@@ -30,6 +30,7 @@ import it.unimi.dsi.fastutil.floats.FloatArrayList;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -50,8 +51,6 @@ public abstract class Layout {
     public static final int DIR_RIGHT_TO_LEFT = -1;
 
     public static final float TAB_INCREMENT = 20;
-
-    private static final ParagraphStyle[] NO_PARA_SPANS = {};
 
     /// member variables \\\
 
@@ -182,7 +181,7 @@ public abstract class Layout {
 
         int previousLineBottom = getLineTop(firstLine);
         int previousLineEnd = getLineStart(firstLine);
-        ParagraphStyle[] spans = NO_PARA_SPANS;
+        List<ParagraphStyle> spans = Collections.emptyList();
         int spanEnd = 0;
         final TextPaint paint = TextPaint.obtain();
         paint.set(mPaint);
@@ -575,8 +574,8 @@ public abstract class Layout {
         if (hasTabs && mText instanceof Spanned) {
             // Just checking this line should be good enough, tabs should be
             // consistent across all lines in a paragraph.
-            TabStopSpan[] tabs = getParagraphSpans((Spanned) mText, start, end, TabStopSpan.class);
-            if (tabs != null && tabs.length > 0) {
+            List<TabStopSpan> tabs = getParagraphSpans((Spanned) mText, start, end, TabStopSpan.class);
+            if (!tabs.isEmpty()) {
                 tabStops = new TabStops(TAB_INCREMENT, tabs); // XXX should reuse
             }
         }
@@ -899,8 +898,8 @@ public abstract class Layout {
         if (hasTab && mText instanceof Spanned) {
             // Just checking this line should be good enough, tabs should be
             // consistent across all lines in a paragraph.
-            TabStopSpan[] tabs = getParagraphSpans((Spanned) mText, start, end, TabStopSpan.class);
-            if (tabs != null && tabs.length > 0) {
+            List<TabStopSpan> tabs = getParagraphSpans((Spanned) mText, start, end, TabStopSpan.class);
+            if (!tabs.isEmpty()) {
                 tabStops = new TabStops(TAB_INCREMENT, tabs); // XXX should reuse
             }
         }
@@ -939,8 +938,8 @@ public abstract class Layout {
         if (hasTab && mText instanceof Spanned) {
             // Just checking this line should be good enough, tabs should be
             // consistent across all lines in a paragraph.
-            TabStopSpan[] tabs = getParagraphSpans((Spanned) mText, start, end, TabStopSpan.class);
-            if (tabs != null && tabs.length > 0) {
+            List<TabStopSpan> tabs = getParagraphSpans((Spanned) mText, start, end, TabStopSpan.class);
+            if (!tabs.isEmpty()) {
                 tabStops = new TabStops(TAB_INCREMENT, tabs); // XXX should reuse
             }
         }
@@ -1157,9 +1156,9 @@ public abstract class Layout {
                 int start = getLineStart(line);
                 int spanEnd = spanned.nextSpanTransition(start, spanned.length(),
                         TabStopSpan.class);
-                TabStopSpan[] tabSpans = getParagraphSpans(spanned, start, spanEnd,
+                List<TabStopSpan> tabSpans = getParagraphSpans(spanned, start, spanEnd,
                         TabStopSpan.class);
-                if (tabSpans != null && tabSpans.length > 0) {
+                if (!tabSpans.isEmpty()) {
                     tabStops = new TabStops(TAB_INCREMENT, tabSpans);
                 }
             }
@@ -1259,17 +1258,15 @@ public abstract class Layout {
         }
 
         if (mSpannedText) {
-            ReplacementSpan[] spans = ((Spanned) text).getSpans(offset, offset,
+            List<ReplacementSpan> spans = ((Spanned) text).getSpans(offset, offset,
                     ReplacementSpan.class);
 
-            if (spans != null) {
-                for (ReplacementSpan span : spans) {
-                    int start = ((Spanned) text).getSpanStart(span);
-                    int end = ((Spanned) text).getSpanEnd(span);
+            for (ReplacementSpan span : spans) {
+                int start = ((Spanned) text).getSpanStart(span);
+                int end = ((Spanned) text).getSpanEnd(span);
 
-                    if (start < offset && end > offset)
-                        offset = start;
-                }
+                if (start < offset && end > offset)
+                    offset = start;
             }
         }
 
@@ -1759,9 +1756,9 @@ public abstract class Layout {
                     if (text instanceof Spanned spanned) {
                         int spanEnd = spanned.nextSpanTransition(start, end,
                                 TabStopSpan.class);
-                        TabStopSpan[] spans = getParagraphSpans(spanned, start, spanEnd,
+                        List<TabStopSpan> spans = getParagraphSpans(spanned, start, spanEnd,
                                 TabStopSpan.class);
-                        if (spans != null && spans.length > 0) {
+                        if (!spans.isEmpty()) {
                             tabStops = new TabStops(TAB_INCREMENT, spans);
                         }
                     }
@@ -1803,16 +1800,16 @@ public abstract class Layout {
      * styles that are already applied to the buffer will apply to text that
      * is inserted into it.
      */
-    @Nullable
-    static <T> T[] getParagraphSpans(@Nonnull Spanned text, int start, int end, Class<T> type) {
+    @Nonnull
+    static <T> List<T> getParagraphSpans(@Nonnull Spanned text, int start, int end, Class<T> type) {
         if (start == end && start > 0) {
-            return null;
+            return Collections.emptyList();
         }
 
         if (text instanceof SpannableStringBuilder) {
             return ((SpannableStringBuilder) text).getSpans(start, end, type, false, null);
         } else {
-            return text.getSpans(start, end, type, null);
+            return text.getSpans(start, end, type);
         }
     }
 
@@ -1917,9 +1914,9 @@ public abstract class Layout {
             mSpanned = (Spanned) display;
         }
 
-        @Nullable
+        @Nonnull
         @Override
-        public <T> T[] getSpans(int start, int end, Class<? extends T> type, @Nullable List<T> out) {
+        public <T> List<T> getSpans(int start, int end, Class<? extends T> type, @Nullable List<T> out) {
             return mSpanned.getSpans(start, end, type, out);
         }
 

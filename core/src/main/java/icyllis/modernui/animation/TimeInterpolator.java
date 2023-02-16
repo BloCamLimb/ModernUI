@@ -18,7 +18,7 @@
 
 package icyllis.modernui.animation;
 
-import icyllis.modernui.graphics.FMath;
+import icyllis.modernui.graphics.MathUtil;
 
 import javax.annotation.Nonnull;
 
@@ -64,7 +64,7 @@ public interface TimeInterpolator {
      * accelerates through the middle.
      */
     @Nonnull
-    TimeInterpolator ACCELERATE_DECELERATE = in -> FMath.cos((in + 1.0f) * FMath.PI) * 0.5f + 0.5f;
+    TimeInterpolator ACCELERATE_DECELERATE = in -> MathUtil.cos((in + 1.0f) * MathUtil.PI) * 0.5f + 0.5f;
 
     /**
      * The constant cycle interpolator that indicates 1/4 cycle sine wave.
@@ -72,7 +72,7 @@ public interface TimeInterpolator {
      * @see #cycle(float)
      */
     @Nonnull
-    TimeInterpolator SINE = in -> FMath.sin(FMath.PI_O_2 * in);
+    TimeInterpolator SINE = in -> MathUtil.sin(MathUtil.PI_O_2 * in);
 
     /**
      * The constant anticipate interpolator whose tension is 2.0.
@@ -158,7 +158,7 @@ public interface TimeInterpolator {
     static TimeInterpolator cycle(float cycle) {
         if (cycle == 0.25f)
             return SINE;
-        return t -> FMath.sin(FMath.PI2 * cycle * t);
+        return t -> MathUtil.sin(MathUtil.PI2 * cycle * t);
     }
 
     /**

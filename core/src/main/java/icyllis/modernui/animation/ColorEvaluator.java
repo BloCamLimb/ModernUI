@@ -18,7 +18,7 @@
 
 package icyllis.modernui.animation;
 
-import icyllis.modernui.graphics.FMath;
+import icyllis.modernui.graphics.MathUtil;
 
 import javax.annotation.Nonnull;
 
@@ -26,22 +26,22 @@ import javax.annotation.Nonnull;
  * This evaluator can be used to perform type interpolation between integer
  * values that represent ARGB colors.
  */
-public final class ArgbEvaluator implements TypeEvaluator<Integer> {
+public final class ColorEvaluator implements TypeEvaluator<Integer> {
 
-    private static final ArgbEvaluator sInstance = new ArgbEvaluator();
+    private static final ColorEvaluator sInstance = new ColorEvaluator();
 
-    private ArgbEvaluator() {
+    private ColorEvaluator() {
     }
 
     /**
-     * Returns an instance of <code>ArgbEvaluator</code> that may be used in
+     * Returns an instance of <code>ColorEvaluator</code> that may be used in
      * {@link PropertyValuesHolder#setEvaluator(TypeEvaluator)}. The same instance may
      * be used in multiple <code>Animator</code>s because it holds no state.
      *
-     * @return An instance of <code>ArgbEvaluator</code>.
+     * @return An instance of <code>ColorEvaluator</code>.
      */
     @Nonnull
-    public static ArgbEvaluator getInstance() {
+    public static ColorEvaluator getInstance() {
         return sInstance;
     }
 
@@ -82,10 +82,10 @@ public final class ArgbEvaluator implements TypeEvaluator<Integer> {
         endB = (float) Math.pow(endB, 2.2);
 
         // compute the interpolated color in linear space
-        float a = FMath.lerp(fraction, startA, endA);
-        float r = FMath.lerp(fraction, startR, endR);
-        float g = FMath.lerp(fraction, startG, endG);
-        float b = FMath.lerp(fraction, startB, endB);
+        float a = MathUtil.lerp(startA, endA, fraction);
+        float r = MathUtil.lerp(startR, endR, fraction);
+        float g = MathUtil.lerp(startG, endG, fraction);
+        float b = MathUtil.lerp(startB, endB, fraction);
 
         // convert back to sRGB in the [0..255] range
         a = a * 255.0f;

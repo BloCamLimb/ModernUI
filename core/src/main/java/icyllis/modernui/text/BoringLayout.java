@@ -24,6 +24,7 @@ import icyllis.modernui.text.style.ParagraphStyle;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.List;
 
 /**
  * A BoringLayout is a very simple Layout implementation for text that
@@ -345,8 +346,8 @@ public class BoringLayout extends Layout implements TextUtils.EllipsizeCallback 
             return null;  // The heuristic considers the whole text RTL. Not boring.
         }
         if (text instanceof Spanned sp) {
-            Object[] styles = sp.getSpans(0, textLength, ParagraphStyle.class);
-            if (styles != null && styles.length > 0) {
+            List<?> styles = sp.getSpans(0, textLength, ParagraphStyle.class);
+            if (!styles.isEmpty()) {
                 return null;  // There are some ParagraphStyle spans. Not boring.
             }
         }

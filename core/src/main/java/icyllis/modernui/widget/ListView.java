@@ -20,7 +20,7 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.graphics.FMath;
+import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.view.*;
 import org.apache.logging.log4j.Marker;
@@ -2068,7 +2068,7 @@ public class ListView extends AbsListView {
 
         // Then check between the starting position and the current position.
         final int count = adapter.getCount();
-        current = FMath.clamp(current, -1, count - 1);
+        current = MathUtil.clamp(current, -1, count - 1);
         if (lookDown) {
             position = Math.min(position - 1, count - 1);
             while ((position > current) && !adapter.isEnabled(position)) {

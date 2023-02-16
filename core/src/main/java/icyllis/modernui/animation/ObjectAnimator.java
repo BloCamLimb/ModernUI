@@ -105,7 +105,7 @@ public final class ObjectAnimator extends ValueAnimator {
     public static <T> ObjectAnimator ofArgb(@Nullable T target, @Nonnull IntProperty<T> property,
                                             @Nonnull int... values) {
         PropertyValuesHolder pvh = PropertyValuesHolder.ofInt(property, values);
-        pvh.setEvaluator(ArgbEvaluator.getInstance());
+        pvh.setEvaluator(ColorEvaluator.getInstance());
         return ofPropertyValuesHolder(target, pvh);
     }
 

@@ -40,7 +40,10 @@ import java.util.List;
 
 /**
  * This is the interface for text that has markup objects attached to
- * ranges of it. This class is modified from Android.
+ * ranges of it.
+ * <br>Not all text classes have mutable markup or text; see
+ * {@link Spannable} for mutable markup and {@link Editable} for
+ * mutable text.
  */
 public interface Spanned extends CharSequence {
 
@@ -61,7 +64,7 @@ public interface Spanned extends CharSequence {
      * its beginning or a POINT at its end) or it will be <i>excluded</i>.
      * <p>
      * Note that <i>before</i> and <i>after</i> here refer to offsets in the String, which are
-     * independent from the visual representation of the text (left-to-right or right-to-left).
+     * independent of the visual representation of the text (left-to-right or right-to-left).
      */
     int SPAN_POINT_MARK_MASK = 0x33;
 
@@ -181,33 +184,35 @@ public interface Spanned extends CharSequence {
     int SPAN_PRIORITY = 0xFF << SPAN_PRIORITY_SHIFT;
 
     /**
-     * Query a set of the markup objects attached to the specified
-     * slice of this {@link CharSequence} and whose type is the specified type
-     * or a subclass of it.  Specify {@code Object.class} for the type
-     * if you want all the objects regardless of type.
+     * Query a set of the markup objects attached to the specified slice
+     * of this {@link CharSequence} and whose type is the specified type
+     * or a subclass of it.
+     * <br>
+     * Specify {@code null} or {@code Object.class} for the type if you
+     * want all the objects regardless of type.
      * <p>
-     * If <code>out</code> list is not null, then it will be filled with the
-     * method result and returns null. If <code>out</code> list is <code>null</code>, then
-     * method will return an array of the method result. If result is empty,
-     * returns <code>null</code>. This method will never return an empty array.
+     * If <code>dest</code> list is non-null, it will be filled with the
+     * method results and returned as-is. Otherwise, a new (and possibly-
+     * unmodifiable) list will be created with method results and returned.
+     * The return list can be empty if there is no match.
      *
-     * @param <T>   markup type
      * @param start start char index of the slice
      * @param end   end char index of the slice
      * @param type  markup class
-     * @param out   the list to receive the result
-     * @return an array of the markup objects, or null
+     * @param dest  the list that receives method results
+     * @return the list of results
      */
-    @Nullable
-    <T> T[] getSpans(int start, int end, Class<? extends T> type, @Nullable List<T> out);
+    @Nonnull
+    <T> List<T> getSpans(int start, int end, @Nullable Class<? extends T> type,
+                         @Nullable List<T> dest);
 
     /**
      * Convenience for getSpans(start, end, type, null).
      *
      * @see #getSpans(int, int, Class, List)
      */
-    @Nullable
-    default <T> T[] getSpans(int start, int end, Class<? extends T> type) {
+    @Nonnull
+    default <T> List<T> getSpans(int start, int end, @Nullable Class<? extends T> type) {
         return getSpans(start, end, type, null);
     }
 

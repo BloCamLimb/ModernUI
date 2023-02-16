@@ -28,6 +28,7 @@ import icyllis.modernui.widget.TextView;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.text.BreakIterator;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -513,15 +514,13 @@ public final class TextKeyListener {
     // Returns the offset of the replacement span edge if the offset is inside the replacement
     // span.  Otherwise, does nothing and returns the input offset value.
     private static int adjustReplacementSpan(Editable text, int offset, boolean moveToStart) {
-        ReplacementSpan[] spans = text.getSpans(offset, offset, ReplacementSpan.class);
-        if (spans != null) {
-            for (ReplacementSpan span : spans) {
-                final int start = text.getSpanStart(span);
-                final int end = text.getSpanEnd(span);
+        List<ReplacementSpan> spans = text.getSpans(offset, offset, ReplacementSpan.class);
+        for (ReplacementSpan span : spans) {
+            final int start = text.getSpanStart(span);
+            final int end = text.getSpanEnd(span);
 
-                if (start < offset && end > offset) {
-                    offset = moveToStart ? start : end;
-                }
+            if (start < offset && end > offset) {
+                offset = moveToStart ? start : end;
             }
         }
         return offset;

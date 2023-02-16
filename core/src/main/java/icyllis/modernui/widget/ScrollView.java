@@ -21,7 +21,7 @@ package icyllis.modernui.widget;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.graphics.FMath;
+import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.view.*;
 
@@ -672,7 +672,7 @@ public class ScrollView extends FrameLayout {
             final float axisValue = event.getAxisValue(MotionEvent.AXIS_VSCROLL);
             final int delta = Math.round(axisValue * mVerticalScrollFactor);
             if (Math.abs(axisValue) > 0.9 && Math.abs(delta) * 6 > mMinimumVelocity) {
-                int deltaY = FMath.clamp(delta * 6, -mMaximumVelocity, mMaximumVelocity);
+                int deltaY = MathUtil.clamp(delta * 6, -mMaximumVelocity, mMaximumVelocity);
                 flingWithNestedDispatch(-deltaY);
                 return true;
             } else if (smoothScrollBy(-delta)) {

@@ -22,7 +22,7 @@ import icyllis.modernui.animation.AnimationUtils;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.graphics.FMath;
+import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.view.*;
 
@@ -774,7 +774,7 @@ public class NestedScrollView extends FrameLayout {
             final float axisValue = event.getAxisValue(MotionEvent.AXIS_VSCROLL);
             final int delta = Math.round(axisValue * ViewConfiguration.get().getVerticalScrollFactor());
             if (Math.abs(axisValue) > 0.9 && Math.abs(delta) * 6 > mMinimumVelocity) {
-                int deltaY = FMath.clamp(delta * 6, -mMaximumVelocity, mMaximumVelocity);
+                int deltaY = MathUtil.clamp(delta * 6, -mMaximumVelocity, mMaximumVelocity);
                 if (!edgeEffectFling(deltaY)
                         && !dispatchNestedPreFling(0, -deltaY)) {
                     dispatchNestedFling(0, -deltaY, true);

@@ -19,7 +19,7 @@
 package icyllis.modernui.graphics.font;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.FMath;
+import icyllis.modernui.graphics.MathUtil;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -145,7 +145,7 @@ public class FontPaint {
      * @param fontSize set the paint's text size in pixel units.
      */
     public void setFontSize(int fontSize) {
-        mFontSize = FMath.clamp(fontSize, 8, 96);
+        mFontSize = MathUtil.clamp(fontSize, 8, 96);
     }
 
     /**

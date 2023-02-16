@@ -18,14 +18,43 @@
 
 package icyllis.modernui.graphics;
 
+import org.lwjgl.system.MemoryUtil;
+
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * Represents a 3x3 row-major matrix.
  */
+//TODO type mask and others are WIP
 @SuppressWarnings("unused")
 public final class Matrix3 implements Cloneable {
+
+    /**
+     * TypeMask
+     * <p>
+     * Enum of bit fields for mask returned by getType().
+     * Used to identify the complexity of Matrix3, to optimize performance.
+     */
+    public static final int
+            Identity_Mask = 0,          // identity; all bits clear
+            Translate_Mask = 0x01,      // translation
+            Scale_Mask = 0x02,          // scale
+            Affine_Mask = 0x04,         // shear or rotate
+            Perspective_Mask = 0x08;    // perspective
+    /**
+     * Set if the matrix will map a rectangle to another rectangle. This
+     * can be true if the matrix is scale-only, or rotates a multiple of
+     * 90 degrees.
+     * <p>
+     * This bit will be set on identity matrices
+     */
+    private static final int AxisAligned_Mask = 0x10;
+    /**
+     * Set if the perspective bit is valid even though the rest of
+     * the matrix is Unknown.
+     */
+    private static final int OnlyPerspectiveValid_Mask = 0x40;
+    private static final int Unknown_Mask = 0x80;
 
     // sequential matrix elements, m(ij) (row, column)
     // directly using primitives will be faster than array in Java
@@ -42,10 +71,9 @@ public final class Matrix3 implements Cloneable {
     float m32;
     float m33;
 
-    /**
-     * Create a zero matrix.
-     */
-    public Matrix3() {
+    int mTypeMask;
+
+    Matrix3() {
     }
 
     /**
@@ -55,13 +83,80 @@ public final class Matrix3 implements Cloneable {
      */
     @Nonnull
     public static Matrix3 identity() {
-        final Matrix3 mat = new Matrix3();
-        mat.m11 = mat.m22 = mat.m33 = 1.0f;
-        return mat;
+        final Matrix3 m = new Matrix3();
+        m.m11 = m.m22 = m.m33 = 1.0f;
+        m.mTypeMask = Identity_Mask | AxisAligned_Mask;
+        return m;
+    }
+
+    /**
+     * Create a new matrix from the given elements.
+     *
+     * @param scaleX the value of m11
+     * @param shearY the value of m12
+     * @param persp0 the value of m13
+     * @param shearX the value of m21
+     * @param scaleY the value of m22
+     * @param persp1 the value of m23
+     * @param transX the value of m31
+     * @param transY the value of m32
+     * @param persp2 the value of m33
+     * @return the matrix
+     */
+    @Nonnull
+    public static Matrix3 makeAll(float scaleX, float shearY, float persp0,
+                                  float shearX, float scaleY, float persp1,
+                                  float transX, float transY, float persp2) {
+        final Matrix3 m = new Matrix3();
+        m.setAll(scaleX, shearY, persp0, shearX, scaleY, persp1, transX, transY, persp2);
+        return m;
+    }
+
+    /**
+     * Returns scale factor multiplied by x-axis input, contributing to x-axis output.
+     * With mapPoints(), scales Point along the x-axis.
+     *
+     * @return horizontal scale factor
+     */
+    public float getScaleX() {
+        return m11;
+    }
+
+    /**
+     * Returns scale factor multiplied by y-axis input, contributing to y-axis output.
+     * With mapPoints(), scales Point along the y-axis.
+     *
+     * @return vertical scale factor
+     */
+    public float getScaleY() {
+        return m22;
+    }
+
+    /**
+     * Returns scale factor multiplied by x-axis input, contributing to y-axis output.
+     * With mapPoints(), shears Point along the y-axis.
+     * Shearing both axes can rotate Point.
+     *
+     * @return vertical shear factor
+     */
+    public float getShearY() {
+        return m12;
+    }
+
+    /**
+     * Returns scale factor multiplied by y-axis input, contributing to x-axis output.
+     * With mapPoints(), shears Point along the x-axis.
+     * Shearing both axes can rotate Point.
+     *
+     * @return horizontal shear factor
+     */
+    public float getShearX() {
+        return m21;
     }
 
     /**
      * Returns translation contributing to x-axis output.
+     * With mapPoints(), moves Point along the x-axis.
      *
      * @return horizontal translation factor
      */
@@ -71,11 +166,143 @@ public final class Matrix3 implements Cloneable {
 
     /**
      * Returns translation contributing to y-axis output.
+     * With mapPoints(), moves Point along the y-axis.
      *
      * @return vertical translation factor
      */
     public float getTranslateY() {
         return m32;
+    }
+
+    /**
+     * Returns factor scaling input x-axis relative to input y-axis.
+     *
+     * @return input x-axis perspective factor
+     */
+    public float getPerspX() {
+        return m13;
+    }
+
+    /**
+     * Returns factor scaling input y-axis relative to input x-axis.
+     *
+     * @return input y-axis perspective factor
+     */
+    public float getPerspY() {
+        return m23;
+    }
+
+    /**
+     * Returns a bit field describing the transformations the matrix may
+     * perform. The bit field is computed conservatively, so it may include
+     * false positives. For example, when Perspective_Mask is set, all
+     * other bits are set.
+     *
+     * @return Identity_Mask, or combinations of: Translate_Mask, Scale_Mask,
+     * Affine_Mask, Perspective_Mask
+     */
+    public int getType() {
+        if ((mTypeMask & Unknown_Mask) != 0) {
+            mTypeMask = computeTypeMask();
+        }
+        // only return the public masks
+        return (mTypeMask & 0xF);
+    }
+
+    /**
+     * Returns true if this matrix is identity.
+     *
+     * @return {@code true} if this matrix is identity.
+     */
+    public boolean isIdentity() {
+        return getType() == Identity_Mask;
+    }
+
+    /**
+     * Returns whether this matrix at most scales and translates.
+     *
+     * @return {@code true} if this matrix is scales, translates, or both.
+     */
+    public boolean isScaleTranslate() {
+        return (getType() & ~(Scale_Mask | Translate_Mask)) == 0;
+    }
+
+    /**
+     * Returns whether this matrix is identity, or translates.
+     *
+     * @return {@code true} if this matrix is identity, or translates
+     */
+    public boolean isTranslate() {
+        return (getType() & ~(Translate_Mask)) == 0;
+    }
+
+    /**
+     * Returns whether this matrix transforms rect to another rect. If true, this matrix is identity,
+     * or/and scales, or mirrors on axes. In all cases, this matrix is affine and may also have translation.
+     *
+     * @return true if this matrix transform one rect into another
+     */
+    public boolean isAxisAligned() {
+        if ((mTypeMask & Unknown_Mask) != 0) {
+            mTypeMask = computeTypeMask();
+        }
+        return (mTypeMask & AxisAligned_Mask) != 0;
+    }
+
+    /**
+     * Returns whether this matrix contains perspective elements.
+     *
+     * @return true if this matrix is in most general form
+     */
+    public boolean hasPerspective() {
+        if ((mTypeMask & Unknown_Mask) != 0 &&
+                (mTypeMask & OnlyPerspectiveValid_Mask) == 0) {
+            mTypeMask = computePerspectiveTypeMask();
+        }
+        return (mTypeMask & Perspective_Mask) != 0;
+    }
+
+    /**
+     * Returns true if this matrix contains only translation, rotation, reflection, and
+     * uniform scale. Returns false if this matrix contains different scales, skewing,
+     * perspective, or degenerate forms that collapse to a line or point.
+     * <p>
+     * Describes that the matrix makes rendering with and without the matrix are
+     * visually alike; a transformed circle remains a circle. Mathematically, this is
+     * referred to as similarity of a Euclidean space, or a similarity transformation.
+     * <p>
+     * Preserves right angles, keeping the arms of the angle equal lengths.
+     *
+     * @return true if this matrix only rotates, uniformly scales, translates
+     */
+    public boolean isSimilarity() {
+        // if identity or translate matrix
+        int mask = getType();
+        if (mask <= Translate_Mask) {
+            return true;
+        }
+        if ((mask & Perspective_Mask) != 0) {
+            return false;
+        }
+
+        float mx = m11;
+        float my = m22;
+        // if no shear, can just compare scale factors
+        if ((mask & Affine_Mask) == 0) {
+            return !MathUtil.isNearlyZero(mx) && MathUtil.isNearlyEqual(Math.abs(mx), Math.abs(my));
+        }
+        float sx = m21;
+        float sy = m12;
+
+        // check if upper-left 2x2 of matrix is degenerate
+        if (MathUtil.isNearlyZero(mx * my - sx * sy)) {
+            return false;
+        }
+
+        // upper 2x2 is rotation/reflection + uniform scale if basis vectors
+        // are 90 degree rotations of each other
+        return (MathUtil.isNearlyEqual(mx, my) && MathUtil.isNearlyEqual(sx, -sy))
+                || (MathUtil.isNearlyEqual(mx, -my) && MathUtil.isNearlyEqual(sx, sy));
     }
 
     /**
@@ -133,7 +360,7 @@ public final class Matrix3 implements Cloneable {
     }
 
     /**
-     * Set this matrix to the identity matrix.
+     * Reset this matrix to the identity.
      */
     public void setIdentity() {
         m11 = 1.0f;
@@ -145,29 +372,96 @@ public final class Matrix3 implements Cloneable {
         m31 = 0.0f;
         m32 = 0.0f;
         m33 = 1.0f;
+        mTypeMask = Identity_Mask | AxisAligned_Mask;
     }
 
     /**
-     * Set this matrix elements to be given matrix.
+     * Store the values of the given matrix into this matrix.
      *
-     * @param mat the matrix to copy from
+     * @param m the matrix to copy from
      */
-    public void set(@Nonnull Matrix3 mat) {
-        m11 = mat.m11;
-        m12 = mat.m12;
-        m13 = mat.m13;
-        m21 = mat.m21;
-        m22 = mat.m22;
-        m23 = mat.m23;
-        m31 = mat.m31;
-        m32 = mat.m32;
-        m33 = mat.m33;
+    public void set(@Nonnull Matrix3 m) {
+        m11 = m.m11;
+        m12 = m.m12;
+        m13 = m.m13;
+        m21 = m.m21;
+        m22 = m.m22;
+        m23 = m.m23;
+        m31 = m.m31;
+        m32 = m.m32;
+        m33 = m.m33;
+        mTypeMask = m.mTypeMask;
     }
 
     /**
-     * Compute the determinant of this matrix.
+     * Sets all values from parameters.
      *
-     * @return the determinant of this matrix
+     * @param scaleX horizontal scale factor to store
+     * @param shearX horizontal skew factor to store
+     * @param transX horizontal translation to store
+     * @param shearY vertical skew factor to store
+     * @param scaleY vertical scale factor to store
+     * @param transY vertical translation to store
+     * @param persp0 input x-axis values perspective factor to store
+     * @param persp1 input y-axis values perspective factor to store
+     * @param persp2 perspective scale factor to store
+     */
+    public void setAll(float scaleX, float shearY, float persp0,
+                       float shearX, float scaleY, float persp1,
+                       float transX, float transY, float persp2) {
+        m11 = scaleX;
+        m12 = shearY;
+        m13 = persp0;
+        m21 = shearX;
+        m22 = scaleY;
+        m23 = persp1;
+        m31 = transX;
+        m32 = transY;
+        m33 = persp2;
+        mTypeMask = Matrix3.Unknown_Mask;
+    }
+
+    /**
+     * Get this matrix data, store them into an address (UNSAFE).
+     * NOTE: This method does not perform memory security checks.
+     *
+     * @param p the pointer of the array to store
+     */
+    public void put(long p) {
+        MemoryUtil.memPutFloat(p, m11);
+        MemoryUtil.memPutFloat(p + 4, m12);
+        MemoryUtil.memPutFloat(p + 8, m13);
+        MemoryUtil.memPutFloat(p + 12, m21);
+        MemoryUtil.memPutFloat(p + 16, m22);
+        MemoryUtil.memPutFloat(p + 20, m23);
+        MemoryUtil.memPutFloat(p + 24, m31);
+        MemoryUtil.memPutFloat(p + 28, m32);
+        MemoryUtil.memPutFloat(p + 32, m33);
+    }
+
+    /**
+     * Get this matrix data, store them into an address (UNSAFE).
+     * The data matches std140 layout so it is not tightly packed.
+     * NOTE: This method does not perform memory security checks.
+     *
+     * @param p the pointer of the array to store, must be aligned
+     */
+    public void putAligned(long p) {
+        MemoryUtil.memPutFloat(p, m11);
+        MemoryUtil.memPutFloat(p + 4, m12);
+        MemoryUtil.memPutFloat(p + 8, m13);
+        MemoryUtil.memPutFloat(p + 16, m21);
+        MemoryUtil.memPutFloat(p + 20, m22);
+        MemoryUtil.memPutFloat(p + 24, m23);
+        MemoryUtil.memPutFloat(p + 32, m31);
+        MemoryUtil.memPutFloat(p + 36, m32);
+        MemoryUtil.memPutFloat(p + 40, m33);
+    }
+
+    /**
+     * Return the determinant of this matrix.
+     *
+     * @return the determinant
      */
     public float determinant() {
         return (m11 * m22 - m12 * m21) * m33 +
@@ -185,18 +479,21 @@ public final class Matrix3 implements Cloneable {
     }
 
     /**
-     * Compute the transpose of this matrix.
+     * Transpose this matrix.
      */
     public void transpose() {
-        float t = m21;
-        m21 = m12;
-        m12 = t;
-        t = m31;
-        m31 = m13;
-        m13 = t;
-        t = m32;
-        m32 = m23;
-        m23 = t;
+        final float f12 = m21;
+        final float f13 = m31;
+        final float f21 = m12;
+        final float f23 = m32;
+        final float f31 = m13;
+        final float f32 = m23;
+        m12 = f12;
+        m13 = f13;
+        m21 = f21;
+        m23 = f23;
+        m31 = f31;
+        m32 = f32;
     }
 
     /**
@@ -222,7 +519,7 @@ public final class Matrix3 implements Cloneable {
         float c = m12 * m23 - m13 * m22;
         // calc the determinant
         float det = a * m33 + b * m32 + c * m31;
-        if (FMath.zero(det)) {
+        if (MathUtil.isNearlyZero(det)) {
             return false;
         }
         // calc algebraic cofactor and transpose
@@ -288,7 +585,7 @@ public final class Matrix3 implements Cloneable {
         float y3 = m12 * r.left + m22 * r.bottom + m32;
         float x4 = m11 * r.right + m21 * r.bottom + m31;
         float y4 = m12 * r.right + m22 * r.bottom + m32;
-        if (!isAffine()) {
+        if (hasPerspective()) {
             // project
             float w = 1.0f / (m13 * r.left + m23 * r.top + m33);
             x1 *= w;
@@ -303,10 +600,10 @@ public final class Matrix3 implements Cloneable {
             x4 *= w;
             y4 *= w;
         }
-        r.left = FMath.min(x1, x2, x3, x4);
-        r.top = FMath.min(y1, y2, y3, y4);
-        r.right = FMath.max(x1, x2, x3, x4);
-        r.bottom = FMath.max(y1, y2, y3, y4);
+        r.left = MathUtil.min(x1, x2, x3, x4);
+        r.top = MathUtil.min(y1, y2, y3, y4);
+        r.right = MathUtil.max(x1, x2, x3, x4);
+        r.bottom = MathUtil.max(y1, y2, y3, y4);
     }
 
     /**
@@ -341,7 +638,7 @@ public final class Matrix3 implements Cloneable {
         float y3 = m12 * l + m22 * b + m32;
         float x4 = m11 * r + m21 * b + m31;
         float y4 = m12 * r + m22 * b + m32;
-        if (!isAffine()) {
+        if (hasPerspective()) {
             // project
             float w = 1.0f / (m13 * l + m23 * t + m33);
             x1 *= w;
@@ -356,10 +653,10 @@ public final class Matrix3 implements Cloneable {
             x4 *= w;
             y4 *= w;
         }
-        out.left = Math.round(FMath.min(x1, x2, x3, x4));
-        out.top = Math.round(FMath.min(y1, y2, y3, y4));
-        out.right = Math.round(FMath.max(x1, x2, x3, x4));
-        out.bottom = Math.round(FMath.max(y1, y2, y3, y4));
+        out.left = Math.round(MathUtil.min(x1, x2, x3, x4));
+        out.top = Math.round(MathUtil.min(y1, y2, y3, y4));
+        out.right = Math.round(MathUtil.max(x1, x2, x3, x4));
+        out.bottom = Math.round(MathUtil.max(y1, y2, y3, y4));
     }
 
     /**
@@ -394,7 +691,7 @@ public final class Matrix3 implements Cloneable {
         float y3 = m12 * l + m22 * b + m32;
         float x4 = m11 * r + m21 * b + m31;
         float y4 = m12 * r + m22 * b + m32;
-        if (!isAffine()) {
+        if (hasPerspective()) {
             // project
             float w = 1.0f / (m13 * l + m23 * t + m33);
             x1 *= w;
@@ -409,51 +706,10 @@ public final class Matrix3 implements Cloneable {
             x4 *= w;
             y4 *= w;
         }
-        out.left = (int) Math.floor(FMath.min(x1, x2, x3, x4));
-        out.top = (int) Math.floor(FMath.min(y1, y2, y3, y4));
-        out.right = (int) Math.ceil(FMath.max(x1, x2, x3, x4));
-        out.bottom = (int) Math.ceil(FMath.max(y1, y2, y3, y4));
-    }
-
-    /**
-     * Returns whether this matrix is seen as an affine transformation.
-     * Otherwise, there's a perspective projection.
-     *
-     * @return {@code true} if this matrix is affine.
-     */
-    public boolean isAffine() {
-        return FMath.zero(m13, m23) && FMath.eq(m33, 1.0f);
-    }
-
-    /**
-     * Returns whether this matrix at most scales and translates.
-     *
-     * @return {@code true} if this matrix is scales, translates, or both.
-     */
-    public boolean isScaleTranslate() {
-        return FMath.zero(m12, m21, m13, m23) && FMath.eq(m33, 1.0f);
-    }
-
-    /**
-     * Returns whether this matrix is identity, or translates.
-     *
-     * @return {@code true} if this matrix is identity, or translates
-     */
-    public boolean isTranslate() {
-        return FMath.zero(m12, m21, m13, m23) && FMath.eq(m11, m22, m33, 1.0f);
-    }
-
-    /**
-     * Returns whether this matrix transforms rect to another rect. If true, this matrix is identity,
-     * or/and scales, or mirrors on axes. In all cases, this matrix is affine and may also have translation.
-     *
-     * @return true if this matrix transform one rect into another
-     */
-    public boolean isAxisAligned() {
-        return isAffine() && (
-                (FMath.zero(m11) && FMath.zero(m22) && !FMath.zero(m12) && !FMath.zero(m21)) ||
-                        (FMath.zero(m12) && FMath.zero(m21) && !FMath.zero(m11) && !FMath.zero(m22))
-        );
+        out.left = (int) Math.floor(MathUtil.min(x1, x2, x3, x4));
+        out.top = (int) Math.floor(MathUtil.min(y1, y2, y3, y4));
+        out.right = (int) Math.ceil(MathUtil.max(x1, x2, x3, x4));
+        out.bottom = (int) Math.ceil(MathUtil.max(y1, y2, y3, y4));
     }
 
     /**
@@ -476,86 +732,146 @@ public final class Matrix3 implements Cloneable {
     }
 
     /**
-     * Calculate whether this matrix is approximately equivalent to an identity matrix.
+     * Returns true if this matrix is exactly equal to the given matrix.
+     * In this case, -0.f is not equal to 0.f, NaN is equal to NaN.
      *
-     * @return {@code true} if this matrix is identity.
+     * @param m the matrix to compare.
+     * @return {@code true} if this matrix is equivalent to other matrix.
      */
-    public boolean isIdentity() {
-        return FMath.zero(m12, m13, m21) &&
-                FMath.zero(m23, m31, m32) &&
-                FMath.eq(m11, m22, m33, 1.0f);
+    public boolean equals(@Nonnull Matrix3 m) {
+        if (this == m) return true;
+        if (Float.floatToIntBits(m.m11) != Float.floatToIntBits(m11)) return false;
+        if (Float.floatToIntBits(m.m12) != Float.floatToIntBits(m12)) return false;
+        if (Float.floatToIntBits(m.m13) != Float.floatToIntBits(m13)) return false;
+        if (Float.floatToIntBits(m.m21) != Float.floatToIntBits(m21)) return false;
+        if (Float.floatToIntBits(m.m22) != Float.floatToIntBits(m22)) return false;
+        if (Float.floatToIntBits(m.m23) != Float.floatToIntBits(m23)) return false;
+        if (Float.floatToIntBits(m.m31) != Float.floatToIntBits(m31)) return false;
+        if (Float.floatToIntBits(m.m32) != Float.floatToIntBits(m32)) return false;
+        return Float.floatToIntBits(m.m33) == Float.floatToIntBits(m33);
     }
 
-    public boolean isEqual(@Nonnull Matrix4 mat) {
-        return m11 == mat.m11 &&
-                m12 == mat.m12 &&
-                m13 == mat.m13 &&
-                m21 == mat.m21 &&
-                m22 == mat.m22 &&
-                m23 == mat.m23 &&
-                m31 == mat.m31 &&
-                m32 == mat.m32 &&
-                m33 == mat.m33;
+    private int computeTypeMask() {
+        int mask = 0;
+
+        if (m13 != 0 || m23 != 0 || m33 != 1) {
+            // Once it is determined that this is a perspective transform,
+            // all other flags are moot as far as optimizations are concerned.
+            return Translate_Mask |
+                    Scale_Mask |
+                    Affine_Mask |
+                    Perspective_Mask;
+        }
+
+        if (m31 != 0 || m32 != 0) {
+            mask |= Translate_Mask;
+        }
+
+        boolean shearX = m21 != 0;
+        boolean shearY = m12 != 0;
+
+        if (shearX || shearY) {
+            // The shear components may be scale-inducing, unless we are dealing
+            // with a pure rotation.  Testing for a pure rotation is expensive,
+            // so we opt for being conservative by always setting the scale bit.
+            // along with affine.
+            // By doing this, we are also ensuring that matrices have the same
+            // type masks as their inverses.
+            mask |= Affine_Mask | Scale_Mask;
+
+            // For axis aligned, in the affine case, we only need check that
+            // the primary diagonal is all zeros and that the secondary diagonal
+            // is all non-zero.
+            if (shearX && shearY && m11 == 0 && m22 == 0) {
+                mask |= AxisAligned_Mask;
+            }
+        } else {
+            // Only test for scale explicitly if not affine, since affine sets the
+            // scale bit.
+            if (m11 != 1 || m22 != 1) {
+                mask |= Scale_Mask;
+            }
+
+            // Not affine, therefore we already know secondary diagonal is
+            // all zeros, so we just need to check that primary diagonal is
+            // all non-zero.
+
+            // record if the (p)rimary diagonal is all non-zero
+            if (m11 != 0 && m22 != 0) {
+                mask |= AxisAligned_Mask;
+            }
+        }
+
+        return mask;
+    }
+
+    private int computePerspectiveTypeMask() {
+        if (m13 != 0 || m23 != 0 || m33 != 1) {
+            // If this is a perspective transform, we return true for all other
+            // transform flags - this does not disable any optimizations, respects
+            // the rule that the type mask must be conservative, and speeds up
+            // type mask computation.
+            return Translate_Mask |
+                    Scale_Mask |
+                    Affine_Mask |
+                    Perspective_Mask;
+        }
+
+        return OnlyPerspectiveValid_Mask | Unknown_Mask;
     }
 
     /**
      * Returns whether this matrix is equivalent to given matrix.
      *
-     * @param mat the matrix to compare.
+     * @param m the matrix to compare.
      * @return {@code true} if this matrix is equivalent to other matrix.
      */
-    public boolean approxEqual(@Nullable Matrix3 mat) {
-        if (mat == this)
-            return true;
-        if (mat == null)
-            return false;
-        return FMath.eq(m11, mat.m11) &&
-                FMath.eq(m12, mat.m12) &&
-                FMath.eq(m13, mat.m13) &&
-                FMath.eq(m21, mat.m21) &&
-                FMath.eq(m22, mat.m22) &&
-                FMath.eq(m23, mat.m23) &&
-                FMath.eq(m31, mat.m31) &&
-                FMath.eq(m32, mat.m32) &&
-                FMath.eq(m33, mat.m33);
-    }
-
-    /**
-     * Returns whether this matrix is exactly equal to some other object.
-     *
-     * @param o the reference object with which to compare.
-     * @return {@code true} if this object is the same as the obj values.
-     */
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        Matrix3 mat = (Matrix3) o;
-
-        if (Float.floatToIntBits(mat.m11) != Float.floatToIntBits(m11)) return false;
-        if (Float.floatToIntBits(mat.m12) != Float.floatToIntBits(m12)) return false;
-        if (Float.floatToIntBits(mat.m13) != Float.floatToIntBits(m13)) return false;
-        if (Float.floatToIntBits(mat.m21) != Float.floatToIntBits(m21)) return false;
-        if (Float.floatToIntBits(mat.m22) != Float.floatToIntBits(m22)) return false;
-        if (Float.floatToIntBits(mat.m23) != Float.floatToIntBits(m23)) return false;
-        if (Float.floatToIntBits(mat.m31) != Float.floatToIntBits(m31)) return false;
-        if (Float.floatToIntBits(mat.m32) != Float.floatToIntBits(m32)) return false;
-        return Float.floatToIntBits(mat.m33) == Float.floatToIntBits(m33);
+    public boolean isNearlyEqual(@Nonnull Matrix3 m) {
+        return MathUtil.isNearlyEqual(m11, m.m11) &&
+                MathUtil.isNearlyEqual(m12, m.m12) &&
+                MathUtil.isNearlyEqual(m13, m.m13) &&
+                MathUtil.isNearlyEqual(m21, m.m21) &&
+                MathUtil.isNearlyEqual(m22, m.m22) &&
+                MathUtil.isNearlyEqual(m23, m.m23) &&
+                MathUtil.isNearlyEqual(m31, m.m31) &&
+                MathUtil.isNearlyEqual(m32, m.m32) &&
+                MathUtil.isNearlyEqual(m33, m.m33);
     }
 
     @Override
     public int hashCode() {
-        int result = (m11 != 0.0f ? Float.floatToIntBits(m11) : 0);
-        result = 31 * result + (m12 != 0.0f ? Float.floatToIntBits(m12) : 0);
-        result = 31 * result + (m13 != 0.0f ? Float.floatToIntBits(m13) : 0);
-        result = 31 * result + (m21 != 0.0f ? Float.floatToIntBits(m21) : 0);
-        result = 31 * result + (m22 != 0.0f ? Float.floatToIntBits(m22) : 0);
-        result = 31 * result + (m23 != 0.0f ? Float.floatToIntBits(m23) : 0);
-        result = 31 * result + (m31 != 0.0f ? Float.floatToIntBits(m31) : 0);
-        result = 31 * result + (m32 != 0.0f ? Float.floatToIntBits(m32) : 0);
-        result = 31 * result + (m33 != 0.0f ? Float.floatToIntBits(m33) : 0);
+        int result = Float.floatToIntBits(m11);
+        result = 31 * result + Float.floatToIntBits(m12);
+        result = 31 * result + Float.floatToIntBits(m13);
+        result = 31 * result + Float.floatToIntBits(m21);
+        result = 31 * result + Float.floatToIntBits(m22);
+        result = 31 * result + Float.floatToIntBits(m23);
+        result = 31 * result + Float.floatToIntBits(m31);
+        result = 31 * result + Float.floatToIntBits(m32);
+        result = 31 * result + Float.floatToIntBits(m33);
         return result;
+    }
+
+    /**
+     * Returns whether this matrix is exactly equal to another matrix.
+     *
+     * @param o the reference object with which to compare.
+     * @return {@code true} if this object is the same as the o values.
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Matrix3 m)) {
+            return false;
+        }
+        return m11 == m.m11 &&
+                m12 == m.m12 &&
+                m13 == m.m13 &&
+                m21 == m.m21 &&
+                m22 == m.m22 &&
+                m23 == m.m23 &&
+                m31 == m.m31 &&
+                m32 == m.m32 &&
+                m33 == m.m33;
     }
 
     @Override
@@ -575,7 +891,8 @@ public final class Matrix3 implements Cloneable {
      * @return a deep copy of this matrix
      */
     @Nonnull
-    public Matrix3 copy() {
+    @Override
+    public Matrix3 clone() {
         try {
             return (Matrix3) super.clone();
         } catch (CloneNotSupportedException e) {

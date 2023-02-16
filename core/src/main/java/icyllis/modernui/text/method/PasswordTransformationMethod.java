@@ -26,6 +26,7 @@ import icyllis.modernui.view.View;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
+import java.util.List;
 
 public class PasswordTransformationMethod implements TransformationMethod, TextWatcher {
 
@@ -50,12 +51,10 @@ public class PasswordTransformationMethod implements TransformationMethod, TextW
              * while a password field is showing; there will still
              * be references to the old EditText in the text.
              */
-            ViewReference[] vr = sp.getSpans(0, sp.length(),
+            List<ViewReference> vr = sp.getSpans(0, sp.length(),
                     ViewReference.class);
-            if (vr != null) {
-                for (ViewReference r : vr) {
-                    sp.removeSpan(r);
-                }
+            for (ViewReference r : vr) {
+                sp.removeSpan(r);
             }
 
             removeVisibleSpans(sp);
@@ -84,9 +83,9 @@ public class PasswordTransformationMethod implements TransformationMethod, TextW
     @Override
     public void onTextChanged(CharSequence s, int start, int before, int count) {
         if (s instanceof Spannable sp) {
-            ViewReference[] vr = sp.getSpans(0, s.length(),
+            List<ViewReference> vr = sp.getSpans(0, s.length(),
                     ViewReference.class);
-            if (vr == null) {
+            if (vr.isEmpty()) {
                 return;
             }
 
@@ -98,8 +97,8 @@ public class PasswordTransformationMethod implements TransformationMethod, TextW
              * field to another.)
              */
             View v = null;
-            for (int i = 0; v == null && i < vr.length; i++) {
-                v = vr[i].get();
+            for (int i = 0; v == null && i < vr.size(); i++) {
+                v = vr.get(i).get();
             }
 
             if (v == null) {
@@ -124,11 +123,9 @@ public class PasswordTransformationMethod implements TransformationMethod, TextW
     }
 
     private static void removeVisibleSpans(@Nonnull Spannable sp) {
-        Visible[] old = sp.getSpans(0, sp.length(), Visible.class);
-        if (old != null) {
-            for (Visible visible : old) {
-                sp.removeSpan(visible);
-            }
+        List<Visible> old = sp.getSpans(0, sp.length(), Visible.class);
+        for (Visible visible : old) {
+            sp.removeSpan(visible);
         }
     }
 
@@ -148,17 +145,15 @@ public class PasswordTransformationMethod implements TransformationMethod, TextW
         @Override
         public char charAt(int i) {
             if (mSource instanceof Spanned sp) {
-                Visible[] visible = sp.getSpans(0, sp.length(), Visible.class);
+                List<Visible> visible = sp.getSpans(0, sp.length(), Visible.class);
 
-                if (visible != null) {
-                    for (Visible value : visible) {
-                        if (sp.getSpanStart(value.mTransformer) >= 0) {
-                            int st = sp.getSpanStart(value);
-                            int en = sp.getSpanEnd(value);
+                for (Visible value : visible) {
+                    if (sp.getSpanStart(value.mTransformer) >= 0) {
+                        int st = sp.getSpanStart(value);
+                        int en = sp.getSpanEnd(value);
 
-                            if (i >= st && i < en) {
-                                return mSource.charAt(i);
-                            }
+                        if (i >= st && i < en) {
+                            return mSource.charAt(i);
                         }
                     }
                 }
@@ -191,18 +186,16 @@ public class PasswordTransformationMethod implements TransformationMethod, TextW
             int[] starts = null, ends = null;
 
             if (mSource instanceof Spanned sp) {
-                Visible[] visible = sp.getSpans(0, sp.length(), Visible.class);
+                List<Visible> visible = sp.getSpans(0, sp.length(), Visible.class);
 
-                if (visible != null) {
-                    count = visible.length;
-                    starts = new int[count];
-                    ends = new int[count];
+                count = visible.size();
+                starts = new int[count];
+                ends = new int[count];
 
-                    for (int i = 0; i < count; i++) {
-                        if (sp.getSpanStart(visible[i].mTransformer) >= 0) {
-                            starts[i] = sp.getSpanStart(visible[i]);
-                            ends[i] = sp.getSpanEnd(visible[i]);
-                        }
+                for (int i = 0; i < count; i++) {
+                    if (sp.getSpanStart(visible.get(i).mTransformer) >= 0) {
+                        starts[i] = sp.getSpanStart(visible.get(i));
+                        ends[i] = sp.getSpanEnd(visible.get(i));
                     }
                 }
             }

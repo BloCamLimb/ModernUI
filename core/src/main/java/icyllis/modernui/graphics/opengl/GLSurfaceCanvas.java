@@ -372,7 +372,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
 
     @RenderThread
     public void setProjection(@Nonnull Matrix4 projection) {
-        projection.put(mProjectionUpload.clear());
+        projection.store(mProjectionUpload.clear());
     }
 
     @Nonnull
@@ -804,9 +804,11 @@ public final class GLSurfaceCanvas extends GLCanvas {
      * @param matrix specified matrix
      */
     private void drawMatrix(@Nonnull Matrix4 matrix) {
-        if (!matrix.approxEqual(mLastMatrix)) {
+        if (!matrix.isNearlyEqual(mLastMatrix)) {
             mLastMatrix.set(matrix);
-            matrix.put(checkUniformMemory());
+            ByteBuffer buf = checkUniformMemory();
+            matrix.store(buf);
+            buf.position(buf.position() + 64);
             mDrawOps.add(DRAW_MATRIX);
         }
     }
@@ -1259,7 +1261,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     @Override
     public void drawArc(float cx, float cy, float radius, float startAngle,
                         float sweepAngle, @Nonnull Paint paint) {
-        if (FMath.zero(sweepAngle) || radius < 0.0001f) {
+        if (MathUtil.isNearlyZero(sweepAngle) || radius < 0.0001f) {
             return;
         }
         if (sweepAngle >= 360) {
@@ -1524,8 +1526,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
         if (t < 0.0001f) {
             return;
         }
-        if (FMath.eq(startX, stopX)) {
-            if (FMath.eq(startY, stopY)) {
+        if (MathUtil.isNearlyEqual(startX, stopX)) {
+            if (MathUtil.isNearlyEqual(startY, stopY)) {
                 drawCircleFill(startX, startY, t, paint);
             } else {
                 // vertical
@@ -1533,7 +1535,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                 float bottom = Math.max(startY, stopY);
                 drawRoundRectFill(startX - t, top - t, startX + t, bottom + t, t, 0, paint);
             }
-        } else if (FMath.eq(startY, stopY)) {
+        } else if (MathUtil.isNearlyEqual(startY, stopY)) {
             // horizontal
             float left = Math.min(startX, stopX);
             float right = Math.max(startX, stopX);
@@ -1541,7 +1543,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         } else {
             float cx = (stopX + startX) * 0.5f;
             float cy = (stopY + startY) * 0.5f;
-            float ang = FMath.atan2(stopY - startY, stopX - startX);
+            float ang = MathUtil.atan2(stopY - startY, stopX - startX);
             save();
             Matrix4 mat = getMatrix();
             // rotate the round rect
@@ -1549,8 +1551,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
             mat.preRotateZ(ang);
             mat.preTranslate(-cx, -cy, 0);
             // rotate positions to horizontal
-            float sin = FMath.sin(-ang);
-            float cos = FMath.cos(-ang);
+            float sin = MathUtil.sin(-ang);
+            float cos = MathUtil.cos(-ang);
             float left = (startX - cx) * cos - (startY - cy) * sin + cx;
             float right = (stopX - cx) * cos - (stopY - cy) * sin + cx;
             drawRoundRectFill(left - t, cy - t, right + t, cy + t, t, 0, paint);

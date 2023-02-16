@@ -176,6 +176,7 @@ public class DisplayMetrics {
     /**
      * The reference density used throughout the system.
      */
+    // default DPI is 72 for compatibility reasons
     public static final int DENSITY_DEFAULT = DENSITY_LOW;
 
     /**

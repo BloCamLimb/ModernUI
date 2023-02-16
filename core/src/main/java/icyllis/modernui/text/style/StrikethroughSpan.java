@@ -18,19 +18,42 @@
 
 package icyllis.modernui.text.style;
 
-import icyllis.modernui.text.TextPaint;
+import icyllis.modernui.text.*;
 
 import javax.annotation.Nonnull;
+import java.io.DataInput;
+import java.io.DataOutput;
 
 /**
  * A span that strikes through the text it's attached to.
+ * <p>
+ * The span can be used like this:
+ * <pre>{@code
+ * SpannableString string = new SpannableString("Text with strikethrough span");
+ * string.setSpan(new StrikethroughSpan(), 10, 23, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);}</pre>
  */
-public class StrikethroughSpan extends CharacterStyle implements UpdateAppearance {
+public class StrikethroughSpan extends CharacterStyle
+        implements UpdateAppearance, FlattenableSpan {
 
     /**
      * Creates a {@link StrikethroughSpan}.
      */
     public StrikethroughSpan() {
+    }
+
+    /**
+     * Creates a {@link StrikethroughSpan} from a stream.
+     */
+    public StrikethroughSpan(@Nonnull DataInput src) {
+    }
+
+    @Override
+    public int getSpanTypeId() {
+        return TextUtils.STRIKETHROUGH_SPAN;
+    }
+
+    @Override
+    public void write(@Nonnull DataOutput dest) {
     }
 
     @Override
