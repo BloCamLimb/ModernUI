@@ -23,7 +23,7 @@ import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.audio.FFT;
-import icyllis.modernui.graphics.FMath;
+import icyllis.modernui.graphics.MathUtil;
 
 import javax.annotation.Nonnull;
 
@@ -73,7 +73,7 @@ public class SpectrumGraph {
         var paint = Paint.get();
         if (mCircular) {
             long time = Core.timeMillis();
-            float b = 1.5f + FMath.sin(time / 600f) / 2;
+            float b = 1.5f + MathUtil.sin(time / 600f) / 2;
             paint.setRGBA(160, 155, 230, (int) (64 * b));
             paint.setSmoothRadius(100);
             paint.setStrokeWidth(200);

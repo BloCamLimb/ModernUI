@@ -186,9 +186,9 @@ public abstract class ReplacementTransformationMethod implements TransformationM
             return new SpannedString(this).subSequence(start, end);
         }
 
-        @Nullable
+        @Nonnull
         @Override
-        public <T> T[] getSpans(int start, int end, Class<? extends T> type, @Nullable List<T> out) {
+        public <T> List<T> getSpans(int start, int end, Class<? extends T> type, @Nullable List<T> out) {
             return mSpanned.getSpans(start, end, type, out);
         }
 

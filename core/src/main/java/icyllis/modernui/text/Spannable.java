@@ -20,12 +20,16 @@ package icyllis.modernui.text;
 
 import icyllis.modernui.text.style.CharacterStyle;
 import icyllis.modernui.text.style.ParagraphStyle;
+import icyllis.modernui.widget.TextView;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 
 /**
  * This is the interface for text to which markup objects can be
- * attached and detached. This class is modified from Android.
+ * attached and detached.
+ * <br>Not all {@code Spannable} classes have mutable text; see
+ * {@link Editable} for that.
  */
 public interface Spannable extends Spanned {
 
@@ -53,8 +57,9 @@ public interface Spannable extends Spanned {
 
     /**
      * Remove the specified object from the range of text to which it
-     * was attached, if any.  It is OK to remove an object that was never
-     * attached in the first place.
+     * was attached, if any.
+     * <br>It is OK to remove an object that was never attached in the
+     * first place.
      *
      * @param span markup object to remove
      */
@@ -62,32 +67,36 @@ public interface Spannable extends Spanned {
 
     /**
      * Remove the specified object from the range of text to which it
-     * was attached, if any.  It is OK to remove an object that was never
-     * attached in the first place.
+     * was attached, if any.
+     * <br>It is OK to remove an object that was never attached in the
+     * first place.
      * <p>
      * See {@link Spanned} for an explanation of what the flags mean.
      *
      * @param span  markup object to remove
      * @param flags flags
      */
+    @ApiStatus.Internal
     default void removeSpan(@Nonnull Object span, int flags) {
         removeSpan(span);
     }
 
     /**
-     * Factory used by TextView to create new {@link Spannable Spannables}. You can subclass
-     * it to provide something other than {@link SpannableString}.
+     * Factory used by {@link TextView} to create new {@link Spannable Spannables}.
+     * You can subclass it to provide something other than {@link SpannableString}.
      *
      * @see #DEFAULT_FACTORY
+     * @see TextView#setSpannableFactory(Factory)
      */
     @FunctionalInterface
     interface Factory {
 
         /**
-         * Creates a new spannable from the specified CharSequence.
+         * Returns a new {@link Spannable} from the specified {@link CharSequence}.
+         * You can override this to provide a different kind of {@link Spannable}.
          *
-         * @param source the source that created from
-         * @return a new spannable
+         * @param source the source to be created from
+         * @return a new {@link Spannable}
          */
         @Nonnull
         Spannable newSpannable(@Nonnull CharSequence source);

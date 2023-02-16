@@ -28,6 +28,7 @@ import icyllis.modernui.view.ViewConfiguration;
 import icyllis.modernui.widget.TextView;
 
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.List;
 
 @ParametersAreNonnullByDefault
 public class Touch {
@@ -94,15 +95,13 @@ public class Touch {
      */
     public static boolean onTouchEvent(TextView widget, Spannable buffer,
                                        MotionEvent event) {
-        DragState[] ds;
+        List<DragState> ds;
 
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN -> {
                 ds = buffer.getSpans(0, buffer.length(), DragState.class);
-                if (ds != null) {
-                    for (DragState d : ds) {
-                        buffer.removeSpan(d);
-                    }
+                for (DragState d : ds) {
+                    buffer.removeSpan(d);
                 }
                 buffer.setSpan(new DragState(event.getX(), event.getY(),
                                 widget.getScrollX(), widget.getScrollY()),
@@ -111,27 +110,25 @@ public class Touch {
             }
             case MotionEvent.ACTION_UP -> {
                 ds = buffer.getSpans(0, buffer.length(), DragState.class);
-                if (ds != null) {
-                    for (DragState d : ds) {
-                        buffer.removeSpan(d);
-                    }
+                for (DragState d : ds) {
+                    buffer.removeSpan(d);
                 }
-                return ds != null && ds[0].mUsed;
+                return !ds.isEmpty() && ds.get(0).mUsed;
             }
             case MotionEvent.ACTION_MOVE -> {
                 ds = buffer.getSpans(0, buffer.length(), DragState.class);
-                if (ds != null) {
-                    if (!ds[0].mFarEnough) {
+                if (!ds.isEmpty()) {
+                    if (!ds.get(0).mFarEnough) {
                         int slop = ViewConfiguration.get().getScaledTouchSlop();
 
-                        if (Math.abs(event.getX() - ds[0].mX) >= slop ||
-                                Math.abs(event.getY() - ds[0].mY) >= slop) {
-                            ds[0].mFarEnough = true;
+                        if (Math.abs(event.getX() - ds.get(0).mX) >= slop ||
+                                Math.abs(event.getY() - ds.get(0).mY) >= slop) {
+                            ds.get(0).mFarEnough = true;
                         }
                     }
 
-                    if (ds[0].mFarEnough) {
-                        ds[0].mUsed = true;
+                    if (ds.get(0).mFarEnough) {
+                        ds.get(0).mUsed = true;
                         boolean cap = event.isShiftPressed() ||
                                 event.isButtonPressed(MotionEvent.BUTTON_PRIMARY) ||
                                 TextKeyListener.getMetaState(buffer, KeyEvent.META_SHIFT_ON) == 1;
@@ -141,14 +138,14 @@ public class Touch {
                         if (cap) {
                             // if we're selecting, we want the scroll to go in
                             // the direction of the drag
-                            dx = event.getX() - ds[0].mX;
-                            dy = event.getY() - ds[0].mY;
+                            dx = event.getX() - ds.get(0).mX;
+                            dy = event.getY() - ds.get(0).mY;
                         } else {
-                            dx = ds[0].mX - event.getX();
-                            dy = ds[0].mY - event.getY();
+                            dx = ds.get(0).mX - event.getX();
+                            dy = ds.get(0).mY - event.getY();
                         }
-                        ds[0].mX = event.getX();
-                        ds[0].mY = event.getY();
+                        ds.get(0).mX = event.getX();
+                        ds.get(0).mY = event.getY();
 
                         int nx = widget.getScrollX() + (int) dx;
                         int ny = widget.getScrollY() + (int) dy;
@@ -182,16 +179,16 @@ public class Touch {
      * @param buffer The text buffer.
      */
     public static int getInitialScrollX(Spannable buffer) {
-        DragState[] ds = buffer.getSpans(0, buffer.length(), DragState.class);
-        return ds != null ? ds[0].mScrollX : -1;
+        List<DragState> ds = buffer.getSpans(0, buffer.length(), DragState.class);
+        return !ds.isEmpty() ? ds.get(0).mScrollX : -1;
     }
 
     /**
      * @param buffer The text buffer.
      */
     public static int getInitialScrollY(Spannable buffer) {
-        DragState[] ds = buffer.getSpans(0, buffer.length(), DragState.class);
-        return ds != null ? ds[0].mScrollY : -1;
+        List<DragState> ds = buffer.getSpans(0, buffer.length(), DragState.class);
+        return !ds.isEmpty() ? ds.get(0).mScrollY : -1;
     }
 
     private static class DragState implements NoCopySpan {

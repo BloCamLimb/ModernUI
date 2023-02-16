@@ -28,6 +28,7 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
+import java.util.List;
 
 public class DynamicLayout extends Layout {
 
@@ -370,11 +371,9 @@ public class DynamicLayout extends Layout {
 
             // Strip out any watchers for other DynamicLayouts.
             final int baseLength = mBase.length();
-            final ChangeWatcher[] spans = sp.getSpans(0, baseLength, ChangeWatcher.class);
-            if (spans != null) {
-                for (ChangeWatcher span : spans) {
-                    sp.removeSpan(span);
-                }
+            final List<ChangeWatcher> spans = sp.getSpans(0, baseLength, ChangeWatcher.class);
+            for (ChangeWatcher span : spans) {
+                sp.removeSpan(span);
             }
 
             sp.setSpan(mWatcher, 0, baseLength,

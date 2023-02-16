@@ -22,7 +22,7 @@ import com.ibm.icu.text.Bidi;
 import icyllis.modernui.graphics.font.FontMetricsInt;
 import icyllis.modernui.graphics.font.FontPaint;
 import icyllis.modernui.graphics.font.MeasuredText;
-import icyllis.modernui.graphics.FMath;
+import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.text.style.CharacterStyle;
 import icyllis.modernui.text.style.MetricAffectingSpan;
 import icyllis.modernui.text.style.ReplacementSpan;
@@ -33,7 +33,7 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
-import java.util.Arrays;
+import java.util.*;
 
 /**
  * MeasuredParagraph provides text information for rendering purpose.
@@ -429,7 +429,7 @@ public class MeasuredParagraph {
                     .setComputeLayout(fullLayout);
             if (c.mSpanned == null) {
                 // No style change by MetricsAffectingSpan. Just measure all text.
-                c.applyMetricsAffectingSpan(paint, null /* spans */, start, end, builder);
+                c.applyMetricsAffectingSpan(paint, /*spans*/Collections.emptyList(), start, end, builder);
                 c.mSpanEndCache.add(end);
             } else {
                 // There may be a MetricsAffectingSpan. Split into span transitions and apply
@@ -438,12 +438,9 @@ public class MeasuredParagraph {
                 for (int spanStart = start; spanStart < end; spanStart = spanEnd) {
                     spanEnd = c.mSpanned.nextSpanTransition(spanStart, end,
                             MetricAffectingSpan.class);
-                    MetricAffectingSpan[] spans = c.mSpanned.getSpans(spanStart, spanEnd,
+                    List<MetricAffectingSpan> spans = c.mSpanned.getSpans(spanStart, spanEnd,
                             MetricAffectingSpan.class);
-                    if (spans != null) {
-                        spans = TextUtils.removeEmptySpans(spans, c.mSpanned,
-                                MetricAffectingSpan.class);
-                    }
+                    spans = TextUtils.removeEmptySpans(spans, c.mSpanned);
                     c.applyMetricsAffectingSpan(paint, spans, spanStart, spanEnd, builder);
                     c.mSpanEndCache.add(spanEnd);
                 }
@@ -467,18 +464,16 @@ public class MeasuredParagraph {
 
         // Replace characters associated with ReplacementSpan to U+FFFC.
         if (mSpanned != null) {
-            final ReplacementSpan[] spans = mSpanned.getSpans(start, end, ReplacementSpan.class);
-            if (spans != null) {
-                for (ReplacementSpan span : spans) {
-                    int startInPara = mSpanned.getSpanStart(span) - start;
-                    int endInPara = mSpanned.getSpanEnd(span) - start;
-                    // The span interval may be larger and must be restricted to [start, end)
-                    if (startInPara < 0)
-                        startInPara = 0;
-                    if (endInPara > length)
-                        endInPara = length;
-                    Arrays.fill(mCopiedBuffer, startInPara, endInPara, '\uFFFC');
-                }
+            final List<ReplacementSpan> spans = mSpanned.getSpans(start, end, ReplacementSpan.class);
+            for (ReplacementSpan span : spans) {
+                int startInPara = mSpanned.getSpanStart(span) - start;
+                int endInPara = mSpanned.getSpanEnd(span) - start;
+                // The span interval may be larger and must be restricted to [start, end)
+                if (startInPara < 0)
+                    startInPara = 0;
+                if (endInPara > length)
+                    endInPara = length;
+                Arrays.fill(mCopiedBuffer, startInPara, endInPara, '\uFFFC');
             }
         }
 
@@ -509,21 +504,19 @@ public class MeasuredParagraph {
         }
     }
 
-    private void applyMetricsAffectingSpan(@Nonnull FontPaint paint, @Nullable MetricAffectingSpan[] spans,
+    private void applyMetricsAffectingSpan(@Nonnull FontPaint paint, @Nonnull List<MetricAffectingSpan> spans,
                                            int start, int end, @Nonnull MeasuredText.Builder builder) {
         assert start != end;
         TextPaint tp = TextPaint.obtain();
         tp.set(paint);
 
         ReplacementSpan replacement = null;
-        if (spans != null) {
-            for (MetricAffectingSpan span : spans) {
-                if (span instanceof ReplacementSpan) {
-                    // The last ReplacementSpan is effective for backward compatibility reasons.
-                    replacement = (ReplacementSpan) span;
-                } else {
-                    span.updateMeasureState(tp);
-                }
+        for (MetricAffectingSpan span : spans) {
+            if (span instanceof ReplacementSpan) {
+                // The last ReplacementSpan is effective for backward compatibility reasons.
+                replacement = (ReplacementSpan) span;
+            } else {
+                span.updateMeasureState(tp);
             }
         }
 
@@ -625,10 +618,10 @@ public class MeasuredParagraph {
      * @return memory usage in bytes
      */
     public int getMemoryUsage() {
-        return FMath.roundUp(12 + 8 + 4 + 8 + (mCopiedBuffer == null ?
+        return MathUtil.align8(12 + 8 + 4 + 8 + (mCopiedBuffer == null ?
                 0 : 16 + (mCopiedBuffer.length << 1)) + 4 + (mLevels == null ?
                 0 : 16 + mLevels.length) + 16 + (mSpanEndCache.size() << 2) +
-                16 + (mFontMetrics.size() << 2) + 8, 8) +
+                16 + (mFontMetrics.size() << 2) + 8) +
                 (mMeasuredText == null ? 0 : mMeasuredText.getMemoryUsage());
     }
 }

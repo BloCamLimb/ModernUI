@@ -45,9 +45,9 @@ public class TestFragment extends Fragment {
         ModernUI.LOGGER.info("{} -> {}",
                 Integer.toHexString(complex),
                 TypedValue.complexToFloat(complex));
-        /*try (ModernUI app = new ModernUI()) {
+        try (ModernUI app = new ModernUI()) {
             app.run(new TestFragment());
-        }*/
+        }
         String str = """
                 public final class Reference {
                 public:
@@ -114,6 +114,7 @@ public class TestFragment extends Fragment {
             params.gravity = Gravity.CENTER;
             base.setLayoutParams(params);
         }
+        base.setRotation(30);
         return base;
     }
 

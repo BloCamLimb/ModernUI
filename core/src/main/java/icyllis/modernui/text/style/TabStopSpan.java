@@ -31,4 +31,35 @@ public interface TabStopSpan extends ParagraphStyle {
      * @return the offset, in pixels
      */
     int getTabStop();
+
+    /**
+     * The default implementation of TabStopSpan that allows setting the offset of the tab stop
+     * from the leading margin of the first line of text.
+     * <p>
+     * Let's consider that we have the following text: <i>"\tParagraph text beginning with tab."</i>
+     * and we want to move the tab stop with 100px. This can be achieved like this:
+     * <pre>
+     * SpannableString string = new SpannableString("\tParagraph text beginning with tab.");
+     * string.setSpan(new TabStopSpan.Standard(100), 0, string.length(),
+     * Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);</pre>
+     */
+    class Standard implements TabStopSpan {
+
+        private final int mTabOffset;
+
+        /**
+         * Constructs a {@link TabStopSpan.Standard} based on an offset.
+         *
+         * @param offset the offset of the tab stop from the leading margin of
+         *               the line, in pixels
+         */
+        public Standard(int offset) {
+            mTabOffset = offset;
+        }
+
+        @Override
+        public int getTabStop() {
+            return mTabOffset;
+        }
+    }
 }

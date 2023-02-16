@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,14 +16,19 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.text.style;
+package icyllis.modernui.text;
+
+import icyllis.modernui.util.Flattenable;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
- * The classes that affect character-level text formatting in a way that
- * triggers a text layout update when one is added or removed must implement
- * this interface.
- * <br>This interface also includes {@link UpdateAppearance} since such a
- * change implicitly also impacts the appearance.
+ * A special kind of {@link Flattenable} for objects that will serve as text spans.
  */
-public interface UpdateLayout extends UpdateAppearance {
+@ApiStatus.Internal
+public interface FlattenableSpan extends Flattenable {
+
+    /**
+     * Return a special type identifier for this span class.
+     */
+    int getSpanTypeId();
 }

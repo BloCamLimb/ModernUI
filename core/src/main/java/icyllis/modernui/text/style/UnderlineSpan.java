@@ -18,19 +18,42 @@
 
 package icyllis.modernui.text.style;
 
-import icyllis.modernui.text.TextPaint;
+import icyllis.modernui.text.*;
 
 import javax.annotation.Nonnull;
+import java.io.DataInput;
+import java.io.DataOutput;
 
 /**
  * A span that underlines the text it's attached to.
+ * <p>
+ * The span can be used like this:
+ * <pre>{@code
+ * SpannableString string = new SpannableString("Text with underline span");
+ * string.setSpan(new UnderlineSpan(), 10, 19, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);}</pre>
  */
-public class UnderlineSpan extends CharacterStyle implements UpdateAppearance {
+public class UnderlineSpan extends CharacterStyle
+        implements UpdateAppearance, FlattenableSpan {
 
     /**
      * Creates an {@link UnderlineSpan}.
      */
     public UnderlineSpan() {
+    }
+
+    /**
+     * Creates an {@link UnderlineSpan} from a stream.
+     */
+    public UnderlineSpan(@Nonnull DataInput src) {
+    }
+
+    @Override
+    public int getSpanTypeId() {
+        return TextUtils.UNDERLINE_SPAN;
+    }
+
+    @Override
+    public void write(@Nonnull DataOutput dest) {
     }
 
     @Override

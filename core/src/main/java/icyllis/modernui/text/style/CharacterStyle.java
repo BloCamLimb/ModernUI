@@ -34,6 +34,7 @@
 
 package icyllis.modernui.text.style;
 
+import icyllis.modernui.text.Spanned;
 import icyllis.modernui.text.TextPaint;
 
 import javax.annotation.Nonnull;
@@ -48,8 +49,9 @@ public abstract class CharacterStyle {
     public abstract void updateDrawState(@Nonnull TextPaint paint);
 
     /**
-     * A given CharacterStyle can only applied to a single region of a given
-     * Spanned.  If you need to attach the same CharacterStyle to multiple
+     * A given {@link CharacterStyle} can only be applied to a single region
+     * of a given {@link Spanned}.
+     * <br>If you need to attach the same {@link CharacterStyle} to multiple
      * regions, you can use this method to wrap it with a new object that
      * will have the same effect but be a distinct object so that it can
      * also be attached without conflict.

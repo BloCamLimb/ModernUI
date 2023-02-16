@@ -19,26 +19,29 @@
 package icyllis.modernui.text.style;
 
 import icyllis.modernui.core.Core;
+import icyllis.modernui.text.FlattenableSpan;
+import icyllis.modernui.text.TextUtils;
+import icyllis.modernui.util.BinaryIO;
 import icyllis.modernui.view.View;
 
 import javax.annotation.Nonnull;
+import java.io.*;
 import java.net.URL;
-import java.util.Objects;
 
 /**
  * Implementation of the {@link ClickableSpan} that allows setting a url string. When
  * selecting and clicking on the text to which the span is attached, the <code>URLSpan</code>
- * will try to open the url, by calling {@link Core#openURL(URL)}.
+ * will try to open the url, by calling {@link Core#openURI(String)}.
  * <p>
  * For example, a <code>URLSpan</code> can be used like this:
  * <pre>
  * SpannableString string = new SpannableString("Text with a url span");
- * string.setSpan(new URLSpan("http://www.developer.android.com"), 12, 15, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+ * string.setSpan(new URLSpan("https://google.com"), 12, 15, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
  * </pre>
  * <img src="https://developer.android.com/reference/android/images/text/style/urlspan.png" />
  * <figcaption>Text with <code>URLSpan</code>.</figcaption>
  */
-public class URLSpan extends ClickableSpan {
+public class URLSpan extends ClickableSpan implements FlattenableSpan {
 
     private final String mURL;
 
@@ -48,7 +51,24 @@ public class URLSpan extends ClickableSpan {
      * @param url the url string
      */
     public URLSpan(String url) {
-        mURL = Objects.requireNonNull(url);
+        mURL = url;
+    }
+
+    /**
+     * Constructs a {@link URLSpan} from a parcel.
+     */
+    public URLSpan(@Nonnull DataInput src) throws IOException {
+        mURL = BinaryIO.readString(src);
+    }
+
+    @Override
+    public int getSpanTypeId() {
+        return TextUtils.URL_SPAN;
+    }
+
+    @Override
+    public void write(@Nonnull DataOutput dest) throws IOException {
+        BinaryIO.writeString(dest, mURL);
     }
 
     /**
@@ -56,7 +76,6 @@ public class URLSpan extends ClickableSpan {
      *
      * @return the url string.
      */
-    @Nonnull
     public String getURL() {
         return mURL;
     }

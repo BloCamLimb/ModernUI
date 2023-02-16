@@ -20,14 +20,15 @@ package icyllis.modernui.text;
 
 import com.ibm.icu.util.ULocale;
 import icyllis.modernui.graphics.font.FontPaint;
-import icyllis.modernui.util.DataSet;
+import icyllis.modernui.text.style.*;
+import icyllis.modernui.util.BinaryIO;
 import icyllis.modernui.view.View;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.*;
-import java.lang.reflect.Array;
-import java.util.Locale;
+import java.util.*;
 
 public final class TextUtils {
 
@@ -117,13 +118,13 @@ public final class TextUtils {
     }
 
     /**
-     * Removes empty spans from the <code>spans</code> array.
+     * Removes empty spans from the <code>spans</code> list.
      * <p>
      * When parsing a Spanned using {@link Spanned#nextSpanTransition(int, int, Class)}, empty spans
      * will (correctly) create span transitions, and calling getSpans on a slice of text bounded by
      * one of these transitions will (correctly) include the empty overlapping span.
      * <p>
-     * However, these empty spans should not be taken into account when layouting or rendering the
+     * However, these empty spans should not be taken into account when laying-out or rendering the
      * string and this method provides a way to filter getSpans' results accordingly.
      *
      * @param spans   A list of spans retrieved using {@link Spanned#getSpans(int, int, Class)} from
@@ -132,27 +133,25 @@ public final class TextUtils {
      * @return A subset of spans where empty spans ({@link Spanned#getSpanStart(Object)}  ==
      * {@link Spanned#getSpanEnd(Object)} have been removed. The initial order is preserved
      */
-    @SuppressWarnings("unchecked")
     @Nonnull
-    public static <T> T[] removeEmptySpans(@Nonnull T[] spans, @Nonnull Spanned spanned, @Nonnull Class<T> clazz) {
-        T[] copy = null;
-        int count = 0;
+    public static <T> List<T> removeEmptySpans(@Nonnull List<T> spans, @Nonnull Spanned spanned) {
+        List<T> copy = null;
 
-        for (int i = 0; i < spans.length; i++) {
-            final T span = spans[i];
+        for (int i = 0; i < spans.size(); i++) {
+            final T span = spans.get(i);
             final int start = spanned.getSpanStart(span);
             final int end = spanned.getSpanEnd(span);
 
             if (start == end) {
                 if (copy == null) {
-                    copy = (T[]) Array.newInstance(clazz, spans.length - 1);
-                    System.arraycopy(spans, 0, copy, 0, i);
-                    count = i;
+                    copy = new ArrayList<>(i);
+                    for (int j = 0; j < i; j++) {
+                        copy.add(spans.get(j));
+                    }
                 }
             } else {
                 if (copy != null) {
-                    copy[count] = span;
-                    count++;
+                    copy.add(span);
                 }
             }
         }
@@ -160,12 +159,7 @@ public final class TextUtils {
         if (copy == null) {
             return spans;
         }
-        if (count == copy.length) {
-            return copy;
-        }
-        T[] result = (T[]) Array.newInstance(clazz, count);
-        System.arraycopy(copy, 0, result, 0, count);
-        return result;
+        return copy;
     }
 
     public static int indexOf(CharSequence s, char ch) {
@@ -272,28 +266,107 @@ public final class TextUtils {
         return -1;
     }
 
+    //@formatter:off
+    @ApiStatus.Internal
+    public static final int
+            FIRST_SPAN                     = 1,
+            ALIGNMENT_SPAN                 = FIRST_SPAN,
+            FOREGROUND_COLOR_SPAN          = FIRST_SPAN + 1,
+            RELATIVE_SIZE_SPAN             = FIRST_SPAN + 2,
+            SCALE_X_SPAN                   = FIRST_SPAN + 3,
+            STRIKETHROUGH_SPAN             = FIRST_SPAN + 4,
+            UNDERLINE_SPAN                 = FIRST_SPAN + 5,
+            STYLE_SPAN                     = FIRST_SPAN + 6,
+            BULLET_SPAN                    = FIRST_SPAN + 7,
+            QUOTE_SPAN                     = FIRST_SPAN + 8,
+            LEADING_MARGIN_SPAN            = FIRST_SPAN + 9,
+            URL_SPAN                       = FIRST_SPAN + 10,
+            BACKGROUND_COLOR_SPAN          = FIRST_SPAN + 11,
+            TYPEFACE_SPAN                  = FIRST_SPAN + 12,
+            SUPERSCRIPT_SPAN               = FIRST_SPAN + 13,
+            SUBSCRIPT_SPAN                 = FIRST_SPAN + 14,
+            ABSOLUTE_SIZE_SPAN             = FIRST_SPAN + 15,
+            TEXT_APPEARANCE_SPAN           = FIRST_SPAN + 16,
+            ANNOTATION                     = FIRST_SPAN + 17,
+            SUGGESTION_SPAN                = FIRST_SPAN + 18,
+            SPELL_CHECK_SPAN               = FIRST_SPAN + 19,
+            SUGGESTION_RANGE_SPAN          = FIRST_SPAN + 20,
+            EASY_EDIT_SPAN                 = FIRST_SPAN + 21,
+            LOCALE_SPAN                    = FIRST_SPAN + 22,
+            TTS_SPAN                       = FIRST_SPAN + 23,
+            ACCESSIBILITY_CLICKABLE_SPAN   = FIRST_SPAN + 24,
+            ACCESSIBILITY_URL_SPAN         = FIRST_SPAN + 25,
+            LINE_BACKGROUND_SPAN           = FIRST_SPAN + 26,
+            LINE_HEIGHT_SPAN               = FIRST_SPAN + 27,
+            ACCESSIBILITY_REPLACEMENT_SPAN = FIRST_SPAN + 28,
+            LAST_SPAN                      = ACCESSIBILITY_REPLACEMENT_SPAN;
+    //@formatter:on
+
+    /**
+     * Flatten a {@link CharSequence} and whatever styles can be copied across processes
+     * into the output.
+     */
     public static void write(@Nonnull DataOutput out, @Nullable CharSequence cs) throws IOException {
         if (cs == null) {
             out.writeInt(0);
-        } else if (cs instanceof Spanned) {
+        } else if (cs instanceof Spanned sp) {
             out.writeInt(2);
-            out.writeUTF(cs.toString());
-            //TODO
+            BinaryIO.writeString8(out, cs.toString());
+
+            final List<Object> os = sp.getSpans(0, cs.length(), Object.class);
+            for (final Object o : os) {
+                Object target = o;
+
+                if (target instanceof CharacterStyle) {
+                    target = ((CharacterStyle) target).getUnderlying();
+                }
+
+                if (target instanceof FlattenableSpan span) {
+                    final int id = span.getSpanTypeId();
+                    if (id < FIRST_SPAN || id > LAST_SPAN) {
+                        throw new AssertionError(id);
+                    } else {
+                        out.writeInt(id);
+                        span.write(out);
+                        out.writeInt(sp.getSpanStart(o));
+                        out.writeInt(sp.getSpanEnd(o));
+                        out.writeInt(sp.getSpanFlags(o));
+                    }
+                }
+            }
+            out.writeInt(0);
         } else {
             out.writeInt(1);
-            out.writeUTF(cs.toString());
+            BinaryIO.writeString8(out, cs.toString());
         }
     }
 
     @Nullable
     public static CharSequence read(@Nonnull DataInput in) throws IOException {
-        int kind = in.readInt();
-        if (kind == 0)
+        int type = in.readInt();
+        if (type == 0)
             return null;
-        String string = in.readUTF();
-        if (kind == 1)
-            return string;
-        return new SpannableString(string);
+        final String s = BinaryIO.readString8(in);
+        if (type == 1)
+            return s;
+        assert type == 2 && s != null;
+        final var sp = new SpannableString(s);
+        while ((type = in.readInt()) != 0) {
+            switch (type) {
+                case FOREGROUND_COLOR_SPAN -> readSpan(in, sp, new ForegroundColorSpan(in));
+                case RELATIVE_SIZE_SPAN -> readSpan(in, sp, new RelativeSizeSpan(in));
+                case STRIKETHROUGH_SPAN -> readSpan(in, sp, new StrikethroughSpan(in));
+                case UNDERLINE_SPAN -> readSpan(in, sp, new UnderlineSpan(in));
+                case STYLE_SPAN -> readSpan(in, sp, new StyleSpan(in));
+                case BACKGROUND_COLOR_SPAN -> readSpan(in, sp, new BackgroundColorSpan(in));
+                case ABSOLUTE_SIZE_SPAN -> readSpan(in, sp, new AbsoluteSizeSpan(in));
+            }
+        }
+        return sp;
+    }
+
+    private static void readSpan(DataInput in, Spannable sp, Object o) throws IOException {
+        sp.setSpan(o, in.readInt(), in.readInt(), in.readInt());
     }
 
     /**
@@ -481,28 +554,26 @@ public final class TextUtils {
      *                                   are out of range in <code>dest</code>.
      */
     public static void copySpansFrom(@Nonnull Spanned source, int start, int end,
-                                     @Nullable Class<?> kind,
+                                     @Nullable Class<?> type,
                                      @Nonnull Spannable dest, int destoff) {
-        if (kind == null) {
-            kind = Object.class;
+        if (type == null) {
+            type = Object.class;
         }
 
-        Object[] spans = source.getSpans(start, end, kind);
+        List<?> spans = source.getSpans(start, end, type);
 
-        if (spans != null) {
-            for (Object span : spans) {
-                int st = source.getSpanStart(span);
-                int en = source.getSpanEnd(span);
-                int fl = source.getSpanFlags(span);
+        for (Object span : spans) {
+            int st = source.getSpanStart(span);
+            int en = source.getSpanEnd(span);
+            int fl = source.getSpanFlags(span);
 
-                if (st < start)
-                    st = start;
-                if (en > end)
-                    en = end;
+            if (st < start)
+                st = start;
+            if (en > end)
+                en = end;
 
-                dest.setSpan(span, st - start + destoff, en - start + destoff,
-                        fl);
-            }
+            dest.setSpan(span, st - start + destoff, en - start + destoff,
+                    fl);
         }
     }
 

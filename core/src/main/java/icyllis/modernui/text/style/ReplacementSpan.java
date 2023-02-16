@@ -33,7 +33,7 @@ public abstract class ReplacementSpan extends MetricAffectingSpan {
      * explicitly instead of affecting Paint properties.
      */
     @Override
-    public final void updateMeasureState(@Nonnull FontPaint paint) {
+    public final void updateMeasureState(@Nonnull TextPaint paint) {
     }
 
     /**

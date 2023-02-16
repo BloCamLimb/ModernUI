@@ -21,7 +21,7 @@ package icyllis.modernui.widget;
 import icyllis.modernui.animation.*;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
-import icyllis.modernui.graphics.FMath;
+import icyllis.modernui.graphics.MathUtil;
 
 import javax.annotation.Nonnull;
 
@@ -67,7 +67,7 @@ public class SwitchButton extends CompoundButton {
             mThumbPosition = TimeInterpolator.DECELERATE.getInterpolation(fraction);
         }
         mInsideRadius = (mButtonBottom - mButtonTop) * 0.5f * fraction;
-        mInsideColor = ArgbEvaluator.evaluate(fraction, mUncheckedColor, mCheckedColor);
+        mInsideColor = ColorEvaluator.evaluate(fraction, mUncheckedColor, mCheckedColor);
 
         invalidate();
     }
@@ -107,7 +107,7 @@ public class SwitchButton extends CompoundButton {
 
         // draw inside background
         paint.setColor(mInsideColor);
-        if (FMath.eq(mInsideRadius, buttonRadius)) {
+        if (MathUtil.isNearlyEqual(mInsideRadius, buttonRadius)) {
             // check a final state and simplify the drawing
             paint.setStyle(Paint.FILL);
             canvas.drawRoundRect(mButtonLeft, mButtonTop, mButtonRight, mButtonBottom, buttonRadius, paint);

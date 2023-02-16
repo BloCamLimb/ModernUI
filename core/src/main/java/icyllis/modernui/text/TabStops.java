@@ -20,8 +20,10 @@ package icyllis.modernui.text;
 
 import icyllis.modernui.text.style.TabStopSpan;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Arrays;
+import java.util.List;
 
 public class TabStops {
 
@@ -35,34 +37,32 @@ public class TabStops {
         mTabWidth = tabWidth;
     }
 
-    public TabStops(float tabWidth, @Nullable Object[] spans) {
+    public TabStops(float tabWidth, @Nonnull List<?> spans) {
         reset(tabWidth, spans);
     }
 
-    public void reset(float tabWidth, @Nullable Object[] spans) {
+    public void reset(float tabWidth, @Nonnull List<?> spans) {
         mTabWidth = tabWidth;
 
         int ns = 0;
-        if (spans != null) {
-            float[] stops = mStops;
-            for (Object o : spans) {
-                if (o instanceof TabStopSpan) {
-                    if (stops == null) {
-                        stops = new float[2];
-                    } else if (ns == stops.length) {
-                        float[] newStops = new float[ns << 1];
-                        System.arraycopy(stops, 0, newStops, 0, ns);
-                        stops = newStops;
-                    }
-                    stops[ns++] = ((TabStopSpan) o).getTabStop();
+        float[] stops = mStops;
+        for (Object o : spans) {
+            if (o instanceof TabStopSpan) {
+                if (stops == null) {
+                    stops = new float[2];
+                } else if (ns == stops.length) {
+                    float[] newStops = new float[ns << 1];
+                    System.arraycopy(stops, 0, newStops, 0, ns);
+                    stops = newStops;
                 }
+                stops[ns++] = ((TabStopSpan) o).getTabStop();
             }
-            if (ns > 1) {
-                Arrays.sort(stops, 0, ns);
-            }
-            if (stops != mStops) {
-                mStops = stops;
-            }
+        }
+        if (ns > 1) {
+            Arrays.sort(stops, 0, ns);
+        }
+        if (stops != mStops) {
+            mStops = stops;
         }
         mNumStops = ns;
     }

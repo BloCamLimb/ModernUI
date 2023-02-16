@@ -19,9 +19,7 @@
 package icyllis.modernui.text;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.util.GrowingArrayUtils;
-import icyllis.modernui.util.Pool;
-import icyllis.modernui.util.Pools;
+import icyllis.modernui.util.*;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntArrays;
 import it.unimi.dsi.fastutil.objects.ObjectArrays;
@@ -30,10 +28,7 @@ import org.apache.logging.log4j.MarkerManager;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.IdentityHashMap;
-import java.util.List;
+import java.util.*;
 
 /**
  * This is the class for text whose content and markup can both be changed.
@@ -42,7 +37,6 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
 
     public static final Marker MARKER = MarkerManager.getMarker("SpannableStringBuilder");
 
-    private static final Pool<ArrayList<Object>> sListPool = Pools.concurrent(1);
     private static final Pool<IntArrayList> sIntBufferPool = Pools.concurrent(2);
 
     //TODO These value are tightly related to the public SPAN_MARK/POINT values in {@link Spanned}
@@ -129,30 +123,28 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
         mSpanOrder = IntArrays.EMPTY_ARRAY;
 
         if (text instanceof Spanned sp) {
-            Object[] spans = sp.getSpans(start, end, Object.class);
+            List<?> spans = sp.getSpans(start, end, Object.class);
 
-            if (spans != null) {
-                for (Object span : spans) {
-                    if (span instanceof NoCopySpan) {
-                        continue;
-                    }
-
-                    int st = sp.getSpanStart(span) - start;
-                    int en = sp.getSpanEnd(span) - start;
-                    int fl = sp.getSpanFlags(span);
-
-                    if (st < 0)
-                        st = 0;
-                    if (st > end - start)
-                        st = end - start;
-
-                    if (en < 0)
-                        en = 0;
-                    if (en > end - start)
-                        en = end - start;
-
-                    setSpan(false, span, st, en, fl, false/*enforceParagraph*/);
+            for (Object span : spans) {
+                if (span instanceof NoCopySpan) {
+                    continue;
                 }
+
+                int st = sp.getSpanStart(span) - start;
+                int en = sp.getSpanEnd(span) - start;
+                int fl = sp.getSpanFlags(span);
+
+                if (st < 0)
+                    st = 0;
+                if (st > end - start)
+                    st = end - start;
+
+                if (en < 0)
+                    en = 0;
+                if (en > end - start)
+                    en = end - start;
+
+                setSpan(false, span, st, en, fl, false/*enforceParagraph*/);
             }
             restoreInvariants();
         }
@@ -516,25 +508,23 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
         }
 
         if (cs instanceof Spanned sp) {
-            Object[] spans = sp.getSpans(csStart, csEnd, Object.class);
+            List<?> spans = sp.getSpans(csStart, csEnd, Object.class);
 
-            if (spans != null) {
-                for (Object span : spans) {
-                    int st = sp.getSpanStart(span);
-                    int en = sp.getSpanEnd(span);
+            for (Object span : spans) {
+                int st = sp.getSpanStart(span);
+                int en = sp.getSpanEnd(span);
 
-                    if (st < csStart) st = csStart;
-                    if (en > csEnd) en = csEnd;
+                if (st < csStart) st = csStart;
+                if (en > csEnd) en = csEnd;
 
-                    // Add span only if this object is not yet used as a span in this string
-                    if (getSpanStart(span) < 0) {
-                        int copySpanStart = st - csStart + start;
-                        int copySpanEnd = en - csStart + start;
-                        int copySpanFlags = sp.getSpanFlags(span) | SPAN_ADDED;
+                // Add span only if this object is not yet used as a span in this string
+                if (getSpanStart(span) < 0) {
+                    int copySpanStart = st - csStart + start;
+                    int copySpanEnd = en - csStart + start;
+                    int copySpanFlags = sp.getSpanFlags(span) | SPAN_ADDED;
 
-                        setSpan(false, span, copySpanStart, copySpanEnd, copySpanFlags,
-                                false/*enforceParagraph*/);
-                    }
+                    setSpan(false, span, copySpanStart, copySpanEnd, copySpanFlags,
+                            false/*enforceParagraph*/);
                 }
             }
             restoreInvariants();
@@ -661,7 +651,7 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
             return this;
         }
 
-        TextWatcher[] textWatchers = getSpans(start, end, TextWatcher.class);
+        List<TextWatcher> textWatchers = getSpans(start, end, TextWatcher.class);
         if (textWatchers != null) {
             sendBeforeTextChanged(textWatchers, start, origLen, newLen);
         }
@@ -714,12 +704,11 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
 
     private static boolean hasNonExclusiveExclusiveSpanAt(CharSequence text, int offset) {
         if (text instanceof Spanned spanned) {
-            Object[] spans = spanned.getSpans(offset, offset, Object.class);
-            if (spans != null) {
-                for (Object span : spans) {
-                    int flags = spanned.getSpanFlags(span);
-                    if (flags != Spanned.SPAN_EXCLUSIVE_EXCLUSIVE) return true;
-                }
+            List<?> spans = spanned.getSpans(offset, offset, Object.class);
+            for (Object span : spans) {
+                int flags = spanned.getSpanFlags(span);
+                if (flags != Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    return true;
             }
         }
         return false;
@@ -980,9 +969,10 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
      * the specified range of the buffer.  The kind may be Object.class to get
      * a list of all the spans regardless of type.
      */
-    @Nullable
+    @Nonnull
     @Override
-    public <T> T[] getSpans(int queryStart, int queryEnd, @Nullable Class<? extends T> kind, @Nullable List<T> out) {
+    public <T> List<T> getSpans(int queryStart, int queryEnd, @Nullable Class<? extends T> kind,
+                                @Nullable List<T> out) {
         return getSpans(queryStart, queryEnd, kind, true, out);
     }
 
@@ -996,63 +986,36 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
      * @param kind                 Class type to search for.
      * @param sortByInsertionOrder If true the results are sorted by the insertion order.
      * @param <T>                  Markup type.
-     * @return Array of the spans. Null if no results are found.
+     * @return List of the spans.
      */
-    @SuppressWarnings({"unchecked", "SuspiciousToArrayCall"})
-    @Nullable
-    public <T> T[] getSpans(int queryStart, int queryEnd, @Nullable Class<? extends T> kind,
-                            boolean sortByInsertionOrder, @Nullable List<T> out) {
-        if (kind == null || mSpanCount == 0) {
-            if (out != null) {
-                out.clear();
-            }
-            return null;
+    @SuppressWarnings({"unchecked"})
+    @Nonnull
+    public <T> List<T> getSpans(int queryStart, int queryEnd, @Nullable Class<? extends T> kind,
+                                boolean sortByInsertionOrder, @Nullable List<T> dest) {
+        if (dest != null) {
+            dest.clear();
         }
-        if (out == null) {
-            ArrayList<Object> list = sListPool.acquire();
-            if (list == null) {
-                list = new ArrayList<>();
-            }
-            final IntArrayList prioSortBuffer = sortByInsertionOrder ? obtain() : null;
-            final IntArrayList orderSortBuffer = sortByInsertionOrder ? obtain() : null;
-            int c = getSpansRec(queryStart, queryEnd, kind, treeRoot(), list, prioSortBuffer,
-                    orderSortBuffer, 0, sortByInsertionOrder);
-            assert c == list.size();
-            if (sortByInsertionOrder) {
-                if (!list.isEmpty()) {
-                    sort(list, prioSortBuffer, orderSortBuffer);
-                }
-                recycle(prioSortBuffer);
-                recycle(orderSortBuffer);
-            }
-            final T[] ret;
-            if (list.isEmpty()) {
-                ret = null;
-            } else {
-                // Java ArrayList uses Object[] as the backend
-                if (kind == Object.class) {
-                    ret = (T[]) list.toArray();
-                } else {
-                    ret = list.toArray((T[]) Array.newInstance(kind, list.size()));
-                }
-                list.clear();
-            }
-            sListPool.release(list);
-            return ret;
+        if (mSpanCount == 0) {
+            return dest != null ? dest : Collections.emptyList();
         }
-        out.clear();
+        if (kind == null) {
+            kind = (Class<? extends T>) Object.class;
+        }
+        if (dest == null) {
+            dest = new ArrayList<>();
+        }
         final IntArrayList prioSortBuffer = sortByInsertionOrder ? obtain() : null;
         final IntArrayList orderSortBuffer = sortByInsertionOrder ? obtain() : null;
-        getSpansRec(queryStart, queryEnd, kind, treeRoot(), (List<Object>) out, prioSortBuffer,
+        getSpansRec(queryStart, queryEnd, kind, treeRoot(), (List<Object>) dest, prioSortBuffer,
                 orderSortBuffer, 0, sortByInsertionOrder);
         if (sortByInsertionOrder) {
-            if (!out.isEmpty()) {
-                sort(out, prioSortBuffer, orderSortBuffer);
+            if (!dest.isEmpty()) {
+                sort(dest, prioSortBuffer, orderSortBuffer);
             }
             recycle(prioSortBuffer);
             recycle(orderSortBuffer);
         }
-        return null;
+        return dest;
     }
 
     private int countSpans(int queryStart, int queryEnd, @Nonnull Class<?> kind, int i) {
@@ -1377,7 +1340,7 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
         return mTextWatcherDepth;
     }
 
-    private void sendBeforeTextChanged(@Nonnull TextWatcher[] watchers, int start, int before, int after) {
+    private void sendBeforeTextChanged(@Nonnull List<TextWatcher> watchers, int start, int before, int after) {
         mTextWatcherDepth++;
         for (TextWatcher watcher : watchers) {
             watcher.beforeTextChanged(this, start, before, after);
@@ -1385,7 +1348,7 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
         mTextWatcherDepth--;
     }
 
-    private void sendTextChanged(@Nonnull TextWatcher[] watchers, int start, int before, int after) {
+    private void sendTextChanged(@Nonnull List<TextWatcher> watchers, int start, int before, int after) {
         mTextWatcherDepth++;
         for (TextWatcher watcher : watchers) {
             watcher.onTextChanged(this, start, before, after);
@@ -1393,7 +1356,7 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
         mTextWatcherDepth--;
     }
 
-    private void sendAfterTextChanged(@Nonnull TextWatcher[] watchers) {
+    private void sendAfterTextChanged(@Nonnull List<TextWatcher> watchers) {
         mTextWatcherDepth++;
         for (TextWatcher watcher : watchers) {
             watcher.afterTextChanged(this);
@@ -1402,32 +1365,26 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
     }
 
     private void sendSpanAdded(Object what, int start, int end) {
-        SpanWatcher[] watchers = getSpans(start, end, SpanWatcher.class);
-        if (watchers != null) {
-            for (SpanWatcher watcher : watchers) {
-                watcher.onSpanAdded(this, what, start, end);
-            }
+        List<SpanWatcher> watchers = getSpans(start, end, SpanWatcher.class);
+        for (SpanWatcher watcher : watchers) {
+            watcher.onSpanAdded(this, what, start, end);
         }
     }
 
     private void sendSpanRemoved(Object what, int start, int end) {
-        SpanWatcher[] watchers = getSpans(start, end, SpanWatcher.class);
-        if (watchers != null) {
-            for (SpanWatcher watcher : watchers) {
-                watcher.onSpanRemoved(this, what, start, end);
-            }
+        List<SpanWatcher> watchers = getSpans(start, end, SpanWatcher.class);
+        for (SpanWatcher watcher : watchers) {
+            watcher.onSpanRemoved(this, what, start, end);
         }
     }
 
     private void sendSpanChanged(Object what, int oldStart, int oldEnd, int start, int end) {
         // The bounds of a possible SpanWatcher are guaranteed to be set before this method is
         // called, so that the order of the span does not affect this broadcast.
-        SpanWatcher[] watchers = getSpans(Math.min(oldStart, start),
+        List<SpanWatcher> watchers = getSpans(Math.min(oldStart, start),
                 Math.min(Math.max(oldEnd, end), length()), SpanWatcher.class);
-        if (watchers != null) {
-            for (SpanWatcher watcher : watchers) {
-                watcher.onSpanChanged(this, what, oldStart, oldEnd, start, end);
-            }
+        for (SpanWatcher watcher : watchers) {
+            watcher.onSpanChanged(this, what, oldStart, oldEnd, start, end);
         }
     }
 
@@ -1562,16 +1519,16 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
         if (o instanceof final Spanned other &&
                 toString().equals(o.toString())) {
             // Check span data
-            final Object[] otherSpans = other.getSpans(0, other.length(), Object.class);
-            final Object[] spans = getSpans(0, length(), Object.class);
-            if (otherSpans == null && spans == null) {
+            final List<?> otherSpans = other.getSpans(0, other.length(), Object.class);
+            final List<?> spans = getSpans(0, length(), Object.class);
+            if (otherSpans.isEmpty() && spans.isEmpty()) {
                 return true;
-            } else if (otherSpans != null && spans != null &&
-                    otherSpans.length == spans.length) {
+            } else if (!otherSpans.isEmpty() && !spans.isEmpty() &&
+                    otherSpans.size() == spans.size()) {
                 // Do not check mSpanCount anymore for safety
-                for (int i = 0; i < spans.length; ++i) {
-                    final Object span = spans[i];
-                    final Object otherSpan = otherSpans[i];
+                for (int i = 0; i < spans.size(); ++i) {
+                    final Object span = spans.get(i);
+                    final Object otherSpan = otherSpans.get(i);
                     if (span == this) {
                         if (other != otherSpan ||
                                 getSpanStart(span) != other.getSpanStart(otherSpan) ||

@@ -18,20 +18,29 @@
 
 package icyllis.modernui.text.style;
 
-import icyllis.modernui.graphics.font.FontPaint;
+import icyllis.modernui.text.*;
 
 import javax.annotation.Nonnull;
+import java.io.*;
 
 /**
  * Span that allows setting the style of the text it's attached to.
- * Possible styles are: {@link FontPaint#REGULAR}, {@link FontPaint#BOLD},
- * {@link FontPaint#ITALIC} and {@link FontPaint#BOLD_ITALIC}.
+ * Possible styles are: {@link Typeface#NORMAL}, {@link Typeface#BOLD},
+ * {@link Typeface#ITALIC} and {@link Typeface#BOLD_ITALIC}.
  * <p>
  * Note that styles are cumulative -- if both bold and italic are set in
  * separate spans, or if the base style is bold and a span calls for italic,
- * you get bold italic.  You can't turn off a style from the base style.
+ * you get bold italic.
+ * <br>You can't turn off a style from the base style.
+ * <p>
+ * For example, the <code>StyleSpan</code> can be used like this:
+ * <pre>
+ * SpannableString string = new SpannableString("Bold and italic text");
+ * string.setSpan(new StyleSpan(Typeface.BOLD), 0, 4, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+ * string.setSpan(new StyleSpan(Typeface.ITALIC), 9, 15, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+ * </pre>
  */
-public class StyleSpan extends MetricAffectingSpan {
+public class StyleSpan extends MetricAffectingSpan implements FlattenableSpan {
 
     private final int mStyle;
 
@@ -39,22 +48,40 @@ public class StyleSpan extends MetricAffectingSpan {
      * Creates a {@link StyleSpan} from a style.
      *
      * @param style An integer constant describing the style for this span. Examples
-     *              include bold, italic, and regular. Values are constants defined
-     *              in {@link FontPaint}.
+     *              include bold, italic, and normal. Values are constants defined
+     *              in {@link Typeface}.
      */
-    public StyleSpan(int style) {
-        mStyle = (style & ~FontPaint.FONT_STYLE_MASK) == 0 ? style : FontPaint.REGULAR;
+    public StyleSpan(@Typeface.Style int style) {
+        mStyle = style;
     }
 
     /**
-     * Returns the style constant defined in {@link FontPaint}.
+     * Creates a {@link StyleSpan} from a stream.
      */
+    public StyleSpan(@Nonnull DataInput src) throws IOException {
+        mStyle = src.readInt();
+    }
+
+    @Override
+    public int getSpanTypeId() {
+        return TextUtils.STYLE_SPAN;
+    }
+
+    @Override
+    public void write(@Nonnull DataOutput dest) throws IOException {
+        dest.writeInt(mStyle);
+    }
+
+    /**
+     * Returns the style constant defined in {@link Typeface}.
+     */
+    @Typeface.Style
     public int getStyle() {
         return mStyle;
     }
 
     @Override
-    public void updateMeasureState(@Nonnull FontPaint paint) {
+    public void updateMeasureState(@Nonnull TextPaint paint) {
         paint.setFontStyle(paint.getFontStyle() | mStyle);
     }
 }

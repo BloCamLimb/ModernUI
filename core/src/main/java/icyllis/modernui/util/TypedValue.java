@@ -18,8 +18,18 @@
 
 package icyllis.modernui.util;
 
+import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
+/**
+ * Container for a dynamically typed data value.
+ * <br>Primarily used with {@link icyllis.modernui.resources.Resources}
+ * for holding resource values.
+ */
+@SuppressWarnings("MagicConstant")
 public class TypedValue {
 
     /**
@@ -67,6 +77,19 @@ public class TypedValue {
      * defined below.
      */
     public static final int COMPLEX_UNIT_MASK = 0xf;
+
+    @ApiStatus.Internal
+    @MagicConstant(intValues = {
+            COMPLEX_UNIT_PX,
+            COMPLEX_UNIT_DP,
+            COMPLEX_UNIT_SP,
+            COMPLEX_UNIT_PT,
+            COMPLEX_UNIT_IN,
+            COMPLEX_UNIT_MM,
+    })
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface ComplexDimensionUnit {
+    }
 
     /**
      * {@link #TYPE_DIMENSION} complex unit: Value is raw pixels.
@@ -252,7 +275,7 @@ public class TypedValue {
      * @return The complex floating point value multiplied by the appropriate
      * metrics depending on its unit.
      */
-    public static float applyDimension(int unit, float value,
+    public static float applyDimension(@ComplexDimensionUnit int unit, float value,
                                        DisplayMetrics metrics) {
         return switch (unit) {
             case COMPLEX_UNIT_PX -> value;

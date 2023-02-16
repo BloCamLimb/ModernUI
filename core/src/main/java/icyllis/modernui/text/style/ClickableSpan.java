@@ -20,6 +20,7 @@ package icyllis.modernui.text.style;
 
 import icyllis.modernui.text.TextPaint;
 import icyllis.modernui.view.View;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -64,7 +65,8 @@ public abstract class ClickableSpan extends CharacterStyle implements UpdateAppe
      *
      * @return The unique ID.
      */
-    public int getId() {
+    @ApiStatus.Internal
+    public final int getId() {
         return mId;
     }
 }

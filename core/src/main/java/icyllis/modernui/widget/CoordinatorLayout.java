@@ -21,7 +21,7 @@ package icyllis.modernui.widget;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
-import icyllis.modernui.graphics.FMath;
+import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.graphics.Matrix4;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.RectF;
@@ -811,7 +811,7 @@ public class CoordinatorLayout extends ViewGroup {
             if (scrimAlpha > 0f) {
                 Paint paint = Paint.get();
                 paint.setColor(lp.mBehavior.getScrimColor(this, child));
-                paint.setAlpha(FMath.clamp(Math.round(255 * scrimAlpha), 0, 255));
+                paint.setAlpha(MathUtil.clamp(Math.round(255 * scrimAlpha), 0, 255));
 
                 // Now draw the rectangle for the scrim
                 canvas.drawRect(getPaddingLeft(), getPaddingTop(),

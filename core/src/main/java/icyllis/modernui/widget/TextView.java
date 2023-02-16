@@ -40,8 +40,7 @@ import org.jetbrains.annotations.VisibleForTesting;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.Locale;
+import java.util.*;
 
 /**
  * A user interface element that displays text to the user. To provide user-editable text,
@@ -1834,11 +1833,9 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
 
         if (text instanceof Spannable sp) {
             // Remove any ChangeWatchers that might have come from other TextViews.
-            final ChangeWatcher[] watchers = sp.getSpans(0, sp.length(), ChangeWatcher.class);
-            if (watchers != null) {
-                for (ChangeWatcher watcher : watchers) {
-                    sp.removeSpan(watcher);
-                }
+            final List<ChangeWatcher> watchers = sp.getSpans(0, sp.length(), ChangeWatcher.class);
+            for (ChangeWatcher watcher : watchers) {
+                sp.removeSpan(watcher);
             }
 
             if (mChangeWatcher == null) {
@@ -3922,11 +3919,11 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
                 // The LinkMovementMethod which should handle taps on links has not been installed
                 // on non-editable text that support text selection.
                 // We reproduce its behavior here to open links for these.
-                ClickableSpan[] links = mSpannable.getSpans(getSelectionStart(), getSelectionEnd(),
+                List<ClickableSpan> links = mSpannable.getSpans(getSelectionStart(), getSelectionEnd(),
                         ClickableSpan.class);
 
-                if (links != null) {
-                    links[0].onClick(this);
+                if (!links.isEmpty()) {
+                    links.get(0).onClick(this);
                     handled = true;
                 }
             }
@@ -4375,9 +4372,9 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
             final float x = event.getX();
             final float y = event.getY();
             final int offset = getOffsetForPosition(x, y);
-            final ClickableSpan[] clickables = mSpannable.getSpans(offset, offset,
+            final List<ClickableSpan> clickables = mSpannable.getSpans(offset, offset,
                     ClickableSpan.class);
-            if (clickables != null) {
+            if (!clickables.isEmpty()) {
                 return PointerIcon.getSystemIcon(PointerIcon.TYPE_HAND);
             }
         }

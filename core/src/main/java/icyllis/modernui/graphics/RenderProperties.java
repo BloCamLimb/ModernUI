@@ -308,7 +308,7 @@ public class RenderProperties {
         }
         if (mAnimationMatrix == null) {
             mAnimationMatrix = new Matrix4(matrix);
-        } else if (!mAnimationMatrix.approxEqual(matrix)) {
+        } else if (!mAnimationMatrix.isNearlyEqual(matrix)) {
             mAnimationMatrix.set(matrix);
         } else {
             return false;

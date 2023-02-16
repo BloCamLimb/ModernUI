@@ -220,7 +220,7 @@ public abstract class Canvas {
      */
     public final void rotate(float degrees) {
         if (degrees != 0.0f) {
-            getMatrix().preRotateZ(FMath.toRadians(degrees));
+            getMatrix().preRotateZ(MathUtil.toRadians(degrees));
         }
     }
 
@@ -236,7 +236,7 @@ public abstract class Canvas {
         if (degrees != 0.0f) {
             Matrix4 matrix = getMatrix();
             matrix.preTranslate(px, py, 0);
-            matrix.preRotateZ(FMath.toRadians(degrees));
+            matrix.preRotateZ(MathUtil.toRadians(degrees));
             matrix.preTranslate(-px, -py, 0);
         }
     }

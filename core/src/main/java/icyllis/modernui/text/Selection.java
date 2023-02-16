@@ -22,6 +22,7 @@ import com.ibm.icu.text.BreakIterator;
 import icyllis.modernui.text.method.WordIterator;
 
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.List;
 
 /**
  * Utility class for manipulating cursors and selections in CharSequences.
@@ -126,11 +127,9 @@ public final class Selection {
 
     private static void removeMemory(Spannable text) {
         text.removeSpan(SELECTION_MEMORY);
-        MemoryTextWatcher[] watchers = text.getSpans(0, text.length(), MemoryTextWatcher.class);
-        if (watchers != null) {
-            for (MemoryTextWatcher watcher : watchers) {
-                text.removeSpan(watcher);
-            }
+        List<MemoryTextWatcher> watchers = text.getSpans(0, text.length(), MemoryTextWatcher.class);
+        for (MemoryTextWatcher watcher : watchers) {
+            text.removeSpan(watcher);
         }
     }
 

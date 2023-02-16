@@ -138,10 +138,10 @@ public class Vector3 {
      * @return the magnitude of this quaternion
      */
     public float length() {
-        return FMath.sqrt(x * x + y * y + z * z);
+        return MathUtil.sqrt(x * x + y * y + z * z);
     }
 
-    public float lengthSquared() {
+    public float lengthSq() {
         return x * x + y * y + z * z;
     }
 
@@ -211,44 +211,25 @@ public class Vector3 {
     }
 
     /**
-     * Returns whether this vector is normalized. Normalizing by
-     * {@link #normalizeFast()} is not seen as being normalized here.
+     * Returns whether this vector is normalized.
      *
      * @return {@code true} if is normalized, {@code false} otherwise
      */
     public boolean isNormalized() {
-        return FMath.eq(lengthSquared(), 1.0f);
+        return MathUtil.isNearlyEqual(lengthSq(), 1.0f);
     }
 
     /**
      * Normalize this vector to unit length, or <code>[1, 0, 0]</code> if this is zero.
      */
     public void normalize() {
-        final float sq = lengthSquared();
+        final float sq = lengthSq();
         if (sq < 1.0e-6f) {
             x = 1.0f;
             y = 0.0f;
             z = 0.0f;
         } else {
-            final float invNorm = 1.0f / FMath.sqrt(sq);
-            x *= invNorm;
-            y *= invNorm;
-            z *= invNorm;
-        }
-    }
-
-    /**
-     * Normalize this quaternion to approximate unit length, or
-     * <code>[1, 0, 0]</code> if this is zero.
-     */
-    public void normalizeFast() {
-        final float sq = lengthSquared();
-        if (sq < 1.0e-6f) {
-            x = 1.0f;
-            y = 0.0f;
-            z = 0.0f;
-        } else {
-            final float invNorm = FMath.fastInvSqrt(sq);
+            final double invNorm = 1.0f / Math.sqrt(sq);
             x *= invNorm;
             y *= invNorm;
             z *= invNorm;
@@ -298,13 +279,13 @@ public class Vector3 {
     public void perpendicular() {
         final float l;
         if (Math.abs(x) >= Math.abs(y)) {
-            l = 1.0f / FMath.sqrt(x * x + z * z);
+            l = 1.0f / MathUtil.sqrt(x * x + z * z);
             float t = x;
             x = -z * l;
             y = 0.0f;
             z = t * l;
         } else {
-            l = 1.0f / FMath.sqrt(y * y + z * z);
+            l = 1.0f / MathUtil.sqrt(y * y + z * z);
             float t = y;
             x = 0.0f;
             y = z * l;
@@ -318,11 +299,11 @@ public class Vector3 {
      * @param v the vector to project on
      */
     public void projection(@Nonnull Vector3 v) {
-        final float sq = lengthSquared();
+        final float sq = lengthSq();
         if (sq < 1.0e-6f) {
             setZero();
         } else {
-            final float c = dot(v) / FMath.sqrt(sq);
+            final float c = dot(v) / MathUtil.sqrt(sq);
             x = v.x * c;
             y = v.y * c;
             z = v.z * c;
@@ -416,9 +397,9 @@ public class Vector3 {
      */
     public boolean equivalent(@Nonnull Vector3 v) {
         if (this == v) return true;
-        return FMath.eq(x, v.x) &&
-                FMath.eq(y, v.y) &&
-                FMath.eq(z, v.z);
+        return MathUtil.isNearlyEqual(x, v.x) &&
+                MathUtil.isNearlyEqual(y, v.y) &&
+                MathUtil.isNearlyEqual(z, v.z);
     }
 
     @Override

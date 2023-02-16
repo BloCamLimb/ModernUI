@@ -19,6 +19,7 @@
 package icyllis.modernui.text;
 
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.annotation.ColorInt;
 import icyllis.modernui.graphics.font.CharArrayIterator;
 import icyllis.modernui.graphics.font.FontMetricsInt;
 import icyllis.modernui.graphics.font.FontPaint;
@@ -51,8 +52,18 @@ public class TextPaint extends FontPaint {
     private Typeface mTypeface;
     private int mColor;
 
-    // 0 means no background
+    // Special value 0 means no background paint
+    @ColorInt
     public int bgColor;
+    public int baselineShift;
+    @ColorInt
+    public int linkColor;
+    public float density = 1.0f;
+    /**
+     * Special value 0 means no custom underline
+     */
+    @ColorInt
+    public int underlineColor = 0;
 
     /**
      * Creates the new TextPaint.
