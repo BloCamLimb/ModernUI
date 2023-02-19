@@ -18,6 +18,7 @@
 
 package icyllis.modernui.core;
 
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.text.Editable;
 import icyllis.modernui.text.Selection;
 import icyllis.modernui.view.KeyEvent;
@@ -26,7 +27,6 @@ import icyllis.modernui.view.ViewRoot;
 import icyllis.modernui.widget.EditText;
 import org.lwjgl.system.MemoryStack;
 
-import javax.annotation.Nonnull;
 import java.nio.DoubleBuffer;
 import java.nio.IntBuffer;
 
@@ -98,8 +98,8 @@ public final class MainWindow extends Window {
      * @param height the window height in virtual screen coordinates
      * @return the main window
      */
-    @Nonnull
-    public static MainWindow initialize(@Nonnull String title, int width, int height) {
+    @NonNull
+    public static MainWindow initialize(@NonNull String title, int width, int height) {
         Core.checkMainThread();
         if (sMainWindow != null) {
             throw new IllegalStateException("Multiple main windows");
@@ -174,13 +174,13 @@ public final class MainWindow extends Window {
     private void onContentScaleCallback(long w, float xScale, float yScale) {
     }
 
-    public void center(@Nonnull Monitor monitor) {
+    public void center(@NonNull Monitor monitor) {
         VideoMode mode = monitor.getCurrentMode();
         glfwSetWindowPos(mHandle, (mode.getWidth() - mScreenWidth) / 2 + monitor.getXPos(),
                 (mode.getHeight() - mScreenHeight) / 2 + monitor.getYPos());
     }
 
-    public void install(@Nonnull ViewRoot root) {
+    public void install(@NonNull ViewRoot root) {
         mRoot = root;
         root.setFrame(mWidth, mHeight);
     }

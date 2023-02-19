@@ -18,7 +18,7 @@
 
 package icyllis.modernui.core;
 
-import icyllis.modernui.annotation.MainThread;
+import icyllis.modernui.annotation.*;
 import it.unimi.dsi.fastutil.longs.Long2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.ObjectCollection;
 import it.unimi.dsi.fastutil.objects.ObjectCollections;
@@ -28,8 +28,6 @@ import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.system.MemoryStack;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.nio.IntBuffer;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -47,7 +45,10 @@ public final class Monitor {
     private static final CopyOnWriteArrayList<MonitorEventListener> sListeners = new CopyOnWriteArrayList<>();
 
     static {
-        GLFW.glfwSetMonitorCallback(Monitor::onMonitorCallback);
+        var prev = GLFW.glfwSetMonitorCallback(Monitor::onMonitorCallback);
+        if (prev != null) {
+            prev.close();
+        }
         PointerBuffer pointers = GLFW.glfwGetMonitors();
         if (pointers != null) {
             for (int i = 0; i < pointers.limit(); ++i) {
@@ -89,13 +90,13 @@ public final class Monitor {
         return sMonitorsView;
     }
 
-    public static void addMonitorEventListener(@Nonnull MonitorEventListener listener) {
+    public static void addMonitorEventListener(@NonNull MonitorEventListener listener) {
         if (!sListeners.contains(listener)) {
             sListeners.add(listener);
         }
     }
 
-    public static void removeMonitorEventListener(@Nonnull MonitorEventListener listener) {
+    public static void removeMonitorEventListener(@NonNull MonitorEventListener listener) {
         sListeners.remove(listener);
     }
 
@@ -154,7 +155,7 @@ public final class Monitor {
         return mYPos;
     }
 
-    @Nonnull
+    @NonNull
     public VideoMode getCurrentMode() {
         GLFWVidMode mode = GLFW.glfwGetVideoMode(mHandle);
         if (mode == null) {
@@ -163,7 +164,7 @@ public final class Monitor {
         return new VideoMode(mode);
     }
 
-    @Nonnull
+    @NonNull
     public String getName() {
         String s = GLFW.glfwGetMonitorName(mHandle);
         return s == null ? "" : s;
@@ -178,12 +179,12 @@ public final class Monitor {
         return mVideoModes.length;
     }
 
-    @Nonnull
+    @NonNull
     public VideoMode getModeAt(int index) {
         return mVideoModes[index];
     }
 
-    @Nonnull
+    @NonNull
     public VideoMode findBestMode(int width, int height) {
         return Arrays.stream(mVideoModes)
                 .filter(m -> m.getWidth() <= width && m.getHeight() <= height)
@@ -195,8 +196,8 @@ public final class Monitor {
 
     public interface MonitorEventListener {
 
-        void onMonitorConnected(@Nonnull Monitor monitor);
+        void onMonitorConnected(@NonNull Monitor monitor);
 
-        void onMonitorDisconnected(@Nonnull Monitor monitor);
+        void onMonitorDisconnected(@NonNull Monitor monitor);
     }
 }

@@ -19,12 +19,12 @@
 package icyllis.modernui.core;
 
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.glfw.GLFW;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 import java.util.ArrayList;
 import java.util.concurrent.locks.LockSupport;
@@ -93,7 +93,7 @@ public final class MessageQueue {
      *
      * @param handler The IdleHandler to be added.
      */
-    public void addIdleHandler(@Nonnull IdleHandler handler) {
+    public void addIdleHandler(@NonNull IdleHandler handler) {
         synchronized (this) {
             mIdleHandlers.add(handler);
         }
@@ -108,7 +108,7 @@ public final class MessageQueue {
      *
      * @param handler The IdleHandler to be removed.
      */
-    public void removeIdleHandler(@Nonnull IdleHandler handler) {
+    public void removeIdleHandler(@NonNull IdleHandler handler) {
         synchronized (this) {
             mIdleHandlers.remove(handler);
         }
@@ -370,7 +370,7 @@ public final class MessageQueue {
         }
     }
 
-    boolean enqueueMessage(@Nonnull Message msg, long when) {
+    boolean enqueueMessage(@NonNull Message msg, long when) {
         if (msg.target == null) {
             throw new IllegalArgumentException("Message must have a target.");
         }
@@ -446,7 +446,7 @@ public final class MessageQueue {
         }
     }
 
-    boolean hasMessages(@Nonnull Handler h, Runnable r) {
+    boolean hasMessages(@NonNull Handler h, Runnable r) {
         synchronized (this) {
             Message p = mMessages;
             while (p != null) {
@@ -459,7 +459,7 @@ public final class MessageQueue {
         }
     }
 
-    boolean hasMessages(@Nonnull Handler h) {
+    boolean hasMessages(@NonNull Handler h) {
         synchronized (this) {
             Message p = mMessages;
             while (p != null) {
@@ -472,7 +472,7 @@ public final class MessageQueue {
         }
     }
 
-    void removeMessages(@Nonnull Handler h, int what, Object object) {
+    void removeMessages(@NonNull Handler h, int what, Object object) {
         synchronized (this) {
             Message p = mMessages;
 
@@ -502,7 +502,7 @@ public final class MessageQueue {
         }
     }
 
-    void removeMessages(@Nonnull Handler h, Runnable r, Object object) {
+    void removeMessages(@NonNull Handler h, Runnable r, Object object) {
         if (r == null) {
             return;
         }
@@ -536,7 +536,7 @@ public final class MessageQueue {
         }
     }
 
-    void removeCallbacksAndMessages(@Nonnull Handler h, Object object) {
+    void removeCallbacksAndMessages(@NonNull Handler h, Object object) {
         synchronized (this) {
             Message p = mMessages;
 

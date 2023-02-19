@@ -21,7 +21,7 @@ package icyllis.modernui.graphics.font;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.core.Core;
-import icyllis.modernui.core.NativeImage;
+import icyllis.modernui.graphics.Bitmap;
 import icyllis.modernui.graphics.opengl.GLTexture;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
@@ -238,9 +238,9 @@ public class GLFontAtlas implements AutoCloseable {
             }
         } else if (Core.isOnRenderThread()) {
             ModernUI.LOGGER.info(GlyphManager.MARKER, "Glyphs: {}", mGlyphs.size());
-            try (NativeImage image = NativeImage.download(mColored ? NativeImage.Format.RGBA : NativeImage.Format.RED,
+            try (Bitmap image = Bitmap.download(mColored ? Bitmap.Format.RGBA_8888 : Bitmap.Format.GRAY_8,
                     mTexture, false)) {
-                image.saveToPath(Path.of(path), NativeImage.SaveFormat.PNG, 0);
+                image.saveToPath(Path.of(path), Bitmap.SaveFormat.PNG, 0);
             } catch (IOException e) {
                 e.printStackTrace();
             }

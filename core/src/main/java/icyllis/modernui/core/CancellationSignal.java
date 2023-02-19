@@ -18,7 +18,7 @@
 
 package icyllis.modernui.core;
 
-import javax.annotation.Nullable;
+import icyllis.modernui.annotation.Nullable;
 
 /**
  * Provides the ability to cancel an operation in progress.

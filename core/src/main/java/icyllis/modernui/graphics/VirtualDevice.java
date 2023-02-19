@@ -33,7 +33,7 @@ public final class VirtualDevice extends BaseDevice {
     private final Pool<ClipState> mClipRecPool = Pools.simple(16);
 
     public VirtualDevice(int left, int top, int right, int bottom) {
-        super(new ImageInfo(right - left, bottom - top));
+        super(ImageInfo.makeUnknown(right - left, bottom - top));
         setOrigin(null, left, top);
         resetClipStack();
     }

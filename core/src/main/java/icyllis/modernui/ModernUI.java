@@ -24,13 +24,12 @@ import icyllis.modernui.core.*;
 import icyllis.modernui.fragment.*;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
+import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.ImageDrawable;
 import icyllis.modernui.graphics.font.FontFamily;
 import icyllis.modernui.graphics.opengl.*;
 import icyllis.modernui.lifecycle.*;
-import icyllis.modernui.graphics.Matrix4;
-import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.text.Typeface;
 import icyllis.modernui.view.*;
 import icyllis.modernui.view.menu.ContextMenuBuilder;
@@ -41,12 +40,8 @@ import org.apache.logging.log4j.*;
 import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.glfw.GLFWMonitorCallback;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.awt.*;
 import java.io.*;
 import java.lang.ref.Cleaner;
-import java.lang.ref.Cleaner.Cleanable;
 import java.nio.channels.*;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -78,7 +73,7 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
         }
     }
 
-    private final VulkanManager mVulkanManager = VulkanManager.getInstance();
+    //private final VulkanManager mVulkanManager = VulkanManager.getInstance();
 
     private volatile MainWindow mWindow;
 
@@ -126,8 +121,8 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
      * @param action a {@code Runnable} to invoke when the target becomes phantom reachable
      * @return a {@code Cleanable} instance for explicit cleaning
      */
-    @Nonnull
-    public static Cleanable registerCleanup(@Nonnull Object target, @Nonnull Runnable action) {
+    @NonNull
+    public static Cleaner.Cleanable registerCleanup(@NonNull Object target, @NonNull Runnable action) {
         return sCleaner.register(target, action);
     }
 
@@ -136,14 +131,14 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
      * This method is only called by the <code>main()</code> on the main thread.
      */
     @MainThread
-    public void run(@Nonnull Fragment fragment) {
+    public void run(@NonNull Fragment fragment) {
         Thread.currentThread().setName("Main-Thread");
         // should be true
-        LOGGER.info(MARKER, "AWT headless: {}", GraphicsEnvironment.isHeadless());
+        LOGGER.info(MARKER, "AWT headless: {}", java.awt.GraphicsEnvironment.isHeadless());
 
         Core.initialize();
 
-        mVulkanManager.initialize();
+        //mVulkanManager.initialize();
 
         LOGGER.info(MARKER, "Initializing window system");
         Monitor monitor = Monitor.getPrimary();
@@ -179,9 +174,9 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
         mUiThread = new Thread(() -> runUI(fragment), "UI-Thread");
         mUiThread.start();
 
-        try (NativeImage i16 = NativeImage.decode(null, getResourceChannel(ID, "AppLogo16x.png"));
-             NativeImage i32 = NativeImage.decode(null, getResourceChannel(ID, "AppLogo32x.png"));
-             NativeImage i48 = NativeImage.decode(null, getResourceChannel(ID, "AppLogo48x.png"))) {
+        try (Bitmap i16 = Bitmap.decode(null, getResourceChannel(ID, "AppLogo16x.png"));
+             Bitmap i32 = Bitmap.decode(null, getResourceChannel(ID, "AppLogo32x.png"));
+             Bitmap i48 = Bitmap.decode(null, getResourceChannel(ID, "AppLogo48x.png"))) {
             mWindow.setIcon(i16, i32, i48);
         } catch (IOException e) {
             e.printStackTrace();
@@ -246,7 +241,7 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
     }
 
     @UiThread
-    private void runUI(@Nonnull Fragment fragment) {
+    private void runUI(@NonNull Fragment fragment) {
         LOGGER.info(MARKER, "Initializing UI thread");
         mUiLooper = Core.initUiThread();
 
@@ -327,9 +322,9 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
         Set<FontFamily> set = new LinkedHashSet<>();
 
         try (InputStream stream = new FileInputStream("F:/Torus Regular.otf")) {
-            Font f = Font.createFont(Font.TRUETYPE_FONT, stream);
+            java.awt.Font f = java.awt.Font.createFont(java.awt.Font.TRUETYPE_FONT, stream);
             set.add(new FontFamily(f));
-        } catch (FontFormatException | IOException ignored) {
+        } catch (java.awt.FontFormatException | IOException ignored) {
         }
 
         for (FontFamily family : FontFamily.getSystemFontMap().values()) {
@@ -343,12 +338,12 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
             }
         }
 
-        set.add(Objects.requireNonNull(FontFamily.getSystemFontMap().get(Font.SANS_SERIF)));
+        set.add(Objects.requireNonNull(FontFamily.getSystemFontMap().get(java.awt.Font.SANS_SERIF)));
 
         mDefaultTypeface = Typeface.createTypeface(set.toArray(new FontFamily[0]));
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Lifecycle getLifecycle() {
         return mLifecycleRegistry;
@@ -368,7 +363,7 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
      *
      * @return the selected locale
      */
-    @Nonnull
+    @NonNull
     public static Locale getSelectedLocale() {
         return sInstance == null ? Locale.getDefault() : sInstance.onGetSelectedLocale();
     }
@@ -378,7 +373,7 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
      *
      * @return the selected typeface
      */
-    @Nonnull
+    @NonNull
     protected Typeface onGetSelectedTypeface() {
         return Objects.requireNonNullElse(mDefaultTypeface, Typeface.SANS_SERIF);
     }
@@ -388,7 +383,7 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
      *
      * @return the selected typeface
      */
-    @Nonnull
+    @NonNull
     public static Typeface getSelectedTypeface() {
         return sInstance == null ? Typeface.SANS_SERIF : sInstance.onGetSelectedTypeface();
     }
@@ -404,8 +399,8 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
     }
 
     @ApiStatus.Experimental
-    @Nonnull
-    public InputStream getResourceStream(@Nonnull String res, @Nonnull String path) throws IOException {
+    @NonNull
+    public InputStream getResourceStream(@NonNull String res, @NonNull String path) throws IOException {
         InputStream stream = ModernUI.class.getResourceAsStream("/assets/" + res + "/" + path);
         if (stream == null) {
             throw new FileNotFoundException();
@@ -414,8 +409,8 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
     }
 
     @ApiStatus.Experimental
-    @Nonnull
-    public ReadableByteChannel getResourceChannel(@Nonnull String res, @Nonnull String path) throws IOException {
+    @NonNull
+    public ReadableByteChannel getResourceChannel(@NonNull String res, @NonNull String path) throws IOException {
         return Channels.newChannel(getResourceStream(res, path));
     }
 
@@ -460,7 +455,7 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
             if (cb != null) {
                 cb.free();
             }
-            mVulkanManager.close();
+            //mVulkanManager.close();
         } finally {
             Core.terminate();
         }
@@ -472,7 +467,7 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
 
         private final Rect mGlobalRect = new Rect();
 
-        @Nonnull
+        @NonNull
         @Override
         protected Canvas beginRecording(int width, int height) {
             GLSurfaceCanvas canvas = GLSurfaceCanvas.getInstance();
@@ -589,19 +584,19 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
             return mDecor.findViewById(id);
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public ViewModelStore getViewModelStore() {
             return mViewModelStore;
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public OnBackPressedDispatcher getOnBackPressedDispatcher() {
             return mOnBackPressedDispatcher;
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public Lifecycle getLifecycle() {
             return mLifecycleRegistry;
