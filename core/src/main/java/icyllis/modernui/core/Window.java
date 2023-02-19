@@ -18,14 +18,15 @@
 
 package icyllis.modernui.core;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.graphics.Bitmap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectArrayMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import org.lwjgl.glfw.Callbacks;
 import org.lwjgl.glfw.GLFWImage;
 import org.lwjgl.system.MemoryStack;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.nio.IntBuffer;
 
@@ -236,14 +237,14 @@ public class Window implements AutoCloseable {
     /**
      * Sets window title.
      */
-    public void setTitle(@Nonnull String title) {
+    public void setTitle(@NonNull String title) {
         glfwSetWindowTitle(mHandle, title);
     }
 
     /**
      * Sets window icon.
      */
-    public void setIcon(@Nonnull NativeImage... icons) {
+    public void setIcon(@NonNull Bitmap... icons) {
         if (icons.length == 0) {
             nglfwSetWindowIcon(mHandle, 0, NULL);
             return;
@@ -251,7 +252,7 @@ public class Window implements AutoCloseable {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             GLFWImage.Buffer images = GLFWImage.malloc(icons.length, stack);
             for (int i = 0; i < icons.length; i++) {
-                NativeImage icon = icons[i];
+                Bitmap icon = icons[i];
                 images.position(i);
                 images.width(icon.getWidth());
                 images.height(icon.getHeight());

@@ -19,7 +19,7 @@
 package icyllis.modernui.graphics.font;
 
 import icyllis.modernui.annotation.RenderThread;
-import icyllis.modernui.core.NativeImage;
+import icyllis.modernui.graphics.Bitmap;
 import icyllis.modernui.text.TextUtils;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntFunction;
@@ -185,7 +185,7 @@ public class GlyphManager {
 
     @RenderThread
     public void debug() {
-        String basePath = NativeImage.saveDialogGet(NativeImage.SaveFormat.PNG, "FontAtlas");
+        String basePath = Bitmap.saveDialogGet(Bitmap.SaveFormat.PNG, "FontAtlas");
         if (basePath != null) {
             // XXX: remove extension name
             basePath = basePath.substring(0, basePath.length() - 4);

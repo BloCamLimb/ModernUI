@@ -18,13 +18,10 @@
 
 package icyllis.modernui.core;
 
-import icyllis.modernui.annotation.MainThread;
+import icyllis.modernui.annotation.*;
 import icyllis.modernui.text.TextUtils;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import static org.lwjgl.system.MemoryUtil.NULL;
 
@@ -56,7 +53,7 @@ public final class Clipboard {
      *
      * @param text the text to set, must be not null
      */
-    public static void setText(@Nonnull CharSequence text) {
+    public static void setText(@NonNull CharSequence text) {
         GLFW.glfwSetClipboardString(NULL, text);
     }
 }

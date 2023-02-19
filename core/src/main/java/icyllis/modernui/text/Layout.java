@@ -18,6 +18,8 @@
 
 package icyllis.modernui.text;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.font.LineBreaker;
 import icyllis.modernui.graphics.Rect;
@@ -28,8 +30,6 @@ import icyllis.modernui.text.style.TabStopSpan;
 import icyllis.modernui.view.KeyEvent;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
 
@@ -136,7 +136,7 @@ public abstract class Layout {
      * @see #drawBackground(Canvas, int, int)
      * @see #drawText(Canvas, int, int)
      */
-    public void draw(@Nonnull Canvas canvas) {
+    public void draw(@NonNull Canvas canvas) {
         final long range = getLineRangeForDraw(canvas);
         if (range < 0) return;
         int firstLine = (int) (range >>> 32);
@@ -158,7 +158,7 @@ public abstract class Layout {
      * @see #drawText(Canvas, int, int)
      */
     //TODO background span
-    public final void drawBackground(@Nonnull Canvas canvas, int firstLine, int lastLine) {
+    public final void drawBackground(@NonNull Canvas canvas, int firstLine, int lastLine) {
         if (!mSpannedText) return;
         assert firstLine >= 0 && lastLine >= firstLine;
         Spanned buffer = (Spanned) mText;
@@ -176,7 +176,7 @@ public abstract class Layout {
      * @param lastLine  last line index (inclusive)
      * @see #drawBackground(Canvas, int, int)
      */
-    public final void drawText(@Nonnull Canvas canvas, int firstLine, int lastLine) {
+    public final void drawText(@NonNull Canvas canvas, int firstLine, int lastLine) {
         assert firstLine >= 0 && lastLine >= firstLine && lastLine < getLineCount();
 
         int previousLineBottom = getLineTop(firstLine);
@@ -289,7 +289,7 @@ public abstract class Layout {
      * @param canvas the canvas used to draw this Layout
      * @return the range of lines that need to be drawn, possibly empty.
      */
-    public final long getLineRangeForDraw(@Nonnull Canvas canvas) {
+    public final long getLineRangeForDraw(@NonNull Canvas canvas) {
         final int lineCount = getLineCount();
         if (lineCount <= 0) {
             return ~0L;
@@ -1473,7 +1473,7 @@ public abstract class Layout {
      * @param dest   the destination lines
      * @param buffer the editing buffer
      */
-    public void getCursorPath(int point, @Nonnull FloatArrayList dest, @Nonnull CharSequence buffer) {
+    public void getCursorPath(int point, @NonNull FloatArrayList dest, @NonNull CharSequence buffer) {
         dest.clear();
         if (point < 0) {
             return;
@@ -1592,7 +1592,7 @@ public abstract class Layout {
      * @param end   the ending index of the selection
      * @param dest  the destination rectangles
      */
-    public void getSelectionPath(int start, int end, @Nonnull FloatArrayList dest) {
+    public void getSelectionPath(int start, int end, @NonNull FloatArrayList dest) {
         dest.clear();
         if (start == end) {
             return;
@@ -1800,8 +1800,8 @@ public abstract class Layout {
      * styles that are already applied to the buffer will apply to text that
      * is inserted into it.
      */
-    @Nonnull
-    static <T> List<T> getParagraphSpans(@Nonnull Spanned text, int start, int end, Class<T> type) {
+    @NonNull
+    static <T> List<T> getParagraphSpans(@NonNull Spanned text, int start, int end, Class<T> type) {
         if (start == end && start > 0) {
             return Collections.emptyList();
         }
@@ -1914,24 +1914,24 @@ public abstract class Layout {
             mSpanned = (Spanned) display;
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public <T> List<T> getSpans(int start, int end, Class<? extends T> type, @Nullable List<T> out) {
             return mSpanned.getSpans(start, end, type, out);
         }
 
         @Override
-        public int getSpanStart(@Nonnull Object tag) {
+        public int getSpanStart(@NonNull Object tag) {
             return mSpanned.getSpanStart(tag);
         }
 
         @Override
-        public int getSpanEnd(@Nonnull Object tag) {
+        public int getSpanEnd(@NonNull Object tag) {
             return mSpanned.getSpanEnd(tag);
         }
 
         @Override
-        public int getSpanFlags(@Nonnull Object tag) {
+        public int getSpanFlags(@NonNull Object tag) {
             return mSpanned.getSpanFlags(tag);
         }
 

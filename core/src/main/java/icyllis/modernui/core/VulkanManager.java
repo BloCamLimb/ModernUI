@@ -18,6 +18,7 @@
 
 package icyllis.modernui.core;
 
+import icyllis.modernui.annotation.NonNull;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFWVulkan;
@@ -25,7 +26,6 @@ import org.lwjgl.system.MemoryStack;
 import org.lwjgl.util.tinyfd.TinyFileDialogs;
 import org.lwjgl.vulkan.*;
 
-import javax.annotation.Nonnull;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
@@ -33,7 +33,6 @@ import static icyllis.modernui.ModernUI.LOGGER;
 import static icyllis.modernui.graphics.vulkan.VkCore.*;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.EXTBlendOperationAdvanced.VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME;
-import static org.lwjgl.vulkan.VK10.VK_VERSION_MAJOR;
 
 /**
  * This class contains the shared global Vulkan objects, such as VkInstance, VkDevice and VkQueue,
@@ -60,7 +59,7 @@ public final class VulkanManager implements AutoCloseable {
     private VulkanManager() {
     }
 
-    @Nonnull
+    @NonNull
     public static VulkanManager getInstance() {
         if (sInstance == null) {
             synchronized (VulkanManager.class) {
@@ -224,7 +223,7 @@ public final class VulkanManager implements AutoCloseable {
         LOGGER.info(MARKER, "Created Vulkan device, Queue index: {}", mGraphicsQueueIndex);
     }
 
-    private boolean choosePhysicalDeviceLocked(@Nonnull VkPhysicalDevice physicalDevice) {
+    private boolean choosePhysicalDeviceLocked(@NonNull VkPhysicalDevice physicalDevice) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             final VkPhysicalDeviceProperties2 properties2 = VkPhysicalDeviceProperties2
                     .calloc(stack)
@@ -352,7 +351,7 @@ public final class VulkanManager implements AutoCloseable {
      *
      * @param features the features whose chain structs to be freed
      */
-    public static void freeFeaturesExtensionsStructs(@Nonnull VkPhysicalDeviceFeatures2 features) {
+    public static void freeFeaturesExtensionsStructs(@NonNull VkPhysicalDeviceFeatures2 features) {
         long pNext = features.pNext();
         while (pNext != NULL) {
             long current = pNext;

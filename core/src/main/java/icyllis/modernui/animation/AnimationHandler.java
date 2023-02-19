@@ -18,12 +18,12 @@
 
 package icyllis.modernui.animation;
 
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.core.Choreographer;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 import org.jetbrains.annotations.ApiStatus;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 
 /**
@@ -42,7 +42,7 @@ public class AnimationHandler {
 
     private final Choreographer.FrameCallback mFrameCallback = new Choreographer.FrameCallback() {
         @Override
-        public void doFrame(@Nonnull Choreographer choreographer, long frameTimeNanos) {
+        public void doFrame(@NonNull Choreographer choreographer, long frameTimeNanos) {
             doAnimationFrame(frameTimeNanos / 1000000);
             if (mAnimationCallbacks.size() > 0) {
                 choreographer.postFrameCallback(this);
@@ -55,7 +55,7 @@ public class AnimationHandler {
     private AnimationHandler() {
     }
 
-    @Nonnull
+    @NonNull
     public static AnimationHandler getInstance() {
         if (sAnimatorHandler.get() == null) {
             sAnimatorHandler.set(new AnimationHandler());
@@ -81,7 +81,7 @@ public class AnimationHandler {
      * @param callback the callback to register
      * @param delay    delayed time in milliseconds, if > 0
      */
-    public void addFrameCallback(@Nonnull FrameCallback callback, long delay) {
+    public void addFrameCallback(@NonNull FrameCallback callback, long delay) {
         if (mAnimationCallbacks.isEmpty()) {
             Choreographer.getInstance().postFrameCallback(mFrameCallback);
         }
@@ -106,7 +106,7 @@ public class AnimationHandler {
      *
      * @param callback the callback to unregister
      */
-    public void removeCallback(@Nonnull FrameCallback callback) {
+    public void removeCallback(@NonNull FrameCallback callback) {
         int id = mAnimationCallbacks.indexOf(callback);
         if (id >= 0) {
             // mark it was removed
@@ -141,7 +141,7 @@ public class AnimationHandler {
      *
      * @return true if they have passed the initial delay or have no delay, false otherwise.
      */
-    private boolean isCallbackDue(@Nonnull FrameCallback callback, long currentTime) {
+    private boolean isCallbackDue(@NonNull FrameCallback callback, long currentTime) {
         long startTime = mDelayedStartTime.getLong(callback);
         if (startTime == 0) {
             return true;
@@ -153,7 +153,7 @@ public class AnimationHandler {
         return false;
     }
 
-    void autoCancelBasedOn(@Nonnull ObjectAnimator animator) {
+    void autoCancelBasedOn(@NonNull ObjectAnimator animator) {
         for (int i = mAnimationCallbacks.size() - 1; i >= 0; i--) {
             FrameCallback cb = mAnimationCallbacks.get(i);
             if (cb == null) {

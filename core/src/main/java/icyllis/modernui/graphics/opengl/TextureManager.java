@@ -20,7 +20,7 @@ package icyllis.modernui.graphics.opengl;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.Core;
-import icyllis.modernui.core.NativeImage;
+import icyllis.modernui.graphics.Bitmap;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
@@ -91,7 +91,7 @@ public class TextureManager {
             texture = new GLTexture(GLCore.GL_TEXTURE_2D);
         }
         try (InputStream stream = ModernUI.getInstance().getResourceStream(namespace, path)) {
-            NativeImage image = NativeImage.decode(null, stream);
+            Bitmap image = Bitmap.decode(null, stream);
             create(texture, image, (flags & MIPMAP_MASK) != 0);
         } catch (IOException e) {
             e.printStackTrace();
@@ -111,7 +111,7 @@ public class TextureManager {
     public GLTexture create(@Nonnull InputStream stream, boolean mipmap) {
         GLTexture texture = new GLTexture(GLCore.GL_TEXTURE_2D);
         try (stream) {
-            NativeImage image = NativeImage.decode(null, stream);
+            Bitmap image = Bitmap.decode(null, stream);
             create(texture, image, mipmap);
         } catch (IOException e) {
             e.printStackTrace();
@@ -131,7 +131,7 @@ public class TextureManager {
     public GLTexture create(@Nonnull ReadableByteChannel channel, boolean mipmap) {
         GLTexture texture = new GLTexture(GLCore.GL_TEXTURE_2D);
         try (channel) {
-            NativeImage image = NativeImage.decode(null, channel);
+            Bitmap image = Bitmap.decode(null, channel);
             create(texture, image, mipmap);
         } catch (IOException e) {
             e.printStackTrace();
@@ -139,14 +139,14 @@ public class TextureManager {
         return texture;
     }
 
-    private void create(@Nonnull GLTexture texture, @Nonnull NativeImage image, boolean mipmap) {
+    private void create(@Nonnull GLTexture texture, @Nonnull Bitmap image, boolean mipmap) {
         int width = image.getWidth();
         int height = image.getHeight();
         texture.setDimension(width, height, 1);
         if (Core.isOnRenderThread()) {
             texture.allocate2D(image.getInternalGlFormat(), width, height, mipmap ? 4 : 0);
             texture.upload(0, 0, 0, width, height, 0,
-                    0, 0, 1, image.getGlFormat(), GLCore.GL_UNSIGNED_BYTE, image.getPixels());
+                    0, 0, 1, image.getExternalGlFormat(), GLCore.GL_UNSIGNED_BYTE, image.getPixels());
             texture.setFilter(true, true);
             if (mipmap) {
                 texture.generateMipmap();
@@ -159,7 +159,7 @@ public class TextureManager {
                     int h = image.getHeight();
                     texture.allocate2D(image.getInternalGlFormat(), w, h, 4);
                     texture.upload(0, 0, 0, w, h, 0,
-                            0, 0, 1, image.getGlFormat(), GLCore.GL_UNSIGNED_BYTE, image.getPixels());
+                            0, 0, 1, image.getExternalGlFormat(), GLCore.GL_UNSIGNED_BYTE, image.getPixels());
                     texture.setFilter(true, true);
                     texture.generateMipmap();
                     image.close();
@@ -170,7 +170,7 @@ public class TextureManager {
                     int h = image.getHeight();
                     texture.allocate2D(image.getInternalGlFormat(), w, h, 0);
                     texture.upload(0, 0, 0, w, h, 0,
-                            0, 0, 1, image.getGlFormat(), GLCore.GL_UNSIGNED_BYTE, image.getPixels());
+                            0, 0, 1, image.getExternalGlFormat(), GLCore.GL_UNSIGNED_BYTE, image.getPixels());
                     texture.setFilter(true, true);
                     image.close();
                 });

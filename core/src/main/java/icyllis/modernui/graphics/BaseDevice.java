@@ -18,8 +18,8 @@
 
 package icyllis.modernui.graphics;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 
 /**
  * Base class for drawing devices.
@@ -48,9 +48,9 @@ public abstract class BaseDevice extends MatrixProvider {
 
     /**
      * Return ImageInfo for this device. If the canvas is not backed by GPU,
-     * then the info's ColorType will be {@link ImageInfo#ColorType_Unknown}.
+     * then the info's ColorType will be {@link ImageInfo#CT_UNKNOWN}.
      */
-    @Nonnull
+    @NonNull
     public final ImageInfo imageInfo() {
         return mInfo;
     }

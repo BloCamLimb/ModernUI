@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,96 +16,92 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.core;
+package icyllis.modernui.graphics;
 
 import com.ibm.icu.text.DateFormat;
 import com.ibm.icu.text.SimpleDateFormat;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.annotation.RenderThread;
-import icyllis.modernui.graphics.Image;
-import icyllis.modernui.graphics.MathUtil;
+import icyllis.modernui.annotation.*;
+import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.opengl.GLFramebuffer;
 import icyllis.modernui.graphics.opengl.GLTexture;
 import org.lwjgl.PointerBuffer;
-import org.lwjgl.stb.STBIWriteCallback;
-import org.lwjgl.stb.STBIWriteCallbackI;
-import org.lwjgl.stb.STBImage;
-import org.lwjgl.stb.STBImageWrite;
+import org.lwjgl.stb.*;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.Cleaner;
 import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.*;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.function.LongConsumer;
 import java.util.stream.Collectors;
 
 import static icyllis.modernui.graphics.opengl.GLCore.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
 /**
- * Represents a native image, with its image data in native. It is used for operations
- * on the client side, such as reading from/writing to a stream/channel. Compared
- * with {@link Image Images}, this data is completely stored in RAM with an
- * uncompressed format. Losing the reference of a native image object will automatically
- * free the native memory.
+ * Describes a 2D raster image, with its pixels in native memory. It is used for
+ * operations totally on the CPU side, such as decoding or encoding. Compared
+ * with {@link Image}, Bitmap data is completely backed by CPU memory with an
+ * uncompressed format.
  */
 @SuppressWarnings("unused")
-public final class NativeImage implements AutoCloseable {
+public final class Bitmap extends Pixmap implements AutoCloseable {
 
-    public static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyyMMddHHmmss");
+    public static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss");
 
-    @Nonnull
+    @NonNull
     private final Format mFormat;
-
-    private final int mWidth;
-    private final int mHeight;
 
     private Ref mRef;
 
-    /**
-     * Creates a native image, the type of all components is unsigned byte.
-     *
-     * @param format number of channels
-     * @param width  width in pixels, ranged from 1 to 16384
-     * @param height height in pixels, ranged from 1 to 16384
-     * @param clear  {@code true} to initialize pixels data to 0, or just allocate memory
-     * @throws IllegalArgumentException width or height out of range
-     */
-    public NativeImage(@Nonnull Format format, int width, int height, boolean clear) {
-        if (width <= 0 || height <= 0) {
-            throw new IllegalArgumentException("Image size must be positive");
-        }
-        if (width > 16384) {
-            throw new IllegalArgumentException("Image width is too large");
-        }
-        if (height > 16384) {
-            throw new IllegalArgumentException("Image height is too large");
-        }
+    private Bitmap(@NonNull Format format, @NonNull ImageInfo info, long addr, int stride,
+                   @NonNull LongConsumer freeFn) {
+        super(info, addr, stride);
         mFormat = format;
-        mWidth = width;
-        mHeight = height;
-        mRef = new Ref(this, format.channels * width * height, clear);
+        mRef = new SafeRef(this, info.width(), info.height(), addr, stride, freeFn);
     }
 
-    private NativeImage(@Nonnull Format format, int width, int height, @Nonnull ByteBuffer data) throws IOException {
-        if (data.capacity() != format.channels * width * height) {
-            throw new IOException("Not tightly packed (should this happen?)");
+    /**
+     * Creates a bitmap and its allocation, the type of all components is unsigned byte.
+     *
+     * @param width  width in pixels, ranged from 1 to 32768
+     * @param height height in pixels, ranged from 1 to 32768
+     * @param format number of channels
+     * @throws IllegalArgumentException width or height out of range
+     */
+    @NonNull
+    public static Bitmap createBitmap(@Size(min = 1, max = 32768) int width,
+                                      @Size(min = 1, max = 32768) int height,
+                                      @NonNull Format format) {
+        if (width <= 0 || height <= 0) {
+            throw new IllegalArgumentException("Image dimensions " + width + "x" + height
+                    + " must be positive");
         }
-        mFormat = format;
-        mWidth = width;
-        mHeight = height;
-        mRef = new Ref(this, MemoryUtil.memAddress(data));
+        if (width > 32768 || height > 32768) {
+            throw new IllegalArgumentException("Image dimensions " + width + "x" + height
+                    + " must be less than or equal to 32768");
+        }
+        long size = (long) format.channels * width * height;
+        if (size > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("Image allocation size " + size
+                    + " must be less than or equal to 2147483647 bytes");
+        }
+        final long address = nmemCalloc(size, 1);
+        if (address == NULL) {
+            throw new OutOfMemoryError("Failed to allocate " + size + " bytes");
+        }
+        return new Bitmap(format,
+                ImageInfo.make(width, height, format.colorType, ImageInfo.AT_PREMUL,
+                        ColorSpace.get(ColorSpace.Named.SRGB)),
+                address, format.channels * width, MemoryUtil::nmemFree);
     }
 
     /**
@@ -138,14 +134,14 @@ public final class NativeImage implements AutoCloseable {
     }
 
     /**
-     * Display a file save dialog to select the path to save this native image.
+     * Display a file save dialog to select the path to save this bitmap.
      *
      * @param format the format used as a file filter
      * @param name   the file name without extension name
      * @return the path or {@code null} if selects nothing
      */
     @Nullable
-    public static String saveDialogGet(@Nonnull SaveFormat format, @Nullable String name) {
+    public static String saveDialogGet(@NonNull SaveFormat format, @Nullable String name) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             PointerBuffer filters = format.getFilters(stack);
             return TinyFileDialogs.tinyfd_saveFileDialog(null,
@@ -154,24 +150,24 @@ public final class NativeImage implements AutoCloseable {
     }
 
     /**
-     * Opens a file select dialog, then decodes the selected file and creates a native image,
+     * Opens a file select dialog, then decodes the selected file and creates a bitmap,
      * using format in file.
      *
-     * @return a native image or {@code null} if selects nothing
+     * @return a bitmap or {@code null} if selects nothing
      */
     @Nullable
-    public static NativeImage openDialog() throws IOException {
+    public static Bitmap openDialog() throws IOException {
         return openDialog(null);
     }
 
     /**
-     * Opens a file select dialog, then decodes the selected file and creates a native image.
+     * Opens a file select dialog, then decodes the selected file and creates a bitmap.
      *
      * @param format the format to convert to, or {@code null} to use format in file
-     * @return a native image or {@code null} if selects nothing
+     * @return a bitmap or {@code null} if selects nothing
      */
     @Nullable
-    public static NativeImage openDialog(@Nullable Format format) throws IOException {
+    public static Bitmap openDialog(@Nullable Format format) throws IOException {
         String path = openDialogGet();
         if (path != null) {
             try (FileChannel channel = FileChannel.open(Path.of(path), StandardOpenOption.READ)) {
@@ -182,57 +178,57 @@ public final class NativeImage implements AutoCloseable {
     }
 
     /**
-     * Creates a native image whose image downloaded from the given texture. The image of
+     * Creates a bitmap whose image downloaded from the given texture. The image of
      * the level-of-detail 0 will be taken.
      *
-     * @param format  the native image format to convert the image to
+     * @param format  the bitmap format to convert the image to
      * @param texture the texture to download from
      * @param flipY   flip the image vertically, such as the texture is from a framebuffer
-     * @return the created native image
+     * @return the created bitmap
      */
-    @Nonnull
+    @NonNull
     @RenderThread
-    public static NativeImage download(@Nonnull Format format, @Nonnull GLTexture texture, boolean flipY) {
+    public static Bitmap download(@NonNull Format format, @NonNull GLTexture texture, boolean flipY) {
         Core.checkRenderThread();
         final int width = texture.getWidth();
         final int height = texture.getHeight();
-        final NativeImage nativeImage = new NativeImage(format, width, height, false);
-        final long p = nativeImage.getPixels();
+        final Bitmap bitmap = createBitmap(width, height, format);
+        final long addr = bitmap.getPixels();
         glPixelStorei(GL_PACK_ROW_LENGTH, 0);
         glPixelStorei(GL_PACK_SKIP_ROWS, 0);
         glPixelStorei(GL_PACK_SKIP_PIXELS, 0);
         glPixelStorei(GL_PACK_ALIGNMENT, 1);
-        glGetTextureImage(texture.get(), 0, format.glFormat, GL_UNSIGNED_BYTE,
-                nativeImage.getSize(), p);
+        glGetTextureImage(texture.get(), 0, format.externalGlFormat, GL_UNSIGNED_BYTE,
+                bitmap.getSize(), addr);
         if (flipY) {
             final int stride = width * format.channels;
             final long temp = nmemAllocChecked(stride);
             for (int i = 0, e = height >> 1; i < e; i++) {
                 final int a = i * stride;
                 final int b = (height - i - 1) * stride;
-                memCopy(p + a, temp, stride);
-                memCopy(p + b, p + a, stride);
-                memCopy(temp, p + b, stride);
+                memCopy(addr + a, temp, stride);
+                memCopy(addr + b, addr + a, stride);
+                memCopy(temp, addr + b, stride);
             }
             nmemFree(temp);
         }
-        return nativeImage;
+        return bitmap;
     }
 
     /**
-     * Creates a native image whose image downloaded from the given off-screen rendering target
+     * Creates a bitmap whose image downloaded from the given off-screen rendering target
      * bound as a read framebuffer.
      *
-     * @param format      the native image format to convert the image to
+     * @param format      the bitmap format to convert the image to
      * @param framebuffer the framebuffer to download from
      * @param colorBuffer the color attachment to read
      * @param flipY       flip the image vertically, such as the texture is from a framebuffer
-     * @return the created native image
+     * @return the created bitmap
      */
-    @Nonnull
+    @NonNull
     @RenderThread
-    public static NativeImage download(@Nonnull Format format, @Nonnull GLFramebuffer framebuffer,
-                                       int colorBuffer, boolean flipY) {
+    public static Bitmap download(@NonNull Format format, @NonNull GLFramebuffer framebuffer,
+                                  int colorBuffer, boolean flipY) {
         Core.checkRenderThread();
         if (framebuffer.isMultisampled()) {
             throw new IllegalArgumentException("Cannot get pixels from a multisampling target");
@@ -240,15 +236,15 @@ public final class NativeImage implements AutoCloseable {
         final GLFramebuffer.Attachment attachment = framebuffer.getAttachment(colorBuffer);
         final int width = attachment.getWidth();
         final int height = attachment.getHeight();
-        final NativeImage nativeImage = new NativeImage(format, width, height, false);
-        final long p = nativeImage.getPixels();
+        final Bitmap bitmap = createBitmap(width, height, format);
+        final long p = bitmap.getPixels();
         framebuffer.bindRead();
         framebuffer.setReadBuffer(colorBuffer);
         glPixelStorei(GL_PACK_ROW_LENGTH, 0);
         glPixelStorei(GL_PACK_SKIP_ROWS, 0);
         glPixelStorei(GL_PACK_SKIP_PIXELS, 0);
         glPixelStorei(GL_PACK_ALIGNMENT, 1);
-        glReadPixels(0, 0, width, height, format.glFormat, GL_UNSIGNED_BYTE, p);
+        glReadPixels(0, 0, width, height, format.externalGlFormat, GL_UNSIGNED_BYTE, p);
         if (flipY) {
             final int stride = width * format.channels;
             final long temp = nmemAllocChecked(stride);
@@ -261,7 +257,7 @@ public final class NativeImage implements AutoCloseable {
             }
             nmemFree(temp);
         }
-        return nativeImage;
+        return bitmap;
     }
 
     /**
@@ -270,14 +266,14 @@ public final class NativeImage implements AutoCloseable {
      * @param format  the format to convert to, or {@code null} to use format in file
      * @param channel input channel
      */
-    @Nonnull
-    public static NativeImage decode(@Nullable Format format, @Nonnull ReadableByteChannel channel) throws IOException {
+    @NonNull
+    public static Bitmap decode(@Nullable Format format, @NonNull ReadableByteChannel channel) throws IOException {
         ByteBuffer p = null;
         try (channel) {
             p = Core.readBuffer(channel);
             return decode(format, p.rewind());
         } finally {
-            MemoryUtil.memFree(p);
+            memFree(p);
         }
     }
 
@@ -287,36 +283,45 @@ public final class NativeImage implements AutoCloseable {
      * @param format the format to convert to, or {@code null} to use format in file
      * @param stream input stream
      */
-    @Nonnull
-    public static NativeImage decode(@Nullable Format format, @Nonnull InputStream stream) throws IOException {
+    @NonNull
+    public static Bitmap decode(@Nullable Format format, @NonNull InputStream stream) throws IOException {
         ByteBuffer p = null;
         try (stream) {
             p = Core.readBuffer(stream);
             return decode(format, p.rewind());
         } finally {
-            MemoryUtil.memFree(p);
+            memFree(p);
         }
     }
 
     // this method doesn't close/free the buffer
-    @Nonnull
-    public static NativeImage decode(@Nullable Format format, @Nonnull ByteBuffer buffer) throws IOException {
+    @NonNull
+    public static Bitmap decode(@Nullable Format format, @NonNull ByteBuffer buffer) throws IOException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            IntBuffer width = stack.mallocInt(1);
-            IntBuffer height = stack.mallocInt(1);
-            IntBuffer channels = stack.mallocInt(1);
-            ByteBuffer data = STBImage.stbi_load_from_memory(buffer, width, height, channels,
-                    format == null ? 0 : format.channels);
-            if (data == null) {
+            long pWidth = stack.nmalloc(4, 4),
+                    pHeight = stack.nmalloc(4, 4),
+                    pChannels = stack.nmalloc(4, 4);
+            long address = STBImage.nstbi_load_from_memory(
+                    memAddress(buffer), buffer.remaining(), pWidth, pHeight, pChannels,
+                    format == null ? STBImage.STBI_default : format.channels);
+            if (address == NULL) {
                 throw new IOException("Failed to read image: " + STBImage.stbi_failure_reason());
             }
-            assert format == null || Format.of(channels.get(0)) == format;
-            return new NativeImage(format == null ? Format.of(channels.get(0)) : format,
-                    width.get(0), height.get(0), data);
+            int width = memGetInt(pWidth),
+                    height = memGetInt(pHeight),
+                    channels = memGetInt(pChannels);
+            assert format == null || Format.of(channels) == format;
+            if (format == null) {
+                format = Format.of(channels);
+            }
+            return new Bitmap(format,
+                    ImageInfo.make(width, height, format.colorType, ImageInfo.AT_UNPREMUL,
+                            ColorSpace.get(ColorSpace.Named.SRGB)),
+                    address, format.channels * width, STBImage::nstbi_image_free);
         }
     }
 
-    @Nonnull
+    @NonNull
     public Format getFormat() {
         return mFormat;
     }
@@ -330,8 +335,8 @@ public final class NativeImage implements AutoCloseable {
      *
      * @return pixels format in OpenGL
      */
-    public int getGlFormat() {
-        return mFormat.glFormat;
+    public int getExternalGlFormat() {
+        return mFormat.externalGlFormat;
     }
 
     /**
@@ -344,21 +349,21 @@ public final class NativeImage implements AutoCloseable {
     }
 
     public int getWidth() {
-        return mWidth;
+        return mRef.mWidth;
     }
 
     public int getHeight() {
-        return mHeight;
+        return mRef.mHeight;
     }
 
     public int getSize() {
-        return mFormat.channels * mWidth * mHeight;
+        return mFormat.channels * getWidth() * getHeight();
     }
 
     /**
-     * The head address of {@code unsigned char *pixels} in native.
+     * The base address of {@code unsigned char *pixels} in native.
      *
-     * @return the pointer of pixels data, or NULL if released
+     * @return the pointer of pixel data, or NULL if released
      */
     public long getPixels() {
         if (mRef != null) {
@@ -368,38 +373,49 @@ public final class NativeImage implements AutoCloseable {
     }
 
     /**
-     * Save this native image to specified path as specified format. This will
+     * The ref of current pixel data, which may be shared across instances.
+     * Calling this method won't affect the ref cnt.
+     *
+     * @return the ref of pixel data, or null if released
+     */
+    @SharedPtr
+    public Ref getRef() {
+        return mRef;
+    }
+
+    /**
+     * Save this bitmap to specified path as specified format. This will
      * open a save dialog to select the path, with a quality of 100 for JPEG format.
      *
      * @param format the format of the saved image
      * @return true if selected a path, otherwise canceled
      */
-    public boolean saveDialog(@Nonnull SaveFormat format) throws IOException {
+    public boolean saveDialog(@NonNull SaveFormat format) throws IOException {
         return saveDialog(format, null, 100);
     }
 
     /**
-     * Save this native image to specified path as specified format. This will
-     * open a save dialog to select the path, with a quality of 100 for JPEG format.
+     * Save this bitmap to specified path as specified format. This will
+     * open a save dialog to select the path, with a default quality for JPEG format.
      *
      * @param format the format of the saved image
      * @param name   the file name without extension name
      * @return true if selected a path, otherwise canceled
      */
-    public boolean saveDialog(@Nonnull SaveFormat format, @Nullable String name) throws IOException {
-        return saveDialog(format, name, 100);
+    public boolean saveDialog(@NonNull SaveFormat format, @Nullable String name) throws IOException {
+        return saveDialog(format, name, 0);
     }
 
     /**
-     * Save this native image to specified path as specified format. This will
+     * Save this bitmap to specified path as specified format. This will
      * open a save dialog to select the path.
      *
      * @param format  the format of the saved image
      * @param name    the file name without extension name
-     * @param quality the compress quality, 1-100, only work for JPEG format.
+     * @param quality the compress quality, 0-100, only work for JPEG format.
      * @return true if selected a path, otherwise canceled
      */
-    public boolean saveDialog(@Nonnull SaveFormat format, @Nullable String name, int quality) throws IOException {
+    public boolean saveDialog(@NonNull SaveFormat format, @Nullable String name, int quality) throws IOException {
         String path = saveDialogGet(format, name);
         if (path != null) {
             saveToPath(Path.of(path), format, quality);
@@ -409,21 +425,24 @@ public final class NativeImage implements AutoCloseable {
     }
 
     /**
-     * Save this native image to specified path with specified format.
+     * Save this bitmap to specified path with specified format.
      *
      * @param path    the image path
      * @param format  the format of the saved image
-     * @param quality the compress quality, 1-100, only work for JPEG format.
+     * @param quality the compress quality, 0-100, only work for JPEG format.
      * @throws IOException saving is not successful
      */
-    public void saveToPath(@Nonnull Path path, @Nonnull SaveFormat format, int quality) throws IOException {
+    public void saveToPath(@NonNull Path path, @NonNull SaveFormat format, int quality) throws IOException {
         checkReleased();
-        final IOException[] exception = new IOException[1];
-        final FileChannel channel = FileChannel.open(path,
+        if (quality < 0 || quality > 100) {
+            throw new IllegalArgumentException("Bad quality " + quality);
+        }
+        final var exception = new IOException[1];
+        final var channel = FileChannel.open(path,
                 StandardOpenOption.WRITE,
                 StandardOpenOption.CREATE,
                 StandardOpenOption.TRUNCATE_EXISTING);
-        final STBIWriteCallback func = STBIWriteCallback.create((ctx, data, size) -> {
+        final var func = STBIWriteCallback.create((__, data, size) -> {
             try {
                 channel.write(STBIWriteCallback.getData(data, size));
             } catch (IOException e) {
@@ -431,40 +450,73 @@ public final class NativeImage implements AutoCloseable {
             }
         });
         try (channel; func) {
-            final boolean success = format.write(func, mWidth, mHeight, mFormat, mRef.mPixels, quality);
+            final boolean success = format.write(func, mRef.mWidth, mRef.mHeight, mFormat, mRef.mPixels, quality);
             if (success) {
                 if (exception[0] != null) {
                     throw new IOException("An error occurred while saving image to the path \"" +
                             path.toAbsolutePath() + "\"", exception[0]);
                 }
             } else {
-                throw new IOException("Failed to save image to the path \"" +
+                throw new IOException("Failed to encode image to the path \"" +
                         path.toAbsolutePath() + "\": " + STBImage.stbi_failure_reason());
+            }
+        }
+    }
+
+    /**
+     * Save this bitmap to specified channel with specified format. The channel
+     * will NOT be closed by this method.
+     *
+     * @param channel the channel
+     * @param format  the format of the saved image
+     * @param quality the compress quality, 0-100, only work for JPEG format.
+     * @throws IOException saving is not successful
+     */
+    public void saveToChannel(@NonNull WritableByteChannel channel,
+                              @NonNull SaveFormat format, int quality) throws IOException {
+        checkReleased();
+        if (quality < 0 || quality > 100) {
+            throw new IllegalArgumentException("Bad quality " + quality);
+        }
+        final var exception = new IOException[1];
+        final var func = STBIWriteCallback.create((__, data, size) -> {
+            try {
+                channel.write(STBIWriteCallback.getData(data, size));
+            } catch (IOException e) {
+                exception[0] = e;
+            }
+        });
+        try (func) {
+            final boolean success = format.write(func, mRef.mWidth, mRef.mHeight, mFormat, mRef.mPixels, quality);
+            if (success) {
+                if (exception[0] != null) {
+                    throw new IOException("An error occurred while saving image", exception[0]);
+                }
+            } else {
+                throw new IOException("Failed to encode image: " + STBImage.stbi_failure_reason());
             }
         }
     }
 
     private void checkReleased() {
         if (mRef == null) {
-            throw new IllegalStateException("Cannot operate released native image");
+            throw new IllegalStateException("Cannot operate released bitmap");
         }
     }
 
     @Override
     public void close() {
         if (mRef != null) {
-            mRef.mCleanup.clean();
+            mRef.safeClean();
             mRef = null;
         }
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
-        return "NativeImage{" +
+        return "Bitmap{" +
                 "mFormat=" + mFormat +
-                ", mWidth=" + mWidth +
-                ", mHeight=" + mHeight +
                 ", mRef=" + mRef +
                 '}';
     }
@@ -473,24 +525,26 @@ public final class NativeImage implements AutoCloseable {
      * Describes the number of channels/components in memory.
      */
     public enum Format {
-        RED(1, GL_RED, GL_R8),
-        RG(2, GL_RG, GL_RG8),
-        RGB(3, GL_RGB, GL_RGB8),
-        RGBA(4, GL_RGBA, GL_RGBA8);
+        GRAY_8(1, GL_RED, GL_R8, ImageInfo.CT_GRAY_8),
+        GRAY_ALPHA_88(2, 0, 0, ImageInfo.CT_GRAY_ALPHA_88), // no equivalent
+        RGB_888(3, GL_RGB, GL_RGB8, ImageInfo.CT_RGB_888),
+        RGBA_8888(4, GL_RGBA, GL_RGBA8, ImageInfo.CT_RGBA_8888);
 
         private static final Format[] VALUES = values();
 
         public final int channels;
-        public final int glFormat;
+        public final int externalGlFormat;
         public final int internalGlFormat;
+        public final int colorType;
 
-        Format(int channels, int glFormat, int internalGlFormat) {
+        Format(int channels, int externalGlFormat, int internalGlFormat, int colorType) {
             this.channels = channels;
-            this.glFormat = glFormat;
+            this.externalGlFormat = externalGlFormat;
             this.internalGlFormat = internalGlFormat;
+            this.colorType = colorType;
         }
 
-        @Nonnull
+        @NonNull
         public static Format of(int channels) {
             if (channels < 1 || channels > 4) {
                 throw new IllegalArgumentException("Specified channels should be ranged from 1 to 4 but " + channels);
@@ -500,7 +554,7 @@ public final class NativeImage implements AutoCloseable {
     }
 
     /**
-     * Lists supported formats a native image can be saved as.
+     * Lists supported formats a bitmap can be saved as.
      */
     public enum SaveFormat {
         /**
@@ -509,7 +563,7 @@ public final class NativeImage implements AutoCloseable {
          */
         PNG("*.png") {
             @Override
-            public boolean write(@Nonnull STBIWriteCallbackI func, int width, int height, @Nonnull Format format,
+            public boolean write(@NonNull STBIWriteCallbackI func, int width, int height, @NonNull Format format,
                                  long data, int quality) {
                 // leave stride as 0, it will use (width * channels)
                 return STBImageWrite.nstbi_write_png_to_func(func.address(),
@@ -523,7 +577,7 @@ public final class NativeImage implements AutoCloseable {
          */
         TGA("*.tga", "*.vda", "*.icb", "*.vst") {
             @Override
-            public boolean write(@Nonnull STBIWriteCallbackI func, int width, int height, @Nonnull Format format,
+            public boolean write(@NonNull STBIWriteCallbackI func, int width, int height, @NonNull Format format,
                                  long data, int quality) {
                 return STBImageWrite.nstbi_write_tga_to_func(func.address(),
                         NULL, width, height, format.channels, data) != 0;
@@ -536,7 +590,7 @@ public final class NativeImage implements AutoCloseable {
          */
         BMP("*.bmp", "*.dib") {
             @Override
-            public boolean write(@Nonnull STBIWriteCallbackI func, int width, int height, @Nonnull Format format,
+            public boolean write(@NonNull STBIWriteCallbackI func, int width, int height, @NonNull Format format,
                                  long data, int quality) {
                 return STBImageWrite.nstbi_write_bmp_to_func(func.address(),
                         NULL, width, height, format.channels, data) != 0;
@@ -550,9 +604,8 @@ public final class NativeImage implements AutoCloseable {
          */
         JPEG("*.jpg", "*.jpeg", "*.jpe", "*.jfif", "*.jif") {
             @Override
-            public boolean write(@Nonnull STBIWriteCallbackI func, int width, int height, @Nonnull Format format,
+            public boolean write(@NonNull STBIWriteCallbackI func, int width, int height, @NonNull Format format,
                                  long data, int quality) {
-                quality = MathUtil.clamp(quality, 1, 120);
                 return STBImageWrite.nstbi_write_jpg_to_func(func.address(),
                         NULL, width, height, format.channels, data, quality) != 0;
             }
@@ -560,18 +613,18 @@ public final class NativeImage implements AutoCloseable {
 
         private static final SaveFormat[] VALUES = values();
 
-        @Nonnull
+        @NonNull
         private final String[] filters;
 
-        SaveFormat(@Nonnull String... filters) {
+        SaveFormat(@NonNull String... filters) {
             this.filters = filters;
         }
 
-        public abstract boolean write(@Nonnull STBIWriteCallbackI func, int width, int height,
-                                      @Nonnull Format format, long data, int quality) throws IOException;
+        public abstract boolean write(@NonNull STBIWriteCallbackI func, int width, int height,
+                                      @NonNull Format format, long data, int quality) throws IOException;
 
-        @Nonnull
-        private static PointerBuffer getAllFilters(@Nonnull MemoryStack stack) {
+        @NonNull
+        private static PointerBuffer getAllFilters(@NonNull MemoryStack stack) {
             int length = 0;
             for (SaveFormat format : VALUES) {
                 length += format.filters.length;
@@ -586,14 +639,14 @@ public final class NativeImage implements AutoCloseable {
             return buffer.rewind();
         }
 
-        @Nonnull
+        @NonNull
         private static String getAllDescription() {
             return "Images (" + Arrays.stream(VALUES).flatMap(f -> Arrays.stream(f.filters))
                     .sorted().collect(Collectors.joining(";")) + ")";
         }
 
-        @Nonnull
-        private PointerBuffer getFilters(@Nonnull MemoryStack stack) {
+        @NonNull
+        private PointerBuffer getFilters(@NonNull MemoryStack stack) {
             PointerBuffer buffer = stack.mallocPointer(filters.length);
             for (String filter : filters) {
                 stack.nUTF8Safe(filter, true);
@@ -602,55 +655,102 @@ public final class NativeImage implements AutoCloseable {
             return buffer.rewind();
         }
 
-        @Nonnull
+        @NonNull
         private String getFileName(@Nullable String name) {
-            return name == null ? DATE_FORMAT.format(new Date()) : name + filters[0].substring(1);
+            return (name == null
+                    ? "image-" + DATE_FORMAT.format(new Date())
+                    : name)
+                    + filters[0].substring(1);
         }
 
-        @Nonnull
+        @NonNull
         private String getDescription() {
             return name() + " (" + String.join(", ", filters) + ")";
         }
     }
 
-    private static class Ref implements Runnable {
+    /**
+     * This class is the smart container for pixel memory, and is used with {@link Bitmap}.
+     * This class can be shared/accessed between multiple threads.
+     */
+    public static class Ref extends RefCnt {
 
+        private final int mWidth;
+        private final int mHeight;
         private final long mPixels;
-        private final boolean mFromSTB;
+        private final int mStride;
+        @NonNull
+        private final LongConsumer mFreeFn;
+
+        private Ref(int width, int height, long pixels, int stride,
+                    @NonNull LongConsumer freeFn) {
+            mWidth = width;
+            mHeight = height;
+            mPixels = pixels;
+            mStride = stride;
+            mFreeFn = freeFn;
+        }
+
+        // used with Bitmap
+        void safeClean() {
+            unref();
+        }
+
+        @Override
+        protected void dispose() {
+            mFreeFn.accept(mPixels);
+        }
+
+        public int getWidth() {
+            return mWidth;
+        }
+
+        public int getHeight() {
+            return mHeight;
+        }
+
+        /**
+         * @return the address whether freed or not
+         */
+        public long getPixels() {
+            return mPixels;
+        }
+
+        public int getStride() {
+            return mStride;
+        }
+
+        @NonNull
+        @Override
+        public String toString() {
+            return "PixelRef{" +
+                    "address=0x" + Long.toHexString(mPixels) +
+                    ", dimensions=" + mWidth + "x" + mHeight +
+                    ", stride=" + mStride +
+                    '}';
+        }
+    }
+
+    // this ensures unref being called when Bitmap become phantom-reachable
+    // but never called to close
+    private static class SafeRef extends Ref implements Runnable {
+
         private final Cleaner.Cleanable mCleanup;
 
-        private Ref(NativeImage owner, int size, boolean init) {
-            mFromSTB = false;
-            if (init) {
-                mPixels = MemoryUtil.nmemCallocChecked(1L, size);
-            } else {
-                mPixels = MemoryUtil.nmemAllocChecked(size);
-            }
+        private SafeRef(@NonNull Bitmap owner, int width, int height,
+                        long pixels, int stride, @NonNull LongConsumer freeFn) {
+            super(width, height, pixels, stride, freeFn);
             mCleanup = ModernUI.registerCleanup(owner, this);
         }
 
-        private Ref(NativeImage owner, long pointer) {
-            mFromSTB = true;
-            mPixels = pointer;
-            mCleanup = ModernUI.registerCleanup(owner, this);
+        @Override
+        void safeClean() {
+            mCleanup.clean();
         }
 
         @Override
         public void run() {
-            if (mFromSTB) {
-                STBImage.nstbi_image_free(mPixels);
-            } else {
-                MemoryUtil.nmemFree(mPixels);
-            }
-        }
-
-        @Nonnull
-        @Override
-        public String toString() {
-            return "Ref{" +
-                    "mPixels=0x" + Long.toHexString(mPixels) +
-                    ", mFromSTB=" + mFromSTB +
-                    '}';
+            unref();
         }
     }
 }

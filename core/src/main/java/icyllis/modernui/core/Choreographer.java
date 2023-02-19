@@ -20,15 +20,12 @@ package icyllis.modernui.core;
 
 import icyllis.modernui.animation.AnimationUtils;
 import icyllis.modernui.animation.ValueAnimator;
-import icyllis.modernui.annotation.RenderThread;
+import icyllis.modernui.annotation.*;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.view.View;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.ApiStatus;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import static icyllis.modernui.ModernUI.LOGGER;
 
@@ -99,7 +96,7 @@ public final class Choreographer {
 
     // All frame callbacks posted by applications have this token.
     private static final Object FRAME_CALLBACK_TOKEN = new Object() {
-        @Nonnull
+        @NonNull
         @Override
         public String toString() {
             return "FRAME_CALLBACK_TOKEN";
@@ -148,7 +145,7 @@ public final class Choreographer {
     private long mLastFrameTimeNanos;
     private long mTimestampNanos;
 
-    private Choreographer(@Nonnull Looper looper) {
+    private Choreographer(@NonNull Looper looper) {
         mHandler = new Handler(looper, this::handleMessage);
 
         mCallbackQueues = new CallbackQueue[CALLBACK_LAST + 1];
@@ -165,7 +162,7 @@ public final class Choreographer {
      * @return The choreographer for this thread.
      * @throws IllegalStateException if the thread does not have a looper
      */
-    @Nonnull
+    @NonNull
     public static Choreographer getInstance() {
         return sThreadInstance.get();
     }
@@ -181,7 +178,7 @@ public final class Choreographer {
      * @param token        The callback token, or null if none.
      * @see #removeCallbacks(int, Runnable, Object)
      */
-    public void postCallback(int callbackType, @Nonnull Runnable action, @Nullable Object token) {
+    public void postCallback(int callbackType, @NonNull Runnable action, @Nullable Object token) {
         postCallbackDelayedInternal(callbackType, action, token, 0);
     }
 
@@ -197,12 +194,12 @@ public final class Choreographer {
      * @param delayMillis  The delay time in milliseconds.
      * @see #removeCallbacks(int, Runnable, Object)
      */
-    public void postCallbackDelayed(int callbackType, @Nonnull Runnable action, @Nullable Object token,
+    public void postCallbackDelayed(int callbackType, @NonNull Runnable action, @Nullable Object token,
                                     long delayMillis) {
         postCallbackDelayedInternal(callbackType, action, token, delayMillis);
     }
 
-    private void postCallbackDelayedInternal(int callbackType, @Nonnull Object action, @Nullable Object token,
+    private void postCallbackDelayedInternal(int callbackType, @NonNull Object action, @Nullable Object token,
                                              long delayMillis) {
         if (DEBUG_FRAMES) {
             LOGGER.info(MARKER, "PostCallback: type=" + callbackType
@@ -265,7 +262,7 @@ public final class Choreographer {
      * @see #postFrameCallbackDelayed
      * @see #removeFrameCallback
      */
-    public void postFrameCallback(@Nonnull FrameCallback callback) {
+    public void postFrameCallback(@NonNull FrameCallback callback) {
         postCallbackDelayedInternal(CALLBACK_ANIMATION, callback, FRAME_CALLBACK_TOKEN, 0);
     }
 
@@ -280,7 +277,7 @@ public final class Choreographer {
      * @see #postFrameCallback
      * @see #removeFrameCallback
      */
-    public void postFrameCallbackDelayed(@Nonnull FrameCallback callback, long delayMillis) {
+    public void postFrameCallbackDelayed(@NonNull FrameCallback callback, long delayMillis) {
         postCallbackDelayedInternal(CALLBACK_ANIMATION, callback, FRAME_CALLBACK_TOKEN, delayMillis);
     }
 
@@ -291,7 +288,7 @@ public final class Choreographer {
      * @see #postFrameCallback
      * @see #postFrameCallbackDelayed
      */
-    public void removeFrameCallback(@Nonnull FrameCallback callback) {
+    public void removeFrameCallback(@NonNull FrameCallback callback) {
         removeCallbacksInternal(CALLBACK_ANIMATION, callback, FRAME_CALLBACK_TOKEN);
     }
 
@@ -470,8 +467,8 @@ public final class Choreographer {
         }
     }
 
-    @Nonnull
-    private CallbackRecord obtainCallbackLocked(long dueTime, @Nonnull Object action, @Nullable Object token) {
+    @NonNull
+    private CallbackRecord obtainCallbackLocked(long dueTime, @NonNull Object action, @Nullable Object token) {
         CallbackRecord callback = mCallbackPool;
         if (callback == null) {
             callback = new CallbackRecord();
@@ -485,14 +482,14 @@ public final class Choreographer {
         return callback;
     }
 
-    private void recycleCallbackLocked(@Nonnull CallbackRecord callback) {
+    private void recycleCallbackLocked(@NonNull CallbackRecord callback) {
         callback.action = null;
         callback.token = null;
         callback.next = mCallbackPool;
         mCallbackPool = callback;
     }
 
-    private boolean handleMessage(@Nonnull Message msg) {
+    private boolean handleMessage(@NonNull Message msg) {
         switch (msg.what) {
             case MSG_DO_FRAME -> doFrame();
             case MSG_DO_SCHEDULE_CALLBACK -> doScheduleCallback(msg.arg1);
@@ -531,7 +528,7 @@ public final class Choreographer {
          *                       in the {@link Core#timeNanos()} timebase.  Divide this value by {@code 1000000}
          *                       to convert it to the {@link Core#timeMillis()} time base.
          */
-        void doFrame(@Nonnull Choreographer choreographer, long frameTimeNanos);
+        void doFrame(@NonNull Choreographer choreographer, long frameTimeNanos);
     }
 
     private final class CallbackRecord {
@@ -580,7 +577,7 @@ public final class Choreographer {
             return callbacks;
         }
 
-        public void addCallbackLocked(long dueTime, @Nonnull Object action, @Nullable Object token) {
+        public void addCallbackLocked(long dueTime, @NonNull Object action, @Nullable Object token) {
             CallbackRecord callback = obtainCallbackLocked(dueTime, action, token);
             CallbackRecord entry = mHead;
             if (entry == null) {

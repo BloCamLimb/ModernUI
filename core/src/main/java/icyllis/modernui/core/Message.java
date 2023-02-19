@@ -18,7 +18,8 @@
 
 package icyllis.modernui.core;
 
-import javax.annotation.Nonnull;
+import icyllis.modernui.annotation.NonNull;
+
 import java.util.Objects;
 
 /**
@@ -85,7 +86,7 @@ public final class Message {
      * Return a new Message instance from the global pool. Allows us to
      * avoid allocating new objects in many cases.
      */
-    @Nonnull
+    @NonNull
     public static Message obtain() {
         synchronized (sPoolSync) {
             if (sPool != null) {
@@ -107,8 +108,8 @@ public final class Message {
      * @param o Original message to copy.
      * @return A Message object from the global pool.
      */
-    @Nonnull
-    public static Message obtain(@Nonnull Message o) {
+    @NonNull
+    public static Message obtain(@NonNull Message o) {
         Message m = obtain();
         m.what = o.what;
         m.arg1 = o.arg1;
@@ -125,8 +126,8 @@ public final class Message {
      * @param h Handler to assign to the returned Message object's <em>target</em> member.
      * @return A Message object from the global pool.
      */
-    @Nonnull
-    public static Message obtain(@Nonnull Handler h) {
+    @NonNull
+    public static Message obtain(@NonNull Handler h) {
         Message m = obtain();
         m.target = h;
         return m;
@@ -140,8 +141,8 @@ public final class Message {
      * @param callback Runnable that will execute when the message is handled.
      * @return A Message object from the global pool.
      */
-    @Nonnull
-    public static Message obtain(@Nonnull Handler h, @Nonnull Runnable callback) {
+    @NonNull
+    public static Message obtain(@NonNull Handler h, @NonNull Runnable callback) {
         Message m = obtain();
         m.target = h;
         m.callback = callback;
@@ -156,8 +157,8 @@ public final class Message {
      * @param what Value to assign to the <em>what</em> member.
      * @return A Message object from the global pool.
      */
-    @Nonnull
-    public static Message obtain(@Nonnull Handler h, int what) {
+    @NonNull
+    public static Message obtain(@NonNull Handler h, int what) {
         Message m = obtain();
         m.target = h;
         m.what = what;
@@ -173,7 +174,7 @@ public final class Message {
      * @param obj  The <em>object</em> method to set.
      * @return A Message object from the global pool.
      */
-    @Nonnull
+    @NonNull
     public static Message obtain(Handler h, int what, Object obj) {
         Message m = obtain();
         m.target = h;
@@ -192,8 +193,8 @@ public final class Message {
      * @param arg2 The <em>arg2</em> value to set.
      * @return A Message object from the global pool.
      */
-    @Nonnull
-    public static Message obtain(@Nonnull Handler h, int what, int arg1, int arg2) {
+    @NonNull
+    public static Message obtain(@NonNull Handler h, int what, int arg1, int arg2) {
         Message m = obtain();
         m.target = h;
         m.what = what;
@@ -213,7 +214,7 @@ public final class Message {
      * @param obj  The <em>obj</em> value to set.
      * @return A Message object from the global pool.
      */
-    @Nonnull
+    @NonNull
     public static Message obtain(Handler h, int what, int arg1, int arg2, Object obj) {
         Message m = obtain();
         m.target = h;
@@ -361,13 +362,13 @@ public final class Message {
         flags |= FLAG_IN_USE;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         return toString(Core.timeMillis());
     }
 
-    @Nonnull
+    @NonNull
     String toString(long now) {
         StringBuilder b = new StringBuilder();
         b.append("{ when=");

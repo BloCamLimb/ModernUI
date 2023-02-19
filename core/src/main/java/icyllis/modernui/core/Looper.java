@@ -35,12 +35,9 @@
 package icyllis.modernui.core;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.annotation.MainThread;
+import icyllis.modernui.annotation.*;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * Class used to run a message loop for a thread.  Threads by default do
@@ -92,7 +89,7 @@ public final class Looper {
      *
      * @throws RuntimeException initializes twice
      */
-    @Nonnull
+    @NonNull
     public static Looper prepare() {
         if (sThreadLocal.get() != null) {
             throw new RuntimeException("Only one Looper may be created per thread");
@@ -119,7 +116,7 @@ public final class Looper {
     /**
      * Poll and deliver single message, return true if the outer loop should continue.
      */
-    private static boolean poll(@Nonnull final Looper me) {
+    private static boolean poll(@NonNull final Looper me) {
         Message msg = me.mQueue.next(); // might block
         if (msg == null) {
             // No message indicates that the message queue is quitting.
@@ -198,7 +195,7 @@ public final class Looper {
      * @param w the main window.
      */
     @MainThread
-    public static void prepare(@Nonnull MainWindow w) {
+    public static void prepare(@NonNull MainWindow w) {
         Core.checkMainThread();
         if (sMainLooper != null) {
             throw new IllegalStateException();
@@ -236,7 +233,7 @@ public final class Looper {
      *
      * @throws NullPointerException not called from a thread running a Looper
      */
-    @Nonnull
+    @NonNull
     public static MessageQueue myQueue() {
         return sThreadLocal.get().mQueue;
     }
@@ -302,7 +299,7 @@ public final class Looper {
      *
      * @return The looper's thread.
      */
-    @Nonnull
+    @NonNull
     public Thread getThread() {
         return mThread;
     }
@@ -312,12 +309,12 @@ public final class Looper {
      *
      * @return The looper's message queue.
      */
-    @Nonnull
+    @NonNull
     public MessageQueue getQueue() {
         return mQueue;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         return "Looper (" + mThread.getName() + ", tid " + mThread.getId()

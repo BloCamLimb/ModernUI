@@ -18,12 +18,12 @@
 
 package icyllis.modernui.animation;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.ApiStatus;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -217,7 +217,7 @@ public abstract class Animator implements Cloneable {
      *
      * @param listener the listener to be added to the current set of listeners for this animation.
      */
-    public final void addListener(@Nonnull AnimatorListener listener) {
+    public final void addListener(@NonNull AnimatorListener listener) {
         if (mListeners == null) {
             mListeners = new CopyOnWriteArrayList<>();
         }
@@ -230,7 +230,7 @@ public abstract class Animator implements Cloneable {
      * @param listener the listener to be removed from the current set of listeners for this
      *                 animation.
      */
-    public final void removeListener(@Nonnull AnimatorListener listener) {
+    public final void removeListener(@NonNull AnimatorListener listener) {
         if (mListeners == null) {
             return;
         }

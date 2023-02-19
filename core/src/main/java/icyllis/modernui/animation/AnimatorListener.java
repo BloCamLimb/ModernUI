@@ -18,7 +18,7 @@
 
 package icyllis.modernui.animation;
 
-import javax.annotation.Nonnull;
+import icyllis.modernui.annotation.NonNull;
 
 /**
  * <p>An animation listener receives notifications from an animation.
@@ -37,7 +37,7 @@ public interface AnimatorListener {
      * @param animation The started animation.
      * @param isReverse Whether the animation is playing in reverse.
      */
-    default void onAnimationStart(@Nonnull Animator animation, boolean isReverse) {
+    default void onAnimationStart(@NonNull Animator animation, boolean isReverse) {
         onAnimationStart(animation);
     }
 
@@ -53,7 +53,7 @@ public interface AnimatorListener {
      * @param animation The animation which reached its end.
      * @param isReverse Whether the animation is playing in reverse.
      */
-    default void onAnimationEnd(@Nonnull Animator animation, boolean isReverse) {
+    default void onAnimationEnd(@NonNull Animator animation, boolean isReverse) {
         onAnimationEnd(animation);
     }
 
@@ -62,7 +62,7 @@ public interface AnimatorListener {
      *
      * @param animation The started animation.
      */
-    default void onAnimationStart(@Nonnull Animator animation) {
+    default void onAnimationStart(@NonNull Animator animation) {
     }
 
     /**
@@ -71,7 +71,7 @@ public interface AnimatorListener {
      *
      * @param animation The animation which reached its end.
      */
-    default void onAnimationEnd(@Nonnull Animator animation) {
+    default void onAnimationEnd(@NonNull Animator animation) {
     }
 
     /**
@@ -80,7 +80,7 @@ public interface AnimatorListener {
      *
      * @param animation The animation which was canceled.
      */
-    default void onAnimationCancel(@Nonnull Animator animation) {
+    default void onAnimationCancel(@NonNull Animator animation) {
     }
 
     /**
@@ -88,7 +88,7 @@ public interface AnimatorListener {
      *
      * @param animation The animation which was repeated.
      */
-    default void onAnimationRepeat(@Nonnull Animator animation) {
+    default void onAnimationRepeat(@NonNull Animator animation) {
     }
 
     /**
@@ -97,7 +97,7 @@ public interface AnimatorListener {
      * @param animation The animation being paused.
      * @see Animator#pause()
      */
-    default void onAnimationPause(@Nonnull Animator animation) {
+    default void onAnimationPause(@NonNull Animator animation) {
     }
 
     /**
@@ -107,6 +107,6 @@ public interface AnimatorListener {
      * @param animation The animation being resumed.
      * @see Animator#resume()
      */
-    default void onAnimationResume(@Nonnull Animator animation) {
+    default void onAnimationResume(@NonNull Animator animation) {
     }
 }

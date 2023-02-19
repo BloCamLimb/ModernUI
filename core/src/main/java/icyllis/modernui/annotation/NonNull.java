@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,22 +16,23 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.core;
+package icyllis.modernui.annotation;
 
-import icyllis.modernui.annotation.Nullable;
-
-import java.util.Objects;
+import java.lang.annotation.*;
 
 /**
- * An exception type that is thrown when an operation in progress is canceled.
+ * Denotes that a parameter, field or method return value can never be null.
+ * <p>
+ * This is a marker annotation and it has no specific attributes.
  */
-public class OperationCanceledException extends RuntimeException {
-
-    public OperationCanceledException() {
-        this(null);
-    }
-
-    public OperationCanceledException(@Nullable String message) {
-        super(Objects.toString(message, "The operation has been canceled."));
-    }
+@Documented
+@Retention(RetentionPolicy.CLASS)
+@Target({ElementType.METHOD,
+        ElementType.PARAMETER,
+        ElementType.FIELD,
+        ElementType.LOCAL_VARIABLE,
+        ElementType.ANNOTATION_TYPE,
+        ElementType.TYPE_PARAMETER,
+        ElementType.PACKAGE})
+public @interface NonNull {
 }

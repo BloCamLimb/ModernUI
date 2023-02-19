@@ -28,8 +28,6 @@ import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.system.Platform;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.*;
 import java.net.URI;
 import java.net.URL;
@@ -177,7 +175,7 @@ public final class Core {
      *
      * @param r the runnable
      */
-    public static void postOnMainThread(@Nonnull Runnable r) {
+    public static void postOnMainThread(@NonNull Runnable r) {
         if (Looper.getMainLooper() == null) {
             sMainCalls.offer(r);
         } else {
@@ -191,7 +189,7 @@ public final class Core {
      *
      * @param r the runnable
      */
-    public static void executeOnMainThread(@Nonnull Runnable r) {
+    public static void executeOnMainThread(@NonNull Runnable r) {
         if (isOnMainThread()) {
             r.run();
         } else {
@@ -205,7 +203,7 @@ public final class Core {
      *
      * @param r the runnable
      */
-    public static void postOnRenderThread(@Nonnull Runnable r) {
+    public static void postOnRenderThread(@NonNull Runnable r) {
         sRenderCalls.offer(r);
     }
 
@@ -214,7 +212,7 @@ public final class Core {
      *
      * @param r the runnable
      */
-    public static void executeOnRenderThread(@Nonnull Runnable r) {
+    public static void executeOnRenderThread(@NonNull Runnable r) {
         if (isOnRenderThread()) {
             r.run();
         } else {
@@ -287,7 +285,7 @@ public final class Core {
      *
      * @return the event loop
      */
-    @Nonnull
+    @NonNull
     @UiThread
     public static Looper initUiThread() {
         synchronized (Core.class) {
@@ -399,7 +397,7 @@ public final class Core {
      * @return the native pointer to {@code unsigned char *data}
      * @throws IOException some errors occurred while reading
      */
-    @Nonnull
+    @NonNull
     public static ByteBuffer readBuffer(ReadableByteChannel channel) throws IOException {
         ByteBuffer p = null;
         try {
@@ -437,7 +435,7 @@ public final class Core {
      * @return the native pointer to {@code unsigned char *data}
      * @throws IOException some errors occurred while reading
      */
-    @Nonnull
+    @NonNull
     public static ByteBuffer readBuffer(InputStream stream) throws IOException {
         return readBuffer(Channels.newChannel(stream));
     }
@@ -473,7 +471,7 @@ public final class Core {
         return readUTF8(Channels.newChannel(stream));
     }
 
-    public static void openURL(@Nonnull URL url) {
+    public static void openURL(@NonNull URL url) {
         try {
             String[] args = switch (Platform.get()) {
                 case WINDOWS -> new String[]{"rundll32", "url.dll,FileProtocolHandler", url.toString()};
@@ -515,7 +513,7 @@ public final class Core {
         }
     }
 
-    public static void openURI(@Nonnull URI uri) {
+    public static void openURI(@NonNull URI uri) {
         try {
             openURL(uri.toURL());
         } catch (Exception e) {
@@ -523,7 +521,7 @@ public final class Core {
         }
     }
 
-    public static void openURI(@Nonnull String uri) {
+    public static void openURI(@NonNull String uri) {
         try {
             openURI(URI.create(uri));
         } catch (Exception e) {
