@@ -19,6 +19,7 @@
 package icyllis.modernui.graphics;
 
 import icyllis.modernui.annotation.NonNull;
+import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.system.NativeType;
 
 import java.util.Objects;
@@ -32,6 +33,7 @@ import java.util.Objects;
  *
  * @see Bitmap
  */
+@ApiStatus.Internal
 public sealed class Pixmap permits Bitmap {
 
     private final ImageInfo mInfo;

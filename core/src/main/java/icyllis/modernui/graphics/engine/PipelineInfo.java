@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,30 +16,21 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.util;
+package icyllis.modernui.graphics.engine;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
+import javax.annotation.concurrent.Immutable;
 
 /**
- * Interface for managing a pool of objects.
- *
- * @param <T> The pooled type.
+ * This immutable object contains all information needed to build a pipeline.
  */
-public interface Pool<T> {
+//TODO
+@Immutable
+public final class PipelineInfo {
 
     /**
-     * @return an instance from the pool if such, null otherwise.
+     * @see SurfaceOrigin
      */
-    @Nullable
-    T acquire();
-
-    /**
-     * Release an instance to the pool.
-     *
-     * @param instance the instance to release.
-     * @return {@code true} if the instance was put in the pool, otherwise the pool is full
-     * @throws IllegalStateException if the instance is already in the pool.
-     */
-    boolean release(@NonNull T instance);
+    public int origin() {
+        return 0;
+    }
 }

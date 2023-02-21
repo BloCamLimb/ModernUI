@@ -22,6 +22,7 @@ import icyllis.modernui.annotation.ColorInt;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 import org.intellij.lang.annotations.MagicConstant;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -29,14 +30,14 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * A Paint collects all options outside the Canvas clip and Canvas matrix,
- * such as style and color information, applied when drawing geometries and images.
+ * {@code Paint} controls options applied when drawing. {@code Paint} collects
+ * all options outside the {@code Canvas} clip and {@code Canvas} matrix.
+ * such as style and color information, applied to geometries and images.
  * <p>
- * A Paint also collects effects and filters that describe single-pass and multiple-pass
- * algorithms that alter the drawing geometry, color, and transparency. For instance,
- * Paint does not directly implement dashing or blur, but contains the objects that do so.
- * <p>
- * Multisampling anti-aliasing (MSAA) is always enabled.
+ * {@code Paint} collects effects and filters that describe single-pass and
+ * multiple-pass algorithms that alter the drawing geometry, color, and
+ * transparency. For instance, {@code Paint} does not directly implement
+ * dashing or blur, but contains the objects that do so.
  */
 public class Paint {
 
@@ -141,12 +142,42 @@ public class Paint {
 
     private static final int JOIN_MASK = 0x30;
 
-    private static final int GRADIENT_MASK = 0x40;
+    /**
+     * The {@code Align} specifies the treatment where the stroke is placed in relation
+     * to the object edge. The default is {@link #ALIGN_CENTER}.
+     */
+    @MagicConstant(intValues = {ALIGN_CENTER, ALIGN_INSIDE, ALIGN_OUTSIDE})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface Align {
+    }
 
-    private static final int BLEND_MODE_SHIFT = 8;
+    /**
+     * The stroke is aligned to center.
+     */
+    public static final int ALIGN_CENTER = 0x00;
+
+    /**
+     * The stroke is aligned to inside.
+     */
+    public static final int ALIGN_INSIDE = 0x40;
+
+    /**
+     * The stroke is aligned to outside.
+     */
+    public static final int ALIGN_OUTSIDE = 0x80;
+
+    private static final int ALIGN_MASK = 0xC0;
+
+    private static final int ANTI_ALIAS_MASK = 0x100;
+    private static final int DITHER_MASK = 0x200;
+
+    private static final int GRADIENT_MASK = 0x400;
+
+    private static final int BLEND_MODE_SHIFT = 16;
     private static final int BLEND_MODE_MASK = 0xFF << BLEND_MODE_SHIFT;
 
-    private static final int DEFAULT_FLAGS = FILL | CAP_ROUND | JOIN_ROUND |
+    private static final int DEFAULT_FLAGS = FILL |
+            CAP_ROUND | JOIN_ROUND | ALIGN_CENTER | ANTI_ALIAS_MASK |
             BlendMode.toValue(BlendMode.SRC_OVER) << BLEND_MODE_SHIFT;
 
     // may be replaced by float values
@@ -213,6 +244,7 @@ public class Paint {
      * @return a thread-local paint
      * @see #take()
      */
+    @ApiStatus.Internal
     @Nonnull
     public static Paint get() {
         Paint paint = TLS.get();

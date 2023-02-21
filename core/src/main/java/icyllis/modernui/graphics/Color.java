@@ -28,6 +28,31 @@ public class Color {
     public static final int TRANSPARENT = 0;
 
     /**
+     * Describes different color channels one can manipulate.
+     */
+    public static final int
+            COLOR_CHANNEL_R = 0, // the red channel
+            COLOR_CHANNEL_G = 1, // the green channel
+            COLOR_CHANNEL_B = 2, // the blue channel
+            COLOR_CHANNEL_A = 3; // the alpha channel
+
+    /**
+     * Used to represent the channels available in a color type or texture format as a mask.
+     */
+    public static final int
+            COLOR_CHANNEL_FLAG_RED = 1 << COLOR_CHANNEL_R,
+            COLOR_CHANNEL_FLAG_GREEN = 1 << COLOR_CHANNEL_G,
+            COLOR_CHANNEL_FLAG_BLUE = 1 << COLOR_CHANNEL_B,
+            COLOR_CHANNEL_FLAG_ALPHA = 1 << COLOR_CHANNEL_A,
+            COLOR_CHANNEL_FLAG_GRAY = 0x10;
+
+    // Convenience values
+    public static final int
+            COLOR_CHANNEL_FLAGS_RG = COLOR_CHANNEL_FLAG_RED | COLOR_CHANNEL_FLAG_GREEN,
+            COLOR_CHANNEL_FLAGS_RGB = COLOR_CHANNEL_FLAGS_RG | COLOR_CHANNEL_FLAG_BLUE,
+            COLOR_CHANNEL_FLAGS_RGBA = COLOR_CHANNEL_FLAGS_RGB | COLOR_CHANNEL_FLAG_ALPHA;
+
+    /**
      * Return the alpha component of a color int. This is the same as saying
      * color >>> 24
      */

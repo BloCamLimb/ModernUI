@@ -414,6 +414,35 @@ public class Rect {
      * specified rectangle is empty, nothing is done. If this rectangle is empty
      * it is set to the specified rectangle.
      *
+     * @param left   the left edge being unioned with this rectangle
+     * @param top    the top edge being unioned with this rectangle
+     * @param right  the right edge being unioned with this rectangle
+     * @param bottom the bottom edge being unioned with this rectangle
+     */
+    public final void join(int left, int top, int right, int bottom) {
+        // do nothing if the params are empty
+        if (left >= right || top >= bottom) {
+            return;
+        }
+        if (this.left < this.right && this.top < this.bottom) {
+            if (this.left > left) this.left = left;
+            if (this.top > top) this.top = top;
+            if (this.right < right) this.right = right;
+            if (this.bottom < bottom) this.bottom = bottom;
+        } else {
+            // if we are empty, just assign
+            this.left = left;
+            this.top = top;
+            this.right = right;
+            this.bottom = bottom;
+        }
+    }
+
+    /**
+     * Update this Rect to enclose itself and the specified rectangle. If the
+     * specified rectangle is empty, nothing is done. If this rectangle is empty
+     * it is set to the specified rectangle.
+     *
      * @param left   The left edge being unioned with this rectangle
      * @param top    The top edge being unioned with this rectangle
      * @param right  The right edge being unioned with this rectangle
