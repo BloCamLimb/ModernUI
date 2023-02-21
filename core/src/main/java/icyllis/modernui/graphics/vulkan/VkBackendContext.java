@@ -20,14 +20,16 @@ package icyllis.modernui.graphics.vulkan;
 
 import org.lwjgl.vulkan.*;
 
-// The BackendContext contains all the base Vulkan objects needed by the GrVkGpu. The assumption
-// is that the client will set these up and pass them to the GrVkGpu constructor. The VkDevice
-// created must support at least one graphics queue, which is passed in as well.
-// The QueueFamilyIndex must match the family of the given queue. It is needed for CommandPool
-// creation, and any GrBackendObjects handed to us (e.g., for wrapped textures) needs to be created
-// in or transitioned to that family. The refs held by members of this struct must be released
-// (either by deleting the struct or manually releasing the refs) before the underlying vulkan
-// device and instance are destroyed.
+/**
+ * The BackendContext contains all the base Vulkan objects needed by the VkServer. The assumption
+ * is that the client will set these up and pass them to the VkServer constructor. The VkDevice
+ * created must support at least one graphics queue, which is passed in as well.
+ * The QueueFamilyIndex must match the family of the given queue. It is needed for CommandPool
+ * creation, and any BackendObjects handed to us (e.g., for wrapped textures) needs to be created
+ * in or transitioned to that family. The refs held by members of this struct must be released
+ * (either by deleting the struct or manually releasing the refs) before the underlying Vulkan
+ * device and instance are destroyed.
+ */
 public final class VkBackendContext {
 
     public VkInstance mInstance;
@@ -35,8 +37,17 @@ public final class VkBackendContext {
     public VkDevice mDevice;
     public VkQueue mQueue;
     public int mGraphicsQueueIndex;
+    // The max api version set here should match the value set in VkApplicationInfo::apiVersion when
+    // then VkInstance was created.
     public int mMaxAPIVersion;
+    // The client can create their VkDevice with either a VkPhysicalDeviceFeatures or
+    // VkPhysicalDeviceFeatures2 struct, thus we have to support taking both. The
+    // VkPhysicalDeviceFeatures2 struct is needed, so we know if the client enabled any extension
+    // specific features. If mDeviceFeatures2 is not null then we ignore mDeviceFeatures. If both
+    // mDeviceFeatures and mDeviceFeatures2 are null we will assume no features are enabled.
     public VkPhysicalDeviceFeatures mDeviceFeatures;
     public VkPhysicalDeviceFeatures2 mDeviceFeatures2;
+    // Indicates that we are working with protected content and all CommandPool and Queue operations
+    // should be done in a protected context.
     public boolean mProtectedContext;
 }

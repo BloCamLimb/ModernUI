@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,33 +18,21 @@
 
 package icyllis.modernui.graphics;
 
-/**
- * GPU hierarchical clipping using stencil test.
- */
-public class ClipStack {
+//TODO
+public final class SamplingOptions {
 
     /**
-     * Clip ops.
+     * Filter modes.
      */
-    public static final byte
-            OP_DIFFERENCE = 0,  // target minus operand
-            OP_INTERSECT = 1;   // target intersected with operand
+    public static final int
+            FILTER_MODE_NEAREST = 0,    // single sample point (nearest neighbor)
+            FILTER_MODE_LINEAR = 1;     // interpolate between 2x2 sample points (bilinear interpolation)
 
     /**
-     * Clip states.
+     * Mipmap modes.
      */
-    public static final byte
-            STATE_EMPTY = 0,
-            STATE_WIDE_OPEN = 1,
-            STATE_DEVICE_RECT = 2,
-            STATE_DEVICE_ROUND_RECT = 3,
-            STATE_COMPLEX = 4;
-
-    public static final class Clip {
-
-        final Rect mShape = new Rect();
-
-        // model view matrix
-        final Matrix4 mMatrix = Matrix4.identity();
-    }
+    public static final int
+            MIPMAP_MODE_NONE = 0,       // ignore mipmap levels, sample from the "base"
+            MIPMAP_MODE_NEAREST = 1,    // sample from the nearest level
+            MIPMAP_MODE_LINEAR = 2;     // interpolate between the two nearest levels
 }

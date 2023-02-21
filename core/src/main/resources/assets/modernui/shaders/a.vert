@@ -316,3 +316,58 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 
     fragColor = col1+(1.0-col1.a)*col2;
 }
+
+// color picker
+vec3 hueToRgb(float hue)
+{
+    const vec4 K = vec4(1,2./3.,1./3.,3);
+    return clamp(abs(fract(hue+K.xyz)*6.-K.w)-K.x,0.,1.);
+}
+
+vec2 rotate2D(vec2 p, float a)
+{
+    float s=sin(a),c=cos(a);
+    return mat2(c,s,-s,c)*p;
+}
+
+float aastep(float f)
+{
+    vec2 grad = vec2(dFdx(f), dFdy(f));
+    float afwidth = 0.7071 * length(grad);
+    return smoothstep(-afwidth, afwidth, f);
+}
+
+float polygon(vec2 st, float radius, float sides) {
+    float angle = atan(st.x,st.y) + 3.1415926535;
+    float slice = 6.283185307 / sides;
+    return aastep(cos(floor(0.5 + angle / slice ) * slice - angle) * length(st)-radius);
+}
+
+void mainImage(out vec4 fragColor, in vec2 fragCoord)
+{
+    vec2 uv = fragCoord/iResolution.xy;
+    vec2 pos = 2.*uv-1.;
+    pos.y /= iResolution.x/iResolution.y;
+
+    vec3 col;
+
+    if ((int(iTime/4.0)&1)==0)
+    {
+        float t1 = 0.5+atan(-pos.y,-pos.x)*0.1591549430918;
+        float t0 = iTime;
+
+        col = hueToRgb(t1)*(1.0-aastep(abs(length(pos)-0.45)-0.05));
+        col += (1.0-polygon(rotate2D(pos,t0),0.2,3.0))*hueToRgb(fract(-t0/6.283185307)+0.25);
+    }
+    else
+    {
+        float t1 = uv.x, t2 = 1.-uv.y;
+        float t0 = sin(iTime)*0.5+0.5;
+
+        col = t2<.9375
+        ? mix(mix(vec3(1),hueToRgb(t0),t1),vec3(0),t2/.9375)
+        : hueToRgb(t1)+step(abs(t1-t0),2./iResolution.x);
+    }
+
+    fragColor = vec4(col,1);
+}

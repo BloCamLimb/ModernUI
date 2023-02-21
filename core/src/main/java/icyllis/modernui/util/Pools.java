@@ -18,8 +18,8 @@
 
 package icyllis.modernui.util;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 
 /**
  * Helper class for creating pools of objects.
@@ -35,7 +35,7 @@ public final class Pools {
      * @param maxPoolSize The max pool size.
      * @throws IllegalArgumentException If the max pool size is less than zero.
      */
-    @Nonnull
+    @NonNull
     public static <T> Pool<T> simple(int maxPoolSize) {
         return new SimplePool<>(maxPoolSize);
     }
@@ -46,7 +46,7 @@ public final class Pools {
      * @param maxPoolSize The max pool size.
      * @throws IllegalArgumentException If the max pool size is less than zero.
      */
-    @Nonnull
+    @NonNull
     public static <T> Pool<T> concurrent(int maxPoolSize) {
         return new SynchronizedPool<>(maxPoolSize);
     }
@@ -81,7 +81,7 @@ public final class Pools {
         }
 
         @Override
-        public boolean release(@Nonnull T instance) {
+        public boolean release(@NonNull T instance) {
             if (mPoolSize == mPool.length)
                 return false;
             for (int i = mPoolSize - 1; i >= 0; i--)
@@ -112,7 +112,7 @@ public final class Pools {
         }
 
         @Override
-        public boolean release(@Nonnull T element) {
+        public boolean release(@NonNull T element) {
             synchronized (this) {
                 return super.release(element);
             }
