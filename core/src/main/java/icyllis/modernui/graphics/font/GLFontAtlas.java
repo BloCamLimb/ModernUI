@@ -22,7 +22,7 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.Bitmap;
-import icyllis.modernui.graphics.opengl.GLTexture;
+import icyllis.modernui.graphics.opengl.GLTextureCompat;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
@@ -72,7 +72,7 @@ public class GLFontAtlas implements AutoCloseable {
     private final Long2ObjectMap<GLBakedGlyph> mGlyphs = new Long2ObjectOpenHashMap<>();
 
     // texture can change by resizing
-    private GLTexture mTexture = new GLTexture(GL_TEXTURE_2D);
+    private GLTextureCompat mTexture = new GLTextureCompat(GL_TEXTURE_2D);
 
     // position for next glyph sprite
     private int mPosX = GlyphManager.GLYPH_BORDER;
@@ -178,7 +178,7 @@ public class GLFontAtlas implements AutoCloseable {
             }
 
             // copy to new texture
-            GLTexture newTexture = new GLTexture(GL_TEXTURE_2D);
+            GLTextureCompat newTexture = new GLTextureCompat(GL_TEXTURE_2D);
             newTexture.allocate2DCompat(mColored ? GL_RGBA8 : GL_R8, mWidth, mHeight, MIPMAP_LEVEL);
             if (sCopyFramebuffer == 0) {
                 sCopyFramebuffer = glGenFramebuffers();

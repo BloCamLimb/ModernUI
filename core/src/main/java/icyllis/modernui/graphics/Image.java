@@ -19,7 +19,7 @@
 package icyllis.modernui.graphics;
 
 import icyllis.modernui.graphics.opengl.GLCore;
-import icyllis.modernui.graphics.opengl.GLTexture;
+import icyllis.modernui.graphics.opengl.GLTextureCompat;
 import icyllis.modernui.graphics.opengl.TextureManager;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -32,15 +32,15 @@ import javax.annotation.Nonnull;
 //TODO wip
 public class Image {
 
-    private final GLTexture mTexture;
+    private final GLTextureCompat mTexture;
 
     @ApiStatus.Experimental
     public Image() {
-        mTexture = new GLTexture(GLCore.GL_TEXTURE_2D);
+        mTexture = new GLTextureCompat(GLCore.GL_TEXTURE_2D);
     }
 
     @ApiStatus.Experimental
-    public Image(@Nonnull GLTexture texture) {
+    public Image(@Nonnull GLTextureCompat texture) {
         mTexture = texture;
     }
 
@@ -66,7 +66,7 @@ public class Image {
      */
     @ApiStatus.Experimental
     @Nonnull
-    public final GLTexture getTexture() {
+    public final GLTextureCompat getTexture() {
         return mTexture;
     }
 

@@ -851,7 +851,7 @@ public final class GLCore extends GL45C {
             case GL_STENCIL_INDEX8 -> "STENCIL_INDEX8";
             case GL_STENCIL_INDEX16 -> "STENCIL_INDEX16";
             case GL_DEPTH24_STENCIL8 -> "DEPTH24_STENCIL8";
-            default -> "Unknown";
+            default -> Integer.toString(format);
         };
     }
 

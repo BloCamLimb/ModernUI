@@ -45,9 +45,9 @@ import static icyllis.modernui.graphics.opengl.GLCore.*;
  *
  * @see <a href="https://www.khronos.org/opengl/wiki/Framebuffer_Object">Framebuffer Object</a>
  */
-public final class GLFramebuffer extends GLObject {
+public final class GLFramebufferCompat extends GLObjectCompat {
 
-    private static GLFramebuffer sSwapFramebuffer;
+    private static GLFramebufferCompat sSwapFramebuffer;
 
     // this can be Java GC-ed
     private final FloatBuffer mClearColor = BufferUtils.createFloatBuffer(4);
@@ -62,7 +62,7 @@ public final class GLFramebuffer extends GLObject {
      *
      * @param sampleCount number of samples
      */
-    public GLFramebuffer(int sampleCount) {
+    public GLFramebufferCompat(int sampleCount) {
         mSampleCount = Math.max(1, sampleCount);
     }
 
@@ -75,9 +75,9 @@ public final class GLFramebuffer extends GLObject {
      * @return sampled texture
      */
     @Nonnull
-    public static GLTexture resolve(@Nonnull GLFramebuffer framebuffer, int colorBuffer) {
+    public static GLTextureCompat resolve(@Nonnull GLFramebufferCompat framebuffer, int colorBuffer) {
         if (sSwapFramebuffer == null) {
-            sSwapFramebuffer = new GLFramebuffer(1);
+            sSwapFramebuffer = new GLFramebufferCompat(1);
             sSwapFramebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT0, GL_RGBA8);
             sSwapFramebuffer.setDrawBuffer(GL_COLOR_ATTACHMENT0);
         }
@@ -221,7 +221,7 @@ public final class GLFramebuffer extends GLObject {
      * @throws IllegalArgumentException attachment is not a texture or detached
      */
     @Nonnull
-    public GLTexture getAttachedTexture(int attachmentPoint) {
+    public GLTextureCompat getAttachedTexture(int attachmentPoint) {
         if (mAttachments != null) {
             Attachment a = mAttachments.get(attachmentPoint);
             if (a instanceof TextureAttachment) {
@@ -232,7 +232,7 @@ public final class GLFramebuffer extends GLObject {
     }
 
     @Nonnull
-    public GLRenderbuffer getAttachedRenderbuffer(int attachmentPoint) {
+    public GLRenderbufferCompat getAttachedRenderbuffer(int attachmentPoint) {
         if (mAttachments != null) {
             AutoCloseable a = mAttachments.get(attachmentPoint);
             if (a instanceof RenderbufferAttachment) {
@@ -261,9 +261,9 @@ public final class GLFramebuffer extends GLObject {
         }
     }
 
-    private static final class Ref extends GLObject.Ref {
+    private static final class Ref extends GLObjectCompat.Ref {
 
-        private Ref(@Nonnull GLFramebuffer owner) {
+        private Ref(@Nonnull GLFramebufferCompat owner) {
             super(owner, glCreateFramebuffers());
         }
 
@@ -275,14 +275,14 @@ public final class GLFramebuffer extends GLObject {
 
     public static abstract class Attachment implements AutoCloseable {
 
-        final WeakReference<GLFramebuffer> mFramebuffer;
+        final WeakReference<GLFramebufferCompat> mFramebuffer;
         final int mAttachmentPoint;
         final int mInternalFormat;
 
         int mWidth;
         int mHeight;
 
-        private Attachment(GLFramebuffer framebuffer, int attachmentPoint, int internalFormat) {
+        private Attachment(GLFramebufferCompat framebuffer, int attachmentPoint, int internalFormat) {
             mFramebuffer = new WeakReference<>(framebuffer);
             mAttachmentPoint = attachmentPoint;
             mInternalFormat = internalFormat;
@@ -307,14 +307,14 @@ public final class GLFramebuffer extends GLObject {
 
     private static class TextureAttachment extends Attachment {
 
-        private final GLTexture mTexture;
+        private final GLTextureCompat mTexture;
 
-        protected TextureAttachment(GLFramebuffer framebuffer, int attachmentPoint, int internalFormat) {
+        protected TextureAttachment(GLFramebufferCompat framebuffer, int attachmentPoint, int internalFormat) {
             super(framebuffer, attachmentPoint, internalFormat);
             if (framebuffer.mSampleCount > 1) {
-                mTexture = new GLTexture(GL_TEXTURE_2D_MULTISAMPLE);
+                mTexture = new GLTextureCompat(GL_TEXTURE_2D_MULTISAMPLE);
             } else {
-                mTexture = new GLTexture(GL_TEXTURE_2D);
+                mTexture = new GLTextureCompat(GL_TEXTURE_2D);
             }
         }
 
@@ -328,7 +328,7 @@ public final class GLFramebuffer extends GLObject {
                 mWidth = width;
                 mHeight = height;
                 mTexture.close();
-                GLFramebuffer framebuffer = mFramebuffer.get();
+                GLFramebufferCompat framebuffer = mFramebuffer.get();
                 if (framebuffer == null) {
                     return false;
                 }
@@ -352,11 +352,11 @@ public final class GLFramebuffer extends GLObject {
 
     private static class RenderbufferAttachment extends Attachment {
 
-        private final GLRenderbuffer mRenderbuffer;
+        private final GLRenderbufferCompat mRenderbuffer;
 
-        protected RenderbufferAttachment(GLFramebuffer framebuffer, int attachmentPoint, int internalFormat) {
+        protected RenderbufferAttachment(GLFramebufferCompat framebuffer, int attachmentPoint, int internalFormat) {
             super(framebuffer, attachmentPoint, internalFormat);
-            mRenderbuffer = new GLRenderbuffer();
+            mRenderbuffer = new GLRenderbufferCompat();
         }
 
         @Override
@@ -369,7 +369,7 @@ public final class GLFramebuffer extends GLObject {
                 mWidth = width;
                 mHeight = height;
                 mRenderbuffer.close();
-                GLFramebuffer framebuffer = mFramebuffer.get();
+                GLFramebufferCompat framebuffer = mFramebuffer.get();
                 if (framebuffer == null) {
                     return false;
                 }
