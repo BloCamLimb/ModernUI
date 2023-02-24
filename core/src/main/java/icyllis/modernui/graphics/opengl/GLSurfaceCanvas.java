@@ -60,7 +60,7 @@ import static org.lwjgl.system.MemoryUtil.*;
  * This class is used to build OpenGL buffers from one thread, using multiple
  * vertex arrays, uniform buffers and vertex buffers. All drawing methods are
  * recording commands and must be called from one thread. Later call
- * {@link #draw(GLFramebuffer)} for calling OpenGL functions on the render thread.
+ * {@link #draw(GLFramebufferCompat)} for calling OpenGL functions on the render thread.
  * The color buffer drawn to must be at index 0, and stencil buffer must be 8-bit.
  * <p>
  * For multiple off-screen rendering targets, Modern UI allocates up to four
@@ -173,22 +173,22 @@ public final class GLSurfaceCanvas extends GLCanvas {
     private final ByteArrayList mDrawOps = new ByteArrayList();
 
     // vertex buffer objects
-    private final GLBuffer mPosColorVBO = new GLBuffer();
+    private final GLBufferCompat mPosColorVBO = new GLBufferCompat();
     private ByteBuffer mPosColorMemory = memAlloc(4096);
     private boolean mPosColorResized = true;
 
-    private final GLBuffer mPosColorTexVBO = new GLBuffer();
+    private final GLBufferCompat mPosColorTexVBO = new GLBufferCompat();
     private ByteBuffer mPosColorTexMemory = memAlloc(4096);
     private boolean mPosColorTexResized = true;
 
     // dynamic update on render thread
-    private final GLBuffer mGlyphVBO = new GLBuffer();
+    private final GLBufferCompat mGlyphVBO = new GLBufferCompat();
     private ByteBuffer mGlyphMemory = memAlloc(4096);
     private boolean mGlyphResized = true;
 
     public static final int MAX_GLYPH_INDEX_COUNT = 3072;
 
-    private final GLBuffer mGlyphIBO = new GLBuffer();
+    private final GLBufferCompat mGlyphIBO = new GLBufferCompat();
 
     /*private int mModelViewVBO = INVALID_ID;
     private ByteBuffer mModelViewData = memAlloc(1024);
@@ -198,12 +198,12 @@ public final class GLSurfaceCanvas extends GLCanvas {
     private ByteBuffer mUniformMemory = memAlloc(4096);
 
     // immutable uniform buffer objects
-    private final GLBuffer mMatrixUBO = new GLBuffer();
-    private final GLBuffer mSmoothUBO = new GLBuffer();
-    private final GLBuffer mArcUBO = new GLBuffer();
-    private final GLBuffer mBezierUBO = new GLBuffer();
-    private final GLBuffer mCircleUBO = new GLBuffer();
-    private final GLBuffer mRoundRectUBO = new GLBuffer();
+    private final GLBufferCompat mMatrixUBO = new GLBufferCompat();
+    private final GLBufferCompat mSmoothUBO = new GLBufferCompat();
+    private final GLBufferCompat mArcUBO = new GLBufferCompat();
+    private final GLBufferCompat mBezierUBO = new GLBufferCompat();
+    private final GLBufferCompat mCircleUBO = new GLBufferCompat();
+    private final GLBufferCompat mRoundRectUBO = new GLBufferCompat();
 
     // mag filter = linear
     private final int mLinearFontSampler;
@@ -225,7 +225,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     private final IntStack mLayerStack = new IntArrayList(3);
 
     // using textures of draw states, in the order of calling
-    private final Queue<GLTexture> mTextures = new ArrayDeque<>();
+    private final Queue<GLTextureCompat> mTextures = new ArrayDeque<>();
     private final List<DrawText> mDrawTexts = new ArrayList<>();
     private final Queue<Runnable> mCustoms = new ArrayDeque<>();
 
@@ -416,7 +416,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     @RenderThread
-    public boolean draw(@Nullable GLFramebuffer framebuffer) {
+    public boolean draw(@Nullable GLFramebufferCompat framebuffer) {
         Core.checkRenderThread();
         Core.flushRenderCalls();
         if (framebuffer != null) {
@@ -1449,7 +1449,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
 
     @Override
     public void drawImage(@Nonnull Image image, float left, float top, @Nullable Paint paint) {
-        GLTexture texture = image.getTexture();
+        GLTextureCompat texture = image.getTexture();
         float right = left + texture.getWidth();
         float bottom = top + texture.getHeight();
         if (quickReject(left, top, right, bottom)) {
@@ -1462,7 +1462,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     // this is only used for offscreen
-    public void drawLayer(@Nonnull GLTexture texture, float w, float h, float alpha, boolean flipY) {
+    public void drawLayer(@Nonnull GLTextureCompat texture, float w, float h, float alpha, boolean flipY) {
         int target = texture.getTarget();
         if (target == GL_TEXTURE_2D || target == GL_TEXTURE_2D_MULTISAMPLE) {
             drawMatrix();
@@ -1482,7 +1482,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         if (quickReject(dstLeft, dstTop, dstRight, dstBottom)) {
             return;
         }
-        GLTexture texture = image.getTexture();
+        GLTextureCompat texture = image.getTexture();
         srcLeft = Math.max(0, srcLeft);
         srcTop = Math.max(0, srcTop);
         int w = texture.getWidth();
@@ -1499,7 +1499,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         mDrawOps.add(DRAW_IMAGE);
     }
 
-    public void drawTexture(@Nonnull GLTexture texture, float srcLeft, float srcTop, float srcRight, float srcBottom,
+    public void drawTexture(@Nonnull GLTextureCompat texture, float srcLeft, float srcTop, float srcRight, float srcBottom,
                             float dstLeft, float dstTop, float dstRight, float dstBottom) {
         if (quickReject(dstLeft, dstTop, dstRight, dstBottom)) {
             return;
@@ -1651,7 +1651,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         if (radius < 0) {
             radius = 0;
         }
-        GLTexture texture = image.getTexture();
+        GLTextureCompat texture = image.getTexture();
         float right = left + texture.getWidth();
         float bottom = top + texture.getHeight();
         if (quickReject(left, top, right, bottom)) {

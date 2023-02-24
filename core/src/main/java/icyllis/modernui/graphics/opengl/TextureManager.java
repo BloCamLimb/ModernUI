@@ -42,7 +42,7 @@ public class TextureManager {
     public static final int MIPMAP_MASK = 0x2;
 
     private final Object mLock = new Object();
-    private Map<String, Map<String, GLTexture>> mTextures = new HashMap<>();
+    private Map<String, Map<String, GLTextureCompat>> mTextures = new HashMap<>();
 
     private TextureManager() {
     }
@@ -74,21 +74,21 @@ public class TextureManager {
      * @return texture
      */
     @Nonnull
-    public GLTexture getOrCreate(@Nonnull String namespace, @Nonnull String path, int flags) {
-        final GLTexture texture;
+    public GLTextureCompat getOrCreate(@Nonnull String namespace, @Nonnull String path, int flags) {
+        final GLTextureCompat texture;
         if ((flags & CACHE_MASK) != 0) {
             synchronized (mLock) {
-                Map<String, GLTexture> cache = mTextures.computeIfAbsent(namespace, n -> new HashMap<>());
-                GLTexture entry = cache.get(path);
+                Map<String, GLTextureCompat> cache = mTextures.computeIfAbsent(namespace, n -> new HashMap<>());
+                GLTextureCompat entry = cache.get(path);
                 if (entry != null) {
                     return entry;
                 } else {
-                    texture = new GLTexture(GLCore.GL_TEXTURE_2D);
+                    texture = new GLTextureCompat(GLCore.GL_TEXTURE_2D);
                     cache.put(path, texture);
                 }
             }
         } else {
-            texture = new GLTexture(GLCore.GL_TEXTURE_2D);
+            texture = new GLTextureCompat(GLCore.GL_TEXTURE_2D);
         }
         try (InputStream stream = ModernUI.getInstance().getResourceStream(namespace, path)) {
             Bitmap image = Bitmap.decode(null, stream);
@@ -108,8 +108,8 @@ public class TextureManager {
      * @return texture
      */
     @Nonnull
-    public GLTexture create(@Nonnull InputStream stream, boolean mipmap) {
-        GLTexture texture = new GLTexture(GLCore.GL_TEXTURE_2D);
+    public GLTextureCompat create(@Nonnull InputStream stream, boolean mipmap) {
+        GLTextureCompat texture = new GLTextureCompat(GLCore.GL_TEXTURE_2D);
         try (stream) {
             Bitmap image = Bitmap.decode(null, stream);
             create(texture, image, mipmap);
@@ -128,51 +128,52 @@ public class TextureManager {
      * @return texture
      */
     @Nonnull
-    public GLTexture create(@Nonnull ReadableByteChannel channel, boolean mipmap) {
-        GLTexture texture = new GLTexture(GLCore.GL_TEXTURE_2D);
+    public GLTextureCompat create(@Nonnull ReadableByteChannel channel, boolean mipmap) {
+        GLTextureCompat texture = new GLTextureCompat(GLCore.GL_TEXTURE_2D);
         try (channel) {
-            Bitmap image = Bitmap.decode(null, channel);
-            create(texture, image, mipmap);
+            Bitmap bitmap = Bitmap.decode(Bitmap.Format.RGBA_8888, channel);
+            create(texture, bitmap, mipmap);
         } catch (IOException e) {
             e.printStackTrace();
         }
         return texture;
     }
 
-    private void create(@Nonnull GLTexture texture, @Nonnull Bitmap image, boolean mipmap) {
-        int width = image.getWidth();
-        int height = image.getHeight();
+    private void create(@Nonnull GLTextureCompat texture, @Nonnull Bitmap bitmap, boolean mipmap) {
+        int width = bitmap.getWidth();
+        int height = bitmap.getHeight();
         texture.setDimension(width, height, 1);
+        int rowPixels = bitmap.getRowStride() / bitmap.getChannels();
         if (Core.isOnRenderThread()) {
-            texture.allocate2D(image.getInternalGlFormat(), width, height, mipmap ? 4 : 0);
-            texture.upload(0, 0, 0, width, height, 0,
-                    0, 0, 1, image.getExternalGlFormat(), GLCore.GL_UNSIGNED_BYTE, image.getPixels());
+            texture.allocate2D(bitmap.getInternalGlFormat(), width, height, mipmap ? 4 : 0);
+            texture.upload(0, 0, 0, width, height, rowPixels,
+                    0, 0, 1, bitmap.getExternalGlFormat(), GLCore.GL_UNSIGNED_BYTE, bitmap.getPixels());
             texture.setFilter(true, true);
             if (mipmap) {
                 texture.generateMipmap();
             }
-            image.close();
+            bitmap.close();
         } else {
             if (mipmap) {
                 Core.postOnRenderThread(() -> {
-                    int w = image.getWidth();
-                    int h = image.getHeight();
-                    texture.allocate2D(image.getInternalGlFormat(), w, h, 4);
-                    texture.upload(0, 0, 0, w, h, 0,
-                            0, 0, 1, image.getExternalGlFormat(), GLCore.GL_UNSIGNED_BYTE, image.getPixels());
+                    int w = bitmap.getWidth();
+                    int h = bitmap.getHeight();
+                    texture.allocate2D(bitmap.getInternalGlFormat(), w, h, 4);
+                    texture.upload(0, 0, 0, w, h, rowPixels,
+                            0, 0, 1, bitmap.getExternalGlFormat(), GLCore.GL_UNSIGNED_BYTE, bitmap.getPixels());
                     texture.setFilter(true, true);
                     texture.generateMipmap();
-                    image.close();
+                    bitmap.close();
                 });
             } else {
                 Core.postOnRenderThread(() -> {
-                    int w = image.getWidth();
-                    int h = image.getHeight();
-                    texture.allocate2D(image.getInternalGlFormat(), w, h, 0);
-                    texture.upload(0, 0, 0, w, h, 0,
-                            0, 0, 1, image.getExternalGlFormat(), GLCore.GL_UNSIGNED_BYTE, image.getPixels());
+                    int w = bitmap.getWidth();
+                    int h = bitmap.getHeight();
+                    texture.allocate2D(bitmap.getInternalGlFormat(), w, h, 0);
+                    texture.upload(0, 0, 0, w, h, rowPixels,
+                            0, 0, 1, bitmap.getExternalGlFormat(), GLCore.GL_UNSIGNED_BYTE, bitmap.getPixels());
                     texture.setFilter(true, true);
-                    image.close();
+                    bitmap.close();
                 });
             }
         }

@@ -23,8 +23,8 @@ import com.ibm.icu.text.SimpleDateFormat;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Core;
-import icyllis.modernui.graphics.opengl.GLFramebuffer;
-import icyllis.modernui.graphics.opengl.GLTexture;
+import icyllis.modernui.graphics.opengl.GLFramebufferCompat;
+import icyllis.modernui.graphics.opengl.GLTextureCompat;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.stb.*;
 import org.lwjgl.system.MemoryStack;
@@ -62,11 +62,11 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
 
     private Ref mRef;
 
-    private Bitmap(@NonNull Format format, @NonNull ImageInfo info, long addr, int stride,
+    private Bitmap(@NonNull Format format, @NonNull ImageInfo info, long addr, int rowStride,
                    @NonNull LongConsumer freeFn) {
-        super(info, addr, stride);
+        super(info, addr, rowStride);
         mFormat = format;
-        mRef = new SafeRef(this, info.width(), info.height(), addr, stride, freeFn);
+        mRef = new SafeRef(this, info.width(), info.height(), addr, rowStride, freeFn);
     }
 
     /**
@@ -188,7 +188,7 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
      */
     @NonNull
     @RenderThread
-    public static Bitmap download(@NonNull Format format, @NonNull GLTexture texture, boolean flipY) {
+    public static Bitmap download(@NonNull Format format, @NonNull GLTextureCompat texture, boolean flipY) {
         Core.checkRenderThread();
         final int width = texture.getWidth();
         final int height = texture.getHeight();
@@ -227,13 +227,13 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
      */
     @NonNull
     @RenderThread
-    public static Bitmap download(@NonNull Format format, @NonNull GLFramebuffer framebuffer,
+    public static Bitmap download(@NonNull Format format, @NonNull GLFramebufferCompat framebuffer,
                                   int colorBuffer, boolean flipY) {
         Core.checkRenderThread();
         if (framebuffer.isMultisampled()) {
             throw new IllegalArgumentException("Cannot get pixels from a multisampling target");
         }
-        final GLFramebuffer.Attachment attachment = framebuffer.getAttachment(colorBuffer);
+        final GLFramebufferCompat.Attachment attachment = framebuffer.getAttachment(colorBuffer);
         final int width = attachment.getWidth();
         final int height = attachment.getHeight();
         final Bitmap bitmap = createBitmap(width, height, format);
@@ -370,6 +370,10 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
             return mRef.mPixels;
         }
         return NULL;
+    }
+
+    public int getRowStride() {
+        return mRef.mRowStride;
     }
 
     /**
@@ -516,8 +520,9 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
     @Override
     public String toString() {
         return "Bitmap{" +
-                "mFormat=" + mFormat +
-                ", mRef=" + mRef +
+                "format=" + mFormat +
+                ", info=" + mInfo +
+                ", ref=" + mRef +
                 '}';
     }
 
@@ -525,10 +530,14 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
      * Describes the number of channels/components in memory.
      */
     public enum Format {
-        GRAY_8(1, GL_RED, GL_R8, ImageInfo.CT_GRAY_8),
-        GRAY_ALPHA_88(2, 0, 0, ImageInfo.CT_GRAY_ALPHA_88), // no equivalent
-        RGB_888(3, GL_RGB, GL_RGB8, ImageInfo.CT_RGB_888),
-        RGBA_8888(4, GL_RGBA, GL_RGBA8, ImageInfo.CT_RGBA_8888);
+        // STBI_grey       = 1,
+        // STBI_grey_alpha = 2,
+        // STBI_rgb        = 3,
+        // STBI_rgb_alpha  = 4;
+        GRAY_8       (1, GL_RED , GL_R8   , ImageInfo.CT_GRAY_8       ),
+        GRAY_ALPHA_88(2, GL_RG  , GL_RG8  , ImageInfo.CT_GRAY_ALPHA_88),
+        RGB_888      (3, GL_RGB , GL_RGB8 , ImageInfo.CT_RGB_888      ),
+        RGBA_8888    (4, GL_RGBA, GL_RGBA8, ImageInfo.CT_RGBA_8888    );
 
         private static final Format[] VALUES = values();
 
@@ -542,6 +551,7 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
             this.externalGlFormat = externalGlFormat;
             this.internalGlFormat = internalGlFormat;
             this.colorType = colorType;
+            assert ordinal() == channels - 1;
         }
 
         @NonNull
@@ -632,7 +642,7 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
             PointerBuffer buffer = stack.mallocPointer(length);
             for (SaveFormat format : VALUES) {
                 for (String filter : format.filters) {
-                    stack.nUTF8Safe(filter, true);
+                    stack.nUTF8(filter, true);
                     buffer.put(stack.getPointerAddress());
                 }
             }
@@ -649,7 +659,7 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
         private PointerBuffer getFilters(@NonNull MemoryStack stack) {
             PointerBuffer buffer = stack.mallocPointer(filters.length);
             for (String filter : filters) {
-                stack.nUTF8Safe(filter, true);
+                stack.nUTF8(filter, true);
                 buffer.put(stack.getPointerAddress());
             }
             return buffer.rewind();
@@ -657,9 +667,7 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
 
         @NonNull
         private String getFileName(@Nullable String name) {
-            return (name == null
-                    ? "image-" + DATE_FORMAT.format(new Date())
-                    : name)
+            return (name != null ? name : "image-" + DATE_FORMAT.format(new Date()))
                     + filters[0].substring(1);
         }
 
@@ -671,23 +679,23 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
 
     /**
      * This class is the smart container for pixel memory, and is used with {@link Bitmap}.
-     * This class can be shared/accessed between multiple threads.
+     * <br>This class can be shared/accessed between multiple threads.
      */
     public static class Ref extends RefCnt {
 
         private final int mWidth;
         private final int mHeight;
         private final long mPixels;
-        private final int mStride;
+        private final int mRowStride;
         @NonNull
         private final LongConsumer mFreeFn;
 
-        private Ref(int width, int height, long pixels, int stride,
+        private Ref(int width, int height, long pixels, int rowStride,
                     @NonNull LongConsumer freeFn) {
             mWidth = width;
             mHeight = height;
             mPixels = pixels;
-            mStride = stride;
+            mRowStride = rowStride;
             mFreeFn = freeFn;
         }
 
@@ -716,8 +724,8 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
             return mPixels;
         }
 
-        public int getStride() {
-            return mStride;
+        public int getRowStride() {
+            return mRowStride;
         }
 
         @NonNull
@@ -726,7 +734,7 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
             return "PixelRef{" +
                     "address=0x" + Long.toHexString(mPixels) +
                     ", dimensions=" + mWidth + "x" + mHeight +
-                    ", stride=" + mStride +
+                    ", rowStride=" + mRowStride +
                     '}';
         }
     }
@@ -738,8 +746,8 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
         private final Cleaner.Cleanable mCleanup;
 
         private SafeRef(@NonNull Bitmap owner, int width, int height,
-                        long pixels, int stride, @NonNull LongConsumer freeFn) {
-            super(width, height, pixels, stride, freeFn);
+                        long pixels, int rowStride, @NonNull LongConsumer freeFn) {
+            super(width, height, pixels, rowStride, freeFn);
             mCleanup = ModernUI.registerCleanup(owner, this);
         }
 

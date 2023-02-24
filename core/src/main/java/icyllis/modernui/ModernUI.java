@@ -204,7 +204,7 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
         glEnable(GL_STENCIL_TEST);
         glEnable(GL_MULTISAMPLE);
 
-        final GLFramebuffer framebuffer = new GLFramebuffer(4);
+        final GLFramebufferCompat framebuffer = new GLFramebufferCompat(4);
         framebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT0, GL_RGBA8);
         framebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT1, GL_RGBA8);
         framebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT2, GL_RGBA8);
@@ -264,7 +264,7 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
         mDecor.setLayoutDirection(View.LAYOUT_DIRECTION_LOCALE);
 
         try {
-            GLTexture texture = TextureManager.getInstance().create(
+            GLTextureCompat texture = TextureManager.getInstance().create(
                     FileChannel.open(Path.of("F:", "eromanga.png"), StandardOpenOption.READ), true);
             Image image = new Image(texture);
             Drawable drawable = new ImageDrawable(image);
@@ -504,7 +504,7 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
         }
 
         @RenderThread
-        private void flushDrawCommands(GLSurfaceCanvas canvas, GLFramebuffer framebuffer) {
+        private void flushDrawCommands(GLSurfaceCanvas canvas, GLFramebufferCompat framebuffer) {
             synchronized (mRenderLock) {
                 if (mRedrawn) {
                     mRedrawn = false;

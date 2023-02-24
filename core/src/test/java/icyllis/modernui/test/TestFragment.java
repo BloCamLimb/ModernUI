@@ -18,6 +18,7 @@
 
 package icyllis.modernui.test;
 
+import com.ibm.icu.text.CompactDecimalFormat;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.fragment.Fragment;
 import icyllis.modernui.graphics.*;
@@ -34,7 +35,11 @@ import org.apache.logging.log4j.core.config.Configurator;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import java.math.BigDecimal;
+import java.util.Locale;
+
 import static icyllis.modernui.view.View.dp;
+import static icyllis.modernui.ModernUI.LOGGER;
 
 public class TestFragment extends Fragment {
 
@@ -42,12 +47,16 @@ public class TestFragment extends Fragment {
         System.setProperty("java.awt.headless", "true");
         Configurator.setRootLevel(Level.ALL);
         int complex = TypedValue.floatToComplex(-0.0f);
-        ModernUI.LOGGER.info("{} -> {}",
+        LOGGER.info("{} -> {}",
                 Integer.toHexString(complex),
                 TypedValue.complexToFloat(complex));
-        try (ModernUI app = new ModernUI()) {
+        CompactDecimalFormat format = CompactDecimalFormat.getInstance(
+                new Locale("ar"), CompactDecimalFormat.CompactStyle.SHORT);
+        format.setMaximumFractionDigits(2);
+        LOGGER.info(format.format(new BigDecimal("2136541565.615")));
+        /*try (ModernUI app = new ModernUI()) {
             app.run(new TestFragment());
-        }
+        }*/
         String str = """
                 public final class Reference {
                 public:

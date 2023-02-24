@@ -117,7 +117,7 @@ public class VertexFormat {
      * @param buffer  the vertex buffer object
      * @param offset  first vertex/instance data to the head of the buffer, in bytes
      */
-    public void setVertexBuffer(int binding, @Nonnull GLBuffer buffer, int offset) {
+    public void setVertexBuffer(int binding, @Nonnull GLBufferCompat buffer, int offset) {
         glVertexArrayVertexBuffer(getVertexArray(), binding, buffer.get(), offset, getBindingSize(binding));
         /*ModernUI.LOGGER.info("Bind Vertex Buffer: {VAO={}, bind={}, buffer={}, offset={}, stride={}}",
                 getVertexArray(), binding, buffer, offset, getBindingSize(binding));*/
@@ -138,7 +138,7 @@ public class VertexFormat {
      *
      * @param buffer the element buffer object
      */
-    public void setElementBuffer(@Nonnull GLBuffer buffer) {
+    public void setElementBuffer(@Nonnull GLBufferCompat buffer) {
         glVertexArrayElementBuffer(getVertexArray(), buffer.get());
     }
 

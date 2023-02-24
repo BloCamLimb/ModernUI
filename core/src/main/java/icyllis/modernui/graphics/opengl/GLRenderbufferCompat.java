@@ -28,9 +28,9 @@ import javax.annotation.Nonnull;
  * Represents OpenGL renderbuffer objects. Losing the reference to this object will
  * delete the renderbuffer automatically.
  */
-public final class GLRenderbuffer extends GLObject {
+public final class GLRenderbufferCompat extends GLObjectCompat {
 
-    public GLRenderbuffer() {
+    public GLRenderbufferCompat() {
     }
 
     @Override
@@ -63,9 +63,9 @@ public final class GLRenderbuffer extends GLObject {
         return GL45C.glGetNamedRenderbufferParameteri(get(), GL30C.GL_RENDERBUFFER_INTERNAL_FORMAT);
     }
 
-    private static final class Ref extends GLObject.Ref {
+    private static final class Ref extends GLObjectCompat.Ref {
 
-        private Ref(@Nonnull GLRenderbuffer owner) {
+        private Ref(@Nonnull GLRenderbufferCompat owner) {
             super(owner, GL45C.glCreateRenderbuffers());
         }
 

@@ -36,9 +36,9 @@ import java.util.Objects;
 @ApiStatus.Internal
 public sealed class Pixmap permits Bitmap {
 
-    private final ImageInfo mInfo;
+    final ImageInfo mInfo;
     private final long mPixels;
-    private final int mRowBytes;
+    private final int mRowStride;
 
     /**
      * Creates Pixmap from info width, height, AlphaType, and ColorType.
@@ -51,16 +51,16 @@ public sealed class Pixmap permits Bitmap {
      * The memory lifetime of pixels is managed by the caller. When Pixmap
      * becomes phantom-reachable, <var>addr</var> is unaffected.
      *
-     * @param info     width, height, AlphaType, ColorType of ImageInfo
-     * @param addr     pointer to pixels allocated by caller; may be null
-     * @param rowBytes size of one row of addr; width times pixel size, or larger
+     * @param info      width, height, AlphaType, ColorType of ImageInfo
+     * @param addr      pointer to pixels allocated by caller; may be null
+     * @param rowStride size of one row of addr; width times pixel size, or larger
      */
     public Pixmap(@NonNull ImageInfo info,
                   @NativeType("const void *") long addr,
-                  int rowBytes) {
+                  int rowStride) {
         mInfo = Objects.requireNonNull(info);
         mPixels = addr;
-        mRowBytes = rowBytes;
+        mRowStride = rowStride;
     }
 
     public ImageInfo getInfo() {
@@ -71,8 +71,8 @@ public sealed class Pixmap permits Bitmap {
         return mPixels;
     }
 
-    public int getRowBytes() {
-        return mRowBytes;
+    public int getRowStride() {
+        return mRowStride;
     }
 
     public int getWidth() {
@@ -93,5 +93,14 @@ public sealed class Pixmap permits Bitmap {
 
     public ColorSpace getColorSpace() {
         return mInfo.colorSpace();
+    }
+
+    @Override
+    public String toString() {
+        return "Pixmap{" +
+                "info=" + mInfo +
+                ", address=0x" + Long.toHexString(mPixels) +
+                ", rowStride=" + mRowStride +
+                '}';
     }
 }

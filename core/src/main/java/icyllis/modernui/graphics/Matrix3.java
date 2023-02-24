@@ -427,7 +427,7 @@ public final class Matrix3 implements Cloneable {
      *
      * @param p the pointer of the array to store
      */
-    public void put(long p) {
+    public void store(long p) {
         MemoryUtil.memPutFloat(p, m11);
         MemoryUtil.memPutFloat(p + 4, m12);
         MemoryUtil.memPutFloat(p + 8, m13);
@@ -446,7 +446,7 @@ public final class Matrix3 implements Cloneable {
      *
      * @param p the pointer of the array to store, must be aligned
      */
-    public void putAligned(long p) {
+    public void storeAligned(long p) {
         MemoryUtil.memPutFloat(p, m11);
         MemoryUtil.memPutFloat(p + 4, m12);
         MemoryUtil.memPutFloat(p + 8, m13);

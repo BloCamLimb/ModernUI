@@ -32,12 +32,12 @@ import java.lang.ref.Cleaner;
  * the constructor and special notes.
  */
 @RenderThread
-public abstract class GLObject implements AutoCloseable {
+public abstract class GLObjectCompat implements AutoCloseable {
 
     @Nullable
     protected Ref ref;
 
-    protected GLObject() {
+    protected GLObjectCompat() {
     }
 
     /**
@@ -81,7 +81,7 @@ public abstract class GLObject implements AutoCloseable {
          * @param owner the owner object
          * @param id    the id/name representing the OpenGL object created by the owner
          */
-        protected Ref(@Nonnull GLObject owner, int id) {
+        protected Ref(@Nonnull GLObjectCompat owner, int id) {
             mCleanup = ModernUI.registerCleanup(owner, this);
             mId = id;
         }

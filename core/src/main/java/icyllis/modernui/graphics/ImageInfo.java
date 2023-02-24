@@ -490,4 +490,14 @@ public final class ImageInfo {
                     Objects.equals(mColorSpace, ii.mColorSpace);
         return false;
     }
+
+    @Override
+    public String toString() {
+        return '{' +
+                "dimensions=" + mWidth + "x" + mHeight +
+                ", colorType=" + mColorType +
+                ", alphaType=" + mAlphaType +
+                ", colorSpace=" + mColorSpace +
+                '}';
+    }
 }

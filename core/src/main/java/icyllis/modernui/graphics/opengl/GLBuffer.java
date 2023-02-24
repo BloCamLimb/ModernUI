@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,114 +18,177 @@
 
 package icyllis.modernui.graphics.opengl;
 
-import icyllis.modernui.core.Core;
-import org.lwjgl.opengl.*;
+import icyllis.modernui.graphics.RefCnt;
+import icyllis.modernui.graphics.SharedPtr;
+import icyllis.modernui.graphics.engine.Buffer;
+import icyllis.modernui.graphics.engine.CpuBuffer;
 
-import javax.annotation.Nonnull;
-import java.nio.ByteBuffer;
+import javax.annotation.Nullable;
 
-/**
- * Represents a OpenGL buffer object.
- */
-public class GLBuffer extends GLObject {
+import static icyllis.modernui.graphics.engine.Engine.BufferUsageFlags;
+import static icyllis.modernui.graphics.opengl.GLCore.*;
+import static org.lwjgl.system.MemoryUtil.NULL;
 
-    public GLBuffer() {
+public final class GLBuffer extends Buffer {
+
+    private int mBuffer;
+
+    private boolean mLocked;
+
+    private long mMappedBuffer;
+    @SharedPtr
+    private CpuBuffer mStagingBuffer;
+
+    private GLBuffer(GLServer server,
+                     int size,
+                     int usage,
+                     int buffer) {
+        super(server, size, usage);
+        mBuffer = buffer;
+
+        registerWithCache(true);
     }
 
-    /**
-     * Returns the OpenGL buffer object name currently associated with this
-     * object, or create and initialize it if not available. It may change in
-     * the future if it is explicitly deleted.
-     *
-     * @return OpenGL buffer object
-     */
+    @Nullable
+    @SharedPtr
+    public static GLBuffer make(GLServer server,
+                                int size,
+                                int usage) {
+        assert (size > 0);
+
+        int allocFlags = 0;
+        if ((usage & (BufferUsageFlags.kVertex | BufferUsageFlags.kIndex | BufferUsageFlags.kUniform)) != 0) {
+            allocFlags |= GL_DYNAMIC_STORAGE_BIT;
+        }
+        if ((usage & BufferUsageFlags.kTransferSrc) != 0) {
+            allocFlags |= GL_MAP_WRITE_BIT;
+        }
+        if ((usage & BufferUsageFlags.kTransferDst) != 0) {
+            allocFlags |= GL_MAP_READ_BIT;
+        }
+
+        int buffer = glCreateBuffers();
+        if (buffer == 0) {
+            return null;
+        }
+        if (server.getCaps().skipErrorChecks()) {
+            glNamedBufferStorage(buffer, size, allocFlags);
+        } else {
+            glClearErrors();
+            glNamedBufferStorage(buffer, size, allocFlags);
+            if (glGetError() != GL_NO_ERROR) {
+                glDeleteBuffers(buffer);
+                return null;
+            }
+        }
+
+        return new GLBuffer(server, size, usage, buffer);
+    }
+
+    public int getBufferID() {
+        return mBuffer;
+    }
+
     @Override
-    public final int get() {
-        if (ref == null) {
-            ref = new Ref(this);
+    protected void onRelease() {
+        if (mBuffer != 0) {
+            glDeleteBuffers(mBuffer);
+            mBuffer = 0;
         }
-        return ref.mId;
+        mLocked = false;
+        mMappedBuffer = NULL;
+        mStagingBuffer = RefCnt.move(mStagingBuffer);
     }
 
-    /**
-     * Binds this buffer to the indexed buffer target, as well as entirely to the binding
-     * point in the array given by index. Each target has its own indexed array of buffer object
-     * binding points.
-     *
-     * @param target the target of the bind operation
-     * @param index  the index of the binding point within the array specified by {@code target}
-     */
-    public void bindBase(int target, int index) {
-        GL30C.glBindBufferBase(target, index, get());
+    @Override
+    protected void onDiscard() {
+        mBuffer = 0;
+        mLocked = false;
+        mMappedBuffer = NULL;
+        mStagingBuffer = RefCnt.move(mStagingBuffer);
     }
 
-    /**
-     * Binds this buffer to the indexed buffer target, as well as a range within it to the
-     * binding point in the array given by index. Each target has its own indexed array of buffer
-     * object binding points.
-     *
-     * @param target the target of the bind operation
-     * @param index  the index of the binding point within the array specified by {@code target}
-     * @param offset the start offset in bytes into the buffer
-     * @param size   the amount of data in bytes that can be read from the buffer object while used as an indexed target
-     */
-    public void bindRange(int target, int index, long offset, long size) {
-        GL30C.glBindBufferRange(target, index, get(), offset, size);
+    @Override
+    protected GLServer getServer() {
+        return (GLServer) super.getServer();
     }
 
-    /**
-     * Creates the immutable data store of this buffer object.
-     *
-     * @param size  the size of the data store in bytes
-     * @param data  the data to initialize the buffer, or {@code NULL} leaving it undefined
-     * @param flags the bitwise {@code OR} of flags describing the intended usage of the buffer object's data
-     *              store by the application
-     */
-    public void allocate(long size, long data, int flags) {
-        GL45C.nglNamedBufferStorage(get(), size, data, flags);
-    }
+    @Override
+    protected long onLock(int mode, int offset, int size) {
+        assert (getServer().getContext().isOwnerThread());
+        assert (!mLocked);
+        assert (mBuffer != 0);
 
-    /**
-     * Creates the mutable data store of this buffer object.
-     *
-     * @param size  the size of the data store in bytes
-     * @param data  the data to initialize the buffer, or {@code NULL} leaving it undefined
-     * @param usage the expected usage pattern of the data store
-     */
-    public void allocateM(long size, long data, int usage) {
-        GL45C.nglNamedBufferData(get(), size, data, usage);
-    }
+        mLocked = true;
 
-    /**
-     * Modifies a subset of this buffer object's data store.
-     *
-     * @param offset the offset into the buffer object's data store where data replacement will begin, measured in bytes
-     * @param size   the size in bytes of the data store region being replaced
-     * @param data   a pointer to the new data that will be copied into the data store, can't be {@code NULL}
-     */
-    public void upload(long offset, long size, long data) {
-        GL45C.nglNamedBufferSubData(get(), offset, size, data);
-    }
-
-    /**
-     * Modifies a subset of this buffer object's data store.
-     *
-     * @param offset the offset into the buffer object's data store where data replacement will begin, measured in bytes
-     * @param data   a pointer to the new data that will be copied into the data store, can't be {@code NULL}
-     */
-    public void upload(long offset, @Nonnull ByteBuffer data) {
-        GL45C.glNamedBufferSubData(get(), offset, data);
-    }
-
-    private static final class Ref extends GLObject.Ref {
-
-        private Ref(@Nonnull GLBuffer owner) {
-            super(owner, GL45C.glCreateBuffers());
+        if (mode == kRead_LockMode) {
+            // prefer mapping, such as pixel buffer object
+            mMappedBuffer = nglMapNamedBufferRange(mBuffer, offset, size, GL_MAP_READ_BIT);
+            if (mMappedBuffer == NULL) {
+                throw new IllegalStateException();
+            }
+            return mMappedBuffer;
+        } else {
+            // prefer CPU staging buffer
+            assert (mode == kWriteDiscard_LockMode);
+            mStagingBuffer = getServer().getCpuBufferCache().makeBuffer(size);
+            assert (mStagingBuffer != null);
+            return mStagingBuffer.data();
         }
+    }
 
-        @Override
-        public void run() {
-            Core.executeOnRenderThread(() -> GL15C.glDeleteBuffers(mId));
+    @Override
+    protected void onUnlock(int mode, int offset, int size) {
+        assert (getServer().getContext().isOwnerThread());
+        assert (mLocked);
+        assert (mBuffer != 0);
+
+        if (mode == kRead_LockMode) {
+            assert (mMappedBuffer != NULL);
+            glUnmapNamedBuffer(mBuffer);
+            mMappedBuffer = NULL;
+        } else {
+            assert (mode == kWriteDiscard_LockMode);
+            if ((mUsage & BufferUsageFlags.kStatic) == 0) {
+                glInvalidateBufferSubData(mBuffer, offset, size);
+            }
+            assert (mStagingBuffer != null);
+            doUploadData(mStagingBuffer.data(), offset, size);
+            mStagingBuffer = RefCnt.move(mStagingBuffer);
+        }
+        mLocked = false;
+    }
+
+    @Override
+    public boolean isLocked() {
+        return mLocked;
+    }
+
+    @Override
+    public long getLockedBuffer() {
+        assert (mLocked);
+        return mMappedBuffer != NULL ? mMappedBuffer : mStagingBuffer.data();
+    }
+
+    @Override
+    protected boolean onUpdateData(long data, int offset, int size) {
+        assert (getServer().getContext().isOwnerThread());
+        assert (mBuffer != 0);
+        if ((mUsage & BufferUsageFlags.kStatic) == 0) {
+            glInvalidateBufferSubData(mBuffer, offset, size);
+        }
+        doUploadData(data, offset, size);
+        return true;
+    }
+
+    private void doUploadData(long data, int offset, int totalSize) {
+        while (totalSize > 0) {
+            // restricted to 256KB per update
+            int size = Math.min(1 << 18, totalSize);
+            nglNamedBufferSubData(mBuffer, offset, size, data);
+            data += size;
+            offset += size;
+            totalSize -= size;
         }
     }
 }
