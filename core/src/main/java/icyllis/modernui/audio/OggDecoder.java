@@ -69,7 +69,7 @@ public class OggDecoder extends SoundSample {
             int headerSize = consumed.get(0);
             mBuffer.position(mBuffer.position() + headerSize);
 
-            STBVorbisInfo info = STBVorbisInfo.mallocStack(stack);
+            STBVorbisInfo info = STBVorbisInfo.malloc(stack);
             STBVorbis.stb_vorbis_get_info(decoder, info);
             mSampleRate = info.sample_rate();
             int channels = info.channels();
@@ -138,7 +138,7 @@ public class OggDecoder extends SoundSample {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             final PointerBuffer samples = stack.mallocPointer(1);
             final IntBuffer count = stack.mallocInt(1);
-            for (; ; ) {
+            for (;;) {
                 int n = STBVorbis.stb_vorbis_decode_frame_pushdata(mDecoder, mBuffer, null, samples, count);
                 mBuffer.position(mBuffer.position() + n);
                 if (n == 0) {

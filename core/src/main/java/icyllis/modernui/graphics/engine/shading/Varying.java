@@ -18,9 +18,12 @@
 
 package icyllis.modernui.graphics.engine.shading;
 
-import icyllis.modernui.graphics.engine.SLType;
+import icyllis.modernui.graphics.engine.ShaderDataType;
 import icyllis.modernui.graphics.engine.ShaderVar;
 
+/**
+ * Shader stage inputs and outputs.
+ */
 public final class Varying {
 
     byte mType;
@@ -28,27 +31,27 @@ public final class Varying {
     String mFsIn = null;
 
     /**
-     * @param type see {@link SLType}
+     * @param type see {@link ShaderDataType}
      */
     public Varying(byte type) {
         // Metal doesn't support varying matrices, so we disallow them everywhere for consistency
-        assert (type != SLType.kVoid && !SLType.isMatrixType(type));
+        assert (type != ShaderDataType.kVoid && !ShaderDataType.isMatrixType(type));
         mType = type;
     }
 
     /**
-     * @param type see {@link SLType}
+     * @param type see {@link ShaderDataType}
      */
     public void reset(byte type) {
         // Metal doesn't support varying matrices, so we disallow them everywhere for consistency
-        assert (type != SLType.kVoid && !SLType.isMatrixType(type));
+        assert (type != ShaderDataType.kVoid && !ShaderDataType.isMatrixType(type));
         mType = type;
         mVsOut = null;
         mFsIn = null;
     }
 
     /**
-     * @return see {@link SLType}
+     * @return see {@link ShaderDataType}
      */
     public byte type() {
         return mType;

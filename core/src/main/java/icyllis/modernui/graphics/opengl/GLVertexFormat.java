@@ -26,10 +26,12 @@ import static icyllis.modernui.graphics.opengl.GLCore.*;
 
 /**
  * Represents a set of vertex attribute specifications used with a vertex shader.
+ *
+ * @see icyllis.modernui.graphics.engine.GeometryProcessor.AttributeSet
  */
-public class VertexFormat {
+public class GLVertexFormat {
 
-    private final VertexAttrib[][] mAttributes;
+    private final GLVertexAttrib[][] mAttributeSets;
 
     private int mVertexArray = INVALID_ID;
 
@@ -43,33 +45,33 @@ public class VertexFormat {
      *
      * @param attribs all attribs
      */
-    public VertexFormat(@Nonnull VertexAttrib... attribs) {
+    public GLVertexFormat(@Nonnull GLVertexAttrib... attribs) {
         final int len = attribs.length;
         if (len == 0) {
             throw new IllegalArgumentException("No attribs");
         }
         // sequential generator
-        Arrays.sort(attribs, Comparator.comparingInt(VertexAttrib::getBinding));
-        mAttributes = new VertexAttrib[attribs[len - 1].getBinding() + 1][];
+        Arrays.sort(attribs, Comparator.comparingInt(GLVertexAttrib::getBinding));
+        mAttributeSets = new GLVertexAttrib[attribs[len - 1].getBinding() + 1][];
         int pos = 0, binding = 0;
         for (int i = 0; i <= len; i++) {
-            VertexAttrib a = i < len ? attribs[i] : null;
-            if (a != null && binding == a.getBinding()) {
+            GLVertexAttrib attr = i < len ? attribs[i] : null;
+            if (attr != null && binding == attr.getBinding()) {
                 continue;
             }
-            VertexAttrib[] arr = new VertexAttrib[i - pos];
+            GLVertexAttrib[] attributes = new GLVertexAttrib[i - pos];
             for (int j = pos, k = 0; j < i; j++, k++) {
-                arr[k] = attribs[j];
+                attributes[k] = attribs[j];
             }
-            mAttributes[binding] = arr;
-            if (a == null) {
+            mAttributeSets[binding] = attributes;
+            if (attr == null) {
                 break;
             }
             pos = i;
-            for (int j = binding + 1; j < a.getBinding(); j++) {
-                mAttributes[j] = new VertexAttrib[0];
+            for (int j = binding + 1; j < attr.getBinding(); j++) {
+                mAttributeSets[j] = new GLVertexAttrib[0];
             }
-            binding = a.getBinding();
+            binding = attr.getBinding();
         }
     }
 
@@ -90,12 +92,12 @@ public class VertexFormat {
      */
     public void setFormat(int array) {
         int location = 0;
-        for (var attribs : mAttributes) {
+        for (var attributes : mAttributeSets) {
             // relative offset in binding point
             int offset = 0;
-            for (var a : attribs) {
-                offset = a.setFormat(array, location, offset);
-                location += a.getCount();
+            for (var attr : attributes) {
+                offset = attr.setFormat(array, location, offset);
+                location += attr.getLocationSize();
             }
         }
     }
@@ -104,7 +106,7 @@ public class VertexFormat {
      * @return the max binding point of this VertexFormat
      */
     public int getMaxBinding() {
-        return mAttributes.length - 1;
+        return mAttributeSets.length - 1;
     }
 
     /**
@@ -138,7 +140,7 @@ public class VertexFormat {
      *
      * @param buffer the element buffer object
      */
-    public void setElementBuffer(@Nonnull GLBufferCompat buffer) {
+    public void setIndexBuffer(@Nonnull GLBufferCompat buffer) {
         glVertexArrayElementBuffer(getVertexArray(), buffer.get());
     }
 
@@ -150,21 +152,21 @@ public class VertexFormat {
      */
     public int getBindingSize(int binding) {
         int size = 0;
-        for (var a : mAttributes[binding]) {
-            size += a.getTotalSize();
+        for (var attributes : mAttributeSets[binding]) {
+            size += attributes.getTotalSize();
         }
         return size;
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.deepHashCode(mAttributeSets);
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        return Arrays.deepEquals(mAttributes, ((VertexFormat) o).mAttributes);
-    }
-
-    @Override
-    public int hashCode() {
-        return Arrays.deepHashCode(mAttributes);
+        return Arrays.deepEquals(mAttributeSets, ((GLVertexFormat) o).mAttributeSets);
     }
 }

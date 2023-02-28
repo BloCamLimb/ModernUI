@@ -648,8 +648,10 @@ public final class GLCore extends GL45C {
     /**
      * @see #glFormatToIndex(int)
      */
-    public static final int LAST_COLOR_FORMAT_INDEX = 16;
-    public static final int LAST_FORMAT_INDEX = 19;
+    //@formatter:off
+    public static final int
+            LAST_COLOR_FORMAT_INDEX = 16,
+            LAST_FORMAT_INDEX       = 19;
 
     /**
      * Lists all supported OpenGL texture formats and converts to table index.
@@ -659,28 +661,29 @@ public final class GLCore extends GL45C {
      */
     public static int glFormatToIndex(@NativeType("GLenum") int format) {
         return switch (format) {
-            case GL_RGBA8 -> 1;
-            case GL_R8 -> 2;
-            case GL_RGB565 -> 3;
-            case GL_RGBA16F -> 4;
-            case GL_R16F -> 5;
-            case GL_RGB8 -> 6;
-            case GL_RG8 -> 7;
-            case GL_RGB10_A2 -> 8;
-            case GL_SRGB8_ALPHA8 -> 9;
-            case GL_COMPRESSED_RGB8_ETC2 -> 10;
-            case GL_COMPRESSED_RGB_S3TC_DXT1_EXT -> 11;
+            case GL_RGBA8                         -> 1;
+            case GL_R8                            -> 2;
+            case GL_RGB565                        -> 3;
+            case GL_RGBA16F                       -> 4;
+            case GL_R16F                          -> 5;
+            case GL_RGB8                          -> 6;
+            case GL_RG8                           -> 7;
+            case GL_RGB10_A2                      -> 8;
+            case GL_SRGB8_ALPHA8                  -> 9;
+            case GL_COMPRESSED_RGB8_ETC2          -> 10;
+            case GL_COMPRESSED_RGB_S3TC_DXT1_EXT  -> 11;
             case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT -> 12;
-            case GL_R16 -> 13;
-            case GL_RG16 -> 14;
-            case GL_RGBA16 -> 15;
-            case GL_RG16F -> 16;            // LAST_COLOR_FORMAT_INDEX
-            case GL_STENCIL_INDEX8 -> 17;
-            case GL_STENCIL_INDEX16 -> 18;
-            case GL_DEPTH24_STENCIL8 -> 19; // LAST_FORMAT_INDEX
+            case GL_R16                           -> 13;
+            case GL_RG16                          -> 14;
+            case GL_RGBA16                        -> 15;
+            case GL_RG16F                         -> 16; // LAST_COLOR_FORMAT_INDEX
+            case GL_STENCIL_INDEX8                -> 17;
+            case GL_STENCIL_INDEX16               -> 18;
+            case GL_DEPTH24_STENCIL8              -> 19; // LAST_FORMAT_INDEX
             default -> 0;
         };
     }
+    //@formatter:on
 
     /**
      * Reverse of {@link #glFormatToIndex(int)}.
@@ -708,14 +711,17 @@ public final class GLCore extends GL45C {
             case 17 -> GL_STENCIL_INDEX8;
             case 18 -> GL_STENCIL_INDEX16;
             case 19 -> GL_DEPTH24_STENCIL8;
-            default -> throw new IllegalArgumentException();
+            default -> {
+                assert false : index;
+                yield 0;
+            }
         };
     }
 
     /**
      * @see Color#COLOR_CHANNEL_FLAGS_RGBA
      */
-    public static int glFormatChannels(int format) {
+    public static int glFormatChannels(@NativeType("GLenum") int format) {
         return switch (format) {
             case GL_RGBA8,
                     GL_RGBA16,
@@ -851,7 +857,7 @@ public final class GLCore extends GL45C {
             case GL_STENCIL_INDEX8 -> "STENCIL_INDEX8";
             case GL_STENCIL_INDEX16 -> "STENCIL_INDEX16";
             case GL_DEPTH24_STENCIL8 -> "DEPTH24_STENCIL8";
-            default -> Integer.toString(format);
+            default -> APIUtil.apiUnknownToken(format);
         };
     }
 

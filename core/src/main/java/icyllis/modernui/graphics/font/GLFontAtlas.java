@@ -19,15 +19,13 @@
 package icyllis.modernui.graphics.font;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.annotation.RenderThread;
+import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.Bitmap;
 import icyllis.modernui.graphics.opengl.GLTextureCompat;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.file.Path;
 
@@ -114,7 +112,7 @@ public class GLFontAtlas implements AutoCloseable {
         mGlyphs.put(key, null);
     }
 
-    public boolean stitch(@Nonnull GLBakedGlyph glyph, long pixels) {
+    public boolean stitch(@NonNull GLBakedGlyph glyph, long pixels) {
         boolean resized = false;
         glyph.texture = mTexture.get();
         if (mWidth == 0) {
@@ -183,17 +181,18 @@ public class GLFontAtlas implements AutoCloseable {
             if (sCopyFramebuffer == 0) {
                 sCopyFramebuffer = glGenFramebuffers();
             }
-            final int pt = glGetInteger(GL_TEXTURE_BINDING_2D);
+            final int lastKnownTexture = glGetInteger(GL_TEXTURE_BINDING_2D);
             glBindTexture(GL_TEXTURE_2D, newTexture.get());
-            final int pfb = glGetInteger(GL_FRAMEBUFFER_BINDING);
+            final int lastKnownFramebuffer = glGetInteger(GL_FRAMEBUFFER_BINDING);
             glBindFramebuffer(GL_FRAMEBUFFER, sCopyFramebuffer);
 
             glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, mTexture.get(), 0);
             glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, oldWidth, oldHeight);
             glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, 0, 0);
 
-            glBindTexture(GL_TEXTURE_2D, pt);
-            glBindFramebuffer(GL_FRAMEBUFFER, pfb);
+            // restore GL context
+            glBindTexture(GL_TEXTURE_2D, lastKnownTexture);
+            glBindFramebuffer(GL_FRAMEBUFFER, lastKnownFramebuffer);
 
             mTexture.close();
             mTexture = newTexture;
@@ -226,6 +225,7 @@ public class GLFontAtlas implements AutoCloseable {
         }
         mTexture.setFilterCompat(sLinearSampling ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST, GL_NEAREST);
         if (!mColored) {
+            //XXX: un-premultiplied
             mTexture.setSwizzleCompat(GL_ONE, GL_ONE, GL_ONE, GL_RED);
         }
     }
@@ -233,14 +233,14 @@ public class GLFontAtlas implements AutoCloseable {
     public void debug(@Nullable String path) {
         if (path == null) {
             for (var glyph : mGlyphs.long2ObjectEntrySet()) {
-                ModernUI.LOGGER.info(GlyphManager.MARKER, "Key {}: {}",
+                ModernUI.LOGGER.info(GlyphManager.MARKER, "Key 0x{}: {}",
                         Long.toHexString(glyph.getLongKey()), glyph.getValue());
             }
         } else if (Core.isOnRenderThread()) {
             ModernUI.LOGGER.info(GlyphManager.MARKER, "Glyphs: {}", mGlyphs.size());
-            try (Bitmap image = Bitmap.download(mColored ? Bitmap.Format.RGBA_8888 : Bitmap.Format.GRAY_8,
+            try (Bitmap bitmap = Bitmap.download(mColored ? Bitmap.Format.RGBA_8888 : Bitmap.Format.GRAY_8,
                     mTexture, false)) {
-                image.saveToPath(Path.of(path), Bitmap.SaveFormat.PNG, 0);
+                bitmap.saveToPath(Path.of(path), Bitmap.SaveFormat.PNG, 0);
             } catch (IOException e) {
                 e.printStackTrace();
             }

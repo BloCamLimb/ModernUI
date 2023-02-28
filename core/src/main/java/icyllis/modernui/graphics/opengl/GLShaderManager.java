@@ -37,21 +37,21 @@ import java.util.Set;
 /**
  * This class helps you create shaders and programs.
  */
-public class ShaderManager {
+public class GLShaderManager {
 
-    private static final ShaderManager INSTANCE = new ShaderManager();
+    private static final GLShaderManager INSTANCE = new GLShaderManager();
 
     private final Set<Listener> mListeners = new HashSet<>();
 
     private Map<String, Object2IntMap<String>> mShaders = new HashMap<>();
 
-    private ShaderManager() {
+    private GLShaderManager() {
     }
 
     /**
      * @return the global shader manager instance
      */
-    public static ShaderManager getInstance() {
+    public static GLShaderManager getInstance() {
         return INSTANCE;
     }
 
@@ -248,6 +248,6 @@ public class ShaderManager {
          * @param manager the shader manager
          */
         @RenderThread
-        void onReload(@Nonnull ShaderManager manager);
+        void onReload(@Nonnull GLShaderManager manager);
     }
 }

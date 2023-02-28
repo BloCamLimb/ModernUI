@@ -140,7 +140,7 @@ public class GLPipeline extends ManagedResource {
                                        int bindingIndex) {
         for (var attrib : attribs) {
             // a matrix can take up multiple locations
-            int locations = attrib.locationSize();
+            int locations = attrib.locations();
             assert (locations > 0);
             int offset = attrib.offset();
             while (locations-- > 0) {
@@ -148,7 +148,7 @@ public class GLPipeline extends ManagedResource {
                 glVertexArrayAttribBinding(vertexArray, attribIndex, bindingIndex);
                 setAttribFormat(attrib.srcType(), vertexArray, attribIndex, offset);
                 attribIndex++;
-                offset += attrib.stepSize();
+                offset += attrib.size();
             }
         }
         return attribIndex;

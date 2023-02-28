@@ -38,9 +38,9 @@ public interface Surface {
     int FLAG_BUDGETED = 1;
     /**
      * Indicates whether a backing store needs to be an exact match or can be larger than
-     * is strictly necessary. Loose fit when set, otherwise exact fit.
+     * is strictly necessary. Approx fit when set, otherwise exact fit.
      */
-    int FLAG_LOOSE_FIT = 1 << 1;
+    int FLAG_APPROX_FIT = 1 << 1;
     /**
      * Used to say whether a texture has mip levels allocated or not. Mipmaps are allocated
      * when set, otherwise mipmaps are not allocated.

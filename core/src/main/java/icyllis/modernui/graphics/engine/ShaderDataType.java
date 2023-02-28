@@ -23,7 +23,7 @@ import javax.annotation.Nonnull;
 /**
  * Types of shader-language-specific boxed variables we can create, shared constants.
  */
-public final class SLType {
+public final class ShaderDataType {
 
     public static final byte
             kVoid = 0,
@@ -341,7 +341,7 @@ public final class SLType {
      * Returns the number of locations take up by a given SLType. We assume that all
      * scalar values are 32 bits.
      */
-    public static int locationSize(byte type) {
+    public static int locationCount(byte type) {
         switch (type) {
             case kBool:
             case kBool2:

@@ -19,7 +19,7 @@
 package icyllis.modernui.graphics.opengl;
 
 import icyllis.modernui.graphics.MathUtil;
-import icyllis.modernui.graphics.engine.SLType;
+import icyllis.modernui.graphics.engine.ShaderDataType;
 import icyllis.modernui.graphics.engine.UniformDataManager;
 import icyllis.modernui.graphics.engine.shading.UniformHandler;
 
@@ -46,7 +46,7 @@ public class GLPipelineStateDataManager extends UniformDataManager {
             UniformHandler.UniformInfo uniformInfo = uniforms.get(i);
             assert ((uniformInfo.mOffset & 0xFFFFFF) == uniformInfo.mOffset);
             assert (MathUtil.isAlign4(uniformInfo.mOffset));
-            assert (SLType.canBeUniformValue(uniformInfo.mVariable.getType()));
+            assert (ShaderDataType.canBeUniformValue(uniformInfo.mVariable.getType()));
             mUniforms[i] = uniformInfo.mOffset | (uniformInfo.mVariable.getType() << 24);
         }
     }

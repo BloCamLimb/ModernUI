@@ -79,7 +79,7 @@ public class TextureProxy extends SurfaceProxy {
         // So fully lazy proxies are created with width and height < 0. Regular lazy proxies must be
         // created with positive widths and heights. The width and height are set to 0 only after a
         // failed instantiation. The former must be "approximate" fit while the latter can be either.
-        assert (width < 0 && height < 0 && (surfaceFlags & Surface.FLAG_LOOSE_FIT) != 0) ||
+        assert (width < 0 && height < 0 && (surfaceFlags & Surface.FLAG_APPROX_FIT) != 0) ||
                 (width > 0 && height > 0);
     }
 
@@ -94,7 +94,7 @@ public class TextureProxy extends SurfaceProxy {
                         int surfaceFlags) {
         super(texture, surfaceFlags);
         mMipmapsDirty = texture.isMipmapsDirty();
-        assert (mSurfaceFlags & Surface.FLAG_LOOSE_FIT) == 0;
+        assert (mSurfaceFlags & Surface.FLAG_APPROX_FIT) == 0;
         assert (mFormat.isExternal() == texture.isExternal());
         assert (texture.isMipmapped()) == ((mSurfaceFlags & Surface.FLAG_MIPMAPPED) != 0);
         assert (texture.getBudgetType() == BudgetType.Budgeted) == ((mSurfaceFlags & Surface.FLAG_BUDGETED) != 0);
@@ -134,7 +134,7 @@ public class TextureProxy extends SurfaceProxy {
         if (mTexture != null) {
             return mTexture.getWidth();
         }
-        if ((mSurfaceFlags & Surface.FLAG_LOOSE_FIT) != 0) {
+        if ((mSurfaceFlags & Surface.FLAG_APPROX_FIT) != 0) {
             return ResourceProvider.makeApprox(mWidth);
         }
         return mWidth;
@@ -146,7 +146,7 @@ public class TextureProxy extends SurfaceProxy {
         if (mTexture != null) {
             return mTexture.getHeight();
         }
-        if ((mSurfaceFlags & Surface.FLAG_LOOSE_FIT) != 0) {
+        if ((mSurfaceFlags & Surface.FLAG_APPROX_FIT) != 0) {
             return ResourceProvider.makeApprox(mHeight);
         }
         return mHeight;
@@ -182,7 +182,7 @@ public class TextureProxy extends SurfaceProxy {
         }
 
         assert ((mSurfaceFlags & Surface.FLAG_MIPMAPPED) == 0) ||
-                ((mSurfaceFlags & Surface.FLAG_LOOSE_FIT) == 0);
+                ((mSurfaceFlags & Surface.FLAG_APPROX_FIT) == 0);
 
         final Texture texture = resourceProvider.createTexture(mWidth, mHeight, mFormat,
                 getSampleCount(), mSurfaceFlags, "");
@@ -272,7 +272,7 @@ public class TextureProxy extends SurfaceProxy {
         // use proxy params
         return Texture.computeSize(mFormat, mWidth, mHeight, getSampleCount(),
                 (mSurfaceFlags & Surface.FLAG_MIPMAPPED) != 0,
-                (mSurfaceFlags & Surface.FLAG_LOOSE_FIT) != 0);
+                (mSurfaceFlags & Surface.FLAG_APPROX_FIT) != 0);
     }
 
     public final boolean isPromiseProxy() {
@@ -363,7 +363,7 @@ public class TextureProxy extends SurfaceProxy {
     @ApiStatus.Internal
     public final void makeProxyExact(boolean allocatedCaseOnly) {
         assert !isLazyMost();
-        if ((mSurfaceFlags & Surface.FLAG_LOOSE_FIT) == 0) {
+        if ((mSurfaceFlags & Surface.FLAG_APPROX_FIT) == 0) {
             return;
         }
 
@@ -390,7 +390,7 @@ public class TextureProxy extends SurfaceProxy {
 
         // The Approx uninstantiated case. Making this proxy be exact should be okay.
         // It could mess things up if prior decisions were based on the approximate size.
-        mSurfaceFlags &= ~Surface.FLAG_LOOSE_FIT;
+        mSurfaceFlags &= ~Surface.FLAG_APPROX_FIT;
         // If GpuMemorySize is used when caching specialImages for the image filter DAG. If it has
         // already been computed we want to leave it alone so that amount will be removed when
         // the special image goes away. If it hasn't been computed yet it might as well compute the
@@ -412,7 +412,7 @@ public class TextureProxy extends SurfaceProxy {
     @SharedPtr
     Texture createTexture(ResourceProvider resourceProvider) {
         assert ((mSurfaceFlags & Surface.FLAG_MIPMAPPED) == 0 ||
-                (mSurfaceFlags & Surface.FLAG_LOOSE_FIT) == 0);
+                (mSurfaceFlags & Surface.FLAG_APPROX_FIT) == 0);
         assert !isLazy();
         assert mTexture == null;
 

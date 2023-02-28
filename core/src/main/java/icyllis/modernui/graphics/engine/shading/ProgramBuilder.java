@@ -165,7 +165,7 @@ public abstract class ProgramBuilder {
         mProjectionUniform = uniformHandler().addUniform(
                 null,
                 ShaderFlags.kVertex,
-                SLType.kFloat4,
+                ShaderDataType.kFloat4,
                 UniformHandler.PROJECTION_NAME);
 
         mFS.codeAppendf("// Stage %d, %s\n", mStageIndex, geomProc.name());

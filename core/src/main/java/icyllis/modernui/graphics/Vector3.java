@@ -216,7 +216,7 @@ public class Vector3 {
      * @return {@code true} if is normalized, {@code false} otherwise
      */
     public boolean isNormalized() {
-        return MathUtil.isNearlyEqual(lengthSq(), 1.0f);
+        return MathUtil.isApproxEqual(lengthSq(), 1.0f);
     }
 
     /**
@@ -397,9 +397,9 @@ public class Vector3 {
      */
     public boolean equivalent(@Nonnull Vector3 v) {
         if (this == v) return true;
-        return MathUtil.isNearlyEqual(x, v.x) &&
-                MathUtil.isNearlyEqual(y, v.y) &&
-                MathUtil.isNearlyEqual(z, v.z);
+        return MathUtil.isApproxEqual(x, v.x) &&
+                MathUtil.isApproxEqual(y, v.y) &&
+                MathUtil.isApproxEqual(z, v.z);
     }
 
     @Override

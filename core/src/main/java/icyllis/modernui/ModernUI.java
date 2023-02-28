@@ -195,7 +195,7 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
         GLCore.showCapsErrorDialog();
 
         final GLSurfaceCanvas canvas = GLSurfaceCanvas.initialize();
-        ShaderManager.getInstance().reload();
+        GLShaderManager.getInstance().reload();
 
         glEnable(GL_CULL_FACE);
         glEnable(GL_BLEND);
@@ -264,7 +264,7 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
         mDecor.setLayoutDirection(View.LAYOUT_DIRECTION_LOCALE);
 
         try {
-            GLTextureCompat texture = TextureManager.getInstance().create(
+            GLTextureCompat texture = GLTextureManager.getInstance().create(
                     FileChannel.open(Path.of("F:", "eromanga.png"), StandardOpenOption.READ), true);
             Image image = new Image(texture);
             Drawable drawable = new ImageDrawable(image);

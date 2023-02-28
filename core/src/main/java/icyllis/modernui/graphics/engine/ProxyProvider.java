@@ -18,10 +18,10 @@
 
 package icyllis.modernui.graphics.engine;
 
+import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.graphics.Bitmap;
 import icyllis.modernui.graphics.SharedPtr;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-
-import javax.annotation.Nullable;
 
 /**
  * A factory for creating {@link TextureProxy}-derived objects. This class may be used on
@@ -89,7 +89,7 @@ public final class ProxyProvider {
      *
      * @see TextureProxy
      * @see Surface#FLAG_BUDGETED
-     * @see Surface#FLAG_LOOSE_FIT
+     * @see Surface#FLAG_APPROX_FIT
      * @see Surface#FLAG_MIPMAPPED
      * @see Surface#FLAG_PROTECTED
      * @see Surface#FLAG_SKIP_ALLOCATOR
@@ -99,7 +99,7 @@ public final class ProxyProvider {
     public TextureProxy createTextureProxy(BackendFormat format,
                                            int width, int height,
                                            int surfaceFlags) {
-        assert mContext.isOwnerThread();
+        mContext.checkOwnerThread();
         if (mContext.isDiscarded()) {
             return null;
         }
@@ -122,8 +122,30 @@ public final class ProxyProvider {
     }
 
     /**
+     * Creates a new texture proxy for the bitmap.
+     *
      * @see Surface#FLAG_BUDGETED
-     * @see Surface#FLAG_LOOSE_FIT
+     * @see Surface#FLAG_APPROX_FIT
+     * @see Surface#FLAG_MIPMAPPED
+     */
+    @Nullable
+    @SharedPtr
+    public TextureProxy createProxyFromBitmap(Bitmap bitmap, int surfaceFlags) {
+        mContext.checkOwnerThread();
+        assert ((surfaceFlags & Surface.FLAG_APPROX_FIT) == 0) ||
+                ((surfaceFlags & Surface.FLAG_MIPMAPPED) == 0);
+        if (mContext.isDiscarded()) {
+            return null;
+        }
+        if (!bitmap.getInfo().isValid()) {
+            return null;
+        }
+        return null;
+    }
+
+    /**
+     * @see Surface#FLAG_BUDGETED
+     * @see Surface#FLAG_APPROX_FIT
      * @see Surface#FLAG_MIPMAPPED
      * @see Surface#FLAG_PROTECTED
      * @see Surface#FLAG_SKIP_ALLOCATOR

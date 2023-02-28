@@ -32,11 +32,14 @@ import java.util.Map;
 
 /**
  * This class maintains OpenGL 2D textures decoded from local client resources.
+ *
+ * @deprecated to be be replaced by {@link icyllis.modernui.graphics.engine.ProxyProvider}
  */
+@Deprecated
 @ApiStatus.Internal
-public class TextureManager {
+public class GLTextureManager {
 
-    private static final TextureManager INSTANCE = new TextureManager();
+    private static final GLTextureManager INSTANCE = new GLTextureManager();
 
     public static final int CACHE_MASK = 0x1;
     public static final int MIPMAP_MASK = 0x2;
@@ -44,13 +47,13 @@ public class TextureManager {
     private final Object mLock = new Object();
     private Map<String, Map<String, GLTextureCompat>> mTextures = new HashMap<>();
 
-    private TextureManager() {
+    private GLTextureManager() {
     }
 
     /**
      * @return the global texture manager instance
      */
-    public static TextureManager getInstance() {
+    public static GLTextureManager getInstance() {
         return INSTANCE;
     }
 
@@ -91,8 +94,8 @@ public class TextureManager {
             texture = new GLTextureCompat(GLCore.GL_TEXTURE_2D);
         }
         try (InputStream stream = ModernUI.getInstance().getResourceStream(namespace, path)) {
-            Bitmap image = Bitmap.decode(null, stream);
-            create(texture, image, (flags & MIPMAP_MASK) != 0);
+            Bitmap bitmap = Bitmap.decode(Bitmap.Format.RGBA_8888, stream);
+            createFromBitmap(texture, bitmap, (flags & MIPMAP_MASK) != 0);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -103,16 +106,16 @@ public class TextureManager {
      * Create the texture from stream, cache will not be used, stream will be closed
      * automatically.
      *
-     * @param stream resource stream
-     * @param mipmap should generate mipmaps
+     * @param stream    resource stream
+     * @param mipmapped should generate mipmaps
      * @return texture
      */
     @Nonnull
-    public GLTextureCompat create(@Nonnull InputStream stream, boolean mipmap) {
+    public GLTextureCompat create(@Nonnull InputStream stream, boolean mipmapped) {
         GLTextureCompat texture = new GLTextureCompat(GLCore.GL_TEXTURE_2D);
         try (stream) {
-            Bitmap image = Bitmap.decode(null, stream);
-            create(texture, image, mipmap);
+            Bitmap bitmap = Bitmap.decode(Bitmap.Format.RGBA_8888, stream);
+            createFromBitmap(texture, bitmap, mipmapped);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -123,38 +126,38 @@ public class TextureManager {
      * Create the texture from channel, cache will not be used, channel will be closed
      * automatically.
      *
-     * @param channel resource channel
-     * @param mipmap  should generate mipmaps
+     * @param channel   resource channel
+     * @param mipmapped should generate mipmaps
      * @return texture
      */
     @Nonnull
-    public GLTextureCompat create(@Nonnull ReadableByteChannel channel, boolean mipmap) {
+    public GLTextureCompat create(@Nonnull ReadableByteChannel channel, boolean mipmapped) {
         GLTextureCompat texture = new GLTextureCompat(GLCore.GL_TEXTURE_2D);
         try (channel) {
             Bitmap bitmap = Bitmap.decode(Bitmap.Format.RGBA_8888, channel);
-            create(texture, bitmap, mipmap);
+            createFromBitmap(texture, bitmap, mipmapped);
         } catch (IOException e) {
             e.printStackTrace();
         }
         return texture;
     }
 
-    private void create(@Nonnull GLTextureCompat texture, @Nonnull Bitmap bitmap, boolean mipmap) {
+    private void createFromBitmap(@Nonnull GLTextureCompat texture, @Nonnull Bitmap bitmap, boolean mipmapped) {
         int width = bitmap.getWidth();
         int height = bitmap.getHeight();
         texture.setDimension(width, height, 1);
         int rowPixels = bitmap.getRowStride() / bitmap.getChannels();
         if (Core.isOnRenderThread()) {
-            texture.allocate2D(bitmap.getInternalGlFormat(), width, height, mipmap ? 4 : 0);
+            texture.allocate2D(bitmap.getInternalGlFormat(), width, height, mipmapped ? 4 : 0);
             texture.upload(0, 0, 0, width, height, rowPixels,
                     0, 0, 1, bitmap.getExternalGlFormat(), GLCore.GL_UNSIGNED_BYTE, bitmap.getPixels());
             texture.setFilter(true, true);
-            if (mipmap) {
+            if (mipmapped) {
                 texture.generateMipmap();
             }
             bitmap.close();
         } else {
-            if (mipmap) {
+            if (mipmapped) {
                 Core.postOnRenderThread(() -> {
                     int w = bitmap.getWidth();
                     int h = bitmap.getHeight();

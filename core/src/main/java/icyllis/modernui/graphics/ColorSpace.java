@@ -18,11 +18,8 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.annotation.IntRange;
-import icyllis.modernui.annotation.Size;
+import icyllis.modernui.annotation.*;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.DoubleUnaryOperator;
@@ -204,9 +201,9 @@ public abstract class ColorSpace {
     // See static initialization block next to #get(Named)
     private static final ColorSpace[] sNamedColorSpaces = new ColorSpace[Named.values().length];
 
-    @Nonnull
+    @NonNull
     private final String mName;
-    @Nonnull
+    @NonNull
     private final Model mModel;
     @IntRange(from = MIN_ID, to = MAX_ID)
     private final int mId;
@@ -825,7 +822,7 @@ public abstract class ColorSpace {
 
         final float[] mTransform;
 
-        Adaptation(@Nonnull @Size(9) float[] transform) {
+        Adaptation(@NonNull @Size(9) float[] transform) {
             mTransform = transform;
         }
     }
@@ -879,8 +876,8 @@ public abstract class ColorSpace {
         }
     }
 
-    ColorSpace(@Nonnull @Size(min = 1) String name,
-               @Nonnull Model model,
+    ColorSpace(@NonNull @Size(min = 1) String name,
+               @NonNull Model model,
                @IntRange(from = MIN_ID, to = MAX_ID) int id) {
         if (name.length() < 1) {
             throw new IllegalArgumentException("The name of a color space cannot be null and " +
@@ -925,7 +922,7 @@ public abstract class ColorSpace {
      *
      * @return A non-null String of length >= 1
      */
-    @Nonnull
+    @NonNull
     public String getName() {
         return mName;
     }
@@ -949,7 +946,7 @@ public abstract class ColorSpace {
      * @see Model
      * @see #getComponentCount()
      */
-    @Nonnull
+    @NonNull
     public Model getModel() {
         return mModel;
     }
@@ -1049,7 +1046,7 @@ public abstract class ColorSpace {
      * @see #toXyz(float[])
      * @see #fromXyz(float, float, float)
      */
-    @Nonnull
+    @NonNull
     @Size(3)
     public float[] toXyz(float r, float g, float b) {
         return toXyz(new float[]{r, g, b});
@@ -1073,9 +1070,9 @@ public abstract class ColorSpace {
      * @see #toXyz(float, float, float)
      * @see #fromXyz(float[])
      */
-    @Nonnull
+    @NonNull
     @Size(min = 3)
-    public abstract float[] toXyz(@Nonnull @Size(min = 3) float[] v);
+    public abstract float[] toXyz(@NonNull @Size(min = 3) float[] v);
 
     /**
      * <p>Converts tristimulus values from the CIE XYZ space to this
@@ -1089,7 +1086,7 @@ public abstract class ColorSpace {
      * @see #fromXyz(float[])
      * @see #toXyz(float, float, float)
      */
-    @Nonnull
+    @NonNull
     @Size(min = 3)
     public float[] fromXyz(float x, float y, float z) {
         float[] xyz = new float[mModel.getComponentCount()];
@@ -1116,9 +1113,9 @@ public abstract class ColorSpace {
      * @see #fromXyz(float, float, float)
      * @see #toXyz(float[])
      */
-    @Nonnull
+    @NonNull
     @Size(min = 3)
-    public abstract float[] fromXyz(@Nonnull @Size(min = 3) float[] v);
+    public abstract float[] fromXyz(@NonNull @Size(min = 3) float[] v);
 
     @Override
     public int hashCode() {
@@ -1155,7 +1152,7 @@ public abstract class ColorSpace {
      *
      * @return A string representation of the object
      */
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         return mName + " (id=" + mId + ", model=" + mModel + ")";
@@ -1181,8 +1178,8 @@ public abstract class ColorSpace {
      * @see #connect(ColorSpace, RenderIntent)
      * @see #connect(ColorSpace, ColorSpace, RenderIntent)
      */
-    @Nonnull
-    public static Connector connect(@Nonnull ColorSpace source, @Nonnull ColorSpace destination) {
+    @NonNull
+    public static Connector connect(@NonNull ColorSpace source, @NonNull ColorSpace destination) {
         return connect(source, destination, RenderIntent.PERCEPTUAL);
     }
 
@@ -1204,10 +1201,10 @@ public abstract class ColorSpace {
      * @see #connect(ColorSpace, RenderIntent)
      * @see #connect(ColorSpace, ColorSpace)
      */
-    @Nonnull
+    @NonNull
     @SuppressWarnings("ConstantConditions")
-    public static Connector connect(@Nonnull ColorSpace source, @Nonnull ColorSpace destination,
-                                    @Nonnull RenderIntent intent) {
+    public static Connector connect(@NonNull ColorSpace source, @NonNull ColorSpace destination,
+                                    @NonNull RenderIntent intent) {
         if (source.equals(destination)) return Connector.identity(source);
 
         if (source.getModel() == Model.RGB && destination.getModel() == Model.RGB) {
@@ -1235,8 +1232,8 @@ public abstract class ColorSpace {
      * @see #connect(ColorSpace, ColorSpace)
      * @see #connect(ColorSpace, ColorSpace, RenderIntent)
      */
-    @Nonnull
-    public static Connector connect(@Nonnull ColorSpace source) {
+    @NonNull
+    public static Connector connect(@NonNull ColorSpace source) {
         return connect(source, RenderIntent.PERCEPTUAL);
     }
 
@@ -1256,8 +1253,8 @@ public abstract class ColorSpace {
      * @see #connect(ColorSpace, ColorSpace)
      * @see #connect(ColorSpace, ColorSpace, RenderIntent)
      */
-    @Nonnull
-    public static Connector connect(@Nonnull ColorSpace source, @Nonnull RenderIntent intent) {
+    @NonNull
+    public static Connector connect(@NonNull ColorSpace source, @NonNull RenderIntent intent) {
         if (source.isSrgb()) return Connector.identity(source);
 
         if (source.getModel() == Model.RGB) {
@@ -1284,9 +1281,9 @@ public abstract class ColorSpace {
      * @see Adaptation
      * @see #adapt(ColorSpace, float[], Adaptation)
      */
-    @Nonnull
-    public static ColorSpace adapt(@Nonnull ColorSpace colorSpace,
-                                   @Nonnull @Size(min = 2, max = 3) float[] whitePoint) {
+    @NonNull
+    public static ColorSpace adapt(@NonNull ColorSpace colorSpace,
+                                   @NonNull @Size(min = 2, max = 3) float[] whitePoint) {
         return adapt(colorSpace, whitePoint, Adaptation.BRADFORD);
     }
 
@@ -1312,10 +1309,10 @@ public abstract class ColorSpace {
      * @see Adaptation
      * @see #adapt(ColorSpace, float[])
      */
-    @Nonnull
-    public static ColorSpace adapt(@Nonnull ColorSpace colorSpace,
-                                   @Nonnull @Size(min = 2, max = 3) float[] whitePoint,
-                                   @Nonnull Adaptation adaptation) {
+    @NonNull
+    public static ColorSpace adapt(@NonNull ColorSpace colorSpace,
+                                   @NonNull @Size(min = 2, max = 3) float[] whitePoint,
+                                   @NonNull Adaptation adaptation) {
         if (colorSpace.getModel() == Model.RGB) {
             ColorSpace.Rgb rgb = (ColorSpace.Rgb) colorSpace;
             if (compare(rgb.mWhitePoint, whitePoint)) return colorSpace;
@@ -1344,7 +1341,7 @@ public abstract class ColorSpace {
      * @throws IllegalArgumentException If the ID does not match the ID of one of the
      *                                  {@link Named named color spaces}
      */
-    @Nonnull
+    @NonNull
     static ColorSpace get(@IntRange(from = MIN_ID, to = MAX_ID) int index) {
         if (index < 0 || index >= sNamedColorSpaces.length) {
             throw new IllegalArgumentException("Invalid ID, must be in the range [0.." +
@@ -1365,8 +1362,8 @@ public abstract class ColorSpace {
      * @param name The name of the color space to get an instance of
      * @return A non-null {@link ColorSpace} instance
      */
-    @Nonnull
-    public static ColorSpace get(@Nonnull Named name) {
+    @NonNull
+    public static ColorSpace get(@NonNull Named name) {
         return sNamedColorSpaces[name.ordinal()];
     }
 
@@ -1385,8 +1382,8 @@ public abstract class ColorSpace {
      */
     @Nullable
     public static ColorSpace match(
-            @Nonnull @Size(9) float[] toXYZD50,
-            @Nonnull Rgb.TransferParameters function) {
+            @NonNull @Size(9) float[] toXYZD50,
+            @NonNull Rgb.TransferParameters function) {
 
         for (ColorSpace colorSpace : sNamedColorSpaces) {
             if (colorSpace.getModel() == Model.RGB) {
@@ -1408,11 +1405,11 @@ public abstract class ColorSpace {
      * created. It also does not fully create the adapted ColorSpace, but
      * just returns the transform.
      */
-    @Nonnull
+    @NonNull
     @Size(9)
     private static float[] adaptToIlluminantD50(
-            @Nonnull @Size(2) float[] origWhitePoint,
-            @Nonnull @Size(9) float[] origTransform) {
+            @NonNull @Size(2) float[] origWhitePoint,
+            @NonNull @Size(9) float[] origTransform) {
         float[] desired = ILLUMINANT_D50;
         if (compare(origWhitePoint, desired)) return origTransform;
 
@@ -1487,7 +1484,7 @@ public abstract class ColorSpace {
      * @param b The second array to compare
      * @return True if the two arrays are equal, false otherwise
      */
-    private static boolean compare(@Nonnull float[] a, @Nonnull float[] b) {
+    private static boolean compare(@NonNull float[] a, @NonNull float[] b) {
         if (a == b) return true;
         for (int i = 0; i < a.length; i++) {
             if (Float.compare(a[i], b[i]) != 0 && Math.abs(a[i] - b[i]) > 1e-3f) return false;
@@ -1501,9 +1498,9 @@ public abstract class ColorSpace {
      * @param m A 3x3 matrix as a non-null array of 9 floats
      * @return A new array of 9 floats containing the inverse of the input matrix
      */
-    @Nonnull
+    @NonNull
     @Size(9)
-    private static float[] inverse3x3(@Nonnull @Size(9) float[] m) {
+    private static float[] inverse3x3(@NonNull @Size(9) float[] m) {
         float a = m[0];
         float b = m[3];
         float c = m[6];
@@ -1541,10 +1538,10 @@ public abstract class ColorSpace {
      * @return A new array of 9 floats containing the result of the multiplication
      * of rhs by lhs
      */
-    @Nonnull
+    @NonNull
     @Size(9)
     private static float[] mul3x3(
-            @Nonnull @Size(9) float[] lhs, @Nonnull @Size(9) float[] rhs) {
+            @NonNull @Size(9) float[] lhs, @NonNull @Size(9) float[] rhs) {
         float[] r = new float[9];
         r[0] = lhs[0] * rhs[0] + lhs[3] * rhs[1] + lhs[6] * rhs[2];
         r[1] = lhs[1] * rhs[0] + lhs[4] * rhs[1] + lhs[7] * rhs[2];
@@ -1566,10 +1563,10 @@ public abstract class ColorSpace {
      * @param rhs Vector of 3 components, as a non-null array of 3 floats
      * @return The array of 3 passed as the rhs parameter
      */
-    @Nonnull
+    @NonNull
     @Size(min = 3)
     private static float[] mul3x3Float3(
-            @Nonnull @Size(9) float[] lhs, @Nonnull @Size(min = 3) float[] rhs) {
+            @NonNull @Size(9) float[] lhs, @NonNull @Size(min = 3) float[] rhs) {
         float r0 = rhs[0];
         float r1 = rhs[1];
         float r2 = rhs[2];
@@ -1588,10 +1585,10 @@ public abstract class ColorSpace {
      * @return A new array of 9 floats containing the result of the multiplication
      * of rhs by lhs
      */
-    @Nonnull
+    @NonNull
     @Size(9)
     private static float[] mul3x3Diag(
-            @Nonnull @Size(3) float[] lhs, @Nonnull @Size(9) float[] rhs) {
+            @NonNull @Size(3) float[] lhs, @NonNull @Size(9) float[] rhs) {
         return new float[]{
                 lhs[0] * rhs[0], lhs[1] * rhs[1], lhs[2] * rhs[2],
                 lhs[0] * rhs[3], lhs[1] * rhs[4], lhs[2] * rhs[5],
@@ -1606,9 +1603,9 @@ public abstract class ColorSpace {
      * @param xyY The xyY value to convert to XYZ, cannot be null, length must be 2
      * @return A new float array of length 3 containing XYZ values
      */
-    @Nonnull
+    @NonNull
     @Size(3)
-    private static float[] xyYToXyz(@Nonnull @Size(2) float[] xyY) {
+    private static float[] xyYToXyz(@NonNull @Size(2) float[] xyY) {
         return new float[]{xyY[0] / xyY[1], 1.0f, (1 - xyY[0] - xyY[1]) / xyY[1]};
     }
 
@@ -1626,11 +1623,11 @@ public abstract class ColorSpace {
      * @param dstWhitePoint The white point to adapt to, *will be modified*
      * @return A 3x3 matrix as a non-null array of 9 floats
      */
-    @Nonnull
+    @NonNull
     @Size(9)
-    private static float[] chromaticAdaptation(@Nonnull @Size(9) float[] matrix,
-                                               @Nonnull @Size(3) float[] srcWhitePoint,
-                                               @Nonnull @Size(3) float[] dstWhitePoint) {
+    private static float[] chromaticAdaptation(@NonNull @Size(9) float[] matrix,
+                                               @NonNull @Size(3) float[] srcWhitePoint,
+                                               @NonNull @Size(3) float[] dstWhitePoint) {
         float[] srcLMS = mul3x3Float3(matrix, srcWhitePoint);
         float[] dstLMS = mul3x3Float3(matrix, dstWhitePoint);
         // LMS is a diagonal matrix stored as a float[3]
@@ -1652,7 +1649,7 @@ public abstract class ColorSpace {
      * @return Corresponding XYZ values
      * @throws IllegalArgumentException If cct is invalid
      */
-    @Nonnull
+    @NonNull
     @Size(3)
     public static float[] cctToXyz(@IntRange(from = 1) int cct) {
         if (cct < 1) {
@@ -1689,11 +1686,11 @@ public abstract class ColorSpace {
      * @param dstWhitePoint The white point to adapt to
      * @return A 3x3 matrix as a non-null array of 9 floats
      */
-    @Nonnull
+    @NonNull
     @Size(9)
-    public static float[] chromaticAdaptation(@Nonnull Adaptation adaptation,
-                                              @Nonnull @Size(min = 2, max = 3) float[] srcWhitePoint,
-                                              @Nonnull @Size(min = 2, max = 3) float[] dstWhitePoint) {
+    public static float[] chromaticAdaptation(@NonNull Adaptation adaptation,
+                                              @NonNull @Size(min = 2, max = 3) float[] srcWhitePoint,
+                                              @NonNull @Size(min = 2, max = 3) float[] dstWhitePoint) {
         if ((srcWhitePoint.length != 2 && srcWhitePoint.length != 3)
                 || (dstWhitePoint.length != 2 && dstWhitePoint.length != 3)) {
             throw new IllegalArgumentException("A white point array must have 2 or 3 floats");
@@ -1725,7 +1722,7 @@ public abstract class ColorSpace {
             );
         }
 
-        private Xyz(@Nonnull String name, @IntRange(from = MIN_ID, to = MAX_ID) int id) {
+        private Xyz(@NonNull String name, @IntRange(from = MIN_ID, to = MAX_ID) int id) {
             super(name, Model.XYZ, id);
         }
 
@@ -1744,18 +1741,18 @@ public abstract class ColorSpace {
             return 2.0f;
         }
 
-        @Nonnull
+        @NonNull
         @Override
-        public float[] toXyz(@Nonnull @Size(min = 3) float[] v) {
+        public float[] toXyz(@NonNull @Size(min = 3) float[] v) {
             v[0] = MathUtil.clamp(v[0], -2.0f, 2.0f);
             v[1] = MathUtil.clamp(v[1], -2.0f, 2.0f);
             v[2] = MathUtil.clamp(v[2], -2.0f, 2.0f);
             return v;
         }
 
-        @Nonnull
+        @NonNull
         @Override
-        public float[] fromXyz(@Nonnull @Size(min = 3) float[] v) {
+        public float[] fromXyz(@NonNull @Size(min = 3) float[] v) {
             v[0] = MathUtil.clamp(v[0], -2.0f, 2.0f);
             v[1] = MathUtil.clamp(v[1], -2.0f, 2.0f);
             v[2] = MathUtil.clamp(v[2], -2.0f, 2.0f);
@@ -1781,7 +1778,7 @@ public abstract class ColorSpace {
             );
         }
 
-        private Lab(@Nonnull String name,
+        private Lab(@NonNull String name,
                     @IntRange(from = MIN_ID, to = MAX_ID) int id) {
             super(name, Model.LAB, id);
         }
@@ -1801,9 +1798,9 @@ public abstract class ColorSpace {
             return component == 0 ? 100.0f : 128.0f;
         }
 
-        @Nonnull
+        @NonNull
         @Override
-        public float[] toXyz(@Nonnull @Size(min = 3) float[] v) {
+        public float[] toXyz(@NonNull @Size(min = 3) float[] v) {
             v[0] = MathUtil.clamp(v[0], 0.0f, 100.0f);
             v[1] = MathUtil.clamp(v[1], -128.0f, 128.0f);
             v[2] = MathUtil.clamp(v[2], -128.0f, 128.0f);
@@ -1822,9 +1819,9 @@ public abstract class ColorSpace {
             return v;
         }
 
-        @Nonnull
+        @NonNull
         @Override
-        public float[] fromXyz(@Nonnull @Size(min = 3) float[] v) {
+        public float[] fromXyz(@NonNull @Size(min = 3) float[] v) {
             float X = v[0] / ILLUMINANT_D50_XYZ[0];
             float Y = v[1] / ILLUMINANT_D50_XYZ[1];
             float Z = v[2] / ILLUMINANT_D50_XYZ[2];
@@ -2263,22 +2260,22 @@ public abstract class ColorSpace {
             );
         }
 
-        @Nonnull
+        @NonNull
         private final float[] mWhitePoint;
-        @Nonnull
+        @NonNull
         private final float[] mPrimaries;
-        @Nonnull
+        @NonNull
         private final float[] mTransform;
-        @Nonnull
+        @NonNull
         private final float[] mInverseTransform;
 
-        @Nonnull
+        @NonNull
         private final DoubleUnaryOperator mOetf;
-        @Nonnull
+        @NonNull
         private final DoubleUnaryOperator mEotf;
-        @Nonnull
+        @NonNull
         private final DoubleUnaryOperator mClampedOetf;
-        @Nonnull
+        @NonNull
         private final DoubleUnaryOperator mClampedEotf;
 
         private final float mMin;
@@ -2311,10 +2308,10 @@ public abstract class ColorSpace {
          * @see #get(Named)
          */
         public Rgb(
-                @Nonnull @Size(min = 1) String name,
-                @Nonnull @Size(9) float[] toXYZ,
-                @Nonnull DoubleUnaryOperator oetf,
-                @Nonnull DoubleUnaryOperator eotf) {
+                @NonNull @Size(min = 1) String name,
+                @NonNull @Size(9) float[] toXYZ,
+                @NonNull DoubleUnaryOperator oetf,
+                @NonNull DoubleUnaryOperator eotf) {
             this(name, computePrimaries(toXYZ), computeWhitePoint(toXYZ), null,
                     oetf, eotf, 0.0f, 1.0f, null, MIN_ID);
         }
@@ -2359,11 +2356,11 @@ public abstract class ColorSpace {
          * @see #get(Named)
          */
         public Rgb(
-                @Nonnull @Size(min = 1) String name,
-                @Nonnull @Size(min = 6, max = 9) float[] primaries,
-                @Nonnull @Size(min = 2, max = 3) float[] whitePoint,
-                @Nonnull DoubleUnaryOperator oetf,
-                @Nonnull DoubleUnaryOperator eotf,
+                @NonNull @Size(min = 1) String name,
+                @NonNull @Size(min = 6, max = 9) float[] primaries,
+                @NonNull @Size(min = 2, max = 3) float[] whitePoint,
+                @NonNull DoubleUnaryOperator oetf,
+                @NonNull DoubleUnaryOperator eotf,
                 float min,
                 float max) {
             this(name, primaries, whitePoint, null, oetf, eotf, min, max, null, MIN_ID);
@@ -2388,9 +2385,9 @@ public abstract class ColorSpace {
          * @see #get(Named)
          */
         public Rgb(
-                @Nonnull @Size(min = 1) String name,
-                @Nonnull @Size(9) float[] toXYZ,
-                @Nonnull TransferParameters function) {
+                @NonNull @Size(min = 1) String name,
+                @NonNull @Size(9) float[] toXYZ,
+                @NonNull TransferParameters function) {
             // Note: when isGray() returns false, this passes null for the transform for
             // consistency with other constructors, which compute the transform from the primaries
             // and white point.
@@ -2431,10 +2428,10 @@ public abstract class ColorSpace {
          * @see #get(Named)
          */
         public Rgb(
-                @Nonnull @Size(min = 1) String name,
-                @Nonnull @Size(min = 6, max = 9) float[] primaries,
-                @Nonnull @Size(min = 2, max = 3) float[] whitePoint,
-                @Nonnull TransferParameters function) {
+                @NonNull @Size(min = 1) String name,
+                @NonNull @Size(min = 6, max = 9) float[] primaries,
+                @NonNull @Size(min = 2, max = 3) float[] whitePoint,
+                @NonNull TransferParameters function) {
             this(name, primaries, whitePoint, null, function, MIN_ID);
         }
 
@@ -2475,11 +2472,11 @@ public abstract class ColorSpace {
          * @see #get(Named)
          */
         private Rgb(
-                @Nonnull @Size(min = 1) String name,
-                @Nonnull @Size(min = 6, max = 9) float[] primaries,
-                @Nonnull @Size(min = 2, max = 3) float[] whitePoint,
+                @NonNull @Size(min = 1) String name,
+                @NonNull @Size(min = 6, max = 9) float[] primaries,
+                @NonNull @Size(min = 2, max = 3) float[] whitePoint,
                 @Nullable @Size(9) float[] transform,
-                @Nonnull TransferParameters function,
+                @NonNull TransferParameters function,
                 @IntRange(from = MIN_ID, to = MAX_ID) int id) {
             this(name, primaries, whitePoint, transform,
                     function.e == 0.0 && function.f == 0.0 ?
@@ -2514,8 +2511,8 @@ public abstract class ColorSpace {
          * @see #get(Named)
          */
         public Rgb(
-                @Nonnull @Size(min = 1) String name,
-                @Nonnull @Size(9) float[] toXYZ,
+                @NonNull @Size(min = 1) String name,
+                @NonNull @Size(9) float[] toXYZ,
                 double gamma) {
             this(name, computePrimaries(toXYZ), computeWhitePoint(toXYZ), gamma, 0.0f, 1.0f, MIN_ID);
         }
@@ -2553,9 +2550,9 @@ public abstract class ColorSpace {
          * @see #get(Named)
          */
         public Rgb(
-                @Nonnull @Size(min = 1) String name,
-                @Nonnull @Size(min = 6, max = 9) float[] primaries,
-                @Nonnull @Size(min = 2, max = 3) float[] whitePoint,
+                @NonNull @Size(min = 1) String name,
+                @NonNull @Size(min = 6, max = 9) float[] primaries,
+                @NonNull @Size(min = 2, max = 3) float[] whitePoint,
                 double gamma) {
             this(name, primaries, whitePoint, gamma, 0.0f, 1.0f, MIN_ID);
         }
@@ -2598,9 +2595,9 @@ public abstract class ColorSpace {
          * @see #get(Named)
          */
         private Rgb(
-                @Nonnull @Size(min = 1) String name,
-                @Nonnull @Size(min = 6, max = 9) float[] primaries,
-                @Nonnull @Size(min = 2, max = 3) float[] whitePoint,
+                @NonNull @Size(min = 1) String name,
+                @NonNull @Size(min = 6, max = 9) float[] primaries,
+                @NonNull @Size(min = 2, max = 3) float[] whitePoint,
                 double gamma,
                 float min,
                 float max,
@@ -2655,12 +2652,12 @@ public abstract class ColorSpace {
          * @see #get(Named)
          */
         private Rgb(
-                @Nonnull @Size(min = 1) String name,
-                @Nonnull @Size(min = 6, max = 9) float[] primaries,
-                @Nonnull @Size(min = 2, max = 3) float[] whitePoint,
+                @NonNull @Size(min = 1) String name,
+                @NonNull @Size(min = 6, max = 9) float[] primaries,
+                @NonNull @Size(min = 2, max = 3) float[] whitePoint,
                 @Nullable @Size(9) float[] transform,
-                @Nonnull DoubleUnaryOperator oetf,
-                @Nonnull DoubleUnaryOperator eotf,
+                @NonNull DoubleUnaryOperator oetf,
+                @NonNull DoubleUnaryOperator eotf,
                 float min,
                 float max,
                 @Nullable TransferParameters transferParameters,
@@ -2723,9 +2720,9 @@ public abstract class ColorSpace {
          *
          * @param colorSpace The color space to create a copy of
          */
-        private Rgb(@Nonnull Rgb colorSpace,
-                    @Nonnull @Size(9) float[] transform,
-                    @Nonnull @Size(min = 2, max = 3) float[] whitePoint) {
+        private Rgb(@NonNull Rgb colorSpace,
+                    @NonNull @Size(9) float[] transform,
+                    @NonNull @Size(min = 2, max = 3) float[] whitePoint) {
             this(colorSpace.getName(), colorSpace.mPrimaries, whitePoint, transform,
                     colorSpace.mOetf, colorSpace.mEotf, colorSpace.mMin, colorSpace.mMax,
                     colorSpace.mTransferParameters, MIN_ID);
@@ -2742,9 +2739,9 @@ public abstract class ColorSpace {
          * @return The destination array passed as a parameter
          * @see #getWhitePoint()
          */
-        @Nonnull
+        @NonNull
         @Size(min = 2)
-        public float[] getWhitePoint(@Nonnull @Size(min = 2) float[] whitePoint) {
+        public float[] getWhitePoint(@NonNull @Size(min = 2) float[] whitePoint) {
             whitePoint[0] = mWhitePoint[0];
             whitePoint[1] = mWhitePoint[1];
             return whitePoint;
@@ -2759,7 +2756,7 @@ public abstract class ColorSpace {
          * @return A new non-null array of 2 floats
          * @see #getWhitePoint(float[])
          */
-        @Nonnull
+        @NonNull
         @Size(2)
         public float[] getWhitePoint() {
             return mWhitePoint.clone();
@@ -2780,9 +2777,9 @@ public abstract class ColorSpace {
          * @return The destination array passed as a parameter
          * @see #getPrimaries()
          */
-        @Nonnull
+        @NonNull
         @Size(min = 6)
-        public float[] getPrimaries(@Nonnull @Size(min = 6) float[] primaries) {
+        public float[] getPrimaries(@NonNull @Size(min = 6) float[] primaries) {
             System.arraycopy(mPrimaries, 0, primaries, 0, mPrimaries.length);
             return primaries;
         }
@@ -2800,7 +2797,7 @@ public abstract class ColorSpace {
          * @return A new non-null array of 2 floats
          * @see #getPrimaries(float[])
          */
-        @Nonnull
+        @NonNull
         @Size(6)
         public float[] getPrimaries() {
             return mPrimaries.clone();
@@ -2820,9 +2817,9 @@ public abstract class ColorSpace {
          * @return The destination array passed as a parameter
          * @see #getTransform()
          */
-        @Nonnull
+        @NonNull
         @Size(min = 9)
-        public float[] getTransform(@Nonnull @Size(min = 9) float[] transform) {
+        public float[] getTransform(@NonNull @Size(min = 9) float[] transform) {
             System.arraycopy(mTransform, 0, transform, 0, mTransform.length);
             return transform;
         }
@@ -2839,7 +2836,7 @@ public abstract class ColorSpace {
          * @return A new array of 9 floats
          * @see #getTransform(float[])
          */
-        @Nonnull
+        @NonNull
         @Size(9)
         public float[] getTransform() {
             return mTransform.clone();
@@ -2859,9 +2856,9 @@ public abstract class ColorSpace {
          * @return The destination array passed as a parameter
          * @see #getInverseTransform()
          */
-        @Nonnull
+        @NonNull
         @Size(min = 9)
-        public float[] getInverseTransform(@Nonnull @Size(min = 9) float[] inverseTransform) {
+        public float[] getInverseTransform(@NonNull @Size(min = 9) float[] inverseTransform) {
             System.arraycopy(mInverseTransform, 0, inverseTransform, 0, mInverseTransform.length);
             return inverseTransform;
         }
@@ -2878,7 +2875,7 @@ public abstract class ColorSpace {
          * @return A new array of 9 floats
          * @see #getInverseTransform(float[])
          */
-        @Nonnull
+        @NonNull
         @Size(9)
         public float[] getInverseTransform() {
             return mInverseTransform.clone();
@@ -2903,7 +2900,7 @@ public abstract class ColorSpace {
          * @see #getEotf()
          * @see #getTransferParameters()
          */
-        @Nonnull
+        @NonNull
         public DoubleUnaryOperator getOetf() {
             return mClampedOetf;
         }
@@ -2926,7 +2923,7 @@ public abstract class ColorSpace {
          * @see #getOetf()
          * @see #getTransferParameters()
          */
-        @Nonnull
+        @NonNull
         public DoubleUnaryOperator getEotf() {
             return mClampedEotf;
         }
@@ -2985,7 +2982,7 @@ public abstract class ColorSpace {
          * @see #toLinear(float[])
          * @see #fromLinear(float, float, float)
          */
-        @Nonnull
+        @NonNull
         @Size(3)
         public float[] toLinear(float r, float g, float b) {
             return toLinear(new float[]{r, g, b});
@@ -3007,9 +3004,9 @@ public abstract class ColorSpace {
          * @see #toLinear(float, float, float)
          * @see #fromLinear(float[])
          */
-        @Nonnull
+        @NonNull
         @Size(min = 3)
-        public float[] toLinear(@Nonnull @Size(min = 3) float[] v) {
+        public float[] toLinear(@NonNull @Size(min = 3) float[] v) {
             v[0] = (float) mClampedEotf.applyAsDouble(v[0]);
             v[1] = (float) mClampedEotf.applyAsDouble(v[1]);
             v[2] = (float) mClampedEotf.applyAsDouble(v[2]);
@@ -3032,7 +3029,7 @@ public abstract class ColorSpace {
          * @see #fromLinear(float[])
          * @see #toLinear(float, float, float)
          */
-        @Nonnull
+        @NonNull
         @Size(3)
         public float[] fromLinear(float r, float g, float b) {
             return fromLinear(new float[]{r, g, b});
@@ -3054,9 +3051,9 @@ public abstract class ColorSpace {
          * @see #fromLinear(float[])
          * @see #toLinear(float, float, float)
          */
-        @Nonnull
+        @NonNull
         @Size(min = 3)
-        public float[] fromLinear(@Nonnull @Size(min = 3) float[] v) {
+        public float[] fromLinear(@NonNull @Size(min = 3) float[] v) {
             v[0] = (float) mClampedOetf.applyAsDouble(v[0]);
             v[1] = (float) mClampedOetf.applyAsDouble(v[1]);
             v[2] = (float) mClampedOetf.applyAsDouble(v[2]);
@@ -3064,9 +3061,9 @@ public abstract class ColorSpace {
         }
 
         @Override
-        @Nonnull
+        @NonNull
         @Size(min = 3)
-        public float[] toXyz(@Nonnull @Size(min = 3) float[] v) {
+        public float[] toXyz(@NonNull @Size(min = 3) float[] v) {
             v[0] = (float) mClampedEotf.applyAsDouble(v[0]);
             v[1] = (float) mClampedEotf.applyAsDouble(v[1]);
             v[2] = (float) mClampedEotf.applyAsDouble(v[2]);
@@ -3074,9 +3071,9 @@ public abstract class ColorSpace {
         }
 
         @Override
-        @Nonnull
+        @NonNull
         @Size(min = 3)
-        public float[] fromXyz(@Nonnull @Size(min = 3) float[] v) {
+        public float[] fromXyz(@NonNull @Size(min = 3) float[] v) {
             mul3x3Float3(mInverseTransform, v);
             v[0] = (float) mClampedOetf.applyAsDouble(v[0]);
             v[1] = (float) mClampedOetf.applyAsDouble(v[1]);
@@ -3137,10 +3134,10 @@ public abstract class ColorSpace {
          * @see #isSrgb()
          */
         private static boolean isSrgb(
-                @Nonnull @Size(6) float[] primaries,
-                @Nonnull @Size(2) float[] whitePoint,
-                @Nonnull DoubleUnaryOperator oetf,
-                @Nonnull DoubleUnaryOperator eotf,
+                @NonNull @Size(6) float[] primaries,
+                @NonNull @Size(2) float[] whitePoint,
+                @NonNull DoubleUnaryOperator oetf,
+                @NonNull DoubleUnaryOperator eotf,
                 float min,
                 float max,
                 @IntRange(from = MIN_ID, to = MAX_ID) int id) {
@@ -3173,7 +3170,7 @@ public abstract class ColorSpace {
          * @param toXYZ A XYZ D50 matrix.
          * @return true if this is a special gray matrix.
          */
-        private static boolean isGray(@Nonnull @Size(9) float[] toXYZ) {
+        private static boolean isGray(@NonNull @Size(9) float[] toXYZ) {
             return toXYZ.length == 9 &&
                     toXYZ[1] == 0 &&
                     toXYZ[2] == 0 &&
@@ -3184,8 +3181,8 @@ public abstract class ColorSpace {
         }
 
         private static boolean compare(double point,
-                                       @Nonnull DoubleUnaryOperator a,
-                                       @Nonnull DoubleUnaryOperator b) {
+                                       @NonNull DoubleUnaryOperator a,
+                                       @NonNull DoubleUnaryOperator b) {
             double rA = a.applyAsDouble(point);
             double rB = b.applyAsDouble(point);
             return Math.abs(rA - rB) <= 1e-3;
@@ -3205,7 +3202,7 @@ public abstract class ColorSpace {
          * @see #isWideGamut()
          * @see #area(float[])
          */
-        private static boolean isWideGamut(@Nonnull @Size(6) float[] primaries,
+        private static boolean isWideGamut(@NonNull @Size(6) float[] primaries,
                                            float min, float max) {
             return (area(primaries) / area(NTSC_1953_PRIMARIES) > 0.9f &&
                     contains(primaries, SRGB_PRIMARIES)) || (min < 0.0f && max > 1.0f);
@@ -3219,7 +3216,7 @@ public abstract class ColorSpace {
          * @return The area of the triangle
          * @see #isWideGamut(float[], float, float)
          */
-        private static float area(@Nonnull @Size(6) float[] primaries) {
+        private static float area(@NonNull @Size(6) float[] primaries) {
             float Rx = primaries[0];
             float Ry = primaries[1];
             float Gx = primaries[2];
@@ -3304,7 +3301,7 @@ public abstract class ColorSpace {
          * @see #isWideGamut(float[], float, float)
          */
         @SuppressWarnings("RedundantIfStatement")
-        private static boolean contains(@Nonnull @Size(6) float[] p1, @Nonnull @Size(6) float[] p2) {
+        private static boolean contains(@NonNull @Size(6) float[] p1, @NonNull @Size(6) float[] p2) {
             // Translate the vertices p1 in the coordinates system
             // with the vertices p2 as the origin
             float[] p0 = {
@@ -3339,9 +3336,9 @@ public abstract class ColorSpace {
          * @return A new array of 6 floats containing the color space's
          * primaries in CIE xyY
          */
-        @Nonnull
+        @NonNull
         @Size(6)
-        private static float[] computePrimaries(@Nonnull @Size(9) float[] toXYZ) {
+        private static float[] computePrimaries(@NonNull @Size(9) float[] toXYZ) {
             float[] r = mul3x3Float3(toXYZ, new float[]{1.0f, 0.0f, 0.0f});
             float[] g = mul3x3Float3(toXYZ, new float[]{0.0f, 1.0f, 0.0f});
             float[] b = mul3x3Float3(toXYZ, new float[]{0.0f, 0.0f, 1.0f});
@@ -3366,9 +3363,9 @@ public abstract class ColorSpace {
          * @return A new array of 2 floats containing the color space's
          * white point in CIE xyY
          */
-        @Nonnull
+        @NonNull
         @Size(2)
-        private static float[] computeWhitePoint(@Nonnull @Size(9) float[] toXYZ) {
+        private static float[] computeWhitePoint(@NonNull @Size(9) float[] toXYZ) {
             float[] w = mul3x3Float3(toXYZ, new float[]{1.0f, 1.0f, 1.0f});
             float sum = w[0] + w[1] + w[2];
             return new float[]{w[0] / sum, w[1] / sum};
@@ -3382,9 +3379,9 @@ public abstract class ColorSpace {
          * @param primaries The primaries in xyY or XYZ
          * @return A new array of 6 floats containing the primaries in xyY
          */
-        @Nonnull
+        @NonNull
         @Size(6)
-        private static float[] xyPrimaries(@Nonnull @Size(min = 6, max = 9) float[] primaries) {
+        private static float[] xyPrimaries(@NonNull @Size(min = 6, max = 9) float[] primaries) {
             float[] xyPrimaries = new float[6];
 
             // XYZ to xyY
@@ -3417,9 +3414,9 @@ public abstract class ColorSpace {
          * @param whitePoint The white point in xyY or XYZ
          * @return A new array of 2 floats containing the white point in xyY
          */
-        @Nonnull
+        @NonNull
         @Size(2)
-        private static float[] xyWhitePoint(@Nonnull @Size(min = 2, max = 3) float[] whitePoint) {
+        private static float[] xyWhitePoint(@NonNull @Size(min = 2, max = 3) float[] whitePoint) {
             float[] xyWhitePoint = new float[2];
 
             // XYZ to xyY
@@ -3443,11 +3440,11 @@ public abstract class ColorSpace {
          * @param whitePoint The white point in xyY, as an array of 2 floats
          * @return A 3x3 matrix as a new array of 9 floats
          */
-        @Nonnull
+        @NonNull
         @Size(9)
         private static float[] computeXYZMatrix(
-                @Nonnull @Size(6) float[] primaries,
-                @Nonnull @Size(2) float[] whitePoint) {
+                @NonNull @Size(6) float[] primaries,
+                @NonNull @Size(2) float[] whitePoint) {
             float Rx = primaries[0];
             float Ry = primaries[1];
             float Gx = primaries[2];
@@ -3526,15 +3523,15 @@ public abstract class ColorSpace {
      * @see ColorSpace#connect(ColorSpace)
      */
     public static class Connector {
-        @Nonnull
+        @NonNull
         private final ColorSpace mSource;
-        @Nonnull
+        @NonNull
         private final ColorSpace mDestination;
-        @Nonnull
+        @NonNull
         private final ColorSpace mTransformSource;
-        @Nonnull
+        @NonNull
         private final ColorSpace mTransformDestination;
-        @Nonnull
+        @NonNull
         private final RenderIntent mIntent;
         @Nullable
         @Size(3)
@@ -3547,8 +3544,8 @@ public abstract class ColorSpace {
          * @param destination The destination color space, cannot be null
          * @param intent      The render intent to use when compressing gamuts
          */
-        Connector(@Nonnull ColorSpace source, @Nonnull ColorSpace destination,
-                  @Nonnull RenderIntent intent) {
+        Connector(@NonNull ColorSpace source, @NonNull ColorSpace destination,
+                  @NonNull RenderIntent intent) {
             this(source, destination,
                     source.getModel() == Model.RGB ? adapt(source, ILLUMINANT_D50_XYZ) : source,
                     destination.getModel() == Model.RGB ?
@@ -3563,9 +3560,9 @@ public abstract class ColorSpace {
          * possibly adapted color spaces used by transform().
          */
         private Connector(
-                @Nonnull ColorSpace source, @Nonnull ColorSpace destination,
-                @Nonnull ColorSpace transformSource, @Nonnull ColorSpace transformDestination,
-                @Nonnull RenderIntent intent, @Nullable @Size(3) float[] transform) {
+                @NonNull ColorSpace source, @NonNull ColorSpace destination,
+                @NonNull ColorSpace transformSource, @NonNull ColorSpace transformDestination,
+                @NonNull RenderIntent intent, @Nullable @Size(3) float[] transform) {
             mSource = source;
             mDestination = destination;
             mTransformSource = transformSource;
@@ -3579,8 +3576,8 @@ public abstract class ColorSpace {
          * selected rendering intent.
          */
         @Nullable
-        private static float[] computeTransform(@Nonnull ColorSpace source,
-                                                @Nonnull ColorSpace destination, @Nonnull RenderIntent intent) {
+        private static float[] computeTransform(@NonNull ColorSpace source,
+                                                @NonNull ColorSpace destination, @NonNull RenderIntent intent) {
             if (intent != RenderIntent.ABSOLUTE) return null;
 
             boolean srcRGB = source.getModel() == Model.RGB;
@@ -3608,7 +3605,7 @@ public abstract class ColorSpace {
          * @return A non-null instance of {@link ColorSpace}
          * @see #getDestination()
          */
-        @Nonnull
+        @NonNull
         public ColorSpace getSource() {
             return mSource;
         }
@@ -3619,7 +3616,7 @@ public abstract class ColorSpace {
          * @return A non-null instance of {@link ColorSpace}
          * @see #getSource()
          */
-        @Nonnull
+        @NonNull
         public ColorSpace getDestination() {
             return mDestination;
         }
@@ -3650,7 +3647,7 @@ public abstract class ColorSpace {
          * transformed from the source space to the destination space
          * @see #transform(float[])
          */
-        @Nonnull
+        @NonNull
         @Size(3)
         public float[] transform(float r, float g, float b) {
             return transform(new float[]{r, g, b});
@@ -3666,9 +3663,9 @@ public abstract class ColorSpace {
          * transformed from the source space to the destination space
          * @see #transform(float, float, float)
          */
-        @Nonnull
+        @NonNull
         @Size(min = 3)
-        public float[] transform(@Nonnull @Size(min = 3) float[] v) {
+        public float[] transform(@NonNull @Size(min = 3) float[] v) {
             float[] xyz = mTransformSource.toXyz(v);
             if (mTransform != null) {
                 xyz[0] *= mTransform[0];
@@ -3682,24 +3679,24 @@ public abstract class ColorSpace {
          * Optimized connector for RGB->RGB conversions.
          */
         private static class Rgb extends Connector {
-            @Nonnull
+            @NonNull
             private final ColorSpace.Rgb mSource;
-            @Nonnull
+            @NonNull
             private final ColorSpace.Rgb mDestination;
-            @Nonnull
+            @NonNull
             private final float[] mTransform;
 
-            Rgb(@Nonnull ColorSpace.Rgb source, @Nonnull ColorSpace.Rgb destination,
-                @Nonnull RenderIntent intent) {
+            Rgb(@NonNull ColorSpace.Rgb source, @NonNull ColorSpace.Rgb destination,
+                @NonNull RenderIntent intent) {
                 super(source, destination, source, destination, intent, null);
                 mSource = source;
                 mDestination = destination;
                 mTransform = computeTransform(source, destination, intent);
             }
 
-            @Nonnull
+            @NonNull
             @Override
-            public float[] transform(@Nonnull @Size(min = 3) float[] rgb) {
+            public float[] transform(@NonNull @Size(min = 3) float[] rgb) {
                 rgb[0] = (float) mSource.mClampedEotf.applyAsDouble(rgb[0]);
                 rgb[1] = (float) mSource.mClampedEotf.applyAsDouble(rgb[1]);
                 rgb[2] = (float) mSource.mClampedEotf.applyAsDouble(rgb[2]);
@@ -3726,12 +3723,12 @@ public abstract class ColorSpace {
              * @param intent      The render intent to use when compressing gamuts
              * @return An array of 9 floats containing the 3x3 matrix transform
              */
-            @Nonnull
+            @NonNull
             @Size(9)
             private static float[] computeTransform(
-                    @Nonnull ColorSpace.Rgb source,
-                    @Nonnull ColorSpace.Rgb destination,
-                    @Nonnull RenderIntent intent) {
+                    @NonNull ColorSpace.Rgb source,
+                    @NonNull ColorSpace.Rgb destination,
+                    @NonNull RenderIntent intent) {
                 if (compare(source.mWhitePoint, destination.mWhitePoint)) {
                     // RGB->RGB using the PCS of both color spaces since they have the same
                     return mul3x3(destination.mInverseTransform, source.mTransform);
@@ -3778,12 +3775,12 @@ public abstract class ColorSpace {
          * @return A non-null connector that does not perform any transform
          * @see ColorSpace#connect(ColorSpace, ColorSpace)
          */
-        @Nonnull
-        static Connector identity(@Nonnull ColorSpace source) {
+        @NonNull
+        static Connector identity(@NonNull ColorSpace source) {
             return new Connector(source, source, RenderIntent.RELATIVE) {
-                @Nonnull
+                @NonNull
                 @Override
-                public float[] transform(@Nonnull @Size(min = 3) float[] v) {
+                public float[] transform(@NonNull @Size(min = 3) float[] v) {
                     return v;
                 }
             };

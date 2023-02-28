@@ -1162,7 +1162,7 @@ public final class Matrix4 implements Cloneable {
         float b11 = m33 * m44 - m34 * m43;
         // calc the determinant
         float det = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
-        if (MathUtil.isNearlyZero(det)) {
+        if (MathUtil.isApproxZero(det)) {
             return false;
         }
         // calc algebraic cofactor and transpose
@@ -2250,7 +2250,7 @@ public final class Matrix4 implements Cloneable {
         }
         // normalize first
         final float is;
-        if (MathUtil.isNearlyEqual(sq, 1.0f)) {
+        if (MathUtil.isApproxEqual(sq, 1.0f)) {
             is = 2.0f;
         } else {
             is = 2.0f / sq;
@@ -2653,7 +2653,7 @@ public final class Matrix4 implements Cloneable {
      * @return {@code true} if this matrix is affine.
      */
     public boolean isAffine() {
-        return MathUtil.isNearlyZero(m14, m24, m34) && MathUtil.isNearlyEqual(m44, 1.0f);
+        return MathUtil.isApproxZero(m14, m24, m34) && MathUtil.isApproxEqual(m44, 1.0f);
     }
 
     /**
@@ -2663,8 +2663,8 @@ public final class Matrix4 implements Cloneable {
      */
     public boolean isScaleTranslate() {
         return isAffine() &&
-                MathUtil.isNearlyZero(m12, m13, m21) &&
-                MathUtil.isNearlyZero(m23, m31, m32);
+                MathUtil.isApproxZero(m12, m13, m21) &&
+                MathUtil.isApproxZero(m23, m31, m32);
     }
 
     /**
@@ -2686,8 +2686,8 @@ public final class Matrix4 implements Cloneable {
      */
     public boolean isAxisAligned() {
         return isAffine() && (
-                (MathUtil.isNearlyZero(m11) && MathUtil.isNearlyZero(m22) && !MathUtil.isNearlyZero(m12) && !MathUtil.isNearlyZero(m21)) ||
-                        (MathUtil.isNearlyZero(m12) && MathUtil.isNearlyZero(m21) && !MathUtil.isNearlyZero(m11) && !MathUtil.isNearlyZero(m22))
+                (MathUtil.isApproxZero(m11) && MathUtil.isApproxZero(m22) && !MathUtil.isApproxZero(m12) && !MathUtil.isApproxZero(m21)) ||
+                        (MathUtil.isApproxZero(m12) && MathUtil.isApproxZero(m21) && !MathUtil.isApproxZero(m11) && !MathUtil.isApproxZero(m22))
         );
     }
 
@@ -2721,7 +2721,7 @@ public final class Matrix4 implements Cloneable {
     }
 
     public boolean hasTranslation() {
-        return !(MathUtil.isNearlyZero(m41, m42, m43) && MathUtil.isNearlyEqual(m44, 1.0f));
+        return !(MathUtil.isApproxZero(m41, m42, m43) && MathUtil.isApproxEqual(m44, 1.0f));
     }
 
     /**
@@ -2730,11 +2730,11 @@ public final class Matrix4 implements Cloneable {
      * @return {@code true} if this matrix is identity.
      */
     public boolean isIdentity() {
-        return MathUtil.isNearlyZero(m12, m13, m14) &&
-                MathUtil.isNearlyZero(m21, m23, m24) &&
-                MathUtil.isNearlyZero(m31, m32, m34) &&
-                MathUtil.isNearlyZero(m41, m42, m43) &&
-                MathUtil.isNearlyEqual(m11, m22, m33, m44, 1.0f);
+        return MathUtil.isApproxZero(m12, m13, m14) &&
+                MathUtil.isApproxZero(m21, m23, m24) &&
+                MathUtil.isApproxZero(m31, m32, m34) &&
+                MathUtil.isApproxZero(m41, m42, m43) &&
+                MathUtil.isApproxEqual(m11, m22, m33, m44, 1.0f);
     }
 
     /**
@@ -2813,23 +2813,23 @@ public final class Matrix4 implements Cloneable {
      * @param m the matrix to compare.
      * @return {@code true} if this matrix is equivalent to other matrix.
      */
-    public boolean isNearlyEqual(@Nonnull Matrix4 m) {
-        return MathUtil.isNearlyEqual(m11, m.m11) &&
-                MathUtil.isNearlyEqual(m12, m.m12) &&
-                MathUtil.isNearlyEqual(m13, m.m13) &&
-                MathUtil.isNearlyEqual(m14, m.m14) &&
-                MathUtil.isNearlyEqual(m21, m.m21) &&
-                MathUtil.isNearlyEqual(m22, m.m22) &&
-                MathUtil.isNearlyEqual(m23, m.m23) &&
-                MathUtil.isNearlyEqual(m24, m.m24) &&
-                MathUtil.isNearlyEqual(m31, m.m31) &&
-                MathUtil.isNearlyEqual(m32, m.m32) &&
-                MathUtil.isNearlyEqual(m33, m.m33) &&
-                MathUtil.isNearlyEqual(m34, m.m34) &&
-                MathUtil.isNearlyEqual(m41, m.m41) &&
-                MathUtil.isNearlyEqual(m42, m.m42) &&
-                MathUtil.isNearlyEqual(m43, m.m43) &&
-                MathUtil.isNearlyEqual(m44, m.m44);
+    public boolean isApproxEqual(@Nonnull Matrix4 m) {
+        return MathUtil.isApproxEqual(m11, m.m11) &&
+                MathUtil.isApproxEqual(m12, m.m12) &&
+                MathUtil.isApproxEqual(m13, m.m13) &&
+                MathUtil.isApproxEqual(m14, m.m14) &&
+                MathUtil.isApproxEqual(m21, m.m21) &&
+                MathUtil.isApproxEqual(m22, m.m22) &&
+                MathUtil.isApproxEqual(m23, m.m23) &&
+                MathUtil.isApproxEqual(m24, m.m24) &&
+                MathUtil.isApproxEqual(m31, m.m31) &&
+                MathUtil.isApproxEqual(m32, m.m32) &&
+                MathUtil.isApproxEqual(m33, m.m33) &&
+                MathUtil.isApproxEqual(m34, m.m34) &&
+                MathUtil.isApproxEqual(m41, m.m41) &&
+                MathUtil.isApproxEqual(m42, m.m42) &&
+                MathUtil.isApproxEqual(m43, m.m43) &&
+                MathUtil.isApproxEqual(m44, m.m44);
     }
 
     @Override

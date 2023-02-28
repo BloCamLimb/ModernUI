@@ -25,7 +25,7 @@ import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.font.FontFamily;
 import icyllis.modernui.graphics.font.FontPaint;
 import icyllis.modernui.graphics.opengl.GLTextureCompat;
-import icyllis.modernui.graphics.opengl.TextureManager;
+import icyllis.modernui.graphics.opengl.GLTextureManager;
 import icyllis.modernui.material.MaterialCheckBox;
 import icyllis.modernui.material.MaterialRadioButton;
 import icyllis.modernui.text.*;
@@ -152,7 +152,7 @@ public class TestLinearLayout extends LinearLayout {
         spannable.setSpan(new UnderlineSpan(), text.length() / 2, text.length(),
                 Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
         try {
-            GLTextureCompat texture = TextureManager.getInstance().create(
+            GLTextureCompat texture = GLTextureManager.getInstance().create(
                     FileChannel.open(Path.of("F:/Photoshop/AppleEmoji/horse-face_1f434.png"),
                             StandardOpenOption.READ), true);
             Image image = new Image(texture);
