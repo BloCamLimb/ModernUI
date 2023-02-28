@@ -46,11 +46,11 @@ public class VertexShaderBuilder extends ShaderBuilderBase implements VertexGeom
             var.addLayoutQualifier(location);
 
             // may contain matrix that takes up multiple locations
-            int locationSize = SLType.locationSize(var.getType());
-            assert (locationSize > 0);
+            int locationCount = ShaderDataType.locationCount(var.getType());
+            assert (locationCount > 0);
             // we have no arrays
             assert (!var.isArray());
-            locationIndex += locationSize;
+            locationIndex += locationCount;
         }
 
         mProgramBuilder.uniformHandler().appendUniformDecls(ShaderFlags.kVertex, uniforms());
@@ -74,12 +74,12 @@ public class VertexShaderBuilder extends ShaderBuilderBase implements VertexGeom
 
     @Override
     public void emitNormalizedPosition(ShaderVar worldPos) {
-        if (worldPos.getType() == SLType.kFloat3) {
+        if (worldPos.getType() == ShaderDataType.kFloat3) {
             codeAppendf("""
                     gl_Position = vec4(%1$s.xy * %2$s.xz + %1$s.zz * %2$s.yw, 0.0, %1$s.z);
                     """, worldPos.getName(), UniformHandler.PROJECTION_NAME);
         } else {
-            assert (worldPos.getType() == SLType.kFloat2);
+            assert (worldPos.getType() == ShaderDataType.kFloat2);
             codeAppendf("""
                     gl_Position = vec4(%1$s.xy * %2$s.xz + %2$s.yw, 0.0, 1.0);
                     """, worldPos.getName(), UniformHandler.PROJECTION_NAME);

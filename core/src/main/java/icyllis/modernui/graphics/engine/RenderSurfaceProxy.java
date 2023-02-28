@@ -56,7 +56,7 @@ public final class RenderSurfaceProxy extends SurfaceProxy {
         if (mSurface != null) {
             return mSurface.getWidth();
         }
-        if ((mSurfaceFlags & Surface.FLAG_LOOSE_FIT) != 0) {
+        if ((mSurfaceFlags & Surface.FLAG_APPROX_FIT) != 0) {
             return ResourceProvider.makeApprox(mWidth);
         }
         return mWidth;
@@ -68,7 +68,7 @@ public final class RenderSurfaceProxy extends SurfaceProxy {
         if (mSurface != null) {
             return mSurface.getHeight();
         }
-        if ((mSurfaceFlags & Surface.FLAG_LOOSE_FIT) != 0) {
+        if ((mSurfaceFlags & Surface.FLAG_APPROX_FIT) != 0) {
             return ResourceProvider.makeApprox(mHeight);
         }
         return mHeight;

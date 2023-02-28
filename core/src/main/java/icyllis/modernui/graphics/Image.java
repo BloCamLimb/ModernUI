@@ -20,7 +20,7 @@ package icyllis.modernui.graphics;
 
 import icyllis.modernui.graphics.opengl.GLCore;
 import icyllis.modernui.graphics.opengl.GLTextureCompat;
-import icyllis.modernui.graphics.opengl.TextureManager;
+import icyllis.modernui.graphics.opengl.GLTextureManager;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
@@ -55,8 +55,8 @@ public class Image {
      */
     @Nonnull
     public static Image create(@Nonnull String ns, @Nonnull String subPath) {
-        return new Image(TextureManager.getInstance().getOrCreate(ns, "textures/" + subPath,
-                TextureManager.CACHE_MASK | TextureManager.MIPMAP_MASK));
+        return new Image(GLTextureManager.getInstance().getOrCreate(ns, "textures/" + subPath,
+                GLTextureManager.CACHE_MASK | GLTextureManager.MIPMAP_MASK));
     }
 
     /**

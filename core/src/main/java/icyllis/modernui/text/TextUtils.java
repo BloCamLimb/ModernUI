@@ -19,14 +19,14 @@
 package icyllis.modernui.text;
 
 import com.ibm.icu.util.ULocale;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.font.FontPaint;
 import icyllis.modernui.text.style.*;
 import icyllis.modernui.util.BinaryIO;
 import icyllis.modernui.view.View;
 import org.jetbrains.annotations.ApiStatus;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.*;
 import java.util.*;
 
@@ -43,8 +43,8 @@ public final class TextUtils {
     // being ellipsized and not the locale.
     private static final String ELLIPSIS_NORMAL = "\u2026"; // HORIZONTAL ELLIPSIS (…)
 
-    @Nonnull
-    public static String getEllipsisString(@Nonnull TextUtils.TruncateAt method) {
+    @NonNull
+    public static String getEllipsisString(@NonNull TextUtils.TruncateAt method) {
         return ELLIPSIS_NORMAL;
     }
 
@@ -55,7 +55,7 @@ public final class TextUtils {
      * @return a char buffer
      * @see #recycle(char[]) recycle the buffer
      */
-    @Nonnull
+    @NonNull
     public static char[] obtain(int len) {
         char[] buf;
 
@@ -70,7 +70,7 @@ public final class TextUtils {
         return buf;
     }
 
-    public static void recycle(@Nonnull char[] temp) {
+    public static void recycle(@NonNull char[] temp) {
         if (temp.length > 1000)
             return;
 
@@ -91,17 +91,17 @@ public final class TextUtils {
     }
 
     /**
-     * Returns true if the string is null or 0-length.
+     * Returns true if the char sequence is null or 0-length.
      *
-     * @param str the string to be examined
-     * @return true if str is null or zero length
+     * @param csq the char sequence to be examined
+     * @return true if csq is null or zero length
      */
-    public static boolean isEmpty(@Nullable CharSequence str) {
-        return str == null || str.length() == 0;
+    public static boolean isEmpty(@Nullable CharSequence csq) {
+        return csq == null || csq.isEmpty();
     }
 
-    public static void getChars(@Nonnull CharSequence s, int srcBegin, int srcEnd,
-                                @Nonnull char[] dst, int dstBegin) {
+    public static void getChars(@NonNull CharSequence s, int srcBegin, int srcEnd,
+                                @NonNull char[] dst, int dstBegin) {
         final Class<? extends CharSequence> c = s.getClass();
         if (c == String.class)
             ((String) s).getChars(srcBegin, srcEnd, dst, dstBegin);
@@ -133,8 +133,8 @@ public final class TextUtils {
      * @return A subset of spans where empty spans ({@link Spanned#getSpanStart(Object)}  ==
      * {@link Spanned#getSpanEnd(Object)} have been removed. The initial order is preserved
      */
-    @Nonnull
-    public static <T> List<T> removeEmptySpans(@Nonnull List<T> spans, @Nonnull Spanned spanned) {
+    @NonNull
+    public static <T> List<T> removeEmptySpans(@NonNull List<T> spans, @NonNull Spanned spanned) {
         List<T> copy = null;
 
         for (int i = 0; i < spans.size(); i++) {
@@ -173,7 +173,7 @@ public final class TextUtils {
         return indexOf(s, ch, start, s.length());
     }
 
-    public static int indexOf(@Nonnull CharSequence s, char ch, int start, int end) {
+    public static int indexOf(@NonNull CharSequence s, char ch, int start, int end) {
         final Class<? extends CharSequence> c = s.getClass();
 
         if (s instanceof GetChars || c == StringBuffer.class ||
@@ -306,7 +306,7 @@ public final class TextUtils {
      * Flatten a {@link CharSequence} and whatever styles can be copied across processes
      * into the output.
      */
-    public static void write(@Nonnull DataOutput out, @Nullable CharSequence cs) throws IOException {
+    public static void write(@NonNull DataOutput out, @Nullable CharSequence cs) throws IOException {
         if (cs == null) {
             out.writeInt(0);
         } else if (cs instanceof Spanned sp) {
@@ -342,7 +342,7 @@ public final class TextUtils {
     }
 
     @Nullable
-    public static CharSequence read(@Nonnull DataInput in) throws IOException {
+    public static CharSequence read(@NonNull DataInput in) throws IOException {
         int type = in.readInt();
         if (type == 0)
             return null;
@@ -396,9 +396,9 @@ public final class TextUtils {
      * or, if it does not fit, a truncated
      * copy with ellipsis character added at the specified edge or center.
      */
-    @Nonnull
-    public static CharSequence ellipsize(@Nonnull CharSequence text, @Nonnull FontPaint p,
-                                         float avail, @Nonnull TruncateAt where) {
+    @NonNull
+    public static CharSequence ellipsize(@NonNull CharSequence text, @NonNull FontPaint p,
+                                         float avail, @NonNull TruncateAt where) {
         return ellipsize(text, p, avail, where, false, null);
     }
 
@@ -414,9 +414,9 @@ public final class TextUtils {
      * report the start and end of the ellipsized range.  TextDirection
      * is determined by the first strong directional character.
      */
-    @Nonnull
-    public static CharSequence ellipsize(@Nonnull CharSequence text, @Nonnull FontPaint paint,
-                                         float avail, @Nonnull TruncateAt where,
+    @NonNull
+    public static CharSequence ellipsize(@NonNull CharSequence text, @NonNull FontPaint paint,
+                                         float avail, @NonNull TruncateAt where,
                                          boolean preserveLength, @Nullable EllipsizeCallback callback) {
         return ellipsize(text, paint, avail, where, preserveLength, callback,
                 TextDirectionHeuristics.FIRSTSTRONG_LTR, getEllipsisString(where));
@@ -435,11 +435,11 @@ public final class TextUtils {
      *
      * @hide
      */
-    @Nonnull
-    private static CharSequence ellipsize(@Nonnull CharSequence text, @Nonnull FontPaint paint,
-                                          float avail, @Nonnull TruncateAt where, boolean preserveLength,
+    @NonNull
+    private static CharSequence ellipsize(@NonNull CharSequence text, @NonNull FontPaint paint,
+                                          float avail, @NonNull TruncateAt where, boolean preserveLength,
                                           @Nullable EllipsizeCallback callback,
-                                          @Nonnull TextDirectionHeuristic textDir, @Nonnull String ellipsis) {
+                                          @NonNull TextDirectionHeuristic textDir, @NonNull String ellipsis) {
 
         final int len = text.length();
 
@@ -534,7 +534,7 @@ public final class TextUtils {
 
     private static final String[] sBinaryCompacts = {" bytes", " KB", " MB", " GB", " TB", " PB", " EB"};
 
-    @Nonnull
+    @NonNull
     public static String binaryCompact(long num) {
         if (num <= 0)
             return "0 bytes";
@@ -553,9 +553,9 @@ public final class TextUtils {
      * @throws IndexOutOfBoundsException if any of the copied spans
      *                                   are out of range in <code>dest</code>.
      */
-    public static void copySpansFrom(@Nonnull Spanned source, int start, int end,
+    public static void copySpansFrom(@NonNull Spanned source, int start, int end,
                                      @Nullable Class<?> type,
-                                     @Nonnull Spannable dest, int destoff) {
+                                     @NonNull Spannable dest, int destoff) {
         if (type == null) {
             type = Object.class;
         }
@@ -611,57 +611,91 @@ public final class TextUtils {
     }
 
     /**
-     * Strip invalid surrogate pairs in the given string.
+     * Fix all invalid surrogate pairs for the given UTF-16 string.
      */
-    @Nonnull
-    public static String validateSurrogatePairs(@Nonnull String text) {
-        final int len = text.length();
-        if (len < 1000) {
-            final char[] buf = obtain(len);
-            int p = 0;
-            for (int i = 0; i < len; i++) {
-                final char _c1 = text.charAt(i);
-                if (Character.isHighSurrogate(_c1) && i + 1 < len) {
-                    final char _c2 = text.charAt(i + 1);
-                    if (Character.isLowSurrogate(_c2)) {
-                        buf[p++] = _c1;
-                        buf[p++] = _c2;
-                        ++i;
-                    } else if (Character.isSurrogate(_c1)) {
-                        buf[p++] = '\uFFFD';
+    @NonNull
+    public static String validateSurrogatePairs(@NonNull String text) {
+        final int n = text.length();
+        if (n <= 1000) {
+            char c1, c2;
+            final char[] b = obtain(n);
+            for (int i = 0; i < n; ) {
+                c1 = text.charAt(i);
+                if (Character.isHighSurrogate(c1) && i + 1 < n) {
+                    c2 = text.charAt(i + 1);
+                    if (Character.isLowSurrogate(c2)) {
+                        b[i++] = c1;
+                        b[i++] = c2;
                     } else {
-                        buf[p++] = _c1;
+                        b[i++] = '\uFFFD';
                     }
-                } else if (Character.isSurrogate(_c1)) {
-                    buf[p++] = '\uFFFD';
                 } else {
-                    buf[p++] = _c1;
+                    b[i++] = Character.isSurrogate(c1) ? '\uFFFD' : c1;
                 }
             }
-            text = new String(buf, 0, p);
-            recycle(buf);
+            text = new String(b, 0, n);
+            recycle(b);
             return text;
         } else {
-            final StringBuilder b = new StringBuilder();
-            for (int i = 0; i < len; i++) {
-                final char _c1 = text.charAt(i);
-                if (Character.isHighSurrogate(_c1) && i + 1 < len) {
-                    final char _c2 = text.charAt(i + 1);
-                    if (Character.isLowSurrogate(_c2)) {
-                        b.append(_c1).append(_c2);
-                        ++i;
-                    } else if (Character.isSurrogate(_c1)) {
-                        b.append('\uFFFD');
+            char c1, c2;
+            final StringBuilder b = new StringBuilder(n);
+            for (int i = 0; i < n; i++) {
+                c1 = text.charAt(i);
+                if (Character.isHighSurrogate(c1) && i + 1 < n) {
+                    c2 = text.charAt(i + 1);
+                    if (Character.isLowSurrogate(c2)) {
+                        b.append(c1).append(c2);
+                        i++;
                     } else {
-                        b.append(_c1);
+                        b.append('\uFFFD');
                     }
-                } else if (Character.isSurrogate(_c1)) {
-                    b.append('\uFFFD');
                 } else {
-                    b.append(_c1);
+                    b.append(Character.isSurrogate(c1) ? '\uFFFD' : c1);
                 }
             }
             return b.toString();
         }
+    }
+
+    /**
+     * Find the Levenshtein distance between <var>a</var> and <var>b</var>.
+     * This algorithm has a time complexity of O(m*n) and a space complexity of O(n),
+     * where m is the length of <var>a</var> and n is the length of <var>b</var>.
+     * <p>
+     * This method only works for Unicode BMP characters without taking into account
+     * grapheme clusters.
+     *
+     * @return the Levenshtein distance in chars (u16)
+     * @since 3.7
+     */
+    public static int distance(@NonNull CharSequence a, @NonNull CharSequence b) {
+        if (a == b)
+            return 0;
+        int m = a.length(), n = b.length();
+        if (m == 0 || n == 0)
+            return m | n;
+        return m < n
+                ? distance0(b, a, n, m)
+                : distance0(a, b, m, n);
+    }
+
+    private static int distance0(@NonNull CharSequence a, @NonNull CharSequence b,
+                                 int m, int n) {
+        // assert m >= n;
+        int i, j, w, c;
+        int[] d = new int[n + 1];
+        for (j = 1; j <= n; j++)
+            d[j] = j;
+        for (i = 1; i <= m; i++) {
+            d[0] = i;
+            w = i - 1;
+            for (j = 1; j <= n; j++) {
+                c = Math.min(Math.min(d[j], d[j - 1]) + 1,
+                        a.charAt(i - 1) == b.charAt(j - 1) ? w : w + 1);
+                w = d[j];
+                d[j] = c;
+            }
+        }
+        return d[n];
     }
 }

@@ -25,6 +25,7 @@ import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.opengl.GLFramebufferCompat;
 import icyllis.modernui.graphics.opengl.GLTextureCompat;
+import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.stb.*;
 import org.lwjgl.system.MemoryStack;
@@ -72,22 +73,22 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
     /**
      * Creates a bitmap and its allocation, the type of all components is unsigned byte.
      *
-     * @param width  width in pixels, ranged from 1 to 32768
-     * @param height height in pixels, ranged from 1 to 32768
+     * @param width  width in pixels, ranged from 1 to 32767
+     * @param height height in pixels, ranged from 1 to 32767
      * @param format number of channels
      * @throws IllegalArgumentException width or height out of range
      */
     @NonNull
-    public static Bitmap createBitmap(@Size(min = 1, max = 32768) int width,
-                                      @Size(min = 1, max = 32768) int height,
+    public static Bitmap createBitmap(@Size(min = 1, max = 32767) int width,
+                                      @Size(min = 1, max = 32767) int height,
                                       @NonNull Format format) {
         if (width <= 0 || height <= 0) {
             throw new IllegalArgumentException("Image dimensions " + width + "x" + height
                     + " must be positive");
         }
-        if (width > 32768 || height > 32768) {
+        if (width > 32767 || height > 32767) {
             throw new IllegalArgumentException("Image dimensions " + width + "x" + height
-                    + " must be less than or equal to 32768");
+                    + " must be less than or equal to 32767");
         }
         long size = (long) format.channels * width * height;
         if (size > Integer.MAX_VALUE) {
@@ -295,6 +296,7 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
     }
 
     // this method doesn't close/free the buffer
+    @ApiStatus.Internal
     @NonNull
     public static Bitmap decode(@Nullable Format format, @NonNull ByteBuffer buffer) throws IOException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -310,7 +312,6 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
             int width = memGetInt(pWidth),
                     height = memGetInt(pHeight),
                     channels = memGetInt(pChannels);
-            assert format == null || Format.of(channels) == format;
             if (format == null) {
                 format = Format.of(channels);
             }
@@ -389,13 +390,13 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
 
     /**
      * Save this bitmap to specified path as specified format. This will
-     * open a save dialog to select the path, with a quality of 100 for JPEG format.
+     * open a save dialog to select the path, with a default quality for JPEG format.
      *
      * @param format the format of the saved image
      * @return true if selected a path, otherwise canceled
      */
     public boolean saveDialog(@NonNull SaveFormat format) throws IOException {
-        return saveDialog(format, null, 100);
+        return saveDialog(format, null, 0);
     }
 
     /**
@@ -476,6 +477,7 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
      * @param quality the compress quality, 0-100, only work for JPEG format.
      * @throws IOException saving is not successful
      */
+    @ApiStatus.Internal
     public void saveToChannel(@NonNull WritableByteChannel channel,
                               @NonNull SaveFormat format, int quality) throws IOException {
         checkReleased();

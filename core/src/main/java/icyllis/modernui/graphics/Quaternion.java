@@ -237,7 +237,7 @@ public class Quaternion {
      */
     public void inverse() {
         final float sq = lengthSq();
-        if (MathUtil.isNearlyEqual(sq, 1.0f)) {
+        if (MathUtil.isApproxEqual(sq, 1.0f)) {
             // equal to invert w component
             conjugate();
         } else {
@@ -255,7 +255,7 @@ public class Quaternion {
      * @return {@code true} if is normalized, {@code false} otherwise
      */
     public boolean isNormalized() {
-        return MathUtil.isNearlyEqual(lengthSq(), 1.0f);
+        return MathUtil.isApproxEqual(lengthSq(), 1.0f);
     }
 
     /**
@@ -290,7 +290,7 @@ public class Quaternion {
      * @return {@code true} if this quaternion is identity.
      */
     public boolean isIdentity() {
-        return MathUtil.isNearlyZero(x, y, z) && MathUtil.isNearlyEqual(w, 1.0f);
+        return MathUtil.isApproxZero(x, y, z) && MathUtil.isApproxEqual(w, 1.0f);
     }
 
     /**
@@ -348,13 +348,13 @@ public class Quaternion {
             set(a);
         } else if (t >= 1.0f) {
             set(b);
-        } else if (MathUtil.isNearlyZero(a.lengthSq())) {
-            if (MathUtil.isNearlyZero(b.lengthSq())) {
+        } else if (MathUtil.isApproxZero(a.lengthSq())) {
+            if (MathUtil.isApproxZero(b.lengthSq())) {
                 setIdentity();
             } else {
                 set(b);
             }
-        } else if (MathUtil.isNearlyZero(b.lengthSq())) {
+        } else if (MathUtil.isApproxZero(b.lengthSq())) {
             set(a);
         } else {
             float cosHalfAngle = a.dot(b);
@@ -524,7 +524,7 @@ public class Quaternion {
      * @param angle rotation angle in radians
      */
     public void setFromAxisAngle(float axisX, float axisY, float axisZ, float angle) {
-        if (MathUtil.isNearlyZero(axisX, axisY, axisZ))
+        if (MathUtil.isApproxZero(axisX, axisY, axisZ))
             setIdentity();
         else {
             angle *= 0.5f;
@@ -544,7 +544,7 @@ public class Quaternion {
      * @param rotationZ the Euler roll angle in radians. (rotation about the Z axis)
      */
     public void setFromEulerAngles(float rotationX, float rotationY, float rotationZ) {
-        if (MathUtil.isNearlyZero(rotationX, rotationY, rotationZ))
+        if (MathUtil.isApproxZero(rotationX, rotationY, rotationZ))
             setIdentity();
         else {
             rotationX *= 0.5f;
@@ -578,7 +578,7 @@ public class Quaternion {
      */
     public float toAxisAngle(@Nonnull Vector3 axis) {
         float l = x * x + y * y + z * z;
-        if (MathUtil.isNearlyZero(l)) {
+        if (MathUtil.isApproxZero(l)) {
             axis.x = 1.0f;
             axis.y = 0.0f;
             axis.z = 0.0f;
@@ -601,7 +601,7 @@ public class Quaternion {
         if (axis.length < 3)
             throw new IllegalArgumentException("The array length must be at least 3");
         float l = x * x + y * y + z * z;
-        if (MathUtil.isNearlyZero(l)) {
+        if (MathUtil.isApproxZero(l)) {
             axis[0] = 1.0f;
             axis[1] = 0.0f;
             axis[2] = 0.0f;
@@ -686,7 +686,7 @@ public class Quaternion {
             return Matrix3.identity();
         }
         final float is;
-        if (MathUtil.isNearlyEqual(sq, 1.0f)) {
+        if (MathUtil.isApproxEqual(sq, 1.0f)) {
             is = 2.0f;
         } else {
             is = 2.0f / sq;
@@ -732,7 +732,7 @@ public class Quaternion {
             return Matrix4.identity();
         }
         final float is;
-        if (MathUtil.isNearlyEqual(sq, 1.0f)) {
+        if (MathUtil.isApproxEqual(sq, 1.0f)) {
             is = 2.0f;
         } else {
             is = 2.0f / sq;
@@ -784,7 +784,7 @@ public class Quaternion {
             return out;
         }
         final float inv;
-        if (MathUtil.isNearlyEqual(sq, 1.0f)) {
+        if (MathUtil.isApproxEqual(sq, 1.0f)) {
             inv = 2.0f;
         } else {
             inv = 2.0f / sq;
@@ -834,7 +834,7 @@ public class Quaternion {
             return out;
         }
         final float inv;
-        if (MathUtil.isNearlyEqual(sq, 1.0f)) {
+        if (MathUtil.isApproxEqual(sq, 1.0f)) {
             inv = 2.0f;
         } else {
             inv = 2.0f / sq;
@@ -881,12 +881,12 @@ public class Quaternion {
      * @param q the quaternion to compare.
      * @return {@code true} if this quaternion is equivalent to other one.
      */
-    public boolean isNearlyEqual(@Nonnull Quaternion q) {
+    public boolean isApproxEqual(@Nonnull Quaternion q) {
         if (this == q) return true;
-        return MathUtil.isNearlyEqual(x, q.x) &&
-                MathUtil.isNearlyEqual(y, q.y) &&
-                MathUtil.isNearlyEqual(z, q.z) &&
-                MathUtil.isNearlyEqual(w, q.w);
+        return MathUtil.isApproxEqual(x, q.x) &&
+                MathUtil.isApproxEqual(y, q.y) &&
+                MathUtil.isApproxEqual(z, q.z) &&
+                MathUtil.isApproxEqual(w, q.w);
     }
 
     @Override

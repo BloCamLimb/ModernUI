@@ -89,7 +89,7 @@ public abstract class SurfaceProxy extends RefCnt {
      * instantiation time we verify that the assumed properties match the actual properties.
      *
      * @see Surface#FLAG_BUDGETED
-     * @see Surface#FLAG_LOOSE_FIT
+     * @see Surface#FLAG_APPROX_FIT
      * @see Surface#FLAG_SKIP_ALLOCATOR
      */
     int mSurfaceFlags;
@@ -127,7 +127,7 @@ public abstract class SurfaceProxy extends RefCnt {
         mWidth = texture.getWidth();
         mHeight = texture.getHeight();
         mSurfaceFlags = texture.getSurfaceFlags() | surfaceFlags;
-        assert (mSurfaceFlags & Surface.FLAG_LOOSE_FIT) == 0;
+        assert (mSurfaceFlags & Surface.FLAG_APPROX_FIT) == 0;
         assert (mFormat.isExternal() == texture.isExternal());
         assert (texture.getBudgetType() == BudgetType.Budgeted) == isBudgeted();
         assert (!texture.isExternal() || isReadOnly());
@@ -253,7 +253,7 @@ public abstract class SurfaceProxy extends RefCnt {
      */
     public final boolean isExact() {
         assert (!isLazyMost());
-        if ((mSurfaceFlags & Surface.FLAG_LOOSE_FIT) == 0) {
+        if ((mSurfaceFlags & Surface.FLAG_APPROX_FIT) == 0) {
             return true;
         }
         return mWidth == ResourceProvider.makeApprox(mWidth) &&
@@ -413,7 +413,7 @@ public abstract class SurfaceProxy extends RefCnt {
 
     @ApiStatus.Internal
     public final boolean isProxyExact() {
-        return (mSurfaceFlags & Surface.FLAG_LOOSE_FIT) == 0;
+        return (mSurfaceFlags & Surface.FLAG_APPROX_FIT) == 0;
     }
 
     public TextureProxy asTextureProxy() {

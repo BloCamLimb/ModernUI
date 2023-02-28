@@ -161,4 +161,13 @@ public abstract sealed class RecordingContext extends Context
     public final boolean isOwnerThread() {
         return Thread.currentThread() == mOwnerThread;
     }
+
+    /**
+     * Checks if calling from the context-creating thread, or throws a runtime exception.
+     */
+    public final void checkOwnerThread() {
+        if (Thread.currentThread() != mOwnerThread)
+            throw new IllegalStateException("Method expected to call from " + mOwnerThread +
+                    " but currently is " + Thread.currentThread());
+    }
 }

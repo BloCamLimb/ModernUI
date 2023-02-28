@@ -20,9 +20,10 @@ package icyllis.modernui.graphics.font;
 
 import com.ibm.icu.impl.UCharacterProperty;
 import com.ibm.icu.lang.*;
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.text.Emoji;
+import org.jetbrains.annotations.Unmodifiable;
 
-import javax.annotation.Nonnull;
 import java.util.*;
 
 public class FontCollection {
@@ -79,10 +80,10 @@ public class FontCollection {
     }
 
     // an array of base fonts
-    @Nonnull
+    @NonNull
     private final List<FontFamily> mFamilies;
 
-    public FontCollection(@Nonnull FontFamily... families) {
+    public FontCollection(@NonNull FontFamily... families) {
         if (families.length == 0) {
             throw new IllegalArgumentException("Font set cannot be empty");
         }
@@ -92,14 +93,16 @@ public class FontCollection {
     /**
      * Perform the itemization.
      */
-    public List<Run> itemize(@Nonnull char[] text, int offset, int limit) {
+    @NonNull
+    public List<Run> itemize(@NonNull char[] text, int offset, int limit) {
         return itemize(text, offset, limit, limit - offset);
     }
 
     /**
      * Perform the itemization.
      */
-    public List<Run> itemize(@Nonnull char[] text, int offset, int limit, int runLimit) {
+    @NonNull
+    public List<Run> itemize(@NonNull char[] text, int offset, int limit, int runLimit) {
         if (offset < 0 || offset > limit || limit > text.length || runLimit < 0) {
             throw new IllegalArgumentException();
         }
@@ -230,7 +233,8 @@ public class FontCollection {
     }
 
     // base fonts
-    @Nonnull
+    @NonNull
+    @Unmodifiable
     public List<FontFamily> getFamilies() {
         return mFamilies;
     }

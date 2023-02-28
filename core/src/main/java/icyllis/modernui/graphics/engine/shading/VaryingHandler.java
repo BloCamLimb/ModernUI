@@ -85,8 +85,8 @@ public class VaryingHandler {
     public final void addVarying(String name,
                                  Varying varying,
                                  int interpolation) {
-        assert (varying.mType != SLType.kVoid);
-        assert (SLType.isFloatType(varying.mType) || interpolation == INTERPOLATION_MUST_BE_FLAT);
+        assert (varying.mType != ShaderDataType.kVoid);
+        assert (ShaderDataType.isFloatType(varying.mType) || interpolation == INTERPOLATION_MUST_BE_FLAT);
         var v = new VaryingInfo();
 
         v.mType = varying.mType;
@@ -121,7 +121,7 @@ public class VaryingHandler {
     public final void addPassThroughAttribute(GeometryProcessor.Attribute attr,
                                               String output,
                                               int interpolation) {
-        assert (attr.dstType() != SLType.kVoid);
+        assert (attr.dstType() != ShaderDataType.kVoid);
         assert (!output.isEmpty());
         Varying v = new Varying(attr.dstType());
         addVarying(attr.name(), v, interpolation);
@@ -157,7 +157,7 @@ public class VaryingHandler {
                 mFragInputs.add(new ShaderVar(fsIn, v.mType, ShaderVar.kIn_TypeModifier,
                         ShaderVar.kNonArray, layoutQualifier, modifier));
             }
-            int locationSize = SLType.locationSize(v.mType);
+            int locationSize = ShaderDataType.locationCount(v.mType);
             assert (locationSize > 0);
             locationIndex += locationSize;
         }

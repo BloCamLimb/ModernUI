@@ -104,14 +104,14 @@ public class GLPipelineState {
     public void bindBuffers(Buffer indexBuffer,
                             Buffer vertexBuffer,
                             Buffer instanceBuffer) {
-        if (indexBuffer instanceof GLBuffer glIndexBuffer) {
-            mPipeline.bindIndexBuffer(glIndexBuffer);
+        if (indexBuffer != null) {
+            mPipeline.bindIndexBuffer((GLBuffer) indexBuffer);
         }
-        if (vertexBuffer instanceof GLBuffer glVertexBuffer) {
-            mPipeline.bindVertexBuffer(glVertexBuffer, 0);
+        if (vertexBuffer != null) {
+            mPipeline.bindVertexBuffer((GLBuffer) vertexBuffer, 0);
         }
-        if (instanceBuffer instanceof GLBuffer glInstanceBuffer) {
-            mPipeline.bindInstanceBuffer(glInstanceBuffer, 0);
+        if (instanceBuffer != null) {
+            mPipeline.bindInstanceBuffer((GLBuffer) instanceBuffer, 0);
         }
     }
 }

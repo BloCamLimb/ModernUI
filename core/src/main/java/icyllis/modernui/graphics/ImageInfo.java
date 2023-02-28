@@ -432,6 +432,7 @@ public final class ImageInfo {
      */
     public boolean isValid() {
         return mWidth > 0 && mHeight > 0 &&
+                mWidth <= 32767 && mHeight <= 32767 &&
                 mColorType != CT_UNKNOWN &&
                 mAlphaType != AT_UNKNOWN;
     }

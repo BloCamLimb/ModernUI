@@ -24,8 +24,10 @@ import static icyllis.modernui.graphics.opengl.GLCore.*;
 
 /**
  * Defines an immutable vertex attribute.
+ *
+ * @see icyllis.modernui.graphics.engine.GeometryProcessor.Attribute
  */
-public class VertexAttrib {
+public class GLVertexAttrib {
 
     private final int mBinding;
     private final Src mSrc;
@@ -42,7 +44,7 @@ public class VertexAttrib {
      *                   range [-1, 1] or [0, 1] if it is signed or unsigned, respectively.
      *                   If not, then integer data is directly converted to floating point.
      */
-    public VertexAttrib(int binding, @Nonnull Src src, @Nonnull Dst dst, boolean normalized) {
+    public GLVertexAttrib(int binding, @Nonnull Src src, @Nonnull Dst dst, boolean normalized) {
         mBinding = binding;
         mSrc = src;
         mDst = dst;
@@ -63,8 +65,8 @@ public class VertexAttrib {
      *
      * @return location count
      */
-    public int getCount() {
-        return mDst.mCount;
+    public int getLocationSize() {
+        return mDst.mLocationSize;
     }
 
     /**
@@ -75,7 +77,7 @@ public class VertexAttrib {
      * @return next relative offset
      */
     public int setFormat(int array, int location, int offset) {
-        for (int i = 0; i < getCount(); i++) {
+        for (int i = 0; i < getLocationSize(); i++) {
             glEnableVertexArrayAttrib(array, location);
             glVertexArrayAttribFormat(array, location, mDst.mSize, mSrc.mType, mNormalized, offset);
             glVertexArrayAttribBinding(array, location, mBinding);
@@ -96,7 +98,7 @@ public class VertexAttrib {
      * @return the total size for this attribute in bytes
      */
     public int getTotalSize() {
-        return getStep() * getCount();
+        return getStep() * getLocationSize();
     }
 
     @Override
@@ -104,7 +106,7 @@ public class VertexAttrib {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        VertexAttrib that = (VertexAttrib) o;
+        GLVertexAttrib that = (GLVertexAttrib) o;
 
         if (mBinding != that.mBinding) return false;
         if (mNormalized != that.mNormalized) return false;
@@ -158,11 +160,11 @@ public class VertexAttrib {
          * The number of components
          */
         private final int mSize;
-        private final int mCount;
+        private final int mLocationSize;
 
-        Dst(int size, int count) {
+        Dst(int size, int locationSize) {
             mSize = size;
-            mCount = count;
+            mLocationSize = locationSize;
         }
     }
 }

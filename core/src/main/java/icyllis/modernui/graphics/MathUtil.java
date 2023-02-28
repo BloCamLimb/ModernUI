@@ -18,8 +18,10 @@
 
 package icyllis.modernui.graphics;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
+import org.jetbrains.annotations.Contract;
+
 import java.util.Comparator;
 
 /**
@@ -92,56 +94,56 @@ public final class MathUtil {
     /**
      * @return true if <code>a</code> is approximately equal to zero
      */
-    public static boolean isNearlyZero(float a) {
+    public static boolean isApproxZero(float a) {
         return Math.abs(a) < EPS;
     }
 
     /**
      * @return true if <code>a</code> is approximately equal to zero
      */
-    public static boolean isNearlyZero(float a, float b) {
+    public static boolean isApproxZero(float a, float b) {
         return Math.abs(a) < EPS && Math.abs(b) < EPS;
     }
 
     /**
      * @return true if <code>a</code> is approximately equal to zero
      */
-    public static boolean isNearlyZero(float a, float b, float c) {
+    public static boolean isApproxZero(float a, float b, float c) {
         return Math.abs(a) < EPS && Math.abs(b) < EPS && Math.abs(c) < EPS;
     }
 
     /**
      * @return true if <code>a</code> is approximately equal to zero
      */
-    public static boolean isNearlyZero(float a, float b, float c, float d) {
+    public static boolean isApproxZero(float a, float b, float c, float d) {
         return Math.abs(a) < EPS && Math.abs(b) < EPS && Math.abs(c) < EPS && Math.abs(d) < EPS;
     }
 
     /**
      * @return true if <code>a</code> is approximately equal to <code>b</code>
      */
-    public static boolean isNearlyEqual(float a, float b) {
+    public static boolean isApproxEqual(float a, float b) {
         return Math.abs(b - a) < EPS;
     }
 
     /**
      * @return true if <code>a</code> is approximately equal to <code>b</code>
      */
-    public static boolean isNearlyEqual(float a, float b, float c) {
+    public static boolean isApproxEqual(float a, float b, float c) {
         return Math.abs(b - a) < EPS && Math.abs(c - a) < EPS;
     }
 
     /**
      * @return true if <code>a</code> is approximately equal to <code>b</code>
      */
-    public static boolean isNearlyEqual(float a, float b, float c, float d) {
+    public static boolean isApproxEqual(float a, float b, float c, float d) {
         return Math.abs(b - a) < EPS && Math.abs(c - a) < EPS && Math.abs(d - a) < EPS;
     }
 
     /**
      * @return true if <code>a</code> is approximately equal to <code>b</code>
      */
-    public static boolean isNearlyEqual(float a, float b, float c, float d, float e) {
+    public static boolean isApproxEqual(float a, float b, float c, float d, float e) {
         return Math.abs(b - a) < EPS && Math.abs(c - a) < EPS && Math.abs(d - a) < EPS && Math.abs(e - a) < EPS;
     }
 
@@ -306,6 +308,56 @@ public final class MathUtil {
      */
     public static double lerp(double a, double b, double t) {
         return (b - a) * t + a;
+    }
+
+    /**
+     * Linear interpolation between two values, matches GLSL {@code mix} intrinsic function.
+     * Slower than {@link #lerp(float, float, float)} but without intermediate overflow or underflow.
+     */
+    public static float mix(float a, float b, float t) {
+        return a * (1 - t) + b * t;
+    }
+
+    /**
+     * Linear interpolation between two values, matches GLSL {@code mix} intrinsic function.
+     * Slower than {@link #lerp(double, double, double)} but without intermediate overflow or underflow.
+     */
+    public static double mix(double a, double b, double t) {
+        return a * (1 - t) + b * t;
+    }
+
+    /**
+     * 2D bilinear interpolation between four values (a quad).
+     */
+    public static float biLerp(float q00, float q10, float q01, float q11, float tx, float ty) {
+        return lerp(lerp(q00, q10, tx), lerp(q01, q11, tx), ty);
+    }
+
+    /**
+     * 2D bilinear interpolation between four values (a quad).
+     */
+    public static double biLerp(double q00, double q10, double q01, double q11, double tx, double ty) {
+        return lerp(lerp(q00, q10, tx), lerp(q01, q11, tx), ty);
+    }
+
+    /**
+     * 3D trilinear interpolation between eight values (a cube).
+     */
+    public static float triLerp(float c000, float c100, float c010, float c110,
+                                float c001, float c101, float c011, float c111,
+                                float tx, float ty, float tz) {
+        return lerp(lerp(lerp(c000, c100, tx), lerp(c010, c110, tx), ty),
+                lerp(lerp(c001, c101, tx), lerp(c011, c111, tx), ty), tz);
+    }
+
+    /**
+     * 3D trilinear interpolation between eight values (a cube).
+     */
+    public static double triLerp(double c000, double c100, double c010, double c110,
+                                 double c001, double c101, double c011, double c111,
+                                 double tx, double ty, double tz) {
+        return lerp(lerp(lerp(c000, c100, tx), lerp(c010, c110, tx), ty),
+                lerp(lerp(c001, c101, tx), lerp(c011, c111, tx), ty), tz);
     }
 
     /**
@@ -590,7 +642,7 @@ public final class MathUtil {
      * @return index of the search value, or {@code a.length}
      * @see java.util.Arrays#sort(int[])
      */
-    public static int upperBound(int[] a, int value) {
+    public static int upperBound(@NonNull int[] a, int value) {
         return upperBound(a, 0, a.length, value);
     }
 
@@ -607,7 +659,8 @@ public final class MathUtil {
      * @return index of the search value, or {@code last}
      * @see java.util.Arrays#sort(int[], int, int)
      */
-    public static int upperBound(int[] a, int first, int last, int value) {
+    @Contract(pure = true)
+    public static int upperBound(@NonNull int[] a, int first, int last, int value) {
         assert (first | last - first | a.length - last) >= 0;
         int low = first, high = last - 1;
         while (low <= high) {
@@ -629,7 +682,7 @@ public final class MathUtil {
      * @return index of the search value, or {@code a.length}
      * @see java.util.Arrays#sort(long[])
      */
-    public static int upperBound(long[] a, long value) {
+    public static int upperBound(@NonNull long[] a, long value) {
         return upperBound(a, 0, a.length, value);
     }
 
@@ -646,7 +699,7 @@ public final class MathUtil {
      * @return index of the search value, or {@code last}
      * @see java.util.Arrays#sort(long[], int, int)
      */
-    public static int upperBound(long[] a, int first, int last, long value) {
+    public static int upperBound(@NonNull long[] a, int first, int last, long value) {
         assert (first | last - first | a.length - last) >= 0;
         int low = first, high = last - 1;
         while (low <= high) {
@@ -671,7 +724,7 @@ public final class MathUtil {
      * @return index of the search value, or {@code a.length}
      * @see java.util.Arrays#sort(Object[], Comparator)
      */
-    public static <T> int upperBound(T[] a, T value, @Nullable Comparator<? super T> c) {
+    public static <T> int upperBound(@NonNull T[] a, T value, @Nullable Comparator<? super T> c) {
         return upperBound(a, 0, a.length, value, c);
     }
 
@@ -692,7 +745,7 @@ public final class MathUtil {
      * @see java.util.Arrays#sort(Object[], int, int, Comparator)
      */
     @SuppressWarnings("unchecked")
-    public static <T> int upperBound(T[] a, int first, int last, T value,
+    public static <T> int upperBound(@NonNull T[] a, int first, int last, T value,
                                      @Nullable Comparator<? super T> c) {
         assert (first | last - first | a.length - last) >= 0;
         if (c == null) c = (Comparator<? super T>) Comparator.naturalOrder();
@@ -716,7 +769,7 @@ public final class MathUtil {
      * @return index of the search value, or {@code a.length}
      * @see java.util.Arrays#sort(int[])
      */
-    public static int lowerBound(int[] a, int value) {
+    public static int lowerBound(@NonNull int[] a, int value) {
         return lowerBound(a, 0, a.length, value);
     }
 
@@ -733,7 +786,8 @@ public final class MathUtil {
      * @return index of the search value, or {@code last}
      * @see java.util.Arrays#sort(int[], int, int)
      */
-    public static int lowerBound(int[] a, int first, int last, int value) {
+    @Contract(pure = true)
+    public static int lowerBound(@NonNull int[] a, int first, int last, int value) {
         assert (first | last - first | a.length - last) >= 0;
         int low = first, high = last - 1;
         while (low <= high) {
@@ -755,7 +809,8 @@ public final class MathUtil {
      * @return index of the search value, or {@code a.length}
      * @see java.util.Arrays#sort(long[])
      */
-    public static int lowerBound(long[] a, long value) {
+    @Contract(pure = true)
+    public static int lowerBound(@NonNull long[] a, long value) {
         return lowerBound(a, 0, a.length, value);
     }
 
@@ -772,7 +827,8 @@ public final class MathUtil {
      * @return index of the search value, or {@code last}
      * @see java.util.Arrays#sort(long[], int, int)
      */
-    public static int lowerBound(long[] a, int first, int last, long value) {
+    @Contract(pure = true)
+    public static int lowerBound(@NonNull long[] a, int first, int last, long value) {
         assert (first | last - first | a.length - last) >= 0;
         int low = first, high = last - 1;
         while (low <= high) {
@@ -797,7 +853,7 @@ public final class MathUtil {
      * @return index of the search value, or {@code a.length}
      * @see java.util.Arrays#sort(Object[], Comparator)
      */
-    public static <T> int lowerBound(T[] a, T value, @Nullable Comparator<? super T> c) {
+    public static <T> int lowerBound(@NonNull T[] a, T value, @Nullable Comparator<? super T> c) {
         return lowerBound(a, 0, a.length, value, c);
     }
 
@@ -818,7 +874,7 @@ public final class MathUtil {
      * @see java.util.Arrays#sort(Object[], int, int, Comparator)
      */
     @SuppressWarnings("unchecked")
-    public static <T> int lowerBound(T[] a, int first, int last, T value,
+    public static <T> int lowerBound(@NonNull T[] a, int first, int last, T value,
                                      @Nullable Comparator<? super T> c) {
         assert (first | last - first | a.length - last) >= 0;
         if (c == null) c = (Comparator<? super T>) Comparator.naturalOrder();
@@ -835,7 +891,8 @@ public final class MathUtil {
      * Returns the length of the longest increasing subsequence (non-strictly).
      * This algorithm has a time complexity of O(n log(n)).
      */
-    public static int lengthOfLIS(int[] a, int n) {
+    @Contract(pure = true)
+    public static int lengthOfLIS(@NonNull int[] a, int n) {
         assert n <= a.length;
         if (n <= 1) return n;
         int[] tail = new int[n];
@@ -855,7 +912,8 @@ public final class MathUtil {
      *
      * @param strict strictly increasing or not
      */
-    public static int lengthOfLIS(int[] a, int n, boolean strict) {
+    @Contract(pure = true)
+    public static int lengthOfLIS(@NonNull int[] a, int n, boolean strict) {
         if (!strict) return lengthOfLIS(a, n);
         // strict version only changes 'upperBound' to 'lowerBound'
         assert n <= a.length;
@@ -875,7 +933,8 @@ public final class MathUtil {
      * Returns the length of the longest increasing subsequence (non-strictly).
      * This algorithm has a time complexity of O(n log(n)).
      */
-    public static int lengthOfLIS(long[] a, int n) {
+    @Contract(pure = true)
+    public static int lengthOfLIS(@NonNull long[] a, int n) {
         assert n <= a.length;
         if (n <= 1) return n;
         long[] tail = new long[n];
@@ -896,7 +955,8 @@ public final class MathUtil {
      *
      * @param strict strictly increasing or not
      */
-    public static int lengthOfLIS(long[] a, int n, boolean strict) {
+    @Contract(pure = true)
+    public static int lengthOfLIS(@NonNull long[] a, int n, boolean strict) {
         if (!strict) return lengthOfLIS(a, n);
         // strict version only changes 'upperBound' to 'lowerBound'
         assert n <= a.length;
@@ -911,33 +971,6 @@ public final class MathUtil {
             else tail[pos] = v;
         }
         return length;
-    }
-
-    /**
-     * Find the Levenshtein distance between <var>a</var> and <var>b</var>.
-     */
-    public static int distance(@Nonnull String a, @Nonnull String b) {
-        if (a.equals(b))
-            return 0;
-        int m = a.length(), n = b.length();
-        if (m == 0 || n == 0)
-            return m + n;
-        int i, j;
-        int[][] d = new int[m + 1][n + 1];
-        for (i = 1; i <= m; i++)
-            d[i][0] = i;
-        for (j = 1; j <= n; j++)
-            d[0][j] = j;
-        for (i = 1; i <= m; i++) {
-            for (j = 1; j <= n; j++) {
-                boolean eq = a.charAt(i - 1) == b.charAt(j - 1);
-                d[i][j] = Math.min(Math.min(
-                                d[i - 1][j] + 1,            // delete
-                                d[i][j - 1] + 1),           // insert
-                        d[i - 1][j - 1] + (eq ? 0 : 1));    // replace
-            }
-        }
-        return d[m][n];
     }
 
     private MathUtil() {

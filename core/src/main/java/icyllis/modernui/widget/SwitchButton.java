@@ -107,7 +107,7 @@ public class SwitchButton extends CompoundButton {
 
         // draw inside background
         paint.setColor(mInsideColor);
-        if (MathUtil.isNearlyEqual(mInsideRadius, buttonRadius)) {
+        if (MathUtil.isApproxEqual(mInsideRadius, buttonRadius)) {
             // check a final state and simplify the drawing
             paint.setStyle(Paint.FILL);
             canvas.drawRoundRect(mButtonLeft, mButtonTop, mButtonRight, mButtonBottom, buttonRadius, paint);

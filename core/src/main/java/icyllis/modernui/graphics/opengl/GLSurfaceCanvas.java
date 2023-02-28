@@ -91,16 +91,16 @@ public final class GLSurfaceCanvas extends GLCanvas {
     /**
      * Vertex attributes
      */
-    public static final VertexAttrib POS;
-    public static final VertexAttrib COLOR;
-    public static final VertexAttrib UV;
+    public static final GLVertexAttrib POS;
+    public static final GLVertexAttrib COLOR;
+    public static final GLVertexAttrib UV;
 
     /**
      * Vertex formats
      */
-    public static final VertexFormat POS_COLOR;
-    public static final VertexFormat POS_COLOR_TEX;
-    public static final VertexFormat POS_TEX;
+    public static final GLVertexFormat POS_COLOR;
+    public static final GLVertexFormat POS_COLOR_TEX;
+    public static final GLVertexFormat POS_TEX;
 
     /**
      * Shader programs
@@ -146,6 +146,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
 
     /**
      * Uniform block sizes (maximum), use std140 layout
+     *
+     * @see icyllis.modernui.graphics.engine.shading.UniformHandler
      */
     public static final int MATRIX_UNIFORM_SIZE = 144;
     public static final int SMOOTH_UNIFORM_SIZE = 4;
@@ -158,15 +160,15 @@ public final class GLSurfaceCanvas extends GLCanvas {
     public static final int POS_COLOR_TEX_VERTEX_SIZE = 20;
 
     static {
-        POS = new VertexAttrib(GENERIC_BINDING, VertexAttrib.Src.FLOAT, VertexAttrib.Dst.VEC2, false);
-        COLOR = new VertexAttrib(GENERIC_BINDING, VertexAttrib.Src.UBYTE, VertexAttrib.Dst.VEC4, true);
-        UV = new VertexAttrib(GENERIC_BINDING, VertexAttrib.Src.FLOAT, VertexAttrib.Dst.VEC2, false);
+        POS = new GLVertexAttrib(GENERIC_BINDING, GLVertexAttrib.Src.FLOAT, GLVertexAttrib.Dst.VEC2, false);
+        COLOR = new GLVertexAttrib(GENERIC_BINDING, GLVertexAttrib.Src.UBYTE, GLVertexAttrib.Dst.VEC4, true);
+        UV = new GLVertexAttrib(GENERIC_BINDING, GLVertexAttrib.Src.FLOAT, GLVertexAttrib.Dst.VEC2, false);
         //MODEL_VIEW = new VertexAttrib(INSTANCED_BINDING, VertexAttrib.Src.FLOAT, VertexAttrib.Dst.MAT4, false);
-        POS_COLOR = new VertexFormat(POS, COLOR);
-        POS_COLOR_TEX = new VertexFormat(POS, COLOR, UV);
-        POS_TEX = new VertexFormat(POS, UV);
+        POS_COLOR = new GLVertexFormat(POS, COLOR);
+        POS_COLOR_TEX = new GLVertexFormat(POS, COLOR, UV);
+        POS_TEX = new GLVertexFormat(POS, UV);
 
-        ShaderManager.getInstance().addListener(GLSurfaceCanvas::onLoadShaders);
+        GLShaderManager.getInstance().addListener(GLSurfaceCanvas::onLoadShaders);
     }
 
     // recorded operations
@@ -291,7 +293,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             MemoryUtil.memFree(indices);
         }
 
-        POS_TEX.setElementBuffer(mGlyphIBO);
+        POS_TEX.setIndexBuffer(mGlyphIBO);
 
         ModernUI.LOGGER.debug(MARKER,
                 "Vertex buffers: PC {}, PCT {}, Glyph {}, Index buffer: Glyph {}",
@@ -322,7 +324,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         return sInstance;
     }
 
-    private static void onLoadShaders(@Nonnull ShaderManager manager) {
+    private static void onLoadShaders(@Nonnull GLShaderManager manager) {
         int posColor = manager.getShard(ModernUI.ID, "pos_color.vert");
         int posColorTex = manager.getShard(ModernUI.ID, "pos_color_tex.vert");
         int posTex = manager.getShard(ModernUI.ID, "pos_tex.vert");
@@ -804,7 +806,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
      * @param matrix specified matrix
      */
     private void drawMatrix(@Nonnull Matrix4 matrix) {
-        if (!matrix.isNearlyEqual(mLastMatrix)) {
+        if (!matrix.isApproxEqual(mLastMatrix)) {
             mLastMatrix.set(matrix);
             ByteBuffer buf = checkUniformMemory();
             matrix.store(buf);
@@ -1261,7 +1263,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     @Override
     public void drawArc(float cx, float cy, float radius, float startAngle,
                         float sweepAngle, @Nonnull Paint paint) {
-        if (MathUtil.isNearlyZero(sweepAngle) || radius < 0.0001f) {
+        if (MathUtil.isApproxZero(sweepAngle) || radius < 0.0001f) {
             return;
         }
         if (sweepAngle >= 360) {
@@ -1526,8 +1528,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
         if (t < 0.0001f) {
             return;
         }
-        if (MathUtil.isNearlyEqual(startX, stopX)) {
-            if (MathUtil.isNearlyEqual(startY, stopY)) {
+        if (MathUtil.isApproxEqual(startX, stopX)) {
+            if (MathUtil.isApproxEqual(startY, stopY)) {
                 drawCircleFill(startX, startY, t, paint);
             } else {
                 // vertical
@@ -1535,7 +1537,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                 float bottom = Math.max(startY, stopY);
                 drawRoundRectFill(startX - t, top - t, startX + t, bottom + t, t, 0, paint);
             }
-        } else if (MathUtil.isNearlyEqual(startY, stopY)) {
+        } else if (MathUtil.isApproxEqual(startY, stopY)) {
             // horizontal
             float left = Math.min(startX, stopX);
             float right = Math.max(startX, stopX);

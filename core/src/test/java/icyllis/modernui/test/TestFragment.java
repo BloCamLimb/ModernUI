@@ -23,6 +23,7 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.fragment.Fragment;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.util.DataSet;
 import icyllis.modernui.util.TypedValue;
 import icyllis.modernui.view.*;
@@ -54,9 +55,10 @@ public class TestFragment extends Fragment {
                 new Locale("ar"), CompactDecimalFormat.CompactStyle.SHORT);
         format.setMaximumFractionDigits(2);
         LOGGER.info(format.format(new BigDecimal("2136541565.615")));
-        /*try (ModernUI app = new ModernUI()) {
+        LOGGER.info("Levenshtein distance: {}", TextUtils.distance( "sunday", "saturday"));
+        try (ModernUI app = new ModernUI()) {
             app.run(new TestFragment());
-        }*/
+        }
         String str = """
                 public final class Reference {
                 public:

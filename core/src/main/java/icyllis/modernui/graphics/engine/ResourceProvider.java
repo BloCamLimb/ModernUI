@@ -54,7 +54,7 @@ public final class ResourceProvider {
         }
 
         int ceilPow2 = MathUtil.ceilPow2(size);
-        if (size <= (1 << 10)) {
+        if (size <= 1024) {
             return ceilPow2;
         }
 
@@ -90,16 +90,16 @@ public final class ResourceProvider {
      * match the request. The contents of the texture are undefined.
      * <p>
      * When {@link Surface#FLAG_BUDGETED} is set, the texture will count against the resource
-     * cache budget. If {@link Surface#FLAG_LOOSE_FIT} is also set, it's always budgeted.
+     * cache budget. If {@link Surface#FLAG_APPROX_FIT} is also set, it's always budgeted.
      * <p>
-     * When {@link Surface#FLAG_LOOSE_FIT} is set, the method returns a potentially loose fit
+     * When {@link Surface#FLAG_APPROX_FIT} is set, the method returns a potentially approx fit
      * texture that approximately matches the descriptor. Will be at least as large in width and
      * height as desc specifies. In this case, {@link Surface#FLAG_MIPMAPPED} and
      * {@link Surface#FLAG_BUDGETED} are ignored. Otherwise, the method returns an exact fit
      * texture.
      * <p>
      * When {@link Surface#FLAG_MIPMAPPED} is set, the texture will be allocated with mipmaps.
-     * If {@link Surface#FLAG_LOOSE_FIT} is also set, it always has no mipmaps.
+     * If {@link Surface#FLAG_APPROX_FIT} is also set, it always has no mipmaps.
      * <p>
      * When {@link Surface#FLAG_RENDERABLE} is set, the texture can be rendered to and
      * {@link Texture#getRenderTarget()} will return nonnull. The <code>sampleCount</code> specifies
@@ -116,7 +116,7 @@ public final class ResourceProvider {
      * @param label        the label for debugging purposes, can be empty to clear the label,
      *                     or null to leave the label unchanged
      * @see Surface#FLAG_BUDGETED
-     * @see Surface#FLAG_LOOSE_FIT
+     * @see Surface#FLAG_APPROX_FIT
      * @see Surface#FLAG_MIPMAPPED
      * @see Surface#FLAG_RENDERABLE
      * @see Surface#FLAG_PROTECTED
@@ -142,7 +142,7 @@ public final class ResourceProvider {
             return null;
         }
 
-        if ((surfaceFlags & Surface.FLAG_LOOSE_FIT) != 0) {
+        if ((surfaceFlags & Surface.FLAG_APPROX_FIT) != 0) {
             width = makeApprox(width);
             height = makeApprox(height);
             surfaceFlags &= Surface.FLAG_RENDERABLE | Surface.FLAG_PROTECTED;
@@ -181,7 +181,7 @@ public final class ResourceProvider {
      * @param label        the label for debugging purposes, can be empty to clear the label,
      *                     or null to leave the label unchanged
      * @see Surface#FLAG_BUDGETED
-     * @see Surface#FLAG_LOOSE_FIT
+     * @see Surface#FLAG_APPROX_FIT
      * @see Surface#FLAG_MIPMAPPED
      * @see Surface#FLAG_RENDERABLE
      * @see Surface#FLAG_PROTECTED

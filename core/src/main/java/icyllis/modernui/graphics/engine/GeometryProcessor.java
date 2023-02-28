@@ -18,41 +18,36 @@
 
 package icyllis.modernui.graphics.engine;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.graphics.Matrix3;
 import icyllis.modernui.graphics.engine.shading.*;
 import icyllis.modernui.graphics.engine.shading.UniformHandler.SamplerHandle;
 import icyllis.modernui.graphics.engine.shading.UniformHandler.UniformHandle;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
 import java.util.*;
 
 import static icyllis.modernui.graphics.engine.Engine.*;
 
 /**
- * The GeometryProcessor represents some kind of geometric primitive. This includes the shape
- * of the primitive and the inherent color of the primitive. The GeometryProcessor is
- * responsible for providing a color and coverage input into the rendering pipeline. Through
- * optimization, Engine may decide a different color, no color, and / or no coverage are required
- * from the GeometryProcessor, so the GeometryProcessor must be able to support this
- * functionality.
+ * The {@link GeometryProcessor} represents some kind of geometric primitive. This includes
+ * the shape of the primitive and the inherent color of the primitive.<br>
+ * The {@link GeometryProcessor} is responsible for providing a color and coverage input
+ * into the rendering pipeline. Through optimization, engine may decide a different color,
+ * no color, and / or no coverage are required from the {@link GeometryProcessor}, so the
+ * {@link GeometryProcessor} must be able to support this functionality.
  * <p>
- * There are two feedback loops between the FragmentProcessors, the XferProcessor, and the
- * GeometryProcessor. These loops run on the CPU and to determine known properties of the final
- * color and coverage inputs to the XferProcessor in order to perform optimizations that preserve
- * correctness. The DrawOp seeds these loops with initial color and coverage, in its
+ * There are two feedback loops between the {@link FragmentProcessor FragmentProcessors},
+ * the {@link TransferProcessor}, and the {@link GeometryProcessor}. These loops run on the
+ * CPU and to determine known properties of the final color and coverage inputs to the
+ * {@link TransferProcessor} in order to perform optimizations that preserve correctness.
+ * The DrawOp seeds these loops with initial color and coverage, in its
  * getProcessorAnalysisInputs implementation. These seed values are processed by the
  * subsequent stages of the rendering pipeline and the output is then fed back into the DrawOp
  * in the applyPipelineOptimizations call, where the op can use the information to inform
- * decisions about GeometryProcessor creation.
- * <p>
- * Note that all derived classes should hide their constructors and provide a Make factory
- * function that takes an arena (except for Tesselation-specific classes). This is because
- * geometry processors can be created in either the record-time or flush-time arenas which
- * define their lifetimes (i.e., a DDLs life time in the first case and a single flush in
- * the second case).
+ * decisions about {@link GeometryProcessor} creation.
  */
 @Immutable
 public abstract class GeometryProcessor extends Processor {
@@ -83,14 +78,14 @@ public abstract class GeometryProcessor extends Processor {
          *
          * @param name    the attrib name, cannot be null or empty
          * @param srcType the data type in vertex buffer, see {@link VertexAttribType}
-         * @param dstType the data type in vertex shader, see {@link SLType}
+         * @param dstType the data type in vertex shader, see {@link ShaderDataType}
          */
-        public Attribute(String name, byte srcType, byte dstType) {
-            assert (name != null && dstType != SLType.kVoid);
+        public Attribute(@NonNull String name, byte srcType, byte dstType) {
+            assert (dstType != ShaderDataType.kVoid);
             assert (srcType >= 0 && srcType <= VertexAttribType.kLast);
-            assert (SLType.checkSLType(dstType));
+            assert (ShaderDataType.checkSLType(dstType));
             assert (!name.isEmpty() && !name.startsWith("_"));
-            assert (SLType.locationSize(dstType) > 0);
+            assert (ShaderDataType.locationCount(dstType) > 0);
             mName = name;
             mSrcType = srcType;
             mDstType = dstType;
@@ -102,15 +97,15 @@ public abstract class GeometryProcessor extends Processor {
          *
          * @param name    the attrib name, UpperCamelCase, cannot be null or empty
          * @param srcType the data type in vertex buffer, see {@link VertexAttribType}
-         * @param dstType the data type in vertex shader, see {@link SLType}
+         * @param dstType the data type in vertex shader, see {@link ShaderDataType}
          * @param offset  N-aligned offset
          */
-        public Attribute(String name, byte srcType, byte dstType, int offset) {
-            assert (name != null && dstType != SLType.kVoid);
+        public Attribute(@NonNull String name, byte srcType, byte dstType, int offset) {
+            assert (dstType != ShaderDataType.kVoid);
             assert (srcType >= 0 && srcType <= VertexAttribType.kLast);
-            assert (SLType.checkSLType(dstType));
+            assert (ShaderDataType.checkSLType(dstType));
             assert (!name.isEmpty() && !name.startsWith("_"));
-            assert (SLType.locationSize(dstType) > 0);
+            assert (ShaderDataType.locationCount(dstType) > 0);
             assert (offset != IMPLICIT_OFFSET && alignOffset(offset) == offset);
             mName = name;
             mSrcType = srcType;
@@ -118,6 +113,7 @@ public abstract class GeometryProcessor extends Processor {
             mOffset = offset;
         }
 
+        @NonNull
         public final String name() {
             return mName;
         }
@@ -130,7 +126,7 @@ public abstract class GeometryProcessor extends Processor {
         }
 
         /**
-         * @return the data type in vertex shader, see {@link SLType}
+         * @return the data type in vertex shader, see {@link ShaderDataType}
          */
         public final byte dstType() {
             return mDstType;
@@ -148,28 +144,28 @@ public abstract class GeometryProcessor extends Processor {
         /**
          * @return the size of the source data in bytes
          */
-        public final int stepSize() {
+        public final int size() {
             return VertexAttribType.size(mSrcType);
         }
 
         /**
          * @return the number of locations
          */
-        public final int locationSize() {
-            return SLType.locationSize(mDstType);
+        public final int locations() {
+            return ShaderDataType.locationCount(mDstType);
         }
 
         /**
          * @return the total size for this attribute in bytes
          */
-        public final int totalSize() {
-            int size = stepSize();
-            int count = locationSize();
+        public final int stride() {
+            int size = size();
+            int count = locations();
             assert (size > 0 && count > 0);
             return size * count;
         }
 
-        @Nonnull
+        @NonNull
         public final ShaderVar asShaderVar() {
             return new ShaderVar(mName, mDstType, ShaderVar.kIn_TypeModifier);
         }
@@ -180,18 +176,6 @@ public abstract class GeometryProcessor extends Processor {
      */
     @Immutable
     public static class AttributeSet implements Iterable<Attribute> {
-
-        private static final Iterator<Attribute> EMPTY_ITER = new Iterator<>() {
-            @Override
-            public boolean hasNext() {
-                return false;
-            }
-
-            @Override
-            public Attribute next() {
-                throw new NoSuchElementException();
-            }
-        };
 
         private final Attribute[] mAttributes;
         private final int mStride;
@@ -205,14 +189,14 @@ public abstract class GeometryProcessor extends Processor {
          * Create an attribute set with implicit offsets and stride. No attributes can have a
          * predetermined stride.
          */
-        @Nonnull
-        public static AttributeSet makeImplicit(@Nonnull Attribute... attrs) {
+        @NonNull
+        public static AttributeSet makeImplicit(@NonNull Attribute... attrs) {
             assert (attrs.length > 0 && attrs.length <= Integer.SIZE);
             int stride = 0;
             for (Attribute attr : attrs) {
                 assert (attr != null);
                 assert (attr.offset() == Attribute.IMPLICIT_OFFSET);
-                stride += Attribute.alignOffset(attr.totalSize());
+                stride += Attribute.alignOffset(attr.stride());
             }
             assert (stride <= 0xFFFF);
             return new AttributeSet(attrs, Attribute.IMPLICIT_OFFSET);
@@ -223,8 +207,8 @@ public abstract class GeometryProcessor extends Processor {
          * initialized and have an explicit offset aligned to 4 bytes and with no attribute
          * crossing stride boundaries.
          */
-        @Nonnull
-        public static AttributeSet makeExplicit(int stride, @Nonnull Attribute... attrs) {
+        @NonNull
+        public static AttributeSet makeExplicit(int stride, @NonNull Attribute... attrs) {
             assert (stride > 0 && stride <= 0xFFFF);
             assert (Attribute.alignOffset(stride) == stride);
             assert (attrs.length > 0 && attrs.length <= Integer.SIZE);
@@ -232,20 +216,21 @@ public abstract class GeometryProcessor extends Processor {
                 assert (attr != null);
                 assert (attr.offset() != Attribute.IMPLICIT_OFFSET);
                 assert (Attribute.alignOffset(attr.offset()) == attr.offset());
-                assert (attr.offset() + attr.totalSize() <= stride);
+                assert (attr.offset() + attr.stride() <= stride);
             }
             return new AttributeSet(attrs, stride);
         }
 
         final int stride(int mask) {
+            // implicit stride changes with mask
             if (mStride == Attribute.IMPLICIT_OFFSET) {
-                final int rawCount = mAttributes.length;
+                final int count = mAttributes.length;
                 int stride = 0;
-                for (int i = 0, bit = 1; i < rawCount; i++, bit <<= 1) {
+                for (int i = 0, bit = 1; i < count; i++, bit <<= 1) {
                     final Attribute attr = mAttributes[i];
                     if ((mask & bit) != 0) {
                         assert (attr.offset() == Attribute.IMPLICIT_OFFSET);
-                        stride += Attribute.alignOffset(attr.totalSize());
+                        stride += Attribute.alignOffset(attr.stride());
                     }
                 }
                 return stride;
@@ -259,13 +244,13 @@ public abstract class GeometryProcessor extends Processor {
             for (int i = 0, bit = 1; i < rawCount; i++, bit <<= 1) {
                 final Attribute attr = mAttributes[i];
                 if ((mask & bit) != 0) {
-                    locations += attr.locationSize();
+                    locations += attr.locations();
                 }
             }
             return locations;
         }
 
-        final void addToKey(@Nonnull KeyBuilder b, int mask) {
+        final void addToKey(@NonNull KeyBuilder b, int mask) {
             final int rawCount = mAttributes.length;
             // max attribs is no less than 16, we assume the minimum
             b.addBits(6, rawCount, "attribute count");
@@ -281,7 +266,7 @@ public abstract class GeometryProcessor extends Processor {
                         offset = attr.offset();
                     } else {
                         offset = implicitOffset;
-                        implicitOffset += Attribute.alignOffset(attr.totalSize());
+                        implicitOffset += Attribute.alignOffset(attr.stride());
                     }
                     assert (offset >= 0 && offset <= 0xFFFF);
                     b.addBits(16, offset, "attrOffset");
@@ -304,44 +289,44 @@ public abstract class GeometryProcessor extends Processor {
             b.addBits(16, stride, "stride");
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public Iterator<Attribute> iterator() {
-            return new Iter(~0 >>> Integer.SIZE - mAttributes.length);
+            return new Iter((1 << mAttributes.length) - 1);
         }
 
         private class Iter implements Iterator<Attribute> {
 
-            private final int mMask;
-            private final int mCount;
+            private final int mask;
+            private final int count;
 
-            private int mIndex;
-            private int mImplicitOffset;
+            private int index;
+            private int implicitOffset;
 
-            public Iter(int mask) {
-                mMask = mask;
-                mCount = Integer.bitCount(mask);
+            private Iter(int mask) {
+                this.mask = mask;
+                count = Integer.bitCount(mask);
             }
 
             @Override
             public boolean hasNext() {
-                return mIndex < mCount;
+                return index < count;
             }
 
-            @Nonnull
+            @NonNull
             @Override
             public Attribute next() {
                 try {
-                    while ((mMask & (1 << mIndex)) == 0) {
-                        mIndex++; // skip unused
+                    while ((mask & (1 << index)) == 0) {
+                        index++; // skip unused
                     }
-                    final Attribute ret, curr = mAttributes[mIndex++];
+                    final Attribute ret, curr = mAttributes[index++];
                     if (curr.offset() == Attribute.IMPLICIT_OFFSET) {
-                        ret = new Attribute(curr.name(), curr.srcType(), curr.dstType(), mImplicitOffset);
+                        ret = new Attribute(curr.name(), curr.srcType(), curr.dstType(), implicitOffset);
                     } else {
                         ret = curr;
                     }
-                    mImplicitOffset += Attribute.alignOffset(curr.totalSize());
+                    implicitOffset += Attribute.alignOffset(curr.stride());
                     return ret;
                 } catch (Exception e) {
                     throw new NoSuchElementException(e);
@@ -352,18 +337,18 @@ public abstract class GeometryProcessor extends Processor {
 
     /**
      * GPs that need to use either float or ubyte colors can just call this to get a correctly
-     * configured Attribute struct
+     * configured {@link Attribute} struct.
      */
-    @Nonnull
+    @NonNull
     protected static Attribute makeColorAttribute(String name, boolean wideColor) {
         return new Attribute(name, wideColor ? VertexAttribType.kFloat4 : VertexAttribType.kUByte4_norm,
-                SLType.kFloat4);
+                ShaderDataType.kFloat4);
     }
 
-    private AttributeSet mVertexAttributes;      // binding = 0, divisor = 0
-    private AttributeSet mInstanceAttributes;    // binding = 1, divisor = 1
-    private int mVertexAttributesMask;
-    private int mInstanceAttributesMask;
+    private AttributeSet mVertexAttributes;     // binding = 0, divisor = 0, VK_VERTEX_INPUT_RATE_VERTEX
+    private AttributeSet mInstanceAttributes;   // binding = 1, divisor = 1, VK_VERTEX_INPUT_RATE_INSTANCE
+    private int mVertexAttributesMask;          // bit mask controlling which attributes are enabled
+    private int mInstanceAttributesMask;        // bit mask controlling which attributes are enabled
 
     protected GeometryProcessor(int classID) {
         super(classID);
@@ -414,8 +399,9 @@ public abstract class GeometryProcessor extends Processor {
 
     /**
      * Returns the number of used per-vertex attribute locations.
+     * Note: attribute of a matrix type counts more than one.
      *
-     * @see SLType#locationSize(byte)
+     * @see ShaderDataType#locationCount(byte)
      * @see #numVertexAttributes()
      */
     public final int numVertexLocations() {
@@ -431,7 +417,7 @@ public abstract class GeometryProcessor extends Processor {
      * <li>It always returns an attribute with a known offset.</li>
      * </ol>
      */
-    @Nonnull
+    @NonNull
     public final Iterable<Attribute> getVertexAttributes() {
         assert (mVertexAttributesMask == 0 || mVertexAttributes != null);
         return mVertexAttributesMask == 0 ? Collections.emptyList() :
@@ -450,8 +436,9 @@ public abstract class GeometryProcessor extends Processor {
 
     /**
      * Returns the number of used per-instance attribute locations.
+     * Note: attribute of a matrix type counts more than one.
      *
-     * @see SLType#locationSize(byte)
+     * @see ShaderDataType#locationCount(byte)
      * @see #numInstanceAttributes()
      */
     public final int numInstanceLocations() {
@@ -467,7 +454,7 @@ public abstract class GeometryProcessor extends Processor {
      * <li>It always returns an attribute with a known offset.</li>
      * </ol>
      */
-    @Nonnull
+    @NonNull
     public final Iterable<Attribute> getInstanceAttributes() {
         assert (mInstanceAttributesMask == 0 || mInstanceAttributes != null);
         return mInstanceAttributesMask == 0 ? Collections.emptyList() :
@@ -519,13 +506,14 @@ public abstract class GeometryProcessor extends Processor {
      *
      * @see #addToKey(KeyBuilder)
      */
-    @Nonnull
+    @NonNull
     public abstract ProgramImpl makeProgramImpl(ShaderCaps caps);
 
     /**
-     * Sets per-vertex attributes. Passes a shared {@link AttributeSet} containing all attributes,
+     * Sets per-vertex attributes. Given a shared {@link AttributeSet} containing all attributes,
      * and then use mask to control which of them are used by this GeometryProcessor instance.
-     * Note: Call this in subclasses constructor.
+     * For example, a mask of 0b1011 means to use attrs[0], attrs[1] and attrs[3], where 0, 1 and 3
+     * is the layout location of the vertex shader input. Note: Call this in subclasses constructor.
      *
      * @param attrs all per-vertex attributes
      * @param mask  a mask determining which attributes to use, can be zero
@@ -533,29 +521,29 @@ public abstract class GeometryProcessor extends Processor {
     protected final void setVertexAttributes(AttributeSet attrs, int mask) {
         assert (mVertexAttributes == null && attrs != null);
         mVertexAttributes = attrs;
-        mVertexAttributesMask = mask & (~0 >>> (Integer.SIZE - attrs.mAttributes.length));
+        mVertexAttributesMask = mask & ((1 << attrs.mAttributes.length) - 1);
     }
 
     /**
-     * Sets per-instance attributes. Passes a shared {@link AttributeSet} containing all attributes,
+     * Sets per-instance attributes. Given a shared {@link AttributeSet} containing all attributes,
      * and then use mask to control which of them are used by this GeometryProcessor instance.
-     * Note: Call this in subclasses constructor.
+     * For example, a mask of 0b1011 means to use attrs[0], attrs[1] and attrs[3], where 0, 1 and 3
+     * is the layout location of the vertex shader input. Note: Call this in subclasses constructor.
      *
      * @param attrs all per-instance attributes
      * @param mask  a mask determining which attributes to use, can be zero
      */
     protected final void setInstanceAttributes(AttributeSet attrs, int mask) {
         assert (mInstanceAttributes == null && attrs != null);
-        assert (Integer.SIZE - Integer.numberOfLeadingZeros(mask) <= attrs.mAttributes.length);
         mInstanceAttributes = attrs;
-        mInstanceAttributesMask = mask & (~0 >>> (Integer.SIZE - attrs.mAttributes.length));
+        mInstanceAttributesMask = mask & ((1 << attrs.mAttributes.length) - 1);
     }
 
     /**
-     * Every {@link GeometryProcessor} must be capable of creating a subclass of ProgramImpl. The
-     * ProgramImpl emits the shader code that implements the GeometryProcessor, is attached to the
-     * generated backend API pipeline/program and used to extract uniform data from
-     * GeometryProcessor instances.
+     * Every {@link GeometryProcessor} must be capable of creating a subclass of {@link ProgramImpl}.
+     * The {@link ProgramImpl} emits the shader code that implements the {@link GeometryProcessor},
+     * is attached to the generated backend API pipeline/program and used to extract uniform data
+     * from {@link GeometryProcessor} instances.
      */
     public static abstract class ProgramImpl {
 
@@ -569,9 +557,9 @@ public abstract class GeometryProcessor extends Processor {
          * @return new state, eiter matrix or state
          */
         //TODO move to other places
-        protected static Matrix3 setTransform(@Nonnull UniformDataManager pdm,
+        protected static Matrix3 setTransform(@NonNull UniformDataManager pdm,
                                               @UniformHandle int uniform,
-                                              @Nonnull Matrix3 matrix,
+                                              @NonNull Matrix3 matrix,
                                               @Nullable Matrix3 state) {
             if (uniform == INVALID_RESOURCE_HANDLE ||
                     (state != null && state.equals(matrix))) {
@@ -602,20 +590,20 @@ public abstract class GeometryProcessor extends Processor {
                                                  ShaderVar inPos,
                                                  String matrixName,
                                                  ShaderVar outPos) {
-            assert (inPos.getType() == SLType.kFloat2 || inPos.getType() == SLType.kFloat3);
+            assert (inPos.getType() == ShaderDataType.kFloat2 || inPos.getType() == ShaderDataType.kFloat3);
 
-            if (inPos.getType() == SLType.kFloat3) {
+            if (inPos.getType() == ShaderDataType.kFloat3) {
                 // A float3 stays a float3 whether the matrix adds perspective
                 vertBuilder.codeAppendf("vec3 _worldPos = %s * %s;\n",
                         matrixName,
                         inPos.getName());
-                outPos.set("_worldPos", SLType.kFloat3);
+                outPos.set("_worldPos", ShaderDataType.kFloat3);
             } else {
                 // A float2 is promoted to a float3 if we add perspective via the matrix
                 vertBuilder.codeAppendf("vec3 _worldPos = %s * vec3(%s, 1.0);\n",
                         matrixName,
                         inPos.getName());
-                outPos.set("_worldPos", SLType.kFloat3);
+                outPos.set("_worldPos", ShaderDataType.kFloat3);
             }
         }
 
@@ -649,10 +637,10 @@ public abstract class GeometryProcessor extends Processor {
                     worldPos);
 
             // Emit the vertex position to the hardware in the normalized device coordinates it expects.
-            assert (worldPos.getType() == SLType.kFloat2 ||
-                    worldPos.getType() == SLType.kFloat3);
+            assert (worldPos.getType() == ShaderDataType.kFloat2 ||
+                    worldPos.getType() == ShaderDataType.kFloat3);
             vertBuilder.emitNormalizedPosition(worldPos);
-            if (worldPos.getType() == SLType.kFloat2) {
+            if (worldPos.getType() == ShaderDataType.kFloat2) {
                 varyingHandler.setNoPerspective();
             }
         }

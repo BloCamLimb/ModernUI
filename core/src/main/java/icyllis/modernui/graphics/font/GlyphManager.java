@@ -18,7 +18,7 @@
 
 package icyllis.modernui.graphics.font;
 
-import icyllis.modernui.annotation.RenderThread;
+import icyllis.modernui.annotation.*;
 import icyllis.modernui.graphics.Bitmap;
 import icyllis.modernui.text.TextUtils;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -29,8 +29,6 @@ import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.system.MemoryUtil;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
@@ -112,7 +110,7 @@ public class GlyphManager {
         reload();
     }
 
-    @Nonnull
+    @NonNull
     public static GlyphManager getInstance() {
         if (sInstance == null) {
             synchronized (GlyphManager.class) {
@@ -149,14 +147,15 @@ public class GlyphManager {
      * @param isRtl whether the text should layout right-to-left
      * @return the newly laid-out GlyphVector
      */
-    @Nonnull
-    public GlyphVector layoutGlyphVector(@Nonnull Font font, char[] text, int start, int limit, boolean isRtl) {
+    @NonNull
+    public GlyphVector layoutGlyphVector(@NonNull Font font, @NonNull char[] text,
+                                         int start, int limit, boolean isRtl) {
         return font.layoutGlyphVector(mGraphics.getFontRenderContext(), text, start, limit,
                 isRtl ? Font.LAYOUT_RIGHT_TO_LEFT : Font.LAYOUT_LEFT_TO_RIGHT);
     }
 
-    @Nonnull
-    public GlyphVector createGlyphVector(@Nonnull Font font, char[] text) {
+    @NonNull
+    public GlyphVector createGlyphVector(@NonNull Font font, @NonNull char[] text) {
         return font.createGlyphVector(mGraphics.getFontRenderContext(), text);
     }
 
@@ -172,7 +171,7 @@ public class GlyphManager {
      */
     @Nullable
     @RenderThread
-    public GLBakedGlyph lookupGlyph(@Nonnull Font font, int glyphCode) {
+    public GLBakedGlyph lookupGlyph(@NonNull Font font, int glyphCode) {
         long fontKey = mFontTable.computeIfAbsent(font, mFontTableMapper);
         long key = (fontKey << 32L) | glyphCode;
         GLFontAtlas atlas = mAtlases.computeIfAbsent(font.getSize(), __ -> new GLFontAtlas());
@@ -216,8 +215,8 @@ public class GlyphManager {
 
     @Nullable
     @RenderThread
-    private GLBakedGlyph cacheGlyph(@Nonnull Font font, int glyphCode,
-                                    @Nonnull GLFontAtlas atlas, @Nonnull GLBakedGlyph glyph,
+    private GLBakedGlyph cacheGlyph(@NonNull Font font, int glyphCode,
+                                    @NonNull GLFontAtlas atlas, @NonNull GLBakedGlyph glyph,
                                     long key) {
         // there's no need to layout glyph vector, we only draw the specific glyphCode
         // which is already laid-out in LayoutEngine
@@ -309,7 +308,7 @@ public class GlyphManager {
      * Re-calculate font metrics in pixels, the higher 32 bits are ascent and
      * lower 32 bits are descent.
      */
-    public int getFontMetrics(@Nonnull FontPaint paint, @Nullable FontMetricsInt fm) {
+    public int getFontMetrics(@NonNull FontPaint paint, @Nullable FontMetricsInt fm) {
         int ascent = 0, descent = 0, height = 0;
         for (FontFamily family : paint.mFontCollection.getFamilies()) {
             Font font = family.getClosestMatch(paint.getFontStyle()).deriveFont((float) paint.mFontSize);
@@ -330,15 +329,15 @@ public class GlyphManager {
      *
      * @see LayoutPiece#LayoutPiece(char[], int, int, boolean, FontPaint, boolean, boolean, LayoutPiece)
      */
-    public Font getFontMetrics(@Nonnull FontFamily family, @Nonnull FontPaint paint, @Nonnull FontMetricsInt fm) {
+    public Font getFontMetrics(@NonNull FontFamily family, @NonNull FontPaint paint, @NonNull FontMetricsInt fm) {
         Font font = family.getClosestMatch(paint.getFontStyle()).deriveFont((float) paint.mFontSize);
         fm.extendBy(mGraphics.getFontMetrics(font));
         return font;
     }
 
     /*@SuppressWarnings("MagicConstant")
-    public void measure(@Nonnull char[] text, int contextStart, int contextEnd, @Nonnull FontPaint paint, boolean isRtl,
-                        @Nonnull BiConsumer<GraphemeMetrics, FontPaint> consumer) {
+    public void measure(@NonNull char[] text, int contextStart, int contextEnd, @NonNull FontPaint paint, boolean isRtl,
+                        @NonNull BiConsumer<GraphemeMetrics, FontPaint> consumer) {
         final List<FontRun> runs = paint.mTypeface.itemize(text, contextStart, contextEnd);
         float advance = 0;
         final FontMetricsInt fm = new FontMetricsInt();

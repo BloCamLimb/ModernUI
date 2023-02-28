@@ -289,20 +289,20 @@ public final class Matrix3 implements Cloneable {
         float my = m22;
         // if no shear, can just compare scale factors
         if ((mask & Affine_Mask) == 0) {
-            return !MathUtil.isNearlyZero(mx) && MathUtil.isNearlyEqual(Math.abs(mx), Math.abs(my));
+            return !MathUtil.isApproxZero(mx) && MathUtil.isApproxEqual(Math.abs(mx), Math.abs(my));
         }
         float sx = m21;
         float sy = m12;
 
         // check if upper-left 2x2 of matrix is degenerate
-        if (MathUtil.isNearlyZero(mx * my - sx * sy)) {
+        if (MathUtil.isApproxZero(mx * my - sx * sy)) {
             return false;
         }
 
         // upper 2x2 is rotation/reflection + uniform scale if basis vectors
         // are 90 degree rotations of each other
-        return (MathUtil.isNearlyEqual(mx, my) && MathUtil.isNearlyEqual(sx, -sy))
-                || (MathUtil.isNearlyEqual(mx, -my) && MathUtil.isNearlyEqual(sx, sy));
+        return (MathUtil.isApproxEqual(mx, my) && MathUtil.isApproxEqual(sx, -sy))
+                || (MathUtil.isApproxEqual(mx, -my) && MathUtil.isApproxEqual(sx, sy));
     }
 
     /**
@@ -519,7 +519,7 @@ public final class Matrix3 implements Cloneable {
         float c = m12 * m23 - m13 * m22;
         // calc the determinant
         float det = a * m33 + b * m32 + c * m31;
-        if (MathUtil.isNearlyZero(det)) {
+        if (MathUtil.isApproxZero(det)) {
             return false;
         }
         // calc algebraic cofactor and transpose
@@ -826,16 +826,16 @@ public final class Matrix3 implements Cloneable {
      * @param m the matrix to compare.
      * @return {@code true} if this matrix is equivalent to other matrix.
      */
-    public boolean isNearlyEqual(@Nonnull Matrix3 m) {
-        return MathUtil.isNearlyEqual(m11, m.m11) &&
-                MathUtil.isNearlyEqual(m12, m.m12) &&
-                MathUtil.isNearlyEqual(m13, m.m13) &&
-                MathUtil.isNearlyEqual(m21, m.m21) &&
-                MathUtil.isNearlyEqual(m22, m.m22) &&
-                MathUtil.isNearlyEqual(m23, m.m23) &&
-                MathUtil.isNearlyEqual(m31, m.m31) &&
-                MathUtil.isNearlyEqual(m32, m.m32) &&
-                MathUtil.isNearlyEqual(m33, m.m33);
+    public boolean isApproxEqual(@Nonnull Matrix3 m) {
+        return MathUtil.isApproxEqual(m11, m.m11) &&
+                MathUtil.isApproxEqual(m12, m.m12) &&
+                MathUtil.isApproxEqual(m13, m.m13) &&
+                MathUtil.isApproxEqual(m21, m.m21) &&
+                MathUtil.isApproxEqual(m22, m.m22) &&
+                MathUtil.isApproxEqual(m23, m.m23) &&
+                MathUtil.isApproxEqual(m31, m.m31) &&
+                MathUtil.isApproxEqual(m32, m.m32) &&
+                MathUtil.isApproxEqual(m33, m.m33);
     }
 
     @Override
