@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.opengl;
+package icyllis.modernui.graphics.vulkan;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.engine.BackendFormat;
@@ -26,14 +26,15 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import org.lwjgl.system.NativeType;
 
 import javax.annotation.concurrent.Immutable;
+import java.util.Objects;
 
-import static icyllis.modernui.graphics.opengl.GLCore.*;
+import static icyllis.modernui.graphics.vulkan.VkCore.*;
 
 @Immutable
-public final class GLBackendFormat extends BackendFormat {
+public final class VkBackendFormat extends BackendFormat {
 
-    private static final Int2ObjectMap<GLBackendFormat> FORMATS =
-            new Int2ObjectOpenHashMap<>(LAST_FORMAT_INDEX + 1);
+    private static final Int2ObjectMap<VkBackendFormat> FORMATS =
+            new Int2ObjectOpenHashMap<>(25);
 
     private final int mFormat;
     private final boolean mIsExternal;
@@ -41,36 +42,30 @@ public final class GLBackendFormat extends BackendFormat {
     /**
      * @see #make(int, boolean)
      */
-    GLBackendFormat(@NativeType("GLenum") int format, boolean isExternal) {
+    VkBackendFormat(@NativeType("VkFormat") int format, boolean isExternal) {
         mFormat = format;
         mIsExternal = isExternal;
     }
 
+    //TODO cache only known formats
     @NonNull
-    public static GLBackendFormat make(@NativeType("GLenum") int format) {
-        return make(format, false);
-    }
-
-    @NonNull
-    public static GLBackendFormat make(@NativeType("GLenum") int format, boolean isExternal) {
-        if (glFormatIsSupported(format)) {
-            if (format < 0) {
-                throw new IllegalArgumentException();
-            }
-            return FORMATS.computeIfAbsent(format | (isExternal ? Integer.MIN_VALUE : 0),
-                    k -> new GLBackendFormat(k & Integer.MAX_VALUE, k < 0));
+    public static VkBackendFormat make(@NativeType("VkFormat") int format, boolean isExternal) {
+        Objects.checkIndex(format, Integer.MAX_VALUE);
+        int key = (format) | (isExternal ? Integer.MIN_VALUE : 0);
+        VkBackendFormat backendFormat = FORMATS.get(key);
+        if (backendFormat != null) {
+            return backendFormat;
         }
-        return new GLBackendFormat(format, isExternal);
+        backendFormat = new VkBackendFormat(format, isExternal);
+        if (backendFormat.getBytesPerBlock() != 0) {
+            FORMATS.put(key, backendFormat);
+        }
+        return backendFormat;
     }
 
     @Override
     public int getBackend() {
-        return Engine.BackendApi.kOpenGL;
-    }
-
-    @Override
-    public int getGLFormat() {
-        return mFormat;
+        return Engine.BackendApi.kVulkan;
     }
 
     @Override
@@ -80,7 +75,12 @@ public final class GLBackendFormat extends BackendFormat {
 
     @Override
     public int getChannelFlags() {
-        return glFormatChannels(mFormat);
+        return vkFormatChannels(mFormat);
+    }
+
+    @Override
+    public int getVkFormat() {
+        return mFormat;
     }
 
     @NonNull
@@ -94,22 +94,22 @@ public final class GLBackendFormat extends BackendFormat {
 
     @Override
     public boolean isSRGB() {
-        return glFormatIsSRGB(mFormat);
+        return mFormat == VK_FORMAT_R8G8B8A8_SRGB;
     }
 
     @Override
     public int getCompressionType() {
-        return glFormatCompressionType(mFormat);
+        return vkFormatCompressionType(mFormat);
     }
 
     @Override
     public int getBytesPerBlock() {
-        return glFormatBytesPerBlock(mFormat);
+        return vkFormatBytesPerBlock(mFormat);
     }
 
     @Override
     public int getStencilBits() {
-        return glFormatStencilBits(mFormat);
+        return vkFormatStencilBits(mFormat);
     }
 
     @Override
@@ -126,13 +126,13 @@ public final class GLBackendFormat extends BackendFormat {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        return mFormat == ((GLBackendFormat) o).mFormat;
+        return mFormat == ((VkBackendFormat) o).mFormat;
     }
 
     @Override
     public String toString() {
-        return "{backend=OpenGL" +
-                ", format=" + glFormatName(mFormat) +
+        return "{backend=Vulkan" +
+                ", format=" + vkFormatName(mFormat) +
                 ", isExternal=" + mIsExternal +
                 '}';
     }

@@ -184,7 +184,7 @@ public class GlyphManager {
 
     @RenderThread
     public void debug() {
-        String basePath = Bitmap.saveDialogGet(Bitmap.SaveFormat.PNG, "FontAtlas");
+        String basePath = Bitmap.saveDialogGet(Bitmap.SaveFormat.PNG, null, "FontAtlas");
         if (basePath != null) {
             // XXX: remove extension name
             basePath = basePath.substring(0, basePath.length() - 4);

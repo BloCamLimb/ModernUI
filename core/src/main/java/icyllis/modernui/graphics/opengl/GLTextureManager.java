@@ -21,6 +21,7 @@ package icyllis.modernui.graphics.opengl;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.Bitmap;
+import icyllis.modernui.graphics.BitmapFactory;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
@@ -33,7 +34,7 @@ import java.util.Map;
 /**
  * This class maintains OpenGL 2D textures decoded from local client resources.
  *
- * @deprecated to be be replaced by {@link icyllis.modernui.graphics.engine.ProxyProvider}
+ * @deprecated to be replaced by {@link icyllis.modernui.graphics.engine.ProxyProvider}
  */
 @Deprecated
 @ApiStatus.Internal
@@ -94,7 +95,10 @@ public class GLTextureManager {
             texture = new GLTextureCompat(GLCore.GL_TEXTURE_2D);
         }
         try (InputStream stream = ModernUI.getInstance().getResourceStream(namespace, path)) {
-            Bitmap bitmap = Bitmap.decode(Bitmap.Format.RGBA_8888, stream);
+            var opts = new BitmapFactory.Options();
+            opts.inPreferredFormat = Bitmap.Format.RGBA_8888;
+            Bitmap bitmap = BitmapFactory.decodeStream(stream, opts);
+            assert bitmap != null;
             createFromBitmap(texture, bitmap, (flags & MIPMAP_MASK) != 0);
         } catch (IOException e) {
             e.printStackTrace();
@@ -114,7 +118,10 @@ public class GLTextureManager {
     public GLTextureCompat create(@Nonnull InputStream stream, boolean mipmapped) {
         GLTextureCompat texture = new GLTextureCompat(GLCore.GL_TEXTURE_2D);
         try (stream) {
-            Bitmap bitmap = Bitmap.decode(Bitmap.Format.RGBA_8888, stream);
+            var opts = new BitmapFactory.Options();
+            opts.inPreferredFormat = Bitmap.Format.RGBA_8888;
+            Bitmap bitmap = BitmapFactory.decodeStream(stream, opts);
+            assert bitmap != null;
             createFromBitmap(texture, bitmap, mipmapped);
         } catch (IOException e) {
             e.printStackTrace();
@@ -134,7 +141,10 @@ public class GLTextureManager {
     public GLTextureCompat create(@Nonnull ReadableByteChannel channel, boolean mipmapped) {
         GLTextureCompat texture = new GLTextureCompat(GLCore.GL_TEXTURE_2D);
         try (channel) {
-            Bitmap bitmap = Bitmap.decode(Bitmap.Format.RGBA_8888, channel);
+            var opts = new BitmapFactory.Options();
+            opts.inPreferredFormat = Bitmap.Format.RGBA_8888;
+            Bitmap bitmap = BitmapFactory.decodeChannel(channel, opts);
+            assert bitmap != null;
             createFromBitmap(texture, bitmap, mipmapped);
         } catch (IOException e) {
             e.printStackTrace();
@@ -146,7 +156,7 @@ public class GLTextureManager {
         int width = bitmap.getWidth();
         int height = bitmap.getHeight();
         texture.setDimension(width, height, 1);
-        int rowPixels = bitmap.getRowStride() / bitmap.getChannels();
+        int rowPixels = bitmap.getRowStride() / bitmap.getChannelCount();
         if (Core.isOnRenderThread()) {
             texture.allocate2D(bitmap.getInternalGlFormat(), width, height, mipmapped ? 4 : 0);
             texture.upload(0, 0, 0, width, height, rowPixels,

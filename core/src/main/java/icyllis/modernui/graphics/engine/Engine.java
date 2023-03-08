@@ -182,7 +182,7 @@ public final class Engine {
         int kFragment = 1 << 1;
     }
 
-    static int colorTypeChannelFlags(int ct) {
+    public static int colorTypeChannelFlags(int ct) {
         return switch (ct) {
             case ImageInfo.CT_UNKNOWN -> 0;
             case ImageInfo.CT_ALPHA_8,

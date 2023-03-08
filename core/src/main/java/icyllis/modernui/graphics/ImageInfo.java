@@ -19,6 +19,7 @@
 package icyllis.modernui.graphics;
 
 import icyllis.modernui.annotation.Size;
+import icyllis.modernui.graphics.engine.Engine;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -422,6 +423,20 @@ public final class ImageInfo {
      */
     public boolean isEmpty() {
         return mWidth <= 0 && mHeight <= 0;
+    }
+
+    /**
+     * Returns true if AlphaType is set to hint that all pixels are opaque; their
+     * alpha value is implicitly or explicitly 1.0.
+     * <p>
+     * Does not check if ColorType allows alpha, or if any pixel value has
+     * transparency.
+     *
+     * @return true if AlphaType is Opaque
+     */
+    public boolean isOpaque() {
+        return mAlphaType == AT_OPAQUE ||
+                (Engine.colorTypeChannelFlags(mColorType) & Color.COLOR_CHANNEL_FLAG_ALPHA) == 0;
     }
 
     /**

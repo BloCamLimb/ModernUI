@@ -26,7 +26,11 @@ import java.lang.annotation.*;
  * Render thread can sometimes be the same thread as main thread.
  */
 @Documented
-@Target({ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.TYPE})
 @Retention(RetentionPolicy.CLASS)
+@Target({ElementType.METHOD,
+        ElementType.CONSTRUCTOR,
+        ElementType.TYPE,
+        ElementType.PARAMETER,
+        ElementType.ANNOTATION_TYPE})
 public @interface RenderThread {
 }

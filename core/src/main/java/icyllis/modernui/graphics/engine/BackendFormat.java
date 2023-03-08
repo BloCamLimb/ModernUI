@@ -18,7 +18,7 @@
 
 package icyllis.modernui.graphics.engine;
 
-import icyllis.modernui.graphics.ImageInfo;
+import icyllis.modernui.graphics.*;
 import org.lwjgl.system.NativeType;
 
 import javax.annotation.Nonnull;
@@ -31,14 +31,14 @@ import javax.annotation.concurrent.Immutable;
 public abstract class BackendFormat {
 
     /**
-     * @see BackendApi#kOpenGL
-     * @see BackendApi#kVulkan
-     * @see BackendApi#kMock
+     * @see Engine.BackendApi#kOpenGL
+     * @see Engine.BackendApi#kVulkan
+     * @see Engine.BackendApi#kMock
      */
     public abstract int getBackend();
 
     /**
-     * If the backend API is Open GL this gets the format as a GLenum.
+     * If the backend API is OpenGL this gets the format as a GLenum.
      */
     @NativeType("GLenum")
     public int getGLFormat() {

@@ -174,9 +174,9 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
         mUiThread = new Thread(() -> runUI(fragment), "UI-Thread");
         mUiThread.start();
 
-        try (Bitmap i16 = Bitmap.decode(null, getResourceChannel(ID, "AppLogo16x.png"));
-             Bitmap i32 = Bitmap.decode(null, getResourceChannel(ID, "AppLogo32x.png"));
-             Bitmap i48 = Bitmap.decode(null, getResourceChannel(ID, "AppLogo48x.png"))) {
+        try (Bitmap i16 = BitmapFactory.decodeStream(getResourceStream(ID, "AppLogo16x.png"));
+             Bitmap i32 = BitmapFactory.decodeStream(getResourceStream(ID, "AppLogo32x.png"));
+             Bitmap i48 = BitmapFactory.decodeStream(getResourceStream(ID, "AppLogo48x.png"))) {
             mWindow.setIcon(i16, i32, i48);
         } catch (IOException e) {
             e.printStackTrace();
@@ -264,13 +264,22 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
         mDecor.setLayoutDirection(View.LAYOUT_DIRECTION_LOCALE);
 
         try {
-            GLTextureCompat texture = GLTextureManager.getInstance().create(
-                    FileChannel.open(Path.of("F:", "eromanga.png"), StandardOpenOption.READ), true);
+            FileChannel channel = FileChannel.open(Path.of("F:", "eromanga.png"), StandardOpenOption.READ);
+            {
+                var opts = new BitmapFactory.Options();
+                opts.inJustDecodeBounds = true;
+                BitmapFactory.decodeChannel(channel, opts);
+                LOGGER.info(MARKER, "Decoded image dimensions: {}x{}, format: {}, mimeType: {}",
+                        opts.outWidth, opts.outHeight, opts.outFormat, opts.outMimeType);
+                channel.position(0);
+            }
+            GLTextureCompat texture = GLTextureManager.getInstance().create(channel, true);
             Image image = new Image(texture);
             Drawable drawable = new ImageDrawable(image);
             drawable.setTint(0xFF808080);
             mDecor.setBackground(drawable);
-        } catch (IOException ignored) {
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
         mRoot.setView(mDecor);
