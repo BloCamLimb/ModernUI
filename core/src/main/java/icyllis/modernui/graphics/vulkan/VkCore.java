@@ -18,16 +18,17 @@
 
 package icyllis.modernui.graphics.vulkan;
 
+import icyllis.modernui.graphics.Color;
+import icyllis.modernui.graphics.ImageInfo;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+import org.lwjgl.system.NativeType;
 import org.lwjgl.vulkan.VK11;
 
 import static org.lwjgl.vulkan.EXTDebugReport.VK_ERROR_VALIDATION_FAILED_EXT;
 import static org.lwjgl.vulkan.KHRDisplaySwapchain.VK_ERROR_INCOMPATIBLE_DISPLAY_KHR;
-import static org.lwjgl.vulkan.KHRSurface.VK_ERROR_NATIVE_WINDOW_IN_USE_KHR;
-import static org.lwjgl.vulkan.KHRSurface.VK_ERROR_SURFACE_LOST_KHR;
-import static org.lwjgl.vulkan.KHRSwapchain.VK_ERROR_OUT_OF_DATE_KHR;
-import static org.lwjgl.vulkan.KHRSwapchain.VK_SUBOPTIMAL_KHR;
+import static org.lwjgl.vulkan.KHRSurface.*;
+import static org.lwjgl.vulkan.KHRSwapchain.*;
 
 public final class VkCore extends VK11 {
 
@@ -101,13 +102,135 @@ public final class VkCore extends VK11 {
         };
     }
 
-    public static String getPhysicalDeviceTypeName(int type) {
-        return switch (type) {
+    public static String getPhysicalDeviceTypeName(@NativeType("VkPhysicalDeviceType") int vkPhysicalDeviceType) {
+        return switch (vkPhysicalDeviceType) {
             case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU -> "Integrated GPU";
             case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU -> "Discrete GPU";
             case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU -> "Virtual GPU";
             case VK_PHYSICAL_DEVICE_TYPE_CPU -> "CPU";
             default -> "Other";
+        };
+    }
+
+    /**
+     * @return see Color
+     */
+    public static int vkFormatChannels(@NativeType("VkFormat") int vkFormat) {
+        return switch (vkFormat) {
+            case VK_FORMAT_R8G8B8A8_UNORM,
+                    VK_FORMAT_R16G16B16A16_UNORM,
+                    VK_FORMAT_BC1_RGBA_UNORM_BLOCK,
+                    VK_FORMAT_R8G8B8A8_SRGB,
+                    VK_FORMAT_R4G4B4A4_UNORM_PACK16,
+                    VK_FORMAT_B4G4R4A4_UNORM_PACK16,
+                    VK_FORMAT_A2R10G10B10_UNORM_PACK32,
+                    VK_FORMAT_A2B10G10R10_UNORM_PACK32,
+                    VK_FORMAT_R16G16B16A16_SFLOAT,
+                    VK_FORMAT_B8G8R8A8_UNORM -> Color.COLOR_CHANNEL_FLAGS_RGBA;
+            case VK_FORMAT_R8_UNORM,
+                    VK_FORMAT_R16_UNORM,
+                    VK_FORMAT_R16_SFLOAT -> Color.COLOR_CHANNEL_FLAG_RED;
+            case VK_FORMAT_R5G6B5_UNORM_PACK16,
+                    VK_FORMAT_BC1_RGB_UNORM_BLOCK,
+                    VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK,
+                    VK_FORMAT_R8G8B8_UNORM -> Color.COLOR_CHANNEL_FLAGS_RGB;
+            case VK_FORMAT_R8G8_UNORM,
+                    VK_FORMAT_R16G16_SFLOAT,
+                    VK_FORMAT_R16G16_UNORM -> Color.COLOR_CHANNEL_FLAGS_RG;
+            // either depth/stencil format or unsupported yet
+            default -> 0;
+        };
+    }
+
+    public static int vkFormatCompressionType(@NativeType("VkFormat") int vkFormat) {
+        return switch (vkFormat) {
+            case VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK -> ImageInfo.COMPRESSION_ETC2_RGB8_UNORM;
+            case VK_FORMAT_BC1_RGB_UNORM_BLOCK -> ImageInfo.COMPRESSION_BC1_RGB8_UNORM;
+            case VK_FORMAT_BC1_RGBA_UNORM_BLOCK -> ImageInfo.COMPRESSION_BC1_RGBA8_UNORM;
+            default -> ImageInfo.COMPRESSION_NONE;
+        };
+    }
+
+    /**
+     * Currently we are just over estimating this value to be used in gpu size calculations even
+     * though the actually size is probably less. We should instead treat planar formats similar
+     * to compressed textures that go through their own special query for calculating size.
+     * <pre>{@code
+     * case VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM: return 3;
+     * case VK_FORMAT_G8_B8R8_2PLANE_420_UNORM:  return 3;
+     * case VK_FORMAT_S8_UINT:                   return 1;
+     * case VK_FORMAT_D24_UNORM_S8_UINT:         return 4;
+     * case VK_FORMAT_D32_SFLOAT_S8_UINT:        return 8;
+     * }</pre>
+     */
+    public static int vkFormatBytesPerBlock(@NativeType("VkFormat") int vkFormat) {
+        return switch (vkFormat) {
+            case VK_FORMAT_R8G8B8A8_UNORM,
+                    VK_FORMAT_D24_UNORM_S8_UINT,
+                    VK_FORMAT_R16G16_SFLOAT,
+                    VK_FORMAT_R16G16_UNORM,
+                    VK_FORMAT_R8G8B8A8_SRGB,
+                    VK_FORMAT_A2R10G10B10_UNORM_PACK32,
+                    VK_FORMAT_A2B10G10R10_UNORM_PACK32,
+                    VK_FORMAT_B8G8R8A8_UNORM -> 4;
+            case VK_FORMAT_R8_UNORM,
+                    VK_FORMAT_S8_UINT -> 1;
+            case VK_FORMAT_R5G6B5_UNORM_PACK16,
+                    VK_FORMAT_R16_UNORM,
+                    VK_FORMAT_R4G4B4A4_UNORM_PACK16,
+                    VK_FORMAT_B4G4R4A4_UNORM_PACK16,
+                    VK_FORMAT_R8G8_UNORM,
+                    VK_FORMAT_R16_SFLOAT -> 2;
+            case VK_FORMAT_R16G16B16A16_SFLOAT,
+                    VK_FORMAT_D32_SFLOAT_S8_UINT,
+                    VK_FORMAT_R16G16B16A16_UNORM,
+                    VK_FORMAT_BC1_RGBA_UNORM_BLOCK,
+                    VK_FORMAT_BC1_RGB_UNORM_BLOCK,
+                    VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK -> 8;
+            case VK_FORMAT_R8G8B8_UNORM,
+                    VK_FORMAT_G8_B8R8_2PLANE_420_UNORM,
+                    VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM -> 3;
+            default -> 0;
+        };
+    }
+
+    public static int vkFormatStencilBits(@NativeType("VkFormat") int vkFormat) {
+        return switch (vkFormat) {
+            case VK_FORMAT_S8_UINT,
+                    VK_FORMAT_D16_UNORM_S8_UINT,
+                    VK_FORMAT_D24_UNORM_S8_UINT,
+                    VK_FORMAT_D32_SFLOAT_S8_UINT -> 8;
+            default -> 0;
+        };
+    }
+
+    public static String vkFormatName(@NativeType("VkFormat") int vkFormat) {
+        return switch (vkFormat) {
+            case VK_FORMAT_R8G8B8A8_UNORM -> "R8G8B8A8_UNORM";
+            case VK_FORMAT_R8_UNORM -> "R8_UNORM";
+            case VK_FORMAT_B8G8R8A8_UNORM -> "B8G8R8A8_UNORM";
+            case VK_FORMAT_R5G6B5_UNORM_PACK16 -> "R5G6B5_UNORM_PACK16";
+            case VK_FORMAT_R16G16B16A16_SFLOAT -> "R16G16B16A16_SFLOAT";
+            case VK_FORMAT_R16_SFLOAT -> "R16_SFLOAT";
+            case VK_FORMAT_R8G8B8_UNORM -> "R8G8B8_UNORM";
+            case VK_FORMAT_R8G8_UNORM -> "R8G8_UNORM";
+            case VK_FORMAT_A2B10G10R10_UNORM_PACK32 -> "A2B10G10R10_UNORM_PACK32";
+            case VK_FORMAT_A2R10G10B10_UNORM_PACK32 -> "A2R10G10B10_UNORM_PACK32";
+            case VK_FORMAT_B4G4R4A4_UNORM_PACK16 -> "B4G4R4A4_UNORM_PACK16";
+            case VK_FORMAT_R4G4B4A4_UNORM_PACK16 -> "R4G4B4A4_UNORM_PACK16";
+            case VK_FORMAT_R32G32B32A32_SFLOAT -> "R32G32B32A32_SFLOAT";
+            case VK_FORMAT_R8G8B8A8_SRGB -> "R8G8B8A8_SRGB";
+            case VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK -> "ETC2_R8G8B8_UNORM_BLOCK";
+            case VK_FORMAT_BC1_RGB_UNORM_BLOCK -> "BC1_RGB_UNORM_BLOCK";
+            case VK_FORMAT_BC1_RGBA_UNORM_BLOCK -> "BC1_RGBA_UNORM_BLOCK";
+            case VK_FORMAT_R16_UNORM -> "R16_UNORM";
+            case VK_FORMAT_R16G16_UNORM -> "R16G16_UNORM";
+            case VK_FORMAT_R16G16B16A16_UNORM -> "R16G16B16A16_UNORM";
+            case VK_FORMAT_R16G16_SFLOAT -> "R16G16_SFLOAT";
+            case VK_FORMAT_S8_UINT -> "S8_UINT";
+            case VK_FORMAT_D24_UNORM_S8_UINT -> "D24_UNORM_S8_UINT";
+            case VK_FORMAT_D32_SFLOAT_S8_UINT -> "D32_SFLOAT_S8_UINT";
+            default -> "Unknown";
         };
     }
 }

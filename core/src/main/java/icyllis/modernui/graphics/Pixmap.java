@@ -22,6 +22,7 @@ import icyllis.modernui.annotation.NonNull;
 import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.system.NativeType;
 
+import javax.annotation.Nullable;
 import java.util.Objects;
 
 /**
@@ -91,6 +92,7 @@ public sealed class Pixmap permits Bitmap {
         return mInfo.alphaType();
     }
 
+    @Nullable
     public ColorSpace getColorSpace() {
         return mInfo.colorSpace();
     }

@@ -23,6 +23,8 @@ import icyllis.modernui.graphics.Bitmap;
 import icyllis.modernui.graphics.SharedPtr;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
+import java.util.Objects;
+
 /**
  * A factory for creating {@link TextureProxy}-derived objects. This class may be used on
  * the creating thread of {@link RecordingContext}.
@@ -205,6 +207,45 @@ public final class ProxyProvider {
         assert sampleCount > 0;
         //TODO
         return null;
+    }
+
+    /**
+     * Creates a texture proxy that will be instantiated by a user-supplied callback during flush.
+     * The width and height must either both be greater than 0 or both less than or equal to zero. A
+     * non-positive value is a signal that the width height are currently unknown. The texture will
+     * not be renderable.
+     *
+     * @see Surface#FLAG_BUDGETED
+     * @see Surface#FLAG_APPROX_FIT
+     * @see Surface#FLAG_MIPMAPPED
+     * @see Surface#FLAG_PROTECTED
+     * @see Surface#FLAG_READ_ONLY
+     * @see Surface#FLAG_SKIP_ALLOCATOR
+     */
+    @Nullable
+    @SharedPtr
+    public TextureProxy createLazyProxy(BackendFormat format,
+                                        int width, int height,
+                                        int surfaceFlags,
+                                        SurfaceProxy.LazyInstantiateCallback callback) {
+        mContext.checkOwnerThread();
+        if (mContext.isDiscarded()) {
+            return null;
+        }
+        assert (width <= 0 && height <= 0)
+                || (width > 0 && height > 0);
+        Objects.requireNonNull(callback);
+        if (format == null || format.getBackend() != mContext.getBackend()) {
+            return null;
+        }
+        if (width > mContext.getCaps().maxTextureSize() ||
+                height > mContext.getCaps().maxTextureSize()) {
+            return null;
+        }
+        if (isDeferredProvider()) {
+            surfaceFlags |= Surface.FLAG_DEFERRED_PROVIDER;
+        }
+        return new TextureProxy(format, width, height, surfaceFlags, callback);
     }
 
     public boolean isDeferredProvider() {

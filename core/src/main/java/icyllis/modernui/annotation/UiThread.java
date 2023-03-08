@@ -28,7 +28,11 @@ import java.lang.annotation.*;
  * UI thread is never be main thread or render thread.
  */
 @Documented
-@Target({ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.TYPE})
 @Retention(RetentionPolicy.CLASS)
+@Target({ElementType.METHOD,
+        ElementType.CONSTRUCTOR,
+        ElementType.TYPE,
+        ElementType.PARAMETER,
+        ElementType.ANNOTATION_TYPE})
 public @interface UiThread {
 }

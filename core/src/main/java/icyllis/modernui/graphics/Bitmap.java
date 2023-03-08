@@ -25,17 +25,14 @@ import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.opengl.GLFramebufferCompat;
 import icyllis.modernui.graphics.opengl.GLTextureCompat;
-import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.stb.*;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.lang.ref.Cleaner;
-import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -49,9 +46,13 @@ import static org.lwjgl.system.MemoryUtil.*;
 
 /**
  * Describes a 2D raster image, with its pixels in native memory. It is used for
- * operations totally on the CPU side, such as decoding or encoding. Compared
- * with {@link Image}, Bitmap data is completely backed by CPU memory with an
- * uncompressed format.
+ * CPU-side operations such as decoding or encoding. It can also be used to
+ * upload to GPU-side {@link Image} for drawing on the screen or download from
+ * GPU-side {@link Image} for saving to disk.
+ * <p>
+ * This class is not thread safe, but memory safe.
+ *
+ * @see BitmapFactory
  */
 @SuppressWarnings("unused")
 public final class Bitmap extends Pixmap implements AutoCloseable {
@@ -63,8 +64,8 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
 
     private Ref mRef;
 
-    private Bitmap(@NonNull Format format, @NonNull ImageInfo info, long addr, int rowStride,
-                   @NonNull LongConsumer freeFn) {
+    Bitmap(@NonNull Format format, @NonNull ImageInfo info, long addr, int rowStride,
+           @NonNull LongConsumer freeFn) {
         super(info, addr, rowStride);
         mFormat = format;
         mRef = new SafeRef(this, info.width(), info.height(), addr, rowStride, freeFn);
@@ -76,7 +77,8 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
      * @param width  width in pixels, ranged from 1 to 32767
      * @param height height in pixels, ranged from 1 to 32767
      * @param format number of channels
-     * @throws IllegalArgumentException width or height out of range
+     * @throws IllegalArgumentException width or height out of range, or allocation size >= 2GB
+     * @throws OutOfMemoryError         out of off-heap memory
      */
     @NonNull
     public static Bitmap createBitmap(@Size(min = 1, max = 32767) int width,
@@ -100,82 +102,85 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
             throw new OutOfMemoryError("Failed to allocate " + size + " bytes");
         }
         return new Bitmap(format,
-                ImageInfo.make(width, height, format.colorType, ImageInfo.AT_PREMUL,
+                ImageInfo.make(width, height, format.getColorType(), ImageInfo.AT_PREMUL,
                         ColorSpace.get(ColorSpace.Named.SRGB)),
-                address, format.channels * width, MemoryUtil::nmemFree);
+                address, width * format.getChannelCount(), MemoryUtil::nmemFree);
     }
 
     /**
-     * Display a file open dialog to select a supported image file.
+     * Display an OS file open dialog to select a supported image file.
+     * The dialog will block the current thread until method return.
      *
-     * @return the path or {@code null} if selects nothing
+     * @param format             the specified image file format to open,
+     *                           or {@code null} to use all supported formats
+     * @param title              the dialog title or {@code null} to use OS default
+     * @param defaultPathAndFile the default path and/or file or {@code null} to use OS default
+     * @return the selected path or {@code null} if selects nothing (dismissed or closed)
      */
     @Nullable
-    public static String openDialogGet() {
+    public static String openDialogGet(@Nullable SaveFormat format,
+                                       @Nullable CharSequence title,
+                                       @Nullable CharSequence defaultPathAndFile) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            PointerBuffer filters = SaveFormat.getAllFilters(stack);
-            return TinyFileDialogs.tinyfd_openFileDialog(null, null,
-                    filters, SaveFormat.getAllDescription(), false);
+            PointerBuffer filters = format != null
+                    ? format.getFilters(stack)
+                    : SaveFormat.getAllFilters(stack);
+            return TinyFileDialogs.tinyfd_openFileDialog(title, defaultPathAndFile,
+                    filters, format != null
+                            ? format.getDescription()
+                            : SaveFormat.getAllDescription(), false);
         }
     }
 
     /**
-     * Display a file open dialog to select multiple supported image files.
+     * Display an OS file open dialog to select multiple supported image files.
+     * The dialog will block the current thread until method return.
      *
-     * @return the paths or {@code null} if selects nothing
+     * @param format             the specified image file format to open,
+     *                           or {@code null} to use all supported formats
+     * @param title              the dialog title or {@code null} to use OS default
+     * @param defaultPathAndFile the default path and/or file or {@code null} to use OS default
+     * @return the selected paths or {@code null} if selects nothing (dismissed or closed)
      */
     @Nullable
-    public static String[] openDialogGets() {
+    public static String[] openDialogGetMulti(@Nullable SaveFormat format,
+                                              @Nullable CharSequence title,
+                                              @Nullable CharSequence defaultPathAndFile) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            PointerBuffer filters = SaveFormat.getAllFilters(stack);
-            String s = TinyFileDialogs.tinyfd_openFileDialog(null, null,
-                    filters, SaveFormat.getAllDescription(), true);
-            return s == null ? null : s.split("\\|");
+            PointerBuffer filters = format != null
+                    ? format.getFilters(stack)
+                    : SaveFormat.getAllFilters(stack);
+            String s = TinyFileDialogs.tinyfd_openFileDialog(title, defaultPathAndFile,
+                    filters, format != null
+                            ? format.getDescription()
+                            : SaveFormat.getAllDescription(), true);
+            return s != null ? s.split("\\|") : null;
         }
     }
 
     /**
-     * Display a file save dialog to select the path to save this bitmap.
+     * Display an OS file save dialog to select the path to save the bitmap.
+     * The dialog will block the current thread until method return.
      *
-     * @param format the format used as a file filter
+     * @param format the specified image file format to filter,
+     *               or {@code null} to filter all supported formats
+     * @param title  the dialog title or {@code null} to use OS default
      * @param name   the file name without extension name
      * @return the path or {@code null} if selects nothing
      */
     @Nullable
-    public static String saveDialogGet(@NonNull SaveFormat format, @Nullable String name) {
+    public static String saveDialogGet(@Nullable SaveFormat format,
+                                       @Nullable CharSequence title,
+                                       @Nullable String name) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            PointerBuffer filters = format.getFilters(stack);
-            return TinyFileDialogs.tinyfd_saveFileDialog(null,
-                    format.getFileName(name), filters, format.getDescription());
+            PointerBuffer filters = format != null
+                    ? format.getFilters(stack)
+                    : SaveFormat.getAllFilters(stack);
+            return TinyFileDialogs.tinyfd_saveFileDialog(title,
+                    SaveFormat.getFileName(format, name), filters, format != null
+                            ? format.getDescription()
+                            : SaveFormat.getAllDescription());
         }
-    }
-
-    /**
-     * Opens a file select dialog, then decodes the selected file and creates a bitmap,
-     * using format in file.
-     *
-     * @return a bitmap or {@code null} if selects nothing
-     */
-    @Nullable
-    public static Bitmap openDialog() throws IOException {
-        return openDialog(null);
-    }
-
-    /**
-     * Opens a file select dialog, then decodes the selected file and creates a bitmap.
-     *
-     * @param format the format to convert to, or {@code null} to use format in file
-     * @return a bitmap or {@code null} if selects nothing
-     */
-    @Nullable
-    public static Bitmap openDialog(@Nullable Format format) throws IOException {
-        String path = openDialogGet();
-        if (path != null) {
-            try (FileChannel channel = FileChannel.open(Path.of(path), StandardOpenOption.READ)) {
-                return decode(format, channel);
-            }
-        }
-        return null;
     }
 
     /**
@@ -187,6 +192,7 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
      * @param flipY   flip the image vertically, such as the texture is from a framebuffer
      * @return the created bitmap
      */
+    @Deprecated
     @NonNull
     @RenderThread
     public static Bitmap download(@NonNull Format format, @NonNull GLTextureCompat texture, boolean flipY) {
@@ -226,6 +232,7 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
      * @param flipY       flip the image vertically, such as the texture is from a framebuffer
      * @return the created bitmap
      */
+    @Deprecated
     @NonNull
     @RenderThread
     public static Bitmap download(@NonNull Format format, @NonNull GLFramebufferCompat framebuffer,
@@ -261,73 +268,12 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
         return bitmap;
     }
 
-    /**
-     * Decodes an image from channel. This method closes the channel automatically.
-     *
-     * @param format  the format to convert to, or {@code null} to use format in file
-     * @param channel input channel
-     */
-    @NonNull
-    public static Bitmap decode(@Nullable Format format, @NonNull ReadableByteChannel channel) throws IOException {
-        ByteBuffer p = null;
-        try (channel) {
-            p = Core.readBuffer(channel);
-            return decode(format, p.rewind());
-        } finally {
-            memFree(p);
-        }
-    }
-
-    /**
-     * Decodes an image from input stream. This method closes the input stream automatically.
-     *
-     * @param format the format to convert to, or {@code null} to use format in file
-     * @param stream input stream
-     */
-    @NonNull
-    public static Bitmap decode(@Nullable Format format, @NonNull InputStream stream) throws IOException {
-        ByteBuffer p = null;
-        try (stream) {
-            p = Core.readBuffer(stream);
-            return decode(format, p.rewind());
-        } finally {
-            memFree(p);
-        }
-    }
-
-    // this method doesn't close/free the buffer
-    @ApiStatus.Internal
-    @NonNull
-    public static Bitmap decode(@Nullable Format format, @NonNull ByteBuffer buffer) throws IOException {
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            long pWidth = stack.nmalloc(4, 4),
-                    pHeight = stack.nmalloc(4, 4),
-                    pChannels = stack.nmalloc(4, 4);
-            long address = STBImage.nstbi_load_from_memory(
-                    memAddress(buffer), buffer.remaining(), pWidth, pHeight, pChannels,
-                    format == null ? STBImage.STBI_default : format.channels);
-            if (address == NULL) {
-                throw new IOException("Failed to read image: " + STBImage.stbi_failure_reason());
-            }
-            int width = memGetInt(pWidth),
-                    height = memGetInt(pHeight),
-                    channels = memGetInt(pChannels);
-            if (format == null) {
-                format = Format.of(channels);
-            }
-            return new Bitmap(format,
-                    ImageInfo.make(width, height, format.colorType, ImageInfo.AT_UNPREMUL,
-                            ColorSpace.get(ColorSpace.Named.SRGB)),
-                    address, format.channels * width, STBImage::nstbi_image_free);
-        }
-    }
-
     @NonNull
     public Format getFormat() {
         return mFormat;
     }
 
-    public int getChannels() {
+    public int getChannelCount() {
         return mFormat.channels;
     }
 
@@ -336,6 +282,7 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
      *
      * @return pixels format in OpenGL
      */
+    @Deprecated
     public int getExternalGlFormat() {
         return mFormat.externalGlFormat;
     }
@@ -345,16 +292,33 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
      *
      * @return internal format in OpenGL
      */
+    @Deprecated
     public int getInternalGlFormat() {
         return mFormat.internalGlFormat;
     }
 
+    /**
+     * Returns the width of the bitmap.
+     */
+    @Override
     public int getWidth() {
-        return mRef.mWidth;
+        if (mRef != null) {
+            return mRef.mWidth;
+        }
+        assert false;
+        return super.getWidth();
     }
 
+    /**
+     * Returns the height of the bitmap.
+     */
+    @Override
     public int getHeight() {
-        return mRef.mHeight;
+        if (mRef != null) {
+            return mRef.mHeight;
+        }
+        assert false;
+        return super.getHeight();
     }
 
     public int getSize() {
@@ -366,6 +330,7 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
      *
      * @return the pointer of pixel data, or NULL if released
      */
+    @Override
     public long getPixels() {
         if (mRef != null) {
             return mRef.mPixels;
@@ -373,13 +338,148 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
         return NULL;
     }
 
+    @Override
     public int getRowStride() {
         return mRef.mRowStride;
     }
 
     /**
+     * Returns true if the bitmap's format supports per-pixel alpha, and
+     * if the pixels may contain non-opaque alpha values. For some configs,
+     * this is always false (e.g. RGB_888), since they do not support per-pixel
+     * alpha. However, for formats that do, the bitmap may be flagged to be
+     * known that all of its pixels are opaque. In this case hasAlpha() will
+     * also return false. If a config such as RGBA_8888 is not so flagged,
+     * it will return true by default.
+     */
+    public boolean hasAlpha() {
+        assert mRef != null;
+        return !mInfo.isOpaque();
+    }
+
+    /**
+     * Returns true if the bitmap is marked as immutable.
+     */
+    public boolean isImmutable() {
+        if (mRef != null) {
+            return mRef.isImmutable();
+        }
+        assert false;
+        return false;
+    }
+
+    /**
+     * Marks the Bitmap as immutable. Further modifications to this Bitmap are disallowed.
+     * After this method is called, this Bitmap cannot be made mutable again.
+     */
+    public void setImmutable() {
+        if (mRef != null) {
+            mRef.setImmutable();
+        }
+    }
+
+    /**
+     * <p>Indicates whether pixels stored in this bitmaps are stored pre-multiplied.
+     * When a pixel is pre-multiplied, the RGB components have been multiplied by
+     * the alpha component. For instance, if the original color is a 50%
+     * translucent red <code>(128, 255, 0, 0)</code>, the pre-multiplied form is
+     * <code>(128, 128, 0, 0)</code>.</p>
+     *
+     * <p>This method only returns true if {@link #hasAlpha()} returns true.
+     * A bitmap with no alpha channel can be used both as a pre-multiplied and
+     * as a non pre-multiplied bitmap.</p>
+     *
+     * <p>Only pre-multiplied bitmaps may be drawn by the view system or
+     * {@link Canvas}. If a non-pre-multiplied bitmap with an alpha channel is
+     * drawn to a Canvas, a RuntimeException will be thrown.</p>
+     *
+     * @return true if the underlying pixels have been pre-multiplied, false
+     * otherwise
+     * @see Bitmap#setPremultiplied(boolean)
+     * @see BitmapFactory.Options#inPremultiplied
+     */
+    public boolean isPremultiplied() {
+        assert mRef != null;
+        return mInfo.alphaType() == ImageInfo.AT_PREMUL;
+    }
+
+    /**
+     * Sets whether the bitmap should treat its data as pre-multiplied.
+     *
+     * <p>Bitmaps are always treated as pre-multiplied by the view system and
+     * {@link Canvas} for performance reasons. Storing un-pre-multiplied data in
+     * a Bitmap (through {@link #setPixel}, {@link #setPixels}, or {@link
+     * BitmapFactory.Options#inPremultiplied BitmapFactory.Options.inPremultiplied})
+     * can lead to incorrect blending if drawn by the framework.</p>
+     *
+     * <p>This method will not affect the behavior of a bitmap without an alpha
+     * channel, or if {@link #hasAlpha()} returns false.</p>
+     *
+     * @see Bitmap#isPremultiplied()
+     * @see BitmapFactory.Options#inPremultiplied
+     */
+    public void setPremultiplied(boolean premultiplied) {
+        checkReleased();
+    }
+
+    private void checkPixelAccess(int x, int y) {
+        if (x < 0) {
+            throw new IllegalArgumentException("x must be >= 0");
+        }
+        if (y < 0) {
+            throw new IllegalArgumentException("y must be >= 0");
+        }
+        if (x >= getWidth()) {
+            throw new IllegalArgumentException("x must be < bitmap.width()");
+        }
+        if (y >= getHeight()) {
+            throw new IllegalArgumentException("y must be < bitmap.height()");
+        }
+    }
+
+    /**
+     * Returns the {@link Color} at the specified location. Throws an exception
+     * if x or y are out of bounds (negative or >= to the width or height
+     * respectively). The returned color is a non-premultiplied ARGB value in
+     * the {@link ColorSpace.Named#SRGB sRGB} color space.
+     *
+     * @param x The x coordinate (0...width-1) of the pixel to return
+     * @param y The y coordinate (0...height-1) of the pixel to return
+     * @return The argb {@link Color} at the specified coordinate
+     * @throws IllegalArgumentException if x, y exceed the bitmap's bounds
+     */
+    @ColorInt
+    public int getPixelARGB(int x, int y) {
+        checkReleased();
+        checkPixelAccess(x, y);
+        int word = MemoryUtil.memGetInt(mRef.mPixels + (long) y * getRowStride() + (long) x * mFormat.channels);
+        int argb = switch (mFormat) {
+            case GRAY_8 -> {
+                int lum = word & 0xFF;
+                yield 0xFF000000 | (lum << 16) | (lum << 8) | lum;
+            }
+            case GRAY_ALPHA_88 -> {
+                int lum = word & 0xFF;
+                yield ((word & 0xFF00) << 16) | (lum << 16) | (lum << 8) | lum;
+            }
+            case RGB_888 -> // to BGRA
+                    0xFF000000 | ((word & 0xFF) << 16) | (word & 0xFF00) | ((word >> 16) & 0xFF);
+            case RGBA_8888 -> // to BGRA
+                    (word & 0xFF000000) | ((word & 0xFF) << 16) | (word & 0xFF00) | ((word >> 16) & 0xFF);
+        };
+        if (getColorSpace() != null && !getColorSpace().isSrgb()) {
+            float[] v = ColorSpace.connect(getColorSpace()).transform(
+                    Color.red(argb) / 255.0f, Color.green(argb) / 255.0f, Color.blue(argb) / 255.0f);
+            argb |= Color.argb(0, v[0], v[1], v[2]);
+        }
+        return argb;
+    }
+
+    /**
      * The ref of current pixel data, which may be shared across instances.
      * Calling this method won't affect the ref cnt.
+     * <p>
+     * This method is <b>UNSAFE</b>, use with caution!
      *
      * @return the ref of pixel data, or null if released
      */
@@ -390,40 +490,20 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
 
     /**
      * Save this bitmap to specified path as specified format. This will
-     * open a save dialog to select the path, with a default quality for JPEG format.
-     *
-     * @param format the format of the saved image
-     * @return true if selected a path, otherwise canceled
-     */
-    public boolean saveDialog(@NonNull SaveFormat format) throws IOException {
-        return saveDialog(format, null, 0);
-    }
-
-    /**
-     * Save this bitmap to specified path as specified format. This will
-     * open a save dialog to select the path, with a default quality for JPEG format.
-     *
-     * @param format the format of the saved image
-     * @param name   the file name without extension name
-     * @return true if selected a path, otherwise canceled
-     */
-    public boolean saveDialog(@NonNull SaveFormat format, @Nullable String name) throws IOException {
-        return saveDialog(format, name, 0);
-    }
-
-    /**
-     * Save this bitmap to specified path as specified format. This will
      * open a save dialog to select the path.
      *
      * @param format  the format of the saved image
-     * @param name    the file name without extension name
      * @param quality the compress quality, 0-100, only work for JPEG format.
+     * @param name    the file name without extension name
      * @return true if selected a path, otherwise canceled
+     * @throws IOException selected a path, but saving is not successful
      */
-    public boolean saveDialog(@NonNull SaveFormat format, @Nullable String name, int quality) throws IOException {
-        String path = saveDialogGet(format, name);
+    @WorkerThread
+    public boolean saveDialog(@NonNull SaveFormat format, int quality,
+                              @Nullable String name) throws IOException {
+        String path = saveDialogGet(format, null, name);
         if (path != null) {
-            saveToPath(Path.of(path), format, quality);
+            saveToPath(format, quality, Path.of(path));
             return true;
         }
         return false;
@@ -432,71 +512,95 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
     /**
      * Save this bitmap to specified path with specified format.
      *
-     * @param path    the image path
      * @param format  the format of the saved image
      * @param quality the compress quality, 0-100, only work for JPEG format.
+     * @param file    the image file
      * @throws IOException saving is not successful
      */
-    public void saveToPath(@NonNull Path path, @NonNull SaveFormat format, int quality) throws IOException {
+    @WorkerThread
+    public void saveToFile(@NonNull SaveFormat format, int quality,
+                           @NonNull File file) throws IOException {
         checkReleased();
-        if (quality < 0 || quality > 100) {
-            throw new IllegalArgumentException("Bad quality " + quality);
+        try (final var stream = new FileOutputStream(file)) {
+            saveToChannel(format, quality, stream.getChannel());
+        } catch (IOException e) {
+            throw new IOException("Failed to save image to path \"" +
+                    file.getAbsolutePath() + "\"", e);
         }
-        final var exception = new IOException[1];
-        final var channel = FileChannel.open(path,
+    }
+
+    /**
+     * Save this bitmap to specified path with specified format.
+     *
+     * @param format  the format of the saved image
+     * @param quality the compress quality, 0-100, only work for JPEG format.
+     * @param path    the image path
+     * @throws IOException saving is not successful
+     */
+    @WorkerThread
+    public void saveToPath(@NonNull SaveFormat format, int quality,
+                           @NonNull Path path) throws IOException {
+        checkReleased();
+        try (final var channel = FileChannel.open(path,
                 StandardOpenOption.WRITE,
                 StandardOpenOption.CREATE,
-                StandardOpenOption.TRUNCATE_EXISTING);
-        final var func = STBIWriteCallback.create((__, data, size) -> {
-            try {
-                channel.write(STBIWriteCallback.getData(data, size));
-            } catch (IOException e) {
-                exception[0] = e;
-            }
-        });
-        try (channel; func) {
-            final boolean success = format.write(func, mRef.mWidth, mRef.mHeight, mFormat, mRef.mPixels, quality);
-            if (success) {
-                if (exception[0] != null) {
-                    throw new IOException("An error occurred while saving image to the path \"" +
-                            path.toAbsolutePath() + "\"", exception[0]);
-                }
-            } else {
-                throw new IOException("Failed to encode image to the path \"" +
-                        path.toAbsolutePath() + "\": " + STBImage.stbi_failure_reason());
-            }
+                StandardOpenOption.TRUNCATE_EXISTING)) {
+            saveToChannel(format, quality, channel);
+        } catch (IOException e) {
+            throw new IOException("Failed to save image to path \"" +
+                    path.toAbsolutePath() + "\"", e);
         }
+    }
+
+    /**
+     * Save this bitmap to specified stream with specified format. The stream
+     * will NOT be closed by this method.
+     *
+     * @param format  the format of the saved image
+     * @param quality the compress quality, 0-100, only work for JPEG format
+     * @param stream  the stream to write image data
+     * @throws IOException saving is not successful
+     */
+    @WorkerThread
+    public void saveToStream(@NonNull SaveFormat format, int quality,
+                             @NonNull OutputStream stream) throws IOException {
+        saveToChannel(format, quality, Channels.newChannel(stream));
     }
 
     /**
      * Save this bitmap to specified channel with specified format. The channel
      * will NOT be closed by this method.
      *
-     * @param channel the channel
      * @param format  the format of the saved image
-     * @param quality the compress quality, 0-100, only work for JPEG format.
+     * @param quality the compress quality, 0-100, only work for JPEG format
+     * @param channel the channel to write image data
      * @throws IOException saving is not successful
      */
-    @ApiStatus.Internal
-    public void saveToChannel(@NonNull WritableByteChannel channel,
-                              @NonNull SaveFormat format, int quality) throws IOException {
+    @WorkerThread
+    public void saveToChannel(@NonNull SaveFormat format, int quality,
+                              @NonNull WritableByteChannel channel) throws IOException {
         checkReleased();
         if (quality < 0 || quality > 100) {
-            throw new IllegalArgumentException("Bad quality " + quality);
+            throw new IllegalArgumentException("Bad quality " + quality + ", must be 0..100");
         }
-        final var exception = new IOException[1];
-        final var func = STBIWriteCallback.create((__, data, size) -> {
-            try {
-                channel.write(STBIWriteCallback.getData(data, size));
-            } catch (IOException e) {
-                exception[0] = e;
+        final var callback = new STBIWriteCallback() {
+            private IOException exception;
+
+            @Override
+            public void invoke(long context, long data, int size) {
+                try {
+                    channel.write(STBIWriteCallback.getData(data, size));
+                } catch (IOException e) {
+                    exception = e;
+                }
             }
-        });
-        try (func) {
-            final boolean success = format.write(func, mRef.mWidth, mRef.mHeight, mFormat, mRef.mPixels, quality);
+        };
+        try (callback) {
+            final boolean success = format.write(callback, mRef.mWidth, mRef.mHeight,
+                    mFormat, mRef.mPixels, quality);
             if (success) {
-                if (exception[0] != null) {
-                    throw new IOException("An error occurred while saving image", exception[0]);
+                if (callback.exception != null) {
+                    throw new IOException("Failed to save image", callback.exception);
                 }
             } else {
                 throw new IOException("Failed to encode image: " + STBImage.stbi_failure_reason());
@@ -510,12 +614,29 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
         }
     }
 
+    /**
+     * Clear the reference to the pixel data. The bitmap is marked as "dead",
+     * and then it is an error to try to access its pixels.
+     * <p>
+     * Note: Even you forgot to call this, the system will clean the underlying pixels
+     * when the bitmap object become phantom-reachable.
+     */
     @Override
     public void close() {
         if (mRef != null) {
             mRef.safeClean();
             mRef = null;
         }
+    }
+
+    /**
+     * Returns true if this bitmap has been closed. If so, then it is an error
+     * to try to access its pixels.
+     *
+     * @return true if the bitmap has been closed
+     */
+    public boolean isClosed() {
+        return mRef == null;
     }
 
     @NonNull
@@ -536,12 +657,12 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
         // STBI_grey_alpha = 2,
         // STBI_rgb        = 3,
         // STBI_rgb_alpha  = 4;
-        GRAY_8       (1, GL_RED , GL_R8   , ImageInfo.CT_GRAY_8       ),
-        GRAY_ALPHA_88(2, GL_RG  , GL_RG8  , ImageInfo.CT_GRAY_ALPHA_88),
-        RGB_888      (3, GL_RGB , GL_RGB8 , ImageInfo.CT_RGB_888      ),
-        RGBA_8888    (4, GL_RGBA, GL_RGBA8, ImageInfo.CT_RGBA_8888    );
+        GRAY_8(1, GL_RED, GL_R8, ImageInfo.CT_GRAY_8),
+        GRAY_ALPHA_88(2, GL_RG, GL_RG8, ImageInfo.CT_GRAY_ALPHA_88),
+        RGB_888(3, GL_RGB, GL_RGB8, ImageInfo.CT_RGB_888),
+        RGBA_8888(4, GL_RGBA, GL_RGBA8, ImageInfo.CT_RGBA_8888);
 
-        private static final Format[] VALUES = values();
+        private static final Format[] FORMATS = values();
 
         public final int channels;
         public final int externalGlFormat;
@@ -556,12 +677,21 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
             assert ordinal() == channels - 1;
         }
 
+        public int getChannelCount() {
+            return channels;
+        }
+
+        @ImageInfo.ColorType
+        public int getColorType() {
+            return colorType;
+        }
+
         @NonNull
         public static Format of(int channels) {
             if (channels < 1 || channels > 4) {
-                throw new IllegalArgumentException("Specified channels should be ranged from 1 to 4 but " + channels);
+                throw new IllegalArgumentException("Specified channels should be 1..4 but " + channels);
             }
-            return VALUES[channels - 1];
+            return FORMATS[channels - 1];
         }
     }
 
@@ -623,7 +753,7 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
             }
         };
 
-        private static final SaveFormat[] VALUES = values();
+        private static final SaveFormat[] FORMATS = values();
 
         @NonNull
         private final String[] filters;
@@ -636,13 +766,13 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
                                       @NonNull Format format, long data, int quality) throws IOException;
 
         @NonNull
-        private static PointerBuffer getAllFilters(@NonNull MemoryStack stack) {
+        public static PointerBuffer getAllFilters(@NonNull MemoryStack stack) {
             int length = 0;
-            for (SaveFormat format : VALUES) {
+            for (SaveFormat format : FORMATS) {
                 length += format.filters.length;
             }
             PointerBuffer buffer = stack.mallocPointer(length);
-            for (SaveFormat format : VALUES) {
+            for (SaveFormat format : FORMATS) {
                 for (String filter : format.filters) {
                     stack.nUTF8(filter, true);
                     buffer.put(stack.getPointerAddress());
@@ -651,14 +781,25 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
             return buffer.rewind();
         }
 
+        /**
+         * Reads: "Image Files (*.png;*.jpg;*.bmp)"
+         */
         @NonNull
-        private static String getAllDescription() {
-            return "Images (" + Arrays.stream(VALUES).flatMap(f -> Arrays.stream(f.filters))
+        public static String getAllDescription() {
+            return getAllDescription("Image Files");
+        }
+
+        /**
+         * Reads: "[header] (*.png;*.jpg;*.bmp)"
+         */
+        @NonNull
+        public static String getAllDescription(@NonNull String header) {
+            return header + " (" + Arrays.stream(FORMATS).flatMap(f -> Arrays.stream(f.filters))
                     .sorted().collect(Collectors.joining(";")) + ")";
         }
 
         @NonNull
-        private PointerBuffer getFilters(@NonNull MemoryStack stack) {
+        public PointerBuffer getFilters(@NonNull MemoryStack stack) {
             PointerBuffer buffer = stack.mallocPointer(filters.length);
             for (String filter : filters) {
                 stack.nUTF8(filter, true);
@@ -668,20 +809,26 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
         }
 
         @NonNull
-        private String getFileName(@Nullable String name) {
-            return (name != null ? name : "image-" + DATE_FORMAT.format(new Date()))
-                    + filters[0].substring(1);
+        public String getDescription() {
+            return name() + " (" + String.join(";", filters) + ")";
         }
 
         @NonNull
-        private String getDescription() {
-            return name() + " (" + String.join(", ", filters) + ")";
+        public static String getFileName(@Nullable SaveFormat format,
+                                         @Nullable String name) {
+            String s = name != null ? name : "image-" + DATE_FORMAT.format(new Date());
+            if (format != null) {
+                return s + format.filters[0].substring(1);
+            }
+            return s;
         }
     }
 
     /**
      * This class is the smart container for pixel memory, and is used with {@link Bitmap}.
      * <br>This class can be shared/accessed between multiple threads.
+     * <p>
+     * This class is <b>UNSAFE</b>, use with caution!
      */
     public static class Ref extends RefCnt {
 
@@ -689,8 +836,11 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
         private final int mHeight;
         private final long mPixels;
         private final int mRowStride;
+
         @NonNull
         private final LongConsumer mFreeFn;
+
+        private boolean mImmutable;
 
         private Ref(int width, int height, long pixels, int rowStride,
                     @NonNull LongConsumer freeFn) {
@@ -730,6 +880,23 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
             return mRowStride;
         }
 
+        /**
+         * Returns true if this ref is marked as immutable, meaning that the
+         * contents of its pixels will not change for the lifetime of the ref.
+         */
+        public boolean isImmutable() {
+            return mImmutable;
+        }
+
+        /**
+         * Marks this ref is immutable, meaning that the contents of its
+         * pixels will not change for the lifetime of the ref. This state can
+         * be set on a ref, but it cannot be cleared once it is set.
+         */
+        public void setImmutable() {
+            mImmutable = true;
+        }
+
         @NonNull
         @Override
         public String toString() {
@@ -737,6 +904,7 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
                     "address=0x" + Long.toHexString(mPixels) +
                     ", dimensions=" + mWidth + "x" + mHeight +
                     ", rowStride=" + mRowStride +
+                    ", immutable=" + mImmutable +
                     '}';
         }
     }

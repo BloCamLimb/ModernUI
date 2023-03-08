@@ -152,7 +152,9 @@ public class LayoutCache {
      * Clear the cache.
      */
     public static void clear() {
-        sCache.invalidateAll();
+        if (sCache != null) {
+            sCache.invalidateAll();
+        }
     }
 
     /**

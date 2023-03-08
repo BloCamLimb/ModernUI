@@ -240,7 +240,7 @@ public class GLFontAtlas implements AutoCloseable {
             ModernUI.LOGGER.info(GlyphManager.MARKER, "Glyphs: {}", mGlyphs.size());
             try (Bitmap bitmap = Bitmap.download(mColored ? Bitmap.Format.RGBA_8888 : Bitmap.Format.GRAY_8,
                     mTexture, false)) {
-                bitmap.saveToPath(Path.of(path), Bitmap.SaveFormat.PNG, 0);
+                bitmap.saveToPath(Bitmap.SaveFormat.PNG, 100, Path.of(path));
             } catch (IOException e) {
                 e.printStackTrace();
             }

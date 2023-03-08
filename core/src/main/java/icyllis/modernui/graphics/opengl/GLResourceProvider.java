@@ -57,9 +57,9 @@ public final class GLResourceProvider {
      */
     @Nullable
     public GLSampler findOrCreateCompatibleSampler(int samplerState) {
-        GLSampler entry = mSamplerCache.get(samplerState);
-        if (entry != null) {
-            return entry;
+        GLSampler cached = mSamplerCache.get(samplerState);
+        if (cached != null) {
+            return cached;
         }
         GLSampler sampler = GLSampler.create(mServer, samplerState);
         if (sampler == null) {

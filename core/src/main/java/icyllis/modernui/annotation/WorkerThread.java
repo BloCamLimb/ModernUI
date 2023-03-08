@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,9 +21,17 @@ package icyllis.modernui.annotation;
 import java.lang.annotation.*;
 
 /**
- * Denotes that the annotated method should only be called on the JVM main thread,
- * the thread is used for handling events from the operating system.
- * Main thread can sometimes be the same thread as render thread.
+ * Denotes that the annotated method should only be called on a worker thread.
+ * If the annotated element is a class, then all methods in the class should be called
+ * on a worker thread.
+ * <p>
+ * Example:
+ * <pre>{@code
+ *  @WorkerThread
+ *  protected abstract FilterResults performFiltering(CharSequence constraint);
+ * }</pre>
+ *
+ * @since 3.7
  */
 @Documented
 @Retention(RetentionPolicy.CLASS)
@@ -32,5 +40,5 @@ import java.lang.annotation.*;
         ElementType.TYPE,
         ElementType.PARAMETER,
         ElementType.ANNOTATION_TYPE})
-public @interface MainThread {
+public @interface WorkerThread {
 }

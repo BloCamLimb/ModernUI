@@ -18,19 +18,30 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.graphics.opengl.GLCore;
-import icyllis.modernui.graphics.opengl.GLTextureCompat;
-import icyllis.modernui.graphics.opengl.GLTextureManager;
+import icyllis.modernui.graphics.engine.RecordingContext;
+import icyllis.modernui.graphics.engine.SurfaceProxyView;
+import icyllis.modernui.graphics.opengl.*;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 
 /**
- * This class is associated with an OpenGL 2D texture object or a Vulkan 2D image object,
- * used with API drawing and processing methods.
+ * {@code Image} describes a two-dimensional array of pixels to draw. The pixels are
+ * located in GPU memory as a GPU texture.
+ * <ul>
+ * <li>{@code Image} cannot be modified after it is created.</li>
+ * <li>{@code Image} width and height are greater than zero.</li>
+ * <li>{@code Image} may be created from {@link Bitmap}, Surface, Picture
+ * and GPU texture.</li>
+ * </ul>
  */
 //TODO wip
-public class Image {
+public final class Image {
+
+    private ImageInfo mInfo;
+
+    private RecordingContext mContext;
+    private SurfaceProxyView mView;
 
     private final GLTextureCompat mTexture;
 
@@ -42,6 +53,7 @@ public class Image {
     @ApiStatus.Experimental
     public Image(@Nonnull GLTextureCompat texture) {
         mTexture = texture;
+        mInfo = ImageInfo.make(texture.getWidth(), texture.getHeight(), 0, 0, null);
     }
 
     /**
@@ -60,31 +72,41 @@ public class Image {
     }
 
     /**
+     * Returns the {@link ImageInfo} describing the width, height, color type, alpha type
+     * and color space of this image.
+     *
+     * @return image info
+     */
+    public ImageInfo getInfo() {
+        return mInfo;
+    }
+
+    /**
+     * Returns the view width of this image (as its texture).
+     *
+     * @return image width in pixels
+     */
+    public int getWidth() {
+        return mInfo.width();
+    }
+
+    /**
+     * Returns the view height of this image (as its texture).
+     *
+     * @return image height in pixels
+     */
+    public int getHeight() {
+        return mInfo.height();
+    }
+
+    /**
      * Returns the backing texture.
      *
      * @return OpenGL texture
      */
     @ApiStatus.Experimental
     @Nonnull
-    public final GLTextureCompat getTexture() {
+    public GLTextureCompat getTexture() {
         return mTexture;
-    }
-
-    /**
-     * Returns the full width of this image (as its texture).
-     *
-     * @return image width in pixels
-     */
-    public final int getWidth() {
-        return mTexture.getWidth();
-    }
-
-    /**
-     * Returns the full height of this image (as its texture).
-     *
-     * @return image height in pixels
-     */
-    public final int getHeight() {
-        return mTexture.getHeight();
     }
 }

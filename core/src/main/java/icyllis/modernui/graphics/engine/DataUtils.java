@@ -34,7 +34,7 @@ public final class DataUtils {
     }
 
     public static int num4x4Blocks(int size) {
-        return MathUtil.align4(size) >> 2;
+        return (size + 3) >> 2;
     }
 
     public static long numBlocks(int compression, int width, int height) {
