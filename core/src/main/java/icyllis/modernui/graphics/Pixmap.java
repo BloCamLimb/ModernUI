@@ -35,7 +35,7 @@ import java.util.Objects;
  * @see Bitmap
  */
 @ApiStatus.Internal
-public sealed class Pixmap permits Bitmap {
+public class Pixmap {
 
     final ImageInfo mInfo;
     private final long mPixels;

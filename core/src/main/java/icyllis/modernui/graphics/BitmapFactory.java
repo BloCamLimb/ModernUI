@@ -26,12 +26,14 @@ import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.imageio.ImageIO;
+import javax.imageio.stream.ImageInputStream;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Objects;
+import java.util.function.Predicate;
 
 import static org.lwjgl.system.MemoryUtil.*;
 
@@ -44,15 +46,23 @@ public final class BitmapFactory {
 
     /**
      * Collects the options for the decoder and additional outputs from the decoder.
+     *
+     * <p>Unlike Android (with its Skia graphics engine), it is not necessary to
+     * pre-multiply alpha of image data in Modern UI framework. We allow images
+     * to be directly drawn by the view system or through a {@link Canvas} either
+     * pre-multiplied or un-pre-multiplied. Although pre-multiplied alpha can
+     * simplify draw-time blending, but it results in precision loss since images
+     * are 8-bit per channel in memory. Instead, Modern UI will pre-multiply alpha
+     * when sampling textures.</p>
      */
     public static class Options {
 
         /**
-         * If set to true, the decoder will return null (no bitmap), but
-         * the <code>out...</code> fields will still be set, allowing the caller to
-         * query the bitmap without having to allocate the memory for its pixels.
+         * If set to true, the decoder will populate the mimetype of the decoded image.
+         *
+         * @see #outMimeType
          */
-        public boolean inJustDecodeBounds;
+        public boolean inDecodeMimeType;
 
         /**
          * If this is non-null, the decoder will try to decode into this
@@ -88,25 +98,6 @@ public final class BitmapFactory {
         public ColorSpace inPreferredColorSpace = null;
 
         /**
-         * If true, the resulting bitmap will have its color channels pre-multiplied
-         * by the alpha channel in advance. <em>The default is false</em>.
-         *
-         * <p>Unlike Android (with its Skia graphics engine), it is not necessary to
-         * pre-multiply alpha of image data in Modern UI framework. We allow images
-         * to be directly drawn by the view system or through a {@link Canvas} either
-         * pre-multiplied or un-pre-multiplied. Although pre-multiplied alpha can
-         * simplify draw-time blending, but it results in precision loss since images
-         * are 8-bit per channel in memory. Instead, Modern UI will pre-multiply alpha
-         * when sampling textures.</p>
-         *
-         * <p>This does not affect bitmaps without an alpha channel.</p>
-         *
-         * @see Bitmap#hasAlpha()
-         * @see Bitmap#isPremultiplied()
-         */
-        public boolean inPremultiplied;
-
-        /**
          * The width of the bitmap. If there is an error, it is undefined.
          */
         public int outWidth;
@@ -119,6 +110,8 @@ public final class BitmapFactory {
         /**
          * If known, this string is set to the mimetype of the decoded image.
          * If not known, or there is an error, it is undefined.
+         * <p>
+         * Set only when {@link #inDecodeMimeType} is true.
          */
         public String outMimeType;
 
@@ -163,14 +156,11 @@ public final class BitmapFactory {
      */
     @NonNull
     public static Bitmap decodeFile(@NonNull File file) throws IOException {
-        return Objects.requireNonNull(decodeFile(file, null));
+        return decodeFile(file, null);
     }
 
     /**
      * Decode a file path into a bitmap.
-     * <p>
-     * If <var>opts</var> is non-null and {@link Options#inJustDecodeBounds} is true,
-     * the method returns null. Otherwise, the method returns non-null.
      * <p>
      * If the file cannot be decoded into a bitmap, the method throws {@link IOException}
      * on the halfway. If the specified color space is not {@link ColorSpace.Model#RGB RGB},
@@ -180,23 +170,43 @@ public final class BitmapFactory {
      *
      * @param file the file to be decoded
      * @param opts the decoder options
-     * @return the decoded bitmap, or null if opts is non-null, if opts requested only the
-     * size be returned (in opts.outWidth and opts.outHeight)
+     * @return the decoded bitmap
      * @throws IllegalArgumentException the options are invalid
      * @throws IOException              the file cannot be decoded into a bitmap
      */
-    @Nullable
+    @NonNull
     public static Bitmap decodeFile(@NonNull File file,
                                     @Nullable Options opts) throws IOException {
         validate(opts);
-        if (opts != null) {
-            setMimeType(opts, file);
+        if (opts != null && opts.inDecodeMimeType) {
+            decodeMimeType(opts, file);
         }
         final Bitmap bm;
         try (final var stream = new FileInputStream(file)) {
-            bm = decodeSeekableChannel(stream.getChannel(), opts);
+            bm = decodeSeekableChannel(stream.getChannel(), opts, false);
         }
+        assert bm != null;
         return bm;
+    }
+
+    /**
+     * Query the bitmap info from a file path, without allocating the memory for its pixels.
+     * <p>
+     * If the file cannot be decoded into a bitmap, the method throws {@link IOException}
+     * on the halfway.
+     *
+     * @param file the file to be decoded
+     * @param opts the out values
+     * @throws IOException the file cannot be decoded into a bitmap
+     */
+    public static void decodeFileInfo(@NonNull File file,
+                                      @NonNull Options opts) throws IOException {
+        if (opts.inDecodeMimeType) {
+            decodeMimeType(opts, file);
+        }
+        try (final var stream = new FileInputStream(file)) {
+            decodeSeekableChannel(stream.getChannel(), opts, true);
+        }
     }
 
     /**
@@ -211,14 +221,11 @@ public final class BitmapFactory {
      */
     @NonNull
     public static Bitmap decodePath(@NonNull Path path) throws IOException {
-        return Objects.requireNonNull(decodePath(path, null));
+        return decodePath(path, null);
     }
 
     /**
      * Decode a file path into a bitmap.
-     * <p>
-     * If <var>opts</var> is non-null and {@link Options#inJustDecodeBounds} is true,
-     * the method returns null. Otherwise, the method returns non-null.
      * <p>
      * If the file cannot be decoded into a bitmap, the method throws {@link IOException}
      * on the halfway. If the specified color space is not {@link ColorSpace.Model#RGB RGB},
@@ -228,23 +235,43 @@ public final class BitmapFactory {
      *
      * @param path the file to be decoded
      * @param opts the decoder options
-     * @return the decoded bitmap, or null if opts is non-null, if opts requested only the
-     * size be returned (in opts.outWidth and opts.outHeight)
+     * @return the decoded bitmap
      * @throws IllegalArgumentException the options are invalid
      * @throws IOException              the file cannot be decoded into a bitmap
      */
-    @Nullable
+    @NonNull
     public static Bitmap decodePath(@NonNull Path path,
                                     @Nullable Options opts) throws IOException {
         validate(opts);
-        if (opts != null) {
-            setMimeType(opts, path.toFile());
+        if (opts != null && opts.inDecodeMimeType) {
+            decodeMimeType(opts, path.toFile());
         }
         final Bitmap bm;
         try (final var channel = FileChannel.open(path, StandardOpenOption.READ)) {
-            bm = decodeSeekableChannel(channel, opts);
+            bm = decodeSeekableChannel(channel, opts, false);
         }
+        assert bm != null;
         return bm;
+    }
+
+    /**
+     * Query the bitmap info from a file path, without allocating the memory for its pixels.
+     * <p>
+     * If the file cannot be decoded into a bitmap, the method throws {@link IOException}
+     * on the halfway.
+     *
+     * @param path the file to be decoded
+     * @param opts the out values
+     * @throws IOException the file cannot be decoded into a bitmap
+     */
+    public static void decodePathInfo(@NonNull Path path,
+                                      @NonNull Options opts) throws IOException {
+        if (opts.inDecodeMimeType) {
+            decodeMimeType(opts, path.toFile());
+        }
+        try (final var channel = FileChannel.open(path, StandardOpenOption.READ)) {
+            decodeSeekableChannel(channel, opts, true);
+        }
     }
 
     /**
@@ -262,14 +289,11 @@ public final class BitmapFactory {
      */
     @NonNull
     public static Bitmap decodeStream(@NonNull InputStream stream) throws IOException {
-        return Objects.requireNonNull(decodeStream(stream, null));
+        return decodeStream(stream, null);
     }
 
     /**
      * Decode an input stream into a bitmap.
-     * <p>
-     * If <var>opts</var> is non-null and {@link Options#inJustDecodeBounds} is true,
-     * the method returns null. Otherwise, the method returns non-null.
      * <p>
      * The stream's position will be at the end of the encoded data. This method
      * <em>does not</em> closed the given stream after read operation has completed.
@@ -282,24 +306,23 @@ public final class BitmapFactory {
      *
      * @param stream the input stream to be decoded
      * @param opts   the decoder options
-     * @return the decoded bitmap, or null if opts is non-null, if opts requested only the
-     * size be returned (in opts.outWidth and opts.outHeight)
+     * @return the decoded bitmap
      * @throws IllegalArgumentException the options are invalid
      * @throws IOException              the data cannot be decoded into a bitmap
      */
-    @Nullable
+    @NonNull
     public static Bitmap decodeStream(@NonNull InputStream stream,
                                       @Nullable Options opts) throws IOException {
         validate(opts);
         final Bitmap bm;
         if (stream.getClass() == FileInputStream.class) {
             FileChannel ch = ((FileInputStream) stream).getChannel();
-            if (opts != null) {
+            if (opts != null && opts.inDecodeMimeType) {
                 long pos = ch.position();
-                setMimeType(opts, stream); // no need to close
+                decodeMimeType(opts, stream); // no need to close
                 ch.position(pos);
             }
-            bm = decodeSeekableChannel(ch, opts);
+            bm = decodeSeekableChannel(ch, opts, false);
         } else {
             ByteBuffer p = null;
             try {
@@ -309,7 +332,39 @@ public final class BitmapFactory {
                 MemoryUtil.memFree(p);
             }
         }
+        assert bm != null;
         return bm;
+    }
+
+    /**
+     * Query the bitmap info from an input stream, without allocating the memory for its pixels.
+     * <p>
+     * If the stream cannot be decoded into a bitmap, the method throws {@link IOException}
+     * on the halfway.
+     *
+     * @param stream the input stream to be decoded
+     * @param opts   the out values
+     * @throws IOException the data cannot be decoded into a bitmap
+     */
+    public static void decodeStreamInfo(@NonNull InputStream stream,
+                                        @NonNull Options opts) throws IOException {
+        if (stream.getClass() == FileInputStream.class) {
+            FileChannel ch = ((FileInputStream) stream).getChannel();
+            if (opts.inDecodeMimeType) {
+                long pos = ch.position();
+                decodeMimeType(opts, stream); // no need to close
+                ch.position(pos);
+            }
+            decodeSeekableChannel(ch, opts, true);
+        } else {
+            ByteBuffer p = null;
+            try {
+                p = Core.readBuffer(stream);
+                decodeBufferInfo(p.rewind(), opts);
+            } finally {
+                MemoryUtil.memFree(p);
+            }
+        }
     }
 
     /**
@@ -321,20 +376,17 @@ public final class BitmapFactory {
      * If the channel cannot be decoded into a bitmap, the method throws {@link IOException}
      * on the halfway.
      *
-     * @param channel the readable stream to be decoded
+     * @param channel the readable channel to be decoded
      * @return the decoded bitmap
      * @throws IOException the data cannot be decoded into a bitmap
      */
     @NonNull
     public static Bitmap decodeChannel(@NonNull ReadableByteChannel channel) throws IOException {
-        return Objects.requireNonNull(decodeChannel(channel, null));
+        return decodeChannel(channel, null);
     }
 
     /**
      * Decode a readable channel into a bitmap.
-     * <p>
-     * If <var>opts</var> is non-null and {@link Options#inJustDecodeBounds} is true,
-     * the method returns null. Otherwise, the method returns non-null.
      * <p>
      * The channel's position will be at the end of the encoded data. This method
      * <em>does not</em> closed the given channel after read operation has completed.
@@ -345,25 +397,24 @@ public final class BitmapFactory {
      * {@link ColorSpace.Rgb.TransferParameters ICC parametric curve}, the method throws
      * {@link IllegalArgumentException}.
      *
-     * @param channel the readable stream to be decoded
+     * @param channel the readable channel to be decoded
      * @param opts    the decoder options
-     * @return the decoded bitmap, or null if opts is non-null, if opts requested only the
-     * size be returned (in opts.outWidth and opts.outHeight)
+     * @return the decoded bitmap
      * @throws IllegalArgumentException the options are invalid
      * @throws IOException              the data cannot be decoded into a bitmap
      */
-    @Nullable
+    @NonNull
     public static Bitmap decodeChannel(@NonNull ReadableByteChannel channel,
                                        @Nullable Options opts) throws IOException {
         validate(opts);
         final Bitmap bm;
         if (channel instanceof SeekableByteChannel ch) {
-            if (opts != null) {
+            if (opts != null && opts.inDecodeMimeType) {
                 long pos = ch.position();
-                setMimeType(opts, Channels.newInputStream(channel)); // no need to close
+                decodeMimeType(opts, Channels.newInputStream(channel)); // no need to close
                 ch.position(pos);
             }
-            bm = decodeSeekableChannel(ch, opts);
+            bm = decodeSeekableChannel(ch, opts, false);
         } else {
             ByteBuffer p = null;
             try {
@@ -373,7 +424,38 @@ public final class BitmapFactory {
                 MemoryUtil.memFree(p);
             }
         }
+        assert bm != null;
         return bm;
+    }
+
+    /**
+     * Query the bitmap info from a readable channel, without allocating the memory for its pixels.
+     * <p>
+     * If the channel cannot be decoded into a bitmap, the method throws {@link IOException}
+     * on the halfway.
+     *
+     * @param channel the readable channel to be decoded
+     * @param opts    the out values
+     * @throws IOException the data cannot be decoded into a bitmap
+     */
+    public static void decodeChannelInfo(@NonNull ReadableByteChannel channel,
+                                         @NonNull Options opts) throws IOException {
+        if (channel instanceof SeekableByteChannel ch) {
+            if (opts.inDecodeMimeType) {
+                long pos = ch.position();
+                decodeMimeType(opts, Channels.newInputStream(channel)); // no need to close
+                ch.position(pos);
+            }
+            decodeSeekableChannel(ch, opts, true);
+        } else {
+            ByteBuffer p = null;
+            try {
+                p = Core.readBuffer(channel);
+                decodeBufferInfo(p.rewind(), opts);
+            } finally {
+                MemoryUtil.memFree(p);
+            }
+        }
     }
 
     /**
@@ -396,9 +478,6 @@ public final class BitmapFactory {
     /**
      * Decode an immutable bitmap from the specified byte array.
      * <p>
-     * If <var>opts</var> is non-null and {@link Options#inJustDecodeBounds} is true,
-     * the method returns null. Otherwise, the method returns non-null.
-     * <p>
      * If the data cannot be decoded into a bitmap, the method throws {@link IOException}
      * on the halfway. If the specified color space is not {@link ColorSpace.Model#RGB RGB},
      * or if the specified color space's transfer function is not an
@@ -409,27 +488,27 @@ public final class BitmapFactory {
      * @param offset offset into image data for where the decoder should begin parsing
      * @param length the number of bytes, beginning at offset, to parse
      * @param opts   the decoder options
-     * @return the decoded bitmap, or null if opts is non-null, if opts requested only the
-     * size be returned (in opts.outWidth and opts.outHeight)
+     * @return the decoded bitmap
      * @throws IllegalArgumentException the options are invalid
      * @throws IOException              the data cannot be decoded into a bitmap
      */
-    @Nullable
+    @NonNull
     public static Bitmap decodeByteArray(byte[] data, int offset, int length,
                                          @Nullable Options opts) throws IOException {
         if ((offset | length) < 0 || data.length < offset + length) {
             throw new ArrayIndexOutOfBoundsException();
         }
         validate(opts);
-        if (opts != null) {
-            setMimeType(opts, new ByteArrayInputStream(data, offset, length));  // no need to close (nop)
+        if (opts != null && opts.inDecodeMimeType) {
+            decodeMimeType(opts, new ByteArrayInputStream(data, offset, length));  // no need to close (nop)
         }
         ByteBuffer p = null;
         final Bitmap bm;
         try {
             p = MemoryUtil.memAlloc(length);
-            bm = decode(null,
-                    p.put(data, offset, length).rewind(), opts, null);
+            bm = decodeBuffer0(p
+                    .put(data, offset, length)
+                    .rewind(), opts);
         } finally {
             MemoryUtil.memFree(p);
         }
@@ -437,38 +516,53 @@ public final class BitmapFactory {
     }
 
     // INTERNAL
-    @Nullable
+    @NonNull
     public static Bitmap decodeBuffer(@NonNull ByteBuffer buffer,
                                       @Nullable Options opts) throws IOException {
         validate(opts);
         assert buffer.isDirect();
-        if (opts != null) {
-            // scan header for setting MIME type, 64 bytes is enough
-            byte[] seek = new byte[Math.min(buffer.limit(), 64)];
+        if (opts != null && opts.inDecodeMimeType) {
+            // scan header for setting MIME type, 96 bytes is enough
+            byte[] seek = new byte[Math.min(buffer.limit(), 96)];
             buffer.get(0, seek, 0, seek.length);
-            setMimeType(opts, new ByteArrayInputStream(seek)); // no need to close (nop)
+            decodeMimeType(opts, new ByteArrayInputStream(seek)); // no need to close (nop)
         }
-        return decode(null, buffer, opts, null);
+        return decodeBuffer0(buffer, opts);
     }
 
-    private static void setMimeType(@NonNull Options opts, @NonNull Object input) {
-        try (var stream = ImageIO.createImageInputStream(input)) {
-            if (stream != null) {
-                var readers = ImageIO.getImageReaders(stream);
-                if (readers.hasNext()) {
-                    String[] mimeTypes = readers.next().getOriginatingProvider().getMIMETypes();
-                    if (mimeTypes != null) {
-                        opts.outMimeType = mimeTypes[0];
-                    }
-                }
-            }
-        } catch (Exception ignored) {
+    // INTERNAL
+    public static void decodeBufferInfo(@NonNull ByteBuffer buffer,
+                                        @NonNull Options opts) throws IOException {
+        assert buffer.isDirect();
+        if (opts.inDecodeMimeType) {
+            // scan header for setting MIME type, 96 bytes is enough
+            byte[] seek = new byte[Math.min(buffer.limit(), 96)];
+            buffer.get(0, seek, 0, seek.length);
+            decodeMimeType(opts, new ByteArrayInputStream(seek)); // no need to close (nop)
         }
+        final boolean isU16, isHDR;
+        isHDR = STBImage.nstbi_is_hdr_from_memory(memAddress(buffer), buffer.remaining()) != 0;
+        isU16 = !isHDR && STBImage.nstbi_is_16_bit_from_memory(memAddress(buffer), buffer.remaining()) != 0;
+        decodeInfo0(null, buffer, opts, null, isU16, isHDR);
+    }
+
+    @NonNull
+    private static Bitmap decodeBuffer0(@NonNull ByteBuffer buffer,
+                                        @Nullable Options opts) throws IOException {
+        final boolean isU16, isHDR;
+        if (opts != null && opts.inPreferredFormat != null) {
+            isU16 = opts.inPreferredFormat.isChannelU16();
+            isHDR = opts.inPreferredFormat.isChannelHDR();
+        } else {
+            isHDR = STBImage.nstbi_is_hdr_from_memory(memAddress(buffer), buffer.remaining()) != 0;
+            isU16 = !isHDR && STBImage.nstbi_is_16_bit_from_memory(memAddress(buffer), buffer.remaining()) != 0;
+        }
+        return decode0(null, buffer, opts, null, isU16, isHDR);
     }
 
     @Nullable
     private static Bitmap decodeSeekableChannel(@NonNull SeekableByteChannel channel,
-                                                @Nullable Options opts) throws IOException {
+                                                @Nullable Options opts, boolean info) throws IOException {
         final boolean[] eof = {false};
         final IOException[] ioe = {null};
         final var readcb = new STBIReadCallback() {
@@ -514,36 +608,74 @@ public final class BitmapFactory {
         };
         try (MemoryStack stack = MemoryStack.stackPush();
              readcb; skipcb; eofcb) {
-            return decode(STBIIOCallbacks.malloc(stack)
-                    .set(readcb, skipcb, eofcb), null, opts, ioe);
+            STBIIOCallbacks callbacks = STBIIOCallbacks.malloc(stack)
+                    .set(readcb, skipcb, eofcb);
+            final boolean isU16, isHDR;
+            if (!info && opts != null && opts.inPreferredFormat != null) {
+                isU16 = opts.inPreferredFormat.isChannelU16();
+                isHDR = opts.inPreferredFormat.isChannelHDR();
+            } else {
+                final long start = channel.position();
+                isHDR = STBImage.nstbi_is_hdr_from_callbacks(callbacks.address(), NULL) != 0;
+                channel.position(start);
+                if (isHDR) {
+                    isU16 = false;
+                } else {
+                    isU16 = STBImage.nstbi_is_16_bit_from_callbacks(callbacks.address(), NULL) != 0;
+                    channel.position(start);
+                }
+            }
+            if (info) {
+                assert opts != null;
+                decodeInfo0(callbacks, null, opts, ioe, isU16, isHDR);
+                return null;
+            }
+            return decode0(callbacks, null, opts, ioe, isU16, isHDR);
         }
     }
 
-    @Nullable
-    private static Bitmap decode(@Nullable STBIIOCallbacks callbacks, @Nullable ByteBuffer buffer, // either
-                                 @Nullable Options opts, @Nullable IOException[] ioe) throws IOException {
-        if (opts != null && opts.inJustDecodeBounds) {
-            decodeInfo(callbacks, buffer, opts, ioe);
-            return null;
-        }
-        Bitmap.Format prefFormat = null;
+    @NonNull
+    private static Bitmap decode0(@Nullable STBIIOCallbacks callbacks, @Nullable ByteBuffer buffer, // either
+                                  @Nullable Options opts, @Nullable IOException[] ioe,
+                                  boolean isU16, boolean isHDR) throws IOException {
+        assert callbacks != null || buffer != null;
+        Bitmap.Format requiredFormat = null;
         if (opts != null) {
             if (opts.inPreferredFormat != null) {
-                prefFormat = opts.inPreferredFormat;
+                requiredFormat = opts.inPreferredFormat;
             }
         }
         try (MemoryStack stack = MemoryStack.stackPush()) {
             long pOuts = stack.nmalloc(4, 12);
             final long address;
+            final int requiredChannels = requiredFormat != null
+                    ? requiredFormat.getChannels()
+                    : STBImage.STBI_default;
             if (callbacks != null) {
-                address = STBImage.nstbi_load_from_callbacks(
-                        callbacks.address(), NULL, pOuts, pOuts + 4, pOuts + 8,
-                        prefFormat != null ? prefFormat.getChannelCount() : STBImage.STBI_default);
+                long cbk = callbacks.address();
+                if (isHDR) {
+                    address = STBImage.nstbi_loadf_from_callbacks(cbk, NULL,
+                            pOuts, pOuts + 4, pOuts + 8, requiredChannels);
+                } else if (isU16) {
+                    address = STBImage.nstbi_load_16_from_callbacks(cbk, NULL,
+                            pOuts, pOuts + 4, pOuts + 8, requiredChannels);
+                } else {
+                    address = STBImage.nstbi_load_from_callbacks(cbk, NULL,
+                            pOuts, pOuts + 4, pOuts + 8, requiredChannels);
+                }
             } else {
-                assert buffer != null;
-                address = STBImage.nstbi_load_from_memory(
-                        memAddress(buffer), buffer.remaining(), pOuts, pOuts + 4, pOuts + 8,
-                        prefFormat != null ? prefFormat.getChannelCount() : STBImage.STBI_default);
+                long buf = memAddress(buffer);
+                int len = buffer.remaining();
+                if (isHDR) {
+                    address = STBImage.nstbi_loadf_from_memory(buf, len,
+                            pOuts, pOuts + 4, pOuts + 8, requiredChannels);
+                } else if (isU16) {
+                    address = STBImage.nstbi_load_16_from_memory(buf, len,
+                            pOuts, pOuts + 4, pOuts + 8, requiredChannels);
+                } else {
+                    address = STBImage.nstbi_load_from_memory(buf, len,
+                            pOuts, pOuts + 4, pOuts + 8, requiredChannels);
+                }
             }
             if (address == NULL) {
                 throw new IOException("Failed to decode image: " + STBImage.stbi_failure_reason());
@@ -553,25 +685,37 @@ public final class BitmapFactory {
             }
             int width = memGetInt(pOuts),
                     height = memGetInt(pOuts + 4),
-                    channels = memGetInt(pOuts + 8);
-            Bitmap.Format format = prefFormat != null ? prefFormat : Bitmap.Format.of(channels);
+                    channels_in_file = memGetInt(pOuts + 8);
+            // determine the final format we got
+            Bitmap.Format format = requiredFormat != null
+                    ? requiredFormat
+                    : Bitmap.Format.of(channels_in_file, isU16, isHDR);
+            ColorSpace cs = isHDR
+                    ? ColorSpace.get(ColorSpace.Named.LINEAR_EXTENDED_SRGB)
+                    : ColorSpace.get(ColorSpace.Named.SRGB);
             if (opts != null) {
                 opts.outWidth = width;
                 opts.outHeight = height;
                 opts.outFormat = format;
-                opts.outColorSpace = ColorSpace.get(ColorSpace.Named.SRGB);
+                opts.outColorSpace = cs;
             }
+            // images have un-premultiplied alpha by default, HDR has alpha of 1.0
+            int at = !isHDR && (channels_in_file == 2 || channels_in_file == 4) && format.hasAlpha()
+                    ? ImageInfo.AT_UNPREMUL
+                    : ImageInfo.AT_OPAQUE;
+            // XXX: row stride is always (width * bpp) in STB
             Bitmap bitmap = new Bitmap(format,
-                    ImageInfo.make(width, height, format.getColorType(), ImageInfo.AT_UNPREMUL,
-                            ColorSpace.get(ColorSpace.Named.SRGB)),
-                    address, width * format.getChannelCount(), STBImage::nstbi_image_free);
+                    ImageInfo.make(width, height, format.getColorType(), at, cs),
+                    address, width * format.getChannels(), STBImage::nstbi_image_free);
             bitmap.setImmutable();
             return bitmap;
         }
     }
 
-    private static void decodeInfo(@Nullable STBIIOCallbacks callbacks, @Nullable ByteBuffer buffer,
-                                   @NonNull Options opts, @Nullable IOException[] ioe) throws IOException {
+    private static void decodeInfo0(@Nullable STBIIOCallbacks callbacks, @Nullable ByteBuffer buffer, // either
+                                    @NonNull Options opts, @Nullable IOException[] ioe,
+                                    boolean isU16, boolean isHDR) throws IOException {
+        assert callbacks != null || buffer != null;
         try (MemoryStack stack = MemoryStack.stackPush()) {
             long pOuts = stack.nmalloc(4, 12);
             final boolean success;
@@ -579,7 +723,6 @@ public final class BitmapFactory {
                 success = STBImage.nstbi_info_from_callbacks(
                         callbacks.address(), NULL, pOuts, pOuts + 4, pOuts + 8) != 0;
             } else {
-                assert buffer != null;
                 success = STBImage.nstbi_info_from_memory(
                         memAddress(buffer), buffer.remaining(), pOuts, pOuts + 4, pOuts + 8) != 0;
             }
@@ -591,12 +734,162 @@ public final class BitmapFactory {
             }
             int width = memGetInt(pOuts),
                     height = memGetInt(pOuts + 4),
-                    channels = memGetInt(pOuts + 8);
-            Bitmap.Format format = Bitmap.Format.of(channels);
+                    channels_in_file = memGetInt(pOuts + 8);
+            Bitmap.Format format = Bitmap.Format.of(channels_in_file, isU16, isHDR);
+            ColorSpace cs = isHDR
+                    ? ColorSpace.get(ColorSpace.Named.LINEAR_EXTENDED_SRGB)
+                    : ColorSpace.get(ColorSpace.Named.SRGB);
             opts.outWidth = width;
             opts.outHeight = height;
             opts.outFormat = format;
-            opts.outColorSpace = ColorSpace.get(ColorSpace.Named.SRGB);
+            opts.outColorSpace = cs;
+        }
+    }
+
+    // INTERNAL
+    public static void decodeMimeType(@NonNull Options opts, @NonNull Object input) {
+        try (var stream = ImageIO.createImageInputStream(input)) {
+            if (stream != null) {
+                var readers = ImageIO.getImageReaders(stream);
+                if (readers.hasNext()) {
+                    String[] mimeTypes = readers.next().getOriginatingProvider().getMIMETypes();
+                    if (mimeTypes != null) {
+                        opts.outMimeType = mimeTypes[0];
+                        return;
+                    }
+                }
+                // the order is important
+                if (test(stream, BitmapFactory::filterPSD)) {
+                    opts.outMimeType = "image/vnd.adobe.photoshop";
+                } else if (test(stream, BitmapFactory::filterPIC)) {
+                    opts.outMimeType = "image/x-pict";
+                } else if (test(stream, BitmapFactory::filterPGM)) {
+                    opts.outMimeType = "image/x-portable-graymap";
+                } else if (test(stream, BitmapFactory::filterPPM)) {
+                    opts.outMimeType = "image/x-portable-pixmap";
+                } else if (test(stream, BitmapFactory::filterHDR)) {
+                    opts.outMimeType = "image/vnd.radiance";
+                } else if (test(stream, BitmapFactory::filterTGA)) {
+                    opts.outMimeType = "image/x-tga";
+                }
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    // INTERNAL
+    public static boolean test(@NonNull ImageInputStream stream,
+                               @NonNull Predicate<ImageInputStream> filter) {
+        try {
+            stream.mark();
+            try {
+                return filter.test(stream);
+            } finally {
+                stream.reset();
+            }
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    // INTERNAL
+    public static boolean filterPSD(@NonNull ImageInputStream stream) {
+        try {
+            return stream.read() == '8' &&
+                    stream.read() == 'B' &&
+                    stream.read() == 'P' &&
+                    stream.read() == 'S';
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static boolean filterPIC(@NonNull ImageInputStream stream) {
+        try {
+            if (stream.read() != 0x53 ||
+                    stream.read() != 0x80 ||
+                    stream.read() != 0xF6 ||
+                    stream.read() != 0x34)
+                return false;
+            stream.seek(stream.getStreamPosition() + 84);
+            return stream.read() == 'P' &&
+                    stream.read() == 'I' &&
+                    stream.read() == 'C' &&
+                    stream.read() == 'T';
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    // INTERNAL
+    public static boolean filterPGM(@NonNull ImageInputStream stream) {
+        try {
+            return stream.read() == 'P' && stream.read() == '5';
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    // INTERNAL
+    public static boolean filterPPM(@NonNull ImageInputStream stream) {
+        try {
+            return stream.read() == 'P' && stream.read() == '6';
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    // INTERNAL
+    public static boolean filterHDR(@NonNull ImageInputStream stream) {
+        try {
+            return stream.read() == '#' &&
+                    stream.read() == '?' &&
+                    stream.read() == 'R' &&
+                    stream.read() == 'A' &&
+                    stream.read() == 'D' &&
+                    stream.read() == 'I' &&
+                    stream.read() == 'A' &&
+                    stream.read() == 'N' &&
+                    stream.read() == 'C' &&
+                    stream.read() == 'E' &&
+                    stream.read() == '\n';
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    // INTERNAL
+    public static boolean filterTGA(@NonNull ImageInputStream stream) {
+        // TGA has no magic number, it must be the last
+        try {
+            stream.read();
+            int color_map_type = stream.read();
+            if (color_map_type != 0 && color_map_type != 1)
+                return false;
+            int data_type_code = stream.read();
+            if (color_map_type == 1) {
+                // Uncompressed, color-mapped images.
+                // Run-Length Encoded color-mapped images.
+                if (data_type_code != 1 && data_type_code != 9)
+                    return false;
+                stream.readInt(); // color map range
+                int color_map_depth = stream.read();
+                if (color_map_depth != 16 && color_map_depth != 24 && color_map_depth != 32)
+                    return false;
+            } else {
+                if (data_type_code != 2 && data_type_code != 3 && data_type_code != 10 && data_type_code != 11)
+                    return false;
+                stream.readInt(); // color map range
+                stream.read(); // color map depth
+            }
+            stream.readInt(); // origin
+            stream.readInt(); // dimensions
+            int bits_per_pixel = stream.read();
+            if (color_map_type == 1 && bits_per_pixel != 8 && bits_per_pixel != 16)
+                return false;
+            return bits_per_pixel == 16 || bits_per_pixel == 24 || bits_per_pixel == 32;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 }
