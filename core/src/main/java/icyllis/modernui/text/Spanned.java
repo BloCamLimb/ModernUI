@@ -34,8 +34,9 @@
 
 package icyllis.modernui.text;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
+
 import java.util.List;
 
 /**
@@ -202,7 +203,7 @@ public interface Spanned extends CharSequence {
      * @param dest  the list that receives method results
      * @return the list of results
      */
-    @Nonnull
+    @NonNull
     <T> List<T> getSpans(int start, int end, @Nullable Class<? extends T> type,
                          @Nullable List<T> dest);
 
@@ -211,7 +212,7 @@ public interface Spanned extends CharSequence {
      *
      * @see #getSpans(int, int, Class, List)
      */
-    @Nonnull
+    @NonNull
     default <T> List<T> getSpans(int start, int end, @Nullable Class<? extends T> type) {
         return getSpans(start, end, type, null);
     }
@@ -223,7 +224,7 @@ public interface Spanned extends CharSequence {
      * @param span markup object
      * @return the start char index
      */
-    int getSpanStart(@Nonnull Object span);
+    int getSpanStart(@NonNull Object span);
 
     /**
      * Return the end of the range of text to which the specified
@@ -232,7 +233,7 @@ public interface Spanned extends CharSequence {
      * @param span markup object
      * @return the end char index
      */
-    int getSpanEnd(@Nonnull Object span);
+    int getSpanEnd(@NonNull Object span);
 
     /**
      * Return the flags that were specified when {@link Spannable#setSpan} was
@@ -242,7 +243,7 @@ public interface Spanned extends CharSequence {
      * @param span markup object
      * @return the flags
      */
-    int getSpanFlags(@Nonnull Object span);
+    int getSpanFlags(@NonNull Object span);
 
     /**
      * Return the first offset greater than {@code start} where a markup

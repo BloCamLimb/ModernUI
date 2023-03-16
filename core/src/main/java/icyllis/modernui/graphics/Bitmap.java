@@ -40,43 +40,44 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.function.LongConsumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static icyllis.modernui.graphics.opengl.GLCore.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
 /**
- * Describes a 2D raster image, with its pixels in native memory. It is used for
- * CPU-side operations such as decoding or encoding. It can also be used to
- * upload to GPU-side {@link Image} for drawing on the screen or download from
- * GPU-side {@link Image} for saving to disk.
- * <p>
- * This class is not thread safe, but memory safe.
+ * Describes a 2D raster image (pixel map), with its pixels in native memory.
+ * This is used for CPU side operations, such as decoding or encoding. It is
+ * generally uploaded to GPU side {@link Image} for drawing on the screen,
+ * or downloaded from GPU side {@link Image} for encoding to streams.
  *
  * @see BitmapFactory
  */
 @SuppressWarnings("unused")
-public final class Bitmap extends Pixmap implements AutoCloseable {
+public final class Bitmap implements AutoCloseable {
 
     public static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss");
 
     @NonNull
     private final Format mFormat;
+    @NonNull
+    private final ImageInfo mInfo;
 
-    private Ref mRef;
+    private SafeRef mRef;
 
     Bitmap(@NonNull Format format, @NonNull ImageInfo info, long addr, int rowStride,
            @NonNull LongConsumer freeFn) {
-        super(info, addr, rowStride);
         mFormat = format;
+        mInfo = info;
         mRef = new SafeRef(this, info.width(), info.height(), addr, rowStride, freeFn);
     }
 
     /**
-     * Creates a bitmap and its allocation, the type of all components is unsigned byte.
+     * Creates a mutable bitmap and its allocation, the content are initialized to zeros.
      *
      * @param width  width in pixels, ranged from 1 to 32767
      * @param height height in pixels, ranged from 1 to 32767
-     * @param format number of channels
+     * @param format number of channels and bpp
      * @throws IllegalArgumentException width or height out of range, or allocation size >= 2GB
      * @throws OutOfMemoryError         out of off-heap memory
      */
@@ -84,27 +85,33 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
     public static Bitmap createBitmap(@Size(min = 1, max = 32767) int width,
                                       @Size(min = 1, max = 32767) int height,
                                       @NonNull Format format) {
-        if (width <= 0 || height <= 0) {
+        if (width < 1 || height < 1) {
             throw new IllegalArgumentException("Image dimensions " + width + "x" + height
                     + " must be positive");
         }
         if (width > 32767 || height > 32767) {
             throw new IllegalArgumentException("Image dimensions " + width + "x" + height
-                    + " must be less than or equal to 32767");
+                    + " must be less than or equal to 2^15-1");
         }
-        long size = (long) format.channels * width * height;
+        int rowStride = width * format.getBytesPerPixel(); // no overflow
+        long size = (long) rowStride * height;
         if (size > Integer.MAX_VALUE) {
             throw new IllegalArgumentException("Image allocation size " + size
-                    + " must be less than or equal to 2147483647 bytes");
+                    + " must be less than or equal to 2^31-1 bytes");
         }
         final long address = nmemCalloc(size, 1);
         if (address == NULL) {
             throw new OutOfMemoryError("Failed to allocate " + size + " bytes");
         }
+        ColorSpace cs = format.isChannelHDR()
+                ? ColorSpace.get(ColorSpace.Named.LINEAR_EXTENDED_SRGB)
+                : ColorSpace.get(ColorSpace.Named.SRGB);
+        int at = format.hasAlpha() && !format.isChannelHDR()
+                ? ImageInfo.AT_UNPREMUL
+                : ImageInfo.AT_OPAQUE;
         return new Bitmap(format,
-                ImageInfo.make(width, height, format.getColorType(), ImageInfo.AT_PREMUL,
-                        ColorSpace.get(ColorSpace.Named.SRGB)),
-                address, width * format.getChannelCount(), MemoryUtil::nmemFree);
+                ImageInfo.make(width, height, format.getColorType(), at, cs),
+                address, rowStride, MemoryUtil::nmemFree);
     }
 
     /**
@@ -143,9 +150,9 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
      * @return the selected paths or {@code null} if selects nothing (dismissed or closed)
      */
     @Nullable
-    public static String[] openDialogGetMulti(@Nullable SaveFormat format,
-                                              @Nullable CharSequence title,
-                                              @Nullable CharSequence defaultPathAndFile) {
+    public static String[] openDialogGets(@Nullable SaveFormat format,
+                                          @Nullable CharSequence title,
+                                          @Nullable CharSequence defaultPathAndFile) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             PointerBuffer filters = format != null
                     ? format.getFilters(stack)
@@ -200,24 +207,14 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
         final int width = texture.getWidth();
         final int height = texture.getHeight();
         final Bitmap bitmap = createBitmap(width, height, format);
-        final long addr = bitmap.getPixels();
         glPixelStorei(GL_PACK_ROW_LENGTH, 0);
         glPixelStorei(GL_PACK_SKIP_ROWS, 0);
         glPixelStorei(GL_PACK_SKIP_PIXELS, 0);
         glPixelStorei(GL_PACK_ALIGNMENT, 1);
         glGetTextureImage(texture.get(), 0, format.externalGlFormat, GL_UNSIGNED_BYTE,
-                bitmap.getSize(), addr);
+                bitmap.getSize(), bitmap.getPixels());
         if (flipY) {
-            final int stride = width * format.channels;
-            final long temp = nmemAllocChecked(stride);
-            for (int i = 0, e = height >> 1; i < e; i++) {
-                final int a = i * stride;
-                final int b = (height - i - 1) * stride;
-                memCopy(addr + a, temp, stride);
-                memCopy(addr + b, addr + a, stride);
-                memCopy(temp, addr + b, stride);
-            }
-            nmemFree(temp);
+            flipVertically(bitmap);
         }
         return bitmap;
     }
@@ -245,27 +242,32 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
         final int width = attachment.getWidth();
         final int height = attachment.getHeight();
         final Bitmap bitmap = createBitmap(width, height, format);
-        final long p = bitmap.getPixels();
         framebuffer.bindRead();
         framebuffer.setReadBuffer(colorBuffer);
         glPixelStorei(GL_PACK_ROW_LENGTH, 0);
         glPixelStorei(GL_PACK_SKIP_ROWS, 0);
         glPixelStorei(GL_PACK_SKIP_PIXELS, 0);
         glPixelStorei(GL_PACK_ALIGNMENT, 1);
-        glReadPixels(0, 0, width, height, format.externalGlFormat, GL_UNSIGNED_BYTE, p);
+        glReadPixels(0, 0, width, height, format.externalGlFormat, GL_UNSIGNED_BYTE, bitmap.getPixels());
         if (flipY) {
-            final int stride = width * format.channels;
-            final long temp = nmemAllocChecked(stride);
-            for (int i = 0, e = height >> 1; i < e; i++) {
-                final int a = i * stride;
-                final int b = (height - i - 1) * stride;
-                memCopy(p + a, temp, stride);
-                memCopy(p + b, p + a, stride);
-                memCopy(temp, p + b, stride);
-            }
-            nmemFree(temp);
+            flipVertically(bitmap);
         }
         return bitmap;
+    }
+
+    private static void flipVertically(@NonNull Bitmap bitmap) {
+        final int height = bitmap.getHeight();
+        final int rowStride = bitmap.getRowStride();
+        final long temp = nmemAllocChecked(rowStride);
+        final long addr = bitmap.getPixels();
+        for (int i = 0, lim = height >> 1; i < lim; i++) {
+            final int srcOff = i * rowStride;
+            final int dstOff = (height - i - 1) * rowStride;
+            memCopy(addr + srcOff, temp, rowStride);
+            memCopy(addr + dstOff, addr + srcOff, rowStride);
+            memCopy(temp, addr + dstOff, rowStride);
+        }
+        nmemFree(temp);
     }
 
     @NonNull
@@ -273,56 +275,42 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
         return mFormat;
     }
 
-    public int getChannelCount() {
-        return mFormat.channels;
+    @NonNull
+    public ImageInfo getInfo() {
+        return mInfo;
     }
 
     /**
-     * Describes the format for OpenGL uploading.
-     *
-     * @return pixels format in OpenGL
+     * Returns the number of channels.
      */
-    @Deprecated
-    public int getExternalGlFormat() {
-        return mFormat.externalGlFormat;
-    }
-
-    /**
-     * Describes the internal format for OpenGL texture allocation.
-     *
-     * @return internal format in OpenGL
-     */
-    @Deprecated
-    public int getInternalGlFormat() {
-        return mFormat.internalGlFormat;
+    public int getChannels() {
+        return mFormat.getChannels();
     }
 
     /**
      * Returns the width of the bitmap.
      */
-    @Override
     public int getWidth() {
         if (mRef != null) {
             return mRef.mWidth;
         }
         assert false;
-        return super.getWidth();
+        return mInfo.width();
     }
 
     /**
      * Returns the height of the bitmap.
      */
-    @Override
     public int getHeight() {
         if (mRef != null) {
             return mRef.mHeight;
         }
         assert false;
-        return super.getHeight();
+        return mInfo.height();
     }
 
     public int getSize() {
-        return mFormat.channels * getWidth() * getHeight();
+        return mFormat.getBytesPerPixel() * getWidth() * getHeight();
     }
 
     /**
@@ -330,7 +318,6 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
      *
      * @return the pointer of pixel data, or NULL if released
      */
-    @Override
     public long getPixels() {
         if (mRef != null) {
             return mRef.mPixels;
@@ -338,19 +325,39 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
         return NULL;
     }
 
-    @Override
+    /**
+     * The distance, in bytes, between the start of one pixel row and the next,
+     * including any unused space between them.
+     *
+     * @return the scanline size in bytes
+     */
     public int getRowStride() {
+        // XXX: row stride is always (width * bpp) in Modern UI
         return mRef.mRowStride;
+    }
+
+    public int getColorType() {
+        return mInfo.colorType();
+    }
+
+    public int getAlphaType() {
+        return mInfo.alphaType();
+    }
+
+    @Nullable
+    public ColorSpace getColorSpace() {
+        return mInfo.colorSpace();
     }
 
     /**
      * Returns true if the bitmap's format supports per-pixel alpha, and
-     * if the pixels may contain non-opaque alpha values. For some configs,
-     * this is always false (e.g. RGB_888), since they do not support per-pixel
-     * alpha. However, for formats that do, the bitmap may be flagged to be
-     * known that all of its pixels are opaque. In this case hasAlpha() will
-     * also return false. If a config such as RGBA_8888 is not so flagged,
-     * it will return true by default.
+     * if the pixels may contain non-opaque alpha values. For some formats,
+     * this is always false (e.g. {@link Format#RGB_888}), since they do
+     * not support per-pixel alpha. However, for formats that do, the
+     * bitmap may be flagged to be known that all of its pixels are opaque.
+     * In this case hasAlpha() will also return false. If a format such as
+     * {@link Format#RGBA_8888} is not so flagged, it will return true
+     * by default.
      */
     public boolean hasAlpha() {
         assert mRef != null;
@@ -389,51 +396,27 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
      * A bitmap with no alpha channel can be used both as a pre-multiplied and
      * as a non pre-multiplied bitmap.</p>
      *
-     * <p>Only pre-multiplied bitmaps may be drawn by the view system or
-     * {@link Canvas}. If a non-pre-multiplied bitmap with an alpha channel is
-     * drawn to a Canvas, a RuntimeException will be thrown.</p>
-     *
      * @return true if the underlying pixels have been pre-multiplied, false
      * otherwise
-     * @see Bitmap#setPremultiplied(boolean)
-     * @see BitmapFactory.Options#inPremultiplied
      */
     public boolean isPremultiplied() {
         assert mRef != null;
+        // XXX: always false in Modern UI, and will be premul in GPU fragment shaders
         return mInfo.alphaType() == ImageInfo.AT_PREMUL;
     }
 
-    /**
-     * Sets whether the bitmap should treat its data as pre-multiplied.
-     *
-     * <p>Bitmaps are always treated as pre-multiplied by the view system and
-     * {@link Canvas} for performance reasons. Storing un-pre-multiplied data in
-     * a Bitmap (through {@link #setPixel}, {@link #setPixels}, or {@link
-     * BitmapFactory.Options#inPremultiplied BitmapFactory.Options.inPremultiplied})
-     * can lead to incorrect blending if drawn by the framework.</p>
-     *
-     * <p>This method will not affect the behavior of a bitmap without an alpha
-     * channel, or if {@link #hasAlpha()} returns false.</p>
-     *
-     * @see Bitmap#isPremultiplied()
-     * @see BitmapFactory.Options#inPremultiplied
-     */
-    public void setPremultiplied(boolean premultiplied) {
-        checkReleased();
-    }
-
-    private void checkPixelAccess(int x, int y) {
+    private void checkOutOfBounds(int x, int y) {
         if (x < 0) {
-            throw new IllegalArgumentException("x must be >= 0");
+            throw new IllegalArgumentException("x " + x + " must be >= 0");
         }
         if (y < 0) {
-            throw new IllegalArgumentException("y must be >= 0");
+            throw new IllegalArgumentException("y " + y + " must be >= 0");
         }
         if (x >= getWidth()) {
-            throw new IllegalArgumentException("x must be < bitmap.width()");
+            throw new IllegalArgumentException("x " + x + " must be < bitmap.width() " + getWidth());
         }
         if (y >= getHeight()) {
-            throw new IllegalArgumentException("y must be < bitmap.height()");
+            throw new IllegalArgumentException("y " + y + " must be < bitmap.height() " + getHeight());
         }
     }
 
@@ -451,26 +434,30 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
     @ColorInt
     public int getPixelARGB(int x, int y) {
         checkReleased();
-        checkPixelAccess(x, y);
-        int word = MemoryUtil.memGetInt(mRef.mPixels + (long) y * getRowStride() + (long) x * mFormat.channels);
+        checkOutOfBounds(x, y);
+        int word = MemoryUtil.memGetInt(mRef.mPixels +
+                (long) y * getRowStride() +
+                (long) x * mFormat.getBytesPerPixel());
         int argb = switch (mFormat) {
-            case GRAY_8 -> {
+            case GRAY_8 -> { // to RRR1
                 int lum = word & 0xFF;
                 yield 0xFF000000 | (lum << 16) | (lum << 8) | lum;
             }
-            case GRAY_ALPHA_88 -> {
+            case GRAY_ALPHA_88 -> { // to RRRG
                 int lum = word & 0xFF;
-                yield ((word & 0xFF00) << 16) | (lum << 16) | (lum << 8) | lum;
+                yield (word << 16) | (lum << 8) | lum;
             }
-            case RGB_888 -> // to BGRA
+            case RGB_888 -> // to BGR1
                     0xFF000000 | ((word & 0xFF) << 16) | (word & 0xFF00) | ((word >> 16) & 0xFF);
             case RGBA_8888 -> // to BGRA
-                    (word & 0xFF000000) | ((word & 0xFF) << 16) | (word & 0xFF00) | ((word >> 16) & 0xFF);
+                    (word & 0xFF00FF00) | ((word & 0xFF) << 16) | ((word >> 16) & 0xFF);
+            default -> throw new RuntimeException(); //TODO
         };
+        // linear to gamma
         if (getColorSpace() != null && !getColorSpace().isSrgb()) {
             float[] v = ColorSpace.connect(getColorSpace()).transform(
                     Color.red(argb) / 255.0f, Color.green(argb) / 255.0f, Color.blue(argb) / 255.0f);
-            argb |= Color.argb(0, v[0], v[1], v[2]);
+            return Color.argb(Color.alpha(argb), v[0], v[1], v[2]);
         }
         return argb;
     }
@@ -583,6 +570,7 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
         if (quality < 0 || quality > 100) {
             throw new IllegalArgumentException("Bad quality " + quality + ", must be 0..100");
         }
+        assert getRowStride() == getWidth() * getFormat().getBytesPerPixel();
         final var callback = new STBIWriteCallback() {
             private IOException exception;
 
@@ -619,12 +607,14 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
      * and then it is an error to try to access its pixels.
      * <p>
      * Note: Even you forgot to call this, the system will clean the underlying pixels
-     * when the bitmap object become phantom-reachable.
+     * when the bitmap object becomes <em>phantom-reachable</em>. But this will have an
+     * impact on performance, since JVM doesn't think a bitmap is heavy on the heap,
+     * it will take a long time to perform an automatic garbage collect.
      */
     @Override
     public void close() {
         if (mRef != null) {
-            mRef.safeClean();
+            mRef.mCleanup.clean();
             mRef = null;
         }
     }
@@ -650,34 +640,46 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
     }
 
     /**
-     * Describes the number of channels/components in memory.
+     * Describes the number of channels and bytes per pixel in memory.
      */
     public enum Format {
-        // STBI_grey       = 1,
-        // STBI_grey_alpha = 2,
-        // STBI_rgb        = 3,
-        // STBI_rgb_alpha  = 4;
-        GRAY_8(1, GL_RED, GL_R8, ImageInfo.CT_GRAY_8),
-        GRAY_ALPHA_88(2, GL_RG, GL_RG8, ImageInfo.CT_GRAY_ALPHA_88),
-        RGB_888(3, GL_RGB, GL_RGB8, ImageInfo.CT_RGB_888),
-        RGBA_8888(4, GL_RGBA, GL_RGBA8, ImageInfo.CT_RGBA_8888);
+        //@formatter:off
+        GRAY_8          (1, GL_RED,     ImageInfo.CT_GRAY_8         ),
+        GRAY_ALPHA_88   (2, GL_RG,      ImageInfo.CT_GRAY_ALPHA_88  ),
+        RGB_888         (3, GL_RGB,     ImageInfo.CT_RGB_888        ),
+        RGBA_8888       (4, GL_RGBA,    ImageInfo.CT_RGBA_8888      ),
+        // U16, SRGB
+        GRAY_16         (1, GL_RED,     ImageInfo.CT_UNKNOWN        ),
+        GRAY_ALPHA_1616 (2, GL_RG,      ImageInfo.CT_UNKNOWN        ),
+        RGB_161616      (3, GL_RGB,     ImageInfo.CT_UNKNOWN        ),
+        RGBA_16161616   (4, GL_RGBA,    ImageInfo.CT_RGBA_16161616  ),
+        // HDR, LINEAR_SRGB
+        GRAY_F32        (1, GL_RED,     ImageInfo.CT_UNKNOWN        ),
+        GRAY_ALPHA_F32  (2, GL_RG,      ImageInfo.CT_UNKNOWN        ),
+        RGB_F32         (3, GL_RGB,     ImageInfo.CT_UNKNOWN        ),
+        RGBA_F32        (4, GL_RGBA,    ImageInfo.CT_RGBA_F32       );
+        //@formatter:on
 
         private static final Format[] FORMATS = values();
 
-        public final int channels;
-        public final int externalGlFormat;
-        public final int internalGlFormat;
-        public final int colorType;
+        private final int channels;
+        @Deprecated
+        private final int externalGlFormat;
+        private final int colorType;
+        private final int bytesPerPixel;
 
-        Format(int channels, int externalGlFormat, int internalGlFormat, int colorType) {
+        Format(int channels, int externalGlFormat, int colorType) {
             this.channels = channels;
             this.externalGlFormat = externalGlFormat;
-            this.internalGlFormat = internalGlFormat;
             this.colorType = colorType;
-            assert ordinal() == channels - 1;
+            bytesPerPixel = ImageInfo.bytesPerPixel(colorType);
+            assert (ordinal() & 3) == (channels - 1);
         }
 
-        public int getChannelCount() {
+        /**
+         * Returns the number of channels.
+         */
+        public int getChannels() {
             return channels;
         }
 
@@ -686,56 +688,108 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
             return colorType;
         }
 
+        /**
+         * Is this format 8-bit per channel and encoded as unsigned byte?
+         */
+        public boolean isChannelU8() {
+            return ordinal() < 4;
+        }
+
+        /**
+         * Is this format 16-bit per channel and encoded as unsigned short?
+         */
+        public boolean isChannelU16() {
+            return ordinal() >> 2 == 1;
+        }
+
+        /**
+         * Is this format 32-bit per channel and encoded as float?
+         */
+        public boolean isChannelHDR() {
+            return ordinal() >> 2 == 2;
+        }
+
+        /**
+         * Does this format have alpha channel?
+         */
+        public boolean hasAlpha() {
+            return (ordinal() & 1) == 1;
+        }
+
+        public int getBytesPerPixel() {
+            return bytesPerPixel;
+        }
+
         @NonNull
-        public static Format of(int channels) {
+        public static Format of(int channels, boolean isU16, boolean isHDR) {
             if (channels < 1 || channels > 4) {
-                throw new IllegalArgumentException("Specified channels should be 1..4 but " + channels);
+                throw new IllegalArgumentException("Number of channels should be 1..4 but " + channels);
             }
-            return FORMATS[channels - 1];
+            if (isU16 && isHDR) {
+                throw new IllegalArgumentException();
+            }
+            return FORMATS[(channels - 1) | (isU16 ? 4 : 0) | (isHDR ? 8 : 0)];
         }
     }
 
     /**
-     * Lists supported formats a bitmap can be saved as.
+     * List of supported formats a bitmap can be saved as (encoding or compressing).
      */
     public enum SaveFormat {
         /**
          * Save as the PNG format. PNG is lossless and compressed, and {@code quality}
          * is ignored.
+         * <p>
+         * Only supports 8-bit per channel images ({@link Format#isChannelU8()} is true).
          */
         PNG("*.png") {
             @Override
             public boolean write(@NonNull STBIWriteCallbackI func, int width, int height, @NonNull Format format,
-                                 long data, int quality) {
-                // leave stride as 0, it will use (width * channels)
+                                 long data, int quality) throws IOException {
+                if (!format.isChannelU8()) {
+                    throw new IOException("Only 8-bit per channel images can be saved as "
+                            + this + ", found " + format);
+                }
                 return STBImageWrite.nstbi_write_png_to_func(func.address(),
-                        NULL, width, height, format.channels, data, 0) != 0;
+                        NULL, width, height, format.getChannels(), data, 0) != 0;
             }
         },
 
         /**
-         * Save as the TGA format. TGA is lossless and compressed, and {@code quality}
+         * Save as the TGA format. TGA is lossless and compressed (by default), and {@code quality}
          * is ignored.
+         * <p>
+         * Only supports 8-bit per channel images ({@link Format#isChannelU8()} is true).
          */
-        TGA("*.tga", "*.vda", "*.icb", "*.vst") {
+        TGA("*.tga", "*.icb", "*.vda", "*.vst") {
             @Override
             public boolean write(@NonNull STBIWriteCallbackI func, int width, int height, @NonNull Format format,
-                                 long data, int quality) {
+                                 long data, int quality) throws IOException {
+                if (!format.isChannelU8()) {
+                    throw new IOException("Only 8-bit per channel images can be saved as "
+                            + this + ", found " + format);
+                }
                 return STBImageWrite.nstbi_write_tga_to_func(func.address(),
-                        NULL, width, height, format.channels, data) != 0;
+                        NULL, width, height, format.getChannels(), data) != 0;
             }
         },
 
         /**
          * Save as the BMP format. BMP is lossless but almost uncompressed, so it takes
          * up a lot of space, and {@code quality} is ignored as well.
+         * <p>
+         * Only supports 8-bit per channel images ({@link Format#isChannelU8()} is true).
          */
         BMP("*.bmp", "*.dib") {
             @Override
             public boolean write(@NonNull STBIWriteCallbackI func, int width, int height, @NonNull Format format,
-                                 long data, int quality) {
+                                 long data, int quality) throws IOException {
+                if (!format.isChannelU8()) {
+                    throw new IOException("Only 8-bit per channel images can be saved as "
+                            + this + ", found " + format);
+                }
                 return STBImageWrite.nstbi_write_bmp_to_func(func.address(),
-                        NULL, width, height, format.channels, data) != 0;
+                        NULL, width, height, format.getChannels(), data) != 0;
             }
         },
 
@@ -743,17 +797,63 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
          * Save as the JPEG baseline format. {@code quality} of {@code 1} means
          * compress for the smallest size. {@code 100} means compress for max
          * visual quality. The file extension can be {@code .jpg}.
+         * <p>
+         * Only supports 8-bit per channel images ({@link Format#isChannelU8()} is true).
          */
-        JPEG("*.jpg", "*.jpeg", "*.jpe", "*.jfif", "*.jif") {
+        JPEG("*.jpg", "*.jpeg", "*.jpe", "*.jif", "*.jfif", "*.jfi") {
             @Override
             public boolean write(@NonNull STBIWriteCallbackI func, int width, int height, @NonNull Format format,
-                                 long data, int quality) {
+                                 long data, int quality) throws IOException {
+                if (!format.isChannelU8()) {
+                    throw new IOException("Only 8-bit per channel images can be saved as "
+                            + this + ", found " + format);
+                }
                 return STBImageWrite.nstbi_write_jpg_to_func(func.address(),
-                        NULL, width, height, format.channels, data, quality) != 0;
+                        NULL, width, height, format.getChannels(), data, quality) != 0;
+            }
+        },
+
+        /**
+         * Save as the Radiance RGBE format. RGBE allows pixels to have the dynamic range
+         * and precision of floating-point values, and {@code quality} is ignored.
+         * <p>
+         * Only supports 32-bit per channel images ({@link Format#isChannelHDR()} is true).
+         */
+        HDR("*.hdr") {
+            @Override
+            public boolean write(@NonNull STBIWriteCallbackI func, int width, int height, @NonNull Format format,
+                                 long data, int quality) throws IOException {
+                if (!format.isChannelHDR()) {
+                    throw new IOException("Only 32-bit per channel images can be saved as "
+                            + this + ", found " + format);
+                }
+                return STBImageWrite.nstbi_write_hdr_to_func(func.address(),
+                        NULL, width, height, format.getChannels(), data) != 0;
+            }
+        },
+
+        /**
+         * Save as the raw binary data, this is simply a memory dump.
+         */
+        // this format must be the last enum
+        RAW("*.bin") {
+            @Override
+            public boolean write(@NonNull STBIWriteCallbackI func, int width, int height, @NonNull Format format,
+                                 long data, int quality) throws IOException {
+                func.invoke(NULL, data, width * height * format.getBytesPerPixel());
+                return true;
             }
         };
 
-        private static final SaveFormat[] FORMATS = values();
+        private static final SaveFormat[] OPEN_FORMATS;
+
+        static {
+            SaveFormat[] values = values();
+            // remove the last "raw" format
+            OPEN_FORMATS = Arrays.copyOf(values, values.length - 1);
+        }
+
+        private static final String[] EXTRA_FILTERS = {"*.psd", "*.gif", "*.pic", "*.pnm", "*.pgm", "*.ppm"};
 
         @NonNull
         private final String[] filters;
@@ -767,16 +867,20 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
 
         @NonNull
         public static PointerBuffer getAllFilters(@NonNull MemoryStack stack) {
-            int length = 0;
-            for (SaveFormat format : FORMATS) {
+            int length = EXTRA_FILTERS.length;
+            for (SaveFormat format : OPEN_FORMATS) {
                 length += format.filters.length;
             }
             PointerBuffer buffer = stack.mallocPointer(length);
-            for (SaveFormat format : FORMATS) {
+            for (SaveFormat format : OPEN_FORMATS) {
                 for (String filter : format.filters) {
                     stack.nUTF8(filter, true);
                     buffer.put(stack.getPointerAddress());
                 }
+            }
+            for (String filter : EXTRA_FILTERS) {
+                stack.nUTF8(filter, true);
+                buffer.put(stack.getPointerAddress());
             }
             return buffer.rewind();
         }
@@ -794,7 +898,9 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
          */
         @NonNull
         public static String getAllDescription(@NonNull String header) {
-            return header + " (" + Arrays.stream(FORMATS).flatMap(f -> Arrays.stream(f.filters))
+            return header + " (" + Stream.concat(
+                            Arrays.stream(OPEN_FORMATS).flatMap(f -> Arrays.stream(f.filters)),
+                            Arrays.stream(EXTRA_FILTERS))
                     .sorted().collect(Collectors.joining(";")) + ")";
         }
 
@@ -832,10 +938,11 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
      */
     public static class Ref extends RefCnt {
 
-        private final int mWidth;
-        private final int mHeight;
-        private final long mPixels;
-        private final int mRowStride;
+        final int mWidth;
+        final int mHeight;
+        final long mPixels;
+        // XXX: row stride is always (width * bpp) in Modern UI
+        final int mRowStride;
 
         @NonNull
         private final LongConsumer mFreeFn;
@@ -849,11 +956,6 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
             mPixels = pixels;
             mRowStride = rowStride;
             mFreeFn = freeFn;
-        }
-
-        // used with Bitmap
-        void safeClean() {
-            unref();
         }
 
         @Override
@@ -913,17 +1015,12 @@ public final class Bitmap extends Pixmap implements AutoCloseable {
     // but never called to close
     private static class SafeRef extends Ref implements Runnable {
 
-        private final Cleaner.Cleanable mCleanup;
+        final Cleaner.Cleanable mCleanup;
 
         private SafeRef(@NonNull Bitmap owner, int width, int height,
                         long pixels, int rowStride, @NonNull LongConsumer freeFn) {
             super(width, height, pixels, rowStride, freeFn);
             mCleanup = ModernUI.registerCleanup(owner, this);
-        }
-
-        @Override
-        void safeClean() {
-            mCleanup.clean();
         }
 
         @Override

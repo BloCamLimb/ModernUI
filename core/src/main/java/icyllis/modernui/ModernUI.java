@@ -19,11 +19,8 @@
 package icyllis.modernui;
 
 import icyllis.modernui.annotation.*;
-import icyllis.modernui.core.Window;
 import icyllis.modernui.core.*;
 import icyllis.modernui.fragment.*;
-import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.ImageDrawable;
@@ -265,14 +262,6 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
 
         try {
             FileChannel channel = FileChannel.open(Path.of("F:", "eromanga.png"), StandardOpenOption.READ);
-            {
-                var opts = new BitmapFactory.Options();
-                opts.inJustDecodeBounds = true;
-                BitmapFactory.decodeChannel(channel, opts);
-                LOGGER.info(MARKER, "Decoded image dimensions: {}x{}, format: {}, mimeType: {}",
-                        opts.outWidth, opts.outHeight, opts.outFormat, opts.outMimeType);
-                channel.position(0);
-            }
             GLTextureCompat texture = GLTextureManager.getInstance().create(channel, true);
             Image image = new Image(texture);
             Drawable drawable = new ImageDrawable(image);

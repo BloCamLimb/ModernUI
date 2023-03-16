@@ -98,7 +98,6 @@ public class GLTextureManager {
             var opts = new BitmapFactory.Options();
             opts.inPreferredFormat = Bitmap.Format.RGBA_8888;
             Bitmap bitmap = BitmapFactory.decodeStream(stream, opts);
-            assert bitmap != null;
             createFromBitmap(texture, bitmap, (flags & MIPMAP_MASK) != 0);
         } catch (IOException e) {
             e.printStackTrace();
@@ -121,7 +120,6 @@ public class GLTextureManager {
             var opts = new BitmapFactory.Options();
             opts.inPreferredFormat = Bitmap.Format.RGBA_8888;
             Bitmap bitmap = BitmapFactory.decodeStream(stream, opts);
-            assert bitmap != null;
             createFromBitmap(texture, bitmap, mipmapped);
         } catch (IOException e) {
             e.printStackTrace();
@@ -144,7 +142,6 @@ public class GLTextureManager {
             var opts = new BitmapFactory.Options();
             opts.inPreferredFormat = Bitmap.Format.RGBA_8888;
             Bitmap bitmap = BitmapFactory.decodeChannel(channel, opts);
-            assert bitmap != null;
             createFromBitmap(texture, bitmap, mipmapped);
         } catch (IOException e) {
             e.printStackTrace();
@@ -156,39 +153,16 @@ public class GLTextureManager {
         int width = bitmap.getWidth();
         int height = bitmap.getHeight();
         texture.setDimension(width, height, 1);
-        int rowPixels = bitmap.getRowStride() / bitmap.getChannelCount();
-        if (Core.isOnRenderThread()) {
-            texture.allocate2D(bitmap.getInternalGlFormat(), width, height, mipmapped ? 4 : 0);
+        int rowPixels = bitmap.getRowStride() / bitmap.getChannels();
+        Core.executeOnRenderThread(() -> {
+            texture.allocate2D(GLCore.GL_RGBA8, width, height, mipmapped ? 4 : 0);
             texture.upload(0, 0, 0, width, height, rowPixels,
-                    0, 0, 1, bitmap.getExternalGlFormat(), GLCore.GL_UNSIGNED_BYTE, bitmap.getPixels());
+                    0, 0, 1, GLCore.GL_RGBA, GLCore.GL_UNSIGNED_BYTE, bitmap.getPixels());
             texture.setFilter(true, true);
             if (mipmapped) {
                 texture.generateMipmap();
             }
             bitmap.close();
-        } else {
-            if (mipmapped) {
-                Core.postOnRenderThread(() -> {
-                    int w = bitmap.getWidth();
-                    int h = bitmap.getHeight();
-                    texture.allocate2D(bitmap.getInternalGlFormat(), w, h, 4);
-                    texture.upload(0, 0, 0, w, h, rowPixels,
-                            0, 0, 1, bitmap.getExternalGlFormat(), GLCore.GL_UNSIGNED_BYTE, bitmap.getPixels());
-                    texture.setFilter(true, true);
-                    texture.generateMipmap();
-                    bitmap.close();
-                });
-            } else {
-                Core.postOnRenderThread(() -> {
-                    int w = bitmap.getWidth();
-                    int h = bitmap.getHeight();
-                    texture.allocate2D(bitmap.getInternalGlFormat(), w, h, 0);
-                    texture.upload(0, 0, 0, w, h, rowPixels,
-                            0, 0, 1, bitmap.getExternalGlFormat(), GLCore.GL_UNSIGNED_BYTE, bitmap.getPixels());
-                    texture.setFilter(true, true);
-                    bitmap.close();
-                });
-            }
-        }
+        });
     }
 }

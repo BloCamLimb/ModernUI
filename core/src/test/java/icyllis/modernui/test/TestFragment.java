@@ -20,7 +20,10 @@ package icyllis.modernui.test;
 
 import com.ibm.icu.text.CompactDecimalFormat;
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.fragment.Fragment;
+import icyllis.modernui.fragment.FragmentContainerView;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.text.TextUtils;
@@ -33,10 +36,9 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.config.Configurator;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.file.Path;
 import java.util.Locale;
 
 import static icyllis.modernui.view.View.dp;
@@ -86,23 +88,25 @@ public class TestFragment extends Fragment {
                 """;
     }
 
+    @Override
+    public void onCreate(@Nullable DataSet savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        getChildFragmentManager().beginTransaction()
+                .replace(660, new FragmentA(), null)
+                .commit();
+    }
+
     @Nullable
     @Override
     public View onCreateView(@Nullable ViewGroup container, @Nullable DataSet savedInstanceState) {
-        ScrollView base = new ScrollView();
-
-        {
-            LinearLayout content = new TestLinearLayout();
-            content.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-            var params = new FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
-            base.addView(content, params);
-        }
+        var base = new FragmentContainerView();
+        base.setId(660);
 
         base.setBackground(new Drawable() {
             //long lastTime = AnimationHandler.currentTimeMillis();
 
             @Override
-            public void draw(@Nonnull Canvas canvas) {
+            public void draw(@NonNull Canvas canvas) {
                 Paint paint = Paint.get();
                 Rect b = getBounds();
                 paint.setRGBA(8, 8, 8, 80);
@@ -129,10 +133,52 @@ public class TestFragment extends Fragment {
         return base;
     }
 
+    public static class FragmentA extends Fragment {
+        @Nullable
+        @Override
+        public View onCreateView(@Nullable ViewGroup container,
+                                 @Nullable DataSet savedInstanceState) {
+            LinearLayout content = new TestLinearLayout();
+            content.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+            content.setLayoutParams(new FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
+
+            content.setOnKeyListener((v, keyCode, event) -> {
+                if (keyCode == KeyEvent.KEY_E && event.getAction() == KeyEvent.ACTION_UP) {
+                    getParentFragmentManager().beginTransaction()
+                            .replace(getId(), new FragmentB())
+                            .commit();
+                    return true;
+                }
+                return false;
+            });
+
+            LOGGER.info("FragmentA onCreateView(), id={}", getId());
+
+            return content;
+        }
+    }
+
+    public static class FragmentB extends Fragment {
+        @Nullable
+        @Override
+        public View onCreateView(@Nullable ViewGroup container,
+                                 @Nullable DataSet savedInstanceState) {
+            var tv = new TextView();
+            tv.setText("My name is Van, I'm an arist, a performance artist.");
+            return tv;
+        }
+
+        @Override
+        public void onDestroy() {
+            super.onDestroy();
+            LOGGER.info("FragmentB onDestroy()");
+        }
+    }
+
     private static class TestView extends View {
 
         @Override
-        protected void onDraw(@Nonnull Canvas canvas) {
+        protected void onDraw(@NonNull Canvas canvas) {
             //canvas.drawRing(100, 20, 5, 8);
             // 3
 
