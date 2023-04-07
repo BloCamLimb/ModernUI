@@ -18,6 +18,7 @@
 
 package icyllis.modernui;
 
+import icyllis.modernui.akashi.opengl.*;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.*;
 import icyllis.modernui.fragment.*;
@@ -25,7 +26,6 @@ import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.ImageDrawable;
 import icyllis.modernui.graphics.font.FontFamily;
-import icyllis.modernui.graphics.opengl.*;
 import icyllis.modernui.lifecycle.*;
 import icyllis.modernui.text.Typeface;
 import icyllis.modernui.view.*;
@@ -44,7 +44,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
 
-import static icyllis.modernui.graphics.opengl.GLCore.*;
+import static icyllis.modernui.akashi.opengl.GLCore.*;
 import static org.lwjgl.glfw.GLFW.*;
 
 /**

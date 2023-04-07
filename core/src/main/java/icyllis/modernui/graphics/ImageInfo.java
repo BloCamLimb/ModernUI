@@ -19,7 +19,7 @@
 package icyllis.modernui.graphics;
 
 import icyllis.modernui.annotation.Size;
-import icyllis.modernui.graphics.engine.Engine;
+import icyllis.modernui.akashi.Engine;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
 

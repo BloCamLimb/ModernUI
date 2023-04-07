@@ -46,5 +46,17 @@ public class TestImageConversion {
                 e.printStackTrace();
             }
         }
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        System.gc();
+        System.out.println("GCed");
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

@@ -18,14 +18,14 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.graphics.engine.*;
-import icyllis.modernui.graphics.vulkan.VkCore;
-import icyllis.modernui.graphics.vulkan.VkImageInfo;
+import icyllis.modernui.akashi.*;
+import icyllis.modernui.akashi.vulkan.VkCore;
+import icyllis.modernui.akashi.vulkan.VkImageInfo;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nullable;
 
-import static icyllis.modernui.graphics.engine.Engine.*;
+import static icyllis.modernui.akashi.Engine.BackendApi;
 
 /**
  * A surface characterization contains all the information Engine requires to make its internal

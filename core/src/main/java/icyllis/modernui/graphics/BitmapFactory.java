@@ -706,7 +706,7 @@ public final class BitmapFactory {
             // XXX: row stride is always (width * bpp) in STB
             Bitmap bitmap = new Bitmap(format,
                     ImageInfo.make(width, height, format.getColorType(), at, cs),
-                    address, width * format.getChannels(), STBImage::nstbi_image_free);
+                    address, width * format.getBytesPerPixel(), STBImage::nstbi_image_free);
             bitmap.setImmutable();
             return bitmap;
         }
