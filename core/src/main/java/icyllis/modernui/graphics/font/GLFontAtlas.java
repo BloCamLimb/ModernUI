@@ -22,14 +22,14 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.Bitmap;
-import icyllis.modernui.graphics.opengl.GLTextureCompat;
+import icyllis.modernui.akashi.opengl.GLTextureCompat;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
 import java.io.IOException;
 import java.nio.file.Path;
 
-import static icyllis.modernui.graphics.opengl.GLCore.*;
+import static icyllis.modernui.akashi.opengl.GLCore.*;
 
 /**
  * Maintains a font texture atlas, which is specified with a font size. In this way,

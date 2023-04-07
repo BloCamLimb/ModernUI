@@ -23,8 +23,9 @@ import com.ibm.icu.text.SimpleDateFormat;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Core;
-import icyllis.modernui.graphics.opengl.GLFramebufferCompat;
-import icyllis.modernui.graphics.opengl.GLTextureCompat;
+import icyllis.modernui.core.RefCnt;
+import icyllis.modernui.akashi.opengl.GLFramebufferCompat;
+import icyllis.modernui.akashi.opengl.GLTextureCompat;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.stb.*;
 import org.lwjgl.system.MemoryStack;
@@ -42,7 +43,7 @@ import java.util.function.LongConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static icyllis.modernui.graphics.opengl.GLCore.*;
+import static icyllis.modernui.akashi.opengl.GLCore.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
 /**
@@ -50,6 +51,9 @@ import static org.lwjgl.system.MemoryUtil.*;
  * This is used for CPU side operations, such as decoding or encoding. It is
  * generally uploaded to GPU side {@link Image} for drawing on the screen,
  * or downloaded from GPU side {@link Image} for encoding to streams.
+ * <p>
+ * This class is not thread safe, but memory safe. Though it's recommended
+ * to call {@link #close()} by user, or via a try-with-resource block.
  *
  * @see BitmapFactory
  */
@@ -63,7 +67,7 @@ public final class Bitmap implements AutoCloseable {
     @NonNull
     private final ImageInfo mInfo;
 
-    private SafeRef mRef;
+    private volatile SafeRef mRef;
 
     Bitmap(@NonNull Format format, @NonNull ImageInfo info, long addr, int rowStride,
            @NonNull LongConsumer freeFn) {
@@ -77,7 +81,7 @@ public final class Bitmap implements AutoCloseable {
      *
      * @param width  width in pixels, ranged from 1 to 32767
      * @param height height in pixels, ranged from 1 to 32767
-     * @param format number of channels and bpp
+     * @param format the number of channels and the bit depth
      * @throws IllegalArgumentException width or height out of range, or allocation size >= 2GB
      * @throws OutOfMemoryError         out of off-heap memory
      */
@@ -99,9 +103,19 @@ public final class Bitmap implements AutoCloseable {
             throw new IllegalArgumentException("Image allocation size " + size
                     + " must be less than or equal to 2^31-1 bytes");
         }
-        final long address = nmemCalloc(size, 1);
+        long address = nmemCalloc(size, 1);
         if (address == NULL) {
-            throw new OutOfMemoryError("Failed to allocate " + size + " bytes");
+            // execute ref.Cleaner
+            System.gc();
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            address = nmemCalloc(size, 1);
+            if (address == NULL) {
+                throw new OutOfMemoryError("Failed to allocate " + size + " bytes");
+            }
         }
         ColorSpace cs = format.isChannelHDR()
                 ? ColorSpace.get(ColorSpace.Named.LINEAR_EXTENDED_SRGB)
@@ -315,6 +329,7 @@ public final class Bitmap implements AutoCloseable {
 
     /**
      * The base address of {@code unsigned char *pixels} in native.
+     * The address is valid until bitmap closed.
      *
      * @return the pointer of pixel data, or NULL if released
      */
@@ -464,20 +479,21 @@ public final class Bitmap implements AutoCloseable {
 
     /**
      * The ref of current pixel data, which may be shared across instances.
-     * Calling this method won't affect the ref cnt.
+     * Calling this method won't affect the ref cnt. Every bitmap object
+     * ref the {@link Ref} on create, and unref on {@link #close()}.
      * <p>
      * This method is <b>UNSAFE</b>, use with caution!
      *
      * @return the ref of pixel data, or null if released
      */
-    @SharedPtr
     public Ref getRef() {
         return mRef;
     }
 
     /**
      * Save this bitmap to specified path as specified format. This will
-     * open a save dialog to select the path.
+     * open a save dialog to select the path, block the current thread until
+     * the encoding is done.
      *
      * @param format  the format of the saved image
      * @param quality the compress quality, 0-100, only work for JPEG format.
@@ -606,14 +622,14 @@ public final class Bitmap implements AutoCloseable {
      * Clear the reference to the pixel data. The bitmap is marked as "dead",
      * and then it is an error to try to access its pixels.
      * <p>
-     * Note: Even you forgot to call this, the system will clean the underlying pixels
-     * when the bitmap object becomes <em>phantom-reachable</em>. But this will have an
-     * impact on performance, since JVM doesn't think a bitmap is heavy on the heap,
-     * it will take a long time to perform an automatic garbage collect.
+     * Even a bitmap is not closed by user, the system will free the native
+     * allocation when the bitmap object becomes phantom-reachable. However,
+     * it tends to take a very long time to perform automatic cleanup.
      */
     @Override
     public void close() {
         if (mRef != null) {
+            // Cleaner is synchronized
             mRef.mCleanup.clean();
             mRef = null;
         }
@@ -633,9 +649,9 @@ public final class Bitmap implements AutoCloseable {
     @Override
     public String toString() {
         return "Bitmap{" +
-                "format=" + mFormat +
-                ", info=" + mInfo +
-                ", ref=" + mRef +
+                "mFormat=" + mFormat +
+                ", mInfo=" + mInfo +
+                ", mRef=" + mRef +
                 '}';
     }
 
@@ -853,6 +869,7 @@ public final class Bitmap implements AutoCloseable {
             OPEN_FORMATS = Arrays.copyOf(values, values.length - 1);
         }
 
+        // read only formats
         private static final String[] EXTRA_FILTERS = {"*.psd", "*.gif", "*.pic", "*.pnm", "*.pgm", "*.ppm"};
 
         @NonNull
@@ -936,7 +953,7 @@ public final class Bitmap implements AutoCloseable {
      * <p>
      * This class is <b>UNSAFE</b>, use with caution!
      */
-    public static class Ref extends RefCnt {
+    public static sealed class Ref extends RefCnt {
 
         final int mWidth;
         final int mHeight;
@@ -959,7 +976,7 @@ public final class Bitmap implements AutoCloseable {
         }
 
         @Override
-        protected void dispose() {
+        protected void deallocate() {
             mFreeFn.accept(mPixels);
         }
 
@@ -1002,18 +1019,18 @@ public final class Bitmap implements AutoCloseable {
         @NonNull
         @Override
         public String toString() {
-            return "PixelRef{" +
-                    "address=0x" + Long.toHexString(mPixels) +
-                    ", dimensions=" + mWidth + "x" + mHeight +
-                    ", rowStride=" + mRowStride +
-                    ", immutable=" + mImmutable +
+            return "PixelsRef{" +
+                    "mAddress=0x" + Long.toHexString(mPixels) +
+                    ", mDimensions=" + mWidth + "x" + mHeight +
+                    ", mRowStride=" + mRowStride +
+                    ", mImmutable=" + mImmutable +
                     '}';
         }
     }
 
     // this ensures unref being called when Bitmap become phantom-reachable
     // but never called to close
-    private static class SafeRef extends Ref implements Runnable {
+    private static final class SafeRef extends Ref implements Runnable {
 
         final Cleaner.Cleanable mCleanup;
 

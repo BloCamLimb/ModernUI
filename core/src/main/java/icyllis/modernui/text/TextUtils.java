@@ -71,7 +71,7 @@ public final class TextUtils {
     }
 
     public static void recycle(@NonNull char[] temp) {
-        if (temp.length > 1000)
+        if (temp.length > 2048)
             return;
 
         synchronized (sLock) {
@@ -611,50 +611,40 @@ public final class TextUtils {
     }
 
     /**
-     * Fix all invalid surrogate pairs for the given UTF-16 string.
+     * Replace all invalid surrogate pairs with 'U+FFFD' for the given UTF-16 string.
+     * Return the given string as-is if it was validated, or a new string.
      */
     @NonNull
     public static String validateSurrogatePairs(@NonNull String text) {
         final int n = text.length();
-        if (n <= 1000) {
-            char c1, c2;
-            final char[] b = obtain(n);
-            for (int i = 0; i < n; ) {
-                c1 = text.charAt(i);
-                if (Character.isHighSurrogate(c1) && i + 1 < n) {
-                    c2 = text.charAt(i + 1);
-                    if (Character.isLowSurrogate(c2)) {
-                        b[i++] = c1;
-                        b[i++] = c2;
-                    } else {
-                        b[i++] = '\uFFFD';
-                    }
-                } else {
-                    b[i++] = Character.isSurrogate(c1) ? '\uFFFD' : c1;
-                }
-            }
-            text = new String(b, 0, n);
-            recycle(b);
-            return text;
-        } else {
-            char c1, c2;
-            final StringBuilder b = new StringBuilder(n);
-            for (int i = 0; i < n; i++) {
-                c1 = text.charAt(i);
-                if (Character.isHighSurrogate(c1) && i + 1 < n) {
-                    c2 = text.charAt(i + 1);
-                    if (Character.isLowSurrogate(c2)) {
+        StringBuilder b = null; // lazy init
+        char c1, c2;
+        for (int i = 0; i < n; i++) {
+            c1 = text.charAt(i);
+            if (Character.isHighSurrogate(c1) && i + 1 < n) {
+                c2 = text.charAt(i + 1);
+                if (Character.isLowSurrogate(c2)) {
+                    if (b != null)
                         b.append(c1).append(c2);
-                        i++;
-                    } else {
-                        b.append('\uFFFD');
-                    }
+                    i++;
                 } else {
-                    b.append(Character.isSurrogate(c1) ? '\uFFFD' : c1);
+                    if (b == null) {
+                        b = new StringBuilder(n);
+                        b.append(text, 0, i);
+                    }
+                    b.append('\uFFFD');
                 }
+            } else if (Character.isSurrogate(c1)) {
+                if (b == null) {
+                    b = new StringBuilder(n);
+                    b.append(text, 0, i);
+                }
+                b.append('\uFFFD');
+            } else if (b != null) {
+                b.append(c1);
             }
-            return b.toString();
         }
+        return b != null ? b.toString() : text;
     }
 
     /**
@@ -669,9 +659,11 @@ public final class TextUtils {
      * @since 3.7
      */
     public static int distance(@NonNull CharSequence a, @NonNull CharSequence b) {
+        // fast path for reference equality
         if (a == b)
             return 0;
         int m = a.length(), n = b.length();
+        // fast path for either of the two is zero-length
         if (m == 0 || n == 0)
             return m | n;
         return m < n

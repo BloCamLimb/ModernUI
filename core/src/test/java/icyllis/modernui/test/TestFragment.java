@@ -33,16 +33,13 @@ import icyllis.modernui.view.*;
 import icyllis.modernui.view.ViewGroup.LayoutParams;
 import icyllis.modernui.widget.*;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.config.Configurator;
 
-import java.io.IOException;
 import java.math.BigDecimal;
-import java.nio.file.Path;
 import java.util.Locale;
 
-import static icyllis.modernui.view.View.dp;
 import static icyllis.modernui.ModernUI.LOGGER;
+import static icyllis.modernui.view.View.dp;
 
 public class TestFragment extends Fragment {
 
@@ -54,10 +51,11 @@ public class TestFragment extends Fragment {
                 Integer.toHexString(complex),
                 TypedValue.complexToFloat(complex));
         CompactDecimalFormat format = CompactDecimalFormat.getInstance(
-                new Locale("ar"), CompactDecimalFormat.CompactStyle.SHORT);
+                new Locale("zh"), CompactDecimalFormat.CompactStyle.SHORT);
         format.setMaximumFractionDigits(2);
         LOGGER.info(format.format(new BigDecimal("2136541565.615")));
-        LOGGER.info("Levenshtein distance: {}", TextUtils.distance( "sunday", "saturday"));
+        LOGGER.info("Levenshtein distance: {}", TextUtils.distance("sunday", "saturday"));
+
         try (ModernUI app = new ModernUI()) {
             app.run(new TestFragment());
         }
@@ -86,6 +84,14 @@ public class TestFragment extends Fragment {
                     }
                 }
                 """;
+    }
+
+    @Override
+    public void onAttach() {
+        super.onAttach();
+        getParentFragmentManager().beginTransaction()
+                .setPrimaryNavigationFragment(this)
+                .commit();
     }
 
     @Override
@@ -146,6 +152,8 @@ public class TestFragment extends Fragment {
                 if (keyCode == KeyEvent.KEY_E && event.getAction() == KeyEvent.ACTION_UP) {
                     getParentFragmentManager().beginTransaction()
                             .replace(getId(), new FragmentB())
+                            .addToBackStack(null)
+                            .setReorderingAllowed(true)
                             .commit();
                     return true;
                 }

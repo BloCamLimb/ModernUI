@@ -18,9 +18,9 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.graphics.engine.RecordingContext;
-import icyllis.modernui.graphics.engine.SurfaceProxyView;
-import icyllis.modernui.graphics.opengl.*;
+import icyllis.modernui.akashi.RecordingContext;
+import icyllis.modernui.akashi.SurfaceProxyView;
+import icyllis.modernui.akashi.opengl.*;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
@@ -53,7 +53,8 @@ public final class Image {
     @ApiStatus.Experimental
     public Image(@Nonnull GLTextureCompat texture) {
         mTexture = texture;
-        mInfo = ImageInfo.make(texture.getWidth(), texture.getHeight(), 0, 0, null);
+        mInfo = ImageInfo.make(texture.getWidth(), texture.getHeight(),
+                ImageInfo.CT_UNKNOWN, ImageInfo.AT_UNKNOWN, null);
     }
 
     /**
@@ -104,9 +105,14 @@ public final class Image {
      *
      * @return OpenGL texture
      */
-    @ApiStatus.Experimental
+    @Deprecated
     @Nonnull
     public GLTextureCompat getTexture() {
         return mTexture;
+    }
+
+    @ApiStatus.Internal
+    public SurfaceProxyView asTextureView() {
+        return mView;
     }
 }
