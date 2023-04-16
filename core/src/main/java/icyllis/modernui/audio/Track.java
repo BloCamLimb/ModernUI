@@ -18,6 +18,7 @@
 
 package icyllis.modernui.audio;
 
+import org.lwjgl.openal.AL10;
 import org.lwjgl.openal.EXTFloat32;
 import org.lwjgl.system.MemoryUtil;
 
@@ -25,10 +26,12 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.FloatBuffer;
+import java.nio.ShortBuffer;
 import java.util.Arrays;
 import java.util.function.Consumer;
 
 import static org.lwjgl.openal.AL11.*;
+import static org.lwjgl.openal.SOFTDirectChannels.AL_DIRECT_CHANNELS_SOFT;
 
 public class Track implements AutoCloseable {
 
@@ -49,6 +52,7 @@ public class Track implements AutoCloseable {
         alSourcef(mSource, AL_GAIN, 0.75f);
         forward(2);
         AudioManager.getInstance().addTrack(this);
+        alSourcei(mSource, AL_DIRECT_CHANNELS_SOFT, AL_TRUE);
     }
 
     public void play() {
@@ -61,6 +65,10 @@ public class Track implements AutoCloseable {
         if (mSource != 0) {
             alSourcePause(mSource);
         }
+    }
+
+    public void setPosition(float x, float y, float z) {
+        alSourcefv(mSource, AL_POSITION, new float[]{x, y, z});
     }
 
     public float getTime() {
@@ -111,7 +119,7 @@ public class Track implements AutoCloseable {
                     buffer.position(0);
                 }
                 while (buffer == null || buffer.position() < targetSamples) {
-                    FloatBuffer ret = mSample.decodeFrame(buffer);
+                    var ret = mSample.decodeFrame(buffer);
                     if (ret == null) {
                         break;
                     }

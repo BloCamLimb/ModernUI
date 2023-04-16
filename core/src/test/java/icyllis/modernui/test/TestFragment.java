@@ -20,10 +20,11 @@ package icyllis.modernui.test;
 
 import com.ibm.icu.text.CompactDecimalFormat;
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.animation.AnimationUtils;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.audio.*;
 import icyllis.modernui.fragment.Fragment;
-import icyllis.modernui.fragment.FragmentContainerView;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.text.TextUtils;
@@ -35,13 +36,19 @@ import icyllis.modernui.widget.*;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
 
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.channels.FileChannel;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.Locale;
 
 import static icyllis.modernui.ModernUI.LOGGER;
 import static icyllis.modernui.view.View.dp;
 
 public class TestFragment extends Fragment {
+
+    public static SpectrumGraph sSpectrumGraph;
 
     public static void main(String[] args) {
         System.setProperty("java.awt.headless", "true");
@@ -55,6 +62,17 @@ public class TestFragment extends Fragment {
         format.setMaximumFractionDigits(2);
         LOGGER.info(format.format(new BigDecimal("2136541565.615")));
         LOGGER.info("Levenshtein distance: {}", TextUtils.distance("sunday", "saturday"));
+
+        try {
+            FileChannel channel = FileChannel.open(Path.of("F:/粉骨砕身カジノゥ (long ver.).ogg"), StandardOpenOption.READ);
+            OggDecoder decoder = new OggDecoder(channel);
+            AudioManager.getInstance().initialize();
+            Track track = new Track(decoder);
+            sSpectrumGraph = new SpectrumGraph(track, true, 400);
+            track.play();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         try (ModernUI app = new ModernUI()) {
             app.run(new TestFragment());
@@ -105,11 +123,11 @@ public class TestFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@Nullable ViewGroup container, @Nullable DataSet savedInstanceState) {
-        var base = new FragmentContainerView();
+        var base = new ScrollView();
         base.setId(660);
 
         base.setBackground(new Drawable() {
-            //long lastTime = AnimationHandler.currentTimeMillis();
+            long lastTime = AnimationUtils.currentAnimationTimeMillis();
 
             @Override
             public void draw(@NonNull Canvas canvas) {
@@ -118,16 +136,15 @@ public class TestFragment extends Fragment {
                 paint.setRGBA(8, 8, 8, 80);
                 canvas.drawRoundRect(b.left, b.top, b.right, b.bottom, 8, paint);
 
-                /*SpectrumGraph graph = TestMain.sGraph;
-                long time = AnimationHandler.currentTimeMillis();
+                SpectrumGraph graph = sSpectrumGraph;
+                long time = AnimationUtils.currentAnimationTimeMillis();
                 long delta = time - lastTime;
                 lastTime = time;
                 if (graph != null) {
-                    float playTime = TestMain.sTrack.getTime();
                     graph.update(delta);
                     graph.draw(canvas, getBounds().centerX(), getBounds().centerY());
                     invalidateSelf();
-                }*/
+                }
             }
         });
         {
@@ -135,7 +152,7 @@ public class TestFragment extends Fragment {
             params.gravity = Gravity.CENTER;
             base.setLayoutParams(params);
         }
-        base.setRotation(30);
+        //base.setRotation(30);
         return base;
     }
 

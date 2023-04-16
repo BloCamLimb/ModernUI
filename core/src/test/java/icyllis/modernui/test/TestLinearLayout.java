@@ -20,6 +20,7 @@ package icyllis.modernui.test;
 
 import icyllis.modernui.R;
 import icyllis.modernui.animation.*;
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.font.FontFamily;
@@ -36,6 +37,8 @@ import icyllis.modernui.widget.*;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -57,6 +60,32 @@ public class TestLinearLayout extends LinearLayout {
     private final Animation iconRadiusAni;
     private final Animation arcStartAni;
     private final Animation arcEndAni;*/
+
+    private static FloatBuffer sLinePoints = FloatBuffer.allocate(16);
+    private static IntBuffer sLineColors = IntBuffer.allocate(8);
+
+    static {
+        sLinePoints
+                .put(100).put(100)
+                .put(110).put(200)
+                .put(120).put(100)
+                .put(130).put(300)
+                .put(140).put(100)
+                .put(150).put(400)
+                .put(160).put(100)
+                .put(170).put(500)
+                .flip();
+        sLineColors
+                .put(0xAAFF0000)
+                .put(0xFFFF00FF)
+                .put(0xAA0000FF)
+                .put(0xFF00FF00)
+                .put(0xAA00FFFF)
+                .put(0xFF00FF00)
+                .put(0xAAFFFF00)
+                .put(0xFFFFFFFF)
+                .flip();
+    }
 
     private final Animator mRoundRectLenAnim;
     //private final Animation roundRectAlphaAni;
@@ -166,9 +195,20 @@ public class TestLinearLayout extends LinearLayout {
         tv.setTextAlignment(TEXT_ALIGNMENT_GRAVITY);
 
         mTextView = tv;
-        /*setRotationY(-30);
-        setRotationX(45);
-        setRotation(60);*/
+        //setRotationY(-30);
+        //setRotationX(30);
+
+        ObjectAnimator anim;
+        {
+            var pvh1 = PropertyValuesHolder.ofFloat(ROTATION, 0, 2880);
+            var pvh2 = PropertyValuesHolder.ofFloat(ROTATION_Y, 0, 720);
+            var pvh3 = PropertyValuesHolder.ofFloat(ROTATION_X, 0, 1440);
+            anim = ObjectAnimator.ofPropertyValuesHolder(this, pvh1, pvh2, pvh3);
+            anim.setDuration(9000);
+            anim.setInterpolator(TimeInterpolator.ACCELERATE_DECELERATE);
+            //anim.setRepeatCount(ValueAnimator.INFINITE);
+            //anim.start();
+        }
 
         for (int i = 0; i < 11; i++) {
             View v;
@@ -192,6 +232,7 @@ public class TestLinearLayout extends LinearLayout {
                         mPopupWindow.dismiss();
                     }*/
                 });
+                switchButton.setChecked(true);
                 p = new LinearLayout.LayoutParams(dp(100), dp(36));
             } else if (i == 2) {
                 continue;
@@ -339,7 +380,7 @@ public class TestLinearLayout extends LinearLayout {
                         .setInterpolator(TimeInterpolator.ACCELERATE)
                 );*/
 
-        ObjectAnimator anim = ObjectAnimator.ofFloat(this, sRoundRectLengthProp, 0, 80);
+        anim = ObjectAnimator.ofFloat(this, sRoundRectLengthProp, 0, 80);
         anim.setDuration(400);
         anim.setInterpolator(TimeInterpolator.OVERSHOOT);
         anim.addUpdateListener(a -> invalidate());
@@ -398,7 +439,7 @@ public class TestLinearLayout extends LinearLayout {
         canvas.restore();*/
 
         Paint paint = Paint.get();
-        paint.setAlpha(192);
+        paint.setRGB(139, 232, 140);
         paint.setStyle(Paint.FILL);
         canvas.drawRoundRect(6, 90, 46, 104, 7, paint);
 
@@ -412,9 +453,14 @@ public class TestLinearLayout extends LinearLayout {
         canvas.drawRect(6, 126, 86, 156, paint);
         canvas.restore();
 
+        canvas.drawMesh(Canvas.VertexMode.LINE_STRIP, sLinePoints, sLineColors, null, null, null, paint);
+
         //canvas.drawRoundImage(ICON, 6, 160, 166, 320, iconRadius, paint);
 
         paint.setStyle(Paint.STROKE);
+        canvas.drawPie(100, 200, 50, 60, 120, paint);
+        float s1 = (float) Math.sin(AnimationUtils.currentAnimationTimeMillis() / 300D);
+        canvas.drawPie(350, 94, 55, 180 + 20 * s1, 100 + 50 * s1 * s1, paint);
         paint.setSmoothRadius(20.0f);
         paint.setStrokeWidth(40.0f);
         //canvas.drawArc(80, 400, 60, arcStart, arcStart - arcEnd, paint);

@@ -20,7 +20,7 @@ package icyllis.modernui.akashi.opengl;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.akashi.shading.UniformHandler;
-import icyllis.modernui.annotation.RenderThread;
+import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.font.*;
@@ -31,8 +31,6 @@ import it.unimi.dsi.fastutil.ints.*;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.system.MemoryUtil;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.lang.annotation.Native;
 import java.nio.*;
@@ -119,11 +117,13 @@ public final class GLSurfaceCanvas extends GLCanvas {
     public static final GLProgram ALPHA_TEX = new GLProgram();
     public static final GLProgram COLOR_TEX_MS = new GLProgram();
     public static final GLProgram GLOW_WAVE = new GLProgram();
+    public static final GLProgram PIE_FILL = new GLProgram();
+    public static final GLProgram PIE_STROKE = new GLProgram();
 
     /**
      * Recording draw operations (sequential)
      */
-    public static final byte DRAW_TRIANGLE = 0;
+    public static final byte DRAW_PRIM = 0;
     public static final byte DRAW_RECT = 1;
     public static final byte DRAW_IMAGE = 2;
     public static final byte DRAW_ROUND_RECT_FILL = 3;
@@ -144,6 +144,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
     public static final byte DRAW_LAYER_POP = 18;
     public static final byte DRAW_CUSTOM = 19;
     public static final byte DRAW_GLOW_WAVE = 20;
+    public static final byte DRAW_PIE_FILL = 21;
+    public static final byte DRAW_PIE_STROKE = 22;
 
     /**
      * Uniform block sizes (maximum), use std140 layout
@@ -174,6 +176,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
 
     // recorded operations
     private final ByteArrayList mDrawOps = new ByteArrayList();
+    private final IntArrayList mDrawPrims = new IntArrayList();
 
     // vertex buffer objects
     private final GLBufferCompat mPosColorVBO = new GLBufferCompat();
@@ -325,24 +328,26 @@ public final class GLSurfaceCanvas extends GLCanvas {
         return sInstance;
     }
 
-    private static void onLoadShaders(@Nonnull GLShaderManager manager) {
-        int posColor = manager.getShard(ModernUI.ID, "pos_color.vert");
-        int posColorTex = manager.getShard(ModernUI.ID, "pos_color_tex.vert");
-        int posTex = manager.getShard(ModernUI.ID, "pos_tex.vert");
+    private static void onLoadShaders(@NonNull GLShaderManager manager) {
+        int posColor = manager.getStage(ModernUI.ID, "pos_color.vert");
+        int posColorTex = manager.getStage(ModernUI.ID, "pos_color_tex.vert");
+        int posTex = manager.getStage(ModernUI.ID, "pos_tex.vert");
 
-        int colorFill = manager.getShard(ModernUI.ID, "color_fill.frag");
-        int colorTex = manager.getShard(ModernUI.ID, "color_tex.frag");
-        int roundRectFill = manager.getShard(ModernUI.ID, "round_rect_fill.frag");
-        int roundRectTex = manager.getShard(ModernUI.ID, "round_rect_tex.frag");
-        int roundRectStroke = manager.getShard(ModernUI.ID, "round_rect_stroke.frag");
-        int circleFill = manager.getShard(ModernUI.ID, "circle_fill.frag");
-        int circleStroke = manager.getShard(ModernUI.ID, "circle_stroke.frag");
-        int arcFill = manager.getShard(ModernUI.ID, "arc_fill.frag");
-        int arcStroke = manager.getShard(ModernUI.ID, "arc_stroke.frag");
-        int quadBezier = manager.getShard(ModernUI.ID, "quadratic_bezier.frag");
-        int alphaTex = manager.getShard(ModernUI.ID, "alpha_tex.frag");
-        int colorTexMs = manager.getShard(ModernUI.ID, "color_tex_4x.frag");
-        int glowWave = manager.getShard(ModernUI.ID, "glow_wave.frag");
+        int colorFill = manager.getStage(ModernUI.ID, "color_fill.frag");
+        int colorTex = manager.getStage(ModernUI.ID, "color_tex.frag");
+        int roundRectFill = manager.getStage(ModernUI.ID, "round_rect_fill.frag");
+        int roundRectTex = manager.getStage(ModernUI.ID, "round_rect_tex.frag");
+        int roundRectStroke = manager.getStage(ModernUI.ID, "round_rect_stroke.frag");
+        int circleFill = manager.getStage(ModernUI.ID, "circle_fill.frag");
+        int circleStroke = manager.getStage(ModernUI.ID, "circle_stroke.frag");
+        int arcFill = manager.getStage(ModernUI.ID, "arc_fill.frag");
+        int arcStroke = manager.getStage(ModernUI.ID, "arc_stroke.frag");
+        int quadBezier = manager.getStage(ModernUI.ID, "quadratic_bezier.frag");
+        int alphaTex = manager.getStage(ModernUI.ID, "alpha_tex.frag");
+        int colorTexMs = manager.getStage(ModernUI.ID, "color_tex_4x.frag");
+        int glowWave = manager.getStage(ModernUI.ID, "glow_wave.frag");
+        int pieFill = manager.getStage(ModernUI.ID, "pie_fill.frag");
+        int pieStroke = manager.getStage(ModernUI.ID, "pie_stroke.frag");
 
         manager.create(COLOR_FILL, posColor, colorFill);
         manager.create(COLOR_TEX, posColorTex, colorTex);
@@ -357,6 +362,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
         manager.create(ALPHA_TEX, posTex, alphaTex);
         manager.create(COLOR_TEX_MS, posColorTex, colorTexMs);
         manager.create(GLOW_WAVE, posColor, glowWave);
+        manager.create(PIE_FILL, posColor, pieFill);
+        manager.create(PIE_STROKE, posColor, pieStroke);
 
         ModernUI.LOGGER.info(MARKER, "Loaded OpenGL canvas shaders");
     }
@@ -374,11 +381,11 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     @RenderThread
-    public void setProjection(@Nonnull Matrix4 projection) {
+    public void setProjection(@NonNull Matrix4 projection) {
         projection.store(mProjectionUpload.clear());
     }
 
-    @Nonnull
+    @NonNull
     @RenderThread
     public FloatBuffer getProjection() {
         return mProjectionUpload.rewind();
@@ -461,6 +468,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         int posColorIndex = 0;
         // preserve two triangles
         int posColorTexIndex = 4;
+        int primIndex = 0;
         int clipIndex = 0;
         int textIndex = 0;
         // layer alphas
@@ -470,11 +478,13 @@ public final class GLSurfaceCanvas extends GLCanvas {
 
         for (int op : mDrawOps) {
             switch (op) {
-                case DRAW_TRIANGLE -> {
+                case DRAW_PRIM -> {
                     bindVertexArray(POS_COLOR.getVertexArray());
                     useProgram(COLOR_FILL.get());
-                    glDrawArrays(GL_TRIANGLES, posColorIndex, 3);
-                    posColorIndex += 3;
+                    int prim = mDrawPrims.getInt(primIndex++);
+                    int n = prim & 0xFFFF;
+                    glDrawArrays(prim >> 16, posColorIndex, n);
+                    posColorIndex += n;
                 }
                 case DRAW_RECT -> {
                     bindVertexArray(POS_COLOR.getVertexArray());
@@ -561,6 +571,22 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     useProgram(BEZIER_CURVE.get());
                     mBezierUBO.upload(0, 28, uniformDataPtr);
                     uniformDataPtr += 28;
+                    glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
+                    posColorIndex += 4;
+                }
+                case DRAW_PIE_FILL -> {
+                    bindVertexArray(POS_COLOR.getVertexArray());
+                    useProgram(PIE_FILL.get());
+                    mArcUBO.upload(0, 20, uniformDataPtr);
+                    uniformDataPtr += 20;
+                    glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
+                    posColorIndex += 4;
+                }
+                case DRAW_PIE_STROKE -> {
+                    bindVertexArray(POS_COLOR.getVertexArray());
+                    useProgram(PIE_STROKE.get());
+                    mArcUBO.upload(0, 24, uniformDataPtr);
+                    uniformDataPtr += 24;
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
                     posColorIndex += 4;
                 }
@@ -694,6 +720,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         bindSampler(0);
 
         mDrawOps.clear();
+        mDrawPrims.clear();
         mClipRefs.clear();
         mLayerAlphas.clear();
         mDrawTexts.clear();
@@ -806,7 +833,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
      *
      * @param matrix specified matrix
      */
-    private void drawMatrix(@Nonnull Matrix4 matrix) {
+    private void drawMatrix(@NonNull Matrix4 matrix) {
         if (!matrix.isApproxEqual(mLastMatrix)) {
             mLastMatrix.set(matrix);
             ByteBuffer buf = checkUniformMemory();
@@ -938,7 +965,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
      * @param b bounds
      * @see #clipRect(float, float, float, float)
      */
-    private void restoreClipBatch(@Nonnull Rect b) {
+    private void restoreClipBatch(@NonNull Rect b) {
         /*int pointer = mDrawOps.size() - 1;
         int op;
         boolean skip = true;
@@ -1036,7 +1063,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         return !Rect.intersects(clip, test);
     }
 
-    private void putRectColor(float left, float top, float right, float bottom, @Nonnull Paint paint) {
+    private void putRectColor(float left, float top, float right, float bottom, @NonNull Paint paint) {
         final ByteBuffer buffer = checkPosColorMemory();
         if (paint.isGradient()) {
             final int[] colors = paint.getColors();
@@ -1199,7 +1226,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         }
     }
 
-    private void putRectColorUV(@Nonnull ByteBuffer buffer,
+    private void putRectColorUV(@NonNull ByteBuffer buffer,
                                 float left, float top, float right, float bottom,
                                 float red, float green, float blue, float alpha,
                                 float u1, float v1, float u2, float v2) {
@@ -1227,7 +1254,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     @RenderThread
-    private void putGlyph(@Nonnull GLBakedGlyph glyph, float left, float top) {
+    private void putGlyph(@NonNull GLBakedGlyph glyph, float left, float top) {
         ByteBuffer buffer = checkPosTexMemory();
         left += glyph.x;
         top += glyph.y;
@@ -1262,8 +1289,91 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     @Override
+    public void drawMesh(@NonNull VertexMode mode,
+                         @NonNull FloatBuffer pos,
+                         @Nullable IntBuffer color,
+                         @Nullable FloatBuffer tex,
+                         @Nullable ShortBuffer indices,
+                         @Nullable Blender blender,
+                         @NonNull Paint paint) {
+        int numVertices = pos.remaining() / 2;
+        if (numVertices > 65535) {
+            throw new IllegalArgumentException();
+        }
+        if (color != null && color.remaining() < numVertices) {
+            throw new BufferUnderflowException();
+        }
+        if (tex != null && tex.remaining() < numVertices * 2) {
+            throw new BufferUnderflowException();
+        }
+        //TODO add support
+        if (tex != null || indices != null || blender != null) {
+            throw new UnsupportedOperationException();
+        }
+
+        int prim;
+        switch (mode) {
+            case POINTS -> {
+                if (numVertices < 1) return;
+                prim = GLCore.GL_POINTS;
+            }
+            case LINES, LINE_STRIP -> {
+                if (numVertices < 2) return;
+                if (mode == VertexMode.LINES) {
+                    numVertices -= numVertices % 2;
+                }
+                prim = (mode == VertexMode.LINES
+                        ? GLCore.GL_LINES
+                        : GLCore.GL_LINE_STRIP);
+            }
+            default -> {
+                if (numVertices < 3) return;
+                if (mode == VertexMode.TRIANGLES) {
+                    numVertices -= numVertices % 3;
+                }
+                prim = (mode == VertexMode.TRIANGLES
+                        ? GLCore.GL_TRIANGLES
+                        : GLCore.GL_TRIANGLE_STRIP);
+            }
+        }
+
+        drawMatrix();
+        mDrawOps.add(DRAW_PRIM);
+        mDrawPrims.add(numVertices | (prim << 16));
+
+        ByteBuffer buffer = checkPosColorMemory();
+        if (color != null) {
+            int pb = pos.position(), cb = color.position();
+            for (int i = 0; i < numVertices; i++) {
+                int col = color.get(cb++);
+                byte a = (byte) (col >>> 24);
+                float factor = (a & 0xFF) / 255.0f;
+                byte r = (byte) (((col >> 16) & 0xff) * factor + 0.5f);
+                byte g = (byte) (((col >> 8) & 0xff) * factor + 0.5f);
+                byte b = (byte) ((col & 0xff) * factor + 0.5f);
+                buffer.putFloat(pos.get(pb++))
+                        .putFloat(pos.get(pb++))
+                        .put(r).put(g).put(b).put(a);
+            }
+        } else {
+            int col = paint.getColor();
+            byte a = (byte) (col >>> 24);
+            float factor = (a & 0xFF) / 255.0f;
+            byte r = (byte) (((col >> 16) & 0xff) * factor + 0.5f);
+            byte g = (byte) (((col >> 8) & 0xff) * factor + 0.5f);
+            byte b = (byte) ((col & 0xff) * factor + 0.5f);
+            int pb = pos.position();
+            for (int i = 0; i < numVertices; i++) {
+                buffer.putFloat(pos.get(pb++))
+                        .putFloat(pos.get(pb++))
+                        .put(r).put(g).put(b).put(a);
+            }
+        }
+    }
+
+    @Override
     public void drawArc(float cx, float cy, float radius, float startAngle,
-                        float sweepAngle, @Nonnull Paint paint) {
+                        float sweepAngle, @NonNull Paint paint) {
         if (MathUtil.isApproxZero(sweepAngle) || radius < 0.0001f) {
             return;
         }
@@ -1281,7 +1391,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     private void drawArcFill(float cx, float cy, float radius, float middleAngle,
-                             float sweepAngle, @Nonnull Paint paint) {
+                             float sweepAngle, @NonNull Paint paint) {
         if (quickReject(cx - radius, cy - radius, cx + radius, cy + radius)) {
             return;
         }
@@ -1298,7 +1408,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     private void drawArcStroke(float cx, float cy, float radius, float middleAngle,
-                               float sweepAngle, @Nonnull Paint paint) {
+                               float sweepAngle, @NonNull Paint paint) {
         float strokeRadius = Math.min(radius, paint.getStrokeWidth() * 0.5f);
         if (strokeRadius < 0.0001f) {
             return;
@@ -1321,7 +1431,66 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     @Override
-    public void drawBezier(float x0, float y0, float x1, float y1, float x2, float y2, @Nonnull Paint paint) {
+    public void drawPie(float cx, float cy, float radius, float startAngle,
+                        float sweepAngle, @NonNull Paint paint) {
+        if (MathUtil.isApproxZero(sweepAngle) || radius < 0.0001f) {
+            return;
+        }
+        if (sweepAngle >= 360) {
+            drawCircle(cx, cy, radius, paint);
+            return;
+        }
+        sweepAngle %= 360;
+        final float middleAngle = (startAngle % 360) + sweepAngle * 0.5f;
+        if (paint.getStyle() == Paint.FILL) {
+            drawPieFill(cx, cy, radius, middleAngle, sweepAngle, paint);
+        } else {
+            drawPieStroke(cx, cy, radius, middleAngle, sweepAngle, paint);
+        }
+    }
+
+    private void drawPieFill(float cx, float cy, float radius, float middleAngle,
+                             float sweepAngle, @NonNull Paint paint) {
+        if (quickReject(cx - radius, cy - radius, cx + radius, cy + radius)) {
+            return;
+        }
+        drawMatrix();
+        drawSmooth(Math.min(radius, paint.getSmoothRadius()));
+        putRectColor(cx - radius, cy - radius, cx + radius, cy + radius, paint);
+        checkUniformMemory()
+                .putFloat(cx)
+                .putFloat(cy)
+                .putFloat(middleAngle)
+                .putFloat(sweepAngle)
+                .putFloat(radius);
+        mDrawOps.add(DRAW_PIE_FILL);
+    }
+
+    private void drawPieStroke(float cx, float cy, float radius, float middleAngle,
+                               float sweepAngle, @NonNull Paint paint) {
+        float strokeRadius = Math.min(radius, paint.getStrokeWidth() * 0.5f);
+        if (strokeRadius < 0.0001f) {
+            return;
+        }
+        float maxRadius = radius + strokeRadius;
+        if (quickReject(cx - maxRadius, cy - maxRadius, cx + maxRadius, cy + maxRadius)) {
+            return;
+        }
+        drawMatrix();
+        drawSmooth(Math.min(strokeRadius, paint.getSmoothRadius()));
+        putRectColor(cx - maxRadius, cy - maxRadius, cx + maxRadius, cy + maxRadius, paint);
+        checkUniformMemory()
+                .putFloat(cx)
+                .putFloat(cy)
+                .putFloat(middleAngle)
+                .putFloat(sweepAngle)
+                .putFloat(radius)
+                .putFloat(strokeRadius);
+        mDrawOps.add(DRAW_PIE_STROKE);
+    }
+
+    @Override
+    public void drawBezier(float x0, float y0, float x1, float y1, float x2, float y2, @NonNull Paint paint) {
         float strokeRadius = paint.getStrokeWidth() * 0.5f;
         if (strokeRadius < 0.0001f) {
             return;
@@ -1348,7 +1517,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     @Override
-    public void drawCircle(float cx, float cy, float radius, @Nonnull Paint paint) {
+    public void drawCircle(float cx, float cy, float radius, @NonNull Paint paint) {
         if (radius < 0.0001f) {
             return;
         }
@@ -1359,7 +1528,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         }
     }
 
-    private void drawCircleFill(float cx, float cy, float radius, @Nonnull Paint paint) {
+    private void drawCircleFill(float cx, float cy, float radius, @NonNull Paint paint) {
         if (quickReject(cx - radius, cy - radius, cx + radius, cy + radius)) {
             return;
         }
@@ -1373,7 +1542,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         mDrawOps.add(DRAW_CIRCLE_FILL);
     }
 
-    private void drawCircleStroke(float cx, float cy, float radius, @Nonnull Paint paint) {
+    private void drawCircleStroke(float cx, float cy, float radius, @NonNull Paint paint) {
         float strokeRadius = Math.min(radius, paint.getStrokeWidth() * 0.5f);
         if (strokeRadius < 0.0001f) {
             return;
@@ -1394,7 +1563,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     @Override
-    public void drawTriangle(float x0, float y0, float x1, float y1, float x2, float y2, @Nonnull Paint paint) {
+    public void drawTriangle(float x0, float y0, float x1, float y1, float x2, float y2, @NonNull Paint paint) {
         float left = Math.min(Math.min(x0, x1), x2);
         float top = Math.min(Math.min(y0, y1), y2);
         float right = Math.max(Math.max(x0, x1), x2);
@@ -1405,10 +1574,11 @@ public final class GLSurfaceCanvas extends GLCanvas {
         drawMatrix();
         int color = paint.getColor();
         ByteBuffer buffer = checkPosColorMemory();
-        byte r = (byte) ((color >> 16) & 0xff);
-        byte g = (byte) ((color >> 8) & 0xff);
-        byte b = (byte) (color & 0xff);
         byte a = (byte) (color >>> 24);
+        float factor = (a & 0xFF) / 255.0f;
+        byte r = (byte) (((color >> 16) & 0xff) * factor + 0.5f);
+        byte g = (byte) (((color >> 8) & 0xff) * factor + 0.5f);
+        byte b = (byte) ((color & 0xff) * factor + 0.5f);
         // CCW
         buffer.putFloat(x0)
                 .putFloat(y0)
@@ -1419,11 +1589,12 @@ public final class GLSurfaceCanvas extends GLCanvas {
         buffer.putFloat(x2)
                 .putFloat(y2)
                 .put(r).put(g).put(b).put(a);
-        mDrawOps.add(DRAW_TRIANGLE);
+        mDrawOps.add(DRAW_PRIM);
+        mDrawPrims.add(3 | (GL_TRIANGLES << 16));
     }
 
     @Override
-    public void drawRect(float left, float top, float right, float bottom, @Nonnull Paint paint) {
+    public void drawRect(float left, float top, float right, float bottom, @NonNull Paint paint) {
         if (quickReject(left, top, right, bottom)) {
             return;
         }
@@ -1451,7 +1622,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     @Override
-    public void drawImage(@Nonnull Image image, float left, float top, @Nullable Paint paint) {
+    public void drawImage(@NonNull Image image, float left, float top, @Nullable Paint paint) {
         GLTextureCompat texture = image.getTexture();
         float right = left + texture.getWidth();
         float bottom = top + texture.getHeight();
@@ -1465,7 +1636,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     // this is only used for offscreen
-    public void drawLayer(@Nonnull GLTextureCompat texture, float w, float h, float alpha, boolean flipY) {
+    public void drawLayer(@NonNull GLTextureCompat texture, float w, float h, float alpha, boolean flipY) {
         int target = texture.getTarget();
         if (target == GL_TEXTURE_2D || target == GL_TEXTURE_2D_MULTISAMPLE) {
             drawMatrix();
@@ -1480,7 +1651,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     @Override
-    public void drawImage(@Nonnull Image image, float srcLeft, float srcTop, float srcRight, float srcBottom,
+    public void drawImage(@NonNull Image image, float srcLeft, float srcTop, float srcRight, float srcBottom,
                           float dstLeft, float dstTop, float dstRight, float dstBottom, @Nullable Paint paint) {
         if (quickReject(dstLeft, dstTop, dstRight, dstBottom)) {
             return;
@@ -1502,7 +1673,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
         mDrawOps.add(DRAW_IMAGE);
     }
 
-    public void drawTexture(@Nonnull GLTextureCompat texture, float srcLeft, float srcTop, float srcRight, float srcBottom,
+    public void drawTexture(@NonNull GLTextureCompat texture, float srcLeft, float srcTop, float srcRight,
+                            float srcBottom,
                             float dstLeft, float dstTop, float dstRight, float dstBottom) {
         if (quickReject(dstLeft, dstTop, dstRight, dstBottom)) {
             return;
@@ -1524,7 +1696,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     @Override
-    public void drawRoundLine(float startX, float startY, float stopX, float stopY, @Nonnull Paint paint) {
+    public void drawRoundLine(float startX, float startY, float stopX, float stopY, @NonNull Paint paint) {
         float t = paint.getStrokeWidth() * 0.5f;
         if (t < 0.0001f) {
             return;
@@ -1565,7 +1737,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
 
     @Override
     public void drawRoundRect(float left, float top, float right, float bottom, float radius,
-                              int sides, @Nonnull Paint paint) {
+                              int sides, @NonNull Paint paint) {
         radius = Math.min(radius, Math.min(right - left, bottom - top) * 0.5f);
         if (radius < 0) {
             radius = 0;
@@ -1578,7 +1750,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     private void drawRoundRectFill(float left, float top, float right, float bottom,
-                                   float radius, int sides, @Nonnull Paint paint) {
+                                   float radius, int sides, @NonNull Paint paint) {
         if (quickReject(left, top, right, bottom)) {
             return;
         }
@@ -1611,7 +1783,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     private void drawRoundRectStroke(float left, float top, float right, float bottom,
-                                     float radius, int sides, @Nonnull Paint paint) {
+                                     float radius, int sides, @NonNull Paint paint) {
         float strokeRadius = Math.min(radius, paint.getStrokeWidth() * 0.5f);
         if (strokeRadius < 0.0001f) {
             return;
@@ -1650,7 +1822,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     @Override
-    public void drawRoundImage(@Nonnull Image image, float left, float top, float radius, @Nonnull Paint paint) {
+    public void drawRoundImage(@NonNull Image image, float left, float top, float radius, @NonNull Paint paint) {
         if (radius < 0) {
             radius = 0;
         }
@@ -1675,8 +1847,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     @Override
-    public void drawText(@Nonnull CharSequence text, int start, int end, float x, float y,
-                         int align, @Nonnull TextPaint paint) {
+    public void drawText(@NonNull CharSequence text, int start, int end, float x, float y,
+                         int align, @NonNull TextPaint paint) {
         if ((start | end | end - start | text.length() - end) < 0) {
             throw new IndexOutOfBoundsException();
         }
@@ -1720,11 +1892,11 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     @Override
-    public void drawTextRun(@Nonnull LayoutPiece piece, float x, float y, @Nonnull TextPaint paint) {
+    public void drawTextRun(@NonNull LayoutPiece piece, float x, float y, @NonNull TextPaint paint) {
         drawTextRun(piece, x, y, paint.getColor());
     }
 
-    private void drawTextRun(@Nonnull LayoutPiece piece, float x, float y, int color) {
+    private void drawTextRun(@NonNull LayoutPiece piece, float x, float y, int color) {
         if (piece.getAdvance() == 0 || (piece.getGlyphs() != null && piece.getGlyphs().length == 0)
                 || quickReject(x, y - piece.getAscent(),
                 x + piece.getAdvance(), y + piece.getDescent())) {
@@ -1750,7 +1922,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         private float x;
         private final float y;
 
-        private DrawText(@Nonnull LayoutPiece piece, float x, float y) {
+        private DrawText(@NonNull LayoutPiece piece, float x, float y) {
             this.piece = piece;
             this.x = x;
             this.y = y;
@@ -1760,8 +1932,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
             x += dx;
         }
 
-        @Nonnull
-        private GLBakedGlyph[] build(@Nonnull GLSurfaceCanvas canvas) {
+        @NonNull
+        private GLBakedGlyph[] build(@NonNull GLSurfaceCanvas canvas) {
             final GLBakedGlyph[] glyphs = piece.getGlyphs();
             final float[] positions = piece.getPositions();
             for (int i = 0, e = glyphs.length; i < e; i++) {
@@ -1776,7 +1948,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
      *
      * @param drawable the custom drawable
      */
-    public void drawCustom(@Nonnull Runnable drawable) {
+    public void drawCustom(@NonNull Runnable drawable) {
         mCustoms.add(drawable);
         mDrawOps.add(DRAW_CUSTOM);
     }

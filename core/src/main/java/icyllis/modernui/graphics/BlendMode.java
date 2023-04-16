@@ -18,12 +18,18 @@
 
 package icyllis.modernui.graphics;
 
+import icyllis.modernui.annotation.NonNull;
+
 import javax.annotation.Nonnull;
 
 /**
- * Blend modes.
+ * Blends are operators that take in two colors (source, destination) and return a new color.
+ * Many of these operate the same on all 4 components: red, green, blue, alpha. For these,
+ * we just document what happens to one component, rather than naming each one separately.
+ *
+ * @since 3.0
  */
-public enum BlendMode {
+public enum BlendMode implements Blender {
     /**
      * <p>
      * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_CLEAR.png" />
@@ -224,5 +230,11 @@ public enum BlendMode {
 
     public static int toValue(@Nonnull BlendMode mode) {
         return mode.ordinal();
+    }
+
+    @NonNull
+    @Override
+    public BlendMode asBlendMode() {
+        return this;
     }
 }

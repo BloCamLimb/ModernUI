@@ -144,11 +144,14 @@ public class GIFDecoder {
         if (palette == null) {
             palette = new byte[size * 4];
         }
-        for (int i = 0, j = 0; i < size; ++i) {
-            for (int k = 0; k < 3; ++k) {
-                palette[j++] = (byte) readByte();
+        for (int i = 0, iPos = 0; i < size; ++i) {
+            try {
+                mBuf.get(palette, iPos, 3);
+            } catch (BufferUnderflowException e) {
+                throw new EOFException();
             }
-            palette[j++] = (i == transparentIndex) ? 0 : (byte) 0xFF;
+            palette[iPos + 3] = (i == transparentIndex) ? 0 : (byte) 0xFF;
+            iPos += 4;
         }
         return palette;
     }
@@ -209,7 +212,7 @@ public class GIFDecoder {
     // Decode the one frame of GIF form the input stream using internal LZWDecoder class
     private void decodeImage(byte[] image, int width, int height, @Nullable int[] interlace) throws IOException {
         final LZWDecoder dec = LZWDecoder.getInstance();
-        byte[] data = dec.setData(mBuf, mBuf.get());
+        byte[] data = dec.setData(mBuf, readByte());
         int y = 0, iPos = 0, xr = width;
         // @formatter:off
         for (;;) {

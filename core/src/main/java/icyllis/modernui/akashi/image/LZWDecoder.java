@@ -18,6 +18,7 @@
 
 package icyllis.modernui.akashi.image;
 
+import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 
 /**
@@ -164,9 +165,13 @@ public final class LZWDecoder {
         while (mInBits < mCodeSize) {
             if (mBlockPos == mBlockLength) {
                 mBlockPos = 0;
-                if ((mBlockLength = mData.get() & 0xFF) > 0) {
-                    mData.get(mBlock, 0, mBlockLength);
-                } else {
+                try {
+                    if ((mBlockLength = mData.get() & 0xFF) > 0) {
+                        mData.get(mBlock, 0, mBlockLength);
+                    } else {
+                        return mEndOfInfo;
+                    }
+                } catch (BufferUnderflowException e) {
                     return mEndOfInfo;
                 }
             }
