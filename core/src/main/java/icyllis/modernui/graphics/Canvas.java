@@ -18,7 +18,7 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.annotation.ColorInt;
+import icyllis.modernui.annotation.*;
 import icyllis.modernui.graphics.font.LayoutPiece;
 import icyllis.modernui.graphics.font.MeasuredText;
 import icyllis.modernui.text.TextPaint;
@@ -26,8 +26,7 @@ import icyllis.modernui.view.Gravity;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import java.nio.*;
 
 /**
  * A Canvas provides an interface for drawing 2D geometries, images, and how the
@@ -257,7 +256,7 @@ public abstract class Canvas {
      *
      * @return current model view matrix
      */
-    @Nonnull
+    @NonNull
     public abstract Matrix4 getMatrix();
 
     /**
@@ -601,26 +600,25 @@ public abstract class Canvas {
      * In paint: Paint's style determines if circle is stroked or filled;
      * if stroked, paint's stroke width describes the line thickness.
      *
-     * @param center the center point of the circle to be drawn
-     * @param radius the radius of the circle to be drawn
-     * @param paint  the paint used to draw the circle
-     */
-    public final void drawCircle(PointF center, float radius, Paint paint) {
-        drawCircle(center.x, center.y, radius, paint);
-    }
-
-    /**
-     * Draw the specified circle at (cx, cy) with radius using the specified paint.
-     * If radius is zero or less, nothing is drawn.
-     * In paint: Paint's style determines if circle is stroked or filled;
-     * if stroked, paint's stroke width describes the line thickness.
-     *
      * @param cx     the x-coordinate of the center of the circle to be drawn
      * @param cy     the y-coordinate of the center of the circle to be drawn
      * @param radius the radius of the circle to be drawn
      * @param paint  the paint used to draw the circle
      */
-    public abstract void drawCircle(float cx, float cy, float radius, Paint paint);
+    public abstract void drawCircle(float cx, float cy, float radius,
+                                    @NonNull Paint paint);
+
+    /**
+     * Variant of {@link #drawCircle(float, float, float, Paint)}.
+     *
+     * @param center the center point of the circle to be drawn
+     * @param radius the radius of the circle to be drawn
+     * @param paint  the paint used to draw the circle
+     */
+    public final void drawCircle(@NonNull PointF center, float radius,
+                                 @NonNull Paint paint) {
+        drawCircle(center.x, center.y, radius, paint);
+    }
 
     /**
      * Draw a circular arc at (cx, cy) with radius using the specified paint.
@@ -632,7 +630,28 @@ public abstract class Canvas {
      * <p>
      * The arc is drawn clockwise. An angle of 0 degrees correspond to the
      * geometric angle of 0 degrees (3 o'clock on a watch). If radius is
-     * non-positive or sweep angle is zero, nothing is drawn.
+     * not positive or sweep angle is zero, nothing is drawn.
+     * <p>
+     * Special note: Arc is a shape rather than a curved line in the concept
+     * of Modern UI. Therefore, an arc may be either filled (path) or stroked
+     * (annular, hollow).
+     * <p>
+     * The implementation is guaranteed to be analytical in Modern UI.
+     *
+     * @param cx         the x-coordinate of the center of the arc to be drawn
+     * @param cy         the y-coordinate of the center of the arc to be drawn
+     * @param radius     the radius of the circular arc to be drawn
+     * @param startAngle starting angle (in degrees) where the arc begins
+     * @param sweepAngle sweep angle or angular extent (in degrees); positive is clockwise
+     * @param paint      the paint used to draw the arc
+     * @see #drawPie(float, float, float, float, float, Paint)
+     */
+    public abstract void drawArc(float cx, float cy, float radius,
+                                 float startAngle, float sweepAngle,
+                                 @NonNull Paint paint);
+
+    /**
+     * Variant version of {@link #drawArc(float, float, float, float, float, Paint)}.
      *
      * @param center     the center point of the arc to be drawn
      * @param radius     the radius of the circular arc to be drawn
@@ -640,22 +659,20 @@ public abstract class Canvas {
      * @param sweepAngle sweep angle or angular extent (in degrees); positive is clockwise
      * @param paint      the paint used to draw the arc
      */
-    public final void drawArc(PointF center, float radius, float startAngle, float sweepAngle,
-                              Paint paint) {
+    public final void drawArc(@NonNull PointF center, float radius,
+                              float startAngle, float sweepAngle,
+                              @NonNull Paint paint) {
         drawArc(center.x, center.y, radius, startAngle, sweepAngle, paint);
     }
 
     /**
-     * Draw a circular arc at (cx, cy) with radius using the specified paint.
+     * Draw a circular sector at (cx, cy) with radius using the specified paint.
      * <p>
-     * If the start angle is negative or >= 360, the start angle is treated as
-     * start angle modulo 360. If the sweep angle is >= 360, then the circle is
-     * drawn completely. If the sweep angle is negative, the sweep angle is
-     * treated as sweep angle modulo 360.
+     * Similar to {@link #drawArc(float, float, float, float, float, Paint)}, but
+     * when the shape is not a full circle, the geometry is closed by the arc and
+     * two line segments from the end of the arc to the center of the circle.
      * <p>
-     * The arc is drawn clockwise. An angle of 0 degrees correspond to the
-     * geometric angle of 0 degrees (3 o'clock on a watch). If radius is
-     * non-positive or sweep angle is zero, nothing is drawn.
+     * The implementation is guaranteed to be analytical in Modern UI.
      *
      * @param cx         the x-coordinate of the center of the arc to be drawn
      * @param cy         the y-coordinate of the center of the arc to be drawn
@@ -664,8 +681,24 @@ public abstract class Canvas {
      * @param sweepAngle sweep angle or angular extent (in degrees); positive is clockwise
      * @param paint      the paint used to draw the arc
      */
-    public abstract void drawArc(float cx, float cy, float radius, float startAngle,
-                                 float sweepAngle, Paint paint);
+    public abstract void drawPie(float cx, float cy, float radius,
+                                 float startAngle, float sweepAngle,
+                                 @NonNull Paint paint);
+
+    /**
+     * Variant version of {@link #drawPie(float, float, float, float, float, Paint)}.
+     *
+     * @param center     the center point of the arc to be drawn
+     * @param radius     the radius of the circular arc to be drawn
+     * @param startAngle starting angle (in degrees) where the arc begins
+     * @param sweepAngle sweep angle or angular extent (in degrees); positive is clockwise
+     * @param paint      the paint used to draw the arc
+     */
+    public final void drawPie(@NonNull PointF center, float radius,
+                              float startAngle, float sweepAngle,
+                              @NonNull Paint paint) {
+        drawPie(center.x, center.y, radius, startAngle, sweepAngle, paint);
+    }
 
     /**
      * Draw a quadratic Bézier curve using the specified paint. The three points represent
@@ -967,6 +1000,65 @@ public abstract class Canvas {
      * @param paint the paint used to draw the text, only color will be taken
      */
     public abstract void drawTextRun(LayoutPiece piece, float x, float y, TextPaint paint);
+
+    /**
+     * Supported primitive topologies, corresponding to OpenGL and Vulkan defined values.
+     */
+    public enum VertexMode {
+        POINTS,
+        LINES,
+        LINE_STRIP,
+        TRIANGLES,
+        TRIANGLE_STRIP
+
+        // enum order is consistent with AkashiGI and Vulkan definition
+    }
+
+    /**
+     * Draw an instance of a custom mesh with the given vertex data, the vertices are
+     * interpreted as the given primitive topology.
+     * <p>
+     * The <var>pos</var> is required, and specifies the x,y pairs for each vertex in
+     * local coordinates, numbered 0, 1, 2, ..., N-1, where N is the number of vertices
+     * and N = pos.remaining() / 2.
+     * <p>
+     * If there is <var>color</var>, but there is no <var>tex</var>, then each color
+     * (AARRGGBB) blends with paint color using the given <var>blender</var>, and
+     * is interpolated across its corresponding topology in a gradient. The default is
+     * {@link BlendMode#DST} in this case.
+     * <p>
+     * If there is <var>tex</var>, then it is used to specify the coordinate in UV
+     * coordinates to use at each vertex (the paint must have a shader in this case).
+     * If there is also <var>color</var>, then they behave as before, but blend with
+     * paint shader. The default is {@link BlendMode#MULTIPLY} in this case.
+     * <p>
+     * If there is <var>indices</var> array, then it is used to specify the index of
+     * each topology, rather than just walking through the arrays in order.
+     * <p>
+     * For {@link VertexMode#TRIANGLES} and {@link VertexMode#TRIANGLE_STRIP},
+     * counterclockwise triangles face forward.
+     * <p>
+     * MaskFilter and anti-aliasing are ignored, anti-aliasing state only depends on
+     * MSAA state of the current render target.
+     *
+     * @param mode    how to interpret the array of vertices
+     * @param pos     array of positions for the mesh, remaining should be multiple of 2
+     * @param color   if not null, specifies a color for each vertex, to be interpolated
+     *                across the topology, remaining >= N
+     * @param tex     if not null, specifies the coordinates to sample into the current
+     *                shader (e.g. bitmap tile or gradient), remaining >= 2*N
+     * @param indices if not null, array of indices to reference into the vertex array
+     * @param blender blends vertices' colors with shader if present or paint color if
+     *                not, ignored if there is no color array, or null to use the default
+     * @param paint   specifies the texture to use if there is tex array and constant
+     *                color (a shader uniform) if there is no color array
+     * @throws java.nio.BufferUnderflowException insufficient vertex data
+     */
+    public void drawMesh(@NonNull VertexMode mode, @NonNull FloatBuffer pos,
+                         @Nullable IntBuffer color, @Nullable FloatBuffer tex,
+                         @Nullable ShortBuffer indices, @Nullable Blender blender,
+                         @NonNull Paint paint) {
+    }
 
     /**
      * Returns true if clip is empty; that is, nothing will draw.

@@ -72,8 +72,8 @@ public class GLShaderManager {
     public void reload() {
         Core.checkRenderThread();
         for (var map : mShaders.values()) {
-            for (int shard : map.values()) {
-                GL20C.glDeleteShader(shard);
+            for (int stage : map.values()) {
+                GLCore.glDeleteShader(stage);
             }
         }
         mShaders.clear();
@@ -81,8 +81,8 @@ public class GLShaderManager {
             l.onReload(this);
         }
         for (var map : mShaders.values()) {
-            for (int shard : map.values()) {
-                GL20C.glDeleteShader(shard);
+            for (int stage : map.values()) {
+                GLCore.glDeleteShader(stage);
             }
         }
         mShaders.clear();
@@ -90,20 +90,20 @@ public class GLShaderManager {
     }
 
     /**
-     * Get or create a shader shard, call this on listener callback.
+     * Get or create a shader stage, call this on listener callback.
      *
      * @param namespace the application namespace
      * @param subPath   sub paths to the shader source, parent is 'shaders'
-     * @return the shader shard handle or 0 on failure
-     * @see #getShard(String, String, int)
+     * @return the shader stage handle or 0 on failure
+     * @see #getStage(String, String, int)
      * @see #addListener(Listener)
      */
-    public int getShard(@Nonnull String namespace, @Nonnull String subPath) {
-        return getShard(namespace, "shaders/" + subPath, 0);
+    public int getStage(@Nonnull String namespace, @Nonnull String subPath) {
+        return getStage(namespace, "shaders/" + subPath, 0);
     }
 
     /**
-     * Get or create a shader shard, call this on listener callback.
+     * Get or create a shader stage, call this on listener callback.
      * <p>
      * Standard file extension:
      * <table border="1">
@@ -136,9 +136,9 @@ public class GLShaderManager {
      * @param namespace the application namespace
      * @param path      the path of shader source
      * @param type      the shader type to create, can be 0 for standard file extension
-     * @return the shader shard or 0 on failure
+     * @return the shader stage or 0 on failure
      */
-    public int getShard(@Nonnull String namespace, @Nonnull String path, int type) {
+    public int getStage(@Nonnull String namespace, @Nonnull String path, int type) {
         Core.checkRenderThread();
         int shader = mShaders.computeIfAbsent(namespace, n -> {
             Object2IntMap<String> r = new Object2IntOpenHashMap<>();
@@ -150,9 +150,9 @@ public class GLShaderManager {
         }
         if (type == 0) {
             if (path.endsWith(".vert")) {
-                type = GL20C.GL_VERTEX_SHADER;
+                type = GLCore.GL_VERTEX_SHADER;
             } else if (path.endsWith(".frag")) {
-                type = GL20C.GL_FRAGMENT_SHADER;
+                type = GLCore.GL_FRAGMENT_SHADER;
             } else if (path.endsWith(".geom")) {
                 type = GL32C.GL_GEOMETRY_SHADER;
             } else if (path.endsWith(".tesc")) {
@@ -173,13 +173,13 @@ public class GLShaderManager {
                 mShaders.get(namespace).putIfAbsent(path, 0);
                 return 0;
             }
-            shader = GL20C.glCreateShader(type);
-            GL20C.glShaderSource(shader, source);
-            GL20C.glCompileShader(shader);
-            if (GL20C.glGetShaderi(shader, GL20C.GL_COMPILE_STATUS) == GL11C.GL_FALSE) {
-                String log = GL20C.glGetShaderInfoLog(shader, 8192).trim();
+            shader = GLCore.glCreateShader(type);
+            GLCore.glShaderSource(shader, source);
+            GLCore.glCompileShader(shader);
+            if (GLCore.glGetShaderi(shader, GLCore.GL_COMPILE_STATUS) == GL11C.GL_FALSE) {
+                String log = GLCore.glGetShaderInfoLog(shader, 8192).trim();
                 ModernUI.LOGGER.error(GLCore.MARKER, "Failed to compile shader {}:{}\n{}", namespace, path, log);
-                GL20C.glDeleteShader(shader);
+                GLCore.glDeleteShader(shader);
                 mShaders.get(namespace).putIfAbsent(path, 0);
                 return 0;
             }
@@ -197,35 +197,35 @@ public class GLShaderManager {
      * If fails, program will be 0 (undefined).
      *
      * @param t      the existing program object
-     * @param shards shader shards for the program
+     * @param stages shader stages for the program
      * @param <T>    custom program subclasses
      * @return program
      * @see #addListener(Listener)
      */
     @SuppressWarnings("unchecked")
     @Nonnull
-    public <T extends GLProgram> T create(@Nullable T t, int... shards) {
+    public <T extends GLProgram> T create(@Nullable T t, int... stages) {
         Core.checkRenderThread();
         int program;
         if (t != null && t.mProgram != 0) {
             program = t.mProgram;
         } else {
-            program = GL20C.glCreateProgram();
+            program = GLCore.glCreateProgram();
         }
-        for (int s : shards) {
-            GL20C.glAttachShader(program, s);
+        for (int s : stages) {
+            GLCore.glAttachShader(program, s);
         }
-        GL20C.glLinkProgram(program);
-        if (GL20C.glGetProgrami(program, GL20C.GL_LINK_STATUS) == GL11C.GL_FALSE) {
-            String log = GL20C.glGetProgramInfoLog(program, 8192);
+        GLCore.glLinkProgram(program);
+        if (GLCore.glGetProgrami(program, GLCore.GL_LINK_STATUS) == GL11C.GL_FALSE) {
+            String log = GLCore.glGetProgramInfoLog(program, 8192);
             ModernUI.LOGGER.error(GLCore.MARKER, "Failed to link shader program\n{}", log);
             // also detaches all shaders
-            GL20C.glDeleteProgram(program);
+            GLCore.glDeleteProgram(program);
             program = 0;
         } else {
             // clear attachment states, for further re-creation
-            for (int s : shards) {
-                GL20C.glDetachShader(program, s);
+            for (int s : stages) {
+                GLCore.glDetachShader(program, s);
             }
         }
         if (t == null) {
@@ -242,7 +242,7 @@ public class GLShaderManager {
     public interface Listener {
 
         /**
-         * This method is invoked on reloading. You may call {@link #getShard(String, String)}
+         * This method is invoked on reloading. You may call {@link #getStage(String, String)}
          * to obtain shaders to create programs.
          *
          * @param manager the shader manager

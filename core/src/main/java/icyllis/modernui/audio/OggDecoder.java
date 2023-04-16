@@ -18,6 +18,7 @@
 
 package icyllis.modernui.audio;
 
+import icyllis.modernui.graphics.MathUtil;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.stb.STBVorbis;
 import org.lwjgl.stb.STBVorbisInfo;
@@ -27,10 +28,7 @@ import org.lwjgl.system.MemoryUtil;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
+import java.nio.*;
 import java.nio.channels.FileChannel;
 
 import static org.lwjgl.system.MemoryUtil.NULL;
@@ -92,6 +90,10 @@ public class OggDecoder extends SoundSample {
                 temp.clear();
             }
         }
+    }
+
+    public void getSamplesShortInterleaved(ShortBuffer buffer) {
+        STBVorbis.stb_vorbis_get_samples_short_interleaved(mDecoder, mChannels, buffer);
     }
 
     /**
@@ -176,6 +178,10 @@ public class OggDecoder extends SoundSample {
                 }
             }
         }
+    }
+
+    private static short f2s16(float s) {
+        return (short)MathUtil.clamp((int)(s * 32767.5f - 0.5f), Short.MIN_VALUE, Short.MAX_VALUE);
     }
 
     @Override

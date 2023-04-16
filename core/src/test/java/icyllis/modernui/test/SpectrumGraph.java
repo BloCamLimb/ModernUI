@@ -64,7 +64,8 @@ public class SpectrumGraph {
         int len = Math.min(mFFT.getAverageSize() - 5, mAmplitudes.length);
         synchronized (mAmplitudes) {
             for (int i = 0; i < len; i++) {
-                mAmplitudes[i] = mAmplitudes[i] - delta * 0.002f * (mAmplitudes[i] + 0.03f);
+                // 2.5e-5f * BPM
+                mAmplitudes[i] = mAmplitudes[i] - delta * 2.5e-5f * 198f * (mAmplitudes[i] + 0.03f);
             }
         }
     }

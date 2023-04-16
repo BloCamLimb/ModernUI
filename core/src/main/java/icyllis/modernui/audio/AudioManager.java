@@ -23,17 +23,14 @@ import icyllis.modernui.annotation.MainThread;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.openal.*;
+import org.lwjgl.system.MemoryStack;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.nio.IntBuffer;
+import java.util.*;
+import java.util.concurrent.*;
 
 import static org.lwjgl.openal.AL11.alEnable;
 import static org.lwjgl.openal.ALC11.*;
@@ -75,8 +72,7 @@ public class AudioManager implements AutoCloseable {
     @Nonnull
     private Thread createThread(Runnable target) {
         Thread t = new Thread(target, "Audio-Thread");
-        if (t.isDaemon())
-            t.setDaemon(false);
+        t.setDaemon(true);
         return t;
     }
 
@@ -110,9 +106,18 @@ public class AudioManager implements AutoCloseable {
                     if (!alcCapabilities.OpenALC11 || !alCapabilities.OpenAL11) {
                         ModernUI.LOGGER.fatal(MARKER, "OpenAL 1.1 is not supported");
                     }
-                    if (alCapabilities.AL_EXT_source_distance_model) {
+                    /*if (alCapabilities.AL_EXT_source_distance_model) {
                         alEnable(EXTSourceDistanceModel.AL_SOURCE_DISTANCE_MODEL);
                     }
+                    if (ALC10.alcGetInteger(device, SOFTHRTF.ALC_NUM_HRTF_SPECIFIERS_SOFT) > 0) {
+                        try (MemoryStack memoryStack = MemoryStack.stackPush()){
+                            SOFTHRTF.alcResetDeviceSOFT(device,
+                                    memoryStack.callocInt(5)
+                                            .put(SOFTHRTF.ALC_HRTF_SOFT).put(1)
+                                            .put(SOFTHRTF.ALC_HRTF_ID_SOFT).put(0)
+                                            .put(0).flip());
+                        }
+                    }*/
                 }
             } else {
                 ModernUI.LOGGER.info(MARKER, "No suitable audio device was found");
