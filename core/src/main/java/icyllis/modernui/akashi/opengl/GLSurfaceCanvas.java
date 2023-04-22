@@ -119,6 +119,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
     public static final GLProgram GLOW_WAVE = new GLProgram();
     public static final GLProgram PIE_FILL = new GLProgram();
     public static final GLProgram PIE_STROKE = new GLProgram();
+    public static final GLProgram ROUND_LINE_FILL = new GLProgram();
+    public static final GLProgram ROUND_LINE_STROKE = new GLProgram();
 
     /**
      * Recording draw operations (sequential)
@@ -146,6 +148,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
     public static final byte DRAW_GLOW_WAVE = 20;
     public static final byte DRAW_PIE_FILL = 21;
     public static final byte DRAW_PIE_STROKE = 22;
+    public static final byte DRAW_ROUND_LINE_FILL = 23;
+    public static final byte DRAW_ROUND_LINE_STROKE = 24;
 
     /**
      * Uniform block sizes (maximum), use std140 layout
@@ -348,6 +352,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
         int glowWave = manager.getStage(ModernUI.ID, "glow_wave.frag");
         int pieFill = manager.getStage(ModernUI.ID, "pie_fill.frag");
         int pieStroke = manager.getStage(ModernUI.ID, "pie_stroke.frag");
+        int roundLineFill = manager.getStage(ModernUI.ID, "round_line_fill.frag");
+        int roundLineStroke = manager.getStage(ModernUI.ID, "round_line_stroke.frag");
 
         manager.create(COLOR_FILL, posColor, colorFill);
         manager.create(COLOR_TEX, posColorTex, colorTex);
@@ -364,6 +370,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
         manager.create(GLOW_WAVE, posColor, glowWave);
         manager.create(PIE_FILL, posColor, pieFill);
         manager.create(PIE_STROKE, posColor, pieStroke);
+        manager.create(ROUND_LINE_FILL, posColor, roundLineFill);
+        manager.create(ROUND_LINE_STROKE, posColor, roundLineStroke);
 
         ModernUI.LOGGER.info(MARKER, "Loaded OpenGL canvas shaders");
     }
@@ -517,6 +525,22 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     uniformDataPtr += 20;
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorTexIndex, 4);
                     posColorTexIndex += 4;
+                }
+                case DRAW_ROUND_LINE_FILL -> {
+                    bindVertexArray(POS_COLOR.getVertexArray());
+                    useProgram(ROUND_LINE_FILL.get());
+                    mRoundRectUBO.upload(0, 20, uniformDataPtr);
+                    uniformDataPtr += 20;
+                    glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
+                    posColorIndex += 4;
+                }
+                case DRAW_ROUND_LINE_STROKE -> {
+                    bindVertexArray(POS_COLOR.getVertexArray());
+                    useProgram(ROUND_LINE_STROKE.get());
+                    mRoundRectUBO.upload(0, 24, uniformDataPtr);
+                    uniformDataPtr += 24;
+                    glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
+                    posColorIndex += 4;
                 }
                 case DRAW_IMAGE -> {
                     bindVertexArray(POS_COLOR_TEX.getVertexArray());
@@ -1298,7 +1322,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                          @NonNull Paint paint) {
         int numVertices = pos.remaining() / 2;
         if (numVertices > 65535) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Number of vertices is too big: " + numVertices);
         }
         if (color != null && color.remaining() < numVertices) {
             throw new BufferUnderflowException();
@@ -1563,37 +1587,6 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     @Override
-    public void drawTriangle(float x0, float y0, float x1, float y1, float x2, float y2, @NonNull Paint paint) {
-        float left = Math.min(Math.min(x0, x1), x2);
-        float top = Math.min(Math.min(y0, y1), y2);
-        float right = Math.max(Math.max(x0, x1), x2);
-        float bottom = Math.max(Math.max(y0, y1), y2);
-        if (quickReject(left, top, right, bottom)) {
-            return;
-        }
-        drawMatrix();
-        int color = paint.getColor();
-        ByteBuffer buffer = checkPosColorMemory();
-        byte a = (byte) (color >>> 24);
-        float factor = (a & 0xFF) / 255.0f;
-        byte r = (byte) (((color >> 16) & 0xff) * factor + 0.5f);
-        byte g = (byte) (((color >> 8) & 0xff) * factor + 0.5f);
-        byte b = (byte) ((color & 0xff) * factor + 0.5f);
-        // CCW
-        buffer.putFloat(x0)
-                .putFloat(y0)
-                .put(r).put(g).put(b).put(a);
-        buffer.putFloat(x1)
-                .putFloat(y1)
-                .put(r).put(g).put(b).put(a);
-        buffer.putFloat(x2)
-                .putFloat(y2)
-                .put(r).put(g).put(b).put(a);
-        mDrawOps.add(DRAW_PRIM);
-        mDrawPrims.add(3 | (GL_TRIANGLES << 16));
-    }
-
-    @Override
     public void drawRect(float left, float top, float right, float bottom, @NonNull Paint paint) {
         if (quickReject(left, top, right, bottom)) {
             return;
@@ -1696,6 +1689,83 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     @Override
+    public void drawLine(float startX, float startY, float stopX, float stopY,
+                         float thickness, @NonNull Paint paint) {
+        float t = thickness * 0.5f;
+        if (t <= 0) {
+            // hairline
+            drawMatrix();
+            mDrawOps.add(DRAW_PRIM);
+            mDrawPrims.add(2 | (GLCore.GL_LINES << 16));
+
+            ByteBuffer buffer = checkPosColorMemory();
+            int col = paint.getColor();
+            byte a = (byte) (col >>> 24);
+            float factor = (a & 0xFF) / 255.0f;
+            byte r = (byte) (((col >> 16) & 0xff) * factor + 0.5f);
+            byte g = (byte) (((col >> 8) & 0xff) * factor + 0.5f);
+            byte b = (byte) ((col & 0xff) * factor + 0.5f);
+            buffer.putFloat(startX)
+                    .putFloat(startY)
+                    .put(r).put(g).put(b).put(a);
+            buffer.putFloat(stopX)
+                    .putFloat(stopY)
+                    .put(r).put(g).put(b).put(a);
+            return;
+        }
+        float left = Math.min(startX, stopX) - t;
+        float top = Math.min(startY, stopY) - t;
+        float right = Math.max(startX, stopX) + t;
+        float bottom = Math.max(startY, stopY) + t;
+        if (paint.getStyle() == Paint.FILL) {
+            drawLineFill(startX, startY, stopX, stopY, t, paint, left, top, right, bottom);
+        } else {
+            drawLineStroke(startX, startY, stopX, stopY, t, paint, left, top, right, bottom);
+        }
+    }
+
+    private void drawLineFill(float startX, float startY, float stopX, float stopY,
+                              float radius, @NonNull Paint paint,
+                              float left, float top, float right, float bottom) {
+        if (quickReject(left, top, right, bottom)) {
+            return;
+        }
+        drawMatrix();
+        drawSmooth(Math.min(radius, paint.getSmoothRadius()));
+        putRectColor(left - 1, top - 1, right + 1, bottom + 1, paint);
+        ByteBuffer buffer = checkUniformMemory();
+        buffer.putFloat(startX)
+                .putFloat(startY)
+                .putFloat(stopX)
+                .putFloat(stopY);
+        buffer.putFloat(radius);
+        mDrawOps.add(DRAW_ROUND_LINE_FILL);
+    }
+
+    private void drawLineStroke(float startX, float startY, float stopX, float stopY,
+                                float radius, @NonNull Paint paint,
+                                float left, float top, float right, float bottom) {
+        float strokeRadius = Math.min(radius, paint.getStrokeWidth() * 0.5f);
+        if (strokeRadius < 0.0001f) {
+            return;
+        }
+        if (quickReject(left - strokeRadius, top - strokeRadius, right + strokeRadius, bottom + strokeRadius)) {
+            return;
+        }
+        drawMatrix();
+        drawSmooth(Math.min(strokeRadius, paint.getSmoothRadius()));
+        putRectColor(left - strokeRadius - 1, top - strokeRadius - 1, right + strokeRadius + 1,
+                bottom + strokeRadius + 1, paint);
+        ByteBuffer buffer = checkUniformMemory();
+        buffer.putFloat(startX)
+                .putFloat(startY)
+                .putFloat(stopX)
+                .putFloat(stopY);
+        buffer.putFloat(radius)
+                .putFloat(strokeRadius);
+        mDrawOps.add(DRAW_ROUND_LINE_STROKE);
+    }
+
     public void drawRoundLine(float startX, float startY, float stopX, float stopY, @NonNull Paint paint) {
         float t = paint.getStrokeWidth() * 0.5f;
         if (t < 0.0001f) {
@@ -1847,6 +1917,28 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     @Override
+    public void drawText(CharSequence text, int start, int end,
+                         float x, float y, TextPaint paint) {
+        drawText(text, start, end, x, y, Gravity.LEFT, paint);
+    }
+
+    /**
+     * Draw a text, which does not contain any characters that affect high-level layout.
+     * This includes but not limited to LINE_FEED, CHARACTER_TABULATION, any BiDi character,
+     * and any control characters. All characters will be laid-out left-to-right.
+     * <p>
+     * <strong>Do not call this method directly in any application with internationalization support,
+     * especially with BiDi text.</strong>
+     *
+     * @param text  the text to draw
+     * @param start context start of the text for shaping and rendering
+     * @param end   context end of the text for shaping and rendering
+     * @param x     the horizontal position at which to draw the text
+     * @param y     the vertical baseline of the line of text
+     * @param align text alignment, one of {@link Gravity#LEFT}, {@link Gravity#CENTER_HORIZONTAL}
+     *              or {@link Gravity#RIGHT}
+     * @param paint the paint used to measure and draw the text
+     */
     public void drawText(@NonNull CharSequence text, int start, int end, float x, float y,
                          int align, @NonNull TextPaint paint) {
         if ((start | end | end - start | text.length() - end) < 0) {

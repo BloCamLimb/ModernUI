@@ -78,8 +78,9 @@ public class MaterialCheckBox extends CheckBox {
                     paint.setAlpha(0xFF);
                     canvas.saveLayer(r.left, r.top, r.right, r.bottom, alpha);
                 }
-                canvas.drawRoundLine(mRadius * 1.5f, mRadius * 3.5f, mRadius * 2.5f, mRadius * 4.5f, paint);
-                canvas.drawRoundLine(mRadius * 2.5f, mRadius * 4.5f, mRadius * 4.5f, mRadius * 2f, paint);
+                paint.setStyle(Paint.FILL);
+                canvas.drawLine(mRadius * 1.5f, mRadius * 3.5f, mRadius * 2.5f, mRadius * 4.5f, mRadius * 0.75f, paint);
+                canvas.drawLine(mRadius * 2.5f, mRadius * 4.5f, mRadius * 4.5f, mRadius * 2f, mRadius * 0.75f, paint);
                 if (alpha != 0xFF) {
                     canvas.restore();
                 }

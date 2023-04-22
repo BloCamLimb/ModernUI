@@ -61,8 +61,11 @@ public class TestLinearLayout extends LinearLayout {
     private final Animation arcStartAni;
     private final Animation arcEndAni;*/
 
-    private static FloatBuffer sLinePoints = FloatBuffer.allocate(16);
-    private static IntBuffer sLineColors = IntBuffer.allocate(8);
+    private static final FloatBuffer sLinePoints = FloatBuffer.allocate(16);
+    private static final IntBuffer sLineColors = IntBuffer.allocate(sLinePoints.capacity() / 2);
+
+    private static final FloatBuffer sTrianglePoints = FloatBuffer.allocate(12);
+    private static final IntBuffer sTriangleColors = IntBuffer.allocate(sTrianglePoints.capacity() / 2);
 
     static {
         sLinePoints
@@ -84,6 +87,22 @@ public class TestLinearLayout extends LinearLayout {
                 .put(0xFF00FF00)
                 .put(0xAAFFFF00)
                 .put(0xFFFFFFFF)
+                .flip();
+        sTrianglePoints
+                .put(420).put(20)
+                .put(420).put(100)
+                .put(490).put(60)
+                .put(300).put(130)
+                .put(250).put(180)
+                .put(350).put(180)
+                .flip();
+        sTriangleColors
+                .put(0xAAFF0000)
+                .put(0xFFFF00FF)
+                .put(0xAA0000FF)
+                .put(0xAA00FFFF)
+                .put(0xFF00FF00)
+                .put(0xAAFFFF00)
                 .flip();
     }
 
@@ -206,7 +225,7 @@ public class TestLinearLayout extends LinearLayout {
             anim = ObjectAnimator.ofPropertyValuesHolder(this, pvh1, pvh2, pvh3);
             anim.setDuration(9000);
             anim.setInterpolator(TimeInterpolator.ACCELERATE_DECELERATE);
-            //anim.setRepeatCount(ValueAnimator.INFINITE);
+            anim.setRepeatCount(ValueAnimator.INFINITE);
             //anim.start();
         }
 
@@ -453,7 +472,11 @@ public class TestLinearLayout extends LinearLayout {
         canvas.drawRect(6, 126, 86, 156, paint);
         canvas.restore();
 
-        canvas.drawMesh(Canvas.VertexMode.LINE_STRIP, sLinePoints, sLineColors, null, null, null, paint);
+        canvas.drawLine(560, 20, 600, 100, 10, paint);
+
+        canvas.drawLineListMesh(sLinePoints, sLineColors, paint);
+        //canvas.drawPointListMesh(sLinePoints, sLineColors, paint);
+        canvas.drawTriangleListMesh(sTrianglePoints, sTriangleColors, paint);
 
         //canvas.drawRoundImage(ICON, 6, 160, 166, 320, iconRadius, paint);
 
@@ -461,6 +484,7 @@ public class TestLinearLayout extends LinearLayout {
         canvas.drawPie(100, 200, 50, 60, 120, paint);
         float s1 = (float) Math.sin(AnimationUtils.currentAnimationTimeMillis() / 300D);
         canvas.drawPie(350, 94, 55, 180 + 20 * s1, 100 + 50 * s1 * s1, paint);
+
         paint.setSmoothRadius(20.0f);
         paint.setStrokeWidth(40.0f);
         //canvas.drawArc(80, 400, 60, arcStart, arcStart - arcEnd, paint);
@@ -665,7 +689,7 @@ public class TestLinearLayout extends LinearLayout {
             Paint paint = Paint.get();
             paint.setARGB(128, 140, 200, 240);
             canvas.drawRoundRect(0, 1, getWidth(), getHeight() - 2, 4, paint);
-            canvas.drawText("DView", 0, 5, getWidth() / 2f, offsetY + 24, Gravity.CENTER, mTextPaint);
+            canvas.drawText("DView", 0, 5, getWidth() / 2f, offsetY + 24, mTextPaint);
         }
 
         @Override

@@ -18,40 +18,56 @@
 
 package icyllis.modernui.view.menu;
 
-import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.Paint;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.graphics.*;
 import icyllis.modernui.material.MaterialDrawable;
-import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.util.LayoutDirection;
 import icyllis.modernui.view.View;
 
 import javax.annotation.Nonnull;
+import java.nio.FloatBuffer;
 
 public class SubMenuArrowDrawable extends MaterialDrawable {
 
     private final int mSize;
+    private final FloatBuffer mPoints;
 
     public SubMenuArrowDrawable() {
         mSize = View.dp(24);
+        mPoints = FloatBuffer.allocate(6);
     }
 
     @Override
     public void draw(@Nonnull Canvas canvas) {
-        final Rect r = getBounds();
-        final float w = r.width();
-        final float h = r.height();
-        Paint paint = Paint.get();
+        Paint paint = Paint.take();
         paint.setColor(mColor);
         paint.setAlpha(modulateAlpha(paint.getAlpha(), mAlpha));
         if (paint.getAlpha() != 0) {
-            boolean mirror = getLayoutDirection() == LayoutDirection.RTL;
-            if (mirror) {
-                canvas.drawTriangle(14 / 24f * w, 7 / 24f * h, 9 / 24f * w, 12 / 24f * h,
-                        14 / 24f * w, 17 / 24f * h, paint);
-            } else {
-                canvas.drawTriangle(10 / 24f * w, 17 / 24f * h, 15 / 24f * w, 12 / 24f * h,
-                        10 / 24f * w, 7 / 24f * h, paint);
-            }
+            canvas.drawTriangleListMesh(mPoints, /*color*/null, paint);
+        }
+        paint.drop();
+    }
+
+    @Override
+    protected void onBoundsChange(@NonNull Rect bounds) {
+        buildArrowPoints(bounds.width(), bounds.height(), getLayoutDirection());
+    }
+
+    @Override
+    protected boolean onLayoutDirectionChanged(int layoutDirection) {
+        final Rect bounds = getBounds();
+        buildArrowPoints(bounds.width(), bounds.height(), layoutDirection);
+        return true;
+    }
+
+    private void buildArrowPoints(float w, float h, int layoutDirection) {
+        boolean mirror = layoutDirection == LayoutDirection.RTL;
+        if (mirror) {
+            mPoints.put(16 / 24f * w).put(7 / 24f * h).put(8 / 24f * w).put(12 / 24f * h)
+                    .put(16 / 24f * w).put(17 / 24f * h).flip();
+        } else {
+            mPoints.put(8 / 24f * w).put(17 / 24f * h).put(16 / 24f * w).put(12 / 24f * h)
+                    .put(8 / 24f * w).put(7 / 24f * h).flip();
         }
     }
 
