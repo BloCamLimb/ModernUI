@@ -314,7 +314,7 @@ public final class MathUtil {
      * Linear interpolation between two values, matches GLSL {@code mix} intrinsic function.
      * Slower than {@link #lerp(float, float, float)} but without intermediate overflow or underflow.
      */
-    public static float mix(float a, float b, float t) {
+    public static float lerpStable(float a, float b, float t) {
         return a * (1 - t) + b * t;
     }
 
@@ -322,7 +322,7 @@ public final class MathUtil {
      * Linear interpolation between two values, matches GLSL {@code mix} intrinsic function.
      * Slower than {@link #lerp(double, double, double)} but without intermediate overflow or underflow.
      */
-    public static double mix(double a, double b, double t) {
+    public static double lerpStable(double a, double b, double t) {
         return a * (1 - t) + b * t;
     }
 
@@ -971,6 +971,26 @@ public final class MathUtil {
             else tail[pos] = v;
         }
         return length;
+    }
+
+    /**
+     * Calculate arithmetic mean without intermediate overflow or underflow.
+     */
+    public static double averageStable(@NonNull double[] a) {
+        double r = 0;
+        for (int i = 0, e = a.length; i < e; )
+            r += (a[i] - r) / ++i;
+        return r;
+    }
+
+    /**
+     * Calculate arithmetic mean without intermediate overflow or underflow.
+     */
+    public static double averageStable(@NonNull double[] a, int start, int limit) {
+        double r = 0, t = 0;
+        for (int i = start; i < limit; )
+            r += (a[i++] - r) / ++t;
+        return r;
     }
 
     private MathUtil() {

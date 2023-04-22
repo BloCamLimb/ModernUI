@@ -82,7 +82,7 @@ public abstract class Canvas {
 
     public static final Marker MARKER = MarkerManager.getMarker("Canvas");
 
-    public Canvas() {
+    protected Canvas() {
     }
 
     /**
@@ -464,32 +464,48 @@ public abstract class Canvas {
     }
 
     /**
-     * Draw a line segment from p0 to p1 using the specified paint.
-     * In paint: Paint's stroke width describes the line thickness;
-     * Paint's cap draws the end rounded or square;
-     * Paint's style is ignored, as if were set to {@link Paint#STROKE}.
+     * Draw a line segment from (x0, y0) to (x1, y1) using the specified paint.
+     * <p>
+     * Line covers an area, and is not a stroke path in the concept of Modern UI.
+     * Therefore, a line may be either "filled" (path) or "stroked" (annular, hollow),
+     * depending on paint's style. Additionally, paint's cap draws the end rounded
+     * or square, if filled; the other properties of paint work as intended.
+     * <p>
+     * See {@link #drawLinePath(float, float, float, float, Paint)} for the path version.
+     * <p>
+     * If thickness = 0 (also known as hairline), then this uses the mesh version.
+     * See {@link #drawLineListMesh(FloatBuffer, IntBuffer, Paint)} for the mesh version.
      *
-     * @param p0    start of line segment
-     * @param p1    end of line segment
-     * @param paint the paint used to draw the line
+     * @param x0        the start of the line segment on x-axis
+     * @param y0        the start of the line segment on y-axis
+     * @param x1        the end of the line segment on x-axis
+     * @param y1        the end of the line segment on y-axis
+     * @param thickness the thickness of the line segment
+     * @param paint     the paint used to draw the line segment
      */
-    public final void drawLine(PointF p0, PointF p1, Paint paint) {
-        drawLine(p0.x, p0.y, p1.x, p1.y, paint);
+    public abstract void drawLine(float x0, float y0, float x1, float y1,
+                                  float thickness, @NonNull Paint paint);
+
+    /**
+     * Variant version of {@link #drawLine(float, float, float, float, float, Paint)}.
+     *
+     * @param p0        start of line segment
+     * @param p1        end of line segment
+     * @param thickness the thickness of the line segment
+     * @param paint     the paint used to draw the line
+     */
+    public final void drawLine(@NonNull PointF p0, @NonNull PointF p1,
+                               float thickness, @NonNull Paint paint) {
+        drawLine(p0.x, p0.y, p1.x, p1.y, thickness, paint);
     }
 
     /**
-     * Draw a line segment from (x0, y0) to (x1, y1) using the specified paint.
      * In paint: Paint's stroke width describes the line thickness;
      * Paint's cap draws the end rounded or square;
      * Paint's style is ignored, as if were set to {@link Paint#STROKE}.
-     *
-     * @param x0    start of line segment on x-axis
-     * @param y0    start of line segment on y-axis
-     * @param x1    end of line segment on x-axis
-     * @param y1    end of line segment on y-axis
-     * @param paint the paint used to draw the line
+     * //WIP
      */
-    public void drawLine(float x0, float y0, float x1, float y1, Paint paint) {
+    public void drawLinePath(float x0, float y0, float x1, float y1, Paint paint) {
     }
 
     /**
@@ -700,6 +716,12 @@ public abstract class Canvas {
         drawPie(center.x, center.y, radius, startAngle, sweepAngle, paint);
     }
 
+    //WIP
+    public void drawArcPath(float cx, float cy, float radius,
+                            float startAngle, float sweepAngle,
+                            @NonNull Paint paint) {
+    }
+
     /**
      * Draw a quadratic Bézier curve using the specified paint. The three points represent
      * the starting point, the first control point and the end control point respectively.
@@ -740,38 +762,6 @@ public abstract class Canvas {
      */
     public abstract void drawBezier(float x0, float y0, float x1, float y1, float x2, float y2,
                                     Paint paint);
-
-    /**
-     * Draw a triangle using the specified paint. The three vertices are in counter-clockwise order.
-     * <p>
-     * The Style is ignored in the paint, triangles are always "filled".
-     * The smooth radius and gradient color are ignored as well.
-     *
-     * @param p0    the first vertex
-     * @param p1    the second vertex
-     * @param p2    the last vertex
-     * @param paint the paint used to draw the triangle
-     */
-    public final void drawTriangle(PointF p0, PointF p1, PointF p2, Paint paint) {
-        drawTriangle(p0.x, p0.y, p1.x, p1.y, p2.x, p2.y, paint);
-    }
-
-    /**
-     * Draw a triangle using the specified paint. The three vertices are in counter-clockwise order.
-     * <p>
-     * The Style is ignored in the paint, triangles are always "filled".
-     * The smooth radius and gradient color are ignored as well.
-     *
-     * @param x0    the x-coordinate of the first vertex
-     * @param y0    the y-coordinate of the first vertex
-     * @param x1    the x-coordinate of the second vertex
-     * @param y1    the y-coordinate of the second vertex
-     * @param x2    the x-coordinate of the last vertex
-     * @param y2    the y-coordinate of the last vertex
-     * @param paint the paint used to draw the triangle
-     */
-    public abstract void drawTriangle(float x0, float y0, float x1, float y1, float x2, float y2,
-                                      Paint paint);
 
     /**
      * Draw the specified image with its top/left corner at (x,y), using the
@@ -837,23 +827,6 @@ public abstract class Canvas {
                                    float dstLeft, float dstTop, float dstRight, float dstBottom, @Nullable Paint paint);
 
     /**
-     * Draw a line segment with the specified start and stop x,y coordinates, using
-     * the specified paint. The Style is ignored in the paint, lines are always "framed".
-     * Stroke width in the paint represents the width of the line.
-     * <p>
-     * Actually, a round line with round corners is drawn as a filled round rectangle,
-     * rotated around the midpoint of the line. So it's a bit heavy to draw.
-     *
-     * @param startX The x-coordinate of the start point of the line
-     * @param startY The y-coordinate of the start point of the line
-     * @param stopX  The x-coordinate of the stop point of the line
-     * @param stopY  The y-coordinate of the stop point of the line
-     * @param paint  The paint used to draw the line
-     */
-    public abstract void drawRoundLine(float startX, float startY, float stopX, float stopY,
-                                       Paint paint);
-
-    /**
      * Draw a series of round lines.
      * <p>
      * When discontinuous, each line is taken from 4 consecutive values in the pts array. Thus,
@@ -875,6 +848,7 @@ public abstract class Canvas {
      * @param strip  Whether line points are continuous
      * @param paint  The paint used to draw the lines
      */
+    @Deprecated
     public void drawRoundLines(float[] pts, int offset, int count, boolean strip,
                                Paint paint) {
         if ((offset | count | pts.length - offset - count) < 0) {
@@ -883,32 +857,20 @@ public abstract class Canvas {
         if (count < 4) {
             return;
         }
+        float thick = paint.getStrokeWidth();
         if (strip) {
             float x, y;
-            drawRoundLine(pts[offset++], pts[offset++], x = pts[offset++], y = pts[offset++], paint);
+            drawLine(pts[offset++], pts[offset++], x = pts[offset++], y = pts[offset++], thick, paint);
             count = (count - 4) >> 1;
             for (int i = 0; i < count; i++) {
-                drawRoundLine(x, y, x = pts[offset++], y = pts[offset++], paint);
+                drawLine(x, y, x = pts[offset++], y = pts[offset++], thick, paint);
             }
         } else {
             count >>= 2;
             for (int i = 0; i < count; i++) {
-                drawRoundLine(pts[offset++], pts[offset++], pts[offset++], pts[offset++], paint);
+                drawLine(pts[offset++], pts[offset++], pts[offset++], pts[offset++], thick, paint);
             }
         }
-    }
-
-    /**
-     * A helper version of {@link #drawRoundLines(float[], int, int, boolean, Paint)},
-     * with its offset is 0 and count is the length of the pts array.
-     *
-     * @param pts   The array of points of the lines to draw [x0 y0 x1 y1 x2 y2 ...]
-     * @param strip Whether line points are continuous
-     * @param paint The paint used to draw the lines
-     * @see #drawRoundLines(float[], int, int, boolean, Paint)
-     */
-    public final void drawRoundLines(float[] pts, boolean strip, Paint paint) {
-        drawRoundLines(pts, 0, pts.length, strip, paint);
     }
 
     /**
@@ -926,44 +888,27 @@ public abstract class Canvas {
                                         float radius, Paint paint);
 
     /**
-     * Draw a text, which does not contain any characters that affect high-level layout.
-     * This includes but not limited to LINE_FEED, CHARACTER_TABULATION, any BiDi character,
-     * and any control characters. All characters will be laid-out left-to-right.
+     * Draw a text with text shaping, but without style controlling and paragraph layout.
      * <p>
-     * <strong>Do not call this method directly in any application with internationalization support,
-     * especially with BiDi text.</strong>
+     * This method only performs glyph layout, all characters will be laid-out left-to-right.
+     * This means only a text containing just printable characters and in LTR direction can be
+     * rendered correctly. <strong>Do not use this method in any application with
+     * internationalization support.</strong>
+     * <p>
+     * See <code>text</code> package to split a Unicode string into BiDi runs, and use
+     * {@link #drawTextRun(LayoutPiece, float, float, TextPaint)} to render the string.
+     * <p>
+     * This method is only available in GUI module, not 3D module.
      *
      * @param text  the text to draw
      * @param start context start of the text for shaping and rendering
      * @param end   context end of the text for shaping and rendering
      * @param x     the horizontal position at which to draw the text
      * @param y     the vertical baseline of the line of text
-     * @param paint the paint used to measure and draw the text
-     */
-    public final void drawText(CharSequence text, int start, int end,
-                               float x, float y, TextPaint paint) {
-        drawText(text, start, end, x, y, Gravity.LEFT, paint);
-    }
-
-    /**
-     * Draw a text, which does not contain any characters that affect high-level layout.
-     * This includes but not limited to LINE_FEED, CHARACTER_TABULATION, any BiDi character,
-     * and any control characters. All characters will be laid-out left-to-right.
-     * <p>
-     * <strong>Do not call this method directly in any application with internationalization support,
-     * especially with BiDi text.</strong>
-     *
-     * @param text  the text to draw
-     * @param start context start of the text for shaping and rendering
-     * @param end   context end of the text for shaping and rendering
-     * @param x     the horizontal position at which to draw the text
-     * @param y     the vertical baseline of the line of text
-     * @param align text alignment, one of {@link Gravity#LEFT}, {@link Gravity#CENTER_HORIZONTAL}
-     *              or {@link Gravity#RIGHT}
      * @param paint the paint used to measure and draw the text
      */
     public abstract void drawText(CharSequence text, int start, int end,
-                                  float x, float y, int align, TextPaint paint);
+                                  float x, float y, TextPaint paint);
 
     /**
      * Draw a run of text. The given range cannot excess a style run or break grapheme cluster,
@@ -1058,6 +1003,48 @@ public abstract class Canvas {
                          @Nullable IntBuffer color, @Nullable FloatBuffer tex,
                          @Nullable ShortBuffer indices, @Nullable Blender blender,
                          @NonNull Paint paint) {
+    }
+
+    /**
+     * Special case of {@link #drawMesh(VertexMode, FloatBuffer, IntBuffer, FloatBuffer, ShortBuffer, Blender, Paint)}.
+     * <p>
+     * Each point is always 1-pixel in screen-space (device space), no matter
+     * what transformation is applied. It has zero area.
+     *
+     * @param pos   array of positions for the mesh, remaining should be multiple of 2
+     * @param color if not null, specifies a color for each vertex, to be interpolated
+     *              across the topology, remaining >= N
+     * @param paint specifies a constant color (a shader uniform) if there is no color array
+     */
+    public final void drawPointListMesh(@NonNull FloatBuffer pos, @Nullable IntBuffer color, @NonNull Paint paint) {
+        drawMesh(VertexMode.POINTS, pos, color, null, null, null, paint);
+    }
+
+    /**
+     * Special case of {@link #drawMesh(VertexMode, FloatBuffer, IntBuffer, FloatBuffer, ShortBuffer, Blender, Paint)}.
+     * <p>
+     * Each line is always 1-pixel wide in screen-space (device space), no matter
+     * what transformation is applied. This is known as hairline and it has zero area.
+     *
+     * @param pos   array of positions for the mesh, remaining should be multiple of 2
+     * @param color if not null, specifies a color for each vertex, to be interpolated
+     *              across the topology, remaining >= N
+     * @param paint specifies a constant color (a shader uniform) if there is no color array
+     */
+    public final void drawLineListMesh(@NonNull FloatBuffer pos, @Nullable IntBuffer color, @NonNull Paint paint) {
+        drawMesh(VertexMode.LINES, pos, color, null, null, null, paint);
+    }
+
+    /**
+     * Special case of {@link #drawMesh(VertexMode, FloatBuffer, IntBuffer, FloatBuffer, ShortBuffer, Blender, Paint)}.
+     *
+     * @param pos   array of positions for the mesh, remaining should be multiple of 2
+     * @param color if not null, specifies a color for each vertex, to be interpolated
+     *              across the topology, remaining >= N
+     * @param paint specifies a constant color (a shader uniform) if there is no color array
+     */
+    public final void drawTriangleListMesh(@NonNull FloatBuffer pos, @Nullable IntBuffer color, @NonNull Paint paint) {
+        drawMesh(VertexMode.TRIANGLES, pos, color, null, null, null, paint);
     }
 
     /**

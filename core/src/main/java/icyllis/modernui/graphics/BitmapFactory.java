@@ -326,7 +326,7 @@ public final class BitmapFactory {
         } else {
             ByteBuffer p = null;
             try {
-                p = Core.readBuffer(stream);
+                p = Core.readIntoNativeBuffer(stream);
                 bm = decodeBuffer(p.rewind(), opts);
             } finally {
                 MemoryUtil.memFree(p);
@@ -359,7 +359,7 @@ public final class BitmapFactory {
         } else {
             ByteBuffer p = null;
             try {
-                p = Core.readBuffer(stream);
+                p = Core.readIntoNativeBuffer(stream);
                 decodeBufferInfo(p.rewind(), opts);
             } finally {
                 MemoryUtil.memFree(p);
@@ -418,7 +418,7 @@ public final class BitmapFactory {
         } else {
             ByteBuffer p = null;
             try {
-                p = Core.readBuffer(channel);
+                p = Core.readIntoNativeBuffer(channel);
                 bm = decodeBuffer(p.rewind(), opts);
             } finally {
                 MemoryUtil.memFree(p);
@@ -450,7 +450,7 @@ public final class BitmapFactory {
         } else {
             ByteBuffer p = null;
             try {
-                p = Core.readBuffer(channel);
+                p = Core.readIntoNativeBuffer(channel);
                 decodeBufferInfo(p.rewind(), opts);
             } finally {
                 MemoryUtil.memFree(p);

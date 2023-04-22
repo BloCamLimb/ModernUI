@@ -18,8 +18,8 @@
 
 package icyllis.modernui.core;
 
-import icyllis.modernui.annotation.*;
 import icyllis.modernui.akashi.opengl.GLCore;
+import icyllis.modernui.annotation.*;
 import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
@@ -61,27 +61,36 @@ public final class Core {
     }
 
     /**
-     * Initializes the GLFW, call on main thread. This method also specifies the main thread.
+     * Initializes the GLFW and the main thread.
+     * <p>
+     * If the GLFW has already been initialized, this method just specifies the current thread as
+     * the main thread. If both are done, it will cause an assertion error.
      */
     @MainThread
     public static void initialize() {
         synchronized (Core.class) {
             if (sMainThread == null) {
-                LOGGER.info(MARKER, "Backend Library: LWJGL {}", Version.getVersion());
-                try (GLFWErrorCallback cb = GLFW.glfwSetErrorCallback(Core::onError)) {
-                    if (cb != null || !GLFW.glfwInit()) {
-                        throw new IllegalStateException("Failed to initialize GLFW");
-                    }
-                    sMainThread = Thread.currentThread();
+                GLFWErrorCallback cb = GLFW.glfwSetErrorCallback(null);
+                if (cb != null) {
+                    GLFW.glfwSetErrorCallback(cb);
+                } else {
+                    LOGGER.info(MARKER, "Backend Library: LWJGL {}", Version.getVersion());
+                    GLFW.glfwSetErrorCallback(new GLFWErrorCallback() {
+                        @Override
+                        public void invoke(int error, long description) {
+                            LOGGER.error(MARKER, "GLFW Error: 0x{} {}",
+                                    Integer.toHexString(error), memUTF8Safe(description));
+                        }
+                    });
                 }
+                if (!GLFW.glfwInit()) {
+                    throw new IllegalStateException("Failed to initialize GLFW");
+                }
+                sMainThread = Thread.currentThread();
             } else {
-                throw new IllegalStateException("Initialize twice");
+                assert false;
             }
         }
-    }
-
-    private static void onError(int error, long description) {
-        LOGGER.error(MARKER, "GLFW Error: 0x{} {}", Integer.toHexString(error), memUTF8Safe(description));
     }
 
     /**
@@ -95,20 +104,6 @@ public final class Core {
         }
         GLFW.glfwTerminate();
         LOGGER.info(MARKER, "Terminated GLFW");
-    }
-
-    /**
-     * Initialize only the main thread. Cannot be used with {@link #initialize()}.
-     */
-    @MainThread
-    public static void initMainThread() {
-        synchronized (Core.class) {
-            if (sMainThread == null) {
-                sMainThread = Thread.currentThread();
-            } else {
-                throw new IllegalStateException("Initialize twice");
-            }
-        }
     }
 
     // not locked, but visible
@@ -364,9 +359,9 @@ public final class Core {
      * on the order of a few micro- or nanoseconds. The timer measures time elapsed
      * since GLFW was initialized.
      * <p>
-     * This is a bit faster than {@link System#nanoTime()}. All input events and
-     * frame events use this time base, but in advanced frameworks (such as animations),
-     * you should NOT use this time base.
+     * Calling this method is faster than {@link System#nanoTime()}. This time base
+     * is used in all input events and frame events, but not in high-level API
+     * (such as animations).
      *
      * @return current time in nanoseconds
      */
@@ -380,7 +375,7 @@ public final class Core {
      * on the order of a few micro- or nanoseconds. The timer measures time elapsed
      * since GLFW was initialized.
      * <p>
-     * You should NOT use this time base in advanced frameworks (such as animations).
+     * You should NOT use this time base in high-level API (such as animations).
      *
      * @return current time in milliseconds
      */
@@ -398,23 +393,28 @@ public final class Core {
      * @throws IOException some errors occurred while reading
      */
     @NonNull
-    public static ByteBuffer readBuffer(ReadableByteChannel channel) throws IOException {
+    public static ByteBuffer readIntoNativeBuffer(@NonNull ReadableByteChannel channel) throws IOException {
         ByteBuffer p = null;
         try {
             if (channel instanceof final SeekableByteChannel ch) {
-                long rem = ch.size() - ch.position();
-                if (rem > Integer.MAX_VALUE - 1) {
-                    throw new IOException("File is too big, found " + rem + " bytes");
+                long rem = ch.size() - ch.position() + 1; // +1 EOF
+                if (rem > Integer.MAX_VALUE) {
+                    throw new IOException("File is too big, found " + (rem - 1) + " bytes");
                 }
-                p = memAlloc((int) (rem + 1)); // +1 EOF
+                p = memAlloc((int) rem);
                 //noinspection StatementWithEmptyBody
-                while (ch.read(p) != -1);
+                while (ch.read(p) != -1)
+                    ;
             } else {
                 p = memAlloc(4096);
                 while (channel.read(p) != -1) {
-                    if (p.remaining() == 0) {
-                        int cap = p.capacity();
-                        p = memRealloc(p, cap + (cap >> 1));
+                    if (!p.hasRemaining()) {
+                        long cap = p.capacity();
+                        if (cap == Integer.MAX_VALUE) {
+                            throw new IOException("File is too big");
+                        }
+                        p = memRealloc(p, (int) Math.min(cap + (cap >> 1), // grow 50%
+                                Integer.MAX_VALUE));
                     }
                 }
             }
@@ -436,23 +436,25 @@ public final class Core {
      * @throws IOException some errors occurred while reading
      */
     @NonNull
-    public static ByteBuffer readBuffer(InputStream stream) throws IOException {
-        return readBuffer(Channels.newChannel(stream));
+    public static ByteBuffer readIntoNativeBuffer(@NonNull InputStream stream) throws IOException {
+        return readIntoNativeBuffer(Channels.newChannel(stream));
     }
 
     /**
-     * This method doesn't close channel.
+     * This method doesn't close channel. No code point validation.
      *
      * @param channel read from
      * @return string or null if an IOException occurred
      */
     @Nullable
-    public static String readUTF8(ReadableByteChannel channel) {
+    public static String readUTF8(@NonNull ReadableByteChannel channel) {
         ByteBuffer p = null;
         try {
-            p = readBuffer(channel);
-            final int l = p.position();
-            return memUTF8(p.rewind(), l);
+            p = readIntoNativeBuffer(channel);
+            int n = p.position();
+            byte[] bytes = new byte[n];
+            p.get(0, bytes, 0, n);
+            return new String(bytes, 0, n, StandardCharsets.UTF_8);
         } catch (IOException e) {
             return null;
         } finally {
@@ -461,71 +463,67 @@ public final class Core {
     }
 
     /**
-     * This method doesn't close channel.
+     * This method doesn't close channel. No code point validation.
      *
      * @param stream read from
      * @return string or null if an IOException occurred
      */
     @Nullable
-    public static String readUTF8(InputStream stream) {
+    public static String readUTF8(@NonNull InputStream stream) {
         return readUTF8(Channels.newChannel(stream));
     }
 
-    public static void openURL(@NonNull URL url) {
+    /**
+     * Launches the associated application to open the URL.
+     *
+     * @return true on success, false on failure
+     */
+    public static boolean openURL(@NonNull URL url) {
         try {
-            String[] args = switch (Platform.get()) {
-                case WINDOWS -> new String[]{"rundll32", "url.dll,FileProtocolHandler", url.toString()};
-                case MACOSX -> new String[]{"open", url.toString()};
-                default -> {
-                    String s = url.toString();
-                    if ("file".equals(url.getProtocol())) {
-                        s = s.replace("file:", "file://");
-                    }
-                    yield new String[]{"xdg-open", s};
-                }
+            String s = url.toString();
+            String[] cmd = switch (Platform.get()) {
+                case WINDOWS -> new String[]{"rundll32", "url.dll,FileProtocolHandler", s};
+                case MACOSX -> new String[]{"open", s};
+                default -> new String[]{"xdg-open", url.getProtocol().equals("file")
+                        ? s.replace("file:", "file://")
+                        : s};
             };
-            Process process = Runtime.getRuntime().exec(args);
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(
-                    process.getErrorStream(), StandardCharsets.UTF_8))) {
-                reader.lines().forEach(s -> LOGGER.error(MARKER, s));
+            Process proc = Runtime.getRuntime().exec(cmd);
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getErrorStream()))) {
+                reader.lines().forEach(line -> LOGGER.error(MARKER, line));
             }
-            // XXX: should not close them ourselves
-            /*try {
-                if (process.getInputStream() != null) {
-                    process.getInputStream().close();
-                }
-            } catch (IOException ex) {
-                try {
-                    if (process.getErrorStream() != null) {
-                        process.getErrorStream().close();
-                    }
-                } catch (IOException e) {
-                    try {
-                        if (process.getOutputStream() != null) {
-                            process.getOutputStream().close();
-                        }
-                    } catch (IOException ignored) {
-                    }
-                }
-            }*/
+            return true;
         } catch (IOException e) {
             LOGGER.error(MARKER, "Failed to open URL: {}", url, e);
+            return false;
         }
     }
 
-    public static void openURI(@NonNull URI uri) {
+    /**
+     * Launches the associated application to open the URL.
+     *
+     * @return true on success, false on failure
+     */
+    public static boolean openURI(@NonNull URI uri) {
         try {
-            openURL(uri.toURL());
+            return openURL(uri.toURL());
         } catch (Exception e) {
-            LOGGER.error("Failed to open URI: {}", uri, e);
+            LOGGER.error(MARKER, "Failed to open URI: {}", uri, e);
+            return false;
         }
     }
 
-    public static void openURI(@NonNull String uri) {
+    /**
+     * Launches the associated application to open the URL.
+     *
+     * @return true on success, false on failure
+     */
+    public static boolean openURI(@NonNull String uri) {
         try {
-            openURI(URI.create(uri));
+            return openURI(URI.create(uri));
         } catch (Exception e) {
-            LOGGER.error("Failed to open URI: {}", uri, e);
+            LOGGER.error(MARKER, "Failed to open URI: {}", uri, e);
+            return false;
         }
     }
 }

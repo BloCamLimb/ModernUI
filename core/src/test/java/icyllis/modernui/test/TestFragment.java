@@ -42,6 +42,8 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Locale;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.DoubleStream;
 
 import static icyllis.modernui.ModernUI.LOGGER;
 import static icyllis.modernui.view.View.dp;
@@ -63,16 +65,9 @@ public class TestFragment extends Fragment {
         LOGGER.info(format.format(new BigDecimal("2136541565.615")));
         LOGGER.info("Levenshtein distance: {}", TextUtils.distance("sunday", "saturday"));
 
-        try {
-            FileChannel channel = FileChannel.open(Path.of("F:/粉骨砕身カジノゥ (long ver.).ogg"), StandardOpenOption.READ);
-            OggDecoder decoder = new OggDecoder(channel);
-            AudioManager.getInstance().initialize();
-            Track track = new Track(decoder);
-            sSpectrumGraph = new SpectrumGraph(track, true, 400);
-            track.play();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        double[] doubles = new double[]{1, 160, 3};
+        DoubleStream.of(doubles).average().ifPresent(LOGGER::info);
+        LOGGER.info(MathUtil.averageStable(doubles));
 
         try (ModernUI app = new ModernUI()) {
             app.run(new TestFragment());
@@ -118,6 +113,19 @@ public class TestFragment extends Fragment {
         getChildFragmentManager().beginTransaction()
                 .replace(660, new FragmentA(), null)
                 .commit();
+
+        CompletableFuture.runAsync(() -> {
+            try {
+                FileChannel channel = FileChannel.open(Path.of("F:/粉骨砕身カジノゥ (long ver.).ogg"), StandardOpenOption.READ);
+                OggDecoder decoder = new OggDecoder(channel);
+                AudioManager.getInstance().initialize();
+                Track track = new Track(decoder);
+                sSpectrumGraph = new SpectrumGraph(track, false, 400);
+                track.play();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     @Nullable
@@ -162,7 +170,7 @@ public class TestFragment extends Fragment {
         public View onCreateView(@Nullable ViewGroup container,
                                  @Nullable DataSet savedInstanceState) {
             LinearLayout content = new TestLinearLayout();
-            content.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+            //content.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
             content.setLayoutParams(new FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
 
             content.setOnKeyListener((v, keyCode, event) -> {
