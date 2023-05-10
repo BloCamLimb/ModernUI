@@ -7,4 +7,6 @@ pluginManagement {
 rootProject.name = 'ModernUI'
 
 include 'core'
-project(':core').name = "ModernUI-Core"
+
+// extensions
+include 'x-viewpager'

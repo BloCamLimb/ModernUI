@@ -29,12 +29,14 @@ import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.system.Platform;
 
 import java.io.*;
+import java.lang.ref.Cleaner;
 import java.net.URI;
 import java.net.URL;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static icyllis.modernui.ModernUI.*;
@@ -45,6 +47,8 @@ import static org.lwjgl.system.MemoryUtil.*;
  * memory operations and thread scheduling.
  */
 public final class Core {
+
+    private static final Cleaner sCleaner = Cleaner.create();
 
     private static volatile Thread sMainThread;
     private static Thread sRenderThread;
@@ -58,6 +62,19 @@ public final class Core {
     private static final ConcurrentLinkedQueue<Runnable> sRenderCalls = new ConcurrentLinkedQueue<>();
 
     private Core() {
+    }
+
+    /**
+     * Registers a target and a cleaning action to run when the target becomes phantom
+     * reachable. The action object should never hold any reference to the target object.
+     *
+     * @param target the target to monitor
+     * @param action a {@code Runnable} to invoke when the target becomes phantom reachable
+     * @return a {@code Cleanable} instance representing the registry entry
+     */
+    @NonNull
+    public static Cleaner.Cleanable registerCleanup(@NonNull Object target, @NonNull Runnable action) {
+        return sCleaner.register(target, action);
     }
 
     /**
@@ -84,6 +101,7 @@ public final class Core {
                     });
                 }
                 if (!GLFW.glfwInit()) {
+                    Objects.requireNonNull(GLFW.glfwSetErrorCallback(null)).free();
                     throw new IllegalStateException("Failed to initialize GLFW");
                 }
                 sMainThread = Thread.currentThread();

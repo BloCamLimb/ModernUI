@@ -37,7 +37,7 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
 
     public static final Marker MARKER = MarkerManager.getMarker("SpannableStringBuilder");
 
-    private static final Pool<IntArrayList> sIntBufferPool = Pools.concurrent(2);
+    private static final Pools.Pool<IntArrayList> sIntBufferPool = Pools.newSynchronizedPool(2);
 
     //TODO These value are tightly related to the public SPAN_MARK/POINT values in {@link Spanned}
     private static final int MARK = 1;

@@ -25,7 +25,6 @@ import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.graphics.Matrix4;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.RectF;
-import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 import icyllis.modernui.view.*;
 import org.intellij.lang.annotations.MagicConstant;
@@ -94,7 +93,7 @@ public class CoordinatorLayout extends ViewGroup {
      */
     static final Comparator<View> TOP_SORTED_CHILDREN_COMPARATOR = (lhs, rhs) -> Float.compare(rhs.getZ(), lhs.getZ());
 
-    private static final Pool<Rect> sRectPool = Pools.concurrent(12);
+    private static final Pools.Pool<Rect> sRectPool = Pools.newSynchronizedPool(12);
 
     @Nonnull
     private static Rect acquireTempRect() {
@@ -809,7 +808,7 @@ public class CoordinatorLayout extends ViewGroup {
         if (lp.mBehavior != null) {
             final float scrimAlpha = lp.mBehavior.getScrimOpacity(this, child);
             if (scrimAlpha > 0f) {
-                Paint paint = Paint.get();
+                Paint paint = Paint.obtain();
                 paint.setColor(lp.mBehavior.getScrimColor(this, child));
                 paint.setAlpha(MathUtil.clamp(Math.round(255 * scrimAlpha), 0, 255));
 
@@ -817,6 +816,7 @@ public class CoordinatorLayout extends ViewGroup {
                 canvas.drawRect(getPaddingLeft(), getPaddingTop(),
                         getWidth() - getPaddingRight(), getHeight() - getPaddingBottom(),
                         paint);
+                paint.recycle();
             }
         }
         super.drawChild(canvas, child, drawingTime);

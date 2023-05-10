@@ -18,7 +18,6 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 
 import javax.annotation.Nonnull;
@@ -32,7 +31,7 @@ public abstract class SurfaceCanvas extends Canvas {
 
     // local MCRec stack
     private final Deque<MCRec> mMCStack = new ArrayDeque<>(16);
-    private final Pool<MCRec> mMCRecPool = Pools.simple(32);
+    private final Pools.Pool<MCRec> mMCRecPool = Pools.newSimplePool(32);
 
     private final BaseDevice mBaseDevice;
 
@@ -115,11 +114,11 @@ public abstract class SurfaceCanvas extends Canvas {
     @Override
     public void drawColor(int color, BlendMode mode) {
         // paint may be modified for recording canvas, so not impl in super class
-        Paint paint = Paint.take();
+        Paint paint = Paint.obtain();
         paint.setColor(color);
         paint.setBlendMode(mode);
         drawPaint(paint);
-        paint.drop();
+        paint.recycle();
     }
 
     @Override

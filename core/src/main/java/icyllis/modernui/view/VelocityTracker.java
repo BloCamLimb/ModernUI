@@ -18,7 +18,6 @@
 
 package icyllis.modernui.view;
 
-import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -37,7 +36,7 @@ import javax.annotation.Nonnull;
 @ApiStatus.Internal
 public final class VelocityTracker {
 
-    private static final Pool<VelocityTracker> sPool = Pools.concurrent(2);
+    private static final Pools.Pool<VelocityTracker> sPool = Pools.newSynchronizedPool(2);
 
     private static final long ASSUME_POINTER_STOPPED_TIME = 40000000; // 40ms
 

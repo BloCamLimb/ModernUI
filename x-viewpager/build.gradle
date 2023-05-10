@@ -1,0 +1,14 @@
+archivesBaseName = 'ModernUI-ViewPager'
+version = '1.0.0'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(':core')
+}
+
+test {
+    useJUnitPlatform()
+}

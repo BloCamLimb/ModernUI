@@ -20,18 +20,23 @@ package icyllis.modernui.util;
 
 /**
  * Receives callbacks when a data set has been changed, or made invalid. The typical data sets
- * that are observed are {@link icyllis.modernui.widget.Adapter}s.
- * DataSetObserver must be implemented by objects which are added to a DataSetObservable.
+ * that are observed are {@link icyllis.modernui.widget.Adapter Adapters}.<br>
+ * {@link DataSetObserver} must be implemented by objects which are added to a
+ * {@link DataSetObservable}.
  */
 public interface DataSetObserver {
 
     /**
      * This method is called when the entire data set has changed.
      */
-    void onChanged();
+    default void onChanged() {
+        // Do nothing
+    }
 
     /**
      * This method is called when the entire data becomes invalid.
      */
-    void onInvalidated();
+    default void onInvalidated() {
+        // Do nothing
+    }
 }

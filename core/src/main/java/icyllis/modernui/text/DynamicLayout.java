@@ -21,7 +21,6 @@ package icyllis.modernui.text;
 import icyllis.modernui.graphics.font.FontMetricsInt;
 import icyllis.modernui.text.style.UpdateLayout;
 import icyllis.modernui.util.GrowingArrayUtils;
-import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 
@@ -32,7 +31,7 @@ import java.util.List;
 
 public class DynamicLayout extends Layout {
 
-    private static final Pool<Builder> sPool = Pools.concurrent(2);
+    private static final Pools.Pool<Builder> sPool = Pools.newSynchronizedPool(2);
 
     /**
      * Obtain a builder for constructing DynamicLayout objects.

@@ -21,10 +21,35 @@ package icyllis.modernui.util;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 
+import java.util.Objects;
+
 /**
  * Helper class for creating pools of objects.
  */
 public final class Pools {
+
+    /**
+     * Interface for managing a pool of objects.
+     *
+     * @param <T> The pooled type.
+     */
+    public interface Pool<T> {
+
+        /**
+         * @return An instance from the pool if such, null otherwise.
+         */
+        @Nullable
+        T acquire();
+
+        /**
+         * Release an instance to the pool.
+         *
+         * @param instance The instance to release.
+         * @return Whether the instance was put in the pool.
+         * @throws IllegalStateException If the instance is already in the pool.
+         */
+        boolean release(@NonNull T instance);
+    }
 
     private Pools() {
     }
@@ -36,19 +61,30 @@ public final class Pools {
      * @throws IllegalArgumentException If the max pool size is less than zero.
      */
     @NonNull
-    public static <T> Pool<T> simple(int maxPoolSize) {
+    public static <T> Pool<T> newSimplePool(int maxPoolSize) {
         return new SimplePool<>(maxPoolSize);
     }
 
     /**
-     * Creates a synchronized pool of objects. Note that the lock is self.
+     * Creates a synchronized pool of objects.
      *
      * @param maxPoolSize The max pool size.
      * @throws IllegalArgumentException If the max pool size is less than zero.
      */
     @NonNull
-    public static <T> Pool<T> concurrent(int maxPoolSize) {
+    public static <T> Pool<T> newSynchronizedPool(int maxPoolSize) {
         return new SynchronizedPool<>(maxPoolSize);
+    }
+
+    /**
+     * Creates a synchronized pool of objects.
+     *
+     * @param maxPoolSize The max pool size.
+     * @throws IllegalArgumentException If the max pool size is less than zero.
+     */
+    @NonNull
+    public static <T> Pool<T> newSynchronizedPool(int maxPoolSize, @NonNull Object lock) {
+        return new SynchronizedPool<>(maxPoolSize, lock);
     }
 
     /**
@@ -56,14 +92,19 @@ public final class Pools {
      *
      * @param <T> The pooled type.
      */
-    private static class SimplePool<T> implements Pool<T> {
+    public static class SimplePool<T> implements Pool<T> {
 
         private final T[] mPool;
-
         private int mPoolSize;
 
+        /**
+         * Creates a new instance.
+         *
+         * @param maxPoolSize The max pool size.
+         * @throws IllegalArgumentException If the max pool size is less than zero.
+         */
         @SuppressWarnings("unchecked")
-        private SimplePool(int maxPoolSize) {
+        public SimplePool(int maxPoolSize) {
             if (maxPoolSize <= 0)
                 throw new IllegalArgumentException("The max pool size must be > 0");
             mPool = (T[]) new Object[maxPoolSize];
@@ -97,23 +138,43 @@ public final class Pools {
      *
      * @param <T> The pooled type.
      */
-    private static class SynchronizedPool<T> extends SimplePool<T> {
+    public static class SynchronizedPool<T> extends SimplePool<T> {
 
-        private SynchronizedPool(int maxPoolSize) {
+        private final Object mLock;
+
+        /**
+         * Creates a new instance.
+         *
+         * @param maxPoolSize The max pool size.
+         * @throws IllegalArgumentException If the max pool size is less than zero.
+         */
+        public SynchronizedPool(int maxPoolSize) {
             super(maxPoolSize);
+            mLock = this;
+        }
+
+        /**
+         * Creates a new instance.
+         *
+         * @param maxPoolSize The max pool size.
+         * @throws IllegalArgumentException If the max pool size is less than zero.
+         */
+        public SynchronizedPool(int maxPoolSize, @NonNull Object lock) {
+            super(maxPoolSize);
+            mLock = Objects.requireNonNull(lock);
         }
 
         @Nullable
         @Override
         public T acquire() {
-            synchronized (this) {
+            synchronized (mLock) {
                 return super.acquire();
             }
         }
 
         @Override
         public boolean release(@NonNull T element) {
-            synchronized (this) {
+            synchronized (mLock) {
                 return super.release(element);
             }
         }

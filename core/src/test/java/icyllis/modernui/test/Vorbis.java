@@ -19,6 +19,7 @@
 package icyllis.modernui.test;
 
 import org.lwjgl.BufferUtils;
+import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.openal.*;
@@ -27,6 +28,7 @@ import org.lwjgl.opengl.GLUtil;
 import org.lwjgl.stb.STBVorbisInfo;
 import org.lwjgl.system.*;
 import org.lwjgl.system.windows.User32;
+import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -287,8 +289,18 @@ public class Vorbis implements AutoCloseable {
     }
 
     public static void main(String[] args) {
-        try (Vorbis vorbis = new Vorbis("F:/粉骨砕身カジノゥ (long ver.).ogg")) {
-            vorbis.runEventLoop();
+        String path;
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            PointerBuffer filters = stack.mallocPointer(1);
+            stack.nUTF8("*.ogg", true);
+            filters.put(stack.getPointerAddress());
+            filters.rewind();
+            path = TinyFileDialogs.tinyfd_openFileDialog(null, null, filters, "Ogg Vorbis (*.ogg)", false);
+        }
+        if (path != null) {
+            try (Vorbis vorbis = new Vorbis(path)) {
+                vorbis.runEventLoop();
+            }
         }
     }
 

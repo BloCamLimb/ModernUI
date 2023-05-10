@@ -21,8 +21,7 @@ package icyllis.modernui.view;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.animation.AnimationUtils;
 import icyllis.modernui.animation.StateListAnimator;
-import icyllis.modernui.annotation.CallSuper;
-import icyllis.modernui.annotation.UiThread;
+import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.*;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
@@ -35,8 +34,6 @@ import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.intellij.lang.annotations.MagicConstant;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.ref.WeakReference;
@@ -2340,7 +2337,7 @@ public class View implements Drawable.Callback {
     /**
      * This method is called by ViewGroup.drawChild() to have each child view draw itself.
      */
-    final void draw(@Nonnull Canvas canvas, @Nonnull ViewGroup group, boolean clip) {
+    final void draw(@NonNull Canvas canvas, @NonNull ViewGroup group, boolean clip) {
         final boolean identity = hasIdentityMatrix();
         if (clip && identity &&
                 canvas.quickReject(mLeft, mTop, mRight, mBottom)) {
@@ -2400,7 +2397,7 @@ public class View implements Drawable.Callback {
      * @param canvas the canvas to draw content
      */
     @CallSuper
-    public void draw(@Nonnull Canvas canvas) {
+    public void draw(@NonNull Canvas canvas) {
         drawBackground(canvas);
 
         onDraw(canvas);
@@ -2410,7 +2407,7 @@ public class View implements Drawable.Callback {
         onDrawForeground(canvas);
     }
 
-    private void drawBackground(@Nonnull Canvas canvas) {
+    private void drawBackground(@NonNull Canvas canvas) {
         final Drawable background = mBackground;
         if (background == null) {
             return;
@@ -2439,7 +2436,7 @@ public class View implements Drawable.Callback {
      *
      * @param canvas the canvas to draw content
      */
-    protected void onDraw(@Nonnull Canvas canvas) {
+    protected void onDraw(@NonNull Canvas canvas) {
     }
 
     /**
@@ -2447,7 +2444,7 @@ public class View implements Drawable.Callback {
      *
      * @param canvas the canvas to draw content
      */
-    protected void dispatchDraw(@Nonnull Canvas canvas) {
+    protected void dispatchDraw(@NonNull Canvas canvas) {
     }
 
     /**
@@ -2459,7 +2456,7 @@ public class View implements Drawable.Callback {
      *
      * @param canvas the canvas to draw content
      */
-    public void onDrawForeground(@Nonnull Canvas canvas) {
+    public void onDrawForeground(@NonNull Canvas canvas) {
         onDrawScrollIndicators(canvas);
         onDrawScrollBars(canvas);
 
@@ -2487,7 +2484,7 @@ public class View implements Drawable.Callback {
         }
     }
 
-    private void onDrawScrollIndicators(@Nonnull Canvas c) {
+    private void onDrawScrollIndicators(@NonNull Canvas c) {
         if ((mPrivateFlags3 & SCROLL_INDICATORS_PFLAG3_MASK) == 0) {
             // No scroll indicators enabled.
             return;
@@ -2561,7 +2558,7 @@ public class View implements Drawable.Callback {
      * @param canvas the canvas on which to draw the scrollbars
      * @see #awakenScrollBars(int)
      */
-    protected final void onDrawScrollBars(@Nonnull Canvas canvas) {
+    protected final void onDrawScrollBars(@NonNull Canvas canvas) {
         final ScrollCache cache = mScrollCache;
         if (cache == null || cache.mState == ScrollCache.OFF) {
             return;
@@ -2963,7 +2960,7 @@ public class View implements Drawable.Callback {
      *
      * @param params layout parameters for this view
      */
-    public void setLayoutParams(@Nonnull ViewGroup.LayoutParams params) {
+    public void setLayoutParams(@NonNull ViewGroup.LayoutParams params) {
         mLayoutParams = params;
         resolveLayoutParams();
         if (mParent instanceof ViewGroup) {
@@ -3850,7 +3847,7 @@ public class View implements Drawable.Callback {
      * @param drawable the drawable to invalidate
      */
     @Override
-    public void invalidateDrawable(@Nonnull Drawable drawable) {
+    public void invalidateDrawable(@NonNull Drawable drawable) {
         if (verifyDrawable(drawable)) {
             invalidate();
         }
@@ -3865,7 +3862,7 @@ public class View implements Drawable.Callback {
      *             {@link Core#timeMillis()} timebase.
      */
     @Override
-    public final void scheduleDrawable(@Nonnull Drawable who, @Nonnull Runnable what, long when) {
+    public final void scheduleDrawable(@NonNull Drawable who, @NonNull Runnable what, long when) {
         if (verifyDrawable(who)) {
             // Postpone the runnable until we know
             // on which thread it needs to run.
@@ -3886,7 +3883,7 @@ public class View implements Drawable.Callback {
      * @param what the action to cancel
      */
     @Override
-    public final void unscheduleDrawable(@Nonnull Drawable who, @Nonnull Runnable what) {
+    public final void unscheduleDrawable(@NonNull Drawable who, @NonNull Runnable what) {
         if (verifyDrawable(who)) {
             if (mAttachInfo != null) {
                 mAttachInfo.mViewRoot.mChoreographer.removeCallbacks(
@@ -4003,7 +4000,7 @@ public class View implements Drawable.Callback {
      * @param direction The direction of the focus
      * @return A list of focusable views
      */
-    @Nonnull
+    @NonNull
     public final ArrayList<View> getFocusables(@FocusDirection int direction) {
         ArrayList<View> result = new ArrayList<>();
         addFocusables(result, direction);
@@ -4034,7 +4031,7 @@ public class View implements Drawable.Callback {
      *                  the number of focusables.
      * @param direction The direction of the focus.
      */
-    public void addFocusables(@Nonnull ArrayList<View> views, @FocusDirection int direction,
+    public void addFocusables(@NonNull ArrayList<View> views, @FocusDirection int direction,
                               @FocusableMode int focusableMode) {
         if (!canTakeFocus()) {
             return;
@@ -4053,7 +4050,7 @@ public class View implements Drawable.Callback {
      * @param views     Keyboard navigation cluster roots found so far
      * @param direction Direction to look
      */
-    public void addKeyboardNavigationClusters(@Nonnull Collection<View> views, int direction) {
+    public void addKeyboardNavigationClusters(@NonNull Collection<View> views, int direction) {
         if (!isKeyboardNavigationCluster()) {
             return;
         }
@@ -4069,7 +4066,7 @@ public class View implements Drawable.Callback {
      *
      * @return A list of touchable views
      */
-    @Nonnull
+    @NonNull
     public final ArrayList<View> getTouchables() {
         ArrayList<View> result = new ArrayList<>();
         addTouchables(result);
@@ -4082,7 +4079,7 @@ public class View implements Drawable.Callback {
      *
      * @param views Touchable views found so far
      */
-    public void addTouchables(@Nonnull ArrayList<View> views) {
+    public void addTouchables(@NonNull ArrayList<View> views) {
         final int viewFlags = mViewFlags;
 
         if (((viewFlags & CLICKABLE) == CLICKABLE || (viewFlags & LONG_CLICKABLE) == LONG_CLICKABLE
@@ -4444,7 +4441,7 @@ public class View implements Drawable.Callback {
      * can be found
      */
     public View keyboardNavigationClusterSearch(View currentCluster, @FocusDirection int direction) {
-        /*if (isKeyboardNavigationCluster()) {
+        if (isKeyboardNavigationCluster()) {
             currentCluster = this;
         }
         if (isRootNamespace()) {
@@ -4455,7 +4452,7 @@ public class View implements Drawable.Callback {
                     this, currentCluster, direction);
         } else if (mParent != null) {
             return mParent.keyboardNavigationClusterSearch(currentCluster, direction);
-        }*/
+        }
         return null;
     }
 
@@ -4910,10 +4907,11 @@ public class View implements Drawable.Callback {
         if (mScrollIndicatorDrawable == null) {
             mScrollIndicatorDrawable = new Drawable() {
                 @Override
-                public void draw(@Nonnull Canvas canvas) {
-                    Paint paint = Paint.get();
+                public void draw(@NonNull Canvas canvas) {
+                    Paint paint = Paint.obtain();
                     paint.setRGBA(0, 0, 0, 0x1f);
                     canvas.drawRect(getBounds(), paint);
+                    paint.recycle();
                 }
             };
         }
@@ -5495,7 +5493,7 @@ public class View implements Drawable.Callback {
         }
     }
 
-    void getScrollIndicatorBounds(@Nonnull Rect out) {
+    void getScrollIndicatorBounds(@NonNull Rect out) {
         out.left = mScrollX;
         out.right = mScrollX + mRight - mLeft;
         out.top = mScrollY;
@@ -6137,7 +6135,7 @@ public class View implements Drawable.Callback {
      */
     public boolean dispatchNestedScroll(int dxConsumed, int dyConsumed, int dxUnconsumed, int dyUnconsumed,
                                         @Nullable int[] offsetInWindow, @NestedScrollType int type,
-                                        @Nonnull int[] consumed) {
+                                        @NonNull int[] consumed) {
         if (isNestedScrollingEnabled()) {
             final ViewParent parent = type == TYPE_NON_TOUCH ? mNestedScrollingParentNonTouch :
                     mNestedScrollingParentTouch;
@@ -6324,7 +6322,7 @@ public class View implements Drawable.Callback {
      *
      * @param outRect The (scrolled) drawing bounds of the view.
      */
-    public void getDrawingRect(@Nonnull Rect outRect) {
+    public void getDrawingRect(@NonNull Rect outRect) {
         outRect.left = mScrollX;
         outRect.top = mScrollY;
         outRect.right = mScrollX + (mRight - mLeft);
@@ -8669,7 +8667,7 @@ public class View implements Drawable.Callback {
      * @see #drawableStateChanged()
      */
     @CallSuper
-    protected boolean verifyDrawable(@Nonnull Drawable drawable) {
+    protected boolean verifyDrawable(@NonNull Drawable drawable) {
         // Avoid verifying the scroll bar drawable so that we don't end up in
         // an invalidation loop. This effectively prevents the scroll bar
         // drawable from triggering invalidations and scheduling runnables.
@@ -8759,7 +8757,7 @@ public class View implements Drawable.Callback {
      * @return an array holding the current {@link Drawable} state of the view.
      * @see #mergeDrawableStates(int[], int[])
      */
-    @Nonnull
+    @NonNull
     protected int[] onCreateDrawableState(int extraSpace) {
         if ((mViewFlags & DUPLICATE_PARENT_STATE) == DUPLICATE_PARENT_STATE &&
                 mParent instanceof View) {
@@ -8829,8 +8827,8 @@ public class View implements Drawable.Callback {
      * passed into the function is returned.
      * @see #onCreateDrawableState(int)
      */
-    @Nonnull
-    protected static int[] mergeDrawableStates(@Nonnull int[] baseState, @Nonnull int[] additionalState) {
+    @NonNull
+    protected static int[] mergeDrawableStates(@NonNull int[] baseState, @NonNull int[] additionalState) {
         int i = baseState.length - 1;
         while (i >= 0 && baseState[i] == 0) {
             i--;
@@ -9097,7 +9095,7 @@ public class View implements Drawable.Callback {
      *
      * @return The ViewTreeObserver for this view's hierarchy.
      */
-    @Nonnull
+    @NonNull
     public final ViewTreeObserver getViewTreeObserver() {
         if (mAttachInfo != null) {
             return mAttachInfo.mTreeObserver;
@@ -9138,7 +9136,7 @@ public class View implements Drawable.Callback {
      * @return false if the transformation could not be applied
      * @hide
      */
-    public boolean toGlobalMotionEvent(@Nonnull MotionEvent ev) {
+    public boolean toGlobalMotionEvent(@NonNull MotionEvent ev) {
         final AttachInfo info = mAttachInfo;
         if (info == null) {
             return false;
@@ -9159,7 +9157,7 @@ public class View implements Drawable.Callback {
      * @return false if the transformation could not be applied
      * @hide
      */
-    public boolean toLocalMotionEvent(@Nonnull MotionEvent ev) {
+    public boolean toLocalMotionEvent(@NonNull MotionEvent ev) {
         final AttachInfo info = mAttachInfo;
         if (info == null) {
             return false;
@@ -9178,7 +9176,7 @@ public class View implements Drawable.Callback {
      *
      * @param matrix input matrix to modify
      */
-    public void transformMatrixToGlobal(@Nonnull Matrix4 matrix) {
+    public void transformMatrixToGlobal(@NonNull Matrix4 matrix) {
         final ViewParent parent = mParent;
         if (parent instanceof final View vp) {
             vp.transformMatrixToGlobal(matrix);
@@ -9198,7 +9196,7 @@ public class View implements Drawable.Callback {
      *
      * @param matrix input matrix to modify
      */
-    public void transformMatrixToLocal(@Nonnull Matrix4 matrix) {
+    public void transformMatrixToLocal(@NonNull Matrix4 matrix) {
         final ViewParent parent = mParent;
         if (parent instanceof final View vp) {
             vp.transformMatrixToLocal(matrix);
@@ -9217,7 +9215,7 @@ public class View implements Drawable.Callback {
      *
      * @param outRect The output location
      */
-    public void getBoundsOnScreen(@Nonnull Rect outRect) {
+    public void getBoundsOnScreen(@NonNull Rect outRect) {
         getBoundsOnScreen(outRect, false);
     }
 
@@ -9227,7 +9225,7 @@ public class View implements Drawable.Callback {
      * @param outRect      The output location
      * @param clipToParent Whether to clip child bounds to the parent ones.
      */
-    public void getBoundsOnScreen(@Nonnull Rect outRect, boolean clipToParent) {
+    public void getBoundsOnScreen(@NonNull Rect outRect, boolean clipToParent) {
         if (mAttachInfo == null) {
             return;
         }
@@ -9244,7 +9242,7 @@ public class View implements Drawable.Callback {
      * @param rect         The rectangle to be mapped
      * @param clipToParent Whether to clip child bounds to the parent ones.
      */
-    public void mapRectFromViewToScreenCoords(@Nonnull RectF rect, boolean clipToParent) {
+    public void mapRectFromViewToScreenCoords(@NonNull RectF rect, boolean clipToParent) {
         if (!hasIdentityMatrix()) {
             getMatrix().mapRect(rect);
         }
@@ -9291,7 +9289,7 @@ public class View implements Drawable.Callback {
      *
      * @param outLocation an array of two integers in which to hold the coordinates
      */
-    public void getLocationInWindow(@Nonnull int[] outLocation) {
+    public void getLocationInWindow(@NonNull int[] outLocation) {
         if (outLocation.length < 2) {
             throw new IllegalArgumentException("outLocation must be an array of two integers");
         }
@@ -9305,7 +9303,7 @@ public class View implements Drawable.Callback {
     /**
      * @hide
      */
-    public void transformFromViewToWindowSpace(@Nonnull int[] inOutLocation) {
+    public void transformFromViewToWindowSpace(@NonNull int[] inOutLocation) {
         if (inOutLocation.length < 2) {
             throw new IllegalArgumentException("inOutLocation must be an array of two integers");
         }
@@ -9373,7 +9371,7 @@ public class View implements Drawable.Callback {
      *                                  in the hierarchy
      * @see View#findViewById(int)
      */
-    @Nonnull
+    @NonNull
     public final <T extends View> T requireViewById(int id) {
         T view = findViewById(id);
         if (view == null) {
@@ -9404,7 +9402,7 @@ public class View implements Drawable.Callback {
      * @return The first view that matches the predicate or null.
      * @hide
      */
-    public final <T extends View> T findViewByPredicate(@Nonnull Predicate<View> predicate) {
+    public final <T extends View> T findViewByPredicate(@NonNull Predicate<View> predicate) {
         return findViewByPredicateTraversal(predicate, null);
     }
 
@@ -9416,7 +9414,7 @@ public class View implements Drawable.Callback {
      */
     @Nullable
     @SuppressWarnings("unchecked")
-    protected <T extends View> T findViewByPredicateTraversal(@Nonnull Predicate<View> predicate,
+    protected <T extends View> T findViewByPredicateTraversal(@NonNull Predicate<View> predicate,
                                                               @Nullable View childToSkip) {
         if (predicate.test(this)) {
             return (T) this;
@@ -9442,7 +9440,7 @@ public class View implements Drawable.Callback {
      */
     @Nullable
     public final <T extends View> T findViewByPredicateInsideOut(
-            @Nonnull View start, Predicate<View> predicate) {
+            @NonNull View start, Predicate<View> predicate) {
         View childToSkip = null;
         for (; ; ) {
             T view = start.findViewByPredicateTraversal(predicate, childToSkip);
@@ -9478,7 +9476,7 @@ public class View implements Drawable.Callback {
      *
      * @return the queue of runnable for this view
      */
-    @Nonnull
+    @NonNull
     private HandlerActionQueue getRunQueue() {
         if (mRunQueue == null) {
             mRunQueue = new HandlerActionQueue();
@@ -9508,7 +9506,7 @@ public class View implements Drawable.Callback {
      * @see #postDelayed
      * @see #removeCallbacks
      */
-    public final boolean post(@Nonnull Runnable action) {
+    public final boolean post(@NonNull Runnable action) {
         final AttachInfo attachInfo = mAttachInfo;
         if (attachInfo != null) {
             return attachInfo.mHandler.post(action);
@@ -9535,7 +9533,7 @@ public class View implements Drawable.Callback {
      * @see #post
      * @see #removeCallbacks
      */
-    public final boolean postDelayed(@Nonnull Runnable action, long delayMillis) {
+    public final boolean postDelayed(@NonNull Runnable action, long delayMillis) {
         final AttachInfo attachInfo = mAttachInfo;
         if (attachInfo != null) {
             return attachInfo.mHandler.postDelayed(action, delayMillis);
@@ -9555,7 +9553,7 @@ public class View implements Drawable.Callback {
      * @see #postOnAnimationDelayed
      * @see #removeCallbacks
      */
-    public final void postOnAnimation(@Nonnull Runnable action) {
+    public final void postOnAnimation(@NonNull Runnable action) {
         final AttachInfo attachInfo = mAttachInfo;
         if (attachInfo != null) {
             attachInfo.mViewRoot.mChoreographer.postCallback(
@@ -9577,7 +9575,7 @@ public class View implements Drawable.Callback {
      * @see #postOnAnimation
      * @see #removeCallbacks
      */
-    public final void postOnAnimationDelayed(@Nonnull Runnable action, long delayMillis) {
+    public final void postOnAnimationDelayed(@NonNull Runnable action, long delayMillis) {
         final AttachInfo attachInfo = mAttachInfo;
         if (attachInfo != null) {
             attachInfo.mViewRoot.mChoreographer.postCallbackDelayed(
@@ -9714,7 +9712,7 @@ public class View implements Drawable.Callback {
      * @param visibility  The new visibility of changedView: {@link #VISIBLE},
      *                    {@link #INVISIBLE} or {@link #GONE}.
      */
-    protected void dispatchVisibilityChanged(@Nonnull View changedView,
+    protected void dispatchVisibilityChanged(@NonNull View changedView,
                                              int visibility) {
         onVisibilityChanged(changedView, visibility);
     }
@@ -9728,7 +9726,7 @@ public class View implements Drawable.Callback {
      * @param visibility  The new visibility, one of {@link #VISIBLE},
      *                    {@link #INVISIBLE} or {@link #GONE}.
      */
-    protected void onVisibilityChanged(@Nonnull View changedView, int visibility) {
+    protected void onVisibilityChanged(@NonNull View changedView, int visibility) {
     }
 
     /**
@@ -9837,7 +9835,7 @@ public class View implements Drawable.Callback {
      * @param event the motion event to be dispatched.
      * @return true if the event was handled by the view, false otherwise.
      */
-    public final boolean dispatchPointerEvent(@Nonnull MotionEvent event) {
+    public final boolean dispatchPointerEvent(@NonNull MotionEvent event) {
         if (event.isTouchEvent()) {
             return dispatchTouchEvent(event);
         } else {
@@ -9902,7 +9900,7 @@ public class View implements Drawable.Callback {
      * @param event the event to be dispatched
      * @return {@code true} if the event was consumed by the view, {@code false} otherwise
      */
-    public boolean dispatchGenericMotionEvent(@Nonnull MotionEvent event) {
+    public boolean dispatchGenericMotionEvent(@NonNull MotionEvent event) {
         final int action = event.getAction();
         if (action == MotionEvent.ACTION_HOVER_ENTER
                 || action == MotionEvent.ACTION_HOVER_MOVE
@@ -9964,7 +9962,7 @@ public class View implements Drawable.Callback {
      * @param event The motion event to be dispatched.
      * @return True if the event was handled by the view, false otherwise.
      */
-    protected boolean dispatchHoverEvent(@Nonnull MotionEvent event) {
+    protected boolean dispatchHoverEvent(@NonNull MotionEvent event) {
         ListenerInfo li = mListenerInfo;
         if (li != null && li.mOnHoverListener != null
                 && (mViewFlags & ENABLED_MASK) == ENABLED
@@ -9985,7 +9983,7 @@ public class View implements Drawable.Callback {
      * @param event The motion event to be dispatched.
      * @return True if the event was handled by the view, false otherwise.
      */
-    protected boolean dispatchGenericPointerEvent(@Nonnull MotionEvent event) {
+    protected boolean dispatchGenericPointerEvent(@NonNull MotionEvent event) {
         return false;
     }
 
@@ -9997,7 +9995,7 @@ public class View implements Drawable.Callback {
      * @param event the generic motion event being processed.
      * @return {@code true} if the event was consumed by the view, {@code false} otherwise
      */
-    public boolean onGenericMotionEvent(@Nonnull MotionEvent event) {
+    public boolean onGenericMotionEvent(@NonNull MotionEvent event) {
         /*final double mouseX = event.getX();
         final double mouseY = event.getY();
         final int action = event.getAction();
@@ -10098,7 +10096,7 @@ public class View implements Drawable.Callback {
      * @see #setHovered
      * @see #onHoverChanged
      */
-    public boolean onHoverEvent(@Nonnull MotionEvent event) {
+    public boolean onHoverEvent(@NonNull MotionEvent event) {
         final int action = event.getAction();
 
         if ((action == MotionEvent.ACTION_HOVER_ENTER || action == MotionEvent.ACTION_HOVER_MOVE)
@@ -10199,7 +10197,7 @@ public class View implements Drawable.Callback {
     public void onHoverChanged(boolean hovered) {
     }
 
-    @Nonnull
+    @NonNull
     ListenerInfo getListenerInfo() {
         if (mListenerInfo == null) {
             mListenerInfo = new ListenerInfo();
@@ -10243,7 +10241,7 @@ public class View implements Drawable.Callback {
      *
      * @param listener The listener that will be called when layout bounds change.
      */
-    public void addOnLayoutChangeListener(@Nonnull OnLayoutChangeListener listener) {
+    public void addOnLayoutChangeListener(@NonNull OnLayoutChangeListener listener) {
         ListenerInfo li = getListenerInfo();
         if (li.mOnLayoutChangeListeners == null) {
             li.mOnLayoutChangeListeners = new ArrayList<>();
@@ -10258,7 +10256,7 @@ public class View implements Drawable.Callback {
      *
      * @param listener The listener for layout bounds change.
      */
-    public void removeOnLayoutChangeListener(@Nonnull OnLayoutChangeListener listener) {
+    public void removeOnLayoutChangeListener(@NonNull OnLayoutChangeListener listener) {
         ListenerInfo li = mListenerInfo;
         if (li == null || li.mOnLayoutChangeListeners == null) {
             return;
@@ -10276,7 +10274,7 @@ public class View implements Drawable.Callback {
      * @param listener Listener to attach
      * @see #removeOnAttachStateChangeListener(OnAttachStateChangeListener)
      */
-    public void addOnAttachStateChangeListener(@Nonnull OnAttachStateChangeListener listener) {
+    public void addOnAttachStateChangeListener(@NonNull OnAttachStateChangeListener listener) {
         ListenerInfo li = getListenerInfo();
         if (li.mOnAttachStateChangeListeners == null) {
             li.mOnAttachStateChangeListeners = new CopyOnWriteArrayList<>();
@@ -10291,7 +10289,7 @@ public class View implements Drawable.Callback {
      * @param listener Listener to remove
      * @see #addOnAttachStateChangeListener(OnAttachStateChangeListener)
      */
-    public void removeOnAttachStateChangeListener(@Nonnull OnAttachStateChangeListener listener) {
+    public void removeOnAttachStateChangeListener(@NonNull OnAttachStateChangeListener listener) {
         ListenerInfo li = mListenerInfo;
         if (li == null || li.mOnAttachStateChangeListeners == null) {
             return;
@@ -10547,7 +10545,7 @@ public class View implements Drawable.Callback {
      * @param event The motion event to be dispatched.
      * @return {@code true} if the event was handled by the view, {@code false} otherwise
      */
-    public boolean dispatchTouchEvent(@Nonnull MotionEvent event) {
+    public boolean dispatchTouchEvent(@NonNull MotionEvent event) {
         int action = event.getAction();
         if (action == MotionEvent.ACTION_DOWN) {
             // Defensive cleanup for new gesture
@@ -10589,7 +10587,7 @@ public class View implements Drawable.Callback {
      * @param event the touch event
      * @return {@code true} if the event was handled by the view, {@code false} otherwise
      */
-    public boolean onTouchEvent(@Nonnull MotionEvent event) {
+    public boolean onTouchEvent(@NonNull MotionEvent event) {
         final float x = event.getX();
         final float y = event.getY();
         final int viewFlags = mViewFlags;
@@ -11085,7 +11083,7 @@ public class View implements Drawable.Callback {
      * @return True if the down was consumed.
      * @hide
      */
-    protected boolean performButtonActionOnTouchDown(@Nonnull MotionEvent event) {
+    protected boolean performButtonActionOnTouchDown(@NonNull MotionEvent event) {
         // Added: check if the view is long clickable
         if (isLongClickable() && (event.getButtonState() & MotionEvent.BUTTON_SECONDARY) != 0) {
             showContextMenu(event.getX(), event.getY());
@@ -11159,7 +11157,7 @@ public class View implements Drawable.Callback {
      *
      * @param menu The context menu to populate
      */
-    public final void createContextMenu(@Nonnull ContextMenu menu) {
+    public final void createContextMenu(@NonNull ContextMenu menu) {
         Object menuInfo = getContextMenuInfo();
 
         // Sets the current menu info so all items added to menu will have
@@ -11201,7 +11199,7 @@ public class View implements Drawable.Callback {
      *
      * @param menu the context menu to populate
      */
-    protected void onCreateContextMenu(@Nonnull ContextMenu menu) {
+    protected void onCreateContextMenu(@NonNull ContextMenu menu) {
     }
 
     /**
@@ -11279,7 +11277,7 @@ public class View implements Drawable.Callback {
      * @param event The key event to be dispatched.
      * @return True if the event was handled, false otherwise.
      */
-    public boolean dispatchKeyEvent(@Nonnull KeyEvent event) {
+    public boolean dispatchKeyEvent(@NonNull KeyEvent event) {
         // Give any attached key listener a first crack at the event.
         ListenerInfo li = mListenerInfo;
         if (li != null && li.mOnKeyListener != null && (mViewFlags & ENABLED_MASK) == ENABLED
@@ -11300,7 +11298,7 @@ public class View implements Drawable.Callback {
      * @param event The key event to be dispatched.
      * @return True if the event was handled by the view, false otherwise.
      */
-    public boolean dispatchKeyShortcutEvent(@Nonnull KeyEvent event) {
+    public boolean dispatchKeyShortcutEvent(@NonNull KeyEvent event) {
         return onKeyShortcut(event.getKeyCode(), event);
     }
 
@@ -11313,7 +11311,7 @@ public class View implements Drawable.Callback {
      *                {@link KeyEvent}
      * @param event   the KeyEvent object that defines the button action
      */
-    public boolean onKeyDown(int keyCode, @Nonnull KeyEvent event) {
+    public boolean onKeyDown(int keyCode, @NonNull KeyEvent event) {
         if (keyCode == KeyEvent.KEY_ENTER || keyCode == KeyEvent.KEY_KP_ENTER) {
             if ((mViewFlags & ENABLED_MASK) == DISABLED) {
                 return true;
@@ -11337,7 +11335,7 @@ public class View implements Drawable.Callback {
      *                {@link KeyEvent}.
      * @param event   The KeyEvent object that defines the button action.
      */
-    public boolean onKeyUp(int keyCode, @Nonnull KeyEvent event) {
+    public boolean onKeyUp(int keyCode, @NonNull KeyEvent event) {
         if (keyCode == KeyEvent.KEY_ENTER || keyCode == KeyEvent.KEY_KP_ENTER) {
             if ((mViewFlags & ENABLED_MASK) == DISABLED) {
                 return true;
@@ -11366,7 +11364,7 @@ public class View implements Drawable.Callback {
      * @return If you handled the event, return true. If you want to allow the
      * event to be handled by the next receiver, return false.
      */
-    public boolean onKeyShortcut(int keyCode, @Nonnull KeyEvent event) {
+    public boolean onKeyShortcut(int keyCode, @NonNull KeyEvent event) {
         return false;
     }
 
@@ -11418,7 +11416,7 @@ public class View implements Drawable.Callback {
      *
      * @param r The rectangle to fill in, in this view's coordinates.
      */
-    public void getFocusedRect(@Nonnull Rect r) {
+    public void getFocusedRect(@NonNull Rect r) {
         getDrawingRect(r);
     }
 
@@ -11436,7 +11434,7 @@ public class View implements Drawable.Callback {
      * @return true if r is non-empty (i.e. part of the view is visible at the
      * root level.
      */
-    public boolean getGlobalVisibleRect(@Nonnull Rect r, @Nullable Point globalOffset) {
+    public boolean getGlobalVisibleRect(@NonNull Rect r, @Nullable Point globalOffset) {
         int width = mRight - mLeft;
         int height = mBottom - mTop;
         if (width > 0 && height > 0) {
@@ -11449,11 +11447,11 @@ public class View implements Drawable.Callback {
         return false;
     }
 
-    public final boolean getGlobalVisibleRect(@Nonnull Rect r) {
+    public final boolean getGlobalVisibleRect(@NonNull Rect r) {
         return getGlobalVisibleRect(r, null);
     }
 
-    public final boolean getLocalVisibleRect(@Nonnull Rect r) {
+    public final boolean getLocalVisibleRect(@NonNull Rect r) {
         final Point offset = mAttachInfo != null ? mAttachInfo.mPoint : new Point();
         if (getGlobalVisibleRect(r, offset)) {
             r.offset(-offset.x, -offset.y); // make r local
@@ -11512,7 +11510,7 @@ public class View implements Drawable.Callback {
      * @param event The MotionEvent from a mouse
      * @see PointerIcon
      */
-    public PointerIcon onResolvePointerIcon(@Nonnull MotionEvent event) {
+    public PointerIcon onResolvePointerIcon(@NonNull MotionEvent event) {
         final float x = event.getX();
         final float y = event.getY();
         if (isDraggingScrollBar() || isOnScrollbarThumb(x, y)) {
@@ -12155,7 +12153,7 @@ public class View implements Drawable.Callback {
          *
          * @param outShadowCenter the center point in the shadow
          */
-        public void onProvideShadowCenter(@Nonnull Point outShadowCenter) {
+        public void onProvideShadowCenter(@NonNull Point outShadowCenter) {
 
         }
 
@@ -12164,7 +12162,7 @@ public class View implements Drawable.Callback {
          *
          * @param canvas canvas to draw content
          */
-        public void onDrawShadow(@Nonnull Canvas canvas) {
+        public void onDrawShadow(@NonNull Canvas canvas) {
             View view = viewRef.get();
             if (view != null) {
                 view.onDraw(canvas);

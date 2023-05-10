@@ -1145,12 +1145,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     .putFloat(top)
                     .put(r).put(g).put(b).put(a);
         } else {
-            int color = paint.getColor();
-            float a = (color >>> 24) / 255.0f;
-            float r = ((color >> 16) & 0xff) / 255.0f;
-            float g = ((color >> 8) & 0xff) / 255.0f;
-            float b = (color & 0xff) / 255.0f;
-            putRectColor(left, top, right, bottom, r, g, b, a);
+            putRectColor(left, top, right, bottom, paint.red(), paint.green(), paint.blue(), paint.alpha());
         }
     }
 
@@ -1241,12 +1236,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     .put(r).put(g).put(b).put(a)
                     .putFloat(u2).putFloat(v1);
         } else {
-            int color = paint.getColor();
-            float a = (color >>> 24) / 255.0f;
-            float r = ((color >> 16) & 0xff) / 255.0f;
-            float g = ((color >> 8) & 0xff) / 255.0f;
-            float b = (color & 0xff) / 255.0f;
-            putRectColorUV(buffer, left, top, right, bottom, r, g, b, a, u1, v1, u2, v2);
+            putRectColorUV(buffer, left, top, right, bottom, paint.red(), paint.green(), paint.blue(), paint.alpha(),
+                    u1, v1, u2, v2);
         }
     }
 
@@ -1380,12 +1371,12 @@ public final class GLSurfaceCanvas extends GLCanvas {
                         .put(r).put(g).put(b).put(a);
             }
         } else {
-            int col = paint.getColor();
-            byte a = (byte) (col >>> 24);
-            float factor = (a & 0xFF) / 255.0f;
-            byte r = (byte) (((col >> 16) & 0xff) * factor + 0.5f);
-            byte g = (byte) (((col >> 8) & 0xff) * factor + 0.5f);
-            byte b = (byte) ((col & 0xff) * factor + 0.5f);
+            float factor = paint.alpha();
+            byte a = (byte) (factor * 255.0f + 0.5f);
+            factor *= 255.0f;
+            byte r = (byte) (paint.red() * factor + 0.5f);
+            byte g = (byte) (paint.green() * factor + 0.5f);
+            byte b = (byte) (paint.blue() * factor + 0.5f);
             int pb = pos.position();
             for (int i = 0; i < numVertices; i++) {
                 buffer.putFloat(pos.get(pb++))
@@ -1420,7 +1411,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             return;
         }
         drawMatrix();
-        drawSmooth(Math.min(radius, paint.getSmoothRadius()));
+        drawSmooth(Math.min(radius, paint.getSmoothWidth() / 2));
         putRectColor(cx - radius, cy - radius, cx + radius, cy + radius, paint);
         checkUniformMemory()
                 .putFloat(cx)
@@ -1442,7 +1433,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             return;
         }
         drawMatrix();
-        drawSmooth(Math.min(strokeRadius, paint.getSmoothRadius()));
+        drawSmooth(Math.min(strokeRadius, paint.getSmoothWidth() / 2));
         putRectColor(cx - maxRadius, cy - maxRadius, cx + maxRadius, cy + maxRadius, paint);
         checkUniformMemory()
                 .putFloat(cx)
@@ -1479,7 +1470,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             return;
         }
         drawMatrix();
-        drawSmooth(Math.min(radius, paint.getSmoothRadius()));
+        drawSmooth(Math.min(radius, paint.getSmoothWidth() / 2));
         putRectColor(cx - radius, cy - radius, cx + radius, cy + radius, paint);
         checkUniformMemory()
                 .putFloat(cx)
@@ -1501,7 +1492,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             return;
         }
         drawMatrix();
-        drawSmooth(Math.min(strokeRadius, paint.getSmoothRadius()));
+        drawSmooth(Math.min(strokeRadius, paint.getSmoothWidth() / 2));
         putRectColor(cx - maxRadius, cy - maxRadius, cx + maxRadius, cy + maxRadius, paint);
         checkUniformMemory()
                 .putFloat(cx)
@@ -1527,7 +1518,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             return;
         }
         drawMatrix();
-        drawSmooth(Math.min(strokeRadius, paint.getSmoothRadius()));
+        drawSmooth(Math.min(strokeRadius, paint.getSmoothWidth() / 2));
         putRectColor(left, top, right, bottom, paint);
         checkUniformMemory()
                 .putFloat(x0)
@@ -1557,7 +1548,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             return;
         }
         drawMatrix();
-        drawSmooth(Math.min(radius, paint.getSmoothRadius()));
+        drawSmooth(Math.min(radius, paint.getSmoothWidth() / 2));
         putRectColor(cx - radius - 1, cy - radius - 1, cx + radius + 1, cy + radius + 1, paint);
         checkUniformMemory()
                 .putFloat(cx)
@@ -1576,7 +1567,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             return;
         }
         drawMatrix();
-        drawSmooth(Math.min(strokeRadius, paint.getSmoothRadius()));
+        drawSmooth(Math.min(strokeRadius, paint.getSmoothWidth() / 2));
         putRectColor(cx - maxRadius - 1, cy - maxRadius - 1, cx + maxRadius + 1, cy + maxRadius + 1, paint);
         checkUniformMemory()
                 .putFloat(cx)
@@ -1699,12 +1690,12 @@ public final class GLSurfaceCanvas extends GLCanvas {
             mDrawPrims.add(2 | (GLCore.GL_LINES << 16));
 
             ByteBuffer buffer = checkPosColorMemory();
-            int col = paint.getColor();
-            byte a = (byte) (col >>> 24);
-            float factor = (a & 0xFF) / 255.0f;
-            byte r = (byte) (((col >> 16) & 0xff) * factor + 0.5f);
-            byte g = (byte) (((col >> 8) & 0xff) * factor + 0.5f);
-            byte b = (byte) ((col & 0xff) * factor + 0.5f);
+            float factor = paint.alpha();
+            byte a = (byte) (factor * 255.0f + 0.5f);
+            factor *= 255.0f;
+            byte r = (byte) (paint.red() * factor + 0.5f);
+            byte g = (byte) (paint.green() * factor + 0.5f);
+            byte b = (byte) (paint.blue() * factor + 0.5f);
             buffer.putFloat(startX)
                     .putFloat(startY)
                     .put(r).put(g).put(b).put(a);
@@ -1731,7 +1722,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             return;
         }
         drawMatrix();
-        drawSmooth(Math.min(radius, paint.getSmoothRadius()));
+        drawSmooth(Math.min(radius, paint.getSmoothWidth() / 2));
         putRectColor(left - 1, top - 1, right + 1, bottom + 1, paint);
         ByteBuffer buffer = checkUniformMemory();
         buffer.putFloat(startX)
@@ -1753,7 +1744,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             return;
         }
         drawMatrix();
-        drawSmooth(Math.min(strokeRadius, paint.getSmoothRadius()));
+        drawSmooth(Math.min(strokeRadius, paint.getSmoothWidth() / 2));
         putRectColor(left - strokeRadius - 1, top - strokeRadius - 1, right + strokeRadius + 1,
                 bottom + strokeRadius + 1, paint);
         ByteBuffer buffer = checkUniformMemory();
@@ -1825,7 +1816,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             return;
         }
         drawMatrix();
-        drawSmooth(Math.min(radius, paint.getSmoothRadius()));
+        drawSmooth(Math.min(radius, paint.getSmoothWidth() / 2));
         putRectColor(left - 1, top - 1, right + 1, bottom + 1, paint);
         ByteBuffer buffer = checkUniformMemory();
         if ((sides & Gravity.RIGHT) == Gravity.RIGHT) {
@@ -1862,7 +1853,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             return;
         }
         drawMatrix();
-        drawSmooth(Math.min(strokeRadius, paint.getSmoothRadius()));
+        drawSmooth(Math.min(strokeRadius, paint.getSmoothWidth() / 2));
         putRectColor(left - strokeRadius - 1, top - strokeRadius - 1, right + strokeRadius + 1,
                 bottom + strokeRadius + 1, paint);
         ByteBuffer buffer = checkUniformMemory();
@@ -1903,7 +1894,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             return;
         }
         drawMatrix();
-        drawSmooth(Math.min(radius, paint.getSmoothRadius()));
+        drawSmooth(Math.min(radius, paint.getSmoothWidth() / 2));
         putRectColorUV(left, top, right, bottom, paint,
                 0, 0, 1, 1);
         checkUniformMemory()

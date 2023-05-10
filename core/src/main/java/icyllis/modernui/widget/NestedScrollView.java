@@ -156,11 +156,12 @@ public class NestedScrollView extends FrameLayout {
 
             @Override
             public void draw(@Nonnull Canvas canvas) {
-                Paint paint = Paint.get();
+                Paint paint = Paint.obtain();
                 paint.setRGBA(84, 190, 196, (int) (mAlpha * 0.5));
                 Rect bounds = getBounds();
                 canvas.drawRoundRect(bounds.left + 1, bounds.top + 1, bounds.right - 1, bounds.bottom - 1,
                         bounds.width() / 2f - 1, paint);
+                paint.recycle();
             }
 
             @Override
@@ -173,13 +174,14 @@ public class NestedScrollView extends FrameLayout {
 
             @Override
             public void draw(@Nonnull Canvas canvas) {
-                Paint paint = Paint.get();
+                Paint paint = Paint.obtain();
                 paint.setRGBA(128, 128, 128, (int) (mAlpha * 0.75));
                 paint.setStyle(Paint.STROKE);
                 paint.setStrokeWidth(3);
                 Rect bounds = getBounds();
                 canvas.drawRoundRect(bounds.left + 1, bounds.top + 1, bounds.right - 1, bounds.bottom - 1,
                         bounds.width() / 2f - 1, paint);
+                paint.recycle();
             }
 
             @Override

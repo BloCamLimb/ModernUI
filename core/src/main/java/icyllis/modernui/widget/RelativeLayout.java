@@ -20,7 +20,6 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.util.ArrayMap;
-import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 import icyllis.modernui.util.SparseArray;
 import icyllis.modernui.view.Gravity;
@@ -1478,7 +1477,7 @@ public class RelativeLayout extends ViewGroup {
 
             // The pool is static, so all nodes instances are shared across
             // activities, that's why we give it a rather high limit
-            private static final Pool<Node> sPool = Pools.concurrent(100);
+            private static final Pools.Pool<Node> sPool = Pools.newSynchronizedPool(100);
 
             @Nonnull
             static Node acquire(View view) {

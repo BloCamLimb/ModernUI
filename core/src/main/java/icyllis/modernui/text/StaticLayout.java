@@ -23,7 +23,6 @@ import icyllis.modernui.graphics.font.FontMetricsInt;
 import icyllis.modernui.graphics.font.LayoutCache;
 import icyllis.modernui.graphics.font.LineBreaker;
 import icyllis.modernui.util.GrowingArrayUtils;
-import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
@@ -43,7 +42,7 @@ public class StaticLayout extends Layout {
 
     public static final Marker MARKER = MarkerManager.getMarker("StaticLayout");
 
-    private static final Pool<Builder> sPool = Pools.concurrent(2);
+    private static final Pools.Pool<Builder> sPool = Pools.newSynchronizedPool(2);
 
     /**
      * Obtain a builder for constructing StaticLayout objects.

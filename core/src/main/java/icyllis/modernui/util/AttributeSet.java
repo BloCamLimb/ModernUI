@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,28 +18,5 @@
 
 package icyllis.modernui.util;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
-
-/**
- * Interface for managing a pool of objects.
- *
- * @param <T> The pooled type.
- */
-public interface Pool<T> {
-
-    /**
-     * @return an instance from the pool if such, null otherwise.
-     */
-    @Nullable
-    T acquire();
-
-    /**
-     * Release an instance to the pool.
-     *
-     * @param instance the instance to release.
-     * @return {@code true} if the instance was put in the pool, otherwise the pool is full
-     * @throws IllegalStateException if the instance is already in the pool.
-     */
-    boolean release(@NonNull T instance);
+public interface AttributeSet {
 }

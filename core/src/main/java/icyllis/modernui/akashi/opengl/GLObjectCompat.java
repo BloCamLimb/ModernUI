@@ -18,8 +18,8 @@
 
 package icyllis.modernui.akashi.opengl;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
+import icyllis.modernui.core.Core;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -82,7 +82,7 @@ public abstract class GLObjectCompat implements AutoCloseable {
          * @param id    the id/name representing the OpenGL object created by the owner
          */
         protected Ref(@Nonnull GLObjectCompat owner, int id) {
-            mCleanup = ModernUI.registerCleanup(owner, this);
+            mCleanup = Core.registerCleanup(owner, this);
             mId = id;
         }
 

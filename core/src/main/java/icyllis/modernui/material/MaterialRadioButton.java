@@ -69,7 +69,7 @@ public class MaterialRadioButton extends RadioButton {
             final Rect r = getBounds();
             float cx = r.exactCenterX();
             float cy = r.exactCenterY();
-            Paint paint = Paint.get();
+            Paint paint = Paint.obtain();
             paint.setColor(mColor);
             paint.setAlpha(modulateAlpha(paint.getAlpha(), mAlpha));
             if (paint.getAlpha() != 0) {
@@ -78,6 +78,7 @@ public class MaterialRadioButton extends RadioButton {
                 paint.setStrokeWidth(mRadius * 0.5f);
                 canvas.drawCircle(cx, cy, mRadius * 1.6f, paint);
             }
+            paint.recycle();
         }
 
         @Override
@@ -106,7 +107,7 @@ public class MaterialRadioButton extends RadioButton {
             final Rect r = getBounds();
             float cx = r.exactCenterX();
             float cy = r.exactCenterY();
-            Paint paint = Paint.get();
+            Paint paint = Paint.obtain();
             paint.setColor(mColor);
             paint.setAlpha(modulateAlpha(paint.getAlpha(), mAlpha));
             if (paint.getAlpha() != 0) {
@@ -114,6 +115,7 @@ public class MaterialRadioButton extends RadioButton {
                 paint.setStrokeWidth(mRadius * 0.5f);
                 canvas.drawCircle(cx, cy, mRadius * 1.6f, paint);
             }
+            paint.recycle();
         }
 
         @Override

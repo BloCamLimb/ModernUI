@@ -18,7 +18,6 @@
 
 package icyllis.modernui.view;
 
-import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 import it.unimi.dsi.fastutil.ints.Int2BooleanArrayMap;
 import org.lwjgl.glfw.GLFW;
@@ -269,7 +268,7 @@ public class KeyEvent extends InputEvent {
      */
     public static final int ACTION_UP = 1;
 
-    private static final Pool<KeyEvent> sPool = Pools.concurrent(10);
+    private static final Pools.Pool<KeyEvent> sPool = Pools.newSynchronizedPool(10);
 
     private int mAction;
     private int mKeyCode;

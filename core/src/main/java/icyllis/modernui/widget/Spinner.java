@@ -62,10 +62,11 @@ public class Spinner extends AbsSpinner {
 
             @Override
             public void draw(@Nonnull Canvas canvas) {
-                Paint paint = Paint.get();
+                Paint paint = Paint.obtain();
                 paint.setColor(0xe0202020); // ff303030
                 Rect b = getBounds();
                 canvas.drawRoundRect(b.left, b.top, b.right, b.bottom, mRadius, paint);
+                paint.recycle();
             }
 
             @Override

@@ -20,14 +20,8 @@ package icyllis.modernui.text;
 
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
-import icyllis.modernui.graphics.font.FontMetricsInt;
-import icyllis.modernui.graphics.font.GraphemeBreak;
-import icyllis.modernui.graphics.font.LayoutCache;
-import icyllis.modernui.graphics.font.LayoutPiece;
-import icyllis.modernui.text.style.CharacterStyle;
-import icyllis.modernui.text.style.MetricAffectingSpan;
-import icyllis.modernui.text.style.ReplacementSpan;
-import icyllis.modernui.util.Pool;
+import icyllis.modernui.graphics.font.*;
+import icyllis.modernui.text.style.*;
 import icyllis.modernui.util.Pools;
 
 import javax.annotation.Nonnull;
@@ -45,7 +39,7 @@ import javax.annotation.Nullable;
  */
 public class TextLine {
 
-    private static final Pool<TextLine> sPool = Pools.concurrent(1);
+    private static final Pools.Pool<TextLine> sPool = Pools.newSynchronizedPool(1);
 
     private static final char TAB_CHAR = '\t';
 
@@ -946,9 +940,9 @@ public class TextLine {
                 rightX = x + totalWidth;
             }
 
+            Paint paint = null;
             if (wp.bgColor != 0) {
-                Paint paint = Paint.get();
-
+                paint = Paint.obtain();
                 paint.setColor(wp.bgColor);
                 paint.setStyle(Paint.FILL);
                 c.drawRect(leftX, top, rightX, bottom, paint);
@@ -957,20 +951,26 @@ public class TextLine {
             c.drawTextRun(piece, leftX, y, wp);
 
             if (flags != 0) {
+                if (paint == null) {
+                    paint = Paint.obtain();
+                } else {
+                    paint.reset();
+                }
                 if ((flags & TextPaint.UNDERLINE_FLAG) != 0) {
                     float thickness = piece.getAscent() / 12f;
                     float strokeTop = y + piece.getDescent() / 3f;
-                    Paint paint = Paint.get();
                     paint.setColor(wp.getColor());
                     c.drawRect(leftX, strokeTop, rightX, strokeTop + thickness, paint);
                 }
                 if ((flags & TextPaint.STRIKETHROUGH_FLAG) != 0) {
                     float thickness = piece.getAscent() / 12f;
                     float strokeTop = y + piece.getAscent() / -2f;
-                    Paint paint = Paint.get();
                     paint.setColor(wp.getColor());
                     c.drawRect(leftX, strokeTop, rightX, strokeTop + thickness, paint);
                 }
+            }
+            if (paint != null) {
+                paint.recycle();
             }
         }
         return runIsRtl ? -totalWidth : totalWidth;

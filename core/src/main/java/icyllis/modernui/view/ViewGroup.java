@@ -19,22 +19,13 @@
 package icyllis.modernui.view;
 
 import icyllis.modernui.animation.LayoutTransition;
-import icyllis.modernui.annotation.UiThread;
+import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Core;
-import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.Point;
-import icyllis.modernui.graphics.PointF;
-import icyllis.modernui.graphics.Rect;
-import icyllis.modernui.graphics.RectF;
-import icyllis.modernui.util.Pool;
+import icyllis.modernui.graphics.*;
 import icyllis.modernui.util.Pools;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.function.Predicate;
 
 /**
@@ -225,7 +216,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     }
 
     @Override
-    protected void dispatchDraw(@Nonnull Canvas canvas) {
+    protected void dispatchDraw(@NonNull Canvas canvas) {
         final int childrenCount = mChildrenCount;
         final View[] children = mChildren;
 
@@ -288,7 +279,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      * @param child       Who to draw
      * @param drawingTime The time at which draw is occurring
      */
-    protected void drawChild(@Nonnull Canvas canvas, @Nonnull View child, long drawingTime) {
+    protected void drawChild(@NonNull Canvas canvas, @NonNull View child, long drawingTime) {
         child.draw(canvas, this, (mGroupFlags & FLAG_CLIP_CHILDREN) != 0);
     }
 
@@ -325,7 +316,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     }
 
     @Override
-    protected boolean dispatchHoverEvent(@Nonnull MotionEvent event) {
+    protected boolean dispatchHoverEvent(@NonNull MotionEvent event) {
         final int action = event.getAction();
 
         final boolean intercepted = onInterceptHoverEvent(event);
@@ -540,7 +531,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      * @param child The view to send the event to.
      * @return {@code true} if the child handled the event.
      */
-    private boolean dispatchTransformedGenericPointerEvent(@Nonnull MotionEvent event, @Nonnull View child) {
+    private boolean dispatchTransformedGenericPointerEvent(@NonNull MotionEvent event, @NonNull View child) {
         boolean handled;
         if (!child.hasIdentityMatrix()) {
             MotionEvent transformedEvent = getTransformedMotionEvent(event, child);
@@ -566,8 +557,8 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      * @return A copy of the the given MotionEvent, transformed into the given View's coordinate
      * space.
      */
-    @Nonnull
-    private MotionEvent getTransformedMotionEvent(@Nonnull MotionEvent event, @Nonnull View child) {
+    @NonNull
+    private MotionEvent getTransformedMotionEvent(@NonNull MotionEvent event, @NonNull View child) {
         final float offsetX = mScrollX - child.mLeft;
         final float offsetY = mScrollY - child.mTop;
         final MotionEvent transformedEvent = event.copy();
@@ -615,7 +606,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      * @return True if the view group would like to intercept the hover event
      * and prevent its children from receiving it.
      */
-    public boolean onInterceptHoverEvent(@Nonnull MotionEvent event) {
+    public boolean onInterceptHoverEvent(@NonNull MotionEvent event) {
         final int action = event.getAction();
         final float x = event.getX();
         final float y = event.getY();
@@ -624,7 +615,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     }
 
     @Override
-    protected boolean dispatchGenericPointerEvent(@Nonnull MotionEvent event) {
+    protected boolean dispatchGenericPointerEvent(@NonNull MotionEvent event) {
         // Send the event to the child under the pointer.
         final int childrenCount = mChildrenCount;
         if (childrenCount != 0) {
@@ -675,7 +666,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     }
 
     /*@Override
-    public final boolean dispatchGenericMotionEvent(@Nonnull MotionEvent event) {
+    public final boolean dispatchGenericMotionEvent(@NonNull MotionEvent event) {
         final int action = event.getAction();
 
         float scrollX = getScrollX();
@@ -748,7 +739,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      *
      * @return true if the flag was previously set.
      */
-    private static boolean resetCancelNextUpFlag(@Nonnull View view) {
+    private static boolean resetCancelNextUpFlag(@NonNull View view) {
         if ((view.mPrivateFlags & PFLAG_CANCEL_NEXT_UP_EVENT) != 0) {
             view.mPrivateFlags &= ~PFLAG_CANCEL_NEXT_UP_EVENT;
             return true;
@@ -817,7 +808,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     }
 
     @Override
-    public boolean dispatchTouchEvent(@Nonnull MotionEvent ev) {
+    public boolean dispatchTouchEvent(@NonNull MotionEvent ev) {
         boolean handled = false;
 
         final int action = ev.getAction();
@@ -1008,7 +999,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      * The current target will receive an ACTION_CANCEL event, and no further
      * messages will be delivered here.
      */
-    public boolean onInterceptTouchEvent(@Nonnull MotionEvent ev) {
+    public boolean onInterceptTouchEvent(@NonNull MotionEvent ev) {
         return ev.getAction() == MotionEvent.ACTION_DOWN
                 && ev.isButtonPressed(MotionEvent.BUTTON_PRIMARY)
                 && isOnScrollbarThumb(ev.getX(), ev.getY());
@@ -1251,7 +1242,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      * filters out irrelevant pointer ids, and overrides its action if necessary.
      * If child is null, assumes the MotionEvent will be sent to this ViewGroup instead.
      */
-    private boolean dispatchTransformedTouchEvent(@Nonnull MotionEvent event,
+    private boolean dispatchTransformedTouchEvent(@NonNull MotionEvent event,
                                                   @Nullable View child, boolean cancel) {
         final boolean handled;
 
@@ -1303,7 +1294,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      * into its coordinate space.
      * Child must not be null.
      */
-    boolean isTransformedTouchPointInView(float x, float y, @Nonnull View child,
+    boolean isTransformedTouchPointInView(float x, float y, @NonNull View child,
                                           @Nullable PointF outLocalPoint) {
         final float[] point = getTempLocationF();
         point[0] = x;
@@ -1319,7 +1310,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     /**
      * @hide
      */
-    protected void transformPointToViewLocal(@Nonnull float[] point, @Nonnull View child) {
+    protected void transformPointToViewLocal(@NonNull float[] point, @NonNull View child) {
         point[0] += mScrollX - child.mLeft;
         point[1] += mScrollY - child.mTop;
 
@@ -1329,7 +1320,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     }
 
     @Override
-    public boolean dispatchKeyEvent(@Nonnull KeyEvent event) {
+    public boolean dispatchKeyEvent(@NonNull KeyEvent event) {
         if ((mPrivateFlags & (PFLAG_FOCUSED | PFLAG_HAS_BOUNDS))
                 == (PFLAG_FOCUSED | PFLAG_HAS_BOUNDS)) {
             return super.dispatchKeyEvent(event);
@@ -1341,7 +1332,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     }
 
     @Override
-    public boolean dispatchKeyShortcutEvent(@Nonnull KeyEvent event) {
+    public boolean dispatchKeyShortcutEvent(@NonNull KeyEvent event) {
         if ((mPrivateFlags & (PFLAG_FOCUSED | PFLAG_HAS_BOUNDS))
                 == (PFLAG_FOCUSED | PFLAG_HAS_BOUNDS)) {
             return super.dispatchKeyShortcutEvent(event);
@@ -1353,7 +1344,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     }
 
     @Override
-    public PointerIcon onResolvePointerIcon(@Nonnull MotionEvent event) {
+    public PointerIcon onResolvePointerIcon(@NonNull MotionEvent event) {
         final float x = event.getX();
         final float y = event.getY();
         if (isOnScrollbarThumb(x, y) || isDraggingScrollBar()) {
@@ -1389,7 +1380,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     }
 
     @Nullable
-    private PointerIcon dispatchResolvePointerIcon(MotionEvent event, @Nonnull View child) {
+    private PointerIcon dispatchResolvePointerIcon(MotionEvent event, @NonNull View child) {
         final PointerIcon pointerIcon;
         if (!child.hasIdentityMatrix()) {
             MotionEvent transformedEvent = getTransformedMotionEvent(event, child);
@@ -1559,7 +1550,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      * @param child the child view to add
      * @see #generateDefaultLayoutParams()
      */
-    public void addView(@Nonnull View child) {
+    public void addView(@NonNull View child) {
         addView(child, -1);
     }
 
@@ -1575,7 +1566,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      * @param index the position at which to add the child
      * @see #generateDefaultLayoutParams()
      */
-    public void addView(@Nonnull View child, int index) {
+    public void addView(@NonNull View child, int index) {
         LayoutParams params = child.getLayoutParams();
         if (params == null) {
             params = generateDefaultLayoutParams();
@@ -1593,7 +1584,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      *
      * @param child the child view to add
      */
-    public void addView(@Nonnull View child, int width, int height) {
+    public void addView(@NonNull View child, int width, int height) {
         final LayoutParams params = generateDefaultLayoutParams();
         params.width = width;
         params.height = height;
@@ -1611,7 +1602,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      * @param params the layout parameters to set on the child
      */
     @Override
-    public void addView(@Nonnull View child, @Nonnull LayoutParams params) {
+    public void addView(@NonNull View child, @NonNull LayoutParams params) {
         addView(child, -1, params);
     }
 
@@ -1626,7 +1617,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      * @param index  the position at which to add the child or -1 to add last
      * @param params the layout parameters to set on the child
      */
-    public void addView(@Nonnull View child, int index, @Nonnull LayoutParams params) {
+    public void addView(@NonNull View child, int index, @NonNull LayoutParams params) {
         // addViewInner() will call child.requestLayout() when setting the new LayoutParams
         // therefore, we call requestLayout() on ourselves before, so that the child's request
         // will be blocked at our level
@@ -1636,7 +1627,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     }
 
     @Override
-    public void updateViewLayout(@Nonnull View view, @Nonnull ViewGroup.LayoutParams params) {
+    public void updateViewLayout(@NonNull View view, @NonNull ViewGroup.LayoutParams params) {
         if (!checkLayoutParams(params)) {
             throw new IllegalArgumentException("Invalid LayoutParams supplied to " + this);
         }
@@ -1657,7 +1648,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      * @param params the layout parameters to associate with the child
      * @return true if the child was added, false otherwise
      */
-    protected boolean addViewInLayout(@Nonnull View child, int index, @Nonnull LayoutParams params) {
+    protected boolean addViewInLayout(@NonNull View child, int index, @NonNull LayoutParams params) {
         return addViewInLayout(child, index, params, false);
     }
 
@@ -1674,7 +1665,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      *                             layout request on child
      * @return true if the child was added, false otherwise
      */
-    protected boolean addViewInLayout(@Nonnull View child, int index, @Nonnull LayoutParams params,
+    protected boolean addViewInLayout(@NonNull View child, int index, @NonNull LayoutParams params,
                                       boolean preventRequestLayout) {
         child.mParent = null;
         addViewInner(child, index, params, preventRequestLayout);
@@ -1686,11 +1677,11 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      *
      * @param child the child on which to perform the cleanup
      */
-    protected void cleanupLayoutState(@Nonnull View child) {
+    protected void cleanupLayoutState(@NonNull View child) {
         child.mPrivateFlags &= ~View.PFLAG_FORCE_LAYOUT;
     }
 
-    private void addViewInner(@Nonnull final View child, int index, @Nonnull LayoutParams params,
+    private void addViewInner(@NonNull final View child, int index, @NonNull LayoutParams params,
                               boolean preventRequestLayout) {
         if (mTransition != null) {
             // Don't prevent other add transitions from completing, but cancel remove
@@ -1909,7 +1900,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      * {@link #dispatchDraw(Canvas)} or any related method.</p>
      */
     @Override
-    public void removeView(@Nonnull View view) {
+    public void removeView(@NonNull View view) {
         if (removeViewInternal(view)) {
             requestLayout();
             invalidate();
@@ -1926,7 +1917,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      *
      * @param view the view to remove from the group
      */
-    public void removeViewInLayout(@Nonnull View view) {
+    public void removeViewInLayout(@NonNull View view) {
         removeViewInternal(view);
     }
 
@@ -2244,7 +2235,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      * @see #detachViewFromParent(View)
      * @see #detachViewFromParent(int)
      */
-    protected void removeDetachedView(@Nonnull View child, boolean animate) {
+    protected void removeDetachedView(@NonNull View child, boolean animate) {
         if (mTransition != null) {
             mTransition.removeChild(this, child);
         }
@@ -2564,7 +2555,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     }
 
     @Override
-    public void addFocusables(@Nonnull ArrayList<View> views, int direction, int focusableMode) {
+    public void addFocusables(@NonNull ArrayList<View> views, int direction, int focusableMode) {
         final int focusableCount = views.size();
 
         final int descendantFocusability = getDescendantFocusability();
@@ -2601,7 +2592,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     }
 
     @Override
-    public void addTouchables(@Nonnull ArrayList<View> views) {
+    public void addTouchables(@NonNull ArrayList<View> views) {
         super.addTouchables(views);
 
         final int count = mChildrenCount;
@@ -2616,7 +2607,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     }
 
     @Override
-    public void addKeyboardNavigationClusters(@Nonnull Collection<View> views, int direction) {
+    public void addKeyboardNavigationClusters(@NonNull Collection<View> views, int direction) {
         final int focusableCount = views.size();
 
         if (isKeyboardNavigationCluster()) {
@@ -2949,7 +2940,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      *                         false otherwise
      * @hide
      */
-    public boolean getChildVisibleRect(@Nonnull View child, Rect r, @Nullable Point offset, boolean forceParentCheck) {
+    public boolean getChildVisibleRect(@NonNull View child, Rect r, @Nullable Point offset, boolean forceParentCheck) {
         // It doesn't make a whole lot of sense to call this on a view that isn't attached,
         // but for some simple tests it can be useful. If we don't have attach info this
         // will allocate memory.
@@ -3174,7 +3165,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     @Nullable
     @Override
     @SuppressWarnings("unchecked")
-    protected <T extends View> T findViewByPredicateTraversal(@Nonnull Predicate<View> predicate,
+    protected <T extends View> T findViewByPredicateTraversal(@NonNull Predicate<View> predicate,
                                                               @Nullable View childToSkip) {
         if (predicate.test(this)) {
             return (T) this;
@@ -3384,7 +3375,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         }
     }
 
-    @Nonnull
+    @NonNull
     @Override
     protected int[] onCreateDrawableState(int extraSpace) {
         if ((mGroupFlags & FLAG_ADD_STATES_FROM_CHILDREN) == 0) {
@@ -3749,7 +3740,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      * @param parentWidthSpec  The width requirements for this view
      * @param parentHeightSpec The height requirements for this view
      */
-    protected void measureChild(@Nonnull View child, int parentWidthSpec,
+    protected void measureChild(@NonNull View child, int parentWidthSpec,
                                 int parentHeightSpec) {
         final LayoutParams lp = child.getLayoutParams();
 
@@ -3775,7 +3766,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      * @param heightUsed       Extra space that has been used up by the parent
      *                         vertically (possibly by other children of the parent)
      */
-    protected void measureChildWithMargins(@Nonnull View child,
+    protected void measureChildWithMargins(@NonNull View child,
                                            int parentWidthSpec, int widthUsed,
                                            int parentHeightSpec, int heightUsed) {
         final MarginLayoutParams lp = (MarginLayoutParams) child.getLayoutParams();
@@ -3930,7 +3921,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      *
      * @param view The View object to be kept visible even if it gets removed from its parent.
      */
-    public void startViewTransition(@Nonnull View view) {
+    public void startViewTransition(@NonNull View view) {
         if (view.mParent == this) {
             if (mTransitioningViews == null) {
                 mTransitioningViews = new ArrayList<>();
@@ -4067,7 +4058,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     }
 
     @Override
-    protected void dispatchVisibilityChanged(@Nonnull View changedView, int visibility) {
+    protected void dispatchVisibilityChanged(@NonNull View changedView, int visibility) {
         super.dispatchVisibilityChanged(changedView, visibility);
         final int count = mChildrenCount;
         final View[] children = mChildren;
@@ -4116,12 +4107,12 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     }
 
     @Override
-    public boolean onStartNestedScroll(@Nonnull View child, @Nonnull View target, int axes, int type) {
+    public boolean onStartNestedScroll(@NonNull View child, @NonNull View target, int axes, int type) {
         return false;
     }
 
     @Override
-    public void onNestedScrollAccepted(@Nonnull View child, @Nonnull View target, int axes, int type) {
+    public void onNestedScrollAccepted(@NonNull View child, @NonNull View target, int axes, int type) {
         if (type == TYPE_NON_TOUCH) {
             mNestedScrollAxesNonTouch = axes;
         } else {
@@ -4130,7 +4121,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     }
 
     @Override
-    public void onStopNestedScroll(@Nonnull View target, int type) {
+    public void onStopNestedScroll(@NonNull View target, int type) {
         // Stop any recursive nested scrolling.
         stopNestedScroll(type);
         if (type == TYPE_NON_TOUCH) {
@@ -4141,26 +4132,26 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     }
 
     @Override
-    public void onNestedScroll(@Nonnull View target, int dxConsumed, int dyConsumed, int dxUnconsumed,
-                               int dyUnconsumed, int type, @Nonnull int[] consumed) {
+    public void onNestedScroll(@NonNull View target, int dxConsumed, int dyConsumed, int dxUnconsumed,
+                               int dyUnconsumed, int type, @NonNull int[] consumed) {
         // Re-dispatch up the tree by default
         dispatchNestedScroll(dxConsumed, dyConsumed, dxUnconsumed, dyUnconsumed, null, type, consumed);
     }
 
     @Override
-    public void onNestedPreScroll(@Nonnull View target, int dx, int dy, @Nonnull int[] consumed, int type) {
+    public void onNestedPreScroll(@NonNull View target, int dx, int dy, @NonNull int[] consumed, int type) {
         // Re-dispatch up the tree by default
         dispatchNestedPreScroll(dx, dy, consumed, null, type);
     }
 
     @Override
-    public boolean onNestedFling(@Nonnull View target, float velocityX, float velocityY, boolean consumed) {
+    public boolean onNestedFling(@NonNull View target, float velocityX, float velocityY, boolean consumed) {
         // Re-dispatch up the tree by default
         return dispatchNestedFling(velocityX, velocityY, consumed);
     }
 
     @Override
-    public boolean onNestedPreFling(@Nonnull View target, float velocityX, float velocityY) {
+    public boolean onNestedPreFling(@NonNull View target, float velocityX, float velocityY) {
         // Re-dispatch up the tree by default
         return dispatchNestedPreFling(velocityX, velocityY);
     }
@@ -4182,8 +4173,8 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      *          for this ViewGroup.
      * @return an instance of {@link LayoutParams} or one of its descendants
      */
-    @Nonnull
-    protected LayoutParams generateLayoutParams(@Nonnull LayoutParams p) {
+    @NonNull
+    protected LayoutParams generateLayoutParams(@NonNull LayoutParams p) {
         return p;
     }
 
@@ -4194,7 +4185,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      *
      * @return a set of default layout parameters
      */
-    @Nonnull
+    @NonNull
     protected LayoutParams generateDefaultLayoutParams() {
         return new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
     }
@@ -4269,7 +4260,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
          *
          * @param source the layout params to copy from.
          */
-        public LayoutParams(@Nonnull LayoutParams source) {
+        public LayoutParams(@NonNull LayoutParams source) {
             width = source.width;
             height = source.height;
         }
@@ -4393,7 +4384,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
          *
          * @param source The layout params to copy from.
          */
-        public MarginLayoutParams(@Nonnull MarginLayoutParams source) {
+        public MarginLayoutParams(@NonNull MarginLayoutParams source) {
             this.width = source.width;
             this.height = source.height;
 
@@ -4417,7 +4408,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         /**
          * @hide Used internally.
          */
-        public final void copyMarginsFrom(@Nonnull MarginLayoutParams source) {
+        public final void copyMarginsFrom(@NonNull MarginLayoutParams source) {
             this.leftMargin = source.leftMargin;
             this.topMargin = source.topMargin;
             this.rightMargin = source.rightMargin;
@@ -4644,8 +4635,8 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         private HoverTarget() {
         }
 
-        @Nonnull
-        public static HoverTarget obtain(@Nonnull View child) {
+        @NonNull
+        public static HoverTarget obtain(@NonNull View child) {
             final HoverTarget target;
             synchronized (sRecyclerLock) {
                 if (sRecyclerTop == null) {
@@ -4688,7 +4679,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      */
     private static final class TouchTarget {
 
-        private static final Pool<TouchTarget> sPool = Pools.concurrent(12);
+        private static final Pools.Pool<TouchTarget> sPool = Pools.newSynchronizedPool(12);
 
         // The touched view, one of the child of this ViewGroup
         public View child;
@@ -4696,8 +4687,8 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         private TouchTarget() {
         }
 
-        @Nonnull
-        public static TouchTarget obtain(@Nonnull View child) {
+        @NonNull
+        public static TouchTarget obtain(@NonNull View child) {
             TouchTarget target = sPool.acquire();
             if (target == null) {
                 target = new TouchTarget();
