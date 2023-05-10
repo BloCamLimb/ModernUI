@@ -20,7 +20,6 @@ package icyllis.modernui.view;
 
 import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.Matrix4;
-import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 import org.lwjgl.glfw.GLFW;
 
@@ -416,7 +415,7 @@ public final class MotionEvent extends InputEvent {
 
     private static final int INITIAL_PACKED_AXIS_VALUES = 2;
 
-    private static final Pool<MotionEvent> sPool = Pools.concurrent(10);
+    private static final Pools.Pool<MotionEvent> sPool = Pools.newSynchronizedPool(10);
 
     private int mAction;
     private int mActionButton;

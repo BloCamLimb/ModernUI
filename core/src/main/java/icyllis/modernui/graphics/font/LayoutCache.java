@@ -22,7 +22,6 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.text.TextUtils;
-import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 
 import javax.annotation.Nonnull;
@@ -45,8 +44,8 @@ public class LayoutCache {
      */
     public static final int MAX_PIECE_LENGTH = 128;
 
-    private static final Pool<LookupKey> sLookupKeys = Pools.concurrent(2);
-    private static final Pool<char[]> sCharBuffers = Pools.concurrent(1);
+    private static final Pools.Pool<LookupKey> sLookupKeys = Pools.newSynchronizedPool(2);
+    private static final Pools.Pool<char[]> sCharBuffers = Pools.newSynchronizedPool(1);
     private static volatile Cache<Key, LayoutPiece> sCache;
 
     /**

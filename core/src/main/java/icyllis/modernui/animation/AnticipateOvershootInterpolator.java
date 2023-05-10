@@ -21,16 +21,15 @@ package icyllis.modernui.animation;
 /**
  * An interpolator where the change starts backward then flings forward and overshoots
  * the target value and finally goes back to the final value.
- *
- * @see TimeInterpolator#ANTICIPATE_OVERSHOOT
- * @see TimeInterpolator#anticipateOvershoot(float)
- * @see TimeInterpolator#anticipateOvershoot(float, float)
  */
 public class AnticipateOvershootInterpolator implements TimeInterpolator {
 
     private final float mTension;
 
-    AnticipateOvershootInterpolator() {
+    /**
+     * @see TimeInterpolator#ANTICIPATE_OVERSHOOT
+     */
+    public AnticipateOvershootInterpolator() {
         mTension = 2.0f * 1.5f;
     }
 
@@ -39,7 +38,7 @@ public class AnticipateOvershootInterpolator implements TimeInterpolator {
      *                there is no anticipation/overshoot and the interpolator becomes
      *                a simple acceleration/deceleration interpolator.
      */
-    AnticipateOvershootInterpolator(float tension) {
+    public AnticipateOvershootInterpolator(float tension) {
         mTension = tension * 1.5f;
     }
 
@@ -51,7 +50,7 @@ public class AnticipateOvershootInterpolator implements TimeInterpolator {
      *                     to get the same overshoot as an OvershootInterpolator with
      *                     a tension of 2.0f, you would use an extraTension of 1.5f.
      */
-    AnticipateOvershootInterpolator(float tension, float extraTension) {
+    public AnticipateOvershootInterpolator(float tension, float extraTension) {
         mTension = tension * extraTension;
     }
 

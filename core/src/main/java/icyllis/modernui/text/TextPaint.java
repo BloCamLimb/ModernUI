@@ -24,7 +24,6 @@ import icyllis.modernui.graphics.font.CharArrayIterator;
 import icyllis.modernui.graphics.font.FontMetricsInt;
 import icyllis.modernui.graphics.font.FontPaint;
 import icyllis.modernui.graphics.font.GraphemeBreak;
-import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 
 import javax.annotation.Nonnull;
@@ -47,7 +46,7 @@ public class TextPaint extends FontPaint {
      */
     public static final int STRIKETHROUGH_FLAG = 0x10;
 
-    private static final Pool<TextPaint> sPool = Pools.concurrent(4);
+    private static final Pools.Pool<TextPaint> sPool = Pools.newSynchronizedPool(4);
 
     private Typeface mTypeface;
     private int mColor;

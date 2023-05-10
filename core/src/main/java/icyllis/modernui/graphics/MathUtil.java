@@ -499,7 +499,7 @@ public final class MathUtil {
 
     /**
      * Returns the smallest power of two greater than or equal to {@code x}.
-     * Asserts {@code x > 0 && x <= 2^30}.
+     * Asserts {@code x > 0 && x <= 2^30}. NextPow2.
      */
     public static int ceilPow2(int x) {
         assert x > 0 && x <= (1 << (Integer.SIZE - 2));
@@ -508,7 +508,7 @@ public final class MathUtil {
 
     /**
      * Returns the smallest power of two greater than or equal to {@code x}.
-     * Asserts {@code x > 0 && x <= 2^62}.
+     * Asserts {@code x > 0 && x <= 2^62}. NextPow2.
      */
     public static long ceilPow2(long x) {
         assert x > 0 && x <= (1L << (Long.SIZE - 2));
@@ -517,7 +517,7 @@ public final class MathUtil {
 
     /**
      * Returns the largest power of two less than or equal to {@code x}.
-     * Asserts {@code x > 0}.
+     * Asserts {@code x > 0}. PrevPow2.
      */
     public static int floorPow2(int x) {
         assert x > 0;
@@ -526,11 +526,37 @@ public final class MathUtil {
 
     /**
      * Returns the largest power of two less than or equal to {@code x}.
-     * Asserts {@code x > 0}.
+     * Asserts {@code x > 0}. PrevPow2.
      */
     public static long floorPow2(long x) {
         assert x > 0;
         return Long.highestOneBit(x);
+    }
+
+    /**
+     * Returns the log2 of the provided value, were that value to be rounded up to the next power of 2.
+     * Returns 0 if value <= 0:<br>
+     * Never returns a negative number, even if value is NaN.
+     * <pre>
+     * nextLog2((-inf..1]) -> 0
+     * nextLog2((1..2]) -> 1
+     * nextLog2((2..4]) -> 2
+     * nextLog2((4..8]) -> 3
+     * nextLog2(+inf) -> 128
+     * nextLog2(NaN) -> 0
+     * </pre>
+     */
+    public static int nextLog2(float x) {
+        int exp = ((Float.floatToRawIntBits(x) + (1 << 23) - 1) >> 23) - 127;
+        return exp & ~(exp >> 31);
+    }
+
+    public static int nextLog4(float x) {
+        return (nextLog2(x) + 1) >> 1;
+    }
+
+    public static int nextLog16(float x) {
+        return (nextLog2(x) + 3) >> 2;
     }
 
     /**

@@ -23,7 +23,6 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Matrix4;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.RectF;
-import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 
 import javax.annotation.Nonnull;
@@ -32,7 +31,7 @@ import java.util.ArrayDeque;
 public abstract class GLCanvas extends Canvas {
 
     // shared pools
-    static final Pool<Save> sSavePool = Pools.concurrent(60);
+    static final Pools.Pool<Save> sSavePool = Pools.newSynchronizedPool(60);
 
     // see window
     static final Matrix4 RESET_MATRIX = Matrix4.makeTranslate(0, 0, -Window.LAST_SYSTEM_WINDOW - 1);

@@ -134,11 +134,12 @@ public class ScrollView extends FrameLayout {
 
             @Override
             public void draw(@Nonnull Canvas canvas) {
-                Paint paint = Paint.get();
+                Paint paint = Paint.obtain();
                 paint.setRGBA(205, 163, 152, (int) (mAlpha * 0.5));
                 Rect bounds = getBounds();
                 canvas.drawRoundRect(bounds.left + 2, bounds.top + 2, bounds.right - 2, bounds.bottom - 2,
                         bounds.width() / 2f - 2, paint);
+                paint.recycle();
             }
 
             @Override
@@ -151,13 +152,14 @@ public class ScrollView extends FrameLayout {
 
             @Override
             public void draw(@Nonnull Canvas canvas) {
-                Paint paint = Paint.get();
+                Paint paint = Paint.obtain();
                 paint.setRGBA(128, 128, 128, (int) (mAlpha * 0.75));
                 paint.setStyle(Paint.STROKE);
                 paint.setStrokeWidth(2);
                 Rect bounds = getBounds();
                 canvas.drawRoundRect(bounds.left + 1, bounds.top + 1, bounds.right - 1, bounds.bottom - 1,
                         bounds.width() / 2f - 1, paint);
+                paint.recycle();
             }
 
             @Override
@@ -909,18 +911,17 @@ public class ScrollView extends FrameLayout {
         View currentFocused = findFocus();
         if (currentFocused == this) currentFocused = null;
 
-        //View nextFocused = FocusFinder.getInstance().findNextFocus(this, currentFocused, direction);
+        View nextFocused = FocusFinder.getInstance().findNextFocus(this, currentFocused, direction);
 
         final int maxJump = (int) (getHeight() * 0.5f);
 
-        /*if (nextFocused != null && isWithinDeltaOfScreen(nextFocused, maxJump, getHeight())) {
+        if (nextFocused != null && isWithinDeltaOfScreen(nextFocused, maxJump, getHeight())) {
             nextFocused.getDrawingRect(mTempRect);
             offsetDescendantRectToMyCoords(nextFocused, mTempRect);
             int scrollDelta = computeScrollDeltaToGetChildRectOnScreen(mTempRect);
-            doScrollY(scrollDelta);
+            smoothScrollBy(scrollDelta);
             nextFocused.requestFocus(direction);
-        } else */
-        {
+        } else {
             // no new focus
             int scrollDelta = maxJump;
 

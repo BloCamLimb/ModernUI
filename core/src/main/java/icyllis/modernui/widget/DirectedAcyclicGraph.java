@@ -18,7 +18,6 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMaps;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
@@ -37,7 +36,7 @@ import java.util.List;
  */
 final class DirectedAcyclicGraph<T> {
 
-    private final Pool<ArrayList<T>> mListPool = Pools.simple(10);
+    private final Pools.Pool<ArrayList<T>> mListPool = Pools.newSimplePool(10);
     private final Object2ObjectOpenHashMap<T, ArrayList<T>> mGraph = new Object2ObjectOpenHashMap<>();
 
     private final ArrayList<T> mSortResult = new ArrayList<>();

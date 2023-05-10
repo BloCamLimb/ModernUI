@@ -35,6 +35,9 @@ import icyllis.modernui.view.ViewGroup.LayoutParams;
 import icyllis.modernui.widget.*;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
+import org.lwjgl.PointerBuffer;
+import org.lwjgl.system.MemoryStack;
+import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -72,6 +75,7 @@ public class TestFragment extends Fragment {
         try (ModernUI app = new ModernUI()) {
             app.run(new TestFragment());
         }
+        AudioManager.getInstance().close();
         String str = """
                 public final class Reference {
                 public:
@@ -114,16 +118,29 @@ public class TestFragment extends Fragment {
                 .replace(660, new FragmentA(), null)
                 .commit();
 
+        AudioManager.getInstance().initialize();
+
         CompletableFuture.runAsync(() -> {
-            try {
-                FileChannel channel = FileChannel.open(Path.of("F:/粉骨砕身カジノゥ (long ver.).ogg"), StandardOpenOption.READ);
-                OggDecoder decoder = new OggDecoder(channel);
-                AudioManager.getInstance().initialize();
-                Track track = new Track(decoder);
-                sSpectrumGraph = new SpectrumGraph(track, false, 400);
-                track.play();
-            } catch (IOException e) {
-                e.printStackTrace();
+            String path;
+            try (MemoryStack stack = MemoryStack.stackPush()) {
+                PointerBuffer filters = stack.mallocPointer(1);
+                stack.nUTF8("*.ogg", true);
+                filters.put(stack.getPointerAddress());
+                filters.rewind();
+                path = TinyFileDialogs.tinyfd_openFileDialog(null, null, filters, "Ogg Vorbis (*.ogg)", false);
+            }
+            if (path != null) {
+                try {
+                    FileChannel channel = FileChannel.open(Path.of(path), StandardOpenOption.READ);
+                    OggDecoder decoder = new OggDecoder(channel);
+                    Track track = new Track(decoder);
+                    sSpectrumGraph = new SpectrumGraph(track, false, 600);
+                    track.play();
+
+                    requireView().postInvalidate();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         });
     }
@@ -139,7 +156,7 @@ public class TestFragment extends Fragment {
 
             @Override
             public void draw(@NonNull Canvas canvas) {
-                Paint paint = Paint.get();
+                Paint paint = Paint.obtain();
                 Rect b = getBounds();
                 paint.setRGBA(8, 8, 8, 80);
                 canvas.drawRoundRect(b.left, b.top, b.right, b.bottom, 8, paint);
@@ -153,6 +170,7 @@ public class TestFragment extends Fragment {
                     graph.draw(canvas, getBounds().centerX(), getBounds().centerY());
                     invalidateSelf();
                 }
+                paint.recycle();
             }
         });
         {

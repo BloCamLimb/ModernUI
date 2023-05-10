@@ -20,12 +20,11 @@ package icyllis.modernui.graphics;
 
 import com.ibm.icu.text.DateFormat;
 import com.ibm.icu.text.SimpleDateFormat;
-import icyllis.modernui.ModernUI;
+import icyllis.modernui.akashi.opengl.GLFramebufferCompat;
+import icyllis.modernui.akashi.opengl.GLTextureCompat;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.core.RefCnt;
-import icyllis.modernui.akashi.opengl.GLFramebufferCompat;
-import icyllis.modernui.akashi.opengl.GLTextureCompat;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.stb.*;
 import org.lwjgl.system.MemoryStack;
@@ -52,8 +51,8 @@ import static org.lwjgl.system.MemoryUtil.*;
  * generally uploaded to GPU side {@link Image} for drawing on the screen,
  * or downloaded from GPU side {@link Image} for encoding to streams.
  * <p>
- * This class is not thread safe, but memory safe. Though it's recommended
- * to call {@link #close()} by user, or via a try-with-resource block.
+ * This class is not thread safe, but memory safe. It's always recommended
+ * to call {@link #close()} manually, or within a try-with-resource block.
  *
  * @see BitmapFactory
  */
@@ -622,8 +621,8 @@ public final class Bitmap implements AutoCloseable {
      * Clear the reference to the pixel data. The bitmap is marked as "dead",
      * and then it is an error to try to access its pixels.
      * <p>
-     * Even a bitmap is not closed by user, the system will free the native
-     * allocation when the bitmap object becomes phantom-reachable. However,
+     * The system can ensure that the native allocation of a Bitmap to be
+     * released when the Bitmap object becomes phantom-reachable. However,
      * it tends to take a very long time to perform automatic cleanup.
      */
     @Override
@@ -1037,7 +1036,7 @@ public final class Bitmap implements AutoCloseable {
         private SafeRef(@NonNull Bitmap owner, int width, int height,
                         long pixels, int rowStride, @NonNull LongConsumer freeFn) {
             super(width, height, pixels, rowStride, freeFn);
-            mCleanup = ModernUI.registerCleanup(owner, this);
+            mCleanup = Core.registerCleanup(owner, this);
         }
 
         @Override

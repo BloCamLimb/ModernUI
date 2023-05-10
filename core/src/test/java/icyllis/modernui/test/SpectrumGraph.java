@@ -38,7 +38,7 @@ public class SpectrumGraph {
     public SpectrumGraph(Track track, boolean circular, int height) {
         mFFT = FFT.create(1024, track.getSampleRate());
         mFFT.setLogAverages(250, 14);
-        mFFT.setWindowFunc(FFT.NONE);
+        mFFT.setWindowFunc(FFT.HANN);
         track.setAnalyzer(mFFT, f -> updateAmplitudes());
         mCircular = circular;
         mHeight = height;
@@ -71,13 +71,13 @@ public class SpectrumGraph {
     }
 
     public void draw(@Nonnull Canvas canvas, float cx, float cy) {
-        var paint = Paint.get();
+        var paint = Paint.obtain();
         if (mCircular) {
             long time = Core.timeMillis();
             float b = 1.5f + MathUtil.sin(time / 600f) / 2;
             paint.setRGBA(160, 155, 230, (int) (64 * b));
-            paint.setSmoothRadius(100);
             paint.setStrokeWidth(200);
+            paint.setSmoothWidth(200);
             paint.setStyle(Paint.STROKE);
             canvas.drawCircle(cx, cy, 130, paint);
             paint.reset();
@@ -94,5 +94,6 @@ public class SpectrumGraph {
                 canvas.drawRect(cx - 479 + i * 16, cy - mAmplitudes[i] * mHeight, cx - 465 + i * 16, cy, paint);
             }
         }
+        paint.recycle();
     }
 }

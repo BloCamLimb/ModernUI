@@ -71,9 +71,10 @@ public class ListMenuItemView extends LinearLayout implements MenuView.ItemView,
         setDividerDrawable(new Drawable() {
             @Override
             public void draw(@Nonnull Canvas canvas) {
-                Paint paint = Paint.get();
+                Paint paint = Paint.obtain();
                 paint.setRGBA(255, 255, 255, 32);
                 canvas.drawRect(getBounds(), paint);
+                paint.recycle();
             }
 
             @Override

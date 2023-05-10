@@ -18,6 +18,7 @@
 
 package icyllis.modernui.util;
 
+import icyllis.modernui.resources.Resources;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -26,7 +27,7 @@ import java.lang.annotation.RetentionPolicy;
 
 /**
  * Container for a dynamically typed data value.
- * <br>Primarily used with {@link icyllis.modernui.resources.Resources}
+ * <br>Primarily used with {@link Resources}
  * for holding resource values.
  */
 @SuppressWarnings("MagicConstant")

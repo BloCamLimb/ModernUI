@@ -19,7 +19,6 @@
 package icyllis.modernui.graphics;
 
 import icyllis.modernui.akashi.ConservativeClip;
-import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 
 import java.util.ArrayDeque;
@@ -31,7 +30,7 @@ import java.util.Deque;
 public final class VirtualDevice extends BaseDevice {
 
     private final Deque<ClipState> mClipStack = new ArrayDeque<>(8);
-    private final Pool<ClipState> mClipRecPool = Pools.simple(16);
+    private final Pools.Pool<ClipState> mClipRecPool = Pools.newSimplePool(16);
 
     public VirtualDevice(int left, int top, int right, int bottom) {
         super(ImageInfo.makeUnknown(right - left, bottom - top));

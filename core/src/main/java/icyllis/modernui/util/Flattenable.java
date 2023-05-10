@@ -51,6 +51,7 @@ import java.io.*;
  *     }
  * }}</pre>
  *
+ * @see BinaryIO
  * @since 3.7
  */
 public interface Flattenable {

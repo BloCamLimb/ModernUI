@@ -38,7 +38,6 @@ import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.glfw.GLFWMonitorCallback;
 
 import java.io.*;
-import java.lang.ref.Cleaner;
 import java.nio.channels.*;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -59,8 +58,6 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
     public static final Marker MARKER = MarkerManager.getMarker("Core");
 
     private static volatile ModernUI sInstance;
-
-    private static final Cleaner sCleaner = Cleaner.create();
 
     private static final int fragment_container = 0x01020007;
 
@@ -107,20 +104,6 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
      */
     public static ModernUI getInstance() {
         return sInstance;
-    }
-
-    /**
-     * Registers a target and a cleaning action to run when the target becomes phantom
-     * reachable. It will be registered with the global cleaner shared across Modern UI.
-     * The action object should never hold any reference to the target object.
-     *
-     * @param target the target to monitor
-     * @param action a {@code Runnable} to invoke when the target becomes phantom reachable
-     * @return a {@code Cleanable} instance for explicit cleaning
-     */
-    @NonNull
-    public static Cleaner.Cleanable registerCleanup(@NonNull Object target, @NonNull Runnable action) {
-        return sCleaner.register(target, action);
     }
 
     /**
@@ -259,6 +242,7 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
         mFragmentContainerView.setId(fragment_container);
         mDecor.addView(mFragmentContainerView);
         mDecor.setLayoutDirection(View.LAYOUT_DIRECTION_LOCALE);
+        mDecor.setIsRootNamespace(true);
 
         try {
             FileChannel channel = FileChannel.open(Path.of("F:", "eromanga.png"), StandardOpenOption.READ);

@@ -26,7 +26,6 @@ import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.text.style.CharacterStyle;
 import icyllis.modernui.text.style.MetricAffectingSpan;
 import icyllis.modernui.text.style.ReplacementSpan;
-import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 
@@ -49,7 +48,7 @@ import java.util.*;
 @NotThreadSafe
 public class MeasuredParagraph {
 
-    private static final Pool<MeasuredParagraph> sPool = Pools.concurrent(1);
+    private static final Pools.Pool<MeasuredParagraph> sPool = Pools.newSynchronizedPool(1);
 
     /**
      * The cast original text.

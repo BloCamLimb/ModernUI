@@ -99,7 +99,7 @@ public class SwitchButton extends CompoundButton {
     @Override
     protected void onDraw(@Nonnull Canvas canvas) {
         super.onDraw(canvas);
-        Paint paint = Paint.get();
+        Paint paint = Paint.obtain();
 
         float buttonRadius = (mButtonBottom - mButtonTop) * 0.5f;
         float thumbX = mButtonLeft + buttonRadius + getThumbOffset();
@@ -148,6 +148,8 @@ public class SwitchButton extends CompoundButton {
         paint.setStrokeWidth(2f);
         paint.setColor(0xFFDDDDDD);
         canvas.drawCircle(thumbX, thumbY, buttonRadius - 1f, paint);
+
+        paint.recycle();
     }
 
     @Override

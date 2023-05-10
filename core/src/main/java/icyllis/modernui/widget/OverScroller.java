@@ -20,6 +20,7 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.animation.AnimationUtils;
 import icyllis.modernui.animation.TimeInterpolator;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nullable;
 import java.util.Objects;
@@ -101,6 +102,30 @@ public class OverScroller {
      */
     public final int getDuration() {
         return mScrollerX.mDuration;
+    }
+
+    /**
+     * Sets the final position (X) for this scroller.
+     *
+     * @param newX The new X offset as an absolute distance from the origin.
+     * @see #extendDuration(int)
+     * @see #setFinalY(int)
+     */
+    @ApiStatus.Internal
+    public void setFinalX(int newX) {
+        mScrollerX.setFinalPosition(newX);
+    }
+
+    /**
+     * Sets the final position (Y) for this scroller.
+     *
+     * @param newY The new Y offset as an absolute distance from the origin.
+     * @see #extendDuration(int)
+     * @see #setFinalX(int)
+     */
+    @ApiStatus.Internal
+    public void setFinalY(int newY) {
+        mScrollerY.setFinalPosition(newY);
     }
 
     /**
@@ -559,6 +584,12 @@ public class OverScroller {
             mCurrentPosition = mFinal;
             mCurrVelocity = 0.0f;
             mFinished = true;
+        }
+
+        void setFinalPosition(int position) {
+            mFinal = position;
+            mSplineDistance = mFinal - mStart;
+            mFinished = false;
         }
 
         boolean springback(int start, int min, int max) {
