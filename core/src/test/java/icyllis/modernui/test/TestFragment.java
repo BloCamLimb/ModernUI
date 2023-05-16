@@ -24,9 +24,11 @@ import icyllis.modernui.animation.AnimationUtils;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.audio.*;
+import icyllis.modernui.core.Core;
 import icyllis.modernui.fragment.Fragment;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.graphics.font.GlyphManager;
 import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.util.DataSet;
 import icyllis.modernui.util.TypedValue;
@@ -193,11 +195,13 @@ public class TestFragment extends Fragment {
 
             content.setOnKeyListener((v, keyCode, event) -> {
                 if (keyCode == KeyEvent.KEY_E && event.getAction() == KeyEvent.ACTION_UP) {
-                    getParentFragmentManager().beginTransaction()
+                    Core.postOnRenderThread(() ->
+                            GlyphManager.getInstance().debug());
+                    /*getParentFragmentManager().beginTransaction()
                             .replace(getId(), new FragmentB())
                             .addToBackStack(null)
                             .setReorderingAllowed(true)
-                            .commit();
+                            .commit();*/
                     return true;
                 }
                 return false;

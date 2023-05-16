@@ -19,28 +19,30 @@
 package icyllis.modernui.graphics.font;
 
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.akashi.Engine;
+import icyllis.modernui.akashi.opengl.GLTextureCompat;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Core;
-import icyllis.modernui.graphics.Bitmap;
-import icyllis.modernui.akashi.opengl.GLTextureCompat;
+import icyllis.modernui.graphics.*;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 import static icyllis.modernui.akashi.opengl.GLCore.*;
 
 /**
- * Maintains a font texture atlas, which is specified with a font size. In this way,
- * the glyphs can have similar sizes so that it will help to tightly packed these
- * sprites. Glyphs are dynamically generated with mipmaps. Each glyph is represented
- * as a {@link GLBakedGlyph}.
+ * Maintains a font texture atlas, which is specified with a font strike (style and
+ * size). Glyphs are dynamically generated with mipmaps, each glyph is represented as
+ * a {@link GLBakedGlyph}.
  * <p>
- * The initial texture size is 256*256, and each resize double the height and width
+ * The initial texture size is 512*512, and each resize double the height and width
  * alternately. For example, 512*512 -> 512*1024 -> 1024*1024.
- * The max texture size would be 16384*16384 and the image is 8-bit grayscale.
- * The OpenGL texture will change due to increasing the texture size.
+ * Each 512*512 area becomes a chunk, and has its {@link RectanglePacker}.
+ * The OpenGL texture ID will change due to expanding the texture size.
  *
  * @see GlyphManager
  * @see GLBakedGlyph
@@ -49,7 +51,7 @@ import static icyllis.modernui.akashi.opengl.GLCore.*;
 @RenderThread
 public class GLFontAtlas implements AutoCloseable {
 
-    public static final int INITIAL_SIZE = 512;
+    public static final int CHUNK_SIZE = 512;
     /**
      * Max mipmap level.
      */
@@ -72,31 +74,33 @@ public class GLFontAtlas implements AutoCloseable {
     // texture can change by resizing
     private GLTextureCompat mTexture = new GLTextureCompat(GL_TEXTURE_2D);
 
-    // position for next glyph sprite
-    private int mPosX = GlyphManager.GLYPH_BORDER;
-    private int mPosY = GlyphManager.GLYPH_BORDER;
-
-    // max height of current line
-    private int mLineHeight;
+    private final List<Chunk> mChunks = new ArrayList<>();
 
     // current texture size
     private int mWidth;
     private int mHeight;
 
-    private final boolean mColored;
+    private final Rect mRect = new Rect();
 
-    // create from any thread
-    public GLFontAtlas() {
-        this(false);
+    private record Chunk(int x, int y, RectanglePacker packer) {
     }
 
+    private final int mMaskFormat;
+
+    // create from any thread
+    @Deprecated
     public GLFontAtlas(boolean colored) {
-        mColored = colored;
+        this(colored ? Engine.MASK_FORMAT_ARGB : Engine.MASK_FORMAT_A8);
+    }
+
+    // create from any thread
+    public GLFontAtlas(int maskFormat) {
+        mMaskFormat = maskFormat;
     }
 
     /**
      * When the key is absent, this method computes a new instance and returns it.
-     * When the key is present but was called {@link #setWhitespace(long)} with it,
+     * When the key is present but was called {@link #setNoPixels(long)} with it,
      * then this method returns null, which means there's nothing to render.
      *
      * @param key a key
@@ -108,7 +112,7 @@ public class GLFontAtlas implements AutoCloseable {
         return mGlyphs.computeIfAbsent(key, __ -> new GLBakedGlyph());
     }
 
-    public void setWhitespace(long key) {
+    public void setNoPixels(long key) {
         mGlyphs.put(key, null);
     }
 
@@ -118,39 +122,47 @@ public class GLFontAtlas implements AutoCloseable {
         if (mWidth == 0) {
             resize(); // first init
         }
-        if (mPosX + glyph.width + GlyphManager.GLYPH_BORDER >= mWidth) {
-            mPosX = GlyphManager.GLYPH_BORDER;
-            // we are on the right half
-            if (mWidth == mHeight && mWidth != INITIAL_SIZE) {
-                mPosX += mWidth >> 1;
+
+        // the source image includes border, but glyph.width/height does not include
+        var rect = mRect;
+        rect.set(0, 0,
+                glyph.width + GlyphManager.GLYPH_BORDER * 2, glyph.height + GlyphManager.GLYPH_BORDER * 2);
+        boolean inserted = false;
+        for (Chunk chunk : mChunks) {
+            if (chunk.packer.addRect(rect)) {
+                inserted = true;
+                rect.offset(chunk.x, chunk.y);
+                break;
             }
-            mPosY += mLineHeight + GlyphManager.GLYPH_BORDER * 2;
-            mLineHeight = 0;
         }
-        if (mPosY + glyph.height + GlyphManager.GLYPH_BORDER >= mHeight) {
-            // move to the right half
-            if (mWidth != mHeight) {
-                mPosX = GlyphManager.GLYPH_BORDER + mWidth;
-                mPosY = GlyphManager.GLYPH_BORDER;
-            }
+        if (!inserted) {
+            // add new chunks
             resize();
-            resized = true;
+            for (Chunk chunk : mChunks) {
+                if (chunk.packer.addRect(rect)) {
+                    inserted = true;
+                    rect.offset(chunk.x, chunk.y);
+                    break;
+                }
+            }
+        }
+        if (!inserted) {
+            // failed...
+            return resized;
         }
 
         // include border
-        mTexture.uploadCompat(0, mPosX - GlyphManager.GLYPH_BORDER, mPosY - GlyphManager.GLYPH_BORDER,
-                glyph.width + GlyphManager.GLYPH_BORDER * 2, glyph.height + GlyphManager.GLYPH_BORDER * 2,
+        mTexture.uploadCompat(0, rect.left, rect.top,
+                rect.width(), rect.height(),
                 0, 0, 0, 1,
-                mColored ? GL_RGBA : GL_RED, GL_UNSIGNED_BYTE, pixels);
+                mMaskFormat == Engine.MASK_FORMAT_ARGB ? GL_RGBA : GL_RED, GL_UNSIGNED_BYTE, pixels);
         mTexture.generateMipmapCompat();
 
-        glyph.u1 = (float) mPosX / mWidth;
-        glyph.v1 = (float) mPosY / mHeight;
-        glyph.u2 = (float) (mPosX + glyph.width) / mWidth;
-        glyph.v2 = (float) (mPosY + glyph.height) / mHeight;
-
-        mPosX += glyph.width + GlyphManager.GLYPH_BORDER * 2;
-        mLineHeight = Math.max(mLineHeight, glyph.height);
+        // exclude border
+        glyph.u1 = (float) (rect.left + GlyphManager.GLYPH_BORDER) / mWidth;
+        glyph.v1 = (float) (rect.top + GlyphManager.GLYPH_BORDER) / mHeight;
+        glyph.u2 = (float) (rect.right - GlyphManager.GLYPH_BORDER) / mWidth;
+        glyph.v2 = (float) (rect.bottom - GlyphManager.GLYPH_BORDER) / mHeight;
 
         return resized;
     }
@@ -158,10 +170,10 @@ public class GLFontAtlas implements AutoCloseable {
     private void resize() {
         // never initialized
         if (mWidth == 0) {
-            mWidth = mHeight = INITIAL_SIZE;
-            mTexture.allocate2DCompat(mColored ? GL_RGBA8 : GL_R8, INITIAL_SIZE, INITIAL_SIZE, MIPMAP_LEVEL);
-            // we have border that not upload data, so generate mipmap may leave undefined data
-            //mTexture.clear(0);
+            mWidth = mHeight = CHUNK_SIZE;
+            mTexture.allocate2DCompat(mMaskFormat == Engine.MASK_FORMAT_ARGB ? GL_RGBA8 : GL_R8, CHUNK_SIZE,
+                    CHUNK_SIZE, MIPMAP_LEVEL);
+            mChunks.add(new Chunk(0, 0, RectanglePacker.make(CHUNK_SIZE, CHUNK_SIZE)));
         } else {
             final int oldWidth = mWidth;
             final int oldHeight = mHeight;
@@ -169,15 +181,26 @@ public class GLFontAtlas implements AutoCloseable {
             final boolean vertical;
             if (mHeight != mWidth) {
                 mWidth <<= 1;
+                for (int x = mWidth / 2; x < mWidth; x += CHUNK_SIZE) {
+                    for (int y = 0; y < mHeight; y += CHUNK_SIZE) {
+                        mChunks.add(new Chunk(x, y, RectanglePacker.make(CHUNK_SIZE, CHUNK_SIZE)));
+                    }
+                }
                 vertical = false;
             } else {
                 mHeight <<= 1;
+                for (int x = 0; x < mWidth; x += CHUNK_SIZE) {
+                    for (int y = mHeight / 2; y < mHeight; y += CHUNK_SIZE) {
+                        mChunks.add(new Chunk(x, y, RectanglePacker.make(CHUNK_SIZE, CHUNK_SIZE)));
+                    }
+                }
                 vertical = true;
             }
 
             // copy to new texture
             GLTextureCompat newTexture = new GLTextureCompat(GL_TEXTURE_2D);
-            newTexture.allocate2DCompat(mColored ? GL_RGBA8 : GL_R8, mWidth, mHeight, MIPMAP_LEVEL);
+            newTexture.allocate2DCompat(mMaskFormat == Engine.MASK_FORMAT_ARGB ? GL_RGBA8 : GL_R8, mWidth, mHeight,
+                    MIPMAP_LEVEL);
             if (sCopyFramebuffer == 0) {
                 sCopyFramebuffer = glGenFramebuffers();
             }
@@ -224,7 +247,7 @@ public class GLFontAtlas implements AutoCloseable {
             // we later generate mipmap
         }
         mTexture.setFilterCompat(sLinearSampling ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST, GL_NEAREST);
-        if (!mColored) {
+        if (mMaskFormat == Engine.MASK_FORMAT_A8) {
             //XXX: un-premultiplied
             mTexture.setSwizzleCompat(GL_ONE, GL_ONE, GL_ONE, GL_RED);
         }
@@ -238,7 +261,10 @@ public class GLFontAtlas implements AutoCloseable {
             }
         } else if (Core.isOnRenderThread()) {
             ModernUI.LOGGER.info(GlyphManager.MARKER, "Glyphs: {}", mGlyphs.size());
-            try (Bitmap bitmap = Bitmap.download(mColored ? Bitmap.Format.RGBA_8888 : Bitmap.Format.GRAY_8,
+            if (mWidth == 0)
+                return;
+            try (Bitmap bitmap = Bitmap.download(mMaskFormat == Engine.MASK_FORMAT_ARGB ? Bitmap.Format.RGBA_8888 :
+                            Bitmap.Format.GRAY_8,
                     mTexture, false)) {
                 bitmap.saveToPath(Bitmap.SaveFormat.PNG, 100, Path.of(path));
             } catch (IOException e) {
@@ -261,7 +287,7 @@ public class GLFontAtlas implements AutoCloseable {
 
     public int getMemorySize() {
         int size = mTexture.getWidth() * mTexture.getHeight();
-        if (mColored) {
+        if (mMaskFormat == Engine.MASK_FORMAT_ARGB) {
             size <<= 2;
         }
         size = ((size - (size >> ((MIPMAP_LEVEL + 1) << 1))) << 2) / 3;

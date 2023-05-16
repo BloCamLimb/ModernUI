@@ -18,10 +18,11 @@
 
 package icyllis.modernui.graphics.font;
 
+import icyllis.modernui.akashi.Engine;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.graphics.Bitmap;
 import icyllis.modernui.text.TextUtils;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.ints.*;
 import it.unimi.dsi.fastutil.objects.Object2IntFunction;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import org.apache.logging.log4j.Marker;
@@ -74,7 +75,7 @@ public class GlyphManager {
     /**
      * All font atlases, with specified font size.
      */
-    private Int2ObjectOpenHashMap<GLFontAtlas> mAtlases;
+    private Int2ObjectMap<GLFontAtlas> mAtlases;
 
     /**
      * Font (with size and style) to int key.
@@ -172,9 +173,10 @@ public class GlyphManager {
     @Nullable
     @RenderThread
     public GLBakedGlyph lookupGlyph(@NonNull Font font, int glyphCode) {
-        long fontKey = mFontTable.computeIfAbsent(font, mFontTableMapper);
-        long key = (fontKey << 32L) | glyphCode;
-        GLFontAtlas atlas = mAtlases.computeIfAbsent(font.getSize(), __ -> new GLFontAtlas());
+        int fontKey = mFontTable.computeIfAbsent(font, mFontTableMapper);
+        long key = ((long) fontKey << 32) | glyphCode;
+        GLFontAtlas atlas = mAtlases.computeIfAbsent(font.getSize(),
+                _k -> new GLFontAtlas(Engine.MASK_FORMAT_A8));
         GLBakedGlyph glyph = atlas.getGlyph(key);
         if (glyph != null && glyph.texture == 0) {
             return cacheGlyph(font, glyphCode, atlas, glyph, key);
@@ -225,7 +227,7 @@ public class GlyphManager {
         Rectangle bounds = vector.getPixelBounds(null, 0, 0);
 
         if (bounds.width == 0 || bounds.height == 0) {
-            atlas.setWhitespace(key);
+            atlas.setNoPixels(key);
             return null;
         }
 
