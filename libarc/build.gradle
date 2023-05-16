@@ -1,5 +1,5 @@
-archivesBaseName = 'ModernUI-ViewPager'
-version = '1.0.0'
+archivesBaseName = 'LibArc'
+version '1.0.0'
 
 repositories {
     mavenCentral()

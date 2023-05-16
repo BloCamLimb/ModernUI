@@ -20,10 +20,7 @@ package icyllis.modernui.text;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.ColorInt;
-import icyllis.modernui.graphics.font.CharArrayIterator;
-import icyllis.modernui.graphics.font.FontMetricsInt;
-import icyllis.modernui.graphics.font.FontPaint;
-import icyllis.modernui.graphics.font.GraphemeBreak;
+import icyllis.modernui.graphics.font.*;
 import icyllis.modernui.util.Pools;
 
 import javax.annotation.Nonnull;
@@ -173,6 +170,22 @@ public class TextPaint extends FontPaint {
         mTypeface = paint.mTypeface;
         mColor = paint.mColor;
         bgColor = paint.bgColor;
+    }
+
+    /**
+     * Equivalent to {@link #getFontSize()}, promoted to float type.
+     */
+    public float getTextSize() {
+        return super.getFontSize();
+    }
+
+    /**
+     * Equivalent to {@link #setFontSize(int)}, with rounding up.
+     *
+     * @param textSize set the paint's text size in pixel units.
+     */
+    public void setTextSize(float textSize) {
+        super.setFontSize((int) (textSize + 0.5));
     }
 
     /**

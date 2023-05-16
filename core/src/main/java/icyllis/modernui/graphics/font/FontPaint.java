@@ -28,13 +28,16 @@ import java.util.Locale;
 
 /**
  * The base paint used with glyph layout engine at lower levels.
+ * See the subclass for public use.
  */
 public class FontPaint {
 
     /**
      * Bit flag used with fontStyle to request the plain/regular/normal style
      */
-    public static final int REGULAR = Font.PLAIN;
+    public static final int PLAIN = Font.PLAIN;
+    public static final int NORMAL = PLAIN;     // alias
+    public static final int REGULAR = PLAIN;    // alias
 
     /**
      * Bit flag used with fontStyle to request the bold style
@@ -51,7 +54,7 @@ public class FontPaint {
      */
     public static final int BOLD_ITALIC = BOLD | ITALIC;
 
-    public static final int FONT_STYLE_MASK = REGULAR | BOLD | ITALIC;
+    public static final int FONT_STYLE_MASK = PLAIN | BOLD | ITALIC;
 
     // shared pointer
     protected FontCollection mFontCollection;
@@ -63,7 +66,7 @@ public class FontPaint {
         mFontCollection = ModernUI.getSelectedTypeface().getFontCollection();
         mLocale = ModernUI.getSelectedLocale();
         mFlags = REGULAR;
-        mFontSize = 24;
+        mFontSize = 12;
     }
 
     public FontPaint(@Nonnull FontPaint paint) {
@@ -131,7 +134,7 @@ public class FontPaint {
     }
 
     /**
-     * Return the paint's text size.
+     * Return the paint's text size, in points.
      *
      * @return the paint's text size in pixel units.
      */
@@ -140,11 +143,17 @@ public class FontPaint {
     }
 
     /**
-     * Set the paint's text size. This value clamps to 8 and 96.
+     * Set the paint's text size, in points. This value clamps to 8 and 96.
+     * You can have even larger glyphs through matrix transformation, and our engine
+     * will attempt to use SDF text rendering.
+     * <p>
+     * Note: the point size is measured at 72 dpi, while Windows has 96 dpi.
+     * This indicates that the font size 12 in MS Word is equal to the font size 16 here.
      *
      * @param fontSize set the paint's text size in pixel units.
      */
     public void setFontSize(int fontSize) {
+        // our engine assumes 8..96, do not edit
         mFontSize = MathUtil.clamp(fontSize, 8, 96);
     }
 

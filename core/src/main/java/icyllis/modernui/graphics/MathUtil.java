@@ -67,12 +67,12 @@ public final class MathUtil {
     }
 
     // fast sin, error +- 0.000152, in radians
-    public static float fsin(float a) {
+    private static float fsin(float a) {
         return SIN_TABLE[Math.round(a * 10430.378f) & 0xffff];
     }
 
     // fast cos, error +- 0.000152, in radians
-    public static float fcos(float a) {
+    private static float fcos(float a) {
         return SIN_TABLE[(Math.round(a * 10430.378f) + 0x4000) & 0xffff];
     }
 
@@ -361,176 +361,212 @@ public final class MathUtil {
     }
 
     /**
-     * Aligns {@code x} up to 2 (half-word).
+     * Aligns {@code a} up to 2 (half-word).
      */
-    public static int align2(int x) {
-        assert x >= 0 && x <= Integer.MAX_VALUE - 8;
-        return (x + 1) & -2;
+    public static int align2(int a) {
+        assert a >= 0 && a <= Integer.MAX_VALUE - 8;
+        return (a + 1) & -2;
     }
 
     /**
-     * Aligns {@code x} up to 4 (word).
+     * Aligns {@code a} up to 4 (word).
      */
-    public static int align4(int x) {
-        assert x >= 0 && x <= Integer.MAX_VALUE - 8;
-        return (x + 3) & -4;
+    public static int align4(int a) {
+        assert a >= 0 && a <= Integer.MAX_VALUE - 8;
+        return (a + 3) & -4;
     }
 
     /**
-     * Aligns {@code x} up to 8 (double word).
+     * Aligns {@code a} up to 8 (double word).
      */
-    public static int align8(int x) {
-        assert x >= 0 && x <= Integer.MAX_VALUE - 8;
-        return (x + 7) & -8;
+    public static int align8(int a) {
+        assert a >= 0 && a <= Integer.MAX_VALUE - 8;
+        return (a + 7) & -8;
     }
 
     /**
-     * Aligns {@code x} up to 2 (half-word).
+     * Aligns {@code a} up to 2 (half-word).
      */
-    public static long align2(long x) {
-        assert x >= 0 && x <= Long.MAX_VALUE - 16;
-        return (x + 1) & -2;
+    public static long align2(long a) {
+        assert a >= 0 && a <= Long.MAX_VALUE - 16;
+        return (a + 1) & -2;
     }
 
     /**
-     * Aligns {@code x} up to 4 (word).
+     * Aligns {@code a} up to 4 (word).
      */
-    public static long align4(long x) {
-        assert x >= 0 && x <= Long.MAX_VALUE - 16;
-        return (x + 3) & -4;
+    public static long align4(long a) {
+        assert a >= 0 && a <= Long.MAX_VALUE - 16;
+        return (a + 3) & -4;
     }
 
     /**
-     * Aligns {@code x} up to 8 (double word).
+     * Aligns {@code a} up to 8 (double word).
      */
-    public static long align8(long x) {
-        assert x >= 0 && x <= Long.MAX_VALUE - 16;
-        return (x + 7) & -8;
+    public static long align8(long a) {
+        assert a >= 0 && a <= Long.MAX_VALUE - 16;
+        return (a + 7) & -8;
     }
 
     /**
-     * Returns {@code true} if {@code x} is a multiple of 2. Asserts {@code x >= 0}.
+     * Returns {@code true} if {@code a} is a multiple of 2. Asserts {@code a >= 0}.
      */
-    public static boolean isAlign2(int x) {
-        assert x >= 0;
-        return (x & 1) == 0;
+    public static boolean isAlign2(int a) {
+        assert a >= 0;
+        return (a & 1) == 0;
     }
 
     /**
-     * Returns {@code true} if {@code x} is a multiple of 4. Asserts {@code x >= 0}.
+     * Returns {@code true} if {@code a} is a multiple of 4. Asserts {@code a >= 0}.
      */
-    public static boolean isAlign4(int x) {
-        assert x >= 0;
-        return (x & 3) == 0;
+    public static boolean isAlign4(int a) {
+        assert a >= 0;
+        return (a & 3) == 0;
     }
 
     /**
-     * Returns {@code true} if {@code x} is a multiple of 8. Asserts {@code x >= 0}.
+     * Returns {@code true} if {@code a} is a multiple of 8. Asserts {@code a >= 0}.
      */
-    public static boolean isAlign8(int x) {
-        assert x >= 0;
-        return (x & 7) == 0;
+    public static boolean isAlign8(int a) {
+        assert a >= 0;
+        return (a & 7) == 0;
     }
 
     /**
-     * Returns {@code true} if {@code x} is a multiple of 2. Asserts {@code x >= 0}.
+     * Returns {@code true} if {@code a} is a multiple of 2. Asserts {@code a >= 0}.
      */
-    public static boolean isAlign2(long x) {
-        assert x >= 0;
-        return (x & 1) == 0;
+    public static boolean isAlign2(long a) {
+        assert a >= 0;
+        return (a & 1) == 0;
     }
 
     /**
-     * Returns {@code true} if {@code x} is a multiple of 4. Asserts {@code x >= 0}.
+     * Returns {@code true} if {@code a} is a multiple of 4. Asserts {@code a >= 0}.
      */
-    public static boolean isAlign4(long x) {
-        assert x >= 0;
-        return (x & 3) == 0;
+    public static boolean isAlign4(long a) {
+        assert a >= 0;
+        return (a & 3) == 0;
     }
 
     /**
-     * Returns {@code true} if {@code x} is a multiple of 8. Asserts {@code x >= 0}.
+     * Returns {@code true} if {@code a} is a multiple of 8. Asserts {@code a >= 0}.
      */
-    public static boolean isAlign8(long x) {
-        assert x >= 0;
-        return (x & 7) == 0;
+    public static boolean isAlign8(long a) {
+        assert a >= 0;
+        return (a & 7) == 0;
     }
 
     /**
-     * Aligns {@code x} up to a power of two.
+     * Aligns {@code a} up to a power of two.
      */
-    public static int alignTo(int x, int alignment) {
-        assert x >= 0 && alignment > 0 &&
+    public static int alignTo(int a, int alignment) {
+        assert a >= 0 && alignment > 0 &&
                 (alignment & (alignment - 1)) == 0;
-        return (x + alignment - 1) & -alignment;
+        return (a + alignment - 1) & -alignment;
     }
 
-    public static int alignUp(int x, int alignment) {
-        assert x >= 0 && alignment > 0;
-        int n = x % alignment;
-        return n == 0 ? x : x + alignment - n;
+    public static int alignUp(int a, int alignment) {
+        assert a >= 0 && alignment > 0;
+        int r = a % alignment;
+        return r == 0 ? a : a + alignment - r;
     }
 
-    public static int alignUpPad(int x, int alignment) {
-        assert x >= 0 && alignment > 0;
-        return (alignment - x % alignment) % alignment;
+    public static int alignUpPad(int a, int alignment) {
+        assert a >= 0 && alignment > 0;
+        return (alignment - a % alignment) % alignment;
     }
 
-    public static int alignDown(int x, int alignment) {
-        assert x >= 0 && alignment > 0;
-        return (x / alignment) * alignment;
-    }
-
-    /**
-     * Returns {@code true} if {@code x} is a power of 2. Asserts {@code x > 0}.
-     */
-    public static boolean isPow2(int x) {
-        assert x > 0;
-        return (x & x - 1) == 0;
+    public static int alignDown(int a, int alignment) {
+        assert a >= 0 && alignment > 0;
+        return (a / alignment) * alignment;
     }
 
     /**
-     * Returns {@code true} if {@code x} is a power of 2. Asserts {@code x > 0}.
+     * Returns {@code true} if {@code a} is a power of 2. Asserts {@code a > 0}.
      */
-    public static boolean isPow2(long x) {
-        assert x > 0;
-        return (x & x - 1) == 0;
+    public static boolean isPow2(int a) {
+        assert a > 0 : "undefined";
+        return (a & a - 1) == 0;
     }
 
     /**
-     * Returns the smallest power of two greater than or equal to {@code x}.
-     * Asserts {@code x > 0 && x <= 2^30}. NextPow2.
+     * Returns {@code true} if {@code a} is a power of 2. Asserts {@code a > 0}.
      */
-    public static int ceilPow2(int x) {
-        assert x > 0 && x <= (1 << (Integer.SIZE - 2));
-        return 1 << -Integer.numberOfLeadingZeros(x - 1);
+    public static boolean isPow2(long a) {
+        assert a > 0 : "undefined";
+        return (a & a - 1) == 0;
     }
 
     /**
-     * Returns the smallest power of two greater than or equal to {@code x}.
-     * Asserts {@code x > 0 && x <= 2^62}. NextPow2.
+     * Returns the log2 of {@code a}, were that value to be rounded up to the
+     * next power of 2. Asserts {@code a > 0}. NextLog2.
      */
-    public static long ceilPow2(long x) {
-        assert x > 0 && x <= (1L << (Long.SIZE - 2));
-        return 1L << -Long.numberOfLeadingZeros(x - 1);
+    public static int ceilLog2(int a) {
+        assert a > 0 : "undefined";
+        return Integer.SIZE - Integer.numberOfLeadingZeros(a - 1);
     }
 
     /**
-     * Returns the largest power of two less than or equal to {@code x}.
-     * Asserts {@code x > 0}. PrevPow2.
+     * Returns the log2 of {@code a}, were that value to be rounded up to the
+     * next power of 2. Asserts {@code a > 0}. NextLog2.
      */
-    public static int floorPow2(int x) {
-        assert x > 0;
-        return Integer.highestOneBit(x);
+    public static int ceilLog2(long a) {
+        assert a > 0 : "undefined";
+        return Long.SIZE - Long.numberOfLeadingZeros(a - 1);
     }
 
     /**
-     * Returns the largest power of two less than or equal to {@code x}.
-     * Asserts {@code x > 0}. PrevPow2.
+     * Returns the smallest power of two greater than or equal to {@code a}.
+     * Asserts {@code a > 0 && a <= 2^30}. NextPow2.
      */
-    public static long floorPow2(long x) {
-        assert x > 0;
-        return Long.highestOneBit(x);
+    public static int ceilPow2(int a) {
+        assert a > 0 && a <= (1 << (Integer.SIZE - 2)) : "undefined";
+        return 1 << -Integer.numberOfLeadingZeros(a - 1);
+    }
+
+    /**
+     * Returns the smallest power of two greater than or equal to {@code a}.
+     * Asserts {@code a > 0 && a <= 2^62}. NextPow2.
+     */
+    public static long ceilPow2(long a) {
+        assert a > 0 && a <= (1L << (Long.SIZE - 2)) : "undefined";
+        return 1L << -Long.numberOfLeadingZeros(a - 1);
+    }
+
+    /**
+     * Returns the log2 of {@code a}, were that value to be rounded down to the
+     * previous power of 2. Asserts {@code a > 0}. PrevLog2.
+     */
+    public static int floorLog2(int a) {
+        assert a > 0 : "undefined";
+        return (Integer.SIZE - 1) - Integer.numberOfLeadingZeros(a);
+    }
+
+    /**
+     * Returns the log2 of {@code a}, were that value to be rounded down to the
+     * previous power of 2. Asserts {@code a > 0}. PrevLog2.
+     */
+    public static int floorLog2(long a) {
+        assert a > 0 : "undefined";
+        return (Long.SIZE - 1) - Long.numberOfLeadingZeros(a);
+    }
+
+    /**
+     * Returns the largest power of two less than or equal to {@code a}.
+     * Asserts {@code a > 0}. PrevPow2.
+     */
+    public static int floorPow2(int a) {
+        assert a > 0 : "undefined";
+        return Integer.highestOneBit(a);
+    }
+
+    /**
+     * Returns the largest power of two less than or equal to {@code a}.
+     * Asserts {@code a > 0}. PrevPow2.
+     */
+    public static long floorPow2(long a) {
+        assert a > 0 : "undefined";
+        return Long.highestOneBit(a);
     }
 
     /**
@@ -538,25 +574,26 @@ public final class MathUtil {
      * Returns 0 if value <= 0:<br>
      * Never returns a negative number, even if value is NaN.
      * <pre>
-     * nextLog2((-inf..1]) -> 0
-     * nextLog2((1..2]) -> 1
-     * nextLog2((2..4]) -> 2
-     * nextLog2((4..8]) -> 3
-     * nextLog2(+inf) -> 128
-     * nextLog2(NaN) -> 0
+     * CeilLog2((-inf..1]) -> 0
+     * CeilLog2((1..2]) -> 1
+     * CeilLog2((2..4]) -> 2
+     * CeilLog2((4..8]) -> 3
+     * CeilLog2(+inf) -> 128
+     * CeilLog2(NaN) -> 0
      * </pre>
+     * NextLog2.
      */
-    public static int nextLog2(float x) {
-        int exp = ((Float.floatToRawIntBits(x) + (1 << 23) - 1) >> 23) - 127;
+    public static int ceilLog2(float v) {
+        int exp = ((Float.floatToRawIntBits(v) + (1 << 23) - 1) >> 23) - 127;
         return exp & ~(exp >> 31);
     }
 
-    public static int nextLog4(float x) {
-        return (nextLog2(x) + 1) >> 1;
+    public static int ceilLog4(float v) {
+        return (ceilLog2(v) + 1) >> 1;
     }
 
-    public static int nextLog16(float x) {
-        return (nextLog2(x) + 3) >> 2;
+    public static int ceilLog16(float v) {
+        return (ceilLog2(v) + 3) >> 2;
     }
 
     /**

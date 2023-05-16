@@ -41,12 +41,12 @@ public class TestImageConversion {
                 ModernUI.LOGGER.info("dimensions: {}x{}, format: {}, mimeType: {}",
                         opts.outWidth, opts.outHeight, opts.outFormat, opts.outMimeType);
                 String name = p.getFileName().toString().replaceAll("\\..+", "");
-                bm.saveDialog(Bitmap.SaveFormat.PNG, 0, name);
+                bm.saveDialog(Bitmap.SaveFormat.PNG, 100, name);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
-        try {
+        /*try {
             Thread.sleep(5000);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -57,6 +57,6 @@ public class TestImageConversion {
             Thread.sleep(3000);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
-        }
+        }*/
     }
 }

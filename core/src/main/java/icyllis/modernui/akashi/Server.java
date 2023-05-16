@@ -145,9 +145,10 @@ public abstract class Server {
                 sampleCount, surfaceFlags)) {
             return null;
         }
-        int levelCount = (surfaceFlags & Surface.FLAG_MIPMAPPED) != 0
-                ? 32 - Integer.numberOfLeadingZeros(Math.max(width, height))
-                : 1;
+        int maxLevel = (surfaceFlags & Surface.FLAG_MIPMAPPED) != 0
+                ? MathUtil.floorLog2(Math.max(width, height))
+                : 0;
+        int levelCount = maxLevel + 1; // +1 base level 0
         if ((surfaceFlags & Surface.FLAG_RENDERABLE) != 0) {
             sampleCount = mCaps.getRenderTargetSampleCount(sampleCount, format);
         }
