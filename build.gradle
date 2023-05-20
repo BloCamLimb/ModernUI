@@ -11,6 +11,19 @@ plugins {
     id 'maven-publish'
 }
 
+publishing {
+    repositories {
+        maven {
+            name 'IzzelAliz'
+            url 'https://maven.izzel.io/releases'
+            credentials {
+                username = project.findProperty("maven_user")
+                password = project.findProperty("izzel_maven_token")
+            }
+        }
+    }
+}
+
 allprojects {
     apply plugin: 'java'
 
@@ -28,8 +41,10 @@ allprojects {
         compileOnly 'org.jetbrains:annotations:23.1.0'
         testCompileOnly 'com.google.code.findbugs:jsr305:3.0.2'
         testCompileOnly 'org.jetbrains:annotations:23.1.0'
-        implementation "org.apache.logging.log4j:log4j-core:${log4j_version}"
-        implementation "org.apache.logging.log4j:log4j-api:${log4j_version}"
+        compileOnly "org.apache.logging.log4j:log4j-core:${log4j_version}"
+        compileOnly "org.apache.logging.log4j:log4j-api:${log4j_version}"
+        testCompileOnly "org.apache.logging.log4j:log4j-core:${log4j_version}"
+        testCompileOnly "org.apache.logging.log4j:log4j-api:${log4j_version}"
     }
 
     tasks.withType(JavaCompile).configureEach {

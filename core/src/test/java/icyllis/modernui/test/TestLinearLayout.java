@@ -668,6 +668,9 @@ public class TestLinearLayout extends LinearLayout {
         private final ObjectAnimator mAnimator;
 
         public DView(TimeInterpolator interpolator) {
+            mTextPaint.setTypeface(Typeface.getSystemFont("Microsoft YaHei UI"));
+            mTextPaint.setFontStyle(Typeface.BOLD);
+            mTextPaint.setFontSize(10);
             /*animation = new Animation(200)
                     .applyTo(new Applier(0, 60, () -> offsetY, v -> {
                         offsetY = v;
@@ -692,7 +695,7 @@ public class TestLinearLayout extends LinearLayout {
             Paint paint = Paint.obtain();
             paint.setARGB(128, 140, 200, 240);
             canvas.drawRoundRect(0, 1, getWidth(), getHeight() - 2, 4, paint);
-            canvas.drawText("DView", 0, 5, getWidth() / 2f, offsetY + 24, mTextPaint);
+            canvas.drawText("18:52", 0, 5, getWidth() / 2f, offsetY + 24, mTextPaint);
             paint.recycle();
         }
 

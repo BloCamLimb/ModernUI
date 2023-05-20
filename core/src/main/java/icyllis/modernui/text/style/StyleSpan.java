@@ -40,7 +40,7 @@ import java.io.*;
  * string.setSpan(new StyleSpan(Typeface.ITALIC), 9, 15, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
  * </pre>
  */
-public class StyleSpan extends MetricAffectingSpan implements FlattenableSpan {
+public class StyleSpan extends MetricAffectingSpan implements ParcelableSpan {
 
     private final int mStyle;
 

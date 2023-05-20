@@ -18,10 +18,9 @@
 
 package icyllis.modernui.util;
 
+import icyllis.modernui.annotation.*;
 import icyllis.modernui.text.TextUtils;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.*;
 import java.lang.reflect.Array;
 import java.nio.charset.StandardCharsets;
@@ -30,10 +29,11 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 /**
- * Provides static methods to perform binary I/O.
+ * Provides static methods for performing binary I/O on various data objects.
  *
  * @since 3.7
  */
+@WorkerThread
 public final class BinaryIO {
 
     /**
@@ -65,43 +65,46 @@ public final class BinaryIO {
     private static final byte
             VAL_LIST = 20,
             VAL_DATA_SET = 21,
-            VAL_FLATTENABLE = 22,
+            VAL_PARCELABLE = 22,
             VAL_OBJECT_ARRAY = 23,
             VAL_SERIALIZABLE = 24;
 
     /**
-     * Reads a compressed DataSet from a GNU zipped file.
+     * Reads a compressed DataSet from a GZIP file.
      * <p>
-     * The stream should be a FileInputStream or a FileChannel->ChannelInputStream,
+     * The stream should be a FileInputStream or a ChannelInputStream over FileChannel,
      * and will be closed after the method call.
      *
-     * @param stream the FileInputStream or FileChannel->ChannelInputStream
-     * @return the newly inflated data set
+     * @param stream a FileInputStream or a ChannelInputStream over FileChannel
+     * @return the data set
      */
-    @Nullable
-    public static DataSet inflate(@Nonnull InputStream stream,
+    @NonNull
+    public static DataSet inflate(@NonNull InputStream stream,
                                   @Nullable ClassLoader loader) throws IOException {
-        try (var input = new DataInputStream(
-                new BufferedInputStream(new GZIPInputStream(stream, 4096), 4096))) {
-            return readDataSet(input, loader);
+        try (var in = new DataInputStream(new GZIPInputStream(
+                new BufferedInputStream(stream, 4096)))) {
+            var res = readDataSet(in, loader);
+            if (res == null) {
+                throw new IOException("Insufficient data");
+            }
+            return res;
         }
     }
 
     /**
-     * Writes and compresses a DataSet to a GNU zipped file. The file can have no extension.
-     * The standard extension is <code>.dat.gz</code> or <code>.gz</code>.
+     * Writes and compresses a DataSet to a GZIP file.
      * <p>
-     * The stream should be a FileOutputStream or a FileChannel->ChannelOutputStream,
+     * The stream should be a FileOutputStream or a ChannelOutputStream over FileChannel,
      * and will be closed after the method call.
      *
-     * @param stream the FileOutputStream or FileChannel->ChannelOutputStream
-     * @param source the data set to deflate
+     * @param stream a FileOutputStream or a ChannelOutputStream over FileChannel
+     * @param source the data set
      */
-    public static void deflate(@Nonnull OutputStream stream,
-                               @Nonnull DataSet source) throws IOException {
-        try (var output = new DataOutputStream(
-                new BufferedOutputStream(new GZIPOutputStream(stream, 4096), 4096))) {
-            writeDataSet(output, source);
+    public static void deflate(@NonNull OutputStream stream,
+                               @NonNull DataSet source) throws IOException {
+        try (var out = new DataOutputStream(new GZIPOutputStream(
+                new BufferedOutputStream(stream, 4096)))) {
+            writeDataSet(out, source);
         }
     }
 
@@ -112,7 +115,8 @@ public final class BinaryIO {
      * @param v   the value to write
      * @throws IOException if an IO error occurs
      */
-    public static void writeValue(@Nonnull DataOutput out, @Nullable Object v) throws IOException {
+    public static void writeValue(@NonNull DataOutput out, @Nullable Object v) throws IOException {
+        //TODO future Java will support pattern matching and value object
         if (v == null) {
             out.writeByte(VAL_NULL);
         } else if (v instanceof String) {
@@ -161,8 +165,8 @@ public final class BinaryIO {
         } else if (v instanceof DataSet) {
             out.writeByte(VAL_DATA_SET);
             writeDataSet(out, (DataSet) v);
-        } else if (v instanceof Flattenable value) {
-            out.writeByte(VAL_FLATTENABLE);
+        } else if (v instanceof Parcelable value) {
+            out.writeByte(VAL_PARCELABLE);
             writeString(out, value.getClass().getName());
             value.write(out);
         } else if (v instanceof int[]) {
@@ -191,11 +195,11 @@ public final class BinaryIO {
             } else if (v instanceof Serializable value) {
                 out.writeByte(VAL_SERIALIZABLE);
                 writeString(out, value.getClass().getName());
-                ByteArrayOutputStream os = new ByteArrayOutputStream();
-                ObjectOutputStream oos = new ObjectOutputStream(os);
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                ObjectOutputStream oos = new ObjectOutputStream(baos);
                 oos.writeObject(value);
                 oos.close();
-                writeByteArray(out, os.toByteArray());
+                writeByteArray(out, baos.toByteArray());
             }
             // others are silently ignored
         }
@@ -203,8 +207,8 @@ public final class BinaryIO {
 
     @SuppressWarnings("unchecked")
     @Nullable
-    public static <T> T readValue(@Nonnull DataInput in, @Nullable ClassLoader loader,
-                                  @Nullable Class<T> clazz, @Nullable Class<?> itemType) throws IOException {
+    public static <T> T readValue(@NonNull DataInput in, @Nullable ClassLoader loader,
+                                  @Nullable Class<T> clazz, @Nullable Class<?> elemType) throws IOException {
         final byte type = in.readByte();
         final Object object = switch (type) {
             case VAL_NULL -> null;
@@ -227,11 +231,11 @@ public final class BinaryIO {
             case VAL_STRING -> readString(in);
             case VAL_CHAR_SEQUENCE -> TextUtils.read(in);
             case VAL_UUID -> new UUID(in.readLong(), in.readLong());
-            case VAL_LIST -> readList(in, loader, itemType);
+            case VAL_LIST -> readList(in, loader, elemType);
             case VAL_DATA_SET -> readDataSet(in, loader);
             case VAL_OBJECT_ARRAY -> {
-                if (itemType == null) {
-                    itemType = Object.class;
+                if (elemType == null) {
+                    elemType = Object.class;
                 }
                 if (clazz != null) {
                     if (!clazz.isArray()) {
@@ -239,14 +243,14 @@ public final class BinaryIO {
                                 + clazz.getCanonicalName()
                                 + " required by caller is not an array.");
                     }
-                    Class<?> itemArrayType = itemType.arrayType();
+                    Class<?> itemArrayType = elemType.arrayType();
                     if (!clazz.isAssignableFrom(itemArrayType)) {
                         throw new IOException("About to read a " + itemArrayType.getCanonicalName()
                                 + ", which is not a subtype of type " + clazz.getCanonicalName()
                                 + " required by caller.");
                     }
                 }
-                yield readArray(in, loader, itemType);
+                yield readArray(in, loader, elemType);
             }
             default -> throw new IOException("Unknown value type identifier: " + type);
         };
@@ -265,7 +269,7 @@ public final class BinaryIO {
      * @param b   the bytes to write
      * @throws IOException if an IO error occurs
      */
-    public static void writeByteArray(@Nonnull DataOutput out,
+    public static void writeByteArray(@NonNull DataOutput out,
                                       @Nullable byte[] b) throws IOException {
         if (b == null) {
             out.writeInt(-1);
@@ -282,7 +286,7 @@ public final class BinaryIO {
      * @param b   the bytes to write
      * @throws IOException if an IO error occurs
      */
-    public static void writeByteArray(@Nonnull DataOutput out,
+    public static void writeByteArray(@NonNull DataOutput out,
                                       @Nullable byte[] b, int off, int len) throws IOException {
         if (b == null) {
             out.writeInt(-1);
@@ -293,7 +297,7 @@ public final class BinaryIO {
     }
 
     @Nullable
-    public static byte[] readByteArray(@Nonnull DataInput in) throws IOException {
+    public static byte[] readByteArray(@NonNull DataInput in) throws IOException {
         int n = in.readInt();
         if (n < 0)
             return null;
@@ -309,7 +313,7 @@ public final class BinaryIO {
      * @param value the short array to write
      * @throws IOException if an IO error occurs
      */
-    public static void writeShortArray(@Nonnull DataOutput out,
+    public static void writeShortArray(@NonNull DataOutput out,
                                        @Nullable short[] value) throws IOException {
         if (value == null) {
             out.writeInt(-1);
@@ -321,7 +325,7 @@ public final class BinaryIO {
     }
 
     @Nullable
-    public static short[] readShortArray(@Nonnull DataInput in) throws IOException {
+    public static short[] readShortArray(@NonNull DataInput in) throws IOException {
         int n = in.readInt();
         if (n < 0)
             return null;
@@ -338,7 +342,7 @@ public final class BinaryIO {
      * @param value the int array to write
      * @throws IOException if an IO error occurs
      */
-    public static void writeIntArray(@Nonnull DataOutput out,
+    public static void writeIntArray(@NonNull DataOutput out,
                                      @Nullable int[] value) throws IOException {
         if (value == null) {
             out.writeInt(-1);
@@ -350,7 +354,7 @@ public final class BinaryIO {
     }
 
     @Nullable
-    public static int[] readIntArray(@Nonnull DataInput in) throws IOException {
+    public static int[] readIntArray(@NonNull DataInput in) throws IOException {
         int n = in.readInt();
         if (n < 0)
             return null;
@@ -367,7 +371,7 @@ public final class BinaryIO {
      * @param value the long array to write
      * @throws IOException if an IO error occurs
      */
-    public static void writeLongArray(@Nonnull DataOutput out,
+    public static void writeLongArray(@NonNull DataOutput out,
                                       @Nullable long[] value) throws IOException {
         if (value == null) {
             out.writeInt(-1);
@@ -379,7 +383,7 @@ public final class BinaryIO {
     }
 
     @Nullable
-    public static long[] readLongArray(@Nonnull DataInput in) throws IOException {
+    public static long[] readLongArray(@NonNull DataInput in) throws IOException {
         int n = in.readInt();
         if (n < 0)
             return null;
@@ -396,7 +400,7 @@ public final class BinaryIO {
      * @param value the float array to write
      * @throws IOException if an IO error occurs
      */
-    public static void writeFloatArray(@Nonnull DataOutput out,
+    public static void writeFloatArray(@NonNull DataOutput out,
                                        @Nullable float[] value) throws IOException {
         if (value == null) {
             out.writeInt(-1);
@@ -408,7 +412,7 @@ public final class BinaryIO {
     }
 
     @Nullable
-    public static float[] readFloatArray(@Nonnull DataInput in) throws IOException {
+    public static float[] readFloatArray(@NonNull DataInput in) throws IOException {
         int n = in.readInt();
         if (n < 0)
             return null;
@@ -425,7 +429,7 @@ public final class BinaryIO {
      * @param value the double array to write
      * @throws IOException if an IO error occurs
      */
-    public static void writeDoubleArray(@Nonnull DataOutput out,
+    public static void writeDoubleArray(@NonNull DataOutput out,
                                         @Nullable double[] value) throws IOException {
         if (value == null) {
             out.writeInt(-1);
@@ -437,7 +441,7 @@ public final class BinaryIO {
     }
 
     @Nullable
-    public static double[] readDoubleArray(@Nonnull DataInput in) throws IOException {
+    public static double[] readDoubleArray(@NonNull DataInput in) throws IOException {
         int n = in.readInt();
         if (n < 0)
             return null;
@@ -454,7 +458,7 @@ public final class BinaryIO {
      * @param value the boolean array to write
      * @throws IOException if an IO error occurs
      */
-    public static void writeBooleanArray(@Nonnull DataOutput out,
+    public static void writeBooleanArray(@NonNull DataOutput out,
                                          @Nullable boolean[] value) throws IOException {
         if (value == null) {
             out.writeInt(-1);
@@ -466,7 +470,7 @@ public final class BinaryIO {
     }
 
     @Nullable
-    public static boolean[] readBooleanArray(@Nonnull DataInput in) throws IOException {
+    public static boolean[] readBooleanArray(@NonNull DataInput in) throws IOException {
         int n = in.readInt();
         if (n < 0)
             return null;
@@ -483,7 +487,7 @@ public final class BinaryIO {
      * @param value the char array to write
      * @throws IOException if an IO error occurs
      */
-    public static void writeCharArray(@Nonnull DataOutput out,
+    public static void writeCharArray(@NonNull DataOutput out,
                                       @Nullable char[] value) throws IOException {
         if (value == null) {
             out.writeInt(-1);
@@ -495,7 +499,7 @@ public final class BinaryIO {
     }
 
     @Nullable
-    public static char[] readCharArray(@Nonnull DataInput in) throws IOException {
+    public static char[] readCharArray(@NonNull DataInput in) throws IOException {
         int n = in.readInt();
         if (n < 0)
             return null;
@@ -512,16 +516,16 @@ public final class BinaryIO {
      * @param a   the object array to write
      * @throws IOException if an IO error occurs
      */
-    public static void writeArray(@Nonnull DataOutput out,
+    public static void writeArray(@NonNull DataOutput out,
                                   @Nullable Object[] a) throws IOException {
         if (a == null) {
             out.writeInt(-1);
             return;
         }
-        int n = a.length, i = 0;
-        out.writeInt(n);
-        while (i < n)
-            writeValue(out, a[i++]);
+        out.writeInt(a.length);
+        for (var e : a) {
+            writeValue(out, e);
+        }
     }
 
     /**
@@ -529,8 +533,8 @@ public final class BinaryIO {
      */
     @SuppressWarnings("unchecked")
     @Nullable
-    public static <T> T[] readArray(@Nonnull DataInput in, @Nullable ClassLoader loader,
-                                    @Nonnull Class<T> clazz) throws IOException {
+    public static <T> T[] readArray(@NonNull DataInput in, @Nullable ClassLoader loader,
+                                    @NonNull Class<T> clazz) throws IOException {
         int n = in.readInt();
         if (n < 0)
             return null;
@@ -549,7 +553,7 @@ public final class BinaryIO {
      * @param s   the string to write
      * @throws IOException if an IO error occurs
      */
-    public static void writeString(@Nonnull DataOutput out, @Nullable String s) throws IOException {
+    public static void writeString(@NonNull DataOutput out, @Nullable String s) throws IOException {
         writeString16(out, s);
     }
 
@@ -560,7 +564,7 @@ public final class BinaryIO {
      * @param s   the string to write
      * @throws IOException if an IO error occurs
      */
-    public static void writeString8(@Nonnull DataOutput out, @Nullable String s) throws IOException {
+    public static void writeString8(@NonNull DataOutput out, @Nullable String s) throws IOException {
         if (s == null) {
             out.writeInt(-1);
         } else {
@@ -577,7 +581,7 @@ public final class BinaryIO {
      * @param s   the string to write
      * @throws IOException if an IO error occurs
      */
-    public static void writeString16(@Nonnull DataOutput out, @Nullable String s) throws IOException {
+    public static void writeString16(@NonNull DataOutput out, @Nullable String s) throws IOException {
         if (s == null) {
             out.writeInt(-1);
         } else {
@@ -593,7 +597,7 @@ public final class BinaryIO {
      * @throws IOException if an IO error occurs
      */
     @Nullable
-    public static String readString(@Nonnull DataInput in) throws IOException {
+    public static String readString(@NonNull DataInput in) throws IOException {
         return readString16(in);
     }
 
@@ -604,7 +608,7 @@ public final class BinaryIO {
      * @throws IOException if an IO error occurs
      */
     @Nullable
-    public static String readString8(@Nonnull DataInput in) throws IOException {
+    public static String readString8(@NonNull DataInput in) throws IOException {
         int n = in.readInt();
         if (n < 0)
             return null;
@@ -620,7 +624,7 @@ public final class BinaryIO {
      * @throws IOException if an IO error occurs
      */
     @Nullable
-    public static String readString16(@Nonnull DataInput in) throws IOException {
+    public static String readString16(@NonNull DataInput in) throws IOException {
         int n = in.readInt();
         if (n < 0)
             return null;
@@ -633,20 +637,20 @@ public final class BinaryIO {
     /**
      * Write a list.
      *
-     * @param out the data output
-     * @param ls  the list to write
+     * @param out  the data output
+     * @param list the list to write
      * @throws IOException if an IO error occurs
      */
-    public static void writeList(@Nonnull DataOutput out,
-                                 @Nullable List<?> ls) throws IOException {
-        if (ls == null) {
+    public static void writeList(@NonNull DataOutput out,
+                                 @Nullable List<?> list) throws IOException {
+        if (list == null) {
             out.writeInt(-1);
             return;
         }
-        int n = ls.size(), i = 0;
-        out.writeInt(n);
-        while (i < n)
-            writeValue(out, ls.get(i++));
+        out.writeInt(list.size());
+        for (var e : list) {
+            writeValue(out, e);
+        }
     }
 
     /**
@@ -657,34 +661,36 @@ public final class BinaryIO {
      * @throws IOException if an IO error occurs
      */
     @Nullable
-    private static <T> List<T> readList(@Nonnull DataInput in, @Nullable ClassLoader loader,
+    private static <T> List<T> readList(@NonNull DataInput in, @Nullable ClassLoader loader,
                                         @Nullable Class<? extends T> clazz) throws IOException {
         int n = in.readInt();
-        if (n < 0)
+        if (n < 0) {
             return null;
-        List<T> ls = new ArrayList<>(n);
-        while (n-- > 0)
-            ls.add(readValue(in, loader, clazz, null));
-        return ls;
+        }
+        var res = new ArrayList<T>(n);
+        while (n-- != 0) {
+            res.add(readValue(in, loader, clazz, null));
+        }
+        return res;
     }
 
     /**
      * Write a data set.
      *
-     * @param out the data output
-     * @param ds  the data set to write
+     * @param out    the data output
+     * @param source the data set to write
      * @throws IOException if an IO error occurs
      */
-    public static void writeDataSet(@Nonnull DataOutput out,
-                                    @Nullable DataSet ds) throws IOException {
-        if (ds == null) {
+    public static void writeDataSet(@NonNull DataOutput out,
+                                    @Nullable DataSet source) throws IOException {
+        if (source == null) {
             out.writeInt(-1);
             return;
         }
-        out.writeInt(ds.size());
-        var it = ds.new FastEntryIterator();
+        out.writeInt(source.size());
+        var it = source.new FastEntryIterator();
         while (it.hasNext()) {
-            Map.Entry<String, Object> e = it.next();
+            var e = it.next();
             writeString(out, e.getKey());
             writeValue(out, e.getValue());
         }
@@ -698,14 +704,16 @@ public final class BinaryIO {
      * @throws IOException if an IO error occurs
      */
     @Nullable
-    public static DataSet readDataSet(@Nonnull DataInput in,
+    public static DataSet readDataSet(@NonNull DataInput in,
                                       @Nullable ClassLoader loader) throws IOException {
         int n = in.readInt();
-        if (n < 0)
+        if (n < 0) {
             return null;
-        DataSet ds = new DataSet(n);
-        while (n-- > 0)
-            ds.put(readString(in), readValue(in, loader, null, null));
-        return ds;
+        }
+        var res = new DataSet(n);
+        while (n-- != 0) {
+            res.put(readString(in), readValue(in, loader, null, null));
+        }
+        return res;
     }
 }

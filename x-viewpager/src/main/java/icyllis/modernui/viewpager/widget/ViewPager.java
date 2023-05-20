@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.muix.viewpager.widget;
+package icyllis.modernui.viewpager.widget;
 
 import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.annotation.*;

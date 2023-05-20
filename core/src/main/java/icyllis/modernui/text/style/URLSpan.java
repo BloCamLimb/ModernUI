@@ -19,14 +19,13 @@
 package icyllis.modernui.text.style;
 
 import icyllis.modernui.core.Core;
-import icyllis.modernui.text.FlattenableSpan;
+import icyllis.modernui.text.ParcelableSpan;
 import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.util.BinaryIO;
 import icyllis.modernui.view.View;
 
 import javax.annotation.Nonnull;
 import java.io.*;
-import java.net.URL;
 
 /**
  * Implementation of the {@link ClickableSpan} that allows setting a url string. When
@@ -41,7 +40,7 @@ import java.net.URL;
  * <img src="https://developer.android.com/reference/android/images/text/style/urlspan.png" />
  * <figcaption>Text with <code>URLSpan</code>.</figcaption>
  */
-public class URLSpan extends ClickableSpan implements FlattenableSpan {
+public class URLSpan extends ClickableSpan implements ParcelableSpan {
 
     private final String mURL;
 

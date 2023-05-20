@@ -33,7 +33,7 @@ import java.io.DataOutput;
  * string.setSpan(new StrikethroughSpan(), 10, 23, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);}</pre>
  */
 public class StrikethroughSpan extends CharacterStyle
-        implements UpdateAppearance, FlattenableSpan {
+        implements UpdateAppearance, ParcelableSpan {
 
     /**
      * Creates a {@link StrikethroughSpan}.

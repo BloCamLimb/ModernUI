@@ -21,7 +21,7 @@ package icyllis.modernui.resources;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 /**
- * Build resource files from raw assets.
+ * The container and index for all resources defined for an app.
  */
 //TODO this will take a long time to finish
 public class ResourceTable {

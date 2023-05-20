@@ -60,4 +60,23 @@ public final class SoundEffectConstants {
      * Effect id for a repeatedly triggered navigation down, e.g. due to long pressing a button
      */
     public static final int NAVIGATION_REPEAT_DOWN = 8;
+
+    /**
+     * Get the sonification constant for the focus directions.
+     *
+     * @param direction The direction of the focus.
+     * @return The appropriate sonification constant.
+     * @throws IllegalArgumentException when the passed direction is not one of the
+     *                                  documented values.
+     */
+    public static int getContantForFocusDirection(@View.FocusDirection int direction) {
+        return switch (direction) {
+            case View.FOCUS_RIGHT -> SoundEffectConstants.NAVIGATION_RIGHT;
+            case View.FOCUS_FORWARD, View.FOCUS_DOWN -> SoundEffectConstants.NAVIGATION_DOWN;
+            case View.FOCUS_LEFT -> SoundEffectConstants.NAVIGATION_LEFT;
+            case View.FOCUS_BACKWARD, View.FOCUS_UP -> SoundEffectConstants.NAVIGATION_UP;
+            default -> throw new IllegalArgumentException("direction must be one of "
+                    + "{FOCUS_UP, FOCUS_DOWN, FOCUS_LEFT, FOCUS_RIGHT, FOCUS_FORWARD, FOCUS_BACKWARD}.");
+        };
+    }
 }

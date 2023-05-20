@@ -32,7 +32,7 @@ import java.io.*;
  * SpannableString string = new SpannableString("Text with relative size span");
  * string.setSpan(new RelativeSizeSpan(1.5f), 10, 24, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);}</pre>
  */
-public class RelativeSizeSpan extends MetricAffectingSpan implements FlattenableSpan {
+public class RelativeSizeSpan extends MetricAffectingSpan implements ParcelableSpan {
 
     private final float mProportion;
 

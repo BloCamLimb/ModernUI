@@ -20,18 +20,12 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.animation.TimeInterpolator;
-import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.Paint;
+import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.graphics.Rect;
-import icyllis.modernui.util.SparseArray;
-import icyllis.modernui.util.SparseBooleanArray;
-import icyllis.modernui.util.StateSet;
+import icyllis.modernui.text.TextWatcher;
+import icyllis.modernui.util.*;
 import icyllis.modernui.view.*;
-import it.unimi.dsi.fastutil.longs.Long2IntMap;
-import it.unimi.dsi.fastutil.longs.Long2IntMaps;
-import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.longs.*;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
@@ -455,11 +449,18 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
     private boolean mIsChildViewEnabled;
 
     /**
+     * The cached drawable state for the selector. Accounts for child enabled
+     * state, but otherwise identical to the view's own drawable state.
+     */
+    private int[] mSelectorState;
+
+    /**
      * The last scroll state reported to clients through {@link OnScrollListener}.
      */
     private int mLastScrollState = OnScrollListener.SCROLL_STATE_IDLE;
 
-    private final int mTouchSlop;
+    private int mTouchSlop;
+    private float mDensityScale;
 
     private final float mVerticalScrollFactor;
 

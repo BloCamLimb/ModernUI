@@ -33,7 +33,7 @@ import java.io.DataOutput;
  * string.setSpan(new UnderlineSpan(), 10, 19, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);}</pre>
  */
 public class UnderlineSpan extends CharacterStyle
-        implements UpdateAppearance, FlattenableSpan {
+        implements UpdateAppearance, ParcelableSpan {
 
     /**
      * Creates an {@link UnderlineSpan}.

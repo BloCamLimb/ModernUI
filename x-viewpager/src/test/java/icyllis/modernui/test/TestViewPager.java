@@ -24,9 +24,9 @@ import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.fragment.Fragment;
 import icyllis.modernui.util.DataSet;
 import icyllis.modernui.view.*;
+import icyllis.modernui.viewpager.widget.*;
 import icyllis.modernui.widget.FrameLayout;
 import icyllis.modernui.widget.TextView;
-import icyllis.muix.viewpager.widget.*;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
 

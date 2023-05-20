@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 import java.util.Arrays;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 import static org.lwjgl.openal.AL11.*;
@@ -49,7 +50,7 @@ public class Track implements AutoCloseable {
     public Track(@Nonnull SoundSample sample) {
         mSource = alGenSources();
         mSample = sample;
-        alSourcef(mSource, AL_GAIN, 0.75f);
+        alSourcef(mSource, AL_GAIN, 1.0f);
         forward(2);
         AudioManager.getInstance().addTrack(this);
         alSourcei(mSource, AL_DIRECT_CHANNELS_SOFT, AL_TRUE);
@@ -165,6 +166,9 @@ public class Track implements AutoCloseable {
             alDeleteBuffers(buf);
             System.arraycopy(mMixedSamples, samples, mMixedSamples, 0, mMixedSampleCount - samples);
             mMixedSampleCount -= samples;
+        }
+        if (count == 2) {
+            play();
         }
         return count;
     }
