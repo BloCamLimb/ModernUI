@@ -16,23 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-/*
- * Copyright 2018 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-package icyllis.muix.viewpager.widget;
+package icyllis.modernui.viewpager.widget;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
@@ -179,7 +163,7 @@ public abstract class PagerAdapter {
      * @return Saved state for this adapter
      */
     @Nullable
-    public Flattenable saveState() {
+    public Parcelable saveState() {
         return null;
     }
 
@@ -190,7 +174,7 @@ public abstract class PagerAdapter {
      * @param state  State previously saved by a call to {@link #saveState()}
      * @param loader A ClassLoader that should be used to instantiate any restored objects
      */
-    public void restoreState(@Nullable Flattenable state, @Nullable ClassLoader loader) {
+    public void restoreState(@Nullable Parcelable state, @Nullable ClassLoader loader) {
     }
 
     /**

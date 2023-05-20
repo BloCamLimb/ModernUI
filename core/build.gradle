@@ -20,6 +20,9 @@ dependencies {
     implementation "com.vladsch.flexmark:flexmark:${flexmark_version}"
     implementation "io.reactivex.rxjava3:rxjava:${rxjava_version}"
 
+    implementation "org.apache.logging.log4j:log4j-core:${log4j_version}"
+    implementation "org.apache.logging.log4j:log4j-api:${log4j_version}"
+
     //implementation "icyllis.arcticgi:ArcticGI:${arc_version}"
 
     def lwjglNatives
@@ -84,16 +87,6 @@ jar {
 }
 
 publishing {
-    repositories {
-        maven {
-            name 'IzzelAliz'
-            url 'https://maven.izzel.io/releases'
-            credentials {
-                username = project.findProperty("maven_user")
-                password = project.findProperty("izzel_maven_token")
-            }
-        }
-    }
     publications {
         mavenCore(MavenPublication) {
             artifact(jar.archiveFile) {

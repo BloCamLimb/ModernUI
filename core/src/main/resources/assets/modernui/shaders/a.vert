@@ -371,3 +371,33 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
 
     fragColor = vec4(col,1);
 }
+
+// rrect
+float sdRBox(vec2 p, vec2 b, vec4 r)
+{
+    r.xy = (p.x>0.0)?r.xy : r.zw;
+    r.x  = (p.y>0.0)?r.x  : r.y;
+    p = abs(p)-b+r.x;
+    return length(max(p,0.0)) + min(max(p.x,p.y),0.0)-r.x;
+}
+
+float aastep(float f)
+{
+    vec2 grad = vec2(dFdx(f), dFdy(f));
+    float afwidth = 0.7071 * length(grad);
+    return smoothstep(-afwidth, afwidth, f);
+}
+
+void mainImage( out vec4 fragColor, in vec2 fragCoord )
+{
+    vec2 uv = fragCoord/iResolution.xy;
+    vec2 pos = 2.0*uv-1.0;
+    pos.y *= iResolution.y/iResolution.x;
+
+    float dis = sdRBox(pos,vec2(0.2),vec4(0.2,0.0,0.2,0.2));
+    vec3 col = vec3(1.0,0.9,1.0);
+    col *= 1.0 - 0.5 * exp(-iResolution.x * 0.05 * abs(dis));
+    col = mix( col, vec3(239,202,195)/255., 1.0-(aastep(dis)));
+
+    fragColor = vec4(col,1.0);
+}

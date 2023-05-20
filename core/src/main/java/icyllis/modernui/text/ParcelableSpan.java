@@ -18,14 +18,14 @@
 
 package icyllis.modernui.text;
 
-import icyllis.modernui.util.Flattenable;
+import icyllis.modernui.util.Parcelable;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
- * A special kind of {@link Flattenable} for objects that will serve as text spans.
+ * A special kind of {@link Parcelable} for objects that will serve as text spans.
  */
 @ApiStatus.Internal
-public interface FlattenableSpan extends Flattenable {
+public interface ParcelableSpan extends Parcelable {
 
     /**
      * Return a special type identifier for this span class.

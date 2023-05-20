@@ -33,6 +33,7 @@ import icyllis.modernui.view.menu.MenuBuilder;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.intellij.lang.annotations.MagicConstant;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -5802,11 +5803,118 @@ public class View implements Drawable.Callback {
     }
 
     /**
+     * Returns the size of the vertical faded edges used to indicate that more
+     * content in this view is visible.
+     *
+     * @return The size in pixels of the vertical faded edge or 0 if vertical
+     *         faded edges are not enabled for this view.
+     */
+    public int getVerticalFadingEdgeLength() {
+        if (isVerticalFadingEdgeEnabled()) {
+            ScrollCache cache = mScrollCache;
+            if (cache != null) {
+                return cache.fadingEdgeLength;
+            }
+        }
+        return 0;
+    }
+
+    /**
      * Called by a parent to request that a child update its values for mScrollX
      * and mScrollY if necessary. This will typically be done if the child is
      * animating a scroll using a Scroller.
      */
     public void computeScroll() {
+    }
+
+    /**
+     * <p>Indicate whether the horizontal edges are faded when the view is
+     * scrolled horizontally.</p>
+     *
+     * @return true if the horizontal edges should are faded on scroll, false
+     *         otherwise
+     *
+     * @see #setHorizontalFadingEdgeEnabled(boolean)
+     */
+    public boolean isHorizontalFadingEdgeEnabled() {
+        return (mViewFlags & FADING_EDGE_HORIZONTAL) == FADING_EDGE_HORIZONTAL;
+    }
+
+    /**
+     * <p>Define whether the horizontal edges should be faded when this view
+     * is scrolled horizontally.</p>
+     *
+     * @param horizontalFadingEdgeEnabled true if the horizontal edges should
+     *                                    be faded when the view is scrolled
+     *                                    horizontally
+     *
+     * @see #isHorizontalFadingEdgeEnabled()
+     */
+    public void setHorizontalFadingEdgeEnabled(boolean horizontalFadingEdgeEnabled) {
+        if (isHorizontalFadingEdgeEnabled() != horizontalFadingEdgeEnabled) {
+            if (horizontalFadingEdgeEnabled) {
+                initScrollCache();
+            }
+
+            mViewFlags ^= FADING_EDGE_HORIZONTAL;
+        }
+    }
+
+    /**
+     * <p>Indicate whether the vertical edges are faded when the view is
+     * scrolled horizontally.</p>
+     *
+     * @return true if the vertical edges should are faded on scroll, false
+     *         otherwise
+     *
+     * @see #setVerticalFadingEdgeEnabled(boolean)
+     */
+    public boolean isVerticalFadingEdgeEnabled() {
+        return (mViewFlags & FADING_EDGE_VERTICAL) == FADING_EDGE_VERTICAL;
+    }
+
+    /**
+     * <p>Define whether the vertical edges should be faded when this view
+     * is scrolled vertically.</p>
+     *
+     * @param verticalFadingEdgeEnabled true if the vertical edges should
+     *                                  be faded when the view is scrolled
+     *                                  vertically
+     *
+     * @see #isVerticalFadingEdgeEnabled()
+     */
+    public void setVerticalFadingEdgeEnabled(boolean verticalFadingEdgeEnabled) {
+        if (isVerticalFadingEdgeEnabled() != verticalFadingEdgeEnabled) {
+            if (verticalFadingEdgeEnabled) {
+                initScrollCache();
+            }
+
+            mViewFlags ^= FADING_EDGE_VERTICAL;
+        }
+    }
+
+    /**
+     * Get the fading edge flags, used for inspection.
+     *
+     * @return One of {@link #FADING_EDGE_NONE}, {@link #FADING_EDGE_VERTICAL},
+     *         or {@link #FADING_EDGE_HORIZONTAL}
+     */
+    @ApiStatus.Internal
+    public int getFadingEdge() {
+        return mViewFlags & FADING_EDGE_MASK;
+    }
+
+    /**
+     * Get the fading edge length, used for inspection
+     *
+     * @return The fading edge length or 0
+     */
+    @ApiStatus.Internal
+    public int getFadingEdgeLength() {
+        if (mScrollCache != null && (mViewFlags & FADING_EDGE_MASK) != FADING_EDGE_NONE) {
+            return mScrollCache.fadingEdgeLength;
+        }
+        return 0;
     }
 
     /**

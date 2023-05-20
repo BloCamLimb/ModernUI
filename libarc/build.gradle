@@ -1,4 +1,4 @@
-archivesBaseName = 'LibArc'
+archivesBaseName = 'libarc'
 version '1.0.0'
 
 repositories {

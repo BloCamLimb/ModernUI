@@ -19,32 +19,44 @@
 package icyllis.modernui.util;
 
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.MathUtil;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.util.*;
 import java.util.function.Consumer;
 
 /**
- * A DataSet encapsulates mappings from int and string keys to primitive values
- * (also includes {@link String} and {@link UUID} values). The specified data types
+ * A DataSet encapsulates mappings from string keys to primitive values (includes
+ * {@link String} and {@link UUID} values). The specified data types
  * can safely be persisted to and restored from local storage and network in binary
  * form. Unsupported I/O data types can also be put into the data set for in-memory
  * operations, and they will be silently ignored during I/O.
  * <p>
  * A DataSet object can be put into other data sets (exclude itself) to construct a
  * tree structure. Additionally, an array structure (exposed in {@link List})
- * is also supported, where elements are backed by {@link ArrayList}. All object keys
- * can not be null.
+ * is also supported, where elements are backed by {@link ArrayList}.
+ * <p>
+ * The implementation of this class is a linked hash map, which is fast and
+ * small-footprint.
+ *
+ * @see BinaryIO
  */
 //TODO not finished yet
 @SuppressWarnings({"unchecked", "unused"})
-public final class DataSet implements Map<String, Object> {
+public final class DataSet implements Map<String, Object>, Parcelable {
 
-    public static final Marker MARKER = MarkerManager.getMarker("DataSet");
+    private static final Marker MARKER = MarkerManager.getMarker("DataSet");
+
+    @NonNull
+    public static final Parcelable.ClassLoaderCreator<DataSet> CREATOR
+            = BinaryIO::readDataSet;
+
+    // derived from LinkedOpenHashMap
 
     /**
      * The default initial size of a hash table.
@@ -126,9 +138,10 @@ public final class DataSet implements Map<String, Object> {
         mThreshold = (int) (n * DEFAULT_LOAD_FACTOR);
     }
 
-    static int hash(Object key) {
-        final int h = key.hashCode() * 0x9e3779b1;
-        return h ^ (h >>> 16);
+    // 0x9E3779B1 is the closest prime number to (2^32)*PHI
+    static int hash(@NonNull Object key) {
+        final int h;
+        return (h = key.hashCode() * 0x9E3779B1) ^ (h >>> 16);
     }
 
     // Query Operations
@@ -216,10 +229,10 @@ public final class DataSet implements Map<String, Object> {
     // @formatter:off
     @Override
     public boolean containsValue(Object value) {
-        final Object[] values = mValue;
-        final String[] keys = mKey;
-        for (int i = keys.length; i-- > 0;)
-            if (keys[i] != null && Objects.equals(value, values[i]))
+        final Object[] v = mValue;
+        final String[] k = mKey;
+        for (int i = k.length; i-- != 0;)
+            if (k[i] != null && Objects.equals(value, v[i]))
                 return true;
         return false;
     }
@@ -725,7 +738,7 @@ public final class DataSet implements Map<String, Object> {
      * @return the String value associated with the given key, or defaultValue
      * if no valid String object is currently mapped to that key.
      */
-    @Nonnull
+    @NonNull
     public String getString(String key, String defaultValue) {
         final Object o = get(key);
         if (o == null)
@@ -767,7 +780,7 @@ public final class DataSet implements Map<String, Object> {
      * @return the UUID value associated with the given key, or defaultValue
      * if no valid UUID object is currently mapped to that key.
      */
-    @Nonnull
+    @NonNull
     public UUID getUUID(String key, UUID defaultValue) {
         final Object o = get(key);
         if (o == null)
@@ -892,11 +905,9 @@ public final class DataSet implements Map<String, Object> {
     }
 
     /**
-     * Associates the specified value with the specified key in this map
-     * (optional operation).  If the map previously contained a mapping for
+     * Associates the specified value with the specified key in this map.
+     * <br>If the map previously contained a mapping for
      * the key, the old value is replaced by the specified value.
-     * <p>
-     * Note that the value must be a supported type by DataSets.
      *
      * @param key   the key with which the specified value is to be associated
      * @param value the value to be associated with the specified key
@@ -906,7 +917,7 @@ public final class DataSet implements Map<String, Object> {
     @Nullable
     @Override
     public Object put(String key, Object value) {
-        if (Objects.requireNonNull(value) == this) {
+        if (value == this) {
             throw new IllegalArgumentException("closed loop");
         }
         final int pos = find(key);
@@ -1286,7 +1297,7 @@ public final class DataSet implements Map<String, Object> {
     // Bulk Operations
 
     @Override
-    public void putAll(@Nonnull Map<? extends String, ?> map) {
+    public void putAll(@NonNull Map<? extends String, ?> map) {
         int capacity = (int) Math.min(1 << 30,
                 1L << -Long.numberOfLeadingZeros((long) Math.ceil((mSize + map.size()) / DEFAULT_LOAD_FACTOR) - 1));
         if (capacity > mKey.length)
@@ -1314,7 +1325,7 @@ public final class DataSet implements Map<String, Object> {
     /**
      * @return a set view of the keys contained in this map
      */
-    @Nonnull
+    @NonNull
     @Override
     public Set<String> keySet() {
         if (mKeys == null)
@@ -1322,7 +1333,7 @@ public final class DataSet implements Map<String, Object> {
         return mKeys;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Collection<Object> values() {
         if (mValues == null)
@@ -1330,7 +1341,7 @@ public final class DataSet implements Map<String, Object> {
         return mValues;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Set<Entry<String, Object>> entrySet() {
         if (mEntries == null)
@@ -1369,7 +1380,7 @@ public final class DataSet implements Map<String, Object> {
         int index = -1;
 
         MapIterator() {
-            next = mTail;
+            next = mHead;
             index = 0;
         }
 
@@ -1628,7 +1639,7 @@ public final class DataSet implements Map<String, Object> {
 
     private final class KeySet extends AbstractSet<String> {
 
-        @Nonnull
+        @NonNull
         @Override
         public Iterator<String> iterator() {
             return new KeyIterator();
@@ -1666,7 +1677,7 @@ public final class DataSet implements Map<String, Object> {
 
     private final class Values extends AbstractCollection<Object> {
 
-        @Nonnull
+        @NonNull
         @Override
         public Iterator<Object> iterator() {
             return new ValueIterator();
@@ -1705,48 +1716,48 @@ public final class DataSet implements Map<String, Object> {
     private final class MapEntry implements Map.Entry<String, Object> {
 
         // The table index this entry refers to, or -1 if this entry has been deleted.
-        int mIndex;
+        int index;
 
         MapEntry() {
         }
 
         MapEntry(int index) {
-            mIndex = index;
+            this.index = index;
         }
 
         @Override
         public String getKey() {
-            return mKey[mIndex];
+            return mKey[index];
         }
 
         @Override
         public Object getValue() {
-            return mValue[mIndex];
+            return mValue[index];
         }
 
         @Override
         public Object setValue(Object newValue) {
-            Object oldValue = mValue[mIndex];
-            mValue[mIndex] = newValue;
+            Object oldValue = mValue[index];
+            mValue[index] = newValue;
             return oldValue;
         }
 
         @Override
         public int hashCode() {
-            return Objects.hashCode(mKey[mIndex]) ^ Objects.hashCode(mValue[mIndex]);
+            return Objects.hashCode(mKey[index]) ^ Objects.hashCode(mValue[index]);
         }
 
         @Override
         public boolean equals(Object o) {
             return o instanceof Map.Entry<?, ?> e
-                    && Objects.equals(mKey[mIndex], e.getKey())
-                    && Objects.equals(mValue[mIndex], e.getValue());
+                    && Objects.equals(mKey[index], e.getKey())
+                    && Objects.equals(mValue[index], e.getValue());
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public String toString() {
-            return mKey[mIndex] + "=" + mValue[mIndex];
+            return mKey[index] + "=" + mValue[index];
         }
     }
 
@@ -1781,7 +1792,7 @@ public final class DataSet implements Map<String, Object> {
         @Override
         public void remove() {
             super.remove();
-            mEntry.mIndex = -1; // You cannot use a deleted entry.
+            mEntry.index = -1; // You cannot use a deleted entry.
         }
 
         @Override
@@ -1810,19 +1821,19 @@ public final class DataSet implements Map<String, Object> {
         // forEachRemaining inherited from MapIterator superclass.
         @Override
         void accept(Consumer<? super Entry<String, Object>> action, int index) {
-            mEntry.mIndex = index;
+            mEntry.index = index;
             action.accept(mEntry);
         }
 
         @Override
-        public MapEntry next() {
-            mEntry.mIndex = nextEntry();
+        public Map.Entry<String, Object> next() {
+            mEntry.index = nextEntry();
             return mEntry;
         }
 
         @Override
-        public MapEntry previous() {
-            mEntry.mIndex = previousEntry();
+        public Map.Entry<String, Object> previous() {
+            mEntry.index = previousEntry();
             return mEntry;
         }
 
@@ -1839,7 +1850,7 @@ public final class DataSet implements Map<String, Object> {
 
     private final class MapEntrySet extends AbstractSet<Entry<String, Object>> {
 
-        @Nonnull
+        @NonNull
         @Override
         public Iterator<Entry<String, Object>> iterator() {
             return new EntryIterator();
@@ -1857,9 +1868,14 @@ public final class DataSet implements Map<String, Object> {
     }
 
     @Override
+    public void write(@NonNull DataOutput dest) throws IOException {
+        BinaryIO.writeDataSet(dest, this);
+    }
+
+    @Override
     public int hashCode() {
         int h = 0;
-        for (int j = mSize, i = 0; j-- > 0; ) {
+        for (int j = mSize, i = 0; j-- != 0; ) {
             while (mKey[i] == null)
                 i++;
             h += mKey[i].hashCode() ^ Objects.hashCode(mValue[i]);
@@ -1877,11 +1893,11 @@ public final class DataSet implements Map<String, Object> {
         if (m.size() != size())
             return false;
         try {
-            var it = new FastEntryIterator();
+            var it = this.new FastEntryIterator();
             while (it.hasNext()) {
-                MapEntry e = it.next();
-                String key = e.getKey();
-                Object value = e.getValue();
+                var e = it.next();
+                var key = e.getKey();
+                var value = e.getValue();
                 if (value == null) {
                     if (!(m.get(key) == null && m.containsKey(key)))
                         return false;
@@ -1903,12 +1919,14 @@ public final class DataSet implements Map<String, Object> {
         var s = new StringBuilder();
         s.append('{');
         var it = new FastEntryIterator();
-        for (; ; ) {
+        //@formatter:off
+        for (;;) {
             s.append(it.next());
             if (!it.hasNext())
                 return s.append('}').toString();
             s.append(',').append(' ');
         }
+        //@formatter:on
     }
 
     static void typeWarning(int key, Object value, String className,

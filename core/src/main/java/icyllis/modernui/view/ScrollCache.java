@@ -58,6 +58,7 @@ final class ScrollCache implements Runnable {
 
     long mFadeStartTime;
 
+    public int fadingEdgeLength;
     int mDefaultDelayBeforeFade;
     int mFadeDuration;
 

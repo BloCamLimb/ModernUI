@@ -34,7 +34,7 @@ import java.io.*;
  * string.setSpan(new BackgroundColorSpan(color), 12, 28, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);}</pre>
  */
 public class BackgroundColorSpan extends CharacterStyle
-        implements UpdateAppearance, FlattenableSpan {
+        implements UpdateAppearance, ParcelableSpan {
 
     private final int mColor;
 

@@ -23,25 +23,25 @@ import javax.annotation.Nullable;
 import java.io.*;
 
 /**
- * {@code Flattenable} is a serialization method alternative to standard Java
+ * {@code Parcelable} is a serialization method alternative to standard Java
  * serialization. Instances can be written to a {@link DataOutput} and restored
  * from a {@link DataInput}, avoiding the heavy overhead of {@link Externalizable}.
  * <br>
- * Classes implementing the {@code Flattenable} interface must also have a
+ * Classes implementing the {@code Parcelable} interface must also have a
  * non-null static field called <var>CREATOR</var> of a type that implements the
  * {@link Creator} or {@link ClassLoaderCreator} interface.
  *
- * <p>A typical implementation of {@code Flattenable} is:</p>
+ * <p>A typical implementation of {@code Parcelable} is:</p>
  *
  * <pre>{@code
- * public class MyFlattenable implements Flattenable {
+ * public class MyParcelable implements Parcelable {
  *
- *     public static final Flattenable.Creator<MyFlattenable> CREATOR
- *             = MyFlattenable::new;
+ *     public static final Parcelable.Creator<MyParcelable> CREATOR
+ *             = MyParcelable::new;
  *
  *     private int mData;
  *
- *     private MyFlattenable(DataInput in) throws IOException {
+ *     private MyParcelable(DataInput in) throws IOException {
  *         mData = in.readInt();
  *     }
  *
@@ -54,7 +54,7 @@ import java.io.*;
  * @see BinaryIO
  * @since 3.7
  */
-public interface Flattenable {
+public interface Parcelable {
 
     /**
      * The subclass implements the method to flatten its contents by calling
@@ -67,18 +67,18 @@ public interface Flattenable {
 
     /**
      * Interface that must be implemented and provided as a public <var>CREATOR</var>
-     * field that creates instances of your {@link Flattenable} class from a {@link DataInput}.
+     * field that creates instances of your {@link Parcelable} class from a {@link DataInput}.
      */
     @FunctionalInterface
     interface Creator<T> {
 
         /**
-         * Create a new instance of the {@link Flattenable} class, instantiating it
+         * Create a new instance of the {@link Parcelable} class, instantiating it
          * from the given {@link DataInput} whose data had previously been written by
-         * {@link Flattenable#write(DataOutput)}.
+         * {@link Parcelable#write(DataOutput)}.
          *
          * @param source the stream to read the object's data from
-         * @return a new instance of the {@link Flattenable} class
+         * @return a new instance of the {@link Parcelable} class
          * @throws IOException if an I/O error occurs
          */
         T create(@Nonnull DataInput source) throws IOException;
@@ -97,13 +97,13 @@ public interface Flattenable {
         }
 
         /**
-         * Create a new instance of the {@link Flattenable} class, instantiating it
+         * Create a new instance of the {@link Parcelable} class, instantiating it
          * from the given {@link DataInput} whose data had previously been written by
-         * {@link Flattenable#write(DataOutput)} and using the given {@link ClassLoader}.
+         * {@link Parcelable#write(DataOutput)} and using the given {@link ClassLoader}.
          *
          * @param source the stream to read the object's data from
          * @param loader the class loader that this object is being created in
-         * @return a new instance of the {@link Flattenable} class
+         * @return a new instance of the {@link Parcelable} class
          * @throws IOException if an I/O error occurs
          */
         T create(@Nonnull DataInput source, @Nullable ClassLoader loader) throws IOException;

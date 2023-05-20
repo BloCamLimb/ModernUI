@@ -12,3 +12,36 @@ dependencies {
 test {
     useJUnitPlatform()
 }
+
+publishing {
+    publications {
+        mavenViewPager(MavenPublication) {
+            from components.java
+            artifactId = project.name
+            groupId = project.group
+            version = project.version
+
+            pom {
+                artifactId = project.name
+                groupId = project.group
+                version = project.version
+                name = rootProject.name
+                packaging = 'pom'
+                scm {
+                    url = 'https://github.com/BloCamLimb/ModernUI.git'
+                }
+                issueManagement {
+                    system = 'github'
+                    url = 'https://github.com/BloCamLimb/ModernUI/issues'
+                }
+                licenses {
+                    license {
+                        name = 'LGPL-3.0-or-later'
+                        url = 'https://www.gnu.org/licenses/lgpl-3.0.en.html'
+                        distribution = 'repo'
+                    }
+                }
+            }
+        }
+    }
+}

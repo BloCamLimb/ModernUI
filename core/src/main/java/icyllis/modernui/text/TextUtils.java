@@ -321,7 +321,7 @@ public final class TextUtils {
                     target = ((CharacterStyle) target).getUnderlying();
                 }
 
-                if (target instanceof FlattenableSpan span) {
+                if (target instanceof ParcelableSpan span) {
                     final int id = span.getSpanTypeId();
                     if (id < FIRST_SPAN || id > LAST_SPAN) {
                         throw new AssertionError(id);

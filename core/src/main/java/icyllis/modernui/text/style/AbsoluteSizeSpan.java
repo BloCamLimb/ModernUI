@@ -31,7 +31,7 @@ import java.io.*;
  * SpannableString string = new SpannableString("Text with absolute size span");
  * string.setSpan(new AbsoluteSizeSpan(55, true), 10, 23, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);}</pre>
  */
-public class AbsoluteSizeSpan extends MetricAffectingSpan implements FlattenableSpan {
+public class AbsoluteSizeSpan extends MetricAffectingSpan implements ParcelableSpan {
 
     private final int mSize;
     private final boolean mScaled;
