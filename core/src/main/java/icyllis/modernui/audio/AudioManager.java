@@ -118,6 +118,10 @@ public class AudioManager implements AutoCloseable {
                                             .put(0).flip());
                         }
                     }*/
+                    String devName = alcGetString(device, ALC_DEVICE_SPECIFIER);
+                    ModernUI.LOGGER.info(MARKER, "Open audio device {}", devName);
+                } else {
+                    ModernUI.LOGGER.error(MARKER, "Failed to create audio context");
                 }
             } else {
                 ModernUI.LOGGER.info(MARKER, "No suitable audio device was found");

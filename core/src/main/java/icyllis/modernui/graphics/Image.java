@@ -18,9 +18,9 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.akashi.RecordingContext;
-import icyllis.modernui.akashi.SurfaceProxyView;
-import icyllis.modernui.akashi.opengl.*;
+import icyllis.arc3d.engine.RecordingContext;
+import icyllis.arc3d.engine.SurfaceProxyView;
+import icyllis.arc3d.opengl.*;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;

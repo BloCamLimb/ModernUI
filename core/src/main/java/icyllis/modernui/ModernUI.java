@@ -18,7 +18,7 @@
 
 package icyllis.modernui;
 
-import icyllis.modernui.akashi.opengl.*;
+import icyllis.arc3d.opengl.*;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.*;
 import icyllis.modernui.fragment.*;
@@ -42,8 +42,9 @@ import java.nio.channels.*;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
+import java.util.concurrent.locks.LockSupport;
 
-import static icyllis.modernui.akashi.opengl.GLCore.*;
+import static icyllis.arc3d.opengl.GLCore.*;
 import static org.lwjgl.glfw.GLFW.*;
 
 /**
@@ -126,22 +127,31 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
         glfwDefaultWindowHints();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
         glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_NATIVE_CONTEXT_API);
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_ANY_PROFILE);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
         glfwWindowHintString(GLFW_X11_CLASS_NAME, NAME_CPT);
         glfwWindowHintString(GLFW_X11_INSTANCE_NAME, NAME_CPT);
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
         if (monitor == null) {
             LOGGER.info(MARKER, "No monitor connected");
-            mWindow = MainWindow.initialize(NAME_CPT, 1280, 720);
+            mWindow = MainWindow.initialize("Modern UI", 1280, 720);
         } else {
             VideoMode mode = monitor.getCurrentMode();
-            mWindow = MainWindow.initialize(NAME_CPT, (int) (mode.getWidth() * 0.75f),
+            mWindow = MainWindow.initialize("Modern UI", (int) (mode.getWidth() * 0.75f),
                     (int) (mode.getHeight() * 0.75f));
             mWindow.center(monitor);
             int[] w = {0}, h = {0};
             glfwGetMonitorPhysicalSize(monitor.getHandle(), w, h);
-            LOGGER.info(MARKER, "Primary monitor DPI: {}",
-                    25.4 * Math.hypot(mode.getWidth(), mode.getHeight()) / Math.hypot(w[0], h[0]));
+            float[] xscale = {0}, yscale = {0};
+            glfwGetMonitorContentScale(monitor.getHandle(), xscale, yscale);
+            float xdpi = 25.4f * mode.getWidth() / w[0],
+                    ydpi = 25.4f * mode.getHeight() / h[0];
+            LOGGER.info(MARKER, "Primary monitor xDpi: {}, yDpi: {}, physical size: {}x{} mm, xScale: {}, yScale: {}",
+                    xdpi, ydpi, w[0], h[0], xscale[0], yscale[0]);
+            float density = xdpi / 72 * xscale[0];
+            LOGGER.info(MARKER, "Density: {}", density);
+            ViewConfiguration.get().setViewScale(density);
         }
 
         loadDefaultTypeface();
@@ -171,13 +181,16 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
         LOGGER.info(MARKER, "Initializing render thread");
         final Window window = mWindow;
         window.makeCurrent();
-        Core.initOpenGL();
+        if (!Core.initOpenGL()) {
+            throw new IllegalStateException("Failed to initialize OpenGL");
+        }
+        GLCore.setupDebugCallback();
         GLCore.showCapsErrorDialog();
 
         final GLSurfaceCanvas canvas = GLSurfaceCanvas.initialize();
         GLShaderManager.getInstance().reload();
 
-        glEnable(GL_CULL_FACE);
+        glDisable(GL_CULL_FACE);
         glEnable(GL_BLEND);
         glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         glDisable(GL_DEPTH_TEST);
@@ -192,31 +205,30 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
         framebuffer.addRenderbufferAttachment(GL_STENCIL_ATTACHMENT, GL_STENCIL_INDEX8);
         framebuffer.setDrawBuffer(GL_COLOR_ATTACHMENT0);
 
-        final Matrix4 projection = new Matrix4();
-
         window.swapInterval(1);
         LOGGER.info(MARKER, "Looping render thread");
 
         while (!window.shouldClose()) {
-            int width = window.getWidth(), height = window.getHeight();
-            glBindFramebuffer(GL_FRAMEBUFFER, DEFAULT_FRAMEBUFFER);
-            glDisable(GL_CULL_FACE);
-            resetFrame(window);
+            boolean flushSurface = false;
             if (mRoot != null) {
-                canvas.setProjection(projection.setOrthographic(width, height, 0, Window.LAST_SYSTEM_WINDOW * 2 + 1,
-                        true));
-                mRoot.flushDrawCommands(canvas, framebuffer);
-            }
-            if (framebuffer.getAttachment(GL_COLOR_ATTACHMENT0).getWidth() > 0) {
-                glBlitNamedFramebuffer(framebuffer.get(), DEFAULT_FRAMEBUFFER, 0, 0,
-                        width, height, 0, 0,
-                        width, height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+                flushSurface = mRoot.flushDrawCommands(canvas, window, framebuffer);
             }
             if (mRoot != null) {
                 mRoot.mChoreographer.scheduleFrameAsync(Core.timeNanos());
             }
-            window.swapBuffers();
+            if (flushSurface) {
+                int width = window.getWidth(), height = window.getHeight();
+                if (framebuffer.getAttachment(GL_COLOR_ATTACHMENT0).getWidth() > 0) {
+                    glBlitNamedFramebuffer(framebuffer.get(), DEFAULT_FRAMEBUFFER, 0, 0,
+                            width, height, 0, 0,
+                            width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+                }
+                window.swapBuffers();
+            } else {
+                LockSupport.parkNanos((long) (1.0 / 288 * 1e9));
+            }
         }
+        Core.getDirectContext().unref();
         LOGGER.info(MARKER, "Quited render thread");
     }
 
@@ -224,8 +236,6 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
     private void runUI(@NonNull Fragment fragment) {
         LOGGER.info(MARKER, "Initializing UI thread");
         mUiLooper = Core.initUiThread();
-
-        ViewConfiguration.get().setViewScale(2);
 
         mRoot = new ViewRootImpl();
 
@@ -245,7 +255,8 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
         mDecor.setIsRootNamespace(true);
 
         try {
-            FileChannel channel = FileChannel.open(Path.of("F:", "eromanga.png"), StandardOpenOption.READ);
+            Path p = Path.of("assets/modernui/raw/eromanga.png").toAbsolutePath();
+            FileChannel channel = FileChannel.open(p, StandardOpenOption.READ);
             GLTextureCompat texture = GLTextureManager.getInstance().create(channel, true);
             Image image = new Image(texture);
             Drawable drawable = new ImageDrawable(image);
@@ -486,12 +497,18 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
         }
 
         @RenderThread
-        private void flushDrawCommands(GLSurfaceCanvas canvas, GLFramebufferCompat framebuffer) {
+        private boolean flushDrawCommands(GLSurfaceCanvas canvas, Window window, GLFramebufferCompat framebuffer) {
             synchronized (mRenderLock) {
+                int width = window.getWidth(), height = window.getHeight();
                 if (mRedrawn) {
+                    final Matrix4 projection = new Matrix4();
+                    canvas.setProjection(projection.setOrthographic(width, height, 0, Window.LAST_SYSTEM_WINDOW * 2 + 1,
+                            true));
                     mRedrawn = false;
-                    canvas.draw(framebuffer);
+                    canvas.executeDrawOps(framebuffer);
+                    return true;
                 }
+                return false;
             }
         }
 

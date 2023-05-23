@@ -18,13 +18,12 @@
 
 package icyllis.modernui.core;
 
-import icyllis.modernui.akashi.opengl.GLCore;
+import icyllis.arc3d.engine.DirectContext;
+import icyllis.arc3d.opengl.GLCore;
 import icyllis.modernui.annotation.*;
 import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
-import org.lwjgl.opengl.GL;
-import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.system.Platform;
 
@@ -60,6 +59,8 @@ public final class Core {
 
     private static final ConcurrentLinkedQueue<Runnable> sMainCalls = new ConcurrentLinkedQueue<>();
     private static final ConcurrentLinkedQueue<Runnable> sRenderCalls = new ConcurrentLinkedQueue<>();
+
+    private static volatile DirectContext sDirectContext;
 
     private Core() {
     }
@@ -257,7 +258,7 @@ public final class Core {
      * Call after creating a Window on render thread.
      */
     @RenderThread
-    public static void initOpenGL() {
+    public static boolean initOpenGL() {
         synchronized (Core.class) {
             if (sRenderThread == null) {
                 sRenderThread = Thread.currentThread();
@@ -265,23 +266,36 @@ public final class Core {
                 throw new IllegalStateException("Initialize twice");
             }
         }
-        // get or create
-        GLCapabilities caps;
+        DirectContext dContext = DirectContext.makeOpenGL();
+        if (dContext == null) {
+            return false;
+        }
+        sDirectContext = dContext;
+
+        final String glVendor = GLCore.glGetString(GLCore.GL_VENDOR);
+        final String glRenderer = GLCore.glGetString(GLCore.GL_RENDERER);
+        final String glVersion = GLCore.glGetString(GLCore.GL_VERSION);
+
+        LOGGER.info(MARKER, "OpenGL vendor: {}", glVendor);
+        LOGGER.info(MARKER, "OpenGL renderer: {}", glRenderer);
+        LOGGER.info(MARKER, "OpenGL version: {}", glVersion);
+
+        LOGGER.debug(MARKER, "OpenGL caps: {}", dContext.getCaps());
+
+        return true;
+        /*GLCapabilities caps;
         try {
             caps = GL.getCapabilities();
-            //noinspection ConstantConditions
             if (caps == null) {
-                // checks may be disabled
                 caps = GL.createCapabilities();
             }
         } catch (IllegalStateException e) {
             caps = GL.createCapabilities();
         }
-        //noinspection ConstantConditions
         if (caps == null) {
             throw new IllegalStateException("Failed to acquire OpenGL capabilities");
         }
-        GLCore.initialize(caps);
+        GLCore.initialize(caps);*/
     }
 
     /**
@@ -291,6 +305,11 @@ public final class Core {
      */
     public static boolean hasRenderThread() {
         return sRenderThread != null;
+    }
+
+    public static DirectContext getDirectContext() {
+        checkRenderThread();
+        return sDirectContext;
     }
 
     /**
