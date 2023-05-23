@@ -18,9 +18,9 @@
 
 package icyllis.modernui.graphics.font;
 
+import icyllis.arc3d.engine.Engine;
+import icyllis.arc3d.opengl.GLTextureCompat;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.akashi.Engine;
-import icyllis.modernui.akashi.opengl.GLTextureCompat;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.*;
@@ -32,15 +32,15 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import static icyllis.modernui.akashi.opengl.GLCore.*;
+import static icyllis.arc3d.opengl.GLCore.*;
 
 /**
  * Maintains a font texture atlas, which is specified with a font strike (style and
  * size). Glyphs are dynamically generated with mipmaps, each glyph is represented as
  * a {@link GLBakedGlyph}.
  * <p>
- * The initial texture size is 512*512, and each resize double the height and width
- * alternately. For example, 512*512 -> 512*1024 -> 1024*1024.
+ * The initial texture size is 1024*1024, and each resize double the height and width
+ * alternately. For example, 1024*1024 -> 1024*2048 -> 2048*2048.
  * Each 512*512 area becomes a chunk, and has its {@link RectanglePacker}.
  * The OpenGL texture ID will change due to expanding the texture size.
  *
@@ -168,12 +168,16 @@ public class GLFontAtlas implements AutoCloseable {
     }
 
     private void resize() {
-        // never initialized
         if (mWidth == 0) {
-            mWidth = mHeight = CHUNK_SIZE;
-            mTexture.allocate2DCompat(mMaskFormat == Engine.MASK_FORMAT_ARGB ? GL_RGBA8 : GL_R8, CHUNK_SIZE,
-                    CHUNK_SIZE, MIPMAP_LEVEL);
-            mChunks.add(new Chunk(0, 0, RectanglePacker.make(CHUNK_SIZE, CHUNK_SIZE)));
+            // initialize 4 chunks
+            mWidth = mHeight = CHUNK_SIZE * 2;
+            mTexture.allocate2DCompat(mMaskFormat == Engine.MASK_FORMAT_ARGB ? GL_RGBA8 : GL_R8,
+                    mWidth, mHeight, MIPMAP_LEVEL);
+            for (int x = 0; x < mWidth; x += CHUNK_SIZE) {
+                for (int y = 0; y < mHeight; y += CHUNK_SIZE) {
+                    mChunks.add(new Chunk(x, y, RectanglePacker.make(CHUNK_SIZE, CHUNK_SIZE)));
+                }
+            }
         } else {
             final int oldWidth = mWidth;
             final int oldHeight = mHeight;

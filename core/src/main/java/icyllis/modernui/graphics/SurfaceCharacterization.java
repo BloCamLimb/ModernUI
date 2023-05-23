@@ -18,19 +18,18 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.akashi.*;
-import icyllis.modernui.akashi.vulkan.VkCore;
-import icyllis.modernui.akashi.vulkan.VkImageInfo;
+import icyllis.arc3d.engine.*;
+import icyllis.arc3d.vulkan.VkCore;
+import icyllis.arc3d.vulkan.VkImageInfo;
+import icyllis.modernui.annotation.Nullable;
 import org.jetbrains.annotations.ApiStatus;
 
-import javax.annotation.Nullable;
-
-import static icyllis.modernui.akashi.Engine.BackendApi;
+import static icyllis.arc3d.engine.Engine.BackendApi;
 
 /**
  * A surface characterization contains all the information Engine requires to make its internal
  * rendering decisions. When passed into a {@link DeferredListRecorder} it will copy the
- * data and pass it on to the {@link DeferredList} if/when it is created. Note that both of
+ * data and pass it on to the {@link DeferredDisplayList} if/when it is created. Note that both of
  * those objects (the Recorder and the DisplayList) will take a ref on the
  * {@link ContextThreadSafeProxy} object.
  */

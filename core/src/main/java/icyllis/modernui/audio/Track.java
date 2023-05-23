@@ -18,7 +18,6 @@
 
 package icyllis.modernui.audio;
 
-import org.lwjgl.openal.AL10;
 import org.lwjgl.openal.EXTFloat32;
 import org.lwjgl.system.MemoryUtil;
 
@@ -26,15 +25,16 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.FloatBuffer;
-import java.nio.ShortBuffer;
 import java.util.Arrays;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 import static org.lwjgl.openal.AL11.*;
 import static org.lwjgl.openal.SOFTDirectChannels.AL_DIRECT_CHANNELS_SOFT;
 
 public class Track implements AutoCloseable {
+
+    // double buffering
+    private static final int BUFFER_COUNT = 2;
 
     private int mSource;
 
@@ -51,9 +51,13 @@ public class Track implements AutoCloseable {
         mSource = alGenSources();
         mSample = sample;
         alSourcef(mSource, AL_GAIN, 1.0f);
-        forward(2);
+        forward(BUFFER_COUNT);
         AudioManager.getInstance().addTrack(this);
         alSourcei(mSource, AL_DIRECT_CHANNELS_SOFT, AL_TRUE);
+    }
+
+    public boolean isPlaying() {
+        return alGetSourcei(mSource, AL_SOURCE_STATE) == AL_PLAYING;
     }
 
     public void play() {
@@ -155,6 +159,9 @@ public class Track implements AutoCloseable {
         } finally {
             MemoryUtil.memFree(buffer);
         }
+        if (count == BUFFER_COUNT) {
+            play();
+        }
     }
 
     private int releaseUsedBuffers() {
@@ -166,9 +173,6 @@ public class Track implements AutoCloseable {
             alDeleteBuffers(buf);
             System.arraycopy(mMixedSamples, samples, mMixedSamples, 0, mMixedSampleCount - samples);
             mMixedSampleCount -= samples;
-        }
-        if (count == 2) {
-            play();
         }
         return count;
     }

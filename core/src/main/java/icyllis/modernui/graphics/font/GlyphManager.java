@@ -18,11 +18,12 @@
 
 package icyllis.modernui.graphics.font;
 
-import icyllis.modernui.akashi.Engine;
+import icyllis.arc3d.engine.Engine;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.graphics.Bitmap;
 import icyllis.modernui.text.TextUtils;
-import it.unimi.dsi.fastutil.ints.*;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntFunction;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import org.apache.logging.log4j.Marker;
@@ -72,10 +73,7 @@ public class GlyphManager {
      */
     private static volatile GlyphManager sInstance;
 
-    /**
-     * All font atlases, with specified font size.
-     */
-    private Int2ObjectMap<GLFontAtlas> mAtlases;
+    private GLFontAtlas mA8Atlas;
 
     /**
      * Font (with size and style) to int key.
@@ -127,12 +125,10 @@ public class GlyphManager {
      * Reload the glyph manager, clear all created textures.
      */
     public void reload() {
-        if (mAtlases != null) {
-            for (GLFontAtlas atlas : mAtlases.values()) {
-                atlas.close();
-            }
+        if (mA8Atlas != null) {
+            mA8Atlas.close();
         }
-        mAtlases = new Int2ObjectOpenHashMap<>();
+        mA8Atlas = null;
         mFontTable = new Object2IntOpenHashMap<>();
         mFontTable.defaultReturnValue(-1);
         allocateImage(64, 64);
@@ -175,11 +171,12 @@ public class GlyphManager {
     public GLBakedGlyph lookupGlyph(@NonNull Font font, int glyphCode) {
         int fontKey = mFontTable.computeIfAbsent(font, mFontTableMapper);
         long key = ((long) fontKey << 32) | glyphCode;
-        GLFontAtlas atlas = mAtlases.computeIfAbsent(font.getSize(),
-                _k -> new GLFontAtlas(Engine.MASK_FORMAT_A8));
-        GLBakedGlyph glyph = atlas.getGlyph(key);
+        if (mA8Atlas == null) {
+            mA8Atlas = new GLFontAtlas(Engine.MASK_FORMAT_A8);
+        }
+        GLBakedGlyph glyph = mA8Atlas.getGlyph(key);
         if (glyph != null && glyph.texture == 0) {
-            return cacheGlyph(font, glyphCode, atlas, glyph, key);
+            return cacheGlyph(font, glyphCode, mA8Atlas, glyph, key);
         }
         return glyph;
     }
@@ -191,13 +188,11 @@ public class GlyphManager {
             // XXX: remove extension name
             basePath = basePath.substring(0, basePath.length() - 4);
         }
-        int index = 0;
-        for (var e : mAtlases.int2ObjectEntrySet()) {
+        if (mA8Atlas != null) {
             if (basePath != null) {
-                e.getValue().debug(basePath + "_" + e.getIntKey() + "_" + index + ".png");
-                index++;
+                mA8Atlas.debug(basePath + ".png");
             } else {
-                e.getValue().debug(null);
+                mA8Atlas.debug(null);
             }
         }
     }
@@ -205,12 +200,12 @@ public class GlyphManager {
     public void dumpInfo(PrintWriter pw) {
         int glyphCount = 0;
         long memorySize = 0;
-        for (var atlas : mAtlases.values()) {
-            glyphCount += atlas.getGlyphCount();
-            memorySize += atlas.getMemorySize();
+        if (mA8Atlas != null) {
+            glyphCount += mA8Atlas.getGlyphCount();
+            memorySize += mA8Atlas.getMemorySize();
         }
         pw.print("GlyphManager: ");
-        pw.print("Atlases=" + mAtlases.size());
+        pw.print("Atlases=" + (mA8Atlas != null ? 1 : 0));
         pw.print(", Glyphs=" + glyphCount);
         pw.println(", GPUMemorySize=" + TextUtils.binaryCompact(memorySize) + " (" + memorySize + " bytes)");
     }

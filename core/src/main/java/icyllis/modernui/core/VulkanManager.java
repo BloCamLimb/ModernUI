@@ -29,8 +29,8 @@ import org.lwjgl.vulkan.*;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
+import static icyllis.arc3d.vulkan.VkCore.*;
 import static icyllis.modernui.ModernUI.LOGGER;
-import static icyllis.modernui.akashi.vulkan.VkCore.*;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.EXTBlendOperationAdvanced.VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME;
 

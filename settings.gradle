@@ -9,8 +9,6 @@ rootProject.name = 'ModernUI'
 include 'core'
 project(':core').name = 'ModernUI-Core'
 
-include 'libarc'
-
 // extensions
 include 'x-viewpager'
 project(':x-viewpager').name = "ModernUI-ViewPager"

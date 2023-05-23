@@ -956,7 +956,7 @@ public abstract class Canvas {
         TRIANGLES,
         TRIANGLE_STRIP
 
-        // enum order is consistent with AkashiGI and Vulkan definition
+        // enum order is consistent with Arc 3D and Vulkan definition
     }
 
     /**

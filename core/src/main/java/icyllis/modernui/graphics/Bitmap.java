@@ -20,8 +20,8 @@ package icyllis.modernui.graphics;
 
 import com.ibm.icu.text.DateFormat;
 import com.ibm.icu.text.SimpleDateFormat;
-import icyllis.modernui.akashi.opengl.GLFramebufferCompat;
-import icyllis.modernui.akashi.opengl.GLTextureCompat;
+import icyllis.arc3d.opengl.GLFramebufferCompat;
+import icyllis.arc3d.opengl.GLTextureCompat;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.core.RefCnt;
@@ -42,7 +42,7 @@ import java.util.function.LongConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static icyllis.modernui.akashi.opengl.GLCore.*;
+import static icyllis.arc3d.opengl.GLCore.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
 /**
@@ -211,6 +211,7 @@ public final class Bitmap implements AutoCloseable {
      * @param texture the texture to download from
      * @param flipY   flip the image vertically, such as the texture is from a framebuffer
      * @return the created bitmap
+     * @deprecated remove soon
      */
     @Deprecated
     @NonNull
@@ -241,6 +242,7 @@ public final class Bitmap implements AutoCloseable {
      * @param colorBuffer the color attachment to read
      * @param flipY       flip the image vertically, such as the texture is from a framebuffer
      * @return the created bitmap
+     * @deprecated remove soon
      */
     @Deprecated
     @NonNull

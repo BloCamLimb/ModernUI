@@ -26,7 +26,6 @@ import java.util.*;
 /**
  * Packs rectangles into a larger rectangle.
  */
-//TODO move to libARC
 public abstract class RectanglePacker {
 
     /**

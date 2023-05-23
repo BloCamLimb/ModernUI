@@ -9,10 +9,6 @@ dependencies {
     implementation project(':ModernUI-Core')
 }
 
-test {
-    useJUnitPlatform()
-}
-
 publishing {
     publications {
         mavenViewPager(MavenPublication) {
