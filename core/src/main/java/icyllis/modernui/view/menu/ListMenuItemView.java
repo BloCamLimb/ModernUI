@@ -19,25 +19,21 @@
 package icyllis.modernui.view.menu;
 
 import icyllis.modernui.R;
-import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.Paint;
+import icyllis.modernui.core.Context;
+import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.material.MaterialCheckBox;
 import icyllis.modernui.material.MaterialRadioButton;
-import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.StateSet;
-import icyllis.modernui.view.Gravity;
-import icyllis.modernui.view.View;
-import icyllis.modernui.view.ViewGroup;
+import icyllis.modernui.view.*;
 import icyllis.modernui.widget.*;
 import icyllis.modernui.widget.ImageView.ScaleType;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import static icyllis.modernui.view.ViewGroup.LayoutParams.MATCH_PARENT;
-import static icyllis.modernui.view.ViewGroup.LayoutParams.WRAP_CONTENT;
+import static icyllis.modernui.view.ViewGroup.LayoutParams.*;
 
 /**
  * The item view for each item in the ListView-based MenuViews.
@@ -65,7 +61,8 @@ public class ListMenuItemView extends LinearLayout implements MenuView.ItemView,
 
     private boolean mForceShowIcon;
 
-    public ListMenuItemView() {
+    public ListMenuItemView(Context context) {
+        super(context);
         setMinimumWidth(dp(196));
         setOrientation(VERTICAL);
         setDividerDrawable(new Drawable() {
@@ -85,7 +82,7 @@ public class ListMenuItemView extends LinearLayout implements MenuView.ItemView,
         setDividerPadding(dp(2));
 
         {
-            mContent = new LinearLayout();
+            mContent = new LinearLayout(getContext());
             mContent.setDuplicateParentStateEnabled(true);
             mContent.setPaddingRelative(dp(4), dp(2), dp(16), dp(2));
 
@@ -95,7 +92,7 @@ public class ListMenuItemView extends LinearLayout implements MenuView.ItemView,
 
             // The title and summary have some gap between them.
             {
-                mTitleView = new TextView();
+                mTitleView = new TextView(getContext());
                 mTitleView.setId(R.id.title);
                 mTitleView.setTextSize(16);
                 mTitleView.setTextColor(TEXT_COLOR);
@@ -110,7 +107,7 @@ public class ListMenuItemView extends LinearLayout implements MenuView.ItemView,
             }
 
             {
-                mShortcutView = new TextView();
+                mShortcutView = new TextView(getContext());
                 mShortcutView.setTextSize(14);
                 mShortcutView.setTextColor(0xFFCECECE);
                 mShortcutView.setSingleLine();
@@ -124,10 +121,10 @@ public class ListMenuItemView extends LinearLayout implements MenuView.ItemView,
             }
 
             {
-                mSubMenuArrowView = new ImageView();
+                mSubMenuArrowView = new ImageView(getContext());
                 mSubMenuArrowView.setScaleType(ScaleType.CENTER);
                 mSubMenuArrowView.setVisibility(GONE);
-                mSubMenuArrowView.setImageDrawable(new SubMenuArrowDrawable());
+                mSubMenuArrowView.setImageDrawable(new SubMenuArrowDrawable(context));
 
                 var params = new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
                 params.gravity = Gravity.CENTER;
@@ -315,7 +312,7 @@ public class ListMenuItemView extends LinearLayout implements MenuView.ItemView,
     }
 
     private void insertIconView() {
-        mIconView = new ImageView();
+        mIconView = new ImageView(getContext());
         mIconView.setScaleType(ScaleType.CENTER_INSIDE);
         mIconView.setDuplicateParentStateEnabled(true);
         var params = new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
@@ -330,7 +327,7 @@ public class ListMenuItemView extends LinearLayout implements MenuView.ItemView,
     }
 
     private void insertRadioButton() {
-        mRadioButton = new MaterialRadioButton();
+        mRadioButton = new MaterialRadioButton(getContext());
         mRadioButton.setFocusable(false);
         mRadioButton.setClickable(false);
         mRadioButton.setDuplicateParentStateEnabled(true);
@@ -341,7 +338,7 @@ public class ListMenuItemView extends LinearLayout implements MenuView.ItemView,
     }
 
     private void insertCheckBox() {
-        mCheckBox = new MaterialCheckBox();
+        mCheckBox = new MaterialCheckBox(getContext());
         mCheckBox.setFocusable(false);
         mCheckBox.setClickable(false);
         mCheckBox.setDuplicateParentStateEnabled(true);

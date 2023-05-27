@@ -24,7 +24,7 @@ import icyllis.modernui.util.DataSet;
 import javax.annotation.Nonnull;
 
 /**
- * Listener for receiving a callback immediately following {@link Fragment#onAttach()}.
+ * Listener for receiving a callback immediately following {@link Fragment#onAttach(icyllis.modernui.core.Context)}.
  * This can be used to perform any additional setup / provide any dependencies that the Fragment
  * may need prior to child fragments being attached or the Fragment going through
  * {@link Fragment#onCreate(DataSet)}.
@@ -36,13 +36,13 @@ public interface FragmentOnAttachListener {
 
     /**
      * Called after the fragment has been attached to its host. This is called
-     * immediately after {@link Fragment#onAttach()} and before
-     * {@link Fragment#onAttach()} has been called on any child fragments.
+     * immediately after {@link Fragment#onAttach(icyllis.modernui.core.Context)} and before
+     * {@link Fragment#onAttach(icyllis.modernui.core.Context)} has been called on any child fragments.
      *
      * @param fragmentManager FragmentManager the fragment is now attached to. This will
      *                        be the same FragmentManager that is returned by
      *                        {@link Fragment#getParentFragmentManager()}.
-     * @param fragment        Fragment that just received a callback to {@link Fragment#onAttach()}
+     * @param fragment        Fragment that just received a callback to {@link Fragment#onAttach(icyllis.modernui.core.Context)}
      */
     @UiThread
     void onAttachFragment(@Nonnull FragmentManager fragmentManager, @Nonnull Fragment fragment);

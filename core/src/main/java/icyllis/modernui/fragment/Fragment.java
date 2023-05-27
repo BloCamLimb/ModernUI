@@ -19,19 +19,14 @@
 package icyllis.modernui.fragment;
 
 import icyllis.modernui.animation.Animator;
-import icyllis.modernui.annotation.CallSuper;
-import icyllis.modernui.annotation.UiThread;
+import icyllis.modernui.annotation.*;
+import icyllis.modernui.core.Context;
 import icyllis.modernui.core.Handler;
 import icyllis.modernui.lifecycle.*;
-import icyllis.modernui.transition.AutoTransition;
-import icyllis.modernui.transition.Transition;
-import icyllis.modernui.transition.Visibility;
+import icyllis.modernui.transition.*;
 import icyllis.modernui.util.DataSet;
-import icyllis.modernui.view.View;
-import icyllis.modernui.view.ViewGroup;
+import icyllis.modernui.view.*;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -68,7 +63,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
     DataSet mSavedFragmentState;
 
     // Internal unique name for this fragment
-    @Nonnull
+    @NonNull
     String mWho = UUID.randomUUID().toString();
 
     // Construction arguments;
@@ -110,7 +105,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
     FragmentHostCallback<?> mHost;
 
     // Private fragment manager for child fragments inside this one.
-    @Nonnull
+    @NonNull
     FragmentManager mChildFragmentManager = new FragmentManager();
 
     // If this Fragment is contained in another Fragment, this is that container.
@@ -208,7 +203,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
      * are automatically saved and restored alongside the Fragment.
      *
      * <p>Applications should generally not implement a constructor. Prefer
-     * {@link #onAttach()} instead. It is the first place application code can run where
+     * {@link #onAttach(Context)} instead. It is the first place application code can run where
      * the fragment is ready to be used - the point where the fragment is actually associated with
      * its context.
      */
@@ -229,7 +224,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
      * Overriding this method is no longer supported and this method will be made
      * <code>final</code> in a future version of Fragment.
      */
-    @Nonnull
+    @NonNull
     @Override
     public Lifecycle getLifecycle() {
         return mLifecycleRegistry;
@@ -252,7 +247,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
      * </ol>
      * <p>
      * The first method where it is safe to access the view lifecycle is
-     * {@link #onCreateView(ViewGroup, DataSet)} under the condition that you must
+     * {@link #onCreateView(LayoutInflater, ViewGroup, DataSet)} under the condition that you must
      * return a non-null view (an IllegalStateException will be thrown if you access the view
      * lifecycle but don't return a non-null view).
      * <p>The view lifecycle remains valid through the call to {@link #onDestroyView()}, after which
@@ -271,7 +266,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
      * @throws IllegalStateException if the {@link #getView() Fragment's View is null}.
      */
     @UiThread
-    @Nonnull
+    @NonNull
     public LifecycleOwner getViewLifecycleOwner() {
         if (mViewLifecycleOwner == null) {
             throw new IllegalStateException("Can't access the Fragment View's LifecycleOwner when "
@@ -292,7 +287,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
      *
      * @return A LiveData that changes in sync with {@link #getViewLifecycleOwner()}.
      */
-    @Nonnull
+    @NonNull
     public LiveData<LifecycleOwner> getViewLifecycleOwnerLiveData() {
         return mViewLifecycleOwnerLiveData;
     }
@@ -307,7 +302,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
      * @throws IllegalStateException if called before the Fragment is attached i.e., before
      *                               onAttach().
      */
-    @Nonnull
+    @NonNull
     @Override
     public ViewModelStore getViewModelStore() {
         if (mFragmentManager == null) {
@@ -363,7 +358,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
         return super.hashCode();
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder(128);
@@ -431,7 +426,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
      * @throws IllegalStateException if no arguments were supplied to the Fragment.
      * @see #getArguments()
      */
-    @Nonnull
+    @NonNull
     public final DataSet requireArguments() {
         DataSet arguments = getArguments();
         if (arguments == null) {
@@ -471,6 +466,31 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
     }
 
     /**
+     * Return the {@link Context} this fragment is currently associated with.
+     *
+     * @see #requireContext()
+     */
+    @Nullable
+    public Context getContext() {
+        return mHost == null ? null : mHost.mContext;
+    }
+
+    /**
+     * Return the {@link Context} this fragment is currently associated with.
+     *
+     * @throws IllegalStateException if not currently associated with a context.
+     * @see #getContext()
+     */
+    @NonNull
+    public final Context requireContext() {
+        Context context = getContext();
+        if (context == null) {
+            throw new IllegalStateException("Fragment " + this + " not attached to a context.");
+        }
+        return context;
+    }
+
+    /**
      * Return the host object of this fragment. May return {@code null} if the fragment
      * isn't currently being hosted.
      *
@@ -487,7 +507,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
      * @throws IllegalStateException if not currently associated with a host.
      * @see #getHost()
      */
-    @Nonnull
+    @NonNull
     public final Object requireHost() {
         Object host = getHost();
         if (host == null) {
@@ -505,7 +525,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
      *
      * @throws IllegalStateException if not associated with a transaction or host.
      */
-    @Nonnull
+    @NonNull
     public final FragmentManager getParentFragmentManager() {
         FragmentManager fragmentManager = mFragmentManager;
         if (fragmentManager == null) {
@@ -519,7 +539,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
      * Return a private FragmentManager for placing and managing Fragments
      * inside this Fragment.
      */
-    @Nonnull
+    @NonNull
     public final FragmentManager getChildFragmentManager() {
         if (mHost == null) {
             throw new IllegalStateException("Fragment " + this + " has not been attached yet.");
@@ -543,7 +563,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
      *                               other Fragment host.
      * @see #getParentFragment()
      */
-    @Nonnull
+    @NonNull
     public final Fragment requireParentFragment() {
         Fragment parentFragment = getParentFragment();
         if (parentFragment == null) {
@@ -679,7 +699,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
      */
     @UiThread
     @CallSuper
-    public void onAttach() {
+    public void onAttach(@NonNull Context context) {
         mCalled = true;
     }
 
@@ -703,8 +723,8 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
 
     /**
      * Called to do initial creation of a fragment.  This is called after
-     * {@link #onAttach()} and before
-     * {@link #onCreateView(ViewGroup, DataSet)}.
+     * {@link #onAttach(Context)} and before
+     * {@link #onCreateView(LayoutInflater, ViewGroup, DataSet)}.
      *
      * <p>Note that this can be called while the fragment's activity is
      * still in the process of being created.  As such, you can not rely
@@ -764,6 +784,8 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
      * <p>If you return a View from here, you will later be called in
      * {@link #onDestroyView} when the view is being released.
      *
+     * @param inflater           The LayoutInflater object that can be used to inflate
+     *                           any views in the fragment
      * @param container          If non-null, this is the parent view that the fragment's
      *                           UI should be attached to.  The fragment should not add the view itself,
      *                           but this can be used to generate the LayoutParams of the view.
@@ -773,23 +795,24 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
      */
     @UiThread
     @Nullable
-    public View onCreateView(@Nullable ViewGroup container, @Nullable DataSet savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+                             @Nullable DataSet savedInstanceState) {
         return null;
     }
 
     /**
-     * Called immediately after {@link #onCreateView(ViewGroup, DataSet)}
+     * Called immediately after {@link #onCreateView(LayoutInflater, ViewGroup, DataSet)}
      * has returned, but before any saved state has been restored in to the view.
      * This gives subclasses a chance to initialize themselves once
      * they know their view hierarchy has been completely created.  The fragment's
      * view hierarchy is not however attached to its parent at this point.
      *
-     * @param view               The View returned by {@link #onCreateView(ViewGroup, DataSet)}.
+     * @param view               The View returned by {@link #onCreateView(LayoutInflater, ViewGroup, DataSet)}.
      * @param savedInstanceState If non-null, this fragment is being re-constructed
      *                           from a previous saved state as given here.
      */
     @UiThread
-    public void onViewCreated(@Nonnull View view, @Nullable DataSet savedInstanceState) {
+    public void onViewCreated(@NonNull View view, @Nullable DataSet savedInstanceState) {
     }
 
     /**
@@ -809,7 +832,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
      * @throws IllegalStateException if no view was returned by {@link #onCreateView}.
      * @see #getView()
      */
-    @Nonnull
+    @NonNull
     public final View requireView() {
         View view = getView();
         if (view == null) {
@@ -859,7 +882,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
      * restarted.  If a new instance of the fragment later needs to be
      * created, the data you place in the Bundle here will be available
      * in the Bundle given to {@link #onCreate(DataSet)},
-     * {@link #onCreateView(ViewGroup, DataSet)}, and
+     * {@link #onCreateView(LayoutInflater, ViewGroup, DataSet)}, and
      * {@link #onViewCreated(View, DataSet)}.
      *
      * <p>Note however: <em>this method may be called
@@ -871,7 +894,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
      * @param outState Bundle in which to place your saved state.
      */
     @UiThread
-    public void onSaveInstanceState(@Nonnull DataSet outState) {
+    public void onSaveInstanceState(@NonNull DataSet outState) {
     }
 
     /**
@@ -1256,8 +1279,8 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
      * transaction have called {@link #startPostponedEnterTransition()}.
      * <p>
      * This method should be called before being added to the FragmentTransaction or
-     * in {@link #onCreate(DataSet)}, {@link #onAttach()}, or
-     * {@link #onCreateView(ViewGroup, DataSet)}}.
+     * in {@link #onCreate(DataSet)}, {@link #onAttach(Context)}, or
+     * {@link #onCreateView(LayoutInflater, ViewGroup, DataSet)}}.
      * {@link #startPostponedEnterTransition()} must be called to allow the Fragment to
      * start the transitions.
      * <p>
@@ -1287,8 +1310,8 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
      * {@link #startPostponedEnterTransition()}.
      * <p>
      * This method should be called before being added to the FragmentTransaction or
-     * in {@link #onCreate(DataSet)}, {@link #onAttach()}, or
-     * {@link #onCreateView(ViewGroup, DataSet)}}.
+     * in {@link #onCreate(DataSet)}, {@link #onAttach(Context)}, or
+     * {@link #onCreateView(LayoutInflater, ViewGroup, DataSet)}}.
      * <p>
      * When a FragmentTransaction is started that may affect a postponed FragmentTransaction,
      * based on which containers are in their operations, the postponed FragmentTransaction
@@ -1303,7 +1326,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
      * @param timeUnit The units of time for {@code duration}
      * @see FragmentTransaction#setReorderingAllowed(boolean)
      */
-    public final void postponeEnterTransition(long duration, @Nonnull TimeUnit timeUnit) {
+    public final void postponeEnterTransition(long duration, @NonNull TimeUnit timeUnit) {
         ensureAnimationInfo().mEnterTransitionPostponed = true;
         Handler handler;
         if (mFragmentManager != null) {
@@ -1371,8 +1394,8 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
      *               closed for you after you return.
      * @param args   additional arguments to the dump request.
      */
-    public void dump(@Nonnull String prefix, @Nullable FileDescriptor fd,
-                     @Nonnull PrintWriter writer, @Nullable String... args) {
+    public void dump(@NonNull String prefix, @Nullable FileDescriptor fd,
+                     @NonNull PrintWriter writer, @Nullable String... args) {
         writer.print(prefix);
         writer.print("mFragmentId=#");
         writer.print(Integer.toHexString(mFragmentId));
@@ -1479,14 +1502,14 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
     }
 
     @Nullable
-    Fragment findFragmentByWho(@Nonnull String who) {
+    Fragment findFragmentByWho(@NonNull String who) {
         if (who.equals(mWho)) {
             return this;
         }
         return mChildFragmentManager.findFragmentByWho(who);
     }
 
-    @Nonnull
+    @NonNull
     FragmentContainer createFragmentContainer() {
         return new FragmentContainer() {
             @Nullable
@@ -1510,7 +1533,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
         mChildFragmentManager.attachController(mHost, createFragmentContainer(), this);
         mState = ATTACHED;
         mCalled = false;
-        onAttach();
+        onAttach(mHost.mContext);
         if (!mCalled) {
             throw new IllegalStateException("Fragment " + this
                     + " did not call through to super.onAttach()");
@@ -1525,8 +1548,8 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
         mCalled = false;
         mLifecycleRegistry.addObserver(new LifecycleObserver() {
             @Override
-            public void onStateChanged(@Nonnull LifecycleOwner source,
-                                       @Nonnull Lifecycle.Event event) {
+            public void onStateChanged(@NonNull LifecycleOwner source,
+                                       @NonNull Lifecycle.Event event) {
                 if (event == Lifecycle.Event.ON_STOP) {
                     if (mView != null) {
                         mView.cancelPendingInputEvents();
@@ -1543,12 +1566,13 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
         mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE);
     }
 
-    void performCreateView(@Nullable ViewGroup container,
+    void performCreateView(@NonNull LayoutInflater inflater,
+                           @Nullable ViewGroup container,
                            @Nullable DataSet savedInstanceState) {
         mChildFragmentManager.noteStateNotSaved();
         mPerformedCreateView = true;
         mViewLifecycleOwner = new FragmentViewLifecycleOwner(this, getViewModelStore());
-        mView = onCreateView(container, savedInstanceState);
+        mView = onCreateView(inflater, container, savedInstanceState);
         if (mView != null) {
             // Initialize the view lifecycle
             mViewLifecycleOwner.initialize();
@@ -1786,7 +1810,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
         mAnimationInfo.mNextTransition = nextTransition;
     }
 
-    @Nonnull
+    @NonNull
     ArrayList<String> getSharedElementSourceNames() {
         if (mAnimationInfo == null || mAnimationInfo.mSharedElementSourceNames == null) {
             return new ArrayList<>();
@@ -1794,7 +1818,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
         return mAnimationInfo.mSharedElementSourceNames;
     }
 
-    @Nonnull
+    @NonNull
     ArrayList<String> getSharedElementTargetNames() {
         if (mAnimationInfo == null || mAnimationInfo.mSharedElementTargetNames == null) {
             return new ArrayList<>();

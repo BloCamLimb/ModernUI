@@ -34,7 +34,7 @@ public class ScrollingMovementMethod extends BaseMovementMethod {
 
     private static final ScrollingMovementMethod sInstance = new ScrollingMovementMethod();
 
-    private ScrollingMovementMethod() {
+    public ScrollingMovementMethod() {
     }
 
     public static MovementMethod getInstance() {

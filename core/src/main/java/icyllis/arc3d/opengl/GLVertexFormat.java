@@ -31,6 +31,7 @@ import static icyllis.arc3d.opengl.GLCore.*;
  *
  * @see GeometryProcessor.AttributeSet
  */
+@Deprecated
 public class GLVertexFormat {
 
     private final GLVertexAttrib[][] mAttributeSets;

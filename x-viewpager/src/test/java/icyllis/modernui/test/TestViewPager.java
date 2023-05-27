@@ -30,8 +30,6 @@ import icyllis.modernui.widget.TextView;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
 
-import static icyllis.modernui.view.View.dp;
-
 public class TestViewPager extends Fragment {
 
     public static void main(String[] args) {
@@ -44,8 +42,9 @@ public class TestViewPager extends Fragment {
 
     @Nullable
     @Override
-    public View onCreateView(@Nullable ViewGroup container, @Nullable DataSet savedInstanceState) {
-        var pager = new ViewPager();
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+                             @Nullable DataSet savedInstanceState) {
+        var pager = new ViewPager(getContext());
 
         pager.setAdapter(new MyAdapter());
         pager.setFocusableInTouchMode(true);
@@ -56,21 +55,22 @@ public class TestViewPager extends Fragment {
                 ModernUI.LOGGER.info("{} focus change: {}", v, hasFocus));
 
         {
-            var indicator = new LinearPagerIndicator();
+            var indicator = new LinearPagerIndicator(getContext());
             indicator.setPager(pager);
             var lp = new ViewPager.LayoutParams();
-            lp.height = dp(30);
+            lp.height = pager.dp(30);
             lp.isDecor = true;
             lp.gravity = Gravity.CENTER_HORIZONTAL;
             pager.addView(indicator, lp);
         }
 
-        var lp = new FrameLayout.LayoutParams(dp(480), dp(360));
+        var lp = new FrameLayout.LayoutParams(pager.dp(480), pager.dp(360));
         lp.gravity = Gravity.CENTER;
         pager.setLayoutParams(lp);
 
         // used when pages change too fast
         //pager.setOffscreenPageLimit(2);
+        container.setClipChildren(true);
 
         return pager;
     }
@@ -85,7 +85,7 @@ public class TestViewPager extends Fragment {
         @NonNull
         @Override
         public Object instantiateItem(@NonNull ViewGroup container, int position) {
-            var tv = new TextView();
+            var tv = new TextView(container.getContext());
             tv.setText("This is page " + position);
             tv.setGravity(Gravity.CENTER);
             container.addView(tv);

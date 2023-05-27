@@ -18,6 +18,7 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.core.Context;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
@@ -124,7 +125,8 @@ public class CoordinatorLayout extends ViewGroup {
     private OnPreDrawListener mOnPreDrawListener;
     private boolean mNeedsPreDrawListener;
 
-    public CoordinatorLayout() {
+    public CoordinatorLayout(Context context) {
+        super(context);
     }
 
     @Override

@@ -19,6 +19,7 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.R;
+import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.util.ColorStateList;
@@ -50,7 +51,8 @@ public abstract class CompoundButton extends Button implements Checkable {
 
     private OnCheckedChangeListener mOnCheckedChangeListener;
 
-    public CompoundButton() {
+    public CompoundButton(Context context) {
+        super(context);
         setGravity(Gravity.CENTER_VERTICAL | Gravity.START);
     }
 

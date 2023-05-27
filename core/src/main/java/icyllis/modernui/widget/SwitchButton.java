@@ -19,6 +19,7 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.animation.*;
+import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.MathUtil;
@@ -44,7 +45,8 @@ public class SwitchButton extends CompoundButton {
 
     private final Animator mAnimator;
 
-    public SwitchButton() {
+    public SwitchButton(Context context) {
+        super(context);
         mCheckedColor = 0xFF51D367;
         mUncheckedColor = 0xFFDDDDDD;
         mBorderWidth = 2;

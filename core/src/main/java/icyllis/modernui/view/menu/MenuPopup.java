@@ -18,6 +18,7 @@
 
 package icyllis.modernui.view.menu;
 
+import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.view.MeasureSpec;
 import icyllis.modernui.view.MenuItem;
@@ -130,7 +131,7 @@ public abstract class MenuPopup implements ShowableListMenu, MenuPresenter, Adap
      * @return The width.
      */
     protected static int measureIndividualMenuWidth(@Nonnull ListAdapter adapter, @Nullable ViewGroup parent,
-                                                    int maxAllowedWidth) {
+                                                    Context context, int maxAllowedWidth) {
         // Menus don't tend to be long, so this is more valid than it looks.
         int maxWidth = 0;
         View itemView = null;
@@ -147,7 +148,7 @@ public abstract class MenuPopup implements ShowableListMenu, MenuPresenter, Adap
             }
 
             if (parent == null) {
-                parent = new FrameLayout();
+                parent = new FrameLayout(context);
             }
 
             itemView = adapter.getView(i, itemView, parent);

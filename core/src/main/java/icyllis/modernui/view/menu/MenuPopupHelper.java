@@ -18,17 +18,19 @@
 
 package icyllis.modernui.view.menu;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Rect;
-import icyllis.modernui.view.Gravity;
-import icyllis.modernui.view.View;
-import icyllis.modernui.view.ViewConfiguration;
+import icyllis.modernui.view.*;
 import icyllis.modernui.widget.PopupMenu;
 import icyllis.modernui.widget.PopupWindow;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 public class MenuPopupHelper implements MenuHelper {
+
+    private static final int TOUCH_EPICENTER_SIZE_DP = 48;
+
+    private final Context mContext;
 
     // Immutable cached popup menu properties.
     private final MenuBuilder mMenu;
@@ -48,15 +50,16 @@ public class MenuPopupHelper implements MenuHelper {
      */
     private final PopupWindow.OnDismissListener mInternalOnDismissListener = this::onDismiss;
 
-    public MenuPopupHelper(@Nonnull MenuBuilder menu) {
-        this(menu, null, false);
+    public MenuPopupHelper(@NonNull Context context, @NonNull MenuBuilder menu) {
+        this(context, menu, null, false);
     }
 
-    public MenuPopupHelper(@Nonnull MenuBuilder menu, View anchorView) {
-        this(menu, anchorView, false);
+    public MenuPopupHelper(@NonNull Context context, @NonNull MenuBuilder menu, View anchorView) {
+        this(context, menu, anchorView, false);
     }
 
-    public MenuPopupHelper(@Nonnull MenuBuilder menu, View anchorView, boolean overflowOnly) {
+    public MenuPopupHelper(@NonNull Context context, @NonNull MenuBuilder menu, View anchorView, boolean overflowOnly) {
+        mContext = context;
         mMenu = menu;
         mAnchorView = anchorView;
         mOverflowOnly = overflowOnly;
@@ -73,7 +76,7 @@ public class MenuPopupHelper implements MenuHelper {
      *
      * @param anchor the view to which the popup window should be anchored
      */
-    public void setAnchorView(@Nonnull View anchor) {
+    public void setAnchorView(@NonNull View anchor) {
         mAnchorView = anchor;
     }
 
@@ -126,7 +129,7 @@ public class MenuPopupHelper implements MenuHelper {
         }
     }
 
-    @Nonnull
+    @NonNull
     public MenuPopup getPopup() {
         if (mPopup == null) {
             mPopup = createPopup();
@@ -194,7 +197,7 @@ public class MenuPopupHelper implements MenuHelper {
      *
      * @return an initialized popup
      */
-    @Nonnull
+    @NonNull
     private MenuPopup createPopup() {
         /*final WindowManager windowManager = mContext.getSystemService(WindowManager.class);
         final Rect maxWindowBounds = windowManager.getMaximumWindowMetrics().getBounds();
@@ -209,7 +212,7 @@ public class MenuPopupHelper implements MenuHelper {
             popup = new CascadingMenuPopup(mContext, mAnchorView, mPopupStyleAttr,
                     mPopupStyleRes, mOverflowOnly);
         } else {*/
-        popup = new StandardMenuPopup(mMenu, mAnchorView, mOverflowOnly);
+        popup = new StandardMenuPopup(mContext, mMenu, mAnchorView, mOverflowOnly);
         //}
 
         // Assign immutable properties.
@@ -246,7 +249,8 @@ public class MenuPopupHelper implements MenuHelper {
             // cursor) sized and centered around the offset position. This
             // will give the appearance that the window is emerging from
             // the touch point.
-            final int halfSize = (int) (24 * ViewConfiguration.get().getViewScale());
+            final float density = mContext.getResources().getDisplayMetrics().density;
+            final int halfSize = (int) (TOUCH_EPICENTER_SIZE_DP * density / 2);
             final Rect epicenter = new Rect(xOffset - halfSize, yOffset - halfSize,
                     xOffset + halfSize, yOffset + halfSize);
             popup.setEpicenterBounds(epicenter);

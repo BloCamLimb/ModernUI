@@ -22,8 +22,6 @@ import icyllis.arc3d.engine.Engine;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.graphics.Bitmap;
 import icyllis.modernui.text.TextUtils;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntFunction;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import org.apache.logging.log4j.Marker;
@@ -36,6 +34,7 @@ import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
 import java.io.PrintWriter;
 import java.nio.ByteBuffer;
+import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -52,6 +51,8 @@ public class GlyphManager {
     /**
      * The width in pixels of a transparent border between individual glyphs in the atlas.
      * This border keeps neighboring glyphs from "bleeding through" when mipmap used.
+     * <p>
+     * Additional notes: two pixels because we may use SDF to stroke.
      */
     public static final int GLYPH_BORDER = 2;
 
@@ -102,7 +103,7 @@ public class GlyphManager {
      */
     private ByteBuffer mImageBuffer;
 
-    private final CopyOnWriteArrayList<Runnable> mAtlasResizeCallbacks = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<Runnable> mAtlasInvalidationCallbacks = new CopyOnWriteArrayList<>();
 
     private GlyphManager() {
         // init
@@ -251,9 +252,9 @@ public class GlyphManager {
         }
         mImageBuffer.flip();
 
-        boolean resized = atlas.stitch(glyph, MemoryUtil.memAddress(mImageBuffer));
-        if (resized) {
-            mAtlasResizeCallbacks.forEach(Runnable::run);
+        boolean invalidated = atlas.stitch(glyph, MemoryUtil.memAddress(mImageBuffer));
+        if (invalidated) {
+            mAtlasInvalidationCallbacks.forEach(Runnable::run);
         }
 
         mGraphics.clearRect(0, 0, mImage.getWidth(), mImage.getHeight());
@@ -293,12 +294,16 @@ public class GlyphManager {
         }
     }
 
-    public void addAtlasResizeCallback(Runnable callback) {
-        mAtlasResizeCallbacks.add(callback);
+    /**
+     * Called when the atlas resized or fully reset, which means
+     * texture ID changed or previous {@link GLBakedGlyph}s become invalid.
+     */
+    public void addAtlasInvalidationCallback(Runnable callback) {
+        mAtlasInvalidationCallbacks.add(Objects.requireNonNull(callback));
     }
 
-    public void removeAtlasResizeCallback(Runnable callback) {
-        mAtlasResizeCallbacks.remove(callback);
+    public void removeAtlasInvalidationCallback(Runnable callback) {
+        mAtlasInvalidationCallbacks.remove(Objects.requireNonNull(callback));
     }
 
     /**

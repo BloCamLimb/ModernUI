@@ -19,6 +19,7 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.engine.Engine;
+import icyllis.arc3d.engine.SamplerState;
 import icyllis.arc3d.engine.geom.DefaultGeoProc;
 import icyllis.arc3d.engine.shading.UniformHandler;
 import icyllis.modernui.ModernUI;
@@ -97,27 +98,6 @@ public final class GLSurfaceCanvas extends GLCanvas {
     public static final GLVertexFormat POS_TEX;*/
 
     /**
-     * Shader programs
-     */
-    public static final GLProgram COLOR_FILL = new GLProgram();
-    public static final GLProgram COLOR_TEX = new GLProgram();
-    public static final GLProgram ROUND_RECT_FILL = new GLProgram();
-    public static final GLProgram ROUND_RECT_TEX = new GLProgram();
-    public static final GLProgram ROUND_RECT_STROKE = new GLProgram();
-    public static final GLProgram CIRCLE_FILL = new GLProgram();
-    public static final GLProgram CIRCLE_STROKE = new GLProgram();
-    public static final GLProgram ARC_FILL = new GLProgram();
-    public static final GLProgram ARC_STROKE = new GLProgram();
-    public static final GLProgram BEZIER_CURVE = new GLProgram();
-    public static final GLProgram ALPHA_TEX = new GLProgram();
-    public static final GLProgram COLOR_TEX_MS = new GLProgram();
-    public static final GLProgram GLOW_WAVE = new GLProgram();
-    public static final GLProgram PIE_FILL = new GLProgram();
-    public static final GLProgram PIE_STROKE = new GLProgram();
-    public static final GLProgram ROUND_LINE_FILL = new GLProgram();
-    public static final GLProgram ROUND_LINE_STROKE = new GLProgram();
-
-    /**
      * Recording draw operations (sequential)
      */
     public static final byte DRAW_PRIM = 0;
@@ -166,9 +146,30 @@ public final class GLSurfaceCanvas extends GLCanvas {
         //POS_COLOR = new GLVertexFormat(POS, COLOR);
         //POS_COLOR_TEX = new GLVertexFormat(POS, COLOR, UV);
         //POS_TEX = new GLVertexFormat(POS, UV);
-
-        GLShaderManager.getInstance().addListener(GLSurfaceCanvas::onLoadShaders);
     }
+
+    /**
+     * Shader programs
+     */
+    public final GLProgram COLOR_FILL = new GLProgram();
+    public final GLProgram COLOR_TEX = new GLProgram();
+    public final GLProgram ROUND_RECT_FILL = new GLProgram();
+    public final GLProgram ROUND_RECT_TEX = new GLProgram();
+    public final GLProgram ROUND_RECT_STROKE = new GLProgram();
+    public final GLProgram CIRCLE_FILL = new GLProgram();
+    public final GLProgram CIRCLE_STROKE = new GLProgram();
+    public final GLProgram ARC_FILL = new GLProgram();
+    public final GLProgram ARC_STROKE = new GLProgram();
+    public final GLProgram BEZIER_CURVE = new GLProgram();
+    public final GLProgram ALPHA_TEX = new GLProgram();
+    public final GLProgram COLOR_TEX_MS = new GLProgram();
+    public final GLProgram GLOW_WAVE = new GLProgram();
+    public final GLProgram PIE_FILL = new GLProgram();
+    public final GLProgram PIE_STROKE = new GLProgram();
+    public final GLProgram ROUND_LINE_FILL = new GLProgram();
+    public final GLProgram ROUND_LINE_STROKE = new GLProgram();
+
+    private boolean mShadersFrozen = false;
 
     /**
      * @see #mTextureRectPipe
@@ -185,7 +186,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
 
     // vertex buffer objects
     private GLBuffer mColorMeshVertexBuffer;
-    private ByteBuffer mColorMeshStagingBuffer = memAlloc(8192);
+    private ByteBuffer mColorMeshStagingBuffer = memAlloc(16384);
     private boolean mColorMeshBufferResized = true;
 
     private GLBuffer mTextureMeshVertexBuffer;
@@ -217,7 +218,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     private final GLBufferCompat mRoundRectUBO = new GLBufferCompat();
 
     // mag filter = linear
-    private final int mLinearFontSampler;
+    private final GLSampler mLinearFontSampler;
 
     private final long mUniformBuffers = nmemAlloc(24);
 
@@ -227,7 +228,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     private int mCurrTexture;
     private int mCurrSampler;
     private int mCurrProgram;
-    private int mCurrVertexFormat;
+    private int mCurrVertexArray;
 
     // absolute value presents the reference value, and sign represents whether to
     // update the stencil buffer (positive = update, or just change stencil func)
@@ -288,11 +289,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
         memPutInt(mUniformBuffers + 16, mCircleUBO.get());
         memPutInt(mUniformBuffers + 20, mRoundRectUBO.get());
 
-        mLinearFontSampler = glCreateSamplers();
-        glSamplerParameteri(mLinearFontSampler, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glSamplerParameteri(mLinearFontSampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glSamplerParameteri(mLinearFontSampler, GL_TEXTURE_MIN_LOD, 0);
-        glSamplerParameteri(mLinearFontSampler, GL_TEXTURE_MAX_LOD, GLFontAtlas.MIPMAP_LEVEL);
+        mLinearFontSampler = server.getResourceProvider().findOrCreateCompatibleSampler(
+                SamplerState.DEFAULT);
 
         {
             ShortBuffer indices = MemoryUtil.memAllocShort(MAX_GLYPH_INDEX_COUNT);
@@ -308,21 +306,23 @@ public final class GLSurfaceCanvas extends GLCanvas {
                 baseIndex += 4;
             }
             indices.flip();
-            mGlyphIndexBuffer = GLBuffer.make(server, MAX_GLYPH_INDEX_COUNT * Short.BYTES,
+            mGlyphIndexBuffer = GLBuffer.make(server, indices.capacity(),
                     Engine.BufferUsageFlags.kStatic |
                             Engine.BufferUsageFlags.kIndex);
             if (mGlyphIndexBuffer == null) {
                 throw new IllegalStateException("Failed to create index buffer for glyph mesh");
             }
-            mGlyphIndexBuffer.updateData(MemoryUtil.memAddress(indices), 0, MAX_GLYPH_INDEX_COUNT * Short.BYTES);
+            mGlyphIndexBuffer.updateData(MemoryUtil.memAddress(indices), 0, indices.capacity());
             MemoryUtil.memFree(indices);
         }
 
         ModernUI.LOGGER.debug(MARKER,
-                "Created glyph index buffer: {}",
-                mGlyphIndexBuffer.getBufferID());
+                "Created glyph index buffer: {}, size: {}",
+                mGlyphIndexBuffer.getBufferID(), mGlyphIndexBuffer.getSize());
 
         mSaves.push(new Save());
+
+        GLShaderManager.getInstance().addListener(this::onLoadShaders);
 
         ModernUI.LOGGER.info(MARKER, "Created OpenGL surface canvas");
     }
@@ -347,7 +347,11 @@ public final class GLSurfaceCanvas extends GLCanvas {
         return sInstance;
     }
 
-    private static void onLoadShaders(@NonNull GLShaderManager manager) {
+    private void onLoadShaders(@NonNull GLShaderManager manager) {
+        if (mShadersFrozen) {
+            return;
+        }
+
         int posColor = manager.getStage(ModernUI.ID, "pos_color.vert");
         int posColorTex = manager.getStage(ModernUI.ID, "pos_color_tex.vert");
         int posTex = manager.getStage(ModernUI.ID, "pos_tex.vert");
@@ -370,25 +374,30 @@ public final class GLSurfaceCanvas extends GLCanvas {
         int roundLineFill = manager.getStage(ModernUI.ID, "round_line_fill.frag");
         int roundLineStroke = manager.getStage(ModernUI.ID, "round_line_stroke.frag");
 
-        manager.create(COLOR_FILL, posColor, colorFill);
-        manager.create(COLOR_TEX, posColorTex, colorTex);
-        manager.create(ROUND_RECT_FILL, posColor, roundRectFill);
-        manager.create(ROUND_RECT_TEX, posColorTex, roundRectTex);
-        manager.create(ROUND_RECT_STROKE, posColor, roundRectStroke);
-        manager.create(CIRCLE_FILL, posColor, circleFill);
-        manager.create(CIRCLE_STROKE, posColor, circleStroke);
-        manager.create(ARC_FILL, posColor, arcFill);
-        manager.create(ARC_STROKE, posColor, arcStroke);
-        manager.create(BEZIER_CURVE, posColor, quadBezier);
-        manager.create(ALPHA_TEX, posTex, alphaTex);
-        manager.create(COLOR_TEX_MS, posColorTex, colorTexMs);
-        manager.create(GLOW_WAVE, posColor, glowWave);
-        manager.create(PIE_FILL, posColor, pieFill);
-        manager.create(PIE_STROKE, posColor, pieStroke);
-        manager.create(ROUND_LINE_FILL, posColor, roundLineFill);
-        manager.create(ROUND_LINE_STROKE, posColor, roundLineStroke);
+        boolean success = true;
 
-        ModernUI.LOGGER.info(MARKER, "Loaded OpenGL canvas shaders");
+        success &= manager.create(COLOR_FILL, posColor, colorFill);
+        success &= manager.create(COLOR_TEX, posColorTex, colorTex);
+        success &= manager.create(ROUND_RECT_FILL, posColor, roundRectFill);
+        success &= manager.create(ROUND_RECT_TEX, posColorTex, roundRectTex);
+        success &= manager.create(ROUND_RECT_STROKE, posColor, roundRectStroke);
+        success &= manager.create(CIRCLE_FILL, posColor, circleFill);
+        success &= manager.create(CIRCLE_STROKE, posColor, circleStroke);
+        success &= manager.create(ARC_FILL, posColor, arcFill);
+        success &= manager.create(ARC_STROKE, posColor, arcStroke);
+        success &= manager.create(BEZIER_CURVE, posColor, quadBezier);
+        success &= manager.create(ALPHA_TEX, posTex, alphaTex);
+        success &= manager.create(COLOR_TEX_MS, posColorTex, colorTexMs);
+        success &= manager.create(GLOW_WAVE, posColor, glowWave);
+        success &= manager.create(PIE_FILL, posColor, pieFill);
+        success &= manager.create(PIE_STROKE, posColor, pieStroke);
+        success &= manager.create(ROUND_LINE_FILL, posColor, roundLineFill);
+        success &= manager.create(ROUND_LINE_STROKE, posColor, roundLineStroke);
+
+        if (success) {
+            mShadersFrozen = true;
+            ModernUI.LOGGER.info(MARKER, "Loaded OpenGL canvas shaders");
+        }
     }
 
     @Override
@@ -415,13 +424,13 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     @RenderThread
-    public void bindPipeline(GLPipeline p0, GLProgram p1) {
-        int array = p0.getVertexArray();
-        if (mCurrVertexFormat != array) {
+    public void bindPipeline(GLPipeline pp, GLProgram prg) {
+        int array = pp.getVertexArray();
+        if (mCurrVertexArray != array) {
             glBindVertexArray(array);
-            mCurrVertexFormat = array;
+            mCurrVertexArray = array;
         }
-        int program = p1.get();
+        int program = prg.get();
         if (mCurrProgram != program) {
             glUseProgram(program);
             mCurrProgram = program;
@@ -477,7 +486,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         glStencilFunc(GL_EQUAL, 0, 0xff);
         glStencilMask(0xff);
 
-        mCurrVertexFormat = 0;
+        mCurrVertexArray = 0;
         mCurrProgram = 0;
         mCurrSampler = 0;
         mCurrTexture = 0;
@@ -679,7 +688,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     bindPipeline(mGlyphPipe, ALPHA_TEX);
                     mGlyphPipe.bindIndexBuffer(mGlyphIndexBuffer);
                     mGlyphPipe.bindVertexBuffer(mGlyphVertexBuffer, 0);
-                    bindSampler(mLinearFontSampler);
+                    bindSampler(mLinearFontSampler.getSamplerID());
 
                     int limit = glyphs.length;
                     int lastPos = 0;
@@ -775,7 +784,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
             }
             newBuffer.setLabel("ColorRectMesh");
             mColorMeshVertexBuffer = GLBuffer.move(mColorMeshVertexBuffer, newBuffer);
-            ModernUI.LOGGER.info("Created new color mesh buffer: {}", newBuffer.getBufferID());
+            ModernUI.LOGGER.info("Created new color mesh buffer: {}, size: {}",
+                    newBuffer.getBufferID(), newBuffer.getSize());
             mColorMeshBufferResized = false;
         }
         if (mColorMeshStagingBuffer.position() > 0) {
@@ -798,7 +808,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
             }
             newBuffer.setLabel("TextureRectMesh");
             mTextureMeshVertexBuffer = GLBuffer.move(mTextureMeshVertexBuffer, newBuffer);
-            ModernUI.LOGGER.info("Created new texture mesh buffer: {}", newBuffer.getBufferID());
+            ModernUI.LOGGER.info("Created new texture mesh buffer: {}, size: {}",
+                    newBuffer.getBufferID(), newBuffer.getSize());
             mTextureMeshBufferResized = false;
         }
         if (mTextureMeshStagingBuffer.position() > 0) {
@@ -824,7 +835,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
                 }
                 newBuffer.setLabel("GlyphMesh");
                 mGlyphVertexBuffer = GLBuffer.move(mGlyphVertexBuffer, newBuffer);
-                ModernUI.LOGGER.info("Created new glyph mesh buffer: {}", newBuffer.getBufferID());
+                ModernUI.LOGGER.info("Created new glyph mesh buffer: {}, size: {}",
+                        newBuffer.getBufferID(), newBuffer.getSize());
                 mGlyphBufferResized = false;
             }
             if (mGlyphStagingBuffer.position() > 0) {

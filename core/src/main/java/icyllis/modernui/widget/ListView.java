@@ -20,6 +20,7 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.view.*;
@@ -155,7 +156,8 @@ public class ListView extends AbsListView {
     // Keeps focused children visible through resizes
     private FocusSelector mFocusSelector;
 
-    public ListView() {
+    public ListView(Context context) {
+        super(context);
         mHeaderDividersEnabled = true;
         mFooterDividersEnabled = true;
     }

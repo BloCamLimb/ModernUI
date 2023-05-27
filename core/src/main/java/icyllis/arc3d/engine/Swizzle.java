@@ -18,13 +18,12 @@
 
 package icyllis.arc3d.engine;
 
-import javax.annotation.Nonnull;
-
 /**
- * Represents a rgba swizzle. It's packed as a <code>short</code>.
+ * Represents a color component mapping. It's packed as a <code>short</code> value.
  * <p>
- * Note: max swizzle value is 0x5555, so (AND 0xFFFF) is not required when implicitly cast to int.
+ * <b>Do NOT change the packing format, there are inlined code in other places</b>.
  */
+//TODO Project Valhalla
 public final class Swizzle {
 
     // default value
@@ -50,7 +49,7 @@ public final class Swizzle {
             case 'a' -> 3;
             case '0' -> 4;
             case '1' -> 5;
-            default -> throw new IllegalArgumentException();
+            default -> throw new AssertionError(c);
         };
     }
 
@@ -62,14 +61,14 @@ public final class Swizzle {
             case 3 -> 'a';
             case 4 -> '0';
             case 5 -> '1';
-            default -> throw new IllegalArgumentException();
+            default -> throw new AssertionError(idx);
         };
     }
 
     /**
      * Compact representation of the swizzle suitable for a key. Letters must be lowercase.
      */
-    public static short make(@Nonnull String s) {
+    public static short make(String s) {
         return make(s.charAt(0), s.charAt(1), s.charAt(2), s.charAt(3));
     }
 
@@ -97,8 +96,12 @@ public final class Swizzle {
     /**
      * Applies this swizzle to the input color and returns the swizzled color.
      */
-    public static void apply(short swizzle, @Nonnull float[] color) {
-        float r = color[0], g = color[1], b = color[2], a = color[3];
+    public static void apply(short swizzle, float[] color) {
+        final float
+                r = color[0],
+                g = color[1],
+                b = color[2],
+                a = color[3];
         for (int i = 0; i < 4; ++i) {
             color[i] = switch (swizzle & 0xF) {
                 case 0 -> r;
@@ -113,7 +116,6 @@ public final class Swizzle {
         }
     }
 
-    @Nonnull
     public static String toString(short swizzle) {
         return String.valueOf(indexToChar(swizzle & 0xF)) +
                 indexToChar((swizzle >> 4) & 0xF) +

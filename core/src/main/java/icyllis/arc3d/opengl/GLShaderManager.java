@@ -91,13 +91,13 @@ public class GLShaderManager {
      * Get or create a shader stage, call this on listener callback.
      *
      * @param namespace the application namespace
-     * @param subPath   sub paths to the shader source, parent is 'shaders'
+     * @param entry   sub paths to the shader source, parent is 'shaders'
      * @return the shader stage handle or 0 on failure
      * @see #getStage(String, String, int)
      * @see #addListener(Listener)
      */
-    public int getStage(@Nonnull String namespace, @Nonnull String subPath) {
-        return getStage(namespace, "shaders/" + subPath, 0);
+    public int getStage(@Nonnull String namespace, @Nonnull String entry) {
+        return getStage(namespace, "shaders/" + entry, 0);
     }
 
     /**
@@ -196,16 +196,13 @@ public class GLShaderManager {
      *
      * @param t      the existing program object
      * @param stages shader stages for the program
-     * @param <T>    custom program subclasses
      * @return program
      * @see #addListener(Listener)
      */
-    @SuppressWarnings("unchecked")
-    @Nonnull
-    public <T extends GLProgram> T create(@Nullable T t, int... stages) {
+    public boolean create(GLProgram t, int... stages) {
         Core.checkRenderThread();
         int program;
-        if (t != null && t.mProgram != 0) {
+        if (t.mProgram != 0) {
             program = t.mProgram;
         } else {
             program = GLCore.glCreateProgram();
@@ -226,11 +223,8 @@ public class GLShaderManager {
                 GLCore.glDetachShader(program, s);
             }
         }
-        if (t == null) {
-            t = (T) new GLProgram();
-        }
         t.mProgram = program;
-        return t;
+        return program != 0;
     }
 
     /**

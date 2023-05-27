@@ -87,8 +87,9 @@ public class GLPipelineState {
         int nextTexSamplerIdx = 0;
         for (int i = 0, e = pipelineInfo.geomProc().numTextureSamplers(); i < e; i++) {
             GLTexture texture = (GLTexture) geomTextures[i].peekTexture();
-            if (!commandBuffer.bindTexture(texture, nextTexSamplerIdx++,
-                    pipelineInfo.geomProc().textureSamplerState(i))) {
+            if (!commandBuffer.bindTexture(nextTexSamplerIdx++, texture,
+                    pipelineInfo.geomProc().textureSamplerState(i),
+                    pipelineInfo.geomProc().textureSamplerSwizzle(i))) {
                 return false;
             }
         }

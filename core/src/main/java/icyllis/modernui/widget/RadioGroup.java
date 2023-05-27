@@ -18,6 +18,7 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.core.Context;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 
@@ -47,7 +48,8 @@ public class RadioGroup extends LinearLayout {
     @Nullable
     private OnCheckedChangeListener mOnCheckedChangeListener;
 
-    public RadioGroup() {
+    public RadioGroup(Context context) {
+        super(context);
         setOrientation(VERTICAL);
     }
 

@@ -235,7 +235,7 @@ class DefaultSpecialEffectsController extends SpecialEffectsController {
         // Every transition needs to target at least one View so that they
         // don't interfere with one another. This is the view we use
         // in cases where there are no real views to target
-        final View nonExistentView = new View();
+        final View nonExistentView = new View(getContainer().getContext());
 
         // Now find the shared element transition if it exists
         TransitionSet sharedElementTransition = null;

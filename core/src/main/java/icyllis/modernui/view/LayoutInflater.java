@@ -16,27 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.resources;
+package icyllis.modernui.view;
 
-import icyllis.modernui.util.DisplayMetrics;
-import org.jetbrains.annotations.ApiStatus;
-
-public class Resources {
-
-    private final DisplayMetrics mMetrics = new DisplayMetrics();
-
-    public Resources() {
-        mMetrics.setToDefaults();
-    }
-
-    @ApiStatus.Internal
-    public void updateMetrics(DisplayMetrics metrics) {
-        if (metrics != null) {
-            mMetrics.setTo(metrics);
-        }
-    }
-
-    public DisplayMetrics getDisplayMetrics() {
-        return mMetrics;
-    }
+public abstract class LayoutInflater {
 }

@@ -18,6 +18,7 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
@@ -113,14 +114,15 @@ public class ScrollView extends FrameLayout {
     private final int[] mScrollConsumed = new int[2];
     private int mNestedYOffset;
 
-    public ScrollView() {
+    public ScrollView(Context context) {
+        super(context);
         mScroller = new OverScroller();
         mEdgeGlowTop = new EdgeEffect();
         mEdgeGlowBottom = new EdgeEffect();
         setFocusable(true);
         setDescendantFocusability(FOCUS_AFTER_DESCENDANTS);
         setWillNotDraw(false);
-        final ViewConfiguration configuration = ViewConfiguration.get();
+        final ViewConfiguration configuration = ViewConfiguration.get(context);
         mTouchSlop = configuration.getScaledTouchSlop();
         mMinimumVelocity = configuration.getScaledMinimumFlingVelocity();
         mMaximumVelocity = configuration.getScaledMaximumFlingVelocity();

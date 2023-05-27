@@ -18,6 +18,7 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.core.Context;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 
@@ -34,7 +35,8 @@ import javax.annotation.Nullable;
 @SuppressWarnings("unused")
 public class AbsoluteLayout extends ViewGroup {
 
-    public AbsoluteLayout() {
+    public AbsoluteLayout(Context context) {
+        super(context);
     }
 
     @Override

@@ -20,6 +20,7 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.R;
+import icyllis.modernui.core.Context;
 import icyllis.modernui.core.Window;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.StateListDrawable;
@@ -71,6 +72,8 @@ public class PopupWindow {
     private final int[] mTmpScreenLocation = new int[2];
     private final int[] mTmpAppLocation = new int[2];
     private final Rect mTempRect = new Rect();
+
+    private Context mContext;
 
     boolean mIsShowing;
     boolean mIsTransitioningToDismiss;
@@ -233,6 +236,10 @@ public class PopupWindow {
      * @param focusable   true if the popup can be focused, false otherwise
      */
     public PopupWindow(View contentView, int width, int height, boolean focusable) {
+        if (contentView != null) {
+            mContext = contentView.getContext();
+        }
+
         setContentView(contentView);
         setWidth(width);
         setHeight(height);
@@ -420,6 +427,10 @@ public class PopupWindow {
         }
 
         mContentView = contentView;
+
+        if (mContext == null && mContentView != null) {
+            mContext = mContentView.getContext();
+        }
     }
 
     /**
@@ -914,7 +925,7 @@ public class PopupWindow {
             height = MATCH_PARENT;
         }
 
-        final var backgroundView = new BackgroundView();
+        final var backgroundView = new BackgroundView(mContext);
         backgroundView.addView(contentView, MATCH_PARENT, height);
 
         return backgroundView;
@@ -936,7 +947,7 @@ public class PopupWindow {
             height = MATCH_PARENT;
         }
 
-        final var decorView = new DecorView(new OutsideDismissBehavior());
+        final var decorView = new DecorView(mContext, new OutsideDismissBehavior());
         decorView.addView(contentView, MATCH_PARENT, height);
         decorView.setClipChildren(false);
         decorView.setClipToPadding(false);
@@ -1752,7 +1763,9 @@ public class PopupWindow {
          */
         private Runnable mCleanupAfterExit;
 
-        public DecorView(@Nonnull Behavior<? extends DecorView> behavior) {
+        public DecorView(Context context,
+                         @Nonnull Behavior<? extends DecorView> behavior) {
+            super(context);
             mBehavior = behavior;
         }
 
@@ -1901,7 +1914,8 @@ public class PopupWindow {
 
     private class BackgroundView extends FrameLayout {
 
-        public BackgroundView() {
+        public BackgroundView(Context context) {
+            super(context);
         }
 
         @Nonnull

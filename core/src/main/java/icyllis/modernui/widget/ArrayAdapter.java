@@ -18,6 +18,7 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.core.Context;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.view.ViewGroup.LayoutParams;
@@ -67,6 +68,8 @@ public class ArrayAdapter<T> extends BaseAdapter implements Filterable {
      */
     private final Object mLock = new Object();
 
+    private final Context mContext;
+
     /**
      * Contains the list of objects that represent the data of this ArrayAdapter.
      * The content of this list is referred to as "the array" in the documentation.
@@ -90,8 +93,8 @@ public class ArrayAdapter<T> extends BaseAdapter implements Filterable {
      *
      * @param objects The objects to represent in the ListView.
      */
-    public ArrayAdapter(@Nonnull T[] objects) {
-        this(Arrays.asList(objects));
+    public ArrayAdapter(Context context, @Nonnull T[] objects) {
+        this(context, Arrays.asList(objects));
     }
 
     /**
@@ -99,7 +102,8 @@ public class ArrayAdapter<T> extends BaseAdapter implements Filterable {
      *
      * @param objects The objects to represent in the ListView.
      */
-    public ArrayAdapter(@Nonnull List<T> objects) {
+    public ArrayAdapter(Context context, @Nonnull List<T> objects) {
+        mContext = context;
         mObjects = objects;
     }
 
@@ -301,28 +305,28 @@ public class ArrayAdapter<T> extends BaseAdapter implements Filterable {
 
     @Nonnull
     private View createViewInner(int position, @Nullable View convertView) {
-        final TextView text;
+        final TextView tv;
 
         if (convertView == null) {
-            text = new TextView();
+            tv = new TextView(mContext);
         } else {
-            text = (TextView) convertView;
+            tv = (TextView) convertView;
         }
 
         final T item = getItem(position);
         if (item instanceof CharSequence) {
-            text.setText((CharSequence) item);
+            tv.setText((CharSequence) item);
         } else {
-            text.setText(String.valueOf(item));
+            tv.setText(String.valueOf(item));
         }
 
-        text.setTextSize(14);
-        text.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
-        final int dp4 = View.dp(4);
-        text.setPadding(dp4, dp4, dp4, dp4);
-        text.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
+        tv.setTextSize(14);
+        tv.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
+        final int dp4 = tv.dp(4);
+        tv.setPadding(dp4, dp4, dp4, dp4);
+        tv.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
 
-        return text;
+        return tv;
     }
 
     @Override

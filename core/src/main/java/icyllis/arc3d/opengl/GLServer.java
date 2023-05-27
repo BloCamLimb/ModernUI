@@ -33,7 +33,7 @@ import java.util.function.Function;
 import static icyllis.arc3d.opengl.GLCore.*;
 
 /**
- * The OpenGL rendering system.
+ * The OpenGL graphics server.
  */
 public final class GLServer extends Server {
 
@@ -279,14 +279,14 @@ public final class GLServer extends Server {
         assert (mCaps.isFormatTexturable(glFormat));
 
         GLTextureParameters parameters = glTexture.getParameters();
-        if (parameters.mBaseMipMapLevel != 0) {
+        if (parameters.baseMipmapLevel != 0) {
             glTextureParameteri(glTexture.getTextureID(), GL_TEXTURE_BASE_LEVEL, 0);
-            parameters.mBaseMipMapLevel = 0;
+            parameters.baseMipmapLevel = 0;
         }
         int maxLevel = glTexture.getMaxMipmapLevel();
-        if (parameters.mMaxMipmapLevel != maxLevel) {
+        if (parameters.maxMipmapLevel != maxLevel) {
             glTextureParameteri(glTexture.getTextureID(), GL_TEXTURE_MAX_LEVEL, maxLevel);
-            parameters.mMaxMipmapLevel = maxLevel;
+            parameters.maxMipmapLevel = maxLevel;
         }
 
         int srcFormat = mCaps.getPixelsExternalFormat(glFormat, dstColorType, srcColorType, /*write*/true);

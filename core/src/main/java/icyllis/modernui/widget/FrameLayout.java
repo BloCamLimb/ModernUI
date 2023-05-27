@@ -18,6 +18,7 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.view.Gravity;
@@ -56,7 +57,8 @@ public class FrameLayout extends ViewGroup {
 
     private final ArrayList<View> mMatchParentChildren = new ArrayList<>(1);
 
-    public FrameLayout() {
+    public FrameLayout(Context context) {
+        super(context);
     }
 
     /**

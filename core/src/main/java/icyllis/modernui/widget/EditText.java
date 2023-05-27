@@ -18,6 +18,7 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.core.Context;
 import icyllis.modernui.text.Editable;
 import icyllis.modernui.text.Selection;
 import icyllis.modernui.text.Spannable;
@@ -58,7 +59,8 @@ import javax.annotation.Nonnull;
  */
 public class EditText extends TextView {
 
-    public EditText() {
+    public EditText(Context context) {
+        super(context);
         setText("", BufferType.EDITABLE);
         setMovementMethod(ArrowKeyMovementMethod.getInstance());
         setFocusableInTouchMode(true);

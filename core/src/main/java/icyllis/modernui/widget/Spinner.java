@@ -18,6 +18,7 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
@@ -54,8 +55,9 @@ public class Spinner extends AbsSpinner {
 
     private int mGravity;
 
-    public Spinner() {
-        mPopup = new DropdownPopup();
+    public Spinner(Context context) {
+        super(context);
+        mPopup = new DropdownPopup(context);
         //mPopup.setOverlapAnchor(true);
         mPopup.setBackgroundDrawable(new Drawable() {
             private final int mRadius = dp(2);
@@ -636,7 +638,8 @@ public class Spinner extends AbsSpinner {
 
         private ListAdapter mAdapter;
 
-        public DropdownPopup() {
+        public DropdownPopup(Context context) {
+            super(context);
             setAnchorView(Spinner.this);
             setModal(true);
             setPromptPosition(POSITION_PROMPT_ABOVE);

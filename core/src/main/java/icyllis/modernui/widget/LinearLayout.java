@@ -18,6 +18,7 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.view.Gravity;
@@ -132,7 +133,8 @@ public class LinearLayout extends ViewGroup {
 
     private int mLayoutDirection = View.LAYOUT_DIRECTION_UNDEFINED;
 
-    public LinearLayout() {
+    public LinearLayout(Context context) {
+        super(context);
     }
 
     /**

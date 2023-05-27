@@ -18,6 +18,7 @@
 
 package icyllis.modernui.view.menu;
 
+import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.view.ContextMenu;
 import icyllis.modernui.view.View;
@@ -40,7 +41,8 @@ import javax.annotation.Nonnull;
  */
 public class ContextMenuBuilder extends MenuBuilder implements ContextMenu {
 
-    public ContextMenuBuilder() {
+    public ContextMenuBuilder(Context context) {
+        super(context);
     }
 
     @Nonnull
@@ -64,7 +66,7 @@ public class ContextMenuBuilder extends MenuBuilder implements ContextMenu {
         return this;
     }
 
-    public MenuPopupHelper showPopup(View originalView, float x, float y) {
+    public MenuPopupHelper showPopup(Context context, View originalView, float x, float y) {
         if (originalView != null) {
             // Let relevant views and their populate context listeners populate
             // the context menu
@@ -76,7 +78,7 @@ public class ContextMenuBuilder extends MenuBuilder implements ContextMenu {
             assert originalView != null;
             originalView.getLocationInWindow(location);
 
-            final MenuPopupHelper helper = new MenuPopupHelper(this, originalView, false);
+            final MenuPopupHelper helper = new MenuPopupHelper(context, this, originalView, false);
             helper.show(Math.round(x), Math.round(y));
             return helper;
         }

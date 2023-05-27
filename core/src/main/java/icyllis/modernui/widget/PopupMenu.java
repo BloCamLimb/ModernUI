@@ -18,6 +18,7 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.core.Context;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.Menu;
 import icyllis.modernui.view.MenuItem;
@@ -36,6 +37,7 @@ import icyllis.modernui.view.menu.ShowableListMenu;
  */
 public class PopupMenu {
 
+    private final Context mContext;
     private final MenuBuilder mMenu;
     private final View mAnchor;
     private final MenuPopupHelper mPopup;
@@ -50,8 +52,8 @@ public class PopupMenu {
      * @param anchor Anchor view for this popup. The popup will appear below
      *               the anchor if there is room, or above it if there is not.
      */
-    public PopupMenu(View anchor) {
-        this(anchor, Gravity.NO_GRAVITY);
+    public PopupMenu(Context context, View anchor) {
+        this(context, anchor, Gravity.NO_GRAVITY);
     }
 
     /**
@@ -63,10 +65,11 @@ public class PopupMenu {
      * @param gravity The {@link Gravity} value for aligning the popup with its
      *                anchor.
      */
-    public PopupMenu(View anchor, int gravity) {
+    public PopupMenu(Context context, View anchor, int gravity) {
+        mContext = context;
         mAnchor = anchor;
 
-        mMenu = new MenuBuilder();
+        mMenu = new MenuBuilder(context);
         mMenu.setCallback(new MenuBuilder.Callback() {
             @Override
             public boolean onMenuItemSelected(MenuBuilder menu, MenuItem item) {
@@ -81,7 +84,7 @@ public class PopupMenu {
             }
         });
 
-        mPopup = new MenuPopupHelper(mMenu, anchor, false);
+        mPopup = new MenuPopupHelper(context, mMenu, anchor, false);
         mPopup.setGravity(gravity);
         mPopup.setOnDismissListener(() -> {
             if (mOnDismissListener != null) {

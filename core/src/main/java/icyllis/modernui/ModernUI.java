@@ -27,12 +27,13 @@ import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.ImageDrawable;
 import icyllis.modernui.graphics.font.FontFamily;
 import icyllis.modernui.lifecycle.*;
+import icyllis.modernui.resources.Resources;
 import icyllis.modernui.text.Typeface;
+import icyllis.modernui.util.DisplayMetrics;
 import icyllis.modernui.view.*;
 import icyllis.modernui.view.menu.ContextMenuBuilder;
 import icyllis.modernui.view.menu.MenuHelper;
-import icyllis.modernui.widget.CoordinatorLayout;
-import icyllis.modernui.widget.EditText;
+import icyllis.modernui.widget.*;
 import org.apache.logging.log4j.*;
 import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.glfw.GLFWMonitorCallback;
@@ -50,7 +51,7 @@ import static org.lwjgl.glfw.GLFW.*;
 /**
  * The core class of Modern UI.
  */
-public class ModernUI implements AutoCloseable, LifecycleOwner {
+public class ModernUI extends Context implements AutoCloseable, LifecycleOwner {
 
     public static final String ID = "modernui"; // as well as the namespace
     public static final String NAME_CPT = "ModernUI";
@@ -87,6 +88,9 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
     private volatile Looper mUiLooper;
     private volatile Thread mUiThread;
     private volatile Thread mRenderThread;
+
+    private Resources mResources = new Resources();
+    private ToastManager mToastManager;
 
     public ModernUI() {
         synchronized (ModernUI.class) {
@@ -133,25 +137,33 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
         glfwWindowHintString(GLFW_X11_CLASS_NAME, NAME_CPT);
         glfwWindowHintString(GLFW_X11_INSTANCE_NAME, NAME_CPT);
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+        glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
         if (monitor == null) {
             LOGGER.info(MARKER, "No monitor connected");
             mWindow = MainWindow.initialize("Modern UI", 1280, 720);
         } else {
             VideoMode mode = monitor.getCurrentMode();
-            mWindow = MainWindow.initialize("Modern UI", (int) (mode.getWidth() * 0.75f),
-                    (int) (mode.getHeight() * 0.75f));
+            mWindow = MainWindow.initialize("Modern UI",
+                    mode.getWidth(), mode.getHeight());
             mWindow.center(monitor);
-            int[] w = {0}, h = {0};
-            glfwGetMonitorPhysicalSize(monitor.getHandle(), w, h);
+            int[] physw = {0}, physh = {0};
+            glfwGetMonitorPhysicalSize(monitor.getHandle(), physw, physh);
             float[] xscale = {0}, yscale = {0};
             glfwGetMonitorContentScale(monitor.getHandle(), xscale, yscale);
-            float xdpi = 25.4f * mode.getWidth() / w[0],
-                    ydpi = 25.4f * mode.getHeight() / h[0];
-            LOGGER.info(MARKER, "Primary monitor xDpi: {}, yDpi: {}, physical size: {}x{} mm, xScale: {}, yScale: {}",
-                    xdpi, ydpi, w[0], h[0], xscale[0], yscale[0]);
-            float density = xdpi / 72 * xscale[0];
-            LOGGER.info(MARKER, "Density: {}", density);
-            ViewConfiguration.get().setViewScale(density);
+            DisplayMetrics metrics = new DisplayMetrics();
+            metrics.setToDefaults();
+            metrics.widthPixels = mWindow.getWidth();
+            metrics.heightPixels = mWindow.getHeight();
+            metrics.xdpi = 25.4f * mode.getWidth() / physw[0];
+            metrics.ydpi = 25.4f * mode.getHeight() / physh[0];
+            LOGGER.info(MARKER, "Primary monitor physical size: {}x{} mm, xScale: {}, yScale: {}",
+                    physw[0], physh[0], xscale[0], yscale[0]);
+            int density = Math.round(metrics.xdpi * xscale[0] / 12) * 12;
+            metrics.density = density * DisplayMetrics.DENSITY_DEFAULT_SCALE;
+            metrics.densityDpi = density;
+            metrics.scaledDensity = metrics.density;
+            LOGGER.info(MARKER, "Display metrics: {}", metrics);
+            mResources.updateMetrics(metrics);
         }
 
         loadDefaultTypeface();
@@ -239,13 +251,13 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
 
         mRoot = new ViewRootImpl();
 
-        mDecor = new CoordinatorLayout();
+        mDecor = new CoordinatorLayout(this);
         mDecor.setClickable(true);
         mDecor.setFocusableInTouchMode(true);
         mDecor.setWillNotDraw(true);
         mDecor.setId(R.id.content);
 
-        mFragmentContainerView = new FragmentContainerView();
+        mFragmentContainerView = new FragmentContainerView(this);
         mFragmentContainerView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT));
         mFragmentContainerView.setWillNotDraw(true);
@@ -340,6 +352,18 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
     @Override
     public Lifecycle getLifecycle() {
         return mLifecycleRegistry;
+    }
+
+    @Override
+    public Resources getResources() {
+        return mResources;
+    }
+
+    public ToastManager getToastManager() {
+        if (mToastManager == null) {
+            mToastManager = new ToastManager(this);
+        }
+        return mToastManager;
     }
 
     /**
@@ -538,7 +562,7 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
             }
 
             if (mContextMenu == null) {
-                mContextMenu = new ContextMenuBuilder();
+                mContextMenu = new ContextMenuBuilder(ModernUI.this);
                 //mContextMenu.setCallback(callback);
             } else {
                 mContextMenu.clearAll();
@@ -547,9 +571,9 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
             final MenuHelper helper;
             final boolean isPopup = !Float.isNaN(x) && !Float.isNaN(y);
             if (isPopup) {
-                helper = mContextMenu.showPopup(originalView, x, y);
+                helper = mContextMenu.showPopup(ModernUI.this, originalView, x, y);
             } else {
-                helper = mContextMenu.showPopup(originalView, 0, 0);
+                helper = mContextMenu.showPopup(ModernUI.this, originalView, 0, 0);
             }
 
             if (helper != null) {
@@ -566,7 +590,7 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
             ViewModelStoreOwner,
             OnBackPressedDispatcherOwner {
         HostCallbacks() {
-            super(new Handler(Looper.myLooper()));
+            super(ModernUI.this, new Handler(Looper.myLooper()));
             assert Core.isOnUiThread();
         }
 

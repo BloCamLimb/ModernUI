@@ -18,6 +18,8 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.core.Context;
+
 /**
  * <p>
  * A checkbox is a specific type of two-states button that can be either
@@ -29,6 +31,7 @@ package icyllis.modernui.widget;
  */
 public class CheckBox extends CompoundButton {
 
-    public CheckBox() {
+    public CheckBox(Context context) {
+        super(context);
     }
 }

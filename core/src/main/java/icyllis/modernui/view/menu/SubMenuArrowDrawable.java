@@ -19,10 +19,11 @@
 package icyllis.modernui.view.menu;
 
 import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.material.MaterialDrawable;
 import icyllis.modernui.util.LayoutDirection;
-import icyllis.modernui.view.View;
+import icyllis.modernui.util.TypedValue;
 
 import javax.annotation.Nonnull;
 import java.nio.FloatBuffer;
@@ -32,8 +33,9 @@ public class SubMenuArrowDrawable extends MaterialDrawable {
     private final int mSize;
     private final FloatBuffer mPoints;
 
-    public SubMenuArrowDrawable() {
-        mSize = View.dp(24);
+    public SubMenuArrowDrawable(Context context) {
+        mSize = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DP,
+                24, context.getResources().getDisplayMetrics());
         mPoints = FloatBuffer.allocate(6);
     }
 

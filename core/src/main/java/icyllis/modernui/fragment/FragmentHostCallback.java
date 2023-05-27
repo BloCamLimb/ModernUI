@@ -18,11 +18,12 @@
 
 package icyllis.modernui.fragment;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.core.Context;
 import icyllis.modernui.core.Handler;
 import icyllis.modernui.view.View;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
 
@@ -50,12 +51,15 @@ import java.io.PrintWriter;
  */
 public abstract class FragmentHostCallback<E> implements FragmentContainer {
 
-    @Nonnull
+    @NonNull
+    final Context mContext;
+    @NonNull
     final Handler mHandler;
-    @Nonnull
+    @NonNull
     final FragmentManager mFragmentManager = new FragmentManager();
 
-    public FragmentHostCallback(@Nonnull Handler handler) {
+    public FragmentHostCallback(@NonNull Context context, @NonNull Handler handler) {
+        mContext = context;
         mHandler = handler;
     }
 
@@ -68,8 +72,8 @@ public abstract class FragmentHostCallback<E> implements FragmentContainer {
      *               for you after you return.
      * @param args   additional arguments to the dump request.
      */
-    public void onDump(@Nonnull String prefix, @Nullable FileDescriptor fd,
-                       @Nonnull PrintWriter writer, @Nullable String... args) {
+    public void onDump(@NonNull String prefix, @Nullable FileDescriptor fd,
+                       @NonNull PrintWriter writer, @Nullable String... args) {
     }
 
     /**

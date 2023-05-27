@@ -1471,7 +1471,7 @@ public final class GLCaps extends Caps {
                 ", mSkipErrorChecks=" + mSkipErrorChecks +
                 ", mMaxLabelLength=" + mMaxLabelLength +
                 ", mDebugSupport=" + mDebugSupport +
-                ", mModernOpenGL=" + mDSASupport +
+                ", mDSASupport=" + mDSASupport +
                 ", mFormatTable=" + Arrays.toString(mFormatTable) +
                 ", mColorTypeToBackendFormat=" + Arrays.toString(mColorTypeToBackendFormat) +
                 ", mCompressionTypeToBackendFormat=" + Arrays.toString(mCompressionTypeToBackendFormat) +

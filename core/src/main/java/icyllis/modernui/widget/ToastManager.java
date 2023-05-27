@@ -19,11 +19,10 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.core.Context;
 import icyllis.modernui.core.Core;
-import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.Paint;
+import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.ViewGroup;
@@ -35,13 +34,9 @@ import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 import java.util.ArrayDeque;
 
-import static icyllis.modernui.view.View.dp;
-
 public final class ToastManager {
 
     static final Marker MARKER = MarkerManager.getMarker("Toast");
-
-    static final ToastManager sInstance = new ToastManager();
 
     private static final int MAX_TOASTS = 5;
 
@@ -55,11 +50,12 @@ public final class ToastManager {
 
     private final Runnable mDurationReached = this::onDurationReached;
 
-    private final TextView mTextView = new TextView();
+    private final TextView mTextView;
     private final FrameLayout.LayoutParams mParams;
     private final Background mBackground = new Background();
 
-    private ToastManager() {
+    public ToastManager(Context context) {
+        mTextView = new TextView(context);
         mParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT);
         mParams.gravity = Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM;
@@ -87,10 +83,10 @@ public final class ToastManager {
 
         mTextView.setText(r.mText);
         mTextView.setTextSize(14);
-        mTextView.setMaxWidth(dp(300));
-        mTextView.setPadding(dp(16), dp(12), dp(16), dp(12));
-        mParams.setMargins(dp(16), 0, dp(16), dp(64));
-        mBackground.mRadius = dp(28);
+        mTextView.setMaxWidth(mTextView.dp(300));
+        mTextView.setPadding(mTextView.dp(16), mTextView.dp(12), mTextView.dp(16), mTextView.dp(12));
+        mParams.setMargins(mTextView.dp(16), 0, mTextView.dp(16), mTextView.dp(64));
+        mBackground.mRadius = mTextView.dp(28);
         ModernUI.getInstance().getViewManager().addView(mTextView, mParams);
 
         int delay = r.getDuration() == Toast.LENGTH_LONG ? LONG_DELAY : SHORT_DELAY;

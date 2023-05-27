@@ -18,6 +18,7 @@
 
 package icyllis.modernui.fragment;
 
+import icyllis.modernui.core.Context;
 import icyllis.modernui.widget.FrameLayout;
 
 public final class FragmentContainerView extends FrameLayout {
@@ -25,6 +26,10 @@ public final class FragmentContainerView extends FrameLayout {
     // Used to indicate whether the FragmentContainerView should override the default ViewGroup
     // drawing order.
     private boolean mDrawDisappearingViewsFirst = true;
+
+    public FragmentContainerView(Context context) {
+        super(context);
+    }
 
     // Used to indicate the container should change the default drawing order.
     void setDrawDisappearingViewsLast(boolean drawDisappearingViewsFirst) {

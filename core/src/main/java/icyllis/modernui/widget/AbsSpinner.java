@@ -18,6 +18,7 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.util.DataSetObserver;
 import icyllis.modernui.util.SparseArray;
@@ -54,7 +55,8 @@ public abstract class AbsSpinner extends AdapterView<SpinnerAdapter> {
      */
     private Rect mTouchFrame;
 
-    AbsSpinner() {
+    AbsSpinner(Context context) {
+        super(context);
         setFocusable(true);
         setWillNotDraw(true);
     }

@@ -18,6 +18,7 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.core.Context;
 import icyllis.modernui.view.MotionEvent;
 import icyllis.modernui.view.PointerIcon;
 
@@ -38,7 +39,8 @@ import javax.annotation.Nonnull;
  */
 public class ImageButton extends ImageView {
 
-    public ImageButton() {
+    public ImageButton(Context context) {
+        super(context);
         setFocusable(true);
         setClickable(true);
     }

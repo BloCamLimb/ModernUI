@@ -18,6 +18,7 @@
 
 package icyllis.modernui.view.menu;
 
+import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.view.Menu;
 import icyllis.modernui.view.MenuItem;
@@ -35,7 +36,8 @@ public class SubMenuBuilder extends MenuBuilder implements SubMenu {
     private final MenuBuilder mParentMenu;
     private final MenuItemImpl mItem;
 
-    public SubMenuBuilder(MenuBuilder parentMenu, MenuItemImpl item) {
+    public SubMenuBuilder(Context context, MenuBuilder parentMenu, MenuItemImpl item) {
+        super(context);
         mParentMenu = parentMenu;
         mItem = item;
     }

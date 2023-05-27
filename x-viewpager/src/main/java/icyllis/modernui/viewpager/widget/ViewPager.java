@@ -20,6 +20,7 @@ package icyllis.modernui.viewpager.widget;
 
 import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.annotation.*;
+import icyllis.modernui.core.Context;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Rect;
@@ -271,16 +272,17 @@ public class ViewPager extends ViewGroup {
     public @interface DecorView {
     }
 
-    public ViewPager() {
-        initViewPager();
+    public ViewPager(Context context) {
+        super(context);
+        initViewPager(context);
     }
 
-    void initViewPager() {
+    void initViewPager(Context context) {
         setWillNotDraw(false);
         setDescendantFocusability(FOCUS_AFTER_DESCENDANTS);
         setFocusable(true);
         mScroller = new OverScroller(TimeInterpolator.DECELERATE_QUINTIC);
-        final ViewConfiguration configuration = ViewConfiguration.get();
+        final ViewConfiguration configuration = ViewConfiguration.get(context);
         final float density = 1;
 
         mTouchSlop = ViewConfiguration.TOUCH_SLOP * 2;

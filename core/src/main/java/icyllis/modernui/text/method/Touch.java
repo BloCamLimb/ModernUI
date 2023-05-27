@@ -119,7 +119,7 @@ public class Touch {
                 ds = buffer.getSpans(0, buffer.length(), DragState.class);
                 if (!ds.isEmpty()) {
                     if (!ds.get(0).mFarEnough) {
-                        int slop = ViewConfiguration.get().getScaledTouchSlop();
+                        int slop = ViewConfiguration.get(widget.getContext()).getScaledTouchSlop();
 
                         if (Math.abs(event.getX() - ds.get(0).mX) >= slop ||
                                 Math.abs(event.getY() - ds.get(0).mY) >= slop) {
