@@ -18,15 +18,15 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.core.Context;
 import icyllis.modernui.core.Core;
-import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.Rect;
+import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.util.DataSetObserver;
 import icyllis.modernui.view.*;
 import icyllis.modernui.view.menu.ShowableListMenu;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * A ListPopupWindow anchors itself to a host view and displays a
@@ -65,6 +65,7 @@ public class ListPopupWindow implements ShowableListMenu {
      */
     public static final int POSITION_PROMPT_BELOW = 1;
 
+    private Context mContext;
     private ListAdapter mAdapter;
     private DropDownListView mDropDownList;
 
@@ -110,7 +111,8 @@ public class ListPopupWindow implements ShowableListMenu {
 
     PopupWindow mPopup;
 
-    public ListPopupWindow() {
+    public ListPopupWindow(@NonNull Context context) {
+        mContext = context;
         mPopup = new PopupWindow();
     }
 
@@ -671,9 +673,9 @@ public class ListPopupWindow implements ShowableListMenu {
         return mDropDownList;
     }
 
-    @Nonnull
-    DropDownListView createDropDownListView(boolean hijackFocus) {
-        return new DropDownListView(hijackFocus);
+    @NonNull
+    DropDownListView createDropDownListView(Context context, boolean hijackFocus) {
+        return new DropDownListView(context, hijackFocus);
     }
 
     /**
@@ -701,7 +703,7 @@ public class ListPopupWindow implements ShowableListMenu {
                 }
             };
 
-            mDropDownList = createDropDownListView(!mModal);
+            mDropDownList = createDropDownListView(mContext, !mModal);
             if (mDropDownListHighlight != null) {
                 mDropDownList.setSelector(mDropDownListHighlight);
             }
@@ -737,7 +739,7 @@ public class ListPopupWindow implements ShowableListMenu {
             if (hintView != null) {
                 // if a hint has been specified, we accomodate more space for it and
                 // add a text view in the drop down menu, at the bottom of the list
-                LinearLayout hintContainer = new LinearLayout();
+                LinearLayout hintContainer = new LinearLayout(mContext);
                 hintContainer.setOrientation(LinearLayout.VERTICAL);
 
                 LinearLayout.LayoutParams hintParams = new LinearLayout.LayoutParams(

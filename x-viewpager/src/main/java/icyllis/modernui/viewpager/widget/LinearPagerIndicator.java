@@ -21,6 +21,7 @@ package icyllis.modernui.viewpager.widget;
 import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.util.DataSetObserver;
 import icyllis.modernui.view.View;
@@ -73,7 +74,8 @@ public class LinearPagerIndicator extends View {
 
     private final PageListener mPageListener = new PageListener();
 
-    public LinearPagerIndicator() {
+    public LinearPagerIndicator(Context context) {
+        super(context);
     }
 
     public void setLineWidth(float lineWidth) {

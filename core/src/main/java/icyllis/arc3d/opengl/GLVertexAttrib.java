@@ -29,27 +29,28 @@ import static icyllis.arc3d.opengl.GLCore.*;
  *
  * @see GeometryProcessor.Attribute
  */
+@Deprecated
 public class GLVertexAttrib {
 
     private final int mBinding;
-    private final Src mSrc;
-    private final Dst mDst;
+    private final SrcType mSrcType;
+    private final DstType mDstType;
     private final boolean mNormalized;
 
     /**
      * Creates a new VertexAttrib to define an immutable vertex attribute.
      *
      * @param binding    vertex buffer binding index
-     * @param src        source data type
-     * @param dst        destination data type
+     * @param srcType    source data type
+     * @param dstType    destination data type
      * @param normalized If normalized, then integer data is normalized to the
      *                   range [-1, 1] or [0, 1] if it is signed or unsigned, respectively.
      *                   If not, then integer data is directly converted to floating point.
      */
-    public GLVertexAttrib(int binding, @Nonnull Src src, @Nonnull Dst dst, boolean normalized) {
+    public GLVertexAttrib(int binding, @Nonnull SrcType srcType, @Nonnull DstType dstType, boolean normalized) {
         mBinding = binding;
-        mSrc = src;
-        mDst = dst;
+        mSrcType = srcType;
+        mDstType = dstType;
         mNormalized = normalized;
     }
 
@@ -68,7 +69,7 @@ public class GLVertexAttrib {
      * @return location count
      */
     public int getLocationSize() {
-        return mDst.mLocationSize;
+        return mDstType.mLocationSize;
     }
 
     /**
@@ -81,7 +82,7 @@ public class GLVertexAttrib {
     public int setFormat(int array, int location, int offset) {
         for (int i = 0; i < getLocationSize(); i++) {
             glEnableVertexArrayAttrib(array, location);
-            glVertexArrayAttribFormat(array, location, mDst.mSize, mSrc.mType, mNormalized, offset);
+            glVertexArrayAttribFormat(array, location, mDstType.mSize, mSrcType.mType, mNormalized, offset);
             glVertexArrayAttribBinding(array, location, mBinding);
             location++;
             offset += getStep();
@@ -93,7 +94,7 @@ public class GLVertexAttrib {
      * @return the size of the source data in bytes
      */
     public int getStep() {
-        return mSrc.mSize * mDst.mSize;
+        return mSrcType.mSize * mDstType.mSize;
     }
 
     /**
@@ -112,15 +113,15 @@ public class GLVertexAttrib {
 
         if (mBinding != that.mBinding) return false;
         if (mNormalized != that.mNormalized) return false;
-        if (mSrc != that.mSrc) return false;
-        return mDst == that.mDst;
+        if (mSrcType != that.mSrcType) return false;
+        return mDstType == that.mDstType;
     }
 
     @Override
     public int hashCode() {
         int result = mBinding;
-        result = 31 * result + mSrc.hashCode();
-        result = 31 * result + mDst.hashCode();
+        result = 31 * result + mSrcType.hashCode();
+        result = 31 * result + mDstType.hashCode();
         result = 31 * result + (mNormalized ? 1 : 0);
         return result;
     }
@@ -128,7 +129,7 @@ public class GLVertexAttrib {
     /**
      * Describes the data type in Vertex Buffer
      */
-    public enum Src {
+    public enum SrcType {
         FLOAT(4, GL_FLOAT),
         BYTE(1, GL_BYTE),
         UBYTE(1, GL_UNSIGNED_BYTE),
@@ -142,7 +143,7 @@ public class GLVertexAttrib {
         private final int mSize;
         private final int mType;
 
-        Src(int size, int type) {
+        SrcType(int size, int type) {
             mSize = size;
             mType = type;
         }
@@ -151,7 +152,7 @@ public class GLVertexAttrib {
     /**
      * Describes the data type in Vertex Shader
      */
-    public enum Dst {
+    public enum DstType {
         FLOAT(1, 1),
         VEC2(2, 1),
         VEC3(3, 1),
@@ -164,7 +165,7 @@ public class GLVertexAttrib {
         private final int mSize;
         private final int mLocationSize;
 
-        Dst(int size, int locationSize) {
+        DstType(int size, int locationSize) {
             mSize = size;
             mLocationSize = locationSize;
         }

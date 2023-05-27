@@ -32,7 +32,7 @@ import javax.annotation.Nullable;
 @SuppressWarnings("unused")
 public interface FragmentLifecycleCallbacks {
     /**
-     * Called right before the fragment's {@link Fragment#onAttach()} method is called.
+     * Called right before the fragment's {@link Fragment#onAttach(icyllis.modernui.core.Context)} method is called.
      * This is a good time to inject any required dependencies or perform other configuration
      * for the fragment before any of the fragment's lifecycle methods are invoked.
      *
@@ -80,7 +80,7 @@ public interface FragmentLifecycleCallbacks {
 
     /**
      * Called after the fragment has returned a non-null view from the FragmentManager's
-     * request to {@link Fragment#onCreateView(ViewGroup, DataSet)}.
+     * request to {@link Fragment#onCreateView(icyllis.modernui.view.LayoutInflater, ViewGroup, DataSet)}.
      *
      * @param fm                 Host FragmentManager
      * @param f                  Fragment that created and owns the view

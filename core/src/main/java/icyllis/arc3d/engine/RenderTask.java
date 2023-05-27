@@ -39,15 +39,18 @@ public abstract class RenderTask extends RefCnt {
     /**
      * Generates a unique ID from the task pool. 0 is reserved.
      */
+    //@formatter:off
     private static int createUniqueID() {
+        // same as AtomicInteger.updateAndGet
         for (;;) {
             final int value = sNextID.get();
-            final int newValue = value == -1 ? 1 : value + 1; // 0 is reserved
+            final int newValue = value == ~0 ? 1 : value + 1; // 0 is reserved
             if (sNextID.weakCompareAndSetVolatile(value, newValue)) {
                 return value;
             }
         }
     }
+    //@formatter:on
 
     /**
      * Indicates "resolutions" that need to be done on a surface before its pixels can be accessed.

@@ -18,8 +18,8 @@
 
 package icyllis.arc3d.opengl;
 
-import icyllis.arc3d.engine.ThreadSafePipelineBuilder;
 import icyllis.arc3d.engine.ShaderErrorHandler;
+import icyllis.arc3d.engine.ThreadSafePipelineBuilder;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.core.Core;
@@ -29,7 +29,8 @@ import icyllis.modernui.graphics.ImageInfo;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.opengl.*;
-import org.lwjgl.system.*;
+import org.lwjgl.system.APIUtil;
+import org.lwjgl.system.NativeType;
 import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
 import java.util.*;
@@ -41,8 +42,7 @@ import static org.lwjgl.opengl.EXTTextureCompressionS3TC.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 /**
- * For managing OpenGL-related things on the render thread, based on
- * OpenGL 4.5 core profile, all methods are at low-level.
+ * The OpenGL interface, based on OpenGL 4.5 core profile.
  */
 @SuppressWarnings("unused")
 public final class GLCore extends GL45C {
@@ -115,32 +115,33 @@ public final class GLCore extends GL45C {
         GLCapabilities caps = GL.getCapabilities();
 
         if (glGetPointer(GL_DEBUG_CALLBACK_FUNCTION) == NULL) {
-            if (caps.OpenGL43) {
-                LOGGER.debug(MARKER, "Using OpenGL 4.3 for error logging");
-                GLDebugMessageCallback proc = GLDebugMessageCallback.create(GLCore::onDebugMessage);
-                glDebugMessageCallback(proc, NULL);
-                glEnable(GL_DEBUG_OUTPUT);
-            } else if (caps.GL_KHR_debug) {
-                LOGGER.debug(MARKER, "Using KHR_debug for error logging");
-                GLDebugMessageCallback proc = GLDebugMessageCallback.create(GLCore::onDebugMessage);
-                KHRDebug.glDebugMessageCallback(proc, NULL);
+            if (caps.OpenGL43 || caps.GL_KHR_debug) {
+                LOGGER.debug(MARKER, "Using OpenGL 4.3 for debug logging");
+                glDebugMessageCallback(GLCore::onDebugMessage, NULL);
                 glEnable(GL_DEBUG_OUTPUT);
             } else if (caps.GL_ARB_debug_output) {
-                LOGGER.debug(MARKER, "Using ARB_debug_output for error logging");
-                GLDebugMessageARBCallback proc = GLDebugMessageARBCallback.create((source, type, id, severity, length
-                        , message, userParam) ->
-                        LOGGER.info(MARKER, "0x{}[{},{},{}]: {}",
-                                Integer.toHexString(id), getSourceARB(source), getTypeARB(type),
-                                getSeverityARB(severity),
-                                GLDebugMessageARBCallback.getMessage(length, message)));
+                LOGGER.debug(MARKER, "Using ARB_debug_output for debug logging");
+                GLDebugMessageARBCallback proc = new GLDebugMessageARBCallback() {
+                    @Override
+                    public void invoke(int source, int type, int id, int severity, int length, long message,
+                                       long userParam) {
+                        LOGGER.info(MARKER, "0x{}[{},{},{}]: {}", Integer.toHexString(id),
+                                getSourceARB(source), getTypeARB(type), getSeverityARB(severity),
+                                GLDebugMessageARBCallback.getMessage(length, message));
+                    }
+                };
                 glDebugMessageCallbackARB(proc, NULL);
             } else if (caps.GL_AMD_debug_output) {
-                LOGGER.debug(MARKER, "Using AMD_debug_output for error logging");
-                GLDebugMessageAMDCallback proc = GLDebugMessageAMDCallback.create((id, category, severity, length,
-                                                                                   message, userParam) ->
-                        LOGGER.info(MARKER, "0x{}[{},{}]: {}",
-                                Integer.toHexString(id), getCategoryAMD(category), getSeverityAMD(severity),
-                                GLDebugMessageAMDCallback.getMessage(length, message)));
+                LOGGER.debug(MARKER, "Using AMD_debug_output for debug logging");
+                GLDebugMessageAMDCallback proc = new GLDebugMessageAMDCallback() {
+                    @Override
+                    public void invoke(int id, int category, int severity, int length, long message,
+                                       long userParam) {
+                        LOGGER.info(MARKER, "0x{}[{},{}]: {}", Integer.toHexString(id),
+                                getCategoryAMD(category), getSeverityAMD(severity),
+                                GLDebugMessageAMDCallback.getMessage(length, message));
+                    }
+                };
                 glDebugMessageCallbackAMD(proc, NULL);
             } else {
                 LOGGER.debug(MARKER, "No debug callback function was used...");
@@ -151,7 +152,7 @@ public final class GLCore extends GL45C {
     }
 
     @RenderThread
-    public static void initialize(@NonNull GLCapabilities caps) {
+    private static void initialize(@NonNull GLCapabilities caps) {
         Core.checkRenderThread();
         if (sInitialized) {
             return;
@@ -263,9 +264,9 @@ public final class GLCore extends GL45C {
         }
     }
 
-    public static List<String> getUnsupportedList() {
+    /*public static List<String> getUnsupportedList() {
         return sUnsupportedList;
-    }
+    }*/
 
     /**
      * Show a dialog that lists unsupported extensions after initialized.
@@ -273,28 +274,19 @@ public final class GLCore extends GL45C {
     @RenderThread
     public static void showCapsErrorDialog() {
         Core.checkRenderThread();
-        if (!sInitialized || sUnsupportedList.isEmpty()) {
+        if (GLCaps.MISSING_EXTENSIONS.isEmpty()) {
             return;
         }
         final String glRenderer = glGetString(GL_RENDERER);
         final String glVersion = glGetString(GL_VERSION);
         new Thread(() -> {
-            String solution;
-            if (Platform.get() == Platform.MACOSX) {
-                solution = "For macOS, click OK for help, click Cancel to ignore this error.";
-            } else {
-                solution = "For Windows and Linux, first update your GPU drivers. " +
-                        "If you have integrated GPU, run Java applications with dedicated GPU. " +
-                        "Otherwise, click OK for help, click Cancel to ignore this error.";
-            }
-            String extensions = String.join("\n", sUnsupportedList);
-            boolean ok = TinyFileDialogs.tinyfd_messageBox("Failed to launch Modern UI",
+            String solution = "Try to update your GPU drivers. " +
+                    "If you have multiple GPUs, ensure Java applications run with the dedicated GPU.";
+            String extensions = String.join("\n", GLCaps.MISSING_EXTENSIONS);
+            TinyFileDialogs.tinyfd_messageBox("Failed to launch Modern UI",
                     "GPU: " + glRenderer + ", OpenGL: " + glVersion + ". " +
                             "The following ARB extensions are required:\n" + extensions + "\n" + solution,
-                    "okcancel", "error", true);
-            if (ok) {
-                Core.openURI("https://github.com/BloCamLimb/ModernUI/wiki/OpenGL-4.5-support");
-            }
+                    "ok", "error", true);
         }, "GL-Error-Dialog").start();
     }
 

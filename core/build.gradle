@@ -23,8 +23,6 @@ dependencies {
     implementation "org.apache.logging.log4j:log4j-core:${log4j_version}"
     implementation "org.apache.logging.log4j:log4j-api:${log4j_version}"
 
-    //implementation "icyllis.arcticgi:ArcticGI:${arc_version}"
-
     def lwjglNatives
     switch (OperatingSystem.current()) {
         case OperatingSystem.WINDOWS:

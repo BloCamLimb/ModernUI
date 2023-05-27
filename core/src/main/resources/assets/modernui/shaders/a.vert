@@ -401,3 +401,80 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 
     fragColor = vec4(col,1.0);
 }
+
+// what is this
+vec2 rotate2D(vec2 p, float a)
+{
+    float s=sin(a),c=cos(a);
+    return mat2(c,s,-s,c)*p;
+}
+
+void mainImage( out vec4 fragColor, in vec2 fragCoord )
+{
+    vec2 uv = fragCoord/iResolution.xy;
+    vec2 pos = 2.0 * uv - 1.0;
+    pos.y /= iResolution.x/iResolution.y;
+
+    pos=rotate2D(pos,iTime);
+
+    vec3 col;
+    for (int j=0;j<20;j++) {
+        float t = -iTime*2.0-float(j)/20.0*6.2831852;
+        float s = sin(t);
+        float c = cos(t);
+
+        vec2 dir = vec2(s,c)*(0.4+0.03*sin(6.0*atan(pos.y,pos.x)));
+
+        float dist = distance(pos,dir);
+        dist = pow(0.1/max(dist,0.0001),1.3);
+        vec3 co = 0.5 + 0.3*cos(iTime+pos.xyx+vec3(0,2,4));
+        col += co * dist;
+    }
+    col = 1.0 - exp(-col*0.2);
+
+    fragColor = vec4(col,1.0);
+}
+
+vec3 rgb2hsv(vec3 c)
+{
+    const vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+    vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+    vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+
+    float d = q.x - min(q.w, q.y);
+    float e = 1.0e-10;
+    return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+}
+
+vec3 hsv2rgb(vec3 c)
+{
+    vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+    vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+    return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+}
+
+// glowing helix
+
+const float DOTS = 30.0;
+const vec3 COLOR = vec3(0.3, 0.6, 1.0);
+
+void mainImage(out vec4 fragColor, in vec2 fragCoord)
+{
+    vec2 p = (fragCoord.xy * 2.0 - iResolution.xy) / min(iResolution.x, iResolution.y);
+
+    float f = 0.0;
+
+    for(float i = 1.0; i <= DOTS; i++)
+    {
+        float t=i/3.0,
+        r=sqrt(t)/8.0,
+        s=sin(t),
+        c=cos(t);
+        f += 0.01 / abs(distance(p*0.5,vec2(s,c)*r));
+    }
+
+    vec3 col = COLOR*f;
+    col = 1.0 - exp(-col);
+
+    fragColor = vec4(col, 1.0);
+}

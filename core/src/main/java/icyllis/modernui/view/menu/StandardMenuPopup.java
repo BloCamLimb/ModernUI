@@ -18,22 +18,25 @@
 
 package icyllis.modernui.view.menu;
 
+import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.transition.AutoTransition;
+import icyllis.modernui.util.TypedValue;
 import icyllis.modernui.view.*;
 import icyllis.modernui.widget.*;
 
 import javax.annotation.Nonnull;
 
-import static icyllis.modernui.view.View.dp;
 import static icyllis.modernui.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static icyllis.modernui.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 
 public class StandardMenuPopup extends MenuPopup implements PopupWindow.OnDismissListener,
         AdapterView.OnItemClickListener, MenuPresenter, View.OnKeyListener {
+
+    private final Context mContext;
 
     private final MenuBuilder mMenu;
     private final MenuAdapter mAdapter;
@@ -104,18 +107,21 @@ public class StandardMenuPopup extends MenuPopup implements PopupWindow.OnDismis
 
     private boolean mShowTitle;
 
-    public StandardMenuPopup(@Nonnull MenuBuilder menu, @Nonnull View anchorView, boolean overflowOnly) {
+    public StandardMenuPopup(Context context, @Nonnull MenuBuilder menu,
+                             @Nonnull View anchorView, boolean overflowOnly) {
+        mContext = context;
         mMenu = menu;
         mOverflowOnly = overflowOnly;
-        mAdapter = new MenuAdapter(menu, mOverflowOnly);
+        mAdapter = new MenuAdapter(context, menu, mOverflowOnly);
 
         mPopupMaxWidth = anchorView.getRootView().getMeasuredWidth() / 2;
 
         mAnchorView = anchorView;
 
-        mPopup = new MenuPopupWindow();
+        mPopup = new MenuPopupWindow(context);
         mPopup.setBackgroundDrawable(new Drawable() {
-            private final int mRadius = dp(8);
+            private final float mRadius = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DP,
+                    8, context.getResources().getDisplayMetrics());
 
             @Override
             public void draw(@Nonnull Canvas canvas) {
@@ -178,7 +184,7 @@ public class StandardMenuPopup extends MenuPopup implements PopupWindow.OnDismis
         mPopup.setDropDownGravity(mDropDownGravity);
 
         if (!mHasContentWidth) {
-            mContentWidth = measureIndividualMenuWidth(mAdapter, null, mPopupMaxWidth);
+            mContentWidth = measureIndividualMenuWidth(mAdapter, null, mContext, mPopupMaxWidth);
             mHasContentWidth = true;
         }
 
@@ -191,12 +197,12 @@ public class StandardMenuPopup extends MenuPopup implements PopupWindow.OnDismis
         listView.setOnKeyListener(this);
 
         if (mShowTitle && mMenu.getHeaderTitle() != null) {
-            FrameLayout titleItemView = new FrameLayout();
-            titleItemView.setMinimumWidth(dp(196));
-            titleItemView.setPadding(dp(16), 0, dp(16), 0);
-            titleItemView.setLayoutParams(new ViewGroup.LayoutParams(MATCH_PARENT, dp(48)));
+            FrameLayout titleItemView = new FrameLayout(mContext);
+            titleItemView.setMinimumWidth(titleItemView.dp(196));
+            titleItemView.setPadding(titleItemView.dp(16), 0, titleItemView.dp(16), 0);
+            titleItemView.setLayoutParams(new ViewGroup.LayoutParams(MATCH_PARENT, titleItemView.dp(48)));
 
-            TextView titleView = new TextView();
+            TextView titleView = new TextView(mContext);
             titleView.setText(mMenu.getHeaderTitle());
             titleView.setGravity(Gravity.CENTER_VERTICAL);
             titleView.setSingleLine();
@@ -270,7 +276,7 @@ public class StandardMenuPopup extends MenuPopup implements PopupWindow.OnDismis
     @Override
     public boolean onSubMenuSelected(@Nonnull SubMenuBuilder subMenu) {
         if (subMenu.hasVisibleItems()) {
-            final MenuPopupHelper subPopup = new MenuPopupHelper(subMenu,
+            final MenuPopupHelper subPopup = new MenuPopupHelper(mContext, subMenu,
                     mShownAnchorView, mOverflowOnly);
             subPopup.setPresenterCallback(mPresenterCallback);
             subPopup.setForceShowIcon(MenuPopup.shouldPreserveIconSpacing(subMenu));

@@ -18,6 +18,7 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.core.Context;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.MotionEvent;
 import icyllis.modernui.view.PointerIcon;
@@ -56,7 +57,8 @@ import javax.annotation.Nonnull;
  */
 public class Button extends TextView {
 
-    public Button() {
+    public Button(Context context) {
+        super(context);
         setFocusable(true);
         setClickable(true);
         setGravity(Gravity.CENTER);

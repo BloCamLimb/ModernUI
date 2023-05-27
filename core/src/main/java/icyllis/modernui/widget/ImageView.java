@@ -18,6 +18,7 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.drawable.Drawable;
@@ -73,7 +74,8 @@ public class ImageView extends View {
     private int mBaseline = -1;
     private boolean mBaselineAlignBottom = false;
 
-    public ImageView() {
+    public ImageView(Context context) {
+        super(context);
     }
 
     @Override

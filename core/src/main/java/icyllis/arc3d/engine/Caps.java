@@ -103,7 +103,7 @@ public abstract class Caps {
     /**
      * Anisotropic filtering (AF).
      */
-    public final boolean anisotropySupport() {
+    public final boolean hasAnisotropySupport() {
         return mAnisotropySupport;
     }
 

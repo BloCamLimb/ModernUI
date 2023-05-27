@@ -18,6 +18,7 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.core.Context;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.util.DataSetObserver;
 import icyllis.modernui.view.ContextMenu;
@@ -215,7 +216,8 @@ public abstract class AdapterView<T extends Adapter> extends ViewGroup {
      */
     boolean mBlockLayoutRequests = false;
 
-    public AdapterView() {
+    public AdapterView(Context context) {
+        super(context);
         mDesiredFocusableState = getFocusable();
         if (mDesiredFocusableState == FOCUSABLE_AUTO) {
             // Starts off without an adapter, so NOT_FOCUSABLE by default.

@@ -36,14 +36,16 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @ParametersAreNonnullByDefault
 public class ArrowKeyMovementMethod extends BaseMovementMethod {
 
-    private static final ArrowKeyMovementMethod sInstance = new ArrowKeyMovementMethod();
+    private static ArrowKeyMovementMethod sInstance;
 
     private static final Object LAST_TAP_DOWN = new Object();
 
-    private ArrowKeyMovementMethod() {
+    public ArrowKeyMovementMethod() {
     }
 
     public static MovementMethod getInstance() {
+        if (sInstance == null)
+            sInstance = new ArrowKeyMovementMethod();
         return sInstance;
     }
 

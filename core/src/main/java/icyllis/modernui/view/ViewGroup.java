@@ -20,6 +20,7 @@ package icyllis.modernui.view;
 
 import icyllis.modernui.animation.LayoutTransition;
 import icyllis.modernui.annotation.*;
+import icyllis.modernui.core.Context;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.util.Pools;
@@ -208,7 +209,8 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     private IntArrayList mTransientIndices = null;
     private List<View> mTransientViews = null;
 
-    public ViewGroup() {
+    public ViewGroup(Context context) {
+        super(context);
         mGroupFlags |= FLAG_CLIP_CHILDREN;
         setDescendantFocusability(FOCUS_BEFORE_DESCENDANTS);
         mChildren = new View[ARRAY_CAPACITY_INCREMENT];
@@ -217,6 +219,15 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
 
     @Override
     protected void dispatchDraw(@NonNull Canvas canvas) {
+        int clipSaveCount = 0;
+        final boolean clipToPadding = (mGroupFlags & CLIP_TO_PADDING_MASK) == CLIP_TO_PADDING_MASK;
+        if (clipToPadding) {
+            clipSaveCount = canvas.save();
+            canvas.clipRect(mScrollX + mPaddingLeft, mScrollY + mPaddingTop,
+                    mScrollX + mRight - mLeft - mPaddingRight,
+                    mScrollY + mBottom - mTop - mPaddingBottom);
+        }
+
         final int childrenCount = mChildrenCount;
         final View[] children = mChildren;
 
@@ -266,6 +277,10 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
                 final View child = disappearingChildren.get(i);
                 drawChild(canvas, child, 0);
             }
+        }
+
+        if (clipToPadding) {
+            canvas.restoreToCount(clipSaveCount);
         }
     }
 

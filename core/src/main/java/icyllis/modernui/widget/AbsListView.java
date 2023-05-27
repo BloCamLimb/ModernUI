@@ -20,6 +20,7 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.animation.TimeInterpolator;
+import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.text.TextWatcher;
@@ -617,7 +618,8 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
         void adjustListItemSelectionBounds(Rect bounds);
     }
 
-    public AbsListView() {
+    public AbsListView(Context context) {
+        super(context);
         mEdgeGlowBottom = new EdgeEffect();
         mEdgeGlowTop = new EdgeEffect();
         // Setting focusable in touch mode will set the focusable property to true
@@ -625,7 +627,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
         setFocusableInTouchMode(true);
         setWillNotDraw(false);
 
-        final ViewConfiguration configuration = ViewConfiguration.get();
+        final ViewConfiguration configuration = ViewConfiguration.get(context);
         mTouchSlop = configuration.getScaledTouchSlop();
         mVerticalScrollFactor = configuration.getScaledVerticalScrollFactor();
         mMinimumVelocity = configuration.getScaledMinimumFlingVelocity();

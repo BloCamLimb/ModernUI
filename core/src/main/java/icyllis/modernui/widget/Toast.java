@@ -18,6 +18,7 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.ModernUI;
 import org.intellij.lang.annotations.MagicConstant;
 
 import javax.annotation.Nonnull;
@@ -91,7 +92,7 @@ public final class Toast {
      * Show the view for the specified duration.
      */
     public void show() {
-        ToastManager.sInstance.enqueueToast(this, mText, mDuration);
+        ModernUI.getInstance().getToastManager().enqueueToast(this, mText, mDuration);
     }
 
     /**
@@ -100,7 +101,7 @@ public final class Toast {
      * after the appropriate duration.
      */
     public void cancel() {
-        ToastManager.sInstance.cancelToast(this);
+        ModernUI.getInstance().getToastManager().cancelToast(this);
     }
 
     /**

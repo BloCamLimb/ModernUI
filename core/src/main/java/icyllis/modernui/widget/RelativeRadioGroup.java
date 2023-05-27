@@ -18,6 +18,7 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.core.Context;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 
@@ -47,7 +48,8 @@ public class RelativeRadioGroup extends RelativeLayout {
     @Nullable
     private OnCheckedChangeListener mOnCheckedChangeListener;
 
-    public RelativeRadioGroup() {
+    public RelativeRadioGroup(Context context) {
+        super(context);
     }
 
     @Override

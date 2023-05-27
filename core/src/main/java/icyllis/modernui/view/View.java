@@ -2210,6 +2210,8 @@ public class View implements Drawable.Callback {
     private float mLongClickX = Float.NaN;
     private float mLongClickY = Float.NaN;
 
+    private Context mContext;
+
     private ScrollCache mScrollCache;
 
     private int[] mDrawableState = null;
@@ -2320,7 +2322,8 @@ public class View implements Drawable.Callback {
     /**
      * Simple constructor to use when creating a view from code.
      */
-    public View() {
+    public View(Context context) {
+        mContext = context;
         mViewFlags = SOUND_EFFECTS_ENABLED | HAPTIC_FEEDBACK_ENABLED | FOCUSABLE_AUTO;
         // Set some flags defaults
         mPrivateFlags2 =
@@ -3062,21 +3065,31 @@ public class View implements Drawable.Callback {
     /**
      * Utility to get the size in pixels that matches the view layout standards.
      *
-     * @param v scaling-independent pixel, relative to other views
+     * @param value density-independent pixel, relative to other views
      * @return converted size in pixels
      */
-    public static int dp(float v) {
-        return ViewConfiguration.get().dp(v);
+    public final int dp(float value) {
+        float f = value * getContext().getResources().getDisplayMetrics().density;
+        final int res = (int) (f >= 0 ? f + 0.5f : f - 0.5f);
+        if (res != 0) return res;
+        if (value == 0) return 0;
+        if (value > 0) return 1;
+        return -1;
     }
 
     /**
      * Utility to get the size in pixels that matches the text layout standards.
      *
-     * @param v scaling-independent pixel, relative to other texts
+     * @param value scaling-independent pixel, relative to other texts
      * @return converted size in pixels
      */
-    public static int sp(float v) {
-        return ViewConfiguration.get().sp(v);
+    public final int sp(float value) {
+        float f = value * getContext().getResources().getDisplayMetrics().scaledDensity;
+        final int res = (int) (f >= 0 ? f + 0.5f : f - 0.5f);
+        if (res != 0) return res;
+        if (value == 0) return 0;
+        if (value > 0) return 1;
+        return -1;
     }
 
     /**
@@ -5008,7 +5021,7 @@ public class View implements Drawable.Callback {
      * @return the scrollbar size
      */
     public int getScrollBarSize() {
-        return mScrollCache == null ? ViewConfiguration.get().getScaledScrollbarSize() :
+        return mScrollCache == null ? ViewConfiguration.get(mContext).getScaledScrollbarSize() :
                 mScrollCache.mScrollBarSize;
     }
 
@@ -5807,7 +5820,7 @@ public class View implements Drawable.Callback {
      * content in this view is visible.
      *
      * @return The size in pixels of the vertical faded edge or 0 if vertical
-     *         faded edges are not enabled for this view.
+     * faded edges are not enabled for this view.
      */
     public int getVerticalFadingEdgeLength() {
         if (isVerticalFadingEdgeEnabled()) {
@@ -5832,8 +5845,7 @@ public class View implements Drawable.Callback {
      * scrolled horizontally.</p>
      *
      * @return true if the horizontal edges should are faded on scroll, false
-     *         otherwise
-     *
+     * otherwise
      * @see #setHorizontalFadingEdgeEnabled(boolean)
      */
     public boolean isHorizontalFadingEdgeEnabled() {
@@ -5847,7 +5859,6 @@ public class View implements Drawable.Callback {
      * @param horizontalFadingEdgeEnabled true if the horizontal edges should
      *                                    be faded when the view is scrolled
      *                                    horizontally
-     *
      * @see #isHorizontalFadingEdgeEnabled()
      */
     public void setHorizontalFadingEdgeEnabled(boolean horizontalFadingEdgeEnabled) {
@@ -5865,8 +5876,7 @@ public class View implements Drawable.Callback {
      * scrolled horizontally.</p>
      *
      * @return true if the vertical edges should are faded on scroll, false
-     *         otherwise
-     *
+     * otherwise
      * @see #setVerticalFadingEdgeEnabled(boolean)
      */
     public boolean isVerticalFadingEdgeEnabled() {
@@ -5880,7 +5890,6 @@ public class View implements Drawable.Callback {
      * @param verticalFadingEdgeEnabled true if the vertical edges should
      *                                  be faded when the view is scrolled
      *                                  vertically
-     *
      * @see #isVerticalFadingEdgeEnabled()
      */
     public void setVerticalFadingEdgeEnabled(boolean verticalFadingEdgeEnabled) {
@@ -5897,7 +5906,7 @@ public class View implements Drawable.Callback {
      * Get the fading edge flags, used for inspection.
      *
      * @return One of {@link #FADING_EDGE_NONE}, {@link #FADING_EDGE_VERTICAL},
-     *         or {@link #FADING_EDGE_HORIZONTAL}
+     * or {@link #FADING_EDGE_HORIZONTAL}
      */
     @ApiStatus.Internal
     public int getFadingEdge() {
@@ -10835,7 +10844,7 @@ public class View implements Drawable.Callback {
                 }
 
                 // Be lenient about moving outside of buttons
-                if (!pointInView(x, y, ViewConfiguration.get().getScaledTouchSlop())) {
+                if (!pointInView(x, y, ViewConfiguration.get(mContext).getScaledTouchSlop())) {
                     // Outside button
                     // Remove any future long press/tap checks
                     removeTapCallback();
@@ -11594,6 +11603,16 @@ public class View implements Drawable.Callback {
             mRenderNode.offsetLeftAndRight(offset);
             invalidate();
         }
+    }
+
+    /**
+     * Returns the context the view is running in, through which it can
+     * access the current theme, resources, etc.
+     *
+     * @return The view's Context.
+     */
+    public final Context getContext() {
+        return mContext;
     }
 
     /**

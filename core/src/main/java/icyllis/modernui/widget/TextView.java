@@ -20,8 +20,7 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.R;
-import icyllis.modernui.core.Core;
-import icyllis.modernui.core.Clipboard;
+import icyllis.modernui.core.*;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
@@ -199,7 +198,8 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      */
     private Editor mEditor;
 
-    public TextView() {
+    public TextView(Context context) {
+        super(context);
         setTextSize(16);
         setTextColor(0xFFFFFFFF);
     }

@@ -86,6 +86,7 @@ public class GLFontAtlas implements AutoCloseable {
     }
 
     private final int mMaskFormat;
+    private final int mMaxTextureSize;
 
     // create from any thread
     @Deprecated
@@ -96,6 +97,7 @@ public class GLFontAtlas implements AutoCloseable {
     // create from any thread
     public GLFontAtlas(int maskFormat) {
         mMaskFormat = maskFormat;
+        mMaxTextureSize = Core.getDirectContext().getMaxTextureSize();
     }
 
     /**
@@ -117,7 +119,7 @@ public class GLFontAtlas implements AutoCloseable {
     }
 
     public boolean stitch(@NonNull GLBakedGlyph glyph, long pixels) {
-        boolean resized = false;
+        boolean invalidated = false;
         glyph.texture = mTexture.get();
         if (mWidth == 0) {
             resize(); // first init
@@ -138,6 +140,7 @@ public class GLFontAtlas implements AutoCloseable {
         if (!inserted) {
             // add new chunks
             resize();
+            invalidated = true;
             for (Chunk chunk : mChunks) {
                 if (chunk.packer.addRect(rect)) {
                     inserted = true;
@@ -148,7 +151,7 @@ public class GLFontAtlas implements AutoCloseable {
         }
         if (!inserted) {
             // failed...
-            return resized;
+            return invalidated;
         }
 
         // include border
@@ -164,7 +167,7 @@ public class GLFontAtlas implements AutoCloseable {
         glyph.u2 = (float) (rect.right - GlyphManager.GLYPH_BORDER) / mWidth;
         glyph.v2 = (float) (rect.bottom - GlyphManager.GLYPH_BORDER) / mHeight;
 
-        return resized;
+        return invalidated;
     }
 
     private void resize() {

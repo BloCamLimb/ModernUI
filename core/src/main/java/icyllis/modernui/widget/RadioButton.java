@@ -18,6 +18,8 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.core.Context;
+
 /**
  * <p>
  * A radio button is a two-states button that can be either checked or
@@ -37,7 +39,8 @@ package icyllis.modernui.widget;
  */
 public class RadioButton extends CompoundButton {
 
-    public RadioButton() {
+    public RadioButton(Context context) {
+        super(context);
     }
 
     /**

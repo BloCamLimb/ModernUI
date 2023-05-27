@@ -19,6 +19,7 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.animation.AnimationUtils;
+import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
@@ -134,7 +135,8 @@ public class NestedScrollView extends FrameLayout {
 
     private OnScrollChangeListener mOnScrollChangeListener;
 
-    public NestedScrollView() {
+    public NestedScrollView(Context context) {
+        super(context);
         mEdgeGlowTop = new EdgeEffect();
         mEdgeGlowBottom = new EdgeEffect();
 
@@ -142,7 +144,7 @@ public class NestedScrollView extends FrameLayout {
         setFocusable(true);
         setDescendantFocusability(FOCUS_AFTER_DESCENDANTS);
         setWillNotDraw(false);
-        final ViewConfiguration configuration = ViewConfiguration.get();
+        final ViewConfiguration configuration = ViewConfiguration.get(context);
         mTouchSlop = configuration.getScaledTouchSlop();
         mMinimumVelocity = configuration.getScaledMinimumFlingVelocity();
         mMaximumVelocity = configuration.getScaledMaximumFlingVelocity();
@@ -659,7 +661,7 @@ public class NestedScrollView extends FrameLayout {
                     // calls onScrollChanged if applicable.
                     boolean clearVelocityTracker =
                             overScrollByCompat(0, deltaY, 0, getScrollY(), 0, range, 0,
-                                    ViewConfiguration.get().getScaledOverscrollDistance(), true) && !hasNestedScrollingParent(TYPE_TOUCH);
+                                    ViewConfiguration.get(getContext()).getScaledOverscrollDistance(), true) && !hasNestedScrollingParent(TYPE_TOUCH);
 
                     final int scrolledDeltaY = getScrollY() - oldY;
                     final int unconsumedY = deltaY - scrolledDeltaY;
@@ -774,7 +776,7 @@ public class NestedScrollView extends FrameLayout {
     public boolean onGenericMotionEvent(@Nonnull MotionEvent event) {
         if (event.getAction() == MotionEvent.ACTION_SCROLL && !mIsBeingDragged) {
             final float axisValue = event.getAxisValue(MotionEvent.AXIS_VSCROLL);
-            final int delta = Math.round(axisValue * ViewConfiguration.get().getVerticalScrollFactor());
+            final int delta = Math.round(axisValue * ViewConfiguration.get(getContext()).getScaledVerticalScrollFactor());
             if (Math.abs(axisValue) > 0.9 && Math.abs(delta) * 6 > mMinimumVelocity) {
                 int deltaY = MathUtil.clamp(delta * 6, -mMaximumVelocity, mMaximumVelocity);
                 if (!edgeEffectFling(deltaY)

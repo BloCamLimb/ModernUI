@@ -18,6 +18,7 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.util.ArrayMap;
 import icyllis.modernui.util.Pools;
@@ -189,7 +190,8 @@ public class RelativeLayout extends ViewGroup {
      **/
     private static final int DEFAULT_WIDTH = 0x00010000;
 
-    public RelativeLayout() {
+    public RelativeLayout(Context context) {
+        super(context);
     }
 
     @Override

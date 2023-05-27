@@ -18,6 +18,7 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.core.Context;
 import icyllis.modernui.view.ViewGroup;
 import org.intellij.lang.annotations.MagicConstant;
 
@@ -62,6 +63,10 @@ public class GridLayout extends ViewGroup {
      * @see #setOrientation(int)
      */
     private int orientation = HORIZONTAL;
+
+    public GridLayout(Context context) {
+        super(context);
+    }
 
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {

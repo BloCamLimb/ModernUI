@@ -18,6 +18,7 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.core.Context;
 import icyllis.modernui.transition.Transition;
 import icyllis.modernui.view.KeyEvent;
 import icyllis.modernui.view.MenuItem;
@@ -39,15 +40,16 @@ public class MenuPopupWindow extends ListPopupWindow implements MenuItemHoverLis
 
     private MenuItemHoverListener mHoverListener;
 
-    public MenuPopupWindow() {
+    public MenuPopupWindow(Context context) {
+        super(context);
     }
 
     @Nonnull
     @Override
-    DropDownListView createDropDownListView(boolean hijackFocus) {
-        MenuDropDownListView view = new MenuDropDownListView(hijackFocus);
+    DropDownListView createDropDownListView(Context context, boolean hijackFocus) {
+        MenuDropDownListView view = new MenuDropDownListView(context, hijackFocus);
         view.setHoverListener(this);
-        view.setPadding(0, View.dp(2), 0, View.dp(2));
+        view.setPadding(0, view.dp(2), 0, view.dp(2));
         return view;
     }
 
@@ -95,8 +97,8 @@ public class MenuPopupWindow extends ListPopupWindow implements MenuItemHoverLis
         private MenuItemHoverListener mHoverListener;
         private MenuItem mHoveredMenuItem;
 
-        public MenuDropDownListView(boolean hijackFocus) {
-            super(hijackFocus);
+        public MenuDropDownListView(Context context, boolean hijackFocus) {
+            super(context, hijackFocus);
 
             //TODO RTL
             /*if (config.getLayoutDirection() == View.LAYOUT_DIRECTION_RTL) {

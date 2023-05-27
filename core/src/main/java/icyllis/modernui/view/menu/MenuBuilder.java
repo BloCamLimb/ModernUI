@@ -18,8 +18,10 @@
 
 package icyllis.modernui.view.menu;
 
+import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.view.*;
+import org.checkerframework.checker.units.qual.C;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -42,6 +44,8 @@ public class MenuBuilder implements Menu {
             2, /* ALTERNATIVE */
             0, /* SELECTED_ALTERNATIVE */
     };
+
+    private final Context mContext;
 
     /**
      * Whether the shortcuts should be qwerty-accessible. Use isQwertyMode()
@@ -171,7 +175,8 @@ public class MenuBuilder implements Menu {
         boolean invokeItem(MenuItemImpl item);
     }
 
-    public MenuBuilder() {
+    public MenuBuilder(Context context) {
+        mContext = context;
         mItems = new ArrayList<>();
 
         mVisibleItems = new ArrayList<>();
@@ -301,7 +306,7 @@ public class MenuBuilder implements Menu {
     @Override
     public SubMenu addSubMenu(int group, int id, int categoryOrder, @Nullable CharSequence title) {
         final MenuItemImpl item = addInternal(group, id, categoryOrder, title);
-        final SubMenuBuilder subMenu = new SubMenuBuilder(this, item);
+        final SubMenuBuilder subMenu = new SubMenuBuilder(mContext, this, item);
         item.setSubMenu(subMenu);
 
         return subMenu;
@@ -581,6 +586,10 @@ public class MenuBuilder implements Menu {
         return mCallback != null && mCallback.onMenuItemSelected(menu, item);
     }
 
+    public Context getContext() {
+        return mContext;
+    }
+
     /**
      * Dispatch a mode change event to this menu's callback.
      */
@@ -702,7 +711,7 @@ public class MenuBuilder implements Menu {
             }
         } else if (itemImpl.hasSubMenu() || providerHasSubMenu) {
             if (!itemImpl.hasSubMenu()) {
-                itemImpl.setSubMenu(new SubMenuBuilder(this, itemImpl));
+                itemImpl.setSubMenu(new SubMenuBuilder(mContext, this, itemImpl));
             }
 
             final SubMenuBuilder subMenu = (SubMenuBuilder) itemImpl.getSubMenu();

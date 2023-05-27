@@ -18,13 +18,13 @@
 
 package icyllis.modernui.util;
 
-import org.jetbrains.annotations.ApiStatus;
-
+/**
+ * A structure describing general information about a display, such as its
+ * size, density, and font scaling.
+ */
 public class DisplayMetrics {
 
-    // most desktop monitors have a physical DPI of 81;
-    // most laptop monitors have a physical DPI of 141;
-    // most phone screens have a physical DPI in 384..460;
+    // most desktop monitors have a physical PPI of 80 to 282;
 
     /**
      * Standard quantized DPI for low-density screens.
@@ -44,22 +44,22 @@ public class DisplayMetrics {
     public static final int DENSITY_MEDIUM = 96;
 
     /**
-     * Intermediate density for screens that sit between {@link #DENSITY_MEDIUM} (160dpi) and
-     * {@link #DENSITY_HIGH} (240dpi). This is not a density that applications should target,
+     * Intermediate density for screens that sit between {@link #DENSITY_MEDIUM} (96dpi) and
+     * {@link #DENSITY_HIGH} (144dpi). This is not a density that applications should target,
      * instead relying on the system to scale their {@link #DENSITY_HIGH} assets for them.
      */
     public static final int DENSITY_108 = 108;
 
     /**
-     * Intermediate density for screens that sit between {@link #DENSITY_MEDIUM} (160dpi) and
-     * {@link #DENSITY_HIGH} (240dpi). This is not a density that applications should target,
+     * Intermediate density for screens that sit between {@link #DENSITY_MEDIUM} (96dpi) and
+     * {@link #DENSITY_HIGH} (144dpi). This is not a density that applications should target,
      * instead relying on the system to scale their {@link #DENSITY_HIGH} assets for them.
      */
     public static final int DENSITY_120 = 120;
 
     /**
-     * Intermediate density for screens that sit between {@link #DENSITY_MEDIUM} (160dpi) and
-     * {@link #DENSITY_HIGH} (240dpi). This is not a density that applications should target,
+     * Intermediate density for screens that sit between {@link #DENSITY_MEDIUM} (96dpi) and
+     * {@link #DENSITY_HIGH} (144dpi). This is not a density that applications should target,
      * instead relying on the system to scale their {@link #DENSITY_HIGH} assets for them.
      */
     public static final int DENSITY_132 = 132;
@@ -70,22 +70,22 @@ public class DisplayMetrics {
     public static final int DENSITY_HIGH = 144;
 
     /**
-     * Intermediate density for screens that sit between {@link #DENSITY_HIGH} (240dpi) and
-     * {@link #DENSITY_XHIGH} (320dpi). This is not a density that applications should target,
+     * Intermediate density for screens that sit between {@link #DENSITY_HIGH} (144dpi) and
+     * {@link #DENSITY_XHIGH} (192dpi). This is not a density that applications should target,
      * instead relying on the system to scale their {@link #DENSITY_XHIGH} assets for them.
      */
     public static final int DENSITY_156 = 156;
 
     /**
-     * Intermediate density for screens that sit between {@link #DENSITY_HIGH} (240dpi) and
-     * {@link #DENSITY_XHIGH} (320dpi). This is not a density that applications should target,
+     * Intermediate density for screens that sit between {@link #DENSITY_HIGH} (144dpi) and
+     * {@link #DENSITY_XHIGH} (192dpi). This is not a density that applications should target,
      * instead relying on the system to scale their {@link #DENSITY_XHIGH} assets for them.
      */
     public static final int DENSITY_168 = 168;
 
     /**
-     * Intermediate density for screens that sit between {@link #DENSITY_HIGH} (240dpi) and
-     * {@link #DENSITY_XHIGH} (320dpi). This is not a density that applications should target,
+     * Intermediate density for screens that sit between {@link #DENSITY_HIGH} (144dpi) and
+     * {@link #DENSITY_XHIGH} (192dpi). This is not a density that applications should target,
      * instead relying on the system to scale their {@link #DENSITY_XHIGH} assets for them.
      */
     public static final int DENSITY_180 = 180;
@@ -97,7 +97,7 @@ public class DisplayMetrics {
 
     /**
      * Intermediate density for screens that sit somewhere between
-     * {@link #DENSITY_XHIGH} (320 dpi) and {@link #DENSITY_XXHIGH} (480 dpi).
+     * {@link #DENSITY_XHIGH} (192 dpi) and {@link #DENSITY_XXHIGH} (288 dpi).
      * This is not a density that applications should target, instead relying
      * on the system to scale their {@link #DENSITY_XXHIGH} assets for them.
      */
@@ -105,7 +105,7 @@ public class DisplayMetrics {
 
     /**
      * Intermediate density for screens that sit somewhere between
-     * {@link #DENSITY_XHIGH} (320 dpi) and {@link #DENSITY_XXHIGH} (480 dpi).
+     * {@link #DENSITY_XHIGH} (192 dpi) and {@link #DENSITY_XXHIGH} (288 dpi).
      * This is not a density that applications should target, instead relying
      * on the system to scale their {@link #DENSITY_XXHIGH} assets for them.
      */
@@ -113,7 +113,15 @@ public class DisplayMetrics {
 
     /**
      * Intermediate density for screens that sit somewhere between
-     * {@link #DENSITY_XHIGH} (320 dpi) and {@link #DENSITY_XXHIGH} (480 dpi).
+     * {@link #DENSITY_XHIGH} (192 dpi) and {@link #DENSITY_XXHIGH} (288 dpi).
+     * This is not a density that applications should target, instead relying
+     * on the system to scale their {@link #DENSITY_XXHIGH} assets for them.
+     */
+    public static final int DENSITY_228 = 228;
+
+    /**
+     * Intermediate density for screens that sit somewhere between
+     * {@link #DENSITY_XHIGH} (192 dpi) and {@link #DENSITY_XXHIGH} (288 dpi).
      * This is not a density that applications should target, instead relying
      * on the system to scale their {@link #DENSITY_XXHIGH} assets for them.
      */
@@ -121,7 +129,7 @@ public class DisplayMetrics {
 
     /**
      * Intermediate density for screens that sit somewhere between
-     * {@link #DENSITY_XHIGH} (320 dpi) and {@link #DENSITY_XXHIGH} (480 dpi).
+     * {@link #DENSITY_XHIGH} (192 dpi) and {@link #DENSITY_XXHIGH} (288 dpi).
      * This is not a density that applications should target, instead relying
      * on the system to scale their {@link #DENSITY_XXHIGH} assets for them.
      */
@@ -129,7 +137,7 @@ public class DisplayMetrics {
 
     /**
      * Intermediate density for screens that sit somewhere between
-     * {@link #DENSITY_XHIGH} (320 dpi) and {@link #DENSITY_XXHIGH} (480 dpi).
+     * {@link #DENSITY_XHIGH} (192 dpi) and {@link #DENSITY_XXHIGH} (288 dpi).
      * This is not a density that applications should target, instead relying
      * on the system to scale their {@link #DENSITY_XXHIGH} assets for them.
      */
@@ -137,11 +145,11 @@ public class DisplayMetrics {
 
     /**
      * Intermediate density for screens that sit somewhere between
-     * {@link #DENSITY_XHIGH} (320 dpi) and {@link #DENSITY_XXHIGH} (480 dpi).
+     * {@link #DENSITY_XHIGH} (192 dpi) and {@link #DENSITY_XXHIGH} (288 dpi).
      * This is not a density that applications should target, instead relying
      * on the system to scale their {@link #DENSITY_XXHIGH} assets for them.
      */
-    public static final int DENSITY_270 = 270;
+    public static final int DENSITY_276 = 276;
 
     /**
      * Standard quantized DPI for extra-extra-high-density screens.
@@ -149,40 +157,13 @@ public class DisplayMetrics {
     public static final int DENSITY_XXHIGH = 288;
 
     /**
-     * Intermediate density for screens that sit somewhere between
-     * {@link #DENSITY_XXHIGH} (480 dpi) and {@link #DENSITY_XXXHIGH} (640 dpi).
-     * This is not a density that applications should target, instead relying
-     * on the system to scale their {@link #DENSITY_XXXHIGH} assets for them.
-     */
-    public static final int DENSITY_336 = 336;
-
-    /**
-     * Intermediate density for screens that sit somewhere between
-     * {@link #DENSITY_XXHIGH} (480 dpi) and {@link #DENSITY_XXXHIGH} (640 dpi).
-     * This is not a density that applications should target, instead relying
-     * on the system to scale their {@link #DENSITY_XXXHIGH} assets for them.
-     */
-    public static final int DENSITY_360 = 360;
-
-    /**
-     * Standard quantized DPI for extra-extra-extra-high-density screens.  Applications
-     * should not generally worry about this density; relying on XHIGH graphics
-     * being scaled up to it should be sufficient for almost all cases.  A typical
-     * use of this density would be 4K television screens -- 3840x2160, which
-     * is 2x a traditional HD 1920x1080 screen which runs at DENSITY_XHIGH.
-     */
-    public static final int DENSITY_XXXHIGH = 384;
-
-    /**
      * The reference density used throughout the system.
      */
-    // default DPI is 72 for compatibility reasons
     public static final int DENSITY_DEFAULT = DENSITY_LOW;
 
     /**
      * Scaling factor to convert a density in DPI units to the density scale.
      */
-    @ApiStatus.Internal
     public static final float DENSITY_DEFAULT_SCALE = 1.0f / DENSITY_DEFAULT;
 
     /**
@@ -194,30 +175,26 @@ public class DisplayMetrics {
      */
     public int heightPixels;
     /**
-     * The logical density of the display.  This is a scaling factor for the
+     * The logical density of the display.<br>This is a scaling factor for the
      * Density Independent Pixel unit, where one DIP is one pixel on an
-     * approximately 160 dpi screen (for example a 240x320, 1.5"x2" screen),
-     * providing the baseline of the system's display. Thus on a 160dpi screen
-     * this density value will be 1; on a 120 dpi screen it would be .75; etc.
+     * approximately 72 dpi screen, providing the baseline of the system's
+     * display. Thus on a 72 dpi screen this density value will be 1; on a
+     * 96 dpi screen it would be 1.33; etc.
      *
      * <p>This value does not exactly follow the real screen size (as given by
      * {@link #xdpi} and {@link #ydpi}), but rather is used to scale the size of
-     * the overall UI in steps based on gross changes in the display dpi.  For
-     * example, a 240x320 screen will have a density of 1 even if its width is
-     * 1.8", 1.3", etc. However, if the screen resolution is increased to
-     * 320x480 but the screen size remained 1.5"x2" then the density would be
-     * increased (probably to 1.5).
+     * the overall UI in steps based on gross changes in the display dpi.
      *
      * @see #DENSITY_DEFAULT
      */
     public float density;
     /**
-     * The screen density expressed as dots-per-inch.  May be either
+     * The screen density expressed as dots-per-inch.<br>May be either
      * {@link #DENSITY_LOW}, {@link #DENSITY_MEDIUM}, or {@link #DENSITY_HIGH}.
      */
     public int densityDpi;
     /**
-     * A scaling factor for fonts displayed on the display.  This is the same
+     * A scaling factor for fonts displayed on the display.<br>This is the same
      * as {@link #density}, except that it may be adjusted in smaller
      * increments at runtime based on a user preference for the font size.
      */
@@ -230,6 +207,66 @@ public class DisplayMetrics {
      * The exact physical pixels per inch of the screen in the Y dimension.
      */
     public float ydpi;
+
+    public DisplayMetrics() {
+    }
+
+    public void setTo(DisplayMetrics o) {
+        if (this == o) {
+            return;
+        }
+        widthPixels = o.widthPixels;
+        heightPixels = o.heightPixels;
+        density = o.density;
+        densityDpi = o.densityDpi;
+        scaledDensity = o.scaledDensity;
+        xdpi = o.xdpi;
+        ydpi = o.ydpi;
+    }
+
+    public void setToDefaults() {
+        widthPixels = 0;
+        heightPixels = 0;
+        density = 1.0f;
+        densityDpi = DENSITY_DEFAULT;
+        scaledDensity = density;
+        xdpi = DENSITY_DEFAULT;
+        ydpi = DENSITY_DEFAULT;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        return o instanceof DisplayMetrics && equals((DisplayMetrics) o);
+    }
+
+    /**
+     * Returns true if these display metrics equal the other display metrics.
+     *
+     * @param other The display metrics with which to compare.
+     * @return True if the display metrics are equal.
+     */
+    public boolean equals(DisplayMetrics other) {
+        return equalsPhysical(other)
+                && scaledDensity == other.scaledDensity;
+    }
+
+    /**
+     * Returns true if the physical aspects of the two display metrics
+     * are equal.  This ignores the scaled density, which is a logical
+     * attribute based on the current desired font size.
+     *
+     * @param other The display metrics with which to compare.
+     * @return True if the display metrics are equal.
+     */
+    public boolean equalsPhysical(DisplayMetrics other) {
+        return other != null
+                && widthPixels == other.widthPixels
+                && heightPixels == other.heightPixels
+                && density == other.density
+                && densityDpi == other.densityDpi
+                && xdpi == other.xdpi
+                && ydpi == other.ydpi;
+    }
 
     @Override
     public int hashCode() {

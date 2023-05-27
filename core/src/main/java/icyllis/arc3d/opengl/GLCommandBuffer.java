@@ -18,11 +18,9 @@
 
 package icyllis.arc3d.opengl;
 
-import icyllis.arc3d.engine.Engine;
-import icyllis.arc3d.engine.SamplerState;
+import icyllis.arc3d.engine.*;
 import icyllis.modernui.annotation.SharedPtr;
 import icyllis.modernui.core.RefCnt;
-import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
@@ -42,16 +40,6 @@ public final class GLCommandBuffer {
             TriState_Disabled = 0,
             TriState_Enabled = 1,
             TriState_Unknown = 2;
-
-    private static final long RGBA_SWIZZLE_MASK;
-
-    static {
-        RGBA_SWIZZLE_MASK = MemoryUtil.nmemAllocChecked(16);
-        MemoryUtil.memPutInt(RGBA_SWIZZLE_MASK, GL_RED);
-        MemoryUtil.memPutInt(RGBA_SWIZZLE_MASK + 4, GL_GREEN);
-        MemoryUtil.memPutInt(RGBA_SWIZZLE_MASK + 8, GL_BLUE);
-        MemoryUtil.memPutInt(RGBA_SWIZZLE_MASK + 12, GL_ALPHA);
-    }
 
     private final GLServer mServer;
 
@@ -264,20 +252,30 @@ public final class GLCommandBuffer {
         }
     }
 
-    public boolean bindTexture(GLTexture texture, int binding, int samplerState) {
+    /**
+     * Bind texture for rendering.
+     *
+     * @param binding the binding index (texture unit)
+     * @param texture the texture object
+     * @param state   the state of texture sampler, see {@link SamplerState}
+     * @param swizzle the read swizzle of texture sampler, see {@link Swizzle}
+     * @return success or not
+     */
+    public boolean bindTexture(int binding, GLTexture texture, int state, short swizzle) {
         assert (texture != null);
         if (binding >= mHWTextureBindings.length) {
             return false;
         }
-        if (SamplerState.isMipmapped(samplerState)) {
+        if (SamplerState.isMipmapped(state)) {
             if (!texture.isMipmapped()) {
-                assert (!SamplerState.isAnisotropy(samplerState));
-                samplerState = SamplerState.resetMipmapMode(samplerState);
+                assert (!SamplerState.isAnisotropy(state));
+                state = SamplerState.resetMipmapMode(state);
             } else {
                 assert (!texture.isMipmapsDirty());
             }
         }
-        GLSampler sampler = mServer.getResourceProvider().findOrCreateCompatibleSampler(samplerState);
+        GLSampler sampler = mServer.getResourceProvider()
+                .findOrCreateCompatibleSampler(state);
         if (sampler == null) {
             return false;
         }
@@ -290,18 +288,35 @@ public final class GLCommandBuffer {
             mHWTextureSamplers[binding] = RefCnt.create(mHWTextureSamplers[binding], sampler);
         }
         GLTextureParameters parameters = texture.getParameters();
-        if (parameters.mBaseMipMapLevel != 0) {
+        if (parameters.baseMipmapLevel != 0) {
             glTextureParameteri(texture.getTextureID(), GL_TEXTURE_BASE_LEVEL, 0);
-            parameters.mBaseMipMapLevel = 0;
+            parameters.baseMipmapLevel = 0;
         }
         int maxLevel = texture.getMaxMipmapLevel();
-        if (parameters.mMaxMipmapLevel != maxLevel) {
+        if (parameters.maxMipmapLevel != maxLevel) {
             glTextureParameteri(texture.getTextureID(), GL_TEXTURE_MAX_LEVEL, maxLevel);
-            parameters.mMaxMipmapLevel = maxLevel;
+            parameters.maxMipmapLevel = maxLevel;
         }
-        if (!parameters.mSwizzleIsRGBA) {
-            nglTextureParameteriv(texture.getTextureID(), GL_TEXTURE_SWIZZLE_RGBA, RGBA_SWIZZLE_MASK);
-            parameters.mSwizzleIsRGBA = true;
+        // texture view is available since 4.3, but less used in OpenGL
+        boolean swizzleChanged = false;
+        for (int i = 0; i < 4; ++i) {
+            int swiz = switch (swizzle & 0xF) {
+                case 0 -> GL_RED;
+                case 1 -> GL_GREEN;
+                case 2 -> GL_BLUE;
+                case 3 -> GL_ALPHA;
+                case 4 -> GL_ZERO;
+                case 5 -> GL_ONE;
+                default -> throw new AssertionError(swizzle);
+            };
+            if (parameters.swizzle[i] != swiz) {
+                parameters.swizzle[i] = swiz;
+                swizzleChanged = true;
+            }
+            swizzle >>= 4;
+        }
+        if (swizzleChanged) {
+            glTextureParameteriv(texture.getTextureID(), GL_TEXTURE_SWIZZLE_RGBA, parameters.swizzle);
         }
         return true;
     }

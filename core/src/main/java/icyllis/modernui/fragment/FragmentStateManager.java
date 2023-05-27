@@ -267,7 +267,7 @@ final class FragmentStateManager {
             if (FragmentManager.DEBUG) {
                 LOGGER.info(MARKER, "moveto CREATE_VIEW: " + mFragment);
             }
-            mFragment.performCreateView(/*mFragment.performGetLayoutInflater(
+            mFragment.performCreateView(null, /*mFragment.performGetLayoutInflater(
                     mFragment.mSavedFragmentState), */null, mFragment.mSavedFragmentState);
             if (mFragment.mView != null) {
                 //mFragment.mView.setSaveFromParentEnabled(false);
@@ -334,7 +334,7 @@ final class FragmentStateManager {
             }
         }
         mFragment.mContainer = container;
-        mFragment.performCreateView(/*layoutInflater, */container, mFragment.mSavedFragmentState);
+        mFragment.performCreateView(null, container, mFragment.mSavedFragmentState);
         if (mFragment.mView != null) {
             //mFragment.mView.setSaveFromParentEnabled(false);
             mFragment.mView.setTag(R.id.fragment_container_view_tag, mFragment);

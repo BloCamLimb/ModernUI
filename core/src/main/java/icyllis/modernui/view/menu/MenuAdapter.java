@@ -18,6 +18,7 @@
 
 package icyllis.modernui.view.menu;
 
+import icyllis.modernui.core.Context;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.widget.BaseAdapter;
@@ -28,6 +29,7 @@ import java.util.ArrayList;
 
 public class MenuAdapter extends BaseAdapter {
 
+    Context mContext;
     MenuBuilder mAdapterMenu;
 
     private int mExpandedIndex = -1;
@@ -35,7 +37,8 @@ public class MenuAdapter extends BaseAdapter {
     private boolean mForceShowIcon;
     private final boolean mOverflowOnly;
 
-    public MenuAdapter(MenuBuilder menu, boolean overflowOnly) {
+    public MenuAdapter(Context context, MenuBuilder menu, boolean overflowOnly) {
+        mContext = context;
         mAdapterMenu = menu;
         mOverflowOnly = overflowOnly;
         findExpandedIndex();
@@ -86,7 +89,7 @@ public class MenuAdapter extends BaseAdapter {
     public View getView(int position, @Nullable View convertView, @Nonnull ViewGroup parent) {
         final ListMenuItemView view;
         if (convertView == null) {
-            view = new ListMenuItemView();
+            view = new ListMenuItemView(mContext);
         } else {
             view = (ListMenuItemView) convertView;
         }

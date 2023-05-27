@@ -25,6 +25,7 @@ import icyllis.modernui.animation.*;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.audio.*;
+import icyllis.modernui.core.Context;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.fragment.Fragment;
 import icyllis.modernui.graphics.*;
@@ -58,7 +59,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.DoubleStream;
 
 import static icyllis.modernui.ModernUI.LOGGER;
-import static icyllis.modernui.view.View.dp;
 import static icyllis.modernui.view.ViewGroup.LayoutParams.*;
 
 /**
@@ -136,8 +136,8 @@ public class TestFragment extends Fragment {
     }
 
     @Override
-    public void onAttach() {
-        super.onAttach();
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
         getParentFragmentManager().beginTransaction()
                 .setPrimaryNavigationFragment(this)
                 .commit();
@@ -155,8 +155,9 @@ public class TestFragment extends Fragment {
 
     @Nullable
     @Override
-    public View onCreateView(@Nullable ViewGroup container, @Nullable DataSet savedInstanceState) {
-        var base = new ScrollView();
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+                             @Nullable DataSet savedInstanceState) {
+        var base = new ScrollView(getContext());
         base.setId(660);
 
         base.setBackground(new Drawable() {
@@ -184,20 +185,21 @@ public class TestFragment extends Fragment {
             }
         });
         {
-            var params = new FrameLayout.LayoutParams(dp(640), dp(360));
+            var params = new FrameLayout.LayoutParams(base.dp(640), base.dp(360));
             params.gravity = Gravity.CENTER;
             base.setLayoutParams(params);
         }
         //base.setRotation(30);
+        container.setClipChildren(true);
         return base;
     }
 
     public static class FragmentA extends Fragment {
         @Nullable
         @Override
-        public View onCreateView(@Nullable ViewGroup container,
+        public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                                  @Nullable DataSet savedInstanceState) {
-            LinearLayout content = new TestLinearLayout();
+            LinearLayout content = new TestLinearLayout(getContext());
             //content.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
             content.setLayoutParams(new FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
 
@@ -224,9 +226,9 @@ public class TestFragment extends Fragment {
     public static class FragmentB extends Fragment {
         @Nullable
         @Override
-        public View onCreateView(@Nullable ViewGroup container,
+        public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                                  @Nullable DataSet savedInstanceState) {
-            var tv = new TextView();
+            var tv = new TextView(getContext());
             tv.setText("My name is Van, I'm an arist, a performance artist.");
             return tv;
         }
@@ -239,6 +241,10 @@ public class TestFragment extends Fragment {
     }
 
     private static class TestView extends View {
+
+        public TestView(Context context) {
+            super(context);
+        }
 
         @Override
         protected void onDraw(@NonNull Canvas canvas) {
@@ -387,7 +393,8 @@ public class TestFragment extends Fragment {
 
         ObjectAnimator mGoodAnim;
 
-        public TestLinearLayout() {
+        public TestLinearLayout(Context context) {
+            super(context);
             setOrientation(VERTICAL);
             setGravity(Gravity.CENTER);
             setDividerDrawable(new Drawable() {
@@ -443,7 +450,7 @@ public class TestFragment extends Fragment {
                     "\ud808" +
                     "\udd99";
 
-            TextView tv = new TextView();
+            TextView tv = new TextView(getContext());
             tv.setLayoutParams(new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT));
 
@@ -453,7 +460,7 @@ public class TestFragment extends Fragment {
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             spannable.setSpan(new AbsoluteSizeSpan(18), text.length() - 69, text.length() - 30,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            spannable.setSpan(new StyleSpan(FontPaint.BOLD), text.length() - 50, text.length() - 40,
+            spannable.setSpan(new StyleSpan(Typeface.BOLD), text.length() - 50, text.length() - 40,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             spannable.setSpan(new URLSpan("https://www.bilibili.com/video/BV1HA41147a4"), firstPara, secondsPara - 2,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -496,7 +503,7 @@ public class TestFragment extends Fragment {
                 View v;
                 LayoutParams p;
                 if (i == 1) {
-                    Button button = new Button();
+                    Button button = new Button(getContext());
                     button.setText("Play A Music!");
                     button.setTextColor(0xFF28A3F3);
                     button.setTextStyle(Typeface.BOLD);
@@ -535,7 +542,7 @@ public class TestFragment extends Fragment {
                     v = button;
                     p = new LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
                 } else if (i == 4) {
-                    SwitchButton switchButton = new SwitchButton();
+                    SwitchButton switchButton = new SwitchButton(getContext());
                     v = switchButton;
                     switchButton.setOnCheckedChangeListener((button, checked) -> {
                         if (checked) {
@@ -557,7 +564,7 @@ public class TestFragment extends Fragment {
                 } else if (i == 2) {
                     continue;
                 } else if (i == 3) {
-                    EditText textField = new EditText();
+                    EditText textField = new EditText(getContext());
                     v = textField;
                     p = new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                             ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -568,14 +575,14 @@ public class TestFragment extends Fragment {
                     //textField.setTransformationMethod(PasswordTransformationMethod.getInstance());
                     textField.setPadding(dp(12), 0, dp(12), 0);
                 } else if (i == 10) {
-                    var layout = new LinearLayout();
+                    var layout = new LinearLayout(getContext());
                     layout.setOrientation(LinearLayout.HORIZONTAL);
                     layout.setHorizontalGravity(Gravity.START);
 
                     final int dp3 = dp(3);
                     final int dp6 = dp(6);
                     {
-                        var title = new TextView();
+                        var title = new TextView(getContext());
                         title.setText("Title");
                         title.setTextSize(14);
                         title.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
@@ -585,7 +592,7 @@ public class TestFragment extends Fragment {
                         layout.addView(title, params);
                     }
                     {
-                        var input = new EditText();
+                        var input = new EditText(getContext());
                         input.setId(R.id.input);
                         input.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_END);
                         input.setTextSize(14);
@@ -603,10 +610,10 @@ public class TestFragment extends Fragment {
                     v = layout;
                     p = params;
                 } else if (i == 5) {
-                    RadioGroup group = new RadioGroup();
+                    RadioGroup group = new RadioGroup(getContext());
                     v = group;
                     for (int j = 0; j < 3; j++) {
-                        RadioButton button = new MaterialRadioButton();
+                        RadioButton button = new MaterialRadioButton(getContext());
                         button.setText("Item " + j);
                         button.setTextSize(16);
                         button.setId(9 + j);
@@ -615,7 +622,7 @@ public class TestFragment extends Fragment {
                     p = new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                             ViewGroup.LayoutParams.WRAP_CONTENT);
                 } else if (i == 6) {
-                    CheckBox checkBox = new MaterialCheckBox();
+                    CheckBox checkBox = new MaterialCheckBox(getContext());
                     v = checkBox;
                     checkBox.setText("Checkbox 0");
                     checkBox.setTextSize(16);
@@ -623,14 +630,15 @@ public class TestFragment extends Fragment {
                     p = new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                             ViewGroup.LayoutParams.WRAP_CONTENT);
                 } else if (i == 7) {
-                    Spinner spinner = new Spinner();
+                    Spinner spinner = new Spinner(getContext());
                     v = spinner;
-                    spinner.setAdapter(new ArrayAdapter<>(new ArrayList<>(FontFamily.getSystemFontMap().keySet())));
+                    spinner.setAdapter(new ArrayAdapter<>(getContext(),
+                            new ArrayList<>(FontFamily.getSystemFontMap().keySet())));
                     p = new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                             ViewGroup.LayoutParams.WRAP_CONTENT);
                     spinner.setMinimumWidth(dp(240));
                 } else {
-                    v = new CView(i);
+                    v = new CView(getContext(), i);
                     p = new LayoutParams(dp(200), dp(50));
                 }
                 if (i == 8) {
@@ -656,7 +664,7 @@ public class TestFragment extends Fragment {
                 p.gravity = Gravity.CENTER;
                 addView(v, p);
             }
-            addView(new DView(TimeInterpolator.DECELERATE), new LayoutParams(dp(120),
+            addView(new DView(getContext(), TimeInterpolator.DECELERATE), new LayoutParams(dp(120),
                     dp(40)));
 
             //addView(new DView(ITimeInterpolator.VISCOUS_FLUID, 30), new LinearLayout.LayoutParams(60, 20));
@@ -936,7 +944,8 @@ public class TestFragment extends Fragment {
             private final String mIndex;
             TextPaint mTextPaint = new TextPaint();
 
-            public CView(int index) {
+            public CView(Context context, int index) {
+                super(context);
                 mIndex = Integer.toString(index);
             }
 
@@ -969,7 +978,8 @@ public class TestFragment extends Fragment {
 
             private final ObjectAnimator mAnimator;
 
-            public DView(TimeInterpolator interpolator) {
+            public DView(Context context, TimeInterpolator interpolator) {
+                super(context);
                 mTextPaint.setTypeface(Typeface.getSystemFont("Microsoft YaHei UI"));
                 mTextPaint.setFontStyle(Typeface.BOLD);
                 mTextPaint.setFontSize(10);

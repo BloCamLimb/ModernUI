@@ -18,6 +18,7 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.core.Context;
 import icyllis.modernui.view.MotionEvent;
 import icyllis.modernui.view.View;
 
@@ -81,7 +82,8 @@ public class DropDownListView extends ListView {
     /**
      * Creates a new list view wrapper.
      */
-    public DropDownListView(boolean hijackFocus) {
+    public DropDownListView(Context context, boolean hijackFocus) {
+        super(context);
         mHijackFocus = hijackFocus;
     }
 

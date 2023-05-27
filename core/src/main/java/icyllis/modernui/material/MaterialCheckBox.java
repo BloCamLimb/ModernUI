@@ -19,12 +19,14 @@
 package icyllis.modernui.material;
 
 import icyllis.modernui.R;
+import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.StateListDrawable;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.StateSet;
+import icyllis.modernui.view.View;
 import icyllis.modernui.widget.CheckBox;
 
 import javax.annotation.Nonnull;
@@ -43,10 +45,11 @@ public class MaterialCheckBox extends CheckBox {
             0xFF616161
     };
 
-    public MaterialCheckBox() {
+    public MaterialCheckBox(Context context) {
+        super(context);
         StateListDrawable drawable = new StateListDrawable();
-        drawable.addState(CHECKED_STATE_SET, new CheckedDrawable());
-        drawable.addState(StateSet.WILD_CARD, new UncheckedDrawable());
+        drawable.addState(CHECKED_STATE_SET, new CheckedDrawable(this));
+        drawable.addState(StateSet.WILD_CARD, new UncheckedDrawable(this));
         drawable.setEnterFadeDuration(300);
         drawable.setExitFadeDuration(300);
         setButtonDrawable(drawable);
@@ -57,8 +60,8 @@ public class MaterialCheckBox extends CheckBox {
 
         private final float mRadius;
 
-        CheckedDrawable() {
-            mRadius = dp(4);
+        CheckedDrawable(View view) {
+            mRadius = view.dp(4);
         }
 
         @Override
@@ -105,8 +108,8 @@ public class MaterialCheckBox extends CheckBox {
 
         private final float mRadius;
 
-        UncheckedDrawable() {
-            mRadius = dp(4);
+        UncheckedDrawable(View view) {
+            mRadius = view.dp(4);
         }
 
         @Override
