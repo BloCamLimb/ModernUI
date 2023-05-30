@@ -18,7 +18,6 @@
 
 package icyllis.modernui;
 
-import com.ibm.icu.text.CompactDecimalFormat;
 import icyllis.arc3d.opengl.GLTextureCompat;
 import icyllis.arc3d.opengl.GLTextureManager;
 import icyllis.modernui.animation.*;
@@ -30,12 +29,14 @@ import icyllis.modernui.core.Core;
 import icyllis.modernui.fragment.Fragment;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.graphics.font.*;
+import icyllis.modernui.graphics.font.FontFamily;
+import icyllis.modernui.graphics.font.GlyphManager;
 import icyllis.modernui.material.MaterialCheckBox;
 import icyllis.modernui.material.MaterialRadioButton;
 import icyllis.modernui.text.*;
 import icyllis.modernui.text.style.*;
-import icyllis.modernui.util.*;
+import icyllis.modernui.util.DataSet;
+import icyllis.modernui.util.FloatProperty;
 import icyllis.modernui.view.*;
 import icyllis.modernui.view.ViewGroup.LayoutParams;
 import icyllis.modernui.widget.*;
@@ -47,16 +48,13 @@ import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.DoubleStream;
 
 import static icyllis.modernui.ModernUI.LOGGER;
 import static icyllis.modernui.view.ViewGroup.LayoutParams.*;
@@ -68,71 +66,14 @@ public class TestFragment extends Fragment {
 
     public static SpectrumGraph sSpectrumGraph;
 
-    static class TestClassA {
-
-        final int value;
-
-        public TestClassA() {
-            LOGGER.info(this);
-            value = 5;
-        }
-
-        @Override
-        public String toString() {
-            return "TestClassA{" +
-                    "value=" + value +
-                    '}';
-        }
-    }
-
     public static void main(String[] args) {
         System.setProperty("java.awt.headless", "true");
         Configurator.setRootLevel(Level.ALL);
-        int complex = TypedValue.floatToComplex(-0.0f);
-        LOGGER.info("{} -> {}",
-                Integer.toHexString(complex),
-                TypedValue.complexToFloat(complex));
-        CompactDecimalFormat format = CompactDecimalFormat.getInstance(
-                new Locale("zh"), CompactDecimalFormat.CompactStyle.SHORT);
-        format.setMaximumFractionDigits(2);
-        LOGGER.info(format.format(new BigDecimal("2136541565.615")));
-        LOGGER.info("Levenshtein distance: {}", TextUtils.distance("sunday", "saturday"));
-
-        double[] doubles = new double[]{1, 160, 3};
-        DoubleStream.of(doubles).average().ifPresent(LOGGER::info);
-        LOGGER.info(MathUtil.averageStable(doubles));
-
-        new TestClassA();
 
         try (ModernUI app = new ModernUI()) {
             app.run(new TestFragment());
         }
         AudioManager.getInstance().close();
-        String str = """
-                public final class Reference {
-                public:
-                    static func hash(x: Object?): int {
-                        uint* v = (uint*) x;
-                        int h = (int) (v ^ (v >>> 32)) * 0x9e3779b1;
-                        return h ^ (h >>> 16);
-                    }
-                    
-                    @ForceInline
-                    static func equals(a: Object?, b: Object?): bool {
-                        return (uint*) a == (uint*) b;
-                    }
-                }
-                public final class Objects {
-                public:
-                    static func hash(x: Object?): int {
-                        return x ? x.hash() : 0;
-                    }
-                                    
-                    static func equals(a: Object?, b: Object?): bool {
-                        return Reference::equals(a, b) || (a && b && a.equals(b));
-                    }
-                }
-                """;
     }
 
     @Override

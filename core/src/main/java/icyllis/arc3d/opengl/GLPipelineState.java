@@ -84,18 +84,16 @@ public class GLPipelineState {
     public boolean bindTextures(GLCommandBuffer commandBuffer,
                                 PipelineInfo pipelineInfo,
                                 TextureProxy[] geomTextures) {
-        int nextTexSamplerIdx = 0;
+        int unit = 0;
         for (int i = 0, e = pipelineInfo.geomProc().numTextureSamplers(); i < e; i++) {
             GLTexture texture = (GLTexture) geomTextures[i].peekTexture();
-            if (!commandBuffer.bindTexture(nextTexSamplerIdx++, texture,
+            commandBuffer.bindTexture(unit++, texture,
                     pipelineInfo.geomProc().textureSamplerState(i),
-                    pipelineInfo.geomProc().textureSamplerSwizzle(i))) {
-                return false;
-            }
+                    pipelineInfo.geomProc().textureSamplerSwizzle(i));
         }
         //TODO bind FP textures
 
-        assert nextTexSamplerIdx == mNumTextureSamplers;
+        assert unit == mNumTextureSamplers;
         return true;
     }
 

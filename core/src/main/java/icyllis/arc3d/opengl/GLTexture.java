@@ -114,7 +114,7 @@ public final class GLTexture extends Texture {
         return mBackendTexture.getBackendFormat();
     }
 
-    public int getTextureID() {
+    public int getHandle() {
         return mInfo.texture;
     }
 

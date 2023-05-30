@@ -73,6 +73,7 @@ import static org.lwjgl.system.MemoryUtil.*;
  *
  * @author BloCamLimb
  */
+//TODO cleanup before program exit
 @NotThreadSafe
 public final class GLSurfaceCanvas extends GLCanvas {
 
@@ -207,7 +208,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     private boolean mRecreateModelView = true;*/
 
     // the client buffer used for updating the uniform blocks
-    private ByteBuffer mUniformStagingBuffer = memAlloc(8192);
+    private ByteBuffer mUniformRingBuffer = memAlloc(8192);
 
     // immutable uniform buffer objects
     private final GLBufferCompat mMatrixUBO = new GLBufferCompat();
@@ -218,6 +219,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     private final GLBufferCompat mRoundRectUBO = new GLBufferCompat();
 
     // mag filter = linear
+    @SharedPtr
     private final GLSampler mLinearFontSampler;
 
     private final long mUniformBuffers = nmemAlloc(24);
@@ -289,8 +291,9 @@ public final class GLSurfaceCanvas extends GLCanvas {
         memPutInt(mUniformBuffers + 16, mCircleUBO.get());
         memPutInt(mUniformBuffers + 20, mRoundRectUBO.get());
 
-        mLinearFontSampler = server.getResourceProvider().findOrCreateCompatibleSampler(
-                SamplerState.DEFAULT);
+        mLinearFontSampler = Objects.requireNonNull(
+                server.getResourceProvider().findOrCreateCompatibleSampler(SamplerState.DEFAULT),
+                "Failed to create font sampler");
 
         {
             ShortBuffer indices = MemoryUtil.memAllocShort(MAX_GLYPH_INDEX_COUNT);
@@ -306,12 +309,11 @@ public final class GLSurfaceCanvas extends GLCanvas {
                 baseIndex += 4;
             }
             indices.flip();
-            mGlyphIndexBuffer = GLBuffer.make(server, indices.capacity(),
-                    Engine.BufferUsageFlags.kStatic |
-                            Engine.BufferUsageFlags.kIndex);
-            if (mGlyphIndexBuffer == null) {
-                throw new IllegalStateException("Failed to create index buffer for glyph mesh");
-            }
+            mGlyphIndexBuffer = Objects.requireNonNull(
+                    GLBuffer.make(server, indices.capacity(),
+                            Engine.BufferUsageFlags.kStatic |
+                                    Engine.BufferUsageFlags.kIndex),
+                    "Failed to create index buffer for glyph mesh");
             mGlyphIndexBuffer.updateData(MemoryUtil.memAddress(indices), 0, indices.capacity());
             MemoryUtil.memFree(indices);
         }
@@ -409,7 +411,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         mDrawTexts.clear();
         mColorMeshStagingBuffer.clear();
         mTextureMeshStagingBuffer.clear();
-        mUniformStagingBuffer.clear();
+        mUniformRingBuffer.clear();
     }
 
     @RenderThread
@@ -491,7 +493,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         mCurrSampler = 0;
         mCurrTexture = 0;
 
-        long uniformDataPtr = memAddress(mUniformStagingBuffer.flip());
+        long uniformDataPtr = memAddress(mUniformRingBuffer.flip());
 
         // generic array index
         int posColorIndex = 0;
@@ -688,7 +690,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     bindPipeline(mGlyphPipe, ALPHA_TEX);
                     mGlyphPipe.bindIndexBuffer(mGlyphIndexBuffer);
                     mGlyphPipe.bindVertexBuffer(mGlyphVertexBuffer, 0);
-                    bindSampler(mLinearFontSampler.getSamplerID());
+                    bindSampler(mLinearFontSampler.getHandle());
 
                     int limit = glyphs.length;
                     int lastPos = 0;
@@ -768,7 +770,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         mClipRefs.clear();
         mLayerAlphas.clear();
         mDrawTexts.clear();
-        mUniformStagingBuffer.clear();
+        mUniformRingBuffer.clear();
         return true;
     }
 
@@ -907,16 +909,16 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     private ByteBuffer checkUniformStagingBuffer() {
-        if (mUniformStagingBuffer.remaining() < 64) {
-            int newCap = grow(mUniformStagingBuffer.capacity());
-            mUniformStagingBuffer = memRealloc(mUniformStagingBuffer, newCap);
+        if (mUniformRingBuffer.remaining() < 64) {
+            int newCap = grow(mUniformRingBuffer.capacity());
+            mUniformRingBuffer = memRealloc(mUniformRingBuffer, newCap);
             ModernUI.LOGGER.debug(MARKER, "Grow general uniform buffer to {} bytes", newCap);
         }
-        return mUniformStagingBuffer;
+        return mUniformRingBuffer;
     }
 
     public int getNativeMemoryUsage() {
-        return mColorMeshStagingBuffer.capacity() + mTextureMeshStagingBuffer.capacity() + mGlyphStagingBuffer.capacity() + mUniformStagingBuffer.capacity();
+        return mColorMeshStagingBuffer.capacity() + mTextureMeshStagingBuffer.capacity() + mGlyphStagingBuffer.capacity() + mUniformRingBuffer.capacity();
     }
 
     private static int grow(int cap) {

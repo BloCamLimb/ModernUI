@@ -18,6 +18,9 @@
 
 package icyllis.modernui.annotation;
 
+import javax.annotation.Nonnull;
+import javax.annotation.meta.TypeQualifierNickname;
+import javax.annotation.meta.When;
 import java.lang.annotation.*;
 
 /**
@@ -40,6 +43,9 @@ import java.lang.annotation.*;
         ElementType.LOCAL_VARIABLE,
         ElementType.ANNOTATION_TYPE,
         ElementType.TYPE_PARAMETER,
+        ElementType.TYPE_USE,
         ElementType.PACKAGE})
+@Nonnull(when = When.MAYBE)
+@TypeQualifierNickname
 public @interface Nullable {
 }

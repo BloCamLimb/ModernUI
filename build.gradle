@@ -1,3 +1,6 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
+
 buildscript {
     dependencies {
         classpath 'org.ow2.asm:asm:9.2'
@@ -9,6 +12,7 @@ buildscript {
 
 plugins {
     id 'maven-publish'
+    id "org.jetbrains.kotlin.jvm" version "1.8.21" apply false
 }
 
 publishing {
@@ -26,10 +30,13 @@ publishing {
 
 allprojects {
     apply plugin: 'java'
+    apply plugin: 'org.jetbrains.kotlin.jvm'
 
     group = 'icyllis.modernui'
 
     java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+
+    kotlin.jvmToolchain(17)
 
     repositories {
         mavenCentral()
@@ -41,15 +48,17 @@ allprojects {
         compileOnly 'org.jetbrains:annotations:23.1.0'
         testCompileOnly 'com.google.code.findbugs:jsr305:3.0.2'
         testCompileOnly 'org.jetbrains:annotations:23.1.0'
-        compileOnly "org.apache.logging.log4j:log4j-core:${log4j_version}"
-        compileOnly "org.apache.logging.log4j:log4j-api:${log4j_version}"
-        testCompileOnly "org.apache.logging.log4j:log4j-core:${log4j_version}"
-        testCompileOnly "org.apache.logging.log4j:log4j-api:${log4j_version}"
+        implementation "org.apache.logging.log4j:log4j-api:${log4j_version}"
+        implementation "org.apache.logging.log4j:log4j-core:${log4j_version}"
     }
 
     tasks.withType(JavaCompile).configureEach {
-        it.options.encoding = "UTF-8"
-        it.options.release.set(17)
+        options.encoding = "UTF-8"
+        options.release.set(17)
+    }
+
+    tasks.withType(KotlinCompilationTask).configureEach {
+        compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
     }
 
     java {
