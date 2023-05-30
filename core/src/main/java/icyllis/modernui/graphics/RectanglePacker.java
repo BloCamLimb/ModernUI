@@ -67,6 +67,7 @@ public abstract class RectanglePacker {
         return new Skyline(width, height);
     }
 
+    @NonNull
     public static RectanglePacker make(int width, int height, int algorithm) {
         return switch (algorithm) {
             case ALGORITHM_SKYLINE -> new Skyline(width, height);

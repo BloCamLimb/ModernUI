@@ -369,7 +369,7 @@ public final class GLPipeline extends ManagedResource {
     // @formatter:on
 
     @Override
-    public void deallocate() {
+    protected void deallocate() {
         if (mProgram != 0) {
             glDeleteProgram(mProgram);
         }

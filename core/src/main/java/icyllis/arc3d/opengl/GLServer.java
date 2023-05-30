@@ -65,6 +65,7 @@ public final class GLServer extends Server {
         GLBuffer.UniqueID mBoundBufferUniqueID;
     }
 
+    // context's buffer binding state, OpenGL 3 only
     private final HWBufferState[] mHWBufferStates = new HWBufferState[4];
 
     {
@@ -280,12 +281,12 @@ public final class GLServer extends Server {
 
         GLTextureParameters parameters = glTexture.getParameters();
         if (parameters.baseMipmapLevel != 0) {
-            glTextureParameteri(glTexture.getTextureID(), GL_TEXTURE_BASE_LEVEL, 0);
+            glTextureParameteri(glTexture.getHandle(), GL_TEXTURE_BASE_LEVEL, 0);
             parameters.baseMipmapLevel = 0;
         }
         int maxLevel = glTexture.getMaxMipmapLevel();
         if (parameters.maxMipmapLevel != maxLevel) {
-            glTextureParameteri(glTexture.getTextureID(), GL_TEXTURE_MAX_LEVEL, maxLevel);
+            glTextureParameteri(glTexture.getHandle(), GL_TEXTURE_MAX_LEVEL, maxLevel);
             parameters.maxMipmapLevel = maxLevel;
         }
 
@@ -313,7 +314,7 @@ public final class GLServer extends Server {
             restoreRowLength = true;
         }
 
-        glTextureSubImage2D(glTexture.getTextureID(), 0,
+        glTextureSubImage2D(glTexture.getHandle(), 0,
                 x, y, width, height, srcFormat, srcType, pixels);
 
         if (restoreRowLength) {

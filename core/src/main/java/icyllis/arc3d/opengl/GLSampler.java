@@ -122,7 +122,7 @@ public final class GLSampler extends ManagedResource {
         mSampler = 0;
     }
 
-    public int getSamplerID() {
+    public int getHandle() {
         return mSampler;
     }
 }

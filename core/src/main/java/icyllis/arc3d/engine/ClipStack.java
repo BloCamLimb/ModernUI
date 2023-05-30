@@ -22,9 +22,9 @@ import icyllis.modernui.graphics.Matrix4;
 import icyllis.modernui.graphics.Rect;
 
 /**
- * GPU hierarchical clipping using stencil test.
+ * GPU hierarchical clipping.
  */
-public class ClipStack {
+public final class ClipStack extends Clip {
 
     /**
      * Clip ops.

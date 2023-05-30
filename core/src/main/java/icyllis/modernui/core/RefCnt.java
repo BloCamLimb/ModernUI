@@ -20,6 +20,7 @@ package icyllis.modernui.core;
 
 import icyllis.modernui.annotation.SharedPtr;
 import it.unimi.dsi.fastutil.objects.*;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -34,6 +35,7 @@ import java.util.Comparator;
  * error for the destructor to be called explicitly (or calling
  * {@link #deallocate()}) if {@link #getRefCnt()} > 1.
  */
+@ApiStatus.Internal
 public abstract class RefCnt {
 
     private static final VarHandle REF_CNT;
@@ -48,7 +50,7 @@ public abstract class RefCnt {
         }
         // linked structure will not create large arrays and we don't care about the CPU overhead
         TRACKER = Object2BooleanMaps.synchronize(
-                new Object2BooleanAVLTreeMap<>(Comparator.comparingInt(System::identityHashCode)));
+                new Object2BooleanRBTreeMap<>(Comparator.comparingInt(System::identityHashCode)));
         try {
             assert false;
         } catch (AssertionError e) {
