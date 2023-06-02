@@ -85,7 +85,7 @@ public class GLPipelineState {
                                 PipelineInfo pipelineInfo,
                                 TextureProxy[] geomTextures) {
         int unit = 0;
-        for (int i = 0, e = pipelineInfo.geomProc().numTextureSamplers(); i < e; i++) {
+        for (int i = 0, n = pipelineInfo.geomProc().numTextureSamplers(); i < n; i++) {
             GLTexture texture = (GLTexture) geomTextures[i].peekTexture();
             commandBuffer.bindTexture(unit++, texture,
                     pipelineInfo.geomProc().textureSamplerState(i),

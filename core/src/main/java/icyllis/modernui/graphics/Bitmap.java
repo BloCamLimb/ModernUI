@@ -25,6 +25,7 @@ import icyllis.arc3d.opengl.GLTextureCompat;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.core.RefCnt;
+import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.stb.*;
 import org.lwjgl.system.MemoryStack;
@@ -487,6 +488,7 @@ public final class Bitmap implements AutoCloseable {
      *
      * @return the ref of pixel data, or null if released
      */
+    @ApiStatus.Internal
     public Ref getRef() {
         return mRef;
     }
@@ -637,12 +639,26 @@ public final class Bitmap implements AutoCloseable {
     }
 
     /**
+     * Same as {@link #close()}.
+     */
+    public void recycle() {
+        close();
+    }
+
+    /**
      * Returns true if this bitmap has been closed. If so, then it is an error
      * to try to access its pixels.
      *
      * @return true if the bitmap has been closed
      */
     public boolean isClosed() {
+        return mRef == null;
+    }
+
+    /**
+     * @return the same as {@link #isClosed()}
+     */
+    public boolean isRecycled() {
         return mRef == null;
     }
 

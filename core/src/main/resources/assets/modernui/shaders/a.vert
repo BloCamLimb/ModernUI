@@ -144,10 +144,10 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     float t1 = uv.x;
     float t2 = 1.0-uv.y;
 
-    const vec3 q11 = pow(vec3(0.2,0.85,0.95),vec3(2.2)); // top left
-    const vec3 q21 = pow(vec3(0.85,0.5,0.75),vec3(2.2)); // top right
-    const vec3 q12 = pow(vec3(0.95,0.5,0.05),vec3(2.2)); // bottom left
-    const vec3 q22 = pow(vec3(0.75,0.95,0.7),vec3(2.2)); // bottom right
+    const vec3 q11 = pow(vec3(0.2,0.85,0.95),vec3(2.2)); // top left 33D9F2
+    const vec3 q21 = pow(vec3(0.85,0.5,0.75),vec3(2.2)); // top right D97FBF
+    const vec3 q12 = pow(vec3(0.95,0.5,0.05),vec3(2.2)); // bottom left F27F0D
+    const vec3 q22 = pow(vec3(0.75,0.95,0.7),vec3(2.2)); // bottom right BFF2B2
     vec3 col = mix(mix(q11,q21,t1),mix(q12,q22,t1),t2);
     col = pow(col,vec3(1.0/2.2));
     col += (rand(pos)-0.5) / 255.0;

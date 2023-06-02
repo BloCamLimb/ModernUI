@@ -27,8 +27,8 @@ import static icyllis.arc3d.opengl.GLCore.*;
  * This class manages a GPU program and records per-program information. It also records the vertex
  * and instance attribute layouts that are to be used with the program.
  * <p>
- * This class represents an OpenGL vertex array object. It manages the lifetime of the vertex array
- * and is used to track the state of the vertex array to avoid redundant GL calls.
+ * This class manages the lifetime of the vertex array object and is used to track the state of the
+ * vertex array to avoid redundant GL calls.
  * <p>
  * Supports OpenGL 3.3 and OpenGL 4.5.
  */

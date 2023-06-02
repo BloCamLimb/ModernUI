@@ -509,5 +509,24 @@ public abstract class Server {
         public void incNumReorderedDAGsOverBudget() {
             mNumReorderedDAGsOverBudget++;
         }
+
+        @Override
+        public String toString() {
+            return "Stats{" +
+                    "mTextureCreates=" + mTextureCreates +
+                    ", mTextureUploads=" + mTextureUploads +
+                    ", mTransfersToTexture=" + mTransfersToTexture +
+                    ", mTransfersFromSurface=" + mTransfersFromSurface +
+                    ", mStencilAttachmentCreates=" + mStencilAttachmentCreates +
+                    ", mMSAAAttachmentCreates=" + mMSAAAttachmentCreates +
+                    ", mNumDraws=" + mNumDraws +
+                    ", mNumFailedDraws=" + mNumFailedDraws +
+                    ", mNumSubmitToGpus=" + mNumSubmitToGpus +
+                    ", mNumScratchTexturesReused=" + mNumScratchTexturesReused +
+                    ", mNumScratchMSAAAttachmentsReused=" + mNumScratchMSAAAttachmentsReused +
+                    ", mRenderPasses=" + mRenderPasses +
+                    ", mNumReorderedDAGsOverBudget=" + mNumReorderedDAGsOverBudget +
+                    '}';
+        }
     }
 }

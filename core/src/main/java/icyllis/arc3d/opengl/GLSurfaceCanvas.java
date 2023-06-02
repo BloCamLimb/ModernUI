@@ -1168,65 +1168,65 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     private void putRectColor(float left, float top, float right, float bottom, @NonNull Paint paint) {
+        putRectColor(left, top, right, bottom, paint.red(), paint.green(), paint.blue(), paint.alpha());
+    }
+
+    private void putRectColorGrad(float left, float top, float right, float bottom,
+                                  int colorUL, int colorUR, int colorLR, int colorLL) {
         final ByteBuffer buffer = checkColorMeshStagingBuffer();
-        if (paint.isGradient()) {
-            final int[] colors = paint.getColors();
 
-            // CCW
-            int color = colors[3];
-            float alpha = (color >>> 24);
-            float red = ((color >> 16) & 0xff) / 255.0f;
-            float green = ((color >> 8) & 0xff) / 255.0f;
-            float blue = (color & 0xff) / 255.0f;
-            byte r = (byte) (red * alpha + 0.5f);
-            byte g = (byte) (green * alpha + 0.5f);
-            byte b = (byte) (blue * alpha + 0.5f);
-            byte a = (byte) (alpha + 0.5f);
-            buffer.putFloat(left)
-                    .putFloat(bottom)
-                    .put(r).put(g).put(b).put(a);
+        // CCW
+        int color = colorLL;
+        float alpha = (color >>> 24);
+        float red = ((color >> 16) & 0xff) / 255.0f;
+        float green = ((color >> 8) & 0xff) / 255.0f;
+        float blue = (color & 0xff) / 255.0f;
+        byte r = (byte) (red * alpha + 0.5f);
+        byte g = (byte) (green * alpha + 0.5f);
+        byte b = (byte) (blue * alpha + 0.5f);
+        byte a = (byte) (alpha + 0.5f);
+        buffer.putFloat(left)
+                .putFloat(bottom)
+                .put(r).put(g).put(b).put(a);
 
-            color = colors[2];
-            alpha = (color >>> 24);
-            red = ((color >> 16) & 0xff) / 255.0f;
-            green = ((color >> 8) & 0xff) / 255.0f;
-            blue = (color & 0xff) / 255.0f;
-            r = (byte) (red * alpha + 0.5f);
-            g = (byte) (green * alpha + 0.5f);
-            b = (byte) (blue * alpha + 0.5f);
-            a = (byte) (alpha + 0.5f);
-            buffer.putFloat(right)
-                    .putFloat(bottom)
-                    .put(r).put(g).put(b).put(a);
+        color = colorLR;
+        alpha = (color >>> 24);
+        red = ((color >> 16) & 0xff) / 255.0f;
+        green = ((color >> 8) & 0xff) / 255.0f;
+        blue = (color & 0xff) / 255.0f;
+        r = (byte) (red * alpha + 0.5f);
+        g = (byte) (green * alpha + 0.5f);
+        b = (byte) (blue * alpha + 0.5f);
+        a = (byte) (alpha + 0.5f);
+        buffer.putFloat(right)
+                .putFloat(bottom)
+                .put(r).put(g).put(b).put(a);
 
-            color = colors[0];
-            alpha = (color >>> 24);
-            red = ((color >> 16) & 0xff) / 255.0f;
-            green = ((color >> 8) & 0xff) / 255.0f;
-            blue = (color & 0xff) / 255.0f;
-            r = (byte) (red * alpha + 0.5f);
-            g = (byte) (green * alpha + 0.5f);
-            b = (byte) (blue * alpha + 0.5f);
-            a = (byte) (alpha + 0.5f);
-            buffer.putFloat(left)
-                    .putFloat(top)
-                    .put(r).put(g).put(b).put(a);
+        color = colorUL;
+        alpha = (color >>> 24);
+        red = ((color >> 16) & 0xff) / 255.0f;
+        green = ((color >> 8) & 0xff) / 255.0f;
+        blue = (color & 0xff) / 255.0f;
+        r = (byte) (red * alpha + 0.5f);
+        g = (byte) (green * alpha + 0.5f);
+        b = (byte) (blue * alpha + 0.5f);
+        a = (byte) (alpha + 0.5f);
+        buffer.putFloat(left)
+                .putFloat(top)
+                .put(r).put(g).put(b).put(a);
 
-            color = colors[1];
-            alpha = (color >>> 24);
-            red = ((color >> 16) & 0xff) / 255.0f;
-            green = ((color >> 8) & 0xff) / 255.0f;
-            blue = (color & 0xff) / 255.0f;
-            r = (byte) (red * alpha + 0.5f);
-            g = (byte) (green * alpha + 0.5f);
-            b = (byte) (blue * alpha + 0.5f);
-            a = (byte) (alpha + 0.5f);
-            buffer.putFloat(right)
-                    .putFloat(top)
-                    .put(r).put(g).put(b).put(a);
-        } else {
-            putRectColor(left, top, right, bottom, paint.red(), paint.green(), paint.blue(), paint.alpha());
-        }
+        color = colorUR;
+        alpha = (color >>> 24);
+        red = ((color >> 16) & 0xff) / 255.0f;
+        green = ((color >> 8) & 0xff) / 255.0f;
+        blue = (color & 0xff) / 255.0f;
+        r = (byte) (red * alpha + 0.5f);
+        g = (byte) (green * alpha + 0.5f);
+        b = (byte) (blue * alpha + 0.5f);
+        a = (byte) (alpha + 0.5f);
+        buffer.putFloat(right)
+                .putFloat(top)
+                .put(r).put(g).put(b).put(a);
     }
 
     private void putRectColor(float left, float top, float right, float bottom,
@@ -1256,8 +1256,9 @@ public final class GLSurfaceCanvas extends GLCanvas {
         final ByteBuffer buffer = checkTextureMeshStagingBuffer();
         if (paint == null) {
             putRectColorUV(buffer, left, top, right, bottom, 1, 1, 1, 1, u1, v1, u2, v2);
-        } else if (paint.isGradient()) {
-            final int[] colors = paint.getColors();
+        } else if (false) {
+            //TODO add four color gradient for image
+            final int[] colors = new int[4];
 
             // CCW
             int color = colors[3];
@@ -1667,6 +1668,18 @@ public final class GLSurfaceCanvas extends GLCanvas {
         mDrawOps.add(DRAW_RECT);
     }
 
+    @Override
+    public void drawRectGradient(float left, float top, float right, float bottom,
+                                 int colorUL, int colorUR,
+                                 int colorLR, int colorLL, Paint paint) {
+        if (quickReject(left, top, right, bottom)) {
+            return;
+        }
+        drawMatrix();
+        putRectColorGrad(left, top, right, bottom, colorUL, colorUR, colorLR, colorLL);
+        mDrawOps.add(DRAW_RECT);
+    }
+
     // test stuff :p
     public void drawGlowWave(float left, float top, float right, float bottom) {
         if (quickReject(left, top, right, bottom)) {
@@ -1849,13 +1862,13 @@ public final class GLSurfaceCanvas extends GLCanvas {
                 // vertical
                 float top = Math.min(startY, stopY);
                 float bottom = Math.max(startY, stopY);
-                drawRoundRectFill(startX - t, top - t, startX + t, bottom + t, t, 0, paint);
+                drawRoundRectFill(startX - t, top - t, startX + t, bottom + t, 0, 0, 0, 0, false, t, 0, paint);
             }
         } else if (MathUtil.isApproxEqual(startY, stopY)) {
             // horizontal
             float left = Math.min(startX, stopX);
             float right = Math.max(startX, stopX);
-            drawRoundRectFill(left - t, startY - t, right + t, startY + t, t, 0, paint);
+            drawRoundRectFill(left - t, startY - t, right + t, startY + t, 0, 0, 0, 0, false, t, 0, paint);
         } else {
             float cx = (stopX + startX) * 0.5f;
             float cy = (stopY + startY) * 0.5f;
@@ -1871,7 +1884,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             float cos = MathUtil.cos(-ang);
             float left = (startX - cx) * cos - (startY - cy) * sin + cx;
             float right = (stopX - cx) * cos - (stopY - cy) * sin + cx;
-            drawRoundRectFill(left - t, cy - t, right + t, cy + t, t, 0, paint);
+            drawRoundRectFill(left - t, cy - t, right + t, cy + t, 0, 0, 0, 0, false, t, 0, paint);
             restore();
         }
     }
@@ -1884,20 +1897,42 @@ public final class GLSurfaceCanvas extends GLCanvas {
             radius = 0;
         }
         if (paint.getStyle() == Paint.FILL) {
-            drawRoundRectFill(left, top, right, bottom, radius, sides, paint);
+            drawRoundRectFill(left, top, right, bottom, 0, 0, 0, 0, false, radius, sides, paint);
         } else {
-            drawRoundRectStroke(left, top, right, bottom, radius, sides, paint);
+            drawRoundRectStroke(left, top, right, bottom, 0, 0, 0, 0, false, radius, sides, paint);
+        }
+    }
+
+    @Override
+    public void drawRoundRectGradient(float left, float top, float right, float bottom,
+                                      int colorUL, int colorUR,
+                                      int colorLR, int colorLL, float radius, Paint paint) {
+        radius = Math.min(radius, Math.min(right - left, bottom - top) * 0.5f);
+        if (radius < 0) {
+            radius = 0;
+        }
+        if (paint.getStyle() == Paint.FILL) {
+            drawRoundRectFill(left, top, right, bottom, colorUL, colorUR, colorLR, colorLL, true, radius, 0, paint);
+        } else {
+            drawRoundRectStroke(left, top, right, bottom, colorUL, colorUR, colorLR, colorLL, true, radius, 0, paint);
         }
     }
 
     private void drawRoundRectFill(float left, float top, float right, float bottom,
+                                   int colorUL, int colorUR,
+                                   int colorLR, int colorLL, boolean useGrad,
                                    float radius, int sides, @NonNull Paint paint) {
         if (quickReject(left, top, right, bottom)) {
             return;
         }
         drawMatrix();
         drawSmooth(Math.min(radius, paint.getSmoothWidth() / 2));
-        putRectColor(left - 1, top - 1, right + 1, bottom + 1, paint);
+        if (useGrad) {
+            putRectColorGrad(left - 1, top - 1, right + 1, bottom + 1,
+                    colorUL, colorUR, colorLR, colorLL);
+        } else {
+            putRectColor(left - 1, top - 1, right + 1, bottom + 1, paint);
+        }
         ByteBuffer buffer = checkUniformStagingBuffer();
         if ((sides & Gravity.RIGHT) == Gravity.RIGHT) {
             buffer.putFloat(left);
@@ -1924,6 +1959,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     private void drawRoundRectStroke(float left, float top, float right, float bottom,
+                                     int colorUL, int colorUR,
+                                     int colorLR, int colorLL, boolean useGrad,
                                      float radius, int sides, @NonNull Paint paint) {
         float strokeRadius = Math.min(radius, paint.getStrokeWidth() * 0.5f);
         if (strokeRadius < 0.0001f) {
@@ -1934,8 +1971,13 @@ public final class GLSurfaceCanvas extends GLCanvas {
         }
         drawMatrix();
         drawSmooth(Math.min(strokeRadius, paint.getSmoothWidth() / 2));
-        putRectColor(left - strokeRadius - 1, top - strokeRadius - 1, right + strokeRadius + 1,
-                bottom + strokeRadius + 1, paint);
+        if (useGrad) {
+            putRectColorGrad(left - strokeRadius - 1, top - strokeRadius - 1, right + strokeRadius + 1,
+                    bottom + strokeRadius + 1, colorUL, colorUR, colorLR, colorLL);
+        } else {
+            putRectColor(left - strokeRadius - 1, top - strokeRadius - 1, right + strokeRadius + 1,
+                    bottom + strokeRadius + 1, paint);
+        }
         ByteBuffer buffer = checkUniformStagingBuffer();
         if ((sides & Gravity.RIGHT) == Gravity.RIGHT) {
             buffer.putFloat(left);

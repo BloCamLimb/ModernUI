@@ -109,7 +109,7 @@ public abstract class GpuResource {
         @Nonnull
         private String mLabel = "";
 
-        private UniqueID() {
+        public UniqueID() {
             assert hashCode() == System.identityHashCode(this);
         }
 

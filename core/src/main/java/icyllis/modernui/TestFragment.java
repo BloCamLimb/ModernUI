@@ -440,7 +440,7 @@ public class TestFragment extends Fragment {
                 mGoodAnim = anim;
             }
 
-            for (int i = 0; i < 11; i++) {
+            for (int i = 0; i < 12; i++) {
                 View v;
                 LayoutParams p;
                 if (i == 1) {
@@ -578,7 +578,13 @@ public class TestFragment extends Fragment {
                     p = new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                             ViewGroup.LayoutParams.WRAP_CONTENT);
                     spinner.setMinimumWidth(dp(240));
-                } else {
+                } else if (i == 11) {
+                    FourColorPicker picker = new FourColorPicker(getContext());
+                    int dp6 = dp(6);
+                    picker.setPadding(dp6, dp6, dp6, dp6);
+                    v = picker;
+                    p = new LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
+                }   else {
                     v = new CView(getContext(), i);
                     p = new LayoutParams(dp(200), dp(50));
                 }
@@ -1053,6 +1059,128 @@ public class TestFragment extends Fragment {
                 }
             }
             paint.recycle();
+        }
+    }
+
+    public static class FourColorPicker extends RelativeLayout {
+
+        private EditText mULColorField;
+        private EditText mURColorField;
+        private EditText mLRColorField;
+        private EditText mLLColorField;
+
+        private int mULColor = ~0;
+        private int mURColor = ~0;
+        private int mLRColor = ~0;
+        private int mLLColor = ~0;
+
+        private final Rect mPreviewBox = new Rect();
+
+        private final View.OnFocusChangeListener mOnFieldFocusChange = (v, hasFocus) -> {
+            EditText input = (EditText) v;
+            if (!hasFocus) {
+                try {
+                    int color = Color.parseColor(input.getText().toString());
+                    if (input == mULColorField) {
+                        if (mULColor != color) {
+                            mULColor = color;
+                            invalidate();
+                        }
+                    } else if (input == mURColorField) {
+                        if (mURColor != color) {
+                            mURColor = color;
+                            invalidate();
+                        }
+                    } else if (input == mLRColorField) {
+                        if (mLRColor != color) {
+                            mLRColor = color;
+                            invalidate();
+                        }
+                    } else if (input == mLLColorField) {
+                        if (mLLColor != color) {
+                            mLLColor = color;
+                            invalidate();
+                        }
+                    }
+                    input.setTextColor(0xFF000000 | color);
+                } catch (Exception e) {
+                    input.setTextColor(0xFFFF0000);
+                }
+            }
+        };
+
+        public FourColorPicker(Context context) {
+            super(context);
+
+            int dp4 = dp(4);
+            mULColorField = createField();
+            {
+                var params = new LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
+                params.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+                params.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+                params.setMargins(dp4, dp4, dp4, dp4);
+                mULColorField.setId(601);
+                addView(mULColorField, params);
+            }
+            mURColorField = createField();
+            {
+                var params = new LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
+                params.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+                params.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+                params.setMargins(dp4, dp4, dp4, dp4);
+                mURColorField.setId(602);
+                addView(mURColorField, params);
+            }
+            mLRColorField = createField();
+            {
+                var params = new LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
+                params.addRule(RelativeLayout.BELOW, 602);
+                params.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+                params.setMargins(dp4, dp4, dp4, dp4);
+                addView(mLRColorField, params);
+            }
+            mLLColorField = createField();
+            {
+                var params = new LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
+                params.addRule(RelativeLayout.BELOW, 601);
+                params.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+                params.setMargins(dp4, dp4, dp4, dp4);
+                addView(mLLColorField, params);
+            }
+        }
+
+        @NonNull
+        private EditText createField() {
+            var field = new EditText(getContext());
+            field.setSingleLine();
+            field.setText("#FFFFFFFF");
+            field.setFilters(new InputFilter.LengthFilter(10));
+            field.setTextSize(16);
+            field.setOnFocusChangeListener(mOnFieldFocusChange);
+            return field;
+        }
+
+        @Override
+        protected void onDraw(@NonNull Canvas canvas) {
+            super.onDraw(canvas);
+
+            var paint = Paint.obtain();
+            canvas.drawRoundRectGradient(mPreviewBox.left, mPreviewBox.top, mPreviewBox.right, mPreviewBox.bottom,
+                    mULColor, mURColor, mLRColor, mLLColor, 4, paint);
+            paint.recycle();
+        }
+
+        @Override
+        protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+            super.onLayout(changed, left, top, right, bottom);
+
+            mPreviewBox.set(
+                    Math.max(mULColorField.getRight(), mLLColorField.getRight()) + 4,
+                    getPaddingTop() + 4,
+                    Math.min(mURColorField.getLeft(), mLRColorField.getLeft()) - 4,
+                    getHeight() - getPaddingBottom() - 4
+            );
+            invalidate();
         }
     }
 }

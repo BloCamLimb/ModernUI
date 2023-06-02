@@ -24,6 +24,7 @@ import icyllis.modernui.graphics.Rect;
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GLCapabilities;
+import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -65,7 +66,7 @@ public final class GLServer extends Server {
         GLBuffer.UniqueID mBoundBufferUniqueID;
     }
 
-    // context's buffer binding state, OpenGL 3 only
+    // context's buffer binding state
     private final HWBufferState[] mHWBufferStates = new HWBufferState[4];
 
     {
@@ -391,6 +392,10 @@ public final class GLServer extends Server {
         return bufferState.mTarget;
     }
 
+    public int maxTextureUnits() {
+        return mCaps.shaderCaps().mMaxFragmentSamplers;
+    }
+
     private int createTexture(int width, int height, int format, int levels) {
         assert (glFormatIsSupported(format));
         assert (!glFormatIsCompressed(format));
@@ -401,20 +406,63 @@ public final class GLServer extends Server {
         }
 
         assert (mCaps.isFormatTexturable(format));
-        assert (mCaps.isTextureStorageCompatible(format));
-        int texture = glCreateTextures(GL_TEXTURE_2D);
-        if (texture == 0) {
-            return 0;
-        }
-
-        if (mCaps.skipErrorChecks()) {
-            glTextureStorage2D(texture, levels, internalFormat, width, height);
-        } else {
-            glClearErrors();
-            glTextureStorage2D(texture, levels, internalFormat, width, height);
-            if (glGetError() != GL_NO_ERROR) {
-                glDeleteTextures(texture);
+        int texture;
+        if (mCaps.hasDSASupport()) {
+            assert (mCaps.isTextureStorageCompatible(format));
+            texture = glCreateTextures(GL_TEXTURE_2D);
+            if (texture == 0) {
                 return 0;
+            }
+            if (mCaps.skipErrorChecks()) {
+                glTextureStorage2D(texture, levels, internalFormat, width, height);
+            } else {
+                glClearErrors();
+                glTextureStorage2D(texture, levels, internalFormat, width, height);
+                if (glGetError() != GL_NO_ERROR) {
+                    glDeleteTextures(texture);
+                    return 0;
+                }
+            }
+        } else {
+            texture = glGenTextures();
+            if (texture == 0) {
+                return 0;
+            }
+            currentCommandBuffer().bindTextureForSetup(texture);
+
+            if (mCaps.isTextureStorageCompatible(format)) {
+                if (mCaps.skipErrorChecks()) {
+                    glTexStorage2D(GL_TEXTURE_2D, levels, internalFormat, width, height);
+                } else {
+                    glClearErrors();
+                    glTexStorage2D(GL_TEXTURE_2D, levels, internalFormat, width, height);
+                    if (glGetError() != GL_NO_ERROR) {
+                        glDeleteTextures(texture);
+                        return 0;
+                    }
+                }
+            } else {
+                final int externalFormat = mCaps.getFormatDefaultExternalFormat(format);
+                final int externalType = mCaps.getFormatDefaultExternalType(format);
+                final boolean checks = !mCaps.skipErrorChecks();
+                int error = 0;
+                if (checks) {
+                    glClearErrors();
+                }
+                for (int level = 0; level < levels; level++) {
+                    int currentWidth = Math.max(1, width >> level);
+                    int currentHeight = Math.max(1, height >> level);
+                    nglTexImage2D(GL_TEXTURE_2D, level, internalFormat,
+                            currentWidth, currentHeight,
+                            0, externalFormat, externalType, MemoryUtil.NULL);
+                    if (checks) {
+                        error |= glGetError();
+                    }
+                }
+                if (error != 0) {
+                    glDeleteTextures(texture);
+                    return 0;
+                }
             }
         }
 
