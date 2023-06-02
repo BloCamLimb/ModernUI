@@ -63,11 +63,22 @@ public final class GLCommandBuffer {
     private int mHWProgram;
     private int mHWVertexArray;
 
-    // raw ptr since managed by ResourceCache
+    // OpenGL 3 only.
+    private int mHWActiveTextureUnit;
+
+    /**
+     * Represents a non-zero texture ID is bound, but no GLTexture object is created.
+     *
+     * @see #bindTextureForSetup(int)
+     */
+    // OpenGL 3 only.
+    private static final GLTexture.UniqueID SETUP_TEXTURE_ID = new GLTexture.UniqueID();
+
+    // target is Texture2D
     private final GLTexture.UniqueID[] mHWTextureStates;
 
     static final class HWSamplerState {
-        // 0 is not a valid state, because maxAnisotropy >= 1
+        // default to invalid, we use 0 because it's not a valid sampler state
         int mSamplerState = 0;
         @SharedPtr
         GLSampler mBoundSampler = null;
@@ -77,7 +88,7 @@ public final class GLCommandBuffer {
 
     GLCommandBuffer(GLServer server) {
         mServer = server;
-        mHWTextureStates = new GLTexture.UniqueID[mServer.getCaps().shaderCaps().mMaxFragmentSamplers];
+        mHWTextureStates = new GLTexture.UniqueID[server.maxTextureUnits()];
         mHWSamplerStates = new HWSamplerState[mHWTextureStates.length];
         for (int i = 0; i < mHWSamplerStates.length; i++) {
             mHWSamplerStates[i] = new HWSamplerState();
@@ -98,11 +109,14 @@ public final class GLCommandBuffer {
 
         if ((states & Engine.GLBackendState.kTexture) != 0) {
             Arrays.fill(mHWTextureStates, null);
+            //TODO
             for (var ss : mHWSamplerStates) {
                 ss.mSamplerState = 0;
                 ss.mBoundSampler = RefCnt.move(ss.mBoundSampler);
             }
         }
+
+        mHWActiveTextureUnit = -1; // invalid
 
         if ((states & Engine.GLBackendState.kView) != 0) {
             mHWScissorTest = TriState_Unknown;
@@ -282,8 +296,14 @@ public final class GLCommandBuffer {
                 assert (!texture.isMipmapsDirty());
             }
         }
+        boolean dsa = mServer.getCaps().hasDSASupport();
         if (mHWTextureStates[binding] != texture.getUniqueID()) {
-            glBindTextureUnit(binding, texture.getHandle());
+            if (dsa) {
+                glBindTextureUnit(binding, texture.getHandle());
+            } else {
+                setTextureUnit(binding);
+                glBindTexture(GL_TEXTURE_2D, texture.getHandle());
+            }
             mHWTextureStates[binding] = texture.getUniqueID();
         }
         var ss = mHWSamplerStates[binding];
@@ -298,12 +318,20 @@ public final class GLCommandBuffer {
         }
         GLTextureParameters parameters = texture.getParameters();
         if (parameters.baseMipmapLevel != 0) {
-            glTextureParameteri(texture.getHandle(), GL_TEXTURE_BASE_LEVEL, 0);
+            if (dsa) {
+                glTextureParameteri(texture.getHandle(), GL_TEXTURE_BASE_LEVEL, 0);
+            } else {
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+            }
             parameters.baseMipmapLevel = 0;
         }
         int maxLevel = texture.getMaxMipmapLevel();
         if (parameters.maxMipmapLevel != maxLevel) {
-            glTextureParameteri(texture.getHandle(), GL_TEXTURE_MAX_LEVEL, maxLevel);
+            if (dsa) {
+                glTextureParameteri(texture.getHandle(), GL_TEXTURE_MAX_LEVEL, maxLevel);
+            } else {
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, maxLevel);
+            }
             parameters.maxMipmapLevel = maxLevel;
         }
         // texture view is available since 4.3, but less used in OpenGL
@@ -325,7 +353,36 @@ public final class GLCommandBuffer {
             readSwizzle >>= 4;
         }
         if (swizzleChanged) {
-            glTextureParameteriv(texture.getHandle(), GL_TEXTURE_SWIZZLE_RGBA, parameters.swizzle);
+            if (dsa) {
+                glTextureParameteriv(texture.getHandle(), GL_TEXTURE_SWIZZLE_RGBA, parameters.swizzle);
+            } else {
+                glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, parameters.swizzle);
+            }
         }
+    }
+
+    /**
+     * Binds texture unit in context. OpenGL 3 only.
+     *
+     * @param unit 0-based texture unit index
+     */
+    public void setTextureUnit(int unit) {
+        assert (unit >= 0 && unit < mHWTextureStates.length);
+        if (unit != mHWActiveTextureUnit) {
+            glActiveTexture(GL_TEXTURE0 + unit);
+            mHWActiveTextureUnit = unit;
+        }
+    }
+
+    /**
+     * Bind raw texture ID to a seldom used texture unit. OpenGL 3 only.
+     *
+     * @param texture the texture
+     */
+    public void bindTextureForSetup(int texture) {
+        int lastUnit = mHWTextureStates.length - 1;
+        setTextureUnit(lastUnit);
+        mHWTextureStates[lastUnit] = SETUP_TEXTURE_ID;
+        glBindTexture(GL_TEXTURE_2D, texture);
     }
 }

@@ -174,9 +174,6 @@ public class Paint {
     @GuardedBy("sPool")
     private static int sPoolSize;
 
-    @Deprecated
-    private static final int GRADIENT_MASK = 0x400;
-
     // local bits
     private static final int PRIVATE_MASK = 0x7FFFFFFF;
     // this bit is guarded by 'sPool'
@@ -225,9 +222,6 @@ public class Paint {
      * the highest bit is locked by 'sPool'
      */
     private int mFlags;
-
-    @Deprecated
-    private int[] mColors;
 
     /**
      * Creates a new Paint with defaults.
@@ -354,9 +348,6 @@ public class Paint {
             //mColorFilter = paint.mColorFilter;
             mImageFilter = paint.mImageFilter;
             mFlags = paint.mFlags;
-            if (paint.mColors != null) {
-                setColors(paint.mColors);
-            }
         }
     }
 
@@ -561,96 +552,6 @@ public class Paint {
         mG = MathUtil.clamp(g, 0.0f, 1.0f);
         mB = MathUtil.clamp(b, 0.0f, 1.0f);
         mA = MathUtil.clamp(a, 0.0f, 1.0f);
-    }
-
-    /**
-     * Set the colors in ARGB and enable gradient mode. When enabled, a primitive should
-     * use the colors sequentially, and {@link #setColor(int)} is ignored.
-     * You can use this to make gradient effect or edge fading effect in one pass,
-     * without post-processing shaders.
-     * <p>
-     * A Paint object has a backing array storing these values, then a copy of the parameter
-     * array will be used. The colors are used in the order of top left, top right, bottom right
-     * and bottom left.
-     * <p>
-     * If the length of the given array is less than 4, then rest color values will use the
-     * last color in the given array. If greater than 4, then rest values are ignored.
-     * <p>
-     * By default, this mode is disabled. Calling other methods like {@link #setColor(int)}
-     * or {@link #setAlpha(int)} will disable the mode.
-     *
-     * @param colors an array of sequential colors
-     * @see #setColors(int, int, int, int)
-     * @see #isGradient()
-     */
-    @Deprecated
-    public void setColors(@ColorInt int[] colors) {
-        int len = colors.length;
-        if (len == 0) {
-            return;
-        }
-        if (mColors == null) {
-            mColors = new int[4];
-        }
-        if (len < 4) {
-            System.arraycopy(colors, 0, mColors, 0, len);
-            for (int i = len; i < 4; i++) {
-                mColors[i] = colors[len - 1];
-            }
-        } else {
-            System.arraycopy(colors, 0, mColors, 0, 4);
-        }
-        mFlags |= GRADIENT_MASK;
-    }
-
-    /**
-     * Set the colors in ARGB and enable gradient mode. When enabled, a primitive should
-     * use the colors sequentially, and {@link #setColor(int)} is ignored.
-     * You can use this to make gradient effect or edge fading effect in one pass,
-     * without post-processing shaders.
-     * <p>
-     * The colors are used in the order of top left, top right, bottom right and bottom left.
-     *
-     * @param tl the top-left color
-     * @param tr the top-right color
-     * @param br the bottom-right color
-     * @param bl the bottom-left color
-     * @see #setColors(int[])
-     * @see #isGradient()
-     */
-    @Deprecated
-    public void setColors(@ColorInt int tl, @ColorInt int tr, @ColorInt int br, @ColorInt int bl) {
-        if (mColors == null) {
-            mColors = new int[4];
-        }
-        mColors[0] = tl;
-        mColors[1] = tr;
-        mColors[2] = br;
-        mColors[3] = bl;
-        mFlags |= GRADIENT_MASK;
-    }
-
-    /**
-     * Returns the backing array of the gradient colors. Each call will return
-     * the same array object. Do not modify the elements of the array.
-     *
-     * @return the backing array of the gradient colors, may be null
-     * @see #setColors(int[])
-     */
-    @Deprecated
-    public int[] getColors() {
-        return mColors;
-    }
-
-    /**
-     * Returns whether gradient colors are used.
-     *
-     * @return whether gradient mode is enabled
-     * @see #setColors(int[])
-     */
-    @Deprecated
-    public boolean isGradient() {
-        return (mFlags & GRADIENT_MASK) != 0;
     }
 
     /**

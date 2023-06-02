@@ -43,7 +43,6 @@ import java.lang.annotation.*;
         ElementType.LOCAL_VARIABLE,
         ElementType.ANNOTATION_TYPE,
         ElementType.TYPE_PARAMETER,
-        ElementType.TYPE_USE,
         ElementType.PACKAGE})
 @Nonnull(when = When.MAYBE)
 @TypeQualifierNickname

@@ -25,6 +25,7 @@ import icyllis.modernui.text.TextPaint;
 import icyllis.modernui.view.Gravity;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.nio.*;
 
@@ -549,6 +550,26 @@ public abstract class Canvas {
     public abstract void drawRect(float left, float top, float right, float bottom, Paint paint);
 
     /**
+     * Similar to {@link #drawRect(float, float, float, float, Paint)},
+     * but paint's color and shader are ignored in this case. Instead, draw a bilinear gradient
+     * with the four given colors, in 0xAARRGGBB format, in the sRGB color space.
+     *
+     * @param left    the left side of the rectangle to be drawn
+     * @param top     the top side of the rectangle to be drawn
+     * @param right   the right side of the rectangle to be drawn
+     * @param bottom  the bottom side of the rectangle to be drawn
+     * @param colorUL the color of the upper left corner
+     * @param colorUR the color of the upper right corner
+     * @param colorLR the color of the lower right corner
+     * @param colorLL the color of the lower left corner
+     * @param paint   the paint used to draw the rect
+     */
+    @ApiStatus.Experimental
+    public abstract void drawRectGradient(float left, float top, float right, float bottom,
+                                          int colorUL, int colorUR, int colorLR, int colorLL,
+                                          Paint paint);
+
+    /**
      * Draw a rectangle with rounded corners within a rectangular bounds. The round
      * rectangle will be filled or framed based on the Style in the paint.
      *
@@ -609,6 +630,27 @@ public abstract class Canvas {
      */
     public abstract void drawRoundRect(float left, float top, float right, float bottom,
                                        float radius, int sides, Paint paint);
+
+    /**
+     * Similar to {@link #drawRoundRect(float, float, float, float, float, Paint)},
+     * but paint's color and shader are ignored in this case. Instead, draw a bilinear gradient
+     * with the four given colors, in 0xAARRGGBB format, in the sRGB color space.
+     *
+     * @param left    the left of the rectangular bounds
+     * @param top     the top of the rectangular bounds
+     * @param right   the right of the rectangular bounds
+     * @param bottom  the bottom of the rectangular bounds
+     * @param colorUL the color of the upper left corner
+     * @param colorUR the color of the upper right corner
+     * @param colorLR the color of the lower right corner
+     * @param colorLL the color of the lower left corner
+     * @param radius  the radius used to round the corners
+     * @param paint   the paint used to draw the round rectangle
+     */
+    @ApiStatus.Experimental
+    public abstract void drawRoundRectGradient(float left, float top, float right, float bottom,
+                                               int colorUL, int colorUR, int colorLR, int colorLL,
+                                               float radius, Paint paint);
 
     /**
      * Draw the specified circle at (cx, cy) with radius using the specified paint.

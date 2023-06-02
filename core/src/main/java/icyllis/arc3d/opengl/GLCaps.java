@@ -33,6 +33,9 @@ import java.util.*;
 import static icyllis.arc3d.opengl.GLCore.*;
 import static org.lwjgl.opengl.EXTTextureCompressionS3TC.*;
 
+/**
+ * Stores some capabilities of a OpenGL context.
+ */
 public final class GLCaps extends Caps {
 
     public static final List<String> MISSING_EXTENSIONS = new ArrayList<>();
@@ -75,9 +78,10 @@ public final class GLCaps extends Caps {
         if (!caps.OpenGL45) {
             // we don't check CONTEXT_PROFILE_MASK, we assume it's always core profile if OpenGL 3.2 is available.
             if (!caps.OpenGL32) {
-                throw new AssertionError("OpenGL 3.2 core profile is unavailable");
+                throw new UnsupportedOperationException("OpenGL 3.2 core profile is unavailable");
             }
             List<String> missingExtensions = MISSING_EXTENSIONS;
+            missingExtensions.clear();
             if (!caps.OpenGL33) {
                 if (!caps.GL_ARB_blend_func_extended) {
                     missingExtensions.add("ARB_blend_func_extended");
@@ -95,16 +99,19 @@ public final class GLCaps extends Caps {
                     missingExtensions.add("ARB_texture_swizzle");
                 }
             }
+            // OpenGL 3.3 is the minimum requirement
             if (!missingExtensions.isEmpty()) {
                 throw new UnsupportedOperationException("Missing required extensions: " + missingExtensions);
             }
             if (!caps.OpenGL41) {
+                // macOS supports
                 if (!caps.GL_ARB_ES2_compatibility) {
                     missingExtensions.add("ARB_ES2_compatibility");
                 }
                 if (!caps.GL_ARB_get_program_binary) {
                     missingExtensions.add("ARB_get_program_binary");
                 }
+                // macOS supports
                 if (!caps.GL_ARB_viewport_array) {
                     missingExtensions.add("ARB_viewport_array");
                 }
@@ -113,9 +120,11 @@ public final class GLCaps extends Caps {
                 if (!caps.GL_ARB_base_instance) {
                     missingExtensions.add("ARB_base_instance");
                 }
+                // macOS supports
                 if (!caps.GL_ARB_texture_storage) {
                     missingExtensions.add("ARB_texture_storage");
                 }
+                // macOS supports
                 if (!caps.GL_ARB_internalformat_query) {
                     missingExtensions.add("ARB_internalformat_query");
                 }
@@ -262,6 +271,9 @@ public final class GLCaps extends Caps {
         final int nonMSAARenderFlags = FormatInfo.COLOR_ATTACHMENT_FLAG;
         final int msaaRenderFlags = nonMSAARenderFlags | FormatInfo.COLOR_ATTACHMENT_WITH_MSAA_FLAG;
 
+        final boolean textureStorageSupported =
+                caps.OpenGL42 || caps.GL_ARB_texture_storage;
+
         // Reserved for undefined
         mFormatTable[0] = new FormatInfo();
 
@@ -277,7 +289,9 @@ public final class GLCaps extends Caps {
             info.mDefaultColorType = ImageInfo.CT_RGBA_8888;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            if (textureStorageSupported) {
+                info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            }
             info.mInternalFormatForTexture = format;
 
             info.mColorTypeInfos = new ColorTypeInfo[3];
@@ -367,7 +381,9 @@ public final class GLCaps extends Caps {
             info.mDefaultColorType = ImageInfo.CT_R_8;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            if (textureStorageSupported) {
+                info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            }
             info.mInternalFormatForTexture = GL_R8;
 
             info.mColorTypeInfos = new ColorTypeInfo[3];
@@ -469,7 +485,9 @@ public final class GLCaps extends Caps {
             info.mDefaultColorType = ImageInfo.CT_RGB_565;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            if (textureStorageSupported) {
+                info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            }
             info.mInternalFormatForTexture = GL_RGB565;
 
             info.mColorTypeInfos = new ColorTypeInfo[1];
@@ -512,7 +530,9 @@ public final class GLCaps extends Caps {
             info.mDefaultColorType = ImageInfo.CT_RGBA_F16;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            if (textureStorageSupported) {
+                info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            }
             info.mInternalFormatForTexture = GL_RGBA16F;
 
             info.mColorTypeInfos = new ColorTypeInfo[2];
@@ -583,7 +603,9 @@ public final class GLCaps extends Caps {
             info.mDefaultColorType = ImageInfo.CT_R_F16;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            if (textureStorageSupported) {
+                info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            }
             info.mInternalFormatForTexture = GL_R16F;
 
             // Format: R16F, Surface: kAlpha_F16
@@ -635,7 +657,9 @@ public final class GLCaps extends Caps {
             } else {
                 info.mFlags |= nonMSAARenderFlags;
             }
-            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            if (textureStorageSupported) {
+                info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            }
             info.mInternalFormatForTexture = GL_RGB8;
 
             info.mColorTypeInfos = new ColorTypeInfo[1];
@@ -678,7 +702,9 @@ public final class GLCaps extends Caps {
             info.mDefaultColorType = ImageInfo.CT_RG_88;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            if (textureStorageSupported) {
+                info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            }
             info.mInternalFormatForTexture = GL_RG8;
 
             info.mColorTypeInfos = new ColorTypeInfo[1];
@@ -721,7 +747,9 @@ public final class GLCaps extends Caps {
             info.mDefaultColorType = ImageInfo.CT_RGBA_1010102;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            if (textureStorageSupported) {
+                info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            }
             info.mInternalFormatForTexture = GL_RGB10_A2;
 
             info.mColorTypeInfos = new ColorTypeInfo[2];
@@ -792,7 +820,9 @@ public final class GLCaps extends Caps {
             info.mDefaultColorType = ImageInfo.CT_RGBA_8888_SRGB;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            if (textureStorageSupported) {
+                info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            }
             info.mInternalFormatForTexture = GL_SRGB8_ALPHA8;
 
             info.mColorTypeInfos = new ColorTypeInfo[1];
@@ -871,7 +901,9 @@ public final class GLCaps extends Caps {
             info.mDefaultColorType = ImageInfo.CT_R_16;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            if (textureStorageSupported) {
+                info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            }
             info.mInternalFormatForTexture = GL_R16;
 
             info.mColorTypeInfos = new ColorTypeInfo[1];
@@ -916,7 +948,9 @@ public final class GLCaps extends Caps {
             info.mDefaultColorType = ImageInfo.CT_RG_1616;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            if (textureStorageSupported) {
+                info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            }
             info.mInternalFormatForTexture = GL_RG16;
 
             info.mColorTypeInfos = new ColorTypeInfo[1];
@@ -959,7 +993,9 @@ public final class GLCaps extends Caps {
             info.mDefaultColorType = ImageInfo.CT_RGBA_16161616;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            if (textureStorageSupported) {
+                info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            }
             info.mInternalFormatForTexture = GL_RGBA16;
 
             // Format: GL_RGBA16, Surface: kRGBA_16161616
@@ -1002,7 +1038,9 @@ public final class GLCaps extends Caps {
             info.mDefaultColorType = ImageInfo.CT_RG_F16;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            if (textureStorageSupported) {
+                info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            }
             info.mInternalFormatForTexture = GL_RG16F;
 
             info.mColorTypeInfos = new ColorTypeInfo[1];
@@ -1427,6 +1465,13 @@ public final class GLCaps extends Caps {
      */
     public int getRenderbufferInternalFormat(int format) {
         return getFormatInfo(format).mInternalFormatForRenderbuffer;
+    }
+
+    /**
+     * Gets the default external format to use with glTex[Sub]Image... when the data pointer is null.
+     */
+    public int getFormatDefaultExternalFormat(int format) {
+        return getFormatInfo(format).mDefaultExternalFormat;
     }
 
     /**

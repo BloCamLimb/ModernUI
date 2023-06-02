@@ -60,7 +60,7 @@ public class ViewConfiguration {
      * Defines the default duration in milliseconds before a press turns into
      * a long press
      */
-    private static final int DEFAULT_LONG_PRESS_TIMEOUT = 400;
+    private static final int DEFAULT_LONG_PRESS_TIMEOUT = 1000;
 
     /**
      * Defines the duration in milliseconds we will wait to see if a touch event

@@ -16,27 +16,8 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.annotation;
+package icyllis.modernui.widget;
 
-import javax.annotation.Nonnull;
-import javax.annotation.meta.TypeQualifierNickname;
-import java.lang.annotation.*;
-
-/**
- * Denotes that a parameter, field or method return value can never be null.
- * <p>
- * This is a marker annotation and it has no specific attributes.
- */
-@Documented
-@Retention(RetentionPolicy.CLASS)
-@Target({ElementType.METHOD,
-        ElementType.PARAMETER,
-        ElementType.FIELD,
-        ElementType.LOCAL_VARIABLE,
-        ElementType.ANNOTATION_TYPE,
-        ElementType.TYPE_PARAMETER,
-        ElementType.PACKAGE})
-@Nonnull
-@TypeQualifierNickname
-public @interface NonNull {
+//TODO
+public class ViewDragHelper {
 }

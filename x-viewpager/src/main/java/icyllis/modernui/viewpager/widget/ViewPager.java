@@ -685,6 +685,72 @@ public class ViewPager extends ViewGroup {
         invalidate();
     }
 
+    /**
+     * Sets the edge effect color for both top and bottom edge effects.
+     *
+     * @param color The color for the edge effects.
+     * @see #setLeftEdgeEffectColor(int)
+     * @see #setRightEdgeEffectColor(int)
+     * @see #getLeftEdgeEffectColor()
+     * @see #getRightEdgeEffectColor()
+     */
+    public void setEdgeEffectColor(int color) {
+        setLeftEdgeEffectColor(color);
+        setRightEdgeEffectColor(color);
+    }
+
+    /**
+     * Sets the left edge effect color.
+     *
+     * @param color The color for the left edge effect.
+     * @see #setRightEdgeEffectColor(int)
+     * @see #setEdgeEffectColor(int)
+     * @see #getLeftEdgeEffectColor()
+     * @see #getRightEdgeEffectColor()
+     */
+    public void setLeftEdgeEffectColor(int color) {
+        mLeftEdge.setColor(color);
+    }
+
+    /**
+     * Sets the right edge effect color.
+     *
+     * @param color The color for the right edge effect.
+     * @see #setLeftEdgeEffectColor(int)
+     * @see #setEdgeEffectColor(int)
+     * @see #getLeftEdgeEffectColor()
+     * @see #getRightEdgeEffectColor()
+     */
+    public void setRightEdgeEffectColor(int color) {
+        mRightEdge.setColor(color);
+    }
+
+    /**
+     * Returns the left edge effect color.
+     *
+     * @return The left edge effect color.
+     * @see #setEdgeEffectColor(int)
+     * @see #setRightEdgeEffectColor(int)
+     * @see #setLeftEdgeEffectColor(int)
+     * @see #getRightEdgeEffectColor()
+     */
+    public int getLeftEdgeEffectColor() {
+        return mLeftEdge.getColor();
+    }
+
+    /**
+     * Returns the right edge effect color.
+     *
+     * @return The right edge effect color.
+     * @see #setEdgeEffectColor(int)
+     * @see #setRightEdgeEffectColor(int)
+     * @see #setLeftEdgeEffectColor(int)
+     * @see #getLeftEdgeEffectColor()
+     */
+    public int getRightEdgeEffectColor() {
+        return mRightEdge.getColor();
+    }
+
     @Override
     protected boolean verifyDrawable(@NonNull Drawable drawable) {
         return super.verifyDrawable(drawable) || drawable == mMarginDrawable;
@@ -1740,6 +1806,7 @@ public class ViewPager extends ViewGroup {
                  */
                 mLastMotionX = mInitialMotionX = ev.getX();
                 mLastMotionY = mInitialMotionY = ev.getY();
+                mActivePointerId = 0;
                 mIsUnableToDrag = false;
 
                 mIsScrollStarted = true;
@@ -1804,6 +1871,7 @@ public class ViewPager extends ViewGroup {
                 // Remember where the motion event started
                 mLastMotionX = mInitialMotionX = ev.getX();
                 mLastMotionY = mInitialMotionY = ev.getY();
+                mActivePointerId = 0;
             }
             case MotionEvent.ACTION_MOVE -> {
                 if (!mIsBeingDragged) {

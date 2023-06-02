@@ -56,11 +56,14 @@ public class LinearPagerIndicator extends View {
             float segLength = (getWidth() - mLineWidth) / mPageCount;
             float left = position * segLength;
             float right = left + segLength + mLineWidth;
+
+            float v = (getHeight() - mLineWidth) * 0.5f;
+
             mLineRect.set(
                     left + segLength * TimeInterpolator.DECELERATE.getInterpolation(positionOffset),
-                    getHeight() - mLineWidth,
+                    v,
                     right + segLength * TimeInterpolator.ACCELERATE.getInterpolation(positionOffset),
-                    getBottom());
+                    v + mLineWidth);
             invalidate();
         }
 
@@ -74,6 +77,8 @@ public class LinearPagerIndicator extends View {
 
     private final PageListener mPageListener = new PageListener();
 
+    private int mLineColor = 0xF0AADCF0;
+
     public LinearPagerIndicator(Context context) {
         super(context);
     }
@@ -82,10 +87,22 @@ public class LinearPagerIndicator extends View {
         mLineWidth = lineWidth;
     }
 
+    public float getLineWidth() {
+        return mLineWidth;
+    }
+
+    public void setLineColor(int lineColor) {
+        mLineColor = lineColor;
+    }
+
+    public int getLineColor() {
+        return mLineColor;
+    }
+
     @Override
     protected void onDraw(@NonNull Canvas canvas) {
         var paint = Paint.obtain();
-        paint.setColor(0xF0AADCF0);
+        paint.setColor(mLineColor);
         canvas.drawRoundRect(mLineRect, mLineWidth / 2, paint);
         paint.recycle();
     }
