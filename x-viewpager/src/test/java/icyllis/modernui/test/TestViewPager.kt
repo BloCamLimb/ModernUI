@@ -63,12 +63,12 @@ class TestViewPager : Fragment() {
             val indicator = LinearPagerIndicator(context)
             indicator.setPager(pager)
             val lp = ViewPager.LayoutParams()
-            lp.height = pager.dp(30f)
+            lp.height = pager.dp(30F)
             lp.isDecor = true
             lp.gravity = Gravity.CENTER_HORIZONTAL
             pager.addView(indicator, lp)
         }
-        val lp = FrameLayout.LayoutParams(pager.dp(480f), pager.dp(360f))
+        val lp = FrameLayout.LayoutParams(pager.dp(480F), pager.dp(360F))
         lp.gravity = Gravity.CENTER
         pager.layoutParams = lp
 
@@ -84,7 +84,7 @@ class TestViewPager : Fragment() {
 
         override fun instantiateItem(container: ViewGroup, position: Int): Any {
             val tv = TextView(container.context)
-            tv.text = "This is page $position"
+            tv.text = "This is page ${position + 1}"
             tv.gravity = Gravity.CENTER
             container.addView(tv)
             return tv

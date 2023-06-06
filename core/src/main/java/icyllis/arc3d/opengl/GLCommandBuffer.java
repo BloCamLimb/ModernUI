@@ -32,7 +32,7 @@ import static icyllis.arc3d.opengl.GLCore.*;
  * mostly the same as that on {@link GLServer}, but {@link GLCommandBuffer} assumes some values
  * and will not handle dirty context.
  *
- * @see GLServer#beginRenderPass(GLRenderTarget, int, int, float[])
+ * @see GLServer#beginRenderPass(GLFramebufferSet, int, int, float[])
  */
 public final class GLCommandBuffer {
 
@@ -56,7 +56,7 @@ public final class GLCommandBuffer {
 
     private int mHWFramebuffer;
     @SharedPtr
-    private GLRenderTarget mHWRenderTarget;
+    private GLFramebufferSet mHWRenderTarget;
 
     @SharedPtr
     private GLPipeline mHWPipeline;
@@ -238,11 +238,11 @@ public final class GLCommandBuffer {
      *
      * @param target raw ptr to render target
      */
-    public void flushRenderTarget(GLRenderTarget target) {
+    public void flushRenderTarget(GLFramebufferSet target) {
         if (target == null) {
             mHWRenderTarget = RefCnt.move(mHWRenderTarget);
         } else {
-            int framebuffer = target.getRenderFramebuffer();
+            int framebuffer = target.getSampleFramebuffer();
             if (mHWFramebuffer != framebuffer ||
                     mHWRenderTarget != target) {
                 glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);

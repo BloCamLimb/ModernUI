@@ -128,8 +128,8 @@ public final class RenderSurfaceProxy extends SurfaceProxy {
 
     @Nullable
     @Override
-    public RenderTarget peekRenderTarget() {
-        return mSurface != null ? mSurface.getRenderTarget() : null;
+    public FramebufferSet peekFramebufferSet() {
+        return mSurface != null ? mSurface.getFramebufferSet() : null;
     }
 
     @Override

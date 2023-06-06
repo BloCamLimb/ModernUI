@@ -155,11 +155,11 @@ public class GLFontAtlas implements AutoCloseable {
         }
 
         // include border
-        mTexture.uploadCompat(0, rect.left, rect.top,
+        mTexture.upload(0, rect.left, rect.top,
                 rect.width(), rect.height(),
                 0, 0, 0, 1,
                 mMaskFormat == Engine.MASK_FORMAT_ARGB ? GL_RGBA : GL_RED, GL_UNSIGNED_BYTE, pixels);
-        mTexture.generateMipmapCompat();
+        mTexture.generateMipmap();
 
         // exclude border
         glyph.u1 = (float) (rect.left + GlyphManager.GLYPH_BORDER) / mWidth;
@@ -174,7 +174,7 @@ public class GLFontAtlas implements AutoCloseable {
         if (mWidth == 0) {
             // initialize 4 chunks
             mWidth = mHeight = CHUNK_SIZE * 2;
-            mTexture.allocate2DCompat(mMaskFormat == Engine.MASK_FORMAT_ARGB ? GL_RGBA8 : GL_R8,
+            mTexture.allocate2D(mMaskFormat == Engine.MASK_FORMAT_ARGB ? GL_RGBA8 : GL_R8,
                     mWidth, mHeight, MIPMAP_LEVEL);
             for (int x = 0; x < mWidth; x += CHUNK_SIZE) {
                 for (int y = 0; y < mHeight; y += CHUNK_SIZE) {
@@ -206,7 +206,7 @@ public class GLFontAtlas implements AutoCloseable {
 
             // copy to new texture
             GLTextureCompat newTexture = new GLTextureCompat(GL_TEXTURE_2D);
-            newTexture.allocate2DCompat(mMaskFormat == Engine.MASK_FORMAT_ARGB ? GL_RGBA8 : GL_R8, mWidth, mHeight,
+            newTexture.allocate2D(mMaskFormat == Engine.MASK_FORMAT_ARGB ? GL_RGBA8 : GL_R8, mWidth, mHeight,
                     MIPMAP_LEVEL);
             if (sCopyFramebuffer == 0) {
                 sCopyFramebuffer = glGenFramebuffers();
@@ -253,10 +253,10 @@ public class GLFontAtlas implements AutoCloseable {
 
             // we later generate mipmap
         }
-        mTexture.setFilterCompat(sLinearSampling ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST, GL_NEAREST);
+        mTexture.setFilter(sLinearSampling ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST, GL_NEAREST);
         if (mMaskFormat == Engine.MASK_FORMAT_A8) {
             //XXX: un-premultiplied
-            mTexture.setSwizzleCompat(GL_ONE, GL_ONE, GL_ONE, GL_RED);
+            mTexture.setSwizzle(GL_ONE, GL_ONE, GL_ONE, GL_RED);
         }
     }
 
@@ -270,9 +270,11 @@ public class GLFontAtlas implements AutoCloseable {
             ModernUI.LOGGER.info(GlyphManager.MARKER, "Glyphs: {}", mGlyphs.size());
             if (mWidth == 0)
                 return;
-            try (Bitmap bitmap = Bitmap.download(mMaskFormat == Engine.MASK_FORMAT_ARGB ? Bitmap.Format.RGBA_8888 :
-                            Bitmap.Format.GRAY_8,
-                    mTexture, false)) {
+            try (Bitmap bitmap = Bitmap.download(
+                    mMaskFormat == Engine.MASK_FORMAT_ARGB
+                            ? Bitmap.Format.RGBA_8888
+                            : Bitmap.Format.GRAY_8,
+                    mTexture)) {
                 bitmap.saveToPath(Bitmap.SaveFormat.PNG, 100, Path.of(path));
             } catch (IOException e) {
                 e.printStackTrace();

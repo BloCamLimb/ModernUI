@@ -92,6 +92,8 @@ public class ModernUI extends Context implements AutoCloseable, LifecycleOwner {
     private Resources mResources = new Resources();
     private ToastManager mToastManager;
 
+    private Image mBackgroundImage;
+
     public ModernUI() {
         synchronized (ModernUI.class) {
             if (sInstance == null) {
@@ -144,7 +146,7 @@ public class ModernUI extends Context implements AutoCloseable, LifecycleOwner {
         } else {
             VideoMode mode = monitor.getCurrentMode();
             mWindow = MainWindow.initialize("Modern UI",
-                    mode.getWidth(), mode.getHeight());
+                    (int) (mode.getWidth() * 0.75), (int) (mode.getHeight() * 0.75));
             mWindow.center(monitor);
             int[] physw = {0}, physh = {0};
             glfwGetMonitorPhysicalSize(monitor.getHandle(), physw, physh);
@@ -171,10 +173,8 @@ public class ModernUI extends Context implements AutoCloseable, LifecycleOwner {
         LOGGER.info(MARKER, "Preparing threads");
         Looper.prepare(mWindow);
 
-        mRenderThread = new Thread(this::runRender, "Render-Thread");
+        mRenderThread = new Thread(() -> runRender(fragment), "Render-Thread");
         mRenderThread.start();
-        mUiThread = new Thread(() -> runUI(fragment), "UI-Thread");
-        mUiThread.start();
 
         try (Bitmap i16 = BitmapFactory.decodeStream(getResourceStream(ID, "AppLogo16x.png"));
              Bitmap i32 = BitmapFactory.decodeStream(getResourceStream(ID, "AppLogo32x.png"));
@@ -189,13 +189,16 @@ public class ModernUI extends Context implements AutoCloseable, LifecycleOwner {
     }
 
     @RenderThread
-    private void runRender() {
+    private void runRender(Fragment fragment) {
         LOGGER.info(MARKER, "Initializing render thread");
         final Window window = mWindow;
         window.makeCurrent();
         if (!Core.initOpenGL()) {
             throw new IllegalStateException("Failed to initialize OpenGL");
         }
+        mUiThread = new Thread(() -> runUI(fragment), "UI-Thread");
+        mUiThread.start();
+
         GLCore.setupDebugCallback();
         GLCore.showCapsErrorDialog();
 
@@ -215,7 +218,6 @@ public class ModernUI extends Context implements AutoCloseable, LifecycleOwner {
         framebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT2, GL_RGBA8);
         framebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT3, GL_RGBA8);
         framebuffer.addRenderbufferAttachment(GL_STENCIL_ATTACHMENT, GL_STENCIL_INDEX8);
-        framebuffer.setDrawBuffer(GL_COLOR_ATTACHMENT0);
 
         window.swapInterval(1);
         LOGGER.info(MARKER, "Looping render thread");
@@ -240,6 +242,7 @@ public class ModernUI extends Context implements AutoCloseable, LifecycleOwner {
                 LockSupport.parkNanos((long) (1.0 / 288 * 1e9));
             }
         }
+        GLSurfaceCanvas.getInstance().destroy();
         Core.getDirectContext().unref();
         LOGGER.info(MARKER, "Quited render thread");
     }
@@ -269,11 +272,13 @@ public class ModernUI extends Context implements AutoCloseable, LifecycleOwner {
         try {
             Path p = Path.of("assets/modernui/raw/eromanga.png").toAbsolutePath();
             FileChannel channel = FileChannel.open(p, StandardOpenOption.READ);
-            GLTextureCompat texture = GLTextureManager.getInstance().create(channel, true);
-            Image image = new Image(texture);
-            Drawable drawable = new ImageDrawable(image);
-            drawable.setTint(0xFF808080);
-            mDecor.setBackground(drawable);
+            Image image = ImageStore.getInstance().create(channel);
+            if (image != null) {
+                Drawable drawable = new ImageDrawable(image);
+                drawable.setTint(0xFF808080);
+                mDecor.setBackground(drawable);
+                mBackgroundImage = image;
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -320,6 +325,7 @@ public class ModernUI extends Context implements AutoCloseable, LifecycleOwner {
         mFragmentController.dispatchDestroy();
         mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY);
 
+        Core.getUiRecordingContext().unref();
         LOGGER.info(MARKER, "Quited UI thread");
     }
 
@@ -453,6 +459,10 @@ public class ModernUI extends Context implements AutoCloseable, LifecycleOwner {
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
+                }
+                if (mBackgroundImage != null) {
+                    mBackgroundImage.close();
+                    mBackgroundImage = null;
                 }
                 if (mRenderThread != null && mRenderThread.isAlive()) {
                     LOGGER.info(MARKER, "Quiting render thread");

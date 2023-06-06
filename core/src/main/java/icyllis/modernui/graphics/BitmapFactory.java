@@ -689,7 +689,7 @@ public final class BitmapFactory {
             // determine the final format we got
             Bitmap.Format format = requiredFormat != null
                     ? requiredFormat
-                    : Bitmap.Format.of(channels_in_file, isU16, isHDR);
+                    : Bitmap.Format.get(channels_in_file, isU16, isHDR);
             ColorSpace cs = isHDR
                     ? ColorSpace.get(ColorSpace.Named.LINEAR_EXTENDED_SRGB)
                     : ColorSpace.get(ColorSpace.Named.SRGB);
@@ -735,7 +735,7 @@ public final class BitmapFactory {
             int width = memGetInt(pOuts),
                     height = memGetInt(pOuts + 4),
                     channels_in_file = memGetInt(pOuts + 8);
-            Bitmap.Format format = Bitmap.Format.of(channels_in_file, isU16, isHDR);
+            Bitmap.Format format = Bitmap.Format.get(channels_in_file, isU16, isHDR);
             ColorSpace cs = isHDR
                     ? ColorSpace.get(ColorSpace.Named.LINEAR_EXTENDED_SRGB)
                     : ColorSpace.get(ColorSpace.Named.SRGB);

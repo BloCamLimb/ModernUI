@@ -44,29 +44,19 @@ public final class GLRenderbufferCompat extends GLObjectCompat {
     public void allocate(int internalFormat, int width, int height, int samples) {
         if (samples < 0) {
             throw new IllegalArgumentException();
-        } else if (samples > 0) {
-            glNamedRenderbufferStorageMultisample(get(), samples, internalFormat, width, height);
-        } else {
-            glNamedRenderbufferStorage(get(), internalFormat, width, height);
         }
-    }
-
-    public int getWidth() {
-        return glGetNamedRenderbufferParameteri(get(), GL_RENDERBUFFER_WIDTH);
-    }
-
-    public int getHeight() {
-        return glGetNamedRenderbufferParameteri(get(), GL_RENDERBUFFER_HEIGHT);
-    }
-
-    public int getInternalFormat() {
-        return glGetNamedRenderbufferParameteri(get(), GL_RENDERBUFFER_INTERNAL_FORMAT);
+        glBindRenderbuffer(GL_RENDERBUFFER, get());
+        if (samples > 1) {
+            glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, internalFormat, width, height);
+        } else {
+            glRenderbufferStorage(GL_RENDERBUFFER, internalFormat, width, height);
+        }
     }
 
     private static final class Ref extends GLObjectCompat.Ref {
 
         private Ref(@Nonnull GLRenderbufferCompat owner) {
-            super(owner, glCreateRenderbuffers());
+            super(owner, glGenRenderbuffers());
         }
 
         @Override

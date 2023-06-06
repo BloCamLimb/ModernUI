@@ -280,8 +280,8 @@ public final class GLCore extends GL45C {
         final String glRenderer = glGetString(GL_RENDERER);
         final String glVersion = glGetString(GL_VERSION);
         new Thread(() -> {
-            String solution = "Try to update your GPU drivers. " +
-                    "If you have multiple GPUs, ensure Java applications run with the dedicated GPU.";
+            String solution = "Please make sure you have up-to-date GPU drivers. " +
+                    "Also make sure Java applications run with the discrete GPU if you have multiple GPUs.";
             String extensions = String.join("\n", GLCaps.MISSING_EXTENSIONS);
             TinyFileDialogs.tinyfd_messageBox("Failed to launch Modern UI",
                     "GPU: " + glRenderer + ", OpenGL: " + glVersion + ". " +

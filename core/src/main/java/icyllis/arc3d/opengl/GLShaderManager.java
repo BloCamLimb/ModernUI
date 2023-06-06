@@ -23,11 +23,12 @@ import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.core.Core;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.IOException;
-import java.nio.channels.ReadableByteChannel;
+import java.nio.ByteBuffer;
 import java.util.*;
 
 import static icyllis.arc3d.opengl.GLCore.*;
@@ -91,7 +92,7 @@ public class GLShaderManager {
      * Get or create a shader stage, call this on listener callback.
      *
      * @param namespace the application namespace
-     * @param entry   sub paths to the shader source, parent is 'shaders'
+     * @param entry     sub paths to the shader source, parent is 'shaders'
      * @return the shader stage handle or 0 on failure
      * @see #getStage(String, String, int)
      * @see #addListener(Listener)
@@ -153,26 +154,21 @@ public class GLShaderManager {
                 type = GLCore.GL_FRAGMENT_SHADER;
             } else if (path.endsWith(".geom")) {
                 type = GL_GEOMETRY_SHADER;
-            } else if (path.endsWith(".tesc")) {
-                type = GL_TESS_CONTROL_SHADER;
-            } else if (path.endsWith(".tese")) {
-                type = GL_TESS_EVALUATION_SHADER;
-            } else if (path.endsWith(".comp")) {
-                type = GL_COMPUTE_SHADER;
             } else {
                 ModernUI.LOGGER.warn(GLCore.MARKER, "Unknown type identifier for shader source {}:{}", namespace, path);
                 return 0;
             }
         }
-        try (ReadableByteChannel channel = ModernUI.getInstance().getResourceChannel(namespace, path)) {
-            String source = Core.readUTF8(channel);
-            if (source == null) {
-                ModernUI.LOGGER.error(GLCore.MARKER, "Failed to read shader source {}:{}", namespace, path);
-                mShaders.get(namespace).putIfAbsent(path, 0);
-                return 0;
-            }
+        ByteBuffer source = null;
+        try (var stream = ModernUI.getInstance().getResourceStream(namespace, path);
+             var stack = MemoryStack.stackPush()) {
+            source = Core.readIntoNativeBuffer(stream);
             shader = GLCore.glCreateShader(type);
-            GLCore.glShaderSource(shader, source);
+            var pLength = stack.mallocInt(1);
+            pLength.put(0, source.position());
+            var pString = stack.mallocPointer(1);
+            pString.put(0, MemoryUtil.memAddress0(source));
+            GLCore.glShaderSource(shader, pString, pLength);
             GLCore.glCompileShader(shader);
             if (GLCore.glGetShaderi(shader, GLCore.GL_COMPILE_STATUS) == GL_FALSE) {
                 String log = GLCore.glGetShaderInfoLog(shader, 8192).trim();
@@ -185,6 +181,8 @@ public class GLShaderManager {
             return shader;
         } catch (IOException e) {
             ModernUI.LOGGER.error(GLCore.MARKER, "Failed to get shader source {}:{}\n", namespace, path, e);
+        } finally {
+            MemoryUtil.memFree(source);
         }
         mShaders.get(namespace).putIfAbsent(path, 0);
         return 0;

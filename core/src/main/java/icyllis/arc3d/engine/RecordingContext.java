@@ -77,7 +77,7 @@ public abstract sealed class RecordingContext extends Context
      */
     public final boolean isSurfaceCompatible(int colorType) {
         colorType = Engine.colorTypeToPublic(colorType);
-        if (    ImageInfo.CT_RG_1616 == colorType ||
+        if (ImageInfo.CT_RG_1616 == colorType ||
                 ImageInfo.CT_A16_UNORM == colorType ||
                 ImageInfo.CT_A16_FLOAT == colorType ||
                 ImageInfo.CT_RG_F16 == colorType ||
@@ -168,6 +168,6 @@ public abstract sealed class RecordingContext extends Context
     public final void checkOwnerThread() {
         if (Thread.currentThread() != mOwnerThread)
             throw new IllegalStateException("Method expected to call from " + mOwnerThread +
-                    " but currently is " + Thread.currentThread());
+                    ", current " + Thread.currentThread() + ", deferred " + !(this instanceof DirectContext));
     }
 }

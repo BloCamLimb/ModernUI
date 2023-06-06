@@ -19,27 +19,18 @@
 package icyllis.modernui.test
 
 import icyllis.arc3d.engine.Surface
+import icyllis.arc3d.opengl.GLBackendFormat
 import icyllis.arc3d.opengl.GLCore
-import icyllis.arc3d.opengl.GLTexture
+import icyllis.arc3d.opengl.GLFramebufferSet
 import icyllis.modernui.core.Core
 import icyllis.modernui.core.MainWindow
-import icyllis.modernui.graphics.Bitmap
-import icyllis.modernui.graphics.BitmapFactory
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.core.config.Configurator
 import org.lwjgl.glfw.GLFW
-import org.lwjgl.opengl.GL11C
-import org.lwjgl.opengl.GL45C
-import java.nio.file.Path
 
 fun main() {
     System.setProperty("java.awt.headless", "true")
     Configurator.setRootLevel(Level.ALL)
-
-    val get = Bitmap.openDialogGet(null, null, null) ?: return
-    val opts = BitmapFactory.Options()
-    opts.inPreferredFormat = Bitmap.Format.RGBA_8888
-    val sourceBm = BitmapFactory.decodePath(Path.of(get), opts)
 
     Core.initialize()
 
@@ -55,34 +46,22 @@ fun main() {
     window.makeCurrent()
     check(Core.initOpenGL()) { "Failed to initialize OpenGL" }
     GLCore.setupDebugCallback()
-    GLCore.showCapsErrorDialog()
 
     val dContext = Core.getDirectContext()
 
-    var proxy = dContext.proxyProvider.createProxyFromBitmap(sourceBm, sourceBm.colorType, Surface.FLAG_BUDGETED)
+    val proxy = dContext.proxyProvider.createRenderTextureProxy(
+        GLBackendFormat.make(GLCore.GL_RGBA8),
+        1600, 900, 4,
+        Surface.FLAG_BUDGETED + Surface.FLAG_MIPMAPPED
+    )
     check(proxy != null) { "Failed to create proxy" }
-    proxy.instantiate(dContext.resourceProvider)
+    check(proxy.instantiate(dContext.resourceProvider))
 
-    proxy.unref()
-
-    proxy = dContext.proxyProvider.createProxyFromBitmap(sourceBm, sourceBm.colorType, Surface.FLAG_BUDGETED)
-    check(proxy != null) { "Failed to create proxy" }
-    proxy.instantiate(dContext.resourceProvider)
-
-    val outBm = Bitmap.createBitmap(sourceBm.width, sourceBm.height, Bitmap.Format.RGBA_8888)
-    try {
-        GL45C.glGetTextureImage(
-            (proxy.peekTexture() as GLTexture).handle, 0, GL11C.GL_RGBA, GL11C.GL_UNSIGNED_BYTE,
-            outBm.size, outBm.pixels
-        )
-        outBm.saveDialog(Bitmap.SaveFormat.PNG, 100, null)
-    } finally {
-        sourceBm.close()
-        proxy.unref()
-        outBm.close()
-    }
-
-    println(dContext.server.stats)
+    val rt = proxy.peekFramebufferSet() as GLFramebufferSet
+    println(rt)
+    println(rt.stencilBuffer)
+    println(rt.sampleFramebuffer)
+    println(rt.resolveFramebuffer)
 
     dContext.unref()
     window.close()

@@ -651,7 +651,7 @@ public final class GLCaps extends Caps {
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             // Even in OpenGL 4.6 GL_RGB8 is required to be color renderable but not required to be
             // a supported render buffer format. Since we usually use render buffers for MSAA on
-            // non-ES GL we don't support MSAA for GL_RGB8.
+            // we don't support MSAA for GL_RGB8.
             if (glGetInternalformati(GL_RENDERBUFFER, GL_RGB8, GL_INTERNALFORMAT_SUPPORTED) == GL_TRUE) {
                 info.mFlags |= msaaRenderFlags;
             } else {
@@ -707,7 +707,7 @@ public final class GLCaps extends Caps {
             }
             info.mInternalFormatForTexture = GL_RG8;
 
-            info.mColorTypeInfos = new ColorTypeInfo[1];
+            info.mColorTypeInfos = new ColorTypeInfo[2];
             // Format: RG8, Surface: kRG_88
             {
                 ColorTypeInfo ctInfo = info.mColorTypeInfos[0] = new ColorTypeInfo();
@@ -733,6 +733,27 @@ public final class GLCaps extends Caps {
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
                     ioFormat.mExternalWriteFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
+                }
+            }
+
+            // Added by Modern UI, this is useful for grayscale PNG image rendering.
+            // Format: RG8, Surface: kGrayAlpha_88
+            {
+                ColorTypeInfo ctInfo = info.mColorTypeInfos[1] = new ColorTypeInfo();
+                ctInfo.mColorType = ImageInfo.CT_GRAY_ALPHA_88;
+                ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG;
+                ctInfo.mReadSwizzle = Swizzle.make("rrrg");
+                setColorTypeFormat(ImageInfo.CT_GRAY_ALPHA_88, GL_RG8);
+
+                // External IO ColorTypes:
+                ctInfo.mExternalIOFormats = new ExternalIOFormat[1];
+                // Format: RG8, Surface: kGrayAlpha_88, Data: kGrayAlpha_88
+                {
+                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
+                    ioFormat.mColorType = ImageInfo.CT_GRAY_ALPHA_88;
+                    ioFormat.mExternalType = GL_UNSIGNED_BYTE;
+                    ioFormat.mExternalWriteFormat = GL_RG;
+                    ioFormat.mExternalReadFormat = GL_RG;
                 }
             }
         }
@@ -1309,7 +1330,7 @@ public final class GLCaps extends Caps {
     @NonNull
     @Override
     public PipelineDesc makeDesc(PipelineDesc desc,
-                                 RenderTarget renderTarget,
+                                 FramebufferSet framebufferSet,
                                  final PipelineInfo pipelineInfo) {
         return PipelineDesc.build(desc, pipelineInfo, this);
     }
@@ -1606,9 +1627,9 @@ public final class GLCaps extends Caps {
         public String toString() {
             return "ColorTypeInfo{" +
                     "mColorType=" + mColorType +
-                    ", mFlags=" + mFlags +
-                    ", mReadSwizzle=" + mReadSwizzle +
-                    ", mWriteSwizzle=" + mWriteSwizzle +
+                    ", mFlags=0x" + Integer.toHexString(mFlags) +
+                    ", mReadSwizzle=" + Swizzle.toString(mReadSwizzle) +
+                    ", mWriteSwizzle=" + Swizzle.toString(mWriteSwizzle) +
                     ", mExternalIOFormats=" + Arrays.toString(mExternalIOFormats) +
                     '}';
         }

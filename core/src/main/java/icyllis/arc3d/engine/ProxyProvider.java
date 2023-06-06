@@ -20,7 +20,7 @@ package icyllis.arc3d.engine;
 
 import icyllis.modernui.annotation.SharedPtr;
 import icyllis.modernui.core.RefCnt;
-import icyllis.modernui.graphics.*;
+import icyllis.modernui.graphics.Bitmap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import javax.annotation.Nullable;
@@ -133,7 +133,7 @@ public final class ProxyProvider {
      */
     @Nullable
     @SharedPtr
-    public TextureProxy createProxyFromBitmap(Bitmap bitmap, int surfaceFlags) {
+    public TextureProxy createProxyFromBitmap(Bitmap bitmap, int dstColorType, int surfaceFlags) {
         mContext.checkOwnerThread();
         assert ((surfaceFlags & Surface.FLAG_APPROX_FIT) == 0) ||
                 ((surfaceFlags & Surface.FLAG_MIPMAPPED) == 0);
@@ -146,31 +146,17 @@ public final class ProxyProvider {
         if (!bitmap.isImmutable()) {
             return null;
         }
-        int colorType = bitmap.getColorType();
-        BackendFormat format = mContext.getCaps()
-                .getDefaultBackendFormat(colorType, false);
+        var format = mContext.getCaps()
+                .getDefaultBackendFormat(dstColorType, false);
         if (format == null) {
             return null;
         }
-        int width = bitmap.getWidth();
-        int height = bitmap.getHeight();
-        Bitmap.Ref ref = RefCnt.create(bitmap.getRef());
-        TextureProxy proxy = createLazyProxy(format, width, height, surfaceFlags,
-                (provider, _format, _width, _height, _samples, _surfaceFlags, label) -> {
-                    @SharedPtr
-                    Texture texture = provider.createTexture(_width, _height,
-                            _format,
-                            _samples,
-                            _surfaceFlags,
-                            colorType,
-                            colorType,
-                            ref.getRowStride(),
-                            ref.getPixels(),
-                            label);
-                    RefCnt.move(ref);
-                    //TODO add an ASAP mipmap gen task
-                    return new SurfaceProxy.LazyCallbackResult(texture);
-                });
+        var srcColorType = bitmap.getColorType();
+        var width = bitmap.getWidth();
+        var height = bitmap.getHeight();
+        @SharedPtr
+        var proxy = createLazyProxy(format, width, height, surfaceFlags,
+                new BitmapCallback(bitmap.getRef(), srcColorType, dstColorType));
         if (proxy == null) {
             return null;
         }
@@ -178,6 +164,43 @@ public final class ProxyProvider {
             proxy.doLazyInstantiation(mDirect.getResourceProvider());
         }
         return proxy;
+    }
+
+    private static final class BitmapCallback implements SurfaceProxy.LazyInstantiateCallback {
+
+        private Bitmap.Ref ref;
+        private final int srcColorType;
+        private final int dstColorType;
+
+        public BitmapCallback(Bitmap.Ref ref, int srcColorType, int dstColorType) {
+            ref.ref();
+            this.ref = ref;
+            this.srcColorType = srcColorType;
+            this.dstColorType = dstColorType;
+        }
+
+        @Override
+        public SurfaceProxy.LazyCallbackResult onLazyInstantiate(ResourceProvider provider, BackendFormat format,
+                                                                 int width, int height, int sampleCount,
+                                                                 int surfaceFlags, String label) {
+            @SharedPtr
+            Texture texture = provider.createTexture(width, height,
+                    format,
+                    sampleCount,
+                    surfaceFlags,
+                    dstColorType,
+                    srcColorType,
+                    ref.getRowStride(),
+                    ref.getPixels(),
+                    label);
+            ref = RefCnt.move(ref);
+            return new SurfaceProxy.LazyCallbackResult(texture);
+        }
+
+        @Override
+        public void close() {
+            ref = RefCnt.move(ref);
+        }
     }
 
     /**
@@ -202,6 +225,8 @@ public final class ProxyProvider {
             // Deferred proxies for compressed textures are not supported.
             return null;
         }
+
+        surfaceFlags |= Surface.FLAG_RENDERABLE;
 
         if (!mContext.getCaps().validateSurfaceParams(width, height, format, sampleCount, surfaceFlags)) {
             return null;

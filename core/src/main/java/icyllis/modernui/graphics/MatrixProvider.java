@@ -18,40 +18,15 @@
 
 package icyllis.modernui.graphics;
 
-import javax.annotation.Nonnull;
+import icyllis.modernui.annotation.NonNull;
 
-public abstract class MatrixProvider {
-
-    final Matrix4 mLocalToDevice;
+public interface MatrixProvider {
 
     /**
-     * Create a matrix provider from an identity matrix.
-     */
-    public MatrixProvider() {
-        this(Matrix4.identity());
-    }
-
-    /**
-     * Create a matrix provider from the given matrix.
-     *
-     * @param localToDevice the backing matrix
-     */
-    public MatrixProvider(final Matrix4 localToDevice) {
-        mLocalToDevice = localToDevice;
-    }
-
-    /**
-     * {@code const Matrix4& localToDevice() const;}
+     * Returns the backing local-to-device matrix.
      *
      * @return the backing local-to-device matrix
      */
-    @Nonnull
-    public final Matrix4 localToDevice() {
-        return mLocalToDevice;
-    }
-
-    /**
-     * {@code virtual bool getLocalToMarker(uint32_t id, Matrix4* localToMarker) const = 0;}
-     */
-    public abstract boolean getLocalToMarker(int id, Matrix4 localToMarker);
+    @NonNull
+    Matrix4 getLocalToDevice();
 }
