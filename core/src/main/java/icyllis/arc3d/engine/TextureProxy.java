@@ -23,6 +23,8 @@ import icyllis.modernui.annotation.SharedPtr;
 import icyllis.modernui.graphics.Rect;
 import org.jetbrains.annotations.ApiStatus;
 
+import java.util.Objects;
+
 public class TextureProxy extends SurfaceProxy {
 
     boolean mIsPromiseProxy = false;
@@ -72,7 +74,7 @@ public class TextureProxy extends SurfaceProxy {
                         int surfaceFlags,
                         LazyInstantiateCallback callback) {
         super(format, width, height, surfaceFlags);
-        mLazyInstantiateCallback = callback;
+        mLazyInstantiateCallback = Objects.requireNonNull(callback);
         // A "fully" lazy proxy's width and height are not known until instantiation time.
         // So fully lazy proxies are created with width and height < 0. Regular lazy proxies must be
         // created with positive widths and heights. The width and height are set to 0 only after a
@@ -110,6 +112,11 @@ public class TextureProxy extends SurfaceProxy {
         // Due to the order of cleanup the Texture this proxy may have wrapped may have gone away
         // at this point. Zero out the pointer so the cache invalidation code doesn't try to use it.
         mTexture = GpuResource.move(mTexture);
+
+        if (mLazyInstantiateCallback != null) {
+            mLazyInstantiateCallback.close();
+            mLazyInstantiateCallback = null;
+        }
 
         // In DDL-mode, uniquely keyed proxies keep their key even after their originating
         // proxy provider has gone away. In that case there is no-one to send the invalid key
@@ -257,12 +264,6 @@ public class TextureProxy extends SurfaceProxy {
     @Override
     public Texture peekTexture() {
         return mTexture;
-    }
-
-    @Nullable
-    @Override
-    public RenderTarget peekRenderTarget() {
-        return mTexture != null ? mTexture.getRenderTarget() : null;
     }
 
     @Override
@@ -452,10 +453,6 @@ public class TextureProxy extends SurfaceProxy {
             mWidth = mHeight = 0;
             return false;
         }
-        if (((mSurfaceFlags & Surface.FLAG_RENDERABLE) == 0) != (texture.getRenderTarget() == null) ||
-                (mSurfaceFlags & Surface.FLAG_RENDERABLE) != 0 && (texture.getRenderTarget().getTexture() != texture)) {
-            throw new IllegalStateException("Unexpected render target access");
-        }
 
         if (isLazyMost()) {
             // This was a lazy-most proxy. We need to fill in the width & height. For normal
@@ -486,6 +483,7 @@ public class TextureProxy extends SurfaceProxy {
         assert mTexture == null;
         mTexture = texture;
         if (releaseCallback) {
+            mLazyInstantiateCallback.close();
             mLazyInstantiateCallback = null;
         }
 

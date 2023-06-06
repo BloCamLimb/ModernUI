@@ -20,11 +20,14 @@ package icyllis.modernui.graphics;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.core.RefCnt;
+
+import javax.annotation.Nonnull;
 
 /**
  * Base class for drawing devices.
  */
-public abstract class BaseDevice extends MatrixProvider {
+public abstract class BaseDevice extends RefCnt implements MatrixProvider {
 
     protected static final int
             CLIP_TYPE_EMPTY = 0,
@@ -34,16 +37,21 @@ public abstract class BaseDevice extends MatrixProvider {
     protected final Rect mBounds = new Rect();
 
     final ImageInfo mInfo;
+
+    final Matrix4 mLocalToDevice = Matrix4.identity();
+
     // mDeviceToGlobal and mGlobalToDevice are inverses of each other; there are never that many
     // Devices, so pay the memory cost to avoid recalculating the inverse.
     final Matrix3 mDeviceToGlobal = Matrix3.identity();
     final Matrix3 mGlobalToDevice = Matrix3.identity();
 
-    MarkerStack mMarkerStack;
-
     public BaseDevice(ImageInfo info) {
         mInfo = info;
         mBounds.set(0, 0, info.width(), info.height());
+    }
+
+    @Override
+    protected void deallocate() {
     }
 
     /**
@@ -90,6 +98,12 @@ public abstract class BaseDevice extends MatrixProvider {
         bounds.set(getClipBounds());
     }
 
+    @Nonnull
+    @Override
+    public final Matrix4 getLocalToDevice() {
+        return mLocalToDevice;
+    }
+
     /**
      * Return the device's coordinate space transform: this maps from the device's coordinate space
      * into the global canvas' space (or root device space). This includes the translation
@@ -128,34 +142,6 @@ public abstract class BaseDevice extends MatrixProvider {
         // global and then from global to the other device.
         out.set(mDeviceToGlobal);
         out.postConcat(device.mGlobalToDevice);
-    }
-
-    @Override
-    public final boolean getLocalToMarker(int id, Matrix4 localToMarker) {
-        // The marker stack stores CTM snapshots, which are "marker to global" matrices.
-        // We ask for the (cached) inverse, which is a "global to marker" matrix.
-        Matrix4 globalToMarker = null;
-        // ID 0 is special, and refers to the CTM (local-to-global)
-        if (mMarkerStack != null && (id == 0 || (globalToMarker = mMarkerStack.findMarkerInverse(id)) != null)) {
-            // globalToMarker will still be the identity if id is zero
-            if (globalToMarker == null) {
-                localToMarker.setIdentity();
-            } else {
-                localToMarker.set(globalToMarker);
-            }
-            localToMarker.preConcat(mDeviceToGlobal);
-            localToMarker.preConcat(mLocalToDevice);
-            return true;
-        }
-        return false;
-    }
-
-    public final MarkerStack markerStack() {
-        return mMarkerStack;
-    }
-
-    public final void setMarkerStack(MarkerStack ms) {
-        mMarkerStack = ms;
     }
 
     public final void save() {

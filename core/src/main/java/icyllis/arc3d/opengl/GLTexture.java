@@ -19,29 +19,23 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.engine.*;
-import icyllis.modernui.annotation.SharedPtr;
 import icyllis.modernui.core.Kernel32;
-import icyllis.modernui.core.RefCnt;
 import org.lwjgl.opengl.EXTMemoryObject;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.system.Platform;
 
 import javax.annotation.Nonnull;
-import java.util.function.Function;
 
 import static icyllis.arc3d.opengl.GLCore.*;
 
 /**
  * Represents OpenGL 2D textures.
  */
-public final class GLTexture extends Texture {
+public class GLTexture extends Texture {
 
     private GLTextureInfo mInfo;
     private final GLBackendTexture mBackendTexture;
     private final boolean mOwnership;
-
-    @SharedPtr
-    private GLRenderTarget mRenderTarget;
 
     private final long mMemorySize;
 
@@ -51,7 +45,7 @@ public final class GLTexture extends Texture {
               GLTextureInfo info,
               BackendFormat format,
               boolean budgeted,
-              Function<GLTexture, GLRenderTarget> target) {
+              boolean register) {
         super(server, width, height);
         assert info.texture != 0;
         assert GLCore.glFormatIsSupported(format.getGLFormat());
@@ -65,13 +59,11 @@ public final class GLTexture extends Texture {
         if (mBackendTexture.isMipmapped()) {
             mFlags |= Surface.FLAG_MIPMAPPED;
         }
-        if (target != null) {
-            mRenderTarget = target.apply(this);
-            mFlags |= Surface.FLAG_RENDERABLE;
-        }
 
         mMemorySize = computeSize(format, width, height, 1, info.levelCount);
-        registerWithCache(budgeted);
+        if (register) {
+            registerWithCache(budgeted);
+        }
     }
 
     // Constructor for instances wrapping backend objects.
@@ -101,11 +93,6 @@ public final class GLTexture extends Texture {
 
         mMemorySize = computeSize(format, width, height, 1, info.levelCount);
         registerWithCacheWrapped(cacheable);
-    }
-
-    @Override
-    public int getSampleCount() {
-        return mRenderTarget != null ? mRenderTarget.getSampleCount() : 1;
     }
 
     @Nonnull
@@ -149,11 +136,6 @@ public final class GLTexture extends Texture {
     }
 
     @Override
-    public GLRenderTarget getRenderTarget() {
-        return mRenderTarget;
-    }
-
-    @Override
     protected void onSetLabel(@Nonnull String label) {
         if (getServer().getCaps().hasDebugSupport()) {
             assert mInfo != null;
@@ -184,14 +166,12 @@ public final class GLTexture extends Texture {
             }
         }
         mInfo = null;
-        mRenderTarget = RefCnt.move(mRenderTarget);
         super.onRelease();
     }
 
     @Override
     protected void onDiscard() {
         mInfo = null;
-        mRenderTarget = RefCnt.move(mRenderTarget);
         super.onDiscard();
     }
 

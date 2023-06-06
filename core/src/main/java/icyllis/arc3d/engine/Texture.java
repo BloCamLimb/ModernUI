@@ -25,16 +25,14 @@ import icyllis.modernui.core.RefCnt;
  * Represents 2D textures can be sampled by shaders, can also be used as attachments
  * of render targets.
  * <p>
- * By default, a Texture is not renderable (not created with a RenderTarget), all
- * mipmaps (including the base level) are dirty. But it can be promoted to renderable
- * whenever needed (i.e. lazy initialization), then we call it a RenderTexture or
- * TextureRenderTarget. The texture will be the main color buffer of the single
- * sample framebuffer of the render target. So we can cache these framebuffers with
- * texture. With promotion, the scratch key is changed and the sample count (MSAA)
- * is locked. Additionally, it may create more surfaces and attach them to it. These
- * surfaces are budgeted but cannot be reused. In most cases, we reuse textures, so
- * these surfaces are reused together. When renderable is not required, the cache
- * will give priority to the texture without promotion. See {@link RenderTextureProxy}.
+ * By default, a Texture is not renderable (not implements {@link RenderTarget}), all
+ * mipmaps (including the base level) are dirty. But it can be renderable on
+ * creation, then we call it a RenderTexture or TextureRenderTarget. The texture
+ * will be the main color buffer of the single sample framebuffer of the render target.
+ * So we can cache these framebuffers with texture. Additionally, it may create more
+ * surfaces and attach them to it. These surfaces are budgeted but cannot be reused.
+ * In most cases, we reuse textures, so these surfaces are reused together, see
+ * {@link FramebufferSet}.
  */
 public abstract class Texture extends GpuResource implements Surface {
 
@@ -203,7 +201,7 @@ public abstract class Texture extends GpuResource implements Surface {
 
     @Nullable
     @Override
-    protected final ScratchKey computeScratchKey() {
+    protected ScratchKey computeScratchKey() {
         BackendFormat format = getBackendFormat();
         if (format.isCompressed()) {
             return null;
@@ -212,7 +210,7 @@ public abstract class Texture extends GpuResource implements Surface {
         return new ScratchKey().compute(
                 format,
                 mWidth, mHeight,
-                getSampleCount(),
+                1,
                 mFlags); // budgeted flag is not included, this method is called only when budgeted
     }
 

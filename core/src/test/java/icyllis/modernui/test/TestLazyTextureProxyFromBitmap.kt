@@ -59,13 +59,13 @@ fun main() {
 
     val dContext = Core.getDirectContext()
 
-    var proxy = dContext.proxyProvider.createProxyFromBitmap(sourceBm, Surface.FLAG_BUDGETED)
+    var proxy = dContext.proxyProvider.createProxyFromBitmap(sourceBm, sourceBm.colorType, Surface.FLAG_BUDGETED)
     check(proxy != null) { "Failed to create proxy" }
     proxy.instantiate(dContext.resourceProvider)
 
     proxy.unref()
 
-    proxy = dContext.proxyProvider.createProxyFromBitmap(sourceBm, Surface.FLAG_BUDGETED)
+    proxy = dContext.proxyProvider.createProxyFromBitmap(sourceBm, sourceBm.colorType, Surface.FLAG_BUDGETED)
     check(proxy != null) { "Failed to create proxy" }
     proxy.instantiate(dContext.resourceProvider)
 

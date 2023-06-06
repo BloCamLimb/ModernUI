@@ -189,6 +189,219 @@ public class Color {
     }
 
     /**
+     * Converts RGB to its HSV components.
+     * hsv[0] contains hsv hue, a value from zero to less than 360.
+     * hsv[1] contains hsv saturation, a value from zero to one.
+     * hsv[2] contains hsv value, a value from zero to one.
+     *
+     * @param r   red component value from zero to 255
+     * @param g   green component value from zero to 255
+     * @param b   blue component value from zero to 255
+     * @param hsv three element array which holds the resulting HSV components
+     */
+    public static void RGBToHSV(int r, int g, int b, float[] hsv) {
+        int max = Math.max(r, Math.max(g, b));
+        int min = Math.min(r, Math.min(g, b));
+
+        int delta = max - min;
+
+        if (delta == 0) {
+            hsv[0] = 0;
+            hsv[1] = 0;
+            hsv[2] = max / 255.0f;
+            return;
+        }
+
+        float h;
+
+        if (max == r) {
+            h = (float) (g - b) / delta;
+        } else if (max == g) {
+            h = 2.0f + (float) (b - r) / delta;
+        } else { // max == blue
+            h = 4.0f + (float) (r - g) / delta;
+        }
+
+        h *= 60;
+        if (h < 0) {
+            h += 360;
+        }
+
+        hsv[0] = h;
+        hsv[1] = (float) delta / max;
+        hsv[2] = max / 255.0f;
+    }
+
+    /**
+     * Converts RGB to its HSV components. Alpha in ARGB (if it has) is ignored.
+     * hsv[0] contains hsv hue, and is assigned a value from zero to less than 360.
+     * hsv[1] contains hsv saturation, a value from zero to one.
+     * hsv[2] contains hsv value, a value from zero to one.
+     *
+     * @param color RGB or ARGB color to convert
+     * @param hsv   three element array which holds the resulting HSV components
+     */
+    public static void RGBToHSV(int color, float[] hsv) {
+        RGBToHSV(red(color), green(color), blue(color), hsv);
+    }
+
+    /**
+     * Converts HSV components to an RGB color. Alpha is NOT implicitly set.
+     * <p>
+     * Out of range hsv values are clamped.
+     *
+     * @param h hsv hue, an angle from zero to less than 360
+     * @param s hsv saturation, and varies from zero to one
+     * @param v hsv value, and varies from zero to one
+     * @return RGB equivalent to HSV, without alpha
+     */
+    public static int HSVToColor(float h, float s, float v) {
+        s = MathUtil.clamp(s, 0.0f, 1.0f);
+        v = MathUtil.clamp(v, 0.0f, 1.0f);
+
+        if (s <= 1.0f / 1024.0f) {
+            int i = (int) (v * 255.0f + 0.5f);
+            return (i << 16) | (i << 8) | i;
+        }
+
+        float hx = (h < 0 || h >= 360.0f) ? 0 : h / 60.0f;
+        int w = (int) hx;
+        float f = hx - w;
+
+        float p = v * (1.0f - s);
+        float q = v * (1.0f - (s * f));
+        float t = v * (1.0f - (s * (1.0f - f)));
+
+        float r, g, b;
+
+        switch (w) {
+            case 0 -> {
+                r = v;
+                g = t;
+                b = p;
+            }
+            case 1 -> {
+                r = q;
+                g = v;
+                b = p;
+            }
+            case 2 -> {
+                r = p;
+                g = v;
+                b = t;
+            }
+            case 3 -> {
+                r = p;
+                g = q;
+                b = v;
+            }
+            case 4 -> {
+                r = t;
+                g = p;
+                b = v;
+            }
+            default -> {
+                r = v;
+                g = p;
+                b = q;
+            }
+        }
+        return ((int) (r * 255.0f + 0.5f) << 16) |
+                ((int) (g * 255.0f + 0.5f) << 8) |
+                (int) (b * 255.0f + 0.5f);
+    }
+
+    /**
+     * Converts HSV components to an RGB color. Alpha is NOT implicitly set.
+     * hsv[0] represents hsv hue, an angle from zero to less than 360.
+     * hsv[1] represents hsv saturation, and varies from zero to one.
+     * hsv[2] represents hsv value, and varies from zero to one.
+     * <p>
+     * Out of range hsv values are clamped.
+     *
+     * @param hsv three element array which holds the input HSV components
+     * @return RGB equivalent to HSV, without alpha
+     */
+    public static int HSVToColor(float[] hsv) {
+        return HSVToColor(hsv[0], hsv[1], hsv[2]);
+    }
+
+    /**
+     * Converts a color component from the sRGB space to the linear RGB space,
+     * using the sRGB transfer function.
+     *
+     * @param x a color component
+     * @return transformed color component
+     */
+    public static float GammaToLinear(float x) {
+        return x < 0.04045
+                ? x / 12.92f
+                : (float) Math.pow((x + 0.055) / 1.055, 2.4);
+    }
+
+    /**
+     * Converts a color component from the linear RGB space to the sRGB space,
+     * using the inverse of sRGB transfer function.
+     *
+     * @param x a color component
+     * @return transformed color component
+     */
+    public static float LinearToGamma(float x) {
+        return x < 0.04045 / 12.92
+                ? x * 12.92f
+                : (float) Math.pow(x, 1.0 / 2.4) * 1.055f - 0.055f;
+    }
+
+    /**
+     * Converts a color from the sRGB space to the linear RGB space,
+     * using the sRGB transfer function.
+     *
+     * @param col the color components
+     */
+    public static void GammaToLinear(float[] col) {
+        col[0] = GammaToLinear(col[0]);
+        col[1] = GammaToLinear(col[1]);
+        col[2] = GammaToLinear(col[2]);
+    }
+
+    /**
+     * Converts a color from the linear RGB space to the sRGB space,
+     * using the inverse of sRGB transfer function.
+     *
+     * @param col the color components
+     */
+    public static void LinearToGamma(float[] col) {
+        col[0] = LinearToGamma(col[0]);
+        col[1] = LinearToGamma(col[1]);
+        col[2] = LinearToGamma(col[2]);
+    }
+
+    /**
+     * Converts a linear RGB color to a luminance value.
+     */
+    public static float luminance(float r, float g, float b) {
+        return 0.2126f * r + 0.7152f * g + 0.0722f * b;
+    }
+
+    /**
+     * Converts a linear RGB color to a luminance value.
+     *
+     * @param col the color components
+     */
+    public static float luminance(float[] col) {
+        return luminance(col[0], col[1], col[2]);
+    }
+
+    /**
+     * Coverts a luminance value to a perceptual lightness value.
+     */
+    public static float lightness(float lum) {
+        return lum <= 216.0 / 24389.0
+                ? lum * 24389.0f / 27.0f
+                : (float) Math.pow(lum, 1.0 / 3.0) * 116.0f - 16.0f;
+    }
+
+    /**
      * Blends the two colors using premultiplied alpha on CPU side. This is to simulate
      * the color blending on GPU side, but this is only used for color filtering (tinting).
      * Do NOT premultiply the src and dst colors with alpha on CPU side. The returned

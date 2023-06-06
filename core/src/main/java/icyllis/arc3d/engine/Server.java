@@ -159,7 +159,7 @@ public abstract class Server {
         if (texture != null) {
             // we don't copy the backend format object, use identity rather than equals()
             assert texture.getBackendFormat() == format;
-            assert (surfaceFlags & Surface.FLAG_RENDERABLE) == 0 || texture.getRenderTarget() != null;
+            assert (surfaceFlags & Surface.FLAG_RENDERABLE) == 0 || texture instanceof RenderTarget;
             if (label != null) {
                 texture.setLabel(label);
             }
@@ -290,6 +290,29 @@ public abstract class Server {
                                              long pixels);
 
     /**
+     * Uses the base level of the texture to compute the contents of the other mipmap levels.
+     *
+     * @return success or not
+     */
+    public final boolean generateMipmaps(Texture texture) {
+        assert texture != null;
+        assert texture.isMipmapped();
+        if (!texture.isMipmapsDirty()) {
+            return true;
+        }
+        if (texture.isReadOnly()) {
+            return false;
+        }
+        if (onGenerateMipmaps(texture)) {
+            texture.setMipmapsDirty(false);
+            return true;
+        }
+        return false;
+    }
+
+    protected abstract boolean onGenerateMipmaps(Texture texture);
+
+    /**
      * Returns a {@link OpsRenderPass} which {@link OpsTask OpsTasks} record draw commands to.
      *
      * @param writeView       the render target to be rendered to
@@ -326,16 +349,16 @@ public abstract class Server {
     /**
      * Resolves MSAA. The resolve rectangle must already be in the native destination space.
      */
-    public void resolveRenderTarget(RenderTarget renderTarget,
+    public void resolveRenderTarget(FramebufferSet framebufferSet,
                                     int resolveLeft, int resolveTop,
                                     int resolveRight, int resolveBottom) {
-        assert (renderTarget != null);
+        assert (framebufferSet != null);
         handleDirtyContext();
-        onResolveRenderTarget(renderTarget, resolveLeft, resolveTop, resolveRight, resolveBottom);
+        onResolveRenderTarget(framebufferSet, resolveLeft, resolveTop, resolveRight, resolveBottom);
     }
 
     // overridden by backend-specific derived class to perform the resolve
-    protected abstract void onResolveRenderTarget(RenderTarget renderTarget,
+    protected abstract void onResolveRenderTarget(FramebufferSet framebufferSet,
                                                   int resolveLeft, int resolveTop,
                                                   int resolveRight, int resolveBottom);
 

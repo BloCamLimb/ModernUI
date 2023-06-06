@@ -22,7 +22,7 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.Rect;
-import icyllis.arc3d.opengl.GLTextureManager;
+import icyllis.modernui.graphics.ImageStore;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.LayoutDirection;
 import icyllis.modernui.view.Gravity;
@@ -69,7 +69,7 @@ public class ImageDrawable extends Drawable {
      * Create a drawable by decoding an image from the given input stream.
      */
     public ImageDrawable(@Nonnull InputStream is) {
-        Image image = new Image(GLTextureManager.getInstance().create(is, true));
+        Image image = ImageStore.getInstance().create(is);
         init(new ImageState(image));
     }
 

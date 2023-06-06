@@ -22,7 +22,7 @@ import icyllis.modernui.annotation.NonNull;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
- * Common interface between {@link Texture} and {@link RenderSurface}.
+ * Common interface between {@link Texture} and {@link RenderTarget}.
  */
 public interface Surface {
 
@@ -123,14 +123,6 @@ public interface Surface {
     int getHeight();
 
     /**
-     * Returns the number of samples per pixel in color buffers (one if non-MSAA).
-     * Always returns one if the surface is a non-renderable {@link Texture}.
-     *
-     * @return the number of samples, greater than (multi-sampled) or equal to one
-     */
-    int getSampleCount();
-
-    /**
      * @return the backend format of the surface
      */
     @NonNull
@@ -142,12 +134,12 @@ public interface Surface {
      * <ul>
      * <li>{@link #FLAG_BUDGETED} -
      *  Indicates whether an allocation should count against a cache budget. Budgeted when
-     *  set, otherwise not budgeted. {@link Texture} only.
+     *  set, otherwise not budgeted. {@link Texture} or RenderTexture only.
      * </li>
      *
      * <li>{@link #FLAG_MIPMAPPED} -
      *  Used to say whether a texture has mip levels allocated or not. Mipmaps are allocated
-     *  when set, otherwise mipmaps are not allocated. {@link Texture} only.
+     *  when set, otherwise mipmaps are not allocated. {@link Texture} or RenderTexture only.
      * </li>
      *
      * <li>{@link #FLAG_RENDERABLE} -
@@ -161,17 +153,10 @@ public interface Surface {
      * </li>
      *
      * <li>{@link #FLAG_READ_ONLY} -
-     *  Means the pixels in the texture are read-only. {@link Texture} only.
+     *  Means the pixels in the texture are read-only. Non-renderable {@link Texture} only.
      * </li>
      *
      * @return combination of the above flags
      */
     int getSurfaceFlags();
-
-    /**
-     * Returns null when this surface is a non-renderable {@link Texture}.
-     *
-     * @return raw ptr to the render target associated with the surface, may be null
-     */
-    RenderTarget getRenderTarget();
 }

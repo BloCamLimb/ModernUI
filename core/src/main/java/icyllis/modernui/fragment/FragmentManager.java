@@ -20,14 +20,12 @@ package icyllis.modernui.fragment;
 
 import icyllis.modernui.R;
 import icyllis.modernui.annotation.UiThread;
+import icyllis.modernui.core.LoggerWriter;
 import icyllis.modernui.lifecycle.*;
 import icyllis.modernui.util.DataSet;
-import icyllis.modernui.view.View;
-import icyllis.modernui.view.ViewGroup;
-import icyllis.modernui.view.ViewParent;
+import icyllis.modernui.view.*;
 import it.unimi.dsi.fastutil.booleans.BooleanArrayList;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
+import org.apache.logging.log4j.*;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -200,18 +198,20 @@ public final class FragmentManager implements FragmentResultOwner {
 
     private void throwException(@Nonnull RuntimeException ex) {
         LOGGER.error(MARKER, "FragmentManager throws an exception", ex);
-        PrintWriter w = new PrintWriter(new LogWriter(MARKER));
-        if (mHost != null) {
-            try {
-                mHost.onDump("  ", null, w);
-            } catch (Exception e) {
-                LOGGER.error(MARKER, "Failed dumping state", e);
-            }
-        } else {
-            try {
-                dump("  ", null, w);
-            } catch (Exception e) {
-                LOGGER.error(MARKER, "Failed dumping state", e);
+        var w = new PrintWriter(new LoggerWriter(LOGGER, Level.DEBUG, MARKER), true);
+        try (w) {
+            if (mHost != null) {
+                try {
+                    mHost.onDump("  ", null, w);
+                } catch (Exception e) {
+                    LOGGER.error(MARKER, "Failed dumping state", e);
+                }
+            } else {
+                try {
+                    dump("  ", null, w);
+                } catch (Exception e) {
+                    LOGGER.error(MARKER, "Failed dumping state", e);
+                }
             }
         }
         throw ex;
@@ -2078,8 +2078,10 @@ public final class FragmentManager implements FragmentResultOwner {
             case FragmentTransaction.TRANSIT_FRAGMENT_OPEN -> FragmentTransaction.TRANSIT_FRAGMENT_CLOSE;
             case FragmentTransaction.TRANSIT_FRAGMENT_CLOSE -> FragmentTransaction.TRANSIT_FRAGMENT_OPEN;
             case FragmentTransaction.TRANSIT_FRAGMENT_FADE -> FragmentTransaction.TRANSIT_FRAGMENT_FADE;
-            case FragmentTransaction.TRANSIT_FRAGMENT_MATCH_ACTIVITY_OPEN -> FragmentTransaction.TRANSIT_FRAGMENT_MATCH_ACTIVITY_CLOSE;
-            case FragmentTransaction.TRANSIT_FRAGMENT_MATCH_ACTIVITY_CLOSE -> FragmentTransaction.TRANSIT_FRAGMENT_MATCH_ACTIVITY_OPEN;
+            case FragmentTransaction.TRANSIT_FRAGMENT_MATCH_ACTIVITY_OPEN ->
+                    FragmentTransaction.TRANSIT_FRAGMENT_MATCH_ACTIVITY_CLOSE;
+            case FragmentTransaction.TRANSIT_FRAGMENT_MATCH_ACTIVITY_CLOSE ->
+                    FragmentTransaction.TRANSIT_FRAGMENT_MATCH_ACTIVITY_OPEN;
             default -> 0;
         };
     }

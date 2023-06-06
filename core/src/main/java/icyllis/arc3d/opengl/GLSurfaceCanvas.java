@@ -18,8 +18,7 @@
 
 package icyllis.arc3d.opengl;
 
-import icyllis.arc3d.engine.Engine;
-import icyllis.arc3d.engine.SamplerState;
+import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.geom.DefaultGeoProc;
 import icyllis.arc3d.engine.shading.UniformHandler;
 import icyllis.modernui.ModernUI;
@@ -32,6 +31,7 @@ import icyllis.modernui.view.Gravity;
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import it.unimi.dsi.fastutil.ints.*;
 import org.lwjgl.glfw.GLFW;
+import org.lwjgl.opengl.GL;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -211,24 +211,22 @@ public final class GLSurfaceCanvas extends GLCanvas {
     private ByteBuffer mUniformRingBuffer = memAlloc(8192);
 
     // immutable uniform buffer objects
-    private final GLBufferCompat mMatrixUBO = new GLBufferCompat();
-    private final GLBufferCompat mSmoothUBO = new GLBufferCompat();
-    private final GLBufferCompat mArcUBO = new GLBufferCompat();
-    private final GLBufferCompat mBezierUBO = new GLBufferCompat();
-    private final GLBufferCompat mCircleUBO = new GLBufferCompat();
-    private final GLBufferCompat mRoundRectUBO = new GLBufferCompat();
+    private final GLUniformBufferCompat mMatrixUBO = new GLUniformBufferCompat();
+    private final GLUniformBufferCompat mSmoothUBO = new GLUniformBufferCompat();
+    private final GLUniformBufferCompat mArcUBO = new GLUniformBufferCompat();
+    private final GLUniformBufferCompat mBezierUBO = new GLUniformBufferCompat();
+    private final GLUniformBufferCompat mCircleUBO = new GLUniformBufferCompat();
+    private final GLUniformBufferCompat mRoundRectUBO = new GLUniformBufferCompat();
 
     // mag filter = linear
     @SharedPtr
-    private final GLSampler mLinearFontSampler;
-
-    private final long mUniformBuffers = nmemAlloc(24);
+    private final GLSampler mLinearSampler;
 
     private final ByteBuffer mLayerImageMemory = memAlloc(TEXTURE_RECT_VERTEX_SIZE * 4);
 
     // used in rendering, local states
     private int mCurrTexture;
-    private int mCurrSampler;
+    private GLSampler mCurrSampler;
     private int mCurrProgram;
     private int mCurrVertexArray;
 
@@ -239,14 +237,18 @@ public final class GLSurfaceCanvas extends GLCanvas {
     private final IntStack mLayerStack = new IntArrayList(3);
 
     // using textures of draw states, in the order of calling
-    private final Queue<GLTextureCompat> mTextures = new ArrayDeque<>();
+    private final Queue<Object> mTextures = new ArrayDeque<>();
     private final List<DrawText> mDrawTexts = new ArrayList<>();
     private final Queue<Runnable> mCustoms = new ArrayDeque<>();
+
+    private final List<SurfaceProxy> mTexturesToClean = new ArrayList<>();
 
     private final Matrix4 mProjection = new Matrix4();
     private final FloatBuffer mProjectionUpload = memAllocFloat(16);
 
     private final GLServer mServer;
+
+    private boolean mNeedsTexBinding;
 
     @RenderThread
     public GLSurfaceCanvas(GLServer server) {
@@ -267,12 +269,12 @@ public final class GLSurfaceCanvas extends GLCanvas {
 
         mServer = server;
 
-        mMatrixUBO.allocate(MATRIX_UNIFORM_SIZE, NULL, GL_DYNAMIC_STORAGE_BIT);
-        mSmoothUBO.allocate(SMOOTH_UNIFORM_SIZE, NULL, GL_DYNAMIC_STORAGE_BIT);
-        mArcUBO.allocate(ARC_UNIFORM_SIZE, NULL, GL_DYNAMIC_STORAGE_BIT);
-        mBezierUBO.allocate(BEZIER_UNIFORM_SIZE, NULL, GL_DYNAMIC_STORAGE_BIT);
-        mCircleUBO.allocate(CIRCLE_UNIFORM_SIZE, NULL, GL_DYNAMIC_STORAGE_BIT);
-        mRoundRectUBO.allocate(ROUND_RECT_UNIFORM_SIZE, NULL, GL_DYNAMIC_STORAGE_BIT);
+        mMatrixUBO.allocate(MATRIX_UNIFORM_SIZE);
+        mSmoothUBO.allocate(SMOOTH_UNIFORM_SIZE);
+        mArcUBO.allocate(ARC_UNIFORM_SIZE);
+        mBezierUBO.allocate(BEZIER_UNIFORM_SIZE);
+        mCircleUBO.allocate(CIRCLE_UNIFORM_SIZE);
+        mRoundRectUBO.allocate(ROUND_RECT_UNIFORM_SIZE);
 
         mColorRectPipe = GLPipeline.make(server,
                 new DefaultGeoProc(DefaultGeoProc.FLAG_COLOR_ATTRIBUTE), 0);
@@ -284,14 +286,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         mGlyphPipe = GLPipeline.make(server,
                 new DefaultGeoProc(DefaultGeoProc.FLAG_TEX_COORD_ATTRIBUTE), 0);
 
-        memPutInt(mUniformBuffers, mMatrixUBO.get());
-        memPutInt(mUniformBuffers + 4, mSmoothUBO.get());
-        memPutInt(mUniformBuffers + 8, mArcUBO.get());
-        memPutInt(mUniformBuffers + 12, mBezierUBO.get());
-        memPutInt(mUniformBuffers + 16, mCircleUBO.get());
-        memPutInt(mUniformBuffers + 20, mRoundRectUBO.get());
-
-        mLinearFontSampler = Objects.requireNonNull(
+        mLinearSampler = Objects.requireNonNull(
                 server.getResourceProvider().findOrCreateCompatibleSampler(SamplerState.DEFAULT),
                 "Failed to create font sampler");
 
@@ -325,8 +320,6 @@ public final class GLSurfaceCanvas extends GLCanvas {
         mSaves.push(new Save());
 
         GLShaderManager.getInstance().addListener(this::onLoadShaders);
-
-        ModernUI.LOGGER.info(MARKER, "Created OpenGL surface canvas");
     }
 
     @RenderThread
@@ -354,27 +347,75 @@ public final class GLSurfaceCanvas extends GLCanvas {
             return;
         }
 
-        int posColor = manager.getStage(ModernUI.ID, "pos_color.vert");
-        int posColorTex = manager.getStage(ModernUI.ID, "pos_color_tex.vert");
-        int posTex = manager.getStage(ModernUI.ID, "pos_tex.vert");
+        int posColor;
+        int posColorTex;
+        int posTex;
 
-        int colorFill = manager.getStage(ModernUI.ID, "color_fill.frag");
-        int colorTex = manager.getStage(ModernUI.ID, "color_tex.frag");
-        int roundRectFill = manager.getStage(ModernUI.ID, "round_rect_fill.frag");
-        int roundRectTex = manager.getStage(ModernUI.ID, "round_rect_tex.frag");
-        int roundRectStroke = manager.getStage(ModernUI.ID, "round_rect_stroke.frag");
-        int circleFill = manager.getStage(ModernUI.ID, "circle_fill.frag");
-        int circleStroke = manager.getStage(ModernUI.ID, "circle_stroke.frag");
-        int arcFill = manager.getStage(ModernUI.ID, "arc_fill.frag");
-        int arcStroke = manager.getStage(ModernUI.ID, "arc_stroke.frag");
-        int quadBezier = manager.getStage(ModernUI.ID, "quadratic_bezier.frag");
-        int alphaTex = manager.getStage(ModernUI.ID, "alpha_tex.frag");
-        int colorTexMs = manager.getStage(ModernUI.ID, "color_tex_4x.frag");
-        int glowWave = manager.getStage(ModernUI.ID, "glow_wave.frag");
-        int pieFill = manager.getStage(ModernUI.ID, "pie_fill.frag");
-        int pieStroke = manager.getStage(ModernUI.ID, "pie_stroke.frag");
-        int roundLineFill = manager.getStage(ModernUI.ID, "round_line_fill.frag");
-        int roundLineStroke = manager.getStage(ModernUI.ID, "round_line_stroke.frag");
+        int colorFill;
+        int colorTex;
+        int roundRectFill;
+        int roundRectTex;
+        int roundRectStroke;
+        int circleFill;
+        int circleStroke;
+        int arcFill;
+        int arcStroke;
+        int quadBezier;
+        int alphaTex;
+        int colorTexMs;
+        int glowWave;
+        int pieFill;
+        int pieStroke;
+        int roundLineFill;
+        int roundLineStroke;
+
+        boolean compat = !GL.getCapabilities().OpenGL45;
+
+        if (!compat) {
+            posColor = manager.getStage(ModernUI.ID, "pos_color.vert");
+            posColorTex = manager.getStage(ModernUI.ID, "pos_color_tex.vert");
+            posTex = manager.getStage(ModernUI.ID, "pos_tex.vert");
+
+            colorFill = manager.getStage(ModernUI.ID, "color_fill.frag");
+            colorTex = manager.getStage(ModernUI.ID, "color_tex.frag");
+            roundRectFill = manager.getStage(ModernUI.ID, "round_rect_fill.frag");
+            roundRectTex = manager.getStage(ModernUI.ID, "round_rect_tex.frag");
+            roundRectStroke = manager.getStage(ModernUI.ID, "round_rect_stroke.frag");
+            circleFill = manager.getStage(ModernUI.ID, "circle_fill.frag");
+            circleStroke = manager.getStage(ModernUI.ID, "circle_stroke.frag");
+            arcFill = manager.getStage(ModernUI.ID, "arc_fill.frag");
+            arcStroke = manager.getStage(ModernUI.ID, "arc_stroke.frag");
+            quadBezier = manager.getStage(ModernUI.ID, "quadratic_bezier.frag");
+            alphaTex = manager.getStage(ModernUI.ID, "alpha_tex.frag");
+            colorTexMs = manager.getStage(ModernUI.ID, "color_tex_4x.frag");
+            glowWave = manager.getStage(ModernUI.ID, "glow_wave.frag");
+            pieFill = manager.getStage(ModernUI.ID, "pie_fill.frag");
+            pieStroke = manager.getStage(ModernUI.ID, "pie_stroke.frag");
+            roundLineFill = manager.getStage(ModernUI.ID, "round_line_fill.frag");
+            roundLineStroke = manager.getStage(ModernUI.ID, "round_line_stroke.frag");
+        } else {
+            posColor = manager.getStage(ModernUI.ID, "pos_color_330.vert");
+            posColorTex = manager.getStage(ModernUI.ID, "pos_color_tex_330.vert");
+            posTex = manager.getStage(ModernUI.ID, "pos_tex_330.vert");
+
+            colorFill = manager.getStage(ModernUI.ID, "color_fill_330.frag");
+            colorTex = manager.getStage(ModernUI.ID, "color_tex_330.frag");
+            roundRectFill = manager.getStage(ModernUI.ID, "round_rect_fill_330.frag");
+            roundRectTex = manager.getStage(ModernUI.ID, "round_rect_tex_330.frag");
+            roundRectStroke = manager.getStage(ModernUI.ID, "round_rect_stroke_330.frag");
+            circleFill = manager.getStage(ModernUI.ID, "circle_fill_330.frag");
+            circleStroke = manager.getStage(ModernUI.ID, "circle_stroke_330.frag");
+            arcFill = manager.getStage(ModernUI.ID, "arc_fill_330.frag");
+            arcStroke = manager.getStage(ModernUI.ID, "arc_stroke_330.frag");
+            quadBezier = manager.getStage(ModernUI.ID, "quadratic_bezier_330.frag");
+            alphaTex = manager.getStage(ModernUI.ID, "alpha_tex_330.frag");
+            colorTexMs = manager.getStage(ModernUI.ID, "color_tex_4x_330.frag");
+            glowWave = manager.getStage(ModernUI.ID, "glow_wave_330.frag");
+            pieFill = manager.getStage(ModernUI.ID, "pie_fill_330.frag");
+            pieStroke = manager.getStage(ModernUI.ID, "pie_stroke_330.frag");
+            roundLineFill = manager.getStage(ModernUI.ID, "round_line_fill_330.frag");
+            roundLineStroke = manager.getStage(ModernUI.ID, "round_line_stroke_330.frag");
+        }
 
         boolean success = true;
 
@@ -398,8 +439,126 @@ public final class GLSurfaceCanvas extends GLCanvas {
 
         if (success) {
             mShadersFrozen = true;
-            ModernUI.LOGGER.info(MARKER, "Loaded OpenGL canvas shaders");
+
+            // manually bind
+            if (compat) {
+                bindProgramMatrixBlock(COLOR_FILL);
+                bindProgramFragLocation(COLOR_FILL);
+
+                bindProgramMatrixBlock(COLOR_TEX);
+                bindProgramFragLocation(COLOR_TEX);
+
+                bindProgramMatrixBlock(COLOR_TEX_MS);
+                bindProgramFragLocation(COLOR_TEX_MS);
+
+                bindProgramMatrixBlock(ALPHA_TEX);
+                bindProgramFragLocation(ALPHA_TEX);
+
+                bindProgramMatrixBlock(GLOW_WAVE);
+                bindProgramFragLocation(GLOW_WAVE);
+
+                bindProgramMatrixBlock(ARC_FILL);
+                bindProgramFragLocation(ARC_FILL);
+                bindProgramArcBlock(ARC_FILL);
+                bindProgramSmoothBlock(ARC_FILL);
+
+                bindProgramMatrixBlock(ARC_STROKE);
+                bindProgramFragLocation(ARC_STROKE);
+                bindProgramArcBlock(ARC_STROKE);
+                bindProgramSmoothBlock(ARC_STROKE);
+
+                bindProgramMatrixBlock(PIE_FILL);
+                bindProgramFragLocation(PIE_FILL);
+                bindProgramArcBlock(PIE_FILL);
+                bindProgramSmoothBlock(PIE_FILL);
+
+                bindProgramMatrixBlock(PIE_STROKE);
+                bindProgramFragLocation(PIE_STROKE);
+                bindProgramArcBlock(PIE_STROKE);
+                bindProgramSmoothBlock(PIE_STROKE);
+
+                bindProgramMatrixBlock(BEZIER_CURVE);
+                bindProgramFragLocation(BEZIER_CURVE);
+                int c3 = glGetUniformBlockIndex(BEZIER_CURVE.get(), "PaintBlock");
+                glUniformBlockBinding(BEZIER_CURVE.get(), c3, 3);
+                bindProgramSmoothBlock(BEZIER_CURVE);
+
+                bindProgramMatrixBlock(CIRCLE_FILL);
+                bindProgramFragLocation(CIRCLE_FILL);
+                bindProgramCircleBlock(CIRCLE_FILL);
+                bindProgramSmoothBlock(CIRCLE_FILL);
+
+                bindProgramMatrixBlock(CIRCLE_STROKE);
+                bindProgramFragLocation(CIRCLE_STROKE);
+                bindProgramCircleBlock(CIRCLE_STROKE);
+                bindProgramSmoothBlock(CIRCLE_STROKE);
+
+                bindProgramMatrixBlock(ROUND_LINE_FILL);
+                bindProgramFragLocation(ROUND_LINE_FILL);
+                bindProgramRoundRectBlock(ROUND_LINE_FILL);
+                bindProgramSmoothBlock(ROUND_LINE_FILL);
+
+                bindProgramMatrixBlock(ROUND_LINE_STROKE);
+                bindProgramFragLocation(ROUND_LINE_STROKE);
+                bindProgramRoundRectBlock(ROUND_LINE_STROKE);
+                bindProgramSmoothBlock(ROUND_LINE_STROKE);
+
+                bindProgramMatrixBlock(ROUND_RECT_FILL);
+                bindProgramFragLocation(ROUND_RECT_FILL);
+                bindProgramRoundRectBlock(ROUND_RECT_FILL);
+                bindProgramSmoothBlock(ROUND_RECT_FILL);
+
+                bindProgramMatrixBlock(ROUND_RECT_STROKE);
+                bindProgramFragLocation(ROUND_RECT_STROKE);
+                bindProgramRoundRectBlock(ROUND_RECT_STROKE);
+                bindProgramSmoothBlock(ROUND_RECT_STROKE);
+
+                bindProgramMatrixBlock(ROUND_RECT_TEX);
+                bindProgramFragLocation(ROUND_RECT_TEX);
+                bindProgramRoundRectBlock(ROUND_RECT_TEX);
+                bindProgramSmoothBlock(ROUND_RECT_TEX);
+
+                mNeedsTexBinding = true;
+            }
+
+            System.out.println("Loaded OpenGL canvas shaders, compatibility mode: " + compat);
         }
+    }
+
+    private void bindProgramMatrixBlock(GLProgram program) {
+        int c0 = glGetUniformBlockIndex(program.get(), "MatrixBlock");
+        glUniformBlockBinding(program.get(), c0, 0);
+    }
+
+    private void bindProgramSmoothBlock(GLProgram program) {
+        int c1 = glGetUniformBlockIndex(program.get(), "SmoothBlock");
+        glUniformBlockBinding(program.get(), c1, 1);
+    }
+
+    private void bindProgramArcBlock(GLProgram program) {
+        int c2 = glGetUniformBlockIndex(program.get(), "PaintBlock");
+        glUniformBlockBinding(program.get(), c2, 2);
+    }
+
+    private void bindProgramCircleBlock(GLProgram program) {
+        int c4 = glGetUniformBlockIndex(program.get(), "PaintBlock");
+        glUniformBlockBinding(program.get(), c4, 4);
+    }
+
+    private void bindProgramRoundRectBlock(GLProgram program) {
+        int c5 = glGetUniformBlockIndex(program.get(), "PaintBlock");
+        glUniformBlockBinding(program.get(), c5, 5);
+    }
+
+    private void bindProgramFragLocation(GLProgram program) {
+        // we use draw buffer 0
+        glBindFragDataLocation(program.get(), 0, "fragColor");
+    }
+
+    private void bindProgramTexBinding(GLProgram program) {
+        glUseProgram(program.get());
+        int u0 = glGetUniformLocation(program.get(), "u_Sampler");
+        glUniform1i(u0, 0); // <- the texture unit is 0
     }
 
     @Override
@@ -412,6 +571,22 @@ public final class GLSurfaceCanvas extends GLCanvas {
         mColorMeshStagingBuffer.clear();
         mTextureMeshStagingBuffer.clear();
         mUniformRingBuffer.clear();
+    }
+
+    public void destroy() {
+        mColorRectPipe.unref();
+        mTextureRectPipe.unref();
+        mGlyphPipe.unref();
+
+        mLinearSampler.unref();
+        mTextures.forEach(o -> {
+            if (o instanceof SurfaceProxyView v) {
+                v.getProxy().unref();
+            }
+        });
+        mTextures.clear();
+        mTexturesToClean.forEach(SurfaceProxy::unref);
+        mTexturesToClean.clear();
     }
 
     @RenderThread
@@ -440,9 +615,13 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     @RenderThread
-    public void bindSampler(int sampler) {
+    public void bindSampler(GLSampler sampler) {
         if (mCurrSampler != sampler) {
-            glBindSampler(0, sampler);
+            if (sampler != null) {
+                glBindSampler(0, sampler.getHandle());
+            } else {
+                glBindSampler(0, 0);
+            }
             mCurrSampler = sampler;
         }
     }
@@ -450,8 +629,55 @@ public final class GLSurfaceCanvas extends GLCanvas {
     @RenderThread
     public void bindTexture(int texture) {
         if (mCurrTexture != texture) {
-            glBindTextureUnit(0, texture);
+            glBindTexture(GL_TEXTURE_2D, texture);
             mCurrTexture = texture;
+        }
+    }
+
+    private void bindNextTexture() {
+        var tex = mTextures.remove();
+        if (tex instanceof GLTextureCompat compat) {
+            bindSampler(null);
+            bindTexture(compat.get());
+        } else {
+            var view = (SurfaceProxyView) tex;
+            var proxy = view.getProxy();
+            boolean success = true;
+            if (!proxy.isInstantiated()) {
+                var resourceProvider = mServer.getContext().getResourceProvider();
+                success = proxy.doLazyInstantiation(resourceProvider);
+            }
+            if (success) {
+                var glTex = (GLTexture) Objects.requireNonNull(proxy.peekTexture());
+                bindSampler(mLinearSampler);
+                bindTexture(glTex.getHandle());
+
+                mServer.generateMipmaps(glTex);
+
+                var swizzle = view.getSwizzle();
+                var parameters = glTex.getParameters();
+                var swizzleChanged = false;
+                for (int i = 0; i < 4; ++i) {
+                    int swiz = switch (swizzle & 0xF) {
+                        case 0 -> GL_RED;
+                        case 1 -> GL_GREEN;
+                        case 2 -> GL_BLUE;
+                        case 3 -> GL_ALPHA;
+                        case 4 -> GL_ZERO;
+                        case 5 -> GL_ONE;
+                        default -> throw new AssertionError(swizzle);
+                    };
+                    if (parameters.swizzle[i] != swiz) {
+                        parameters.swizzle[i] = swiz;
+                        swizzleChanged = true;
+                    }
+                    swizzle >>= 4;
+                }
+                if (swizzleChanged) {
+                    glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, parameters.swizzle);
+                }
+            }
+            mTexturesToClean.add(proxy);
         }
     }
 
@@ -460,9 +686,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
         Core.checkRenderThread();
         Core.flushRenderCalls();
         if (framebuffer != null) {
-            // there's a bug on NVIDIA driver with DSA, allocate them always
-            framebuffer.makeBuffers(mWidth, mHeight, true);
-
+            framebuffer.bindDraw();
+            framebuffer.makeBuffers(mWidth, mHeight, false);
             framebuffer.clearColorBuffer();
             framebuffer.clearDepthStencilBuffer();
         }
@@ -472,9 +697,6 @@ public final class GLSurfaceCanvas extends GLCanvas {
         if (getSaveCount() != 1) {
             throw new IllegalStateException("Unbalanced save-restore pair: " + getSaveCount());
         }
-        if (framebuffer != null) {
-            framebuffer.bindDraw();
-        }
         mServer.markContextDirty(Engine.GLBackendState.kPipeline);
 
         // upload projection matrix
@@ -482,15 +704,30 @@ public final class GLSurfaceCanvas extends GLCanvas {
 
         uploadVertexBuffers();
 
+        if (mNeedsTexBinding) {
+            bindProgramTexBinding(ALPHA_TEX);
+            bindProgramTexBinding(COLOR_TEX);
+            bindProgramTexBinding(COLOR_TEX_MS);
+            bindProgramTexBinding(ROUND_RECT_TEX);
+            mNeedsTexBinding = false;
+        }
+
         // uniform bindings are globally shared, we must re-bind before we use them
-        nglBindBuffersBase(GL_UNIFORM_BUFFER, MATRIX_BLOCK_BINDING, 6, mUniformBuffers);
+        //nglBindBuffersBase(GL_UNIFORM_BUFFER, MATRIX_BLOCK_BINDING, 6, mUniformBuffers);
+        mMatrixUBO.bindBase(GL_UNIFORM_BUFFER, 0);
+        mSmoothUBO.bindBase(GL_UNIFORM_BUFFER, 1);
+        mArcUBO.bindBase(GL_UNIFORM_BUFFER, 2);
+        mBezierUBO.bindBase(GL_UNIFORM_BUFFER, 3);
+        mCircleUBO.bindBase(GL_UNIFORM_BUFFER, 4);
+        mRoundRectUBO.bindBase(GL_UNIFORM_BUFFER, 5);
 
         glStencilFunc(GL_EQUAL, 0, 0xff);
         glStencilMask(0xff);
+        glActiveTexture(GL_TEXTURE0);
 
         mCurrVertexArray = 0;
         mCurrProgram = 0;
-        mCurrSampler = 0;
+        mCurrSampler = null;
         mCurrTexture = 0;
 
         long uniformDataPtr = memAddress(mUniformRingBuffer.flip());
@@ -543,8 +780,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                 case DRAW_ROUND_IMAGE -> {
                     bindPipeline(mTextureRectPipe, ROUND_RECT_TEX);
                     mTextureRectPipe.bindVertexBuffer(mTextureMeshVertexBuffer, 0);
-                    bindSampler(0);
-                    bindTexture(mTextures.remove().get());
+                    bindNextTexture();
                     mRoundRectUBO.upload(0, 20, uniformDataPtr);
                     uniformDataPtr += 20;
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorTexIndex, 4);
@@ -569,16 +805,15 @@ public final class GLSurfaceCanvas extends GLCanvas {
                 case DRAW_IMAGE -> {
                     bindPipeline(mTextureRectPipe, COLOR_TEX);
                     mTextureRectPipe.bindVertexBuffer(mTextureMeshVertexBuffer, 0);
-                    bindSampler(0);
-                    bindTexture(mTextures.remove().get());
+                    bindNextTexture();
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorTexIndex, 4);
                     posColorTexIndex += 4;
                 }
                 case DRAW_IMAGE_MS -> {
                     bindPipeline(mTextureRectPipe, COLOR_TEX_MS);
                     mTextureRectPipe.bindVertexBuffer(mTextureMeshVertexBuffer, 0);
-                    bindSampler(0);
-                    bindTexture(mTextures.remove().get());
+                    bindSampler(null);
+                    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, ((GLTextureCompat) mTextures.remove()).get());
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorTexIndex, 4);
                     posColorTexIndex += 4;
                 }
@@ -690,7 +925,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     bindPipeline(mGlyphPipe, ALPHA_TEX);
                     mGlyphPipe.bindIndexBuffer(mGlyphIndexBuffer);
                     mGlyphPipe.bindVertexBuffer(mGlyphVertexBuffer, 0);
-                    bindSampler(mLinearFontSampler.getHandle());
+                    bindSampler(mLinearSampler);
 
                     int limit = glyphs.length;
                     int lastPos = 0;
@@ -742,8 +977,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
 
                     bindPipeline(mTextureRectPipe, COLOR_TEX_MS);
                     mTextureRectPipe.bindVertexBuffer(mTextureMeshVertexBuffer, 0);
-                    bindSampler(0);
-                    bindTexture(framebuffer.getAttachedTexture(colorBuffer).get());
+                    bindSampler(null);
+                    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, framebuffer.getAttachedTexture(colorBuffer).get());
                     framebuffer.setDrawBuffer(--colorBuffer);
                     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
                 }
@@ -763,7 +998,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         assert mTextures.isEmpty();
         assert mCustoms.isEmpty();
 
-        bindSampler(0);
+        bindSampler(null);
 
         mDrawOps.clear();
         mDrawPrims.clear();
@@ -771,6 +1006,11 @@ public final class GLSurfaceCanvas extends GLCanvas {
         mLayerAlphas.clear();
         mDrawTexts.clear();
         mUniformRingBuffer.clear();
+
+        for (int i = 0; i < mTexturesToClean.size(); i++) {
+            mTexturesToClean.get(i).unref();
+        }
+        mTexturesToClean.clear();
         return true;
     }
 
@@ -1700,15 +1940,19 @@ public final class GLSurfaceCanvas extends GLCanvas {
 
     @Override
     public void drawImage(@NonNull Image image, float left, float top, @Nullable Paint paint) {
-        GLTextureCompat texture = image.getTexture();
-        float right = left + texture.getWidth();
-        float bottom = top + texture.getHeight();
+        var view = image.asTextureView();
+        if (view == null) {
+            return;
+        }
+        float right = left + view.getWidth();
+        float bottom = top + view.getHeight();
         if (quickReject(left, top, right, bottom)) {
             return;
         }
         drawMatrix();
         putRectColorUV(left, top, right, bottom, paint, 0, 0, 1, 1);
-        mTextures.add(texture);
+        view.refProxy();
+        mTextures.add(view);
         mDrawOps.add(DRAW_IMAGE);
     }
 
@@ -1733,11 +1977,14 @@ public final class GLSurfaceCanvas extends GLCanvas {
         if (quickReject(dstLeft, dstTop, dstRight, dstBottom)) {
             return;
         }
-        GLTextureCompat texture = image.getTexture();
+        var view = image.asTextureView();
+        if (view == null) {
+            return;
+        }
         srcLeft = Math.max(0, srcLeft);
         srcTop = Math.max(0, srcTop);
-        int w = texture.getWidth();
-        int h = texture.getHeight();
+        int w = view.getWidth();
+        int h = view.getHeight();
         srcRight = Math.min(srcRight, w);
         srcBottom = Math.min(srcBottom, h);
         if (srcRight <= srcLeft || srcBottom <= srcTop) {
@@ -1746,7 +1993,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
         drawMatrix();
         putRectColorUV(dstLeft, dstTop, dstRight, dstBottom, paint,
                 srcLeft / w, srcTop / h, srcRight / w, srcBottom / h);
-        mTextures.add(texture);
+        view.refProxy();
+        mTextures.add(view);
         mDrawOps.add(DRAW_IMAGE);
     }
 
@@ -2009,9 +2257,12 @@ public final class GLSurfaceCanvas extends GLCanvas {
         if (radius < 0) {
             radius = 0;
         }
-        GLTextureCompat texture = image.getTexture();
-        float right = left + texture.getWidth();
-        float bottom = top + texture.getHeight();
+        var view = image.asTextureView();
+        if (view == null) {
+            return;
+        }
+        float right = left + view.getWidth();
+        float bottom = top + view.getHeight();
         if (quickReject(left, top, right, bottom)) {
             return;
         }
@@ -2025,7 +2276,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
                 .putFloat(right - radius + 1)
                 .putFloat(bottom - radius + 1)
                 .putFloat(radius);
-        mTextures.add(texture);
+        view.refProxy();
+        mTextures.add(view);
         mDrawOps.add(DRAW_ROUND_IMAGE);
     }
 

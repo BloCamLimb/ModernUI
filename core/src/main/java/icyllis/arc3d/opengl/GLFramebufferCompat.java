@@ -72,22 +72,25 @@ public final class GLFramebufferCompat extends GLObjectCompat {
      *
      * @param framebuffer source framebuffer
      * @param colorBuffer color buffer
-     * @return sampled texture
+     * @return the swap buffer
      */
     @Nonnull
-    public static GLTextureCompat resolve(@Nonnull GLFramebufferCompat framebuffer, int colorBuffer) {
+    public static GLFramebufferCompat resolve(@Nonnull GLFramebufferCompat framebuffer, int colorBuffer) {
         if (sSwapFramebuffer == null) {
             sSwapFramebuffer = new GLFramebufferCompat(1);
             sSwapFramebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT0, GL_RGBA8);
-            sSwapFramebuffer.setDrawBuffer(GL_COLOR_ATTACHMENT0);
         }
         Attachment src = framebuffer.getAttachment(colorBuffer);
         int w = src.getWidth();
         int h = src.getHeight();
-        sSwapFramebuffer.getAttachment(GL_COLOR_ATTACHMENT0).make(w, h, false);
-        glBlitNamedFramebuffer(framebuffer.get(), sSwapFramebuffer.get(), 0, 0, w, h,
-                0, 0, w, h, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-        return sSwapFramebuffer.getAttachedTexture(GL_COLOR_ATTACHMENT0);
+        sSwapFramebuffer.bind();
+        sSwapFramebuffer.getAttachment(GL_COLOR_ATTACHMENT0)
+                .make(w, h, false);
+        framebuffer.bindRead();
+        glBlitFramebuffer(0, 0, w, h,
+                0, 0, w, h,
+                GL_COLOR_BUFFER_BIT, GL_NEAREST);
+        return sSwapFramebuffer;
     }
 
     @Override
@@ -133,33 +136,6 @@ public final class GLFramebufferCompat extends GLObjectCompat {
         getAttachments().put(attachmentPoint, new RenderbufferAttachment(this, attachmentPoint, internalFormat));
     }
 
-    public void removeAttachment(int attachmentPoint) {
-        if (mAttachments == null) {
-            return;
-        }
-        Attachment attachment = mAttachments.remove(attachmentPoint);
-        if (attachment != null) {
-            attachment.close();
-            glNamedFramebufferTexture(get(), attachmentPoint, GLCore.DEFAULT_TEXTURE, 0);
-        }
-        if (mAttachments.isEmpty()) {
-            mAttachments = null;
-        }
-    }
-
-    public void clearAttachments() {
-        if (mAttachments == null) {
-            return;
-        }
-        int framebuffer = get();
-        for (var entry : mAttachments.int2ObjectEntrySet()) {
-            entry.getValue().close();
-            glNamedFramebufferTexture(framebuffer, entry.getIntKey(), GLCore.DEFAULT_TEXTURE, 0);
-        }
-        mAttachments.clear();
-        mAttachments = null;
-    }
-
     /**
      * Set the color used for {@link #clearColorBuffer()}, default clear color is (0,0,0,0).
      */
@@ -173,7 +149,7 @@ public final class GLFramebufferCompat extends GLObjectCompat {
      */
     public void clearColorBuffer() {
         // here drawbuffer is zero, because setDrawBuffer only set the buffer with index 0
-        glClearNamedFramebufferfv(get(), GL_COLOR, 0, mClearColor);
+        glClearBufferfv(GL_COLOR, 0, mClearColor);
     }
 
     /**
@@ -181,7 +157,7 @@ public final class GLFramebufferCompat extends GLObjectCompat {
      */
     public void clearDepthStencilBuffer() {
         // for depth or stencil, the drawbuffer must be 0
-        glClearNamedFramebufferfi(get(), GL_DEPTH_STENCIL, 0, 1.0f, 0);
+        glClearBufferfi(GL_DEPTH_STENCIL, 0, 1.0f, 0);
     }
 
     /**
@@ -195,11 +171,11 @@ public final class GLFramebufferCompat extends GLObjectCompat {
      * @param buffer enum buffer
      */
     public void setDrawBuffer(int buffer) {
-        glNamedFramebufferDrawBuffer(get(), buffer);
+        glDrawBuffer(buffer);
     }
 
     public void setReadBuffer(int buffer) {
-        glNamedFramebufferReadBuffer(get(), buffer);
+        glReadBuffer(buffer);
     }
 
     @Nonnull
@@ -264,7 +240,7 @@ public final class GLFramebufferCompat extends GLObjectCompat {
     private static final class Ref extends GLObjectCompat.Ref {
 
         private Ref(@Nonnull GLFramebufferCompat owner) {
-            super(owner, glCreateFramebuffers());
+            super(owner, glGenFramebuffers());
         }
 
         @Override
@@ -337,7 +313,7 @@ public final class GLFramebufferCompat extends GLObjectCompat {
                 } else {
                     mTexture.allocate2D(mInternalFormat, width, height, 0);
                 }
-                glNamedFramebufferTexture(framebuffer.get(), mAttachmentPoint, mTexture.get(), 0);
+                glFramebufferTexture(GL_FRAMEBUFFER, mAttachmentPoint, mTexture.get(), 0);
                 return true;
             }
             return false;
@@ -374,7 +350,7 @@ public final class GLFramebufferCompat extends GLObjectCompat {
                     return false;
                 }
                 mRenderbuffer.allocate(mInternalFormat, width, height, framebuffer.mSampleCount);
-                glNamedFramebufferRenderbuffer(framebuffer.get(), mAttachmentPoint, GL_RENDERBUFFER,
+                glFramebufferRenderbuffer(GL_FRAMEBUFFER, mAttachmentPoint, GL_RENDERBUFFER,
                         mRenderbuffer.get());
                 return true;
             }
