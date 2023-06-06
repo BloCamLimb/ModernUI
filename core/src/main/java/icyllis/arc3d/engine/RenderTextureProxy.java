@@ -18,6 +18,7 @@
 
 package icyllis.arc3d.engine;
 
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Rect;
 import org.jetbrains.annotations.VisibleForTesting;
 
@@ -53,6 +54,12 @@ public final class RenderTextureProxy extends TextureProxy {
     @Override
     public int getSampleCount() {
         return mSampleCount;
+    }
+
+    @Nullable
+    @Override
+    public FramebufferSet peekFramebufferSet() {
+        return mTexture != null ? ((RenderTarget) mTexture).getFramebufferSet() : null;
     }
 
     @Override

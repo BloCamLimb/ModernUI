@@ -176,7 +176,7 @@ public abstract class SurfaceProxy extends RefCnt {
      * Lazy-callback function.
      */
     @FunctionalInterface
-    public interface LazyInstantiateCallback {
+    public interface LazyInstantiateCallback extends AutoCloseable {
 
         /**
          * Specifies the expected properties of the {@link Surface} returned by a lazy instantiation
@@ -188,6 +188,10 @@ public abstract class SurfaceProxy extends RefCnt {
                                              int sampleCount,
                                              int surfaceFlags,
                                              String label);
+
+        @Override
+        default void close() {
+        }
     }
 
     /**
@@ -355,10 +359,10 @@ public abstract class SurfaceProxy extends RefCnt {
 
     /**
      * If this is a renderable proxy and the proxy is already instantiated, return its
-     * backing {@link RenderTarget}; if not, return null.
+     * backing {@link FramebufferSet}; if not, return null.
      */
     @Nullable
-    public RenderTarget peekRenderTarget() {
+    public FramebufferSet peekFramebufferSet() {
         return null;
     }
 

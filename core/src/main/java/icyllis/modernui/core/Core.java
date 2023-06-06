@@ -19,6 +19,7 @@
 package icyllis.modernui.core;
 
 import icyllis.arc3d.engine.DirectContext;
+import icyllis.arc3d.engine.RecordingContext;
 import icyllis.arc3d.opengl.GLCore;
 import icyllis.modernui.annotation.*;
 import org.lwjgl.Version;
@@ -61,6 +62,7 @@ public final class Core {
     private static final ConcurrentLinkedQueue<Runnable> sRenderCalls = new ConcurrentLinkedQueue<>();
 
     private static volatile DirectContext sDirectContext;
+    private static volatile RecordingContext sUiRecordingContext;
 
     private Core() {
     }
@@ -128,7 +130,7 @@ public final class Core {
     // not locked, but visible
     public static void checkMainThread() {
         if (Thread.currentThread() != sMainThread)
-            throw new IllegalStateException("Not called from main thread. Current " + Thread.currentThread());
+            throw new IllegalStateException("Not called from main thread, current " + Thread.currentThread());
     }
 
     // not locked, but visible on checking, and locked on failure
@@ -136,11 +138,10 @@ public final class Core {
         if (Thread.currentThread() != sRenderThread)
             synchronized (Core.class) {
                 if (sRenderThread == null)
-                    throw new IllegalStateException("Render thread was never initialized. " +
-                            "Please check whether the loader threw an exception before.");
+                    throw new IllegalStateException("Render thread has not been initialized yet.");
                 else
-                    throw new IllegalStateException("Not called from render thread. Desired " + sRenderThread +
-                            " current " + Thread.currentThread());
+                    throw new IllegalStateException("Not called from render thread " + sRenderThread +
+                            ", current " + Thread.currentThread());
             }
     }
 
@@ -262,16 +263,16 @@ public final class Core {
         synchronized (Core.class) {
             if (sRenderThread == null) {
                 sRenderThread = Thread.currentThread();
+
+                var dContext = DirectContext.makeOpenGL();
+                if (dContext == null) {
+                    return false;
+                }
+                sDirectContext = dContext;
             } else {
                 throw new IllegalStateException("Initialize twice");
             }
         }
-        DirectContext dContext = DirectContext.makeOpenGL();
-        if (dContext == null) {
-            return false;
-        }
-        sDirectContext = dContext;
-
         final String glVendor = GLCore.glGetString(GLCore.GL_VENDOR);
         final String glRenderer = GLCore.glGetString(GLCore.GL_RENDERER);
         final String glVersion = GLCore.glGetString(GLCore.GL_VERSION);
@@ -280,8 +281,7 @@ public final class Core {
         LOGGER.info(MARKER, "OpenGL renderer: {}", glRenderer);
         LOGGER.info(MARKER, "OpenGL version: {}", glVersion);
 
-        LOGGER.debug(MARKER, "OpenGL caps: {}", dContext.getCaps());
-
+        LOGGER.debug(MARKER, "OpenGL caps: {}", sDirectContext.getCaps());
         return true;
         /*GLCapabilities caps;
         try {
@@ -307,9 +307,20 @@ public final class Core {
         return sRenderThread != null;
     }
 
+    @NonNull
+    @RenderThread
     public static DirectContext getDirectContext() {
         checkRenderThread();
-        return sDirectContext;
+        return Objects.requireNonNull(sDirectContext,
+                "Render context has not been created yet, or creation failed");
+    }
+
+    @NonNull
+    @UiThread
+    public static RecordingContext getUiRecordingContext() {
+        checkUiThread();
+        return Objects.requireNonNull(sUiRecordingContext,
+                "UI recording context has not been created yet, or creation failed");
     }
 
     /**
@@ -326,6 +337,16 @@ public final class Core {
                 final Looper looper = Looper.prepare();
                 sUiHandler = new Handler(looper);
                 sUiHandlerAsync = Handler.createAsync(looper);
+
+                if (sDirectContext != null) {
+                    if (sUiThread == sRenderThread) {
+                        sUiRecordingContext = sDirectContext;
+                    } else {
+                        var rContext = RecordingContext.makeDeferred(sDirectContext.getThreadSafeProxy());
+                        sUiRecordingContext = Objects.requireNonNull(rContext, "No graphics context");
+                    }
+                }
+
                 return looper;
             } else {
                 throw new IllegalStateException("Initialize twice");

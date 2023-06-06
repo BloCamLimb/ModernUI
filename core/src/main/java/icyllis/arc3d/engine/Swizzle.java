@@ -30,6 +30,7 @@ public final class Swizzle {
     public static final short RGBA = 0x3210;
     public static final short BGRA = 0x3012;
     public static final short RGB1 = 0x5210;
+    public static final short BGR1 = 0x5012;
     public static final short AAAA = 0x3333;
 
     static {
@@ -37,7 +38,9 @@ public final class Swizzle {
         assert make('r', 'g', 'b', 'a') == RGBA;
         assert make('b', 'g', 'r', 'a') == BGRA;
         assert make('r', 'g', 'b', '1') == RGB1;
+        assert make('b', 'g', 'r', '1') == BGR1;
         assert make('a', 'a', 'a', 'a') == AAAA;
+        assert concat(make('1', '1', '1', 'r'), AAAA) == make('r', 'r', 'r', 'r');
     }
 
     public static int charToIndex(char c) {
@@ -79,6 +82,9 @@ public final class Swizzle {
         return (short) (charToIndex(r) | (charToIndex(g) << 4) | (charToIndex(b) << 8) | (charToIndex(a) << 12));
     }
 
+    /**
+     * Concatenates two swizzles (e.g. concat("111R", "AAAA") -> "RRRR").
+     */
     public static short concat(short a, short b) {
         short swizzle = 0;
         for (int i = 0; i < 4; ++i) {
@@ -96,14 +102,14 @@ public final class Swizzle {
     /**
      * Applies this swizzle to the input color and returns the swizzled color.
      */
-    public static void apply(short swizzle, float[] color) {
+    public static float[] apply(short swizzle, float[] v) {
         final float
-                r = color[0],
-                g = color[1],
-                b = color[2],
-                a = color[3];
+                r = v[0],
+                g = v[1],
+                b = v[2],
+                a = v[3];
         for (int i = 0; i < 4; ++i) {
-            color[i] = switch (swizzle & 0xF) {
+            v[i] = switch (swizzle & 0xF) {
                 case 0 -> r;
                 case 1 -> g;
                 case 2 -> b;
@@ -114,10 +120,11 @@ public final class Swizzle {
             };
             swizzle >>= 4;
         }
+        return v;
     }
 
     public static String toString(short swizzle) {
-        return String.valueOf(indexToChar(swizzle & 0xF)) +
+        return "" + indexToChar(swizzle & 0xF) +
                 indexToChar((swizzle >> 4) & 0xF) +
                 indexToChar((swizzle >> 8) & 0xF) +
                 indexToChar(swizzle >>> 12);

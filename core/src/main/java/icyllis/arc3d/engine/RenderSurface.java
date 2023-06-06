@@ -26,50 +26,51 @@ import java.util.Objects;
 
 /**
  * Manages a wrapped {@link RenderTarget} on the client (no texture access).
+ * For example, the OpenGL default framebuffer (framebuffer id = 0).
  */
-public final class RenderSurface extends RefCnt implements Surface {
+public final class RenderSurface extends RefCnt implements RenderTarget {
 
     @SharedPtr
-    private RenderTarget mRenderTarget;
+    private FramebufferSet mFramebufferSet;
 
-    RenderSurface(@SharedPtr RenderTarget target) {
-        assert (target != null && target.getTexture() == null);
-        mRenderTarget = target;
+    RenderSurface(@SharedPtr FramebufferSet fs) {
+        assert (fs != null && fs.getColorBuffer() == null);
+        mFramebufferSet = fs;
     }
 
     @Override
     protected void deallocate() {
-        mRenderTarget = RefCnt.move(mRenderTarget);
+        mFramebufferSet = RefCnt.move(mFramebufferSet);
     }
 
     @Override
     public int getWidth() {
-        return mRenderTarget.getWidth();
+        return mFramebufferSet.getWidth();
     }
 
     @Override
     public int getHeight() {
-        return mRenderTarget.getHeight();
+        return mFramebufferSet.getHeight();
     }
 
     @Override
     public int getSampleCount() {
-        return mRenderTarget.getSampleCount();
+        return mFramebufferSet.getSampleCount();
     }
 
     @Nonnull
     @Override
     public BackendFormat getBackendFormat() {
-        return mRenderTarget.getBackendFormat();
+        return mFramebufferSet.getBackendFormat();
     }
 
     @Override
     public int getSurfaceFlags() {
-        return mRenderTarget.getSurfaceFlags();
+        return mFramebufferSet.getSurfaceFlags();
     }
 
     @Override
-    public RenderTarget getRenderTarget() {
-        return Objects.requireNonNull(mRenderTarget, "Disposed");
+    public FramebufferSet getFramebufferSet() {
+        return Objects.requireNonNull(mFramebufferSet, "Disposed");
     }
 }

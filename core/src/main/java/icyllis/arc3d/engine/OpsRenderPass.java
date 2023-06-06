@@ -38,7 +38,7 @@ public abstract class OpsRenderPass {
 
     private int mDrawPipelineStatus = kNotConfigured_DrawPipelineStatus;
 
-    protected RenderTarget mRenderTarget;
+    protected FramebufferSet mFramebufferSet;
     protected int mOrigin;
 
     private TextureProxy[] mGeomTextures = new TextureProxy[1];
@@ -47,8 +47,8 @@ public abstract class OpsRenderPass {
         this(null, Engine.SurfaceOrigin.kUpperLeft);
     }
 
-    public OpsRenderPass(RenderTarget rt, int origin) {
-        mRenderTarget = rt;
+    public OpsRenderPass(FramebufferSet rt, int origin) {
+        mFramebufferSet = rt;
         mOrigin = origin;
     }
 
@@ -65,7 +65,7 @@ public abstract class OpsRenderPass {
      */
     public void clearColor(int left, int top, int right, int bottom,
                            float red, float green, float blue, float alpha) {
-        assert (mRenderTarget != null);
+        assert (mFramebufferSet != null);
         mDrawPipelineStatus = kNotConfigured_DrawPipelineStatus;
     }
 
@@ -73,7 +73,7 @@ public abstract class OpsRenderPass {
      * Same as {@link #clearColor} but modifies the stencil.
      */
     public void clearStencil(int left, int top, int right, int bottom, boolean insideMask) {
-        assert (mRenderTarget != null);
+        assert (mFramebufferSet != null);
         mDrawPipelineStatus = kNotConfigured_DrawPipelineStatus;
     }
 
@@ -217,9 +217,9 @@ public abstract class OpsRenderPass {
         }
     }
 
-    protected void set(RenderTarget rt, int origin) {
-        assert (mRenderTarget == null);
-        mRenderTarget = rt;
+    protected void set(FramebufferSet rt, int origin) {
+        assert (mFramebufferSet == null);
+        mFramebufferSet = rt;
         mOrigin = origin;
     }
 

@@ -27,7 +27,7 @@ classes
 *.log
 logs
 
-assets
+/assets
 
 core/src/main/resources/assets/modernui/test/
 forge/src/main/java/icyllis/modernui/test/Main.java

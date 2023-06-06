@@ -18,8 +18,6 @@
 
 package icyllis.modernui;
 
-import icyllis.arc3d.opengl.GLTextureCompat;
-import icyllis.arc3d.opengl.GLTextureManager;
 import icyllis.modernui.animation.*;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
@@ -68,12 +66,13 @@ public class TestFragment extends Fragment {
 
     public static void main(String[] args) {
         System.setProperty("java.awt.headless", "true");
-        Configurator.setRootLevel(Level.ALL);
+        Configurator.setRootLevel(Level.DEBUG);
 
         try (ModernUI app = new ModernUI()) {
             app.run(new TestFragment());
         }
         AudioManager.getInstance().close();
+        System.gc();
     }
 
     @Override
@@ -161,6 +160,12 @@ public class TestFragment extends Fragment {
             LOGGER.info("{} onCreateView(), id={}", getClass().getSimpleName(), getId());
 
             return content;
+        }
+
+        @Override
+        public void onDestroy() {
+            super.onDestroy();
+            LOGGER.info("{} onDestroy()", getClass().getSimpleName());
         }
     }
 
@@ -410,13 +415,14 @@ public class TestFragment extends Fragment {
             spannable.setSpan(new UnderlineSpan(), text.length() / 2, text.length(),
                     Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
             try {
-                GLTextureCompat texture = GLTextureManager.getInstance().create(
+                Image image = ImageStore.getInstance().create(
                         FileChannel.open(Path.of("F:/Photoshop/AppleEmoji/horse-face_1f434.png"),
-                                StandardOpenOption.READ), true);
-                Image image = new Image(texture);
-                ImageSpan span = new ImageSpan(image);
-                span.getDrawable().setBounds(0, 0, sp(24), sp(24));
-                spannable.setSpan(span, emojiSt, emojiSt + 2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                StandardOpenOption.READ));
+                if (image != null) {
+                    ImageSpan span = new ImageSpan(image);
+                    span.getDrawable().setBounds(0, 0, sp(24), sp(24));
+                    spannable.setSpan(span, emojiSt, emojiSt + 2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                }
             } catch (IOException ignored) {
             }
             tv.setLinksClickable(true);
@@ -584,7 +590,7 @@ public class TestFragment extends Fragment {
                     picker.setPadding(dp6, dp6, dp6, dp6);
                     v = picker;
                     p = new LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
-                }   else {
+                } else {
                     v = new CView(getContext(), i);
                     p = new LayoutParams(dp(200), dp(50));
                 }

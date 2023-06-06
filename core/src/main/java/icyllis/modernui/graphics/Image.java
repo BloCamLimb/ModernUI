@@ -18,12 +18,13 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.arc3d.engine.RecordingContext;
-import icyllis.arc3d.engine.SurfaceProxyView;
-import icyllis.arc3d.opengl.*;
+import icyllis.arc3d.engine.Surface;
+import icyllis.arc3d.engine.*;
+import icyllis.modernui.annotation.*;
+import icyllis.modernui.core.Core;
 import org.jetbrains.annotations.ApiStatus;
 
-import javax.annotation.Nonnull;
+import java.lang.ref.Cleaner;
 
 /**
  * {@code Image} describes a two-dimensional array of pixels to draw. The pixels are
@@ -36,25 +37,65 @@ import javax.annotation.Nonnull;
  * </ul>
  */
 //TODO wip
-public final class Image {
+public class Image implements AutoCloseable {
 
-    private ImageInfo mInfo;
+    private final ImageInfo mInfo;
 
-    private RecordingContext mContext;
-    private SurfaceProxyView mView;
+    private final RecordingContext mContext;
+    private ViewReference mView;
 
-    private final GLTextureCompat mTexture;
-
-    @ApiStatus.Experimental
-    public Image() {
-        mTexture = new GLTextureCompat(GLCore.GL_TEXTURE_2D);
+    private Image(ImageInfo info, RecordingContext context, TextureProxy proxy, short swizzle) {
+        mInfo = info;
+        mContext = context;
+        mView = new ViewReference(this, proxy, swizzle);
     }
 
-    @ApiStatus.Experimental
-    public Image(@Nonnull GLTextureCompat texture) {
-        mTexture = texture;
-        mInfo = ImageInfo.make(texture.getWidth(), texture.getHeight(),
-                ImageInfo.CT_UNKNOWN, ImageInfo.AT_UNKNOWN, null);
+    // must be called after render system and UI system are initialized successfully,
+    // must be called from either render thread or UI thread
+    @Nullable
+    public static Image createTextureFromBitmap(Bitmap bitmap) {
+        if (bitmap == null || bitmap.isClosed()) {
+            return null;
+        }
+        return createTextureFromBitmap(
+                Core.isOnUiThread()
+                        ? Core.getUiRecordingContext()
+                        : Core.getDirectContext(),
+                bitmap
+        );
+    }
+
+    /**
+     * Create an image that backed by a GPU texture with the given bitmap.
+     * The bitmap should be immutable and can be safely closed after the call.
+     *
+     * @param rContext the recording graphics context on the current thread
+     * @param bitmap   the source bitmap
+     * @return image, or null if failed
+     */
+    @Nullable
+    public static Image createTextureFromBitmap(@NonNull RecordingContext rContext,
+                                                @NonNull Bitmap bitmap) {
+        var caps = rContext.getCaps();
+        var ct = (bitmap.getFormat() == Bitmap.Format.RGB_888)
+                ? ImageInfo.CT_RGB_888x
+                : bitmap.getColorType();
+        if (caps.getDefaultBackendFormat(ct, /*renderable*/false) == null) {
+            return null;
+        }
+        var flags = Surface.FLAG_BUDGETED;
+        if (bitmap.getWidth() > 1 || bitmap.getHeight() > 1) {
+            flags |= Surface.FLAG_MIPMAPPED;
+        }
+        var proxy = rContext.getProxyProvider().createProxyFromBitmap(bitmap, ct, flags);
+        if (proxy == null) {
+            return null;
+        }
+        var swizzle = caps.getReadSwizzle(proxy.getBackendFormat(), ct);
+        return new Image(bitmap.getInfo(),
+                rContext,
+                proxy,
+                swizzle);
     }
 
     /**
@@ -62,14 +103,13 @@ public final class Image {
      * You should use a single image as the UI texture to avoid each icon creating its own image.
      * Underlying resources are automatically released.
      *
-     * @param ns      the application namespace
-     * @param subPath the sub path to the resource
+     * @param namespace the application namespace
+     * @param entry     the sub path to the resource
      * @return the image
      */
-    @Nonnull
-    public static Image create(@Nonnull String ns, @Nonnull String subPath) {
-        return new Image(GLTextureManager.getInstance().getOrCreate(ns, "textures/" + subPath,
-                GLTextureManager.CACHE_MASK | GLTextureManager.MIPMAP_MASK));
+    @Nullable
+    public static Image create(@NonNull String namespace, @NonNull String entry) {
+        return ImageStore.getInstance().getOrCreate(namespace, "textures/" + entry);
     }
 
     /**
@@ -100,19 +140,43 @@ public final class Image {
         return mInfo.height();
     }
 
-    /**
-     * Returns the backing texture.
-     *
-     * @return OpenGL texture
-     */
-    @Deprecated
-    @Nonnull
-    public GLTextureCompat getTexture() {
-        return mTexture;
-    }
-
+    // do not close this!
     @ApiStatus.Internal
     public SurfaceProxyView asTextureView() {
         return mView;
+    }
+
+    @Override
+    public void close() {
+        if (mView != null) {
+            mView.mCleanup.clean();
+            mView = null;
+        }
+    }
+
+    public boolean isClosed() {
+        return mView == null;
+    }
+
+    private static final class ViewReference extends SurfaceProxyView implements Runnable {
+
+        private final Cleaner.Cleanable mCleanup;
+
+        private ViewReference(Image owner, @SharedPtr TextureProxy proxy, short swizzle) {
+            super(proxy,
+                    Engine.SurfaceOrigin.kUpperLeft,
+                    swizzle);
+            mCleanup = Core.registerCleanup(owner, this);
+        }
+
+        @Override
+        public void run() {
+            super.close();
+        }
+
+        @Override
+        public void close() {
+            throw new UnsupportedOperationException();
+        }
     }
 }

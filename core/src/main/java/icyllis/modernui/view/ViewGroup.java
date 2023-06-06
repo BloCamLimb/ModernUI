@@ -4400,8 +4400,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
          * @param source The layout params to copy from.
          */
         public MarginLayoutParams(@NonNull MarginLayoutParams source) {
-            this.width = source.width;
-            this.height = source.height;
+            super(source);
 
             this.leftMargin = source.leftMargin;
             this.topMargin = source.topMargin;
