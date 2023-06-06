@@ -18,6 +18,8 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.Rect;
@@ -26,8 +28,6 @@ import icyllis.modernui.view.MeasureSpec;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 
 /**
@@ -57,7 +57,7 @@ public class FrameLayout extends ViewGroup {
 
     private final ArrayList<View> mMatchParentChildren = new ArrayList<>(1);
 
-    public FrameLayout(Context context) {
+    public FrameLayout(@NonNull Context context) {
         super(context);
     }
 
@@ -272,9 +272,9 @@ public class FrameLayout extends ViewGroup {
         return mMeasureAllChildren;
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    protected ViewGroup.LayoutParams generateLayoutParams(@Nonnull ViewGroup.LayoutParams params) {
+    protected ViewGroup.LayoutParams generateLayoutParams(@NonNull ViewGroup.LayoutParams params) {
         if (params instanceof LayoutParams) {
             return new LayoutParams((LayoutParams) params);
         } else if (params instanceof MarginLayoutParams) {
@@ -288,7 +288,7 @@ public class FrameLayout extends ViewGroup {
      * {@link ViewGroup.LayoutParams#MATCH_PARENT},
      * and a height of {@link ViewGroup.LayoutParams#MATCH_PARENT}.
      */
-    @Nonnull
+    @NonNull
     @Override
     protected ViewGroup.LayoutParams generateDefaultLayoutParams() {
         return new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
@@ -350,11 +350,11 @@ public class FrameLayout extends ViewGroup {
             this.gravity = gravity;
         }
 
-        public LayoutParams(@Nonnull ViewGroup.LayoutParams source) {
+        public LayoutParams(@NonNull ViewGroup.LayoutParams source) {
             super(source);
         }
 
-        public LayoutParams(@Nonnull ViewGroup.MarginLayoutParams source) {
+        public LayoutParams(@NonNull ViewGroup.MarginLayoutParams source) {
             super(source);
         }
 
@@ -364,7 +364,7 @@ public class FrameLayout extends ViewGroup {
          *
          * @param source the layout params to copy from.
          */
-        public LayoutParams(@Nonnull LayoutParams source) {
+        public LayoutParams(@NonNull LayoutParams source) {
             super(source);
 
             gravity = source.gravity;

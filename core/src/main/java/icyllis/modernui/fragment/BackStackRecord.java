@@ -18,8 +18,10 @@
 
 package icyllis.modernui.fragment;
 
+import icyllis.modernui.core.LoggerWriter;
 import icyllis.modernui.lifecycle.Lifecycle;
 import it.unimi.dsi.fastutil.booleans.BooleanArrayList;
+import org.apache.logging.log4j.Level;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -292,8 +294,9 @@ final class BackStackRecord extends FragmentTransaction implements
         if (mCommitted) throw new IllegalStateException("commit already called");
         if (FragmentManager.TRACE) {
             LOGGER.info(FragmentManager.MARKER, "Commit: " + this);
-            try (var pw = new PrintWriter(new LogWriter(FragmentManager.MARKER))) {
-                dump("  ", pw);
+            var w = new PrintWriter(new LoggerWriter(LOGGER, Level.DEBUG, FragmentManager.MARKER), true);
+            try (w) {
+                dump("  ", w);
             }
         }
         mCommitted = true;

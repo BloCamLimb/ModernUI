@@ -20,7 +20,6 @@ package icyllis.modernui.graphics;
 
 import com.ibm.icu.text.DateFormat;
 import com.ibm.icu.text.SimpleDateFormat;
-import icyllis.arc3d.opengl.GLFramebufferCompat;
 import icyllis.arc3d.opengl.GLTextureCompat;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Core;
@@ -210,14 +209,13 @@ public final class Bitmap implements AutoCloseable {
      *
      * @param format  the bitmap format to convert the image to
      * @param texture the texture to download from
-     * @param flipY   flip the image vertically, such as the texture is from a framebuffer
      * @return the created bitmap
      * @deprecated remove soon
      */
     @Deprecated
     @NonNull
     @RenderThread
-    public static Bitmap download(@NonNull Format format, @NonNull GLTextureCompat texture, boolean flipY) {
+    public static Bitmap download(@NonNull Format format, @NonNull GLTextureCompat texture) {
         Core.checkRenderThread();
         final int width = texture.getWidth();
         final int height = texture.getHeight();
@@ -226,52 +224,20 @@ public final class Bitmap implements AutoCloseable {
         glPixelStorei(GL_PACK_SKIP_ROWS, 0);
         glPixelStorei(GL_PACK_SKIP_PIXELS, 0);
         glPixelStorei(GL_PACK_ALIGNMENT, 1);
-        glGetTextureImage(texture.get(), 0, format.externalGlFormat, GL_UNSIGNED_BYTE,
+        int externalGlFormat = switch (format) {
+            case GRAY_8 -> GL_RED;
+            case GRAY_ALPHA_88 -> GL_RG;
+            case RGB_888 -> GL_RGB;
+            case RGBA_8888 -> GL_RGBA;
+            default -> throw new IllegalArgumentException();
+        };
+        glGetTextureImage(texture.get(), 0, externalGlFormat, GL_UNSIGNED_BYTE,
                 bitmap.getSize(), bitmap.getPixels());
-        if (flipY) {
-            flipVertically(bitmap);
-        }
         return bitmap;
     }
 
-    /**
-     * Creates a bitmap whose image downloaded from the given off-screen rendering target
-     * bound as a read framebuffer.
-     *
-     * @param format      the bitmap format to convert the image to
-     * @param framebuffer the framebuffer to download from
-     * @param colorBuffer the color attachment to read
-     * @param flipY       flip the image vertically, such as the texture is from a framebuffer
-     * @return the created bitmap
-     * @deprecated remove soon
-     */
-    @Deprecated
-    @NonNull
-    @RenderThread
-    public static Bitmap download(@NonNull Format format, @NonNull GLFramebufferCompat framebuffer,
-                                  int colorBuffer, boolean flipY) {
-        Core.checkRenderThread();
-        if (framebuffer.isMultisampled()) {
-            throw new IllegalArgumentException("Cannot get pixels from a multisampling target");
-        }
-        final GLFramebufferCompat.Attachment attachment = framebuffer.getAttachment(colorBuffer);
-        final int width = attachment.getWidth();
-        final int height = attachment.getHeight();
-        final Bitmap bitmap = createBitmap(width, height, format);
-        framebuffer.bindRead();
-        framebuffer.setReadBuffer(colorBuffer);
-        glPixelStorei(GL_PACK_ROW_LENGTH, 0);
-        glPixelStorei(GL_PACK_SKIP_ROWS, 0);
-        glPixelStorei(GL_PACK_SKIP_PIXELS, 0);
-        glPixelStorei(GL_PACK_ALIGNMENT, 1);
-        glReadPixels(0, 0, width, height, format.externalGlFormat, GL_UNSIGNED_BYTE, bitmap.getPixels());
-        if (flipY) {
-            flipVertically(bitmap);
-        }
-        return bitmap;
-    }
-
-    private static void flipVertically(@NonNull Bitmap bitmap) {
+    @ApiStatus.Internal
+    public static void flipVertically(@NonNull Bitmap bitmap) {
         final int height = bitmap.getHeight();
         final int rowStride = bitmap.getRowStride();
         final long temp = nmemAllocChecked(rowStride);
@@ -452,28 +418,28 @@ public final class Bitmap implements AutoCloseable {
     public int getPixelARGB(int x, int y) {
         checkReleased();
         checkOutOfBounds(x, y);
-        int word = MemoryUtil.memGetInt(mRef.mPixels +
+        int data = MemoryUtil.memGetInt(mRef.mPixels +
                 (long) y * getRowStride() +
                 (long) x * mFormat.getBytesPerPixel());
         int argb = switch (mFormat) {
             case GRAY_8 -> { // to RRR1
-                int lum = word & 0xFF;
+                int lum = data & 0xFF;
                 yield 0xFF000000 | (lum << 16) | (lum << 8) | lum;
             }
             case GRAY_ALPHA_88 -> { // to RRRG
-                int lum = word & 0xFF;
-                yield (word << 16) | (lum << 8) | lum;
+                int lum = data & 0xFF;
+                yield (data << 16) | (lum << 8) | lum;
             }
             case RGB_888 -> // to BGR1
-                    0xFF000000 | ((word & 0xFF) << 16) | (word & 0xFF00) | ((word >> 16) & 0xFF);
+                    0xFF000000 | ((data & 0xFF) << 16) | (data & 0xFF00) | ((data >> 16) & 0xFF);
             case RGBA_8888 -> // to BGRA
-                    (word & 0xFF00FF00) | ((word & 0xFF) << 16) | ((word >> 16) & 0xFF);
-            default -> throw new RuntimeException(); //TODO
+                    (data & 0xFF00FF00) | ((data & 0xFF) << 16) | ((data >> 16) & 0xFF);
+            default -> throw new UnsupportedOperationException();
         };
         // linear to gamma
         if (getColorSpace() != null && !getColorSpace().isSrgb()) {
-            float[] v = ColorSpace.connect(getColorSpace()).transform(
-                    Color.red(argb) / 255.0f, Color.green(argb) / 255.0f, Color.blue(argb) / 255.0f);
+            float[] v = {Color.red(argb) / 255.0f, Color.green(argb) / 255.0f, Color.blue(argb) / 255.0f};
+            ColorSpace.connect(getColorSpace()).transform(v);
             return Color.argb(Color.alpha(argb), v[0], v[1], v[2]);
         }
         return argb;
@@ -677,48 +643,75 @@ public final class Bitmap implements AutoCloseable {
      */
     public enum Format {
         //@formatter:off
-        GRAY_8          (1, GL_RED,     ImageInfo.CT_GRAY_8         ),
-        GRAY_ALPHA_88   (2, GL_RG,      ImageInfo.CT_GRAY_ALPHA_88  ),
-        RGB_888         (3, GL_RGB,     ImageInfo.CT_RGB_888        ),
-        RGBA_8888       (4, GL_RGBA,    ImageInfo.CT_RGBA_8888      ),
+        /**
+         * Grayscale, one channel, 8-bit per channel.
+         */
+        GRAY_8         (1, ImageInfo.CT_GRAY_8       ),
+        /**
+         * Grayscale, with alpha, two channels, 8-bit per channel.
+         */
+        GRAY_ALPHA_88  (2, ImageInfo.CT_GRAY_ALPHA_88),
+        /**
+         * RGB, three channels, 8-bit per channel.
+         */
+        RGB_888        (3, ImageInfo.CT_RGB_888      ),
+        /**
+         * RGB, with alpha, four channels, 8-bit per channel.
+         */
+        RGBA_8888      (4, ImageInfo.CT_RGBA_8888    ),
         // U16, SRGB
-        GRAY_16         (1, GL_RED,     ImageInfo.CT_UNKNOWN        ),
-        GRAY_ALPHA_1616 (2, GL_RG,      ImageInfo.CT_UNKNOWN        ),
-        RGB_161616      (3, GL_RGB,     ImageInfo.CT_UNKNOWN        ),
-        RGBA_16161616   (4, GL_RGBA,    ImageInfo.CT_RGBA_16161616  ),
+        @ApiStatus.Internal
+        GRAY_16        (1, ImageInfo.CT_UNKNOWN      ),
+        @ApiStatus.Internal
+        GRAY_ALPHA_1616(2, ImageInfo.CT_UNKNOWN      ),
+        @ApiStatus.Internal
+        RGB_161616     (3, ImageInfo.CT_UNKNOWN      ),
+        RGBA_16161616  (4, ImageInfo.CT_RGBA_16161616),
         // HDR, LINEAR_SRGB
-        GRAY_F32        (1, GL_RED,     ImageInfo.CT_UNKNOWN        ),
-        GRAY_ALPHA_F32  (2, GL_RG,      ImageInfo.CT_UNKNOWN        ),
-        RGB_F32         (3, GL_RGB,     ImageInfo.CT_UNKNOWN        ),
-        RGBA_F32        (4, GL_RGBA,    ImageInfo.CT_RGBA_F32       );
+        @ApiStatus.Internal
+        GRAY_F32       (1, ImageInfo.CT_UNKNOWN      ),
+        @ApiStatus.Internal
+        GRAY_ALPHA_F32 (2, ImageInfo.CT_UNKNOWN      ),
+        @ApiStatus.Internal
+        RGB_F32        (3, ImageInfo.CT_UNKNOWN      ),
+        RGBA_F32       (4, ImageInfo.CT_RGBA_F32     );
         //@formatter:on
 
         private static final Format[] FORMATS = values();
 
-        private final int channels;
-        @Deprecated
-        private final int externalGlFormat;
-        private final int colorType;
-        private final int bytesPerPixel;
+        private final int mChannels;
+        private final int mColorType;
+        private final int mBytesPerPixel;
 
-        Format(int channels, int externalGlFormat, int colorType) {
-            this.channels = channels;
-            this.externalGlFormat = externalGlFormat;
-            this.colorType = colorType;
-            bytesPerPixel = ImageInfo.bytesPerPixel(colorType);
-            assert (ordinal() & 3) == (channels - 1);
+        Format(int chs, int ct) {
+            mChannels = chs;
+            mColorType = ct;
+            mBytesPerPixel = ImageInfo.bytesPerPixel(ct);
+            assert (ordinal() & 3) == (chs - 1);
         }
 
         /**
          * Returns the number of channels.
          */
         public int getChannels() {
-            return channels;
+            return mChannels;
         }
 
+        /**
+         * The source (in CPU memory) color type of this format.
+         * <p>
+         * RGB is special, it's 3 bytes per pixel in CPU memory, but
+         * 4 bytes per pixel in GPU memory (implicitly).
+         *
+         * @see #getBytesPerPixel()
+         */
         @ImageInfo.ColorType
         public int getColorType() {
-            return colorType;
+            return mColorType;
+        }
+
+        public int getBytesPerPixel() {
+            return mBytesPerPixel;
         }
 
         /**
@@ -749,19 +742,15 @@ public final class Bitmap implements AutoCloseable {
             return (ordinal() & 1) == 1;
         }
 
-        public int getBytesPerPixel() {
-            return bytesPerPixel;
-        }
-
         @NonNull
-        public static Format of(int channels, boolean isU16, boolean isHDR) {
-            if (channels < 1 || channels > 4) {
-                throw new IllegalArgumentException("Number of channels should be 1..4 but " + channels);
-            }
-            if (isU16 && isHDR) {
+        public static Format get(int chs, boolean u16, boolean hdr) {
+            if (chs < 1 || chs > 4) {
                 throw new IllegalArgumentException();
             }
-            return FORMATS[(channels - 1) | (isU16 ? 4 : 0) | (isHDR ? 8 : 0)];
+            if (u16 && hdr) {
+                throw new IllegalArgumentException();
+            }
+            return FORMATS[(chs - 1) | (u16 ? 4 : 0) | (hdr ? 8 : 0)];
         }
     }
 

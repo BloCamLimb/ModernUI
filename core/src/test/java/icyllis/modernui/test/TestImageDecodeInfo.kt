@@ -27,7 +27,7 @@ import java.io.IOException
 import java.nio.file.Path
 import java.util.*
 
-fun main(args: Array<String>) {
+fun main() {
     Configurator.setRootLevel(Level.INFO)
     val gets = Bitmap.openDialogGets(null, null, null)
     if (gets != null) {

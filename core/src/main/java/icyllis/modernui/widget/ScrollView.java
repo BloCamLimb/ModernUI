@@ -18,12 +18,10 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.Context;
-import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.Paint;
+import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.graphics.MathUtil;
-import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.view.*;
 
 import javax.annotation.Nonnull;
@@ -106,6 +104,12 @@ public class ScrollView extends FrameLayout {
     private final int mOverflingDistance;
 
     private final float mVerticalScrollFactor;
+
+    /**
+     * ID of the active pointer. This is used to retain consistency during
+     * drags/flings if multiple pointers are used.
+     */
+    private int mActivePointerId = MotionEvent.INVALID_POINTER_ID;
 
     /**
      * Used during scrolling to retrieve the new offset within the window.
@@ -446,6 +450,17 @@ public class ScrollView extends FrameLayout {
 
         switch (action) {
             case MotionEvent.ACTION_MOVE -> {
+
+                /*
+                 * Locally do absolute value. mLastMotionY is set to the y value
+                 * of the down event.
+                 */
+                final int activePointerId = mActivePointerId;
+                if (activePointerId == MotionEvent.INVALID_POINTER_ID) {
+                    // If we don't have a valid id, the touch down wasn't on content.
+                    break;
+                }
+
                 final int y = (int) ev.getY();
                 final int yDiff = Math.abs(y - mLastMotionY);
                 if (yDiff > mTouchSlop && (getNestedScrollAxes() & SCROLL_AXIS_VERTICAL) == 0) {
@@ -473,6 +488,7 @@ public class ScrollView extends FrameLayout {
                  * ACTION_DOWN always refers to pointer index 0.
                  */
                 mLastMotionY = y;
+                mActivePointerId = ev.getPointerId(0);
 
                 initOrResetVelocityTracker();
                 mVelocityTracker.addMovement(ev);
@@ -497,6 +513,7 @@ public class ScrollView extends FrameLayout {
             case MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_UP -> {
                 /* Release the drag */
                 mIsBeingDragged = false;
+                mActivePointerId = MotionEvent.INVALID_POINTER_ID;
                 recycleVelocityTracker();
                 if (mScroller.springBack(mScrollX, mScrollY, 0, 0, 0, getScrollRange())) {
                     postInvalidateOnAnimation();
@@ -530,7 +547,7 @@ public class ScrollView extends FrameLayout {
         vtev.offsetLocation(0, mNestedYOffset);
 
         switch (action) {
-            case MotionEvent.ACTION_DOWN: {
+            case MotionEvent.ACTION_DOWN -> {
                 if (getChildCount() == 0) {
                     vtev.recycle();
                     return false;
@@ -552,10 +569,13 @@ public class ScrollView extends FrameLayout {
 
                 // Remember where the motion event started
                 mLastMotionY = (int) ev.getY();
+                mActivePointerId = ev.getPointerId(0);
                 startNestedScroll(SCROLL_AXIS_VERTICAL, TYPE_TOUCH);
-                break;
             }
-            case MotionEvent.ACTION_MOVE:
+            case MotionEvent.ACTION_MOVE -> {
+                if (mActivePointerId == MotionEvent.INVALID_POINTER_ID) {
+                    break;
+                }
                 final int y = (int) ev.getY();
                 int deltaY = mLastMotionY - y;
                 if (dispatchNestedPreScroll(0, deltaY, mScrollConsumed, mScrollOffset, TYPE_TOUCH)) {
@@ -636,8 +656,8 @@ public class ScrollView extends FrameLayout {
                         }
                     }
                 }
-                break;
-            case MotionEvent.ACTION_UP:
+            }
+            case MotionEvent.ACTION_UP -> {
                 if (mIsBeingDragged) {
                     final VelocityTracker velocityTracker = mVelocityTracker;
                     velocityTracker.computeCurrentVelocity(1000, mMaximumVelocity);
@@ -649,18 +669,19 @@ public class ScrollView extends FrameLayout {
                             getScrollRange())) {
                         postInvalidateOnAnimation();
                     }
-
+                    mActivePointerId = MotionEvent.INVALID_POINTER_ID;
                     endDrag();
                 }
-                break;
-            case MotionEvent.ACTION_CANCEL:
+            }
+            case MotionEvent.ACTION_CANCEL -> {
                 if (mIsBeingDragged && getChildCount() > 0) {
                     if (mScroller.springBack(mScrollX, mScrollY, 0, 0, 0, getScrollRange())) {
                         postInvalidateOnAnimation();
                     }
+                    mActivePointerId = MotionEvent.INVALID_POINTER_ID;
                     endDrag();
                 }
-                break;
+            }
         }
 
         if (mVelocityTracker != null) {

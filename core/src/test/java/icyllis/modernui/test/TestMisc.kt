@@ -25,7 +25,9 @@ import icyllis.modernui.text.TextUtils
 import icyllis.modernui.util.TypedValue
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.core.config.Configurator
+import org.lwjgl.system.MemoryUtil
 import java.math.BigDecimal
+import java.nio.ByteOrder
 import java.util.*
 
 fun main() {
@@ -46,4 +48,19 @@ fun main() {
     val doubles = doubleArrayOf(1.0, 160.0, 3.0)
     Arrays.stream(doubles).average().ifPresent { average -> ModernUI.LOGGER.info(average) }
     ModernUI.LOGGER.info(MathUtil.averageStable(doubles))
+
+    val triple = Triple("A", "B", "C")
+    ModernUI.LOGGER.info(triple)
+
+    val ptr = MemoryUtil.nmemAlloc(4)
+    MemoryUtil.memPutByte(ptr + 0, 30)
+    MemoryUtil.memPutByte(ptr + 1, 40)
+    MemoryUtil.memPutByte(ptr + 2, 50)
+    MemoryUtil.memPutByte(ptr + 3, 60)
+
+    ModernUI.LOGGER.info(
+        "{} {}",
+        ByteOrder.nativeOrder(),
+        Integer.toHexString(MemoryUtil.memGetInt(ptr))
+    )
 }

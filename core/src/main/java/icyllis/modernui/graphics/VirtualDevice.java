@@ -99,7 +99,7 @@ public final class VirtualDevice extends BaseDevice {
 
     @Override
     public void clipRect(RectF rect, int clipOp, boolean doAA) {
-        writableClip().opRect(rect, localToDevice(), clipOp, doAA);
+        writableClip().opRect(rect, mLocalToDevice, clipOp, doAA);
     }
 
     @Override

@@ -237,9 +237,9 @@ public final class GLServer extends Server {
         if (texture == 0) {
             return null;
         }
-        Function<GLTexture, GLRenderTarget> target = null;
+        Function<GLTexture, GLFramebufferSet> target = null;
         if ((surfaceFlags & Surface.FLAG_RENDERABLE) != 0) {
-            target = createRenderTargetObjects(
+            target = createRTObjects(
                     texture,
                     width, height,
                     glFormat,
@@ -253,12 +253,21 @@ public final class GLServer extends Server {
         info.texture = texture;
         info.format = format.getGLFormat();
         info.levelCount = levelCount;
-        return new GLTexture(this,
-                width, height,
-                info,
-                format,
-                (surfaceFlags & Surface.FLAG_BUDGETED) != 0,
-                target);
+        if (target == null) {
+            return new GLTexture(this,
+                    width, height,
+                    info,
+                    format,
+                    (surfaceFlags & Surface.FLAG_BUDGETED) != 0,
+                    true);
+        } else {
+            return new GLRenderTexture(this,
+                    width, height,
+                    info,
+                    format,
+                    (surfaceFlags & Surface.FLAG_BUDGETED) != 0,
+                    target);
+        }
     }
 
     @Nullable
@@ -276,18 +285,18 @@ public final class GLServer extends Server {
                                     int rowBytes, long pixels) {
         assert (!texture.isExternal());
         assert (!texture.getBackendFormat().isCompressed());
-        GLTexture glTexture = (GLTexture) texture;
-        int glFormat = glTexture.getFormat();
+        GLTexture tex = (GLTexture) texture;
+        int glFormat = tex.getFormat();
         assert (mCaps.isFormatTexturable(glFormat));
 
-        GLTextureParameters parameters = glTexture.getParameters();
+        GLTextureParameters parameters = tex.getParameters();
         if (parameters.baseMipmapLevel != 0) {
-            glTextureParameteri(glTexture.getHandle(), GL_TEXTURE_BASE_LEVEL, 0);
+            glTextureParameteri(tex.getHandle(), GL_TEXTURE_BASE_LEVEL, 0);
             parameters.baseMipmapLevel = 0;
         }
-        int maxLevel = glTexture.getMaxMipmapLevel();
+        int maxLevel = tex.getMaxMipmapLevel();
         if (parameters.maxMipmapLevel != maxLevel) {
-            glTextureParameteri(glTexture.getHandle(), GL_TEXTURE_MAX_LEVEL, maxLevel);
+            glTextureParameteri(tex.getHandle(), GL_TEXTURE_MAX_LEVEL, maxLevel);
             parameters.maxMipmapLevel = maxLevel;
         }
 
@@ -315,13 +324,26 @@ public final class GLServer extends Server {
             restoreRowLength = true;
         }
 
-        glTextureSubImage2D(glTexture.getHandle(), 0,
+        currentCommandBuffer().bindTextureForSetup(tex.getHandle());
+        glTexSubImage2D(GL_TEXTURE_2D, 0,
                 x, y, width, height, srcFormat, srcType, pixels);
 
         if (restoreRowLength) {
             glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
         }
 
+        return true;
+    }
+
+    @Override
+    protected boolean onGenerateMipmaps(Texture texture) {
+        GLTexture tex = (GLTexture) texture;
+        if (mCaps.hasDSASupport()) {
+            glGenerateTextureMipmap(tex.getHandle());
+        } else {
+            currentCommandBuffer().bindTextureForSetup(tex.getHandle());
+            glGenerateMipmap(GL_TEXTURE_2D);
+        }
         return true;
     }
 
@@ -333,7 +355,8 @@ public final class GLServer extends Server {
     }
 
     @Override
-    protected void onResolveRenderTarget(RenderTarget renderTarget, int resolveLeft, int resolveTop, int resolveRight
+    protected void onResolveRenderTarget(FramebufferSet framebufferSet, int resolveLeft, int resolveTop,
+                                         int resolveRight
             , int resolveBottom) {
 
     }
@@ -470,10 +493,10 @@ public final class GLServer extends Server {
     }
 
     @Nullable
-    private Function<GLTexture, GLRenderTarget> createRenderTargetObjects(int texture,
-                                                                          int width, int height,
-                                                                          int format,
-                                                                          int samples) {
+    private Function<GLTexture, GLFramebufferSet> createRTObjects(int texture,
+                                                                  int width, int height,
+                                                                  int format,
+                                                                  int samples) {
         assert texture != 0;
         assert glFormatIsSupported(format);
         assert !glFormatIsCompressed(format);
@@ -481,20 +504,16 @@ public final class GLServer extends Server {
         // There's an NVIDIA driver bug that creating framebuffer via DSA with attachments of
         // different dimensions will report GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT.
         // The workaround is to use traditional glGen* and glBind* (validate).
+        // see https://forums.developer.nvidia.com/t/framebuffer-incomplete-when-attaching-color-buffers-of-different-sizes-with-dsa/211550
         final int framebuffer = glGenFramebuffers();
         if (framebuffer == 0) {
             return null;
         }
-        // Below here we may bind the FBO.
-        // Create the state vector of the framebuffer.
-        currentCommandBuffer().bindFramebuffer(framebuffer);
 
+        // If we are using multisampling we will create two FBOs. We render to one and then resolve to
+        // the texture bound to the other.
         final int msaaFramebuffer;
         final GLAttachment msaaColorBuffer;
-        // If we are using multisampling we will create two FBOs. We render to one and then resolve to
-        // the texture bound to the other. The exception is the IMG multisample extension. With this
-        // extension the texture is multisampled when rendered to and then auto-resolves it when it is
-        // rendered from.
         if (samples <= 1) {
             msaaFramebuffer = 0;
             msaaColorBuffer = null;
@@ -504,10 +523,8 @@ public final class GLServer extends Server {
                 glDeleteFramebuffers(framebuffer);
                 return null;
             }
-            // Create the state vector of the framebuffer.
-            currentCommandBuffer().bindFramebuffer(msaaFramebuffer);
 
-            msaaColorBuffer = GLAttachment.makeMSAA(this,
+            msaaColorBuffer = GLAttachment.makeColor(this,
                     width, height,
                     samples,
                     format);
@@ -517,12 +534,13 @@ public final class GLServer extends Server {
                 return null;
             }
 
-            glNamedFramebufferRenderbuffer(msaaFramebuffer,
+            currentCommandBuffer().bindFramebuffer(msaaFramebuffer);
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER,
                     GL_COLOR_ATTACHMENT0,
                     GL_RENDERBUFFER,
                     msaaColorBuffer.getRenderbufferID());
             if (!mCaps.skipErrorChecks()) {
-                int status = glCheckNamedFramebufferStatus(msaaFramebuffer, GL_FRAMEBUFFER);
+                int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
                 if (status != GL_FRAMEBUFFER_COMPLETE) {
                     glDeleteFramebuffers(framebuffer);
                     glDeleteFramebuffers(msaaFramebuffer);
@@ -532,12 +550,13 @@ public final class GLServer extends Server {
             }
         }
 
-        glNamedFramebufferTexture(framebuffer,
+        currentCommandBuffer().bindFramebuffer(framebuffer);
+        glFramebufferTexture(GL_FRAMEBUFFER,
                 GL_COLOR_ATTACHMENT0,
                 texture,
                 0);
         if (!mCaps.skipErrorChecks()) {
-            int status = glCheckNamedFramebufferStatus(framebuffer, GL_FRAMEBUFFER);
+            int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
             if (status != GL_FRAMEBUFFER_COMPLETE) {
                 glDeleteFramebuffers(framebuffer);
                 glDeleteFramebuffers(msaaFramebuffer);
@@ -548,12 +567,14 @@ public final class GLServer extends Server {
             }
         }
 
-        return glTexture -> new GLRenderTarget(this,
-                glTexture.getWidth(), glTexture.getHeight(),
-                glTexture.getFormat(), samples,
+        return colorBuffer -> new GLFramebufferSet(this,
+                colorBuffer.getWidth(),
+                colorBuffer.getHeight(),
+                colorBuffer.getFormat(),
+                samples,
                 framebuffer,
                 msaaFramebuffer,
-                glTexture,
+                colorBuffer,
                 msaaColorBuffer);
     }
 }

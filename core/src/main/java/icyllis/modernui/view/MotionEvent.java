@@ -21,6 +21,7 @@ package icyllis.modernui.view;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.Matrix4;
 import icyllis.modernui.util.Pools;
+import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
@@ -36,15 +37,15 @@ public final class MotionEvent extends InputEvent {
      * An invalid pointer id.
      * <p>
      * This value (-1) can be used as a placeholder to indicate that a pointer id
-     * has not been assigned or is not available.  It cannot appear as
+     * has not been assigned or is not available.<br>It cannot appear as
      * a pointer id inside a {@link MotionEvent}.
      */
-    private static final int INVALID_POINTER_ID = -1;
+    public static final int INVALID_POINTER_ID = -1;
 
     /**
      * Bit mask of the parts of the action code that are the action itself.
      */
-    private static final int ACTION_MASK = 0xff;
+    public static final int ACTION_MASK = 0xff;
 
     /**
      * Constant for {@link #getActionMasked}: A pressed gesture has started, the
@@ -102,7 +103,7 @@ public final class MotionEvent extends InputEvent {
      * unmasked action returned by {@link #getAction}.
      * </p>
      */
-    private static final int ACTION_POINTER_DOWN = 5;
+    public static final int ACTION_POINTER_DOWN = 5;
 
     /**
      * Constant for {@link #getActionMasked}: A non-primary pointer has gone up.
@@ -113,7 +114,7 @@ public final class MotionEvent extends InputEvent {
      * unmasked action returned by {@link #getAction}.
      * </p>
      */
-    private static final int ACTION_POINTER_UP = 6;
+    public static final int ACTION_POINTER_UP = 6;
 
     /**
      * Constant for {@link #getActionMasked}: A change happened but the pointer
@@ -208,7 +209,7 @@ public final class MotionEvent extends InputEvent {
      *
      * @see #getActionIndex
      */
-    private static final int ACTION_POINTER_INDEX_MASK = 0xff00;
+    public static final int ACTION_POINTER_INDEX_MASK = 0xff00;
 
     /**
      * Bit shift for the action bits holding the pointer index as
@@ -216,20 +217,32 @@ public final class MotionEvent extends InputEvent {
      *
      * @see #getActionIndex
      */
-    private static final int ACTION_POINTER_INDEX_SHIFT = 8;
+    public static final int ACTION_POINTER_INDEX_SHIFT = 8;
 
     /**
      * This private flag is only set on {@link #ACTION_HOVER_MOVE} events and indicates that
      * this event will be immediately followed by a {@link #ACTION_HOVER_EXIT}. It is used to
      * prevent generating redundant {@link #ACTION_HOVER_ENTER} events.
      */
+    @ApiStatus.Internal
     public static final int FLAG_HOVER_EXIT_PENDING = 0x4;
+
+    /**
+     * Private flag that indicates when the system has detected that this motion event
+     * may be inconsistent with respect to the sequence of previously delivered motion events,
+     * such as when a pointer move event is sent but the pointer is not down.
+     *
+     * @see #isTainted
+     * @see #setTainted
+     */
+    @ApiStatus.Internal
+    public static final int FLAG_TAINTED = 0x80000000;
 
     /**
      * Button constant: Primary button (left mouse button).
      * <p>
      * This button constant is not set in response to simple touches with a finger
-     * or stylus tip.  The user must actually push a button.
+     * or stylus tip.<br>The user must actually push a button.
      *
      * @see #getButtonState
      */
@@ -265,14 +278,14 @@ public final class MotionEvent extends InputEvent {
 
     // Symbolic names of all button states in bit order from least significant
     // to most significant.
-    private static final String[] BUTTON_SYMBOLIC_NAMES = new String[]{
+    private static final String[] BUTTON_SYMBOLIC_NAMES = {
             "BUTTON_PRIMARY",
             "BUTTON_SECONDARY",
             "BUTTON_TERTIARY",
             "BUTTON_BACK",
             "BUTTON_FORWARD",
-            "BUTTON_STYLUS_PRIMARY",
-            "BUTTON_STYLUS_SECONDARY",
+            "0x00000020",
+            "0x00000040",
             "0x00000080",
             "0x00000100",
             "0x00000200",
@@ -307,35 +320,7 @@ public final class MotionEvent extends InputEvent {
      *
      * @see #getToolType
      */
-    private static final int TOOL_TYPE_UNKNOWN = 0;
-
-    /**
-     * Tool type constant: The tool is a finger.
-     *
-     * @see #getToolType
-     */
-    private static final int TOOL_TYPE_FINGER = 1;
-
-    /**
-     * Tool type constant: The tool is a stylus.
-     *
-     * @see #getToolType
-     */
-    private static final int TOOL_TYPE_STYLUS = 2;
-
-    /**
-     * Tool type constant: The tool is a mouse.
-     *
-     * @see #getToolType
-     */
-    private static final int TOOL_TYPE_MOUSE = 3;
-
-    /**
-     * Tool type constant: The tool is an eraser or a stylus being used in an inverted posture.
-     *
-     * @see #getToolType
-     */
-    private static final int TOOL_TYPE_ERASER = 4;
+    public static final int TOOL_TYPE_UNKNOWN = 0;
 
     /**
      * Axis constant: X axis of a motion event.
@@ -672,8 +657,7 @@ public final class MotionEvent extends InputEvent {
      * The number of pointers of data contained in this event.  Always
      * >= 1.
      */
-    @Deprecated
-    private int getPointerCount() {
+    public int getPointerCount() {
         return 1;
     }
 
@@ -686,12 +670,11 @@ public final class MotionEvent extends InputEvent {
      * @param pointerIndex Raw index of pointer to retrieve.  Value may be from 0
      *                     (the first pointer that is down) to {@link #getPointerCount()}-1.
      */
-    @Deprecated
-    private int getPointerId(int pointerIndex) {
+    public int getPointerId(int pointerIndex) {
         if (pointerIndex < 0 || pointerIndex >= getPointerCount()) {
             throw new IllegalArgumentException("pointerIndex out of range");
         }
-        return INVALID_POINTER_ID;
+        return 0;
     }
 
     /**
@@ -703,12 +686,8 @@ public final class MotionEvent extends InputEvent {
      *                     (the first pointer that is down) to {@link #getPointerCount()}-1.
      * @return The tool type of the pointer.
      * @see #TOOL_TYPE_UNKNOWN
-     * @see #TOOL_TYPE_FINGER
-     * @see #TOOL_TYPE_STYLUS
-     * @see #TOOL_TYPE_MOUSE
      */
-    @Deprecated
-    private int getToolType(int pointerIndex) {
+    public int getToolType(int pointerIndex) {
         if (pointerIndex < 0 || pointerIndex >= getPointerCount()) {
             throw new IllegalArgumentException("pointerIndex out of range");
         }

@@ -21,16 +21,15 @@ package icyllis.arc3d.opengl;
 import icyllis.modernui.core.Core;
 
 import javax.annotation.Nonnull;
-import java.nio.ByteBuffer;
 
 import static icyllis.arc3d.opengl.GLCore.*;
 
 /**
  * Represents a OpenGL buffer object.
  */
-public class GLBufferCompat extends GLObjectCompat {
+public class GLUniformBufferCompat extends GLObjectCompat {
 
-    public GLBufferCompat() {
+    public GLUniformBufferCompat() {
     }
 
     /**
@@ -78,23 +77,10 @@ public class GLBufferCompat extends GLObjectCompat {
      * Creates the immutable data store of this buffer object.
      *
      * @param size  the size of the data store in bytes
-     * @param data  the data to initialize the buffer, or {@code NULL} leaving it undefined
-     * @param flags the bitwise {@code OR} of flags describing the intended usage of the buffer object's data
-     *              store by the application
      */
-    public void allocate(long size, long data, int flags) {
-        nglNamedBufferStorage(get(), size, data, flags);
-    }
-
-    /**
-     * Creates the mutable data store of this buffer object.
-     *
-     * @param size  the size of the data store in bytes
-     * @param data  the data to initialize the buffer, or {@code NULL} leaving it undefined
-     * @param usage the expected usage pattern of the data store
-     */
-    public void allocateM(long size, long data, int usage) {
-        nglNamedBufferData(get(), size, data, usage);
+    public void allocate(long size) {
+        glBindBuffer(GL_UNIFORM_BUFFER, get());
+        nglBufferData(GL_UNIFORM_BUFFER, size, 0, GL_DYNAMIC_DRAW);
     }
 
     /**
@@ -105,23 +91,14 @@ public class GLBufferCompat extends GLObjectCompat {
      * @param data   a pointer to the new data that will be copied into the data store, can't be {@code NULL}
      */
     public void upload(long offset, long size, long data) {
-        nglNamedBufferSubData(get(), offset, size, data);
-    }
-
-    /**
-     * Modifies a subset of this buffer object's data store.
-     *
-     * @param offset the offset into the buffer object's data store where data replacement will begin, measured in bytes
-     * @param data   a pointer to the new data that will be copied into the data store, can't be {@code NULL}
-     */
-    public void upload(long offset, @Nonnull ByteBuffer data) {
-        glNamedBufferSubData(get(), offset, data);
+        glBindBuffer(GL_UNIFORM_BUFFER, get());
+        nglBufferSubData(GL_UNIFORM_BUFFER, offset, size, data);
     }
 
     private static final class Ref extends GLObjectCompat.Ref {
 
-        private Ref(@Nonnull GLBufferCompat owner) {
-            super(owner, glCreateBuffers());
+        private Ref(@Nonnull GLUniformBufferCompat owner) {
+            super(owner, glGenBuffers());
         }
 
         @Override
