@@ -18,10 +18,10 @@
 
 package icyllis.arc3d.opengl;
 
+import icyllis.modernui.graphics.RefCnt;
+import icyllis.modernui.graphics.SharedPtr;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.shading.UniformHandler;
-import icyllis.modernui.annotation.SharedPtr;
-import icyllis.modernui.core.RefCnt;
 
 import java.util.List;
 

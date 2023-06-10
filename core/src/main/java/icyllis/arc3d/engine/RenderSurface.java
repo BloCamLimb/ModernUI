@@ -18,8 +18,8 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.modernui.annotation.SharedPtr;
-import icyllis.modernui.core.RefCnt;
+import icyllis.modernui.graphics.RefCnt;
+import icyllis.modernui.graphics.SharedPtr;
 
 import javax.annotation.Nonnull;
 import java.util.Objects;
@@ -69,6 +69,7 @@ public final class RenderSurface extends RefCnt implements RenderTarget {
         return mFramebufferSet.getSurfaceFlags();
     }
 
+    @Nonnull
     @Override
     public FramebufferSet getFramebufferSet() {
         return Objects.requireNonNull(mFramebufferSet, "Disposed");

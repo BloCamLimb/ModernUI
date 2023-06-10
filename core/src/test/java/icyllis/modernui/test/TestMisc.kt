@@ -21,6 +21,7 @@ package icyllis.modernui.test
 import com.ibm.icu.text.CompactDecimalFormat
 import icyllis.modernui.ModernUI
 import icyllis.modernui.graphics.MathUtil
+import icyllis.modernui.material.MaterialDrawable
 import icyllis.modernui.text.TextUtils
 import icyllis.modernui.util.TypedValue
 import org.apache.logging.log4j.Level
@@ -29,6 +30,7 @@ import org.lwjgl.system.MemoryUtil
 import java.math.BigDecimal
 import java.nio.ByteOrder
 import java.util.*
+import kotlin.math.abs
 
 fun main() {
     Configurator.setRootLevel(Level.ALL)
@@ -53,10 +55,10 @@ fun main() {
     ModernUI.LOGGER.info(triple)
 
     val ptr = MemoryUtil.nmemAlloc(4)
-    MemoryUtil.memPutByte(ptr + 0, 30)
-    MemoryUtil.memPutByte(ptr + 1, 40)
-    MemoryUtil.memPutByte(ptr + 2, 50)
-    MemoryUtil.memPutByte(ptr + 3, 60)
+    MemoryUtil.memPutByte(ptr + 0, 0x11)
+    MemoryUtil.memPutByte(ptr + 1, 0x22)
+    MemoryUtil.memPutByte(ptr + 2, 0x33)
+    MemoryUtil.memPutByte(ptr + 3, 0x44)
 
     ModernUI.LOGGER.info(
         "{} {}",

@@ -501,11 +501,44 @@ public abstract class Canvas {
     }
 
     /**
+     * Variant version of {@link #drawLine(float, float, float, float, float, Paint)}.
+     * Draw a "filled" line, Paint's stroke width describes the line thickness.
+     *
+     * @param x0    the start of the line segment on x-axis
+     * @param y0    the start of the line segment on y-axis
+     * @param x1    the end of the line segment on x-axis
+     * @param y1    the end of the line segment on y-axis
+     * @param paint the paint used to draw the line
+     */
+    public final void drawLine(float x0, float y0, float x1, float y1, @NonNull Paint paint) {
+        var pStyle = paint.getStyle();
+        paint.setStyle(Paint.FILL);
+        drawLine(x0, y0, x1, y1, paint.getStrokeWidth(), paint);
+        paint.setStyle(pStyle);
+    }
+
+    /**
+     * Variant version of {@link #drawLine(float, float, float, float, float, Paint)}.
+     * Draw a "filled" line, Paint's stroke width describes the line thickness.
+     *
+     * @param p0    start of line segment
+     * @param p1    end of line segment
+     * @param paint the paint used to draw the line
+     */
+    public final void drawLine(@NonNull PointF p0, @NonNull PointF p1, @NonNull Paint paint) {
+        var pStyle = paint.getStyle();
+        paint.setStyle(Paint.FILL);
+        drawLine(p0.x, p0.y, p1.x, p1.y, paint.getStrokeWidth(), paint);
+        paint.setStyle(pStyle);
+    }
+
+    /**
      * In paint: Paint's stroke width describes the line thickness;
      * Paint's cap draws the end rounded or square;
      * Paint's style is ignored, as if were set to {@link Paint#STROKE}.
      * //WIP
      */
+    //TODO
     public void drawLinePath(float x0, float y0, float x1, float y1, Paint paint) {
     }
 

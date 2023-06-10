@@ -18,7 +18,7 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.modernui.annotation.SharedPtr;
+import icyllis.modernui.graphics.SharedPtr;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;

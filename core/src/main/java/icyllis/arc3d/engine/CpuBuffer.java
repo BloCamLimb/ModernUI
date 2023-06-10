@@ -18,7 +18,7 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.modernui.core.RefCnt;
+import icyllis.modernui.graphics.RefCnt;
 import org.lwjgl.system.MemoryUtil;
 
 /**

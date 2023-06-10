@@ -18,20 +18,15 @@
 
 package icyllis.modernui.graphics.drawable;
 
-import icyllis.modernui.annotation.ColorInt;
+import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.core.Handler;
-import icyllis.modernui.graphics.BlendMode;
-import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.Rect;
-import icyllis.modernui.util.ColorStateList;
-import icyllis.modernui.util.LayoutDirection;
-import icyllis.modernui.util.StateSet;
+import icyllis.modernui.graphics.*;
+import icyllis.modernui.resources.Resources;
+import icyllis.modernui.util.*;
 import icyllis.modernui.view.View;
 import icyllis.modernui.widget.ImageView;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
 
@@ -122,7 +117,7 @@ public abstract class Drawable {
      *
      * @param canvas The canvas to draw into
      */
-    public abstract void draw(@Nonnull Canvas canvas);
+    public abstract void draw(@NonNull Canvas canvas);
 
     /**
      * Specify a bounding rectangle for the Drawable. This is where the drawable
@@ -150,7 +145,7 @@ public abstract class Drawable {
      * Specify a bounding rectangle for the Drawable. This is where the drawable
      * will draw when its draw() method is called.
      */
-    public void setBounds(@Nonnull Rect bounds) {
+    public void setBounds(@NonNull Rect bounds) {
         setBounds(bounds.left, bounds.top, bounds.right, bounds.bottom);
     }
 
@@ -162,7 +157,7 @@ public abstract class Drawable {
      * @param bounds Rect to receive the drawable's bounds (allocated by the
      *               caller).
      */
-    public final void copyBounds(@Nonnull Rect bounds) {
+    public final void copyBounds(@NonNull Rect bounds) {
         bounds.set(mBounds);
     }
 
@@ -174,7 +169,7 @@ public abstract class Drawable {
      *
      * @return A copy of the drawable's bounds
      */
-    @Nonnull
+    @NonNull
     public final Rect copyBounds() {
         return new Rect(mBounds);
     }
@@ -193,7 +188,7 @@ public abstract class Drawable {
      * @see #copyBounds()
      * @see #copyBounds(Rect)
      */
-    @Nonnull
+    @NonNull
     public final Rect getBounds() {
         if (mBounds == ZERO_BOUNDS_RECT) {
             mBounds = new Rect();
@@ -218,7 +213,7 @@ public abstract class Drawable {
          *
          * @param who The drawable that is requesting the update.
          */
-        void invalidateDrawable(@Nonnull Drawable who);
+        void invalidateDrawable(@NonNull Drawable who);
 
         /**
          * A Drawable can call this to schedule the next frame of its
@@ -232,7 +227,7 @@ public abstract class Drawable {
          * @param when The time (in milliseconds) to run.  The timebase is
          *             {@link Core#timeMillis()}
          */
-        void scheduleDrawable(@Nonnull Drawable who, @Nonnull Runnable what, long when);
+        void scheduleDrawable(@NonNull Drawable who, @NonNull Runnable what, long when);
 
         /**
          * A Drawable can call this to unschedule an action previously
@@ -244,7 +239,7 @@ public abstract class Drawable {
          * @param who  The drawable being unscheduled.
          * @param what The action being unscheduled.
          */
-        void unscheduleDrawable(@Nonnull Drawable who, @Nonnull Runnable what);
+        void unscheduleDrawable(@NonNull Drawable who, @NonNull Runnable what);
     }
 
     /**
@@ -295,7 +290,7 @@ public abstract class Drawable {
      * @param when The time (in milliseconds) to run.
      * @see Callback#scheduleDrawable
      */
-    public void scheduleSelf(@Nonnull Runnable what, long when) {
+    public void scheduleSelf(@NonNull Runnable what, long when) {
         final Callback callback = getCallback();
         if (callback != null) {
             callback.scheduleDrawable(this, what, when);
@@ -310,7 +305,7 @@ public abstract class Drawable {
      * @param what The runnable that you no longer want called.
      * @see Callback#unscheduleDrawable
      */
-    public void unscheduleSelf(@Nonnull Runnable what) {
+    public void unscheduleSelf(@NonNull Runnable what) {
         final Callback callback = getCallback();
         if (callback != null) {
             callback.unscheduleDrawable(this, what);
@@ -416,7 +411,7 @@ public abstract class Drawable {
      * @see #setTint(int)
      * @see #setTintList(ColorStateList)
      */
-    public void setTintBlendMode(@Nonnull BlendMode blendMode) {
+    public void setTintBlendMode(@NonNull BlendMode blendMode) {
     }
 
     /**
@@ -447,7 +442,7 @@ public abstract class Drawable {
      * @param outRect the rect to populate with the hotspot bounds
      * @see #setHotspotBounds(int, int, int, int)
      */
-    public void getHotspotBounds(@Nonnull Rect outRect) {
+    public void getHotspotBounds(@NonNull Rect outRect) {
         outRect.set(getBounds());
     }
 
@@ -500,7 +495,7 @@ public abstract class Drawable {
      * of the Drawable to change (hence requiring an invalidate), otherwise
      * returns false.
      */
-    public boolean setState(@Nonnull final int[] stateSet) {
+    public boolean setState(@NonNull final int[] stateSet) {
         if (!Arrays.equals(mStateSet, stateSet)) {
             mStateSet = stateSet;
             return onStateChange(stateSet);
@@ -516,7 +511,7 @@ public abstract class Drawable {
      *
      * @return An array of resource Ids describing the current state.
      */
-    @Nonnull
+    @NonNull
     public int[] getState() {
         return mStateSet;
     }
@@ -624,7 +619,7 @@ public abstract class Drawable {
      * if it looks the same and there is no need to redraw it since its
      * last state.
      */
-    protected boolean onStateChange(@Nonnull int[] state) {
+    protected boolean onStateChange(@NonNull int[] state) {
         return false;
     }
 
@@ -645,7 +640,7 @@ public abstract class Drawable {
      * Override this in your subclass to change appearance if you vary based on
      * the bounds.
      */
-    protected void onBoundsChange(@Nonnull Rect bounds) {
+    protected void onBoundsChange(@NonNull Rect bounds) {
     }
 
     /**
@@ -710,7 +705,7 @@ public abstract class Drawable {
      * @return true if this drawable actually has a padding, else false. When false is returned,
      * the padding is always set to 0.
      */
-    public boolean getPadding(@Nonnull Rect padding) {
+    public boolean getPadding(@NonNull Rect padding) {
         padding.set(0, 0, 0, 0);
         return false;
     }
@@ -729,7 +724,7 @@ public abstract class Drawable {
      * @see ConstantState
      * @see #getConstantState()
      */
-    @Nonnull
+    @NonNull
     public Drawable mutate() {
         return this;
     }
@@ -766,10 +761,32 @@ public abstract class Drawable {
 
         /**
          * Creates a new Drawable instance from its constant state.
+         * <p>
+         * <strong>Note:</strong> Using this method means density-dependent
+         * properties, such as pixel dimensions or bitmap images, will not be
+         * updated to match the density of the target display. To ensure
+         * correct scaling, use {@link #newDrawable(Resources)} instead to
+         * provide an appropriate Resources object.
          *
          * @return a new drawable object based on this constant state
+         * @see #newDrawable(Resources)
          */
-        @Nonnull
-        public abstract Drawable newDrawable();
+        public abstract @NonNull Drawable newDrawable();
+
+        /**
+         * Creates a new Drawable instance from its constant state using the
+         * specified resources. This method should be implemented for drawables
+         * that have density-dependent properties.
+         * <p>
+         * The default implementation for this method calls through to
+         * {@link #newDrawable()}.
+         *
+         * @param res the resources of the context in which the drawable will
+         *            be displayed
+         * @return a new drawable object based on this constant state
+         */
+        public @NonNull Drawable newDrawable(@Nullable Resources res) {
+            return newDrawable();
+        }
     }
 }

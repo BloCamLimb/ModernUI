@@ -18,12 +18,12 @@
 
 package icyllis.arc3d.opengl;
 
+import icyllis.modernui.graphics.SharedPtr;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.shading.*;
-import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.annotation.SharedPtr;
 import org.lwjgl.system.MemoryStack;
 
+import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 

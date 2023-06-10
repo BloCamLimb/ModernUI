@@ -23,7 +23,6 @@ import com.ibm.icu.text.SimpleDateFormat;
 import icyllis.arc3d.opengl.GLTextureCompat;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Core;
-import icyllis.modernui.core.RefCnt;
 import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.stb.*;
@@ -33,6 +32,7 @@ import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
 import java.io.*;
 import java.lang.ref.Cleaner;
+import java.nio.ByteOrder;
 import java.nio.channels.*;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -418,24 +418,41 @@ public final class Bitmap implements AutoCloseable {
     public int getPixelARGB(int x, int y) {
         checkReleased();
         checkOutOfBounds(x, y);
-        int data = MemoryUtil.memGetInt(mRef.mPixels +
+        int n32 = MemoryUtil.memGetInt(mRef.mPixels +
                 (long) y * getRowStride() +
                 (long) x * mFormat.getBytesPerPixel());
-        int argb = switch (mFormat) {
-            case GRAY_8 -> { // to RRR1
-                int lum = data & 0xFF;
-                yield 0xFF000000 | (lum << 16) | (lum << 8) | lum;
-            }
-            case GRAY_ALPHA_88 -> { // to RRRG
-                int lum = data & 0xFF;
-                yield (data << 16) | (lum << 8) | lum;
-            }
-            case RGB_888 -> // to BGR1
-                    0xFF000000 | ((data & 0xFF) << 16) | (data & 0xFF00) | ((data >> 16) & 0xFF);
-            case RGBA_8888 -> // to BGRA
-                    (data & 0xFF00FF00) | ((data & 0xFF) << 16) | ((data >> 16) & 0xFF);
-            default -> throw new UnsupportedOperationException();
-        };
+        int argb;
+        if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN) {
+            argb = switch (mFormat) {
+                case GRAY_8 -> {
+                    int lum = n32 >>> 24;
+                    yield 0xFF000000 | (lum << 16) | (lum << 8) | lum;
+                }
+                case GRAY_ALPHA_88 -> {
+                    int lum = n32 >>> 24;
+                    yield ((n32 & 0xFF0000) << 8) | (lum << 16) | (lum << 8) | lum;
+                }
+                case RGB_888 -> 0xFF000000 | (n32 >>> 8);
+                case RGBA_8888 -> ((n32 & 0xFF) << 24) | (n32 >>> 8);
+                default -> throw new UnsupportedOperationException();
+            };
+        } else {
+            argb = switch (mFormat) {
+                case GRAY_8 -> { // to RRR1
+                    int lum = n32 & 0xFF;
+                    yield 0xFF000000 | (lum << 16) | (lum << 8) | lum;
+                }
+                case GRAY_ALPHA_88 -> { // to RRRG
+                    int lum = n32 & 0xFF;
+                    yield (n32 << 16) | (lum << 8) | lum;
+                }
+                case RGB_888 -> // to BGR1
+                        0xFF000000 | ((n32 & 0xFF) << 16) | (n32 & 0xFF00) | ((n32 >> 16) & 0xFF);
+                case RGBA_8888 -> // to BGRA
+                        (n32 & 0xFF00FF00) | ((n32 & 0xFF) << 16) | ((n32 >> 16) & 0xFF);
+                default -> throw new UnsupportedOperationException();
+            };
+        }
         // linear to gamma
         if (getColorSpace() != null && !getColorSpace().isSrgb()) {
             float[] v = {Color.red(argb) / 255.0f, Color.green(argb) / 255.0f, Color.blue(argb) / 255.0f};

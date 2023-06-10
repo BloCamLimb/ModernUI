@@ -18,7 +18,7 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.modernui.core.RefCnt;
+import icyllis.modernui.graphics.RefCnt;
 
 /**
  * Ref-counted object that calls a callback from its destructor.
@@ -30,11 +30,11 @@ public abstract class ReleaseCallback extends RefCnt {
 
     @Override
     protected final void deallocate() {
-        onRelease();
+        invoke();
     }
 
     /**
      * This callback is invoked when the resource is released.
      */
-    public abstract void onRelease();
+    public abstract void invoke();
 }

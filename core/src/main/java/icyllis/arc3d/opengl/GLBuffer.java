@@ -18,12 +18,12 @@
 
 package icyllis.arc3d.opengl;
 
+import icyllis.modernui.graphics.RefCnt;
+import icyllis.modernui.graphics.SharedPtr;
 import icyllis.arc3d.engine.*;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.SharedPtr;
-import icyllis.modernui.core.RefCnt;
 import org.lwjgl.system.MemoryUtil;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import static icyllis.arc3d.opengl.GLCore.*;
@@ -162,7 +162,7 @@ public final class GLBuffer extends GpuBuffer {
     }
 
     @Override
-    protected void onSetLabel(@NonNull String label) {
+    protected void onSetLabel(@Nonnull String label) {
         if (getServer().getCaps().hasDebugSupport()) {
             if (label.isEmpty()) {
                 nglObjectLabel(GL_BUFFER, mBuffer, 0, MemoryUtil.NULL);

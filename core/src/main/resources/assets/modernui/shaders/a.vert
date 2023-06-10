@@ -460,21 +460,23 @@ const vec3 COLOR = vec3(0.3, 0.6, 1.0);
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
-    vec2 p = (fragCoord.xy * 2.0 - iResolution.xy) / min(iResolution.x, iResolution.y);
+    vec2 uv = fragCoord/iResolution.xy;
+    vec2 p = 2.0 * uv - 1.0;
+    p.y /= iResolution.x/iResolution.y;
 
     float f = 0.0;
 
-    for(float i = 1.0; i <= DOTS; i++)
+    for(float i = 0.0; i < DOTS; i++)
     {
-        float t=i/3.0,
-        r=sqrt(t)/8.0,
+        float t=mod(i/2.0 + iTime*2.0, DOTS/2.0),
+        r=sqrt(t)/12.0,
         s=sin(t),
         c=cos(t);
-        f += 0.01 / abs(distance(p*0.5,vec2(s,c)*r));
+        f += smoothstep(0.0,3.0,t)*(1.0-smoothstep(DOTS/2.0-3.0,DOTS/2.0,t))*0.01 / abs(distance(p*0.5,vec2(s,c)*r));
     }
 
     vec3 col = COLOR*f;
-    col = 1.0 - exp(-col);
+    col = 1.0 - exp(-col*0.8);
 
     fragColor = vec4(col, 1.0);
 }

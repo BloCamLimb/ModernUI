@@ -18,16 +18,15 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.modernui.annotation.SharedPtr;
+import icyllis.modernui.graphics.SharedPtr;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
  * The {@link FramebufferSet} manages all objects used by a {@link RenderTarget},
- * they are framebuffers, render passes and a set of attachments. This is the place
- * where the rendering pipeline will eventually draw to, and may be associated with
- * a {@link icyllis.modernui.graphics.Surface}.
+ * which are framebuffers, render passes and a set of attachments. This is the target
+ * of {@link OpsRenderPass}, and may be associated with {@link icyllis.modernui.graphics.Surface}.
  * <p>
  * A {@link FramebufferSet} is always associated with a {@link RenderTarget}, which
  * can be either a renderable {@link Texture} or a wrapped {@link RenderSurface}.
@@ -42,7 +41,7 @@ public abstract class FramebufferSet extends ManagedResource {
     private final int mSampleCount;
 
     /**
-     * The stencil buffer is set at first only with wrapped <code>GLRenderTarget</code>,
+     * The stencil buffer is set at first only with wrapped <code>GLFramebufferSet</code>,
      * the stencil attachment is fake and made beforehand (renderbuffer id 0). For example,
      * wrapping OpenGL default framebuffer (framebuffer id 0).
      */

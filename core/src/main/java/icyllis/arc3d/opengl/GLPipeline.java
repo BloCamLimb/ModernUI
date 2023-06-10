@@ -18,8 +18,11 @@
 
 package icyllis.arc3d.opengl;
 
+import icyllis.modernui.graphics.SharedPtr;
 import icyllis.arc3d.engine.*;
-import icyllis.modernui.annotation.*;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import static icyllis.arc3d.opengl.GLCore.*;
 
@@ -62,7 +65,7 @@ public final class GLPipeline extends ManagedResource {
     private GLBuffer.UniqueID mVertexBuffer;
     private GLBuffer.UniqueID mInstanceBuffer;
 
-    private GLPipeline(@NonNull GLServer server,
+    private GLPipeline(@Nonnull GLServer server,
                        int program,
                        int vertexArray,
                        int vertexBinding,
@@ -89,8 +92,8 @@ public final class GLPipeline extends ManagedResource {
 
     @Nullable
     @SharedPtr
-    public static GLPipeline make(@NonNull GLServer server,
-                                  @NonNull GeometryProcessor geomProc,
+    public static GLPipeline make(@Nonnull GLServer server,
+                                  @Nonnull GeometryProcessor geomProc,
                                   int program) {
         final boolean dsa = server.getCaps().hasDSASupport();
         final int vertexArray;
@@ -205,7 +208,7 @@ public final class GLPipeline extends ManagedResource {
                 attributes);
     }
 
-    private static int set_vertex_format_3(@NonNull Iterable<GeometryProcessor.Attribute> attribs,
+    private static int set_vertex_format_3(@Nonnull Iterable<GeometryProcessor.Attribute> attribs,
                                            int index, int divisor, int[] attributes) {
         for (var attrib : attribs) {
             int locations = attrib.locations();
@@ -285,7 +288,7 @@ public final class GLPipeline extends ManagedResource {
     /**
      * See {@link icyllis.arc3d.engine.shading.VertexShaderBuilder} to see how we bind these on GPU side.
      */
-    private static int set_vertex_format_4(@NonNull Iterable<GeometryProcessor.Attribute> attribs,
+    private static int set_vertex_format_4(@Nonnull Iterable<GeometryProcessor.Attribute> attribs,
                                            int array,
                                            int index,
                                            int binding,
@@ -399,7 +402,7 @@ public final class GLPipeline extends ManagedResource {
      *
      * @param buffer the element buffer object, raw ptr
      */
-    public void bindIndexBuffer(@NonNull GLBuffer buffer) {
+    public void bindIndexBuffer(@Nonnull GLBuffer buffer) {
         if (mVertexArray == 0) {
             return;
         }
@@ -428,7 +431,7 @@ public final class GLPipeline extends ManagedResource {
      * @param buffer the vertex buffer object, raw ptr
      * @param offset first vertex data to the head of the buffer, in bytes
      */
-    public void bindVertexBuffer(@NonNull GLBuffer buffer, long offset) {
+    public void bindVertexBuffer(@Nonnull GLBuffer buffer, long offset) {
         if (mVertexArray == 0) {
             return;
         }
@@ -471,7 +474,7 @@ public final class GLPipeline extends ManagedResource {
      * @param buffer the vertex buffer object, raw ptr
      * @param offset first instance data to the head of the buffer, in bytes
      */
-    public void bindInstanceBuffer(@NonNull GLBuffer buffer, long offset) {
+    public void bindInstanceBuffer(@Nonnull GLBuffer buffer, long offset) {
         if (mVertexArray == 0) {
             return;
         }

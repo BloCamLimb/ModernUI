@@ -18,7 +18,7 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.modernui.annotation.SharedPtr;
+import icyllis.modernui.graphics.SharedPtr;
 import icyllis.modernui.graphics.MathUtil;
 import org.lwjgl.system.APIUtil;
 

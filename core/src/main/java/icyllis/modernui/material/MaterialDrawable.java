@@ -33,10 +33,6 @@ public abstract class MaterialDrawable extends Drawable {
     protected int mColor = ~0;
     protected int mAlpha = 255;
 
-    public static int modulateAlpha(int paintAlpha, int alpha) {
-        return paintAlpha * (alpha & 0xFF) >>> 8;
-    }
-
     @Override
     public void setTintList(@Nullable ColorStateList tint) {
         if (mTint != tint) {

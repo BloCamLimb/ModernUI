@@ -20,7 +20,6 @@ package icyllis.modernui.graphics;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.core.RefCnt;
 
 import javax.annotation.Nonnull;
 

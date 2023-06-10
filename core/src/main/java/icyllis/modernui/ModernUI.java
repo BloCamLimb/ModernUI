@@ -37,6 +37,8 @@ import icyllis.modernui.widget.*;
 import org.apache.logging.log4j.*;
 import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.glfw.GLFWMonitorCallback;
+import org.lwjgl.opengl.GL;
+import org.lwjgl.system.Configuration;
 
 import java.io.*;
 import java.nio.channels.*;
@@ -130,12 +132,19 @@ public class ModernUI extends Context implements AutoCloseable, LifecycleOwner {
         LOGGER.info(MARKER, "Initializing window system");
         Monitor monitor = Monitor.getPrimary();
 
+        String name = Configuration.OPENGL_LIBRARY_NAME.get();
+        if (name != null) {
+            // non-system library should load before window creation
+            LOGGER.info(ModernUI.MARKER, "OpenGL library: {}", name);
+            Objects.requireNonNull(GL.getFunctionProvider(), "Implicit OpenGL loading is required");
+        }
+
         glfwDefaultWindowHints();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
         glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_NATIVE_CONTEXT_API);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         glfwWindowHintString(GLFW_X11_CLASS_NAME, NAME_CPT);
         glfwWindowHintString(GLFW_X11_INSTANCE_NAME, NAME_CPT);
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);

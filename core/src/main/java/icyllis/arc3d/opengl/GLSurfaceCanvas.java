@@ -18,6 +18,7 @@
 
 package icyllis.arc3d.opengl;
 
+import icyllis.modernui.graphics.SharedPtr;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.geom.DefaultGeoProc;
 import icyllis.arc3d.engine.shading.UniformHandler;
@@ -73,7 +74,6 @@ import static org.lwjgl.system.MemoryUtil.*;
  *
  * @author BloCamLimb
  */
-//TODO cleanup before program exit
 @NotThreadSafe
 public final class GLSurfaceCanvas extends GLCanvas {
 

@@ -18,8 +18,8 @@
 
 package icyllis.arc3d.opengl;
 
+import icyllis.modernui.graphics.SharedPtr;
 import icyllis.arc3d.engine.SamplerState;
-import icyllis.modernui.annotation.SharedPtr;
 import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
 
 import javax.annotation.Nullable;

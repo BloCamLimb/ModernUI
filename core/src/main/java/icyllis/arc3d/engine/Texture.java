@@ -18,8 +18,9 @@
 
 package icyllis.arc3d.engine;
 
+import icyllis.modernui.graphics.SharedPtr;
 import icyllis.modernui.annotation.*;
-import icyllis.modernui.core.RefCnt;
+import icyllis.modernui.graphics.RefCnt;
 
 /**
  * Represents 2D textures can be sampled by shaders, can also be used as attachments

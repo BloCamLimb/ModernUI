@@ -18,9 +18,12 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.modernui.annotation.*;
-import icyllis.modernui.core.RefCnt;
+import icyllis.modernui.graphics.RefCnt;
+import icyllis.modernui.graphics.SharedPtr;
 import org.jetbrains.annotations.ApiStatus;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * The {@link SurfaceProxy} targets a {@link Surface} with three instantiation
@@ -271,7 +274,7 @@ public abstract class SurfaceProxy extends RefCnt {
     /**
      * @return the backend format of the proxy
      */
-    @NonNull
+    @Nonnull
     public final BackendFormat getBackendFormat() {
         return mFormat;
     }

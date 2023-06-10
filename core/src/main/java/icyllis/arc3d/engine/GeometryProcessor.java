@@ -246,7 +246,7 @@ public abstract class GeometryProcessor extends Processor {
             return locations;
         }
 
-        final void addToKey(@NonNull KeyBuilder b, int mask) {
+        final void addToKey(@NonNull Key.Builder b, int mask) {
             final int rawCount = mAttributes.length;
             // max attribs is no less than 16, we assume the minimum
             b.addBits(6, rawCount, "attribute count");
@@ -486,9 +486,9 @@ public abstract class GeometryProcessor extends Processor {
      * Adds a key on the KeyBuilder that reflects any variety in the code that the
      * geometry processor subclass can emit.
      */
-    public abstract void addToKey(KeyBuilder b);
+    public abstract void addToKey(Key.Builder b);
 
-    public final void getAttributeKey(KeyBuilder b) {
+    public final void getAttributeKey(Key.Builder b) {
         b.appendComment("vertex attributes");
         mVertexAttributes.addToKey(b, mVertexAttributesMask);
         b.appendComment("instance attributes");
@@ -500,7 +500,7 @@ public abstract class GeometryProcessor extends Processor {
      * GeometryProcessor. This method is called only when the specified key does not
      * exist in the program cache.
      *
-     * @see #addToKey(KeyBuilder)
+     * @see #addToKey(Key.Builder)
      */
     @NonNull
     public abstract ProgramImpl makeProgramImpl(ShaderCaps caps);

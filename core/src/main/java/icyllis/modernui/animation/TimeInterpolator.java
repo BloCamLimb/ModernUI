@@ -165,7 +165,8 @@ public interface TimeInterpolator {
     static TimeInterpolator accelerate(float factor) {
         if (factor == 1.0f)
             return ACCELERATE;
-        return t -> (float) Math.pow(t, factor * 2.0);
+        final double f = factor * 2.0;
+        return t -> (float) Math.pow(t, f);
     }
 
     /**
@@ -197,8 +198,10 @@ public interface TimeInterpolator {
             return DECELERATE_CUBIC;
         else if (factor == 2.5f)
             return DECELERATE_QUINTIC;
-        else
-            return t -> (float) (1.0f - Math.pow(1.0f - t, factor * 2.0));
+        else {
+            final double f = factor * 2.0;
+            return t -> (float) (1.0 - Math.pow(1.0 - t, f));
+        }
     }
 
     /**
@@ -210,7 +213,8 @@ public interface TimeInterpolator {
     static TimeInterpolator cycle(float cycle) {
         if (cycle == 0.25f)
             return SINE;
-        return t -> (float) Math.sin(Math.PI * 2.0 * cycle * t);
+        final double f = Math.PI * 2.0 * cycle;
+        return t -> (float) Math.sin(f * t);
     }
 
     /**

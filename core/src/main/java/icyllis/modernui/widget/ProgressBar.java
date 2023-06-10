@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,17 +16,19 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.drawable.shapes;
+package icyllis.modernui.widget;
 
-/**
- * Creates a rounded-corner rectangle. Optionally, an inset (rounded) rectangle
- * can be included (to make a sort of "O" shape).
- * <p>
- * The rounded rectangle can be drawn to a Canvas with its own draw() method,
- * but more graphical control is available if you instead pass
- * the RoundRectShape to a {@link icyllis.modernui.graphics.drawable.ShapeDrawable}.
- */
-public class RoundRectShape extends RectShape {
+import icyllis.modernui.core.Context;
+import icyllis.modernui.view.View;
 
-    //TODO not working
+public class ProgressBar extends View {
+
+    /**
+     * Create a new progress bar with range 0...100 and initial progress of 0.
+     *
+     * @param context the application environment
+     */
+    public ProgressBar(Context context) {
+        super(context);
+    }
 }
