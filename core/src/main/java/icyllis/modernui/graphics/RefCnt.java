@@ -16,11 +16,9 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.core;
+package icyllis.modernui.graphics;
 
-import icyllis.modernui.annotation.SharedPtr;
 import it.unimi.dsi.fastutil.objects.*;
-import org.jetbrains.annotations.ApiStatus;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -35,7 +33,6 @@ import java.util.Comparator;
  * error for the destructor to be called explicitly (or calling
  * {@link #deallocate()}) if {@link #getRefCnt()} > 1.
  */
-@ApiStatus.Internal
 public abstract class RefCnt {
 
     private static final VarHandle REF_CNT;

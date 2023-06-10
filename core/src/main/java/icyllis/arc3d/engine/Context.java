@@ -19,7 +19,7 @@
 package icyllis.arc3d.engine;
 
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.core.RefCnt;
+import icyllis.modernui.graphics.RefCnt;
 import icyllis.modernui.graphics.*;
 import org.jetbrains.annotations.ApiStatus;
 

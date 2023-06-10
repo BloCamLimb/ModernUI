@@ -20,7 +20,7 @@ package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.engine.ManagedResource;
 import icyllis.arc3d.engine.SamplerState;
-import icyllis.modernui.annotation.SharedPtr;
+import icyllis.modernui.graphics.SharedPtr;
 import org.lwjgl.opengl.GL46C;
 
 import javax.annotation.Nullable;

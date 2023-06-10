@@ -361,6 +361,18 @@ public final class MathUtil {
     }
 
     /**
+     * Blends two alpha using modulate. This method has errors but is fast.
+     *
+     * @param srcAlpha 0..255 no validation
+     * @param dstAlpha 0..255 no validation
+     * @return result alpha
+     */
+    public static int modulateAlpha(int srcAlpha, int dstAlpha) {
+        int multiplier = dstAlpha + (dstAlpha >> 7);
+        return srcAlpha * multiplier >> 8;
+    }
+
+    /**
      * Aligns {@code a} up to 2 (half-word).
      */
     public static int align2(int a) {

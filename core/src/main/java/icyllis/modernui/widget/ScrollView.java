@@ -18,10 +18,10 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.*;
-import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.graphics.drawable.ShapeDrawable;
+import icyllis.modernui.resources.SystemTheme;
 import icyllis.modernui.view.*;
 
 import javax.annotation.Nonnull;
@@ -135,44 +135,15 @@ public class ScrollView extends FrameLayout {
         mVerticalScrollFactor = configuration.getScaledVerticalScrollFactor();
 
         setVerticalScrollBarEnabled(true);
-        setVerticalScrollbarThumbDrawable(new Drawable() {
-            private int mAlpha = 255;
-
-            @Override
-            public void draw(@Nonnull Canvas canvas) {
-                Paint paint = Paint.obtain();
-                paint.setRGBA(205, 163, 152, (int) (mAlpha * 0.5));
-                Rect bounds = getBounds();
-                canvas.drawRoundRect(bounds.left + 2, bounds.top + 2, bounds.right - 2, bounds.bottom - 2,
-                        bounds.width() / 2f - 2, paint);
-                paint.recycle();
-            }
-
-            @Override
-            public void setAlpha(int alpha) {
-                this.mAlpha = alpha;
-            }
-        });
-        setVerticalScrollbarTrackDrawable(new Drawable() {
-            private int mAlpha = 255;
-
-            @Override
-            public void draw(@Nonnull Canvas canvas) {
-                Paint paint = Paint.obtain();
-                paint.setRGBA(128, 128, 128, (int) (mAlpha * 0.75));
-                paint.setStyle(Paint.STROKE);
-                paint.setStrokeWidth(2);
-                Rect bounds = getBounds();
-                canvas.drawRoundRect(bounds.left + 1, bounds.top + 1, bounds.right - 1, bounds.bottom - 1,
-                        bounds.width() / 2f - 1, paint);
-                paint.recycle();
-            }
-
-            @Override
-            public void setAlpha(int alpha) {
-                this.mAlpha = alpha;
-            }
-        });
+        ShapeDrawable thumb = new ShapeDrawable();
+        thumb.setColor(SystemTheme.modulateColor(SystemTheme.COLOR_FOREGROUND, 0.25f));
+        thumb.setCornerRadius(dp(2));
+        setVerticalScrollbarThumbDrawable(thumb);
+        ShapeDrawable track = new ShapeDrawable();
+        track.setColor(0x40808080);
+        track.setSize(dp(4), -1);
+        track.setCornerRadius(dp(2));
+        setVerticalScrollbarTrackDrawable(track);
     }
 
     @Override

@@ -19,8 +19,6 @@
 package icyllis.modernui.graphics;
 
 import icyllis.arc3d.engine.RenderTarget;
-import icyllis.modernui.annotation.SharedPtr;
-import icyllis.modernui.core.RefCnt;
 
 /**
  * Surface is responsible for managing the pixels that a canvas draws into.

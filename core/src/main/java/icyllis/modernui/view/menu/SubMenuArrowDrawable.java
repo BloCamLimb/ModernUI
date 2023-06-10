@@ -43,7 +43,7 @@ public class SubMenuArrowDrawable extends MaterialDrawable {
     public void draw(@Nonnull Canvas canvas) {
         Paint paint = Paint.obtain();
         paint.setColor(mColor);
-        paint.setAlpha(modulateAlpha(paint.getAlpha(), mAlpha));
+        paint.setAlpha(MathUtil.modulateAlpha(paint.getAlpha(), mAlpha));
         if (paint.getAlpha() != 0) {
             canvas.drawTriangleListMesh(mPoints, /*color*/null, paint);
         }

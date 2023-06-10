@@ -18,6 +18,8 @@
 
 package icyllis.arc3d.engine;
 
+import javax.annotation.Nonnull;
+
 /**
  * Common interface between RenderTexture and {@link RenderSurface}.
  */
@@ -35,5 +37,6 @@ public interface RenderTarget extends Surface {
      *
      * @return raw ptr to the framebuffer set associated with the RT, non-null
      */
+    @Nonnull
     FramebufferSet getFramebufferSet();
 }

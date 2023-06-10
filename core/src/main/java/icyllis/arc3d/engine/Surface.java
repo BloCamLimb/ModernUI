@@ -18,8 +18,9 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.modernui.annotation.NonNull;
 import org.jetbrains.annotations.ApiStatus;
+
+import javax.annotation.Nonnull;
 
 /**
  * Common interface between {@link Texture} and {@link RenderTarget}.
@@ -125,7 +126,7 @@ public interface Surface {
     /**
      * @return the backend format of the surface
      */
-    @NonNull
+    @Nonnull
     BackendFormat getBackendFormat();
 
     /**

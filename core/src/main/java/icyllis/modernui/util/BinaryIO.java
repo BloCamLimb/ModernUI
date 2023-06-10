@@ -21,10 +21,14 @@ package icyllis.modernui.util;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.text.TextUtils;
 
+import javax.annotation.concurrent.GuardedBy;
 import java.io.*;
 import java.lang.reflect.Array;
+import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -37,7 +41,7 @@ import java.util.zip.GZIPOutputStream;
 public final class BinaryIO {
 
     /**
-     * Value types.
+     * Value types, version 3.7, do not change.
      */
     private static final byte VAL_NULL = 0;
     private static final byte
@@ -60,14 +64,19 @@ public final class BinaryIO {
             VAL_CHAR_ARRAY = 16;
     private static final byte
             VAL_STRING = 17,
-            VAL_CHAR_SEQUENCE = 18,
-            VAL_UUID = 19;
+            VAL_UUID = 19,
+            VAL_INSTANT = 20;
     private static final byte
-            VAL_LIST = 20,
-            VAL_DATA_SET = 21,
-            VAL_PARCELABLE = 22,
-            VAL_OBJECT_ARRAY = 23,
-            VAL_SERIALIZABLE = 24;
+            VAL_DATA_SET = 64,
+            VAL_PARCELABLE = 65,
+            VAL_CHAR_SEQUENCE = 66,
+            VAL_LIST = 68,
+            VAL_OBJECT_ARRAY = 118,
+            VAL_SERIALIZABLE = 127;
+
+    @GuardedBy("gCreators")
+    private static final ConcurrentHashMap<ClassLoader, ConcurrentHashMap<String, Parcelable.Creator<?>>>
+            gCreators = new ConcurrentHashMap<>();
 
     /**
      * Reads a compressed DataSet from a GZIP file.
@@ -116,7 +125,6 @@ public final class BinaryIO {
      * @throws IOException if an IO error occurs
      */
     public static void writeValue(@NonNull DataOutput out, @Nullable Object v) throws IOException {
-        //TODO future Java will support pattern matching and value object
         if (v == null) {
             out.writeByte(VAL_NULL);
         } else if (v instanceof String) {
@@ -146,22 +154,23 @@ public final class BinaryIO {
         } else if (v instanceof Boolean) {
             out.writeByte(VAL_BOOLEAN);
             out.writeBoolean((Boolean) v);
-        } else if (v instanceof CharSequence) {
-            out.writeByte(VAL_CHAR_SEQUENCE);
-            TextUtils.write(out, (CharSequence) v);
         } else if (v instanceof UUID value) {
             out.writeByte(VAL_UUID);
             out.writeLong(value.getMostSignificantBits());
             out.writeLong(value.getLeastSignificantBits());
+        } else if (v instanceof Instant value) {
+            out.writeByte(VAL_INSTANT);
+            out.writeLong(value.getEpochSecond());
+            out.writeInt(value.getNano());
+        } else if (v instanceof int[]) {
+            out.writeByte(VAL_INT_ARRAY);
+            writeIntArray(out, (int[]) v);
         } else if (v instanceof byte[]) {
             out.writeByte(VAL_BYTE_ARRAY);
             writeByteArray(out, (byte[]) v);
         } else if (v instanceof char[]) {
             out.writeByte(VAL_CHAR_ARRAY);
             writeCharArray(out, (char[]) v);
-        } else if (v instanceof List) {
-            out.writeByte(VAL_LIST);
-            writeList(out, (List<?>) v);
         } else if (v instanceof DataSet) {
             out.writeByte(VAL_DATA_SET);
             writeDataSet(out, (DataSet) v);
@@ -169,9 +178,12 @@ public final class BinaryIO {
             out.writeByte(VAL_PARCELABLE);
             writeString(out, value.getClass().getName());
             value.write(out);
-        } else if (v instanceof int[]) {
-            out.writeByte(VAL_INT_ARRAY);
-            writeIntArray(out, (int[]) v);
+        } else if (v instanceof CharSequence) {
+            out.writeByte(VAL_CHAR_SEQUENCE);
+            TextUtils.write(out, (CharSequence) v);
+        } else if (v instanceof List) {
+            out.writeByte(VAL_LIST);
+            writeList(out, (List<?>) v);
         } else if (v instanceof long[]) {
             out.writeByte(VAL_LONG_ARRAY);
             writeLongArray(out, (long[]) v);
@@ -190,6 +202,7 @@ public final class BinaryIO {
         } else {
             Class<?> clazz = v.getClass();
             if (clazz.isArray() && clazz.getComponentType() == Object.class) {
+                // pure Object[]
                 out.writeByte(VAL_OBJECT_ARRAY);
                 writeArray(out, (Object[]) v);
             } else if (v instanceof Serializable value) {
@@ -229,10 +242,12 @@ public final class BinaryIO {
             case VAL_BOOLEAN_ARRAY -> readBooleanArray(in);
             case VAL_CHAR_ARRAY -> readCharArray(in);
             case VAL_STRING -> readString(in);
-            case VAL_CHAR_SEQUENCE -> TextUtils.read(in);
             case VAL_UUID -> new UUID(in.readLong(), in.readLong());
-            case VAL_LIST -> readList(in, loader, elemType);
+            case VAL_INSTANT -> Instant.ofEpochSecond(in.readLong(), in.readInt());
             case VAL_DATA_SET -> readDataSet(in, loader);
+            case VAL_PARCELABLE -> readParcelable0(in, loader, clazz);
+            case VAL_CHAR_SEQUENCE -> TextUtils.read(in);
+            case VAL_LIST -> readList(in, loader, elemType);
             case VAL_OBJECT_ARRAY -> {
                 if (elemType == null) {
                     elemType = Object.class;
@@ -260,6 +275,100 @@ public final class BinaryIO {
                     + " provided in the parameter");
         }
         return (T) object;
+    }
+
+    @Nullable
+    public static <T> T readParcelable(@NonNull DataInput in, @Nullable ClassLoader loader,
+                                       @NonNull Class<T> clazz) throws IOException {
+        return readParcelable0(in, loader, Objects.requireNonNull(clazz));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Nullable
+    public static <T> T readParcelable0(@NonNull DataInput in, @Nullable ClassLoader loader,
+                                        @Nullable Class<T> clazz) throws IOException {
+        Parcelable.Creator<?> creator = readParcelableCreator0(in, loader, clazz);
+        if (creator == null) {
+            return null;
+        }
+        if (creator instanceof Parcelable.ClassLoaderCreator<?>) {
+            return (T) ((Parcelable.ClassLoaderCreator<?>) creator).create(in, loader);
+        }
+        return (T) creator.create(in);
+    }
+
+    @Nullable
+    public static <T> Parcelable.Creator<T> readParcelableCreator(
+            @NonNull DataInput in, @Nullable ClassLoader loader,
+            @NonNull Class<T> clazz) throws IOException {
+        return readParcelableCreator0(in, loader, Objects.requireNonNull(clazz));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Nullable
+    private static <T> Parcelable.Creator<T> readParcelableCreator0(
+            @NonNull DataInput in, @Nullable ClassLoader loader,
+            @Nullable Class<T> clazz) throws IOException {
+        final var name = readString(in);
+        if (name == null) {
+            return null;
+        }
+        final var map = gCreators.computeIfAbsent(loader, __ -> new ConcurrentHashMap<>());
+        var creator = map.get(name);
+        if (creator != null) {
+            if (clazz != null) {
+                var target = creator.getClass().getEnclosingClass();
+                if (!clazz.isAssignableFrom(target)) {
+                    throw new RuntimeException("Parcelable creator " + name + " is not "
+                            + "a subclass of required class " + clazz.getName()
+                            + " provided in the parameter");
+                }
+            }
+            return (Parcelable.Creator<T>) creator;
+        }
+
+        try {
+            var target = (loader == null ? BinaryIO.class.getClassLoader() : loader)
+                    .loadClass(name);
+            if (!Parcelable.class.isAssignableFrom(target)) {
+                throw new RuntimeException("Parcelable protocol requires subclassing "
+                        + "from Parcelable on class " + name);
+            }
+            if (clazz != null) {
+                if (!clazz.isAssignableFrom(target)) {
+                    throw new RuntimeException("Parcelable creator " + name + " is not "
+                            + "a subclass of required class " + clazz.getName()
+                            + " provided in the parameter");
+                }
+            }
+            var f = target.getField("CREATOR");
+            if ((f.getModifiers() & Modifier.STATIC) == 0) {
+                throw new RuntimeException("Parcelable protocol requires "
+                        + "the CREATOR object to be static on class " + name);
+            }
+            if (!Parcelable.Creator.class.isAssignableFrom(f.getType())) {
+                throw new RuntimeException("Parcelable protocol requires a "
+                        + "Parcelable.Creator object called "
+                        + "CREATOR on class " + name);
+            }
+            creator = (Parcelable.Creator<?>) f.get(null);
+        } catch (NoSuchFieldException e) {
+            throw new RuntimeException("Parcelable protocol requires a "
+                    + "Parcelable.Creator object called "
+                    + "CREATOR on class " + name, e);
+        } catch (ClassNotFoundException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+        if (creator == null) {
+            throw new RuntimeException("Parcelable protocol requires a "
+                    + "non-null Parcelable.Creator object called "
+                    + "CREATOR on class " + name);
+        }
+
+        // Modern UI: just like Android source code, there's always a race
+        map.put(name, creator);
+
+        return (Parcelable.Creator<T>) creator;
     }
 
     /**
@@ -699,7 +808,8 @@ public final class BinaryIO {
     /**
      * Read a data set as a value.
      *
-     * @param in the data input
+     * @param in     the data input
+     * @param loader the class loader for {@link Parcelable} classes
      * @return the newly created data set
      * @throws IOException if an IO error occurs
      */

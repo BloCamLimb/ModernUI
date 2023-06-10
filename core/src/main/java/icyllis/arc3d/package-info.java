@@ -20,5 +20,8 @@
  * Arc 3D Graphics Engine is a modern implementation to graphics API,
  * providing accelerated graphics backed by various 3D graphics APIs
  * (OpenGL and Vulkan), and optimized for desktop GPUs.
+ * <p>
+ * This package and {@link icyllis.modernui.graphics} refer to each other.
+ * Arc 3D doesn't refer other packages under Modern UI core framework.
  */
-package icyllis.arc3d.engine;
+package icyllis.arc3d;

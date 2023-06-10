@@ -18,8 +18,8 @@
 
 package icyllis.arc3d.engine;
 
+import icyllis.modernui.graphics.SharedPtr;
 import icyllis.arc3d.shaderc.Compiler;
-import icyllis.modernui.annotation.SharedPtr;
 import icyllis.modernui.graphics.*;
 
 import javax.annotation.Nullable;

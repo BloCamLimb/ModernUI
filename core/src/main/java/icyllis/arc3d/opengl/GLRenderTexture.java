@@ -18,10 +18,11 @@
 
 package icyllis.arc3d.opengl;
 
+import icyllis.modernui.graphics.RefCnt;
+import icyllis.modernui.graphics.SharedPtr;
 import icyllis.arc3d.engine.*;
-import icyllis.modernui.annotation.SharedPtr;
-import icyllis.modernui.core.RefCnt;
 
+import javax.annotation.Nonnull;
 import java.util.function.Function;
 
 /**
@@ -30,16 +31,16 @@ import java.util.function.Function;
 public final class GLRenderTexture extends GLTexture implements RenderTarget {
 
     @SharedPtr
-    private GLFramebufferSet mFramebufferManager;
+    private GLFramebufferSet mGLFramebufferSet;
 
     GLRenderTexture(GLServer server,
                     int width, int height,
                     GLTextureInfo info,
                     BackendFormat format,
                     boolean budgeted,
-                    Function<GLTexture, GLFramebufferSet> target) {
+                    Function<GLTexture, GLFramebufferSet> function) {
         super(server, width, height, info, format, budgeted, false);
-        mFramebufferManager = target.apply(this);
+        mGLFramebufferSet = function.apply(this);
         mFlags |= Surface.FLAG_RENDERABLE;
 
         registerWithCache(budgeted);
@@ -47,23 +48,24 @@ public final class GLRenderTexture extends GLTexture implements RenderTarget {
 
     @Override
     public int getSampleCount() {
-        return mFramebufferManager.getSampleCount();
+        return mGLFramebufferSet.getSampleCount();
     }
 
+    @Nonnull
     @Override
     public GLFramebufferSet getFramebufferSet() {
-        return mFramebufferManager;
+        return mGLFramebufferSet;
     }
 
     @Override
     protected void onRelease() {
-        mFramebufferManager = RefCnt.move(mFramebufferManager);
+        mGLFramebufferSet = RefCnt.move(mGLFramebufferSet);
         super.onRelease();
     }
 
     @Override
     protected void onDiscard() {
-        mFramebufferManager = RefCnt.move(mFramebufferManager);
+        mGLFramebufferSet = RefCnt.move(mGLFramebufferSet);
         super.onDiscard();
     }
 
@@ -84,7 +86,7 @@ public final class GLRenderTexture extends GLTexture implements RenderTarget {
                 ", mDestroyed=" + isDestroyed() +
                 ", mLabel=" + getLabel() +
                 ", mMemorySize=" + getMemorySize() +
-                ", mFramebufferManager=" + mFramebufferManager +
+                ", mFramebufferSet=" + mGLFramebufferSet +
                 '}';
     }
 }

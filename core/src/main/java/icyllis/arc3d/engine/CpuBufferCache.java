@@ -18,8 +18,8 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.modernui.annotation.SharedPtr;
-import icyllis.modernui.core.RefCnt;
+import icyllis.modernui.graphics.SharedPtr;
+import icyllis.modernui.graphics.RefCnt;
 
 /**
  * A cache object that can be shared by multiple {@link BufferAllocPool} instances. It caches

@@ -58,7 +58,7 @@ public final class DefaultGeoProc extends GeometryProcessor {
     }
 
     @Override
-    public void addToKey(KeyBuilder b) {
+    public void addToKey(Key.Builder b) {
         b.addBits(3, mFlags, "gpFlags");
     }
 

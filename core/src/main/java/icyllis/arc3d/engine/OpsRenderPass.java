@@ -18,12 +18,12 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.modernui.annotation.SharedPtr;
+import icyllis.modernui.graphics.SharedPtr;
 import icyllis.modernui.graphics.RectF;
 
 /**
- * The {@code OpsRenderPass} is a series of commands (draws, clears, and discards), which all target the
- * same render target. {@link Op Ops} execute into a {@code OpsRenderPass}.
+ * The {@link OpsRenderPass} is a series of commands (draws, clears, and discards), which all target the
+ * same render target. {@link Op Ops} execute into a {@link OpsRenderPass}.
  */
 //TODO
 public abstract class OpsRenderPass {
@@ -39,7 +39,7 @@ public abstract class OpsRenderPass {
     private int mDrawPipelineStatus = kNotConfigured_DrawPipelineStatus;
 
     protected FramebufferSet mFramebufferSet;
-    protected int mOrigin;
+    protected int mSurfaceOrigin;
 
     private TextureProxy[] mGeomTextures = new TextureProxy[1];
 
@@ -47,9 +47,9 @@ public abstract class OpsRenderPass {
         this(null, Engine.SurfaceOrigin.kUpperLeft);
     }
 
-    public OpsRenderPass(FramebufferSet rt, int origin) {
-        mFramebufferSet = rt;
-        mOrigin = origin;
+    public OpsRenderPass(FramebufferSet fs, int origin) {
+        mFramebufferSet = fs;
+        mSurfaceOrigin = origin;
     }
 
     public void begin() {
@@ -85,7 +85,7 @@ public abstract class OpsRenderPass {
      * @param drawBounds   the draw's sub-area of the render target
      */
     public void bindPipeline(PipelineInfo pipelineInfo, RectF drawBounds) {
-        assert (pipelineInfo.origin() == mOrigin);
+        assert (pipelineInfo.origin() == mSurfaceOrigin);
 
         if (!onBindPipeline(pipelineInfo, drawBounds)) {
             mDrawPipelineStatus = kFailedToBind_DrawPipelineStatus;
@@ -217,10 +217,10 @@ public abstract class OpsRenderPass {
         }
     }
 
-    protected void set(FramebufferSet rt, int origin) {
+    protected void set(FramebufferSet fs, int origin) {
         assert (mFramebufferSet == null);
-        mFramebufferSet = rt;
-        mOrigin = origin;
+        mFramebufferSet = fs;
+        mSurfaceOrigin = origin;
     }
 
     protected abstract Server getServer();
