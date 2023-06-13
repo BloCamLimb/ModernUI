@@ -111,6 +111,8 @@ public abstract class Drawable {
 
     private int mLayoutDirection;
 
+    public static final int MAX_LEVEL = 10000;
+
     /**
      * Draw in its bounds (set via setBounds) respecting optional effects such
      * as alpha (set via setAlpha).
@@ -548,6 +550,7 @@ public abstract class Drawable {
      * @return Returns true if this change in level has caused the appearance
      * of the Drawable to change (hence requiring an invalidate), otherwise
      * returns false.
+     * @see #MAX_LEVEL
      */
     public final boolean setLevel(int level) {
         if (mLevel != level) {
@@ -561,6 +564,7 @@ public abstract class Drawable {
      * Retrieve the current level.
      *
      * @return int Current level, from 0 (minimum) to 10000 (maximum).
+     * @see #MAX_LEVEL
      */
     public final int getLevel() {
         return mLevel;

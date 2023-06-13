@@ -26,6 +26,7 @@ import java.util.function.Function;
 
 public class FontFamily {
 
+    @UnmodifiableView
     private static final Map<String, FontFamily> sSystemFontMap;
 
     static {
@@ -33,12 +34,19 @@ public class FontFamily {
         GraphicsEnvironment.getLocalGraphicsEnvironment().preferLocaleFonts();
 
         Map<String, FontFamily> map = new HashMap<>();
-        Function<String, FontFamily> mapping = s -> new FontFamily(new Font(s, Font.PLAIN, 1));
 
-        String[] families = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames(Locale.ROOT);
-        for (String family : families) {
-            map.computeIfAbsent(family, mapping);
+        Locale defaultLocale = Locale.getDefault();
+        for (String name : GraphicsEnvironment.getLocalGraphicsEnvironment()
+                .getAvailableFontFamilyNames(Locale.ROOT)) {
+            if (!map.containsKey(name)) {
+                Font font = new Font(name, Font.PLAIN, 1);
+                FontFamily family = new FontFamily(font);
+                map.put(name, family);
+                map.putIfAbsent(font.getFamily(defaultLocale), family);
+            }
         }
+        Function<String, FontFamily> mapping = name ->
+                new FontFamily(new Font(name, Font.PLAIN, 1));
         map.computeIfAbsent(Font.SANS_SERIF, mapping);
         map.computeIfAbsent(Font.SERIF, mapping);
         map.computeIfAbsent(Font.MONOSPACED, mapping);

@@ -118,6 +118,9 @@ public final class R {
         public static final int undo = 0x01020032;
         public static final int redo = 0x01020033;
 
+        public static final int progress = 0x0102000d;
+        public static final int secondaryProgress = 0x0102000f;
+
         /// INTERNAL BELOW \\\
 
         // Constant IDs for Fragment package.

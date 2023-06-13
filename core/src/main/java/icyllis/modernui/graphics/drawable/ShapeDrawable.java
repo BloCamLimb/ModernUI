@@ -42,8 +42,6 @@ import java.lang.annotation.RetentionPolicy;
  * with different colors.<br>
  * Rectangle can be rounded; circle and ring can use {@link #getLevel() level},
  * that is, they become pie and arc, which can be stroked as well.<br>
- * If filled, the arc end is square; the line end is round;
- * if stroked, the rectangle corner is round.
  */
 public class ShapeDrawable extends Drawable {
 
@@ -136,18 +134,20 @@ public class ShapeDrawable extends Drawable {
         if (mShapeIsDirty) {
             mShapeIsDirty = false;
 
-            Rect bounds = getBounds();
-            float inset = 0;
+            mRect.set(getBounds());
 
             if (mStrokePaint != null) {
-                inset = mStrokePaint.getStrokeWidth() * 0.5f;
+                // the stroke direction is center, inset halfStrokeWidth to fit in bounds
+                float inset = mStrokePaint.getStrokeWidth() * 0.5f;
+                mRect.inset(inset, inset);
             }
-
-            mRect.set(bounds.left + inset, bounds.top + inset,
-                    bounds.right - inset, bounds.bottom - inset);
         }
-
-        return mRect.isEmpty();
+        if (mShapeState.mStrokeWidth > 0) {
+            //TODO Google bug: find out if there's nothing to draw (with stroke)
+            return false;
+        } else {
+            return mRect.isEmpty();
+        }
     }
 
     @Override
@@ -167,6 +167,7 @@ public class ShapeDrawable extends Drawable {
         final boolean haveFill = currFillAlpha > 0;
         final boolean haveStroke = currStrokeAlpha > 0 && mStrokePaint != null &&
                 mStrokePaint.getStrokeWidth() > 0;
+        //TODO Google bug: also check BlendMode/Shader/ColorFilter to determine there's fill or stroke
         final ShapeState st = mShapeState;
 
         mFillPaint.setAlpha(currFillAlpha);
@@ -188,6 +189,7 @@ public class ShapeDrawable extends Drawable {
                             Math.min(r.width(), r.height()) * 0.5f);
                     canvas.drawRoundRect(r, rad, mFillPaint);
                     if (haveStroke) {
+                        mStrokePaint.setStrokeCap(Paint.CAP_ROUND);
                         canvas.drawRoundRect(r, rad, mStrokePaint);
                     }
                 } else {
@@ -196,6 +198,7 @@ public class ShapeDrawable extends Drawable {
                         canvas.drawRect(r, mFillPaint);
                     }
                     if (haveStroke) {
+                        mStrokePaint.setStrokeCap(Paint.CAP_SQUARE);
                         canvas.drawRect(r, mStrokePaint);
                     }
                 }
@@ -208,28 +211,54 @@ public class ShapeDrawable extends Drawable {
                     float sweep = 360.0f * getLevel() / 10000.0f;
                     canvas.drawPie(cx, cy, radius, -90, sweep, mFillPaint);
                     if (haveStroke) {
+                        mStrokePaint.setStrokeCap(Paint.CAP_BUTT);
                         canvas.drawPie(cx, cy, radius, -90, sweep, mStrokePaint);
                     }
                 } else {
                     canvas.drawCircle(cx, cy, radius, mFillPaint);
                     if (haveStroke) {
+                        mStrokePaint.setStrokeCap(Paint.CAP_BUTT);
                         canvas.drawCircle(cx, cy, radius, mStrokePaint);
                     }
                 }
             }
             case RING -> {
-                //TODO
+                //TODO new arc render
+                float cx = r.centerX();
+                float cy = r.centerY();
+                float thickness = st.mThickness != -1 ?
+                        st.mThickness : r.width() / st.mThicknessRatio;
+                // inner radius
+                float radius = st.mInnerRadius != -1 ?
+                        st.mInnerRadius : r.width() / st.mInnerRadiusRatio;
+                radius += thickness * 0.5f;
+                Paint paint = Paint.obtain();
+                paint.set(mFillPaint);
+                paint.setStrokeWidth(thickness);
+                float sweep = st.mUseLevelForShape ? (360.0f * getLevel() / 10000.0f) : 360f;
+                canvas.drawArc(cx, cy, radius, -90, sweep, paint);
+                paint.recycle();
             }
             case HLINE -> {
                 float y = r.centerY();
                 if (haveStroke) {
+                    mStrokePaint.setStrokeCap(st.mRadius > 0 ? Paint.CAP_ROUND : Paint.CAP_SQUARE);
                     canvas.drawLine(r.left, y, r.right, y, mStrokePaint);
+                } else {
+                    // Modern UI added, both are the same
+                    mFillPaint.setStrokeCap(st.mRadius > 0 ? Paint.CAP_ROUND : Paint.CAP_SQUARE);
+                    canvas.drawLine(r.left, y, r.right, y, r.height() * 0.5f, mFillPaint);
                 }
             }
             case VLINE -> {
                 float x = r.centerX();
                 if (haveStroke) {
+                    mStrokePaint.setStrokeCap(st.mRadius > 0 ? Paint.CAP_ROUND : Paint.CAP_SQUARE);
                     canvas.drawLine(x, r.top, x, r.bottom, mStrokePaint);
+                } else {
+                    // Modern UI added, both are the same
+                    mFillPaint.setStrokeCap(st.mRadius > 0 ? Paint.CAP_ROUND : Paint.CAP_SQUARE);
+                    canvas.drawLine(x, r.top, x, r.bottom, r.width() * 0.5f, mFillPaint);
                 }
             }
         }
@@ -265,6 +294,27 @@ public class ShapeDrawable extends Drawable {
     @Shape
     public int getShape() {
         return mShapeState.mShape;
+    }
+
+    /**
+     * <p>Sets whether to draw circles and rings based on level.</p>
+     * <p><strong>Note</strong>: changing this property will affect all instances
+     * of a drawable loaded from a resource. It is recommended to invoke
+     * {@link #mutate()} before changing this property.</p>
+     *
+     * @param useLevelForShape Whether to use level for shape
+     * @see #getUseLevelForShape()
+     */
+    public void setUseLevelForShape(boolean useLevelForShape) {
+        mShapeState.mUseLevelForShape = useLevelForShape;
+        invalidateSelf();
+    }
+
+    /**
+     * @see #setUseLevelForShape(boolean)
+     */
+    public boolean getUseLevelForShape() {
+        return mShapeState.mUseLevelForShape;
     }
 
     /**
@@ -674,7 +724,21 @@ public class ShapeDrawable extends Drawable {
         }
 
         public ShapeState(@NonNull ShapeState orig, @Nullable Resources res) {
-
+            mShape = orig.mShape;
+            mSolidColors = orig.mSolidColors;
+            mStrokeColors = orig.mStrokeColors;
+            mStrokeWidth = orig.mStrokeWidth;
+            mRadius = orig.mRadius;
+            if (orig.mPadding != null) {
+                mPadding = new Rect(orig.mPadding);
+            }
+            mWidth = orig.mWidth;
+            mHeight = orig.mHeight;
+            mInnerRadiusRatio = orig.mInnerRadiusRatio;
+            mThicknessRatio = orig.mThicknessRatio;
+            mInnerRadius = orig.mInnerRadius;
+            mThickness = orig.mThickness;
+            mUseLevelForShape = orig.mUseLevelForShape;
         }
 
         public void setShape(@Shape int shape) {
@@ -703,6 +767,12 @@ public class ShapeDrawable extends Drawable {
         @Override
         public Drawable newDrawable() {
             return new ShapeDrawable(this, null);
+        }
+
+        @NonNull
+        @Override
+        public Drawable newDrawable(@Nullable Resources res) {
+            return new ShapeDrawable(this, res);
         }
     }
 }

@@ -20,18 +20,14 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.animation.*;
 import icyllis.modernui.core.Context;
-import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.Paint;
-import icyllis.modernui.graphics.MathUtil;
+import icyllis.modernui.graphics.*;
+import icyllis.modernui.resources.SystemTheme;
 
 import javax.annotation.Nonnull;
 
 public class SwitchButton extends CompoundButton {
 
-    private int mButtonLeft;
-    private int mButtonTop;
-    private int mButtonRight;
-    private int mButtonBottom;
+    private final RectF mButtonRect = new RectF();
 
     private float mThumbPosition;
 
@@ -47,9 +43,9 @@ public class SwitchButton extends CompoundButton {
 
     public SwitchButton(Context context) {
         super(context);
-        mCheckedColor = 0xFF51D367;
+        mCheckedColor = SystemTheme.COLOR_CONTROL_ACTIVATED;
         mUncheckedColor = 0xFFDDDDDD;
-        mBorderWidth = dp(1);
+        mBorderWidth = dp(1.5f);
 
         mInsideColor = mUncheckedColor;
 
@@ -68,7 +64,7 @@ public class SwitchButton extends CompoundButton {
         } else {
             mThumbPosition = TimeInterpolator.DECELERATE.getInterpolation(fraction);
         }
-        mInsideRadius = (mButtonBottom - mButtonTop) * 0.5f * fraction;
+        mInsideRadius = mButtonRect.height() * 0.5f * fraction;
         mInsideColor = ColorEvaluator.evaluate(fraction, mUncheckedColor, mCheckedColor);
 
         invalidate();
@@ -88,13 +84,11 @@ public class SwitchButton extends CompoundButton {
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         super.onLayout(changed, left, top, right, bottom);
         int thickness = (int) Math.ceil(mBorderWidth / 2f);
-        mButtonLeft = thickness;
-        mButtonTop = thickness;
-        mButtonRight = right - left - thickness;
-        mButtonBottom = bottom - top - thickness;
+        mButtonRect.set(0, 0, right - left, bottom - top);
+        mButtonRect.inset(thickness, thickness);
 
         if (isChecked()) {
-            mInsideRadius = (mButtonBottom - mButtonTop) * 0.5f;
+            mInsideRadius = mButtonRect.height() * 0.5f;
         }
     }
 
@@ -103,43 +97,43 @@ public class SwitchButton extends CompoundButton {
         super.onDraw(canvas);
         Paint paint = Paint.obtain();
 
-        float buttonRadius = (mButtonBottom - mButtonTop) * 0.5f;
-        float thumbX = mButtonLeft + buttonRadius + getThumbOffset();
-        float thumbY = mButtonTop + buttonRadius;
+        float buttonRadius = mButtonRect.height() * 0.5f;
+        float thumbX = mButtonRect.left + buttonRadius + getThumbOffset();
+        float thumbY = mButtonRect.top + buttonRadius;
 
         // draw inside background
         paint.setColor(mInsideColor);
         if (MathUtil.isApproxEqual(mInsideRadius, buttonRadius)) {
             // check a final state and simplify the drawing
             paint.setStyle(Paint.FILL);
-            canvas.drawRoundRect(mButtonLeft, mButtonTop, mButtonRight, mButtonBottom, buttonRadius, paint);
+            canvas.drawRoundRect(mButtonRect, buttonRadius, paint);
         } else if (mInsideRadius > 0) {
             float thickness = mInsideRadius * 0.5f;
-            paint.setStyle(Paint.STROKE);
-            paint.setStrokeWidth(mInsideRadius);
-            canvas.drawRoundRect(mButtonLeft + thickness, mButtonTop + thickness,
-                    mButtonRight - thickness, mButtonBottom - thickness,
-                    buttonRadius - thickness, paint);
             // fill in unchecked blanks
             paint.setStyle(Paint.FILL);
             if (isLayoutRtl()) {
-                canvas.drawCircle(mButtonRight - buttonRadius, thumbY,
-                        buttonRadius - Math.max(thickness - 2f, 0), paint);
-                canvas.drawRect(thumbX, mButtonTop + 2f,
-                        mButtonRight - buttonRadius, mButtonBottom - 2f, paint);
+                canvas.drawCircle(mButtonRect.right - buttonRadius, thumbY,
+                        buttonRadius - thickness, paint);
+                canvas.drawRect(thumbX, mButtonRect.top,
+                        mButtonRect.right - buttonRadius, mButtonRect.bottom, paint);
             } else {
-                canvas.drawCircle(mButtonLeft + buttonRadius, thumbY,
-                        buttonRadius - Math.max(thickness - 2f, 0), paint);
-                canvas.drawRect(mButtonLeft + buttonRadius,
-                        mButtonTop + 2f, thumbX, mButtonBottom - 2f, paint);
+                canvas.drawCircle(mButtonRect.left + buttonRadius, thumbY,
+                        buttonRadius - thickness, paint);
+                canvas.drawRect(mButtonRect.left + buttonRadius,
+                        mButtonRect.top, thumbX, mButtonRect.bottom, paint);
             }
+            paint.setStyle(Paint.STROKE);
+            paint.setStrokeWidth(mInsideRadius);
+            canvas.drawRoundRect(mButtonRect.left + thickness, mButtonRect.top + thickness,
+                    mButtonRect.right - thickness, mButtonRect.bottom - thickness,
+                    buttonRadius - thickness, paint);
         }
 
         // draw border
         paint.setStyle(Paint.STROKE);
         paint.setStrokeWidth(mBorderWidth);
         paint.setColor(mUncheckedColor);
-        canvas.drawRoundRect(mButtonLeft, mButtonTop, mButtonRight, mButtonBottom, buttonRadius, paint);
+        canvas.drawRoundRect(mButtonRect, buttonRadius, paint);
 
         // draw thumb
         paint.setStyle(Paint.FILL);
@@ -199,6 +193,6 @@ public class SwitchButton extends CompoundButton {
     }
 
     private int getThumbScrollRange() {
-        return mButtonTop - mButtonBottom + mButtonRight - mButtonLeft;
+        return (int) Math.ceil(mButtonRect.width() - mButtonRect.height());
     }
 }
