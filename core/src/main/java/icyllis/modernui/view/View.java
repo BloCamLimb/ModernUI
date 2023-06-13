@@ -7716,6 +7716,7 @@ public class View implements Drawable.Callback {
      * @return {@link #LAYOUT_DIRECTION_RTL} if the layout direction is RTL or returns
      * {@link #LAYOUT_DIRECTION_LTR} if the layout direction is not RTL.
      */
+    @ResolvedLayoutDir
     public final int getLayoutDirection() {
         return ((mPrivateFlags2 & PFLAG2_LAYOUT_DIRECTION_RESOLVED_RTL) ==
                 PFLAG2_LAYOUT_DIRECTION_RESOLVED_RTL) ? LAYOUT_DIRECTION_RTL : LAYOUT_DIRECTION_LTR;
@@ -10256,7 +10257,9 @@ public class View implements Drawable.Callback {
         if ((viewFlags & ENABLED_MASK) == DISABLED) {
             return false;
         }
-        return (viewFlags & CLICKABLE) == CLICKABLE;
+        return (viewFlags & CLICKABLE) == CLICKABLE
+                || (viewFlags & LONG_CLICKABLE) == LONG_CLICKABLE
+                || (viewFlags & CONTEXT_CLICKABLE) == CONTEXT_CLICKABLE;
     }
 
     /**
@@ -11434,6 +11437,7 @@ public class View implements Drawable.Callback {
                 return true;
             }
             if (event.getRepeatCount() == 0) {
+                //TODO
                 if ((mViewFlags & CLICKABLE) == CLICKABLE) {
                     setPressed(true);
                     return true;

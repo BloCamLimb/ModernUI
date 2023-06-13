@@ -30,23 +30,29 @@ import icyllis.modernui.util.StateSet;
 public class SystemTheme {
 
     public static final int COLOR_FOREGROUND = 0xFFFFFFFF;
+    public static final int COLOR_FOREGROUND_NORMAL = 0xFFB0B0B0;
+    public static final int COLOR_FOREGROUND_DISABLED = 0xFF3F3F3F;
 
     public static final float DISABLED_ALPHA = 0.3f;
     public static final float PRIMARY_CONTENT_ALPHA = 1;
     public static final float SECONDARY_CONTENT_ALPHA = 0.7f;
 
+    public static final int COLOR_CONTROL_ACTIVATED = 0xffcda398;
+
     public static final ColorStateList TEXT_COLOR_SECONDARY;
 
     static {
-        int[][] states = {
+        int[][] stateSet = {
                 new int[]{-R.attr.state_enabled},
+                new int[]{R.attr.state_hovered},
                 StateSet.WILD_CARD
         };
         int[] colors = {
-                modulateColor(COLOR_FOREGROUND, DISABLED_ALPHA),
-                modulateColor(COLOR_FOREGROUND, SECONDARY_CONTENT_ALPHA)
+                COLOR_FOREGROUND_DISABLED,
+                COLOR_FOREGROUND,
+                COLOR_FOREGROUND_NORMAL
         };
-        TEXT_COLOR_SECONDARY = new ColorStateList(states, colors);
+        TEXT_COLOR_SECONDARY = new ColorStateList(stateSet, colors);
     }
 
     public static final ColorStateList COLOR_CONTROL_NORMAL = TEXT_COLOR_SECONDARY;

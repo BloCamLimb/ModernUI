@@ -18,7 +18,6 @@
 
 package icyllis.arc3d.opengl;
 
-import icyllis.modernui.graphics.SharedPtr;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.geom.DefaultGeoProc;
 import icyllis.arc3d.engine.shading.UniformHandler;
@@ -113,7 +112,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     public static final byte DRAW_ARC_STROKE = 9;
     public static final byte DRAW_BEZIER = 10;
     public static final byte DRAW_TEXT = 11;
-    public static final byte DRAW_IMAGE_MS = 12;
+    public static final byte DRAW_IMAGE_LAYER = 12;
     public static final byte DRAW_CLIP_PUSH = 13;
     public static final byte DRAW_CLIP_POP = 14;
     public static final byte DRAW_MATRIX = 15;
@@ -163,7 +162,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     public final GLProgram ARC_STROKE = new GLProgram();
     public final GLProgram BEZIER_CURVE = new GLProgram();
     public final GLProgram ALPHA_TEX = new GLProgram();
-    public final GLProgram COLOR_TEX_MS = new GLProgram();
+    public final GLProgram COLOR_TEX_PRE = new GLProgram();
     public final GLProgram GLOW_WAVE = new GLProgram();
     public final GLProgram PIE_FILL = new GLProgram();
     public final GLProgram PIE_STROKE = new GLProgram();
@@ -362,7 +361,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         int arcStroke;
         int quadBezier;
         int alphaTex;
-        int colorTexMs;
+        int colorTexPre;
         int glowWave;
         int pieFill;
         int pieStroke;
@@ -387,7 +386,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             arcStroke = manager.getStage(ModernUI.ID, "arc_stroke.frag");
             quadBezier = manager.getStage(ModernUI.ID, "quadratic_bezier.frag");
             alphaTex = manager.getStage(ModernUI.ID, "alpha_tex.frag");
-            colorTexMs = manager.getStage(ModernUI.ID, "color_tex_4x.frag");
+            colorTexPre = manager.getStage(ModernUI.ID, "color_tex_pre.frag");
             glowWave = manager.getStage(ModernUI.ID, "glow_wave.frag");
             pieFill = manager.getStage(ModernUI.ID, "pie_fill.frag");
             pieStroke = manager.getStage(ModernUI.ID, "pie_stroke.frag");
@@ -409,7 +408,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             arcStroke = manager.getStage(ModernUI.ID, "arc_stroke_330.frag");
             quadBezier = manager.getStage(ModernUI.ID, "quadratic_bezier_330.frag");
             alphaTex = manager.getStage(ModernUI.ID, "alpha_tex_330.frag");
-            colorTexMs = manager.getStage(ModernUI.ID, "color_tex_4x_330.frag");
+            colorTexPre = manager.getStage(ModernUI.ID, "color_tex_pre_330.frag");
             glowWave = manager.getStage(ModernUI.ID, "glow_wave_330.frag");
             pieFill = manager.getStage(ModernUI.ID, "pie_fill_330.frag");
             pieStroke = manager.getStage(ModernUI.ID, "pie_stroke_330.frag");
@@ -430,7 +429,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         success &= manager.create(ARC_STROKE, posColor, arcStroke);
         success &= manager.create(BEZIER_CURVE, posColor, quadBezier);
         success &= manager.create(ALPHA_TEX, posTex, alphaTex);
-        success &= manager.create(COLOR_TEX_MS, posColorTex, colorTexMs);
+        success &= manager.create(COLOR_TEX_PRE, posColorTex, colorTexPre);
         success &= manager.create(GLOW_WAVE, posColor, glowWave);
         success &= manager.create(PIE_FILL, posColor, pieFill);
         success &= manager.create(PIE_STROKE, posColor, pieStroke);
@@ -448,8 +447,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
                 bindProgramMatrixBlock(COLOR_TEX);
                 bindProgramFragLocation(COLOR_TEX);
 
-                bindProgramMatrixBlock(COLOR_TEX_MS);
-                bindProgramFragLocation(COLOR_TEX_MS);
+                bindProgramMatrixBlock(COLOR_TEX_PRE);
+                bindProgramFragLocation(COLOR_TEX_PRE);
 
                 bindProgramMatrixBlock(ALPHA_TEX);
                 bindProgramFragLocation(ALPHA_TEX);
@@ -707,7 +706,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         if (mNeedsTexBinding) {
             bindProgramTexBinding(ALPHA_TEX);
             bindProgramTexBinding(COLOR_TEX);
-            bindProgramTexBinding(COLOR_TEX_MS);
+            bindProgramTexBinding(COLOR_TEX_PRE);
             bindProgramTexBinding(ROUND_RECT_TEX);
             mNeedsTexBinding = false;
         }
@@ -724,6 +723,9 @@ public final class GLSurfaceCanvas extends GLCanvas {
         glStencilFunc(GL_EQUAL, 0, 0xff);
         glStencilMask(0xff);
         glActiveTexture(GL_TEXTURE0);
+        glBindSampler(0, 0);
+        glBindVertexArray(0);
+        glUseProgram(0);
 
         mCurrVertexArray = 0;
         mCurrProgram = 0;
@@ -809,11 +811,11 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorTexIndex, 4);
                     posColorTexIndex += 4;
                 }
-                case DRAW_IMAGE_MS -> {
-                    bindPipeline(mTextureRectPipe, COLOR_TEX_MS);
+                case DRAW_IMAGE_LAYER -> {
+                    bindPipeline(mTextureRectPipe, COLOR_TEX_PRE);
                     mTextureRectPipe.bindVertexBuffer(mTextureMeshVertexBuffer, 0);
                     bindSampler(null);
-                    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, ((GLTextureCompat) mTextures.remove()).get());
+                    bindTexture(((GLTextureCompat) mTextures.remove()).get());
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorTexIndex, 4);
                     posColorTexIndex += 4;
                 }
@@ -975,10 +977,15 @@ public final class GLSurfaceCanvas extends GLCanvas {
                             mLayerImageMemory.remaining());
                     mLayerImageMemory.clear();
 
-                    bindPipeline(mTextureRectPipe, COLOR_TEX_MS);
+                    bindPipeline(mTextureRectPipe, COLOR_TEX_PRE);
                     mTextureRectPipe.bindVertexBuffer(mTextureMeshVertexBuffer, 0);
                     bindSampler(null);
-                    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, framebuffer.getAttachedTexture(colorBuffer).get());
+                    GLFramebufferCompat resolve = GLFramebufferCompat.resolve(framebuffer,
+                            colorBuffer, mWidth, mHeight);
+                    framebuffer.setReadBuffer(GL_COLOR_ATTACHMENT0);
+                    framebuffer.bindDraw();
+                    GLTextureCompat layer = resolve.getAttachedTexture(GL_COLOR_ATTACHMENT0);
+                    bindTexture(layer.get());
                     framebuffer.setDrawBuffer(--colorBuffer);
                     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
                 }
@@ -999,6 +1006,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         assert mCustoms.isEmpty();
 
         bindSampler(null);
+        glStencilFunc(GL_ALWAYS, 0, 0xff);
 
         mDrawOps.clear();
         mDrawPrims.clear();
@@ -1959,13 +1967,13 @@ public final class GLSurfaceCanvas extends GLCanvas {
     // this is only used for offscreen
     public void drawLayer(@NonNull GLTextureCompat texture, float w, float h, float alpha, boolean flipY) {
         int target = texture.getTarget();
-        if (target == GL_TEXTURE_2D || target == GL_TEXTURE_2D_MULTISAMPLE) {
+        if (target == GL_TEXTURE_2D) {
             drawMatrix();
             putRectColorUV(checkTextureMeshStagingBuffer(), 0, 0, w, h, 1, 1, 1, alpha,
                     0, flipY ? h / texture.getHeight() : 0,
                     w / texture.getWidth(), flipY ? 0 : h / texture.getHeight());
             mTextures.add(texture);
-            mDrawOps.add(target == GL_TEXTURE_2D ? DRAW_IMAGE : DRAW_IMAGE_MS);
+            mDrawOps.add(DRAW_IMAGE_LAYER);
         } else {
             ModernUI.LOGGER.warn(MARKER, "Cannot draw texture target {}", target);
         }

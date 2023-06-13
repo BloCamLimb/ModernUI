@@ -70,23 +70,21 @@ public final class GLFramebufferCompat extends GLObjectCompat {
      * Blit the given framebuffer color buffer of read buffer to a swap framebuffer
      * texture. This is used with a MSAA target for blending with other targets.
      *
-     * @param framebuffer source framebuffer
-     * @param colorBuffer color buffer
+     * @param multisampleFramebuffer source framebuffer
      * @return the swap buffer
      */
     @Nonnull
-    public static GLFramebufferCompat resolve(@Nonnull GLFramebufferCompat framebuffer, int colorBuffer) {
+    public static GLFramebufferCompat resolve(@Nonnull GLFramebufferCompat multisampleFramebuffer,
+                                              int colorBuf, int w, int h) {
         if (sSwapFramebuffer == null) {
             sSwapFramebuffer = new GLFramebufferCompat(1);
             sSwapFramebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT0, GL_RGBA8);
         }
-        Attachment src = framebuffer.getAttachment(colorBuffer);
-        int w = src.getWidth();
-        int h = src.getHeight();
         sSwapFramebuffer.bind();
         sSwapFramebuffer.getAttachment(GL_COLOR_ATTACHMENT0)
                 .make(w, h, false);
-        framebuffer.bindRead();
+        multisampleFramebuffer.bindRead();
+        multisampleFramebuffer.setReadBuffer(colorBuf);
         glBlitFramebuffer(0, 0, w, h,
                 0, 0, w, h,
                 GL_COLOR_BUFFER_BIT, GL_NEAREST);

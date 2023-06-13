@@ -25,6 +25,8 @@ import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.graphics.Rect;
+import icyllis.modernui.graphics.drawable.ShapeDrawable;
+import icyllis.modernui.resources.SystemTheme;
 import icyllis.modernui.view.*;
 
 import javax.annotation.Nonnull;
@@ -153,44 +155,17 @@ public class NestedScrollView extends FrameLayout {
         setNestedScrollingEnabled(true);
 
         setVerticalScrollBarEnabled(true);
-        setVerticalScrollbarThumbDrawable(new Drawable() {
-            private int mAlpha = 255;
-
-            @Override
-            public void draw(@Nonnull Canvas canvas) {
-                Paint paint = Paint.obtain();
-                paint.setRGBA(84, 190, 196, (int) (mAlpha * 0.5));
-                Rect bounds = getBounds();
-                canvas.drawRoundRect(bounds.left + 1, bounds.top + 1, bounds.right - 1, bounds.bottom - 1,
-                        bounds.width() / 2f - 1, paint);
-                paint.recycle();
-            }
-
-            @Override
-            public void setAlpha(int alpha) {
-                this.mAlpha = alpha;
-            }
-        });
-        setVerticalScrollbarTrackDrawable(new Drawable() {
-            private int mAlpha = 255;
-
-            @Override
-            public void draw(@Nonnull Canvas canvas) {
-                Paint paint = Paint.obtain();
-                paint.setRGBA(128, 128, 128, (int) (mAlpha * 0.75));
-                paint.setStyle(Paint.STROKE);
-                paint.setStrokeWidth(3);
-                Rect bounds = getBounds();
-                canvas.drawRoundRect(bounds.left + 1, bounds.top + 1, bounds.right - 1, bounds.bottom - 1,
-                        bounds.width() / 2f - 1, paint);
-                paint.recycle();
-            }
-
-            @Override
-            public void setAlpha(int alpha) {
-                this.mAlpha = alpha;
-            }
-        });
+        ShapeDrawable thumb = new ShapeDrawable();
+        thumb.setShape(ShapeDrawable.VLINE);
+        thumb.setStroke(dp(4), SystemTheme.modulateColor(SystemTheme.COLOR_FOREGROUND, 0.25f));
+        thumb.setCornerRadius(1);
+        setVerticalScrollbarThumbDrawable(thumb);
+        ShapeDrawable track = new ShapeDrawable();
+        track.setShape(ShapeDrawable.VLINE);
+        track.setStroke(dp(4), 0x40808080);
+        track.setSize(dp(4), -1);
+        track.setCornerRadius(1);
+        setVerticalScrollbarTrackDrawable(track);
     }
 
     // NestedScrollingParent3
@@ -769,7 +744,9 @@ public class NestedScrollView extends FrameLayout {
             mEdgeGlowBottom.onPullDistance(0, 1 - e.getY() / getHeight());
             stopped = true;
         }
-        return stopped;
+        // Modern UI: do not intercept if edge effects are not finished
+        // If user clicks too fast, edge effects will not finish, and events will always be intercepted
+        return stopped && false;
     }
 
     @Override

@@ -136,13 +136,15 @@ public class ScrollView extends FrameLayout {
 
         setVerticalScrollBarEnabled(true);
         ShapeDrawable thumb = new ShapeDrawable();
-        thumb.setColor(SystemTheme.modulateColor(SystemTheme.COLOR_FOREGROUND, 0.25f));
-        thumb.setCornerRadius(dp(2));
+        thumb.setShape(ShapeDrawable.VLINE);
+        thumb.setStroke(dp(4), SystemTheme.modulateColor(SystemTheme.COLOR_FOREGROUND, 0.25f));
+        thumb.setCornerRadius(1);
         setVerticalScrollbarThumbDrawable(thumb);
         ShapeDrawable track = new ShapeDrawable();
-        track.setColor(0x40808080);
+        track.setShape(ShapeDrawable.VLINE);
+        track.setStroke(dp(4), 0x40808080);
         track.setSize(dp(4), -1);
-        track.setCornerRadius(dp(2));
+        track.setCornerRadius(1);
         setVerticalScrollbarTrackDrawable(track);
     }
 
@@ -470,8 +472,11 @@ public class ScrollView extends FrameLayout {
                  * isFinished() is correct.
                  */
                 mScroller.computeScrollOffset();
-                mIsBeingDragged = !mScroller.isFinished() || !mEdgeGlowBottom.isFinished()
-                        || !mEdgeGlowTop.isFinished();
+                mIsBeingDragged = !mScroller.isFinished()/* || !mEdgeGlowBottom.isFinished()
+                        || !mEdgeGlowTop.isFinished()*/;
+                // Modern UI: do not intercept if edge effects are not finished
+                // If user clicks too fast, edge effects will not finish, and events will always be intercepted
+
                 // Catch the edge effect if it is active.
                 if (!mEdgeGlowTop.isFinished()) {
                     mEdgeGlowTop.onPullDistance(0f, ev.getX() / getWidth());
