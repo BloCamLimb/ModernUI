@@ -42,7 +42,7 @@ public final class MessageQueue {
     private static final Marker MARKER = MarkerManager.getMarker("MessageQueue");
     private static final boolean DEBUG = false;
 
-    private final MainWindow mWindow;
+    // Null means the main thread, otherwise the looper thread
     private final Thread mThread;
 
     @GuardedBy("this")
@@ -64,9 +64,8 @@ public final class MessageQueue {
     @GuardedBy("this")
     private int mNextBarrierToken;
 
-    MessageQueue(MainWindow window) {
-        mWindow = window;
-        mThread = Thread.currentThread();
+    MessageQueue(Thread thread) {
+        mThread = thread;
     }
 
     /**
@@ -142,7 +141,7 @@ public final class MessageQueue {
         int pendingIdleHandlerCount = -1; // -1 only during first iteration
         int nextPollTimeoutMillis = 0;
         for (;;) {
-            if (mWindow != null) {
+            if (mThread == null) {
                 // Handling main thread
                 mPolling = true;
                 if (nextPollTimeoutMillis < 0) {
@@ -153,12 +152,6 @@ public final class MessageQueue {
                     GLFW.glfwWaitEventsTimeout(nextPollTimeoutMillis / 1000D);
                 }
                 mPolling = false;
-
-                // Exit the main loop and the application
-                if (mWindow.shouldClose()) {
-                    mDisposed = true;
-                    return null;
-                }
             } else {
                 // Blocking
                 mPolling = true;
@@ -259,10 +252,6 @@ public final class MessageQueue {
     }
 
     void quit(boolean safe) {
-        if (mWindow != null) {
-            throw new IllegalStateException("Main thread not allowed to quit.");
-        }
-
         synchronized (this) {
             if (mQuitting) {
                 return;
@@ -361,7 +350,7 @@ public final class MessageQueue {
             // If the loop is quitting then it is already awake.
             // We can assume mDisposed is false because mQuitting is false.
             if (needWake && !mQuitting) {
-                if (mWindow != null) {
+                if (mThread == null) {
                     GLFW.glfwPostEmptyEvent();
                 } else {
                     LockSupport.unpark(mThread);
@@ -419,7 +408,7 @@ public final class MessageQueue {
 
             // We can assume mDisposed is false because mQuitting is false.
             if (needWake) {
-                if (mWindow != null) {
+                if (mThread == null) {
                     GLFW.glfwPostEmptyEvent();
                 } else {
                     LockSupport.unpark(mThread);

@@ -37,6 +37,7 @@ import icyllis.modernui.widget.*;
 import org.apache.logging.log4j.*;
 import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.glfw.GLFWMonitorCallback;
+import org.lwjgl.glfw.GLFWWindowCloseCallback;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.system.Configuration;
 
@@ -45,6 +46,7 @@ import java.nio.channels.*;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.LockSupport;
 
 import static icyllis.arc3d.opengl.GLCore.*;
@@ -88,7 +90,6 @@ public class ModernUI extends Context implements AutoCloseable, LifecycleOwner {
     private Typeface mDefaultTypeface;
 
     private volatile Looper mUiLooper;
-    private volatile Thread mUiThread;
     private volatile Thread mRenderThread;
 
     private Resources mResources = new Resources();
@@ -148,7 +149,7 @@ public class ModernUI extends Context implements AutoCloseable, LifecycleOwner {
         glfwWindowHintString(GLFW_X11_CLASS_NAME, NAME_CPT);
         glfwWindowHintString(GLFW_X11_INSTANCE_NAME, NAME_CPT);
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-        glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+        //glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
         if (monitor == null) {
             LOGGER.info(MARKER, "No monitor connected");
             mWindow = MainWindow.initialize("Modern UI", 1280, 720);
@@ -180,10 +181,29 @@ public class ModernUI extends Context implements AutoCloseable, LifecycleOwner {
         loadDefaultTypeface();
 
         LOGGER.info(MARKER, "Preparing threads");
-        Looper.prepare(mWindow);
+        Looper.prepareMainLooper();
 
-        mRenderThread = new Thread(() -> runRender(fragment), "Render-Thread");
+        glfwSetWindowCloseCallback(mWindow.getHandle(), new GLFWWindowCloseCallback() {
+            @Override
+            public void invoke(long window) {
+                LOGGER.info(MARKER, "Window closed from callback");
+                Looper.getMainLooper().quitSafely();
+            }
+        });
+
+        CountDownLatch latch = new CountDownLatch(1);
+
+        mRenderThread = new Thread(() -> runRender(latch), "Render-Thread");
         mRenderThread.start();
+
+        // wait render thread init
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        LOGGER.info(MARKER, "Initializing UI system");
 
         try (Bitmap i16 = BitmapFactory.decodeStream(getResourceStream(ID, "AppLogo16x.png"));
              Bitmap i32 = BitmapFactory.decodeStream(getResourceStream(ID, "AppLogo32x.png"));
@@ -193,20 +213,96 @@ public class ModernUI extends Context implements AutoCloseable, LifecycleOwner {
             e.printStackTrace();
         }
 
+        mUiLooper = Core.initUiThread();
+
+        mRoot = new ViewRootImpl();
+
+        mDecor = new CoordinatorLayout(this);
+        mDecor.setClickable(true);
+        mDecor.setFocusableInTouchMode(true);
+        mDecor.setWillNotDraw(true);
+        mDecor.setId(R.id.content);
+
+        mFragmentContainerView = new FragmentContainerView(this);
+        mFragmentContainerView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT));
+        mFragmentContainerView.setWillNotDraw(true);
+        mFragmentContainerView.setId(fragment_container);
+        mDecor.addView(mFragmentContainerView);
+        mDecor.setLayoutDirection(View.LAYOUT_DIRECTION_LOCALE);
+        mDecor.setIsRootNamespace(true);
+
+        try {
+            Path p = Path.of("assets/modernui/raw/eromanga.png").toAbsolutePath();
+            FileChannel channel = FileChannel.open(p, StandardOpenOption.READ);
+            Image image = ImageStore.getInstance().create(channel);
+            if (image != null) {
+                Drawable drawable = new ImageDrawable(image);
+                drawable.setTint(0xFF808080);
+                mDecor.setBackground(drawable);
+                mBackgroundImage = image;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        mRoot.setView(mDecor);
+
+        LOGGER.info(MARKER, "Installing view protocol");
+
+        mWindow.install(mRoot);
+
+        mLifecycleRegistry = new LifecycleRegistry(this);
+        mOnBackPressedDispatcher = new OnBackPressedDispatcher(() -> {
+            mWindow.setShouldClose(true);
+            Looper.getMainLooper().quitSafely();
+        });
+        mViewModelStore = new ViewModelStore();
+        mFragmentController = FragmentController.createController(new HostCallbacks());
+
+        mFragmentController.attachHost(null);
+
+        mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE);
+        mFragmentController.dispatchCreate();
+
+        mFragmentController.dispatchActivityCreated();
+        mFragmentController.execPendingActions();
+
+        mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START);
+        mFragmentController.dispatchStart();
+
+        LOGGER.info(MARKER, "Starting main fragment");
+
+        mFragmentController.getFragmentManager().beginTransaction()
+                .add(fragment_container, fragment, "main")
+                .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
+                .addToBackStack("main")
+                .commit();
+
+        mWindow.show();
+
         LOGGER.info(MARKER, "Looping main thread");
         Looper.loop();
+
+        mFragmentController.dispatchStop();
+        mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_STOP);
+
+        mFragmentController.dispatchDestroy();
+        mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY);
+
+        Core.getUiRecordingContext().unref();
+        LOGGER.info(MARKER, "Quited main thread");
     }
 
     @RenderThread
-    private void runRender(Fragment fragment) {
+    private void runRender(CountDownLatch latch) {
         LOGGER.info(MARKER, "Initializing render thread");
         final Window window = mWindow;
         window.makeCurrent();
         if (!Core.initOpenGL()) {
             throw new IllegalStateException("Failed to initialize OpenGL");
         }
-        mUiThread = new Thread(() -> runUI(fragment), "UI-Thread");
-        mUiThread.start();
+        latch.countDown();
 
         GLCore.setupDebugCallback();
         GLCore.showCapsErrorDialog();
@@ -248,94 +344,12 @@ public class ModernUI extends Context implements AutoCloseable, LifecycleOwner {
                 }
                 window.swapBuffers();
             } else {
-                LockSupport.parkNanos((long) (1.0 / 288 * 1e9));
+                LockSupport.parkNanos((long) (1.0 / 576 * 1e9));
             }
         }
         GLSurfaceCanvas.getInstance().destroy();
         Core.getDirectContext().unref();
         LOGGER.info(MARKER, "Quited render thread");
-    }
-
-    @UiThread
-    private void runUI(@NonNull Fragment fragment) {
-        LOGGER.info(MARKER, "Initializing UI thread");
-        mUiLooper = Core.initUiThread();
-
-        mRoot = new ViewRootImpl();
-
-        mDecor = new CoordinatorLayout(this);
-        mDecor.setClickable(true);
-        mDecor.setFocusableInTouchMode(true);
-        mDecor.setWillNotDraw(true);
-        mDecor.setId(R.id.content);
-
-        mFragmentContainerView = new FragmentContainerView(this);
-        mFragmentContainerView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT));
-        mFragmentContainerView.setWillNotDraw(true);
-        mFragmentContainerView.setId(fragment_container);
-        mDecor.addView(mFragmentContainerView);
-        mDecor.setLayoutDirection(View.LAYOUT_DIRECTION_LOCALE);
-        mDecor.setIsRootNamespace(true);
-
-        try {
-            Path p = Path.of("assets/modernui/raw/eromanga.png").toAbsolutePath();
-            FileChannel channel = FileChannel.open(p, StandardOpenOption.READ);
-            Image image = ImageStore.getInstance().create(channel);
-            if (image != null) {
-                Drawable drawable = new ImageDrawable(image);
-                drawable.setTint(0xFF808080);
-                mDecor.setBackground(drawable);
-                mBackgroundImage = image;
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        mRoot.setView(mDecor);
-
-        LOGGER.info(MARKER, "Installing view protocol");
-
-        mWindow.install(mRoot);
-
-        mLifecycleRegistry = new LifecycleRegistry(this);
-        mOnBackPressedDispatcher = new OnBackPressedDispatcher(() -> mWindow.setShouldClose(true));
-        mViewModelStore = new ViewModelStore();
-        mFragmentController = FragmentController.createController(new HostCallbacks());
-
-        mFragmentController.attachHost(null);
-
-        mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE);
-        mFragmentController.dispatchCreate();
-
-        mFragmentController.dispatchActivityCreated();
-        mFragmentController.execPendingActions();
-
-        mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START);
-        mFragmentController.dispatchStart();
-
-        LOGGER.info(MARKER, "Starting main fragment");
-
-        mFragmentController.getFragmentManager().beginTransaction()
-                .add(fragment_container, fragment, "main")
-                .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
-                .addToBackStack("main")
-                .commit();
-
-        Core.executeOnMainThread(mWindow::show);
-
-        LOGGER.info(MARKER, "Looping UI thread");
-
-        Looper.loop();
-
-        mFragmentController.dispatchStop();
-        mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_STOP);
-
-        mFragmentController.dispatchDestroy();
-        mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY);
-
-        Core.getUiRecordingContext().unref();
-        LOGGER.info(MARKER, "Quited UI thread");
     }
 
     private void loadDefaultTypeface() {
@@ -347,13 +361,10 @@ public class ModernUI extends Context implements AutoCloseable, LifecycleOwner {
         } catch (java.awt.FontFormatException | IOException ignored) {
         }
 
-        for (FontFamily family : FontFamily.getSystemFontMap().values()) {
-            String name = family.getFamilyName();
-            if (name.startsWith("Calibri") ||
-                    name.startsWith("Microsoft YaHei UI") ||
-                    name.startsWith("STHeiti") ||
-                    name.startsWith("Segoe UI") ||
-                    name.startsWith("SimHei")) {
+        Map<String, FontFamily> map = FontFamily.getSystemFontMap();
+        for (String name : new String[]{"Microsoft YaHei UI", "Calibri", "STHeiti", "Segoe UI", "SimHei"}) {
+            FontFamily family = map.get(name);
+            if (family != null) {
                 set.add(family);
             }
         }
@@ -460,15 +471,6 @@ public class ModernUI extends Context implements AutoCloseable, LifecycleOwner {
     public void close() {
         try {
             synchronized (Core.class) {
-                if (mUiThread != null) {
-                    LOGGER.info(MARKER, "Quiting UI thread");
-                    try {
-                        Core.getUiHandlerAsync().post(() -> mUiLooper.quitSafely());
-                        mUiThread.join(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
                 if (mBackgroundImage != null) {
                     mBackgroundImage.close();
                     mBackgroundImage = null;

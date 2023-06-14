@@ -38,11 +38,12 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.*;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
  * Class used to run a message loop for a thread.  Threads by default do
  * not have a message loop associated with them; to create one, call
- * {@link #prepare} in the thread that is to run the loop, and then
+ * {@link #prepareMainLooper} in the thread that is to run the loop, and then
  * {@link #loop} to have it process messages until the loop is stopped.
  *
  * <p>Most interaction with a message loop is through the
@@ -94,9 +95,24 @@ public final class Looper {
         if (sThreadLocal.get() != null) {
             throw new RuntimeException("Only one Looper may be created per thread");
         }
-        final Looper looper = new Looper(null);
+        final Looper looper = new Looper(false);
         sThreadLocal.set(looper);
         return looper;
+    }
+
+    /**
+     * Prepare the main event loop. This must be called from the entry point of the application.
+     */
+    @ApiStatus.Internal
+    @MainThread
+    public static void prepareMainLooper() {
+        Core.checkMainThread();
+        if (sMainLooper != null) {
+            throw new IllegalStateException();
+        }
+        final Looper me = new Looper(true);
+        sThreadLocal.set(me);
+        sMainLooper = me;
     }
 
     /**
@@ -183,26 +199,8 @@ public final class Looper {
         me.mInLoop = true;
         me.mSlowDeliveryDetected = false;
         //noinspection StatementWithEmptyBody
-        while (poll(me));
-    }
-
-    /**
-     * Prepare the main event loop. This must be called from the entry point of the application.
-     * <p>
-     * Main looper cannot quit via {@link #quit()}, but it will quit right after the main window
-     * is marked closed.
-     *
-     * @param w the main window.
-     */
-    @MainThread
-    public static void prepare(@NonNull MainWindow w) {
-        Core.checkMainThread();
-        if (sMainLooper != null) {
-            throw new IllegalStateException();
-        }
-        final Looper me = new Looper(w);
-        sThreadLocal.set(me);
-        sMainLooper = me;
+        while (poll(me))
+            ;
     }
 
     private static boolean showSlowLog(long threshold, long measureStart, long measureEnd,
@@ -238,9 +236,9 @@ public final class Looper {
         return sThreadLocal.get().mQueue;
     }
 
-    private Looper(MainWindow w) {
-        mQueue = new MessageQueue(w);
+    private Looper(boolean main) {
         mThread = Thread.currentThread();
+        mQueue = new MessageQueue(main ? null : mThread);
     }
 
     /**
