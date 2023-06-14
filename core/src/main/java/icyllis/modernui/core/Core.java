@@ -35,9 +35,9 @@ import java.net.URL;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
-import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Executor;
 
 import static icyllis.modernui.ModernUI.*;
 import static org.lwjgl.system.MemoryUtil.*;
@@ -51,15 +51,19 @@ public final class Core {
     private static final Cleaner sCleaner = Cleaner.create();
 
     private static volatile Thread sMainThread;
-    private static Thread sRenderThread;
-    private static Thread sUiThread;
+    private static volatile Thread sRenderThread;
+    private static volatile Thread sUiThread;
 
     private static volatile Handler sMainHandlerAsync;
-    private static Handler sUiHandler;
-    private static Handler sUiHandlerAsync;
+    private static volatile Handler sUiHandler;
+    private static volatile Handler sUiHandlerAsync;
 
     private static final ConcurrentLinkedQueue<Runnable> sMainCalls = new ConcurrentLinkedQueue<>();
     private static final ConcurrentLinkedQueue<Runnable> sRenderCalls = new ConcurrentLinkedQueue<>();
+
+    private static final Executor sMainThreadExecutor = Core::executeOnMainThread;
+    private static final Executor sRenderThreadExecutor = Core::executeOnRenderThread;
+    private static final Executor sUiThreadExecutor = Core::executeOnUiThread;
 
     private static volatile DirectContext sDirectContext;
     private static volatile RecordingContext sUiRecordingContext;
@@ -105,7 +109,7 @@ public final class Core {
                 }
                 if (!GLFW.glfwInit()) {
                     Objects.requireNonNull(GLFW.glfwSetErrorCallback(null)).free();
-                    throw new IllegalStateException("Failed to initialize GLFW");
+                    throw new UnsupportedOperationException("Failed to initialize GLFW");
                 }
                 sMainThread = Thread.currentThread();
             } else {
@@ -119,6 +123,7 @@ public final class Core {
      */
     @MainThread
     public static void terminate() {
+        checkMainThread();
         GLFWErrorCallback cb = GLFW.glfwSetErrorCallback(null);
         if (cb != null) {
             cb.close();
@@ -127,42 +132,104 @@ public final class Core {
         LOGGER.info(MARKER, "Terminated GLFW");
     }
 
-    // not locked, but visible
+    /**
+     * Ensures that the current thread is the main thread, otherwise a runtime exception will be thrown.
+     */
     public static void checkMainThread() {
         if (Thread.currentThread() != sMainThread)
-            throw new IllegalStateException("Not called from main thread, current " + Thread.currentThread());
+            throw new IllegalStateException("Not called from the main thread, current " + Thread.currentThread());
     }
 
-    // not locked, but visible on checking, and locked on failure
-    public static void checkRenderThread() {
-        if (Thread.currentThread() != sRenderThread)
-            synchronized (Core.class) {
-                if (sRenderThread == null)
-                    throw new IllegalStateException("Render thread has not been initialized yet.");
-                else
-                    throw new IllegalStateException("Not called from render thread " + sRenderThread +
-                            ", current " + Thread.currentThread());
-            }
-    }
-
-    // not locked, but visible
+    /**
+     * @return the main thread if initialized, or null
+     */
     public static Thread getMainThread() {
         return sMainThread;
     }
 
-    // not locked, but visible
-    public static Thread getRenderThread() {
-        return sRenderThread;
-    }
-
-    // not locked, but visible
+    /**
+     * @return whether the current thread is the main thread
+     */
     public static boolean isOnMainThread() {
         return Thread.currentThread() == sMainThread;
     }
 
-    // not locked, but visible
+    /**
+     * Initializes OpenGL pipeline and the render thread.
+     * <p>
+     * Before calling this method, it is necessary to ensure that the GL library is loaded
+     * and that the current thread has an OpenGL context for a certain platform window.
+     *
+     * @return true if successful
+     */
+    @RenderThread
+    public static boolean initOpenGL() {
+        final DirectContext dContext;
+        synchronized (Core.class) {
+            if (sDirectContext != null) {
+                return true;
+            }
+            if (sRenderThread == null) {
+                sRenderThread = Thread.currentThread();
+            } else if (Thread.currentThread() != sRenderThread) {
+                throw new IllegalStateException();
+            }
+            dContext = DirectContext.makeOpenGL();
+            if (dContext == null) {
+                return false;
+            }
+            sDirectContext = dContext;
+        }
+        final String glVendor = GLCore.glGetString(GLCore.GL_VENDOR);
+        final String glRenderer = GLCore.glGetString(GLCore.GL_RENDERER);
+        final String glVersion = GLCore.glGetString(GLCore.GL_VERSION);
+
+        LOGGER.info(MARKER, "OpenGL vendor: {}", glVendor);
+        LOGGER.info(MARKER, "OpenGL renderer: {}", glRenderer);
+        LOGGER.info(MARKER, "OpenGL version: {}", glVersion);
+
+        LOGGER.debug(MARKER, "OpenGL caps: {}", dContext.getCaps());
+        return true;
+    }
+
+    /**
+     * Ensures that the current thread is the render thread, otherwise a runtime exception will be thrown.
+     */
+    public static void checkRenderThread() {
+        if (Thread.currentThread() != sRenderThread)
+            synchronized (Core.class) {
+                if (sRenderThread == null)
+                    throw new IllegalStateException("The render thread has not been initialized yet.");
+                else
+                    throw new IllegalStateException("Not called from the render thread " + sRenderThread +
+                            ", current " + Thread.currentThread());
+            }
+    }
+
+    /**
+     * @return the render thread if initialized, or null
+     */
+    public static Thread getRenderThread() {
+        return sRenderThread;
+    }
+
+    /**
+     * @return whether the current thread is the render thread
+     */
     public static boolean isOnRenderThread() {
         return Thread.currentThread() == sRenderThread;
+    }
+
+    @NonNull
+    @RenderThread
+    public static DirectContext getDirectContext() {
+        checkRenderThread();
+        return Objects.requireNonNull(sDirectContext,
+                "Direct context has not been created yet, or creation failed");
+    }
+
+    public static DirectContext peekDirectContext() {
+        return sDirectContext;
     }
 
     /**
@@ -171,12 +238,13 @@ public final class Core {
      *
      * @return async main handler
      */
+    @NonNull
     public static Handler getMainHandlerAsync() {
         if (sMainHandlerAsync == null) {
             synchronized (Core.class) {
                 if (sMainHandlerAsync == null) {
                     if (Looper.getMainLooper() == null) {
-                        throw new RuntimeException("The main event loop does not exist. Modern UI may be embedded.");
+                        throw new IllegalStateException("The main event loop does not exist.");
                     }
                     sMainHandlerAsync = Handler.createAsync(Looper.getMainLooper());
                 }
@@ -186,7 +254,7 @@ public final class Core {
     }
 
     /**
-     * Post a delayed operation that will be executed on main thread.
+     * Post an async operation that will be executed on main thread.
      *
      * @param r the runnable
      */
@@ -212,9 +280,13 @@ public final class Core {
         }
     }
 
+    @NonNull
+    public static Executor getMainThreadExecutor() {
+        return sMainThreadExecutor;
+    }
+
     /**
-     * Post a delayed operation that will be executed on render thread.
-     * Render thread is not a looper thread.
+     * Post an async operation that will be executed on render thread.
      *
      * @param r the runnable
      */
@@ -235,8 +307,13 @@ public final class Core {
         }
     }
 
+    @NonNull
+    public static Executor getRenderThreadExecutor() {
+        return sRenderThreadExecutor;
+    }
+
     /**
-     * Flush main thread calls. Use only if the application is not running independently.
+     * Flush main thread calls if the main thread is not a looper thread.
      */
     public static void flushMainCalls() {
         //noinspection UnnecessaryLocalVariable
@@ -246,7 +323,7 @@ public final class Core {
     }
 
     /**
-     * Flush render thread calls.
+     * Flush render thread calls if the render thread is not a looper thread.
      */
     public static void flushRenderCalls() {
         //noinspection UnnecessaryLocalVariable
@@ -256,63 +333,70 @@ public final class Core {
     }
 
     /**
-     * Call after creating a Window on render thread.
+     * Initializes UI thread and its event loop.
+     * <p>
+     * UI thread can be the main thread iff the main thread is a looper thread.
+     *
+     * @return the event loop
      */
-    @RenderThread
-    public static boolean initOpenGL() {
+    @NonNull
+    @UiThread
+    public static Looper initUiThread() {
         synchronized (Core.class) {
-            if (sRenderThread == null) {
-                sRenderThread = Thread.currentThread();
+            if (sUiThread == null) {
+                sUiThread = Thread.currentThread();
 
-                var dContext = DirectContext.makeOpenGL();
-                if (dContext == null) {
-                    return false;
+                final Looper looper;
+                if (sUiThread == sMainThread) {
+                    looper = Looper.getMainLooper();
+                    sUiHandlerAsync = sMainHandlerAsync;
+                } else {
+                    looper = Looper.prepare();
+                    sUiHandlerAsync = Handler.createAsync(looper);
                 }
-                sDirectContext = dContext;
+                sUiHandler = new Handler(looper);
+
+                if (sDirectContext != null) {
+                    if (sUiThread == sRenderThread) {
+                        sUiRecordingContext = sDirectContext;
+                    } else {
+                        sUiRecordingContext = RecordingContext.makeDeferred(sDirectContext.getThreadSafeProxy());
+                    }
+                }
+
+                return looper;
             } else {
-                throw new IllegalStateException("Initialize twice");
+                throw new IllegalStateException();
             }
         }
-        final String glVendor = GLCore.glGetString(GLCore.GL_VENDOR);
-        final String glRenderer = GLCore.glGetString(GLCore.GL_RENDERER);
-        final String glVersion = GLCore.glGetString(GLCore.GL_VERSION);
-
-        LOGGER.info(MARKER, "OpenGL vendor: {}", glVendor);
-        LOGGER.info(MARKER, "OpenGL renderer: {}", glRenderer);
-        LOGGER.info(MARKER, "OpenGL version: {}", glVersion);
-
-        LOGGER.debug(MARKER, "OpenGL caps: {}", sDirectContext.getCaps());
-        return true;
-        /*GLCapabilities caps;
-        try {
-            caps = GL.getCapabilities();
-            if (caps == null) {
-                caps = GL.createCapabilities();
-            }
-        } catch (IllegalStateException e) {
-            caps = GL.createCapabilities();
-        }
-        if (caps == null) {
-            throw new IllegalStateException("Failed to acquire OpenGL capabilities");
-        }
-        GLCore.initialize(caps);*/
     }
 
     /**
-     * Return whether render thread is initialized. Not locked, but visible.
-     *
-     * @return whether render thread is initialized
+     * Ensures that the current thread is the UI thread, otherwise a runtime exception will be thrown.
      */
-    public static boolean hasRenderThread() {
-        return sRenderThread != null;
+    public static void checkUiThread() {
+        if (Thread.currentThread() != sUiThread)
+            synchronized (Core.class) {
+                if (sUiThread == null)
+                    throw new IllegalStateException("The UI thread has not been initialized yet.");
+                else
+                    throw new IllegalStateException("Not called from the UI thread " + sRenderThread +
+                            ", current " + Thread.currentThread());
+            }
     }
 
-    @NonNull
-    @RenderThread
-    public static DirectContext getDirectContext() {
-        checkRenderThread();
-        return Objects.requireNonNull(sDirectContext,
-                "Render context has not been created yet, or creation failed");
+    /**
+     * @return the UI thread if initialized, or null
+     */
+    public static Thread getUiThread() {
+        return sUiThread;
+    }
+
+    /**
+     * @return whether the current thread is the UI thread
+     */
+    public static boolean isOnUiThread() {
+        return Thread.currentThread() == sUiThread;
     }
 
     @NonNull
@@ -323,66 +407,8 @@ public final class Core {
                 "UI recording context has not been created yet, or creation failed");
     }
 
-    /**
-     * Initialize UI thread and its event loop.
-     *
-     * @return the event loop
-     */
-    @NonNull
-    @UiThread
-    public static Looper initUiThread() {
-        synchronized (Core.class) {
-            if (sUiThread == null) {
-                sUiThread = Thread.currentThread();
-                final Looper looper = Looper.prepare();
-                sUiHandler = new Handler(looper);
-                sUiHandlerAsync = Handler.createAsync(looper);
-
-                if (sDirectContext != null) {
-                    if (sUiThread == sRenderThread) {
-                        sUiRecordingContext = sDirectContext;
-                    } else {
-                        var rContext = RecordingContext.makeDeferred(sDirectContext.getThreadSafeProxy());
-                        sUiRecordingContext = Objects.requireNonNull(rContext, "No graphics context");
-                    }
-                }
-
-                return looper;
-            } else {
-                throw new IllegalStateException("Initialize twice");
-            }
-        }
-    }
-
-    public static void checkUiThread() {
-        if (Thread.currentThread() != sUiThread)
-            synchronized (Core.class) {
-                if (sUiThread == null)
-                    throw new IllegalStateException("UI thread was never initialized. " +
-                            "Please check whether the loader threw an exception before.");
-                else
-                    throw new IllegalStateException("Not called from UI thread. Desired " + sUiThread +
-                            " current " + Thread.currentThread());
-            }
-    }
-
-    // not locked, but visible
-    public static Thread getUiThread() {
-        return sUiThread;
-    }
-
-    // not locked, but visible
-    public static boolean isOnUiThread() {
-        return Thread.currentThread() == sUiThread;
-    }
-
-    /**
-     * Return whether UI thread is initialized. Not locked, but visible.
-     *
-     * @return whether UI thread is initialized
-     */
-    public static boolean hasUiThread() {
-        return sUiThread != null;
+    public static RecordingContext peekUiRecordingContext() {
+        return sUiRecordingContext;
     }
 
     /**
@@ -409,6 +435,34 @@ public final class Core {
      */
     public static Handler getUiHandlerAsync() {
         return sUiHandlerAsync;
+    }
+
+    /**
+     * Post an async operation that will be executed on main thread.
+     *
+     * @param r the runnable
+     */
+    public static void postOnUiThread(@NonNull Runnable r) {
+        getUiHandlerAsync().post(r);
+    }
+
+    /**
+     * This should be rarely used. Only when the render thread and the main thread are the same thread,
+     * and you need to call some methods that must be called on the main thread.
+     *
+     * @param r the runnable
+     */
+    public static void executeOnUiThread(@NonNull Runnable r) {
+        if (isOnUiThread()) {
+            r.run();
+        } else {
+            postOnUiThread(r);
+        }
+    }
+
+    @NonNull
+    public static Executor getUiThreadExecutor() {
+        return sUiThreadExecutor;
     }
 
     /**
@@ -443,7 +497,7 @@ public final class Core {
 
     /**
      * Allocates native memory and read buffered resource. The memory <b>MUST</b> be
-     * manually freed by {@link MemoryUtil#memFree(Buffer)}. The stream can NOT be
+     * manually freed by {@link MemoryUtil#memFree(Buffer)}. The channel can NOT be
      * larger than 2 GB. This method does NOT close the channel.
      *
      * @param channel where to read input from
@@ -455,7 +509,7 @@ public final class Core {
         ByteBuffer p = null;
         try {
             if (channel instanceof final SeekableByteChannel ch) {
-                long rem = ch.size() - ch.position() + 1; // +1 EOF
+                long rem = ch.size() - ch.position() + 1;
                 if (rem > Integer.MAX_VALUE) {
                     throw new IOException("File is too big, found " + (rem - 1) + " bytes");
                 }
@@ -466,14 +520,15 @@ public final class Core {
             } else {
                 p = memAlloc(4096);
                 while (channel.read(p) != -1) {
-                    if (!p.hasRemaining()) {
-                        long cap = p.capacity();
-                        if (cap == Integer.MAX_VALUE) {
-                            throw new IOException("File is too big");
-                        }
-                        p = memRealloc(p, (int) Math.min(cap + (cap >> 1), // grow 50%
-                                Integer.MAX_VALUE));
+                    if (p.hasRemaining()) {
+                        continue;
                     }
+                    long cap = p.capacity();
+                    if (cap == Integer.MAX_VALUE) {
+                        throw new IOException("File is too big");
+                    }
+                    p = memRealloc(p, (int) Math.min(cap + (cap >> 1), // grow 50%
+                            Integer.MAX_VALUE));
                 }
             }
         } catch (Throwable t) {
@@ -487,7 +542,7 @@ public final class Core {
     /**
      * Allocates native memory and read buffered resource. The memory <b>MUST</b> be
      * manually freed by {@link MemoryUtil#memFree(Buffer)}. The stream can NOT be
-     * larger than 2 GB. This method does NOT close the channel.
+     * larger than 2 GB. This method does NOT close the stream.
      *
      * @param stream where to read input from
      * @return the native pointer to {@code unsigned char *data}
@@ -496,39 +551,6 @@ public final class Core {
     @NonNull
     public static ByteBuffer readIntoNativeBuffer(@NonNull InputStream stream) throws IOException {
         return readIntoNativeBuffer(Channels.newChannel(stream));
-    }
-
-    /**
-     * This method doesn't close channel. No code point validation.
-     *
-     * @param channel read from
-     * @return string or null if an IOException occurred
-     */
-    @Nullable
-    public static String readUTF8(@NonNull ReadableByteChannel channel) {
-        ByteBuffer p = null;
-        try {
-            p = readIntoNativeBuffer(channel);
-            int n = p.position();
-            byte[] bytes = new byte[n];
-            p.get(0, bytes, 0, n);
-            return new String(bytes, 0, n, StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            return null;
-        } finally {
-            memFree(p);
-        }
-    }
-
-    /**
-     * This method doesn't close channel. No code point validation.
-     *
-     * @param stream read from
-     * @return string or null if an IOException occurred
-     */
-    @Nullable
-    public static String readUTF8(@NonNull InputStream stream) {
-        return readUTF8(Channels.newChannel(stream));
     }
 
     /**
