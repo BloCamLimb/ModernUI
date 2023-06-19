@@ -59,14 +59,14 @@ public class FontFamily {
         return sSystemFontMap;
     }
 
-    private Font mPlain;
+    private Font mFont;
     private Font mBold;
     private Font mItalic;
     private Font mBoldItalic;
 
     public FontFamily(Font font) {
         if (font != null) {
-            mPlain = font.deriveFont(Font.PLAIN);
+            mFont = font;
             mBold = font.deriveFont(Font.BOLD);
             mItalic = font.deriveFont(Font.ITALIC);
             mBoldItalic = font.deriveFont(Font.BOLD | Font.ITALIC);
@@ -75,7 +75,7 @@ public class FontFamily {
 
     public Font getClosestMatch(int style) {
         return switch (style) {
-            case Font.PLAIN -> mPlain;
+            case Font.PLAIN -> mFont;
             case Font.BOLD -> mBold;
             case Font.ITALIC -> mItalic;
             case Font.BOLD | Font.ITALIC -> mBoldItalic;
@@ -83,22 +83,22 @@ public class FontFamily {
         };
     }
 
-    public boolean hasGlyph(int codePoint) {
-        return mPlain.canDisplay(codePoint);
+    public boolean hasGlyph(int ch) {
+        return mFont.canDisplay(ch);
     }
 
-    public boolean hasGlyph(int codePoint, int variationSelector) {
+    public boolean hasGlyph(int ch, int vs) {
         // no public API
-        return hasGlyph(codePoint);
+        return hasGlyph(ch);
     }
 
     public String getFamilyName() {
-        return mPlain.getFamily(Locale.ROOT);
+        return mFont.getFamily(Locale.ROOT);
     }
 
     @Override
     public int hashCode() {
-        return mPlain != null ? mPlain.hashCode() : 0;
+        return mFont != null ? mFont.hashCode() : 0;
     }
 
     @Override
@@ -106,6 +106,6 @@ public class FontFamily {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         FontFamily that = (FontFamily) o;
-        return Objects.equals(mPlain, that.mPlain);
+        return Objects.equals(mFont, that.mFont);
     }
 }

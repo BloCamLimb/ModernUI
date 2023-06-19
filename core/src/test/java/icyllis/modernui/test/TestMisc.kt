@@ -21,7 +21,6 @@ package icyllis.modernui.test
 import com.ibm.icu.text.CompactDecimalFormat
 import icyllis.modernui.ModernUI
 import icyllis.modernui.graphics.MathUtil
-import icyllis.modernui.material.MaterialDrawable
 import icyllis.modernui.text.TextUtils
 import icyllis.modernui.util.TypedValue
 import org.apache.logging.log4j.Level
@@ -30,7 +29,6 @@ import org.lwjgl.system.MemoryUtil
 import java.math.BigDecimal
 import java.nio.ByteOrder
 import java.util.*
-import kotlin.math.abs
 
 fun main() {
     Configurator.setRootLevel(Level.ALL)
@@ -65,4 +63,15 @@ fun main() {
         ByteOrder.nativeOrder(),
         Integer.toHexString(MemoryUtil.memGetInt(ptr))
     )
+}
+
+class Handler {
+    companion object {
+        fun doCheck(o: Any?) {
+            o?.let(Handler::doChecked)
+        }
+
+        private fun doChecked(o: Any) {
+        }
+    }
 }

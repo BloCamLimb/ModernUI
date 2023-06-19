@@ -22,7 +22,6 @@ import icyllis.arc3d.engine.Engine;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.graphics.Bitmap;
 import icyllis.modernui.text.TextUtils;
-import it.unimi.dsi.fastutil.objects.Object2IntFunction;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
@@ -34,8 +33,10 @@ import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
 import java.io.PrintWriter;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.ToIntFunction;
 
 /**
  * Manages all glyphs, font atlases, measures glyph metrics and draw them of
@@ -79,9 +80,13 @@ public class GlyphManager {
     /**
      * Font (with size and style) to int key.
      */
-    private Object2IntOpenHashMap<Font> mFontTable;
+    private final Object2IntOpenHashMap<Font> mFontTable = new Object2IntOpenHashMap<>();
 
-    private final Object2IntFunction<Font> mFontTableMapper = f -> mFontTable.size();
+    private final ArrayList<Font> mReverseFontTable = new ArrayList<>();
+    private final ToIntFunction<Font> mFontTableMapper = f -> {
+        mReverseFontTable.add(f);
+        return mFontTable.size() + 1;
+    };
 
     /**
      * Draw a single glyph onto this image and then loaded from here into an OpenGL texture.
@@ -130,16 +135,30 @@ public class GlyphManager {
             mA8Atlas.close();
         }
         mA8Atlas = null;
-        mFontTable = new Object2IntOpenHashMap<>();
-        mFontTable.defaultReturnValue(-1);
+        mFontTable.clear();
+        mFontTable.trim();
+        mReverseFontTable.clear();
+        mReverseFontTable.trimToSize();
         allocateImage(64, 64);
+    }
+
+    /**
+     * Returns a new Font object that is suitable for other methods.
+     *
+     * @param family the font family
+     * @param style  the font style
+     * @param size   the font size in pts
+     * @return a derived Font object
+     */
+    public Font chooseFont(@NonNull FontFamily family, int style, int size) {
+        return family.getClosestMatch(style).deriveFont((float) size);
     }
 
     /**
      * Given a font, perform full text layout/shaping and create a new GlyphVector for a text.
      *
-     * @param font  the derived Font used to layout a GlyphVector for the text
-     * @param text  the plain text to layout
+     * @param font  see {@link #chooseFont(FontFamily, int, int)}
+     * @param text  the U16 text to layout
      * @param start the offset into text at which to start the layout
      * @param limit the (offset + length) at which to stop performing the layout
      * @param isRtl whether the text should layout right-to-left
@@ -152,9 +171,52 @@ public class GlyphManager {
                 isRtl ? Font.LAYOUT_RIGHT_TO_LEFT : Font.LAYOUT_LEFT_TO_RIGHT);
     }
 
+    /**
+     * Create glyph vector without text shaping, which means by mapping
+     * characters to glyphs one-to-one.
+     *
+     * @param font see {@link #chooseFont(FontFamily, int, int)}
+     * @param text the U16 text to layout
+     * @return the newly created GlyphVector
+     */
     @NonNull
     public GlyphVector createGlyphVector(@NonNull Font font, @NonNull char[] text) {
         return font.createGlyphVector(mGraphics.getFontRenderContext(), text);
+    }
+
+    /**
+     * Compute a glyph key used to retrieve GPU baked glyph, the key is valid
+     * until next {@link #reload()}.
+     *
+     * @param font      see {@link #chooseFont(FontFamily, int, int)}
+     * @param glyphCode the font specific glyph code
+     * @return a key
+     */
+    public long computeGlyphKey(@NonNull Font font, int glyphCode) {
+        long fontKey = mFontTable.computeIfAbsent(font, mFontTableMapper);
+        return (fontKey << 32) | glyphCode;
+    }
+
+    public Font getFontFromKey(long key) {
+        return mReverseFontTable.get((int) (key >> 32) - 1);
+    }
+
+    public static int getGlyphCodeFromKey(long key) {
+        return (int) key;
+    }
+
+    @Nullable
+    public GLBakedGlyph lookupGlyph(long key) {
+        if (mA8Atlas == null) {
+            mA8Atlas = new GLFontAtlas(Engine.MASK_FORMAT_A8);
+        }
+        GLBakedGlyph glyph = mA8Atlas.getGlyph(key);
+        if (glyph != null && glyph.texture == 0) {
+            Font font = getFontFromKey(key);
+            int glyphCode = getGlyphCodeFromKey(key);
+            return cacheGlyph(font, glyphCode, mA8Atlas, glyph, key);
+        }
+        return glyph;
     }
 
     /**
@@ -170,8 +232,7 @@ public class GlyphManager {
     @Nullable
     @RenderThread
     public GLBakedGlyph lookupGlyph(@NonNull Font font, int glyphCode) {
-        int fontKey = mFontTable.computeIfAbsent(font, mFontTableMapper);
-        long key = ((long) fontKey << 32) | glyphCode;
+        long key = computeGlyphKey(font, glyphCode);
         if (mA8Atlas == null) {
             mA8Atlas = new GLFontAtlas(Engine.MASK_FORMAT_A8);
         }
@@ -307,13 +368,14 @@ public class GlyphManager {
     }
 
     /**
-     * Re-calculate font metrics in pixels, the higher 32 bits are ascent and
-     * lower 32 bits are descent.
+     * Re-calculate font metrics in pixels.
+     *
+     * @return line height
      */
     public int getFontMetrics(@NonNull FontPaint paint, @Nullable FontMetricsInt fm) {
         int ascent = 0, descent = 0, height = 0;
         for (FontFamily family : paint.mFontCollection.getFamilies()) {
-            Font font = family.getClosestMatch(paint.getFontStyle()).deriveFont((float) paint.mFontSize);
+            Font font = chooseFont(family, paint.getFontStyle(), paint.getFontSize());
             FontMetrics metrics = mGraphics.getFontMetrics(font);
             ascent = Math.max(ascent, metrics.getAscent()); // positive
             descent = Math.max(descent, metrics.getDescent()); // positive
@@ -327,12 +389,12 @@ public class GlyphManager {
     }
 
     /**
-     * Extend metrics.
+     * Extend metrics and choose font.
      *
      * @see LayoutPiece#LayoutPiece(char[], int, int, boolean, FontPaint, boolean, boolean, LayoutPiece)
      */
     public Font getFontMetrics(@NonNull FontFamily family, @NonNull FontPaint paint, @NonNull FontMetricsInt fm) {
-        Font font = family.getClosestMatch(paint.getFontStyle()).deriveFont((float) paint.mFontSize);
+        Font font = chooseFont(family, paint.getFontStyle(), paint.getFontSize());
         fm.extendBy(mGraphics.getFontMetrics(font));
         return font;
     }
