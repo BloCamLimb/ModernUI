@@ -30,7 +30,7 @@ import java.util.Arrays;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 /**
- * A pool of geometry buffers tied to a {@link Server}.
+ * A pool of geometry buffers tied to a {@link Device}.
  * <p>
  * The pool allows a client to make space for geometry and then put back excess
  * space if it over allocated. When a client is ready to draw from the pool
@@ -45,16 +45,16 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 public abstract class BufferAllocPool {
 
     /**
-     * We expect buffers for meshes to be at least 64KB.
+     * We expect buffers for meshes to be at least 128KB.
      */
-    public static final int DEFAULT_BUFFER_SIZE = 1 << 16;
+    public static final int DEFAULT_BUFFER_SIZE = 1 << 17;
 
-    private final Server mServer;
+    private final Device mDevice;
     private final int mBufferType;
 
     // blocks
     @SharedPtr
-    protected GpuBuffer[] mBuffers = new GpuBuffer[8];
+    protected Buffer[] mBuffers = new Buffer[8];
     protected int[] mFreeBytes = new int[8];
     protected int mIndex = -1;
 
@@ -67,33 +67,33 @@ public abstract class BufferAllocPool {
     /**
      * Constructor.
      *
-     * @param server     the server used to create the buffers.
+     * @param device     the device used to create the buffers.
      * @param bufferType the type of buffers to create.
      */
-    protected BufferAllocPool(Server server, int bufferType) {
+    protected BufferAllocPool(Device device, int bufferType) {
         assert (bufferType == Engine.BufferUsageFlags.kVertex || bufferType == Engine.BufferUsageFlags.kIndex);
-        mServer = server;
+        mDevice = device;
         mBufferType = bufferType;
     }
 
     /**
      * Constructor.
      *
-     * @param server the server used to create the vertex buffers.
+     * @param device the device used to create the vertex buffers.
      */
     @Nonnull
-    public static BufferAllocPool makeVertexPool(Server server) {
-        return new VertexPool(server);
+    public static BufferAllocPool makeVertexPool(Device device) {
+        return new VertexPool(device);
     }
 
     /**
      * Constructor.
      *
-     * @param server the server used to create the instance buffers.
+     * @param device the device used to create the instance buffers.
      */
     @Nonnull
-    public static BufferAllocPool makeInstancePool(Server server) {
-        return new InstancePool(server);
+    public static BufferAllocPool makeInstancePool(Device device) {
+        return new InstancePool(device);
     }
 
     /**
@@ -103,7 +103,7 @@ public abstract class BufferAllocPool {
     public void flush() {
         if (mBufferPtr != NULL) {
             assert (mIndex >= 0);
-            GpuBuffer buffer = mBuffers[mIndex];
+            Buffer buffer = mBuffers[mIndex];
             int usedBytes = buffer.getSize() - mFreeBytes[mIndex];
             assert (buffer.isLocked());
             assert (buffer.getLockedBuffer() == mBufferPtr);
@@ -120,16 +120,16 @@ public abstract class BufferAllocPool {
         mBytesInUse = 0;
         if (mIndex >= 0) {
             assert (mBufferPtr != NULL);
-            GpuBuffer buffer = mBuffers[mIndex];
+            Buffer buffer = mBuffers[mIndex];
             assert (buffer.isLocked());
             assert (buffer.getLockedBuffer() == mBufferPtr);
             buffer.unlock();
             mBufferPtr = NULL;
         }
         while (mIndex >= 0) {
-            GpuBuffer buffer = mBuffers[mIndex];
+            Buffer buffer = mBuffers[mIndex];
             assert (!buffer.isLocked());
-            mBuffers[mIndex--] = GpuResource.move(buffer);
+            mBuffers[mIndex--] = Resource.move(buffer);
         }
         assert (mIndex == -1);
         assert (mBufferPtr == NULL);
@@ -142,7 +142,7 @@ public abstract class BufferAllocPool {
         while (bytes > 0) {
             // caller shouldn't try to put back more than they've taken
             assert (mIndex >= 0);
-            GpuBuffer buffer = mBuffers[mIndex];
+            Buffer buffer = mBuffers[mIndex];
             int usedBytes = buffer.getSize() - mFreeBytes[mIndex];
             if (bytes >= usedBytes) {
                 bytes -= usedBytes;
@@ -151,7 +151,7 @@ public abstract class BufferAllocPool {
                 assert (buffer.getLockedBuffer() == mBufferPtr);
                 buffer.unlock(/*offset=*/0, usedBytes);
                 assert (!buffer.isLocked());
-                mBuffers[mIndex--] = GpuResource.move(buffer);
+                mBuffers[mIndex--] = Resource.move(buffer);
                 mBufferPtr = NULL;
             } else {
                 mFreeBytes[mIndex] += bytes;
@@ -213,7 +213,7 @@ public abstract class BufferAllocPool {
 
         if (mBufferPtr != NULL) {
             assert (mIndex >= 0);
-            GpuBuffer buffer = mBuffers[mIndex];
+            Buffer buffer = mBuffers[mIndex];
             int pos = buffer.getSize() - mFreeBytes[mIndex];
             int pad = MathUtil.alignUpPad(pos, alignment);
             int alignedSize = size + pad;
@@ -230,7 +230,7 @@ public abstract class BufferAllocPool {
         int blockSize = Math.max(size, DEFAULT_BUFFER_SIZE);
 
         @SharedPtr
-        GpuBuffer buffer = mServer.getContext().getResourceProvider()
+        Buffer buffer = mDevice.getContext().getResourceProvider()
                 .createBuffer(blockSize, mBufferType | Engine.BufferUsageFlags.kStream);
         if (buffer == null) {
             return NULL;
@@ -259,8 +259,8 @@ public abstract class BufferAllocPool {
 
     private static class VertexPool extends BufferAllocPool {
 
-        public VertexPool(Server server) {
-            super(server, Engine.BufferUsageFlags.kVertex);
+        public VertexPool(Device device) {
+            super(device, Engine.BufferUsageFlags.kVertex);
         }
 
         /**
@@ -291,7 +291,7 @@ public abstract class BufferAllocPool {
                 return NULL;
             }
 
-            GpuBuffer buffer = mBuffers[mIndex];
+            Buffer buffer = mBuffers[mIndex];
             int offset = (int) (ptr - mBufferPtr);
             assert (offset % vertexSize == 0);
             mesh.setVertexBuffer(buffer, offset / vertexSize, vertexCount);
@@ -317,7 +317,7 @@ public abstract class BufferAllocPool {
                 return null;
             }
 
-            GpuBuffer buffer = mBuffers[mIndex];
+            Buffer buffer = mBuffers[mIndex];
             int offset = (int) (ptr - mBufferPtr);
             assert (offset % vertexSize == 0);
             mesh.setVertexBuffer(buffer, offset / vertexSize, vertexCount);
@@ -333,8 +333,8 @@ public abstract class BufferAllocPool {
 
     private static class InstancePool extends BufferAllocPool {
 
-        public InstancePool(Server server) {
-            super(server, Engine.BufferUsageFlags.kVertex);
+        public InstancePool(Device device) {
+            super(device, Engine.BufferUsageFlags.kVertex);
             // instance buffers are also vertex buffers, but we allocate them from a different pool
         }
 
@@ -366,7 +366,7 @@ public abstract class BufferAllocPool {
                 return NULL;
             }
 
-            GpuBuffer buffer = mBuffers[mIndex];
+            Buffer buffer = mBuffers[mIndex];
             int offset = (int) (ptr - mBufferPtr);
             assert (offset % instanceSize == 0);
             mesh.setInstanceBuffer(buffer, offset / instanceSize, instanceCount);
@@ -392,7 +392,7 @@ public abstract class BufferAllocPool {
                 return null;
             }
 
-            GpuBuffer buffer = mBuffers[mIndex];
+            Buffer buffer = mBuffers[mIndex];
             int offset = (int) (ptr - mBufferPtr);
             assert (offset % instanceSize == 0);
             mesh.setInstanceBuffer(buffer, offset / instanceSize, instanceCount);

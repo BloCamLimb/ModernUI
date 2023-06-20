@@ -34,14 +34,14 @@ public final class GLSampler extends ManagedResource {
 
     private int mSampler;
 
-    private GLSampler(GLServer server, int sampler) {
-        super(server);
+    private GLSampler(GLDevice device, int sampler) {
+        super(device);
         mSampler = sampler;
     }
 
     @Nullable
     @SharedPtr
-    public static GLSampler create(GLServer server,
+    public static GLSampler create(GLDevice device,
                                    int samplerState) {
         int sampler = glGenSamplers();
         if (sampler == 0) {
@@ -64,13 +64,13 @@ public final class GLSampler extends ManagedResource {
         glSamplerParameteri(sampler, GL_TEXTURE_MIN_FILTER, minFilter);
         glSamplerParameteri(sampler, GL_TEXTURE_WRAP_S, wrapX);
         glSamplerParameteri(sampler, GL_TEXTURE_WRAP_T, wrapY);
-        if (server.getCaps().hasAnisotropySupport()) {
+        if (device.getCaps().hasAnisotropySupport()) {
             float maxAnisotropy = Math.min(SamplerState.getMaxAnisotropy(samplerState),
-                    server.getCaps().maxTextureMaxAnisotropy());
+                    device.getCaps().maxTextureMaxAnisotropy());
             assert (maxAnisotropy >= 1.0f);
             glSamplerParameterf(sampler, GL46C.GL_TEXTURE_MAX_ANISOTROPY, maxAnisotropy);
         }
-        return new GLSampler(server, sampler);
+        return new GLSampler(device, sampler);
     }
 
     //@formatter:off

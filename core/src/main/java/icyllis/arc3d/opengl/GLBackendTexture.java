@@ -38,7 +38,7 @@ public final class GLBackendTexture extends BackendTexture {
         glTextureParametersModified();
     }
 
-    // Internally used by GLServer and GLTexture
+    // Internally used by GLDevice and GLTexture
     GLBackendTexture(int width, int height, GLTextureInfo info,
                      GLTextureParameters params, BackendFormat backendFormat) {
         super(width, height);

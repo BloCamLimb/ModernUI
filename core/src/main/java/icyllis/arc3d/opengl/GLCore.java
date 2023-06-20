@@ -18,7 +18,6 @@
 
 package icyllis.arc3d.opengl;
 
-import icyllis.arc3d.engine.ShaderErrorHandler;
 import icyllis.arc3d.engine.ThreadSafePipelineBuilder;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.RenderThread;
@@ -29,11 +28,12 @@ import icyllis.modernui.graphics.ImageInfo;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.opengl.*;
-import org.lwjgl.system.APIUtil;
-import org.lwjgl.system.NativeType;
+import org.lwjgl.system.*;
 import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
-import java.util.*;
+import java.io.PrintWriter;
+import java.nio.ByteBuffer;
+import java.util.Locale;
 
 import static icyllis.modernui.ModernUI.LOGGER;
 import static org.lwjgl.opengl.AMDDebugOutput.*;
@@ -52,7 +52,7 @@ public final class GLCore extends GL45C {
     /**
      * Represents an invalid/unassigned OpenGL object compared to {@link #GL_NONE}.
      */
-    public static final int INVALID_ID = -1;
+    public static final int INVALID_ID = 0xFFFFFFFF;
 
     /**
      * The reserved framebuffer that used for swapping buffers with window.
@@ -60,54 +60,15 @@ public final class GLCore extends GL45C {
     public static final int DEFAULT_FRAMEBUFFER = 0;
 
     /**
-     * The global vertex array compared to custom vertex array objects.
+     * The default vertex array compared to custom vertex array objects.
      */
-    public static final int GLOBAL_VERTEX_ARRAY = 0;
+    public static final int DEFAULT_VERTEX_ARRAY = 0;
 
     public static final int DEFAULT_TEXTURE = 0;
-
-    private static boolean sInitialized = false;
-
-    //private static Redirector sRedirector;
-
-    private static List<String> sUnsupportedList = Collections.emptyList();
-
-    // enabled or disabled
-    //private static boolean sCullState = false;
-    //private static int sCullMode = GL_BACK;
-
-    //private static int sDrawFramebuffer = DEFAULT_FRAMEBUFFER;
-    //private static int sReadFramebuffer = DEFAULT_FRAMEBUFFER;
-
-    //private static int sVertexArray = GLOBAL_VERTEX_ARRAY;
-
-    //private static final Deque<Rect> sViewportStack = new ArrayDeque<>();
-
-    //private static int sActiveTexture = 0;
-    // texture unit (index) to texture target to texture name
-    //private static final Int2IntMap[] sBindTextures;
-
-    static {
-        /*Int2IntMap[] bindTextures = new Int2IntMap[32];
-        for (int i = 0; i < 32; i++) {
-            // since texture_2d is most commonly used, an array map would be faster
-            Int2IntMap o = new Int2IntArrayMap();
-            o.defaultReturnValue(DEFAULT_TEXTURE);
-            bindTextures[i] = o;
-        }
-        sBindTextures = bindTextures;*/
-    }
 
     private GLCore() {
         throw new UnsupportedOperationException();
     }
-
-    /*// call before initialization
-    public static synchronized void setRedirector(@NonNull Redirector redirector) {
-        if (sRedirector == null) {
-            sRedirector = redirector;
-        }
-    }*/
 
     @RenderThread
     public static void setupDebugCallback() {
@@ -151,101 +112,6 @@ public final class GLCore extends GL45C {
         }
     }
 
-    @RenderThread
-    private static void initialize(@NonNull GLCapabilities caps) {
-        Core.checkRenderThread();
-        if (sInitialized) {
-            return;
-        }
-
-        final List<String> unsupported;
-        if (!caps.OpenGL45) {
-            unsupported = new ArrayList<>();
-            // we don't check CONTEXT_PROFILE_MASK, we assume it's always core profile.
-            if (!caps.OpenGL32) {
-                throw new RuntimeException("OpenGL 3.2 core profile is unavailable");
-            }
-            if (!caps.OpenGL33) {
-                if (!caps.GL_ARB_explicit_attrib_location) {
-                    unsupported.add("ARB_explicit_attrib_location (OpenGL 3.3)");
-                }
-                if (!caps.GL_ARB_instanced_arrays) {
-                    unsupported.add("ARB_instanced_arrays (OpenGL 3.3)");
-                }
-                if (!caps.GL_ARB_texture_swizzle) {
-                    unsupported.add("ARB_texture_swizzle (OpenGL 3.3)");
-                }
-            }
-            if (!caps.OpenGL42) {
-                if (!caps.GL_ARB_base_instance) {
-                    unsupported.add("ARB_base_instance (OpenGL 4.2)");
-                }
-                if (!caps.GL_ARB_texture_storage) {
-                    unsupported.add("ARB_texture_storage (OpenGL 4.2)");
-                }
-            }
-            if (!caps.OpenGL43) {
-                if (!caps.GL_ARB_explicit_uniform_location) {
-                    unsupported.add("ARB_explicit_uniform_location (OpenGL 4.3)");
-                }
-                // we use the new API introduced in OpenGL 4.3, rather than glVertexAttrib*
-                if (!caps.GL_ARB_vertex_attrib_binding) {
-                    unsupported.add("ARB_vertex_attrib_binding (OpenGL 4.3)");
-                }
-            }
-            if (!caps.OpenGL44) {
-                if (!caps.GL_ARB_clear_texture) {
-                    unsupported.add("ARB_clear_texture (OpenGL 4.4)");
-                }
-            }
-            // DSA, OpenGL 4.5
-            if (!caps.GL_ARB_direct_state_access) {
-                unsupported.add("ARB_direct_state_access (OpenGL 4.5)");
-            }
-        } else {
-            unsupported = null;
-        }
-
-        // test optional extensions
-        if (caps.GL_NV_blend_equation_advanced) {
-            LOGGER.debug(MARKER, "NV blend equation advanced enabled");
-            if (caps.GL_NV_blend_equation_advanced_coherent) {
-                LOGGER.debug(MARKER, "NV blend equation advanced coherent enabled");
-            } else {
-                LOGGER.debug(MARKER, "NV blend equation advanced coherent disabled");
-            }
-        } else if (caps.GL_KHR_blend_equation_advanced) {
-            LOGGER.debug(MARKER, "KHR blend equation advanced enabled");
-            if (caps.GL_KHR_blend_equation_advanced_coherent) {
-                LOGGER.debug(MARKER, "KHR blend equation advanced coherent enabled");
-            } else {
-                LOGGER.debug(MARKER, "KHR blend equation advanced coherent disabled");
-            }
-        } else {
-            LOGGER.debug(MARKER, "NV or KHR blend equation advanced disabled");
-        }
-
-        if (unsupported != null && !unsupported.isEmpty()) {
-            for (String s : unsupported) {
-                LOGGER.fatal(MARKER, "{} is unavailable", s);
-            }
-            sUnsupportedList = unsupported;
-        } else if (unsupported != null) {
-            LOGGER.debug(MARKER, "Using OpenGL 4.5 ARB");
-        } else {
-            LOGGER.debug(MARKER, "Using OpenGL 4.5 Core");
-        }
-
-        /*if (sRedirector == null) {
-            sRedirector = () -> {
-            };
-        } else {
-            sRedirector.onInit();
-        }*/
-
-        sInitialized = true;
-    }
-
     private static void onDebugMessage(int source, int type, int id, int severity, int length, long message,
                                        long userParam) {
         switch (severity) {
@@ -263,10 +129,6 @@ public final class GLCore extends GL45C {
                     GLDebugMessageCallback.getMessage(length, message));
         }
     }
-
-    /*public static List<String> getUnsupportedList() {
-        return sUnsupportedList;
-    }*/
 
     /**
      * Show a dialog that lists unsupported extensions after initialized.
@@ -298,194 +160,11 @@ public final class GLCore extends GL45C {
     @RenderThread
     public static void resetFrame(@NonNull Window window) {
         Core.checkRenderThread();
-        /*sViewportStack.clear();
 
-        final Rect viewport = new Rect(0, 0, window.getWidth(), window.getHeight());
-        sViewportStack.push(viewport);*/
         glViewport(0, 0, window.getWidth(), window.getHeight());
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
-
-    /*
-     * Resets all OpenGL states managed by GLWrapper for compatibility.
-     */
-    /*public static void resetStates() {
-    }*/
-
-    /*@RenderThread
-    public static void bindFramebuffer(int framebuffer) {
-        if (framebuffer != sDrawFramebuffer || framebuffer != sReadFramebuffer) {
-            sDrawFramebuffer = sReadFramebuffer = framebuffer;
-            glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-        }
-    }
-
-    @RenderThread
-    public static void bindDrawFramebuffer(int framebuffer) {
-        if (framebuffer != sDrawFramebuffer) {
-            sDrawFramebuffer = framebuffer;
-            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer);
-        }
-    }
-
-    @RenderThread
-    public static void bindReadFramebuffer(int framebuffer) {
-        if (framebuffer != sReadFramebuffer) {
-            sReadFramebuffer = framebuffer;
-            glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer);
-        }
-    }*/
-
-    /*@RenderThread
-    public static void bindTexture(int target, int texture) {
-        if (sRedirector.bindTexture(target, texture))
-            return;
-        if (sBindTextures[sActiveTexture].put(target, texture) != texture)
-            glBindTexture(target, texture);
-    }*/
-
-    /*public static void bindTextureUnit(int unit, int texture) {
-
-    }*/
-
-    /*@RenderThread
-    public static void deleteTexture(int texture) {
-        int target = glGetTextureParameteri(texture, GL_TEXTURE_TARGET);
-        for (var m : sBindTextures)
-            if (m.get(target) == texture)
-                m.put(target, DEFAULT_TEXTURE);
-        glDeleteTextures(texture);
-    }*/
-
-    // r - the runnable that calls this method
-    /*public static void deleteTextureAsync(int texture, @Nullable Runnable r) {
-        if (Core.isOnRenderThread()) {
-            glDeleteTextures(texture);
-        } else {
-            Core.postOnRenderThread(Objects.requireNonNullElseGet(r,
-                    () -> () -> glDeleteTextures(texture)));
-        }
-    }*/
-
-    // select active texture unit, min 0-7, max 31, def 0
-    // the unit is passed to sampler
-    /*@RenderThread
-    public static void activeTexture(int unit) {
-        if (unit != sActiveTexture) {
-            sActiveTexture = unit;
-            glActiveTexture(GL_TEXTURE0 + unit);
-        }
-    }*/
-
-    // ret active texture unit 0-7, max 31, not GL_TEXTURE0[1-31]
-    // used for sampler value
-    /*@RenderThread
-    public static int getActiveTexture() {
-        return sActiveTexture;
-    }*/
-
-    /*public static void deleteBufferAsync(int buffer, @Nullable Runnable r) {
-        if (Core.isOnRenderThread()) {
-            glDeleteBuffers(buffer);
-        } else {
-            Core.postOnRenderThread(Objects.requireNonNullElseGet(r,
-                    () -> () -> glDeleteBuffers(buffer)));
-        }
-    }
-
-    public static void deleteFramebufferAsync(int framebuffer, @Nullable Runnable r) {
-        if (Core.isOnRenderThread()) {
-            glDeleteFramebuffers(framebuffer);
-        } else {
-            Core.postOnRenderThread(Objects.requireNonNullElseGet(r,
-                    () -> () -> glDeleteFramebuffers(framebuffer)));
-        }
-    }
-
-    public static void deleteRenderbufferAsync(int renderbuffer, @Nullable Runnable r) {
-        if (Core.isOnRenderThread()) {
-            glDeleteRenderbuffers(renderbuffer);
-        } else {
-            Core.postOnRenderThread(Objects.requireNonNullElseGet(r,
-                    () -> () -> glDeleteRenderbuffers(renderbuffer)));
-        }
-    }*/
-
-    /*@RenderThread
-    public static void bindVertexArray(int array) {
-        if (array != sVertexArray) {
-            sVertexArray = array;
-            glBindVertexArray(array);
-        }
-    }
-
-    @RenderThread
-    public static void enableCull() {
-        if (!sCullState) {
-            sCullState = true;
-            glEnable(GL_CULL_FACE);
-        }
-    }
-
-    @RenderThread
-    public static void disableCull() {
-        if (sCullState) {
-            sCullState = false;
-            glDisable(GL_CULL_FACE);
-        }
-    }*/
-
-    /*
-     * Specifies whether front- or back-facing facets are candidates for culling.
-     * Symbolic constants {@link #GL_FRONT}, {@link #GL_BACK}, and
-     * {@link #GL_FRONT_AND_BACK} are accepted. The initial value is {@link #GL_BACK}.
-     *
-     * @param mode culling mode
-     */
-    /*@RenderThread
-    public static void cullFace(int mode) {
-        if (mode != sCullMode) {
-            sCullMode = mode;
-            glCullFace(mode);
-        }
-    }*/
-
-    /*
-     * Use undefined shader program.
-     */
-    /*@RenderThread
-    public static void stopProgram() {
-        glUseProgram(0);
-    }*/
-
-    /*
-     * Applies a new viewport rect and pushes it into the stack.
-     *
-     * @param viewport the viewport rect.
-     */
-    /*@RenderThread
-    public static void pushViewport(@NonNull Rect viewport) {
-        if (viewport.isEmpty())
-            return;
-        final Rect top = sViewportStack.peek();
-        sViewportStack.push(viewport);
-        if (viewport.equals(top))
-            return;
-        glViewport(viewport.left, viewport.top, viewport.width(), viewport.height());
-    }*/
-
-    /*
-     * Applies the last viewport rect.
-     */
-    /*@RenderThread
-    public static void popViewport() {
-        final Rect last;
-        if (!Objects.equals(sViewportStack.peek(), last = sViewportStack.pop()))
-            glViewport(last.left, last.top, last.width(), last.height());
-        if (sViewportStack.isEmpty())
-            throw new IllegalStateException("Popping the main viewport");
-    }*/
 
     @NonNull
     private static String getDebugSource(int source) {
@@ -585,22 +264,6 @@ public final class GLCore extends GL45C {
             default -> APIUtil.apiUnknownToken(severity);
         };
     }
-
-    // redirect default methods, return true instead
-    /*@Deprecated
-    @FunctionalInterface
-    private interface Redirector {
-
-        void onInit();
-
-        default boolean bindTexture(int target, int texture) {
-            return false;
-        }
-
-        default boolean deleteTexture(int target, int texture) {
-            return false;
-        }
-    }*/
 
     public static void glClearErrors() {
         //noinspection StatementWithEmptyBody
@@ -824,13 +487,41 @@ public final class GLCore extends GL45C {
         };
     }
 
+    public static int glCompileShader(int shaderType,
+                                      ByteBuffer source,
+                                      ThreadSafePipelineBuilder.Stats stats,
+                                      PrintWriter pw) {
+        int shader = glCreateShader(shaderType);
+        if (shader == 0) {
+            return 0;
+        }
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            var string = stack.mallocPointer(1)
+                    .put(0, source);
+            var length = stack.mallocInt(1)
+                    .put(0, source.remaining());
+            glShaderSource(shader, string, length);
+        }
+
+        glCompileShader(shader);
+        stats.incShaderCompilations();
+
+        if (glGetShaderi(shader, GL_COMPILE_STATUS) == GL_FALSE) {
+            String log = glGetShaderInfoLog(shader, 8192).trim();
+            glDeleteShader(shader);
+            handleCompileError(pw, MemoryUtil.memUTF8(source), log);
+            return 0;
+        }
+
+        return shader;
+    }
+
     public static int glCompileAndAttachShader(int program,
-                                               int type,
+                                               int shaderType,
                                                String source,
                                                ThreadSafePipelineBuilder.Stats stats,
-                                               ShaderErrorHandler errorHandler) {
-        // Specify GLSL source to the driver.
-        int shader = glCreateShader(type);
+                                               PrintWriter pw) {
+        int shader = glCreateShader(shaderType);
         if (shader == 0) {
             return 0;
         }
@@ -840,14 +531,26 @@ public final class GLCore extends GL45C {
         stats.incShaderCompilations();
 
         if (glGetShaderi(shader, GL_COMPILE_STATUS) == GL_FALSE) {
-            String log = glGetShaderInfoLog(shader).trim();
+            String log = glGetShaderInfoLog(shader, 8192).trim();
             glDeleteShader(shader);
-            errorHandler.handleCompileError(source, log);
+            handleCompileError(pw, source, log);
             return 0;
         }
 
         // Attach the shader, but defer deletion until after we have linked the program.
         glAttachShader(program, shader);
         return shader;
+    }
+
+    public static void handleCompileError(PrintWriter pw, String shader, String errors) {
+        pw.println("Shader compilation error");
+        pw.println("------------------------");
+        String[] lines = shader.split("\n");
+        for (int i = 0; i < lines.length; ++i) {
+            pw.printf(Locale.ROOT, "%4s\t%s\n", i + 1, lines[i]);
+        }
+        pw.println("Errors:");
+        pw.println(errors);
+        assert false;
     }
 }

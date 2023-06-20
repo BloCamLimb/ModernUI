@@ -35,6 +35,7 @@ import org.lwjgl.opengl.GL;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.concurrent.NotThreadSafe;
+import java.io.IOException;
 import java.nio.*;
 import java.util.*;
 
@@ -149,36 +150,30 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     /**
-     * Shader programs
+     * Pipelines.
      */
-    public final GLProgram COLOR_FILL = new GLProgram();
-    public final GLProgram COLOR_TEX = new GLProgram();
-    public final GLProgram ROUND_RECT_FILL = new GLProgram();
-    public final GLProgram ROUND_RECT_TEX = new GLProgram();
-    public final GLProgram ROUND_RECT_STROKE = new GLProgram();
-    public final GLProgram CIRCLE_FILL = new GLProgram();
-    public final GLProgram CIRCLE_STROKE = new GLProgram();
-    public final GLProgram ARC_FILL = new GLProgram();
-    public final GLProgram ARC_STROKE = new GLProgram();
-    public final GLProgram BEZIER_CURVE = new GLProgram();
-    public final GLProgram ALPHA_TEX = new GLProgram();
-    public final GLProgram COLOR_TEX_PRE = new GLProgram();
-    public final GLProgram GLOW_WAVE = new GLProgram();
-    public final GLProgram PIE_FILL = new GLProgram();
-    public final GLProgram PIE_STROKE = new GLProgram();
-    public final GLProgram ROUND_LINE_FILL = new GLProgram();
-    public final GLProgram ROUND_LINE_STROKE = new GLProgram();
-
-    private boolean mShadersFrozen = false;
+    private GLPipeline COLOR_FILL;
+    private GLPipeline COLOR_TEX;
+    private GLPipeline ROUND_RECT_FILL;
+    private GLPipeline ROUND_RECT_TEX;
+    private GLPipeline ROUND_RECT_STROKE;
+    private GLPipeline CIRCLE_FILL;
+    private GLPipeline CIRCLE_STROKE;
+    private GLPipeline ARC_FILL;
+    private GLPipeline ARC_STROKE;
+    private GLPipeline BEZIER_CURVE;
+    private GLPipeline ALPHA_TEX;
+    private GLPipeline COLOR_TEX_PRE;
+    private GLPipeline GLOW_WAVE;
+    private GLPipeline PIE_FILL;
+    private GLPipeline PIE_STROKE;
+    private GLPipeline ROUND_LINE_FILL;
+    private GLPipeline ROUND_LINE_STROKE;
 
     /**
-     * @see #mTextureRectPipe
+     * pos vec2 + color ubyte4 + uv vec2
      */
     public static final int TEXTURE_RECT_VERTEX_SIZE = 20;
-
-    private final GLPipeline mColorRectPipe;
-    private final GLPipeline mTextureRectPipe;
-    private final GLPipeline mGlyphPipe;
 
     // recorded operations
     private final ByteArrayList mDrawOps = new ByteArrayList();
@@ -245,12 +240,12 @@ public final class GLSurfaceCanvas extends GLCanvas {
     private final Matrix4 mProjection = new Matrix4();
     private final FloatBuffer mProjectionUpload = memAllocFloat(16);
 
-    private final GLServer mServer;
+    private final GLDevice mGLDevice;
 
     private boolean mNeedsTexBinding;
 
     @RenderThread
-    public GLSurfaceCanvas(GLServer server) {
+    public GLSurfaceCanvas(GLDevice device) {
         /*mProjectionUBO = glCreateBuffers();
         glNamedBufferStorage(mProjectionUBO, PROJECTION_UNIFORM_SIZE, GL_DYNAMIC_STORAGE_BIT);
 
@@ -266,7 +261,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         mArcUBO = glCreateBuffers();
         glNamedBufferStorage(mArcUBO, ARC_UNIFORM_SIZE, GL_DYNAMIC_STORAGE_BIT);*/
 
-        mServer = server;
+        mGLDevice = device;
 
         mMatrixUBO.allocate(MATRIX_UNIFORM_SIZE);
         mSmoothUBO.allocate(SMOOTH_UNIFORM_SIZE);
@@ -275,18 +270,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
         mCircleUBO.allocate(CIRCLE_UNIFORM_SIZE);
         mRoundRectUBO.allocate(ROUND_RECT_UNIFORM_SIZE);
 
-        mColorRectPipe = GLPipeline.make(server,
-                new DefaultGeoProc(DefaultGeoProc.FLAG_COLOR_ATTRIBUTE), 0);
-        {
-            var gp = new DefaultGeoProc(DefaultGeoProc.FLAG_COLOR_ATTRIBUTE | DefaultGeoProc.FLAG_TEX_COORD_ATTRIBUTE);
-            assert gp.vertexStride() == TEXTURE_RECT_VERTEX_SIZE;
-            mTextureRectPipe = GLPipeline.make(server, gp, 0);
-        }
-        mGlyphPipe = GLPipeline.make(server,
-                new DefaultGeoProc(DefaultGeoProc.FLAG_TEX_COORD_ATTRIBUTE), 0);
-
         mLinearSampler = Objects.requireNonNull(
-                server.getResourceProvider().findOrCreateCompatibleSampler(SamplerState.DEFAULT),
+                device.getResourceProvider().findOrCreateCompatibleSampler(SamplerState.DEFAULT),
                 "Failed to create font sampler");
 
         {
@@ -304,7 +289,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             }
             indices.flip();
             mGlyphIndexBuffer = Objects.requireNonNull(
-                    GLBuffer.make(server, indices.capacity(),
+                    GLBuffer.make(device, indices.capacity(),
                             Engine.BufferUsageFlags.kStatic |
                                     Engine.BufferUsageFlags.kIndex),
                     "Failed to create index buffer for glyph mesh");
@@ -318,14 +303,14 @@ public final class GLSurfaceCanvas extends GLCanvas {
 
         mSaves.push(new Save());
 
-        GLShaderManager.getInstance().addListener(this::onLoadShaders);
+        loadPipelines();
     }
 
     @RenderThread
     public static GLSurfaceCanvas initialize() {
         Core.checkRenderThread();
         if (sInstance == null) {
-            sInstance = new GLSurfaceCanvas((GLServer) Core.getDirectContext().getServer());
+            sInstance = new GLSurfaceCanvas((GLDevice) Core.getDirectContext().getDevice());
             /*POS_COLOR.setBindingDivisor(INSTANCED_BINDING, 1);
             POS_COLOR_TEX.setBindingDivisor(INSTANCED_BINDING, 1);*/
         }
@@ -341,10 +326,23 @@ public final class GLSurfaceCanvas extends GLCanvas {
         return sInstance;
     }
 
-    private void onLoadShaders(@NonNull GLShaderManager manager) {
-        if (mShadersFrozen) {
-            return;
+    //@formatter:off
+    private void loadPipelines() {
+
+        GLVertexArray aPosColor = GLVertexArray.make(mGLDevice,
+                new DefaultGeoProc(DefaultGeoProc.FLAG_COLOR_ATTRIBUTE));
+        GLVertexArray aPosColorUV;
+        {
+            var gp = new DefaultGeoProc(DefaultGeoProc.FLAG_COLOR_ATTRIBUTE |
+                    DefaultGeoProc.FLAG_TEX_COORD_ATTRIBUTE);
+            assert gp.vertexStride() == TEXTURE_RECT_VERTEX_SIZE;
+            aPosColorUV = GLVertexArray.make(mGLDevice, gp);
         }
+        GLVertexArray aPosUV = GLVertexArray.make(mGLDevice,
+                new DefaultGeoProc(DefaultGeoProc.FLAG_TEX_COORD_ATTRIBUTE));
+        Objects.requireNonNull(aPosColor);
+        Objects.requireNonNull(aPosColorUV);
+        Objects.requireNonNull(aPosUV);
 
         int posColor;
         int posColorTex;
@@ -368,195 +366,261 @@ public final class GLSurfaceCanvas extends GLCanvas {
         int roundLineFill;
         int roundLineStroke;
 
-        boolean compat = !GL.getCapabilities().OpenGL45;
+        boolean compat = !mGLDevice.getCaps().hasDSASupport();
 
-        if (!compat) {
-            posColor = manager.getStage(ModernUI.ID, "pos_color.vert");
-            posColorTex = manager.getStage(ModernUI.ID, "pos_color_tex.vert");
-            posTex = manager.getStage(ModernUI.ID, "pos_tex.vert");
+        posColor    = createStage( "pos_color.vert", compat);
+        posColorTex = createStage( "pos_color_tex.vert", compat);
+        posTex      = createStage( "pos_tex.vert", compat);
 
-            colorFill = manager.getStage(ModernUI.ID, "color_fill.frag");
-            colorTex = manager.getStage(ModernUI.ID, "color_tex.frag");
-            roundRectFill = manager.getStage(ModernUI.ID, "round_rect_fill.frag");
-            roundRectTex = manager.getStage(ModernUI.ID, "round_rect_tex.frag");
-            roundRectStroke = manager.getStage(ModernUI.ID, "round_rect_stroke.frag");
-            circleFill = manager.getStage(ModernUI.ID, "circle_fill.frag");
-            circleStroke = manager.getStage(ModernUI.ID, "circle_stroke.frag");
-            arcFill = manager.getStage(ModernUI.ID, "arc_fill.frag");
-            arcStroke = manager.getStage(ModernUI.ID, "arc_stroke.frag");
-            quadBezier = manager.getStage(ModernUI.ID, "quadratic_bezier.frag");
-            alphaTex = manager.getStage(ModernUI.ID, "alpha_tex.frag");
-            colorTexPre = manager.getStage(ModernUI.ID, "color_tex_pre.frag");
-            glowWave = manager.getStage(ModernUI.ID, "glow_wave.frag");
-            pieFill = manager.getStage(ModernUI.ID, "pie_fill.frag");
-            pieStroke = manager.getStage(ModernUI.ID, "pie_stroke.frag");
-            roundLineFill = manager.getStage(ModernUI.ID, "round_line_fill.frag");
-            roundLineStroke = manager.getStage(ModernUI.ID, "round_line_stroke.frag");
+        colorFill       = createStage( "color_fill.frag", compat);
+        colorTex        = createStage( "color_tex.frag", compat);
+        roundRectFill   = createStage( "round_rect_fill.frag", compat);
+        roundRectTex    = createStage( "round_rect_tex.frag", compat);
+        roundRectStroke = createStage( "round_rect_stroke.frag", compat);
+        circleFill      = createStage( "circle_fill.frag", compat);
+        circleStroke    = createStage( "circle_stroke.frag", compat);
+        arcFill         = createStage( "arc_fill.frag", compat);
+        arcStroke       = createStage( "arc_stroke.frag", compat);
+        quadBezier      = createStage( "quadratic_bezier.frag", compat);
+        alphaTex        = createStage( "alpha_tex.frag", compat);
+        colorTexPre     = createStage( "color_tex_pre.frag", compat);
+        glowWave        = createStage( "glow_wave.frag", compat);
+        pieFill         = createStage( "pie_fill.frag", compat);
+        pieStroke       = createStage( "pie_stroke.frag", compat);
+        roundLineFill   = createStage( "round_line_fill.frag", compat);
+        roundLineStroke = createStage( "round_line_stroke.frag", compat);
+
+        int pColorFill          = createProgram(posColor,    colorFill);
+        int pColorTex           = createProgram(posColorTex, colorTex);
+        int pRoundRectFill      = createProgram(posColor,    roundRectFill);
+        int pRoundRectTex       = createProgram(posColorTex, roundRectTex);
+        int pRoundRectStroke    = createProgram(posColor,    roundRectStroke);
+        int pCircleFill         = createProgram(posColor,    circleFill);
+        int pCircleStroke       = createProgram(posColor,    circleStroke);
+        int pArcFill            = createProgram(posColor,    arcFill);
+        int pArcStroke          = createProgram(posColor,    arcStroke);
+        int pBezierCurve        = createProgram(posColor,    quadBezier);
+        int pAlphaTex           = createProgram(posTex,      alphaTex);
+        int pColorTexPre        = createProgram(posColorTex, colorTexPre);
+        int pGlowWave           = createProgram(posColor,    glowWave);
+        int pPieFill            = createProgram(posColor,    pieFill);
+        int pPieStroke          = createProgram(posColor,    pieStroke);
+        int pRoundLineFill      = createProgram(posColor,    roundLineFill);
+        int pRoundLineStroke    = createProgram(posColor,    roundLineStroke);
+
+        boolean success = pColorFill != 0 &&
+        pColorTex != 0 &&
+                pRoundRectFill != 0 &&
+        pRoundRectTex != 0 &&
+                pRoundRectStroke != 0 &&
+        pCircleFill != 0 &&
+                pCircleStroke != 0 &&
+        pArcFill != 0 &&
+                pArcStroke != 0 &&
+        pBezierCurve != 0 &&
+                pAlphaTex != 0 &&
+        pColorTexPre != 0 &&
+                pGlowWave != 0 &&
+        pPieFill != 0 &&
+                pPieStroke != 0 &&
+        pRoundLineFill != 0 &&
+                pRoundLineStroke != 0;
+
+        if (!success) {
+            throw new RuntimeException("Failed to link shader programs");
+        }
+
+        // manually bind
+        if (compat) {
+            bindProgramMatrixBlock(pColorFill);
+            bindProgramFragLocation(pColorFill);
+
+            bindProgramMatrixBlock( pColorTex);
+            bindProgramFragLocation(pColorTex);
+
+            bindProgramMatrixBlock( pColorTexPre);
+            bindProgramFragLocation(pColorTexPre);
+
+            bindProgramMatrixBlock( pAlphaTex);
+            bindProgramFragLocation(pAlphaTex);
+
+            bindProgramMatrixBlock( pGlowWave);
+            bindProgramFragLocation(pGlowWave);
+
+            bindProgramMatrixBlock( pArcFill);
+            bindProgramFragLocation(pArcFill);
+            bindProgramArcBlock(    pArcFill);
+            bindProgramSmoothBlock( pArcFill);
+
+            bindProgramMatrixBlock( pArcStroke);
+            bindProgramFragLocation(pArcStroke);
+            bindProgramArcBlock(    pArcStroke);
+            bindProgramSmoothBlock( pArcStroke);
+
+            bindProgramMatrixBlock( pPieFill);
+            bindProgramFragLocation(pPieFill);
+            bindProgramArcBlock(    pPieFill);
+            bindProgramSmoothBlock( pPieFill);
+
+            bindProgramMatrixBlock( pPieStroke);
+            bindProgramFragLocation(pPieStroke);
+            bindProgramArcBlock(    pPieStroke);
+            bindProgramSmoothBlock( pPieStroke);
+
+            bindProgramMatrixBlock( pBezierCurve);
+            bindProgramFragLocation(pBezierCurve);
+            int c3 = glGetUniformBlockIndex(pBezierCurve, "PaintBlock");
+            glUniformBlockBinding(pBezierCurve, c3, 3);
+            bindProgramSmoothBlock(pBezierCurve);
+
+            bindProgramMatrixBlock( pCircleFill);
+            bindProgramFragLocation(pCircleFill);
+            bindProgramCircleBlock( pCircleFill);
+            bindProgramSmoothBlock( pCircleFill);
+
+            bindProgramMatrixBlock( pCircleStroke);
+            bindProgramFragLocation(pCircleStroke);
+            bindProgramCircleBlock( pCircleStroke);
+            bindProgramSmoothBlock( pCircleStroke);
+
+            bindProgramMatrixBlock(   pRoundLineFill);
+            bindProgramFragLocation(  pRoundLineFill);
+            bindProgramRoundRectBlock(pRoundLineFill);
+            bindProgramSmoothBlock(   pRoundLineFill);
+
+            bindProgramMatrixBlock(   pRoundLineStroke);
+            bindProgramFragLocation(  pRoundLineStroke);
+            bindProgramRoundRectBlock(pRoundLineStroke);
+            bindProgramSmoothBlock(   pRoundLineStroke);
+
+            bindProgramMatrixBlock(   pRoundRectFill);
+            bindProgramFragLocation(  pRoundRectFill);
+            bindProgramRoundRectBlock(pRoundRectFill);
+            bindProgramSmoothBlock(   pRoundRectFill);
+
+            bindProgramMatrixBlock(   pRoundRectStroke);
+            bindProgramFragLocation(  pRoundRectStroke);
+            bindProgramRoundRectBlock(pRoundRectStroke);
+            bindProgramSmoothBlock(   pRoundRectStroke);
+
+            bindProgramMatrixBlock(   pRoundRectTex);
+            bindProgramFragLocation(  pRoundRectTex);
+            bindProgramRoundRectBlock(pRoundRectTex);
+            bindProgramSmoothBlock(   pRoundRectTex);
+
+            mNeedsTexBinding = true;
+        }
+
+        COLOR_FILL = new GLPipeline(mGLDevice, pColorFill, RefCnt.create(aPosColor));
+        COLOR_TEX  = new GLPipeline(mGLDevice, pColorTex,  RefCnt.create(aPosColorUV));
+        ROUND_RECT_FILL   = new GLPipeline(mGLDevice, pRoundRectFill, RefCnt.create(aPosColor));
+        ROUND_RECT_TEX    = new GLPipeline(mGLDevice, pRoundRectTex, RefCnt.create(aPosColorUV));
+        ROUND_RECT_STROKE = new GLPipeline(mGLDevice, pRoundRectStroke, RefCnt.create(aPosColor));
+        CIRCLE_FILL   = new GLPipeline(mGLDevice, pCircleFill,   RefCnt.create(aPosColor));
+        CIRCLE_STROKE = new GLPipeline(mGLDevice, pCircleStroke, RefCnt.create(aPosColor));
+        ARC_FILL   = new GLPipeline(mGLDevice, pArcFill,   RefCnt.create(aPosColor));
+        ARC_STROKE = new GLPipeline(mGLDevice, pArcStroke, RefCnt.create(aPosColor));
+        BEZIER_CURVE = new GLPipeline(mGLDevice, pBezierCurve, RefCnt.create(aPosColor));
+        ALPHA_TEX = new GLPipeline(mGLDevice, pAlphaTex, RefCnt.create(aPosUV));
+        COLOR_TEX_PRE = new GLPipeline(mGLDevice, pColorTexPre, RefCnt.create(aPosColorUV));
+        GLOW_WAVE = new GLPipeline(mGLDevice, pGlowWave, RefCnt.create(aPosColor));
+        PIE_FILL = new GLPipeline(mGLDevice, pPieFill, RefCnt.create(aPosColor));
+        PIE_STROKE = new GLPipeline(mGLDevice, pPieStroke, RefCnt.create(aPosColor));
+        ROUND_LINE_FILL = new GLPipeline(mGLDevice, pRoundLineFill, RefCnt.create(aPosColor));
+        ROUND_LINE_STROKE = new GLPipeline(mGLDevice, pRoundLineStroke, RefCnt.create(aPosColor));
+
+        RefCnt.move(aPosColor);
+        RefCnt.move(aPosColorUV);
+        RefCnt.move(aPosUV);
+
+        System.out.println("Loaded OpenGL canvas shaders, compatibility mode: " + compat);
+    }
+    //@formatter:on
+
+    private int createStage(String entry, boolean compat) {
+        int sp = entry.length() - 5;
+        String path = "shaders/" + (compat
+                ? entry.substring(0, sp) + "_330" + entry.substring(sp)
+                : entry);
+        int type;
+        if (entry.endsWith(".vert")) {
+            type = GLCore.GL_VERTEX_SHADER;
+        } else if (entry.endsWith(".frag")) {
+            type = GLCore.GL_FRAGMENT_SHADER;
+        } else if (entry.endsWith(".geom")) {
+            type = GL_GEOMETRY_SHADER;
         } else {
-            posColor = manager.getStage(ModernUI.ID, "pos_color_330.vert");
-            posColorTex = manager.getStage(ModernUI.ID, "pos_color_tex_330.vert");
-            posTex = manager.getStage(ModernUI.ID, "pos_tex_330.vert");
-
-            colorFill = manager.getStage(ModernUI.ID, "color_fill_330.frag");
-            colorTex = manager.getStage(ModernUI.ID, "color_tex_330.frag");
-            roundRectFill = manager.getStage(ModernUI.ID, "round_rect_fill_330.frag");
-            roundRectTex = manager.getStage(ModernUI.ID, "round_rect_tex_330.frag");
-            roundRectStroke = manager.getStage(ModernUI.ID, "round_rect_stroke_330.frag");
-            circleFill = manager.getStage(ModernUI.ID, "circle_fill_330.frag");
-            circleStroke = manager.getStage(ModernUI.ID, "circle_stroke_330.frag");
-            arcFill = manager.getStage(ModernUI.ID, "arc_fill_330.frag");
-            arcStroke = manager.getStage(ModernUI.ID, "arc_stroke_330.frag");
-            quadBezier = manager.getStage(ModernUI.ID, "quadratic_bezier_330.frag");
-            alphaTex = manager.getStage(ModernUI.ID, "alpha_tex_330.frag");
-            colorTexPre = manager.getStage(ModernUI.ID, "color_tex_pre_330.frag");
-            glowWave = manager.getStage(ModernUI.ID, "glow_wave_330.frag");
-            pieFill = manager.getStage(ModernUI.ID, "pie_fill_330.frag");
-            pieStroke = manager.getStage(ModernUI.ID, "pie_stroke_330.frag");
-            roundLineFill = manager.getStage(ModernUI.ID, "round_line_fill_330.frag");
-            roundLineStroke = manager.getStage(ModernUI.ID, "round_line_stroke_330.frag");
+            throw new RuntimeException();
         }
-
-        boolean success = true;
-
-        success &= manager.create(COLOR_FILL, posColor, colorFill);
-        success &= manager.create(COLOR_TEX, posColorTex, colorTex);
-        success &= manager.create(ROUND_RECT_FILL, posColor, roundRectFill);
-        success &= manager.create(ROUND_RECT_TEX, posColorTex, roundRectTex);
-        success &= manager.create(ROUND_RECT_STROKE, posColor, roundRectStroke);
-        success &= manager.create(CIRCLE_FILL, posColor, circleFill);
-        success &= manager.create(CIRCLE_STROKE, posColor, circleStroke);
-        success &= manager.create(ARC_FILL, posColor, arcFill);
-        success &= manager.create(ARC_STROKE, posColor, arcStroke);
-        success &= manager.create(BEZIER_CURVE, posColor, quadBezier);
-        success &= manager.create(ALPHA_TEX, posTex, alphaTex);
-        success &= manager.create(COLOR_TEX_PRE, posColorTex, colorTexPre);
-        success &= manager.create(GLOW_WAVE, posColor, glowWave);
-        success &= manager.create(PIE_FILL, posColor, pieFill);
-        success &= manager.create(PIE_STROKE, posColor, pieStroke);
-        success &= manager.create(ROUND_LINE_FILL, posColor, roundLineFill);
-        success &= manager.create(ROUND_LINE_STROKE, posColor, roundLineStroke);
-
-        if (success) {
-            mShadersFrozen = true;
-
-            // manually bind
-            if (compat) {
-                bindProgramMatrixBlock(COLOR_FILL);
-                bindProgramFragLocation(COLOR_FILL);
-
-                bindProgramMatrixBlock(COLOR_TEX);
-                bindProgramFragLocation(COLOR_TEX);
-
-                bindProgramMatrixBlock(COLOR_TEX_PRE);
-                bindProgramFragLocation(COLOR_TEX_PRE);
-
-                bindProgramMatrixBlock(ALPHA_TEX);
-                bindProgramFragLocation(ALPHA_TEX);
-
-                bindProgramMatrixBlock(GLOW_WAVE);
-                bindProgramFragLocation(GLOW_WAVE);
-
-                bindProgramMatrixBlock(ARC_FILL);
-                bindProgramFragLocation(ARC_FILL);
-                bindProgramArcBlock(ARC_FILL);
-                bindProgramSmoothBlock(ARC_FILL);
-
-                bindProgramMatrixBlock(ARC_STROKE);
-                bindProgramFragLocation(ARC_STROKE);
-                bindProgramArcBlock(ARC_STROKE);
-                bindProgramSmoothBlock(ARC_STROKE);
-
-                bindProgramMatrixBlock(PIE_FILL);
-                bindProgramFragLocation(PIE_FILL);
-                bindProgramArcBlock(PIE_FILL);
-                bindProgramSmoothBlock(PIE_FILL);
-
-                bindProgramMatrixBlock(PIE_STROKE);
-                bindProgramFragLocation(PIE_STROKE);
-                bindProgramArcBlock(PIE_STROKE);
-                bindProgramSmoothBlock(PIE_STROKE);
-
-                bindProgramMatrixBlock(BEZIER_CURVE);
-                bindProgramFragLocation(BEZIER_CURVE);
-                int c3 = glGetUniformBlockIndex(BEZIER_CURVE.get(), "PaintBlock");
-                glUniformBlockBinding(BEZIER_CURVE.get(), c3, 3);
-                bindProgramSmoothBlock(BEZIER_CURVE);
-
-                bindProgramMatrixBlock(CIRCLE_FILL);
-                bindProgramFragLocation(CIRCLE_FILL);
-                bindProgramCircleBlock(CIRCLE_FILL);
-                bindProgramSmoothBlock(CIRCLE_FILL);
-
-                bindProgramMatrixBlock(CIRCLE_STROKE);
-                bindProgramFragLocation(CIRCLE_STROKE);
-                bindProgramCircleBlock(CIRCLE_STROKE);
-                bindProgramSmoothBlock(CIRCLE_STROKE);
-
-                bindProgramMatrixBlock(ROUND_LINE_FILL);
-                bindProgramFragLocation(ROUND_LINE_FILL);
-                bindProgramRoundRectBlock(ROUND_LINE_FILL);
-                bindProgramSmoothBlock(ROUND_LINE_FILL);
-
-                bindProgramMatrixBlock(ROUND_LINE_STROKE);
-                bindProgramFragLocation(ROUND_LINE_STROKE);
-                bindProgramRoundRectBlock(ROUND_LINE_STROKE);
-                bindProgramSmoothBlock(ROUND_LINE_STROKE);
-
-                bindProgramMatrixBlock(ROUND_RECT_FILL);
-                bindProgramFragLocation(ROUND_RECT_FILL);
-                bindProgramRoundRectBlock(ROUND_RECT_FILL);
-                bindProgramSmoothBlock(ROUND_RECT_FILL);
-
-                bindProgramMatrixBlock(ROUND_RECT_STROKE);
-                bindProgramFragLocation(ROUND_RECT_STROKE);
-                bindProgramRoundRectBlock(ROUND_RECT_STROKE);
-                bindProgramSmoothBlock(ROUND_RECT_STROKE);
-
-                bindProgramMatrixBlock(ROUND_RECT_TEX);
-                bindProgramFragLocation(ROUND_RECT_TEX);
-                bindProgramRoundRectBlock(ROUND_RECT_TEX);
-                bindProgramSmoothBlock(ROUND_RECT_TEX);
-
-                mNeedsTexBinding = true;
-            }
-
-            System.out.println("Loaded OpenGL canvas shaders, compatibility mode: " + compat);
+        ByteBuffer source = null;
+        try (var stream = ModernUI.getInstance().getResourceStream(ModernUI.ID, path)) {
+            source = Core.readIntoNativeBuffer(stream).flip();
+            return GLCore.glCompileShader(type, source,
+                    mGLDevice.getPipelineBuilder().getStates(),
+                    mGLDevice.getContext().getErrorWriter());
+        } catch (IOException e) {
+            ModernUI.LOGGER.error(GLCore.MARKER, "Failed to get shader source {}:{}\n", ModernUI.ID, path, e);
+        } finally {
+            MemoryUtil.memFree(source);
         }
+        return 0;
     }
 
-    private void bindProgramMatrixBlock(GLProgram program) {
-        int c0 = glGetUniformBlockIndex(program.get(), "MatrixBlock");
-        glUniformBlockBinding(program.get(), c0, 0);
+    public int createProgram(int... stages) {
+        int program = GLCore.glCreateProgram();
+        if (program == 0) {
+            return 0;
+        }
+        for (int s : stages) {
+            GLCore.glAttachShader(program, s);
+        }
+        GLCore.glLinkProgram(program);
+        if (GLCore.glGetProgrami(program, GLCore.GL_LINK_STATUS) == GL_FALSE) {
+            String log = GLCore.glGetProgramInfoLog(program, 8192);
+            ModernUI.LOGGER.error(GLCore.MARKER, "Failed to link shader program\n{}", log);
+            // also detaches all shaders
+            GLCore.glDeleteProgram(program);
+            return 0;
+        }
+        for (int s : stages) {
+            GLCore.glDetachShader(program, s);
+        }
+        return program;
     }
 
-    private void bindProgramSmoothBlock(GLProgram program) {
-        int c1 = glGetUniformBlockIndex(program.get(), "SmoothBlock");
-        glUniformBlockBinding(program.get(), c1, 1);
+    private void bindProgramMatrixBlock(int program) {
+        int c0 = glGetUniformBlockIndex(program, "MatrixBlock");
+        glUniformBlockBinding(program, c0, 0);
     }
 
-    private void bindProgramArcBlock(GLProgram program) {
-        int c2 = glGetUniformBlockIndex(program.get(), "PaintBlock");
-        glUniformBlockBinding(program.get(), c2, 2);
+    private void bindProgramSmoothBlock(int program) {
+        int c1 = glGetUniformBlockIndex(program, "SmoothBlock");
+        glUniformBlockBinding(program, c1, 1);
     }
 
-    private void bindProgramCircleBlock(GLProgram program) {
-        int c4 = glGetUniformBlockIndex(program.get(), "PaintBlock");
-        glUniformBlockBinding(program.get(), c4, 4);
+    private void bindProgramArcBlock(int program) {
+        int c2 = glGetUniformBlockIndex(program, "PaintBlock");
+        glUniformBlockBinding(program, c2, 2);
     }
 
-    private void bindProgramRoundRectBlock(GLProgram program) {
-        int c5 = glGetUniformBlockIndex(program.get(), "PaintBlock");
-        glUniformBlockBinding(program.get(), c5, 5);
+    private void bindProgramCircleBlock(int program) {
+        int c4 = glGetUniformBlockIndex(program, "PaintBlock");
+        glUniformBlockBinding(program, c4, 4);
     }
 
-    private void bindProgramFragLocation(GLProgram program) {
+    private void bindProgramRoundRectBlock(int program) {
+        int c5 = glGetUniformBlockIndex(program, "PaintBlock");
+        glUniformBlockBinding(program, c5, 5);
+    }
+
+    private void bindProgramFragLocation(int program) {
         // we use draw buffer 0
-        glBindFragDataLocation(program.get(), 0, "fragColor");
+        glBindFragDataLocation(program, 0, "fragColor");
     }
 
-    private void bindProgramTexBinding(GLProgram program) {
-        glUseProgram(program.get());
-        int u0 = glGetUniformLocation(program.get(), "u_Sampler");
+    private void bindProgramTexBinding(int program) {
+        glUseProgram(program);
+        int u0 = glGetUniformLocation(program, "u_Sampler");
         glUniform1i(u0, 0); // <- the texture unit is 0
     }
 
@@ -573,9 +637,23 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     public void destroy() {
-        mColorRectPipe.unref();
-        mTextureRectPipe.unref();
-        mGlyphPipe.unref();
+        COLOR_FILL.unref();
+        COLOR_TEX.unref();
+        ROUND_RECT_FILL.unref();
+        ROUND_RECT_TEX.unref();
+        ROUND_RECT_STROKE.unref();
+        CIRCLE_FILL.unref();
+        CIRCLE_STROKE.unref();
+        ARC_FILL.unref();
+        ARC_STROKE.unref();
+        BEZIER_CURVE.unref();
+        ALPHA_TEX.unref();
+        COLOR_TEX_PRE.unref();
+        GLOW_WAVE.unref();
+        PIE_FILL.unref();
+        PIE_STROKE.unref();
+        ROUND_LINE_FILL.unref();
+        ROUND_LINE_STROKE.unref();
 
         mLinearSampler.unref();
         mTextures.forEach(o -> {
@@ -600,17 +678,18 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     @RenderThread
-    public void bindPipeline(GLPipeline pp, GLProgram prg) {
-        int array = pp.getVertexArray();
+    public GLPipeline bindPipeline(GLPipeline pipe) {
+        int array = pipe.getVertexArray();
         if (mCurrVertexArray != array) {
             glBindVertexArray(array);
             mCurrVertexArray = array;
         }
-        int program = prg.get();
+        int program = pipe.getProgram();
         if (mCurrProgram != program) {
             glUseProgram(program);
             mCurrProgram = program;
         }
+        return pipe;
     }
 
     @RenderThread
@@ -643,7 +722,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             var proxy = view.getProxy();
             boolean success = true;
             if (!proxy.isInstantiated()) {
-                var resourceProvider = mServer.getContext().getResourceProvider();
+                var resourceProvider = mGLDevice.getContext().getResourceProvider();
                 success = proxy.doLazyInstantiation(resourceProvider);
             }
             if (success) {
@@ -651,7 +730,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                 bindSampler(mLinearSampler);
                 bindTexture(glTex.getHandle());
 
-                mServer.generateMipmaps(glTex);
+                mGLDevice.generateMipmaps(glTex);
 
                 var swizzle = view.getSwizzle();
                 var parameters = glTex.getParameters();
@@ -696,7 +775,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         if (getSaveCount() != 1) {
             throw new IllegalStateException("Unbalanced save-restore pair: " + getSaveCount());
         }
-        mServer.markContextDirty(Engine.GLBackendState.kPipeline);
+        mGLDevice.markContextDirty(Engine.GLBackendState.kPipeline);
 
         // upload projection matrix
         mMatrixUBO.upload(0, 64, memAddress(mProjectionUpload.flip()));
@@ -704,10 +783,10 @@ public final class GLSurfaceCanvas extends GLCanvas {
         uploadVertexBuffers();
 
         if (mNeedsTexBinding) {
-            bindProgramTexBinding(ALPHA_TEX);
-            bindProgramTexBinding(COLOR_TEX);
-            bindProgramTexBinding(COLOR_TEX_PRE);
-            bindProgramTexBinding(ROUND_RECT_TEX);
+            bindProgramTexBinding(ALPHA_TEX.getProgram());
+            bindProgramTexBinding(COLOR_TEX.getProgram());
+            bindProgramTexBinding(COLOR_TEX_PRE.getProgram());
+            bindProgramTexBinding(ROUND_RECT_TEX.getProgram());
             mNeedsTexBinding = false;
         }
 
@@ -750,38 +829,38 @@ public final class GLSurfaceCanvas extends GLCanvas {
         for (int op : mDrawOps) {
             switch (op) {
                 case DRAW_PRIM -> {
-                    bindPipeline(mColorRectPipe, COLOR_FILL);
-                    mColorRectPipe.bindVertexBuffer(mColorMeshVertexBuffer, 0);
+                    bindPipeline(COLOR_FILL)
+                            .bindVertexBuffer(mColorMeshVertexBuffer, 0);
                     int prim = mDrawPrims.getInt(primIndex++);
                     int n = prim & 0xFFFF;
                     glDrawArrays(prim >> 16, posColorIndex, n);
                     posColorIndex += n;
                 }
                 case DRAW_RECT -> {
-                    bindPipeline(mColorRectPipe, COLOR_FILL);
-                    mColorRectPipe.bindVertexBuffer(mColorMeshVertexBuffer, 0);
+                    bindPipeline(COLOR_FILL).
+                            bindVertexBuffer(mColorMeshVertexBuffer, 0);
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
                     posColorIndex += 4;
                 }
                 case DRAW_ROUND_RECT_FILL -> {
-                    bindPipeline(mColorRectPipe, ROUND_RECT_FILL);
-                    mColorRectPipe.bindVertexBuffer(mColorMeshVertexBuffer, 0);
+                    bindPipeline(ROUND_RECT_FILL)
+                            .bindVertexBuffer(mColorMeshVertexBuffer, 0);
                     mRoundRectUBO.upload(0, 20, uniformDataPtr);
                     uniformDataPtr += 20;
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
                     posColorIndex += 4;
                 }
                 case DRAW_ROUND_RECT_STROKE -> {
-                    bindPipeline(mColorRectPipe, ROUND_RECT_STROKE);
-                    mColorRectPipe.bindVertexBuffer(mColorMeshVertexBuffer, 0);
+                    bindPipeline(ROUND_RECT_STROKE)
+                            .bindVertexBuffer(mColorMeshVertexBuffer, 0);
                     mRoundRectUBO.upload(0, 24, uniformDataPtr);
                     uniformDataPtr += 24;
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
                     posColorIndex += 4;
                 }
                 case DRAW_ROUND_IMAGE -> {
-                    bindPipeline(mTextureRectPipe, ROUND_RECT_TEX);
-                    mTextureRectPipe.bindVertexBuffer(mTextureMeshVertexBuffer, 0);
+                    bindPipeline(ROUND_RECT_TEX)
+                            .bindVertexBuffer(mTextureMeshVertexBuffer, 0);
                     bindNextTexture();
                     mRoundRectUBO.upload(0, 20, uniformDataPtr);
                     uniformDataPtr += 20;
@@ -789,87 +868,87 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     posColorTexIndex += 4;
                 }
                 case DRAW_ROUND_LINE_FILL -> {
-                    bindPipeline(mColorRectPipe, ROUND_LINE_FILL);
-                    mColorRectPipe.bindVertexBuffer(mColorMeshVertexBuffer, 0);
+                    bindPipeline(ROUND_LINE_FILL)
+                            .bindVertexBuffer(mColorMeshVertexBuffer, 0);
                     mRoundRectUBO.upload(0, 20, uniformDataPtr);
                     uniformDataPtr += 20;
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
                     posColorIndex += 4;
                 }
                 case DRAW_ROUND_LINE_STROKE -> {
-                    bindPipeline(mColorRectPipe, ROUND_LINE_STROKE);
-                    mColorRectPipe.bindVertexBuffer(mColorMeshVertexBuffer, 0);
+                    bindPipeline(ROUND_LINE_STROKE)
+                            .bindVertexBuffer(mColorMeshVertexBuffer, 0);
                     mRoundRectUBO.upload(0, 24, uniformDataPtr);
                     uniformDataPtr += 24;
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
                     posColorIndex += 4;
                 }
                 case DRAW_IMAGE -> {
-                    bindPipeline(mTextureRectPipe, COLOR_TEX);
-                    mTextureRectPipe.bindVertexBuffer(mTextureMeshVertexBuffer, 0);
+                    bindPipeline(COLOR_TEX)
+                            .bindVertexBuffer(mTextureMeshVertexBuffer, 0);
                     bindNextTexture();
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorTexIndex, 4);
                     posColorTexIndex += 4;
                 }
                 case DRAW_IMAGE_LAYER -> {
-                    bindPipeline(mTextureRectPipe, COLOR_TEX_PRE);
-                    mTextureRectPipe.bindVertexBuffer(mTextureMeshVertexBuffer, 0);
+                    bindPipeline(COLOR_TEX_PRE)
+                            .bindVertexBuffer(mTextureMeshVertexBuffer, 0);
                     bindSampler(null);
                     bindTexture(((GLTextureCompat) mTextures.remove()).get());
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorTexIndex, 4);
                     posColorTexIndex += 4;
                 }
                 case DRAW_CIRCLE_FILL -> {
-                    bindPipeline(mColorRectPipe, CIRCLE_FILL);
-                    mColorRectPipe.bindVertexBuffer(mColorMeshVertexBuffer, 0);
+                    bindPipeline(CIRCLE_FILL)
+                            .bindVertexBuffer(mColorMeshVertexBuffer, 0);
                     mCircleUBO.upload(0, 12, uniformDataPtr);
                     uniformDataPtr += 12;
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
                     posColorIndex += 4;
                 }
                 case DRAW_CIRCLE_STROKE -> {
-                    bindPipeline(mColorRectPipe, CIRCLE_STROKE);
-                    mColorRectPipe.bindVertexBuffer(mColorMeshVertexBuffer, 0);
+                    bindPipeline(CIRCLE_STROKE)
+                            .bindVertexBuffer(mColorMeshVertexBuffer, 0);
                     mCircleUBO.upload(0, 16, uniformDataPtr);
                     uniformDataPtr += 16;
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
                     posColorIndex += 4;
                 }
                 case DRAW_ARC_FILL -> {
-                    bindPipeline(mColorRectPipe, ARC_FILL);
-                    mColorRectPipe.bindVertexBuffer(mColorMeshVertexBuffer, 0);
+                    bindPipeline(ARC_FILL)
+                            .bindVertexBuffer(mColorMeshVertexBuffer, 0);
                     mArcUBO.upload(0, 20, uniformDataPtr);
                     uniformDataPtr += 20;
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
                     posColorIndex += 4;
                 }
                 case DRAW_ARC_STROKE -> {
-                    bindPipeline(mColorRectPipe, ARC_STROKE);
-                    mColorRectPipe.bindVertexBuffer(mColorMeshVertexBuffer, 0);
+                    bindPipeline(ARC_STROKE)
+                            .bindVertexBuffer(mColorMeshVertexBuffer, 0);
                     mArcUBO.upload(0, 24, uniformDataPtr);
                     uniformDataPtr += 24;
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
                     posColorIndex += 4;
                 }
                 case DRAW_BEZIER -> {
-                    bindPipeline(mColorRectPipe, BEZIER_CURVE);
-                    mColorRectPipe.bindVertexBuffer(mColorMeshVertexBuffer, 0);
+                    bindPipeline(BEZIER_CURVE)
+                            .bindVertexBuffer(mColorMeshVertexBuffer, 0);
                     mBezierUBO.upload(0, 28, uniformDataPtr);
                     uniformDataPtr += 28;
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
                     posColorIndex += 4;
                 }
                 case DRAW_PIE_FILL -> {
-                    bindPipeline(mColorRectPipe, PIE_FILL);
-                    mColorRectPipe.bindVertexBuffer(mColorMeshVertexBuffer, 0);
+                    bindPipeline(PIE_FILL)
+                            .bindVertexBuffer(mColorMeshVertexBuffer, 0);
                     mArcUBO.upload(0, 20, uniformDataPtr);
                     uniformDataPtr += 20;
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
                     posColorIndex += 4;
                 }
                 case DRAW_PIE_STROKE -> {
-                    bindPipeline(mColorRectPipe, PIE_STROKE);
-                    mColorRectPipe.bindVertexBuffer(mColorMeshVertexBuffer, 0);
+                    bindPipeline(PIE_STROKE)
+                            .bindVertexBuffer(mColorMeshVertexBuffer, 0);
                     mArcUBO.upload(0, 24, uniformDataPtr);
                     uniformDataPtr += 24;
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
@@ -882,8 +961,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
                         glStencilOp(GL_KEEP, GL_KEEP, GL_INCR);
                         glColorMask(false, false, false, false);
 
-                        bindPipeline(mColorRectPipe, COLOR_FILL);
-                        mColorRectPipe.bindVertexBuffer(mColorMeshVertexBuffer, 0);
+                        bindPipeline(COLOR_FILL)
+                                .bindVertexBuffer(mColorMeshVertexBuffer, 0);
                         glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
                         posColorIndex += 4;
 
@@ -902,8 +981,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
                         glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
                         glColorMask(false, false, false, false);
 
-                        bindPipeline(mColorRectPipe, COLOR_FILL);
-                        mColorRectPipe.bindVertexBuffer(mColorMeshVertexBuffer, 0);
+                        bindPipeline(COLOR_FILL)
+                                .bindVertexBuffer(mColorMeshVertexBuffer, 0);
                         glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
                         posColorIndex += 4;
 
@@ -924,9 +1003,9 @@ public final class GLSurfaceCanvas extends GLCanvas {
                         continue;
                     }
 
-                    bindPipeline(mGlyphPipe, ALPHA_TEX);
-                    mGlyphPipe.bindIndexBuffer(mGlyphIndexBuffer);
-                    mGlyphPipe.bindVertexBuffer(mGlyphVertexBuffer, 0);
+                    bindPipeline(ALPHA_TEX);
+                    ALPHA_TEX.bindIndexBuffer(mGlyphIndexBuffer);
+                    ALPHA_TEX.bindVertexBuffer(mGlyphVertexBuffer, 0);
                     bindSampler(mLinearSampler);
 
                     int limit = glyphs.length;
@@ -977,8 +1056,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
                             mLayerImageMemory.remaining());
                     mLayerImageMemory.clear();
 
-                    bindPipeline(mTextureRectPipe, COLOR_TEX_PRE);
-                    mTextureRectPipe.bindVertexBuffer(mTextureMeshVertexBuffer, 0);
+                    bindPipeline(COLOR_TEX_PRE)
+                            .bindVertexBuffer(mTextureMeshVertexBuffer, 0);
                     bindSampler(null);
                     GLFramebufferCompat resolve = GLFramebufferCompat.resolve(framebuffer,
                             colorBuffer, mWidth, mHeight);
@@ -991,8 +1070,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
                 }
                 case DRAW_CUSTOM -> mCustoms.remove().run();
                 case DRAW_GLOW_WAVE -> {
-                    bindPipeline(mColorRectPipe, GLOW_WAVE);
-                    mColorRectPipe.bindVertexBuffer(mColorMeshVertexBuffer, 0);
+                    bindPipeline(GLOW_WAVE)
+                            .bindVertexBuffer(mColorMeshVertexBuffer, 0);
                     mMatrixUBO.upload(128, 4, uniformDataPtr);
                     uniformDataPtr += 4;
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
@@ -1025,7 +1104,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     @RenderThread
     private void uploadVertexBuffers() {
         if (mColorMeshBufferResized) {
-            GLBuffer newBuffer = GLBuffer.make(mServer,
+            GLBuffer newBuffer = GLBuffer.make(mGLDevice,
                     mColorMeshStagingBuffer.capacity(),
                     Engine.BufferUsageFlags.kVertex |
                             Engine.BufferUsageFlags.kStream);
@@ -1049,7 +1128,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         int preserveForLayer = TEXTURE_RECT_VERTEX_SIZE * 4;
 
         if (mTextureMeshBufferResized) {
-            GLBuffer newBuffer = GLBuffer.make(mServer,
+            GLBuffer newBuffer = GLBuffer.make(mGLDevice,
                     mTextureMeshStagingBuffer.capacity() + preserveForLayer,
                     Engine.BufferUsageFlags.kVertex |
                             Engine.BufferUsageFlags.kStream);
@@ -1076,7 +1155,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                 textOp.writeMeshData(this);
             }
             if (mGlyphBufferResized) {
-                GLBuffer newBuffer = GLBuffer.make(mServer,
+                GLBuffer newBuffer = GLBuffer.make(mGLDevice,
                         mGlyphStagingBuffer.capacity(),
                         Engine.BufferUsageFlags.kVertex |
                                 Engine.BufferUsageFlags.kStream);

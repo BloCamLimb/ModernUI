@@ -44,7 +44,7 @@ public class GLPipelineState {
 
     private final int mNumTextureSamplers;
 
-    GLPipelineState(GLServer server,
+    GLPipelineState(GLDevice device,
                     @SharedPtr GLPipeline pipeline,
                     List<UniformHandler.UniformInfo> uniforms,
                     int uniformSize,
@@ -100,9 +100,9 @@ public class GLPipelineState {
     /**
      * Binds all geometric buffers.
      */
-    public void bindBuffers(GpuBuffer indexBuffer,
-                            GpuBuffer vertexBuffer,
-                            GpuBuffer instanceBuffer) {
+    public void bindBuffers(Buffer indexBuffer,
+                            Buffer vertexBuffer,
+                            Buffer instanceBuffer) {
         if (indexBuffer != null) {
             mPipeline.bindIndexBuffer((GLBuffer) indexBuffer);
         }

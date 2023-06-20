@@ -37,7 +37,7 @@ public class DrawingManager {
         mContext = context;
         if (context instanceof DirectContext direct) {
             mDirect = direct;
-            mFlushState = new OpFlushState(direct.getServer(), direct.getResourceProvider());
+            mFlushState = new OpFlushState(direct.getDevice(), direct.getResourceProvider());
             mResourceAllocator = new ResourceAllocator(direct);
         } else {
             // deferred

@@ -51,10 +51,10 @@ public abstract class FramebufferSet extends ManagedResource {
     // determined by subclass constructors
     protected int mSurfaceFlags;
 
-    protected FramebufferSet(Server server,
+    protected FramebufferSet(Device device,
                              int width, int height,
                              int sampleCount) {
-        super(server);
+        super(device);
         mWidth = width;
         mHeight = height;
         mSampleCount = sampleCount;

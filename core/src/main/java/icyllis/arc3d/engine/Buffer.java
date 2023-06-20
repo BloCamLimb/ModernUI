@@ -27,7 +27,7 @@ import static org.lwjgl.system.MemoryUtil.NULL;
  * vertex buffers, index buffers and pixel transfer buffers. Such buffer tends to update
  * data every frame.
  */
-public abstract class GpuBuffer extends GpuResource {
+public abstract class Buffer extends Resource {
 
     /**
      * Locks for reading. The effect of writes is undefined.
@@ -46,10 +46,10 @@ public abstract class GpuBuffer extends GpuResource {
     private int mLockOffset;
     private int mLockSize;
 
-    protected GpuBuffer(Server server,
-                        int size,
-                        int usage) {
-        super(server);
+    protected Buffer(Device device,
+                     int size,
+                     int usage) {
+        super(device);
         mSize = size;
         mUsage = usage;
     }

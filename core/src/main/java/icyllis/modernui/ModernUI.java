@@ -308,7 +308,6 @@ public class ModernUI extends Context implements AutoCloseable, LifecycleOwner {
         GLCore.showCapsErrorDialog();
 
         final GLSurfaceCanvas canvas = GLSurfaceCanvas.initialize();
-        GLShaderManager.getInstance().reload();
 
         glDisable(GL_CULL_FACE);
         glEnable(GL_BLEND);

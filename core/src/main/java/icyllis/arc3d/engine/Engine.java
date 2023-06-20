@@ -18,7 +18,7 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.opengl.GLServer;
+import icyllis.arc3d.opengl.GLDevice;
 import icyllis.modernui.graphics.Color;
 import icyllis.modernui.graphics.ImageInfo;
 
@@ -97,7 +97,7 @@ public final class Engine {
      * A Context's cache of backend context state can be partially invalidated.
      * These enums are specific to the GL backend and we'd add a new set for an alternative backend.
      *
-     * @see GLServer#markContextDirty(int)
+     * @see GLDevice#markContextDirty(int)
      */
     public interface GLBackendState {
 
@@ -332,7 +332,7 @@ public final class Engine {
     /**
      * Budget types. Used with resources that have a large memory allocation.
      *
-     * @see GpuResource
+     * @see Resource
      */
     // @formatter:off
     public interface BudgetType {

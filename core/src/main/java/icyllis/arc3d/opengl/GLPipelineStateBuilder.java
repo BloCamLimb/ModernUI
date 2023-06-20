@@ -24,6 +24,7 @@ import icyllis.arc3d.engine.shading.*;
 import org.lwjgl.system.MemoryStack;
 
 import javax.annotation.Nullable;
+import java.io.PrintWriter;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
@@ -31,26 +32,26 @@ import static icyllis.arc3d.opengl.GLCore.*;
 
 public class GLPipelineStateBuilder extends ProgramBuilder {
 
-    private final GLServer mServer;
+    private final GLDevice mDevice;
 
     private final VaryingHandler mVaryingHandler;
     private final GLUniformHandler mUniformHandler;
 
-    private GLPipelineStateBuilder(GLServer server,
+    private GLPipelineStateBuilder(GLDevice device,
                                    PipelineDesc desc,
                                    PipelineInfo pipelineInfo) {
         super(desc, pipelineInfo);
-        mServer = server;
+        mDevice = device;
         mVaryingHandler = new VaryingHandler(this);
         mUniformHandler = new GLUniformHandler(this);
     }
 
     @Nullable
-    public static GLPipelineState createPipelineState(GLServer server,
+    public static GLPipelineState createPipelineState(GLDevice device,
                                                       final PipelineDesc desc,
                                                       final PipelineInfo pipelineInfo) {
 
-        GLPipelineStateBuilder builder = new GLPipelineStateBuilder(server, desc, pipelineInfo);
+        GLPipelineStateBuilder builder = new GLPipelineStateBuilder(device, desc, pipelineInfo);
         if (!builder.emitAndInstallProcs()) {
             return null;
         }
@@ -68,17 +69,17 @@ public class GLPipelineStateBuilder extends ProgramBuilder {
         String vertSource = mVS.toString();
         String fragSource = mFS.toString();
 
-        ShaderErrorHandler errorHandler = mServer.getContext().getShaderErrorHandler();
+        PrintWriter pw = mDevice.getContext().getErrorWriter();
 
         int frag = glCompileAndAttachShader(program, GL_FRAGMENT_SHADER, fragSource,
-                mServer.getPipelineBuilder().getStates(), errorHandler);
+                mDevice.getPipelineBuilder().getStates(), pw);
         if (frag == 0) {
             glDeleteProgram(program);
             return null;
         }
 
         int vert = glCompileAndAttachShader(program, GL_VERTEX_SHADER, vertSource,
-                mServer.getPipelineBuilder().getStates(), errorHandler);
+                mDevice.getPipelineBuilder().getStates(), pw);
         if (vert == 0) {
             glDeleteProgram(program);
             glDeleteShader(frag);
@@ -96,7 +97,7 @@ public class GLPipelineStateBuilder extends ProgramBuilder {
                         %s
                         """, vertSource, fragSource);
                 String log = glGetProgramInfoLog(program).trim();
-                errorHandler.handleCompileError(allShaders, log);
+                GLCore.handleCompileError(pw, allShaders, log);
                 return null;
             } finally {
                 glDeleteProgram(program);
@@ -134,13 +135,13 @@ public class GLPipelineStateBuilder extends ProgramBuilder {
         }
 
         @SharedPtr
-        GLPipeline pipeline = GLPipeline.make(mServer, mPipelineInfo.geomProc(), program);
+        GLPipeline pipeline = GLPipeline.make(mDevice, mPipelineInfo.geomProc(), program);
         if (pipeline == null) {
             glDeleteProgram(program);
             return null;
         }
 
-        return new GLPipelineState(mServer,
+        return new GLPipelineState(mDevice,
                 pipeline,
                 mUniformHandler.mUniforms,
                 mUniformHandler.mCurrentOffset,
@@ -150,7 +151,7 @@ public class GLPipelineStateBuilder extends ProgramBuilder {
 
     @Override
     public Caps caps() {
-        return mServer.getCaps();
+        return mDevice.getCaps();
     }
 
     @Override

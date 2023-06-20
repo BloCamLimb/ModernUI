@@ -27,7 +27,7 @@ import org.jetbrains.annotations.VisibleForTesting;
 //TODO compile shader multi-threaded but create backend object on render thread
 public class GLPipelineStateCache extends ThreadSafePipelineBuilder {
 
-    private final GLServer mServer;
+    private final GLDevice mDevice;
 
     private final int mCacheSize;
     private final Object2ObjectLinkedOpenHashMap<Key, GLPipelineState> mCache;
@@ -35,8 +35,8 @@ public class GLPipelineStateCache extends ThreadSafePipelineBuilder {
     private final PipelineDesc mLookupDesc = new PipelineDesc();
 
     @VisibleForTesting
-    public GLPipelineStateCache(GLServer server, int cacheSize) {
-        mServer = server;
+    public GLPipelineStateCache(GLDevice device, int cacheSize) {
+        mDevice = device;
         mCacheSize = cacheSize;
         mCache = new Object2ObjectLinkedOpenHashMap<>(cacheSize, Hash.FAST_LOAD_FACTOR);
     }
@@ -53,7 +53,7 @@ public class GLPipelineStateCache extends ThreadSafePipelineBuilder {
 
     @Nullable
     public GLPipelineState findOrCreatePipelineState(final PipelineInfo pipelineInfo) {
-        final Caps caps = mServer.getCaps();
+        final Caps caps = mDevice.getCaps();
         final PipelineDesc desc = caps.makeDesc(mLookupDesc, /*renderTarget*/null, pipelineInfo);
         assert (!desc.isEmpty());
         GLPipelineState pipelineState = findOrCreatePipelineStateImpl(desc, pipelineInfo);
@@ -82,7 +82,7 @@ public class GLPipelineStateCache extends ThreadSafePipelineBuilder {
             return entry;
         }
         // We have a cache miss
-        GLPipelineState pipelineState = GLPipelineStateBuilder.createPipelineState(mServer, desc, pipelineInfo);
+        GLPipelineState pipelineState = GLPipelineStateBuilder.createPipelineState(mDevice, desc, pipelineInfo);
         if (pipelineState == null) {
             mStats.incNumCompilationFailures();
             return null;

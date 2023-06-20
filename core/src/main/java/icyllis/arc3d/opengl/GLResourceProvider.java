@@ -31,14 +31,14 @@ public final class GLResourceProvider {
 
     private static final int SAMPLER_CACHE_SIZE = 32;
 
-    private final GLServer mServer;
+    private final GLDevice mDevice;
 
     // LRU cache, samplers are shared by mHWTextureSamplers and mSamplerCache
     private final Int2ObjectLinkedOpenHashMap<GLSampler> mSamplerCache =
             new Int2ObjectLinkedOpenHashMap<>(SAMPLER_CACHE_SIZE);
 
-    GLResourceProvider(GLServer server) {
-        mServer = server;
+    GLResourceProvider(GLDevice device) {
+        mDevice = device;
     }
 
     void discard() {
@@ -62,7 +62,7 @@ public final class GLResourceProvider {
     public GLSampler findOrCreateCompatibleSampler(int samplerState) {
         GLSampler sampler = mSamplerCache.getAndMoveToFirst(samplerState);
         if (sampler == null) {
-            sampler = GLSampler.create(mServer, samplerState);
+            sampler = GLSampler.create(mDevice, samplerState);
             if (sampler == null) {
                 return null;
             }

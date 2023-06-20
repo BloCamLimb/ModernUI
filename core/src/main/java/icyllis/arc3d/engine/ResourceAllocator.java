@@ -25,7 +25,7 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 
 /**
- * The ResourceAllocator explicitly distributes {@link GpuResource Resources} at flush time. It
+ * The ResourceAllocator explicitly distributes {@link Resource Resources} at flush time. It
  * operates by being given the usage intervals of the various proxies. It keeps these intervals
  * in a singly linked list sorted by increasing start index. (It also maintains a h table
  * from proxyID to interval to find proxy reuse). The ResourceAllocator uses Registers (in the
@@ -397,13 +397,13 @@ public final class ResourceAllocator {
                 if (mProxy == proxy) {
                     texture = proxy.createTexture(resourceProvider);
                 } else {
-                    texture = GpuResource.create(mProxy.peekTexture());
+                    texture = Resource.create(mProxy.peekTexture());
                 }
                 if (texture == null) {
                     return false;
                 }
             } else {
-                texture = GpuResource.create(mTexture);
+                texture = Resource.create(mTexture);
             }
             assert (texture != null);
             assert (proxy.mSurfaceFlags & Surface.FLAG_RENDERABLE) == 0 || texture instanceof RenderTarget;
@@ -433,7 +433,7 @@ public final class ResourceAllocator {
         public boolean reset() {
             if (mInit) {
                 mProxy = null;
-                mTexture = GpuResource.move(mTexture);
+                mTexture = Resource.move(mTexture);
                 mInit = false;
                 return true;
             }

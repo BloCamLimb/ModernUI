@@ -19,10 +19,10 @@
 package icyllis.arc3d.engine;
 
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.graphics.RefCnt;
 import icyllis.modernui.graphics.*;
 import org.jetbrains.annotations.ApiStatus;
 
+import java.io.PrintWriter;
 import java.util.Objects;
 
 /**
@@ -117,11 +117,21 @@ public abstract class Context extends RefCnt {
     }
 
     @ApiStatus.Internal
-    public final ShaderErrorHandler getShaderErrorHandler() {
-        return Objects.requireNonNullElse(getOptions().mShaderErrorHandler, ShaderErrorHandler.DEFAULT);
+    public final PrintWriter getErrorWriter() {
+        return Objects.requireNonNullElseGet(getOptions().mErrorWriter, Context::getDefaultErrorWriter);
     }
 
     protected boolean init() {
         return mThreadSafeProxy.isValid();
+    }
+
+    private static PrintWriter sDefaultErrorWriter;
+
+    private static PrintWriter getDefaultErrorWriter() {
+        PrintWriter err = sDefaultErrorWriter;
+        if (err == null) {
+            sDefaultErrorWriter = err = new PrintWriter(System.err, true);
+        }
+        return err;
     }
 }

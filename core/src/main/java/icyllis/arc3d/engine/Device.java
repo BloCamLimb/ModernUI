@@ -27,14 +27,14 @@ import java.util.ArrayList;
 import java.util.Set;
 
 /**
- * Represents the client connection to the backend 3D API, holding a reference to
+ * Represents the logical device of the backend 3D API, holding a reference to
  * {@link DirectContext}. It is responsible for creating / deleting 3D API objects,
  * controlling binding status, uploading and downloading data, transferring
  * 3D API commands, etc. Most methods are expected on render thread.
  */
-public abstract class Server {
+public abstract class Device {
 
-    // this server is managed by this context
+    // this device is managed by this context
     protected final DirectContext mContext;
     protected final Caps mCaps;
     protected final Compiler mCompiler;
@@ -44,7 +44,7 @@ public abstract class Server {
     private final ArrayList<FlushInfo.SubmittedCallback> mSubmittedCallbacks = new ArrayList<>();
     private int mResetBits = ~0;
 
-    protected Server(DirectContext context, Caps caps) {
+    protected Device(DirectContext context, Caps caps) {
         assert context != null && caps != null;
         mContext = context;
         mCaps = caps;
@@ -87,9 +87,9 @@ public abstract class Server {
     }
 
     /**
-     * The server object normally assumes that no outsider is setting state
+     * The device object normally assumes that no outsider is setting state
      * within the underlying 3D API's context/device/whatever. This call informs
-     * the server that the state was modified, and it shouldn't make assumptions
+     * the device that the state was modified, and it shouldn't make assumptions
      * about the state.
      */
     public final void markContextDirty(int state) {
@@ -115,7 +115,7 @@ public abstract class Server {
     public abstract BufferAllocPool getInstancePool();
 
     /**
-     * Creates a texture object and allocates its server memory. In other words, the
+     * Creates a texture object and allocates its GPU memory. In other words, the
      * image data is dirty and needs to be uploaded later. If mipmapped, also allocates
      * <code>(31 - CLZ(max(width,height)))</code> mipmaps in addition to the base level.
      * NPoT (non-power-of-two) dimensions are always supported. Compressed format are

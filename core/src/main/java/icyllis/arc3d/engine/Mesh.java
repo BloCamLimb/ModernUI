@@ -47,7 +47,7 @@ public interface Mesh {
      *                          in units of the size of a vertex from layout param
      * @param actualVertexCount the actual number of vertices allocated
      */
-    default void setVertexBuffer(GpuBuffer buffer, int baseVertex, int actualVertexCount) {
+    default void setVertexBuffer(Buffer buffer, int baseVertex, int actualVertexCount) {
         throw new IllegalStateException();
     }
 
@@ -74,7 +74,7 @@ public interface Mesh {
      *                            in units of the size of an instance from layout param
      * @param actualInstanceCount the actual number of instances allocated
      */
-    default void setInstanceBuffer(GpuBuffer buffer, int baseInstance, int actualInstanceCount) {
+    default void setInstanceBuffer(Buffer buffer, int baseInstance, int actualInstanceCount) {
         throw new IllegalStateException();
     }
 }
