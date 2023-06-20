@@ -30,14 +30,14 @@ public final class ResourceProvider {
 
     public static final int MIN_SCRATCH_TEXTURE_SIZE = 16;
 
-    private final Server mServer;
+    private final Device mDevice;
     private final ResourceCache mCache;
 
     // lookup key
     private final Texture.ScratchKey mTextureScratchKey = new Texture.ScratchKey();
 
-    ResourceProvider(Server server, ResourceCache cache) {
-        mServer = server;
+    ResourceProvider(Device device, ResourceCache cache) {
+        mDevice = device;
         mCache = cache;
     }
 
@@ -71,16 +71,16 @@ public final class ResourceProvider {
     /**
      * Finds a resource in the cache, based on the specified key. Prior to calling this, the caller
      * must be sure that if a resource of exists in the cache with the given unique key then it is
-     * of type T. If the resource is no longer used, then {@link GpuResource#unref()} must be called.
+     * of type T. If the resource is no longer used, then {@link Resource#unref()} must be called.
      *
      * @param key the resource unique key
      */
     @Nullable
     @SharedPtr
     @SuppressWarnings("unchecked")
-    public <T extends GpuResource> T findByUniqueKey(Object key) {
-        assert mServer.getContext().isOwnerThread();
-        return mServer.getContext().isDiscarded() ? null : (T) mCache.findAndRefUniqueResource(key);
+    public <T extends Resource> T findByUniqueKey(Object key) {
+        assert mDevice.getContext().isOwnerThread();
+        return mDevice.getContext().isDiscarded() ? null : (T) mCache.findAndRefUniqueResource(key);
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -129,8 +129,8 @@ public final class ResourceProvider {
                                  int sampleCount,
                                  int surfaceFlags,
                                  String label) {
-        assert mServer.getContext().isOwnerThread();
-        if (mServer.getContext().isDiscarded()) {
+        assert mDevice.getContext().isOwnerThread();
+        if (mDevice.getContext().isDiscarded()) {
             return null;
         }
 
@@ -138,7 +138,7 @@ public final class ResourceProvider {
         // textures should be created through the createCompressedTexture function.
         assert !format.isCompressed();
 
-        if (!mServer.getCaps().validateSurfaceParams(width, height, format,
+        if (!mDevice.getCaps().validateSurfaceParams(width, height, format,
                 sampleCount, surfaceFlags)) {
             return null;
         }
@@ -159,7 +159,7 @@ public final class ResourceProvider {
             return texture;
         }
 
-        return mServer.createTexture(width, height, format,
+        return mDevice.createTexture(width, height, format,
                 sampleCount, surfaceFlags, label);
     }
 
@@ -198,8 +198,8 @@ public final class ResourceProvider {
                                  int rowBytes,
                                  long pixels,
                                  String label) {
-        assert mServer.getContext().isOwnerThread();
-        if (mServer.getContext().isDiscarded()) {
+        assert mDevice.getContext().isOwnerThread();
+        if (mDevice.getContext().isDiscarded()) {
             return null;
         }
 
@@ -213,7 +213,7 @@ public final class ResourceProvider {
         if (actualRowBytes < minRowBytes) {
             return null;
         }
-        int actualColorType = (int) mServer.getCaps().getSupportedWriteColorType(
+        int actualColorType = (int) mDevice.getCaps().getSupportedWriteColorType(
                 dstColorType,
                 format,
                 srcColorType);
@@ -229,7 +229,7 @@ public final class ResourceProvider {
         if (pixels == 0) {
             return texture;
         }
-        boolean result = mServer.writePixels(texture, 0, 0, width, height,
+        boolean result = mDevice.writePixels(texture, 0, 0, width, height,
                 dstColorType, actualColorType, actualRowBytes, pixels);
         assert result;
 
@@ -246,13 +246,13 @@ public final class ResourceProvider {
     @Nullable
     @SharedPtr
     public Texture findAndRefScratchTexture(Object key, String label) {
-        assert mServer.getContext().isOwnerThread();
-        assert !mServer.getContext().isDiscarded();
+        assert mDevice.getContext().isOwnerThread();
+        assert !mDevice.getContext().isDiscarded();
         assert key != null;
 
-        GpuResource resource = mCache.findAndRefScratchResource(key);
+        Resource resource = mCache.findAndRefScratchResource(key);
         if (resource != null) {
-            mServer.getStats().incNumScratchTexturesReused();
+            mDevice.getStats().incNumScratchTexturesReused();
             if (label != null) {
                 resource.setLabel(label);
             }
@@ -278,10 +278,10 @@ public final class ResourceProvider {
                                             int sampleCount,
                                             int surfaceFlags,
                                             String label) {
-        assert mServer.getContext().isOwnerThread();
-        assert !mServer.getContext().isDiscarded();
+        assert mDevice.getContext().isOwnerThread();
+        assert !mDevice.getContext().isDiscarded();
         assert !format.isCompressed();
-        assert mServer.getCaps().validateSurfaceParams(width, height, format,
+        assert mDevice.getCaps().validateSurfaceParams(width, height, format,
                 sampleCount, surfaceFlags);
 
         return findAndRefScratchTexture(mTextureScratchKey.compute(
@@ -313,10 +313,10 @@ public final class ResourceProvider {
     public Texture wrapRenderableBackendTexture(BackendTexture texture,
                                                 int sampleCount,
                                                 boolean ownership) {
-        if (mServer.getContext().isDiscarded()) {
+        if (mDevice.getContext().isDiscarded()) {
             return null;
         }
-        return mServer.wrapRenderableBackendTexture(texture, sampleCount, ownership);
+        return mDevice.wrapRenderableBackendTexture(texture, sampleCount, ownership);
     }
 
     /**
@@ -329,13 +329,13 @@ public final class ResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public GpuBuffer createBuffer(int size, int usage) {
+    public Buffer createBuffer(int size, int usage) {
         return null;
     }
 
-    public void assignUniqueKeyToResource(Object key, GpuResource resource) {
-        assert mServer.getContext().isOwnerThread();
-        if (mServer.getContext().isDiscarded() || resource == null) {
+    public void assignUniqueKeyToResource(Object key, Resource resource) {
+        assert mDevice.getContext().isOwnerThread();
+        if (mDevice.getContext().isDiscarded() || resource == null) {
             return;
         }
         resource.setUniqueKey(key);

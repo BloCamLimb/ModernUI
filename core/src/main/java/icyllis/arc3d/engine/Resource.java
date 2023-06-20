@@ -30,7 +30,7 @@ import java.lang.invoke.VarHandle;
 import static icyllis.arc3d.engine.Engine.BudgetType;
 
 /**
- * Base class for operating server memory objects that can be kept in the
+ * Base class for operating backend memory objects that can be kept in the
  * {@link ResourceCache}. Such resources will have a large memory allocation.
  * Possible implementations:
  * <ul>
@@ -47,11 +47,11 @@ import static icyllis.arc3d.engine.Engine.BudgetType;
  * otherwise they tend to be used as raw pointers (no ref/unref calls should be
  * made). Java object's reference, or identity, can be used as unique identifiers.
  * <p>
- * Each {@link GpuResource} should be created with immutable GPU memory allocation.
- * Use {@link ResourceProvider} to obtain {@link GpuResource} objects.
+ * Each {@link Resource} should be created with immutable GPU memory allocation.
+ * Use {@link ResourceProvider} to obtain {@link Resource} objects.
  */
 @NotThreadSafe
-public abstract class GpuResource {
+public abstract class Resource {
 
     private static final VarHandle REF_CNT;
     private static final VarHandle COMMAND_BUFFER_USAGE_CNT;
@@ -59,8 +59,8 @@ public abstract class GpuResource {
     static {
         MethodHandles.Lookup lookup = MethodHandles.lookup();
         try {
-            REF_CNT = lookup.findVarHandle(GpuResource.class, "mRefCnt", int.class);
-            COMMAND_BUFFER_USAGE_CNT = lookup.findVarHandle(GpuResource.class, "mCommandBufferUsageCnt", int.class);
+            REF_CNT = lookup.findVarHandle(Resource.class, "mRefCnt", int.class);
+            COMMAND_BUFFER_USAGE_CNT = lookup.findVarHandle(Resource.class, "mCommandBufferUsageCnt", int.class);
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
@@ -71,14 +71,14 @@ public abstract class GpuResource {
     @SuppressWarnings("FieldMayBeFinal")
     private volatile int mCommandBufferUsageCnt = 0;
 
-    static final PriorityQueue.Accessor<GpuResource> QUEUE_ACCESSOR = new PriorityQueue.Accessor<>() {
+    static final PriorityQueue.Accessor<Resource> QUEUE_ACCESSOR = new PriorityQueue.Accessor<>() {
         @Override
-        public void setIndex(GpuResource resource, int index) {
+        public void setIndex(Resource resource, int index) {
             resource.mCacheIndex = index;
         }
 
         @Override
-        public int getIndex(GpuResource resource) {
+        public int getIndex(Resource resource) {
             return resource.mCacheIndex;
         }
     };
@@ -96,7 +96,7 @@ public abstract class GpuResource {
     Object mUniqueKey;
 
     // set once in constructor, clear to null after being destroyed
-    Server mServer;
+    Device mDevice;
 
     private byte mBudgetType = BudgetType.NotBudgeted;
     private boolean mWrapped = false;
@@ -122,34 +122,34 @@ public abstract class GpuResource {
 
     private final UniqueID mUniqueID = new UniqueID();
 
-    protected GpuResource(Server server) {
-        assert (server != null);
-        mServer = server;
+    protected Resource(Device device) {
+        assert (device != null);
+        mDevice = device;
     }
 
     @SharedPtr
-    public static <T extends GpuResource> T move(@SharedPtr T sp) {
+    public static <T extends Resource> T move(@SharedPtr T sp) {
         if (sp != null)
             sp.unref();
         return null;
     }
 
     @SharedPtr
-    public static <T extends GpuResource> T move(@SharedPtr T sp, @SharedPtr T that) {
+    public static <T extends Resource> T move(@SharedPtr T sp, @SharedPtr T that) {
         if (sp != null)
             sp.unref();
         return that;
     }
 
     @SharedPtr
-    public static <T extends GpuResource> T create(@SharedPtr T that) {
+    public static <T extends Resource> T create(@SharedPtr T that) {
         if (that != null)
             that.ref();
         return that;
     }
 
     @SharedPtr
-    public static <T extends GpuResource> T create(@SharedPtr T sp, @SharedPtr T that) {
+    public static <T extends Resource> T create(@SharedPtr T sp, @SharedPtr T that) {
         if (sp != null)
             sp.unref();
         if (that != null)
@@ -189,12 +189,12 @@ public abstract class GpuResource {
     }
 
     /**
-     * Increases the usage count by 1 on the tracked server pipeline.
+     * Increases the usage count by 1 on the tracked backend pipeline.
      * <p>
      * This is designed to be used by Resources that need to track when they are in use on
-     * server (usually via a command buffer) separately from tracking if there are any current logical
+     * backend (usually via a command buffer) separately from tracking if there are any current logical
      * usages in client. This allows for a scratch Resource to be reused for new draw calls even
-     * if it is in use on the server.
+     * if it is in use on the backend.
      */
     public final void addCommandBufferUsage() {
         // stronger than std::memory_order_relaxed
@@ -202,7 +202,7 @@ public abstract class GpuResource {
     }
 
     /**
-     * Decreases the usage count by 1 on the tracked server pipeline.
+     * Decreases the usage count by 1 on the tracked backend pipeline.
      * It's an error to call this method if the usage count has already reached zero.
      */
     public final void removeCommandBufferUsage() {
@@ -234,7 +234,7 @@ public abstract class GpuResource {
 
     // Either ref cnt or command buffer usage cnt reached zero
     private void notifyACntReachedZero(boolean commandBufferUsage) {
-        if (mServer == null) {
+        if (mDevice == null) {
             // If we have no ref and no command buffer usage, then we've already been removed from the cache,
             // and then this Java object should be phantom reachable soon after (GC-ed).
             // Otherwise, either ref and command buffer usage is not 0, then this Java object will still be
@@ -243,7 +243,7 @@ public abstract class GpuResource {
             return;
         }
 
-        mServer.getContext().getResourceCache().notifyACntReachedZero(this, commandBufferUsage);
+        mDevice.getContext().getResourceCache().notifyACntReachedZero(this, commandBufferUsage);
     }
 
     /**
@@ -256,7 +256,7 @@ public abstract class GpuResource {
      * @return true if the object has been released or discarded, false otherwise.
      */
     public final boolean isDestroyed() {
-        return mServer == null;
+        return mDevice == null;
     }
 
     /**
@@ -267,17 +267,17 @@ public abstract class GpuResource {
      */
     @Nullable
     public final DirectContext getContext() {
-        return mServer != null ? mServer.getContext() : null;
+        return mDevice != null ? mDevice.getContext() : null;
     }
 
     /**
-     * Retrieves the amount of server memory used by this resource in bytes. It is
+     * Retrieves the amount of GPU memory used by this resource in bytes. It is
      * approximate since we aren't aware of additional padding or copies made
      * by the driver.
      * <p>
      * <b>NOTE: The return value must be constant in this object.</b>
      *
-     * @return the amount of server memory used in bytes
+     * @return the amount of GPU memory used in bytes
      */
     public abstract long getMemorySize();
 
@@ -340,11 +340,11 @@ public abstract class GpuResource {
             return;
         }
 
-        if (mServer == null) {
+        if (mDevice == null) {
             return;
         }
 
-        mServer.getContext().getResourceCache().changeUniqueKey(this, key);
+        mDevice.getContext().getResourceCache().changeUniqueKey(this, key);
     }
 
     /**
@@ -353,11 +353,11 @@ public abstract class GpuResource {
      */
     @ApiStatus.Internal
     public final void removeUniqueKey() {
-        if (mServer == null) {
+        if (mDevice == null) {
             return;
         }
 
-        mServer.getContext().getResourceCache().removeUniqueKey(this);
+        mDevice.getContext().getResourceCache().removeUniqueKey(this);
     }
 
     /**
@@ -375,15 +375,15 @@ public abstract class GpuResource {
             assert !mWrapped;
             // Only wrapped resources can be in the cacheable budgeted state.
             assert mBudgetType != BudgetType.WrapCacheable;
-            if (mServer != null && mBudgetType == BudgetType.NotBudgeted) {
+            if (mDevice != null && mBudgetType == BudgetType.NotBudgeted) {
                 // Currently, resources referencing wrapped objects are not budgeted.
                 mBudgetType = BudgetType.Budgeted;
-                mServer.getContext().getResourceCache().didChangeBudgetStatus(this);
+                mDevice.getContext().getResourceCache().didChangeBudgetStatus(this);
             }
         } else {
-            if (mServer != null && mBudgetType == BudgetType.Budgeted && mUniqueKey == null) {
+            if (mDevice != null && mBudgetType == BudgetType.Budgeted && mUniqueKey == null) {
                 mBudgetType = BudgetType.NotBudgeted;
-                mServer.getContext().getResourceCache().didChangeBudgetStatus(this);
+                mDevice.getContext().getResourceCache().didChangeBudgetStatus(this);
             }
         }
     }
@@ -423,8 +423,8 @@ public abstract class GpuResource {
      */
     @ApiStatus.Internal
     public final void removeScratchKey() {
-        if (mServer != null && mScratchKey != null) {
-            mServer.getContext().getResourceCache().willRemoveScratchKey(this);
+        if (mDevice != null && mScratchKey != null) {
+            mDevice.getContext().getResourceCache().willRemoveScratchKey(this);
             mScratchKey = null;
         }
     }
@@ -452,7 +452,7 @@ public abstract class GpuResource {
         assert mBudgetType == BudgetType.NotBudgeted;
         mBudgetType = budgeted ? BudgetType.Budgeted : BudgetType.NotBudgeted;
         mScratchKey = computeScratchKey();
-        mServer.getContext().getResourceCache().insertResource(this);
+        mDevice.getContext().getResourceCache().insertResource(this);
     }
 
     /**
@@ -467,14 +467,14 @@ public abstract class GpuResource {
         // Resources referencing wrapped objects are never budgeted. They may be cached or uncached.
         mBudgetType = cacheable ? BudgetType.WrapCacheable : BudgetType.NotBudgeted;
         mWrapped = true;
-        mServer.getContext().getResourceCache().insertResource(this);
+        mDevice.getContext().getResourceCache().insertResource(this);
     }
 
     /**
-     * @return the server or null if destroyed
+     * @return the device or null if destroyed
      */
-    protected Server getServer() {
-        return mServer;
+    protected Device getDevice() {
+        return mDevice;
     }
 
     /**
@@ -519,22 +519,22 @@ public abstract class GpuResource {
      * Called by the cache to delete the resource under normal circumstances.
      */
     final void release() {
-        assert mServer != null;
+        assert mDevice != null;
         onRelease();
-        mServer.getContext().getResourceCache().removeResource(this);
-        mServer = null;
+        mDevice.getContext().getResourceCache().removeResource(this);
+        mDevice = null;
     }
 
     /**
      * Called by the cache to delete the resource when the backend 3D context is no longer valid.
      */
     final void discard() {
-        if (mServer == null) {
+        if (mDevice == null) {
             return;
         }
         onDiscard();
-        mServer.getContext().getResourceCache().removeResource(this);
-        mServer = null;
+        mDevice.getContext().getResourceCache().removeResource(this);
+        mDevice = null;
     }
 
     final void setCleanUpTime() {

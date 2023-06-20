@@ -21,9 +21,9 @@ package icyllis.arc3d.engine;
 import icyllis.modernui.graphics.RefCnt;
 
 /**
- * Base class for operating server resources that may be shared by multiple
+ * Base class for operating backend resources that may be shared by multiple
  * objects, in particular objects that are tracked by a command buffer.
- * Unlike {@link GpuResource}, these resources will not have a large memory
+ * Unlike {@link Resource}, these resources will not have a large memory
  * allocation, but a set of constant states instead. When an existing owner
  * wants to share a reference, it calls {@link #ref()}. When an owner wants
  * to release its reference, it calls {@link #unref()}. When the shared
@@ -34,13 +34,13 @@ import icyllis.modernui.graphics.RefCnt;
  */
 public abstract class ManagedResource extends RefCnt {
 
-    private final Server mServer;
+    private final Device mDevice;
 
-    public ManagedResource(Server server) {
-        mServer = server;
+    public ManagedResource(Device device) {
+        mDevice = device;
     }
 
-    protected Server getServer() {
-        return mServer;
+    protected Device getDevice() {
+        return mDevice;
     }
 }

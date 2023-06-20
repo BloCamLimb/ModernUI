@@ -34,9 +34,9 @@ import java.util.function.Function;
 import static icyllis.arc3d.opengl.GLCore.*;
 
 /**
- * The OpenGL graphics server.
+ * The OpenGL graphics device.
  */
-public final class GLServer extends Server {
+public final class GLDevice extends Device {
 
     private final GLCaps mCaps;
 
@@ -81,7 +81,7 @@ public final class GLServer extends Server {
 
     private boolean mNeedsFlush;
 
-    private GLServer(DirectContext context, GLCaps caps) {
+    private GLDevice(DirectContext context, GLCaps caps) {
         super(context, caps);
         mCaps = caps;
         mMainCmdBuffer = new GLCommandBuffer(this);
@@ -93,14 +93,14 @@ public final class GLServer extends Server {
     }
 
     /**
-     * Create a GLServer with OpenGL context current in the current thread.
+     * Create a {@link GLDevice} with OpenGL context current in the current thread.
      *
      * @param context the owner context
      * @param options the context options
-     * @return the server or null if failed to create
+     * @return the device or null if failed to create
      */
     @Nullable
-    public static GLServer make(DirectContext context, ContextOptions options) {
+    public static GLDevice make(DirectContext context, ContextOptions options) {
         GLCapabilities capabilities;
         try {
             capabilities = Objects.requireNonNullElseGet(GL.getCapabilities(), GL::createCapabilities);
@@ -114,7 +114,7 @@ public final class GLServer extends Server {
         }
         try {
             GLCaps caps = new GLCaps(options, capabilities);
-            return new GLServer(context, caps);
+            return new GLDevice(context, caps);
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -403,7 +403,7 @@ public final class GLServer extends Server {
         int type = buffer.getTypeEnum();
         if (type == BUFFER_TYPE_INDEX) {
             // Index buffer state is tied to the vertex array.
-            currentCommandBuffer().bindPipeline(null);
+            currentCommandBuffer().bindVertexArray(DEFAULT_VERTEX_ARRAY);
         }
 
         var bufferState = mHWBufferStates[type];

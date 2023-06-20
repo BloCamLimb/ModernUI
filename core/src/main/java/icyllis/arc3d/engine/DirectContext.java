@@ -18,7 +18,7 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.opengl.GLServer;
+import icyllis.arc3d.opengl.GLDevice;
 import icyllis.arc3d.vulkan.VkBackendContext;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -29,7 +29,7 @@ import javax.annotation.Nullable;
  */
 public final class DirectContext extends RecordingContext {
 
-    private Server mServer;
+    private Device mDevice;
     private ResourceCache mResourceCache;
     private ResourceProvider mResourceProvider;
 
@@ -84,7 +84,7 @@ public final class DirectContext extends RecordingContext {
     @Nullable
     public static DirectContext makeOpenGL(ContextOptions options) {
         DirectContext context = new DirectContext(Engine.BackendApi.kOpenGL, options);
-        context.mServer = GLServer.make(context, options);
+        context.mDevice = GLDevice.make(context, options);
         if (context.init()) {
             return context;
         }
@@ -120,8 +120,8 @@ public final class DirectContext extends RecordingContext {
     }
 
     @ApiStatus.Internal
-    public Server getServer() {
-        return mServer;
+    public Device getDevice() {
+        return mDevice;
     }
 
     @ApiStatus.Internal
@@ -137,11 +137,11 @@ public final class DirectContext extends RecordingContext {
     @Override
     protected boolean init() {
         assert isOwnerThread();
-        if (mServer == null) {
+        if (mDevice == null) {
             return false;
         }
 
-        mThreadSafeProxy.init(mServer.getCaps());
+        mThreadSafeProxy.init(mDevice.getCaps());
         if (!super.init()) {
             return false;
         }
@@ -149,7 +149,7 @@ public final class DirectContext extends RecordingContext {
         assert getThreadSafeCache() != null;
 
         mResourceCache = new ResourceCache(getContextID());
-        mResourceProvider = new ResourceProvider(mServer, mResourceCache);
+        mResourceProvider = new ResourceProvider(mDevice, mResourceCache);
         return true;
     }
 
@@ -159,6 +159,6 @@ public final class DirectContext extends RecordingContext {
         if (mResourceCache != null) {
             mResourceCache.releaseAll();
         }
-        mServer.disconnect(true);
+        mDevice.disconnect(true);
     }
 }

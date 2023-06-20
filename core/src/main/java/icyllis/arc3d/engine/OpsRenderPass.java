@@ -129,9 +129,9 @@ public abstract class OpsRenderPass {
      * @param vertexBuffer   the vertex buffer, nonnull
      * @param instanceBuffer the instance buffer if using instanced rendering, or null
      */
-    public final void bindBuffers(@SharedPtr GpuBuffer indexBuffer,
-                                  @SharedPtr GpuBuffer vertexBuffer,
-                                  @SharedPtr GpuBuffer instanceBuffer) {
+    public final void bindBuffers(@SharedPtr Buffer indexBuffer,
+                                  @SharedPtr Buffer vertexBuffer,
+                                  @SharedPtr Buffer instanceBuffer) {
         if (vertexBuffer == null) {
             mDrawPipelineStatus = kFailedToBind_DrawPipelineStatus;
             return;
@@ -152,10 +152,10 @@ public abstract class OpsRenderPass {
     public final void draw(int vertexCount, int baseVertex) {
         if (mDrawPipelineStatus == kConfigured_DrawPipelineStatus) {
             onDraw(vertexCount, baseVertex);
-            getServer().getStats().incNumDraws();
+            getDevice().getStats().incNumDraws();
         } else {
             assert (mDrawPipelineStatus == kFailedToBind_DrawPipelineStatus);
-            getServer().getStats().incNumFailedDraws();
+            getDevice().getStats().incNumFailedDraws();
         }
     }
 
@@ -170,10 +170,10 @@ public abstract class OpsRenderPass {
                                   int baseVertex) {
         if (mDrawPipelineStatus == kConfigured_DrawPipelineStatus) {
             onDrawIndexed(indexCount, baseIndex, baseVertex);
-            getServer().getStats().incNumDraws();
+            getDevice().getStats().incNumDraws();
         } else {
             assert (mDrawPipelineStatus == kFailedToBind_DrawPipelineStatus);
-            getServer().getStats().incNumFailedDraws();
+            getDevice().getStats().incNumFailedDraws();
         }
     }
 
@@ -189,10 +189,10 @@ public abstract class OpsRenderPass {
                                     int vertexCount, int baseVertex) {
         if (mDrawPipelineStatus == kConfigured_DrawPipelineStatus) {
             onDrawInstanced(instanceCount, baseInstance, vertexCount, baseVertex);
-            getServer().getStats().incNumDraws();
+            getDevice().getStats().incNumDraws();
         } else {
             assert (mDrawPipelineStatus == kFailedToBind_DrawPipelineStatus);
-            getServer().getStats().incNumFailedDraws();
+            getDevice().getStats().incNumFailedDraws();
         }
     }
 
@@ -210,10 +210,10 @@ public abstract class OpsRenderPass {
                                            int baseVertex) {
         if (mDrawPipelineStatus == kConfigured_DrawPipelineStatus) {
             onDrawIndexedInstanced(indexCount, baseIndex, instanceCount, baseInstance, baseVertex);
-            getServer().getStats().incNumDraws();
+            getDevice().getStats().incNumDraws();
         } else {
             assert (mDrawPipelineStatus == kFailedToBind_DrawPipelineStatus);
-            getServer().getStats().incNumFailedDraws();
+            getDevice().getStats().incNumFailedDraws();
         }
     }
 
@@ -223,13 +223,13 @@ public abstract class OpsRenderPass {
         mSurfaceOrigin = origin;
     }
 
-    protected abstract Server getServer();
+    protected abstract Device getDevice();
 
     protected abstract boolean onBindPipeline(PipelineInfo pipelineInfo, RectF drawBounds);
 
-    protected abstract void onBindBuffers(@SharedPtr GpuBuffer indexBuffer,
-                                          @SharedPtr GpuBuffer vertexBuffer,
-                                          @SharedPtr GpuBuffer instanceBuffer);
+    protected abstract void onBindBuffers(@SharedPtr Buffer indexBuffer,
+                                          @SharedPtr Buffer vertexBuffer,
+                                          @SharedPtr Buffer instanceBuffer);
 
     protected abstract void onDraw(int vertexCount, int baseVertex);
 

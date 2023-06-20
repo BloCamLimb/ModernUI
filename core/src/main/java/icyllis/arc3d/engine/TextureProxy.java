@@ -111,7 +111,7 @@ public class TextureProxy extends SurfaceProxy {
     protected void deallocate() {
         // Due to the order of cleanup the Texture this proxy may have wrapped may have gone away
         // at this point. Zero out the pointer so the cache invalidation code doesn't try to use it.
-        mTexture = GpuResource.move(mTexture);
+        mTexture = Resource.move(mTexture);
 
         if (mLazyInstantiateCallback != null) {
             mLazyInstantiateCallback.close();

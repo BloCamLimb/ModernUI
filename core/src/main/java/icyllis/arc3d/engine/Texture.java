@@ -35,7 +35,7 @@ import icyllis.modernui.graphics.RefCnt;
  * In most cases, we reuse textures, so these surfaces are reused together, see
  * {@link FramebufferSet}.
  */
-public abstract class Texture extends GpuResource implements Surface {
+public abstract class Texture extends Resource implements Surface {
 
     protected final int mWidth;
     protected final int mHeight;
@@ -55,8 +55,8 @@ public abstract class Texture extends GpuResource implements Surface {
     @SharedPtr
     private ReleaseCallback mReleaseCallback;
 
-    protected Texture(Server server, int width, int height) {
-        super(server);
+    protected Texture(Device device, int width, int height) {
+        super(device);
         assert width > 0 && height > 0;
         mWidth = width;
         mHeight = height;

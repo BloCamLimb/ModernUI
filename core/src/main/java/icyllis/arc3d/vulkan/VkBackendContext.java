@@ -21,8 +21,8 @@ package icyllis.arc3d.vulkan;
 import org.lwjgl.vulkan.*;
 
 /**
- * The BackendContext contains all the base Vulkan objects needed by the VkServer. The assumption
- * is that the client will set these up and pass them to the VkServer constructor. The VkDevice
+ * The BackendContext contains all the base Vulkan objects needed by the VkDevice. The assumption
+ * is that the client will set these up and pass them to the VkDevice constructor. The VkDevice
  * created must support at least one graphics queue, which is passed in as well.
  * The QueueFamilyIndex must match the family of the given queue. It is needed for CommandPool
  * creation, and any BackendObjects handed to us (e.g., for wrapped textures) needs to be created

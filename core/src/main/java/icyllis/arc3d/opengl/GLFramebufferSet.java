@@ -54,7 +54,7 @@ public final class GLFramebufferSet extends FramebufferSet {
     private BackendRenderTarget mBackendRenderTarget;
 
     // Constructor for instances created by our engine. (has texture access)
-    GLFramebufferSet(GLServer server,
+    GLFramebufferSet(GLDevice device,
                      int width, int height,
                      int format,
                      int sampleCount,
@@ -62,7 +62,7 @@ public final class GLFramebufferSet extends FramebufferSet {
                      int msaaFramebuffer,
                      GLTexture colorBuffer,
                      GLAttachment msaaColorBuffer) {
-        super(server, width, height, sampleCount);
+        super(device, width, height, sampleCount);
         assert (sampleCount > 0);
         mFormat = format;
         mSampleFramebuffer = sampleCount > 1 ? msaaFramebuffer : framebuffer;
@@ -73,14 +73,14 @@ public final class GLFramebufferSet extends FramebufferSet {
     }
 
     // Constructor for instances wrapping backend objects. (no texture access)
-    private GLFramebufferSet(GLServer server,
+    private GLFramebufferSet(GLDevice device,
                              int width, int height,
                              int format,
                              int sampleCount,
                              int framebuffer,
                              boolean ownership,
                              @SharedPtr GLAttachment stencilBuffer) {
-        super(server, width, height, sampleCount);
+        super(device, width, height, sampleCount);
         assert (sampleCount > 0);
         assert (framebuffer != 0 || !ownership);
         mFormat = format;
@@ -102,7 +102,7 @@ public final class GLFramebufferSet extends FramebufferSet {
      */
     @Nonnull
     @SharedPtr
-    public static GLFramebufferSet makeWrapped(GLServer server,
+    public static GLFramebufferSet makeWrapped(GLDevice device,
                                                int width, int height,
                                                int format,
                                                int sampleCount,
@@ -130,13 +130,13 @@ public final class GLFramebufferSet extends FramebufferSet {
             // We don't have the actual renderbufferID, but we need to make an attachment for the stencil,
             // so we just set it to an invalid value of 0 to make sure we don't explicitly use it or try
             // and delete it.
-            stencilBuffer = GLAttachment.makeWrapped(server,
+            stencilBuffer = GLAttachment.makeWrapped(device,
                     width, height,
                     sampleCount,
                     stencilFormat,
                     0);
         }
-        return new GLFramebufferSet(server,
+        return new GLFramebufferSet(device,
                 width, height,
                 format,
                 sampleCount,
@@ -249,7 +249,7 @@ public final class GLFramebufferSet extends FramebufferSet {
             mRebindStencilBuffer = true;
         }
 
-        mStencilBuffer = GpuResource.move(mStencilBuffer, stencilBuffer);
+        mStencilBuffer = Resource.move(mStencilBuffer, stencilBuffer);
     }
 
     @Override

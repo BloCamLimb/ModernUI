@@ -40,13 +40,13 @@ public class GLTexture extends Texture {
     private final long mMemorySize;
 
     // Constructor for instances created by ourselves.
-    GLTexture(GLServer server,
+    GLTexture(GLDevice device,
               int width, int height,
               GLTextureInfo info,
               BackendFormat format,
               boolean budgeted,
               boolean register) {
-        super(server, width, height);
+        super(device, width, height);
         assert info.texture != 0;
         assert GLCore.glFormatIsSupported(format.getGLFormat());
         mInfo = info;
@@ -67,7 +67,7 @@ public class GLTexture extends Texture {
     }
 
     // Constructor for instances wrapping backend objects.
-    public GLTexture(GLServer server,
+    public GLTexture(GLDevice device,
                      int width, int height,
                      GLTextureInfo info,
                      GLTextureParameters params,
@@ -75,7 +75,7 @@ public class GLTexture extends Texture {
                      int ioType,
                      boolean cacheable,
                      boolean ownership) {
-        super(server, width, height);
+        super(device, width, height);
         assert info.texture != 0;
         assert GLCore.glFormatIsSupported(format.getGLFormat());
         mInfo = info;
@@ -137,13 +137,13 @@ public class GLTexture extends Texture {
 
     @Override
     protected void onSetLabel(@Nonnull String label) {
-        if (getServer().getCaps().hasDebugSupport()) {
+        if (getDevice().getCaps().hasDebugSupport()) {
             assert mInfo != null;
             if (label.isEmpty()) {
                 nglObjectLabel(GL_TEXTURE, mInfo.texture, 0, MemoryUtil.NULL);
             } else {
                 label = label.substring(0, Math.min(label.length(),
-                        getServer().getCaps().maxLabelLength()));
+                        getDevice().getCaps().maxLabelLength()));
                 glObjectLabel(GL_TEXTURE, mInfo.texture, label);
             }
         }
@@ -176,8 +176,8 @@ public class GLTexture extends Texture {
     }
 
     @Override
-    protected GLServer getServer() {
-        return (GLServer) super.getServer();
+    protected GLDevice getDevice() {
+        return (GLDevice) super.getDevice();
     }
 
     @Override

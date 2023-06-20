@@ -33,13 +33,13 @@ public final class GLRenderTexture extends GLTexture implements RenderTarget {
     @SharedPtr
     private GLFramebufferSet mGLFramebufferSet;
 
-    GLRenderTexture(GLServer server,
+    GLRenderTexture(GLDevice device,
                     int width, int height,
                     GLTextureInfo info,
                     BackendFormat format,
                     boolean budgeted,
                     Function<GLTexture, GLFramebufferSet> function) {
-        super(server, width, height, info, format, budgeted, false);
+        super(device, width, height, info, format, budgeted, false);
         mGLFramebufferSet = function.apply(this);
         mFlags |= Surface.FLAG_RENDERABLE;
 

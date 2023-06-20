@@ -22,6 +22,7 @@ import icyllis.modernui.graphics.RefCnt;
 import icyllis.modernui.graphics.SharedPtr;
 import icyllis.arc3d.engine.*;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Arrays;
 
@@ -29,10 +30,10 @@ import static icyllis.arc3d.opengl.GLCore.*;
 
 /**
  * The main command buffer of OpenGL context. The commands executed on {@link GLCommandBuffer} are
- * mostly the same as that on {@link GLServer}, but {@link GLCommandBuffer} assumes some values
+ * mostly the same as that on {@link GLDevice}, but {@link GLCommandBuffer} assumes some values
  * and will not handle dirty context.
  *
- * @see GLServer#beginRenderPass(GLFramebufferSet, int, int, float[])
+ * @see GLDevice#beginRenderPass(GLFramebufferSet, int, int, float[])
  */
 public final class GLCommandBuffer {
 
@@ -41,7 +42,7 @@ public final class GLCommandBuffer {
             TriState_Enabled = 1,
             TriState_Unknown = 2;
 
-    private final GLServer mServer;
+    private final GLDevice mDevice;
 
     private int mHWViewportWidth;
     private int mHWViewportHeight;
@@ -86,9 +87,9 @@ public final class GLCommandBuffer {
 
     private final HWSamplerState[] mHWSamplerStates;
 
-    GLCommandBuffer(GLServer server) {
-        mServer = server;
-        mHWTextureStates = new GLTexture.UniqueID[server.maxTextureUnits()];
+    GLCommandBuffer(GLDevice device) {
+        mDevice = device;
+        mHWTextureStates = new GLTexture.UniqueID[device.maxTextureUnits()];
         mHWSamplerStates = new HWSamplerState[mHWTextureStates.length];
         for (int i = 0; i < mHWSamplerStates.length; i++) {
             mHWSamplerStates[i] = new HWSamplerState();
@@ -97,14 +98,14 @@ public final class GLCommandBuffer {
 
     void resetStates(int states) {
         if ((states & Engine.GLBackendState.kRenderTarget) != 0) {
-            mHWFramebuffer = 0;
+            mHWFramebuffer = INVALID_ID;
             mHWRenderTarget = RefCnt.move(mHWRenderTarget);
         }
 
         if ((states & Engine.GLBackendState.kPipeline) != 0) {
             mHWPipeline = RefCnt.move(mHWPipeline);
             mHWProgram = 0;
-            mHWVertexArray = 0;
+            mHWVertexArray = INVALID_ID;
         }
 
         if ((states & Engine.GLBackendState.kTexture) != 0) {
@@ -254,26 +255,22 @@ public final class GLCommandBuffer {
         }
     }
 
-    public void bindPipeline(@Nullable GLPipeline pipeline) {
+    public void bindPipeline(@Nonnull GLPipeline pipeline) {
         if (mHWPipeline != pipeline) {
-            if (pipeline != null) {
-                // active program will not be deleted, so no collision
-                assert (pipeline.getProgram() != mHWProgram);
-                assert (pipeline.getVertexArray() != mHWVertexArray);
-                glUseProgram(pipeline.getProgram());
-                glBindVertexArray(pipeline.getVertexArray());
-                mHWPipeline = RefCnt.create(mHWPipeline, pipeline);
-                mHWProgram = pipeline.getProgram();
-                mHWVertexArray = pipeline.getVertexArray();
-                assert (mHWProgram != 0 && mHWVertexArray != 0);
-            } else {
-                assert (mHWProgram != 0 && mHWVertexArray != 0);
-                glUseProgram(0);
-                glBindVertexArray(0);
-                mHWPipeline = RefCnt.move(mHWPipeline);
-                mHWProgram = 0;
-                mHWVertexArray = 0;
-            }
+            // active program will not be deleted, so no collision
+            assert (pipeline.getProgram() != mHWProgram);
+            glUseProgram(pipeline.getProgram());
+            bindVertexArray(pipeline.getVertexArray());
+            mHWPipeline = RefCnt.create(mHWPipeline, pipeline);
+            mHWProgram = pipeline.getProgram();
+            assert (mHWProgram != 0 && mHWVertexArray != 0);
+        }
+    }
+
+    public void bindVertexArray(int vertexArray) {
+        if (mHWVertexArray != vertexArray) {
+            glBindVertexArray(vertexArray);
+            mHWVertexArray = vertexArray;
         }
     }
 
@@ -296,7 +293,7 @@ public final class GLCommandBuffer {
                 assert (!texture.isMipmapsDirty());
             }
         }
-        boolean dsa = mServer.getCaps().hasDSASupport();
+        boolean dsa = mDevice.getCaps().hasDSASupport();
         if (mHWTextureStates[binding] != texture.getUniqueID()) {
             if (dsa) {
                 glBindTextureUnit(binding, texture.getHandle());
@@ -309,7 +306,7 @@ public final class GLCommandBuffer {
         var ss = mHWSamplerStates[binding];
         if (ss.mSamplerState != samplerState) {
             GLSampler sampler = samplerState != 0
-                    ? mServer.getResourceProvider().findOrCreateCompatibleSampler(samplerState)
+                    ? mDevice.getResourceProvider().findOrCreateCompatibleSampler(samplerState)
                     : null;
             glBindSampler(binding, sampler != null
                     ? sampler.getHandle()

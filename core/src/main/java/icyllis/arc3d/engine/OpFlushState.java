@@ -29,39 +29,39 @@ import java.util.Set;
  */
 public class OpFlushState implements MeshDrawTarget {
 
-    private final Server mServer;
+    private final Device mDevice;
 
     private OpsRenderPass mOpsRenderPass;
 
-    public OpFlushState(Server server,
+    public OpFlushState(Device device,
                         ResourceProvider resourceProvider) {
-        mServer = server;
+        mDevice = device;
     }
 
-    public Server getServer() {
-        return mServer;
+    public Device getDevice() {
+        return mDevice;
     }
 
     @Override
     public long makeVertexSpace(Mesh mesh) {
-        return mServer.getVertexPool().makeSpace(mesh);
+        return mDevice.getVertexPool().makeSpace(mesh);
     }
 
     @Override
     public long makeInstanceSpace(Mesh mesh) {
-        return mServer.getInstancePool().makeSpace(mesh);
+        return mDevice.getInstancePool().makeSpace(mesh);
     }
 
     @Nullable
     @Override
     public ByteBuffer makeVertexWriter(Mesh mesh) {
-        return mServer.getVertexPool().makeWriter(mesh);
+        return mDevice.getVertexPool().makeWriter(mesh);
     }
 
     @Nullable
     @Override
     public ByteBuffer makeInstanceWriter(Mesh mesh) {
-        return mServer.getInstancePool().makeWriter(mesh);
+        return mDevice.getInstancePool().makeWriter(mesh);
     }
 
     public OpsRenderPass getOpsRenderPass() {
@@ -76,7 +76,7 @@ public class OpFlushState implements MeshDrawTarget {
                                             Set<TextureProxy> sampledTextures,
                                             int pipelineFlags) {
         assert (mOpsRenderPass == null);
-        OpsRenderPass opsRenderPass = mServer.getOpsRenderPass(writeView, contentBounds,
+        OpsRenderPass opsRenderPass = mDevice.getOpsRenderPass(writeView, contentBounds,
                 colorOps, stencilOps, clearColor,
                 sampledTextures, pipelineFlags);
         if (opsRenderPass == null) {

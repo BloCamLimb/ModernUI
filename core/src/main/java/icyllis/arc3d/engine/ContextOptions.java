@@ -18,6 +18,8 @@
 
 package icyllis.arc3d.engine;
 
+import java.io.PrintWriter;
+
 /**
  * Boolean value represents a tristate:
  * {@link Boolean#FALSE}: Forces an option to be disabled.
@@ -82,10 +84,10 @@ public final class ContextOptions {
     public float mGlyphsAsPathsFontSize = 384;
 
     /**
-     * If present, use this object to report shader compilation failures. If not, report failures
-     * via err and assert.
+     * If present, use this object to print errors. If not, print errors
+     * via {@link System#err}.
      */
-    public ShaderErrorHandler mShaderErrorHandler = null;
+    public PrintWriter mErrorWriter = null;
 
     /**
      * Specifies the number of samples Engine should use when performing internal draws with MSAA
