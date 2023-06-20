@@ -1,15 +1,6 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
-buildscript {
-    dependencies {
-        classpath 'org.ow2.asm:asm:9.2'
-        classpath 'org.ow2.asm:asm-commons:9.2'
-        classpath 'org.ow2.asm:asm-tree:9.2'
-        classpath 'org.ow2.asm:asm-util:9.2'
-    }
-}
-
 plugins {
     id 'maven-publish'
     id "org.jetbrains.kotlin.jvm" version "1.8.21" apply false

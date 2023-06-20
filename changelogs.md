@@ -1,5 +1,53 @@
 Changelogs
 ===
+### Modern UI 3.7.0 (2023-06-20)
+#### Core Framework 3.7
+* Optimize view matrix composition
+* Rework threading system
+* Add ProgressBar and SeekBar
+* Add Locale alias for FontFamily
+* Add ScaleDrawable
+* Change ScrollView default scrollbar
+* Fix bitmap getPixelARGB on BIG ENDIAN machine
+* Rework ShapeDrawable, remove old Shape classes
+* Set long press timeout to 1000ms by default
+* Add LinkMovementMethod
+* Update BinaryIO
+* Update ListView
+* Update Pool and Pools
+* Update Paint methods
+* Add ViewPager module
+* Rework drawLine method with SDF
+* Add drawPie drawMesh canvas method
+* Add GIF image decoder
+* Add more Bitmap formats and image decode methods
+* Merge Arc 3D graphics engine
+* Add framework Nullable/NonNull annotations
+* Allow Bitmap's pixels to be shared
+* Add ColorSpace implementation
+* Update Matrix and MathUtil
+* Optimize for styled text, make text style serializable
+* Add complex value and display metrics
+* Add linked structure and custom data class for DataSet
+* Add property name for Property
+#### Arc 3D Graphics Engine 3.7
+* Use MSAA resolve instead of MS texture sampler
+* Add compatibility methods for creating render target objects
+* Add close() for LazyCallback proxies
+* Add GL_RG for GrayAlpha surface usage
+* Add OpenGL 3.3 compatible shaders
+* Add mutable texture allocation methods
+* Add swizzle on texture binding
+* Use separate min/mag filter for SamplerState
+* Optimize surface canvas methods
+* Optimize font atlas generation
+* Change default font atlas size to 4 chunks (1024x1024)
+* Change number of font atlases from multiple to single
+* Add efficient rectangle packing algorithms
+#### View Pager 1.0
+* Add linear pager indicator
+* Initial update
+
 ### Modern UI 3.6.3.117 (2022-12-15)
 #### Forge Extension 1.19.2-43.1.2
 * Adjust GUI scale algorithm
