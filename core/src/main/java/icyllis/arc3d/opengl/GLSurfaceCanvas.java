@@ -31,7 +31,6 @@ import icyllis.modernui.view.Gravity;
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import it.unimi.dsi.fastutil.ints.*;
 import org.lwjgl.glfw.GLFW;
-import org.lwjgl.opengl.GL;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -1046,10 +1045,17 @@ public final class GLSurfaceCanvas extends GLCanvas {
                 }
                 case DRAW_LAYER_POP -> {
                     assert framebuffer != null;
+                    GLFramebufferCompat resolve = GLFramebufferCompat.resolve(framebuffer,
+                            colorBuffer, mWidth, mHeight);
+                    framebuffer.setReadBuffer(GL_COLOR_ATTACHMENT0);
+                    framebuffer.bindDraw();
+                    GLTextureCompat layer = resolve.getAttachedTexture(GL_COLOR_ATTACHMENT0);
+
                     float alpha = mLayerStack.popInt() / 255f;
                     putRectColorUV(mLayerImageMemory, 0, 0, mWidth, mHeight,
                             1, 1, 1, alpha,
-                            0, 1, 1, 0);
+                            0, (float) mHeight / layer.getHeight(),
+                            (float) mWidth / layer.getWidth(), 0);
                     mLayerImageMemory.flip();
                     mTextureMeshVertexBuffer.updateData(MemoryUtil.memAddress(mLayerImageMemory),
                             0,
@@ -1059,11 +1065,6 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     bindPipeline(COLOR_TEX_PRE)
                             .bindVertexBuffer(mTextureMeshVertexBuffer, 0);
                     bindSampler(null);
-                    GLFramebufferCompat resolve = GLFramebufferCompat.resolve(framebuffer,
-                            colorBuffer, mWidth, mHeight);
-                    framebuffer.setReadBuffer(GL_COLOR_ATTACHMENT0);
-                    framebuffer.bindDraw();
-                    GLTextureCompat layer = resolve.getAttachedTexture(GL_COLOR_ATTACHMENT0);
                     bindTexture(layer.get());
                     framebuffer.setDrawBuffer(--colorBuffer);
                     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
