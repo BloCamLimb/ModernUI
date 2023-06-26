@@ -158,7 +158,7 @@ public final class MessageQueue {
                 if (nextPollTimeoutMillis < 0) {
                     LockSupport.park();
                 } else if (nextPollTimeoutMillis > 0) {
-                    LockSupport.parkNanos(nextPollTimeoutMillis * 1000L);
+                    LockSupport.parkNanos(nextPollTimeoutMillis * 1000000L);
                 }
                 mPolling = false;
             }
@@ -262,6 +262,12 @@ public final class MessageQueue {
                 removeAllFutureMessagesLocked();
             } else {
                 removeAllMessagesLocked();
+            }
+
+            if (mThread == null) {
+                GLFW.glfwPostEmptyEvent();
+            } else {
+                LockSupport.unpark(mThread);
             }
         }
     }
