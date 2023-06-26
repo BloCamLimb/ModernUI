@@ -31,47 +31,47 @@ import java.util.Objects;
 public final class RenderSurface extends RefCnt implements RenderTarget {
 
     @SharedPtr
-    private FramebufferSet mFramebufferSet;
+    private SurfaceManager mSurfaceManager;
 
-    RenderSurface(@SharedPtr FramebufferSet fs) {
+    RenderSurface(@SharedPtr SurfaceManager fs) {
         assert (fs != null && fs.getColorBuffer() == null);
-        mFramebufferSet = fs;
+        mSurfaceManager = fs;
     }
 
     @Override
     protected void deallocate() {
-        mFramebufferSet = RefCnt.move(mFramebufferSet);
+        mSurfaceManager = RefCnt.move(mSurfaceManager);
     }
 
     @Override
     public int getWidth() {
-        return mFramebufferSet.getWidth();
+        return mSurfaceManager.getWidth();
     }
 
     @Override
     public int getHeight() {
-        return mFramebufferSet.getHeight();
+        return mSurfaceManager.getHeight();
     }
 
     @Override
     public int getSampleCount() {
-        return mFramebufferSet.getSampleCount();
+        return mSurfaceManager.getSampleCount();
     }
 
     @Nonnull
     @Override
     public BackendFormat getBackendFormat() {
-        return mFramebufferSet.getBackendFormat();
+        return mSurfaceManager.getBackendFormat();
     }
 
     @Override
     public int getSurfaceFlags() {
-        return mFramebufferSet.getSurfaceFlags();
+        return mSurfaceManager.getSurfaceFlags();
     }
 
     @Nonnull
     @Override
-    public FramebufferSet getFramebufferSet() {
-        return Objects.requireNonNull(mFramebufferSet, "Disposed");
+    public SurfaceManager getSurfaceManager() {
+        return Objects.requireNonNull(mSurfaceManager, "Disposed");
     }
 }

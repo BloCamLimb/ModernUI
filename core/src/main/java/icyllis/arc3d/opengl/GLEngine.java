@@ -34,9 +34,9 @@ import java.util.function.Function;
 import static icyllis.arc3d.opengl.GLCore.*;
 
 /**
- * The OpenGL graphics device.
+ * The OpenGL graphics engine.
  */
-public final class GLDevice extends Device {
+public final class GLEngine extends Engine {
 
     private final GLCaps mCaps;
 
@@ -81,7 +81,7 @@ public final class GLDevice extends Device {
 
     private boolean mNeedsFlush;
 
-    private GLDevice(DirectContext context, GLCaps caps) {
+    private GLEngine(DirectContext context, GLCaps caps) {
         super(context, caps);
         mCaps = caps;
         mMainCmdBuffer = new GLCommandBuffer(this);
@@ -93,17 +93,20 @@ public final class GLDevice extends Device {
     }
 
     /**
-     * Create a {@link GLDevice} with OpenGL context current in the current thread.
+     * Create a {@link GLEngine} with OpenGL context current in the current thread.
      *
      * @param context the owner context
      * @param options the context options
-     * @return the device or null if failed to create
+     * @return the engine or null if failed to create
      */
     @Nullable
-    public static GLDevice make(DirectContext context, ContextOptions options) {
+    public static GLEngine make(DirectContext context, ContextOptions options) {
         GLCapabilities capabilities;
         try {
-            capabilities = Objects.requireNonNullElseGet(GL.getCapabilities(), GL::createCapabilities);
+            capabilities = Objects.requireNonNullElseGet(
+                    GL.getCapabilities(),
+                    GL::createCapabilities
+            );
         } catch (Exception x) {
             try {
                 capabilities = GL.createCapabilities();
@@ -114,7 +117,7 @@ public final class GLDevice extends Device {
         }
         try {
             GLCaps caps = new GLCaps(options, capabilities);
-            return new GLDevice(context, caps);
+            return new GLEngine(context, caps);
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -176,17 +179,17 @@ public final class GLDevice extends Device {
         currentCommandBuffer().resetStates(resetBits);
 
         // we assume these values
-        if ((resetBits & Engine.GLBackendState.kPixelStore) != 0) {
+        if ((resetBits & GLBackendState.kPixelStore) != 0) {
             glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
             glPixelStorei(GL_PACK_ROW_LENGTH, 0);
         }
 
-        if ((resetBits & Engine.GLBackendState.kPipeline) != 0) {
+        if ((resetBits & GLBackendState.kPipeline) != 0) {
             mHWBufferStates[BUFFER_TYPE_VERTEX].mBoundBufferUniqueID = null;
             mHWBufferStates[BUFFER_TYPE_INDEX].mBoundBufferUniqueID = null;
         }
 
-        if ((resetBits & Engine.GLBackendState.kRaster) != 0) {
+        if ((resetBits & GLBackendState.kRaster) != 0) {
             glDisable(GL_LINE_SMOOTH);
             glDisable(GL_POLYGON_SMOOTH);
 
@@ -194,11 +197,11 @@ public final class GLDevice extends Device {
             glEnable(GL_MULTISAMPLE);
         }
 
-        if ((resetBits & Engine.GLBackendState.kBlend) != 0) {
+        if ((resetBits & GLBackendState.kBlend) != 0) {
             glDisable(GL_COLOR_LOGIC_OP);
         }
 
-        if ((resetBits & Engine.GLBackendState.kMisc) != 0) {
+        if ((resetBits & GLBackendState.kMisc) != 0) {
             // we don't use the z-buffer at all
             glDisable(GL_DEPTH_TEST);
             glDepthMask(false);
@@ -217,14 +220,20 @@ public final class GLDevice extends Device {
         }
     }
 
+    //FIXME this is temp, wait for beginRenderPass()
+    public void forceResetContext(int state) {
+        markContextDirty(state);
+        handleDirtyContext();
+    }
+
     @Nullable
     @Override
     protected Texture onCreateTexture(int width, int height,
                                       BackendFormat format,
-                                      int levelCount,
+                                      int mipLevelCount,
                                       int sampleCount,
                                       int surfaceFlags) {
-        assert (levelCount > 0 && sampleCount > 0);
+        assert (mipLevelCount > 0 && sampleCount > 0);
         // We don't support protected textures in OpenGL.
         if ((surfaceFlags & Surface.FLAG_PROTECTED) != 0) {
             return null;
@@ -233,11 +242,11 @@ public final class GLDevice extends Device {
             return null;
         }
         int glFormat = format.getGLFormat();
-        int texture = createTexture(width, height, glFormat, levelCount);
+        int texture = createTexture(width, height, glFormat, mipLevelCount);
         if (texture == 0) {
             return null;
         }
-        Function<GLTexture, GLFramebufferSet> target = null;
+        Function<GLTexture, GLSurfaceManager> target = null;
         if ((surfaceFlags & Surface.FLAG_RENDERABLE) != 0) {
             target = createRTObjects(
                     texture,
@@ -252,7 +261,7 @@ public final class GLDevice extends Device {
         final GLTextureInfo info = new GLTextureInfo();
         info.texture = texture;
         info.format = format.getGLFormat();
-        info.levelCount = levelCount;
+        info.levels = mipLevelCount;
         if (target == null) {
             return new GLTexture(this,
                     width, height,
@@ -355,7 +364,7 @@ public final class GLDevice extends Device {
     }
 
     @Override
-    protected void onResolveRenderTarget(FramebufferSet framebufferSet, int resolveLeft, int resolveTop,
+    protected void onResolveRenderTarget(SurfaceManager surfaceManager, int resolveLeft, int resolveTop,
                                          int resolveRight
             , int resolveBottom) {
 
@@ -493,7 +502,7 @@ public final class GLDevice extends Device {
     }
 
     @Nullable
-    private Function<GLTexture, GLFramebufferSet> createRTObjects(int texture,
+    private Function<GLTexture, GLSurfaceManager> createRTObjects(int texture,
                                                                   int width, int height,
                                                                   int format,
                                                                   int samples) {
@@ -567,7 +576,7 @@ public final class GLDevice extends Device {
             }
         }
 
-        return colorBuffer -> new GLFramebufferSet(this,
+        return colorBuffer -> new GLSurfaceManager(this,
                 colorBuffer.getWidth(),
                 colorBuffer.getHeight(),
                 colorBuffer.getFormat(),

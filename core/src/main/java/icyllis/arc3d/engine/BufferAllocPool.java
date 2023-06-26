@@ -30,7 +30,7 @@ import java.util.Arrays;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 /**
- * A pool of geometry buffers tied to a {@link Device}.
+ * A pool of geometry buffers tied to a {@link Engine}.
  * <p>
  * The pool allows a client to make space for geometry and then put back excess
  * space if it over allocated. When a client is ready to draw from the pool
@@ -49,7 +49,7 @@ public abstract class BufferAllocPool {
      */
     public static final int DEFAULT_BUFFER_SIZE = 1 << 17;
 
-    private final Device mDevice;
+    private final Engine mEngine;
     private final int mBufferType;
 
     // blocks
@@ -67,33 +67,33 @@ public abstract class BufferAllocPool {
     /**
      * Constructor.
      *
-     * @param device     the device used to create the buffers.
+     * @param engine     the engine used to create the buffers.
      * @param bufferType the type of buffers to create.
      */
-    protected BufferAllocPool(Device device, int bufferType) {
+    protected BufferAllocPool(Engine engine, int bufferType) {
         assert (bufferType == Engine.BufferUsageFlags.kVertex || bufferType == Engine.BufferUsageFlags.kIndex);
-        mDevice = device;
+        mEngine = engine;
         mBufferType = bufferType;
     }
 
     /**
      * Constructor.
      *
-     * @param device the device used to create the vertex buffers.
+     * @param engine the engine used to create the vertex buffers.
      */
     @Nonnull
-    public static BufferAllocPool makeVertexPool(Device device) {
-        return new VertexPool(device);
+    public static BufferAllocPool makeVertexPool(Engine engine) {
+        return new VertexPool(engine);
     }
 
     /**
      * Constructor.
      *
-     * @param device the device used to create the instance buffers.
+     * @param engine the engine used to create the instance buffers.
      */
     @Nonnull
-    public static BufferAllocPool makeInstancePool(Device device) {
-        return new InstancePool(device);
+    public static BufferAllocPool makeInstancePool(Engine engine) {
+        return new InstancePool(engine);
     }
 
     /**
@@ -230,7 +230,7 @@ public abstract class BufferAllocPool {
         int blockSize = Math.max(size, DEFAULT_BUFFER_SIZE);
 
         @SharedPtr
-        Buffer buffer = mDevice.getContext().getResourceProvider()
+        Buffer buffer = mEngine.getContext().getResourceProvider()
                 .createBuffer(blockSize, mBufferType | Engine.BufferUsageFlags.kStream);
         if (buffer == null) {
             return NULL;
@@ -259,8 +259,8 @@ public abstract class BufferAllocPool {
 
     private static class VertexPool extends BufferAllocPool {
 
-        public VertexPool(Device device) {
-            super(device, Engine.BufferUsageFlags.kVertex);
+        public VertexPool(Engine engine) {
+            super(engine, Engine.BufferUsageFlags.kVertex);
         }
 
         /**
@@ -333,8 +333,8 @@ public abstract class BufferAllocPool {
 
     private static class InstancePool extends BufferAllocPool {
 
-        public InstancePool(Device device) {
-            super(device, Engine.BufferUsageFlags.kVertex);
+        public InstancePool(Engine engine) {
+            super(engine, Engine.BufferUsageFlags.kVertex);
             // instance buffers are also vertex buffers, but we allocate them from a different pool
         }
 

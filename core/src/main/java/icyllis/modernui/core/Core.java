@@ -18,10 +18,11 @@
 
 package icyllis.modernui.core;
 
-import icyllis.arc3d.engine.DirectContext;
-import icyllis.arc3d.engine.RecordingContext;
+import icyllis.arc3d.engine.*;
 import icyllis.arc3d.opengl.GLCore;
 import icyllis.modernui.annotation.*;
+import icyllis.modernui.graphics.RefCnt;
+import org.apache.logging.log4j.Level;
 import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
@@ -154,6 +155,22 @@ public final class Core {
         return Thread.currentThread() == sMainThread;
     }
 
+    @NonNull
+    private static ContextOptions initContextOptions(@NonNull ContextOptions options) {
+        if (options.mErrorWriter == null) {
+            options.mErrorWriter = new PrintWriter(
+                    new LogWriter(LOGGER, Level.ERROR, MARKER),
+                    true
+            );
+        }
+        return options;
+    }
+
+    @RenderThread
+    public static boolean initOpenGL() {
+        return initOpenGL(new ContextOptions());
+    }
+
     /**
      * Initializes OpenGL pipeline and the render thread.
      * <p>
@@ -163,10 +180,13 @@ public final class Core {
      * @return true if successful
      */
     @RenderThread
-    public static boolean initOpenGL() {
+    public static boolean initOpenGL(@NonNull ContextOptions options) {
         final DirectContext dContext;
         synchronized (Core.class) {
             if (sDirectContext != null) {
+                if (sDirectContext.getBackend() != Engine.BackendApi.kOpenGL) {
+                    throw new IllegalStateException();
+                }
                 return true;
             }
             if (sRenderThread == null) {
@@ -174,7 +194,8 @@ public final class Core {
             } else if (Thread.currentThread() != sRenderThread) {
                 throw new IllegalStateException();
             }
-            dContext = DirectContext.makeOpenGL();
+            initContextOptions(options);
+            dContext = DirectContext.makeOpenGL(options);
             if (dContext == null) {
                 return false;
             }
@@ -189,6 +210,51 @@ public final class Core {
         LOGGER.info(MARKER, "OpenGL version: {}", glVersion);
 
         LOGGER.debug(MARKER, "OpenGL caps: {}", dContext.getCaps());
+        return true;
+    }
+
+    @RenderThread
+    public static boolean initVulkan() {
+        return initVulkan(new ContextOptions());
+    }
+
+    /**
+     * Initializes Vulkan pipeline and the render thread.
+     * <p>
+     * Before calling this method, it is necessary to ensure that the VK library is loaded
+     * and that Vulkan is available for the current platform.
+     *
+     * @return true if successful
+     */
+    @RenderThread
+    public static boolean initVulkan(@NonNull ContextOptions options) {
+        final DirectContext dContext;
+        synchronized (Core.class) {
+            if (sDirectContext != null) {
+                if (sDirectContext.getBackend() != Engine.BackendApi.kVulkan) {
+                    throw new IllegalStateException();
+                }
+                return true;
+            }
+            if (sRenderThread == null) {
+                sRenderThread = Thread.currentThread();
+            } else if (Thread.currentThread() != sRenderThread) {
+                throw new IllegalStateException();
+            }
+            try {
+                var vkManager = VulkanManager.getInstance();
+                vkManager.initialize();
+                initContextOptions(options);
+                dContext = vkManager.createContext(options);
+                if (dContext == null) {
+                    return false;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                return false;
+            }
+            sDirectContext = dContext;
+        }
         return true;
     }
 
@@ -222,7 +288,7 @@ public final class Core {
 
     @NonNull
     @RenderThread
-    public static DirectContext getDirectContext() {
+    public static DirectContext requireDirectContext() {
         checkRenderThread();
         return Objects.requireNonNull(sDirectContext,
                 "Direct context has not been created yet, or creation failed");
@@ -358,10 +424,13 @@ public final class Core {
 
                 if (sDirectContext != null) {
                     if (sUiThread == sRenderThread) {
-                        sUiRecordingContext = sDirectContext;
+                        sUiRecordingContext = RefCnt.create(sDirectContext);
                     } else {
                         sUiRecordingContext = RecordingContext.makeDeferred(sDirectContext.getThreadSafeProxy());
                     }
+                    Objects.requireNonNull(sUiRecordingContext);
+                } else {
+                    LOGGER.warn(MARKER, "UI thread initializing without a direct context");
                 }
 
                 return looper;
@@ -401,7 +470,7 @@ public final class Core {
 
     @NonNull
     @UiThread
-    public static RecordingContext getUiRecordingContext() {
+    public static RecordingContext requireUiRecordingContext() {
         checkUiThread();
         return Objects.requireNonNull(sUiRecordingContext,
                 "UI recording context has not been created yet, or creation failed");
@@ -532,7 +601,6 @@ public final class Core {
                 }
             }
         } catch (Throwable t) {
-            // IMPORTANT: we cannot return the pointer, so it must be freed here
             memFree(p);
             throw t;
         }

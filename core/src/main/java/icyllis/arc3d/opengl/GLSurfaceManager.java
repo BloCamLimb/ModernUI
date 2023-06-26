@@ -25,7 +25,7 @@ import javax.annotation.Nonnull;
 
 import static icyllis.arc3d.opengl.GLCore.*;
 
-public final class GLFramebufferSet extends FramebufferSet {
+public final class GLSurfaceManager extends SurfaceManager {
 
     /**
      * The GL format for all color attachments.
@@ -54,7 +54,7 @@ public final class GLFramebufferSet extends FramebufferSet {
     private BackendRenderTarget mBackendRenderTarget;
 
     // Constructor for instances created by our engine. (has texture access)
-    GLFramebufferSet(GLDevice device,
+    GLSurfaceManager(GLEngine engine,
                      int width, int height,
                      int format,
                      int sampleCount,
@@ -62,7 +62,7 @@ public final class GLFramebufferSet extends FramebufferSet {
                      int msaaFramebuffer,
                      GLTexture colorBuffer,
                      GLAttachment msaaColorBuffer) {
-        super(device, width, height, sampleCount);
+        super(engine, width, height, sampleCount);
         assert (sampleCount > 0);
         mFormat = format;
         mSampleFramebuffer = sampleCount > 1 ? msaaFramebuffer : framebuffer;
@@ -73,14 +73,14 @@ public final class GLFramebufferSet extends FramebufferSet {
     }
 
     // Constructor for instances wrapping backend objects. (no texture access)
-    private GLFramebufferSet(GLDevice device,
+    private GLSurfaceManager(GLEngine engine,
                              int width, int height,
                              int format,
                              int sampleCount,
                              int framebuffer,
                              boolean ownership,
                              @SharedPtr GLAttachment stencilBuffer) {
-        super(device, width, height, sampleCount);
+        super(engine, width, height, sampleCount);
         assert (sampleCount > 0);
         assert (framebuffer != 0 || !ownership);
         mFormat = format;
@@ -94,7 +94,7 @@ public final class GLFramebufferSet extends FramebufferSet {
     }
 
     /**
-     * Make a {@link GLFramebufferSet} that wraps existing framebuffers without
+     * Make a {@link GLSurfaceManager} that wraps existing framebuffers without
      * accessing their backing buffers (texture and stencil).
      *
      * @param width  the effective width of framebuffer
@@ -102,7 +102,7 @@ public final class GLFramebufferSet extends FramebufferSet {
      */
     @Nonnull
     @SharedPtr
-    public static GLFramebufferSet makeWrapped(GLDevice device,
+    public static GLSurfaceManager makeWrapped(GLEngine engine,
                                                int width, int height,
                                                int format,
                                                int sampleCount,
@@ -130,13 +130,13 @@ public final class GLFramebufferSet extends FramebufferSet {
             // We don't have the actual renderbufferID, but we need to make an attachment for the stencil,
             // so we just set it to an invalid value of 0 to make sure we don't explicitly use it or try
             // and delete it.
-            stencilBuffer = GLAttachment.makeWrapped(device,
+            stencilBuffer = GLAttachment.makeWrapped(engine,
                     width, height,
                     sampleCount,
                     stencilFormat,
                     0);
         }
-        return new GLFramebufferSet(device,
+        return new GLSurfaceManager(engine,
                 width, height,
                 format,
                 sampleCount,
@@ -270,7 +270,7 @@ public final class GLFramebufferSet extends FramebufferSet {
 
     @Override
     public String toString() {
-        return "GLFramebufferSet{" +
+        return "GLSurfaceManager{" +
                 "mRenderFramebuffer=" + mSampleFramebuffer +
                 ", mResolveFramebuffer=" + mResolveFramebuffer +
                 ", mFormat=" + GLCore.glFormatName(mFormat) +

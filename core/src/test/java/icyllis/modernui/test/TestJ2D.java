@@ -44,7 +44,7 @@ public class TestJ2D {
         g2d.setBackground(Color.black);
         g2d.clearRect(0, 0, 800, 450);
         //g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_GASP);
+        g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
         g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_OFF);
         g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
         g2d.setRenderingHint(RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_QUALITY);
@@ -57,10 +57,8 @@ public class TestJ2D {
         String s = "你说的对，但是《原神》是由米哈游自主研发的一款全新开放世界冒险游戏。";
         var gv0 = font.layoutGlyphVector(g2d.getFontRenderContext(),
                 s.toCharArray(), 0, s.length(), Font.LAYOUT_LEFT_TO_RIGHT);
-        System.out.println(gv0.getGlyphCode(0) & 0xFFFFFF);
         g2d.drawGlyphVector(gv0, 2, 16);
 
-        g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
         var gv1 = font.layoutGlyphVector(g2d.getFontRenderContext(),
                 s.toCharArray(), 0, s.length(), Font.LAYOUT_LEFT_TO_RIGHT);
         g2d.drawGlyphVector(gv1, 2, 34);

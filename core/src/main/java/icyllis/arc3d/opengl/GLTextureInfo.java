@@ -44,7 +44,7 @@ public final class GLTextureInfo {
     /**
      * <code>GLsizei</code> - number of texture levels
      */
-    public int levelCount = 0;
+    public int levels = 0;
     /**
      * <code>GLuint</code> - memory
      */
@@ -62,7 +62,7 @@ public final class GLTextureInfo {
     public void set(GLTextureInfo info) {
         texture = info.texture;
         format = info.format;
-        levelCount = info.levelCount;
+        levels = info.levels;
         memoryObject = info.memoryObject;
         memoryHandle = info.memoryHandle;
     }
@@ -71,7 +71,7 @@ public final class GLTextureInfo {
     public int hashCode() {
         int h = texture;
         h = 31 * h + format;
-        h = 31 * h + levelCount;
+        h = 31 * h + levels;
         h = 31 * h + memoryObject;
         h = 31 * h + memoryHandle;
         return h;
@@ -83,7 +83,7 @@ public final class GLTextureInfo {
         if (o instanceof GLTextureInfo info)
             return texture == info.texture &&
                     format == info.format &&
-                    levelCount == info.levelCount &&
+                    levels == info.levels &&
                     memoryObject == info.memoryObject &&
                     memoryHandle == info.memoryHandle;
         return false;
@@ -94,7 +94,7 @@ public final class GLTextureInfo {
         return '{' +
                 "texture=" + texture +
                 ", format=" + GLCore.glFormatName(format) +
-                ", levelCount=" + levelCount +
+                ", levels=" + levels +
                 ", memoryObject=" + memoryObject +
                 ", memoryHandle=" + memoryHandle +
                 '}';

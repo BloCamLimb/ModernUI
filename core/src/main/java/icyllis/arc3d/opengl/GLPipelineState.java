@@ -44,7 +44,7 @@ public class GLPipelineState {
 
     private final int mNumTextureSamplers;
 
-    GLPipelineState(GLDevice device,
+    GLPipelineState(GLEngine engine,
                     @SharedPtr GLPipeline pipeline,
                     List<UniformHandler.UniformInfo> uniforms,
                     int uniformSize,

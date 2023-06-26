@@ -58,8 +58,8 @@ public final class RenderTextureProxy extends TextureProxy {
 
     @Nullable
     @Override
-    public FramebufferSet peekFramebufferSet() {
-        return mTexture != null ? ((RenderTarget) mTexture).getFramebufferSet() : null;
+    public SurfaceManager peekSurfaceManager() {
+        return mTexture != null ? ((RenderTarget) mTexture).getSurfaceManager() : null;
     }
 
     @Override

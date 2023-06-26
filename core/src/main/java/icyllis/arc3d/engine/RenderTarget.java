@@ -38,5 +38,5 @@ public interface RenderTarget extends Surface {
      * @return raw ptr to the framebuffer set associated with the RT, non-null
      */
     @Nonnull
-    FramebufferSet getFramebufferSet();
+    SurfaceManager getSurfaceManager();
 }

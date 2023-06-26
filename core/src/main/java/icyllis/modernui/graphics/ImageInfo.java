@@ -18,8 +18,8 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.annotation.Size;
 import icyllis.arc3d.engine.Engine;
+import icyllis.modernui.annotation.Size;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
 

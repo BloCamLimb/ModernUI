@@ -1122,6 +1122,14 @@ public abstract class Canvas {
         drawMesh(VertexMode.TRIANGLES, pos, color, null, null, null, paint);
     }
 
+    @ApiStatus.Experimental
+    public void drawCustomDrawable(@NonNull CustomDrawable drawable, @Nullable Matrix4 matrix) {
+    }
+
+    public final void drawCustomDrawable(@NonNull CustomDrawable drawable) {
+        drawCustomDrawable(drawable, null);
+    }
+
     /**
      * Returns true if clip is empty; that is, nothing will draw.
      * <p>

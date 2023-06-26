@@ -32,26 +32,26 @@ import static icyllis.arc3d.opengl.GLCore.*;
 
 public class GLPipelineStateBuilder extends ProgramBuilder {
 
-    private final GLDevice mDevice;
+    private final GLEngine mEngine;
 
     private final VaryingHandler mVaryingHandler;
     private final GLUniformHandler mUniformHandler;
 
-    private GLPipelineStateBuilder(GLDevice device,
+    private GLPipelineStateBuilder(GLEngine engine,
                                    PipelineDesc desc,
                                    PipelineInfo pipelineInfo) {
         super(desc, pipelineInfo);
-        mDevice = device;
+        mEngine = engine;
         mVaryingHandler = new VaryingHandler(this);
         mUniformHandler = new GLUniformHandler(this);
     }
 
     @Nullable
-    public static GLPipelineState createPipelineState(GLDevice device,
+    public static GLPipelineState createPipelineState(GLEngine engine,
                                                       final PipelineDesc desc,
                                                       final PipelineInfo pipelineInfo) {
 
-        GLPipelineStateBuilder builder = new GLPipelineStateBuilder(device, desc, pipelineInfo);
+        GLPipelineStateBuilder builder = new GLPipelineStateBuilder(engine, desc, pipelineInfo);
         if (!builder.emitAndInstallProcs()) {
             return null;
         }
@@ -69,17 +69,17 @@ public class GLPipelineStateBuilder extends ProgramBuilder {
         String vertSource = mVS.toString();
         String fragSource = mFS.toString();
 
-        PrintWriter pw = mDevice.getContext().getErrorWriter();
+        PrintWriter pw = mEngine.getContext().getErrorWriter();
 
         int frag = glCompileAndAttachShader(program, GL_FRAGMENT_SHADER, fragSource,
-                mDevice.getPipelineBuilder().getStates(), pw);
+                mEngine.getPipelineBuilder().getStates(), pw);
         if (frag == 0) {
             glDeleteProgram(program);
             return null;
         }
 
         int vert = glCompileAndAttachShader(program, GL_VERTEX_SHADER, vertSource,
-                mDevice.getPipelineBuilder().getStates(), pw);
+                mEngine.getPipelineBuilder().getStates(), pw);
         if (vert == 0) {
             glDeleteProgram(program);
             glDeleteShader(frag);
@@ -135,13 +135,13 @@ public class GLPipelineStateBuilder extends ProgramBuilder {
         }
 
         @SharedPtr
-        GLPipeline pipeline = GLPipeline.make(mDevice, mPipelineInfo.geomProc(), program);
+        GLPipeline pipeline = GLPipeline.make(mEngine, mPipelineInfo.geomProc(), program);
         if (pipeline == null) {
             glDeleteProgram(program);
             return null;
         }
 
-        return new GLPipelineState(mDevice,
+        return new GLPipelineState(mEngine,
                 pipeline,
                 mUniformHandler.mUniforms,
                 mUniformHandler.mCurrentOffset,
@@ -151,7 +151,7 @@ public class GLPipelineStateBuilder extends ProgramBuilder {
 
     @Override
     public Caps caps() {
-        return mDevice.getCaps();
+        return mEngine.getCaps();
     }
 
     @Override

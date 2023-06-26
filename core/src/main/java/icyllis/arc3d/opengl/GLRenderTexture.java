@@ -31,16 +31,16 @@ import java.util.function.Function;
 public final class GLRenderTexture extends GLTexture implements RenderTarget {
 
     @SharedPtr
-    private GLFramebufferSet mGLFramebufferSet;
+    private GLSurfaceManager mSurfaceManager;
 
-    GLRenderTexture(GLDevice device,
+    GLRenderTexture(GLEngine engine,
                     int width, int height,
                     GLTextureInfo info,
                     BackendFormat format,
                     boolean budgeted,
-                    Function<GLTexture, GLFramebufferSet> function) {
-        super(device, width, height, info, format, budgeted, false);
-        mGLFramebufferSet = function.apply(this);
+                    Function<GLTexture, GLSurfaceManager> function) {
+        super(engine, width, height, info, format, budgeted, false);
+        mSurfaceManager = function.apply(this);
         mFlags |= Surface.FLAG_RENDERABLE;
 
         registerWithCache(budgeted);
@@ -48,24 +48,24 @@ public final class GLRenderTexture extends GLTexture implements RenderTarget {
 
     @Override
     public int getSampleCount() {
-        return mGLFramebufferSet.getSampleCount();
+        return mSurfaceManager.getSampleCount();
     }
 
     @Nonnull
     @Override
-    public GLFramebufferSet getFramebufferSet() {
-        return mGLFramebufferSet;
+    public GLSurfaceManager getSurfaceManager() {
+        return mSurfaceManager;
     }
 
     @Override
     protected void onRelease() {
-        mGLFramebufferSet = RefCnt.move(mGLFramebufferSet);
+        mSurfaceManager = RefCnt.move(mSurfaceManager);
         super.onRelease();
     }
 
     @Override
     protected void onDiscard() {
-        mGLFramebufferSet = RefCnt.move(mGLFramebufferSet);
+        mSurfaceManager = RefCnt.move(mSurfaceManager);
         super.onDiscard();
     }
 
@@ -86,7 +86,7 @@ public final class GLRenderTexture extends GLTexture implements RenderTarget {
                 ", mDestroyed=" + isDestroyed() +
                 ", mLabel=" + getLabel() +
                 ", mMemorySize=" + getMemorySize() +
-                ", mFramebufferSet=" + mGLFramebufferSet +
+                ", mSurfaceManager=" + mSurfaceManager +
                 '}';
     }
 }

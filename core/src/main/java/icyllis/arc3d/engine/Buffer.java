@@ -46,10 +46,10 @@ public abstract class Buffer extends Resource {
     private int mLockOffset;
     private int mLockSize;
 
-    protected Buffer(Device device,
+    protected Buffer(Engine engine,
                      int size,
                      int usage) {
-        super(device);
+        super(engine);
         mSize = size;
         mUsage = usage;
     }

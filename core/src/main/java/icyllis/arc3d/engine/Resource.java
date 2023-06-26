@@ -96,7 +96,7 @@ public abstract class Resource {
     Object mUniqueKey;
 
     // set once in constructor, clear to null after being destroyed
-    Device mDevice;
+    Engine mEngine;
 
     private byte mBudgetType = BudgetType.NotBudgeted;
     private boolean mWrapped = false;
@@ -122,9 +122,9 @@ public abstract class Resource {
 
     private final UniqueID mUniqueID = new UniqueID();
 
-    protected Resource(Device device) {
-        assert (device != null);
-        mDevice = device;
+    protected Resource(Engine engine) {
+        assert (engine != null);
+        mEngine = engine;
     }
 
     @SharedPtr
@@ -234,7 +234,7 @@ public abstract class Resource {
 
     // Either ref cnt or command buffer usage cnt reached zero
     private void notifyACntReachedZero(boolean commandBufferUsage) {
-        if (mDevice == null) {
+        if (mEngine == null) {
             // If we have no ref and no command buffer usage, then we've already been removed from the cache,
             // and then this Java object should be phantom reachable soon after (GC-ed).
             // Otherwise, either ref and command buffer usage is not 0, then this Java object will still be
@@ -243,7 +243,7 @@ public abstract class Resource {
             return;
         }
 
-        mDevice.getContext().getResourceCache().notifyACntReachedZero(this, commandBufferUsage);
+        mEngine.getContext().getResourceCache().notifyACntReachedZero(this, commandBufferUsage);
     }
 
     /**
@@ -256,7 +256,7 @@ public abstract class Resource {
      * @return true if the object has been released or discarded, false otherwise.
      */
     public final boolean isDestroyed() {
-        return mDevice == null;
+        return mEngine == null;
     }
 
     /**
@@ -267,7 +267,7 @@ public abstract class Resource {
      */
     @Nullable
     public final DirectContext getContext() {
-        return mDevice != null ? mDevice.getContext() : null;
+        return mEngine != null ? mEngine.getContext() : null;
     }
 
     /**
@@ -340,11 +340,11 @@ public abstract class Resource {
             return;
         }
 
-        if (mDevice == null) {
+        if (mEngine == null) {
             return;
         }
 
-        mDevice.getContext().getResourceCache().changeUniqueKey(this, key);
+        mEngine.getContext().getResourceCache().changeUniqueKey(this, key);
     }
 
     /**
@@ -353,11 +353,11 @@ public abstract class Resource {
      */
     @ApiStatus.Internal
     public final void removeUniqueKey() {
-        if (mDevice == null) {
+        if (mEngine == null) {
             return;
         }
 
-        mDevice.getContext().getResourceCache().removeUniqueKey(this);
+        mEngine.getContext().getResourceCache().removeUniqueKey(this);
     }
 
     /**
@@ -375,15 +375,15 @@ public abstract class Resource {
             assert !mWrapped;
             // Only wrapped resources can be in the cacheable budgeted state.
             assert mBudgetType != BudgetType.WrapCacheable;
-            if (mDevice != null && mBudgetType == BudgetType.NotBudgeted) {
+            if (mEngine != null && mBudgetType == BudgetType.NotBudgeted) {
                 // Currently, resources referencing wrapped objects are not budgeted.
                 mBudgetType = BudgetType.Budgeted;
-                mDevice.getContext().getResourceCache().didChangeBudgetStatus(this);
+                mEngine.getContext().getResourceCache().didChangeBudgetStatus(this);
             }
         } else {
-            if (mDevice != null && mBudgetType == BudgetType.Budgeted && mUniqueKey == null) {
+            if (mEngine != null && mBudgetType == BudgetType.Budgeted && mUniqueKey == null) {
                 mBudgetType = BudgetType.NotBudgeted;
-                mDevice.getContext().getResourceCache().didChangeBudgetStatus(this);
+                mEngine.getContext().getResourceCache().didChangeBudgetStatus(this);
             }
         }
     }
@@ -423,8 +423,8 @@ public abstract class Resource {
      */
     @ApiStatus.Internal
     public final void removeScratchKey() {
-        if (mDevice != null && mScratchKey != null) {
-            mDevice.getContext().getResourceCache().willRemoveScratchKey(this);
+        if (mEngine != null && mScratchKey != null) {
+            mEngine.getContext().getResourceCache().willRemoveScratchKey(this);
             mScratchKey = null;
         }
     }
@@ -452,7 +452,7 @@ public abstract class Resource {
         assert mBudgetType == BudgetType.NotBudgeted;
         mBudgetType = budgeted ? BudgetType.Budgeted : BudgetType.NotBudgeted;
         mScratchKey = computeScratchKey();
-        mDevice.getContext().getResourceCache().insertResource(this);
+        mEngine.getContext().getResourceCache().insertResource(this);
     }
 
     /**
@@ -467,14 +467,14 @@ public abstract class Resource {
         // Resources referencing wrapped objects are never budgeted. They may be cached or uncached.
         mBudgetType = cacheable ? BudgetType.WrapCacheable : BudgetType.NotBudgeted;
         mWrapped = true;
-        mDevice.getContext().getResourceCache().insertResource(this);
+        mEngine.getContext().getResourceCache().insertResource(this);
     }
 
     /**
-     * @return the device or null if destroyed
+     * @return the engine or null if destroyed
      */
-    protected Device getDevice() {
-        return mDevice;
+    protected Engine getEngine() {
+        return mEngine;
     }
 
     /**
@@ -519,22 +519,22 @@ public abstract class Resource {
      * Called by the cache to delete the resource under normal circumstances.
      */
     final void release() {
-        assert mDevice != null;
+        assert mEngine != null;
         onRelease();
-        mDevice.getContext().getResourceCache().removeResource(this);
-        mDevice = null;
+        mEngine.getContext().getResourceCache().removeResource(this);
+        mEngine = null;
     }
 
     /**
      * Called by the cache to delete the resource when the backend 3D context is no longer valid.
      */
     final void discard() {
-        if (mDevice == null) {
+        if (mEngine == null) {
             return;
         }
         onDiscard();
-        mDevice.getContext().getResourceCache().removeResource(this);
-        mDevice = null;
+        mEngine.getContext().getResourceCache().removeResource(this);
+        mEngine = null;
     }
 
     final void setCleanUpTime() {

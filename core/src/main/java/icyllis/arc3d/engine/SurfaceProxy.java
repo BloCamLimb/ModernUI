@@ -362,10 +362,10 @@ public abstract class SurfaceProxy extends RefCnt {
 
     /**
      * If this is a renderable proxy and the proxy is already instantiated, return its
-     * backing {@link FramebufferSet}; if not, return null.
+     * backing {@link SurfaceManager}; if not, return null.
      */
     @Nullable
-    public FramebufferSet peekFramebufferSet() {
+    public SurfaceManager peekSurfaceManager() {
         return null;
     }
 
