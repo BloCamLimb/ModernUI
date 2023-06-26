@@ -40,25 +40,25 @@ public final class GLPipeline extends ManagedResource {
     @SharedPtr
     private GLVertexArray mVertexArray;
 
-    public GLPipeline(@Nonnull GLDevice device,
+    public GLPipeline(@Nonnull GLEngine engine,
                        int program,
                        GLVertexArray vertexArray) {
-        super(device);
+        super(engine);
         mProgram = program;
         mVertexArray = vertexArray;
     }
 
     @Nullable
     @SharedPtr
-    public static GLPipeline make(@Nonnull GLDevice device,
+    public static GLPipeline make(@Nonnull GLEngine engine,
                                   @Nonnull GeometryProcessor geomProc,
                                   int program) {
         @SharedPtr
-        GLVertexArray vertexArray = GLVertexArray.make(device, geomProc);
+        GLVertexArray vertexArray = GLVertexArray.make(engine, geomProc);
         if (vertexArray == null) {
             return null;
         }
-        return new GLPipeline(device,
+        return new GLPipeline(engine,
                 program,
                 vertexArray);
     }

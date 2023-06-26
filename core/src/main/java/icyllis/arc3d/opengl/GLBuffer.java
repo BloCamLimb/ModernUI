@@ -40,24 +40,24 @@ public final class GLBuffer extends Buffer {
     @SharedPtr
     private CpuBuffer mStagingBuffer;
 
-    private GLBuffer(GLDevice device,
+    private GLBuffer(GLEngine engine,
                      int size,
                      int usage,
                      int type,
                      int buffer) {
-        super(device, size, usage);
+        super(engine, size, usage);
         mType = type;
         mBuffer = buffer;
 
         registerWithCache(true);
 
         // OpenGL 3.3 uses mutable allocation
-        if (!device.getCaps().hasDSASupport()) {
+        if (!engine.getCaps().hasDSASupport()) {
 
-            int target = device.bindBuffer(this);
+            int target = engine.bindBuffer(this);
             int flag = getUsageFlag();
 
-            if (device.getCaps().skipErrorChecks()) {
+            if (engine.getCaps().skipErrorChecks()) {
                 glBufferData(target, size, flag);
             } else {
                 glClearErrors();
@@ -74,25 +74,25 @@ public final class GLBuffer extends Buffer {
 
     @Nullable
     @SharedPtr
-    public static GLBuffer make(GLDevice device,
+    public static GLBuffer make(GLEngine engine,
                                 int size,
                                 int usage) {
         assert (size > 0);
 
         int type;
         if ((usage & Engine.BufferUsageFlags.kVertex) != 0) {
-            type = GLDevice.BUFFER_TYPE_VERTEX;
+            type = GLEngine.BUFFER_TYPE_VERTEX;
         } else if ((usage & Engine.BufferUsageFlags.kIndex) != 0) {
-            type = GLDevice.BUFFER_TYPE_INDEX;
+            type = GLEngine.BUFFER_TYPE_INDEX;
         } else if ((usage & Engine.BufferUsageFlags.kTransferSrc) != 0) {
-            type = GLDevice.BUFFER_TYPE_XFER_SRC;
+            type = GLEngine.BUFFER_TYPE_XFER_SRC;
         } else if ((usage & Engine.BufferUsageFlags.kTransferDst) != 0) {
-            type = GLDevice.BUFFER_TYPE_XFER_DST;
+            type = GLEngine.BUFFER_TYPE_XFER_DST;
         } else {
             return null;
         }
 
-        if (device.getCaps().hasDSASupport()) {
+        if (engine.getCaps().hasDSASupport()) {
             int flags = 0;
             if ((usage & (Engine.BufferUsageFlags.kVertex | Engine.BufferUsageFlags.kIndex)) != 0) {
                 flags |= GL_DYNAMIC_STORAGE_BIT;
@@ -108,7 +108,7 @@ public final class GLBuffer extends Buffer {
             if (buffer == 0) {
                 return null;
             }
-            if (device.getCaps().skipErrorChecks()) {
+            if (engine.getCaps().skipErrorChecks()) {
                 glNamedBufferStorage(buffer, size, flags);
             } else {
                 glClearErrors();
@@ -119,14 +119,14 @@ public final class GLBuffer extends Buffer {
                 }
             }
 
-            return new GLBuffer(device, size, usage, type, buffer);
+            return new GLBuffer(engine, size, usage, type, buffer);
         } else {
             int buffer = glGenBuffers();
             if (buffer == 0) {
                 return null;
             }
 
-            GLBuffer res = new GLBuffer(device, size, usage, type, buffer);
+            GLBuffer res = new GLBuffer(engine, size, usage, type, buffer);
             if (res.mBuffer == 0) {
                 // OOM
                 res.unref();
@@ -163,12 +163,12 @@ public final class GLBuffer extends Buffer {
 
     @Override
     protected void onSetLabel(@Nonnull String label) {
-        if (getDevice().getCaps().hasDebugSupport()) {
+        if (getEngine().getCaps().hasDebugSupport()) {
             if (label.isEmpty()) {
                 nglObjectLabel(GL_BUFFER, mBuffer, 0, MemoryUtil.NULL);
             } else {
                 label = label.substring(0, Math.min(label.length(),
-                        getDevice().getCaps().maxLabelLength()));
+                        getEngine().getCaps().maxLabelLength()));
                 glObjectLabel(GL_BUFFER, mBuffer, label);
             }
         }
@@ -191,13 +191,13 @@ public final class GLBuffer extends Buffer {
     }
 
     @Override
-    protected GLDevice getDevice() {
-        return (GLDevice) super.getDevice();
+    protected GLEngine getEngine() {
+        return (GLEngine) super.getEngine();
     }
 
     @Override
     protected long onLock(int mode, int offset, int size) {
-        assert (getDevice().getContext().isOwnerThread());
+        assert (getEngine().getContext().isOwnerThread());
         assert (!mLocked);
         assert (mBuffer != 0);
 
@@ -213,7 +213,7 @@ public final class GLBuffer extends Buffer {
         } else {
             // prefer CPU staging buffer
             assert (mode == kWriteDiscard_LockMode);
-            mStagingBuffer = getDevice().getCpuBufferCache().makeBuffer(size);
+            mStagingBuffer = getEngine().getCpuBufferCache().makeBuffer(size);
             assert (mStagingBuffer != null);
             return mStagingBuffer.data();
         }
@@ -221,7 +221,7 @@ public final class GLBuffer extends Buffer {
 
     @Override
     protected void onUnlock(int mode, int offset, int size) {
-        assert (getDevice().getContext().isOwnerThread());
+        assert (getEngine().getContext().isOwnerThread());
         assert (mLocked);
         assert (mBuffer != 0);
 
@@ -255,7 +255,7 @@ public final class GLBuffer extends Buffer {
 
     @Override
     protected boolean onUpdateData(long data, int offset, int size) {
-        assert (getDevice().getContext().isOwnerThread());
+        assert (getEngine().getContext().isOwnerThread());
         assert (mBuffer != 0);
         if ((mUsage & Engine.BufferUsageFlags.kStatic) == 0) {
             // non-static needs triple buffering, but GPU drivers did
@@ -269,7 +269,7 @@ public final class GLBuffer extends Buffer {
     private static final int MAX_TRANSFER_UNIT = 1 << 18;
 
     private void doUploadData(long data, int offset, int totalSize) {
-        if (getDevice().getCaps().hasDSASupport()) {
+        if (getEngine().getCaps().hasDSASupport()) {
             while (totalSize > 0) {
                 int size = Math.min(MAX_TRANSFER_UNIT, totalSize);
                 nglNamedBufferSubData(mBuffer, offset, size, data);
@@ -278,7 +278,7 @@ public final class GLBuffer extends Buffer {
                 totalSize -= size;
             }
         } else {
-            int target = getDevice().bindBuffer(this);
+            int target = getEngine().bindBuffer(this);
             while (totalSize > 0) {
                 int size = Math.min(MAX_TRANSFER_UNIT, totalSize);
                 nglBufferSubData(target, offset, size, data);
@@ -290,7 +290,7 @@ public final class GLBuffer extends Buffer {
     }
 
     private void doInvalidateBuffer(int offset, int size) {
-        if (getDevice().getCaps().getInvalidateBufferType() == GLCaps.INVALIDATE_BUFFER_TYPE_INVALIDATE) {
+        if (getEngine().getCaps().getInvalidateBufferType() == GLCaps.INVALIDATE_BUFFER_TYPE_INVALIDATE) {
             glInvalidateBufferSubData(mBuffer, offset, size);
         }
         // to be honest, invalidation doesn't help performance in most cases

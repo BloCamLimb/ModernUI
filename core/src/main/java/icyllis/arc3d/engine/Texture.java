@@ -33,7 +33,7 @@ import icyllis.modernui.graphics.RefCnt;
  * So we can cache these framebuffers with texture. Additionally, it may create more
  * surfaces and attach them to it. These surfaces are budgeted but cannot be reused.
  * In most cases, we reuse textures, so these surfaces are reused together, see
- * {@link FramebufferSet}.
+ * {@link SurfaceManager}.
  */
 public abstract class Texture extends Resource implements Surface {
 
@@ -55,8 +55,8 @@ public abstract class Texture extends Resource implements Surface {
     @SharedPtr
     private ReleaseCallback mReleaseCallback;
 
-    protected Texture(Device device, int width, int height) {
-        super(device);
+    protected Texture(Engine engine, int width, int height) {
+        super(engine);
         assert width > 0 && height > 0;
         mWidth = width;
         mHeight = height;

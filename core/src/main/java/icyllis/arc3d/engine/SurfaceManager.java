@@ -24,16 +24,16 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * The {@link FramebufferSet} manages all objects used by a {@link RenderTarget},
+ * The {@link SurfaceManager} manages all objects used by a {@link RenderTarget},
  * which are framebuffers, render passes and a set of attachments. This is the target
  * of {@link OpsRenderPass}, and may be associated with {@link icyllis.modernui.graphics.Surface}.
  * <p>
- * A {@link FramebufferSet} is always associated with a {@link RenderTarget}, which
+ * A {@link SurfaceManager} is always associated with a {@link RenderTarget}, which
  * can be either a renderable {@link Texture} or a wrapped {@link RenderSurface}.
  * This class is used by the pipeline internally. Use {@link RenderTextureProxy}
  * and {@link RenderSurfaceProxy} for high-level operations.
  */
-public abstract class FramebufferSet extends ManagedResource {
+public abstract class SurfaceManager extends ManagedResource {
 
     private final int mWidth;
     private final int mHeight;
@@ -41,7 +41,7 @@ public abstract class FramebufferSet extends ManagedResource {
     private final int mSampleCount;
 
     /**
-     * The stencil buffer is set at first only with wrapped <code>GLFramebufferSet</code>,
+     * The stencil buffer is set at first only with wrapped <code>GLSurfaceManager</code>,
      * the stencil attachment is fake and made beforehand (renderbuffer id 0). For example,
      * wrapping OpenGL default framebuffer (framebuffer id 0).
      */
@@ -51,10 +51,10 @@ public abstract class FramebufferSet extends ManagedResource {
     // determined by subclass constructors
     protected int mSurfaceFlags;
 
-    protected FramebufferSet(Device device,
+    protected SurfaceManager(Engine engine,
                              int width, int height,
                              int sampleCount) {
-        super(device);
+        super(engine);
         mWidth = width;
         mHeight = height;
         mSampleCount = sampleCount;

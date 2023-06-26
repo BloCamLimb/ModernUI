@@ -30,14 +30,14 @@ public final class ResourceProvider {
 
     public static final int MIN_SCRATCH_TEXTURE_SIZE = 16;
 
-    private final Device mDevice;
+    private final Engine mEngine;
     private final ResourceCache mCache;
 
     // lookup key
     private final Texture.ScratchKey mTextureScratchKey = new Texture.ScratchKey();
 
-    ResourceProvider(Device device, ResourceCache cache) {
-        mDevice = device;
+    ResourceProvider(Engine engine, ResourceCache cache) {
+        mEngine = engine;
         mCache = cache;
     }
 
@@ -79,8 +79,8 @@ public final class ResourceProvider {
     @SharedPtr
     @SuppressWarnings("unchecked")
     public <T extends Resource> T findByUniqueKey(Object key) {
-        assert mDevice.getContext().isOwnerThread();
-        return mDevice.getContext().isDiscarded() ? null : (T) mCache.findAndRefUniqueResource(key);
+        assert mEngine.getContext().isOwnerThread();
+        return mEngine.getContext().isDiscarded() ? null : (T) mCache.findAndRefUniqueResource(key);
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -103,7 +103,7 @@ public final class ResourceProvider {
      * If {@link Surface#FLAG_APPROX_FIT} is also set, it always has no mipmaps.
      * <p>
      * When {@link Surface#FLAG_RENDERABLE} is set, the texture can be rendered to and
-     * {@link RenderTarget#getFramebufferSet()} will return nonnull. The <code>sampleCount</code>
+     * {@link RenderTarget#getSurfaceManager()} will return nonnull. The <code>sampleCount</code>
      * specifies the number of samples to use for rendering.
      * <p>
      * When {@link Surface#FLAG_PROTECTED} is set, the texture will be created as protected.
@@ -129,8 +129,8 @@ public final class ResourceProvider {
                                  int sampleCount,
                                  int surfaceFlags,
                                  String label) {
-        assert mDevice.getContext().isOwnerThread();
-        if (mDevice.getContext().isDiscarded()) {
+        assert mEngine.getContext().isOwnerThread();
+        if (mEngine.getContext().isDiscarded()) {
             return null;
         }
 
@@ -138,7 +138,7 @@ public final class ResourceProvider {
         // textures should be created through the createCompressedTexture function.
         assert !format.isCompressed();
 
-        if (!mDevice.getCaps().validateSurfaceParams(width, height, format,
+        if (!mEngine.getCaps().validateSurfaceParams(width, height, format,
                 sampleCount, surfaceFlags)) {
             return null;
         }
@@ -159,7 +159,7 @@ public final class ResourceProvider {
             return texture;
         }
 
-        return mDevice.createTexture(width, height, format,
+        return mEngine.createTexture(width, height, format,
                 sampleCount, surfaceFlags, label);
     }
 
@@ -198,8 +198,8 @@ public final class ResourceProvider {
                                  int rowBytes,
                                  long pixels,
                                  String label) {
-        assert mDevice.getContext().isOwnerThread();
-        if (mDevice.getContext().isDiscarded()) {
+        assert mEngine.getContext().isOwnerThread();
+        if (mEngine.getContext().isDiscarded()) {
             return null;
         }
 
@@ -213,7 +213,7 @@ public final class ResourceProvider {
         if (actualRowBytes < minRowBytes) {
             return null;
         }
-        int actualColorType = (int) mDevice.getCaps().getSupportedWriteColorType(
+        int actualColorType = (int) mEngine.getCaps().getSupportedWriteColorType(
                 dstColorType,
                 format,
                 srcColorType);
@@ -229,7 +229,7 @@ public final class ResourceProvider {
         if (pixels == 0) {
             return texture;
         }
-        boolean result = mDevice.writePixels(texture, 0, 0, width, height,
+        boolean result = mEngine.writePixels(texture, 0, 0, width, height,
                 dstColorType, actualColorType, actualRowBytes, pixels);
         assert result;
 
@@ -246,13 +246,13 @@ public final class ResourceProvider {
     @Nullable
     @SharedPtr
     public Texture findAndRefScratchTexture(Object key, String label) {
-        assert mDevice.getContext().isOwnerThread();
-        assert !mDevice.getContext().isDiscarded();
+        assert mEngine.getContext().isOwnerThread();
+        assert !mEngine.getContext().isDiscarded();
         assert key != null;
 
         Resource resource = mCache.findAndRefScratchResource(key);
         if (resource != null) {
-            mDevice.getStats().incNumScratchTexturesReused();
+            mEngine.getStats().incNumScratchTexturesReused();
             if (label != null) {
                 resource.setLabel(label);
             }
@@ -278,10 +278,10 @@ public final class ResourceProvider {
                                             int sampleCount,
                                             int surfaceFlags,
                                             String label) {
-        assert mDevice.getContext().isOwnerThread();
-        assert !mDevice.getContext().isDiscarded();
+        assert mEngine.getContext().isOwnerThread();
+        assert !mEngine.getContext().isDiscarded();
         assert !format.isCompressed();
-        assert mDevice.getCaps().validateSurfaceParams(width, height, format,
+        assert mEngine.getCaps().validateSurfaceParams(width, height, format,
                 sampleCount, surfaceFlags);
 
         return findAndRefScratchTexture(mTextureScratchKey.compute(
@@ -313,10 +313,10 @@ public final class ResourceProvider {
     public Texture wrapRenderableBackendTexture(BackendTexture texture,
                                                 int sampleCount,
                                                 boolean ownership) {
-        if (mDevice.getContext().isDiscarded()) {
+        if (mEngine.getContext().isDiscarded()) {
             return null;
         }
-        return mDevice.wrapRenderableBackendTexture(texture, sampleCount, ownership);
+        return mEngine.wrapRenderableBackendTexture(texture, sampleCount, ownership);
     }
 
     /**
@@ -334,8 +334,8 @@ public final class ResourceProvider {
     }
 
     public void assignUniqueKeyToResource(Object key, Resource resource) {
-        assert mDevice.getContext().isOwnerThread();
-        if (mDevice.getContext().isDiscarded() || resource == null) {
+        assert mEngine.getContext().isOwnerThread();
+        if (mEngine.getContext().isDiscarded() || resource == null) {
             return;
         }
         resource.setUniqueKey(key);

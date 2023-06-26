@@ -18,7 +18,12 @@
 
 package icyllis.modernui.core;
 
+import icyllis.arc3d.engine.ContextOptions;
+import icyllis.arc3d.engine.DirectContext;
+import icyllis.arc3d.vulkan.VkBackendContext;
 import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.graphics.SharedPtr;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFWVulkan;
@@ -118,7 +123,7 @@ public final class VulkanManager implements AutoCloseable {
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
             final ByteBuffer appName = stack.UTF8("Modern UI", true);
-            final ByteBuffer engineName = stack.UTF8("Arc UI", true);
+            final ByteBuffer engineName = stack.UTF8("Arc 3D", true);
             final VkApplicationInfo appInfo = VkApplicationInfo
                     .calloc(stack)
                     .sType$Default()
@@ -138,7 +143,7 @@ public final class VulkanManager implements AutoCloseable {
             mInstance = new VkInstance(pInstance.get(0), pCreateInfo);
         }
 
-        LOGGER.info(MARKER, "Created Vulkan instance, Engine: {}", "Arc UI");
+        LOGGER.info(MARKER, "Created Vulkan instance, Engine: {}", "Arc 3D");
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
             final IntBuffer pCount = stack.mallocInt(1);
@@ -299,6 +304,19 @@ public final class VulkanManager implements AutoCloseable {
                     });
             return true;
         }
+    }
+
+    @Nullable
+    @SharedPtr
+    public DirectContext createContext(@NonNull ContextOptions options) {
+        VkBackendContext backendContext = new VkBackendContext();
+        backendContext.mInstance = mInstance;
+        backendContext.mPhysicalDevice = mPhysicalDevice;
+        backendContext.mDevice = mDevice;
+        //TODO
+        backendContext.mGraphicsQueueIndex = mGraphicsQueueIndex;
+        backendContext.mDeviceFeatures2 = mPhysicalDeviceFeatures2;
+        return DirectContext.makeVulkan(backendContext, options);
     }
 
     @Override

@@ -57,7 +57,7 @@ fun main() {
     GLCore.setupDebugCallback()
     GLCore.showCapsErrorDialog()
 
-    val dContext = Core.getDirectContext()
+    val dContext = Core.requireDirectContext()
 
     var proxy = dContext.proxyProvider.createProxyFromBitmap(sourceBm, sourceBm.colorType, Surface.FLAG_BUDGETED)
     check(proxy != null) { "Failed to create proxy" }
@@ -82,7 +82,7 @@ fun main() {
         outBm.close()
     }
 
-    println(dContext.device.stats)
+    println(dContext.engine.stats)
 
     dContext.unref()
     window.close()

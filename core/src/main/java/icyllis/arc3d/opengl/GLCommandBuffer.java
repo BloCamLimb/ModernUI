@@ -23,17 +23,16 @@ import icyllis.modernui.graphics.SharedPtr;
 import icyllis.arc3d.engine.*;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Arrays;
 
 import static icyllis.arc3d.opengl.GLCore.*;
 
 /**
  * The main command buffer of OpenGL context. The commands executed on {@link GLCommandBuffer} are
- * mostly the same as that on {@link GLDevice}, but {@link GLCommandBuffer} assumes some values
+ * mostly the same as that on {@link GLEngine}, but {@link GLCommandBuffer} assumes some values
  * and will not handle dirty context.
  *
- * @see GLDevice#beginRenderPass(GLFramebufferSet, int, int, float[])
+ * @see GLEngine#beginRenderPass(GLSurfaceManager, int, int, float[])
  */
 public final class GLCommandBuffer {
 
@@ -42,7 +41,7 @@ public final class GLCommandBuffer {
             TriState_Enabled = 1,
             TriState_Unknown = 2;
 
-    private final GLDevice mDevice;
+    private final GLEngine mEngine;
 
     private int mHWViewportWidth;
     private int mHWViewportHeight;
@@ -57,7 +56,7 @@ public final class GLCommandBuffer {
 
     private int mHWFramebuffer;
     @SharedPtr
-    private GLFramebufferSet mHWRenderTarget;
+    private GLSurfaceManager mHWRenderTarget;
 
     @SharedPtr
     private GLPipeline mHWPipeline;
@@ -87,9 +86,9 @@ public final class GLCommandBuffer {
 
     private final HWSamplerState[] mHWSamplerStates;
 
-    GLCommandBuffer(GLDevice device) {
-        mDevice = device;
-        mHWTextureStates = new GLTexture.UniqueID[device.maxTextureUnits()];
+    GLCommandBuffer(GLEngine engine) {
+        mEngine = engine;
+        mHWTextureStates = new GLTexture.UniqueID[engine.maxTextureUnits()];
         mHWSamplerStates = new HWSamplerState[mHWTextureStates.length];
         for (int i = 0; i < mHWSamplerStates.length; i++) {
             mHWSamplerStates[i] = new HWSamplerState();
@@ -239,7 +238,7 @@ public final class GLCommandBuffer {
      *
      * @param target raw ptr to render target
      */
-    public void flushRenderTarget(GLFramebufferSet target) {
+    public void flushRenderTarget(GLSurfaceManager target) {
         if (target == null) {
             mHWRenderTarget = RefCnt.move(mHWRenderTarget);
         } else {
@@ -293,7 +292,7 @@ public final class GLCommandBuffer {
                 assert (!texture.isMipmapsDirty());
             }
         }
-        boolean dsa = mDevice.getCaps().hasDSASupport();
+        boolean dsa = mEngine.getCaps().hasDSASupport();
         if (mHWTextureStates[binding] != texture.getUniqueID()) {
             if (dsa) {
                 glBindTextureUnit(binding, texture.getHandle());
@@ -306,7 +305,7 @@ public final class GLCommandBuffer {
         var ss = mHWSamplerStates[binding];
         if (ss.mSamplerState != samplerState) {
             GLSampler sampler = samplerState != 0
-                    ? mDevice.getResourceProvider().findOrCreateCompatibleSampler(samplerState)
+                    ? mEngine.getResourceProvider().findOrCreateCompatibleSampler(samplerState)
                     : null;
             glBindSampler(binding, sampler != null
                     ? sampler.getHandle()

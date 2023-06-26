@@ -290,7 +290,7 @@ public class ModernUI extends Context implements AutoCloseable, LifecycleOwner {
         mFragmentController.dispatchDestroy();
         mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY);
 
-        Core.getUiRecordingContext().unref();
+        Core.requireUiRecordingContext().unref();
         LOGGER.info(MARKER, "Quited main thread");
     }
 
@@ -347,7 +347,7 @@ public class ModernUI extends Context implements AutoCloseable, LifecycleOwner {
             }
         }
         GLSurfaceCanvas.getInstance().destroy();
-        Core.getDirectContext().unref();
+        Core.requireDirectContext().unref();
         LOGGER.info(MARKER, "Quited render thread");
     }
 

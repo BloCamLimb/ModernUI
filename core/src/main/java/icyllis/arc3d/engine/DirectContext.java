@@ -18,7 +18,7 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.opengl.GLDevice;
+import icyllis.arc3d.opengl.GLEngine;
 import icyllis.arc3d.vulkan.VkBackendContext;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -29,7 +29,7 @@ import javax.annotation.Nullable;
  */
 public final class DirectContext extends RecordingContext {
 
-    private Device mDevice;
+    private Engine mEngine;
     private ResourceCache mResourceCache;
     private ResourceProvider mResourceProvider;
 
@@ -84,7 +84,7 @@ public final class DirectContext extends RecordingContext {
     @Nullable
     public static DirectContext makeOpenGL(ContextOptions options) {
         DirectContext context = new DirectContext(Engine.BackendApi.kOpenGL, options);
-        context.mDevice = GLDevice.make(context, options);
+        context.mEngine = GLEngine.make(context, options);
         if (context.init()) {
             return context;
         }
@@ -119,9 +119,24 @@ public final class DirectContext extends RecordingContext {
         return null;
     }
 
+    /**
+     * The context normally assumes that no outsider is setting state
+     * within the underlying 3D API's context/device. This call informs
+     * the context that the state was modified and it should resend.
+     * <p>
+     * The flag bits, state, is dependent on which backend is used by the
+     * context, only GL.
+     *
+     * @see Engine.GLBackendState
+     */
+    public void resetContext(int state) {
+        checkOwnerThread();
+        mEngine.markContextDirty(state);
+    }
+
     @ApiStatus.Internal
-    public Device getDevice() {
-        return mDevice;
+    public Engine getEngine() {
+        return mEngine;
     }
 
     @ApiStatus.Internal
@@ -137,11 +152,11 @@ public final class DirectContext extends RecordingContext {
     @Override
     protected boolean init() {
         assert isOwnerThread();
-        if (mDevice == null) {
+        if (mEngine == null) {
             return false;
         }
 
-        mThreadSafeProxy.init(mDevice.getCaps());
+        mThreadSafeProxy.init(mEngine.getCaps());
         if (!super.init()) {
             return false;
         }
@@ -149,7 +164,7 @@ public final class DirectContext extends RecordingContext {
         assert getThreadSafeCache() != null;
 
         mResourceCache = new ResourceCache(getContextID());
-        mResourceProvider = new ResourceProvider(mDevice, mResourceCache);
+        mResourceProvider = new ResourceProvider(mEngine, mResourceCache);
         return true;
     }
 
@@ -159,6 +174,6 @@ public final class DirectContext extends RecordingContext {
         if (mResourceCache != null) {
             mResourceCache.releaseAll();
         }
-        mDevice.disconnect(true);
+        mEngine.disconnect(true);
     }
 }

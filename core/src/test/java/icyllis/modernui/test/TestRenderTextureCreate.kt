@@ -21,7 +21,7 @@ package icyllis.modernui.test
 import icyllis.arc3d.engine.Surface
 import icyllis.arc3d.opengl.GLBackendFormat
 import icyllis.arc3d.opengl.GLCore
-import icyllis.arc3d.opengl.GLFramebufferSet
+import icyllis.arc3d.opengl.GLSurfaceManager
 import icyllis.modernui.core.Core
 import icyllis.modernui.core.MainWindow
 import org.apache.logging.log4j.Level
@@ -47,7 +47,7 @@ fun main() {
     check(Core.initOpenGL()) { "Failed to initialize OpenGL" }
     GLCore.setupDebugCallback()
 
-    val dContext = Core.getDirectContext()
+    val dContext = Core.requireDirectContext()
 
     val proxy = dContext.proxyProvider.createRenderTextureProxy(
         GLBackendFormat.make(GLCore.GL_RGBA8),
@@ -57,7 +57,7 @@ fun main() {
     check(proxy != null) { "Failed to create proxy" }
     check(proxy.instantiate(dContext.resourceProvider))
 
-    val rt = proxy.peekFramebufferSet() as GLFramebufferSet
+    val rt = proxy.peekSurfaceManager() as GLSurfaceManager
     println(rt)
     println(rt.stencilBuffer)
     println(rt.sampleFramebuffer)

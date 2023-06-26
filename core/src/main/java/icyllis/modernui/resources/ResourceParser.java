@@ -21,8 +21,11 @@ package icyllis.modernui.resources;
 import icyllis.modernui.annotation.NonNull;
 import org.jetbrains.annotations.Contract;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.*;
+import java.io.StringReader;
+import java.lang.invoke.MethodHandles;
+import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -89,6 +92,33 @@ public class ResourceParser {
             mask |= type;
         }
         return mask;
+    }
+
+    public boolean Parse(XMLStreamReader reader) {
+        try {
+            if (reader.nextTag() == XMLResourceReader.START_ELEMENT &&
+                    reader.getNamespaceURI() == null &&
+                    reader.getLocalName().equals("resources")) {
+                return ParseResources(reader);
+            }
+        } catch (XMLStreamException e) {
+            e.printStackTrace();
+            return false;
+        }
+        return false;
+    }
+
+    public static void main(String[] args) throws XMLStreamException {
+        boolean success = new ResourceParser().Parse(XMLInputFactory.newFactory().createXMLStreamReader(new StringReader("""
+                <?xml version="1.0" encoding="utf-8"?>
+                <resources>
+                </resources>
+                """)));
+        System.out.println(success);
+    }
+
+    public boolean ParseResources(XMLStreamReader reader) {
+        return true;
     }
 
     public boolean Attr(XMLStreamReader reader, ParsedResource out) {

@@ -19,7 +19,7 @@
 package icyllis.arc3d.engine;
 
 import icyllis.modernui.annotation.NonNull;
-import icyllis.arc3d.opengl.GLDevice;
+import icyllis.arc3d.opengl.GLEngine;
 import icyllis.arc3d.opengl.GLTextureInfo;
 import icyllis.arc3d.vulkan.VkImageInfo;
 
@@ -78,7 +78,7 @@ public abstract class BackendTexture {
      * externally to Context.
      * <p>
      * Tells client that these parameters of the texture are changed out of client control
-     * (for example, you called glTexParameteri without using {@link GLDevice}).
+     * (for example, you called glTexParameteri without using {@link GLEngine}).
      * The local states will be forced to reset to a known state when next use.
      */
     public void glTextureParametersModified() {

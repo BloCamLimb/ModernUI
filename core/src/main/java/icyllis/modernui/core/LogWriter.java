@@ -27,7 +27,7 @@ import java.io.Writer;
 /**
  * Buffered writer to log4j logger, auto flush on newline.
  */
-public class LoggerWriter extends Writer {
+public class LogWriter extends Writer {
 
     private static final int FORCE_WRAP_LENGTH = 960;
 
@@ -36,16 +36,16 @@ public class LoggerWriter extends Writer {
     private final Marker mMarker;
     private final StringBuilder mBuilder = new StringBuilder(120);
 
-    public LoggerWriter(@NonNull Logger logger) {
+    public LogWriter(@NonNull Logger logger) {
         this(logger, Level.DEBUG, null);
     }
 
     /**
      * Create a new Writer that sends to the log with the given tag.
      */
-    public LoggerWriter(@NonNull Logger logger,
-                        @NonNull Level level,
-                        @Nullable Marker marker) {
+    public LogWriter(@NonNull Logger logger,
+                     @NonNull Level level,
+                     @Nullable Marker marker) {
         mLogger = logger;
         mLevel = level;
         mMarker = marker;

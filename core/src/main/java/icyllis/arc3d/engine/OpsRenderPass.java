@@ -18,6 +18,7 @@
 
 package icyllis.arc3d.engine;
 
+import icyllis.arc3d.engine.ops.Op;
 import icyllis.modernui.graphics.SharedPtr;
 import icyllis.modernui.graphics.RectF;
 
@@ -38,7 +39,7 @@ public abstract class OpsRenderPass {
 
     private int mDrawPipelineStatus = kNotConfigured_DrawPipelineStatus;
 
-    protected FramebufferSet mFramebufferSet;
+    protected SurfaceManager mSurfaceManager;
     protected int mSurfaceOrigin;
 
     private TextureProxy[] mGeomTextures = new TextureProxy[1];
@@ -47,8 +48,8 @@ public abstract class OpsRenderPass {
         this(null, Engine.SurfaceOrigin.kUpperLeft);
     }
 
-    public OpsRenderPass(FramebufferSet fs, int origin) {
-        mFramebufferSet = fs;
+    public OpsRenderPass(SurfaceManager fs, int origin) {
+        mSurfaceManager = fs;
         mSurfaceOrigin = origin;
     }
 
@@ -65,7 +66,7 @@ public abstract class OpsRenderPass {
      */
     public void clearColor(int left, int top, int right, int bottom,
                            float red, float green, float blue, float alpha) {
-        assert (mFramebufferSet != null);
+        assert (mSurfaceManager != null);
         mDrawPipelineStatus = kNotConfigured_DrawPipelineStatus;
     }
 
@@ -73,7 +74,7 @@ public abstract class OpsRenderPass {
      * Same as {@link #clearColor} but modifies the stencil.
      */
     public void clearStencil(int left, int top, int right, int bottom, boolean insideMask) {
-        assert (mFramebufferSet != null);
+        assert (mSurfaceManager != null);
         mDrawPipelineStatus = kNotConfigured_DrawPipelineStatus;
     }
 
@@ -108,12 +109,12 @@ public abstract class OpsRenderPass {
 
     /**
      * Binds textures for the geometry processor. Texture bindings are dynamic state and therefore
-     * not set during {@link #bindPipeline(PipelineInfo, Rect2f)}. If the current program uses textures,
+     * not set during {@link #bindPipeline(PipelineInfo, RectF)}. If the current program uses textures,
      * then the client must call this method before drawing. The geometry processor textures may also
      * be updated between draws by calling this method again with a different array for textures.
      * <p>
      * Note that this method is only used for GP using texture. If GP does not use texture but FP does,
-     * they will be automatically set during {@link #bindPipeline(PipelineInfo, Rect2f)}, and this is
+     * they will be automatically set during {@link #bindPipeline(PipelineInfo, RectF)}, and this is
      * a no-op. Otherwise, this method must be called if the GP uses textures.
      *
      * @param geomTextures the raw ptr to textures starting from binding 0
@@ -152,10 +153,10 @@ public abstract class OpsRenderPass {
     public final void draw(int vertexCount, int baseVertex) {
         if (mDrawPipelineStatus == kConfigured_DrawPipelineStatus) {
             onDraw(vertexCount, baseVertex);
-            getDevice().getStats().incNumDraws();
+            getEngine().getStats().incNumDraws();
         } else {
             assert (mDrawPipelineStatus == kFailedToBind_DrawPipelineStatus);
-            getDevice().getStats().incNumFailedDraws();
+            getEngine().getStats().incNumFailedDraws();
         }
     }
 
@@ -170,10 +171,10 @@ public abstract class OpsRenderPass {
                                   int baseVertex) {
         if (mDrawPipelineStatus == kConfigured_DrawPipelineStatus) {
             onDrawIndexed(indexCount, baseIndex, baseVertex);
-            getDevice().getStats().incNumDraws();
+            getEngine().getStats().incNumDraws();
         } else {
             assert (mDrawPipelineStatus == kFailedToBind_DrawPipelineStatus);
-            getDevice().getStats().incNumFailedDraws();
+            getEngine().getStats().incNumFailedDraws();
         }
     }
 
@@ -189,10 +190,10 @@ public abstract class OpsRenderPass {
                                     int vertexCount, int baseVertex) {
         if (mDrawPipelineStatus == kConfigured_DrawPipelineStatus) {
             onDrawInstanced(instanceCount, baseInstance, vertexCount, baseVertex);
-            getDevice().getStats().incNumDraws();
+            getEngine().getStats().incNumDraws();
         } else {
             assert (mDrawPipelineStatus == kFailedToBind_DrawPipelineStatus);
-            getDevice().getStats().incNumFailedDraws();
+            getEngine().getStats().incNumFailedDraws();
         }
     }
 
@@ -210,20 +211,20 @@ public abstract class OpsRenderPass {
                                            int baseVertex) {
         if (mDrawPipelineStatus == kConfigured_DrawPipelineStatus) {
             onDrawIndexedInstanced(indexCount, baseIndex, instanceCount, baseInstance, baseVertex);
-            getDevice().getStats().incNumDraws();
+            getEngine().getStats().incNumDraws();
         } else {
             assert (mDrawPipelineStatus == kFailedToBind_DrawPipelineStatus);
-            getDevice().getStats().incNumFailedDraws();
+            getEngine().getStats().incNumFailedDraws();
         }
     }
 
-    protected void set(FramebufferSet fs, int origin) {
-        assert (mFramebufferSet == null);
-        mFramebufferSet = fs;
+    protected void set(SurfaceManager fs, int origin) {
+        assert (mSurfaceManager == null);
+        mSurfaceManager = fs;
         mSurfaceOrigin = origin;
     }
 
-    protected abstract Device getDevice();
+    protected abstract Engine getEngine();
 
     protected abstract boolean onBindPipeline(PipelineInfo pipelineInfo, RectF drawBounds);
 

@@ -21,11 +21,13 @@ package icyllis.modernui.annotation;
 import java.lang.annotation.*;
 
 /**
- * Denotes that the annotated method should only be called on the UI thread,
- * which is used for handling UI events and recording drawing contents for
- * the UI on application side, there will no graphics context on this thread.
- * All input events from the window for UI should be posted to this thread.
- * UI thread is never be main thread or render thread.
+ * Denotes that the annotated method or constructor should only be called on the UI thread.
+ * If the annotated element is a class, then all methods in the class should be called
+ * on the UI thread.
+ * <p>
+ * UI thread is used to process UI events, calculate animations, measure and layout views,
+ * and record drawing commands. UI thread can be the same as the main thread, but should be
+ * different from the render thread.
  */
 @Documented
 @Retention(RetentionPolicy.CLASS)

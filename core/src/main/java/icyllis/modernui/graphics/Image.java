@@ -59,8 +59,8 @@ public class Image implements AutoCloseable {
         }
         return createTextureFromBitmap(
                 Core.isOnUiThread()
-                        ? Core.getUiRecordingContext()
-                        : Core.getDirectContext(),
+                        ? Core.requireUiRecordingContext()
+                        : Core.requireDirectContext(),
                 bitmap
         );
     }

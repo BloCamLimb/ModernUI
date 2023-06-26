@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,21 +16,14 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.annotation;
+package icyllis.arc3d.engine;
 
-import java.lang.annotation.*;
+@FunctionalInterface
+public interface TextureProxyVisitor {
 
-/**
- * Denotes that the annotated method should only be called on the main thread,
- * the thread is used for handling events from the window system.<br>
- * Main thread can sometimes be the same thread as render thread.
- */
-@Documented
-@Retention(RetentionPolicy.CLASS)
-@Target({ElementType.METHOD,
-        ElementType.CONSTRUCTOR,
-        ElementType.TYPE,
-        ElementType.PARAMETER,
-        ElementType.ANNOTATION_TYPE})
-public @interface MainThread {
+    /**
+     * @param proxy        raw ptr to texture proxy
+     * @param samplerState see {@link SamplerState}
+     */
+    void visit(TextureProxy proxy, int samplerState);
 }

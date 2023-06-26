@@ -37,7 +37,7 @@ public final class GLTextureParameters {
     }
 
     /**
-     * Makes parameters invalid, forces GLDevice to refresh.
+     * Makes parameters invalid, forces GLContext to refresh.
      */
     public void invalidate() {
         baseMipmapLevel = ~0;

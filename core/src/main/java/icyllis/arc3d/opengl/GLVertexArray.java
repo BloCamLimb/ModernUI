@@ -61,7 +61,7 @@ public final class GLVertexArray extends ManagedResource {
     private GLBuffer.UniqueID mVertexBuffer;
     private GLBuffer.UniqueID mInstanceBuffer;
 
-    private GLVertexArray(GLDevice device,
+    private GLVertexArray(GLEngine engine,
                           int vertexArray,
                           int vertexBinding,
                           int instanceBinding,
@@ -70,7 +70,7 @@ public final class GLVertexArray extends ManagedResource {
                           int numVertexLocations,
                           int numInstanceLocations,
                           int[] attributes) {
-        super(device);
+        super(engine);
         assert (vertexArray != 0);
         assert (vertexBinding == INVALID_BINDING || vertexStride > 0);
         assert (instanceBinding == INVALID_BINDING || instanceStride > 0);
@@ -86,9 +86,9 @@ public final class GLVertexArray extends ManagedResource {
 
     @Nullable
     @SharedPtr
-    public static GLVertexArray make(@Nonnull GLDevice device,
+    public static GLVertexArray make(@Nonnull GLEngine engine,
                                      @Nonnull GeometryProcessor geomProc) {
-        final boolean dsa = device.getCaps().hasDSASupport();
+        final boolean dsa = engine.getCaps().hasDSASupport();
         final int vertexArray;
 
         if (dsa) {
@@ -150,7 +150,7 @@ public final class GLVertexArray extends ManagedResource {
 
         assert index == numVertexLocations + numInstanceLocations;
 
-        if (index > device.getCaps().maxVertexAttributes()) {
+        if (index > engine.getCaps().maxVertexAttributes()) {
             glDeleteVertexArrays(vertexArray);
             if (!dsa) {
                 glBindVertexArray(oldVertexArray);
@@ -180,16 +180,16 @@ public final class GLVertexArray extends ManagedResource {
             glBindVertexArray(oldVertexArray);
         }
 
-        if (device.getCaps().hasDebugSupport()) {
+        if (engine.getCaps().hasDebugSupport()) {
             String label = geomProc.name();
             if (!label.isEmpty()) {
                 label = label.substring(0, Math.min(label.length(),
-                        device.getCaps().maxLabelLength()));
+                        engine.getCaps().maxLabelLength()));
                 glObjectLabel(GL_VERTEX_ARRAY, vertexArray, label);
             }
         }
 
-        return new GLVertexArray(device,
+        return new GLVertexArray(engine,
                 vertexArray,
                 vertexBinding,
                 instanceBinding,
@@ -432,7 +432,7 @@ public final class GLVertexArray extends ManagedResource {
                 // OpenGL 3.3, you must bind pipeline before
                 // 'offset' should translate into 'baseVertex'
                 // however, because we always use 'baseVertex', 'offset' is always 0
-                int target = getDevice().bindBuffer(buffer);
+                int target = getEngine().bindBuffer(buffer);
                 assert target == GL_ARRAY_BUFFER;
                 for (int index = 0;
                      index < mNumVertexLocations;
@@ -475,7 +475,7 @@ public final class GLVertexArray extends ManagedResource {
                 // OpenGL 3.3, you must bind pipeline before
                 // 'offset' should translate into 'baseVertex'
                 // however, because we always use 'baseVertex', 'offset' is always 0
-                int target = getDevice().bindBuffer(buffer);
+                int target = getEngine().bindBuffer(buffer);
                 assert target == GL_ARRAY_BUFFER;
                 for (int index = mNumVertexLocations;
                      index < mNumVertexLocations + mNumInstanceLocations;
@@ -492,7 +492,7 @@ public final class GLVertexArray extends ManagedResource {
     }
 
     @Override
-    protected GLDevice getDevice() {
-        return (GLDevice) super.getDevice();
+    protected GLEngine getEngine() {
+        return (GLEngine) super.getEngine();
     }
 }

@@ -22,7 +22,7 @@ import java.lang.annotation.*;
 
 /**
  * Denotes that the annotated method should only be called on the render thread,
- * which has the 3D graphics context shared between windows.
+ * which has the 3D graphics context shared between windows.<br>
  * Render thread can sometimes be the same thread as main thread.
  */
 @Documented

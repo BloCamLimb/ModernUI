@@ -97,7 +97,7 @@ public class GLFontAtlas implements AutoCloseable {
     // create from any thread
     public GLFontAtlas(int maskFormat) {
         mMaskFormat = maskFormat;
-        mMaxTextureSize = Core.getDirectContext().getMaxTextureSize();
+        mMaxTextureSize = Core.requireDirectContext().getMaxTextureSize();
     }
 
     /**

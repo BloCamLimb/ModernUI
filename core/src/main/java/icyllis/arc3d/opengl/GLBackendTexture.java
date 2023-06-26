@@ -38,7 +38,7 @@ public final class GLBackendTexture extends BackendTexture {
         glTextureParametersModified();
     }
 
-    // Internally used by GLDevice and GLTexture
+    // Internally used by GLContext and GLTexture
     GLBackendTexture(int width, int height, GLTextureInfo info,
                      GLTextureParameters params, BackendFormat backendFormat) {
         super(width, height);
@@ -59,7 +59,7 @@ public final class GLBackendTexture extends BackendTexture {
 
     @Override
     public boolean isMipmapped() {
-        return mInfo.levelCount > 1;
+        return mInfo.levels > 1;
     }
 
     @Override

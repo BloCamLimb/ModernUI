@@ -40,13 +40,13 @@ public class GLTexture extends Texture {
     private final long mMemorySize;
 
     // Constructor for instances created by ourselves.
-    GLTexture(GLDevice device,
+    GLTexture(GLEngine engine,
               int width, int height,
               GLTextureInfo info,
               BackendFormat format,
               boolean budgeted,
               boolean register) {
-        super(device, width, height);
+        super(engine, width, height);
         assert info.texture != 0;
         assert GLCore.glFormatIsSupported(format.getGLFormat());
         mInfo = info;
@@ -60,14 +60,14 @@ public class GLTexture extends Texture {
             mFlags |= Surface.FLAG_MIPMAPPED;
         }
 
-        mMemorySize = computeSize(format, width, height, 1, info.levelCount);
+        mMemorySize = computeSize(format, width, height, 1, info.levels);
         if (register) {
             registerWithCache(budgeted);
         }
     }
 
     // Constructor for instances wrapping backend objects.
-    public GLTexture(GLDevice device,
+    public GLTexture(GLEngine engine,
                      int width, int height,
                      GLTextureInfo info,
                      GLTextureParameters params,
@@ -75,7 +75,7 @@ public class GLTexture extends Texture {
                      int ioType,
                      boolean cacheable,
                      boolean ownership) {
-        super(device, width, height);
+        super(engine, width, height);
         assert info.texture != 0;
         assert GLCore.glFormatIsSupported(format.getGLFormat());
         mInfo = info;
@@ -91,7 +91,7 @@ public class GLTexture extends Texture {
             mFlags |= FLAG_MIPMAPPED;
         }
 
-        mMemorySize = computeSize(format, width, height, 1, info.levelCount);
+        mMemorySize = computeSize(format, width, height, 1, info.levels);
         registerWithCacheWrapped(cacheable);
     }
 
@@ -127,7 +127,7 @@ public class GLTexture extends Texture {
 
     @Override
     public int getMaxMipmapLevel() {
-        return mInfo.levelCount - 1; // minus base level
+        return mInfo.levels - 1; // minus base level
     }
 
     @Override
@@ -137,13 +137,13 @@ public class GLTexture extends Texture {
 
     @Override
     protected void onSetLabel(@Nonnull String label) {
-        if (getDevice().getCaps().hasDebugSupport()) {
+        if (getEngine().getCaps().hasDebugSupport()) {
             assert mInfo != null;
             if (label.isEmpty()) {
                 nglObjectLabel(GL_TEXTURE, mInfo.texture, 0, MemoryUtil.NULL);
             } else {
                 label = label.substring(0, Math.min(label.length(),
-                        getDevice().getCaps().maxLabelLength()));
+                        getEngine().getCaps().maxLabelLength()));
                 glObjectLabel(GL_TEXTURE, mInfo.texture, label);
             }
         }
@@ -176,8 +176,8 @@ public class GLTexture extends Texture {
     }
 
     @Override
-    protected GLDevice getDevice() {
-        return (GLDevice) super.getDevice();
+    protected GLEngine getEngine() {
+        return (GLEngine) super.getEngine();
     }
 
     @Override

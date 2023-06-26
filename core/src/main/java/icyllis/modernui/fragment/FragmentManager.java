@@ -20,7 +20,7 @@ package icyllis.modernui.fragment;
 
 import icyllis.modernui.R;
 import icyllis.modernui.annotation.UiThread;
-import icyllis.modernui.core.LoggerWriter;
+import icyllis.modernui.core.LogWriter;
 import icyllis.modernui.lifecycle.*;
 import icyllis.modernui.util.DataSet;
 import icyllis.modernui.view.*;
@@ -198,7 +198,7 @@ public final class FragmentManager implements FragmentResultOwner {
 
     private void throwException(@Nonnull RuntimeException ex) {
         LOGGER.error(MARKER, "FragmentManager throws an exception", ex);
-        var w = new PrintWriter(new LoggerWriter(LOGGER, Level.DEBUG, MARKER), true);
+        var w = new PrintWriter(new LogWriter(LOGGER, Level.DEBUG, MARKER), true);
         try (w) {
             if (mHost != null) {
                 try {
