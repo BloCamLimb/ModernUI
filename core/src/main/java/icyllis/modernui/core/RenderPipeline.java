@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,24 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.view;
+package icyllis.modernui.core;
 
-import icyllis.modernui.annotation.NonNull;
-
-/**
- * Interface for adding/removing child views to/from a view hierarchy.
- */
-public interface ViewManager {
-
-    /**
-     * Assign the passed LayoutParams to the passed View and add the view to the window.
-     *
-     * @param view   The view to be added to this window.
-     * @param params The LayoutParams to assign to view.
-     */
-    void addView(@NonNull View view, @NonNull ViewGroup.LayoutParams params);
-
-    void updateViewLayout(@NonNull View view, @NonNull ViewGroup.LayoutParams params);
-
-    void removeView(@NonNull View view);
+public abstract class RenderPipeline {
 }

@@ -18,10 +18,10 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.ModernUI;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.app.Activity;
+import icyllis.modernui.core.Context;
 import org.intellij.lang.annotations.MagicConstant;
-
-import javax.annotation.Nonnull;
 
 /**
  * A toast is a view containing a quick little message for the user.  The toast class
@@ -58,18 +58,21 @@ public final class Toast {
      */
     public static final int LENGTH_LONG = 1;
 
+    private final Context mContext;
+
     private int mDuration;
 
     /**
      * Text to be shown, in case this is NOT a custom toast (e.g. created with {@link
-     * #makeText(CharSequence, int)} or its variants).
+     * #makeText(Context, CharSequence, int)} or its variants).
      */
     private CharSequence mText;
 
     /**
-     * Use {@link #makeText(CharSequence, int)} instead.
+     * Use {@link #makeText(Context, CharSequence, int)} instead.
      */
-    private Toast() {
+    private Toast(@NonNull Context context) {
+        mContext = context;
     }
 
     /**
@@ -79,10 +82,10 @@ public final class Toast {
      * @param duration How long to display the message.  Either {@link #LENGTH_SHORT} or
      *                 {@link #LENGTH_LONG}
      */
-    @Nonnull
-    public static Toast makeText(@Nonnull CharSequence text,
+    @NonNull
+    public static Toast makeText(@NonNull Context context, @NonNull CharSequence text,
                                  @MagicConstant(intValues = {LENGTH_SHORT, LENGTH_LONG}) int duration) {
-        final Toast toast = new Toast();
+        final Toast toast = new Toast(context);
         toast.mText = text;
         toast.mDuration = duration;
         return toast;
@@ -92,7 +95,7 @@ public final class Toast {
      * Show the view for the specified duration.
      */
     public void show() {
-        ModernUI.getInstance().getToastManager().enqueueToast(this, mText, mDuration);
+        ((Activity) mContext).getToastManager().enqueueToast(this, mText, mDuration);
     }
 
     /**
@@ -101,7 +104,7 @@ public final class Toast {
      * after the appropriate duration.
      */
     public void cancel() {
-        ModernUI.getInstance().getToastManager().cancelToast(this);
+        ((Activity) mContext).getToastManager().cancelToast(this);
     }
 
     /**
@@ -128,7 +131,7 @@ public final class Toast {
      *
      * @param s The new text for the Toast.
      */
-    public void setText(@Nonnull CharSequence s) {
+    public void setText(@NonNull CharSequence s) {
         mText = s;
     }
 }

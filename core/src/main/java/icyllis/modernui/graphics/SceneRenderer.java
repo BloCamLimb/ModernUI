@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,33 +16,14 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.widget;
+package icyllis.modernui.graphics;
 
-public final class ToastRecord {
+import java.util.ArrayList;
+import java.util.List;
 
-    public final Toast mToken;
-    public final CharSequence mText;
+public class SceneRenderer {
 
-    private int mDuration;
+    private final List<RenderNode> mRenderNodes = new ArrayList<>();
 
-    ToastRecord(Toast token, CharSequence text, int duration) {
-        mToken = token;
-        mText = text;
-        mDuration = duration;
-    }
 
-    /**
-     * Returns the duration of this toast, which can be {@link Toast#LENGTH_SHORT}
-     * or {@link Toast#LENGTH_LONG}.
-     */
-    public int getDuration() {
-        return mDuration;
-    }
-
-    /**
-     * Updates toast duration.
-     */
-    public void update(int duration) {
-        mDuration = duration;
-    }
 }

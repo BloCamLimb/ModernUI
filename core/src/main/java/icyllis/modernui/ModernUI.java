@@ -20,6 +20,7 @@ package icyllis.modernui;
 
 import icyllis.arc3d.opengl.*;
 import icyllis.modernui.annotation.*;
+import icyllis.modernui.app.Activity;
 import icyllis.modernui.core.*;
 import icyllis.modernui.fragment.*;
 import icyllis.modernui.graphics.*;
@@ -33,7 +34,7 @@ import icyllis.modernui.util.DisplayMetrics;
 import icyllis.modernui.view.*;
 import icyllis.modernui.view.menu.ContextMenuBuilder;
 import icyllis.modernui.view.menu.MenuHelper;
-import icyllis.modernui.widget.*;
+import icyllis.modernui.widget.EditText;
 import org.apache.logging.log4j.*;
 import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.glfw.GLFWMonitorCallback;
@@ -55,7 +56,7 @@ import static org.lwjgl.glfw.GLFW.*;
 /**
  * The core class of Modern UI.
  */
-public class ModernUI extends Context implements AutoCloseable, LifecycleOwner {
+public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner {
 
     public static final String ID = "modernui"; // as well as the namespace
     public static final String NAME_CPT = "ModernUI";
@@ -78,7 +79,7 @@ public class ModernUI extends Context implements AutoCloseable, LifecycleOwner {
     private volatile MainWindow mWindow;
 
     private ViewRootImpl mRoot;
-    private CoordinatorLayout mDecor;
+    private WindowGroup mDecor;
     private FragmentContainerView mFragmentContainerView;
 
     private LifecycleRegistry mLifecycleRegistry;
@@ -93,7 +94,6 @@ public class ModernUI extends Context implements AutoCloseable, LifecycleOwner {
     private volatile Thread mRenderThread;
 
     private Resources mResources = new Resources();
-    private ToastManager mToastManager;
 
     private Image mBackgroundImage;
 
@@ -217,15 +217,12 @@ public class ModernUI extends Context implements AutoCloseable, LifecycleOwner {
 
         mRoot = new ViewRootImpl();
 
-        mDecor = new CoordinatorLayout(this);
-        mDecor.setClickable(true);
-        mDecor.setFocusableInTouchMode(true);
+        mDecor = new WindowGroup(this);
         mDecor.setWillNotDraw(true);
         mDecor.setId(R.id.content);
 
         mFragmentContainerView = new FragmentContainerView(this);
-        mFragmentContainerView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT));
+        mFragmentContainerView.setLayoutParams(new WindowManager.LayoutParams());
         mFragmentContainerView.setWillNotDraw(true);
         mFragmentContainerView.setId(fragment_container);
         mDecor.addView(mFragmentContainerView);
@@ -384,13 +381,6 @@ public class ModernUI extends Context implements AutoCloseable, LifecycleOwner {
         return mResources;
     }
 
-    public ToastManager getToastManager() {
-        if (mToastManager == null) {
-            mToastManager = new ToastManager(this);
-        }
-        return mToastManager;
-    }
-
     /**
      * Get the default or preferred locale set by user.
      *
@@ -462,7 +452,8 @@ public class ModernUI extends Context implements AutoCloseable, LifecycleOwner {
      * @return window view manager
      */
     @ApiStatus.Internal
-    public ViewManager getViewManager() {
+    @Override
+    public WindowManager getWindowManager() {
         return mDecor;
     }
 

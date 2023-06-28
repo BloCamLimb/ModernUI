@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,21 +19,21 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.core.Context;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.app.Activity;
 import icyllis.modernui.core.Core;
-import icyllis.modernui.graphics.*;
-import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.text.TextUtils;
-import icyllis.modernui.view.Gravity;
-import icyllis.modernui.view.ViewGroup;
+import icyllis.modernui.view.*;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+import org.jetbrains.annotations.ApiStatus;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 import java.util.ArrayDeque;
 
+@ApiStatus.Internal
 public final class ToastManager {
 
     static final Marker MARKER = MarkerManager.getMarker("Toast");
@@ -43,6 +43,8 @@ public final class ToastManager {
     static final int LONG_DELAY = 3500; // 3.5 seconds
     static final int SHORT_DELAY = 2000; // 2 seconds
 
+    private final WindowManager mWindowManager;
+
     private final ArrayDeque<ToastRecord> mToastQueue = new ArrayDeque<>(MAX_TOASTS);
 
     @GuardedBy("mToastQueue")
@@ -51,22 +53,28 @@ public final class ToastManager {
     private final Runnable mDurationReached = this::onDurationReached;
 
     private final TextView mTextView;
-    private final FrameLayout.LayoutParams mParams;
-    private final Background mBackground = new Background();
+    private final WindowManager.LayoutParams mParams;
+    private final ShapeDrawable mBackground = new ShapeDrawable();
 
-    public ToastManager(Context context) {
-        mTextView = new TextView(context);
-        mParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT);
+    public ToastManager(Activity activity) {
+        mWindowManager = activity.getWindowManager();
+        mTextView = new TextView(activity);
+        mParams = new WindowManager.LayoutParams();
+        mParams.width = ViewGroup.LayoutParams.WRAP_CONTENT;
+        mParams.height = ViewGroup.LayoutParams.WRAP_CONTENT;
         mParams.gravity = Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM;
+        mParams.flags |= WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+        mParams.type = WindowManager.LayoutParams.TYPE_TOAST;
         mTextView.setEllipsize(TextUtils.TruncateAt.END);
         mTextView.setMaxLines(2);
+        mBackground.setShape(ShapeDrawable.RECTANGLE);
+        mBackground.setColor(0xC0000000);
         mTextView.setBackground(mBackground);
     }
 
     @Nullable
     @GuardedBy("mToastQueue")
-    private ToastRecord getToastLocked(@Nonnull Toast token) {
+    private ToastRecord getToastLocked(@NonNull Toast token) {
         for (ToastRecord r : mToastQueue) {
             if (r.mToken == token) {
                 return r;
@@ -85,9 +93,9 @@ public final class ToastManager {
         mTextView.setTextSize(14);
         mTextView.setMaxWidth(mTextView.dp(300));
         mTextView.setPadding(mTextView.dp(16), mTextView.dp(12), mTextView.dp(16), mTextView.dp(12));
-        mParams.setMargins(mTextView.dp(16), 0, mTextView.dp(16), mTextView.dp(64));
-        mBackground.mRadius = mTextView.dp(28);
-        ModernUI.getInstance().getViewManager().addView(mTextView, mParams);
+        mParams.y = mTextView.dp(64);
+        mBackground.setCornerRadius(mTextView.dp(28));
+        mWindowManager.addView(mTextView, mParams);
 
         int delay = r.getDuration() == Toast.LENGTH_LONG ? LONG_DELAY : SHORT_DELAY;
         delay += 300; // animation
@@ -107,8 +115,8 @@ public final class ToastManager {
         }
     }
 
-    private void cancelToastLocked(@Nonnull ToastRecord record) {
-        ModernUI.getInstance().getViewManager().removeView(mTextView);
+    private void cancelToastLocked(@NonNull ToastRecord record) {
+        mWindowManager.removeView(mTextView);
         mToastQueue.remove(record);
 
         if (mToastQueue.size() > 0) {
@@ -116,7 +124,7 @@ public final class ToastManager {
         }
     }
 
-    public void enqueueToast(@Nonnull Toast token, @Nonnull CharSequence text, int duration) {
+    public void enqueueToast(@NonNull Toast token, @NonNull CharSequence text, int duration) {
         synchronized (mToastQueue) {
             ToastRecord record = getToastLocked(token);
             if (record != null) {
@@ -136,7 +144,7 @@ public final class ToastManager {
         }
     }
 
-    public void cancelToast(@Nonnull Toast token) {
+    public void cancelToast(@NonNull Toast token) {
         synchronized (mToastQueue) {
             ToastRecord r = getToastLocked(token);
             if (r != null) {
@@ -147,17 +155,32 @@ public final class ToastManager {
         }
     }
 
-    private static class Background extends Drawable {
+    static final class ToastRecord {
 
-        private float mRadius;
+        public final Toast mToken;
+        public final CharSequence mText;
 
-        @Override
-        public void draw(@Nonnull Canvas canvas) {
-            Paint paint = Paint.obtain();
-            paint.setColor(0xC0000000);
-            Rect b = getBounds();
-            canvas.drawRoundRect(b.left, b.top, b.right, b.bottom, mRadius, paint);
-            paint.recycle();
+        private int mDuration;
+
+        ToastRecord(Toast token, CharSequence text, int duration) {
+            mToken = token;
+            mText = text;
+            mDuration = duration;
+        }
+
+        /**
+         * Returns the duration of this toast, which can be {@link Toast#LENGTH_SHORT}
+         * or {@link Toast#LENGTH_LONG}.
+         */
+        public int getDuration() {
+            return mDuration;
+        }
+
+        /**
+         * Updates toast duration.
+         */
+        public void update(int duration) {
+            mDuration = duration;
         }
     }
 }

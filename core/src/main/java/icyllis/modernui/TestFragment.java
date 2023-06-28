@@ -59,7 +59,7 @@ import static icyllis.modernui.ModernUI.LOGGER;
 import static icyllis.modernui.view.ViewGroup.LayoutParams.*;
 
 /**
- * Usability test, don't copy.
+ * Usability test, don't use.
  */
 public class TestFragment extends Fragment {
 
@@ -567,6 +567,9 @@ public class TestFragment extends Fragment {
                         button.setId(9 + j);
                         group.addView(button);
                     }
+                    group.setOnCheckedChangeListener((__, checkedId) ->
+                            Toast.makeText(context, "You checked " + checkedId, Toast.LENGTH_SHORT)
+                                    .show());
                     p = new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                             ViewGroup.LayoutParams.WRAP_CONTENT);
                 } else if (i == 6) {
