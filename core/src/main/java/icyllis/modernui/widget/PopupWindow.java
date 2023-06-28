@@ -18,27 +18,24 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.R;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.app.Activity;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.core.Window;
+import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.StateListDrawable;
-import icyllis.modernui.graphics.Rect;
-import icyllis.modernui.transition.Transition;
-import icyllis.modernui.transition.TransitionListener;
-import icyllis.modernui.transition.TransitionManager;
+import icyllis.modernui.transition.*;
 import icyllis.modernui.view.*;
 import icyllis.modernui.view.View.OnTouchListener;
 import icyllis.modernui.view.ViewGroup.LayoutParams;
-import icyllis.modernui.widget.CoordinatorLayout.Behavior;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
 
-import static icyllis.modernui.view.ViewGroup.LayoutParams.MATCH_PARENT;
-import static icyllis.modernui.view.ViewGroup.LayoutParams.WRAP_CONTENT;
+import static icyllis.modernui.view.ViewGroup.LayoutParams.*;
 
 /**
  * <p>
@@ -54,9 +51,8 @@ import static icyllis.modernui.view.ViewGroup.LayoutParams.WRAP_CONTENT;
  * and passing a {@link Transition}.
  * </p>
  * <p>
- * This is a modified version from Android that is a hard dependency on
- * {@link CoordinatorLayout} instead of window manager. Modern UI implementations require the
- * root view must be a {@link CoordinatorLayout} for its behavior to intercept input events.
+ * This is a modified version from Android. Modern UI implementations require the
+ * root view must be a {@link WindowGroup} for its behavior to intercept input events.
  * We don't need its anchoring feature, because it will calculate all transformation matrices.
  * Firstly, the performance is slightly lower, and we don't want the position of pop-up window
  * to change too frequently.
@@ -74,6 +70,7 @@ public class PopupWindow {
     private final Rect mTempRect = new Rect();
 
     private Context mContext;
+    private WindowManager mWindowManager;
 
     boolean mIsShowing;
     boolean mIsTransitioningToDismiss;
@@ -117,7 +114,7 @@ public class PopupWindow {
     private Rect mEpicenterBounds;
 
     private boolean mAboveAnchor;
-    private int mWindowLayoutType = Window.TYPE_APPLICATION_PANEL;
+    private int mWindowLayoutType = WindowManager.LayoutParams.TYPE_APPLICATION_PANEL;
 
     private OnDismissListener mOnDismissListener;
 
@@ -238,6 +235,7 @@ public class PopupWindow {
     public PopupWindow(View contentView, int width, int height, boolean focusable) {
         if (contentView != null) {
             mContext = contentView.getContext();
+            mWindowManager = ((Activity) mContext).getWindowManager();
         }
 
         setContentView(contentView);
@@ -430,6 +428,10 @@ public class PopupWindow {
 
         if (mContext == null && mContentView != null) {
             mContext = mContentView.getContext();
+        }
+
+        if (mWindowManager == null && mContentView != null) {
+            mWindowManager = ((Activity) mContext).getWindowManager();
         }
     }
 
@@ -754,10 +756,10 @@ public class PopupWindow {
         mIsDropdown = false;
         mGravity = gravity;
 
-        final CoordinatorLayout.LayoutParams p = new CoordinatorLayout.LayoutParams(mWidth, mHeight);
+        final WindowManager.LayoutParams p = createPopupLayoutParams();
         p.gravity = gravity;
-        p.setMarginStart(x);
-        p.topMargin = y;
+        p.x = x;
+        p.y = y;
         preparePopup();
 
         invokePopup(p);
@@ -829,7 +831,7 @@ public class PopupWindow {
         mIsShowing = true;
         mIsDropdown = true;
 
-        final var p = new CoordinatorLayout.LayoutParams(mWidth, mHeight);
+        final var p = createPopupLayoutParams();
         preparePopup();
 
         final boolean aboveAnchor = findDropDownPosition(anchor, p, xOff, yOff,
@@ -902,7 +904,6 @@ public class PopupWindow {
         // The background owner should be elevated so that it casts a shadow.
         mBackgroundView.setElevation(mElevation);
 
-        mDecorView.setElevation(mWindowLayoutType);
         mDecorView.setFocusable(mFocusable);
 
         mPopupViewInitialLayoutDirectionInherited =
@@ -947,7 +948,7 @@ public class PopupWindow {
             height = MATCH_PARENT;
         }
 
-        final var decorView = new DecorView(mContext, new OutsideDismissBehavior());
+        final var decorView = new DecorView(mContext);
         decorView.addView(contentView, MATCH_PARENT, height);
         decorView.setClipChildren(false);
         decorView.setClipToPadding(false);
@@ -963,12 +964,12 @@ public class PopupWindow {
      *
      * @param p the layout parameters of the popup's content view
      */
-    private void invokePopup(@Nonnull LayoutParams p) {
+    private void invokePopup(@Nonnull WindowManager.LayoutParams p) {
         final DecorView decorView = mDecorView;
 
         setLayoutDirectionFromAnchor();
 
-        ModernUI.getInstance().getViewManager().addView(decorView, p);
+        mWindowManager.addView(decorView, p);
 
         if (mEnterTransition != null) {
             decorView.requestEnterTransition(mEnterTransition);
@@ -1000,17 +1001,18 @@ public class PopupWindow {
      * @return the layout parameters to pass to the window manager
      */
     @Nonnull
-    final CoordinatorLayout.LayoutParams createPopupLayoutParams() {
-        final var p = new CoordinatorLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT);
+    final WindowManager.LayoutParams createPopupLayoutParams() {
+        final var p = new WindowManager.LayoutParams();
 
         // These gravity settings put the view in the top left corner of the
         // screen. The view is then positioned to the appropriate location by
         // setting the x and y offsets to match the anchor's bottom-left
         // corner.
         p.gravity = computeGravity();
+        p.type = mWindowLayoutType;
 
-        /*p.height = mLastHeight = mHeight;
-        p.width = mLastWidth = mWidth;*/
+        p.height = mHeight;
+        p.width = mWidth;
 
         return p;
     }
@@ -1033,7 +1035,7 @@ public class PopupWindow {
      * @return true if the popup is translated upwards to fit on screen
      * @hide
      */
-    boolean findDropDownPosition(@Nonnull View anchor, CoordinatorLayout.LayoutParams outParams,
+    boolean findDropDownPosition(@Nonnull View anchor, WindowManager.LayoutParams outParams,
                                  int xOffset, int yOffset, int width, int height, int gravity,
                                  boolean allowScroll) {
         final int anchorHeight = anchor.getHeight();
@@ -1053,8 +1055,8 @@ public class PopupWindow {
         final int[] drawingLocation = mTmpDrawingLocation;
         drawingLocation[0] = screenLocation[0] - appScreenLocation[0];
         drawingLocation[1] = screenLocation[1] - appScreenLocation[1];
-        outParams.leftMargin = (drawingLocation[0] + xOffset);
-        outParams.topMargin = drawingLocation[1] + anchorHeight + yOffset;
+        outParams.x = (drawingLocation[0] + xOffset);
+        outParams.y = drawingLocation[1] + anchorHeight + yOffset;
 
         // Let the window manager know to align the top to y.
         outParams.gravity = Gravity.TOP | Gravity.LEFT;
@@ -1090,12 +1092,12 @@ public class PopupWindow {
                 anchor.getLocationInWindow(screenLocation);
                 drawingLocation[0] = screenLocation[0] - appScreenLocation[0];
                 drawingLocation[1] = screenLocation[1] - appScreenLocation[1];
-                outParams.leftMargin = drawingLocation[0] + xOffset;
-                outParams.topMargin = drawingLocation[1] + anchorHeight + yOffset;
+                outParams.x = drawingLocation[0] + xOffset;
+                outParams.y = drawingLocation[1] + anchorHeight + yOffset;
 
                 // Preserve the gravity adjustment.
                 if (hGrav == Gravity.RIGHT) {
-                    outParams.leftMargin += anchorWidth;
+                    outParams.x += anchorWidth;
                 }
             }
 
@@ -1109,14 +1111,14 @@ public class PopupWindow {
         }
 
         // Return whether the popup's top edge is above the anchor's top edge.
-        return outParams.topMargin < drawingLocation[1];
+        return outParams.y < drawingLocation[1];
     }
 
-    private boolean tryFitVertical(@Nonnull CoordinatorLayout.LayoutParams outParams, int yOffset, int height,
+    private boolean tryFitVertical(@Nonnull WindowManager.LayoutParams outParams, int yOffset, int height,
                                    int anchorHeight, int drawingLocationY, int screenLocationY, int displayFrameTop,
                                    int displayFrameBottom, boolean allowResize) {
         final int winOffsetY = screenLocationY - drawingLocationY;
-        final int anchorTopInScreen = outParams.topMargin + winOffsetY;
+        final int anchorTopInScreen = outParams.y + winOffsetY;
         final int spaceBelow = displayFrameBottom - anchorTopInScreen;
         if (anchorTopInScreen >= displayFrameTop && height <= spaceBelow) {
             return true;
@@ -1128,7 +1130,7 @@ public class PopupWindow {
             if (mOverlapAnchor) {
                 yOffset += anchorHeight;
             }
-            outParams.topMargin = drawingLocationY - height + yOffset;
+            outParams.y = drawingLocationY - height + yOffset;
 
             return true;
         }
@@ -1137,26 +1139,26 @@ public class PopupWindow {
                 displayFrameTop, displayFrameBottom, allowResize);
     }
 
-    private boolean positionInDisplayVertical(@Nonnull CoordinatorLayout.LayoutParams outParams, int height,
+    private boolean positionInDisplayVertical(@Nonnull WindowManager.LayoutParams outParams, int height,
                                               int drawingLocationY, int screenLocationY, int displayFrameTop,
                                               int displayFrameBottom,
                                               boolean canResize) {
         boolean fitsInDisplay = true;
 
         final int winOffsetY = screenLocationY - drawingLocationY;
-        outParams.topMargin += winOffsetY;
+        outParams.y += winOffsetY;
         outParams.height = height;
 
-        final int bottom = outParams.topMargin + height;
+        final int bottom = outParams.y + height;
         if (bottom > displayFrameBottom) {
             // The popup is too far down, move it back in.
-            outParams.topMargin -= bottom - displayFrameBottom;
+            outParams.y -= bottom - displayFrameBottom;
         }
 
-        if (outParams.topMargin < displayFrameTop) {
+        if (outParams.y < displayFrameTop) {
             // The popup is too far up, move it back in and clip if
             // it's still too large.
-            outParams.topMargin = displayFrameTop;
+            outParams.y = displayFrameTop;
 
             final int displayFrameHeight = displayFrameBottom - displayFrameTop;
             if (canResize && height > displayFrameHeight) {
@@ -1166,16 +1168,16 @@ public class PopupWindow {
             }
         }
 
-        outParams.topMargin -= winOffsetY;
+        outParams.y -= winOffsetY;
 
         return fitsInDisplay;
     }
 
-    private boolean tryFitHorizontal(@Nonnull CoordinatorLayout.LayoutParams outParams, int width,
+    private boolean tryFitHorizontal(@Nonnull WindowManager.LayoutParams outParams, int width,
                                      int drawingLocationX, int screenLocationX, int displayFrameLeft,
                                      int displayFrameRight, boolean allowResize) {
         final int winOffsetX = screenLocationX - drawingLocationX;
-        final int anchorLeftInScreen = outParams.leftMargin + winOffsetX;
+        final int anchorLeftInScreen = outParams.x + winOffsetX;
         final int spaceRight = displayFrameRight - anchorLeftInScreen;
         if (anchorLeftInScreen >= displayFrameLeft && width <= spaceRight) {
             return true;
@@ -1185,7 +1187,7 @@ public class PopupWindow {
                 displayFrameLeft, displayFrameRight, allowResize);
     }
 
-    private boolean positionInDisplayHorizontal(@Nonnull CoordinatorLayout.LayoutParams outParams, int width,
+    private boolean positionInDisplayHorizontal(@Nonnull WindowManager.LayoutParams outParams, int width,
                                                 int drawingLocationX, int screenLocationX, int displayFrameLeft,
                                                 int displayFrameRight,
                                                 boolean canResize) {
@@ -1193,18 +1195,18 @@ public class PopupWindow {
 
         // Use screen coordinates for comparison against display frame.
         final int winOffsetX = screenLocationX - drawingLocationX;
-        outParams.leftMargin += winOffsetX;
+        outParams.x += winOffsetX;
 
-        final int right = outParams.leftMargin + width;
+        final int right = outParams.x + width;
         if (right > displayFrameRight) {
             // The popup is too far right, move it back in.
-            outParams.leftMargin -= right - displayFrameRight;
+            outParams.x -= right - displayFrameRight;
         }
 
-        if (outParams.leftMargin < displayFrameLeft) {
+        if (outParams.x < displayFrameLeft) {
             // The popup is too far left, move it back in and clip if it's
             // still too large.
-            outParams.leftMargin = displayFrameLeft;
+            outParams.x = displayFrameLeft;
 
             final int displayFrameWidth = displayFrameRight - displayFrameLeft;
             if (canResize && width > displayFrameWidth) {
@@ -1214,7 +1216,7 @@ public class PopupWindow {
             }
         }
 
-        outParams.leftMargin -= winOffsetX;
+        outParams.x -= winOffsetX;
 
         return fitsInDisplay;
     }
@@ -1383,7 +1385,7 @@ public class PopupWindow {
         // then it was either never added or was already removed. That should
         // never happen, but it's worth checking to avoid potential crashes.
         if (decorView.getParent() != null) {
-            ModernUI.getInstance().getViewManager().removeView(decorView);
+            mWindowManager.removeView(decorView);
         }
 
         if (contentHolder != null) {
@@ -1439,7 +1441,7 @@ public class PopupWindow {
      */
     protected void update(View anchor, LayoutParams params) {
         setLayoutDirectionFromAnchor();
-        ModernUI.getInstance().getViewManager().updateViewLayout(mDecorView, params);
+        mWindowManager.updateViewLayout(mDecorView, params);
     }
 
     /**
@@ -1452,8 +1454,8 @@ public class PopupWindow {
      * @param height the new height in pixels, must be >= 0 or -1 to ignore
      */
     public void update(int width, int height) {
-        final CoordinatorLayout.LayoutParams p = getDecorViewLayoutParams();
-        update(p.leftMargin, p.topMargin, width, height, false);
+        final WindowManager.LayoutParams p = getDecorViewLayoutParams();
+        update(p.x, p.y, width, height, false);
     }
 
     /**
@@ -1500,7 +1502,7 @@ public class PopupWindow {
             return;
         }
 
-        final CoordinatorLayout.LayoutParams p = getDecorViewLayoutParams();
+        final WindowManager.LayoutParams p = getDecorViewLayoutParams();
 
         boolean update = force;
 
@@ -1514,13 +1516,13 @@ public class PopupWindow {
             update = true;
         }
 
-        if (p.leftMargin != x) {
-            p.leftMargin = x;
+        if (p.x != x) {
+            p.x = x;
             update = true;
         }
 
-        if (p.topMargin != y) {
-            p.topMargin = y;
+        if (p.y != y) {
+            p.y = y;
             update = true;
         }
 
@@ -1554,8 +1556,8 @@ public class PopupWindow {
     /**
      * @hide
      */
-    protected CoordinatorLayout.LayoutParams getDecorViewLayoutParams() {
-        return (CoordinatorLayout.LayoutParams) mDecorView.getLayoutParams();
+    protected WindowManager.LayoutParams getDecorViewLayoutParams() {
+        return (WindowManager.LayoutParams) mDecorView.getLayoutParams();
     }
 
     /**
@@ -1611,12 +1613,12 @@ public class PopupWindow {
             mAnchorYOff = yoff;
         }
 
-        final CoordinatorLayout.LayoutParams p = getDecorViewLayoutParams();
+        final WindowManager.LayoutParams p = getDecorViewLayoutParams();
         final int oldGravity = p.gravity;
         final int oldWidth = p.width;
         final int oldHeight = p.height;
-        final int oldX = p.leftMargin;
-        final int oldY = p.topMargin;
+        final int oldX = p.x;
+        final int oldY = p.y;
 
         // If an explicit width/height has not specified, use the most recent
         // explicitly specified value (either from setWidth/Height or update).
@@ -1631,7 +1633,7 @@ public class PopupWindow {
                 width, height, gravity, true);
         updateAboveAnchor(aboveAnchor);
 
-        final boolean paramsChanged = oldGravity != p.gravity || oldX != p.leftMargin || oldY != p.topMargin
+        final boolean paramsChanged = oldGravity != p.gravity || oldX != p.x || oldY != p.y
                 || oldWidth != p.width || oldHeight != p.height;
 
         // If width and mWidth were both < 0 then we have a MATCH_PARENT or
@@ -1640,7 +1642,7 @@ public class PopupWindow {
         // absolute values.
         final int newWidth = width < 0 ? width : p.width;
         final int newHeight = height < 0 ? height : p.height;
-        update(p.leftMargin, p.topMargin, newWidth, newHeight, paramsChanged);
+        update(p.x, p.y, newWidth, newHeight, paramsChanged);
     }
 
     /**
@@ -1705,41 +1707,15 @@ public class PopupWindow {
     private void alignToAnchor() {
         final View anchor = mAnchor != null ? mAnchor.get() : null;
         if (anchor != null && anchor.isAttachedToWindow() && hasDecorView()) {
-            final CoordinatorLayout.LayoutParams p = getDecorViewLayoutParams();
+            final WindowManager.LayoutParams p = getDecorViewLayoutParams();
 
             updateAboveAnchor(findDropDownPosition(anchor, p, mAnchorXOff, mAnchorYOff,
                     p.width, p.height, mAnchoredGravity, false));
-            update(p.leftMargin, p.topMargin, -1, -1, true);
+            update(p.x, p.y, -1, -1, true);
         }
     }
 
-    private class OutsideDismissBehavior extends CoordinatorLayout.Behavior<DecorView> {
-
-        //TODO touch event handling
-        @Override
-        public boolean onInterceptTouchEvent(@Nonnull CoordinatorLayout parent, @Nonnull DecorView child,
-                                             @Nonnull MotionEvent ev) {
-            if (mTouchInterceptor != null && mTouchInterceptor.onTouch(child, ev)) {
-                return true;
-            }
-            final int x = (int) ev.getX();
-            final int y = (int) ev.getY();
-            if (mOutsideTouchable && ev.getAction() == MotionEvent.ACTION_DOWN &&
-                    (x < child.getLeft() || x >= child.getRight() || y < child.getTop() || y >= child.getBottom())) {
-                dismiss();
-                return true;
-            }
-            return false;
-        }
-
-        @Override
-        public boolean onTouchEvent(@Nonnull CoordinatorLayout parent, @Nonnull DecorView child,
-                                    @Nonnull MotionEvent ev) {
-            return false;
-        }
-    }
-
-    private class DecorView extends FrameLayout implements CoordinatorLayout.AttachedBehavior {
+    private class DecorView extends FrameLayout {
 
         private final OnAttachStateChangeListener mOnAnchorRootDetachedListener = new OnAttachStateChangeListener() {
             @Override
@@ -1756,23 +1732,36 @@ public class PopupWindow {
             }
         };
 
-        private final Behavior<? extends DecorView> mBehavior;
-
         /**
          * Runnable used to clean up listeners after exit transition.
          */
         private Runnable mCleanupAfterExit;
 
-        public DecorView(Context context,
-                         @Nonnull Behavior<? extends DecorView> behavior) {
+        public DecorView(Context context) {
             super(context);
-            mBehavior = behavior;
         }
 
-        @Nonnull
         @Override
-        public Behavior<? extends DecorView> getBehavior() {
-            return mBehavior;
+        public boolean onInterceptTouchEvent(@NonNull MotionEvent ev) {
+            if (mTouchInterceptor != null && mTouchInterceptor.onTouch(this, ev)) {
+                return true;
+            }
+            return super.onInterceptTouchEvent(ev);
+        }
+
+        @Override
+        public boolean onTouchEvent(@NonNull MotionEvent event) {
+            final int x = (int) event.getX();
+            final int y = (int) event.getY();
+            if (event.getAction() == MotionEvent.ACTION_DOWN &&
+                    (x < 0 || x >= getWidth() || y < 0 || y >= getHeight())) {
+                dismiss();
+                return true;
+            } else if (event.getAction() == MotionEvent.ACTION_OUTSIDE) {
+                dismiss();
+                return true;
+            }
+            return super.onTouchEvent(event);
         }
 
         @Override

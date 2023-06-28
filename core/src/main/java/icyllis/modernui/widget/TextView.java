@@ -21,17 +21,12 @@ package icyllis.modernui.widget;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.R;
 import icyllis.modernui.core.*;
-import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.Paint;
+import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.font.FontMetricsInt;
-import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.text.*;
 import icyllis.modernui.text.method.*;
-import icyllis.modernui.text.style.CharacterStyle;
-import icyllis.modernui.text.style.ClickableSpan;
-import icyllis.modernui.text.style.ParagraphStyle;
-import icyllis.modernui.text.style.UpdateAppearance;
+import icyllis.modernui.text.style.*;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.view.*;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
@@ -4216,21 +4211,17 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * @return true if the context menu item action was performed.
      */
     public boolean onTextContextMenuItem(int id) {
-        int min = 0;
-        int max = mText.length();
+        final int min;
+        final int max;
 
-        //FIXME a view tree has only one focus, but we don't want to unfocus this,
-        // popup window may have a focus
         if (!isFocused()) {
             requestFocus();
         }
-        {
-            final int selStart = getSelectionStart();
-            final int selEnd = getSelectionEnd();
+        final int selStart = getSelectionStart();
+        final int selEnd = getSelectionEnd();
 
-            min = Math.max(0, Math.min(selStart, selEnd));
-            max = Math.max(0, Math.max(selStart, selEnd));
-        }
+        min = Math.max(0, Math.min(selStart, selEnd));
+        max = Math.max(0, Math.max(selStart, selEnd));
 
         switch (id) {
             case ID_CUT -> {
@@ -4245,15 +4236,13 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
                 return true;
             }
             case ID_PASTE -> {
-                int aMax = max;
-                int aMin = min;
                 Core.executeOnMainThread(() -> {
                     String replacement = Clipboard.getText();
                     if (replacement != null) {
                         post(() -> {
                             Editable editable = getEditableText();
-                            Selection.setSelection(editable, aMax);
-                            editable.replace(aMin, aMax, replacement);
+                            Selection.setSelection(editable, max);
+                            editable.replace(min, max, replacement);
                         });
                     }
                 });

@@ -147,7 +147,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     private int mChildrenCount;
 
     // The view contained within this ViewGroup that has or contains focus.
-    private View mFocused;
+    View mFocused;
     // The view contained within this ViewGroup (excluding nested keyboard navigation clusters)
     // that is or contains a default-focus view.
     private View mDefaultFocus;
@@ -546,7 +546,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      * @param child The view to send the event to.
      * @return {@code true} if the child handled the event.
      */
-    private boolean dispatchTransformedGenericPointerEvent(@NonNull MotionEvent event, @NonNull View child) {
+    boolean dispatchTransformedGenericPointerEvent(@NonNull MotionEvent event, @NonNull View child) {
         boolean handled;
         if (!child.hasIdentityMatrix()) {
             MotionEvent transformedEvent = getTransformedMotionEvent(event, child);
@@ -1257,7 +1257,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      * filters out irrelevant pointer ids, and overrides its action if necessary.
      * If child is null, assumes the MotionEvent will be sent to this ViewGroup instead.
      */
-    private boolean dispatchTransformedTouchEvent(@NonNull MotionEvent event,
+    boolean dispatchTransformedTouchEvent(@NonNull MotionEvent event,
                                                   @Nullable View child, boolean cancel) {
         final boolean handled;
 
@@ -1395,7 +1395,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     }
 
     @Nullable
-    private PointerIcon dispatchResolvePointerIcon(MotionEvent event, @NonNull View child) {
+    PointerIcon dispatchResolvePointerIcon(MotionEvent event, @NonNull View child) {
         final PointerIcon pointerIcon;
         if (!child.hasIdentityMatrix()) {
             MotionEvent transformedEvent = getTransformedMotionEvent(event, child);

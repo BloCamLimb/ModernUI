@@ -415,12 +415,11 @@ public final class Core {
                 final Looper looper;
                 if (sUiThread == sMainThread) {
                     looper = Looper.getMainLooper();
-                    sUiHandlerAsync = sMainHandlerAsync;
                 } else {
                     looper = Looper.prepare();
-                    sUiHandlerAsync = Handler.createAsync(looper);
                 }
                 sUiHandler = new Handler(looper);
+                sUiHandlerAsync = Handler.createAsync(looper);
 
                 if (sDirectContext != null) {
                     if (sUiThread == sRenderThread) {

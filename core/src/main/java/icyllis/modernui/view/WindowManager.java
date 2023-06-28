@@ -18,11 +18,98 @@
 
 package icyllis.modernui.view;
 
+import org.jetbrains.annotations.ApiStatus;
+
 /**
- * The interface that apps use to talk to the window manager.
+ * Interface for adding custom windows to the platform window.
  * <p>
- * Each window manager instance is bound to the platform window. To obtain the
- * <code>WindowManager</code>, call {@link Context#getSystemService}.
+ * Internally used by ToastManager and PopupWindow.
  */
+@ApiStatus.Internal
 public interface WindowManager extends ViewManager {
+
+    class LayoutParams extends ViewGroup.LayoutParams {
+        /**
+         * X position for this window.  With the default gravity it is ignored.
+         * When using {@link Gravity#LEFT} or {@link Gravity#START} or {@link Gravity#RIGHT} or
+         * {@link Gravity#END} it provides an offset from the given edge.
+         */
+        public int x;
+
+        /**
+         * Y position for this window.  With the default gravity it is ignored.
+         * When using {@link Gravity#TOP} or {@link Gravity#BOTTOM} it provides
+         * an offset from the given edge.
+         */
+        public int y;
+
+        /**
+         * Indicates how much of the extra space will be allocated horizontally
+         * to the view associated with these LayoutParams. Specify 0 if the view
+         * should not be stretched. Otherwise the extra pixels will be pro-rated
+         * among all views whose weight is greater than 0.
+         */
+        public float horizontalWeight;
+
+        /**
+         * Indicates how much of the extra space will be allocated vertically
+         * to the view associated with these LayoutParams. Specify 0 if the view
+         * should not be stretched. Otherwise the extra pixels will be pro-rated
+         * among all views whose weight is greater than 0.
+         */
+        public float verticalWeight;
+
+        public int type;
+
+        public static final int FIRST_APPLICATION_WINDOW = 1;
+
+        public static final int TYPE_BASE_APPLICATION = 1;
+
+        public static final int LAST_APPLICATION_WINDOW = 99;
+
+        public static final int FIRST_SUB_WINDOW = 1000;
+
+        public static final int TYPE_APPLICATION_PANEL = FIRST_SUB_WINDOW;
+
+        public static final int TYPE_APPLICATION_SUB_PANEL = FIRST_SUB_WINDOW + 2;
+
+        @ApiStatus.Internal
+        public static final int TYPE_APPLICATION_ABOVE_SUB_PANEL = FIRST_SUB_WINDOW + 5;
+
+        public static final int LAST_SUB_WINDOW = 1999;
+
+        public static final int FIRST_SYSTEM_WINDOW = 2000;
+
+        @ApiStatus.Internal
+        public static final int TYPE_TOAST = FIRST_SYSTEM_WINDOW + 5;
+
+        public static final int LAST_SYSTEM_WINDOW = 2999;
+
+        public static final int FLAG_NOT_FOCUSABLE = 0x00000008;
+
+        public static final int FLAG_NOT_TOUCH_MODAL = 0x00000020;
+
+        public int flags;
+
+        public int gravity;
+
+        public float horizontalMargin;
+
+        public float verticalMargin;
+
+        public LayoutParams() {
+            super(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
+            type = TYPE_BASE_APPLICATION;
+        }
+
+        /**
+         * True if the window should consume all pointer events itself, regardless of whether they
+         * are inside of the window. If the window is modal, its touchable region will expand to the
+         * size of its task.
+         */
+        @ApiStatus.Internal
+        public boolean isModal() {
+            return (flags & (FLAG_NOT_TOUCH_MODAL | FLAG_NOT_FOCUSABLE)) == 0;
+        }
+    }
 }

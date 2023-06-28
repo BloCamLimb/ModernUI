@@ -141,6 +141,8 @@ public final class GLEngine extends Engine {
         mInstancePool.reset();
         mCpuBufferCache.releaseAll();
 
+        mMainCmdBuffer.resetStates(~0);
+
         if (cleanup) {
             mProgramCache.release();
             mResourceProvider.release();
