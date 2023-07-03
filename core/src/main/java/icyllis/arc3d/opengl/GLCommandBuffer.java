@@ -18,11 +18,12 @@
 
 package icyllis.arc3d.opengl;
 
+import icyllis.arc3d.engine.*;
 import icyllis.modernui.graphics.RefCnt;
 import icyllis.modernui.graphics.SharedPtr;
-import icyllis.arc3d.engine.*;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Arrays;
 
 import static icyllis.arc3d.opengl.GLCore.*;
@@ -32,7 +33,7 @@ import static icyllis.arc3d.opengl.GLCore.*;
  * mostly the same as that on {@link GLEngine}, but {@link GLCommandBuffer} assumes some values
  * and will not handle dirty context.
  *
- * @see GLEngine#beginRenderPass(GLSurfaceManager, int, int, float[])
+ * @see GLEngine#beginRenderPass
  */
 public final class GLCommandBuffer {
 
@@ -59,9 +60,10 @@ public final class GLCommandBuffer {
     private GLSurfaceManager mHWRenderTarget;
 
     @SharedPtr
-    private GLPipeline mHWPipeline;
-    private int mHWProgram;
-    private int mHWVertexArray;
+    private GLProgram mHWProgram;
+    @SharedPtr
+    private GLVertexArray mHWVertexArray;
+    private boolean mHWVertexArrayInvalid;
 
     // OpenGL 3 only.
     private int mHWActiveTextureUnit;
@@ -69,7 +71,7 @@ public final class GLCommandBuffer {
     /**
      * Represents a non-zero texture ID is bound, but no GLTexture object is created.
      *
-     * @see #bindTextureForSetup(int)
+     * @see #bindTextureForOp(int)
      */
     // OpenGL 3 only.
     private static final GLTexture.UniqueID SETUP_TEXTURE_ID = new GLTexture.UniqueID();
@@ -102,9 +104,9 @@ public final class GLCommandBuffer {
         }
 
         if ((states & Engine.GLBackendState.kPipeline) != 0) {
-            mHWPipeline = RefCnt.move(mHWPipeline);
-            mHWProgram = 0;
-            mHWVertexArray = INVALID_ID;
+            mHWProgram = RefCnt.move(mHWProgram);
+            mHWVertexArray = RefCnt.move(mHWVertexArray);
+            mHWVertexArrayInvalid = true;
         }
 
         if ((states & Engine.GLBackendState.kTexture) != 0) {
@@ -254,22 +256,22 @@ public final class GLCommandBuffer {
         }
     }
 
-    public void bindPipeline(@Nonnull GLPipeline pipeline) {
-        if (mHWPipeline != pipeline) {
+    public void bindPipeline(@Nonnull GLProgram program, @Nonnull GLVertexArray vertexArray) {
+        if (mHWProgram != program) {
             // active program will not be deleted, so no collision
-            assert (pipeline.getProgram() != mHWProgram);
-            glUseProgram(pipeline.getProgram());
-            bindVertexArray(pipeline.getVertexArray());
-            mHWPipeline = RefCnt.create(mHWPipeline, pipeline);
-            mHWProgram = pipeline.getProgram();
-            assert (mHWProgram != 0 && mHWVertexArray != 0);
+            glUseProgram(program.getProgram());
+            bindVertexArray(vertexArray);
+            mHWProgram = RefCnt.create(mHWProgram, program);
         }
     }
 
-    public void bindVertexArray(int vertexArray) {
-        if (mHWVertexArray != vertexArray) {
-            glBindVertexArray(vertexArray);
-            mHWVertexArray = vertexArray;
+    public void bindVertexArray(@Nullable GLVertexArray vertexArray) {
+        if (mHWVertexArrayInvalid ||
+                mHWVertexArray != vertexArray) {
+            // active vertex array will not be deleted, so no collision
+            glBindVertexArray(vertexArray == null ? 0 : vertexArray.getHandle());
+            mHWVertexArray = RefCnt.create(mHWVertexArray, vertexArray);
+            mHWVertexArrayInvalid = false;
         }
     }
 
@@ -375,7 +377,7 @@ public final class GLCommandBuffer {
      *
      * @param texture the texture
      */
-    public void bindTextureForSetup(int texture) {
+    public void bindTextureForOp(int texture) {
         int lastUnit = mHWTextureStates.length - 1;
         setTextureUnit(lastUnit);
         mHWTextureStates[lastUnit] = SETUP_TEXTURE_ID;

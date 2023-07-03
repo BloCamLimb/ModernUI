@@ -18,15 +18,16 @@
 
 package icyllis.arc3d.opengl;
 
-import icyllis.modernui.graphics.SharedPtr;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.shading.*;
+import icyllis.modernui.graphics.SharedPtr;
 import org.lwjgl.system.MemoryStack;
 
-import javax.annotation.Nullable;
+import javax.annotation.Nonnull;
 import java.io.PrintWriter;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+import java.util.concurrent.CompletableFuture;
 
 import static icyllis.arc3d.opengl.GLCore.*;
 
@@ -37,6 +38,9 @@ public class GLPipelineStateBuilder extends ProgramBuilder {
     private final VaryingHandler mVaryingHandler;
     private final GLUniformHandler mUniformHandler;
 
+    private String mVertSource;
+    private String mFragSource;
+
     private GLPipelineStateBuilder(GLEngine engine,
                                    PipelineDesc desc,
                                    PipelineInfo pipelineInfo) {
@@ -46,44 +50,59 @@ public class GLPipelineStateBuilder extends ProgramBuilder {
         mUniformHandler = new GLUniformHandler(this);
     }
 
-    @Nullable
-    public static GLPipelineState createPipelineState(GLEngine engine,
+    @Nonnull
+    public static GLPipelineState createPipelineState(final GLEngine engine,
                                                       final PipelineDesc desc,
                                                       final PipelineInfo pipelineInfo) {
-
-        GLPipelineStateBuilder builder = new GLPipelineStateBuilder(engine, desc, pipelineInfo);
-        if (!builder.emitAndInstallProcs()) {
-            return null;
-        }
-        return builder.build();
+        return new GLPipelineState(engine, CompletableFuture.supplyAsync(() -> {
+            GLPipelineStateBuilder builder = new GLPipelineStateBuilder(engine, desc, pipelineInfo);
+            builder.buildAsync();
+            return builder;
+        }));
     }
 
-    @Nullable
-    private GLPipelineState build() {
+    private void buildAsync() {
+        if (!emitAndInstallProcs()) {
+            return;
+        }
+        mVaryingHandler.finish();
+        mVertSource = mVS.toString();
+        mFragSource = mFS.toString();
+
+        //TODO debug only, will remove
+        String allShaders = String.format("""
+                // Vertex GLSL
+                %s
+                // Fragment GLSL
+                %s
+                """, mVertSource, mFragSource);
+        System.out.printf("%s: %s\n", Thread.currentThread(), allShaders);
+    }
+
+    boolean finish(GLPipelineState result) {
+        if (mVertSource == null || mFragSource == null) {
+            return false;
+        }
         int program = glCreateProgram();
         if (program == 0) {
-            return null;
+            return false;
         }
 
-        mVaryingHandler.finish();
-        String vertSource = mVS.toString();
-        String fragSource = mFS.toString();
+        PrintWriter errorWriter = mEngine.getContext().getErrorWriter();
 
-        PrintWriter pw = mEngine.getContext().getErrorWriter();
-
-        int frag = glCompileAndAttachShader(program, GL_FRAGMENT_SHADER, fragSource,
-                mEngine.getPipelineBuilder().getStates(), pw);
+        int frag = glCompileAndAttachShader(program, GL_FRAGMENT_SHADER, mFragSource,
+                mEngine.getPipelineStateCache().getStates(), errorWriter);
         if (frag == 0) {
             glDeleteProgram(program);
-            return null;
+            return false;
         }
 
-        int vert = glCompileAndAttachShader(program, GL_VERTEX_SHADER, vertSource,
-                mEngine.getPipelineBuilder().getStates(), pw);
+        int vert = glCompileAndAttachShader(program, GL_VERTEX_SHADER, mVertSource,
+                mEngine.getPipelineStateCache().getStates(), errorWriter);
         if (vert == 0) {
             glDeleteProgram(program);
             glDeleteShader(frag);
-            return null;
+            return false;
         }
 
         glLinkProgram(program);
@@ -95,10 +114,10 @@ public class GLPipelineStateBuilder extends ProgramBuilder {
                         %s
                         // Fragment GLSL
                         %s
-                        """, vertSource, fragSource);
+                        """, mVertSource, mFragSource);
                 String log = glGetProgramInfoLog(program).trim();
-                GLCore.handleCompileError(pw, allShaders, log);
-                return null;
+                GLCore.handleCompileError(errorWriter, allShaders, log);
+                return false;
             } finally {
                 glDeleteProgram(program);
                 glDeleteShader(frag);
@@ -113,15 +132,6 @@ public class GLPipelineStateBuilder extends ProgramBuilder {
         glDeleteShader(frag);
         glDeleteShader(vert);
 
-        //TODO debug only, will remove
-        String allShaders = String.format("""
-                // Vertex GLSL
-                %s
-                // Fragment GLSL
-                %s
-                """, vertSource, fragSource);
-        System.out.println(allShaders);
-
         try (MemoryStack stack = MemoryStack.stackPush()) {
             IntBuffer pLength = stack.mallocInt(1);
             IntBuffer pBinaryFormat = stack.mallocInt(1);
@@ -134,19 +144,21 @@ public class GLPipelineStateBuilder extends ProgramBuilder {
             }
         }
 
+        //TODO share vertex arrays
         @SharedPtr
-        GLPipeline pipeline = GLPipeline.make(mEngine, mPipelineInfo.geomProc(), program);
-        if (pipeline == null) {
+        GLVertexArray vertexArray = GLVertexArray.make(mEngine, mPipelineInfo.geomProc());
+        if (vertexArray == null) {
             glDeleteProgram(program);
-            return null;
+            return false;
         }
 
-        return new GLPipelineState(mEngine,
-                pipeline,
+        result.init(new GLProgram(mEngine, program),
+                vertexArray,
                 mUniformHandler.mUniforms,
                 mUniformHandler.mCurrentOffset,
                 mUniformHandler.mSamplers,
                 mGPImpl);
+        return true;
     }
 
     @Override

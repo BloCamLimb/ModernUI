@@ -51,6 +51,9 @@ dependencies {
     if (lwjglNatives == "natives-macos" || lwjglNatives == "natives-macos-arm64") {
         runtimeOnly "org.lwjgl:lwjgl-vulkan::$lwjglNatives"
     }
+
+    testImplementation 'org.openjdk.jmh:jmh-core:1.35'
+    testAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.35'
 }
 
 tasks.register('copyDependencies', Copy) {

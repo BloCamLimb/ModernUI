@@ -16,12 +16,14 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics;
+package icyllis.arc3d;
 
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.vulkan.VkCore;
 import icyllis.arc3d.vulkan.VkImageInfo;
 import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.graphics.DeferredDisplayList;
+import icyllis.modernui.graphics.ImageInfo;
 import org.jetbrains.annotations.ApiStatus;
 
 import static icyllis.arc3d.engine.Engine.BackendApi;

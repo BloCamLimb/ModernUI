@@ -29,9 +29,9 @@ public final class DefaultGeoProc extends GeometryProcessor {
     public static final int FLAG_TEX_COORD_ATTRIBUTE = 0x2;
 
     public static final Attribute
-            POSITION = new Attribute("Pos", VertexAttribType.kFloat2, ShaderDataType.kFloat2),
-            COLOR = new Attribute("Color", VertexAttribType.kUByte4_norm, ShaderDataType.kFloat4),
-            TEX_COORD = new Attribute("UV", VertexAttribType.kFloat2, ShaderDataType.kFloat2);
+            POSITION = new Attribute("Pos", VertexAttribType.kFloat2, SLDataType.kFloat2),
+            COLOR = new Attribute("Color", VertexAttribType.kUByte4_norm, SLDataType.kFloat4),
+            TEX_COORD = new Attribute("UV", VertexAttribType.kFloat2, SLDataType.kFloat2);
 
     public static final AttributeSet VERTEX_ATTRIBS = AttributeSet.makeImplicit(
             POSITION, COLOR, TEX_COORD

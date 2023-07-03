@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics;
+package icyllis.arc3d.engine;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
@@ -26,13 +26,13 @@ import java.util.ArrayDeque;
 import java.util.function.BiFunction;
 
 /**
- * High performance implementation to MultiMap.
+ * High performance implementation to multimap.
  *
  * @see Object2ObjectOpenHashMap
  * @see ArrayDeque
  */
 @NotThreadSafe
-public class DequeMultiMap<K, V> extends Object2ObjectOpenHashMap<K, ArrayDeque<V>> {
+public class ArrayDequeMultimap<K, V> extends Object2ObjectOpenHashMap<K, ArrayDeque<V>> {
 
     private V mTmpValue;
 
@@ -41,7 +41,7 @@ public class DequeMultiMap<K, V> extends Object2ObjectOpenHashMap<K, ArrayDeque<
     private final BiFunction<K, ArrayDeque<V>, ArrayDeque<V>> mRemoveLastEntry =
             (__, queue) -> queue.removeLastOccurrence(mTmpValue) && queue.isEmpty() ? null : queue;
 
-    public DequeMultiMap() {
+    public ArrayDequeMultimap() {
     }
 
     public void addFirstEntry(K k, V v) {

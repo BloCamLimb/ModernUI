@@ -156,7 +156,7 @@ public final class DirectContext extends RecordingContext {
             return false;
         }
 
-        mThreadSafeProxy.init(mEngine.getCaps());
+        mThreadSafeProxy.init(mEngine.getCaps(), mEngine.getPipelineStateCache());
         if (!super.init()) {
             return false;
         }

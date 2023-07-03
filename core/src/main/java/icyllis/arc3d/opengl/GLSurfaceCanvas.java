@@ -151,23 +151,27 @@ public final class GLSurfaceCanvas extends GLCanvas {
     /**
      * Pipelines.
      */
-    private GLPipeline COLOR_FILL;
-    private GLPipeline COLOR_TEX;
-    private GLPipeline ROUND_RECT_FILL;
-    private GLPipeline ROUND_RECT_TEX;
-    private GLPipeline ROUND_RECT_STROKE;
-    private GLPipeline CIRCLE_FILL;
-    private GLPipeline CIRCLE_STROKE;
-    private GLPipeline ARC_FILL;
-    private GLPipeline ARC_STROKE;
-    private GLPipeline BEZIER_CURVE;
-    private GLPipeline ALPHA_TEX;
-    private GLPipeline COLOR_TEX_PRE;
-    private GLPipeline GLOW_WAVE;
-    private GLPipeline PIE_FILL;
-    private GLPipeline PIE_STROKE;
-    private GLPipeline ROUND_LINE_FILL;
-    private GLPipeline ROUND_LINE_STROKE;
+    private GLProgram COLOR_FILL;
+    private GLProgram COLOR_TEX;
+    private GLProgram ROUND_RECT_FILL;
+    private GLProgram ROUND_RECT_TEX;
+    private GLProgram ROUND_RECT_STROKE;
+    private GLProgram CIRCLE_FILL;
+    private GLProgram CIRCLE_STROKE;
+    private GLProgram ARC_FILL;
+    private GLProgram ARC_STROKE;
+    private GLProgram BEZIER_CURVE;
+    private GLProgram ALPHA_TEX;
+    private GLProgram COLOR_TEX_PRE;
+    private GLProgram GLOW_WAVE;
+    private GLProgram PIE_FILL;
+    private GLProgram PIE_STROKE;
+    private GLProgram ROUND_LINE_FILL;
+    private GLProgram ROUND_LINE_STROKE;
+
+    private GLVertexArray POS_COLOR;
+    private GLVertexArray POS_COLOR_TEX;
+    private GLVertexArray POS_TEX;
 
     /**
      * pos vec2 + color ubyte4 + uv vec2
@@ -508,29 +512,29 @@ public final class GLSurfaceCanvas extends GLCanvas {
             mNeedsTexBinding = true;
         }
 
-        COLOR_FILL = new GLPipeline(mEngine, pColorFill, RefCnt.create(aPosColor));
-        COLOR_TEX  = new GLPipeline(mEngine, pColorTex,  RefCnt.create(aPosColorUV));
-        ROUND_RECT_FILL   = new GLPipeline(mEngine, pRoundRectFill, RefCnt.create(aPosColor));
-        ROUND_RECT_TEX    = new GLPipeline(mEngine, pRoundRectTex, RefCnt.create(aPosColorUV));
-        ROUND_RECT_STROKE = new GLPipeline(mEngine, pRoundRectStroke, RefCnt.create(aPosColor));
-        CIRCLE_FILL   = new GLPipeline(mEngine, pCircleFill,   RefCnt.create(aPosColor));
-        CIRCLE_STROKE = new GLPipeline(mEngine, pCircleStroke, RefCnt.create(aPosColor));
-        ARC_FILL   = new GLPipeline(mEngine, pArcFill,   RefCnt.create(aPosColor));
-        ARC_STROKE = new GLPipeline(mEngine, pArcStroke, RefCnt.create(aPosColor));
-        BEZIER_CURVE = new GLPipeline(mEngine, pBezierCurve, RefCnt.create(aPosColor));
-        ALPHA_TEX = new GLPipeline(mEngine, pAlphaTex, RefCnt.create(aPosUV));
-        COLOR_TEX_PRE = new GLPipeline(mEngine, pColorTexPre, RefCnt.create(aPosColorUV));
-        GLOW_WAVE = new GLPipeline(mEngine, pGlowWave, RefCnt.create(aPosColor));
-        PIE_FILL = new GLPipeline(mEngine, pPieFill, RefCnt.create(aPosColor));
-        PIE_STROKE = new GLPipeline(mEngine, pPieStroke, RefCnt.create(aPosColor));
-        ROUND_LINE_FILL = new GLPipeline(mEngine, pRoundLineFill, RefCnt.create(aPosColor));
-        ROUND_LINE_STROKE = new GLPipeline(mEngine, pRoundLineStroke, RefCnt.create(aPosColor));
+        COLOR_FILL = new GLProgram(mEngine, pColorFill );
+        COLOR_TEX  = new GLProgram(mEngine, pColorTex  );
+        ROUND_RECT_FILL   = new GLProgram(mEngine, pRoundRectFill);
+        ROUND_RECT_TEX    = new GLProgram(mEngine, pRoundRectTex);
+        ROUND_RECT_STROKE = new GLProgram(mEngine, pRoundRectStroke);
+        CIRCLE_FILL   = new GLProgram(mEngine, pCircleFill);
+        CIRCLE_STROKE = new GLProgram(mEngine, pCircleStroke);
+        ARC_FILL   = new GLProgram(mEngine, pArcFill);
+        ARC_STROKE = new GLProgram(mEngine, pArcStroke);
+        BEZIER_CURVE = new GLProgram(mEngine, pBezierCurve);
+        ALPHA_TEX = new GLProgram(mEngine, pAlphaTex);
+        COLOR_TEX_PRE = new GLProgram(mEngine, pColorTexPre);
+        GLOW_WAVE = new GLProgram(mEngine, pGlowWave);
+        PIE_FILL = new GLProgram(mEngine, pPieFill);
+        PIE_STROKE = new GLProgram(mEngine, pPieStroke);
+        ROUND_LINE_FILL = new GLProgram(mEngine, pRoundLineFill);
+        ROUND_LINE_STROKE = new GLProgram(mEngine, pRoundLineStroke);
 
-        RefCnt.move(aPosColor);
-        RefCnt.move(aPosColorUV);
-        RefCnt.move(aPosUV);
+        POS_COLOR = aPosColor;
+        POS_COLOR_TEX = aPosColorUV;
+        POS_TEX = aPosUV;
 
-        System.out.println("Loaded OpenGL canvas shaders, compatibility mode: " + compat);
+        ModernUI.LOGGER.info("Loaded OpenGL canvas shaders, compatibility mode: " + compat);
     }
     //@formatter:on
 
@@ -553,7 +557,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         try (var stream = ModernUI.getInstance().getResourceStream(ModernUI.ID, path)) {
             source = Core.readIntoNativeBuffer(stream).flip();
             return GLCore.glCompileShader(type, source,
-                    mEngine.getPipelineBuilder().getStates(),
+                    mEngine.getPipelineStateCache().getStates(),
                     mEngine.getContext().getErrorWriter());
         } catch (IOException e) {
             ModernUI.LOGGER.error(GLCore.MARKER, "Failed to get shader source {}:{}\n", ModernUI.ID, path, e);
@@ -655,6 +659,10 @@ public final class GLSurfaceCanvas extends GLCanvas {
         ROUND_LINE_FILL.unref();
         ROUND_LINE_STROKE.unref();
 
+        POS_COLOR.unref();
+        POS_COLOR_TEX.unref();
+        POS_TEX.unref();
+
         mLinearSampler.unref();
         mTextures.forEach(o -> {
             if (o instanceof SurfaceProxyView v) {
@@ -677,10 +685,10 @@ public final class GLSurfaceCanvas extends GLCanvas {
         return mProjectionUpload.rewind();
     }
 
-    private GLPipeline bindPipeline(GLPipeline pipeline) {
+    private GLVertexArray bindPipeline(GLProgram program, GLVertexArray vertexArray) {
         var cmdBuffer = mEngine.currentCommandBuffer();
-        cmdBuffer.bindPipeline(pipeline);
-        return pipeline;
+        cmdBuffer.bindPipeline(program, vertexArray);
+        return vertexArray;
     }
 
     @RenderThread
@@ -818,7 +826,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         for (int op : mDrawOps) {
             switch (op) {
                 case DRAW_PRIM -> {
-                    bindPipeline(COLOR_FILL)
+                    bindPipeline(COLOR_FILL, POS_COLOR)
                             .bindVertexBuffer(mColorMeshVertexBuffer, 0);
                     int prim = mDrawPrims.getInt(primIndex++);
                     int n = prim & 0xFFFF;
@@ -826,13 +834,13 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     posColorIndex += n;
                 }
                 case DRAW_RECT -> {
-                    bindPipeline(COLOR_FILL).
+                    bindPipeline(COLOR_FILL, POS_COLOR).
                             bindVertexBuffer(mColorMeshVertexBuffer, 0);
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
                     posColorIndex += 4;
                 }
                 case DRAW_ROUND_RECT_FILL -> {
-                    bindPipeline(ROUND_RECT_FILL)
+                    bindPipeline(ROUND_RECT_FILL, POS_COLOR)
                             .bindVertexBuffer(mColorMeshVertexBuffer, 0);
                     mRoundRectUBO.upload(0, 20, uniformDataPtr);
                     uniformDataPtr += 20;
@@ -840,7 +848,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     posColorIndex += 4;
                 }
                 case DRAW_ROUND_RECT_STROKE -> {
-                    bindPipeline(ROUND_RECT_STROKE)
+                    bindPipeline(ROUND_RECT_STROKE, POS_COLOR)
                             .bindVertexBuffer(mColorMeshVertexBuffer, 0);
                     mRoundRectUBO.upload(0, 24, uniformDataPtr);
                     uniformDataPtr += 24;
@@ -848,7 +856,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     posColorIndex += 4;
                 }
                 case DRAW_ROUND_IMAGE -> {
-                    bindPipeline(ROUND_RECT_TEX)
+                    bindPipeline(ROUND_RECT_TEX, POS_COLOR_TEX)
                             .bindVertexBuffer(mTextureMeshVertexBuffer, 0);
                     bindNextTexture();
                     mRoundRectUBO.upload(0, 20, uniformDataPtr);
@@ -857,7 +865,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     posColorTexIndex += 4;
                 }
                 case DRAW_ROUND_LINE_FILL -> {
-                    bindPipeline(ROUND_LINE_FILL)
+                    bindPipeline(ROUND_LINE_FILL, POS_COLOR)
                             .bindVertexBuffer(mColorMeshVertexBuffer, 0);
                     mRoundRectUBO.upload(0, 20, uniformDataPtr);
                     uniformDataPtr += 20;
@@ -865,7 +873,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     posColorIndex += 4;
                 }
                 case DRAW_ROUND_LINE_STROKE -> {
-                    bindPipeline(ROUND_LINE_STROKE)
+                    bindPipeline(ROUND_LINE_STROKE, POS_COLOR)
                             .bindVertexBuffer(mColorMeshVertexBuffer, 0);
                     mRoundRectUBO.upload(0, 24, uniformDataPtr);
                     uniformDataPtr += 24;
@@ -873,14 +881,14 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     posColorIndex += 4;
                 }
                 case DRAW_IMAGE -> {
-                    bindPipeline(COLOR_TEX)
+                    bindPipeline(COLOR_TEX, POS_COLOR_TEX)
                             .bindVertexBuffer(mTextureMeshVertexBuffer, 0);
                     bindNextTexture();
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorTexIndex, 4);
                     posColorTexIndex += 4;
                 }
                 case DRAW_IMAGE_LAYER -> {
-                    bindPipeline(COLOR_TEX_PRE)
+                    bindPipeline(COLOR_TEX_PRE, POS_COLOR_TEX)
                             .bindVertexBuffer(mTextureMeshVertexBuffer, 0);
                     bindSampler(null);
                     bindTexture(((GLTextureCompat) mTextures.remove()).get());
@@ -888,7 +896,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     posColorTexIndex += 4;
                 }
                 case DRAW_CIRCLE_FILL -> {
-                    bindPipeline(CIRCLE_FILL)
+                    bindPipeline(CIRCLE_FILL, POS_COLOR)
                             .bindVertexBuffer(mColorMeshVertexBuffer, 0);
                     mCircleUBO.upload(0, 12, uniformDataPtr);
                     uniformDataPtr += 12;
@@ -896,7 +904,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     posColorIndex += 4;
                 }
                 case DRAW_CIRCLE_STROKE -> {
-                    bindPipeline(CIRCLE_STROKE)
+                    bindPipeline(CIRCLE_STROKE, POS_COLOR)
                             .bindVertexBuffer(mColorMeshVertexBuffer, 0);
                     mCircleUBO.upload(0, 16, uniformDataPtr);
                     uniformDataPtr += 16;
@@ -904,7 +912,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     posColorIndex += 4;
                 }
                 case DRAW_ARC_FILL -> {
-                    bindPipeline(ARC_FILL)
+                    bindPipeline(ARC_FILL, POS_COLOR)
                             .bindVertexBuffer(mColorMeshVertexBuffer, 0);
                     mArcUBO.upload(0, 20, uniformDataPtr);
                     uniformDataPtr += 20;
@@ -912,7 +920,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     posColorIndex += 4;
                 }
                 case DRAW_ARC_STROKE -> {
-                    bindPipeline(ARC_STROKE)
+                    bindPipeline(ARC_STROKE, POS_COLOR)
                             .bindVertexBuffer(mColorMeshVertexBuffer, 0);
                     mArcUBO.upload(0, 24, uniformDataPtr);
                     uniformDataPtr += 24;
@@ -920,7 +928,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     posColorIndex += 4;
                 }
                 case DRAW_BEZIER -> {
-                    bindPipeline(BEZIER_CURVE)
+                    bindPipeline(BEZIER_CURVE, POS_COLOR)
                             .bindVertexBuffer(mColorMeshVertexBuffer, 0);
                     mBezierUBO.upload(0, 28, uniformDataPtr);
                     uniformDataPtr += 28;
@@ -928,7 +936,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     posColorIndex += 4;
                 }
                 case DRAW_PIE_FILL -> {
-                    bindPipeline(PIE_FILL)
+                    bindPipeline(PIE_FILL, POS_COLOR)
                             .bindVertexBuffer(mColorMeshVertexBuffer, 0);
                     mArcUBO.upload(0, 20, uniformDataPtr);
                     uniformDataPtr += 20;
@@ -936,7 +944,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     posColorIndex += 4;
                 }
                 case DRAW_PIE_STROKE -> {
-                    bindPipeline(PIE_STROKE)
+                    bindPipeline(PIE_STROKE, POS_COLOR)
                             .bindVertexBuffer(mColorMeshVertexBuffer, 0);
                     mArcUBO.upload(0, 24, uniformDataPtr);
                     uniformDataPtr += 24;
@@ -950,7 +958,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                         glStencilOp(GL_KEEP, GL_KEEP, GL_INCR);
                         glColorMask(false, false, false, false);
 
-                        bindPipeline(COLOR_FILL)
+                        bindPipeline(COLOR_FILL, POS_COLOR)
                                 .bindVertexBuffer(mColorMeshVertexBuffer, 0);
                         glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
                         posColorIndex += 4;
@@ -970,7 +978,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                         glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
                         glColorMask(false, false, false, false);
 
-                        bindPipeline(COLOR_FILL)
+                        bindPipeline(COLOR_FILL, POS_COLOR)
                                 .bindVertexBuffer(mColorMeshVertexBuffer, 0);
                         glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
                         posColorIndex += 4;
@@ -992,9 +1000,9 @@ public final class GLSurfaceCanvas extends GLCanvas {
                         continue;
                     }
 
-                    bindPipeline(ALPHA_TEX);
-                    ALPHA_TEX.bindIndexBuffer(mGlyphIndexBuffer);
-                    ALPHA_TEX.bindVertexBuffer(mGlyphVertexBuffer, 0);
+                    bindPipeline(ALPHA_TEX, POS_TEX);
+                    POS_TEX.bindIndexBuffer(mGlyphIndexBuffer);
+                    POS_TEX.bindVertexBuffer(mGlyphVertexBuffer, 0);
                     bindSampler(mLinearSampler);
 
                     int limit = glyphs.length;
@@ -1052,7 +1060,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                             mLayerImageMemory.remaining());
                     mLayerImageMemory.clear();
 
-                    bindPipeline(COLOR_TEX_PRE)
+                    bindPipeline(COLOR_TEX_PRE, POS_COLOR_TEX)
                             .bindVertexBuffer(mTextureMeshVertexBuffer, 0);
                     bindSampler(null);
                     bindTexture(layer.get());
@@ -1069,7 +1077,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     mCurrTexture = 0;
                 }
                 case DRAW_GLOW_WAVE -> {
-                    bindPipeline(GLOW_WAVE)
+                    bindPipeline(GLOW_WAVE, POS_COLOR)
                             .bindVertexBuffer(mColorMeshVertexBuffer, 0);
                     mMatrixUBO.upload(128, 4, uniformDataPtr);
                     uniformDataPtr += 4;
@@ -1494,7 +1502,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     private void putRectColor(float left, float top, float right, float bottom, @NonNull Paint paint) {
-        putRectColor(left, top, right, bottom, paint.red(), paint.green(), paint.blue(), paint.alpha());
+        putRectColor(left, top, right, bottom, paint.r(), paint.g(), paint.b(), paint.a());
     }
 
     private void putRectColorGrad(float left, float top, float right, float bottom,
@@ -1643,7 +1651,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     .put(r).put(g).put(b).put(a)
                     .putFloat(u2).putFloat(v1);
         } else {
-            putRectColorUV(buffer, left, top, right, bottom, paint.red(), paint.green(), paint.blue(), paint.alpha(),
+            putRectColorUV(buffer, left, top, right, bottom, paint.r(), paint.g(), paint.b(), paint.a(),
                     u1, v1, u2, v2);
         }
     }
@@ -1778,12 +1786,12 @@ public final class GLSurfaceCanvas extends GLCanvas {
                         .put(r).put(g).put(b).put(a);
             }
         } else {
-            float factor = paint.alpha();
+            float factor = paint.a();
             byte a = (byte) (factor * 255.0f + 0.5f);
             factor *= 255.0f;
-            byte r = (byte) (paint.red() * factor + 0.5f);
-            byte g = (byte) (paint.green() * factor + 0.5f);
-            byte b = (byte) (paint.blue() * factor + 0.5f);
+            byte r = (byte) (paint.r() * factor + 0.5f);
+            byte g = (byte) (paint.g() * factor + 0.5f);
+            byte b = (byte) (paint.b() * factor + 0.5f);
             int pb = pos.position();
             for (int i = 0; i < numVertices; i++) {
                 buffer.putFloat(pos.get(pb++))
@@ -2117,12 +2125,12 @@ public final class GLSurfaceCanvas extends GLCanvas {
             mDrawPrims.add(2 | (GLCore.GL_LINES << 16));
 
             ByteBuffer buffer = checkColorMeshStagingBuffer();
-            float factor = paint.alpha();
+            float factor = paint.a();
             byte a = (byte) (factor * 255.0f + 0.5f);
             factor *= 255.0f;
-            byte r = (byte) (paint.red() * factor + 0.5f);
-            byte g = (byte) (paint.green() * factor + 0.5f);
-            byte b = (byte) (paint.blue() * factor + 0.5f);
+            byte r = (byte) (paint.r() * factor + 0.5f);
+            byte g = (byte) (paint.g() * factor + 0.5f);
+            byte b = (byte) (paint.b() * factor + 0.5f);
             buffer.putFloat(startX)
                     .putFloat(startY)
                     .put(r).put(g).put(b).put(a);

@@ -16,15 +16,21 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine;
+package icyllis.arc3d.engine.ops;
 
 /**
- * The DeferredContext is the one in effect during DDL Recording. It isn't backed by a GPU and
- * cannot allocate any GPU resources.
+ * Base class for {@link Op Ops} that draw. These ops can draw into an {@link OpsRenderPass}'s
+ * {@link RenderTarget}.
  */
-public final class DeferredContext extends RecordingContext {
+public abstract class DrawOp extends Op {
 
-    DeferredContext(ContextThreadSafeProxy proxy) {
-        super(proxy);
+    public DrawOp() {
+    }
+
+    /**
+     * Returns whether the op will draw stencil.
+     */
+    public boolean usesStencil() {
+        return false;
     }
 }

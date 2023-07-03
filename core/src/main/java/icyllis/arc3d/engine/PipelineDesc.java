@@ -21,14 +21,19 @@ package icyllis.arc3d.engine;
 import javax.annotation.Nonnull;
 
 /**
- * This class is used to generate a generic pipeline cache key. The Vulkan backend
- * derive backend-specific versions which add additional information.
+ * This class is used to generate a generic pipeline cache key.
+ * Also used to lookup pipeline state objects in cache.
  */
 public final class PipelineDesc extends Key.Builder {
 
     private int mShaderKeyLength;
 
     public PipelineDesc() {
+    }
+
+    public PipelineDesc(PipelineDesc other) {
+        super(other);
+        mShaderKeyLength = other.mShaderKeyLength;
     }
 
     /**

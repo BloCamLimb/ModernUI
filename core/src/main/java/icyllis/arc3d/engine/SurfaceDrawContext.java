@@ -16,28 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine.shading;
+package icyllis.arc3d.engine;
 
-import icyllis.arc3d.engine.ShaderVar;
-import icyllis.arc3d.engine.GeometryProcessor;
-
-/**
- * Base class for vertex shader builder. This is the stage that computes input geometry for the
- * rasterizer.
- */
-public interface VertexGeomBuilder extends ShaderBuilder {
-
-    /**
-     * Emits per-vertex and per-instance attributes to vertex shader inputs.
-     *
-     * @param geomProc the geometry processor
-     */
-    void emitAttributes(GeometryProcessor geomProc);
-
-    /**
-     * Emits position in device space and transforms it into the normalized device space.
-     *
-     * @param devicePos the position in device space (xy or xyw)
-     */
-    void emitNormalizedPosition(ShaderVar devicePos);
+public class SurfaceDrawContext {
 }

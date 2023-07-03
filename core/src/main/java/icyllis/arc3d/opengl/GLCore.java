@@ -18,7 +18,7 @@
 
 package icyllis.arc3d.opengl;
 
-import icyllis.arc3d.engine.ThreadSafePipelineBuilder;
+import icyllis.arc3d.engine.PipelineStateCache;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.core.Core;
@@ -489,7 +489,7 @@ public final class GLCore extends GL45C {
 
     public static int glCompileShader(int shaderType,
                                       ByteBuffer source,
-                                      ThreadSafePipelineBuilder.Stats stats,
+                                      PipelineStateCache.Stats stats,
                                       PrintWriter pw) {
         int shader = glCreateShader(shaderType);
         if (shader == 0) {
@@ -519,7 +519,7 @@ public final class GLCore extends GL45C {
     public static int glCompileAndAttachShader(int program,
                                                int shaderType,
                                                String source,
-                                               ThreadSafePipelineBuilder.Stats stats,
+                                               PipelineStateCache.Stats stats,
                                                PrintWriter pw) {
         int shader = glCreateShader(shaderType);
         if (shader == 0) {

@@ -330,7 +330,8 @@ public final class ImageInfo {
      * @param w pixel column count; must be zero or greater
      * @param h pixel row count; must be zero or greater
      */
-    ImageInfo(@Size(min = 0) int w, @Size(min = 0) int h,
+    @ApiStatus.Internal
+    public ImageInfo(@Size(min = 0) int w, @Size(min = 0) int h,
               @ColorType int ct, @AlphaType int at, @Nullable ColorSpace cs) {
         mWidth = w;
         mHeight = h;
@@ -342,7 +343,8 @@ public final class ImageInfo {
     /**
      * Internal resize for optimization purposes.
      */
-    void resize(int width, int height) {
+    @ApiStatus.Internal
+    public void resize(int width, int height) {
         mWidth = width;
         mHeight = height;
     }

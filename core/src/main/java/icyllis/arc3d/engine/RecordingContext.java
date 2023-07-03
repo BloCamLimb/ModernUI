@@ -18,6 +18,7 @@
 
 package icyllis.arc3d.engine;
 
+import icyllis.arc3d.Surface;
 import icyllis.modernui.graphics.ImageInfo;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -26,13 +27,15 @@ import javax.annotation.Nullable;
 /**
  * This class is a public API, except where noted.
  */
-public abstract sealed class RecordingContext extends Context
-        permits DeferredContext, DirectContext {
+public sealed class RecordingContext extends Context
+        permits DirectContext {
 
     private final Thread mOwnerThread;
 
     private final ProxyProvider mProxyProvider;
     private DrawingManager mDrawingManager;
+
+    private final PipelineDesc mLookupDesc = new PipelineDesc();
 
     protected RecordingContext(ContextThreadSafeProxy proxy) {
         super(proxy);
@@ -41,12 +44,12 @@ public abstract sealed class RecordingContext extends Context
     }
 
     @Nullable
-    public static RecordingContext makeDeferred(ContextThreadSafeProxy proxy) {
-        RecordingContext context = new DeferredContext(proxy);
-        if (context.init()) {
-            return context;
+    public static RecordingContext makeRecording(Context context) {
+        RecordingContext rContext = new RecordingContext(context.getThreadSafeProxy());
+        if (rContext.init()) {
+            return rContext;
         }
-        context.unref();
+        rContext.unref();
         return null;
     }
 
@@ -70,7 +73,7 @@ public abstract sealed class RecordingContext extends Context
     }
 
     /**
-     * Can a {@link icyllis.modernui.graphics.Surface} be created with the given color type.
+     * Can a {@link Surface} be created with the given color type.
      * To check whether MSAA is supported use {@link #getMaxSurfaceSampleCount(int)}.
      *
      * @param colorType see {@link ImageInfo}
@@ -116,6 +119,17 @@ public abstract sealed class RecordingContext extends Context
     @ApiStatus.Internal
     public final ThreadSafeCache getThreadSafeCache() {
         return mThreadSafeProxy.getThreadSafeCache();
+    }
+
+    @ApiStatus.Internal
+    public final PipelineStateCache getPipelineStateCache() {
+        return mThreadSafeProxy.getPipelineStateCache();
+    }
+
+    @ApiStatus.Internal
+    public final PipelineState findOrCreatePipelineState(final PipelineInfo pipelineInfo) {
+        mLookupDesc.clear();
+        return getPipelineStateCache().findOrCreatePipelineState(mLookupDesc, pipelineInfo);
     }
 
     @Override

@@ -28,7 +28,7 @@ import static icyllis.arc3d.opengl.GLCore.*;
 
 /**
  * This class manages the lifetime of the vertex array object and is used to track the state of the
- * vertex array to avoid redundant GL calls. May be shared by multiple {@link GLPipeline pipelines}.
+ * vertex array to avoid redundant GL calls. May be shared by multiple {@link GLPipelineState}.
  * <p>
  * Supports OpenGL 3.3 and OpenGL 4.5.
  */
@@ -60,6 +60,9 @@ public final class GLVertexArray extends ManagedResource {
     private GLBuffer.UniqueID mIndexBuffer;
     private GLBuffer.UniqueID mVertexBuffer;
     private GLBuffer.UniqueID mInstanceBuffer;
+
+    private long mVertexOffset;
+    private long mInstanceOffset;
 
     private GLVertexArray(GLEngine engine,
                           int vertexArray,
@@ -218,7 +221,7 @@ public final class GLVertexArray extends ManagedResource {
     }
 
     // @formatter:off
-    private static void set_attrib_format_3(int type, int index, int stride, int offset) {
+    private static void set_attrib_format_3(int type, int index, int stride, long offset) {
         switch (type) {
             case Engine.VertexAttribType.kFloat ->
                     glVertexAttribPointer(index, 1, GL_FLOAT, /*normalized*/false, stride, offset);
@@ -379,6 +382,14 @@ public final class GLVertexArray extends ManagedResource {
         return mVertexArray;
     }
 
+    public int getVertexStride() {
+        return mVertexStride;
+    }
+
+    public int getInstanceStride() {
+        return mInstanceStride;
+    }
+
     /**
      * Set element buffer (index buffer).
      * <p>
@@ -413,14 +424,15 @@ public final class GLVertexArray extends ManagedResource {
      * In OpenGL 3.3, bind pipeline first.
      *
      * @param buffer the vertex buffer object, raw ptr
-     * @param offset first vertex data to the head of the buffer, in bytes
+     * @param offset first vertex data to the base of the buffer, in bytes
      */
     public void bindVertexBuffer(@Nonnull GLBuffer buffer, long offset) {
         if (mVertexArray == 0) {
             return;
         }
         assert mVertexStride > 0;
-        if (mVertexBuffer != buffer.getUniqueID()) {
+        if (mVertexBuffer != buffer.getUniqueID() ||
+                mVertexOffset != offset) {
             if (mVertexBinding != INVALID_BINDING) {
                 // OpenGL 4.5
                 glVertexArrayVertexBuffer(mVertexArray,
@@ -431,7 +443,6 @@ public final class GLVertexArray extends ManagedResource {
             } else if (mAttributes != null) {
                 // OpenGL 3.3, you must bind pipeline before
                 // 'offset' should translate into 'baseVertex'
-                // however, because we always use 'baseVertex', 'offset' is always 0
                 int target = getEngine().bindBuffer(buffer);
                 assert target == GL_ARRAY_BUFFER;
                 for (int index = 0;
@@ -441,10 +452,11 @@ public final class GLVertexArray extends ManagedResource {
                     set_attrib_format_3(/*type*/attr >>> 24,
                             index,
                             mVertexStride,
-                            /*offset*/attr & 0xFFFFFF);
+                            /*base_offset*/offset + /*relative_offset*/(attr & 0xFFFFFF));
                 }
             } else assert false;
             mVertexBuffer = buffer.getUniqueID();
+            mVertexOffset = offset;
         }
     }
 
@@ -456,14 +468,15 @@ public final class GLVertexArray extends ManagedResource {
      * In OpenGL 3.3, bind pipeline first.
      *
      * @param buffer the vertex buffer object, raw ptr
-     * @param offset first instance data to the head of the buffer, in bytes
+     * @param offset first instance data to the base of the buffer, in bytes
      */
     public void bindInstanceBuffer(@Nonnull GLBuffer buffer, long offset) {
         if (mVertexArray == 0) {
             return;
         }
         assert mInstanceStride > 0;
-        if (mInstanceBuffer != buffer.getUniqueID()) {
+        if (mInstanceBuffer != buffer.getUniqueID() ||
+                mInstanceOffset != offset) {
             if (mInstanceBinding != INVALID_BINDING) {
                 // OpenGL 4.5
                 glVertexArrayVertexBuffer(mVertexArray,
@@ -473,8 +486,7 @@ public final class GLVertexArray extends ManagedResource {
                         mInstanceStride);
             } else if (mAttributes != null) {
                 // OpenGL 3.3, you must bind pipeline before
-                // 'offset' should translate into 'baseVertex'
-                // however, because we always use 'baseVertex', 'offset' is always 0
+                // 'offset' should translate into 'baseInstance'
                 int target = getEngine().bindBuffer(buffer);
                 assert target == GL_ARRAY_BUFFER;
                 for (int index = mNumVertexLocations;
@@ -484,10 +496,11 @@ public final class GLVertexArray extends ManagedResource {
                     set_attrib_format_3(/*type*/attr >>> 24,
                             index,
                             mInstanceStride,
-                            /*offset*/attr & 0xFFFFFF);
+                            /*base_offset*/offset + /*relative_offset*/(attr & 0xFFFFFF));
                 }
             } else assert false;
             mInstanceBuffer = buffer.getUniqueID();
+            mInstanceOffset = offset;
         }
     }
 

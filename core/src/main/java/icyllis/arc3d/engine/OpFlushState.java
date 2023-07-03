@@ -18,7 +18,7 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.modernui.graphics.Rect;
+import icyllis.arc3d.Rect2i;
 
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
@@ -40,6 +40,10 @@ public class OpFlushState implements MeshDrawTarget {
 
     public Engine getEngine() {
         return mEngine;
+    }
+
+    public final PipelineState findOrCreatePipelineState(final PipelineInfo pipelineInfo) {
+        return mEngine.getContext().findOrCreatePipelineState(pipelineInfo);
     }
 
     @Override
@@ -69,7 +73,7 @@ public class OpFlushState implements MeshDrawTarget {
     }
 
     public OpsRenderPass beginOpsRenderPass(SurfaceProxyView writeView,
-                                            Rect contentBounds,
+                                            Rect2i contentBounds,
                                             byte colorOps,
                                             byte stencilOps,
                                             float[] clearColor,

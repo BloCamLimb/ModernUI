@@ -18,9 +18,9 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.modernui.graphics.SharedPtr;
 import icyllis.modernui.graphics.MathUtil;
-import org.lwjgl.system.APIUtil;
+import icyllis.modernui.graphics.SharedPtr;
+import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -257,6 +257,14 @@ public abstract class BufferAllocPool {
         return mBufferPtr;
     }
 
+    @Nonnull
+    private static ByteBuffer getMappedBuffer(@Nullable ByteBuffer buffer, long address, int capacity) {
+        if (buffer != null && MemoryUtil.memAddress0(buffer) == address && buffer.capacity() == capacity) {
+            return buffer;
+        }
+        return MemoryUtil.memByteBuffer(address, capacity);
+    }
+
     private static class VertexPool extends BufferAllocPool {
 
         public VertexPool(Engine engine) {
@@ -322,8 +330,7 @@ public abstract class BufferAllocPool {
             assert (offset % vertexSize == 0);
             mesh.setVertexBuffer(buffer, offset / vertexSize, vertexCount);
 
-            ByteBuffer writer = APIUtil.apiGetMappedBuffer(mWriter, mBufferPtr, buffer.getSize());
-            assert (writer != null);
+            ByteBuffer writer = getMappedBuffer(mWriter, mBufferPtr, buffer.getSize());
             writer.position(offset);
             writer.limit(offset + totalSize);
             mWriter = writer;
@@ -397,8 +404,7 @@ public abstract class BufferAllocPool {
             assert (offset % instanceSize == 0);
             mesh.setInstanceBuffer(buffer, offset / instanceSize, instanceCount);
 
-            ByteBuffer writer = APIUtil.apiGetMappedBuffer(mWriter, mBufferPtr, buffer.getSize());
-            assert (writer != null);
+            ByteBuffer writer = getMappedBuffer(mWriter, mBufferPtr, buffer.getSize());
             writer.position(offset);
             writer.limit(offset + totalSize);
             mWriter = writer;

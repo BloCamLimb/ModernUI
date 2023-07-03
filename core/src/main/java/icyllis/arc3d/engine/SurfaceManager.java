@@ -18,6 +18,7 @@
 
 package icyllis.arc3d.engine;
 
+import icyllis.arc3d.Surface;
 import icyllis.modernui.graphics.SharedPtr;
 
 import javax.annotation.Nonnull;
@@ -26,7 +27,7 @@ import javax.annotation.Nullable;
 /**
  * The {@link SurfaceManager} manages all objects used by a {@link RenderTarget},
  * which are framebuffers, render passes and a set of attachments. This is the target
- * of {@link OpsRenderPass}, and may be associated with {@link icyllis.modernui.graphics.Surface}.
+ * of {@link OpsRenderPass}, and may be associated with {@link Surface}.
  * <p>
  * A {@link SurfaceManager} is always associated with a {@link RenderTarget}, which
  * can be either a renderable {@link Texture} or a wrapped {@link RenderSurface}.

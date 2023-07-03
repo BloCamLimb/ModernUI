@@ -57,10 +57,15 @@ public sealed interface Key permits Key.Storage, Key.Builder {
      */
     non-sealed class Builder extends IntArrayList implements Key {
 
-        private int mCurValue = 0;
-        private int mBitsUsed = 0;  // ... in current value
+        private transient int mCurValue = 0;
+        private transient int mBitsUsed = 0;  // ... in current value
 
         public Builder() {
+        }
+
+        public Builder(Builder other) {
+            super(other);
+            assert (other.mCurValue == 0 && other.mBitsUsed == 0);
         }
 
         /**

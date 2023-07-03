@@ -18,12 +18,13 @@
 
 package icyllis.arc3d.opengl;
 
+import icyllis.arc3d.Rect2i;
 import icyllis.arc3d.engine.*;
 import icyllis.modernui.graphics.ImageInfo;
-import icyllis.modernui.graphics.Rect;
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GLCapabilities;
+import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
@@ -32,6 +33,7 @@ import java.util.*;
 import java.util.function.Function;
 
 import static icyllis.arc3d.opengl.GLCore.*;
+import static org.lwjgl.system.MemoryUtil.memPutInt;
 
 /**
  * The OpenGL graphics engine.
@@ -51,7 +53,7 @@ public final class GLEngine extends Engine {
     private final BufferAllocPool mInstancePool;
 
     // unique ptr
-    //private GLOpsRenderPass mCachedOpsRenderPass;
+    private GLOpsRenderPass mCachedOpsRenderPass;
 
     private final ArrayDeque<FlushInfo.FinishedCallback> mFinishedCallbacks = new ArrayDeque<>();
     private final LongArrayFIFOQueue mFinishedFences = new LongArrayFIFOQueue();
@@ -130,7 +132,7 @@ public final class GLEngine extends Engine {
     }
 
     @Override
-    public GLPipelineStateCache getPipelineBuilder() {
+    public GLPipelineStateCache getPipelineStateCache() {
         return mProgramCache;
     }
 
@@ -335,7 +337,7 @@ public final class GLEngine extends Engine {
             restoreRowLength = true;
         }
 
-        currentCommandBuffer().bindTextureForSetup(tex.getHandle());
+        currentCommandBuffer().bindTextureForOp(tex.getHandle());
         glTexSubImage2D(GL_TEXTURE_2D, 0,
                 x, y, width, height, srcFormat, srcType, pixels);
 
@@ -352,24 +354,120 @@ public final class GLEngine extends Engine {
         if (mCaps.hasDSASupport()) {
             glGenerateTextureMipmap(tex.getHandle());
         } else {
-            currentCommandBuffer().bindTextureForSetup(tex.getHandle());
+            currentCommandBuffer().bindTextureForOp(tex.getHandle());
             glGenerateMipmap(GL_TEXTURE_2D);
         }
         return true;
     }
 
     @Override
-    protected OpsRenderPass onGetOpsRenderPass(SurfaceProxyView writeView, Rect contentBounds, byte colorOps,
-                                               byte stencilOps, float[] clearColor, Set<TextureProxy> sampledTextures
-            , int pipelineFlags) {
-        return null;
+    protected OpsRenderPass onGetOpsRenderPass(SurfaceProxyView writeView,
+                                               Rect2i contentBounds,
+                                               byte colorOps,
+                                               byte stencilOps,
+                                               float[] clearColor,
+                                               Set<TextureProxy> sampledTextures,
+                                               int pipelineFlags) {
+        mStats.incRenderPasses();
+        if (mCachedOpsRenderPass == null) {
+            mCachedOpsRenderPass = new GLOpsRenderPass(this);
+        }
+        return mCachedOpsRenderPass.set(writeView.getProxy().peekSurfaceManager(),
+                contentBounds,
+                writeView.getOrigin(),
+                colorOps,
+                stencilOps,
+                clearColor);
+    }
+
+    public GLCommandBuffer beginRenderPass(GLSurfaceManager fs,
+                                           byte colorOps,
+                                           byte stencilOps,
+                                           float[] clearColor) {
+        handleDirtyContext();
+
+        GLCommandBuffer cmdBuffer = currentCommandBuffer();
+
+        boolean colorLoadClear = LoadStoreOps.loadOp(colorOps) == LoadOp.Clear;
+        boolean stencilLoadClear = LoadStoreOps.loadOp(stencilOps) == LoadOp.Clear;
+        if (colorLoadClear || stencilLoadClear) {
+            int framebuffer = fs.getSampleFramebuffer();
+            cmdBuffer.flushScissorTest(false);
+            if (colorLoadClear) {
+                cmdBuffer.flushColorWrite(true);
+                glClearNamedFramebufferfv(framebuffer,
+                        GL_COLOR,
+                        0,
+                        clearColor);
+            }
+            if (stencilLoadClear) {
+                glStencilMask(0xFFFFFFFF); // stencil will be flushed later
+                glClearNamedFramebufferfi(framebuffer,
+                        GL_DEPTH_STENCIL,
+                        0,
+                        1.0f, 0);
+            }
+        }
+        cmdBuffer.flushRenderTarget(fs);
+
+        return cmdBuffer;
+    }
+
+    public void endRenderPass(GLSurfaceManager fs,
+                              byte colorOps,
+                              byte stencilOps) {
+        handleDirtyContext();
+
+        boolean colorStoreDiscard = LoadStoreOps.storeOp(colorOps) == StoreOp.DontCare;
+        boolean stencilStoreDiscard = LoadStoreOps.storeOp(stencilOps) == StoreOp.DontCare;
+        if (colorStoreDiscard || stencilStoreDiscard) {
+            int framebuffer = fs.getSampleFramebuffer();
+            try (MemoryStack stack = MemoryStack.stackPush()) {
+                final long pAttachments = stack.nmalloc(4, 8);
+                int numAttachments = 0;
+                if (colorStoreDiscard) {
+                    int attachment = fs.getSampleFramebuffer() == DEFAULT_FRAMEBUFFER
+                            ? GL_COLOR
+                            : GL_COLOR_ATTACHMENT0;
+                    memPutInt(pAttachments, attachment);
+                    numAttachments++;
+                }
+                if (stencilStoreDiscard) {
+                    int attachment = fs.getSampleFramebuffer() == DEFAULT_FRAMEBUFFER
+                            ? GL_STENCIL
+                            : GL_STENCIL_ATTACHMENT;
+                    memPutInt(pAttachments + (numAttachments << 2), attachment);
+                    numAttachments++;
+                }
+                nglInvalidateNamedFramebufferData(framebuffer, numAttachments, pAttachments);
+            }
+        }
+    }
+
+    @Nullable
+    @Override
+    protected Buffer onCreateBuffer(int size, int flags) {
+        return GLBuffer.make(this, size, flags);
     }
 
     @Override
-    protected void onResolveRenderTarget(SurfaceManager surfaceManager, int resolveLeft, int resolveTop,
-                                         int resolveRight
-            , int resolveBottom) {
+    protected void onResolveRenderTarget(SurfaceManager surfaceManager,
+                                         int resolveLeft, int resolveTop,
+                                         int resolveRight, int resolveBottom) {
+        GLSurfaceManager glRenderTarget = (GLSurfaceManager) surfaceManager;
 
+        int framebuffer = glRenderTarget.getSampleFramebuffer();
+        int resolveFramebuffer = glRenderTarget.getResolveFramebuffer();
+
+        // We should always have something to resolve
+        assert (framebuffer != 0 && framebuffer != resolveFramebuffer);
+
+        // BlitFramebuffer respects the scissor, so disable it.
+        currentCommandBuffer().flushScissorTest(false);
+        glBlitNamedFramebuffer(framebuffer, resolveFramebuffer, // MSAA to single
+                resolveLeft, resolveTop, resolveRight, resolveBottom, // src rect
+                resolveLeft, resolveTop, resolveRight, resolveBottom, // dst rect
+                GL_COLOR_BUFFER_BIT, GL_NEAREST);
     }
 
     @Override
@@ -414,7 +512,7 @@ public final class GLEngine extends Engine {
         int type = buffer.getTypeEnum();
         if (type == BUFFER_TYPE_INDEX) {
             // Index buffer state is tied to the vertex array.
-            currentCommandBuffer().bindVertexArray(DEFAULT_VERTEX_ARRAY);
+            currentCommandBuffer().bindVertexArray(null);
         }
 
         var bufferState = mHWBufferStates[type];
@@ -462,7 +560,7 @@ public final class GLEngine extends Engine {
             if (texture == 0) {
                 return 0;
             }
-            currentCommandBuffer().bindTextureForSetup(texture);
+            currentCommandBuffer().bindTextureForOp(texture);
 
             if (mCaps.isTextureStorageCompatible(format)) {
                 if (mCaps.skipErrorChecks()) {

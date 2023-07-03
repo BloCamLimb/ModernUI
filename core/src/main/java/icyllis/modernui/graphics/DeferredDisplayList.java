@@ -18,6 +18,8 @@
 
 package icyllis.modernui.graphics;
 
+import icyllis.arc3d.Surface;
+
 /**
  * This class contains pre-processed graphics operations that can be replayed into
  * a {@link Surface} via Surface::draw(DeferredDisplayList*).

@@ -18,7 +18,7 @@
 
 package icyllis.arc3d.engine.shading;
 
-import icyllis.arc3d.engine.ShaderDataType;
+import icyllis.arc3d.engine.SLDataType;
 import icyllis.arc3d.engine.ShaderVar;
 
 /**
@@ -31,27 +31,27 @@ public final class Varying {
     String mFsIn = null;
 
     /**
-     * @param type see {@link ShaderDataType}
+     * @param type see {@link SLDataType}
      */
     public Varying(byte type) {
         // Metal doesn't support varying matrices, so we disallow them everywhere for consistency
-        assert (type != ShaderDataType.kVoid && !ShaderDataType.isMatrixType(type));
+        assert (type != SLDataType.kVoid && !SLDataType.isMatrixType(type));
         mType = type;
     }
 
     /**
-     * @param type see {@link ShaderDataType}
+     * @param type see {@link SLDataType}
      */
     public void reset(byte type) {
         // Metal doesn't support varying matrices, so we disallow them everywhere for consistency
-        assert (type != ShaderDataType.kVoid && !ShaderDataType.isMatrixType(type));
+        assert (type != SLDataType.kVoid && !SLDataType.isMatrixType(type));
         mType = type;
         mVsOut = null;
         mFsIn = null;
     }
 
     /**
-     * @return see {@link ShaderDataType}
+     * @return see {@link SLDataType}
      */
     public byte type() {
         return mType;

@@ -18,8 +18,8 @@
 
 package icyllis.arc3d.engine;
 
+import icyllis.arc3d.Rect2i;
 import icyllis.modernui.graphics.Matrix4;
-import icyllis.modernui.graphics.Rect;
 
 /**
  * GPU hierarchical clipping.
@@ -45,7 +45,7 @@ public final class ClipStack extends Clip {
 
     public static final class Clip {
 
-        final Rect mShape = new Rect();
+        final Rect2i mShape = new Rect2i();
 
         // model view matrix
         final Matrix4 mMatrix = Matrix4.identity();

@@ -16,9 +16,10 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics;
+package icyllis.arc3d;
 
 import icyllis.arc3d.engine.RenderTarget;
+import icyllis.modernui.graphics.*;
 
 /**
  * Surface is responsible for managing the pixels that a canvas draws into.

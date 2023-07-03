@@ -115,6 +115,8 @@ public final class GLBuffer extends Buffer {
                 glNamedBufferStorage(buffer, size, flags);
                 if (glGetError() != GL_NO_ERROR) {
                     glDeleteBuffers(buffer);
+                    new Throwable("RHICreateBuffer, failed to allocate " + size + " bytes from device")
+                            .printStackTrace(engine.getContext().getErrorWriter());
                     return null;
                 }
             }
@@ -128,8 +130,9 @@ public final class GLBuffer extends Buffer {
 
             GLBuffer res = new GLBuffer(engine, size, usage, type, buffer);
             if (res.mBuffer == 0) {
-                // OOM
                 res.unref();
+                new Throwable("RHICreateBuffer, failed to allocate " + size + " bytes from device")
+                        .printStackTrace(engine.getContext().getErrorWriter());
                 return null;
             }
 

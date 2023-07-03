@@ -29,6 +29,9 @@ public class ShaderCaps {
             Automatic_AdvBlendEqInteraction = 1,        // No interaction required
             GeneralEnable_AdvBlendEqInteraction = 2;    // layout(blend_support_all_equations) out
 
+    // GLSL version 450 or 330
+    public boolean mIsGLSL450 = false;
+
     public boolean mDualSourceBlendingSupport = false;
     public boolean mPreferFlatInterpolation = false;
     public boolean mVertexIDSupport = false;
@@ -66,6 +69,8 @@ public class ShaderCaps {
     public int mAdvBlendEqInteraction = NotSupported_AdvBlendEqInteraction;
 
     public int mMaxFragmentSamplers = 0;
+
+    public String mVersionDeclString = "";
 
     public ShaderCaps() {
     }

@@ -166,26 +166,72 @@ public class Paint {
 
     private static final int ALIGN_MASK = 0xC0;
 
-    private static final int ANTI_ALIAS_MASK = 0x100;
-    private static final int DITHER_MASK = 0x200;
+    /**
+     * The {@code FilterMode} specifies the sampling method on transformed texture images.
+     * The default is {@link #FILTER_MODE_LINEAR}.
+     */
+    @MagicConstant(intValues = {FILTER_MODE_NEAREST, FILTER_MODE_LINEAR})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface FilterMode {
+    }
+
+    /**
+     * Single sample point (nearest neighbor).
+     */
+    public static final int FILTER_MODE_NEAREST = 0x000;
+
+    /**
+     * Interpolate between 2x2 sample points (bilinear interpolation).
+     */
+    public static final int FILTER_MODE_LINEAR = 0x100;
+
+    private static final int FILTER_MODE_MASK = 0x100;
+
+    /**
+     * The {@code MipmapMode} specifies the interpolation method for MIP image levels when
+     * down-sampling texture images. The default is {@link #MIPMAP_MODE_LINEAR}.
+     */
+    @MagicConstant(intValues = {MIPMAP_MODE_NONE, MIPMAP_MODE_NEAREST, MIPMAP_MODE_LINEAR})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface MipmapMode {
+    }
+
+    /**
+     * Ignore mipmap levels, sample from the "base".
+     */
+    public static final int MIPMAP_MODE_NONE = 0x000;
+
+    /**
+     * Sample from the nearest level.
+     */
+    public static final int MIPMAP_MODE_NEAREST = 0x200;
+
+    /**
+     * Interpolate between the two nearest levels.
+     */
+    public static final int MIPMAP_MODE_LINEAR = 0x400;
+
+    private static final int MIPMAP_MODE_MASK = 0x600;
+
+    private static final int MAX_ANISOTROPY_SHIFT = 11;
+    private static final int MAX_ANISOTROPY_MASK = 0x1F << MAX_ANISOTROPY_SHIFT;
+
+    private static final int ANTI_ALIAS_MASK = 0x10000;
+    private static final int DITHER_MASK = 0x20000;
 
     // the recycle bin, see obtain()
-    private static final Paint[] sPool = new Paint[4];
+    private static final Paint[] sPool = new Paint[8];
     @GuardedBy("sPool")
     private static int sPoolSize;
 
-    // local bits
-    private static final int PRIVATE_MASK = 0x7FFFFFFF;
-    // this bit is guarded by 'sPool'
-    private static final int IN_POOL_MASK = 0x80000000;
-
     private static final int DEFAULT_FLAGS = FILL |
-            CAP_ROUND | JOIN_ROUND | ALIGN_CENTER | ANTI_ALIAS_MASK;
+            CAP_ROUND | JOIN_ROUND | ALIGN_CENTER |
+            FILTER_MODE_LINEAR | MIPMAP_MODE_LINEAR | ANTI_ALIAS_MASK;
 
     // color components using non-premultiplied alpha
-    private float mR; // may out of range
-    private float mG; // may out of range
-    private float mB; // may out of range
+    private float mR; // 0..1
+    private float mG; // 0..1
+    private float mB; // 0..1
     private float mA; // 0..1
 
     private float mWidth;       // stroke-width
@@ -201,25 +247,31 @@ public class Paint {
 
     /*
      * bitfield
-     * |--------|--------|
-     *                 00  FILL             (def)
-     *                 01  STROKE
-     *                 10  STROKE_AND_FILL
-     *               00    CAP_BUTT
-     *               01    CAP_ROUND        (def)
-     *               10    CAP_SQUARE
-     *             00      JOIN_MITER
-     *             01      JOIN_ROUND       (def)
-     *             10      JOIN_BEVEL
-     *           00        ALIGN_CENTER     (def)
-     *           01        ALIGN_INSIDE
-     *           10        ALIGN_OUTSIDE
-     * |--------|--------|
-     *         1           ANTI_ALIAS       (def)
-     *        1            DITHER
-     * |--------|--------|
-     *
-     * the highest bit is locked by 'sPool'
+     * 24       16       8        0
+     * |--------|--------|--------|
+     *                          00  FILL             (def)
+     *                          01  STROKE
+     *                          10  STROKE_AND_FILL
+     *                        00    CAP_BUTT
+     *                        01    CAP_ROUND        (def)
+     *                        10    CAP_SQUARE
+     *                      00      JOIN_MITER
+     *                      01      JOIN_ROUND       (def)
+     *                      10      JOIN_BEVEL
+     *                    00        ALIGN_CENTER     (def)
+     *                    01        ALIGN_INSIDE
+     *                    10        ALIGN_OUTSIDE
+     * |--------|--------|--------|
+     *                  0           FILTER_NEAREST
+     *                  1           FILTER_LINEAR       (def)
+     *                00            MIPMAP_MODE_NONE
+     *                01            MIPMAP_MODE_NEAREST
+     *                11            MIPMAP_MODE_LINEAR  (def)
+     *           11111              MAX_ANISOTROPY_MASK (range: 0-16, def: 0)
+     * |--------|--------|--------|
+     *         1                    ANTI_ALIAS       (def)
+     *        1                     DITHER
+     * |--------|--------|--------|
      */
     private int mFlags;
 
@@ -245,7 +297,7 @@ public class Paint {
 
     /**
      * Returns a paint from the shared pool, if any, or creates a new one.<br>
-     * The attributes of the paint are guaranteed to be defaults mentioned in this class.
+     * The attributes of the paint are guaranteed to be defaults according to this class.
      * A call to {@link #recycle()} is expected (not strictly necessary) after use.
      * <p>
      * For example:
@@ -271,37 +323,28 @@ public class Paint {
      */
     @NonNull
     public static Paint obtain() {
-        Paint result = null;
         synchronized (sPool) {
-            if (sPoolSize > 0) {
-                final int i = --sPoolSize;
-                result = sPool[i];
+            if (sPoolSize != 0) {
+                int i = --sPoolSize;
+                Paint p = sPool[i];
                 sPool[i] = null;
+                return p;
             }
         }
-        if (result == null)
-            return new Paint();
-        result.mFlags &= ~IN_POOL_MASK;
-        result.reset();
-        return result;
+        return new Paint();
     }
 
     /**
      * Releases this paint object to the shared pool. You can't touch this paint anymore
      * after recycling.
      *
-     * @throws IllegalStateException If the instance is already in the pool.
      * @see #obtain()
      */
     public final void recycle() {
-        assert (mFlags & IN_POOL_MASK) == 0;
+        reset();
         synchronized (sPool) {
-            if (sPoolSize < sPool.length) {
-                if ((mFlags & IN_POOL_MASK) != 0) {
-                    throw new IllegalStateException("Already in the pool!");
-                }
+            if (sPoolSize != sPool.length) {
                 sPool[sPoolSize++] = this;
-                mFlags |= IN_POOL_MASK;
             }
         }
     }
@@ -310,7 +353,6 @@ public class Paint {
      * Set all contents of this paint to their initial values.
      */
     public final void reset() {
-        assert (mFlags & IN_POOL_MASK) == 0;
         mR = 1;
         mG = 1;
         mB = 1;
@@ -351,6 +393,8 @@ public class Paint {
         }
     }
 
+    ///// Solid Color
+
     /**
      * Return the paint's solid color in sRGB. Note that the color is a 32-bit value
      * containing alpha as well as r,g,b. This 32-bit value is not premultiplied,
@@ -385,7 +429,7 @@ public class Paint {
      *
      * @return alpha ranging from zero, fully transparent, to one, fully opaque
      */
-    public final float getAlphaf() {
+    public final float getAlphaF() {
         return mA;
     }
 
@@ -408,7 +452,7 @@ public class Paint {
      *
      * @param a the alpha component [0..1] of the paint's color
      */
-    public final void setAlphaf(float a) {
+    public final void setAlphaF(float a) {
         mA = MathUtil.clamp(a, 0.0f, 1.0f);
     }
 
@@ -425,44 +469,44 @@ public class Paint {
     /**
      * Returns the value of the red component.
      *
-     * @see #alpha()
-     * @see #green()
-     * @see #blue()
+     * @see #a()
+     * @see #g()
+     * @see #b()
      */
-    public final float red() {
+    public final float r() {
         return mR;
     }
 
     /**
      * Returns the value of the green component.
      *
-     * @see #alpha()
-     * @see #red()
-     * @see #blue()
+     * @see #a()
+     * @see #r()
+     * @see #b()
      */
-    public final float green() {
+    public final float g() {
         return mG;
     }
 
     /**
      * Returns the value of the blue component.
      *
-     * @see #alpha()
-     * @see #red()
-     * @see #green()
+     * @see #a()
+     * @see #r()
+     * @see #g()
      */
-    public final float blue() {
+    public final float b() {
         return mB;
     }
 
     /**
      * Returns the value of the alpha component.
      *
-     * @see #alpha()
-     * @see #red()
-     * @see #green()
+     * @see #a()
+     * @see #r()
+     * @see #g()
      */
-    public final float alpha() {
+    public final float a() {
         return mA;
     }
 
@@ -554,6 +598,8 @@ public class Paint {
         mA = MathUtil.clamp(a, 0.0f, 1.0f);
     }
 
+    ///// Basic Flags
+
     /**
      * Returns true if distance-to-edge anti-aliasing should be used.
      * If true, the AA step is calculated in screen space.
@@ -628,6 +674,8 @@ public class Paint {
     public final void setStyle(@Style int style) {
         mFlags = (mFlags & ~STYLE_MASK) | (style & STYLE_MASK);
     }
+
+    ///// Stroke Parameters
 
     /**
      * Sets paint's style to STROKE if true, or FILL if false.
@@ -769,6 +817,117 @@ public class Paint {
         mSmoothWidth = Math.max(smooth, 0);
     }
 
+    ///// Sampler Parameters
+
+    /**
+     * Returns the bilinear interpolation for sampling texture images. True means
+     * {@link #FILTER_MODE_LINEAR}, while false means {@link #FILTER_MODE_NEAREST}.
+     * The value is ignored when anisotropic filtering is used. The default value
+     * is true.
+     *
+     * @return whether to use bilinear filter on images, or nearest neighbor
+     * @see #setFilter(boolean)
+     */
+    public final boolean isFilter() {
+        return (mFlags & FILTER_MODE_MASK) != 0;
+    }
+
+    /**
+     * Set the bilinear interpolation for sampling texture images. True means
+     * {@link #FILTER_MODE_LINEAR}, while false means {@link #FILTER_MODE_NEAREST}.
+     * Calling this method disables anisotropic filtering. The default value
+     * is true.
+     *
+     * @param filter whether to use bilinear filter on images, or nearest neighbor
+     * @see #isFilter()
+     */
+    public final void setFilter(boolean filter) {
+        if (filter) {
+            mFlags = (mFlags | FILTER_MODE_LINEAR) & ~MAX_ANISOTROPY_MASK;
+        } else {
+            mFlags &= ~(FILTER_MODE_MASK | MAX_ANISOTROPY_MASK);
+        }
+    }
+
+    /**
+     * Returns the current filter. The default is {@link #FILTER_MODE_LINEAR}.
+     * The value is ignored when anisotropic filtering is used.
+     *
+     * @return the current filter
+     * @see #setFilterMode(int)
+     */
+    @FilterMode
+    public final int getFilterMode() {
+        return mFlags & FILTER_MODE_MASK;
+    }
+
+    /**
+     * Set the interpolation method for sampling texture images.
+     * The default is {@link #FILTER_MODE_LINEAR}.
+     * Calling this method does NOT affect anisotropic filtering.
+     *
+     * @param filter the paint's filter
+     * @see #getFilterMode()
+     */
+    public final void setFilterMode(@FilterMode int filter) {
+        mFlags = (mFlags & ~FILTER_MODE_MASK) | (filter & FILTER_MODE_MASK);
+    }
+
+    /**
+     * Returns the mipmap mode. The value is ignored when anisotropic filtering is used.
+     * The default is {@link #MIPMAP_MODE_LINEAR}.
+     *
+     * @return the mipmap mode
+     */
+    @MipmapMode
+    public final int getMipmapMode() {
+        return mFlags & MIPMAP_MODE_MASK;
+    }
+
+    /**
+     * Set the mipmap mode for sampling texture images. The value is ignored when
+     * anisotropic filtering is used. The default is {@link #MIPMAP_MODE_LINEAR}.
+     *
+     * @param mipmap the mipmap mode
+     */
+    public final void setMipmapMode(@MipmapMode int mipmap) {
+        mFlags = (mFlags & ~MIPMAP_MODE_MASK) | (mipmap & MIPMAP_MODE_MASK);
+    }
+
+    /**
+     * Returns whether the anisotropic filtering is enabled.
+     * If enabled, {@link #getFilterMode()} and {@link #getMipmapMode()} are ignored.
+     *
+     * @return true if anisotropic filtering will be used for sampling images.
+     */
+    public final boolean isAnisotropy() {
+        return (mFlags & MAX_ANISOTROPY_MASK) != 0;
+    }
+
+    /**
+     * Returns the maximum level of anisotropic filtering. The default value is 0 (OFF).
+     *
+     * @return the max anisotropy
+     */
+    public final int getMaxAnisotropy() {
+        return (mFlags & MAX_ANISOTROPY_MASK) >> MAX_ANISOTROPY_SHIFT;
+    }
+
+    /**
+     * Set the maximum level of anisotropic filtering. A value greater than 0 means
+     * anisotropic filtering is used, and {@link #getFilterMode()} and {@link #getMipmapMode()}
+     * are ignored. If the device does not support anisotropic filtering, this method will
+     * be downgraded to bilinear filtering. The default value is 0 (OFF).
+     *
+     * @param maxAnisotropy the max anisotropy level ranged from 0 to 16
+     */
+    public final void setMaxAnisotropy(int maxAnisotropy) {
+        mFlags = (mFlags & ~MAX_ANISOTROPY_MASK) |
+                (MathUtil.clamp(maxAnisotropy, 0, 16) << MAX_ANISOTROPY_SHIFT);
+    }
+
+    ///// Effects
+
     /**
      * Returns optional colors used when filling a path, such as a gradient.
      *
@@ -874,6 +1033,8 @@ public class Paint {
     public final void setImageFilter(@Nullable ImageFilter imageFilter) {
         mImageFilter = imageFilter;
     }
+
+    ///// Utility
 
     /**
      * Returns true if the paint prevents all drawing; otherwise, the paint may or

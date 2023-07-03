@@ -18,14 +18,20 @@
 
 package icyllis.arc3d.engine;
 
+import javax.annotation.concurrent.ThreadSafe;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public abstract class ThreadSafePipelineBuilder {
+//TODO make concurrent
+@ThreadSafe
+public abstract class PipelineStateCache {
 
     protected final Stats mStats = new Stats();
 
-    public ThreadSafePipelineBuilder() {
+    public PipelineStateCache() {
     }
+
+    public abstract PipelineState findOrCreatePipelineState(final PipelineDesc desc,
+                                                            final PipelineInfo pipelineInfo);
 
     protected abstract void close();
 

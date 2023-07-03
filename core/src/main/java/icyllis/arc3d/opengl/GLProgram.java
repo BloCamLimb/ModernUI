@@ -16,28 +16,41 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine.shading;
+package icyllis.arc3d.opengl;
 
-import icyllis.arc3d.engine.ShaderVar;
-import icyllis.arc3d.engine.GeometryProcessor;
+import icyllis.arc3d.engine.ManagedResource;
+
+import javax.annotation.Nonnull;
+
+import static icyllis.arc3d.opengl.GLCore.glDeleteProgram;
 
 /**
- * Base class for vertex shader builder. This is the stage that computes input geometry for the
- * rasterizer.
+ * Represents OpenGL programs.
  */
-public interface VertexGeomBuilder extends ShaderBuilder {
+public final class GLProgram extends ManagedResource {
 
-    /**
-     * Emits per-vertex and per-instance attributes to vertex shader inputs.
-     *
-     * @param geomProc the geometry processor
-     */
-    void emitAttributes(GeometryProcessor geomProc);
+    private int mProgram;
 
-    /**
-     * Emits position in device space and transforms it into the normalized device space.
-     *
-     * @param devicePos the position in device space (xy or xyw)
-     */
-    void emitNormalizedPosition(ShaderVar devicePos);
+    public GLProgram(@Nonnull GLEngine engine,
+                     int program) {
+        super(engine);
+        assert (program != 0);
+        mProgram = program;
+    }
+
+    @Override
+    protected void deallocate() {
+        if (mProgram != 0) {
+            glDeleteProgram(mProgram);
+        }
+        discard();
+    }
+
+    public void discard() {
+        mProgram = 0;
+    }
+
+    public int getProgram() {
+        return mProgram;
+    }
 }
