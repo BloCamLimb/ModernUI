@@ -18,6 +18,8 @@
 
 package icyllis.arc3d.engine;
 
+import icyllis.arc3d.Rect2i;
+import icyllis.arc3d.engine.ops.OpsTask;
 import icyllis.arc3d.opengl.GLEngine;
 import icyllis.arc3d.shaderc.Compiler;
 import icyllis.modernui.graphics.*;
@@ -584,7 +586,7 @@ public abstract class Engine {
         return mCompiler;
     }
 
-    public abstract ThreadSafePipelineBuilder getPipelineBuilder();
+    public abstract PipelineStateCache getPipelineStateCache();
 
     /**
      * Called by context when the underlying backend context is already or will be destroyed
@@ -841,7 +843,7 @@ public abstract class Engine {
      */
     @Nullable
     public final OpsRenderPass getOpsRenderPass(SurfaceProxyView writeView,
-                                                Rect contentBounds,
+                                                Rect2i contentBounds,
                                                 byte colorOps,
                                                 byte stencilOps,
                                                 float[] clearColor,
@@ -854,7 +856,7 @@ public abstract class Engine {
     }
 
     protected abstract OpsRenderPass onGetOpsRenderPass(SurfaceProxyView writeView,
-                                                        Rect contentBounds,
+                                                        Rect2i contentBounds,
                                                         byte colorOps,
                                                         byte stencilOps,
                                                         float[] clearColor,
@@ -876,6 +878,26 @@ public abstract class Engine {
     protected abstract void onResolveRenderTarget(SurfaceManager surfaceManager,
                                                   int resolveLeft, int resolveTop,
                                                   int resolveRight, int resolveBottom);
+
+    @Nullable
+    @SharedPtr
+    public final Buffer createBuffer(int size, int flags) {
+        if (size <= 0) {
+            new Throwable("RHICreateBuffer, invalid size: " + size)
+                    .printStackTrace(getContext().getErrorWriter());
+            return null;
+        }
+        if ((flags & (BufferUsageFlags.kTransferSrc | BufferUsageFlags.kTransferDst)) != 0 &&
+                (flags & BufferUsageFlags.kStatic) != 0) {
+            return null;
+        }
+        handleDirtyContext();
+        return onCreateBuffer(size, flags);
+    }
+
+    @Nullable
+    @SharedPtr
+    protected abstract Buffer onCreateBuffer(int size, int flags);
 
     /**
      * Creates a new fence and inserts it into the graphics queue.

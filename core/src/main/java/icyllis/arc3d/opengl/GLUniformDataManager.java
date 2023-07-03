@@ -19,7 +19,7 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.modernui.graphics.MathUtil;
-import icyllis.arc3d.engine.ShaderDataType;
+import icyllis.arc3d.engine.SLDataType;
 import icyllis.arc3d.engine.UniformDataManager;
 import icyllis.arc3d.engine.shading.UniformHandler;
 
@@ -28,7 +28,7 @@ import java.util.List;
 /**
  * Uploads a UBO for a Uniform Interface Block with std140 layout.
  */
-public class GLPipelineStateDataManager extends UniformDataManager {
+public class GLUniformDataManager extends UniformDataManager {
 
     private int mRTWidth;
     private int mRTHeight;
@@ -40,13 +40,13 @@ public class GLPipelineStateDataManager extends UniformDataManager {
      * @param uniforms    the uniforms
      * @param uniformSize the uniform block size in bytes
      */
-    GLPipelineStateDataManager(List<UniformHandler.UniformInfo> uniforms, int uniformSize) {
+    GLUniformDataManager(List<UniformHandler.UniformInfo> uniforms, int uniformSize) {
         super(uniforms.size(), uniformSize);
         for (int i = 0, e = uniforms.size(); i < e; i++) {
             UniformHandler.UniformInfo uniformInfo = uniforms.get(i);
             assert ((uniformInfo.mOffset & 0xFFFFFF) == uniformInfo.mOffset);
             assert (MathUtil.isAlign4(uniformInfo.mOffset));
-            assert (ShaderDataType.canBeUniformValue(uniformInfo.mVariable.getType()));
+            assert (SLDataType.canBeUniformValue(uniformInfo.mVariable.getType()));
             mUniforms[i] = uniformInfo.mOffset | (uniformInfo.mVariable.getType() << 24);
         }
     }
@@ -54,7 +54,7 @@ public class GLPipelineStateDataManager extends UniformDataManager {
     /**
      * Set the orthographic projection vector.
      */
-    public void setProjection(int u, int width, int height, boolean flipY) {
+    public void setProjection(@UniformHandler.UniformHandle int u, int width, int height, boolean flipY) {
         if (width != mRTWidth || height != mRTHeight || flipY != mRTFlipY) {
             if (flipY) {
                 set4f(u, 2.0f / width, -1.0f, -2.0f / height, 1.0f);

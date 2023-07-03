@@ -18,9 +18,9 @@
 
 package icyllis.arc3d.engine;
 
+import icyllis.arc3d.Rect2i;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.SharedPtr;
-import icyllis.modernui.graphics.Rect;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Objects;
@@ -245,7 +245,7 @@ public class TextureProxy extends SurfaceProxy {
         throw new UnsupportedOperationException();
     }
 
-    public Rect getMSAADirtyRect() {
+    public Rect2i getMSAADirtyRect() {
         throw new UnsupportedOperationException();
     }
 

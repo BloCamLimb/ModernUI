@@ -18,7 +18,7 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.modernui.graphics.RectF;
+import icyllis.arc3d.Rect2f;
 
 /**
  * Produced by {@link Clip}. It provides a set of modifications to the drawing state that
@@ -63,7 +63,7 @@ public final class ClipState implements Cloneable {
      * empty or the draw no longer intersects the clip. In either case the draw can be skipped.
      */
     public boolean addScissor(int l, int t, int r, int b,
-                              RectF bounds) {
+                              Rect2f bounds) {
         return intersect(l, t, r, b) &&
                 bounds.intersect(l, t, r, b);
     }

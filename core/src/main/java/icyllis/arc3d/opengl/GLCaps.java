@@ -50,6 +50,7 @@ public final class GLCaps extends Caps {
 
     final boolean mDebugSupport;
 
+    final boolean mBaseInstanceSupport;
     final boolean mDSASupport;
 
     public static final int
@@ -166,10 +167,12 @@ public final class GLCaps extends Caps {
             mDSASupport = missingExtensions.isEmpty();
 
             mDebugSupport = caps.OpenGL43 || caps.GL_KHR_debug;
+            mBaseInstanceSupport = caps.OpenGL42 || caps.GL_ARB_base_instance;
 
         } else {
             mDSASupport = true;
             mDebugSupport = true;
+            mBaseInstanceSupport = true;
         }
 
         mMaxFragmentUniformVectors = glGetInteger(GL_MAX_FRAGMENT_UNIFORM_VECTORS);
@@ -190,6 +193,8 @@ public final class GLCaps extends Caps {
 
         initGLSL(caps);
         ShaderCaps shaderCaps = mShaderCaps;
+
+        shaderCaps.mIsGLSL450 = mDSASupport;
 
         // OpenGL 3.3
         shaderCaps.mDualSourceBlendingSupport = true;
@@ -1229,6 +1234,10 @@ public final class GLCaps extends Caps {
 
     public boolean hasDebugSupport() {
         return mDebugSupport;
+    }
+
+    public boolean hasBaseInstanceSupport() {
+        return mBaseInstanceSupport;
     }
 
     @Override

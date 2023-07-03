@@ -22,8 +22,7 @@ import icyllis.modernui.graphics.SharedPtr;
 import icyllis.modernui.graphics.RefCnt;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -94,7 +93,7 @@ public abstract class RenderTask extends RefCnt {
         }
 
         @Override
-        public List<RenderTask> getIncomingEdges(@Nonnull RenderTask node) {
+        public Collection<RenderTask> getIncomingEdges(@Nonnull RenderTask node) {
             return node.mDependencies;
         }
     };

@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,12 +16,12 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics;
+package icyllis.arc3d;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.graphics.*;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Base class for drawing devices.
@@ -33,16 +33,14 @@ public abstract class BaseDevice extends RefCnt implements MatrixProvider {
             CLIP_TYPE_RECT = 1,
             CLIP_TYPE_COMPLEX = 2;
 
-    protected final Rect mBounds = new Rect();
-
     final ImageInfo mInfo;
+    protected final Rect2i mBounds = new Rect2i();
 
     final Matrix4 mLocalToDevice = Matrix4.identity();
 
-    // mDeviceToGlobal and mGlobalToDevice are inverses of each other; there are never that many
-    // Devices, so pay the memory cost to avoid recalculating the inverse.
-    final Matrix3 mDeviceToGlobal = Matrix3.identity();
-    final Matrix3 mGlobalToDevice = Matrix3.identity();
+    // mDeviceToGlobal and mGlobalToDevice are inverses of each other
+    final Matrix4 mDeviceToGlobal = Matrix4.identity();
+    final Matrix4 mGlobalToDevice = Matrix4.identity();
 
     public BaseDevice(ImageInfo info) {
         mInfo = info;
@@ -57,7 +55,7 @@ public abstract class BaseDevice extends RefCnt implements MatrixProvider {
      * Return ImageInfo for this device. If the canvas is not backed by GPU,
      * then the info's ColorType will be {@link ImageInfo#CT_UNKNOWN}.
      */
-    @NonNull
+    @Nonnull
     public final ImageInfo imageInfo() {
         return mInfo;
     }
@@ -70,7 +68,7 @@ public abstract class BaseDevice extends RefCnt implements MatrixProvider {
         return mInfo.height();
     }
 
-    public final void getBounds(Rect bounds) {
+    public final void getBounds(Rect2i bounds) {
         bounds.set(mBounds);
     }
 
@@ -79,11 +77,12 @@ public abstract class BaseDevice extends RefCnt implements MatrixProvider {
      * canvas. The root device will have its top-left at 0,0, but other devices
      * such as those associated with saveLayer may have a non-zero origin.
      */
-    public final void getGlobalBounds(Rect bounds) {
+    public final void getGlobalBounds(Rect2i bounds) {
         if (mDeviceToGlobal.isIdentity()) {
             bounds.set(mBounds);
         } else {
-            mDeviceToGlobal.mapRectOut(mBounds, bounds);
+            //mDeviceToGlobal.mapRectOut(mBounds, bounds);
+            //FIXME
         }
     }
 
@@ -93,7 +92,7 @@ public abstract class BaseDevice extends RefCnt implements MatrixProvider {
      * draws unless the clip is further modified (at which point this will
      * return the updated bounds).
      */
-    public final void getClipBounds(Rect bounds) {
+    public final void getClipBounds(Rect2i bounds) {
         bounds.set(getClipBounds());
     }
 
@@ -108,7 +107,7 @@ public abstract class BaseDevice extends RefCnt implements MatrixProvider {
      * into the global canvas' space (or root device space). This includes the translation
      * necessary to account for the device's origin.
      */
-    public final Matrix3 deviceToGlobal() {
+    public final Matrix4 deviceToGlobal() {
         return mDeviceToGlobal;
     }
 
@@ -116,7 +115,7 @@ public abstract class BaseDevice extends RefCnt implements MatrixProvider {
      * Return the inverse of getDeviceToGlobal(), mapping from the global canvas' space (or root
      * device space) into this device's coordinate space.
      */
-    public final Matrix3 globalToDevice() {
+    public final Matrix4 globalToDevice() {
         return mGlobalToDevice;
     }
 
@@ -125,9 +124,11 @@ public abstract class BaseDevice extends RefCnt implements MatrixProvider {
      * and any relative translation between the two spaces is in integer pixel units.
      */
     public final boolean isPixelAlignedToGlobal() {
-        float x = mDeviceToGlobal.getTranslateX();
-        float y = mDeviceToGlobal.getTranslateY();
-        return x == Math.round(x) && y == Math.round(y) && mDeviceToGlobal.isTranslate();
+        Matrix4 mat = mDeviceToGlobal;
+        return mat.m11 == 1 && mat.m12 == 0 && mat.m13 == 0 && mat.m14 == 0 &&
+                mat.m21 == 0 && mat.m22 == 1 && mat.m23 == 0 && mat.m24 == 0 &&
+                mat.m31 == 0 && mat.m32 == 0 && mat.m33 == 1 && mat.m34 == 0 &&
+                mat.m41 == Math.floor(mat.m41) && mat.m42 == Math.floor(mat.m42) && mat.m43 == 0 && mat.m44 == 1;
     }
 
     /**
@@ -136,11 +137,11 @@ public abstract class BaseDevice extends RefCnt implements MatrixProvider {
      * that device is drawn to the root device, the net effect will be that this device's contents
      * have been transformed by the global transform.
      */
-    public final void getRelativeTransform(final BaseDevice device, Matrix3 out) {
+    public final void getRelativeTransform(final BaseDevice device, Matrix4 dest) {
         // To get the transform from this space to the other device's, transform from our space to
         // global and then from global to the other device.
-        out.set(mDeviceToGlobal);
-        out.postConcat(device.mGlobalToDevice);
+        dest.set(mDeviceToGlobal);
+        dest.postConcat(device.mGlobalToDevice);
     }
 
     public final void save() {
@@ -157,10 +158,10 @@ public abstract class BaseDevice extends RefCnt implements MatrixProvider {
         setLocalToDevice(localToDevice);
     }
 
-    public void clipRect(RectF rect, int clipOp, boolean doAA) {
+    public void clipRect(Rect2f rect, int clipOp, boolean doAA) {
     }
 
-    public void replaceClip(Rect rect) {
+    public void replaceClip(Rect2i rect) {
     }
 
     public abstract boolean clipIsAA();
@@ -194,21 +195,24 @@ public abstract class BaseDevice extends RefCnt implements MatrixProvider {
      * 'localToDevice', i.e. what geometry drawn into this device will be transformed with).
      * <p>
      * (bufferOriginX, bufferOriginY) defines where the (0,0) pixel the device's backing buffer
-     * is anchored in the device space. The final device-to-global matrix stored by the SkDevice
+     * is anchored in the device space. The final device-to-global matrix stored by the Device
      * will include a pre-translation by T(deviceOriginX, deviceOriginY), and the final
      * local-to-device matrix will have a post-translation of T(-deviceOriginX, -deviceOriginY).
      */
-    final void setCoordinateSystem(@Nullable Matrix3 deviceToGlobal, @Nullable Matrix4 localToDevice,
-                                   int bufferOriginX, int bufferOriginY) {
+    final void setCoordinateSystem(@Nullable Matrix4 deviceToGlobal,
+                                   @Nullable Matrix4 globalToDevice,
+                                   @Nullable Matrix4 localToDevice,
+                                   int bufferOriginX,
+                                   int bufferOriginY) {
         if (deviceToGlobal == null) {
             mDeviceToGlobal.setIdentity();
             mGlobalToDevice.setIdentity();
         } else {
+            assert (globalToDevice != null);
             mDeviceToGlobal.set(deviceToGlobal);
             mDeviceToGlobal.normalizePerspective();
-            if (!mDeviceToGlobal.invert(mGlobalToDevice)) {
-                throw new IllegalStateException();
-            }
+            mGlobalToDevice.set(globalToDevice);
+            mGlobalToDevice.normalizePerspective();
         }
         if (localToDevice == null) {
             mLocalToDevice.setIdentity();
@@ -228,7 +232,7 @@ public abstract class BaseDevice extends RefCnt implements MatrixProvider {
      * unique origin.
      */
     final void setOrigin(@Nullable Matrix4 globalTransform, int x, int y) {
-        setCoordinateSystem(null, globalTransform, x, y);
+        setCoordinateSystem(null, null, globalTransform, x, y);
     }
 
     protected void onSave() {
@@ -239,7 +243,7 @@ public abstract class BaseDevice extends RefCnt implements MatrixProvider {
 
     protected abstract int getClipType();
 
-    protected abstract Rect getClipBounds();
+    protected abstract Rect2i getClipBounds();
 
     /**
      * These are called inside the per-device-layer loop for each draw call.

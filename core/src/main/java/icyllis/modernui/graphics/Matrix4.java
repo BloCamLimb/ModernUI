@@ -2551,6 +2551,10 @@ public final class Matrix4 implements Cloneable {
         out.bottom = Math.round(MathUtil.max(y1, y2, y3, y4));
     }
 
+    public void mapRectOut(@Nonnull Rect r, @Nonnull Rect out) {
+        mapRectOut(r.left, r.top, r.right, r.bottom, out);
+    }
+
     /**
      * Map a rectangle points in the X-Y plane to get the maximum bounds.
      *
@@ -2558,33 +2562,38 @@ public final class Matrix4 implements Cloneable {
      * @param out the round out values
      */
     public void mapRectOut(@Nonnull RectF r, @Nonnull Rect out) {
-        float x1 = m11 * r.left + m21 * r.top + m41;
-        float y1 = m12 * r.left + m22 * r.top + m42;
-        float x2 = m11 * r.right + m21 * r.top + m41;
-        float y2 = m12 * r.right + m22 * r.top + m42;
-        float x3 = m11 * r.left + m21 * r.bottom + m41;
-        float y3 = m12 * r.left + m22 * r.bottom + m42;
-        float x4 = m11 * r.right + m21 * r.bottom + m41;
-        float y4 = m12 * r.right + m22 * r.bottom + m42;
-        if (!isAffine()) {
+        mapRectOut(r.left, r.top, r.right, r.bottom, out);
+    }
+
+    public void mapRectOut(float left, float top, float right, float bottom, @Nonnull Rect dest) {
+        float x1 = m11 * left + m21 * top + m41;
+        float y1 = m12 * left + m22 * top + m42;
+        float x2 = m11 * right + m21 * top + m41;
+        float y2 = m12 * right + m22 * top + m42;
+        float x3 = m11 * left + m21 * bottom + m41;
+        float y3 = m12 * left + m22 * bottom + m42;
+        float x4 = m11 * right + m21 * bottom + m41;
+        float y4 = m12 * right + m22 * bottom + m42;
+        if (hasPerspective()) {
             // project
-            float w = 1.0f / (m14 * r.left + m24 * r.top + m44);
+            float w;
+            w = 1.0f / (m14 * left + m24 * top + m44);
             x1 *= w;
             y1 *= w;
-            w = 1.0f / (m14 * r.right + m24 * r.top + m44);
+            w = 1.0f / (m14 * right + m24 * top + m44);
             x2 *= w;
             y2 *= w;
-            w = 1.0f / (m14 * r.left + m24 * r.bottom + m44);
+            w = 1.0f / (m14 * left + m24 * bottom + m44);
             x3 *= w;
             y3 *= w;
-            w = 1.0f / (m14 * r.right + m24 * r.bottom + m44);
+            w = 1.0f / (m14 * right + m24 * bottom + m44);
             x4 *= w;
             y4 *= w;
         }
-        out.left = (int) Math.floor(MathUtil.min(x1, x2, x3, x4));
-        out.top = (int) Math.floor(MathUtil.min(y1, y2, y3, y4));
-        out.right = (int) Math.ceil(MathUtil.max(x1, x2, x3, x4));
-        out.bottom = (int) Math.ceil(MathUtil.max(y1, y2, y3, y4));
+        dest.left = (int) Math.floor(MathUtil.min(x1, x2, x3, x4));
+        dest.top = (int) Math.floor(MathUtil.min(y1, y2, y3, y4));
+        dest.right = (int) Math.ceil(MathUtil.max(x1, x2, x3, x4));
+        dest.bottom = (int) Math.ceil(MathUtil.max(y1, y2, y3, y4));
     }
 
     /**

@@ -18,7 +18,6 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.modernui.graphics.DequeMultiMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import javax.annotation.Nullable;
@@ -112,7 +111,7 @@ public final class ResourceCache implements AutoCloseable {
     private int mNonCleanableSize;
 
     // This map holds all resources that can be used as scratch resources.
-    private final DequeMultiMap<Object, Resource> mScratchMap;
+    private final ArrayDequeMultimap<Object, Resource> mScratchMap;
     // This map holds all resources that have unique keys.
     private final Object2ObjectOpenHashMap<Object, Resource> mUniqueMap;
 
@@ -140,7 +139,7 @@ public final class ResourceCache implements AutoCloseable {
         mCleanableQueue = new PriorityQueue<>(TIMESTAMP_COMPARATOR, Resource.QUEUE_ACCESSOR);
         mNonCleanableList = new Resource[10]; // initial size must > 2
 
-        mScratchMap = new DequeMultiMap<>();
+        mScratchMap = new ArrayDequeMultimap<>();
         mUniqueMap = new Object2ObjectOpenHashMap<>();
     }
 

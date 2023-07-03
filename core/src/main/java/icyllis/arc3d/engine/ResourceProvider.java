@@ -330,7 +330,11 @@ public final class ResourceProvider {
     @Nullable
     @SharedPtr
     public Buffer createBuffer(int size, int usage) {
-        return null;
+        if (mEngine.getContext().isDiscarded()) {
+            return null;
+        }
+        //TODO scratch
+        return mEngine.createBuffer(size, usage);
     }
 
     public void assignUniqueKeyToResource(Object key, Resource resource) {

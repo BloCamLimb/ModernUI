@@ -20,7 +20,6 @@ package icyllis.arc3d.engine;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.SharedPtr;
-import icyllis.modernui.graphics.DequeMultiMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 
@@ -88,7 +87,7 @@ public final class ResourceAllocator {
     private final IntervalList mFinishedIntervals = new IntervalList();
 
     // Recently created/used textures
-    private final DequeMultiMap<TextureProxy, Register> mFreePool = new DequeMultiMap<>();
+    private final ArrayDequeMultimap<TextureProxy, Register> mFreePool = new ArrayDequeMultimap<>();
 
     private final Object2ObjectOpenHashMap<Object, Register> mUniqueKeyRegisters =
             new Object2ObjectOpenHashMap<>();

@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,9 +16,10 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics;
+package icyllis.arc3d;
 
 import icyllis.arc3d.engine.ConservativeClip;
+import icyllis.modernui.graphics.*;
 import icyllis.modernui.util.Pools;
 
 import java.util.ArrayDeque;
@@ -27,12 +28,12 @@ import java.util.Deque;
 /**
  * A virtual device draws nothing, but tracks device's clip.
  */
-public final class VirtualDevice extends BaseDevice {
+public final class NoPixelsDevice extends BaseDevice {
 
     private final Deque<ClipState> mClipStack = new ArrayDeque<>(8);
     private final Pools.Pool<ClipState> mClipRecPool = Pools.newSimplePool(16);
 
-    public VirtualDevice(int left, int top, int right, int bottom) {
+    public NoPixelsDevice(int left, int top, int right, int bottom) {
         super(ImageInfo.makeUnknown(right - left, bottom - top));
         setOrigin(null, left, top);
         resetClipStack();
@@ -98,12 +99,12 @@ public final class VirtualDevice extends BaseDevice {
     }
 
     @Override
-    public void clipRect(RectF rect, int clipOp, boolean doAA) {
+    public void clipRect(Rect2f rect, int clipOp, boolean doAA) {
         writableClip().opRect(rect, mLocalToDevice, clipOp, doAA);
     }
 
     @Override
-    public void replaceClip(Rect rect) {
+    public void replaceClip(Rect2i rect) {
         writableClip().replace(rect, globalToDevice(), mBounds);
     }
 
@@ -130,7 +131,7 @@ public final class VirtualDevice extends BaseDevice {
     }
 
     @Override
-    protected Rect getClipBounds() {
+    protected Rect2i getClipBounds() {
         return clip().getBounds();
     }
 

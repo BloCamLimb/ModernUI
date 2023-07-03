@@ -21,9 +21,10 @@ package icyllis.arc3d.engine;
 import javax.annotation.concurrent.Immutable;
 
 /**
- * This immutable object contains all information needed to build a pipeline.
+ * This immutable object contains all information needed to build a pipeline
+ * and set pipeline state for a draw. It is used along with a source of geometric
+ * data to draw.
  */
-//TODO
 @Immutable
 public final class PipelineInfo {
 
@@ -73,10 +74,6 @@ public final class PipelineInfo {
      * Note that the fields of all input objects MUST be immutable after constructor is called.
      *
      * @param writeView           the main color render target to write, can NOT be null
-     * @param geomProc            the geometry processor, can NOT be null
-     * @param xferProc            the transfer processor, can NOT be null
-     * @param colorFragProc       the paint's color fragment processors, can be null
-     * @param coverageFragProc    the paint's coverage fragment processors, can be null
      * @param userStencilSettings the stencil settings for stencil clipping, can be null
      */
     public PipelineInfo(SurfaceProxyView writeView,
@@ -87,7 +84,6 @@ public final class PipelineInfo {
                         UserStencilSettings userStencilSettings,
                         int pipelineFlags) {
         assert (writeView != null);
-        assert (geomProc != null);
         mBackendFormat = writeView.getProxy().getBackendFormat();
         mSampleCount = writeView.getProxy().getSampleCount();
         mOrigin = writeView.getOrigin();

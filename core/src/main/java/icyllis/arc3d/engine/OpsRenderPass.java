@@ -18,9 +18,9 @@
 
 package icyllis.arc3d.engine;
 
+import icyllis.arc3d.Rect2f;
 import icyllis.arc3d.engine.ops.Op;
 import icyllis.modernui.graphics.SharedPtr;
-import icyllis.modernui.graphics.RectF;
 
 /**
  * The {@link OpsRenderPass} is a series of commands (draws, clears, and discards), which all target the
@@ -79,16 +79,16 @@ public abstract class OpsRenderPass {
     }
 
     /**
-     * Updates the internal pipeline state for drawing with the provided {@link PipelineInfo}. Enters an
-     * internal "bad" state if the pipeline could not be set.
+     * Updates the internal pipeline state for drawing. Enters an internal "bad" state if
+     * the pipeline could not be set.
      *
-     * @param pipelineInfo the pipeline state
-     * @param drawBounds   the draw's sub-area of the render target
+     * @param pipelineInfo  the pipeline info used to update uniforms
+     * @param pipelineState the pipeline state object
+     * @param drawBounds    the sub-area of render target for subsequent draw calls
      */
-    public void bindPipeline(PipelineInfo pipelineInfo, RectF drawBounds) {
+    public void bindPipeline(PipelineInfo pipelineInfo, PipelineState pipelineState, Rect2f drawBounds) {
         assert (pipelineInfo.origin() == mSurfaceOrigin);
-
-        if (!onBindPipeline(pipelineInfo, drawBounds)) {
+        if (!onBindPipeline(pipelineInfo, pipelineState, drawBounds)) {
             mDrawPipelineStatus = kFailedToBind_DrawPipelineStatus;
             return;
         }
@@ -109,12 +109,12 @@ public abstract class OpsRenderPass {
 
     /**
      * Binds textures for the geometry processor. Texture bindings are dynamic state and therefore
-     * not set during {@link #bindPipeline(PipelineInfo, RectF)}. If the current program uses textures,
+     * not set during {@link #bindPipeline(PipelineState, Rect2f)}. If the current program uses textures,
      * then the client must call this method before drawing. The geometry processor textures may also
      * be updated between draws by calling this method again with a different array for textures.
      * <p>
      * Note that this method is only used for GP using texture. If GP does not use texture but FP does,
-     * they will be automatically set during {@link #bindPipeline(PipelineInfo, RectF)}, and this is
+     * they will be automatically set during {@link #bindPipeline(PipelineState, Rect2f)}, and this is
      * a no-op. Otherwise, this method must be called if the GP uses textures.
      *
      * @param geomTextures the raw ptr to textures starting from binding 0
@@ -226,7 +226,9 @@ public abstract class OpsRenderPass {
 
     protected abstract Engine getEngine();
 
-    protected abstract boolean onBindPipeline(PipelineInfo pipelineInfo, RectF drawBounds);
+    protected abstract boolean onBindPipeline(PipelineInfo pipelineInfo,
+                                              PipelineState pipelineState,
+                                              Rect2f drawBounds);
 
     protected abstract void onBindBuffers(@SharedPtr Buffer indexBuffer,
                                           @SharedPtr Buffer vertexBuffer,

@@ -425,7 +425,7 @@ public final class Core {
                     if (sUiThread == sRenderThread) {
                         sUiRecordingContext = RefCnt.create(sDirectContext);
                     } else {
-                        sUiRecordingContext = RecordingContext.makeDeferred(sDirectContext.getThreadSafeProxy());
+                        sUiRecordingContext = RecordingContext.makeRecording(sDirectContext);
                     }
                     Objects.requireNonNull(sUiRecordingContext);
                 } else {

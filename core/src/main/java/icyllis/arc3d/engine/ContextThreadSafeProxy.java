@@ -20,7 +20,7 @@ package icyllis.arc3d.engine;
 
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.ImageInfo;
-import icyllis.modernui.graphics.SurfaceCharacterization;
+import icyllis.arc3d.SurfaceCharacterization;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -54,6 +54,7 @@ public final class ContextThreadSafeProxy {
 
     private volatile Caps mCaps;
     private volatile ThreadSafeCache mThreadSafeCache;
+    private volatile PipelineStateCache mPipelineStateCache;
 
     private final AtomicBoolean mDiscarded = new AtomicBoolean(false);
 
@@ -275,10 +276,16 @@ public final class ContextThreadSafeProxy {
         return mThreadSafeCache;
     }
 
-    void init(Caps caps) {
+    @ApiStatus.Internal
+    public PipelineStateCache getPipelineStateCache() {
+        return mPipelineStateCache;
+    }
+
+    void init(Caps caps, PipelineStateCache psc) {
         assert (caps != null);
         mCaps = caps;
         mThreadSafeCache = new ThreadSafeCache();
+        mPipelineStateCache = psc;
     }
 
     boolean discard() {

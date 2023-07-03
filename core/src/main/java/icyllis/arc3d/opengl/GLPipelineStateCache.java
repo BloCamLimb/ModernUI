@@ -24,21 +24,22 @@ import it.unimi.dsi.fastutil.Hash;
 import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
 import org.jetbrains.annotations.VisibleForTesting;
 
-//TODO compile shader multi-threaded but create backend object on render thread
-public class GLPipelineStateCache extends ThreadSafePipelineBuilder {
+import javax.annotation.Nonnull;
+import java.util.concurrent.ConcurrentHashMap;
+
+//TODO cache trim
+public class GLPipelineStateCache extends PipelineStateCache {
 
     private final GLEngine mEngine;
 
     private final int mCacheSize;
-    private final Object2ObjectLinkedOpenHashMap<Key, GLPipelineState> mCache;
-
-    private final PipelineDesc mLookupDesc = new PipelineDesc();
+    private final ConcurrentHashMap<Key, GLPipelineState> mCache;
 
     @VisibleForTesting
     public GLPipelineStateCache(GLEngine engine, int cacheSize) {
         mEngine = engine;
         mCacheSize = cacheSize;
-        mCache = new Object2ObjectLinkedOpenHashMap<>(cacheSize, Hash.FAST_LOAD_FACTOR);
+        mCache = new ConcurrentHashMap<>(cacheSize, Hash.FAST_LOAD_FACTOR);
     }
 
     public void discard() {
@@ -52,49 +53,36 @@ public class GLPipelineStateCache extends ThreadSafePipelineBuilder {
     }
 
     @Nullable
-    public GLPipelineState findOrCreatePipelineState(final PipelineInfo pipelineInfo) {
-        final Caps caps = mEngine.getCaps();
-        final PipelineDesc desc = caps.makeDesc(mLookupDesc, /*renderTarget*/null, pipelineInfo);
-        assert (!desc.isEmpty());
-        GLPipelineState pipelineState = findOrCreatePipelineStateImpl(desc, pipelineInfo);
-        if (pipelineState == null) {
-            mStats.incNumInlineCompilationFailures();
-        }
-        return pipelineState;
-    }
-
-    @Nullable
     public GLPipelineState findOrCreatePipelineState(final PipelineDesc desc,
                                                      final PipelineInfo pipelineInfo) {
-        assert (!desc.isEmpty());
-        GLPipelineState pipelineState = findOrCreatePipelineStateImpl(desc, pipelineInfo);
-        if (pipelineState == null) {
-            mStats.incNumPreCompilationFailures();
+        if (desc.isEmpty()) {
+            final Caps caps = mEngine.getCaps();
+            caps.makeDesc(desc, /*renderTarget*/null, pipelineInfo);
         }
-        return pipelineState;
+        assert (!desc.isEmpty());
+        return findOrCreatePipelineStateImpl(desc, pipelineInfo);
     }
 
-    @Nullable
-    private GLPipelineState findOrCreatePipelineStateImpl(final PipelineDesc desc,
+    @Nonnull
+    private GLPipelineState findOrCreatePipelineStateImpl(PipelineDesc desc,
                                                           final PipelineInfo pipelineInfo) {
         GLPipelineState entry = mCache.get(desc);
         if (entry != null) {
             return entry;
         }
         // We have a cache miss
+        desc = new PipelineDesc(desc);
         GLPipelineState pipelineState = GLPipelineStateBuilder.createPipelineState(mEngine, desc, pipelineInfo);
-        if (pipelineState == null) {
-            mStats.incNumCompilationFailures();
-            return null;
+        entry = mCache.putIfAbsent(desc.toKey(), pipelineState);
+        if (entry != null) {
+            // race
+            pipelineState.discard();
+            return entry;
         }
-        mStats.incNumCompilationSuccesses();
-        if (mCache.size() >= mCacheSize) {
+        /*if (mCache.size() >= mCacheSize) {
             mCache.removeFirst().release();
             assert (mCache.size() < mCacheSize);
-        }
-        if (mCache.put(desc.toKey(), pipelineState) != null) {
-            throw new IllegalStateException();
-        }
+        }*/
         return pipelineState;
     }
 

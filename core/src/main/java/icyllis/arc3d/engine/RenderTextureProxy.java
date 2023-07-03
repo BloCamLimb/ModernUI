@@ -18,8 +18,8 @@
 
 package icyllis.arc3d.engine;
 
+import icyllis.arc3d.Rect2i;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.graphics.Rect;
 import org.jetbrains.annotations.VisibleForTesting;
 
 /**
@@ -30,7 +30,7 @@ import org.jetbrains.annotations.VisibleForTesting;
 public final class RenderTextureProxy extends TextureProxy {
 
     private final int mSampleCount;
-    private final Rect mMSAADirtyRect = new Rect();
+    private final Rect2i mMSAADirtyRect = new Rect2i();
 
     // Deferred version - no data
     RenderTextureProxy(BackendFormat format,
@@ -81,7 +81,7 @@ public final class RenderTextureProxy extends TextureProxy {
     }
 
     @Override
-    public Rect getMSAADirtyRect() {
+    public Rect2i getMSAADirtyRect() {
         assert isManualMSAAResolve();
         return mMSAADirtyRect;
     }

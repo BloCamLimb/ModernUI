@@ -18,6 +18,8 @@
 
 package icyllis.arc3d.engine;
 
+import icyllis.arc3d.Rect2f;
+import icyllis.arc3d.Rect2i;
 import icyllis.modernui.graphics.*;
 
 /**
@@ -26,9 +28,7 @@ import icyllis.modernui.graphics.*;
  */
 public final class ConservativeClip {
 
-    private static final ThreadLocal<Rect> sRect = ThreadLocal.withInitial(Rect::new);
-
-    private final Rect mBounds = new Rect();
+    private final Rect2i mBounds = new Rect2i();
     private boolean mIsRect = true;
     private boolean mIsAA = false;
 
@@ -59,7 +59,7 @@ public final class ConservativeClip {
     }
 
     // do not modify
-    public Rect getBounds() {
+    public Rect2i getBounds() {
         return mBounds;
     }
 
@@ -75,13 +75,16 @@ public final class ConservativeClip {
         mIsAA = false;
     }
 
-    public void setRect(Rect r) {
-        setRect(r.left, r.top, r.right, r.bottom);
+    public void setRect(Rect2i r) {
+        mBounds.set(r);
+        mIsRect = true;
+        mIsAA = false;
     }
 
-    public void replace(final Rect globalRect, final Matrix3 globalToDevice, final Rect deviceBounds) {
-        final Rect deviceRect = sRect.get();
-        globalToDevice.mapRect(globalRect, deviceRect);
+    public void replace(final Rect2i globalRect, final Matrix4 globalToDevice, final Rect2i deviceBounds) {
+        final Rect2i deviceRect = new Rect2i();
+        //FIXME
+        //globalToDevice.mapRect(new Rect2f(globalRect), deviceRect);
         if (!deviceRect.intersect(deviceBounds)) {
             setEmpty();
         } else {
@@ -89,7 +92,7 @@ public final class ConservativeClip {
         }
     }
 
-    public void opRect(final RectF localRect, final Matrix4 localToDevice, int clipOp, boolean doAA) {
+    public void opRect(final Rect2f localRect, final Matrix4 localToDevice, int clipOp, boolean doAA) {
         applyOpParams(clipOp, doAA, localToDevice.isScaleTranslate());
         switch (clipOp) {
             case ClipStack.OP_INTERSECT:
@@ -101,16 +104,17 @@ public final class ConservativeClip {
             default:
                 throw new IllegalArgumentException();
         }
-        final Rect deviceRect = sRect.get();
-        if (doAA) {
+        final Rect2i deviceRect = new Rect2i ();
+        //FIXME
+        /*if (doAA) {
             localToDevice.mapRectOut(localRect, deviceRect);
         } else {
             localToDevice.mapRect(localRect, deviceRect);
-        }
+        }*/
         opRect(deviceRect, clipOp);
     }
 
-    public void opRect(final Rect deviceRect, int clipOp) {
+    public void opRect(final Rect2i deviceRect, int clipOp) {
         applyOpParams(clipOp, false, true);
 
         if (clipOp == ClipStack.OP_INTERSECT) {
@@ -124,7 +128,7 @@ public final class ConservativeClip {
             if (mBounds.isEmpty()) {
                 return;
             }
-            if (deviceRect.isEmpty() || !Rect.intersects(mBounds, deviceRect)) {
+            if (deviceRect.isEmpty() || !Rect2i.intersects(mBounds, deviceRect)) {
                 return;
             }
             if (deviceRect.contains(mBounds)) {

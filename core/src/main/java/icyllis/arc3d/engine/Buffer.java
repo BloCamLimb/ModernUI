@@ -148,8 +148,9 @@ public abstract class Buffer extends Resource {
             return;
         }
         if (isLocked()) {
-            Objects.checkIndex(offset, mLockOffset);
-            Objects.checkIndex(size, mLockSize);
+            if (offset < mLockOffset || size > mLockSize) {
+                throw new IllegalStateException();
+            }
             onUnlock((mUsage & Engine.BufferUsageFlags.kTransferDst) != 0
                             ? kRead_LockMode
                             : kWriteDiscard_LockMode,
