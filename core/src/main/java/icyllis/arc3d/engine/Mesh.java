@@ -18,6 +18,8 @@
 
 package icyllis.arc3d.engine;
 
+import icyllis.arc3d.SharedPtr;
+
 /**
  * The interface used to receive geometry buffers from {@link MeshDrawTarget}
  * for mesh-drawing operations.
@@ -41,13 +43,12 @@ public interface Mesh {
     /**
      * The callback method for {@link MeshDrawTarget#makeVertexSpace(Mesh)} results.
      *
-     * @param buffer            the raw ptr to the vertex buffer that will hold the vertices,
-     *                          will be valid until draw
+     * @param buffer            the shared ptr to the vertex buffer that will hold the vertices
      * @param baseVertex        the offset into buffer of the first vertex,
      *                          in units of the size of a vertex from layout param
      * @param actualVertexCount the actual number of vertices allocated
      */
-    default void setVertexBuffer(Buffer buffer, int baseVertex, int actualVertexCount) {
+    default void setVertexBuffer(@SharedPtr Buffer buffer, int baseVertex, int actualVertexCount) {
         throw new IllegalStateException();
     }
 
@@ -68,13 +69,12 @@ public interface Mesh {
     /**
      * The callback method for {@link MeshDrawTarget#makeInstanceSpace(Mesh)} results.
      *
-     * @param buffer              the raw ptr to the instance buffer that will hold the instances,
-     *                            will be valid until draw
+     * @param buffer              the shared ptr to the instance buffer that will hold the instances
      * @param baseInstance        the offset into buffer of the first instance,
      *                            in units of the size of an instance from layout param
      * @param actualInstanceCount the actual number of instances allocated
      */
-    default void setInstanceBuffer(Buffer buffer, int baseInstance, int actualInstanceCount) {
+    default void setInstanceBuffer(@SharedPtr Buffer buffer, int baseInstance, int actualInstanceCount) {
         throw new IllegalStateException();
     }
 }

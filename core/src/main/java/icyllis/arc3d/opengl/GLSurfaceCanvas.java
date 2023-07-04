@@ -18,6 +18,7 @@
 
 package icyllis.arc3d.opengl;
 
+import icyllis.arc3d.SharedPtr;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.geom.DefaultGeoProc;
 import icyllis.arc3d.engine.shading.UniformHandler;
@@ -666,7 +667,9 @@ public final class GLSurfaceCanvas extends GLCanvas {
         mLinearSampler.unref();
         mTextures.forEach(o -> {
             if (o instanceof SurfaceProxyView v) {
-                v.getProxy().unref();
+                if (v.getProxy() != null) {
+                    v.getProxy().unref();
+                }
             }
         });
         mTextures.clear();

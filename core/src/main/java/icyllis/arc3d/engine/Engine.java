@@ -19,6 +19,7 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.Rect2i;
+import icyllis.arc3d.SharedPtr;
 import icyllis.arc3d.engine.ops.OpsTask;
 import icyllis.arc3d.opengl.GLEngine;
 import icyllis.arc3d.shaderc.Compiler;
@@ -676,7 +677,7 @@ public abstract class Engine {
         if (texture != null) {
             // we don't copy the backend format object, use identity rather than equals()
             assert texture.getBackendFormat() == format;
-            assert (surfaceFlags & Surface.FLAG_RENDERABLE) == 0 || texture instanceof RenderTarget;
+            assert (surfaceFlags & Surface.FLAG_RENDERABLE) == 0 || texture.getRenderTarget() != null;
             if (label != null) {
                 texture.setLabel(label);
             }
@@ -866,16 +867,16 @@ public abstract class Engine {
     /**
      * Resolves MSAA. The resolve rectangle must already be in the native destination space.
      */
-    public void resolveRenderTarget(SurfaceManager surfaceManager,
+    public void resolveRenderTarget(RenderTarget renderTarget,
                                     int resolveLeft, int resolveTop,
                                     int resolveRight, int resolveBottom) {
-        assert (surfaceManager != null);
+        assert (renderTarget != null);
         handleDirtyContext();
-        onResolveRenderTarget(surfaceManager, resolveLeft, resolveTop, resolveRight, resolveBottom);
+        onResolveRenderTarget(renderTarget, resolveLeft, resolveTop, resolveRight, resolveBottom);
     }
 
     // overridden by backend-specific derived class to perform the resolve
-    protected abstract void onResolveRenderTarget(SurfaceManager surfaceManager,
+    protected abstract void onResolveRenderTarget(RenderTarget renderTarget,
                                                   int resolveLeft, int resolveTop,
                                                   int resolveRight, int resolveBottom);
 

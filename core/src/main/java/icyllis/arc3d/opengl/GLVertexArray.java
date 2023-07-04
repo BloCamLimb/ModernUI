@@ -19,7 +19,7 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.engine.*;
-import icyllis.modernui.graphics.SharedPtr;
+import icyllis.arc3d.SharedPtr;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -408,7 +408,7 @@ public final class GLVertexArray extends ManagedResource {
             } else {
                 // OpenGL 3.3
                 // this binding state is associated with current VAO
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.getBufferID());
+                getEngine().bindIndexBufferInPipe(buffer);
             }
             mIndexBuffer = buffer.getUniqueID();
         }

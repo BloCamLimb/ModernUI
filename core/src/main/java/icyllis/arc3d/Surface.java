@@ -18,12 +18,11 @@
 
 package icyllis.arc3d;
 
-import icyllis.arc3d.engine.RenderTarget;
 import icyllis.modernui.graphics.*;
 
 /**
  * Surface is responsible for managing the pixels that a canvas draws into.
- * The pixels will be allocated on the GPU (a {@link RenderTarget} surface).
+ * The pixels will be allocated on the GPU (a RenderTarget surface).
  * Surface takes care of allocating a {@link Canvas} that will draw into the surface.
  * Call {@link #getCanvas()} to use that canvas (it is owned by the surface).
  * Surface always has non-zero dimensions. If there is a request for a new surface,

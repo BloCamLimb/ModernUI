@@ -23,7 +23,7 @@ import org.jetbrains.annotations.ApiStatus;
 import javax.annotation.Nonnull;
 
 /**
- * Common interface between {@link Texture} and {@link RenderTarget}.
+ * Interface representing primary surface data.
  */
 public interface Surface {
 
@@ -83,7 +83,7 @@ public interface Surface {
     int FLAG_DEFERRED_PROVIDER = FLAG_PROTECTED << 3;
     /**
      * This is a OpenGL only flag. It tells us that the internal render target wraps the OpenGL
-     * default framebuffer (id=0) that preserved by window. {@link RenderTarget} only.
+     * default framebuffer (id=0) that preserved by window. RT only.
      */
     @ApiStatus.Internal
     int FLAG_GL_WRAP_DEFAULT_FB = FLAG_PROTECTED << 4;
@@ -91,14 +91,13 @@ public interface Surface {
      * This means the render target is multi-sampled, and internally holds a non-msaa texture
      * for resolving into. The render target resolves itself by blit-ting into this internal
      * texture. (It might or might not have the internal texture access, but if it does, we
-     * always resolve the render target before accessing this texture's data.) {@link RenderTarget}
-     * only.
+     * always resolve the render target before accessing this texture's data.) RT only.
      */
     @ApiStatus.Internal
     int FLAG_MANUAL_MSAA_RESOLVE = FLAG_PROTECTED << 5;
     /**
      * This is a Vulkan only flag. It tells us that the internal render target is wrapping a raw
-     * Vulkan secondary command buffer. {@link RenderTarget} only.
+     * Vulkan secondary command buffer. RT only.
      */
     @ApiStatus.Internal
     int FLAG_VK_WRAP_SECONDARY_CB = FLAG_PROTECTED << 6;
@@ -160,4 +159,25 @@ public interface Surface {
      * @return combination of the above flags
      */
     int getSurfaceFlags();
+
+    ///// Common interface between RenderTexture and RenderSurface
+    ///// The following methods are only valid when FLAG_RENDERABLE is set
+
+    /**
+     * Returns the number of samples per pixel in color buffers (one if non-MSAA).
+     *
+     * @return the number of samples, greater than (multi-sampled) or equal to one
+     */
+    default int getSampleCount() {
+        return 1;
+    }
+
+    /**
+     * Returns the underlying object who owns the framebuffers and additional surfaces of this RT.
+     *
+     * @return raw ptr to the framebuffer set associated with the RT, non-null or exception
+     */
+    default RenderTarget getRenderTarget() {
+        throw new UnsupportedOperationException();
+    }
 }

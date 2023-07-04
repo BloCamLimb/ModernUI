@@ -18,14 +18,14 @@
 
 package icyllis.arc3d.opengl;
 
-import icyllis.modernui.graphics.SharedPtr;
+import icyllis.arc3d.SharedPtr;
 import icyllis.arc3d.engine.*;
 
 import javax.annotation.Nonnull;
 
 import static icyllis.arc3d.opengl.GLCore.*;
 
-public final class GLSurfaceManager extends SurfaceManager {
+public final class GLRenderTarget extends RenderTarget {
 
     /**
      * The GL format for all color attachments.
@@ -54,14 +54,14 @@ public final class GLSurfaceManager extends SurfaceManager {
     private BackendRenderTarget mBackendRenderTarget;
 
     // Constructor for instances created by our engine. (has texture access)
-    GLSurfaceManager(GLEngine engine,
-                     int width, int height,
-                     int format,
-                     int sampleCount,
-                     int framebuffer,
-                     int msaaFramebuffer,
-                     GLTexture colorBuffer,
-                     GLAttachment msaaColorBuffer) {
+    GLRenderTarget(GLEngine engine,
+                   int width, int height,
+                   int format,
+                   int sampleCount,
+                   int framebuffer,
+                   int msaaFramebuffer,
+                   GLTexture colorBuffer,
+                   GLAttachment msaaColorBuffer) {
         super(engine, width, height, sampleCount);
         assert (sampleCount > 0);
         mFormat = format;
@@ -73,13 +73,13 @@ public final class GLSurfaceManager extends SurfaceManager {
     }
 
     // Constructor for instances wrapping backend objects. (no texture access)
-    private GLSurfaceManager(GLEngine engine,
-                             int width, int height,
-                             int format,
-                             int sampleCount,
-                             int framebuffer,
-                             boolean ownership,
-                             @SharedPtr GLAttachment stencilBuffer) {
+    private GLRenderTarget(GLEngine engine,
+                           int width, int height,
+                           int format,
+                           int sampleCount,
+                           int framebuffer,
+                           boolean ownership,
+                           @SharedPtr GLAttachment stencilBuffer) {
         super(engine, width, height, sampleCount);
         assert (sampleCount > 0);
         assert (framebuffer != 0 || !ownership);
@@ -94,7 +94,7 @@ public final class GLSurfaceManager extends SurfaceManager {
     }
 
     /**
-     * Make a {@link GLSurfaceManager} that wraps existing framebuffers without
+     * Make a {@link GLRenderTarget} that wraps existing framebuffers without
      * accessing their backing buffers (texture and stencil).
      *
      * @param width  the effective width of framebuffer
@@ -102,13 +102,13 @@ public final class GLSurfaceManager extends SurfaceManager {
      */
     @Nonnull
     @SharedPtr
-    public static GLSurfaceManager makeWrapped(GLEngine engine,
-                                               int width, int height,
-                                               int format,
-                                               int sampleCount,
-                                               int framebuffer,
-                                               int stencilBits,
-                                               boolean ownership) {
+    public static GLRenderTarget makeWrapped(GLEngine engine,
+                                             int width, int height,
+                                             int format,
+                                             int sampleCount,
+                                             int framebuffer,
+                                             int stencilBits,
+                                             boolean ownership) {
         assert (sampleCount > 0);
         assert (framebuffer != 0 || !ownership);
         GLAttachment stencilBuffer = null;
@@ -136,7 +136,7 @@ public final class GLSurfaceManager extends SurfaceManager {
                     stencilFormat,
                     0);
         }
-        return new GLSurfaceManager(engine,
+        return new GLRenderTarget(engine,
                 width, height,
                 format,
                 sampleCount,
@@ -270,7 +270,7 @@ public final class GLSurfaceManager extends SurfaceManager {
 
     @Override
     public String toString() {
-        return "GLSurfaceManager{" +
+        return "GLRenderTarget{" +
                 "mRenderFramebuffer=" + mSampleFramebuffer +
                 ", mResolveFramebuffer=" + mResolveFramebuffer +
                 ", mFormat=" + GLCore.glFormatName(mFormat) +

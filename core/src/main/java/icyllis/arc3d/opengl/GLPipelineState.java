@@ -21,7 +21,7 @@ package icyllis.arc3d.opengl;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.shading.UniformHandler;
 import icyllis.modernui.graphics.RefCnt;
-import icyllis.modernui.graphics.SharedPtr;
+import icyllis.arc3d.SharedPtr;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -84,7 +84,9 @@ public class GLPipelineState extends PipelineState {
         }
         if (mProgram != null) {
             mProgram.discard();
-            mVertexArray.discard();
+            if (mVertexArray.unique()) {
+                mVertexArray.discard();
+            }
         }
     }
 
@@ -92,10 +94,6 @@ public class GLPipelineState extends PipelineState {
         mProgram = RefCnt.move(mProgram);
         mVertexArray = RefCnt.move(mVertexArray);
         mDataManager = RefCnt.move(mDataManager);
-        if (mAsyncWork != null) {
-            mAsyncWork.cancel(true);
-            mAsyncWork = null;
-        }
     }
 
     private void checkAsyncWork() {
@@ -121,13 +119,15 @@ public class GLPipelineState extends PipelineState {
         return false;
     }
 
-    public void bindUniforms(GLCommandBuffer commandBuffer,
-                             PipelineInfo pipelineInfo,
-                             int width, int height) {
+    public boolean bindUniforms(GLCommandBuffer commandBuffer,
+                                PipelineInfo pipelineInfo,
+                                int width, int height) {
         mDataManager.setProjection(0, width, height,
                 pipelineInfo.origin() == Engine.SurfaceOrigin.kLowerLeft);
         mGPImpl.setData(mDataManager, pipelineInfo.geomProc());
         //TODO FP and upload
+
+        return mDataManager.bindAndUploadUniforms(mEngine, commandBuffer);
     }
 
     /**

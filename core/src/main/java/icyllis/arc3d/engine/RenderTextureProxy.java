@@ -58,8 +58,8 @@ public final class RenderTextureProxy extends TextureProxy {
 
     @Nullable
     @Override
-    public SurfaceManager peekSurfaceManager() {
-        return mTexture != null ? ((RenderTarget) mTexture).getSurfaceManager() : null;
+    public RenderTarget peekRenderTarget() {
+        return mTexture != null ? mTexture.getRenderTarget() : null;
     }
 
     @Override

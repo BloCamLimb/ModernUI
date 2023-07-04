@@ -20,7 +20,7 @@ package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.engine.*;
 import icyllis.modernui.graphics.RefCnt;
-import icyllis.modernui.graphics.SharedPtr;
+import icyllis.arc3d.SharedPtr;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -57,13 +57,16 @@ public final class GLCommandBuffer {
 
     private int mHWFramebuffer;
     @SharedPtr
-    private GLSurfaceManager mHWRenderTarget;
+    private GLRenderTarget mHWRenderTarget;
 
     @SharedPtr
     private GLProgram mHWProgram;
     @SharedPtr
     private GLVertexArray mHWVertexArray;
     private boolean mHWVertexArrayInvalid;
+
+    @SharedPtr
+    private final GLUniformBuffer[] mBoundUniformBuffers;
 
     // OpenGL 3 only.
     private int mHWActiveTextureUnit;
@@ -95,6 +98,7 @@ public final class GLCommandBuffer {
         for (int i = 0; i < mHWSamplerStates.length; i++) {
             mHWSamplerStates[i] = new HWSamplerState();
         }
+        mBoundUniformBuffers = new GLUniformBuffer[4];
     }
 
     void resetStates(int states) {
@@ -107,6 +111,9 @@ public final class GLCommandBuffer {
             mHWProgram = RefCnt.move(mHWProgram);
             mHWVertexArray = RefCnt.move(mHWVertexArray);
             mHWVertexArrayInvalid = true;
+            for (int i = 0; i < mBoundUniformBuffers.length; i++) {
+                mBoundUniformBuffers[i] = RefCnt.move(mBoundUniformBuffers[i]);
+            }
         }
 
         if ((states & Engine.GLBackendState.kTexture) != 0) {
@@ -240,7 +247,7 @@ public final class GLCommandBuffer {
      *
      * @param target raw ptr to render target
      */
-    public void flushRenderTarget(GLSurfaceManager target) {
+    public void flushRenderTarget(GLRenderTarget target) {
         if (target == null) {
             mHWRenderTarget = RefCnt.move(mHWRenderTarget);
         } else {
@@ -272,6 +279,14 @@ public final class GLCommandBuffer {
             glBindVertexArray(vertexArray == null ? 0 : vertexArray.getHandle());
             mHWVertexArray = RefCnt.create(mHWVertexArray, vertexArray);
             mHWVertexArrayInvalid = false;
+        }
+    }
+
+    public void bindUniformBuffer(@Nonnull GLUniformBuffer uniformBuffer) {
+        int index = uniformBuffer.getBinding();
+        if (mBoundUniformBuffers[index] != uniformBuffer) {
+            glBindBufferBase(GL_UNIFORM_BUFFER, index, uniformBuffer.getHandle());
+            mBoundUniformBuffers[index] = RefCnt.move(mBoundUniformBuffers[index], uniformBuffer);
         }
     }
 

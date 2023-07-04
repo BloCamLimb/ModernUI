@@ -22,12 +22,15 @@ import icyllis.arc3d.Rect2f;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.geom.RoundRectGeoProc;
 import icyllis.modernui.annotation.NonNull;
+import icyllis.arc3d.SharedPtr;
 
 public class RoundRectOp extends MeshDrawOp {
 
+    @SharedPtr
     private Buffer mVertexBuffer;
     private int mBaseVertex;
 
+    @SharedPtr
     private Buffer mInstanceBuffer;
     private int mBaseInstance;
 
@@ -59,13 +62,13 @@ public class RoundRectOp extends MeshDrawOp {
     }
 
     @Override
-    public void setVertexBuffer(Buffer buffer, int baseVertex, int actualVertexCount) {
+    public void setVertexBuffer(@SharedPtr Buffer buffer, int baseVertex, int actualVertexCount) {
         mVertexBuffer = buffer;
         mBaseVertex = baseVertex;
     }
 
     @Override
-    public void setInstanceBuffer(Buffer buffer, int baseInstance, int actualInstanceCount) {
+    public void setInstanceBuffer(@SharedPtr Buffer buffer, int baseInstance, int actualInstanceCount) {
         mInstanceBuffer = buffer;
         mBaseInstance = baseInstance;
     }
@@ -74,5 +77,12 @@ public class RoundRectOp extends MeshDrawOp {
     protected void onPrepareDraws(MeshDrawTarget target) {
         long vertexData = target.makeVertexSpace(this);
         long instanceData = target.makeInstanceSpace(this);
+    }
+
+    @Override
+    public void onEndFlush() {
+        super.onEndFlush();
+        mVertexBuffer = Resource.move(mVertexBuffer);
+        mInstanceBuffer = Resource.move(mInstanceBuffer);
     }
 }

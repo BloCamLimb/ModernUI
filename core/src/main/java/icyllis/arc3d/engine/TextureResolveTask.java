@@ -19,7 +19,7 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.Rect2i;
-import icyllis.modernui.graphics.SharedPtr;
+import icyllis.arc3d.SharedPtr;
 
 import java.util.ArrayList;
 import java.util.List;

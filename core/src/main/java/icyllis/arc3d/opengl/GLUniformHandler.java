@@ -112,7 +112,12 @@ public class GLUniformHandler extends UniformHandler {
         int handle = mSamplers.size();
 
         // equivalent to setting texture unit to index
-        String layoutQualifier = "binding = " + handle;
+        String layoutQualifier;
+        if (mProgramBuilder.shaderCaps().mIsGLSL450) {
+            layoutQualifier = "binding = " + handle;
+        } else {
+            layoutQualifier = "";
+        }
 
         var tempInfo = new UniformInfo();
         tempInfo.mVariable = new ShaderVar(resolvedName,

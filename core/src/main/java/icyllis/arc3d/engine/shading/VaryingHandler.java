@@ -144,7 +144,12 @@ public class VaryingHandler {
     public final void finish() {
         int locationIndex = 0;
         for (var v : mVaryings) {
-            String layoutQualifier = "location = " + locationIndex;
+            String layoutQualifier;
+            if (mProgramBuilder.shaderCaps().mIsGLSL450) {
+                layoutQualifier = "location = " + locationIndex;
+            } else {
+                layoutQualifier = "";
+            }
             String modifier = v.mIsFlat ? "flat" : mDefaultInterpolationModifier;
             if ((v.mVisibility & Engine.ShaderFlags.kVertex) != 0) {
                 mVertexOutputs.add(new ShaderVar(v.mVsOut, v.mType, ShaderVar.kOut_TypeModifier,

@@ -20,7 +20,7 @@ package icyllis.arc3d.engine;
 
 import icyllis.arc3d.Rect2i;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.graphics.SharedPtr;
+import icyllis.arc3d.SharedPtr;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Objects;

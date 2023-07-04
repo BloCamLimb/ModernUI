@@ -18,7 +18,7 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.modernui.graphics.SharedPtr;
+import icyllis.arc3d.SharedPtr;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import javax.annotation.Nullable;
@@ -128,8 +128,8 @@ public final class RenderSurfaceProxy extends SurfaceProxy {
 
     @Nullable
     @Override
-    public SurfaceManager peekSurfaceManager() {
-        return mSurface != null ? mSurface.getSurfaceManager() : null;
+    public RenderTarget peekRenderTarget() {
+        return mSurface != null ? mSurface.getRenderTarget() : null;
     }
 
     @Override

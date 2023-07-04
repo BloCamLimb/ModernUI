@@ -19,7 +19,7 @@
 package icyllis.arc3d.engine;
 
 import icyllis.modernui.graphics.RefCnt;
-import icyllis.modernui.graphics.SharedPtr;
+import icyllis.arc3d.SharedPtr;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
@@ -362,10 +362,10 @@ public abstract class SurfaceProxy extends RefCnt {
 
     /**
      * If this is a renderable proxy and the proxy is already instantiated, return its
-     * backing {@link SurfaceManager}; if not, return null.
+     * backing {@link RenderTarget}; if not, return null.
      */
     @Nullable
-    public SurfaceManager peekSurfaceManager() {
+    public RenderTarget peekRenderTarget() {
         return null;
     }
 
