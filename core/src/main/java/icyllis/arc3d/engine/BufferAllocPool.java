@@ -19,7 +19,7 @@
 package icyllis.arc3d.engine;
 
 import icyllis.modernui.graphics.MathUtil;
-import icyllis.modernui.graphics.SharedPtr;
+import icyllis.arc3d.SharedPtr;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
@@ -119,12 +119,13 @@ public abstract class BufferAllocPool {
     public void reset() {
         mBytesInUse = 0;
         if (mIndex >= 0) {
-            assert (mBufferPtr != NULL);
             Buffer buffer = mBuffers[mIndex];
-            assert (buffer.isLocked());
-            assert (buffer.getLockedBuffer() == mBufferPtr);
-            buffer.unlock();
-            mBufferPtr = NULL;
+            if (buffer.isLocked()) {
+                assert (mBufferPtr != NULL);
+                assert (buffer.getLockedBuffer() == mBufferPtr);
+                buffer.unlock();
+                mBufferPtr = NULL;
+            }
         }
         while (mIndex >= 0) {
             Buffer buffer = mBuffers[mIndex];
@@ -299,7 +300,7 @@ public abstract class BufferAllocPool {
                 return NULL;
             }
 
-            Buffer buffer = mBuffers[mIndex];
+            Buffer buffer = Resource.create(mBuffers[mIndex]);
             int offset = (int) (ptr - mBufferPtr);
             assert (offset % vertexSize == 0);
             mesh.setVertexBuffer(buffer, offset / vertexSize, vertexCount);
@@ -325,7 +326,8 @@ public abstract class BufferAllocPool {
                 return null;
             }
 
-            Buffer buffer = mBuffers[mIndex];
+            @SharedPtr
+            Buffer buffer = Resource.create(mBuffers[mIndex]);
             int offset = (int) (ptr - mBufferPtr);
             assert (offset % vertexSize == 0);
             mesh.setVertexBuffer(buffer, offset / vertexSize, vertexCount);
@@ -373,7 +375,7 @@ public abstract class BufferAllocPool {
                 return NULL;
             }
 
-            Buffer buffer = mBuffers[mIndex];
+            Buffer buffer = Resource.create(mBuffers[mIndex]);
             int offset = (int) (ptr - mBufferPtr);
             assert (offset % instanceSize == 0);
             mesh.setInstanceBuffer(buffer, offset / instanceSize, instanceCount);
@@ -399,7 +401,7 @@ public abstract class BufferAllocPool {
                 return null;
             }
 
-            Buffer buffer = mBuffers[mIndex];
+            Buffer buffer = Resource.create(mBuffers[mIndex]);
             int offset = (int) (ptr - mBufferPtr);
             assert (offset % instanceSize == 0);
             mesh.setInstanceBuffer(buffer, offset / instanceSize, instanceCount);

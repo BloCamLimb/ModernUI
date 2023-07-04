@@ -18,6 +18,7 @@
 
 package icyllis.modernui.graphics;
 
+import icyllis.arc3d.SharedPtr;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.core.Core;
 import org.jetbrains.annotations.ApiStatus;

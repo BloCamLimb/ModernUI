@@ -19,7 +19,7 @@
 package icyllis.arc3d.engine;
 
 import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.graphics.SharedPtr;
+import icyllis.arc3d.SharedPtr;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 
@@ -405,7 +405,7 @@ public final class ResourceAllocator {
                 texture = Resource.create(mTexture);
             }
             assert (texture != null);
-            assert (proxy.mSurfaceFlags & Surface.FLAG_RENDERABLE) == 0 || texture instanceof RenderTarget;
+            assert (proxy.mSurfaceFlags & Surface.FLAG_RENDERABLE) == 0 || texture.getRenderTarget() != null;
 
             // Make texture budgeted if this proxy is budgeted.
             if (proxy.isBudgeted() && texture.getBudgetType() != Engine.BudgetType.Budgeted) {

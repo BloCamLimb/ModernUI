@@ -19,7 +19,7 @@
 package icyllis.arc3d.engine;
 
 import icyllis.modernui.graphics.RefCnt;
-import icyllis.modernui.graphics.SharedPtr;
+import icyllis.arc3d.SharedPtr;
 
 import javax.annotation.Nonnull;
 import java.util.Objects;
@@ -28,50 +28,50 @@ import java.util.Objects;
  * Manages a wrapped {@link RenderTarget} on the client (no texture access).
  * For example, the OpenGL default framebuffer (framebuffer id = 0).
  */
-public final class RenderSurface extends RefCnt implements RenderTarget {
+public final class RenderSurface extends RefCnt implements Surface {
 
     @SharedPtr
-    private SurfaceManager mSurfaceManager;
+    private RenderTarget mRenderTarget;
 
-    RenderSurface(@SharedPtr SurfaceManager fs) {
+    RenderSurface(@SharedPtr RenderTarget fs) {
         assert (fs != null && fs.getColorBuffer() == null);
-        mSurfaceManager = fs;
+        mRenderTarget = fs;
     }
 
     @Override
     protected void deallocate() {
-        mSurfaceManager = RefCnt.move(mSurfaceManager);
+        mRenderTarget = RefCnt.move(mRenderTarget);
     }
 
     @Override
     public int getWidth() {
-        return mSurfaceManager.getWidth();
+        return mRenderTarget.getWidth();
     }
 
     @Override
     public int getHeight() {
-        return mSurfaceManager.getHeight();
+        return mRenderTarget.getHeight();
     }
 
     @Override
     public int getSampleCount() {
-        return mSurfaceManager.getSampleCount();
+        return mRenderTarget.getSampleCount();
     }
 
     @Nonnull
     @Override
     public BackendFormat getBackendFormat() {
-        return mSurfaceManager.getBackendFormat();
+        return mRenderTarget.getBackendFormat();
     }
 
     @Override
     public int getSurfaceFlags() {
-        return mSurfaceManager.getSurfaceFlags();
+        return mRenderTarget.getSurfaceFlags() | FLAG_RENDERABLE;
     }
 
     @Nonnull
     @Override
-    public SurfaceManager getSurfaceManager() {
-        return Objects.requireNonNull(mSurfaceManager, "Disposed");
+    public RenderTarget getRenderTarget() {
+        return Objects.requireNonNull(mRenderTarget, "Disposed");
     }
 }

@@ -22,8 +22,11 @@ import icyllis.modernui.graphics.MathUtil;
 import icyllis.arc3d.engine.SLDataType;
 import icyllis.arc3d.engine.UniformDataManager;
 import icyllis.arc3d.engine.shading.UniformHandler;
+import icyllis.modernui.graphics.RefCnt;
 
 import java.util.List;
+
+import static icyllis.arc3d.opengl.GLCore.*;
 
 /**
  * Uploads a UBO for a Uniform Interface Block with std140 layout.
@@ -33,6 +36,8 @@ public class GLUniformDataManager extends UniformDataManager {
     private int mRTWidth;
     private int mRTHeight;
     private boolean mRTFlipY;
+
+    private GLUniformBuffer mUniformBuffer;
 
     /**
      * Created by {@link GLPipelineState}.
@@ -51,6 +56,12 @@ public class GLUniformDataManager extends UniformDataManager {
         }
     }
 
+    @Override
+    protected void deallocate() {
+        super.deallocate();
+        mUniformBuffer = RefCnt.move(mUniformBuffer);
+    }
+
     /**
      * Set the orthographic projection vector.
      */
@@ -67,5 +78,20 @@ public class GLUniformDataManager extends UniformDataManager {
         }
     }
 
-    //TODO upload to UBO
+    public boolean bindAndUploadUniforms(GLEngine engine,
+                                         GLCommandBuffer commandBuffer) {
+        if (!mUniformsDirty) {
+            return true;
+        }
+        if (mUniformBuffer == null) {
+            mUniformBuffer = GLUniformBuffer.make(engine, mUniformSize, GLUniformHandler.UNIFORM_BINDING);
+        }
+        if (mUniformBuffer == null) {
+            return false;
+        }
+        commandBuffer.bindUniformBuffer(mUniformBuffer);
+        nglBufferSubData(GL_UNIFORM_BUFFER, 0, mUniformSize, mUniformData);
+        mUniformsDirty = false;
+        return true;
+    }
 }

@@ -23,7 +23,7 @@ import icyllis.arc3d.engine.DirectContext;
 import icyllis.arc3d.vulkan.VkBackendContext;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.graphics.SharedPtr;
+import icyllis.arc3d.SharedPtr;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFWVulkan;

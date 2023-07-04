@@ -18,6 +18,7 @@
 
 package icyllis.modernui.graphics;
 
+import icyllis.arc3d.SharedPtr;
 import icyllis.arc3d.engine.Surface;
 import icyllis.arc3d.engine.*;
 import icyllis.modernui.annotation.*;
@@ -44,7 +45,7 @@ public class Image implements AutoCloseable {
     private final RecordingContext mContext;
     private ViewReference mView;
 
-    private Image(ImageInfo info, RecordingContext context, TextureProxy proxy, short swizzle) {
+    private Image(ImageInfo info, RecordingContext context, @SharedPtr TextureProxy proxy, short swizzle) {
         mInfo = info;
         mContext = context;
         mView = new ViewReference(this, proxy, swizzle);
@@ -87,6 +88,7 @@ public class Image implements AutoCloseable {
         if (bitmap.getWidth() > 1 || bitmap.getHeight() > 1) {
             flags |= Surface.FLAG_MIPMAPPED;
         }
+        @SharedPtr
         var proxy = rContext.getProxyProvider().createProxyFromBitmap(bitmap, ct, flags);
         if (proxy == null) {
             return null;

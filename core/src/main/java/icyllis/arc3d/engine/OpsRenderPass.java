@@ -20,7 +20,7 @@ package icyllis.arc3d.engine;
 
 import icyllis.arc3d.Rect2f;
 import icyllis.arc3d.engine.ops.Op;
-import icyllis.modernui.graphics.SharedPtr;
+import icyllis.arc3d.SharedPtr;
 
 /**
  * The {@link OpsRenderPass} is a series of commands (draws, clears, and discards), which all target the
@@ -39,7 +39,7 @@ public abstract class OpsRenderPass {
 
     private int mDrawPipelineStatus = kNotConfigured_DrawPipelineStatus;
 
-    protected SurfaceManager mSurfaceManager;
+    protected RenderTarget mRenderTarget;
     protected int mSurfaceOrigin;
 
     private TextureProxy[] mGeomTextures = new TextureProxy[1];
@@ -48,8 +48,8 @@ public abstract class OpsRenderPass {
         this(null, Engine.SurfaceOrigin.kUpperLeft);
     }
 
-    public OpsRenderPass(SurfaceManager fs, int origin) {
-        mSurfaceManager = fs;
+    public OpsRenderPass(RenderTarget fs, int origin) {
+        mRenderTarget = fs;
         mSurfaceOrigin = origin;
     }
 
@@ -66,7 +66,7 @@ public abstract class OpsRenderPass {
      */
     public void clearColor(int left, int top, int right, int bottom,
                            float red, float green, float blue, float alpha) {
-        assert (mSurfaceManager != null);
+        assert (mRenderTarget != null);
         mDrawPipelineStatus = kNotConfigured_DrawPipelineStatus;
     }
 
@@ -74,7 +74,7 @@ public abstract class OpsRenderPass {
      * Same as {@link #clearColor} but modifies the stencil.
      */
     public void clearStencil(int left, int top, int right, int bottom, boolean insideMask) {
-        assert (mSurfaceManager != null);
+        assert (mRenderTarget != null);
         mDrawPipelineStatus = kNotConfigured_DrawPipelineStatus;
     }
 
@@ -218,9 +218,9 @@ public abstract class OpsRenderPass {
         }
     }
 
-    protected void set(SurfaceManager fs, int origin) {
-        assert (mSurfaceManager == null);
-        mSurfaceManager = fs;
+    protected void set(RenderTarget fs, int origin) {
+        assert (mRenderTarget == null);
+        mRenderTarget = fs;
         mSurfaceOrigin = origin;
     }
 

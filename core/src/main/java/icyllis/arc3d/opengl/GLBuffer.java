@@ -19,7 +19,7 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.modernui.graphics.RefCnt;
-import icyllis.modernui.graphics.SharedPtr;
+import icyllis.arc3d.SharedPtr;
 import icyllis.arc3d.engine.*;
 import org.lwjgl.system.MemoryUtil;
 

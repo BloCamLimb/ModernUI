@@ -250,7 +250,7 @@ public final class GLEngine extends Engine {
         if (texture == 0) {
             return null;
         }
-        Function<GLTexture, GLSurfaceManager> target = null;
+        Function<GLTexture, GLRenderTarget> target = null;
         if ((surfaceFlags & Surface.FLAG_RENDERABLE) != 0) {
             target = createRTObjects(
                     texture,
@@ -372,7 +372,7 @@ public final class GLEngine extends Engine {
         if (mCachedOpsRenderPass == null) {
             mCachedOpsRenderPass = new GLOpsRenderPass(this);
         }
-        return mCachedOpsRenderPass.set(writeView.getProxy().peekSurfaceManager(),
+        return mCachedOpsRenderPass.set(writeView.getProxy().peekRenderTarget(),
                 contentBounds,
                 writeView.getOrigin(),
                 colorOps,
@@ -380,7 +380,7 @@ public final class GLEngine extends Engine {
                 clearColor);
     }
 
-    public GLCommandBuffer beginRenderPass(GLSurfaceManager fs,
+    public GLCommandBuffer beginRenderPass(GLRenderTarget fs,
                                            byte colorOps,
                                            byte stencilOps,
                                            float[] clearColor) {
@@ -413,7 +413,7 @@ public final class GLEngine extends Engine {
         return cmdBuffer;
     }
 
-    public void endRenderPass(GLSurfaceManager fs,
+    public void endRenderPass(GLRenderTarget fs,
                               byte colorOps,
                               byte stencilOps) {
         handleDirtyContext();
@@ -451,10 +451,10 @@ public final class GLEngine extends Engine {
     }
 
     @Override
-    protected void onResolveRenderTarget(SurfaceManager surfaceManager,
+    protected void onResolveRenderTarget(RenderTarget renderTarget,
                                          int resolveLeft, int resolveTop,
                                          int resolveRight, int resolveBottom) {
-        GLSurfaceManager glRenderTarget = (GLSurfaceManager) surfaceManager;
+        GLRenderTarget glRenderTarget = (GLRenderTarget) renderTarget;
 
         int framebuffer = glRenderTarget.getSampleFramebuffer();
         int resolveFramebuffer = glRenderTarget.getResolveFramebuffer();
@@ -522,6 +522,19 @@ public final class GLEngine extends Engine {
         }
 
         return bufferState.mTarget;
+    }
+
+    public void bindIndexBufferInPipe(@Nonnull GLBuffer buffer) {
+        assert !getCaps().hasDSASupport();
+
+        handleDirtyContext();
+
+        int type = buffer.getTypeEnum();
+        assert (type == BUFFER_TYPE_INDEX);
+        // force rebind
+        var bufferState = mHWBufferStates[type];
+        glBindBuffer(bufferState.mTarget, buffer.getBufferID());
+        bufferState.mBoundBufferUniqueID = buffer.getUniqueID();
     }
 
     public int maxTextureUnits() {
@@ -602,10 +615,10 @@ public final class GLEngine extends Engine {
     }
 
     @Nullable
-    private Function<GLTexture, GLSurfaceManager> createRTObjects(int texture,
-                                                                  int width, int height,
-                                                                  int format,
-                                                                  int samples) {
+    private Function<GLTexture, GLRenderTarget> createRTObjects(int texture,
+                                                                int width, int height,
+                                                                int format,
+                                                                int samples) {
         assert texture != 0;
         assert glFormatIsSupported(format);
         assert !glFormatIsCompressed(format);
@@ -676,7 +689,7 @@ public final class GLEngine extends Engine {
             }
         }
 
-        return colorBuffer -> new GLSurfaceManager(this,
+        return colorBuffer -> new GLRenderTarget(this,
                 colorBuffer.getWidth(),
                 colorBuffer.getHeight(),
                 colorBuffer.getFormat(),

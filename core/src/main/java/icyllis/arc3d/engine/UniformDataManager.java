@@ -42,7 +42,7 @@ import static org.lwjgl.system.MemoryUtil.*;
 public abstract class UniformDataManager extends RefCnt {
 
     // lower 24 bits: offset in bytes
-    // higher 8 bits: SLType (assert)
+    // higher 8 bits: SLDataType (assert)
     protected final int[] mUniforms;
 
     protected final int mUniformSize;

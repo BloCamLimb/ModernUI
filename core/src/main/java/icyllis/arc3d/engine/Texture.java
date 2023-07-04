@@ -18,7 +18,7 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.modernui.graphics.SharedPtr;
+import icyllis.arc3d.SharedPtr;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.graphics.RefCnt;
 
@@ -26,14 +26,13 @@ import icyllis.modernui.graphics.RefCnt;
  * Represents 2D textures can be sampled by shaders, can also be used as attachments
  * of render targets.
  * <p>
- * By default, a Texture is not renderable (not implements {@link RenderTarget}), all
- * mipmaps (including the base level) are dirty. But it can be renderable on
- * creation, then we call it a RenderTexture or TextureRenderTarget. The texture
- * will be the main color buffer of the single sample framebuffer of the render target.
- * So we can cache these framebuffers with texture. Additionally, it may create more
- * surfaces and attach them to it. These surfaces are budgeted but cannot be reused.
- * In most cases, we reuse textures, so these surfaces are reused together, see
- * {@link SurfaceManager}.
+ * By default, a Texture is not renderable, all mipmaps (including the base level) are
+ * dirty. But it can be renderable on creation, then we call it a RenderTexture or
+ * TextureRenderTarget. The texture will be the main color buffer of the single sample
+ * framebuffer of the render target. So we can cache these framebuffers with texture.
+ * Additionally, it may create more surfaces and attach them to it. These surfaces are
+ * budgeted but cannot be reused. In most cases, we reuse textures, so these surfaces
+ * are reused together, see {@link RenderTarget}.
  */
 public abstract class Texture extends Resource implements Surface {
 

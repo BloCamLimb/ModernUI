@@ -21,7 +21,7 @@ package icyllis.modernui.test
 import icyllis.arc3d.engine.Surface
 import icyllis.arc3d.opengl.GLBackendFormat
 import icyllis.arc3d.opengl.GLCore
-import icyllis.arc3d.opengl.GLSurfaceManager
+import icyllis.arc3d.opengl.GLRenderTarget
 import icyllis.modernui.core.Core
 import icyllis.modernui.core.MainWindow
 import org.apache.logging.log4j.Level
@@ -57,7 +57,7 @@ fun main() {
     check(proxy != null) { "Failed to create proxy" }
     check(proxy.instantiate(dContext.resourceProvider))
 
-    val rt = proxy.peekSurfaceManager() as GLSurfaceManager
+    val rt = proxy.peekRenderTarget() as GLRenderTarget
     println(rt)
     println(rt.stencilBuffer)
     println(rt.sampleFramebuffer)

@@ -30,7 +30,7 @@ public class ShaderCaps {
             GeneralEnable_AdvBlendEqInteraction = 2;    // layout(blend_support_all_equations) out
 
     // GLSL version 450 or 330
-    public boolean mIsGLSL450 = false;
+    public boolean mIsGLSL450 = true;
 
     public boolean mDualSourceBlendingSupport = false;
     public boolean mPreferFlatInterpolation = false;

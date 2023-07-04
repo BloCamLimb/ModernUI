@@ -18,6 +18,7 @@
 
 package icyllis.modernui.test;
 
+import icyllis.arc3d.SharedPtr;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.geom.RoundRectGeoProc;
 import icyllis.arc3d.opengl.*;
@@ -76,6 +77,8 @@ public class TestPipelineBuilder {
         rt.unref();
         Objects.requireNonNull(pso);
         System.out.println(dContext.getPipelineStateCache().getStates());
+
+        System.out.printf("Uniform Buffer Offset Alignment: %d\n", GLCore.glGetInteger(GLCore.GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT));
 
         ByteBuffer data = MemoryUtil.memAlloc(2048);
         data.putFloat(2f / window.getWidth())
@@ -152,6 +155,8 @@ public class TestPipelineBuilder {
         while (!window.shouldClose()) {
             GLFW.glfwWaitEvents();
         }
+        buffers[1].unref();
+        vertexBuffer.unref();
 
         dContext.unref();
         window.close();
