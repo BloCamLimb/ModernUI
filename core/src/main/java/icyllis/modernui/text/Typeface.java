@@ -19,6 +19,7 @@
 package icyllis.modernui.text;
 
 import icyllis.modernui.graphics.font.*;
+import icyllis.modernui.graphics.text.FontPaint;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
 

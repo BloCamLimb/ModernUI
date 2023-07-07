@@ -21,7 +21,7 @@ package icyllis.modernui.text;
 import com.ibm.icu.util.ULocale;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.graphics.font.FontPaint;
+import icyllis.modernui.graphics.text.FontPaint;
 import icyllis.modernui.text.style.*;
 import icyllis.modernui.util.BinaryIO;
 import icyllis.modernui.view.View;

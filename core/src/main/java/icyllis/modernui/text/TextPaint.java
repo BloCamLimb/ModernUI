@@ -21,6 +21,7 @@ package icyllis.modernui.text;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.ColorInt;
 import icyllis.modernui.graphics.font.*;
+import icyllis.modernui.graphics.text.*;
 import icyllis.modernui.util.Pools;
 
 import javax.annotation.Nonnull;
@@ -36,12 +37,12 @@ public class TextPaint extends FontPaint {
     /**
      * Paint flag that applies an underline decoration to drawn text.
      */
-    public static final int UNDERLINE_FLAG = 0x08;
+    public static final int UNDERLINE_FLAG = 0x400;
 
     /**
      * Paint flag that applies a strike-through decoration to drawn text.
      */
-    public static final int STRIKETHROUGH_FLAG = 0x10;
+    public static final int STRIKETHROUGH_FLAG = 0x800;
 
     private static final Pools.Pool<TextPaint> sPool = Pools.newSynchronizedPool(4);
 
@@ -219,7 +220,7 @@ public class TextPaint extends FontPaint {
      */
     public void setTypeface(@Nonnull Typeface typeface) {
         mTypeface = typeface;
-        mFontCollection = typeface.mFontCollection;
+        mFont = typeface.mFontCollection;
     }
 
     @Nonnull

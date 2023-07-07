@@ -18,5 +18,55 @@
 
 package icyllis.arc3d.engine;
 
-public class SurfaceDrawContext {
+import icyllis.arc3d.SharedPtr;
+import icyllis.modernui.graphics.ImageInfo;
+
+public class SurfaceDrawContext extends SurfaceFillContext {
+
+    public SurfaceDrawContext(RecordingContext context,
+                              SurfaceProxyView readView,
+                              SurfaceProxyView writeView,
+                              int colorType) {
+        super(context, readView, writeView,
+                ImageInfo.makeColorInfo(colorType, ImageInfo.AT_PREMUL));
+    }
+
+    public static SurfaceDrawContext make(
+            RecordingContext context,
+            int colorType,
+            int width, int height,
+            int sampleCount,
+            int surfaceFlags,
+            int origin) {
+        if (context == null || context.isDiscarded()) {
+            return null;
+        }
+
+        BackendFormat format = context.getCaps().getDefaultBackendFormat(colorType, true);
+        if (format == null) {
+            return null;
+        }
+
+        @SharedPtr
+        TextureProxy proxy = context.getProxyProvider().createRenderTextureProxy(
+                format,
+                width,
+                height,
+                sampleCount,
+                surfaceFlags
+        );
+        if (proxy == null) {
+            return null;
+        }
+
+        short readSwizzle = context.getCaps().getReadSwizzle(format, colorType);
+        short writeSwizzle = context.getCaps().getWriteSwizzle(format, colorType);
+
+        // two views, inc one more ref
+        proxy.ref();
+        SurfaceProxyView readView = new SurfaceProxyView(proxy, origin, readSwizzle);
+        SurfaceProxyView writeView = new SurfaceProxyView(proxy, origin, writeSwizzle);
+
+        return new SurfaceDrawContext(context, readView, writeView, colorType);
+    }
 }

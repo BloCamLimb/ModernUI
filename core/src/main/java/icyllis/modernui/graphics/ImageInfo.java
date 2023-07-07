@@ -275,6 +275,54 @@ public final class ImageInfo {
         };
     }
 
+    /**
+     * Creates a color info based on the supplied color type and alpha type.
+     *
+     * @param colorType the color type of the color info
+     * @param alphaType the alpha type of the color info
+     * @return the color info based on color type and alpha type
+     */
+    public static int makeColorInfo(int colorType, int alphaType) {
+        assert ((alphaType & ~3) == 0);
+        return colorType | (alphaType << 16);
+    }
+
+    /**
+     * Extracts the color type from the supplied color info.
+     *
+     * @param colorInfo the color info to extract the color type from
+     * @return the color type defined in the supplied color info
+     */
+    public static int colorType(int colorInfo) {
+        assert ((colorInfo & ~0x3001F) == 0);
+        return colorInfo & 0xFFFF;
+    }
+
+    /**
+     * Extracts the alpha type from the supplied color info.
+     *
+     * @param colorInfo the color info to extract the alpha type from
+     * @return the alpha type defined in the supplied color info
+     */
+    public static int alphaType(int colorInfo) {
+        assert ((colorInfo & ~0x3001F) == 0);
+        return colorInfo >>> 16;
+    }
+
+    /**
+     * Creates new ColorInfo with same AlphaType, with ColorType set to newColorType.
+     */
+    public static int makeColorType(int colorInfo, int newColorType) {
+        return makeColorInfo(newColorType, alphaType(colorInfo));
+    }
+
+    /**
+     * Creates new ColorInfo with same ColorType, with AlphaType set to newAlphaType.
+     */
+    public static int makeAlphaType(int colorInfo, int newAlphaType) {
+        return makeColorInfo(colorType(colorInfo), newAlphaType);
+    }
+
     @Size(min = 0)
     private int mWidth;
     @Size(min = 0)

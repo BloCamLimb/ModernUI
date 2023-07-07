@@ -116,7 +116,7 @@ public final class GLOpsRenderPass extends OpsRenderPass {
         }
 
         return mPipelineState.bindUniforms(mCmdBuffer, pipelineInfo,
-                mRenderTarget.getWidth(), mRenderTarget.getHeight());
+                1600, 900);
     }
 
     @Override
@@ -132,9 +132,9 @@ public final class GLOpsRenderPass extends OpsRenderPass {
     }
 
     @Override
-    protected void onBindBuffers(@SharedPtr Buffer indexBuffer,
-                                 @SharedPtr Buffer vertexBuffer,
-                                 @SharedPtr Buffer instanceBuffer) {
+    protected void onBindBuffers(Buffer indexBuffer,
+                                 Buffer vertexBuffer,
+                                 Buffer instanceBuffer) {
         assert (mPipelineState != null);
         if (mEngine.getCaps().hasBaseInstanceSupport()) {
             mPipelineState.bindBuffers(indexBuffer, vertexBuffer, 0, instanceBuffer, 0);
@@ -142,9 +142,9 @@ public final class GLOpsRenderPass extends OpsRenderPass {
             // bind instance buffer on drawInstanced()
             mPipelineState.bindBuffers(indexBuffer, vertexBuffer, 0, null, 0);
         }
-        mActiveIndexBuffer = Resource.move(mActiveIndexBuffer, indexBuffer);
-        mActiveVertexBuffer = Resource.move(mActiveVertexBuffer, vertexBuffer);
-        mActiveInstanceBuffer = Resource.move(mActiveInstanceBuffer, instanceBuffer);
+        mActiveIndexBuffer = Resource.create(mActiveIndexBuffer, indexBuffer);
+        mActiveVertexBuffer = Resource.create(mActiveVertexBuffer, vertexBuffer);
+        mActiveInstanceBuffer = Resource.create(mActiveInstanceBuffer, instanceBuffer);
     }
 
     @Override

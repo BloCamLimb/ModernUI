@@ -78,29 +78,29 @@ public final class Bitmap implements AutoCloseable {
     /**
      * Creates a mutable bitmap and its allocation, the content are initialized to zeros.
      *
-     * @param width  width in pixels, ranged from 1 to 32767
-     * @param height height in pixels, ranged from 1 to 32767
+     * @param width  width in pixels, ranged from 1 to 32768
+     * @param height height in pixels, ranged from 1 to 32768
      * @param format the number of channels and the bit depth
      * @throws IllegalArgumentException width or height out of range, or allocation size >= 2GB
      * @throws OutOfMemoryError         out of off-heap memory
      */
     @NonNull
-    public static Bitmap createBitmap(@Size(min = 1, max = 32767) int width,
-                                      @Size(min = 1, max = 32767) int height,
+    public static Bitmap createBitmap(@Size(min = 1, max = 32768) int width,
+                                      @Size(min = 1, max = 32768) int height,
                                       @NonNull Format format) {
         if (width < 1 || height < 1) {
             throw new IllegalArgumentException("Image dimensions " + width + "x" + height
                     + " must be positive");
         }
-        if (width > 32767 || height > 32767) {
+        if (width > 32768 || height > 32768) {
             throw new IllegalArgumentException("Image dimensions " + width + "x" + height
-                    + " must be less than or equal to 2^15-1");
+                    + " must be less than or equal to 32768");
         }
         int rowStride = width * format.getBytesPerPixel(); // no overflow
         long size = (long) rowStride * height;
         if (size > Integer.MAX_VALUE) {
             throw new IllegalArgumentException("Image allocation size " + size
-                    + " must be less than or equal to 2^31-1 bytes");
+                    + " must be less than or equal to 2GB");
         }
         long address = nmemCalloc(size, 1);
         if (address == NULL) {

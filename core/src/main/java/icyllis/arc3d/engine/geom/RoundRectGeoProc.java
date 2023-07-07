@@ -75,7 +75,7 @@ public class RoundRectGeoProc extends GeometryProcessor {
 
     @Override
     public byte primitiveType() {
-        return PrimitiveType.TriangleList;
+        return PrimitiveType.TriangleStrip;
     }
 
     @Override

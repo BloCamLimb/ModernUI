@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,11 +16,12 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.font;
+package icyllis.modernui.graphics.text;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import icyllis.modernui.graphics.MathUtil;
+import icyllis.modernui.graphics.font.FontCollection;
 import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.util.Pools;
 
@@ -28,6 +29,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.concurrent.ThreadSafe;
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Globally shared layout cache. Useful when recycling layouts, or raw data source and
@@ -37,7 +39,7 @@ import java.util.Locale;
  * @since 2.6
  */
 @ThreadSafe
-public class LayoutCache {
+public final class LayoutCache {
 
     /**
      * The internal policy on the maximum length of a text run, shared globally.
@@ -55,24 +57,22 @@ public class LayoutCache {
      * increase the reuse rate of pieced text. The given text must be in the same
      * paragraph and should not break the grapheme cluster.
      *
-     * @param text    text source that provides chars, cannot be null or empty, only referred in stack
-     * @param start   start char offset
-     * @param end     end char index
-     * @param isRtl   whether to layout in right-to-left
-     * @param paint   the font paint affecting measurement
-     * @param measure whether to calculate individual char advance
-     * @param layout  whether to compute full layout for rendering
+     * @param text  text source that provides chars, cannot be null or empty, only referred in stack
+     * @param start start char offset
+     * @param end   end char index
+     * @param isRtl whether to layout in right-to-left
+     * @param paint the font paint affecting measurement
      * @return the layout piece
      */
     @Nonnull
-    public static LayoutPiece getOrCreate(@Nonnull CharSequence text, int start, int end, boolean isRtl,
-                                          @Nonnull FontPaint paint, boolean measure, boolean layout) {
+    public static LayoutPiece getOrCreate(@Nonnull CharSequence text, int contextStart, int contextEnd,
+                                          int start, int end, boolean isRtl, @Nonnull FontPaint paint) {
         char[] buf = sCharBuffers.acquire();
         if (buf == null) {
             buf = new char[MAX_PIECE_LENGTH];
         }
         TextUtils.getChars(text, start, end, buf, 0);
-        LayoutPiece piece = getOrCreate(buf, 0, end - start, isRtl, paint, measure, layout);
+        LayoutPiece piece = getOrCreate(buf, 0, contextEnd - contextStart, 0, end - start, isRtl, paint);
         sCharBuffers.release(buf);
         return piece;
     }
@@ -84,27 +84,29 @@ public class LayoutCache {
      * increase the reuse rate of pieced text. The given text must be in the same
      * paragraph and should not break the grapheme cluster.
      *
-     * @param buf     text buffer, cannot be null or empty, only referred in stack
-     * @param start   start char offset
-     * @param end     end char index
-     * @param isRtl   whether to layout in right-to-left
-     * @param paint   the font paint affecting measurement
-     * @param measure whether to calculate individual char advance
-     * @param layout  whether to compute full layout for rendering
+     * @param buf   text buffer, cannot be null or empty, only referred in stack
+     * @param start start char offset
+     * @param end   end char index
+     * @param isRtl whether to layout in right-to-left
+     * @param paint the font paint affecting measurement
      * @return the layout piece
      */
     @Nonnull
-    public static LayoutPiece getOrCreate(@Nonnull char[] buf, int start, int end, boolean isRtl,
-                                          @Nonnull FontPaint paint, boolean measure, boolean layout) {
-        if (start < 0 || start >= end || end - start > MAX_PIECE_LENGTH
-                || buf.length == 0 || end > buf.length) {
-            throw new IllegalArgumentException();
+    public static LayoutPiece getOrCreate(@Nonnull char[] buf, int contextStart, int contextEnd,
+                                          int start, int end, boolean isRtl, FontPaint paint) {
+        if (contextStart < 0 || contextStart >= contextEnd || buf.length == 0 ||
+                contextEnd > buf.length || start < contextStart || end > contextEnd) {
+            throw new IndexOutOfBoundsException();
+        }
+        if (end - start > MAX_PIECE_LENGTH) {
+            return new LayoutPiece(buf, contextStart, contextEnd, start, end, isRtl, paint);
         }
         if (sCache == null) {
             synchronized (LayoutCache.class) {
                 if (sCache == null) {
                     sCache = Caffeine.newBuilder()
-                            .maximumSize(1000)
+                            .maximumSize(5000)
+                            .expireAfterAccess(5, TimeUnit.MINUTES)
                             .build();
                 }
             }
@@ -116,12 +118,11 @@ public class LayoutCache {
         LayoutPiece piece = sCache.getIfPresent(
                 key.update(buf, start, end, paint, isRtl));
         // create new or re-compute for more params
-        if (piece == null || (measure && (piece.mAscent & 0x80000000) == 0)
-                || (layout && (piece.mDescent & 0x80000000) == 0)) {
+        if (piece == null) {
             final Key k = key.copy();
             // recycle the lookup key earlier, since creating layout is heavy
             sLookupKeys.release(key);
-            piece = new LayoutPiece(buf, start, end, isRtl, paint, measure, layout, piece);
+            piece = new LayoutPiece(buf, contextStart, contextEnd, start, end, isRtl, paint);
             sCache.put(k, piece);
         } else {
             sLookupKeys.release(key);
@@ -192,7 +193,7 @@ public class LayoutCache {
             if (this == o) return true;
             // we never compare with a LookupKey
             if (o.getClass() != Key.class) {
-                return false;
+                throw new IllegalStateException();
             }
             Key key = (Key) o;
 
@@ -240,7 +241,7 @@ public class LayoutCache {
             mChars = text;
             mStart = start;
             mEnd = end;
-            mFontCollection = paint.mFontCollection;
+            mFontCollection = paint.mFont;
             mFontStyle = paint.getFontStyle();
             mFontSize = paint.mFontSize;
             mLocale = paint.mLocale;
