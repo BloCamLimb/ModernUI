@@ -16,13 +16,9 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.opengl;
+package icyllis.modernui.graphics;
 
 import icyllis.modernui.core.Window;
-import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.Matrix4;
-import icyllis.modernui.graphics.Rect;
-import icyllis.modernui.graphics.RectF;
 import icyllis.modernui.util.Pools;
 
 import javax.annotation.Nonnull;

@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,7 +16,9 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.font;
+package icyllis.modernui.graphics.text;
+
+import icyllis.modernui.graphics.font.FontMetricsInt;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -406,7 +408,7 @@ public class MeasuredText {
 
         @Override
         void measure(@Nonnull char[] text, boolean computeLayout) {
-            mLayoutPiece = LayoutCache.getOrCreate(text, mStart, mEnd, mIsRtl, mPaint, true, computeLayout);
+            mLayoutPiece = LayoutCache.getOrCreate(text, mStart, mEnd, mStart, mEnd, mIsRtl, mPaint);
             mComputedLayout = computeLayout;
         }
 
@@ -416,7 +418,7 @@ public class MeasuredText {
             if (start == mStart && end == mEnd) {
                 mLayoutPiece.getExtent(extent);
             } else {
-                LayoutCache.getOrCreate(text, start, end, mIsRtl, mPaint, true, false).getExtent(extent);
+                LayoutCache.getOrCreate(text, mStart, mEnd, start, end, mIsRtl, mPaint).getExtent(extent);
             }
         }
 
@@ -424,12 +426,12 @@ public class MeasuredText {
         LayoutPiece getLayout(@Nonnull char[] text, int start, int end) {
             if (start == mStart && end == mEnd) {
                 if (!mComputedLayout) {
-                    mLayoutPiece = LayoutCache.getOrCreate(text, start, end, mIsRtl, mPaint, true, true);
+                    mLayoutPiece = LayoutCache.getOrCreate(text, mStart, mEnd, start, end, mIsRtl, mPaint);
                     mComputedLayout = true;
                 }
                 return mLayoutPiece;
             }
-            return LayoutCache.getOrCreate(text, start, end, mIsRtl, mPaint, false, true);
+            return LayoutCache.getOrCreate(text, mStart, mEnd, start, end, mIsRtl, mPaint);
         }
 
         @Override

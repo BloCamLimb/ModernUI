@@ -20,8 +20,8 @@ package icyllis.modernui.text;
 
 import com.ibm.icu.text.Bidi;
 import icyllis.modernui.graphics.font.FontMetricsInt;
-import icyllis.modernui.graphics.font.FontPaint;
-import icyllis.modernui.graphics.font.MeasuredText;
+import icyllis.modernui.graphics.text.FontPaint;
+import icyllis.modernui.graphics.text.MeasuredText;
 import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.text.style.CharacterStyle;
 import icyllis.modernui.text.style.MetricAffectingSpan;

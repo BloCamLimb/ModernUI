@@ -109,12 +109,12 @@ public abstract class OpsRenderPass {
 
     /**
      * Binds textures for the geometry processor. Texture bindings are dynamic state and therefore
-     * not set during {@link #bindPipeline(PipelineState, Rect2f)}. If the current program uses textures,
+     * not set during {@link #bindPipeline}. If the current program uses textures,
      * then the client must call this method before drawing. The geometry processor textures may also
      * be updated between draws by calling this method again with a different array for textures.
      * <p>
      * Note that this method is only used for GP using texture. If GP does not use texture but FP does,
-     * they will be automatically set during {@link #bindPipeline(PipelineState, Rect2f)}, and this is
+     * they will be automatically set during {@link #bindPipeline}, and this is
      * a no-op. Otherwise, this method must be called if the GP uses textures.
      *
      * @param geomTextures the raw ptr to textures starting from binding 0
@@ -124,16 +124,16 @@ public abstract class OpsRenderPass {
     }
 
     /**
-     * Binds geometric buffers to current command buffer.
+     * Binds geometric (input) buffers to current command buffer.
      *
-     * @param indexBuffer    the index buffer if using indexed rendering, or null
-     * @param vertexBuffer   the vertex buffer, nonnull
-     * @param instanceBuffer the instance buffer if using instanced rendering, or null
+     * @param indexBuffer    raw ptr to the index buffer if using indexed rendering, or nullptr
+     * @param vertexBuffer   raw ptr to the vertex buffer, can be nullptr
+     * @param instanceBuffer raw ptr to the instance buffer if using instanced rendering, or nullptr
      */
-    public final void bindBuffers(@SharedPtr Buffer indexBuffer,
-                                  @SharedPtr Buffer vertexBuffer,
-                                  @SharedPtr Buffer instanceBuffer) {
-        if (vertexBuffer == null) {
+    public final void bindBuffers(Buffer indexBuffer,
+                                  Buffer vertexBuffer,
+                                  Buffer instanceBuffer) {
+        if (vertexBuffer == null && instanceBuffer == null) {
             mDrawPipelineStatus = kFailedToBind_DrawPipelineStatus;
             return;
         }
@@ -230,9 +230,9 @@ public abstract class OpsRenderPass {
                                               PipelineState pipelineState,
                                               Rect2f drawBounds);
 
-    protected abstract void onBindBuffers(@SharedPtr Buffer indexBuffer,
-                                          @SharedPtr Buffer vertexBuffer,
-                                          @SharedPtr Buffer instanceBuffer);
+    protected abstract void onBindBuffers(Buffer indexBuffer,
+                                          Buffer vertexBuffer,
+                                          Buffer instanceBuffer);
 
     protected abstract void onDraw(int vertexCount, int baseVertex);
 

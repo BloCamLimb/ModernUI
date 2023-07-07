@@ -21,6 +21,7 @@ package icyllis.modernui.graphics.font;
 import icyllis.arc3d.engine.Engine;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.graphics.Bitmap;
+import icyllis.modernui.graphics.text.*;
 import icyllis.modernui.text.TextUtils;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import org.apache.logging.log4j.Marker;
@@ -33,8 +34,7 @@ import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
 import java.io.PrintWriter;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.ToIntFunction;
 
@@ -143,39 +143,10 @@ public class GlyphManager {
     }
 
     /**
-     * Returns a new Font object that is suitable for other methods.
-     *
-     * @param family the font family
-     * @param style  the font style
-     * @param size   the font size in pts
-     * @return a derived Font object
-     */
-    public Font chooseFont(@NonNull FontFamily family, int style, int size) {
-        return family.getClosestMatch(style).deriveFont((float) size);
-    }
-
-    /**
-     * Given a font, perform full text layout/shaping and create a new GlyphVector for a text.
-     *
-     * @param font  see {@link #chooseFont(FontFamily, int, int)}
-     * @param text  the U16 text to layout
-     * @param start the offset into text at which to start the layout
-     * @param limit the (offset + length) at which to stop performing the layout
-     * @param isRtl whether the text should layout right-to-left
-     * @return the newly laid-out GlyphVector
-     */
-    @NonNull
-    public GlyphVector layoutGlyphVector(@NonNull Font font, @NonNull char[] text,
-                                         int start, int limit, boolean isRtl) {
-        return font.layoutGlyphVector(mGraphics.getFontRenderContext(), text, start, limit,
-                isRtl ? Font.LAYOUT_RIGHT_TO_LEFT : Font.LAYOUT_LEFT_TO_RIGHT);
-    }
-
-    /**
      * Create glyph vector without text shaping, which means by mapping
      * characters to glyphs one-to-one.
      *
-     * @param font see {@link #chooseFont(FontFamily, int, int)}
+     * @param font see {@link LayoutCore#chooseFont(FontFamily, int, int)}
      * @param text the U16 text to layout
      * @return the newly created GlyphVector
      */
@@ -188,7 +159,7 @@ public class GlyphManager {
      * Compute a glyph key used to retrieve GPU baked glyph, the key is valid
      * until next {@link #reload()}.
      *
-     * @param font      see {@link #chooseFont(FontFamily, int, int)}
+     * @param font      see {@link LayoutCore#chooseFont(FontFamily, int, int)}
      * @param glyphCode the font specific glyph code
      * @return a key
      */
@@ -374,8 +345,8 @@ public class GlyphManager {
      */
     public int getFontMetrics(@NonNull FontPaint paint, @Nullable FontMetricsInt fm) {
         int ascent = 0, descent = 0, height = 0;
-        for (FontFamily family : paint.mFontCollection.getFamilies()) {
-            Font font = chooseFont(family, paint.getFontStyle(), paint.getFontSize());
+        for (FontFamily family : paint.getFontCollection().getFamilies()) {
+            Font font = family.getClosestMatch(paint.getFontStyle()).deriveFont((float)paint.getFontSize());
             FontMetrics metrics = mGraphics.getFontMetrics(font);
             ascent = Math.max(ascent, metrics.getAscent()); // positive
             descent = Math.max(descent, metrics.getDescent()); // positive
@@ -386,17 +357,6 @@ public class GlyphManager {
             fm.descent = descent;
         }
         return height;
-    }
-
-    /**
-     * Extend metrics and choose font.
-     *
-     * @see LayoutPiece#LayoutPiece(char[], int, int, boolean, FontPaint, boolean, boolean, LayoutPiece)
-     */
-    public Font getFontMetrics(@NonNull FontFamily family, @NonNull FontPaint paint, @NonNull FontMetricsInt fm) {
-        Font font = chooseFont(family, paint.getFontStyle(), paint.getFontSize());
-        fm.extendBy(mGraphics.getFontMetrics(font));
-        return font;
     }
 
     /*@SuppressWarnings("MagicConstant")

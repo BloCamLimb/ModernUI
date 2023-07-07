@@ -20,7 +20,7 @@ package icyllis.modernui.text.method;
 
 import com.ibm.icu.lang.UCharacter;
 import icyllis.modernui.graphics.font.FontCollection;
-import icyllis.modernui.graphics.font.GraphemeBreak;
+import icyllis.modernui.graphics.text.GraphemeBreak;
 import icyllis.modernui.text.*;
 import icyllis.modernui.text.style.ReplacementSpan;
 import icyllis.modernui.view.KeyEvent;

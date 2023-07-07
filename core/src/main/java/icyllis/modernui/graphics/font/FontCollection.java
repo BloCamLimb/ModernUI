@@ -22,10 +22,12 @@ import com.ibm.icu.impl.UCharacterProperty;
 import com.ibm.icu.lang.*;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.text.Emoji;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.*;
 
+@ApiStatus.Internal
 public class FontCollection {
 
     // 0b0000 0000 0000 0000 0000 0001 1100 0000
@@ -86,6 +88,9 @@ public class FontCollection {
     public FontCollection(@NonNull FontFamily... families) {
         if (families.length == 0) {
             throw new IllegalArgumentException("Font set cannot be empty");
+        }
+        if (families.length > 127) {
+            throw new IllegalArgumentException();
         }
         mFamilies = List.of(families);
     }

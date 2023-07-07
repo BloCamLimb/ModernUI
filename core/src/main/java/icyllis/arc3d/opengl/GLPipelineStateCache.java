@@ -66,24 +66,24 @@ public class GLPipelineStateCache extends PipelineStateCache {
     @Nonnull
     private GLPipelineState findOrCreatePipelineStateImpl(PipelineDesc desc,
                                                           final PipelineInfo pipelineInfo) {
-        GLPipelineState entry = mCache.get(desc);
-        if (entry != null) {
-            return entry;
+        GLPipelineState existing = mCache.get(desc);
+        if (existing != null) {
+            return existing;
         }
         // We have a cache miss
         desc = new PipelineDesc(desc);
-        GLPipelineState pipelineState = GLPipelineStateBuilder.createPipelineState(mEngine, desc, pipelineInfo);
-        entry = mCache.putIfAbsent(desc.toKey(), pipelineState);
-        if (entry != null) {
-            // race
-            pipelineState.discard();
-            return entry;
+        GLPipelineState newPipelineState = GLPipelineStateBuilder.createPipelineState(mEngine, desc, pipelineInfo);
+        existing = mCache.putIfAbsent(desc.toKey(), newPipelineState);
+        if (existing != null) {
+            // there's a race, reuse existing
+            newPipelineState.discard();
+            return existing;
         }
         /*if (mCache.size() >= mCacheSize) {
             mCache.removeFirst().release();
             assert (mCache.size() < mCacheSize);
         }*/
-        return pipelineState;
+        return newPipelineState;
     }
 
     @Override

@@ -30,10 +30,10 @@ import java.util.ArrayList;
 import java.util.Set;
 
 /**
- * Represents the logical device of the backend 3D API, holding a reference to
- * {@link DirectContext}. It is responsible for creating/deleting 3D API objects,
- * transferring data, submitting 3D API commands, etc. Most methods are expected
- * on render thread (direct thread).
+ * Abstract base class that represents the logical device and graphics queue of the
+ * backend 3D API, holds a reference to {@link DirectContext}. It is responsible for
+ * creating/deleting 3D API objects, transferring data, submitting 3D API commands, etc.
+ * Most methods are only permitted on render thread (a.k.a. direct/RHI thread).
  */
 public abstract class Engine {
 

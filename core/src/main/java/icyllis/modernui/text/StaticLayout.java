@@ -20,8 +20,8 @@ package icyllis.modernui.text;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.font.FontMetricsInt;
-import icyllis.modernui.graphics.font.LayoutCache;
-import icyllis.modernui.graphics.font.LineBreaker;
+import icyllis.modernui.graphics.text.LayoutCache;
+import icyllis.modernui.graphics.text.LineBreaker;
 import icyllis.modernui.util.GrowingArrayUtils;
 import icyllis.modernui.util.Pools;
 import org.apache.logging.log4j.Marker;
@@ -729,8 +729,8 @@ public class StaticLayout extends Layout {
         }
 
         String ellipsisStr = TextUtils.getEllipsisString(where);
-        float ellipsisWidth = LayoutCache.getOrCreate(ellipsisStr, 0, ellipsisStr.length(), false,
-                paint, false, false).getAdvance();
+        float ellipsisWidth = LayoutCache.getOrCreate(ellipsisStr, 0, ellipsisStr.length(),
+                0, ellipsisStr.length(), false, paint).getAdvance();
         int ellipsisStart = 0;
         int ellipsisCount = 0;
         int len = lineEnd - lineStart;

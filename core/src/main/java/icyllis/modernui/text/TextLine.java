@@ -21,6 +21,7 @@ package icyllis.modernui.text;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.font.*;
+import icyllis.modernui.graphics.text.*;
 import icyllis.modernui.text.style.*;
 import icyllis.modernui.util.Pools;
 
@@ -920,12 +921,13 @@ public class TextLine {
         LayoutPiece piece = null;
         if (c != null || needWidth) {
             if (mCharsValid) {
-                piece = LayoutCache.getOrCreate(mChars, start, offset,
-                        runIsRtl, wp, false, c != null);
+                piece = LayoutCache.getOrCreate(mChars, start, offset, start, offset,
+                        runIsRtl, wp);
             } else {
                 final int delta = mStart;
                 piece = LayoutCache.getOrCreate(mText, start + delta, offset + delta,
-                        runIsRtl, wp, false, c != null);
+                        start + delta, offset + delta,
+                        runIsRtl, wp);
             }
             totalWidth = piece.getAdvance();
         }

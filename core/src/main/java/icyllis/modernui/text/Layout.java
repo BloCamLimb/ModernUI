@@ -21,7 +21,7 @@ package icyllis.modernui.text;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.font.LineBreaker;
+import icyllis.modernui.graphics.text.LineBreaker;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.text.method.TextKeyListener;
 import icyllis.modernui.text.style.ParagraphStyle;

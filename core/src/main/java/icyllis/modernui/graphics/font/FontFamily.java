@@ -18,6 +18,8 @@
 
 package icyllis.modernui.graphics.font;
 
+import icyllis.modernui.annotation.Nullable;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.UnmodifiableView;
 
 import java.awt.*;
@@ -28,21 +30,26 @@ public class FontFamily {
 
     @UnmodifiableView
     private static final Map<String, FontFamily> sSystemFontMap;
+    @UnmodifiableView
+    private static final Map<String, String> sSystemFontAliases;
 
     static {
         // Use Java's logical font as the default initial font if user does not override it in some configuration files
         GraphicsEnvironment.getLocalGraphicsEnvironment().preferLocaleFonts();
 
         Map<String, FontFamily> map = new HashMap<>();
+        Map<String, String> aliases = new HashMap<>();
 
         Locale defaultLocale = Locale.getDefault();
         for (String name : GraphicsEnvironment.getLocalGraphicsEnvironment()
                 .getAvailableFontFamilyNames(Locale.ROOT)) {
             if (!map.containsKey(name)) {
-                Font font = new Font(name, Font.PLAIN, 1);
-                FontFamily family = new FontFamily(font);
+                FontFamily family = new FontFamily(new Font(name, Font.PLAIN, 1));
                 map.put(name, family);
-                map.putIfAbsent(font.getFamily(defaultLocale), family);
+                String alias = family.getFamilyName(defaultLocale);
+                if (!name.equals(alias)) {
+                    aliases.put(alias, name);
+                }
             }
         }
         Function<String, FontFamily> mapping = name ->
@@ -52,6 +59,7 @@ public class FontFamily {
         map.computeIfAbsent(Font.MONOSPACED, mapping);
 
         sSystemFontMap = Collections.unmodifiableMap(map);
+        sSystemFontAliases = Collections.unmodifiableMap(aliases);
     }
 
     @UnmodifiableView
@@ -59,18 +67,36 @@ public class FontFamily {
         return sSystemFontMap;
     }
 
+    @UnmodifiableView
+    public static Map<String, String> getSystemFontAliases() {
+        return sSystemFontAliases;
+    }
+
+    @Nullable
+    public static FontFamily getSystemFontWithAlias(String name) {
+        return sSystemFontMap.get(sSystemFontAliases.getOrDefault(name, name));
+    }
+
+    // root name
+    private final String mFamilyName;
+
     private Font mFont;
     private Font mBold;
     private Font mItalic;
     private Font mBoldItalic;
 
+    @ApiStatus.Internal
+    public FontFamily(String name) {
+        mFamilyName = name;
+    }
+
+    @ApiStatus.Internal
     public FontFamily(Font font) {
-        if (font != null) {
-            mFont = font;
-            mBold = font.deriveFont(Font.BOLD);
-            mItalic = font.deriveFont(Font.ITALIC);
-            mBoldItalic = font.deriveFont(Font.BOLD | Font.ITALIC);
-        }
+        this(font.getFamily(Locale.ROOT));
+        mFont = font;
+        mBold = font.deriveFont(Font.BOLD);
+        mItalic = font.deriveFont(Font.ITALIC);
+        mBoldItalic = font.deriveFont(Font.BOLD | Font.ITALIC);
     }
 
     public Font getClosestMatch(int style) {
@@ -89,16 +115,20 @@ public class FontFamily {
 
     public boolean hasGlyph(int ch, int vs) {
         // no public API
-        return hasGlyph(ch);
+        return mFont.canDisplay(ch);
     }
 
     public String getFamilyName() {
-        return mFont.getFamily(Locale.ROOT);
+        return mFamilyName;
+    }
+
+    public String getFamilyName(Locale locale) {
+        return mFont.getFamily(locale);
     }
 
     @Override
     public int hashCode() {
-        return mFont != null ? mFont.hashCode() : 0;
+        return Objects.hashCode(mFont);
     }
 
     @Override
@@ -107,5 +137,10 @@ public class FontFamily {
         if (o == null || getClass() != o.getClass()) return false;
         FontFamily that = (FontFamily) o;
         return Objects.equals(mFont, that.mFont);
+    }
+
+    @Override
+    public String toString() {
+        return "FontFamily{" + mFamilyName + '}';
     }
 }

@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,10 +16,11 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.font;
+package icyllis.modernui.graphics.text;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.MathUtil;
+import icyllis.modernui.graphics.font.*;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -56,21 +57,28 @@ public class FontPaint {
 
     public static final int FONT_STYLE_MASK = PLAIN | BOLD | ITALIC;
 
+    public static final int RENDER_FLAG_ANTI_ALIAS = 0x1;
+    public static final int RENDER_FLAG_LINEAR_METRICS = 0x2;
+
+    public static final int FLAG_MASK = 0x3;
+
+    public static final int FLAG_SHIFT = 4;
+
     // shared pointer
-    protected FontCollection mFontCollection;
+    protected FontCollection mFont;
     Locale mLocale;
     protected int mFlags;
     int mFontSize;
 
     public FontPaint() {
-        mFontCollection = ModernUI.getSelectedTypeface().getFontCollection();
+        mFont = ModernUI.getSelectedTypeface().getFontCollection();
         mLocale = ModernUI.getSelectedLocale();
         mFlags = REGULAR;
         mFontSize = 12;
     }
 
     public FontPaint(@Nonnull FontPaint paint) {
-        mFontCollection = paint.mFontCollection;
+        mFont = paint.mFont;
         mLocale = paint.mLocale;
         mFlags = paint.mFlags;
         mFontSize = paint.mFontSize;
@@ -80,10 +88,14 @@ public class FontPaint {
      * Copy the data from paint into this TextPaint
      */
     public void set(@Nonnull FontPaint paint) {
-        mFontCollection = paint.mFontCollection;
+        mFont = paint.mFont;
         mLocale = paint.mLocale;
         mFlags = paint.mFlags;
         mFontSize = paint.mFontSize;
+    }
+
+    public FontCollection getFontCollection() {
+        return mFont;
     }
 
     /**
@@ -168,7 +180,7 @@ public class FontPaint {
             return true;
         if ((mFlags & FONT_STYLE_MASK) != (paint.mFlags & FONT_STYLE_MASK))
             return true;
-        if (!mFontCollection.equals(paint.mFontCollection))
+        if (!mFont.equals(paint.mFont))
             return true;
         return !mLocale.equals(paint.mLocale);
     }
@@ -197,6 +209,10 @@ public class FontPaint {
         return GlyphManager.getInstance().getFontMetrics(this, fm);
     }
 
+    public int getRenderFlags() {
+        return 1;
+    }
+
     /**
      * Create a copy of this paint as the base class paint for internal
      * layout engine. Subclasses must ensure that be immutable.
@@ -217,13 +233,13 @@ public class FontPaint {
 
         if (mFontSize != that.mFontSize) return false;
         if ((mFlags & FONT_STYLE_MASK) != (that.mFlags & FONT_STYLE_MASK)) return false;
-        if (!mFontCollection.equals(that.mFontCollection)) return false;
+        if (!mFont.equals(that.mFont)) return false;
         return mLocale.equals(that.mLocale);
     }
 
     @Override
     public int hashCode() {
-        int h = mFontCollection.hashCode();
+        int h = mFont.hashCode();
         h = 31 * h + mLocale.hashCode();
         h = 31 * h + (mFlags & FONT_STYLE_MASK);
         h = 31 * h + mFontSize;
@@ -233,7 +249,7 @@ public class FontPaint {
     @Override
     public String toString() {
         return "FontPaint{" +
-                "typeface=" + mFontCollection +
+                "typeface=" + mFont +
                 ", locale=" + mLocale +
                 ", flags=0x" + Integer.toHexString(mFlags) +
                 ", fontSize=" + mFontSize +

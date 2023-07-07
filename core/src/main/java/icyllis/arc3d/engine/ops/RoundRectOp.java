@@ -23,6 +23,10 @@ import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.geom.RoundRectGeoProc;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.arc3d.SharedPtr;
+import icyllis.modernui.graphics.Matrix3;
+import org.lwjgl.system.MemoryUtil;
+
+import java.nio.ByteBuffer;
 
 public class RoundRectOp extends MeshDrawOp {
 
@@ -33,6 +37,20 @@ public class RoundRectOp extends MeshDrawOp {
     @SharedPtr
     private Buffer mInstanceBuffer;
     private int mBaseInstance;
+
+    private float[] mColor;
+    private Rect2f mLocalRect;
+    private float mCornerRadius;
+    private float mStrokeRadius;
+    private Matrix3 mViewMatrix;
+
+    public RoundRectOp(float[] color, Rect2f localRect, float cornerRadius, float strokeRadius, Matrix3 viewMatrix) {
+        mColor = color;
+        mLocalRect = localRect;
+        mCornerRadius = cornerRadius;
+        mStrokeRadius = strokeRadius;
+        mViewMatrix = viewMatrix;
+    }
 
     @Override
     public void onExecute(OpFlushState state, Rect2f chainBounds) {
@@ -63,20 +81,38 @@ public class RoundRectOp extends MeshDrawOp {
 
     @Override
     public void setVertexBuffer(@SharedPtr Buffer buffer, int baseVertex, int actualVertexCount) {
+        assert mVertexBuffer == null;
         mVertexBuffer = buffer;
         mBaseVertex = baseVertex;
     }
 
     @Override
     public void setInstanceBuffer(@SharedPtr Buffer buffer, int baseInstance, int actualInstanceCount) {
+        assert mInstanceBuffer == null;
         mInstanceBuffer = buffer;
         mBaseInstance = baseInstance;
     }
 
     @Override
     protected void onPrepareDraws(MeshDrawTarget target) {
-        long vertexData = target.makeVertexSpace(this);
-        long instanceData = target.makeInstanceSpace(this);
+        ByteBuffer vertexData = target.makeVertexWriter(this);
+        vertexData.putFloat(-1).putFloat(1); // LL
+        vertexData.putFloat(1).putFloat(1); // LR
+        vertexData.putFloat(-1).putFloat(-1); // UL
+        vertexData.putFloat(1).putFloat(-1); // UR
+        ByteBuffer instanceData = target.makeInstanceWriter(this);
+        instanceData.putFloat(mColor[0]);
+        instanceData.putFloat(mColor[1]);
+        instanceData.putFloat(mColor[2]);
+        instanceData.putFloat(mColor[3]);
+        // local rect
+        instanceData.putFloat(mLocalRect.width());
+        instanceData.putFloat(mLocalRect.centerX());
+        instanceData.putFloat(mLocalRect.height());
+        instanceData.putFloat(mLocalRect.centerY());
+        // radii
+        instanceData.putFloat(mCornerRadius).putFloat(mStrokeRadius);
+        mViewMatrix.store(MemoryUtil.memAddress(instanceData));
     }
 
     @Override
