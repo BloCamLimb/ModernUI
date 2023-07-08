@@ -19,7 +19,7 @@
 package icyllis.modernui.text;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.font.FontMetricsInt;
+import icyllis.modernui.graphics.text.FontMetricsInt;
 import icyllis.modernui.graphics.text.LayoutCache;
 import icyllis.modernui.graphics.text.LineBreaker;
 import icyllis.modernui.util.GrowingArrayUtils;

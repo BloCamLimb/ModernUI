@@ -71,7 +71,7 @@ public class FontPaint {
     int mFontSize;
 
     public FontPaint() {
-        mFont = ModernUI.getSelectedTypeface().getFontCollection();
+        mFont = ModernUI.getSelectedTypeface();
         mLocale = ModernUI.getSelectedLocale();
         mFlags = REGULAR;
         mFontSize = 12;
@@ -166,6 +166,7 @@ public class FontPaint {
      */
     public void setFontSize(int fontSize) {
         // our engine assumes 8..96, do not edit
+        //TODO Remove this restriction, once our rendering engine updates
         mFontSize = MathUtil.clamp(fontSize, 8, 96);
     }
 
@@ -206,7 +207,19 @@ public class FontPaint {
      * @return the font's interline spacing.
      */
     public int getFontMetricsInt(@Nullable FontMetricsInt fm) {
-        return GlyphManager.getInstance().getFontMetrics(this, fm);
+        int ascent = 0, descent = 0, height = 0;
+        for (FontFamily family : getFontCollection().getFamilies()) {
+            Font font = family.getClosestMatch(getFontStyle()).deriveFont((float)getFontSize());
+            FontMetrics metrics = LayoutPiece.sGraphics[getRenderFlags()].getFontMetrics(font);
+            ascent = Math.max(ascent, metrics.getAscent()); // positive
+            descent = Math.max(descent, metrics.getDescent()); // positive
+            height = Math.max(height, metrics.getHeight());
+        }
+        if (fm != null) {
+            fm.ascent = ascent;
+            fm.descent = descent;
+        }
+        return height;
     }
 
     public int getRenderFlags() {

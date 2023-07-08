@@ -19,8 +19,7 @@
 package icyllis.modernui.graphics;
 
 import icyllis.modernui.annotation.*;
-import icyllis.modernui.graphics.text.LayoutPiece;
-import icyllis.modernui.graphics.text.MeasuredText;
+import icyllis.modernui.graphics.text.*;
 import icyllis.modernui.text.TextPaint;
 import icyllis.modernui.view.Gravity;
 import org.apache.logging.log4j.Marker;
@@ -984,6 +983,15 @@ public abstract class Canvas {
      */
     public abstract void drawText(CharSequence text, int start, int end,
                                   float x, float y, TextPaint paint);
+
+    public void drawGlyphs(int[] glyphs,
+                           int glyphOffset,
+                           float[] positions,
+                           int positionOffset,
+                           int glyphCount,
+                           FontFamily font,
+                           TextPaint paint) {
+    }
 
     /**
      * Draw a run of text. The given range cannot excess a style run or break grapheme cluster,

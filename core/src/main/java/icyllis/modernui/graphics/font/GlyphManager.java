@@ -21,7 +21,7 @@ package icyllis.modernui.graphics.font;
 import icyllis.arc3d.engine.Engine;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.graphics.Bitmap;
-import icyllis.modernui.graphics.text.*;
+import icyllis.modernui.graphics.text.FontCollection;
 import icyllis.modernui.text.TextUtils;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import org.apache.logging.log4j.Marker;
@@ -34,7 +34,8 @@ import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
 import java.io.PrintWriter;
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.ToIntFunction;
 
@@ -68,7 +69,7 @@ public class GlyphManager {
      * This may require additional reviews on pixel alignment.
      */
     public static volatile boolean sAntiAliasing = true;
-    public static volatile boolean sFractionalMetrics = true;
+    public static volatile boolean sFractionalMetrics = false;
 
     /**
      * The global instance.
@@ -143,23 +144,9 @@ public class GlyphManager {
     }
 
     /**
-     * Create glyph vector without text shaping, which means by mapping
-     * characters to glyphs one-to-one.
-     *
-     * @param font see {@link LayoutCore#chooseFont(FontFamily, int, int)}
-     * @param text the U16 text to layout
-     * @return the newly created GlyphVector
-     */
-    @NonNull
-    public GlyphVector createGlyphVector(@NonNull Font font, @NonNull char[] text) {
-        return font.createGlyphVector(mGraphics.getFontRenderContext(), text);
-    }
-
-    /**
      * Compute a glyph key used to retrieve GPU baked glyph, the key is valid
      * until next {@link #reload()}.
      *
-     * @param font      see {@link LayoutCore#chooseFont(FontFamily, int, int)}
      * @param glyphCode the font specific glyph code
      * @return a key
      */
@@ -336,27 +323,6 @@ public class GlyphManager {
 
     public void removeAtlasInvalidationCallback(Runnable callback) {
         mAtlasInvalidationCallbacks.remove(Objects.requireNonNull(callback));
-    }
-
-    /**
-     * Re-calculate font metrics in pixels.
-     *
-     * @return line height
-     */
-    public int getFontMetrics(@NonNull FontPaint paint, @Nullable FontMetricsInt fm) {
-        int ascent = 0, descent = 0, height = 0;
-        for (FontFamily family : paint.getFontCollection().getFamilies()) {
-            Font font = family.getClosestMatch(paint.getFontStyle()).deriveFont((float)paint.getFontSize());
-            FontMetrics metrics = mGraphics.getFontMetrics(font);
-            ascent = Math.max(ascent, metrics.getAscent()); // positive
-            descent = Math.max(descent, metrics.getDescent()); // positive
-            height = Math.max(height, metrics.getHeight());
-        }
-        if (fm != null) {
-            fm.ascent = ascent;
-            fm.descent = descent;
-        }
-        return height;
     }
 
     /*@SuppressWarnings("MagicConstant")

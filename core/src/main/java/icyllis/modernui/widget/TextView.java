@@ -23,7 +23,7 @@ import icyllis.modernui.R;
 import icyllis.modernui.core.*;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.graphics.font.FontMetricsInt;
+import icyllis.modernui.graphics.text.FontMetricsInt;
 import icyllis.modernui.text.*;
 import icyllis.modernui.text.method.*;
 import icyllis.modernui.text.style.*;

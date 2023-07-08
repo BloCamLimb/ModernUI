@@ -27,8 +27,8 @@ import icyllis.modernui.core.Core;
 import icyllis.modernui.fragment.Fragment;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.graphics.font.FontFamily;
 import icyllis.modernui.graphics.font.GlyphManager;
+import icyllis.modernui.graphics.text.FontFamily;
 import icyllis.modernui.material.MaterialCheckBox;
 import icyllis.modernui.material.MaterialRadioButton;
 import icyllis.modernui.resources.SystemTheme;
@@ -90,6 +90,16 @@ public class TestFragment extends Fragment {
         getChildFragmentManager().beginTransaction()
                 .replace(660, new FragmentA(), null)
                 .commit();
+
+        CompletableFuture.runAsync(() -> {
+            String text = "My name is van";
+            var glyphs = TextShaper.shapeTextRun(text, 1, text.length() - 2, 0, text.length(),
+                    TextDirectionHeuristics.FIRSTSTRONG_LTR, new TextPaint());
+            LOGGER.info("Shape {}: {}", text, glyphs);
+        }).exceptionally(e -> {
+            LOGGER.info("Shape", e);
+            return null;
+        });
 
         AudioManager.getInstance().initialize();
     }

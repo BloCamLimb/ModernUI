@@ -19,7 +19,6 @@
 package icyllis.modernui.graphics.text;
 
 import com.ibm.icu.text.BreakIterator;
-import icyllis.modernui.graphics.font.FontMetricsInt;
 import icyllis.modernui.text.TabStops;
 import it.unimi.dsi.fastutil.ints.IntArrays;
 

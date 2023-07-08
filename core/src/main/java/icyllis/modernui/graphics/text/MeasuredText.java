@@ -18,23 +18,22 @@
 
 package icyllis.modernui.graphics.text;
 
-import icyllis.modernui.graphics.font.FontMetricsInt;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
 import javax.annotation.concurrent.NotThreadSafe;
-import javax.annotation.concurrent.ThreadSafe;
 import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * For the result of text shaping, measurement and glyph layout of a single paragraph.
+ * Text shaping result object for multi-style text, multiple text runs of positioned glyphs.
+ * <p>
+ * This object is immutable, internal buffers may be shared between threads.
  *
+ * @see ShapedText
  * @see LayoutCache
  */
 @Immutable
-@ThreadSafe
 public class MeasuredText {
 
     private final char[] mTextBuf;

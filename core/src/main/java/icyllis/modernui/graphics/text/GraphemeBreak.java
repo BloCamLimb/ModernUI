@@ -97,14 +97,14 @@ public final class GraphemeBreak {
     }
 
     public static void forTextRun(@Nonnull char[] text, @Nonnull Locale locale, int contextStart, int contextEnd,
-                                  @Nonnull RunConsumer consumer) {
+                                  @Nonnull ClusterConsumer consumer) {
         if (sUseICU) {
             final BreakIterator breaker = BreakIterator.getCharacterInstance(locale);
             breaker.setText(new CharArrayIterator(text, contextStart, contextEnd));
             int prevOffset = contextStart;
             int offset;
             while ((offset = breaker.following(prevOffset)) != BreakIterator.DONE) {
-                consumer.onRun(prevOffset, offset);
+                consumer.accept(prevOffset, offset);
                 prevOffset = offset;
             }
         } else {
@@ -113,16 +113,16 @@ public final class GraphemeBreak {
             int offset;
             while ((offset = getTextRunCursorImpl(null, text, contextStart, count, prevOffset, AFTER))
                     != prevOffset) {
-                consumer.onRun(prevOffset, offset);
+                consumer.accept(prevOffset, offset);
                 prevOffset = offset;
             }
         }
     }
 
     @FunctionalInterface
-    public interface RunConsumer {
+    public interface ClusterConsumer {
 
-        void onRun(int start, int end);
+        void accept(int clusterStart, int clusterEnd);
     }
 
     public static int getTextRunCursorICU(CharacterIterator text, Locale locale, int offset, int op) {

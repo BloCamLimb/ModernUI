@@ -18,7 +18,8 @@
 
 package icyllis.modernui;
 
-import icyllis.arc3d.opengl.*;
+import icyllis.arc3d.opengl.GLCore;
+import icyllis.arc3d.opengl.GLFramebufferCompat;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.app.Activity;
 import icyllis.modernui.core.*;
@@ -26,7 +27,7 @@ import icyllis.modernui.fragment.*;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.ImageDrawable;
-import icyllis.modernui.graphics.font.FontFamily;
+import icyllis.modernui.graphics.text.FontFamily;
 import icyllis.modernui.lifecycle.*;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.text.Typeface;
@@ -196,6 +197,14 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         mRenderThread = new Thread(() -> runRender(latch), "Render-Thread");
         mRenderThread.start();
 
+        try (Bitmap i16 = BitmapFactory.decodeStream(getResourceStream(ID, "AppLogo16x.png"));
+             Bitmap i32 = BitmapFactory.decodeStream(getResourceStream(ID, "AppLogo32x.png"));
+             Bitmap i48 = BitmapFactory.decodeStream(getResourceStream(ID, "AppLogo48x.png"))) {
+            mWindow.setIcon(i16, i32, i48);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         // wait render thread init
         try {
             latch.await();
@@ -204,14 +213,6 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         }
 
         LOGGER.info(MARKER, "Initializing UI system");
-
-        try (Bitmap i16 = BitmapFactory.decodeStream(getResourceStream(ID, "AppLogo16x.png"));
-             Bitmap i32 = BitmapFactory.decodeStream(getResourceStream(ID, "AppLogo32x.png"));
-             Bitmap i48 = BitmapFactory.decodeStream(getResourceStream(ID, "AppLogo48x.png"))) {
-            mWindow.setIcon(i16, i32, i48);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
 
         mUiLooper = Core.initUiThread();
 

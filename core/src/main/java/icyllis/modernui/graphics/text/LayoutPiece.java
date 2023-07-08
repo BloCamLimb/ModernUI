@@ -19,9 +19,7 @@
 package icyllis.modernui.graphics.text;
 
 import icyllis.modernui.graphics.MathUtil;
-import icyllis.modernui.graphics.font.FontCollection.Run;
-import icyllis.modernui.graphics.font.FontFamily;
-import icyllis.modernui.graphics.font.FontMetricsInt;
+import icyllis.modernui.graphics.text.FontCollection.Run;
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -43,7 +41,7 @@ import java.util.function.Function;
  */
 public final class LayoutPiece {
 
-    private static final Graphics2D[] sGraphics = new Graphics2D[4];
+    static final Graphics2D[] sGraphics = new Graphics2D[4];
 
     static {
         var image = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
@@ -100,7 +98,7 @@ public final class LayoutPiece {
         // preserve memory
         final var fontIndices = new ByteArrayList(count);
         final var glyphs = new IntArrayList(count);
-        final var positions = new FloatArrayList(count);
+        final var positions = new FloatArrayList(count * 2);
 
         final var fonts = new ArrayList<FontFamily>();
 
@@ -186,6 +184,13 @@ public final class LayoutPiece {
         mAscent = extent.ascent;
         mDescent = extent.descent;
         mAdvance = advance;
+    }
+
+    /**
+     * Returns the number of glyphs.
+     */
+    public int getGlyphCount() {
+        return mGlyphs.length;
     }
 
     /**

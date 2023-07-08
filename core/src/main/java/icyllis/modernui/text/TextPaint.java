@@ -20,7 +20,6 @@ package icyllis.modernui.text;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.ColorInt;
-import icyllis.modernui.graphics.font.*;
 import icyllis.modernui.graphics.text.*;
 import icyllis.modernui.util.Pools;
 
@@ -220,7 +219,7 @@ public class TextPaint extends FontPaint {
      */
     public void setTypeface(@Nonnull Typeface typeface) {
         mTypeface = typeface;
-        mFont = typeface.mFontCollection;
+        mFont = typeface;
     }
 
     @Nonnull
