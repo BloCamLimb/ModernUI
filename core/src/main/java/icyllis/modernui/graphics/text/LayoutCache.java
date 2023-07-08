@@ -21,7 +21,6 @@ package icyllis.modernui.graphics.text;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import icyllis.modernui.graphics.MathUtil;
-import icyllis.modernui.graphics.font.FontCollection;
 import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.util.Pools;
 
@@ -71,8 +70,9 @@ public final class LayoutCache {
         if (buf == null) {
             buf = new char[MAX_PIECE_LENGTH];
         }
-        TextUtils.getChars(text, start, end, buf, 0);
-        LayoutPiece piece = getOrCreate(buf, 0, contextEnd - contextStart, 0, end - start, isRtl, paint);
+        TextUtils.getChars(text, contextStart, contextEnd, buf, 0);
+        LayoutPiece piece = getOrCreate(buf, 0, contextEnd - contextStart,
+                start - contextStart, end - contextStart, isRtl, paint);
         sCharBuffers.release(buf);
         return piece;
     }

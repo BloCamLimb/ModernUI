@@ -19,7 +19,7 @@
 package icyllis.modernui.text;
 
 import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.font.FontMetricsInt;
+import icyllis.modernui.graphics.text.FontMetricsInt;
 import icyllis.modernui.text.style.ParagraphStyle;
 
 import javax.annotation.Nonnull;

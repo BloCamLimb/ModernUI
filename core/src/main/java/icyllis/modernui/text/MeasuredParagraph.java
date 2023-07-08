@@ -19,7 +19,7 @@
 package icyllis.modernui.text;
 
 import com.ibm.icu.text.Bidi;
-import icyllis.modernui.graphics.font.FontMetricsInt;
+import icyllis.modernui.graphics.text.FontMetricsInt;
 import icyllis.modernui.graphics.text.FontPaint;
 import icyllis.modernui.graphics.text.MeasuredText;
 import icyllis.modernui.graphics.MathUtil;

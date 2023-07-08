@@ -27,8 +27,7 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.font.*;
-import icyllis.modernui.graphics.text.LayoutCache;
-import icyllis.modernui.graphics.text.LayoutPiece;
+import icyllis.modernui.graphics.text.*;
 import icyllis.modernui.text.TextPaint;
 import icyllis.modernui.view.Gravity;
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
@@ -238,7 +237,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
 
     // using textures of draw states, in the order of calling
     private final Queue<Object> mTextures = new ArrayDeque<>();
-    private final List<DrawText> mDrawTexts = new ArrayList<>();
+    private final List<DrawTextOp> mDrawTexts = new ArrayList<>();
     private final Queue<CustomDrawable.DrawHandler> mCustoms = new ArrayDeque<>();
 
     private final List<SurfaceProxy> mTexturesToClean = new ArrayList<>();
@@ -1002,8 +1001,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     uniformDataPtr += 16;
 
                     var textOp = mDrawTexts.get(textIndex++);
-                    final GLBakedGlyph[] glyphs = textOp.getGlyphs();
-                    int limit = textOp.nVisibleGlyphs;
+                    final GLBakedGlyph[] glyphs = textOp.getBakedGlyphs();
+                    int limit = textOp.mVisibleGlyphCount;
                     if (limit == 0) {
                         // due to deferred plotting, this can be empty
                         continue;
@@ -1166,7 +1165,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         }
 
         if (!mDrawTexts.isEmpty()) {
-            for (DrawText textOp : mDrawTexts) {
+            for (DrawTextOp textOp : mDrawTexts) {
                 textOp.writeMeshData(this);
             }
             if (mGlyphBufferResized) {
@@ -2456,17 +2455,40 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     private void drawTextRun(@NonNull LayoutPiece piece, float x, float y, int color, TextPaint paint) {
-        if (piece.getAdvance() == 0 || (piece.getGlyphs() != null && piece.getGlyphs().length == 0)
+        if (piece.getAdvance() == 0 || (piece.getGlyphs().length == 0)
                 || quickReject(x, y - piece.getAscent(),
                 x + piece.getAdvance(), y + piece.getDescent())) {
             return;
         }
-        mDrawTexts.add(new DrawText(piece, x, y, paint.getFontStyle(), paint.getTextSize()));
         drawMatrix();
         float alpha = (color >>> 24) / 255.0f;
         float red = ((color >> 16) & 0xff) / 255.0f;
         float green = ((color >> 8) & 0xff) / 255.0f;
         float blue = (color & 0xff) / 255.0f;
+        FontFamily lastFont = piece.getFont(0);
+        int nGlyphs = piece.getGlyphCount();
+        int lastPos = 0;
+        int curPos = 1;
+        for (; curPos < nGlyphs; curPos++) {
+            FontFamily curFont = piece.getFont(curPos);
+            if (lastFont != curFont) {
+                mDrawTexts.add(new DrawTextOp(piece.getGlyphs(), lastPos,
+                        piece.getPositions(), lastPos << 1, curPos - lastPos,
+                        x, y, lastFont.getClosestMatch(paint.getFontStyle()).deriveFont(paint.getTextSize())));
+                checkUniformStagingBuffer()
+                        .putFloat(red * alpha)
+                        .putFloat(green * alpha)
+                        .putFloat(blue * alpha)
+                        .putFloat(alpha);
+                mDrawOps.add(DRAW_TEXT);
+
+                lastFont = curFont;
+                lastPos = curPos;
+            }
+        }
+        mDrawTexts.add(new DrawTextOp(piece.getGlyphs(), lastPos,
+                piece.getPositions(), lastPos << 1, curPos - lastPos,
+                x, y, lastFont.getClosestMatch(paint.getFontStyle()).deriveFont(paint.getTextSize())));
         checkUniformStagingBuffer()
                 .putFloat(red * alpha)
                 .putFloat(green * alpha)
@@ -2475,59 +2497,61 @@ public final class GLSurfaceCanvas extends GLCanvas {
         mDrawOps.add(DRAW_TEXT);
     }
 
-    private static class DrawText {
+    private static class DrawTextOp {
 
-        private final LayoutPiece piece;
-        private float x;
-        private final float y;
-        private GLBakedGlyph[] glyphs;
-        private int nVisibleGlyphs;
-        private int style;
-        private float size;
+        private final int[] mGlyphs;
+        private final int mGlyphOffset;
+        private final float[] mPositions;
+        private final int mPositionOffset;
+        private final int mGlyphCount;
+        private float mOffsetX;
+        private final float mOffsetY;
+        private final Font mFont;
 
-        private DrawText(@NonNull LayoutPiece piece, float x, float y,
-                         int style, float size) {
-            this.piece = piece;
-            this.x = x;
-            this.y = y;
-            this.style = style;
-            this.size = size;
+        private GLBakedGlyph[] mBakedGlyphs;
+        private int mVisibleGlyphCount;
+
+        public DrawTextOp(int[] glyphs, int glyphOffset, float[] positions, int positionOffset, int glyphCount,
+                          float offsetX, float offsetY, Font font) {
+            mGlyphs = glyphs;
+            mGlyphOffset = glyphOffset;
+            mPositions = positions;
+            mPositionOffset = positionOffset;
+            mGlyphCount = glyphCount;
+            mOffsetX = offsetX;
+            mOffsetY = offsetY;
+            mFont = font;
         }
 
         private void offsetX(float dx) {
-            x += dx;
+            mOffsetX += dx;
         }
 
-        private GLBakedGlyph[] getGlyphs() {
-            return glyphs;
-        }
-
-        public int nVisibleGlyphs() {
-            return nVisibleGlyphs;
+        private GLBakedGlyph[] getBakedGlyphs() {
+            return mBakedGlyphs;
         }
 
         private void writeMeshData(@NonNull GLSurfaceCanvas canvas) {
             GlyphManager glyphManager = GlyphManager.getInstance();
-            final int[] glyphs = piece.getGlyphs();
-            final float[] positions = piece.getPositions();
-            final GLBakedGlyph[] bakedGlyphs = new GLBakedGlyph[glyphs.length];
-            FontFamily lastFamily = null;
-            Font font = null;
-            int nVisGlyphs = 0;
+            final int[] glyphs = mGlyphs;
+            int glyphOffset = mGlyphOffset;
+            final float[] positions = mPositions;
+            int positionOffset = mPositionOffset;
+            final GLBakedGlyph[] bakedGlyphs = new GLBakedGlyph[mGlyphCount];
+            int visibleGlyphCount = 0;
             for (int i = 0; i < bakedGlyphs.length; i++) {
-                FontFamily curFamily = piece.getFont(i);
-                if (lastFamily != curFamily) {
-                    lastFamily = curFamily;
-                    font = curFamily.getClosestMatch(style).deriveFont(size);
-                }
-                GLBakedGlyph bakedGlyph = glyphManager.lookupGlyph(font, glyphs[i]);
+                GLBakedGlyph bakedGlyph = glyphManager.lookupGlyph(mFont, glyphs[glyphOffset++]);
                 if (bakedGlyph != null) {
-                    canvas.putGlyph(bakedGlyph, x + positions[i * 2], y + positions[i * 2 + 1]);
-                    bakedGlyphs[nVisGlyphs++] = bakedGlyph;
+                    canvas.putGlyph(bakedGlyph,
+                            mOffsetX + positions[positionOffset++],
+                            mOffsetY + positions[positionOffset++]);
+                    bakedGlyphs[visibleGlyphCount++] = bakedGlyph;
+                } else {
+                    positionOffset += 2;
                 }
             }
-            this.glyphs = bakedGlyphs;
-            this.nVisibleGlyphs = nVisGlyphs;
+            mBakedGlyphs = bakedGlyphs;
+            mVisibleGlyphCount = visibleGlyphCount;
         }
     }
 
