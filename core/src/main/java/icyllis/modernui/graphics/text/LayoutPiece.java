@@ -95,7 +95,7 @@ public final class LayoutPiece {
         mAdvances = new float[count];
         final FontMetricsInt extent = new FontMetricsInt();
 
-        // preserve memory
+        // reserve memory, glyph count is <= char count
         final var fontIndices = new ByteArrayList(count);
         final var glyphs = new IntArrayList(count);
         final var positions = new FloatArrayList(count * 2);
@@ -184,6 +184,9 @@ public final class LayoutPiece {
         mAscent = extent.ascent;
         mDescent = extent.descent;
         mAdvance = advance;
+
+        assert mGlyphs.length * 2 == mPositions.length;
+        assert mFontIndices == null || mFontIndices.length == mGlyphs.length;
     }
 
     /**
@@ -214,6 +217,7 @@ public final class LayoutPiece {
 
     /**
      * Returns which font should be used for the i-th glyph.
+     * It's guaranteed reference equality can be used instead of equals() for better performance.
      *
      * @param i the index
      * @return the font family

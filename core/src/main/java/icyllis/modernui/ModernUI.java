@@ -353,7 +353,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         Set<FontFamily> set = new LinkedHashSet<>();
 
         try (InputStream stream = new FileInputStream("F:/Torus Regular.otf")) {
-            set.add(FontFamily.createFonts(stream, true)[0]);
+            set.add(FontFamily.createFamily(stream, true));
         } catch (IOException ignored) {
         }
 
@@ -363,8 +363,6 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
                 set.add(family);
             }
         }
-
-        set.add(Objects.requireNonNull(FontFamily.getSystemFontWithAlias(FontFamily.SANS_SERIF)));
 
         mDefaultTypeface = Typeface.createTypeface(set.toArray(new FontFamily[0]));
     }

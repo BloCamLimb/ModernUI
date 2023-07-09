@@ -49,9 +49,9 @@ public class StyleSpan extends MetricAffectingSpan implements ParcelableSpan {
      *
      * @param style An integer constant describing the style for this span. Examples
      *              include bold, italic, and normal. Values are constants defined
-     *              in {@link Typeface}.
+     *              in {@link TextPaint}.
      */
-    public StyleSpan(@Typeface.Style int style) {
+    public StyleSpan(@TextPaint.Style int style) {
         mStyle = style;
     }
 
@@ -73,9 +73,9 @@ public class StyleSpan extends MetricAffectingSpan implements ParcelableSpan {
     }
 
     /**
-     * Returns the style constant defined in {@link Typeface}.
+     * Returns the style constant defined in {@link TextPaint}.
      */
-    @Typeface.Style
+    @TextPaint.Style
     public int getStyle() {
         return mStyle;
     }

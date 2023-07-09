@@ -89,7 +89,9 @@ public class FontCollection {
         if (families.length == 0) {
             throw new IllegalArgumentException("Font set cannot be empty");
         }
-        if (families.length > 127) {
+        // we use font indices array to save memory
+        // the number of families in a FontCollection cannot exceed byte.max
+        if (families.length > Byte.MAX_VALUE) {
             throw new IllegalArgumentException();
         }
         mFamilies = List.of(families);
@@ -264,6 +266,12 @@ public class FontCollection {
 
     private FontFamily getFamilyForChar(int ch, int vs) {
         for (FontFamily family : mFamilies) {
+            if (family.hasGlyph(ch, vs)) {
+                return family;
+            }
+        }
+        { // our convention is to use sans serif first
+            FontFamily family = FontFamily.SANS_SERIF;
             if (family.hasGlyph(ch, vs)) {
                 return family;
             }

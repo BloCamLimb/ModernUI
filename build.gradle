@@ -24,6 +24,7 @@ allprojects {
     apply plugin: 'org.jetbrains.kotlin.jvm'
 
     group = 'icyllis.modernui'
+    version = "${modernui_version}" as String
 
     java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 

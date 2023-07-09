@@ -22,8 +22,12 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.ColorInt;
 import icyllis.modernui.graphics.text.*;
 import icyllis.modernui.util.Pools;
+import org.intellij.lang.annotations.MagicConstant;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.util.Locale;
 
 /**
@@ -32,6 +36,34 @@ import java.util.Locale;
  * reflow and re-layout, not just re-drawing.
  */
 public class TextPaint extends FontPaint {
+
+    @ApiStatus.Internal
+    @MagicConstant(intValues = {
+            NORMAL,
+            BOLD,
+            ITALIC,
+            BOLD_ITALIC
+    })
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface Style {
+    }
+
+    /**
+     * Font style constant to request the plain/regular/normal style
+     */
+    public static final int NORMAL      = FontPaint.NORMAL;
+    /**
+     * Font style constant to request the bold style
+     */
+    public static final int BOLD        = FontPaint.BOLD;
+    /**
+     * Font style constant to request the italic style
+     */
+    public static final int ITALIC      = FontPaint.ITALIC;
+    /**
+     * Font style constant to request the bold and italic style
+     */
+    public static final int BOLD_ITALIC = FontPaint.BOLD_ITALIC;
 
     /**
      * Paint flag that applies an underline decoration to drawn text.

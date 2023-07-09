@@ -26,7 +26,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Text shaping result object for multi-style text, multiple text runs of positioned glyphs.
+ * Text shaping result object for multi-style text, so there are multiple style runs
+ * of positioned glyphs.
  * <p>
  * This object is immutable, internal buffers may be shared between threads.
  *
@@ -271,6 +272,7 @@ public class MeasuredText {
             if (end > mText.length) {
                 throw new IllegalArgumentException("Style exceeds the text length");
             }
+            //TODO
             if (length <= LayoutCache.MAX_PIECE_LENGTH) {
                 mRuns.add(new StyleRun(mCurrentOffset, end, paint.toBase(), isRtl));
             } else {

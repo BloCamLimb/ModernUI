@@ -20,20 +20,28 @@ package icyllis.modernui.graphics.text;
 
 import com.ibm.icu.text.Bidi;
 import com.ibm.icu.text.BidiRun;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.text.TextShaper;
+import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import it.unimi.dsi.fastutil.floats.FloatArrays;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntArrays;
-import it.unimi.dsi.fastutil.objects.ObjectArrays;
 
-import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
 import java.util.*;
+import java.util.function.Function;
 
 /**
  * Text shaping result object for single style text, a sequence of positioned glyphs.
- * You can get text shaping result by {@link TextShaper#shapeTextRun}.
+ * You can get text shaping result by {@link TextShaper#shapeTextRun}, or directly
+ * calling the constructor if no text direction heuristic algorithm is needed.
+ * <p>
+ * Text shaping is the process of translating a string of character codes (such as
+ * Unicode codepoints) into a properly arranged sequence of glyphs that can be rendered
+ * onto a screen or into final output form for inclusion in a document. See
+ * <a href="https://harfbuzz.github.io/what-is-harfbuzz.html">HarfBuzz</a> for more.
  * <p>
  * This object is immutable, internal buffers may be shared between threads.
  *
@@ -66,12 +74,12 @@ public class ShapedText {
      */
     public static final int BIDI_DEFAULT_RTL = 0b011;
     /**
-     * BiDi flags that indicating the whole text direction is known to be left-to-right,
+     * BiDi flags that indicating the whole text direction is determined to be left-to-right,
      * no BiDi analysis will be performed.
      */
     public static final int BIDI_OVERRIDE_LTR = 0b100;
     /**
-     * BiDi flags that indicating the whole text direction is known to be right-to-left,
+     * BiDi flags that indicating the whole text direction is determined to be right-to-left,
      * no BiDi analysis will be performed.
      */
     public static final int BIDI_OVERRIDE_RTL = 0b101;
@@ -85,11 +93,19 @@ public class ShapedText {
 
     /**
      * The array is about all laid-out glyph codes for in order visually from left to right.
+     * The length is {@link #getGlyphCount()}.
      *
      * @return glyphs
      */
     public int[] getGlyphs() {
         return mGlyphs;
+    }
+
+    /**
+     * Helper of {@link #getGlyphs()}.
+     */
+    public int getGlyph(int i) {
+        return mGlyphs[i];
     }
 
     /**
@@ -103,16 +119,35 @@ public class ShapedText {
     }
 
     /**
-     * This array holds which font should be used for the i-th glyph.
-     *
-     * @return glyph fonts
+     * Helper of {@link #getPositions()}.
      */
-    public FontFamily[] getFonts() {
-        return mFonts;
+    public float getX(int i) {
+        return mPositions[i << 1];
     }
 
     /**
-     * Returns the number of characters (constructor <code>limit - start</code> in code units).
+     * Helper of {@link #getPositions()}.
+     */
+    public float getY(int i) {
+        return mPositions[i << 1 | 1];
+    }
+
+    /**
+     * Returns which font should be used for the i-th glyph.
+     * It's guaranteed reference equality can be used instead of equals() for better performance.
+     *
+     * @param i the index
+     * @return the font family
+     */
+    public FontFamily getFont(int i) {
+        if (mFontIndices != null) {
+            return mFonts[mFontIndices[i]];
+        }
+        return mFonts[0];
+    }
+
+    /**
+     * Returns the number of characters (i.e. constructor <code>limit - start</code> in code units).
      */
     public int getCharCount() {
         return mAdvances.length;
@@ -121,14 +156,24 @@ public class ShapedText {
     /**
      * The array of all chars advance, the length and order are relative to the text buffer.
      * Only grapheme cluster bounds have advances, others are zeros. For example:
-     * [13.57, 0, 14.26, 0, 0], meaning c[0] and c[1] become a cluster; c[2], c[3] and c[4]
-     * become a cluster. The length is constructor <code>limit - start</code> in code units.
+     * [13.0, 0, 14.0, 0, 0] meaning c[0] and c[1] become a cluster; c[2], c[3] and c[4]
+     * become a cluster. The length is {@link #getCharCount()}.
      *
      * @return advances
      * @see GraphemeBreak
      */
     public float[] getAdvances() {
         return mAdvances;
+    }
+
+    /**
+     * Helper of {@link #getAdvances()}.
+     */
+    public float getAdvance(int i) {
+        if (i == mAdvances.length) {
+            return mAdvance;
+        }
+        return mAdvances[i];
     }
 
     /**
@@ -169,12 +214,25 @@ public class ShapedText {
         return mAdvance;
     }
 
+    public int getMemoryUsage() {
+        int m = 48;
+        m += 16 + MathUtil.align8(mGlyphs.length << 2);
+        m += 16 + MathUtil.align8(mPositions.length << 2);
+        if (mFontIndices != null) {
+            m += 16 + MathUtil.align8(mFontIndices.length);
+        }
+        m += 16 + MathUtil.align8(mFonts.length << 2);
+        m += 16 + MathUtil.align8(mAdvances.length << 2);
+        return m;
+    }
+
     @Override
     public String toString() {
         return "ShapedText{" +
                 "mGlyphs=" + Arrays.toString(mGlyphs) +
                 ", mPositions=" + Arrays.toString(mPositions) +
                 ", mFonts=" + Arrays.toString(mFonts) +
+                ", mFontIndices=" + Arrays.toString(mFontIndices) +
                 ", mAdvances=" + Arrays.toString(mAdvances) +
                 ", mAscent=" + mAscent +
                 ", mDescent=" + mDescent +
@@ -188,6 +246,7 @@ public class ShapedText {
     // x0 y0 x1 y1... for positioning glyphs
     private final float[] mPositions;
 
+    private final byte[] mFontIndices;
     private final FontFamily[] mFonts;
 
     private final float[] mAdvances;
@@ -213,21 +272,25 @@ public class ShapedText {
      * @param bidiFlags    one of BiDi flags listed above
      * @param paint        layout params
      */
-    public ShapedText(@Nonnull char[] text, int contextStart, int contextLimit,
+    public ShapedText(@NonNull char[] text, int contextStart, int contextLimit,
                       int start, int limit, int bidiFlags, FontPaint paint) {
         Objects.checkFromToIndex(contextStart, contextLimit, text.length);
         if (contextStart > start || contextLimit < limit) {
             throw new IndexOutOfBoundsException();
         }
-        if (bidiFlags < 0 || bidiFlags > BIDI_OVERRIDE_RTL) {
+        if (bidiFlags < 0 || bidiFlags > 0b111) {
             throw new IllegalArgumentException();
         }
         int count = limit - start;
+        // we allow for an empty range
         if (count == 0) {
+            // these three arrays are public so cannot be null
             mAdvances = FloatArrays.EMPTY_ARRAY;
             mGlyphs = IntArrays.EMPTY_ARRAY;
             mPositions = FloatArrays.EMPTY_ARRAY;
-            mFonts = (FontFamily[]) ObjectArrays.EMPTY_ARRAY;
+            // these two arrays are internal so can be null
+            mFontIndices = null;
+            mFonts = null;
             mAscent = 0;
             mDescent = 0;
             mAdvance = 0;
@@ -236,10 +299,20 @@ public class ShapedText {
         mAdvances = new float[count];
         final FontMetricsInt extent = new FontMetricsInt();
 
-        // preserve memory
+        // reserve memory, glyph count is <= char count
+        final var fontIndices = new ByteArrayList(count);
         final var glyphs = new IntArrayList(count);
         final var positions = new FloatArrayList(count * 2);
-        final var fonts = new ArrayList<FontFamily>(count);
+
+        final var fonts = new ArrayList<FontFamily>();
+
+        HashMap<FontFamily, Byte> fontMap = new HashMap<>();
+        Function<FontFamily, Byte> idGen = family -> {
+            fonts.add(family);
+            return (byte) fontMap.size();
+        };
+        Function<FontFamily, Byte> idGet = family ->
+                fontMap.computeIfAbsent(family, idGen);
 
         float advance = 0;
 
@@ -248,7 +321,7 @@ public class ShapedText {
             final boolean isRtl = (bidiFlags & 0b001) != 0;
             advance += doLayoutRun(text, contextStart, contextLimit,
                     start, limit, isRtl, paint, start,
-                    mAdvances, advance, glyphs, positions, fonts, extent);
+                    mAdvances, advance, glyphs, positions, fontIndices, idGet, extent);
         } else {
             final byte paraLevel = switch (bidiFlags) {
                 case BIDI_LTR -> Bidi.LTR;
@@ -257,20 +330,20 @@ public class ShapedText {
                 case BIDI_DEFAULT_RTL -> Bidi.LEVEL_DEFAULT_RTL;
                 default -> throw new AssertionError();
             };
-            // preserve memory
+            // reserve memory
             Bidi bidi = new Bidi(contextLimit - contextStart, 0);
             bidi.setPara(text, paraLevel, null);
             // entirely right-to-left
             if (bidi.isRightToLeft()) {
                 advance += doLayoutRun(text, contextStart, contextLimit,
                         start, limit, true, paint, start,
-                        mAdvances, advance, glyphs, positions, fonts, extent);
+                        mAdvances, advance, glyphs, positions, fontIndices, idGet, extent);
             }
             // entirely left-to-right
             else if (bidi.isLeftToRight()) {
                 advance += doLayoutRun(text, contextStart, contextLimit,
                         start, limit, false, paint, start,
-                        mAdvances, advance, glyphs, positions, fonts, extent);
+                        mAdvances, advance, glyphs, positions, fontIndices, idGet, extent);
             }
             // full bidirectional analysis
             else {
@@ -281,7 +354,7 @@ public class ShapedText {
                     int runEnd = Math.min(run.getLimit(), limit);
                     advance += doLayoutRun(text, contextStart, contextLimit,
                             runStart, runEnd, run.isOddRun(), paint, start,
-                            mAdvances, advance, glyphs, positions, fonts, extent);
+                            mAdvances, advance, glyphs, positions, fontIndices, idGet, extent);
                 }
             }
         }
@@ -289,18 +362,28 @@ public class ShapedText {
 
         mGlyphs = glyphs.toIntArray();
         mPositions = positions.toFloatArray();
+        if (fonts.size() > 1) {
+            mFontIndices = fontIndices.toByteArray();
+        } else {
+            mFontIndices = null;
+        }
         mFonts = fonts.toArray(new FontFamily[0]);
 
         mAscent = extent.ascent;
         mDescent = extent.descent;
+
+        assert mGlyphs.length * 2 == mPositions.length;
+        assert mFontIndices == null || mFontIndices.length == mGlyphs.length;
     }
 
     // BiDi run, visual order
     private static float doLayoutRun(char[] text, int contextStart, int contextLimit,
                                      int start, int limit, boolean isRtl, FontPaint paint,
-                                     int layoutStart, float[] advances, float parAdvance,
+                                     int layoutStart, float[] advances, float curAdvance,
                                      IntArrayList glyphs, FloatArrayList positions,
-                                     ArrayList<FontFamily> fonts, FontMetricsInt extent) {
+                                     ByteArrayList fontIndices,
+                                     Function<FontFamily, Byte> idGet,
+                                     FontMetricsInt extent) {
         float advance = 0;
 
         //@formatter:off
@@ -320,9 +403,9 @@ public class ShapedText {
                 }
                 advance += doLayoutWord(text, itContextStart, itContextEnd,
                         itPieceStart, itPieceEnd, true, paint,
-                        itPieceStart - layoutStart, advances, parAdvance + advance,
+                        itPieceStart - layoutStart, advances, curAdvance + advance,
                         glyphs, positions,
-                        fonts, extent);
+                        fontIndices, idGet, extent);
                 pos = itPieceStart;
             }
         } else {
@@ -341,9 +424,9 @@ public class ShapedText {
                 }
                 advance += doLayoutWord(text, itContextStart, itContextEnd,
                         itPieceStart, itPieceEnd, false, paint,
-                        itPieceStart - layoutStart, advances, parAdvance + advance,
+                        itPieceStart - layoutStart, advances, curAdvance + advance,
                         glyphs, positions,
-                        fonts, extent);
+                        fontIndices, idGet, extent);
                 pos = itPieceEnd;
             }
         }
@@ -354,14 +437,16 @@ public class ShapedText {
     // visual order
     private static float doLayoutWord(char[] buf, int contextStart, int contextEnd,
                                       int start, int end, boolean isRtl, FontPaint paint,
-                                      int advanceOffset, float[] advances, float runAdvance,
+                                      int advanceOffset, float[] advances, float curAdvance,
                                       IntArrayList glyphs, FloatArrayList positions,
-                                      ArrayList<FontFamily> fonts, FontMetricsInt extent) {
+                                      ByteArrayList fontIndices,
+                                      Function<FontFamily, Byte> idGet,
+                                      FontMetricsInt extent) {
         LayoutPiece src = LayoutCache.getOrCreate(
                 buf, contextStart, contextEnd, start, end, isRtl, paint);
 
         for (int i = 0; i < src.getGlyphCount(); i++) {
-            fonts.add(src.getFont(i));
+            fontIndices.add((byte) idGet.apply(src.getFont(i)));
         }
         glyphs.addElements(glyphs.size(), src.getGlyphs());
         int posStart = positions.size();
@@ -370,7 +455,7 @@ public class ShapedText {
              posEnd = positions.size();
              posIndex < posEnd;
              posIndex += 2) {
-            positions.elements()[posIndex] += runAdvance;
+            positions.elements()[posIndex] += curAdvance;
         }
 
         float[] srcAdvances = src.getAdvances();

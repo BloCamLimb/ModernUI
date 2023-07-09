@@ -1,5 +1,40 @@
 Changelogs
 ===
+### Modern UI 3.7.1 (2023-07-09)
+#### Core Framework 3.7.1
+* Add context range to LayoutCache
+* Add draw ShapedText, add register method to FontFamily
+* Add ShapedText and TextShaper for drawing text, make drawText deprecated
+* Rework LayoutPiece, optimize cluster work, now it won't do texture work
+* Add FontFamily aliases
+* Moving low-level text layout to graphics.text package
+* Fix MessageQueue parkNanos time unit
+* Don't use perspective if View has no 3D transform
+* Add WindowGroup for toasts and popups
+* Add context to Toast
+* Add MpmcArrayQueue
+#### Arc 3D Graphics Engine 3.7.1
+* Fix BufferAllocPool
+* Fix OpsRenderPass buffer pointers
+* Update VaryingHandler and UniformHandler layout qualifier
+* Add compatibility for base instance support
+* Add GLUniformBuffer and buffer upload
+* Add FilterMode, MipmapMode and AnisotropicFiltering for Paint
+* Add async pipeline state cache (thread safe)
+* Add separate objects from graphics package
+* Add CustomDrawable for handling unmanaged draw
+* Fix Buffer unlock method
+* Fix BufferAlloc pointers
+* Add RoundRectGeoProc
+* Add Buffer creation method to Engine
+* Add DrawOp and MeshDrawOp
+* Add OpListTask
+* Replace GLPipeline with separate GLProgram and GLVertexArray
+* Add GLOpsRenderPass
+* Add GLUniformDataManager
+* Support base offset for GLVertexArray in OpenGL 3.3
+* Fix Surface hierarchy
+
 ### Modern UI 3.7.0 (2023-06-20)
 #### Core Framework 3.7
 * Optimize view matrix composition

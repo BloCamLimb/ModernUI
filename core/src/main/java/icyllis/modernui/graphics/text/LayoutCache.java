@@ -20,15 +20,14 @@ package icyllis.modernui.graphics.text;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.util.Pools;
 
-import javax.annotation.Nonnull;
 import javax.annotation.concurrent.ThreadSafe;
 import java.util.Arrays;
 import java.util.Locale;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Globally shared layout cache. Useful when recycling layouts, or raw data source and
@@ -45,7 +44,7 @@ public final class LayoutCache {
      */
     public static final int MAX_PIECE_LENGTH = 128;
 
-    private static final Pools.Pool<LookupKey> sLookupKeys = Pools.newSynchronizedPool(2);
+    private static final Pools.Pool<LookupKey> sLookupKeys = Pools.newSynchronizedPool(3);
     private static final Pools.Pool<char[]> sCharBuffers = Pools.newSynchronizedPool(1);
     private static volatile Cache<Key, LayoutPiece> sCache;
 
@@ -63,9 +62,10 @@ public final class LayoutCache {
      * @param paint the font paint affecting measurement
      * @return the layout piece
      */
-    @Nonnull
-    public static LayoutPiece getOrCreate(@Nonnull CharSequence text, int contextStart, int contextEnd,
-                                          int start, int end, boolean isRtl, @Nonnull FontPaint paint) {
+    //TODO move to somewhere?
+    @NonNull
+    public static LayoutPiece getOrCreate(@NonNull CharSequence text, int contextStart, int contextEnd,
+                                          int start, int end, boolean isRtl, @NonNull FontPaint paint) {
         char[] buf = sCharBuffers.acquire();
         if (buf == null) {
             buf = new char[MAX_PIECE_LENGTH];
@@ -91,8 +91,8 @@ public final class LayoutCache {
      * @param paint the font paint affecting measurement
      * @return the layout piece
      */
-    @Nonnull
-    public static LayoutPiece getOrCreate(@Nonnull char[] buf, int contextStart, int contextEnd,
+    @NonNull
+    public static LayoutPiece getOrCreate(@NonNull char[] buf, int contextStart, int contextEnd,
                                           int start, int end, boolean isRtl, FontPaint paint) {
         if (contextStart < 0 || contextStart >= contextEnd || buf.length == 0 ||
                 contextEnd > buf.length || start < contextStart || end > contextEnd) {
@@ -105,8 +105,8 @@ public final class LayoutCache {
             synchronized (LayoutCache.class) {
                 if (sCache == null) {
                     sCache = Caffeine.newBuilder()
-                            .maximumSize(5000)
-                            .expireAfterAccess(5, TimeUnit.MINUTES)
+                            .maximumSize(2000)
+                            //.expireAfterAccess(5, TimeUnit.MINUTES)
                             .build();
                 }
             }
@@ -116,7 +116,7 @@ public final class LayoutCache {
             key = new LookupKey();
         }
         LayoutPiece piece = sCache.getIfPresent(
-                key.update(buf, start, end, paint, isRtl));
+                key.update(buf, contextStart, contextEnd, start, end, paint, isRtl));
         // create new or re-compute for more params
         if (piece == null) {
             final Key k = key.copy();
@@ -162,10 +162,12 @@ public final class LayoutCache {
      */
     private static class Key {
 
-        // for Lookup case, this is only a pointer to the requester
+        // for Lookup case, this is only a pointer to the argument
         char[] mChars;
-        FontCollection mFontCollection;
-        int mFontStyle;
+        int mStart;
+        int mEnd;
+        FontCollection mFont;
+        int mFontFlags;
         int mFontSize;
         Locale mLocale;
         boolean mIsRtl;
@@ -176,13 +178,16 @@ public final class LayoutCache {
         /**
          * Copy constructor, used as a key stored in the cache
          */
-        private Key(@Nonnull LookupKey key) {
+        private Key(@NonNull LookupKey key) {
             // deep copy chars
-            mChars = new char[key.mEnd - key.mStart];
-            System.arraycopy(key.mChars, key.mStart, mChars, 0, mChars.length);
+            mChars = new char[key.mContextEnd - key.mContextStart];
+            System.arraycopy(key.mChars, key.mContextStart,
+                    mChars, 0, mChars.length);
+            mStart = key.mStart;
+            mEnd = key.mEnd;
             // shared pointers
-            mFontCollection = key.mFontCollection;
-            mFontStyle = key.mFontStyle;
+            mFont = key.mFont;
+            mFontFlags = key.mFontFlags;
             mFontSize = key.mFontSize;
             mLocale = key.mLocale;
             mIsRtl = key.mIsRtl;
@@ -197,12 +202,14 @@ public final class LayoutCache {
             }
             Key key = (Key) o;
 
-            if (mFontStyle != key.mFontStyle) return false;
+            if (mStart != key.mStart) return false;
+            if (mEnd != key.mEnd) return false;
+            if (mFontFlags != key.mFontFlags) return false;
             if (mFontSize != key.mFontSize) return false;
             if (mIsRtl != key.mIsRtl) return false;
             if (!Arrays.equals(mChars, key.mChars))
                 return false;
-            if (!mFontCollection.equals(key.mFontCollection)) return false;
+            if (!mFont.equals(key.mFont)) return false;
             return mLocale.equals(key.mLocale);
         }
 
@@ -212,9 +219,11 @@ public final class LayoutCache {
             for (char c : mChars) {
                 result = 31 * result + c;
             }
-            result = 31 * result + mFontCollection.hashCode();
-            result = 31 * result + mFontStyle;
+            result = 31 * result + mFont.hashCode();
+            result = 31 * result + mFontFlags;
             result = 31 * result + mFontSize;
+            result = 31 * result + mStart;
+            result = 31 * result + mEnd;
             result = 31 * result + mLocale.hashCode();
             result = 31 * result + (mIsRtl ? 1 : 0);
             return result;
@@ -226,23 +235,26 @@ public final class LayoutCache {
     }
 
     /**
-     * A static key used for looking-up, compared against the base Key class.
+     * A reusable key used for looking-up, compared against the base Key class.
      */
     private static class LookupKey extends Key {
 
-        private int mStart;
-        private int mEnd;
+        private int mContextStart;
+        private int mContextEnd;
 
         public LookupKey() {
         }
 
-        @Nonnull
-        public Key update(@Nonnull char[] text, int start, int end, @Nonnull FontPaint paint, boolean dir) {
+        @NonNull
+        public Key update(@NonNull char[] text, int contextStart, int contextEnd,
+                          int start, int end, @NonNull FontPaint paint, boolean dir) {
             mChars = text;
-            mStart = start;
-            mEnd = end;
-            mFontCollection = paint.mFont;
-            mFontStyle = paint.getFontStyle();
+            mContextStart = contextStart;
+            mContextEnd = contextEnd;
+            mStart = start - contextStart;
+            mEnd = end - contextStart;
+            mFont = paint.mFont;
+            mFontFlags = paint.getFontStyle(); // TODO this is style & renderFlags
             mFontSize = paint.mFontSize;
             mLocale = paint.mLocale;
             mIsRtl = dir;
@@ -254,36 +266,40 @@ public final class LayoutCache {
             if (this == o) return true;
             // we never compare with a LookupKey
             if (o.getClass() != Key.class) {
-                throw new IllegalStateException("Well, lookup key is not comparing against an storing key");
+                throw new IllegalStateException();
             }
             Key key = (Key) o;
 
-            if (mFontStyle != key.mFontStyle) return false;
+            if (mStart != key.mStart) return false;
+            if (mEnd != key.mEnd) return false;
+            if (mFontFlags != key.mFontFlags) return false;
             if (mFontSize != key.mFontSize) return false;
             if (mIsRtl != key.mIsRtl) return false;
-            if (!Arrays.equals(mChars, mStart, mEnd,
+            if (!Arrays.equals(mChars, mContextStart, mContextEnd,
                     key.mChars, 0, key.mChars.length)) {
                 return false;
             }
-            if (!mFontCollection.equals(key.mFontCollection)) return false;
+            if (!mFont.equals(key.mFont)) return false;
             return mLocale.equals(key.mLocale);
         }
 
         @Override
         public int hashCode() {
             int result = 1;
-            for (int i = mStart; i < mEnd; i++) {
+            for (int i = mContextStart; i < mContextEnd; i++) {
                 result = 31 * result + mChars[i];
             }
-            result = 31 * result + mFontCollection.hashCode();
-            result = 31 * result + mFontStyle;
+            result = 31 * result + mFont.hashCode();
+            result = 31 * result + mFontFlags;
             result = 31 * result + mFontSize;
+            result = 31 * result + mStart;
+            result = 31 * result + mEnd;
             result = 31 * result + mLocale.hashCode();
             result = 31 * result + (mIsRtl ? 1 : 0);
             return result;
         }
 
-        @Nonnull
+        @NonNull
         public Key copy() {
             return new Key(this);
         }

@@ -95,7 +95,7 @@ public class TestFragment extends Fragment {
             String text = "My name is van";
             var glyphs = TextShaper.shapeTextRun(text, 1, text.length() - 2, 0, text.length(),
                     TextDirectionHeuristics.FIRSTSTRONG_LTR, new TextPaint());
-            LOGGER.info("Shape {}: {}", text, glyphs);
+            LOGGER.info("Shape \"{}\"\n{}\nMemory Usage: {} bytes", text, glyphs, glyphs.getMemoryUsage());
         }).exceptionally(e -> {
             LOGGER.info("Shape", e);
             return null;

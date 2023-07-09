@@ -144,6 +144,34 @@ public class GlyphManager {
     }
 
     /**
+     * Given a font, perform full text layout/shaping and create a new GlyphVector for a text.
+     *
+     * @param text  the U16 text to layout
+     * @param start the offset into text at which to start the layout
+     * @param limit the (offset + length) at which to stop performing the layout
+     * @param isRtl whether the text should layout right-to-left
+     * @return the newly laid-out GlyphVector
+     */
+    @NonNull
+    public GlyphVector layoutGlyphVector(@NonNull Font font, @NonNull char[] text,
+                                         int start, int limit, boolean isRtl) {
+        return font.layoutGlyphVector(mGraphics.getFontRenderContext(), text, start, limit,
+                isRtl ? Font.LAYOUT_RIGHT_TO_LEFT : Font.LAYOUT_LEFT_TO_RIGHT);
+    }
+
+    /**
+     * Create glyph vector without text shaping, which means by mapping
+     * characters to glyphs one-to-one.
+     *
+     * @param text the U16 text to layout
+     * @return the newly created GlyphVector
+     */
+    @NonNull
+    public GlyphVector createGlyphVector(@NonNull Font font, @NonNull char[] text) {
+        return font.createGlyphVector(mGraphics.getFontRenderContext(), text);
+    }
+
+    /**
      * Compute a glyph key used to retrieve GPU baked glyph, the key is valid
      * until next {@link #reload()}.
      *
