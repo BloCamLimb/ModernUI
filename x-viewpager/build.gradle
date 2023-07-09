@@ -1,5 +1,4 @@
 archivesBaseName = 'ModernUI-ViewPager'
-version = "${viewpager_version}" as String
 
 repositories {
     mavenCentral()

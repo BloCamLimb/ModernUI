@@ -1058,11 +1058,11 @@ public abstract class Canvas {
         if (text.getGlyphCount() == 0) {
             return;
         }
-        FontFamily lastFont = text.getFonts()[0];
+        FontFamily lastFont = text.getFont(0);
         int lastPos = start;
         int curPos = start + 1;
         for (; curPos < end; curPos++) {
-            FontFamily curFont = text.getFonts()[curPos];
+            FontFamily curFont = text.getFont(curPos);
             if (lastFont != curFont) {
                 drawGlyphs(text.getGlyphs(), lastPos,
                         text.getPositions(), lastPos << 1, curPos - lastPos,

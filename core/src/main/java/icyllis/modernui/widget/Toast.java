@@ -18,6 +18,7 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.app.Activity;
 import icyllis.modernui.core.Context;
@@ -73,6 +74,11 @@ public final class Toast {
      */
     private Toast(@NonNull Context context) {
         mContext = context;
+    }
+
+    @Deprecated(forRemoval = true)
+    public static Toast makeText(@NonNull CharSequence text, int duration) {
+        return makeText(ModernUI.getInstance(), text, duration);
     }
 
     /**

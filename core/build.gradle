@@ -1,7 +1,6 @@
 import org.gradle.internal.os.OperatingSystem
 
 archivesBaseName = 'ModernUI'
-version = "${core_version}" as String
 
 dependencies {
     implementation "com.ibm.icu:icu4j:${icu4j_version}"

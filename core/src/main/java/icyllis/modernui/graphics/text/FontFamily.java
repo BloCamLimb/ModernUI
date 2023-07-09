@@ -30,9 +30,9 @@ import java.util.function.Function;
 
 public class FontFamily {
 
-    public static final String SANS_SERIF = Font.SANS_SERIF;
-    public static final String SERIF = Font.SERIF;
-    public static final String MONOSPACED = Font.MONOSPACED;
+    public static final FontFamily SANS_SERIF;
+    public static final FontFamily SERIF;
+    public static final FontFamily MONOSPACED;
 
     private static final Map<String, FontFamily> sSystemFontMap;
     private static final Map<String, String> sSystemFontAliases;
@@ -63,9 +63,9 @@ public class FontFamily {
         }
         Function<String, FontFamily> mapping = name ->
                 new FontFamily(new Font(name, Font.PLAIN, 1));
-        map.computeIfAbsent(Font.SANS_SERIF, mapping);
-        map.computeIfAbsent(Font.SERIF, mapping);
-        map.computeIfAbsent(Font.MONOSPACED, mapping);
+        SANS_SERIF = map.computeIfAbsent(Font.SANS_SERIF, mapping);
+        SERIF = map.computeIfAbsent(Font.SERIF, mapping);
+        MONOSPACED = map.computeIfAbsent(Font.MONOSPACED, mapping);
 
         sSystemFontMap = map;
         sSystemFontAliases = aliases;
@@ -89,45 +89,41 @@ public class FontFamily {
     }
 
     @NonNull
-    public static FontFamily[] createFonts(@NonNull File fontFile, boolean register) {
+    public static FontFamily createFamily(@NonNull File file, boolean register) {
         try {
-            Font[] fonts = Font.createFonts(fontFile);
-            return createFonts(fonts, register);
+            Font[] fonts = Font.createFonts(file);
+            return createFamily(fonts, register);
         } catch (FontFormatException | IOException e) {
             throw new RuntimeException(e);
         }
     }
 
     @NonNull
-    public static FontFamily[] createFonts(@NonNull InputStream fontStream, boolean register) {
+    public static FontFamily createFamily(@NonNull InputStream stream, boolean register) {
         try {
-            Font[] fonts = Font.createFonts(fontStream);
-            return createFonts(fonts, register);
+            Font[] fonts = Font.createFonts(stream);
+            return createFamily(fonts, register);
         } catch (FontFormatException | IOException e) {
             throw new RuntimeException(e);
         }
     }
 
     @NonNull
-    private static FontFamily[] createFonts(@NonNull Font[] fonts, boolean register) {
-        FontFamily[] result = new FontFamily[fonts.length];
-        for (int i = 0; i < fonts.length; i++) {
-            Font font = fonts[i];
-            FontFamily family = new FontFamily(font);
-            if (register) {
-                String name = family.getFamilyName(Locale.ROOT);
-                String alias = family.getFamilyName(Locale.getDefault());
-                // override system
-                sSystemFontMap.put(name, family);
-                if (!name.equals(alias)) {
-                    sSystemFontAliases.put(alias, name);
-                }
+    private static FontFamily createFamily(@NonNull Font[] fonts, boolean register) {
+        FontFamily family = new FontFamily(fonts[0]);
+        if (register) {
+            String name = family.getFamilyName();
+            String alias = family.getFamilyName(Locale.getDefault());
+            sSystemFontMap.putIfAbsent(name, family);
+            if (!name.equals(alias)) {
+                sSystemFontAliases.putIfAbsent(alias, name);
+            }
+            for (Font font : fonts) {
                 GraphicsEnvironment.getLocalGraphicsEnvironment()
                         .registerFont(font);
             }
-            result[i] = family;
         }
-        return result;
+        return family;
     }
 
     // root name
@@ -145,7 +141,7 @@ public class FontFamily {
 
     private FontFamily(@NonNull Font font) {
         this(font.getFamily(Locale.ROOT));
-        mFont = font;
+        mFont = font.deriveFont(Font.PLAIN);
         mBold = font.deriveFont(Font.BOLD);
         mItalic = font.deriveFont(Font.ITALIC);
         mBoldItalic = font.deriveFont(Font.BOLD | Font.ITALIC);

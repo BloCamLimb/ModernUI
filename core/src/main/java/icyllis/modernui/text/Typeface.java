@@ -20,12 +20,8 @@ package icyllis.modernui.text;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.text.*;
-import org.intellij.lang.annotations.MagicConstant;
-import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.concurrent.Immutable;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 import java.util.*;
 
 /**
@@ -46,39 +42,28 @@ public class Typeface extends FontCollection {
         for (var entry : FontFamily.getSystemFontMap().entrySet()) {
             map.putIfAbsent(entry.getKey(), createTypeface(entry.getValue()));
         }
-        SANS_SERIF = Objects.requireNonNull(map.get(FontFamily.SANS_SERIF));
-        SERIF = Objects.requireNonNull(map.get(FontFamily.SERIF));
-        MONOSPACED = Objects.requireNonNull(map.get(FontFamily.MONOSPACED));
+        SANS_SERIF = Objects.requireNonNull(map.get(java.awt.Font.SANS_SERIF));
+        SERIF = Objects.requireNonNull(map.get(java.awt.Font.SERIF));
+        MONOSPACED = Objects.requireNonNull(map.get(java.awt.Font.MONOSPACED));
         sSystemFontMap = map;
-    }
-
-    @ApiStatus.Internal
-    @MagicConstant(intValues = {
-            NORMAL,
-            BOLD,
-            ITALIC,
-            BOLD_ITALIC
-    })
-    @Retention(RetentionPolicy.SOURCE)
-    public @interface Style {
     }
 
     /**
      * Font style constant to request the plain/regular/normal style
      */
-    public static final int NORMAL      = FontPaint.NORMAL;
+    public static final int NORMAL      = TextPaint.NORMAL;
     /**
      * Font style constant to request the bold style
      */
-    public static final int BOLD        = FontPaint.BOLD;
+    public static final int BOLD        = TextPaint.BOLD;
     /**
      * Font style constant to request the italic style
      */
-    public static final int ITALIC      = FontPaint.ITALIC;
+    public static final int ITALIC      = TextPaint.ITALIC;
     /**
      * Font style constant to request the bold and italic style
      */
-    public static final int BOLD_ITALIC = FontPaint.BOLD_ITALIC;
+    public static final int BOLD_ITALIC = TextPaint.BOLD_ITALIC;
 
     @NonNull
     public static Typeface createTypeface(@NonNull FontFamily... families) {
