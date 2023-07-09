@@ -353,20 +353,18 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         Set<FontFamily> set = new LinkedHashSet<>();
 
         try (InputStream stream = new FileInputStream("F:/Torus Regular.otf")) {
-            java.awt.Font f = java.awt.Font.createFont(java.awt.Font.TRUETYPE_FONT, stream);
-            set.add(new FontFamily(f));
-        } catch (java.awt.FontFormatException | IOException ignored) {
+            set.add(FontFamily.createFonts(stream, true)[0]);
+        } catch (IOException ignored) {
         }
 
-        Map<String, FontFamily> map = FontFamily.getSystemFontMap();
         for (String name : new String[]{"Microsoft YaHei UI", "Calibri", "STHeiti", "Segoe UI", "SimHei"}) {
-            FontFamily family = map.get(name);
+            FontFamily family = FontFamily.getSystemFontWithAlias(name);
             if (family != null) {
                 set.add(family);
             }
         }
 
-        set.add(Objects.requireNonNull(FontFamily.getSystemFontMap().get(java.awt.Font.SANS_SERIF)));
+        set.add(Objects.requireNonNull(FontFamily.getSystemFontWithAlias(FontFamily.SANS_SERIF)));
 
         mDefaultTypeface = Typeface.createTypeface(set.toArray(new FontFamily[0]));
     }

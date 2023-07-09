@@ -21,6 +21,7 @@ package icyllis.modernui.graphics;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.graphics.text.*;
 import icyllis.modernui.text.TextPaint;
+import icyllis.modernui.text.TextShaper;
 import icyllis.modernui.view.Gravity;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
@@ -984,13 +985,95 @@ public abstract class Canvas {
     public abstract void drawText(CharSequence text, int start, int end,
                                   float x, float y, TextPaint paint);
 
-    public void drawGlyphs(int[] glyphs,
+    /**
+     * Draw array of glyphs with specified font in order <em>visually left-to-right</em>.
+     * The Paint must be the same as the one passed to any of {@link TextShaper} methods.
+     *
+     * @param glyphs         Array of glyph IDs. The length of array must be greater than or equal to
+     *                       {@code glyphStart + glyphCount}.
+     * @param glyphOffset    Number of elements to skip before drawing in <code>glyphIds</code>
+     *                       array.
+     * @param positions      A flattened X and Y position array. The first glyph X position must be
+     *                       stored at {@code positionOffset}. The first glyph Y position must be stored
+     *                       at {@code positionOffset + 1}, then the second glyph X position must be
+     *                       stored at {@code positionOffset + 2}.
+     *                       The length of array must be greater than or equal to
+     *                       {@code positionOffset + glyphCount * 2}.
+     * @param positionOffset Number of elements to skip before drawing in {@code positions}.
+     *                       The first glyph X position must be stored at {@code positionOffset}.
+     *                       The first glyph Y position must be stored at
+     *                       {@code positionOffset + 1}, then the second glyph X position must be
+     *                       stored at {@code positionOffset + 2}.
+     * @param glyphCount     Number of glyphs to be drawn.
+     * @param font           FontFamily used for drawing.
+     * @param x              Additional amount of x offset of the glyph X positions.
+     * @param y              Additional amount of y offset of the glyph Y positions.
+     * @param paint          Paint used for drawing.
+     * @see TextShaper
+     */
+    public void drawGlyphs(@NonNull int[] glyphs,
                            int glyphOffset,
-                           float[] positions,
+                           @NonNull float[] positions,
                            int positionOffset,
                            int glyphCount,
-                           FontFamily font,
-                           TextPaint paint) {
+                           @NonNull FontFamily font,
+                           float x, float y,
+                           @NonNull TextPaint paint) {
+    }
+
+    /**
+     * Draw a single style run of positioned glyphs in order <em>visually left-to-right</em>,
+     * where a single style run may contain multiple BiDi runs and font runs.
+     * The Paint must be the same as the one passed to any of {@link TextShaper} methods.
+     *
+     * @param text  A sequence of positioned glyphs.
+     * @param x     Additional amount of x offset of the glyph X positions.
+     * @param y     Additional amount of y offset of the glyph Y positions.
+     * @param paint Paint used for drawing.
+     * @see TextShaper
+     */
+    public final void drawText(@NonNull ShapedText text,
+                               float x, float y, @NonNull TextPaint paint) {
+        drawText(text, 0, text.getGlyphCount(), x, y, paint);
+    }
+
+    /**
+     * Draw a single style run of positioned glyphs in order <em>visually left-to-right</em>,
+     * where a single style run may contain multiple BiDi runs and font runs.
+     * The Paint must be the same as the one passed to any of {@link TextShaper} methods.
+     *
+     * @param text  A sequence of positioned glyphs.
+     * @param start Number of glyphs to skip before drawing text.
+     * @param end   Number of glyphs to be drawn.
+     * @param x     Additional amount of x offset of the glyph X positions.
+     * @param y     Additional amount of y offset of the glyph Y positions.
+     * @param paint Paint used for drawing.
+     * @see TextShaper
+     */
+    public final void drawText(@NonNull ShapedText text, int start, int end,
+                               float x, float y, @NonNull TextPaint paint) {
+        if ((start | end | end - start | end - text.getGlyphCount()) < 0) {
+            throw new IndexOutOfBoundsException();
+        }
+        if (text.getGlyphCount() == 0) {
+            return;
+        }
+        FontFamily lastFont = text.getFonts()[0];
+        int lastPos = start;
+        int curPos = start + 1;
+        for (; curPos < end; curPos++) {
+            FontFamily curFont = text.getFonts()[curPos];
+            if (lastFont != curFont) {
+                drawGlyphs(text.getGlyphs(), lastPos,
+                        text.getPositions(), lastPos << 1, curPos - lastPos,
+                        lastFont, x, y, paint);
+                lastFont = curFont;
+                lastPos = curPos;
+            }
+        }
+        drawGlyphs(text.getGlyphs(), lastPos,
+                text.getPositions(), lastPos << 1, curPos - lastPos,
+                lastFont, x, y, paint);
     }
 
     /**
@@ -1027,7 +1110,30 @@ public abstract class Canvas {
      * @param y     the vertical baseline of the line of text
      * @param paint the paint used to draw the text, only color will be taken
      */
-    public abstract void drawTextRun(LayoutPiece piece, float x, float y, TextPaint paint);
+    public final void drawTextRun(LayoutPiece piece, float x, float y, TextPaint paint) {
+        if (piece.getAdvance() == 0 || (piece.getGlyphs().length == 0)
+                || quickReject(x, y - piece.getAscent(),
+                x + piece.getAdvance(), y + piece.getDescent())) {
+            return;
+        }
+        FontFamily lastFont = piece.getFont(0);
+        int nGlyphs = piece.getGlyphCount();
+        int lastPos = 0;
+        int curPos = 1;
+        for (; curPos < nGlyphs; curPos++) {
+            FontFamily curFont = piece.getFont(curPos);
+            if (lastFont != curFont) {
+                drawGlyphs(piece.getGlyphs(), lastPos,
+                        piece.getPositions(), lastPos << 1, curPos - lastPos,
+                        lastFont, x, y, paint);
+                lastFont = curFont;
+                lastPos = curPos;
+            }
+        }
+        drawGlyphs(piece.getGlyphs(), lastPos,
+                piece.getPositions(), lastPos << 1, curPos - lastPos,
+                lastFont, x, y, paint);
+    }
 
     /**
      * Supported primitive topologies, corresponding to OpenGL and Vulkan defined values.

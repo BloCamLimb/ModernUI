@@ -2413,14 +2413,13 @@ public final class GLSurfaceCanvas extends GLCanvas {
         if (start == end) {
             return;
         }
-        final int color = paint.getColor();
         if (end - start <= LayoutCache.MAX_PIECE_LENGTH) {
             LayoutPiece piece = LayoutCache.getOrCreate(text, start, end, start, end, false, paint);
             switch (align & Gravity.HORIZONTAL_GRAVITY_MASK) {
                 case Gravity.CENTER_HORIZONTAL -> x -= piece.getAdvance() / 2f;
                 case Gravity.RIGHT -> x -= piece.getAdvance();
             }
-            drawTextRun(piece, x, y, color, paint);
+            drawTextRun(piece, x, y, paint);
         } else {
             final float originalX = x;
             final int pst = mDrawTexts.size();
@@ -2428,7 +2427,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             do {
                 e = Math.min(e + LayoutCache.MAX_PIECE_LENGTH, end);
                 LayoutPiece piece = LayoutCache.getOrCreate(text, s, e, s, e, false, paint);
-                drawTextRun(piece, x, y, color, paint);
+                drawTextRun(piece, x, y, paint);
                 x += piece.getAdvance();
                 s = e;
             } while (s < end);
@@ -2450,45 +2449,20 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     @Override
-    public void drawTextRun(@NonNull LayoutPiece piece, float x, float y, @NonNull TextPaint paint) {
-        drawTextRun(piece, x, y, paint.getColor(), paint);
-    }
-
-    private void drawTextRun(@NonNull LayoutPiece piece, float x, float y, int color, TextPaint paint) {
-        if (piece.getAdvance() == 0 || (piece.getGlyphs().length == 0)
-                || quickReject(x, y - piece.getAscent(),
-                x + piece.getAdvance(), y + piece.getDescent())) {
-            return;
-        }
+    public void drawGlyphs(@NonNull int[] glyphs, int glyphOffset,
+                           @NonNull float[] positions, int positionOffset,
+                           int glyphCount, @NonNull FontFamily font,
+                           float x, float y,
+                           @NonNull TextPaint paint) {
         drawMatrix();
+        int color = paint.getColor();
         float alpha = (color >>> 24) / 255.0f;
         float red = ((color >> 16) & 0xff) / 255.0f;
         float green = ((color >> 8) & 0xff) / 255.0f;
         float blue = (color & 0xff) / 255.0f;
-        FontFamily lastFont = piece.getFont(0);
-        int nGlyphs = piece.getGlyphCount();
-        int lastPos = 0;
-        int curPos = 1;
-        for (; curPos < nGlyphs; curPos++) {
-            FontFamily curFont = piece.getFont(curPos);
-            if (lastFont != curFont) {
-                mDrawTexts.add(new DrawTextOp(piece.getGlyphs(), lastPos,
-                        piece.getPositions(), lastPos << 1, curPos - lastPos,
-                        x, y, lastFont.getClosestMatch(paint.getFontStyle()).deriveFont(paint.getTextSize())));
-                checkUniformStagingBuffer()
-                        .putFloat(red * alpha)
-                        .putFloat(green * alpha)
-                        .putFloat(blue * alpha)
-                        .putFloat(alpha);
-                mDrawOps.add(DRAW_TEXT);
-
-                lastFont = curFont;
-                lastPos = curPos;
-            }
-        }
-        mDrawTexts.add(new DrawTextOp(piece.getGlyphs(), lastPos,
-                piece.getPositions(), lastPos << 1, curPos - lastPos,
-                x, y, lastFont.getClosestMatch(paint.getFontStyle()).deriveFont(paint.getTextSize())));
+        mDrawTexts.add(new DrawTextOp(glyphs, glyphOffset,
+                positions, positionOffset, glyphCount,
+                x, y, font.getClosestMatch(paint.getFontStyle()).deriveFont(paint.getTextSize())));
         checkUniformStagingBuffer()
                 .putFloat(red * alpha)
                 .putFloat(green * alpha)
