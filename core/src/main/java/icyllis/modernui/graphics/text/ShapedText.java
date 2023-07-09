@@ -112,6 +112,13 @@ public class ShapedText {
     }
 
     /**
+     * Returns the number of characters (constructor <code>limit - start</code> in code units).
+     */
+    public int getCharCount() {
+        return mAdvances.length;
+    }
+
+    /**
      * The array of all chars advance, the length and order are relative to the text buffer.
      * Only grapheme cluster bounds have advances, others are zeros. For example:
      * [13.57, 0, 14.26, 0, 0], meaning c[0] and c[1] become a cluster; c[2], c[3] and c[4]

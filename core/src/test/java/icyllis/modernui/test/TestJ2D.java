@@ -25,7 +25,6 @@ import org.lwjgl.system.MemoryUtil;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.font.GlyphVector;
-import java.awt.font.TextAttribute;
 import java.awt.geom.Arc2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -34,7 +33,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Map;
 
 public class TestJ2D {
 

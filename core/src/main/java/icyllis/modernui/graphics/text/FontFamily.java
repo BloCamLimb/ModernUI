@@ -18,20 +18,29 @@
 
 package icyllis.modernui.graphics.text;
 
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.UnmodifiableView;
 
 import java.awt.*;
+import java.io.*;
 import java.util.*;
 import java.util.function.Function;
 
 public class FontFamily {
 
-    @UnmodifiableView
+    public static final String SANS_SERIF = Font.SANS_SERIF;
+    public static final String SERIF = Font.SERIF;
+    public static final String MONOSPACED = Font.MONOSPACED;
+
     private static final Map<String, FontFamily> sSystemFontMap;
-    @UnmodifiableView
     private static final Map<String, String> sSystemFontAliases;
+
+    @UnmodifiableView
+    private static final Map<String, FontFamily> sSystemFontMapView;
+    @UnmodifiableView
+    private static final Map<String, String> sSystemFontAliasesView;
 
     static {
         // Use Java's logical font as the default initial font if user does not override it in some configuration files
@@ -58,23 +67,67 @@ public class FontFamily {
         map.computeIfAbsent(Font.SERIF, mapping);
         map.computeIfAbsent(Font.MONOSPACED, mapping);
 
-        sSystemFontMap = Collections.unmodifiableMap(map);
-        sSystemFontAliases = Collections.unmodifiableMap(aliases);
+        sSystemFontMap = map;
+        sSystemFontAliases = aliases;
+        sSystemFontMapView = Collections.unmodifiableMap(map);
+        sSystemFontAliasesView = Collections.unmodifiableMap(aliases);
     }
 
     @UnmodifiableView
     public static Map<String, FontFamily> getSystemFontMap() {
-        return sSystemFontMap;
+        return sSystemFontMapView;
     }
 
     @UnmodifiableView
     public static Map<String, String> getSystemFontAliases() {
-        return sSystemFontAliases;
+        return sSystemFontAliasesView;
     }
 
     @Nullable
     public static FontFamily getSystemFontWithAlias(String name) {
-        return sSystemFontMap.get(sSystemFontAliases.getOrDefault(name, name));
+        return sSystemFontMapView.get(sSystemFontAliasesView.getOrDefault(name, name));
+    }
+
+    @NonNull
+    public static FontFamily[] createFonts(@NonNull File fontFile, boolean register) {
+        try {
+            Font[] fonts = Font.createFonts(fontFile);
+            return createFonts(fonts, register);
+        } catch (FontFormatException | IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @NonNull
+    public static FontFamily[] createFonts(@NonNull InputStream fontStream, boolean register) {
+        try {
+            Font[] fonts = Font.createFonts(fontStream);
+            return createFonts(fonts, register);
+        } catch (FontFormatException | IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @NonNull
+    private static FontFamily[] createFonts(@NonNull Font[] fonts, boolean register) {
+        FontFamily[] result = new FontFamily[fonts.length];
+        for (int i = 0; i < fonts.length; i++) {
+            Font font = fonts[i];
+            FontFamily family = new FontFamily(font);
+            if (register) {
+                String name = family.getFamilyName(Locale.ROOT);
+                String alias = family.getFamilyName(Locale.getDefault());
+                // override system
+                sSystemFontMap.put(name, family);
+                if (!name.equals(alias)) {
+                    sSystemFontAliases.put(alias, name);
+                }
+                GraphicsEnvironment.getLocalGraphicsEnvironment()
+                        .registerFont(font);
+            }
+            result[i] = family;
+        }
+        return result;
     }
 
     // root name
@@ -86,12 +139,11 @@ public class FontFamily {
     private Font mBoldItalic;
 
     @ApiStatus.Internal
-    public FontFamily(String name) {
+    protected FontFamily(String name) {
         mFamilyName = name;
     }
 
-    @ApiStatus.Internal
-    public FontFamily(Font font) {
+    private FontFamily(@NonNull Font font) {
         this(font.getFamily(Locale.ROOT));
         mFont = font;
         mBold = font.deriveFont(Font.BOLD);

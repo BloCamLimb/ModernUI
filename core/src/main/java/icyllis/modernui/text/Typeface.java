@@ -39,23 +39,17 @@ public class Typeface extends FontCollection {
     public static final Typeface SERIF;
     public static final Typeface MONOSPACED;
 
-    private static final Map<String, Typeface> sSystemFontMap = new HashMap<>();
+    private static final Map<String, Typeface> sSystemFontMap;
 
     static {
-        FontFamily sansSerif = Objects.requireNonNull(FontFamily.getSystemFontMap().get(
-                java.awt.Font.SANS_SERIF));
-
-        for (var e : FontFamily.getSystemFontMap().entrySet()) {
-            if (e.getKey().equals(java.awt.Font.SANS_SERIF)) {
-                sSystemFontMap.putIfAbsent(e.getKey(), createTypeface(e.getValue()));
-            } else {
-                sSystemFontMap.putIfAbsent(e.getKey(), createTypeface(e.getValue(), sansSerif));
-            }
+        Map<String, Typeface> map = new HashMap<>();
+        for (var entry : FontFamily.getSystemFontMap().entrySet()) {
+            map.putIfAbsent(entry.getKey(), createTypeface(entry.getValue()));
         }
-
-        SANS_SERIF = Objects.requireNonNull(sSystemFontMap.get(java.awt.Font.SANS_SERIF));
-        SERIF = Objects.requireNonNull(sSystemFontMap.get(java.awt.Font.SERIF));
-        MONOSPACED = Objects.requireNonNull(sSystemFontMap.get(java.awt.Font.MONOSPACED));
+        SANS_SERIF = Objects.requireNonNull(map.get(FontFamily.SANS_SERIF));
+        SERIF = Objects.requireNonNull(map.get(FontFamily.SERIF));
+        MONOSPACED = Objects.requireNonNull(map.get(FontFamily.MONOSPACED));
+        sSystemFontMap = map;
     }
 
     @ApiStatus.Internal
@@ -101,6 +95,6 @@ public class Typeface extends FontCollection {
     }
 
     private Typeface(@NonNull FontFamily... families) {
-         super(families);
+        super(families);
     }
 }
