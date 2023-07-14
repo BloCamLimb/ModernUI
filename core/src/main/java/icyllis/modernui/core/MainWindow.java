@@ -19,6 +19,7 @@
 package icyllis.modernui.core;
 
 import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.text.Editable;
 import icyllis.modernui.text.Selection;
 import icyllis.modernui.view.KeyEvent;
@@ -100,11 +101,16 @@ public final class MainWindow extends Window {
      */
     @NonNull
     public static MainWindow initialize(@NonNull String title, int width, int height) {
+        return initialize(title, width, height, null);
+    }
+
+    @NonNull
+    public static MainWindow initialize(@NonNull String title, int width, int height, @Nullable Monitor monitor) {
         Core.checkMainThread();
         if (sMainWindow != null) {
             throw new IllegalStateException("Multiple main windows");
         }
-        long handle = glfwCreateWindow(width, height, title, NULL, NULL);
+        long handle = glfwCreateWindow(width, height, title, monitor == null ? NULL : monitor.getHandle(), NULL);
         if (handle == NULL) {
             throw new IllegalStateException("Failed to create window");
         }

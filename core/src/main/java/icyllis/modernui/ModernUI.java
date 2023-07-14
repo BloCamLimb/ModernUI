@@ -297,13 +297,16 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         LOGGER.info(MARKER, "Initializing render thread");
         final Window window = mWindow;
         window.makeCurrent();
-        if (!Core.initOpenGL()) {
-            throw new IllegalStateException("Failed to initialize OpenGL");
+        try {
+            if (!Core.initOpenGL()) {
+                GLCore.showCapsErrorDialog();
+                throw new IllegalStateException("Failed to initialize OpenGL");
+            }
+        } finally {
+            latch.countDown();
         }
-        latch.countDown();
 
         GLCore.setupDebugCallback();
-        GLCore.showCapsErrorDialog();
 
         final GLSurfaceCanvas canvas = GLSurfaceCanvas.initialize();
 
