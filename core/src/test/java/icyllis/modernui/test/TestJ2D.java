@@ -19,6 +19,8 @@
 package icyllis.modernui.test;
 
 import icyllis.modernui.core.Core;
+import icyllis.modernui.graphics.Matrix3;
+import icyllis.modernui.graphics.Matrix4;
 import org.lwjgl.stb.*;
 import org.lwjgl.system.MemoryUtil;
 
@@ -33,18 +35,46 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
 
 public class TestJ2D {
 
     public static void main(String[] args) throws IOException, FontFormatException {
         System.setProperty("java.awt.headless", "true");
         System.out.println(System.getProperty("sun.jnu.encoding"));
+        Toolkit tk = Toolkit.getDefaultToolkit();
+        System.out.println(tk);
+        System.out.println(tk.getDesktopProperty("win.text.fontSmoothingOn"));
+        System.out.println(tk.getDesktopProperty("win.text.fontSmoothingType"));
+        System.out.println(tk.getDesktopProperty("win.text.fontSmoothingOrientation"));
+        System.out.println(tk.getDesktopProperty("win.text.fontSmoothingContrast"));
 
-        var bm = new BufferedImage(800, 450, BufferedImage.TYPE_INT_RGB);
+        float pivotX = 10.0f*(float)Math.random();
+        float pivotY = 10.0f*(float)Math.random();
+        float translationX = 10.0f*(float)Math.random();
+        float translationY = 10.0f*(float)Math.random();
+        float scaleX = 10.0f*(float)Math.random();
+        float scaleY = 10.0f*(float)Math.random();
+        float rotationX = 10.0f*(float)Math.random();
+        float rotationY = 10.0f*(float)Math.random();
+        float rotationZ = 10.0f*(float)Math.random();
+        var mat1 = getOldMatrix(pivotX, pivotY, translationX, translationY, scaleX, scaleY, rotationX,rotationY,rotationZ);
+        var mat2 = getNewMatrix(pivotX, pivotY, translationX, translationY, scaleX, scaleY, rotationX,rotationY,rotationZ);
+        var mat3 = getNewMatrix2(pivotX, pivotY, translationX, translationY, scaleX, scaleY, rotationX,rotationY,rotationZ);
+        var mat4 = new Matrix4();
+        mat3.invert(mat4);
+        float[] v1 = {4, 6, 0, 1};
+        System.out.printf("%s\n%s\n%s\n%s", mat3.isApproxEqual(mat2), mat1, mat2, mat3);
+        mapVec4(mat3, v1);
+        System.out.println(Arrays.toString(v1));
+        mapVec4(mat4, v1);
+        System.out.println(Arrays.toString(v1));
+
+        var bm = new BufferedImage(800, 450, BufferedImage.TYPE_USHORT_565_RGB);
         var g2d = bm.createGraphics();
 
-        g2d.setColor(Color.black);
-        g2d.setBackground(Color.white);
+        g2d.setColor(Color.white);
+        g2d.setBackground(Color.black);
         g2d.clearRect(0, 0, 800, 450);
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
@@ -55,12 +85,12 @@ public class TestJ2D {
         g2d.setStroke(new BasicStroke(6, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
         g2d.draw(arc);
 
-        Font font = new Font("Microsoft YaHei UI", Font.PLAIN, 32);
-        //font = Font.createFonts(new File("F:\\NotoColorEmoji.ttf"))[0];
-        //font = font.deriveFont(16f);
+        Font font = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
+        font = Font.createFonts(new File("E:\\Free Fonts\\biliw.otf"))[0];
+        font = font.deriveFont(12f);
         //font = new Font("Nirmala Text", Font.PLAIN, 16);
 
-        String s = "你说的对，但是《原神》是由米哈游自主研发的一款全新开放世界冒险游戏。";
+        String s = "Microsoft ClearType antialiasing";
         //s = "হ্যালো";
         var gv0 = font.layoutGlyphVector(g2d.getFontRenderContext(),
                 s.toCharArray(), 0, s.length(), Font.LAYOUT_LEFT_TO_RIGHT);
@@ -73,9 +103,15 @@ public class TestJ2D {
                 s.toCharArray(), 0, s.length(), Font.LAYOUT_LEFT_TO_RIGHT);
         g2d.drawGlyphVector(gv1, 2, 34);
 
+        g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         var gv2 = font.layoutGlyphVector(g2d.getFontRenderContext(),
                 s.toCharArray(), 0, s.length(), Font.LAYOUT_LEFT_TO_RIGHT);
         g2d.drawGlyphVector(gv2, 2, 52);
+
+        g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+        var gv8 = font.layoutGlyphVector(g2d.getFontRenderContext(),
+                s.toCharArray(), 0, s.length(), Font.LAYOUT_LEFT_TO_RIGHT);
+        g2d.drawGlyphVector(gv8, 2, 70);
 
         g2d.setStroke(new BasicStroke(1.0f));
         g2d.draw(gv2.getOutline(60, 260));
@@ -88,21 +124,28 @@ public class TestJ2D {
         //g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
         var gv5 = font.layoutGlyphVector(g2d.getFontRenderContext(),
                 s.toCharArray(), 0, s.length(), Font.LAYOUT_LEFT_TO_RIGHT);
-        g2d.drawGlyphVector(gv5, 2, 70);
+        g2d.drawGlyphVector(gv5, 2, 88);
 
         printGlyphVector(gv5);
+
+        g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_OFF);
+        //g2d.setRenderingHint(RenderingHints.KEY_TEXT_LCD_CONTRAST, 120);
+        var gv7 = font.layoutGlyphVector(g2d.getFontRenderContext(),
+                s.toCharArray(), 0, s.length(), Font.LAYOUT_LEFT_TO_RIGHT);
+        g2d.drawGlyphVector(gv7, 2, 106);
+
 
         font = new Font("SimSun", Font.PLAIN, 16);
         g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_GASP);
         g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_OFF);
         var gv3 = font.layoutGlyphVector(g2d.getFontRenderContext(),
                 s.toCharArray(), 0, s.length(), Font.LAYOUT_LEFT_TO_RIGHT);
-        g2d.drawGlyphVector(gv3, 2, 110);
+        g2d.drawGlyphVector(gv3, 2, 140);
 
-        g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+        g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
         var gv4 = font.layoutGlyphVector(g2d.getFontRenderContext(),
                 s.toCharArray(), 0, s.length(), Font.LAYOUT_LEFT_TO_RIGHT);
-        g2d.drawGlyphVector(gv4, 2, 150);
+        g2d.drawGlyphVector(gv4, 2, 170);
 
         ByteBuffer fontBuffer = null;
         try (FileChannel channel = FileChannel.open(Path.of("C:\\Windows\\Fonts\\msyh.ttc"), StandardOpenOption.READ)) {
@@ -139,5 +182,63 @@ public class TestJ2D {
             System.out.printf("Glyph index: %d, point: %s, charIndex: %d, advance: %f\n", i, gv.getGlyphPosition(i),
                     gv.getGlyphCharIndex(i), gv.getGlyphMetrics(i).getAdvance());
         }
+    }
+
+    public static Matrix4 getOldMatrix(float pivotX, float pivotY, float translationX, float translationY,
+                                       float scaleX, float scaleY, float rotationX, float rotationY, float rotationZ) {
+        Matrix4 matrix = new Matrix4();
+        matrix.setTranslate(pivotX + translationX, pivotY + translationY, 0);
+        matrix.preScale(scaleX, scaleY);
+        matrix.preTranslate(-pivotX, -pivotY);
+        Matrix4 matrix2 = Matrix4.identity();
+        matrix2.m34 = 1 / 1920f;
+        matrix2.preRotate(Math.toRadians(-rotationX),
+                Math.toRadians(-rotationY),
+                Math.toRadians(rotationZ));
+        matrix2.preTranslate(-pivotX, -pivotY);
+        matrix2.postTranslate(pivotX + translationX, pivotY + translationY);
+        matrix.postConcat(matrix2);
+        return matrix;
+    }
+
+    public static Matrix4 getNewMatrix(float pivotX, float pivotY, float translationX, float translationY,
+                                       float scaleX, float scaleY, float rotationX, float rotationY, float rotationZ) {
+        Matrix4 matrix = Matrix4.identity();
+        matrix.preTranslate(pivotX, pivotY);
+        matrix.preScale(scaleX, scaleY);
+        matrix.preTranslate(-pivotX, -pivotY);
+        Matrix4 matrix2 = Matrix4.identity();
+        matrix2.m34 = 1 / 1920f;
+        matrix2.preRotate(Math.toRadians(-rotationX),
+                Math.toRadians(-rotationY),
+                Math.toRadians(rotationZ));
+        matrix2.preTranslate(-pivotX, -pivotY);
+        matrix2.postTranslate(pivotX + translationX, pivotY + translationY);
+        matrix.postConcat(matrix2);
+        return matrix;
+    }
+
+    public static Matrix4 getNewMatrix2(float pivotX, float pivotY, float translationX, float translationY,
+                                        float scaleX, float scaleY, float rotationX, float rotationY, float rotationZ) {
+        Matrix4 matrix = Matrix4.identity();
+        matrix.m34 = 1 / 1920f;
+        matrix.preRotate(Math.toRadians(-rotationX),
+                Math.toRadians(-rotationY),
+                Math.toRadians(rotationZ));
+        matrix.preScale(scaleX, scaleY);
+        matrix.preTranslate(-pivotX, -pivotY);
+        matrix.postTranslate(pivotX + translationX, pivotY + translationY);
+        return matrix;
+    }
+
+    static void mapVec4(Matrix4 m, float[] vec) {
+        final float x = m.m11 * vec[0] + m.m21 * vec[1] + m.m31 * vec[2] + m.m41 * vec[3];
+        final float y = m.m12 * vec[0] + m.m22 * vec[1] + m.m32 * vec[2] + m.m42 * vec[3];
+        final float z = m.m13 * vec[0] + m.m23 * vec[1] + m.m33 * vec[2] + m.m43 * vec[3];
+        final float w = m.m14 * vec[0] + m.m24 * vec[1] + m.m34 * vec[2] + m.m44 * vec[3];
+        vec[0] = x;
+        vec[1] = y;
+        vec[2] = z;
+        vec[3] = w;
     }
 }

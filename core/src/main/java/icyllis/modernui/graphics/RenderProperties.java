@@ -18,6 +18,7 @@
 
 package icyllis.modernui.graphics;
 
+import icyllis.modernui.annotation.FloatRange;
 import icyllis.modernui.view.View;
 
 import javax.annotation.Nonnull;
@@ -64,6 +65,8 @@ public class RenderProperties {
     private boolean mHasOverlappingRendering = false;
     private boolean mPivotExplicitlySet = false;
     private boolean mMatrixOrPivotDirty = false;
+    private float mCameraDistance = 1;
+    private boolean mCameraDistanceExplicitlySet = false;
 
     public RenderProperties() {
         setLayerPaint(null);
@@ -84,25 +87,26 @@ public class RenderProperties {
                 mPivotX = mWidth / 2.0f;
                 mPivotY = mHeight / 2.0f;
             }
+            if (!mCameraDistanceExplicitlySet) {
+                mCameraDistance = Math.max(mWidth, mHeight);
+            }
             if (mMatrix == null) {
                 mMatrix = new Matrix4();
             }
             final Matrix4 matrix = mMatrix;
             // because it's 2D rendering, the Z value is used only for transparency sorting
             // which happens on the application layer, so there's no need to report the Z value to GPU
-            matrix.setIdentity();
+            matrix.setTranslate(mPivotX + mTranslationX, mPivotY + mTranslationY, mTranslationZ);
             if (Math.abs(mRotationX) == 0 && Math.abs(mRotationY) == 0) {
                 matrix.preRotateZ(Math.toRadians(mRotationZ));
             } else {
-                matrix.m34 = 1 / 1920f; // TODO camera distance
-                matrix.preRotate(Math.toRadians(-mRotationX),
-                        Math.toRadians(-mRotationY),
+                matrix.m34 = -1.0f / mCameraDistance;
+                matrix.preRotate(Math.toRadians(mRotationX),
+                        Math.toRadians(mRotationY),
                         Math.toRadians(mRotationZ));
             }
-            matrix.preTranslate(mTranslationX, mTranslationY);
             matrix.preScale(mScaleX, mScaleY);
             matrix.preTranslate(-mPivotX, -mPivotY);
-            matrix.postTranslate(mPivotX + mTranslationX, mPivotY + mTranslationY);
             return matrix;
         }
         return mMatrix;
@@ -713,6 +717,9 @@ public class RenderProperties {
      * @see #setPivotX(float)
      */
     public float getPivotX() {
+        if (!mPivotExplicitlySet) {
+            getMatrix();
+        }
         return mPivotX;
     }
 
@@ -743,6 +750,9 @@ public class RenderProperties {
      * @see #setPivotY(float)
      */
     public float getPivotY() {
+        if (!mPivotExplicitlySet) {
+            getMatrix();
+        }
         return mPivotY;
     }
 
@@ -765,6 +775,87 @@ public class RenderProperties {
     public boolean resetPivot() {
         if (mPivotExplicitlySet) {
             mPivotExplicitlySet = false;
+            mMatrixOrPivotDirty = true;
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * <p>Sets the distance along the Z axis (orthogonal to the X/Y plane on which
+     * RenderNodes are drawn) from the camera to this RenderNode. The camera's distance
+     * affects 3D transformations, for instance rotations around the X and Y
+     * axis. If the rotationX or rotationY properties are changed and this view is
+     * large (more than half the size of the screen), it is recommended to always
+     * use a camera distance that's greater than the height (X axis rotation) or
+     * the width (Y axis rotation) of this view.</p>
+     *
+     * <p>The distance of the camera from the drawing plane can have an affect on the
+     * perspective distortion of the RenderNode when it is rotated around the x or y axis.
+     * For example, a large distance will result in a large viewing angle, and there
+     * will not be much perspective distortion of the view as it rotates. A short
+     * distance may cause much more perspective distortion upon rotation, and can
+     * also result in some drawing artifacts if the rotated view ends up partially
+     * behind the camera (which is why the recommendation is to use a distance at
+     * least as far as the size of the view, if the view is to be rotated.)</p>
+     *
+     * <p>The distance is expressed in pixels and must always be positive</p>
+     *
+     * @param distance The distance in pixels, must always be positive
+     * @return True if the value changed, false if the new value was the same as the previous value.
+     * @see #setRotationX(float)
+     * @see #setRotationY(float)
+     */
+    public boolean setCameraDistance(@FloatRange(from = 0.0f, to = Float.MAX_VALUE) float distance) {
+        if (!Float.isFinite(distance) || distance <= 0.0f) {
+            throw new IllegalArgumentException("distance must be finite & positive, given="
+                    + distance);
+        }
+        final boolean dirty = mCameraDistance != distance;
+        if (dirty) {
+            mCameraDistance = distance;
+        }
+        if (dirty || !mCameraDistanceExplicitlySet) {
+            mMatrixOrPivotDirty = true;
+            mCameraDistanceExplicitlySet = true;
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Returns the distance in Z of the camera for this RenderNode
+     *
+     * @return the distance along the Z axis in pixels.
+     * @see #setCameraDistance(float)
+     */
+    @FloatRange(from = 0.0f, to = Float.MAX_VALUE)
+    public float getCameraDistance() {
+        if (!mCameraDistanceExplicitlySet) {
+            getMatrix();
+        }
+        return mCameraDistance;
+    }
+
+    /**
+     * @return Whether a camera distance was explicitly set with {@link #setCameraDistance(float)}.
+     * If no camera distance has been set then the camera distance will be the max(width,height)
+     * of the RenderNode.
+     */
+    public boolean isCameraDistanceExplicitlySet() {
+        return mCameraDistanceExplicitlySet;
+    }
+
+    /**
+     * Clears any camera distance previously set by a call to {@link #setCameraDistance(float)}.
+     * After calling this {@link #isCameraDistanceExplicitlySet()} will be false and the camera
+     * distance used for rotation will return to default to the max(width,height) of the view.
+     *
+     * @return True if the value changed, false if the new value was the same as the previous value.
+     */
+    public boolean resetCameraDistance() {
+        if (mCameraDistanceExplicitlySet) {
+            mCameraDistanceExplicitlySet = false;
             mMatrixOrPivotDirty = true;
             return true;
         }

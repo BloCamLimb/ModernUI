@@ -441,8 +441,8 @@ public class TestFragment extends Fragment {
             tv.setTextAlignment(TEXT_ALIGNMENT_GRAVITY);
 
             mTextView = tv;
-            //setRotationY(-30);
-            //setRotationX(30);
+            setRotationY(-30);
+            setRotationX(30);
 
             ObjectAnimator anim;
             {

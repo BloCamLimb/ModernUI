@@ -47,6 +47,7 @@ public class TestPipelineBuilder {
         GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE);
         GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 4);
         GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 5);
+        //GLFW.glfwWindowHint(GLFW.GLFW_TRANSPARENT_FRAMEBUFFER, GLFW.GLFW_TRUE);
 
         var window = MainWindow.initialize("Window", 1600, 900);
         window.makeCurrent();
@@ -69,6 +70,7 @@ public class TestPipelineBuilder {
                 GLCore.glGetInteger(GLCore.GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT));
 
         GLCore.glViewport(0, 0, window.getWidth(), window.getHeight());
+        GLCore.glClearBufferfv(GLCore.GL_COLOR, 0, new float[]{0, 0, 0, 0});
 
         DrawingManager drawingManager = dContext.getDrawingManager();
 
