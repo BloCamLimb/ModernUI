@@ -19,7 +19,7 @@
 package icyllis.modernui.view;
 
 import icyllis.modernui.core.Core;
-import icyllis.modernui.graphics.Matrix4;
+import icyllis.arc3d.core.Matrix4;
 import icyllis.modernui.util.Pools;
 import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.glfw.GLFW;

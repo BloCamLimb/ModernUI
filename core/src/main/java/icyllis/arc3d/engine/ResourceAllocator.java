@@ -19,7 +19,7 @@
 package icyllis.arc3d.engine;
 
 import icyllis.modernui.annotation.NonNull;
-import icyllis.arc3d.SharedPtr;
+import icyllis.arc3d.core.SharedPtr;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 

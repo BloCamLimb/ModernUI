@@ -18,8 +18,8 @@
 
 package icyllis.modernui.test
 
-import icyllis.modernui.graphics.Rect
-import icyllis.modernui.graphics.RectanglePacker
+import icyllis.arc3d.core.Rect2i
+import icyllis.arc3d.core.RectanglePacker
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.core.config.Configurator
 import org.lwjgl.glfw.GLFW
@@ -77,11 +77,11 @@ fun main() {
         val h = random.nextInt(12, 37)
         val col = Color(random.nextInt(0x1000000))
 
-        val rect = Rect(0, 0, w, h)
+        val rect = Rect2i(0, 0, w, h)
         var start = GLFW.glfwGetTime()
         if (packer1.addRect(rect)) {
             g2d1.color = col
-            g2d1.drawRect(rect.left, rect.top, rect.width() - 1, rect.height() - 1)
+            g2d1.drawRect(rect.mLeft, rect.mTop, rect.width() - 1, rect.height() - 1)
             ++n1
         } else {
             ++fails
@@ -92,7 +92,7 @@ fun main() {
         start = GLFW.glfwGetTime()
         if (packer2.addRect(rect)) {
             g2d2.color = col
-            g2d2.drawRect(rect.left, rect.top, rect.width() - 1, rect.height() - 1)
+            g2d2.drawRect(rect.mLeft, rect.mTop, rect.width() - 1, rect.height() - 1)
             ++n2
         } else {
             ++fails
@@ -103,7 +103,7 @@ fun main() {
         start = GLFW.glfwGetTime()
         if (packer3.addRect(rect)) {
             g2d3.color = col
-            g2d3.drawRect(rect.left, rect.top, rect.width() - 1, rect.height() - 1)
+            g2d3.drawRect(rect.mLeft, rect.mTop, rect.width() - 1, rect.height() - 1)
             ++n3
         } else {
             ++fails
@@ -114,7 +114,7 @@ fun main() {
         start = GLFW.glfwGetTime()
         if (packer4.addRect(rect)) {
             g2d4.color = col
-            g2d4.drawRect(rect.left, rect.top, rect.width() - 1, rect.height() - 1)
+            g2d4.drawRect(rect.mLeft, rect.mTop, rect.width() - 1, rect.height() - 1)
             ++n4
         } else {
             ++fails
@@ -125,7 +125,7 @@ fun main() {
         start = GLFW.glfwGetTime()
         if (packer5.addRect(rect)) {
             g2d5.color = col
-            g2d5.drawRect(rect.left, rect.top, rect.width() - 1, rect.height() - 1)
+            g2d5.drawRect(rect.mLeft, rect.mTop, rect.width() - 1, rect.height() - 1)
             ++n5
         } else {
             ++fails

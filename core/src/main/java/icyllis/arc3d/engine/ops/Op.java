@@ -18,7 +18,7 @@
 
 package icyllis.arc3d.engine.ops;
 
-import icyllis.arc3d.Rect2f;
+import icyllis.arc3d.core.Rect2f;
 import icyllis.arc3d.engine.*;
 
 import javax.annotation.Nonnull;

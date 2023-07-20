@@ -28,7 +28,7 @@ import org.lwjgl.system.NativeType;
 import javax.annotation.concurrent.Immutable;
 import java.util.Objects;
 
-import static icyllis.arc3d.vulkan.VkCore.*;
+import static icyllis.arc3d.vulkan.VKCore.*;
 
 @Immutable
 public final class VkBackendFormat extends BackendFormat {

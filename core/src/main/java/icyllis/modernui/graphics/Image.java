@@ -18,7 +18,7 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.arc3d.SharedPtr;
+import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.Surface;
 import icyllis.arc3d.engine.*;
 import icyllis.modernui.annotation.*;

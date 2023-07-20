@@ -18,9 +18,9 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.Rect2i;
+import icyllis.arc3d.core.Rect2i;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.arc3d.SharedPtr;
+import icyllis.arc3d.core.SharedPtr;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Objects;

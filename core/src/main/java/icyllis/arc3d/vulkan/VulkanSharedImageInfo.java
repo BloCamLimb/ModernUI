@@ -16,20 +16,35 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine;
+package icyllis.arc3d.vulkan;
 
-import icyllis.arc3d.core.Rect2f;
-import icyllis.arc3d.core.Rect2i;
+public final class VulkanSharedImageInfo {
 
-/**
- * {@link Clip} is an abstract base class for producing a clip. It constructs a
- * clip mask if necessary, and fills out a {@link ClipResult} instructing the
- * caller on how to set up the draw state.
- */
-public abstract class Clip {
+    private volatile int mLayout;
+    private volatile int mQueueFamilyIndex;
 
-    public static void getPixelBounds(Rect2f bounds, boolean aa,
-                                      boolean exterior, Rect2i out) {
+    public VulkanSharedImageInfo(VulkanImageInfo info) {
+        this(info.mImageLayout, info.mCurrentQueueFamily);
+    }
 
+    public VulkanSharedImageInfo(int layout, int queueFamilyIndex) {
+        mLayout = layout;
+        mQueueFamilyIndex = queueFamilyIndex;
+    }
+
+    public void setImageLayout(int layout) {
+        mLayout = layout;
+    }
+
+    public int getImageLayout() {
+        return mLayout;
+    }
+
+    public void setQueueFamilyIndex(int queueFamilyIndex) {
+        mQueueFamilyIndex = queueFamilyIndex;
+    }
+
+    public int getQueueFamilyIndex() {
+        return mQueueFamilyIndex;
     }
 }

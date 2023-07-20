@@ -16,20 +16,33 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine;
+package icyllis.arc3d.vulkan;
 
-import icyllis.arc3d.core.Rect2f;
-import icyllis.arc3d.core.Rect2i;
+import org.lwjgl.vulkan.VkCommandBuffer;
+import org.lwjgl.vulkan.VkDevice;
 
-/**
- * {@link Clip} is an abstract base class for producing a clip. It constructs a
- * clip mask if necessary, and fills out a {@link ClipResult} instructing the
- * caller on how to set up the draw state.
- */
-public abstract class Clip {
+import static icyllis.arc3d.vulkan.VKCore.vkCmdDraw;
 
-    public static void getPixelBounds(Rect2f bounds, boolean aa,
-                                      boolean exterior, Rect2i out) {
+public abstract class VulkanCommandBuffer extends VkCommandBuffer {
 
+    protected boolean mIsRecording = false;
+
+    public VulkanCommandBuffer(VkDevice device, long handle) {
+        super(handle, device);
+    }
+
+    public void draw(int vertexCount,
+                     int instanceCount,
+                     int firstVertex,
+                     int firstInstance) {
+        vkCmdDraw(this,
+                vertexCount,
+                instanceCount,
+                firstVertex,
+                firstInstance);
+    }
+
+    public boolean isRecording() {
+        return mIsRecording;
     }
 }

@@ -16,7 +16,31 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d;
+package icyllis.arc3d.vulkan;
 
-public abstract class Strike {
+import icyllis.arc3d.engine.DirectContext;
+import icyllis.arc3d.engine.Engine;
+import org.lwjgl.vulkan.VkDevice;
+
+public abstract class VulkanEngine extends Engine {
+
+    private VkDevice mDevice;
+    private boolean mProtectedContext;
+    private int mQueueIndex;
+
+    public VulkanEngine(DirectContext context) {
+        super(context, null);
+    }
+
+    public VkDevice device() {
+        return mDevice;
+    }
+
+    public int getQueueIndex() {
+        return mQueueIndex;
+    }
+
+    public boolean isProtectedContext() {
+        return mProtectedContext;
+    }
 }

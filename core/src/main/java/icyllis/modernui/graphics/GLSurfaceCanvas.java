@@ -18,7 +18,8 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.arc3d.SharedPtr;
+import icyllis.arc3d.core.Matrix4;
+import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.geom.DefaultGeoProc;
 import icyllis.arc3d.engine.shading.UniformHandler;
@@ -1121,7 +1122,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             GLBuffer newBuffer = GLBuffer.make(mEngine,
                     mColorMeshStagingBuffer.capacity(),
                     Engine.BufferUsageFlags.kVertex |
-                            Engine.BufferUsageFlags.kStream);
+                            Engine.BufferUsageFlags.kVolatile);
             if (newBuffer == null) {
                 throw new IllegalStateException("Failed to create color mesh buffer");
             }
@@ -1145,7 +1146,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             GLBuffer newBuffer = GLBuffer.make(mEngine,
                     mTextureMeshStagingBuffer.capacity() + preserveForLayer,
                     Engine.BufferUsageFlags.kVertex |
-                            Engine.BufferUsageFlags.kStream);
+                            Engine.BufferUsageFlags.kVolatile);
             if (newBuffer == null) {
                 throw new IllegalStateException("Failed to create texture mesh buffer");
             }
@@ -1172,7 +1173,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                 GLBuffer newBuffer = GLBuffer.make(mEngine,
                         mGlyphStagingBuffer.capacity(),
                         Engine.BufferUsageFlags.kVertex |
-                                Engine.BufferUsageFlags.kStream);
+                                Engine.BufferUsageFlags.kVolatile);
                 if (newBuffer == null) {
                     throw new IllegalStateException("Failed to create buffer for glyph mesh");
                 }

@@ -18,12 +18,10 @@
 
 package icyllis.arc3d.engine.ops;
 
-import icyllis.arc3d.Rect2f;
+import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.geom.RoundRectGeoProc;
 import icyllis.modernui.annotation.NonNull;
-import icyllis.arc3d.SharedPtr;
-import icyllis.modernui.graphics.Matrix3;
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.ByteBuffer;
@@ -42,9 +40,9 @@ public class RoundRectOp extends MeshDrawOp {
     private Rect2f mLocalRect;
     private float mCornerRadius;
     private float mStrokeRadius;
-    private Matrix3 mViewMatrix;
+    private Matrix mViewMatrix;
 
-    public RoundRectOp(float[] color, Rect2f localRect, float cornerRadius, float strokeRadius, Matrix3 viewMatrix) {
+    public RoundRectOp(float[] color, Rect2f localRect, float cornerRadius, float strokeRadius, Matrix viewMatrix) {
         mColor = color;
         mLocalRect = localRect;
         mCornerRadius = cornerRadius;

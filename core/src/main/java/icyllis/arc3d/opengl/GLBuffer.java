@@ -19,7 +19,7 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.modernui.graphics.RefCnt;
-import icyllis.arc3d.SharedPtr;
+import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.*;
 import org.lwjgl.system.MemoryUtil;
 
@@ -153,8 +153,10 @@ public final class GLBuffer extends Buffer {
     public int getUsageFlag() {
         if ((mUsage & Engine.BufferUsageFlags.kTransferDst) != 0) {
             return GL_DYNAMIC_READ;
-        } else if ((mUsage & Engine.BufferUsageFlags.kStream) != 0) {
+        } else if ((mUsage & Engine.BufferUsageFlags.kVolatile) != 0) {
             return GL_STREAM_DRAW;
+        } else if ((mUsage & Engine.BufferUsageFlags.kStatic) != 0) {
+            return GL_STATIC_DRAW;
         } else {
             return GL_DYNAMIC_DRAW;
         }

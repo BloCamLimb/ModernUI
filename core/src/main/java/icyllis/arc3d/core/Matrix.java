@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,8 +16,9 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics;
+package icyllis.arc3d.core;
 
+import icyllis.modernui.graphics.MathUtil;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
@@ -27,7 +28,7 @@ import javax.annotation.Nonnull;
  */
 //TODO type mask and others are WIP
 @SuppressWarnings("unused")
-public final class Matrix3 implements Cloneable {
+public class Matrix implements Cloneable {
 
     /**
      * TypeMask
@@ -61,19 +62,19 @@ public final class Matrix3 implements Cloneable {
     // [m11 m12 m13]
     // [m21 m22 m23]
     // [m31 m32 m33] <- [m31 m32] represents the origin
-    float m11;
-    float m12;
-    float m13;
-    float m21;
-    float m22;
-    float m23;
-    float m31;
-    float m32;
-    float m33;
+    protected float m11;
+    protected float m12;
+    protected float m13;
+    protected float m21;
+    protected float m22;
+    protected float m23;
+    protected float m31;
+    protected float m32;
+    protected float m33;
 
-    int mTypeMask;
+    protected int mTypeMask;
 
-    Matrix3() {
+    protected Matrix() {
     }
 
     /**
@@ -82,8 +83,8 @@ public final class Matrix3 implements Cloneable {
      * @return an identity matrix
      */
     @Nonnull
-    public static Matrix3 identity() {
-        final Matrix3 m = new Matrix3();
+    public static Matrix identity() {
+        final Matrix m = new Matrix();
         m.m11 = m.m22 = m.m33 = 1.0f;
         m.mTypeMask = Identity_Mask | AxisAligned_Mask;
         return m;
@@ -104,10 +105,10 @@ public final class Matrix3 implements Cloneable {
      * @return the matrix
      */
     @Nonnull
-    public static Matrix3 makeAll(float scaleX, float shearY, float persp0,
-                                  float shearX, float scaleY, float persp1,
-                                  float transX, float transY, float persp2) {
-        final Matrix3 m = new Matrix3();
+    public static Matrix makeAll(float scaleX, float shearY, float persp0,
+                                 float shearX, float scaleY, float persp1,
+                                 float transX, float transY, float persp2) {
+        final Matrix m = new Matrix();
         m.setAll(scaleX, shearY, persp0, shearX, scaleY, persp1, transX, transY, persp2);
         return m;
     }
@@ -311,7 +312,7 @@ public final class Matrix3 implements Cloneable {
      *
      * @param mat the matrix to multiply
      */
-    public void preConcat(@Nonnull Matrix3 mat) {
+    public void preConcat(@Nonnull Matrix mat) {
         final float f11 = mat.m11 * m11 + mat.m12 * m21 + mat.m13 * m31;
         final float f12 = mat.m11 * m12 + mat.m12 * m22 + mat.m13 * m32;
         final float f13 = mat.m11 * m13 + mat.m12 * m23 + mat.m13 * m33;
@@ -338,7 +339,7 @@ public final class Matrix3 implements Cloneable {
      *
      * @param mat the matrix to multiply
      */
-    public void postConcat(@Nonnull Matrix3 mat) {
+    public void postConcat(@Nonnull Matrix mat) {
         final float f11 = m11 * mat.m11 + m12 * mat.m21 + m13 * mat.m31;
         final float f12 = m11 * mat.m12 + m12 * mat.m22 + m13 * mat.m32;
         final float f13 = m11 * mat.m13 + m12 * mat.m23 + m13 * mat.m33;
@@ -380,7 +381,7 @@ public final class Matrix3 implements Cloneable {
      *
      * @param m the matrix to copy from
      */
-    public void set(@Nonnull Matrix3 m) {
+    public void set(@Nonnull Matrix m) {
         m11 = m.m11;
         m12 = m.m12;
         m13 = m.m13;
@@ -418,7 +419,7 @@ public final class Matrix3 implements Cloneable {
         m31 = transX;
         m32 = transY;
         m33 = persp2;
-        mTypeMask = Matrix3.Unknown_Mask;
+        mTypeMask = Matrix.Unknown_Mask;
     }
 
     /**
@@ -513,7 +514,7 @@ public final class Matrix3 implements Cloneable {
      * @param mat the destination matrix
      * @return {@code true} if this matrix is invertible.
      */
-    public boolean invert(@Nonnull Matrix3 mat) {
+    public boolean invert(@Nonnull Matrix mat) {
         float a = m11 * m22 - m12 * m21;
         float b = m13 * m21 - m11 * m23;
         float c = m12 * m23 - m13 * m22;
@@ -572,144 +573,63 @@ public final class Matrix3 implements Cloneable {
     }
 
     /**
-     * Map a rectangle points in the X-Y plane to get the maximum bounds.
-     *
-     * @param r the rectangle to transform
+     * Sets dst to bounds of src corners mapped by Matrix.
+     * Returns true if mapped corners are dst corners.
      */
-    public void mapRect(@Nonnull RectF r) {
-        float x1 = m11 * r.left + m21 * r.top + m31;
-        float y1 = m12 * r.left + m22 * r.top + m32;
-        float x2 = m11 * r.right + m21 * r.top + m31;
-        float y2 = m12 * r.right + m22 * r.top + m32;
-        float x3 = m11 * r.left + m21 * r.bottom + m31;
-        float y3 = m12 * r.left + m22 * r.bottom + m32;
-        float x4 = m11 * r.right + m21 * r.bottom + m31;
-        float y4 = m12 * r.right + m22 * r.bottom + m32;
-        if (hasPerspective()) {
-            // project
-            float w = 1.0f / (m13 * r.left + m23 * r.top + m33);
+    //@formatter:off
+    public final boolean mapRect(Rect2f src, Rect2f dst) {
+        int typeMask = getType();
+        if (typeMask <= Translate_Mask) {
+            dst.mLeft   = src.mLeft   + m31;
+            dst.mTop    = src.mTop    + m32;
+            dst.mRight  = src.mRight  + m31;
+            dst.mBottom = src.mBottom + m32;
+            return true;
+        }
+        if ((typeMask & ~(Scale_Mask | Translate_Mask)) == 0) {
+            dst.mLeft =   src.mLeft   * m11 + m31;
+            dst.mTop =    src.mTop    * m22 + m32;
+            dst.mRight =  src.mRight  * m11 + m31;
+            dst.mBottom = src.mBottom * m22 + m32;
+            return true;
+        }
+        float x1 = m11 * src.mLeft +  m21 * src.mTop    + m31;
+        float y1 = m12 * src.mLeft +  m22 * src.mTop    + m32;
+        float x2 = m11 * src.mRight + m21 * src.mTop    + m31;
+        float y2 = m12 * src.mRight + m22 * src.mTop    + m32;
+        float x3 = m11 * src.mLeft +  m21 * src.mBottom + m31;
+        float y3 = m12 * src.mLeft +  m22 * src.mBottom + m32;
+        float x4 = m11 * src.mRight + m21 * src.mBottom + m31;
+        float y4 = m12 * src.mRight + m22 * src.mBottom + m32;
+        if ((typeMask & Perspective_Mask) != 0) {
+            float w;
+            w = 1.0f / (m13 * src.mLeft  + m23 * src.mTop    + m33);
             x1 *= w;
             y1 *= w;
-            w = 1.0f / (m13 * r.right + m23 * r.top + m33);
+            w = 1.0f / (m13 * src.mRight + m23 * src.mTop    + m33);
             x2 *= w;
             y2 *= w;
-            w = 1.0f / (m13 * r.left + m23 * r.bottom + m33);
+            w = 1.0f / (m13 * src.mLeft  + m23 * src.mBottom + m33);
             x3 *= w;
             y3 *= w;
-            w = 1.0f / (m13 * r.right + m23 * r.bottom + m33);
+            w = 1.0f / (m13 * src.mRight + m23 * src.mBottom + m33);
             x4 *= w;
             y4 *= w;
         }
-        r.left = MathUtil.min(x1, x2, x3, x4);
-        r.top = MathUtil.min(y1, y2, y3, y4);
-        r.right = MathUtil.max(x1, x2, x3, x4);
-        r.bottom = MathUtil.max(y1, y2, y3, y4);
+        dst.mLeft   = MathUtil.min(x1, x2, x3, x4);
+        dst.mTop    = MathUtil.min(y1, y2, y3, y4);
+        dst.mRight  = MathUtil.max(x1, x2, x3, x4);
+        dst.mBottom = MathUtil.max(y1, y2, y3, y4);
+        return (typeMask & AxisAligned_Mask) != 0;
     }
+    //@formatter:on
 
     /**
-     * Map a rectangle points in the X-Y plane to get the maximum bounds.
-     *
-     * @param out the round values
+     * Sets rect to bounds of rect corners mapped by Matrix.
+     * Returns true if mapped corners are dst corners.
      */
-    public void mapRect(@Nonnull RectF r, @Nonnull Rect out) {
-        mapRect(r.left, r.top, r.right, r.bottom, out);
-    }
-
-    /**
-     * Map a rectangle points in the X-Y plane to get the maximum bounds.
-     *
-     * @param out the round values
-     */
-    public void mapRect(@Nonnull Rect r, @Nonnull Rect out) {
-        mapRect(r.left, r.top, r.right, r.bottom, out);
-    }
-
-    /**
-     * Map a rectangle points in the X-Y plane to get the maximum bounds.
-     *
-     * @param out the round values
-     */
-    public void mapRect(float l, float t, float r, float b, @Nonnull Rect out) {
-        float x1 = m11 * l + m21 * t + m31;
-        float y1 = m12 * l + m22 * t + m32;
-        float x2 = m11 * r + m21 * t + m31;
-        float y2 = m12 * r + m22 * t + m32;
-        float x3 = m11 * l + m21 * b + m31;
-        float y3 = m12 * l + m22 * b + m32;
-        float x4 = m11 * r + m21 * b + m31;
-        float y4 = m12 * r + m22 * b + m32;
-        if (hasPerspective()) {
-            // project
-            float w = 1.0f / (m13 * l + m23 * t + m33);
-            x1 *= w;
-            y1 *= w;
-            w = 1.0f / (m13 * r + m23 * t + m33);
-            x2 *= w;
-            y2 *= w;
-            w = 1.0f / (m13 * l + m23 * b + m33);
-            x3 *= w;
-            y3 *= w;
-            w = 1.0f / (m13 * r + m23 * b + m33);
-            x4 *= w;
-            y4 *= w;
-        }
-        out.left = Math.round(MathUtil.min(x1, x2, x3, x4));
-        out.top = Math.round(MathUtil.min(y1, y2, y3, y4));
-        out.right = Math.round(MathUtil.max(x1, x2, x3, x4));
-        out.bottom = Math.round(MathUtil.max(y1, y2, y3, y4));
-    }
-
-    /**
-     * Map a rectangle points in the X-Y plane to get the maximum bounds.
-     *
-     * @param out the round out values
-     */
-    public void mapRectOut(@Nonnull RectF r, @Nonnull Rect out) {
-        mapRectOut(r.left, r.top, r.right, r.bottom, out);
-    }
-
-    /**
-     * Map a rectangle points in the X-Y plane to get the maximum bounds.
-     *
-     * @param out the round out values
-     */
-    public void mapRectOut(@Nonnull Rect r, @Nonnull Rect out) {
-        mapRectOut(r.left, r.top, r.right, r.bottom, out);
-    }
-
-    /**
-     * Map a rectangle points in the X-Y plane to get the maximum bounds.
-     *
-     * @param out the round out values
-     */
-    public void mapRectOut(float l, float t, float r, float b, @Nonnull Rect out) {
-        float x1 = m11 * l + m21 * t + m31;
-        float y1 = m12 * l + m22 * t + m32;
-        float x2 = m11 * r + m21 * t + m31;
-        float y2 = m12 * r + m22 * t + m32;
-        float x3 = m11 * l + m21 * b + m31;
-        float y3 = m12 * l + m22 * b + m32;
-        float x4 = m11 * r + m21 * b + m31;
-        float y4 = m12 * r + m22 * b + m32;
-        if (hasPerspective()) {
-            // project
-            float w = 1.0f / (m13 * l + m23 * t + m33);
-            x1 *= w;
-            y1 *= w;
-            w = 1.0f / (m13 * r + m23 * t + m33);
-            x2 *= w;
-            y2 *= w;
-            w = 1.0f / (m13 * l + m23 * b + m33);
-            x3 *= w;
-            y3 *= w;
-            w = 1.0f / (m13 * r + m23 * b + m33);
-            x4 *= w;
-            y4 *= w;
-        }
-        out.left = (int) Math.floor(MathUtil.min(x1, x2, x3, x4));
-        out.top = (int) Math.floor(MathUtil.min(y1, y2, y3, y4));
-        out.right = (int) Math.ceil(MathUtil.max(x1, x2, x3, x4));
-        out.bottom = (int) Math.ceil(MathUtil.max(y1, y2, y3, y4));
+    public final boolean mapRect(Rect2f rect) {
+        return mapRect(rect, rect);
     }
 
     /**
@@ -738,7 +658,7 @@ public final class Matrix3 implements Cloneable {
      * @param m the matrix to compare.
      * @return {@code true} if this matrix is equivalent to other matrix.
      */
-    public boolean equals(@Nonnull Matrix3 m) {
+    public boolean equals(@Nonnull Matrix m) {
         if (this == m) return true;
         if (Float.floatToIntBits(m.m11) != Float.floatToIntBits(m11)) return false;
         if (Float.floatToIntBits(m.m12) != Float.floatToIntBits(m12)) return false;
@@ -826,7 +746,7 @@ public final class Matrix3 implements Cloneable {
      * @param m the matrix to compare.
      * @return {@code true} if this matrix is equivalent to other matrix.
      */
-    public boolean isApproxEqual(@Nonnull Matrix3 m) {
+    public boolean isApproxEqual(@Nonnull Matrix m) {
         return MathUtil.isApproxEqual(m11, m.m11) &&
                 MathUtil.isApproxEqual(m12, m.m12) &&
                 MathUtil.isApproxEqual(m13, m.m13) &&
@@ -860,7 +780,7 @@ public final class Matrix3 implements Cloneable {
      */
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof Matrix3 m)) {
+        if (!(o instanceof Matrix m)) {
             return false;
         }
         return m11 == m.m11 &&
@@ -892,9 +812,9 @@ public final class Matrix3 implements Cloneable {
      */
     @Nonnull
     @Override
-    public Matrix3 clone() {
+    public Matrix clone() {
         try {
-            return (Matrix3) super.clone();
+            return (Matrix) super.clone();
         } catch (CloneNotSupportedException e) {
             throw new InternalError(e);
         }

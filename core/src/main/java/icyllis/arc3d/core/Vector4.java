@@ -16,25 +16,28 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics;
+package icyllis.arc3d.core;
 
-//TODO
-public final class SamplingOptions {
+import javax.annotation.Nonnull;
 
-    //@formatter:off
+/**
+ * Represents a four-dimensional vector.
+ */
+@SuppressWarnings("unused")
+public class Vector4 {
+
+    // coordinate components
+    public float x;
+    public float y;
+    public float z;
+    public float w;
+
     /**
-     * Filters.
+     * Transform this vector by a 4x4 transformation matrix.
+     *
+     * @param mat the matrix used as the transformation
      */
-    public static final int
-            FILTER_NEAREST = 0, // single sample point (nearest neighbor)
-            FILTER_LINEAR  = 1; // interpolate between 2x2 sample points (bilinear interpolation)
-
-    /**
-     * Mipmap modes.
-     */
-    public static final int
-            MIPMAP_MODE_NONE    = 0, // ignore mipmap levels, sample from the "base"
-            MIPMAP_MODE_NEAREST = 1, // sample from the nearest level
-            MIPMAP_MODE_LINEAR  = 2; // interpolate between the two nearest levels
-    //@formatter:on
+    public void transform(@Nonnull Matrix4 mat) {
+        mat.preTransform(this);
+    }
 }

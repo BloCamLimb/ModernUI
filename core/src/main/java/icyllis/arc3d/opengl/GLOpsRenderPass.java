@@ -18,10 +18,10 @@
 
 package icyllis.arc3d.opengl;
 
-import icyllis.arc3d.Rect2f;
-import icyllis.arc3d.Rect2i;
+import icyllis.arc3d.core.Rect2f;
+import icyllis.arc3d.core.Rect2i;
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.SharedPtr;
+import icyllis.arc3d.core.SharedPtr;
 
 import static icyllis.arc3d.opengl.GLCore.*;
 import static icyllis.arc3d.engine.Engine.*;

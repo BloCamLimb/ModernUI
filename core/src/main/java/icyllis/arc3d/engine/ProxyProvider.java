@@ -18,7 +18,7 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.SharedPtr;
+import icyllis.arc3d.core.SharedPtr;
 import icyllis.modernui.graphics.RefCnt;
 import icyllis.modernui.graphics.Bitmap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;

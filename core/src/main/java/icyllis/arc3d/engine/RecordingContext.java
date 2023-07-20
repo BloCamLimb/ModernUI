@@ -18,7 +18,7 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.Surface;
+import icyllis.arc3d.core.Surface;
 import icyllis.modernui.graphics.ImageInfo;
 import org.jetbrains.annotations.ApiStatus;
 

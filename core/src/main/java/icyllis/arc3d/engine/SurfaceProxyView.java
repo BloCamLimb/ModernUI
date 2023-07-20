@@ -18,7 +18,7 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.SharedPtr;
+import icyllis.arc3d.core.SharedPtr;
 
 /**
  * Views a {@link SurfaceProxy} in the pipeline.
