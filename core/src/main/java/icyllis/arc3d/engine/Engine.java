@@ -18,8 +18,8 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.Rect2i;
-import icyllis.arc3d.SharedPtr;
+import icyllis.arc3d.core.Rect2i;
+import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.ops.OpsTask;
 import icyllis.arc3d.opengl.GLEngine;
 import icyllis.arc3d.shaderc.Compiler;
@@ -154,7 +154,8 @@ public abstract class Engine {
     }
 
     /**
-     * Describes the intended usage a GPU buffer.
+     * Describes the intended usage (type + access) a GPU buffer.
+     * This will affect memory allocation and pipeline commands.
      */
     public interface BufferUsageFlags {
 
@@ -166,31 +167,43 @@ public abstract class Engine {
          * Index buffer, also known as element buffer.
          */
         int kIndex = 1 << 1;
+
+        /**
+         * Staging buffer. Src meaning CPU to device, Dst meaning device to CPU.
+         * In OpenGL, this means only pixel transfer buffer.
+         */
+        int kTransferSrc = 1 << 2; // transfer src and host coherent
+        int kTransferDst = 1 << 3; // transfer dst and host cached
+
+        /**
+         * Uniform buffer, also known as constant buffer.
+         * This will be created as ring buffers.
+         */
+        int kUniform = 1 << 4;
         /**
          * Indirect buffer, also known as argument buffer.
+         * Not always available, check caps first.
          */
-        int kDrawIndirect = 1 << 2;
-
-        int kTransferSrc = 1 << 3; // transfer src only
-        int kTransferDst = 1 << 4; // transfer dst only
+        int kDrawIndirect = 1 << 5;
 
         /**
-         * For VBO, data store will be respecified once by Host and used at most a frame.
-         * (Per-frame updates, VBO, IBO, etc.)
-         */
-        int kStream = 1 << 5;
-        /**
-         * Data store will be specified by Host once and may be respecified
-         * repeatedly by Device. (Fixed vertex/index buffer, etc.)
+         * Data store will be written to once by CPU.
+         * A staging buffer is required to update it contents.
          */
         int kStatic = 1 << 6;
         /**
-         * Data store will be respecified randomly by Host and Device.
-         * (Uniform buffer, staging buffer, etc.)
+         * Data store will be written to occasionally, CPU writes, GPU reads.
+         * A staging buffer is required to update it contents.
          */
         int kDynamic = 1 << 7;
+        /**
+         * Data store will be written to once by CPU and used at most one frame.
+         * Will be host visible and persistently mapped, typically pinned memory.
+         */
+        int kVolatile = 1 << 8;
 
-        int kUniform = 1 << 8; // TODO remove, UBO is special buffers
+        // Note: Arc 3D itself doesn't use dynamic buffers,
+        // they are meant to render objects in large 3D scene.
     }
 
     /**

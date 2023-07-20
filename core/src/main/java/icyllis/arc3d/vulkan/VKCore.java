@@ -30,7 +30,7 @@ import static org.lwjgl.vulkan.KHRDisplaySwapchain.VK_ERROR_INCOMPATIBLE_DISPLAY
 import static org.lwjgl.vulkan.KHRSurface.*;
 import static org.lwjgl.vulkan.KHRSwapchain.*;
 
-public final class VkCore extends VK11 {
+public final class VKCore extends VK11 {
 
     public static final Marker MARKER = MarkerManager.getMarker("Vulkan");
 

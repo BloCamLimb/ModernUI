@@ -18,7 +18,7 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.arc3d.Surface;
+import icyllis.arc3d.core.Surface;
 
 /**
  * This class contains pre-processed graphics operations that can be replayed into

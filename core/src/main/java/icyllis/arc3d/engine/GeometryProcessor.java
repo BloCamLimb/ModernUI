@@ -18,11 +18,11 @@
 
 package icyllis.arc3d.engine;
 
+import icyllis.arc3d.core.Matrix;
 import icyllis.arc3d.engine.shading.*;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.MathUtil;
-import icyllis.modernui.graphics.Matrix3;
 
 import javax.annotation.concurrent.Immutable;
 import java.util.*;
@@ -553,10 +553,10 @@ public abstract class GeometryProcessor extends Processor {
          * @return new state, eiter matrix or state
          */
         //TODO move to other places
-        protected static Matrix3 setTransform(@NonNull UniformDataManager pdm,
-                                              @UniformHandler.UniformHandle int uniform,
-                                              @NonNull Matrix3 matrix,
-                                              @Nullable Matrix3 state) {
+        protected static Matrix setTransform(@NonNull UniformDataManager pdm,
+                                             @UniformHandler.UniformHandle int uniform,
+                                             @NonNull Matrix matrix,
+                                             @Nullable Matrix state) {
             if (uniform == Engine.INVALID_RESOURCE_HANDLE ||
                     (state != null && state.equals(matrix))) {
                 // No update needed

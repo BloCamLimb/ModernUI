@@ -18,7 +18,8 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.SharedPtr;
+import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.core.Surface;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -26,7 +27,7 @@ import javax.annotation.Nullable;
 /**
  * The {@link RenderTarget} manages all objects used by a renderable primary surface,
  * which are framebuffers, render passes and a set of attachments. This is the target
- * of {@link OpsRenderPass}, and may be associated with {@link icyllis.arc3d.Surface}.
+ * of {@link OpsRenderPass}, and may be associated with {@link Surface}.
  * <p>
  * A {@link RenderTarget} is always associated with a renderable primary surface, which
  * can be either a renderable {@link Texture} or a wrapped {@link RenderSurface}.

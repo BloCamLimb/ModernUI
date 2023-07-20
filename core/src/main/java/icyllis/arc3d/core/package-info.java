@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,28 +16,12 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics;
-
-import javax.annotation.Nonnull;
-
 /**
- * Represents a four-dimensional vector.
+ * Arc 3D Graphics Engine is a modern implementation to graphics API,
+ * providing accelerated graphics backed by various 3D graphics APIs
+ * (OpenGL and Vulkan), and optimized for desktop GPUs.
+ * <p>
+ * This package and {@link icyllis.modernui.graphics} refer to each other.
+ * Arc 3D doesn't refer other packages under Modern UI core framework.
  */
-@SuppressWarnings("unused")
-public class Vector4 {
-
-    // coordinate components
-    public float x;
-    public float y;
-    public float z;
-    public float w;
-
-    /**
-     * Transform this vector by a 4x4 transformation matrix.
-     *
-     * @param mat the matrix used as the transformation
-     */
-    public void transform(@Nonnull Matrix4 mat) {
-        mat.preTransform(this);
-    }
-}
+package icyllis.arc3d.core;

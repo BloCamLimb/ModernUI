@@ -18,7 +18,7 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.arc3d.SharedPtr;
+import icyllis.arc3d.core.SharedPtr;
 import it.unimi.dsi.fastutil.objects.*;
 
 import java.lang.invoke.MethodHandles;

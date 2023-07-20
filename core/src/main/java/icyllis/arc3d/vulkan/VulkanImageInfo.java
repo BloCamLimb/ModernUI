@@ -21,21 +21,21 @@ package icyllis.arc3d.vulkan;
 import icyllis.arc3d.engine.BackendTexture;
 import org.lwjgl.vulkan.EXTQueueFamilyForeign;
 
-import static icyllis.arc3d.vulkan.VkCore.*;
+import static icyllis.arc3d.vulkan.VKCore.*;
 
 /**
  * When wrapping a {@link BackendTexture} or {@link BackendRenderTarget}, the {@link #mCurrentQueueFamily}
- * should either be {@link VkCore#VK_QUEUE_FAMILY_IGNORED}, {@link VkCore#VK_QUEUE_FAMILY_EXTERNAL},
+ * should either be {@link VKCore#VK_QUEUE_FAMILY_IGNORED}, {@link VKCore#VK_QUEUE_FAMILY_EXTERNAL},
  * or {@link EXTQueueFamilyForeign#VK_QUEUE_FAMILY_FOREIGN_EXT}. If {@link #mSharingMode} is
- * {@link VkCore#VK_SHARING_MODE_EXCLUSIVE}, then {@link #mCurrentQueueFamily} can also be the graphics
+ * {@link VKCore#VK_SHARING_MODE_EXCLUSIVE}, then {@link #mCurrentQueueFamily} can also be the graphics
  * queue index passed into pipeline.
  * <p>
- * Note the image type is always {@link VkCore#VK_IMAGE_TYPE_2D}. When importing external memory,
+ * Note the image type is always {@link VKCore#VK_IMAGE_TYPE_2D}. When importing external memory,
  * {@link #mMemoryHandle} is POSIX file descriptor or Win32 NT handle (though <code>HANDLE</code> is defined
  * as <code>void*</code>, we can safely truncate it because Win32 handles are 32-bit significant).
  * If it is an NT handle, it must be released manually by the memory exporter (e.g. Vulkan).
  */
-public final class VkImageInfo extends VkAlloc {
+public final class VulkanImageInfo extends VulkanAllocation {
 
     public long mImage = VK_NULL_HANDLE;
     public int mImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -49,7 +49,7 @@ public final class VkImageInfo extends VkAlloc {
     public int mMemoryHandle = -1;
     public boolean mProtected = false;
 
-    public void set(VkImageInfo info) {
+    public void set(VulkanImageInfo info) {
         super.set(info);
         mImage = info.mImage;
         mImageLayout = info.mImageLayout;
@@ -69,7 +69,7 @@ public final class VkImageInfo extends VkAlloc {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
-        VkImageInfo that = (VkImageInfo) o;
+        VulkanImageInfo that = (VulkanImageInfo) o;
         if (mImage != that.mImage) return false;
         if (mImageLayout != that.mImageLayout) return false;
         if (mImageTiling != that.mImageTiling) return false;

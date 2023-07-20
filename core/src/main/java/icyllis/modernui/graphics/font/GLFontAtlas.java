@@ -18,6 +18,8 @@
 
 package icyllis.modernui.graphics.font;
 
+import icyllis.arc3d.core.Rect2i;
+import icyllis.arc3d.core.RectanglePacker;
 import icyllis.arc3d.engine.Engine;
 import icyllis.arc3d.opengl.GLTextureCompat;
 import icyllis.modernui.ModernUI;
@@ -80,7 +82,7 @@ public class GLFontAtlas implements AutoCloseable {
     private int mWidth;
     private int mHeight;
 
-    private final Rect mRect = new Rect();
+    private final Rect2i mRect = new Rect2i();
 
     private record Chunk(int x, int y, RectanglePacker packer) {
     }
@@ -155,17 +157,17 @@ public class GLFontAtlas implements AutoCloseable {
         }
 
         // include border
-        mTexture.upload(0, rect.left, rect.top,
+        mTexture.upload(0, rect.mLeft, rect.mTop,
                 rect.width(), rect.height(),
                 0, 0, 0, 1,
                 mMaskFormat == Engine.MASK_FORMAT_ARGB ? GL_RGBA : GL_RED, GL_UNSIGNED_BYTE, pixels);
         mTexture.generateMipmap();
 
         // exclude border
-        glyph.u1 = (float) (rect.left + GlyphManager.GLYPH_BORDER) / mWidth;
-        glyph.v1 = (float) (rect.top + GlyphManager.GLYPH_BORDER) / mHeight;
-        glyph.u2 = (float) (rect.right - GlyphManager.GLYPH_BORDER) / mWidth;
-        glyph.v2 = (float) (rect.bottom - GlyphManager.GLYPH_BORDER) / mHeight;
+        glyph.u1 = (float) (rect.mLeft + GlyphManager.GLYPH_BORDER) / mWidth;
+        glyph.v1 = (float) (rect.mTop + GlyphManager.GLYPH_BORDER) / mHeight;
+        glyph.u2 = (float) (rect.mRight - GlyphManager.GLYPH_BORDER) / mWidth;
+        glyph.v2 = (float) (rect.mBottom - GlyphManager.GLYPH_BORDER) / mHeight;
 
         return invalidated;
     }

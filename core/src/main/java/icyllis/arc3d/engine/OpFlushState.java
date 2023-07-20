@@ -18,7 +18,7 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.Rect2i;
+import icyllis.arc3d.core.Rect2i;
 
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;

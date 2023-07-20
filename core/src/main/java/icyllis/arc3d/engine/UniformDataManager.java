@@ -18,6 +18,8 @@
 
 package icyllis.arc3d.engine;
 
+import icyllis.arc3d.core.Matrix;
+import icyllis.arc3d.core.Matrix4;
 import icyllis.arc3d.engine.shading.UniformHandler;
 import icyllis.modernui.graphics.RefCnt;
 import icyllis.modernui.graphics.*;
@@ -685,9 +687,9 @@ public abstract class UniformDataManager extends RefCnt {
     }
 
     /**
-     * Convenience method for uploading a Matrix3 to a 3x3 matrix uniform.
+     * Convenience method for uploading a Matrix to a 3x3 matrix uniform.
      */
-    public void setMatrix3f(@UniformHandler.UniformHandle int u, Matrix3 matrix) {
+    public void setMatrix3f(@UniformHandler.UniformHandle int u, Matrix matrix) {
         int uni = mUniforms[u];
         assert ((uni >> 24) == SLDataType.kFloat3x3);
         long buffer = getBufferPtrAndMarkDirty(uni);

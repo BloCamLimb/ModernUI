@@ -18,6 +18,7 @@
 
 package icyllis.modernui.graphics;
 
+import icyllis.arc3d.core.Matrix4;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.graphics.text.*;
 import icyllis.modernui.text.TextPaint;

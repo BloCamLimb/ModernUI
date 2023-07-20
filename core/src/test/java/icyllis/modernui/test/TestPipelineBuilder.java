@@ -18,14 +18,13 @@
 
 package icyllis.modernui.test;
 
-import icyllis.arc3d.*;
+import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.Surface;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.ops.RoundRectOp;
 import icyllis.arc3d.opengl.*;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.core.MainWindow;
-import icyllis.modernui.graphics.Matrix3;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.lwjgl.glfw.GLFW;
@@ -76,7 +75,7 @@ public class TestPipelineBuilder {
 
         var rtv = new SurfaceProxyView(rt, Engine.SurfaceOrigin.kLowerLeft, Swizzle.RGBA);
         var op = new RoundRectOp(new float[]{0.88f, 0.075f, 0.11f, 1},
-                new Rect2f(90, 90, 180, 180), 10, 5, Matrix3.identity());
+                new Rect2f(90, 90, 180, 180), 10, 5, Matrix.identity());
         op.onPrepare(drawingManager.getFlushState(), rtv, 0);
         engine.getVertexPool().flush();
         engine.getInstancePool().flush();

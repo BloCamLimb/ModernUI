@@ -23,7 +23,7 @@ import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.MathUtil;
-import icyllis.modernui.graphics.Matrix4;
+import icyllis.arc3d.core.Matrix4;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.RectF;
 import icyllis.modernui.util.Pools;

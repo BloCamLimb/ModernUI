@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,8 +16,9 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics;
+package icyllis.arc3d.core;
 
+import icyllis.modernui.graphics.*;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
@@ -30,7 +31,7 @@ import java.nio.FloatBuffer;
  * The memory layout matches GLSL's column major and HLSL's row major.
  */
 @SuppressWarnings("unused")
-public final class Matrix4 implements Cloneable {
+public class Matrix4 implements Cloneable {
 
     // sequential matrix elements, m(ij) (row, column)
     // directly using primitives will be faster than array in Java
@@ -546,7 +547,7 @@ public final class Matrix4 implements Cloneable {
      *
      * @param lhs the left-hand side matrix to multiply
      */
-    public void preConcat2D(@Nonnull Matrix3 lhs) {
+    public void preConcat2D(@Nonnull Matrix lhs) {
         // 36 multiplications
         final float f11 = lhs.m11 * m11 + lhs.m12 * m21 + lhs.m13 * m41;
         final float f12 = lhs.m11 * m12 + lhs.m12 * m22 + lhs.m13 * m42;
@@ -590,7 +591,7 @@ public final class Matrix4 implements Cloneable {
      *
      * @param rhs the right-hand side matrix to multiply
      */
-    public void postConcat2D(@Nonnull Matrix3 rhs) {
+    public void postConcat2D(@Nonnull Matrix rhs) {
         // 36 multiplications
         final float f11 = m11 * rhs.m11 + m12 * rhs.m21 + m14 * rhs.m31;
         final float f12 = m11 * rhs.m12 + m12 * rhs.m22 + m14 * rhs.m32;
@@ -2755,7 +2756,7 @@ public final class Matrix4 implements Cloneable {
      * [ g h x i ]
      * }</pre>
      */
-    public void toM33NoZ(@Nonnull Matrix3 dest) {
+    public void toM33NoZ(@Nonnull Matrix dest) {
         dest.setAll(
                 m11, m12, m14,
                 m21, m22, m24,
@@ -2773,8 +2774,8 @@ public final class Matrix4 implements Cloneable {
      * }</pre>
      */
     @Nonnull
-    public Matrix3 toM33NoZ() {
-        return Matrix3.makeAll(
+    public Matrix toM33NoZ() {
+        return Matrix.makeAll(
                 m11, m12, m14,
                 m21, m22, m24,
                 m41, m42, m44
@@ -2791,11 +2792,15 @@ public final class Matrix4 implements Cloneable {
      * }</pre>
      */
     public void toM33NoW(@Nonnull Matrix3 dest) {
-        dest.setAll(
-                m11, m12, m13,
-                m21, m22, m23,
-                m31, m32, m33
-        );
+        dest.m11 = m11;
+        dest.m12 = m12;
+        dest.m13 = m13;
+        dest.m21 = m21;
+        dest.m22 = m22;
+        dest.m23 = m23;
+        dest.m31 = m31;
+        dest.m32 = m32;
+        dest.m33 = m33;
     }
 
     /**
@@ -2809,11 +2814,9 @@ public final class Matrix4 implements Cloneable {
      */
     @Nonnull
     public Matrix3 toM33NoW() {
-        return Matrix3.makeAll(
-                m11, m12, m13,
-                m21, m22, m23,
-                m31, m32, m33
-        );
+        Matrix3 m = new Matrix3();
+        toM33NoW(m);
+        return m;
     }
 
     /**

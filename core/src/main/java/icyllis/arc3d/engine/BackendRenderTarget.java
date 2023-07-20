@@ -19,7 +19,7 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.opengl.GLFramebufferInfo;
-import icyllis.arc3d.vulkan.VkImageInfo;
+import icyllis.arc3d.vulkan.VulkanImageInfo;
 
 import javax.annotation.Nonnull;
 
@@ -72,7 +72,7 @@ public abstract class BackendRenderTarget {
      * in pointer and returns true. This snapshot will set the mImageLayout to the current layout
      * state. Otherwise, returns false if the backend API is not Vulkan.
      */
-    public boolean getVkImageInfo(VkImageInfo info) {
+    public boolean getVkImageInfo(VulkanImageInfo info) {
         return false;
     }
 

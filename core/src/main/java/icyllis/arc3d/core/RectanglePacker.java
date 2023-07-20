@@ -16,11 +16,11 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics;
+package icyllis.arc3d.core;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.graphics.MathUtil;
 
+import javax.annotation.Nullable;
 import java.util.*;
 
 /**
@@ -61,13 +61,11 @@ public abstract class RectanglePacker {
      * @param width  the max width, typical value is 256, 512 or 1024
      * @param height the max height, typical value is 256, 512 or 1024
      */
-    @NonNull
     public static RectanglePacker make(int width, int height) {
         // skyline has the best coverage, and is fast enough
         return new Skyline(width, height);
     }
 
-    @NonNull
     public static RectanglePacker make(int width, int height, int algorithm) {
         return switch (algorithm) {
             case ALGORITHM_SKYLINE -> new Skyline(width, height);
@@ -98,7 +96,7 @@ public abstract class RectanglePacker {
      *
      * @return true on success; false on failure
      */
-    public abstract boolean addRect(@NonNull Rect rect);
+    public abstract boolean addRect(Rect2i rect);
 
     /**
      * Gets the ratio of current area to total area, higher values indicate better packing.
@@ -146,7 +144,7 @@ public abstract class RectanglePacker {
         }
 
         @Override
-        public boolean addRect(@NonNull Rect rect) {
+        public boolean addRect(Rect2i rect) {
             final int width = rect.width();
             final int height = rect.height();
             assert width > 0 && height > 0;
@@ -287,7 +285,7 @@ public abstract class RectanglePacker {
         }
 
         @Override
-        public boolean addRect(@NonNull Rect rect) {
+        public boolean addRect(Rect2i rect) {
             final int width = rect.width();
             final int height = rect.height();
             assert width > 0 && height > 0;
@@ -405,7 +403,7 @@ public abstract class RectanglePacker {
             /**
              * Tries to add the given rectangle to this level.
              */
-            boolean add(Rect rect, int levelWidth, int requestedLength, int requestedSize) {
+            boolean add(Rect2i rect, int levelWidth, int requestedLength, int requestedSize) {
                 // See whether we can add at the end
                 if (x + requestedLength <= levelWidth && requestedSize <= height) {
                     rect.offsetTo(x, y);
@@ -452,7 +450,7 @@ public abstract class RectanglePacker {
         }
 
         @Override
-        public boolean addRect(@NonNull Rect rect) {
+        public boolean addRect(Rect2i rect) {
             final int width = rect.width();
             final int height = rect.height();
             assert width > 0 && height > 0;
@@ -530,7 +528,7 @@ public abstract class RectanglePacker {
         }
 
         @Override
-        public boolean addRect(@NonNull Rect rect) {
+        public boolean addRect(Rect2i rect) {
             final int width = rect.width();
             final int height = rect.height();
             assert width > 0 && height > 0;
@@ -636,7 +634,7 @@ public abstract class RectanglePacker {
         }
 
         @Override
-        public boolean addRect(@NonNull Rect rect) {
+        public boolean addRect(Rect2i rect) {
             final int width = rect.width();
             int height = rect.height();
             assert width > 0 && height > 0;

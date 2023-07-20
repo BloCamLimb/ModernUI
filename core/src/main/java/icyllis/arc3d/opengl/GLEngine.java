@@ -18,7 +18,7 @@
 
 package icyllis.arc3d.opengl;
 
-import icyllis.arc3d.Rect2i;
+import icyllis.arc3d.core.Rect2i;
 import icyllis.arc3d.engine.*;
 import icyllis.modernui.graphics.ImageInfo;
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;

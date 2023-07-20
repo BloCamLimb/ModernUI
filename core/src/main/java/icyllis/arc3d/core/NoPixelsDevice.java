@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d;
+package icyllis.arc3d.core;
 
 import icyllis.arc3d.engine.ConservativeClip;
 import icyllis.modernui.graphics.*;

@@ -18,8 +18,8 @@
 
 package icyllis.arc3d.engine.ops;
 
-import icyllis.arc3d.Rect2f;
-import icyllis.arc3d.Rect2i;
+import icyllis.arc3d.core.Rect2f;
+import icyllis.arc3d.core.Rect2i;
 import icyllis.arc3d.engine.*;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
@@ -178,7 +178,7 @@ public class OpsTask extends RenderTask {
         recordOp(op, null, ProcessorAnalyzer.EMPTY_ANALYSIS);
     }
 
-    public void addDrawOp(@Nonnull DrawOp op, @Nullable ClipState clip, int processorAnalysis) {
+    public void addDrawOp(@Nonnull DrawOp op, @Nullable ClipResult clip, int processorAnalysis) {
         TextureProxyVisitor addDependency = (p, ss) -> {
             mSampledTextures.add(p);
             addDependency(p, ss);
@@ -193,7 +193,7 @@ public class OpsTask extends RenderTask {
         recordOp(op, clip != null && clip.hasClip() ? clip : null, processorAnalysis);
     }
 
-    void recordOp(@Nonnull Op op, @Nullable ClipState clip, int processorAnalysis) {
+    void recordOp(@Nonnull Op op, @Nullable ClipResult clip, int processorAnalysis) {
         // A closed OpsTask should never receive new/more ops
         assert (!isClosed());
 
@@ -235,14 +235,14 @@ public class OpsTask extends RenderTask {
         private Op mTail;
 
         @Nullable
-        private final ClipState mClipState;
+        private final ClipResult mClipResult;
         private final int mProcessorAnalysis;
 
-        public OpChain(@Nonnull Op op, @Nullable ClipState clipState, int processorAnalysis) {
+        public OpChain(@Nonnull Op op, @Nullable ClipResult clipResult, int processorAnalysis) {
             mHead = op;
             mTail = op;
 
-            mClipState = clipState;
+            mClipResult = clipResult;
             mProcessorAnalysis = processorAnalysis;
 
             set(op);
@@ -257,8 +257,8 @@ public class OpsTask extends RenderTask {
         }
 
         @Nullable
-        public ClipState getClipState() {
-            return mClipState;
+        public ClipResult getClipState() {
+            return mClipResult;
         }
 
         public void deleteOps() {
@@ -279,7 +279,7 @@ public class OpsTask extends RenderTask {
             return temp;
         }
 
-        public Op appendOp(@Nonnull Op op, @Nullable ClipState appliedClip, int processorAnalysis) {
+        public Op appendOp(@Nonnull Op op, @Nullable ClipResult appliedClip, int processorAnalysis) {
             assert (op.isChainHead() && op.isChainTail());
             assert (op.validateChain(op));
             assert (mHead != null);
@@ -288,7 +288,7 @@ public class OpsTask extends RenderTask {
                     (processorAnalysis & ProcessorAnalyzer.NON_OVERLAPPING)) ||
                     ((mProcessorAnalysis & ProcessorAnalyzer.NON_OVERLAPPING) != 0 &&
                             Rect2f.rectsTouchOrOverlap(this, op)) ||
-                    !Objects.equals(mClipState, appliedClip)) {
+                    !Objects.equals(mClipResult, appliedClip)) {
                 return op;
             }
 

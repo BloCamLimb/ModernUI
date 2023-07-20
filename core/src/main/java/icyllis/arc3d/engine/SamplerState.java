@@ -19,7 +19,6 @@
 package icyllis.arc3d.engine;
 
 import icyllis.modernui.graphics.MathUtil;
-import icyllis.modernui.graphics.SamplingOptions;
 import org.jetbrains.annotations.Contract;
 
 /**
@@ -42,16 +41,16 @@ public final class SamplerState {
      * Filters.
      */
     public static final int
-            FILTER_NEAREST = SamplingOptions.FILTER_NEAREST,
-            FILTER_LINEAR  = SamplingOptions.FILTER_LINEAR;
+            FILTER_NEAREST = 0, // single sample point (nearest neighbor)
+            FILTER_LINEAR  = 1; // interpolate between 2x2 sample points (bilinear interpolation)
 
     /**
      * Mipmap modes.
      */
     public static final int
-            MIPMAP_MODE_NONE    = SamplingOptions.MIPMAP_MODE_NONE,
-            MIPMAP_MODE_NEAREST = SamplingOptions.MIPMAP_MODE_NEAREST,
-            MIPMAP_MODE_LINEAR  = SamplingOptions.MIPMAP_MODE_LINEAR;
+            MIPMAP_MODE_NONE    = 0, // ignore mipmap levels, sample from the "base"
+            MIPMAP_MODE_NEAREST = 1, // sample from the nearest level
+            MIPMAP_MODE_LINEAR  = 2; // interpolate between the two nearest levels
 
     /**
      * Address modes, or wrap modes. Specify behavior of sampling with texture coordinates

@@ -472,24 +472,23 @@ public final class MathUtil {
      * Aligns {@code a} up to a power of two.
      */
     public static int alignTo(int a, int alignment) {
-        assert a >= 0 && alignment > 0 &&
-                (alignment & (alignment - 1)) == 0;
+        assert alignment > 0 && (alignment & (alignment - 1)) == 0;
         return (a + alignment - 1) & -alignment;
     }
 
     public static int alignUp(int a, int alignment) {
-        assert a >= 0 && alignment > 0;
+        assert alignment > 0;
         int r = a % alignment;
         return r == 0 ? a : a + alignment - r;
     }
 
     public static int alignUpPad(int a, int alignment) {
-        assert a >= 0 && alignment > 0;
+        assert alignment > 0;
         return (alignment - a % alignment) % alignment;
     }
 
     public static int alignDown(int a, int alignment) {
-        assert a >= 0 && alignment > 0;
+        assert alignment > 0;
         return (a / alignment) * alignment;
     }
 

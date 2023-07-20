@@ -18,9 +18,8 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.Rect2f;
+import icyllis.arc3d.core.Rect2f;
 import icyllis.arc3d.engine.ops.Op;
-import icyllis.arc3d.SharedPtr;
 
 /**
  * The {@link OpsRenderPass} is a series of commands (draws, clears, and discards), which all target the

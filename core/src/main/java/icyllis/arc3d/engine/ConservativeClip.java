@@ -18,9 +18,7 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.Rect2f;
-import icyllis.arc3d.Rect2i;
-import icyllis.modernui.graphics.*;
+import icyllis.arc3d.core.*;
 
 /**
  * The conservative clip computes the maximum rectangular bounds of the actual clipping region

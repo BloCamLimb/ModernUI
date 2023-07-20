@@ -18,6 +18,7 @@
 
 package icyllis.modernui.graphics;
 
+import icyllis.arc3d.core.Matrix4;
 import icyllis.arc3d.engine.*;
 
 /**

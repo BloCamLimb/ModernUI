@@ -19,8 +19,7 @@
 package icyllis.modernui.test;
 
 import icyllis.modernui.core.Core;
-import icyllis.modernui.graphics.Matrix3;
-import icyllis.modernui.graphics.Matrix4;
+import icyllis.arc3d.core.Matrix4;
 import org.lwjgl.stb.*;
 import org.lwjgl.system.MemoryUtil;
 
@@ -49,18 +48,21 @@ public class TestJ2D {
         System.out.println(tk.getDesktopProperty("win.text.fontSmoothingOrientation"));
         System.out.println(tk.getDesktopProperty("win.text.fontSmoothingContrast"));
 
-        float pivotX = 10.0f*(float)Math.random();
-        float pivotY = 10.0f*(float)Math.random();
-        float translationX = 10.0f*(float)Math.random();
-        float translationY = 10.0f*(float)Math.random();
-        float scaleX = 10.0f*(float)Math.random();
-        float scaleY = 10.0f*(float)Math.random();
-        float rotationX = 10.0f*(float)Math.random();
-        float rotationY = 10.0f*(float)Math.random();
-        float rotationZ = 10.0f*(float)Math.random();
-        var mat1 = getOldMatrix(pivotX, pivotY, translationX, translationY, scaleX, scaleY, rotationX,rotationY,rotationZ);
-        var mat2 = getNewMatrix(pivotX, pivotY, translationX, translationY, scaleX, scaleY, rotationX,rotationY,rotationZ);
-        var mat3 = getNewMatrix2(pivotX, pivotY, translationX, translationY, scaleX, scaleY, rotationX,rotationY,rotationZ);
+        float pivotX = 10.0f * (float) Math.random();
+        float pivotY = 10.0f * (float) Math.random();
+        float translationX = 10.0f * (float) Math.random();
+        float translationY = 10.0f * (float) Math.random();
+        float scaleX = 10.0f * (float) Math.random();
+        float scaleY = 10.0f * (float) Math.random();
+        float rotationX = 10.0f * (float) Math.random();
+        float rotationY = 10.0f * (float) Math.random();
+        float rotationZ = 10.0f * (float) Math.random();
+        var mat1 = getOldMatrix(pivotX, pivotY, translationX, translationY, scaleX, scaleY, rotationX, rotationY,
+                rotationZ);
+        var mat2 = getNewMatrix(pivotX, pivotY, translationX, translationY, scaleX, scaleY, rotationX, rotationY,
+                rotationZ);
+        var mat3 = getNewMatrix2(pivotX, pivotY, translationX, translationY, scaleX, scaleY, rotationX, rotationY,
+                rotationZ);
         var mat4 = new Matrix4();
         mat3.invert(mat4);
         float[] v1 = {4, 6, 0, 1};

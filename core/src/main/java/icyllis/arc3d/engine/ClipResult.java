@@ -18,13 +18,13 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.Rect2f;
+import icyllis.arc3d.core.Rect2f;
 
 /**
  * Produced by {@link Clip}. It provides a set of modifications to the drawing state that
  * implements the clip.
  */
-public final class ClipState implements Cloneable {
+public final class ClipResult implements Cloneable {
 
     private int mStencilSeq;
 
@@ -42,8 +42,8 @@ public final class ClipState implements Cloneable {
      * There are two kinds of sizes. Sometimes we create a larger texture but only
      * use a subset of the area, thus it must be scissored.
      */
-    public ClipState init(int logicalWidth, int logicalHeight,
-                          int physicalWidth, int physicalHeight) {
+    public ClipResult init(int logicalWidth, int logicalHeight,
+                           int physicalWidth, int physicalHeight) {
         assert (logicalWidth > 0 && logicalHeight > 0);
         assert (physicalWidth > 0 && physicalHeight > 0);
         assert (logicalWidth <= physicalWidth &&
@@ -161,7 +161,7 @@ public final class ClipState implements Cloneable {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        ClipState other = (ClipState) o;
+        ClipResult other = (ClipResult) o;
         return mStencilSeq == other.mStencilSeq &&
                 mScissorX0 == other.mScissorX0 &&
                 mScissorY0 == other.mScissorY0 &&
@@ -172,9 +172,9 @@ public final class ClipState implements Cloneable {
     }
 
     @Override
-    public ClipState clone() {
+    public ClipResult clone() {
         try {
-            return (ClipState) super.clone();
+            return (ClipResult) super.clone();
         } catch (CloneNotSupportedException e) {
             throw new InternalError(e);
         }

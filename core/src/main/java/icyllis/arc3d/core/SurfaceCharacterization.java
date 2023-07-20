@@ -16,11 +16,11 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d;
+package icyllis.arc3d.core;
 
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.vulkan.VkCore;
-import icyllis.arc3d.vulkan.VkImageInfo;
+import icyllis.arc3d.vulkan.VKCore;
+import icyllis.arc3d.vulkan.VulkanImageInfo;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.DeferredDisplayList;
 import icyllis.modernui.graphics.ImageInfo;
@@ -254,11 +254,11 @@ public final class SurfaceCharacterization {
             if (texture.getBackend() != BackendApi.kVulkan) {
                 return false;
             }
-            VkImageInfo vkInfo = new VkImageInfo();
+            VulkanImageInfo vkInfo = new VulkanImageInfo();
             if (!texture.getVkImageInfo(vkInfo)) {
                 return false;
             }
-            return (vkInfo.mImageUsageFlags & VkCore.VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) != 0;
+            return (vkInfo.mImageUsageFlags & VKCore.VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) != 0;
         } else {
             return true;
         }

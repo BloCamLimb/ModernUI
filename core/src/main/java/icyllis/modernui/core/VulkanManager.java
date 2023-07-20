@@ -23,7 +23,7 @@ import icyllis.arc3d.engine.DirectContext;
 import icyllis.arc3d.vulkan.VkBackendContext;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.arc3d.SharedPtr;
+import icyllis.arc3d.core.SharedPtr;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFWVulkan;
@@ -34,7 +34,7 @@ import org.lwjgl.vulkan.*;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
-import static icyllis.arc3d.vulkan.VkCore.*;
+import static icyllis.arc3d.vulkan.VKCore.*;
 import static icyllis.modernui.ModernUI.LOGGER;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.EXTBlendOperationAdvanced.VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME;
