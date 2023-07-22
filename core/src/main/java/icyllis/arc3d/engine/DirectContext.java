@@ -18,7 +18,7 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.opengl.GLEngine;
+import icyllis.arc3d.opengl.GLServer;
 import icyllis.arc3d.vulkan.VkBackendContext;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -29,7 +29,7 @@ import javax.annotation.Nullable;
  */
 public final class DirectContext extends RecordingContext {
 
-    private Engine mEngine;
+    private Server mServer;
     private ResourceCache mResourceCache;
     private ResourceProvider mResourceProvider;
 
@@ -84,7 +84,7 @@ public final class DirectContext extends RecordingContext {
     @Nullable
     public static DirectContext makeOpenGL(ContextOptions options) {
         DirectContext context = new DirectContext(Engine.BackendApi.kOpenGL, options);
-        context.mEngine = GLEngine.make(context, options);
+        context.mServer = GLServer.make(context, options);
         if (context.init()) {
             return context;
         }
@@ -131,12 +131,12 @@ public final class DirectContext extends RecordingContext {
      */
     public void resetContext(int state) {
         checkOwnerThread();
-        mEngine.markContextDirty(state);
+        mServer.markContextDirty(state);
     }
 
     @ApiStatus.Internal
-    public Engine getEngine() {
-        return mEngine;
+    public Server getServer() {
+        return mServer;
     }
 
     @ApiStatus.Internal
@@ -152,11 +152,11 @@ public final class DirectContext extends RecordingContext {
     @Override
     protected boolean init() {
         assert isOwnerThread();
-        if (mEngine == null) {
+        if (mServer == null) {
             return false;
         }
 
-        mThreadSafeProxy.init(mEngine.getCaps(), mEngine.getPipelineStateCache());
+        mThreadSafeProxy.init(mServer.getCaps(), mServer.getPipelineStateCache());
         if (!super.init()) {
             return false;
         }
@@ -164,7 +164,7 @@ public final class DirectContext extends RecordingContext {
         assert getThreadSafeCache() != null;
 
         mResourceCache = new ResourceCache(getContextID());
-        mResourceProvider = new ResourceProvider(mEngine, mResourceCache);
+        mResourceProvider = mServer.getResourceProvider();
         return true;
     }
 
@@ -174,6 +174,6 @@ public final class DirectContext extends RecordingContext {
         if (mResourceCache != null) {
             mResourceCache.releaseAll();
         }
-        mEngine.disconnect(true);
+        mServer.disconnect(true);
     }
 }

@@ -77,4 +77,23 @@ public interface Mesh {
     default void setInstanceBuffer(@SharedPtr Buffer buffer, int baseInstance, int actualInstanceCount) {
         throw new IllegalStateException();
     }
+
+    /**
+     * Returns the number of indices to draw in the mesh.
+     */
+    default int getIndexCount() {
+        return 0;
+    }
+
+    /**
+     * The callback method for {@link MeshDrawTarget#makeIndexSpace(Mesh)} results.
+     *
+     * @param buffer           the shared ptr to the index buffer that will hold the indices
+     * @param baseIndex        the offset into buffer of the first index,
+     *                         in units of the size of an index from layout param
+     * @param actualIndexCount the actual number of indices allocated
+     */
+    default void setIndexBuffer(@SharedPtr Buffer buffer, int baseIndex, int actualIndexCount) {
+        throw new IllegalStateException();
+    }
 }

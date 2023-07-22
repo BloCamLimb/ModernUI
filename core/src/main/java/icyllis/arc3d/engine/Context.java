@@ -40,7 +40,7 @@ public abstract class Context extends RefCnt {
     /**
      * The 3D API backing this context.
      *
-     * @return see {@link Engine.BackendApi}
+     * @return see {@link Server.BackendApi}
      */
     public final int getBackend() {
         return mThreadSafeProxy.getBackend();

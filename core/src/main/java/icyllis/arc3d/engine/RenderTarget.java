@@ -52,10 +52,10 @@ public abstract class RenderTarget extends ManagedResource {
     // determined by subclass constructors
     protected int mSurfaceFlags;
 
-    protected RenderTarget(Engine engine,
+    protected RenderTarget(Server server,
                            int width, int height,
                            int sampleCount) {
-        super(engine);
+        super(server);
         mWidth = width;
         mHeight = height;
         mSampleCount = sampleCount;

@@ -29,43 +29,54 @@ import java.util.Set;
  */
 public class OpFlushState implements MeshDrawTarget {
 
-    private final Engine mEngine;
+    private final Server mServer;
 
     private OpsRenderPass mOpsRenderPass;
 
-    public OpFlushState(Engine engine,
+    public OpFlushState(Server server,
                         ResourceProvider resourceProvider) {
-        mEngine = engine;
+        mServer = server;
     }
 
-    public Engine getEngine() {
-        return mEngine;
+    public Server getServer() {
+        return mServer;
     }
 
     public final PipelineState findOrCreatePipelineState(final PipelineInfo pipelineInfo) {
-        return mEngine.getContext().findOrCreatePipelineState(pipelineInfo);
+        return mServer.getContext().findOrCreatePipelineState(pipelineInfo);
     }
 
     @Override
     public long makeVertexSpace(Mesh mesh) {
-        return mEngine.getVertexPool().makeSpace(mesh);
+        return mServer.getVertexPool().makeSpace(mesh);
     }
 
     @Override
     public long makeInstanceSpace(Mesh mesh) {
-        return mEngine.getInstancePool().makeSpace(mesh);
+        return mServer.getInstancePool().makeSpace(mesh);
+    }
+
+    @Override
+    public long makeIndexSpace(Mesh mesh) {
+        return mServer.getIndexPool().makeSpace(mesh);
     }
 
     @Nullable
     @Override
     public ByteBuffer makeVertexWriter(Mesh mesh) {
-        return mEngine.getVertexPool().makeWriter(mesh);
+        return mServer.getVertexPool().makeWriter(mesh);
     }
 
     @Nullable
     @Override
     public ByteBuffer makeInstanceWriter(Mesh mesh) {
-        return mEngine.getInstancePool().makeWriter(mesh);
+        return mServer.getInstancePool().makeWriter(mesh);
+    }
+
+    @Nullable
+    @Override
+    public ByteBuffer makeIndexWriter(Mesh mesh) {
+        return mServer.getIndexPool().makeWriter(mesh);
     }
 
     public OpsRenderPass getOpsRenderPass() {
@@ -80,7 +91,7 @@ public class OpFlushState implements MeshDrawTarget {
                                             Set<TextureProxy> sampledTextures,
                                             int pipelineFlags) {
         assert (mOpsRenderPass == null);
-        OpsRenderPass opsRenderPass = mEngine.getOpsRenderPass(writeView, contentBounds,
+        OpsRenderPass opsRenderPass = mServer.getOpsRenderPass(writeView, contentBounds,
                 colorOps, stencilOps, clearColor,
                 sampledTextures, pipelineFlags);
         if (opsRenderPass == null) {

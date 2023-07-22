@@ -28,7 +28,7 @@ import static icyllis.arc3d.engine.Engine.*;
 
 public final class GLOpsRenderPass extends OpsRenderPass {
 
-    private final GLEngine mEngine;
+    private final GLServer mServer;
 
     private GLCommandBuffer mCmdBuffer;
     private GLPipelineState mPipelineState;
@@ -46,13 +46,13 @@ public final class GLOpsRenderPass extends OpsRenderPass {
 
     private int mPrimitiveType;
 
-    public GLOpsRenderPass(GLEngine engine) {
-        mEngine = engine;
+    public GLOpsRenderPass(GLServer server) {
+        mServer = server;
     }
 
     @Override
-    protected GLEngine getEngine() {
-        return mEngine;
+    protected GLServer getServer() {
+        return mServer;
     }
 
     public GLOpsRenderPass set(RenderTarget fs,
@@ -71,7 +71,7 @@ public final class GLOpsRenderPass extends OpsRenderPass {
     public void begin() {
         super.begin();
         GLRenderTarget glRenderTarget = (GLRenderTarget) mRenderTarget;
-        mCmdBuffer = mEngine.beginRenderPass(glRenderTarget,
+        mCmdBuffer = mServer.beginRenderPass(glRenderTarget,
                 mColorOps,
                 mStencilOps,
                 mClearColor);
@@ -83,7 +83,7 @@ public final class GLOpsRenderPass extends OpsRenderPass {
         mActiveVertexBuffer = Resource.move(mActiveVertexBuffer);
         mActiveInstanceBuffer = Resource.move(mActiveInstanceBuffer);
         GLRenderTarget glRenderTarget = (GLRenderTarget) mRenderTarget;
-        mEngine.endRenderPass(glRenderTarget,
+        mServer.endRenderPass(glRenderTarget,
                 mColorOps,
                 mStencilOps);
         super.end();
@@ -136,7 +136,7 @@ public final class GLOpsRenderPass extends OpsRenderPass {
                                  Buffer vertexBuffer,
                                  Buffer instanceBuffer) {
         assert (mPipelineState != null);
-        if (mEngine.getCaps().hasBaseInstanceSupport()) {
+        if (mServer.getCaps().hasBaseInstanceSupport()) {
             mPipelineState.bindBuffers(indexBuffer, vertexBuffer, 0, instanceBuffer, 0);
         } else {
             // bind instance buffer on drawInstanced()
@@ -162,7 +162,7 @@ public final class GLOpsRenderPass extends OpsRenderPass {
     @Override
     protected void onDrawInstanced(int instanceCount, int baseInstance,
                                    int vertexCount, int baseVertex) {
-        if (mEngine.getCaps().hasBaseInstanceSupport()) {
+        if (mServer.getCaps().hasBaseInstanceSupport()) {
             glDrawArraysInstancedBaseInstance(mPrimitiveType, baseVertex, vertexCount,
                     instanceCount, baseInstance);
         } else {
@@ -177,7 +177,7 @@ public final class GLOpsRenderPass extends OpsRenderPass {
     protected void onDrawIndexedInstanced(int indexCount, int baseIndex,
                                           int instanceCount, int baseInstance,
                                           int baseVertex) {
-        if (mEngine.getCaps().hasBaseInstanceSupport()) {
+        if (mServer.getCaps().hasBaseInstanceSupport()) {
             nglDrawElementsInstancedBaseVertexBaseInstance(mPrimitiveType, indexCount,
                     GL_UNSIGNED_SHORT, baseIndex, instanceCount, baseVertex, baseInstance);
         } else {

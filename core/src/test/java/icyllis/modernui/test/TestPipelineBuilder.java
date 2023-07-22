@@ -55,7 +55,7 @@ public class TestPipelineBuilder {
         GLCore.setupDebugCallback();
 
         var dContext = Core.requireDirectContext();
-        var engine = (GLEngine) dContext.getEngine();
+        var server = (GLServer) dContext.getServer();
 
         @SharedPtr
         var rt = dContext.getProxyProvider().createRenderTextureProxy(
@@ -77,8 +77,8 @@ public class TestPipelineBuilder {
         var op = new RoundRectOp(new float[]{0.88f, 0.075f, 0.11f, 1},
                 new Rect2f(90, 90, 180, 180), 10, 5, Matrix.identity());
         op.onPrepare(drawingManager.getFlushState(), rtv, 0);
-        engine.getVertexPool().flush();
-        engine.getInstancePool().flush();
+        server.getVertexPool().flush();
+        server.getInstancePool().flush();
         OpsRenderPass opsRenderPass = drawingManager.getFlushState().beginOpsRenderPass(rtv,
                 new Rect2i(0, 0, 900, 900),
                 Engine.LoadStoreOps.DontLoad_Store,

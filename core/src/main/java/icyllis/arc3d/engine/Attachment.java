@@ -30,8 +30,8 @@ public abstract class Attachment extends Resource {
     protected final int mHeight;
     protected final int mSampleCount;
 
-    protected Attachment(Engine engine, int width, int height, int sampleCount) {
-        super(engine);
+    protected Attachment(Server server, int width, int height, int sampleCount) {
+        super(server);
         assert width > 0 && height > 0 && sampleCount > 0;
         mWidth = width;
         mHeight = height;

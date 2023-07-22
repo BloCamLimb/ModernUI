@@ -42,7 +42,7 @@ import java.util.concurrent.CompletableFuture;
 //TODO set and bind textures
 public class GLPipelineState extends PipelineState {
 
-    private final GLEngine mEngine;
+    private final GLServer mServer;
 
     @SharedPtr
     private GLProgram mProgram;
@@ -58,9 +58,9 @@ public class GLPipelineState extends PipelineState {
 
     private CompletableFuture<GLPipelineStateBuilder> mAsyncWork;
 
-    GLPipelineState(GLEngine engine,
+    GLPipelineState(GLServer server,
                     CompletableFuture<GLPipelineStateBuilder> asyncWork) {
-        mEngine = engine;
+        mServer = server;
         mAsyncWork = asyncWork;
     }
 
@@ -99,7 +99,7 @@ public class GLPipelineState extends PipelineState {
     private void checkAsyncWork() {
         if (mAsyncWork != null) {
             boolean success = mAsyncWork.join().finish(this);
-            var stats = mEngine.getPipelineStateCache().getStates();
+            var stats = mServer.getPipelineStateCache().getStates();
             if (success) {
                 stats.incNumCompilationSuccesses();
             } else {
@@ -127,7 +127,7 @@ public class GLPipelineState extends PipelineState {
         mGPImpl.setData(mDataManager, pipelineInfo.geomProc());
         //TODO FP and upload
 
-        return mDataManager.bindAndUploadUniforms(mEngine, commandBuffer);
+        return mDataManager.bindAndUploadUniforms(mServer, commandBuffer);
     }
 
     /**

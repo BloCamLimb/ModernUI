@@ -30,12 +30,12 @@ public final class VulkanPrimaryCommandBuffer extends VulkanCommandBuffer {
         super(device, handle);
     }
 
-    public static VulkanPrimaryCommandBuffer create(VulkanEngine engine,
+    public static VulkanPrimaryCommandBuffer create(VulkanServer server,
                                                     long commandPool) {
         try (var stack = MemoryStack.stackPush()) {
             var pCommandBuffer = stack.mallocPointer(1);
             var result = vkAllocateCommandBuffers(
-                    engine.device(),
+                    server.device(),
                     VkCommandBufferAllocateInfo
                             .malloc(stack)
                             .sType$Default()
@@ -48,7 +48,7 @@ public final class VulkanPrimaryCommandBuffer extends VulkanCommandBuffer {
             if (result != VK_SUCCESS) {
                 return null;
             }
-            return new VulkanPrimaryCommandBuffer(engine.device(), pCommandBuffer.get(0));
+            return new VulkanPrimaryCommandBuffer(server.device(), pCommandBuffer.get(0));
         }
     }
 }

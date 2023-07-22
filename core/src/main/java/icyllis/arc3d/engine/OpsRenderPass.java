@@ -152,10 +152,10 @@ public abstract class OpsRenderPass {
     public final void draw(int vertexCount, int baseVertex) {
         if (mDrawPipelineStatus == kConfigured_DrawPipelineStatus) {
             onDraw(vertexCount, baseVertex);
-            getEngine().getStats().incNumDraws();
+            getServer().getStats().incNumDraws();
         } else {
             assert (mDrawPipelineStatus == kFailedToBind_DrawPipelineStatus);
-            getEngine().getStats().incNumFailedDraws();
+            getServer().getStats().incNumFailedDraws();
         }
     }
 
@@ -170,10 +170,10 @@ public abstract class OpsRenderPass {
                                   int baseVertex) {
         if (mDrawPipelineStatus == kConfigured_DrawPipelineStatus) {
             onDrawIndexed(indexCount, baseIndex, baseVertex);
-            getEngine().getStats().incNumDraws();
+            getServer().getStats().incNumDraws();
         } else {
             assert (mDrawPipelineStatus == kFailedToBind_DrawPipelineStatus);
-            getEngine().getStats().incNumFailedDraws();
+            getServer().getStats().incNumFailedDraws();
         }
     }
 
@@ -189,10 +189,10 @@ public abstract class OpsRenderPass {
                                     int vertexCount, int baseVertex) {
         if (mDrawPipelineStatus == kConfigured_DrawPipelineStatus) {
             onDrawInstanced(instanceCount, baseInstance, vertexCount, baseVertex);
-            getEngine().getStats().incNumDraws();
+            getServer().getStats().incNumDraws();
         } else {
             assert (mDrawPipelineStatus == kFailedToBind_DrawPipelineStatus);
-            getEngine().getStats().incNumFailedDraws();
+            getServer().getStats().incNumFailedDraws();
         }
     }
 
@@ -210,10 +210,10 @@ public abstract class OpsRenderPass {
                                            int baseVertex) {
         if (mDrawPipelineStatus == kConfigured_DrawPipelineStatus) {
             onDrawIndexedInstanced(indexCount, baseIndex, instanceCount, baseInstance, baseVertex);
-            getEngine().getStats().incNumDraws();
+            getServer().getStats().incNumDraws();
         } else {
             assert (mDrawPipelineStatus == kFailedToBind_DrawPipelineStatus);
-            getEngine().getStats().incNumFailedDraws();
+            getServer().getStats().incNumFailedDraws();
         }
     }
 
@@ -223,7 +223,7 @@ public abstract class OpsRenderPass {
         mSurfaceOrigin = origin;
     }
 
-    protected abstract Engine getEngine();
+    protected abstract Server getServer();
 
     protected abstract boolean onBindPipeline(PipelineInfo pipelineInfo,
                                               PipelineState pipelineState,

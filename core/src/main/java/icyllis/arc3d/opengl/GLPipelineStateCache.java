@@ -21,7 +21,6 @@ package icyllis.arc3d.opengl;
 import icyllis.arc3d.engine.*;
 import icyllis.modernui.annotation.Nullable;
 import it.unimi.dsi.fastutil.Hash;
-import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import javax.annotation.Nonnull;
@@ -30,14 +29,14 @@ import java.util.concurrent.ConcurrentHashMap;
 //TODO cache trim
 public class GLPipelineStateCache extends PipelineStateCache {
 
-    private final GLEngine mEngine;
+    private final GLServer mServer;
 
     private final int mCacheSize;
     private final ConcurrentHashMap<Key, GLPipelineState> mCache;
 
     @VisibleForTesting
-    public GLPipelineStateCache(GLEngine engine, int cacheSize) {
-        mEngine = engine;
+    public GLPipelineStateCache(GLServer server, int cacheSize) {
+        mServer = server;
         mCacheSize = cacheSize;
         mCache = new ConcurrentHashMap<>(cacheSize, Hash.FAST_LOAD_FACTOR);
     }
@@ -56,7 +55,7 @@ public class GLPipelineStateCache extends PipelineStateCache {
     public GLPipelineState findOrCreatePipelineState(final PipelineDesc desc,
                                                      final PipelineInfo pipelineInfo) {
         if (desc.isEmpty()) {
-            final Caps caps = mEngine.getCaps();
+            final Caps caps = mServer.getCaps();
             caps.makeDesc(desc, /*renderTarget*/null, pipelineInfo);
         }
         assert (!desc.isEmpty());
@@ -72,7 +71,7 @@ public class GLPipelineStateCache extends PipelineStateCache {
         }
         // We have a cache miss
         desc = new PipelineDesc(desc);
-        GLPipelineState newPipelineState = GLPipelineStateBuilder.createPipelineState(mEngine, desc, pipelineInfo);
+        GLPipelineState newPipelineState = GLPipelineStateBuilder.createPipelineState(mServer, desc, pipelineInfo);
         existing = mCache.putIfAbsent(desc.toKey(), newPipelineState);
         if (existing != null) {
             // there's a race, reuse existing

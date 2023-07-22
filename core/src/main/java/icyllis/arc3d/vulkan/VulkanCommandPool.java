@@ -42,30 +42,30 @@ public class VulkanCommandPool extends ManagedResource {
 
     private final long[] mSubmitFence = new long[1];
 
-    private VulkanCommandPool(VulkanEngine engine, long handle,
+    private VulkanCommandPool(VulkanServer server, long handle,
                               VulkanPrimaryCommandBuffer primaryCommandBuffer) {
-        super(engine);
+        super(server);
         mCommandPool = handle;
         mPrimaryCommandBuffer = primaryCommandBuffer;
     }
 
     @Nullable
-    public static VulkanCommandPool create(VulkanEngine engine) {
+    public static VulkanCommandPool create(VulkanServer server) {
         int cmdPoolCreateFlags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
-        if (engine.isProtectedContext()) {
+        if (server.isProtectedContext()) {
             cmdPoolCreateFlags |= VK_COMMAND_POOL_CREATE_PROTECTED_BIT;
         }
         long commandPool;
         try (var stack = MemoryStack.stackPush()) {
             var pCommandPool = stack.mallocLong(1);
             var result = vkCreateCommandPool(
-                    engine.device(),
+                    server.device(),
                     VkCommandPoolCreateInfo
                             .malloc(stack)
                             .sType$Default()
                             .pNext(0)
                             .flags(cmdPoolCreateFlags)
-                            .queueFamilyIndex(engine.getQueueIndex()),
+                            .queueFamilyIndex(server.getQueueIndex()),
                     null,
                     pCommandPool
             );
@@ -75,22 +75,22 @@ public class VulkanCommandPool extends ManagedResource {
             commandPool = pCommandPool.get(0);
         }
         VulkanPrimaryCommandBuffer primaryCommandBuffer =
-                VulkanPrimaryCommandBuffer.create(engine, commandPool);
+                VulkanPrimaryCommandBuffer.create(server, commandPool);
         if (primaryCommandBuffer == null) {
             vkDestroyCommandPool(
-                    engine.device(),
+                    server.device(),
                     commandPool,
                     null
             );
             return null;
         }
-        return new VulkanCommandPool(engine, commandPool, primaryCommandBuffer);
+        return new VulkanCommandPool(server, commandPool, primaryCommandBuffer);
     }
 
     @Override
     protected void deallocate() {
         vkDestroyCommandPool(
-                getEngine().device(),
+                getServer().device(),
                 mCommandPool,
                 null
         );
@@ -102,7 +102,7 @@ public class VulkanCommandPool extends ManagedResource {
         if (mSubmitFence[0] == VK_NULL_HANDLE) {
             try (var stack = MemoryStack.stackPush()) {
                 var result = vkCreateFence(
-                        getEngine().device(),
+                        getServer().device(),
                         VkFenceCreateInfo
                                 .calloc(stack)
                                 .sType$Default(),
@@ -116,7 +116,7 @@ public class VulkanCommandPool extends ManagedResource {
             }
         } else {
             CHECK_ERROR(vkResetFences(
-                    getEngine().device(),
+                    getServer().device(),
                     mSubmitFence
             ));
         }
@@ -132,7 +132,7 @@ public class VulkanCommandPool extends ManagedResource {
             return true;
         }
         var result = vkGetFenceStatus(
-                getEngine().device(),
+                getServer().device(),
                 mSubmitFence[0]
         );
         if (result == VK_SUCCESS ||
@@ -149,7 +149,7 @@ public class VulkanCommandPool extends ManagedResource {
         assert isSubmitted();
 
         vkResetCommandPool(
-                getEngine().device(),
+                getServer().device(),
                 mCommandPool,
                 0
         );
@@ -162,7 +162,7 @@ public class VulkanCommandPool extends ManagedResource {
     }
 
     @Override
-    protected VulkanEngine getEngine() {
-        return (VulkanEngine) super.getEngine();
+    protected VulkanServer getServer() {
+        return (VulkanServer) super.getServer();
     }
 }

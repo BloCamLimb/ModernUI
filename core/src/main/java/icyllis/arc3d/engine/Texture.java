@@ -54,8 +54,8 @@ public abstract class Texture extends Resource implements Surface {
     @SharedPtr
     private ReleaseCallback mReleaseCallback;
 
-    protected Texture(Engine engine, int width, int height) {
-        super(engine);
+    protected Texture(Server server, int width, int height) {
+        super(server);
         assert width > 0 && height > 0;
         mWidth = width;
         mHeight = height;

@@ -16,41 +16,18 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.opengl;
+package icyllis.arc3d.engine;
 
-import icyllis.arc3d.engine.ManagedResource;
+import icyllis.arc3d.core.SharedPtr;
 
-import javax.annotation.Nonnull;
+import java.util.ArrayList;
 
-import static icyllis.arc3d.opengl.GLCore.glDeleteProgram;
+public abstract class CommandBuffer {
 
-/**
- * Represents OpenGL programs.
- */
-public final class GLProgram extends ManagedResource {
+    @SharedPtr
+    private final ArrayList<Buffer> mTrackingGPUBuffers = new ArrayList<>();
 
-    private int mProgram;
-
-    public GLProgram(@Nonnull GLServer server,
-                     int program) {
-        super(server);
-        assert (program != 0);
-        mProgram = program;
-    }
-
-    @Override
-    protected void deallocate() {
-        if (mProgram != 0) {
-            glDeleteProgram(mProgram);
-        }
-        discard();
-    }
-
-    public void discard() {
-        mProgram = 0;
-    }
-
-    public int getProgram() {
-        return mProgram;
+    public void moveAndTrackGPUBuffer(@SharedPtr Buffer buffer) {
+        mTrackingGPUBuffers.add(buffer);
     }
 }

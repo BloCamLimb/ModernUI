@@ -358,7 +358,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
 
         try (InputStream stream = new FileInputStream("F:/Torus Regular.otf")) {
             set.add(FontFamily.createFamily(stream, true));
-        } catch (IOException ignored) {
+        } catch (Exception ignored) {
         }
 
         for (String name : new String[]{"Microsoft YaHei UI", "Calibri", "STHeiti", "Segoe UI", "SimHei"}) {

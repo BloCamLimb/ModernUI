@@ -78,13 +78,13 @@ public class GLUniformDataManager extends UniformDataManager {
         }
     }
 
-    public boolean bindAndUploadUniforms(GLEngine engine,
+    public boolean bindAndUploadUniforms(GLServer server,
                                          GLCommandBuffer commandBuffer) {
         if (!mUniformsDirty) {
             return true;
         }
         if (mUniformBuffer == null) {
-            mUniformBuffer = GLUniformBuffer.make(engine, mUniformSize, GLUniformHandler.UNIFORM_BINDING);
+            mUniformBuffer = GLUniformBuffer.make(server, mUniformSize, GLUniformHandler.UNIFORM_BINDING);
         }
         if (mUniformBuffer == null) {
             return false;

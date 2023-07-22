@@ -54,7 +54,7 @@ public final class GLRenderTarget extends RenderTarget {
     private BackendRenderTarget mBackendRenderTarget;
 
     // Constructor for instances created by our engine. (has texture access)
-    GLRenderTarget(GLEngine engine,
+    GLRenderTarget(GLServer server,
                    int width, int height,
                    int format,
                    int sampleCount,
@@ -62,7 +62,7 @@ public final class GLRenderTarget extends RenderTarget {
                    int msaaFramebuffer,
                    GLTexture colorBuffer,
                    GLAttachment msaaColorBuffer) {
-        super(engine, width, height, sampleCount);
+        super(server, width, height, sampleCount);
         assert (sampleCount > 0);
         mFormat = format;
         mSampleFramebuffer = sampleCount > 1 ? msaaFramebuffer : framebuffer;
@@ -73,14 +73,14 @@ public final class GLRenderTarget extends RenderTarget {
     }
 
     // Constructor for instances wrapping backend objects. (no texture access)
-    private GLRenderTarget(GLEngine engine,
+    private GLRenderTarget(GLServer server,
                            int width, int height,
                            int format,
                            int sampleCount,
                            int framebuffer,
                            boolean ownership,
                            @SharedPtr GLAttachment stencilBuffer) {
-        super(engine, width, height, sampleCount);
+        super(server, width, height, sampleCount);
         assert (sampleCount > 0);
         assert (framebuffer != 0 || !ownership);
         mFormat = format;
@@ -102,7 +102,7 @@ public final class GLRenderTarget extends RenderTarget {
      */
     @Nonnull
     @SharedPtr
-    public static GLRenderTarget makeWrapped(GLEngine engine,
+    public static GLRenderTarget makeWrapped(GLServer server,
                                              int width, int height,
                                              int format,
                                              int sampleCount,
@@ -130,13 +130,13 @@ public final class GLRenderTarget extends RenderTarget {
             // We don't have the actual renderbufferID, but we need to make an attachment for the stencil,
             // so we just set it to an invalid value of 0 to make sure we don't explicitly use it or try
             // and delete it.
-            stencilBuffer = GLAttachment.makeWrapped(engine,
+            stencilBuffer = GLAttachment.makeWrapped(server,
                     width, height,
                     sampleCount,
                     stencilFormat,
                     0);
         }
-        return new GLRenderTarget(engine,
+        return new GLRenderTarget(server,
                 width, height,
                 format,
                 sampleCount,

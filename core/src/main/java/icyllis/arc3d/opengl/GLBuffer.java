@@ -18,9 +18,9 @@
 
 package icyllis.arc3d.opengl;
 
-import icyllis.modernui.graphics.RefCnt;
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.*;
+import icyllis.modernui.graphics.RefCnt;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
@@ -31,7 +31,6 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 
 public final class GLBuffer extends Buffer {
 
-    private final int mType;
     private int mBuffer;
 
     private boolean mLocked;
@@ -40,140 +39,184 @@ public final class GLBuffer extends Buffer {
     @SharedPtr
     private CpuBuffer mStagingBuffer;
 
-    private GLBuffer(GLEngine engine,
+    private final boolean mPersistentMapping;
+
+    private GLBuffer(GLServer server,
                      int size,
                      int usage,
-                     int type,
-                     int buffer) {
-        super(engine, size, usage);
-        mType = type;
+                     int buffer,
+                     long mappedBuffer) {
+        super(server, size, usage);
         mBuffer = buffer;
+        mMappedBuffer = mappedBuffer;
+        mPersistentMapping = mMappedBuffer != NULL;
 
         registerWithCache(true);
-
-        // OpenGL 3.3 uses mutable allocation
-        if (!engine.getCaps().hasDSASupport()) {
-
-            int target = engine.bindBuffer(this);
-            int flag = getUsageFlag();
-
-            if (engine.getCaps().skipErrorChecks()) {
-                glBufferData(target, size, flag);
-            } else {
-                glClearErrors();
-                glBufferData(target, size, flag);
-                if (glGetError() != GL_NO_ERROR) {
-                    glDeleteBuffers(mBuffer);
-                    mBuffer = 0;
-                    // OOM
-                    removeScratchKey();
-                }
-            }
-        }
     }
 
     @Nullable
     @SharedPtr
-    public static GLBuffer make(GLEngine engine,
+    public static GLBuffer make(GLServer server,
                                 int size,
                                 int usage) {
         assert (size > 0);
 
-        int type;
-        if ((usage & Engine.BufferUsageFlags.kVertex) != 0) {
-            type = GLEngine.BUFFER_TYPE_VERTEX;
-        } else if ((usage & Engine.BufferUsageFlags.kIndex) != 0) {
-            type = GLEngine.BUFFER_TYPE_INDEX;
-        } else if ((usage & Engine.BufferUsageFlags.kTransferSrc) != 0) {
-            type = GLEngine.BUFFER_TYPE_XFER_SRC;
-        } else if ((usage & Engine.BufferUsageFlags.kTransferDst) != 0) {
-            type = GLEngine.BUFFER_TYPE_XFER_DST;
-        } else {
-            return null;
-        }
+        int typeFlags = usage & (Engine.BufferUsageFlags.kVertex |
+                Engine.BufferUsageFlags.kIndex |
+                Engine.BufferUsageFlags.kTransferSrc |
+                Engine.BufferUsageFlags.kTransferDst |
+                Engine.BufferUsageFlags.kUniform |
+                Engine.BufferUsageFlags.kDrawIndirect);
+        assert typeFlags != 0;
 
-        if (engine.getCaps().hasDSASupport()) {
-            int flags = 0;
-            if ((usage & (Engine.BufferUsageFlags.kVertex | Engine.BufferUsageFlags.kIndex)) != 0) {
-                flags |= GL_DYNAMIC_STORAGE_BIT;
-            }
-            if ((usage & Engine.BufferUsageFlags.kTransferSrc) != 0) {
-                flags |= GL_MAP_WRITE_BIT;
-            }
-            if ((usage & Engine.BufferUsageFlags.kTransferDst) != 0) {
-                flags |= GL_MAP_READ_BIT;
-            }
-
+        if (server.getCaps().hasDSASupport()) {
             int buffer = glCreateBuffers();
             if (buffer == 0) {
                 return null;
             }
-            if (engine.getCaps().skipErrorChecks()) {
-                glNamedBufferStorage(buffer, size, flags);
+
+            long persistentlyMappedBuffer = NULL;
+            int allocFlags = getBufferStorageFlags(usage);
+
+            if (server.getCaps().skipErrorChecks()) {
+                glNamedBufferStorage(buffer, size, allocFlags);
             } else {
                 glClearErrors();
-                glNamedBufferStorage(buffer, size, flags);
+                glNamedBufferStorage(buffer, size, allocFlags);
                 if (glGetError() != GL_NO_ERROR) {
                     glDeleteBuffers(buffer);
                     new Throwable("RHICreateBuffer, failed to allocate " + size + " bytes from device")
-                            .printStackTrace(engine.getContext().getErrorWriter());
+                            .printStackTrace(server.getContext().getErrorWriter());
+                    return null;
+                }
+            }
+            if ((usage & Engine.BufferUsageFlags.kVolatile) != 0) {
+                persistentlyMappedBuffer = nglMapNamedBufferRange(buffer, 0, size,
+                        GL_MAP_WRITE_BIT |
+                                GL_MAP_PERSISTENT_BIT |
+                                GL_MAP_COHERENT_BIT);
+                if (persistentlyMappedBuffer == NULL) {
+                    glDeleteBuffers(buffer);
+                    new Throwable("RHICreateBuffer, failed to map buffer range persistently")
+                            .printStackTrace(server.getContext().getErrorWriter());
                     return null;
                 }
             }
 
-            return new GLBuffer(engine, size, usage, type, buffer);
+            return new GLBuffer(server, size, usage, buffer, persistentlyMappedBuffer);
         } else {
+            if (Integer.bitCount(typeFlags) != 1) {
+                new Throwable("RHICreateBuffer, only one type bit is allowed, given 0x" +
+                        Integer.toHexString(typeFlags))
+                        .printStackTrace(server.getContext().getErrorWriter());
+                return null;
+            }
+
             int buffer = glGenBuffers();
             if (buffer == 0) {
                 return null;
             }
 
-            GLBuffer res = new GLBuffer(engine, size, usage, type, buffer);
-            if (res.mBuffer == 0) {
-                res.unref();
-                new Throwable("RHICreateBuffer, failed to allocate " + size + " bytes from device")
-                        .printStackTrace(engine.getContext().getErrorWriter());
-                return null;
+            int target = server.bindBufferForSetup(usage, buffer);
+            long persistentlyMappedBuffer = NULL;
+
+            if (server.getCaps().hasBufferStorageSupport()) {
+                int allocFlags = getBufferStorageFlags(usage);
+
+                if (server.getCaps().skipErrorChecks()) {
+                    glBufferStorage(target, size, allocFlags);
+                } else {
+                    glClearErrors();
+                    glBufferStorage(target, size, allocFlags);
+                    if (glGetError() != GL_NO_ERROR) {
+                        glDeleteBuffers(buffer);
+                        new Throwable("RHICreateBuffer, failed to allocate " + size + " bytes from device")
+                                .printStackTrace(server.getContext().getErrorWriter());
+                        return null;
+                    }
+                }
+                if ((usage & Engine.BufferUsageFlags.kVolatile) != 0) {
+                    persistentlyMappedBuffer = nglMapBufferRange(target, 0, size,
+                            GL_MAP_WRITE_BIT |
+                                    GL_MAP_PERSISTENT_BIT |
+                                    GL_MAP_COHERENT_BIT);
+                    if (persistentlyMappedBuffer == NULL) {
+                        glDeleteBuffers(buffer);
+                        new Throwable("RHICreateBuffer, failed to map buffer range persistently")
+                                .printStackTrace(server.getContext().getErrorWriter());
+                        return null;
+                    }
+                }
+            } else {
+                // OpenGL 3.3 uses mutable allocation
+                int allocUsage = getLegacyBufferUsage(usage);
+
+                if (server.getCaps().skipErrorChecks()) {
+                    glBufferData(target, size, allocUsage);
+                } else {
+                    glClearErrors();
+                    glBufferData(target, size, allocUsage);
+                    if (glGetError() != GL_NO_ERROR) {
+                        glDeleteBuffers(buffer);
+                        new Throwable("RHICreateBuffer, failed to allocate " + size + " bytes from device")
+                                .printStackTrace(server.getContext().getErrorWriter());
+                        return null;
+                    }
+                }
             }
 
-            return res;
+            return new GLBuffer(server, size, usage, buffer, persistentlyMappedBuffer);
         }
     }
 
-    /**
-     * For OpenGL 3.3.
-     */
-    public int getTypeEnum() {
-        return mType;
-    }
-
-    /**
-     * For OpenGL 3.3.
-     */
-    public int getUsageFlag() {
-        if ((mUsage & Engine.BufferUsageFlags.kTransferDst) != 0) {
-            return GL_DYNAMIC_READ;
-        } else if ((mUsage & Engine.BufferUsageFlags.kVolatile) != 0) {
-            return GL_STREAM_DRAW;
-        } else if ((mUsage & Engine.BufferUsageFlags.kStatic) != 0) {
-            return GL_STATIC_DRAW;
+    public static int getLegacyBufferUsage(int usage) {
+        int allocUsage;
+        if ((usage & Engine.BufferUsageFlags.kTransferDst) != 0) {
+            allocUsage = GL_DYNAMIC_READ;
+        } else if ((usage & Engine.BufferUsageFlags.kVolatile) != 0) {
+            allocUsage = GL_STREAM_DRAW;
+        } else if ((usage & Engine.BufferUsageFlags.kDynamic) != 0) {
+            allocUsage = GL_DYNAMIC_DRAW;
+        } else if ((usage & Engine.BufferUsageFlags.kStatic) != 0) {
+            allocUsage = GL_STATIC_DRAW;
         } else {
-            return GL_DYNAMIC_DRAW;
+            allocUsage = GL_DYNAMIC_DRAW;
         }
+        return allocUsage;
     }
 
-    public int getBufferID() {
+    public static int getBufferStorageFlags(int usage) {
+        int allocFlags = 0;
+        if ((usage & Engine.BufferUsageFlags.kTransferSrc) != 0) {
+            allocFlags |= GL_MAP_WRITE_BIT;
+        }
+        if ((usage & Engine.BufferUsageFlags.kTransferDst) != 0) {
+            allocFlags |= GL_MAP_READ_BIT;
+        }
+        if ((usage & Engine.BufferUsageFlags.kVolatile) != 0) {
+            // no staging buffer, use pinned memory
+            allocFlags |= GL_MAP_WRITE_BIT |
+                    GL_MAP_PERSISTENT_BIT |
+                    GL_MAP_COHERENT_BIT;
+        } else if ((usage & (Engine.BufferUsageFlags.kVertex |
+                Engine.BufferUsageFlags.kIndex)) != 0) {
+            allocFlags |= GL_DYNAMIC_STORAGE_BIT;
+        }
+        return allocFlags;
+    }
+
+    public int getHandle() {
         return mBuffer;
     }
 
     @Override
     protected void onSetLabel(@Nonnull String label) {
-        if (getEngine().getCaps().hasDebugSupport()) {
+        if (getServer().getCaps().hasDebugSupport()) {
             if (label.isEmpty()) {
                 nglObjectLabel(GL_BUFFER, mBuffer, 0, MemoryUtil.NULL);
             } else {
                 label = label.substring(0, Math.min(label.length(),
-                        getEngine().getCaps().maxLabelLength()));
+                        getServer().getCaps().maxLabelLength()));
                 glObjectLabel(GL_BUFFER, mBuffer, label);
             }
         }
@@ -196,29 +239,35 @@ public final class GLBuffer extends Buffer {
     }
 
     @Override
-    protected GLEngine getEngine() {
-        return (GLEngine) super.getEngine();
+    protected GLServer getServer() {
+        return (GLServer) super.getServer();
     }
 
     @Override
     protected long onLock(int mode, int offset, int size) {
-        assert (getEngine().getContext().isOwnerThread());
+        assert (getServer().getContext().isOwnerThread());
         assert (!mLocked);
         assert (mBuffer != 0);
 
         mLocked = true;
 
+        if (mPersistentMapping) {
+            assert (mMappedBuffer != NULL);
+            return mMappedBuffer;
+        }
+
         if (mode == kRead_LockMode) {
             // prefer mapping, such as pixel buffer object
             mMappedBuffer = nglMapNamedBufferRange(mBuffer, offset, size, GL_MAP_READ_BIT);
             if (mMappedBuffer == NULL) {
-                throw new IllegalStateException();
+                new Throwable("Failed to map buffer " + this)
+                        .printStackTrace(getServer().getContext().getErrorWriter());
             }
             return mMappedBuffer;
         } else {
             // prefer CPU staging buffer
             assert (mode == kWriteDiscard_LockMode);
-            mStagingBuffer = getEngine().getCpuBufferCache().makeBuffer(size);
+            mStagingBuffer = getServer().getCpuBufferCache().makeBuffer(size);
             assert (mStagingBuffer != null);
             return mStagingBuffer.data();
         }
@@ -226,22 +275,29 @@ public final class GLBuffer extends Buffer {
 
     @Override
     protected void onUnlock(int mode, int offset, int size) {
-        assert (getEngine().getContext().isOwnerThread());
+        assert (getServer().getContext().isOwnerThread());
         assert (mLocked);
         assert (mBuffer != 0);
 
-        if (mode == kRead_LockMode) {
+        if (mPersistentMapping) {
+            assert (mMappedBuffer != NULL);
+            // COHERENT == true
+        } else if (mode == kRead_LockMode) {
             assert (mMappedBuffer != NULL);
             glUnmapNamedBuffer(mBuffer);
             mMappedBuffer = NULL;
         } else {
             assert (mode == kWriteDiscard_LockMode);
+            int target = 0;
+            if (!getServer().getCaps().hasDSASupport()) {
+                target = getServer().bindBuffer(this);
+            }
             if ((mUsage & Engine.BufferUsageFlags.kStatic) == 0) {
-                // non-static needs triple buffering, but GPU drivers did
-                doInvalidateBuffer(offset, size);
+                // non-static needs triple buffering, though most GPU drivers did it internally
+                doInvalidateBuffer(target, offset, size);
             }
             assert (mStagingBuffer != null);
-            doUploadData(mStagingBuffer.data(), offset, size);
+            doUploadData(target, mStagingBuffer.data(), offset, size);
             mStagingBuffer = RefCnt.move(mStagingBuffer);
         }
         mLocked = false;
@@ -254,38 +310,45 @@ public final class GLBuffer extends Buffer {
 
     @Override
     public long getLockedBuffer() {
-        assert (mLocked);
-        return mMappedBuffer != NULL ? mMappedBuffer : mStagingBuffer.data();
+        if (mLocked) {
+            return mMappedBuffer != NULL ? mMappedBuffer : mStagingBuffer.data();
+        }
+        return NULL;
     }
 
     @Override
     protected boolean onUpdateData(long data, int offset, int size) {
-        assert (getEngine().getContext().isOwnerThread());
+        assert (getServer().getContext().isOwnerThread());
         assert (mBuffer != 0);
-        if ((mUsage & Engine.BufferUsageFlags.kStatic) == 0) {
-            // non-static needs triple buffering, but GPU drivers did
-            doInvalidateBuffer(offset, size);
+        int target = 0;
+        if (!getServer().getCaps().hasDSASupport()) {
+            target = getServer().bindBuffer(this);
         }
-        doUploadData(data, offset, size);
+        if ((mUsage & Engine.BufferUsageFlags.kStatic) == 0) {
+            // non-static needs triple buffering, though most GPU drivers did it internally
+            if (!doInvalidateBuffer(target, offset, size)) {
+                return false;
+            }
+        }
+        doUploadData(target, data, offset, size);
         return true;
     }
 
     // restricted to 256KB per update
-    private static final int MAX_TRANSFER_UNIT = 1 << 18;
+    private static final int MAX_BYTES_PER_UPDATE = 1 << 18;
 
-    private void doUploadData(long data, int offset, int totalSize) {
-        if (getEngine().getCaps().hasDSASupport()) {
+    private void doUploadData(int target, long data, int offset, int totalSize) {
+        if (target == 0) {
             while (totalSize > 0) {
-                int size = Math.min(MAX_TRANSFER_UNIT, totalSize);
+                int size = Math.min(MAX_BYTES_PER_UPDATE, totalSize);
                 nglNamedBufferSubData(mBuffer, offset, size, data);
                 data += size;
                 offset += size;
                 totalSize -= size;
             }
         } else {
-            int target = getEngine().bindBuffer(this);
             while (totalSize > 0) {
-                int size = Math.min(MAX_TRANSFER_UNIT, totalSize);
+                int size = Math.min(MAX_BYTES_PER_UPDATE, totalSize);
                 nglBufferSubData(target, offset, size, data);
                 data += size;
                 offset += size;
@@ -294,11 +357,29 @@ public final class GLBuffer extends Buffer {
         }
     }
 
-    private void doInvalidateBuffer(int offset, int size) {
-        if (getEngine().getCaps().getInvalidateBufferType() == GLCaps.INVALIDATE_BUFFER_TYPE_INVALIDATE) {
-            glInvalidateBufferSubData(mBuffer, offset, size);
-        }
+    private boolean doInvalidateBuffer(int target, int offset, int size) {
         // to be honest, invalidation doesn't help performance in most cases
         // because GPU drivers did optimizations
+        var server = getServer();
+        switch (server.getCaps().getInvalidateBufferType()) {
+            case GLCaps.INVALIDATE_BUFFER_TYPE_ORPHAN -> {
+                assert target != 0; // DSA is not support
+                int allocUsage = getLegacyBufferUsage(getUsage());
+                // orphan full size
+                if (server.getCaps().skipErrorChecks()) {
+                    glBufferData(target, mSize, allocUsage);
+                } else {
+                    glClearErrors();
+                    glBufferData(target, mSize, allocUsage);
+                    if (glGetError() != GL_NO_ERROR) {
+                        return false;
+                    }
+                }
+            }
+            case GLCaps.INVALIDATE_BUFFER_TYPE_INVALIDATE -> {
+                glInvalidateBufferSubData(mBuffer, offset, size);
+            }
+        }
+        return true;
     }
 }
