@@ -19,26 +19,27 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.SharedPtr;
-import icyllis.modernui.graphics.*;
+import icyllis.modernui.graphics.ImageInfo;
+import icyllis.modernui.graphics.MathUtil;
 
 import javax.annotation.Nullable;
 
 /**
- * Provides common resources with cache.
+ * Provides resources with cache.
  */
-public final class ResourceProvider {
+public class ResourceProvider {
 
     public static final int MIN_SCRATCH_TEXTURE_SIZE = 16;
 
-    private final Engine mEngine;
-    private final ResourceCache mCache;
+    private final Server mServer;
+    private final DirectContext mContext;
 
     // lookup key
     private final Texture.ScratchKey mTextureScratchKey = new Texture.ScratchKey();
 
-    ResourceProvider(Engine engine, ResourceCache cache) {
-        mEngine = engine;
-        mCache = cache;
+    protected ResourceProvider(Server server, DirectContext context) {
+        mServer = server;
+        mContext = context;
     }
 
     /**
@@ -78,9 +79,10 @@ public final class ResourceProvider {
     @Nullable
     @SharedPtr
     @SuppressWarnings("unchecked")
-    public <T extends Resource> T findByUniqueKey(Object key) {
-        assert mEngine.getContext().isOwnerThread();
-        return mEngine.getContext().isDiscarded() ? null : (T) mCache.findAndRefUniqueResource(key);
+    public final <T extends Resource> T findByUniqueKey(Object key) {
+        assert mServer.getContext().isOwnerThread();
+        return mServer.getContext().isDiscarded() ? null :
+                (T) mContext.getResourceCache().findAndRefUniqueResource(key);
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -124,13 +126,13 @@ public final class ResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public Texture createTexture(int width, int height,
-                                 BackendFormat format,
-                                 int sampleCount,
-                                 int surfaceFlags,
-                                 String label) {
-        assert mEngine.getContext().isOwnerThread();
-        if (mEngine.getContext().isDiscarded()) {
+    public final Texture createTexture(int width, int height,
+                                       BackendFormat format,
+                                       int sampleCount,
+                                       int surfaceFlags,
+                                       String label) {
+        assert mServer.getContext().isOwnerThread();
+        if (mServer.getContext().isDiscarded()) {
             return null;
         }
 
@@ -138,7 +140,7 @@ public final class ResourceProvider {
         // textures should be created through the createCompressedTexture function.
         assert !format.isCompressed();
 
-        if (!mEngine.getCaps().validateSurfaceParams(width, height, format,
+        if (!mServer.getCaps().validateSurfaceParams(width, height, format,
                 sampleCount, surfaceFlags)) {
             return null;
         }
@@ -159,7 +161,7 @@ public final class ResourceProvider {
             return texture;
         }
 
-        return mEngine.createTexture(width, height, format,
+        return mServer.createTexture(width, height, format,
                 sampleCount, surfaceFlags, label);
     }
 
@@ -189,17 +191,17 @@ public final class ResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public Texture createTexture(int width, int height,
-                                 BackendFormat format,
-                                 int sampleCount,
-                                 int surfaceFlags,
-                                 int dstColorType,
-                                 int srcColorType,
-                                 int rowBytes,
-                                 long pixels,
-                                 String label) {
-        assert mEngine.getContext().isOwnerThread();
-        if (mEngine.getContext().isDiscarded()) {
+    public final Texture createTexture(int width, int height,
+                                       BackendFormat format,
+                                       int sampleCount,
+                                       int surfaceFlags,
+                                       int dstColorType,
+                                       int srcColorType,
+                                       int rowBytes,
+                                       long pixels,
+                                       String label) {
+        assert mServer.getContext().isOwnerThread();
+        if (mServer.getContext().isDiscarded()) {
             return null;
         }
 
@@ -213,7 +215,7 @@ public final class ResourceProvider {
         if (actualRowBytes < minRowBytes) {
             return null;
         }
-        int actualColorType = (int) mEngine.getCaps().getSupportedWriteColorType(
+        int actualColorType = (int) mServer.getCaps().getSupportedWriteColorType(
                 dstColorType,
                 format,
                 srcColorType);
@@ -229,7 +231,7 @@ public final class ResourceProvider {
         if (pixels == 0) {
             return texture;
         }
-        boolean result = mEngine.writePixels(texture, 0, 0, width, height,
+        boolean result = mServer.writePixels(texture, 0, 0, width, height,
                 dstColorType, actualColorType, actualRowBytes, pixels);
         assert result;
 
@@ -245,14 +247,14 @@ public final class ResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public Texture findAndRefScratchTexture(Object key, String label) {
-        assert mEngine.getContext().isOwnerThread();
-        assert !mEngine.getContext().isDiscarded();
+    public final Texture findAndRefScratchTexture(Object key, String label) {
+        assert mServer.getContext().isOwnerThread();
+        assert !mServer.getContext().isDiscarded();
         assert key != null;
 
-        Resource resource = mCache.findAndRefScratchResource(key);
+        Resource resource = mContext.getResourceCache().findAndRefScratchResource(key);
         if (resource != null) {
-            mEngine.getStats().incNumScratchTexturesReused();
+            mServer.getStats().incNumScratchTexturesReused();
             if (label != null) {
                 resource.setLabel(label);
             }
@@ -273,15 +275,15 @@ public final class ResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public Texture findAndRefScratchTexture(int width, int height,
-                                            BackendFormat format,
-                                            int sampleCount,
-                                            int surfaceFlags,
-                                            String label) {
-        assert mEngine.getContext().isOwnerThread();
-        assert !mEngine.getContext().isDiscarded();
+    public final Texture findAndRefScratchTexture(int width, int height,
+                                                  BackendFormat format,
+                                                  int sampleCount,
+                                                  int surfaceFlags,
+                                                  String label) {
+        assert mServer.getContext().isOwnerThread();
+        assert !mServer.getContext().isDiscarded();
         assert !format.isCompressed();
-        assert mEngine.getCaps().validateSurfaceParams(width, height, format,
+        assert mServer.getCaps().validateSurfaceParams(width, height, format,
                 sampleCount, surfaceFlags);
 
         return findAndRefScratchTexture(mTextureScratchKey.compute(
@@ -310,13 +312,13 @@ public final class ResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public Texture wrapRenderableBackendTexture(BackendTexture texture,
-                                                int sampleCount,
-                                                boolean ownership) {
-        if (mEngine.getContext().isDiscarded()) {
+    public final Texture wrapRenderableBackendTexture(BackendTexture texture,
+                                                      int sampleCount,
+                                                      boolean ownership) {
+        if (mServer.getContext().isDiscarded()) {
             return null;
         }
-        return mEngine.wrapRenderableBackendTexture(texture, sampleCount, ownership);
+        return mServer.wrapRenderableBackendTexture(texture, sampleCount, ownership);
     }
 
     /**
@@ -325,21 +327,21 @@ public final class ResourceProvider {
      * @param size  minimum size of buffer to return.
      * @param usage hint to the graphics subsystem about what the buffer will be used for.
      * @return the buffer if successful, otherwise nullptr.
-     * @see Engine.BufferUsageFlags
+     * @see Server.BufferUsageFlags
      */
     @Nullable
     @SharedPtr
-    public Buffer createBuffer(int size, int usage) {
-        if (mEngine.getContext().isDiscarded()) {
+    public final Buffer createBuffer(int size, int usage) {
+        if (mServer.getContext().isDiscarded()) {
             return null;
         }
         //TODO scratch
-        return mEngine.createBuffer(size, usage);
+        return mServer.createBuffer(size, usage);
     }
 
-    public void assignUniqueKeyToResource(Object key, Resource resource) {
-        assert mEngine.getContext().isOwnerThread();
-        if (mEngine.getContext().isDiscarded() || resource == null) {
+    public final void assignUniqueKeyToResource(Object key, Resource resource) {
+        assert mServer.getContext().isOwnerThread();
+        if (mServer.getContext().isDiscarded() || resource == null) {
             return;
         }
         resource.setUniqueKey(key);

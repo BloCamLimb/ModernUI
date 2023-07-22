@@ -82,7 +82,7 @@ fun main() {
         outBm.close()
     }
 
-    println(dContext.engine.stats)
+    println(dContext.server.stats)
 
     dContext.unref()
     window.close()

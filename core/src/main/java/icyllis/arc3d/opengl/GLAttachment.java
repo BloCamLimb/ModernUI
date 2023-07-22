@@ -43,9 +43,9 @@ public final class GLAttachment extends Attachment {
 
     private final long mMemorySize;
 
-    private GLAttachment(GLEngine engine, int width, int height,
+    private GLAttachment(GLServer server, int width, int height,
                          int sampleCount, int format, int renderbuffer) {
-        super(engine, width, height, sampleCount);
+        super(server, width, height, sampleCount);
         mRenderbuffer = renderbuffer;
         mFormat = format;
 
@@ -58,7 +58,7 @@ public final class GLAttachment extends Attachment {
 
     @Nullable
     @SharedPtr
-    public static GLAttachment makeStencil(GLEngine engine,
+    public static GLAttachment makeStencil(GLServer server,
                                            int width, int height,
                                            int sampleCount,
                                            int format) {
@@ -69,7 +69,7 @@ public final class GLAttachment extends Attachment {
             return null;
         }
         glBindRenderbuffer(GL_RENDERBUFFER, renderbuffer);
-        if (engine.getCaps().skipErrorChecks()) {
+        if (server.getCaps().skipErrorChecks()) {
             // GL has a concept of MSAA rasterization with a single sample, but we do not.
             if (sampleCount > 1) {
                 glRenderbufferStorageMultisample(GL_RENDERBUFFER, sampleCount, format, width, height);
@@ -91,12 +91,12 @@ public final class GLAttachment extends Attachment {
             }
         }
 
-        return new GLAttachment(engine, width, height, sampleCount, format, renderbuffer);
+        return new GLAttachment(server, width, height, sampleCount, format, renderbuffer);
     }
 
     @Nullable
     @SharedPtr
-    public static GLAttachment makeColor(GLEngine engine,
+    public static GLAttachment makeColor(GLServer server,
                                          int width, int height,
                                          int sampleCount,
                                          int format) {
@@ -107,8 +107,8 @@ public final class GLAttachment extends Attachment {
             return null;
         }
         glBindRenderbuffer(GL_RENDERBUFFER, renderbuffer);
-        int internalFormat = engine.getCaps().getRenderbufferInternalFormat(format);
-        if (engine.getCaps().skipErrorChecks()) {
+        int internalFormat = server.getCaps().getRenderbufferInternalFormat(format);
+        if (server.getCaps().skipErrorChecks()) {
             glRenderbufferStorageMultisample(GL_RENDERBUFFER, sampleCount, internalFormat, width, height);
         } else {
             glClearErrors();
@@ -119,18 +119,18 @@ public final class GLAttachment extends Attachment {
             }
         }
 
-        return new GLAttachment(engine, width, height, sampleCount, format, renderbuffer);
+        return new GLAttachment(server, width, height, sampleCount, format, renderbuffer);
     }
 
     @Nonnull
     @SharedPtr
-    public static GLAttachment makeWrapped(GLEngine engine,
+    public static GLAttachment makeWrapped(GLServer server,
                                            int width, int height,
                                            int sampleCount,
                                            int format,
                                            int renderbuffer) {
         assert sampleCount > 0;
-        return new GLAttachment(engine, width, height, sampleCount, format, renderbuffer);
+        return new GLAttachment(server, width, height, sampleCount, format, renderbuffer);
     }
 
     @Nonnull

@@ -50,6 +50,8 @@ public final class GLCaps extends Caps {
 
     final boolean mDebugSupport;
 
+    final boolean mBufferStorageSupport;
+
     final boolean mBaseInstanceSupport;
     final boolean mDSASupport;
 
@@ -168,17 +170,19 @@ public final class GLCaps extends Caps {
 
             mDebugSupport = caps.OpenGL43 || caps.GL_KHR_debug;
             mBaseInstanceSupport = caps.OpenGL42 || caps.GL_ARB_base_instance;
+            mBufferStorageSupport = caps.OpenGL44 || caps.GL_ARB_buffer_storage;
 
         } else {
             mDSASupport = true;
             mDebugSupport = true;
             mBaseInstanceSupport = true;
+            mBufferStorageSupport = true;
         }
 
         mMaxFragmentUniformVectors = glGetInteger(GL_MAX_FRAGMENT_UNIFORM_VECTORS);
         mMaxVertexAttributes = Math.min(32, glGetInteger(GL_MAX_VERTEX_ATTRIBS));
 
-        if (mDSASupport || caps.GL_ARB_invalidate_subdata) {
+        if (caps.OpenGL43 || caps.GL_ARB_invalidate_subdata) {
             mInvalidateBufferType = INVALIDATE_BUFFER_TYPE_INVALIDATE;
         } else {
             mInvalidateBufferType = INVALIDATE_BUFFER_TYPE_ORPHAN;
@@ -1238,6 +1242,10 @@ public final class GLCaps extends Caps {
 
     public boolean hasBaseInstanceSupport() {
         return mBaseInstanceSupport;
+    }
+
+    public boolean hasBufferStorageSupport() {
+        return mBufferStorageSupport;
     }
 
     @Override

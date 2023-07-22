@@ -18,31 +18,30 @@
 
 package icyllis.arc3d.opengl;
 
+import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.*;
 import icyllis.modernui.graphics.RefCnt;
-import icyllis.arc3d.core.SharedPtr;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Arrays;
 
 import static icyllis.arc3d.opengl.GLCore.*;
 
 /**
  * The main command buffer of OpenGL context. The commands executed on {@link GLCommandBuffer} are
- * mostly the same as that on {@link GLEngine}, but {@link GLCommandBuffer} assumes some values
+ * mostly the same as that on {@link GLServer}, but {@link GLCommandBuffer} assumes some values
  * and will not handle dirty context.
  *
- * @see GLEngine#beginRenderPass
+ * @see GLServer#beginRenderPass
  */
-public final class GLCommandBuffer {
+public final class GLCommandBuffer extends CommandBuffer {
 
     private static final int
             TriState_Disabled = 0,
             TriState_Enabled = 1,
             TriState_Unknown = 2;
 
-    private final GLEngine mEngine;
+    private final GLServer mServer;
 
     private int mHWViewportWidth;
     private int mHWViewportHeight;
@@ -68,37 +67,29 @@ public final class GLCommandBuffer {
     @SharedPtr
     private final GLUniformBuffer[] mBoundUniformBuffers;
 
-    // OpenGL 3 only.
-    private int mHWActiveTextureUnit;
+    private long mSubmitFence;
 
-    /**
-     * Represents a non-zero texture ID is bound, but no GLTexture object is created.
-     *
-     * @see #bindTextureForOp(int)
-     */
-    // OpenGL 3 only.
-    private static final GLTexture.UniqueID SETUP_TEXTURE_ID = new GLTexture.UniqueID();
+    GLCommandBuffer(GLServer server) {
+        mServer = server;
 
-    // target is Texture2D
-    private final GLTexture.UniqueID[] mHWTextureStates;
-
-    static final class HWSamplerState {
-        // default to invalid, we use 0 because it's not a valid sampler state
-        int mSamplerState = 0;
-        @SharedPtr
-        GLSampler mBoundSampler = null;
+        mBoundUniformBuffers = new GLUniformBuffer[4];
     }
 
-    private final HWSamplerState[] mHWSamplerStates;
+    void submit() {
 
-    GLCommandBuffer(GLEngine engine) {
-        mEngine = engine;
-        mHWTextureStates = new GLTexture.UniqueID[engine.maxTextureUnits()];
-        mHWSamplerStates = new HWSamplerState[mHWTextureStates.length];
-        for (int i = 0; i < mHWSamplerStates.length; i++) {
-            mHWSamplerStates[i] = new HWSamplerState();
+        mSubmitFence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+    }
+
+    void checkFinishedAndReset() {
+        if (mSubmitFence == 0) {
+            return;
         }
-        mBoundUniformBuffers = new GLUniformBuffer[4];
+        int status = glClientWaitSync(mSubmitFence, 0, 0);
+        if (status == GL_CONDITION_SATISFIED ||
+                status == GL_ALREADY_SIGNALED) {
+
+            glDeleteSync(mSubmitFence);
+        }
     }
 
     void resetStates(int states) {
@@ -115,17 +106,6 @@ public final class GLCommandBuffer {
                 mBoundUniformBuffers[i] = RefCnt.move(mBoundUniformBuffers[i]);
             }
         }
-
-        if ((states & Engine.GLBackendState.kTexture) != 0) {
-            Arrays.fill(mHWTextureStates, null);
-            //TODO
-            for (var ss : mHWSamplerStates) {
-                ss.mSamplerState = 0;
-                ss.mBoundSampler = RefCnt.move(ss.mBoundSampler);
-            }
-        }
-
-        mHWActiveTextureUnit = -1; // invalid
 
         if ((states & Engine.GLBackendState.kView) != 0) {
             mHWScissorTest = TriState_Unknown;
@@ -309,93 +289,6 @@ public final class GLCommandBuffer {
                 assert (!texture.isMipmapsDirty());
             }
         }
-        boolean dsa = mEngine.getCaps().hasDSASupport();
-        if (mHWTextureStates[binding] != texture.getUniqueID()) {
-            if (dsa) {
-                glBindTextureUnit(binding, texture.getHandle());
-            } else {
-                setTextureUnit(binding);
-                glBindTexture(GL_TEXTURE_2D, texture.getHandle());
-            }
-            mHWTextureStates[binding] = texture.getUniqueID();
-        }
-        var ss = mHWSamplerStates[binding];
-        if (ss.mSamplerState != samplerState) {
-            GLSampler sampler = samplerState != 0
-                    ? mEngine.getResourceProvider().findOrCreateCompatibleSampler(samplerState)
-                    : null;
-            glBindSampler(binding, sampler != null
-                    ? sampler.getHandle()
-                    : 0);
-            ss.mBoundSampler = RefCnt.move(ss.mBoundSampler, sampler);
-        }
-        GLTextureParameters parameters = texture.getParameters();
-        if (parameters.baseMipmapLevel != 0) {
-            if (dsa) {
-                glTextureParameteri(texture.getHandle(), GL_TEXTURE_BASE_LEVEL, 0);
-            } else {
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-            }
-            parameters.baseMipmapLevel = 0;
-        }
-        int maxLevel = texture.getMaxMipmapLevel();
-        if (parameters.maxMipmapLevel != maxLevel) {
-            if (dsa) {
-                glTextureParameteri(texture.getHandle(), GL_TEXTURE_MAX_LEVEL, maxLevel);
-            } else {
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, maxLevel);
-            }
-            parameters.maxMipmapLevel = maxLevel;
-        }
-        // texture view is available since 4.3, but less used in OpenGL
-        boolean swizzleChanged = false;
-        for (int i = 0; i < 4; ++i) {
-            int swiz = switch (readSwizzle & 0xF) {
-                case 0 -> GL_RED;
-                case 1 -> GL_GREEN;
-                case 2 -> GL_BLUE;
-                case 3 -> GL_ALPHA;
-                case 4 -> GL_ZERO;
-                case 5 -> GL_ONE;
-                default -> throw new AssertionError(readSwizzle);
-            };
-            if (parameters.swizzle[i] != swiz) {
-                parameters.swizzle[i] = swiz;
-                swizzleChanged = true;
-            }
-            readSwizzle >>= 4;
-        }
-        if (swizzleChanged) {
-            if (dsa) {
-                glTextureParameteriv(texture.getHandle(), GL_TEXTURE_SWIZZLE_RGBA, parameters.swizzle);
-            } else {
-                glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, parameters.swizzle);
-            }
-        }
-    }
-
-    /**
-     * Binds texture unit in context. OpenGL 3 only.
-     *
-     * @param unit 0-based texture unit index
-     */
-    public void setTextureUnit(int unit) {
-        assert (unit >= 0 && unit < mHWTextureStates.length);
-        if (unit != mHWActiveTextureUnit) {
-            glActiveTexture(GL_TEXTURE0 + unit);
-            mHWActiveTextureUnit = unit;
-        }
-    }
-
-    /**
-     * Bind raw texture ID to a seldom used texture unit. OpenGL 3 only.
-     *
-     * @param texture the texture
-     */
-    public void bindTextureForOp(int texture) {
-        int lastUnit = mHWTextureStates.length - 1;
-        setTextureUnit(lastUnit);
-        mHWTextureStates[lastUnit] = SETUP_TEXTURE_ID;
-        glBindTexture(GL_TEXTURE_2D, texture);
+        mServer.bindTexture(binding, texture, samplerState, readSwizzle);
     }
 }

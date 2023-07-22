@@ -64,7 +64,7 @@ public final class GLVertexArray extends ManagedResource {
     private long mVertexOffset;
     private long mInstanceOffset;
 
-    private GLVertexArray(GLEngine engine,
+    private GLVertexArray(GLServer server,
                           int vertexArray,
                           int vertexBinding,
                           int instanceBinding,
@@ -73,7 +73,7 @@ public final class GLVertexArray extends ManagedResource {
                           int numVertexLocations,
                           int numInstanceLocations,
                           int[] attributes) {
-        super(engine);
+        super(server);
         assert (vertexArray != 0);
         assert (vertexBinding == INVALID_BINDING || vertexStride > 0);
         assert (instanceBinding == INVALID_BINDING || instanceStride > 0);
@@ -89,9 +89,9 @@ public final class GLVertexArray extends ManagedResource {
 
     @Nullable
     @SharedPtr
-    public static GLVertexArray make(@Nonnull GLEngine engine,
+    public static GLVertexArray make(@Nonnull GLServer server,
                                      @Nonnull GeometryProcessor geomProc) {
-        final boolean dsa = engine.getCaps().hasDSASupport();
+        final boolean dsa = server.getCaps().hasDSASupport();
         final int vertexArray;
 
         if (dsa) {
@@ -153,7 +153,7 @@ public final class GLVertexArray extends ManagedResource {
 
         assert index == numVertexLocations + numInstanceLocations;
 
-        if (index > engine.getCaps().maxVertexAttributes()) {
+        if (index > server.getCaps().maxVertexAttributes()) {
             glDeleteVertexArrays(vertexArray);
             if (!dsa) {
                 glBindVertexArray(oldVertexArray);
@@ -183,16 +183,16 @@ public final class GLVertexArray extends ManagedResource {
             glBindVertexArray(oldVertexArray);
         }
 
-        if (engine.getCaps().hasDebugSupport()) {
+        if (server.getCaps().hasDebugSupport()) {
             String label = geomProc.name();
             if (!label.isEmpty()) {
                 label = label.substring(0, Math.min(label.length(),
-                        engine.getCaps().maxLabelLength()));
+                        server.getCaps().maxLabelLength()));
                 glObjectLabel(GL_VERTEX_ARRAY, vertexArray, label);
             }
         }
 
-        return new GLVertexArray(engine,
+        return new GLVertexArray(server,
                 vertexArray,
                 vertexBinding,
                 instanceBinding,
@@ -404,11 +404,11 @@ public final class GLVertexArray extends ManagedResource {
         if (mIndexBuffer != buffer.getUniqueID()) {
             if (mAttributes == null) {
                 // OpenGL 4.5
-                glVertexArrayElementBuffer(mVertexArray, buffer.getBufferID());
+                glVertexArrayElementBuffer(mVertexArray, buffer.getHandle());
             } else {
                 // OpenGL 3.3
                 // this binding state is associated with current VAO
-                getEngine().bindIndexBufferInPipe(buffer);
+                getServer().bindIndexBufferInPipe(buffer);
             }
             mIndexBuffer = buffer.getUniqueID();
         }
@@ -437,13 +437,13 @@ public final class GLVertexArray extends ManagedResource {
                 // OpenGL 4.5
                 glVertexArrayVertexBuffer(mVertexArray,
                         mVertexBinding,
-                        buffer.getBufferID(),
+                        buffer.getHandle(),
                         offset,
                         mVertexStride);
             } else if (mAttributes != null) {
                 // OpenGL 3.3, you must bind pipeline before
                 // 'offset' should translate into 'baseVertex'
-                int target = getEngine().bindBuffer(buffer);
+                int target = getServer().bindBuffer(buffer);
                 assert target == GL_ARRAY_BUFFER;
                 for (int index = 0;
                      index < mNumVertexLocations;
@@ -481,13 +481,13 @@ public final class GLVertexArray extends ManagedResource {
                 // OpenGL 4.5
                 glVertexArrayVertexBuffer(mVertexArray,
                         mInstanceBinding,
-                        buffer.getBufferID(),
+                        buffer.getHandle(),
                         offset,
                         mInstanceStride);
             } else if (mAttributes != null) {
                 // OpenGL 3.3, you must bind pipeline before
                 // 'offset' should translate into 'baseInstance'
-                int target = getEngine().bindBuffer(buffer);
+                int target = getServer().bindBuffer(buffer);
                 assert target == GL_ARRAY_BUFFER;
                 for (int index = mNumVertexLocations;
                      index < mNumVertexLocations + mNumInstanceLocations;
@@ -505,7 +505,7 @@ public final class GLVertexArray extends ManagedResource {
     }
 
     @Override
-    protected GLEngine getEngine() {
-        return (GLEngine) super.getEngine();
+    protected GLServer getServer() {
+        return (GLServer) super.getServer();
     }
 }

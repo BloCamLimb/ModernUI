@@ -46,7 +46,7 @@ public class DrawingManager {
         mContext = context;
         if (context instanceof DirectContext direct) {
             mDirect = direct;
-            mFlushState = new OpFlushState(direct.getEngine(), direct.getResourceProvider());
+            mFlushState = new OpFlushState(direct.getServer(), direct.getResourceProvider());
             mResourceAllocator = new ResourceAllocator(direct);
         } else {
             // deferred
@@ -85,8 +85,8 @@ public class DrawingManager {
 
         final DirectContext context = mDirect;
         assert (context != null);
-        final Engine engine = context.getEngine();
-        assert (engine != null);
+        final Server server = context.getServer();
+        assert (server != null);
 
         closeTasks();
         mActiveOpsTask = null;

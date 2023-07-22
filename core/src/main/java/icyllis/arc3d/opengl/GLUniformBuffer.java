@@ -31,21 +31,21 @@ public class GLUniformBuffer extends ManagedResource {
     private final int mSize;
     private int mBuffer;
 
-    private GLUniformBuffer(GLEngine engine,
+    private GLUniformBuffer(GLServer server,
                             int binding,
                             int size,
                             int buffer) {
-        super(engine);
+        super(server);
         mSize = size;
         mBuffer = buffer;
         mBinding = binding;
 
         // OpenGL 3.3 uses mutable allocation
-        if (!engine.getCaps().hasDSASupport()) {
+        if (!server.getCaps().hasDSASupport()) {
 
-            engine.currentCommandBuffer().bindUniformBuffer(this);
+            server.currentCommandBuffer().bindUniformBuffer(this);
 
-            if (engine.getCaps().skipErrorChecks()) {
+            if (server.getCaps().skipErrorChecks()) {
                 glBufferData(GL_UNIFORM_BUFFER, size, GL_DYNAMIC_DRAW);
             } else {
                 glClearErrors();
@@ -63,17 +63,17 @@ public class GLUniformBuffer extends ManagedResource {
      */
     @Nullable
     @SharedPtr
-    public static GLUniformBuffer make(GLEngine engine,
+    public static GLUniformBuffer make(GLServer server,
                                        int size,
                                        int binding) {
         assert (size > 0);
 
-        if (engine.getCaps().hasDSASupport()) {
+        if (server.getCaps().hasDSASupport()) {
             int buffer = glCreateBuffers();
             if (buffer == 0) {
                 return null;
             }
-            if (engine.getCaps().skipErrorChecks()) {
+            if (server.getCaps().skipErrorChecks()) {
                 glNamedBufferStorage(buffer, size, GL_DYNAMIC_STORAGE_BIT);
             } else {
                 glClearErrors();
@@ -84,14 +84,14 @@ public class GLUniformBuffer extends ManagedResource {
                 }
             }
 
-            return new GLUniformBuffer(engine, binding, size, buffer);
+            return new GLUniformBuffer(server, binding, size, buffer);
         } else {
             int buffer = glGenBuffers();
             if (buffer == 0) {
                 return null;
             }
 
-            GLUniformBuffer res = new GLUniformBuffer(engine, binding, size, buffer);
+            GLUniformBuffer res = new GLUniformBuffer(server, binding, size, buffer);
             if (res.mBuffer == 0) {
                 res.unref();
                 return null;

@@ -33,7 +33,7 @@ import static icyllis.arc3d.opengl.GLCore.*;
 
 public class GLPipelineStateBuilder extends ProgramBuilder {
 
-    private final GLEngine mEngine;
+    private final GLServer mServer;
 
     private final VaryingHandler mVaryingHandler;
     private final GLUniformHandler mUniformHandler;
@@ -41,21 +41,21 @@ public class GLPipelineStateBuilder extends ProgramBuilder {
     private String mVertSource;
     private String mFragSource;
 
-    private GLPipelineStateBuilder(GLEngine engine,
+    private GLPipelineStateBuilder(GLServer server,
                                    PipelineDesc desc,
                                    PipelineInfo pipelineInfo) {
         super(desc, pipelineInfo);
-        mEngine = engine;
+        mServer = server;
         mVaryingHandler = new VaryingHandler(this);
         mUniformHandler = new GLUniformHandler(this);
     }
 
     @Nonnull
-    public static GLPipelineState createPipelineState(final GLEngine engine,
+    public static GLPipelineState createPipelineState(final GLServer server,
                                                       final PipelineDesc desc,
                                                       final PipelineInfo pipelineInfo) {
-        return new GLPipelineState(engine, CompletableFuture.supplyAsync(() -> {
-            GLPipelineStateBuilder builder = new GLPipelineStateBuilder(engine, desc, pipelineInfo);
+        return new GLPipelineState(server, CompletableFuture.supplyAsync(() -> {
+            GLPipelineStateBuilder builder = new GLPipelineStateBuilder(server, desc, pipelineInfo);
             builder.buildAsync();
             return builder;
         }));
@@ -88,17 +88,17 @@ public class GLPipelineStateBuilder extends ProgramBuilder {
             return false;
         }
 
-        PrintWriter errorWriter = mEngine.getContext().getErrorWriter();
+        PrintWriter errorWriter = mServer.getContext().getErrorWriter();
 
         int frag = glCompileAndAttachShader(program, GL_FRAGMENT_SHADER, mFragSource,
-                mEngine.getPipelineStateCache().getStates(), errorWriter);
+                mServer.getPipelineStateCache().getStates(), errorWriter);
         if (frag == 0) {
             glDeleteProgram(program);
             return false;
         }
 
         int vert = glCompileAndAttachShader(program, GL_VERTEX_SHADER, mVertSource,
-                mEngine.getPipelineStateCache().getStates(), errorWriter);
+                mServer.getPipelineStateCache().getStates(), errorWriter);
         if (vert == 0) {
             glDeleteProgram(program);
             glDeleteShader(frag);
@@ -146,13 +146,13 @@ public class GLPipelineStateBuilder extends ProgramBuilder {
 
         //TODO share vertex arrays
         @SharedPtr
-        GLVertexArray vertexArray = GLVertexArray.make(mEngine, mPipelineInfo.geomProc());
+        GLVertexArray vertexArray = GLVertexArray.make(mServer, mPipelineInfo.geomProc());
         if (vertexArray == null) {
             glDeleteProgram(program);
             return false;
         }
 
-        result.init(new GLProgram(mEngine, program),
+        result.init(new GLProgram(mServer, program),
                 vertexArray,
                 mUniformHandler.mUniforms,
                 mUniformHandler.mCurrentOffset,
@@ -163,7 +163,7 @@ public class GLPipelineStateBuilder extends ProgramBuilder {
 
     @Override
     public Caps caps() {
-        return mEngine.getCaps();
+        return mServer.getCaps();
     }
 
     @Override

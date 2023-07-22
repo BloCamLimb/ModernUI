@@ -18,8 +18,8 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.modernui.graphics.MathUtil;
 import icyllis.arc3d.core.SharedPtr;
+import icyllis.modernui.graphics.MathUtil;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
@@ -30,7 +30,7 @@ import java.util.Arrays;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 /**
- * A pool of geometry buffers tied to a {@link Engine}.
+ * A pool of geometry buffers tied to a {@link DirectContext}.
  * <p>
  * The pool allows a client to make space for geometry and then put back excess
  * space if it over allocated. When a client is ready to draw from the pool
@@ -49,7 +49,7 @@ public abstract class BufferAllocPool {
      */
     public static final int DEFAULT_BUFFER_SIZE = 1 << 17;
 
-    private final Engine mEngine;
+    private final DirectContext mContext;
     private final int mBufferType;
 
     // blocks
@@ -62,38 +62,49 @@ public abstract class BufferAllocPool {
 
     private int mBytesInUse;
 
-    protected ByteBuffer mWriter;
+    protected ByteBuffer mCachedWriter;
 
     /**
      * Constructor.
      *
-     * @param engine     the engine used to create the buffers.
+     * @param context    the context used to create the buffers.
      * @param bufferType the type of buffers to create.
      */
-    protected BufferAllocPool(Engine engine, int bufferType) {
-        assert (bufferType == Engine.BufferUsageFlags.kVertex || bufferType == Engine.BufferUsageFlags.kIndex);
-        mEngine = engine;
+    protected BufferAllocPool(DirectContext context, int bufferType) {
+        assert (bufferType == Engine.BufferUsageFlags.kVertex ||
+                bufferType == Engine.BufferUsageFlags.kIndex);
+        mContext = context;
         mBufferType = bufferType;
     }
 
     /**
      * Constructor.
      *
-     * @param engine the engine used to create the vertex buffers.
+     * @param context the context used to create the vertex buffers.
      */
     @Nonnull
-    public static BufferAllocPool makeVertexPool(Engine engine) {
-        return new VertexPool(engine);
+    public static BufferAllocPool makeVertexPool(DirectContext context) {
+        return new VertexPool(context);
     }
 
     /**
      * Constructor.
      *
-     * @param engine the engine used to create the instance buffers.
+     * @param context the context used to create the instance buffers.
      */
     @Nonnull
-    public static BufferAllocPool makeInstancePool(Engine engine) {
-        return new InstancePool(engine);
+    public static BufferAllocPool makeInstancePool(DirectContext context) {
+        return new InstancePool(context);
+    }
+
+    /**
+     * Constructor.
+     *
+     * @param context the context used to create the index buffers.
+     */
+    @Nonnull
+    public static BufferAllocPool makeIndexPool(DirectContext context) {
+        return new IndexPool(context);
     }
 
     /**
@@ -128,9 +139,39 @@ public abstract class BufferAllocPool {
             }
         }
         while (mIndex >= 0) {
+            @SharedPtr
             Buffer buffer = mBuffers[mIndex];
             assert (!buffer.isLocked());
             mBuffers[mIndex--] = Resource.move(buffer);
+        }
+        assert (mIndex == -1);
+        assert (mBufferPtr == NULL);
+    }
+
+    /**
+     * Alternative to {@link #reset()} that flushes and submits ALL using buffers to
+     * the given command buffer. This method ensures all buffers are unlocked and
+     * have all data written to them.
+     *
+     * @param cmdBuffer the cmd buf the G buffers used in
+     */
+    public void submit(CommandBuffer cmdBuffer) {
+        mBytesInUse = 0;
+        if (mIndex >= 0) {
+            Buffer buffer = mBuffers[mIndex];
+            if (buffer.isLocked()) {
+                assert (mBufferPtr != NULL);
+                assert (buffer.getLockedBuffer() == mBufferPtr);
+                buffer.unlock();
+                mBufferPtr = NULL;
+            }
+        }
+        while (mIndex >= 0) {
+            @SharedPtr
+            Buffer buffer = mBuffers[mIndex];
+            assert (!buffer.isLocked());
+            cmdBuffer.moveAndTrackGPUBuffer(buffer);
+            mBuffers[mIndex--] = null;
         }
         assert (mIndex == -1);
         assert (mBufferPtr == NULL);
@@ -231,7 +272,7 @@ public abstract class BufferAllocPool {
         int blockSize = Math.max(size, DEFAULT_BUFFER_SIZE);
 
         @SharedPtr
-        Buffer buffer = mEngine.getContext().getResourceProvider()
+        Buffer buffer = mContext.getResourceProvider()
                 .createBuffer(blockSize, mBufferType | Engine.BufferUsageFlags.kVolatile);
         if (buffer == null) {
             return NULL;
@@ -268,8 +309,8 @@ public abstract class BufferAllocPool {
 
     private static class VertexPool extends BufferAllocPool {
 
-        public VertexPool(Engine engine) {
-            super(engine, Engine.BufferUsageFlags.kVertex);
+        public VertexPool(DirectContext context) {
+            super(context, Engine.BufferUsageFlags.kVertex);
         }
 
         /**
@@ -280,6 +321,7 @@ public abstract class BufferAllocPool {
          *      <li>this method is called again.</li>
          *      <li>{@link #flush()} is called.</li>
          *      <li>{@link #reset()} is called.</li>
+         *      <li>{@link #submit(CommandBuffer)} is called.</li>
          * </ul>
          * Once {@link #flush()} on the pool is called the vertices are guaranteed to be in
          * the buffer at the offset indicated by baseVertex. Until that time they
@@ -332,18 +374,18 @@ public abstract class BufferAllocPool {
             assert (offset % vertexSize == 0);
             mesh.setVertexBuffer(buffer, offset / vertexSize, vertexCount);
 
-            ByteBuffer writer = getMappedBuffer(mWriter, mBufferPtr, buffer.getSize());
+            ByteBuffer writer = getMappedBuffer(mCachedWriter, mBufferPtr, buffer.getSize());
             writer.position(offset);
             writer.limit(offset + totalSize);
-            mWriter = writer;
+            mCachedWriter = writer;
             return writer;
         }
     }
 
     private static class InstancePool extends BufferAllocPool {
 
-        public InstancePool(Engine engine) {
-            super(engine, Engine.BufferUsageFlags.kVertex);
+        public InstancePool(DirectContext context) {
+            super(context, Engine.BufferUsageFlags.kVertex);
             // instance buffers are also vertex buffers, but we allocate them from a different pool
         }
 
@@ -355,6 +397,7 @@ public abstract class BufferAllocPool {
          *      <li>this method is called again.</li>
          *      <li>{@link #flush()} is called.</li>
          *      <li>{@link #reset()} is called.</li>
+         *      <li>{@link #submit(CommandBuffer)} is called.</li>
          * </ul>
          * Once {@link #flush()} on the pool is called the instances are guaranteed to be in
          * the buffer at the offset indicated by baseInstance. Until that time they
@@ -406,10 +449,84 @@ public abstract class BufferAllocPool {
             assert (offset % instanceSize == 0);
             mesh.setInstanceBuffer(buffer, offset / instanceSize, instanceCount);
 
-            ByteBuffer writer = getMappedBuffer(mWriter, mBufferPtr, buffer.getSize());
+            ByteBuffer writer = getMappedBuffer(mCachedWriter, mBufferPtr, buffer.getSize());
             writer.position(offset);
             writer.limit(offset + totalSize);
-            mWriter = writer;
+            mCachedWriter = writer;
+            return writer;
+        }
+    }
+
+    private static class IndexPool extends BufferAllocPool {
+
+        public IndexPool(DirectContext context) {
+            super(context, Engine.BufferUsageFlags.kIndex);
+        }
+
+        /**
+         * Returns a block of memory to hold indices. A buffer designated to hold
+         * the indices given to the caller. The buffer may or may not be locked.
+         * The returned ptr remains valid until any of the following:
+         * <ul>
+         *      <li>this method is called again.</li>
+         *      <li>{@link #flush()} is called.</li>
+         *      <li>{@link #reset()} is called.</li>
+         *      <li>{@link #submit(CommandBuffer)} is called.</li>
+         * </ul>
+         * Once {@link #flush()} on the pool is called the indices are guaranteed to be in
+         * the buffer at the offset indicated by baseIndex. Until that time they
+         * may be in temporary storage and/or the buffer may be locked.
+         *
+         * @param mesh specifies the mesh to allocate space for
+         * @return pointer to first index, or NULL if failed
+         */
+        @Override
+        public long makeSpace(Mesh mesh) {
+            final int indexSize = Short.BYTES;
+            int indexCount = mesh.getIndexCount();
+            assert (indexCount > 0);
+
+            int totalSize = indexSize * indexCount;
+            long ptr = makeSpace(totalSize, indexSize);
+            if (ptr == NULL) {
+                return NULL;
+            }
+
+            Buffer buffer = Resource.create(mBuffers[mIndex]);
+            int offset = (int) (ptr - mBufferPtr);
+            assert (offset % indexSize == 0);
+            mesh.setIndexBuffer(buffer, offset / indexSize, indexCount);
+            return ptr;
+        }
+
+        /**
+         * Similar to {@link #makeSpace(Mesh)}, but returns a wrapper instead.
+         *
+         * @param mesh specifies the mesh to allocate space for
+         * @return pointer to first index, or null if failed
+         */
+        @Nullable
+        @Override
+        public ByteBuffer makeWriter(Mesh mesh) {
+            final int indexSize = Short.BYTES;
+            int indexCount = mesh.getIndexCount();
+            assert (indexCount > 0);
+
+            int totalSize = indexSize * indexCount;
+            long ptr = makeSpace(totalSize, indexSize);
+            if (ptr == NULL) {
+                return null;
+            }
+
+            Buffer buffer = Resource.create(mBuffers[mIndex]);
+            int offset = (int) (ptr - mBufferPtr);
+            assert (offset % indexSize == 0);
+            mesh.setIndexBuffer(buffer, offset / indexSize, indexCount);
+
+            ByteBuffer writer = getMappedBuffer(mCachedWriter, mBufferPtr, buffer.getSize());
+            writer.position(offset);
+            writer.limit(offset + totalSize);
+            mCachedWriter = writer;
             return writer;
         }
     }

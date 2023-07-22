@@ -19,26 +19,27 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.SharedPtr;
-import icyllis.arc3d.engine.SamplerState;
+import icyllis.arc3d.engine.*;
 import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
 
 import javax.annotation.Nullable;
 
 /**
- * Provides OpenGL state objects with cache.
+ * Provides OpenGL objects with cache.
  */
-public final class GLResourceProvider {
+public final class GLResourceProvider extends ResourceProvider {
 
     private static final int SAMPLER_CACHE_SIZE = 32;
 
-    private final GLEngine mEngine;
+    private final GLServer mServer;
 
     // LRU cache, samplers are shared by mHWTextureSamplers and mSamplerCache
     private final Int2ObjectLinkedOpenHashMap<GLSampler> mSamplerCache =
             new Int2ObjectLinkedOpenHashMap<>(SAMPLER_CACHE_SIZE);
 
-    GLResourceProvider(GLEngine engine) {
-        mEngine = engine;
+    GLResourceProvider(GLServer server, DirectContext context) {
+        super(server, context);
+        mServer = server;
     }
 
     void discard() {
@@ -62,7 +63,7 @@ public final class GLResourceProvider {
     public GLSampler findOrCreateCompatibleSampler(int samplerState) {
         GLSampler sampler = mSamplerCache.getAndMoveToFirst(samplerState);
         if (sampler == null) {
-            sampler = GLSampler.create(mEngine, samplerState);
+            sampler = GLSampler.create(mServer, samplerState);
             if (sampler == null) {
                 return null;
             }

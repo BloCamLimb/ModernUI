@@ -34,13 +34,13 @@ import icyllis.modernui.graphics.RefCnt;
  */
 public abstract class ManagedResource extends RefCnt {
 
-    private final Engine mEngine;
+    private final Server mServer;
 
-    public ManagedResource(Engine engine) {
-        mEngine = engine;
+    public ManagedResource(Server server) {
+        mServer = server;
     }
 
-    protected Engine getEngine() {
-        return mEngine;
+    protected Server getServer() {
+        return mServer;
     }
 }

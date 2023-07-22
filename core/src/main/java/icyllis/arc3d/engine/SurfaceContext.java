@@ -20,7 +20,7 @@ package icyllis.arc3d.engine;
 
 import icyllis.modernui.graphics.ImageInfo;
 
-import static icyllis.arc3d.engine.Engine.*;
+import static icyllis.arc3d.engine.Server.*;
 
 /**
  * Helper to orchestrate commands for a particular surface.

@@ -200,7 +200,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
 
     // dynamic update on render thread
     private GLBuffer mGlyphVertexBuffer;
-    private ByteBuffer mGlyphStagingBuffer = memAlloc(MAX_GLYPH_INDEX_COUNT / 6 * 4 * 64); // 128KB
+    private ByteBuffer mGlyphStagingBuffer = memAlloc(MAX_GLYPH_INDEX_COUNT / 6 * 4 * 16); // 32KB
     private boolean mGlyphBufferResized = true;
 
     private final GLBuffer mGlyphIndexBuffer;
@@ -246,12 +246,12 @@ public final class GLSurfaceCanvas extends GLCanvas {
     private final Matrix4 mProjection = new Matrix4();
     private final FloatBuffer mProjectionUpload = memAllocFloat(16);
 
-    private final GLEngine mEngine;
+    private final GLServer mServer;
 
     private boolean mNeedsTexBinding;
 
     @RenderThread
-    public GLSurfaceCanvas(GLEngine engine) {
+    public GLSurfaceCanvas(GLServer server) {
         /*mProjectionUBO = glCreateBuffers();
         glNamedBufferStorage(mProjectionUBO, PROJECTION_UNIFORM_SIZE, GL_DYNAMIC_STORAGE_BIT);
 
@@ -267,7 +267,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         mArcUBO = glCreateBuffers();
         glNamedBufferStorage(mArcUBO, ARC_UNIFORM_SIZE, GL_DYNAMIC_STORAGE_BIT);*/
 
-        mEngine = engine;
+        mServer = server;
 
         mMatrixUBO.allocate(MATRIX_UNIFORM_SIZE);
         mSmoothUBO.allocate(SMOOTH_UNIFORM_SIZE);
@@ -277,7 +277,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         mRoundRectUBO.allocate(ROUND_RECT_UNIFORM_SIZE);
 
         mLinearSampler = Objects.requireNonNull(
-                engine.getResourceProvider().findOrCreateCompatibleSampler(SamplerState.DEFAULT),
+                server.getResourceProvider().findOrCreateCompatibleSampler(SamplerState.DEFAULT),
                 "Failed to create font sampler");
 
         {
@@ -295,7 +295,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             }
             indices.flip();
             mGlyphIndexBuffer = Objects.requireNonNull(
-                    GLBuffer.make(engine, indices.capacity(),
+                    GLBuffer.make(server, indices.capacity(),
                             Engine.BufferUsageFlags.kStatic |
                                     Engine.BufferUsageFlags.kIndex),
                     "Failed to create index buffer for glyph mesh");
@@ -305,7 +305,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
 
         ModernUI.LOGGER.debug(MARKER,
                 "Created glyph index buffer: {}, size: {}",
-                mGlyphIndexBuffer.getBufferID(), mGlyphIndexBuffer.getSize());
+                mGlyphIndexBuffer.getHandle(), mGlyphIndexBuffer.getSize());
 
         mSaves.push(new Save());
 
@@ -316,7 +316,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     public static GLSurfaceCanvas initialize() {
         Core.checkRenderThread();
         if (sInstance == null) {
-            sInstance = new GLSurfaceCanvas((GLEngine) Core.requireDirectContext().getEngine());
+            sInstance = new GLSurfaceCanvas((GLServer) Core.requireDirectContext().getServer());
             /*POS_COLOR.setBindingDivisor(INSTANCED_BINDING, 1);
             POS_COLOR_TEX.setBindingDivisor(INSTANCED_BINDING, 1);*/
         }
@@ -335,16 +335,16 @@ public final class GLSurfaceCanvas extends GLCanvas {
     //@formatter:off
     private void loadPipelines() {
 
-        GLVertexArray aPosColor = GLVertexArray.make(mEngine,
+        GLVertexArray aPosColor = GLVertexArray.make(mServer,
                 new DefaultGeoProc(DefaultGeoProc.FLAG_COLOR_ATTRIBUTE));
         GLVertexArray aPosColorUV;
         {
             var gp = new DefaultGeoProc(DefaultGeoProc.FLAG_COLOR_ATTRIBUTE |
                     DefaultGeoProc.FLAG_TEX_COORD_ATTRIBUTE);
             assert gp.vertexStride() == TEXTURE_RECT_VERTEX_SIZE;
-            aPosColorUV = GLVertexArray.make(mEngine, gp);
+            aPosColorUV = GLVertexArray.make(mServer, gp);
         }
-        GLVertexArray aPosUV = GLVertexArray.make(mEngine,
+        GLVertexArray aPosUV = GLVertexArray.make(mServer,
                 new DefaultGeoProc(DefaultGeoProc.FLAG_TEX_COORD_ATTRIBUTE));
         Objects.requireNonNull(aPosColor);
         Objects.requireNonNull(aPosColorUV);
@@ -372,7 +372,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         int roundLineFill;
         int roundLineStroke;
 
-        boolean compat = !mEngine.getCaps().hasDSASupport();
+        boolean compat = !mServer.getCaps().hasDSASupport();
 
         posColor    = createStage( "pos_color.vert", compat);
         posColorTex = createStage( "pos_color_tex.vert", compat);
@@ -517,23 +517,23 @@ public final class GLSurfaceCanvas extends GLCanvas {
             mNeedsTexBinding = true;
         }
 
-        COLOR_FILL = new GLProgram(mEngine, pColorFill );
-        COLOR_TEX  = new GLProgram(mEngine, pColorTex  );
-        ROUND_RECT_FILL   = new GLProgram(mEngine, pRoundRectFill);
-        ROUND_RECT_TEX    = new GLProgram(mEngine, pRoundRectTex);
-        ROUND_RECT_STROKE = new GLProgram(mEngine, pRoundRectStroke);
-        CIRCLE_FILL   = new GLProgram(mEngine, pCircleFill);
-        CIRCLE_STROKE = new GLProgram(mEngine, pCircleStroke);
-        ARC_FILL   = new GLProgram(mEngine, pArcFill);
-        ARC_STROKE = new GLProgram(mEngine, pArcStroke);
-        BEZIER_CURVE = new GLProgram(mEngine, pBezierCurve);
-        ALPHA_TEX = new GLProgram(mEngine, pAlphaTex);
-        COLOR_TEX_PRE = new GLProgram(mEngine, pColorTexPre);
-        GLOW_WAVE = new GLProgram(mEngine, pGlowWave);
-        PIE_FILL = new GLProgram(mEngine, pPieFill);
-        PIE_STROKE = new GLProgram(mEngine, pPieStroke);
-        ROUND_LINE_FILL = new GLProgram(mEngine, pRoundLineFill);
-        ROUND_LINE_STROKE = new GLProgram(mEngine, pRoundLineStroke);
+        COLOR_FILL = new GLProgram(mServer, pColorFill );
+        COLOR_TEX  = new GLProgram(mServer, pColorTex  );
+        ROUND_RECT_FILL   = new GLProgram(mServer, pRoundRectFill);
+        ROUND_RECT_TEX    = new GLProgram(mServer, pRoundRectTex);
+        ROUND_RECT_STROKE = new GLProgram(mServer, pRoundRectStroke);
+        CIRCLE_FILL   = new GLProgram(mServer, pCircleFill);
+        CIRCLE_STROKE = new GLProgram(mServer, pCircleStroke);
+        ARC_FILL   = new GLProgram(mServer, pArcFill);
+        ARC_STROKE = new GLProgram(mServer, pArcStroke);
+        BEZIER_CURVE = new GLProgram(mServer, pBezierCurve);
+        ALPHA_TEX = new GLProgram(mServer, pAlphaTex);
+        COLOR_TEX_PRE = new GLProgram(mServer, pColorTexPre);
+        GLOW_WAVE = new GLProgram(mServer, pGlowWave);
+        PIE_FILL = new GLProgram(mServer, pPieFill);
+        PIE_STROKE = new GLProgram(mServer, pPieStroke);
+        ROUND_LINE_FILL = new GLProgram(mServer, pRoundLineFill);
+        ROUND_LINE_STROKE = new GLProgram(mServer, pRoundLineStroke);
 
         POS_COLOR = aPosColor;
         POS_COLOR_TEX = aPosColorUV;
@@ -562,8 +562,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
         try (var stream = ModernUI.getInstance().getResourceStream(ModernUI.ID, path)) {
             source = Core.readIntoNativeBuffer(stream).flip();
             return GLCore.glCompileShader(type, source,
-                    mEngine.getPipelineStateCache().getStates(),
-                    mEngine.getContext().getErrorWriter());
+                    mServer.getPipelineStateCache().getStates(),
+                    mServer.getContext().getErrorWriter());
         } catch (IOException e) {
             ModernUI.LOGGER.error(GLCore.MARKER, "Failed to get shader source {}:{}\n", ModernUI.ID, path, e);
         } finally {
@@ -693,7 +693,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     private GLVertexArray bindPipeline(GLProgram program, GLVertexArray vertexArray) {
-        var cmdBuffer = mEngine.currentCommandBuffer();
+        var cmdBuffer = mServer.currentCommandBuffer();
         cmdBuffer.bindPipeline(program, vertexArray);
         return vertexArray;
     }
@@ -728,7 +728,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             var proxy = view.getProxy();
             boolean success = true;
             if (!proxy.isInstantiated()) {
-                var resourceProvider = mEngine.getContext().getResourceProvider();
+                var resourceProvider = mServer.getResourceProvider();
                 success = proxy.doLazyInstantiation(resourceProvider);
             }
             if (success) {
@@ -736,7 +736,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                 bindSampler(mLinearSampler);
                 bindTexture(glTex.getHandle());
 
-                mEngine.generateMipmaps(glTex);
+                mServer.generateMipmaps(glTex);
 
                 var swizzle = view.getSwizzle();
                 var parameters = glTex.getParameters();
@@ -781,7 +781,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         if (getSaveCount() != 1) {
             throw new IllegalStateException("Unbalanced save-restore pair: " + getSaveCount());
         }
-        mEngine.forceResetContext(Engine.GLBackendState.kPipeline);
+        mServer.forceResetContext(Engine.GLBackendState.kPipeline);
 
         // upload projection matrix
         mMatrixUBO.upload(0, 64, memAddress(mProjectionUpload.flip()));
@@ -1077,9 +1077,9 @@ public final class GLSurfaceCanvas extends GLCanvas {
                 }
                 case DRAW_CUSTOM -> {
                     var drawable = mCustoms.remove();
-                    drawable.draw(mEngine.getContext(), null);
+                    drawable.draw(mServer.getContext(), null);
                     drawable.close();
-                    mEngine.forceResetContext(Engine.GLBackendState.kPipeline);
+                    mServer.forceResetContext(Engine.GLBackendState.kPipeline);
                     glBindSampler(0, 0);
                     mCurrSampler = null;
                     mCurrTexture = 0;
@@ -1119,7 +1119,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     @RenderThread
     private void uploadVertexBuffers() {
         if (mColorMeshBufferResized) {
-            GLBuffer newBuffer = GLBuffer.make(mEngine,
+            GLBuffer newBuffer = GLBuffer.make(mServer,
                     mColorMeshStagingBuffer.capacity(),
                     Engine.BufferUsageFlags.kVertex |
                             Engine.BufferUsageFlags.kVolatile);
@@ -1129,7 +1129,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             newBuffer.setLabel("ColorRectMesh");
             mColorMeshVertexBuffer = GLBuffer.move(mColorMeshVertexBuffer, newBuffer);
             ModernUI.LOGGER.info("Created new color mesh buffer: {}, size: {}",
-                    newBuffer.getBufferID(), newBuffer.getSize());
+                    newBuffer.getHandle(), newBuffer.getSize());
             mColorMeshBufferResized = false;
         }
         if (mColorMeshStagingBuffer.position() > 0) {
@@ -1143,7 +1143,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         int preserveForLayer = TEXTURE_RECT_VERTEX_SIZE * 4;
 
         if (mTextureMeshBufferResized) {
-            GLBuffer newBuffer = GLBuffer.make(mEngine,
+            GLBuffer newBuffer = GLBuffer.make(mServer,
                     mTextureMeshStagingBuffer.capacity() + preserveForLayer,
                     Engine.BufferUsageFlags.kVertex |
                             Engine.BufferUsageFlags.kVolatile);
@@ -1153,7 +1153,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             newBuffer.setLabel("TextureRectMesh");
             mTextureMeshVertexBuffer = GLBuffer.move(mTextureMeshVertexBuffer, newBuffer);
             ModernUI.LOGGER.info("Created new texture mesh buffer: {}, size: {}",
-                    newBuffer.getBufferID(), newBuffer.getSize());
+                    newBuffer.getHandle(), newBuffer.getSize());
             mTextureMeshBufferResized = false;
         }
         if (mTextureMeshStagingBuffer.position() > 0) {
@@ -1170,7 +1170,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                 textOp.writeMeshData(this);
             }
             if (mGlyphBufferResized) {
-                GLBuffer newBuffer = GLBuffer.make(mEngine,
+                GLBuffer newBuffer = GLBuffer.make(mServer,
                         mGlyphStagingBuffer.capacity(),
                         Engine.BufferUsageFlags.kVertex |
                                 Engine.BufferUsageFlags.kVolatile);
@@ -1180,7 +1180,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                 newBuffer.setLabel("GlyphMesh");
                 mGlyphVertexBuffer = GLBuffer.move(mGlyphVertexBuffer, newBuffer);
                 ModernUI.LOGGER.info("Created new glyph mesh buffer: {}, size: {}",
-                        newBuffer.getBufferID(), newBuffer.getSize());
+                        newBuffer.getHandle(), newBuffer.getSize());
                 mGlyphBufferResized = false;
             }
             if (mGlyphStagingBuffer.position() > 0) {

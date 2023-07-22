@@ -26,6 +26,7 @@ import org.jetbrains.annotations.UnmodifiableView;
 import java.awt.*;
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 public class FontFamily {
@@ -34,8 +35,8 @@ public class FontFamily {
     public static final FontFamily SERIF;
     public static final FontFamily MONOSPACED;
 
-    private static final Map<String, FontFamily> sSystemFontMap;
-    private static final Map<String, String> sSystemFontAliases;
+    private static final ConcurrentHashMap<String, FontFamily> sSystemFontMap;
+    private static final ConcurrentHashMap<String, String> sSystemFontAliases;
 
     @UnmodifiableView
     private static final Map<String, FontFamily> sSystemFontMapView;
@@ -46,8 +47,8 @@ public class FontFamily {
         // Use Java's logical font as the default initial font if user does not override it in some configuration files
         GraphicsEnvironment.getLocalGraphicsEnvironment().preferLocaleFonts();
 
-        Map<String, FontFamily> map = new HashMap<>();
-        Map<String, String> aliases = new HashMap<>();
+        ConcurrentHashMap<String, FontFamily> map = new ConcurrentHashMap<>();
+        ConcurrentHashMap<String, String> aliases = new ConcurrentHashMap<>();
 
         Locale defaultLocale = Locale.getDefault();
         for (String name : GraphicsEnvironment.getLocalGraphicsEnvironment()
@@ -113,8 +114,8 @@ public class FontFamily {
         FontFamily family = new FontFamily(fonts[0]);
         if (register) {
             String name = family.getFamilyName();
-            String alias = family.getFamilyName(Locale.getDefault());
             sSystemFontMap.putIfAbsent(name, family);
+            String alias = family.getFamilyName(Locale.getDefault());
             if (!name.equals(alias)) {
                 sSystemFontAliases.putIfAbsent(alias, name);
             }

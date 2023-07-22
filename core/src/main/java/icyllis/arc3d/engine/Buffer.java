@@ -23,22 +23,22 @@ import java.util.Objects;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 /**
- * Represents a device memory block that prefers to allocate GPU memory and may be used as
- * vertex buffers, index buffers and pixel transfer buffers. Such buffer tends to update
- * data every frame.
+ * Represents a single device-visible memory region that may be used as mesh buffers and
+ * staging buffers. A buffer cannot be accessed by both CPU and GPU simultaneously, it's
+ * either locked by engine or executing in command list.
  */
 public abstract class Buffer extends Resource {
 
     /**
      * Locks for reading. The effect of writes is undefined.
      */
-    protected static final int kRead_LockMode = 0;
+    public static final int kRead_LockMode = 0;
     /**
      * Locks for writing. The existing contents are discarded and the initial contents of the
      * buffer. Reads (even after overwriting initial contents) should be avoided for performance
      * reasons as the memory may not be cached.
      */
-    protected static final int kWriteDiscard_LockMode = 1;
+    public static final int kWriteDiscard_LockMode = 1;
 
     protected final int mSize;
     protected final int mUsage;
@@ -46,21 +46,24 @@ public abstract class Buffer extends Resource {
     private int mLockOffset;
     private int mLockSize;
 
-    protected Buffer(Engine engine,
+    protected Buffer(Server server,
                      int size,
                      int usage) {
-        super(engine);
+        super(server);
         mSize = size;
         mUsage = usage;
     }
 
     /**
-     * @return size of the buffer in bytes
+     * @return allocation size of the buffer in bytes
      */
     public final int getSize() {
         return mSize;
     }
 
+    /**
+     * @return {@link Engine.BufferUsageFlags}
+     */
     public final int getUsage() {
         return mUsage;
     }
@@ -106,7 +109,7 @@ public abstract class Buffer extends Resource {
      * reading or vice versa produces undefined results. If the buffer is locked for writing
      * then the buffer's previous contents are invalidated.
      *
-     * @return a valid pointer to the locked data
+     * @return a valid pointer to the locked data, or nullptr if failed
      */
     public final long lock(int offset, int size) {
         if (isDestroyed() || isLocked()) {
@@ -193,6 +196,7 @@ public abstract class Buffer extends Resource {
      *
      * @return returns true if the update succeeds, false otherwise.
      */
+    @Deprecated
     public boolean updateData(long data, int offset, int size) {
         assert (data != NULL);
         assert (!isLocked());

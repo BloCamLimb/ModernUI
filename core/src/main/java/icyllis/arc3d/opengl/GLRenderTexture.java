@@ -33,13 +33,13 @@ public final class GLRenderTexture extends GLTexture {
     @SharedPtr
     private GLRenderTarget mRenderTarget;
 
-    GLRenderTexture(GLEngine engine,
+    GLRenderTexture(GLServer server,
                     int width, int height,
                     GLTextureInfo info,
                     BackendFormat format,
                     boolean budgeted,
                     Function<GLTexture, GLRenderTarget> function) {
-        super(engine, width, height, info, format, budgeted, false);
+        super(server, width, height, info, format, budgeted, false);
         mRenderTarget = function.apply(this);
         mFlags |= Surface.FLAG_RENDERABLE;
 
