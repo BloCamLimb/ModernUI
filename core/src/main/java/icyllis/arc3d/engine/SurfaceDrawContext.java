@@ -32,23 +32,23 @@ public class SurfaceDrawContext extends SurfaceFillContext {
     }
 
     public static SurfaceDrawContext make(
-            RecordingContext context,
+            RecordingContext rContext,
             int colorType,
             int width, int height,
             int sampleCount,
             int surfaceFlags,
             int origin) {
-        if (context == null || context.isDiscarded()) {
+        if (rContext == null || rContext.isDiscarded()) {
             return null;
         }
 
-        BackendFormat format = context.getCaps().getDefaultBackendFormat(colorType, true);
+        BackendFormat format = rContext.getCaps().getDefaultBackendFormat(colorType, true);
         if (format == null) {
             return null;
         }
 
         @SharedPtr
-        TextureProxy proxy = context.getProxyProvider().createRenderTextureProxy(
+        TextureProxy proxy = rContext.getProxyProvider().createRenderTextureProxy(
                 format,
                 width,
                 height,
@@ -59,14 +59,31 @@ public class SurfaceDrawContext extends SurfaceFillContext {
             return null;
         }
 
-        short readSwizzle = context.getCaps().getReadSwizzle(format, colorType);
-        short writeSwizzle = context.getCaps().getWriteSwizzle(format, colorType);
+        short readSwizzle = rContext.getCaps().getReadSwizzle(format, colorType);
+        short writeSwizzle = rContext.getCaps().getWriteSwizzle(format, colorType);
 
         // two views, inc one more ref
         proxy.ref();
         SurfaceProxyView readView = new SurfaceProxyView(proxy, origin, readSwizzle);
         SurfaceProxyView writeView = new SurfaceProxyView(proxy, origin, writeSwizzle);
 
-        return new SurfaceDrawContext(context, readView, writeView, colorType);
+        return new SurfaceDrawContext(rContext, readView, writeView, colorType);
+    }
+
+    public static SurfaceDrawContext make(RecordingContext rContext,
+                                          int colorType,
+                                          SurfaceProxy proxy,
+                                          int origin) {
+        BackendFormat format = proxy.getBackendFormat();
+
+        short readSwizzle = rContext.getCaps().getReadSwizzle(format, colorType);
+        short writeSwizzle = rContext.getCaps().getWriteSwizzle(format, colorType);
+
+        // two views, inc one more ref
+        proxy.ref();
+        SurfaceProxyView readView = new SurfaceProxyView(proxy, origin, readSwizzle);
+        SurfaceProxyView writeView = new SurfaceProxyView(proxy, origin, writeSwizzle);
+
+        return new SurfaceDrawContext(rContext, readView, writeView, colorType);
     }
 }

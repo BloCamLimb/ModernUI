@@ -56,7 +56,7 @@ public final class GLCaps extends Caps {
     final boolean mDSASupport;
 
     public static final int
-            INVALIDATE_BUFFER_TYPE_ORPHAN = 1,
+            INVALIDATE_BUFFER_TYPE_NULL_DATA = 1,
             INVALIDATE_BUFFER_TYPE_INVALIDATE = 2;
     final int mInvalidateBufferType;
 
@@ -185,7 +185,7 @@ public final class GLCaps extends Caps {
         if (caps.OpenGL43 || caps.GL_ARB_invalidate_subdata) {
             mInvalidateBufferType = INVALIDATE_BUFFER_TYPE_INVALIDATE;
         } else {
-            mInvalidateBufferType = INVALIDATE_BUFFER_TYPE_ORPHAN;
+            mInvalidateBufferType = INVALIDATE_BUFFER_TYPE_NULL_DATA;
         }
 
         mTransferPixelsToRowBytesSupport = true;
@@ -1309,7 +1309,7 @@ public final class GLCaps extends Caps {
             return 0;
         }
 
-        if (sampleCount == 1) {
+        if (sampleCount <= 1) {
             return formatInfo.mColorSampleCounts[0] == 1 ? 1 : 0;
         }
 
@@ -1554,7 +1554,10 @@ public final class GLCaps extends Caps {
                 ", mSkipErrorChecks=" + mSkipErrorChecks +
                 ", mMaxLabelLength=" + mMaxLabelLength +
                 ", mDebugSupport=" + mDebugSupport +
+                ", mBufferStorageSupport=" + mBufferStorageSupport +
+                ", mBaseInstanceSupport=" + mBaseInstanceSupport +
                 ", mDSASupport=" + mDSASupport +
+                ", mInvalidateBufferType=" + mInvalidateBufferType +
                 ", mFormatTable=" + Arrays.toString(mFormatTable) +
                 ", mColorTypeToBackendFormat=" + Arrays.toString(mColorTypeToBackendFormat) +
                 ", mCompressionTypeToBackendFormat=" + Arrays.toString(mCompressionTypeToBackendFormat) +

@@ -247,6 +247,20 @@ public abstract class Server implements Engine {
                                                               int sampleCount,
                                                               boolean ownership);
 
+    @Nullable
+    @SharedPtr
+    public RenderSurface wrapBackendRenderTarget(BackendRenderTarget backendRenderTarget) {
+        if (!getCaps().isFormatRenderable(backendRenderTarget.getBackendFormat(),
+                backendRenderTarget.getSampleCount())) {
+            return null;
+        }
+        return onWrapBackendRenderTarget(backendRenderTarget);
+    }
+
+    @Nullable
+    @SharedPtr
+    public abstract RenderSurface onWrapBackendRenderTarget(BackendRenderTarget backendRenderTarget);
+
     /**
      * Updates the pixels in a rectangle of a texture. No sRGB/linear conversions are performed.
      * The write operation can fail because of the surface doesn't support writing (e.g. read only),
@@ -311,45 +325,6 @@ public abstract class Server implements Engine {
                                              int srcColorType,
                                              int rowBytes,
                                              long pixels);
-
-    /**
-     * Updates the buffer data.
-     * <p>
-     * The size of the buffer will be preserved. The src data will be
-     * placed at offset.
-     * <p>
-     * The buffer must not be locked or executing in command list.
-     * <p>
-     * Fails for {@link Engine.BufferUsageFlags#kTransferDst}.
-     * <p>
-     * Note that buffer updates do not go through Context and therefore are
-     * not serialized with other operations.
-     *
-     * @return returns true if the update succeeds, false otherwise.
-     */
-    public final boolean updateBufferData(Buffer buffer,
-                                          long offset,
-                                          long size,
-                                          long data) {
-        if (buffer.isLocked() || buffer.isDestroyed()) {
-            return false;
-        }
-        if (size <= 0 || offset + size > buffer.getSize()) {
-            return false;
-        }
-        if (data == NULL) {
-            return true;
-        }
-        if ((buffer.getUsage() & BufferUsageFlags.kTransferDst) != 0) {
-            return false;
-        }
-        return onUpdateBufferData(buffer, offset, size, data);
-    }
-
-    protected abstract boolean onUpdateBufferData(Buffer buffer,
-                                                  long offset,
-                                                  long size,
-                                                  long data);
 
     /**
      * Uses the base level of the texture to compute the contents of the other mipmap levels.

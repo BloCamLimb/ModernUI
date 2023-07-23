@@ -33,7 +33,7 @@ public final class RenderSurface extends RefCnt implements Surface {
     @SharedPtr
     private RenderTarget mRenderTarget;
 
-    RenderSurface(@SharedPtr RenderTarget fs) {
+    public RenderSurface(@SharedPtr RenderTarget fs) {
         assert (fs != null && fs.getColorBuffer() == null);
         mRenderTarget = fs;
     }

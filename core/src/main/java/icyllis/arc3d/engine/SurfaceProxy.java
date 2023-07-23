@@ -119,18 +119,15 @@ public abstract class SurfaceProxy extends RefCnt {
     }
 
     // Wrapped version
-    SurfaceProxy(@SharedPtr Texture texture,
+    SurfaceProxy(@SharedPtr Surface surface,
                  int surfaceFlags) {
-        assert (texture != null);
-        mFormat = texture.getBackendFormat();
-        mWidth = texture.getWidth();
-        mHeight = texture.getHeight();
-        mSurfaceFlags = texture.getSurfaceFlags() | surfaceFlags;
+        assert (surface != null);
+        mFormat = surface.getBackendFormat();
+        mWidth = surface.getWidth();
+        mHeight = surface.getHeight();
+        mSurfaceFlags = surface.getSurfaceFlags() | surfaceFlags;
         assert (mSurfaceFlags & Surface.FLAG_APPROX_FIT) == 0;
-        assert (mFormat.isExternal() == texture.isExternal());
-        assert (texture.getBudgetType() == Engine.BudgetType.Budgeted) == isBudgeted();
-        assert (!texture.isExternal() || isReadOnly());
-        mUniqueID = texture; // converting from unique resource ID to a proxy ID
+        mUniqueID = surface; // converting from unique resource ID to a proxy ID
     }
 
     public static class LazyCallbackResult {

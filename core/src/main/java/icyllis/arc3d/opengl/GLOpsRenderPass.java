@@ -116,7 +116,7 @@ public final class GLOpsRenderPass extends OpsRenderPass {
         }
 
         return mPipelineState.bindUniforms(mCmdBuffer, pipelineInfo,
-                1600, 900);
+                mRenderTarget.getWidth(), mRenderTarget.getHeight());
     }
 
     @Override

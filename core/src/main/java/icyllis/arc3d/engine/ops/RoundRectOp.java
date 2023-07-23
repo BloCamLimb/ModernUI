@@ -28,11 +28,9 @@ import java.nio.ByteBuffer;
 
 public class RoundRectOp extends MeshDrawOp {
 
-    @SharedPtr
     private Buffer mVertexBuffer;
     private int mBaseVertex;
 
-    @SharedPtr
     private Buffer mInstanceBuffer;
     private int mBaseInstance;
 
@@ -41,13 +39,17 @@ public class RoundRectOp extends MeshDrawOp {
     private float mCornerRadius;
     private float mStrokeRadius;
     private Matrix mViewMatrix;
+    private boolean mStroke;
 
-    public RoundRectOp(float[] color, Rect2f localRect, float cornerRadius, float strokeRadius, Matrix viewMatrix) {
+    public RoundRectOp(float[] color, Rect2f localRect, float cornerRadius, float strokeRadius, Matrix viewMatrix,
+                       boolean stroke) {
         mColor = color;
         mLocalRect = localRect;
         mCornerRadius = cornerRadius;
         mStrokeRadius = strokeRadius;
         mViewMatrix = viewMatrix;
+        mStroke = stroke;
+        viewMatrix.mapRect(localRect, this);
     }
 
     @Override
@@ -63,7 +65,7 @@ public class RoundRectOp extends MeshDrawOp {
     @Override
     protected PipelineInfo onCreatePipelineInfo(SurfaceProxyView writeView, int pipelineFlags) {
         return new PipelineInfo(writeView,
-                new RoundRectGeoProc(false), null, null, null,
+                new RoundRectGeoProc(mStroke), null, null, null,
                 null, pipelineFlags);
     }
 
@@ -104,9 +106,9 @@ public class RoundRectOp extends MeshDrawOp {
         instanceData.putFloat(mColor[2]);
         instanceData.putFloat(mColor[3]);
         // local rect
-        instanceData.putFloat(mLocalRect.width());
+        instanceData.putFloat(mLocalRect.width() / 2f);
         instanceData.putFloat(mLocalRect.centerX());
-        instanceData.putFloat(mLocalRect.height());
+        instanceData.putFloat(mLocalRect.height() / 2f);
         instanceData.putFloat(mLocalRect.centerY());
         // radii
         instanceData.putFloat(mCornerRadius).putFloat(mStrokeRadius);
@@ -116,7 +118,5 @@ public class RoundRectOp extends MeshDrawOp {
     @Override
     public void onEndFlush() {
         super.onEndFlush();
-        mVertexBuffer = Resource.move(mVertexBuffer);
-        mInstanceBuffer = Resource.move(mInstanceBuffer);
     }
 }

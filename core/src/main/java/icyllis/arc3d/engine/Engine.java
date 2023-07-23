@@ -158,12 +158,16 @@ public interface Engine {
          */
         int kIndex = 1 << 1;
 
+        // Note: vertex buffers and index buffers are mesh buffers.
+
         /**
          * Staging buffer. Src meaning CPU to device, Dst meaning device to CPU.
          * In OpenGL, this means only pixel transfer buffer.
          */
         int kTransferSrc = 1 << 2; // transfer src and host coherent
         int kTransferDst = 1 << 3; // transfer dst and host cached
+
+        // Note: transfer buffers must be created with Dynamic_Flag.
 
         /**
          * Uniform buffer, also known as constant buffer.
@@ -175,6 +179,9 @@ public interface Engine {
          * Not always available, check caps first.
          */
         int kDrawIndirect = 1 << 5;
+
+        // Note: uniform buffers must be created with Volatile_Flag,
+        // draw indirect buffers are currently not supported.
 
         /**
          * Data store will be written to once by CPU.
@@ -192,8 +199,8 @@ public interface Engine {
          */
         int kVolatile = 1 << 8;
 
-        // Note: Arc 3D itself doesn't use dynamic buffers,
-        // they are meant to render objects in large 3D scene.
+        // Note: Arc 3D itself doesn't use dynamic mesh buffers,
+        // they are meant to render a large number of objects in 3D scene.
     }
 
     /**

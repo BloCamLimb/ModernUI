@@ -342,7 +342,7 @@ public abstract class BufferAllocPool {
                 return NULL;
             }
 
-            Buffer buffer = Resource.create(mBuffers[mIndex]);
+            Buffer buffer = mBuffers[mIndex];
             int offset = (int) (ptr - mBufferPtr);
             assert (offset % vertexSize == 0);
             mesh.setVertexBuffer(buffer, offset / vertexSize, vertexCount);
@@ -368,8 +368,7 @@ public abstract class BufferAllocPool {
                 return null;
             }
 
-            @SharedPtr
-            Buffer buffer = Resource.create(mBuffers[mIndex]);
+            Buffer buffer = mBuffers[mIndex];
             int offset = (int) (ptr - mBufferPtr);
             assert (offset % vertexSize == 0);
             mesh.setVertexBuffer(buffer, offset / vertexSize, vertexCount);
@@ -418,7 +417,7 @@ public abstract class BufferAllocPool {
                 return NULL;
             }
 
-            Buffer buffer = Resource.create(mBuffers[mIndex]);
+            Buffer buffer = mBuffers[mIndex];
             int offset = (int) (ptr - mBufferPtr);
             assert (offset % instanceSize == 0);
             mesh.setInstanceBuffer(buffer, offset / instanceSize, instanceCount);
@@ -444,7 +443,7 @@ public abstract class BufferAllocPool {
                 return null;
             }
 
-            Buffer buffer = Resource.create(mBuffers[mIndex]);
+            Buffer buffer = mBuffers[mIndex];
             int offset = (int) (ptr - mBufferPtr);
             assert (offset % instanceSize == 0);
             mesh.setInstanceBuffer(buffer, offset / instanceSize, instanceCount);
@@ -492,7 +491,7 @@ public abstract class BufferAllocPool {
                 return NULL;
             }
 
-            Buffer buffer = Resource.create(mBuffers[mIndex]);
+            Buffer buffer = mBuffers[mIndex];
             int offset = (int) (ptr - mBufferPtr);
             assert (offset % indexSize == 0);
             mesh.setIndexBuffer(buffer, offset / indexSize, indexCount);
@@ -518,7 +517,7 @@ public abstract class BufferAllocPool {
                 return null;
             }
 
-            Buffer buffer = Resource.create(mBuffers[mIndex]);
+            Buffer buffer = mBuffers[mIndex];
             int offset = (int) (ptr - mBufferPtr);
             assert (offset % indexSize == 0);
             mesh.setIndexBuffer(buffer, offset / indexSize, indexCount);

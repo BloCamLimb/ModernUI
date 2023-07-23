@@ -18,8 +18,6 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.SharedPtr;
-
 /**
  * The interface used to receive geometry buffers from {@link MeshDrawTarget}
  * for mesh-drawing operations.
@@ -42,13 +40,15 @@ public interface Mesh {
 
     /**
      * The callback method for {@link MeshDrawTarget#makeVertexSpace(Mesh)} results.
+     * The given GPU buffer will be kept by {@link BufferAllocPool} and moved to
+     * command buffer when the frame ends.
      *
-     * @param buffer            the shared ptr to the vertex buffer that will hold the vertices
+     * @param buffer            the raw ptr to the vertex buffer that will hold the vertices
      * @param baseVertex        the offset into buffer of the first vertex,
      *                          in units of the size of a vertex from layout param
      * @param actualVertexCount the actual number of vertices allocated
      */
-    default void setVertexBuffer(@SharedPtr Buffer buffer, int baseVertex, int actualVertexCount) {
+    default void setVertexBuffer(Buffer buffer, int baseVertex, int actualVertexCount) {
         throw new IllegalStateException();
     }
 
@@ -68,13 +68,15 @@ public interface Mesh {
 
     /**
      * The callback method for {@link MeshDrawTarget#makeInstanceSpace(Mesh)} results.
+     * The given GPU buffer will be kept by {@link BufferAllocPool} and moved to
+     * command buffer when the frame ends.
      *
-     * @param buffer              the shared ptr to the instance buffer that will hold the instances
+     * @param buffer              the raw ptr to the instance buffer that will hold the instances
      * @param baseInstance        the offset into buffer of the first instance,
      *                            in units of the size of an instance from layout param
      * @param actualInstanceCount the actual number of instances allocated
      */
-    default void setInstanceBuffer(@SharedPtr Buffer buffer, int baseInstance, int actualInstanceCount) {
+    default void setInstanceBuffer(Buffer buffer, int baseInstance, int actualInstanceCount) {
         throw new IllegalStateException();
     }
 
@@ -87,13 +89,15 @@ public interface Mesh {
 
     /**
      * The callback method for {@link MeshDrawTarget#makeIndexSpace(Mesh)} results.
+     * The given GPU buffer will be kept by {@link BufferAllocPool} and moved to
+     * command buffer when the frame ends.
      *
-     * @param buffer           the shared ptr to the index buffer that will hold the indices
+     * @param buffer           the raw ptr to the index buffer that will hold the indices
      * @param baseIndex        the offset into buffer of the first index,
      *                         in units of the size of an index from layout param
      * @param actualIndexCount the actual number of indices allocated
      */
-    default void setIndexBuffer(@SharedPtr Buffer buffer, int baseIndex, int actualIndexCount) {
+    default void setIndexBuffer(Buffer buffer, int baseIndex, int actualIndexCount) {
         throw new IllegalStateException();
     }
 }
