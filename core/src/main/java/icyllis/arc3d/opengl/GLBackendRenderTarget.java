@@ -39,7 +39,7 @@ public final class GLBackendRenderTarget extends BackendRenderTarget {
         mSampleCount = sampleCount;
         mStencilBits = stencilBits;
         mInfo = info;
-        assert sampleCount > 0;
+        assert sampleCount >= 0;
     }
 
     @Override
@@ -74,6 +74,6 @@ public final class GLBackendRenderTarget extends BackendRenderTarget {
 
     @Override
     public boolean isProtected() {
-        return false;
+        return mInfo.mIsProtected;
     }
 }

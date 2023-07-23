@@ -27,25 +27,31 @@ public final class GLFramebufferInfo {
 
     public int mFramebuffer;
     public int mFormat;
+    public boolean mIsProtected;
 
     public void set(GLFramebufferInfo info) {
         mFramebuffer = info.mFramebuffer;
         mFormat = info.mFormat;
+        mIsProtected = info.mIsProtected;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
+
         GLFramebufferInfo that = (GLFramebufferInfo) o;
+
         if (mFramebuffer != that.mFramebuffer) return false;
-        return mFormat == that.mFormat;
+        if (mFormat != that.mFormat) return false;
+        return mIsProtected == that.mIsProtected;
     }
 
     @Override
     public int hashCode() {
         int result = mFramebuffer;
         result = 31 * result + mFormat;
+        result = 31 * result + (mIsProtected ? 1 : 0);
         return result;
     }
 }

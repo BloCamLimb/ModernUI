@@ -89,13 +89,13 @@ public class ArrayDequeMultimap<K, V> extends Object2ObjectOpenHashMap<K, ArrayD
     }
 
     @Override
-    public boolean trim() {
+    public boolean trim(final int n) {
         // release the backing buffer if queue is empty
-        for (ObjectIterator<Entry<K, ArrayDeque<V>>> it = object2ObjectEntrySet().fastIterator(); it.hasNext(); ) {
+        for (ObjectIterator<Entry<K, ArrayDeque<V>>> it = object2ObjectEntrySet().fastIterator(); it.hasNext();) {
             if (it.next().getValue().isEmpty()) {
                 it.remove();
             }
         }
-        return super.trim();
+        return super.trim(n);
     }
 }

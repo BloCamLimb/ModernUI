@@ -196,7 +196,6 @@ public abstract class Buffer extends Resource {
      *
      * @return returns true if the update succeeds, false otherwise.
      */
-    @Deprecated
     public boolean updateData(long data, int offset, int size) {
         assert (data != NULL);
         assert (!isLocked());

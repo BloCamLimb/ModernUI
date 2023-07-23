@@ -118,9 +118,8 @@ public abstract class RefCnt {
      */
     public final void ref() {
         // stronger than std::memory_order_relaxed
-        if ((int) REF_CNT.getAndAddAcquire(this, 1) < 1) {
-            throw new IllegalStateException("Reference count has reached zero");
-        }
+        var refCnt = (int) REF_CNT.getAndAddAcquire(this, 1);
+        assert refCnt > 0 : "Reference count has reached zero";
     }
 
     /**
@@ -130,7 +129,9 @@ public abstract class RefCnt {
      */
     public final void unref() {
         // stronger than std::memory_order_acq_rel
-        if ((int) REF_CNT.getAndAdd(this, -1) == 1) {
+        var refCnt = (int) REF_CNT.getAndAdd(this, -1);
+        assert refCnt > 0 : "Reference count has reached zero";
+        if (refCnt == 1) {
             deallocate();
             assert TRACKER.removeBoolean(this);
         }

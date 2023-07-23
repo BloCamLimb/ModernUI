@@ -398,6 +398,32 @@ public final class GLServer extends Server {
         return null;
     }
 
+    @Nullable
+    @Override
+    public RenderSurface onWrapBackendRenderTarget(BackendRenderTarget backendRenderTarget) {
+        GLFramebufferInfo info = new GLFramebufferInfo();
+        if (!backendRenderTarget.getGLFramebufferInfo(info)) {
+            return null;
+        }
+        if (backendRenderTarget.isProtected()) {
+            return null;
+        }
+        if (!mCaps.isFormatRenderable(info.mFormat, backendRenderTarget.getSampleCount())) {
+            return null;
+        }
+        int actualSamplerCount = mCaps.getRenderTargetSampleCount(backendRenderTarget.getSampleCount(), info.mFormat);
+        @SharedPtr
+        var rt = GLRenderTarget.makeWrapped(this,
+                backendRenderTarget.getWidth(),
+                backendRenderTarget.getHeight(),
+                info.mFormat,
+                actualSamplerCount,
+                info.mFramebuffer,
+                backendRenderTarget.getStencilBits(),
+                false);
+        return new RenderSurface(rt);
+    }
+
     @Override
     protected boolean onWritePixels(Texture __,
                                     int x, int y,
@@ -454,21 +480,6 @@ public final class GLServer extends Server {
             glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
         }
 
-        return true;
-    }
-
-    @Override
-    protected boolean onUpdateBufferData(Buffer __,
-                                         long offset,
-                                         long size,
-                                         long data) {
-        var buffer = (GLBuffer) __;
-        if (mCaps.hasDSASupport()) {
-            nglNamedBufferSubData(buffer.getHandle(), offset, size, data);
-        } else {
-            int target = bindBuffer(buffer);
-            nglBufferSubData(target, offset, size, data);
-        }
         return true;
     }
 

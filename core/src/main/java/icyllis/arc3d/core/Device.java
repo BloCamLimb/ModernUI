@@ -72,6 +72,20 @@ public final class Device extends BaseDevice {
         return make(sdc, alphaType, clear);
     }
 
+    @SharedPtr
+    public static Device make(RecordingContext rContext,
+                              int colorType,
+                              SurfaceProxy proxy,
+                              int origin,
+                              boolean clear) {
+        if (rContext == null) {
+            return null;
+        }
+        SurfaceDrawContext sdc = SurfaceDrawContext.make(rContext,
+                colorType, proxy, origin);
+        return make(sdc, ImageInfo.AT_PREMUL, clear);
+    }
+
     @Override
     public boolean clipIsAA() {
         return false;

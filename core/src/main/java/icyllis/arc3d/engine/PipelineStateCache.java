@@ -101,7 +101,7 @@ public abstract class PipelineStateCache {
 
         @Override
         public String toString() {
-            return "Stats{" +
+            return "PipelineStateCache.Stats{" +
                     "shaderCompilations=" + mShaderCompilations +
                     ", numInlineCompilationFailures=" + mNumInlineCompilationFailures +
                     ", numPreCompilationFailures=" + mNumPreCompilationFailures +

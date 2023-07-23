@@ -85,7 +85,7 @@ public final class GLRenderTarget extends RenderTarget {
         assert (framebuffer != 0 || !ownership);
         mFormat = format;
         mSampleFramebuffer = framebuffer;
-        mResolveFramebuffer = framebuffer;
+        mResolveFramebuffer = 0;
         mOwnership = ownership;
         mStencilBuffer = stencilBuffer; // std::move
         if (framebuffer == 0) {

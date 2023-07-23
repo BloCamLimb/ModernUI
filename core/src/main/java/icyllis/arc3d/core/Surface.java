@@ -18,6 +18,9 @@
 
 package icyllis.arc3d.core;
 
+import icyllis.arc3d.engine.BackendRenderTarget;
+import icyllis.arc3d.engine.RecordingContext;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.*;
 
 /**
@@ -30,16 +33,34 @@ import icyllis.modernui.graphics.*;
  */
 public class Surface extends RefCnt {
 
-    @SharedPtr
-    private BaseDevice mDevice;
+    public Surface() {
+    }
 
-    public Surface(@SharedPtr BaseDevice device) {
-        mDevice = device;
+    @Nullable
+    public static Surface wrapBackendRenderTarget(RecordingContext rContext,
+                                                  BackendRenderTarget backendRenderTarget,
+                                                  int origin,
+                                                  int colorType) {
+        if (colorType == ImageInfo.CT_UNKNOWN) {
+            return null;
+        }
+        var proxyProvider = rContext.getProxyProvider();
+        var fsp = proxyProvider.wrapBackendRenderTarget(backendRenderTarget, null);
+        if (fsp == null) {
+            return null;
+        }
+        var dev = Device.make(rContext,
+                colorType,
+                fsp,
+                origin,
+                false);
+        if (dev == null) {
+            return null;
+        }
+        return new DedicatedSurface(dev);
     }
 
     @Override
     protected void deallocate() {
-        mDevice.unref();
-        mDevice = null;
     }
 }

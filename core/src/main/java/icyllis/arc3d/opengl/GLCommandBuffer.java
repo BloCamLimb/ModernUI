@@ -266,7 +266,7 @@ public final class GLCommandBuffer extends CommandBuffer {
         int index = uniformBuffer.getBinding();
         if (mBoundUniformBuffers[index] != uniformBuffer) {
             glBindBufferBase(GL_UNIFORM_BUFFER, index, uniformBuffer.getHandle());
-            mBoundUniformBuffers[index] = RefCnt.move(mBoundUniformBuffers[index], uniformBuffer);
+            mBoundUniformBuffers[index] = RefCnt.create(mBoundUniformBuffers[index], uniformBuffer);
         }
     }
 

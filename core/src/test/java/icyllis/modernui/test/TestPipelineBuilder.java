@@ -19,20 +19,21 @@
 package icyllis.modernui.test;
 
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.engine.Surface;
 import icyllis.arc3d.engine.*;
+import icyllis.arc3d.engine.ops.OpsTask;
 import icyllis.arc3d.engine.ops.RoundRectOp;
 import icyllis.arc3d.opengl.*;
-import icyllis.modernui.core.Core;
-import icyllis.modernui.core.MainWindow;
+import icyllis.modernui.core.*;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.Objects;
-import java.util.Set;
 
 public class TestPipelineBuilder {
+
+    public static final int WIDTH = 1600;
+    public static final int HEIGHT = 900;
 
     public static void main(String[] args) {
         System.setProperty("java.awt.headless", "true");
@@ -48,48 +49,64 @@ public class TestPipelineBuilder {
         GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 5);
         //GLFW.glfwWindowHint(GLFW.GLFW_TRANSPARENT_FRAMEBUFFER, GLFW.GLFW_TRUE);
 
-        var window = MainWindow.initialize("Window", 1600, 900);
+        var window = MainWindow.initialize("Window", WIDTH, HEIGHT);
+        Monitor monitor = Monitor.getPrimary();
+        if (monitor != null) {
+            window.center(monitor);
+        }
         window.makeCurrent();
         if (!Core.initOpenGL())
             throw new RuntimeException("Failed to initialize OpenGL");
         GLCore.setupDebugCallback();
+        System.out.println("Red size: " + GLCore.glGetFramebufferAttachmentParameteri(
+                GLCore.GL_FRAMEBUFFER, GLCore.GL_BACK_LEFT, GLCore.GL_FRAMEBUFFER_ATTACHMENT_RED_SIZE));
+        System.out.println("Green size: " + GLCore.glGetFramebufferAttachmentParameteri(
+                GLCore.GL_FRAMEBUFFER, GLCore.GL_BACK_LEFT, GLCore.GL_FRAMEBUFFER_ATTACHMENT_GREEN_SIZE));
+        System.out.println("Blue size: " + GLCore.glGetFramebufferAttachmentParameteri(
+                GLCore.GL_FRAMEBUFFER, GLCore.GL_BACK_LEFT, GLCore.GL_FRAMEBUFFER_ATTACHMENT_BLUE_SIZE));
+        System.out.println("Alpha size: " + GLCore.glGetFramebufferAttachmentParameteri(
+                GLCore.GL_FRAMEBUFFER, GLCore.GL_BACK_LEFT, GLCore.GL_FRAMEBUFFER_ATTACHMENT_ALPHA_SIZE));
 
         var dContext = Core.requireDirectContext();
         var server = (GLServer) dContext.getServer();
 
-        @SharedPtr
-        var rt = dContext.getProxyProvider().createRenderTextureProxy(
-                GLBackendFormat.make(GLCore.GL_RGBA8),
-                800, 800, 4,
-                Surface.FLAG_BUDGETED
-        );
-        Objects.requireNonNull(rt);
-
         System.out.printf("Uniform Buffer Offset Alignment: %d\n",
                 GLCore.glGetInteger(GLCore.GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT));
 
-        GLCore.glViewport(0, 0, window.getWidth(), window.getHeight());
-        GLCore.glClearBufferfv(GLCore.GL_COLOR, 0, new float[]{0, 0, 0, 0});
+        GLFramebufferInfo framebufferInfo = new GLFramebufferInfo();
+        framebufferInfo.mFramebuffer = GLCore.DEFAULT_FRAMEBUFFER;
+        framebufferInfo.mFormat = GLCore.GL_RGBA8;
+
+        @SharedPtr
+        var fsp = dContext.getProxyProvider().wrapBackendRenderTarget(
+                new GLBackendRenderTarget(
+                        WIDTH, HEIGHT, 0, 8, framebufferInfo
+                ),
+                null
+        );
+        Objects.requireNonNull(fsp);
 
         DrawingManager drawingManager = dContext.getDrawingManager();
 
-        var rtv = new SurfaceProxyView(rt, Engine.SurfaceOrigin.kLowerLeft, Swizzle.RGBA);
-        var op = new RoundRectOp(new float[]{0.88f, 0.075f, 0.11f, 1},
-                new Rect2f(90, 90, 180, 180), 10, 5, Matrix.identity());
-        op.onPrepare(drawingManager.getFlushState(), rtv, 0);
+        var target = new SurfaceProxyView(fsp, Engine.SurfaceOrigin.kLowerLeft, Swizzle.RGBA);
+        var task = new OpsTask(drawingManager, target);
+        {
+            var op = new RoundRectOp(new float[]{0.88f, 0.075f, 0.11f, 1},
+                    new Rect2f(90, 90, 280, 180),
+                    10, 5, Matrix.identity(), true);
+            task.addDrawOp(op, null, 0);
+        }
+        task.makeClosed(dContext);
+
+        task.prepare(drawingManager.getFlushState());
         server.getVertexPool().flush();
         server.getInstancePool().flush();
-        OpsRenderPass opsRenderPass = drawingManager.getFlushState().beginOpsRenderPass(rtv,
-                new Rect2i(0, 0, 900, 900),
-                Engine.LoadStoreOps.DontLoad_Store,
-                Engine.LoadStoreOps.DontLoad_Store,
-                new float[]{0, 0, 0, 0},
-                Set.of(),
-                0);
-        op.onExecute(drawingManager.getFlushState(), new Rect2f(0, 0, 900, 900));
-        opsRenderPass.end();
-        op.onEndFlush();
-        rtv.close();
+
+        task.execute(drawingManager.getFlushState());
+        task.detach(drawingManager);
+        task.unref();
+        target.close();
+
         window.swapBuffers();
         while (!window.shouldClose()) {
             GLFW.glfwWaitEvents();

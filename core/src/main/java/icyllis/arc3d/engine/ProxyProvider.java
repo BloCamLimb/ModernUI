@@ -269,6 +269,29 @@ public final class ProxyProvider {
         return null;
     }
 
+    @Nullable
+    @SharedPtr
+    public RenderSurfaceProxy wrapBackendRenderTarget(BackendRenderTarget backendRenderTarget,
+                                                      Runnable rcReleaseCB) {
+        if (mContext.isDiscarded()) {
+            return null;
+        }
+
+        // This is only supported on a direct Context.
+        if (mDirect == null) {
+            return null;
+        }
+
+        @SharedPtr
+        var fsr = mDirect.getResourceProvider()
+                .wrapBackendRenderTarget(backendRenderTarget);
+        if (fsr == null) {
+            return null;
+        }
+
+        return new RenderSurfaceProxy(fsr, 0);
+    }
+
     /**
      * Creates a texture proxy that will be instantiated by a user-supplied callback during flush.
      * The width and height must either both be greater than 0 or both less than or equal to zero. A

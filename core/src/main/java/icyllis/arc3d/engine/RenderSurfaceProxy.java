@@ -39,6 +39,12 @@ public final class RenderSurfaceProxy extends SurfaceProxy {
         assert hashCode() == System.identityHashCode(this);
     }
 
+    RenderSurfaceProxy(RenderSurface surface, int surfaceFlags) {
+        super(surface, surfaceFlags);
+        mSurface = surface;
+        mSampleCount = surface.getSampleCount();
+    }
+
     @Override
     protected void deallocate() {
         mSurface = move(mSurface);

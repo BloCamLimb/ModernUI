@@ -19,6 +19,7 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.engine.ops.OpsTask;
 import icyllis.modernui.graphics.RefCnt;
 
 import javax.annotation.Nonnull;

@@ -322,6 +322,25 @@ public class ResourceProvider {
     }
 
     /**
+     * Wraps an existing render target with a RenderSurface object. It is
+     * similar to wrapBackendTexture but can be used to draw into surfaces
+     * that are not also textures (e.g. FBO 0 in OpenGL, or an MSAA buffer that
+     * the client will resolve to a texture). Currently wrapped render targets
+     * always are not cacheable and not owned by returned object (you must free it
+     * manually, releasing RenderSurface doesn't release the backend framebuffer).
+     *
+     * @return RenderSurface object or null on failure.
+     */
+    @Nullable
+    @SharedPtr
+    public final RenderSurface wrapBackendRenderTarget(BackendRenderTarget backendRenderTarget) {
+        if (mServer.getContext().isDiscarded()) {
+            return null;
+        }
+        return mServer.wrapBackendRenderTarget(backendRenderTarget);
+    }
+
+    /**
      * Returns a buffer.
      *
      * @param size  minimum size of buffer to return.

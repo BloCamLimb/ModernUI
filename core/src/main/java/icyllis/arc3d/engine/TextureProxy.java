@@ -99,6 +99,8 @@ public class TextureProxy extends SurfaceProxy {
         assert (texture.isMipmapped()) == ((mSurfaceFlags & Surface.FLAG_MIPMAPPED) != 0);
         assert (texture.getBudgetType() == Engine.BudgetType.Budgeted) == ((mSurfaceFlags & Surface.FLAG_BUDGETED) != 0);
         assert (!texture.isExternal()) || ((mSurfaceFlags & Surface.FLAG_READ_ONLY) != 0);
+        assert (texture.getBudgetType() == Engine.BudgetType.Budgeted) == isBudgeted();
+        assert (!texture.isExternal() || isReadOnly());
         mTexture = texture; // std::move
         if (texture.getUniqueKey() != null) {
             assert (texture.getContext() != null);
