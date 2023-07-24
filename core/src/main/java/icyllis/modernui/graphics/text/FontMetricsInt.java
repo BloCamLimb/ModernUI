@@ -45,6 +45,14 @@ public class FontMetricsInt {
         ascent = descent = 0;
     }
 
+    public int getAscent() {
+        return ascent;
+    }
+
+    public int getDescent() {
+        return descent;
+    }
+
     public void extendBy(@Nonnull FontMetrics fm) {
         extendBy(fm.getAscent(), fm.getDescent());
     }

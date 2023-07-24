@@ -292,7 +292,7 @@ public class OpsTask extends RenderTask {
                 return op;
             }
 
-            if (mTail.mayChain(op)) {
+            if (mHead.mayChain(op)) {
                 mTail.chainConcat(op);
                 mTail = mTail.nextInChain();
             } else {

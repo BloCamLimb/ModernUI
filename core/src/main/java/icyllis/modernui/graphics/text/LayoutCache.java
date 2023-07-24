@@ -21,8 +21,7 @@ package icyllis.modernui.graphics.text;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.graphics.MathUtil;
-import icyllis.modernui.text.TextUtils;
+import icyllis.arc3d.core.MathUtil;
 import icyllis.modernui.util.Pools;
 
 import javax.annotation.concurrent.ThreadSafe;
@@ -45,37 +44,7 @@ public final class LayoutCache {
     public static final int MAX_PIECE_LENGTH = 128;
 
     private static final Pools.Pool<LookupKey> sLookupKeys = Pools.newSynchronizedPool(3);
-    private static final Pools.Pool<char[]> sCharBuffers = Pools.newSynchronizedPool(1);
     private static volatile Cache<Key, LayoutPiece> sCache;
-
-    /**
-     * Get or create the layout piece from the global cache with given requirements.
-     * <p>
-     * In particular, the given range cannot exceed {@link #MAX_PIECE_LENGTH} to
-     * increase the reuse rate of pieced text. The given text must be in the same
-     * paragraph and should not break the grapheme cluster.
-     *
-     * @param text  text source that provides chars, cannot be null or empty, only referred in stack
-     * @param start start char offset
-     * @param end   end char index
-     * @param isRtl whether to layout in right-to-left
-     * @param paint the font paint affecting measurement
-     * @return the layout piece
-     */
-    //TODO move to somewhere?
-    @NonNull
-    public static LayoutPiece getOrCreate(@NonNull CharSequence text, int contextStart, int contextEnd,
-                                          int start, int end, boolean isRtl, @NonNull FontPaint paint) {
-        char[] buf = sCharBuffers.acquire();
-        if (buf == null) {
-            buf = new char[MAX_PIECE_LENGTH];
-        }
-        TextUtils.getChars(text, contextStart, contextEnd, buf, 0);
-        LayoutPiece piece = getOrCreate(buf, 0, contextEnd - contextStart,
-                start - contextStart, end - contextStart, isRtl, paint);
-        sCharBuffers.release(buf);
-        return piece;
-    }
 
     /**
      * Get or create the layout piece from the global cache with given requirements.

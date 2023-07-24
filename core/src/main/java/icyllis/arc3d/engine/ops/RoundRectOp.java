@@ -20,10 +20,10 @@ package icyllis.arc3d.engine.ops;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.engine.geom.RoundRectGeoProc;
-import icyllis.modernui.annotation.NonNull;
+import icyllis.arc3d.engine.geom.SDFRoundRectGeoProc;
 import org.lwjgl.system.MemoryUtil;
 
+import javax.annotation.Nonnull;
 import java.nio.ByteBuffer;
 
 public class RoundRectOp extends MeshDrawOp {
@@ -41,6 +41,8 @@ public class RoundRectOp extends MeshDrawOp {
     private Matrix mViewMatrix;
     private boolean mStroke;
 
+    private int mNumInstances = 1;
+
     public RoundRectOp(float[] color, Rect2f localRect, float cornerRadius, float strokeRadius, Matrix viewMatrix,
                        boolean stroke) {
         mColor = color;
@@ -53,6 +55,16 @@ public class RoundRectOp extends MeshDrawOp {
     }
 
     @Override
+    protected boolean onMayChain(@Nonnull Op __) {
+        var op = (RoundRectOp) __;
+        if (op.mStroke == mStroke) {
+            mNumInstances++;
+            return true;
+        }
+        return false;
+    }
+
+    @Override
     public void onExecute(OpFlushState state, Rect2f chainBounds) {
         OpsRenderPass opsRenderPass = state.getOpsRenderPass();
         opsRenderPass.bindPipeline(getPipelineInfo(), getPipelineState(), chainBounds);
@@ -61,11 +73,11 @@ public class RoundRectOp extends MeshDrawOp {
         opsRenderPass.drawInstanced(getInstanceCount(), mBaseInstance, getVertexCount(), mBaseVertex);
     }
 
-    @NonNull
+    @Nonnull
     @Override
     protected PipelineInfo onCreatePipelineInfo(SurfaceProxyView writeView, int pipelineFlags) {
         return new PipelineInfo(writeView,
-                new RoundRectGeoProc(mStroke), null, null, null,
+                new SDFRoundRectGeoProc(mStroke), null, null, null,
                 null, pipelineFlags);
     }
 
@@ -76,7 +88,7 @@ public class RoundRectOp extends MeshDrawOp {
 
     @Override
     public int getInstanceCount() {
-        return 1;
+        return mNumInstances;
     }
 
     @Override
@@ -96,23 +108,33 @@ public class RoundRectOp extends MeshDrawOp {
     @Override
     protected void onPrepareDraws(MeshDrawTarget target) {
         ByteBuffer vertexData = target.makeVertexWriter(this);
+        if (vertexData == null) {
+            return;
+        }
         vertexData.putFloat(-1).putFloat(1); // LL
         vertexData.putFloat(1).putFloat(1); // LR
         vertexData.putFloat(-1).putFloat(-1); // UL
         vertexData.putFloat(1).putFloat(-1); // UR
         ByteBuffer instanceData = target.makeInstanceWriter(this);
-        instanceData.putFloat(mColor[0]);
-        instanceData.putFloat(mColor[1]);
-        instanceData.putFloat(mColor[2]);
-        instanceData.putFloat(mColor[3]);
-        // local rect
-        instanceData.putFloat(mLocalRect.width() / 2f);
-        instanceData.putFloat(mLocalRect.centerX());
-        instanceData.putFloat(mLocalRect.height() / 2f);
-        instanceData.putFloat(mLocalRect.centerY());
-        // radii
-        instanceData.putFloat(mCornerRadius).putFloat(mStrokeRadius);
-        mViewMatrix.store(MemoryUtil.memAddress(instanceData));
+        if (instanceData == null) {
+            return;
+        }
+        for (Op it = this; it != null; it = it.nextInChain()) {
+            var op = (RoundRectOp) it;
+            instanceData.putFloat(op.mColor[0]);
+            instanceData.putFloat(op.mColor[1]);
+            instanceData.putFloat(op.mColor[2]);
+            instanceData.putFloat(op.mColor[3]);
+            // local rect
+            instanceData.putFloat(op.mLocalRect.width() / 2f);
+            instanceData.putFloat(op.mLocalRect.centerX());
+            instanceData.putFloat(op.mLocalRect.height() / 2f);
+            instanceData.putFloat(op.mLocalRect.centerY());
+            // radii
+            instanceData.putFloat(op.mCornerRadius).putFloat(op.mStrokeRadius);
+            op.mViewMatrix.store(MemoryUtil.memAddress(instanceData));
+            instanceData.position(instanceData.position() + 36);
+        }
     }
 
     @Override

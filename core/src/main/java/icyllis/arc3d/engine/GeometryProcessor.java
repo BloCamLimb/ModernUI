@@ -22,8 +22,9 @@ import icyllis.arc3d.core.Matrix;
 import icyllis.arc3d.engine.shading.*;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.graphics.MathUtil;
+import icyllis.arc3d.core.MathUtil;
 
+import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
 import java.util.*;
 
@@ -502,7 +503,7 @@ public abstract class GeometryProcessor extends Processor {
      *
      * @see #addToKey(Key.Builder)
      */
-    @NonNull
+    @Nonnull
     public abstract ProgramImpl makeProgramImpl(ShaderCaps caps);
 
     /**

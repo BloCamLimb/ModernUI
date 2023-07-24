@@ -19,8 +19,7 @@
 package icyllis.modernui.graphics.text;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.MathUtil;
-import icyllis.modernui.graphics.font.*;
+import icyllis.arc3d.core.MathUtil;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

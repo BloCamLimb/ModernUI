@@ -43,9 +43,17 @@ public final class TextUtils {
     // being ellipsized and not the locale.
     private static final String ELLIPSIS_NORMAL = "\u2026"; // HORIZONTAL ELLIPSIS (…)
 
+    private static final char[] ELLIPSIS_NORMAL_ARRAY = ELLIPSIS_NORMAL.toCharArray();
+
     @NonNull
     public static String getEllipsisString(@NonNull TextUtils.TruncateAt method) {
         return ELLIPSIS_NORMAL;
+    }
+
+    //TODO temp, remove in future
+    @NonNull
+    public static char[] getEllipsisChars(@NonNull TextUtils.TruncateAt method) {
+        return ELLIPSIS_NORMAL_ARRAY;
     }
 
     /**

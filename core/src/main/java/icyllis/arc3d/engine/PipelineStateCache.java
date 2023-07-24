@@ -35,7 +35,7 @@ public abstract class PipelineStateCache {
 
     protected abstract void close();
 
-    public final Stats getStates() {
+    public final Stats getStats() {
         return mStats;
     }
 

@@ -18,8 +18,10 @@
 
 package icyllis.modernui.text;
 
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.text.FontMetricsInt;
+import icyllis.modernui.graphics.text.ShapedText;
 import icyllis.modernui.text.style.ParagraphStyle;
 
 import javax.annotation.Nonnull;
@@ -36,9 +38,7 @@ import java.util.List;
  * This class is used by widgets to control text layout. You should not need
  * to use this class directly unless you are implementing your own widget
  * or custom display object, in which case
- * you are encouraged to use a Layout instead of calling
- * {@link Canvas#drawText(CharSequence, int, int, float, float, TextPaint)
- * Canvas.drawText()} directly.</p>
+ * you are encouraged to use a Layout.</p>
  */
 public class BoringLayout extends Layout implements TextUtils.EllipsizeCallback {
 
@@ -156,7 +156,7 @@ public class BoringLayout extends Layout implements TextUtils.EllipsizeCallback 
         return this;
     }
 
-    private String mDirect;
+    private ShapedText mDirect;
     private TextPaint mPaint;
 
     /* package */ int mBottom, mDesc;   // for Direct
@@ -232,8 +232,20 @@ public class BoringLayout extends Layout implements TextUtils.EllipsizeCallback 
                             BoringLayout.Metrics metrics, boolean includePad, boolean trustWidth) {
         int spacing;
 
-        if (source instanceof String && align == Layout.Alignment.ALIGN_NORMAL) {
-            mDirect = source.toString();
+        if (source instanceof String &&
+                (align == Alignment.ALIGN_NORMAL || align == Alignment.ALIGN_LEFT)) {
+            String direct = source.toString();
+            int len = direct.length();
+            char[] buf = TextUtils.obtain(len);
+            direct.getChars(0, len, buf, 0);
+            mDirect = new ShapedText(
+                    buf,
+                    0, len,
+                    0, len,
+                    ShapedText.BIDI_OVERRIDE_LTR,
+                    paint
+            );
+            TextUtils.recycle(buf);
         } else {
             mDirect = null;
         }
@@ -453,11 +465,11 @@ public class BoringLayout extends Layout implements TextUtils.EllipsizeCallback 
 
     // Override draw so it will be faster.
     @Override
-    public void draw(@Nonnull Canvas canvas) {
+    public void drawText(@NonNull Canvas canvas, int firstLine, int lastLine) {
         if (mDirect != null) {
-            canvas.drawText(mDirect, 0, mDirect.length(), 0, mBottom - mDesc, mPaint);
+            canvas.drawText(mDirect, 0, mBottom - mDesc, mPaint);
         } else {
-            super.draw(canvas);
+            super.drawText(canvas, firstLine, lastLine);
         }
     }
 

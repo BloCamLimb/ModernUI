@@ -18,7 +18,7 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.modernui.graphics.MathUtil;
+import icyllis.arc3d.core.MathUtil;
 
 /**
  * Used to sub-allocate a large GPU buffer, typically for uniform buffers.

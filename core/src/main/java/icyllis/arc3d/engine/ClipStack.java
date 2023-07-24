@@ -57,6 +57,127 @@ public final class ClipStack extends Clip {
         final Matrix4 mMatrix = Matrix4.identity();
     }
 
+    public interface GeometrySource {
+
+        int op();
+
+        Rect2i outerBounds();
+
+        boolean contains(GeometrySource other);
+    }
+
+    // This captures which of the two elements in (A op B) would be required when they are combined,
+    // where op is intersect or difference.
+    public static final int
+            CLIP_GEOMETRY_EMPTY = 0,
+            CLIP_GEOMETRY_A_ONLY = 1,
+            CLIP_GEOMETRY_B_ONLY = 2,
+            CLIP_GEOMETRY_BOTH = 3;
+
+    public static int getClipGeometry(
+            GeometrySource A,
+            GeometrySource B) {
+
+        if (A.op() == OP_INTERSECT) {
+
+            if (B.op() == OP_INTERSECT) {
+
+                // Intersect (A) + Intersect (B)
+                if (!Rect2i.intersects(
+                        A.outerBounds(),
+                        B.outerBounds())) {
+                    // Regions with non-zero coverage are disjoint, so intersection = empty
+                    return CLIP_GEOMETRY_EMPTY;
+                }
+
+                if (B.contains(A)) {
+                    // B's full coverage region contains entirety of A, so intersection = A
+                    return CLIP_GEOMETRY_A_ONLY;
+                }
+
+                if (A.contains(B)) {
+                    // A's full coverage region contains entirety of B, so intersection = B
+                    return CLIP_GEOMETRY_B_ONLY;
+                }
+
+                {
+                    // The shapes intersect in some non-trivial manner
+                    return CLIP_GEOMETRY_BOTH;
+                }
+            }
+
+            if (B.op() == OP_DIFFERENCE) {
+
+                // Intersect (A) + Difference (B)
+                if (!Rect2i.intersects(
+                        A.outerBounds(),
+                        B.outerBounds())) {
+                    // A only intersects B's full coverage region, so intersection = A
+                    return CLIP_GEOMETRY_A_ONLY;
+                }
+
+                if (B.contains(A)) {
+                    // B's zero coverage region completely contains A, so intersection = empty
+                    return CLIP_GEOMETRY_EMPTY;
+                }
+
+                {
+                    // Intersection cannot be simplified. Note that the combination of a intersect
+                    // and difference op in this order cannot produce kBOnly
+                    return CLIP_GEOMETRY_BOTH;
+                }
+            }
+        }
+
+        if (A.op() == OP_DIFFERENCE) {
+
+            if (B.op() == OP_INTERSECT) {
+
+                // Difference (A) + Intersect (B) - the mirror of Intersect(A) + Difference(B),
+                // but combining is commutative so this is equivalent barring naming.
+                if (!Rect2i.intersects(
+                        B.outerBounds(),
+                        A.outerBounds())) {
+                    // B only intersects A's full coverage region, so intersection = B
+                    return CLIP_GEOMETRY_B_ONLY;
+                }
+
+                if (A.contains(B)) {
+                    // A's zero coverage region completely contains B, so intersection = empty
+                    return CLIP_GEOMETRY_EMPTY;
+                }
+
+                {
+                    // Cannot be simplified
+                    return CLIP_GEOMETRY_BOTH;
+                }
+            }
+
+            if (B.op() == OP_DIFFERENCE) {
+
+                // Difference (A) + Difference (B)
+                if (A.contains(B)) {
+                    // A's zero coverage region contains B, so B doesn't remove any extra
+                    // coverage from their intersection.
+                    return CLIP_GEOMETRY_A_ONLY;
+                }
+
+                if (B.contains(A)) {
+                    // Mirror of the above case, intersection = B instead
+                    return CLIP_GEOMETRY_B_ONLY;
+                }
+
+                {
+                    // Intersection of the two differences cannot be simplified. Note that for
+                    // this op combination it is not possible to produce kEmpty.
+                    return CLIP_GEOMETRY_BOTH;
+                }
+            }
+        }
+
+        throw new IllegalStateException();
+    }
+
     public static class Element {
         Rect2f mRect;
         Matrix mViewMatrix;
@@ -122,6 +243,19 @@ public final class ClipStack extends Clip {
     }
 
     public void restore() {
+    }
+
+    public Rect2i getConservativeBounds() {
+        var current = currentSaveRecord();
+        if (current.mState == STATE_EMPTY) {
+            return null;
+        } else if (current.mState == STATE_WIDE_OPEN) {
+            return mDeviceBounds;
+        } else {
+            {
+                return current.mOuterBounds;
+            }
+        }
     }
 
     private final Rect2f mTmpRect1 = new Rect2f();

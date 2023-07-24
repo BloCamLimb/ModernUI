@@ -18,11 +18,11 @@
 
 package icyllis.modernui.graphics;
 
+import icyllis.arc3d.core.MathUtil;
 import icyllis.arc3d.core.Matrix4;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.graphics.text.*;
-import icyllis.modernui.text.TextPaint;
-import icyllis.modernui.text.TextShaper;
+import icyllis.modernui.text.*;
 import icyllis.modernui.view.Gravity;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
@@ -221,7 +221,7 @@ public abstract class Canvas {
      */
     public final void rotate(float degrees) {
         if (degrees != 0.0f) {
-            getMatrix().preRotateZ(MathUtil.toRadians(degrees));
+            getMatrix().preRotateZ(degrees * MathUtil.DEG_TO_RAD);
         }
     }
 
@@ -237,7 +237,7 @@ public abstract class Canvas {
         if (degrees != 0.0f) {
             Matrix4 matrix = getMatrix();
             matrix.preTranslate(px, py, 0);
-            matrix.preRotateZ(MathUtil.toRadians(degrees));
+            matrix.preRotateZ(degrees * MathUtil.DEG_TO_RAD);
             matrix.preTranslate(-px, -py, 0);
         }
     }
@@ -964,31 +964,9 @@ public abstract class Canvas {
                                         float radius, Paint paint);
 
     /**
-     * Draw a text with text shaping, but without style controlling and paragraph layout.
-     * <p>
-     * This method only performs glyph layout, all characters will be laid-out left-to-right.
-     * This means only a text containing just printable characters and in LTR direction can be
-     * rendered correctly. <strong>Do not use this method in any application with
-     * internationalization support.</strong>
-     * <p>
-     * See <code>text</code> package to split a Unicode string into BiDi runs, and use
-     * {@link #drawTextRun(LayoutPiece, float, float, TextPaint)} to render the string.
-     * <p>
-     * This method is only available in GUI module, not 3D module.
-     *
-     * @param text  the text to draw
-     * @param start context start of the text for shaping and rendering
-     * @param end   context end of the text for shaping and rendering
-     * @param x     the horizontal position at which to draw the text
-     * @param y     the vertical baseline of the line of text
-     * @param paint the paint used to measure and draw the text
-     */
-    public abstract void drawText(CharSequence text, int start, int end,
-                                  float x, float y, TextPaint paint);
-
-    /**
      * Draw array of glyphs with specified font in order <em>visually left-to-right</em>.
      * The Paint must be the same as the one passed to any of {@link TextShaper} methods.
+     * The given arrays <b>MUST BE IMMUTABLE!</b>
      *
      * @param glyphs         Array of glyph IDs. The length of array must be greater than or equal to
      *                       {@code glyphStart + glyphCount}.
@@ -1045,7 +1023,7 @@ public abstract class Canvas {
      *
      * @param text  A sequence of positioned glyphs.
      * @param start Number of glyphs to skip before drawing text.
-     * @param end   Number of glyphs to be drawn.
+     * @param end   Number of glyphs to skip + Number of glyphs to be drawn.
      * @param x     Additional amount of x offset of the glyph X positions.
      * @param y     Additional amount of y offset of the glyph Y positions.
      * @param paint Paint used for drawing.
@@ -1078,33 +1056,9 @@ public abstract class Canvas {
     }
 
     /**
-     * Draw a run of text. The given range cannot excess a style run or break grapheme cluster,
-     * or maximum piece cache size when creating the measured text.
-     * <p>
-     * Do not call this method directly unless you develop your own layout engine for text pages.
-     *
-     * @param text  the text to draw, which has been measured (and computed glyph layout)
-     * @param start context start of the text for shaping and rendering
-     * @param end   context end of the text for shaping and rendering
-     * @param x     the horizontal position at which to draw the text between runs
-     * @param y     the vertical baseline of the line of text
-     * @param paint the paint used to draw the text, only color will be taken
-     */
-    public final void drawTextRun(MeasuredText text, int start, int end,
-                                  float x, float y, TextPaint paint) {
-        if ((start | end | end - start) < 0) {
-            throw new IndexOutOfBoundsException();
-        }
-        LayoutPiece piece = text.getLayoutPiece(start, end);
-        if (piece != null) {
-            drawTextRun(piece, x, y, paint);
-        }
-    }
-
-    /**
      * Draw a layout piece, the base unit to draw a text.
      * <p>
-     * Do not call this method directly unless you develop your own layout engine for text pages.
+     * Do not call this method directly unless you are implementing your own widget for text.
      *
      * @param piece the layout piece to draw
      * @param x     the horizontal position at which to draw the text between runs
@@ -1134,6 +1088,100 @@ public abstract class Canvas {
         drawGlyphs(piece.getGlyphs(), lastPos,
                 piece.getPositions(), lastPos << 1, curPos - lastPos,
                 lastFont, x, y, paint);
+    }
+
+    /**
+     * Draw a run of text, all in a single direction, with optional context for complex text
+     * shaping.
+     * <p>
+     * See {@link #drawTextRun(CharSequence, int, int, int, int, float, float, boolean, TextPaint)} for
+     * more details. This method uses a character array rather than CharSequence to represent the
+     * string. Also, to be consistent with the pattern established in {@link #drawText}, in this
+     * method {@code count} and {@code contextCount} are used rather than offsets of the end
+     * position; {@code count = end - start, contextCount = contextEnd -
+     * contextStart}.
+     *
+     * @param text         the text to render
+     * @param start        the start of the text to render. Data before this position can be used for
+     *                     shaping context.
+     * @param end          the end of the text to render. Data at or after this position can be used for
+     *                     shaping context.
+     * @param contextStart the index of the start of the shaping context
+     * @param contextEnd   the index of the end of the shaping context
+     * @param x            the x position at which to draw the text
+     * @param y            the y position at which to draw the text
+     * @param isRtl        whether the run is in RTL direction
+     * @param paint        the paint
+     */
+    public final void drawTextRun(@NonNull char[] text, int start, int end, int contextStart,
+                                  int contextEnd, float x, float y, boolean isRtl, @NonNull TextPaint paint) {
+        if ((start | end | contextStart | contextEnd | start - contextStart | end - start
+                | contextEnd - end | text.length - contextEnd) < 0) {
+            throw new IndexOutOfBoundsException();
+        }
+        if (start == end) {
+            return;
+        }
+        ShapedText.doLayoutRun(
+                text, contextStart, contextEnd,
+                start, end, isRtl, paint, null,
+                (piece, __, curAdvance) -> {
+                    drawTextRun(piece, x + curAdvance, y, paint);
+                }
+        );
+    }
+
+    /**
+     * Draw a run of text, all in a single direction, with optional context for complex text
+     * shaping.
+     * <p>
+     * The run of text includes the characters from {@code start} to {@code end} in the text. In
+     * addition, the range {@code contextStart} to {@code contextEnd} is used as context for the
+     * purpose of complex text shaping, such as Arabic text potentially shaped differently based on
+     * the text next to it.
+     * <p>
+     * All text outside the range {@code contextStart..contextEnd} is ignored. The text between
+     * {@code start} and {@code end} will be laid out and drawn. The context range is useful for
+     * contextual shaping, e.g. Kerning, Arabic contextual form.
+     * <p>
+     * The direction of the run is explicitly specified by {@code isRtl}. Thus, this method is
+     * suitable only for runs of a single direction. Alignment of the text is as determined by the
+     * Paint's TextAlign value. Further, {@code 0 <= contextStart <= start <= end <= contextEnd
+     * <= text.length} must hold on entry.
+     *
+     * @param text         the text to render
+     * @param start        the start of the text to render. Data before this position can be used for
+     *                     shaping context.
+     * @param end          the end of the text to render. Data at or after this position can be used for
+     *                     shaping context.
+     * @param contextStart the index of the start of the shaping context
+     * @param contextEnd   the index of the end of the shaping context
+     * @param x            the x position at which to draw the text
+     * @param y            the y position at which to draw the text
+     * @param isRtl        whether the run is in RTL direction
+     * @param paint        the paint
+     * @see #drawTextRun(char[], int, int, int, int, float, float, boolean, TextPaint)
+     */
+    public final void drawTextRun(@NonNull CharSequence text, int start, int end, int contextStart,
+                                  int contextEnd, float x, float y, boolean isRtl, @NonNull TextPaint paint) {
+        if ((start | end | contextStart | contextEnd | start - contextStart | end - start
+                | contextEnd - end | text.length() - contextEnd) < 0) {
+            throw new IndexOutOfBoundsException();
+        }
+        if (start == end) {
+            return;
+        }
+        final int len = contextEnd - contextStart;
+        final char[] buf = TextUtils.obtain(len);
+        TextUtils.getChars(text, contextStart, contextEnd, buf, 0);
+        ShapedText.doLayoutRun(
+                buf, 0, len,
+                start - contextStart, end - contextStart, isRtl, paint, null,
+                (piece, __, curAdvance) -> {
+                    drawTextRun(piece, x + curAdvance, y, paint);
+                }
+        );
+        TextUtils.recycle(buf);
     }
 
     /**

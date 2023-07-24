@@ -18,8 +18,7 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.modernui.annotation.NonNull;
-
+import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
 
 /**
@@ -37,7 +36,8 @@ public abstract class Processor {
             CircularRRect_Geom_ClassID = 1,
             Circle_Geom_ClassID = 2,
             RoundRect_GeoProc_ClassID = 3,
-            DefaultGeoProc_ClassID = 4;
+            DefaultGeoProc_ClassID = 4,
+            SDFRect_GeoProc_ClassID = 5;
 
     protected final int mClassID;
 
@@ -49,7 +49,7 @@ public abstract class Processor {
      * Human-meaningful string to identify this processor; may be embedded in generated shader
      * code and must be a legal AkSL identifier prefix.
      */
-    @NonNull
+    @Nonnull
     public abstract String name();
 
     /**

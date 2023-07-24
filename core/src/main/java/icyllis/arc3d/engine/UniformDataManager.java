@@ -18,11 +18,10 @@
 
 package icyllis.arc3d.engine;
 
+import icyllis.arc3d.core.*;
 import icyllis.arc3d.core.Matrix;
-import icyllis.arc3d.core.Matrix4;
 import icyllis.arc3d.engine.shading.UniformHandler;
 import icyllis.modernui.graphics.RefCnt;
-import icyllis.modernui.graphics.*;
 
 import static org.lwjgl.system.MemoryUtil.*;
 

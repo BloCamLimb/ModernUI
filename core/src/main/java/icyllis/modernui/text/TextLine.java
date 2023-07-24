@@ -23,9 +23,12 @@ import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.text.*;
 import icyllis.modernui.text.style.*;
 import icyllis.modernui.util.Pools;
+import it.unimi.dsi.fastutil.floats.FloatArrayList;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 
 /**
  * Represents a line of styled text, for measuring in visual order and
@@ -37,9 +40,10 @@ import javax.annotation.Nullable;
  * Call set to prepare the instance for use, then either draw, measure,
  * metrics, or caretToLeftRightOf.
  */
+@ApiStatus.Internal
 public class TextLine {
 
-    private static final Pools.Pool<TextLine> sPool = Pools.newSynchronizedPool(1);
+    private static final Pools.Pool<TextLine> sPool = Pools.newSynchronizedPool(3);
 
     private static final char TAB_CHAR = '\t';
 
@@ -69,6 +73,15 @@ public class TextLine {
             new SpanSet<>(CharacterStyle.class);
     private final SpanSet<ReplacementSpan> mReplacementSpanSpanSet =
             new SpanSet<>(ReplacementSpan.class);
+
+    private final ArrayList<LayoutPiece> mCachedPieces = new ArrayList<>();
+    private final FloatArrayList mCachedCurAdvances = new FloatArrayList();
+    private final FontMetricsInt mCachedFontExtent = new FontMetricsInt();
+
+    private final ShapedText.RunConsumer mBuildCachedPieces = (piece, __, curAdvance) -> {
+        mCachedPieces.add(piece);
+        mCachedCurAdvances.add(curAdvance);
+    };
 
     private TextLine() {
     }
@@ -869,20 +882,9 @@ public class TextLine {
                 final int flags = activePaint.getFlags() & (TextPaint.UNDERLINE_FLAG | TextPaint.STRIKETHROUGH_FLAG);
                 activePaint.setFlags(activePaint.getFlags() & ~(TextPaint.UNDERLINE_FLAG | TextPaint.STRIKETHROUGH_FLAG));
 
-                if (jnext - j <= LayoutCache.MAX_PIECE_LENGTH) {
-                    x += handleText(activePaint, j, jnext, runIsRtl, canvas, x,
-                            top, y, bottom, needWidth || jnext < measureLimit,
-                            offset, flags);
-                } else {
-                    int s = j, e = s;
-                    do {
-                        e = Math.min(e + LayoutCache.MAX_PIECE_LENGTH, jnext);
-                        x += handleText(activePaint, s, e, runIsRtl, canvas, x,
-                                top, y, bottom, needWidth || jnext < measureLimit,
-                                offset, flags);
-                        s = e;
-                    } while (s < jnext);
-                }
+                x += handleText(activePaint, j, jnext, runIsRtl, canvas, x,
+                        top, y, bottom, needWidth || jnext < measureLimit,
+                        offset, flags);
             }
         }
 
@@ -917,18 +919,28 @@ public class TextLine {
         }
         float totalWidth = 0;
 
-        LayoutPiece piece = null;
         if (c != null || needWidth) {
+            mCachedFontExtent.reset();
             if (mCharsValid) {
-                piece = LayoutCache.getOrCreate(mChars, start, offset, start, offset,
-                        runIsRtl, wp);
+                totalWidth = ShapedText.doLayoutRun(
+                        mChars, start, offset, start, offset,
+                        runIsRtl, wp,
+                        mCachedFontExtent,
+                        mBuildCachedPieces
+                );
             } else {
                 final int delta = mStart;
-                piece = LayoutCache.getOrCreate(mText, start + delta, offset + delta,
-                        start + delta, offset + delta,
-                        runIsRtl, wp);
+                final int len = offset - start;
+                final char[] buf = TextUtils.obtain(len);
+                TextUtils.getChars(mText, start + delta, offset + delta, buf, 0);
+                totalWidth = ShapedText.doLayoutRun(
+                        buf, 0, len, 0, len,
+                        runIsRtl, wp,
+                        mCachedFontExtent,
+                        mBuildCachedPieces
+                );
+                TextUtils.recycle(buf);
             }
-            totalWidth = piece.getAdvance();
         }
 
         if (c != null) {
@@ -949,7 +961,13 @@ public class TextLine {
                 c.drawRect(leftX, top, rightX, bottom, paint);
             }
 
-            c.drawTextRun(piece, leftX, y, wp);
+            ArrayList<LayoutPiece> pieces = mCachedPieces;
+            FloatArrayList extraAdvances = mCachedCurAdvances;
+            assert pieces.size() == extraAdvances.size();
+            for (int i = 0, count = pieces.size(); i < count; i++) {
+                c.drawTextRun(
+                        pieces.get(i), leftX + extraAdvances.getFloat(i), y, wp);
+            }
 
             if (flags != 0) {
                 if (paint == null) {
@@ -958,14 +976,14 @@ public class TextLine {
                     paint.reset();
                 }
                 if ((flags & TextPaint.UNDERLINE_FLAG) != 0) {
-                    float thickness = piece.getAscent() / 12f;
-                    float strokeTop = y + piece.getDescent() / 3f;
+                    float thickness = mCachedFontExtent.getAscent() / 12f;
+                    float strokeTop = y + mCachedFontExtent.getDescent() / 3f;
                     paint.setColor(wp.getColor());
                     c.drawRect(leftX, strokeTop, rightX, strokeTop + thickness, paint);
                 }
                 if ((flags & TextPaint.STRIKETHROUGH_FLAG) != 0) {
-                    float thickness = piece.getAscent() / 12f;
-                    float strokeTop = y + piece.getAscent() / -2f;
+                    float thickness = mCachedFontExtent.getAscent() / 12f;
+                    float strokeTop = y + mCachedFontExtent.getAscent() / -2f;
                     paint.setColor(wp.getColor());
                     c.drawRect(leftX, strokeTop, rightX, strokeTop + thickness, paint);
                 }
@@ -974,6 +992,10 @@ public class TextLine {
                 paint.recycle();
             }
         }
+
+        mCachedPieces.clear();
+        mCachedCurAdvances.clear();
+
         return runIsRtl ? -totalWidth : totalWidth;
     }
 

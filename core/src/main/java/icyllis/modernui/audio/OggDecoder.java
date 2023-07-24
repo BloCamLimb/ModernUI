@@ -18,7 +18,7 @@
 
 package icyllis.modernui.audio;
 
-import icyllis.modernui.graphics.MathUtil;
+import icyllis.arc3d.core.MathUtil;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.stb.STBVorbis;
 import org.lwjgl.stb.STBVorbisInfo;

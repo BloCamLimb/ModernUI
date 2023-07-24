@@ -18,7 +18,6 @@
 
 package icyllis.arc3d.core;
 
-import icyllis.modernui.graphics.MathUtil;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;

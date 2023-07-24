@@ -18,8 +18,7 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.arc3d.core.Matrix4;
-import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.geom.DefaultGeoProc;
 import icyllis.arc3d.engine.shading.UniformHandler;
@@ -299,7 +298,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                             Engine.BufferUsageFlags.kStatic |
                                     Engine.BufferUsageFlags.kIndex),
                     "Failed to create index buffer for glyph mesh");
-            mGlyphIndexBuffer.updateData(MemoryUtil.memAddress(indices), 0, indices.capacity());
+            mGlyphIndexBuffer.updateData(0, indices.capacity(), MemoryUtil.memAddress(indices));
             MemoryUtil.memFree(indices);
         }
 
@@ -562,7 +561,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         try (var stream = ModernUI.getInstance().getResourceStream(ModernUI.ID, path)) {
             source = Core.readIntoNativeBuffer(stream).flip();
             return GLCore.glCompileShader(type, source,
-                    mServer.getPipelineStateCache().getStates(),
+                    mServer.getPipelineStateCache().getStats(),
                     mServer.getContext().getErrorWriter());
         } catch (IOException e) {
             ModernUI.LOGGER.error(GLCore.MARKER, "Failed to get shader source {}:{}\n", ModernUI.ID, path, e);
@@ -1002,7 +1001,6 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     uniformDataPtr += 16;
 
                     var textOp = mDrawTexts.get(textIndex++);
-                    final GLBakedGlyph[] glyphs = textOp.getBakedGlyphs();
                     int limit = textOp.mVisibleGlyphCount;
                     if (limit == 0) {
                         // due to deferred plotting, this can be empty
@@ -1015,15 +1013,14 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     bindSampler(mLinearSampler);
 
                     int lastPos = 0;
-                    int lastTex = glyphs[0].texture;
+                    int lastTex = textOp.mTexture;
                     for (int i = 1; i < limit; i++) {
                         int indexCount = (i - lastPos) * 6;
-                        if (glyphs[i].texture != lastTex || indexCount >= MAX_GLYPH_INDEX_COUNT) {
+                        if (indexCount >= MAX_GLYPH_INDEX_COUNT) {
                             bindTexture(lastTex);
                             nglDrawElementsBaseVertex(GL_TRIANGLES, indexCount,
                                     GL_UNSIGNED_SHORT, 0, textBaseVertex + lastPos * 4);
                             lastPos = i;
-                            lastTex = glyphs[i].texture;
                         }
                     }
                     if (lastPos < limit) {
@@ -1063,9 +1060,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
                             0, (float) mHeight / layer.getHeight(),
                             (float) mWidth / layer.getWidth(), 0);
                     mLayerImageMemory.flip();
-                    mTextureMeshVertexBuffer.updateData(MemoryUtil.memAddress(mLayerImageMemory),
-                            0,
-                            mLayerImageMemory.remaining());
+                    mTextureMeshVertexBuffer.updateData(0, mLayerImageMemory.remaining(), MemoryUtil.memAddress(mLayerImageMemory)
+                    );
                     mLayerImageMemory.clear();
 
                     bindPipeline(COLOR_TEX_PRE, POS_COLOR_TEX)
@@ -1122,7 +1118,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             GLBuffer newBuffer = GLBuffer.make(mServer,
                     mColorMeshStagingBuffer.capacity(),
                     Engine.BufferUsageFlags.kVertex |
-                            Engine.BufferUsageFlags.kVolatile);
+                            Engine.BufferUsageFlags.kDynamic);
             if (newBuffer == null) {
                 throw new IllegalStateException("Failed to create color mesh buffer");
             }
@@ -1134,9 +1130,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
         }
         if (mColorMeshStagingBuffer.position() > 0) {
             mColorMeshStagingBuffer.flip();
-            mColorMeshVertexBuffer.updateData(MemoryUtil.memAddress(mColorMeshStagingBuffer),
-                    0,
-                    mColorMeshStagingBuffer.remaining());
+            mColorMeshVertexBuffer.updateData(0, mColorMeshStagingBuffer.remaining(), MemoryUtil.memAddress(mColorMeshStagingBuffer)
+            );
             mColorMeshStagingBuffer.clear();
         }
 
@@ -1146,7 +1141,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             GLBuffer newBuffer = GLBuffer.make(mServer,
                     mTextureMeshStagingBuffer.capacity() + preserveForLayer,
                     Engine.BufferUsageFlags.kVertex |
-                            Engine.BufferUsageFlags.kVolatile);
+                            Engine.BufferUsageFlags.kDynamic);
             if (newBuffer == null) {
                 throw new IllegalStateException("Failed to create texture mesh buffer");
             }
@@ -1159,9 +1154,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
         if (mTextureMeshStagingBuffer.position() > 0) {
             // preserve memory for layer rendering
             mTextureMeshStagingBuffer.flip();
-            mTextureMeshVertexBuffer.updateData(MemoryUtil.memAddress(mTextureMeshStagingBuffer),
-                    preserveForLayer,
-                    mTextureMeshStagingBuffer.remaining());
+            mTextureMeshVertexBuffer.updateData(preserveForLayer, mTextureMeshStagingBuffer.remaining(), MemoryUtil.memAddress(mTextureMeshStagingBuffer)
+            );
             mTextureMeshStagingBuffer.clear();
         }
 
@@ -1173,7 +1167,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                 GLBuffer newBuffer = GLBuffer.make(mServer,
                         mGlyphStagingBuffer.capacity(),
                         Engine.BufferUsageFlags.kVertex |
-                                Engine.BufferUsageFlags.kVolatile);
+                                Engine.BufferUsageFlags.kDynamic);
                 if (newBuffer == null) {
                     throw new IllegalStateException("Failed to create buffer for glyph mesh");
                 }
@@ -1185,9 +1179,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
             }
             if (mGlyphStagingBuffer.position() > 0) {
                 mGlyphStagingBuffer.flip();
-                mGlyphVertexBuffer.updateData(MemoryUtil.memAddress(mGlyphStagingBuffer),
-                        0,
-                        mGlyphStagingBuffer.remaining());
+                mGlyphVertexBuffer.updateData(0, mGlyphStagingBuffer.remaining(), MemoryUtil.memAddress(mGlyphStagingBuffer)
+                );
                 mGlyphStagingBuffer.clear();
             }
         }
@@ -2384,72 +2377,6 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     @Override
-    public void drawText(CharSequence text, int start, int end,
-                         float x, float y, TextPaint paint) {
-        drawText(text, start, end, x, y, Gravity.LEFT, paint);
-    }
-
-    /**
-     * Draw a text, which does not contain any characters that affect high-level layout.
-     * This includes but not limited to LINE_FEED, CHARACTER_TABULATION, any BiDi character,
-     * and any control characters. All characters will be laid-out left-to-right.
-     * <p>
-     * <strong>Do not call this method directly in any application with internationalization support,
-     * especially with BiDi text.</strong>
-     *
-     * @param text  the text to draw
-     * @param start context start of the text for shaping and rendering
-     * @param end   context end of the text for shaping and rendering
-     * @param x     the horizontal position at which to draw the text
-     * @param y     the vertical baseline of the line of text
-     * @param align text alignment, one of {@link Gravity#LEFT}, {@link Gravity#CENTER_HORIZONTAL}
-     *              or {@link Gravity#RIGHT}
-     * @param paint the paint used to measure and draw the text
-     */
-    public void drawText(@NonNull CharSequence text, int start, int end, float x, float y,
-                         int align, @NonNull TextPaint paint) {
-        if ((start | end | end - start | text.length() - end) < 0) {
-            throw new IndexOutOfBoundsException();
-        }
-        if (start == end) {
-            return;
-        }
-        if (end - start <= LayoutCache.MAX_PIECE_LENGTH) {
-            LayoutPiece piece = LayoutCache.getOrCreate(text, start, end, start, end, false, paint);
-            switch (align & Gravity.HORIZONTAL_GRAVITY_MASK) {
-                case Gravity.CENTER_HORIZONTAL -> x -= piece.getAdvance() / 2f;
-                case Gravity.RIGHT -> x -= piece.getAdvance();
-            }
-            drawTextRun(piece, x, y, paint);
-        } else {
-            final float originalX = x;
-            final int pst = mDrawTexts.size();
-            int s = start, e = s;
-            do {
-                e = Math.min(e + LayoutCache.MAX_PIECE_LENGTH, end);
-                LayoutPiece piece = LayoutCache.getOrCreate(text, s, e, s, e, false, paint);
-                drawTextRun(piece, x, y, paint);
-                x += piece.getAdvance();
-                s = e;
-            } while (s < end);
-            switch (align & Gravity.HORIZONTAL_GRAVITY_MASK) {
-                case Gravity.CENTER_HORIZONTAL -> {
-                    float offset = (originalX - x) / 2f;
-                    for (int i = pst; i < mDrawTexts.size(); i++) {
-                        mDrawTexts.get(i).offsetX(offset);
-                    }
-                }
-                case Gravity.RIGHT -> {
-                    float offset = originalX - x;
-                    for (int i = pst; i < mDrawTexts.size(); i++) {
-                        mDrawTexts.get(i).offsetX(offset);
-                    }
-                }
-            }
-        }
-    }
-
-    @Override
     public void drawGlyphs(@NonNull int[] glyphs, int glyphOffset,
                            @NonNull float[] positions, int positionOffset,
                            int glyphCount, @NonNull FontFamily font,
@@ -2479,11 +2406,11 @@ public final class GLSurfaceCanvas extends GLCanvas {
         private final float[] mPositions;
         private final int mPositionOffset;
         private final int mGlyphCount;
-        private float mOffsetX;
+        private final float mOffsetX;
         private final float mOffsetY;
         private final Font mFont;
 
-        private GLBakedGlyph[] mBakedGlyphs;
+        private int mTexture;
         private int mVisibleGlyphCount;
 
         public DrawTextOp(int[] glyphs, int glyphOffset, float[] positions, int positionOffset, int glyphCount,
@@ -2498,34 +2425,25 @@ public final class GLSurfaceCanvas extends GLCanvas {
             mFont = font;
         }
 
-        private void offsetX(float dx) {
-            mOffsetX += dx;
-        }
-
-        private GLBakedGlyph[] getBakedGlyphs() {
-            return mBakedGlyphs;
-        }
-
         private void writeMeshData(@NonNull GLSurfaceCanvas canvas) {
             GlyphManager glyphManager = GlyphManager.getInstance();
             final int[] glyphs = mGlyphs;
             int glyphOffset = mGlyphOffset;
             final float[] positions = mPositions;
             int positionOffset = mPositionOffset;
-            final GLBakedGlyph[] bakedGlyphs = new GLBakedGlyph[mGlyphCount];
             int visibleGlyphCount = 0;
-            for (int i = 0; i < bakedGlyphs.length; i++) {
+            for (int i = 0; i < mGlyphCount; i++) {
                 GLBakedGlyph bakedGlyph = glyphManager.lookupGlyph(mFont, glyphs[glyphOffset++]);
                 if (bakedGlyph != null) {
                     canvas.putGlyph(bakedGlyph,
                             mOffsetX + positions[positionOffset++],
                             mOffsetY + positions[positionOffset++]);
-                    bakedGlyphs[visibleGlyphCount++] = bakedGlyph;
+                    mTexture = bakedGlyph.texture;
+                    visibleGlyphCount++;
                 } else {
                     positionOffset += 2;
                 }
             }
-            mBakedGlyphs = bakedGlyphs;
             mVisibleGlyphCount = visibleGlyphCount;
         }
     }

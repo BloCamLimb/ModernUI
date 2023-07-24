@@ -18,7 +18,7 @@
 
 package icyllis.arc3d.opengl;
 
-import icyllis.modernui.graphics.MathUtil;
+import icyllis.arc3d.core.MathUtil;
 import icyllis.arc3d.engine.SLDataType;
 import icyllis.arc3d.engine.UniformDataManager;
 import icyllis.arc3d.engine.shading.UniformHandler;
