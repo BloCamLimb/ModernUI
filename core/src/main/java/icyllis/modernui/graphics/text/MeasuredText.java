@@ -255,9 +255,8 @@ public class MeasuredText {
          * offset is zero. After the style is applied the internal offset is moved to {@code offset
          * + length}, and next call will start from this new position.
          * <p>
-         * If paint is TextPaint, then a copy of base class will be used, or ensure it is immutable.
-         * You can recycle the font paint for making multiple style runs without measurement
-         * requirement changes.
+         * You <b>must</b> ensure the given font paint object is immutable. You can reuse the same
+         * font paint object for making multiple style runs without measurement requirement changes.
          *
          * @param paint  a paint
          * @param length a length to be applied with a given paint, can not exceed the length of the
@@ -274,9 +273,8 @@ public class MeasuredText {
             }
             //TODO
             if (length <= LayoutCache.MAX_PIECE_LENGTH) {
-                mRuns.add(new StyleRun(mCurrentOffset, end, paint.toBase(), isRtl));
+                mRuns.add(new StyleRun(mCurrentOffset, end, paint, isRtl));
             } else {
-                paint = paint.toBase(); // shared
                 int s = mCurrentOffset, e = s;
                 do {
                     e = Math.min(e + LayoutCache.MAX_PIECE_LENGTH, end);
@@ -311,7 +309,7 @@ public class MeasuredText {
             if (end > mText.length) {
                 throw new IllegalArgumentException("Replacement exceeds the text length");
             }
-            mRuns.add(new ReplacementRun(mCurrentOffset, end, width, paint.getTextLocale()));
+            mRuns.add(new ReplacementRun(mCurrentOffset, end, width, paint.getLocale()));
             mCurrentOffset = end;
         }
 
@@ -465,7 +463,7 @@ public class MeasuredText {
         @Nonnull
         @Override
         public Locale getLocale() {
-            return mPaint.getTextLocale();
+            return mPaint.getLocale();
         }
 
         @Override

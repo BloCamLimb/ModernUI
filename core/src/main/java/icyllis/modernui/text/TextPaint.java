@@ -19,15 +19,13 @@
 package icyllis.modernui.text;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.annotation.ColorInt;
+import icyllis.modernui.annotation.*;
+import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.text.*;
 import icyllis.modernui.util.Pools;
-import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 import java.util.Locale;
 
 /**
@@ -35,35 +33,7 @@ import java.util.Locale;
  * For the base class {@link FontPaint}, changing any attributes will require a
  * reflow and re-layout, not just re-drawing.
  */
-public class TextPaint extends FontPaint {
-
-    @ApiStatus.Internal
-    @MagicConstant(intValues = {
-            NORMAL,
-            BOLD,
-            ITALIC,
-            BOLD_ITALIC
-    })
-    @Retention(RetentionPolicy.SOURCE)
-    public @interface Style {
-    }
-
-    /**
-     * Font style constant to request the plain/regular/normal style
-     */
-    public static final int NORMAL      = FontPaint.NORMAL;
-    /**
-     * Font style constant to request the bold style
-     */
-    public static final int BOLD        = FontPaint.BOLD;
-    /**
-     * Font style constant to request the italic style
-     */
-    public static final int ITALIC      = FontPaint.ITALIC;
-    /**
-     * Font style constant to request the bold and italic style
-     */
-    public static final int BOLD_ITALIC = FontPaint.BOLD_ITALIC;
+public class TextPaint extends Paint {
 
     /**
      * Paint flag that applies an underline decoration to drawn text.
@@ -77,8 +47,10 @@ public class TextPaint extends FontPaint {
 
     private static final Pools.Pool<TextPaint> sPool = Pools.newSynchronizedPool(4);
 
+    private final FontPaint mInternalPaint = new FontPaint();
+
     private Typeface mTypeface;
-    private int mColor;
+    private Locale mLocale;
 
     // Special value 0 means no background paint
     @ColorInt
@@ -99,7 +71,7 @@ public class TextPaint extends FontPaint {
     public TextPaint() {
         super();
         mTypeface = ModernUI.getSelectedTypeface();
-        mColor = ~0;
+        mLocale = ModernUI.getSelectedLocale();
     }
 
     /**
@@ -108,13 +80,21 @@ public class TextPaint extends FontPaint {
      *
      * @return a pooled object, states are undefined
      */
-    @Nonnull
+    @NonNull
     public static TextPaint obtain() {
         TextPaint paint = sPool.acquire();
         if (paint == null) {
             return new TextPaint();
         }
         return paint;
+    }
+
+    /**
+     * Recycle this text paint, this object cannot be used anymore after recycling.
+     */
+    @Override
+    public void recycle() {
+        sPool.release(this);
     }
 
     /**
@@ -141,7 +121,7 @@ public class TextPaint extends FontPaint {
      * @param op            how to move the cursor
      * @return the offset of the next position or -1
      */
-    public static int getTextRunCursor(@Nonnull char[] text, @Nonnull Locale locale, int contextStart,
+    public static int getTextRunCursor(@NonNull char[] text, @NonNull Locale locale, int contextStart,
                                        int contextLength, int offset, int op) {
         int contextEnd = contextStart + contextLength;
         if (((contextStart | contextEnd | offset | (contextEnd - contextStart)
@@ -180,7 +160,7 @@ public class TextPaint extends FontPaint {
      * @param op           how to move the cursor
      * @return the offset of the next position, or -1
      */
-    public static int getTextRunCursor(@Nonnull CharSequence text, @Nonnull Locale locale, int contextStart,
+    public static int getTextRunCursor(@NonNull CharSequence text, @NonNull Locale locale, int contextStart,
                                        int contextEnd, int offset, int op) {
         if (text instanceof String || text instanceof SpannedString ||
                 text instanceof SpannableString) {
@@ -197,51 +177,10 @@ public class TextPaint extends FontPaint {
     /**
      * Copy the data from paint into this TextPaint
      */
-    public void set(@Nonnull TextPaint paint) {
+    public void set(@NonNull TextPaint paint) {
         super.set(paint);
         mTypeface = paint.mTypeface;
-        mColor = paint.mColor;
         bgColor = paint.bgColor;
-    }
-
-    /**
-     * Equivalent to {@link #getFontSize()}, promoted to float type.
-     */
-    public float getTextSize() {
-        return super.getFontSize();
-    }
-
-    /**
-     * Equivalent to {@link #setFontSize(int)}, with rounding up.
-     *
-     * @param textSize set the paint's text size in pixel units.
-     */
-    public void setTextSize(float textSize) {
-        super.setFontSize((int) (textSize + 0.5));
-    }
-
-    /**
-     * Return the paint's color in sRGB. Note that the color is a 32bit value
-     * containing alpha as well as r,g,b. This 32bit value is not premultiplied,
-     * meaning that its alpha can be any value, regardless of the values of
-     * r,g,b. See the Color class for more details.
-     *
-     * @return the paint's color (and alpha).
-     */
-    public int getColor() {
-        return mColor;
-    }
-
-    /**
-     * Set the paint's color. Note that the color is an int containing alpha
-     * as well as r,g,b. This 32bit value is not premultiplied, meaning that
-     * its alpha can be any value, regardless of the values of r,g,b.
-     * See the Color class for more details.
-     *
-     * @param color The new color (including alpha) to set in the paint.
-     */
-    public void setColor(int color) {
-        mColor = color;
     }
 
     /**
@@ -249,14 +188,38 @@ public class TextPaint extends FontPaint {
      *
      * @param typeface the font collection
      */
-    public void setTypeface(@Nonnull Typeface typeface) {
+    public void setTypeface(@NonNull Typeface typeface) {
         mTypeface = typeface;
-        mFont = typeface;
     }
 
-    @Nonnull
+    @NonNull
     public Typeface getTypeface() {
         return mTypeface;
+    }
+
+    /**
+     * Set the text locale.
+     * <p>
+     * A Locale may affect word break, line break, grapheme cluster break, etc.
+     * The locale should match the language of the text to be drawn or user preference,
+     * by default, the selected locale should be used {@link ModernUI#getSelectedLocale()}.
+     *
+     * @param locale the paint's locale value for drawing text, must not be null.
+     */
+    public void setTextLocale(@NonNull Locale locale) {
+        if (!locale.equals(mLocale)) {
+            mLocale = locale;
+        }
+    }
+
+    /**
+     * Get the text's Locale.
+     *
+     * @return the paint's Locale used for measuring and drawing text, never null.
+     */
+    @NonNull
+    public Locale getTextLocale() {
+        return mLocale;
     }
 
     /**
@@ -266,7 +229,7 @@ public class TextPaint extends FontPaint {
      * @see #setUnderline(boolean)
      */
     public final boolean isUnderline() {
-        return (mFlags & UNDERLINE_FLAG) != 0;
+        return (mFontFlags & UNDERLINE_FLAG) != 0;
     }
 
     /**
@@ -278,9 +241,9 @@ public class TextPaint extends FontPaint {
      */
     public void setUnderline(boolean underline) {
         if (underline) {
-            mFlags |= UNDERLINE_FLAG;
+            mFontFlags |= UNDERLINE_FLAG;
         } else {
-            mFlags &= ~UNDERLINE_FLAG;
+            mFontFlags &= ~UNDERLINE_FLAG;
         }
     }
 
@@ -296,7 +259,7 @@ public class TextPaint extends FontPaint {
      * @see #getUnderlineThickness(FontMetricsInt)
      * @see #setUnderline(boolean)
      */
-    public float getUnderlineOffset(@Nonnull FontMetricsInt fm) {
+    public float getUnderlineOffset(@NonNull FontMetricsInt fm) {
         return fm.descent / 3f;
     }
 
@@ -308,7 +271,7 @@ public class TextPaint extends FontPaint {
      * @see #getUnderlineOffset(FontMetricsInt)
      * @see #setUnderline(boolean)
      */
-    public float getUnderlineThickness(@Nonnull FontMetricsInt fm) {
+    public float getUnderlineThickness(@NonNull FontMetricsInt fm) {
         return fm.ascent / 12f;
     }
 
@@ -319,7 +282,7 @@ public class TextPaint extends FontPaint {
      * @see #setStrikethrough(boolean)
      */
     public final boolean isStrikethrough() {
-        return (mFlags & STRIKETHROUGH_FLAG) != 0;
+        return (mFontFlags & STRIKETHROUGH_FLAG) != 0;
     }
 
     /**
@@ -331,9 +294,9 @@ public class TextPaint extends FontPaint {
      */
     public void setStrikethrough(boolean strikethrough) {
         if (strikethrough) {
-            mFlags |= STRIKETHROUGH_FLAG;
+            mFontFlags |= STRIKETHROUGH_FLAG;
         } else {
-            mFlags &= ~STRIKETHROUGH_FLAG;
+            mFontFlags &= ~STRIKETHROUGH_FLAG;
         }
     }
 
@@ -347,7 +310,7 @@ public class TextPaint extends FontPaint {
      * @return the position of the strike-through line in pixels
      * @see #getStrikethroughThickness(FontMetricsInt)
      */
-    public float getStrikethroughOffset(@Nonnull FontMetricsInt fm) {
+    public float getStrikethroughOffset(@NonNull FontMetricsInt fm) {
         return -fm.ascent / 2f;
     }
 
@@ -357,16 +320,65 @@ public class TextPaint extends FontPaint {
      * @return the position of the strike-through line in pixels
      * @see #getStrikethroughOffset(FontMetricsInt)
      */
-    public float getStrikethroughThickness(@Nonnull FontMetricsInt fm) {
+    public float getStrikethroughThickness(@NonNull FontMetricsInt fm) {
         return fm.ascent / 12f;
     }
 
-    int getFlags() {
-        return mFlags;
+    int getFontFlags() {
+        return mFontFlags;
     }
 
-    void setFlags(int flags) {
-        mFlags = flags;
+    void setFontFlags(int flags) {
+        mFontFlags = flags;
+    }
+
+    /**
+     * Returns true of the passed {@link TextPaint} will have the different effect on text measurement
+     *
+     * @param paint the paint to compare with
+     * @return true if given {@link TextPaint} has the different effect on text measurement.
+     */
+    public boolean isMetricAffecting(@Nonnull TextPaint paint) {
+        return getInternalPaint().isMetricAffecting(paint.getInternalPaint());
+    }
+
+    @NonNull
+    public FontMetricsInt getFontMetricsInt() {
+        FontMetricsInt fm = new FontMetricsInt();
+        getFontMetricsInt(fm);
+        return fm;
+    }
+
+    /**
+     * Return the font's interline spacing, given the Paint's settings for
+     * typeface, textSize, etc. If metrics is not null, return the fontmetric
+     * values in it. Note: all values have been converted to integers from
+     * floats, in such a way has to make the answers useful for both spacing
+     * and clipping. If you want more control over the rounding, call
+     * getFontMetrics().
+     *
+     * <p>Note that these are the values for the main typeface, and actual text rendered may need a
+     * larger set of values because fallback fonts may get used in rendering the text.
+     *
+     * @return the font's interline spacing.
+     */
+    public int getFontMetricsInt(@Nullable FontMetricsInt fm) {
+        return getInternalPaint().getFontMetricsInt(fm);
+    }
+
+    @ApiStatus.Internal
+    @NonNull
+    public final FontPaint getInternalPaint() {
+        FontPaint p = mInternalPaint;
+        p.setFont(mTypeface);
+        p.setLocale(mLocale);
+        p.setFontSize(getFontSize());
+        p.setFontStyle(getFontStyle());
+        p.setRenderFlags(
+                (isTextAntiAlias() ? FontPaint.RENDER_FLAG_ANTI_ALIAS : 0) |
+                        (isLinearText() ? FontPaint.RENDER_FLAG_LINEAR_METRICS : 0)
+        );
+        return p;
     }
 
     /**
@@ -375,16 +387,9 @@ public class TextPaint extends FontPaint {
      *
      * @return an internal paint
      */
-    @Nonnull
-    @Override
-    public final FontPaint toBase() {
-        return new FontPaint(this);
-    }
-
-    /**
-     * Recycle this text paint, this object cannot be used anymore after recycling.
-     */
-    public void recycle() {
-        sPool.release(this);
+    @ApiStatus.Internal
+    @NonNull
+    public final FontPaint createInternalPaint() {
+        return new FontPaint(getInternalPaint());
     }
 }

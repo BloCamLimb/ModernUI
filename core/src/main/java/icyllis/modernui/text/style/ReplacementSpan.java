@@ -50,7 +50,7 @@ public abstract class ReplacementSpan extends MetricAffectingSpan {
      * @param fm    Font metrics, can be null.
      * @return Width of the span.
      */
-    public abstract int getSize(@Nonnull FontPaint paint, CharSequence text,
+    public abstract int getSize(@Nonnull TextPaint paint, CharSequence text,
                                 int start, int end, @Nullable FontMetricsInt fm);
 
     /**

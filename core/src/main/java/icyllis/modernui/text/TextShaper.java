@@ -134,7 +134,7 @@ public class TextShaper {
             bidiFlags = isRtl ? ShapedText.BIDI_RTL : ShapedText.BIDI_LTR;
         }
         return new ShapedText(text, contextStart, contextStart + contextCount,
-                start, start + count, bidiFlags, paint);
+                start, start + count, bidiFlags, paint.getInternalPaint());
     }
 
     /**
@@ -165,6 +165,67 @@ public class TextShaper {
             TextUtils.getChars(text, contextStart, contextStart + contextCount, buf, 0);
             return shapeTextRun(buf, start - contextStart, count,
                     0, contextCount, dir, paint);
+        } finally {
+            TextUtils.recycle(buf);
+        }
+    }
+
+    /**
+     * Shape non-styled text.
+     * <p>
+     * This function shapes the text of the given range under the context of given context range.
+     * Some script, e.g. Arabic or Devanagari, changes letter shape based on its location or
+     * surrounding characters.
+     *
+     * @param text         a text buffer to be shaped
+     * @param start        a start index of shaping target in the buffer.
+     * @param count        a length of shaping target in the buffer.
+     * @param contextStart a start index of context used for shaping in the buffer.
+     * @param contextCount a length of context used for shaping in the buffer.
+     * @param isRtl        true if this text is shaped for RTL direction, false otherwise.
+     * @param paint        a paint used for shaping text.
+     * @return a shape result.
+     */
+    @NonNull
+    public static ShapedText shapeTextRun(
+            @NonNull char[] text, @IntRange(from = 0) int start,
+            @IntRange(from = 0) int count, int contextStart, int contextCount,
+            boolean isRtl, @NonNull TextPaint paint) {
+        Objects.requireNonNull(text);
+        Objects.requireNonNull(paint);
+        int bidiFlags = isRtl ? ShapedText.BIDI_OVERRIDE_RTL : ShapedText.BIDI_OVERRIDE_LTR;
+        return new ShapedText(text, contextStart, contextStart + contextCount,
+                start, start + count, bidiFlags, paint.getInternalPaint());
+    }
+
+    /**
+     * Shape non-styled text.
+     * <p>
+     * This function shapes the text of the given range under the context of given context range.
+     * Some script, e.g. Arabic or Devanagari, changes letter shape based on its location or
+     * surrounding characters.
+     *
+     * @param text         a text buffer to be shaped. Any styled spans stored in this text are ignored.
+     * @param start        a start index of shaping target in the buffer.
+     * @param count        a length of shaping target in the buffer.
+     * @param contextStart a start index of context used for shaping in the buffer.
+     * @param contextCount a length of context used for shaping in the buffer.
+     * @param isRtl        true if this text is shaped for RTL direction, false otherwise.
+     * @param paint        a paint used for shaping text.
+     * @return a shape result
+     */
+    @NonNull
+    public static ShapedText shapeTextRun(
+            @NonNull CharSequence text, @IntRange(from = 0) int start,
+            @IntRange(from = 0) int count, int contextStart, int contextCount,
+            boolean isRtl, @NonNull TextPaint paint) {
+        Objects.requireNonNull(text);
+        Objects.checkFromIndexSize(contextStart, contextCount, text.length());
+        char[] buf = TextUtils.obtain(contextCount);
+        try {
+            TextUtils.getChars(text, contextStart, contextStart + contextCount, buf, 0);
+            return shapeTextRun(buf, start - contextStart, count,
+                    0, contextCount, isRtl, paint);
         } finally {
             TextUtils.recycle(buf);
         }

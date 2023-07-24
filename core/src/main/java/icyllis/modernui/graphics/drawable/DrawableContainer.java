@@ -19,7 +19,7 @@
 package icyllis.modernui.graphics.drawable;
 
 import icyllis.modernui.core.Core;
-import icyllis.modernui.graphics.BlendMode;
+import icyllis.arc3d.core.BlendMode;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.util.ColorStateList;

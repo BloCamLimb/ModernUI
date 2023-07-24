@@ -18,6 +18,7 @@
 
 package icyllis.modernui.graphics;
 
+import icyllis.arc3d.core.BlendMode;
 import icyllis.arc3d.core.Matrix4;
 import icyllis.modernui.annotation.FloatRange;
 import icyllis.modernui.view.View;

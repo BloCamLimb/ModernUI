@@ -1005,7 +1005,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * @return the size (in pixels) of the default text size in this TextView.
      */
     public float getTextSize() {
-        return mTextPaint.getFontSize();
+        return mTextPaint.getTextSize();
     }
 
     /**
@@ -1017,8 +1017,8 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      */
     public void setTextSize(float size) {
         int s = sp(size);
-        if (s != mTextPaint.getFontSize()) {
-            mTextPaint.setFontSize(s);
+        if (s != mTextPaint.getTextSize()) {
+            mTextPaint.setTextSize(s);
 
             if (mLayout != null) {
                 nullLayouts();
@@ -1034,9 +1034,9 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * @param style the text style to set
      * @see #getTextStyle()
      */
-    public void setTextStyle(int style) {
-        if (style != mTextPaint.getFontStyle()) {
-            mTextPaint.setFontStyle(style);
+    public void setTextStyle(@Paint.TextStyle int style) {
+        if (style != mTextPaint.getTextStyle()) {
+            mTextPaint.setTextStyle(style);
 
             if (mLayout != null) {
                 nullLayouts();
@@ -1052,8 +1052,9 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * @return the current text style
      * @see #setTextStyle(int)
      */
+    @Paint.TextStyle
     public int getTextStyle() {
-        return mTextPaint.getFontStyle();
+        return mTextPaint.getTextStyle();
     }
 
     /**

@@ -20,8 +20,8 @@ package icyllis.modernui.graphics.text;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import icyllis.modernui.annotation.NonNull;
 import icyllis.arc3d.core.MathUtil;
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.util.Pools;
 
 import javax.annotation.concurrent.ThreadSafe;
@@ -92,6 +92,7 @@ public final class LayoutCache {
             // recycle the lookup key earlier, since creating layout is heavy
             sLookupKeys.release(key);
             piece = new LayoutPiece(buf, contextStart, contextEnd, start, end, isRtl, paint);
+            // there may be a race, but we don't care
             sCache.put(k, piece);
         } else {
             sLookupKeys.release(key);
@@ -136,8 +137,8 @@ public final class LayoutCache {
         int mStart;
         int mEnd;
         FontCollection mFont;
-        int mFontFlags;
-        int mFontSize;
+        int mFlags;
+        int mSize;
         Locale mLocale;
         boolean mIsRtl;
 
@@ -156,8 +157,8 @@ public final class LayoutCache {
             mEnd = key.mEnd;
             // shared pointers
             mFont = key.mFont;
-            mFontFlags = key.mFontFlags;
-            mFontSize = key.mFontSize;
+            mFlags = key.mFlags;
+            mSize = key.mSize;
             mLocale = key.mLocale;
             mIsRtl = key.mIsRtl;
         }
@@ -173,8 +174,8 @@ public final class LayoutCache {
 
             if (mStart != key.mStart) return false;
             if (mEnd != key.mEnd) return false;
-            if (mFontFlags != key.mFontFlags) return false;
-            if (mFontSize != key.mFontSize) return false;
+            if (mFlags != key.mFlags) return false;
+            if (mSize != key.mSize) return false;
             if (mIsRtl != key.mIsRtl) return false;
             if (!Arrays.equals(mChars, key.mChars))
                 return false;
@@ -189,8 +190,8 @@ public final class LayoutCache {
                 result = 31 * result + c;
             }
             result = 31 * result + mFont.hashCode();
-            result = 31 * result + mFontFlags;
-            result = 31 * result + mFontSize;
+            result = 31 * result + mFlags;
+            result = 31 * result + mSize;
             result = 31 * result + mStart;
             result = 31 * result + mEnd;
             result = 31 * result + mLocale.hashCode();
@@ -220,11 +221,12 @@ public final class LayoutCache {
             mChars = text;
             mContextStart = contextStart;
             mContextEnd = contextEnd;
+            // relative to contextual range
             mStart = start - contextStart;
             mEnd = end - contextStart;
             mFont = paint.mFont;
-            mFontFlags = paint.getFontStyle(); // TODO this is style & renderFlags
-            mFontSize = paint.mFontSize;
+            mFlags = paint.mFlags;
+            mSize = paint.mSize;
             mLocale = paint.mLocale;
             mIsRtl = dir;
             return this;
@@ -241,8 +243,8 @@ public final class LayoutCache {
 
             if (mStart != key.mStart) return false;
             if (mEnd != key.mEnd) return false;
-            if (mFontFlags != key.mFontFlags) return false;
-            if (mFontSize != key.mFontSize) return false;
+            if (mFlags != key.mFlags) return false;
+            if (mSize != key.mSize) return false;
             if (mIsRtl != key.mIsRtl) return false;
             if (!Arrays.equals(mChars, mContextStart, mContextEnd,
                     key.mChars, 0, key.mChars.length)) {
@@ -259,8 +261,8 @@ public final class LayoutCache {
                 result = 31 * result + mChars[i];
             }
             result = 31 * result + mFont.hashCode();
-            result = 31 * result + mFontFlags;
-            result = 31 * result + mFontSize;
+            result = 31 * result + mFlags;
+            result = 31 * result + mSize;
             result = 31 * result + mStart;
             result = 31 * result + mEnd;
             result = 31 * result + mLocale.hashCode();

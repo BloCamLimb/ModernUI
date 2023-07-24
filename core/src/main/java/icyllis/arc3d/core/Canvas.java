@@ -18,7 +18,6 @@
 
 package icyllis.arc3d.core;
 
-import icyllis.modernui.graphics.*;
 import org.intellij.lang.annotations.MagicConstant;
 
 import javax.annotation.Nonnull;
@@ -29,7 +28,7 @@ import java.util.Objects;
 /**
  * Arc 3D implementation to Canvas.
  */
-public abstract class Canvas extends icyllis.modernui.graphics.Canvas {
+public abstract class Canvas {
 
     /**
      * SaveLayerFlags provides options that may be used in any combination in SaveLayerRec,
@@ -262,22 +261,18 @@ public abstract class Canvas extends icyllis.modernui.graphics.Canvas {
     protected void didRestore() {
     }
 
-    @Override
     public boolean quickReject(float left, float top, float right, float bottom) {
         return false;
     }
 
-    @Override
     public void drawColor(int color, BlendMode mode) {
         // paint may be modified for recording canvas, so not impl in super class
-        Paint paint = Paint.obtain();
+        Paint paint = new Paint();
         paint.setColor(color);
         paint.setBlendMode(mode);
         drawPaint(paint);
-        paint.recycle();
     }
 
-    @Override
     public void drawPaint(Paint paint) {
         // drawPaint does not call internalQuickReject() because computing its geometry is not free
         // (see getLocalClipBounds()), and the two conditions below are sufficient.
@@ -287,17 +282,14 @@ public abstract class Canvas extends icyllis.modernui.graphics.Canvas {
         topDevice().drawPaint(paint);
     }
 
-    @Override
     public void drawPoint(float x, float y, Paint paint) {
 
     }
 
-    @Override
     public boolean isClipEmpty() {
         return topDevice().getClipType() == BaseDevice.CLIP_TYPE_EMPTY;
     }
 
-    @Override
     public boolean isClipRect() {
         return topDevice().getClipType() == BaseDevice.CLIP_TYPE_RECT;
     }

@@ -18,6 +18,7 @@
 
 package icyllis.modernui.graphics;
 
+import icyllis.arc3d.core.BlendMode;
 import icyllis.arc3d.core.MathUtil;
 import icyllis.modernui.annotation.ColorInt;
 

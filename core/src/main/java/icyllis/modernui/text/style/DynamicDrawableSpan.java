@@ -140,7 +140,7 @@ public abstract class DynamicDrawableSpan extends ReplacementSpan {
     public abstract Drawable getDrawable();
 
     @Override
-    public int getSize(@Nonnull FontPaint paint, CharSequence text,
+    public int getSize(@Nonnull TextPaint paint, CharSequence text,
                        int start, int end, @Nullable FontMetricsInt fm) {
         Drawable d = getCachedDrawable();
         Rect rect = d.getBounds();

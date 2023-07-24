@@ -18,8 +18,7 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.arc3d.core.MathUtil;
-import icyllis.arc3d.core.Matrix4;
+import icyllis.arc3d.core.*;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.graphics.text.*;
 import icyllis.modernui.text.*;
@@ -990,15 +989,14 @@ public abstract class Canvas {
      * @param paint          Paint used for drawing.
      * @see TextShaper
      */
-    public void drawGlyphs(@NonNull int[] glyphs,
-                           int glyphOffset,
-                           @NonNull float[] positions,
-                           int positionOffset,
-                           int glyphCount,
-                           @NonNull FontFamily font,
-                           float x, float y,
-                           @NonNull TextPaint paint) {
-    }
+    public abstract void drawGlyphs(@NonNull int[] glyphs,
+                                    int glyphOffset,
+                                    @NonNull float[] positions,
+                                    int positionOffset,
+                                    int glyphCount,
+                                    @NonNull FontFamily font,
+                                    float x, float y,
+                                    @NonNull Paint paint);
 
     /**
      * Draw a single style run of positioned glyphs in order <em>visually left-to-right</em>,
@@ -1012,7 +1010,7 @@ public abstract class Canvas {
      * @see TextShaper
      */
     public final void drawText(@NonNull ShapedText text,
-                               float x, float y, @NonNull TextPaint paint) {
+                               float x, float y, @NonNull Paint paint) {
         drawText(text, 0, text.getGlyphCount(), x, y, paint);
     }
 
@@ -1030,7 +1028,7 @@ public abstract class Canvas {
      * @see TextShaper
      */
     public final void drawText(@NonNull ShapedText text, int start, int end,
-                               float x, float y, @NonNull TextPaint paint) {
+                               float x, float y, @NonNull Paint paint) {
         if ((start | end | end - start | end - text.getGlyphCount()) < 0) {
             throw new IndexOutOfBoundsException();
         }
@@ -1065,7 +1063,7 @@ public abstract class Canvas {
      * @param y     the vertical baseline of the line of text
      * @param paint the paint used to draw the text, only color will be taken
      */
-    public final void drawTextRun(LayoutPiece piece, float x, float y, TextPaint paint) {
+    public final void drawTextRun(LayoutPiece piece, float x, float y, Paint paint) {
         if (piece.getAdvance() == 0 || (piece.getGlyphs().length == 0)
                 || quickReject(x, y - piece.getAscent(),
                 x + piece.getAdvance(), y + piece.getDescent())) {
@@ -1124,7 +1122,7 @@ public abstract class Canvas {
         }
         ShapedText.doLayoutRun(
                 text, contextStart, contextEnd,
-                start, end, isRtl, paint, null,
+                start, end, isRtl, paint.getInternalPaint(), null,
                 (piece, __, curAdvance) -> {
                     drawTextRun(piece, x + curAdvance, y, paint);
                 }
@@ -1176,7 +1174,7 @@ public abstract class Canvas {
         TextUtils.getChars(text, contextStart, contextEnd, buf, 0);
         ShapedText.doLayoutRun(
                 buf, 0, len,
-                start - contextStart, end - contextStart, isRtl, paint, null,
+                start - contextStart, end - contextStart, isRtl, paint.getInternalPaint(), null,
                 (piece, __, curAdvance) -> {
                     drawTextRun(piece, x + curAdvance, y, paint);
                 }

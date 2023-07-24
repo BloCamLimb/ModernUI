@@ -71,6 +71,6 @@ public class RelativeSizeSpan extends MetricAffectingSpan implements ParcelableS
 
     @Override
     public void updateMeasureState(@Nonnull TextPaint paint) {
-        paint.setFontSize(Math.round(paint.getFontSize() * mProportion));
+        paint.setTextSize(paint.getTextSize() * mProportion);
     }
 }

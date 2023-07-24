@@ -416,7 +416,7 @@ public class MeasuredParagraph {
      */
     @Nonnull
     public static MeasuredParagraph buildForStaticLayout(
-            @Nonnull FontPaint paint, @Nonnull CharSequence text, int start, int end,
+            @Nonnull TextPaint paint, @Nonnull CharSequence text, int start, int end,
             @Nonnull TextDirectionHeuristic textDir, boolean fullLayout, @Nullable MeasuredParagraph recycle) {
         if ((start | end | end - start | text.length() - end) < 0) {
             throw new IllegalArgumentException();
@@ -503,7 +503,7 @@ public class MeasuredParagraph {
         }
     }
 
-    private void applyMetricsAffectingSpan(@Nonnull FontPaint paint, @Nonnull List<MetricAffectingSpan> spans,
+    private void applyMetricsAffectingSpan(@Nonnull TextPaint paint, @Nonnull List<MetricAffectingSpan> spans,
                                            int start, int end, @Nonnull MeasuredText.Builder builder) {
         assert start != end;
         TextPaint tp = TextPaint.obtain();
@@ -524,10 +524,10 @@ public class MeasuredParagraph {
         if (replacement != null) {
             final float width = replacement.getSize(
                     tp, mSpanned, start + mTextStart, end + mTextStart, mCachedFm);
-            builder.addReplacementRun(tp, end - start, width);
+            builder.addReplacementRun(tp.getInternalPaint(), end - start, width);
         } else {
             final int offset = mTextStart;
-            final FontPaint base = tp.toBase();
+            final FontPaint base = tp.createInternalPaint();
             if (mSpanned != null) {
                 int spanEnd;
                 for (int spanStart = start; spanStart < end; spanStart = spanEnd) {
