@@ -18,8 +18,9 @@
 
 package icyllis.modernui.graphics.text;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import icyllis.modernui.annotation.*;
+import icyllis.modernui.text.TextPaint;
+
 import javax.annotation.concurrent.Immutable;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.util.*;
@@ -40,7 +41,7 @@ public class MeasuredText {
     private final char[] mTextBuf;
     private final Run[] mRuns;
 
-    private MeasuredText(@Nonnull char[] textBuf, @Nonnull Run[] runs, boolean computeLayout) {
+    private MeasuredText(@NonNull char[] textBuf, @NonNull Run[] runs, boolean computeLayout) {
         //assert (textBuf.length == 0) == (runs.length == 0);
         mTextBuf = textBuf;
         mRuns = runs;
@@ -55,7 +56,7 @@ public class MeasuredText {
      *
      * @return the backend buffer of the text
      */
-    @Nonnull
+    @NonNull
     public char[] getTextBuf() {
         return mTextBuf;
     }
@@ -66,7 +67,7 @@ public class MeasuredText {
      *
      * @return all text runs, may empty if text buf is empty
      */
-    @Nonnull
+    @NonNull
     public Run[] getRuns() {
         return mRuns;
     }
@@ -78,7 +79,7 @@ public class MeasuredText {
      * @param end    the end index
      * @param extent receives the metrics
      */
-    public void getExtent(int start, int end, @Nonnull FontMetricsInt extent) {
+    public void getExtent(int start, int end, @NonNull FontMetricsInt extent) {
         if (start >= end) {
             return;
         }
@@ -232,7 +233,7 @@ public class MeasuredText {
 
         private final List<Run> mRuns = new ArrayList<>();
 
-        @Nonnull
+        @NonNull
         private final char[] mText;
         private boolean mComputeLayout = true;
         private int mCurrentOffset = 0;
@@ -240,11 +241,13 @@ public class MeasuredText {
         /**
          * Construct a builder.
          * <p>
-         * The MeasuredText returned by build method will hold a reference of the text.
+         * The MeasuredText returned by build method will hold a reference of the text,
+         * then the char array <b>must</b> be immutable.
          *
          * @param text a text, with full range, can be empty
          */
-        public Builder(@Nonnull char[] text) {
+        public Builder(@NonNull char[] text) {
+            Objects.requireNonNull(text);
             mText = text;
         }
 
@@ -254,16 +257,23 @@ public class MeasuredText {
          * Keeps an internal offset which increases at every append. The initial value for this
          * offset is zero. After the style is applied the internal offset is moved to {@code offset
          * + length}, and next call will start from this new position.
-         * <p>
-         * You <b>must</b> ensure the given font paint object is immutable. You can reuse the same
-         * font paint object for making multiple style runs without measurement requirement changes.
          *
          * @param paint  a paint
          * @param length a length to be applied with a given paint, can not exceed the length of the
          *               text
          * @param isRtl  true if the text is in RTL context, otherwise false.
          */
-        public void addStyleRun(@Nonnull FontPaint paint, int length, boolean isRtl) {
+        @NonNull
+        public Builder appendStyleRun(@NonNull TextPaint paint,
+                                      @IntRange(from = 0) int length,
+                                      boolean isRtl) {
+            addStyleRun(paint.createInternalPaint(), length, isRtl);
+            return this;
+        }
+
+        public void addStyleRun(@NonNull FontPaint paint, @IntRange(from = 0) int length,
+                                boolean isRtl) {
+            Objects.requireNonNull(paint);
             if (length <= 0) {
                 throw new IllegalArgumentException("length can not be negative");
             }
@@ -271,17 +281,7 @@ public class MeasuredText {
             if (end > mText.length) {
                 throw new IllegalArgumentException("Style exceeds the text length");
             }
-            //TODO
-            if (length <= LayoutCache.MAX_PIECE_LENGTH) {
-                mRuns.add(new StyleRun(mCurrentOffset, end, paint, isRtl));
-            } else {
-                int s = mCurrentOffset, e = s;
-                do {
-                    e = Math.min(e + LayoutCache.MAX_PIECE_LENGTH, end);
-                    mRuns.add(new StyleRun(s, e, paint, isRtl));
-                    s = e;
-                } while (s < end);
-            }
+            mRuns.add(new StyleRun(mCurrentOffset, end, paint, isRtl));
             mCurrentOffset = end;
         }
 
@@ -301,7 +301,16 @@ public class MeasuredText {
          *               text
          * @param width  a replacement width of the range in pixels
          */
-        public void addReplacementRun(@Nonnull FontPaint paint, int length, float width) {
+        @NonNull
+        public Builder appendReplacementRun(@NonNull TextPaint paint,
+                                            @IntRange(from = 0) int length,
+                                            @FloatRange(from = 0) float width) {
+            addReplacementRun(paint.getTextLocale(), length, width);
+            return this;
+        }
+
+        public void addReplacementRun(@NonNull Locale locale, @IntRange(from = 0) int length,
+                                      @FloatRange(from = 0) float width) {
             if (length <= 0) {
                 throw new IllegalArgumentException("length can not be negative");
             }
@@ -309,7 +318,7 @@ public class MeasuredText {
             if (end > mText.length) {
                 throw new IllegalArgumentException("Replacement exceeds the text length");
             }
-            mRuns.add(new ReplacementRun(mCurrentOffset, end, width, paint.getLocale()));
+            mRuns.add(new ReplacementRun(mCurrentOffset, end, width, locale));
             mCurrentOffset = end;
         }
 
@@ -325,7 +334,7 @@ public class MeasuredText {
          *
          * @param computeLayout true if you want to retrieve full layout info, e.g. glyphs position
          */
-        @Nonnull
+        @NonNull
         public Builder setComputeLayout(boolean computeLayout) {
             mComputeLayout = computeLayout;
             return this;
@@ -338,7 +347,7 @@ public class MeasuredText {
          *
          * @return text measurement result
          */
-        @Nonnull
+        @NonNull
         public MeasuredText build() {
             if (mCurrentOffset < 0) {
                 throw new IllegalStateException("Builder can not be reused.");
@@ -364,13 +373,13 @@ public class MeasuredText {
         }
 
         // Compute metrics
-        abstract void measure(@Nonnull char[] text, boolean computeLayout);
+        abstract void measure(@NonNull char[] text, boolean computeLayout);
 
         // Extend extent
-        abstract void getExtent(@Nonnull char[] text, int start, int end, @Nonnull FontMetricsInt extent);
+        abstract void getExtent(@NonNull char[] text, int start, int end, @NonNull FontMetricsInt extent);
 
         @Nullable
-        abstract LayoutPiece getLayout(@Nonnull char[] text, int start, int end);
+        abstract LayoutPiece getLayout(@NonNull char[] text, int start, int end);
 
         abstract float getAdvance(int pos);
 
@@ -383,7 +392,7 @@ public class MeasuredText {
         public abstract boolean canBreak();
 
         // Returns the locale for this run.
-        @Nonnull
+        @NonNull
         public abstract Locale getLocale();
 
         public abstract int getMemoryUsage();
@@ -406,31 +415,35 @@ public class MeasuredText {
         }
 
         @Override
-        void measure(@Nonnull char[] text, boolean computeLayout) {
-            mLayoutPiece = LayoutCache.getOrCreate(text, mStart, mEnd, mStart, mEnd, mIsRtl, mPaint);
+        void measure(@NonNull char[] text, boolean computeLayout) {
+            mLayoutPiece = LayoutCache.getOrCreate(text, mStart, mEnd, mStart, mEnd, mIsRtl, mPaint,
+                    LayoutCache.COMPUTE_CLUSTER_ADVANCES);
             mComputedLayout = computeLayout;
         }
 
         @Override
-        void getExtent(@Nonnull char[] text, int start, int end,
-                       @Nonnull FontMetricsInt extent) {
+        void getExtent(@NonNull char[] text, int start, int end,
+                       @NonNull FontMetricsInt extent) {
             if (start == mStart && end == mEnd) {
                 mLayoutPiece.getExtent(extent);
             } else {
-                LayoutCache.getOrCreate(text, mStart, mEnd, start, end, mIsRtl, mPaint).getExtent(extent);
+                LayoutCache.getOrCreate(text, mStart, mEnd, start, end, mIsRtl, mPaint,
+                        LayoutCache.COMPUTE_CLUSTER_ADVANCES).getExtent(extent);
             }
         }
 
         @Override
-        LayoutPiece getLayout(@Nonnull char[] text, int start, int end) {
+        LayoutPiece getLayout(@NonNull char[] text, int start, int end) {
             if (start == mStart && end == mEnd) {
                 if (!mComputedLayout) {
-                    mLayoutPiece = LayoutCache.getOrCreate(text, mStart, mEnd, start, end, mIsRtl, mPaint);
+                    mLayoutPiece = LayoutCache.getOrCreate(text, mStart, mEnd, start, end, mIsRtl, mPaint,
+                            LayoutCache.COMPUTE_CLUSTER_ADVANCES);
                     mComputedLayout = true;
                 }
                 return mLayoutPiece;
             }
-            return LayoutCache.getOrCreate(text, mStart, mEnd, start, end, mIsRtl, mPaint);
+            return LayoutCache.getOrCreate(text, mStart, mEnd, start, end, mIsRtl, mPaint,
+                    LayoutCache.COMPUTE_CLUSTER_ADVANCES);
         }
 
         @Override
@@ -460,7 +473,7 @@ public class MeasuredText {
             return true;
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public Locale getLocale() {
             return mPaint.getLocale();
@@ -498,18 +511,18 @@ public class MeasuredText {
         }
 
         @Override
-        void measure(@Nonnull char[] text, boolean computeLayout) {
+        void measure(@NonNull char[] text, boolean computeLayout) {
             //TODO: Get the extents information from the caller.
         }
 
         @Override
-        void getExtent(@Nonnull char[] text, int start, int end, @Nonnull FontMetricsInt extent) {
+        void getExtent(@NonNull char[] text, int start, int end, @NonNull FontMetricsInt extent) {
 
         }
 
         @Nullable
         @Override
-        LayoutPiece getLayout(@Nonnull char[] text, int start, int end) {
+        LayoutPiece getLayout(@NonNull char[] text, int start, int end) {
             return null;
         }
 
@@ -539,7 +552,7 @@ public class MeasuredText {
             return false;
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public Locale getLocale() {
             return mLocale;

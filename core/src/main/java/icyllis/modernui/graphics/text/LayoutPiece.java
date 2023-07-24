@@ -19,12 +19,13 @@
 package icyllis.modernui.graphics.text;
 
 import icyllis.arc3d.core.MathUtil;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.text.FontCollection.Run;
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 
-import javax.annotation.Nonnull;
 import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
@@ -80,31 +81,76 @@ public final class LayoutPiece {
     // total advance
     private final float mAdvance;
 
+    private final int mBoundsX;
+    private final int mBoundsY;
+    private final int mBoundsWidth;
+    private final int mBoundsHeight;
+
+    final int mComputeFlags;
+
     /**
      * Creates the glyph layout of a piece. No reference to the buffer will be held.
      *
-     * @param buf   text buffer, cannot be null or empty
-     * @param start start char offset
-     * @param end   end char index
-     * @param isRtl whether to layout in right-to-left
-     * @param paint the font paint affecting measurement
+     * @param buf      text buffer, cannot be null or empty
+     * @param start    start char offset
+     * @param end      end char index
+     * @param isRtl    whether to layout in right-to-left
+     * @param paint    the font paint affecting measurement
+     * @param hint     existing layout piece
+     * @param newFlags additional flags to compute
      */
-    LayoutPiece(@Nonnull char[] buf, int contextStart, int contextEnd, int start, int end,
-                boolean isRtl, FontPaint paint) {
+    LayoutPiece(@NonNull char[] buf, int contextStart, int contextEnd, int start, int end,
+                boolean isRtl, @NonNull FontPaint paint, @Nullable LayoutPiece hint, int newFlags) {
+        final boolean computeAdvances =
+                (newFlags & LayoutCache.COMPUTE_CLUSTER_ADVANCES) != 0;
+        final boolean computeBounds =
+                (newFlags & LayoutCache.COMPUTE_GLYPHS_PIXEL_BOUNDS) != 0;
+
         int count = end - start;
-        mAdvances = new float[count];
+        if (computeAdvances) {
+            assert hint == null || hint.mAdvances == null;
+            mAdvances = new float[count];
+        } else if (hint != null) {
+            mAdvances = hint.mAdvances;
+        } else {
+            mAdvances = null;
+        }
         final FontMetricsInt extent = new FontMetricsInt();
+        final Rectangle bounds = new Rectangle();
 
-        // reserve memory, glyph count is <= char count
-        final var fontIndices = new ByteArrayList(count);
-        final var glyphs = new IntArrayList(count);
-        final var positions = new FloatArrayList(count * 2);
+        final ByteArrayList fontIndices;
+        final IntArrayList glyphs;
+        final FloatArrayList positions;
+        if (hint == null) {
+            // reserve memory, glyph count is <= char count
+            fontIndices = new ByteArrayList(count);
+            glyphs = new IntArrayList(count);
+            positions = new FloatArrayList(count * 2);
+        } else {
+            fontIndices = null;
+            glyphs = null;
+            positions = null;
+        }
 
-        final var fonts = new ArrayList<FontFamily>();
+        final ArrayList<FontFamily> fonts;
+        final HashMap<FontFamily, Byte> fontMap;
+        final Function<FontFamily, Byte> idGen;
+        if (hint == null) {
+            fonts = new ArrayList<>();
+            fontMap = new HashMap<>();
+            idGen = family -> {
+                fonts.add(family);
+                return (byte) fontMap.size();
+            };
+        } else {
+            fonts = null;
+            fontMap = null;
+            idGen = null;
+        }
 
-        HashMap<FontFamily, Byte> fontMap = new HashMap<>();
-
+        int style = paint.getFontStyle();
         float size = paint.getFontSize();
+        final var g = sGraphics[paint.getRenderFlags()];
         float advance = 0;
 
         final List<Run> items = paint.mFont.itemize(buf, start, end);
@@ -118,19 +164,18 @@ public final class LayoutPiece {
             runEnd = items.size();
             runDir = 1;
         }
-        Function<FontFamily, Byte> idGen = family -> {
-            fonts.add(family);
-            return (byte) fontMap.size();
-        };
         // this is visually left-to-right
         for (; runIndex != runEnd; runIndex += runDir) {
             Run run = items.get(runIndex);
 
-            byte fontIdx = fontMap.computeIfAbsent(run.family(), idGen);
-
-            var g = sGraphics[paint.getRenderFlags()];
-            Font font = run.family().getClosestMatch(paint.getFontStyle()).deriveFont(size);
-            extent.extendBy(g.getFontMetrics(font));
+            final byte fontIdx;
+            Font font = run.family().getClosestMatch(style).deriveFont(size);
+            if (hint == null) {
+                fontIdx = fontMap.computeIfAbsent(run.family(), idGen);
+                extent.extendBy(g.getFontMetrics(font));
+            } else {
+                fontIdx = -1;
+            }
             int layoutFlags = isRtl ? Font.LAYOUT_RIGHT_TO_LEFT : Font.LAYOUT_LEFT_TO_RIGHT;
             if (run.start() == contextStart) {
                 layoutFlags |= Font.LAYOUT_NO_START_CONTEXT;
@@ -142,48 +187,84 @@ public final class LayoutPiece {
                     buf, run.start(), run.end(), layoutFlags);
             int nGlyphs = vector.getNumGlyphs();
 
-            for (int i = 0; i < nGlyphs; i++) {
-                int charIndex = vector.getGlyphCharIndex(i);
-                mAdvances[charIndex + run.start() - start] = vector.getGlyphMetrics(i).getAdvanceX();
+            if (computeAdvances) {
+                for (int i = 0; i < nGlyphs; i++) {
+                    int charIndex = vector.getGlyphCharIndex(i);
+                    mAdvances[charIndex + run.start() - start] = vector.getGlyphMetrics(i).getAdvanceX();
+                }
+
+                // this is a bit slow
+                GraphemeBreak.forTextRun(buf, paint.mLocale, run.start(), run.end(),
+                        (clusterStart, clusterEnd) -> {
+                            int rStart = clusterStart - start;
+                            int rEnd = clusterEnd - start;
+                            // accumulate advance to cluster
+                            for (int i = rStart + 1; i < rEnd; i++) {
+                                mAdvances[rStart] += mAdvances[i];
+                                mAdvances[i] = 0;
+                            }
+                        });
             }
 
-            GraphemeBreak.forTextRun(buf, paint.mLocale, run.start(), run.end(),
-                    (clusterStart, clusterEnd) -> {
-                        int rStart = clusterStart - start;
-                        int rEnd = clusterEnd - start;
-                        // accumulate advance to cluster
-                        for (int i = rStart + 1; i < rEnd; i++) {
-                            mAdvances[rStart] += mAdvances[i];
-                            mAdvances[i] = 0;
-                        }
-                    });
+            if (hint == null) {
+                // this is visually left-to-right
+                for (int i = 0; i < nGlyphs; i++) {
+                    glyphs.add(vector.getGlyphCode(i));
+                    var point = vector.getGlyphPosition(i);
+                    positions.add((float) point.getX() + advance);
+                    positions.add((float) point.getY());
+                }
 
-            // this is visually left-to-right
-            for (int i = 0; i < nGlyphs; i++) {
-                glyphs.add(vector.getGlyphCode(i));
-                var point = vector.getGlyphPosition(i);
-                positions.add((float) point.getX() + advance);
-                positions.add((float) point.getY());
+                int oldFontIdxSize = fontIndices.size();
+                fontIndices.size(oldFontIdxSize + nGlyphs);
+                Arrays.fill(fontIndices.elements(), oldFontIdxSize, oldFontIdxSize + nGlyphs, fontIdx);
             }
 
-            int oldFontIdxSize = fontIndices.size();
-            fontIndices.size(oldFontIdxSize + nGlyphs);
-            Arrays.fill(fontIndices.elements(), oldFontIdxSize, oldFontIdxSize + nGlyphs, fontIdx);
+            if (computeBounds) {
+                // this is a bit slow
+                Rectangle r = vector.getPixelBounds(null, advance, 0);
+                bounds.add(r);
+            }
 
-            advance += vector.getGlyphPosition(vector.getNumGlyphs()).getX();
+            advance += vector.getGlyphPosition(nGlyphs).getX();
         }
-        mGlyphs = glyphs.toIntArray();
-        mPositions = positions.toFloatArray();
-        if (fonts.size() > 1) {
-            mFontIndices = fontIndices.toByteArray();
+        if (hint != null) {
+            mGlyphs = hint.mGlyphs;
+            mPositions = hint.mPositions;
+            mFontIndices = hint.mFontIndices;
+            mFonts = hint.mFonts;
+            mAscent = hint.mAscent;
+            mDescent = hint.mDescent;
+            mAdvance = hint.mAdvance;
+            assert mAdvance == advance;
         } else {
-            mFontIndices = null;
-        }
-        mFonts = fonts.toArray(new FontFamily[0]);
+            mGlyphs = glyphs.toIntArray();
+            mPositions = positions.toFloatArray();
+            if (fonts.size() > 1) {
+                mFontIndices = fontIndices.toByteArray();
+            } else {
+                mFontIndices = null;
+            }
+            mFonts = fonts.toArray(new FontFamily[0]);
 
-        mAscent = extent.ascent;
-        mDescent = extent.descent;
-        mAdvance = advance;
+            mAscent = extent.ascent;
+            mDescent = extent.descent;
+            mAdvance = advance;
+        }
+
+        if (computeBounds || hint == null) {
+            mBoundsX = bounds.x;
+            mBoundsY = bounds.y;
+            mBoundsWidth = bounds.width;
+            mBoundsHeight = bounds.height;
+        } else {
+            mBoundsX = hint.mBoundsX;
+            mBoundsY = hint.mBoundsY;
+            mBoundsWidth = hint.mBoundsWidth;
+            mBoundsHeight = hint.mBoundsHeight;
+        }
+
+        mComputeFlags = (hint != null ? hint.mComputeFlags : 0) | newFlags;
 
         assert mGlyphs.length * 2 == mPositions.length;
         assert mFontIndices == null || mFontIndices.length == mGlyphs.length;
@@ -230,11 +311,13 @@ public final class LayoutPiece {
     }
 
     /**
-     * The array of all chars advance, the length and order are relative to the text buffer.
-     * Only grapheme cluster bounds have advances, others are zeros. For example: [13.57, 0, 14.26, 0, 0].
-     * The length is constructor <code>end - start</code>.
+     * The array of all chars advance, the length and order are relative to
+     * the text buffer, if computed. Only grapheme cluster bounds have advances,
+     * others are zeros. For example: [13.57, 0, 14.26, 0, 0]. The length is
+     * constructor <code>end - start</code>.
      *
-     * @return advances
+     * @return advances, or null
+     * @see LayoutCache#COMPUTE_CLUSTER_ADVANCES
      */
     public float[] getAdvances() {
         return mAdvances;
@@ -245,7 +328,7 @@ public final class LayoutPiece {
      *
      * @param extent to expand from
      */
-    public void getExtent(@Nonnull FontMetricsInt extent) {
+    public void getExtent(@NonNull FontMetricsInt extent) {
         extent.extendBy(getAscent(), getDescent());
     }
 
@@ -276,15 +359,71 @@ public final class LayoutPiece {
         return mAdvance;
     }
 
+    /**
+     * Returns the floor left value of the pixel bounds of all glyph images,
+     * relative to (0, 0), if computed.
+     *
+     * @return the bounds X, or 0
+     * @see LayoutCache#COMPUTE_GLYPHS_PIXEL_BOUNDS
+     */
+    public int getBoundsX() {
+        return mBoundsX;
+    }
+
+    /**
+     * Returns the floor top value of the pixel bounds of all glyph images,
+     * relative to (0, 0), if computed.
+     *
+     * @return the bounds Y, or 0
+     * @see LayoutCache#COMPUTE_GLYPHS_PIXEL_BOUNDS
+     */
+    public int getBoundsY() {
+        return mBoundsY;
+    }
+
+    /**
+     * Returns the width value of the pixel bounds of all glyph images,
+     * if computed.
+     *
+     * @return the bounds width, or 0
+     * @see LayoutCache#COMPUTE_GLYPHS_PIXEL_BOUNDS
+     */
+    public int getBoundsWidth() {
+        return mBoundsWidth;
+    }
+
+    /**
+     * Returns the height value of the pixel bounds of all glyph images,
+     * if computed.
+     *
+     * @return the bounds height, or 0
+     * @see LayoutCache#COMPUTE_GLYPHS_PIXEL_BOUNDS
+     */
+    public int getBoundsHeight() {
+        return mBoundsHeight;
+    }
+
+    /**
+     * Returns which flags were computed.
+     *
+     * @see LayoutCache#COMPUTE_CLUSTER_ADVANCES
+     * @see LayoutCache#COMPUTE_GLYPHS_PIXEL_BOUNDS
+     */
+    public int getComputeFlags() {
+        return mComputeFlags;
+    }
+
     public int getMemoryUsage() {
-        int m = 48;
+        int m = 64;
         m += 16 + MathUtil.align8(mGlyphs.length << 2);
         m += 16 + MathUtil.align8(mPositions.length << 2);
         if (mFontIndices != null) {
             m += 16 + MathUtil.align8(mFontIndices.length);
         }
         m += 16 + MathUtil.align8(mFonts.length << 2);
-        m += 16 + MathUtil.align8(mAdvances.length << 2);
+        if (mAdvances != null) {
+            m += 16 + MathUtil.align8(mAdvances.length << 2);
+        }
         return m;
     }
 
@@ -299,6 +438,11 @@ public final class LayoutPiece {
                 ", mAscent=" + mAscent +
                 ", mDescent=" + mDescent +
                 ", mAdvance=" + mAdvance +
+                ", mBoundsX=" + mBoundsX +
+                ", mBoundsY=" + mBoundsY +
+                ", mBoundsWidth=" + mBoundsWidth +
+                ", mBoundsHeight=" + mBoundsHeight +
+                ", mComputeFlags=0x" + Integer.toHexString(mComputeFlags) +
                 '}';
     }
 }

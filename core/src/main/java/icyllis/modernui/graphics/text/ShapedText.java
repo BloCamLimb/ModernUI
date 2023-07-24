@@ -20,8 +20,8 @@ package icyllis.modernui.graphics.text;
 
 import com.ibm.icu.text.Bidi;
 import com.ibm.icu.text.BidiRun;
-import icyllis.modernui.annotation.NonNull;
 import icyllis.arc3d.core.MathUtil;
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.text.TextShaper;
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
@@ -147,19 +147,12 @@ public class ShapedText {
     }
 
     /**
-     * Returns the number of characters (i.e. constructor <code>limit - start</code> in code units).
-     */
-    public int getCharCount() {
-        return mAdvances.length;
-    }
-
-    /**
      * The array of all chars advance, the length and order are relative to the text buffer.
      * Only grapheme cluster bounds have advances, others are zeros. For example:
      * [13.0, 0, 14.0, 0, 0] meaning c[0] and c[1] become a cluster; c[2], c[3] and c[4]
-     * become a cluster. The length is {@link #getCharCount()}.
+     * become a cluster. The length is constructor <code>limit - start</code> in code units.
      *
-     * @return advances
+     * @return advances, or null
      * @see GraphemeBreak
      */
     public float[] getAdvances() {
@@ -222,7 +215,9 @@ public class ShapedText {
             m += 16 + MathUtil.align8(mFontIndices.length);
         }
         m += 16 + MathUtil.align8(mFonts.length << 2);
-        m += 16 + MathUtil.align8(mAdvances.length << 2);
+        if (mAdvances != null) {
+            m += 16 + MathUtil.align8(mAdvances.length << 2);
+        }
         return m;
     }
 
@@ -284,8 +279,8 @@ public class ShapedText {
         int count = limit - start;
         // we allow for an empty range
         if (count == 0) {
-            // these three arrays are public so cannot be null
-            mAdvances = FloatArrays.EMPTY_ARRAY;
+            mAdvances = null;
+            // these two arrays are public so cannot be null
             mGlyphs = IntArrays.EMPTY_ARRAY;
             mPositions = FloatArrays.EMPTY_ARRAY;
             // these two arrays are internal so can be null
@@ -296,7 +291,10 @@ public class ShapedText {
             mAdvance = 0;
             return;
         }
-        mAdvances = new float[count];
+        //TODO currently we don't compute/store per-cluster advances
+        // because they are not needed for rendering, just needed for line breaking...
+        //mAdvances = new float[count];
+        mAdvances = null;
         final FontMetricsInt extent = new FontMetricsInt();
 
         // reserve memory, glyph count is <= char count
@@ -483,9 +481,10 @@ public class ShapedText {
                                       FontMetricsInt extent,
                                       RunConsumer consumer) {
         LayoutPiece src = LayoutCache.getOrCreate(
-                buf, contextStart, contextEnd, start, end, isRtl, paint);
+                buf, contextStart, contextEnd, start, end, isRtl, paint,
+                advances != null ? LayoutCache.COMPUTE_CLUSTER_ADVANCES : 0);
 
-        if (advances != null) {
+        if (consumer == null) {
             for (int i = 0; i < src.getGlyphCount(); i++) {
                 fontIndices.add((byte) idGet.apply(src.getFont(i)));
             }
@@ -499,9 +498,11 @@ public class ShapedText {
                 positions.elements()[posIndex] += curAdvance;
             }
 
-            float[] srcAdvances = src.getAdvances();
-            System.arraycopy(srcAdvances, 0,
-                    advances, advanceOffset, srcAdvances.length);
+            if (advances != null) {
+                float[] srcAdvances = src.getAdvances();
+                System.arraycopy(srcAdvances, 0,
+                        advances, advanceOffset, srcAdvances.length);
+            }
         } else {
             consumer.accept(src, paint, curAdvance);
         }

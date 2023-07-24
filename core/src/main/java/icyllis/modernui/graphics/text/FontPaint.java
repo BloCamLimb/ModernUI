@@ -29,7 +29,6 @@ import java.util.Locale;
 /**
  * The base paint used with layout engine at lower levels.
  */
-@ApiStatus.Internal
 public class FontPaint {
 
     /**
