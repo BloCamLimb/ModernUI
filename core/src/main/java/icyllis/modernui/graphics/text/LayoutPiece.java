@@ -18,7 +18,7 @@
 
 package icyllis.modernui.graphics.text;
 
-import icyllis.modernui.graphics.MathUtil;
+import icyllis.arc3d.core.MathUtil;
 import icyllis.modernui.graphics.text.FontCollection.Run;
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;

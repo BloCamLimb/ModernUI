@@ -503,7 +503,6 @@ public final class GLServer extends Server {
                                                float[] clearColor,
                                                Set<TextureProxy> sampledTextures,
                                                int pipelineFlags) {
-        mStats.incRenderPasses();
         if (mCachedOpsRenderPass == null) {
             mCachedOpsRenderPass = new GLOpsRenderPass(this);
         }

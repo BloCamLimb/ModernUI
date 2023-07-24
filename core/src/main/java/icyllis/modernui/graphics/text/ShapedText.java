@@ -21,7 +21,7 @@ package icyllis.modernui.graphics.text;
 import com.ibm.icu.text.Bidi;
 import com.ibm.icu.text.BidiRun;
 import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.graphics.MathUtil;
+import icyllis.arc3d.core.MathUtil;
 import icyllis.modernui.text.TextShaper;
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
@@ -321,7 +321,8 @@ public class ShapedText {
             final boolean isRtl = (bidiFlags & 0b001) != 0;
             advance += doLayoutRun(text, contextStart, contextLimit,
                     start, limit, isRtl, paint, start,
-                    mAdvances, advance, glyphs, positions, fontIndices, idGet, extent);
+                    mAdvances, advance, glyphs, positions, fontIndices, idGet, extent,
+                    null);
         } else {
             final byte paraLevel = switch (bidiFlags) {
                 case BIDI_LTR -> Bidi.LTR;
@@ -337,13 +338,15 @@ public class ShapedText {
             if (bidi.isRightToLeft()) {
                 advance += doLayoutRun(text, contextStart, contextLimit,
                         start, limit, true, paint, start,
-                        mAdvances, advance, glyphs, positions, fontIndices, idGet, extent);
+                        mAdvances, advance, glyphs, positions, fontIndices, idGet, extent,
+                        null);
             }
             // entirely left-to-right
             else if (bidi.isLeftToRight()) {
                 advance += doLayoutRun(text, contextStart, contextLimit,
                         start, limit, false, paint, start,
-                        mAdvances, advance, glyphs, positions, fontIndices, idGet, extent);
+                        mAdvances, advance, glyphs, positions, fontIndices, idGet, extent,
+                        null);
             }
             // full bidirectional analysis
             else {
@@ -354,7 +357,8 @@ public class ShapedText {
                     int runEnd = Math.min(run.getLimit(), limit);
                     advance += doLayoutRun(text, contextStart, contextLimit,
                             runStart, runEnd, run.isOddRun(), paint, start,
-                            mAdvances, advance, glyphs, positions, fontIndices, idGet, extent);
+                            mAdvances, advance, glyphs, positions, fontIndices, idGet, extent,
+                            null);
                 }
             }
         }
@@ -376,6 +380,22 @@ public class ShapedText {
         assert mFontIndices == null || mFontIndices.length == mGlyphs.length;
     }
 
+    public interface RunConsumer {
+
+        void accept(LayoutPiece piece, FontPaint paint, float curAdvance);
+    }
+
+    // BiDi run, visual order, append layout pieces
+    public static float doLayoutRun(char[] text, int contextStart, int contextLimit,
+                                    int start, int limit, boolean isRtl, FontPaint paint,
+                                    FontMetricsInt extent,
+                                    RunConsumer consumer) {
+        return doLayoutRun(text, contextStart, contextLimit,
+                start, limit, isRtl, paint, start,
+                null, 0, null, null, null, null, extent,
+                consumer);
+    }
+
     // BiDi run, visual order
     private static float doLayoutRun(char[] text, int contextStart, int contextLimit,
                                      int start, int limit, boolean isRtl, FontPaint paint,
@@ -383,7 +403,8 @@ public class ShapedText {
                                      IntArrayList glyphs, FloatArrayList positions,
                                      ByteArrayList fontIndices,
                                      Function<FontFamily, Byte> idGet,
-                                     FontMetricsInt extent) {
+                                     FontMetricsInt extent,
+                                     RunConsumer consumer) {
         float advance = 0;
 
         //@formatter:off
@@ -401,11 +422,20 @@ public class ShapedText {
                 if (itPieceStart == itPieceEnd) {
                     break;
                 }
-                advance += doLayoutWord(text, itContextStart, itContextEnd,
-                        itPieceStart, itPieceEnd, true, paint,
-                        itPieceStart - layoutStart, advances, curAdvance + advance,
-                        glyphs, positions,
-                        fontIndices, idGet, extent);
+                advance += doLayoutWord(text,
+                        itContextStart, itContextEnd,
+                        itPieceStart, itPieceEnd,
+                        true,
+                        paint,
+                        itPieceStart - layoutStart,
+                        advances,
+                        curAdvance + advance,
+                        glyphs,
+                        positions,
+                        fontIndices,
+                        idGet,
+                        extent,
+                        consumer);
                 pos = itPieceStart;
             }
         } else {
@@ -422,11 +452,20 @@ public class ShapedText {
                 if (itPieceStart == itPieceEnd) {
                     break;
                 }
-                advance += doLayoutWord(text, itContextStart, itContextEnd,
-                        itPieceStart, itPieceEnd, false, paint,
-                        itPieceStart - layoutStart, advances, curAdvance + advance,
-                        glyphs, positions,
-                        fontIndices, idGet, extent);
+                advance += doLayoutWord(text,
+                        itContextStart, itContextEnd,
+                        itPieceStart, itPieceEnd,
+                        false,
+                        paint,
+                        itPieceStart - layoutStart,
+                        advances,
+                        curAdvance + advance,
+                        glyphs,
+                        positions,
+                        fontIndices,
+                        idGet,
+                        extent,
+                        consumer);
                 pos = itPieceEnd;
             }
         }
@@ -441,27 +480,34 @@ public class ShapedText {
                                       IntArrayList glyphs, FloatArrayList positions,
                                       ByteArrayList fontIndices,
                                       Function<FontFamily, Byte> idGet,
-                                      FontMetricsInt extent) {
+                                      FontMetricsInt extent,
+                                      RunConsumer consumer) {
         LayoutPiece src = LayoutCache.getOrCreate(
                 buf, contextStart, contextEnd, start, end, isRtl, paint);
 
-        for (int i = 0; i < src.getGlyphCount(); i++) {
-            fontIndices.add((byte) idGet.apply(src.getFont(i)));
-        }
-        glyphs.addElements(glyphs.size(), src.getGlyphs());
-        int posStart = positions.size();
-        positions.addElements(posStart, src.getPositions());
-        for (int posIndex = posStart,
-             posEnd = positions.size();
-             posIndex < posEnd;
-             posIndex += 2) {
-            positions.elements()[posIndex] += curAdvance;
-        }
+        if (advances != null) {
+            for (int i = 0; i < src.getGlyphCount(); i++) {
+                fontIndices.add((byte) idGet.apply(src.getFont(i)));
+            }
+            glyphs.addElements(glyphs.size(), src.getGlyphs());
+            int posStart = positions.size();
+            positions.addElements(posStart, src.getPositions());
+            for (int posIndex = posStart,
+                 posEnd = positions.size();
+                 posIndex < posEnd;
+                 posIndex += 2) {
+                positions.elements()[posIndex] += curAdvance;
+            }
 
-        float[] srcAdvances = src.getAdvances();
-        System.arraycopy(srcAdvances, 0,
-                advances, advanceOffset, srcAdvances.length);
-        extent.extendBy(src.getAscent(), src.getDescent());
+            float[] srcAdvances = src.getAdvances();
+            System.arraycopy(srcAdvances, 0,
+                    advances, advanceOffset, srcAdvances.length);
+        } else {
+            consumer.accept(src, paint, curAdvance);
+        }
+        if (extent != null) {
+            extent.extendBy(src.getAscent(), src.getDescent());
+        }
 
         return src.getAdvance();
     }

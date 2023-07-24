@@ -91,14 +91,14 @@ public class GLPipelineStateBuilder extends ProgramBuilder {
         PrintWriter errorWriter = mServer.getContext().getErrorWriter();
 
         int frag = glCompileAndAttachShader(program, GL_FRAGMENT_SHADER, mFragSource,
-                mServer.getPipelineStateCache().getStates(), errorWriter);
+                mServer.getPipelineStateCache().getStats(), errorWriter);
         if (frag == 0) {
             glDeleteProgram(program);
             return false;
         }
 
         int vert = glCompileAndAttachShader(program, GL_VERTEX_SHADER, mVertSource,
-                mServer.getPipelineStateCache().getStates(), errorWriter);
+                mServer.getPipelineStateCache().getStats(), errorWriter);
         if (vert == 0) {
             glDeleteProgram(program);
             glDeleteShader(frag);

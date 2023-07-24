@@ -176,7 +176,7 @@ public abstract class Layout {
      * @param lastLine  last line index (inclusive)
      * @see #drawBackground(Canvas, int, int)
      */
-    public final void drawText(@NonNull Canvas canvas, int firstLine, int lastLine) {
+    public void drawText(@NonNull Canvas canvas, int firstLine, int lastLine) {
         assert firstLine >= 0 && lastLine >= firstLine && lastLine < getLineCount();
 
         int previousLineBottom = getLineTop(firstLine);
@@ -270,7 +270,7 @@ public abstract class Layout {
 
             if (directions == Directions.ALL_LEFT_TO_RIGHT && !mSpannedText && !hasTab) {
                 // XXX: assumes there's nothing additional to be done
-                canvas.drawText(buf, start, end, x, lbaseline, paint);
+                canvas.drawTextRun(buf, start, end, start, end, x, lbaseline, false, paint);
             } else {
                 tl.draw(canvas, x, ltop, lbaseline, lbottom);
             }

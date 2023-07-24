@@ -21,6 +21,7 @@ package icyllis.modernui.material;
 import icyllis.modernui.R;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.*;
+import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.graphics.drawable.StateListDrawable;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.StateSet;
@@ -67,7 +68,7 @@ public class MaterialCheckBox extends CheckBox {
             final Rect r = getBounds();
             Paint paint = Paint.obtain();
             paint.setColor(mColor);
-            paint.setAlpha(MathUtil.modulateAlpha(paint.getAlpha(), mAlpha));
+            paint.setAlpha(ShapeDrawable.modulateAlpha(paint.getAlpha(), mAlpha));
             int alpha = paint.getAlpha();
             if (alpha != 0) {
                 float inner = mRadius * 0.5f;
@@ -115,7 +116,7 @@ public class MaterialCheckBox extends CheckBox {
             final Rect r = getBounds();
             Paint paint = Paint.obtain();
             paint.setColor(mColor);
-            paint.setAlpha(MathUtil.modulateAlpha(paint.getAlpha(), mAlpha));
+            paint.setAlpha(ShapeDrawable.modulateAlpha(paint.getAlpha(), mAlpha));
             if (paint.getAlpha() != 0) {
                 float inner = mRadius * 0.5f;
                 paint.setStyle(Paint.STROKE);

@@ -23,13 +23,11 @@ import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.ops.OpsTask;
 import icyllis.arc3d.shaderc.Compiler;
 import icyllis.modernui.graphics.ImageInfo;
-import icyllis.modernui.graphics.MathUtil;
+import icyllis.arc3d.core.MathUtil;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Set;
-
-import static org.lwjgl.system.MemoryUtil.NULL;
 
 /**
  * Abstract base class that represents the logical device and graphics queue of the
@@ -591,7 +589,7 @@ public abstract class Server implements Engine {
 
         @Override
         public String toString() {
-            return "Stats{" +
+            return "Server.Stats{" +
                     "mTextureCreates=" + mTextureCreates +
                     ", mTextureUploads=" + mTextureUploads +
                     ", mTransfersToTexture=" + mTransfersToTexture +

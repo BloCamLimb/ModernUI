@@ -73,6 +73,12 @@ public abstract class Buffer extends Resource {
         return mSize;
     }
 
+    private static int getLockMode(int usage) {
+        return (usage & Engine.BufferUsageFlags.kTransferDst) != 0
+                ? kRead_LockMode
+                : kWriteDiscard_LockMode;
+    }
+
     /**
      * Locks the buffer to be read or written by the CPU.
      * <p>
@@ -87,15 +93,15 @@ public abstract class Buffer extends Resource {
      * @return a valid pointer to the locked data
      */
     public final long lock() {
-        if (isDestroyed() || isLocked()) {
-            throw new IllegalStateException();
+        if (isDestroyed()) {
+            return NULL;
+        }
+        if (isLocked()) {
+            throw new IllegalStateException("Already locked");
         }
         mLockOffset = 0;
         mLockSize = mSize;
-        return onLock((mUsage & Engine.BufferUsageFlags.kTransferDst) != 0
-                        ? kRead_LockMode
-                        : kWriteDiscard_LockMode,
-                0, mSize);
+        return onLock(getLockMode(mUsage), 0, mSize);
     }
 
     /**
@@ -109,19 +115,19 @@ public abstract class Buffer extends Resource {
      * reading or vice versa produces undefined results. If the buffer is locked for writing
      * then the buffer's previous contents are invalidated.
      *
-     * @return a valid pointer to the locked data, or nullptr if failed
+     * @return a valid pointer to the locked data, or nullptr if lock failed
      */
     public final long lock(int offset, int size) {
-        if (isDestroyed() || isLocked()) {
-            throw new IllegalStateException();
+        if (isDestroyed()) {
+            return NULL;
+        }
+        if (isLocked()) {
+            throw new IllegalStateException("Already locked");
         }
         Objects.checkFromIndexSize(offset, size, mSize);
         mLockOffset = offset;
         mLockSize = size;
-        return onLock((mUsage & Engine.BufferUsageFlags.kTransferDst) != 0
-                        ? kRead_LockMode
-                        : kWriteDiscard_LockMode,
-                offset, size);
+        return onLock(getLockMode(mUsage), offset, size);
     }
 
     /**
@@ -134,11 +140,9 @@ public abstract class Buffer extends Resource {
             return;
         }
         if (isLocked()) {
-            onUnlock((mUsage & Engine.BufferUsageFlags.kTransferDst) != 0
-                            ? kRead_LockMode
-                            : kWriteDiscard_LockMode,
-                    mLockOffset, mLockSize);
+            onUnlock(getLockMode(mUsage), mLockOffset, mLockSize);
         }
+        assert (!isLocked());
     }
 
     /**
@@ -154,11 +158,9 @@ public abstract class Buffer extends Resource {
             if (offset < mLockOffset || size > mLockSize) {
                 throw new IllegalStateException();
             }
-            onUnlock((mUsage & Engine.BufferUsageFlags.kTransferDst) != 0
-                            ? kRead_LockMode
-                            : kWriteDiscard_LockMode,
-                    offset, size);
+            onUnlock(getLockMode(mUsage), offset, size);
         }
+        assert (!isLocked());
     }
 
     protected abstract long onLock(int mode, int offset, int size);
@@ -166,7 +168,8 @@ public abstract class Buffer extends Resource {
     protected abstract void onUnlock(int mode, int offset, int size);
 
     /**
-     * Queries whether the buffer has been locked by {@link #lock(int, int)}.
+     * Queries whether the buffer has been locked by {@link #lock(int, int)},
+     * this is mostly used for validation.
      *
      * @return true if the buffer is locked, false otherwise.
      */
@@ -174,7 +177,8 @@ public abstract class Buffer extends Resource {
 
     /**
      * Queries the pointer returned by the previous {@link #lock(int, int)} if
-     * {@link #isLocked()} returns true, otherwise the pointer is invalid.
+     * {@link #isLocked()} returns true, otherwise the pointer is invalid,
+     * this is mostly used for validation.
      *
      * @return the pointer to the locked buffer if locked.
      */
@@ -196,10 +200,9 @@ public abstract class Buffer extends Resource {
      *
      * @return returns true if the update succeeds, false otherwise.
      */
-    public boolean updateData(long data, int offset, int size) {
+    public boolean updateData(int offset, int size, long data) {
         assert (data != NULL);
-        assert (!isLocked());
-        if (isDestroyed()) {
+        if (isDestroyed() || isLocked()) {
             return false;
         }
         assert (size > 0 && offset + size <= mSize);
@@ -208,8 +211,8 @@ public abstract class Buffer extends Resource {
             return false;
         }
 
-        return onUpdateData(data, offset, size);
+        return onUpdateData(offset, size, data);
     }
 
-    protected abstract boolean onUpdateData(long data, int offset, int size);
+    protected abstract boolean onUpdateData(int offset, int size, long data);
 }

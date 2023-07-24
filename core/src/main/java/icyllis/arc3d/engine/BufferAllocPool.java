@@ -19,7 +19,7 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.SharedPtr;
-import icyllis.modernui.graphics.MathUtil;
+import icyllis.arc3d.core.MathUtil;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
@@ -273,7 +273,7 @@ public abstract class BufferAllocPool {
 
         @SharedPtr
         Buffer buffer = mContext.getResourceProvider()
-                .createBuffer(blockSize, mBufferType | Engine.BufferUsageFlags.kVolatile);
+                .createBuffer(blockSize, mBufferType | Engine.BufferUsageFlags.kStreaming);
         if (buffer == null) {
             return NULL;
         }

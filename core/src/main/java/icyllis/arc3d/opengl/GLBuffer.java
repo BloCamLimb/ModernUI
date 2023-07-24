@@ -31,13 +31,6 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 
 public final class GLBuffer extends Buffer {
 
-    /**
-     * We need manual multiple buffering and synchronization if we use
-     * persistently mapped buffers. Immutable buffer storage without
-     * persistent mapping is useless.
-     */
-    private static final boolean USE_BUFFER_STORAGE = false;
-
     private int mBuffer;
 
     private boolean mLocked;
@@ -76,7 +69,9 @@ public final class GLBuffer extends Buffer {
                 Engine.BufferUsageFlags.kDrawIndirect);
         assert typeFlags != 0;
 
-        if (!USE_BUFFER_STORAGE) {
+        boolean preferBufferStorage = (usage & Engine.BufferUsageFlags.kStreaming) != 0;
+
+        if (!preferBufferStorage) {
             if (Integer.bitCount(typeFlags) != 1) {
                 new Throwable("RHICreateBuffer, only one type bit is allowed, given 0x" +
                         Integer.toHexString(typeFlags))
@@ -93,7 +88,7 @@ public final class GLBuffer extends Buffer {
 
             long persistentlyMappedBuffer = NULL;
 
-            if (USE_BUFFER_STORAGE) {
+            if (preferBufferStorage) {
                 int allocFlags = getBufferStorageFlags(usage);
 
                 if (server.getCaps().skipErrorChecks()) {
@@ -108,7 +103,7 @@ public final class GLBuffer extends Buffer {
                         return null;
                     }
                 }
-                if ((usage & Engine.BufferUsageFlags.kVolatile) != 0) {
+                if ((usage & Engine.BufferUsageFlags.kStreaming) != 0) {
                     persistentlyMappedBuffer = nglMapNamedBufferRange(buffer, 0, size,
                             GL_MAP_WRITE_BIT |
                                     GL_MAP_PERSISTENT_BIT |
@@ -148,7 +143,7 @@ public final class GLBuffer extends Buffer {
             int target = server.bindBufferForSetup(usage, buffer);
             long persistentlyMappedBuffer = NULL;
 
-            if (USE_BUFFER_STORAGE && server.getCaps().hasBufferStorageSupport()) {
+            if (preferBufferStorage && server.getCaps().hasBufferStorageSupport()) {
                 int allocFlags = getBufferStorageFlags(usage);
 
                 if (server.getCaps().skipErrorChecks()) {
@@ -163,7 +158,7 @@ public final class GLBuffer extends Buffer {
                         return null;
                     }
                 }
-                if ((usage & Engine.BufferUsageFlags.kVolatile) != 0) {
+                if ((usage & Engine.BufferUsageFlags.kStreaming) != 0) {
                     persistentlyMappedBuffer = nglMapBufferRange(target, 0, size,
                             GL_MAP_WRITE_BIT |
                                     GL_MAP_PERSISTENT_BIT |
@@ -201,7 +196,7 @@ public final class GLBuffer extends Buffer {
         int allocUsage;
         if ((usage & Engine.BufferUsageFlags.kTransferDst) != 0) {
             allocUsage = GL_DYNAMIC_READ;
-        } else if ((usage & Engine.BufferUsageFlags.kVolatile) != 0) {
+        } else if ((usage & Engine.BufferUsageFlags.kStreaming) != 0) {
             allocUsage = GL_STREAM_DRAW;
         } else if ((usage & Engine.BufferUsageFlags.kDynamic) != 0) {
             allocUsage = GL_DYNAMIC_DRAW;
@@ -221,7 +216,7 @@ public final class GLBuffer extends Buffer {
         if ((usage & Engine.BufferUsageFlags.kTransferDst) != 0) {
             allocFlags |= GL_MAP_READ_BIT;
         }
-        if ((usage & Engine.BufferUsageFlags.kVolatile) != 0) {
+        if ((usage & Engine.BufferUsageFlags.kStreaming) != 0) {
             // no staging buffer, use pinned memory
             allocFlags |= GL_MAP_WRITE_BIT |
                     GL_MAP_PERSISTENT_BIT |
@@ -345,7 +340,7 @@ public final class GLBuffer extends Buffer {
     }
 
     @Override
-    protected boolean onUpdateData(long data, int offset, int size) {
+    protected boolean onUpdateData(int offset, int size, long data) {
         assert (getServer().getContext().isOwnerThread());
         assert (mBuffer != 0);
         int target = 0;

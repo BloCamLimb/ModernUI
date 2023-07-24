@@ -21,6 +21,7 @@ package icyllis.modernui.view.menu;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.*;
+import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.material.MaterialDrawable;
 import icyllis.modernui.util.LayoutDirection;
 import icyllis.modernui.util.TypedValue;
@@ -43,7 +44,7 @@ public class SubMenuArrowDrawable extends MaterialDrawable {
     public void draw(@Nonnull Canvas canvas) {
         Paint paint = Paint.obtain();
         paint.setColor(mColor);
-        paint.setAlpha(MathUtil.modulateAlpha(paint.getAlpha(), mAlpha));
+        paint.setAlpha(ShapeDrawable.modulateAlpha(paint.getAlpha(), mAlpha));
         if (paint.getAlpha() != 0) {
             canvas.drawTriangleListMesh(mPoints, /*color*/null, paint);
         }

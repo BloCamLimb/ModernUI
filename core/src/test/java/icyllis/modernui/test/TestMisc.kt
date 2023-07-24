@@ -20,8 +20,8 @@ package icyllis.modernui.test
 
 import com.ibm.icu.text.CompactDecimalFormat
 import icyllis.modernui.ModernUI
-import icyllis.modernui.graphics.MathUtil
 import icyllis.modernui.text.TextUtils
+import icyllis.modernui.util.AlgorithmUtils
 import icyllis.modernui.util.TypedValue
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.core.config.Configurator
@@ -47,7 +47,7 @@ fun main() {
 
     val doubles = doubleArrayOf(1.0, 160.0, 3.0)
     Arrays.stream(doubles).average().ifPresent { average -> ModernUI.LOGGER.info(average) }
-    ModernUI.LOGGER.info(MathUtil.averageStable(doubles))
+    ModernUI.LOGGER.info(AlgorithmUtils.averageStable(doubles))
 
     val triple = Triple("A", "B", "C")
     ModernUI.LOGGER.info(triple)

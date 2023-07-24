@@ -70,6 +70,18 @@ public class ShapeDrawable extends Drawable {
      */
     public static final int VLINE = 4;
 
+    /**
+     * Blends two alpha using modulate. This method has errors but is fast.
+     *
+     * @param srcAlpha 0..255 no validation
+     * @param dstAlpha 0..255 no validation
+     * @return result alpha
+     */
+    public static int modulateAlpha(int srcAlpha, int dstAlpha) {
+        int multiplier = dstAlpha + (dstAlpha >> 7);
+        return srcAlpha * multiplier >> 8;
+    }
+
     @MagicConstant(intValues = {RECTANGLE, CIRCLE, RING, HLINE, VLINE})
     @Retention(RetentionPolicy.SOURCE)
     public @interface Shape {
@@ -161,8 +173,8 @@ public class ShapeDrawable extends Drawable {
         final int prevFillAlpha = mFillPaint.getAlpha();
         final int prevStrokeAlpha = mStrokePaint != null ? mStrokePaint.getAlpha() : 0;
         // compute the modulate alpha values
-        final int currFillAlpha = MathUtil.modulateAlpha(prevFillAlpha, mAlpha);
-        final int currStrokeAlpha = MathUtil.modulateAlpha(prevStrokeAlpha, mAlpha);
+        final int currFillAlpha = modulateAlpha(prevFillAlpha, mAlpha);
+        final int currStrokeAlpha = modulateAlpha(prevStrokeAlpha, mAlpha);
 
         final boolean haveFill = currFillAlpha > 0;
         final boolean haveStroke = currStrokeAlpha > 0 && mStrokePaint != null &&

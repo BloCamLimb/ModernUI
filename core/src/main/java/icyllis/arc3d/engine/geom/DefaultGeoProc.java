@@ -19,7 +19,8 @@
 package icyllis.arc3d.engine.geom;
 
 import icyllis.arc3d.engine.*;
-import icyllis.modernui.annotation.NonNull;
+
+import javax.annotation.Nonnull;
 
 import static icyllis.arc3d.engine.Engine.VertexAttribType;
 
@@ -52,6 +53,12 @@ public final class DefaultGeoProc extends GeometryProcessor {
         setVertexAttributes(VERTEX_ATTRIBS, mask);
     }
 
+    @Nonnull
+    @Override
+    public String name() {
+        return "Default_GeomProc";
+    }
+
     @Override
     public byte primitiveType() {
         return 0;
@@ -62,15 +69,9 @@ public final class DefaultGeoProc extends GeometryProcessor {
         b.addBits(3, mFlags, "gpFlags");
     }
 
-    @NonNull
+    @Nonnull
     @Override
     public ProgramImpl makeProgramImpl(ShaderCaps caps) {
         return null;
-    }
-
-    @NonNull
-    @Override
-    public String name() {
-        return "DefaultGeoProc";
     }
 }

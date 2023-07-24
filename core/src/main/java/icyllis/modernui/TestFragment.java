@@ -18,6 +18,7 @@
 
 package icyllis.modernui;
 
+import icyllis.arc3d.core.MathUtil;
 import icyllis.modernui.animation.*;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
@@ -441,8 +442,8 @@ public class TestFragment extends Fragment {
             tv.setTextAlignment(TEXT_ALIGNMENT_GRAVITY);
 
             mTextView = tv;
-            setRotationY(-30);
-            setRotationX(30);
+            //setRotationY(-30);
+            //setRotationX(30);
 
             ObjectAnimator anim;
             {
@@ -921,7 +922,8 @@ public class TestFragment extends Fragment {
                     Paint paint = Paint.obtain();
                     paint.setARGB(128, 140, 200, 240);
                     canvas.drawRoundRect(0, 1, getWidth(), getHeight() - 2, 4, paint);
-                    canvas.drawText(mIndex, 0, mIndex.length(), 20, getHeight() >> 1, mTextPaint);
+                    canvas.drawTextRun(mIndex, 0, mIndex.length(), 0, mIndex.length(), 20, getHeight() >> 1, false,
+                            mTextPaint);
                     paint.recycle();
                 }
             }
@@ -973,7 +975,7 @@ public class TestFragment extends Fragment {
                 Paint paint = Paint.obtain();
                 paint.setARGB(128, 140, 200, 240);
                 canvas.drawRoundRect(0, 1, getWidth(), getHeight() - 2, 4, paint);
-                canvas.drawText("18:52", 0, 5, getWidth() / 2f, offsetY + 24, mTextPaint);
+                canvas.drawTextRun("18:52", 0, 5, 0, 5, getWidth() / 2f, offsetY + 24, false, mTextPaint);
                 paint.recycle();
             }
 

@@ -99,7 +99,7 @@ public class GLPipelineState extends PipelineState {
     private void checkAsyncWork() {
         if (mAsyncWork != null) {
             boolean success = mAsyncWork.join().finish(this);
-            var stats = mServer.getPipelineStateCache().getStates();
+            var stats = mServer.getPipelineStateCache().getStats();
             if (success) {
                 stats.incNumCompilationSuccesses();
             } else {

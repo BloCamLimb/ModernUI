@@ -18,6 +18,7 @@
 
 package icyllis.modernui.graphics;
 
+import icyllis.arc3d.core.MathUtil;
 import icyllis.modernui.annotation.*;
 import org.intellij.lang.annotations.MagicConstant;
 

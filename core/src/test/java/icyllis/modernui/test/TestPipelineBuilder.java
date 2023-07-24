@@ -90,10 +90,13 @@ public class TestPipelineBuilder {
 
         var target = new SurfaceProxyView(fsp, Engine.SurfaceOrigin.kLowerLeft, Swizzle.RGBA);
         var task = new OpsTask(drawingManager, target);
-        {
-            var op = new RoundRectOp(new float[]{0.88f, 0.075f, 0.11f, 1},
-                    new Rect2f(90, 90, 280, 180),
-                    10, 5, Matrix.identity(), true);
+        for (int i = 0; i < 7; ) {
+            int shift = i++ * 200;
+            float x = 10 + shift;
+            float y = 10 + shift / 2f;
+            var op = new RoundRectOp(new float[]{1 - i * 0.12f, i * 0.075f, i * 0.11f, 1},
+                    new Rect2f(x, y, x + 160, y + 90),
+                    i * 4, Math.min(i * 2, 6), Matrix.identity(), true);
             task.addDrawOp(op, null, 0);
         }
         task.makeClosed(dContext);
@@ -112,7 +115,8 @@ public class TestPipelineBuilder {
             GLFW.glfwWaitEvents();
         }
 
-        System.out.println(dContext.getPipelineStateCache().getStates());
+        System.out.println(dContext.getPipelineStateCache().getStats());
+        System.out.println(server.getStats());
 
         dContext.unref();
         window.close();

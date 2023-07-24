@@ -1,4 +1,4 @@
-import icyllis.modernui.graphics.MathUtil;
+import icyllis.arc3d.core.MathUtil;
 
 // this class does nothing
 public class Main {

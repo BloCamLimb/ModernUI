@@ -18,7 +18,6 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.opengl.GLServer;
 import icyllis.modernui.graphics.Color;
 import icyllis.modernui.graphics.ImageInfo;
 
@@ -180,7 +179,7 @@ public interface Engine {
          */
         int kDrawIndirect = 1 << 5;
 
-        // Note: uniform buffers must be created with Volatile_Flag,
+        // Note: uniform buffers must be created with Streaming_Flag,
         // draw indirect buffers are currently not supported.
 
         /**
@@ -197,7 +196,7 @@ public interface Engine {
          * Data store will be written to once by CPU and used at most one frame.
          * Will be host visible and persistently mapped, typically pinned memory.
          */
-        int kVolatile = 1 << 8;
+        int kStreaming = 1 << 8;
 
         // Note: Arc 3D itself doesn't use dynamic mesh buffers,
         // they are meant to render a large number of objects in 3D scene.

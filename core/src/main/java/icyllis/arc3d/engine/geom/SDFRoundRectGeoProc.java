@@ -30,7 +30,7 @@ import static icyllis.arc3d.engine.Engine.*;
  * The stroke direction is CENTER. This processor uses instance rendering and static
  * vertex data.
  */
-public class RoundRectGeoProc extends GeometryProcessor {
+public class SDFRoundRectGeoProc extends GeometryProcessor {
 
     /**
      * Per-vertex attributes.
@@ -60,7 +60,7 @@ public class RoundRectGeoProc extends GeometryProcessor {
 
     private final boolean mStroke;
 
-    public RoundRectGeoProc(boolean stroke) {
+    public SDFRoundRectGeoProc(boolean stroke) {
         super(RoundRect_GeoProc_ClassID);
         mStroke = stroke;
         setVertexAttributes(VERTEX_ATTRIBS, 0x1);
@@ -70,7 +70,7 @@ public class RoundRectGeoProc extends GeometryProcessor {
     @Nonnull
     @Override
     public String name() {
-        return "RoundRect_GeometryProcessor";
+        return "SDFRoundRect_GeomProc";
     }
 
     @Override
@@ -108,7 +108,7 @@ public class RoundRectGeoProc extends GeometryProcessor {
                                   int[] texSamplers,
                                   ShaderVar localPos,
                                   ShaderVar worldPos) {
-            final boolean stroke = ((RoundRectGeoProc) geomProc).mStroke;
+            final boolean stroke = ((SDFRoundRectGeoProc) geomProc).mStroke;
 
             // emit attributes
             vertBuilder.emitAttributes(geomProc);
