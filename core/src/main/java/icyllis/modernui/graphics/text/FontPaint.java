@@ -18,8 +18,8 @@
 
 package icyllis.modernui.graphics.text;
 
-import icyllis.modernui.ModernUI;
 import icyllis.arc3d.core.MathUtil;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -27,17 +27,16 @@ import java.awt.*;
 import java.util.Locale;
 
 /**
- * The base paint used with glyph layout engine at lower levels.
- * See the subclass for public use.
+ * The base paint used with layout engine at lower levels.
  */
+@ApiStatus.Internal
 public class FontPaint {
 
     /**
-     * Bit flag used with fontStyle to request the plain/regular/normal style
+     * Bit flag used with fontStyle to request the plain/normal style
      */
     public static final int PLAIN = Font.PLAIN;
     public static final int NORMAL = PLAIN;     // alias
-    public static final int REGULAR = PLAIN;    // alias
 
     /**
      * Bit flag used with fontStyle to request the bold style
@@ -59,28 +58,25 @@ public class FontPaint {
     public static final int RENDER_FLAG_ANTI_ALIAS = 0x1;
     public static final int RENDER_FLAG_LINEAR_METRICS = 0x2;
 
-    public static final int FLAG_MASK = 0x3;
-
-    public static final int FLAG_SHIFT = 4;
+    public static final int RENDER_FLAG_MASK = 0x3;
+    public static final int RENDER_FLAG_SHIFT = 4;
 
     // shared pointer
-    protected FontCollection mFont;
+    FontCollection mFont;
     Locale mLocale;
-    protected int mFlags;
-    int mFontSize;
+    int mFlags;
+    int mSize;
 
+    @ApiStatus.Internal
     public FontPaint() {
-        mFont = ModernUI.getSelectedTypeface();
-        mLocale = ModernUI.getSelectedLocale();
-        mFlags = REGULAR;
-        mFontSize = 12;
     }
 
+    @ApiStatus.Internal
     public FontPaint(@Nonnull FontPaint paint) {
         mFont = paint.mFont;
         mLocale = paint.mLocale;
         mFlags = paint.mFlags;
-        mFontSize = paint.mFontSize;
+        mSize = paint.mSize;
     }
 
     /**
@@ -90,35 +86,22 @@ public class FontPaint {
         mFont = paint.mFont;
         mLocale = paint.mLocale;
         mFlags = paint.mFlags;
-        mFontSize = paint.mFontSize;
+        mSize = paint.mSize;
     }
 
-    public FontCollection getFontCollection() {
+    public void setFont(@Nonnull FontCollection font) {
+        mFont = font;
+    }
+
+    public FontCollection getFont() {
         return mFont;
     }
 
-    /**
-     * Set the text locale.
-     * <p>
-     * A Locale may affect word break, line break, grapheme cluster break, etc.
-     * The locale should match the language of the text to be drawn or user preference,
-     * by default, the selected locale should be used {@link ModernUI#getSelectedLocale()}.
-     *
-     * @param locale the paint's locale value for drawing text, must not be null.
-     */
-    public void setTextLocale(@Nonnull Locale locale) {
-        if (!locale.equals(mLocale)) {
-            mLocale = locale;
-        }
+    public void setLocale(@Nonnull Locale locale) {
+        mLocale = locale;
     }
 
-    /**
-     * Get the text's Locale.
-     *
-     * @return the paint's Locale used for measuring and drawing text, never null.
-     */
-    @Nonnull
-    public Locale getTextLocale() {
+    public Locale getLocale() {
         return mLocale;
     }
 
@@ -128,11 +111,7 @@ public class FontPaint {
      * @param fontStyle the style of the font
      */
     public void setFontStyle(int fontStyle) {
-        if ((fontStyle & ~FONT_STYLE_MASK) == 0) {
-            mFlags |= fontStyle;
-        } else {
-            mFlags &= ~FONT_STYLE_MASK;
-        }
+        mFlags = (mFlags & ~FONT_STYLE_MASK) | (fontStyle & FONT_STYLE_MASK);
     }
 
     /**
@@ -142,15 +121,6 @@ public class FontPaint {
      */
     public int getFontStyle() {
         return mFlags & FONT_STYLE_MASK;
-    }
-
-    /**
-     * Return the paint's text size, in points.
-     *
-     * @return the paint's text size in pixel units.
-     */
-    public int getFontSize() {
-        return mFontSize;
     }
 
     /**
@@ -166,7 +136,25 @@ public class FontPaint {
     public void setFontSize(int fontSize) {
         // our engine assumes 8..96, do not edit
         //TODO Remove this restriction, once our rendering engine updates
-        mFontSize = MathUtil.clamp(fontSize, 8, 96);
+        mSize = MathUtil.clamp(fontSize, 8, 96);
+    }
+
+    /**
+     * Return the paint's text size, in points.
+     *
+     * @return the paint's text size in pixel units.
+     */
+    public int getFontSize() {
+        return mSize;
+    }
+
+    public void setRenderFlags(int flags) {
+        mFlags = (mFlags & ~(RENDER_FLAG_MASK << RENDER_FLAG_SHIFT)) |
+                ((flags & RENDER_FLAG_MASK) << RENDER_FLAG_SHIFT);
+    }
+
+    public int getRenderFlags() {
+        return (mFlags >> RENDER_FLAG_SHIFT) & RENDER_FLAG_MASK;
     }
 
     /**
@@ -176,20 +164,13 @@ public class FontPaint {
      * @return true if given {@link FontPaint} has the different effect on text measurement.
      */
     public boolean isMetricAffecting(@Nonnull FontPaint paint) {
-        if (mFontSize != paint.mFontSize)
+        if (mSize != paint.mSize)
             return true;
-        if ((mFlags & FONT_STYLE_MASK) != (paint.mFlags & FONT_STYLE_MASK))
+        if (mFlags != paint.mFlags)
             return true;
         if (!mFont.equals(paint.mFont))
             return true;
         return !mLocale.equals(paint.mLocale);
-    }
-
-    @Nonnull
-    public FontMetricsInt getFontMetricsInt() {
-        FontMetricsInt fm = new FontMetricsInt();
-        getFontMetricsInt(fm);
-        return fm;
     }
 
     /**
@@ -207,8 +188,8 @@ public class FontPaint {
      */
     public int getFontMetricsInt(@Nullable FontMetricsInt fm) {
         int ascent = 0, descent = 0, height = 0;
-        for (FontFamily family : getFontCollection().getFamilies()) {
-            Font font = family.getClosestMatch(getFontStyle()).deriveFont((float)getFontSize());
+        for (FontFamily family : getFont().getFamilies()) {
+            Font font = family.getClosestMatch(getFontStyle()).deriveFont((float) getFontSize());
             FontMetrics metrics = LayoutPiece.sGraphics[getRenderFlags()].getFontMetrics(font);
             ascent = Math.max(ascent, metrics.getAscent()); // positive
             descent = Math.max(descent, metrics.getDescent()); // positive
@@ -221,21 +202,6 @@ public class FontPaint {
         return height;
     }
 
-    public int getRenderFlags() {
-        return 1;
-    }
-
-    /**
-     * Create a copy of this paint as the base class paint for internal
-     * layout engine. Subclasses must ensure that be immutable.
-     *
-     * @return a internal paint
-     */
-    @Nonnull
-    public FontPaint toBase() {
-        return this;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -243,8 +209,8 @@ public class FontPaint {
 
         FontPaint that = (FontPaint) o;
 
-        if (mFontSize != that.mFontSize) return false;
-        if ((mFlags & FONT_STYLE_MASK) != (that.mFlags & FONT_STYLE_MASK)) return false;
+        if (mSize != that.mSize) return false;
+        if (mFlags != that.mFlags) return false;
         if (!mFont.equals(that.mFont)) return false;
         return mLocale.equals(that.mLocale);
     }
@@ -253,18 +219,18 @@ public class FontPaint {
     public int hashCode() {
         int h = mFont.hashCode();
         h = 31 * h + mLocale.hashCode();
-        h = 31 * h + (mFlags & FONT_STYLE_MASK);
-        h = 31 * h + mFontSize;
+        h = 31 * h + mFlags;
+        h = 31 * h + mSize;
         return h;
     }
 
     @Override
     public String toString() {
         return "FontPaint{" +
-                "typeface=" + mFont +
+                "font=" + mFont +
                 ", locale=" + mLocale +
                 ", flags=0x" + Integer.toHexString(mFlags) +
-                ", fontSize=" + mFontSize +
+                ", size=" + mSize +
                 '}';
     }
 }

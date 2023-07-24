@@ -18,6 +18,7 @@
 
 package icyllis.modernui.graphics.drawable;
 
+import icyllis.arc3d.core.BlendMode;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.*;

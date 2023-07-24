@@ -243,7 +243,7 @@ public class BoringLayout extends Layout implements TextUtils.EllipsizeCallback 
                     0, len,
                     0, len,
                     ShapedText.BIDI_OVERRIDE_LTR,
-                    paint
+                    paint.getInternalPaint()
             );
             TextUtils.recycle(buf);
         } else {

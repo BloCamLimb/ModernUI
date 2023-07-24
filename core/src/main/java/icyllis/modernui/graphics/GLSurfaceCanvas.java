@@ -2381,7 +2381,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                            @NonNull float[] positions, int positionOffset,
                            int glyphCount, @NonNull FontFamily font,
                            float x, float y,
-                           @NonNull TextPaint paint) {
+                           @NonNull Paint paint) {
         drawMatrix();
         int color = paint.getColor();
         float alpha = (color >>> 24) / 255.0f;
@@ -2390,7 +2390,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         float blue = (color & 0xff) / 255.0f;
         mDrawTexts.add(new DrawTextOp(glyphs, glyphOffset,
                 positions, positionOffset, glyphCount,
-                x, y, font.getClosestMatch(paint.getFontStyle()).deriveFont(paint.getTextSize())));
+                x, y, font.getClosestMatch(paint.getTextStyle()).deriveFont(paint.getTextSize())));
         checkUniformStagingBuffer()
                 .putFloat(red * alpha)
                 .putFloat(green * alpha)

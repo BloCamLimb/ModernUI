@@ -97,9 +97,9 @@ public class AbsoluteSizeSpan extends MetricAffectingSpan implements ParcelableS
     @Override
     public void updateMeasureState(@Nonnull TextPaint paint) {
         if (mScaled) {
-            paint.setFontSize(Math.round(mSize * paint.density));
+            paint.setTextSize(mSize * paint.density);
         } else {
-            paint.setFontSize(mSize);
+            paint.setTextSize(mSize);
         }
     }
 }

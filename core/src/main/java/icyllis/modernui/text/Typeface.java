@@ -19,6 +19,7 @@
 package icyllis.modernui.text;
 
 import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.text.*;
 
 import javax.annotation.concurrent.Immutable;
@@ -51,19 +52,19 @@ public class Typeface extends FontCollection {
     /**
      * Font style constant to request the plain/regular/normal style
      */
-    public static final int NORMAL      = TextPaint.NORMAL;
+    public static final int NORMAL      = Paint.NORMAL;
     /**
      * Font style constant to request the bold style
      */
-    public static final int BOLD        = TextPaint.BOLD;
+    public static final int BOLD        = Paint.BOLD;
     /**
      * Font style constant to request the italic style
      */
-    public static final int ITALIC      = TextPaint.ITALIC;
+    public static final int ITALIC      = Paint.ITALIC;
     /**
      * Font style constant to request the bold and italic style
      */
-    public static final int BOLD_ITALIC = TextPaint.BOLD_ITALIC;
+    public static final int BOLD_ITALIC = Paint.BOLD_ITALIC;
 
     @NonNull
     public static Typeface createTypeface(@NonNull FontFamily... families) {

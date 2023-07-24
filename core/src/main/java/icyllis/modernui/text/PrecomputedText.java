@@ -18,8 +18,6 @@
 
 package icyllis.modernui.text;
 
-import icyllis.modernui.graphics.text.FontPaint;
-
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,11 +26,11 @@ import java.util.List;
 public class PrecomputedText {
 
     private final SpannableString mText;
-    private final FontPaint mPaint;
+    private final TextPaint mPaint;
     private final TextDirectionHeuristic mTextDir;
     private final MeasuredParagraph[] mParagraphs;
 
-    private PrecomputedText(@Nonnull SpannableString text, @Nonnull FontPaint paint,
+    private PrecomputedText(@Nonnull SpannableString text, @Nonnull TextPaint paint,
                             @Nonnull TextDirectionHeuristic textDir, @Nonnull MeasuredParagraph[] paragraphs) {
         mText = text;
         mPaint = paint;
@@ -41,7 +39,7 @@ public class PrecomputedText {
     }
 
     @Nonnull
-    public static PrecomputedText create(@Nonnull CharSequence text, @Nonnull FontPaint paint,
+    public static PrecomputedText create(@Nonnull CharSequence text, @Nonnull TextPaint paint,
                                          @Nonnull TextDirectionHeuristic textDir) {
         // always create new spannable, in case of original text changed but we don't have watchers
         return new PrecomputedText(new SpannableString(text, true), paint, textDir,
@@ -50,7 +48,7 @@ public class PrecomputedText {
 
     @Nonnull
     public static MeasuredParagraph[] createMeasuredParagraphs(
-            @Nonnull CharSequence text, int start, int end, @Nonnull FontPaint paint,
+            @Nonnull CharSequence text, int start, int end, @Nonnull TextPaint paint,
             @Nonnull TextDirectionHeuristic textDir, boolean computeLayout) {
         List<MeasuredParagraph> list = new ArrayList<>();
         int paraEnd;
@@ -80,7 +78,7 @@ public class PrecomputedText {
         return -1;
     }
 
-    public FontPaint getPaint() {
+    public TextPaint getPaint() {
         return mPaint;
     }
 

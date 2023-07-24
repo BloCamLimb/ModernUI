@@ -18,6 +18,7 @@
 
 package icyllis.modernui.text.style;
 
+import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.text.*;
 
 import javax.annotation.Nonnull;
@@ -51,7 +52,7 @@ public class StyleSpan extends MetricAffectingSpan implements ParcelableSpan {
      *              include bold, italic, and normal. Values are constants defined
      *              in {@link TextPaint}.
      */
-    public StyleSpan(@TextPaint.Style int style) {
+    public StyleSpan(@Paint.TextStyle int style) {
         mStyle = style;
     }
 
@@ -75,13 +76,13 @@ public class StyleSpan extends MetricAffectingSpan implements ParcelableSpan {
     /**
      * Returns the style constant defined in {@link TextPaint}.
      */
-    @TextPaint.Style
+    @Paint.TextStyle
     public int getStyle() {
         return mStyle;
     }
 
     @Override
     public void updateMeasureState(@Nonnull TextPaint paint) {
-        paint.setFontStyle(paint.getFontStyle() | mStyle);
+        paint.setTextStyle(mStyle);
     }
 }

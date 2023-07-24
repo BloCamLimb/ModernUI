@@ -20,7 +20,6 @@ package icyllis.arc3d.core;
 
 import icyllis.arc3d.engine.*;
 import icyllis.modernui.graphics.ImageInfo;
-import icyllis.modernui.graphics.Paint;
 
 /**
  * Engine implementation for canvas devices.

@@ -18,6 +18,7 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.arc3d.core.BlendMode;
 import icyllis.arc3d.core.MathUtil;
 import icyllis.modernui.R;
 import icyllis.modernui.animation.*;

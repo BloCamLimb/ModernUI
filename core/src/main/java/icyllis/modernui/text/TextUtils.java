@@ -32,8 +32,7 @@ import java.util.*;
 
 public final class TextUtils {
 
-    private static final Object sLock = new Object();
-    private static char[] sTemp = null;
+    private static final char[][] sTemp = new char[4][];
 
     // Zero-width character used to fill ellipsized strings when codepoint length must be preserved.
     static final char ELLIPSIS_FILLER = '\uFEFF'; // ZERO WIDTH NO-BREAK SPACE
@@ -65,11 +64,18 @@ public final class TextUtils {
      */
     @NonNull
     public static char[] obtain(int len) {
-        char[] buf;
+        if (len > 2048)
+            return new char[len];
 
-        synchronized (sLock) {
-            buf = sTemp;
-            sTemp = null;
+        char[] buf = null;
+
+        synchronized (sTemp) {
+            final var pool = sTemp;
+            for (int i = pool.length - 1; i >= 0; --i)
+                if ((buf = pool[i]) != null && buf.length >= len) {
+                    pool[i] = null;
+                    break;
+                }
         }
 
         if (buf == null || buf.length < len)
@@ -82,8 +88,13 @@ public final class TextUtils {
         if (temp.length > 2048)
             return;
 
-        synchronized (sLock) {
-            sTemp = temp;
+        synchronized (sTemp) {
+            final var pool = sTemp;
+            for (int i = 0; i < pool.length; ++i)
+                if (pool[i] == null) {
+                    pool[i] = temp;
+                    break;
+                }
         }
     }
 
@@ -405,7 +416,7 @@ public final class TextUtils {
      * copy with ellipsis character added at the specified edge or center.
      */
     @NonNull
-    public static CharSequence ellipsize(@NonNull CharSequence text, @NonNull FontPaint p,
+    public static CharSequence ellipsize(@NonNull CharSequence text, @NonNull TextPaint p,
                                          float avail, @NonNull TruncateAt where) {
         return ellipsize(text, p, avail, where, false, null);
     }
@@ -423,7 +434,7 @@ public final class TextUtils {
      * is determined by the first strong directional character.
      */
     @NonNull
-    public static CharSequence ellipsize(@NonNull CharSequence text, @NonNull FontPaint paint,
+    public static CharSequence ellipsize(@NonNull CharSequence text, @NonNull TextPaint paint,
                                          float avail, @NonNull TruncateAt where,
                                          boolean preserveLength, @Nullable EllipsizeCallback callback) {
         return ellipsize(text, paint, avail, where, preserveLength, callback,
@@ -444,7 +455,7 @@ public final class TextUtils {
      * @hide
      */
     @NonNull
-    private static CharSequence ellipsize(@NonNull CharSequence text, @NonNull FontPaint paint,
+    private static CharSequence ellipsize(@NonNull CharSequence text, @NonNull TextPaint paint,
                                           float avail, @NonNull TruncateAt where, boolean preserveLength,
                                           @Nullable EllipsizeCallback callback,
                                           @NonNull TextDirectionHeuristic textDir, @NonNull String ellipsis) {

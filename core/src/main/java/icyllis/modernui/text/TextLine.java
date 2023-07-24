@@ -879,8 +879,8 @@ public class TextLine {
                     span.updateDrawState(activePaint);
                 }
 
-                final int flags = activePaint.getFlags() & (TextPaint.UNDERLINE_FLAG | TextPaint.STRIKETHROUGH_FLAG);
-                activePaint.setFlags(activePaint.getFlags() & ~(TextPaint.UNDERLINE_FLAG | TextPaint.STRIKETHROUGH_FLAG));
+                final int flags = activePaint.getFontFlags() & (TextPaint.UNDERLINE_FLAG | TextPaint.STRIKETHROUGH_FLAG);
+                activePaint.setFontFlags(activePaint.getFontFlags() & ~(TextPaint.UNDERLINE_FLAG | TextPaint.STRIKETHROUGH_FLAG));
 
                 x += handleText(activePaint, j, jnext, runIsRtl, canvas, x,
                         top, y, bottom, needWidth || jnext < measureLimit,
@@ -924,7 +924,7 @@ public class TextLine {
             if (mCharsValid) {
                 totalWidth = ShapedText.doLayoutRun(
                         mChars, start, offset, start, offset,
-                        runIsRtl, wp,
+                        runIsRtl, wp.getInternalPaint(),
                         mCachedFontExtent,
                         mBuildCachedPieces
                 );
@@ -935,7 +935,7 @@ public class TextLine {
                 TextUtils.getChars(mText, start + delta, offset + delta, buf, 0);
                 totalWidth = ShapedText.doLayoutRun(
                         buf, 0, len, 0, len,
-                        runIsRtl, wp,
+                        runIsRtl, wp.getInternalPaint(),
                         mCachedFontExtent,
                         mBuildCachedPieces
                 );
