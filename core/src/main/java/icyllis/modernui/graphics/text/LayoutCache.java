@@ -43,6 +43,20 @@ public final class LayoutCache {
      */
     public static final int MAX_PIECE_LENGTH = 128;
 
+    /**
+     * Also computes per-cluster advances.
+     *
+     * @see LayoutPiece#getAdvances()
+     */
+    public static final int COMPUTE_CLUSTER_ADVANCES = 0x1;
+    /**
+     * Also computes total pixel bounds of all glyph images.
+     *
+     * @see LayoutPiece#getBoundsX()
+     * @see LayoutPiece#getBoundsY()
+     */
+    public static final int COMPUTE_GLYPHS_PIXEL_BOUNDS = 0x2;
+
     private static final Pools.Pool<LookupKey> sLookupKeys = Pools.newSynchronizedPool(3);
     private static volatile Cache<Key, LayoutPiece> sCache;
 
@@ -52,23 +66,28 @@ public final class LayoutCache {
      * In particular, the given range cannot exceed {@link #MAX_PIECE_LENGTH} to
      * increase the reuse rate of pieced text. The given text must be in the same
      * paragraph and should not break the grapheme cluster.
+     * <p>
+     * Use computeFlags to compute optional info lazily.
      *
-     * @param buf   text buffer, cannot be null or empty, only referred in stack
-     * @param start start char offset
-     * @param end   end char index
-     * @param isRtl whether to layout in right-to-left
-     * @param paint the font paint affecting measurement
+     * @param buf          text buffer, cannot be null or empty, only referred in stack
+     * @param start        start char offset
+     * @param end          end char index
+     * @param isRtl        whether to layout in right-to-left
+     * @param paint        the font paint affecting measurement
+     * @param computeFlags additional desired info to compute, or 0
      * @return the layout piece
      */
     @NonNull
     public static LayoutPiece getOrCreate(@NonNull char[] buf, int contextStart, int contextEnd,
-                                          int start, int end, boolean isRtl, FontPaint paint) {
+                                          int start, int end, boolean isRtl, @NonNull FontPaint paint,
+                                          int computeFlags) {
         if (contextStart < 0 || contextStart >= contextEnd || buf.length == 0 ||
                 contextEnd > buf.length || start < contextStart || end > contextEnd) {
             throw new IndexOutOfBoundsException();
         }
         if (end - start > MAX_PIECE_LENGTH) {
-            return new LayoutPiece(buf, contextStart, contextEnd, start, end, isRtl, paint);
+            return new LayoutPiece(buf, contextStart, contextEnd, start, end, isRtl, paint,
+                    null, computeFlags);
         }
         if (sCache == null) {
             synchronized (LayoutCache.class) {
@@ -86,16 +105,29 @@ public final class LayoutCache {
         }
         LayoutPiece piece = sCache.getIfPresent(
                 key.update(buf, contextStart, contextEnd, start, end, paint, isRtl));
-        // create new or re-compute for more params
         if (piece == null) {
+            // create new
             final Key k = key.copy();
             // recycle the lookup key earlier, since creating layout is heavy
             sLookupKeys.release(key);
-            piece = new LayoutPiece(buf, contextStart, contextEnd, start, end, isRtl, paint);
+            piece = new LayoutPiece(buf, contextStart, contextEnd, start, end, isRtl, paint,
+                    null, computeFlags);
             // there may be a race, but we don't care
             sCache.put(k, piece);
         } else {
-            sLookupKeys.release(key);
+            int currFlags = (piece.mComputeFlags & computeFlags);
+            if (currFlags != computeFlags) {
+                // re-compute for more info
+                final Key k = key.copy();
+                // recycle the lookup key earlier, since creating layout is heavy
+                sLookupKeys.release(key);
+                piece = new LayoutPiece(buf, contextStart, contextEnd, start, end, isRtl, paint,
+                        piece, currFlags ^ computeFlags); // <- compute the difference
+                // override old value
+                sCache.put(k, piece);
+            } else {
+                sLookupKeys.release(key);
+            }
         }
         return piece;
     }

@@ -731,7 +731,7 @@ public class StaticLayout extends Layout {
         //TODO use paint.measureText
         char[] ellipsisChars = TextUtils.getEllipsisChars(where);
         float ellipsisWidth = LayoutCache.getOrCreate(ellipsisChars, 0, ellipsisChars.length,
-                0, ellipsisChars.length, false, paint.getInternalPaint()).getAdvance();
+                0, ellipsisChars.length, false, paint.getInternalPaint(), 0).getAdvance();
         int ellipsisStart = 0;
         int ellipsisCount = 0;
         int len = lineEnd - lineStart;

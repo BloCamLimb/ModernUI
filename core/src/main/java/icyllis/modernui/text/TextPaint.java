@@ -23,7 +23,6 @@ import icyllis.modernui.annotation.*;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.text.*;
 import icyllis.modernui.util.Pools;
-import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import java.util.Locale;
@@ -366,7 +365,12 @@ public class TextPaint extends Paint {
         return getInternalPaint().getFontMetricsInt(fm);
     }
 
-    @ApiStatus.Internal
+    /**
+     * Populates layout attributes to a temporary internal paint and returns.
+     * See {@link #createInternalPaint()} to create a new paint.
+     *
+     * @return a shared internal paint
+     */
     @NonNull
     public final FontPaint getInternalPaint() {
         FontPaint p = mInternalPaint;
@@ -383,11 +387,10 @@ public class TextPaint extends Paint {
 
     /**
      * Create a copy of this paint as the base class paint for internal
-     * layout engine. Subclasses must ensure that be immutable.
+     * layout engine.
      *
      * @return an internal paint
      */
-    @ApiStatus.Internal
     @NonNull
     public final FontPaint createInternalPaint() {
         return new FontPaint(getInternalPaint());

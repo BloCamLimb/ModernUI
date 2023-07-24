@@ -29,7 +29,7 @@ import icyllis.modernui.fragment.Fragment;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.font.GlyphManager;
-import icyllis.modernui.graphics.text.FontFamily;
+import icyllis.modernui.graphics.text.*;
 import icyllis.modernui.material.MaterialCheckBox;
 import icyllis.modernui.material.MaterialRadioButton;
 import icyllis.modernui.resources.SystemTheme;
@@ -97,6 +97,14 @@ public class TestFragment extends Fragment {
             var glyphs = TextShaper.shapeTextRun(text, 1, text.length() - 2, 0, text.length(),
                     TextDirectionHeuristics.FIRSTSTRONG_LTR, new TextPaint());
             LOGGER.info("Shape \"{}\"\n{}\nMemory Usage: {} bytes", text, glyphs, glyphs.getMemoryUsage());
+            LayoutPiece piece = LayoutCache.getOrCreate(
+                    text.toCharArray(),
+                    0, text.length(),
+                    1, text.length() - 2,
+                    false, new TextPaint().createInternalPaint(),
+                    LayoutCache.COMPUTE_CLUSTER_ADVANCES | LayoutCache.COMPUTE_GLYPHS_PIXEL_BOUNDS
+            );
+            LOGGER.info("Piece \"{}\"\n{}\nMemory Usage: {} bytes", text, piece, piece.getMemoryUsage());
         }).exceptionally(e -> {
             LOGGER.info("Shape", e);
             return null;
@@ -594,8 +602,9 @@ public class TestFragment extends Fragment {
                 } else if (i == 7) {
                     Spinner spinner = new Spinner(getContext());
                     v = spinner;
-                    spinner.setAdapter(new ArrayAdapter<>(getContext(),
-                            new ArrayList<>(FontFamily.getSystemFontMap().keySet())));
+                    ArrayList<String> list = new ArrayList<>(FontFamily.getSystemFontMap().keySet());
+                    list.sort(null);
+                    spinner.setAdapter(new ArrayAdapter<>(getContext(), list));
                     p = new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                             ViewGroup.LayoutParams.WRAP_CONTENT);
                     spinner.setMinimumWidth(dp(240));

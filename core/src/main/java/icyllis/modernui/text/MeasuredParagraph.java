@@ -524,7 +524,7 @@ public class MeasuredParagraph {
         if (replacement != null) {
             final float width = replacement.getSize(
                     tp, mSpanned, start + mTextStart, end + mTextStart, mCachedFm);
-            builder.addReplacementRun(tp.getInternalPaint(), end - start, width);
+            builder.addReplacementRun(tp.getTextLocale(), end - start, width);
         } else {
             final int offset = mTextStart;
             final FontPaint base = tp.createInternalPaint();
