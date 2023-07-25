@@ -124,24 +124,29 @@ public final class AlgorithmUtils {
         return res;
     }
 
+    // lower   : <  (C++ lower_bound - 1)
+    // floor   : <= (C++ upper_bound - 1)
+    // ceil    : >= (C++ lower_bound)
+    // higher  : >  (C++ upper_bound)
+
     /**
-     * Returns an index of the first element in the range {@code [0, a.length)}
-     * such that {@code a[index] > value}, or {@code a.length} if no such element is
+     * Returns an index of the last element in the range {@code [0, a.length)}
+     * such that {@code a[index] < value}, or {@code -1} if no such element is
      * found. The elements in the range shall already be sorted or at least
      * partitioned with respect to {@code value}.
      *
      * @param a     the array to be searched
      * @param value the value to be searched for
-     * @return index of the search value, or {@code a.length}
+     * @return index of the search value, or {@code -1}
      * @see java.util.Arrays#sort(int[])
      */
-    public static int upperBound(@NonNull int[] a, int value) {
-        return upperBound(a, 0, a.length, value);
+    public static int lower(@NonNull int[] a, int value) {
+        return lower(a, 0, a.length, value);
     }
 
     /**
-     * Returns an index of the first element in the range {@code [first, last)}
-     * such that {@code a[index] > value}, or {@code last} if no such element is
+     * Returns an index of the last element in the range {@code [0, a.length)}
+     * such that {@code a[index] < value}, or {@code first - 1} if no such element is
      * found. The elements in the range shall already be sorted or at least
      * partitioned with respect to {@code value}.
      *
@@ -149,39 +154,40 @@ public final class AlgorithmUtils {
      * @param first the index of the first element (inclusive) to be searched
      * @param last  the index of the last element (exclusive) to be searched
      * @param value the value to be searched for
-     * @return index of the search value, or {@code last}
+     * @return index of the search value, or {@code first - 1}
      * @see java.util.Arrays#sort(int[], int, int)
      */
     @Contract(pure = true)
-    public static int upperBound(@NonNull int[] a, int first, int last, int value) {
+    public static int lower(@NonNull int[] a, int first, int last, int value) {
         assert (first | last - first | a.length - last) >= 0;
         int low = first, high = last - 1;
         while (low <= high) {
             int mid = (low + high) >>> 1;
-            if (a[mid] > value) high = mid - 1;
-            else low = mid + 1;
+            if (a[mid] < value) low = mid + 1;
+            else high = mid - 1;
         }
-        return low;
+        return high;
     }
 
     /**
-     * Returns an index of the first element in the range {@code [0, a.length)}
-     * such that {@code a[index] > value}, or {@code a.length} if no such element is
+     * Returns an index of the last element in the range {@code [0, a.length)}
+     * such that {@code a[index] < value}, or {@code -1} if no such element is
      * found. The elements in the range shall already be sorted or at least
      * partitioned with respect to {@code value}.
      *
      * @param a     the array to be searched
      * @param value the value to be searched for
-     * @return index of the search value, or {@code a.length}
+     * @return index of the search value, or {@code -1}
      * @see java.util.Arrays#sort(long[])
      */
-    public static int upperBound(@NonNull long[] a, long value) {
-        return upperBound(a, 0, a.length, value);
+    @Contract(pure = true)
+    public static int lower(@NonNull long[] a, long value) {
+        return lower(a, 0, a.length, value);
     }
 
     /**
-     * Returns an index of the first element in the range {@code [first, last)}
-     * such that {@code a[index] > value}, or {@code last} if no such element is
+     * Returns an index of the last element in the range {@code [0, a.length)}
+     * such that {@code a[index] < value}, or {@code first - 1} if no such element is
      * found. The elements in the range shall already be sorted or at least
      * partitioned with respect to {@code value}.
      *
@@ -189,23 +195,24 @@ public final class AlgorithmUtils {
      * @param first the index of the first element (inclusive) to be searched
      * @param last  the index of the last element (exclusive) to be searched
      * @param value the value to be searched for
-     * @return index of the search value, or {@code last}
+     * @return index of the search value, or {@code first - 1}
      * @see java.util.Arrays#sort(long[], int, int)
      */
-    public static int upperBound(@NonNull long[] a, int first, int last, long value) {
+    @Contract(pure = true)
+    public static int lower(@NonNull long[] a, int first, int last, long value) {
         assert (first | last - first | a.length - last) >= 0;
         int low = first, high = last - 1;
         while (low <= high) {
             int mid = (low + high) >>> 1;
-            if (a[mid] > value) high = mid - 1;
-            else low = mid + 1;
+            if (a[mid] < value) low = mid + 1;
+            else high = mid - 1;
         }
-        return low;
+        return high;
     }
 
     /**
-     * Returns an index of the first element in the range {@code [0, a.length)}
-     * such that {@code a[index] > value}, or {@code a.length} if no such element is
+     * Returns an index of the last element in the range {@code [0, a.length)}
+     * such that {@code a[index] < value}, or {@code -1} if no such element is
      * found. The elements in the range shall already be sorted or at least
      * partitioned with respect to {@code value}.
      *
@@ -214,16 +221,16 @@ public final class AlgorithmUtils {
      * @param c     the comparator by which the array is ordered.  A
      *              {@code null} value indicates that the elements'
      *              {@linkplain Comparable natural ordering} should be used.
-     * @return index of the search value, or {@code a.length}
+     * @return index of the search value, or {@code -1}
      * @see java.util.Arrays#sort(Object[], Comparator)
      */
-    public static <T> int upperBound(@NonNull T[] a, T value, @Nullable Comparator<? super T> c) {
-        return upperBound(a, 0, a.length, value, c);
+    public static <T> int lower(@NonNull T[] a, T value, @Nullable Comparator<? super T> c) {
+        return lower(a, 0, a.length, value, c);
     }
 
     /**
-     * Returns an index of the first element in the range {@code [first, last)}
-     * such that {@code a[index] > value}, or {@code last} if no such element is
+     * Returns an index of the last element in the range {@code [0, a.length)}
+     * such that {@code a[index] < value}, or {@code first - 1} if no such element is
      * found. The elements in the range shall already be sorted or at least
      * partitioned with respect to {@code value}.
      *
@@ -234,12 +241,141 @@ public final class AlgorithmUtils {
      * @param c     the comparator by which the array is ordered.  A
      *              {@code null} value indicates that the elements'
      *              {@linkplain Comparable natural ordering} should be used.
-     * @return index of the search value, or {@code last}
+     * @return index of the search value, or {@code first - 1}
      * @see java.util.Arrays#sort(Object[], int, int, Comparator)
      */
     @SuppressWarnings("unchecked")
-    public static <T> int upperBound(@NonNull T[] a, int first, int last, T value,
-                                     @Nullable Comparator<? super T> c) {
+    public static <T> int lower(@NonNull T[] a, int first, int last, T value,
+                                @Nullable Comparator<? super T> c) {
+        assert (first | last - first | a.length - last) >= 0;
+        if (c == null) c = (Comparator<? super T>) Comparator.naturalOrder();
+        int low = first, high = last - 1;
+        while (low <= high) {
+            int mid = (low + high) >>> 1;
+            if (c.compare(a[mid], value) < 0) high = mid - 1;
+            else low = mid + 1;
+        }
+        return high;
+    }
+
+    /**
+     * Returns an index of the last element in the range {@code [0, a.length)}
+     * such that {@code a[index] <= value}, or {@code -1} if no such element is
+     * found. The elements in the range shall already be sorted or at least
+     * partitioned with respect to {@code value}.
+     *
+     * @param a     the array to be searched
+     * @param value the value to be searched for
+     * @return index of the search value, or {@code -1}
+     * @see java.util.Arrays#sort(int[])
+     */
+    public static int floor(@NonNull int[] a, int value) {
+        return floor(a, 0, a.length, value);
+    }
+
+    /**
+     * Returns an index of the last element in the range {@code [first, last)}
+     * such that {@code a[index] <= value}, or {@code first - 1} if no such element is
+     * found. The elements in the range shall already be sorted or at least
+     * partitioned with respect to {@code value}.
+     *
+     * @param a     the array to be searched
+     * @param first the index of the first element (inclusive) to be searched
+     * @param last  the index of the last element (exclusive) to be searched
+     * @param value the value to be searched for
+     * @return index of the search value, or {@code first - 1}
+     * @see java.util.Arrays#sort(int[], int, int)
+     */
+    @Contract(pure = true)
+    public static int floor(@NonNull int[] a, int first, int last, int value) {
+        assert (first | last - first | a.length - last) >= 0;
+        int low = first, high = last - 1;
+        while (low <= high) {
+            int mid = (low + high) >>> 1;
+            if (a[mid] > value) high = mid - 1;
+            else low = mid + 1;
+        }
+        return high;
+    }
+
+    /**
+     * Returns an index of the last element in the range {@code [0, a.length)}
+     * such that {@code a[index] <= value}, or {@code -1} if no such element is
+     * found. The elements in the range shall already be sorted or at least
+     * partitioned with respect to {@code value}.
+     *
+     * @param a     the array to be searched
+     * @param value the value to be searched for
+     * @return index of the search value, or {@code -1}
+     * @see java.util.Arrays#sort(long[])
+     */
+    @Contract(pure = true)
+    public static int floor(@NonNull long[] a, long value) {
+        return floor(a, 0, a.length, value);
+    }
+
+    /**
+     * Returns an index of the last element in the range {@code [first, last)}
+     * such that {@code a[index] <= value}, or {@code first - 1} if no such element is
+     * found. The elements in the range shall already be sorted or at least
+     * partitioned with respect to {@code value}.
+     *
+     * @param a     the array to be searched
+     * @param first the index of the first element (inclusive) to be searched
+     * @param last  the index of the last element (exclusive) to be searched
+     * @param value the value to be searched for
+     * @return index of the search value, or {@code first - 1}
+     * @see java.util.Arrays#sort(long[], int, int)
+     */
+    @Contract(pure = true)
+    public static int floor(@NonNull long[] a, int first, int last, long value) {
+        assert (first | last - first | a.length - last) >= 0;
+        int low = first, high = last - 1;
+        while (low <= high) {
+            int mid = (low + high) >>> 1;
+            if (a[mid] > value) high = mid - 1;
+            else low = mid + 1;
+        }
+        return high;
+    }
+
+    /**
+     * Returns an index of the last element in the range {@code [0, a.length)}
+     * such that {@code a[index] <= value}, or {@code -1} if no such element is
+     * found. The elements in the range shall already be sorted or at least
+     * partitioned with respect to {@code value}.
+     *
+     * @param a     the array to be searched
+     * @param value the value to be searched for
+     * @param c     the comparator by which the array is ordered.  A
+     *              {@code null} value indicates that the elements'
+     *              {@linkplain Comparable natural ordering} should be used.
+     * @return index of the search value, or {@code -1}
+     * @see java.util.Arrays#sort(Object[], Comparator)
+     */
+    public static <T> int floor(@NonNull T[] a, T value, @Nullable Comparator<? super T> c) {
+        return floor(a, 0, a.length, value, c);
+    }
+
+    /**
+     * Returns an index of the last element in the range {@code [first, last)}
+     * such that {@code a[index] <= value}, or {@code first - 1} if no such element is
+     * found. The elements in the range shall already be sorted or at least
+     * partitioned with respect to {@code value}.
+     *
+     * @param a     the array to be searched
+     * @param first the index of the first element (inclusive) to be searched
+     * @param last  the index of the last element (exclusive) to be searched
+     * @param value the value to be searched for
+     * @param c     the comparator by which the array is ordered.  A
+     *              {@code null} value indicates that the elements'
+     *              {@linkplain Comparable natural ordering} should be used.
+     * @return index of the search value, or {@code first - 1}
+     * @see java.util.Arrays#sort(Object[], int, int, Comparator)
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> int floor(@NonNull T[] a, int first, int last, T value,
+                                @Nullable Comparator<? super T> c) {
         assert (first | last - first | a.length - last) >= 0;
         if (c == null) c = (Comparator<? super T>) Comparator.naturalOrder();
         int low = first, high = last - 1;
@@ -248,29 +384,33 @@ public final class AlgorithmUtils {
             if (c.compare(a[mid], value) > 0) high = mid - 1;
             else low = mid + 1;
         }
-        return low;
+        return high;
     }
 
     /**
      * Returns an index of the first element in the range {@code [0, a.length)}
-     * such that {@code a[index] < value}, or {@code a.length} if no such element is
+     * such that {@code a[index] >= value}, or {@code a.length} if no such element is
      * found. The elements in the range shall already be sorted or at least
      * partitioned with respect to {@code value}.
+     * <p>
+     * Equivalent to C++ {@code lower_bound}.
      *
      * @param a     the array to be searched
      * @param value the value to be searched for
      * @return index of the search value, or {@code a.length}
      * @see java.util.Arrays#sort(int[])
      */
-    public static int lowerBound(@NonNull int[] a, int value) {
-        return lowerBound(a, 0, a.length, value);
+    public static int ceil(@NonNull int[] a, int value) {
+        return ceil(a, 0, a.length, value);
     }
 
     /**
      * Returns an index of the first element in the range {@code [first, last)}
-     * such that {@code a[index] < value}, or {@code last} if no such element is
+     * such that {@code a[index] >= value}, or {@code last} if no such element is
      * found. The elements in the range shall already be sorted or at least
      * partitioned with respect to {@code value}.
+     * <p>
+     * Equivalent to C++ {@code lower_bound}.
      *
      * @param a     the array to be searched
      * @param first the index of the first element (inclusive) to be searched
@@ -280,7 +420,7 @@ public final class AlgorithmUtils {
      * @see java.util.Arrays#sort(int[], int, int)
      */
     @Contract(pure = true)
-    public static int lowerBound(@NonNull int[] a, int first, int last, int value) {
+    public static int ceil(@NonNull int[] a, int first, int last, int value) {
         assert (first | last - first | a.length - last) >= 0;
         int low = first, high = last - 1;
         while (low <= high) {
@@ -293,9 +433,11 @@ public final class AlgorithmUtils {
 
     /**
      * Returns an index of the first element in the range {@code [0, a.length)}
-     * such that {@code a[index] < value}, or {@code a.length} if no such element is
+     * such that {@code a[index] >= value}, or {@code a.length} if no such element is
      * found. The elements in the range shall already be sorted or at least
      * partitioned with respect to {@code value}.
+     * <p>
+     * Equivalent to C++ {@code lower_bound}.
      *
      * @param a     the array to be searched
      * @param value the value to be searched for
@@ -303,15 +445,17 @@ public final class AlgorithmUtils {
      * @see java.util.Arrays#sort(long[])
      */
     @Contract(pure = true)
-    public static int lowerBound(@NonNull long[] a, long value) {
-        return lowerBound(a, 0, a.length, value);
+    public static int ceil(@NonNull long[] a, long value) {
+        return ceil(a, 0, a.length, value);
     }
 
     /**
      * Returns an index of the first element in the range {@code [first, last)}
-     * such that {@code a[index] < value}, or {@code last} if no such element is
+     * such that {@code a[index] >= value}, or {@code last} if no such element is
      * found. The elements in the range shall already be sorted or at least
      * partitioned with respect to {@code value}.
+     * <p>
+     * Equivalent to C++ {@code lower_bound}.
      *
      * @param a     the array to be searched
      * @param first the index of the first element (inclusive) to be searched
@@ -321,7 +465,7 @@ public final class AlgorithmUtils {
      * @see java.util.Arrays#sort(long[], int, int)
      */
     @Contract(pure = true)
-    public static int lowerBound(@NonNull long[] a, int first, int last, long value) {
+    public static int ceil(@NonNull long[] a, int first, int last, long value) {
         assert (first | last - first | a.length - last) >= 0;
         int low = first, high = last - 1;
         while (low <= high) {
@@ -334,9 +478,11 @@ public final class AlgorithmUtils {
 
     /**
      * Returns an index of the first element in the range {@code [0, a.length)}
-     * such that {@code a[index] < value}, or {@code a.length} if no such element is
+     * such that {@code a[index] >= value}, or {@code a.length} if no such element is
      * found. The elements in the range shall already be sorted or at least
      * partitioned with respect to {@code value}.
+     * <p>
+     * Equivalent to C++ {@code lower_bound}.
      *
      * @param a     the array to be searched
      * @param value the value to be searched for
@@ -346,15 +492,17 @@ public final class AlgorithmUtils {
      * @return index of the search value, or {@code a.length}
      * @see java.util.Arrays#sort(Object[], Comparator)
      */
-    public static <T> int lowerBound(@NonNull T[] a, T value, @Nullable Comparator<? super T> c) {
-        return lowerBound(a, 0, a.length, value, c);
+    public static <T> int ceil(@NonNull T[] a, T value, @Nullable Comparator<? super T> c) {
+        return ceil(a, 0, a.length, value, c);
     }
 
     /**
      * Returns an index of the first element in the range {@code [first, last)}
-     * such that {@code a[index] < value}, or {@code last} if no such element is
+     * such that {@code a[index] >= value}, or {@code last} if no such element is
      * found. The elements in the range shall already be sorted or at least
      * partitioned with respect to {@code value}.
+     * <p>
+     * Equivalent to C++ {@code lower_bound}.
      *
      * @param a     the array to be searched
      * @param first the index of the first element (inclusive) to be searched
@@ -367,14 +515,153 @@ public final class AlgorithmUtils {
      * @see java.util.Arrays#sort(Object[], int, int, Comparator)
      */
     @SuppressWarnings("unchecked")
-    public static <T> int lowerBound(@NonNull T[] a, int first, int last, T value,
-                                     @Nullable Comparator<? super T> c) {
+    public static <T> int ceil(@NonNull T[] a, int first, int last, T value,
+                               @Nullable Comparator<? super T> c) {
         assert (first | last - first | a.length - last) >= 0;
         if (c == null) c = (Comparator<? super T>) Comparator.naturalOrder();
         int low = first, high = last - 1;
         while (low <= high) {
             int mid = (low + high) >>> 1;
             if (c.compare(a[mid], value) < 0) high = mid - 1;
+            else low = mid + 1;
+        }
+        return low;
+    }
+
+    /**
+     * Returns an index of the first element in the range {@code [0, a.length)}
+     * such that {@code a[index] > value}, or {@code a.length} if no such element is
+     * found. The elements in the range shall already be sorted or at least
+     * partitioned with respect to {@code value}.
+     * <p>
+     * Equivalent to C++ {@code upper_bound}.
+     *
+     * @param a     the array to be searched
+     * @param value the value to be searched for
+     * @return index of the search value, or {@code a.length}
+     * @see java.util.Arrays#sort(int[])
+     */
+    public static int higher(@NonNull int[] a, int value) {
+        return higher(a, 0, a.length, value);
+    }
+
+    /**
+     * Returns an index of the first element in the range {@code [first, last)}
+     * such that {@code a[index] > value}, or {@code last} if no such element is
+     * found. The elements in the range shall already be sorted or at least
+     * partitioned with respect to {@code value}.
+     * <p>
+     * Equivalent to C++ {@code upper_bound}.
+     *
+     * @param a     the array to be searched
+     * @param first the index of the first element (inclusive) to be searched
+     * @param last  the index of the last element (exclusive) to be searched
+     * @param value the value to be searched for
+     * @return index of the search value, or {@code last}
+     * @see java.util.Arrays#sort(int[], int, int)
+     */
+    @Contract(pure = true)
+    public static int higher(@NonNull int[] a, int first, int last, int value) {
+        assert (first | last - first | a.length - last) >= 0;
+        int low = first, high = last - 1;
+        while (low <= high) {
+            int mid = (low + high) >>> 1;
+            if (a[mid] > value) high = mid - 1;
+            else low = mid + 1;
+        }
+        return low;
+    }
+
+    /**
+     * Returns an index of the first element in the range {@code [0, a.length)}
+     * such that {@code a[index] > value}, or {@code a.length} if no such element is
+     * found. The elements in the range shall already be sorted or at least
+     * partitioned with respect to {@code value}.
+     * <p>
+     * Equivalent to C++ {@code upper_bound}.
+     *
+     * @param a     the array to be searched
+     * @param value the value to be searched for
+     * @return index of the search value, or {@code a.length}
+     * @see java.util.Arrays#sort(long[])
+     */
+    public static int higher(@NonNull long[] a, long value) {
+        return higher(a, 0, a.length, value);
+    }
+
+    /**
+     * Returns an index of the first element in the range {@code [first, last)}
+     * such that {@code a[index] > value}, or {@code last} if no such element is
+     * found. The elements in the range shall already be sorted or at least
+     * partitioned with respect to {@code value}.
+     * <p>
+     * Equivalent to C++ {@code upper_bound}.
+     *
+     * @param a     the array to be searched
+     * @param first the index of the first element (inclusive) to be searched
+     * @param last  the index of the last element (exclusive) to be searched
+     * @param value the value to be searched for
+     * @return index of the search value, or {@code last}
+     * @see java.util.Arrays#sort(long[], int, int)
+     */
+    public static int higher(@NonNull long[] a, int first, int last, long value) {
+        assert (first | last - first | a.length - last) >= 0;
+        int low = first, high = last - 1;
+        while (low <= high) {
+            int mid = (low + high) >>> 1;
+            if (a[mid] > value) high = mid - 1;
+            else low = mid + 1;
+        }
+        return low;
+    }
+
+    /**
+     * Returns an index of the first element in the range {@code [0, a.length)}
+     * such that {@code a[index] > value}, or {@code a.length} if no such element is
+     * found. The elements in the range shall already be sorted or at least
+     * partitioned with respect to {@code value}.
+     * <p>
+     * Equivalent to C++ {@code upper_bound}.
+     *
+     * @param a     the array to be searched
+     * @param value the value to be searched for
+     * @param c     the comparator by which the array is ordered.  A
+     *              {@code null} value indicates that the elements'
+     *              {@linkplain Comparable natural ordering} should be used.
+     * @return index of the search value, or {@code a.length}
+     * @see java.util.Arrays#sort(Object[], Comparator)
+     */
+    public static <T> int higher(@NonNull T[] a, T value, @Nullable Comparator<? super T> c) {
+        return higher(a, 0, a.length, value, c);
+    }
+
+    /**
+     * Returns an index of the first element in the range {@code [first, last)}
+     * such that {@code a[index] > value}, or {@code last} if no such element is
+     * found. The elements in the range shall already be sorted or at least
+     * partitioned with respect to {@code value}.
+     * <p>
+     * Equivalent to C++ {@code upper_bound}.
+     *
+     * @param a     the array to be searched
+     * @param first the index of the first element (inclusive) to be searched
+     * @param last  the index of the last element (exclusive) to be searched
+     * @param value the value to be searched for
+     * @param c     the comparator by which the array is ordered.  A
+     *              {@code null} value indicates that the elements'
+     *              {@linkplain Comparable natural ordering} should be used.
+     * @return index of the search value, or {@code last}
+     * @see java.util.Arrays#sort(Object[], int, int, Comparator)
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> int higher(@NonNull T[] a, int first, int last, T value,
+                                 @Nullable Comparator<? super T> c) {
+        assert (first | last - first | a.length - last) >= 0;
+        if (c == null) c = (Comparator<? super T>) Comparator.naturalOrder();
+        int low = first, high = last - 1;
+        while (low <= high) {
+            int mid = (low + high) >>> 1;
+            if (c.compare(a[mid], value) > 0) high = mid - 1;
             else low = mid + 1;
         }
         return low;
@@ -392,7 +679,7 @@ public final class AlgorithmUtils {
         int length = 1;
         tail[0] = a[0];
         for (int i = 1; i < n; i++) {
-            int v = a[i], pos = upperBound(tail, 0, length, v);
+            int v = a[i], pos = higher(tail, 0, length, v);
             if (pos == length) tail[length++] = v;
             else tail[pos] = v;
         }
@@ -408,14 +695,14 @@ public final class AlgorithmUtils {
     @Contract(pure = true)
     public static int lengthOfLIS(@NonNull int[] a, int n, boolean strict) {
         if (!strict) return lengthOfLIS(a, n);
-        // strict version only changes 'upperBound' to 'lowerBound'
+        // strict version only changes '>' to '>='
         assert n <= a.length;
         if (n <= 1) return n;
         int[] tail = new int[n];
         int length = 1;
         tail[0] = a[0];
         for (int i = 1; i < n; i++) {
-            int v = a[i], pos = lowerBound(tail, 0, length, v);
+            int v = a[i], pos = ceil(tail, 0, length, v);
             if (pos == length) tail[length++] = v;
             else tail[pos] = v;
         }
@@ -435,7 +722,7 @@ public final class AlgorithmUtils {
         tail[0] = a[0];
         for (int i = 1; i < n; i++) {
             long v = a[i];
-            int pos = upperBound(tail, 0, length, v);
+            int pos = higher(tail, 0, length, v);
             if (pos == length) tail[length++] = v;
             else tail[pos] = v;
         }
@@ -451,7 +738,7 @@ public final class AlgorithmUtils {
     @Contract(pure = true)
     public static int lengthOfLIS(@NonNull long[] a, int n, boolean strict) {
         if (!strict) return lengthOfLIS(a, n);
-        // strict version only changes 'upperBound' to 'lowerBound'
+        // strict version only changes '>' to '>='
         assert n <= a.length;
         if (n <= 1) return n;
         long[] tail = new long[n];
@@ -459,7 +746,7 @@ public final class AlgorithmUtils {
         tail[0] = a[0];
         for (int i = 1; i < n; i++) {
             long v = a[i];
-            int pos = lowerBound(tail, 0, length, v);
+            int pos = ceil(tail, 0, length, v);
             if (pos == length) tail[length++] = v;
             else tail[pos] = v;
         }

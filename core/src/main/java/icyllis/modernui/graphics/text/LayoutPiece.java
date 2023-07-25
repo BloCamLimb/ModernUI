@@ -86,6 +86,8 @@ public final class LayoutPiece {
     private final int mBoundsWidth;
     private final int mBoundsHeight;
 
+    private final int mNumChars;
+
     final int mComputeFlags;
 
     /**
@@ -265,6 +267,7 @@ public final class LayoutPiece {
         }
 
         mComputeFlags = (hint != null ? hint.mComputeFlags : 0) | newFlags;
+        mNumChars = count;
 
         assert mGlyphs.length * 2 == mPositions.length;
         assert mFontIndices == null || mFontIndices.length == mGlyphs.length;
@@ -308,6 +311,13 @@ public final class LayoutPiece {
             return mFonts[mFontIndices[i]];
         }
         return mFonts[0];
+    }
+
+    /**
+     * Returns the number of characters (i.e. constructor <code>limit - start</code> in code units).
+     */
+    public int getCharCount() {
+        return mNumChars;
     }
 
     /**

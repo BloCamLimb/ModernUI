@@ -21,6 +21,7 @@ package icyllis.modernui.text;
 import com.ibm.icu.text.Bidi;
 import icyllis.modernui.annotation.IntRange;
 import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.text.ShapedText;
 
 import java.util.Objects;
@@ -30,7 +31,7 @@ import java.util.Objects;
  * <p>
  * Text shaping is a preprocess for drawing text into canvas with glyphs. The glyph is a most
  * primitive unit of the text drawing, consist of glyph identifier in the font file and its position
- * and style. You can draw the shape result to Canvas by calling Canvas#drawGlyphs.
+ * and style. You can draw the shape result to Canvas by calling {@link Canvas#drawGlyphs}.
  * <p>
  * For most of the use cases, {@link #shapeText} will provide text shaping
  * functionalities needed.

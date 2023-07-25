@@ -35,8 +35,7 @@ import icyllis.modernui.material.MaterialRadioButton;
 import icyllis.modernui.resources.SystemTheme;
 import icyllis.modernui.text.*;
 import icyllis.modernui.text.style.*;
-import icyllis.modernui.util.DataSet;
-import icyllis.modernui.util.FloatProperty;
+import icyllis.modernui.util.*;
 import icyllis.modernui.view.*;
 import icyllis.modernui.view.ViewGroup.LayoutParams;
 import icyllis.modernui.widget.*;
@@ -424,7 +423,7 @@ public class TestFragment extends Fragment {
             Spannable spannable = (Spannable) tv.getText();
             spannable.setSpan(new ForegroundColorSpan(0xfff699b4), text.length() - 54, text.length(),
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            spannable.setSpan(new AbsoluteSizeSpan(18), text.length() - 69, text.length() - 30,
+            spannable.setSpan(new RelativeSizeSpan(0.5f), text.length() - 99, text.length() - 30,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             spannable.setSpan(new StyleSpan(Typeface.BOLD), text.length() - 50, text.length() - 40,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
