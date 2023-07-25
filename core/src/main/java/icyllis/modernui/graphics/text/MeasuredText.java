@@ -20,33 +20,42 @@ package icyllis.modernui.graphics.text;
 
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.text.TextPaint;
+import icyllis.modernui.util.AlgorithmUtils;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
 
-import javax.annotation.concurrent.Immutable;
-import javax.annotation.concurrent.NotThreadSafe;
 import java.util.*;
 import java.util.stream.Collectors;
 
 /**
  * Text shaping result object for multi-style text, so there are multiple style runs
  * of positioned glyphs.
- * <p>
- * This object is immutable, internal buffers may be shared between threads.
  *
  * @see ShapedText
  * @see LayoutCache
  */
-@Immutable
 public class MeasuredText {
 
     private final char[] mTextBuf;
     private final Run[] mRuns;
 
-    private MeasuredText(@NonNull char[] textBuf, @NonNull Run[] runs, boolean computeLayout) {
+    private Run mLastSeenRun;
+    private int mLastSeenRunIndex;
+
+    private MeasuredText(@NonNull char[] textBuf,
+                         @NonNull Run[] runs,
+                         boolean computeLayout) {
         //assert (textBuf.length == 0) == (runs.length == 0);
         mTextBuf = textBuf;
         mRuns = runs;
-        for (Run run : runs) {
-            run.measure(textBuf, computeLayout);
+
+        if (runs.length > 0) {
+            mLastSeenRun = runs[0];
+
+            for (Run run : runs) {
+                run.measure(textBuf, computeLayout);
+            }
+        } else {
+            mLastSeenRunIndex = -1;
         }
     }
 
@@ -83,10 +92,19 @@ public class MeasuredText {
         if (start >= end) {
             return;
         }
-        for (Run run : mRuns) {
+        Run run = memoizedSearch(start);
+        int index = mLastSeenRunIndex;
+        for (;;) {
             if (start < run.mEnd && end > run.mStart) {
-                run.getExtent(mTextBuf, Math.max(start, run.mStart), Math.min(end, run.mEnd), extent);
+                run.getExtent(mTextBuf,
+                        Math.max(start, run.mStart),
+                        Math.min(end, run.mEnd),
+                        extent);
             }
+            if (run.mEnd >= end) {
+                break;
+            }
+            run = mRuns[++index];
         }
     }
 
@@ -102,11 +120,8 @@ public class MeasuredText {
      * @return advance
      */
     public float getAdvance(int pos) {
-        Run run = searchRun(pos);
-        if (run == null) {
-            return 0f;
-        }
-        return run.getAdvance(pos);
+        Run run = memoizedSearch(pos);
+        return run.getAdvance(mTextBuf, pos);
     }
 
     /**
@@ -121,60 +136,75 @@ public class MeasuredText {
         if (start >= end) {
             return 0;
         }
-        float a = 0;
-        for (Run run : mRuns) {
+        float advance = 0;
+        Run run = memoizedSearch(start);
+        int index = mLastSeenRunIndex;
+        for (;;) {
             if (start < run.mEnd && end > run.mStart) {
-                a += run.getAdvance(Math.max(start, run.mStart), Math.min(end, run.mEnd));
+                advance += run.getAdvance(mTextBuf,
+                        Math.max(start, run.mStart),
+                        Math.min(end, run.mEnd));
             }
+            if (run.mEnd >= end) {
+                return advance;
+            }
+            run = mRuns[++index];
         }
-        return a;
     }
 
     /**
-     * Returns the layout piece for a single style run with the given range
-     * <strong>only for rendering purposes</strong>.
-     *
-     * @param start start of range
-     * @param end   end of range
-     * @return the layout or nothing to draw with characters
-     */
-    @Nullable
-    public LayoutPiece getLayoutPiece(int start, int end) {
-        if (start >= end) {
-            return null;
-        }
-        Run run = searchRun(start);
-        if (run != null) {
-            return run.getLayout(mTextBuf, start, end);
-        }
-        return null;
-    }
-
-    /**
-     * Binary search with ranges.
+     * Fast binary search with ranges.
      *
      * @param pos char index
-     * @return the run index
+     * @return the run
      */
-    public int search(int pos) {
-        if (pos < 0 || pos >= mTextBuf.length) {
-            return -1;
+    @NonNull
+    private Run memoizedSearch(int pos) {
+        Run run = mLastSeenRun;
+        if (pos >= run.mStart && pos < run.mEnd) {
+            return run;
         }
+        // Find adjacent ranges
+        int index = mLastSeenRunIndex;
+        Run[] runs = mRuns;
+        if (index < runs.length - 1) {
+            // next
+            run = runs[index + 1];
+            if (pos >= run.mStart && pos < run.mEnd) {
+                mLastSeenRun = run;
+                ++mLastSeenRunIndex;
+                return run;
+            }
+        }
+        if (index > 0) {
+            // prev
+            run = runs[index - 1];
+            if (pos >= run.mStart && pos < run.mEnd) {
+                mLastSeenRun = run;
+                --mLastSeenRunIndex;
+                return run;
+            }
+        }
+
+        // Find random ranges
         int low = 0;
-        int high = mRuns.length - 1;
+        int high = runs.length - 1;
 
         while (low <= high) {
             int mid = (low + high) >>> 1;
-            Run run = mRuns[mid];
+            run = runs[mid];
 
             if (run.mEnd <= pos)
                 low = mid + 1;
             else if (run.mStart > pos)
                 high = mid - 1;
-            else
-                return mid;
+            else {
+                mLastSeenRun = run;
+                mLastSeenRunIndex = mid;
+                return run;
+            }
         }
-        return -(low + 1);
+        throw new IndexOutOfBoundsException(-(low + 1));
     }
 
     /**
@@ -228,7 +258,6 @@ public class MeasuredText {
     /**
      * For creating a MeasuredText.
      */
-    @NotThreadSafe
     public static class Builder {
 
         private final List<Run> mRuns = new ArrayList<>();
@@ -325,14 +354,8 @@ public class MeasuredText {
         /**
          * By passing true to this method, the build method will compute all full layout
          * information.
-         * <p>
-         * If you don't want to render the text soon, you can pass false to this method and
-         * save the memory spaces. The default value is true.
-         * <p>
-         * Even if you pass false to this method, you can still render the text but it becomes
-         * slower.
          *
-         * @param computeLayout true if you want to retrieve full layout info, e.g. glyphs position
+         * @param computeLayout true if you want to retrieve full layout info, e.g. glyphs bounds
          */
         @NonNull
         public Builder setComputeLayout(boolean computeLayout) {
@@ -360,7 +383,9 @@ public class MeasuredText {
         }
     }
 
-    // a logical run, subrange of bidi run
+    /**
+     * A logical run, subrange of bidi run.
+     */
     public static abstract class Run {
 
         // range in context
@@ -373,17 +398,14 @@ public class MeasuredText {
         }
 
         // Compute metrics
-        abstract void measure(@NonNull char[] text, boolean computeLayout);
+        public abstract void measure(@NonNull char[] text, boolean computeLayout);
 
         // Extend extent
-        abstract void getExtent(@NonNull char[] text, int start, int end, @NonNull FontMetricsInt extent);
+        public abstract void getExtent(@NonNull char[] text, int start, int end, @NonNull FontMetricsInt extent);
 
-        @Nullable
-        abstract LayoutPiece getLayout(@NonNull char[] text, int start, int end);
+        public abstract float getAdvance(char[] text, int pos);
 
-        abstract float getAdvance(int pos);
-
-        abstract float getAdvance(int start, int end);
+        public abstract float getAdvance(char[] text, int start, int end);
 
         // Returns true if this run is RTL. Otherwise returns false.
         public abstract boolean isRtl();
@@ -404,9 +426,11 @@ public class MeasuredText {
         public final FontPaint mPaint;
         private final boolean mIsRtl;
 
-        // obtained from cache or newly created, but may be removed from cache later
-        private LayoutPiece mLayoutPiece;
-        private boolean mComputedLayout;
+        // end (exclusive) offsets of each piece
+        private int[] mOffsets;
+        private LayoutPiece[] mPieces;
+
+        private float mAdvance;
 
         private StyleRun(int start, int end, FontPaint paint, boolean isRtl) {
             super(start, end);
@@ -415,52 +439,167 @@ public class MeasuredText {
         }
 
         @Override
-        void measure(@NonNull char[] text, boolean computeLayout) {
-            mLayoutPiece = LayoutCache.getOrCreate(text, mStart, mEnd, mStart, mEnd, mIsRtl, mPaint,
-                    LayoutCache.COMPUTE_CLUSTER_ADVANCES);
-            mComputedLayout = computeLayout;
+        public void measure(@NonNull char[] text, boolean computeLayout) {
+            final ArrayList<LayoutPiece> pieces = new ArrayList<>();
+            final IntArrayList offsets = new IntArrayList();
+            final int[] offset = {mIsRtl ? mEnd : mStart};
+            // context range is the same as StyleRun's range
+            mAdvance = ShapedText.doLayoutRun(text,
+                    mStart, mEnd,
+                    mStart, mEnd,
+                    mIsRtl, mPaint,
+                    null, (piece, __, __$) -> {
+                        pieces.add(piece);
+                        if (mIsRtl) {
+                            offsets.add(offset[0]);
+                            offset[0] -= piece.getCharCount();
+                        } else {
+                            offset[0] += piece.getCharCount();
+                            offsets.add(offset[0]);
+                        }
+                    });
+            assert offset[0] == (mIsRtl ? mStart : mEnd);
+            if (mIsRtl) {
+                Collections.reverse(pieces);
+            }
+            mPieces = pieces.toArray(new LayoutPiece[0]);
+            mOffsets = offsets.toIntArray();
+            if (mIsRtl) {
+                Arrays.sort(mOffsets);
+            }
         }
 
         @Override
-        void getExtent(@NonNull char[] text, int start, int end,
-                       @NonNull FontMetricsInt extent) {
-            if (start == mStart && end == mEnd) {
-                mLayoutPiece.getExtent(extent);
+        public void getExtent(@NonNull char[] text, int start, int end,
+                              @NonNull FontMetricsInt extent) {
+            final int[] offsets = mOffsets;
+            final LayoutPiece[] pieces = mPieces;
+            int i;
+            // the word context range is the same as StyleRun's context range
+            int itContextStart;
+            int itContextEnd;
+            if (start < offsets[0]) {
+                i = 0;
+                itContextStart = mStart;
+                itContextEnd = offsets[0];
             } else {
-                LayoutCache.getOrCreate(text, mStart, mEnd, start, end, mIsRtl, mPaint,
-                        LayoutCache.COMPUTE_CLUSTER_ADVANCES).getExtent(extent);
+                i = AlgorithmUtils.higher(offsets, start);
+                itContextStart = offsets[i - 1];
+                itContextEnd = i == offsets.length ? mEnd : offsets[i];
             }
-        }
-
-        @Override
-        LayoutPiece getLayout(@NonNull char[] text, int start, int end) {
-            if (start == mStart && end == mEnd) {
-                if (!mComputedLayout) {
-                    mLayoutPiece = LayoutCache.getOrCreate(text, mStart, mEnd, start, end, mIsRtl, mPaint,
-                            LayoutCache.COMPUTE_CLUSTER_ADVANCES);
-                    mComputedLayout = true;
+            for (;;) {
+                int itPieceStart = Math.max(itContextStart, start);
+                int itPieceEnd = Math.min(itContextEnd, end);
+                if (itPieceStart == itContextStart &&
+                        itPieceEnd == itContextEnd) {
+                    pieces[i].getExtent(extent);
+                } else {
+                    LayoutCache.getOrCreate(
+                                    text,
+                                    itContextStart,
+                                    itContextEnd,
+                                    itPieceStart,
+                                    itPieceEnd,
+                                    mIsRtl,
+                                    mPaint,
+                                    0)
+                            .getExtent(extent);
                 }
-                return mLayoutPiece;
+                if (itPieceEnd == end) {
+                    break;
+                }
+                itContextStart = itContextEnd;
+                itContextEnd = offsets[++i];
             }
-            return LayoutCache.getOrCreate(text, mStart, mEnd, start, end, mIsRtl, mPaint,
-                    LayoutCache.COMPUTE_CLUSTER_ADVANCES);
         }
 
         @Override
-        float getAdvance(int pos) {
-            return mLayoutPiece.getAdvances()[pos - mStart];
+        public float getAdvance(char[] text, int pos) {
+            final int[] offsets = mOffsets;
+            final LayoutPiece[] pieces = mPieces;
+            int i;
+            // the word context range is the same as StyleRun's context range
+            int itContextStart;
+            int itContextEnd;
+            if (pos < offsets[0]) {
+                i = 0;
+                itContextStart = mStart;
+                itContextEnd = offsets[0];
+            } else {
+                i = AlgorithmUtils.higher(offsets, pos);
+                itContextStart = offsets[i - 1];
+                itContextEnd = i == offsets.length ? mEnd : offsets[i];
+            }
+            LayoutPiece piece = pieces[i];
+            if ((piece.getComputeFlags() & LayoutCache.COMPUTE_CLUSTER_ADVANCES) == 0) {
+                pieces[i] = piece = LayoutCache.getOrCreate(
+                        text,
+                        itContextStart,
+                        itContextEnd,
+                        itContextStart,
+                        itContextEnd,
+                        mIsRtl,
+                        mPaint,
+                        LayoutCache.COMPUTE_CLUSTER_ADVANCES
+                );
+            }
+
+            return piece.getAdvances()[pos - itContextStart];
         }
 
         @Override
-        float getAdvance(int start, int end) {
+        public float getAdvance(char[] text, int start, int end) {
             if (start == mStart && end == mEnd) {
-                return mLayoutPiece.getAdvance();
+                return mAdvance;
             }
-            float a = 0;
-            for (int i = start - mStart, e = end - mStart; i < e; i++) {
-                a += mLayoutPiece.getAdvances()[i];
+            final int[] offsets = mOffsets;
+            final LayoutPiece[] pieces = mPieces;
+            int i;
+            // the word context range is the same as StyleRun's context range
+            int itContextStart;
+            int itContextEnd;
+            if (start < offsets[0]) {
+                i = 0;
+                itContextStart = mStart;
+                itContextEnd = offsets[0];
+            } else {
+                i = AlgorithmUtils.higher(offsets, start);
+                itContextStart = offsets[i - 1];
+                itContextEnd = i == offsets.length ? mEnd : offsets[i];
             }
-            return a;
+            float advance = 0;
+            for (;;) {
+                int itPieceStart = Math.max(itContextStart, start);
+                int itPieceEnd = Math.min(itContextEnd, end);
+                if (itPieceStart == itContextStart &&
+                        itPieceEnd == itContextEnd) {
+                    advance += pieces[i].getAdvance();
+                } else {
+                    LayoutPiece piece = pieces[i];
+                    if ((piece.getComputeFlags() & LayoutCache.COMPUTE_CLUSTER_ADVANCES) == 0) {
+                        pieces[i] = piece = LayoutCache.getOrCreate(
+                                text,
+                                itContextStart,
+                                itContextEnd,
+                                itContextStart,
+                                itContextEnd,
+                                mIsRtl,
+                                mPaint,
+                                LayoutCache.COMPUTE_CLUSTER_ADVANCES
+                        );
+                    }
+                    for (int j = itPieceStart;
+                         j < itPieceEnd;
+                         j++) {
+                        advance += piece.getAdvances()[j - itContextStart];
+                    }
+                }
+                if (itPieceEnd == end) {
+                    return advance;
+                }
+                itContextStart = itContextEnd;
+                itContextEnd = offsets[++i];
+            }
         }
 
         @Override
@@ -484,17 +623,24 @@ public class MeasuredText {
             // 12 + 4 + 4 + (12 + 8 + 8 + 4 + 4) + 1 + 1 + 8
             // here assumes paint is partially shared (one third)
             // don't worry layout piece is null, see MeasuredText constructor
-            return 48 + mLayoutPiece.getMemoryUsage();
+            int size = 40 + 16 + 16;
+            size += (mOffsets.length << 2);
+            for (var piece : mPieces) {
+                size += piece.getMemoryUsage();
+            }
+            return size;
         }
 
         @Override
         public String toString() {
             return "StyleRun{" +
-                    "mStart=" + mStart +
-                    ", mEnd=" + mEnd +
-                    ", mPaint=" + mPaint +
+                    "mPaint=" + mPaint +
                     ", mIsRtl=" + mIsRtl +
-                    ", mLayoutPiece=" + mLayoutPiece +
+                    ", mOffsets=" + Arrays.toString(mOffsets) +
+                    ", mPieces=" + Arrays.toString(mPieces) +
+                    ", mAdvance=" + mAdvance +
+                    ", mStart=" + mStart +
+                    ", mEnd=" + mEnd +
                     '}';
         }
     }
@@ -511,23 +657,18 @@ public class MeasuredText {
         }
 
         @Override
-        void measure(@NonNull char[] text, boolean computeLayout) {
+        public void measure(@NonNull char[] text, boolean computeLayout) {
             //TODO: Get the extents information from the caller.
         }
 
         @Override
-        void getExtent(@NonNull char[] text, int start, int end, @NonNull FontMetricsInt extent) {
+        public void getExtent(@NonNull char[] text, int start, int end, @NonNull FontMetricsInt extent) {
 
         }
 
-        @Nullable
         @Override
-        LayoutPiece getLayout(@NonNull char[] text, int start, int end) {
-            return null;
-        }
-
-        @Override
-        float getAdvance(int pos) {
+        public float getAdvance(char[] text, int pos) {
+            assert pos >= mStart && pos < mEnd;
             if (pos == mStart) {
                 return mWidth;
             }
@@ -535,8 +676,9 @@ public class MeasuredText {
         }
 
         @Override
-        float getAdvance(int start, int end) {
-            if (start <= mStart) {
+        public float getAdvance(char[] text, int start, int end) {
+            assert start >= mStart && end <= mEnd && start < end;
+            if (start == mStart) {
                 return mWidth;
             }
             return 0;
