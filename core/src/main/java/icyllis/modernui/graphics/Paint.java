@@ -168,7 +168,7 @@ public class Paint extends icyllis.arc3d.core.Paint {
     public void reset() {
         super.reset();
         mFontFlags = NORMAL;
-        mFontSize = 12;
+        mFontSize = 16;
     }
 
     /**
@@ -223,7 +223,7 @@ public class Paint extends icyllis.arc3d.core.Paint {
      * of 16 means the letter 'M' is 16 pixels high in device space.
      * For performance reasons, this value is always rounded to an integer.
      * <p>
-     * The default value is 12.
+     * The default value is 16.
      *
      * @return the paint's text size in pixel units.
      */
@@ -237,7 +237,7 @@ public class Paint extends icyllis.arc3d.core.Paint {
 
     /**
      * Set the paint's text size in pixel units. For example, a text size
-     * of 16 means the letter 'M' is 16 pixels high in device space.
+     * of 16 (1em) means the letter 'M' is 16 pixels high in device space.
      * For performance reasons, this value is always rounded to an integer,
      * and clamps to 8 and 96. You can have even larger glyphs through matrix
      * transformation, and our engine will attempt to use SDF text rendering.
@@ -246,7 +246,7 @@ public class Paint extends icyllis.arc3d.core.Paint {
      * This indicates that the font size 12 in MS Word is equal to the font
      * size 16 here (12 * 4/3 == 16).
      * <p>
-     * The default value is 12.
+     * The default value is 16.
      *
      * @param textSize set the paint's text size in pixel units.
      */

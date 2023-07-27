@@ -1,0 +1,57 @@
+archivesBaseName = 'ModernUI-Markdown'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(':ModernUI-Core')
+    implementation "com.vladsch.flexmark:flexmark:${flexmark_version}"
+}
+
+jar {
+    manifest {
+        attributes(
+                "Specification-Title": "ModernUI-Markdown",
+                "Specification-Vendor": "BloCamLimb",
+                "Specification-Version": "1",
+                "Implementation-Title": project.name,
+                "Implementation-Version": project.version,
+                "Implementation-Vendor": "BloCamLimb",
+                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
+        )
+    }
+}
+
+publishing {
+    publications {
+        mavenMarkdown(MavenPublication) {
+            from components.java
+            artifactId = project.name
+            groupId = project.group
+            version = project.version
+
+            pom {
+                artifactId = project.name
+                groupId = project.group
+                version = project.version
+                name = rootProject.name
+                packaging = 'pom'
+                scm {
+                    url = 'https://github.com/BloCamLimb/ModernUI.git'
+                }
+                issueManagement {
+                    system = 'github'
+                    url = 'https://github.com/BloCamLimb/ModernUI/issues'
+                }
+                licenses {
+                    license {
+                        name = 'LGPL-3.0-or-later'
+                        url = 'https://www.gnu.org/licenses/lgpl-3.0.en.html'
+                        distribution = 'repo'
+                    }
+                }
+            }
+        }
+    }
+}
