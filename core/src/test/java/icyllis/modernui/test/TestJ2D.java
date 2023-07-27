@@ -18,6 +18,8 @@
 
 package icyllis.modernui.test;
 
+import com.ibm.icu.text.*;
+import com.ibm.icu.util.ULocale;
 import icyllis.modernui.core.Core;
 import icyllis.arc3d.core.Matrix4;
 import org.lwjgl.stb.*;
@@ -35,6 +37,7 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
+import java.util.Locale;
 
 public class TestJ2D {
 
@@ -47,6 +50,9 @@ public class TestJ2D {
         System.out.println(tk.getDesktopProperty("win.text.fontSmoothingType"));
         System.out.println(tk.getDesktopProperty("win.text.fontSmoothingOrientation"));
         System.out.println(tk.getDesktopProperty("win.text.fontSmoothingContrast"));
+
+        System.out.println(NumberFormat.getCurrencyInstance(new Locale("hi"))
+                .format(5));
 
         float pivotX = 10.0f * (float) Math.random();
         float pivotY = 10.0f * (float) Math.random();

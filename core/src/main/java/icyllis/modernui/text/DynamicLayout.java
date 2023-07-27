@@ -20,6 +20,7 @@ package icyllis.modernui.text;
 
 import icyllis.modernui.graphics.text.FontMetricsInt;
 import icyllis.modernui.text.style.UpdateLayout;
+import icyllis.modernui.text.style.WrapTogetherSpan;
 import icyllis.modernui.util.GrowingArrayUtils;
 import icyllis.modernui.util.Pools;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -417,9 +418,37 @@ public class DynamicLayout extends Layout {
 
         // seek further out to cover anything that is forced to wrap together
 
-        //TODO
-        if (text instanceof Spanned) {
-            Spanned sp = (Spanned) text;
+        if (text instanceof Spanned sp) {
+            boolean again;
+
+            do {
+                again = false;
+
+                List<?> force = sp.getSpans(where, where + after,
+                        WrapTogetherSpan.class);
+
+                for (Object span : force) {
+                    int st = sp.getSpanStart(span);
+                    int en = sp.getSpanEnd(span);
+
+                    if (st < where) {
+                        again = true;
+
+                        int diff = where - st;
+                        before += diff;
+                        after += diff;
+                        where -= diff;
+                    }
+
+                    if (en > where + after) {
+                        again = true;
+
+                        int diff = en - (where + after);
+                        before += diff;
+                        after += diff;
+                    }
+                }
+            } while (again);
         }
 
         // find affected region of old layout

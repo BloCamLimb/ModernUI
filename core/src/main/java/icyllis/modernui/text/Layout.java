@@ -21,12 +21,11 @@ package icyllis.modernui.text;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.text.LineBreaker;
 import icyllis.modernui.graphics.Rect;
+import icyllis.modernui.graphics.text.LineBreaker;
 import icyllis.modernui.text.method.TextKeyListener;
-import icyllis.modernui.text.style.ParagraphStyle;
-import icyllis.modernui.text.style.ReplacementSpan;
-import icyllis.modernui.text.style.TabStopSpan;
+import icyllis.modernui.text.style.*;
+import icyllis.modernui.text.style.LeadingMarginSpan.LeadingMarginSpan2;
 import icyllis.modernui.view.KeyEvent;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 
@@ -209,10 +208,67 @@ public abstract class Layout {
             int left = 0;
             int right = mWidth;
 
-            //TODO para style
             if (mSpannedText) {
                 Spanned sp = (Spanned) buf;
-                spans = getParagraphSpans(sp, start, spanEnd, ParagraphStyle.class);
+                int textLength = buf.length();
+                boolean isFirstParaLine = (start == 0 || buf.charAt(start - 1) == '\n');
+
+                // New batch of paragraph styles, collect into spans array.
+                // Compute the alignment, last alignment style wins.
+                // Reset tabStops, we'll rebuild if we encounter a line with
+                // tabs.
+                // We expect paragraph spans to be relatively infrequent, use
+                // spanEnd so that we can check less frequently.  Since
+                // paragraph styles ought to apply to entire paragraphs, we can
+                // just collect the ones present at the start of the paragraph.
+                // If spanEnd is before the end of the paragraph, that's not
+                // our problem.
+                if (start >= spanEnd && (lineNum == firstLine || isFirstParaLine)) {
+                    spanEnd = sp.nextSpanTransition(start, textLength,
+                            ParagraphStyle.class);
+                    spans = getParagraphSpans(sp, start, spanEnd, ParagraphStyle.class);
+
+                    paraAlign = mAlignment;
+                    for (int n = spans.size() - 1; n >= 0; n--) {
+                        if (spans.get(n) instanceof AlignmentSpan alignment) {
+                            paraAlign = alignment.getAlignment();
+                            break;
+                        }
+                    }
+
+                    tabStopsIsInitialized = false;
+                }
+
+                // Draw all leading margin spans.  Adjust left or right according
+                // to the paragraph direction of the line.
+                boolean useFirstLineMargin = isFirstParaLine;
+                for (ParagraphStyle span : spans) {
+                    if (span instanceof LeadingMarginSpan2 margin) {
+                        int count = margin.getLeadingMarginLineCount();
+                        int startLine = getLineForOffset(sp.getSpanStart(margin));
+                        // if there is more than one LeadingMarginSpan2, use
+                        // the count that is greatest
+                        if (lineNum < startLine + count) {
+                            useFirstLineMargin = true;
+                            break;
+                        }
+                    }
+                }
+                for (ParagraphStyle span : spans) {
+                    if (span instanceof LeadingMarginSpan margin) {
+                        if (dir == DIR_RIGHT_TO_LEFT) {
+                            margin.drawLeadingMargin(canvas, paint, right, dir, ltop,
+                                    lbaseline, lbottom, buf,
+                                    start, end, isFirstParaLine, this);
+                            right -= margin.getLeadingMargin(useFirstLineMargin);
+                        } else {
+                            margin.drawLeadingMargin(canvas, paint, left, dir, ltop,
+                                    lbaseline, lbottom, buf,
+                                    start, end, isFirstParaLine, this);
+                            left += margin.getLeadingMargin(useFirstLineMargin);
+                        }
+                    }
+                }
             }
 
             boolean hasTab = getLineContainsTab(lineNum);
@@ -1342,8 +1398,38 @@ public abstract class Layout {
      * @return the leading margin of this line
      */
     private int getParagraphLeadingMargin(int line) {
-        //TODO
-        return 0;
+        if (!mSpannedText) {
+            return 0;
+        }
+        Spanned spanned = (Spanned) mText;
+
+        int lineStart = getLineStart(line);
+        int lineEnd = getLineEnd(line);
+        int spanEnd = spanned.nextSpanTransition(lineStart, lineEnd,
+                LeadingMarginSpan.class);
+        List<LeadingMarginSpan> spans = getParagraphSpans(spanned, lineStart, spanEnd,
+                LeadingMarginSpan.class);
+        if (spans.isEmpty()) {
+            return 0; // no leading margin span;
+        }
+
+        int margin = 0;
+
+        boolean useFirstLineMargin = lineStart == 0 || spanned.charAt(lineStart - 1) == '\n';
+        for (LeadingMarginSpan span : spans) {
+            if (span instanceof LeadingMarginSpan2) {
+                int spStart = spanned.getSpanStart(span);
+                int spanLine = getLineForOffset(spStart);
+                int count = ((LeadingMarginSpan2) span).getLeadingMarginLineCount();
+                // if there is more than one LeadingMarginSpan2, use the count that is greatest
+                useFirstLineMargin |= line < spanLine + count;
+            }
+        }
+        for (LeadingMarginSpan span : spans) {
+            margin += span.getLeadingMargin(useFirstLineMargin);
+        }
+
+        return margin;
     }
 
     /**
@@ -1742,14 +1828,13 @@ public abstract class Layout {
             TabStops tabStops = null;
             // leading margins should be taken into account when measuring a paragraph
             int margin = 0;
-            /*if (text instanceof Spanned) {
-                Spanned spanned = (Spanned) text;
-                LeadingMarginSpan[] spans = getParagraphSpans(spanned, start, end,
+            if (text instanceof Spanned spanned) {
+                List<LeadingMarginSpan> spans = getParagraphSpans(spanned, start, end,
                         LeadingMarginSpan.class);
                 for (LeadingMarginSpan lms : spans) {
                     margin += lms.getLeadingMargin(true);
                 }
-            }*/
+            }
             for (char c : chars) {
                 if (c == '\t') {
                     hasTabs = true;

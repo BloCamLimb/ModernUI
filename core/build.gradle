@@ -7,7 +7,6 @@ dependencies {
     implementation "it.unimi.dsi:fastutil:${fastutil_version}"
 
     implementation "com.github.ben-manes.caffeine:caffeine:${caffeine_version}"
-    implementation "com.vladsch.flexmark:flexmark:${flexmark_version}"
 
     def lwjglNatives
     switch (OperatingSystem.current()) {

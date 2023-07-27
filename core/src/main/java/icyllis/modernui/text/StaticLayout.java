@@ -22,6 +22,8 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.text.FontMetricsInt;
 import icyllis.modernui.graphics.text.LayoutCache;
 import icyllis.modernui.graphics.text.LineBreaker;
+import icyllis.modernui.text.style.LeadingMarginSpan;
+import icyllis.modernui.text.style.TabStopSpan;
 import icyllis.modernui.util.GrowingArrayUtils;
 import icyllis.modernui.util.Pools;
 import org.apache.logging.log4j.Marker;
@@ -30,6 +32,7 @@ import org.apache.logging.log4j.MarkerManager;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * StaticLayout is a Layout for text that will not be edited after it
@@ -463,13 +466,27 @@ public class StaticLayout extends Layout {
             int restWidth = outerWidth;
 
             if (spanned != null) {
-
+                List<LeadingMarginSpan> sp = getParagraphSpans(spanned, paraStart, paraEnd,
+                        LeadingMarginSpan.class);
+                for (LeadingMarginSpan lms : sp) {
+                    firstWidth -= lms.getLeadingMargin(true);
+                    restWidth -= lms.getLeadingMargin(false);
+                }
             }
 
             // tab stop locations
             float[] variableTabStops = null;
             if (spanned != null) {
-
+                List<TabStopSpan> spans = getParagraphSpans(spanned, paraStart,
+                        paraEnd, TabStopSpan.class);
+                if (!spans.isEmpty()) {
+                    float[] stops = new float[spans.size()];
+                    for (int i = 0; i < spans.size(); i++) {
+                        stops[i] = (float) spans.get(i).getTabStop();
+                    }
+                    Arrays.sort(stops, 0, stops.length);
+                    variableTabStops = stops;
+                }
             }
 
             final MeasuredParagraph measuredPara = paragraphs[paraIndex];
