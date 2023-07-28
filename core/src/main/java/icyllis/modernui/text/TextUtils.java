@@ -21,7 +21,6 @@ package icyllis.modernui.text;
 import com.ibm.icu.util.ULocale;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.graphics.text.FontPaint;
 import icyllis.modernui.text.style.*;
 import icyllis.modernui.util.BinaryIO;
 import icyllis.modernui.view.View;
@@ -318,7 +317,8 @@ public final class TextUtils {
             LINE_BACKGROUND_SPAN           = FIRST_SPAN + 26,
             LINE_HEIGHT_SPAN               = FIRST_SPAN + 27,
             ACCESSIBILITY_REPLACEMENT_SPAN = FIRST_SPAN + 28,
-            LAST_SPAN                      = ACCESSIBILITY_REPLACEMENT_SPAN;
+            TRAILING_MARGIN_SPAN           = FIRST_SPAN + 29,
+            LAST_SPAN                      = TRAILING_MARGIN_SPAN;
     //@formatter:on
 
     /**

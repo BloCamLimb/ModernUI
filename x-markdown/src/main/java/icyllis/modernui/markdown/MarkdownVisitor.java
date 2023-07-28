@@ -21,8 +21,9 @@ package icyllis.modernui.markdown;
 import com.vladsch.flexmark.util.ast.Node;
 import com.vladsch.flexmark.util.ast.NodeVisitHandler;
 import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.text.SpannableStringBuilder;
-import icyllis.modernui.text.Spanned;
+import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.text.*;
+import icyllis.modernui.util.DataSet;
 
 import java.util.*;
 
@@ -37,6 +38,8 @@ public final class MarkdownVisitor implements NodeVisitHandler {
     final Map<Class<? extends Node>, NodeVisitor<Node>> mVisitors;
 
     private final SpannableStringBuilder mBuilder = new SpannableStringBuilder();
+
+    private final DataSet mRenderArguments = new DataSet();
 
     private final BlockHandler mBlockHandler;
 
@@ -76,12 +79,20 @@ public final class MarkdownVisitor implements NodeVisitHandler {
         }
     }
 
-    public SpannableStringBuilder reverseBuilder() {
+    public SpannableStringBuilder builder() {
         return mBuilder;
     }
 
-    public void append(CharSequence text) {
-        mBuilder.append(text);
+    public DataSet getRenderArguments() {
+        return mRenderArguments;
+    }
+
+    public Editable append(char c) {
+        return mBuilder.append(c);
+    }
+
+    public Editable append(CharSequence text) {
+        return mBuilder.append(text);
     }
 
     public int length() {
@@ -117,22 +128,19 @@ public final class MarkdownVisitor implements NodeVisitHandler {
         mBlockHandler.blockEnd(this, node);
     }
 
-    public <N extends Node> Object populateSpans(@NonNull N node, boolean mandatory) {
+    @Nullable
+    public <N extends Node> Object preSetSpans(@NonNull N node, int offset) {
         SpanFactory<Node> factory = mConfig.getSpanFactory(node.getClass());
-        if (mandatory) {
-            Objects.requireNonNull(factory);
-        }
         if (factory != null) {
-            Object spans = factory.create(mConfig, node);
-            int point = mBuilder.length();
-            setSpans0(spans, point, point, Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
+            Object spans = factory.create(mConfig, node, mRenderArguments);
+            setSpans0(spans, offset, offset, Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
             return spans;
         }
         return null;
     }
 
-    public void adjustSpansOffset(Object spans, int start) {
-        setSpans0(spans, start, mBuilder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+    public void postSetSpans(@Nullable Object spans, int offset) {
+        setSpans0(spans, offset, mBuilder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
     }
 
     private void setSpans0(Object spans, int start, int end, int flags) {

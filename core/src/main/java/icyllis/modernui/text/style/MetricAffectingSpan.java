@@ -45,8 +45,8 @@ import javax.annotation.Nonnull;
 public abstract class MetricAffectingSpan extends CharacterStyle implements UpdateLayout {
 
     @Override
-    public final void updateDrawState(@Nonnull TextPaint paint) {
-        // NO-OP, except generating a new layout
+    public void updateDrawState(@Nonnull TextPaint paint) {
+        updateMeasureState(paint);
     }
 
     /**
@@ -88,6 +88,7 @@ public abstract class MetricAffectingSpan extends CharacterStyle implements Upda
 
         /**
          * Passes updateMeasureState through to the underlying MetricAffectingSpan.
+         *
          * @param paint
          */
         @Override

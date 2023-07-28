@@ -22,12 +22,14 @@ import com.vladsch.flexmark.ast.*;
 import com.vladsch.flexmark.util.ast.Block;
 import com.vladsch.flexmark.util.ast.Node;
 import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.graphics.drawable.ColorDrawable;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.markdown.*;
+import icyllis.modernui.markdown.core.spans.CodeBlockSpan;
 import icyllis.modernui.text.TextPaint;
 import icyllis.modernui.text.style.*;
+import icyllis.modernui.util.DataSet;
 
-public final class CorePlugin implements MarkdownPlugin {
+public final class CorePlugin implements Plugin {
 
     private static final float[] HEADING_SIZES = {
             2.0f, 1.5f, 1.17f, 1.0f, 0.83f, 0.66f
@@ -35,37 +37,48 @@ public final class CorePlugin implements MarkdownPlugin {
 
     @Override
     public void configure(@NonNull MarkdownConfig.Builder builder) {
-        builder.addVisitor(Text.class, this::visitText);
-        builder.addVisitor(StrongEmphasis.class, this::visitDelimited);
-        builder.addVisitor(Emphasis.class, this::visitDelimited);
+        builder
+                .addVisitor(Text.class, this::visitText)
+                .addVisitor(StrongEmphasis.class, this::visitDelimited)
+                .addVisitor(Emphasis.class, this::visitDelimited)
 
-        builder.addVisitor(SoftLineBreak.class, this::visitSoftLineBreak);
-        builder.addVisitor(HardLineBreak.class, this::visitHardLineBreak);
+                .addVisitor(SoftLineBreak.class, this::visitSoftLineBreak)
+                .addVisitor(HardLineBreak.class, this::visitHardLineBreak)
 
-        builder.addVisitor(Heading.class, this::visitHeading);
-        builder.addVisitor(Paragraph.class, this::visitParagraph);
+                .addVisitor(Heading.class, this::visitHeading)
+                .addVisitor(Paragraph.class, this::visitParagraph)
 
-        builder.addVisitor(BulletListItem.class, this::visitListItem);
-        builder.addVisitor(OrderedListItem.class, this::visitListItem);
+                .addVisitor(BulletListItem.class, this::visitListItem)
+                .addVisitor(OrderedListItem.class, this::visitListItem)
 
-        builder.addVisitor(BulletList.class, this::visitSimpleBlock);
-        builder.addVisitor(OrderedList.class, this::visitSimpleBlock);
+                .addVisitor(BulletList.class, this::visitSimpleBlock)
+                .addVisitor(OrderedList.class, this::visitSimpleBlock)
 
-        builder.addVisitor(BlockQuote.class, this::visitBlockQuote);
+                .addVisitor(BlockQuote.class, this::visitBlockQuote)
 
-        builder.appendSpanFactory(StrongEmphasis.class,
-                (config, node) -> new StyleSpan(TextPaint.BOLD));
-        builder.appendSpanFactory(Emphasis.class,
-                (config, node) -> new StyleSpan(TextPaint.ITALIC));
-        builder.appendSpanFactory(Heading.class,
-                (config, node) -> new RelativeSizeSpan(HEADING_SIZES[node.getLevel() - 1]));
-        builder.appendSpanFactory(BulletListItem.class,
-                (config, node) -> {
-                    int level = listLevel(node);
-                    return new BulletSpan(48, 0, 0, level);
-                });
-        builder.appendSpanFactory(BlockQuote.class,
-                (config, node) -> new QuoteSpan(48, 8, 0x40FFFFFF));
+                .addVisitor(Code.class, this::visitCode)
+                .addVisitor(FencedCodeBlock.class, this::visitFencedCodeBlock)
+                .addVisitor(IndentedCodeBlock.class, this::visitIndentedCodeBlock);
+
+        builder
+                .appendSpanFactory(StrongEmphasis.class,
+                        (config, node, props) -> new StyleSpan(TextPaint.BOLD))
+                .appendSpanFactory(Emphasis.class,
+                        (config, node, props) -> new StyleSpan(TextPaint.ITALIC))
+                .appendSpanFactory(Heading.class,
+                        (config, node, props) -> new RelativeSizeSpan(HEADING_SIZES[node.getLevel() - 1]))
+                .appendSpanFactory(BulletListItem.class,
+                        (config, node, props) -> {
+                            int level = listLevel(node);
+                            return new BulletSpan(48, 0, 0, level);
+                        })
+                .appendSpanFactory(BlockQuote.class,
+                        (config, node, props) -> new QuoteSpan(48, 8, 0x40FFFFFF))
+                .appendSpanFactory(Code.class, this::createCodeSpans)
+                .appendSpanFactory(FencedCodeBlock.class,
+                        (config, node, args) -> new CodeBlockSpan(config.theme()))
+                .appendSpanFactory(IndentedCodeBlock.class,
+                        (config, node, args) -> new CodeBlockSpan(config.theme()));
     }
 
     private void visitSimpleBlock(
@@ -73,10 +86,97 @@ public final class CorePlugin implements MarkdownPlugin {
             @NonNull Block block) {
         visitor.blockStart(block);
         int offset = visitor.length();
-        var spans = visitor.populateSpans(block, false);
+        var spans = visitor.preSetSpans(block, offset);
         visitor.visitChildren(block);
-        visitor.adjustSpansOffset(spans, offset);
+        visitor.postSetSpans(spans, offset);
         visitor.blockEnd(block);
+    }
+
+    private void visitCode(
+            @NonNull MarkdownVisitor visitor,
+            @NonNull Code code) {
+        int offset = visitor.length();
+        var spans = visitor.preSetSpans(code, offset);
+        visitor
+                .append('\u00a0')
+                .append(code.getText())
+                .append('\u00a0');
+        visitor.postSetSpans(spans, offset);
+    }
+
+    private void visitFencedCodeBlock(
+            @NonNull MarkdownVisitor visitor,
+            @NonNull FencedCodeBlock fencedCodeBlock) {
+        visitCodeBlock0(
+                visitor,
+                fencedCodeBlock.getInfo(),
+                fencedCodeBlock.getContentChars(),
+                fencedCodeBlock
+        );
+    }
+
+    private void visitIndentedCodeBlock(
+            @NonNull MarkdownVisitor visitor,
+            @NonNull IndentedCodeBlock indentedCodeBlock) {
+        visitCodeBlock0(
+                visitor,
+                null,
+                indentedCodeBlock.getContentChars(),
+                indentedCodeBlock
+        );
+    }
+
+    private void visitCodeBlock0(
+            @NonNull MarkdownVisitor visitor,
+            @Nullable CharSequence info,
+            @NonNull CharSequence code,
+            @NonNull Block block) {
+        visitor.blockStart(block);
+
+        int offset = visitor.length();
+        var spans = visitor.preSetSpans(block, offset);
+
+        visitor.append('\u00a0').append('\n')
+                .append(code);
+
+        visitor.ensureNewLine();
+
+        visitor.append('\u00a0');
+
+        visitor.postSetSpans(spans, offset);
+
+        visitor.blockEnd(block);
+    }
+
+    @NonNull
+    private Object createCodeSpans(
+            @NonNull MarkdownConfig config,
+            @NonNull Code code,
+            @NonNull DataSet args) {
+        MarkdownTheme theme = config.theme();
+        boolean applyTextColor = theme.getCodeTextColor() != 0;
+        boolean applyBackgroundColor = theme.getCodeBackgroundColor() != 0;
+        boolean applyTextSize = theme.getCodeTextSize() != 0;
+        int extra = 0;
+        if (applyTextColor) ++extra;
+        if (applyBackgroundColor) ++extra;
+        Object[] spans = new Object[extra + 2];
+        spans[0] = new TypefaceSpan(theme.getCodeTypeface());
+        if (applyTextSize) {
+            spans[1] = new AbsoluteSizeSpan(theme.getCodeTextSize());
+        } else {
+            spans[1] = new RelativeSizeSpan(0.75F);
+        }
+        if (extra > 0) {
+            extra = 2;
+            if (applyTextColor) {
+                spans[extra++] = new ForegroundColorSpan(theme.getCodeTextColor());
+            }
+            if (applyBackgroundColor) {
+                spans[extra++] = new BackgroundColorSpan(theme.getCodeBackgroundColor());
+            }
+        }
+        return spans;
     }
 
     private static int listLevel(@NonNull Node node) {
@@ -97,9 +197,9 @@ public final class CorePlugin implements MarkdownPlugin {
 
     private void visitDelimited(@NonNull MarkdownVisitor visitor, @NonNull Node node) {
         int offset = visitor.length();
-        var spans = visitor.populateSpans(node, false);
+        var spans = visitor.preSetSpans(node, offset);
         visitor.visitChildren(node);
-        visitor.adjustSpansOffset(spans, offset);
+        visitor.postSetSpans(spans, offset);
     }
 
     private void visitSoftLineBreak(@NonNull MarkdownVisitor visitor, @NonNull SoftLineBreak softLineBreak) {
@@ -115,9 +215,9 @@ public final class CorePlugin implements MarkdownPlugin {
             @NonNull Heading heading) {
         visitor.blockStart(heading);
         int offset = visitor.length();
-        var spans = visitor.populateSpans(heading, false);
+        var spans = visitor.preSetSpans(heading, offset);
         visitor.visitChildren(heading);
-        visitor.adjustSpansOffset(spans, offset);
+        visitor.postSetSpans(spans, offset);
         visitor.blockEnd(heading);
     }
 
@@ -131,9 +231,9 @@ public final class CorePlugin implements MarkdownPlugin {
         }
 
         int offset = visitor.length();
-        var spans = visitor.populateSpans(paragraph, false);
+        var spans = visitor.preSetSpans(paragraph, offset);
         visitor.visitChildren(paragraph);
-        visitor.adjustSpansOffset(spans, offset);
+        visitor.postSetSpans(spans, offset);
 
         if (!inTightList) {
             visitor.blockEnd(paragraph);
@@ -147,10 +247,10 @@ public final class CorePlugin implements MarkdownPlugin {
 
         int offset = visitor.length();
 
-        var spans = visitor.populateSpans(blockQuote, false);
+        var spans = visitor.preSetSpans(blockQuote, offset);
 
         visitor.visitChildren(blockQuote);
-        visitor.adjustSpansOffset(spans, offset);
+        visitor.postSetSpans(spans, offset);
 
         visitor.blockEnd(blockQuote);
     }
@@ -169,9 +269,9 @@ public final class CorePlugin implements MarkdownPlugin {
             @NonNull MarkdownVisitor visitor,
             @NonNull ListItem listItem) {
         int offset = visitor.length();
-        var spans = visitor.populateSpans(listItem, false);
+        var spans = visitor.preSetSpans(listItem, offset);
         visitor.visitChildren(listItem);
-        visitor.adjustSpansOffset(spans, offset);
+        visitor.postSetSpans(spans, offset);
 
         if (visitor.hasNext(listItem)) {
             visitor.ensureNewLine();

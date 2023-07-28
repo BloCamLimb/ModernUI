@@ -26,6 +26,7 @@ import icyllis.modernui.graphics.text.LineBreaker;
 import icyllis.modernui.text.method.TextKeyListener;
 import icyllis.modernui.text.style.*;
 import icyllis.modernui.text.style.LeadingMarginSpan.LeadingMarginSpan2;
+import icyllis.modernui.util.GrowingArrayUtils;
 import icyllis.modernui.view.KeyEvent;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 
@@ -59,6 +60,9 @@ public abstract class Layout {
     private Alignment mAlignment;
     private boolean mSpannedText;
     private final TextDirectionHeuristic mTextDir;
+    private SpanSet<LineBackgroundSpan> mLineBackgroundSpans;
+
+    private static final LineBackgroundSpan[] EMPTY_BACKGROUND_SPANS = {};
 
     /**
      * Subclasses of Layout use this constructor to set the display text,
@@ -156,11 +160,68 @@ public abstract class Layout {
      * @param lastLine  last line index (inclusive)
      * @see #drawText(Canvas, int, int)
      */
-    //TODO background span
     public final void drawBackground(@NonNull Canvas canvas, int firstLine, int lastLine) {
-        if (!mSpannedText) return;
+        if (!mSpannedText) {
+            return;
+        }
         assert firstLine >= 0 && lastLine >= firstLine;
+        if (mLineBackgroundSpans == null) {
+            mLineBackgroundSpans = new SpanSet<>(LineBackgroundSpan.class);
+        }
         Spanned buffer = (Spanned) mText;
+
+        int textLength = buffer.length();
+        mLineBackgroundSpans.init(buffer, 0, textLength);
+
+        if (!mLineBackgroundSpans.isEmpty()) {
+            int previousLineBottom = getLineTop(firstLine);
+            int previousLineEnd = getLineStart(firstLine);
+            LineBackgroundSpan[] spans = EMPTY_BACKGROUND_SPANS;
+            int spansLength = 0;
+            TextPaint paint = mPaint;
+            int spanEnd = 0;
+            final int width = mWidth;
+            for (int i = firstLine; i <= lastLine; i++) {
+                int start = previousLineEnd;
+                int end = getLineStart(i + 1);
+                previousLineEnd = end;
+
+                int ltop = previousLineBottom;
+                int lbottom = getLineTop(i + 1);
+                previousLineBottom = lbottom;
+                int lbaseline = lbottom - getLineDescent(i);
+
+                if (end >= spanEnd) {
+                    // These should be infrequent, so we'll use this so that
+                    // we don't have to check as often.
+                    spanEnd = mLineBackgroundSpans.getNextTransition(start, textLength);
+                    // All LineBackgroundSpans on a line contribute to its background.
+                    spansLength = 0;
+                    // Duplication of the logic of getParagraphSpans
+                    if (start != end || start == 0) {
+                        // Equivalent to a getSpans(start, end), but filling the 'spans' local
+                        // array instead to reduce memory allocation
+                        for (int j = 0; j < mLineBackgroundSpans.size(); j++) {
+                            // equal test is valid since both intervals are not empty by
+                            // construction
+                            if (mLineBackgroundSpans.mSpanStarts[j] >= end ||
+                                    mLineBackgroundSpans.mSpanEnds[j] <= start) continue;
+                            spans = GrowingArrayUtils.append(
+                                    spans, spansLength, mLineBackgroundSpans.get(j));
+                            spansLength++;
+                        }
+                    }
+                }
+
+                for (int n = 0; n < spansLength; n++) {
+                    LineBackgroundSpan lineBackgroundSpan = spans[n];
+                    lineBackgroundSpan.drawBackground(canvas, paint, 0, width,
+                            ltop, lbaseline, lbottom,
+                            buffer, start, end, i);
+                }
+            }
+        }
+        mLineBackgroundSpans.recycle();
     }
 
     /**
@@ -255,17 +316,22 @@ public abstract class Layout {
                     }
                 }
                 for (ParagraphStyle span : spans) {
-                    if (span instanceof LeadingMarginSpan margin) {
+                    // sometimes a span can implement both LMS and TMS
+                    if (span instanceof LeadingMarginSpan lms) {
+                        lms.drawMargin(canvas, paint, left, right, dir, ltop,
+                                lbaseline, lbottom, buf,
+                                start, end, isFirstParaLine, this);
                         if (dir == DIR_RIGHT_TO_LEFT) {
-                            margin.drawLeadingMargin(canvas, paint, right, dir, ltop,
-                                    lbaseline, lbottom, buf,
-                                    start, end, isFirstParaLine, this);
-                            right -= margin.getLeadingMargin(useFirstLineMargin);
+                            right -= lms.getLeadingMargin(useFirstLineMargin);
                         } else {
-                            margin.drawLeadingMargin(canvas, paint, left, dir, ltop,
-                                    lbaseline, lbottom, buf,
-                                    start, end, isFirstParaLine, this);
-                            left += margin.getLeadingMargin(useFirstLineMargin);
+                            left += lms.getLeadingMargin(useFirstLineMargin);
+                        }
+                    }
+                    if (span instanceof TrailingMarginSpan tms) {
+                        if (dir == DIR_LEFT_TO_RIGHT) {
+                            right -= tms.getTrailingMargin();
+                        } else {
+                            left += tms.getTrailingMargin();
                         }
                     }
                 }
@@ -598,7 +664,8 @@ public abstract class Layout {
      * leading margin indent, but excluding trailing whitespace.
      */
     public float getLineMax(int line) {
-        float margin = getParagraphLeadingMargin(line);
+        float margin = getParagraphLeadingMargin(line) +
+                getParagraphTrailingMargin(line);
         float signedExtent = getLineExtent(line, false);
         return margin + (signedExtent >= 0 ? signedExtent : -signedExtent);
     }
@@ -608,7 +675,8 @@ public abstract class Layout {
      * leading margin indent and trailing whitespace.
      */
     public float getLineWidth(int line) {
-        float margin = getParagraphLeadingMargin(line);
+        float margin = getParagraphLeadingMargin(line) +
+                getParagraphTrailingMargin(line);
         float signedExtent = getLineExtent(line, true);
         return margin + (signedExtent >= 0 ? signedExtent : -signedExtent);
     }
@@ -758,9 +826,12 @@ public abstract class Layout {
      */
     public final int getParagraphLeft(int line) {
         int left = 0;
+        if (!mSpannedText) {
+            return left;
+        }
         int dir = getParagraphDirection(line);
-        if (dir == DIR_RIGHT_TO_LEFT || !mSpannedText) {
-            return left; // leading margin has no impact, or no styles
+        if (dir == DIR_RIGHT_TO_LEFT) {
+            return getParagraphTrailingMargin(line);
         }
         return getParagraphLeadingMargin(line);
     }
@@ -770,9 +841,12 @@ public abstract class Layout {
      */
     public final int getParagraphRight(int line) {
         int right = mWidth;
+        if (!mSpannedText) {
+            return right;
+        }
         int dir = getParagraphDirection(line);
-        if (dir == DIR_LEFT_TO_RIGHT || !mSpannedText) {
-            return right; // leading margin has no impact, or no styles
+        if (dir == DIR_LEFT_TO_RIGHT) {
+            return right - getParagraphTrailingMargin(line);
         }
         return right - getParagraphLeadingMargin(line);
     }
@@ -1433,6 +1507,37 @@ public abstract class Layout {
     }
 
     /**
+     * Returns the effective trailing margin (unsigned) for this line.
+     *
+     * @param line the line index
+     * @return the trailing margin of this line
+     */
+    private int getParagraphTrailingMargin(int line) {
+        if (!mSpannedText) {
+            return 0;
+        }
+        Spanned spanned = (Spanned) mText;
+
+        int lineStart = getLineStart(line);
+        int lineEnd = getLineEnd(line);
+        int spanEnd = spanned.nextSpanTransition(lineStart, lineEnd,
+                TrailingMarginSpan.class);
+        List<TrailingMarginSpan> spans = getParagraphSpans(spanned, lineStart, spanEnd,
+                TrailingMarginSpan.class);
+        if (spans.isEmpty()) {
+            return 0; // no trailing margin span;
+        }
+
+        int margin = 0;
+
+        for (TrailingMarginSpan span : spans) {
+            margin += span.getTrailingMargin();
+        }
+
+        return margin;
+    }
+
+    /**
      * Determine whether we should clamp cursor position. Currently it's
      * only robust for left-aligned displays.
      */
@@ -1826,13 +1931,18 @@ public abstract class Layout {
             final int dir = mt.getParagraphDir();
             boolean hasTabs = false;
             TabStops tabStops = null;
-            // leading margins should be taken into account when measuring a paragraph
+            // margins should be taken into account when measuring a paragraph
             int margin = 0;
             if (text instanceof Spanned spanned) {
-                List<LeadingMarginSpan> spans = getParagraphSpans(spanned, start, end,
+                List<LeadingMarginSpan> leadingMarginSpans = getParagraphSpans(spanned, start, end,
                         LeadingMarginSpan.class);
-                for (LeadingMarginSpan lms : spans) {
+                for (LeadingMarginSpan lms : leadingMarginSpans) {
                     margin += lms.getLeadingMargin(true);
+                }
+                List<TrailingMarginSpan> trailingMarginSpans = getParagraphSpans(spanned, start, end,
+                        TrailingMarginSpan.class);
+                for (TrailingMarginSpan tms : trailingMarginSpans) {
+                    margin += tms.getTrailingMargin();
                 }
             }
             for (char c : chars) {

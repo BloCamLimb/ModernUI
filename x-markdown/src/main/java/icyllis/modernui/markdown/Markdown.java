@@ -22,6 +22,7 @@ import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Document;
 import com.vladsch.flexmark.util.ast.Node;
 import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.core.Context;
 import icyllis.modernui.markdown.core.CorePlugin;
 import icyllis.modernui.text.Spanned;
 
@@ -35,24 +36,25 @@ public final class Markdown {
     private final Parser mParser;
     private final MarkdownConfig mConfig;
 
-    private final List<MarkdownPlugin> mPlugins;
+    private final List<Plugin> mPlugins;
 
-    Markdown(Parser parser, MarkdownConfig config, List<MarkdownPlugin> plugins) {
+    Markdown(Parser parser, MarkdownConfig config, List<Plugin> plugins) {
         mParser = parser;
         mConfig = config;
         mPlugins = plugins;
     }
 
     @NonNull
-    public static Markdown create() {
-        return new Markdown.Builder()
+    public static Markdown create(@NonNull Context context) {
+        Objects.requireNonNull(context);
+        return new Markdown.Builder(context)
                 .usePlugin(new CorePlugin())
                 .build();
     }
 
     @NonNull
     public Document parse(@NonNull String input) {
-        for (MarkdownPlugin plugin : mPlugins) {
+        for (Plugin plugin : mPlugins) {
             input = plugin.preProcess(input);
         }
         return mParser.parse(input);
@@ -71,7 +73,7 @@ public final class Markdown {
 
         visitor.visit(document);
 
-        return visitor.reverseBuilder();
+        return visitor.builder();
     }
 
     @NonNull
@@ -81,10 +83,15 @@ public final class Markdown {
 
     public static final class Builder {
 
-        private final LinkedHashSet<MarkdownPlugin> mExtensions = new LinkedHashSet<>();
+        private final Context mContext;
+        private final LinkedHashSet<Plugin> mExtensions = new LinkedHashSet<>();
+
+        public Builder(Context context) {
+            mContext = context;
+        }
 
         @NonNull
-        public Builder usePlugin(@NonNull MarkdownPlugin extension) {
+        public Builder usePlugin(@NonNull Plugin extension) {
             Objects.requireNonNull(extension);
             mExtensions.add(extension);
             return this;
@@ -95,15 +102,15 @@ public final class Markdown {
 
             MarkdownConfig.Builder builder = new MarkdownConfig.Builder();
 
-            List<MarkdownPlugin> plugins = new MarkdownPluginRegistry(mExtensions)
+            List<Plugin> plugins = new MarkdownPluginRegistry(mExtensions)
                     .process();
 
-            for (MarkdownPlugin plugin : plugins) {
+            for (Plugin plugin : plugins) {
                 plugin.configure(builder);
             }
 
             return new Markdown(Parser.builder().build(),
-                    builder.build(),
+                    builder.build(MarkdownTheme.create(mContext)),
                     Collections.unmodifiableList(plugins));
         }
     }

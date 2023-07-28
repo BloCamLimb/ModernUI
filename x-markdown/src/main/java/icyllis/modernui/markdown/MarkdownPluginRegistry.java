@@ -23,39 +23,45 @@ import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.markdown.core.CorePlugin;
 
 import java.util.*;
+import java.util.function.Consumer;
 
-public class MarkdownPluginRegistry {
+public class MarkdownPluginRegistry implements Plugin.Registry {
 
-    private final LinkedHashSet<MarkdownPlugin> mGiven;
-    private final HashSet<MarkdownPlugin> mFound;
-    private final HashSet<MarkdownPlugin> mVisited;
+    private final LinkedHashSet<Plugin> mGiven;
+    private final HashSet<Plugin> mFound;
+    private final HashSet<Plugin> mVisited;
 
-    private final ArrayList<MarkdownPlugin> mResults = new ArrayList<>();
+    private final ArrayList<Plugin> mResults = new ArrayList<>();
 
-    MarkdownPluginRegistry(LinkedHashSet<MarkdownPlugin> given) {
+    MarkdownPluginRegistry(LinkedHashSet<Plugin> given) {
         mGiven = given;
         mFound = new LinkedHashSet<>(given.size());
         mVisited = new HashSet<>();
     }
 
-    ArrayList<MarkdownPlugin> process() {
-        for (MarkdownPlugin plugin : mGiven) {
+    ArrayList<Plugin> process() {
+        for (Plugin plugin : mGiven) {
             visit(plugin);
         }
         return mResults;
     }
 
     @NonNull
-    public <P extends MarkdownPlugin> P require(@NonNull Class<? extends P> clazz) {
+    public <P extends Plugin> P require(@NonNull Class<P> clazz) {
         return get(clazz);
     }
 
-    private void visit(MarkdownPlugin plugin) {
+    @Override
+    public <P extends Plugin> void require(@NonNull Class<P> clazz, @NonNull Consumer<? super P> action) {
+        action.accept(get(clazz));
+    }
+
+    private void visit(Plugin plugin) {
         if (!mFound.contains(plugin)) {
             if (!mVisited.add(plugin)) {
                 throw new IllegalStateException("Cyclic dependency chain found: " + mVisited);
             }
-            plugin.register(this);
+            plugin.configure(this);
             mVisited.remove(plugin);
             if (mFound.add(plugin)) {
                 if (plugin.getClass() == CorePlugin.class) {
@@ -68,7 +74,7 @@ public class MarkdownPluginRegistry {
     }
 
     @NonNull
-    private <P extends MarkdownPlugin> P get(@NonNull Class<? extends P> clazz) {
+    private <P extends Plugin> P get(@NonNull Class<? extends P> clazz) {
         P plugin = find(mFound, clazz);
 
         if (plugin == null) {
@@ -83,8 +89,8 @@ public class MarkdownPluginRegistry {
     }
 
     @Nullable
-    private <P extends MarkdownPlugin> P find(Set<MarkdownPlugin> set, @NonNull Class<? extends P> clazz) {
-        for (MarkdownPlugin plugin : set) {
+    private <P extends Plugin> P find(Set<Plugin> set, @NonNull Class<? extends P> clazz) {
+        for (Plugin plugin : set) {
             if (clazz.isAssignableFrom(plugin.getClass())) {
                 return (P) plugin;
             }

@@ -21,6 +21,7 @@ package icyllis.modernui.markdown;
 import com.vladsch.flexmark.util.ast.Node;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.util.DataSet;
 
 import java.util.*;
 
@@ -29,16 +30,22 @@ import java.util.*;
  */
 public final class MarkdownConfig {
 
+    final MarkdownTheme mTheme;
     final Map<Class<? extends Node>, NodeVisitor<Node>> mVisitors;
     final BlockHandler mBlockHandler;
 
     private final Map<Class<? extends Node>, SpanFactory<Node>> mSpanFactories;
 
-    private MarkdownConfig(Map<Class<? extends Node>, NodeVisitor<Node>> visitors,
+    private MarkdownConfig(MarkdownTheme theme, Map<Class<? extends Node>, NodeVisitor<Node>> visitors,
                            BlockHandler blockHandler, Map<Class<? extends Node>, SpanFactory<Node>> spanFactories) {
+        mTheme = theme;
         mVisitors = new HashMap<>(visitors);
         mBlockHandler = blockHandler;
         mSpanFactories = new HashMap<>(spanFactories);
+    }
+
+    public MarkdownTheme theme() {
+        return mTheme;
     }
 
     SpanFactory<Node> getSpanFactory(Class<? extends Node> clazz) {
@@ -62,45 +69,48 @@ public final class MarkdownConfig {
             return this;
         }
 
+        @SuppressWarnings("unchecked")
         @NonNull
         public <N extends Node> Builder appendSpanFactory(@NonNull Class<? extends N> clazz,
                                                           @Nullable SpanFactory<N> factory) {
-            SpanFactory<Node> one = mSpanFactories.get(clazz);
-            if (one != null) {
-                if (one instanceof CompositeSpanFactory<Node> f) {
-                    f.mList.add((SpanFactory<Node>) factory);
+            SpanFactory<Node> oldFactory = mSpanFactories.get(clazz);
+            SpanFactory<Node> newFactory = (SpanFactory<Node>) factory;
+            if (oldFactory != null) {
+                if (oldFactory instanceof CompositeSpanFactory<Node> list) {
+                    list.add(newFactory);
                 } else {
-                    mSpanFactories.put(clazz, new CompositeSpanFactory<>(one, (SpanFactory<Node>) factory));
+                    mSpanFactories.put(clazz, new CompositeSpanFactory<>(oldFactory, newFactory));
                 }
             } else {
-                mSpanFactories.put(clazz, (SpanFactory<Node>) factory);
+                mSpanFactories.put(clazz, newFactory);
             }
             return this;
         }
 
-        public MarkdownConfig build() {
+        @NonNull
+        public MarkdownConfig build(MarkdownTheme theme) {
             BlockHandler blockHandler = mBlockHandler;
-            if(blockHandler == null) {
+            if (blockHandler == null) {
                 blockHandler = new DefaultBlockHandler();
             }
-            return new MarkdownConfig(mVisitors, blockHandler, mSpanFactories);
+            return new MarkdownConfig(theme, mVisitors, blockHandler, mSpanFactories);
         }
 
-        static class CompositeSpanFactory<N extends Node> implements SpanFactory<N> {
-
-            final ArrayList<SpanFactory<N>> mList = new ArrayList<>();
+        static class CompositeSpanFactory<N extends Node>
+                extends ArrayList<SpanFactory<N>>
+                implements SpanFactory<N> {
 
             public CompositeSpanFactory(SpanFactory<N> first, SpanFactory<N> second) {
-                mList.add(first);
-                mList.add(second);
+                add(first);
+                add(second);
             }
 
             @Override
-            public Object create(@NonNull MarkdownConfig config, @NonNull N node) {
-                int n = mList.size();
+            public Object create(@NonNull MarkdownConfig config, @NonNull N node, @NonNull DataSet args) {
+                int n = size();
                 Object[] spans = new Object[n];
                 for (int i = 0; i < n; i++) {
-                    spans[i] = mList.get(i).create(config, node);
+                    spans[i] = get(i).create(config, node, args);
                 }
                 return spans;
             }

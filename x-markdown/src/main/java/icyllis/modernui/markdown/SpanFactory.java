@@ -20,9 +20,18 @@ package icyllis.modernui.markdown;
 
 import com.vladsch.flexmark.util.ast.Node;
 import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.util.DataSet;
 
 @FunctionalInterface
 public interface SpanFactory<N extends Node> {
 
-    Object create(@NonNull MarkdownConfig config, @NonNull N node);
+    /**
+     * Create a span object or an array of span objects for the given node.
+     *
+     * @param config context options
+     * @param node   AST node
+     * @param args   optional arguments
+     * @return span, array of spans, or null
+     */
+    Object create(@NonNull MarkdownConfig config, @NonNull N node, @NonNull DataSet args);
 }

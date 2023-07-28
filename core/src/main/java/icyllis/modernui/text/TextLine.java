@@ -848,7 +848,7 @@ public class TextLine {
                 } else {
                     // We might have a replacement that uses the draw
                     // state, otherwise measure state would suffice.
-                    span.updateMeasureState(wp);
+                    span.updateDrawState(wp);
                 }
             }
 
@@ -869,7 +869,7 @@ public class TextLine {
                         mStart;
 
                 final int offset = Math.min(jnext, mlimit);
-                activePaint.set(wp);
+                activePaint.set(mPaint);
                 for (int k = 0; k < mCharacterStyleSpanSet.size(); k++) {
                     // Intentionally using >= and <= as explained above
                     if ((mCharacterStyleSpanSet.mSpanStarts[k] >= mStart + offset) ||
