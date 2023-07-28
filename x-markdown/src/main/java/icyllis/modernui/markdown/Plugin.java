@@ -20,16 +20,36 @@ package icyllis.modernui.markdown;
 
 import icyllis.modernui.annotation.NonNull;
 
-/**
- * An extension point for a {@link Markdown}.
- */
-public interface MarkdownPlugin {
+import java.util.function.Consumer;
 
-    default void register(@NonNull MarkdownPluginRegistry registry) {
+/**
+ * Class represents a plugin (extension) to {@link Markdown} to configure how parsing and rendering
+ * of markdown is carried on.
+ */
+public interface Plugin {
+
+    /**
+     * @see #configure(Registry)
+     */
+    interface Registry {
+
+        @NonNull
+        <P extends Plugin> P require(@NonNull Class<P> plugin);
+
+        <P extends Plugin> void require(
+                @NonNull Class<P> plugin,
+                @NonNull Consumer<? super P> action);
     }
 
     /**
+     * This method will be called before any other during {@link Markdown} instance construction.
      *
+     * @param registry the plugin registry
+     */
+    default void configure(@NonNull Registry registry) {
+    }
+
+    /**
      * @param builder
      */
     default void configure(@NonNull MarkdownConfig.Builder builder) {

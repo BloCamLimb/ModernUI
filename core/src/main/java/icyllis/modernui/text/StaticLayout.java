@@ -22,8 +22,7 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.text.FontMetricsInt;
 import icyllis.modernui.graphics.text.LayoutCache;
 import icyllis.modernui.graphics.text.LineBreaker;
-import icyllis.modernui.text.style.LeadingMarginSpan;
-import icyllis.modernui.text.style.TabStopSpan;
+import icyllis.modernui.text.style.*;
 import icyllis.modernui.util.GrowingArrayUtils;
 import icyllis.modernui.util.Pools;
 import org.apache.logging.log4j.Marker;
@@ -466,11 +465,18 @@ public class StaticLayout extends Layout {
             int restWidth = outerWidth;
 
             if (spanned != null) {
-                List<LeadingMarginSpan> sp = getParagraphSpans(spanned, paraStart, paraEnd,
+                List<LeadingMarginSpan> leadingMarginSpans = getParagraphSpans(spanned, paraStart, paraEnd,
                         LeadingMarginSpan.class);
-                for (LeadingMarginSpan lms : sp) {
+                for (LeadingMarginSpan lms : leadingMarginSpans) {
                     firstWidth -= lms.getLeadingMargin(true);
                     restWidth -= lms.getLeadingMargin(false);
+                }
+                List<TrailingMarginSpan> trailingMarginSpans = getParagraphSpans(spanned, paraStart, paraEnd,
+                        TrailingMarginSpan.class);
+                for (TrailingMarginSpan tms : trailingMarginSpans) {
+                    int margin = tms.getTrailingMargin();
+                    firstWidth -= margin;
+                    restWidth -= margin;
                 }
             }
 

@@ -356,7 +356,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
     private void loadDefaultTypeface() {
         Set<FontFamily> set = new LinkedHashSet<>();
 
-        try (InputStream stream = new FileInputStream("F:/Torus Regular.otf")) {
+        try (InputStream stream = new FileInputStream("E:/Free Fonts/biliw.otf")) {
             set.add(FontFamily.createFamily(stream, true));
         } catch (Exception ignored) {
         }
