@@ -21,7 +21,6 @@ package icyllis.modernui.graphics;
 import icyllis.arc3d.core.*;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.graphics.text.*;
-import icyllis.modernui.text.*;
 import icyllis.modernui.view.Gravity;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
@@ -964,8 +963,8 @@ public abstract class Canvas {
 
     /**
      * Draw array of glyphs with specified font in order <em>visually left-to-right</em>.
-     * The Paint must be the same as the one passed to any of {@link TextShaper} methods.
-     * The given arrays <b>MUST BE IMMUTABLE!</b>
+     * The Paint must be the same as the one passed to any of {@link icyllis.modernui.text.TextShaper} methods.
+     * All the given arrays <b>MUST BE IMMUTABLE!</b>
      *
      * @param glyphs         Array of glyph IDs. The length of array must be greater than or equal to
      *                       {@code glyphStart + glyphCount}.
@@ -987,7 +986,8 @@ public abstract class Canvas {
      * @param x              Additional amount of x offset of the glyph X positions.
      * @param y              Additional amount of y offset of the glyph Y positions.
      * @param paint          Paint used for drawing.
-     * @see TextShaper
+     * @see icyllis.modernui.text.TextShaper
+     * @see #drawText
      */
     public abstract void drawGlyphs(@NonNull int[] glyphs,
                                     int glyphOffset,
@@ -1001,13 +1001,13 @@ public abstract class Canvas {
     /**
      * Draw a single style run of positioned glyphs in order <em>visually left-to-right</em>,
      * where a single style run may contain multiple BiDi runs and font runs.
-     * The Paint must be the same as the one passed to any of {@link TextShaper} methods.
+     * The Paint must be the same as the one passed to any of {@link icyllis.modernui.text.TextShaper} methods.
      *
      * @param text  A sequence of positioned glyphs.
      * @param x     Additional amount of x offset of the glyph X positions.
      * @param y     Additional amount of y offset of the glyph Y positions.
      * @param paint Paint used for drawing.
-     * @see TextShaper
+     * @see icyllis.modernui.text.TextShaper
      */
     public final void drawText(@NonNull ShapedText text,
                                float x, float y, @NonNull Paint paint) {
@@ -1017,39 +1017,40 @@ public abstract class Canvas {
     /**
      * Draw a single style run of positioned glyphs in order <em>visually left-to-right</em>,
      * where a single style run may contain multiple BiDi runs and font runs.
-     * The Paint must be the same as the one passed to any of {@link TextShaper} methods.
+     * The Paint must be the same as the one passed to any of {@link icyllis.modernui.text.TextShaper} methods.
      *
      * @param text  A sequence of positioned glyphs.
      * @param start Number of glyphs to skip before drawing text.
-     * @param end   Number of glyphs to skip + Number of glyphs to be drawn.
+     * @param count Number of glyphs to be drawn.
      * @param x     Additional amount of x offset of the glyph X positions.
      * @param y     Additional amount of y offset of the glyph Y positions.
      * @param paint Paint used for drawing.
-     * @see TextShaper
+     * @see icyllis.modernui.text.TextShaper
      */
-    public final void drawText(@NonNull ShapedText text, int start, int end,
+    public final void drawText(@NonNull ShapedText text, int start, int count,
                                float x, float y, @NonNull Paint paint) {
-        if ((start | end | end - start | end - text.getGlyphCount()) < 0) {
+        if ((start | count | start + count |
+                text.getGlyphCount() - start - count) < 0) {
             throw new IndexOutOfBoundsException();
         }
-        if (text.getGlyphCount() == 0) {
+        if (count == 0) {
             return;
         }
-        FontFamily lastFont = text.getFont(0);
+        FontFamily lastFont = text.getFont(start);
         int lastPos = start;
-        int curPos = start + 1;
-        for (; curPos < end; curPos++) {
-            FontFamily curFont = text.getFont(curPos);
+        int currPos = start + 1;
+        for (int end = start + count; currPos < end; currPos++) {
+            FontFamily curFont = text.getFont(currPos);
             if (lastFont != curFont) {
                 drawGlyphs(text.getGlyphs(), lastPos,
-                        text.getPositions(), lastPos << 1, curPos - lastPos,
+                        text.getPositions(), lastPos << 1, currPos - lastPos,
                         lastFont, x, y, paint);
                 lastFont = curFont;
-                lastPos = curPos;
+                lastPos = currPos;
             }
         }
         drawGlyphs(text.getGlyphs(), lastPos,
-                text.getPositions(), lastPos << 1, curPos - lastPos,
+                text.getPositions(), lastPos << 1, currPos - lastPos,
                 lastFont, x, y, paint);
     }
 
@@ -1062,124 +1063,36 @@ public abstract class Canvas {
      * @param x     the horizontal position at which to draw the text between runs
      * @param y     the vertical baseline of the line of text
      * @param paint the paint used to draw the text, only color will be taken
+     * @see icyllis.modernui.text.TextUtils#drawTextRun
      */
-    public final void drawTextRun(LayoutPiece piece, float x, float y, Paint paint) {
+    @ApiStatus.Internal
+    public final void drawTextRun(@NonNull LayoutPiece piece, float x, float y, @NonNull Paint paint) {
+        //TODO this bounds check is not correct, this is logical bounds not visual pixel bounds
         if (piece.getAdvance() == 0 || (piece.getGlyphs().length == 0)
                 || quickReject(x, y - piece.getAscent(),
                 x + piece.getAdvance(), y + piece.getDescent())) {
             return;
         }
+        final int nGlyphs = piece.getGlyphCount();
+        if (nGlyphs == 0) {
+            return;
+        }
         FontFamily lastFont = piece.getFont(0);
-        int nGlyphs = piece.getGlyphCount();
         int lastPos = 0;
-        int curPos = 1;
-        for (; curPos < nGlyphs; curPos++) {
-            FontFamily curFont = piece.getFont(curPos);
+        int currPos = 1;
+        for (; currPos < nGlyphs; currPos++) {
+            FontFamily curFont = piece.getFont(currPos);
             if (lastFont != curFont) {
                 drawGlyphs(piece.getGlyphs(), lastPos,
-                        piece.getPositions(), lastPos << 1, curPos - lastPos,
+                        piece.getPositions(), lastPos << 1, currPos - lastPos,
                         lastFont, x, y, paint);
                 lastFont = curFont;
-                lastPos = curPos;
+                lastPos = currPos;
             }
         }
         drawGlyphs(piece.getGlyphs(), lastPos,
-                piece.getPositions(), lastPos << 1, curPos - lastPos,
+                piece.getPositions(), lastPos << 1, currPos - lastPos,
                 lastFont, x, y, paint);
-    }
-
-    /**
-     * Draw a run of text, all in a single direction, with optional context for complex text
-     * shaping.
-     * <p>
-     * See {@link #drawTextRun(CharSequence, int, int, int, int, float, float, boolean, TextPaint)} for
-     * more details. This method uses a character array rather than CharSequence to represent the
-     * string. Also, to be consistent with the pattern established in {@link #drawText}, in this
-     * method {@code count} and {@code contextCount} are used rather than offsets of the end
-     * position; {@code count = end - start, contextCount = contextEnd -
-     * contextStart}.
-     *
-     * @param text         the text to render
-     * @param start        the start of the text to render. Data before this position can be used for
-     *                     shaping context.
-     * @param end          the end of the text to render. Data at or after this position can be used for
-     *                     shaping context.
-     * @param contextStart the index of the start of the shaping context
-     * @param contextEnd   the index of the end of the shaping context
-     * @param x            the x position at which to draw the text
-     * @param y            the y position at which to draw the text
-     * @param isRtl        whether the run is in RTL direction
-     * @param paint        the paint
-     */
-    public final void drawTextRun(@NonNull char[] text, int start, int end, int contextStart,
-                                  int contextEnd, float x, float y, boolean isRtl, @NonNull TextPaint paint) {
-        if ((start | end | contextStart | contextEnd | start - contextStart | end - start
-                | contextEnd - end | text.length - contextEnd) < 0) {
-            throw new IndexOutOfBoundsException();
-        }
-        if (start == end) {
-            return;
-        }
-        ShapedText.doLayoutRun(
-                text, contextStart, contextEnd,
-                start, end, isRtl, paint.getInternalPaint(), null,
-                (piece, __, curAdvance) -> {
-                    drawTextRun(piece, x + curAdvance, y, paint);
-                }
-        );
-    }
-
-    /**
-     * Draw a run of text, all in a single direction, with optional context for complex text
-     * shaping.
-     * <p>
-     * The run of text includes the characters from {@code start} to {@code end} in the text. In
-     * addition, the range {@code contextStart} to {@code contextEnd} is used as context for the
-     * purpose of complex text shaping, such as Arabic text potentially shaped differently based on
-     * the text next to it.
-     * <p>
-     * All text outside the range {@code contextStart..contextEnd} is ignored. The text between
-     * {@code start} and {@code end} will be laid out and drawn. The context range is useful for
-     * contextual shaping, e.g. Kerning, Arabic contextual form.
-     * <p>
-     * The direction of the run is explicitly specified by {@code isRtl}. Thus, this method is
-     * suitable only for runs of a single direction. Alignment of the text is as determined by the
-     * Paint's TextAlign value. Further, {@code 0 <= contextStart <= start <= end <= contextEnd
-     * <= text.length} must hold on entry.
-     *
-     * @param text         the text to render
-     * @param start        the start of the text to render. Data before this position can be used for
-     *                     shaping context.
-     * @param end          the end of the text to render. Data at or after this position can be used for
-     *                     shaping context.
-     * @param contextStart the index of the start of the shaping context
-     * @param contextEnd   the index of the end of the shaping context
-     * @param x            the x position at which to draw the text
-     * @param y            the y position at which to draw the text
-     * @param isRtl        whether the run is in RTL direction
-     * @param paint        the paint
-     * @see #drawTextRun(char[], int, int, int, int, float, float, boolean, TextPaint)
-     */
-    public final void drawTextRun(@NonNull CharSequence text, int start, int end, int contextStart,
-                                  int contextEnd, float x, float y, boolean isRtl, @NonNull TextPaint paint) {
-        if ((start | end | contextStart | contextEnd | start - contextStart | end - start
-                | contextEnd - end | text.length() - contextEnd) < 0) {
-            throw new IndexOutOfBoundsException();
-        }
-        if (start == end) {
-            return;
-        }
-        final int len = contextEnd - contextStart;
-        final char[] buf = TextUtils.obtain(len);
-        TextUtils.getChars(text, contextStart, contextEnd, buf, 0);
-        ShapedText.doLayoutRun(
-                buf, 0, len,
-                start - contextStart, end - contextStart, isRtl, paint.getInternalPaint(), null,
-                (piece, __, curAdvance) -> {
-                    drawTextRun(piece, x + curAdvance, y, paint);
-                }
-        );
-        TextUtils.recycle(buf);
     }
 
     /**

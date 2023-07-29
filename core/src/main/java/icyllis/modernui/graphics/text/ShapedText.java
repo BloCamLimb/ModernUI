@@ -22,12 +22,12 @@ import com.ibm.icu.text.Bidi;
 import com.ibm.icu.text.BidiRun;
 import icyllis.arc3d.core.MathUtil;
 import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.text.TextShaper;
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import it.unimi.dsi.fastutil.floats.FloatArrays;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntArrays;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.concurrent.Immutable;
 import java.util.*;
@@ -35,7 +35,7 @@ import java.util.function.Function;
 
 /**
  * Text shaping result object for single style text, a sequence of positioned glyphs.
- * You can get text shaping result by {@link TextShaper#shapeTextRun}, or directly
+ * You can get text shaping result by {@link icyllis.modernui.text.TextShaper#shapeText}, or directly
  * calling the constructor if no text direction heuristic algorithm is needed.
  * <p>
  * Text shaping is the process of translating a string of character codes (such as
@@ -385,12 +385,13 @@ public class ShapedText {
         assert mFontIndices == null || mFontIndices.length == mGlyphs.length;
     }
 
+    @FunctionalInterface
     public interface RunConsumer {
-
-        void accept(LayoutPiece piece, FontPaint paint, float curAdvance);
+        void accept(LayoutPiece piece, float offsetX);
     }
 
     // BiDi run, visual order, append layout pieces
+    @ApiStatus.Internal
     public static float doLayoutRun(char[] text, int contextStart, int contextLimit,
                                     int start, int limit, boolean isRtl, FontPaint paint,
                                     FontMetricsInt extent,
@@ -511,7 +512,7 @@ public class ShapedText {
                         advances, advanceOffset, srcAdvances.length);
             }
         } else {
-            consumer.accept(src, paint, curAdvance);
+            consumer.accept(src, curAdvance);
         }
         if (extent != null) {
             extent.extendBy(src.getAscent(), src.getDescent());

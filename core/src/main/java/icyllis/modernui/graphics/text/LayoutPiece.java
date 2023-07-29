@@ -26,6 +26,7 @@ import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 
+import javax.annotation.concurrent.Immutable;
 import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
@@ -40,6 +41,7 @@ import java.util.function.Function;
  * @see LayoutCache
  * @since 2.6
  */
+@Immutable
 public final class LayoutPiece {
 
     static final Graphics2D[] sGraphics = new Graphics2D[4];
