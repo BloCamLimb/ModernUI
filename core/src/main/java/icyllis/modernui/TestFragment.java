@@ -93,7 +93,7 @@ public class TestFragment extends Fragment {
 
         CompletableFuture.runAsync(() -> {
             String text = "My name is van";
-            var glyphs = TextShaper.shapeTextRun(text, 1, text.length() - 2, 0, text.length(),
+            var glyphs = TextShaper.shapeText(text, 1, text.length() - 2, 0, text.length(),
                     TextDirectionHeuristics.FIRSTSTRONG_LTR, new TextPaint());
             LOGGER.info("Shape \"{}\"\n{}\nMemory Usage: {} bytes", text, glyphs, glyphs.getMemoryUsage());
             LayoutPiece piece = LayoutCache.getOrCreate(
@@ -930,7 +930,7 @@ public class TestFragment extends Fragment {
                     Paint paint = Paint.obtain();
                     paint.setARGB(128, 140, 200, 240);
                     canvas.drawRoundRect(0, 1, getWidth(), getHeight() - 2, 4, paint);
-                    canvas.drawTextRun(mIndex, 0, mIndex.length(), 0, mIndex.length(), 20, getHeight() >> 1, false,
+                    TextUtils.drawTextRun(canvas, mIndex, 0, mIndex.length(), 0, mIndex.length(), 20, getHeight() >> 1, false,
                             mTextPaint);
                     paint.recycle();
                 }
@@ -983,7 +983,7 @@ public class TestFragment extends Fragment {
                 Paint paint = Paint.obtain();
                 paint.setARGB(128, 140, 200, 240);
                 canvas.drawRoundRect(0, 1, getWidth(), getHeight() - 2, 4, paint);
-                canvas.drawTextRun("18:52", 0, 5, 0, 5, getWidth() / 2f, offsetY + 24, false, mTextPaint);
+                TextUtils.drawTextRun(canvas, "18:52", 0, 5, 0, 5, getWidth() / 2f, offsetY + 24, false, mTextPaint);
                 paint.recycle();
             }
 

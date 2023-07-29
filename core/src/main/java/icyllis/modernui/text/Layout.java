@@ -392,7 +392,7 @@ public abstract class Layout {
 
             if (directions == Directions.ALL_LEFT_TO_RIGHT && !mSpannedText && !hasTab) {
                 // XXX: assumes there's nothing additional to be done
-                canvas.drawTextRun(buf, start, end, start, end, x, lbaseline, false, paint);
+                TextUtils.drawTextRun(canvas, buf, start, end, start, end, x, lbaseline, false, paint);
             } else {
                 tl.draw(canvas, x, ltop, lbaseline, lbottom);
             }

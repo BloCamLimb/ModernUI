@@ -23,8 +23,7 @@ import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.text.*;
 import icyllis.modernui.util.BinaryIO;
 
-import java.io.DataOutput;
-import java.io.IOException;
+import java.io.*;
 
 public class TypefaceSpan extends MetricAffectingSpan implements ParcelableSpan {
 
@@ -53,6 +52,11 @@ public class TypefaceSpan extends MetricAffectingSpan implements ParcelableSpan 
      */
     public TypefaceSpan(@NonNull Typeface typeface) {
         this(null, typeface);
+    }
+
+    public TypefaceSpan(@NonNull DataInput src) throws IOException {
+        mFamily = BinaryIO.readString(src);
+        mTypeface = null;
     }
 
     private TypefaceSpan(@Nullable String family, @Nullable Typeface typeface) {

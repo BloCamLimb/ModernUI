@@ -21,6 +21,8 @@ package icyllis.modernui.text;
 import com.ibm.icu.util.ULocale;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.text.ShapedText;
 import icyllis.modernui.text.style.*;
 import icyllis.modernui.util.BinaryIO;
 import icyllis.modernui.view.View;
@@ -372,13 +374,19 @@ public final class TextUtils {
         final var sp = new SpannableString(s);
         while ((type = in.readInt()) != 0) {
             switch (type) {
+                case ALIGNMENT_SPAN -> readSpan(in, sp, new AlignmentSpan.Standard(in));
                 case FOREGROUND_COLOR_SPAN -> readSpan(in, sp, new ForegroundColorSpan(in));
                 case RELATIVE_SIZE_SPAN -> readSpan(in, sp, new RelativeSizeSpan(in));
                 case STRIKETHROUGH_SPAN -> readSpan(in, sp, new StrikethroughSpan(in));
                 case UNDERLINE_SPAN -> readSpan(in, sp, new UnderlineSpan(in));
                 case STYLE_SPAN -> readSpan(in, sp, new StyleSpan(in));
+                case LEADING_MARGIN_SPAN -> readSpan(in, sp, new LeadingMarginSpan.Standard(in));
+                case URL_SPAN -> readSpan(in, sp, new URLSpan(in));
                 case BACKGROUND_COLOR_SPAN -> readSpan(in, sp, new BackgroundColorSpan(in));
+                case TYPEFACE_SPAN -> readSpan(in, sp, new TypefaceSpan(in));
                 case ABSOLUTE_SIZE_SPAN -> readSpan(in, sp, new AbsoluteSizeSpan(in));
+                case LINE_BACKGROUND_SPAN -> readSpan(in, sp, new LineBackgroundSpan.Standard(in));
+                case TRAILING_MARGIN_SPAN -> readSpan(in, sp, new TrailingMarginSpan.Standard(in));
             }
         }
         return sp;
@@ -386,6 +394,97 @@ public final class TextUtils {
 
     private static void readSpan(DataInput in, Spannable sp, Object o) throws IOException {
         sp.setSpan(o, in.readInt(), in.readInt(), in.readInt());
+    }
+
+    /**
+     * Draw a run of text, all in a single direction, with optional context for complex text
+     * shaping.
+     * <p>
+     * See {@link #drawTextRun(Canvas, CharSequence, int, int, int, int, float, float, boolean, TextPaint)} for
+     * more details. This method uses a character array rather than CharSequence to represent the
+     * string.
+     *
+     * @param canvas       the canvas
+     * @param text         the text to render
+     * @param start        the start of the text to render. Data before this position can be used for
+     *                     shaping context.
+     * @param end          the end of the text to render. Data at or after this position can be used for
+     *                     shaping context.
+     * @param contextStart the index of the start of the shaping context
+     * @param contextEnd   the index of the end of the shaping context
+     * @param x            the x position at which to draw the text
+     * @param y            the y position at which to draw the text
+     * @param isRtl        whether the run is in RTL direction
+     * @param paint        the paint
+     */
+    public static void drawTextRun(@NonNull Canvas canvas, @NonNull char[] text, int start, int end,
+                                   int contextStart, int contextEnd, float x, float y, boolean isRtl,
+                                   @NonNull TextPaint paint) {
+        if ((start | end | contextStart | contextEnd | start - contextStart | end - start
+                | contextEnd - end | text.length - contextEnd) < 0) {
+            throw new IndexOutOfBoundsException();
+        }
+        if (start == end) {
+            return;
+        }
+        ShapedText.doLayoutRun(
+                text, contextStart, contextEnd,
+                start, end, isRtl, paint.getInternalPaint(), null,
+                (piece, offsetX) -> canvas.drawTextRun(piece, x + offsetX, y, paint)
+        );
+    }
+
+    /**
+     * Draw a run of text, all in a single direction, with optional context for complex text
+     * shaping.
+     * <p>
+     * The run of text includes the characters from {@code start} to {@code end} in the text. In
+     * addition, the range {@code contextStart} to {@code contextEnd} is used as context for the
+     * purpose of complex text shaping, such as Arabic text potentially shaped differently based on
+     * the text next to it.
+     * <p>
+     * All text outside the range {@code contextStart..contextEnd} is ignored. The text between
+     * {@code start} and {@code end} will be laid out and drawn. The context range is useful for
+     * contextual shaping, e.g. Kerning, Arabic contextual form.
+     * <p>
+     * The direction of the run is explicitly specified by {@code isRtl}. Thus, this method is
+     * suitable only for runs of a single direction. Alignment of the text is as determined by the
+     * Paint's TextAlign value. Further, {@code 0 <= contextStart <= start <= end <= contextEnd
+     * <= text.length} must hold on entry.
+     *
+     * @param canvas       the canvas
+     * @param text         the text to render
+     * @param start        the start of the text to render. Data before this position can be used for
+     *                     shaping context.
+     * @param end          the end of the text to render. Data at or after this position can be used for
+     *                     shaping context.
+     * @param contextStart the index of the start of the shaping context
+     * @param contextEnd   the index of the end of the shaping context
+     * @param x            the x position at which to draw the text
+     * @param y            the y position at which to draw the text
+     * @param isRtl        whether the run is in RTL direction
+     * @param paint        the paint
+     * @see #drawTextRun(Canvas, char[], int, int, int, int, float, float, boolean, TextPaint)
+     */
+    public static void drawTextRun(@NonNull Canvas canvas, @NonNull CharSequence text, int start, int end,
+                                   int contextStart, int contextEnd, float x, float y, boolean isRtl,
+                                   @NonNull TextPaint paint) {
+        if ((start | end | contextStart | contextEnd | start - contextStart | end - start
+                | contextEnd - end | text.length() - contextEnd) < 0) {
+            throw new IndexOutOfBoundsException();
+        }
+        if (start == end) {
+            return;
+        }
+        final int len = contextEnd - contextStart;
+        final char[] buf = obtain(len);
+        getChars(text, contextStart, contextEnd, buf, 0);
+        ShapedText.doLayoutRun(
+                buf, 0, len,
+                start - contextStart, end - contextStart, isRtl, paint.getInternalPaint(), null,
+                (piece, offsetX) -> canvas.drawTextRun(piece, x + offsetX, y, paint)
+        );
+        recycle(buf);
     }
 
     /**

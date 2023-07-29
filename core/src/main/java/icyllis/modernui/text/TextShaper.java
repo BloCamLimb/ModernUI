@@ -31,7 +31,7 @@ import java.util.Objects;
  * <p>
  * Text shaping is a preprocess for drawing text into canvas with glyphs. The glyph is a most
  * primitive unit of the text drawing, consist of glyph identifier in the font file and its position
- * and style. You can draw the shape result to Canvas by calling {@link Canvas#drawGlyphs}.
+ * and style. You can draw the shape result to Canvas by calling {@link Canvas#drawText}.
  * <p>
  * For most of the use cases, {@link #shapeText} will provide text shaping
  * functionalities needed.
@@ -47,20 +47,24 @@ public class TextShaper {
         /**
          * Accept text shape result.
          * <p>
-         * The implementation must not keep reference of paint since it will be mutated for the
-         * subsequent styles. Also, for saving heap size, keep only necessary members in the
-         * {@link TextPaint} instead of copying {@link TextPaint} object.
+         * The implementation must <em>not</em> keep reference of paint since it will be mutated
+         * for the subsequent styles. Also, for saving heap size, keep only necessary members in
+         * the {@link TextPaint} instead of copying {@link TextPaint} object.
          *
-         * @param start  The start index of the shaped text.
-         * @param count  The length of the shaped text.
-         * @param glyphs The shape result.
-         * @param paint  The paint to be used for drawing.
+         * @param start   The start index of the shaped text.
+         * @param count   The length of the shaped text.
+         * @param glyphs  The shape result.
+         * @param paint   The paint to be used for drawing.
+         * @param offsetX The additional X offset (relative to the left) of this style run.
+         * @param offsetY The additional Y offset (relative to the top) of this style run.
          */
         void accept(
                 @IntRange(from = 0) int start,
                 @IntRange(from = 0) int count,
                 @NonNull ShapedText glyphs,
-                @NonNull TextPaint paint);
+                @NonNull TextPaint paint,
+                float offsetX,
+                float offsetY);
     }
 
     /**
@@ -81,12 +85,27 @@ public class TextShaper {
             @NonNull CharSequence text, @IntRange(from = 0) int start,
             @IntRange(from = 0) int count, @NonNull TextDirectionHeuristic dir,
             @NonNull TextPaint paint, @NonNull GlyphsConsumer consumer) {
-        //TODO
+        if (!(text instanceof Spanned)) {
+            consumer.accept(start, count,
+                    shapeText(text, start, count, start, count, dir, paint),
+                    paint, 0, 0);
+            return;
+        }
         MeasuredParagraph mp = MeasuredParagraph.buildForBidi(
                 text, start, start + count, dir, null);
+        TextLine tl = TextLine.obtain();
         try {
-
+            // runs are in logical order
+            tl.set(paint, text, start, start + count,
+                    mp.getParagraphDir(),
+                    mp.getDirections(0, count),
+                    false /* tabstop is not supported */,
+                    null,
+                    -1, -1 // ellipsis is not supported.
+            );
+            tl.shape(consumer);
         } finally {
+            tl.recycle();
             mp.recycle();
         }
     }
@@ -108,7 +127,7 @@ public class TextShaper {
      * @return a shape result.
      */
     @NonNull
-    public static ShapedText shapeTextRun(
+    public static ShapedText shapeText(
             @NonNull char[] text, @IntRange(from = 0) int start,
             @IntRange(from = 0) int count, int contextStart, int contextCount,
             @NonNull TextDirectionHeuristic dir, @NonNull TextPaint paint) {
@@ -155,7 +174,7 @@ public class TextShaper {
      * @return a shape result
      */
     @NonNull
-    public static ShapedText shapeTextRun(
+    public static ShapedText shapeText(
             @NonNull CharSequence text, @IntRange(from = 0) int start,
             @IntRange(from = 0) int count, int contextStart, int contextCount,
             @NonNull TextDirectionHeuristic dir, @NonNull TextPaint paint) {
@@ -164,7 +183,7 @@ public class TextShaper {
         char[] buf = TextUtils.obtain(contextCount);
         try {
             TextUtils.getChars(text, contextStart, contextStart + contextCount, buf, 0);
-            return shapeTextRun(buf, start - contextStart, count,
+            return shapeText(buf, start - contextStart, count,
                     0, contextCount, dir, paint);
         } finally {
             TextUtils.recycle(buf);
