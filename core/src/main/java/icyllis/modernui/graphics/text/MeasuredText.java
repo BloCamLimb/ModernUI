@@ -444,7 +444,7 @@ public class MeasuredText {
             final IntArrayList offsets = new IntArrayList();
             final int[] offset = {mIsRtl ? mEnd : mStart};
             // context range is the same as StyleRun's range
-            mAdvance = ShapedText.doLayoutRun(text,
+            mAdvance = ShapedText.layoutRun(text,
                     mStart, mEnd,
                     mStart, mEnd,
                     mIsRtl, mPaint,

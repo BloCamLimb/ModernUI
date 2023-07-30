@@ -25,7 +25,7 @@ import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.text.*;
 import icyllis.modernui.util.DataSet;
 
-import java.util.*;
+import java.util.Map;
 
 /**
  * Configurable node visitor handler which does not know anything about node subclasses
@@ -41,6 +41,7 @@ public final class MarkdownVisitor implements NodeVisitHandler {
 
     private final DataSet mRenderArguments = new DataSet();
 
+    @Nullable
     private final BlockHandler mBlockHandler;
 
     MarkdownVisitor(MarkdownConfig config) {
@@ -121,11 +122,21 @@ public final class MarkdownVisitor implements NodeVisitHandler {
     }
 
     public void blockStart(@NonNull Node node) {
-        mBlockHandler.blockStart(this, node);
+        if (mBlockHandler != null) {
+            mBlockHandler.blockStart(this, node);
+        } else {
+            ensureNewLine();
+        }
     }
 
     public void blockEnd(@NonNull Node node) {
-        mBlockHandler.blockEnd(this, node);
+        if (mBlockHandler != null) {
+            mBlockHandler.blockEnd(this, node);
+        } else {
+            if (hasNext(node)) {
+                ensureNewLine();
+            }
+        }
     }
 
     @Nullable

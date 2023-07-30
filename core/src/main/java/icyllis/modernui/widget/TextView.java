@@ -20,6 +20,8 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.R;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.*;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
@@ -32,8 +34,6 @@ import icyllis.modernui.view.*;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import org.jetbrains.annotations.VisibleForTesting;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.*;
 
 /**
@@ -116,16 +116,16 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     private int mLastLayoutDirection = LAYOUT_DIRECTION_UNDEFINED;
 
     // Do not update following mText/mSpannable/mPrecomputed except for setTextInternal()
-    @Nonnull
+    @NonNull
     private CharSequence mText = "";
     @Nullable
     private Spannable mSpannable;
     @Nullable
     private PrecomputedText mPrecomputed;
 
-    @Nonnull
+    @NonNull
     private CharSequence mTransformed = "";
-    @Nonnull
+    @NonNull
     private BufferType mBufferType = BufferType.NORMAL;
 
     @Nullable
@@ -180,7 +180,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
 
     private TextDirectionHeuristic mTextDir;
 
-    @Nonnull
+    @NonNull
     private InputFilter[] mFilters = NO_FILTERS;
 
     int mHighlightColor = 0x6633B5E5;
@@ -804,7 +804,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     /**
      * Returns drawables for the left, top, right, and bottom borders.
      */
-    @Nonnull
+    @NonNull
     public Drawable[] getCompoundDrawables() {
         final Drawables dr = mDrawables;
         if (dr != null) {
@@ -817,7 +817,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     /**
      * Returns drawables for the start, top, end, and bottom borders.
      */
-    @Nonnull
+    @NonNull
     public Drawable[] getCompoundDrawablesRelative() {
         final Drawables dr = mDrawables;
         if (dr != null) {
@@ -982,7 +982,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      *
      * @return the default primary {@link Locale} of the text in this TextView.
      */
-    @Nonnull
+    @NonNull
     public Locale getTextLocale() {
         return mTextPaint.getTextLocale();
     }
@@ -992,7 +992,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      *
      * @param locale the {@link Locale} for drawing text, must not be null.
      */
-    public void setTextLocale(@Nonnull Locale locale) {
+    public void setTextLocale(@NonNull Locale locale) {
         mTextPaint.setTextLocale(locale);
         if (mLayout != null) {
             nullLayouts();
@@ -1062,7 +1062,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      *
      * @see #getTypeface()
      */
-    public void setTypeface(@Nonnull Typeface tf) {
+    public void setTypeface(@NonNull Typeface tf) {
         if (mTextPaint.getTypeface() != tf) {
             mTextPaint.setTypeface(tf);
 
@@ -1080,7 +1080,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * @return The current Typeface.
      * @see #setTypeface(Typeface)
      */
-    @Nonnull
+    @NonNull
     public Typeface getTypeface() {
         return mTextPaint.getTypeface();
     }
@@ -1201,7 +1201,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      *
      * @return The base paint used for the text.
      */
-    @Nonnull
+    @NonNull
     public TextPaint getPaint() {
         return mTextPaint;
     }
@@ -1658,7 +1658,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      *
      * @return The text displayed by the text view.
      */
-    @Nonnull
+    @NonNull
     public CharSequence getText() {
         return mText;
     }
@@ -1680,7 +1680,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * @see Editable.Factory
      * @see BufferType#EDITABLE
      */
-    public final void setEditableFactory(@Nonnull Editable.Factory factory) {
+    public final void setEditableFactory(@NonNull Editable.Factory factory) {
         mEditableFactory = factory;
         setText(mText);
     }
@@ -1692,7 +1692,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * @see Spannable.Factory
      * @see BufferType#SPANNABLE
      */
-    public final void setSpannableFactory(@Nonnull Spannable.Factory factory) {
+    public final void setSpannableFactory(@NonNull Spannable.Factory factory) {
         mSpannableFactory = factory;
         setText(mText);
     }
@@ -1714,7 +1714,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      *                                  parameters used to create the PrecomputedText mismatches
      *                                  with this TextView.
      */
-    public final void setText(@Nonnull CharSequence text) {
+    public final void setText(@NonNull CharSequence text) {
         setText(text, mBufferType);
     }
 
@@ -1731,7 +1731,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * @param text text to be displayed
      * @see #setText(CharSequence)
      */
-    public final void setTextKeepState(@Nonnull CharSequence text) {
+    public final void setTextKeepState(@NonNull CharSequence text) {
         setTextKeepState(text, mBufferType);
     }
 
@@ -1751,7 +1751,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      *             stored as a static text, styleable/spannable text, or editable text
      * @see #setText(CharSequence, BufferType)
      */
-    public final void setTextKeepState(@Nonnull CharSequence text, @Nonnull BufferType type) {
+    public final void setTextKeepState(@NonNull CharSequence text, @NonNull BufferType type) {
         int start = getSelectionStart();
         int end = getSelectionEnd();
         int len = text.length();
@@ -1788,7 +1788,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * @see #setSpannableFactory(Spannable.Factory)
      * @see #setEditableFactory(Editable.Factory)
      */
-    public void setText(@Nonnull CharSequence text, @Nonnull BufferType type) {
+    public void setText(@NonNull CharSequence text, @NonNull BufferType type) {
         for (InputFilter filter : mFilters) {
             CharSequence out = filter.filter(text, 0, text.length(), EMPTY_SPANNED, 0, 0);
             if (out != null) {
@@ -1876,7 +1876,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     }
 
     // Update mText and mPrecomputed
-    private void setTextInternal(@Nonnull CharSequence text) {
+    private void setTextInternal(@NonNull CharSequence text) {
         mText = text;
         mSpannable = (text instanceof Spannable) ? (Spannable) text : null;
         mPrecomputed = (text instanceof PrecomputedText) ? (PrecomputedText) text : null;
@@ -1931,7 +1931,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * Sets the list of input filters that will be used if the buffer is
      * Editable. Has no effect otherwise.
      */
-    public void setFilters(@Nonnull InputFilter... filters) {
+    public void setFilters(@NonNull InputFilter... filters) {
         mFilters = filters;
 
         if (mText instanceof Editable) {
@@ -1942,7 +1942,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     /**
      * Returns the current list of input filters.
      */
-    @Nonnull
+    @NonNull
     public InputFilter[] getFilters() {
         return mFilters;
     }
@@ -2090,7 +2090,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     }
 
     @Override
-    protected boolean verifyDrawable(@Nonnull Drawable who) {
+    protected boolean verifyDrawable(@NonNull Drawable who) {
         final boolean verified = super.verifyDrawable(who);
         if (!verified && mDrawables != null) {
             for (Drawable dr : mDrawables.mShowing) {
@@ -2215,7 +2215,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         }
     }
 
-    @Nonnull
+    @NonNull
     @Override
     protected int[] onCreateDrawableState(int extraSpace) {
         final int[] drawableState = super.onCreateDrawableState(extraSpace);
@@ -2239,7 +2239,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         return drawableState;
     }
 
-    private void drawHighlight(@Nonnull Canvas canvas, int cursorOffsetVertical) {
+    private void drawHighlight(@NonNull Canvas canvas, int cursorOffsetVertical) {
         final int selStart = getSelectionStart();
         if (mMovement != null && (isFocused() || isPressed()) && selStart >= 0) {
             final int selEnd = getSelectionEnd();
@@ -2294,7 +2294,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     }
 
     @Override
-    protected void onDraw(@Nonnull Canvas canvas) {
+    protected void onDraw(@NonNull Canvas canvas) {
         final int compoundPaddingLeft = getCompoundPaddingLeft();
         final int compoundPaddingTop = getCompoundPaddingTop();
         final int compoundPaddingRight = getCompoundPaddingRight();
@@ -2425,7 +2425,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     }
 
     @Override
-    public void getFocusedRect(@Nonnull Rect r) {
+    public void getFocusedRect(@NonNull Rect r) {
         if (mLayout == null) {
             super.getFocusedRect(r);
             return;
@@ -2698,7 +2698,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     /**
      * @hide
      */
-    @Nonnull
+    @NonNull
     private Layout makeSingleLayout(int wantWidth, BoringLayout.Metrics boring, int ellipsisWidth,
                                     Layout.Alignment alignment, boolean shouldEllipsize,
                                     TextUtils.TruncateAt effectiveEllipsize, boolean useSaved) {
@@ -2770,7 +2770,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         return result;
     }
 
-    private static int desired(@Nonnull Layout layout) {
+    private static int desired(@NonNull Layout layout) {
         int n = layout.getLineCount();
         CharSequence text = layout.getText();
         float max = 0;
@@ -3449,7 +3449,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         return false;
     }
 
-    private void getInterestingRect(@Nonnull Rect r, int line) {
+    private void getInterestingRect(@NonNull Rect r, int line) {
         convertFromViewportToContentCoordinates(r);
 
         // Rectangle can can be expanded on first and last line to take
@@ -3458,7 +3458,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         if (line == mLayout.getLineCount() - 1) r.bottom += getExtendedPaddingBottom();
     }
 
-    private void convertFromViewportToContentCoordinates(@Nonnull Rect r) {
+    private void convertFromViewportToContentCoordinates(@NonNull Rect r) {
         final int horizontalOffset = viewportToContentHorizontalOffset();
         r.left += horizontalOffset;
         r.right += horizontalOffset;
@@ -3723,7 +3723,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      *
      * @param watcher the watcher to add
      */
-    public void addTextChangedListener(@Nonnull TextWatcher watcher) {
+    public void addTextChangedListener(@NonNull TextWatcher watcher) {
         if (mListeners == null) {
             mListeners = new ArrayList<>();
         }
@@ -3736,7 +3736,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      *
      * @param watcher the watcher to remove
      */
-    public void removeTextChangedListener(@Nonnull TextWatcher watcher) {
+    public void removeTextChangedListener(@NonNull TextWatcher watcher) {
         if (mListeners != null) {
             mListeners.remove(watcher);
         }
@@ -3882,7 +3882,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     }
 
     @Override
-    public boolean onTouchEvent(@Nonnull MotionEvent event) {
+    public boolean onTouchEvent(@NonNull MotionEvent event) {
         final int action = event.getAction();
         if (mEditor != null) {
             mEditor.onTouchEvent(event);
@@ -3941,7 +3941,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     }
 
     @Override
-    public boolean onGenericMotionEvent(@Nonnull MotionEvent event) {
+    public boolean onGenericMotionEvent(@NonNull MotionEvent event) {
         if (mMovement != null && mSpannable != null && mLayout != null) {
             if (mMovement.onGenericMotionEvent(this, mSpannable, event)) {
                 return true;
@@ -3951,7 +3951,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     }
 
     @Override
-    protected void onCreateContextMenu(@Nonnull ContextMenu menu) {
+    protected void onCreateContextMenu(@NonNull ContextMenu menu) {
         if (mEditor != null) {
             mEditor.onCreateContextMenu(menu);
         }
@@ -4013,7 +4013,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     }
 
     @Override
-    public boolean onKeyDown(int keyCode, @Nonnull KeyEvent event) {
+    public boolean onKeyDown(int keyCode, @NonNull KeyEvent event) {
         if (!isEnabled()) {
             return super.onKeyDown(keyCode, event);
         }
@@ -4087,7 +4087,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     }
 
     @Override
-    public boolean onKeyUp(int keyCode, @Nonnull KeyEvent event) {
+    public boolean onKeyUp(int keyCode, @NonNull KeyEvent event) {
         if (!isEnabled()) {
             return super.onKeyUp(keyCode, event);
         }
@@ -4151,7 +4151,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     }
 
     @Override
-    public boolean onKeyShortcut(int keyCode, @Nonnull KeyEvent event) {
+    public boolean onKeyShortcut(int keyCode, @NonNull KeyEvent event) {
         if (event.isCtrlPressed()) {
             // Handle Ctrl-only shortcuts.
             switch (keyCode) {
@@ -4277,7 +4277,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * return value may not be the same as the one TextView uses if the View's layout direction is
      * not resolved or detached from parent root view.
      */
-    @Nonnull
+    @NonNull
     public TextDirectionHeuristic getTextDirectionHeuristic() {
         if (hasPasswordTransformationMethod()) {
             // passwords fields should be LTR
@@ -4358,7 +4358,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     }
 
     @Override
-    public PointerIcon onResolvePointerIcon(@Nonnull MotionEvent event) {
+    public PointerIcon onResolvePointerIcon(@NonNull MotionEvent event) {
         if (mSpannable != null && mLinksClickable) {
             final float x = event.getX();
             final float y = event.getY();

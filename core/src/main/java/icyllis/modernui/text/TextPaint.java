@@ -56,7 +56,7 @@ public class TextPaint extends Paint {
     public int bgColor;
     public int baselineShift;
     @ColorInt
-    public int linkColor;
+    public int linkColor = 0xff539bf5;
     public float density = 1.0f;
     /**
      * Special value 0 means no custom underline
@@ -94,83 +94,6 @@ public class TextPaint extends Paint {
     @Override
     public void recycle() {
         sPool.release(this);
-    }
-
-    /**
-     * Returns the next cursor position in the run.
-     * <p>
-     * This avoids placing the cursor between surrogates, between characters that form conjuncts,
-     * between base characters and combining marks, or within a reordering cluster.
-     *
-     * <p>
-     * ContextStart and offset are relative to the start of text.
-     * The context is the shaping context for cursor movement, generally the bounds of the metric
-     * span enclosing the cursor in the direction of movement.
-     *
-     * <p>
-     * If op is {@link GraphemeBreak#AT} and the offset is not a valid cursor position, this
-     * returns -1.  Otherwise, this will never return a value before contextStart or after
-     * contextStart + contextLength.
-     *
-     * @param text          the text
-     * @param locale        the text's locale
-     * @param contextStart  the start of the context
-     * @param contextLength the length of the context
-     * @param offset        the cursor position to move from
-     * @param op            how to move the cursor
-     * @return the offset of the next position or -1
-     */
-    public static int getTextRunCursor(@NonNull char[] text, @NonNull Locale locale, int contextStart,
-                                       int contextLength, int offset, int op) {
-        int contextEnd = contextStart + contextLength;
-        if (((contextStart | contextEnd | offset | (contextEnd - contextStart)
-                | (offset - contextStart) | (contextEnd - offset)
-                | (text.length - contextEnd) | op) < 0)
-                || op > GraphemeBreak.AT) {
-            throw new IndexOutOfBoundsException();
-        }
-        return GraphemeBreak.sUseICU ? GraphemeBreak.getTextRunCursorICU(new CharArrayIterator(text, contextStart,
-                contextEnd), locale, offset, op)
-                : GraphemeBreak.getTextRunCursorImpl(null, text, contextStart, contextLength, offset, op);
-    }
-
-    /**
-     * Returns the next cursor position in the run.
-     * <p>
-     * This avoids placing the cursor between surrogates, between characters that form conjuncts,
-     * between base characters and combining marks, or within a reordering cluster.
-     *
-     * <p>
-     * ContextStart, contextEnd, and offset are relative to the start of
-     * text.  The context is the shaping context for cursor movement, generally
-     * the bounds of the metric span enclosing the cursor in the direction of
-     * movement.
-     *
-     * <p>
-     * If op is {@link GraphemeBreak#AT} and the offset is not a valid cursor position, this
-     * returns -1.  Otherwise, this will never return a value before contextStart or after
-     * contextEnd.
-     *
-     * @param text         the text
-     * @param locale       the text's locale
-     * @param contextStart the start of the context
-     * @param contextEnd   the end of the context
-     * @param offset       the cursor position to move from
-     * @param op           how to move the cursor
-     * @return the offset of the next position, or -1
-     */
-    public static int getTextRunCursor(@NonNull CharSequence text, @NonNull Locale locale, int contextStart,
-                                       int contextEnd, int offset, int op) {
-        if (text instanceof String || text instanceof SpannedString ||
-                text instanceof SpannableString) {
-            return GraphemeBreak.getTextRunCursor(text.toString(), locale, contextStart, contextEnd,
-                    offset, op);
-        }
-        final int contextLen = contextEnd - contextStart;
-        final char[] buf = new char[contextLen];
-        TextUtils.getChars(text, contextStart, contextEnd, buf, 0);
-        offset = getTextRunCursor(buf, locale, 0, contextLen, offset - contextStart, op);
-        return offset == -1 ? -1 : offset + contextStart;
     }
 
     /**
@@ -321,6 +244,81 @@ public class TextPaint extends Paint {
      */
     public float getStrikethroughThickness(@NonNull FontMetricsInt fm) {
         return fm.ascent / 12f;
+    }
+
+    /**
+     * Returns the next cursor position in the run.
+     * <p>
+     * This avoids placing the cursor between surrogates, between characters that form conjuncts,
+     * between base characters and combining marks, or within a reordering cluster.
+     *
+     * <p>
+     * ContextStart and offset are relative to the start of text.
+     * The context is the shaping context for cursor movement, generally the bounds of the metric
+     * span enclosing the cursor in the direction of movement.
+     *
+     * <p>
+     * If op is {@link GraphemeBreak#AT} and the offset is not a valid cursor position, this
+     * returns -1.  Otherwise, this will never return a value before contextStart or after
+     * contextStart + contextLength.
+     *
+     * @param text          the text
+     * @param contextStart  the start of the context
+     * @param contextLength the length of the context
+     * @param offset        the cursor position to move from
+     * @param op            how to move the cursor
+     * @return the offset of the next position or -1
+     */
+    public int getTextRunCursor(@NonNull char[] text, int contextStart,
+                                int contextLength, int offset, int op) {
+        int contextEnd = contextStart + contextLength;
+        if (((contextStart | contextEnd | offset | (contextEnd - contextStart)
+                | (offset - contextStart) | (contextEnd - offset)
+                | (text.length - contextEnd) | op) < 0)
+                || op > GraphemeBreak.AT) {
+            throw new IndexOutOfBoundsException();
+        }
+        return GraphemeBreak.sUseICU ? GraphemeBreak.getTextRunCursorICU(new CharArrayIterator(text, contextStart,
+                contextEnd), mLocale, offset, op)
+                : GraphemeBreak.getTextRunCursorImpl(null, text, contextStart, contextLength, offset, op);
+    }
+
+    /**
+     * Returns the next cursor position in the run.
+     * <p>
+     * This avoids placing the cursor between surrogates, between characters that form conjuncts,
+     * between base characters and combining marks, or within a reordering cluster.
+     *
+     * <p>
+     * ContextStart, contextEnd, and offset are relative to the start of
+     * text.  The context is the shaping context for cursor movement, generally
+     * the bounds of the metric span enclosing the cursor in the direction of
+     * movement.
+     *
+     * <p>
+     * If op is {@link GraphemeBreak#AT} and the offset is not a valid cursor position, this
+     * returns -1.  Otherwise, this will never return a value before contextStart or after
+     * contextEnd.
+     *
+     * @param text         the text
+     * @param contextStart the start of the context
+     * @param contextEnd   the end of the context
+     * @param offset       the cursor position to move from
+     * @param op           how to move the cursor
+     * @return the offset of the next position, or -1
+     */
+    public int getTextRunCursor(@NonNull CharSequence text, int contextStart,
+                                int contextEnd, int offset, int op) {
+        if (text instanceof String || text instanceof SpannedString ||
+                text instanceof SpannableString) {
+            return GraphemeBreak.getTextRunCursor(text.toString(), mLocale, contextStart, contextEnd,
+                    offset, op);
+        }
+        final int contextLen = contextEnd - contextStart;
+        final char[] buf = new char[contextLen];
+        TextUtils.getChars(text, contextStart, contextEnd, buf, 0);
+        offset = getTextRunCursor(buf, 0, contextLen, offset - contextStart, op);
+        return offset == -1 ? -1 : offset + contextStart;
     }
 
     int getFontFlags() {

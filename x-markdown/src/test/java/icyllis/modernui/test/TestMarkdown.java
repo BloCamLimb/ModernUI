@@ -47,9 +47,10 @@ public class TestMarkdown extends Fragment {
                              @Nullable ViewGroup container,
                              @Nullable DataSet savedInstanceState) {
         TextView tv = new TextView(requireContext());
-        tv.setTextSize(16);
-        tv.setText(Markdown.create(requireContext())
-                .convert("""
+        tv.setTextSize(14);
+        tv.setTextIsSelectable(true);
+        Markdown.create(requireContext())
+                .setMarkdown(tv, """
                         Advanced Page
                         ---
                         My **First** Line
@@ -61,11 +62,19 @@ public class TestMarkdown extends Fragment {
                             ```
                           * Three
                             * Four
-                        * Five
+                                                
+                        [Modern UI](https://github.com/BloCamLimb/ModernUI)
+                        1. One
+                        2. Two
+                        3. Three
                         # Heading 1
                         ## Heading 2
                         ### Heading 3
-                        """));
+                                                
+                        AAA AAA
+                        ******
+                        BBB BBB
+                        """);
         tv.setLayoutParams(new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER));
         return tv;

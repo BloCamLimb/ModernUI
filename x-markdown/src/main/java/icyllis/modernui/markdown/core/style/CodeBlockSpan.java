@@ -16,11 +16,10 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.markdown.core.spans;
+package icyllis.modernui.markdown.core.style;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.markdown.MarkdownTheme;
 import icyllis.modernui.text.Layout;
 import icyllis.modernui.text.TextPaint;
@@ -51,7 +50,7 @@ public class CodeBlockSpan extends MetricAffectingSpan
         if (textSize > 0) {
             paint.setTextSize(textSize);
         } else {
-            paint.setTextSize(paint.getTextSize() * 0.75F);
+            paint.setTextSize(paint.getTextSize() * 0.875F);
         }
     }
 
@@ -66,12 +65,12 @@ public class CodeBlockSpan extends MetricAffectingSpan
     }
 
     @Override
-    public void drawLeadingMargin(Canvas c, Paint p, int x, int dir, int top, int baseline, int bottom,
+    public void drawLeadingMargin(Canvas c, TextPaint p, int x, int dir, int top, int baseline, int bottom,
                                   CharSequence text, int start, int end, boolean first, Layout layout) {
     }
 
     @Override
-    public void drawMargin(Canvas c, Paint p, int left, int right, int dir, int top, int baseline, int bottom,
+    public void drawMargin(Canvas c, TextPaint p, int left, int right, int dir, int top, int baseline, int bottom,
                            CharSequence text, int start, int end, boolean first, Layout layout) {
         final int color = p.getColor();
         p.setColor(mTheme.getCodeBlockBackgroundColor());
