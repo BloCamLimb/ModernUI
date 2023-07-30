@@ -58,6 +58,7 @@ public abstract class ClickableSpan extends CharacterStyle implements UpdateAppe
     @Override
     public void updateDrawState(@Nonnull TextPaint ds) {
         ds.setUnderline(true);
+        ds.setColor(ds.linkColor);
     }
 
     /**

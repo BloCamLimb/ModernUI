@@ -29,7 +29,6 @@ import icyllis.modernui.widget.TextView;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.text.BreakIterator;
 import java.util.List;
-import java.util.Locale;
 
 /**
  * Provides methods for handling text additions and deletions in a {@link TextView}.
@@ -256,8 +255,8 @@ public final class TextKeyListener {
         final int start = Selection.getSelectionEnd(content);
         final int end;
         if (isForwardDelete) {
-            Locale locale = view.getPaint().getTextLocale();
-            end = getOffsetForDeleteKey(content, start, locale);
+            TextPaint paint = view.getPaint();
+            end = getOffsetForDeleteKey(content, start, paint);
         } else {
             end = getOffsetForBackspaceKey(content, start);
         }
@@ -342,14 +341,14 @@ public final class TextKeyListener {
     }
 
     // Returns the end offset to be deleted by a forward delete key from the given offset.
-    private static int getOffsetForDeleteKey(Editable text, int offset, Locale locale) {
+    private static int getOffsetForDeleteKey(Editable text, int offset, TextPaint paint) {
         final int len = text.length();
 
         if (offset >= len - 1) {
             return len;
         }
 
-        offset = TextPaint.getTextRunCursor(text, locale, offset, len, offset, GraphemeBreak.AFTER);
+        offset = paint.getTextRunCursor(text, offset, len, offset, GraphemeBreak.AFTER);
 
         return adjustReplacementSpan(text, offset, false /* move to the end */);
     }

@@ -20,7 +20,6 @@ package icyllis.modernui.text.style;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.text.*;
 
 import java.io.*;
@@ -67,14 +66,14 @@ public interface LeadingMarginSpan extends ParagraphStyle {
      * @param first    true if this is the first line of its paragraph
      * @param layout   the layout containing this line
      */
-    void drawLeadingMargin(Canvas c, Paint p,
+    void drawLeadingMargin(Canvas c, TextPaint p,
                            int x, int dir,
                            int top, int baseline, int bottom,
                            CharSequence text, int start, int end,
                            boolean first, Layout layout);
 
     // this method allows to draw trailing margin at the same time
-    default void drawMargin(Canvas c, Paint p,
+    default void drawMargin(Canvas c, TextPaint p,
                             int left, int right, int dir,
                             int top, int baseline, int bottom,
                             CharSequence text, int start, int end,
@@ -159,7 +158,7 @@ public interface LeadingMarginSpan extends ParagraphStyle {
         }
 
         @Override
-        public void drawLeadingMargin(Canvas c, Paint p,
+        public void drawLeadingMargin(Canvas c, TextPaint p,
                                       int x, int dir,
                                       int top, int baseline, int bottom,
                                       CharSequence text, int start, int end,

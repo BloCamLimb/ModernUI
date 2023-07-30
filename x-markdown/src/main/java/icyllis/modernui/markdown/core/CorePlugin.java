@@ -24,23 +24,31 @@ import com.vladsch.flexmark.util.ast.Node;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.markdown.*;
-import icyllis.modernui.markdown.core.spans.CodeBlockSpan;
+import icyllis.modernui.markdown.core.style.*;
+import icyllis.modernui.text.Spanned;
 import icyllis.modernui.text.TextPaint;
 import icyllis.modernui.text.style.*;
 import icyllis.modernui.util.DataSet;
+import icyllis.modernui.widget.TextView;
 
-public final class CorePlugin implements Plugin {
+public final class CorePlugin implements MarkdownPlugin {
 
-    private static final float[] HEADING_SIZES = {
-            2.0f, 1.5f, 1.17f, 1.0f, 0.83f, 0.66f
-    };
+    public static final String CORE_ORDERED_LIST_ITEM_NUMBER = "core:ordered_list_item_number";
+
+    @NonNull
+    public static CorePlugin create() {
+        return new CorePlugin();
+    }
+
+    CorePlugin() {
+    }
 
     @Override
-    public void configure(@NonNull MarkdownConfig.Builder builder) {
+    public void configureConfig(@NonNull MarkdownConfig.Builder builder) {
         builder
                 .addVisitor(Text.class, this::visitText)
-                .addVisitor(StrongEmphasis.class, this::visitDelimited)
-                .addVisitor(Emphasis.class, this::visitDelimited)
+                .addVisitor(StrongEmphasis.class, this::visitSimpleNode)
+                .addVisitor(Emphasis.class, this::visitSimpleNode)
 
                 .addVisitor(SoftLineBreak.class, this::visitSoftLineBreak)
                 .addVisitor(HardLineBreak.class, this::visitHardLineBreak)
@@ -48,17 +56,21 @@ public final class CorePlugin implements Plugin {
                 .addVisitor(Heading.class, this::visitHeading)
                 .addVisitor(Paragraph.class, this::visitParagraph)
 
-                .addVisitor(BulletListItem.class, this::visitListItem)
-                .addVisitor(OrderedListItem.class, this::visitListItem)
+                .addVisitor(BulletListItem.class, this::visitBulletListItem)
+                .addVisitor(OrderedListItem.class, this::visitOrderedListItem)
 
                 .addVisitor(BulletList.class, this::visitSimpleBlock)
-                .addVisitor(OrderedList.class, this::visitSimpleBlock)
+                .addVisitor(OrderedList.class, this::visitOrderedList)
 
                 .addVisitor(BlockQuote.class, this::visitBlockQuote)
 
                 .addVisitor(Code.class, this::visitCode)
                 .addVisitor(FencedCodeBlock.class, this::visitFencedCodeBlock)
-                .addVisitor(IndentedCodeBlock.class, this::visitIndentedCodeBlock);
+                .addVisitor(IndentedCodeBlock.class, this::visitIndentedCodeBlock)
+
+                .addVisitor(Link.class, this::visitSimpleNode)
+
+                .addVisitor(ThematicBreak.class, this::visitThematicBreak);
 
         builder
                 .appendSpanFactory(StrongEmphasis.class,
@@ -66,19 +78,32 @@ public final class CorePlugin implements Plugin {
                 .appendSpanFactory(Emphasis.class,
                         (config, node, props) -> new StyleSpan(TextPaint.ITALIC))
                 .appendSpanFactory(Heading.class,
-                        (config, node, props) -> new RelativeSizeSpan(HEADING_SIZES[node.getLevel() - 1]))
-                .appendSpanFactory(BulletListItem.class,
-                        (config, node, props) -> {
-                            int level = listLevel(node);
-                            return new BulletSpan(48, 0, 0, level);
-                        })
+                        (config, node, props) -> new HeadingSpan(config.theme(), node.getLevel()))
+
+                .appendSpanFactory(BulletListItem.class, this::createBulletListItemSpans)
+                .appendSpanFactory(OrderedListItem.class, this::createOrderedListItemSpans)
+
                 .appendSpanFactory(BlockQuote.class,
-                        (config, node, props) -> new QuoteSpan(48, 8, 0x40FFFFFF))
+                        (config, node, props) -> new QuoteSpan(
+                                config.theme().getBlockQuoteMargin(),
+                                config.theme().getBlockQuoteWidth(),
+                                config.theme().getBlockQuoteColor()))
+
                 .appendSpanFactory(Code.class, this::createCodeSpans)
                 .appendSpanFactory(FencedCodeBlock.class,
                         (config, node, args) -> new CodeBlockSpan(config.theme()))
                 .appendSpanFactory(IndentedCodeBlock.class,
-                        (config, node, args) -> new CodeBlockSpan(config.theme()));
+                        (config, node, args) -> new CodeBlockSpan(config.theme()))
+
+                .appendSpanFactory(Link.class,
+                        (config, node, args) -> new URLSpan(node.getUrl().toString()))
+                .appendSpanFactory(ThematicBreak.class,
+                        (config, node, args) -> new ThematicBreakSpan(config.theme()));
+    }
+
+    @Override
+    public void beforeSetText(@NonNull TextView textView, @NonNull Spanned markdown) {
+        OrderedListItemSpan.measure(textView, markdown);
     }
 
     private void visitSimpleBlock(
@@ -90,6 +115,24 @@ public final class CorePlugin implements Plugin {
         visitor.visitChildren(block);
         visitor.postSetSpans(spans, offset);
         visitor.blockEnd(block);
+    }
+
+    private void visitOrderedList(
+            @NonNull MarkdownVisitor visitor,
+            @NonNull OrderedList orderedList) {
+        visitor.blockStart(orderedList);
+
+        int offset = visitor.length();
+        var spans = visitor.preSetSpans(orderedList, offset);
+
+        visitor.getRenderArguments()
+                .putInt(CORE_ORDERED_LIST_ITEM_NUMBER, orderedList.getStartNumber());
+
+        visitor.visitChildren(orderedList);
+
+        visitor.postSetSpans(spans, offset);
+
+        visitor.blockEnd(orderedList);
     }
 
     private void visitCode(
@@ -107,7 +150,7 @@ public final class CorePlugin implements Plugin {
     private void visitFencedCodeBlock(
             @NonNull MarkdownVisitor visitor,
             @NonNull FencedCodeBlock fencedCodeBlock) {
-        visitCodeBlock0(
+        visitCodeBlock(
                 visitor,
                 fencedCodeBlock.getInfo(),
                 fencedCodeBlock.getContentChars(),
@@ -118,7 +161,7 @@ public final class CorePlugin implements Plugin {
     private void visitIndentedCodeBlock(
             @NonNull MarkdownVisitor visitor,
             @NonNull IndentedCodeBlock indentedCodeBlock) {
-        visitCodeBlock0(
+        visitCodeBlock(
                 visitor,
                 null,
                 indentedCodeBlock.getContentChars(),
@@ -126,7 +169,7 @@ public final class CorePlugin implements Plugin {
         );
     }
 
-    private void visitCodeBlock0(
+    private void visitCodeBlock(
             @NonNull MarkdownVisitor visitor,
             @Nullable CharSequence info,
             @NonNull CharSequence code,
@@ -165,7 +208,7 @@ public final class CorePlugin implements Plugin {
         if (applyTextSize) {
             spans[1] = new AbsoluteSizeSpan(theme.getCodeTextSize());
         } else {
-            spans[1] = new RelativeSizeSpan(0.75F);
+            spans[1] = new RelativeSizeSpan(0.875F);
         }
         if (extra > 0) {
             extra = 2;
@@ -177,6 +220,16 @@ public final class CorePlugin implements Plugin {
             }
         }
         return spans;
+    }
+
+    @NonNull
+    private Object createBulletListItemSpans(
+            @NonNull MarkdownConfig config,
+            @NonNull BulletListItem bulletListItem,
+            @NonNull DataSet args) {
+        int level = listLevel(bulletListItem);
+        return new BulletSpan(config.theme().getListItemMargin(),
+                0, config.theme().getListItemColor(), level);
     }
 
     private static int listLevel(@NonNull Node node) {
@@ -191,11 +244,20 @@ public final class CorePlugin implements Plugin {
         return level;
     }
 
+    @NonNull
+    private Object createOrderedListItemSpans(
+            @NonNull MarkdownConfig config,
+            @NonNull OrderedListItem orderedListItem,
+            @NonNull DataSet args) {
+        String number = args.getInt(CORE_ORDERED_LIST_ITEM_NUMBER) + ".\u00a0";
+        return new OrderedListItemSpan(config.theme(), number);
+    }
+
     private void visitText(@NonNull MarkdownVisitor visitor, @NonNull Text text) {
         visitor.append(text.getChars());
     }
 
-    private void visitDelimited(@NonNull MarkdownVisitor visitor, @NonNull Node node) {
+    private void visitSimpleNode(@NonNull MarkdownVisitor visitor, @NonNull Node node) {
         int offset = visitor.length();
         var spans = visitor.preSetSpans(node, offset);
         visitor.visitChildren(node);
@@ -265,16 +327,50 @@ public final class CorePlugin implements Plugin {
         return false;
     }
 
-    private void visitListItem(
+    private void visitBulletListItem(
             @NonNull MarkdownVisitor visitor,
-            @NonNull ListItem listItem) {
+            @NonNull BulletListItem bulletListItem) {
         int offset = visitor.length();
-        var spans = visitor.preSetSpans(listItem, offset);
-        visitor.visitChildren(listItem);
+        var spans = visitor.preSetSpans(bulletListItem, offset);
+        visitor.visitChildren(bulletListItem);
         visitor.postSetSpans(spans, offset);
 
-        if (visitor.hasNext(listItem)) {
+        if (visitor.hasNext(bulletListItem)) {
             visitor.ensureNewLine();
         }
+    }
+
+    private void visitOrderedListItem(
+            @NonNull MarkdownVisitor visitor,
+            @NonNull OrderedListItem orderedListItem) {
+        int offset = visitor.length();
+        var spans = visitor.preSetSpans(orderedListItem, offset);
+
+        visitor.visitChildren(orderedListItem);
+
+        visitor.postSetSpans(spans, offset);
+
+        int number = visitor.getRenderArguments().getInt(CORE_ORDERED_LIST_ITEM_NUMBER);
+        visitor.getRenderArguments()
+                .putInt(CORE_ORDERED_LIST_ITEM_NUMBER, number + 1);
+
+        if (visitor.hasNext(orderedListItem)) {
+            visitor.ensureNewLine();
+        }
+    }
+
+    private void visitThematicBreak(
+            @NonNull MarkdownVisitor visitor,
+            @NonNull ThematicBreak thematicBreak) {
+        visitor.blockStart(thematicBreak);
+
+        int offset = visitor.length();
+
+        var spans = visitor.preSetSpans(thematicBreak, offset);
+
+        visitor.append('\u200b');
+        visitor.postSetSpans(spans, offset);
+
+        visitor.blockEnd(thematicBreak);
     }
 }

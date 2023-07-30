@@ -36,7 +36,7 @@ import icyllis.modernui.util.DisplayMetrics;
 import icyllis.modernui.view.*;
 import icyllis.modernui.view.menu.ContextMenuBuilder;
 import icyllis.modernui.view.menu.MenuHelper;
-import icyllis.modernui.widget.EditText;
+import icyllis.modernui.widget.TextView;
 import org.apache.logging.log4j.*;
 import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.glfw.GLFWMonitorCallback;
@@ -508,7 +508,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         protected boolean dispatchTouchEvent(MotionEvent event) {
             if (event.getAction() == MotionEvent.ACTION_DOWN) {
                 View v = mView.findFocus();
-                if (v instanceof EditText) {
+                if (v instanceof TextView tv && tv.getMovementMethod() != null) {
                     v.getGlobalVisibleRect(mGlobalRect);
                     if (!mGlobalRect.contains((int) event.getRawX(), (int) event.getRawY())) {
                         v.clearFocus();
@@ -523,7 +523,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
             if (event.getAction() == KeyEvent.ACTION_DOWN) {
                 if (event.getKeyCode() == KeyEvent.KEY_ESCAPE) {
                     View v = mView.findFocus();
-                    if (v instanceof EditText) {
+                    if (v instanceof TextView tv && tv.getMovementMethod() != null) {
                         mView.requestFocus();
                     } else {
                         mOnBackPressedDispatcher.onBackPressed();

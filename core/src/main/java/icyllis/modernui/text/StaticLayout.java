@@ -19,10 +19,9 @@
 package icyllis.modernui.text;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.text.FontMetricsInt;
-import icyllis.modernui.graphics.text.LayoutCache;
-import icyllis.modernui.graphics.text.LineBreaker;
+import icyllis.modernui.graphics.text.*;
 import icyllis.modernui.text.style.*;
+import icyllis.modernui.text.style.LeadingMarginSpan.LeadingMarginSpan2;
 import icyllis.modernui.util.GrowingArrayUtils;
 import icyllis.modernui.util.Pools;
 import org.apache.logging.log4j.Marker;
@@ -30,8 +29,7 @@ import org.apache.logging.log4j.MarkerManager;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 /**
  * StaticLayout is a Layout for text that will not be edited after it
@@ -461,22 +459,55 @@ public class StaticLayout extends Layout {
              paraIndex++, paraStart = paraEnd) {
             paraEnd += paragraphs[paraIndex].getTextLength();
 
+            int firstWidthLineCount = 1;
             int firstWidth = outerWidth;
             int restWidth = outerWidth;
 
+            List<LineHeightSpan> chooseHt = Collections.emptyList();
             if (spanned != null) {
                 List<LeadingMarginSpan> leadingMarginSpans = getParagraphSpans(spanned, paraStart, paraEnd,
                         LeadingMarginSpan.class);
                 for (LeadingMarginSpan lms : leadingMarginSpans) {
                     firstWidth -= lms.getLeadingMargin(true);
                     restWidth -= lms.getLeadingMargin(false);
+
+                    // LeadingMarginSpan2 is odd.  The count affects all
+                    // leading margin spans, not just this particular one
+                    if (lms instanceof LeadingMarginSpan2) {
+                        firstWidthLineCount = Math.max(firstWidthLineCount,
+                                ((LeadingMarginSpan2) lms).getLeadingMarginLineCount());
+                    }
                 }
+
                 List<TrailingMarginSpan> trailingMarginSpans = getParagraphSpans(spanned, paraStart, paraEnd,
                         TrailingMarginSpan.class);
                 for (TrailingMarginSpan tms : trailingMarginSpans) {
                     int margin = tms.getTrailingMargin();
                     firstWidth -= margin;
                     restWidth -= margin;
+                }
+
+                chooseHt = getParagraphSpans(spanned, paraStart, paraEnd, LineHeightSpan.class);
+
+                if (!chooseHt.isEmpty()) {
+                    if (chooseHtv == null || chooseHtv.length < chooseHt.size()) {
+                        chooseHtv = new int[chooseHt.size()];
+                    }
+
+                    for (int i = 0; i < chooseHt.size(); i++) {
+                        int o = spanned.getSpanStart(chooseHt.get(i));
+
+                        if (o < paraStart) {
+                            // starts in this layout, before the
+                            // current paragraph
+
+                            chooseHtv[i] = getLineTop(getLineForOffset(o));
+                        } else {
+                            // starts in this paragraph
+
+                            chooseHtv[i] = v;
+                        }
+                    }
                 }
             }
 
@@ -591,10 +622,10 @@ public class StaticLayout extends Layout {
                             ? Math.max(fmDescent, Math.round(descents[breakIndex]))
                             : fmDescent;
 
-                    //FIXME top, bottom, chooseHt
+                    //FIXME top, bottom
                     v = out(source, here, endPos,
                             ascent, descent, ascent, descent,
-                            v, /*chooseHt, */chooseHtv, fm,
+                            v, chooseHt, chooseHtv, fm,
                             hasTabs[breakIndex],
                             measuredPara, bufEnd, includePad, trackPad,
                             paraStart, ellipsize, ellipsizedWidth, lineWidths[breakIndex],
@@ -630,7 +661,7 @@ public class StaticLayout extends Layout {
             paint.getFontMetricsInt(fm);
             out(source, bufEnd, bufEnd,
                     fm.ascent, fm.descent, fm.ascent, fm.descent,
-                    v, /*null, */null, fm, false,
+                    v, Collections.emptyList(), null, fm, false,
                     measuredPara, bufEnd,
                     includePad, trackPad,
                     bufStart, ellipsize,
@@ -639,7 +670,7 @@ public class StaticLayout extends Layout {
     }
 
     private int out(final CharSequence text, final int start, final int end, int above, int below,
-                    int top, int bottom, int v, /*final LineHeightSpan[] chooseHt, */final int[] chooseHtv,
+                    int top, int bottom, int v, final List<LineHeightSpan> chooseHt, final int[] chooseHtv,
                     final FontMetricsInt fm, final boolean hasTab,
                     @Nonnull final MeasuredParagraph measured,
                     final int bufEnd, final boolean includePad, final boolean trackPad,
@@ -656,6 +687,22 @@ public class StaticLayout extends Layout {
 
         if (j >= mLineDirections.length) {
             mLineDirections = Arrays.copyOf(mLineDirections, GrowingArrayUtils.growSize(j));
+        }
+
+        if (!chooseHt.isEmpty()) {
+            fm.ascent = above;
+            fm.descent = below;
+            /*fm.top = top;
+            fm.bottom = bottom;*/
+
+            for (int i = 0; i < chooseHt.size(); i++) {
+                chooseHt.get(i).chooseHeight(text, start, end, chooseHtv[i], v, fm, paint);
+            }
+
+            above = fm.ascent;
+            below = fm.descent;
+            /*top = fm.top;
+            bottom = fm.bottom;*/
         }
 
         boolean firstLine = (j == 0);

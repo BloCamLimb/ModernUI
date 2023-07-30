@@ -392,10 +392,9 @@ public class ShapedText {
 
     // BiDi run, visual order, append layout pieces
     @ApiStatus.Internal
-    public static float doLayoutRun(char[] text, int contextStart, int contextLimit,
-                                    int start, int limit, boolean isRtl, FontPaint paint,
-                                    FontMetricsInt extent,
-                                    RunConsumer consumer) {
+    public static float layoutRun(char[] text, int contextStart, int contextLimit,
+                                  int start, int limit, boolean isRtl, FontPaint paint,
+                                  FontMetricsInt extent, RunConsumer consumer) {
         return doLayoutRun(text, contextStart, contextLimit,
                 start, limit, isRtl, paint, start,
                 null, 0, null, null, null, null, extent,
