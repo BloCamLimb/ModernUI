@@ -433,7 +433,7 @@ public class TestFragment extends Fragment {
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             spannable.setSpan(new UnderlineSpan(), text.length() / 2, text.length(),
                     Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
-            try {
+            /*try {
                 Image image = ImageStore.getInstance().create(
                         FileChannel.open(Path.of("F:/Photoshop/AppleEmoji/horse-face_1f434.png"),
                                 StandardOpenOption.READ));
@@ -443,7 +443,7 @@ public class TestFragment extends Fragment {
                     spannable.setSpan(span, emojiSt, emojiSt + 2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                 }
             } catch (IOException ignored) {
-            }
+            }*/
             tv.setLinksClickable(true);
             tv.setTextIsSelectable(true);
             tv.setTextAlignment(TEXT_ALIGNMENT_GRAVITY);

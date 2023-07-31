@@ -20,6 +20,7 @@ package icyllis.modernui.graphics.text;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.util.SparseArray;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.UnmodifiableView;
 
@@ -131,31 +132,35 @@ public class FontFamily {
     private final String mFamilyName;
 
     private Font mFont;
-    private Font mBold;
-    private Font mItalic;
-    private Font mBoldItalic;
+    private SparseArray<Font>[] mFonts;
 
     @ApiStatus.Internal
     protected FontFamily(String name) {
         mFamilyName = name;
     }
 
+    @SuppressWarnings("unchecked")
     private FontFamily(@NonNull Font font) {
         this(font.getFamily(Locale.ROOT));
         mFont = font.deriveFont(Font.PLAIN);
-        mBold = font.deriveFont(Font.BOLD);
-        mItalic = font.deriveFont(Font.ITALIC);
-        mBoldItalic = font.deriveFont(Font.BOLD | Font.ITALIC);
+        mFonts = new SparseArray[4];
+        for (int i = 0; i < 4; i++) {
+            mFonts[i] = new SparseArray<>();
+        }
     }
 
-    public Font getClosestMatch(int style) {
-        return switch (style) {
-            case Font.PLAIN -> mFont;
-            case Font.BOLD -> mBold;
-            case Font.ITALIC -> mItalic;
-            case Font.BOLD | Font.ITALIC -> mBoldItalic;
-            default -> null;
-        };
+    public Font chooseFont(int style, int size) {
+        if (size <= 96) {
+            SparseArray<Font> vector = mFonts[style];
+            Font value = vector.get(size);
+            if (value != null) {
+                return value;
+            }
+            value = mFont.deriveFont(style, size);
+            vector.put(size, value);
+            return value;
+        }
+        return mFont.deriveFont(style, size);
     }
 
     public boolean hasGlyph(int ch) {

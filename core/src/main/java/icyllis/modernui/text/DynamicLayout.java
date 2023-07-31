@@ -357,7 +357,7 @@ public class DynamicLayout extends Layout {
         start[DESCENT] = desc;
         mInts.insertAt(0, start);
 
-        start[TOP] = desc + asc;
+        start[TOP] = desc - asc;
         mInts.insertAt(1, start);
 
         mObjects.insertAt(0, dirs);

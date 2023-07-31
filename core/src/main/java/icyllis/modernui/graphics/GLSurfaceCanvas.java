@@ -28,7 +28,6 @@ import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.font.*;
 import icyllis.modernui.graphics.text.*;
-import icyllis.modernui.text.TextPaint;
 import icyllis.modernui.view.Gravity;
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import it.unimi.dsi.fastutil.ints.*;
@@ -2390,7 +2389,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         float blue = (color & 0xff) / 255.0f;
         mDrawTexts.add(new DrawTextOp(glyphs, glyphOffset,
                 positions, positionOffset, glyphCount,
-                x, y, font.getClosestMatch(paint.getTextStyle()).deriveFont(paint.getTextSize())));
+                x, y, font.chooseFont(paint.getFontStyle(), paint.getFontSize())));
         checkUniformStagingBuffer()
                 .putFloat(red * alpha)
                 .putFloat(green * alpha)

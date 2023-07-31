@@ -153,7 +153,7 @@ public final class LayoutPiece {
         }
 
         int style = paint.getFontStyle();
-        float size = paint.getFontSize();
+        int size = paint.getFontSize();
         final var g = sGraphics[paint.getRenderFlags()];
         float advance = 0;
 
@@ -173,7 +173,7 @@ public final class LayoutPiece {
             Run run = items.get(runIndex);
 
             final byte fontIdx;
-            Font font = run.family().getClosestMatch(style).deriveFont(size);
+            Font font = run.family().chooseFont(style, size);
             if (hint == null) {
                 fontIdx = fontMap.computeIfAbsent(run.family(), idGen);
                 extent.extendBy(g.getFontMetrics(font));
@@ -241,6 +241,8 @@ public final class LayoutPiece {
             mDescent = hint.mDescent;
             mAdvance = hint.mAdvance;
             assert mAdvance == advance;
+
+            mComputeFlags = hint.mComputeFlags | newFlags;
         } else {
             mGlyphs = glyphs.toIntArray();
             mPositions = positions.toFloatArray();
@@ -254,6 +256,8 @@ public final class LayoutPiece {
             mAscent = extent.ascent;
             mDescent = extent.descent;
             mAdvance = advance;
+
+            mComputeFlags = newFlags;
         }
 
         if (computeBounds || hint == null) {
@@ -268,8 +272,8 @@ public final class LayoutPiece {
             mBoundsHeight = hint.mBoundsHeight;
         }
 
-        mComputeFlags = (hint != null ? hint.mComputeFlags : 0) | newFlags;
         mNumChars = count;
+        assert (hint == null || hint.mNumChars == count);
 
         assert mGlyphs.length * 2 == mPositions.length;
         assert mFontIndices == null || mFontIndices.length == mGlyphs.length;
@@ -341,13 +345,13 @@ public final class LayoutPiece {
      * @param extent to expand from
      */
     public void getExtent(@NonNull FontMetricsInt extent) {
-        extent.extendBy(getAscent(), getDescent());
+        extent.extendBy(mAscent, mDescent);
     }
 
     /**
      * Gets the font metrics of the maximum extent of this piece.
      *
-     * @return ascent to baseline, always positive
+     * @return ascent to baseline, always negative
      */
     public int getAscent() {
         return mAscent;

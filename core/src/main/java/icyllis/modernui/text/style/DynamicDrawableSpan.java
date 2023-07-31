@@ -146,7 +146,7 @@ public abstract class DynamicDrawableSpan extends ReplacementSpan {
         Rect rect = d.getBounds();
 
         if (fm != null) {
-            fm.ascent = rect.bottom;
+            fm.ascent = -rect.bottom;
             fm.descent = 0;
         }
 

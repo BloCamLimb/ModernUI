@@ -1069,7 +1069,7 @@ public abstract class Canvas {
     public final void drawTextRun(@NonNull LayoutPiece piece, float x, float y, @NonNull Paint paint) {
         //TODO this bounds check is not correct, this is logical bounds not visual pixel bounds
         if (piece.getAdvance() == 0 || (piece.getGlyphs().length == 0)
-                || quickReject(x, y - piece.getAscent(),
+                || quickReject(x, y + piece.getAscent(),
                 x + piece.getAdvance(), y + piece.getDescent())) {
             return;
         }

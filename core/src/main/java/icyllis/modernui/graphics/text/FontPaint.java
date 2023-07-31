@@ -186,19 +186,20 @@ public class FontPaint {
      * @return the font's interline spacing.
      */
     public int getFontMetricsInt(@Nullable FontMetricsInt fm) {
-        int ascent = 0, descent = 0, height = 0;
+        int ascent = 0, descent = 0, leading = 0;
         for (FontFamily family : getFont().getFamilies()) {
-            Font font = family.getClosestMatch(getFontStyle()).deriveFont((float) getFontSize());
+            Font font = family.chooseFont(getFontStyle(), getFontSize());
             FontMetrics metrics = LayoutPiece.sGraphics[getRenderFlags()].getFontMetrics(font);
             ascent = Math.max(ascent, metrics.getAscent()); // positive
             descent = Math.max(descent, metrics.getDescent()); // positive
-            height = Math.max(height, metrics.getHeight());
+            leading = Math.max(leading, metrics.getLeading()); // positive
         }
         if (fm != null) {
-            fm.ascent = ascent;
+            fm.ascent = -ascent;
             fm.descent = descent;
+            fm.leading = leading;
         }
-        return height;
+        return ascent + descent + leading;
     }
 
     @Override

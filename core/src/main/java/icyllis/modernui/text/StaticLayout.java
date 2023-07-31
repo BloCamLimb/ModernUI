@@ -598,7 +598,7 @@ public class StaticLayout extends Layout {
                 fm.descent = fmCache[cacheIndex * 2 + 1];
                 cacheIndex++;
 
-                if (fm.ascent > fmAscent) {
+                if (fm.ascent < fmAscent) {
                     fmAscent = fm.ascent;
                 }
                 if (fm.descent > fmDescent) {
@@ -616,7 +616,7 @@ public class StaticLayout extends Layout {
                     boolean moreChars = (endPos < bufEnd);
 
                     final int ascent = fallbackLineSpacing
-                            ? Math.max(fmAscent, Math.round(ascents[breakIndex]))
+                            ? Math.min(fmAscent, Math.round(ascents[breakIndex]))
                             : fmAscent;
                     final int descent = fallbackLineSpacing
                             ? Math.max(fmDescent, Math.round(descents[breakIndex]))
@@ -770,10 +770,10 @@ public class StaticLayout extends Layout {
             // below calculation as if it was the last line
             int maxLineBelow = includePad ? bottom : below;
             // similar to the calculation of v below, without the extra.
-            mMaxLineHeight = v + (maxLineBelow + above);
+            mMaxLineHeight = v + (maxLineBelow - above);
         }
 
-        v += (below + above);
+        v += (below - above);
         lines[off + mColumns + START] = end;
         lines[off + mColumns + TOP] = v;
 
