@@ -256,7 +256,7 @@ public class BoringLayout extends Layout implements TextUtils.EllipsizeCallback 
             /*spacing = metrics.bottom - metrics.top;
             mDesc = metrics.bottom;*/
         } else {
-            spacing = metrics.descent + metrics.ascent;
+            spacing = metrics.descent - metrics.ascent;
             mDesc = metrics.descent;
         }
 

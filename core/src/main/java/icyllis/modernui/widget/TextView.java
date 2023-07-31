@@ -920,7 +920,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         }
 
         final FontMetricsInt fontMetrics = getPaint().getFontMetricsInt();
-        final int fontMetricsTop = fontMetrics.ascent;
+        final int fontMetricsTop = -fontMetrics.ascent;
 
         if (firstBaselineToTopHeight > fontMetricsTop) {
             final int paddingTop = firstBaselineToTopHeight - fontMetricsTop;
@@ -965,7 +965,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * @see #setFirstBaselineToTopHeight(int)
      */
     public int getFirstBaselineToTopHeight() {
-        return getPaddingTop() + getPaint().getFontMetricsInt().ascent;
+        return getPaddingTop() - getPaint().getFontMetricsInt().ascent;
     }
 
     /**

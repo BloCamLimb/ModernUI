@@ -19,7 +19,6 @@
 package icyllis.modernui.graphics.text;
 
 import javax.annotation.Nonnull;
-import java.awt.*;
 
 /**
  * Also known as Font Extent.
@@ -28,7 +27,7 @@ public class FontMetricsInt {
 
     /**
      * The recommended distance above the baseline for singled spaced text.
-     * This is always a positive integer.
+     * This is always a negative integer.
      */
     public int ascent;
 
@@ -38,6 +37,11 @@ public class FontMetricsInt {
      */
     public int descent;
 
+    /**
+     * The recommended additional space to add between lines of text.
+     */
+    public int leading;
+
     public FontMetricsInt() {
     }
 
@@ -45,16 +49,8 @@ public class FontMetricsInt {
         ascent = descent = 0;
     }
 
-    public int getAscent() {
-        return ascent;
-    }
-
-    public int getDescent() {
-        return descent;
-    }
-
-    public void extendBy(@Nonnull FontMetrics fm) {
-        extendBy(fm.getAscent(), fm.getDescent());
+    public void extendBy(@Nonnull java.awt.FontMetrics fm) {
+        extendBy(-fm.getAscent(), fm.getDescent());
     }
 
     public void extendBy(@Nonnull FontMetricsInt fm) {
@@ -62,7 +58,7 @@ public class FontMetricsInt {
     }
 
     public void extendBy(int ascent, int descent) {
-        this.ascent = Math.max(this.ascent, ascent); // positive
+        this.ascent = Math.min(this.ascent, ascent); // negative
         this.descent = Math.max(this.descent, descent); // positive
     }
 
