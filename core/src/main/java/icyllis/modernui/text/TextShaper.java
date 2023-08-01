@@ -31,7 +31,7 @@ import java.util.Objects;
  * <p>
  * Text shaping is a preprocess for drawing text into canvas with glyphs. The glyph is a most
  * primitive unit of the text drawing, consist of glyph identifier in the font file and its position
- * and style. You can draw the shape result to Canvas by calling {@link Canvas#drawText}.
+ * and style. You can draw the shape result to Canvas by calling {@link Canvas#drawShapedText}.
  * <p>
  * For most of the use cases, {@link #shapeText} will provide text shaping
  * functionalities needed.

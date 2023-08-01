@@ -467,7 +467,7 @@ public class BoringLayout extends Layout implements TextUtils.EllipsizeCallback 
     @Override
     public void drawText(@NonNull Canvas canvas, int firstLine, int lastLine) {
         if (mDirect != null) {
-            canvas.drawText(mDirect, 0, mBottom - mDesc, mPaint);
+            canvas.drawShapedText(mDirect, 0, mBottom - mDesc, mPaint);
         } else {
             super.drawText(canvas, firstLine, lastLine);
         }

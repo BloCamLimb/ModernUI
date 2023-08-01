@@ -24,6 +24,7 @@ import org.jetbrains.annotations.ApiStatus;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.awt.*;
+import java.awt.font.FontRenderContext;
 import java.util.Locale;
 
 /**
@@ -34,18 +35,18 @@ public class FontPaint {
     /**
      * Bit flag used with fontStyle to request the plain/normal style
      */
-    public static final int PLAIN = Font.PLAIN;
+    public static final int PLAIN = java.awt.Font.PLAIN;
     public static final int NORMAL = PLAIN;     // alias
 
     /**
      * Bit flag used with fontStyle to request the bold style
      */
-    public static final int BOLD = Font.BOLD;
+    public static final int BOLD = java.awt.Font.BOLD;
 
     /**
      * Bit flag used with fontStyle to request the italic style
      */
-    public static final int ITALIC = Font.ITALIC;
+    public static final int ITALIC = java.awt.Font.ITALIC;
 
     /**
      * Font style constant to request the bold and italic style
@@ -188,7 +189,7 @@ public class FontPaint {
     public int getFontMetricsInt(@Nullable FontMetricsInt fm) {
         int ascent = 0, descent = 0, leading = 0;
         for (FontFamily family : getFont().getFamilies()) {
-            Font font = family.chooseFont(getFontStyle(), getFontSize());
+            java.awt.Font font = family.chooseFont(getFontStyle(), getFontSize());
             FontMetrics metrics = LayoutPiece.sGraphics[getRenderFlags()].getFontMetrics(font);
             ascent = Math.max(ascent, metrics.getAscent()); // positive
             descent = Math.max(descent, metrics.getDescent()); // positive
@@ -200,6 +201,11 @@ public class FontPaint {
             fm.leading = leading;
         }
         return ascent + descent + leading;
+    }
+
+    @ApiStatus.Internal
+    public static FontRenderContext getFontRenderContext(int renderFlags) {
+        return LayoutPiece.sGraphics[renderFlags].getFontRenderContext();
     }
 
     @Override
