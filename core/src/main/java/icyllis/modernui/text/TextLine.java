@@ -1038,7 +1038,7 @@ public class TextLine {
             FloatArrayList xOffsets = mCachedXOffsets;
             assert pieces.size() == xOffsets.size();
             for (int i = 0, count = pieces.size(); i < count; i++) {
-                c.drawTextRun(
+                TextUtils.drawTextRun(c,
                         pieces.get(i), leftX + xOffsets.getFloat(i), y, wp);
             }
 

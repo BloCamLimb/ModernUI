@@ -2407,13 +2407,13 @@ public final class GLSurfaceCanvas extends GLCanvas {
         private final int mGlyphCount;
         private final float mOffsetX;
         private final float mOffsetY;
-        private final Font mFont;
+        private final java.awt.Font mFont;
 
         private int mTexture;
         private int mVisibleGlyphCount;
 
         public DrawTextOp(int[] glyphs, int glyphOffset, float[] positions, int positionOffset, int glyphCount,
-                          float offsetX, float offsetY, Font font) {
+                          float offsetX, float offsetY, java.awt.Font font) {
             mGlyphs = glyphs;
             mGlyphOffset = glyphOffset;
             mPositions = positions;

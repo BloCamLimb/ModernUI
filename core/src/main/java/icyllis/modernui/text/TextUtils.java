@@ -22,7 +22,8 @@ import com.ibm.icu.util.ULocale;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.text.ShapedText;
+import icyllis.modernui.graphics.Paint;
+import icyllis.modernui.graphics.text.*;
 import icyllis.modernui.text.style.*;
 import icyllis.modernui.util.BinaryIO;
 import icyllis.modernui.view.View;
@@ -430,7 +431,7 @@ public final class TextUtils {
         ShapedText.layoutRun(
                 text, contextStart, contextEnd,
                 start, end, isRtl, paint.getInternalPaint(), null,
-                (piece, offsetX) -> canvas.drawTextRun(piece, x + offsetX, y, paint)
+                (piece, offsetX) -> drawTextRun(canvas, piece, x + offsetX, y, paint)
         );
     }
 
@@ -482,9 +483,49 @@ public final class TextUtils {
         ShapedText.layoutRun(
                 buf, 0, len,
                 start - contextStart, end - contextStart, isRtl, paint.getInternalPaint(), null,
-                (piece, offsetX) -> canvas.drawTextRun(piece, x + offsetX, y, paint)
+                (piece, offsetX) -> drawTextRun(canvas, piece, x + offsetX, y, paint)
         );
         recycle(buf);
+    }
+
+    /**
+     * Draw a layout piece, the base unit to draw a text.
+     *
+     * @param piece the layout piece to draw
+     * @param x     the horizontal position at which to draw the text between runs
+     * @param y     the vertical baseline of the line of text
+     * @param paint the paint used to draw the text, only color will be taken
+     * @see TextUtils#drawTextRun
+     */
+    @ApiStatus.Internal
+    static void drawTextRun(@NonNull Canvas canvas, @NonNull LayoutPiece piece,
+                            float x, float y, @NonNull Paint paint) {
+        //TODO this bounds check is not correct, this is logical bounds not visual pixel bounds
+        if (piece.getAdvance() == 0 || (piece.getGlyphs().length == 0)
+                || canvas.quickReject(x, y + piece.getAscent(),
+                x + piece.getAdvance(), y + piece.getDescent())) {
+            return;
+        }
+        final int nGlyphs = piece.getGlyphCount();
+        if (nGlyphs == 0) {
+            return;
+        }
+        FontFamily lastFont = piece.getFont(0);
+        int lastPos = 0;
+        int currPos = 1;
+        for (; currPos < nGlyphs; currPos++) {
+            FontFamily curFont = piece.getFont(currPos);
+            if (lastFont != curFont) {
+                canvas.drawGlyphs(piece.getGlyphs(), lastPos,
+                        piece.getPositions(), lastPos << 1, currPos - lastPos,
+                        lastFont, x, y, paint);
+                lastFont = curFont;
+                lastPos = currPos;
+            }
+        }
+        canvas.drawGlyphs(piece.getGlyphs(), lastPos,
+                piece.getPositions(), lastPos << 1, currPos - lastPos,
+                lastFont, x, y, paint);
     }
 
     /**

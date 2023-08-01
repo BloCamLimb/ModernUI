@@ -18,10 +18,9 @@
 
 package icyllis.modernui.test;
 
-import com.ibm.icu.text.*;
-import com.ibm.icu.util.ULocale;
-import icyllis.modernui.core.Core;
+import com.ibm.icu.text.NumberFormat;
 import icyllis.arc3d.core.Matrix4;
+import icyllis.modernui.core.Core;
 import org.lwjgl.stb.*;
 import org.lwjgl.system.MemoryUtil;
 

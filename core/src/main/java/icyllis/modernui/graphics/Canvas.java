@@ -987,7 +987,7 @@ public abstract class Canvas {
      * @param y              Additional amount of y offset of the glyph Y positions.
      * @param paint          Paint used for drawing.
      * @see icyllis.modernui.text.TextShaper
-     * @see #drawText
+     * @see #drawShapedText
      */
     public abstract void drawGlyphs(@NonNull int[] glyphs,
                                     int glyphOffset,
@@ -1004,14 +1004,14 @@ public abstract class Canvas {
      * The Paint must be the same as the one passed to any of {@link icyllis.modernui.text.TextShaper} methods.
      *
      * @param text  A sequence of positioned glyphs.
-     * @param x     Additional amount of x offset of the glyph X positions.
-     * @param y     Additional amount of y offset of the glyph Y positions.
+     * @param x     Additional amount of x offset of the glyph X positions, i.e. left position
+     * @param y     Additional amount of y offset of the glyph Y positions, i.e. baseline position
      * @param paint Paint used for drawing.
      * @see icyllis.modernui.text.TextShaper
      */
-    public final void drawText(@NonNull ShapedText text,
-                               float x, float y, @NonNull Paint paint) {
-        drawText(text, 0, text.getGlyphCount(), x, y, paint);
+    public final void drawShapedText(@NonNull ShapedText text,
+                                     float x, float y, @NonNull Paint paint) {
+        drawShapedText(text, 0, text.getGlyphCount(), x, y, paint);
     }
 
     /**
@@ -1022,13 +1022,13 @@ public abstract class Canvas {
      * @param text  A sequence of positioned glyphs.
      * @param start Number of glyphs to skip before drawing text.
      * @param count Number of glyphs to be drawn.
-     * @param x     Additional amount of x offset of the glyph X positions.
-     * @param y     Additional amount of y offset of the glyph Y positions.
+     * @param x     Additional amount of x offset of the glyph X positions, i.e. left position
+     * @param y     Additional amount of y offset of the glyph Y positions, i.e. baseline position
      * @param paint Paint used for drawing.
      * @see icyllis.modernui.text.TextShaper
      */
-    public final void drawText(@NonNull ShapedText text, int start, int count,
-                               float x, float y, @NonNull Paint paint) {
+    public final void drawShapedText(@NonNull ShapedText text, int start, int count,
+                                     float x, float y, @NonNull Paint paint) {
         if ((start | count | start + count |
                 text.getGlyphCount() - start - count) < 0) {
             throw new IndexOutOfBoundsException();
@@ -1054,45 +1054,31 @@ public abstract class Canvas {
                 lastFont, x, y, paint);
     }
 
-    /**
-     * Draw a layout piece, the base unit to draw a text.
-     * <p>
-     * Do not call this method directly unless you are implementing your own widget for text.
-     *
-     * @param piece the layout piece to draw
-     * @param x     the horizontal position at which to draw the text between runs
-     * @param y     the vertical baseline of the line of text
-     * @param paint the paint used to draw the text, only color will be taken
-     * @see icyllis.modernui.text.TextUtils#drawTextRun
-     */
-    @ApiStatus.Internal
-    public final void drawTextRun(@NonNull LayoutPiece piece, float x, float y, @NonNull Paint paint) {
-        //TODO this bounds check is not correct, this is logical bounds not visual pixel bounds
-        if (piece.getAdvance() == 0 || (piece.getGlyphs().length == 0)
-                || quickReject(x, y + piece.getAscent(),
-                x + piece.getAdvance(), y + piece.getDescent())) {
+    public final void drawSimpleText(@NonNull char[] text, @NonNull FontFamily font,
+                                     float x, float y, @NonNull Paint paint) {
+        if (text.length == 0) {
             return;
         }
-        final int nGlyphs = piece.getGlyphCount();
-        if (nGlyphs == 0) {
-            return;
+        var f = font.chooseFont(paint.getFontStyle(), paint.getFontSize());
+        var frc = FontPaint.getFontRenderContext(
+                (paint.isTextAntiAlias() ? FontPaint.RENDER_FLAG_ANTI_ALIAS : 0) |
+                        (paint.isLinearText() ? FontPaint.RENDER_FLAG_LINEAR_METRICS : 0));
+        var gv = f.createGlyphVector(frc, text);
+        int nGlyphs = gv.getNumGlyphs();
+        drawGlyphs(gv.getGlyphCodes(0, nGlyphs, null),
+                0,
+                gv.getGlyphPositions(0, nGlyphs, null),
+                0,
+                nGlyphs,
+                font,
+                x, y, paint);
+    }
+
+    public final void drawSimpleText(@NonNull String text, @NonNull FontFamily font,
+                                     float x, float y, @NonNull Paint paint) {
+        if (!text.isBlank()) {
+            drawSimpleText(text.toCharArray(), font, x, y, paint);
         }
-        FontFamily lastFont = piece.getFont(0);
-        int lastPos = 0;
-        int currPos = 1;
-        for (; currPos < nGlyphs; currPos++) {
-            FontFamily curFont = piece.getFont(currPos);
-            if (lastFont != curFont) {
-                drawGlyphs(piece.getGlyphs(), lastPos,
-                        piece.getPositions(), lastPos << 1, currPos - lastPos,
-                        lastFont, x, y, paint);
-                lastFont = curFont;
-                lastPos = currPos;
-            }
-        }
-        drawGlyphs(piece.getGlyphs(), lastPos,
-                piece.getPositions(), lastPos << 1, currPos - lastPos,
-                lastFont, x, y, paint);
     }
 
     /**

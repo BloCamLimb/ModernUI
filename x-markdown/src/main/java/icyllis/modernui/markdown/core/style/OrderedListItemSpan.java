@@ -104,7 +104,7 @@ public class OrderedListItemSpan implements LeadingMarginSpan {
                 oldColor = p.getColor();
                 p.setColor(newColor);
             }
-            c.drawText(mShapedNumber, x, baseline, p);
+            c.drawShapedText(mShapedNumber, x, baseline, p);
             if (newColor != 0) {
                 p.setColor(oldColor);
             }
