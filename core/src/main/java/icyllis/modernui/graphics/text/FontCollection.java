@@ -196,8 +196,8 @@ public class FontCollection {
                             (isCombining(ch) || (Emoji.isEmojiModifier(ch) && Emoji.isEmojiModifierBase(prevCh)))) {
                         int prevLength = Character.charCount(prevCh);
                         if (lastRun != null) {
-                            lastRun.end -= prevLength;
-                            if (lastRun.start == lastRun.end) {
+                            lastRun.limit -= prevLength;
+                            if (lastRun.start == lastRun.limit) {
                                 result.remove(lastRun);
                             }
                         }
@@ -218,7 +218,7 @@ public class FontCollection {
             }
             prevCh = ch;
             if (lastRun != null) {
-                lastRun.end = next;
+                lastRun.limit = next;
             }
 
             // Stop searching the remaining characters if the result length gets runMax + 2.
@@ -316,15 +316,15 @@ public class FontCollection {
 
         private final FontFamily family;
         private final int start;
-        private int end;
+        private int limit;
 
-        Run(FontFamily family, int start, int end) {
+        Run(FontFamily family, int start, int limit) {
             this.family = family;
             this.start = start;
-            this.end = end;
+            this.limit = limit;
         }
 
-        // base font without style and size
+        // font family
         public FontFamily family() {
             return family;
         }
@@ -334,9 +334,9 @@ public class FontCollection {
             return start;
         }
 
-        // end index (exclusive)
-        public int end() {
-            return end;
+        // limit index (exclusive)
+        public int limit() {
+            return limit;
         }
     }
 }

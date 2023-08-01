@@ -21,7 +21,7 @@ package icyllis.modernui.graphics.text;
 import javax.annotation.Nonnull;
 
 /**
- * Also known as Font Extent.
+ * Also used as Font Extent (just ascent & descent).
  */
 public class FontMetricsInt {
 
@@ -46,20 +46,21 @@ public class FontMetricsInt {
     }
 
     public void reset() {
-        ascent = descent = 0;
-    }
-
-    public void extendBy(@Nonnull java.awt.FontMetrics fm) {
-        extendBy(-fm.getAscent(), fm.getDescent());
+        ascent = descent = leading = 0;
     }
 
     public void extendBy(@Nonnull FontMetricsInt fm) {
-        extendBy(fm.ascent, fm.descent);
+        extendBy(fm.ascent, fm.descent, fm.leading);
     }
 
     public void extendBy(int ascent, int descent) {
         this.ascent = Math.min(this.ascent, ascent); // negative
         this.descent = Math.max(this.descent, descent); // positive
+    }
+
+    public void extendBy(int ascent, int descent, int leading) {
+        extendBy(ascent, descent);
+        this.leading = Math.max(this.leading, leading); // positive
     }
 
     @Override
@@ -70,20 +71,24 @@ public class FontMetricsInt {
         FontMetricsInt that = (FontMetricsInt) o;
 
         if (ascent != that.ascent) return false;
-        return descent == that.descent;
+        if (descent != that.descent) return false;
+        return leading == that.leading;
     }
 
     @Override
     public int hashCode() {
         int result = ascent;
         result = 31 * result + descent;
+        result = 31 * result + leading;
         return result;
     }
 
     @Override
     public String toString() {
-        return "FontMetricsInt: " +
+        return "FontMetricsInt{" +
                 "ascent=" + ascent +
-                ", descent=" + descent;
+                ", descent=" + descent +
+                ", leading=" + leading +
+                '}';
     }
 }

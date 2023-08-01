@@ -18,6 +18,7 @@
 
 package icyllis.modernui.graphics;
 
+import icyllis.arc3d.core.BlendMode;
 import icyllis.arc3d.core.*;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.graphics.text.*;
@@ -982,7 +983,7 @@ public abstract class Canvas {
      *                       {@code positionOffset + 1}, then the second glyph X position must be
      *                       stored at {@code positionOffset + 2}.
      * @param glyphCount     Number of glyphs to be drawn.
-     * @param font           FontFamily used for drawing.
+     * @param font           FontFace used for drawing.
      * @param x              Additional amount of x offset of the glyph X positions.
      * @param y              Additional amount of y offset of the glyph Y positions.
      * @param paint          Paint used for drawing.
@@ -994,7 +995,7 @@ public abstract class Canvas {
                                     @NonNull float[] positions,
                                     int positionOffset,
                                     int glyphCount,
-                                    @NonNull FontFamily font,
+                                    @NonNull Font font,
                                     float x, float y,
                                     @NonNull Paint paint);
 
@@ -1036,11 +1037,11 @@ public abstract class Canvas {
         if (count == 0) {
             return;
         }
-        FontFamily lastFont = text.getFont(start);
+        var lastFont = text.getFont(start);
         int lastPos = start;
         int currPos = start + 1;
         for (int end = start + count; currPos < end; currPos++) {
-            FontFamily curFont = text.getFont(currPos);
+            var curFont = text.getFont(currPos);
             if (lastFont != curFont) {
                 drawGlyphs(text.getGlyphs(), lastPos,
                         text.getPositions(), lastPos << 1, currPos - lastPos,
@@ -1054,27 +1055,28 @@ public abstract class Canvas {
                 lastFont, x, y, paint);
     }
 
-    public final void drawSimpleText(@NonNull char[] text, @NonNull FontFamily font,
+    public final void drawSimpleText(@NonNull char[] text, @NonNull Font font,
                                      float x, float y, @NonNull Paint paint) {
         if (text.length == 0) {
             return;
         }
-        var f = font.chooseFont(paint.getFontStyle(), paint.getFontSize());
-        var frc = FontPaint.getFontRenderContext(
-                (paint.isTextAntiAlias() ? FontPaint.RENDER_FLAG_ANTI_ALIAS : 0) |
-                        (paint.isLinearText() ? FontPaint.RENDER_FLAG_LINEAR_METRICS : 0));
-        var gv = f.createGlyphVector(frc, text);
-        int nGlyphs = gv.getNumGlyphs();
-        drawGlyphs(gv.getGlyphCodes(0, nGlyphs, null),
-                0,
-                gv.getGlyphPositions(0, nGlyphs, null),
-                0,
-                nGlyphs,
-                font,
-                x, y, paint);
+        if (font instanceof StandardFont ff) {
+            var fff = ff.chooseFont(paint.getFontSize());
+            var frc = StandardFont.getFontRenderContext(
+                    FontPaint.computeRenderFlags(paint));
+            var gv = fff.createGlyphVector(frc, text);
+            int nGlyphs = gv.getNumGlyphs();
+            drawGlyphs(gv.getGlyphCodes(0, nGlyphs, null),
+                    0,
+                    gv.getGlyphPositions(0, nGlyphs, null),
+                    0,
+                    nGlyphs,
+                    font,
+                    x, y, paint);
+        }
     }
 
-    public final void drawSimpleText(@NonNull String text, @NonNull FontFamily font,
+    public final void drawSimpleText(@NonNull String text, @NonNull Font font,
                                      float x, float y, @NonNull Paint paint) {
         if (!text.isBlank()) {
             drawSimpleText(text.toCharArray(), font, x, y, paint);

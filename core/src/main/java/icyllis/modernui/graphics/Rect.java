@@ -90,6 +90,20 @@ public class Rect {
     }
 
     /**
+     * Returns the rectangle's left.
+     */
+    public final int x() {
+        return left;
+    }
+
+    /**
+     * Return the rectangle's top.
+     */
+    public final int y() {
+        return top;
+    }
+
+    /**
      * @return the rectangle's width. This does not check for a valid rectangle
      * (i.e. left <= right) so the result may be negative.
      */
@@ -541,6 +555,7 @@ public class Rect {
 
     /**
      * Return a string representation of the rectangle in a compact form.
+     *
      * @hide
      */
     @Nonnull

@@ -23,7 +23,8 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
-import icyllis.modernui.graphics.text.*;
+import icyllis.modernui.graphics.text.LayoutPiece;
+import icyllis.modernui.graphics.text.ShapedText;
 import icyllis.modernui.text.style.*;
 import icyllis.modernui.util.BinaryIO;
 import icyllis.modernui.view.View;
@@ -510,11 +511,11 @@ public final class TextUtils {
         if (nGlyphs == 0) {
             return;
         }
-        FontFamily lastFont = piece.getFont(0);
+        var lastFont = piece.getFont(0);
         int lastPos = 0;
         int currPos = 1;
         for (; currPos < nGlyphs; currPos++) {
-            FontFamily curFont = piece.getFont(currPos);
+            var curFont = piece.getFont(currPos);
             if (lastFont != curFont) {
                 canvas.drawGlyphs(piece.getGlyphs(), lastPos,
                         piece.getPositions(), lastPos << 1, currPos - lastPos,
@@ -606,7 +607,8 @@ public final class TextUtils {
 
         MeasuredParagraph mt = null;
         try {
-            mt = MeasuredParagraph.buildForStaticLayout(paint, null, ellipsis, 0, ellipsis.length(), textDir, false, null);
+            mt = MeasuredParagraph.buildForStaticLayout(paint, null, ellipsis, 0, ellipsis.length(), textDir, false,
+                    null);
             ellipsisWidth = mt.getAdvance(0, ellipsis.length());
         } finally {
             if (mt != null) {
