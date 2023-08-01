@@ -20,18 +20,14 @@ package icyllis.modernui.graphics.text;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.util.SparseArray;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.UnmodifiableView;
 
-import java.awt.Font;
-import java.awt.*;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
-public class FontFamily {
+public final class FontFamily {
 
     public static final FontFamily SANS_SERIF;
     public static final FontFamily SERIF;
@@ -47,16 +43,18 @@ public class FontFamily {
 
     static {
         // Use Java's logical font as the default initial font if user does not override it in some configuration files
-        GraphicsEnvironment.getLocalGraphicsEnvironment().preferLocaleFonts();
+        java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment().preferLocaleFonts();
 
         ConcurrentHashMap<String, FontFamily> map = new ConcurrentHashMap<>();
         ConcurrentHashMap<String, String> aliases = new ConcurrentHashMap<>();
 
         Locale defaultLocale = Locale.getDefault();
-        for (String name : GraphicsEnvironment.getLocalGraphicsEnvironment()
+        Function<String, FontFamily> mapping =
+                name -> new FontFamily(new java.awt.Font(name, java.awt.Font.PLAIN, 1));
+        for (String name : java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment()
                 .getAvailableFontFamilyNames(Locale.ROOT)) {
             if (!map.containsKey(name)) {
-                FontFamily family = new FontFamily(new Font(name, Font.PLAIN, 1));
+                FontFamily family = mapping.apply(name);
                 map.put(name, family);
                 String alias = family.getFamilyName(defaultLocale);
                 if (!name.equals(alias)) {
@@ -64,11 +62,9 @@ public class FontFamily {
                 }
             }
         }
-        Function<String, FontFamily> mapping = name ->
-                new FontFamily(new Font(name, Font.PLAIN, 1));
-        SANS_SERIF = map.computeIfAbsent(Font.SANS_SERIF, mapping);
-        SERIF = map.computeIfAbsent(Font.SERIF, mapping);
-        MONOSPACED = map.computeIfAbsent(Font.MONOSPACED, mapping);
+        SANS_SERIF = map.computeIfAbsent(java.awt.Font.SANS_SERIF, mapping);
+        SERIF = map.computeIfAbsent(java.awt.Font.SERIF, mapping);
+        MONOSPACED = map.computeIfAbsent(java.awt.Font.MONOSPACED, mapping);
 
         sSystemFontMap = map;
         sSystemFontAliases = aliases;
@@ -94,9 +90,9 @@ public class FontFamily {
     @NonNull
     public static FontFamily createFamily(@NonNull File file, boolean register) {
         try {
-            Font[] fonts = Font.createFonts(file);
+            var fonts = java.awt.Font.createFonts(file);
             return createFamily(fonts, register);
-        } catch (FontFormatException | IOException e) {
+        } catch (java.awt.FontFormatException | IOException e) {
             throw new RuntimeException(e);
         }
     }
@@ -104,15 +100,15 @@ public class FontFamily {
     @NonNull
     public static FontFamily createFamily(@NonNull InputStream stream, boolean register) {
         try {
-            Font[] fonts = Font.createFonts(stream);
+            var fonts = java.awt.Font.createFonts(stream);
             return createFamily(fonts, register);
-        } catch (FontFormatException | IOException e) {
+        } catch (java.awt.FontFormatException | IOException e) {
             throw new RuntimeException(e);
         }
     }
 
     @NonNull
-    private static FontFamily createFamily(@NonNull Font[] fonts, boolean register) {
+    private static FontFamily createFamily(@NonNull java.awt.Font[] fonts, boolean register) {
         FontFamily family = new FontFamily(fonts[0]);
         if (register) {
             String name = family.getFamilyName();
@@ -121,64 +117,54 @@ public class FontFamily {
             if (!name.equals(alias)) {
                 sSystemFontAliases.putIfAbsent(alias, name);
             }
-            for (Font font : fonts) {
-                GraphicsEnvironment.getLocalGraphicsEnvironment()
+            for (var font : fonts) {
+                java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment()
                         .registerFont(font);
             }
         }
         return family;
     }
 
-    // root name
-    private final String mFamilyName;
+    private final Font mFont;
+    private Font mBold;
+    private Font mItalic;
+    private Font mBoldItalic;
 
-    private Font mFont;
-    private SparseArray<Font>[] mFonts;
-
-    @ApiStatus.Internal
-    protected FontFamily(String name) {
-        mFamilyName = name;
+    public FontFamily(Font font) {
+        mFont = Objects.requireNonNull(font);
     }
 
-    @SuppressWarnings("unchecked")
-    private FontFamily(@NonNull Font font) {
-        this(font.getFamily(Locale.ROOT));
-        mFont = font.deriveFont(Font.PLAIN);
-        mFonts = new SparseArray[4];
-        for (int i = 0; i < 4; i++) {
-            mFonts[i] = new SparseArray<>();
-        }
+    private FontFamily(@NonNull java.awt.Font font) {
+        mFont = new StandardFont(font);
+        mBold = new StandardFont(font.deriveFont(java.awt.Font.BOLD));
+        mItalic = new StandardFont(font.deriveFont(java.awt.Font.ITALIC));
+        mBoldItalic = new StandardFont(font.deriveFont(java.awt.Font.BOLD | java.awt.Font.ITALIC));
     }
 
-    public Font chooseFont(int style, int size) {
-        if (size <= 96) {
-            SparseArray<Font> vector = mFonts[style];
-            Font value = vector.get(size);
-            if (value != null) {
-                return value;
-            }
-            value = mFont.deriveFont(style, size);
-            vector.put(size, value);
-            return value;
-        }
-        return mFont.deriveFont(style, size);
+    public Font getClosestMatch(int style) {
+        return switch (style) {
+            case FontPaint.NORMAL -> mFont;
+            case FontPaint.BOLD -> mBold != null ? mBold : mFont;
+            case FontPaint.ITALIC -> mItalic != null ? mItalic : mFont;
+            case FontPaint.BOLD | FontPaint.ITALIC -> mBoldItalic != null ? mBoldItalic : mFont;
+            default -> null;
+        };
     }
 
     public boolean hasGlyph(int ch) {
-        return mFont.canDisplay(ch);
+        return mFont.hasGlyph(ch, 0);
     }
 
     public boolean hasGlyph(int ch, int vs) {
-        // no public API
-        return mFont.canDisplay(ch);
+        return mFont.hasGlyph(ch, vs);
     }
 
     public String getFamilyName() {
-        return mFamilyName;
+        return mFont.getFamilyName();
     }
 
     public String getFamilyName(Locale locale) {
-        return mFont.getFamily(locale);
+        return mFont.getFamilyName(locale);
     }
 
     @Override
@@ -196,6 +182,11 @@ public class FontFamily {
 
     @Override
     public String toString() {
-        return "FontFamily{" + mFamilyName + '}';
+        return "FontFamily{" +
+                "mFont=" + mFont +
+                ", mBold=" + mBold +
+                ", mItalic=" + mItalic +
+                ", mBoldItalic=" + mBoldItalic +
+                '}';
     }
 }

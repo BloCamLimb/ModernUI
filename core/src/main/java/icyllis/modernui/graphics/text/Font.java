@@ -19,29 +19,66 @@
 package icyllis.modernui.graphics.text;
 
 import icyllis.arc3d.core.Strike;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Rect;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 
+import java.util.Locale;
+
 /**
- * Platform abstract font face, represents a single font file.
+ * Platform abstract font face, may represent a single font file.
+ * For standard font, this may represent a fake font or logical font.
  */
-public abstract class Font {
+public interface Font {
 
-    public abstract boolean hasGlyph(int ch, int vs);
+    /**
+     * Returns the intrinsic style of this font.
+     * For standard fonts, may return the style that this object is simulating.
+     * This indicates that this font can directly provide glyph images in this style.
+     */
+    int getStyle();
 
-    public abstract float doSimpleLayout(char[] buf,
-                                         int start, int limit,
-                                         int style, int size, int render_flags,
-                                         IntArrayList glyphs, FloatArrayList positions);
+    default String getFullName() {
+        return getFullName(Locale.ROOT);
+    }
 
-    public abstract float doComplexLayout(char[] buf,
-                                          int context_start, int context_limit,
-                                          int layout_start, int layout_limit,
-                                          int style, int size, int render_flags,
-                                          IntArrayList glyphs, FloatArrayList positions,
-                                          float[] advances, int advance_offset,
-                                          Rect bounds);
+    String getFullName(@NonNull Locale locale);
 
-    public abstract Strike findOrCreateStrike(int style, int size, int render_flags);
+    default String getFamilyName() {
+        return getFamilyName(Locale.ROOT);
+    }
+
+    String getFamilyName(@NonNull Locale locale);
+
+    /**
+     * Expand the font metrics.
+     *
+     * @param paint a paint object used for retrieving font metrics.
+     * @param fm    a nullable destination object. If null is passed, this function only
+     *              retrieve recommended interline spacing. If non-null is passed, this function
+     *              expands to font metrics to it.
+     * @return the font's interline spacing.
+     */
+    int getMetrics(@NonNull FontPaint paint,
+                   @Nullable FontMetricsInt fm);
+
+    boolean hasGlyph(int ch, int vs);
+
+    // map characters to glyphs
+    float doSimpleLayout(char[] buf, int start, int limit,
+                         FontPaint paint, IntArrayList glyphs,
+                         FloatArrayList positions, float x, float y);
+
+    // do HarfBuzz text shaping
+    float doComplexLayout(char[] buf,
+                          int contextStart, int contextLimit,
+                          int layoutStart, int layoutLimit,
+                          boolean isRtl, FontPaint paint,
+                          IntArrayList glyphs, FloatArrayList positions,
+                          float[] advances, int advanceOffset,
+                          Rect bounds, float x, float y);
+
+    Strike findOrCreateStrike(FontPaint paint);
 }

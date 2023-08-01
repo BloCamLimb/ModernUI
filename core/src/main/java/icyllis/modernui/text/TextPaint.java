@@ -386,8 +386,7 @@ public class TextPaint extends Paint {
         p.setFontSize(getFontSize());
         p.setFontStyle(getFontStyle());
         p.setRenderFlags(
-                (isTextAntiAlias() ? FontPaint.RENDER_FLAG_ANTI_ALIAS : 0) |
-                        (isLinearText() ? FontPaint.RENDER_FLAG_LINEAR_METRICS : 0)
+               FontPaint.computeRenderFlags(this)
         );
         return p;
     }

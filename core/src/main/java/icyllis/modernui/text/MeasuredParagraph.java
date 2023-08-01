@@ -368,8 +368,8 @@ public class MeasuredParagraph {
      * <p>
      * This is available only if the MeasuredParagraph is computed with buildForStaticLayout.
      */
-    public void getFontMetricsInt(@IntRange(from = 0) int start, @IntRange(from = 0) int end,
-                                  @NonNull FontMetricsInt fmi) {
+    public void getExtent(@IntRange(from = 0) int start, @IntRange(from = 0) int end,
+                          @NonNull FontMetricsInt fmi) {
         if (mMeasuredText != null) {
             mMeasuredText.getExtent(start, end, fmi);
         }

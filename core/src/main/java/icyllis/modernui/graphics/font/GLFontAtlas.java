@@ -157,7 +157,7 @@ public class GLFontAtlas implements AutoCloseable {
         }
 
         // include border
-        mTexture.upload(0, rect.mLeft, rect.mTop,
+        mTexture.upload(0, rect.x(), rect.y(),
                 rect.width(), rect.height(),
                 0, 0, 0, 1,
                 mMaskFormat == Engine.MASK_FORMAT_ARGB ? GL_RGBA : GL_RED, GL_UNSIGNED_BYTE, pixels);

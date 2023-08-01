@@ -536,7 +536,7 @@ public class PrecomputedText implements Spannable {
                     + "para: (" + paraStart + ", " + paraEnd + "), "
                     + "request: (" + start + ", " + end + ")");
         }
-        getMeasuredParagraph(paraIndex).getFontMetricsInt(start - paraStart,
+        getMeasuredParagraph(paraIndex).getExtent(start - paraStart,
                 end - paraStart, outMetrics);
     }
 

@@ -26,8 +26,10 @@ import icyllis.arc3d.opengl.*;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Core;
-import icyllis.modernui.graphics.font.*;
-import icyllis.modernui.graphics.text.*;
+import icyllis.modernui.graphics.font.GLBakedGlyph;
+import icyllis.modernui.graphics.font.GlyphManager;
+import icyllis.modernui.graphics.text.Font;
+import icyllis.modernui.graphics.text.StandardFont;
 import icyllis.modernui.view.Gravity;
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import it.unimi.dsi.fastutil.ints.*;
@@ -35,11 +37,9 @@ import org.lwjgl.glfw.GLFW;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.concurrent.NotThreadSafe;
-import java.awt.*;
 import java.io.IOException;
 import java.nio.*;
 import java.util.*;
-import java.util.List;
 
 import static icyllis.arc3d.opengl.GLCore.*;
 import static org.lwjgl.system.MemoryUtil.*;
@@ -1059,7 +1059,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
                             0, (float) mHeight / layer.getHeight(),
                             (float) mWidth / layer.getWidth(), 0);
                     mLayerImageMemory.flip();
-                    mTextureMeshVertexBuffer.updateData(0, mLayerImageMemory.remaining(), MemoryUtil.memAddress(mLayerImageMemory)
+                    mTextureMeshVertexBuffer.updateData(0, mLayerImageMemory.remaining(),
+                            MemoryUtil.memAddress(mLayerImageMemory)
                     );
                     mLayerImageMemory.clear();
 
@@ -1129,7 +1130,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
         }
         if (mColorMeshStagingBuffer.position() > 0) {
             mColorMeshStagingBuffer.flip();
-            mColorMeshVertexBuffer.updateData(0, mColorMeshStagingBuffer.remaining(), MemoryUtil.memAddress(mColorMeshStagingBuffer)
+            mColorMeshVertexBuffer.updateData(0, mColorMeshStagingBuffer.remaining(),
+                    MemoryUtil.memAddress(mColorMeshStagingBuffer)
             );
             mColorMeshStagingBuffer.clear();
         }
@@ -1153,7 +1155,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
         if (mTextureMeshStagingBuffer.position() > 0) {
             // preserve memory for layer rendering
             mTextureMeshStagingBuffer.flip();
-            mTextureMeshVertexBuffer.updateData(preserveForLayer, mTextureMeshStagingBuffer.remaining(), MemoryUtil.memAddress(mTextureMeshStagingBuffer)
+            mTextureMeshVertexBuffer.updateData(preserveForLayer, mTextureMeshStagingBuffer.remaining(),
+                    MemoryUtil.memAddress(mTextureMeshStagingBuffer)
             );
             mTextureMeshStagingBuffer.clear();
         }
@@ -1178,7 +1181,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
             }
             if (mGlyphStagingBuffer.position() > 0) {
                 mGlyphStagingBuffer.flip();
-                mGlyphVertexBuffer.updateData(0, mGlyphStagingBuffer.remaining(), MemoryUtil.memAddress(mGlyphStagingBuffer)
+                mGlyphVertexBuffer.updateData(0, mGlyphStagingBuffer.remaining(),
+                        MemoryUtil.memAddress(mGlyphStagingBuffer)
                 );
                 mGlyphStagingBuffer.clear();
             }
@@ -2378,24 +2382,26 @@ public final class GLSurfaceCanvas extends GLCanvas {
     @Override
     public void drawGlyphs(@NonNull int[] glyphs, int glyphOffset,
                            @NonNull float[] positions, int positionOffset,
-                           int glyphCount, @NonNull FontFamily font,
+                           int glyphCount, @NonNull Font font,
                            float x, float y,
                            @NonNull Paint paint) {
-        drawMatrix();
-        int color = paint.getColor();
-        float alpha = (color >>> 24) / 255.0f;
-        float red = ((color >> 16) & 0xff) / 255.0f;
-        float green = ((color >> 8) & 0xff) / 255.0f;
-        float blue = (color & 0xff) / 255.0f;
-        mDrawTexts.add(new DrawTextOp(glyphs, glyphOffset,
-                positions, positionOffset, glyphCount,
-                x, y, font.chooseFont(paint.getFontStyle(), paint.getFontSize())));
-        checkUniformStagingBuffer()
-                .putFloat(red * alpha)
-                .putFloat(green * alpha)
-                .putFloat(blue * alpha)
-                .putFloat(alpha);
-        mDrawOps.add(DRAW_TEXT);
+        if (font instanceof StandardFont ff) {
+            drawMatrix();
+            int color = paint.getColor();
+            float alpha = (color >>> 24) / 255.0f;
+            float red = ((color >> 16) & 0xff) / 255.0f;
+            float green = ((color >> 8) & 0xff) / 255.0f;
+            float blue = (color & 0xff) / 255.0f;
+            mDrawTexts.add(new DrawTextOp(glyphs, glyphOffset,
+                    positions, positionOffset, glyphCount,
+                    x, y, ff.chooseFont(paint.getFontSize())));
+            checkUniformStagingBuffer()
+                    .putFloat(red * alpha)
+                    .putFloat(green * alpha)
+                    .putFloat(blue * alpha)
+                    .putFloat(alpha);
+            mDrawOps.add(DRAW_TEXT);
+        }
     }
 
     private static class DrawTextOp {

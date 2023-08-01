@@ -19,12 +19,12 @@
 package icyllis.modernui.graphics.text;
 
 import icyllis.arc3d.core.MathUtil;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.graphics.Paint;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.awt.*;
-import java.awt.font.FontRenderContext;
 import java.util.Locale;
 
 /**
@@ -33,10 +33,9 @@ import java.util.Locale;
 public class FontPaint {
 
     /**
-     * Bit flag used with fontStyle to request the plain/normal style
+     * Bit flag used with fontStyle to request the normal/regular style
      */
-    public static final int PLAIN = java.awt.Font.PLAIN;
-    public static final int NORMAL = PLAIN;     // alias
+    public static final int NORMAL = java.awt.Font.PLAIN;
 
     /**
      * Bit flag used with fontStyle to request the bold style
@@ -53,7 +52,7 @@ public class FontPaint {
      */
     public static final int BOLD_ITALIC = BOLD | ITALIC;
 
-    public static final int FONT_STYLE_MASK = PLAIN | BOLD | ITALIC;
+    public static final int FONT_STYLE_MASK = NORMAL | BOLD | ITALIC;
 
     public static final int RENDER_FLAG_ANTI_ALIAS = 0x1;
     public static final int RENDER_FLAG_LINEAR_METRICS = 0x2;
@@ -187,25 +186,17 @@ public class FontPaint {
      * @return the font's interline spacing.
      */
     public int getFontMetricsInt(@Nullable FontMetricsInt fm) {
-        int ascent = 0, descent = 0, leading = 0;
+        int height = 0;
         for (FontFamily family : getFont().getFamilies()) {
-            java.awt.Font font = family.chooseFont(getFontStyle(), getFontSize());
-            FontMetrics metrics = LayoutPiece.sGraphics[getRenderFlags()].getFontMetrics(font);
-            ascent = Math.max(ascent, metrics.getAscent()); // positive
-            descent = Math.max(descent, metrics.getDescent()); // positive
-            leading = Math.max(leading, metrics.getLeading()); // positive
+            var font = family.getClosestMatch(getFontStyle());
+            height = Math.max(height, font.getMetrics(this, fm));
         }
-        if (fm != null) {
-            fm.ascent = -ascent;
-            fm.descent = descent;
-            fm.leading = leading;
-        }
-        return ascent + descent + leading;
+        return height;
     }
 
-    @ApiStatus.Internal
-    public static FontRenderContext getFontRenderContext(int renderFlags) {
-        return LayoutPiece.sGraphics[renderFlags].getFontRenderContext();
+    public static int computeRenderFlags(@NonNull Paint paint) {
+        return (paint.isTextAntiAlias() ? FontPaint.RENDER_FLAG_ANTI_ALIAS : 0) |
+                (paint.isLinearText() ? FontPaint.RENDER_FLAG_LINEAR_METRICS : 0);
     }
 
     @Override

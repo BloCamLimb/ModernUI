@@ -71,22 +71,22 @@ public final class LayoutCache {
      *
      * @param buf          text buffer, cannot be null or empty, only referred in stack
      * @param start        start char offset
-     * @param end          end char index
+     * @param limit        end char index
      * @param isRtl        whether to layout in right-to-left
      * @param paint        the font paint affecting measurement
      * @param computeFlags additional desired info to compute, or 0
      * @return the layout piece
      */
     @NonNull
-    public static LayoutPiece getOrCreate(@NonNull char[] buf, int contextStart, int contextEnd,
-                                          int start, int end, boolean isRtl, @NonNull FontPaint paint,
+    public static LayoutPiece getOrCreate(@NonNull char[] buf, int contextStart, int contextLimit,
+                                          int start, int limit, boolean isRtl, @NonNull FontPaint paint,
                                           int computeFlags) {
-        if (contextStart < 0 || contextStart >= contextEnd || buf.length == 0 ||
-                contextEnd > buf.length || start < contextStart || end > contextEnd) {
+        if (contextStart < 0 || contextStart >= contextLimit || buf.length == 0 ||
+                contextLimit > buf.length || start < contextStart || limit > contextLimit) {
             throw new IndexOutOfBoundsException();
         }
-        if (end - start > MAX_PIECE_LENGTH) {
-            return new LayoutPiece(buf, contextStart, contextEnd, start, end, isRtl, paint,
+        if (limit - start > MAX_PIECE_LENGTH) {
+            return new LayoutPiece(buf, contextStart, contextLimit, start, limit, isRtl, paint,
                     null, computeFlags);
         }
         if (sCache == null) {
@@ -104,13 +104,13 @@ public final class LayoutCache {
             key = new LookupKey();
         }
         LayoutPiece piece = sCache.getIfPresent(
-                key.update(buf, contextStart, contextEnd, start, end, paint, isRtl));
+                key.update(buf, contextStart, contextLimit, start, limit, paint, isRtl));
         if (piece == null) {
             // create new
             final Key k = key.copy();
             // recycle the lookup key earlier, since creating layout is heavy
             sLookupKeys.release(key);
-            piece = new LayoutPiece(buf, contextStart, contextEnd, start, end, isRtl, paint,
+            piece = new LayoutPiece(buf, contextStart, contextLimit, start, limit, isRtl, paint,
                     null, computeFlags);
             // there may be a race, but we don't care
             sCache.put(k, piece);
@@ -121,7 +121,7 @@ public final class LayoutCache {
                 final Key k = key.copy();
                 // recycle the lookup key earlier, since creating layout is heavy
                 sLookupKeys.release(key);
-                piece = new LayoutPiece(buf, contextStart, contextEnd, start, end, isRtl, paint,
+                piece = new LayoutPiece(buf, contextStart, contextLimit, start, limit, isRtl, paint,
                         piece, currFlags ^ computeFlags); // <- compute the difference
                 // override old value
                 sCache.put(k, piece);
@@ -167,7 +167,7 @@ public final class LayoutCache {
         // for Lookup case, this is only a pointer to the argument
         char[] mChars;
         int mStart;
-        int mEnd;
+        int mLimit;
         FontCollection mFont;
         int mFlags;
         int mSize;
@@ -182,11 +182,11 @@ public final class LayoutCache {
          */
         private Key(@NonNull LookupKey key) {
             // deep copy chars
-            mChars = new char[key.mContextEnd - key.mContextStart];
+            mChars = new char[key.mContextLimit - key.mContextStart];
             System.arraycopy(key.mChars, key.mContextStart,
                     mChars, 0, mChars.length);
             mStart = key.mStart;
-            mEnd = key.mEnd;
+            mLimit = key.mLimit;
             // shared pointers
             mFont = key.mFont;
             mFlags = key.mFlags;
@@ -205,7 +205,7 @@ public final class LayoutCache {
             Key key = (Key) o;
 
             if (mStart != key.mStart) return false;
-            if (mEnd != key.mEnd) return false;
+            if (mLimit != key.mLimit) return false;
             if (mFlags != key.mFlags) return false;
             if (mSize != key.mSize) return false;
             if (mIsRtl != key.mIsRtl) return false;
@@ -225,7 +225,7 @@ public final class LayoutCache {
             result = 31 * result + mFlags;
             result = 31 * result + mSize;
             result = 31 * result + mStart;
-            result = 31 * result + mEnd;
+            result = 31 * result + mLimit;
             result = 31 * result + mLocale.hashCode();
             result = 31 * result + (mIsRtl ? 1 : 0);
             return result;
@@ -242,20 +242,20 @@ public final class LayoutCache {
     private static class LookupKey extends Key {
 
         private int mContextStart;
-        private int mContextEnd;
+        private int mContextLimit;
 
         public LookupKey() {
         }
 
         @NonNull
-        public Key update(@NonNull char[] text, int contextStart, int contextEnd,
-                          int start, int end, @NonNull FontPaint paint, boolean dir) {
+        public Key update(@NonNull char[] text, int contextStart, int contextLimit,
+                          int start, int limit, @NonNull FontPaint paint, boolean dir) {
             mChars = text;
             mContextStart = contextStart;
-            mContextEnd = contextEnd;
+            mContextLimit = contextLimit;
             // relative to contextual range
             mStart = start - contextStart;
-            mEnd = end - contextStart;
+            mLimit = limit - contextStart;
             mFont = paint.mFont;
             mFlags = paint.mFlags;
             mSize = paint.mSize;
@@ -274,11 +274,11 @@ public final class LayoutCache {
             Key key = (Key) o;
 
             if (mStart != key.mStart) return false;
-            if (mEnd != key.mEnd) return false;
+            if (mLimit != key.mLimit) return false;
             if (mFlags != key.mFlags) return false;
             if (mSize != key.mSize) return false;
             if (mIsRtl != key.mIsRtl) return false;
-            if (!Arrays.equals(mChars, mContextStart, mContextEnd,
+            if (!Arrays.equals(mChars, mContextStart, mContextLimit,
                     key.mChars, 0, key.mChars.length)) {
                 return false;
             }
@@ -289,14 +289,14 @@ public final class LayoutCache {
         @Override
         public int hashCode() {
             int result = 1;
-            for (int i = mContextStart; i < mContextEnd; i++) {
+            for (int i = mContextStart; i < mContextLimit; i++) {
                 result = 31 * result + mChars[i];
             }
             result = 31 * result + mFont.hashCode();
             result = 31 * result + mFlags;
             result = 31 * result + mSize;
             result = 31 * result + mStart;
-            result = 31 * result + mEnd;
+            result = 31 * result + mLimit;
             result = 31 * result + mLocale.hashCode();
             result = 31 * result + (mIsRtl ? 1 : 0);
             return result;

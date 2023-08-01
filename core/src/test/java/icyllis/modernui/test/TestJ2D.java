@@ -20,12 +20,14 @@ package icyllis.modernui.test;
 
 import com.ibm.icu.text.NumberFormat;
 import icyllis.arc3d.core.Matrix4;
+import icyllis.arc3d.engine.SamplerState;
 import icyllis.modernui.core.Core;
 import org.lwjgl.stb.*;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
+import java.awt.font.FontRenderContext;
 import java.awt.font.GlyphVector;
 import java.awt.geom.Arc2D;
 import java.awt.image.BufferedImage;
@@ -35,8 +37,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Arrays;
-import java.util.Locale;
+import java.util.*;
 
 public class TestJ2D {
 
@@ -49,6 +50,15 @@ public class TestJ2D {
         System.out.println(tk.getDesktopProperty("win.text.fontSmoothingType"));
         System.out.println(tk.getDesktopProperty("win.text.fontSmoothingOrientation"));
         System.out.println(tk.getDesktopProperty("win.text.fontSmoothingContrast"));
+
+        {
+            var font = Font.createFont(Font.TRUETYPE_FONT, new File("E:/Free Fonts/NotoColorEmoji-noflags.ttf"));
+            for (int i = 1; i <= Character.MAX_CODE_POINT; i++) {
+                if (font.canDisplay(i)) {
+                    System.out.println(Integer.toHexString(i));
+                }
+            }
+        }
 
         System.out.println(NumberFormat.getCurrencyInstance(new Locale("hi"))
                 .format(5));

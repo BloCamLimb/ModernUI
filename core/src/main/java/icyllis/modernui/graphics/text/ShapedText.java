@@ -134,12 +134,11 @@ public class ShapedText {
 
     /**
      * Returns which font should be used for the i-th glyph.
-     * It's guaranteed reference equality can be used instead of equals() for better performance.
      *
      * @param i the index
-     * @return the font family
+     * @return the font
      */
-    public FontFamily getFont(int i) {
+    public Font getFont(int i) {
         if (mFontIndices != null) {
             return mFonts[mFontIndices[i]];
         }
@@ -249,7 +248,7 @@ public class ShapedText {
     private final float[] mPositions;
 
     private final byte[] mFontIndices;
-    private final FontFamily[] mFonts;
+    private final Font[] mFonts;
 
     private final float[] mAdvances;
 
@@ -309,15 +308,14 @@ public class ShapedText {
         final var glyphs = new IntArrayList(count);
         final var positions = new FloatArrayList(count * 2);
 
-        final var fonts = new ArrayList<FontFamily>();
-
-        HashMap<FontFamily, Byte> fontMap = new HashMap<>();
-        Function<FontFamily, Byte> idGen = family -> {
-            fonts.add(family);
+        final ArrayList<Font> fontVec = new ArrayList<>();
+        final HashMap<Font, Byte> fontMap = new HashMap<>();
+        final Function<Font, Byte> nextID = font -> {
+            fontVec.add(font);
             return (byte) fontMap.size();
         };
-        Function<FontFamily, Byte> idGet = family ->
-                fontMap.computeIfAbsent(family, idGen);
+        Function<Font, Byte> idGet = font ->
+                fontMap.computeIfAbsent(font, nextID);
 
         float advance = 0;
 
@@ -371,12 +369,12 @@ public class ShapedText {
 
         mGlyphs = glyphs.toIntArray();
         mPositions = positions.toFloatArray();
-        if (fonts.size() > 1) {
+        if (fontVec.size() > 1) {
             mFontIndices = fontIndices.toByteArray();
         } else {
             mFontIndices = null;
         }
-        mFonts = fonts.toArray(new FontFamily[0]);
+        mFonts = fontVec.toArray(new Font[0]);
 
         mAscent = extent.ascent;
         mDescent = extent.descent;
@@ -407,7 +405,7 @@ public class ShapedText {
                                      int layoutStart, float[] advances, float curAdvance,
                                      IntArrayList glyphs, FloatArrayList positions,
                                      ByteArrayList fontIndices,
-                                     Function<FontFamily, Byte> idGet,
+                                     Function<Font, Byte> idGet,
                                      FontMetricsInt extent,
                                      RunConsumer consumer) {
         float advance = 0;
@@ -484,7 +482,7 @@ public class ShapedText {
                                       int advanceOffset, float[] advances, float curAdvance,
                                       IntArrayList glyphs, FloatArrayList positions,
                                       ByteArrayList fontIndices,
-                                      Function<FontFamily, Byte> idGet,
+                                      Function<Font, Byte> idGet,
                                       FontMetricsInt extent,
                                       RunConsumer consumer) {
         LayoutPiece src = LayoutCache.getOrCreate(
