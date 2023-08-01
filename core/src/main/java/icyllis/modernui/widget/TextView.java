@@ -26,6 +26,7 @@ import icyllis.modernui.core.*;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.text.FontMetricsInt;
+import icyllis.modernui.graphics.text.LineBreakConfig;
 import icyllis.modernui.text.*;
 import icyllis.modernui.text.method.*;
 import icyllis.modernui.text.style.*;
@@ -1129,6 +1130,38 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     }
 
     /**
+     * Gets the parameters for text layout pre-computation, for use with {@link PrecomputedText}.
+     *
+     * @return a current {@link PrecomputedText.Params}
+     * @see PrecomputedText
+     */
+    public @NonNull PrecomputedText.Params getTextMetricsParams() {
+        return new PrecomputedText.Params(new TextPaint(mTextPaint),
+                LineBreakConfig.NONE,
+                getTextDirectionHeuristic());
+    }
+
+    /**
+     * Apply the text layout parameter.
+     * <p>
+     * Update the TextView parameters to be compatible with {@link PrecomputedText.Params}.
+     *
+     * @see PrecomputedText
+     */
+    public void setTextMetricsParams(@NonNull PrecomputedText.Params params) {
+        mTextPaint.set(params.getTextPaint());
+        mTextDir = params.getTextDirection();
+        LineBreakConfig lineBreakConfig = params.getLineBreakConfig();
+        /*mLineBreakStyle = lineBreakConfig.getLineBreakStyle();
+        mLineBreakWordStyle = lineBreakConfig.getLineBreakWordStyle();*/
+        if (mLayout != null) {
+            nullLayouts();
+            requestLayout();
+            invalidate();
+        }
+    }
+
+    /**
      * Sets the text color for all the states (normal, selected,
      * focused) to be this color.
      *
@@ -1806,6 +1839,28 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
             Editable t = mEditableFactory.newEditable(text);
             text = t;
             t.setFilters(mFilters);
+        } else if (text instanceof PrecomputedText precomputed) {
+            if (mTextDir == null) {
+                mTextDir = getTextDirectionHeuristic();
+            }
+            final @PrecomputedText.Params.CheckResultUsableResult int checkResult =
+                    precomputed.getParams().checkResultUsable(getPaint(), mTextDir,
+                            LineBreakConfig.NONE);
+            switch (checkResult) {
+                case PrecomputedText.Params.UNUSABLE:
+                    throw new IllegalArgumentException(
+                            "PrecomputedText's Parameters don't match the parameters of this TextView."
+                                    + "Consider using setTextMetricsParams(precomputedText.getParams()) "
+                                    + "to override the settings of this TextView: "
+                                    + "PrecomputedText: " + precomputed.getParams()
+                                    + "TextView: " + getTextMetricsParams());
+                case PrecomputedText.Params.NEED_RECOMPUTE:
+                    // Modern UI fixed: Google's bug
+                    text = PrecomputedText.create(precomputed, getTextMetricsParams());
+                    break;
+                case PrecomputedText.Params.USABLE:
+                    // pass through
+            }
         } else if (type == BufferType.SPANNABLE || mMovement != null) {
             text = mSpannableFactory.newSpannable(text);
         } else {

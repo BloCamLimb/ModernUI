@@ -19,6 +19,7 @@
 package icyllis.modernui.text;
 
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.annotation.*;
 import icyllis.modernui.graphics.text.*;
 import icyllis.modernui.text.style.*;
 import icyllis.modernui.text.style.LeadingMarginSpan.LeadingMarginSpan2;
@@ -27,8 +28,6 @@ import icyllis.modernui.util.Pools;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.*;
 
 /**
@@ -54,9 +53,10 @@ public class StaticLayout extends Layout {
      * @param width  The width in pixels for each line
      * @return a builder object used for constructing the StaticLayout
      */
-    @Nonnull
-    public static Builder builder(@Nonnull CharSequence source, int start, int end,
-                                  @Nonnull TextPaint paint, int width) {
+    @NonNull
+    public static Builder builder(@NonNull CharSequence source, @IntRange(from = 0) int start,
+                                  @IntRange(from = 0) int end, @NonNull TextPaint paint,
+                                  @IntRange(from = 0) int width) {
         Builder b = sPool.acquire();
         if (b == null) {
             b = new Builder();
@@ -73,6 +73,7 @@ public class StaticLayout extends Layout {
         b.mEllipsizedWidth = width;
         b.mEllipsize = null;
         b.mMaxLines = Integer.MAX_VALUE;
+        b.mLineBreakConfig = LineBreakConfig.NONE;
         return b;
     }
 
@@ -107,6 +108,7 @@ public class StaticLayout extends Layout {
         private int[] mLeftIndents;
         @Nullable
         private int[] mRightIndents;
+        private LineBreakConfig mLineBreakConfig = LineBreakConfig.NONE;
 
         private Builder() {
         }
@@ -138,8 +140,8 @@ public class StaticLayout extends Layout {
          * @param end    The index + 1 of the end of the text
          * @return this builder, useful for chaining
          */
-        @Nonnull
-        Builder setText(@Nonnull CharSequence source, int start, int end) {
+        @NonNull
+        Builder setText(@NonNull CharSequence source, int start, int end) {
             mText = source;
             mStart = start;
             mEnd = end;
@@ -152,8 +154,8 @@ public class StaticLayout extends Layout {
          * @param paint The base paint used for layout
          * @return this builder, useful for chaining
          */
-        @Nonnull
-        Builder setPaint(@Nonnull TextPaint paint) {
+        @NonNull
+        Builder setPaint(@NonNull TextPaint paint) {
             mPaint = paint;
             return this;
         }
@@ -164,7 +166,7 @@ public class StaticLayout extends Layout {
          * @param width The width in pixels
          * @return this builder, useful for chaining
          */
-        @Nonnull
+        @NonNull
         Builder setWidth(int width) {
             mWidth = width;
             if (mEllipsize == null) {
@@ -179,8 +181,8 @@ public class StaticLayout extends Layout {
          * @param alignment Alignment for the resulting {@link StaticLayout}
          * @return this builder, useful for chaining
          */
-        @Nonnull
-        public Builder setAlignment(@Nonnull Alignment alignment) {
+        @NonNull
+        public Builder setAlignment(@NonNull Alignment alignment) {
             mAlignment = alignment;
             return this;
         }
@@ -193,8 +195,8 @@ public class StaticLayout extends Layout {
          * @param textDir text direction heuristic for resolving bidi behavior.
          * @return this builder, useful for chaining
          */
-        @Nonnull
-        public Builder setTextDirection(@Nonnull TextDirectionHeuristic textDir) {
+        @NonNull
+        public Builder setTextDirection(@NonNull TextDirectionHeuristic textDir) {
             mTextDir = textDir;
             return this;
         }
@@ -207,7 +209,7 @@ public class StaticLayout extends Layout {
          * @param includePad whether to include padding
          * @return this builder, useful for chaining
          */
-        @Nonnull
+        @NonNull
         public Builder setIncludePad(boolean includePad) {
             mIncludePad = includePad;
             return this;
@@ -226,7 +228,7 @@ public class StaticLayout extends Layout {
          * @param fallbackLineSpacing whether to expand line spacing based on fallback fonts
          * @return this builder, useful for chaining
          */
-        @Nonnull
+        @NonNull
         public Builder setFallbackLineSpacing(boolean fallbackLineSpacing) {
             mFallbackLineSpacing = fallbackLineSpacing;
             return this;
@@ -240,7 +242,7 @@ public class StaticLayout extends Layout {
          * @param ellipsizedWidth width used for ellipsizing, in pixels
          * @return this builder, useful for chaining
          */
-        @Nonnull
+        @NonNull
         public Builder setEllipsizedWidth(int ellipsizedWidth) {
             mEllipsizedWidth = ellipsizedWidth;
             return this;
@@ -256,7 +258,7 @@ public class StaticLayout extends Layout {
          * @param ellipsize type of ellipsis behavior
          * @return this builder, useful for chaining
          */
-        @Nonnull
+        @NonNull
         public Builder setEllipsize(@Nullable TextUtils.TruncateAt ellipsize) {
             mEllipsize = ellipsize;
             return this;
@@ -270,7 +272,7 @@ public class StaticLayout extends Layout {
          * @param maxLines maximum number of lines in the layout
          * @return this builder, useful for chaining
          */
-        @Nonnull
+        @NonNull
         public Builder setMaxLines(int maxLines) {
             mMaxLines = maxLines;
             return this;
@@ -284,10 +286,26 @@ public class StaticLayout extends Layout {
          * @param rightIndents array of indent values for right margin, in pixels
          * @return this builder, useful for chaining
          */
-        @Nonnull
+        @NonNull
         public Builder setIndents(@Nullable int[] leftIndents, @Nullable int[] rightIndents) {
             mLeftIndents = leftIndents;
             mRightIndents = rightIndents;
+            return this;
+        }
+
+        /**
+         * Set the line break configuration. The line break will be passed to native used for
+         * calculating the text wrapping. The default value of the line break style is
+         * {@link LineBreakConfig#LINE_BREAK_STYLE_NONE}
+         *
+         * @param lineBreakConfig the line break configuration for text wrapping.
+         * @return this builder, useful for chaining.
+         * @see TextView#setLineBreakStyle
+         * @see TextView#setLineBreakWordStyle
+         */
+        @NonNull
+        public Builder setLineBreakConfig(@NonNull LineBreakConfig lineBreakConfig) {
+            mLineBreakConfig = lineBreakConfig;
             return this;
         }
 
@@ -300,7 +318,7 @@ public class StaticLayout extends Layout {
          *
          * @return the newly constructed {@link StaticLayout} object
          */
-        @Nonnull
+        @NonNull
         public StaticLayout build() {
             final StaticLayout result = new StaticLayout(this);
             recycle();
@@ -368,7 +386,7 @@ public class StaticLayout extends Layout {
         mLines = new int[2 * mColumns];
     }
 
-    private StaticLayout(@Nonnull Builder b) {
+    private StaticLayout(@NonNull Builder b) {
         super(b.mEllipsize == null
                 ? b.mText
                 : (b.mText instanceof Spanned)
@@ -398,7 +416,7 @@ public class StaticLayout extends Layout {
         generate(b, b.mIncludePad, b.mIncludePad);
     }
 
-    void generate(@Nonnull Builder b, boolean includePad, boolean trackPad) {
+    void generate(@NonNull Builder b, boolean includePad, boolean trackPad) {
         final CharSequence source = b.mText;
         final int bufStart = b.mStart;
         final int bufEnd = b.mEnd;
@@ -445,19 +463,43 @@ public class StaticLayout extends Layout {
         LineBreaker.ParagraphConstraints constraints =
                 new LineBreaker.ParagraphConstraints();
 
-        MeasuredParagraph[] paragraphs = null;
+        PrecomputedText.ParagraphInfo[] paragraphInfo = null;
         final Spanned spanned = (source instanceof Spanned) ? (Spanned) source : null;
-
-        //FIXME precomputed text
-        if (paragraphs == null) {
-            paragraphs = PrecomputedText.createMeasuredParagraphs(source, bufStart, bufEnd,
-                    paint, textDir, /* computeLayout */ false);
+        if (source instanceof PrecomputedText) {
+            PrecomputedText precomputed = (PrecomputedText) source;
+            final @PrecomputedText.Params.CheckResultUsableResult int checkResult =
+                    precomputed.checkResultUsable(bufStart, bufEnd, textDir, paint,
+                            b.mLineBreakConfig);
+            switch (checkResult) {
+                case PrecomputedText.Params.UNUSABLE:
+                    break;
+                case PrecomputedText.Params.NEED_RECOMPUTE:
+                    final PrecomputedText.Params newParams =
+                            new PrecomputedText.Params.Builder(paint)
+                                    .setTextDirection(textDir)
+                                    .setLineBreakConfig(b.mLineBreakConfig)
+                                    .build();
+                    precomputed = PrecomputedText.create(precomputed, newParams);
+                    paragraphInfo = precomputed.getParagraphInfo();
+                    break;
+                case PrecomputedText.Params.USABLE:
+                    // Some parameters are different from the ones when measured text is created.
+                    paragraphInfo = precomputed.getParagraphInfo();
+                    break;
+            }
         }
 
-        for (int paraIndex = 0, paraStart = bufStart, paraEnd = paraStart;
-             paraIndex < paragraphs.length;
-             paraIndex++, paraStart = paraEnd) {
-            paraEnd += paragraphs[paraIndex].getTextLength();
+        if (paragraphInfo == null) {
+            final PrecomputedText.Params param = new PrecomputedText.Params(paint,
+                    b.mLineBreakConfig, textDir);
+            paragraphInfo = PrecomputedText.createMeasuredParagraphs(source, param, bufStart,
+                    bufEnd, false /* computeLayout */);
+        }
+
+        for (int paraIndex = 0; paraIndex < paragraphInfo.length; paraIndex++) {
+            final int paraStart = paraIndex == 0
+                    ? bufStart : paragraphInfo[paraIndex - 1].paragraphEnd;
+            final int paraEnd = paragraphInfo[paraIndex].paragraphEnd;
 
             int firstWidthLineCount = 1;
             int firstWidth = outerWidth;
@@ -526,7 +568,7 @@ public class StaticLayout extends Layout {
                 }
             }
 
-            final MeasuredParagraph measuredPara = paragraphs[paraIndex];
+            final MeasuredParagraph measuredPara = paragraphInfo[paraIndex].measured;
             final int[] spanEndCache = measuredPara.getSpanEndCache().elements();
             final int[] fmCache = measuredPara.getFontMetrics().elements();
 
@@ -672,7 +714,7 @@ public class StaticLayout extends Layout {
     private int out(final CharSequence text, final int start, final int end, int above, int below,
                     int top, int bottom, int v, final List<LineHeightSpan> chooseHt, final int[] chooseHtv,
                     final FontMetricsInt fm, final boolean hasTab,
-                    @Nonnull final MeasuredParagraph measured,
+                    @NonNull final MeasuredParagraph measured,
                     final int bufEnd, final boolean includePad, final boolean trackPad,
                     final int widthStart, final TextUtils.TruncateAt ellipsize, final float ellipsisWidth,
                     final float textWidth, final TextPaint paint, final boolean moreChars) {

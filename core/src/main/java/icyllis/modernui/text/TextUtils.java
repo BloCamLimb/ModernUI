@@ -606,7 +606,7 @@ public final class TextUtils {
 
         MeasuredParagraph mt = null;
         try {
-            mt = MeasuredParagraph.buildForStaticLayout(paint, ellipsis, 0, ellipsis.length(), textDir, false, null);
+            mt = MeasuredParagraph.buildForStaticLayout(paint, null, ellipsis, 0, ellipsis.length(), textDir, false, null);
             ellipsisWidth = mt.getAdvance(0, ellipsis.length());
         } finally {
             if (mt != null) {
@@ -616,7 +616,7 @@ public final class TextUtils {
         }
 
         try {
-            mt = MeasuredParagraph.buildForStaticLayout(paint, text, 0, text.length(), textDir, false, null);
+            mt = MeasuredParagraph.buildForStaticLayout(paint, null, text, 0, text.length(), textDir, false, null);
             float width = mt.getAdvance(0, text.length());
 
             if (width <= avail) {
