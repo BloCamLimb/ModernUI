@@ -19,18 +19,13 @@
 package icyllis.modernui.text;
 
 import com.ibm.icu.text.Bidi;
-import icyllis.modernui.graphics.text.FontMetricsInt;
-import icyllis.modernui.graphics.text.FontPaint;
-import icyllis.modernui.graphics.text.MeasuredText;
 import icyllis.arc3d.core.MathUtil;
-import icyllis.modernui.text.style.CharacterStyle;
-import icyllis.modernui.text.style.MetricAffectingSpan;
-import icyllis.modernui.text.style.ReplacementSpan;
+import icyllis.modernui.annotation.*;
+import icyllis.modernui.graphics.text.*;
+import icyllis.modernui.text.style.*;
 import icyllis.modernui.util.Pools;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.util.*;
 
@@ -87,19 +82,19 @@ public class MeasuredParagraph {
     /**
      * @see #getSpanEndCache()
      */
-    @Nonnull
+    @NonNull
     private final IntArrayList mSpanEndCache = new IntArrayList();
 
     /**
      * @see #getFontMetrics()
      */
-    @Nonnull
+    @NonNull
     private final IntArrayList mFontMetrics = new IntArrayList();
 
     @Nullable
     private MeasuredText mMeasuredText;
 
-    @Nonnull
+    @NonNull
     private final FontMetricsInt mCachedFm = new FontMetricsInt();
 
     private MeasuredParagraph() {
@@ -147,7 +142,7 @@ public class MeasuredParagraph {
      *
      * @return backend text buffer
      */
-    @Nonnull
+    @NonNull
     public char[] getChars() {
         return mCopiedBuffer;
     }
@@ -168,7 +163,7 @@ public class MeasuredParagraph {
      * @param end   end char index, with start offset
      * @return new calculated directions of this paragraph
      */
-    @Nonnull
+    @NonNull
     public Directions getDirections(int start, int end) {
         if (start == end || mLevels == null) {
             return Directions.ALL_LEFT_TO_RIGHT;
@@ -298,7 +293,7 @@ public class MeasuredParagraph {
      * This is available only if the MeasuredParagraph is computed with buildForStaticLayout.
      * and the text is not empty. Returns empty array in other cases.
      */
-    @Nonnull
+    @NonNull
     public IntArrayList getSpanEndCache() {
         return mSpanEndCache;
     }
@@ -311,7 +306,7 @@ public class MeasuredParagraph {
      * This is available only if the MeasuredParagraph is computed with buildForStaticLayout.
      * and the text is not empty. Returns empty array in other cases.
      */
-    @Nonnull
+    @NonNull
     public IntArrayList getFontMetrics() {
         return mFontMetrics;
     }
@@ -368,7 +363,19 @@ public class MeasuredParagraph {
         }
     }
 
-    @Nonnull
+    /**
+     * Retrieves the font metrics for the given range.
+     * <p>
+     * This is available only if the MeasuredParagraph is computed with buildForStaticLayout.
+     */
+    public void getFontMetricsInt(@IntRange(from = 0) int start, @IntRange(from = 0) int end,
+                                  @NonNull FontMetricsInt fmi) {
+        if (mMeasuredText != null) {
+            mMeasuredText.getExtent(start, end, fmi);
+        }
+    }
+
+    @NonNull
     private static MeasuredParagraph obtain() {
         final MeasuredParagraph c = sPool.acquire();
         return c == null ? new MeasuredParagraph() : c;
@@ -387,9 +394,9 @@ public class MeasuredParagraph {
      * @param recycle pass existing MeasuredParagraph if you want to recycle it.
      * @return measured text
      */
-    @Nonnull
-    public static MeasuredParagraph buildForBidi(@Nonnull CharSequence text, int start, int end,
-                                                 @Nonnull TextDirectionHeuristic textDir,
+    @NonNull
+    public static MeasuredParagraph buildForBidi(@NonNull CharSequence text, int start, int end,
+                                                 @NonNull TextDirectionHeuristic textDir,
                                                  @Nullable MeasuredParagraph recycle) {
         if ((start | end | end - start | text.length() - end) < 0) {
             throw new IllegalArgumentException();
@@ -414,10 +421,16 @@ public class MeasuredParagraph {
      * @param recycle    pass existing MeasuredParagraph if you want to recycle it
      * @return measured text
      */
-    @Nonnull
+    @NonNull
     public static MeasuredParagraph buildForStaticLayout(
-            @Nonnull TextPaint paint, @Nonnull CharSequence text, int start, int end,
-            @Nonnull TextDirectionHeuristic textDir, boolean fullLayout, @Nullable MeasuredParagraph recycle) {
+            @NonNull TextPaint paint,
+            @Nullable LineBreakConfig lineBreakConfig,
+            @NonNull CharSequence text,
+            @IntRange(from = 0) int start,
+            @IntRange(from = 0) int end,
+            @NonNull TextDirectionHeuristic textDir,
+            boolean fullLayout,
+            @Nullable MeasuredParagraph recycle) {
         if ((start | end | end - start | text.length() - end) < 0) {
             throw new IllegalArgumentException();
         }
@@ -449,8 +462,8 @@ public class MeasuredParagraph {
         return c;
     }
 
-    private void resetAndAnalyzeBidi(@Nonnull CharSequence text, int start, int end,
-                                     @Nonnull TextDirectionHeuristic dir) {
+    private void resetAndAnalyzeBidi(@NonNull CharSequence text, int start, int end,
+                                     @NonNull TextDirectionHeuristic dir) {
         reset();
         mSpanned = text instanceof Spanned ? (Spanned) text : null;
         mTextStart = start;
@@ -503,8 +516,8 @@ public class MeasuredParagraph {
         }
     }
 
-    private void applyMetricsAffectingSpan(@Nonnull TextPaint paint, @Nonnull List<MetricAffectingSpan> spans,
-                                           int start, int end, @Nonnull MeasuredText.Builder builder) {
+    private void applyMetricsAffectingSpan(@NonNull TextPaint paint, @NonNull List<MetricAffectingSpan> spans,
+                                           int start, int end, @NonNull MeasuredText.Builder builder) {
         assert start != end;
         TextPaint tp = TextPaint.obtain();
         tp.set(paint);
@@ -544,8 +557,8 @@ public class MeasuredParagraph {
         tp.recycle();
     }
 
-    private void applyStyleRun(@Nonnull FontPaint paint, int start, int end,
-                               @Nonnull MeasuredText.Builder builder) {
+    private void applyStyleRun(@NonNull FontPaint paint, int start, int end,
+                               @NonNull MeasuredText.Builder builder) {
         if (mLevels == null) {
             // If the whole text is LTR direction, just apply whole region.
             builder.addStyleRun(paint, end - start, false);

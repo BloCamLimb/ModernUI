@@ -157,7 +157,7 @@ public class TextLine {
         mComputed = null;
         if (text instanceof PrecomputedText) {
             mComputed = (PrecomputedText) text;
-            if (mComputed.getPaint().isMetricAffecting(paint)) {
+            if (!mComputed.getParams().getTextPaint().equalsForTextMeasurement(paint)) {
                 mComputed = null;
             }
         }
@@ -1014,6 +1014,7 @@ public class TextLine {
                 );
                 TextUtils.recycle(buf);
             }
+            //TODO take use of PrecomputedText
         }
 
         if (c != null) {
@@ -1189,9 +1190,29 @@ public class TextLine {
     private static void expandMetricsFromPaint(@NonNull FontMetricsInt fmi, @NonNull TextPaint wp) {
         final int previousAscent = fmi.ascent;
         final int previousDescent = fmi.descent;
+        final int previousLeading = fmi.leading;
 
         wp.getFontMetricsInt(fmi);
 
         fmi.extendBy(previousAscent, previousDescent);
+        fmi.leading = Math.max(fmi.leading, previousLeading);
+    }
+
+    private void expandMetricsFromPaint(@NonNull TextPaint wp, int start, int end,
+                                        int contextStart, int contextEnd, boolean runIsRtl,
+                                        @NonNull FontMetricsInt fmi) {
+        final int previousAscent = fmi.ascent;
+        final int previousDescent = fmi.descent;
+        final int previousLeading = fmi.leading;
+
+        if (mComputed == null) {
+            //TODO this is incorrect
+            wp.getFontMetricsInt(fmi);
+        } else {
+            mComputed.getFontMetricsInt(mStart + start, mStart + end, fmi);
+        }
+
+        fmi.extendBy(previousAscent, previousDescent);
+        fmi.leading = Math.max(fmi.leading, previousLeading);
     }
 }

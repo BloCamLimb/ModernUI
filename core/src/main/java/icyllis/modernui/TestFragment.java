@@ -419,8 +419,7 @@ public class TestFragment extends Fragment {
             tv.setLayoutParams(new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT));
 
-            tv.setText(text, TextView.BufferType.SPANNABLE);
-            Spannable spannable = (Spannable) tv.getText();
+            Spannable spannable = new SpannableString(text);
             spannable.setSpan(new ForegroundColorSpan(0xfff699b4), text.length() - 54, text.length(),
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             spannable.setSpan(new RelativeSizeSpan(0.5f), text.length() - 99, text.length() - 30,
@@ -433,6 +432,13 @@ public class TestFragment extends Fragment {
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             spannable.setSpan(new UnderlineSpan(), text.length() / 2, text.length(),
                     Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
+            CompletableFuture.runAsync(() -> {
+                long startNanos = System.nanoTime();
+                var precomputed = PrecomputedText.create(spannable, tv.getTextMetricsParams());
+                long usedNanos = System.nanoTime() - startNanos;
+                LOGGER.info("Precomputed text in {} microseconds", usedNanos / 1000);
+                tv.post(() -> tv.setText(precomputed, TextView.BufferType.SPANNABLE));
+            });
             /*try {
                 Image image = ImageStore.getInstance().create(
                         FileChannel.open(Path.of("F:/Photoshop/AppleEmoji/horse-face_1f434.png"),
@@ -462,7 +468,7 @@ public class TestFragment extends Fragment {
                 anim.setInterpolator(TimeInterpolator.ACCELERATE_DECELERATE);
                 //anim.setRepeatCount(ValueAnimator.INFINITE);
                 //anim.start();
-                mGoodAnim = anim;
+                //mGoodAnim = anim;
             }
 
             for (int i = 0; i < 12; i++) {
@@ -496,7 +502,9 @@ public class TestFragment extends Fragment {
                                     if (v1.isAttachedToWindow()) {
                                         v1.post(() -> {
                                             v1.invalidate();
-                                            mGoodAnim.start();
+                                            if (mGoodAnim != null) {
+                                                mGoodAnim.start();
+                                            }
                                         });
                                     }
                                 } catch (IOException e) {

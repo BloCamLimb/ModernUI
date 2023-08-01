@@ -23,6 +23,7 @@ import icyllis.modernui.annotation.*;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.text.*;
 import icyllis.modernui.util.Pools;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import java.util.Locale;
@@ -73,6 +74,13 @@ public class TextPaint extends Paint {
         mLocale = ModernUI.getSelectedLocale();
     }
 
+    @ApiStatus.Internal
+    public TextPaint(TextPaint paint) {
+        super(paint);
+        mTypeface = paint.mTypeface;
+        mLocale = paint.mLocale;
+    }
+
     /**
      * Returns a TextPaint from the shared pool, a {@link #set(TextPaint)} is
      * expected before use and a {@link #recycle()} after use.
@@ -102,6 +110,7 @@ public class TextPaint extends Paint {
     public void set(@NonNull TextPaint paint) {
         super.set(paint);
         mTypeface = paint.mTypeface;
+        mLocale = paint.mLocale;
         bgColor = paint.bgColor;
     }
 
@@ -335,8 +344,8 @@ public class TextPaint extends Paint {
      * @param paint the paint to compare with
      * @return true if given {@link TextPaint} has the different effect on text measurement.
      */
-    public boolean isMetricAffecting(@Nonnull TextPaint paint) {
-        return getInternalPaint().isMetricAffecting(paint.getInternalPaint());
+    public boolean equalsForTextMeasurement(@Nonnull TextPaint paint) {
+        return !getInternalPaint().isMetricAffecting(paint.getInternalPaint());
     }
 
     @NonNull
