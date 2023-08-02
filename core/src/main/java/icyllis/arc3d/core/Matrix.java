@@ -81,6 +81,10 @@ public class Matrix implements Cloneable {
         mTypeMask = Identity_Mask | AxisAligned_Mask;
     }
 
+    public Matrix(Matrix m) {
+        set(m);
+    }
+
     /**
      * Create a new identity matrix.
      *

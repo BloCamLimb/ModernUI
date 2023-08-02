@@ -20,7 +20,7 @@ package icyllis.modernui.util;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.arc3d.core.MathUtil;
+import icyllis.modernui.graphics.MathUtil;
 
 import javax.annotation.concurrent.ThreadSafe;
 import java.lang.invoke.MethodHandles;

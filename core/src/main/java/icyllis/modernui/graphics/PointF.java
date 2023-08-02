@@ -18,8 +18,6 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.arc3d.core.MathUtil;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 

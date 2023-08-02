@@ -894,23 +894,12 @@ public class Paint {
      * @param mode the blend mode to be installed in the paint, may be null
      * @see BlendMode
      */
-    public final void setBlendMode(@Nullable BlendMode mode) {
-        if (mode == null || mode == BlendMode.SRC_OVER) {
+    public final void setBlendMode(int mode) {
+        if (mode == -1 || mode == BlendMode.SRC_OVER) {
             mBlender = null;
         } else {
-            mBlender = mode;
+            mBlender = Blender.mode(mode);
         }
-    }
-
-    /**
-     * Get the paint's blend mode. By default, returns {@link BlendMode#SRC_OVER}.
-     * A null value means a custom blend.
-     *
-     * @return the paint's blend mode used to combine source color with destination color
-     */
-    @Nullable
-    public final BlendMode getBlendMode() {
-        return mBlender != null ? mBlender.asBlendMode() : BlendMode.SRC_OVER;
     }
 
     /**
@@ -927,11 +916,11 @@ public class Paint {
      * <p>
      * A null blender signifies the default {@link BlendMode#SRC_OVER} behavior.
      * <p>
-     * For convenience, you can call {@link #setBlendMode(BlendMode)} if the blend effect
+     * For convenience, you can call {@link #setBlendMode(int)} if the blend effect
      * can be expressed as one of those values.
      *
      * @see #getBlender()
-     * @see #setBlendMode(BlendMode)
+     * @see #setBlendMode(int)
      */
     public final void setBlender(@Nullable Blender blender) {
         mBlender = blender;
@@ -944,7 +933,6 @@ public class Paint {
      *
      * @return the blender assigned to this paint, otherwise null
      * @see #setBlender(Blender)
-     * @see #getBlendMode()
      */
     @Nullable
     public final Blender getBlender() {
@@ -983,15 +971,15 @@ public class Paint {
      * @return true if the paint prevents all drawing
      */
     public boolean nothingToDraw() {
-        var mode = getBlendMode();
-        if (mode != null) {
+        var mode = getBlendModeDirect(this);
+        if (mode != -1) {
             switch (mode) {
-                case SRC_OVER, SRC_ATOP, DST_OUT, DST_OVER, PLUS -> {
+                case BlendMode.SRC_OVER, BlendMode.SRC_ATOP, BlendMode.DST_OUT, BlendMode.DST_OVER, BlendMode.PLUS -> {
                     if (getAlpha() == 0) {
                         return !isBlendedImageFilter(mImageFilter);
                     }
                 }
-                case DST -> {
+                case BlendMode.DST -> {
                     return true;
                 }
             }
@@ -1115,9 +1103,14 @@ public class Paint {
         return paint != null ? paint.getAlpha() : 0xFF;
     }
 
-    @Nullable
-    public static BlendMode getBlendModeDirect(@Nullable Paint paint) {
-        return paint != null ? paint.getBlendMode() : BlendMode.SRC_OVER;
+    public static int getBlendModeDirect(@Nullable Paint paint) {
+        if (paint != null) {
+            var blender = paint.getBlender();
+            if (blender != null) {
+                return blender.asBlendMode();
+            }
+        }
+        return BlendMode.SRC_OVER;
     }
 
     public static boolean isBlendedShader(@Nullable Shader shader) {
@@ -1135,7 +1128,7 @@ public class Paint {
         if (paint.getAlpha() != 0xFF) {
             return false;
         }
-        BlendMode mode = paint.getBlendMode();
+        var mode = getBlendModeDirect(paint);
         return mode == BlendMode.SRC_OVER || mode == BlendMode.SRC;
     }
 }

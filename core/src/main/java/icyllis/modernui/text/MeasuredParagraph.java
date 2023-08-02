@@ -19,8 +19,8 @@
 package icyllis.modernui.text;
 
 import com.ibm.icu.text.Bidi;
-import icyllis.arc3d.core.MathUtil;
 import icyllis.modernui.annotation.*;
+import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.graphics.text.*;
 import icyllis.modernui.text.style.*;
 import icyllis.modernui.util.Pools;

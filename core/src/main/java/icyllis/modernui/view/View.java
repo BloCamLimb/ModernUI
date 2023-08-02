@@ -18,7 +18,6 @@
 
 package icyllis.modernui.view;
 
-import icyllis.arc3d.core.Matrix4;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.animation.AnimationUtils;
 import icyllis.modernui.animation.StateListAnimator;
@@ -7221,24 +7220,24 @@ public class View implements Drawable.Callback {
      * @param matrix The matrix, null indicates that the matrix should be cleared.
      * @see #getAnimationMatrix()
      */
-    public final void setAnimationMatrix(@Nullable Matrix4 matrix) {
+    public final void setAnimationMatrix(@Nullable Matrix matrix) {
         mRenderNode.setAnimationMatrix(matrix);
     }
 
     /**
      * Changes the transition matrix on the view. This is only used in the transition animation
      * framework, {@link Transition}. Returns <code>null</code> when there is no
-     * transformation provided by {@link #setAnimationMatrix(Matrix4)}.
+     * transformation provided by {@link #setAnimationMatrix(Matrix)}.
      * <p>
      * Note that this matrix only affects the visual effect of this view, you should never
      * call this method. You should use methods such as {@link #setTranslationX(float)}} instead
      * to change the transformation logically.
      *
      * @return the matrix, null indicates that the matrix should be cleared.
-     * @see #setAnimationMatrix(Matrix4)
+     * @see #setAnimationMatrix(Matrix)
      */
     @Nullable
-    public final Matrix4 getAnimationMatrix() {
+    public final Matrix getAnimationMatrix() {
         return mRenderNode.getAnimationMatrix();
     }
 

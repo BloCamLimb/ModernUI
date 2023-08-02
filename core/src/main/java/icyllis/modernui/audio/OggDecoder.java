@@ -18,7 +18,7 @@
 
 package icyllis.modernui.audio;
 
-import icyllis.arc3d.core.MathUtil;
+import icyllis.modernui.graphics.MathUtil;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.stb.STBVorbis;
 import org.lwjgl.stb.STBVorbisInfo;
@@ -181,7 +181,7 @@ public class OggDecoder extends SoundSample {
     }
 
     private static short f2s16(float s) {
-        return (short)MathUtil.clamp((int)(s * 32767.5f - 0.5f), Short.MIN_VALUE, Short.MAX_VALUE);
+        return (short) MathUtil.clamp((int)(s * 32767.5f - 0.5f), Short.MIN_VALUE, Short.MAX_VALUE);
     }
 
     @Override

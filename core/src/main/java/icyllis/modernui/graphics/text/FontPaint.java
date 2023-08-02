@@ -18,8 +18,8 @@
 
 package icyllis.modernui.graphics.text;
 
-import icyllis.arc3d.core.MathUtil;
 import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.graphics.Paint;
 import org.jetbrains.annotations.ApiStatus;
 

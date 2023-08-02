@@ -18,7 +18,6 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.arc3d.core.MathUtil;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;

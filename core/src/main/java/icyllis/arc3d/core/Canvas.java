@@ -265,7 +265,7 @@ public abstract class Canvas {
         return false;
     }
 
-    public void drawColor(int color, BlendMode mode) {
+    public void drawColor(int color, int mode) {
         // paint may be modified for recording canvas, so not impl in super class
         Paint paint = new Paint();
         paint.setColor(color);
