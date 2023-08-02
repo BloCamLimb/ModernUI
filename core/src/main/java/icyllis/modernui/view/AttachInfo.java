@@ -121,6 +121,11 @@ final class AttachInfo {
      */
     View mViewRequestingLayout;
 
+    /**
+     * The view that currently has a tooltip displayed.
+     */
+    View mTooltipHost;
+
     AttachInfo(ViewRoot viewRoot, Handler handler, Callbacks callbacks) {
         mViewRoot = viewRoot;
         mHandler = handler;

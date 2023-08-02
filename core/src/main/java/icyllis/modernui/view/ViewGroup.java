@@ -180,6 +180,13 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     // It might not have actually handled the hover event.
     private boolean mHoveredSelf;
 
+    // The child capable of showing a tooltip and currently under the pointer.
+    private View mTooltipHoverTarget;
+
+    // True if the view group is capable of showing a tooltip and the pointer is directly
+    // over the view group but not one of its child views.
+    private boolean mTooltipHoveredSelf;
+
     // Used to animate add/remove changes in layout
     private LayoutTransition mTransition;
 
@@ -535,6 +542,104 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
             }
             predecessor = target;
             target = next;
+        }
+    }
+
+    @Override
+    boolean dispatchTooltipHoverEvent(MotionEvent event) {
+        final int action = event.getAction();
+        switch (action) {
+            case MotionEvent.ACTION_HOVER_ENTER:
+                break;
+
+            case MotionEvent.ACTION_HOVER_MOVE:
+                View newTarget = null;
+
+                // Check what the child under the pointer says about the tooltip.
+                final int childrenCount = mChildrenCount;
+                if (childrenCount != 0) {
+                    final float x = event.getX();
+                    final float y = event.getY();
+
+                    final ArrayList<View> preorderedList = buildOrderedChildList();
+                    final boolean customOrder = preorderedList == null
+                            && isChildrenDrawingOrderEnabled();
+                    final View[] children = mChildren;
+                    for (int i = childrenCount - 1; i >= 0; i--) {
+                        final int childIndex =
+                                getAndVerifyPreorderedIndex(childrenCount, i, customOrder);
+                        final View child =
+                                getAndVerifyPreorderedView(preorderedList, children, childIndex);
+                        if (!child.canReceivePointerEvents()
+                                || !isTransformedTouchPointInView(x, y, child, null)) {
+                            continue;
+                        }
+                        if (dispatchTooltipHoverEvent(event, child)) {
+                            newTarget = child;
+                            break;
+                        }
+                    }
+                    if (preorderedList != null) preorderedList.clear();
+                }
+
+                if (mTooltipHoverTarget != newTarget) {
+                    if (mTooltipHoverTarget != null) {
+                        event.setAction(MotionEvent.ACTION_HOVER_EXIT);
+                        mTooltipHoverTarget.dispatchTooltipHoverEvent(event);
+                        event.setAction(action);
+                    }
+                    mTooltipHoverTarget = newTarget;
+                }
+
+                if (mTooltipHoverTarget != null) {
+                    if (mTooltipHoveredSelf) {
+                        mTooltipHoveredSelf = false;
+                        event.setAction(MotionEvent.ACTION_HOVER_EXIT);
+                        super.dispatchTooltipHoverEvent(event);
+                        event.setAction(action);
+                    }
+                    return true;
+                }
+
+                mTooltipHoveredSelf = super.dispatchTooltipHoverEvent(event);
+                return mTooltipHoveredSelf;
+
+            case MotionEvent.ACTION_HOVER_EXIT:
+                if (mTooltipHoverTarget != null) {
+                    mTooltipHoverTarget.dispatchTooltipHoverEvent(event);
+                    mTooltipHoverTarget = null;
+                } else if (mTooltipHoveredSelf) {
+                    super.dispatchTooltipHoverEvent(event);
+                    mTooltipHoveredSelf = false;
+                }
+                break;
+        }
+        return false;
+    }
+
+    private boolean dispatchTooltipHoverEvent(MotionEvent event, View child) {
+        final boolean result;
+        if (!child.hasIdentityMatrix()) {
+            MotionEvent transformedEvent = getTransformedMotionEvent(event, child);
+            result = child.dispatchTooltipHoverEvent(transformedEvent);
+            transformedEvent.recycle();
+        } else {
+            final float offsetX = mScrollX - child.mLeft;
+            final float offsetY = mScrollY - child.mTop;
+            event.offsetLocation(offsetX, offsetY);
+            result = child.dispatchTooltipHoverEvent(event);
+            event.offsetLocation(-offsetX, -offsetY);
+        }
+        return result;
+    }
+
+    private void exitTooltipHoverTargets() {
+        if (mTooltipHoveredSelf || mTooltipHoverTarget != null) {
+            final long now = Core.timeNanos();
+            MotionEvent event = MotionEvent.obtain(now,
+                    MotionEvent.ACTION_HOVER_EXIT, 0.0f, 0.0f, 0);
+            dispatchTooltipHoverEvent(event);
+            event.recycle();
         }
     }
 
@@ -1258,7 +1363,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      * If child is null, assumes the MotionEvent will be sent to this ViewGroup instead.
      */
     boolean dispatchTransformedTouchEvent(@NonNull MotionEvent event,
-                                                  @Nullable View child, boolean cancel) {
+                                          @Nullable View child, boolean cancel) {
         final boolean handled;
 
         // Canceling motions is a special case.  We don't need to perform any transformations

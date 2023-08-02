@@ -604,6 +604,7 @@ public class TestFragment extends Fragment {
                     checkBox.setText("Checkbox 0");
                     checkBox.setTextSize(16);
                     checkBox.setGravity(Gravity.END);
+                    checkBox.setTooltipText("Hello, this is a tooltip.");
                     p = new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                             ViewGroup.LayoutParams.WRAP_CONTENT);
                 } else if (i == 7) {
