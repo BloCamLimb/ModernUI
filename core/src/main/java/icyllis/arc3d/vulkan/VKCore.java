@@ -19,7 +19,7 @@
 package icyllis.arc3d.vulkan;
 
 import icyllis.modernui.graphics.Color;
-import icyllis.modernui.graphics.ImageInfo;
+import icyllis.arc3d.core.ImageInfo;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.system.NativeType;

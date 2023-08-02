@@ -19,7 +19,6 @@
 package icyllis.arc3d.core;
 
 import icyllis.arc3d.engine.ConservativeClip;
-import icyllis.modernui.graphics.*;
 import icyllis.modernui.util.Pools;
 
 import java.util.ArrayDeque;

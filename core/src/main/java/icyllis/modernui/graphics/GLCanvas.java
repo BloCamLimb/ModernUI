@@ -18,7 +18,7 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.arc3d.core.Matrix4;
+import icyllis.arc3d.core.*;
 import icyllis.modernui.core.Window;
 import icyllis.modernui.util.Pools;
 
@@ -42,8 +42,8 @@ public abstract class GLCanvas extends Canvas {
     int mWidth;
     int mHeight;
 
-    final Rect mTmpRect = new Rect();
-    final RectF mTmpRectF = new RectF();
+    final Rect2i mTmpRectI = new Rect2i();
+    final Rect2f mTmpRectF = new Rect2f();
 
     GLCanvas() {
     }
@@ -112,7 +112,7 @@ public abstract class GLCanvas extends Canvas {
     static final class Save {
 
         // maximum clip bounds transformed by model view matrix
-        final Rect mClip = new Rect();
+        final Rect2i mClip = new Rect2i();
 
         // model view matrix
         final Matrix4 mMatrix = Matrix4.identity();

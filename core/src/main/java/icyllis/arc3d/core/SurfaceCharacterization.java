@@ -22,8 +22,6 @@ import icyllis.arc3d.engine.*;
 import icyllis.arc3d.vulkan.VKCore;
 import icyllis.arc3d.vulkan.VulkanImageInfo;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.graphics.DeferredDisplayList;
-import icyllis.modernui.graphics.ImageInfo;
 import org.jetbrains.annotations.ApiStatus;
 
 import static icyllis.arc3d.engine.Engine.BackendApi;

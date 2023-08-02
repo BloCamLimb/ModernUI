@@ -18,6 +18,7 @@
 
 package icyllis.arc3d.engine;
 
+import icyllis.arc3d.core.ImageInfo;
 import icyllis.arc3d.core.SurfaceCharacterization;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.*;

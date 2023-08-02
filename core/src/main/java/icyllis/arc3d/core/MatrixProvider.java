@@ -16,19 +16,17 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics;
+package icyllis.arc3d.core;
 
-/**
- * Keep API consistent.
- */
-public class BlendMode {
+import javax.annotation.Nonnull;
 
-    public static final icyllis.arc3d.core.BlendMode CLEAR =
-            icyllis.arc3d.core.BlendMode.CLEAR;
+public interface MatrixProvider {
 
-    public static final icyllis.arc3d.core.BlendMode SRC =
-            icyllis.arc3d.core.BlendMode.SRC;
-
-    public static final icyllis.arc3d.core.BlendMode SRC_OVER =
-            icyllis.arc3d.core.BlendMode.SRC_OVER;
+    /**
+     * Returns the backing local-to-device matrix.
+     *
+     * @return the backing local-to-device matrix
+     */
+    @Nonnull
+    Matrix4 getLocalToDevice();
 }

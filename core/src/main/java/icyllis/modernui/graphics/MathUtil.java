@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,16 +18,11 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.arc3d.core.Matrix4;
-import icyllis.modernui.annotation.NonNull;
+/**
+ * Keep API consistent.
+ */
+public final class MathUtil extends icyllis.arc3d.core.MathUtil {
 
-public interface MatrixProvider {
-
-    /**
-     * Returns the backing local-to-device matrix.
-     *
-     * @return the backing local-to-device matrix
-     */
-    @NonNull
-    Matrix4 getLocalToDevice();
+    private MathUtil() {
+    }
 }

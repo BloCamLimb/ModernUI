@@ -21,7 +21,7 @@ package icyllis.arc3d.core;
 /**
  * Utility class that provides auxiliary operations.
  */
-public final class MathUtil {
+public class MathUtil {
 
     // compile-time
     private static final boolean USE_SIN_TABLE = false;
@@ -575,6 +575,7 @@ public final class MathUtil {
         return (ceilLog2(v) + 3) >> 2;
     }
 
-    private MathUtil() {
+    protected MathUtil() {
+        throw new UnsupportedOperationException();
     }
 }

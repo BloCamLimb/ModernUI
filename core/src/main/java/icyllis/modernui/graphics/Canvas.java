@@ -253,10 +253,22 @@ public abstract class Canvas {
     }
 
     /**
+     * Pre-multiply the current matrix by the specified matrix.
+     *
+     * @param matrix the matrix to multiply
+     */
+    public final void concat(Matrix matrix) {
+        if (!matrix.isIdentity()) {
+            getMatrix().preConcat2D(matrix);
+        }
+    }
+
+    /**
      * Gets the backing matrix for local <strong>modification purposes</strong>.
      *
      * @return current model view matrix
      */
+    @ApiStatus.Internal
     @NonNull
     public abstract Matrix4 getMatrix();
 

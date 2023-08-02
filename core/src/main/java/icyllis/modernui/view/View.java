@@ -6699,7 +6699,7 @@ public class View implements Drawable.Callback {
      * @see #getPivotX()
      * @see #getPivotY()
      */
-    public final Matrix4 getMatrix() {
+    public final Matrix getMatrix() {
         return mRenderNode.getMatrix();
     }
 
@@ -6711,7 +6711,7 @@ public class View implements Drawable.Callback {
      * @return The inverse of the current matrix of this view, may be null if identity
      * @see #hasIdentityMatrix()
      */
-    public final Matrix4 getInverseMatrix() {
+    public final Matrix getInverseMatrix() {
         return mRenderNode.getInverseMatrix();
     }
 
@@ -6722,7 +6722,7 @@ public class View implements Drawable.Callback {
      * @see #getMatrix()
      */
     public final boolean hasIdentityMatrix() {
-        Matrix4 matrix = mRenderNode.getMatrix();
+        Matrix matrix = mRenderNode.getMatrix();
         return matrix == null || matrix.isIdentity();
     }
 
@@ -9329,7 +9329,7 @@ public class View implements Drawable.Callback {
             return false;
         }
 
-        final Matrix4 m = info.mTmpMatrix;
+        final Matrix m = info.mTmpMatrix;
         m.setIdentity();
         transformMatrixToGlobal(m);
         ev.transform(m);
@@ -9350,7 +9350,7 @@ public class View implements Drawable.Callback {
             return false;
         }
 
-        final Matrix4 m = info.mTmpMatrix;
+        final Matrix m = info.mTmpMatrix;
         m.setIdentity();
         transformMatrixToLocal(m);
         ev.transform(m);
@@ -9363,7 +9363,7 @@ public class View implements Drawable.Callback {
      *
      * @param matrix input matrix to modify
      */
-    public void transformMatrixToGlobal(@NonNull Matrix4 matrix) {
+    public void transformMatrixToGlobal(@NonNull Matrix matrix) {
         final ViewParent parent = mParent;
         if (parent instanceof final View vp) {
             vp.transformMatrixToGlobal(matrix);
@@ -9383,7 +9383,7 @@ public class View implements Drawable.Callback {
      *
      * @param matrix input matrix to modify
      */
-    public void transformMatrixToLocal(@NonNull Matrix4 matrix) {
+    public void transformMatrixToLocal(@NonNull Matrix matrix) {
         final ViewParent parent = mParent;
         if (parent instanceof final View vp) {
             vp.transformMatrixToLocal(matrix);

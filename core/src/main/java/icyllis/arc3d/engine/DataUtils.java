@@ -18,7 +18,7 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.modernui.graphics.ImageInfo;
+import icyllis.arc3d.core.ImageInfo;
 
 public final class DataUtils {
 

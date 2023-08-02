@@ -42,9 +42,11 @@ public class RenderProperties {
      * and the mTranslation properties are used directly.
      */
     @Nullable
-    private Matrix4 mMatrix;
+    private Matrix4 mTransform;
     @Nullable
-    private Matrix4 mInverseMatrix;
+    private Matrix mMatrix;
+    @Nullable
+    private Matrix mInverseMatrix;
 
     @Nullable
     private Rect mClipBounds; // lazy
@@ -74,6 +76,40 @@ public class RenderProperties {
         setLayerPaint(null);
     }
 
+    void computeTransform() {
+        mMatrixOrPivotDirty = false;
+        if (!mPivotExplicitlySet) {
+            mPivotX = mWidth / 2.0f;
+            mPivotY = mHeight / 2.0f;
+        }
+        if (!mCameraDistanceExplicitlySet) {
+            mCameraDistance = Math.max(mWidth, mHeight);
+        }
+        if (mTransform == null) {
+            mTransform = new Matrix4();
+        }
+        final Matrix4 matrix = mTransform;
+        // because it's 2D rendering, the Z value is used only for transparency sorting
+        // which happens on the application layer, so there's no need to report the Z value to GPU
+        matrix.setIdentity();
+        if (Math.abs(mRotationX) == 0 && Math.abs(mRotationY) == 0) {
+            matrix.preRotateZ(Math.toRadians(mRotationZ));
+        } else {
+            matrix.m34 = -1.0f / mCameraDistance;
+            matrix.preRotate(Math.toRadians(mRotationX),
+                    Math.toRadians(mRotationY),
+                    Math.toRadians(mRotationZ));
+        }
+        matrix.preTranslate(mTranslationX, mTranslationY, mTranslationZ);
+        matrix.preScale(mScaleX, mScaleY);
+        matrix.preTranslate(-mPivotX, -mPivotY);
+        matrix.postTranslate(mPivotX + mTranslationX, mPivotY + mTranslationY, mTranslationZ);
+        if (mMatrix == null) {
+            mMatrix = new Matrix();
+        }
+        matrix.toMatrix(mMatrix);
+    }
+
     /**
      * Gets the current transform matrix. The return value may be null, indicating that it is identity.
      * Note that the returned matrix is <b>READ-ONLY</b> currently. If you want to record this matrix,
@@ -82,36 +118,9 @@ public class RenderProperties {
      * @return The current transform matrix, may be null
      */
     @Nullable
-    public Matrix4 getMatrix() {
+    public Matrix getMatrix() {
         if (mMatrixOrPivotDirty) {
-            mMatrixOrPivotDirty = false;
-            if (!mPivotExplicitlySet) {
-                mPivotX = mWidth / 2.0f;
-                mPivotY = mHeight / 2.0f;
-            }
-            if (!mCameraDistanceExplicitlySet) {
-                mCameraDistance = Math.max(mWidth, mHeight);
-            }
-            if (mMatrix == null) {
-                mMatrix = new Matrix4();
-            }
-            final Matrix4 matrix = mMatrix;
-            // because it's 2D rendering, the Z value is used only for transparency sorting
-            // which happens on the application layer, so there's no need to report the Z value to GPU
-            matrix.setIdentity();
-            if (Math.abs(mRotationX) == 0 && Math.abs(mRotationY) == 0) {
-                matrix.preRotateZ(Math.toRadians(mRotationZ));
-            } else {
-                matrix.m34 = -1.0f / mCameraDistance;
-                matrix.preRotate(Math.toRadians(mRotationX),
-                        Math.toRadians(mRotationY),
-                        Math.toRadians(mRotationZ));
-            }
-            matrix.preTranslate(mTranslationX, mTranslationY, mTranslationZ);
-            matrix.preScale(mScaleX, mScaleY);
-            matrix.preTranslate(-mPivotX, -mPivotY);
-            matrix.postTranslate(mPivotX + mTranslationX, mPivotY + mTranslationY, mTranslationZ);
-            return matrix;
+            computeTransform();
         }
         return mMatrix;
     }
@@ -124,13 +133,13 @@ public class RenderProperties {
      * @return The inverse of current transform matrix, may be null
      */
     @Nullable
-    public Matrix4 getInverseMatrix() {
-        Matrix4 matrix = getMatrix();
+    public Matrix getInverseMatrix() {
+        Matrix matrix = getMatrix();
         if (matrix == null) {
             return null;
         }
         if (mInverseMatrix == null) {
-            mInverseMatrix = new Matrix4();
+            mInverseMatrix = new Matrix();
         }
         if (matrix.invert(mInverseMatrix)) {
             return mInverseMatrix;
@@ -722,7 +731,7 @@ public class RenderProperties {
      */
     public float getPivotX() {
         if (!mPivotExplicitlySet) {
-            getMatrix();
+            return mWidth / 2.0f;
         }
         return mPivotX;
     }
@@ -755,7 +764,7 @@ public class RenderProperties {
      */
     public float getPivotY() {
         if (!mPivotExplicitlySet) {
-            getMatrix();
+            return mHeight / 2.0f;
         }
         return mPivotY;
     }

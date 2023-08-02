@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,10 +16,12 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics;
+package icyllis.arc3d.core;
 
 import icyllis.arc3d.engine.Engine;
 import icyllis.modernui.annotation.Size;
+import icyllis.modernui.graphics.Color;
+import icyllis.modernui.graphics.ColorSpace;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -380,7 +382,7 @@ public final class ImageInfo {
      */
     @ApiStatus.Internal
     public ImageInfo(@Size(min = 0) int w, @Size(min = 0) int h,
-              @ColorType int ct, @AlphaType int at, @Nullable ColorSpace cs) {
+                     @ColorType int ct, @AlphaType int at, @Nullable ColorSpace cs) {
         mWidth = w;
         mHeight = h;
         mColorType = (short) ct;

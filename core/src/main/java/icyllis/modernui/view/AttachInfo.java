@@ -20,9 +20,7 @@ package icyllis.modernui.view;
 
 import icyllis.modernui.core.Handler;
 import icyllis.arc3d.core.Matrix4;
-import icyllis.modernui.graphics.Point;
-import icyllis.modernui.graphics.Rect;
-import icyllis.modernui.graphics.RectF;
+import icyllis.modernui.graphics.*;
 
 /**
  * A set of information given to a view when it is attached to its parent
@@ -108,7 +106,7 @@ final class AttachInfo {
     /**
      * Temporary for use in transforming invalidation rect
      */
-    final Matrix4 mTmpMatrix = new Matrix4();
+    final Matrix mTmpMatrix = new Matrix();
 
     /**
      * Point used to compute visible regions.

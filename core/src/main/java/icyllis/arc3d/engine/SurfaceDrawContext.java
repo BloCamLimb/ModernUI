@@ -19,7 +19,7 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.SharedPtr;
-import icyllis.modernui.graphics.ImageInfo;
+import icyllis.arc3d.core.ImageInfo;
 
 public class SurfaceDrawContext extends SurfaceFillContext {
 

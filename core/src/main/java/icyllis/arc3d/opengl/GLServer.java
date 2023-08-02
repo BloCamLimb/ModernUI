@@ -21,7 +21,7 @@ package icyllis.arc3d.opengl;
 import icyllis.arc3d.core.Rect2i;
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.*;
-import icyllis.modernui.graphics.ImageInfo;
+import icyllis.arc3d.core.ImageInfo;
 import icyllis.modernui.graphics.RefCnt;
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
 import org.lwjgl.opengl.GL;
