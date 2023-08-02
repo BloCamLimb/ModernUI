@@ -18,8 +18,6 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.arc3d.core.MathUtil;
-
 import javax.annotation.Nonnull;
 
 /**
@@ -32,6 +30,10 @@ public class Matrix extends icyllis.arc3d.core.Matrix {
      * Create a new identity matrix.
      */
     public Matrix() {
+    }
+
+    public Matrix(Matrix m) {
+        super(m);
     }
 
     /**

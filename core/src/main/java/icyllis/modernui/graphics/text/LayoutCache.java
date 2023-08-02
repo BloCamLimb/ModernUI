@@ -20,8 +20,8 @@ package icyllis.modernui.graphics.text;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import icyllis.arc3d.core.MathUtil;
 import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.util.Pools;
 
 import javax.annotation.concurrent.ThreadSafe;

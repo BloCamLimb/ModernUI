@@ -18,7 +18,6 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.arc3d.core.BlendMode;
 import icyllis.arc3d.core.*;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.graphics.text.*;

@@ -18,7 +18,6 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.arc3d.core.MathUtil;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Context;

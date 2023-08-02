@@ -18,7 +18,6 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.arc3d.core.BlendMode;
 import icyllis.arc3d.core.Matrix4;
 import icyllis.modernui.annotation.FloatRange;
 import icyllis.modernui.view.View;
@@ -51,11 +50,11 @@ public class RenderProperties {
     @Nullable
     private Rect mClipBounds; // lazy
     @Nullable
-    private Matrix4 mAnimationMatrix; // copy or null
+    private Matrix mAnimationMatrix; // copy or null
 
     private boolean mForceToLayer = false;
     private int mLayerAlpha;
-    private BlendMode mLayerMode;
+    private int mLayerMode = -1;
 
     private int mLeft = 0, mTop = 0, mRight = 0, mBottom = 0;
     private int mWidth = 0, mHeight = 0;
@@ -201,7 +200,7 @@ public class RenderProperties {
             mLayerAlpha = alpha;
             changed = true;
         }
-        BlendMode mode = Paint.getBlendModeDirect(paint);
+        var mode = Paint.getBlendModeDirect(paint);
         if (mLayerMode != mode) {
             mLayerMode = mode;
             changed = true;
@@ -234,8 +233,7 @@ public class RenderProperties {
      *
      * @return the layer's blend mode
      */
-    @Nonnull
-    public BlendMode getLayerBlendMode() {
+    public int getLayerBlendMode() {
         return mLayerMode;
     }
 
@@ -317,7 +315,7 @@ public class RenderProperties {
      * @param matrix The matrix, null indicates that the matrix should be cleared.
      * @see #getAnimationMatrix()
      */
-    public boolean setAnimationMatrix(@Nullable Matrix4 matrix) {
+    public boolean setAnimationMatrix(@Nullable Matrix matrix) {
         if (matrix == null) {
             if (mMatrix != null) {
                 mMatrix = null;
@@ -326,7 +324,7 @@ public class RenderProperties {
             return false;
         }
         if (mAnimationMatrix == null) {
-            mAnimationMatrix = new Matrix4(matrix);
+            mAnimationMatrix = new Matrix(matrix);
         } else if (!mAnimationMatrix.isApproxEqual(matrix)) {
             mAnimationMatrix.set(matrix);
         } else {
@@ -339,13 +337,13 @@ public class RenderProperties {
      * Returns the previously set animation matrix. This matrix exists if an animation is
      * currently playing on a View, and is set on the RenderNode during at draw time.
      * Returns <code>null</code> when there is no transformation provided by
-     * {@link #setAnimationMatrix(Matrix4)}.
+     * {@link #setAnimationMatrix(Matrix)}.
      *
      * @return the current Animation matrix.
-     * @see #setAnimationMatrix(Matrix4)
+     * @see #setAnimationMatrix(Matrix)
      */
     @Nullable
-    public Matrix4 getAnimationMatrix() {
+    public Matrix getAnimationMatrix() {
         return mAnimationMatrix;
     }
 
@@ -845,7 +843,7 @@ public class RenderProperties {
     @FloatRange(from = 0.0f, to = Float.MAX_VALUE)
     public float getCameraDistance() {
         if (!mCameraDistanceExplicitlySet) {
-            getMatrix();
+            return Math.max(mWidth, mHeight);
         }
         return mCameraDistance;
     }

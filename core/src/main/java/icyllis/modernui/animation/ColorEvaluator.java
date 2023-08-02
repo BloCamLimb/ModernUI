@@ -18,7 +18,7 @@
 
 package icyllis.modernui.animation;
 
-import icyllis.arc3d.core.MathUtil;
+import icyllis.modernui.graphics.MathUtil;
 
 import javax.annotation.Nonnull;
 

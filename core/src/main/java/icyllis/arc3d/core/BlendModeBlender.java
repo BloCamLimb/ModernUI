@@ -18,30 +18,24 @@
 
 package icyllis.arc3d.core;
 
-/**
- * {@code Blender} represents a custom blend function in the pipeline. A blender
- * combines a source color (from the paint) and destination color (from the
- * draw buffer) into a new color.
- *
- * @see BlendMode
- * @since 3.7
- */
-public interface Blender {
+import java.util.Arrays;
 
-    /**
-     * Create a blender that implements the specified BlendMode.
-     */
-    static Blender mode(int mode) {
-        return BlendModeBlender.sBlenders[mode];
+public final class BlendModeBlender implements Blender {
+
+    static final BlendModeBlender[] sBlenders = new BlendModeBlender[27];
+
+    static {
+        Arrays.setAll(sBlenders, BlendModeBlender::new);
     }
 
-    /**
-     * Returns the blender's BlendMode in `mode` if this Blender represents any BlendMode.
-     * Returns -1 for other types of blends.
-     * <p>
-     * Note that this method is equivalent to <code>(o instanceof BlendMode)</code> check.
-     */
-    default int asBlendMode() {
-        return -1;
+    private final int mMode;
+
+    private BlendModeBlender(int mode) {
+        mMode = mode;
+    }
+
+    @Override
+    public int asBlendMode() {
+        return mMode;
     }
 }

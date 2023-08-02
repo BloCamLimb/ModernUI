@@ -20,8 +20,8 @@ package icyllis.modernui.graphics.text;
 
 import com.ibm.icu.text.Bidi;
 import com.ibm.icu.text.BidiRun;
-import icyllis.arc3d.core.MathUtil;
 import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.graphics.MathUtil;
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import it.unimi.dsi.fastutil.floats.FloatArrays;
