@@ -21,7 +21,6 @@ package icyllis.modernui.graphics.text;
 import com.ibm.icu.impl.UCharacterProperty;
 import com.ibm.icu.lang.*;
 import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.text.Emoji;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Unmodifiable;
 

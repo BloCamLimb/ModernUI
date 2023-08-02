@@ -18,6 +18,7 @@
 
 package icyllis.modernui.graphics.text;
 
+import com.ibm.icu.text.BreakIterator;
 import icyllis.arc3d.core.Strike;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
@@ -34,55 +35,65 @@ import java.util.Map;
  */
 public final class EmojiFont implements Font {
 
-    private final String mFontName;
-    private final IntSet mSupportedUnicodes;
-    private final int mSpriteSize;
-    private final int mAscent; // positive
-    private final float mNormalizeFactor;
+    private final String mName;
+    private final IntSet mCoverage;
+    private final float mBaseSize;
+    private final float mBaseAscent; // positive
+    private final float mBaseDescent;
+    private final float mBaseSpacing;
 
-    private final Map<CharSequence, EmojiEntry> mEmojiMap;
+    private final Map<CharSequence, EmojiEntry> mMap;
 
     /**
-     * @param id       used as glyph code
+     * @param id       used as glyph ID
      * @param image    image file name
-     * @param sequence emoji char sequence
+     * @param sequence emoji char sequence (key)
      */
     public record EmojiEntry(int id, String image, String sequence) {
     }
 
-    public EmojiFont(String fontName, IntSet supportedUnicodes, int spriteSize, int ascent, float normalizeFactor,
-                     Map<CharSequence, EmojiEntry> emojiMap) {
-        mFontName = fontName;
-        mSupportedUnicodes = supportedUnicodes;
-        mSpriteSize = spriteSize;
-        mAscent = ascent;
-        mNormalizeFactor = normalizeFactor;
-        mEmojiMap = emojiMap;
+    private final CharSequenceBuilder mLookupKey = new CharSequenceBuilder();
+
+    public EmojiFont(String name, IntSet coverage, int size, int ascent, int spacing,
+                     int base, Map<CharSequence, EmojiEntry> map) {
+        mName = name;
+        mCoverage = coverage;
+        mBaseSize = (float) size / base;
+        mBaseAscent = (float) ascent / base;
+        mBaseDescent = (float) (size - ascent) / base;
+        mBaseSpacing = (float) spacing / base;
+        mMap = map;
     }
 
     @Override
     public int getStyle() {
-        return 0;
+        return FontPaint.NORMAL;
     }
 
     @Override
     public String getFullName(@NonNull Locale locale) {
-        return mFontName;
+        return mName;
     }
 
     @Override
     public String getFamilyName(@NonNull Locale locale) {
-        return mFontName;
+        return mName;
     }
 
     @Override
     public int getMetrics(@NonNull FontPaint paint, @Nullable FontMetricsInt fm) {
-        return 0;
+        int size = paint.getFontSize();
+        int ascent = (int) (0.95 + mBaseAscent * size);
+        int descent = (int) (0.95 + mBaseDescent * size);
+        if (fm != null) {
+            fm.extendBy(-ascent, descent);
+        }
+        return ascent + descent;
     }
 
     @Override
     public boolean hasGlyph(int ch, int vs) {
-        return mSupportedUnicodes.contains(ch);
+        return mCoverage.contains(ch);
     }
 
     @Override
@@ -101,9 +112,101 @@ public final class EmojiFont implements Font {
                                  IntArrayList glyphs, FloatArrayList positions,
                                  float[] advances, int advanceOffset,
                                  Rect bounds, float x, float y) {
+        // Measure grapheme cluster in visual order
+        final var breaker = BreakIterator.getCharacterInstance(paint.mLocale);
+        // We simply ignore the context range
+        final var iterator = new CharArrayIterator(buf, layoutStart, layoutLimit);
+        breaker.setText(iterator);
 
+        boolean hint = (paint.getRenderFlags() & FontPaint.RENDER_FLAG_LINEAR_METRICS) == 0;
+        float sz = paint.getFontSize();
+        float add = mBaseSpacing * sz;
+        if (hint) {
+            add = Math.max(1, (int) (0.95 + add));
+        }
+        sz = mBaseSize * sz;
+        if (hint) {
+            sz = (int) (0.95 + sz);
+        }
+        float adv = sz + add * 2;
 
-        return 0;
+        if (hint) {
+            x = (int) x;
+            y = (int) y;
+        }
+
+        int prevPos;
+        int currPos;
+        if (isRtl) {
+            prevPos = layoutLimit;
+        } else {
+            prevPos = layoutStart;
+        }
+
+        float currAdvance = 0;
+
+        while ((currPos = isRtl
+                ? breaker.preceding(prevPos)
+                : breaker.following(prevPos)) != BreakIterator.DONE) {
+            int pieceStart = Math.min(prevPos, currPos);
+            int pieceLimit = Math.max(prevPos, currPos);
+
+            EmojiEntry entry;
+            synchronized (mLookupKey) {
+                entry = mMap.get(
+                        mLookupKey.updateChars(buf, pieceStart, pieceLimit)
+                );
+            }
+            if (entry == null) {
+                char vs = buf[pieceLimit - 1];
+                if (vs != Emoji.VARIATION_SELECTOR_15) {
+                    if (vs == Emoji.VARIATION_SELECTOR_16) {
+                        // try w/o
+                        synchronized (mLookupKey) {
+                            entry = mMap.get(
+                                    mLookupKey.updateChars(buf, pieceStart, pieceLimit - 1)
+                            );
+                        }
+                    } else {
+                        // try w/
+                        synchronized (mLookupKey) {
+                            mLookupKey.updateChars(buf, pieceStart, pieceLimit)
+                                    .add((char) Emoji.VARIATION_SELECTOR_16);
+                            entry = mMap.get(mLookupKey);
+                        }
+                    }
+                }
+            }
+            if (entry != null) {
+                if (advances != null) {
+                    advances[pieceStart - advanceOffset] = adv;
+                }
+
+                if (glyphs != null) {
+                    glyphs.add(entry.id);
+                }
+                if (positions != null) {
+                    positions.add(x + currAdvance + add);
+                    positions.add(y);
+                }
+
+                currAdvance += adv;
+            }
+
+            prevPos = currPos;
+        }
+
+        if (bounds != null) {
+            int s = paint.getFontSize();
+            bounds.union(
+                    (int) x,
+                    (int) (y - mBaseAscent * s - 0.05),
+                    (int) (x + currAdvance + 0.95),
+                    (int) (y + mBaseDescent * s + 0.95)
+            );
+        }
+
+        return currAdvance;
     }
 
     @Override
