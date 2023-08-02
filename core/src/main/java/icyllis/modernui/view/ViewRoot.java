@@ -22,9 +22,7 @@ import icyllis.modernui.animation.LayoutTransition;
 import icyllis.modernui.annotation.MainThread;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.core.*;
-import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.Point;
-import icyllis.modernui.graphics.Rect;
+import icyllis.modernui.graphics.*;
 import icyllis.modernui.view.View.FocusDirection;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
@@ -518,6 +516,7 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
                                 mPointerIconType = PointerIcon.TYPE_DEFAULT;
                             }
                         }
+                        maybeUpdateTooltip(ev);
                         if (handled) continue;
                         onTouchEvent(ev);
                     }
@@ -767,6 +766,22 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
     }
 
     protected void applyPointerIcon(int pointerType) {
+    }
+
+    private void maybeUpdateTooltip(MotionEvent event) {
+        if (event.getPointerCount() != 1) {
+            return;
+        }
+        final int action = event.getActionMasked();
+        if (action != MotionEvent.ACTION_HOVER_ENTER
+                && action != MotionEvent.ACTION_HOVER_MOVE
+                && action != MotionEvent.ACTION_HOVER_EXIT) {
+            return;
+        }
+        if (mView == null) {
+            return;
+        }
+        mView.dispatchTooltipHoverEvent(event);
     }
 
     /**

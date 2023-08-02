@@ -572,8 +572,7 @@ public final class MotionEvent extends InputEvent {
      *
      * @return The action, such as {@link #ACTION_DOWN} or {@link #ACTION_POINTER_DOWN}.
      */
-    @Deprecated
-    private int getActionMasked() {
+    public int getActionMasked() {
         return mAction & ACTION_MASK;
     }
 

@@ -23,6 +23,7 @@ import icyllis.modernui.core.Context;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.util.DisplayMetrics;
 import icyllis.modernui.util.SparseArray;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
  * Contains methods to standard constants used in the UI for timeouts, sizes, and distances.
@@ -119,6 +120,22 @@ public class ViewConfiguration {
      */
     public static final float VERTICAL_SCROLL_FACTOR = 64;
 
+    /**
+     * Defines the duration in milliseconds before an end of a long press causes a tooltip to be
+     * hidden.
+     */
+    private static final int LONG_PRESS_TOOLTIP_HIDE_TIMEOUT = 1500;
+
+    /**
+     * Defines the duration in milliseconds before a hover event causes a tooltip to be shown.
+     */
+    private static final int HOVER_TOOLTIP_SHOW_TIMEOUT = 500;
+
+    /**
+     * Defines the duration in milliseconds before mouse inactivity causes a tooltip to be hidden.
+     */
+    private static final int HOVER_TOOLTIP_HIDE_TIMEOUT = 15000;
+
     private final int mEdgeSlop;
     private final int mFadingEdgeLength;
     private final int mMinimumFlingVelocity;
@@ -126,7 +143,7 @@ public class ViewConfiguration {
     private final int mScrollbarSize;
     private final int mTouchSlop;
     private volatile int mMinScalingSpan;
-    private volatile int mHoverSlop;
+    private final int mHoverSlop;
     private final int mMinScrollbarTouchTarget;
     private volatile int mDoubleTapTouchSlop;
     private volatile int mPagingTouchSlop;
@@ -151,6 +168,7 @@ public class ViewConfiguration {
         mScrollbarSize = (int) (density * SCROLL_BAR_SIZE + 0.5f);
 
         mTouchSlop = (int) (density * TOUCH_SLOP + 0.5f);
+        mHoverSlop = mTouchSlop / 2;
         mMinScrollbarTouchTarget = (int) (density * MIN_SCROLLBAR_TOUCH_TARGET + 0.5f);
 
         mMinimumFlingVelocity = (int) (density * MINIMUM_FLING_VELOCITY + 0.5f);
@@ -254,6 +272,13 @@ public class ViewConfiguration {
     }
 
     /**
+     * @return Distance in pixels a hover can wander while it is still considered "stationary".
+     */
+    public int getScaledHoverSlop() {
+        return mHoverSlop;
+    }
+
+    /**
      * @return the minimum size of the scrollbar thumb's touch target in pixels
      */
     public int getScaledMinScrollbarTouchTarget() {
@@ -304,5 +329,30 @@ public class ViewConfiguration {
      */
     public float getScaledHorizontalScrollFactor() {
         return mHorizontalScrollFactor;
+    }
+
+    /**
+     * @return the duration in milliseconds before an end of a long press causes a tooltip to be
+     * hidden
+     */
+    @ApiStatus.Internal
+    public static int getLongPressTooltipHideTimeout() {
+        return LONG_PRESS_TOOLTIP_HIDE_TIMEOUT;
+    }
+
+    /**
+     * @return the duration in milliseconds before a hover event causes a tooltip to be shown
+     */
+    @ApiStatus.Internal
+    public static int getHoverTooltipShowTimeout() {
+        return HOVER_TOOLTIP_SHOW_TIMEOUT;
+    }
+
+    /**
+     * @return the duration in milliseconds before mouse inactivity causes a tooltip to be hidden.
+     */
+    @ApiStatus.Internal
+    public static int getHoverTooltipHideTimeout() {
+        return HOVER_TOOLTIP_HIDE_TIMEOUT;
     }
 }
