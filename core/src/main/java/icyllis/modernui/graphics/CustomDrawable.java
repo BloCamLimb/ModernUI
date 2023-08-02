@@ -18,7 +18,7 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.arc3d.core.Matrix4;
+import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
 
 /**
@@ -89,7 +89,7 @@ public interface CustomDrawable {
      */
     DrawHandler snapDrawHandler(int backendApi,
                                 Matrix4 viewMatrix,
-                                Rect clipBounds,
+                                Rect2i clipBounds,
                                 ImageInfo targetInfo);
 
     /**

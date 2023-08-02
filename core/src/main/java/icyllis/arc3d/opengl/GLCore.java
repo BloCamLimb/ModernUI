@@ -24,7 +24,7 @@ import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.core.Window;
 import icyllis.modernui.graphics.Color;
-import icyllis.modernui.graphics.ImageInfo;
+import icyllis.arc3d.core.ImageInfo;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.opengl.*;

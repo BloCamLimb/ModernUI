@@ -18,6 +18,7 @@
 
 package icyllis.arc3d.engine;
 
+import icyllis.arc3d.core.ImageInfo;
 import icyllis.modernui.graphics.*;
 import org.lwjgl.system.NativeType;
 

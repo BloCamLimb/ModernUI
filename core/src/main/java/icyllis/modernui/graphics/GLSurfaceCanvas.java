@@ -1407,7 +1407,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
      * @param b bounds
      * @see #clipRect(float, float, float, float)
      */
-    private void restoreClipBatch(@NonNull Rect b) {
+    private void restoreClipBatch(@NonNull Rect2i b) {
         /*int pointer = mDrawOps.size() - 1;
         int op;
         boolean skip = true;
@@ -1431,7 +1431,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         } else {
             drawMatrix(RESET_MATRIX);
             // must have a color
-            putRectColor(b.left, b.top, b.right, b.bottom, 1, 1, 1, 1);
+            putRectColor(b.mLeft, b.mTop, b.mRight, b.mBottom, 1, 1, 1, 1);
             mClipRefs.add(getSave().mClipRef);
         }
         mDrawOps.add(DRAW_CLIP_POP);
@@ -1455,12 +1455,12 @@ public final class GLSurfaceCanvas extends GLCanvas {
         if (save.mClip.isEmpty()) {
             return false;
         }
-        RectF temp = mTmpRectF;
+        var temp = mTmpRectF;
         temp.set(left, top, right, bottom);
         temp.inset(-1, -1);
         getMatrix().mapRect(temp);
 
-        Rect test = mTmpRect;
+        var test = mTmpRectI;
         temp.roundOut(test);
 
         // not empty and not changed, return true
@@ -1490,19 +1490,19 @@ public final class GLSurfaceCanvas extends GLCanvas {
         if (right <= left || bottom <= top) {
             return true;
         }
-        final Rect clip = getSave().mClip;
+        final var clip = getSave().mClip;
         // already empty, reject
         if (clip.isEmpty()) {
             return true;
         }
 
-        RectF temp = mTmpRectF;
+        var temp = mTmpRectF;
         temp.set(left, top, right, bottom);
         getMatrix().mapRect(temp);
 
-        Rect test = mTmpRect;
+        var test = mTmpRectI;
         temp.roundOut(test);
-        return !Rect.intersects(clip, test);
+        return !Rect2i.intersects(clip, test);
     }
 
     private void putRectColor(float left, float top, float right, float bottom, @NonNull Paint paint) {

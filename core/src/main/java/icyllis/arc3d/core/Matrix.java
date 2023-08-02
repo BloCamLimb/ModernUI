@@ -73,7 +73,12 @@ public class Matrix implements Cloneable {
 
     protected int mTypeMask;
 
-    protected Matrix() {
+    /**
+     * Create a new identity matrix.
+     */
+    public Matrix() {
+        m11 = m22 = m33 = 1.0f;
+        mTypeMask = Identity_Mask | AxisAligned_Mask;
     }
 
     /**

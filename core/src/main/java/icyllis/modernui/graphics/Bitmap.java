@@ -20,6 +20,7 @@ package icyllis.modernui.graphics;
 
 import com.ibm.icu.text.DateFormat;
 import com.ibm.icu.text.SimpleDateFormat;
+import icyllis.arc3d.core.ImageInfo;
 import icyllis.arc3d.opengl.GLTextureCompat;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Core;

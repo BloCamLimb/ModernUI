@@ -18,7 +18,6 @@
 
 package icyllis.arc3d.core;
 
-import icyllis.modernui.graphics.*;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
@@ -2486,34 +2485,34 @@ public class Matrix4 implements Cloneable {
      *
      * @param r the rectangle to transform
      */
-    public void mapRect(@Nonnull RectF r) {
-        float x1 = m11 * r.left + m21 * r.top + m41;
-        float y1 = m12 * r.left + m22 * r.top + m42;
-        float x2 = m11 * r.right + m21 * r.top + m41;
-        float y2 = m12 * r.right + m22 * r.top + m42;
-        float x3 = m11 * r.left + m21 * r.bottom + m41;
-        float y3 = m12 * r.left + m22 * r.bottom + m42;
-        float x4 = m11 * r.right + m21 * r.bottom + m41;
-        float y4 = m12 * r.right + m22 * r.bottom + m42;
+    public void mapRect(@Nonnull Rect2f r) {
+        float x1 = m11 * r.mLeft + m21 * r.mTop + m41;
+        float y1 = m12 * r.mLeft + m22 * r.mTop + m42;
+        float x2 = m11 * r.mRight + m21 * r.mTop + m41;
+        float y2 = m12 * r.mRight + m22 * r.mTop + m42;
+        float x3 = m11 * r.mLeft + m21 * r.mBottom + m41;
+        float y3 = m12 * r.mLeft + m22 * r.mBottom + m42;
+        float x4 = m11 * r.mRight + m21 * r.mBottom + m41;
+        float y4 = m12 * r.mRight + m22 * r.mBottom + m42;
         if (!isAffine()) {
             // project
-            float w = 1.0f / (m14 * r.left + m24 * r.top + m44);
+            float w = 1.0f / (m14 * r.mLeft + m24 * r.mTop + m44);
             x1 *= w;
             y1 *= w;
-            w = 1.0f / (m14 * r.right + m24 * r.top + m44);
+            w = 1.0f / (m14 * r.mRight + m24 * r.mTop + m44);
             x2 *= w;
             y2 *= w;
-            w = 1.0f / (m14 * r.left + m24 * r.bottom + m44);
+            w = 1.0f / (m14 * r.mLeft + m24 * r.mBottom + m44);
             x3 *= w;
             y3 *= w;
-            w = 1.0f / (m14 * r.right + m24 * r.bottom + m44);
+            w = 1.0f / (m14 * r.mRight + m24 * r.mBottom + m44);
             x4 *= w;
             y4 *= w;
         }
-        r.left = MathUtil.min(x1, x2, x3, x4);
-        r.top = MathUtil.min(y1, y2, y3, y4);
-        r.right = MathUtil.max(x1, x2, x3, x4);
-        r.bottom = MathUtil.max(y1, y2, y3, y4);
+        r.mLeft = MathUtil.min(x1, x2, x3, x4);
+        r.mTop = MathUtil.min(y1, y2, y3, y4);
+        r.mRight = MathUtil.max(x1, x2, x3, x4);
+        r.mBottom = MathUtil.max(y1, y2, y3, y4);
     }
 
     /**
@@ -2522,38 +2521,38 @@ public class Matrix4 implements Cloneable {
      * @param r   the rectangle to transform
      * @param out the round values
      */
-    public void mapRect(@Nonnull RectF r, @Nonnull Rect out) {
-        float x1 = m11 * r.left + m21 * r.top + m41;
-        float y1 = m12 * r.left + m22 * r.top + m42;
-        float x2 = m11 * r.right + m21 * r.top + m41;
-        float y2 = m12 * r.right + m22 * r.top + m42;
-        float x3 = m11 * r.left + m21 * r.bottom + m41;
-        float y3 = m12 * r.left + m22 * r.bottom + m42;
-        float x4 = m11 * r.right + m21 * r.bottom + m41;
-        float y4 = m12 * r.right + m22 * r.bottom + m42;
+    public void mapRect(@Nonnull Rect2f r, @Nonnull Rect2i out) {
+        float x1 = m11 * r.mLeft + m21 * r.mTop + m41;
+        float y1 = m12 * r.mLeft + m22 * r.mTop + m42;
+        float x2 = m11 * r.mRight + m21 * r.mTop + m41;
+        float y2 = m12 * r.mRight + m22 * r.mTop + m42;
+        float x3 = m11 * r.mLeft + m21 * r.mBottom + m41;
+        float y3 = m12 * r.mLeft + m22 * r.mBottom + m42;
+        float x4 = m11 * r.mRight + m21 * r.mBottom + m41;
+        float y4 = m12 * r.mRight + m22 * r.mBottom + m42;
         if (!isAffine()) {
             // project
-            float w = 1.0f / (m14 * r.left + m24 * r.top + m44);
+            float w = 1.0f / (m14 * r.mLeft + m24 * r.mTop + m44);
             x1 *= w;
             y1 *= w;
-            w = 1.0f / (m14 * r.right + m24 * r.top + m44);
+            w = 1.0f / (m14 * r.mRight + m24 * r.mTop + m44);
             x2 *= w;
             y2 *= w;
-            w = 1.0f / (m14 * r.left + m24 * r.bottom + m44);
+            w = 1.0f / (m14 * r.mLeft + m24 * r.mBottom + m44);
             x3 *= w;
             y3 *= w;
-            w = 1.0f / (m14 * r.right + m24 * r.bottom + m44);
+            w = 1.0f / (m14 * r.mRight + m24 * r.mBottom + m44);
             x4 *= w;
             y4 *= w;
         }
-        out.left = Math.round(MathUtil.min(x1, x2, x3, x4));
-        out.top = Math.round(MathUtil.min(y1, y2, y3, y4));
-        out.right = Math.round(MathUtil.max(x1, x2, x3, x4));
-        out.bottom = Math.round(MathUtil.max(y1, y2, y3, y4));
+        out.mLeft = Math.round(MathUtil.min(x1, x2, x3, x4));
+        out.mTop = Math.round(MathUtil.min(y1, y2, y3, y4));
+        out.mRight = Math.round(MathUtil.max(x1, x2, x3, x4));
+        out.mBottom = Math.round(MathUtil.max(y1, y2, y3, y4));
     }
 
-    public void mapRectOut(@Nonnull Rect r, @Nonnull Rect out) {
-        mapRectOut(r.left, r.top, r.right, r.bottom, out);
+    public void mapRectOut(@Nonnull Rect2i r, @Nonnull Rect2i out) {
+        mapRectOut(r.mLeft, r.mTop, r.mRight, r.mBottom, out);
     }
 
     /**
@@ -2562,11 +2561,11 @@ public class Matrix4 implements Cloneable {
      * @param r   the rectangle to transform
      * @param out the round out values
      */
-    public void mapRectOut(@Nonnull RectF r, @Nonnull Rect out) {
-        mapRectOut(r.left, r.top, r.right, r.bottom, out);
+    public void mapRectOut(@Nonnull Rect2f r, @Nonnull Rect2i out) {
+        mapRectOut(r.mLeft, r.mTop, r.mRight, r.mBottom, out);
     }
 
-    public void mapRectOut(float left, float top, float right, float bottom, @Nonnull Rect dest) {
+    public void mapRectOut(float left, float top, float right, float bottom, @Nonnull Rect2i dest) {
         float x1 = m11 * left + m21 * top + m41;
         float y1 = m12 * left + m22 * top + m42;
         float x2 = m11 * right + m21 * top + m41;
@@ -2591,29 +2590,10 @@ public class Matrix4 implements Cloneable {
             x4 *= w;
             y4 *= w;
         }
-        dest.left = (int) Math.floor(MathUtil.min(x1, x2, x3, x4));
-        dest.top = (int) Math.floor(MathUtil.min(y1, y2, y3, y4));
-        dest.right = (int) Math.ceil(MathUtil.max(x1, x2, x3, x4));
-        dest.bottom = (int) Math.ceil(MathUtil.max(y1, y2, y3, y4));
-    }
-
-    /**
-     * Map a point in the X-Y plane.
-     *
-     * @param p the point to transform
-     */
-    public void mapPoint(@Nonnull PointF p) {
-        if (isAffine()) {
-            p.set(m11 * p.x + m21 * p.y + m41,
-                    m12 * p.x + m22 * p.y + m42);
-        } else {
-            // project
-            final float x = m11 * p.x + m21 * p.y + m41;
-            final float y = m12 * p.x + m22 * p.y + m42;
-            float w = 1.0f / (m14 * p.x + m24 * p.y + m44);
-            p.x = x * w;
-            p.y = y * w;
-        }
+        dest.mLeft = (int) Math.floor(MathUtil.min(x1, x2, x3, x4));
+        dest.mTop = (int) Math.floor(MathUtil.min(y1, y2, y3, y4));
+        dest.mRight = (int) Math.ceil(MathUtil.max(x1, x2, x3, x4));
+        dest.mBottom = (int) Math.ceil(MathUtil.max(y1, y2, y3, y4));
     }
 
     /**
@@ -2756,7 +2736,7 @@ public class Matrix4 implements Cloneable {
      * [ g h x i ]
      * }</pre>
      */
-    public void toM33NoZ(@Nonnull Matrix dest) {
+    public void toMatrix(@Nonnull Matrix dest) {
         dest.setAll(
                 m11, m12, m14,
                 m21, m22, m24,
@@ -2774,7 +2754,7 @@ public class Matrix4 implements Cloneable {
      * }</pre>
      */
     @Nonnull
-    public Matrix toM33NoZ() {
+    public Matrix toMatrix() {
         return Matrix.makeAll(
                 m11, m12, m14,
                 m21, m22, m24,
@@ -2791,7 +2771,7 @@ public class Matrix4 implements Cloneable {
      * [ x x x x ]
      * }</pre>
      */
-    public void toM33NoW(@Nonnull Matrix3 dest) {
+    public void toMatrix3(@Nonnull Matrix3 dest) {
         dest.m11 = m11;
         dest.m12 = m12;
         dest.m13 = m13;
@@ -2813,9 +2793,9 @@ public class Matrix4 implements Cloneable {
      * }</pre>
      */
     @Nonnull
-    public Matrix3 toM33NoW() {
+    public Matrix3 toMatrix3() {
         Matrix3 m = new Matrix3();
-        toM33NoW(m);
+        toMatrix3(m);
         return m;
     }
 

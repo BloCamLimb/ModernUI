@@ -16,9 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics;
-
-import icyllis.arc3d.core.Surface;
+package icyllis.arc3d.core;
 
 /**
  * This class contains pre-processed graphics operations that can be replayed into

@@ -21,7 +21,7 @@ package icyllis.arc3d.opengl;
 import icyllis.arc3d.engine.*;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.graphics.ImageInfo;
+import icyllis.arc3d.core.ImageInfo;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.lwjgl.opengl.GL46C;
 import org.lwjgl.opengl.GLCapabilities;

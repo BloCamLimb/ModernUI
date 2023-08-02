@@ -18,6 +18,7 @@
 
 package icyllis.modernui.graphics;
 
+import icyllis.arc3d.core.ImageInfo;
 import icyllis.modernui.annotation.NonNull;
 import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.system.NativeType;

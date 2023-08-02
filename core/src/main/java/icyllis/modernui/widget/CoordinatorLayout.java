@@ -18,14 +18,10 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.arc3d.core.MathUtil;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.core.Core;
-import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.Paint;
-import icyllis.arc3d.core.MathUtil;
-import icyllis.arc3d.core.Matrix4;
-import icyllis.modernui.graphics.Rect;
-import icyllis.modernui.graphics.RectF;
+import icyllis.modernui.graphics.*;
 import icyllis.modernui.util.Pools;
 import icyllis.modernui.view.*;
 import org.intellij.lang.annotations.MagicConstant;
@@ -36,10 +32,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 /**
  * CoordinatorLayout is a super-powered {@link FrameLayout}.
@@ -74,7 +67,7 @@ import java.util.List;
 @SuppressWarnings("unused")
 public class CoordinatorLayout extends ViewGroup {
 
-    private static final ThreadLocal<Matrix4> sMatrix = ThreadLocal.withInitial(Matrix4::identity);
+    private static final ThreadLocal<Matrix> sMatrix = ThreadLocal.withInitial(Matrix::new);
     private static final ThreadLocal<RectF> sRectF = ThreadLocal.withInitial(RectF::new);
 
     private static final int TYPE_ON_INTERCEPT = 0;
@@ -452,7 +445,7 @@ public class CoordinatorLayout extends ViewGroup {
      * @param rect       (in/out) the rect to offset from descendant to this view's coordinate system
      */
     void offsetDescendantRect(View descendant, Rect rect) {
-        Matrix4 m = sMatrix.get();
+        Matrix m = sMatrix.get();
         m.setIdentity();
 
         offsetDescendantMatrix(descendant, m);
@@ -463,7 +456,7 @@ public class CoordinatorLayout extends ViewGroup {
         rectF.round(rect);
     }
 
-    private void offsetDescendantMatrix(@Nonnull View view, Matrix4 m) {
+    private void offsetDescendantMatrix(@Nonnull View view, Matrix m) {
         final ViewParent parent = view.getParent();
         if (parent instanceof final View vp && parent != this) {
             offsetDescendantMatrix(vp, m);

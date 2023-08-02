@@ -28,7 +28,10 @@ import javax.annotation.Nonnull;
 @SuppressWarnings("unused")
 public class Matrix extends icyllis.arc3d.core.Matrix {
 
-    Matrix() {
+    /**
+     * Create a new identity matrix.
+     */
+    public Matrix() {
     }
 
     /**
@@ -170,5 +173,44 @@ public class Matrix extends icyllis.arc3d.core.Matrix {
         out.top = (int) Math.floor(MathUtil.min(y1, y2, y3, y4));
         out.right = (int) Math.ceil(MathUtil.max(x1, x2, x3, x4));
         out.bottom = (int) Math.ceil(MathUtil.max(y1, y2, y3, y4));
+    }
+
+    /**
+     * Map a point in the X-Y plane.
+     *
+     * @param p the point to transform
+     */
+    public void mapPoint(@Nonnull PointF p) {
+        if (getType() <= Affine_Mask) {
+            p.set(m11 * p.x + m21 * p.y + m31,
+                    m12 * p.x + m22 * p.y + m32);
+        } else {
+            // project
+            final float x = m11 * p.x + m21 * p.y + m31;
+            final float y = m12 * p.x + m22 * p.y + m32;
+            float w = 1.0f / (m13 * p.x + m23 * p.y + m33);
+            p.x = x * w;
+            p.y = y * w;
+        }
+    }
+
+    /**
+     * Map a point in the X-Y plane.
+     *
+     * @param p the point to transform
+     */
+    public void mapPoint(@Nonnull float[] p) {
+        if (getType() <= Affine_Mask) {
+            final float x = m11 * p[0] + m21 * p[1] + m31;
+            final float y = m12 * p[0] + m22 * p[1] + m32;
+            p[0] = x;
+            p[1] = y;
+        } else {
+            final float x = m11 * p[0] + m21 * p[1] + m31;
+            final float y = m12 * p[0] + m22 * p[1] + m32;
+            float w = 1.0f / (m13 * p[0] + m23 * p[1] + m33);
+            p[0] = x * w;
+            p[1] = y * w;
+        }
     }
 }

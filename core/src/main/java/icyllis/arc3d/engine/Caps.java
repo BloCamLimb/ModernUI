@@ -21,7 +21,7 @@ package icyllis.arc3d.engine;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Color;
-import icyllis.modernui.graphics.ImageInfo;
+import icyllis.arc3d.core.ImageInfo;
 
 /**
  * Represents the capabilities of a 3D API Context.

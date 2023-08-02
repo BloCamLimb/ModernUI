@@ -19,7 +19,7 @@
 package icyllis.arc3d.engine;
 
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.graphics.ImageInfo;
+import icyllis.arc3d.core.ImageInfo;
 import icyllis.arc3d.core.SurfaceCharacterization;
 import org.jetbrains.annotations.ApiStatus;
 
