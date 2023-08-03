@@ -66,6 +66,8 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
     public static final Logger LOGGER = LogManager.getLogger(NAME_CPT);
     public static final Marker MARKER = MarkerManager.getMarker("Core");
 
+    public static final Properties props = new Properties();
+
     private static volatile ModernUI sInstance;
 
     private static final int fragment_container = 0x01020007;
