@@ -204,6 +204,10 @@ public final class MainWindow extends Window {
         if (mRoot == null) {
             return;
         }
+        // block NUL and DEL character
+        if (codepoint == 0 || codepoint == 0x007F) {
+            return;
+        }
         Message msg = Message.obtain(mRoot.mHandler, () -> {
             if (mRoot != null && mRoot.getView().findFocus() instanceof EditText text) {
                 final Editable content = text.getText();
