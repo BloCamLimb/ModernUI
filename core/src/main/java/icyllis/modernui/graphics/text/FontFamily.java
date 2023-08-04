@@ -20,6 +20,7 @@ package icyllis.modernui.graphics.text;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.UnmodifiableView;
 
 import java.io.*;
@@ -27,6 +28,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
+@ApiStatus.Internal
 public final class FontFamily {
 
     public static final FontFamily SANS_SERIF;
@@ -130,8 +132,11 @@ public final class FontFamily {
     private Font mItalic;
     private Font mBoldItalic;
 
+    private final boolean mIsColorEmoji;
+
     public FontFamily(Font font) {
         mFont = Objects.requireNonNull(font);
+        mIsColorEmoji = font instanceof EmojiFont;
     }
 
     private FontFamily(@NonNull java.awt.Font font) {
@@ -139,6 +144,7 @@ public final class FontFamily {
         mBold = new StandardFont(font.deriveFont(java.awt.Font.BOLD));
         mItalic = new StandardFont(font.deriveFont(java.awt.Font.ITALIC));
         mBoldItalic = new StandardFont(font.deriveFont(java.awt.Font.BOLD | java.awt.Font.ITALIC));
+        mIsColorEmoji = false;
     }
 
     public Font getClosestMatch(int style) {
@@ -149,6 +155,10 @@ public final class FontFamily {
             case FontPaint.BOLD | FontPaint.ITALIC -> mBoldItalic != null ? mBoldItalic : mFont;
             default -> null;
         };
+    }
+
+    public boolean isColorEmojiFamily() {
+        return mIsColorEmoji;
     }
 
     public boolean hasGlyph(int ch) {

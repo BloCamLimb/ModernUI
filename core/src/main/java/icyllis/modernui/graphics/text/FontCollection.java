@@ -52,8 +52,6 @@ public class FontCollection {
 
     public static final int REPLACEMENT_CHARACTER = 0xFFFD;
 
-    public static final int TEXT_STYLE_VS = 0xFE0E;
-
     // Characters where we want to continue using existing font run instead of
     // recomputing the best match in the fallback list.
     public static boolean isStickyWhitelisted(int c) {
@@ -245,29 +243,42 @@ public class FontCollection {
         return mFamilies;
     }
 
+    public static final int UNSUPPORTED_FONT_SCORE = 0;
+    public static final int FIRST_FONT_SCORE = 0xFFFFFFFF;
+
     private int calcCoverageScore(int ch, int vs, FontFamily family) {
-        boolean hasVSGlyph = (vs != 0) && family.hasGlyph(ch, vs);
-        if (!hasVSGlyph && !family.hasGlyph(ch)) {
-            return 0;
+        if (!family.hasGlyph(ch, vs)) {
+            return UNSUPPORTED_FONT_SCORE;
         }
-        if ((vs == 0 || hasVSGlyph) && mFamilies.get(0) == family) {
-            return Integer.MAX_VALUE;
+        if ((vs == 0) && mFamilies.get(0) == family) {
+            return FIRST_FONT_SCORE;
         }
-        if (vs != 0 && hasVSGlyph) {
-            return 3;
+        boolean colorEmojiRequest;
+        switch (vs) {
+            case Emoji.VARIATION_SELECTOR_15 -> colorEmojiRequest = false;
+            case Emoji.VARIATION_SELECTOR_16 -> colorEmojiRequest = true;
+            default -> {
+                return 1;
+            }
         }
-        if (vs == TEXT_STYLE_VS) {
-            return 2;
-        } else {
-            return 1;
-        }
+        return colorEmojiRequest == family.isColorEmojiFamily() ? 2 : 1;
     }
 
     private FontFamily getFamilyForChar(int ch, int vs) {
+        int bestScore = UNSUPPORTED_FONT_SCORE;
+        FontFamily bestFamily = null;
         for (FontFamily family : mFamilies) {
-            if (family.hasGlyph(ch, vs)) {
+            int score = calcCoverageScore(ch, vs, family);
+            if (score == FIRST_FONT_SCORE) {
                 return family;
             }
+            if (score != UNSUPPORTED_FONT_SCORE && score > bestScore) {
+                bestScore = score;
+                bestFamily = family;
+            }
+        }
+        if (bestFamily != null) {
+            return bestFamily;
         }
         { // our convention is to use sans serif first
             FontFamily family = FontFamily.SANS_SERIF;

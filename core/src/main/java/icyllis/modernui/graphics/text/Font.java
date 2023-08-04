@@ -24,6 +24,7 @@ import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Rect;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Locale;
 
@@ -64,14 +65,17 @@ public interface Font {
     int getMetrics(@NonNull FontPaint paint,
                    @Nullable FontMetricsInt fm);
 
+    @ApiStatus.Internal
     boolean hasGlyph(int ch, int vs);
 
     // map characters to glyphs
+    @ApiStatus.Internal
     float doSimpleLayout(char[] buf, int start, int limit,
                          FontPaint paint, IntArrayList glyphs,
                          FloatArrayList positions, float x, float y);
 
     // do HarfBuzz text shaping
+    @ApiStatus.Internal
     float doComplexLayout(char[] buf,
                           int contextStart, int contextLimit,
                           int layoutStart, int layoutLimit,
@@ -80,5 +84,6 @@ public interface Font {
                           float[] advances, int advanceOffset,
                           Rect bounds, float x, float y);
 
+    @ApiStatus.Internal
     Strike findOrCreateStrike(FontPaint paint);
 }
