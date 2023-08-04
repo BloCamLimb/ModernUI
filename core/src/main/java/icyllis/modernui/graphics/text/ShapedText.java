@@ -390,9 +390,9 @@ public class ShapedText {
 
     // BiDi run, visual order, append layout pieces
     @ApiStatus.Internal
-    public static float layoutRun(char[] text, int contextStart, int contextLimit,
-                                  int start, int limit, boolean isRtl, FontPaint paint,
-                                  FontMetricsInt extent, RunConsumer consumer) {
+    public static float doLayoutRun(char[] text, int contextStart, int contextLimit,
+                                    int start, int limit, boolean isRtl, FontPaint paint,
+                                    FontMetricsInt extent, RunConsumer consumer) {
         return doLayoutRun(text, contextStart, contextLimit,
                 start, limit, isRtl, paint, start,
                 null, 0, null, null, null, null, extent,
@@ -400,14 +400,15 @@ public class ShapedText {
     }
 
     // BiDi run, visual order
-    private static float doLayoutRun(char[] text, int contextStart, int contextLimit,
-                                     int start, int limit, boolean isRtl, FontPaint paint,
-                                     int layoutStart, float[] advances, float curAdvance,
-                                     IntArrayList glyphs, FloatArrayList positions,
-                                     ByteArrayList fontIndices,
-                                     Function<Font, Byte> idGet,
-                                     FontMetricsInt extent,
-                                     RunConsumer consumer) {
+    @ApiStatus.Internal
+    public static float doLayoutRun(char[] text, int contextStart, int contextLimit,
+                                    int start, int limit, boolean isRtl, FontPaint paint,
+                                    int layoutStart, float[] advances, float curAdvance,
+                                    IntArrayList glyphs, FloatArrayList positions,
+                                    ByteArrayList fontIndices,
+                                    Function<Font, Byte> idGet,
+                                    FontMetricsInt extent,
+                                    RunConsumer consumer) {
         float advance = 0;
 
         //@formatter:off

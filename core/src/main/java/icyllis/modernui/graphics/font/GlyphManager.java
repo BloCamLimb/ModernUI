@@ -192,12 +192,12 @@ public class GlyphManager {
     }
 
     @Nullable
-    public GLBakedGlyph lookupGlyph(long key) {
+    public BakedGlyph lookupGlyph(long key) {
         if (mA8Atlas == null) {
             mA8Atlas = new GLFontAtlas(Engine.MASK_FORMAT_A8);
         }
-        GLBakedGlyph glyph = mA8Atlas.getGlyph(key);
-        if (glyph != null && glyph.texture == 0) {
+        BakedGlyph glyph = mA8Atlas.getGlyph(key);
+        if (glyph != null && glyph.x == Short.MIN_VALUE) {
             Font font = getFontFromKey(key);
             int glyphCode = getGlyphCodeFromKey(key);
             return cacheGlyph(font, glyphCode, mA8Atlas, glyph, key);
@@ -217,16 +217,23 @@ public class GlyphManager {
      */
     @Nullable
     @RenderThread
-    public GLBakedGlyph lookupGlyph(@NonNull Font font, int glyphCode) {
+    public BakedGlyph lookupGlyph(@NonNull Font font, int glyphCode) {
         long key = computeGlyphKey(font, glyphCode);
         if (mA8Atlas == null) {
             mA8Atlas = new GLFontAtlas(Engine.MASK_FORMAT_A8);
         }
-        GLBakedGlyph glyph = mA8Atlas.getGlyph(key);
-        if (glyph != null && glyph.texture == 0) {
+        BakedGlyph glyph = mA8Atlas.getGlyph(key);
+        if (glyph != null && glyph.x == Short.MIN_VALUE) {
             return cacheGlyph(font, glyphCode, mA8Atlas, glyph, key);
         }
         return glyph;
+    }
+
+    public int getCurrentTexture(int maskFormat) {
+        if (maskFormat == Engine.MASK_FORMAT_A8) {
+            return mA8Atlas.mTexture.get();
+        }
+        return 0;
     }
 
     @RenderThread
@@ -260,9 +267,9 @@ public class GlyphManager {
 
     @Nullable
     @RenderThread
-    private GLBakedGlyph cacheGlyph(@NonNull Font font, int glyphCode,
-                                    @NonNull GLFontAtlas atlas, @NonNull GLBakedGlyph glyph,
-                                    long key) {
+    private BakedGlyph cacheGlyph(@NonNull Font font, int glyphCode,
+                                  @NonNull GLFontAtlas atlas, @NonNull BakedGlyph glyph,
+                                  long key) {
         // there's no need to layout glyph vector, we only draw the specific glyphCode
         // which is already laid-out in LayoutEngine
         GlyphVector vector = font.createGlyphVector(mGraphics.getFontRenderContext(), new int[]{glyphCode});
@@ -275,10 +282,10 @@ public class GlyphManager {
         }
 
         //glyph.advance = vector.getGlyphMetrics(0).getAdvanceX();
-        glyph.x = bounds.x;
-        glyph.y = bounds.y;
-        glyph.width = bounds.width;
-        glyph.height = bounds.height;
+        glyph.x = (short) bounds.x;
+        glyph.y = (short) bounds.y;
+        glyph.width = (short) bounds.width;
+        glyph.height = (short) bounds.height;
         int borderedWidth = bounds.width + GLYPH_BORDER * 2;
         int borderedHeight = bounds.height + GLYPH_BORDER * 2;
 
@@ -343,7 +350,7 @@ public class GlyphManager {
 
     /**
      * Called when the atlas resized or fully reset, which means
-     * texture ID changed or previous {@link GLBakedGlyph}s become invalid.
+     * texture ID changed or previous {@link BakedGlyph}s become invalid.
      */
     public void addAtlasInvalidationCallback(Runnable callback) {
         mAtlasInvalidationCallbacks.add(Objects.requireNonNull(callback));

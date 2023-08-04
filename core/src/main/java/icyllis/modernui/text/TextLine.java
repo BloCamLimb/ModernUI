@@ -995,7 +995,7 @@ public class TextLine {
         if (c != null || needWidth) {
             mCachedFontExtent.reset();
             if (mCharsValid) {
-                totalWidth = ShapedText.layoutRun(
+                totalWidth = ShapedText.doLayoutRun(
                         mChars, contextStart, contextEnd, start, offset,
                         runIsRtl, wp.getInternalPaint(),
                         mCachedFontExtent,
@@ -1006,7 +1006,7 @@ public class TextLine {
                 final int len = contextEnd - contextStart;
                 final char[] buf = TextUtils.obtain(len);
                 TextUtils.getChars(mText, contextStart + delta, contextEnd + delta, buf, 0);
-                totalWidth = ShapedText.layoutRun(
+                totalWidth = ShapedText.doLayoutRun(
                         buf, 0, len, start - contextStart, offset - contextStart,
                         runIsRtl, wp.getInternalPaint(),
                         mCachedFontExtent,
