@@ -131,7 +131,6 @@ public final class LayoutPiece {
         }
 
         int style = paint.getFontStyle();
-        int size = paint.getFontSize();
         float advance = 0;
 
         final var items = paint.mFont.itemize(buf, start, limit);

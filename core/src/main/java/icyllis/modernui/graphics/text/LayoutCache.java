@@ -133,6 +133,16 @@ public final class LayoutCache {
     }
 
     /**
+     * Returns the approximate number of entries in this cache.
+     */
+    public static int getSize() {
+        if (sCache == null) {
+            return 0;
+        }
+        return (int) Math.min(sCache.estimatedSize(), Integer.MAX_VALUE);
+    }
+
+    /**
      * This only returns measurable memory usage, in other words, at least
      *
      * @return memory usage in bytes

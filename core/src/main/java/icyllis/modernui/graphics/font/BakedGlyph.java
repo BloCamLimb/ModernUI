@@ -27,32 +27,27 @@ package icyllis.modernui.graphics.font;
  * @see GLFontAtlas
  * @since 2.0
  */
-public class GLBakedGlyph {
-
-    /**
-     * The OpenGL texture ID that contains this glyph image.
-     */
-    public int texture;
+public class BakedGlyph {
 
     /**
      * The horizontal offset to baseline in pixels.
      */
-    public int x;
+    public short x;
 
     /**
      * The vertical offset to baseline in pixels.
      */
-    public int y;
+    public short y;
 
     /**
      * The width of this glyph image in pixels (w/o padding).
      */
-    public int width;
+    public short width;
 
     /**
      * The height of this glyph image in pixels (w/o padding).
      */
-    public int height;
+    public short height;
 
     /**
      * The horizontal texture coordinate of the upper-left corner.
@@ -74,13 +69,13 @@ public class GLBakedGlyph {
      */
     public float v2;
 
-    public GLBakedGlyph() {
+    public BakedGlyph() {
+        x = Short.MIN_VALUE;
     }
 
     @Override
     public String toString() {
-        return "Glyph{tex=" + texture +
-                ",x=" + x +
+        return "Glyph{x=" + x +
                 ",y=" + y +
                 ",w=" + width +
                 ",h=" + height +

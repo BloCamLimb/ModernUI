@@ -429,7 +429,7 @@ public final class TextUtils {
         if (start == end) {
             return;
         }
-        ShapedText.layoutRun(
+        ShapedText.doLayoutRun(
                 text, contextStart, contextEnd,
                 start, end, isRtl, paint.getInternalPaint(), null,
                 (piece, offsetX) -> drawTextRun(canvas, piece, x + offsetX, y, paint)
@@ -481,7 +481,7 @@ public final class TextUtils {
         final int len = contextEnd - contextStart;
         final char[] buf = obtain(len);
         getChars(text, contextStart, contextEnd, buf, 0);
-        ShapedText.layoutRun(
+        ShapedText.doLayoutRun(
                 buf, 0, len,
                 start - contextStart, end - contextStart, isRtl, paint.getInternalPaint(), null,
                 (piece, offsetX) -> drawTextRun(canvas, piece, x + offsetX, y, paint)

@@ -26,7 +26,7 @@ import icyllis.arc3d.opengl.*;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Core;
-import icyllis.modernui.graphics.font.GLBakedGlyph;
+import icyllis.modernui.graphics.font.BakedGlyph;
 import icyllis.modernui.graphics.font.GlyphManager;
 import icyllis.modernui.graphics.text.Font;
 import icyllis.modernui.graphics.text.StandardFont;
@@ -1688,7 +1688,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     @RenderThread
-    private void putGlyph(@NonNull GLBakedGlyph glyph, float left, float top) {
+    private void putGlyph(@NonNull BakedGlyph glyph, float left, float top) {
         ByteBuffer buffer = checkGlyphStagingBuffer();
         left += glyph.x;
         top += glyph.y;
@@ -2438,17 +2438,17 @@ public final class GLSurfaceCanvas extends GLCanvas {
             int positionOffset = mPositionOffset;
             int visibleGlyphCount = 0;
             for (int i = 0; i < mGlyphCount; i++) {
-                GLBakedGlyph bakedGlyph = glyphManager.lookupGlyph(mFont, glyphs[glyphOffset++]);
+                BakedGlyph bakedGlyph = glyphManager.lookupGlyph(mFont, glyphs[glyphOffset++]);
                 if (bakedGlyph != null) {
                     canvas.putGlyph(bakedGlyph,
                             mOffsetX + positions[positionOffset++],
                             mOffsetY + positions[positionOffset++]);
-                    mTexture = bakedGlyph.texture;
                     visibleGlyphCount++;
                 } else {
                     positionOffset += 2;
                 }
             }
+            mTexture = glyphManager.getCurrentTexture(Engine.MASK_FORMAT_A8);
             mVisibleGlyphCount = visibleGlyphCount;
         }
     }

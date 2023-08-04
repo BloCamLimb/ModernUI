@@ -25,7 +25,7 @@ import icyllis.arc3d.opengl.GLTextureCompat;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Core;
-import icyllis.modernui.graphics.*;
+import icyllis.modernui.graphics.Bitmap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
@@ -39,7 +39,7 @@ import static icyllis.arc3d.opengl.GLCore.*;
 /**
  * Maintains a font texture atlas, which is specified with a font strike (style and
  * size). Glyphs are dynamically generated with mipmaps, each glyph is represented as
- * a {@link GLBakedGlyph}.
+ * a {@link BakedGlyph}.
  * <p>
  * The initial texture size is 1024*1024, and each resize double the height and width
  * alternately. For example, 1024*1024 -> 1024*2048 -> 2048*2048.
@@ -47,7 +47,7 @@ import static icyllis.arc3d.opengl.GLCore.*;
  * The OpenGL texture ID will change due to expanding the texture size.
  *
  * @see GlyphManager
- * @see GLBakedGlyph
+ * @see BakedGlyph
  */
 //TODO handle too many glyphs?
 @RenderThread
@@ -71,10 +71,10 @@ public class GLFontAtlas implements AutoCloseable {
     private static int sCopyFramebuffer;
 
     // OpenHashMap uses less memory than RBTree/AVLTree, but higher than ArrayMap
-    private final Long2ObjectMap<GLBakedGlyph> mGlyphs = new Long2ObjectOpenHashMap<>();
+    private final Long2ObjectMap<BakedGlyph> mGlyphs = new Long2ObjectOpenHashMap<>();
 
     // texture can change by resizing
-    private GLTextureCompat mTexture = new GLTextureCompat(GL_TEXTURE_2D);
+    public GLTextureCompat mTexture = new GLTextureCompat(GL_TEXTURE_2D);
 
     private final List<Chunk> mChunks = new ArrayList<>();
 
@@ -111,18 +111,17 @@ public class GLFontAtlas implements AutoCloseable {
      * @return the baked glyph or null if no pixels
      */
     @Nullable
-    public GLBakedGlyph getGlyph(long key) {
+    public BakedGlyph getGlyph(long key) {
         // static factory
-        return mGlyphs.computeIfAbsent(key, __ -> new GLBakedGlyph());
+        return mGlyphs.computeIfAbsent(key, __ -> new BakedGlyph());
     }
 
     public void setNoPixels(long key) {
         mGlyphs.put(key, null);
     }
 
-    public boolean stitch(@NonNull GLBakedGlyph glyph, long pixels) {
+    public boolean stitch(@NonNull BakedGlyph glyph, long pixels) {
         boolean invalidated = false;
-        glyph.texture = mTexture.get();
         if (mWidth == 0) {
             resize(); // first init
         }
@@ -187,6 +186,10 @@ public class GLFontAtlas implements AutoCloseable {
             final int oldWidth = mWidth;
             final int oldHeight = mHeight;
 
+            if (oldWidth == mMaxTextureSize && oldHeight == mMaxTextureSize) {
+                return;
+            }
+
             final boolean vertical;
             if (mHeight != mWidth) {
                 mWidth <<= 1;
@@ -231,25 +234,21 @@ public class GLFontAtlas implements AutoCloseable {
 
             if (vertical) {
                 //mTexture.clear(0, 0, mHeight >> 1, mWidth, mHeight >> 1);
-                for (GLBakedGlyph glyph : mGlyphs.values()) {
+                for (BakedGlyph glyph : mGlyphs.values()) {
                     if (glyph == null) {
                         continue;
                     }
                     glyph.v1 *= 0.5;
                     glyph.v2 *= 0.5;
-                    // texture id changed
-                    glyph.texture = mTexture.get();
                 }
             } else {
                 //mTexture.clear(0, mWidth >> 1, 0, mWidth >> 1, mHeight);
-                for (GLBakedGlyph glyph : mGlyphs.values()) {
+                for (BakedGlyph glyph : mGlyphs.values()) {
                     if (glyph == null) {
                         continue;
                     }
                     glyph.u1 *= 0.5;
                     glyph.u2 *= 0.5;
-                    // texture id changed
-                    glyph.texture = mTexture.get();
                 }
             }
 

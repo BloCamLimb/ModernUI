@@ -26,9 +26,9 @@ import icyllis.modernui.graphics.Rect;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntSet;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
 
 import java.util.Locale;
-import java.util.Map;
 
 /**
  * Special font for Color Emoji.
@@ -42,20 +42,12 @@ public final class EmojiFont implements Font {
     private final float mBaseDescent;
     private final float mBaseSpacing;
 
-    private final Map<CharSequence, EmojiEntry> mMap;
-
-    /**
-     * @param id       used as glyph ID
-     * @param image    image file name
-     * @param sequence emoji char sequence (key)
-     */
-    public record EmojiEntry(int id, String image, String sequence) {
-    }
+    private final Object2IntMap<CharSequence> mMap;
 
     private final CharSequenceBuilder mLookupKey = new CharSequenceBuilder();
 
     public EmojiFont(String name, IntSet coverage, int size, int ascent, int spacing,
-                     int base, Map<CharSequence, EmojiEntry> map) {
+                     int base, Object2IntMap<CharSequence> map) {
         mName = name;
         mCoverage = coverage;
         mBaseSize = (float) size / base;
@@ -151,19 +143,19 @@ public final class EmojiFont implements Font {
             int pieceStart = Math.min(prevPos, currPos);
             int pieceLimit = Math.max(prevPos, currPos);
 
-            EmojiEntry entry;
+            int code;
             synchronized (mLookupKey) {
-                entry = mMap.get(
+                code = mMap.getInt(
                         mLookupKey.updateChars(buf, pieceStart, pieceLimit)
                 );
             }
-            if (entry == null) {
+            if (code == 0) {
                 char vs = buf[pieceLimit - 1];
                 if (vs != Emoji.VARIATION_SELECTOR_15) {
                     if (vs == Emoji.VARIATION_SELECTOR_16) {
                         // try w/o
                         synchronized (mLookupKey) {
-                            entry = mMap.get(
+                            code = mMap.getInt(
                                     mLookupKey.updateChars(buf, pieceStart, pieceLimit - 1)
                             );
                         }
@@ -172,18 +164,18 @@ public final class EmojiFont implements Font {
                         synchronized (mLookupKey) {
                             mLookupKey.updateChars(buf, pieceStart, pieceLimit)
                                     .add((char) Emoji.VARIATION_SELECTOR_16);
-                            entry = mMap.get(mLookupKey);
+                            code = mMap.getInt(mLookupKey);
                         }
                     }
                 }
             }
-            if (entry != null) {
+            if (code != 0) {
                 if (advances != null) {
                     advances[pieceStart - advanceOffset] = adv;
                 }
 
                 if (glyphs != null) {
-                    glyphs.add(entry.id);
+                    glyphs.add(code);
                 }
                 if (positions != null) {
                     positions.add(x + currAdvance + add);
