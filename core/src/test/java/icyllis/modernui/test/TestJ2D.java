@@ -22,6 +22,8 @@ import com.ibm.icu.text.NumberFormat;
 import icyllis.arc3d.core.Matrix4;
 import icyllis.arc3d.engine.SamplerState;
 import icyllis.modernui.core.Core;
+import icyllis.modernui.graphics.text.Emoji;
+import icyllis.modernui.graphics.text.FontCollection;
 import org.lwjgl.stb.*;
 import org.lwjgl.system.MemoryUtil;
 
@@ -54,14 +56,11 @@ public class TestJ2D {
         {
             var font = Font.createFont(Font.TRUETYPE_FONT, new File("E:/Free Fonts/NotoColorEmoji-noflags.ttf"));
             for (int i = 1; i <= Character.MAX_CODE_POINT; i++) {
-                if (font.canDisplay(i)) {
+                /*if (font.canDisplay(i)) {
                     System.out.println(Integer.toHexString(i));
-                }
+                }*/
             }
         }
-
-        System.out.println(NumberFormat.getCurrencyInstance(new Locale("hi"))
-                .format(5));
 
         float pivotX = 10.0f * (float) Math.random();
         float pivotY = 10.0f * (float) Math.random();
@@ -113,7 +112,7 @@ public class TestJ2D {
                 s.toCharArray(), 0, s.length(), Font.LAYOUT_LEFT_TO_RIGHT);
         g2d.drawGlyphVector(gv0, 2, 16);
 
-        printGlyphVector(gv0);
+        //printGlyphVector(gv0);
 
         g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_GASP);
         var gv1 = font.layoutGlyphVector(g2d.getFontRenderContext(),
@@ -135,7 +134,7 @@ public class TestJ2D {
         g2d.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
         g2d.draw(gv2.getOutline(60, 360));
 
-        printGlyphVector(gv2);
+        //printGlyphVector(gv2);
 
         g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
         //g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
@@ -143,7 +142,7 @@ public class TestJ2D {
                 s.toCharArray(), 0, s.length(), Font.LAYOUT_LEFT_TO_RIGHT);
         g2d.drawGlyphVector(gv5, 2, 88);
 
-        printGlyphVector(gv5);
+        //printGlyphVector(gv5);
 
         g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_OFF);
         //g2d.setRenderingHint(RenderingHints.KEY_TEXT_LCD_CONTRAST, 120);

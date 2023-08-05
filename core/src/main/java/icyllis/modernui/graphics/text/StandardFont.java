@@ -51,12 +51,23 @@ public final class StandardFont implements Font {
         }
     }
 
+    private static final String[] LOGICAL_FONT_NAMES = {
+            java.awt.Font.DIALOG,
+            java.awt.Font.SANS_SERIF,
+            java.awt.Font.SERIF,
+            java.awt.Font.MONOSPACED
+    };
+
     private final java.awt.Font mFont;
 
     private final SparseArray<java.awt.Font> mFonts = new SparseArray<>();
 
+    private final boolean mIsLogicalFont;
+
     public StandardFont(java.awt.Font font) {
         mFont = Objects.requireNonNull(font);
+        mIsLogicalFont = Arrays.stream(LOGICAL_FONT_NAMES)
+                .anyMatch(s -> s.equalsIgnoreCase(font.getName()));
     }
 
     public static FontRenderContext getFontRenderContext(int renderFlags) {
@@ -115,6 +126,13 @@ public final class StandardFont implements Font {
     @Override
     public boolean hasGlyph(int ch, int vs) {
         return mFont.canDisplay(ch);
+    }
+
+    @Override
+    public int calcGlyphScore(char[] buf, int start, int limit) {
+        int offset = mFont.canDisplayUpTo(buf, start, limit);
+        // Logical fonts have lower priority
+        return (offset == -1 ? limit : offset) + (mIsLogicalFont ? -1 : 0);
     }
 
     @Override
