@@ -89,6 +89,47 @@ public final class EmojiFont implements Font {
     }
 
     @Override
+    public int calcGlyphScore(char[] buf, int start, int limit) {
+        final var breaker = BreakIterator.getCharacterInstance(Locale.ROOT);
+        final var iterator = new CharArrayIterator(buf, start, limit);
+
+        breaker.setText(iterator);
+
+        int prevPos = start;
+        int currPos;
+        while ((currPos = breaker.following(prevPos)) != BreakIterator.DONE) {
+            int code = find(buf, prevPos, currPos);
+            if (code == 0) {
+                return prevPos;
+            }
+            prevPos = currPos;
+        }
+
+        return prevPos;
+    }
+
+    private int find(char[] buf, int start, int limit) {
+        int code;
+        synchronized (mLookupKey) {
+            code = mMap.getInt(
+                    mLookupKey.updateChars(buf, start, limit)
+            );
+        }
+        if (code == 0) {
+            char vs = buf[limit - 1];
+            if (vs == Emoji.VARIATION_SELECTOR_16) {
+                // try w/o
+                synchronized (mLookupKey) {
+                    code = mMap.getInt(
+                            mLookupKey.updateChars(buf, start, limit - 1)
+                    );
+                }
+            }
+        }
+        return code;
+    }
+
+    @Override
     public float doSimpleLayout(char[] buf, int start, int limit,
                                 FontPaint paint, IntArrayList glyphs,
                                 FloatArrayList positions, float x, float y) {
@@ -105,7 +146,7 @@ public final class EmojiFont implements Font {
                                  float[] advances, int advanceOffset,
                                  Rect bounds, float x, float y) {
         // Measure grapheme cluster in visual order
-        final var breaker = BreakIterator.getCharacterInstance(paint.mLocale);
+        final var breaker = BreakIterator.getCharacterInstance(Locale.ROOT);
         // We simply ignore the context range
         final var iterator = new CharArrayIterator(buf, layoutStart, layoutLimit);
         breaker.setText(iterator);
@@ -143,32 +184,7 @@ public final class EmojiFont implements Font {
             int pieceStart = Math.min(prevPos, currPos);
             int pieceLimit = Math.max(prevPos, currPos);
 
-            int code;
-            synchronized (mLookupKey) {
-                code = mMap.getInt(
-                        mLookupKey.updateChars(buf, pieceStart, pieceLimit)
-                );
-            }
-            if (code == 0) {
-                char vs = buf[pieceLimit - 1];
-                if (vs != Emoji.VARIATION_SELECTOR_15) {
-                    if (vs == Emoji.VARIATION_SELECTOR_16) {
-                        // try w/o
-                        synchronized (mLookupKey) {
-                            code = mMap.getInt(
-                                    mLookupKey.updateChars(buf, pieceStart, pieceLimit - 1)
-                            );
-                        }
-                    } else {
-                        // try w/
-                        synchronized (mLookupKey) {
-                            mLookupKey.updateChars(buf, pieceStart, pieceLimit)
-                                    .add((char) Emoji.VARIATION_SELECTOR_16);
-                            code = mMap.getInt(mLookupKey);
-                        }
-                    }
-                }
-            }
+            int code = find(buf, pieceStart, pieceLimit);
             if (code != 0) {
                 if (advances != null) {
                     advances[pieceStart - advanceOffset] = adv;

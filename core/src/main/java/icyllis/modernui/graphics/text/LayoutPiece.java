@@ -150,7 +150,7 @@ public final class LayoutPiece {
 
             byte fontIdx = -1;
             int oldGlyphSize = 0;
-            var font = run.family().getClosestMatch(style);
+            var font = run.getBestFont(buf, style);
             if (hint == null) {
                 fontIdx = fontMap.computeIfAbsent(font, nextID);
                 font.getMetrics(paint, extent);

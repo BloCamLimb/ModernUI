@@ -68,6 +68,25 @@ public interface Font {
     @ApiStatus.Internal
     boolean hasGlyph(int ch, int vs);
 
+    // higher is better
+    @ApiStatus.Internal
+    default int calcGlyphScore(char[] buf, int start, int limit) {
+        for (int i = start; i < limit; i++) {
+            char c = buf[i];
+            if (hasGlyph(c, 0)) {
+                continue;
+            }
+            if (!Character.isHighSurrogate(c)) {
+                return i;
+            }
+            if (!hasGlyph(Character.codePointAt(buf, i, limit), 0)) {
+                return i;
+            }
+            i++;
+        }
+        return limit;
+    }
+
     // map characters to glyphs
     @ApiStatus.Internal
     float doSimpleLayout(char[] buf, int start, int limit,

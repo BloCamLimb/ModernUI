@@ -78,6 +78,15 @@ public class FontCollection {
         return UCharacter.hasBinaryProperty(c, UProperty.VARIATION_SELECTOR);
     }
 
+    public static boolean isEmojiBreak(int prevCh, int ch) {
+        return !(Emoji.isEmojiModifier(ch) ||
+                (Emoji.isRegionalIndicatorSymbol(prevCh) && Emoji.isRegionalIndicatorSymbol(ch)) ||
+                ch == Emoji.COMBINING_ENCLOSING_KEYCAP ||
+                Emoji.isTagSpecChar(ch) ||
+                ch == Emoji.ZERO_WIDTH_JOINER ||
+                prevCh == Emoji.ZERO_WIDTH_JOINER);
+    }
+
     // an array of base fonts
     @NonNull
     private final List<FontFamily> mFamilies;
@@ -117,7 +126,7 @@ public class FontCollection {
         final List<Run> result = new ArrayList<>();
 
         Run lastRun = null;
-        FontFamily lastFamily = null;
+        List<FontFamily> lastFamilies = null;
 
         int nextCh;
         int prevCh = 0;
@@ -175,14 +184,49 @@ public class FontCollection {
             if (doesNotNeedFontSupport(ch)) {
                 // Always continue if the character is a format character not needed to be in the font.
                 shouldContinueRun = true;
-            } else if (lastFamily != null && (isStickyWhitelisted(ch) || isCombining(ch))) {
+            } else if (lastFamilies != null && !lastFamilies.isEmpty() &&
+                    (isStickyWhitelisted(ch) || isCombining(ch))) {
                 // Continue using existing font as long as it has coverage and is whitelisted.
-                shouldContinueRun = lastFamily.hasGlyph(ch);
+
+                if (lastFamilies.get(0).isColorEmojiFamily()) {
+                    // If the last family is color emoji font, find the longest family.
+                    for (FontFamily family : lastFamilies) {
+                        shouldContinueRun |= family.hasGlyph(ch);
+                    }
+                } else {
+                    shouldContinueRun = lastFamilies.get(0).hasGlyph(ch);
+                }
             }
 
             if (!shouldContinueRun) {
-                FontFamily family = getFamilyForChar(ch, isVariationSelector(nextCh) ? nextCh : 0);
-                if (pos == 0 || family != lastFamily) {
+                List<FontFamily> families = getFamilyForChar(ch,
+                        running && isVariationSelector(nextCh) ? nextCh : 0);
+                final boolean breakRun;
+                if (pos == 0 || lastFamilies == null || lastFamilies.isEmpty()) {
+                    breakRun = true;
+                } else {
+                    if (lastFamilies.get(0).isColorEmojiFamily()) {
+                        List<FontFamily> intersection = new ArrayList<>(families);
+                        intersection.retainAll(lastFamilies);
+                        if (intersection.isEmpty()) {
+                            breakRun = true; // None of last family can draw the given char.
+                        } else {
+                            breakRun = isEmojiBreak(prevCh, ch);
+                            if (!breakRun) {
+                                // To select sequence supported families, update family indices with the
+                                // intersection between the supported families between prev char and
+                                // current char.
+                                families = intersection;
+                                lastFamilies = intersection;
+                                lastRun.families = intersection;
+                            }
+                        }
+                    } else {
+                        breakRun = families.get(0) != lastFamilies.get(0);
+                    }
+                }
+
+                if (breakRun) {
                     int start = pos;
                     // Workaround for combining marks and emoji modifiers until we implement
                     // per-cluster font selection: if a combining mark or an emoji modifier is found in
@@ -191,26 +235,31 @@ public class FontCollection {
                     // handled properly by this since it's a combining mark too.
                     if (pos != 0 &&
                             (isCombining(ch) || (Emoji.isEmojiModifier(ch) && Emoji.isEmojiModifierBase(prevCh)))) {
-                        int prevLength = Character.charCount(prevCh);
-                        if (lastRun != null) {
-                            lastRun.limit -= prevLength;
-                            if (lastRun.start == lastRun.limit) {
-                                result.remove(lastRun);
+                        for (FontFamily family : families) {
+                            if (family.hasGlyph(prevCh)) {
+                                int prevLength = Character.charCount(prevCh);
+                                if (lastRun != null) {
+                                    lastRun.limit -= prevLength;
+                                    if (lastRun.start == lastRun.limit) {
+                                        result.remove(lastRun);
+                                    }
+                                }
+                                start -= prevLength;
+                                break;
                             }
                         }
-                        start -= prevLength;
                     }
-                    if (lastFamily == null) {
+                    if (lastFamilies == null || lastFamilies.isEmpty()) {
                         // This is the first family ever assigned. We are either seeing the very first
                         // character (which means start would already be zero), or we have only seen
                         // characters that don't need any font support (which means we need to adjust
                         // start to be 0 to include those characters).
                         start = offset;
                     }
-                    Run run = new Run(family, start, 0);
+                    Run run = new Run(families, start, 0);
                     result.add(run);
                     lastRun = run;
-                    lastFamily = family;
+                    lastFamilies = families;
                 }
             }
             prevCh = ch;
@@ -228,10 +277,10 @@ public class FontCollection {
             }
         } while (running);
 
-        if (lastFamily == null) {
+        if (lastFamilies == null || lastFamilies.isEmpty()) {
             // No character needed any font support, so it doesn't really matter which font they end up
             // getting displayed in. We put the whole string in one run, using the first font.
-            result.add(new Run(mFamilies.get(0), offset, limit));
+            result.add(new Run(List.of(mFamilies.get(0)), offset, limit));
         }
         return result;
     }
@@ -244,19 +293,15 @@ public class FontCollection {
     }
 
     public static final int UNSUPPORTED_FONT_SCORE = 0;
-    public static final int FIRST_FONT_SCORE = 0xFFFFFFFF;
 
     private int calcCoverageScore(int ch, int vs, FontFamily family) {
         if (!family.hasGlyph(ch, vs)) {
             return UNSUPPORTED_FONT_SCORE;
         }
-        if ((vs == 0) && mFamilies.get(0) == family) {
-            return FIRST_FONT_SCORE;
-        }
         boolean colorEmojiRequest;
         switch (vs) {
-            case Emoji.VARIATION_SELECTOR_15 -> colorEmojiRequest = false;
             case Emoji.VARIATION_SELECTOR_16 -> colorEmojiRequest = true;
+            case Emoji.VARIATION_SELECTOR_15 -> colorEmojiRequest = false;
             default -> {
                 return 1;
             }
@@ -264,34 +309,48 @@ public class FontCollection {
         return colorEmojiRequest == family.isColorEmojiFamily() ? 2 : 1;
     }
 
-    private FontFamily getFamilyForChar(int ch, int vs) {
+    @NonNull
+    private List<FontFamily> getFamilyForChar(int ch, int vs) {
+        List<FontFamily> families = null;
         int bestScore = UNSUPPORTED_FONT_SCORE;
-        FontFamily bestFamily = null;
         for (FontFamily family : mFamilies) {
             int score = calcCoverageScore(ch, vs, family);
-            if (score == FIRST_FONT_SCORE) {
-                return family;
-            }
-            if (score != UNSUPPORTED_FONT_SCORE && score > bestScore) {
-                bestScore = score;
-                bestFamily = family;
+            if (score != UNSUPPORTED_FONT_SCORE && score >= bestScore) {
+                if (families == null) {
+                    families = new ArrayList<>(2);
+                }
+                if (score > bestScore) {
+                    families.clear();
+                    bestScore = score;
+                }
+                if (families.size() < 2) {
+                    families.add(family);
+                }
             }
         }
-        if (bestFamily != null) {
-            return bestFamily;
-        }
-        { // our convention is to use sans serif first
-            FontFamily family = FontFamily.SANS_SERIF;
-            if (family.hasGlyph(ch, vs)) {
-                return family;
-            }
+        if (families != null &&
+                !families.get(0).isColorEmojiFamily()) {
+            return families;
         }
         for (FontFamily family : FontFamily.getSystemFontMap().values()) {
-            if (family.hasGlyph(ch, vs)) {
-                return family;
+            int score = calcCoverageScore(ch, vs, family);
+            if (score != UNSUPPORTED_FONT_SCORE && score >= bestScore) {
+                if (families == null) {
+                    families = new ArrayList<>(8);
+                }
+                if (score > bestScore) {
+                    families.clear();
+                    bestScore = score;
+                }
+                if (families.size() < 8) {
+                    families.add(family);
+                }
             }
         }
-        return mFamilies.get(0);
+        if (families != null) {
+            return families;
+        }
+        return List.of(mFamilies.get(0));
     }
 
     @Override
@@ -324,19 +383,33 @@ public class FontCollection {
 
     public static final class Run {
 
-        private final FontFamily family;
-        private final int start;
-        private int limit;
+        List<FontFamily> families;
+        int start;
+        int limit;
 
-        Run(FontFamily family, int start, int limit) {
-            this.family = family;
+        Run(List<FontFamily> families, int start, int limit) {
+            this.families = families;
             this.start = start;
             this.limit = limit;
         }
 
-        // font family
-        public FontFamily family() {
-            return family;
+        public Font getBestFont(char[] text, int style) {
+            int bestIndex = 0;
+            int bestScore = 0;
+
+            if (families.get(0).isColorEmojiFamily() && families.size() > 1) {
+                for (int i = 0; i < families.size(); i++) {
+                    Font font = families.get(i).getClosestMatch(FontPaint.NORMAL);
+                    int score = font.calcGlyphScore(text,
+                            start, limit);
+                    if (score > bestScore) {
+                        bestIndex = i;
+                        bestScore = score;
+                    }
+                }
+            }
+
+            return families.get(bestIndex).getClosestMatch(style);
         }
 
         // start index (inclusive)
