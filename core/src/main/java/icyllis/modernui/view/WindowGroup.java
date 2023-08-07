@@ -148,6 +148,9 @@ public final class WindowGroup extends ViewGroup implements WindowManager {
                         (int) (attrs.x + attrs.horizontalMargin * pw),
                         (int) (attrs.y + attrs.verticalMargin * ph), outFrame);
 
+                // Now make sure the window fits in the overall display frame.
+                Gravity.applyDisplay(attrs.gravity, outParentFrame, outFrame);
+
                 child.layout(outFrame.left, outFrame.top, outFrame.right, outFrame.bottom);
             }
         }

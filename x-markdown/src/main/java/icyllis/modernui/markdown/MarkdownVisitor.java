@@ -135,6 +135,7 @@ public final class MarkdownVisitor implements NodeVisitHandler {
         } else {
             if (hasNext(node)) {
                 ensureNewLine();
+                forceNewLine();
             }
         }
     }

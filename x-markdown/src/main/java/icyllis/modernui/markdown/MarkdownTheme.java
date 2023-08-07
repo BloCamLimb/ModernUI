@@ -184,9 +184,8 @@ public final class MarkdownTheme {
         }
     }
 
-    // we use 14 as base
     private static final float[] HEADING_SIZES = {
-            32f / 14f, 24f / 14f, 18.66f / 14f, 16f / 14f, 1.0f, 12f / 14f
+            2.0f, 1.5f, 1.17f, 1.0f, 0.83f, 0.67f
     };
 
     private final int mBlockQuoteMargin;
