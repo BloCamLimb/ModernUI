@@ -134,7 +134,7 @@ public class ViewConfiguration {
     /**
      * Defines the duration in milliseconds before mouse inactivity causes a tooltip to be hidden.
      */
-    private static final int HOVER_TOOLTIP_HIDE_TIMEOUT = 15000;
+    private static final int HOVER_TOOLTIP_HIDE_TIMEOUT = 30000;
 
     private final int mEdgeSlop;
     private final int mFadingEdgeLength;

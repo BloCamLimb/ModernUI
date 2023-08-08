@@ -546,7 +546,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     }
 
     @Override
-    boolean dispatchTooltipHoverEvent(MotionEvent event) {
+    boolean dispatchTooltipHoverEvent(@NonNull MotionEvent event) {
         final int action = event.getAction();
         switch (action) {
             case MotionEvent.ACTION_HOVER_ENTER:
@@ -574,7 +574,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
                                 || !isTransformedTouchPointInView(x, y, child, null)) {
                             continue;
                         }
-                        if (dispatchTooltipHoverEvent(event, child)) {
+                        if (dispatchTransformedTooltipHoverEvent(event, child)) {
                             newTarget = child;
                             break;
                         }
@@ -617,7 +617,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         return false;
     }
 
-    private boolean dispatchTooltipHoverEvent(MotionEvent event, View child) {
+    boolean dispatchTransformedTooltipHoverEvent(MotionEvent event, View child) {
         final boolean result;
         if (!child.hasIdentityMatrix()) {
             MotionEvent transformedEvent = getTransformedMotionEvent(event, child);
