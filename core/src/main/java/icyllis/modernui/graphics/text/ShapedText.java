@@ -140,7 +140,7 @@ public class ShapedText {
      */
     public Font getFont(int i) {
         if (mFontIndices != null) {
-            return mFonts[mFontIndices[i]];
+            return mFonts[mFontIndices[i] & 0xFF];
         }
         return mFonts[0];
     }

@@ -71,6 +71,17 @@ public final class WindowGroup extends ViewGroup implements WindowManager {
     }
 
     @Override
+    boolean dispatchTooltipHoverEvent(@NonNull MotionEvent event) {
+        if (mFocused != null) {
+            var attrs = (WindowManager.LayoutParams) mFocused.getLayoutParams();
+            if (attrs.isModal()) {
+                return dispatchTransformedTooltipHoverEvent(event, mFocused);
+            }
+        }
+        return super.dispatchTooltipHoverEvent(event);
+    }
+
+    @Override
     public PointerIcon onResolvePointerIcon(@NonNull MotionEvent event) {
         if (mFocused != null) {
             var attrs = (WindowManager.LayoutParams) mFocused.getLayoutParams();

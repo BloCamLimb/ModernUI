@@ -11828,7 +11828,7 @@ public class View implements Drawable.Callback {
         showTooltip(mTooltipInfo.mAnchorX, mTooltipInfo.mAnchorY, false);
     }
 
-    boolean dispatchTooltipHoverEvent(MotionEvent event) {
+    boolean dispatchTooltipHoverEvent(@NonNull MotionEvent event) {
         if (mTooltipInfo == null) {
             return false;
         }

@@ -93,17 +93,11 @@ public class TestFragment extends Fragment {
 
         CompletableFuture.runAsync(() -> {
             String text = "My name is van";
-            var glyphs = TextShaper.shapeText(text, 1, text.length() - 2, 0, text.length(),
-                    TextDirectionHeuristics.FIRSTSTRONG_LTR, new TextPaint());
-            LOGGER.info("Shape \"{}\"\n{}\nMemory Usage: {} bytes", text, glyphs, glyphs.getMemoryUsage());
-            LayoutPiece piece = LayoutCache.getOrCreate(
-                    text.toCharArray(),
-                    0, text.length(),
-                    1, text.length() - 2,
-                    false, new TextPaint().createInternalPaint(),
-                    LayoutCache.COMPUTE_CLUSTER_ADVANCES | LayoutCache.COMPUTE_GLYPHS_PIXEL_BOUNDS
-            );
-            LOGGER.info("Piece \"{}\"\n{}\nMemory Usage: {} bytes", text, piece, piece.getMemoryUsage());
+            var tp = new TextPaint();
+            tp.setTextStyle(TextPaint.BOLD);
+            var shapedText = TextShaper.shapeText(text, 1, text.length() - 2, 0, text.length(),
+                    TextDirectionHeuristics.FIRSTSTRONG_LTR, tp);
+            LOGGER.info("Shape \"{}\"\n{}\nMemory Usage: {} bytes", text, shapedText, shapedText.getMemoryUsage());
         }).exceptionally(e -> {
             LOGGER.info("Shape", e);
             return null;
