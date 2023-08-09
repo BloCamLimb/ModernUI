@@ -98,6 +98,10 @@ public class TestFragment extends Fragment {
             var shapedText = TextShaper.shapeText(text, 1, text.length() - 2, 0, text.length(),
                     TextDirectionHeuristics.FIRSTSTRONG_LTR, tp);
             LOGGER.info("Shape \"{}\"\n{}\nMemory Usage: {} bytes", text, shapedText, shapedText.getMemoryUsage());
+            text = "y";
+            var adv = tp.getTypeface().getFamilies().get(0).getClosestMatch(FontPaint.BOLD)
+                            .doSimpleLayout(text.toCharArray(), 0, 1, tp.getInternalPaint(), null, null, 0, 0);
+            LOGGER.info("y: adv {}", adv);
         }).exceptionally(e -> {
             LOGGER.info("Shape", e);
             return null;

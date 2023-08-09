@@ -18,10 +18,10 @@
 
 package icyllis.arc3d.opengl;
 
+import icyllis.arc3d.core.ImageInfo;
 import icyllis.arc3d.engine.*;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.arc3d.core.ImageInfo;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.lwjgl.opengl.GL46C;
 import org.lwjgl.opengl.GLCapabilities;
@@ -1546,6 +1546,10 @@ public final class GLCaps extends Caps {
 
     @Override
     public String toString() {
+        return toString(true);
+    }
+
+    public String toString(boolean includeFormatTable) {
         return "GLCaps{" +
                 "mProgramBinaryFormats=" + Arrays.toString(mProgramBinaryFormats) +
                 ", mMaxFragmentUniformVectors=" + mMaxFragmentUniformVectors +
@@ -1558,7 +1562,7 @@ public final class GLCaps extends Caps {
                 ", mBaseInstanceSupport=" + mBaseInstanceSupport +
                 ", mDSASupport=" + mDSASupport +
                 ", mInvalidateBufferType=" + mInvalidateBufferType +
-                ", mFormatTable=" + Arrays.toString(mFormatTable) +
+                (includeFormatTable ? ", mFormatTable=" + Arrays.toString(mFormatTable) : "") +
                 ", mColorTypeToBackendFormat=" + Arrays.toString(mColorTypeToBackendFormat) +
                 ", mCompressionTypeToBackendFormat=" + Arrays.toString(mCompressionTypeToBackendFormat) +
                 ", mShaderCaps=" + mShaderCaps +
