@@ -1,5 +1,52 @@
 Changelogs
 ===
+### Modern UI 3.8.0 (2023-08-10)
+#### Core Framework 3.8.0
+* Update font itemization for color emoji
+* Fit sub-windows in main window
+* Add ColorEmoji support for font itemization
+* Optimize GPU glyph memory usage
+* Block NUL and DEL character from input
+* Add EmojiFont features
+* Replace Matrix4 with Matrix for View
+* Add TooltipPopup support for View
+* Add Font interface for layout engine, move old Font usage to StandardFont
+* Add text pre-computation
+* Replace all ascents with negative values
+* Fix TextLine context range
+* Add offset parameters to GlyphsConsumer
+* Add TextShaper.shapeText for multi-styled text
+* Fix Canvas.drawText(ShapedText) method
+* Update TextShaper and Canvas methods
+* Add TrailingMarginSpan, add LineBackgroundSpan, add TypefaceSpan
+* Enhance rich text spans, add AlignmentSpan, BulletSpan, LeadingMarginSpan, QuoteSpan
+* Optimize MeasuredText
+* Supports text layout with optional per-glyph advances and pixel bounds
+* Separate Arc Paint, Graphics Paint, TextPaint and FontPaint
+* Enhance temp TextBuffer recycling
+* Fix fast path for BoringLayout.draw()
+* Remove Canvas.drawText(CharSequence)
+* Replace old LayoutPiece usage with ShapedText.doLayout
+* Optimize text rendering
+* Fix FontFamily is not thread safe
+* Add Matrix for 2D transform (xyw), Matrix3 for 3D transform (xyz)
+* Migrate graphics package to Arc 3D
+* Add explicit camera distance
+* Other small updates...
+#### Markdown 3.8.0
+* Add Code and CodeBlock
+* Initial basic Markdown support
+#### Arc 3D Graphics Engine 3.8.0
+* Add experimental instanced rendering
+* Optimize text rendering
+* Always use buffer orphaning for OpenGL
+* Add backend render target wrapping
+* Add submit method for BufferPool
+* Add IndexMeshPool
+* Move some context states out of GLCommandBuffer
+* Add RingBuffer
+* Add some Vulkan backend classes
+
 ### Modern UI 3.7.1 (2023-07-09)
 #### Core Framework 3.7.1
 * Add context range to LayoutCache
