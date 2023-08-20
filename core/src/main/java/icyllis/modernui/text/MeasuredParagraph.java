@@ -441,7 +441,8 @@ public class MeasuredParagraph {
                     .setComputeLayout(fullLayout);
             if (c.mSpanned == null) {
                 // No style change by MetricsAffectingSpan. Just measure all text.
-                c.applyMetricsAffectingSpan(paint, /*spans*/Collections.emptyList(), start, end, builder);
+                c.applyMetricsAffectingSpan(paint, lineBreakConfig, /*spans*/Collections.emptyList(), start, end,
+                        builder);
                 c.mSpanEndCache.add(end);
             } else {
                 // There may be a MetricsAffectingSpan. Split into span transitions and apply
@@ -453,7 +454,8 @@ public class MeasuredParagraph {
                     List<MetricAffectingSpan> spans = c.mSpanned.getSpans(spanStart, spanEnd,
                             MetricAffectingSpan.class);
                     spans = TextUtils.removeEmptySpans(spans, c.mSpanned);
-                    c.applyMetricsAffectingSpan(paint, spans, spanStart, spanEnd, builder);
+                    c.applyMetricsAffectingSpan(paint, lineBreakConfig, spans, spanStart, spanEnd,
+                            builder);
                     c.mSpanEndCache.add(spanEnd);
                 }
             }
@@ -516,8 +518,13 @@ public class MeasuredParagraph {
         }
     }
 
-    private void applyMetricsAffectingSpan(@NonNull TextPaint paint, @NonNull List<MetricAffectingSpan> spans,
-                                           int start, int end, @NonNull MeasuredText.Builder builder) {
+    private void applyMetricsAffectingSpan(
+            @NonNull TextPaint paint,
+            @Nullable LineBreakConfig lineBreakConfig,
+            @NonNull List<MetricAffectingSpan> spans,
+            @IntRange(from = 0) int start,
+            @IntRange(from = 0) int end,
+            @NonNull MeasuredText.Builder builder) {
         assert start != end;
         TextPaint tp = TextPaint.obtain();
         tp.set(paint);
@@ -541,15 +548,7 @@ public class MeasuredParagraph {
         } else {
             final int offset = mTextStart;
             final FontPaint base = tp.createInternalPaint();
-            if (mSpanned != null) {
-                int spanEnd;
-                for (int spanStart = start; spanStart < end; spanStart = spanEnd) {
-                    spanEnd = mSpanned.nextSpanTransition(spanStart, end, CharacterStyle.class);
-                    applyStyleRun(base, spanStart - offset, spanEnd - offset, builder);
-                }
-            } else {
-                applyStyleRun(base, start - offset, end - offset, builder);
-            }
+            applyStyleRun(base, start - offset, end - offset, lineBreakConfig, builder);
         }
 
         mFontMetrics.add(mCachedFm.ascent);
@@ -558,10 +557,11 @@ public class MeasuredParagraph {
     }
 
     private void applyStyleRun(@NonNull FontPaint paint, int start, int end,
+                               @Nullable LineBreakConfig config,
                                @NonNull MeasuredText.Builder builder) {
         if (mLevels == null) {
             // If the whole text is LTR direction, just apply whole region.
-            builder.addStyleRun(paint, end - start, false);
+            builder.addStyleRun(paint, config, end - start, false);
         } else {
             // If there is multiple bidi levels, split into individual bidi level and apply style.
             byte level = mLevels[start];
@@ -570,7 +570,7 @@ public class MeasuredParagraph {
             for (int levelStart = start, levelEnd = start + 1; ; ++levelEnd) {
                 if (levelEnd == end || mLevels[levelEnd] != level) { // transition point
                     final boolean isRtl = (level & 0x1) != 0;
-                    builder.addStyleRun(paint, levelEnd - levelStart, isRtl);
+                    builder.addStyleRun(paint, config, levelEnd - levelStart, isRtl);
                     if (levelEnd == end) {
                         break;
                     }

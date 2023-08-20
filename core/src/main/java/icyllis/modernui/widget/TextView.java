@@ -86,6 +86,14 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
 
     private static final int CHANGE_WATCHER_PRIORITY = 100;
 
+    // The default value of the line break style.
+    private static final int DEFAULT_LINE_BREAK_STYLE =
+            LineBreakConfig.LINE_BREAK_STYLE_NONE;
+
+    // The default value of the line break word style.
+    private static final int DEFAULT_LINE_BREAK_WORD_STYLE =
+            LineBreakConfig.LINE_BREAK_WORD_STYLE_NONE;
+
     private ColorStateList mTextColor;
     private ColorStateList mHintTextColor;
     private ColorStateList mLinkTextColor;
@@ -145,6 +153,10 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     // display attributes
     private final TextPaint mTextPaint = new TextPaint();
     private Layout mLayout;
+    @LineBreakConfig.LineBreakStyle
+    private int mLineBreakStyle = DEFAULT_LINE_BREAK_STYLE;
+    @LineBreakConfig.LineBreakWordStyle
+    private int mLineBreakWordStyle = DEFAULT_LINE_BREAK_WORD_STYLE;
 
     // True if fallback fonts that end up getting used should be allowed to affect line spacing.
     boolean mUseFallbackLineSpacing = true;
@@ -1130,6 +1142,75 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     }
 
     /**
+     * Set the line break style for text wrapping.
+     * <p>
+     * The line break style to indicates the line break strategies can be used when
+     * calculating the text wrapping. The line break style affects rule-based breaking. It
+     * specifies the strictness of line-breaking rules.
+     * There are several types for the line break style:
+     * {@link LineBreakConfig#LINE_BREAK_STYLE_LOOSE},
+     * {@link LineBreakConfig#LINE_BREAK_STYLE_NORMAL} and
+     * {@link LineBreakConfig#LINE_BREAK_STYLE_STRICT}. The default values of the line break style
+     * is {@link LineBreakConfig#LINE_BREAK_STYLE_NONE}, indicating no breaking rule is specified.
+     * See <a href="https://www.w3.org/TR/css-text-3/#line-break-property">
+     * the line-break property</a>
+     *
+     * @param lineBreakStyle the line break style for the text.
+     */
+    public void setLineBreakStyle(@LineBreakConfig.LineBreakStyle int lineBreakStyle) {
+        if (mLineBreakStyle != lineBreakStyle) {
+            mLineBreakStyle = lineBreakStyle;
+            if (mLayout != null) {
+                nullLayouts();
+                requestLayout();
+                invalidate();
+            }
+        }
+    }
+
+    /**
+     * Set the line break word style for text wrapping.
+     * <p>
+     * The line break word style affects dictionary-based breaking and provide phrase-based
+     * breaking opportunities. The type for the line break word style is
+     * {@link LineBreakConfig#LINE_BREAK_WORD_STYLE_PHRASE}. The default values of the line break
+     * word style is {@link LineBreakConfig#LINE_BREAK_WORD_STYLE_NONE}, indicating no breaking rule
+     * is specified.
+     * See <a href="https://www.w3.org/TR/css-text-3/#word-break-property">
+     * the word-break property</a>
+     *
+     * @param lineBreakWordStyle the line break word style for the tet
+     */
+    public void setLineBreakWordStyle(@LineBreakConfig.LineBreakWordStyle int lineBreakWordStyle) {
+        if (mLineBreakWordStyle != lineBreakWordStyle) {
+            mLineBreakWordStyle = lineBreakWordStyle;
+            if (mLayout != null) {
+                nullLayouts();
+                requestLayout();
+                invalidate();
+            }
+        }
+    }
+
+    /**
+     * Get the current line break style for text wrapping.
+     *
+     * @return the current line break style to be used for text wrapping.
+     */
+    public @LineBreakConfig.LineBreakStyle int getLineBreakStyle() {
+        return mLineBreakStyle;
+    }
+
+    /**
+     * Get the current line word break style for text wrapping.
+     *
+     * @return the current line break word style to be used for text wrapping.
+     */
+    public @LineBreakConfig.LineBreakWordStyle int getLineBreakWordStyle() {
+        return mLineBreakWordStyle;
+    }
+
+    /**
      * Gets the parameters for text layout pre-computation, for use with {@link PrecomputedText}.
      *
      * @return a current {@link PrecomputedText.Params}
@@ -1137,7 +1218,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      */
     public @NonNull PrecomputedText.Params getTextMetricsParams() {
         return new PrecomputedText.Params(new TextPaint(mTextPaint),
-                LineBreakConfig.NONE,
+                LineBreakConfig.getLineBreakConfig(mLineBreakStyle, mLineBreakWordStyle),
                 getTextDirectionHeuristic());
     }
 
@@ -1152,8 +1233,8 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         mTextPaint.set(params.getTextPaint());
         mTextDir = params.getTextDirection();
         LineBreakConfig lineBreakConfig = params.getLineBreakConfig();
-        /*mLineBreakStyle = lineBreakConfig.getLineBreakStyle();
-        mLineBreakWordStyle = lineBreakConfig.getLineBreakWordStyle();*/
+        mLineBreakStyle = lineBreakConfig.getLineBreakStyle();
+        mLineBreakWordStyle = lineBreakConfig.getLineBreakWordStyle();
         if (mLayout != null) {
             nullLayouts();
             requestLayout();
@@ -1845,7 +1926,8 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
             }
             final @PrecomputedText.Params.CheckResultUsableResult int checkResult =
                     precomputed.getParams().checkResultUsable(getPaint(), mTextDir,
-                            LineBreakConfig.NONE);
+                            LineBreakConfig.getLineBreakConfig(
+                                    mLineBreakStyle, mLineBreakWordStyle));
             switch (checkResult) {
                 case PrecomputedText.Params.UNUSABLE:
                     throw new IllegalArgumentException(
@@ -2726,7 +2808,9 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
                         .setTextDirection(mTextDir)
                         .setIncludePad(mIncludePad)
                         .setFallbackLineSpacing(mUseFallbackLineSpacing)
-                        .setMaxLines(mMaxMode == LINES ? mMaximum : Integer.MAX_VALUE);
+                        .setMaxLines(mMaxMode == LINES ? mMaximum : Integer.MAX_VALUE)
+                        .setLineBreakConfig(LineBreakConfig.getLineBreakConfig(
+                                mLineBreakStyle, mLineBreakWordStyle));
                 if (shouldEllipsize) {
                     builder.setEllipsize(mEllipsize)
                             .setEllipsizedWidth(ellipsisWidth);
@@ -2815,7 +2899,9 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
                     .setTextDirection(mTextDir)
                     .setIncludePad(mIncludePad)
                     .setFallbackLineSpacing(mUseFallbackLineSpacing)
-                    .setMaxLines(mMaxMode == LINES ? mMaximum : Integer.MAX_VALUE);
+                    .setMaxLines(mMaxMode == LINES ? mMaximum : Integer.MAX_VALUE)
+                    .setLineBreakConfig(LineBreakConfig.getLineBreakConfig(
+                            mLineBreakStyle, mLineBreakWordStyle));
             if (shouldEllipsize) {
                 builder.setEllipsize(effectiveEllipsize)
                         .setEllipsizedWidth(ellipsisWidth);

@@ -19,15 +19,15 @@
 package icyllis.modernui.graphics.text;
 
 import com.ibm.icu.text.BreakIterator;
+import com.ibm.icu.util.ULocale;
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.text.TabStops;
 import it.unimi.dsi.fastutil.ints.IntArrays;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.text.CharacterIterator;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 
 /**
  * Provides automatic line breaking for a <em>single</em> paragraph.
@@ -110,32 +110,71 @@ public class LineBreaker {
         return breaker.getResult();
     }
 
+    @NonNull
+    public static ULocale getLocaleWithLineBreakOption(@NonNull Locale locale,
+                                                       int lbStyle,
+                                                       int lbWordStyle) {
+        if (lbStyle == LineBreakConfig.LINE_BREAK_STYLE_NONE &&
+                lbWordStyle == LineBreakConfig.LINE_BREAK_WORD_STYLE_NONE) {
+            return ULocale.forLocale(locale);
+        }
+        return new ULocale.Builder()
+                .setLocale(ULocale.forLocale(locale))
+                .setUnicodeLocaleKeyword(
+                        "lb", switch (lbStyle) {
+                            case LineBreakConfig.LINE_BREAK_STYLE_LOOSE -> "loose";
+                            case LineBreakConfig.LINE_BREAK_STYLE_NORMAL -> "normal";
+                            case LineBreakConfig.LINE_BREAK_STYLE_STRICT -> "strict";
+                            default -> null;
+                        }
+                )
+                .setUnicodeLocaleKeyword(
+                        "lw", switch (lbWordStyle) {
+                            case LineBreakConfig.LINE_BREAK_WORD_STYLE_PHRASE -> "phrase";
+                            case LineBreakConfig.LINE_BREAK_WORD_STYLE_NORMAL -> "normal";
+                            case LineBreakConfig.LINE_BREAK_WORD_STYLE_BREAK_ALL -> "breakall";
+                            case LineBreakConfig.LINE_BREAK_WORD_STYLE_KEEP_ALL -> "keepall";
+                            default -> null;
+                        }
+                )
+                .build();
+    }
+
+    // Greedy
     private void process() {
         BreakIterator breaker = sBreaker;
         final CharacterIterator iterator = new CharArrayIterator(mTextBuf);
 
         Locale locale = null;
-        int nextBoundary = 0;
+        int lbStyle = 0;
+        int lbWordStyle = 0;
+        int nextLineBoundary = 0;
         for (var run : mMeasuredText.getRuns()) {
 
             Locale newLocale = run.getLocale();
-            if (locale != newLocale) {
+            if (locale != newLocale ||
+                    lbStyle != run.getLineBreakStyle() ||
+                    lbWordStyle != run.getLineBreakWordStyle()) {
                 locale = newLocale;
-                breaker = BreakIterator.getLineInstance(locale);
+                lbStyle = run.getLineBreakStyle();
+                lbWordStyle = run.getLineBreakWordStyle();
+                breaker = BreakIterator.getLineInstance(
+                        getLocaleWithLineBreakOption(locale, lbStyle, lbWordStyle)
+                );
                 breaker.setText(iterator);
-                nextBoundary = breaker.following(run.mStart);
+                nextLineBoundary = breaker.following(run.mStart);
             }
 
             for (int i = run.mStart; i < run.mEnd; i++) {
                 updateLineWidth(mTextBuf[i], mMeasuredText.getAdvance(i));
 
-                if (i + 1 == nextBoundary) {
-                    if (run.canBreak() || nextBoundary == run.mEnd) {
+                if (i + 1 == nextLineBoundary) {
+                    if (run.canBreak() || nextLineBoundary == run.mEnd) {
                         processLineBreak(i + 1);
                     }
-                    nextBoundary = breaker.next();
-                    if (nextBoundary == BreakIterator.DONE) {
-                        nextBoundary = mTextBuf.length;
+                    nextLineBoundary = breaker.next();
+                    if (nextLineBoundary == BreakIterator.DONE) {
+                        nextLineBoundary = mTextBuf.length;
                     }
                 }
             }

@@ -18,12 +18,9 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.Rect2i;
-import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.ops.OpsTask;
 import icyllis.arc3d.shaderc.Compiler;
-import icyllis.arc3d.core.ImageInfo;
-import icyllis.arc3d.core.MathUtil;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -450,19 +447,18 @@ public abstract class Server implements Engine {
 
     public static final class Stats {
 
-        private int mTextureCreates = 0;
-        private int mTextureUploads = 0;
-        private int mTransfersToTexture = 0;
-        private int mTransfersFromSurface = 0;
-        private int mStencilAttachmentCreates = 0;
-        private int mMSAAAttachmentCreates = 0;
-        private int mNumDraws = 0;
-        private int mNumFailedDraws = 0;
-        private int mNumSubmitToGpus = 0;
-        private int mNumScratchTexturesReused = 0;
-        private int mNumScratchMSAAAttachmentsReused = 0;
-        private int mRenderPasses = 0;
-        private int mNumReorderedDAGsOverBudget = 0;
+        private long mTextureCreates = 0;
+        private long mTextureUploads = 0;
+        private long mTransfersToTexture = 0;
+        private long mTransfersFromSurface = 0;
+        private long mStencilAttachmentCreates = 0;
+        private long mMSAAAttachmentCreates = 0;
+        private long mNumDraws = 0;
+        private long mNumFailedDraws = 0;
+        private long mNumSubmitToGpus = 0;
+        private long mNumScratchTexturesReused = 0;
+        private long mNumScratchMSAAAttachmentsReused = 0;
+        private long mRenderPasses = 0;
 
         public Stats() {
         }
@@ -480,10 +476,9 @@ public abstract class Server implements Engine {
             mNumScratchTexturesReused = 0;
             mNumScratchMSAAAttachmentsReused = 0;
             mRenderPasses = 0;
-            mNumReorderedDAGsOverBudget = 0;
         }
 
-        public int numTextureCreates() {
+        public long numTextureCreates() {
             return mTextureCreates;
         }
 
@@ -491,7 +486,7 @@ public abstract class Server implements Engine {
             mTextureCreates++;
         }
 
-        public int numTextureUploads() {
+        public long numTextureUploads() {
             return mTextureUploads;
         }
 
@@ -499,7 +494,7 @@ public abstract class Server implements Engine {
             mTextureUploads++;
         }
 
-        public int numTransfersToTexture() {
+        public long numTransfersToTexture() {
             return mTransfersToTexture;
         }
 
@@ -507,7 +502,7 @@ public abstract class Server implements Engine {
             mTransfersToTexture++;
         }
 
-        public int numTransfersFromSurface() {
+        public long numTransfersFromSurface() {
             return mTransfersFromSurface;
         }
 
@@ -515,7 +510,7 @@ public abstract class Server implements Engine {
             mTransfersFromSurface++;
         }
 
-        public int numStencilAttachmentCreates() {
+        public long numStencilAttachmentCreates() {
             return mStencilAttachmentCreates;
         }
 
@@ -523,7 +518,7 @@ public abstract class Server implements Engine {
             mStencilAttachmentCreates++;
         }
 
-        public int msaaAttachmentCreates() {
+        public long msaaAttachmentCreates() {
             return mMSAAAttachmentCreates;
         }
 
@@ -531,7 +526,7 @@ public abstract class Server implements Engine {
             mMSAAAttachmentCreates++;
         }
 
-        public int numDraws() {
+        public long numDraws() {
             return mNumDraws;
         }
 
@@ -539,7 +534,11 @@ public abstract class Server implements Engine {
             mNumDraws++;
         }
 
-        public int numFailedDraws() {
+        public void incNumDraws(int increment) {
+            mNumDraws += increment;
+        }
+
+        public long numFailedDraws() {
             return mNumFailedDraws;
         }
 
@@ -547,7 +546,7 @@ public abstract class Server implements Engine {
             mNumFailedDraws++;
         }
 
-        public int numSubmitToGpus() {
+        public long numSubmitToGpus() {
             return mNumSubmitToGpus;
         }
 
@@ -555,7 +554,7 @@ public abstract class Server implements Engine {
             mNumSubmitToGpus++;
         }
 
-        public int numScratchTexturesReused() {
+        public long numScratchTexturesReused() {
             return mNumScratchTexturesReused;
         }
 
@@ -563,7 +562,7 @@ public abstract class Server implements Engine {
             mNumScratchTexturesReused++;
         }
 
-        public int numScratchMSAAAttachmentsReused() {
+        public long numScratchMSAAAttachmentsReused() {
             return mNumScratchMSAAAttachmentsReused;
         }
 
@@ -571,20 +570,12 @@ public abstract class Server implements Engine {
             mNumScratchMSAAAttachmentsReused++;
         }
 
-        public int numRenderPasses() {
+        public long numRenderPasses() {
             return mRenderPasses;
         }
 
         public void incRenderPasses() {
             mRenderPasses++;
-        }
-
-        public int numReorderedDAGsOverBudget() {
-            return mNumReorderedDAGsOverBudget;
-        }
-
-        public void incNumReorderedDAGsOverBudget() {
-            mNumReorderedDAGsOverBudget++;
         }
 
         @Override
@@ -602,7 +593,6 @@ public abstract class Server implements Engine {
                     ", mNumScratchTexturesReused=" + mNumScratchTexturesReused +
                     ", mNumScratchMSAAAttachmentsReused=" + mNumScratchMSAAAttachmentsReused +
                     ", mRenderPasses=" + mRenderPasses +
-                    ", mNumReorderedDAGsOverBudget=" + mNumReorderedDAGsOverBudget +
                     '}';
         }
     }
