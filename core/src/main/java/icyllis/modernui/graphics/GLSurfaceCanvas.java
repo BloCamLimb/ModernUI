@@ -828,6 +828,9 @@ public final class GLSurfaceCanvas extends GLCanvas {
         // draw buffers
         int colorBuffer = GL_COLOR_ATTACHMENT0;
 
+        final var stats = mServer.getStats();
+        int nDraws = 0;
+
         for (int op : mDrawOps) {
             switch (op) {
                 case DRAW_PRIM -> {
@@ -836,12 +839,14 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     int prim = mDrawPrims.getInt(primIndex++);
                     int n = prim & 0xFFFF;
                     glDrawArrays(prim >> 16, posColorIndex, n);
+                    nDraws++;
                     posColorIndex += n;
                 }
                 case DRAW_RECT -> {
                     bindPipeline(COLOR_FILL, POS_COLOR).
                             bindVertexBuffer(mColorMeshVertexBuffer, 0);
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
+                    nDraws++;
                     posColorIndex += 4;
                 }
                 case DRAW_ROUND_RECT_FILL -> {
@@ -850,6 +855,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     mRoundRectUBO.upload(0, 20, uniformDataPtr);
                     uniformDataPtr += 20;
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
+                    nDraws++;
                     posColorIndex += 4;
                 }
                 case DRAW_ROUND_RECT_STROKE -> {
@@ -858,6 +864,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     mRoundRectUBO.upload(0, 24, uniformDataPtr);
                     uniformDataPtr += 24;
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
+                    nDraws++;
                     posColorIndex += 4;
                 }
                 case DRAW_ROUND_IMAGE -> {
@@ -867,6 +874,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     mRoundRectUBO.upload(0, 20, uniformDataPtr);
                     uniformDataPtr += 20;
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorTexIndex, 4);
+                    nDraws++;
                     posColorTexIndex += 4;
                 }
                 case DRAW_ROUND_LINE_FILL -> {
@@ -875,6 +883,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     mRoundRectUBO.upload(0, 20, uniformDataPtr);
                     uniformDataPtr += 20;
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
+                    nDraws++;
                     posColorIndex += 4;
                 }
                 case DRAW_ROUND_LINE_STROKE -> {
@@ -883,6 +892,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     mRoundRectUBO.upload(0, 24, uniformDataPtr);
                     uniformDataPtr += 24;
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
+                    nDraws++;
                     posColorIndex += 4;
                 }
                 case DRAW_IMAGE -> {
@@ -890,6 +900,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                             .bindVertexBuffer(mTextureMeshVertexBuffer, 0);
                     bindNextTexture();
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorTexIndex, 4);
+                    nDraws++;
                     posColorTexIndex += 4;
                 }
                 case DRAW_IMAGE_LAYER -> {
@@ -898,6 +909,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     bindSampler(null);
                     bindTexture(((GLTextureCompat) mTextures.remove()).get());
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorTexIndex, 4);
+                    nDraws++;
                     posColorTexIndex += 4;
                 }
                 case DRAW_CIRCLE_FILL -> {
@@ -906,6 +918,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     mCircleUBO.upload(0, 12, uniformDataPtr);
                     uniformDataPtr += 12;
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
+                    nDraws++;
                     posColorIndex += 4;
                 }
                 case DRAW_CIRCLE_STROKE -> {
@@ -914,6 +927,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     mCircleUBO.upload(0, 16, uniformDataPtr);
                     uniformDataPtr += 16;
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
+                    nDraws++;
                     posColorIndex += 4;
                 }
                 case DRAW_ARC_FILL -> {
@@ -922,6 +936,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     mArcUBO.upload(0, 20, uniformDataPtr);
                     uniformDataPtr += 20;
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
+                    nDraws++;
                     posColorIndex += 4;
                 }
                 case DRAW_ARC_STROKE -> {
@@ -930,6 +945,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     mArcUBO.upload(0, 24, uniformDataPtr);
                     uniformDataPtr += 24;
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
+                    nDraws++;
                     posColorIndex += 4;
                 }
                 case DRAW_BEZIER -> {
@@ -938,6 +954,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     mBezierUBO.upload(0, 28, uniformDataPtr);
                     uniformDataPtr += 28;
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
+                    nDraws++;
                     posColorIndex += 4;
                 }
                 case DRAW_PIE_FILL -> {
@@ -946,6 +963,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     mArcUBO.upload(0, 20, uniformDataPtr);
                     uniformDataPtr += 20;
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
+                    nDraws++;
                     posColorIndex += 4;
                 }
                 case DRAW_PIE_STROKE -> {
@@ -954,6 +972,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     mArcUBO.upload(0, 24, uniformDataPtr);
                     uniformDataPtr += 24;
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
+                    nDraws++;
                     posColorIndex += 4;
                 }
                 case DRAW_CLIP_PUSH -> {
@@ -966,6 +985,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                         bindPipeline(COLOR_FILL, POS_COLOR)
                                 .bindVertexBuffer(mColorMeshVertexBuffer, 0);
                         glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
+                        nDraws++;
                         posColorIndex += 4;
 
                         glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
@@ -986,6 +1006,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                         bindPipeline(COLOR_FILL, POS_COLOR)
                                 .bindVertexBuffer(mColorMeshVertexBuffer, 0);
                         glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
+                        nDraws++;
                         posColorIndex += 4;
 
                         glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
@@ -1009,26 +1030,18 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     bindPipeline(ALPHA_TEX, POS_TEX);
                     POS_TEX.bindIndexBuffer(mGlyphIndexBuffer);
                     POS_TEX.bindVertexBuffer(mGlyphVertexBuffer, 0);
+                    bindTexture(textOp.mTexture);
                     bindSampler(mLinearSampler);
-
-                    int lastPos = 0;
-                    int lastTex = textOp.mTexture;
-                    for (int i = 1; i < limit; i++) {
-                        int indexCount = (i - lastPos) * 6;
-                        if (indexCount >= MAX_GLYPH_INDEX_COUNT) {
-                            bindTexture(lastTex);
-                            nglDrawElementsBaseVertex(GL_TRIANGLES, indexCount,
-                                    GL_UNSIGNED_SHORT, 0, textBaseVertex + lastPos * 4);
-                            lastPos = i;
-                        }
+                    for (int lastPrim = 0;
+                         lastPrim < limit;
+                    ) {
+                        int primCount = Math.min(limit - lastPrim, MAX_GLYPH_INDEX_COUNT / 6);
+                        nglDrawElementsBaseVertex(GL_TRIANGLES, /*indexCount*/ primCount * 6,
+                                GL_UNSIGNED_SHORT, /*baseIndex*/ 0, textBaseVertex);
+                        nDraws++;
+                        lastPrim += primCount;
+                        textBaseVertex += primCount << 2;
                     }
-                    if (lastPos < limit) {
-                        int indexCount = (limit - lastPos) * 6;
-                        bindTexture(lastTex);
-                        nglDrawElementsBaseVertex(GL_TRIANGLES, indexCount,
-                                GL_UNSIGNED_SHORT, 0, textBaseVertex + lastPos * 4);
-                    }
-                    textBaseVertex += limit * 4;
                 }
                 case DRAW_MATRIX -> {
                     mMatrixUBO.upload(64, 64, uniformDataPtr);
@@ -1070,6 +1083,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     bindTexture(layer.get());
                     framebuffer.setDrawBuffer(--colorBuffer);
                     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+                    nDraws++;
                 }
                 case DRAW_CUSTOM -> {
                     var drawable = mCustoms.remove();
@@ -1086,6 +1100,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     mMatrixUBO.upload(128, 4, uniformDataPtr);
                     uniformDataPtr += 4;
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
+                    nDraws++;
                     posColorIndex += 4;
                 }
                 default -> throw new IllegalStateException("Unexpected draw op " + op);
@@ -1109,6 +1124,10 @@ public final class GLSurfaceCanvas extends GLCanvas {
             mTexturesToClean.get(i).unref();
         }
         mTexturesToClean.clear();
+
+        stats.incNumDraws(nDraws);
+        stats.incRenderPasses();
+
         return true;
     }
 

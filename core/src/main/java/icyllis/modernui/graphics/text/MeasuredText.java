@@ -296,11 +296,35 @@ public class MeasuredText {
         public Builder appendStyleRun(@NonNull TextPaint paint,
                                       @IntRange(from = 0) int length,
                                       boolean isRtl) {
-            addStyleRun(paint.createInternalPaint(), length, isRtl);
+            addStyleRun(paint.createInternalPaint(), null, length, isRtl);
             return this;
         }
 
-        public void addStyleRun(@NonNull FontPaint paint, @IntRange(from = 0) int length,
+        /**
+         * Apply styles to the given length.
+         * <p>
+         * Keeps an internal offset which increases at every append. The initial value for this
+         * offset is zero. After the style is applied the internal offset is moved to {@code offset
+         * + length}, and next call will start from this new position.
+         *
+         * @param paint           a paint
+         * @param lineBreakConfig a line break configuration.
+         * @param length          a length to be applied with a given paint, can not exceed the length of the
+         *                        text
+         * @param isRtl           true if the text is in RTL context, otherwise false.
+         */
+        @NonNull
+        public Builder appendStyleRun(@NonNull TextPaint paint,
+                                      @Nullable LineBreakConfig lineBreakConfig,
+                                      @IntRange(from = 0) int length,
+                                      boolean isRtl) {
+            addStyleRun(paint.createInternalPaint(), lineBreakConfig, length, isRtl);
+            return this;
+        }
+
+        public void addStyleRun(@NonNull FontPaint paint,
+                                @Nullable LineBreakConfig lineBreakConfig,
+                                @IntRange(from = 0) int length,
                                 boolean isRtl) {
             Objects.requireNonNull(paint);
             if (length <= 0) {
@@ -310,7 +334,11 @@ public class MeasuredText {
             if (end > mText.length) {
                 throw new IllegalArgumentException("Style exceeds the text length");
             }
-            mRuns.add(new StyleRun(mCurrentOffset, end, paint, isRtl));
+            int lbStyle = (lineBreakConfig != null) ? lineBreakConfig.getLineBreakStyle() :
+                    LineBreakConfig.LINE_BREAK_STYLE_NONE;
+            int lbWordStyle = (lineBreakConfig != null) ? lineBreakConfig.getLineBreakWordStyle() :
+                    LineBreakConfig.LINE_BREAK_WORD_STYLE_NONE;
+            mRuns.add(new StyleRun(mCurrentOffset, end, paint, lbStyle, lbWordStyle, isRtl));
             mCurrentOffset = end;
         }
 
@@ -417,13 +445,19 @@ public class MeasuredText {
         @NonNull
         public abstract Locale getLocale();
 
+        public abstract int getLineBreakStyle();
+
+        public abstract int getLineBreakWordStyle();
+
         public abstract int getMemoryUsage();
     }
 
     public static class StyleRun extends Run {
 
         // maybe a shared pointer, but its contents must be immutable (read only)
-        public final FontPaint mPaint;
+        private final FontPaint mPaint;
+        private final int mLineBreakStyle;
+        private final int mLineBreakWordStyle;
         private final boolean mIsRtl;
 
         // end (exclusive) offsets of each piece
@@ -432,9 +466,13 @@ public class MeasuredText {
 
         private float mAdvance;
 
-        private StyleRun(int start, int end, FontPaint paint, boolean isRtl) {
+        StyleRun(int start, int end, FontPaint paint,
+                 int lineBreakStyle, int lineBreakWordStyle,
+                 boolean isRtl) {
             super(start, end);
             mPaint = paint;
+            mLineBreakStyle = lineBreakStyle;
+            mLineBreakWordStyle = lineBreakWordStyle;
             mIsRtl = isRtl;
         }
 
@@ -619,11 +657,21 @@ public class MeasuredText {
         }
 
         @Override
+        public int getLineBreakStyle() {
+            return mLineBreakStyle;
+        }
+
+        @Override
+        public int getLineBreakWordStyle() {
+            return mLineBreakWordStyle;
+        }
+
+        @Override
         public int getMemoryUsage() {
             // 12 + 4 + 4 + (12 + 8 + 8 + 4 + 4) + 1 + 1 + 8
             // here assumes paint is partially shared (one third)
             // don't worry layout piece is null, see MeasuredText constructor
-            int size = 40 + 16 + 16;
+            int size = 40 + 16 + 16 + 8;
             size += (mOffsets.length << 2);
             for (var piece : mPieces) {
                 size += piece.getMemoryUsage();
@@ -635,9 +683,9 @@ public class MeasuredText {
         public String toString() {
             return "StyleRun{" +
                     "mPaint=" + mPaint +
+                    ", mLineBreakStyle=" + mLineBreakStyle +
+                    ", mLineBreakWordStyle=" + mLineBreakWordStyle +
                     ", mIsRtl=" + mIsRtl +
-                    ", mOffsets=" + Arrays.toString(mOffsets) +
-                    ", mPieces=" + Arrays.toString(mPieces) +
                     ", mAdvance=" + mAdvance +
                     ", mStart=" + mStart +
                     ", mEnd=" + mEnd +
@@ -698,6 +746,16 @@ public class MeasuredText {
         @Override
         public Locale getLocale() {
             return mLocale;
+        }
+
+        @Override
+        public int getLineBreakStyle() {
+            return LineBreakConfig.LINE_BREAK_STYLE_NONE;
+        }
+
+        @Override
+        public int getLineBreakWordStyle() {
+            return LineBreakConfig.LINE_BREAK_WORD_STYLE_NONE;
         }
 
         @Override

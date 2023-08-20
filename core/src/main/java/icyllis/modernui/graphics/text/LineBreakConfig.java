@@ -24,12 +24,12 @@ import org.jetbrains.annotations.ApiStatus;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.util.Objects;
 
 /**
  * Indicates the strategies can be used when calculating the text wrapping.
  * <p>
  * See <a href="https://www.w3.org/TR/css-text-3/#line-break-property">the line-break property</a>
+ * See <a href="https://www.w3.org/TR/css-text-3/#word-break-property">the word-break property</a>
  */
 public final class LineBreakConfig {
 
@@ -55,7 +55,9 @@ public final class LineBreakConfig {
 
     @ApiStatus.Internal
     @MagicConstant(intValues = {
-            LINE_BREAK_STYLE_NONE, LINE_BREAK_STYLE_LOOSE, LINE_BREAK_STYLE_NORMAL,
+            LINE_BREAK_STYLE_NONE,
+            LINE_BREAK_STYLE_LOOSE,
+            LINE_BREAK_STYLE_NORMAL,
             LINE_BREAK_STYLE_STRICT
     })
     @Retention(RetentionPolicy.SOURCE)
@@ -75,9 +77,32 @@ public final class LineBreakConfig {
      */
     public static final int LINE_BREAK_WORD_STYLE_PHRASE = 1;
 
+    /**
+     * Normal script/language behavior for midword breaks.
+     */
+    public static final int LINE_BREAK_WORD_STYLE_NORMAL = 2;
+
+    /**
+     * Allow midword breaks unless forbidden by line break style.
+     * To prevent overflow, word breaks should be inserted between any
+     * two characters (excluding Chinese/Japanese/Korean text).
+     */
+    public static final int LINE_BREAK_WORD_STYLE_BREAK_ALL = 3;
+
+    /**
+     * Prohibit midword breaks except for dictionary breaks.
+     * Word breaks should not be used for Chinese/Japanese/Korean (CJK) text.
+     * Non-CJK text behavior is the same as for normal.
+     */
+    public static final int LINE_BREAK_WORD_STYLE_KEEP_ALL = 4;
+
     @ApiStatus.Internal
     @MagicConstant(intValues = {
-            LINE_BREAK_WORD_STYLE_NONE, LINE_BREAK_WORD_STYLE_PHRASE
+            LINE_BREAK_WORD_STYLE_NONE,
+            LINE_BREAK_WORD_STYLE_PHRASE,
+            LINE_BREAK_WORD_STYLE_NORMAL,
+            LINE_BREAK_WORD_STYLE_BREAK_ALL,
+            LINE_BREAK_WORD_STYLE_KEEP_ALL
     })
     @Retention(RetentionPolicy.SOURCE)
     public @interface LineBreakWordStyle {
@@ -88,7 +113,8 @@ public final class LineBreakConfig {
      */
     public static final class Builder {
         // The line break style for the LineBreakConfig.
-        private @LineBreakStyle int mLineBreakStyle = LineBreakConfig.LINE_BREAK_STYLE_NONE;
+        private @LineBreakStyle int mLineBreakStyle =
+                LineBreakConfig.LINE_BREAK_STYLE_NONE;
 
         // The line break word style for the LineBreakConfig.
         private @LineBreakWordStyle int mLineBreakWordStyle =
@@ -133,6 +159,10 @@ public final class LineBreakConfig {
         }
     }
 
+    @ApiStatus.Internal
+    public static final LineBreakConfig NONE =
+            new LineBreakConfig(LINE_BREAK_STYLE_NONE, LINE_BREAK_WORD_STYLE_NONE);
+
     /**
      * Create the LineBreakConfig instance.
      *
@@ -144,16 +174,12 @@ public final class LineBreakConfig {
     @NonNull
     public static LineBreakConfig getLineBreakConfig(@LineBreakStyle int lineBreakStyle,
                                                      @LineBreakWordStyle int lineBreakWordStyle) {
-        LineBreakConfig.Builder builder = new LineBreakConfig.Builder();
-        return builder.setLineBreakStyle(lineBreakStyle)
-                .setLineBreakWordStyle(lineBreakWordStyle)
-                .build();
+        if (lineBreakStyle == LINE_BREAK_STYLE_NONE &&
+                lineBreakWordStyle == LINE_BREAK_WORD_STYLE_NONE) {
+            return NONE;
+        }
+        return new LineBreakConfig(lineBreakStyle, lineBreakWordStyle);
     }
-
-    @ApiStatus.Internal
-    public static final LineBreakConfig NONE =
-            new Builder().setLineBreakStyle(LINE_BREAK_STYLE_NONE)
-                    .setLineBreakWordStyle(LINE_BREAK_WORD_STYLE_NONE).build();
 
     private final @LineBreakStyle int mLineBreakStyle;
     private final @LineBreakWordStyle int mLineBreakWordStyle;
@@ -187,16 +213,17 @@ public final class LineBreakConfig {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (o == null) return false;
-        if (this == o) return true;
-        if (!(o instanceof LineBreakConfig that)) return false;
-        return (mLineBreakStyle == that.mLineBreakStyle)
-                && (mLineBreakWordStyle == that.mLineBreakWordStyle);
+    public int hashCode() {
+        int result = mLineBreakStyle;
+        result = 31 * result + mLineBreakWordStyle;
+        return result;
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(mLineBreakStyle, mLineBreakWordStyle);
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof LineBreakConfig that)) return false;
+        return mLineBreakStyle == that.mLineBreakStyle &&
+                mLineBreakWordStyle == that.mLineBreakWordStyle;
     }
 }

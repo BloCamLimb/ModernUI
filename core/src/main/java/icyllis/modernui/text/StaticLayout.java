@@ -25,6 +25,7 @@ import icyllis.modernui.text.style.*;
 import icyllis.modernui.text.style.LeadingMarginSpan.LeadingMarginSpan2;
 import icyllis.modernui.util.GrowingArrayUtils;
 import icyllis.modernui.util.Pools;
+import icyllis.modernui.widget.TextView;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 

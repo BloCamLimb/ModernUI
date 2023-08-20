@@ -35,7 +35,8 @@ import icyllis.modernui.material.MaterialRadioButton;
 import icyllis.modernui.resources.SystemTheme;
 import icyllis.modernui.text.*;
 import icyllis.modernui.text.style.*;
-import icyllis.modernui.util.*;
+import icyllis.modernui.util.DataSet;
+import icyllis.modernui.util.FloatProperty;
 import icyllis.modernui.view.*;
 import icyllis.modernui.view.ViewGroup.LayoutParams;
 import icyllis.modernui.widget.*;
@@ -100,7 +101,7 @@ public class TestFragment extends Fragment {
             LOGGER.info("Shape \"{}\"\n{}\nMemory Usage: {} bytes", text, shapedText, shapedText.getMemoryUsage());
             text = "y";
             var adv = tp.getTypeface().getFamilies().get(0).getClosestMatch(FontPaint.BOLD)
-                            .doSimpleLayout(text.toCharArray(), 0, 1, tp.getInternalPaint(), null, null, 0, 0);
+                    .doSimpleLayout(text.toCharArray(), 0, 1, tp.getInternalPaint(), null, null, 0, 0);
             LOGGER.info("y: adv {}", adv);
         }).exceptionally(e -> {
             LOGGER.info("Shape", e);
@@ -414,13 +415,13 @@ public class TestFragment extends Fragment {
                     "\udd99";
 
             TextView tv = new TextView(getContext());
-            tv.setLayoutParams(new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT));
+            tv.setLayoutParams(new LayoutParams(MATCH_PARENT, WRAP_CONTENT));
+            tv.setLineBreakWordStyle(LineBreakConfig.LINE_BREAK_WORD_STYLE_BREAK_ALL);
 
             Spannable spannable = new SpannableString(text);
             spannable.setSpan(new ForegroundColorSpan(0xfff699b4), text.length() - 54, text.length(),
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            spannable.setSpan(new RelativeSizeSpan(0.5f), text.length() - 99, text.length() - 30,
+            spannable.setSpan(new RelativeSizeSpan(1.15f), text.length() - 99, text.length() - 30,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             spannable.setSpan(new StyleSpan(Typeface.BOLD), text.length() - 50, text.length() - 40,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -449,7 +450,7 @@ public class TestFragment extends Fragment {
             } catch (IOException ignored) {
             }*/
             tv.setLinksClickable(true);
-            tv.setTextIsSelectable(true);
+            //tv.setTextIsSelectable(true);
             tv.setTextAlignment(TEXT_ALIGNMENT_GRAVITY);
 
             mTextView = tv;
@@ -937,7 +938,8 @@ public class TestFragment extends Fragment {
                     Paint paint = Paint.obtain();
                     paint.setARGB(128, 140, 200, 240);
                     canvas.drawRoundRect(0, 1, getWidth(), getHeight() - 2, 4, paint);
-                    TextUtils.drawTextRun(canvas, mIndex, 0, mIndex.length(), 0, mIndex.length(), 20, getHeight() >> 1, false,
+                    TextUtils.drawTextRun(canvas, mIndex, 0, mIndex.length(), 0, mIndex.length(), 20,
+                            getHeight() >> 1, false,
                             mTextPaint);
                     paint.recycle();
                 }
