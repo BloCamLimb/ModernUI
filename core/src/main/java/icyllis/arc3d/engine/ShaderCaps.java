@@ -30,7 +30,7 @@ public class ShaderCaps {
             GeneralEnable_AdvBlendEqInteraction = 2;    // layout(blend_support_all_equations) out
 
     // GLSL version 450 or 330
-    public boolean mIsGLSL450 = true;
+    public int mGLSLVersion = 450;
 
     public boolean mDualSourceBlendingSupport = false;
     public boolean mPreferFlatInterpolation = false;
@@ -47,6 +47,8 @@ public class ShaderCaps {
     // Use a reduced set of rendering algorithms or less optimal effects in order to reduce the
     // number of unique shaders generated.
     public boolean mReducedShaderMode = false;
+
+    public boolean mTextureQueryLod = true;
 
     // Used for specific driver bug workarounds
     public boolean mRequiresLocalOutputColorForFBFetch = false;

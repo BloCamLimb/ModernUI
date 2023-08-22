@@ -99,7 +99,7 @@ public class GLFontAtlas implements AutoCloseable {
     // create from any thread
     public GLFontAtlas(int maskFormat) {
         mMaskFormat = maskFormat;
-        mMaxTextureSize = Core.requireDirectContext().getMaxTextureSize();
+        mMaxTextureSize = Math.min(Core.requireDirectContext().getMaxTextureSize(), 8192);
     }
 
     /**
@@ -140,8 +140,7 @@ public class GLFontAtlas implements AutoCloseable {
         }
         if (!inserted) {
             // add new chunks
-            resize();
-            invalidated = true;
+            invalidated = resize();
             for (Chunk chunk : mChunks) {
                 if (chunk.packer.addRect(rect)) {
                     inserted = true;
@@ -171,7 +170,7 @@ public class GLFontAtlas implements AutoCloseable {
         return invalidated;
     }
 
-    private void resize() {
+    private boolean resize() {
         if (mWidth == 0) {
             // initialize 4 chunks
             mWidth = mHeight = CHUNK_SIZE * 2;
@@ -187,7 +186,7 @@ public class GLFontAtlas implements AutoCloseable {
             final int oldHeight = mHeight;
 
             if (oldWidth == mMaxTextureSize && oldHeight == mMaxTextureSize) {
-                return;
+                return false;
             }
 
             final boolean vertical;
@@ -259,6 +258,7 @@ public class GLFontAtlas implements AutoCloseable {
             //XXX: un-premultiplied
             mTexture.setSwizzle(GL_ONE, GL_ONE, GL_ONE, GL_RED);
         }
+        return true;
     }
 
     public void debug(@Nullable String path) {

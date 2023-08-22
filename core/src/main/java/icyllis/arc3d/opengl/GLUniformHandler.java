@@ -79,9 +79,9 @@ public class GLUniformHandler extends UniformHandler {
 
         int handle = mUniforms.size();
 
-        // ARB enhanced layouts or GLSL 440
         String layoutQualifier;
-        if (mProgramBuilder.shaderCaps().mIsGLSL450) {
+        if (mProgramBuilder.shaderCaps().mGLSLVersion >= 440) {
+            // ARB_enhanced_layouts or GLSL 440
             layoutQualifier = "offset = " + offset;
         } else {
             layoutQualifier = "";
@@ -111,9 +111,10 @@ public class GLUniformHandler extends UniformHandler {
 
         int handle = mSamplers.size();
 
-        // equivalent to setting texture unit to index
         String layoutQualifier;
-        if (mProgramBuilder.shaderCaps().mIsGLSL450) {
+        if (mProgramBuilder.shaderCaps().mGLSLVersion >= 420) {
+            // ARB_shading_language_420pack
+            // equivalent to setting texture unit to index
             layoutQualifier = "binding = " + handle;
         } else {
             layoutQualifier = "";
@@ -167,8 +168,12 @@ public class GLUniformHandler extends UniformHandler {
         }
         // The uniform block definition for all shader stages must be exactly the same
         if (firstVisible) {
-            out.append("layout(std140, binding = ");
-            out.append(UNIFORM_BINDING);
+            out.append("layout(std140");
+            if (mProgramBuilder.shaderCaps().mGLSLVersion >= 420) {
+                // ARB_shading_language_420pack
+                out.append(", binding = ");
+                out.append(UNIFORM_BINDING);
+            }
             out.append(") uniform ");
             out.append(UNIFORM_BLOCK_NAME);
             out.append(" {\n");
