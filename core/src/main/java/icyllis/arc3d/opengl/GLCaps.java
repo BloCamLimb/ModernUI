@@ -195,10 +195,25 @@ public final class GLCaps extends Caps {
 
         mMaxLabelLength = glGetInteger(GL_MAX_LABEL_LENGTH);
 
-        initGLSL(caps);
         ShaderCaps shaderCaps = mShaderCaps;
-
-        shaderCaps.mIsGLSL450 = mDSASupport;
+        if (caps.OpenGL45) {
+            shaderCaps.mGLSLVersion = 450;
+        } else if (caps.OpenGL44) {
+            shaderCaps.mGLSLVersion = 440;
+        } else if (caps.OpenGL43) {
+            shaderCaps.mGLSLVersion = 430;
+        } else if (caps.OpenGL42) {
+            shaderCaps.mGLSLVersion = 420;
+        } else if (caps.OpenGL41) {
+            shaderCaps.mGLSLVersion = 410;
+        } else if (caps.OpenGL40) {
+            shaderCaps.mGLSLVersion = 400;
+        } else if (caps.OpenGL33) {
+            shaderCaps.mGLSLVersion = 330;
+        } else {
+            shaderCaps.mGLSLVersion = 150;
+        }
+        initGLSL(caps);
 
         // OpenGL 3.3
         shaderCaps.mDualSourceBlendingSupport = true;
@@ -263,7 +278,7 @@ public final class GLCaps extends Caps {
         // Desktop
         shaderCaps.mNonConstantArrayIndexSupport = true;
         // GLSL 400
-        shaderCaps.mBitManipulationSupport = true;
+        shaderCaps.mBitManipulationSupport = caps.OpenGL40;
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
             IntBuffer range = stack.mallocInt(2);

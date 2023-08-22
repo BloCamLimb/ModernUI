@@ -39,17 +39,17 @@ public final class LineBreakConfig {
     public static final int LINE_BREAK_STYLE_NONE = 0;
 
     /**
-     * Use the least restrictive rule for line-breaking. This is usually used for short lines.
+     * Uses the least restrictive rule for line-breaking. Typically used for short lines.
      */
     public static final int LINE_BREAK_STYLE_LOOSE = 1;
 
     /**
-     * Indicate breaking text with the most comment set of line-breaking rules.
+     * Indicates breaking text with the most common set of line-breaking rules.
      */
     public static final int LINE_BREAK_STYLE_NORMAL = 2;
 
     /**
-     * Indicates breaking text with the most strictest line-breaking rules.
+     * Indicates breaking text with the most stringent line-breaking rules.
      */
     public static final int LINE_BREAK_STYLE_STRICT = 3;
 

@@ -965,9 +965,7 @@ public class TestFragment extends Fragment {
 
             public DView(Context context, TimeInterpolator interpolator) {
                 super(context);
-                mTextPaint.setTypeface(Typeface.getSystemFont("Microsoft YaHei UI"));
-                mTextPaint.setTextStyle(Typeface.BOLD);
-                mTextPaint.setTextSize(10);
+                mTextPaint.setTextSize(8);
                 /*animation = new Animation(200)
                         .applyTo(new Applier(0, 60, () -> offsetY, v -> {
                             offsetY = v;
