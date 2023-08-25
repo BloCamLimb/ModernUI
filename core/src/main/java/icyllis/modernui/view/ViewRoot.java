@@ -467,9 +467,9 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
 
                         if (event.getAction() == KeyEvent.ACTION_DOWN
                                 && event.getKeyCode() == KeyEvent.KEY_TAB) {
-                            if (event.isShiftPressed()) {
+                            if (event.hasModifiers(KeyEvent.META_SHIFT_ON | KeyEvent.META_ALT_ON)) {
                                 groupNavigationDirection = View.FOCUS_BACKWARD;
-                            } else {
+                            } else if (event.hasModifiers(KeyEvent.META_ALT_ON)) {
                                 groupNavigationDirection = View.FOCUS_FORWARD;
                             }
                         }
