@@ -778,6 +778,11 @@ public class TestFragment extends Fragment {
             float s1 = (float) Math.sin(AnimationUtils.currentAnimationTimeMillis() / 300D);
             canvas.drawPie(350, 94, 55, 180 + 20 * s1, 100 + 50 * s1 * s1, paint);
 
+            paint.setStrokeWidth(10.0f);
+            canvas.drawRect(200, 300, 500, 400, paint);
+            paint.setStrokeCap(Paint.CAP_SQUARE);
+            canvas.drawRect(200, 450, 500, 550, paint);
+
             paint.setStrokeWidth(40.0f);
             paint.setSmoothWidth(40.0f);
             //canvas.drawArc(80, 400, 60, arcStart, arcStart - arcEnd, paint);
