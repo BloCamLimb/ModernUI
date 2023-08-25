@@ -1207,6 +1207,54 @@ public class ScrollView extends FrameLayout {
     }
 
     @Override
+    public void requestChildFocus(View child, View focused) {
+        if (focused != null && focused.getRevealOnFocusHint()) {
+            if (!mIsLayoutDirty) {
+                scrollToDescendant(focused);
+            } else {
+                // The child may not be laid out yet, we can't compute the scroll yet
+                mChildToScrollTo = focused;
+            }
+        }
+        super.requestChildFocus(child, focused);
+    }
+
+    /**
+     * When looking for focus in children of a scroll view, need to be a little
+     * more careful not to give focus to something that is scrolled off-screen.
+     * <p>
+     * This is more expensive than the default {@link ViewGroup}
+     * implementation, otherwise this behavior might have been made the default.
+     */
+    @Override
+    protected boolean onRequestFocusInDescendants(int direction,
+                                                  Rect previouslyFocusedRect) {
+
+        // convert from forward / backward notation to up / down / left / right
+        // (ugh).
+        if (direction == View.FOCUS_FORWARD) {
+            direction = View.FOCUS_DOWN;
+        } else if (direction == View.FOCUS_BACKWARD) {
+            direction = View.FOCUS_UP;
+        }
+
+        final View nextFocus = previouslyFocusedRect == null ?
+                FocusFinder.getInstance().findNextFocus(this, null, direction) :
+                FocusFinder.getInstance().findNextFocusFromRect(this,
+                        previouslyFocusedRect, direction);
+
+        if (nextFocus == null) {
+            return false;
+        }
+
+        if (isOffScreen(nextFocus)) {
+            return false;
+        }
+
+        return nextFocus.requestFocus(direction, previouslyFocusedRect);
+    }
+
+    @Override
     public boolean requestChildRectangleOnScreen(@Nonnull View child, @Nonnull Rect rectangle,
                                                  boolean immediate) {
         // offset into coordinate space of this scroll view

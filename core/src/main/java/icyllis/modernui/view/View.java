@@ -4337,7 +4337,7 @@ public class View implements Drawable.Callback {
 
             if (mParent != null) {
                 mParent.requestChildFocus(this, this);
-                //updateFocusedInCluster(oldFocus, direction);
+                updateFocusedInCluster(oldFocus, direction);
             }
 
             if (mAttachInfo != null) {
@@ -4346,6 +4346,62 @@ public class View implements Drawable.Callback {
 
             onFocusChanged(true, direction, previouslyFocusedRect);
             refreshDrawableState();
+        }
+    }
+
+    /**
+     * Sets this View as the one which receives focus the next time cluster navigation jumps
+     * to the cluster containing this View. This does NOT change focus even if the cluster
+     * containing this view is current.
+     */
+    @ApiStatus.Internal
+    public final void setFocusedInCluster() {
+        setFocusedInCluster(findKeyboardNavigationCluster());
+    }
+
+    private void setFocusedInCluster(View cluster) {
+        if (this instanceof ViewGroup) {
+            ((ViewGroup) this).mFocusedInCluster = null;
+        }
+        if (cluster == this) {
+            return;
+        }
+        ViewParent parent = mParent;
+        View child = this;
+        while (parent instanceof ViewGroup) {
+            ((ViewGroup) parent).mFocusedInCluster = child;
+            if (parent == cluster) {
+                break;
+            }
+            child = (View) parent;
+            parent = parent.getParent();
+        }
+    }
+
+    private void updateFocusedInCluster(View oldFocus, @FocusDirection int direction) {
+        if (oldFocus != null) {
+            View oldCluster = oldFocus.findKeyboardNavigationCluster();
+            View cluster = findKeyboardNavigationCluster();
+            if (oldCluster != cluster) {
+                // Going from one cluster to another, so save last-focused.
+                // This covers cluster jumps because they are always FOCUS_DOWN
+                oldFocus.setFocusedInCluster(oldCluster);
+                if (!(oldFocus.mParent instanceof ViewGroup)) {
+                    return;
+                }
+                if (direction == FOCUS_FORWARD || direction == FOCUS_BACKWARD) {
+                    // This is a result of ordered navigation so consider navigation through
+                    // the previous cluster "complete" and clear its last-focused memory.
+                    ((ViewGroup) oldFocus.mParent).clearFocusedInCluster(oldFocus);
+                } else if (oldFocus instanceof ViewGroup
+                        && ((ViewGroup) oldFocus).getDescendantFocusability()
+                        == ViewGroup.FOCUS_AFTER_DESCENDANTS
+                        && ViewRoot.isViewDescendantOf(this, oldFocus)) {
+                    // This means oldFocus is not focusable since it obviously has a focusable
+                    // child (this). Don't restore focus to it in the future.
+                    ((ViewGroup) oldFocus.mParent).clearFocusedInCluster(oldFocus);
+                }
+            }
         }
     }
 
