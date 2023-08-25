@@ -128,6 +128,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
     public static final byte DRAW_PIE_STROKE = 22;
     public static final byte DRAW_ROUND_LINE_FILL = 23;
     public static final byte DRAW_ROUND_LINE_STROKE = 24;
+    public static final byte DRAW_RECT_STROKE_BEVEL = 25;
+    public static final byte DRAW_RECT_STROKE_ROUND = 26;
 
     /**
      * Uniform block sizes (maximum), use std140 layout
@@ -171,6 +173,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
     private GLProgram PIE_STROKE;
     private GLProgram ROUND_LINE_FILL;
     private GLProgram ROUND_LINE_STROKE;
+    private GLProgram RECT_STROKE_BEVEL;
+    private GLProgram RECT_STROKE_ROUND;
 
     private GLVertexArray POS_COLOR;
     private GLVertexArray POS_COLOR_TEX;
@@ -369,6 +373,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
         int pieStroke;
         int roundLineFill;
         int roundLineStroke;
+        int rectStrokeBevel;
+        int rectStrokeRound;
 
         boolean compat = !mServer.getCaps().hasDSASupport();
 
@@ -393,6 +399,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
         pieStroke       = createStage( "pie_stroke.frag", compat);
         roundLineFill   = createStage( "round_line_fill.frag", compat);
         roundLineStroke = createStage( "round_line_stroke.frag", compat);
+        rectStrokeBevel = createStage( "rect_stroke_bevel.frag", compat);
+        rectStrokeRound = createStage( "rect_stroke_round.frag", compat);
 
         int pColorFill          = createProgram(posColor,    colorFill);
         int pColorTex           = createProgram(posColorTex, colorTex);
@@ -411,6 +419,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
         int pPieStroke          = createProgram(posColor,    pieStroke);
         int pRoundLineFill      = createProgram(posColor,    roundLineFill);
         int pRoundLineStroke    = createProgram(posColor,    roundLineStroke);
+        int pRectStrokeBevel    = createProgram(posColor,    rectStrokeBevel);
+        int pRectStrokeRound    = createProgram(posColor,    rectStrokeRound);
 
         boolean success = pColorFill != 0 &&
         pColorTex != 0 &&
@@ -428,7 +438,9 @@ public final class GLSurfaceCanvas extends GLCanvas {
         pPieFill != 0 &&
                 pPieStroke != 0 &&
         pRoundLineFill != 0 &&
-                pRoundLineStroke != 0;
+                pRoundLineStroke != 0 &&
+                pRectStrokeBevel != 0 &&
+                pRectStrokeRound != 0;
 
         if (!success) {
             throw new RuntimeException("Failed to link shader programs");
@@ -507,6 +519,16 @@ public final class GLSurfaceCanvas extends GLCanvas {
             bindProgramRoundRectBlock(pRoundRectStroke);
             bindProgramSmoothBlock(   pRoundRectStroke);
 
+            bindProgramMatrixBlock(   pRectStrokeBevel);
+            bindProgramFragLocation(  pRectStrokeBevel);
+            bindProgramRoundRectBlock(pRectStrokeBevel);
+            bindProgramSmoothBlock(   pRectStrokeBevel);
+
+            bindProgramMatrixBlock(   pRectStrokeRound);
+            bindProgramFragLocation(  pRectStrokeRound);
+            bindProgramRoundRectBlock(pRectStrokeRound);
+            bindProgramSmoothBlock(   pRectStrokeRound);
+
             bindProgramMatrixBlock(   pRoundRectTex);
             bindProgramFragLocation(  pRoundRectTex);
             bindProgramRoundRectBlock(pRoundRectTex);
@@ -532,6 +554,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
         PIE_STROKE = new GLProgram(mServer, pPieStroke);
         ROUND_LINE_FILL = new GLProgram(mServer, pRoundLineFill);
         ROUND_LINE_STROKE = new GLProgram(mServer, pRoundLineStroke);
+        RECT_STROKE_BEVEL = new GLProgram(mServer, pRectStrokeBevel);
+        RECT_STROKE_ROUND = new GLProgram(mServer, pRectStrokeRound);
 
         POS_COLOR = aPosColor;
         POS_COLOR_TEX = aPosColorUV;
@@ -661,6 +685,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
         PIE_STROKE.unref();
         ROUND_LINE_FILL.unref();
         ROUND_LINE_STROKE.unref();
+        RECT_STROKE_BEVEL.unref();
+        RECT_STROKE_ROUND.unref();
 
         POS_COLOR.unref();
         POS_COLOR_TEX.unref();
@@ -888,6 +914,24 @@ public final class GLSurfaceCanvas extends GLCanvas {
                 }
                 case DRAW_ROUND_LINE_STROKE -> {
                     bindPipeline(ROUND_LINE_STROKE, POS_COLOR)
+                            .bindVertexBuffer(mColorMeshVertexBuffer, 0);
+                    mRoundRectUBO.upload(0, 24, uniformDataPtr);
+                    uniformDataPtr += 24;
+                    glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
+                    nDraws++;
+                    posColorIndex += 4;
+                }
+                case DRAW_RECT_STROKE_BEVEL -> {
+                    bindPipeline(RECT_STROKE_BEVEL, POS_COLOR)
+                            .bindVertexBuffer(mColorMeshVertexBuffer, 0);
+                    mRoundRectUBO.upload(0, 24, uniformDataPtr);
+                    uniformDataPtr += 24;
+                    glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
+                    nDraws++;
+                    posColorIndex += 4;
+                }
+                case DRAW_RECT_STROKE_ROUND -> {
+                    bindPipeline(RECT_STROKE_ROUND, POS_COLOR)
                             .bindVertexBuffer(mColorMeshVertexBuffer, 0);
                     mRoundRectUBO.upload(0, 24, uniformDataPtr);
                     uniformDataPtr += 24;
@@ -2020,9 +2064,14 @@ public final class GLSurfaceCanvas extends GLCanvas {
         if (quickReject(left, top, right, bottom)) {
             return;
         }
-        drawMatrix();
-        putRectColor(left, top, right, bottom, paint);
-        mDrawOps.add(DRAW_RECT);
+        if (paint.getStyle() == Paint.FILL) {
+            drawMatrix();
+            putRectColor(left, top, right, bottom, paint);
+            mDrawOps.add(DRAW_RECT);
+        } else {
+            drawRectStroke(left, top, right, bottom,
+                    0, 0, 0, 0, false, paint);
+        }
     }
 
     @Override
@@ -2032,9 +2081,48 @@ public final class GLSurfaceCanvas extends GLCanvas {
         if (quickReject(left, top, right, bottom)) {
             return;
         }
+        if (paint.getStyle() == Paint.FILL) {
+            drawMatrix();
+            putRectColorGrad(left, top, right, bottom, colorUL, colorUR, colorLR, colorLL);
+            mDrawOps.add(DRAW_RECT);
+        } else {
+            drawRectStroke(left, top, right, bottom,
+                    colorUL, colorUR, colorLR, colorLL, true, paint);
+        }
+    }
+
+    private void drawRectStroke(float left, float top, float right, float bottom,
+                                int colorUL, int colorUR,
+                                int colorLR, int colorLL, boolean useGrad,
+                                @NonNull Paint paint) {
+        float strokeRadius = paint.getStrokeWidth() * 0.5f;
+        if (strokeRadius < 0.0001f) {
+            return;
+        }
+        if (quickReject(left - strokeRadius, top - strokeRadius, right + strokeRadius, bottom + strokeRadius)) {
+            return;
+        }
         drawMatrix();
-        putRectColorGrad(left, top, right, bottom, colorUL, colorUR, colorLR, colorLL);
-        mDrawOps.add(DRAW_RECT);
+        drawSmooth(Math.min(strokeRadius, paint.getSmoothWidth() / 2));
+        if (useGrad) {
+            putRectColorGrad(left - strokeRadius - 1, top - strokeRadius - 1, right + strokeRadius + 1,
+                    bottom + strokeRadius + 1, colorUL, colorUR, colorLR, colorLL);
+        } else {
+            putRectColor(left - strokeRadius - 1, top - strokeRadius - 1, right + strokeRadius + 1,
+                    bottom + strokeRadius + 1, paint);
+        }
+        ByteBuffer buffer = checkUniformStagingBuffer();
+        buffer.putFloat(left);
+        buffer.putFloat(top);
+        buffer.putFloat(right);
+        buffer.putFloat(bottom);
+        buffer.putFloat(0)
+                .putFloat(strokeRadius);
+        mDrawOps.add(
+                paint.getStrokeCap() == Paint.CAP_ROUND
+                        ? DRAW_RECT_STROKE_ROUND
+                        : DRAW_RECT_STROKE_BEVEL
+        );
     }
 
     // test stuff :p
