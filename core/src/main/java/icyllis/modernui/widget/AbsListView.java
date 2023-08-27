@@ -23,7 +23,8 @@ import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.text.TextWatcher;
+import icyllis.modernui.graphics.drawable.ShapeDrawable;
+import icyllis.modernui.resources.SystemTheme;
 import icyllis.modernui.util.*;
 import icyllis.modernui.view.*;
 import it.unimi.dsi.fastutil.longs.*;
@@ -636,44 +637,17 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
         mOverflingDistance = configuration.getScaledOverflingDistance();
 
         setVerticalScrollBarEnabled(true);
-        setVerticalScrollbarThumbDrawable(new Drawable() {
-            private int mAlpha = 255;
-
-            @Override
-            public void draw(@Nonnull Canvas canvas) {
-                Paint paint = Paint.obtain();
-                paint.setRGBA(84, 190, 196, (int) (mAlpha * 0.5));
-                Rect bounds = getBounds();
-                canvas.drawRoundRect(bounds.left + 1, bounds.top + 1, bounds.right - 1, bounds.bottom - 1,
-                        bounds.width() / 2f - 1, paint);
-                paint.recycle();
-            }
-
-            @Override
-            public void setAlpha(int alpha) {
-                this.mAlpha = alpha;
-            }
-        });
-        setVerticalScrollbarTrackDrawable(new Drawable() {
-            private int mAlpha = 255;
-
-            @Override
-            public void draw(@Nonnull Canvas canvas) {
-                Paint paint = Paint.obtain();
-                paint.setRGBA(128, 128, 128, (int) (mAlpha * 0.75));
-                paint.setStyle(Paint.STROKE);
-                paint.setStrokeWidth(3);
-                Rect bounds = getBounds();
-                canvas.drawRoundRect(bounds.left + 1, bounds.top + 1, bounds.right - 1, bounds.bottom - 1,
-                        bounds.width() / 2f - 1, paint);
-                paint.recycle();
-            }
-
-            @Override
-            public void setAlpha(int alpha) {
-                this.mAlpha = alpha;
-            }
-        });
+        ShapeDrawable thumb = new ShapeDrawable();
+        thumb.setShape(ShapeDrawable.VLINE);
+        thumb.setStroke(dp(4), SystemTheme.modulateColor(SystemTheme.COLOR_FOREGROUND, 0.25f));
+        thumb.setCornerRadius(1);
+        setVerticalScrollbarThumbDrawable(thumb);
+        ShapeDrawable track = new ShapeDrawable();
+        track.setShape(ShapeDrawable.VLINE);
+        track.setStroke(dp(4), 0x40808080);
+        track.setSize(dp(4), -1);
+        track.setCornerRadius(1);
+        setVerticalScrollbarTrackDrawable(track);
     }
 
     /**
@@ -4693,7 +4667,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
         private ArrayList<View> mSkippedScrap;
 
         private SparseArray<View> mTransientStateViews;
-        private Long2ObjectOpenHashMap<View> mTransientStateViewsById;
+        private LongSparseArray<View> mTransientStateViewsById;
 
         @SuppressWarnings("unchecked")
         public void setViewTypeCount(int viewTypeCount) {
@@ -4731,8 +4705,9 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
                 }
             }
             if (mTransientStateViewsById != null) {
-                for (View v : mTransientStateViewsById.values()) {
-                    v.forceLayout();
+                final int count = mTransientStateViewsById.size();
+                for (int i = 0; i < count; i++) {
+                    mTransientStateViewsById.valueAt(i).forceLayout();
                 }
             }
         }
@@ -4839,10 +4814,11 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
                 viewsByPos.clear();
             }
 
-            final Long2ObjectOpenHashMap<View> viewsById = mTransientStateViewsById;
+            final LongSparseArray<View> viewsById = mTransientStateViewsById;
             if (viewsById != null) {
-                for (View v : viewsById.values()) {
-                    removeDetachedView(v);
+                final int N = viewsById.size();
+                for (int i = 0; i < N; i++) {
+                    removeDetachedView(viewsById.valueAt(i));
                 }
                 viewsById.clear();
             }
@@ -4906,7 +4882,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
                     // If the adapter has stable IDs, we can reuse the view for
                     // the same data.
                     if (mTransientStateViewsById == null) {
-                        mTransientStateViewsById = new Long2ObjectOpenHashMap<>();
+                        mTransientStateViewsById = new LongSparseArray<>();
                     }
                     mTransientStateViewsById.put(lp.itemId, scrap);
                 } else if (!mDataChanged) {
@@ -4950,8 +4926,9 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
             if (mSkippedScrap == null) {
                 return;
             }
-            for (View view : mSkippedScrap) {
-                removeDetachedView(view);
+            final int count = mSkippedScrap.size();
+            for (int i = 0; i < count; i++) {
+                removeDetachedView(mSkippedScrap.get(i));
             }
             mSkippedScrap.clear();
         }
@@ -4981,7 +4958,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
 
                         if (mAdapter != null && mAdapterHasStableIds) {
                             if (mTransientStateViewsById == null) {
-                                mTransientStateViewsById = new Long2ObjectOpenHashMap<>();
+                                mTransientStateViewsById = new LongSparseArray<>();
                             }
                             long id = mAdapter.getItemId(mFirstActivePosition + i);
                             mTransientStateViewsById.put(id, victim);
@@ -5067,13 +5044,14 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
                 }
             }
 
-            final Long2ObjectOpenHashMap<View> transViewsById = mTransientStateViewsById;
+            final LongSparseArray<View> transViewsById = mTransientStateViewsById;
             if (transViewsById != null) {
-                for (ObjectIterator<View> it = transViewsById.values().iterator(); it.hasNext(); ) {
-                    View v = it.next();
+                for (int i = 0; i < transViewsById.size(); i++) {
+                    final View v = transViewsById.valueAt(i);
                     if (!v.hasTransientState()) {
                         removeDetachedView(v);
-                        it.remove();
+                        transViewsById.removeAt(i);
+                        i--;
                     }
                 }
             }
@@ -5135,7 +5113,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
         private void clearScrapForRebind(@Nonnull View view) {
         }
 
-        private void removeDetachedView(@Nonnull View child) {
+        private void removeDetachedView(View child) {
             AbsListView.this.removeDetachedView(child, false);
         }
     }
