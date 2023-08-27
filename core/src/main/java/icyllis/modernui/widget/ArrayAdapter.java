@@ -21,7 +21,6 @@ package icyllis.modernui.widget;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
-import icyllis.modernui.view.ViewGroup.LayoutParams;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -324,7 +323,6 @@ public class ArrayAdapter<T> extends BaseAdapter implements Filterable {
         tv.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
         final int dp4 = tv.dp(4);
         tv.setPadding(dp4, dp4, dp4, dp4);
-        tv.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
 
         return tv;
     }
