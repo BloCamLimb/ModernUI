@@ -91,6 +91,7 @@ public final class ToastManager {
 
         mTextView.setText(r.mText);
         mTextView.setTextSize(14);
+        mTextView.setTypeface(ModernUI.getSelectedTypeface());
         mTextView.setMaxWidth(mTextView.dp(300));
         mTextView.setPadding(mTextView.dp(16), mTextView.dp(12), mTextView.dp(16), mTextView.dp(12));
         mParams.y = mTextView.dp(64);
