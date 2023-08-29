@@ -20,8 +20,7 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.R;
 import icyllis.modernui.core.Context;
-import icyllis.modernui.graphics.drawable.ScaleDrawable;
-import icyllis.modernui.graphics.drawable.ShapeDrawable;
+import icyllis.modernui.graphics.drawable.*;
 import icyllis.modernui.resources.SystemTheme;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.StateSet;
@@ -79,12 +78,28 @@ public class SeekBar extends AbsSeekBar {
 
         if (getClass() == SeekBar.class) {
             {
-                var track = new ShapeDrawable();
-                track.setShape(ShapeDrawable.HLINE);
-                track.setStroke(dp(2), SystemTheme.COLOR_CONTROL_ACTIVATED);
-                track.setSize(-1, dp(2));
-                track.setCornerRadius(1);
-                setProgressDrawable(new ScaleDrawable(track, Gravity.LEFT, 1, -1));
+                final Drawable track;
+                {
+                    var shape = new ShapeDrawable();
+                    shape.setShape(ShapeDrawable.HLINE);
+                    shape.setStroke(dp(2), SystemTheme.COLOR_CONTROL_ACTIVATED);
+                    shape.setSize(-1, dp(2));
+                    shape.setCornerRadius(1);
+                    track = new ScaleDrawable(shape, Gravity.LEFT, 1, -1);
+                }
+                final Drawable secondaryTrack;
+                {
+                    var shape = new ShapeDrawable();
+                    shape.setShape(ShapeDrawable.HLINE);
+                    shape.setStroke(dp(2), SystemTheme.COLOR_FOREGROUND_DISABLED);
+                    shape.setSize(-1, dp(2));
+                    shape.setCornerRadius(1);
+                    secondaryTrack = shape;
+                }
+                var progress = new LayerDrawable(secondaryTrack, track);
+                progress.setId(0, R.id.secondaryProgress);
+                progress.setId(1, R.id.progress);
+                setProgressDrawable(progress);
             }
             {
                 var thumb = new ShapeDrawable();
