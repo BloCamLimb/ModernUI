@@ -330,26 +330,46 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         window.swapInterval(1);
         LOGGER.info(MARKER, "Looping render thread");
 
-        while (!window.shouldClose()) {
-            boolean flushSurface = false;
-            if (mRoot != null) {
-                flushSurface = mRoot.flushDrawCommands(canvas, window, framebuffer);
+        if (Boolean.parseBoolean(System.getProperty("icyllis.modernui.newRenderLoop")))
+            while (!window.shouldClose()) {
+                boolean flushSurface = false;
+                if (mRoot != null) {
+                    flushSurface = mRoot.flushDrawCommands(canvas, window, framebuffer);
+                }
+                if (mRoot != null) {
+                    mRoot.mChoreographer.scheduleFrameAsync(Core.timeNanos());
+                }
+                if (flushSurface) {
+                    int width = window.getWidth(), height = window.getHeight();
+                    if (framebuffer.getAttachment(GL_COLOR_ATTACHMENT0).getWidth() > 0) {
+                        glBlitNamedFramebuffer(framebuffer.get(), DEFAULT_FRAMEBUFFER, 0, 0,
+                                width, height, 0, 0,
+                                width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+                    }
+                    window.swapBuffers();
+                } else {
+                    LockSupport.parkNanos((long) (1.0 / 576 * 1e9));
+                }
             }
-            if (mRoot != null) {
-                mRoot.mChoreographer.scheduleFrameAsync(Core.timeNanos());
-            }
-            if (flushSurface) {
+        else
+            while (!window.shouldClose()) {
                 int width = window.getWidth(), height = window.getHeight();
+                glBindFramebuffer(GL_FRAMEBUFFER, DEFAULT_FRAMEBUFFER);
+                glDisable(GL_CULL_FACE);
+                resetFrame(window);
+                if (mRoot != null) {
+                    mRoot.flushDrawCommands(canvas, window, framebuffer);
+                }
                 if (framebuffer.getAttachment(GL_COLOR_ATTACHMENT0).getWidth() > 0) {
                     glBlitNamedFramebuffer(framebuffer.get(), DEFAULT_FRAMEBUFFER, 0, 0,
                             width, height, 0, 0,
-                            width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+                            width, height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+                }
+                if (mRoot != null) {
+                    mRoot.mChoreographer.scheduleFrameAsync(Core.timeNanos());
                 }
                 window.swapBuffers();
-            } else {
-                LockSupport.parkNanos((long) (1.0 / 576 * 1e9));
             }
-        }
         GLSurfaceCanvas.getInstance().destroy();
         Core.requireDirectContext().unref();
         LOGGER.info(MARKER, "Quited render thread");

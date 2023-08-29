@@ -495,7 +495,7 @@ public class TestFragment extends Fragment {
                                     FileChannel channel = FileChannel.open(Path.of(path), StandardOpenOption.READ);
                                     OggDecoder decoder = new OggDecoder(channel);
                                     Track track = new Track(decoder);
-                                    sSpectrumGraph = new SpectrumGraph(track, TestLinearLayout.this, false, 600);
+                                    sSpectrumGraph = new SpectrumGraph(track, TestLinearLayout.this, true, 600);
                                     track.play();
 
                                     if (v1.isAttachedToWindow()) {

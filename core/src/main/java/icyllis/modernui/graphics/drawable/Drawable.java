@@ -18,15 +18,16 @@
 
 package icyllis.modernui.graphics.drawable;
 
-import icyllis.modernui.graphics.BlendMode;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.core.Handler;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.resources.Resources;
+import icyllis.modernui.resources.Theme;
 import icyllis.modernui.util.*;
 import icyllis.modernui.view.View;
 import icyllis.modernui.widget.ImageView;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
@@ -105,6 +106,7 @@ public abstract class Drawable {
 
     private int[] mStateSet = StateSet.WILD_CARD;
     private int mLevel = 0;
+    private int mChangingConfigurations = 0;
     private Rect mBounds = ZERO_BOUNDS_RECT;  // lazily becomes a new Rect()
     @Nullable
     private WeakReference<Callback> mCallback = null;
@@ -197,6 +199,30 @@ public abstract class Drawable {
             mBounds = new Rect();
         }
         return mBounds;
+    }
+
+    /**
+     * Set a mask of the configuration parameters for which this drawable
+     * may change, requiring that it be re-created.
+     *
+     * @param configs A mask of the changing configuration parameters
+     */
+    public void setChangingConfigurations(int configs) {
+        mChangingConfigurations = configs;
+    }
+
+    /**
+     * Return a mask of the configuration parameters for which this drawable
+     * may change, requiring that it be re-created.  The default implementation
+     * returns whatever was provided through
+     * {@link #setChangingConfigurations(int)} or 0 by default.  Subclasses
+     * may extend this to or in the changing configurations of any other
+     * drawables they hold.
+     *
+     * @return Returns a mask of the changing configuration parameters
+     */
+    public int getChangingConfigurations() {
+        return mChangingConfigurations;
     }
 
     /**
@@ -616,6 +642,18 @@ public abstract class Drawable {
     }
 
     /**
+     * Applies the specified theme to this Drawable and its children.
+     *
+     * @param t the theme to apply
+     */
+    public void applyTheme(@NonNull @SuppressWarnings("unused") Theme t) {
+    }
+
+    public boolean canApplyTheme() {
+        return false;
+    }
+
+    /**
      * Override this in your subclass to change appearance if you recognize the
      * specified state.
      *
@@ -738,6 +776,7 @@ public abstract class Drawable {
      * Clears the mutated state, allowing this drawable to be cached and
      * mutated again.
      */
+    @ApiStatus.Internal
     public void clearMutated() {
         // Default implementation is no-op.
     }
@@ -793,5 +832,80 @@ public abstract class Drawable {
         public @NonNull Drawable newDrawable(@Nullable Resources res) {
             return newDrawable();
         }
+
+        /**
+         * Return a bit mask of configuration changes that will impact
+         * this drawable (and thus require completely reloading it).
+         */
+        public int getChangingConfigurations() {
+            return 0;
+        }
+
+        /**
+         * Return whether this constant state can have a theme applied.
+         */
+        public boolean canApplyTheme() {
+            return false;
+        }
+    }
+
+    /**
+     * Scales a floating-point pixel value from the source density to the
+     * target density.
+     *
+     * @param pixels        the pixel value for use in source density
+     * @param sourceDensity the source density
+     * @param targetDensity the target density
+     * @return the scaled pixel value for use in target density
+     */
+    @ApiStatus.Internal
+    public static float scaleFromDensity(float pixels, int sourceDensity, int targetDensity) {
+        return pixels * targetDensity / sourceDensity;
+    }
+
+    /**
+     * Scales a pixel value from the source density to the target density,
+     * optionally handling the resulting pixel value as a size rather than an
+     * offset.
+     * <p>
+     * A size conversion involves rounding the base value and ensuring that
+     * a non-zero base value is at least one pixel in size.
+     * <p>
+     * An offset conversion involves simply truncating the base value to an
+     * integer.
+     *
+     * @param pixels        the pixel value for use in source density
+     * @param sourceDensity the source density
+     * @param targetDensity the target density
+     * @param isSize        {@code true} to handle the resulting scaled value as a
+     *                      size, or {@code false} to handle it as an offset
+     * @return the scaled pixel value for use in target density
+     */
+    @ApiStatus.Internal
+    public static int scaleFromDensity(
+            int pixels, int sourceDensity, int targetDensity, boolean isSize) {
+        if (pixels == 0 || sourceDensity == targetDensity) {
+            return pixels;
+        }
+
+        final float result = pixels * targetDensity / (float) sourceDensity;
+        if (!isSize) {
+            return (int) result;
+        }
+
+        final int rounded = Math.round(result);
+        if (rounded != 0) {
+            return rounded;
+        } else if (pixels > 0) {
+            return 1;
+        } else {
+            return -1;
+        }
+    }
+
+    @ApiStatus.Internal
+    public static int resolveDensity(@Nullable Resources r, int parentDensity) {
+        final int densityDpi = r == null ? parentDensity : r.getDisplayMetrics().densityDpi;
+        return densityDpi == 0 ? DisplayMetrics.DENSITY_DEFAULT : densityDpi;
     }
 }
