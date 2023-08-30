@@ -1,5 +1,20 @@
 Changelogs
 ===
+### Modern UI 3.8.1 (2023-08-30)
+#### Core Framework 3.8.1
+* Add LayerDrawable
+* Allow typeface change for toasts
+* Fix adapter views not getting attached
+* Fix changing focus with TAB key
+* Make ScrollView auto scroll to focus
+* Add implementation of LineBreakConfig
+* Stop text from being split into small MeasureText.Runs
+#### Arc 3D Graphics Engine 3.8.1
+* Add rect stroke bevel and round shaders
+* Limit FontAtlas size
+* Make use of GLSL version in ShaderCaps
+* Add numDraws and renderPasses stats
+
 ### Modern UI 3.8.0 (2023-08-10)
 #### Core Framework 3.8.0
 * Update font itemization for color emoji
