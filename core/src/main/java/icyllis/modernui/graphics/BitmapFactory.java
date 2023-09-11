@@ -609,7 +609,8 @@ public final class BitmapFactory {
         };
         try (MemoryStack stack = MemoryStack.stackPush();
              readcb; skipcb; eofcb) {
-            STBIIOCallbacks callbacks = STBIIOCallbacks.malloc(stack)
+            //TODO use malloc(stack) once we update to LWJGL 3.4.0 and drop LWJGL 3.2.0 support
+            STBIIOCallbacks callbacks = STBIIOCallbacks.mallocStack(stack)
                     .set(readcb, skipcb, eofcb);
             final boolean isU16, isHDR;
             if (!info && opts != null && opts.inPreferredFormat != null) {

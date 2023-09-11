@@ -1,5 +1,10 @@
 Changelogs
 ===
+### Modern UI 3.8.2 (2023-08-30)
+#### Core Framework 3.8.2
+* Add compatibility with LWJGL 3.2
+#### Arc 3D Graphics Engine 3.8.2
+
 ### Modern UI 3.8.1 (2023-08-30)
 #### Core Framework 3.8.1
 * Add LayerDrawable
