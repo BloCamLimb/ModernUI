@@ -1917,9 +1917,10 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
 
         if (type == BufferType.EDITABLE || needEditableForNotification) {
             createEditorIfNeeded();
+            mEditor.forgetUndoRedo();
             Editable t = mEditableFactory.newEditable(text);
             text = t;
-            t.setFilters(mFilters);
+            setFilters(t, mFilters);
         } else if (text instanceof PrecomputedText precomputed) {
             if (mTextDir == null) {
                 mTextDir = getTextDirectionHeuristic();
@@ -2069,11 +2070,37 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * Editable. Has no effect otherwise.
      */
     public void setFilters(@NonNull InputFilter... filters) {
-        mFilters = filters;
+        mFilters = Objects.requireNonNull(filters);
 
         if (mText instanceof Editable) {
-            ((Editable) mText).setFilters(filters);
+            setFilters((Editable) mText, filters);
         }
+    }
+
+    /**
+     * Sets the list of input filters on the specified Editable,
+     * and includes mInput in the list if it is an InputFilter.
+     */
+    private void setFilters(Editable e, InputFilter[] filters) {
+        if (mEditor != null) {
+            final boolean undoFilter = mEditor.mUndoInputFilter != null;
+            int num = 0;
+            if (undoFilter) num++;
+            if (num > 0) {
+                InputFilter[] nf = new InputFilter[filters.length + num];
+
+                System.arraycopy(filters, 0, nf, 0, filters.length);
+                num = 0;
+                if (undoFilter) {
+                    nf[filters.length] = mEditor.mUndoInputFilter;
+                    num++;
+                }
+
+                e.setFilters(nf);
+                return;
+            }
+        }
+        e.setFilters(filters);
     }
 
     /**
@@ -4293,7 +4320,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
 
     @Override
     public boolean onKeyShortcut(int keyCode, @NonNull KeyEvent event) {
-        if (event.isCtrlPressed()) {
+        if (event.hasModifiers(KeyEvent.META_CTRL_ON)) {
             // Handle Ctrl-only shortcuts.
             switch (keyCode) {
                 case KeyEvent.KEY_X:
@@ -4314,6 +4341,20 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
                 case KeyEvent.KEY_A:
                     if (canSelectAllText()) {
                         return onTextContextMenuItem(ID_SELECT_ALL);
+                    }
+                    break;
+                case KeyEvent.KEY_Z:
+                    if (canUndo()) {
+                        return onTextContextMenuItem(ID_UNDO);
+                    }
+                    break;
+            }
+        } else if (event.hasModifiers(KeyEvent.META_CTRL_ON | KeyEvent.META_SHIFT_ON)) {
+            // Handle Ctrl-Shift shortcuts.
+            switch (keyCode) {
+                case KeyEvent.KEY_Z:
+                    if (canRedo()) {
+                        return onTextContextMenuItem(ID_REDO);
                     }
                     break;
             }
@@ -4393,6 +4434,18 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
             case ID_SELECT_ALL -> {
                 selectAllText();
                 return true;
+            }
+            case ID_UNDO -> {
+                if (mEditor != null) {
+                    mEditor.undo();
+                }
+                return true;  // Returns true even if nothing was undone.
+            }
+            case ID_REDO -> {
+                if (mEditor != null) {
+                    mEditor.redo();
+                }
+                return true;  // Returns true even if nothing was undone.
             }
         }
         return false;
@@ -4563,6 +4616,14 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     int getOffsetAtCoordinate(int line, float x) {
         x = convertToLocalHorizontalCoordinate(x);
         return getLayout().getOffsetForHorizontal(line, x);
+    }
+
+    boolean canUndo() {
+        return mEditor != null && mEditor.canUndo();
+    }
+
+    boolean canRedo() {
+        return mEditor != null && mEditor.canRedo();
     }
 
     boolean canCut() {

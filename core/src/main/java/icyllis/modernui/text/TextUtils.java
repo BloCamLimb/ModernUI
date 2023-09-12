@@ -122,6 +122,22 @@ public final class TextUtils {
         return csq == null || csq.isEmpty();
     }
 
+    public static boolean contentEquals(@Nullable CharSequence a, @Nullable CharSequence b) {
+        if (a == b) return true;
+        int length;
+        if (a != null && b != null && (length = a.length()) == b.length()) {
+            if (a instanceof String && b instanceof String) {
+                return a.equals(b);
+            } else {
+                for (int i = 0; i < length; i++) {
+                    if (a.charAt(i) != b.charAt(i)) return false;
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static void getChars(@NonNull CharSequence s, int srcBegin, int srcEnd,
                                 @NonNull char[] dst, int dstBegin) {
         final Class<? extends CharSequence> c = s.getClass();
@@ -182,6 +198,31 @@ public final class TextUtils {
             return spans;
         }
         return copy;
+    }
+
+    /**
+     * Create a new String object containing the given range of characters
+     * from the source string.  This is different than simply calling
+     * {@link CharSequence#subSequence(int, int) CharSequence.subSequence}
+     * in that it does not preserve any style runs in the source sequence,
+     * allowing a more efficient implementation.
+     */
+    public static String substring(CharSequence source, int start, int end) {
+        if (source instanceof String)
+            return ((String) source).substring(start, end);
+        if (source instanceof StringBuilder)
+            return ((StringBuilder) source).substring(start, end);
+        if (source instanceof StringBuffer)
+            return ((StringBuffer) source).substring(start, end);
+        if (source instanceof SpannableStringInternal)
+            return source.toString().substring(start, end);
+
+        char[] temp = obtain(end - start);
+        getChars(source, start, end, temp, 0);
+        String ret = new String(temp, 0, end - start);
+        recycle(temp);
+
+        return ret;
     }
 
     public static int indexOf(CharSequence s, char ch) {
