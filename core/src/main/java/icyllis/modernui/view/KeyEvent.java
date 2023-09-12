@@ -392,7 +392,8 @@ public class KeyEvent extends InputEvent {
         if (modifiers == 0) {
             return mModifiers == 0;
         }
-        return (mModifiers & modifiers) == modifiers;
+        //TODO review
+        return mModifiers == modifiers;
     }
 
     /**
