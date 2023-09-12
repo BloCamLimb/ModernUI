@@ -336,6 +336,7 @@ public class Editor {
                 .setOnMenuItemClickListener(mOnContextMenuItemClickListener)
                 .setEnabled(mTextView.canUndo());
         menu.add(Menu.NONE, TextView.ID_REDO, MENU_ITEM_ORDER_REDO, "Redo")
+                .setAlphabeticShortcut('y')
                 .setOnMenuItemClickListener(mOnContextMenuItemClickListener)
                 .setEnabled(mTextView.canRedo());
 
