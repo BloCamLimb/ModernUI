@@ -297,7 +297,7 @@ public final class MenuItemImpl implements MenuItem {
                 mMenu.isQwertyMode() ? mShortcutAlphabeticModifiers : mShortcutNumericModifiers;
         appendModifier(sb, modifiers, KeyEvent.META_CTRL_ON, "Ctrl + ");
         appendModifier(sb, modifiers, KeyEvent.META_ALT_ON, "Alt + ");
-        appendModifier(sb, modifiers, KeyEvent.META_SHIFT_ON, "Shirt + ");
+        appendModifier(sb, modifiers, KeyEvent.META_SHIFT_ON, "Shift + ");
 
         sb.append(Character.toUpperCase(shortcut));
 
