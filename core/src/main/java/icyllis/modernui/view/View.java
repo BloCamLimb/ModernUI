@@ -38,8 +38,7 @@ import org.jetbrains.annotations.ApiStatus;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
@@ -3030,19 +3029,18 @@ public class View implements Drawable.Callback {
      * @param params layout parameters for this view
      */
     public void setLayoutParams(@NonNull ViewGroup.LayoutParams params) {
-        mLayoutParams = params;
+        mLayoutParams = Objects.requireNonNull(params);
         resolveLayoutParams();
         if (mParent instanceof ViewGroup) {
-            ((View) mParent).requestLayout();
+            ((ViewGroup) mParent).onSetLayoutParams(this, params);
         }
         requestLayout();
     }
 
     /**
      * Resolve the layout parameters depending on the resolved layout direction
-     *
-     * @hide
      */
+    @ApiStatus.Internal
     public void resolveLayoutParams() {
         if (mLayoutParams != null) {
             mLayoutParams.resolveLayoutDirection(getLayoutDirection());
@@ -3259,11 +3257,10 @@ public class View implements Drawable.Callback {
     }
 
     /**
-     * {@hide}
-     *
      * @param isRoot true if the view belongs to the root namespace, false
      *               otherwise
      */
+    @ApiStatus.Internal
     public void setIsRootNamespace(boolean isRoot) {
         if (isRoot) {
             mPrivateFlags |= PFLAG_IS_ROOT_NAMESPACE;
@@ -3273,10 +3270,9 @@ public class View implements Drawable.Callback {
     }
 
     /**
-     * {@hide}
-     *
      * @return true if the view belongs to the root namespace, false otherwise
      */
+    @ApiStatus.Internal
     public boolean isRootNamespace() {
         return (mPrivateFlags & PFLAG_IS_ROOT_NAMESPACE) != 0;
     }
@@ -5721,8 +5717,8 @@ public class View implements Drawable.Callback {
      * FastScroller is visible.
      *
      * @return whether to temporarily hide the vertical scrollbar
-     * @hide
      */
+    @ApiStatus.Internal
     protected boolean isVerticalScrollBarHidden() {
         return false;
     }
@@ -7531,8 +7527,8 @@ public class View implements Drawable.Callback {
      * translation.
      *
      * @param hasTranslationTransientState true if this view has translation transient state
-     * @hide
      */
+    @ApiStatus.Internal
     public void setHasTranslationTransientState(boolean hasTranslationTransientState) {
         if (hasTranslationTransientState) {
             mPrivateFlags4 |= PFLAG4_HAS_TRANSLATION_TRANSIENT_STATE;
@@ -7541,9 +7537,7 @@ public class View implements Drawable.Callback {
         }
     }
 
-    /**
-     * @hide
-     */
+    @ApiStatus.Internal
     public boolean hasTranslationTransientState() {
         return (mPrivateFlags4 & PFLAG4_HAS_TRANSLATION_TRANSIENT_STATE)
                 == PFLAG4_HAS_TRANSLATION_TRANSIENT_STATE;
@@ -7796,8 +7790,8 @@ public class View implements Drawable.Callback {
      * {@link #LAYOUT_DIRECTION_RTL},
      * {@link #LAYOUT_DIRECTION_INHERIT} or
      * {@link #LAYOUT_DIRECTION_LOCALE}.
-     * @hide
      */
+    @ApiStatus.Internal
     public final int getRawLayoutDirection() {
         return (mPrivateFlags2 & PFLAG2_LAYOUT_DIRECTION_MASK) >> PFLAG2_LAYOUT_DIRECTION_MASK_SHIFT;
     }
@@ -7851,8 +7845,8 @@ public class View implements Drawable.Callback {
      * layout attribute and/or the inherited value from the parent
      *
      * @return true if the layout is right-to-left.
-     * @hide
      */
+    @ApiStatus.Internal
     public final boolean isLayoutRtl() {
         return (getLayoutDirection() == LAYOUT_DIRECTION_RTL);
     }
@@ -7861,8 +7855,8 @@ public class View implements Drawable.Callback {
      * Resolve all RTL related properties.
      *
      * @return true if resolution of RTL properties has been done
-     * @hide
      */
+    @ApiStatus.Internal
     public boolean resolveRtlPropertiesIfNeeded() {
         // Overall check
         if ((mPrivateFlags2 & ALL_RTL_PROPERTIES_RESOLVED) == ALL_RTL_PROPERTIES_RESOLVED) {
@@ -7895,9 +7889,8 @@ public class View implements Drawable.Callback {
 
     /**
      * Reset resolution of all RTL related properties.
-     *
-     * @hide
      */
+    @ApiStatus.Internal
     void resetRtlProperties() {
         resetResolvedLayoutDirection();
         resetResolvedTextDirection();
@@ -7927,8 +7920,8 @@ public class View implements Drawable.Callback {
      * that the parent directionality can and will be resolved before its children.
      *
      * @return true if resolution has been done, false otherwise.
-     * @hide
      */
+    @ApiStatus.Internal
     public boolean resolveLayoutDirection() {
         // Clear any previous layout direction resolution
         mPrivateFlags2 &= ~PFLAG2_LAYOUT_DIRECTION_RESOLVED_MASK;
@@ -7995,9 +7988,8 @@ public class View implements Drawable.Callback {
     /**
      * Reset the resolved layout direction. Layout direction will be resolved during a call to
      * {@link #onMeasure(int, int)}.
-     *
-     * @hide
      */
+    @ApiStatus.Internal
     void resetResolvedLayoutDirection() {
         // Reset the current resolved bits
         mPrivateFlags2 &= ~PFLAG2_LAYOUT_DIRECTION_RESOLVED_MASK;
@@ -8005,8 +7997,8 @@ public class View implements Drawable.Callback {
 
     /**
      * @return true if the layout direction is inherited.
-     * @hide
      */
+    @ApiStatus.Internal
     public final boolean isLayoutDirectionInherited() {
         return (getRawLayoutDirection() == LAYOUT_DIRECTION_INHERIT);
     }
@@ -8032,8 +8024,8 @@ public class View implements Drawable.Callback {
      * {@link #TEXT_DIRECTION_LOCALE},
      * {@link #TEXT_DIRECTION_FIRST_STRONG_LTR},
      * {@link #TEXT_DIRECTION_FIRST_STRONG_RTL}
-     * @hide
      */
+    @ApiStatus.Internal
     public final int getRawTextDirection() {
         return (mPrivateFlags2 & PFLAG2_TEXT_DIRECTION_MASK) >> PFLAG2_TEXT_DIRECTION_MASK_SHIFT;
     }
@@ -8097,8 +8089,8 @@ public class View implements Drawable.Callback {
      * Resolve the text direction.
      *
      * @return true if resolution has been done, false otherwise.
-     * @hide
      */
+    @ApiStatus.Internal
     public boolean resolveTextDirection() {
         // Reset any previous text direction resolution
         mPrivateFlags2 &= ~(PFLAG2_TEXT_DIRECTION_RESOLVED | PFLAG2_TEXT_DIRECTION_RESOLVED_MASK);
@@ -8202,8 +8194,8 @@ public class View implements Drawable.Callback {
 
     /**
      * @return true if text direction is inherited.
-     * @hide
      */
+    @ApiStatus.Internal
     public final boolean isTextDirectionInherited() {
         return (getRawTextDirection() == TEXT_DIRECTION_INHERIT);
     }
@@ -8228,8 +8220,8 @@ public class View implements Drawable.Callback {
      * {@link #TEXT_ALIGNMENT_TEXT_END},
      * {@link #TEXT_ALIGNMENT_VIEW_START},
      * {@link #TEXT_ALIGNMENT_VIEW_END}
-     * @hide
      */
+    @ApiStatus.Internal
     public final int getRawTextAlignment() {
         return (mPrivateFlags2 & PFLAG2_TEXT_ALIGNMENT_MASK) >> PFLAG2_TEXT_ALIGNMENT_MASK_SHIFT;
     }
@@ -8292,8 +8284,8 @@ public class View implements Drawable.Callback {
      * Resolve the text alignment.
      *
      * @return true if resolution has been done, false otherwise.
-     * @hide
      */
+    @ApiStatus.Internal
     public boolean resolveTextAlignment() {
         // Reset any previous text alignment resolution
         mPrivateFlags2 &= ~(PFLAG2_TEXT_ALIGNMENT_RESOLVED | PFLAG2_TEXT_ALIGNMENT_RESOLVED_MASK);
@@ -8398,8 +8390,8 @@ public class View implements Drawable.Callback {
 
     /**
      * @return true if text alignment is inherited.
-     * @hide
      */
+    @ApiStatus.Internal
     public final boolean isTextAlignmentInherited() {
         return (getRawTextAlignment() == TEXT_ALIGNMENT_INHERIT);
     }
@@ -8423,9 +8415,8 @@ public class View implements Drawable.Callback {
     /**
      * Resolves padding depending on layout direction, if applicable, and
      * recomputes internal padding values to adjust for scroll bars.
-     *
-     * @hide
      */
+    @ApiStatus.Internal
     public void resolvePadding() {
         final int resolvedLayoutDirection = getLayoutDirection();
 
@@ -9283,8 +9274,8 @@ public class View implements Drawable.Callback {
      *
      * @return true if the foreground should draw inside the padding region or false
      * if it should draw inset by the view's padding
-     * @hide internal use only; only used by FrameLayout and internal screen layouts.
      */
+    @ApiStatus.Internal // internal use only; only used by FrameLayout and internal screen layouts.
     public boolean isForegroundInsidePadding() {
         return mForegroundInfo == null || mForegroundInfo.mInsidePadding;
     }
@@ -9376,8 +9367,8 @@ public class View implements Drawable.Callback {
      *
      * @param ev the view-local motion event
      * @return false if the transformation could not be applied
-     * @hide
      */
+    @ApiStatus.Internal
     public boolean toGlobalMotionEvent(@NonNull MotionEvent ev) {
         final AttachInfo info = mAttachInfo;
         if (info == null) {
@@ -9397,8 +9388,8 @@ public class View implements Drawable.Callback {
      *
      * @param ev the on-screen motion event
      * @return false if the transformation could not be applied
-     * @hide
      */
+    @ApiStatus.Internal
     public boolean toLocalMotionEvent(@NonNull MotionEvent ev) {
         final AttachInfo info = mAttachInfo;
         if (info == null) {
