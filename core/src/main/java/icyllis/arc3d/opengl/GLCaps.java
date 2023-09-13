@@ -1155,57 +1155,44 @@ public final class GLCaps extends Caps {
             // Make sure we didn't set fbo attachable with msaa and not fbo attachable
             if ((info.mFlags & FormatInfo.COLOR_ATTACHMENT_WITH_MSAA_FLAG) != 0 &&
                     (info.mFlags & FormatInfo.COLOR_ATTACHMENT_FLAG) == 0) {
-                throw new AssertionError();
+                assert false;
             }
             // Make sure all renderbuffer formats can also be texture formats
             if ((info.mFlags & FormatInfo.COLOR_ATTACHMENT_FLAG) != 0 &&
                     (info.mFlags & FormatInfo.TEXTURABLE_FLAG) == 0) {
-                throw new AssertionError();
+                assert false;
             }
 
             // Make sure we set all the formats' FormatType
             if (info.mFormatType == FormatInfo.FORMAT_TYPE_UNKNOWN) {
-                throw new AssertionError();
+                assert false;
             }
 
             // All texturable format should have their internal formats
             if ((info.mFlags & FormatInfo.TEXTURABLE_FLAG) != 0 &&
                     info.mInternalFormatForTexture == 0) {
-                throw new AssertionError();
+                assert false;
             }
 
             // All renderable format should have their internal formats
             if ((info.mFlags & FormatInfo.COLOR_ATTACHMENT_FLAG) != 0 &&
                     info.mInternalFormatForRenderbuffer == 0) {
-                throw new AssertionError();
-            }
-
-            // Only compressed format doesn't support glTexStorage
-            if ((info.mFlags & FormatInfo.TEXTURABLE_FLAG) != 0 &&
-                    (info.mFlags & FormatInfo.TEXTURE_STORAGE_FLAG) == 0 &&
-                    !GLCore.glFormatIsCompressed(GLCore.glIndexToFormat(index))) {
-                throw new AssertionError();
-            }
-
-            // Only compressed format doesn't support renderbuffer
-            if (info.mInternalFormatForTexture != info.mInternalFormatForRenderbuffer &&
-                    !GLCore.glFormatIsCompressed(GLCore.glIndexToFormat(index))) {
-                throw new AssertionError();
+                assert false;
             }
 
             // Make sure if we added a ColorTypeInfo we filled it out
             for (ColorTypeInfo ctInfo : info.mColorTypeInfos) {
                 if (ctInfo.mColorType == ImageInfo.CT_UNKNOWN) {
-                    throw new AssertionError();
+                    assert false;
                 }
                 // Seems silly to add a color type if we don't support any flags on it
                 if (ctInfo.mFlags == 0) {
-                    throw new AssertionError();
+                    assert false;
                 }
                 // Make sure if we added any ExternalIOFormats we filled it out
                 for (ExternalIOFormat ioInfo : ctInfo.mExternalIOFormats) {
                     if (ioInfo.mColorType == ImageInfo.CT_UNKNOWN) {
-                        throw new AssertionError();
+                        assert false;
                     }
                 }
             }
