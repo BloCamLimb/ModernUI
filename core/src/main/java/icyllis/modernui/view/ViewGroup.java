@@ -25,6 +25,7 @@ import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.util.Pools;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.*;
 import java.util.function.Predicate;
@@ -104,8 +105,8 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
 
     /**
      * When set, this ViewGroup should not intercept touch events.
-     * {@hide}
      */
+    @ApiStatus.Internal
     protected static final int FLAG_DISALLOW_INTERCEPT = 0x80000;
 
     /**
@@ -1272,9 +1273,8 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
 
     /**
      * {@inheritDoc}
-     *
-     * @hide
      */
+    @ApiStatus.Internal
     @Override
     public void dispatchStartTemporaryDetach() {
         super.dispatchStartTemporaryDetach();
@@ -1287,9 +1287,8 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
 
     /**
      * {@inheritDoc}
-     *
-     * @hide
      */
+    @ApiStatus.Internal
     @Override
     public void dispatchFinishTemporaryDetach() {
         super.dispatchFinishTemporaryDetach();
@@ -1427,9 +1426,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         return isInView;
     }
 
-    /**
-     * @hide
-     */
+    @ApiStatus.Internal
     protected void transformPointToViewLocal(@NonNull float[] point, @NonNull View child) {
         point[0] += mScrollX - child.mLeft;
         point[1] += mScrollY - child.mTop;
@@ -1550,8 +1547,8 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      *              This value is relative to the {@link #getChildAt(int) index} values in the normal
      *              child list of this container, where any transient view at a particular index will
      *              be drawn before any normal child at that same index.
-     * @hide
      */
+    @ApiStatus.Internal
     public void addTransientView(View view, int index) {
         if (index < 0 || view == null) {
             return;
@@ -1591,8 +1588,8 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      * such transient view, this method does nothing.
      *
      * @param view The transient view to be removed
-     * @hide
      */
+    @ApiStatus.Internal
     public void removeTransientView(View view) {
         if (mTransientViews == null) {
             return;
@@ -1618,9 +1615,9 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      * {@link #getTransientView(int)} and {@link #getTransientViewIndex(int)}.
      *
      * @return The number of transient views in this container
-     * @hide
      * @see #addTransientView(View, int)
      */
+    @ApiStatus.Internal
     public int getTransientViewCount() {
         return mTransientIndices == null ? 0 : mTransientIndices.size();
     }
@@ -1633,8 +1630,8 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      *                 and less than the value returned by {@link #getTransientViewCount()}.
      * @return The index of the transient view stored in the given position if the
      * position is valid, otherwise -1
-     * @hide
      */
+    @ApiStatus.Internal
     public int getTransientViewIndex(int position) {
         if (position < 0 || mTransientIndices == null || position >= mTransientIndices.size()) {
             return -1;
@@ -1650,8 +1647,8 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      *                 and less than the value returned by {@link #getTransientViewCount()}.
      * @return The transient view stored in the given position if the
      * position is valid, otherwise null
-     * @hide
      */
+    @ApiStatus.Internal
     public View getTransientView(int position) {
         if (mTransientViews == null || position >= mTransientViews.size()) {
             return null;
@@ -3058,8 +3055,8 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     /**
      * @param forceParentCheck true to guarantee that this call will propagate to all ancestors,
      *                         false otherwise
-     * @hide
      */
+    @ApiStatus.Internal
     public boolean getChildVisibleRect(@NonNull View child, Rect r, @Nullable Point offset, boolean forceParentCheck) {
         // It doesn't make a whole lot of sense to call this on a view that isn't attached,
         // but for some simple tests it can be useful. If we don't have attach info this
@@ -3568,8 +3565,8 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      * starts all pending transitions prior to the drawing phase in the current traversal.
      *
      * @param transition The LayoutTransition to be started on the next traversal.
-     * @hide
      */
+    @ApiStatus.Internal
     public void requestTransitionStart(LayoutTransition transition) {
         ViewRoot viewAncestor = mAttachInfo != null ? mAttachInfo.mViewRoot : null;
         if (viewAncestor != null) {
@@ -3577,9 +3574,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         }
     }
 
-    /**
-     * @hide
-     */
+    @ApiStatus.Internal
     @Override
     public boolean resolveRtlPropertiesIfNeeded() {
         final boolean result = super.resolveRtlPropertiesIfNeeded();
@@ -3596,9 +3591,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         return result;
     }
 
-    /**
-     * @hide
-     */
+    @ApiStatus.Internal
     @Override
     public boolean resolveLayoutDirection() {
         final boolean result = super.resolveLayoutDirection();
@@ -3614,9 +3607,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         return result;
     }
 
-    /**
-     * @hide
-     */
+    @ApiStatus.Internal
     @Override
     public boolean resolveTextDirection() {
         final boolean result = super.resolveTextDirection();
@@ -3632,9 +3623,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         return result;
     }
 
-    /**
-     * @hide
-     */
+    @ApiStatus.Internal
     @Override
     public boolean resolveTextAlignment() {
         final boolean result = super.resolveTextAlignment();
@@ -3650,9 +3639,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         return result;
     }
 
-    /**
-     * @hide
-     */
+    @ApiStatus.Internal
     @Override
     public void resolvePadding() {
         super.resolvePadding();
@@ -3665,9 +3652,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         }
     }
 
-    /**
-     * @hide
-     */
+    @ApiStatus.Internal
     @Override
     protected void resolveDrawables() {
         super.resolveDrawables();
@@ -3680,9 +3665,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         }
     }
 
-    /**
-     * @hide
-     */
+    @ApiStatus.Internal
     @Override
     public void resolveLayoutParams() {
         super.resolveLayoutParams();
@@ -3693,9 +3676,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         }
     }
 
-    /**
-     * @hide
-     */
+    @ApiStatus.Internal
     @Override
     void resetResolvedLayoutDirection() {
         super.resetResolvedLayoutDirection();
@@ -3709,9 +3690,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         }
     }
 
-    /**
-     * @hide
-     */
+    @ApiStatus.Internal
     @Override
     void resetResolvedTextDirection() {
         super.resetResolvedTextDirection();
@@ -3725,9 +3704,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         }
     }
 
-    /**
-     * @hide
-     */
+    @ApiStatus.Internal
     @Override
     void resetResolvedTextAlignment() {
         super.resetResolvedTextAlignment();
@@ -3741,9 +3718,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         }
     }
 
-    /**
-     * @hide
-     */
+    @ApiStatus.Internal
     @Override
     void resetResolvedPadding() {
         super.resetResolvedPadding();
@@ -3757,9 +3732,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         }
     }
 
-    /**
-     * @hide
-     */
+    @ApiStatus.Internal
     @Override
     protected void resetResolvedDrawables() {
         super.resetResolvedDrawables();
@@ -4135,9 +4108,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         return mSuppressLayout;
     }
 
-    /**
-     * @hide
-     */
+    @ApiStatus.Internal
     @Override
     protected void internalSetPadding(int left, int top, int right, int bottom) {
         super.internalSetPadding(left, top, right, bottom);
@@ -4156,8 +4127,8 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      * @param child         The view whose visibility has changed
      * @param oldVisibility The previous visibility value (GONE, INVISIBLE, or VISIBLE).
      * @param newVisibility The new visibility value (GONE, INVISIBLE, or VISIBLE).
-     * @hide
      */
+    @ApiStatus.Internal
     protected void onChildVisibilityChanged(View child, int oldVisibility, int newVisibility) {
         if (mTransition != null) {
             if (newVisibility == VISIBLE) {
@@ -4281,6 +4252,11 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         return mNestedScrollAxesTouch | mNestedScrollAxesNonTouch;
     }
 
+    @ApiStatus.Internal
+    protected void onSetLayoutParams(View child, LayoutParams layoutParams) {
+        requestLayout();
+    }
+
     /**
      * Returns a safe set of layout parameters based on the supplied layout params.
      * When a ViewGroup is passed a View whose layout params do not pass the test of
@@ -4387,9 +4363,8 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
 
         /**
          * Used internally by MarginLayoutParams.
-         *
-         * @hide
          */
+        @ApiStatus.Internal
         LayoutParams() {
         }
 
@@ -4455,9 +4430,8 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
 
         /**
          * The default start and end margin.
-         *
-         * @hide
          */
+        @ApiStatus.Internal
         public static final int DEFAULT_MARGIN_RELATIVE = Integer.MIN_VALUE;
 
         /**
@@ -4469,9 +4443,8 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
          * Bit  5: need resolution
          * <p>
          * Bit 6 to 7 not used
-         *
-         * @hide
          */
+        @ApiStatus.Internal
         byte mMarginFlags;
 
         private static final int LAYOUT_DIRECTION_MASK = 0x00000003;
@@ -4524,9 +4497,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
             mMarginFlags |= RIGHT_MARGIN_UNDEFINED_MASK;
         }
 
-        /**
-         * @hide Used internally.
-         */
+        @ApiStatus.Internal
         public final void copyMarginsFrom(@NonNull MarginLayoutParams source) {
             this.leftMargin = source.leftMargin;
             this.topMargin = source.topMargin;
@@ -4573,7 +4544,6 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
          * @param top    the top margin size
          * @param end    the right margin size
          * @param bottom the bottom margin size
-         * @hide
          */
         public void setMarginsRelative(int start, int top, int end, int bottom) {
             startMargin = start;
@@ -4727,9 +4697,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
             mMarginFlags &= ~NEED_RESOLUTION_MASK;
         }
 
-        /**
-         * @hide
-         */
+        @ApiStatus.Internal
         public boolean isLayoutRtl() {
             return ((mMarginFlags & LAYOUT_DIRECTION_MASK) == View.LAYOUT_DIRECTION_RTL);
         }
