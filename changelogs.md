@@ -2,6 +2,7 @@ Changelogs
 ===
 ### Modern UI 3.8.2 (2023-08-30)
 #### Core Framework 3.8.2
+* Add TableLayout
 * Add GridLayout
 * Add UndoManager
 * Add compatibility with LWJGL 3.2
