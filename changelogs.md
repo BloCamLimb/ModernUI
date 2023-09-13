@@ -1,6 +1,6 @@
 Changelogs
 ===
-### Modern UI 3.8.2 (2023-08-30)
+### Modern UI 3.8.2 (2023-09-13)
 #### Core Framework 3.8.2
 * Add GridView
 * Add TableLayout
@@ -8,7 +8,7 @@ Changelogs
 * Add UndoManager
 * Add compatibility with LWJGL 3.2
 #### Arc 3D Graphics Engine 3.8.2
-* Fix compatibility with OpenGL ES 3.0
+* Fix compatibility with OpenGL 3.3
 
 ### Modern UI 3.8.1 (2023-08-30)
 #### Core Framework 3.8.1
