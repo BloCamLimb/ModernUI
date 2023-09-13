@@ -2145,18 +2145,11 @@ public class GridLayout extends ViewGroup {
      * <p>
      * Intervals are often written as {@code [min, max]} and represent the set of values
      * {@code x} such that {@code min <= x < max}.
+     *
+     * @param min The minimum value.
+     * @param max The maximum value.
      */
-    final static class Interval {
-        /**
-         * The minimum value.
-         */
-        public final int min;
-
-        /**
-         * The maximum value.
-         */
-        public final int max;
-
+    record Interval(int min, int max) {
         /**
          * Construct a new Interval, {@code interval}, where:
          * <ul>
@@ -2167,55 +2160,16 @@ public class GridLayout extends ViewGroup {
          * @param min the minimum value.
          * @param max the maximum value.
          */
-        public Interval(int min, int max) {
-            this.min = min;
-            this.max = max;
+        Interval {
         }
 
         int size() {
             return max - min;
         }
 
+        @NonNull
         Interval inverse() {
             return new Interval(max, min);
-        }
-
-        /**
-         * Returns {@code true} if the {@link #getClass class},
-         * {@link #min} and {@link #max} properties of this Interval and the
-         * supplied parameter are pairwise equal; {@code false} otherwise.
-         *
-         * @param that the object to compare this interval with
-         * @return {@code true} if the specified object is equal to this
-         * {@code Interval}, {@code false} otherwise.
-         */
-        @Override
-        public boolean equals(Object that) {
-            if (this == that) {
-                return true;
-            }
-            if (that == null || getClass() != that.getClass()) {
-                return false;
-            }
-
-            Interval interval = (Interval) that;
-
-            if (max != interval.max) {
-                return false;
-            }
-            //noinspection RedundantIfStatement
-            if (min != interval.min) {
-                return false;
-            }
-
-            return true;
-        }
-
-        @Override
-        public int hashCode() {
-            int result = min;
-            result = 31 * result + max;
-            return result;
         }
 
         @Override
