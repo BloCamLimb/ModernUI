@@ -7,8 +7,7 @@ plugins {
 apply plugin: 'java'
 
 version = "${core_version}" as String
-group = 'icyllis.akashigi'
-archivesBaseName = 'AkashiGI'
+group = 'icyllis.arc3d'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
@@ -87,7 +86,7 @@ java {
 jar {
     manifest {
         attributes(
-                "Specification-Title": "AkashiGI",
+                "Specification-Title": project.name,
                 "Specification-Vendor": "BloCamLimb",
                 "Specification-Version": "1",
                 "Implementation-Title": project.name,
@@ -142,11 +141,11 @@ publishing {
                 name = rootProject.name
                 packaging = 'pom'
                 scm {
-                    url = 'https://github.com/BloCamLimb/AkashiGI.git'
+                    url = 'https://github.com/BloCamLimb/Arc3D.git'
                 }
                 issueManagement {
                     system = 'github'
-                    url = 'https://github.com/BloCamLimb/AkashiGI/issues'
+                    url = 'https://github.com/BloCamLimb/Arc3D/issues'
                 }
                 licenses {
                     license {
