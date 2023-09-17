@@ -450,7 +450,7 @@ public class TestFragment extends Fragment {
             } catch (IOException ignored) {
             }*/
             tv.setLinksClickable(true);
-            //tv.setTextIsSelectable(true);
+            tv.setTextIsSelectable(true);
             tv.setTextAlignment(TEXT_ALIGNMENT_GRAVITY);
 
             mTextView = tv;
