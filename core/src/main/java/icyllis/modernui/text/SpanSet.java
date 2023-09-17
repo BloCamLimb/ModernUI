@@ -18,8 +18,9 @@
 
 package icyllis.modernui.text;
 
-import javax.annotation.Nonnull;
-import java.util.ArrayList;
+import icyllis.modernui.annotation.NonNull;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+
 import java.util.Iterator;
 
 /**
@@ -28,49 +29,81 @@ import java.util.Iterator;
  * <p>
  * Fields are public for a convenient direct access (read only).
  * <p>
- * Note that empty spans are ignored by this class.
+ * Note that empty spans are ignored by this class by default.
  */
-public class SpanSet<E> extends ArrayList<E> {
+public class SpanSet<E> extends ObjectArrayList<E> {
 
-    private final Class<? extends E> mType;
+    final Class<? extends E> mType;
+    final boolean mIgnoreEmptySpans;
 
     public int[] mSpanStarts;
     public int[] mSpanEnds;
     public int[] mSpanFlags;
 
-    public SpanSet(@Nonnull Class<? extends E> type) {
-        mType = type;
+    public SpanSet(@NonNull Class<? extends E> type) {
+        this(type, true);
     }
 
-    public boolean init(@Nonnull Spanned spanned, int start, int limit) {
+    public SpanSet(@NonNull Class<? extends E> type, boolean ignoreEmptySpans) {
+        mType = type;
+        mIgnoreEmptySpans = ignoreEmptySpans;
+    }
+
+    void add(int index, E span, int start, int end, int flags) {
+        grow(size + 1);
+        if (index != size) {
+            System.arraycopy(mSpanStarts, index, mSpanStarts, index + 1, size - index);
+            System.arraycopy(mSpanEnds, index, mSpanEnds, index + 1, size - index);
+            System.arraycopy(mSpanFlags, index, mSpanFlags, index + 1, size - index);
+        }
+        mSpanStarts[index] = start;
+        mSpanEnds[index] = end;
+        mSpanFlags[index] = flags;
+        add(span);
+    }
+
+    private void grow(int length) {
+        if (mSpanStarts == null) {
+            length = Math.max(length, 10);
+        } else if (mSpanStarts.length < length) {
+            length = Math.max(length, mSpanStarts.length + (mSpanStarts.length >> 1));
+        } else {
+            length = 0;
+        }
+        if (length > 0) {
+            // These arrays may end up being too large because of the discarded empty spans
+            mSpanStarts = new int[length];
+            mSpanEnds = new int[length];
+            mSpanFlags = new int[length];
+        }
+    }
+
+    public boolean init(@NonNull Spanned spanned, int start, int limit) {
         spanned.getSpans(start, limit, mType, this);
         final int length = size();
 
         if (length > 0) {
-            if (mSpanStarts == null || mSpanStarts.length < length) {
-                // These arrays may end up being too large because of the discarded empty spans
-                mSpanStarts = new int[length];
-                mSpanEnds = new int[length];
-                mSpanFlags = new int[length];
-            }
+            if (!(spanned instanceof SpannableStringInternal)) {
+                grow(length);
 
-            int size = 0;
-            for (Iterator<E> it = iterator(); it.hasNext(); ) {
-                E span = it.next();
-                final int spanStart = spanned.getSpanStart(span);
-                final int spanEnd = spanned.getSpanEnd(span);
-                if (spanStart == spanEnd) {
-                    it.remove();
-                    continue;
+                int size = 0;
+                for (Iterator<E> it = iterator(); it.hasNext(); ) {
+                    E span = it.next();
+                    final int spanStart = spanned.getSpanStart(span);
+                    final int spanEnd = spanned.getSpanEnd(span);
+                    if (mIgnoreEmptySpans && spanStart == spanEnd) {
+                        it.remove();
+                        continue;
+                    }
+
+                    final int spanFlag = spanned.getSpanFlags(span);
+
+                    mSpanStarts[size] = spanStart;
+                    mSpanEnds[size] = spanEnd;
+                    mSpanFlags[size] = spanFlag;
+
+                    size++;
                 }
-
-                final int spanFlag = spanned.getSpanFlags(span);
-
-                mSpanStarts[size] = spanStart;
-                mSpanEnds[size] = spanEnd;
-                mSpanFlags[size] = spanFlag;
-
-                size++;
             }
             return size > 0;
         }
