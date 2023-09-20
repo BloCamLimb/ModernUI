@@ -1,6 +1,7 @@
 /*
- * Arc 3D.
- * Copyright (C) 2022-2023 BloCamLimb. All rights reserved.
+ * This file is part of Arc 3D.
+ *
+ * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -28,9 +29,9 @@ import icyllis.arc3d.core.RefCnt;
  * wants to share a reference, it calls {@link #ref()}. When an owner wants
  * to release its reference, it calls {@link #unref()}. When the shared
  * object's reference count goes to zero as the result of an {@link #unref()}
- * call, its {@link #dispose()} is called. It is an error for the destructor
+ * call, its {@link #deallocate()} is called. It is an error for the destructor
  * to be called explicitly (or via the object going out of scope on the
- * stack or calling {@link #dispose()}) if {@link #getRefCnt()} > 1.
+ * stack or calling {@link #deallocate()}) if {@link #getRefCnt()} > 1.
  */
 public abstract class ManagedResource extends RefCnt {
 

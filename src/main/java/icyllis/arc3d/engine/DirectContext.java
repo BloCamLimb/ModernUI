@@ -1,6 +1,7 @@
 /*
- * Arc 3D.
- * Copyright (C) 2022-2023 BloCamLimb. All rights reserved.
+ * This file is part of Arc 3D.
+ *
+ * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -156,8 +157,8 @@ public final class DirectContext extends RecordingContext {
     }
 
     @Override
-    protected void dispose() {
-        super.dispose();
+    protected void deallocate() {
+        super.deallocate();
         if (mResourceCache != null) {
             mResourceCache.releaseAll();
         }

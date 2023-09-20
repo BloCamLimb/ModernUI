@@ -1,6 +1,7 @@
 /*
- * Arc 3D.
- * Copyright (C) 2022-2023 BloCamLimb. All rights reserved.
+ * This file is part of Arc 3D.
+ *
+ * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -35,7 +36,7 @@ public abstract class BaseDevice extends RefCnt implements MatrixProvider {
             CLIP_TYPE_COMPLEX = 2;
 
     final ImageInfo mInfo;
-    final Rect2i mBounds = new Rect2i();
+    protected final Rect2i mBounds = new Rect2i();
 
     final Matrix4 mLocalToDevice = Matrix4.identity();
 
@@ -57,29 +58,29 @@ public abstract class BaseDevice extends RefCnt implements MatrixProvider {
     }
 
     @Override
-    protected void dispose() {
+    protected void deallocate() {
     }
 
     /**
      * Return image info for this device.
      */
     @Nonnull
-    public final ImageInfo getImageInfo() {
+    public final ImageInfo imageInfo() {
         return mInfo;
     }
 
-    public final int getWidth() {
+    public final int width() {
         return mInfo.width();
     }
 
-    public final int getHeight() {
+    public final int height() {
         return mInfo.height();
     }
 
     /**
-     * @return read-only
+     * @return read-only bounds
      */
-    public final Rect2i getBounds() {
+    public final Rect2i bounds() {
         return mBounds;
     }
 
@@ -87,7 +88,7 @@ public abstract class BaseDevice extends RefCnt implements MatrixProvider {
      * Return the bounds of the device in the coordinate space of this device.
      */
     public final void getBounds(@Nonnull Rect2i bounds) {
-        bounds.set(getBounds());
+        bounds.set(bounds());
     }
 
     /**
@@ -96,7 +97,7 @@ public abstract class BaseDevice extends RefCnt implements MatrixProvider {
      * such as those associated with saveLayer may have a non-zero origin.
      */
     public final void getGlobalBounds(@Nonnull Rect2i bounds) {
-        mDeviceToGlobal.mapRectOut(getBounds(), bounds);
+        mDeviceToGlobal.mapRectOut(bounds(), bounds);
     }
 
     /**

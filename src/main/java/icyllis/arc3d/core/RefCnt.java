@@ -1,6 +1,7 @@
 /*
- * Arc 3D.
- * Copyright (C) 2022-2023 BloCamLimb. All rights reserved.
+ * This file is part of Arc 3D.
+ *
+ * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -29,10 +30,9 @@ import java.util.Comparator;
  * existing owner wants to share a reference, it calls {@link #ref()}.
  * When an owner wants to release its reference, it calls {@link #unref()}.
  * When the shared object's reference count goes to zero as the result of
- * an {@link #unref()} call, its {@link #dispose()} is called. It is an
- * error for the destructor to be called explicitly (or via the object
- * going out of scope on the stack or calling {@link #dispose()}) if
- * {@link #getRefCnt()} > 1.
+ * an {@link #unref()} call, its {@link #deallocate()} is called. It is an
+ * error for the destructor to be called explicitly (or calling
+ * {@link #deallocate()}) if {@link #getRefCnt()} > 1.
  */
 public abstract class RefCnt {
 
@@ -48,7 +48,7 @@ public abstract class RefCnt {
         }
         // linked structure will not create large arrays and we don't care about the CPU overhead
         TRACKER = Object2BooleanMaps.synchronize(
-                new Object2BooleanAVLTreeMap<>(Comparator.comparingInt(System::identityHashCode)));
+                new Object2BooleanRBTreeMap<>(Comparator.comparingInt(System::identityHashCode)));
         try {
             assert false;
         } catch (AssertionError e) {
@@ -118,20 +118,21 @@ public abstract class RefCnt {
      */
     public final void ref() {
         // stronger than std::memory_order_relaxed
-        if ((int) REF_CNT.getAndAddAcquire(this, 1) < 1) {
-            throw new IllegalStateException("Reference count has reached zero");
-        }
+        var refCnt = (int) REF_CNT.getAndAddAcquire(this, 1);
+        assert refCnt > 0 : "Reference count has reached zero";
     }
 
     /**
      * Decreases the reference count by 1 on the client. If the reference count is 1 before
-     * the decrement, then {@link #dispose()} is called. It's an error to call this method
+     * the decrement, then {@link #deallocate()} is called. It's an error to call this method
      * if the reference count has already reached zero.
      */
     public final void unref() {
         // stronger than std::memory_order_acq_rel
-        if ((int) REF_CNT.getAndAdd(this, -1) == 1) {
-            dispose();
+        var refCnt = (int) REF_CNT.getAndAdd(this, -1);
+        assert refCnt > 0 : "Reference count has reached zero";
+        if (refCnt == 1) {
+            deallocate();
             assert TRACKER.removeBoolean(this);
         }
     }
@@ -172,5 +173,5 @@ public abstract class RefCnt {
     /**
      * Override this method to invoke de-allocation of the underlying resource.
      */
-    protected abstract void dispose();
+    protected abstract void deallocate();
 }
