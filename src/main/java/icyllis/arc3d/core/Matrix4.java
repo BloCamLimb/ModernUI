@@ -1,6 +1,7 @@
 /*
- * Arc 3D.
- * Copyright (C) 2022-2023 BloCamLimb. All rights reserved.
+ * This file is part of Arc 3D.
+ *
+ * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -26,8 +27,13 @@ import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 
 /**
- * Represents a 4x4 row-major matrix using the right-hand rule.
- * The memory layout matches GLSL's column major and HLSL's row major.
+ * This class represents a 4x4 matrix and a 3D transformation, using the
+ * right-hand rule.
+ * <p>
+ * The memory layout (order of components) is the same as GLSL's column-major and
+ * HLSL's row-major, this is just a difference in naming and writing.
+ *
+ * @see Matrix
  */
 @SuppressWarnings("unused")
 public class Matrix4 implements Cloneable {
@@ -158,6 +164,108 @@ public class Matrix4 implements Cloneable {
         m.m33 = z;
         m.m44 = 1.0f;
         return m;
+    }
+
+    /**
+     * Create an orthographic projection matrix.
+     *
+     * @param left   the left frustum plane
+     * @param right  the right frustum plane
+     * @param bottom the bottom frustum plane
+     * @param top    the top frustum plane
+     * @param near   the near frustum plane, must be positive
+     * @param far    the far frustum plane, must be positive
+     * @return the resulting matrix
+     */
+    @Nonnull
+    public static Matrix4 makeOrthographic(float left, float right, float bottom, float top, float near, float far) {
+        final Matrix4 mat = new Matrix4();
+        float invRL = 1.0f / (right - left);
+        float invTB = 1.0f / (top - bottom);
+        float invNF = 1.0f / (near - far);
+        mat.m11 = 2.0f * invRL;
+        mat.m22 = 2.0f * invTB;
+        mat.m33 = 2.0f * invNF;
+        mat.m41 = -(right + left) * invRL;
+        mat.m42 = -(top + bottom) * invTB;
+        mat.m43 = (near + far) * invNF;
+        mat.m44 = 1.0f;
+        return mat;
+    }
+
+    /**
+     * Create an orthographic projection matrix. The left plane and top plane
+     * are considered to be 0.
+     *
+     * @param width  the distance from right frustum plane to left frustum plane
+     * @param height the distance from bottom frustum plane to top frustum plane
+     * @param near   the near frustum plane, must be positive
+     * @param far    the far frustum plane, must be positive
+     * @param flipY  whether to flip the projection vertically
+     * @return the resulting matrix
+     */
+    @Nonnull
+    public static Matrix4 makeOrthographic(float width, float height, float near, float far, boolean flipY) {
+        final Matrix4 mat = new Matrix4();
+        float invNF = 1.0f / (near - far);
+        mat.m11 = 2.0f / width;
+        mat.m22 = flipY ? -2.0f / height : 2.0f / height;
+        mat.m33 = 2.0f * invNF;
+        mat.m41 = -1.0f;
+        mat.m42 = flipY ? 1.0f : -1.0f;
+        mat.m43 = (near + far) * invNF;
+        mat.m44 = 1.0f;
+        return mat;
+    }
+
+    /**
+     * Create a perspective projection matrix.
+     *
+     * @param left   the left frustum plane
+     * @param right  the right frustum plane
+     * @param bottom the bottom frustum plane
+     * @param top    the top frustum plane
+     * @param near   the near frustum plane, must be positive
+     * @param far    the far frustum plane, must be positive
+     * @return the resulting matrix
+     */
+    @Nonnull
+    public static Matrix4 makePerspective(float left, float right, float bottom, float top, float near, float far) {
+        final Matrix4 mat = new Matrix4();
+        float invRL = 1.0f / (right - left);
+        float invTB = 1.0f / (top - bottom);
+        float invNF = 1.0f / (near - far);
+        float tNear = 2.0f * near;
+        mat.m11 = tNear * invRL;
+        mat.m22 = tNear * invTB;
+        mat.m31 = (right + left) * invRL;
+        mat.m32 = (top + bottom) * invTB;
+        mat.m33 = (near + far) * invNF;
+        mat.m34 = -1.0f;
+        mat.m43 = tNear * far * invNF;
+        return mat;
+    }
+
+    /**
+     * Create a perspective projection matrix.
+     *
+     * @param fov    the angle of field of view in radians (0,PI)
+     * @param aspect aspect ratio of the view (width / height)
+     * @param near   the near frustum plane, must be positive
+     * @param far    the far frustum plane, must be positive
+     * @return the resulting matrix
+     */
+    @Nonnull
+    public static Matrix4 makePerspective(float fov, float aspect, float near, float far) {
+        final Matrix4 mat = new Matrix4();
+        float y = (float) (1.0 / Math.tan(fov * 0.5));
+        float invNF = 1.0f / (near - far);
+        mat.m11 = y / aspect;
+        mat.m22 = y;
+        mat.m33 = (near + far) * invNF;
+        mat.m34 = -1.0f;
+        mat.m43 = 2.0f * far * near * invNF;
+        return mat;
     }
 
     /**
@@ -444,7 +552,7 @@ public class Matrix4 implements Cloneable {
      *
      * @param lhs the left-hand side matrix to multiply
      */
-    public void preConcat2D(@Nonnull Matrix3 lhs) {
+    public void preConcat2D(@Nonnull Matrix lhs) {
         // 36 multiplications
         final float f11 = lhs.m11 * m11 + lhs.m12 * m21 + lhs.m13 * m41;
         final float f12 = lhs.m11 * m12 + lhs.m12 * m22 + lhs.m13 * m42;
@@ -488,7 +596,7 @@ public class Matrix4 implements Cloneable {
      *
      * @param rhs the right-hand side matrix to multiply
      */
-    public void postConcat2D(@Nonnull Matrix3 rhs) {
+    public void postConcat2D(@Nonnull Matrix rhs) {
         // 36 multiplications
         final float f11 = m11 * rhs.m11 + m12 * rhs.m21 + m14 * rhs.m31;
         final float f12 = m11 * rhs.m12 + m12 * rhs.m22 + m14 * rhs.m32;
@@ -843,6 +951,15 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
+     * Set this matrix elements to be given matrix.
+     *
+     * @param m the matrix to store
+     */
+    public void store(@Nonnull Matrix4 m) {
+        m.set(this);
+    }
+
+    /**
      * Store this matrix into the give float array in row-major order.
      *
      * @param a the array to store into
@@ -981,6 +1098,15 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
+     * Compute the trace of this matrix.
+     *
+     * @return the trace of this matrix
+     */
+    public float trace() {
+        return m11 + m22 + m33 + m44;
+    }
+
+    /**
      * Transpose this matrix.
      */
     public void transpose() {
@@ -1042,7 +1168,7 @@ public class Matrix4 implements Cloneable {
         float b11 = m33 * m44 - m34 * m43;
         // calc the determinant
         float det = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
-        if (MathUtil.isNearlyZero(det)) {
+        if (MathUtil.isApproxZero(det)) {
             return false;
         }
         // calc algebraic cofactor and transpose
@@ -1080,6 +1206,73 @@ public class Matrix4 implements Cloneable {
         dest.m34 = f43;
         dest.m44 = f44;
         return true;
+    }
+
+    /**
+     * Set this matrix to an orthographic projection matrix.
+     *
+     * @param left   the left frustum plane
+     * @param right  the right frustum plane
+     * @param bottom the bottom frustum plane
+     * @param top    the top frustum plane
+     * @param near   the near frustum plane, must be positive
+     * @param far    the far frustum plane, must be positive
+     * @return this
+     */
+    @Nonnull
+    public Matrix4 setOrthographic(float left, float right, float bottom, float top, float near, float far) {
+        float invRL = 1.0f / (right - left);
+        float invTB = 1.0f / (top - bottom);
+        float invNF = 1.0f / (near - far);
+        m11 = 2.0f * invRL;
+        m12 = 0.0f;
+        m13 = 0.0f;
+        m14 = 0.0f;
+        m21 = 0.0f;
+        m22 = 2.0f * invTB;
+        m23 = 0.0f;
+        m24 = 0.0f;
+        m31 = 0.0f;
+        m32 = 0.0f;
+        m33 = 2.0f * invNF;
+        m34 = 0.0f;
+        m41 = -(right + left) * invRL;
+        m42 = -(top + bottom) * invTB;
+        m43 = (near + far) * invNF;
+        m44 = 1.0f;
+        return this;
+    }
+
+    /**
+     * Set this matrix to an orthographic projection matrix.
+     *
+     * @param width  the distance from right frustum plane to left frustum plane
+     * @param height the distance from bottom frustum plane to top frustum plane
+     * @param near   the near frustum plane, must be positive
+     * @param far    the far frustum plane, must be positive
+     * @param flipY  whether to flip the projection vertically
+     * @return this
+     */
+    @Nonnull
+    public Matrix4 setOrthographic(float width, float height, float near, float far, boolean flipY) {
+        float invNF = 1.0f / (near - far);
+        m11 = 2.0f / width;
+        m12 = 0.0f;
+        m13 = 0.0f;
+        m14 = 0.0f;
+        m21 = 0.0f;
+        m22 = flipY ? -2.0f / height : 2.0f / height;
+        m23 = 0.0f;
+        m24 = 0.0f;
+        m31 = 0.0f;
+        m32 = 0.0f;
+        m33 = 2.0f * invNF;
+        m34 = 0.0f;
+        m41 = -1.0f;
+        m42 = flipY ? 1.0f : -1.0f;
+        m43 = (near + far) * invNF;
+        m44 = 1.0f;
+        return this;
     }
 
     /**
@@ -1148,6 +1341,74 @@ public class Matrix4 implements Cloneable {
         m42 = (top + bottom) / (bottom - top);
         m43 = (signed ? (far + near) : near) / (near - far);
         m44 = 1.0f;
+    }
+
+    /**
+     * Set this matrix to a perspective projection matrix.
+     *
+     * @param left   the left frustum plane
+     * @param right  the right frustum plane
+     * @param bottom the bottom frustum plane
+     * @param top    the top frustum plane
+     * @param near   the near frustum plane, must be positive
+     * @param far    the far frustum plane, must be positive
+     * @return this
+     */
+    @Nonnull
+    public Matrix4 setPerspective(float left, float right, float bottom, float top, float near, float far) {
+        float invRL = 1.0f / (right - left);
+        float invTB = 1.0f / (top - bottom);
+        float invNF = 1.0f / (near - far);
+        float tNear = 2.0f * near;
+        m11 = tNear * invRL;
+        m12 = 0.0f;
+        m13 = 0.0f;
+        m14 = 0.0f;
+        m21 = 0.0f;
+        m22 = tNear * invTB;
+        m23 = 0.0f;
+        m24 = 0.0f;
+        m31 = (right + left) * invRL;
+        m32 = (top + bottom) * invTB;
+        m33 = (near + far) * invNF;
+        m34 = -1.0f;
+        m41 = 0.0f;
+        m42 = 0.0f;
+        m43 = tNear * far * invNF;
+        m44 = 0.0f;
+        return this;
+    }
+
+    /**
+     * Set this matrix to a perspective projection matrix.
+     *
+     * @param fov    the angle of field of view in radians (0,PI)
+     * @param aspect aspect ratio of the view (width / height)
+     * @param near   the near frustum plane, must be positive
+     * @param far    the far frustum plane, must be positive
+     * @return this
+     */
+    @Nonnull
+    public Matrix4 setPerspective(float fov, float aspect, float near, float far) {
+        float y = 1.0f / MathUtil.tan(fov * 0.5f);
+        float invNF = 1.0f / (near - far);
+        m11 = y / aspect;
+        m12 = 0.0f;
+        m13 = 0.0f;
+        m14 = 0.0f;
+        m21 = 0.0f;
+        m22 = y;
+        m23 = 0.0f;
+        m24 = 0.0f;
+        m31 = 0.0f;
+        m32 = 0.0f;
+        m33 = (near + far) * invNF;
+        m34 = -1.0f;
+        m41 = 0.0f;
+        m42 = 0.0f;
+        m43 = 2.0f * far * near * invNF;
+        m44 = 0.0f;
+        return this;
     }
 
     /**
@@ -1231,6 +1492,94 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
+     * Translates this matrix by given vector. This is equivalent to
+     * pre-multiplying by a translation matrix.
+     *
+     * @param dx the x-component of the translation
+     */
+    public void preTranslateX(float dx) {
+        m41 += dx * m11;
+        m42 += dx * m12;
+        m43 += dx * m13;
+        m44 += dx * m14;
+    }
+
+    /**
+     * Post-translates this matrix by given vector. This is equivalent to
+     * post-multiplying by a translation matrix.
+     *
+     * @param dx the x-component of the translation
+     */
+    public void postTranslateX(float dx) {
+        m11 += dx * m14;
+        m21 += dx * m24;
+        m31 += dx * m34;
+        m41 += dx * m44;
+    }
+
+    /**
+     * Translates this matrix by given vector. This is equivalent to
+     * pre-multiplying by a translation matrix.
+     *
+     * @param dy the y-component of the translation
+     */
+    public void preTranslateY(float dy) {
+        m41 += dy * m21;
+        m42 += dy * m22;
+        m43 += dy * m23;
+        m44 += dy * m24;
+    }
+
+    /**
+     * Post-translates this matrix by given vector. This is equivalent to
+     * post-multiplying by a translation matrix.
+     *
+     * @param dy the y-component of the translation
+     */
+    public void postTranslateY(float dy) {
+        m12 += dy * m14;
+        m22 += dy * m24;
+        m32 += dy * m34;
+        m42 += dy * m44;
+    }
+
+    /**
+     * Translates this matrix by given vector. This is equivalent to
+     * pre-multiplying by a translation matrix.
+     *
+     * @param dz the z-component of the translation
+     */
+    public void preTranslateZ(float dz) {
+        m41 += dz * m31;
+        m42 += dz * m32;
+        m43 += dz * m33;
+        m44 += dz * m34;
+    }
+
+    /**
+     * Post-translates this matrix by given vector. This is equivalent to
+     * post-multiplying by a translation matrix.
+     *
+     * @param dz the z-component of the translation
+     */
+    public void postTranslateZ(float dz) {
+        m13 += dz * m14;
+        m23 += dz * m24;
+        m33 += dz * m34;
+        m43 += dz * m44;
+    }
+
+    /**
+     * Translates this matrix by given changes. This is equivalent to
+     * pre-multiplying by a translation matrix. (translation * this)
+     *
+     * @param t the translation vector
+     */
+    public void preTranslate(@Nonnull Vector3 t) {
+        preTranslate(t.x, t.y, t.z);
+    }
+
+    /**
      * Apply a translation to this matrix by translating by the given number of
      * units in x, y and z.
      * <p>
@@ -1267,6 +1616,16 @@ public class Matrix4 implements Cloneable {
         m42 += dx * m12 + dy * m22;
         m43 += dx * m13 + dy * m23;
         m44 += dx * m14 + dy * m24;
+    }
+
+    /**
+     * Post-translates this matrix by given changes. This is equivalent to
+     * post-multiplying by a translation matrix. (this * translation)
+     *
+     * @param t the translation vector
+     */
+    public void postTranslate(@Nonnull Vector3 t) {
+        postTranslate(t.x, t.y, t.z);
     }
 
     /**
@@ -1321,6 +1680,15 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
+     * Sets this matrix to a translation matrix by given components.
+     *
+     * @param t the translation vector
+     */
+    public void setTranslate(@Nonnull Vector3 t) {
+        setTranslate(t.x, t.y, t.z);
+    }
+
+    /**
      * Set this matrix to be a simple translation matrix.
      *
      * @param x the x-component of the translation
@@ -1344,6 +1712,94 @@ public class Matrix4 implements Cloneable {
         m42 = y;
         m43 = z;
         m44 = 1.0f;
+    }
+
+    /**
+     * Scales this matrix by given vector. This is equivalent to
+     * pre-multiplying by a scale matrix.
+     *
+     * @param s the x-component of the scale
+     */
+    public void preScaleX(float s) {
+        m11 *= s;
+        m12 *= s;
+        m13 *= s;
+        m14 *= s;
+    }
+
+    /**
+     * Post-scales this matrix by given vector. This is equivalent to
+     * post-multiplying by a scale matrix.
+     *
+     * @param s the x-component of the scale
+     */
+    public void postScaleX(float s) {
+        m11 *= s;
+        m21 *= s;
+        m31 *= s;
+        m41 *= s;
+    }
+
+    /**
+     * Scales this matrix by given vector. This is equivalent to
+     * pre-multiplying by a scale matrix.
+     *
+     * @param s the y-component of the scale
+     */
+    public void preScaleY(float s) {
+        m21 *= s;
+        m22 *= s;
+        m23 *= s;
+        m24 *= s;
+    }
+
+    /**
+     * Post-scales this matrix by given vector. This is equivalent to
+     * post-multiplying by a scale matrix.
+     *
+     * @param s the y-component of the scale
+     */
+    public void postScaleY(float s) {
+        m12 *= s;
+        m22 *= s;
+        m32 *= s;
+        m42 *= s;
+    }
+
+    /**
+     * Scales this matrix by given vector. This is equivalent to
+     * pre-multiplying by a scale matrix.
+     *
+     * @param s the x-component of the scale
+     */
+    public void preScaleZ(float s) {
+        m31 *= s;
+        m32 *= s;
+        m33 *= s;
+        m34 *= s;
+    }
+
+    /**
+     * Post-scales this matrix by given vector. This is equivalent to
+     * post-multiplying by a scale matrix.
+     *
+     * @param s the x-component of the scale
+     */
+    public void postScaleZ(float s) {
+        m13 *= s;
+        m23 *= s;
+        m33 *= s;
+        m43 *= s;
+    }
+
+    /**
+     * Scales this matrix by given vector. This is equivalent to
+     * pre-multiplying by a scale matrix.
+     *
+     * @param s the scale vector
+     */
+    public void preScale(@Nonnull Vector3 s) {
+        preScale(s.x, s.y, s.z);
     }
 
     /**
@@ -1398,6 +1854,16 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
+     * Post-scales this matrix by given vector. This is equivalent to
+     * post-multiplying by a scale matrix.
+     *
+     * @param s the scale vector
+     */
+    public void postScale(@Nonnull Vector3 s) {
+        postScale(s.x, s.y, s.z);
+    }
+
+    /**
      * Post-multiply scaling to <code>this</code> matrix by scaling the base axes by the given x,
      * y and z factors and store the result in <code>dest</code>.
      * <p>
@@ -1446,6 +1912,15 @@ public class Matrix4 implements Cloneable {
         m22 *= sy;
         m32 *= sy;
         m42 *= sy;
+    }
+
+    /**
+     * Sets this matrix to a scaling matrix by given components.
+     *
+     * @param s the scale vector
+     */
+    public void setScale(@Nonnull Vector3 s) {
+        setScale(s.x, s.y, s.z);
     }
 
     /**
@@ -1813,6 +2288,26 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
+     * Rotates this matrix about an arbitrary axis. The axis must be a
+     * normalized (unit) vector. If the axis is X, Y or Z, use axis-specified
+     * methods to rotate this matrix which are faster.
+     * <p>
+     * When used with a right-handed coordinate system, the produced rotation
+     * will rotate a vector counter-clockwise around the rotation axis, when
+     * viewing along the negative axis direction towards the origin. When
+     * used with a left-handed coordinate system, the rotation is clockwise.
+     *
+     * @param axis  the rotation axis
+     * @param angle rotation angle in radians
+     * @see #preRotateY(double)
+     * @see #preRotateZ(double)
+     * @see #preRotateX(double)
+     */
+    public void preRotate(@Nonnull Vector3 axis, float angle) {
+        preRotate(axis.x, axis.y, axis.z, angle);
+    }
+
+    /**
      * Rotates this matrix about an arbitrary axis with the given angle in radians.
      * The axis described by the three components must be normalized. If it is
      * known that the rotation axis is X, Y or Z, use axis-specified methods instead.
@@ -1897,6 +2392,76 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
+     * Rotate this matrix by the given quaternion's rotation matrix.
+     * (quat * this)
+     *
+     * @param q the quaternion to rotate by.
+     */
+    public void preRotate(@Nonnull Quaternion q) {
+        final float sq = q.lengthSq();
+        if (sq < 1.0e-6f) {
+            return;
+        }
+        // normalize first
+        final float is;
+        if (MathUtil.isApproxEqual(sq, 1.0f)) {
+            is = 2.0f;
+        } else {
+            is = 2.0f / sq;
+        }
+        float xs = is * q.x;
+        float ys = is * q.y;
+        float zs = is * q.z;
+
+        final float xx = q.x * xs;
+        final float xy = q.x * ys;
+        final float xz = q.x * zs;
+        final float xw = xs * q.w;
+        final float yy = q.y * ys;
+        final float yz = q.y * zs;
+        final float yw = ys * q.w;
+        final float zz = q.z * zs;
+        final float zw = zs * q.w;
+
+        xs = 1.0f - (yy + zz);
+        ys = xy + zw;
+        zs = xz - yw;
+        final float f11 = xs * m11 + ys * m21 + zs * m31;
+        final float f12 = xs * m12 + ys * m22 + zs * m32;
+        final float f13 = xs * m13 + ys * m23 + zs * m33;
+        final float f14 = xs * m14 + ys * m24 + zs * m34;
+
+        xs = xy - zw;
+        ys = 1.0f - (xx + zz);
+        zs = yz + xw;
+        final float f21 = xs * m11 + ys * m21 + zs * m31;
+        final float f22 = xs * m12 + ys * m22 + zs * m32;
+        final float f23 = xs * m13 + ys * m23 + zs * m33;
+        final float f24 = xs * m14 + ys * m24 + zs * m34;
+
+        xs = xz + yw;
+        ys = yz - xw;
+        zs = 1.0f - (xx + yy);
+        final float f31 = xs * m11 + ys * m21 + zs * m31;
+        final float f32 = xs * m12 + ys * m22 + zs * m32;
+        final float f33 = xs * m13 + ys * m23 + zs * m33;
+        final float f34 = xs * m14 + ys * m24 + zs * m34;
+
+        m11 = f11;
+        m12 = f12;
+        m13 = f13;
+        m14 = f14;
+        m21 = f21;
+        m22 = f22;
+        m23 = f23;
+        m24 = f24;
+        m31 = f31;
+        m32 = f32;
+        m33 = f33;
+        m34 = f34;
+    }
+
+    /**
      * Post-rotates this matrix about an arbitrary axis with the given angle in radians.
      * The axis described by the three components must be normalized. If it is
      * known that the rotation axis is X, Y or Z, use axis-specified methods instead.
@@ -1978,6 +2543,95 @@ public class Matrix4 implements Cloneable {
         m41 = (float) x;
         m42 = (float) y;
         m43 = (float) z;
+    }
+
+    /**
+     * Set this matrix to a rotation matrix by the quaternion's rotation.
+     *
+     * @param q the quaternion to set by.
+     */
+    public void setRotation(@Nonnull Quaternion q) {
+        q.toMatrix4(this);
+    }
+
+    /**
+     * Transform a four-dimensional row vector by post-multiplication
+     * (vec4 * this).
+     *
+     * @param vec the vector to transform
+     */
+    public void preTransform(@Nonnull Vector4 vec) {
+        final float x = m11 * vec.x + m21 * vec.y + m31 * vec.z + m41 * vec.w;
+        final float y = m12 * vec.x + m22 * vec.y + m32 * vec.z + m42 * vec.w;
+        final float z = m13 * vec.x + m23 * vec.y + m33 * vec.z + m43 * vec.w;
+        final float w = m14 * vec.x + m24 * vec.y + m34 * vec.z + m44 * vec.w;
+        vec.x = x;
+        vec.y = y;
+        vec.z = z;
+        vec.w = w;
+    }
+
+    /**
+     * Transform a four-dimensional column vector by pre-multiplication
+     * (this * vec4).
+     *
+     * @param vec the vector to transform
+     */
+    public void postTransform(@Nonnull Vector4 vec) {
+        final float x = m11 * vec.x + m12 * vec.y + m13 * vec.z + m14 * vec.w;
+        final float y = m21 * vec.x + m22 * vec.y + m23 * vec.z + m24 * vec.w;
+        final float z = m31 * vec.x + m32 * vec.y + m33 * vec.z + m34 * vec.w;
+        final float w = m41 * vec.x + m42 * vec.y + m43 * vec.z + m44 * vec.w;
+        vec.x = x;
+        vec.y = y;
+        vec.z = z;
+        vec.w = w;
+    }
+
+    /**
+     * Transform a three-dimensional row vector by post-multiplication
+     * (vec3 * this, w-component is considered as 1).
+     * This should be used with position vectors.
+     *
+     * @param vec the vector to transform
+     */
+    public void preTransform(@Nonnull Vector3 vec) {
+        final float x = m11 * vec.x + m21 * vec.y + m31 * vec.z + m41;
+        final float y = m12 * vec.x + m22 * vec.y + m32 * vec.z + m42;
+        final float z = m13 * vec.x + m23 * vec.y + m33 * vec.z + m43;
+        if (isAffine()) {
+            vec.x = x;
+            vec.y = y;
+            vec.z = z;
+        } else {
+            float w = 1.0f / (m14 * vec.x + m24 * vec.y + m34 * vec.z + m44);
+            vec.x = x * w;
+            vec.y = y * w;
+            vec.z = z * w;
+        }
+    }
+
+    /**
+     * Transform a three-dimensional column vector by pre-multiplication
+     * (this * vec3, w-component is considered as 1).
+     * This should be used with normal vectors.
+     *
+     * @param vec the vector to transform
+     */
+    public void postTransform(@Nonnull Vector3 vec) {
+        final float x = m11 * vec.x + m12 * vec.y + m13 * vec.z + m14;
+        final float y = m21 * vec.x + m22 * vec.y + m23 * vec.z + m24;
+        final float z = m31 * vec.x + m32 * vec.y + m33 * vec.z + m34;
+        if (!hasTranslation()) {
+            vec.x = x;
+            vec.y = y;
+            vec.z = z;
+        } else {
+            float w = 1.0f / (m41 * vec.x + m42 * vec.y + m43 * vec.z + m44);
+            vec.x = x * w;
+            vec.y = y * w;
+            vec.z = z * w;
+        }
     }
 
     /**
@@ -2093,7 +2747,7 @@ public class Matrix4 implements Cloneable {
      * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
      * rectangle will be the bounding box of the projected points after being clipped to w > 0.
      */
-    public void mapRectOut(@Nonnull Rect2f r, @Nonnull Rect2i dest) {
+    public void mapRectOut(@Nonnull Rect2i r, @Nonnull Rect2i dest) {
         mapRectOut(r.mLeft, r.mTop, r.mRight, r.mBottom, dest);
     }
 
@@ -2102,7 +2756,7 @@ public class Matrix4 implements Cloneable {
      * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
      * rectangle will be the bounding box of the projected points after being clipped to w > 0.
      */
-    public void mapRectOut(@Nonnull Rect2i r, @Nonnull Rect2i dest) {
+    public void mapRectOut(@Nonnull Rect2f r, @Nonnull Rect2i dest) {
         mapRectOut(r.mLeft, r.mTop, r.mRight, r.mBottom, dest);
     }
 
@@ -2162,6 +2816,26 @@ public class Matrix4 implements Cloneable {
         }
     }
 
+    public float mapPointX(float x, float y) {
+        if (isAffine()) {
+            return m11 * x + m21 * y + m41;
+        } else {
+            final float f = m11 * x + m21 * y + m41;
+            float w = 1.0f / (m14 * x + m24 * y + m44);
+            return f * w;
+        }
+    }
+
+    public float mapPointY(float x, float y) {
+        if (isAffine()) {
+            return m12 * x + m22 * y + m42;
+        } else {
+            final float f = m12 * x + m22 * y + m42;
+            float w = 1.0f / (m14 * x + m24 * y + m44);
+            return f * w;
+        }
+    }
+
     public void mapVec3(float[] vec) {
         final float x = m11 * vec[0] + m21 * vec[1] + m41 * vec[2];
         final float y = m12 * vec[0] + m22 * vec[1] + m42 * vec[2];
@@ -2178,7 +2852,7 @@ public class Matrix4 implements Cloneable {
      * @return {@code true} if this matrix is affine.
      */
     public boolean isAffine() {
-        return MathUtil.isNearlyZero(m14, m24, m34) && MathUtil.isNearlyEqual(m44, 1.0f);
+        return MathUtil.isApproxZero(m14, m24, m34) && MathUtil.isApproxEqual(m44, 1.0f);
     }
 
     /**
@@ -2188,8 +2862,8 @@ public class Matrix4 implements Cloneable {
      */
     public boolean isScaleTranslate() {
         return isAffine() &&
-                MathUtil.isNearlyZero(m12, m13, m21) &&
-                MathUtil.isNearlyZero(m23, m31, m32);
+                MathUtil.isApproxZero(m12, m13, m21) &&
+                MathUtil.isApproxZero(m23, m31, m32);
     }
 
     /**
@@ -2211,8 +2885,8 @@ public class Matrix4 implements Cloneable {
      */
     public boolean isAxisAligned() {
         return isAffine() && (
-                (MathUtil.isNearlyZero(m11, m22) && !MathUtil.isNearlyZero(m12) && !MathUtil.isNearlyZero(m21)) ||
-                        (MathUtil.isNearlyZero(m12, m21) && !MathUtil.isNearlyZero(m11) && !MathUtil.isNearlyZero(m22))
+                (MathUtil.isApproxZero(m11) && MathUtil.isApproxZero(m22) && !MathUtil.isApproxZero(m12) && !MathUtil.isApproxZero(m21)) ||
+                        (MathUtil.isApproxZero(m12) && MathUtil.isApproxZero(m21) && !MathUtil.isApproxZero(m11) && !MathUtil.isApproxZero(m22))
         );
     }
 
@@ -2242,24 +2916,24 @@ public class Matrix4 implements Cloneable {
     }
 
     public boolean hasPerspective() {
-        return m14 != 0 || m24 != 0 || m34 != 0 || m44 != 1;
+        return !isAffine();
     }
 
     public boolean hasTranslation() {
-        return !(MathUtil.isNearlyZero(m41, m42, m43) && MathUtil.isNearlyEqual(m44, 1.0f));
+        return !(MathUtil.isApproxZero(m41, m42, m43) && MathUtil.isApproxEqual(m44, 1.0f));
     }
 
     /**
-     * Returns whether this matrix is approximately equal to an identity matrix.
+     * Returns whether this matrix is approximately equivalent to an identity matrix.
      *
      * @return {@code true} if this matrix is identity.
      */
     public boolean isIdentity() {
-        return MathUtil.isNearlyZero(m12, m13, m14) &&
-                MathUtil.isNearlyZero(m21, m23, m24) &&
-                MathUtil.isNearlyZero(m31, m32, m34) &&
-                MathUtil.isNearlyZero(m41, m42, m43) &&
-                MathUtil.isNearlyEqual(m11, m22, m33, m44, 1.0f);
+        return MathUtil.isApproxZero(m12, m13, m14) &&
+                MathUtil.isApproxZero(m21, m23, m24) &&
+                MathUtil.isApproxZero(m31, m32, m34) &&
+                MathUtil.isApproxZero(m41, m42, m43) &&
+                MathUtil.isApproxEqual(m11, m22, m33, m44, 1.0f);
     }
 
     /**
@@ -2271,7 +2945,7 @@ public class Matrix4 implements Cloneable {
      * [ g h x i ]
      * }</pre>
      */
-    public void toM33NoZ(@Nonnull Matrix3 dest) {
+    public void toMatrix(@Nonnull Matrix dest) {
         dest.setAll(
                 m11, m12, m14,
                 m21, m22, m24,
@@ -2289,8 +2963,8 @@ public class Matrix4 implements Cloneable {
      * }</pre>
      */
     @Nonnull
-    public Matrix3 toM33NoZ() {
-        return Matrix3.makeAll(
+    public Matrix toMatrix() {
+        return Matrix.makeAll(
                 m11, m12, m14,
                 m21, m22, m24,
                 m41, m42, m44
@@ -2306,12 +2980,16 @@ public class Matrix4 implements Cloneable {
      * [ x x x x ]
      * }</pre>
      */
-    public void toM33NoW(@Nonnull Matrix3 dest) {
-        dest.setAll(
-                m11, m12, m13,
-                m21, m22, m23,
-                m31, m32, m33
-        );
+    public void toMatrix3(@Nonnull Matrix3 dest) {
+        dest.m11 = m11;
+        dest.m12 = m12;
+        dest.m13 = m13;
+        dest.m21 = m21;
+        dest.m22 = m22;
+        dest.m23 = m23;
+        dest.m31 = m31;
+        dest.m32 = m32;
+        dest.m33 = m33;
     }
 
     /**
@@ -2324,12 +3002,10 @@ public class Matrix4 implements Cloneable {
      * }</pre>
      */
     @Nonnull
-    public Matrix3 toM33NoW() {
-        return Matrix3.makeAll(
-                m11, m12, m13,
-                m21, m22, m23,
-                m31, m32, m33
-        );
+    public Matrix3 toMatrix3() {
+        Matrix3 m = new Matrix3();
+        toMatrix3(m);
+        return m;
     }
 
     /**
@@ -2338,23 +3014,23 @@ public class Matrix4 implements Cloneable {
      * @param m the matrix to compare.
      * @return {@code true} if this matrix is equivalent to other matrix.
      */
-    public boolean isNearlyEqual(@Nonnull Matrix4 m) {
-        return MathUtil.isNearlyEqual(m11, m.m11) &&
-                MathUtil.isNearlyEqual(m12, m.m12) &&
-                MathUtil.isNearlyEqual(m13, m.m13) &&
-                MathUtil.isNearlyEqual(m14, m.m14) &&
-                MathUtil.isNearlyEqual(m21, m.m21) &&
-                MathUtil.isNearlyEqual(m22, m.m22) &&
-                MathUtil.isNearlyEqual(m23, m.m23) &&
-                MathUtil.isNearlyEqual(m24, m.m24) &&
-                MathUtil.isNearlyEqual(m31, m.m31) &&
-                MathUtil.isNearlyEqual(m32, m.m32) &&
-                MathUtil.isNearlyEqual(m33, m.m33) &&
-                MathUtil.isNearlyEqual(m34, m.m34) &&
-                MathUtil.isNearlyEqual(m41, m.m41) &&
-                MathUtil.isNearlyEqual(m42, m.m42) &&
-                MathUtil.isNearlyEqual(m43, m.m43) &&
-                MathUtil.isNearlyEqual(m44, m.m44);
+    public boolean isApproxEqual(@Nonnull Matrix4 m) {
+        return MathUtil.isApproxEqual(m11, m.m11) &&
+                MathUtil.isApproxEqual(m12, m.m12) &&
+                MathUtil.isApproxEqual(m13, m.m13) &&
+                MathUtil.isApproxEqual(m14, m.m14) &&
+                MathUtil.isApproxEqual(m21, m.m21) &&
+                MathUtil.isApproxEqual(m22, m.m22) &&
+                MathUtil.isApproxEqual(m23, m.m23) &&
+                MathUtil.isApproxEqual(m24, m.m24) &&
+                MathUtil.isApproxEqual(m31, m.m31) &&
+                MathUtil.isApproxEqual(m32, m.m32) &&
+                MathUtil.isApproxEqual(m33, m.m33) &&
+                MathUtil.isApproxEqual(m34, m.m34) &&
+                MathUtil.isApproxEqual(m41, m.m41) &&
+                MathUtil.isApproxEqual(m42, m.m42) &&
+                MathUtil.isApproxEqual(m43, m.m43) &&
+                MathUtil.isApproxEqual(m44, m.m44);
     }
 
     @Override
@@ -2433,5 +3109,246 @@ public class Matrix4 implements Cloneable {
         } catch (CloneNotSupportedException e) {
             throw new InternalError(e);
         }
+    }
+
+    private static void mulMatrix(@Nonnull float[] a, @Nonnull float[] b) {
+        float var4 = b[0];
+        float var5 = b[1];
+        float var6 = b[2];
+        float var7 = b[3];
+        float var8 = b[4];
+        float var9 = b[1 + 4];
+        float var10 = b[2 + 4];
+        float var11 = b[3 + 4];
+        float var12 = b[8];
+        float var13 = b[1 + 8];
+        float var14 = b[2 + 8];
+        float var15 = b[3 + 8];
+        float var16 = b[12];
+        float var17 = b[1 + 12];
+        float var18 = b[2 + 12];
+        float var19 = b[3 + 12];
+        float var20 = a[0];
+        float var21 = a[4];
+        float var22 = a[8];
+        float var23 = a[12];
+        a[0] = var20 * var4 + var21 * var5 + var22 * var6 + var23 * var7;
+        a[4] = var20 * var8 + var21 * var9 + var22 * var10 + var23 * var11;
+        a[8] = var20 * var12 + var21 * var13 + var22 * var14 + var23 * var15;
+        a[12] = var20 * var16 + var21 * var17 + var22 * var18 + var23 * var19;
+        var20 = a[1];
+        var21 = a[1 + 4];
+        var22 = a[1 + 8];
+        var23 = a[1 + 12];
+        a[1] = var20 * var4 + var21 * var5 + var22 * var6 + var23 * var7;
+        a[1 + 4] = var20 * var8 + var21 * var9 + var22 * var10 + var23 * var11;
+        a[1 + 8] = var20 * var12 + var21 * var13 + var22 * var14 + var23 * var15;
+        a[1 + 12] = var20 * var16 + var21 * var17 + var22 * var18 + var23 * var19;
+        var20 = a[2];
+        var21 = a[2 + 4];
+        var22 = a[2 + 8];
+        var23 = a[2 + 12];
+        a[2] = var20 * var4 + var21 * var5 + var22 * var6 + var23 * var7;
+        a[2 + 4] = var20 * var8 + var21 * var9 + var22 * var10 + var23 * var11;
+        a[2 + 8] = var20 * var12 + var21 * var13 + var22 * var14 + var23 * var15;
+        a[2 + 12] = var20 * var16 + var21 * var17 + var22 * var18 + var23 * var19;
+        var20 = a[3];
+        var21 = a[3 + 4];
+        var22 = a[3 + 8];
+        var23 = a[3 + 12];
+        a[3] = var20 * var4 + var21 * var5 + var22 * var6 + var23 * var7;
+        a[3 + 4] = var20 * var8 + var21 * var9 + var22 * var10 + var23 * var11;
+        a[3 + 8] = var20 * var12 + var21 * var13 + var22 * var14 + var23 * var15;
+        a[3 + 12] = var20 * var16 + var21 * var17 + var22 * var18 + var23 * var19;
+    }
+
+    // strassen algorithm
+    private static void multiply(@Nonnull float[] a, @Nonnull float[] b, @Nonnull float[] out) {
+        float[] temp = new float[28];
+
+        float x1, x2, x3, x4, x5, x6, x7;
+        float f11, f12, f21, f22, g11, g12, g21, g22;
+
+        // 1
+        f11 = a[0] + a[10];
+        f12 = a[1] + a[11];
+        f21 = a[4] + a[14];
+        f22 = a[5] + a[15];
+        g11 = b[0] + b[10];
+        g12 = b[1] + b[11];
+        g21 = b[4] + b[14];
+        g22 = b[5] + b[15];
+
+        x1 = (f11 + f22) * (g11 + g22);
+        x2 = (f21 + f22) * g11;
+        x3 = f11 * (g12 - g22);
+        x4 = f22 * (g21 - g11);
+        x5 = (f11 + f12) * g22;
+        x6 = (f21 - f11) * (g11 + g12);
+        x7 = (f12 - f22) * (g21 + g22);
+
+        temp[0] = x1 + x4 - x5 + x7;
+        temp[1] = x3 + x5;
+        temp[2] = x2 + x4;
+        temp[3] = x1 - x2 + x3 + x6;
+
+        // 2
+        f11 = a[8] + a[10];
+        f12 = a[9] + a[11];
+        f21 = a[12] + a[14];
+        f22 = a[13] + a[15];
+        g11 = b[0];
+        g12 = b[1];
+        g21 = b[4];
+        g22 = b[5];
+
+        x1 = (f11 + f22) * (g11 + g22);
+        x2 = (f21 + f22) * g11;
+        x3 = f11 * (g12 - g22);
+        x4 = f22 * (g21 - g11);
+        x5 = (f11 + f12) * g22;
+        x6 = (f21 - f11) * (g11 + g12);
+        x7 = (f12 - f22) * (g21 + g22);
+
+        temp[4] = x1 + x4 - x5 + x7;
+        temp[5] = x3 + x5;
+        temp[6] = x2 + x4;
+        temp[7] = x1 - x2 + x3 + x6;
+
+        // 3
+        f11 = a[0];
+        f12 = a[1];
+        f21 = a[4];
+        f22 = a[5];
+        g11 = b[2] - b[10];
+        g12 = b[3] - b[11];
+        g21 = b[6] - b[14];
+        g22 = b[7] - b[15];
+
+        x1 = (f11 + f22) * (g11 + g22);
+        x2 = (f21 + f22) * g11;
+        x3 = f11 * (g12 - g22);
+        x4 = f22 * (g21 - g11);
+        x5 = (f11 + f12) * g22;
+        x6 = (f21 - f11) * (g11 + g12);
+        x7 = (f12 - f22) * (g21 + g22);
+
+        temp[8] = x1 + x4 - x5 + x7;
+        temp[9] = x3 + x5;
+        temp[10] = x2 + x4;
+        temp[11] = x1 - x2 + x3 + x6;
+
+        // 4
+        f11 = a[10];
+        f12 = a[11];
+        f21 = a[14];
+        f22 = a[15];
+        g11 = b[10] - b[0];
+        g12 = b[11] - b[1];
+        g21 = b[12] - b[4];
+        g22 = b[13] - b[5];
+
+        x1 = (f11 + f22) * (g11 + g22);
+        x2 = (f21 + f22) * g11;
+        x3 = f11 * (g12 - g22);
+        x4 = f22 * (g21 - g11);
+        x5 = (f11 + f12) * g22;
+        x6 = (f21 - f11) * (g11 + g12);
+        x7 = (f12 - f22) * (g21 + g22);
+
+        temp[12] = x1 + x4 - x5 + x7;
+        temp[13] = x3 + x5;
+        temp[14] = x2 + x4;
+        temp[15] = x1 - x2 + x3 + x6;
+
+        // 5
+        f11 = a[0] + a[2];
+        f12 = a[1] + a[3];
+        f21 = a[4] + a[6];
+        f22 = a[5] + a[7];
+        g11 = b[10];
+        g12 = b[11];
+        g21 = b[14];
+        g22 = b[15];
+
+        x1 = (f11 + f22) * (g11 + g22);
+        x2 = (f21 + f22) * g11;
+        x3 = f11 * (g12 - g22);
+        x4 = f22 * (g21 - g11);
+        x5 = (f11 + f12) * g22;
+        x6 = (f21 - f11) * (g11 + g12);
+        x7 = (f12 - f22) * (g21 + g22);
+
+        temp[16] = x1 + x4 - x5 + x7;
+        temp[17] = x3 + x5;
+        temp[18] = x2 + x4;
+        temp[19] = x1 - x2 + x3 + x6;
+
+        // 6
+        f11 = a[10] - a[0];
+        f12 = a[11] - a[1];
+        f21 = a[12] - a[4];
+        f22 = a[13] - a[5];
+        g11 = b[0] + b[2];
+        g12 = b[1] + b[3];
+        g21 = b[4] + b[6];
+        g22 = b[5] + b[7];
+
+        x1 = (f11 + f22) * (g11 + g22);
+        x2 = (f21 + f22) * g11;
+        x3 = f11 * (g12 - g22);
+        x4 = f22 * (g21 - g11);
+        x5 = (f11 + f12) * g22;
+        x6 = (f21 - f11) * (g11 + g12);
+        x7 = (f12 - f22) * (g21 + g22);
+
+        temp[20] = x1 + x4 - x5 + x7;
+        temp[21] = x3 + x5;
+        temp[22] = x2 + x4;
+        temp[23] = x1 - x2 + x3 + x6;
+
+        // 7
+        f11 = a[2] - a[10];
+        f12 = a[3] - a[11];
+        f21 = a[6] - a[14];
+        f22 = a[7] - a[15];
+        g11 = b[8] + b[10];
+        g12 = b[9] + b[11];
+        g21 = b[12] + b[14];
+        g22 = b[13] + b[15];
+
+        x1 = (f11 + f22) * (g11 + g22);
+        x2 = (f21 + f22) * g11;
+        x3 = f11 * (g12 - g22);
+        x4 = f22 * (g21 - g11);
+        x5 = (f11 + f12) * g22;
+        x6 = (f21 - f11) * (g11 + g12);
+        x7 = (f12 - f22) * (g21 + g22);
+
+        temp[24] = x1 + x4 - x5 + x7;
+        temp[25] = x3 + x5;
+        temp[26] = x2 + x4;
+        temp[27] = x1 - x2 + x3 + x6;
+
+        // out
+        out[0] = temp[0] + temp[12] - temp[16] + temp[24];
+        out[1] = temp[1] + temp[13] - temp[17] + temp[25];
+        out[4] = temp[2] + temp[14] - temp[18] + temp[26];
+        out[5] = temp[3] + temp[15] - temp[19] + temp[27];
+
+        out[2] = temp[8] + temp[16];
+        out[3] = temp[9] + temp[17];
+        out[6] = temp[10] + temp[18];
+        out[7] = temp[11] + temp[19];
+
+        out[8] = temp[4] + temp[12];
+        out[9] = temp[5] + temp[13];
+        out[12] = temp[6] + temp[14];
+        out[13] = temp[7] + temp[15];
+
+        out[10] = temp[0] - temp[4] + temp[8] + temp[20];
+        out[11] = temp[1] - temp[5] + temp[9] + temp[21];
+        out[14] = temp[2] - temp[6] + temp[10] + temp[22];
+        out[15] = temp[3] - temp[7] + temp[11] + temp[23];
     }
 }

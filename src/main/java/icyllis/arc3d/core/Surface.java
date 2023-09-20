@@ -1,6 +1,7 @@
 /*
- * Arc 3D.
- * Copyright (C) 2022-2023 BloCamLimb. All rights reserved.
+ * This file is part of Arc 3D.
+ *
+ * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -24,11 +25,11 @@ import javax.annotation.Nullable;
 
 /**
  * Surface is responsible for managing the pixels that a canvas draws into.
- * The pixels will be allocated on the GPU (a {@link RenderTarget} surface).
+ * The pixels will be allocated on the GPU (a RenderTarget surface).
  * Surface takes care of allocating a {@link Canvas} that will draw into the surface.
  * Call {@link #getCanvas()} to use that canvas (it is owned by the surface).
  * Surface always has non-zero dimensions. If there is a request for a new surface,
- * and either of the requested dimensions are zero, then nullptr will be returned.
+ * and either of the requested dimensions are zero, then null will be returned.
  */
 public class Surface extends RefCnt {
 
@@ -147,7 +148,7 @@ public class Surface extends RefCnt {
     }
 
     @Override
-    protected void dispose() {
+    protected void deallocate() {
         mDevice.unref();
         mDevice = null;
         if (mCachedCanvas != null) {
@@ -163,7 +164,7 @@ public class Surface extends RefCnt {
      * @return number of pixel columns
      */
     public int getWidth() {
-        return mDevice.getWidth();
+        return mDevice.width();
     }
 
     /**
@@ -172,14 +173,14 @@ public class Surface extends RefCnt {
      * @return number of pixel rows
      */
     public int getHeight() {
-        return mDevice.getHeight();
+        return mDevice.height();
     }
 
     /**
      * Returns an ImageInfo describing the surface.
      */
     public ImageInfo getImageInfo() {
-        return mDevice.getImageInfo();
+        return mDevice.imageInfo();
     }
 
     /**

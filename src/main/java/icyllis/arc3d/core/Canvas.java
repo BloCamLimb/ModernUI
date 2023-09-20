@@ -1,6 +1,7 @@
 /*
- * Arc 3D.
- * Copyright (C) 2022-2023 BloCamLimb. All rights reserved.
+ * This file is part of Arc 3D.
+ *
+ * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -174,7 +175,7 @@ public class Canvas implements AutoCloseable {
      */
     @Nonnull
     public ImageInfo getImageInfo() {
-        return mBaseDevice.getImageInfo();
+        return mBaseDevice.imageInfo();
     }
 
     /**
@@ -185,7 +186,7 @@ public class Canvas implements AutoCloseable {
      * @return integral width of base layer
      */
     public final int getBaseLayerWidth() {
-        return mBaseDevice.getWidth();
+        return mBaseDevice.width();
     }
 
     /**
@@ -196,7 +197,7 @@ public class Canvas implements AutoCloseable {
      * @return integral height of base layer
      */
     public final int getBaseLayerHeight() {
-        return mBaseDevice.getHeight();
+        return mBaseDevice.height();
     }
 
     /**

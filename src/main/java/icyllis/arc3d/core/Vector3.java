@@ -1,6 +1,7 @@
 /*
- * Arc 3D.
- * Copyright (C) 2022-2023 BloCamLimb. All rights reserved.
+ * This file is part of Arc 3D.
+ *
+ * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -138,10 +139,10 @@ public class Vector3 {
      * @return the magnitude of this quaternion
      */
     public float length() {
-        return (float) Math.sqrt(x * x + y * y + z * z);
+        return MathUtil.sqrt(x * x + y * y + z * z);
     }
 
-    public float lengthSquared() {
+    public float lengthSq() {
         return x * x + y * y + z * z;
     }
 
@@ -211,16 +212,25 @@ public class Vector3 {
     }
 
     /**
+     * Returns whether this vector is normalized.
+     *
+     * @return {@code true} if is normalized, {@code false} otherwise
+     */
+    public boolean isNormalized() {
+        return MathUtil.isApproxEqual(lengthSq(), 1.0f);
+    }
+
+    /**
      * Normalize this vector to unit length, or <code>[1, 0, 0]</code> if this is zero.
      */
     public void normalize() {
-        final float sq = lengthSquared();
-        if (sq < MathUtil.EPS) {
+        final float sq = lengthSq();
+        if (sq < 1.0e-6f) {
             x = 1.0f;
             y = 0.0f;
             z = 0.0f;
         } else {
-            final float invNorm = (float) (1.0f / Math.sqrt(sq));
+            final double invNorm = 1.0f / Math.sqrt(sq);
             x *= invNorm;
             y *= invNorm;
             z *= invNorm;
@@ -270,13 +280,13 @@ public class Vector3 {
     public void perpendicular() {
         final float l;
         if (Math.abs(x) >= Math.abs(y)) {
-            l = (float) (1.0f / Math.sqrt(x * x + z * z));
+            l = 1.0f / MathUtil.sqrt(x * x + z * z);
             float t = x;
             x = -z * l;
             y = 0.0f;
             z = t * l;
         } else {
-            l = (float) (1.0f / Math.sqrt(y * y + z * z));
+            l = 1.0f / MathUtil.sqrt(y * y + z * z);
             float t = y;
             x = 0.0f;
             y = z * l;
@@ -290,15 +300,62 @@ public class Vector3 {
      * @param v the vector to project on
      */
     public void projection(@Nonnull Vector3 v) {
-        final float sq = lengthSquared();
+        final float sq = lengthSq();
         if (sq < 1.0e-6f) {
             setZero();
         } else {
-            final float c = (float) (dot(v) / Math.sqrt(sq));
+            final float c = dot(v) / MathUtil.sqrt(sq);
             x = v.x * c;
             y = v.y * c;
             z = v.z * c;
         }
+    }
+
+    /**
+     * Create a rotational quaternion clockwise about this axis with given angle in radians.
+     * This vector must be normalized.
+     *
+     * @param angle rotation angle in radians
+     * @return a quaternion represents the rotation
+     */
+    @Nonnull
+    public Quaternion rotation(float angle) {
+        return Quaternion.makeAxisAngle(this, angle);
+    }
+
+    /**
+     * Transform this vector by a 4x4 transformation matrix.
+     *
+     * @param mat the matrix to transform from
+     */
+    public void transform(@Nonnull Matrix4 mat) {
+        mat.preTransform(this);
+    }
+
+    /**
+     * Pre-transform this vector by a 4x4 transformation matrix.
+     *
+     * @param mat the matrix to transform from
+     */
+    public void preTransform(@Nonnull Matrix4 mat) {
+        mat.postTransform(this);
+    }
+
+    /**
+     * Transform this vector by a quaternion rotation.
+     *
+     * @param q the quaternion to rotate the vector by
+     */
+    public void transform(@Nonnull Quaternion q) {
+        // formula quat * vec * quat^-1, 32 multiplications
+        // since this vector is 3-dimensional, we can optimize it as follows:
+        // vec + 2.0 * cross(quat.xyz, cross(quat.xyz, vec) + quat.w * vec)
+        final float f = q.y * z - q.z * y + q.w * x;
+        final float g = q.z * x - q.x * z + q.w * y;
+        final float h = q.x * y - q.y * x + q.w * z;
+        x += (q.y * h - q.z * g) * 2.0f;
+        y += (q.z * f - q.x * h) * 2.0f;
+        z += (q.x * g - q.y * f) * 2.0f;
     }
 
     /**
@@ -331,6 +388,19 @@ public class Vector3 {
         float t = x;
         x = z;
         z = t;
+    }
+
+    /**
+     * Returns whether this vector is equivalent to given vector.
+     *
+     * @param v the quaternion to compare.
+     * @return {@code true} if this vector is equivalent to other.
+     */
+    public boolean equivalent(@Nonnull Vector3 v) {
+        if (this == v) return true;
+        return MathUtil.isApproxEqual(x, v.x) &&
+                MathUtil.isApproxEqual(y, v.y) &&
+                MathUtil.isApproxEqual(z, v.z);
     }
 
     @Override

@@ -1,6 +1,7 @@
 /*
- * Arc 3D.
- * Copyright (C) 2022-2023 BloCamLimb. All rights reserved.
+ * This file is part of Arc 3D.
+ *
+ * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -77,8 +78,6 @@ public class TestManagedResource {
         pw.println("Max vertex stride: " + GLCore.glGetInteger(GLCore.GL_MAX_VERTEX_ATTRIB_STRIDE));
         pw.println("Max label length: " + GLCore.glGetInteger(GLCore.GL_MAX_LABEL_LENGTH));
 
-        pw.println("Distance of two strings: " + MathUtil.distance("funciton", "function"));
-
         {
             ModuleLoader moduleLoader = ModuleLoader.getInstance();
             DSL.start(ModuleKind.GENERIC, new ModuleOptions(), moduleLoader.getRootModule());
@@ -113,8 +112,6 @@ public class TestManagedResource {
                         """;
 
         testShaderBuilder(pw, dContext);
-
-        pw.println("quickModPow: " + MathUtil.quickModPow(95959595, 87878787, 998244353));
 
         pw.println("BinaryFormats: " + Arrays.toString(((GLCaps) dContext.getCaps()).mProgramBinaryFormats));
 
@@ -394,12 +391,12 @@ public class TestManagedResource {
         Matrix4 transform = Matrix4.identity();
         transform.m34 = 1 / 4096f;
         transform.preRotateX(MathUtil.PI_O_3);
-        Matrix3 matrix3 = transform.toM33NoZ();
+        Matrix matrix3 = transform.toMatrix();
         pw.println(matrix3);
 
         Matrix4 mat = Matrix4.identity();
         mat.preRotateZ(MathUtil.PI_O_2 * 29);
-        Matrix3 m3 = mat.toM33NoZ();
+        Matrix m3 = mat.toMatrix();
         pw.println(m3);
         pw.println(m3.getType());
         pw.println("Similarity: " + m3.isSimilarity());

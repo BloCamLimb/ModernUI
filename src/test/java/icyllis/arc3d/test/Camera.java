@@ -1,6 +1,7 @@
 /*
- * Arc 3D.
- * Copyright (C) 2022-2023 BloCamLimb. All rights reserved.
+ * This file is part of Arc 3D.
+ *
+ * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -60,14 +61,25 @@ public class Camera {
         p2 = new float[]{25, -15};
         p3 = new float[]{25, 15};
         p4 = new float[]{-25, 15};
-        outMatrix.mapPoint(p1);
-        outMatrix.mapPoint(p2);
-        outMatrix.mapPoint(p3);
-        outMatrix.mapPoint(p4);
+        mapPoint(outMatrix, p1);
+        mapPoint(outMatrix, p2);
+        mapPoint(outMatrix, p3);
+        mapPoint(outMatrix, p4);
         pw.println(Arrays.toString(p1));
         pw.println(Arrays.toString(p2));
         pw.println(Arrays.toString(p3));
         pw.println(Arrays.toString(p4));
+    }
+
+    public static void mapPoint(Matrix3 m, float[] p) {
+        float x1 = m.m11 * p[0] + m.m21 * p[1] + m.m31;
+        float y1 = m.m12 * p[0] + m.m22 * p[1] + m.m32;
+        // project
+        float w = 1.0f / (m.m13 * p[0] + m.m23 * p[1] + m.m33);
+        x1 *= w;
+        y1 *= w;
+        p[0] = x1;
+        p[1] = y1;
     }
 
     public static class Patch3D {

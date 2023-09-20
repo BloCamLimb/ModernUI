@@ -1,6 +1,7 @@
 /*
- * Arc 3D.
- * Copyright (C) 2022-2023 BloCamLimb. All rights reserved.
+ * This file is part of Arc 3D.
+ *
+ * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -31,15 +32,18 @@ import java.lang.annotation.*;
  * transfer ownership. When denote a field, the owner object has to unref it along
  * with object itself. When there is no annotation, it is seen as raw ptr.
  * <p>
- * Denoted classes should implement {@link AutoCloseable}, which is equivalent to
+ * Denoted classes sometimes implement {@link AutoCloseable}, which is equivalent to
  * "unref". Some classes may not need to be shared, or they may only be shared
  * internally and have a unique owner object, or there are no underlying resources,
- * or there is no need for immediacy. They also implement {@link AutoCloseable},
+ * or there is no need for immediacy. They may implement {@link AutoCloseable},
  * which is equivalent to "free" (or similar methods), you just need to manage
  * their finalizing.
  */
 @Documented
 @Retention(RetentionPolicy.CLASS)
-@Target({ElementType.FIELD, ElementType.METHOD, ElementType.PARAMETER, ElementType.LOCAL_VARIABLE})
+@Target({ElementType.METHOD,
+        ElementType.PARAMETER,
+        ElementType.FIELD,
+        ElementType.LOCAL_VARIABLE})
 public @interface SharedPtr {
 }
