@@ -46,7 +46,7 @@ import javax.annotation.Nullable;
  * The bounds are used in determining which clip elements must be applied and thus the bounds cannot
  * in turn depend upon the clip.
  */
-public abstract class Op {
+public abstract class Op extends Rect2f {
 
     /**
      * Indicates that the op will produce geometry that extends beyond its bounds for the
@@ -65,12 +65,7 @@ public abstract class Op {
     // we are owned by this (uniquely)
     private Op mPrevInChain;
 
-    private int mFlags;
-
-    private float mLeft;
-    private float mTop;
-    private float mRight;
-    private float mBottom;
+    private int mBoundsFlags;
 
     public Op() {
     }
@@ -80,76 +75,49 @@ public abstract class Op {
     }
 
     /**
-     * The op that combineIfPossible was called on now represents its own work plus that of
-     * the passed op. The passed op should be destroyed without being flushed. Currently it
-     * is not legal to merge an op passed to combineIfPossible() the passed op is already in a
-     * chain (though the op on which combineIfPossible() was called may be).
+     * The op that this method was called on now represents its own work plus that of
+     * the passed op. If the pipeline state used by two ops is the same, they can be
+     * batched through indexed rendering or instanced rendering. If this method returns
+     * true, it means that the passed op will be added to the tail of the chain, while
+     * the head op is responsible for rendering the chain.
      */
-    public final boolean combineIfPossible(@Nonnull Op op) {
+    public final boolean mayChain(@Nonnull Op op) {
         assert (op != this);
         if (getClass() != op.getClass()) {
             return false;
         }
-        boolean result = onCombineIfPossible(op);
+        boolean result = onMayChain(op);
         if (result) {
-            mFlags |= op.mFlags;
-            mLeft = Math.min(mLeft, op.mLeft);
-            mTop = Math.min(mTop, op.mTop);
-            mRight = Math.max(mRight, op.mRight);
-            mBottom = Math.max(mBottom, op.mBottom);
+            joinNoCheck(op);
+            mBoundsFlags |= op.mBoundsFlags;
         }
         return result;
     }
 
-    protected boolean onCombineIfPossible(@Nonnull Op op) {
+    protected boolean onMayChain(@Nonnull Op op) {
         return false;
     }
 
     /**
      * Must be called at least once before use.
      */
-    protected final void setBounds(float left, float top, float right, float bottom,
-                                   boolean aaBloat, boolean zeroArea) {
-        mLeft = left;
-        mTop = top;
-        mRight = right;
-        mBottom = bottom;
-        mFlags = (aaBloat ? BoundsFlag_AABloat : 0) |
+    protected final void setBoundsFlags(boolean aaBloat, boolean zeroArea) {
+        mBoundsFlags = (aaBloat ? BoundsFlag_AABloat : 0) |
                 (zeroArea ? BoundsFlag_ZeroArea : 0);
     }
 
-    public final void getBounds(@Nonnull Rect2f bounds) {
-        bounds.set(mLeft, mTop, mRight, mBottom);
-    }
-
-    public final float getLeft() {
-        return mLeft;
-    }
-
-    public final float getTop() {
-        return mTop;
-    }
-
-    public final float getRight() {
-        return mRight;
-    }
-
-    public final float getBottom() {
-        return mBottom;
-    }
-
     /**
-     * @return true if this has analytical anti-aliasing bloat when determining coverage (outset by 0.5)
+     * @return true if this has DEAA bloat when determining coverage (outset by 0.5)
      */
     public final boolean hasAABloat() {
-        return (mFlags & BoundsFlag_AABloat) != 0;
+        return (mBoundsFlags & BoundsFlag_AABloat) != 0;
     }
 
     /**
      * @return true if this draws a primitive that has zero area, we can also call hairline
      */
     public final boolean hasZeroArea() {
-        return (mFlags & BoundsFlag_ZeroArea) != 0;
+        return (mBoundsFlags & BoundsFlag_ZeroArea) != 0;
     }
 
     /**
@@ -171,7 +139,7 @@ public abstract class Op {
                                    int pipelineFlags);
 
     /**
-     * Issues the op's commands to {@link Server}.
+     * Issues the op chain's commands to {@link OpsRenderPass}.
      *
      * @param chainBounds If this op is chained then chainBounds is the union of the bounds of all ops in the chain.
      *                    Otherwise, this op's bounds.
@@ -182,7 +150,7 @@ public abstract class Op {
      * Concatenates two op chains. This op must be a tail and the passed op must be a head. The ops
      * must be of the same subclass.
      */
-    public final void mergeChain(@Nonnull Op next) {
+    public final void chainConcat(@Nonnull Op next) {
         assert (getClass() == next.getClass());
         assert (isChainTail());
         assert (next.isChainHead());
@@ -223,7 +191,7 @@ public abstract class Op {
      * chain or null if this was already a tail.
      */
     @Nullable
-    public final Op cutChain() {
+    public final Op chainSplit() {
         final Op next = mNextInChain;
         if (next != null) {
             next.mPrevInChain = null;

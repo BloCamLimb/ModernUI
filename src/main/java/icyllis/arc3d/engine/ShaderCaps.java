@@ -30,6 +30,9 @@ public class ShaderCaps {
             Automatic_AdvBlendEqInteraction = 1,        // No interaction required
             GeneralEnable_AdvBlendEqInteraction = 2;    // layout(blend_support_all_equations) out
 
+    // GLSL version 450 or 330
+    public int mGLSLVersion = 450;
+
     public boolean mDualSourceBlendingSupport = false;
     public boolean mPreferFlatInterpolation = false;
     public boolean mVertexIDSupport = false;
@@ -45,6 +48,8 @@ public class ShaderCaps {
     // Use a reduced set of rendering algorithms or less optimal effects in order to reduce the
     // number of unique shaders generated.
     public boolean mReducedShaderMode = false;
+
+    public boolean mTextureQueryLod = true;
 
     // Used for specific driver bug workarounds
     public boolean mRequiresLocalOutputColorForFBFetch = false;
@@ -68,6 +73,8 @@ public class ShaderCaps {
 
     public int mMaxFragmentSamplers = 0;
 
+    public String mVersionDeclString = "";
+
     public ShaderCaps() {
     }
 
@@ -79,5 +86,28 @@ public class ShaderCaps {
 
     public final boolean mustEnableAdvBlendEqs() {
         return mAdvBlendEqInteraction >= GeneralEnable_AdvBlendEqInteraction;
+    }
+
+    @Override
+    public String toString() {
+        return "ShaderCaps{" +
+                "mDualSourceBlendingSupport=" + mDualSourceBlendingSupport +
+                ", mPreferFlatInterpolation=" + mPreferFlatInterpolation +
+                ", mVertexIDSupport=" + mVertexIDSupport +
+                ", mInfinitySupport=" + mInfinitySupport +
+                ", mNonConstantArrayIndexSupport=" + mNonConstantArrayIndexSupport +
+                ", mBitManipulationSupport=" + mBitManipulationSupport +
+                ", mHalfIs32Bits=" + mHalfIs32Bits +
+                ", mHasLowFragmentPrecision=" + mHasLowFragmentPrecision +
+                ", mReducedShaderMode=" + mReducedShaderMode +
+                ", mRequiresLocalOutputColorForFBFetch=" + mRequiresLocalOutputColorForFBFetch +
+                ", mMustObfuscateUniformColor=" + mMustObfuscateUniformColor +
+                ", mMustWriteToFragColor=" + mMustWriteToFragColor +
+                ", mColorSpaceMathNeedsFloat=" + mColorSpaceMathNeedsFloat +
+                ", mAvoidDfDxForGradientsWhenPossible=" + mAvoidDfDxForGradientsWhenPossible +
+                ", mSecondaryOutputExtensionString='" + mSecondaryOutputExtensionString + '\'' +
+                ", mAdvBlendEqInteraction=" + mAdvBlendEqInteraction +
+                ", mMaxFragmentSamplers=" + mMaxFragmentSamplers +
+                '}';
     }
 }

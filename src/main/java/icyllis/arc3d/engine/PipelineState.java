@@ -19,11 +19,8 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.Rect2f;
-
-public abstract class Clip {
-
-    public abstract int apply(SurfaceDrawContext sdc,
-                              ClipResult out,
-                              Rect2f bounds);
+/**
+ * Pipeline state object.
+ */
+public abstract class PipelineState {
 }

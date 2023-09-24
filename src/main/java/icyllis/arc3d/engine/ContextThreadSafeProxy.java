@@ -19,15 +19,15 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.Surface;
-import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.ImageInfo;
+import icyllis.arc3d.core.SurfaceCharacterization;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nullable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static icyllis.arc3d.engine.Engine.BackendApi;
+import static icyllis.arc3d.engine.Engine.*;
 
 /**
  * Can be used to perform actions related to the generating {@link Context} in a thread safe manner. The
@@ -40,7 +40,7 @@ public final class ContextThreadSafeProxy {
     private static final AtomicInteger sNextID = new AtomicInteger(1);
 
     private static int createUniqueID() {
-        for (;;) {
+        for (; ; ) {
             final int value = sNextID.get();
             final int newValue = value == -1 ? 1 : value + 1; // 0 is reserved
             if (sNextID.weakCompareAndSetVolatile(value, newValue)) {
@@ -55,6 +55,7 @@ public final class ContextThreadSafeProxy {
 
     private volatile Caps mCaps;
     private volatile ThreadSafeCache mThreadSafeCache;
+    private volatile PipelineStateCache mPipelineStateCache;
 
     private final AtomicBoolean mDiscarded = new AtomicBoolean(false);
 
@@ -77,14 +78,14 @@ public final class ContextThreadSafeProxy {
      *                                 all resource allocation decisions are made at record time
      *                                 and at playback time the budget limits will be ignored.
      * @param imageInfo                The image info specifying properties of the
-     *                                 {@link Surface} that the DDL created
+     *                                 {@link icyllis.arc3d.engine.Surface} that the DDL created
      *                                 with this characterization will be replayed into.
      *                                 Note: Engine doesn't make use of the
      *                                 {@link ImageInfo#alphaType()}.
      * @param backendFormat            Information about the format of the GPU surface that
-     *                                 will back the {@link Surface} upon
+     *                                 will back the {@link icyllis.arc3d.engine.Surface} upon
      *                                 replay.
-     * @param origin                   The origin of the {@link Surface} that
+     * @param origin                   The origin of the {@link icyllis.arc3d.engine.Surface} that
      *                                 the DDL created with this characterization will be
      *                                 replayed into.
      * @param sampleCount              The sample count of the {@link Surface}
@@ -179,20 +180,20 @@ public final class ContextThreadSafeProxy {
     }
 
     /**
-     * Retrieve the default {@link BackendFormat} for a given {@link Core.ColorType} and renderability.
+     * Retrieve the default {@link BackendFormat} for a given {@code ColorType} and renderability.
      * It is guaranteed that this backend format will be the one used by the following
-     * {@link Core.ColorType} and {@link SurfaceCharacterization#createBackendFormat(int, BackendFormat)}.
+     * {@code ColorType} and {@link SurfaceCharacterization#createBackendFormat(int, BackendFormat)}.
      * <p>
      * The caller should check that the returned format is valid (nullability).
      *
-     * @param colorType  see {@link Core.ColorType}
+     * @param colorType  see {@link ImageInfo}
      * @param renderable true if the format will be used as color attachments
      */
     @Nullable
     public BackendFormat getDefaultBackendFormat(int colorType, boolean renderable) {
         assert (mCaps != null);
 
-        colorType = Engine.ColorType.toPublic(colorType);
+        colorType = colorTypeToPublic(colorType);
         BackendFormat format = mCaps.getDefaultBackendFormat(colorType, renderable);
         if (format == null) {
             return null;
@@ -203,13 +204,13 @@ public final class ContextThreadSafeProxy {
     }
 
     /**
-     * Retrieve the {@link BackendFormat} for a given {@link Core.CompressionType}. This is
+     * Retrieve the {@link BackendFormat} for a given {@code CompressionType}. This is
      * guaranteed to match the backend format used by the following
-     * createCompressedBackendTexture methods that take a {@link Core.CompressionType}.
+     * createCompressedBackendTexture methods that take a {@code CompressionType}.
      * <p>
      * The caller should check that the returned format is valid (nullability).
      *
-     * @param compressionType see {@link Core.CompressionType}
+     * @param compressionType see {@link ImageInfo}
      */
     @Nullable
     public BackendFormat getCompressedBackendFormat(int compressionType) {
@@ -226,12 +227,12 @@ public final class ContextThreadSafeProxy {
      * rendering is supported for the color type. 0 is returned if rendering to this color type
      * is not supported at all.
      *
-     * @param colorType see {@link Core.ColorType}
+     * @param colorType see {@link ImageInfo}
      */
     public int getMaxSurfaceSampleCount(int colorType) {
         assert (mCaps != null);
 
-        colorType = Engine.ColorType.toPublic(colorType);
+        colorType = colorTypeToPublic(colorType);
         BackendFormat format = mCaps.getDefaultBackendFormat(colorType, true);
         if (format == null) {
             return 0;
@@ -276,10 +277,16 @@ public final class ContextThreadSafeProxy {
         return mThreadSafeCache;
     }
 
-    void init(Caps caps) {
+    @ApiStatus.Internal
+    public PipelineStateCache getPipelineStateCache() {
+        return mPipelineStateCache;
+    }
+
+    void init(Caps caps, PipelineStateCache psc) {
         assert (caps != null);
         mCaps = caps;
         mThreadSafeCache = new ThreadSafeCache();
+        mPipelineStateCache = psc;
     }
 
     boolean discard() {
@@ -295,8 +302,5 @@ public final class ContextThreadSafeProxy {
         return mContextID;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        return this == o;
-    }
+    // use reference equality
 }

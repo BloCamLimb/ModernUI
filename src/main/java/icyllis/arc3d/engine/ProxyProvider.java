@@ -19,12 +19,11 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.core.*;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import javax.annotation.Nullable;
-
-import static icyllis.arc3d.engine.Engine.*;
+import java.util.Objects;
 
 /**
  * A factory for creating {@link TextureProxy}-derived objects. This class may be used on
@@ -61,7 +60,7 @@ public final class ProxyProvider {
         }
 
         // Only the proxyProvider that created a proxy should be assigning unique keys to it.
-        assert isDeferredProvider() == ((proxy.mSurfaceFlags & SurfaceFlags.DEFERRED_PROVIDER) != 0);
+        assert isDeferredProvider() == ((proxy.mSurfaceFlags & Surface.FLAG_DEFERRED_PROVIDER) != 0);
 
         // If there is already a Resource with this key then the caller has violated the
         // normal usage pattern of uniquely keyed resources (e.g., they have created one w/o
@@ -91,11 +90,11 @@ public final class ProxyProvider {
      * Create a {@link TextureProxy} without any data.
      *
      * @see TextureProxy
-     * @see SurfaceFlags#Budgeted
-     * @see SurfaceFlags#LooseFit
-     * @see SurfaceFlags#Mipmapped
-     * @see SurfaceFlags#Protected
-     * @see SurfaceFlags#SKIP_ALLOCATOR
+     * @see Surface#FLAG_BUDGETED
+     * @see Surface#FLAG_APPROX_FIT
+     * @see Surface#FLAG_MIPMAPPED
+     * @see Surface#FLAG_PROTECTED
+     * @see Surface#FLAG_SKIP_ALLOCATOR
      */
     @Nullable
     @SharedPtr
@@ -117,19 +116,100 @@ public final class ProxyProvider {
         }
 
         if (isDeferredProvider())
-            surfaceFlags |= SurfaceFlags.DEFERRED_PROVIDER;
+            surfaceFlags |= Surface.FLAG_DEFERRED_PROVIDER;
         else
-            assert (surfaceFlags & SurfaceFlags.DEFERRED_PROVIDER) == 0;
+            assert (surfaceFlags & Surface.FLAG_DEFERRED_PROVIDER) == 0;
 
         return new TextureProxy(format, width, height, surfaceFlags);
     }
 
     /**
-     * @see SurfaceFlags#Budgeted
-     * @see SurfaceFlags#LooseFit
-     * @see SurfaceFlags#Mipmapped
-     * @see SurfaceFlags#Protected
-     * @see SurfaceFlags#SKIP_ALLOCATOR
+     * Creates a new texture proxy for the pixmap.
+     *
+     * @param pixmap raw ptr to pixels holder
+     * @see Surface#FLAG_BUDGETED
+     * @see Surface#FLAG_APPROX_FIT
+     * @see Surface#FLAG_MIPMAPPED
+     */
+    @Nullable
+    @SharedPtr
+    public TextureProxy createProxyFromPixmap(Pixmap pixmap, int dstColorType, int surfaceFlags) {
+        mContext.checkOwnerThread();
+        assert ((surfaceFlags & Surface.FLAG_APPROX_FIT) == 0) ||
+                ((surfaceFlags & Surface.FLAG_MIPMAPPED) == 0);
+        if (mContext.isDiscarded()) {
+            return null;
+        }
+        if (!pixmap.getInfo().isValid()) {
+            return null;
+        }
+        if (!pixmap.isImmutable()) {
+            return null;
+        }
+        var format = mContext.getCaps()
+                .getDefaultBackendFormat(dstColorType, false);
+        if (format == null) {
+            return null;
+        }
+        var srcColorType = pixmap.getColorType();
+        var width = pixmap.getWidth();
+        var height = pixmap.getHeight();
+        @SharedPtr
+        var proxy = createLazyProxy(format, width, height, surfaceFlags,
+                new PixmapCallback(pixmap, srcColorType, dstColorType));
+        if (proxy == null) {
+            return null;
+        }
+        if (!isDeferredProvider()) {
+            proxy.doLazyInstantiation(mDirect.getResourceProvider());
+        }
+        return proxy;
+    }
+
+    private static final class PixmapCallback implements SurfaceProxy.LazyInstantiateCallback {
+
+        private Pixmap mPixmap;
+        private final int srcColorType;
+        private final int dstColorType;
+
+        public PixmapCallback(Pixmap pixmap, int srcColorType, int dstColorType) {
+            pixmap.ref();
+            this.mPixmap = pixmap;
+            this.srcColorType = srcColorType;
+            this.dstColorType = dstColorType;
+        }
+
+        @Override
+        public SurfaceProxy.LazyCallbackResult onLazyInstantiate(ResourceProvider provider, BackendFormat format,
+                                                                 int width, int height, int sampleCount,
+                                                                 int surfaceFlags, String label) {
+            @SharedPtr
+            Texture texture = provider.createTexture(width, height,
+                    format,
+                    sampleCount,
+                    surfaceFlags,
+                    dstColorType,
+                    srcColorType,
+                    mPixmap.getRowStride(),
+                    mPixmap.getPixels(),
+                    label);
+            mPixmap.unref();
+            mPixmap = null;
+            return new SurfaceProxy.LazyCallbackResult(texture);
+        }
+
+        @Override
+        public void close() {
+            mPixmap = RefCnt.move(mPixmap);
+        }
+    }
+
+    /**
+     * @see Surface#FLAG_BUDGETED
+     * @see Surface#FLAG_APPROX_FIT
+     * @see Surface#FLAG_MIPMAPPED
+     * @see Surface#FLAG_PROTECTED
+     * @see Surface#FLAG_SKIP_ALLOCATOR
      */
     @Nullable
     @SharedPtr
@@ -152,9 +232,9 @@ public final class ProxyProvider {
         }
 
         if (isDeferredProvider())
-            surfaceFlags |= SurfaceFlags.DEFERRED_PROVIDER;
+            surfaceFlags |= Surface.FLAG_DEFERRED_PROVIDER;
         else
-            assert (surfaceFlags & SurfaceFlags.DEFERRED_PROVIDER) == 0;
+            assert (surfaceFlags & Surface.FLAG_DEFERRED_PROVIDER) == 0;
 
         return new RenderTextureProxy(format, width, height, sampleCount, surfaceFlags);
     }
@@ -186,6 +266,68 @@ public final class ProxyProvider {
         assert sampleCount > 0;
         //TODO
         return null;
+    }
+
+    @Nullable
+    @SharedPtr
+    public RenderSurfaceProxy wrapBackendRenderTarget(BackendRenderTarget backendRenderTarget,
+                                                      Runnable rcReleaseCB) {
+        if (mContext.isDiscarded()) {
+            return null;
+        }
+
+        // This is only supported on a direct Context.
+        if (mDirect == null) {
+            return null;
+        }
+
+        @SharedPtr
+        var fsr = mDirect.getResourceProvider()
+                .wrapBackendRenderTarget(backendRenderTarget);
+        if (fsr == null) {
+            return null;
+        }
+
+        return new RenderSurfaceProxy(fsr, 0);
+    }
+
+    /**
+     * Creates a texture proxy that will be instantiated by a user-supplied callback during flush.
+     * The width and height must either both be greater than 0 or both less than or equal to zero. A
+     * non-positive value is a signal that the width height are currently unknown. The texture will
+     * not be renderable.
+     *
+     * @see Surface#FLAG_BUDGETED
+     * @see Surface#FLAG_APPROX_FIT
+     * @see Surface#FLAG_MIPMAPPED
+     * @see Surface#FLAG_PROTECTED
+     * @see Surface#FLAG_READ_ONLY
+     * @see Surface#FLAG_SKIP_ALLOCATOR
+     */
+    @Nullable
+    @SharedPtr
+    public TextureProxy createLazyProxy(BackendFormat format,
+                                        int width, int height,
+                                        int surfaceFlags,
+                                        SurfaceProxy.LazyInstantiateCallback callback) {
+        mContext.checkOwnerThread();
+        if (mContext.isDiscarded()) {
+            return null;
+        }
+        assert (width <= 0 && height <= 0)
+                || (width > 0 && height > 0);
+        Objects.requireNonNull(callback);
+        if (format == null || format.getBackend() != mContext.getBackend()) {
+            return null;
+        }
+        if (width > mContext.getCaps().maxTextureSize() ||
+                height > mContext.getCaps().maxTextureSize()) {
+            return null;
+        }
+        if (isDeferredProvider()) {
+            surfaceFlags |= Surface.FLAG_DEFERRED_PROVIDER;
+        }
+        return new TextureProxy(format, width, height, surfaceFlags, callback);
     }
 
     public boolean isDeferredProvider() {

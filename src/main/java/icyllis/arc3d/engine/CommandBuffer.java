@@ -19,13 +19,16 @@
 
 package icyllis.arc3d.engine;
 
-/**
- * The DeferredContext is the one in effect during DDL Recording. It isn't backed by a GPU and
- * cannot allocate any GPU resources.
- */
-public final class DeferredContext extends RecordingContext {
+import icyllis.arc3d.core.SharedPtr;
 
-    DeferredContext(ContextThreadSafeProxy proxy) {
-        super(proxy);
+import java.util.ArrayList;
+
+public abstract class CommandBuffer {
+
+    @SharedPtr
+    private final ArrayList<Buffer> mTrackingGPUBuffers = new ArrayList<>();
+
+    public void moveAndTrackGPUBuffer(@SharedPtr Buffer buffer) {
+        mTrackingGPUBuffers.add(buffer);
     }
 }

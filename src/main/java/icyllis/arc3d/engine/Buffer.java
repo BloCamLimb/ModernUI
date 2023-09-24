@@ -25,22 +25,22 @@ import static icyllis.arc3d.engine.Engine.BufferUsageFlags;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 /**
- * Represents a device memory block that prefers to allocate GPU memory and may be used as
- * vertex buffers, index buffers and pixel transfer buffers. Such buffer tends to update
- * data every frame.
+ * Represents a single device-visible memory region that may be used as mesh buffers and
+ * staging buffers. A buffer cannot be accessed by both CPU and GPU simultaneously, it's
+ * either locked by engine or executing in command list.
  */
 public abstract class Buffer extends Resource {
 
     /**
      * Locks for reading. The effect of writes is undefined.
      */
-    protected static final int kRead_LockMode = 0;
+    public static final int kRead_LockMode = 0;
     /**
      * Locks for writing. The existing contents are discarded and the initial contents of the
      * buffer. Reads (even after overwriting initial contents) should be avoided for performance
      * reasons as the memory may not be cached.
      */
-    protected static final int kWriteDiscard_LockMode = 1;
+    public static final int kWriteDiscard_LockMode = 1;
 
     protected final int mSize;
     protected final int mUsage;
@@ -57,12 +57,15 @@ public abstract class Buffer extends Resource {
     }
 
     /**
-     * @return size of the buffer in bytes
+     * @return allocation size of the buffer in bytes
      */
     public final int getSize() {
         return mSize;
     }
 
+    /**
+     * @return {@link Engine.BufferUsageFlags}
+     */
     public final int getUsage() {
         return mUsage;
     }
@@ -72,29 +75,10 @@ public abstract class Buffer extends Resource {
         return mSize;
     }
 
-    /**
-     * Locks the buffer to be read or written by the CPU.
-     * <p>
-     * It is an error to draw from the buffer while it is locked or transfer to/from the buffer.
-     * Once a buffer is locked, subsequent calls to this method will throw an exception.
-     * <p>
-     * If the buffer is of type {@link BufferUsageFlags#kTransferDst} then it is locked for
-     * reading only. Otherwise it is locked writing only. Writing to a buffer that is locked for
-     * reading or vice versa produces undefined results. If the buffer is locked for writing
-     * then the buffer's previous contents are invalidated.
-     *
-     * @return a valid pointer to the locked data
-     */
-    public final long lock() {
-        if (isDestroyed() || isLocked()) {
-            throw new IllegalStateException();
-        }
-        mLockOffset = 0;
-        mLockSize = mSize;
-        return onLock((mUsage & BufferUsageFlags.kTransferDst) != 0
-                        ? kRead_LockMode
-                        : kWriteDiscard_LockMode,
-                0, mSize);
+    private static int getLockMode(int usage) {
+        return (usage & Engine.BufferUsageFlags.kTransferDst) != 0
+                ? kRead_LockMode
+                : kWriteDiscard_LockMode;
     }
 
     /**
@@ -103,24 +87,49 @@ public abstract class Buffer extends Resource {
      * It is an error to draw from the buffer while it is locked or transfer to/from the buffer.
      * Once a buffer is locked, subsequent calls to this method will throw an exception.
      * <p>
-     * If the buffer is of type {@link BufferUsageFlags#kTransferDst} then it is locked for
+     * If the buffer is of type {@link Engine.BufferUsageFlags#kTransferDst} then it is locked for
      * reading only. Otherwise it is locked writing only. Writing to a buffer that is locked for
      * reading or vice versa produces undefined results. If the buffer is locked for writing
      * then the buffer's previous contents are invalidated.
      *
      * @return a valid pointer to the locked data
      */
+    public final long lock() {
+        if (isDestroyed()) {
+            return NULL;
+        }
+        if (isLocked()) {
+            throw new IllegalStateException("Already locked");
+        }
+        mLockOffset = 0;
+        mLockSize = mSize;
+        return onLock(getLockMode(mUsage), 0, mSize);
+    }
+
+    /**
+     * Locks the buffer to be read or written by the CPU.
+     * <p>
+     * It is an error to draw from the buffer while it is locked or transfer to/from the buffer.
+     * Once a buffer is locked, subsequent calls to this method will throw an exception.
+     * <p>
+     * If the buffer is of type {@link Engine.BufferUsageFlags#kTransferDst} then it is locked for
+     * reading only. Otherwise it is locked writing only. Writing to a buffer that is locked for
+     * reading or vice versa produces undefined results. If the buffer is locked for writing
+     * then the buffer's previous contents are invalidated.
+     *
+     * @return a valid pointer to the locked data, or nullptr if lock failed
+     */
     public final long lock(int offset, int size) {
-        if (isDestroyed() || isLocked()) {
-            throw new IllegalStateException();
+        if (isDestroyed()) {
+            return NULL;
+        }
+        if (isLocked()) {
+            throw new IllegalStateException("Already locked");
         }
         Objects.checkFromIndexSize(offset, size, mSize);
         mLockOffset = offset;
         mLockSize = size;
-        return onLock((mUsage & BufferUsageFlags.kTransferDst) != 0
-                        ? kRead_LockMode
-                        : kWriteDiscard_LockMode,
-                offset, size);
+        return onLock(getLockMode(mUsage), offset, size);
     }
 
     /**
@@ -133,11 +142,9 @@ public abstract class Buffer extends Resource {
             return;
         }
         if (isLocked()) {
-            onUnlock((mUsage & BufferUsageFlags.kTransferDst) != 0
-                            ? kRead_LockMode
-                            : kWriteDiscard_LockMode,
-                    mLockOffset, mLockSize);
+            onUnlock(getLockMode(mUsage), mLockOffset, mLockSize);
         }
+        assert (!isLocked());
     }
 
     /**
@@ -150,13 +157,12 @@ public abstract class Buffer extends Resource {
             return;
         }
         if (isLocked()) {
-            Objects.checkIndex(offset, mLockOffset);
-            Objects.checkIndex(size, mLockSize);
-            onUnlock((mUsage & BufferUsageFlags.kTransferDst) != 0
-                            ? kRead_LockMode
-                            : kWriteDiscard_LockMode,
-                    offset, size);
+            if (offset < mLockOffset || size > mLockSize) {
+                throw new IllegalStateException();
+            }
+            onUnlock(getLockMode(mUsage), offset, size);
         }
+        assert (!isLocked());
     }
 
     protected abstract long onLock(int mode, int offset, int size);
@@ -164,7 +170,8 @@ public abstract class Buffer extends Resource {
     protected abstract void onUnlock(int mode, int offset, int size);
 
     /**
-     * Queries whether the buffer has been locked by {@link #lock(int, int)}.
+     * Queries whether the buffer has been locked by {@link #lock(int, int)},
+     * this is mostly used for validation.
      *
      * @return true if the buffer is locked, false otherwise.
      */
@@ -172,7 +179,8 @@ public abstract class Buffer extends Resource {
 
     /**
      * Queries the pointer returned by the previous {@link #lock(int, int)} if
-     * {@link #isLocked()} returns true, otherwise the pointer is invalid.
+     * {@link #isLocked()} returns true, otherwise the pointer is invalid,
+     * this is mostly used for validation.
      *
      * @return the pointer to the locked buffer if locked.
      */
@@ -187,27 +195,26 @@ public abstract class Buffer extends Resource {
      * <p>
      * The buffer must not be locked.
      * <p>
-     * Fails for {@link BufferUsageFlags#kTransferDst}.
+     * Fails for {@link Engine.BufferUsageFlags#kTransferDst}.
      * <p>
      * Note that buffer updates do not go through Context and therefore are
      * not serialized with other operations.
      *
      * @return returns true if the update succeeds, false otherwise.
      */
-    public boolean updateData(long data, int offset, int size) {
+    public boolean updateData(int offset, int size, long data) {
         assert (data != NULL);
-        assert (!isLocked());
-        if (isDestroyed()) {
+        if (isDestroyed() || isLocked()) {
             return false;
         }
         assert (size > 0 && offset + size <= mSize);
 
-        if ((mUsage & BufferUsageFlags.kTransferDst) != 0) {
+        if ((mUsage & Engine.BufferUsageFlags.kTransferDst) != 0) {
             return false;
         }
 
-        return onUpdateData(data, offset, size);
+        return onUpdateData(offset, size, data);
     }
 
-    protected abstract boolean onUpdateData(long data, int offset, int size);
+    protected abstract boolean onUpdateData(int offset, int size, long data);
 }

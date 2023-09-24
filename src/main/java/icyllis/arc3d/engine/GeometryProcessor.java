@@ -82,14 +82,14 @@ public abstract class GeometryProcessor extends Processor {
          *
          * @param name    the attrib name, cannot be null or empty
          * @param srcType the data type in vertex buffer, see {@link VertexAttribType}
-         * @param dstType the data type in vertex shader, see {@link SLType}
+         * @param dstType the data type in vertex shader, see {@link SLDataType}
          */
         public Attribute(String name, byte srcType, byte dstType) {
-            assert (name != null && dstType != SLType.kVoid);
+            assert (name != null && dstType != SLDataType.kVoid);
             assert (srcType >= 0 && srcType <= VertexAttribType.kLast);
-            assert (SLType.checkSLType(dstType));
+            assert (SLDataType.checkSLType(dstType));
             assert (!name.isEmpty() && !name.startsWith("_"));
-            assert (SLType.locationSize(dstType) > 0);
+            assert (SLDataType.locationSize(dstType) > 0);
             mName = name;
             mSrcType = srcType;
             mDstType = dstType;
@@ -101,15 +101,15 @@ public abstract class GeometryProcessor extends Processor {
          *
          * @param name    the attrib name, UpperCamelCase, cannot be null or empty
          * @param srcType the data type in vertex buffer, see {@link VertexAttribType}
-         * @param dstType the data type in vertex shader, see {@link SLType}
+         * @param dstType the data type in vertex shader, see {@link SLDataType}
          * @param offset  N-aligned offset
          */
         public Attribute(String name, byte srcType, byte dstType, int offset) {
-            assert (name != null && dstType != SLType.kVoid);
+            assert (name != null && dstType != SLDataType.kVoid);
             assert (srcType >= 0 && srcType <= VertexAttribType.kLast);
-            assert (SLType.checkSLType(dstType));
+            assert (SLDataType.checkSLType(dstType));
             assert (!name.isEmpty() && !name.startsWith("_"));
-            assert (SLType.locationSize(dstType) > 0);
+            assert (SLDataType.locationSize(dstType) > 0);
             assert (offset != IMPLICIT_OFFSET && alignOffset(offset) == offset);
             mName = name;
             mSrcType = srcType;
@@ -129,7 +129,7 @@ public abstract class GeometryProcessor extends Processor {
         }
 
         /**
-         * @return the data type in vertex shader, see {@link SLType}
+         * @return the data type in vertex shader, see {@link SLDataType}
          */
         public final byte dstType() {
             return mDstType;
@@ -155,7 +155,7 @@ public abstract class GeometryProcessor extends Processor {
          * @return the number of locations
          */
         public final int locationSize() {
-            return SLType.locationSize(mDstType);
+            return SLDataType.locationSize(mDstType);
         }
 
         /**
@@ -264,7 +264,7 @@ public abstract class GeometryProcessor extends Processor {
             return locations;
         }
 
-        final void addToKey(@Nonnull KeyBuilder b, int mask) {
+        final void addToKey(@Nonnull Key.Builder b, int mask) {
             final int rawCount = mAttributes.length;
             // max attribs is no less than 16, we assume the minimum
             b.addBits(6, rawCount, "attribute count");
@@ -356,7 +356,7 @@ public abstract class GeometryProcessor extends Processor {
     @Nonnull
     protected static Attribute makeColorAttribute(String name, boolean wideColor) {
         return new Attribute(name, wideColor ? VertexAttribType.kFloat4 : VertexAttribType.kUByte4_norm,
-                SLType.kFloat4);
+                SLDataType.kFloat4);
     }
 
     private AttributeSet mVertexAttributes;      // binding = 0, divisor = 0
@@ -414,7 +414,7 @@ public abstract class GeometryProcessor extends Processor {
     /**
      * Returns the number of used per-vertex attribute locations.
      *
-     * @see SLType#locationSize(byte)
+     * @see SLDataType#locationSize(byte)
      * @see #numVertexAttributes()
      */
     public final int numVertexLocations() {
@@ -450,7 +450,7 @@ public abstract class GeometryProcessor extends Processor {
     /**
      * Returns the number of used per-instance attribute locations.
      *
-     * @see SLType#locationSize(byte)
+     * @see SLDataType#locationSize(byte)
      * @see #numInstanceAttributes()
      */
     public final int numInstanceLocations() {
@@ -502,9 +502,9 @@ public abstract class GeometryProcessor extends Processor {
      * Adds a key on the KeyBuilder that reflects any variety in the code that the
      * geometry processor subclass can emit.
      */
-    public abstract void addToKey(KeyBuilder b);
+    public abstract void addToKey(Key.Builder b);
 
-    public final void getAttributeKey(KeyBuilder b) {
+    public final void getAttributeKey(Key.Builder b) {
         b.appendComment("vertex attributes");
         mVertexAttributes.addToKey(b, mVertexAttributesMask);
         b.appendComment("instance attributes");
@@ -516,7 +516,7 @@ public abstract class GeometryProcessor extends Processor {
      * GeometryProcessor. This method is called only when the specified key does not
      * exist in the program cache.
      *
-     * @see #addToKey(KeyBuilder)
+     * @see #addToKey(Key.Builder)
      */
     @Nonnull
     public abstract ProgramImpl makeProgramImpl(ShaderCaps caps);
@@ -568,11 +568,11 @@ public abstract class GeometryProcessor extends Processor {
          * @return new state, eiter matrix or state
          */
         //TODO move to other places
-        protected static Matrix3 setTransform(@Nonnull UniformDataManager pdm,
-                                              @UniformHandle int uniform,
-                                              @Nonnull Matrix3 matrix,
-                                              @Nullable Matrix3 state) {
-            if (uniform == INVALID_RESOURCE_HANDLE ||
+        protected static Matrix setTransform(@Nonnull UniformDataManager pdm,
+                                             @UniformHandler.UniformHandle int uniform,
+                                             @Nonnull Matrix matrix,
+                                             @Nullable Matrix state) {
+            if (uniform == Engine.INVALID_RESOURCE_HANDLE ||
                     (state != null && state.equals(matrix))) {
                 // No update needed
                 return state;
@@ -601,20 +601,20 @@ public abstract class GeometryProcessor extends Processor {
                                                  ShaderVar inPos,
                                                  String matrixName,
                                                  ShaderVar outPos) {
-            assert (inPos.getType() == SLType.kFloat2 || inPos.getType() == SLType.kFloat3);
+            assert (inPos.getType() == SLDataType.kFloat2 || inPos.getType() == SLDataType.kFloat3);
 
-            if (inPos.getType() == SLType.kFloat3) {
+            if (inPos.getType() == SLDataType.kFloat3) {
                 // A float3 stays a float3 whether the matrix adds perspective
                 vertBuilder.codeAppendf("vec3 _worldPos = %s * %s;\n",
                         matrixName,
                         inPos.getName());
-                outPos.set("_worldPos", SLType.kFloat3);
+                outPos.set("_worldPos", SLDataType.kFloat3);
             } else {
                 // A float2 is promoted to a float3 if we add perspective via the matrix
                 vertBuilder.codeAppendf("vec3 _worldPos = %s * vec3(%s, 1.0);\n",
                         matrixName,
                         inPos.getName());
-                outPos.set("_worldPos", SLType.kFloat3);
+                outPos.set("_worldPos", SLDataType.kFloat3);
             }
         }
 
@@ -648,10 +648,10 @@ public abstract class GeometryProcessor extends Processor {
                     worldPos);
 
             // Emit the vertex position to the hardware in the normalized device coordinates it expects.
-            assert (worldPos.getType() == SLType.kFloat2 ||
-                    worldPos.getType() == SLType.kFloat3);
+            assert (worldPos.getType() == SLDataType.kFloat2 ||
+                    worldPos.getType() == SLDataType.kFloat3);
             vertBuilder.emitNormalizedPosition(worldPos);
-            if (worldPos.getType() == SLType.kFloat2) {
+            if (worldPos.getType() == SLDataType.kFloat2) {
                 varyingHandler.setNoPerspective();
             }
         }

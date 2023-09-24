@@ -628,38 +628,63 @@ public class Matrix implements Cloneable {
     }
 
     /**
-     * Map a rectangle points in the X-Y plane to get the maximum bounds.
-     *
-     * @param r the rectangle to transform
+     * Sets dst to bounds of src corners mapped by Matrix.
+     * Returns true if mapped corners are dst corners.
      */
-    public void mapRect(@Nonnull Rect2f r) {
-        float x1 = m11 * r.mLeft + m21 * r.mTop + m31;
-        float y1 = m12 * r.mLeft + m22 * r.mTop + m32;
-        float x2 = m11 * r.mRight + m21 * r.mTop + m31;
-        float y2 = m12 * r.mRight + m22 * r.mTop + m32;
-        float x3 = m11 * r.mLeft + m21 * r.mBottom + m31;
-        float y3 = m12 * r.mLeft + m22 * r.mBottom + m32;
-        float x4 = m11 * r.mRight + m21 * r.mBottom + m31;
-        float y4 = m12 * r.mRight + m22 * r.mBottom + m32;
-        if (hasPerspective()) {
-            // project
-            float w = 1.0f / (m13 * r.mLeft + m23 * r.mTop + m33);
+    //@formatter:off
+    public final boolean mapRect(Rect2f src, Rect2f dst) {
+        int typeMask = getType();
+        if (typeMask <= Translate_Mask) {
+            dst.mLeft   = src.mLeft   + m31;
+            dst.mTop    = src.mTop    + m32;
+            dst.mRight  = src.mRight  + m31;
+            dst.mBottom = src.mBottom + m32;
+            return true;
+        }
+        if ((typeMask & ~(Scale_Mask | Translate_Mask)) == 0) {
+            dst.mLeft =   src.mLeft   * m11 + m31;
+            dst.mTop =    src.mTop    * m22 + m32;
+            dst.mRight =  src.mRight  * m11 + m31;
+            dst.mBottom = src.mBottom * m22 + m32;
+            return true;
+        }
+        float x1 = m11 * src.mLeft +  m21 * src.mTop    + m31;
+        float y1 = m12 * src.mLeft +  m22 * src.mTop    + m32;
+        float x2 = m11 * src.mRight + m21 * src.mTop    + m31;
+        float y2 = m12 * src.mRight + m22 * src.mTop    + m32;
+        float x3 = m11 * src.mLeft +  m21 * src.mBottom + m31;
+        float y3 = m12 * src.mLeft +  m22 * src.mBottom + m32;
+        float x4 = m11 * src.mRight + m21 * src.mBottom + m31;
+        float y4 = m12 * src.mRight + m22 * src.mBottom + m32;
+        if ((typeMask & Perspective_Mask) != 0) {
+            float w;
+            w = 1.0f / (m13 * src.mLeft  + m23 * src.mTop    + m33);
             x1 *= w;
             y1 *= w;
-            w = 1.0f / (m13 * r.mRight + m23 * r.mTop + m33);
+            w = 1.0f / (m13 * src.mRight + m23 * src.mTop    + m33);
             x2 *= w;
             y2 *= w;
-            w = 1.0f / (m13 * r.mLeft + m23 * r.mBottom + m33);
+            w = 1.0f / (m13 * src.mLeft  + m23 * src.mBottom + m33);
             x3 *= w;
             y3 *= w;
-            w = 1.0f / (m13 * r.mRight + m23 * r.mBottom + m33);
+            w = 1.0f / (m13 * src.mRight + m23 * src.mBottom + m33);
             x4 *= w;
             y4 *= w;
         }
-        r.mLeft = MathUtil.min(x1, x2, x3, x4);
-        r.mTop = MathUtil.min(y1, y2, y3, y4);
-        r.mRight = MathUtil.max(x1, x2, x3, x4);
-        r.mBottom = MathUtil.max(y1, y2, y3, y4);
+        dst.mLeft   = MathUtil.min(x1, x2, x3, x4);
+        dst.mTop    = MathUtil.min(y1, y2, y3, y4);
+        dst.mRight  = MathUtil.max(x1, x2, x3, x4);
+        dst.mBottom = MathUtil.max(y1, y2, y3, y4);
+        return (typeMask & AxisAligned_Mask) != 0;
+    }
+    //@formatter:on
+
+    /**
+     * Sets rect to bounds of rect corners mapped by Matrix.
+     * Returns true if mapped corners are dst corners.
+     */
+    public final boolean mapRect(Rect2f rect) {
+        return mapRect(rect, rect);
     }
 
     /**

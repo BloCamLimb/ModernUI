@@ -21,63 +21,83 @@ package icyllis.arc3d.opengl;
 
 /**
  * Types for interacting with GL resources created externally to pipeline. BackendObjects for GL
- * textures are really const GLTexture*. The {@link #mFormat} here should be a sized, internal format
+ * textures are really const GLTexture*. The {@link #format} here should be a sized, internal format
  * for the texture. We use the sized format since the base internal formats are deprecated.
  * <p>
  * Note the target is always {@link GLCore#GL_TEXTURE_2D}. When importing external memory,
- * {@link #mMemoryHandle} is POSIX file descriptor or Win32 NT handle (though <code>HANDLE</code>
+ * {@link #memoryHandle} is POSIX file descriptor or Win32 NT handle (though <code>HANDLE</code>
  * is defined as <code>void*</code>, we can safely truncate it because Win32 handles are
- * 32-bit significant). {@link #mMemoryObject} is OpenGL memory object. If it is an NT handle,
+ * 32-bit significant). {@link #memoryObject} is OpenGL memory object. If it is an NT handle,
  * it must be released manually by the memory exporter (e.g. Vulkan).
  * <p>
  * We only provide single-sample textures, multisample can be only renderbuffers.
  */
 public final class GLTextureInfo {
 
-    public int mTexture;
-    public int mFormat;
-    public int mLevelCount = 0;
-    public int mMemoryObject;
-    public int mMemoryHandle = -1;
+    /**
+     * <code>GLuint</code> - texture name
+     */
+    public int texture;
+    /**
+     * <code>GLenum</code> - sized internal format
+     */
+    public int format;
+    /**
+     * <code>GLsizei</code> - number of texture levels
+     */
+    public int levels = 0;
+    /**
+     * <code>GLuint</code> - memory
+     */
+    public int memoryObject;
+    /**
+     * <pre>{@code
+     * union {
+     *     int fd; // file descriptor
+     *     HANDLE handle; // win32 handle
+     * };
+     * }</pre>
+     */
+    public int memoryHandle = -1;
 
     public void set(GLTextureInfo info) {
-        mTexture = info.mTexture;
-        mFormat = info.mFormat;
-        mLevelCount = info.mLevelCount;
-        mMemoryObject = info.mMemoryObject;
-        mMemoryHandle = info.mMemoryHandle;
+        texture = info.texture;
+        format = info.format;
+        levels = info.levels;
+        memoryObject = info.memoryObject;
+        memoryHandle = info.memoryHandle;
+    }
+
+    @Override
+    public int hashCode() {
+        int h = texture;
+        h = 31 * h + format;
+        h = 31 * h + levels;
+        h = 31 * h + memoryObject;
+        h = 31 * h + memoryHandle;
+        return h;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        GLTextureInfo that = (GLTextureInfo) o;
-        if (mTexture != that.mTexture) return false;
-        if (mFormat != that.mFormat) return false;
-        if (mLevelCount != that.mLevelCount) return false;
-        if (mMemoryObject != that.mMemoryObject) return false;
-        return mMemoryHandle == that.mMemoryHandle;
-    }
-
-    @Override
-    public int hashCode() {
-        int result = mTexture;
-        result = 31 * result + mFormat;
-        result = 31 * result + mLevelCount;
-        result = 31 * result + mMemoryObject;
-        result = 31 * result + mMemoryHandle;
-        return result;
+        if (o instanceof GLTextureInfo info)
+            return texture == info.texture &&
+                    format == info.format &&
+                    levels == info.levels &&
+                    memoryObject == info.memoryObject &&
+                    memoryHandle == info.memoryHandle;
+        return false;
     }
 
     @Override
     public String toString() {
-        return "{" +
-                "mTexture=" + mTexture +
-                ", mFormat=0x" + Integer.toHexString(mFormat) +
-                ", mLevelCount=" + mLevelCount +
-                ", mMemoryObject=" + mMemoryObject +
-                ", mMemoryHandle=" + mMemoryHandle +
+        return '{' +
+                "texture=" + texture +
+                ", format=" + GLCore.glFormatName(format) +
+                ", levels=" + levels +
+                ", memoryObject=" + memoryObject +
+                ", memoryHandle=" + memoryHandle +
                 '}';
     }
 }

@@ -21,12 +21,12 @@ package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
+import icyllis.arc3d.engine.Surface;
 import org.lwjgl.opengl.EXTMemoryObject;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.system.Platform;
 
 import javax.annotation.Nonnull;
-import java.util.function.Function;
 
 import static icyllis.arc3d.engine.Engine.*;
 import static icyllis.arc3d.opengl.GLCore.*;
@@ -34,14 +34,11 @@ import static icyllis.arc3d.opengl.GLCore.*;
 /**
  * Represents OpenGL 2D textures.
  */
-public final class GLTexture extends Texture {
+public class GLTexture extends Texture {
 
     private GLTextureInfo mInfo;
     private final GLBackendTexture mBackendTexture;
     private final boolean mOwnership;
-
-    @SharedPtr
-    private GLRenderTarget mRenderTarget;
 
     private final long mMemorySize;
 
@@ -51,27 +48,25 @@ public final class GLTexture extends Texture {
               GLTextureInfo info,
               BackendFormat format,
               boolean budgeted,
-              Function<GLTexture, GLRenderTarget> target) {
+              boolean register) {
         super(server, width, height);
-        assert info.mTexture != 0;
+        assert info.texture != 0;
         assert glFormatIsSupported(format.getGLFormat());
         mInfo = info;
         mBackendTexture = new GLBackendTexture(width, height, info, new GLTextureParameters(), format);
         mOwnership = true;
 
         if (glFormatIsCompressed(format.getGLFormat()) || format.isExternal()) {
-            mFlags |= SurfaceFlags.READ_ONLY;
+            mFlags |= Surface.FLAG_READ_ONLY;
         }
         if (mBackendTexture.isMipmapped()) {
-            mFlags |= SurfaceFlags.Mipmapped;
-        }
-        if (target != null) {
-            mRenderTarget = target.apply(this);
-            mFlags |= SurfaceFlags.Renderable;
+            mFlags |= Surface.FLAG_MIPMAPPED;
         }
 
-        mMemorySize = computeSize(format, width, height, 1, info.mLevelCount);
-        registerWithCache(budgeted);
+        mMemorySize = computeSize(format, width, height, 1, info.levels);
+        if (register) {
+            registerWithCache(budgeted);
+        }
     }
 
     // Constructor for instances wrapping backend objects.
@@ -84,7 +79,7 @@ public final class GLTexture extends Texture {
                      boolean cacheable,
                      boolean ownership) {
         super(server, width, height);
-        assert info.mTexture != 0;
+        assert info.texture != 0;
         assert glFormatIsSupported(format.getGLFormat());
         mInfo = info;
         mBackendTexture = new GLBackendTexture(width, height, info, params, format);
@@ -93,19 +88,14 @@ public final class GLTexture extends Texture {
         // compressed formats always set 'ioType' to READ
         assert (ioType == IOType.kRead || format.isCompressed());
         if (ioType == IOType.kRead || format.isExternal()) {
-            mFlags |= SurfaceFlags.READ_ONLY;
+            mFlags |= FLAG_READ_ONLY;
         }
         if (mBackendTexture.isMipmapped()) {
-            mFlags |= SurfaceFlags.Mipmapped;
+            mFlags |= FLAG_MIPMAPPED;
         }
 
-        mMemorySize = computeSize(format, width, height, 1, info.mLevelCount);
+        mMemorySize = computeSize(format, width, height, 1, info.levels);
         registerWithCacheWrapped(cacheable);
-    }
-
-    @Override
-    public int getSampleCount() {
-        return mRenderTarget != null ? mRenderTarget.getSampleCount() : 1;
     }
 
     @Nonnull
@@ -114,8 +104,8 @@ public final class GLTexture extends Texture {
         return mBackendTexture.getBackendFormat();
     }
 
-    public int getTextureID() {
-        return mInfo.mTexture;
+    public int getHandle() {
+        return mInfo.texture;
     }
 
     public int getFormat() {
@@ -140,7 +130,7 @@ public final class GLTexture extends Texture {
 
     @Override
     public int getMaxMipmapLevel() {
-        return mInfo.mLevelCount - 1; // minus base level
+        return mInfo.levels - 1; // minus base level
     }
 
     @Override
@@ -149,19 +139,16 @@ public final class GLTexture extends Texture {
     }
 
     @Override
-    public GLRenderTarget getRenderTarget() {
-        return mRenderTarget;
-    }
-
-    @Override
     protected void onSetLabel(@Nonnull String label) {
-        assert mInfo != null;
-        if (label.isEmpty()) {
-            nglObjectLabel(GL_TEXTURE, mInfo.mTexture, 0, MemoryUtil.NULL);
-        } else {
-            label = label.substring(0, Math.min(label.length(),
-                    getServer().getCaps().maxLabelLength()));
-            glObjectLabel(GL_TEXTURE, mInfo.mTexture, label);
+        if (getServer().getCaps().hasDebugSupport()) {
+            assert mInfo != null;
+            if (label.isEmpty()) {
+                nglObjectLabel(GL_TEXTURE, mInfo.texture, 0, MemoryUtil.NULL);
+            } else {
+                label = label.substring(0, Math.min(label.length(),
+                        getServer().getCaps().maxLabelLength()));
+                glObjectLabel(GL_TEXTURE, mInfo.texture, label);
+            }
         }
     }
 
@@ -169,27 +156,25 @@ public final class GLTexture extends Texture {
     protected void onRelease() {
         final GLTextureInfo info = mInfo;
         if (mOwnership) {
-            if (info.mTexture != 0) {
-                glDeleteTextures(info.mTexture);
+            if (info.texture != 0) {
+                glDeleteTextures(info.texture);
             }
-            if (info.mMemoryObject != 0) {
-                EXTMemoryObject.glDeleteMemoryObjectsEXT(info.mMemoryObject);
+            if (info.memoryObject != 0) {
+                EXTMemoryObject.glDeleteMemoryObjectsEXT(info.memoryObject);
             }
-            if (info.mMemoryHandle != -1) {
+            if (info.memoryHandle != -1) {
                 if (Platform.get() == Platform.WINDOWS) {
-                    Kernel32.CloseHandle(info.mMemoryHandle);
+                    Kernel32.CloseHandle(info.memoryHandle);
                 } // Linux transfers the fd
             }
         }
         mInfo = null;
-        mRenderTarget = RefCnt.move(mRenderTarget);
         super.onRelease();
     }
 
     @Override
     protected void onDiscard() {
         mInfo = null;
-        mRenderTarget = RefCnt.move(mRenderTarget);
         super.onDiscard();
     }
 

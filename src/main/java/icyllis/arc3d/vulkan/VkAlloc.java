@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.vulkan;
 
-import static icyllis.arc3d.vulkan.VkCore.VK_NULL_HANDLE;
+import static icyllis.arc3d.vulkan.VKCore.VK_NULL_HANDLE;
 
 /**
  * Holds Vulkan memory allocation information.

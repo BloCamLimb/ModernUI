@@ -19,7 +19,6 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.PriorityQueue;
 import icyllis.arc3d.core.SharedPtr;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -29,10 +28,10 @@ import javax.annotation.concurrent.NotThreadSafe;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 
-import static icyllis.arc3d.engine.Engine.*;
+import static icyllis.arc3d.engine.Engine.BudgetType;
 
 /**
- * Base class for operating server memory objects that can be kept in the
+ * Base class for operating backend memory objects that can be kept in the
  * {@link ResourceCache}. Such resources will have a large memory allocation.
  * Possible implementations:
  * <ul>
@@ -103,13 +102,30 @@ public abstract class Resource {
     private byte mBudgetType = BudgetType.NotBudgeted;
     private boolean mWrapped = false;
 
-    @Nonnull
-    private String mLabel = "";
+    /**
+     * An object with identity.
+     */
+    public static final class UniqueID {
+
+        @Nonnull
+        private String mLabel = "";
+
+        public UniqueID() {
+            assert hashCode() == System.identityHashCode(this);
+        }
+
+        @Nonnull
+        @Override
+        public String toString() {
+            return "GpuResource.UniqueID" + "@" + Integer.toHexString(hashCode()) + "{" + mLabel + "}";
+        }
+    }
+
+    private final UniqueID mUniqueID = new UniqueID();
 
     protected Resource(Server server) {
         assert (server != null);
         mServer = server;
-        assert hashCode() == System.identityHashCode(this);
     }
 
     @SharedPtr
@@ -174,12 +190,12 @@ public abstract class Resource {
     }
 
     /**
-     * Increases the usage count by 1 on the tracked server pipeline.
+     * Increases the usage count by 1 on the tracked backend pipeline.
      * <p>
      * This is designed to be used by Resources that need to track when they are in use on
-     * server (usually via a command buffer) separately from tracking if there are any current logical
+     * backend (usually via a command buffer) separately from tracking if there are any current logical
      * usages in client. This allows for a scratch Resource to be reused for new draw calls even
-     * if it is in use on the server.
+     * if it is in use on the backend.
      */
     public final void addCommandBufferUsage() {
         // stronger than std::memory_order_relaxed
@@ -187,7 +203,7 @@ public abstract class Resource {
     }
 
     /**
-     * Decreases the usage count by 1 on the tracked server pipeline.
+     * Decreases the usage count by 1 on the tracked backend pipeline.
      * It's an error to call this method if the usage count has already reached zero.
      */
     public final void removeCommandBufferUsage() {
@@ -256,13 +272,13 @@ public abstract class Resource {
     }
 
     /**
-     * Retrieves the amount of server memory used by this resource in bytes. It is
+     * Retrieves the amount of GPU memory used by this resource in bytes. It is
      * approximate since we aren't aware of additional padding or copies made
      * by the driver.
      * <p>
      * <b>NOTE: The return value must be constant in this object.</b>
      *
-     * @return the amount of server memory used in bytes
+     * @return the amount of GPU memory used in bytes
      */
     public abstract long getMemorySize();
 
@@ -276,11 +292,22 @@ public abstract class Resource {
     }
 
     /**
+     * Gets a tag that is unique for this Resource object. It is static in that it does
+     * not change when the content of the Resource object changes. It has identity and
+     * never hold a reference to this Resource object, so it can be used to track state
+     * changes through '=='.
+     */
+    @Nonnull
+    public UniqueID getUniqueID() {
+        return mUniqueID;
+    }
+
+    /**
      * @return the label for the resource, or empty
      */
     @Nonnull
     public final String getLabel() {
-        return mLabel;
+        return mUniqueID.mLabel;
     }
 
     /**
@@ -289,9 +316,9 @@ public abstract class Resource {
      * @param label the new label to set, or empty to clear
      */
     public final void setLabel(String label) {
-        label = label != null ? label.strip() : "";
-        if (!mLabel.equals(label)) {
-            mLabel = label;
+        label = label != null ? label.trim() : "";
+        if (!mUniqueID.mLabel.equals(label)) {
+            mUniqueID.mLabel = label;
             onSetLabel(label);
         }
     }

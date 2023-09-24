@@ -19,18 +19,23 @@
 
 package icyllis.arc3d.engine;
 
+import javax.annotation.concurrent.ThreadSafe;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public abstract class ThreadSafePipelineBuilder {
+@ThreadSafe
+public abstract class PipelineStateCache {
 
     protected final Stats mStats = new Stats();
 
-    public ThreadSafePipelineBuilder() {
+    public PipelineStateCache() {
     }
+
+    public abstract PipelineState findOrCreatePipelineState(final PipelineDesc desc,
+                                                            final PipelineInfo pipelineInfo);
 
     protected abstract void close();
 
-    public final Stats getStates() {
+    public final Stats getStats() {
         return mStats;
     }
 
@@ -96,7 +101,7 @@ public abstract class ThreadSafePipelineBuilder {
 
         @Override
         public String toString() {
-            return "Stats{" +
+            return "PipelineStateCache.Stats{" +
                     "shaderCompilations=" + mShaderCompilations +
                     ", numInlineCompilationFailures=" + mNumInlineCompilationFailures +
                     ", numPreCompilationFailures=" + mNumPreCompilationFailures +

@@ -21,12 +21,11 @@ package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SharedPtr;
-import icyllis.arc3d.engine.SamplerState;
-import org.lwjgl.system.MemoryUtil;
+import icyllis.arc3d.engine.*;
 
-import java.util.Arrays;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
-import static icyllis.arc3d.engine.Engine.*;
 import static icyllis.arc3d.opengl.GLCore.*;
 
 /**
@@ -34,24 +33,14 @@ import static icyllis.arc3d.opengl.GLCore.*;
  * mostly the same as that on {@link GLServer}, but {@link GLCommandBuffer} assumes some values
  * and will not handle dirty context.
  *
- * @see GLServer#beginRenderPass(GLRenderTarget, int, int, float[])
+ * @see GLServer#beginRenderPass
  */
-public final class GLCommandBuffer {
+public final class GLCommandBuffer extends CommandBuffer {
 
     private static final int
             TriState_Disabled = 0,
             TriState_Enabled = 1,
             TriState_Unknown = 2;
-
-    private static final long RGBA_SWIZZLE_MASK;
-
-    static {
-        RGBA_SWIZZLE_MASK = MemoryUtil.nmemAllocChecked(16);
-        MemoryUtil.memPutInt(RGBA_SWIZZLE_MASK, GL_RED);
-        MemoryUtil.memPutInt(RGBA_SWIZZLE_MASK + 4, GL_GREEN);
-        MemoryUtil.memPutInt(RGBA_SWIZZLE_MASK + 8, GL_BLUE);
-        MemoryUtil.memPutInt(RGBA_SWIZZLE_MASK + 12, GL_ALPHA);
-    }
 
     private final GLServer mServer;
 
@@ -71,41 +60,55 @@ public final class GLCommandBuffer {
     private GLRenderTarget mHWRenderTarget;
 
     @SharedPtr
-    private GLPipeline mHWPipeline;
-    private int mHWProgram;
-    private int mHWVertexArray;
-
-    // raw ptr since managed by ResourceCache
-    private final GLTexture[] mHWTextureBindings;
+    private GLProgram mHWProgram;
     @SharedPtr
-    private final GLSampler[] mHWTextureSamplers;
+    private GLVertexArray mHWVertexArray;
+    private boolean mHWVertexArrayInvalid;
+
+    @SharedPtr
+    private final GLUniformBuffer[] mBoundUniformBuffers;
+
+    private long mSubmitFence;
 
     GLCommandBuffer(GLServer server) {
         mServer = server;
-        mHWTextureBindings = new GLTexture[mServer.getCaps().shaderCaps().mMaxFragmentSamplers];
-        mHWTextureSamplers = new GLSampler[mHWTextureBindings.length];
+
+        mBoundUniformBuffers = new GLUniformBuffer[4];
+    }
+
+    void submit() {
+
+        mSubmitFence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+    }
+
+    void checkFinishedAndReset() {
+        if (mSubmitFence == 0) {
+            return;
+        }
+        int status = glClientWaitSync(mSubmitFence, 0, 0);
+        if (status == GL_CONDITION_SATISFIED ||
+                status == GL_ALREADY_SIGNALED) {
+
+            glDeleteSync(mSubmitFence);
+        }
     }
 
     void resetStates(int states) {
-        if ((states & GLBackendState.kRenderTarget) != 0) {
-            mHWFramebuffer = 0;
+        if ((states & Engine.GLBackendState.kRenderTarget) != 0) {
+            mHWFramebuffer = INVALID_ID;
             mHWRenderTarget = RefCnt.move(mHWRenderTarget);
         }
 
-        if ((states & GLBackendState.kPipeline) != 0) {
-            mHWPipeline = RefCnt.move(mHWPipeline);
-            mHWProgram = 0;
-            mHWVertexArray = 0;
-        }
-
-        if ((states & GLBackendState.kTexture) != 0) {
-            Arrays.fill(mHWTextureBindings, null);
-            for (int i = 0, e = mHWTextureBindings.length; i < e; i++) {
-                mHWTextureSamplers[i] = RefCnt.move(mHWTextureSamplers[i]);
+        if ((states & Engine.GLBackendState.kPipeline) != 0) {
+            mHWProgram = RefCnt.move(mHWProgram);
+            mHWVertexArray = RefCnt.move(mHWVertexArray);
+            mHWVertexArrayInvalid = true;
+            for (int i = 0; i < mBoundUniformBuffers.length; i++) {
+                mBoundUniformBuffers[i] = RefCnt.move(mBoundUniformBuffers[i]);
             }
         }
 
-        if ((states & GLBackendState.kView) != 0) {
+        if ((states & Engine.GLBackendState.kView) != 0) {
             mHWScissorTest = TriState_Unknown;
             mHWScissorX = -1;
             mHWScissorY = -1;
@@ -115,7 +118,7 @@ public final class GLCommandBuffer {
             mHWViewportHeight = -1;
         }
 
-        if ((states & GLBackendState.kMisc) != 0) {
+        if ((states & Engine.GLBackendState.kMisc) != 0) {
             mHWColorWrite = TriState_Unknown;
         }
     }
@@ -142,7 +145,7 @@ public final class GLCommandBuffer {
      * @param width  the effective width of color attachment
      * @param height the effective height of color attachment
      * @param origin the surface origin
-     * @see SurfaceOrigin
+     * @see Engine.SurfaceOrigin
      */
     public void flushScissorRect(int width, int height, int origin,
                                  int scissorLeft, int scissorTop,
@@ -154,10 +157,10 @@ public final class GLCommandBuffer {
                 scissorWidth >= 0 && scissorWidth <= width &&
                 scissorHeight >= 0 && scissorHeight <= height);
         final int scissorY;
-        if (origin == SurfaceOrigin.kUpperLeft) {
+        if (origin == Engine.SurfaceOrigin.kUpperLeft) {
             scissorY = scissorTop;
         } else {
-            assert (origin == SurfaceOrigin.kLowerLeft);
+            assert (origin == Engine.SurfaceOrigin.kLowerLeft);
             scissorY = height - scissorBottom;
         }
         assert (scissorY >= 0);
@@ -229,7 +232,7 @@ public final class GLCommandBuffer {
         if (target == null) {
             mHWRenderTarget = RefCnt.move(mHWRenderTarget);
         } else {
-            int framebuffer = target.getRenderFramebuffer();
+            int framebuffer = target.getSampleFramebuffer();
             if (mHWFramebuffer != framebuffer ||
                     mHWRenderTarget != target) {
                 glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
@@ -241,26 +244,44 @@ public final class GLCommandBuffer {
         }
     }
 
-    @SuppressWarnings("AssertWithSideEffects")
-    public void bindPipeline(GLPipeline pipeline) {
-        assert (pipeline != null);
-        if (mHWPipeline != pipeline) {
+    public void bindPipeline(@Nonnull GLProgram program, @Nonnull GLVertexArray vertexArray) {
+        if (mHWProgram != program) {
             // active program will not be deleted, so no collision
-            assert (pipeline.getProgram() != mHWProgram);
-            assert (pipeline.getVertexArray() != mHWVertexArray);
-            glUseProgram(pipeline.getProgram());
-            glBindVertexArray(pipeline.getVertexArray());
-            mHWPipeline = RefCnt.create(mHWPipeline, pipeline);
-            assert ((mHWProgram = pipeline.getProgram()) != 0);
-            assert ((mHWVertexArray = pipeline.getVertexArray()) != 0);
+            glUseProgram(program.getProgram());
+            bindVertexArray(vertexArray);
+            mHWProgram = RefCnt.create(mHWProgram, program);
         }
     }
 
-    public boolean bindTexture(GLTexture texture, int binding, int samplerState) {
-        assert (texture != null);
-        if (binding >= mHWTextureBindings.length) {
-            return false;
+    public void bindVertexArray(@Nullable GLVertexArray vertexArray) {
+        if (mHWVertexArrayInvalid ||
+                mHWVertexArray != vertexArray) {
+            // active vertex array will not be deleted, so no collision
+            glBindVertexArray(vertexArray == null ? 0 : vertexArray.getHandle());
+            mHWVertexArray = RefCnt.create(mHWVertexArray, vertexArray);
+            mHWVertexArrayInvalid = false;
         }
+    }
+
+    public void bindUniformBuffer(@Nonnull GLUniformBuffer uniformBuffer) {
+        int index = uniformBuffer.getBinding();
+        if (mBoundUniformBuffers[index] != uniformBuffer) {
+            glBindBufferBase(GL_UNIFORM_BUFFER, index, uniformBuffer.getHandle());
+            mBoundUniformBuffers[index] = RefCnt.create(mBoundUniformBuffers[index], uniformBuffer);
+        }
+    }
+
+    /**
+     * Bind texture for rendering.
+     *
+     * @param binding      the binding index (texture unit)
+     * @param texture      the texture object
+     * @param samplerState the state of texture sampler or 0, see {@link SamplerState}
+     * @param readSwizzle  the read swizzle of texture sampler, see {@link Swizzle}
+     */
+    public void bindTexture(int binding, GLTexture texture,
+                            int samplerState, short readSwizzle) {
+        assert (texture != null);
         if (SamplerState.isMipmapped(samplerState)) {
             if (!texture.isMipmapped()) {
                 assert (!SamplerState.isAnisotropy(samplerState));
@@ -269,32 +290,6 @@ public final class GLCommandBuffer {
                 assert (!texture.isMipmapsDirty());
             }
         }
-        GLSampler sampler = mServer.getResourceProvider().findOrCreateCompatibleSampler(samplerState);
-        if (sampler == null) {
-            return false;
-        }
-        if (mHWTextureBindings[binding] != texture) {
-            glBindTextureUnit(binding, texture.getTextureID());
-            mHWTextureBindings[binding] = texture;
-        }
-        if (mHWTextureSamplers[binding] != sampler) {
-            glBindSampler(binding, sampler.getSamplerID());
-            mHWTextureSamplers[binding] = RefCnt.create(mHWTextureSamplers[binding], sampler);
-        }
-        GLTextureParameters parameters = texture.getParameters();
-        if (parameters.mBaseMipMapLevel != 0) {
-            glTextureParameteri(texture.getTextureID(), GL_TEXTURE_BASE_LEVEL, 0);
-            parameters.mBaseMipMapLevel = 0;
-        }
-        int maxLevel = texture.getMaxMipmapLevel();
-        if (parameters.mMaxMipmapLevel != maxLevel) {
-            glTextureParameteri(texture.getTextureID(), GL_TEXTURE_MAX_LEVEL, maxLevel);
-            parameters.mMaxMipmapLevel = maxLevel;
-        }
-        if (!parameters.mSwizzleIsRGBA) {
-            nglTextureParameteriv(texture.getTextureID(), GL_TEXTURE_SWIZZLE_RGBA, RGBA_SWIZZLE_MASK);
-            parameters.mSwizzleIsRGBA = true;
-        }
-        return true;
+        mServer.bindTexture(binding, texture, samplerState, readSwizzle);
     }
 }

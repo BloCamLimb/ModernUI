@@ -35,14 +35,14 @@ public final class GLBackendTexture extends BackendTexture {
 
     // The GLTextureInfo must have a valid mFormat, can NOT be modified anymore.
     public GLBackendTexture(int width, int height, GLTextureInfo info) {
-        this(width, height, info, new GLTextureParameters(), GLBackendFormat.make(info.mFormat,
-                info.mMemoryHandle != -1));
-        assert info.mFormat != 0;
+        this(width, height, info, new GLTextureParameters(), GLBackendFormat.make(info.format,
+                info.memoryHandle != -1));
+        assert info.format != 0;
         // Make no assumptions about client's texture's parameters.
         glTextureParametersModified();
     }
 
-    // Internally used by GLServer and GLTexture
+    // Internally used by GLContext and GLTexture
     GLBackendTexture(int width, int height, GLTextureInfo info,
                      GLTextureParameters params, BackendFormat backendFormat) {
         super(width, height);
@@ -63,7 +63,7 @@ public final class GLBackendTexture extends BackendTexture {
 
     @Override
     public boolean isMipmapped() {
-        return mInfo.mLevelCount > 1;
+        return mInfo.levels > 1;
     }
 
     @Override
@@ -91,7 +91,7 @@ public final class GLBackendTexture extends BackendTexture {
     @Override
     public boolean isSameTexture(BackendTexture texture) {
         if (texture instanceof GLBackendTexture t) {
-            return mInfo.mTexture == t.mInfo.mTexture;
+            return mInfo.texture == t.mInfo.texture;
         }
         return false;
     }

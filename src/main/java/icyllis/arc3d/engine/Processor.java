@@ -36,7 +36,9 @@ public abstract class Processor {
             Null_ClassID = 0, // Reserved ID for missing (null) processors
             CircularRRect_Geom_ClassID = 1,
             Circle_Geom_ClassID = 2,
-            RoundRect_Geom_ClassID = 3;
+            RoundRect_GeoProc_ClassID = 3,
+            DefaultGeoProc_ClassID = 4,
+            SDFRect_GeoProc_ClassID = 5;
 
     protected final int mClassID;
 

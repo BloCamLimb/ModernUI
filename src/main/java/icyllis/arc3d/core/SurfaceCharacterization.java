@@ -20,7 +20,7 @@
 package icyllis.arc3d.core;
 
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.vulkan.VkCore;
+import icyllis.arc3d.vulkan.VKCore;
 import icyllis.arc3d.vulkan.VkImageInfo;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -258,7 +258,7 @@ public final class SurfaceCharacterization {
             if (!texture.getVkImageInfo(vkInfo)) {
                 return false;
             }
-            return (vkInfo.mImageUsageFlags & VkCore.VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) != 0;
+            return (vkInfo.mImageUsageFlags & VKCore.VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) != 0;
         } else {
             return true;
         }

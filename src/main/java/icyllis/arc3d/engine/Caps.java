@@ -20,15 +20,13 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.Color;
-import icyllis.arc3d.core.Core;
+import icyllis.arc3d.core.ImageInfo;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import static icyllis.arc3d.engine.Engine.*;
-
 /**
- * Represents the capabilities of a Context.
+ * Represents the capabilities of a 3D API Context.
  * <p>
  * Capabilities are used to test if something is capable or not. In other words,
  * these are optional and there are alternatives, required features are not listed
@@ -63,6 +61,7 @@ public abstract class Caps {
     protected boolean mConservativeRasterSupport = false;
     protected boolean mTransferPixelsToRowBytesSupport = false;
     protected boolean mMustSyncGpuDuringDiscard = true;
+    protected boolean mTextureBarrierSupport = false;
 
     // Not (yet) implemented in VK backend.
     protected boolean mDynamicStateArrayGeometryProcessorTextureSupport = false;
@@ -76,8 +75,6 @@ public abstract class Caps {
     protected int mMaxVertexAttributes = 0;
     protected int mMaxTextureSize = 1;
     protected int mInternalMultisampleCount = 0;
-    protected int mMinPathVerbsForHwTessellation = 25;
-    protected int mMinStrokeVerbsForHwTessellation = 50;
     protected int mMaxPushConstantsSize = 0;
 
     public Caps(ContextOptions options) {
@@ -108,7 +105,7 @@ public abstract class Caps {
     /**
      * Anisotropic filtering (AF).
      */
-    public final boolean anisotropySupport() {
+    public final boolean hasAnisotropySupport() {
         return mAnisotropySupport;
     }
 
@@ -254,6 +251,10 @@ public abstract class Caps {
         return mMustSyncGpuDuringDiscard;
     }
 
+    public final boolean supportsTextureBarrier() {
+        return mTextureBarrierSupport;
+    }
+
     public final boolean reducedShaderMode() {
         return mShaderCaps.mReducedShaderMode;
     }
@@ -293,18 +294,6 @@ public abstract class Caps {
 
     public final int maxTextureSize() {
         return mMaxTextureSize;
-    }
-
-    /**
-     * Hardware tessellation seems to have a fixed upfront cost. If there is a somewhat small number
-     * of verbs, we seem to be faster emulating tessellation with instanced draws instead.
-     */
-    public final int minPathVerbsForHwTessellation() {
-        return mMinPathVerbsForHwTessellation;
-    }
-
-    public final int minStrokeVerbsForHwTessellation() {
-        return mMinStrokeVerbsForHwTessellation;
     }
 
     public final int maxPushConstantsSize() {
@@ -386,15 +375,15 @@ public abstract class Caps {
 
         // There are known problems with 24 vs 32 bit BPP with this color type. Just fail for now if
         // using a transfer buffer.
-        if (colorType == ColorType.kRGB_888x) {
+        if (colorType == ImageInfo.CT_RGB_888x) {
             transferOffsetAlignment = 0;
         }
         // It's very convenient to access 1 byte-per-channel 32-bit color types as uint32_t on the CPU.
         // Make those aligned reads out of the buffer even if the underlying API doesn't require it.
-        int channelFlags = ColorType.channelFlags(colorType);
+        int channelFlags = Engine.colorTypeChannelFlags(colorType);
         if ((channelFlags == Color.COLOR_CHANNEL_FLAGS_RGBA || channelFlags == Color.COLOR_CHANNEL_FLAGS_RGB ||
                 channelFlags == Color.COLOR_CHANNEL_FLAG_ALPHA || channelFlags == Color.COLOR_CHANNEL_FLAG_GRAY) &&
-                ColorType.bytesPerPixel(colorType) == 4) {
+                ImageInfo.bytesPerPixel(colorType) == 4) {
             switch ((int) (transferOffsetAlignment & 0b11)) {
                 // offset alignment already a multiple of 4
                 case 0:
@@ -530,7 +519,7 @@ public abstract class Caps {
         if (!isFormatTexturable(format)) {
             return false;
         }
-        if ((surfaceFlags & SurfaceFlags.Renderable) != 0) {
+        if ((surfaceFlags & Surface.FLAG_RENDERABLE) != 0) {
             final int maxSize = maxRenderTargetSize();
             if (width > maxSize || height > maxSize) {
                 return false;
@@ -562,14 +551,14 @@ public abstract class Caps {
     }
 
     public final boolean isFormatCompatible(int colorType, BackendFormat format) {
-        if (colorType == ColorType.kUnknown) {
+        if (colorType == ImageInfo.CT_UNKNOWN) {
             return false;
         }
         int compression = format.getCompressionType();
-        if (compression != Core.CompressionType.None) {
+        if (compression != ImageInfo.COMPRESSION_NONE) {
             return colorType == (DataUtils.compressionTypeIsOpaque(compression) ?
-                    ColorType.kRGB_888x :
-                    ColorType.kRGBA_8888);
+                    ImageInfo.CT_RGB_888x :
+                    ImageInfo.CT_RGBA_8888);
         }
         return onFormatCompatible(colorType, format);
     }
@@ -583,7 +572,7 @@ public abstract class Caps {
     public final BackendFormat getDefaultBackendFormat(int colorType,
                                                        boolean renderable) {
         // Unknown color types are always an invalid format.
-        if (colorType == ColorType.kUnknown) {
+        if (colorType == ImageInfo.CT_UNKNOWN) {
             return null;
         }
         BackendFormat format = onGetDefaultBackendFormat(colorType);
@@ -596,7 +585,7 @@ public abstract class Caps {
         // Currently, we require that it be possible to write pixels into the "default" format. Perhaps,
         // that could be a separate requirement from the caller. It seems less necessary if
         // renderability was requested.
-        if ((getSupportedWriteColorType(colorType, format, colorType) & 0xFFFFFFFFL) == ColorType.kUnknown) {
+        if ((getSupportedWriteColorType(colorType, format, colorType) & 0xFFFFFFFFL) == ImageInfo.CT_UNKNOWN) {
             return null;
         }
         if (renderable && !isFormatRenderable(colorType, format, 1)) {
@@ -618,8 +607,8 @@ public abstract class Caps {
 
     public final short getReadSwizzle(BackendFormat format, int colorType) {
         int compression = format.getCompressionType();
-        if (compression != Core.CompressionType.None) {
-            if (colorType == ColorType.kRGB_888x || colorType == ColorType.kRGBA_8888) {
+        if (compression != ImageInfo.COMPRESSION_NONE) {
+            if (colorType == ImageInfo.CT_RGB_888x || colorType == ImageInfo.CT_RGBA_8888) {
                 return Swizzle.RGBA;
             }
             assert false;

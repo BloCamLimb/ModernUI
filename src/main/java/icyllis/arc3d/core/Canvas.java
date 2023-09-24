@@ -534,7 +534,7 @@ public class Canvas implements AutoCloseable {
         if (degrees != 0.0f) {
             checkForDeferredSave();
             Matrix4 transform = top().mMatrix;
-            transform.preRotateZ(MathUtil.toRadians(degrees));
+            transform.preRotateZ(degrees * MathUtil.DEG_TO_RAD);
             getTopDevice().setGlobalTransform(transform);
             didRotate(degrees);
         }
@@ -558,7 +558,7 @@ public class Canvas implements AutoCloseable {
             checkForDeferredSave();
             Matrix4 transform = top().mMatrix;
             transform.preTranslate(px, py);
-            transform.preRotateZ(MathUtil.toRadians(degrees));
+            transform.preRotateZ(degrees * MathUtil.DEG_TO_RAD);
             transform.preTranslate(-px, -py);
             getTopDevice().setGlobalTransform(transform);
             didRotate(degrees, px, py);

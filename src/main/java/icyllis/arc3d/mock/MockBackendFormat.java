@@ -20,11 +20,13 @@
 package icyllis.arc3d.mock;
 
 import icyllis.arc3d.core.Core;
+import icyllis.arc3d.core.ImageInfo;
 import icyllis.arc3d.engine.BackendFormat;
+import icyllis.arc3d.engine.Engine;
 
 import javax.annotation.Nonnull;
 
-import static icyllis.arc3d.engine.Engine.*;
+import static icyllis.arc3d.engine.Engine.BackendApi;
 
 public class MockBackendFormat extends BackendFormat {
 
@@ -63,7 +65,7 @@ public class MockBackendFormat extends BackendFormat {
 
     @Override
     public int getChannelFlags() {
-        return ColorType.channelFlags(mColorType);
+        return Engine.colorTypeChannelFlags(mColorType);
     }
 
     @Nonnull
@@ -74,7 +76,7 @@ public class MockBackendFormat extends BackendFormat {
 
     @Override
     public boolean isSRGB() {
-        return mCompressionType == Core.CompressionType.None && mColorType == ColorType.kRGBA_8888_SRGB;
+        return mCompressionType == Core.CompressionType.None && mColorType == ImageInfo.CT_RGBA_8888_SRGB;
     }
 
     @Override
@@ -89,7 +91,7 @@ public class MockBackendFormat extends BackendFormat {
         } else if (mIsStencilFormat) {
             return 4;
         } else {
-            return ColorType.bytesPerPixel(mColorType);
+            return ImageInfo.bytesPerPixel(mColorType);
         }
     }
 

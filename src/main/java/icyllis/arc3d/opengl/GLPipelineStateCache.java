@@ -20,80 +20,71 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.engine.*;
+import it.unimi.dsi.fastutil.Hash;
 import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenCustomHashMap;
+import org.jetbrains.annotations.VisibleForTesting;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.concurrent.ConcurrentHashMap;
 
-public class GLPipelineStateCache extends ThreadSafePipelineBuilder {
+//TODO cache trim
+public class GLPipelineStateCache extends PipelineStateCache {
 
     private final GLServer mServer;
 
     private final int mCacheSize;
-    private final Object2ObjectLinkedOpenCustomHashMap<Object, GLPipelineState> mCache;
+    private final ConcurrentHashMap<Key, GLPipelineState> mCache;
 
-    private final PipelineDesc mLookupDesc = new PipelineDesc();
-
-    GLPipelineStateCache(GLServer server, int cacheSize) {
+    @VisibleForTesting
+    public GLPipelineStateCache(GLServer server, int cacheSize) {
         mServer = server;
         mCacheSize = cacheSize;
-        mCache = new Object2ObjectLinkedOpenCustomHashMap<>(cacheSize, PipelineDesc.HASH_STRATEGY);
+        mCache = new ConcurrentHashMap<>(cacheSize, Hash.FAST_LOAD_FACTOR);
     }
 
     public void discard() {
         mCache.values().forEach(GLPipelineState::discard);
-        destroy();
+        release();
     }
 
-    public void destroy() {
-        mCache.values().forEach(GLPipelineState::destroy);
+    public void release() {
+        mCache.values().forEach(GLPipelineState::release);
         mCache.clear();
-    }
-
-    @Nullable
-    public GLPipelineState findOrCreatePipelineState(final PipelineInfo pipelineInfo) {
-        final Caps caps = mServer.getCaps();
-        final PipelineDesc desc = caps.makeDesc(mLookupDesc, /*renderTarget*/null, pipelineInfo);
-        assert (!desc.isEmpty());
-        GLPipelineState pipelineState = findOrCreatePipelineStateImpl(desc, pipelineInfo);
-        if (pipelineState == null) {
-            mStats.incNumInlineCompilationFailures();
-        }
-        return pipelineState;
     }
 
     @Nullable
     public GLPipelineState findOrCreatePipelineState(final PipelineDesc desc,
                                                      final PipelineInfo pipelineInfo) {
-        assert (!desc.isEmpty());
-        GLPipelineState pipelineState = findOrCreatePipelineStateImpl(desc, pipelineInfo);
-        if (pipelineState == null) {
-            mStats.incNumPreCompilationFailures();
+        if (desc.isEmpty()) {
+            final Caps caps = mServer.getCaps();
+            caps.makeDesc(desc, /*renderTarget*/null, pipelineInfo);
         }
-        return pipelineState;
+        assert (!desc.isEmpty());
+        return findOrCreatePipelineStateImpl(desc, pipelineInfo);
     }
 
-    @Nullable
-    private GLPipelineState findOrCreatePipelineStateImpl(final PipelineDesc desc,
+    @Nonnull
+    private GLPipelineState findOrCreatePipelineStateImpl(PipelineDesc desc,
                                                           final PipelineInfo pipelineInfo) {
-        GLPipelineState entry = mCache.get(desc);
-        if (entry != null) {
-            return entry;
+        GLPipelineState existing = mCache.get(desc);
+        if (existing != null) {
+            return existing;
         }
         // We have a cache miss
-        GLPipelineState pipelineState = GLPipelineStateBuilder.createPipelineState(mServer, desc, pipelineInfo);
-        if (pipelineState == null) {
-            mStats.incNumCompilationFailures();
-            return null;
+        desc = new PipelineDesc(desc);
+        GLPipelineState newPipelineState = GLPipelineStateBuilder.createPipelineState(mServer, desc, pipelineInfo);
+        existing = mCache.putIfAbsent(desc.toKey(), newPipelineState);
+        if (existing != null) {
+            // there's a race, reuse existing
+            newPipelineState.discard();
+            return existing;
         }
-        mStats.incNumCompilationSuccesses();
-        if (mCache.size() >= mCacheSize) {
-            mCache.removeFirst().destroy();
+        /*if (mCache.size() >= mCacheSize) {
+            mCache.removeFirst().release();
             assert (mCache.size() < mCacheSize);
-        }
-        if (mCache.put(desc.toKey(), pipelineState) != null) {
-            throw new IllegalStateException();
-        }
-        return pipelineState;
+        }*/
+        return newPipelineState;
     }
 
     @Override

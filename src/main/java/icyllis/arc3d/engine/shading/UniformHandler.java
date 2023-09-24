@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.engine.shading;
 
-import icyllis.arc3d.core.SLType;
+import icyllis.arc3d.core.SLDataType;
 import icyllis.arc3d.engine.*;
 
 import javax.annotation.Nullable;
@@ -131,7 +131,7 @@ public abstract class UniformHandler {
      *
      * @param owner      the raw ptr to owner, may be null
      * @param visibility combination of ShaderFlags can be zero as placeholder
-     * @param type       see {@link SLType}
+     * @param type       see {@link SLDataType}
      * @param name       the raw name (pre-mangling), cannot be null or empty
      * @return UniformHandle either from Render Block or Effect Block
      */
@@ -142,8 +142,8 @@ public abstract class UniformHandler {
                                 String name) {
         assert (name != null && !name.isEmpty());
         assert ((visibility & ~(ShaderFlags.kVertex | ShaderFlags.kFragment)) == 0);
-        assert (SLType.checkSLType(type));
-        assert (!SLType.isCombinedSamplerType(type));
+        assert (SLDataType.checkSLType(type));
+        assert (!SLDataType.isCombinedSamplerType(type));
         return internalAddUniformArray(owner, visibility, type, name, ShaderVar.kNonArray);
     }
 
@@ -152,7 +152,7 @@ public abstract class UniformHandler {
      *
      * @param owner      the raw ptr to owner, may be null
      * @param visibility combination of ShaderFlags, can be zero as placeholder
-     * @param type       see {@link SLType}
+     * @param type       see {@link SLDataType}
      * @param name       the raw name (pre-mangling), cannot be null or empty
      * @param arrayCount the number of elements, cannot be zero
      * @return UniformHandle either from Render Block or Effect Block
@@ -165,8 +165,8 @@ public abstract class UniformHandler {
                                      int arrayCount) {
         assert (name != null && !name.isEmpty());
         assert ((visibility & ~(ShaderFlags.kVertex | ShaderFlags.kFragment)) == 0);
-        assert (SLType.checkSLType(type));
-        assert (!SLType.isCombinedSamplerType(type));
+        assert (SLDataType.checkSLType(type));
+        assert (!SLDataType.isCombinedSamplerType(type));
         assert (arrayCount >= 1);
         return internalAddUniformArray(owner, visibility, type, name, arrayCount);
     }
@@ -259,43 +259,43 @@ public abstract class UniformHandler {
     /**
      * Returns the base alignment mask in bytes taken up in UBO for SLTypes.
      *
-     * @param type     see {@link SLType}
+     * @param type     see {@link SLDataType}
      * @param nonArray true for a single scalar or vector, false for an array of scalars or vectors
      * @param layout   true for std430 layout, false for std140 layout
      * @return base alignment mask
      */
     public static int getAlignmentMask(byte type, boolean nonArray, boolean layout) {
         switch (type) {
-            case SLType.kBool:   // fall through
-            case SLType.kInt:    // fall through
-            case SLType.kUInt:   // fall through
-            case SLType.kFloat:  // fall through
+            case SLDataType.kBool:   // fall through
+            case SLDataType.kInt:    // fall through
+            case SLDataType.kUInt:   // fall through
+            case SLDataType.kFloat:  // fall through
                 return layout == Std430Layout || nonArray ? 0x3 : 0xF; // N - 1
-            case SLType.kBool2:  // fall through
-            case SLType.kInt2:  // fall through
-            case SLType.kUInt2:  // fall through
-            case SLType.kFloat2:   // fall through
+            case SLDataType.kBool2:  // fall through
+            case SLDataType.kInt2:  // fall through
+            case SLDataType.kUInt2:  // fall through
+            case SLDataType.kFloat2:   // fall through
                 return layout == Std430Layout || nonArray ? 0x7 : 0xF; // 2N - 1
-            case SLType.kBool3:  // fall through
-            case SLType.kBool4:  // fall through
-            case SLType.kInt3:  // fall through
-            case SLType.kInt4:  // fall through
-            case SLType.kUInt3:  // fall through
-            case SLType.kUInt4:  // fall through
-            case SLType.kFloat3:   // fall through
-            case SLType.kFloat4:   // fall through
-            case SLType.kFloat3x3:   // fall through
-            case SLType.kFloat4x4:   // fall through
+            case SLDataType.kBool3:  // fall through
+            case SLDataType.kBool4:  // fall through
+            case SLDataType.kInt3:  // fall through
+            case SLDataType.kInt4:  // fall through
+            case SLDataType.kUInt3:  // fall through
+            case SLDataType.kUInt4:  // fall through
+            case SLDataType.kFloat3:   // fall through
+            case SLDataType.kFloat4:   // fall through
+            case SLDataType.kFloat3x3:   // fall through
+            case SLDataType.kFloat4x4:   // fall through
                 return 0xF; // 4N - 1
-            case SLType.kFloat2x2:
+            case SLDataType.kFloat2x2:
                 return layout == Std430Layout ? 0x7 : 0xF; // as an array of Vec2
 
             // This query is only valid for certain types.
-            case SLType.kVoid:
-            case SLType.kSampler2D:
-            case SLType.kTexture2D:
-            case SLType.kSampler:
-            case SLType.kSubpassInput:
+            case SLDataType.kVoid:
+            case SLDataType.kSampler2D:
+            case SLDataType.kTexture2D:
+            case SLDataType.kSampler:
+            case SLDataType.kSubpassInput:
                 throw new IllegalStateException(String.valueOf(type));
         }
         throw new IllegalArgumentException(String.valueOf(type));
@@ -305,50 +305,50 @@ public abstract class UniformHandler {
      * Returns the size in bytes taken up in UBO for SLTypes.
      * This includes paddings between components, but does not include paddings at the end of the element.
      *
-     * @param type   see {@link SLType}
+     * @param type   see {@link SLDataType}
      * @param layout true for std430 layout, false for std140 layout
      * @return size in bytes
      * @see UniformDataManager
      */
     public static int getSize(byte type, boolean layout) {
         switch (type) {
-            case SLType.kFloat:
+            case SLDataType.kFloat:
                 return Float.BYTES;
-            case SLType.kFloat2:
+            case SLDataType.kFloat2:
                 return 2 * Float.BYTES;
-            case SLType.kFloat3:
+            case SLDataType.kFloat3:
                 return 3 * Float.BYTES;
-            case SLType.kFloat4:
+            case SLDataType.kFloat4:
                 return 4 * Float.BYTES;
-            case SLType.kBool:   // fall through
-            case SLType.kInt:    // fall through
-            case SLType.kUInt:
+            case SLDataType.kBool:   // fall through
+            case SLDataType.kInt:    // fall through
+            case SLDataType.kUInt:
                 return Integer.BYTES;
-            case SLType.kBool2:  // fall through
-            case SLType.kInt2:  // fall through
-            case SLType.kUInt2:
+            case SLDataType.kBool2:  // fall through
+            case SLDataType.kInt2:  // fall through
+            case SLDataType.kUInt2:
                 return 2 * Integer.BYTES;
-            case SLType.kBool3:  // fall through
-            case SLType.kInt3:  // fall through
-            case SLType.kUInt3:
+            case SLDataType.kBool3:  // fall through
+            case SLDataType.kInt3:  // fall through
+            case SLDataType.kUInt3:
                 return 3 * Integer.BYTES;
-            case SLType.kBool4:  // fall through
-            case SLType.kInt4:  // fall through
-            case SLType.kUInt4:
+            case SLDataType.kBool4:  // fall through
+            case SLDataType.kInt4:  // fall through
+            case SLDataType.kUInt4:
                 return 4 * Integer.BYTES;
-            case SLType.kFloat2x2:
+            case SLDataType.kFloat2x2:
                 return layout == Std430Layout ? 2 * 2 * Float.BYTES : 2 * 4 * Float.BYTES;
-            case SLType.kFloat3x3:
+            case SLDataType.kFloat3x3:
                 return 3 * 4 * Float.BYTES;
-            case SLType.kFloat4x4:
+            case SLDataType.kFloat4x4:
                 return 4 * 4 * Float.BYTES;
 
             // This query is only valid for certain types.
-            case SLType.kVoid:
-            case SLType.kSampler2D:
-            case SLType.kTexture2D:
-            case SLType.kSampler:
-            case SLType.kSubpassInput:
+            case SLDataType.kVoid:
+            case SLDataType.kSampler2D:
+            case SLDataType.kTexture2D:
+            case SLDataType.kSampler:
+            case SLDataType.kSubpassInput:
                 throw new IllegalStateException(String.valueOf(type));
         }
         throw new IllegalArgumentException(String.valueOf(type));
@@ -360,7 +360,7 @@ public abstract class UniformHandler {
      * {@link #getAlignedStride(byte, int, boolean)} to get the offset to the end of the new uniform.
      *
      * @param offset     the current offset
-     * @param type       see {@link SLType}
+     * @param type       see {@link SLDataType}
      * @param arrayCount see {@link ShaderVar}
      * @param layout     true for std430 layout, false for std140 layout
      * @return the aligned offset for the new uniform
@@ -369,7 +369,7 @@ public abstract class UniformHandler {
                                        byte type,
                                        int arrayCount,
                                        boolean layout) {
-        assert (SLType.checkSLType(type));
+        assert (SLDataType.checkSLType(type));
         assert (arrayCount == ShaderVar.kNonArray) || (arrayCount >= 1);
         int alignmentMask = getAlignmentMask(type, arrayCount == ShaderVar.kNonArray, layout);
         return (offset + alignmentMask) & ~alignmentMask;
@@ -381,7 +381,7 @@ public abstract class UniformHandler {
     public static int getAlignedStride(byte type,
                                        int arrayCount,
                                        boolean layout) {
-        assert (SLType.checkSLType(type));
+        assert (SLDataType.checkSLType(type));
         assert (arrayCount == ShaderVar.kNonArray) || (arrayCount >= 1);
         if (arrayCount == ShaderVar.kNonArray) {
             return getSize(type, layout);

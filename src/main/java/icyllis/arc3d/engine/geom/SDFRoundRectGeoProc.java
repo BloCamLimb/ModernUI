@@ -25,35 +25,33 @@ import icyllis.arc3d.engine.shading.*;
 
 import javax.annotation.Nonnull;
 
-import static icyllis.arc3d.engine.Engine.*;
-
 /**
  * Unlike {@link CircleProcessor}, this processor uses SDF and supports over-stroking.
  * The stroke direction is CENTER. This processor uses instance rendering and static
  * vertex data.
  */
-public class RoundRectProcessor extends GeometryProcessor {
+public class SDFRoundRectGeoProc extends GeometryProcessor {
 
     /**
      * Per-vertex attributes.
      */
     // {(-1,-1), (-1, 1), (1, -1), (1, 1)}
     public static final Attribute
-            POSITION = new Attribute("Position", VertexAttribType.kFloat2, SLDataType.kFloat2);
+            POSITION = new Attribute("Position", Engine.VertexAttribType.kFloat2, SLDataType.kFloat2);
     /**
      * Per-instance attributes.
      */
     // per-multiplied color
     public static final Attribute
-            COLOR = new Attribute("Color", VertexAttribType.kFloat4, SLDataType.kFloat4);
+            COLOR = new Attribute("Color", Engine.VertexAttribType.kFloat4, SLDataType.kFloat4);
     // scale x, translate x, scale y, translate y
     public static final Attribute
-            LOCAL_RECT = new Attribute("LocalRect", VertexAttribType.kFloat4, SLDataType.kFloat4);
+            LOCAL_RECT = new Attribute("LocalRect", Engine.VertexAttribType.kFloat4, SLDataType.kFloat4);
     // radius, stroke radius (if stroke, or 0)
     public static final Attribute
-            RADII = new Attribute("Radii", VertexAttribType.kFloat2, SLDataType.kFloat2);
+            RADII = new Attribute("Radii", Engine.VertexAttribType.kFloat2, SLDataType.kFloat2);
     public static final Attribute
-            MODEL_VIEW = new Attribute("ModelView", VertexAttribType.kFloat3, SLDataType.kFloat3x3);
+            MODEL_VIEW = new Attribute("ModelView", Engine.VertexAttribType.kFloat3, SLDataType.kFloat3x3);
 
     public static final AttributeSet VERTEX_ATTRIBS = AttributeSet.makeImplicit(
             POSITION);
@@ -62,7 +60,7 @@ public class RoundRectProcessor extends GeometryProcessor {
 
     private final boolean mStroke;
 
-    public RoundRectProcessor(boolean stroke) {
+    public SDFRoundRectGeoProc(boolean stroke) {
         super(RoundRect_GeoProc_ClassID);
         mStroke = stroke;
         setVertexAttributes(VERTEX_ATTRIBS, 0x1);
@@ -72,12 +70,12 @@ public class RoundRectProcessor extends GeometryProcessor {
     @Nonnull
     @Override
     public String name() {
-        return "RoundRect_GeometryProcessor";
+        return "SDFRoundRect_GeomProc";
     }
 
     @Override
     public byte primitiveType() {
-        return PrimitiveType.TriangleList;
+        return Engine.PrimitiveType.TriangleStrip;
     }
 
     @Override
@@ -110,7 +108,7 @@ public class RoundRectProcessor extends GeometryProcessor {
                                   int[] texSamplers,
                                   ShaderVar localPos,
                                   ShaderVar worldPos) {
-            final boolean stroke = ((RoundRectProcessor) geomProc).mStroke;
+            final boolean stroke = ((SDFRoundRectGeoProc) geomProc).mStroke;
 
             // emit attributes
             vertBuilder.emitAttributes(geomProc);

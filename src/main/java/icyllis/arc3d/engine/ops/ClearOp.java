@@ -46,7 +46,8 @@ public final class ClearOp extends Op {
         mColorBlue = colorBlue;
         mColorAlpha = colorAlpha;
         mInsideMask = insideMask;
-        setBounds(scissorLeft, scissorTop, scissorRight, scissorBottom, false, false);
+        set(scissorLeft, scissorTop, scissorRight, scissorBottom);
+        setBoundsFlags(false, false);
     }
 
     @Nonnull

@@ -25,6 +25,8 @@ import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nullable;
 
+import java.util.Objects;
+
 import static icyllis.arc3d.engine.Engine.*;
 
 public class TextureProxy extends SurfaceProxy {
@@ -76,12 +78,12 @@ public class TextureProxy extends SurfaceProxy {
                         int surfaceFlags,
                         LazyInstantiateCallback callback) {
         super(format, width, height, surfaceFlags);
-        mLazyInstantiateCallback = callback;
+        mLazyInstantiateCallback = Objects.requireNonNull(callback);
         // A "fully" lazy proxy's width and height are not known until instantiation time.
         // So fully lazy proxies are created with width and height < 0. Regular lazy proxies must be
         // created with positive widths and heights. The width and height are set to 0 only after a
         // failed instantiation. The former must be "approximate" fit while the latter can be either.
-        assert (width < 0 && height < 0 && (surfaceFlags & SurfaceFlags.LooseFit) != 0) ||
+        assert (width < 0 && height < 0 && (surfaceFlags & Surface.FLAG_APPROX_FIT) != 0) ||
                 (width > 0 && height > 0);
     }
 
@@ -96,11 +98,13 @@ public class TextureProxy extends SurfaceProxy {
                         int surfaceFlags) {
         super(texture, surfaceFlags);
         mMipmapsDirty = texture.isMipmapsDirty();
-        assert (mSurfaceFlags & SurfaceFlags.LooseFit) == 0;
+        assert (mSurfaceFlags & Surface.FLAG_APPROX_FIT) == 0;
         assert (mFormat.isExternal() == texture.isExternal());
-        assert (texture.isMipmapped()) == ((mSurfaceFlags & SurfaceFlags.Mipmapped) != 0);
-        assert (texture.getBudgetType() == BudgetType.Budgeted) == ((mSurfaceFlags & SurfaceFlags.Budgeted) != 0);
-        assert (!texture.isExternal()) || ((mSurfaceFlags & SurfaceFlags.READ_ONLY) != 0);
+        assert (texture.isMipmapped()) == ((mSurfaceFlags & Surface.FLAG_MIPMAPPED) != 0);
+        assert (texture.getBudgetType() == Engine.BudgetType.Budgeted) == ((mSurfaceFlags & Surface.FLAG_BUDGETED) != 0);
+        assert (!texture.isExternal()) || ((mSurfaceFlags & Surface.FLAG_READ_ONLY) != 0);
+        assert (texture.getBudgetType() == Engine.BudgetType.Budgeted) == isBudgeted();
+        assert (!texture.isExternal() || isReadOnly());
         mTexture = texture; // std::move
         if (texture.getUniqueKey() != null) {
             assert (texture.getContext() != null);
@@ -114,6 +118,11 @@ public class TextureProxy extends SurfaceProxy {
         // Due to the order of cleanup the Texture this proxy may have wrapped may have gone away
         // at this point. Zero out the pointer so the cache invalidation code doesn't try to use it.
         mTexture = Resource.move(mTexture);
+
+        if (mLazyInstantiateCallback != null) {
+            mLazyInstantiateCallback.close();
+            mLazyInstantiateCallback = null;
+        }
 
         // In DDL-mode, uniquely keyed proxies keep their key even after their originating
         // proxy provider has gone away. In that case there is no-one to send the invalid key
@@ -136,7 +145,7 @@ public class TextureProxy extends SurfaceProxy {
         if (mTexture != null) {
             return mTexture.getWidth();
         }
-        if ((mSurfaceFlags & SurfaceFlags.LooseFit) != 0) {
+        if ((mSurfaceFlags & Surface.FLAG_APPROX_FIT) != 0) {
             return ResourceProvider.makeApprox(mWidth);
         }
         return mWidth;
@@ -148,7 +157,7 @@ public class TextureProxy extends SurfaceProxy {
         if (mTexture != null) {
             return mTexture.getHeight();
         }
-        if ((mSurfaceFlags & SurfaceFlags.LooseFit) != 0) {
+        if ((mSurfaceFlags & Surface.FLAG_APPROX_FIT) != 0) {
             return ResourceProvider.makeApprox(mHeight);
         }
         return mHeight;
@@ -183,8 +192,8 @@ public class TextureProxy extends SurfaceProxy {
             return true;
         }
 
-        assert ((mSurfaceFlags & SurfaceFlags.Mipmapped) == 0) ||
-                ((mSurfaceFlags & SurfaceFlags.LooseFit) == 0);
+        assert ((mSurfaceFlags & Surface.FLAG_MIPMAPPED) == 0) ||
+                ((mSurfaceFlags & Surface.FLAG_APPROX_FIT) == 0);
 
         final Texture texture = resourceProvider.createTexture(mWidth, mHeight, mFormat,
                 getSampleCount(), mSurfaceFlags, "");
@@ -214,7 +223,7 @@ public class TextureProxy extends SurfaceProxy {
 
     @Override
     public final boolean shouldSkipAllocator() {
-        if ((mSurfaceFlags & SurfaceFlags.SKIP_ALLOCATOR) != 0) {
+        if ((mSurfaceFlags & Surface.FLAG_SKIP_ALLOCATOR) != 0) {
             // Usually an atlas or onFlush proxy
             return true;
         }
@@ -273,8 +282,8 @@ public class TextureProxy extends SurfaceProxy {
     public long getMemorySize() {
         // use proxy params
         return Texture.computeSize(mFormat, mWidth, mHeight, getSampleCount(),
-                (mSurfaceFlags & SurfaceFlags.Mipmapped) != 0,
-                (mSurfaceFlags & SurfaceFlags.LooseFit) != 0);
+                (mSurfaceFlags & Surface.FLAG_MIPMAPPED) != 0,
+                (mSurfaceFlags & Surface.FLAG_APPROX_FIT) != 0);
     }
 
     public final boolean isPromiseProxy() {
@@ -292,7 +301,7 @@ public class TextureProxy extends SurfaceProxy {
         if (mTexture != null) {
             return mTexture.isMipmapped();
         }
-        return (mSurfaceFlags & SurfaceFlags.Mipmapped) != 0;
+        return (mSurfaceFlags & Surface.FLAG_MIPMAPPED) != 0;
     }
 
     public final boolean isMipmapsDirty() {
@@ -309,7 +318,7 @@ public class TextureProxy extends SurfaceProxy {
      * been instantiated or not.
      */
     public final boolean isProxyMipmapped() {
-        return (mSurfaceFlags & SurfaceFlags.Mipmapped) != 0;
+        return (mSurfaceFlags & Surface.FLAG_MIPMAPPED) != 0;
     }
 
     /**
@@ -327,8 +336,8 @@ public class TextureProxy extends SurfaceProxy {
         int result = getBackingWidth();
         result = 31 * result + getBackingHeight();
         result = 31 * result + mFormat.getFormatKey();
-        result = 31 * result + ((mSurfaceFlags & (SurfaceFlags.Renderable | SurfaceFlags.Protected)) |
-                (isMipmapped() ? SurfaceFlags.Mipmapped : 0));
+        result = 31 * result + ((mSurfaceFlags & (Surface.FLAG_RENDERABLE | Surface.FLAG_PROTECTED)) |
+                (isMipmapped() ? Surface.FLAG_MIPMAPPED : 0));
         return result;
     }
 
@@ -343,16 +352,16 @@ public class TextureProxy extends SurfaceProxy {
             return key.mWidth == getBackingWidth() &&
                     key.mHeight == getBackingHeight() &&
                     key.mFormat == mFormat.getFormatKey() &&
-                    key.mFlags == ((mSurfaceFlags & (SurfaceFlags.Renderable | SurfaceFlags.Protected)) |
-                            (isMipmapped() ? SurfaceFlags.Mipmapped : 0));
+                    key.mFlags == ((mSurfaceFlags & (Surface.FLAG_RENDERABLE | Surface.FLAG_PROTECTED)) |
+                            (isMipmapped() ? Surface.FLAG_MIPMAPPED : 0));
         } else if (o instanceof TextureProxy proxy) {
             // ResourceAllocator
             return proxy.getBackingWidth() == getBackingWidth() &&
                     proxy.getBackingHeight() == getBackingHeight() &&
                     proxy.mFormat.getFormatKey() == mFormat.getFormatKey() &&
                     proxy.isMipmapped() == isMipmapped() &&
-                    (proxy.mSurfaceFlags & (SurfaceFlags.Renderable | SurfaceFlags.Protected)) ==
-                            (mSurfaceFlags & (SurfaceFlags.Renderable | SurfaceFlags.Protected));
+                    (proxy.mSurfaceFlags & (Surface.FLAG_RENDERABLE | Surface.FLAG_PROTECTED)) ==
+                            (mSurfaceFlags & (Surface.FLAG_RENDERABLE | Surface.FLAG_PROTECTED));
         }
         return false;
     }
@@ -365,7 +374,7 @@ public class TextureProxy extends SurfaceProxy {
     @ApiStatus.Internal
     public final void makeProxyExact(boolean allocatedCaseOnly) {
         assert !isLazyMost();
-        if ((mSurfaceFlags & SurfaceFlags.LooseFit) == 0) {
+        if ((mSurfaceFlags & Surface.FLAG_APPROX_FIT) == 0) {
             return;
         }
 
@@ -392,7 +401,7 @@ public class TextureProxy extends SurfaceProxy {
 
         // The Approx uninstantiated case. Making this proxy be exact should be okay.
         // It could mess things up if prior decisions were based on the approximate size.
-        mSurfaceFlags &= ~SurfaceFlags.LooseFit;
+        mSurfaceFlags &= ~Surface.FLAG_APPROX_FIT;
         // If GpuMemorySize is used when caching specialImages for the image filter DAG. If it has
         // already been computed we want to leave it alone so that amount will be removed when
         // the special image goes away. If it hasn't been computed yet it might as well compute the
@@ -413,8 +422,8 @@ public class TextureProxy extends SurfaceProxy {
 
     @SharedPtr
     Texture createTexture(ResourceProvider resourceProvider) {
-        assert ((mSurfaceFlags & SurfaceFlags.Mipmapped) == 0 ||
-                (mSurfaceFlags & SurfaceFlags.LooseFit) == 0);
+        assert ((mSurfaceFlags & Surface.FLAG_MIPMAPPED) == 0 ||
+                (mSurfaceFlags & Surface.FLAG_APPROX_FIT) == 0);
         assert !isLazy();
         assert mTexture == null;
 
@@ -426,7 +435,7 @@ public class TextureProxy extends SurfaceProxy {
     }
 
     @Override
-    final boolean doLazyInstantiation(ResourceProvider resourceProvider) {
+    public final boolean doLazyInstantiation(ResourceProvider resourceProvider) {
         assert isLazy();
 
         @SharedPtr
@@ -455,10 +464,6 @@ public class TextureProxy extends SurfaceProxy {
         if (texture == null) {
             mWidth = mHeight = 0;
             return false;
-        }
-        if (((mSurfaceFlags & SurfaceFlags.Renderable) == 0) != (texture.getRenderTarget() == null) ||
-                (mSurfaceFlags & SurfaceFlags.Renderable) != 0 && (texture.getRenderTarget().getTexture() != texture)) {
-            throw new IllegalStateException("Unexpected render target access");
         }
 
         if (isLazyMost()) {
@@ -490,6 +495,7 @@ public class TextureProxy extends SurfaceProxy {
         assert mTexture == null;
         mTexture = texture;
         if (releaseCallback) {
+            mLazyInstantiateCallback.close();
             mLazyInstantiateCallback = null;
         }
 

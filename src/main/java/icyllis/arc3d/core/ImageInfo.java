@@ -19,9 +19,16 @@
 
 package icyllis.arc3d.core;
 
-import javax.annotation.Nonnull;
+import icyllis.arc3d.engine.Engine;
+import org.intellij.lang.annotations.MagicConstant;
+import org.jetbrains.annotations.ApiStatus;
 
-import static icyllis.arc3d.core.Core.*;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.util.Objects;
 
 /**
  * Describes pixel dimensions and encoding.
@@ -37,6 +44,242 @@ import static icyllis.arc3d.core.Core.*;
  * into the int.
  */
 public final class ImageInfo {
+
+    //@formatter:off
+    @ApiStatus.Internal
+    @MagicConstant(intValues = {
+            COMPRESSION_NONE,
+            COMPRESSION_ETC2_RGB8_UNORM,
+            COMPRESSION_BC1_RGB8_UNORM,
+            COMPRESSION_BC1_RGBA8_UNORM
+    })
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface CompressionType {
+    }
+
+    /**
+     * Compression types.
+     * <table>
+     *   <tr>
+     *     <th>Core</th>
+     *     <th>GL_COMPRESSED_*</th>
+     *     <th>VK_FORMAT_*_BLOCK</th>
+     *   </tr>
+     *   <tr>
+     *     <td>ETC2_RGB8_UNORM</td>
+     *     <td>RGB8_ETC2</td>
+     *     <td>ETC2_R8G8B8_UNORM</td>
+     *   </tr>
+     *   <tr>
+     *     <td>BC1_RGB8_UNORM</td>
+     *     <td>RGB_S3TC_DXT1_EXT</td>
+     *     <td>BC1_RGB_UNORM</td>
+     *   </tr>
+     *   <tr>
+     *     <td>BC1_RGBA8_UNORM</td>
+     *     <td>RGBA_S3TC_DXT1_EXT</td>
+     *     <td>BC1_RGBA_UNORM</td>
+     *   </tr>
+     * </table>
+     */
+    public static final int
+            COMPRESSION_NONE            = 0,
+            COMPRESSION_ETC2_RGB8_UNORM = 1,
+            COMPRESSION_BC1_RGB8_UNORM  = 2,
+            COMPRESSION_BC1_RGBA8_UNORM = 3,
+            COMPRESSION_COUNT           = 4;
+
+    /**
+     * Describes how to interpret the alpha component of a pixel.
+     */
+    @ApiStatus.Internal
+    @MagicConstant(intValues = {
+            AT_UNKNOWN,
+            AT_OPAQUE,
+            AT_PREMUL,
+            AT_UNPREMUL
+    })
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface AlphaType {
+    }
+
+    /**
+     * Alpha types.
+     * <p>
+     * Describes how to interpret the alpha component of a pixel. A pixel may
+     * be opaque, or alpha, describing multiple levels of transparency.
+     * <p>
+     * In simple blending, alpha weights the source color and the destination
+     * color to create a new color. If alpha describes a weight from zero to one:
+     * <p>
+     * result color = source color * alpha + destination color * (1 - alpha)
+     * <p>
+     * In practice alpha is encoded in two or more bits, where 1.0 equals all bits set.
+     * <p>
+     * RGB may have alpha included in each component value; the stored
+     * value is the original RGB multiplied by alpha. Premultiplied color
+     * components improve performance, but it will reduce the image quality.
+     * The usual practice is to premultiply alpha in the GPU, since they were
+     * converted into floating-point values.
+     */
+    public static final int
+            AT_UNKNOWN  = 0,  // uninitialized
+            AT_OPAQUE   = 1,   // pixel is opaque
+            AT_PREMUL   = 2,   // pixel components are premultiplied by alpha
+            AT_UNPREMUL = 3; // pixel components are unassociated with alpha
+
+    /**
+     * Describes how pixel bits encode color.
+     */
+    @ApiStatus.Internal
+    @MagicConstant(intValues = {
+            CT_UNKNOWN,
+            CT_RGB_565,
+            CT_R_8,
+            CT_RG_88,
+            CT_RGB_888,
+            CT_RGB_888x,
+            CT_RGBA_8888,
+            CT_BGRA_8888,
+            CT_RGBA_8888_SRGB,
+            CT_RGBA_1010102,
+            CT_BGRA_1010102,
+            CT_R_16,
+            CT_R_F16,
+            CT_RG_1616,
+            CT_RG_F16,
+            CT_RGBA_16161616,
+            CT_RGBA_F16,
+            CT_RGBA_F16_CLAMPED,
+            CT_RGBA_F32,
+            CT_ALPHA_8,
+            CT_ALPHA_16,
+            CT_ALPHA_F16,
+            CT_GRAY_8,
+            CT_GRAY_ALPHA_88,
+            CT_R5G6B5_UNORM,
+            CT_R8G8_UNORM,
+            CT_A16_UNORM,
+            CT_A16_FLOAT,
+            CT_A16G16_UNORM,
+            CT_R16G16_FLOAT,
+            CT_R16G16B16A16_UNORM,
+            CT_R_8xxx,
+            CT_ALPHA_8xxx,
+            CT_ALPHA_F32xxx,
+            CT_GRAY_8xxx
+    })
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface ColorType {
+    }
+
+    /**
+     * Color types.
+     * <p>
+     * Describes a layout of pixel data in CPU memory. A pixel may be an alpha mask, a grayscale,
+     * RGB, or RGBA. It specifies the channels, their type, and width. It does not refer to a texture
+     * format and the mapping to texture formats may be many-to-many. It does not specify the sRGB
+     * encoding of the stored values. The components are listed in order of where they appear in
+     * memory, except for {@link #CT_RGB_565}. In other words the first component listed is in the
+     * low bits and the last component in the high bits, reverse for {@link #CT_RGB_565}.
+     */
+    public static final int
+            CT_UNKNOWN          = 0, // uninitialized
+            CT_RGB_565          = 1, // pixel with 5 bits blue, 6 bits green, 5 bits red; in 16-bit word
+            CT_R_8              = 2, // pixel with 8 bits for red
+            CT_RG_88            = 3; // pixel with 8 bits for red, green; in 16-bit word
+    @ApiStatus.Internal
+    public static final int
+            CT_RGB_888          = 4; // pixel with 8 bits for red, green, blue; in 24-bit word
+    public static final int
+            CT_RGB_888x         = 5, // pixel with 8 bits for red, green, blue; in 32-bit word
+            CT_RGBA_8888        = 6, // pixel with 8 bits for red, green, blue, alpha; in 32-bit word
+            CT_BGRA_8888        = 7; // pixel with 8 bits for blue, green, red, alpha; in 32-bit word
+    @ApiStatus.Internal
+    public static final int
+            CT_RGBA_8888_SRGB   = 8;
+    public static final int
+            CT_RGBA_1010102     = 9,  // 10 bits for red, green, blue; 2 bits for alpha; in 32-bit word
+            CT_BGRA_1010102     = 10; // 10 bits for blue, green, red; 2 bits for alpha; in 32-bit word
+    @ApiStatus.Internal
+    public static final int
+            CT_R_16             = 11, // pixel with uint16_t for red
+            CT_R_F16            = 12, // pixel with float16_t for red
+            CT_RG_1616          = 13, // pixel with uint16_t for red and green
+            CT_RG_F16           = 14; // pixel with float16_t for red and green
+    public static final int
+            CT_RGBA_16161616    = 15, // pixel with uint16_t for red, green, blue, alpha; in 64-bit word
+            CT_RGBA_F16         = 16, // pixel with float16_t for red, green, blue, alpha; in 64-bit word
+            CT_RGBA_F16_CLAMPED = 17, // pixel with float16_t for red, green, blue, alpha; in 64-bit word (manual)
+            CT_RGBA_F32         = 18, // pixel with float32_t for red, green, blue, alpha; in 128-bit word
+            CT_ALPHA_8          = 19, // pixel with uint8_t for alpha (000r)
+            CT_ALPHA_16         = 20, // pixel with uint16_t for alpha (000r)
+            CT_ALPHA_F16        = 21, // pixel with float16_t for alpha (000r)
+            CT_GRAY_8           = 22; // pixel with uint8_t for grayscale level (rrr1)
+    @ApiStatus.Internal
+    public static final int
+            CT_GRAY_ALPHA_88    = 23; // for PNG
+    /**
+     * Aliases.
+     */
+    public static final int
+            CT_R5G6B5_UNORM       = CT_RGB_565,
+            CT_R8G8_UNORM         = CT_RG_88,
+            CT_A16_UNORM          = CT_ALPHA_16,
+            CT_A16_FLOAT          = CT_ALPHA_F16,
+            CT_A16G16_UNORM       = CT_RG_1616,
+            CT_R16G16_FLOAT       = CT_RG_F16,
+            CT_R16G16B16A16_UNORM = CT_RGBA_16161616;
+    /**
+     * Unusual types that come up after reading back in cases where we are reassigning the meaning
+     * of a texture format's channels to use for a particular color format but have to read back the
+     * data to a full RGBA quadruple. (e.g. using a R8 texture format as A8 color type but the API
+     * only supports reading to RGBA8.)
+     */
+    @ApiStatus.Internal
+    public static final int
+            CT_R_8xxx       = 24,
+            CT_ALPHA_8xxx   = 25,
+            CT_ALPHA_F32xxx = 26,
+            CT_GRAY_8xxx    = 27;
+    @ApiStatus.Internal
+    public static final int
+            CT_COUNT        = 28;
+    //@formatter:on
+
+    public static int bytesPerPixel(@ColorType int ct) {
+        return switch (ct) {
+            case CT_UNKNOWN -> 0;
+            case CT_R_8,
+                    CT_ALPHA_8,
+                    CT_GRAY_8 -> 1;
+            case CT_RGB_565,
+                    CT_RG_88,
+                    CT_R_16,
+                    CT_R_F16,
+                    CT_ALPHA_16,
+                    CT_ALPHA_F16,
+                    CT_GRAY_ALPHA_88 -> 2;
+            case CT_RGB_888 -> 3;
+            case CT_RGB_888x,
+                    CT_RGBA_8888,
+                    CT_BGRA_8888,
+                    CT_BGRA_1010102,
+                    CT_RGBA_1010102,
+                    CT_RG_1616,
+                    CT_RG_F16,
+                    CT_R_8xxx,
+                    CT_ALPHA_8xxx,
+                    CT_GRAY_8xxx,
+                    CT_RGBA_8888_SRGB -> 4;
+            case CT_RGBA_16161616,
+                    CT_RGBA_F16,
+                    CT_RGBA_F16_CLAMPED -> 8;
+            case CT_RGBA_F32,
+                    CT_ALPHA_F32xxx -> 16;
+            default -> throw new AssertionError(ct);
+        };
+    }
 
     /**
      * Creates a color info based on the supplied color type and alpha type.
@@ -86,21 +329,40 @@ public final class ImageInfo {
         return makeColorInfo(colorType(colorInfo), newAlphaType);
     }
 
-    private int mWidth;
-    private int mHeight;
-    private final int mColorInfo;
+    @Size(min = 0)
+    private int width;
+    @Size(min = 0)
+    private int height;
+    @ColorType
+    private final short colorType;
+    @AlphaType
+    private final short alphaType;
+    @Nullable
+    private final ColorSpace colorSpace;
 
     /**
-     * Creates an empty ImageInfo with {@link ColorType#kUnknown},
-     * {@link AlphaType#Unknown}, and a width and height of zero.
+     * Creates ImageInfo from integral dimensions width and height, ColorType ct,
+     * AlphaType at, and optionally ColorSpace cs.
+     * <p>
+     * If ColorSpace cs is null and ImageInfo is part of drawing source: ColorSpace
+     * defaults to sRGB, mapping into Surface ColorSpace.
+     * <p>
+     * Parameters are not validated to see if their values are legal, or that the
+     * combination is supported.
+     *
+     * @param width  pixel column count; must be zero or greater
+     * @param height pixel row count; must be zero or greater
+     * @param cs     range of colors; may be null
      */
-    public ImageInfo() {
-        this(0, 0, 0);
+    @Nonnull
+    public static ImageInfo make(@Size(min = 0) int width, @Size(min = 0) int height,
+                                 @ColorType int ct, @AlphaType int at, @Nullable ColorSpace cs) {
+        return new ImageInfo(width, height, ct, at, cs);
     }
 
     /**
-     * Creates ImageInfo from integral dimensions width and height,
-     * {@link ColorType#kUnknown} and {@link AlphaType#Unknown}.
+     * Creates ImageInfo from integral dimensions width and height, {@link #CT_UNKNOWN},
+     * {@link #AT_UNKNOWN}, with ColorSpace set to null.
      * <p>
      * Returned ImageInfo as part of source does not draw, and as part of destination
      * can not be drawn to.
@@ -108,8 +370,31 @@ public final class ImageInfo {
      * @param width  pixel column count; must be zero or greater
      * @param height pixel row count; must be zero or greater
      */
-    public ImageInfo(int width, int height) {
-        this(width, height, 0);
+    @Nonnull
+    public static ImageInfo makeUnknown(@Size(min = 0) int width, @Size(min = 0) int height) {
+        return new ImageInfo(width, height, CT_UNKNOWN, AT_UNKNOWN, null);
+    }
+
+    /**
+     * Creates an empty ImageInfo with {@link #CT_UNKNOWN},
+     * {@link #AT_UNKNOWN}, and a width and height of zero.
+     */
+    public ImageInfo() {
+        this(0, 0);
+    }
+
+    /**
+     * Creates ImageInfo from integral dimensions width and height,
+     * {@link #CT_UNKNOWN} and {@link #AT_UNKNOWN}.
+     * <p>
+     * Returned ImageInfo as part of source does not draw, and as part of destination
+     * can not be drawn to.
+     *
+     * @param width  pixel column count; must be zero or greater
+     * @param height pixel row count; must be zero or greater
+     */
+    public ImageInfo(@Size(min = 0) int width, @Size(min = 0) int height) {
+        this(width, height, CT_UNKNOWN, AT_UNKNOWN);
     }
 
     /**
@@ -122,8 +407,9 @@ public final class ImageInfo {
      * @param width  pixel column count; must be zero or greater
      * @param height pixel row count; must be zero or greater
      */
-    public ImageInfo(int width, int height, int colorType, int alphaType) {
-        this(width, height, makeColorInfo(colorType, alphaType));
+    public ImageInfo(@Size(min = 0) int width, @Size(min = 0) int height,
+                     @ColorType int colorType, @AlphaType int alphaType) {
+        this(width, height, colorType, alphaType, null);
     }
 
     /**
@@ -132,22 +418,26 @@ public final class ImageInfo {
      * Parameters are not validated to see if their values are legal, or that the
      * combination is supported.
      *
-     * @param width     pixel column count; must be zero or greater
-     * @param height    pixel row count; must be zero or greater
-     * @param colorInfo the pixel encoding consisting of ColorType, AlphaType
+     * @param w pixel column count; must be zero or greater
+     * @param h pixel row count; must be zero or greater
      */
-    ImageInfo(int width, int height, int colorInfo) {
-        mWidth = width;
-        mHeight = height;
-        mColorInfo = colorInfo;
+    @ApiStatus.Internal
+    public ImageInfo(@Size(min = 0) int w, @Size(min = 0) int h,
+                     @ColorType int ct, @AlphaType int at, @Nullable ColorSpace cs) {
+        width = w;
+        height = h;
+        colorType = (short) ct;
+        alphaType = (short) at;
+        colorSpace = cs;
     }
 
     /**
      * Internal resize for optimization purposes. ImageInfo should be created immutable.
      */
-    void resize(int width, int height) {
-        mWidth = width;
-        mHeight = height;
+    @ApiStatus.Internal
+    public void resize(int width, int height) {
+        this.width = width;
+        this.height = height;
     }
 
     /**
@@ -156,7 +446,7 @@ public final class ImageInfo {
      * @return pixel width
      */
     public int width() {
-        return mWidth;
+        return width;
     }
 
     /**
@@ -165,7 +455,7 @@ public final class ImageInfo {
      * @return pixel height
      */
     public int height() {
-        return mHeight;
+        return height;
     }
 
     /**
@@ -174,7 +464,7 @@ public final class ImageInfo {
      * @return color type
      */
     public int colorType() {
-        return colorType(mColorInfo);
+        return colorType;
     }
 
     /**
@@ -183,25 +473,27 @@ public final class ImageInfo {
      * @return alpha type
      */
     public int alphaType() {
-        return alphaType(mColorInfo);
+        return alphaType;
     }
 
     /**
-     * Returns the dimensionless ColorInfo that represents the same color type,
-     * alpha type as this ImageInfo.
+     * Returns ColorSpace, the range of colors.
+     *
+     * @return ColorSpace, or null
      */
-    public int colorInfo() {
-        return mColorInfo;
+    @Nullable
+    public ColorSpace colorSpace() {
+        return colorSpace;
     }
 
     /**
      * Returns number of bytes per pixel required by ColorType.
-     * Returns zero if colorType is {@link ColorType#kUnknown}.
+     * Returns zero if colorType is {@link #CT_UNKNOWN}.
      *
      * @return bytes in pixel, bpp
      */
     public int bytesPerPixel() {
-        return ColorType.bytesPerPixel(colorType());
+        return bytesPerPixel(colorType());
     }
 
     /**
@@ -211,7 +503,7 @@ public final class ImageInfo {
      * @return width() times bytesPerPixel() as integer
      */
     public int minRowBytes() {
-        return mWidth * bytesPerPixel();
+        return width() * bytesPerPixel();
     }
 
     /**
@@ -221,7 +513,21 @@ public final class ImageInfo {
      * @return true if either dimension is zero or smaller
      */
     public boolean isEmpty() {
-        return mWidth <= 0 && mHeight <= 0;
+        return width <= 0 && height <= 0;
+    }
+
+    /**
+     * Returns true if AlphaType is set to hint that all pixels are opaque; their
+     * alpha value is implicitly or explicitly 1.0.
+     * <p>
+     * Does not check if ColorType allows alpha, or if any pixel value has
+     * transparency.
+     *
+     * @return true if AlphaType is Opaque
+     */
+    public boolean isOpaque() {
+        return alphaType == AT_OPAQUE ||
+                (Engine.colorTypeChannelFlags(colorType) & Color.COLOR_CHANNEL_FLAG_ALPHA) == 0;
     }
 
     /**
@@ -231,9 +537,10 @@ public final class ImageInfo {
      * @return true if both dimension and ColorInfo is valid
      */
     public boolean isValid() {
-        return mWidth > 0 && mHeight > 0 &&
-                colorType(mColorInfo) != ColorType.kUnknown &&
-                alphaType(mColorInfo) != AlphaType.Unknown;
+        return width > 0 && height > 0 &&
+                width <= 32767 && height <= 32767 &&
+                colorType != CT_UNKNOWN &&
+                alphaType != AT_UNKNOWN;
     }
 
     /**
@@ -246,17 +553,7 @@ public final class ImageInfo {
      */
     @Nonnull
     public ImageInfo makeWH(int newWidth, int newHeight) {
-        return new ImageInfo(newWidth, newHeight, mColorInfo);
-    }
-
-    /**
-     * Creates ImageInfo with same AlphaType, width, and height, with ColorType set to newColorType.
-     *
-     * @return created ImageInfo
-     */
-    @Nonnull
-    public ImageInfo makeColorType(int newColorType) {
-        return new ImageInfo(mWidth, mHeight, makeColorType(mColorInfo, newColorType));
+        return new ImageInfo(newWidth, newHeight, colorType, alphaType, colorSpace);
     }
 
     /**
@@ -265,25 +562,49 @@ public final class ImageInfo {
      * @return created ImageInfo
      */
     @Nonnull
-    public ImageInfo makeAlphaType(int newAlphaType) {
-        return new ImageInfo(mWidth, mHeight, makeAlphaType(mColorInfo, newAlphaType));
+    public ImageInfo makeAlphaType(@AlphaType int newAlphaType) {
+        return new ImageInfo(width, height, colorType, newAlphaType, colorSpace);
+    }
+
+    /**
+     * Creates ImageInfo with same AlphaType, width, and height, with ColorType set to newColorType.
+     *
+     * @return created ImageInfo
+     */
+    @Nonnull
+    public ImageInfo makeColorType(@ColorType int newColorType) {
+        return new ImageInfo(width, height, newColorType, alphaType, colorSpace);
     }
 
     @Override
     public int hashCode() {
-        int hash = mWidth;
-        hash = 31 * hash + mHeight;
-        hash = 31 * hash + mColorInfo;
-        return hash;
+        int result = width;
+        result = 31 * result + height;
+        result = 31 * result + (int) colorType;
+        result = 31 * result + (int) alphaType;
+        result = 31 * result + Objects.hashCode(colorSpace);
+        return result;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o instanceof ImageInfo ii)
-            return mWidth == ii.mWidth &&
-                    mHeight == ii.mHeight &&
-                    mColorInfo == ii.mColorInfo;
+            return width == ii.width &&
+                    height == ii.height &&
+                    colorType == ii.colorType &&
+                    alphaType == ii.alphaType &&
+                    Objects.equals(colorSpace, ii.colorSpace);
         return false;
+    }
+
+    @Override
+    public String toString() {
+        return '{' +
+                "dimensions=" + width + "x" + height +
+                ", colorType=" + colorType +
+                ", alphaType=" + alphaType +
+                ", colorSpace=" + colorSpace +
+                '}';
     }
 }

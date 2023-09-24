@@ -17,13 +17,41 @@
  * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine;
+package icyllis.arc3d.opengl;
 
-import icyllis.arc3d.core.Rect2f;
+import icyllis.arc3d.engine.ManagedResource;
 
-public abstract class Clip {
+import javax.annotation.Nonnull;
 
-    public abstract int apply(SurfaceDrawContext sdc,
-                              ClipResult out,
-                              Rect2f bounds);
+import static org.lwjgl.opengl.GL20C.glDeleteProgram;
+
+/**
+ * Represents OpenGL programs.
+ */
+public final class GLProgram extends ManagedResource {
+
+    private int mProgram;
+
+    public GLProgram(@Nonnull GLServer server,
+                     int program) {
+        super(server);
+        assert (program != 0);
+        mProgram = program;
+    }
+
+    @Override
+    protected void deallocate() {
+        if (mProgram != 0) {
+            glDeleteProgram(mProgram);
+        }
+        discard();
+    }
+
+    public void discard() {
+        mProgram = 0;
+    }
+
+    public int getProgram() {
+        return mProgram;
+    }
 }

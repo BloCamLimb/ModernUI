@@ -28,7 +28,7 @@ import javax.annotation.Nonnull;
 import java.util.Objects;
 
 import static icyllis.arc3d.engine.Engine.BackendApi;
-import static icyllis.arc3d.vulkan.VkCore.*;
+import static icyllis.arc3d.vulkan.VKCore.*;
 
 public final class VkBackendFormat extends BackendFormat {
 

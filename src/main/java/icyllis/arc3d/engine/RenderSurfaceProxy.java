@@ -43,6 +43,12 @@ public final class RenderSurfaceProxy extends SurfaceProxy {
         assert hashCode() == System.identityHashCode(this);
     }
 
+    RenderSurfaceProxy(RenderSurface surface, int surfaceFlags) {
+        super(surface, surfaceFlags);
+        mSurface = surface;
+        mSampleCount = surface.getSampleCount();
+    }
+
     @Override
     protected void deallocate() {
         mSurface = RefCnt.move(mSurface);
@@ -59,7 +65,7 @@ public final class RenderSurfaceProxy extends SurfaceProxy {
         if (mSurface != null) {
             return mSurface.getWidth();
         }
-        if ((mSurfaceFlags & SurfaceFlags.LooseFit) != 0) {
+        if ((mSurfaceFlags & Surface.FLAG_APPROX_FIT) != 0) {
             return ResourceProvider.makeApprox(mWidth);
         }
         return mWidth;
@@ -71,7 +77,7 @@ public final class RenderSurfaceProxy extends SurfaceProxy {
         if (mSurface != null) {
             return mSurface.getHeight();
         }
-        if ((mSurfaceFlags & SurfaceFlags.LooseFit) != 0) {
+        if ((mSurfaceFlags & Surface.FLAG_APPROX_FIT) != 0) {
             return ResourceProvider.makeApprox(mHeight);
         }
         return mHeight;
@@ -112,7 +118,7 @@ public final class RenderSurfaceProxy extends SurfaceProxy {
 
     @Override
     public boolean shouldSkipAllocator() {
-        if ((mSurfaceFlags & SurfaceFlags.SKIP_ALLOCATOR) != 0) {
+        if ((mSurfaceFlags & Surface.FLAG_SKIP_ALLOCATOR) != 0) {
             // Usually an atlas or onFlush proxy
             return true;
         }

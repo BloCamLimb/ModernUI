@@ -25,8 +25,6 @@ import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nullable;
 
-import static icyllis.arc3d.engine.Engine.BackendApi;
-
 /**
  * Represents a backend context of 3D graphics API (OpenGL or Vulkan) on the render thread.
  */
@@ -86,7 +84,7 @@ public final class DirectContext extends RecordingContext {
      */
     @Nullable
     public static DirectContext makeOpenGL(ContextOptions options) {
-        DirectContext context = new DirectContext(BackendApi.kOpenGL, options);
+        DirectContext context = new DirectContext(Engine.BackendApi.kOpenGL, options);
         context.mServer = GLServer.make(context, options);
         if (context.init()) {
             return context;
@@ -122,6 +120,21 @@ public final class DirectContext extends RecordingContext {
         return null;
     }
 
+    /**
+     * The context normally assumes that no outsider is setting state
+     * within the underlying 3D API's context/device. This call informs
+     * the context that the state was modified and it should resend.
+     * <p>
+     * The flag bits, state, is dependent on which backend is used by the
+     * context, only GL.
+     *
+     * @see Engine.GLBackendState
+     */
+    public void resetContext(int state) {
+        checkOwnerThread();
+        mServer.markContextDirty(state);
+    }
+
     @ApiStatus.Internal
     public Server getServer() {
         return mServer;
@@ -144,7 +157,7 @@ public final class DirectContext extends RecordingContext {
             return false;
         }
 
-        mThreadSafeProxy.init(mServer.getCaps());
+        mThreadSafeProxy.init(mServer.getCaps(), mServer.getPipelineStateCache());
         if (!super.init()) {
             return false;
         }
@@ -152,7 +165,7 @@ public final class DirectContext extends RecordingContext {
         assert getThreadSafeCache() != null;
 
         mResourceCache = new ResourceCache(getContextID());
-        mResourceProvider = new ResourceProvider(mServer, mResourceCache);
+        mResourceProvider = mServer.getResourceProvider();
         return true;
     }
 

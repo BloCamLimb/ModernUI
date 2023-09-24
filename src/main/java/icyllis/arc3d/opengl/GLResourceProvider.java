@@ -19,33 +19,36 @@
 
 package icyllis.arc3d.opengl;
 
-import icyllis.arc3d.engine.SamplerState;
+import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.engine.*;
 import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
 
 import javax.annotation.Nullable;
 
 /**
- * Provides OpenGL state objects with cache.
+ * Provides OpenGL objects with cache.
  */
-public final class GLResourceProvider {
+public final class GLResourceProvider extends ResourceProvider {
 
     private static final int SAMPLER_CACHE_SIZE = 32;
 
     private final GLServer mServer;
 
+    // LRU cache, samplers are shared by mHWTextureSamplers and mSamplerCache
     private final Int2ObjectLinkedOpenHashMap<GLSampler> mSamplerCache =
             new Int2ObjectLinkedOpenHashMap<>(SAMPLER_CACHE_SIZE);
 
-    GLResourceProvider(GLServer server) {
+    GLResourceProvider(GLServer server, DirectContext context) {
+        super(server, context);
         mServer = server;
     }
 
     void discard() {
         mSamplerCache.values().forEach(GLSampler::discard);
-        destroy();
+        release();
     }
 
-    void destroy() {
+    void release() {
         mSamplerCache.values().forEach(GLSampler::unref);
         mSamplerCache.clear();
     }
@@ -54,25 +57,23 @@ public final class GLResourceProvider {
      * Finds or creates a compatible {@link GLSampler} based on the SamplerState.
      *
      * @param samplerState see {@link SamplerState}
-     * @return raw ptr to the sampler object, or null if failed
+     * @return the sampler object, or null if failed
      */
     @Nullable
+    @SharedPtr
     public GLSampler findOrCreateCompatibleSampler(int samplerState) {
-        GLSampler entry = mSamplerCache.get(samplerState);
-        if (entry != null) {
-            return entry;
-        }
-        GLSampler sampler = GLSampler.create(mServer, samplerState);
+        GLSampler sampler = mSamplerCache.getAndMoveToFirst(samplerState);
         if (sampler == null) {
-            return null;
+            sampler = GLSampler.create(mServer, samplerState);
+            if (sampler == null) {
+                return null;
+            }
+            while (mSamplerCache.size() >= SAMPLER_CACHE_SIZE) {
+                mSamplerCache.removeLast().unref();
+            }
+            mSamplerCache.putAndMoveToFirst(samplerState, sampler);
         }
-        if (mSamplerCache.size() >= SAMPLER_CACHE_SIZE) {
-            mSamplerCache.removeFirst().unref();
-            assert (mSamplerCache.size() < SAMPLER_CACHE_SIZE);
-        }
-        if (mSamplerCache.put(samplerState, sampler) != null) {
-            throw new IllegalStateException();
-        }
+        sampler.ref();
         return sampler;
     }
 }

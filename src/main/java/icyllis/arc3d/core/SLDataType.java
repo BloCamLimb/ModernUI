@@ -24,7 +24,7 @@ import javax.annotation.Nonnull;
 /**
  * Types of shader-language-specific boxed variables we can create, shared constants.
  */
-public final class SLType {
+public final class SLDataType {
 
     public static final byte
             kVoid = 0,

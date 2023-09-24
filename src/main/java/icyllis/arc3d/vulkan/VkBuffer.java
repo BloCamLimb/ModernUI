@@ -59,7 +59,7 @@ public final class VkBuffer extends Buffer {
     }
 
     @Override
-    protected boolean onUpdateData(long data, int offset, int size) {
+    protected boolean onUpdateData(int offset, int size, long data) {
         return false;
     }
 }

@@ -21,12 +21,15 @@ package icyllis.arc3d.engine.ops;
 
 import icyllis.arc3d.engine.*;
 
+import javax.annotation.Nonnull;
+
 /**
  * Base class for mesh-drawing {@link DrawOp DrawOps}.
  */
 public abstract class MeshDrawOp extends DrawOp implements Mesh {
 
     private PipelineInfo mPipelineInfo;
+    private PipelineState mPipelineState;
 
     public MeshDrawOp() {
     }
@@ -35,22 +38,43 @@ public abstract class MeshDrawOp extends DrawOp implements Mesh {
         return mPipelineInfo;
     }
 
+    public PipelineState getPipelineState() {
+        return mPipelineState;
+    }
+
+    @Override
+    public int getVertexSize() {
+        return mPipelineInfo.geomProc().vertexStride();
+    }
+
+    @Override
+    public int getInstanceSize() {
+        return mPipelineInfo.geomProc().instanceStride();
+    }
+
     @Override
     public void onPrePrepare(RecordingContext context,
                              SurfaceProxyView writeView,
                              int pipelineFlags) {
         assert (mPipelineInfo == null);
         mPipelineInfo = onCreatePipelineInfo(writeView, pipelineFlags);
+        mPipelineState = context.findOrCreatePipelineState(mPipelineInfo);
     }
 
     @Override
-    public final void onPrepare(OpFlushState state, SurfaceProxyView writeView, int pipelineFlags) {
+    public final void onPrepare(OpFlushState state,
+                                SurfaceProxyView writeView,
+                                int pipelineFlags) {
         if (mPipelineInfo == null) {
             mPipelineInfo = onCreatePipelineInfo(writeView, pipelineFlags);
+        }
+        if (mPipelineState == null) {
+            mPipelineState = state.findOrCreatePipelineState(mPipelineInfo);
         }
         onPrepareDraws(state);
     }
 
+    @Nonnull
     protected abstract PipelineInfo onCreatePipelineInfo(SurfaceProxyView writeView,
                                                          int pipelineFlags);
 

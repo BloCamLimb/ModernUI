@@ -21,54 +21,68 @@ package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.*;
 
-import static icyllis.arc3d.engine.Engine.*;
-
 /**
  * The drawing device is backed by GPU.
  */
-public final class Device extends BaseDevice {
+public final class ServerDevice extends BaseDevice {
 
-    private Device(SurfaceDrawContext context, ImageInfo info, boolean clear) {
+    private ClipStack mClipStack;
+
+    private ServerDevice(SurfaceDrawContext context, ImageInfo info, boolean clear) {
         super(info);
     }
 
     @SharedPtr
-    private static Device make(SurfaceDrawContext sdc,
-                               int alphaType,
-                               boolean clear) {
+    private static ServerDevice make(SurfaceDrawContext sdc,
+                                     int alphaType,
+                                     boolean clear) {
         if (sdc == null) {
             return null;
         }
-        if (alphaType != Core.AlphaType.Premul && alphaType != Core.AlphaType.Opaque) {
+        if (alphaType != ImageInfo.AT_PREMUL && alphaType != ImageInfo.AT_OPAQUE) {
             return null;
         }
         RecordingContext rContext = sdc.getContext();
         if (rContext.isDiscarded()) {
             return null;
         }
-        int colorType = ColorType.toPublic(sdc.getColorType());
+        int colorType = Engine.colorTypeToPublic(sdc.getColorType());
         if (rContext.isSurfaceCompatible(colorType)) {
-            ImageInfo info = new ImageInfo(sdc.getWidth(), sdc.getHeight(), colorType, alphaType);
-            return new Device(sdc, info, clear);
+            ImageInfo info = new ImageInfo(sdc.getWidth(), sdc.getHeight(), colorType, alphaType, null);
+            return new ServerDevice(sdc, info, clear);
         }
         return null;
     }
 
     @SharedPtr
-    public static Device make(RecordingContext rContext,
-                              int colorType,
-                              int alphaType,
-                              int width, int height,
-                              int sampleCount,
-                              int surfaceFlags,
-                              int origin,
-                              boolean clear) {
+    public static ServerDevice make(RecordingContext rContext,
+                                    int colorType,
+                                    int alphaType,
+                                    int width, int height,
+                                    int sampleCount,
+                                    int surfaceFlags,
+                                    int origin,
+                                    boolean clear) {
         if (rContext == null) {
             return null;
         }
         SurfaceDrawContext sdc = SurfaceDrawContext.make(rContext,
                 colorType, width, height, sampleCount, surfaceFlags, origin);
         return make(sdc, alphaType, clear);
+    }
+
+    @SharedPtr
+    public static ServerDevice make(RecordingContext rContext,
+                                    int colorType,
+                                    SurfaceProxy proxy,
+                                    int origin,
+                                    boolean clear) {
+        if (rContext == null) {
+            return null;
+        }
+        SurfaceDrawContext sdc = SurfaceDrawContext.make(rContext,
+                colorType, proxy, origin);
+        return make(sdc, ImageInfo.AT_PREMUL, clear);
     }
 
     @Override

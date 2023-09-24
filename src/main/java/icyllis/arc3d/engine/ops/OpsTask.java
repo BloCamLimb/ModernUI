@@ -106,11 +106,11 @@ public class OpsTask extends RenderTask {
         for (OpChain chain : mOpChains) {
             if (chain.mHead != null) {
                 int pipelineFlags = mPipelineFlags;
-                if (chain.getAppliedClip() != null) {
-                    if (chain.getAppliedClip().hasScissorClip()) {
+                if (chain.getClipState() != null) {
+                    if (chain.getClipState().hasScissorClip()) {
                         pipelineFlags |= PipelineInfo.kHasScissorClip_Flag;
                     }
-                    if (chain.getAppliedClip().hasStencilClip()) {
+                    if (chain.getClipState().hasStencilClip()) {
                         pipelineFlags |= PipelineInfo.kHasStencilClip_Flag;
                     }
                 }
@@ -135,8 +135,7 @@ public class OpsTask extends RenderTask {
 
         for (OpChain chain : mOpChains) {
             if (chain.mHead != null) {
-                chain.mHead.onExecute(flushState,
-                        chain.mBounds);
+                chain.mHead.onExecute(flushState, chain);
             }
         }
 
@@ -181,7 +180,7 @@ public class OpsTask extends RenderTask {
         recordOp(op, null, ProcessorAnalyzer.EMPTY_ANALYSIS);
     }
 
-    public void addDrawOp(@Nonnull DrawOp op, @Nullable AppliedClip clip, int processorAnalysis) {
+    public void addDrawOp(@Nonnull DrawOp op, @Nullable ClipResult clip, int processorAnalysis) {
         TextureProxyVisitor addDependency = (p, ss) -> {
             mSampledTextures.add(p);
             addDependency(p, ss);
@@ -196,17 +195,15 @@ public class OpsTask extends RenderTask {
         recordOp(op, clip != null && clip.hasClip() ? clip : null, processorAnalysis);
     }
 
-    void recordOp(@Nonnull Op op, @Nullable AppliedClip clip, int processorAnalysis) {
+    void recordOp(@Nonnull Op op, @Nullable ClipResult clip, int processorAnalysis) {
         // A closed OpsTask should never receive new/more ops
         assert (!isClosed());
 
-        if (!Rect2f.isFinite(op.getLeft(), op.getTop(),
-                op.getRight(), op.getBottom())) {
+        if (!op.isFinite()) {
             return;
         }
 
-        mTotalBounds.join(op.getLeft(), op.getTop(),
-                op.getRight(), op.getBottom());
+        mTotalBounds.join(op);
 
         int maxCandidates = Math.min(10, mOpChains.size());
         if (maxCandidates > 0) {
@@ -218,9 +215,7 @@ public class OpsTask extends RenderTask {
                     return;
                 }
                 // Check overlaps for painter's algorithm
-                if (Rect2f.rectsOverlap(candidate.mBounds,
-                        op.getLeft(), op.getTop(),
-                        op.getRight(), op.getBottom())) {
+                if (Rect2f.rectsOverlap(candidate, op)) {
                     // Stop going backwards if we would cause a painter's order violation.
                     break;
                 }
@@ -236,26 +231,23 @@ public class OpsTask extends RenderTask {
         mOpChains.add(new OpChain(op, clip, processorAnalysis));
     }
 
-    private static class OpChain {
+    private static class OpChain extends Rect2f {
 
         private Op mHead;
         private Op mTail;
 
         @Nullable
-        private final AppliedClip mAppliedClip;
+        private final ClipResult mClipResult;
         private final int mProcessorAnalysis;
 
-        private final Rect2f mBounds;
-
-        public OpChain(@Nonnull Op op, @Nullable AppliedClip appliedClip, int processorAnalysis) {
+        public OpChain(@Nonnull Op op, @Nullable ClipResult clipResult, int processorAnalysis) {
             mHead = op;
             mTail = op;
 
-            mAppliedClip = appliedClip;
+            mClipResult = clipResult;
             mProcessorAnalysis = processorAnalysis;
 
-            mBounds = new Rect2f(op.getLeft(), op.getTop(),
-                    op.getRight(), op.getBottom());
+            set(op);
 
             assert (validate());
         }
@@ -267,8 +259,8 @@ public class OpsTask extends RenderTask {
         }
 
         @Nullable
-        public AppliedClip getAppliedClip() {
-            return mAppliedClip;
+        public ClipResult getClipState() {
+            return mClipResult;
         }
 
         public void deleteOps() {
@@ -281,7 +273,7 @@ public class OpsTask extends RenderTask {
         public Op popHead() {
             assert (mHead != null);
             Op temp = mHead;
-            mHead = mHead.cutChain();
+            mHead = mHead.chainSplit();
             if (mHead == null) {
                 assert (mTail == temp);
                 mTail = null;
@@ -289,7 +281,7 @@ public class OpsTask extends RenderTask {
             return temp;
         }
 
-        public Op appendOp(@Nonnull Op op, @Nullable AppliedClip appliedClip, int processorAnalysis) {
+        public Op appendOp(@Nonnull Op op, @Nullable ClipResult clipResult, int processorAnalysis) {
             assert (op.isChainHead() && op.isChainTail());
             assert (op.validateChain(op));
             assert (mHead != null);
@@ -297,21 +289,18 @@ public class OpsTask extends RenderTask {
             if (((mProcessorAnalysis & ProcessorAnalyzer.NON_OVERLAPPING) !=
                     (processorAnalysis & ProcessorAnalyzer.NON_OVERLAPPING)) ||
                     ((mProcessorAnalysis & ProcessorAnalyzer.NON_OVERLAPPING) != 0 &&
-                            Rect2f.rectsTouchOrOverlap(mBounds,
-                                    op.getLeft(), op.getTop(),
-                                    op.getRight(), op.getBottom())) ||
-                    !Objects.equals(mAppliedClip, appliedClip)) {
+                            Rect2f.rectsTouchOrOverlap(this, op)) ||
+                    !Objects.equals(mClipResult, clipResult)) {
                 return op;
             }
 
-            if (mTail.combineIfPossible(op)) {
-                mTail.mergeChain(op);
+            if (mHead.mayChain(op)) {
+                mTail.chainConcat(op);
                 mTail = mTail.nextInChain();
             } else {
                 return op;
             }
-            mBounds.joinNoCheck(op.getLeft(), op.getTop(),
-                    op.getRight(), op.getBottom());
+            joinNoCheck(op);
             assert validate();
             return null;
         }
@@ -322,8 +311,8 @@ public class OpsTask extends RenderTask {
                 assert mHead.validateChain(mTail);
             }
             for (Op op = mHead; op != null; op = op.nextInChain()) {
-                assert (mBounds.mLeft <= op.getLeft() && mBounds.mTop <= op.getTop() &&
-                        mBounds.mRight >= op.getRight() && mBounds.mBottom >= op.getBottom());
+                assert (mLeft <= op.mLeft && mTop <= op.mTop &&
+                        mRight >= op.mRight && mBottom >= op.mBottom);
             }
             return true;
         }

@@ -587,20 +587,20 @@ public class Rect2f {
      * Returns true if the rectangles have a nonzero area of overlap. It assumed that rects can be
      * infinitely small but not "inverted".
      */
-    public static boolean rectsOverlap(Rect2f a, float bLeft, float bTop, float bRight, float bBottom) {
+    public static boolean rectsOverlap(Rect2f a, Rect2f b) {
         assert (!a.isFinite() || (a.mLeft <= a.mRight && a.mTop <= a.mBottom));
-        assert (!isFinite(bLeft, bTop, bRight, bBottom) || (bLeft <= bRight && bTop <= bBottom));
-        return a.mRight > bLeft && a.mBottom > bTop && bRight > a.mLeft && bBottom > a.mTop;
+        assert (!isFinite(b.mLeft, b.mTop, b.mRight, b.mBottom) || (b.mLeft <= b.mRight && b.mTop <= b.mBottom));
+        return a.mRight > b.mLeft && a.mBottom > b.mTop && b.mRight > a.mLeft && b.mBottom > a.mTop;
     }
 
     /**
      * Returns true if the rectangles overlap or share an edge or corner. It assumed that rects can be
      * infinitely small but not "inverted".
      */
-    public static boolean rectsTouchOrOverlap(Rect2f a, float bLeft, float bTop, float bRight, float bBottom) {
+    public static boolean rectsTouchOrOverlap(Rect2f a, Rect2f b) {
         assert (!a.isFinite() || (a.mLeft <= a.mRight && a.mTop <= a.mBottom));
-        assert (!isFinite(bLeft, bTop, bRight, bBottom) || (bLeft <= bRight && bTop <= bBottom));
-        return a.mRight >= bLeft && a.mBottom >= bTop && bRight >= a.mLeft && bBottom >= a.mTop;
+        assert (!isFinite(b.mLeft, b.mTop, b.mRight, b.mBottom) || (b.mLeft <= b.mRight && b.mTop <= b.mBottom));
+        return a.mRight >= b.mLeft && a.mBottom >= b.mTop && b.mRight >= a.mLeft && b.mBottom >= a.mTop;
     }
 
     /**

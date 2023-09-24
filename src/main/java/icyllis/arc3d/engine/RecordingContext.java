@@ -19,7 +19,8 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.Core;
+import icyllis.arc3d.core.ImageInfo;
+import icyllis.arc3d.core.Surface;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nullable;
@@ -27,13 +28,15 @@ import javax.annotation.Nullable;
 /**
  * This class is a public API, except where noted.
  */
-public abstract sealed class RecordingContext extends Context
-        permits DeferredContext, DirectContext {
+public sealed class RecordingContext extends Context
+        permits DirectContext {
 
     private final Thread mOwnerThread;
 
     private final ProxyProvider mProxyProvider;
     private DrawingManager mDrawingManager;
+
+    private final PipelineDesc mLookupDesc = new PipelineDesc();
 
     protected RecordingContext(ContextThreadSafeProxy proxy) {
         super(proxy);
@@ -42,12 +45,12 @@ public abstract sealed class RecordingContext extends Context
     }
 
     @Nullable
-    public static RecordingContext makeDeferred(ContextThreadSafeProxy proxy) {
-        RecordingContext context = new DeferredContext(proxy);
-        if (context.init()) {
-            return context;
+    public static RecordingContext makeRecording(ContextThreadSafeProxy context) {
+        RecordingContext rContext = new RecordingContext(context);
+        if (rContext.init()) {
+            return rContext;
         }
-        context.unref();
+        rContext.unref();
         return null;
     }
 
@@ -64,26 +67,26 @@ public abstract sealed class RecordingContext extends Context
     /**
      * Can a {@link icyllis.arc3d.core.Image} be created with the given color type.
      *
-     * @param colorType see {@link Core.ColorType}
+     * @param colorType see {@link ImageInfo}
      */
     public final boolean isImageCompatible(int colorType) {
         return getDefaultBackendFormat(colorType, false) != null;
     }
 
     /**
-     * Can a {@link icyllis.arc3d.core.Surface} be created with the given color type.
+     * Can a {@link Surface} be created with the given color type.
      * To check whether MSAA is supported use {@link #getMaxSurfaceSampleCount(int)}.
      *
-     * @param colorType see {@link Core.ColorType}
+     * @param colorType see {@link ImageInfo}
      */
     public final boolean isSurfaceCompatible(int colorType) {
-        colorType = Engine.ColorType.toPublic(colorType);
-        if (Core.ColorType.kR16G16_unorm == colorType ||
-                Core.ColorType.kA16_unorm == colorType ||
-                Core.ColorType.kA16_float == colorType ||
-                Core.ColorType.kR16G16_float == colorType ||
-                Core.ColorType.kR16G16B16A16_unorm == colorType ||
-                Core.ColorType.kGray_8 == colorType) {
+        colorType = Engine.colorTypeToPublic(colorType);
+        if (ImageInfo.CT_RG_1616 == colorType ||
+                ImageInfo.CT_A16_UNORM == colorType ||
+                ImageInfo.CT_A16_FLOAT == colorType ||
+                ImageInfo.CT_RG_F16 == colorType ||
+                ImageInfo.CT_R16G16B16A16_UNORM == colorType ||
+                ImageInfo.CT_GRAY_8 == colorType) {
             return false;
         }
 
@@ -117,6 +120,17 @@ public abstract sealed class RecordingContext extends Context
     @ApiStatus.Internal
     public final ThreadSafeCache getThreadSafeCache() {
         return mThreadSafeProxy.getThreadSafeCache();
+    }
+
+    @ApiStatus.Internal
+    public final PipelineStateCache getPipelineStateCache() {
+        return mThreadSafeProxy.getPipelineStateCache();
+    }
+
+    @ApiStatus.Internal
+    public final PipelineState findOrCreatePipelineState(final PipelineInfo pipelineInfo) {
+        mLookupDesc.clear();
+        return getPipelineStateCache().findOrCreatePipelineState(mLookupDesc, pipelineInfo);
     }
 
     @Override
@@ -161,5 +175,14 @@ public abstract sealed class RecordingContext extends Context
      */
     public final boolean isOwnerThread() {
         return Thread.currentThread() == mOwnerThread;
+    }
+
+    /**
+     * Checks if calling from the context-creating thread, or throws a runtime exception.
+     */
+    public final void checkOwnerThread() {
+        if (Thread.currentThread() != mOwnerThread)
+            throw new IllegalStateException("Method expected to call from " + mOwnerThread +
+                    ", current " + Thread.currentThread() + ", deferred " + !(this instanceof DirectContext));
     }
 }
