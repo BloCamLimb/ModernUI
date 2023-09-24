@@ -26,21 +26,21 @@ import javax.annotation.Nullable;
 import static icyllis.arc3d.engine.Engine.*;
 
 /**
- * Provides common resources with cache.
+ * Provides resources with cache.
  */
-public final class ResourceProvider {
+public class ResourceProvider {
 
     public static final int MIN_SCRATCH_TEXTURE_SIZE = 16;
 
     private final Server mServer;
-    private final ResourceCache mCache;
+    private final DirectContext mContext;
 
     // lookup key
     private final Texture.ScratchKey mTextureScratchKey = new Texture.ScratchKey();
 
-    ResourceProvider(Server server, ResourceCache cache) {
+    protected ResourceProvider(Server server, DirectContext context) {
         mServer = server;
-        mCache = cache;
+        mContext = context;
     }
 
     /**
@@ -57,7 +57,7 @@ public final class ResourceProvider {
         }
 
         int ceilPow2 = MathUtil.ceilPow2(size);
-        if (size <= (1 << 10)) {
+        if (size <= 1024) {
             return ceilPow2;
         }
 
@@ -80,9 +80,10 @@ public final class ResourceProvider {
     @Nullable
     @SharedPtr
     @SuppressWarnings("unchecked")
-    public <T extends Resource> T findByUniqueKey(Object key) {
+    public final <T extends Resource> T findByUniqueKey(Object key) {
         assert mServer.getContext().isOwnerThread();
-        return mServer.getContext().isDiscarded() ? null : (T) mCache.findAndRefUniqueResource(key);
+        return mServer.getContext().isDiscarded() ? null :
+                (T) mContext.getResourceCache().findAndRefUniqueResource(key);
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -92,23 +93,23 @@ public final class ResourceProvider {
      * Finds or creates a texture that matches the descriptor. The texture's format will always
      * match the request. The contents of the texture are undefined.
      * <p>
-     * When {@link SurfaceFlags#Budgeted} is set, the texture will count against the resource
-     * cache budget. If {@link SurfaceFlags#LooseFit} is also set, it's always budgeted.
+     * When {@link Surface#FLAG_BUDGETED} is set, the texture will count against the resource
+     * cache budget. If {@link Surface#FLAG_APPROX_FIT} is also set, it's always budgeted.
      * <p>
-     * When {@link SurfaceFlags#LooseFit} is set, the method returns a potentially loose fit
+     * When {@link Surface#FLAG_APPROX_FIT} is set, the method returns a potentially approx fit
      * texture that approximately matches the descriptor. Will be at least as large in width and
-     * height as desc specifies. In this case, {@link SurfaceFlags#Mipmapped} and
-     * {@link SurfaceFlags#Budgeted} are ignored. Otherwise, the method returns an exact fit
+     * height as desc specifies. In this case, {@link Surface#FLAG_MIPMAPPED} and
+     * {@link Surface#FLAG_BUDGETED} are ignored. Otherwise, the method returns an exact fit
      * texture.
      * <p>
-     * When {@link SurfaceFlags#Mipmapped} is set, the texture will be allocated with mipmaps.
-     * If {@link SurfaceFlags#LooseFit} is also set, it always has no mipmaps.
+     * When {@link Surface#FLAG_MIPMAPPED} is set, the texture will be allocated with mipmaps.
+     * If {@link Surface#FLAG_APPROX_FIT} is also set, it always has no mipmaps.
      * <p>
-     * When {@link SurfaceFlags#Renderable} is set, the texture can be rendered to and
-     * {@link Texture#getRenderTarget()} will return nonnull. The <code>sampleCount</code> specifies
-     * the number of samples to use for rendering.
+     * When {@link Surface#FLAG_RENDERABLE} is set, the texture can be rendered to and
+     * {@link Surface#getRenderTarget()} will return nonnull. The <code>sampleCount</code>
+     * specifies the number of samples to use for rendering.
      * <p>
-     * When {@link SurfaceFlags#Protected} is set, the texture will be created as protected.
+     * When {@link Surface#FLAG_PROTECTED} is set, the texture will be created as protected.
      *
      * @param width        the desired width of the texture to be created
      * @param height       the desired height of the texture to be created
@@ -118,19 +119,19 @@ public final class ResourceProvider {
      * @param surfaceFlags the combination of the above flags
      * @param label        the label for debugging purposes, can be empty to clear the label,
      *                     or null to leave the label unchanged
-     * @see SurfaceFlags#Budgeted
-     * @see SurfaceFlags#LooseFit
-     * @see SurfaceFlags#Mipmapped
-     * @see SurfaceFlags#Renderable
-     * @see SurfaceFlags#Protected
+     * @see Surface#FLAG_BUDGETED
+     * @see Surface#FLAG_APPROX_FIT
+     * @see Surface#FLAG_MIPMAPPED
+     * @see Surface#FLAG_RENDERABLE
+     * @see Surface#FLAG_PROTECTED
      */
     @Nullable
     @SharedPtr
-    public Texture createTexture(int width, int height,
-                                 BackendFormat format,
-                                 int sampleCount,
-                                 int surfaceFlags,
-                                 String label) {
+    public final Texture createTexture(int width, int height,
+                                       BackendFormat format,
+                                       int sampleCount,
+                                       int surfaceFlags,
+                                       String label) {
         assert mServer.getContext().isOwnerThread();
         if (mServer.getContext().isDiscarded()) {
             return null;
@@ -145,17 +146,17 @@ public final class ResourceProvider {
             return null;
         }
 
-        if ((surfaceFlags & SurfaceFlags.LooseFit) != 0) {
+        if ((surfaceFlags & Surface.FLAG_APPROX_FIT) != 0) {
             width = makeApprox(width);
             height = makeApprox(height);
-            surfaceFlags &= SurfaceFlags.Renderable | SurfaceFlags.Protected;
-            surfaceFlags |= SurfaceFlags.Budgeted;
+            surfaceFlags &= Surface.FLAG_RENDERABLE | Surface.FLAG_PROTECTED;
+            surfaceFlags |= Surface.FLAG_BUDGETED;
         }
 
         final Texture texture = findAndRefScratchTexture(width, height, format,
                 sampleCount, surfaceFlags, label);
         if (texture != null) {
-            if ((surfaceFlags & SurfaceFlags.Budgeted) == 0) {
+            if ((surfaceFlags & Surface.FLAG_BUDGETED) == 0) {
                 texture.makeBudgeted(false);
             }
             return texture;
@@ -183,34 +184,34 @@ public final class ResourceProvider {
      * @param pixels       the pointer to the texel data for base level image
      * @param label        the label for debugging purposes, can be empty to clear the label,
      *                     or null to leave the label unchanged
-     * @see SurfaceFlags#Budgeted
-     * @see SurfaceFlags#LooseFit
-     * @see SurfaceFlags#Mipmapped
-     * @see SurfaceFlags#Renderable
-     * @see SurfaceFlags#Protected
+     * @see Surface#FLAG_BUDGETED
+     * @see Surface#FLAG_APPROX_FIT
+     * @see Surface#FLAG_MIPMAPPED
+     * @see Surface#FLAG_RENDERABLE
+     * @see Surface#FLAG_PROTECTED
      */
     @Nullable
     @SharedPtr
-    public Texture createTexture(int width, int height,
-                                 BackendFormat format,
-                                 int sampleCount,
-                                 int surfaceFlags,
-                                 int dstColorType,
-                                 int srcColorType,
-                                 int rowBytes,
-                                 long pixels,
-                                 String label) {
+    public final Texture createTexture(int width, int height,
+                                       BackendFormat format,
+                                       int sampleCount,
+                                       int surfaceFlags,
+                                       int dstColorType,
+                                       int srcColorType,
+                                       int rowBytes,
+                                       long pixels,
+                                       String label) {
         assert mServer.getContext().isOwnerThread();
         if (mServer.getContext().isDiscarded()) {
             return null;
         }
 
-        if (srcColorType == ColorType.kUnknown ||
-                dstColorType == ColorType.kUnknown) {
+        if (srcColorType == ImageInfo.CT_UNKNOWN ||
+                dstColorType == ImageInfo.CT_UNKNOWN) {
             return null;
         }
 
-        int minRowBytes = width * ColorType.bytesPerPixel(srcColorType);
+        int minRowBytes = width * ImageInfo.bytesPerPixel(srcColorType);
         int actualRowBytes = rowBytes > 0 ? rowBytes : minRowBytes;
         if (actualRowBytes < minRowBytes) {
             return null;
@@ -247,12 +248,12 @@ public final class ResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public Texture findAndRefScratchTexture(Object key, String label) {
+    public final Texture findAndRefScratchTexture(Object key, String label) {
         assert mServer.getContext().isOwnerThread();
         assert !mServer.getContext().isDiscarded();
         assert key != null;
 
-        Resource resource = mCache.findAndRefScratchResource(key);
+        Resource resource = mContext.getResourceCache().findAndRefScratchResource(key);
         if (resource != null) {
             mServer.getStats().incNumScratchTexturesReused();
             if (label != null) {
@@ -269,17 +270,17 @@ public final class ResourceProvider {
      *
      * @param label the label for debugging purposes, can be empty to clear the label,
      *              or null to leave the label unchanged
-     * @see SurfaceFlags#Mipmapped
-     * @see SurfaceFlags#Renderable
-     * @see SurfaceFlags#Protected
+     * @see Surface#FLAG_MIPMAPPED
+     * @see Surface#FLAG_RENDERABLE
+     * @see Surface#FLAG_PROTECTED
      */
     @Nullable
     @SharedPtr
-    public Texture findAndRefScratchTexture(int width, int height,
-                                            BackendFormat format,
-                                            int sampleCount,
-                                            int surfaceFlags,
-                                            String label) {
+    public final Texture findAndRefScratchTexture(int width, int height,
+                                                  BackendFormat format,
+                                                  int sampleCount,
+                                                  int surfaceFlags,
+                                                  String label) {
         assert mServer.getContext().isOwnerThread();
         assert !mServer.getContext().isDiscarded();
         assert !format.isCompressed();
@@ -312,13 +313,32 @@ public final class ResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public Texture wrapRenderableBackendTexture(BackendTexture texture,
-                                                int sampleCount,
-                                                boolean ownership) {
+    public final Texture wrapRenderableBackendTexture(BackendTexture texture,
+                                                      int sampleCount,
+                                                      boolean ownership) {
         if (mServer.getContext().isDiscarded()) {
             return null;
         }
         return mServer.wrapRenderableBackendTexture(texture, sampleCount, ownership);
+    }
+
+    /**
+     * Wraps an existing render target with a RenderSurface object. It is
+     * similar to wrapBackendTexture but can be used to draw into surfaces
+     * that are not also textures (e.g. FBO 0 in OpenGL, or an MSAA buffer that
+     * the client will resolve to a texture). Currently wrapped render targets
+     * always are not cacheable and not owned by returned object (you must free it
+     * manually, releasing RenderSurface doesn't release the backend framebuffer).
+     *
+     * @return RenderSurface object or null on failure.
+     */
+    @Nullable
+    @SharedPtr
+    public final RenderSurface wrapBackendRenderTarget(BackendRenderTarget backendRenderTarget) {
+        if (mServer.getContext().isDiscarded()) {
+            return null;
+        }
+        return mServer.wrapBackendRenderTarget(backendRenderTarget);
     }
 
     /**
@@ -327,15 +347,19 @@ public final class ResourceProvider {
      * @param size  minimum size of buffer to return.
      * @param usage hint to the graphics subsystem about what the buffer will be used for.
      * @return the buffer if successful, otherwise nullptr.
-     * @see BufferUsageFlags
+     * @see Server.BufferUsageFlags
      */
     @Nullable
     @SharedPtr
-    public Buffer createBuffer(int size, int usage) {
-        return null;
+    public final Buffer createBuffer(int size, int usage) {
+        if (mServer.getContext().isDiscarded()) {
+            return null;
+        }
+        //TODO scratch
+        return mServer.createBuffer(size, usage);
     }
 
-    public void assignUniqueKeyToResource(Object key, Resource resource) {
+    public final void assignUniqueKeyToResource(Object key, Resource resource) {
         assert mServer.getContext().isOwnerThread();
         if (mServer.getContext().isDiscarded() || resource == null) {
             return;

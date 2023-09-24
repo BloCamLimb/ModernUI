@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.opengl;
 
-import icyllis.arc3d.core.SLType;
+import icyllis.arc3d.core.SLDataType;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.shading.ProgramBuilder;
 import icyllis.arc3d.engine.shading.UniformHandler;
@@ -63,7 +63,7 @@ public class GLUniformHandler extends UniformHandler {
                                           byte type,
                                           String name,
                                           int arrayCount) {
-        assert (SLType.canBeUniformValue(type));
+        assert (SLDataType.canBeUniformValue(type));
         assert (visibility != 0);
 
         assert (!name.contains("__"));
@@ -81,7 +81,13 @@ public class GLUniformHandler extends UniformHandler {
 
         int handle = mUniforms.size();
 
-        String layoutQualifier = "offset = " + offset;
+        String layoutQualifier;
+        if (mProgramBuilder.shaderCaps().mGLSLVersion >= 440) {
+            // ARB_enhanced_layouts or GLSL 440
+            layoutQualifier = "offset = " + offset;
+        } else {
+            layoutQualifier = "";
+        }
 
         var tempInfo = new UniformInfo();
         tempInfo.mVariable = new ShaderVar(resolvedName,
@@ -107,12 +113,18 @@ public class GLUniformHandler extends UniformHandler {
 
         int handle = mSamplers.size();
 
-        // equivalent to setting texture unit to index
-        String layoutQualifier = "binding = " + handle;
+        String layoutQualifier;
+        if (mProgramBuilder.shaderCaps().mGLSLVersion >= 420) {
+            // ARB_shading_language_420pack
+            // equivalent to setting texture unit to index
+            layoutQualifier = "binding = " + handle;
+        } else {
+            layoutQualifier = "";
+        }
 
         var tempInfo = new UniformInfo();
         tempInfo.mVariable = new ShaderVar(resolvedName,
-                SLType.kSampler2D,
+                SLDataType.kSampler2D,
                 ShaderVar.kUniform_TypeModifier,
                 ShaderVar.kNonArray,
                 layoutQualifier,
@@ -145,7 +157,7 @@ public class GLUniformHandler extends UniformHandler {
         boolean firstMember = false;
         boolean firstVisible = false;
         for (var uniform : mUniforms) {
-            assert (SLType.canBeUniformValue(uniform.mVariable.getType()));
+            assert (SLDataType.canBeUniformValue(uniform.mVariable.getType()));
             if (!firstMember) {
                 // Check to make sure we are starting our offset at 0 so the offset qualifier we
                 // set on each variable in the uniform block is valid.
@@ -153,24 +165,29 @@ public class GLUniformHandler extends UniformHandler {
                 firstMember = true;
             }
             if ((uniform.mVisibility & visibility) != 0) {
-                if (!firstVisible) {
-                    out.append("layout(std140, binding = ");
-                    out.append(UNIFORM_BINDING);
-                    out.append(") uniform ");
-                    out.append(UNIFORM_BLOCK_NAME);
-                    out.append(" {\n");
-                    firstVisible = true;
-                }
+                firstVisible = true;
+            }
+        }
+        // The uniform block definition for all shader stages must be exactly the same
+        if (firstVisible) {
+            out.append("layout(std140");
+            if (mProgramBuilder.shaderCaps().mGLSLVersion >= 420) {
+                // ARB_shading_language_420pack
+                out.append(", binding = ");
+                out.append(UNIFORM_BINDING);
+            }
+            out.append(") uniform ");
+            out.append(UNIFORM_BLOCK_NAME);
+            out.append(" {\n");
+            for (var uniform : mUniforms) {
                 uniform.mVariable.appendDecl(out);
                 out.append(";\n");
             }
-        }
-        if (firstVisible) {
             out.append("};\n");
         }
 
         for (var sampler : mSamplers) {
-            assert (sampler.mVariable.getType() == SLType.kSampler2D);
+            assert (sampler.mVariable.getType() == SLDataType.kSampler2D);
             if ((sampler.mVisibility & visibility) != 0) {
                 sampler.mVariable.appendDecl(out);
                 out.append(";\n");

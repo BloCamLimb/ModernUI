@@ -89,27 +89,33 @@ public final class GLOpsRenderPass extends OpsRenderPass {
     }
 
     @Override
-    protected boolean onBindPipeline(PipelineInfo info, Rect2f drawBounds) {
+    protected boolean onBindPipeline(PipelineInfo pipelineInfo,
+                                     PipelineState pipelineState,
+                                     Rect2f drawBounds) {
         mActiveIndexBuffer = Resource.move(mActiveIndexBuffer);
         mActiveVertexBuffer = Resource.move(mActiveVertexBuffer);
         mActiveInstanceBuffer = Resource.move(mActiveInstanceBuffer);
 
-        mPipelineState = mServer.getPipelineBuilder().findOrCreatePipelineState(info);
+        mPipelineState = (GLPipelineState) pipelineState;
         if (mPipelineState == null) {
             return false;
         }
-        mPrimitiveType = switch (info.primitiveType()) {
+        mPrimitiveType = switch (pipelineInfo.primitiveType()) {
             case PrimitiveType.PointList        -> GL_POINTS;
             case PrimitiveType.LineList         -> GL_LINES;
             case PrimitiveType.LineStrip        -> GL_LINE_STRIP;
             case PrimitiveType.TriangleList     -> GL_TRIANGLES;
             case PrimitiveType.TriangleStrip    -> GL_TRIANGLE_STRIP;
-            default -> throw new IllegalStateException();
+            default -> throw new AssertionError();
         };
 
         //TODO flush RT again?
-        mPipelineState.bindPipeline(mCmdBuffer);
-        return true;
+        if (!mPipelineState.bindPipeline(mCmdBuffer)) {
+            return false;
+        }
+
+        return mPipelineState.bindUniforms(mCmdBuffer, pipelineInfo,
+                mRenderTarget.getWidth(), mRenderTarget.getHeight());
     }
 
     @Override
@@ -125,14 +131,19 @@ public final class GLOpsRenderPass extends OpsRenderPass {
     }
 
     @Override
-    protected void onBindBuffers(@SharedPtr Buffer indexBuffer,
-                                 @SharedPtr Buffer vertexBuffer,
-                                 @SharedPtr Buffer instanceBuffer) {
+    protected void onBindBuffers(Buffer indexBuffer,
+                                 Buffer vertexBuffer,
+                                 Buffer instanceBuffer) {
         assert (mPipelineState != null);
-        mPipelineState.bindBuffers(indexBuffer, vertexBuffer, instanceBuffer);
-        mActiveIndexBuffer = Resource.move(mActiveIndexBuffer, indexBuffer);
-        mActiveVertexBuffer = Resource.move(mActiveVertexBuffer, vertexBuffer);
-        mActiveInstanceBuffer = Resource.move(mActiveInstanceBuffer, instanceBuffer);
+        if (mServer.getCaps().hasBaseInstanceSupport()) {
+            mPipelineState.bindBuffers(indexBuffer, vertexBuffer, 0, instanceBuffer, 0);
+        } else {
+            // bind instance buffer on drawInstanced()
+            mPipelineState.bindBuffers(indexBuffer, vertexBuffer, 0, null, 0);
+        }
+        mActiveIndexBuffer = Resource.create(mActiveIndexBuffer, indexBuffer);
+        mActiveVertexBuffer = Resource.create(mActiveVertexBuffer, vertexBuffer);
+        mActiveInstanceBuffer = Resource.create(mActiveInstanceBuffer, instanceBuffer);
     }
 
     @Override
@@ -150,15 +161,29 @@ public final class GLOpsRenderPass extends OpsRenderPass {
     @Override
     protected void onDrawInstanced(int instanceCount, int baseInstance,
                                    int vertexCount, int baseVertex) {
-        glDrawArraysInstancedBaseInstance(mPrimitiveType, baseVertex, vertexCount,
-                instanceCount, baseInstance);
+        if (mServer.getCaps().hasBaseInstanceSupport()) {
+            glDrawArraysInstancedBaseInstance(mPrimitiveType, baseVertex, vertexCount,
+                    instanceCount, baseInstance);
+        } else {
+            long instanceOffset = (long) baseInstance * mPipelineState.getInstanceStride();
+            mPipelineState.bindInstanceBuffer((GLBuffer) mActiveInstanceBuffer, instanceOffset);
+            glDrawArraysInstanced(mPrimitiveType, baseVertex, vertexCount,
+                    instanceCount);
+        }
     }
 
     @Override
     protected void onDrawIndexedInstanced(int indexCount, int baseIndex,
                                           int instanceCount, int baseInstance,
                                           int baseVertex) {
-        nglDrawElementsInstancedBaseVertexBaseInstance(mPrimitiveType, indexCount,
-                GL_UNSIGNED_SHORT, baseIndex, instanceCount, baseVertex, baseInstance);
+        if (mServer.getCaps().hasBaseInstanceSupport()) {
+            nglDrawElementsInstancedBaseVertexBaseInstance(mPrimitiveType, indexCount,
+                    GL_UNSIGNED_SHORT, baseIndex, instanceCount, baseVertex, baseInstance);
+        } else {
+            long instanceOffset = (long) baseInstance * mPipelineState.getInstanceStride();
+            mPipelineState.bindInstanceBuffer((GLBuffer) mActiveInstanceBuffer, instanceOffset);
+            glDrawElementsInstancedBaseVertex(mPrimitiveType, indexCount,
+                    GL_UNSIGNED_SHORT, baseIndex, instanceCount, baseVertex);
+        }
     }
 }

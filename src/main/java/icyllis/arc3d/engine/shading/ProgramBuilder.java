@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.engine.shading;
 
-import icyllis.arc3d.core.SLType;
+import icyllis.arc3d.core.SLDataType;
 import icyllis.arc3d.engine.*;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 
@@ -166,7 +166,7 @@ public abstract class ProgramBuilder {
         mProjectionUniform = uniformHandler().addUniform(
                 null,
                 ShaderFlags.kVertex,
-                SLType.kFloat4,
+                SLDataType.kFloat4,
                 UniformHandler.PROJECTION_NAME);
 
         mFS.codeAppendf("// Stage %d, %s\n", mStageIndex, geomProc.name());

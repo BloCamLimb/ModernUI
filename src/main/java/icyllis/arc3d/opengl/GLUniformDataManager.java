@@ -19,21 +19,25 @@
 
 package icyllis.arc3d.opengl;
 
-import icyllis.arc3d.core.MathUtil;
-import icyllis.arc3d.core.SLType;
+import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.UniformDataManager;
 import icyllis.arc3d.engine.shading.UniformHandler;
 
 import java.util.List;
 
+import static org.lwjgl.opengl.GL15C.nglBufferSubData;
+import static org.lwjgl.opengl.GL31C.GL_UNIFORM_BUFFER;
+
 /**
  * Uploads a UBO for a Uniform Interface Block with std140 layout.
  */
-public class GLPipelineStateDataManager extends UniformDataManager {
+public class GLUniformDataManager extends UniformDataManager {
 
     private int mRTWidth;
     private int mRTHeight;
     private boolean mRTFlipY;
+
+    private GLUniformBuffer mUniformBuffer;
 
     /**
      * Created by {@link GLPipelineState}.
@@ -41,21 +45,27 @@ public class GLPipelineStateDataManager extends UniformDataManager {
      * @param uniforms    the uniforms
      * @param uniformSize the uniform block size in bytes
      */
-    GLPipelineStateDataManager(List<UniformHandler.UniformInfo> uniforms, int uniformSize) {
+    GLUniformDataManager(List<UniformHandler.UniformInfo> uniforms, int uniformSize) {
         super(uniforms.size(), uniformSize);
         for (int i = 0, e = uniforms.size(); i < e; i++) {
             UniformHandler.UniformInfo uniformInfo = uniforms.get(i);
             assert ((uniformInfo.mOffset & 0xFFFFFF) == uniformInfo.mOffset);
             assert (MathUtil.isAlign4(uniformInfo.mOffset));
-            assert (SLType.canBeUniformValue(uniformInfo.mVariable.getType()));
+            assert (SLDataType.canBeUniformValue(uniformInfo.mVariable.getType()));
             mUniforms[i] = uniformInfo.mOffset | (uniformInfo.mVariable.getType() << 24);
         }
+    }
+
+    @Override
+    protected void deallocate() {
+        super.deallocate();
+        mUniformBuffer = RefCnt.move(mUniformBuffer);
     }
 
     /**
      * Set the orthographic projection vector.
      */
-    public void setProjection(int u, int width, int height, boolean flipY) {
+    public void setProjection(@UniformHandler.UniformHandle int u, int width, int height, boolean flipY) {
         if (width != mRTWidth || height != mRTHeight || flipY != mRTFlipY) {
             if (flipY) {
                 set4f(u, 2.0f / width, -1.0f, -2.0f / height, 1.0f);
@@ -68,5 +78,20 @@ public class GLPipelineStateDataManager extends UniformDataManager {
         }
     }
 
-    //TODO upload to UBO
+    public boolean bindAndUploadUniforms(GLServer server,
+                                         GLCommandBuffer commandBuffer) {
+        if (!mUniformsDirty) {
+            return true;
+        }
+        if (mUniformBuffer == null) {
+            mUniformBuffer = GLUniformBuffer.make(server, mUniformSize, GLUniformHandler.UNIFORM_BINDING);
+        }
+        if (mUniformBuffer == null) {
+            return false;
+        }
+        commandBuffer.bindUniformBuffer(mUniformBuffer);
+        nglBufferSubData(GL_UNIFORM_BUFFER, 0, mUniformSize, mUniformData);
+        mUniformsDirty = false;
+        return true;
+    }
 }

@@ -19,9 +19,8 @@
 
 package icyllis.arc3d.engine;
 
+import icyllis.arc3d.core.*;
 import icyllis.arc3d.shaderc.Compiler;
-import icyllis.arc3d.core.Rect2i;
-import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.ops.OpsTask;
 
 import javax.annotation.Nullable;
@@ -31,12 +30,26 @@ import java.util.Set;
 import static icyllis.arc3d.engine.Engine.*;
 
 /**
- * Represents the client connection to the backend 3D API, holding a reference to
- * {@link DirectContext}. It is responsible for creating / deleting 3D API objects,
- * controlling binding status, uploading and downloading data, transferring
- * 3D API commands, etc. Most methods are expected on render thread.
+ * Abstract base class that represents the logical device and graphics queue of the
+ * backend 3D API, holds a reference to {@link DirectContext}. It is responsible for
+ * creating/deleting 3D API objects, transferring data, submitting 3D API commands, etc.
+ * Most methods are only permitted on render thread (a.k.a. direct/RHI thread).
  */
-public abstract class Server {
+public abstract class Server implements Engine {
+
+    // @formatter:off
+    static {
+        assert (LoadStoreOps.Load_Store         == LoadStoreOps.make(LoadOp.Load,       StoreOp.Store));
+        assert (LoadStoreOps.Clear_Store        == LoadStoreOps.make(LoadOp.Clear,      StoreOp.Store));
+        assert (LoadStoreOps.DontLoad_Store     == LoadStoreOps.make(LoadOp.DontCare,   StoreOp.Store));
+        assert (LoadStoreOps.Load_DontStore     == LoadStoreOps.make(LoadOp.Load,       StoreOp.DontCare));
+        assert (LoadStoreOps.Clear_DontStore    == LoadStoreOps.make(LoadOp.Clear,      StoreOp.DontCare));
+        assert (LoadStoreOps.DontLoad_DontStore == LoadStoreOps.make(LoadOp.DontCare,   StoreOp.DontCare));
+        //noinspection ConstantValue
+        assert ( LoadOp.Count  <= (1 << LoadStoreOps.StoreOpShift)) &&
+                (StoreOp.Count <= (1 << LoadStoreOps.StoreOpShift));
+    }
+    // @formatter:on
 
     // this server is managed by this context
     protected final DirectContext mContext;
@@ -73,7 +86,9 @@ public abstract class Server {
         return mCompiler;
     }
 
-    public abstract ThreadSafePipelineBuilder getPipelineBuilder();
+    public abstract ResourceProvider getResourceProvider();
+
+    public abstract PipelineStateCache getPipelineStateCache();
 
     /**
      * Called by context when the underlying backend context is already or will be destroyed
@@ -91,16 +106,16 @@ public abstract class Server {
     }
 
     /**
-     * The server object normally assumes that no outsider is setting state
+     * The engine object normally assumes that no outsider is setting state
      * within the underlying 3D API's context/device/whatever. This call informs
-     * the server that the state was modified, and it shouldn't make assumptions
+     * the engine that the state was modified, and it shouldn't make assumptions
      * about the state.
      */
     public final void markContextDirty(int state) {
         mResetBits |= state;
     }
 
-    protected final void handleDirtyContext() {
+    protected void handleDirtyContext() {
         if (mResetBits != 0) {
             onResetContext(mResetBits);
             mResetBits = 0;
@@ -118,8 +133,10 @@ public abstract class Server {
 
     public abstract BufferAllocPool getInstancePool();
 
+    public abstract BufferAllocPool getIndexPool();
+
     /**
-     * Creates a texture object and allocates its server memory. In other words, the
+     * Creates a texture object and allocates its GPU memory. In other words, the
      * image data is dirty and needs to be uploaded later. If mipmapped, also allocates
      * <code>(31 - CLZ(max(width,height)))</code> mipmaps in addition to the base level.
      * NPoT (non-power-of-two) dimensions are always supported. Compressed format are
@@ -129,10 +146,10 @@ public abstract class Server {
      * @param height the height of the texture to be created
      * @param format the backend format for the texture
      * @return the texture object if successful, otherwise nullptr
-     * @see SurfaceFlags#Budgeted
-     * @see SurfaceFlags#Mipmapped
-     * @see SurfaceFlags#Renderable
-     * @see SurfaceFlags#Protected
+     * @see Surface#FLAG_BUDGETED
+     * @see Surface#FLAG_MIPMAPPED
+     * @see Surface#FLAG_RENDERABLE
+     * @see Surface#FLAG_PROTECTED
      */
     @Nullable
     @SharedPtr
@@ -149,20 +166,21 @@ public abstract class Server {
                 sampleCount, surfaceFlags)) {
             return null;
         }
-        int levelCount = (surfaceFlags & SurfaceFlags.Mipmapped) != 0
-                ? 32 - Integer.numberOfLeadingZeros(Math.max(width, height))
-                : 1;
-        if ((surfaceFlags & SurfaceFlags.Renderable) != 0) {
+        int maxMipLevel = (surfaceFlags & Surface.FLAG_MIPMAPPED) != 0
+                ? MathUtil.floorLog2(Math.max(width, height))
+                : 0;
+        int mipLevelCount = maxMipLevel + 1; // +1 base level 0
+        if ((surfaceFlags & Surface.FLAG_RENDERABLE) != 0) {
             sampleCount = mCaps.getRenderTargetSampleCount(sampleCount, format);
         }
         assert (sampleCount > 0 && sampleCount <= 64);
         handleDirtyContext();
         final Texture texture = onCreateTexture(width, height, format,
-                levelCount, sampleCount, surfaceFlags);
+                mipLevelCount, sampleCount, surfaceFlags);
         if (texture != null) {
             // we don't copy the backend format object, use identity rather than equals()
             assert texture.getBackendFormat() == format;
-            assert (surfaceFlags & SurfaceFlags.Renderable) == 0 || texture.getRenderTarget() != null;
+            assert (surfaceFlags & Surface.FLAG_RENDERABLE) == 0 || texture.getRenderTarget() != null;
             if (label != null) {
                 texture.setLabel(label);
             }
@@ -181,7 +199,7 @@ public abstract class Server {
     @SharedPtr
     protected abstract Texture onCreateTexture(int width, int height,
                                                BackendFormat format,
-                                               int levelCount,
+                                               int mipLevelCount,
                                                int sampleCount,
                                                int surfaceFlags);
 
@@ -227,6 +245,20 @@ public abstract class Server {
                                                               int sampleCount,
                                                               boolean ownership);
 
+    @Nullable
+    @SharedPtr
+    public RenderSurface wrapBackendRenderTarget(BackendRenderTarget backendRenderTarget) {
+        if (!getCaps().isFormatRenderable(backendRenderTarget.getBackendFormat(),
+                backendRenderTarget.getSampleCount())) {
+            return null;
+        }
+        return onWrapBackendRenderTarget(backendRenderTarget);
+    }
+
+    @Nullable
+    @SharedPtr
+    public abstract RenderSurface onWrapBackendRenderTarget(BackendRenderTarget backendRenderTarget);
+
     /**
      * Updates the pixels in a rectangle of a texture. No sRGB/linear conversions are performed.
      * The write operation can fail because of the surface doesn't support writing (e.g. read only),
@@ -257,7 +289,7 @@ public abstract class Server {
         if (x + width > texture.getWidth() || y + height > texture.getHeight()) {
             return false;
         }
-        int bpp = ColorType.bytesPerPixel(srcColorType);
+        int bpp = ImageInfo.bytesPerPixel(srcColorType);
         int minRowBytes = width * bpp;
         if (rowBytes < minRowBytes) {
             return false;
@@ -291,6 +323,29 @@ public abstract class Server {
                                              int srcColorType,
                                              int rowBytes,
                                              long pixels);
+
+    /**
+     * Uses the base level of the texture to compute the contents of the other mipmap levels.
+     *
+     * @return success or not
+     */
+    public final boolean generateMipmaps(Texture texture) {
+        assert texture != null;
+        assert texture.isMipmapped();
+        if (!texture.isMipmapsDirty()) {
+            return true;
+        }
+        if (texture.isReadOnly()) {
+            return false;
+        }
+        if (onGenerateMipmaps(texture)) {
+            texture.setMipmapsDirty(false);
+            return true;
+        }
+        return false;
+    }
+
+    protected abstract boolean onGenerateMipmaps(Texture texture);
 
     /**
      * Returns a {@link OpsRenderPass} which {@link OpsTask OpsTasks} record draw commands to.
@@ -342,6 +397,25 @@ public abstract class Server {
                                                   int resolveLeft, int resolveTop,
                                                   int resolveRight, int resolveBottom);
 
+    @Nullable
+    @SharedPtr
+    public final Buffer createBuffer(int size, int flags) {
+        if (size <= 0) {
+            new Throwable("RHICreateBuffer, invalid size: " + size)
+                    .printStackTrace(getContext().getErrorWriter());
+            return null;
+        }
+        if ((flags & (BufferUsageFlags.kTransferSrc | BufferUsageFlags.kTransferDst)) != 0 &&
+                (flags & BufferUsageFlags.kStatic) != 0) {
+            return null;
+        }
+        return onCreateBuffer(size, flags);
+    }
+
+    @Nullable
+    @SharedPtr
+    protected abstract Buffer onCreateBuffer(int size, int flags);
+
     /**
      * Creates a new fence and inserts it into the graphics queue.
      * Calls {@link #deleteFence(long)} if the fence is no longer used.
@@ -376,19 +450,18 @@ public abstract class Server {
 
     public static final class Stats {
 
-        private int mTextureCreates = 0;
-        private int mTextureUploads = 0;
-        private int mTransfersToTexture = 0;
-        private int mTransfersFromSurface = 0;
-        private int mStencilAttachmentCreates = 0;
-        private int mMSAAAttachmentCreates = 0;
-        private int mNumDraws = 0;
-        private int mNumFailedDraws = 0;
-        private int mNumSubmitToGpus = 0;
-        private int mNumScratchTexturesReused = 0;
-        private int mNumScratchMSAAAttachmentsReused = 0;
-        private int mRenderPasses = 0;
-        private int mNumReorderedDAGsOverBudget = 0;
+        private long mTextureCreates = 0;
+        private long mTextureUploads = 0;
+        private long mTransfersToTexture = 0;
+        private long mTransfersFromSurface = 0;
+        private long mStencilAttachmentCreates = 0;
+        private long mMSAAAttachmentCreates = 0;
+        private long mNumDraws = 0;
+        private long mNumFailedDraws = 0;
+        private long mNumSubmitToGpus = 0;
+        private long mNumScratchTexturesReused = 0;
+        private long mNumScratchMSAAAttachmentsReused = 0;
+        private long mRenderPasses = 0;
 
         public Stats() {
         }
@@ -406,10 +479,9 @@ public abstract class Server {
             mNumScratchTexturesReused = 0;
             mNumScratchMSAAAttachmentsReused = 0;
             mRenderPasses = 0;
-            mNumReorderedDAGsOverBudget = 0;
         }
 
-        public int numTextureCreates() {
+        public long numTextureCreates() {
             return mTextureCreates;
         }
 
@@ -417,7 +489,7 @@ public abstract class Server {
             mTextureCreates++;
         }
 
-        public int numTextureUploads() {
+        public long numTextureUploads() {
             return mTextureUploads;
         }
 
@@ -425,7 +497,7 @@ public abstract class Server {
             mTextureUploads++;
         }
 
-        public int numTransfersToTexture() {
+        public long numTransfersToTexture() {
             return mTransfersToTexture;
         }
 
@@ -433,7 +505,7 @@ public abstract class Server {
             mTransfersToTexture++;
         }
 
-        public int numTransfersFromSurface() {
+        public long numTransfersFromSurface() {
             return mTransfersFromSurface;
         }
 
@@ -441,7 +513,7 @@ public abstract class Server {
             mTransfersFromSurface++;
         }
 
-        public int numStencilAttachmentCreates() {
+        public long numStencilAttachmentCreates() {
             return mStencilAttachmentCreates;
         }
 
@@ -449,7 +521,7 @@ public abstract class Server {
             mStencilAttachmentCreates++;
         }
 
-        public int msaaAttachmentCreates() {
+        public long msaaAttachmentCreates() {
             return mMSAAAttachmentCreates;
         }
 
@@ -457,7 +529,7 @@ public abstract class Server {
             mMSAAAttachmentCreates++;
         }
 
-        public int numDraws() {
+        public long numDraws() {
             return mNumDraws;
         }
 
@@ -465,7 +537,11 @@ public abstract class Server {
             mNumDraws++;
         }
 
-        public int numFailedDraws() {
+        public void incNumDraws(int increment) {
+            mNumDraws += increment;
+        }
+
+        public long numFailedDraws() {
             return mNumFailedDraws;
         }
 
@@ -473,7 +549,7 @@ public abstract class Server {
             mNumFailedDraws++;
         }
 
-        public int numSubmitToGpus() {
+        public long numSubmitToGpus() {
             return mNumSubmitToGpus;
         }
 
@@ -481,7 +557,7 @@ public abstract class Server {
             mNumSubmitToGpus++;
         }
 
-        public int numScratchTexturesReused() {
+        public long numScratchTexturesReused() {
             return mNumScratchTexturesReused;
         }
 
@@ -489,7 +565,7 @@ public abstract class Server {
             mNumScratchTexturesReused++;
         }
 
-        public int numScratchMSAAAttachmentsReused() {
+        public long numScratchMSAAAttachmentsReused() {
             return mNumScratchMSAAAttachmentsReused;
         }
 
@@ -497,7 +573,7 @@ public abstract class Server {
             mNumScratchMSAAAttachmentsReused++;
         }
 
-        public int numRenderPasses() {
+        public long numRenderPasses() {
             return mRenderPasses;
         }
 
@@ -505,12 +581,22 @@ public abstract class Server {
             mRenderPasses++;
         }
 
-        public int numReorderedDAGsOverBudget() {
-            return mNumReorderedDAGsOverBudget;
-        }
-
-        public void incNumReorderedDAGsOverBudget() {
-            mNumReorderedDAGsOverBudget++;
+        @Override
+        public String toString() {
+            return "Server.Stats{" +
+                    "mTextureCreates=" + mTextureCreates +
+                    ", mTextureUploads=" + mTextureUploads +
+                    ", mTransfersToTexture=" + mTransfersToTexture +
+                    ", mTransfersFromSurface=" + mTransfersFromSurface +
+                    ", mStencilAttachmentCreates=" + mStencilAttachmentCreates +
+                    ", mMSAAAttachmentCreates=" + mMSAAAttachmentCreates +
+                    ", mNumDraws=" + mNumDraws +
+                    ", mNumFailedDraws=" + mNumFailedDraws +
+                    ", mNumSubmitToGpus=" + mNumSubmitToGpus +
+                    ", mNumScratchTexturesReused=" + mNumScratchTexturesReused +
+                    ", mNumScratchMSAAAttachmentsReused=" + mNumScratchMSAAAttachmentsReused +
+                    ", mRenderPasses=" + mRenderPasses +
+                    '}';
         }
     }
 }

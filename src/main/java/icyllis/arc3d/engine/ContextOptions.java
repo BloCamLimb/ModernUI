@@ -19,6 +19,7 @@
 
 package icyllis.arc3d.engine;
 
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -86,10 +87,10 @@ public final class ContextOptions {
     public float mGlyphsAsPathsFontSize = 384;
 
     /**
-     * If present, use this object to report shader compilation failures. If not, report failures
-     * via err and assert.
+     * If present, use this object to print errors. If not, print errors
+     * via {@link System#err}.
      */
-    public ShaderErrorHandler mShaderErrorHandler = null;
+    public PrintWriter mErrorWriter = null;
 
     /**
      * Specifies the number of samples Engine should use when performing internal draws with MSAA
@@ -114,11 +115,6 @@ public final class ContextOptions {
      * A value of -1 means we will pick a limit value internally.
      */
     public int mMaxVkSecondaryCommandBufferCacheSize = -1;
-
-    /**
-     * A read-only list populates all missing required extensions when context creation fails.
-     */
-    public final List<String> mMissingExtensions = new ArrayList<>();
 
     public ContextOptions() {
     }

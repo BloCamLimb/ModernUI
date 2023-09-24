@@ -19,22 +19,57 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.Color;
-import icyllis.arc3d.core.Core;
-import org.jetbrains.annotations.ApiStatus;
+import icyllis.arc3d.core.*;
 
 /**
  * Shared constants, enums and utilities for Arc 3D Engine.
  */
-public final class Engine {
+public interface Engine {
+
+    /**
+     * Block engine-private values.
+     */
+    static int colorTypeToPublic(int ct) {
+        return switch (ct) {
+            case ImageInfo.CT_UNKNOWN,
+                    ImageInfo.CT_ALPHA_8,
+                    ImageInfo.CT_RGB_565,
+                    ImageInfo.CT_RGBA_8888,
+                    ImageInfo.CT_RGBA_8888_SRGB,
+                    ImageInfo.CT_RGB_888x,
+                    ImageInfo.CT_RG_88,
+                    ImageInfo.CT_BGRA_8888,
+                    ImageInfo.CT_RGBA_1010102,
+                    ImageInfo.CT_BGRA_1010102,
+                    ImageInfo.CT_GRAY_8,
+                    ImageInfo.CT_ALPHA_F16,
+                    ImageInfo.CT_RGBA_F16,
+                    ImageInfo.CT_RGBA_F16_CLAMPED,
+                    ImageInfo.CT_RGBA_F32,
+                    ImageInfo.CT_ALPHA_16,
+                    ImageInfo.CT_RG_1616,
+                    ImageInfo.CT_RG_F16,
+                    ImageInfo.CT_RGBA_16161616,
+                    ImageInfo.CT_R_8 -> ct;
+            case ImageInfo.CT_ALPHA_8xxx,
+                    ImageInfo.CT_ALPHA_F32xxx,
+                    ImageInfo.CT_GRAY_8xxx,
+                    ImageInfo.CT_R_8xxx,
+                    ImageInfo.CT_RGB_888,
+                    ImageInfo.CT_R_16,
+                    ImageInfo.CT_R_F16,
+                    ImageInfo.CT_GRAY_ALPHA_88 -> ImageInfo.CT_UNKNOWN;
+            default -> throw new AssertionError(ct);
+        };
+    }
 
     /**
      * Possible 3D APIs that may be used by Arc 3D Engine.
      */
-    public interface BackendApi {
+    interface BackendApi {
 
         /**
-         * OpenGL 4.5 core profile (desktop)
+         * OpenGL 3.3 to 4.5 core profile (desktop)
          */
         int kOpenGL = 0;
         /**
@@ -45,13 +80,22 @@ public final class Engine {
          * Mock draws nothing. It is used for unit tests and to measure CPU overhead.
          */
         int kMock = 2;
+
+        static String toString(int value) {
+            return switch (value) {
+                case kOpenGL -> "OpenGL";
+                case kVulkan -> "Vulkan";
+                case kMock -> "Mock";
+                default -> throw new AssertionError(value);
+            };
+        }
     }
 
     /**
      * Image and Surfaces can be stored such that (0, 0) in texture space may correspond to
      * either the upper-left or lower-left content pixel.
      */
-    public interface SurfaceOrigin {
+    interface SurfaceOrigin {
 
         int kUpperLeft = 0; // top left, Vulkan
         int kLowerLeft = 1; // bottom left, OpenGL
@@ -59,11 +103,11 @@ public final class Engine {
 
     /**
      * A Context's cache of backend context state can be partially invalidated.
-     * These enums are specific to the GL backend and we'd add a new set for an alternative backend.
+     * These enums are specific to the GL backend.
      *
-     * @see icyllis.arc3d.opengl.GLServer#markContextDirty(int)
+     * @see DirectContext#resetContext(int)
      */
-    public interface GLBackendState {
+    interface GLBackendState {
 
         int kRenderTarget = 1;
         int kPixelStore = 1 << 1;
@@ -91,7 +135,7 @@ public final class Engine {
     /**
      * Indicates the type of pending IO operations that can be recorded for GPU resources.
      */
-    public interface IOType {
+    interface IOType {
 
         int kRead = 0;
         int kWrite = 1;
@@ -99,10 +143,11 @@ public final class Engine {
     }
 
     /**
-     * Describes the intended usage a GPU buffer.
+     * Describes the intended usage (type + access) a GPU buffer.
+     * This will affect memory allocation and pipeline commands.
      */
-    public interface BufferUsageFlags {
-
+    interface BufferUsageFlags {
+        // DO NOT CHANGE THE ORDER OR THE BIT VALUE
         /**
          * Vertex buffer (also includes instance buffer).
          */
@@ -111,177 +156,93 @@ public final class Engine {
          * Index buffer, also known as element buffer.
          */
         int kIndex = 1 << 1;
+
+        // Note: vertex buffers and index buffers are mesh buffers.
+
+        /**
+         * Staging buffer. Src meaning CPU to device, Dst meaning device to CPU.
+         * In OpenGL, this means only pixel transfer buffer.
+         */
+        int kTransferSrc = 1 << 2; // transfer src and host coherent
+        int kTransferDst = 1 << 3; // transfer dst and host cached
+
+        // Note: transfer buffers must be created with Dynamic_Flag.
+
+        /**
+         * Uniform buffer, also known as constant buffer.
+         * This will be created as ring buffers.
+         */
+        int kUniform = 1 << 4;
         /**
          * Indirect buffer, also known as argument buffer.
+         * Not always available, check caps first.
          */
-        int kDrawIndirect = 1 << 2;
+        int kDrawIndirect = 1 << 5;
 
-        int kTransferSrc = 1 << 3; // transfer src only
-        int kTransferDst = 1 << 4; // transfer dst only
+        // Note: uniform buffers must be created with Streaming_Flag,
+        // draw indirect buffers are currently not supported.
 
         /**
-         * For VBO, data store will be respecified once by Host and used at most a frame.
-         * (Per-frame updates, VBO, IBO, etc.)
-         */
-        int kStream = 1 << 5;
-        /**
-         * Data store will be specified by Host once and may be respecified
-         * repeatedly by Device. (Fixed vertex/index buffer, etc.)
+         * Data store will be written to once by CPU.
+         * A staging buffer is required to update it contents.
          */
         int kStatic = 1 << 6;
         /**
-         * Data store will be respecified randomly by Host and Device.
-         * (Uniform buffer, staging buffer, etc.)
+         * Data store will be written to occasionally, CPU writes, GPU reads.
+         * A staging buffer is required to update it contents.
          */
         int kDynamic = 1 << 7;
+        /**
+         * Data store will be written to once by CPU and used at most one frame.
+         * Will be host visible and persistently mapped, typically pinned memory.
+         */
+        int kStreaming = 1 << 8;
 
-        int kUniform = 1 << 8; // TODO remove, UBO is special buffers
+        // Note: Arc 3D itself doesn't use dynamic mesh buffers,
+        // they are meant to render a large number of objects in 3D scene.
     }
 
     /**
      * Shader flags.
      */
-    public interface ShaderFlags {
+    interface ShaderFlags {
 
         int kVertex = 1;
         int kFragment = 1 << 1;
     }
 
-    @ApiStatus.Internal
-    public interface ColorType extends Core.ColorType {
-
-        /**
-         * Engine values.
-         * <p>
-         * Unusual types that come up after reading back in cases where we are reassigning the meaning
-         * of a texture format's channels to use for a particular color format but have to read back the
-         * data to a full RGBA quadruple. (e.g. using a R8 texture format as A8 color type but the API
-         * only supports reading to RGBA8.)
-         */
-        int
-                kAlpha_8xxx = 21,
-                kAlpha_F32xxx = 22,
-                kGray_8xxx = 23,
-                kR_8xxx = 24;
-        /**
-         * Engine values.
-         * <p>
-         * Types used to initialize backend textures.
-         */
-        int
-                kRGB_888 = 25,
-                kR_16 = 26,
-                kR_F16 = 27;
-        int
-                kLast = kR_F16;
-
-        /**
-         * @return bpp
-         */
-        static int bytesPerPixel(int colorType) {
-            return switch (colorType) {
-                case kUnknown -> 0;
-                case kAlpha_8,
-                        kR_8,
-                        kGray_8 -> 1;
-                case kBGR_565,
-                        kABGR_4444,
-                        kR_F16,
-                        kR_16,
-                        kAlpha_16,
-                        kAlpha_F16,
-                        kRG_88 -> 2;
-                case kRGB_888 -> 3;
-                case kRGBA_8888,
-                        kRG_F16,
-                        kRG_1616,
-                        kR_8xxx,
-                        kGray_8xxx,
-                        kAlpha_8xxx,
-                        kBGRA_1010102,
-                        kRGBA_1010102,
-                        kBGRA_8888,
-                        kRGB_888x,
-                        kRGBA_8888_SRGB -> 4;
-                case kRGBA_F16,
-                        kRGBA_16161616,
-                        kRGBA_F16_Clamped -> 8;
-                case kRGBA_F32,
-                        kAlpha_F32xxx -> 16;
-                default -> throw new AssertionError(colorType);
-            };
-        }
-
-        static int channelFlags(int colorType) {
-            return switch (colorType) {
-                case kUnknown -> 0;
-                case kAlpha_8,
-                        kAlpha_16,
-                        kAlpha_F16,
-                        kAlpha_8xxx,
-                        kAlpha_F32xxx -> Color.COLOR_CHANNEL_FLAG_ALPHA;
-                case kBGR_565,
-                        kRGB_888,
-                        kRGB_888x -> Color.COLOR_CHANNEL_FLAGS_RGB;
-                case kABGR_4444,
-                        kRGBA_16161616,
-                        kRGBA_F32,
-                        kRGBA_F16_Clamped,
-                        kRGBA_F16,
-                        kBGRA_1010102,
-                        kRGBA_1010102,
-                        kBGRA_8888,
-                        kRGBA_8888_SRGB,
-                        kRGBA_8888 -> Color.COLOR_CHANNEL_FLAGS_RGBA;
-                case kRG_88,
-                        kRG_1616,
-                        kRG_F16 -> Color.COLOR_CHANNEL_FLAGS_RG;
-                case kGray_8,
-                        kGray_8xxx -> Color.COLOR_CHANNEL_FLAG_GRAY;
-                case kR_8,
-                        kR_16,
-                        kR_F16,
-                        kR_8xxx -> Color.COLOR_CHANNEL_FLAG_RED;
-                default -> throw new AssertionError(colorType);
-            };
-        }
-
-        /**
-         * Block engine-private values.
-         */
-        static int toPublic(int colorType) {
-            return switch (colorType) {
-                case kUnknown,
-                        kAlpha_8,
-                        kBGR_565,
-                        kABGR_4444,
-                        kRGBA_8888,
-                        kRGBA_8888_SRGB,
-                        kRGB_888x,
-                        kRG_88,
-                        kBGRA_8888,
-                        kRGBA_1010102,
-                        kBGRA_1010102,
-                        kGray_8,
-                        kAlpha_F16,
-                        kRGBA_F16,
-                        kRGBA_F16_Clamped,
-                        kRGBA_F32,
-                        kAlpha_16,
-                        kRG_1616,
-                        kRG_F16,
-                        kRGBA_16161616,
-                        kR_8 -> colorType;
-                case kAlpha_8xxx,
-                        kAlpha_F32xxx,
-                        kGray_8xxx,
-                        kR_8xxx,
-                        kRGB_888,
-                        kR_16,
-                        kR_F16 -> kUnknown;
-                default -> throw new AssertionError(colorType);
-            };
-        }
+    static int colorTypeChannelFlags(int ct) {
+        return switch (ct) {
+            case ImageInfo.CT_UNKNOWN -> 0;
+            case ImageInfo.CT_ALPHA_8,
+                    ImageInfo.CT_ALPHA_16,
+                    ImageInfo.CT_ALPHA_F16,
+                    ImageInfo.CT_ALPHA_8xxx,
+                    ImageInfo.CT_ALPHA_F32xxx -> Color.COLOR_CHANNEL_FLAG_ALPHA;
+            case ImageInfo.CT_RGB_565,
+                    ImageInfo.CT_RGB_888,
+                    ImageInfo.CT_RGB_888x -> Color.COLOR_CHANNEL_FLAGS_RGB;
+            case ImageInfo.CT_RGBA_16161616,
+                    ImageInfo.CT_RGBA_F32,
+                    ImageInfo.CT_RGBA_F16_CLAMPED,
+                    ImageInfo.CT_RGBA_F16,
+                    ImageInfo.CT_BGRA_1010102,
+                    ImageInfo.CT_RGBA_1010102,
+                    ImageInfo.CT_BGRA_8888,
+                    ImageInfo.CT_RGBA_8888_SRGB,
+                    ImageInfo.CT_RGBA_8888 -> Color.COLOR_CHANNEL_FLAGS_RGBA;
+            case ImageInfo.CT_RG_88,
+                    ImageInfo.CT_RG_1616,
+                    ImageInfo.CT_RG_F16 -> Color.COLOR_CHANNEL_FLAGS_RG;
+            case ImageInfo.CT_GRAY_8,
+                    ImageInfo.CT_GRAY_8xxx -> Color.COLOR_CHANNEL_FLAG_GRAY;
+            case ImageInfo.CT_R_8,
+                    ImageInfo.CT_R_16,
+                    ImageInfo.CT_R_F16,
+                    ImageInfo.CT_R_8xxx -> Color.COLOR_CHANNEL_FLAG_RED;
+            case ImageInfo.CT_GRAY_ALPHA_88 -> Color.COLOR_CHANNEL_FLAG_GRAY | Color.COLOR_CHANNEL_FLAG_ALPHA;
+            default -> throw new AssertionError(ct);
+        };
     }
 
     /**
@@ -289,41 +250,41 @@ public final class Engine {
      *
      * @see #colorTypeEncoding(int)
      */
-    public static final int
+    int
             COLOR_ENCODING_UNORM = 0,
             COLOR_ENCODING_SRGB_UNORM = 1,
             COLOR_ENCODING_FLOAT = 2;
 
-    public static int colorTypeEncoding(int ct) {
+    static int colorTypeEncoding(int ct) {
         return switch (ct) {
-            case ColorType.kUnknown,
-                    ColorType.kAlpha_8,
-                    ColorType.kBGR_565,
-                    ColorType.kABGR_4444,
-                    ColorType.kRGBA_8888,
-                    ColorType.kRGB_888x,
-                    ColorType.kRG_88,
-                    ColorType.kBGRA_8888,
-                    ColorType.kRGBA_1010102,
-                    ColorType.kBGRA_1010102,
-                    ColorType.kGray_8,
-                    ColorType.kAlpha_8xxx,
-                    ColorType.kGray_8xxx,
-                    ColorType.kR_8xxx,
-                    ColorType.kAlpha_16,
-                    ColorType.kRG_1616,
-                    ColorType.kRGBA_16161616,
-                    ColorType.kRGB_888,
-                    ColorType.kR_8,
-                    ColorType.kR_16 -> COLOR_ENCODING_UNORM;
-            case ColorType.kRGBA_8888_SRGB -> COLOR_ENCODING_SRGB_UNORM;
-            case ColorType.kAlpha_F16,
-                    ColorType.kRGBA_F16,
-                    ColorType.kRGBA_F16_Clamped,
-                    ColorType.kRGBA_F32,
-                    ColorType.kAlpha_F32xxx,
-                    ColorType.kRG_F16,
-                    ColorType.kR_F16 -> COLOR_ENCODING_FLOAT;
+            case ImageInfo.CT_UNKNOWN,
+                    ImageInfo.CT_ALPHA_8,
+                    ImageInfo.CT_RGB_565,
+                    ImageInfo.CT_RGBA_8888,
+                    ImageInfo.CT_RGB_888x,
+                    ImageInfo.CT_RG_88,
+                    ImageInfo.CT_BGRA_8888,
+                    ImageInfo.CT_RGBA_1010102,
+                    ImageInfo.CT_BGRA_1010102,
+                    ImageInfo.CT_GRAY_8,
+                    ImageInfo.CT_ALPHA_8xxx,
+                    ImageInfo.CT_GRAY_8xxx,
+                    ImageInfo.CT_R_8xxx,
+                    ImageInfo.CT_ALPHA_16,
+                    ImageInfo.CT_RG_1616,
+                    ImageInfo.CT_RGBA_16161616,
+                    ImageInfo.CT_RGB_888,
+                    ImageInfo.CT_R_8,
+                    ImageInfo.CT_R_16,
+                    ImageInfo.CT_GRAY_ALPHA_88 -> COLOR_ENCODING_UNORM;
+            case ImageInfo.CT_RGBA_8888_SRGB -> COLOR_ENCODING_SRGB_UNORM;
+            case ImageInfo.CT_ALPHA_F16,
+                    ImageInfo.CT_RGBA_F16,
+                    ImageInfo.CT_RGBA_F16_CLAMPED,
+                    ImageInfo.CT_RGBA_F32,
+                    ImageInfo.CT_ALPHA_F32xxx,
+                    ImageInfo.CT_RG_F16,
+                    ImageInfo.CT_R_F16 -> COLOR_ENCODING_FLOAT;
             default -> throw new AssertionError(ct);
         };
     }
@@ -334,41 +295,40 @@ public final class Engine {
      *
      * @see #colorTypeClampType(int)
      */
-    public static final int
+    int
             CLAMP_TYPE_AUTO = 0,    // Normalized, fixed-point configs
             CLAMP_TYPE_MANUAL = 1,  // Clamped FP configs
             CLAMP_TYPE_NONE = 2;    // Normal (un-clamped) FP configs
 
-    public static int colorTypeClampType(int ct) {
+    static int colorTypeClampType(int ct) {
         return switch (ct) {
-            case ColorType.kUnknown,
-                    ColorType.kAlpha_8,
-                    ColorType.kBGR_565,
-                    ColorType.kABGR_4444,
-                    ColorType.kRGBA_8888,
-                    ColorType.kRGBA_8888_SRGB,
-                    ColorType.kRGB_888x,
-                    ColorType.kRG_88,
-                    ColorType.kBGRA_8888,
-                    ColorType.kRGBA_1010102,
-                    ColorType.kBGRA_1010102,
-                    ColorType.kGray_8,
-                    ColorType.kAlpha_8xxx,
-                    ColorType.kGray_8xxx,
-                    ColorType.kR_8xxx,
-                    ColorType.kAlpha_16,
-                    ColorType.kRG_1616,
-                    ColorType.kRGBA_16161616,
-                    ColorType.kRGB_888,
-                    ColorType.kR_8,
-                    ColorType.kR_16 -> CLAMP_TYPE_AUTO;
-            case ColorType.kRGBA_F16_Clamped -> CLAMP_TYPE_MANUAL;
-            case ColorType.kAlpha_F16,
-                    ColorType.kRGBA_F16,
-                    ColorType.kRGBA_F32,
-                    ColorType.kAlpha_F32xxx,
-                    ColorType.kRG_F16,
-                    ColorType.kR_F16 -> CLAMP_TYPE_NONE;
+            case ImageInfo.CT_UNKNOWN,
+                    ImageInfo.CT_ALPHA_8,
+                    ImageInfo.CT_RGB_565,
+                    ImageInfo.CT_RGBA_8888,
+                    ImageInfo.CT_RGBA_8888_SRGB,
+                    ImageInfo.CT_RGB_888x,
+                    ImageInfo.CT_RG_88,
+                    ImageInfo.CT_BGRA_8888,
+                    ImageInfo.CT_RGBA_1010102,
+                    ImageInfo.CT_BGRA_1010102,
+                    ImageInfo.CT_GRAY_8,
+                    ImageInfo.CT_ALPHA_8xxx,
+                    ImageInfo.CT_GRAY_8xxx,
+                    ImageInfo.CT_R_8xxx,
+                    ImageInfo.CT_ALPHA_16,
+                    ImageInfo.CT_RG_1616,
+                    ImageInfo.CT_RGBA_16161616,
+                    ImageInfo.CT_RGB_888,
+                    ImageInfo.CT_R_8,
+                    ImageInfo.CT_R_16 -> CLAMP_TYPE_AUTO;
+            case ImageInfo.CT_RGBA_F16_CLAMPED -> CLAMP_TYPE_MANUAL;
+            case ImageInfo.CT_ALPHA_F16,
+                    ImageInfo.CT_RGBA_F16,
+                    ImageInfo.CT_RGBA_F32,
+                    ImageInfo.CT_ALPHA_F32xxx,
+                    ImageInfo.CT_RG_F16,
+                    ImageInfo.CT_R_F16 -> CLAMP_TYPE_NONE;
             default -> throw new AssertionError(ct);
         };
     }
@@ -379,7 +339,7 @@ public final class Engine {
      * We can't simply use point or line, because both OpenGL and Vulkan can only guarantee
      * the rasterization of one pixel in screen coordinates, may or may not anti-aliased.
      */
-    public interface PrimitiveType {
+    interface PrimitiveType {
         byte PointList      = 0; // 1 px only
         byte LineList       = 1; // 1 px wide only
         byte LineStrip      = 2; // 1 px wide only
@@ -392,7 +352,7 @@ public final class Engine {
      * <p>
      * Using L-shift to get the number of bytes-per-pixel for the specified mask format.
      */
-    public static final int
+    int
             MASK_FORMAT_A8 = 0,     // 1-byte per pixel
             MASK_FORMAT_A565 = 1,   // 2-bytes per pixel, RGB represent 3-channel LCD coverage
             MASK_FORMAT_ARGB = 2;   // 4-bytes per pixel, color format
@@ -403,7 +363,7 @@ public final class Engine {
      * @see Resource
      */
     // @formatter:off
-    public interface BudgetType {
+    interface BudgetType {
         /**
          * The resource is budgeted and is subject to cleaning up under budget pressure.
          */
@@ -424,7 +384,7 @@ public final class Engine {
      * Load ops. Used to specify the load operation to be used when an OpsTask/OpsRenderPass
      * begins execution.
      */
-    public interface LoadOp {
+    interface LoadOp {
         byte Load       = 0;
         byte Clear      = 1;
         byte DontCare   = 2;
@@ -435,7 +395,7 @@ public final class Engine {
      * Store ops. Used to specify the store operation to be used when an OpsTask/OpsRenderPass
      * ends execution.
      */
-    public interface StoreOp {
+    interface StoreOp {
         byte Store      = 0;
         byte DontCare   = 1;
         byte Count      = 2;
@@ -444,7 +404,7 @@ public final class Engine {
     /**
      * Combination of load ops and store ops.
      */
-    public interface LoadStoreOps {
+    interface LoadStoreOps {
 
         byte StoreOpShift = Byte.SIZE / 2;
 
@@ -481,75 +441,19 @@ public final class Engine {
             return (byte) (ops >>> StoreOpShift);
         }
     }
-
-    static {
-        assert (LoadStoreOps.Load_Store         == LoadStoreOps.make(LoadOp.Load,       StoreOp.Store));
-        assert (LoadStoreOps.Clear_Store        == LoadStoreOps.make(LoadOp.Clear,      StoreOp.Store));
-        assert (LoadStoreOps.DontLoad_Store     == LoadStoreOps.make(LoadOp.DontCare,   StoreOp.Store));
-        assert (LoadStoreOps.Load_DontStore     == LoadStoreOps.make(LoadOp.Load,       StoreOp.DontCare));
-        assert (LoadStoreOps.Clear_DontStore    == LoadStoreOps.make(LoadOp.Clear,      StoreOp.DontCare));
-        assert (LoadStoreOps.DontLoad_DontStore == LoadStoreOps.make(LoadOp.DontCare,   StoreOp.DontCare));
-        //noinspection ConstantValue
-        assert (LoadOp.Count  <= (1 << LoadStoreOps.StoreOpShift)) &&
-               (StoreOp.Count <= (1 << LoadStoreOps.StoreOpShift));
-    }
     // @formatter:on
 
     /**
      * Specifies if the holder owns the backend, OpenGL or Vulkan, object.
      */
-    public static final boolean
+    boolean
             Ownership_Borrowed = false, // Holder does not destroy the backend object.
             Ownership_Owned = true;     // Holder destroys the backend object.
 
     /**
-     * Surface flags shared between the Surface & SurfaceProxy class hierarchies.
-     * An arbitrary combination of flags may result in unexpected behaviors.
-     */
-    @ApiStatus.Internal
-    public interface SurfaceFlags extends Core.SurfaceFlags {
-        /**
-         * Means the pixels in the texture are read-only. {@link Texture} and {@link TextureProxy}
-         * only.
-         */
-        int READ_ONLY               = Protected << 1;
-        /**
-         * When set, the proxy will be instantiated outside the allocator (e.g. for proxies that are
-         * instantiated in on-flush callbacks). Otherwise, {@link ResourceAllocator} should instantiate
-         * the proxy. {@link SurfaceProxy} only.
-         */
-        int SKIP_ALLOCATOR          = Protected << 2;
-        /**
-         * For TextureProxies created in a deferred list recording thread it is possible for the
-         * unique key to be cleared on the backing {@link Texture} while the unique key remains on
-         * the proxy. When set, it loosens up asserts that the key of an instantiated uniquely-keyed
-         * texture proxy is also always set on the backing {@link Texture}. {@link TextureProxy} only.
-         */
-        int DEFERRED_PROVIDER       = Protected << 3;
-        /**
-         * This is a OpenGL only flag. It tells us that the internal render target wraps the OpenGL
-         * default framebuffer (id=0) that preserved by window. {@link RenderTarget} only.
-         */
-        int GL_WRAP_DEFAULT_FB      = Protected << 4;
-        /**
-         * This means the render target is multi-sampled, and internally holds a non-msaa texture
-         * for resolving into. The render target resolves itself by blit-ting into this internal
-         * texture. (It might or might not have the internal texture access, but if it does, we
-         * always resolve the render target before accessing this texture's data.) {@link RenderTarget}
-         * only.
-         */
-        int MANUAL_MSAA_RESOLVE     = Protected << 5;
-        /**
-         * This is a Vulkan only flag. It tells us that the internal render target is wrapping a raw
-         * Vulkan secondary command buffer. {@link RenderTarget} only.
-         */
-        int VK_WRAP_SECONDARY_CB    = Protected << 6;
-    }
-
-    /**
      * Types used to describe format of vertices in arrays.
      */
-    public interface VertexAttribType {
+    interface VertexAttribType {
 
         byte
                 kFloat = 0,
@@ -642,8 +546,5 @@ public final class Engine {
     /**
      * ResourceHandle is an opaque handle to a resource, actually a table index.
      */
-    public static final int INVALID_RESOURCE_HANDLE = -1;
-
-    private Engine() {
-    }
+    int INVALID_RESOURCE_HANDLE = -1;
 }

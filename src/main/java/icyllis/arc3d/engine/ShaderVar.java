@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.SLType;
+import icyllis.arc3d.core.SLDataType;
 
 /**
  * Represents a variable in a shader.
@@ -53,7 +53,7 @@ public class ShaderVar {
      * Defaults to a void with no type modifier or layout qualifier.
      */
     public ShaderVar() {
-        this("", SLType.kVoid, kNone_TypeModifier, kNonArray, "", "");
+        this("", SLDataType.kVoid, kNone_TypeModifier, kNonArray, "", "");
     }
 
     public ShaderVar(String name, byte type) {
@@ -75,7 +75,7 @@ public class ShaderVar {
     public ShaderVar(String name, byte type, byte typeModifier, int arrayCount,
                      String layoutQualifier, String extraModifier) {
         assert (name != null);
-        assert (SLType.checkSLType(type));
+        assert (SLDataType.checkSLType(type));
         assert (typeModifier >= kNone_TypeModifier && typeModifier <= kUniform_TypeModifier);
         assert (arrayCount == kNonArray || arrayCount > 0);
         assert (layoutQualifier != null && extraModifier != null);
@@ -91,7 +91,7 @@ public class ShaderVar {
      * Sets as a non-array. Internally used with the default constructor.
      */
     public void set(String name, byte type) {
-        assert (type != SLType.kVoid);
+        assert (type != SLDataType.kVoid);
         mType = type;
         mName = name;
     }
@@ -120,7 +120,7 @@ public class ShaderVar {
     /**
      * Get the type.
      *
-     * @see SLType
+     * @see SLDataType
      */
     public byte getType() {
         return mType;
@@ -184,14 +184,14 @@ public class ShaderVar {
         byte type = getType();
         if (isArray()) {
             assert (getArrayCount() > 0);
-            out.append(SLType.typeString(type));
+            out.append(SLDataType.typeString(type));
             out.append(" ");
             out.append(getName());
             out.append("[");
             out.append(getArrayCount());
             out.append("]");
         } else {
-            out.append(SLType.typeString(type));
+            out.append(SLDataType.typeString(type));
             out.append(" ");
             out.append(getName());
         }

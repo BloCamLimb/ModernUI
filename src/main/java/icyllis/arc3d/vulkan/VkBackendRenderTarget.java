@@ -25,7 +25,7 @@ import icyllis.arc3d.engine.BackendRenderTarget;
 import javax.annotation.Nonnull;
 
 import static icyllis.arc3d.engine.Engine.BackendApi;
-import static icyllis.arc3d.vulkan.VkCore.*;
+import static icyllis.arc3d.vulkan.VKCore.*;
 
 public final class VkBackendRenderTarget extends BackendRenderTarget {
 

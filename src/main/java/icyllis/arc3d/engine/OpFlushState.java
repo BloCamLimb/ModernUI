@@ -43,6 +43,10 @@ public class OpFlushState implements MeshDrawTarget {
         return mServer;
     }
 
+    public final PipelineState findOrCreatePipelineState(final PipelineInfo pipelineInfo) {
+        return mServer.getContext().findOrCreatePipelineState(pipelineInfo);
+    }
+
     @Override
     public long makeVertexSpace(Mesh mesh) {
         return mServer.getVertexPool().makeSpace(mesh);
@@ -51,6 +55,11 @@ public class OpFlushState implements MeshDrawTarget {
     @Override
     public long makeInstanceSpace(Mesh mesh) {
         return mServer.getInstancePool().makeSpace(mesh);
+    }
+
+    @Override
+    public long makeIndexSpace(Mesh mesh) {
+        return mServer.getIndexPool().makeSpace(mesh);
     }
 
     @Nullable
@@ -63,6 +72,12 @@ public class OpFlushState implements MeshDrawTarget {
     @Override
     public ByteBuffer makeInstanceWriter(Mesh mesh) {
         return mServer.getInstancePool().makeWriter(mesh);
+    }
+
+    @Nullable
+    @Override
+    public ByteBuffer makeIndexWriter(Mesh mesh) {
+        return mServer.getIndexPool().makeWriter(mesh);
     }
 
     public OpsRenderPass getOpsRenderPass() {

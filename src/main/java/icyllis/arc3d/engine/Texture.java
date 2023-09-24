@@ -25,22 +25,19 @@ import icyllis.arc3d.core.SharedPtr;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import static icyllis.arc3d.engine.Engine.*;
+import static icyllis.arc3d.engine.Engine.BudgetType;
 
 /**
  * Represents 2D textures can be sampled by shaders, can also be used as attachments
  * of render targets.
  * <p>
- * By default, a Texture is not renderable (not created with a RenderTarget), all
- * mipmaps (including the base level) are dirty. But it can be promoted to renderable
- * whenever needed (i.e. lazy initialization), then we call it a RenderTexture or
- * TextureRenderTarget. The texture will be the main color buffer of the single
- * sample framebuffer of the render target. So we can cache these framebuffers with
- * texture. With promotion, the scratch key is changed and the sample count (MSAA)
- * is locked. Additionally, it may create more surfaces and attach them to it. These
- * surfaces are budgeted but cannot be reused. In most cases, we reuse textures, so
- * these surfaces are reused together. When renderable is not required, the cache
- * will give priority to the texture without promotion. See {@link RenderTextureProxy}.
+ * By default, a Texture is not renderable, all mipmaps (including the base level) are
+ * dirty. But it can be renderable on creation, then we call it a RenderTexture or
+ * TextureRenderTarget. The texture will be the main color buffer of the single sample
+ * framebuffer of the render target. So we can cache these framebuffers with texture.
+ * Additionally, it may create more surfaces and attach them to it. These surfaces are
+ * budgeted but cannot be reused. In most cases, we reuse textures, so these surfaces
+ * are reused together, see {@link RenderTarget}.
  */
 public abstract class Texture extends Resource implements Surface {
 
@@ -89,7 +86,7 @@ public abstract class Texture extends Resource implements Surface {
      * @return true if this surface has mipmaps and have been allocated
      */
     public final boolean isMipmapped() {
-        return (mFlags & SurfaceFlags.Mipmapped) != 0;
+        return (mFlags & FLAG_MIPMAPPED) != 0;
     }
 
     /**
@@ -100,41 +97,41 @@ public abstract class Texture extends Resource implements Surface {
      * @return true if pixels in this surface are read-only
      */
     public final boolean isReadOnly() {
-        return (mFlags & SurfaceFlags.READ_ONLY) != 0;
+        return (mFlags & FLAG_READ_ONLY) != 0;
     }
 
     /**
      * @return true if we are working with protected content
      */
     public final boolean isProtected() {
-        return (mFlags & SurfaceFlags.Protected) != 0;
+        return (mFlags & FLAG_PROTECTED) != 0;
     }
 
     /**
      * Surface flags, but no render target level flags.
      *
      * <ul>
-     * <li>{@link SurfaceFlags#Budgeted} -
+     * <li>{@link #FLAG_BUDGETED} -
      *  Indicates whether an allocation should count against a cache budget. Budgeted when
      *  set, otherwise not budgeted. {@link Texture} only.
      * </li>
      *
-     * <li>{@link SurfaceFlags#Mipmapped} -
+     * <li>{@link #FLAG_MIPMAPPED} -
      *  Used to say whether a texture has mip levels allocated or not. Mipmaps are allocated
      *  when set, otherwise mipmaps are not allocated. {@link Texture} only.
      * </li>
      *
-     * <li>{@link SurfaceFlags#Renderable} -
+     * <li>{@link #FLAG_RENDERABLE} -
      *  Used to say whether a surface can be rendered to, whether a texture can be used as
      *  color attachments. Renderable when set, otherwise not renderable.
      * </li>
      *
-     * <li>{@link SurfaceFlags#Protected} -
+     * <li>{@link #FLAG_PROTECTED} -
      *  Used to say whether texture is backed by protected memory. Protected when set, otherwise
      *  not protected.
      * </li>
      *
-     * <li>{@link SurfaceFlags#READ_ONLY} -
+     * <li>{@link #FLAG_READ_ONLY} -
      *  Means the pixels in the texture are read-only. {@link Texture} only.
      * </li>
      *
@@ -144,7 +141,7 @@ public abstract class Texture extends Resource implements Surface {
     public final int getSurfaceFlags() {
         int flags = mFlags;
         if (getBudgetType() == BudgetType.Budgeted) {
-            flags |= SurfaceFlags.Budgeted;
+            flags |= Surface.FLAG_BUDGETED;
         }
         return flags;
     }
@@ -209,7 +206,7 @@ public abstract class Texture extends Resource implements Surface {
 
     @Nullable
     @Override
-    protected final ScratchKey computeScratchKey() {
+    protected ScratchKey computeScratchKey() {
         BackendFormat format = getBackendFormat();
         if (format.isCompressed()) {
             return null;
@@ -218,7 +215,7 @@ public abstract class Texture extends Resource implements Surface {
         return new ScratchKey().compute(
                 format,
                 mWidth, mHeight,
-                getSampleCount(),
+                1,
                 mFlags); // budgeted flag is not included, this method is called only when budgeted
     }
 
@@ -313,9 +310,9 @@ public abstract class Texture extends Resource implements Surface {
             mWidth = width;
             mHeight = height;
             mFormat = format.getFormatKey();
-            mFlags = (surfaceFlags & (SurfaceFlags.Mipmapped |
-                    SurfaceFlags.Renderable |
-                    SurfaceFlags.Protected)) | (sampleCount << 16);
+            mFlags = (surfaceFlags & (Surface.FLAG_MIPMAPPED |
+                    Surface.FLAG_RENDERABLE |
+                    Surface.FLAG_PROTECTED)) | (sampleCount << 16);
             return this;
         }
 

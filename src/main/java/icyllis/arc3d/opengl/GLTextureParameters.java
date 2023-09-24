@@ -19,35 +19,39 @@
 
 package icyllis.arc3d.opengl;
 
+import java.util.Arrays;
+
+import static org.lwjgl.opengl.GL11C.*;
+
 public final class GLTextureParameters {
 
     // Texture parameter state that is not overridden by a bound sampler object.
-    public int mBaseMipMapLevel;
-    public int mMaxMipmapLevel;
-    public boolean mSwizzleIsRGBA;
+    public int baseMipmapLevel;
+    public int maxMipmapLevel;
+    // The read swizzle, identity by default.
+    public final int[] swizzle = {GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA};
 
     public GLTextureParameters() {
         // These are the OpenGL defaults.
-        mBaseMipMapLevel = 0;
-        mMaxMipmapLevel = 1000;
-        mSwizzleIsRGBA = true;
+        baseMipmapLevel = 0;
+        maxMipmapLevel = 1000;
     }
 
     /**
-     * Makes parameters invalid, forces GLServer to refresh.
+     * Makes parameters invalid, forces GLContext to refresh.
      */
     public void invalidate() {
-        mBaseMipMapLevel = ~0;
-        mMaxMipmapLevel = ~0;
-        mSwizzleIsRGBA = false;
+        baseMipmapLevel = ~0;
+        maxMipmapLevel = ~0;
+        Arrays.fill(swizzle, 0);
     }
 
     @Override
     public String toString() {
-        return "{" +
-                "mBaseMipMapLevel=" + mBaseMipMapLevel +
-                ", mMaxMipmapLevel=" + mMaxMipmapLevel +
-                ", mSwizzleIsRGBA=" + mSwizzleIsRGBA +
+        return '{' +
+                "baseMipmapLevel=" + baseMipmapLevel +
+                ", maxMipmapLevel=" + maxMipmapLevel +
+                ", swizzle=" + Arrays.toString(swizzle) +
                 '}';
     }
 }

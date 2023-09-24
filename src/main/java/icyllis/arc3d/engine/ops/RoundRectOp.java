@@ -19,9 +19,15 @@
 
 package icyllis.arc3d.engine.ops;
 
-import icyllis.arc3d.core.Rect2f;
+import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.geom.RoundRectProcessor;
+import icyllis.arc3d.engine.geom.SDFRoundRectGeoProc;
+import org.jetbrains.annotations.NotNull;
+import org.lwjgl.system.MemoryUtil;
+
+import javax.annotation.Nonnull;
+import java.nio.ByteBuffer;
 
 //TODO
 public class RoundRectOp extends MeshDrawOp {
@@ -32,25 +38,51 @@ public class RoundRectOp extends MeshDrawOp {
     private Buffer mInstanceBuffer;
     private int mBaseInstance;
 
+    private float[] mColor;
+    private Rect2f mLocalRect;
+    private float mCornerRadius;
+    private float mStrokeRadius;
+    private Matrix mViewMatrix;
+    private boolean mStroke;
+
+    private int mNumInstances = 1;
+
+    public RoundRectOp(float[] color, Rect2f localRect, float cornerRadius, float strokeRadius, Matrix viewMatrix,
+                       boolean stroke) {
+        mColor = color;
+        mLocalRect = localRect;
+        mCornerRadius = cornerRadius;
+        mStrokeRadius = strokeRadius;
+        mViewMatrix = viewMatrix;
+        mStroke = stroke;
+        viewMatrix.mapRect(localRect, this);
+    }
+
+    @Override
+    protected boolean onMayChain(@Nonnull Op __) {
+        var op = (RoundRectOp) __;
+        if (op.mStroke == mStroke) {
+            mNumInstances++;
+            return true;
+        }
+        return false;
+    }
+
     @Override
     public void onExecute(OpFlushState state, Rect2f chainBounds) {
         OpsRenderPass opsRenderPass = state.getOpsRenderPass();
-        opsRenderPass.bindPipeline(getPipelineInfo(), chainBounds);
+        opsRenderPass.bindPipeline(getPipelineInfo(), getPipelineState(), chainBounds);
         opsRenderPass.bindTextures(null);
         opsRenderPass.bindBuffers(null, mVertexBuffer, mInstanceBuffer);
         opsRenderPass.drawInstanced(getInstanceCount(), mBaseInstance, getVertexCount(), mBaseVertex);
     }
 
+    @Nonnull
     @Override
-    protected PipelineInfo onCreatePipelineInfo(SurfaceProxyView writeView,
-                                                int pipelineFlags) {
+    protected @NotNull PipelineInfo onCreatePipelineInfo(SurfaceProxyView writeView, int pipelineFlags) {
         return new PipelineInfo(writeView,
-                new RoundRectProcessor(false),
-                null,
-                null,
-                null,
-                null,
-                pipelineFlags);
+                new SDFRoundRectGeoProc(mStroke), null, null, null,
+                null, pipelineFlags);
     }
 
     @Override
@@ -59,35 +91,53 @@ public class RoundRectOp extends MeshDrawOp {
     }
 
     @Override
-    public int getVertexSize() {
-        return getPipelineInfo().geomProc().vertexStride();
-    }
-
-    @Override
     public int getInstanceCount() {
-        return 1;
+        return mNumInstances;
     }
 
     @Override
-    public int getInstanceSize() {
-        return getPipelineInfo().geomProc().instanceStride();
-    }
-
-    @Override
-    public void setVertexBuffer(Buffer buffer, int baseVertex, int actualVertexCount) {
+    public void setVertexBuffer(@SharedPtr Buffer buffer, int baseVertex, int actualVertexCount) {
+        assert mVertexBuffer == null;
         mVertexBuffer = buffer;
         mBaseVertex = baseVertex;
     }
 
     @Override
-    public void setInstanceBuffer(Buffer buffer, int baseInstance, int actualInstanceCount) {
+    public void setInstanceBuffer(@SharedPtr Buffer buffer, int baseInstance, int actualInstanceCount) {
+        assert mInstanceBuffer == null;
         mInstanceBuffer = buffer;
         mBaseInstance = baseInstance;
     }
 
     @Override
     protected void onPrepareDraws(MeshDrawTarget target) {
-        long vertexData = target.makeVertexSpace(this);
-        long instanceData = target.makeInstanceSpace(this);
+        ByteBuffer vertexData = target.makeVertexWriter(this);
+        if (vertexData == null) {
+            return;
+        }
+        vertexData.putFloat(-1).putFloat(1); // LL
+        vertexData.putFloat(1).putFloat(1); // LR
+        vertexData.putFloat(-1).putFloat(-1); // UL
+        vertexData.putFloat(1).putFloat(-1); // UR
+        ByteBuffer instanceData = target.makeInstanceWriter(this);
+        if (instanceData == null) {
+            return;
+        }
+        for (Op it = this; it != null; it = it.nextInChain()) {
+            var op = (RoundRectOp) it;
+            instanceData.putFloat(op.mColor[0]);
+            instanceData.putFloat(op.mColor[1]);
+            instanceData.putFloat(op.mColor[2]);
+            instanceData.putFloat(op.mColor[3]);
+            // local rect
+            instanceData.putFloat(op.mLocalRect.width() / 2f);
+            instanceData.putFloat(op.mLocalRect.centerX());
+            instanceData.putFloat(op.mLocalRect.height() / 2f);
+            instanceData.putFloat(op.mLocalRect.centerY());
+            // radii
+            instanceData.putFloat(op.mCornerRadius).putFloat(op.mStrokeRadius);
+            op.mViewMatrix.store(MemoryUtil.memAddress(instanceData));
+            instanceData.position(instanceData.position() + 36);
+        }
     }
 }

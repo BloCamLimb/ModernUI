@@ -17,9 +17,8 @@
  * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.core;
+package icyllis.arc3d.engine;
 
-import javax.annotation.Nonnull;
 import java.util.*;
 
 /**
@@ -195,7 +194,6 @@ public class PriorityQueue<E> extends AbstractQueue<E> {
      *
      * @return an array containing all of the elements in this queue
      */
-    @Nonnull
     @Override
     public Object[] toArray() {
         return Arrays.copyOf(mHeap, mSize);
@@ -237,10 +235,9 @@ public class PriorityQueue<E> extends AbstractQueue<E> {
      *                              this queue
      * @throws NullPointerException if the specified array is null
      */
-    @Nonnull
     @Override
     @SuppressWarnings("SuspiciousSystemArraycopy")
-    public <T> T[] toArray(@Nonnull T[] a) {
+    public <T> T[] toArray(T[] a) {
         final int size = mSize;
         if (a.length < size)
             // Make a new array of a's runtime type, but my contents:

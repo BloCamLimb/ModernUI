@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.engine.shading;
 
-import icyllis.arc3d.core.SLType;
+import icyllis.arc3d.core.SLDataType;
 import icyllis.arc3d.engine.GeometryProcessor;
 import icyllis.arc3d.engine.ShaderVar;
 
@@ -49,7 +49,7 @@ public class VertexShaderBuilder extends ShaderBuilderBase implements VertexGeom
             var.addLayoutQualifier(location);
 
             // may contain matrix that takes up multiple locations
-            int locationSize = SLType.locationSize(var.getType());
+            int locationSize = SLDataType.locationSize(var.getType());
             assert (locationSize > 0);
             // we have no arrays
             assert (!var.isArray());
@@ -77,12 +77,12 @@ public class VertexShaderBuilder extends ShaderBuilderBase implements VertexGeom
 
     @Override
     public void emitNormalizedPosition(ShaderVar worldPos) {
-        if (worldPos.getType() == SLType.kFloat3) {
+        if (worldPos.getType() == SLDataType.kFloat3) {
             codeAppendf("""
                     gl_Position = vec4(%1$s.xy * %2$s.xz + %1$s.zz * %2$s.yw, 0.0, %1$s.z);
                     """, worldPos.getName(), UniformHandler.PROJECTION_NAME);
         } else {
-            assert (worldPos.getType() == SLType.kFloat2);
+            assert (worldPos.getType() == SLDataType.kFloat2);
             codeAppendf("""
                     gl_Position = vec4(%1$s.xy * %2$s.xz + %2$s.yw, 0.0, 1.0);
                     """, worldPos.getName(), UniformHandler.PROJECTION_NAME);

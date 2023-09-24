@@ -19,8 +19,8 @@
 
 package icyllis.arc3d.test;
 
-import icyllis.arc3d.core.*;
 import icyllis.arc3d.core.MathUtil;
+import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.geom.RoundRectProcessor;
 import icyllis.arc3d.opengl.*;
@@ -28,7 +28,6 @@ import icyllis.arc3d.shaderc.*;
 import icyllis.arc3d.shaderc.parser.Lexer;
 import icyllis.arc3d.shaderc.parser.Token;
 import icyllis.arc3d.shaderc.tree.Type;
-import it.unimi.dsi.fastutil.ints.IntArrayList;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.EXTTextureCompressionS3TC;
@@ -122,7 +121,7 @@ public class TestManagedResource {
 
         Swizzle.make("rgb1");
         //noinspection unused
-        int sampler = SamplerState.make(SamplerState.FILTER_MODE_NEAREST, SamplerState.MIPMAP_MODE_NONE);
+        int sampler = SamplerState.make(SamplerState.FILTER_NEAREST, SamplerState.MIPMAP_MODE_NONE);
 
         testTexture(pw, dContext);
 
@@ -264,7 +263,8 @@ public class TestManagedResource {
                     FragColor0 = col;
                 }
                 """);
-        long token; int kind;
+        long token;
+        int kind;
         while ((kind = Token.kind(token = lexer.next())) != Lexer.TK_END_OF_FILE) {
             if (kind == Lexer.TK_WHITESPACE) continue;
             int offset = Token.offset(token);
@@ -278,7 +278,7 @@ public class TestManagedResource {
             process.onExit().thenAccept(p -> {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
                 try {
-                    for (;;) {
+                    for (; ; ) {
                         String line = reader.readLine();
                         if (line == null)
                             break;
@@ -292,8 +292,6 @@ public class TestManagedResource {
     }
 
     public static void testShaderBuilder(PrintWriter pw, DirectContext dContext) {
-        GLServer server = (GLServer) dContext.getServer();
-        GLPipelineStateCache pipelineStateCache = server.getPipelineBuilder();
         @SharedPtr
         TextureProxy target = dContext.getProxyProvider().createRenderTextureProxy(
                 GLBackendFormat.make(GLCore.GL_RGBA8),
@@ -301,7 +299,7 @@ public class TestManagedResource {
                 SurfaceFlags.Budgeted | SurfaceFlags.Renderable
         );
         Objects.requireNonNull(target);
-        GLPipelineState pso = pipelineStateCache.findOrCreatePipelineState(
+        GLPipelineState pso = (GLPipelineState) dContext.findOrCreatePipelineState(
                 new PipelineInfo(new SurfaceProxyView(target), new RoundRectProcessor(true),
                         null, null, null, null,
                         PipelineInfo.kNone_Flag));
@@ -310,7 +308,7 @@ public class TestManagedResource {
             target.unref();
         }
 
-        pw.println(dContext.getServer().getPipelineBuilder().getStates());
+        pw.println(dContext.getPipelineStateCache().getStats());
     }
 
     public static void testTexture(PrintWriter pw, DirectContext dContext) {
@@ -379,8 +377,7 @@ public class TestManagedResource {
     }
 
     public static void testKeyBuilder(PrintWriter pw) {
-        IntArrayList intArrayList = new IntArrayList();
-        KeyBuilder keyBuilder = new KeyBuilder.StringKeyBuilder(intArrayList);
+        Key.Builder keyBuilder = new Key.StringBuilder();
         keyBuilder.addBits(6, 0x2F, "A");
         keyBuilder.addInt32(0xF111_1111, "B");
         keyBuilder.flush();

@@ -23,6 +23,7 @@ import icyllis.arc3d.core.*;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nullable;
+import java.io.PrintWriter;
 import java.util.Objects;
 
 /**
@@ -39,20 +40,20 @@ public abstract class Context extends RefCnt {
     /**
      * The 3D API backing this context.
      *
-     * @return see {@link Engine.BackendApi}
+     * @return see {@link Server.BackendApi}
      */
     public final int getBackend() {
         return mThreadSafeProxy.getBackend();
     }
 
     /**
-     * Retrieve the default {@link BackendFormat} for a given {@link Core.ColorType} and renderability.
+     * Retrieve the default {@link BackendFormat} for a given {@code ColorType} and renderability.
      * It is guaranteed that this backend format will be the one used by the following
-     * {@link Core.ColorType} and {@link SurfaceCharacterization#createBackendFormat(int, BackendFormat)}.
+     * {@code ColorType} and {@link SurfaceCharacterization#createBackendFormat(int, BackendFormat)}.
      * <p>
      * The caller should check that the returned format is valid (nullability).
      *
-     * @param colorType  see {@link Core.ColorType}
+     * @param colorType  see {@link ImageInfo}
      * @param renderable true if the format will be used as color attachments
      */
     @Nullable
@@ -61,13 +62,13 @@ public abstract class Context extends RefCnt {
     }
 
     /**
-     * Retrieve the {@link BackendFormat} for a given {@link Core.CompressionType}. This is
+     * Retrieve the {@link BackendFormat} for a given {@code CompressionType}. This is
      * guaranteed to match the backend format used by the following
-     * createCompressedBackendTexture methods that take a {@link Core.CompressionType}.
+     * createCompressedBackendTexture methods that take a {@code CompressionType}.
      * <p>
      * The caller should check that the returned format is valid (nullability).
      *
-     * @param compressionType see {@link Core.CompressionType}
+     * @param compressionType see {@link ImageInfo}
      */
     @Nullable
     public final BackendFormat getCompressedBackendFormat(int compressionType) {
@@ -79,7 +80,7 @@ public abstract class Context extends RefCnt {
      * rendering is supported for the color type. 0 is returned if rendering to this color type
      * is not supported at all.
      *
-     * @param colorType see {@link Core.ColorType}
+     * @param colorType see {@link ImageInfo}
      */
     public final int getMaxSurfaceSampleCount(int colorType) {
         return mThreadSafeProxy.getMaxSurfaceSampleCount(colorType);
@@ -117,11 +118,21 @@ public abstract class Context extends RefCnt {
     }
 
     @ApiStatus.Internal
-    public final ShaderErrorHandler getShaderErrorHandler() {
-        return Objects.requireNonNullElse(getOptions().mShaderErrorHandler, ShaderErrorHandler.DEFAULT);
+    public final PrintWriter getErrorWriter() {
+        return Objects.requireNonNullElseGet(getOptions().mErrorWriter, Context::getDefaultErrorWriter);
     }
 
     protected boolean init() {
         return mThreadSafeProxy.isValid();
+    }
+
+    private static PrintWriter sDefaultErrorWriter;
+
+    private static PrintWriter getDefaultErrorWriter() {
+        PrintWriter err = sDefaultErrorWriter;
+        if (err == null) {
+            sDefaultErrorWriter = err = new PrintWriter(System.err, true);
+        }
+        return err;
     }
 }

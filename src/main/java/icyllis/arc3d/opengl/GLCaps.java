@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.opengl;
 
-import icyllis.arc3d.core.Core;
+import icyllis.arc3d.core.ImageInfo;
 import icyllis.arc3d.engine.*;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.lwjgl.opengl.GL46C;
@@ -29,12 +29,17 @@ import org.lwjgl.system.MemoryStack;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.nio.IntBuffer;
+import java.util.*;
 
-import static icyllis.arc3d.engine.Engine.ColorType;
 import static icyllis.arc3d.opengl.GLCore.*;
 import static org.lwjgl.opengl.EXTTextureCompressionS3TC.*;
 
+/**
+ * Stores some capabilities of a OpenGL context.
+ */
 public final class GLCaps extends Caps {
+
+    public static final List<String> MISSING_EXTENSIONS = new ArrayList<>();
 
     public final int[] mProgramBinaryFormats;
 
@@ -44,136 +49,145 @@ public final class GLCaps extends Caps {
     private boolean mSkipErrorChecks = false;
     private final int mMaxLabelLength;
 
+    final boolean mDebugSupport;
+
+    final boolean mBufferStorageSupport;
+
+    final boolean mBaseInstanceSupport;
+    final boolean mDSASupport;
+
+    public static final int
+            INVALIDATE_BUFFER_TYPE_NULL_DATA = 1,
+            INVALIDATE_BUFFER_TYPE_INVALIDATE = 2;
+    final int mInvalidateBufferType;
+
     /**
      * Format table for textures.
      *
      * @see GLCore#glFormatToIndex(int)
      */
     private final FormatInfo[] mFormatTable =
-            new FormatInfo[LAST_COLOR_FORMAT_INDEX + 1];
+            new FormatInfo[GLCore.LAST_COLOR_FORMAT_INDEX + 1];
 
     // may contain null values that representing invalid
     private final GLBackendFormat[] mColorTypeToBackendFormat =
-            new GLBackendFormat[ColorType.kLast + 1];
+            new GLBackendFormat[ImageInfo.CT_COUNT];
     private final GLBackendFormat[] mCompressionTypeToBackendFormat =
-            new GLBackendFormat[Core.CompressionType.Count];
-
-    /**
-     * All required ARB extensions from OpenGL 3.3 to OpenGL 4.5
-     */
-    public static final String[] REQUIRED_EXTENSIONS = {
-            "ARB_blend_func_extended",
-            "ARB_sampler_objects",
-            "ARB_explicit_attrib_location",
-            "ARB_instanced_arrays",
-            "ARB_texture_swizzle",
-            "ARB_ES2_compatibility",
-            "ARB_get_program_binary",
-            "ARB_base_instance",
-            "ARB_texture_storage",
-            "ARB_internalformat_query",
-            "ARB_shading_language_420pack",
-            "ARB_invalidate_subdata",
-            "ARB_explicit_uniform_location",
-            "ARB_vertex_attrib_binding",
-            "ARB_ES3_compatibility",
-            "ARB_clear_texture",
-            "ARB_buffer_storage",
-            "ARB_enhanced_layouts",
-            "ARB_texture_barrier",
-            "ARB_direct_state_access"
-    };
+            new GLBackendFormat[ImageInfo.COMPRESSION_COUNT];
 
     @VisibleForTesting
     public GLCaps(ContextOptions options, GLCapabilities caps) {
         super(options);
-        options.mMissingExtensions.clear();
-        // we must have OpenGL 4.5, if not, test ARBs...
+        // Your GPU is not modern...
         if (!caps.OpenGL45) {
             // we don't check CONTEXT_PROFILE_MASK, we assume it's always core profile if OpenGL 3.2 is available.
             if (!caps.OpenGL32) {
-                throw new AssertionError("OpenGL 3.2 core profile is unavailable");
+                throw new UnsupportedOperationException("OpenGL 3.2 core profile is unavailable");
             }
+            List<String> missingExtensions = MISSING_EXTENSIONS;
+            missingExtensions.clear();
             if (!caps.OpenGL33) {
                 if (!caps.GL_ARB_blend_func_extended) {
-                    options.mMissingExtensions.add("ARB_blend_func_extended");
+                    missingExtensions.add("ARB_blend_func_extended");
                 }
                 if (!caps.GL_ARB_sampler_objects) {
-                    options.mMissingExtensions.add("ARB_sampler_objects");
+                    missingExtensions.add("ARB_sampler_objects");
                 }
                 if (!caps.GL_ARB_explicit_attrib_location) {
-                    options.mMissingExtensions.add("ARB_explicit_attrib_location");
+                    missingExtensions.add("ARB_explicit_attrib_location");
                 }
                 if (!caps.GL_ARB_instanced_arrays) {
-                    options.mMissingExtensions.add("ARB_instanced_arrays");
+                    missingExtensions.add("ARB_instanced_arrays");
                 }
                 if (!caps.GL_ARB_texture_swizzle) {
-                    options.mMissingExtensions.add("ARB_texture_swizzle");
+                    missingExtensions.add("ARB_texture_swizzle");
                 }
             }
+            // OpenGL 3.3 is the minimum requirement
+            if (!missingExtensions.isEmpty()) {
+                throw new UnsupportedOperationException("Missing required extensions: " + missingExtensions);
+            }
             if (!caps.OpenGL41) {
+                // macOS supports
                 if (!caps.GL_ARB_ES2_compatibility) {
-                    options.mMissingExtensions.add("ARB_ES2_compatibility");
+                    missingExtensions.add("ARB_ES2_compatibility");
                 }
                 if (!caps.GL_ARB_get_program_binary) {
-                    options.mMissingExtensions.add("ARB_get_program_binary");
+                    missingExtensions.add("ARB_get_program_binary");
                 }
+                // macOS supports
                 if (!caps.GL_ARB_viewport_array) {
-                    options.mMissingExtensions.add("ARB_viewport_array");
+                    missingExtensions.add("ARB_viewport_array");
                 }
             }
             if (!caps.OpenGL42) {
                 if (!caps.GL_ARB_base_instance) {
-                    options.mMissingExtensions.add("ARB_base_instance");
+                    missingExtensions.add("ARB_base_instance");
                 }
+                // macOS supports
                 if (!caps.GL_ARB_texture_storage) {
-                    options.mMissingExtensions.add("ARB_texture_storage");
+                    missingExtensions.add("ARB_texture_storage");
                 }
+                // macOS supports
                 if (!caps.GL_ARB_internalformat_query) {
-                    options.mMissingExtensions.add("ARB_internalformat_query");
+                    missingExtensions.add("ARB_internalformat_query");
                 }
                 if (!caps.GL_ARB_shading_language_420pack) {
-                    options.mMissingExtensions.add("ARB_shading_language_420pack");
+                    missingExtensions.add("ARB_shading_language_420pack");
                 }
             }
             if (!caps.OpenGL43) {
                 if (!caps.GL_ARB_invalidate_subdata) {
-                    options.mMissingExtensions.add("ARB_invalidate_subdata");
+                    missingExtensions.add("ARB_invalidate_subdata");
                 }
                 if (!caps.GL_ARB_explicit_uniform_location) {
-                    options.mMissingExtensions.add("ARB_explicit_uniform_location");
+                    missingExtensions.add("ARB_explicit_uniform_location");
                 }
                 if (!caps.GL_ARB_vertex_attrib_binding) {
-                    options.mMissingExtensions.add("ARB_vertex_attrib_binding");
+                    missingExtensions.add("ARB_vertex_attrib_binding");
                 }
                 if (!caps.GL_ARB_ES3_compatibility) {
-                    options.mMissingExtensions.add("ARB_ES3_compatibility");
+                    missingExtensions.add("ARB_ES3_compatibility");
                 }
             }
             if (!caps.OpenGL44) {
                 if (!caps.GL_ARB_clear_texture) {
-                    options.mMissingExtensions.add("ARB_clear_texture");
+                    missingExtensions.add("ARB_clear_texture");
                 }
                 if (!caps.GL_ARB_buffer_storage) {
-                    options.mMissingExtensions.add("ARB_buffer_storage");
+                    missingExtensions.add("ARB_buffer_storage");
                 }
                 if (!caps.GL_ARB_enhanced_layouts) {
-                    options.mMissingExtensions.add("ARB_enhanced_layouts");
+                    missingExtensions.add("ARB_enhanced_layouts");
                 }
             }
             if (!caps.GL_ARB_texture_barrier) {
-                options.mMissingExtensions.add("ARB_texture_barrier");
+                missingExtensions.add("ARB_texture_barrier");
             }
             if (!caps.GL_ARB_direct_state_access) {
-                options.mMissingExtensions.add("ARB_direct_state_access");
+                missingExtensions.add("ARB_direct_state_access");
             }
-        }
-        if (!options.mMissingExtensions.isEmpty()) {
-            throw new UnsupportedOperationException("Missing required extensions: " + options.mMissingExtensions);
+            mDSASupport = missingExtensions.isEmpty();
+
+            mDebugSupport = caps.OpenGL43 || caps.GL_KHR_debug;
+            mBaseInstanceSupport = caps.OpenGL42 || caps.GL_ARB_base_instance;
+            mBufferStorageSupport = caps.OpenGL44 || caps.GL_ARB_buffer_storage;
+
+        } else {
+            mDSASupport = true;
+            mDebugSupport = true;
+            mBaseInstanceSupport = true;
+            mBufferStorageSupport = true;
         }
 
         mMaxFragmentUniformVectors = glGetInteger(GL_MAX_FRAGMENT_UNIFORM_VECTORS);
         mMaxVertexAttributes = Math.min(32, glGetInteger(GL_MAX_VERTEX_ATTRIBS));
+
+        if (caps.OpenGL43 || caps.GL_ARB_invalidate_subdata) {
+            mInvalidateBufferType = INVALIDATE_BUFFER_TYPE_INVALIDATE;
+        } else {
+            mInvalidateBufferType = INVALIDATE_BUFFER_TYPE_NULL_DATA;
+        }
 
         mTransferPixelsToRowBytesSupport = true;
 
@@ -182,8 +196,25 @@ public final class GLCaps extends Caps {
 
         mMaxLabelLength = glGetInteger(GL_MAX_LABEL_LENGTH);
 
-        initGLSL(caps);
         ShaderCaps shaderCaps = mShaderCaps;
+        if (caps.OpenGL45) {
+            shaderCaps.mGLSLVersion = 450;
+        } else if (caps.OpenGL44) {
+            shaderCaps.mGLSLVersion = 440;
+        } else if (caps.OpenGL43) {
+            shaderCaps.mGLSLVersion = 430;
+        } else if (caps.OpenGL42) {
+            shaderCaps.mGLSLVersion = 420;
+        } else if (caps.OpenGL41) {
+            shaderCaps.mGLSLVersion = 410;
+        } else if (caps.OpenGL40) {
+            shaderCaps.mGLSLVersion = 400;
+        } else if (caps.OpenGL33) {
+            shaderCaps.mGLSLVersion = 330;
+        } else {
+            shaderCaps.mGLSLVersion = 150;
+        }
+        initGLSL(caps);
 
         // OpenGL 3.3
         shaderCaps.mDualSourceBlendingSupport = true;
@@ -248,7 +279,7 @@ public final class GLCaps extends Caps {
         // Desktop
         shaderCaps.mNonConstantArrayIndexSupport = true;
         // GLSL 400
-        shaderCaps.mBitManipulationSupport = true;
+        shaderCaps.mBitManipulationSupport = caps.OpenGL40;
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
             IntBuffer range = stack.mallocInt(2);
@@ -265,6 +296,9 @@ public final class GLCaps extends Caps {
         final int nonMSAARenderFlags = FormatInfo.COLOR_ATTACHMENT_FLAG;
         final int msaaRenderFlags = nonMSAARenderFlags | FormatInfo.COLOR_ATTACHMENT_WITH_MSAA_FLAG;
 
+        final boolean textureStorageSupported =
+                caps.OpenGL42 || caps.GL_ARB_texture_storage;
+
         // Reserved for undefined
         mFormatTable[0] = new FormatInfo();
 
@@ -272,31 +306,33 @@ public final class GLCaps extends Caps {
         {
             final int format = GL_RGBA8;
             FormatInfo info = mFormatTable[1] = new FormatInfo();
-            assert (getFormatInfo(format) == info && glIndexToFormat(1) == format);
+            assert (getFormatInfo(format) == info && GLCore.glIndexToFormat(1) == format);
             info.mFormatType = FormatInfo.FORMAT_TYPE_NORMALIZED_FIXED_POINT;
             info.mInternalFormatForRenderbuffer = format;
             info.mDefaultExternalFormat = GL_RGBA;
             info.mDefaultExternalType = GL_UNSIGNED_BYTE;
-            info.mDefaultColorType = Core.ColorType.kRGBA_8888;
+            info.mDefaultColorType = ImageInfo.CT_RGBA_8888;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            if (textureStorageSupported) {
+                info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            }
             info.mInternalFormatForTexture = format;
 
             info.mColorTypeInfos = new ColorTypeInfo[3];
             // Format: RGBA8, Surface: kRGBA_8888
             {
                 ColorTypeInfo ctInfo = info.mColorTypeInfos[0] = new ColorTypeInfo();
-                ctInfo.mColorType = Core.ColorType.kRGBA_8888;
+                ctInfo.mColorType = ImageInfo.CT_RGBA_8888;
                 ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG | ColorTypeInfo.RENDERABLE_FLAG;
-                setColorTypeFormat(Core.ColorType.kRGBA_8888, format);
+                setColorTypeFormat(ImageInfo.CT_RGBA_8888, format);
 
                 // External IO ColorTypes:
                 ctInfo.mExternalIOFormats = new ExternalIOFormat[2];
                 // Format: RGBA8, Surface: kRGBA_8888, Data: kRGBA_8888
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
-                    ioFormat.mColorType = Core.ColorType.kRGBA_8888;
+                    ioFormat.mColorType = ImageInfo.CT_RGBA_8888;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
                     ioFormat.mExternalWriteFormat = GL_RGBA;
                     ioFormat.mExternalReadFormat = GL_RGBA;
@@ -305,7 +341,7 @@ public final class GLCaps extends Caps {
                 // Format: RGBA8, Surface: kRGBA_8888, Data: kBGRA_8888
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
-                    ioFormat.mColorType = Core.ColorType.kBGRA_8888;
+                    ioFormat.mColorType = ImageInfo.CT_BGRA_8888;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
                     ioFormat.mExternalWriteFormat = GL_BGRA;
                     ioFormat.mExternalReadFormat = GL_BGRA;
@@ -315,16 +351,16 @@ public final class GLCaps extends Caps {
             // Format: RGBA8, Surface: kBGRA_8888
             {
                 ColorTypeInfo ctInfo = info.mColorTypeInfos[1] = new ColorTypeInfo();
-                ctInfo.mColorType = Core.ColorType.kBGRA_8888;
+                ctInfo.mColorType = ImageInfo.CT_BGRA_8888;
                 ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG | ColorTypeInfo.RENDERABLE_FLAG;
-                setColorTypeFormat(Core.ColorType.kBGRA_8888, format);
+                setColorTypeFormat(ImageInfo.CT_BGRA_8888, format);
 
                 // External IO ColorTypes:
                 ctInfo.mExternalIOFormats = new ExternalIOFormat[2];
                 // Format: RGBA8, Surface: kBGRA_8888, Data: kBGRA_8888
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
-                    ioFormat.mColorType = Core.ColorType.kBGRA_8888;
+                    ioFormat.mColorType = ImageInfo.CT_BGRA_8888;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
                     ioFormat.mExternalWriteFormat = GL_BGRA;
                     ioFormat.mExternalReadFormat = GL_BGRA;
@@ -333,7 +369,7 @@ public final class GLCaps extends Caps {
                 // Format: RGBA8, Surface: kBGRA_8888, Data: kRGBA_8888
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
-                    ioFormat.mColorType = Core.ColorType.kRGBA_8888;
+                    ioFormat.mColorType = ImageInfo.CT_RGBA_8888;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
                     ioFormat.mExternalWriteFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
@@ -343,7 +379,7 @@ public final class GLCaps extends Caps {
             // Format: RGBA8, Surface: kRGB_888x
             {
                 ColorTypeInfo ctInfo = info.mColorTypeInfos[2] = new ColorTypeInfo();
-                ctInfo.mColorType = Core.ColorType.kRGB_888x;
+                ctInfo.mColorType = ImageInfo.CT_RGB_888x;
                 ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG;
                 ctInfo.mReadSwizzle = Swizzle.RGB1;
 
@@ -352,7 +388,7 @@ public final class GLCaps extends Caps {
                 // Format: RGBA8, Surface: kRGB_888x, Data: kRGBA_888x
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
-                    ioFormat.mColorType = Core.ColorType.kRGB_888x;
+                    ioFormat.mColorType = ImageInfo.CT_RGB_888x;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
                     ioFormat.mExternalWriteFormat = GL_RGBA;
                     ioFormat.mExternalReadFormat = GL_RGBA;
@@ -367,26 +403,28 @@ public final class GLCaps extends Caps {
             info.mInternalFormatForRenderbuffer = GL_R8;
             info.mDefaultExternalFormat = GL_RED;
             info.mDefaultExternalType = GL_UNSIGNED_BYTE;
-            info.mDefaultColorType = Core.ColorType.kR_8;
+            info.mDefaultColorType = ImageInfo.CT_R_8;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            if (textureStorageSupported) {
+                info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            }
             info.mInternalFormatForTexture = GL_R8;
 
             info.mColorTypeInfos = new ColorTypeInfo[3];
             // Format: R8, Surface: kR_8
             {
                 ColorTypeInfo ctInfo = info.mColorTypeInfos[0] = new ColorTypeInfo();
-                ctInfo.mColorType = Core.ColorType.kR_8;
+                ctInfo.mColorType = ImageInfo.CT_R_8;
                 ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG | ColorTypeInfo.RENDERABLE_FLAG;
-                setColorTypeFormat(Core.ColorType.kR_8, GL_R8);
+                setColorTypeFormat(ImageInfo.CT_R_8, GL_R8);
 
                 // External IO ColorTypes:
                 ctInfo.mExternalIOFormats = new ExternalIOFormat[2];
                 // Format: R8, Surface: kR_8, Data: kR_8
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
-                    ioFormat.mColorType = Core.ColorType.kR_8;
+                    ioFormat.mColorType = ImageInfo.CT_R_8;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
                     ioFormat.mExternalWriteFormat = GL_RED;
                     ioFormat.mExternalReadFormat = GL_RED;
@@ -395,7 +433,7 @@ public final class GLCaps extends Caps {
                 // Format: R8, Surface: kR_8, Data: kR_8xxx
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
-                    ioFormat.mColorType = ColorType.kR_8xxx;
+                    ioFormat.mColorType = ImageInfo.CT_R_8xxx;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
                     ioFormat.mExternalWriteFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
@@ -405,18 +443,18 @@ public final class GLCaps extends Caps {
             // Format: R8, Surface: kAlpha_8
             {
                 ColorTypeInfo ctInfo = info.mColorTypeInfos[1] = new ColorTypeInfo();
-                ctInfo.mColorType = Core.ColorType.kAlpha_8;
+                ctInfo.mColorType = ImageInfo.CT_ALPHA_8;
                 ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG | ColorTypeInfo.RENDERABLE_FLAG;
                 ctInfo.mReadSwizzle = Swizzle.make("000r");
                 ctInfo.mWriteSwizzle = Swizzle.make("a000");
-                setColorTypeFormat(Core.ColorType.kAlpha_8, GL_R8);
+                setColorTypeFormat(ImageInfo.CT_ALPHA_8, GL_R8);
 
                 // External IO ColorTypes:
                 ctInfo.mExternalIOFormats = new ExternalIOFormat[2];
                 // Format: R8, Surface: kAlpha_8, Data: kAlpha_8
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
-                    ioFormat.mColorType = Core.ColorType.kAlpha_8;
+                    ioFormat.mColorType = ImageInfo.CT_ALPHA_8;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
                     ioFormat.mExternalWriteFormat = GL_RED;
                     ioFormat.mExternalReadFormat = GL_RED;
@@ -425,7 +463,7 @@ public final class GLCaps extends Caps {
                 // Format: R8, Surface: kAlpha_8, Data: kAlpha_8xxx
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
-                    ioFormat.mColorType = ColorType.kAlpha_8xxx;
+                    ioFormat.mColorType = ImageInfo.CT_ALPHA_8xxx;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
                     ioFormat.mExternalWriteFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
@@ -435,17 +473,17 @@ public final class GLCaps extends Caps {
             // Format: R8, Surface: kGray_8
             {
                 ColorTypeInfo ctInfo = info.mColorTypeInfos[2] = new ColorTypeInfo();
-                ctInfo.mColorType = Core.ColorType.kGray_8;
+                ctInfo.mColorType = ImageInfo.CT_GRAY_8;
                 ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG;
                 ctInfo.mReadSwizzle = Swizzle.make("rrr1");
-                setColorTypeFormat(Core.ColorType.kGray_8, GL_R8);
+                setColorTypeFormat(ImageInfo.CT_GRAY_8, GL_R8);
 
                 // External IO ColorTypes:
                 ctInfo.mExternalIOFormats = new ExternalIOFormat[2];
                 // Format: R8, Surface: kGray_8, Data: kGray_8
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
-                    ioFormat.mColorType = Core.ColorType.kGray_8;
+                    ioFormat.mColorType = ImageInfo.CT_GRAY_8;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
                     ioFormat.mExternalWriteFormat = GL_RED;
                     ioFormat.mExternalReadFormat = GL_RED;
@@ -454,7 +492,7 @@ public final class GLCaps extends Caps {
                 // Format: R8, Surface: kGray_8, Data: kGray_8xxx
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
-                    ioFormat.mColorType = ColorType.kGray_8xxx;
+                    ioFormat.mColorType = ImageInfo.CT_GRAY_8xxx;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
                     ioFormat.mExternalWriteFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
@@ -469,26 +507,28 @@ public final class GLCaps extends Caps {
             info.mInternalFormatForRenderbuffer = GL_RGB565;
             info.mDefaultExternalFormat = GL_RGB;
             info.mDefaultExternalType = GL_UNSIGNED_SHORT_5_6_5;
-            info.mDefaultColorType = Core.ColorType.kBGR_565;
+            info.mDefaultColorType = ImageInfo.CT_RGB_565;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            if (textureStorageSupported) {
+                info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            }
             info.mInternalFormatForTexture = GL_RGB565;
 
             info.mColorTypeInfos = new ColorTypeInfo[1];
             // Format: RGB565, Surface: kBGR_565
             {
                 ColorTypeInfo ctInfo = info.mColorTypeInfos[0] = new ColorTypeInfo();
-                ctInfo.mColorType = Core.ColorType.kBGR_565;
+                ctInfo.mColorType = ImageInfo.CT_RGB_565;
                 ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG | ColorTypeInfo.RENDERABLE_FLAG;
-                setColorTypeFormat(Core.ColorType.kBGR_565, GL_RGB565);
+                setColorTypeFormat(ImageInfo.CT_RGB_565, GL_RGB565);
 
                 // External IO ColorTypes:
                 ctInfo.mExternalIOFormats = new ExternalIOFormat[2];
                 // Format: RGB565, Surface: kBGR_565, Data: kBGR_565
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
-                    ioFormat.mColorType = Core.ColorType.kBGR_565;
+                    ioFormat.mColorType = ImageInfo.CT_RGB_565;
                     ioFormat.mExternalType = GL_UNSIGNED_SHORT_5_6_5;
                     ioFormat.mExternalWriteFormat = GL_RGB;
                     ioFormat.mExternalReadFormat = GL_RGB;
@@ -497,7 +537,7 @@ public final class GLCaps extends Caps {
                 // Format: RGB565, Surface: kBGR_565, Data: kRGBA_8888
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
-                    ioFormat.mColorType = Core.ColorType.kRGBA_8888;
+                    ioFormat.mColorType = ImageInfo.CT_RGBA_8888;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
                     ioFormat.mExternalWriteFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
@@ -512,26 +552,28 @@ public final class GLCaps extends Caps {
             info.mInternalFormatForRenderbuffer = GL_RGBA16F;
             info.mDefaultExternalFormat = GL_RGBA;
             info.mDefaultExternalType = GL_HALF_FLOAT;
-            info.mDefaultColorType = Core.ColorType.kRGBA_F16;
+            info.mDefaultColorType = ImageInfo.CT_RGBA_F16;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            if (textureStorageSupported) {
+                info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            }
             info.mInternalFormatForTexture = GL_RGBA16F;
 
             info.mColorTypeInfos = new ColorTypeInfo[2];
             // Format: RGBA16F, Surface: kRGBA_F16
             {
                 ColorTypeInfo ctInfo = info.mColorTypeInfos[0] = new ColorTypeInfo();
-                ctInfo.mColorType = Core.ColorType.kRGBA_F16;
+                ctInfo.mColorType = ImageInfo.CT_RGBA_F16;
                 ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG | ColorTypeInfo.RENDERABLE_FLAG;
-                setColorTypeFormat(Core.ColorType.kRGBA_F16, GL_RGBA16F);
+                setColorTypeFormat(ImageInfo.CT_RGBA_F16, GL_RGBA16F);
 
                 // External IO ColorTypes:
                 ctInfo.mExternalIOFormats = new ExternalIOFormat[2];
                 // Format: RGBA16F, Surface: kRGBA_F16, Data: kRGBA_F16
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
-                    ioFormat.mColorType = Core.ColorType.kRGBA_F16;
+                    ioFormat.mColorType = ImageInfo.CT_RGBA_F16;
                     ioFormat.mExternalType = GL_HALF_FLOAT;
                     ioFormat.mExternalWriteFormat = GL_RGBA;
                     ioFormat.mExternalReadFormat = GL_RGBA;
@@ -540,7 +582,7 @@ public final class GLCaps extends Caps {
                 // Format: RGBA16F, Surface: kRGBA_F16, Data: kRGBA_F32
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
-                    ioFormat.mColorType = Core.ColorType.kRGBA_F32;
+                    ioFormat.mColorType = ImageInfo.CT_RGBA_F32;
                     ioFormat.mExternalType = GL_FLOAT;
                     ioFormat.mExternalWriteFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
@@ -550,16 +592,16 @@ public final class GLCaps extends Caps {
             // Format: RGBA16F, Surface: kRGBA_F16_Clamped
             {
                 ColorTypeInfo ctInfo = info.mColorTypeInfos[1] = new ColorTypeInfo();
-                ctInfo.mColorType = Core.ColorType.kRGBA_F16_Clamped;
+                ctInfo.mColorType = ImageInfo.CT_RGBA_F16_CLAMPED;
                 ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG | ColorTypeInfo.RENDERABLE_FLAG;
-                setColorTypeFormat(Core.ColorType.kRGBA_F16_Clamped, GL_RGBA16F);
+                setColorTypeFormat(ImageInfo.CT_RGBA_F16_CLAMPED, GL_RGBA16F);
 
                 // External IO ColorTypes:
                 ctInfo.mExternalIOFormats = new ExternalIOFormat[2];
                 // Format: RGBA16F, Surface: kRGBA_F16_Clamped, Data: kRGBA_F16_Clamped
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
-                    ioFormat.mColorType = Core.ColorType.kRGBA_F16_Clamped;
+                    ioFormat.mColorType = ImageInfo.CT_RGBA_F16_CLAMPED;
                     ioFormat.mExternalType = GL_HALF_FLOAT;
                     ioFormat.mExternalWriteFormat = GL_RGBA;
                     ioFormat.mExternalReadFormat = GL_RGBA;
@@ -568,7 +610,7 @@ public final class GLCaps extends Caps {
                 // Format: RGBA16F, Surface: kRGBA_F16_Clamped, Data: kRGBA_F32
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
-                    ioFormat.mColorType = Core.ColorType.kRGBA_F32;
+                    ioFormat.mColorType = ImageInfo.CT_RGBA_F32;
                     ioFormat.mExternalType = GL_FLOAT;
                     ioFormat.mExternalWriteFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
@@ -583,28 +625,30 @@ public final class GLCaps extends Caps {
             info.mInternalFormatForRenderbuffer = GL_R16F;
             info.mDefaultExternalFormat = GL_RED;
             info.mDefaultExternalType = GL_HALF_FLOAT;
-            info.mDefaultColorType = ColorType.kR_F16;
+            info.mDefaultColorType = ImageInfo.CT_R_F16;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            if (textureStorageSupported) {
+                info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            }
             info.mInternalFormatForTexture = GL_R16F;
 
             // Format: R16F, Surface: kAlpha_F16
             info.mColorTypeInfos = new ColorTypeInfo[1];
             {
                 ColorTypeInfo ctInfo = info.mColorTypeInfos[0] = new ColorTypeInfo();
-                ctInfo.mColorType = Core.ColorType.kAlpha_F16;
+                ctInfo.mColorType = ImageInfo.CT_ALPHA_F16;
                 ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG | ColorTypeInfo.RENDERABLE_FLAG;
                 ctInfo.mReadSwizzle = Swizzle.make("000r");
                 ctInfo.mWriteSwizzle = Swizzle.make("a000");
-                setColorTypeFormat(Core.ColorType.kAlpha_F16, GL_R16F);
+                setColorTypeFormat(ImageInfo.CT_ALPHA_F16, GL_R16F);
 
                 // External IO ColorTypes:
                 ctInfo.mExternalIOFormats = new ExternalIOFormat[2];
                 // Format: R16F, Surface: kAlpha_F16, Data: kAlpha_F16
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
-                    ioFormat.mColorType = Core.ColorType.kAlpha_F16;
+                    ioFormat.mColorType = ImageInfo.CT_ALPHA_F16;
                     ioFormat.mExternalType = GL_HALF_FLOAT;
                     ioFormat.mExternalWriteFormat = GL_RED;
                     ioFormat.mExternalReadFormat = GL_RED;
@@ -613,7 +657,7 @@ public final class GLCaps extends Caps {
                 // Format: R16F, Surface: kAlpha_F16, Data: kAlpha_F32xxx
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
-                    ioFormat.mColorType = ColorType.kAlpha_F32xxx;
+                    ioFormat.mColorType = ImageInfo.CT_ALPHA_F32xxx;
                     ioFormat.mExternalType = GL_FLOAT;
                     ioFormat.mExternalWriteFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
@@ -628,33 +672,35 @@ public final class GLCaps extends Caps {
             info.mInternalFormatForRenderbuffer = GL_RGB8;
             info.mDefaultExternalFormat = GL_RGB;
             info.mDefaultExternalType = GL_UNSIGNED_BYTE;
-            info.mDefaultColorType = ColorType.kRGB_888;
+            info.mDefaultColorType = ImageInfo.CT_RGB_888;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             // Even in OpenGL 4.6 GL_RGB8 is required to be color renderable but not required to be
             // a supported render buffer format. Since we usually use render buffers for MSAA on
-            // non-ES GL we don't support MSAA for GL_RGB8.
+            // we don't support MSAA for GL_RGB8.
             if (glGetInternalformati(GL_RENDERBUFFER, GL_RGB8, GL_INTERNALFORMAT_SUPPORTED) == GL_TRUE) {
                 info.mFlags |= msaaRenderFlags;
             } else {
                 info.mFlags |= nonMSAARenderFlags;
             }
-            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            if (textureStorageSupported) {
+                info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            }
             info.mInternalFormatForTexture = GL_RGB8;
 
             info.mColorTypeInfos = new ColorTypeInfo[1];
             // Format: RGB8, Surface: kRGB_888x
             {
                 ColorTypeInfo ctInfo = info.mColorTypeInfos[0] = new ColorTypeInfo();
-                ctInfo.mColorType = Core.ColorType.kRGB_888x;
+                ctInfo.mColorType = ImageInfo.CT_RGB_888x;
                 ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG | ColorTypeInfo.RENDERABLE_FLAG;
-                setColorTypeFormat(Core.ColorType.kRGB_888x, GL_RGB8);
+                setColorTypeFormat(ImageInfo.CT_RGB_888x, GL_RGB8);
 
                 // External IO ColorTypes:
                 ctInfo.mExternalIOFormats = new ExternalIOFormat[2];
                 // Format: RGB8, Surface: kRGB_888x, Data: kRGB_888
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
-                    ioFormat.mColorType = ColorType.kRGB_888;
+                    ioFormat.mColorType = ImageInfo.CT_RGB_888;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
                     ioFormat.mExternalWriteFormat = GL_RGB;
                     ioFormat.mExternalReadFormat = 0;
@@ -663,7 +709,7 @@ public final class GLCaps extends Caps {
                 // Format: RGB8, Surface: kRGB_888x, Data: kRGBA_8888
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
-                    ioFormat.mColorType = Core.ColorType.kRGBA_8888;
+                    ioFormat.mColorType = ImageInfo.CT_RGBA_8888;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
                     ioFormat.mExternalWriteFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
@@ -678,26 +724,28 @@ public final class GLCaps extends Caps {
             info.mInternalFormatForRenderbuffer = GL_RG8;
             info.mDefaultExternalFormat = GL_RG;
             info.mDefaultExternalType = GL_UNSIGNED_BYTE;
-            info.mDefaultColorType = Core.ColorType.kRG_88;
+            info.mDefaultColorType = ImageInfo.CT_RG_88;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            if (textureStorageSupported) {
+                info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            }
             info.mInternalFormatForTexture = GL_RG8;
 
-            info.mColorTypeInfos = new ColorTypeInfo[1];
+            info.mColorTypeInfos = new ColorTypeInfo[2];
             // Format: RG8, Surface: kRG_88
             {
                 ColorTypeInfo ctInfo = info.mColorTypeInfos[0] = new ColorTypeInfo();
-                ctInfo.mColorType = Core.ColorType.kRG_88;
+                ctInfo.mColorType = ImageInfo.CT_RG_88;
                 ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG | ColorTypeInfo.RENDERABLE_FLAG;
-                setColorTypeFormat(Core.ColorType.kRG_88, GL_RG8);
+                setColorTypeFormat(ImageInfo.CT_RG_88, GL_RG8);
 
                 // External IO ColorTypes:
                 ctInfo.mExternalIOFormats = new ExternalIOFormat[2];
                 // Format: RG8, Surface: kRG_88, Data: kRG_88
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
-                    ioFormat.mColorType = Core.ColorType.kRG_88;
+                    ioFormat.mColorType = ImageInfo.CT_RG_88;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
                     ioFormat.mExternalWriteFormat = GL_RG;
                     ioFormat.mExternalReadFormat = GL_RG;
@@ -706,10 +754,31 @@ public final class GLCaps extends Caps {
                 // Format: RG8, Surface: kRG_88, Data: kRGBA_8888
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
-                    ioFormat.mColorType = Core.ColorType.kRGBA_8888;
+                    ioFormat.mColorType = ImageInfo.CT_RGBA_8888;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
                     ioFormat.mExternalWriteFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
+                }
+            }
+
+            // Added by Modern UI, this is useful for grayscale PNG image rendering.
+            // Format: RG8, Surface: kGrayAlpha_88
+            {
+                ColorTypeInfo ctInfo = info.mColorTypeInfos[1] = new ColorTypeInfo();
+                ctInfo.mColorType = ImageInfo.CT_GRAY_ALPHA_88;
+                ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG;
+                ctInfo.mReadSwizzle = Swizzle.make("rrrg");
+                setColorTypeFormat(ImageInfo.CT_GRAY_ALPHA_88, GL_RG8);
+
+                // External IO ColorTypes:
+                ctInfo.mExternalIOFormats = new ExternalIOFormat[1];
+                // Format: RG8, Surface: kGrayAlpha_88, Data: kGrayAlpha_88
+                {
+                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
+                    ioFormat.mColorType = ImageInfo.CT_GRAY_ALPHA_88;
+                    ioFormat.mExternalType = GL_UNSIGNED_BYTE;
+                    ioFormat.mExternalWriteFormat = GL_RG;
+                    ioFormat.mExternalReadFormat = GL_RG;
                 }
             }
         }
@@ -721,26 +790,28 @@ public final class GLCaps extends Caps {
             info.mInternalFormatForRenderbuffer = GL_RGB10_A2;
             info.mDefaultExternalFormat = GL_RGBA;
             info.mDefaultExternalType = GL_UNSIGNED_INT_2_10_10_10_REV;
-            info.mDefaultColorType = Core.ColorType.kRGBA_1010102;
+            info.mDefaultColorType = ImageInfo.CT_RGBA_1010102;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            if (textureStorageSupported) {
+                info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            }
             info.mInternalFormatForTexture = GL_RGB10_A2;
 
             info.mColorTypeInfos = new ColorTypeInfo[2];
             // Format: RGB10_A2, Surface: kRGBA_1010102
             {
                 ColorTypeInfo ctInfo = info.mColorTypeInfos[0] = new ColorTypeInfo();
-                ctInfo.mColorType = Core.ColorType.kRGBA_1010102;
+                ctInfo.mColorType = ImageInfo.CT_RGBA_1010102;
                 ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG | ColorTypeInfo.RENDERABLE_FLAG;
-                setColorTypeFormat(Core.ColorType.kRGBA_1010102, GL_RGB10_A2);
+                setColorTypeFormat(ImageInfo.CT_RGBA_1010102, GL_RGB10_A2);
 
                 // External IO ColorTypes:
                 ctInfo.mExternalIOFormats = new ExternalIOFormat[2];
                 // Format: RGB10_A2, Surface: kRGBA_1010102, Data: kRGBA_1010102
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
-                    ioFormat.mColorType = Core.ColorType.kRGBA_1010102;
+                    ioFormat.mColorType = ImageInfo.CT_RGBA_1010102;
                     ioFormat.mExternalType = GL_UNSIGNED_INT_2_10_10_10_REV;
                     ioFormat.mExternalWriteFormat = GL_RGBA;
                     ioFormat.mExternalReadFormat = GL_RGBA;
@@ -749,7 +820,7 @@ public final class GLCaps extends Caps {
                 // Format: RGB10_A2, Surface: kRGBA_1010102, Data: kRGBA_8888
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
-                    ioFormat.mColorType = Core.ColorType.kRGBA_8888;
+                    ioFormat.mColorType = ImageInfo.CT_RGBA_8888;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
                     ioFormat.mExternalWriteFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
@@ -759,16 +830,16 @@ public final class GLCaps extends Caps {
             // Format: RGB10_A2, Surface: kBGRA_1010102
             {
                 ColorTypeInfo ctInfo = info.mColorTypeInfos[1] = new ColorTypeInfo();
-                ctInfo.mColorType = Core.ColorType.kBGRA_1010102;
+                ctInfo.mColorType = ImageInfo.CT_BGRA_1010102;
                 ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG | ColorTypeInfo.RENDERABLE_FLAG;
-                setColorTypeFormat(Core.ColorType.kBGRA_1010102, GL_RGB10_A2);
+                setColorTypeFormat(ImageInfo.CT_BGRA_1010102, GL_RGB10_A2);
 
                 // External IO ColorTypes:
                 ctInfo.mExternalIOFormats = new ExternalIOFormat[2];
                 // Format: RGB10_A2, Surface: kBGRA_1010102, Data: kBGRA_1010102
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
-                    ioFormat.mColorType = Core.ColorType.kBGRA_1010102;
+                    ioFormat.mColorType = ImageInfo.CT_BGRA_1010102;
                     ioFormat.mExternalType = GL_UNSIGNED_INT_2_10_10_10_REV;
                     ioFormat.mExternalWriteFormat = GL_BGRA;
                     ioFormat.mExternalReadFormat = GL_BGRA;
@@ -777,50 +848,7 @@ public final class GLCaps extends Caps {
                 // Format: RGB10_A2, Surface: kBGRA_1010102, Data: kRGBA_8888
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
-                    ioFormat.mColorType = Core.ColorType.kRGBA_8888;
-                    ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalWriteFormat = 0;
-                    ioFormat.mExternalReadFormat = GL_RGBA;
-                }
-            }
-        }
-
-        // Format: RGBA4
-        {
-            FormatInfo info = mFormatTable[9] = new FormatInfo();
-            info.mFormatType = FormatInfo.FORMAT_TYPE_NORMALIZED_FIXED_POINT;
-            info.mInternalFormatForRenderbuffer = GL_RGBA4;
-            info.mDefaultExternalFormat = GL_RGBA;
-            info.mDefaultExternalType = GL_UNSIGNED_SHORT_4_4_4_4;
-            info.mDefaultColorType = Core.ColorType.kABGR_4444;
-            info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
-            info.mFlags |= msaaRenderFlags;
-            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
-            info.mInternalFormatForTexture = GL_RGBA4;
-
-            info.mColorTypeInfos = new ColorTypeInfo[1];
-            // Format: RGBA4, Surface: kABGR_4444
-            {
-                ColorTypeInfo ctInfo = info.mColorTypeInfos[0] = new ColorTypeInfo();
-                ctInfo.mColorType = Core.ColorType.kABGR_4444;
-                ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG | ColorTypeInfo.RENDERABLE_FLAG;
-                setColorTypeFormat(Core.ColorType.kABGR_4444, GL_RGBA4);
-
-                // External IO ColorTypes:
-                ctInfo.mExternalIOFormats = new ExternalIOFormat[2];
-                // Format: RGBA4, Surface: kABGR_4444, Data: kABGR_4444
-                {
-                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
-                    ioFormat.mColorType = Core.ColorType.kABGR_4444;
-                    ioFormat.mExternalType = GL_UNSIGNED_SHORT_4_4_4_4;
-                    ioFormat.mExternalWriteFormat = GL_RGBA;
-                    ioFormat.mExternalReadFormat = GL_RGBA;
-                }
-
-                // Format: RGBA4, Surface: kABGR_4444, Data: kRGBA_8888
-                {
-                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
-                    ioFormat.mColorType = Core.ColorType.kRGBA_8888;
+                    ioFormat.mColorType = ImageInfo.CT_RGBA_8888;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
                     ioFormat.mExternalWriteFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
@@ -830,24 +858,26 @@ public final class GLCaps extends Caps {
 
         // Format: SRGB8_ALPHA8
         {
-            FormatInfo info = mFormatTable[10] = new FormatInfo();
+            FormatInfo info = mFormatTable[9] = new FormatInfo();
             info.mFormatType = FormatInfo.FORMAT_TYPE_NORMALIZED_FIXED_POINT;
             info.mInternalFormatForRenderbuffer = GL_SRGB8_ALPHA8;
             info.mDefaultExternalFormat = GL_RGBA;
             info.mDefaultExternalType = GL_UNSIGNED_BYTE;
-            info.mDefaultColorType = Core.ColorType.kRGBA_8888_SRGB;
+            info.mDefaultColorType = ImageInfo.CT_RGBA_8888_SRGB;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            if (textureStorageSupported) {
+                info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            }
             info.mInternalFormatForTexture = GL_SRGB8_ALPHA8;
 
             info.mColorTypeInfos = new ColorTypeInfo[1];
             // Format: SRGB8_ALPHA8, Surface: kRGBA_8888_SRGB
             {
                 ColorTypeInfo ctInfo = info.mColorTypeInfos[0] = new ColorTypeInfo();
-                ctInfo.mColorType = Core.ColorType.kRGBA_8888_SRGB;
+                ctInfo.mColorType = ImageInfo.CT_RGBA_8888_SRGB;
                 ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG | ColorTypeInfo.RENDERABLE_FLAG;
-                setColorTypeFormat(Core.ColorType.kRGBA_8888_SRGB, GL_SRGB8_ALPHA8);
+                setColorTypeFormat(ImageInfo.CT_RGBA_8888_SRGB, GL_SRGB8_ALPHA8);
 
                 // External IO ColorTypes:
                 ctInfo.mExternalIOFormats = new ExternalIOFormat[1];
@@ -856,7 +886,7 @@ public final class GLCaps extends Caps {
                     // GL does not do srgb<->rgb conversions when transferring between cpu and gpu.
                     // Thus, the external format is GL_RGBA.
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
-                    ioFormat.mColorType = Core.ColorType.kRGBA_8888_SRGB;
+                    ioFormat.mColorType = ImageInfo.CT_RGBA_8888_SRGB;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
                     ioFormat.mExternalWriteFormat = GL_RGBA;
                     ioFormat.mExternalReadFormat = GL_RGBA;
@@ -866,12 +896,12 @@ public final class GLCaps extends Caps {
 
         // Format: COMPRESSED_RGB8_ETC2
         {
-            FormatInfo info = mFormatTable[11] = new FormatInfo();
+            FormatInfo info = mFormatTable[10] = new FormatInfo();
             info.mFormatType = FormatInfo.FORMAT_TYPE_NORMALIZED_FIXED_POINT;
             info.mInternalFormatForTexture = GL_COMPRESSED_RGB8_ETC2;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG;
 
-            mCompressionTypeToBackendFormat[Core.CompressionType.ETC2_RGB8_UNORM] =
+            mCompressionTypeToBackendFormat[ImageInfo.COMPRESSION_ETC2_RGB8_UNORM] =
                     GLBackendFormat.make(GL_COMPRESSED_RGB8_ETC2);
 
             // There are no support ColorTypes for this format
@@ -879,13 +909,13 @@ public final class GLCaps extends Caps {
 
         // Format: COMPRESSED_RGB8_BC1
         {
-            FormatInfo info = mFormatTable[12] = new FormatInfo();
+            FormatInfo info = mFormatTable[11] = new FormatInfo();
             info.mFormatType = FormatInfo.FORMAT_TYPE_NORMALIZED_FIXED_POINT;
             info.mInternalFormatForTexture = GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
             if (caps.GL_EXT_texture_compression_s3tc) {
                 info.mFlags = FormatInfo.TEXTURABLE_FLAG;
 
-                mCompressionTypeToBackendFormat[Core.CompressionType.BC1_RGB8_UNORM] =
+                mCompressionTypeToBackendFormat[ImageInfo.COMPRESSION_BC1_RGB8_UNORM] =
                         GLBackendFormat.make(GL_COMPRESSED_RGB_S3TC_DXT1_EXT);
             }
 
@@ -894,13 +924,13 @@ public final class GLCaps extends Caps {
 
         // Format: COMPRESSED_RGBA8_BC1
         {
-            FormatInfo info = mFormatTable[13] = new FormatInfo();
+            FormatInfo info = mFormatTable[12] = new FormatInfo();
             info.mFormatType = FormatInfo.FORMAT_TYPE_NORMALIZED_FIXED_POINT;
             info.mInternalFormatForTexture = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
             if (caps.GL_EXT_texture_compression_s3tc) {
                 info.mFlags = FormatInfo.TEXTURABLE_FLAG;
 
-                mCompressionTypeToBackendFormat[Core.CompressionType.BC1_RGBA8_UNORM] =
+                mCompressionTypeToBackendFormat[ImageInfo.COMPRESSION_BC1_RGBA8_UNORM] =
                         GLBackendFormat.make(GL_COMPRESSED_RGBA_S3TC_DXT1_EXT);
             }
 
@@ -909,33 +939,35 @@ public final class GLCaps extends Caps {
 
         // Format: R16
         {
-            FormatInfo info = mFormatTable[14] = new FormatInfo();
+            FormatInfo info = mFormatTable[13] = new FormatInfo();
             info.mFormatType = FormatInfo.FORMAT_TYPE_NORMALIZED_FIXED_POINT;
             info.mInternalFormatForRenderbuffer = GL_R16;
             info.mDefaultExternalFormat = GL_RED;
             info.mDefaultExternalType = GL_UNSIGNED_SHORT;
-            info.mDefaultColorType = ColorType.kR_16;
+            info.mDefaultColorType = ImageInfo.CT_R_16;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            if (textureStorageSupported) {
+                info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            }
             info.mInternalFormatForTexture = GL_R16;
 
             info.mColorTypeInfos = new ColorTypeInfo[1];
             // Format: R16, Surface: kAlpha_16
             {
                 ColorTypeInfo ctInfo = info.mColorTypeInfos[0] = new ColorTypeInfo();
-                ctInfo.mColorType = Core.ColorType.kAlpha_16;
+                ctInfo.mColorType = ImageInfo.CT_ALPHA_16;
                 ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG | ColorTypeInfo.RENDERABLE_FLAG;
                 ctInfo.mReadSwizzle = Swizzle.make("000r");
                 ctInfo.mWriteSwizzle = Swizzle.make("a000");
-                setColorTypeFormat(Core.ColorType.kAlpha_16, GL_R16);
+                setColorTypeFormat(ImageInfo.CT_ALPHA_16, GL_R16);
 
                 // External IO ColorTypes:
                 ctInfo.mExternalIOFormats = new ExternalIOFormat[2];
                 // Format: R16, Surface: kAlpha_16, Data: kAlpha_16
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
-                    ioFormat.mColorType = Core.ColorType.kAlpha_16;
+                    ioFormat.mColorType = ImageInfo.CT_ALPHA_16;
                     ioFormat.mExternalType = GL_UNSIGNED_SHORT;
                     ioFormat.mExternalWriteFormat = GL_RED;
                     ioFormat.mExternalReadFormat = GL_RED;
@@ -944,7 +976,7 @@ public final class GLCaps extends Caps {
                 // Format: R16, Surface: kAlpha_16, Data: kAlpha_8xxx
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
-                    ioFormat.mColorType = ColorType.kAlpha_8xxx;
+                    ioFormat.mColorType = ImageInfo.CT_ALPHA_8xxx;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
                     ioFormat.mExternalWriteFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
@@ -954,31 +986,33 @@ public final class GLCaps extends Caps {
 
         // Format: RG16
         {
-            FormatInfo info = mFormatTable[15] = new FormatInfo();
+            FormatInfo info = mFormatTable[14] = new FormatInfo();
             info.mFormatType = FormatInfo.FORMAT_TYPE_NORMALIZED_FIXED_POINT;
             info.mInternalFormatForRenderbuffer = GL_RG16;
             info.mDefaultExternalFormat = GL_RG;
             info.mDefaultExternalType = GL_UNSIGNED_SHORT;
-            info.mDefaultColorType = Core.ColorType.kRG_1616;
+            info.mDefaultColorType = ImageInfo.CT_RG_1616;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            if (textureStorageSupported) {
+                info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            }
             info.mInternalFormatForTexture = GL_RG16;
 
             info.mColorTypeInfos = new ColorTypeInfo[1];
             // Format: GL_RG16, Surface: kRG_1616
             {
                 ColorTypeInfo ctInfo = info.mColorTypeInfos[0] = new ColorTypeInfo();
-                ctInfo.mColorType = Core.ColorType.kRG_1616;
+                ctInfo.mColorType = ImageInfo.CT_RG_1616;
                 ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG | ColorTypeInfo.RENDERABLE_FLAG;
-                setColorTypeFormat(Core.ColorType.kRG_1616, GL_RG16);
+                setColorTypeFormat(ImageInfo.CT_RG_1616, GL_RG16);
 
                 // External IO ColorTypes:
                 ctInfo.mExternalIOFormats = new ExternalIOFormat[2];
                 // Format: GL_RG16, Surface: kRG_1616, Data: kRG_1616
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
-                    ioFormat.mColorType = Core.ColorType.kRG_1616;
+                    ioFormat.mColorType = ImageInfo.CT_RG_1616;
                     ioFormat.mExternalType = GL_UNSIGNED_SHORT;
                     ioFormat.mExternalWriteFormat = GL_RG;
                     ioFormat.mExternalReadFormat = GL_RG;
@@ -987,7 +1021,7 @@ public final class GLCaps extends Caps {
                 // Format: GL_RG16, Surface: kRG_1616, Data: kRGBA_8888
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
-                    ioFormat.mColorType = Core.ColorType.kRGBA_8888;
+                    ioFormat.mColorType = ImageInfo.CT_RGBA_8888;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
                     ioFormat.mExternalWriteFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
@@ -997,31 +1031,33 @@ public final class GLCaps extends Caps {
 
         // Format: RGBA16
         {
-            FormatInfo info = mFormatTable[16] = new FormatInfo();
+            FormatInfo info = mFormatTable[15] = new FormatInfo();
             info.mFormatType = FormatInfo.FORMAT_TYPE_NORMALIZED_FIXED_POINT;
             info.mInternalFormatForRenderbuffer = GL_RGBA16;
             info.mDefaultExternalFormat = GL_RGBA;
             info.mDefaultExternalType = GL_UNSIGNED_SHORT;
-            info.mDefaultColorType = Core.ColorType.kRGBA_16161616;
+            info.mDefaultColorType = ImageInfo.CT_RGBA_16161616;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            if (textureStorageSupported) {
+                info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            }
             info.mInternalFormatForTexture = GL_RGBA16;
 
             // Format: GL_RGBA16, Surface: kRGBA_16161616
             info.mColorTypeInfos = new ColorTypeInfo[1];
             {
                 ColorTypeInfo ctInfo = info.mColorTypeInfos[0] = new ColorTypeInfo();
-                ctInfo.mColorType = Core.ColorType.kRGBA_16161616;
+                ctInfo.mColorType = ImageInfo.CT_RGBA_16161616;
                 ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG | ColorTypeInfo.RENDERABLE_FLAG;
-                setColorTypeFormat(Core.ColorType.kRGBA_16161616, GL_RGBA16);
+                setColorTypeFormat(ImageInfo.CT_RGBA_16161616, GL_RGBA16);
 
                 // External IO ColorTypes:
                 ctInfo.mExternalIOFormats = new ExternalIOFormat[2];
                 // Format: GL_RGBA16, Surface: kRGBA_16161616, Data: kRGBA_16161616
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
-                    ioFormat.mColorType = Core.ColorType.kRGBA_16161616;
+                    ioFormat.mColorType = ImageInfo.CT_RGBA_16161616;
                     ioFormat.mExternalType = GL_UNSIGNED_SHORT;
                     ioFormat.mExternalWriteFormat = GL_RGBA;
                     ioFormat.mExternalReadFormat = GL_RGBA;
@@ -1030,7 +1066,7 @@ public final class GLCaps extends Caps {
                 // Format: GL_RGBA16, Surface: kRGBA_16161616, Data: kRGBA_8888
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
-                    ioFormat.mColorType = Core.ColorType.kRGBA_8888;
+                    ioFormat.mColorType = ImageInfo.CT_RGBA_8888;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
                     ioFormat.mExternalWriteFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
@@ -1040,31 +1076,33 @@ public final class GLCaps extends Caps {
 
         // Format:RG16F
         {
-            FormatInfo info = mFormatTable[17] = new FormatInfo();
+            FormatInfo info = mFormatTable[16] = new FormatInfo();
             info.mFormatType = FormatInfo.FORMAT_TYPE_FLOAT;
             info.mInternalFormatForRenderbuffer = GL_RG16F;
             info.mDefaultExternalFormat = GL_RG;
             info.mDefaultExternalType = GL_HALF_FLOAT;
-            info.mDefaultColorType = Core.ColorType.kRG_F16;
+            info.mDefaultColorType = ImageInfo.CT_RG_F16;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            if (textureStorageSupported) {
+                info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
+            }
             info.mInternalFormatForTexture = GL_RG16F;
 
             info.mColorTypeInfos = new ColorTypeInfo[1];
             // Format: GL_RG16F, Surface: kRG_F16
             {
                 ColorTypeInfo ctInfo = info.mColorTypeInfos[0] = new ColorTypeInfo();
-                ctInfo.mColorType = Core.ColorType.kRG_F16;
+                ctInfo.mColorType = ImageInfo.CT_RG_F16;
                 ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG | ColorTypeInfo.RENDERABLE_FLAG;
-                setColorTypeFormat(Core.ColorType.kRG_F16, GL_RG16F);
+                setColorTypeFormat(ImageInfo.CT_RG_F16, GL_RG16F);
 
                 // External IO ColorTypes:
                 ctInfo.mExternalIOFormats = new ExternalIOFormat[2];
                 // Format: GL_RG16F, Surface: kRG_F16, Data: kRG_F16
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
-                    ioFormat.mColorType = Core.ColorType.kRG_F16;
+                    ioFormat.mColorType = ImageInfo.CT_RG_F16;
                     ioFormat.mExternalType = GL_HALF_FLOAT;
                     ioFormat.mExternalWriteFormat = GL_RG;
                     ioFormat.mExternalReadFormat = GL_RG;
@@ -1073,7 +1111,7 @@ public final class GLCaps extends Caps {
                 // Format: GL_RG16F, Surface: kRG_F16, Data: kRGBA_F32
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
-                    ioFormat.mColorType = Core.ColorType.kRGBA_F32;
+                    ioFormat.mColorType = ImageInfo.CT_RGBA_F32;
                     ioFormat.mExternalType = GL_FLOAT;
                     ioFormat.mExternalWriteFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
@@ -1118,57 +1156,44 @@ public final class GLCaps extends Caps {
             // Make sure we didn't set fbo attachable with msaa and not fbo attachable
             if ((info.mFlags & FormatInfo.COLOR_ATTACHMENT_WITH_MSAA_FLAG) != 0 &&
                     (info.mFlags & FormatInfo.COLOR_ATTACHMENT_FLAG) == 0) {
-                throw new AssertionError();
+                assert false;
             }
             // Make sure all renderbuffer formats can also be texture formats
             if ((info.mFlags & FormatInfo.COLOR_ATTACHMENT_FLAG) != 0 &&
                     (info.mFlags & FormatInfo.TEXTURABLE_FLAG) == 0) {
-                throw new AssertionError();
+                assert false;
             }
 
             // Make sure we set all the formats' FormatType
             if (info.mFormatType == FormatInfo.FORMAT_TYPE_UNKNOWN) {
-                throw new AssertionError();
+                assert false;
             }
 
             // All texturable format should have their internal formats
             if ((info.mFlags & FormatInfo.TEXTURABLE_FLAG) != 0 &&
                     info.mInternalFormatForTexture == 0) {
-                throw new AssertionError();
+                assert false;
             }
 
             // All renderable format should have their internal formats
             if ((info.mFlags & FormatInfo.COLOR_ATTACHMENT_FLAG) != 0 &&
                     info.mInternalFormatForRenderbuffer == 0) {
-                throw new AssertionError();
-            }
-
-            // Only compressed format doesn't support glTexStorage
-            if ((info.mFlags & FormatInfo.TEXTURABLE_FLAG) != 0 &&
-                    (info.mFlags & FormatInfo.TEXTURE_STORAGE_FLAG) == 0 &&
-                    !glFormatIsCompressed(glIndexToFormat(index))) {
-                throw new AssertionError();
-            }
-
-            // Only compressed format doesn't support renderbuffer
-            if (info.mInternalFormatForTexture != info.mInternalFormatForRenderbuffer &&
-                    !glFormatIsCompressed(glIndexToFormat(index))) {
-                throw new AssertionError();
+                assert false;
             }
 
             // Make sure if we added a ColorTypeInfo we filled it out
             for (ColorTypeInfo ctInfo : info.mColorTypeInfos) {
-                if (ctInfo.mColorType == Core.ColorType.kUnknown) {
-                    throw new AssertionError();
+                if (ctInfo.mColorType == ImageInfo.CT_UNKNOWN) {
+                    assert false;
                 }
                 // Seems silly to add a color type if we don't support any flags on it
                 if (ctInfo.mFlags == 0) {
-                    throw new AssertionError();
+                    assert false;
                 }
                 // Make sure if we added any ExternalIOFormats we filled it out
                 for (ExternalIOFormat ioInfo : ctInfo.mExternalIOFormats) {
-                    if (ioInfo.mColorType == Core.ColorType.kUnknown) {
-                        throw new AssertionError();
+                    if (ioInfo.mColorType == ImageInfo.CT_UNKNOWN) {
+                        assert false;
                     }
                 }
             }
@@ -1176,13 +1201,54 @@ public final class GLCaps extends Caps {
     }
 
     public FormatInfo getFormatInfo(int format) {
-        return mFormatTable[glFormatToIndex(format)];
+        return mFormatTable[GLCore.glFormatToIndex(format)];
     }
 
     private void setColorTypeFormat(int colorType, int format) {
         assert mColorTypeToBackendFormat[colorType] == null;
-        assert glFormatIsSupported(format);
+        assert GLCore.glFormatIsSupported(format);
         mColorTypeToBackendFormat[colorType] = GLBackendFormat.make(format);
+    }
+
+    /**
+     * Modern OpenGL means OpenGL 4.5 is supported, so all of the following are supported:
+     * <ul>
+     *     <li>ARB_ES2_compatibility</li>
+     *     <li>ARB_get_program_binary</li>
+     *     <li>ARB_base_instance</li>
+     *     <li>ARB_texture_storage</li>
+     *     <li>ARB_internalformat_query</li>
+     *     <li>ARB_shading_language_420pack</li>
+     *     <li>ARB_invalidate_subdata</li>
+     *     <li>ARB_explicit_uniform_location</li>
+     *     <li>ARB_vertex_attrib_binding</li>
+     *     <li>ARB_ES3_compatibility</li>
+     *     <li>ARB_clear_texture</li>
+     *     <li>ARB_buffer_storage</li>
+     *     <li>ARB_enhanced_layouts</li>
+     *     <li>ARB_texture_barrier</li>
+     *     <li>ARB_direct_state_access</li>
+     * </ul>
+     * Arc 3D requires OpenGL 3.3 at least.
+     */
+    public boolean hasDSASupport() {
+        return mDSASupport;
+    }
+
+    public int getInvalidateBufferType() {
+        return mInvalidateBufferType;
+    }
+
+    public boolean hasDebugSupport() {
+        return mDebugSupport;
+    }
+
+    public boolean hasBaseInstanceSupport() {
+        return mBaseInstanceSupport;
+    }
+
+    public boolean hasBufferStorageSupport() {
+        return mBufferStorageSupport;
     }
 
     @Override
@@ -1246,7 +1312,7 @@ public final class GLCaps extends Caps {
             return 0;
         }
 
-        if (sampleCount == 1) {
+        if (sampleCount <= 1) {
             return formatInfo.mColorSampleCounts[0] == 1 ? 1 : 0;
         }
 
@@ -1317,7 +1383,7 @@ public final class GLCaps extends Caps {
     public long getSupportedWriteColorType(int dstColorType, BackendFormat dstFormat, int srcColorType) {
         // We first try to find a supported write pixels ColorType that matches the data's
         // srcColorType. If that doesn't exist we will use any supported ColorType.
-        int fallbackCT = Core.ColorType.kUnknown;
+        int fallbackCT = ImageInfo.CT_UNKNOWN;
         final FormatInfo formatInfo = getFormatInfo(dstFormat.getGLFormat());
         boolean foundSurfaceCT = false;
         long transferOffsetAlignment = 0;
@@ -1335,7 +1401,7 @@ public final class GLCaps extends Caps {
                         }
                         // Currently we just pick the first supported format that we find as our
                         // fallback.
-                        if (fallbackCT == Core.ColorType.kUnknown) {
+                        if (fallbackCT == ImageInfo.CT_UNKNOWN) {
                             fallbackCT = ioInfo.mColorType;
                         }
                     }
@@ -1380,15 +1446,15 @@ public final class GLCaps extends Caps {
     @Override
     protected long onSupportedReadColorType(int srcColorType, BackendFormat srcFormat, int dstColorType) {
         int compression = srcFormat.getCompressionType();
-        if (compression != Core.CompressionType.None) {
+        if (compression != ImageInfo.COMPRESSION_NONE) {
             return (DataUtils.compressionTypeIsOpaque(compression) ?
-                    Core.ColorType.kRGB_888x :
-                    Core.ColorType.kRGBA_8888); // alignment = 0
+                    ImageInfo.CT_RGB_888x :
+                    ImageInfo.CT_RGBA_8888); // alignment = 0
         }
 
         // We first try to find a supported read pixels ColorType that matches the requested
         // dstColorType. If that doesn't exist we will use any valid read pixels ColorType.
-        int fallbackColorType = Core.ColorType.kUnknown;
+        int fallbackColorType = ImageInfo.CT_UNKNOWN;
         long fallbackTransferOffsetAlignment = 0;
         FormatInfo formatInfo = getFormatInfo(srcFormat.getGLFormat());
         for (ColorTypeInfo ctInfo : formatInfo.mColorTypeInfos) {
@@ -1404,7 +1470,7 @@ public final class GLCaps extends Caps {
                         }
                         // Currently, we just pick the first supported format that we find as our
                         // fallback.
-                        if (fallbackColorType == Core.ColorType.kUnknown) {
+                        if (fallbackColorType == ImageInfo.CT_UNKNOWN) {
                             fallbackColorType = ioInfo.mColorType;
                             fallbackTransferOffsetAlignment = transferOffsetAlignment;
                         }
@@ -1443,6 +1509,13 @@ public final class GLCaps extends Caps {
     }
 
     /**
+     * Gets the default external format to use with glTex[Sub]Image... when the data pointer is null.
+     */
+    public int getFormatDefaultExternalFormat(int format) {
+        return getFormatInfo(format).mDefaultExternalFormat;
+    }
+
+    /**
      * Gets the default external type to use with glTex[Sub]Image... when the data pointer is null.
      */
     public int getFormatDefaultExternalType(int format) {
@@ -1474,9 +1547,49 @@ public final class GLCaps extends Caps {
         return mMaxTextureMaxAnisotropy;
     }
 
+    @Override
+    public String toString() {
+        return toString(true);
+    }
+
+    public String toString(boolean includeFormatTable) {
+        return "GLCaps{" +
+                "mProgramBinaryFormats=" + Arrays.toString(mProgramBinaryFormats) +
+                ", mMaxFragmentUniformVectors=" + mMaxFragmentUniformVectors +
+                ", mMaxTextureMaxAnisotropy=" + mMaxTextureMaxAnisotropy +
+                ", mSupportsProtected=" + mSupportsProtected +
+                ", mSkipErrorChecks=" + mSkipErrorChecks +
+                ", mMaxLabelLength=" + mMaxLabelLength +
+                ", mDebugSupport=" + mDebugSupport +
+                ", mBufferStorageSupport=" + mBufferStorageSupport +
+                ", mBaseInstanceSupport=" + mBaseInstanceSupport +
+                ", mDSASupport=" + mDSASupport +
+                ", mInvalidateBufferType=" + mInvalidateBufferType +
+                (includeFormatTable ? ", mFormatTable=" + Arrays.toString(mFormatTable) : "") +
+                ", mColorTypeToBackendFormat=" + Arrays.toString(mColorTypeToBackendFormat) +
+                ", mCompressionTypeToBackendFormat=" + Arrays.toString(mCompressionTypeToBackendFormat) +
+                ", mShaderCaps=" + mShaderCaps +
+                ", mAnisotropySupport=" + mAnisotropySupport +
+                ", mGpuTracingSupport=" + mGpuTracingSupport +
+                ", mConservativeRasterSupport=" + mConservativeRasterSupport +
+                ", mTransferPixelsToRowBytesSupport=" + mTransferPixelsToRowBytesSupport +
+                ", mMustSyncGpuDuringDiscard=" + mMustSyncGpuDuringDiscard +
+                ", mTextureBarrierSupport=" + mTextureBarrierSupport +
+                ", mDynamicStateArrayGeometryProcessorTextureSupport=" + mDynamicStateArrayGeometryProcessorTextureSupport +
+                ", mBlendEquationSupport=" + mBlendEquationSupport +
+                ", mMapBufferFlags=" + mMapBufferFlags +
+                ", mMaxRenderTargetSize=" + mMaxRenderTargetSize +
+                ", mMaxPreferredRenderTargetSize=" + mMaxPreferredRenderTargetSize +
+                ", mMaxVertexAttributes=" + mMaxVertexAttributes +
+                ", mMaxTextureSize=" + mMaxTextureSize +
+                ", mInternalMultisampleCount=" + mInternalMultisampleCount +
+                ", mMaxPushConstantsSize=" + mMaxPushConstantsSize +
+                '}';
+    }
+
     static class ExternalIOFormat {
 
-        int mColorType = Core.ColorType.kUnknown;
+        int mColorType = ImageInfo.CT_UNKNOWN;
 
         /**
          * The external format and type are to be used when uploading/downloading data using
@@ -1489,11 +1602,21 @@ public final class GLCaps extends Caps {
         int mExternalType = 0;
         int mExternalWriteFormat = 0;
         int mExternalReadFormat = 0;
+
+        @Override
+        public String toString() {
+            return "ExternalIOFormat{" +
+                    "mColorType=" + mColorType +
+                    ", mExternalType=" + mExternalType +
+                    ", mExternalWriteFormat=" + mExternalWriteFormat +
+                    ", mExternalReadFormat=" + mExternalReadFormat +
+                    '}';
+        }
     }
 
     static class ColorTypeInfo {
 
-        int mColorType = Core.ColorType.kUnknown;
+        int mColorType = ImageInfo.CT_UNKNOWN;
 
         public static final int
                 UPLOAD_DATA_FLAG = 0x1,
@@ -1525,6 +1648,17 @@ public final class GLCaps extends Caps {
                 }
             }
             return 0;
+        }
+
+        @Override
+        public String toString() {
+            return "ColorTypeInfo{" +
+                    "mColorType=" + mColorType +
+                    ", mFlags=0x" + Integer.toHexString(mFlags) +
+                    ", mReadSwizzle=" + Swizzle.toString(mReadSwizzle) +
+                    ", mWriteSwizzle=" + Swizzle.toString(mWriteSwizzle) +
+                    ", mExternalIOFormats=" + Arrays.toString(mExternalIOFormats) +
+                    '}';
         }
     }
 
@@ -1566,7 +1700,7 @@ public final class GLCaps extends Caps {
         int mDefaultExternalType = 0;
         // When the above two values are used to initialize a texture by uploading cleared data to
         // it the data should be of this color type.
-        int mDefaultColorType = Core.ColorType.kUnknown;
+        int mDefaultColorType = ImageInfo.CT_UNKNOWN;
 
         int[] mColorSampleCounts = {};
 
@@ -1597,6 +1731,21 @@ public final class GLCaps extends Caps {
                 }
             }
             return 0;
+        }
+
+        @Override
+        public String toString() {
+            return "FormatInfo{" +
+                    "mFlags=" + mFlags +
+                    ", mFormatType=" + mFormatType +
+                    ", mInternalFormatForTexture=" + mInternalFormatForTexture +
+                    ", mInternalFormatForRenderbuffer=" + mInternalFormatForRenderbuffer +
+                    ", mDefaultExternalFormat=" + mDefaultExternalFormat +
+                    ", mDefaultExternalType=" + mDefaultExternalType +
+                    ", mDefaultColorType=" + mDefaultColorType +
+                    ", mColorSampleCounts=" + Arrays.toString(mColorSampleCounts) +
+                    ", mColorTypeInfos=" + Arrays.toString(mColorTypeInfos) +
+                    '}';
         }
     }
 }

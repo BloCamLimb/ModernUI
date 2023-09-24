@@ -22,21 +22,31 @@ package icyllis.arc3d.engine;
 import javax.annotation.Nonnull;
 
 /**
- * This class is used to generate a generic pipeline cache key. The Vulkan backend
- * derive backend-specific versions which add additional information.
+ * This class is used to generate a generic pipeline cache key.
+ * Also used to lookup pipeline state objects in cache.
  */
-public final class PipelineDesc extends KeyBuilder {
+public final class PipelineDesc extends Key.Builder {
 
-    private int mBaseLength;
+    private int mShaderKeyLength;
 
     public PipelineDesc() {
     }
 
+    public PipelineDesc(PipelineDesc other) {
+        super(other);
+        mShaderKeyLength = other.mShaderKeyLength;
+    }
+
     /**
-     * @return the number of ints of the base key, without additional information
+     * Returns the number of ints of the base key, without additional information.
+     * The key in this range describes the shader module info. OpenGL has no additional
+     * information, but Vulkan has.
+     * <p>
+     * Because Vulkan encapsulates some states into an immutable structure, we have to
+     * collect additional information to form the cache key.
      */
-    public int getBaseLength() {
-        return mBaseLength;
+    public int getShaderKeyLength() {
+        return mShaderKeyLength;
     }
 
     /**
@@ -48,19 +58,19 @@ public final class PipelineDesc extends KeyBuilder {
      */
     @Nonnull
     public static PipelineDesc build(PipelineDesc desc, PipelineInfo info, Caps caps) {
-        desc.reset();
+        desc.clear();
         genKey(desc, info, caps);
-        desc.mBaseLength = desc.length();
+        desc.mShaderKeyLength = desc.size();
         return desc;
     }
 
     public static String describe(PipelineInfo info, Caps caps) {
-        StringKeyBuilder b = new StringKeyBuilder();
+        StringBuilder b = new StringBuilder();
         genKey(b, info, caps);
         return b.toString();
     }
 
-    static void genKey(KeyBuilder b,
+    static void genKey(Builder b,
                        PipelineInfo info,
                        Caps caps) {
         genGPKey(info.geomProc(), b);
@@ -81,7 +91,7 @@ public final class PipelineDesc extends KeyBuilder {
      * Shader code may be dependent on properties of the effect not placed in the key by the effect
      * (e.g. pixel format of textures used).
      */
-    static void genGPKey(GeometryProcessor geomProc, KeyBuilder b) {
+    static void genGPKey(GeometryProcessor geomProc, Builder b) {
         b.appendComment(geomProc.name());
         // Currently we allow 8 bits for the class id
         b.addBits(8, geomProc.classID(), "gpClassID");

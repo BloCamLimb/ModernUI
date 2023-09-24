@@ -25,7 +25,7 @@ import icyllis.arc3d.engine.BackendTexture;
 import javax.annotation.Nonnull;
 
 import static icyllis.arc3d.engine.Engine.BackendApi;
-import static icyllis.arc3d.vulkan.VkCore.*;
+import static icyllis.arc3d.vulkan.VKCore.*;
 import static org.lwjgl.vulkan.EXTImageDrmFormatModifier.VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
 
 public final class VkBackendTexture extends BackendTexture {

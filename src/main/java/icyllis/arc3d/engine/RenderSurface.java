@@ -27,15 +27,16 @@ import java.util.Objects;
 
 /**
  * Manages a wrapped {@link RenderTarget} on the client (no texture access).
+ * For example, the OpenGL default framebuffer (framebuffer id = 0).
  */
 public final class RenderSurface extends RefCnt implements Surface {
 
     @SharedPtr
     private RenderTarget mRenderTarget;
 
-    RenderSurface(@SharedPtr RenderTarget target) {
-        assert (target != null && target.getTexture() == null);
-        mRenderTarget = target;
+    public RenderSurface(@SharedPtr RenderTarget fs) {
+        assert (fs != null && fs.getColorBuffer() == null);
+        mRenderTarget = fs;
     }
 
     @Override
@@ -66,9 +67,10 @@ public final class RenderSurface extends RefCnt implements Surface {
 
     @Override
     public int getSurfaceFlags() {
-        return mRenderTarget.getSurfaceFlags();
+        return mRenderTarget.getSurfaceFlags() | FLAG_RENDERABLE;
     }
 
+    @Nonnull
     @Override
     public RenderTarget getRenderTarget() {
         return Objects.requireNonNull(mRenderTarget, "Disposed");

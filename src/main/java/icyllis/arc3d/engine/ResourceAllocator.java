@@ -19,7 +19,6 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.DequeMultiMap;
 import icyllis.arc3d.core.SharedPtr;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
@@ -92,7 +91,7 @@ public final class ResourceAllocator {
     private final IntervalList mFinishedIntervals = new IntervalList();
 
     // Recently created/used textures
-    private final DequeMultiMap<TextureProxy, Register> mFreePool = new DequeMultiMap<>();
+    private final ArrayDequeMultimap<TextureProxy, Register> mFreePool = new ArrayDequeMultimap<>();
 
     private final Object2ObjectOpenHashMap<Object, Register> mUniqueKeyRegisters =
             new Object2ObjectOpenHashMap<>();
@@ -410,7 +409,7 @@ public final class ResourceAllocator {
                 texture = Resource.create(mTexture);
             }
             assert (texture != null);
-            assert (proxy.mSurfaceFlags & SurfaceFlags.Renderable) == 0 || texture.getRenderTarget() != null;
+            assert (proxy.mSurfaceFlags & Surface.FLAG_RENDERABLE) == 0 || texture.getRenderTarget() != null;
 
             // Make texture budgeted if this proxy is budgeted.
             if (proxy.isBudgeted() && texture.getBudgetType() != BudgetType.Budgeted) {

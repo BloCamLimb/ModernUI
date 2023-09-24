@@ -51,8 +51,8 @@ public final class GLAttachment extends Attachment {
         mFormat = format;
 
         // color buffers may be compressed
-        mMemorySize = DataUtils.numBlocks(glFormatCompressionType(format), width, height) *
-                glFormatBytesPerBlock(format) * sampleCount;
+        mMemorySize = DataUtils.numBlocks(GLCore.glFormatCompressionType(format), width, height) *
+                GLCore.glFormatBytesPerBlock(format) * sampleCount;
 
         registerWithCache(true);
     }
@@ -63,26 +63,28 @@ public final class GLAttachment extends Attachment {
                                            int width, int height,
                                            int sampleCount,
                                            int format) {
-        assert sampleCount > 0 && glFormatStencilBits(format) > 0;
-        int renderbuffer = glCreateRenderbuffers();
+        assert sampleCount > 0 && GLCore.glFormatStencilBits(format) > 0;
+
+        int renderbuffer = glGenRenderbuffers();
         if (renderbuffer == 0) {
             return null;
         }
+        glBindRenderbuffer(GL_RENDERBUFFER, renderbuffer);
         if (server.getCaps().skipErrorChecks()) {
             // GL has a concept of MSAA rasterization with a single sample, but we do not.
             if (sampleCount > 1) {
-                glNamedRenderbufferStorageMultisample(renderbuffer, sampleCount, format, width, height);
+                glRenderbufferStorageMultisample(GL_RENDERBUFFER, sampleCount, format, width, height);
             } else {
                 // glNamedRenderbufferStorage is equivalent to calling glNamedRenderbufferStorageMultisample
                 // with the samples set to zero. But we don't think sampleCount=1 is multisampled.
-                glNamedRenderbufferStorage(renderbuffer, format, width, height);
+                glRenderbufferStorage(GL_RENDERBUFFER, format, width, height);
             }
         } else {
             glClearErrors();
             if (sampleCount > 1) {
-                glNamedRenderbufferStorageMultisample(renderbuffer, sampleCount, format, width, height);
+                glRenderbufferStorageMultisample(GL_RENDERBUFFER, sampleCount, format, width, height);
             } else {
-                glNamedRenderbufferStorage(renderbuffer, format, width, height);
+                glRenderbufferStorage(GL_RENDERBUFFER, format, width, height);
             }
             if (glGetError() != GL_NO_ERROR) {
                 glDeleteRenderbuffers(renderbuffer);
@@ -95,21 +97,23 @@ public final class GLAttachment extends Attachment {
 
     @Nullable
     @SharedPtr
-    public static GLAttachment makeMSAA(GLServer server,
-                                        int width, int height,
-                                        int sampleCount,
-                                        int format) {
+    public static GLAttachment makeColor(GLServer server,
+                                         int width, int height,
+                                         int sampleCount,
+                                         int format) {
         assert sampleCount > 1;
-        int renderbuffer = glCreateRenderbuffers();
+
+        int renderbuffer = glGenRenderbuffers();
         if (renderbuffer == 0) {
             return null;
         }
+        glBindRenderbuffer(GL_RENDERBUFFER, renderbuffer);
         int internalFormat = server.getCaps().getRenderbufferInternalFormat(format);
         if (server.getCaps().skipErrorChecks()) {
-            glNamedRenderbufferStorageMultisample(renderbuffer, sampleCount, internalFormat, width, height);
+            glRenderbufferStorageMultisample(GL_RENDERBUFFER, sampleCount, internalFormat, width, height);
         } else {
             glClearErrors();
-            glNamedRenderbufferStorageMultisample(renderbuffer, sampleCount, internalFormat, width, height);
+            glRenderbufferStorageMultisample(GL_RENDERBUFFER, sampleCount, internalFormat, width, height);
             if (glGetError() != GL_NO_ERROR) {
                 glDeleteRenderbuffers(renderbuffer);
                 return null;
@@ -163,5 +167,17 @@ public final class GLAttachment extends Attachment {
     @Override
     protected void onDiscard() {
         mRenderbuffer = 0;
+    }
+
+    @Override
+    public String toString() {
+        return "GLAttachment{" +
+                "mRenderbuffer=" + mRenderbuffer +
+                ", mFormat=" + glFormatName(mFormat) +
+                ", mMemorySize=" + mMemorySize +
+                ", mWidth=" + mWidth +
+                ", mHeight=" + mHeight +
+                ", mSampleCount=" + mSampleCount +
+                '}';
     }
 }

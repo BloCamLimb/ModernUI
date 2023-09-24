@@ -32,20 +32,20 @@ import static icyllis.arc3d.opengl.GLCore.*;
 public final class GLRenderTarget extends RenderTarget {
 
     /**
-     * The render target format for all color attachments.
+     * The GL format for all color attachments.
      */
     private final int mFormat;
 
     // the main color buffer, raw ptr
-    // if this texture is deleted, then this render target is deleted as well
-    // always null for wrapped render targets
-    private GLTexture mTexture;
+    // if this texture is deleted, then this framebuffer set is deleted as well
+    // null for wrapped render targets
+    private GLTexture mColorBuffer;
     // the renderbuffer used as MSAA color buffer
-    // always null for wrapped render targets
+    // null for wrapped render targets
     @SharedPtr
-    private GLAttachment mMSAAColorBuffer;
+    private GLAttachment mMultisampleColorBuffer;
 
-    private int mRenderFramebuffer;
+    private int mSampleFramebuffer;
     private int mResolveFramebuffer;
 
     // if we need bind stencil buffers on next framebuffer bind call
@@ -57,26 +57,23 @@ public final class GLRenderTarget extends RenderTarget {
     private BackendFormat mBackendFormat;
     private BackendRenderTarget mBackendRenderTarget;
 
-    // Constructor for instances created by ourselves. (texture access)
+    // Constructor for instances created by our engine. (has texture access)
     GLRenderTarget(GLServer server,
                    int width, int height,
                    int format,
                    int sampleCount,
                    int framebuffer,
                    int msaaFramebuffer,
-                   GLTexture texture,
+                   GLTexture colorBuffer,
                    GLAttachment msaaColorBuffer) {
         super(server, width, height, sampleCount);
         assert (sampleCount > 0);
-        int resolveFramebuffer = framebuffer;
-        framebuffer = sampleCount > 1 ? msaaFramebuffer : framebuffer;
-        assert sampleCount > 1 && framebuffer != resolveFramebuffer || sampleCount == 1;
-        assert (framebuffer != 0 && resolveFramebuffer != 0);
         mFormat = format;
-        mRenderFramebuffer = framebuffer;
-        mResolveFramebuffer = resolveFramebuffer;
+        mSampleFramebuffer = sampleCount > 1 ? msaaFramebuffer : framebuffer;
+        mResolveFramebuffer = framebuffer;
         mOwnership = true;
-        mTexture = texture;
+        mColorBuffer = colorBuffer;
+        mMultisampleColorBuffer = msaaColorBuffer;
     }
 
     // Constructor for instances wrapping backend objects. (no texture access)
@@ -91,12 +88,12 @@ public final class GLRenderTarget extends RenderTarget {
         assert (sampleCount > 0);
         assert (framebuffer != 0 || !ownership);
         mFormat = format;
-        mRenderFramebuffer = framebuffer;
-        mResolveFramebuffer = framebuffer;
+        mSampleFramebuffer = framebuffer;
+        mResolveFramebuffer = 0;
         mOwnership = ownership;
         mStencilBuffer = stencilBuffer; // std::move
         if (framebuffer == 0) {
-            mSurfaceFlags |= Engine.SurfaceFlags.GL_WRAP_DEFAULT_FB;
+            mSurfaceFlags |= Surface.FLAG_GL_WRAP_DEFAULT_FB;
         }
     }
 
@@ -159,8 +156,8 @@ public final class GLRenderTarget extends RenderTarget {
         return mFormat;
     }
 
-    public int getRenderFramebuffer() {
-        return mRenderFramebuffer;
+    public int getSampleFramebuffer() {
+        return mSampleFramebuffer;
     }
 
     public int getResolveFramebuffer() {
@@ -177,14 +174,14 @@ public final class GLRenderTarget extends RenderTarget {
         if (!mRebindStencilBuffer) {
             return;
         }
-        int framebuffer = mRenderFramebuffer;
+        int framebuffer = mSampleFramebuffer;
         GLAttachment stencilBuffer = (GLAttachment) mStencilBuffer;
         if (stencilBuffer != null) {
             glNamedFramebufferRenderbuffer(framebuffer,
                     GL_STENCIL_ATTACHMENT,
                     GL_RENDERBUFFER,
                     stencilBuffer.getRenderbufferID());
-            if (glFormatIsPackedDepthStencil(stencilBuffer.getFormat())) {
+            if (GLCore.glFormatIsPackedDepthStencil(stencilBuffer.getFormat())) {
                 glNamedFramebufferRenderbuffer(framebuffer,
                         GL_DEPTH_ATTACHMENT,
                         GL_RENDERBUFFER,
@@ -218,13 +215,8 @@ public final class GLRenderTarget extends RenderTarget {
     }
 
     @Override
-    public int getSurfaceFlags() {
-        return 0;
-    }
-
-    @Override
-    public GLTexture getTexture() {
-        return mTexture;
+    public GLTexture getColorBuffer() {
+        return mColorBuffer;
     }
 
     @Nonnull
@@ -232,7 +224,7 @@ public final class GLRenderTarget extends RenderTarget {
     public BackendRenderTarget getBackendRenderTarget() {
         if (mBackendRenderTarget == null) {
             final GLFramebufferInfo info = new GLFramebufferInfo();
-            info.mFramebuffer = mRenderFramebuffer;
+            info.mFramebuffer = mSampleFramebuffer;
             info.mFormat = mFormat;
             mBackendRenderTarget = new GLBackendRenderTarget(
                     getWidth(), getHeight(), getSampleCount(), getStencilBits(), info);
@@ -268,27 +260,26 @@ public final class GLRenderTarget extends RenderTarget {
     protected void deallocate() {
         super.deallocate();
         if (mOwnership) {
-            if (mRenderFramebuffer != 0) {
-                glDeleteFramebuffers(mRenderFramebuffer);
+            if (mSampleFramebuffer != 0) {
+                glDeleteFramebuffers(mSampleFramebuffer);
             }
-            if (mRenderFramebuffer != mResolveFramebuffer) {
+            if (mSampleFramebuffer != mResolveFramebuffer) {
                 assert (mResolveFramebuffer != 0);
                 glDeleteFramebuffers(mResolveFramebuffer);
             }
         }
-        mRenderFramebuffer = 0;
+        mSampleFramebuffer = 0;
         mResolveFramebuffer = 0;
     }
 
     @Override
     public String toString() {
         return "GLRenderTarget{" +
-                "mRenderFramebuffer=" + mRenderFramebuffer +
+                "mRenderFramebuffer=" + mSampleFramebuffer +
                 ", mResolveFramebuffer=" + mResolveFramebuffer +
-                ", mFormat=" + glFormatName(mFormat) +
+                ", mFormat=" + GLCore.glFormatName(mFormat) +
                 ", mSampleCount=" + getSampleCount() +
-                ", mTexture=" + mTexture +
-                ", mMSAAColorBuffer=" + mMSAAColorBuffer +
+                ", mMultisampleColorBuffer=" + mMultisampleColorBuffer +
                 ", mOwnership=" + mOwnership +
                 ", mBackendFormat=" + mBackendFormat +
                 '}';

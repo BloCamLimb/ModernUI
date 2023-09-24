@@ -31,7 +31,7 @@ import static org.lwjgl.vulkan.KHRSwapchain.*;
 /**
  * Provides native interfaces of Vulkan 1.1 core and user-defined utilities.
  */
-public final class VkCore extends VK11 {
+public final class VKCore extends VK11 {
 
     /**
      * Runtime assertion against a {@code VkResult} value, throws an exception
@@ -235,6 +235,6 @@ public final class VkCore extends VK11 {
         };
     }
 
-    private VkCore() {
+    private VKCore() {
     }
 }

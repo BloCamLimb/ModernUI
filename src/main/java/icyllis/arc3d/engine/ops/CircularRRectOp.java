@@ -20,9 +20,10 @@
 package icyllis.arc3d.engine.ops;
 
 import icyllis.arc3d.core.Rect2f;
-import icyllis.arc3d.core.SLType;
+import icyllis.arc3d.core.SLDataType;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.shading.*;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 
@@ -35,8 +36,8 @@ public final class CircularRRectOp extends MeshDrawOp {
     }
 
     @Override
-    protected PipelineInfo onCreatePipelineInfo(SurfaceProxyView writeView,
-                                                int pipelineFlags) {
+    protected @NotNull PipelineInfo onCreatePipelineInfo(SurfaceProxyView writeView,
+                                                         int pipelineFlags) {
         return null;
     }
 
@@ -52,7 +53,7 @@ public final class CircularRRectOp extends MeshDrawOp {
 
     private static class Processor extends GeometryProcessor {
 
-        private static final Attribute POS = new Attribute("Pos", VertexAttribType.kFloat2, SLType.kFloat2);
+        private static final Attribute POS = new Attribute("Pos", VertexAttribType.kFloat2, SLDataType.kFloat2);
 
         public Processor() {
             super(CircularRRect_Geom_ClassID);
@@ -70,7 +71,7 @@ public final class CircularRRectOp extends MeshDrawOp {
         }
 
         @Override
-        public void addToKey(KeyBuilder b) {
+        public void addToKey(Key.Builder b) {
 
         }
 
@@ -110,12 +111,12 @@ public final class CircularRRectOp extends MeshDrawOp {
                 String sizeUniformName = uniformHandler.getUniformName(
                         mSizeUniform = uniformHandler.addUniform(geomProc,
                                 Engine.ShaderFlags.kFragment,
-                                SLType.kFloat2,
+                                SLDataType.kFloat2,
                                 "Size"));
                 String radiusUniformName = uniformHandler.getUniformName(
                         mRadiusUniform = uniformHandler.addUniform(geomProc,
                                 Engine.ShaderFlags.kFragment,
-                                SLType.kFloat,
+                                SLDataType.kFloat,
                                 "Radius"));
                 fragBuilder.codeAppendf("""
                                 vec2 q = abs(p) - %1$s + %2$s;

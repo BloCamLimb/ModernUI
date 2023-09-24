@@ -44,7 +44,7 @@ public final class DeferredListRecorder implements AutoCloseable {
     public DeferredListRecorder(SurfaceCharacterization c) {
         mCharacterization = c;
         if (c != null) {
-            mContext = RecordingContext.makeDeferred(c.getContextInfo());
+            mContext = RecordingContext.makeRecording(c.getContextInfo());
         }
     }
 

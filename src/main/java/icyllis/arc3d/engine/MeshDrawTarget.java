@@ -54,6 +54,18 @@ public interface MeshDrawTarget {
     long makeInstanceSpace(Mesh mesh);
 
     /**
+     * Makes space for index data. The returned pointer is the location where index data
+     * should be written. On return the buffer that will hold the data as well as an offset into
+     * the buffer (in 'ushort' units) where the data will be placed.
+     * <p>
+     * This method requires {@link Mesh#getIndexCount()} as
+     * arguments and {@link Mesh#setIndexBuffer(Buffer, int, int)} as results.
+     *
+     * @return may NULL if failed
+     */
+    long makeIndexSpace(Mesh mesh);
+
+    /**
      * Helper method.
      *
      * @return may null if failed
@@ -70,4 +82,13 @@ public interface MeshDrawTarget {
      */
     @Nullable
     ByteBuffer makeInstanceWriter(Mesh mesh);
+
+    /**
+     * Helper method.
+     *
+     * @return may null if failed
+     * @see #makeIndexSpace(Mesh)
+     */
+    @Nullable
+    ByteBuffer makeIndexWriter(Mesh mesh);
 }
