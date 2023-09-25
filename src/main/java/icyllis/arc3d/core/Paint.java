@@ -342,7 +342,7 @@ public class Paint {
      *
      * @return the paint's color (and alpha).
      */
-    public final int getColor() {
+    public int getColor() {
         return ((int) (mA * 255.0f + 0.5f) << 24) |
                 ((int) (mR * 255.0f + 0.5f) << 16) |
                 ((int) (mG * 255.0f + 0.5f) << 8) |
@@ -356,7 +356,7 @@ public class Paint {
      *
      * @param color the new color (including alpha) to set in the paint.
      */
-    public final void setColor(int color) {
+    public void setColor(int color) {
         mR = ((color >> 16) & 0xff) / 255.0f;
         mG = ((color >> 8) & 0xff) / 255.0f;
         mB = (color & 0xff) / 255.0f;
@@ -368,7 +368,7 @@ public class Paint {
      *
      * @return alpha ranging from zero, fully transparent, to one, fully opaque
      */
-    public final float getAlphaF() {
+    public float getAlphaF() {
         return mA;
     }
 
@@ -379,7 +379,7 @@ public class Paint {
      *
      * @return the alpha component of the paint's color.
      */
-    public final int getAlpha() {
+    public int getAlpha() {
         return (int) (mA * 255.0f + 0.5f);
     }
 
@@ -391,7 +391,7 @@ public class Paint {
      *
      * @param a the alpha component [0..1] of the paint's color
      */
-    public final void setAlphaF(float a) {
+    public void setAlphaF(float a) {
         mA = MathUtil.clamp(a, 0.0f, 1.0f);
     }
 
@@ -401,7 +401,7 @@ public class Paint {
      *
      * @param a the alpha component [0..255] of the paint's color
      */
-    public final void setAlpha(int a) {
+    public void setAlpha(int a) {
         mA = MathUtil.clamp(a / 255.0f, 0.0f, 1.0f);
     }
 
@@ -515,7 +515,7 @@ public class Paint {
      * @param g the new green component (0..255) of the paint's color.
      * @param b the new blue component (0..255) of the paint's color.
      */
-    public final void setARGB(int a, int r, int g, int b) {
+    public void setARGB(int a, int r, int g, int b) {
         mR = MathUtil.clamp(r / 255.0f, 0.0f, 1.0f);
         mG = MathUtil.clamp(g / 255.0f, 0.0f, 1.0f);
         mB = MathUtil.clamp(b / 255.0f, 0.0f, 1.0f);
@@ -530,7 +530,7 @@ public class Paint {
      * @param b the new blue component (0..1) of the paint's color.
      * @param a the new alpha component (0..1) of the paint's color.
      */
-    public final void setARGB(float a, float r, float g, float b) {
+    public void setARGB(float a, float r, float g, float b) {
         mR = MathUtil.clamp(r, 0.0f, 1.0f);
         mG = MathUtil.clamp(g, 0.0f, 1.0f);
         mB = MathUtil.clamp(b, 0.0f, 1.0f);
@@ -600,7 +600,7 @@ public class Paint {
      * @see #setStyle(int)
      */
     @Style
-    public final int getStyle() {
+    public int getStyle() {
         return mFlags & STYLE_MASK;
     }
 
@@ -610,7 +610,7 @@ public class Paint {
      *
      * @param style the new style to set in the paint
      */
-    public final void setStyle(@Style int style) {
+    public void setStyle(@Style int style) {
         mFlags = (mFlags & ~STYLE_MASK) | (style & STYLE_MASK);
     }
 
@@ -634,7 +634,7 @@ public class Paint {
      * @see #setStrokeCap(int)
      */
     @Cap
-    public final int getStrokeCap() {
+    public int getStrokeCap() {
         return mFlags & CAP_MASK;
     }
 
@@ -645,7 +645,7 @@ public class Paint {
      *
      * @param cap set the paint's line cap style
      */
-    public final void setStrokeCap(@Cap int cap) {
+    public void setStrokeCap(@Cap int cap) {
         mFlags = (mFlags & ~CAP_MASK) | (cap & CAP_MASK);
     }
 
@@ -656,7 +656,7 @@ public class Paint {
      * @see #setStrokeJoin(int)
      */
     @Join
-    public final int getStrokeJoin() {
+    public int getStrokeJoin() {
         return mFlags & JOIN_MASK;
     }
 
@@ -665,7 +665,7 @@ public class Paint {
      *
      * @param join set the paint's Join
      */
-    public final void setStrokeJoin(@Join int join) {
+    public void setStrokeJoin(@Join int join) {
         mFlags = (mFlags & ~JOIN_MASK) | (join & JOIN_MASK);
     }
 
@@ -695,7 +695,7 @@ public class Paint {
      * @return the paint's stroke width; zero for hairline, greater than zero for pen thickness
      * @see #setStrokeWidth(float)
      */
-    public final float getStrokeWidth() {
+    public float getStrokeWidth() {
         return mWidth;
     }
 
@@ -706,7 +706,7 @@ public class Paint {
      *
      * @param width set the paint's stroke width; zero for hairline, greater than zero for pen thickness
      */
-    public final void setStrokeWidth(float width) {
+    public void setStrokeWidth(float width) {
         mWidth = Math.max(width, 0);
     }
 
@@ -717,7 +717,7 @@ public class Paint {
      * @return zero and greater miter limit
      * @see #setStrokeMiter(float)
      */
-    public final float getStrokeMiter() {
+    public float getStrokeMiter() {
         return mMiterLimit;
     }
 
@@ -727,7 +727,7 @@ public class Paint {
      *
      * @param miter zero and greater miter limit
      */
-    public final void setStrokeMiter(float miter) {
+    public void setStrokeMiter(float miter) {
         mMiterLimit = Math.max(miter, 0);
     }
 
@@ -873,7 +873,7 @@ public class Paint {
      * @return Shader if previously set, null otherwise
      */
     @Nullable
-    public final Shader getShader() {
+    public Shader getShader() {
         return mShader;
     }
 
@@ -882,7 +882,7 @@ public class Paint {
      *
      * @param shader how geometry is filled with color; if null, solid color is used instead
      */
-    public final void setShader(@Nullable Shader shader) {
+    public void setShader(@Nullable Shader shader) {
         mShader = shader;
     }
 
@@ -892,7 +892,7 @@ public class Paint {
      * @return ColorFilter if previously set, null otherwise
      */
     @Nullable
-    public final ColorFilter getColorFilter() {
+    public ColorFilter getColorFilter() {
         return mColorFilter;
     }
 
@@ -901,7 +901,7 @@ public class Paint {
      *
      * @param colorFilter ColorFilter to apply to subsequent draw
      */
-    public final void setColorFilter(@Nullable ColorFilter colorFilter) {
+    public void setColorFilter(@Nullable ColorFilter colorFilter) {
         mColorFilter = colorFilter;
     }
 
@@ -912,6 +912,19 @@ public class Paint {
      */
     public final boolean isSrcOver() {
         return mBlender == null || mBlender.asBlendMode() == BlendMode.SRC_OVER;
+    }
+
+    /**
+     * Returns the user-supplied blend function, if one has been set.
+     * <p>
+     * A null blender signifies the default {@link BlendMode#SRC_OVER} behavior.
+     *
+     * @return the blender assigned to this paint, otherwise null
+     * @see #setBlender(Blender)
+     */
+    @Nullable
+    public final Blender getBlender() {
+        return mBlender;
     }
 
     /**
@@ -932,25 +945,12 @@ public class Paint {
     }
 
     /**
-     * Returns the user-supplied blend function, if one has been set.
-     * <p>
-     * A null blender signifies the default {@link BlendMode#SRC_OVER} behavior.
-     *
-     * @return the blender assigned to this paint, otherwise null
-     * @see #setBlender(Blender)
-     */
-    @Nullable
-    public final Blender getBlender() {
-        return mBlender;
-    }
-
-    /**
      * Returns MaskFilter if set, or null.
      *
      * @return MaskFilter if previously set, null otherwise
      */
     @Nullable
-    public final MaskFilter getMaskFilter() {
+    public MaskFilter getMaskFilter() {
         return mMaskFilter;
     }
 
@@ -960,7 +960,7 @@ public class Paint {
      *
      * @param maskFilter modifies clipping mask generated from drawn geometry
      */
-    public final void setMaskFilter(@Nullable MaskFilter maskFilter) {
+    public void setMaskFilter(@Nullable MaskFilter maskFilter) {
         mMaskFilter = maskFilter;
     }
 
@@ -970,7 +970,7 @@ public class Paint {
      * @return ImageFilter if previously set, null otherwise
      */
     @Nullable
-    public final ImageFilter getImageFilter() {
+    public ImageFilter getImageFilter() {
         return mImageFilter;
     }
 
@@ -980,7 +980,7 @@ public class Paint {
      *
      * @param imageFilter how Image is sampled when transformed
      */
-    public final void setImageFilter(@Nullable ImageFilter imageFilter) {
+    public void setImageFilter(@Nullable ImageFilter imageFilter) {
         mImageFilter = imageFilter;
     }
 

@@ -66,6 +66,11 @@ public class DrawingManager {
         return mContext;
     }
 
+    // for test
+    public OpFlushState getFlushState() {
+        return mFlushState;
+    }
+
     public boolean flush(FlushInfo info) {
         if (mFlushing || mContext.isDiscarded()) {
             if (info != null) {
