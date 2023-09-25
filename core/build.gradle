@@ -1,10 +1,23 @@
 import org.gradle.internal.os.OperatingSystem
 
+plugins {
+    id 'com.github.johnrengelman.shadow' version '7.0.0'
+}
+
 archivesBaseName = 'ModernUI'
+
+configurations {
+    shadow
+}
 
 dependencies {
     implementation "com.ibm.icu:icu4j:${icu4j_version}"
     implementation "it.unimi.dsi:fastutil:${fastutil_version}"
+
+    implementation("icyllis.arc3d:Arc3D")
+    shadow("icyllis.arc3d:Arc3D") {
+        transitive = false
+    }
 
     implementation "com.github.ben-manes.caffeine:caffeine:${caffeine_version}"
 
@@ -54,6 +67,11 @@ dependencies {
     testAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.35'
 }
 
+shadowJar {
+    archiveClassifier.set("shadow")
+    configurations = [project.configurations.shadow]
+}
+
 tasks.register('copyDependencies', Copy) {
     from configurations.default
     into "${buildDir}/output/libs"
@@ -76,7 +94,7 @@ jar {
 publishing {
     publications {
         mavenCore(MavenPublication) {
-            artifact(jar.archiveFile) {
+            artifact(shadowJar.archiveFile) {
                 builtBy build
             }
             artifact(sourcesJar.archiveFile) {

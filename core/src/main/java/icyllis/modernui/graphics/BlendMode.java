@@ -215,5 +215,7 @@ public enum BlendMode {
     COLOR,
     LUMINOSITY;
 
-    static final BlendMode[] VALUES = values();
+    static final BlendMode[] BLEND_MODES = values();
+
+    final icyllis.arc3d.core.BlendMode mBlendMode = icyllis.arc3d.core.BlendMode.mode(ordinal());
 }

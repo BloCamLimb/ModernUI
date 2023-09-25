@@ -256,7 +256,7 @@ public class Window implements AutoCloseable {
                 images.position(i);
                 images.width(icon.getWidth());
                 images.height(icon.getHeight());
-                memPutAddress(images.address() + GLFWImage.PIXELS, icon.getPixels());
+                memPutAddress(images.address() + GLFWImage.PIXELS, icon.getAddress());
             }
             images.flip();
             glfwSetWindowIcon(mHandle, images);

@@ -20,7 +20,7 @@ package icyllis.modernui.resources;
 
 import icyllis.modernui.R;
 import icyllis.modernui.graphics.Color;
-import icyllis.arc3d.core.MathUtil;
+import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.StateSet;
 

@@ -57,3 +57,12 @@ dependencies {
     // apply other Modern UI modules (optional)
 }
 ```
+
+#### Building Modern UI
+The `master` branch holds the latest release version of Modern UI, while `dev` branch holds
+the latest snapshot version of Modern UI. Others are archived branches for historical versions.
+When building or contributing to Modern UI, you should always check out the `dev` branch.
+
+Modern UI requires the latest [Arc 3D](https://github.com/BloCamLimb/Arc3D) codebase to build.
+You must clone `Arc3D` into the same parent directory of `ModernUI` and ensure it's up-to-date.
+Modern UI core jar will include all the Arc 3D code, via `shadow` plugin.

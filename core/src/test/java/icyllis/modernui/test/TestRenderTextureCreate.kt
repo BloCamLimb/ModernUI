@@ -45,7 +45,7 @@ fun main() {
     val window = MainWindow.initialize("ProxyWindow", 16, 16)
     window.makeCurrent()
     check(Core.initOpenGL()) { "Failed to initialize OpenGL" }
-    GLCore.setupDebugCallback()
+    Core.glSetupDebugCallback()
 
     val dContext = Core.requireDirectContext()
 

@@ -54,7 +54,7 @@ public class RenderProperties {
 
     private boolean mForceToLayer = false;
     private int mLayerAlpha;
-    private int mLayerMode = -1;
+    private BlendMode mLayerMode = null;
 
     private int mLeft = 0, mTop = 0, mRight = 0, mBottom = 0;
     private int mWidth = 0, mHeight = 0;
@@ -200,7 +200,8 @@ public class RenderProperties {
             mLayerAlpha = alpha;
             changed = true;
         }
-        var mode = Paint.getBlendModeDirect(paint);
+        // custom blender is not supported here
+        var mode = paint != null ? paint.getBlendMode() : BlendMode.SRC_OVER;
         if (mLayerMode != mode) {
             mLayerMode = mode;
             changed = true;
@@ -233,7 +234,7 @@ public class RenderProperties {
      *
      * @return the layer's blend mode
      */
-    public int getLayerBlendMode() {
+    public BlendMode getLayerBlendMode() {
         return mLayerMode;
     }
 

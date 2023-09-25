@@ -18,16 +18,19 @@
 
 package icyllis.modernui.core;
 
+import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.engine.*;
+import icyllis.arc3d.opengl.GLCaps;
 import icyllis.arc3d.opengl.GLCore;
 import icyllis.modernui.annotation.*;
-import icyllis.modernui.graphics.RefCnt;
 import org.apache.logging.log4j.Level;
 import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
+import org.lwjgl.opengl.*;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.system.Platform;
+import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
 import java.io.*;
 import java.lang.ref.Cleaner;
@@ -40,7 +43,10 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 
+import static icyllis.arc3d.opengl.GLCore.*;
 import static icyllis.modernui.ModernUI.*;
+import static org.lwjgl.opengl.AMDDebugOutput.glDebugMessageCallbackAMD;
+import static org.lwjgl.opengl.ARBDebugOutput.glDebugMessageCallbackARB;
 import static org.lwjgl.system.MemoryUtil.*;
 
 /**
@@ -211,6 +217,102 @@ public final class Core {
 
         LOGGER.debug(MARKER, "OpenGL caps: {}", dContext.getCaps());
         return true;
+    }
+
+    @RenderThread
+    public static void glSetupDebugCallback() {
+
+        GLCapabilities caps = GL.getCapabilities();
+
+        if (glGetPointer(GL_DEBUG_CALLBACK_FUNCTION) == NULL) {
+            if (caps.OpenGL43 || caps.GL_KHR_debug) {
+                LOGGER.debug(MARKER, "Using OpenGL 4.3 for debug logging");
+                glDebugMessageCallback(Core::glDebugMessage, NULL);
+                glEnable(GL_DEBUG_OUTPUT);
+            } else if (caps.GL_ARB_debug_output) {
+                LOGGER.debug(MARKER, "Using ARB_debug_output for debug logging");
+                GLDebugMessageARBCallback proc = new GLDebugMessageARBCallback() {
+                    @Override
+                    public void invoke(int source, int type, int id, int severity, int length, long message,
+                                       long userParam) {
+                        LOGGER.info(MARKER, "0x{}[{},{},{}]: {}", Integer.toHexString(id),
+                                getSourceARB(source), getTypeARB(type), getSeverityARB(severity),
+                                GLDebugMessageARBCallback.getMessage(length, message));
+                    }
+                };
+                glDebugMessageCallbackARB(proc, NULL);
+            } else if (caps.GL_AMD_debug_output) {
+                LOGGER.debug(MARKER, "Using AMD_debug_output for debug logging");
+                GLDebugMessageAMDCallback proc = new GLDebugMessageAMDCallback() {
+                    @Override
+                    public void invoke(int id, int category, int severity, int length, long message,
+                                       long userParam) {
+                        LOGGER.info(MARKER, "0x{}[{},{}]: {}", Integer.toHexString(id),
+                                getCategoryAMD(category), getSeverityAMD(severity),
+                                GLDebugMessageAMDCallback.getMessage(length, message));
+                    }
+                };
+                glDebugMessageCallbackAMD(proc, NULL);
+            } else {
+                LOGGER.debug(MARKER, "No debug callback function was used...");
+            }
+        } else {
+            LOGGER.debug(MARKER, "The debug callback function is already set.");
+        }
+    }
+
+    public static void glDebugMessage(int source, int type, int id, int severity, int length, long message,
+                                      long userParam) {
+        switch (severity) {
+            case GL_DEBUG_SEVERITY_HIGH -> LOGGER.error(MARKER, "({}|{}|0x{}) {}",
+                    getDebugSource(source), getDebugType(type), Integer.toHexString(id),
+                    GLDebugMessageCallback.getMessage(length, message));
+            case GL_DEBUG_SEVERITY_MEDIUM -> LOGGER.warn(MARKER, "({}|{}|0x{}) {}",
+                    getDebugSource(source), getDebugType(type), Integer.toHexString(id),
+                    GLDebugMessageCallback.getMessage(length, message));
+            case GL_DEBUG_SEVERITY_LOW -> LOGGER.info(MARKER, "({}|{}|0x{}) {}",
+                    getDebugSource(source), getDebugType(type), Integer.toHexString(id),
+                    GLDebugMessageCallback.getMessage(length, message));
+            case GL_DEBUG_SEVERITY_NOTIFICATION -> LOGGER.debug(MARKER, "({}|{}|0x{}) {}",
+                    getDebugSource(source), getDebugType(type), Integer.toHexString(id),
+                    GLDebugMessageCallback.getMessage(length, message));
+        }
+    }
+
+    /**
+     * Show a dialog that lists unsupported extensions after initialized.
+     */
+    @RenderThread
+    public static void glShowCapsErrorDialog() {
+        Core.checkRenderThread();
+        if (GLCaps.MISSING_EXTENSIONS.isEmpty()) {
+            return;
+        }
+        final String glRenderer = glGetString(GL_RENDERER);
+        final String glVersion = glGetString(GL_VERSION);
+        new Thread(() -> {
+            String solution = "Please make sure you have up-to-date GPU drivers. " +
+                    "Also make sure Java applications run with the discrete GPU if you have multiple GPUs.";
+            String extensions = String.join("\n", GLCaps.MISSING_EXTENSIONS);
+            TinyFileDialogs.tinyfd_messageBox("Failed to launch Modern UI",
+                    "GPU: " + glRenderer + ", OpenGL: " + glVersion + ". " +
+                            "The following ARB extensions are required:\n" + extensions + "\n" + solution,
+                    "ok", "error", true);
+        }, "GL-Error-Dialog").start();
+    }
+
+    /**
+     * Resets states before rendering a new frame.
+     *
+     * @param window the window for rendering.
+     */
+    @RenderThread
+    public static void glResetFrame(@NonNull Window window) {
+        Core.checkRenderThread();
+
+        glViewport(0, 0, window.getWidth(), window.getHeight());
+
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 
     @RenderThread
@@ -425,7 +527,9 @@ public final class Core {
                     if (sUiThread == sRenderThread) {
                         sUiRecordingContext = RefCnt.create(sDirectContext);
                     } else {
-                        sUiRecordingContext = RecordingContext.makeRecording(sDirectContext);
+                        sUiRecordingContext = RecordingContext.makeRecording(
+                                sDirectContext.getThreadSafeProxy()
+                        );
                     }
                     Objects.requireNonNull(sUiRecordingContext);
                 } else {
