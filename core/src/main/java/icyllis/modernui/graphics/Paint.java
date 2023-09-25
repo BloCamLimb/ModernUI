@@ -18,6 +18,7 @@
 
 package icyllis.modernui.graphics;
 
+import icyllis.arc3d.core.*;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.text.FontPaint;
@@ -40,6 +41,59 @@ import java.lang.annotation.RetentionPolicy;
  */
 @SuppressWarnings({"MagicConstant", "unused"})
 public class Paint extends icyllis.arc3d.core.Paint {
+
+    /**
+     * Geometry drawn with this style will be filled, ignoring all
+     * stroke-related settings in the paint.
+     */
+    public static final int FILL = icyllis.arc3d.core.Paint.FILL;
+
+    /**
+     * Geometry drawn with this style will be stroked, respecting
+     * the stroke-related fields on the paint.
+     */
+    public static final int STROKE = icyllis.arc3d.core.Paint.STROKE;
+
+    /**
+     * Geometry (path) drawn with this style will be both filled and
+     * stroked at the same time, respecting the stroke-related fields on
+     * the paint. This shares all paint attributes; for instance, they
+     * are drawn with the same color. Use this to avoid hitting the same
+     * pixels twice with a stroke draw and a fill draw.
+     */
+    public static final int FILL_AND_STROKE = icyllis.arc3d.core.Paint.FILL_AND_STROKE;
+
+    /**
+     * The stroke ends with the path, and does not project beyond it.
+     */
+    public static final int CAP_BUTT = icyllis.arc3d.core.Paint.CAP_BUTT;
+
+    /**
+     * The stroke projects out as a semicircle, with the center at the
+     * end of the path.
+     */
+    public static final int CAP_ROUND = icyllis.arc3d.core.Paint.CAP_ROUND;
+
+    /**
+     * The stroke projects out as a square, with the center at the end
+     * of the path.
+     */
+    public static final int CAP_SQUARE = icyllis.arc3d.core.Paint.CAP_SQUARE;
+
+    /**
+     * The outer edges of a join meet at a sharp angle
+     */
+    public static final int JOIN_MITER = icyllis.arc3d.core.Paint.JOIN_MITER;
+
+    /**
+     * The outer edges of a join meet in a circular arc.
+     */
+    public static final int JOIN_ROUND = icyllis.arc3d.core.Paint.JOIN_ROUND;
+
+    /**
+     * The outer edges of a join meet with a straight line
+     */
+    public static final int JOIN_BEVEL = icyllis.arc3d.core.Paint.JOIN_BEVEL;
 
     @ApiStatus.Internal
     @MagicConstant(intValues = {
@@ -185,6 +239,274 @@ public class Paint extends icyllis.arc3d.core.Paint {
     }
 
     /**
+     * Return the paint's solid color in sRGB. Note that the color is a 32-bit value
+     * containing alpha as well as r,g,b. This 32-bit value is not premultiplied,
+     * meaning that its alpha can be any value, regardless of the values of r,g,b.
+     *
+     * @return the paint's color (and alpha).
+     */
+    @Override
+    public int getColor() {
+        return super.getColor();
+    }
+
+    /**
+     * Set the paint's solid color in sRGB. Note that the color is a 32-bit value
+     * containing alpha as well as r,g,b. This 32-bit value is not premultiplied,
+     * meaning that its alpha can be any value, regardless of the values of r,g,b.
+     *
+     * @param color the new color (including alpha) to set in the paint.
+     */
+    @Override
+    public void setColor(int color) {
+        super.setColor(color);
+    }
+
+    /**
+     * Helper to getColor() that just returns the color's alpha value. This is
+     * the same as calling getColor() >>> 24. It always returns a value between
+     * 0 (completely transparent) and 255 (completely opaque).
+     *
+     * @return the alpha component of the paint's color.
+     */
+    @Override
+    public int getAlpha() {
+        return super.getAlpha();
+    }
+
+    /**
+     * Helper to setColor(), that only assigns the color's alpha value,
+     * leaving its r,g,b values unchanged.
+     *
+     * @param a the alpha component [0..255] of the paint's color
+     */
+    @Override
+    public void setAlpha(int a) {
+        super.setAlpha(a);
+    }
+
+    /**
+     * Retrieves alpha/opacity from the color used when stroking and filling.
+     *
+     * @return alpha ranging from zero, fully transparent, to one, fully opaque
+     */
+    @Override
+    public float getAlphaF() {
+        return super.getAlphaF();
+    }
+
+    /**
+     * Replaces alpha, leaving RGB unchanged.
+     * <code>a</code> is a value from 0.0 to 1.0.
+     * <code>a</code> set to 0.0 makes color fully transparent;
+     * <code>a</code> set to 1.0 makes color fully opaque.
+     *
+     * @param a the alpha component [0..1] of the paint's color
+     */
+    @Override
+    public void setAlphaF(float a) {
+        super.setAlphaF(a);
+    }
+
+    /**
+     * Helper to setColor(), that takes <code>a,r,g,b</code> and constructs the color int.
+     *
+     * @param a the new alpha component (0..255) of the paint's color.
+     * @param r the new red component (0..255) of the paint's color.
+     * @param g the new green component (0..255) of the paint's color.
+     * @param b the new blue component (0..255) of the paint's color.
+     */
+    @Override
+    public void setARGB(int a, int r, int g, int b) {
+        super.setARGB(a, r, g, b);
+    }
+
+    /**
+     * Helper to setColor(), that takes floating point <code>a,r,g,b</code> values.
+     *
+     * @param r the new red component (0..1) of the paint's color.
+     * @param g the new green component (0..1) of the paint's color.
+     * @param b the new blue component (0..1) of the paint's color.
+     * @param a the new alpha component (0..1) of the paint's color.
+     */
+    @Override
+    public void setARGB(float a, float r, float g, float b) {
+        super.setARGB(a, r, g, b);
+    }
+
+    /**
+     * Returns the paint's style, used for controlling how primitives' geometries
+     * are interpreted, except where noted. The default is {@link #FILL}.
+     *
+     * @return the paint's style setting (fill, stroke or both)
+     * @see #setStyle(int)
+     */
+    @Style
+    @Override
+    public int getStyle() {
+        return super.getStyle();
+    }
+
+    /**
+     * Sets the paint's style, used for controlling how primitives' geometries
+     * are interpreted, except where noted. The default is {@link #FILL}.
+     *
+     * @param style the new style to set in the paint
+     */
+    @Override
+    public void setStyle(@Style int style) {
+        super.setStyle(style);
+    }
+
+    /**
+     * Returns the paint's cap type, controlling how the start and end of stroked
+     * lines and paths are treated, except where noted.
+     * The default is {@link #CAP_ROUND}.
+     *
+     * @return the line cap style for the paint
+     * @see #setStrokeCap(int)
+     */
+    @Cap
+    @Override
+    public int getStrokeCap() {
+        return super.getStrokeCap();
+    }
+
+    /**
+     * Sets the paint's cap type, controlling how the start and end of stroked
+     * lines and paths are treated, except where noted.
+     * The default is {@link #CAP_ROUND}.
+     *
+     * @param cap set the paint's line cap style
+     */
+    @Override
+    public void setStrokeCap(@Cap int cap) {
+        super.setStrokeCap(cap);
+    }
+
+    /**
+     * Returns the paint's stroke join type. The default is {@link #JOIN_ROUND}.
+     *
+     * @return the paint's Join
+     * @see #setStrokeJoin(int)
+     */
+    @Join
+    @Override
+    public int getStrokeJoin() {
+        return super.getStrokeJoin();
+    }
+
+    /**
+     * Sets the paint's stroke join type. The default is {@link #JOIN_ROUND}.
+     *
+     * @param join set the paint's Join
+     */
+    @Override
+    public void setStrokeJoin(@Join int join) {
+        super.setStrokeJoin(join);
+    }
+
+    /**
+     * Returns the thickness of the pen for stroking shapes. The default value is 2.0 px.
+     *
+     * @return the paint's stroke width; zero for hairline, greater than zero for pen thickness
+     * @see #setStrokeWidth(float)
+     */
+    @Override
+    public float getStrokeWidth() {
+        return super.getStrokeWidth();
+    }
+
+    /**
+     * Sets the thickness of the pen for stroking shapes. The default value is 2.0 px.
+     * A stroke width of zero is treated as "hairline" width. Hairlines are always exactly one
+     * pixel wide in screen space (their thickness does not change as the canvas is scaled).
+     *
+     * @param width set the paint's stroke width; zero for hairline, greater than zero for pen thickness
+     */
+    @Override
+    public void setStrokeWidth(float width) {
+        super.setStrokeWidth(width);
+    }
+
+    /**
+     * Returns the miter limit at which a sharp corner is drawn beveled.
+     * The default value is 4.0 px.
+     *
+     * @return zero and greater miter limit
+     * @see #setStrokeMiter(float)
+     */
+    @Override
+    public float getStrokeMiter() {
+        return super.getStrokeMiter();
+    }
+
+    /**
+     * Sets the miter limit at which a sharp corner is drawn beveled.
+     * The default value is 4.0 px.
+     *
+     * @param miter zero and greater miter limit
+     */
+    @Override
+    public void setStrokeMiter(float miter) {
+        super.setStrokeMiter(miter);
+    }
+
+    /**
+     * Returns optional colors used when filling a path, such as a gradient.
+     *
+     * @return Shader if previously set, null otherwise
+     */
+    @Nullable
+    @Override
+    public Shader getShader() {
+        return super.getShader();
+    }
+
+    /**
+     * Sets optional colors used when filling a path, such as a gradient.
+     *
+     * @param shader how geometry is filled with color; if null, solid color is used instead
+     */
+    @Override
+    public void setShader(@Nullable Shader shader) {
+        super.setShader(shader);
+    }
+
+    /**
+     * Returns ColorFilter if set, or null.
+     *
+     * @return ColorFilter if previously set, null otherwise
+     */
+    @Nullable
+    @Override
+    public ColorFilter getColorFilter() {
+        return super.getColorFilter();
+    }
+
+    /**
+     * Sets ColorFilter to filter, pass null to clear ColorFilter.
+     *
+     * @param colorFilter ColorFilter to apply to subsequent draw
+     */
+    @Override
+    public void setColorFilter(@Nullable ColorFilter colorFilter) {
+        super.setColorFilter(colorFilter);
+    }
+
+    /**
+     * Get the paint's blend mode. By default, returns {@link BlendMode#SRC_OVER}.
+     * A null value means a custom blend.
+     *
+     * @return the paint's blend mode used to combine source color with destination color
+     */
+    @Nullable
+    public final BlendMode getBlendMode() {
+        var mode = getBlendModeDirect(this);
+        return mode != null ? BlendMode.BLEND_MODES[mode.ordinal()] : null;
+    }
+
+    /**
      * Set or clear the blend mode. A blend mode defines how source pixels
      * (generated by a drawing command) are composited with the destination pixels
      * (content of the render target).
@@ -195,19 +517,51 @@ public class Paint extends icyllis.arc3d.core.Paint {
      * @see BlendMode
      */
     public final void setBlendMode(@Nullable BlendMode mode) {
-        setBlendMode(mode != null ? mode.ordinal() : -1);
+        setBlender(mode != null ? mode.mBlendMode : null);
     }
 
     /**
-     * Get the paint's blend mode. By default, returns {@link icyllis.arc3d.core.BlendMode#SRC_OVER}.
-     * A null value means a custom blend.
+     * Returns MaskFilter if set, or null.
      *
-     * @return the paint's blend mode used to combine source color with destination color
+     * @return MaskFilter if previously set, null otherwise
      */
     @Nullable
-    public final BlendMode getBlendMode() {
-        var mode = getBlendModeDirect(this);
-        return mode == -1 ? null : BlendMode.VALUES[mode];
+    @Override
+    public MaskFilter getMaskFilter() {
+        return super.getMaskFilter();
+    }
+
+    /**
+     * Sets MaskFilter, pass null to clear MaskFilter and leave MaskFilter effect on
+     * mask alpha unaltered.
+     *
+     * @param maskFilter modifies clipping mask generated from drawn geometry
+     */
+    @Override
+    public void setMaskFilter(@Nullable MaskFilter maskFilter) {
+        super.setMaskFilter(maskFilter);
+    }
+
+    /**
+     * Returns ImageFilter if set, or null.
+     *
+     * @return ImageFilter if previously set, null otherwise
+     */
+    @Nullable
+    @Override
+    public ImageFilter getImageFilter() {
+        return super.getImageFilter();
+    }
+
+    /**
+     * Sets ImageFilter, pass null to clear ImageFilter, and remove ImageFilter effect
+     * on drawing.
+     *
+     * @param imageFilter how Image is sampled when transformed
+     */
+    @Override
+    public void setImageFilter(@Nullable ImageFilter imageFilter) {
+        super.setImageFilter(imageFilter);
     }
 
     /**

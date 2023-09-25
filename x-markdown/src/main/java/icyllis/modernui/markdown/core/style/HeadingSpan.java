@@ -18,9 +18,9 @@
 
 package icyllis.modernui.markdown.core.style;
 
-import icyllis.arc3d.core.Paint;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.text.FontMetricsInt;
 import icyllis.modernui.markdown.MarkdownTheme;
 import icyllis.modernui.text.*;

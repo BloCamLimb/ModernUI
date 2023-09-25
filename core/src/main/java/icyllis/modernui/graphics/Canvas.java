@@ -20,6 +20,7 @@ package icyllis.modernui.graphics;
 
 import icyllis.arc3d.core.*;
 import icyllis.modernui.annotation.*;
+import icyllis.modernui.annotation.ColorInt;
 import icyllis.modernui.graphics.text.*;
 import icyllis.modernui.view.Gravity;
 import org.apache.logging.log4j.Marker;

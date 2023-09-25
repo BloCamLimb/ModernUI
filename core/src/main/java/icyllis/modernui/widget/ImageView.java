@@ -19,12 +19,10 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.core.Context;
-import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.Image;
+import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.ImageDrawable;
 import icyllis.modernui.graphics.drawable.LevelListDrawable;
-import icyllis.arc3d.core.Matrix4;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.view.MeasureSpec;
 import icyllis.modernui.view.View;
@@ -47,7 +45,7 @@ import javax.annotation.Nullable;
  */
 public class ImageView extends View {
 
-    private final Matrix4 mMatrix = Matrix4.identity();
+    private final Matrix mMatrix = new Matrix();
     private ScaleType mScaleType = ScaleType.FIT_CENTER;
     private boolean mAdjustViewBounds = false;
     private int mMaxWidth = Integer.MAX_VALUE;
@@ -67,7 +65,7 @@ public class ImageView extends View {
     private int mLevel = 0;
     private int mDrawableWidth;
     private int mDrawableHeight;
-    private Matrix4 mDrawMatrix = null;
+    private Matrix mDrawMatrix = null;
 
     private boolean mCropToPadding = false;
 
@@ -375,13 +373,13 @@ public class ImageView extends View {
     }
 
     /**
-     * Adds a transformation {@link Matrix4} that is applied
+     * Adds a transformation {@link Matrix} that is applied
      * to the view's drawable when it is drawn.  Allows custom scaling,
      * translation, and perspective distortion.
      *
      * @param matrix The transformation parameters in matrix form.
      */
-    public void setImageMatrix(@Nullable Matrix4 matrix) {
+    public void setImageMatrix(@Nullable Matrix matrix) {
         // collapse null and identity to just null
         if (matrix != null && matrix.isIdentity()) {
             matrix = null;
@@ -686,7 +684,7 @@ public class ImageView extends View {
                 // Center image in view, no scaling.
                 mDrawMatrix = mMatrix;
                 mDrawMatrix.setTranslate(Math.round((vwidth - dwidth) * 0.5f),
-                        Math.round((vheight - dheight) * 0.5f), 0);
+                        Math.round((vheight - dheight) * 0.5f));
             } else if (ScaleType.CENTER_CROP == mScaleType) {
                 mDrawMatrix = mMatrix;
 
@@ -701,7 +699,7 @@ public class ImageView extends View {
                     dy = (vheight - dheight * scale) * 0.5f;
                 }
 
-                mDrawMatrix.setTranslate(Math.round(dx), Math.round(dy), 0);
+                mDrawMatrix.setTranslate(Math.round(dx), Math.round(dy));
                 mDrawMatrix.preScale(scale, scale);
             } else if (ScaleType.CENTER_INSIDE == mScaleType) {
                 mDrawMatrix = mMatrix;
@@ -719,7 +717,7 @@ public class ImageView extends View {
                 dx = Math.round((vwidth - dwidth * scale) * 0.5f);
                 dy = Math.round((vheight - dheight * scale) * 0.5f);
 
-                mDrawMatrix.setTranslate(dx, dy, 0);
+                mDrawMatrix.setTranslate(dx, dy);
                 mDrawMatrix.preScale(scale, scale);
             } else {
                 mDrawMatrix = mMatrix;
@@ -755,7 +753,7 @@ public class ImageView extends View {
                     }
                 }
 
-                mDrawMatrix.setTranslate(tx, ty, 0);
+                mDrawMatrix.setTranslate(tx, ty);
                 mDrawMatrix.preScale(sx, sy);
             }
         }
@@ -782,16 +780,16 @@ public class ImageView extends View {
     }
 
     /**
-     * Applies a temporary transformation {@link Matrix4} to the view's drawable when it is drawn.
+     * Applies a temporary transformation {@link Matrix} to the view's drawable when it is drawn.
      * Allows custom scaling, translation, and perspective distortion during an animation.
      * <p>
-     * This method is a lightweight analogue of {@link ImageView#setImageMatrix(Matrix4)} to use
+     * This method is a lightweight analogue of {@link ImageView#setImageMatrix(Matrix)} to use
      * only during animations as this matrix will be cleared after the next drawable
      * update or view's bounds change.
      *
      * @param matrix The transformation parameters in matrix form.
      */
-    public void animateTransform(@Nullable Matrix4 matrix) {
+    public void animateTransform(@Nullable Matrix matrix) {
         if (mDrawable == null) {
             return;
         }
@@ -803,7 +801,7 @@ public class ImageView extends View {
         } else {
             mDrawable.setBounds(0, 0, mDrawableWidth, mDrawableHeight);
             if (mDrawMatrix == null) {
-                mDrawMatrix = new Matrix4();
+                mDrawMatrix = new Matrix();
             }
             mDrawMatrix.set(matrix);
         }
@@ -949,7 +947,7 @@ public class ImageView extends View {
     public enum ScaleType {
         /**
          * Scale using the image matrix when drawing. The image matrix can be set using
-         * {@link ImageView#setImageMatrix(Matrix4)}.
+         * {@link ImageView#setImageMatrix(Matrix)}.
          */
         MATRIX,
         /**

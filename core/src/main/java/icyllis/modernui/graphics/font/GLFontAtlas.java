@@ -21,7 +21,7 @@ package icyllis.modernui.graphics.font;
 import icyllis.arc3d.core.Rect2i;
 import icyllis.arc3d.core.RectanglePacker;
 import icyllis.arc3d.engine.Engine;
-import icyllis.arc3d.opengl.GLTextureCompat;
+import icyllis.modernui.graphics.GLTextureCompat;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Core;

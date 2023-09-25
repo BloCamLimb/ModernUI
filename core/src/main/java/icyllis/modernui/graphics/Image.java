@@ -90,7 +90,9 @@ public class Image implements AutoCloseable {
             flags |= Surface.FLAG_MIPMAPPED;
         }
         @SharedPtr
-        var proxy = rContext.getProxyProvider().createProxyFromBitmap(bitmap, ct, flags);
+        var proxy = rContext.getProxyProvider().createProxyFromPixmap(
+                bitmap.getPixels(), ct, flags
+        );
         if (proxy == null) {
             return null;
         }

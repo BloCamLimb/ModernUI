@@ -57,7 +57,7 @@ public class TestPipelineBuilder {
         window.makeCurrent();
         if (!Core.initOpenGL())
             throw new RuntimeException("Failed to initialize OpenGL");
-        GLCore.setupDebugCallback();
+        Core.glSetupDebugCallback();
         System.out.println("Red size: " + GLCore.glGetFramebufferAttachmentParameteri(
                 GLCore.GL_FRAMEBUFFER, GLCore.GL_BACK_LEFT, GLCore.GL_FRAMEBUFFER_ATTACHMENT_RED_SIZE));
         System.out.println("Green size: " + GLCore.glGetFramebufferAttachmentParameteri(

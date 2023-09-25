@@ -587,7 +587,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     mServer.getPipelineStateCache().getStats(),
                     mServer.getContext().getErrorWriter());
         } catch (IOException e) {
-            ModernUI.LOGGER.error(GLCore.MARKER, "Failed to get shader source {}:{}\n", ModernUI.ID, path, e);
+            ModernUI.LOGGER.error(MARKER, "Failed to get shader source {}:{}\n", ModernUI.ID, path, e);
         } finally {
             MemoryUtil.memFree(source);
         }
@@ -605,7 +605,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         GLCore.glLinkProgram(program);
         if (GLCore.glGetProgrami(program, GLCore.GL_LINK_STATUS) == GL_FALSE) {
             String log = GLCore.glGetProgramInfoLog(program, 8192);
-            ModernUI.LOGGER.error(GLCore.MARKER, "Failed to link shader program\n{}", log);
+            ModernUI.LOGGER.error(MARKER, "Failed to link shader program\n{}", log);
             // also detaches all shaders
             GLCore.glDeleteProgram(program);
             return 0;

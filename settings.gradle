@@ -6,6 +6,8 @@ pluginManagement {
 
 rootProject.name = 'ModernUI'
 
+includeBuild '../Arc3D'
+
 include 'core'
 project(':core').name = 'ModernUI-Core'
 

@@ -18,12 +18,12 @@
 
 package icyllis.modernui.core;
 
+import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.ContextOptions;
 import icyllis.arc3d.engine.DirectContext;
 import icyllis.arc3d.vulkan.VkBackendContext;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.arc3d.core.SharedPtr;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFWVulkan;
@@ -35,7 +35,7 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
 import static icyllis.arc3d.vulkan.VKCore.*;
-import static icyllis.modernui.ModernUI.LOGGER;
+import static icyllis.modernui.ModernUI.*;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.EXTBlendOperationAdvanced.VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME;
 
@@ -109,10 +109,10 @@ public final class VulkanManager implements AutoCloseable {
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
             final IntBuffer pCount = stack.mallocInt(1);
-            CHECK(vkEnumerateInstanceExtensionProperties((ByteBuffer) null, pCount, null));
+            _CHECK_(vkEnumerateInstanceExtensionProperties((ByteBuffer) null, pCount, null));
             final int count = pCount.get(0);
             final VkExtensionProperties.Buffer properties = VkExtensionProperties.malloc(count, stack);
-            CHECK(vkEnumerateInstanceExtensionProperties((ByteBuffer) null, pCount, properties));
+            _CHECK_(vkEnumerateInstanceExtensionProperties((ByteBuffer) null, pCount, properties));
             for (var prop : properties) {
                 mInstanceExtensions.putIfAbsent(prop.extensionNameString(), prop.specVersion());
             }
@@ -139,7 +139,7 @@ public final class VulkanManager implements AutoCloseable {
                     .ppEnabledExtensionNames(GLFWVulkan.glfwGetRequiredInstanceExtensions());
 
             final PointerBuffer pInstance = stack.mallocPointer(1);
-            CHECK_ERROR(vkCreateInstance(pCreateInfo, null, pInstance));
+            _CHECK_ERROR_(vkCreateInstance(pCreateInfo, null, pInstance));
             mInstance = new VkInstance(pInstance.get(0), pCreateInfo);
         }
 
@@ -147,13 +147,13 @@ public final class VulkanManager implements AutoCloseable {
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
             final IntBuffer pCount = stack.mallocInt(1);
-            CHECK(vkEnumeratePhysicalDevices(mInstance, pCount, null));
+            _CHECK_(vkEnumeratePhysicalDevices(mInstance, pCount, null));
             final int deviceCount = pCount.get(0);
             if (deviceCount == 0) {
                 throw new RuntimeException("No GPU device was found");
             }
             final PointerBuffer pPhysicalDevices = stack.mallocPointer(deviceCount);
-            CHECK(vkEnumeratePhysicalDevices(mInstance, pCount, pPhysicalDevices));
+            _CHECK_(vkEnumeratePhysicalDevices(mInstance, pCount, pPhysicalDevices));
             for (int i = 0; i < deviceCount; i++) {
                 final var physicalDevice = new VkPhysicalDevice(pPhysicalDevices.get(i), mInstance);
                 if (choosePhysicalDeviceLocked(physicalDevice)) {
@@ -172,10 +172,10 @@ public final class VulkanManager implements AutoCloseable {
         final PointerBuffer extensionNames;
         try (MemoryStack stack = MemoryStack.stackPush()) {
             final IntBuffer pCount = stack.mallocInt(1);
-            CHECK(vkEnumerateDeviceExtensionProperties(mPhysicalDevice, (ByteBuffer) null, pCount, null));
+            _CHECK_(vkEnumerateDeviceExtensionProperties(mPhysicalDevice, (ByteBuffer) null, pCount, null));
             final int count = pCount.get(0);
             final VkExtensionProperties.Buffer properties = VkExtensionProperties.malloc(count, stack);
-            CHECK(vkEnumerateDeviceExtensionProperties(mPhysicalDevice, (ByteBuffer) null, pCount, properties));
+            _CHECK_(vkEnumerateDeviceExtensionProperties(mPhysicalDevice, (ByteBuffer) null, pCount, properties));
             extensionNames = memAllocPointer(count);
             for (var prop : properties) {
                 extensionNames.put(prop.extensionName());
@@ -219,7 +219,7 @@ public final class VulkanManager implements AutoCloseable {
                     .ppEnabledExtensionNames(extensionNames);
 
             final PointerBuffer pDevice = stack.mallocPointer(1);
-            CHECK(vkCreateDevice(mPhysicalDevice, pCreateInfo, null, pDevice));
+            _CHECK_(vkCreateDevice(mPhysicalDevice, pCreateInfo, null, pDevice));
             mDevice = new VkDevice(pDevice.get(0), mPhysicalDevice, pCreateInfo, VK_API_VERSION_1_1);
         } finally {
             memFree(extensionNames);

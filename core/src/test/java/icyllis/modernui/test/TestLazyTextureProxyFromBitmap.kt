@@ -19,7 +19,6 @@
 package icyllis.modernui.test
 
 import icyllis.arc3d.engine.Surface
-import icyllis.arc3d.opengl.GLCore
 import icyllis.arc3d.opengl.GLTexture
 import icyllis.modernui.core.Core
 import icyllis.modernui.core.MainWindow
@@ -54,18 +53,18 @@ fun main() {
     val window = MainWindow.initialize("ProxyWindow", 16, 16)
     window.makeCurrent()
     check(Core.initOpenGL()) { "Failed to initialize OpenGL" }
-    GLCore.setupDebugCallback()
-    GLCore.showCapsErrorDialog()
+    Core.glSetupDebugCallback()
+    Core.glShowCapsErrorDialog()
 
     val dContext = Core.requireDirectContext()
 
-    var proxy = dContext.proxyProvider.createProxyFromBitmap(sourceBm, sourceBm.colorType, Surface.FLAG_BUDGETED)
+    var proxy = dContext.proxyProvider.createProxyFromPixmap(sourceBm.pixels, sourceBm.colorType, Surface.FLAG_BUDGETED)
     check(proxy != null) { "Failed to create proxy" }
     proxy.instantiate(dContext.resourceProvider)
 
     proxy.unref()
 
-    proxy = dContext.proxyProvider.createProxyFromBitmap(sourceBm, sourceBm.colorType, Surface.FLAG_BUDGETED)
+    proxy = dContext.proxyProvider.createProxyFromPixmap(sourceBm.pixels, sourceBm.colorType, Surface.FLAG_BUDGETED)
     check(proxy != null) { "Failed to create proxy" }
     proxy.instantiate(dContext.resourceProvider)
 
@@ -73,7 +72,7 @@ fun main() {
     try {
         GL45C.glGetTextureImage(
             (proxy.peekTexture() as GLTexture).handle, 0, GL11C.GL_RGBA, GL11C.GL_UNSIGNED_BYTE,
-            outBm.size, outBm.pixels
+            outBm.size, outBm.address
         )
         outBm.saveDialog(Bitmap.SaveFormat.PNG, 100, null)
     } finally {

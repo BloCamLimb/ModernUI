@@ -19,8 +19,7 @@
 package icyllis.modernui;
 
 import icyllis.arc3d.core.Matrix4;
-import icyllis.arc3d.opengl.GLCore;
-import icyllis.arc3d.opengl.GLFramebufferCompat;
+import icyllis.modernui.graphics.GLFramebufferCompat;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.app.Activity;
 import icyllis.modernui.core.*;
@@ -302,14 +301,14 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         window.makeCurrent();
         try {
             if (!Core.initOpenGL()) {
-                GLCore.showCapsErrorDialog();
+                Core.glShowCapsErrorDialog();
                 throw new IllegalStateException("Failed to initialize OpenGL");
             }
         } finally {
             latch.countDown();
         }
 
-        GLCore.setupDebugCallback();
+        Core.glSetupDebugCallback();
 
         final GLSurfaceCanvas canvas = GLSurfaceCanvas.initialize();
 
@@ -356,7 +355,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
                 int width = window.getWidth(), height = window.getHeight();
                 glBindFramebuffer(GL_FRAMEBUFFER, DEFAULT_FRAMEBUFFER);
                 glDisable(GL_CULL_FACE);
-                resetFrame(window);
+                Core.glResetFrame(window);
                 if (mRoot != null) {
                     mRoot.flushDrawCommands(canvas, window, framebuffer);
                 }

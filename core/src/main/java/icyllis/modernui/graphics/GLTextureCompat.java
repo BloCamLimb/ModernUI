@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.opengl;
+package icyllis.modernui.graphics;
 
 import icyllis.modernui.core.Core;
 import org.lwjgl.system.MemoryStack;
