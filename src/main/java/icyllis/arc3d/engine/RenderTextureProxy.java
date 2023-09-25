@@ -22,6 +22,8 @@ package icyllis.arc3d.engine;
 import icyllis.arc3d.core.Rect2i;
 import org.jetbrains.annotations.VisibleForTesting;
 
+import javax.annotation.Nullable;
+
 /**
  * Subclass of {@link TextureProxy} that also provides render target info.
  */
@@ -54,6 +56,12 @@ public final class RenderTextureProxy extends TextureProxy {
     @Override
     public int getSampleCount() {
         return mSampleCount;
+    }
+
+    @Nullable
+    @Override
+    public RenderTarget peekRenderTarget() {
+        return mTexture != null ? mTexture.getRenderTarget() : null;
     }
 
     @Override

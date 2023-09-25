@@ -19,13 +19,10 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SharedPtr;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import javax.annotation.Nullable;
-
-import static icyllis.arc3d.engine.Engine.*;
 
 /**
  * Lazy-callback or wrapped a render target (no texture access).
@@ -51,7 +48,7 @@ public final class RenderSurfaceProxy extends SurfaceProxy {
 
     @Override
     protected void deallocate() {
-        mSurface = RefCnt.move(mSurface);
+        mSurface = move(mSurface);
     }
 
     @Override
@@ -143,7 +140,7 @@ public final class RenderSurfaceProxy extends SurfaceProxy {
     }
 
     @Override
-    boolean doLazyInstantiation(ResourceProvider resourceProvider) {
+    public boolean doLazyInstantiation(ResourceProvider resourceProvider) {
         assert isLazy();
 
         @SharedPtr
@@ -178,7 +175,7 @@ public final class RenderSurfaceProxy extends SurfaceProxy {
         assert getWidth() <= surface.getWidth();
         assert getHeight() <= surface.getHeight();
 
-        mSurface = RefCnt.move(mSurface, surface);
+        mSurface = move(mSurface, surface);
         if (releaseCallback) {
             mLazyInstantiateCallback = null;
         }

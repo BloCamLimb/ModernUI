@@ -20,20 +20,24 @@
 package icyllis.arc3d.vulkan;
 
 import icyllis.arc3d.engine.BackendFormat;
+import icyllis.arc3d.engine.Engine;
 import it.unimi.dsi.fastutil.HashCommon;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import org.lwjgl.system.NativeType;
 
 import javax.annotation.Nonnull;
+import javax.annotation.concurrent.Immutable;
 import java.util.Objects;
 
 import static icyllis.arc3d.engine.Engine.BackendApi;
 import static icyllis.arc3d.vulkan.VKCore.*;
 
+@Immutable
 public final class VkBackendFormat extends BackendFormat {
 
-    private static final Int2ObjectOpenHashMap<VkBackendFormat> sVkBackendFormats =
-            new Int2ObjectOpenHashMap<>(25, 0.8f);
+    private static final Int2ObjectMap<VkBackendFormat> FORMATS =
+            new Int2ObjectOpenHashMap<>(25);
 
     private final int mFormat;
     private final boolean mIsExternal;
@@ -51,20 +55,20 @@ public final class VkBackendFormat extends BackendFormat {
     public static VkBackendFormat make(@NativeType("VkFormat") int format, boolean isExternal) {
         Objects.checkIndex(format, Integer.MAX_VALUE);
         int key = (format) | (isExternal ? Integer.MIN_VALUE : 0);
-        VkBackendFormat backendFormat = sVkBackendFormats.get(key);
+        VkBackendFormat backendFormat = FORMATS.get(key);
         if (backendFormat != null) {
             return backendFormat;
         }
         backendFormat = new VkBackendFormat(format, isExternal);
         if (backendFormat.getBytesPerBlock() != 0) {
-            sVkBackendFormats.put(key, backendFormat);
+            FORMATS.put(key, backendFormat);
         }
         return backendFormat;
     }
 
     @Override
     public int getBackend() {
-        return BackendApi.kVulkan;
+        return Engine.BackendApi.kVulkan;
     }
 
     @Override
@@ -118,7 +122,7 @@ public final class VkBackendFormat extends BackendFormat {
 
     @Override
     public int hashCode() {
-        return HashCommon.mix(mFormat);
+        return mFormat;
     }
 
     @Override
@@ -130,9 +134,9 @@ public final class VkBackendFormat extends BackendFormat {
 
     @Override
     public String toString() {
-        return "{mBackend=Vulkan" +
-                ", mFormat=" + vkFormatName(mFormat) +
-                ", mIsExternal=" + mIsExternal +
+        return "{backend=Vulkan" +
+                ", format=" + vkFormatName(mFormat) +
+                ", isExternal=" + mIsExternal +
                 '}';
     }
 }

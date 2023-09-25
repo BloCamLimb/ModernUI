@@ -21,10 +21,27 @@ package icyllis.arc3d.vulkan;
 
 import icyllis.arc3d.engine.DirectContext;
 import icyllis.arc3d.engine.Server;
+import org.lwjgl.vulkan.VkDevice;
 
-public abstract class VkServer extends Server {
+public abstract class VulkanServer extends Server {
 
-    public VkServer(DirectContext context) {
+    private VkDevice mDevice;
+    private boolean mProtectedContext;
+    private int mQueueIndex;
+
+    public VulkanServer(DirectContext context) {
         super(context, null);
+    }
+
+    public VkDevice device() {
+        return mDevice;
+    }
+
+    public int getQueueIndex() {
+        return mQueueIndex;
+    }
+
+    public boolean isProtectedContext() {
+        return mProtectedContext;
     }
 }

@@ -606,9 +606,20 @@ public class Matrix implements Cloneable {
      * @param dy the y-component of the translation
      */
     public void preTranslate(float dx, float dy) {
-        m31 += dx * m11 + dy * m21;
-        m32 += dx * m12 + dy * m22;
-        m33 += dx * m13 + dy * m23;
+        int type = getType();
+        if (type <= Translate_Mask) {
+            m31 += dx;
+            m32 += dy;
+        } else {
+            m31 += dx * m11 + dy * m21;
+            m32 += dx * m12 + dy * m22;
+            m33 += dx * m13 + dy * m23;
+        }
+        if (m31 != 0 || m32 != 0) {
+            mTypeMask |= Translate_Mask;
+        } else {
+            mTypeMask &= ~Translate_Mask;
+        }
     }
 
     /**
@@ -619,12 +630,68 @@ public class Matrix implements Cloneable {
      * @param dy the y-component of the translation
      */
     public void postTranslate(float dx, float dy) {
-        m11 += dx * m13;
-        m12 += dy * m13;
-        m21 += dx * m23;
-        m22 += dy * m23;
-        m31 += dx * m33;
-        m32 += dy * m33;
+        int type = getType();
+        if (type <= Translate_Mask) {
+            m31 += dx;
+            m32 += dy;
+        } else {
+            m11 += dx * m13;
+            m12 += dy * m13;
+            m21 += dx * m23;
+            m22 += dy * m23;
+            m31 += dx * m33;
+            m32 += dy * m33;
+        }
+        if (m31 != 0 || m32 != 0) {
+            mTypeMask |= Translate_Mask;
+        } else {
+            mTypeMask &= ~Translate_Mask;
+        }
+    }
+
+    /**
+     * Set this matrix to be a simple translation matrix.
+     *
+     * @param x the x-component of the translation
+     * @param y the y-component of the translation
+     */
+    public void setTranslate(float x, float y) {
+        m11 = 1.0f;
+        m12 = 0.0f;
+        m13 = 0.0f;
+        m21 = 0.0f;
+        m22 = 1.0f;
+        m23 = 0.0f;
+        m31 = x;
+        m32 = y;
+        m33 = 1.0f;
+        if (x != 0 || y != 0) {
+            mTypeMask = Translate_Mask | AxisAligned_Mask;
+        } else {
+            mTypeMask = Identity_Mask | AxisAligned_Mask;
+        }
+    }
+
+    /**
+     * Apply scaling to <code>this</code> matrix by scaling the base axes by the given x,
+     * y and z factors and store the result in <code>dest</code>.
+     * <p>
+     * If <code>M</code> is <code>this</code> matrix and <code>S</code> the scaling matrix,
+     * then the new matrix will be <code>S * M</code> (row-major). So when transforming a
+     * vector <code>v</code> with the new matrix by using <code>v * S * M</code>,
+     * the scaling will be applied first.
+     *
+     * @param sx the x-component of the scale
+     * @param sy the y-component of the scale
+     */
+    public void preScale(float sx, float sy) {
+        m11 *= sx;
+        m12 *= sx;
+        m13 *= sx;
+        m21 *= sy;
+        m22 *= sy;
+        m23 *= sy;
+        mTypeMask = Unknown_Mask;
     }
 
     /**

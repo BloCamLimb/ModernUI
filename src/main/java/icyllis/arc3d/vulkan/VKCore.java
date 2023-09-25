@@ -38,11 +38,10 @@ public final class VKCore extends VK11 {
      * with a human-readable error message if failed.
      *
      * @param vkResult the {@code VkResult} value
-     * @throws IllegalStateException the VkResult is not VK_SUCCESS
+     * @throws AssertionError the VkResult is not VK_SUCCESS
      */
     public static void _CHECK_(@NativeType("VkResult") int vkResult) {
-        if (vkResult != VK_SUCCESS)
-            throw new IllegalStateException(getResultMessage(vkResult));
+        if (vkResult != VK_SUCCESS) throw new AssertionError(getResultMessage(vkResult));
     }
 
     /**
@@ -50,21 +49,20 @@ public final class VKCore extends VK11 {
      * with a human-readable error message if failed.
      *
      * @param vkResult the {@code VkResult} value
-     * @throws IllegalStateException the VkResult is negative (error)
+     * @throws AssertionError the VkResult is negative
      */
     public static void _CHECK_ERROR_(@NativeType("VkResult") int vkResult) {
-        if (vkResult < VK_SUCCESS)
-            throw new IllegalStateException(getResultMessage(vkResult));
+        if (vkResult < VK_SUCCESS) throw new AssertionError(getResultMessage(vkResult));
     }
 
     /**
      * Translates a Vulkan {@code VkResult} value to a String describing the result.
      *
-     * @param vkResult the {@code VkResult} value
+     * @param result the {@code VkResult} value
      * @return the result description
      */
-    public static String getResultMessage(@NativeType("VkResult") int vkResult) {
-        return switch (vkResult) {
+    public static String getResultMessage(int result) {
+        return switch (result) {
             // Success codes
             case VK_SUCCESS -> "Command successfully completed.";
             case VK_NOT_READY -> "A fence or query has not yet completed.";
@@ -99,7 +97,7 @@ public final class VKCore extends VK11 {
             case VK_ERROR_INCOMPATIBLE_DISPLAY_KHR -> "The display used by a swap-chain does not use the same " +
                     "presentable image layout, or is incompatible in a way that prevents sharing an image.";
             case VK_ERROR_VALIDATION_FAILED_EXT -> "A validation layer found an error.";
-            default -> String.format("%s [%d]", "Unknown", vkResult);
+            default -> String.format("%s [%d]", "Unknown", result);
         };
     }
 
@@ -145,10 +143,10 @@ public final class VKCore extends VK11 {
 
     public static int vkFormatCompressionType(@NativeType("VkFormat") int vkFormat) {
         return switch (vkFormat) {
-            case VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK -> Core.CompressionType.ETC2_RGB8_UNORM;
-            case VK_FORMAT_BC1_RGB_UNORM_BLOCK -> Core.CompressionType.BC1_RGB8_UNORM;
-            case VK_FORMAT_BC1_RGBA_UNORM_BLOCK -> Core.CompressionType.BC1_RGBA8_UNORM;
-            default -> Core.CompressionType.None;
+            case VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK -> ImageInfo.COMPRESSION_ETC2_RGB8_UNORM;
+            case VK_FORMAT_BC1_RGB_UNORM_BLOCK -> ImageInfo.COMPRESSION_BC1_RGB8_UNORM;
+            case VK_FORMAT_BC1_RGBA_UNORM_BLOCK -> ImageInfo.COMPRESSION_BC1_RGBA8_UNORM;
+            default -> ImageInfo.COMPRESSION_NONE;
         };
     }
 
@@ -233,8 +231,5 @@ public final class VKCore extends VK11 {
             case VK_FORMAT_D32_SFLOAT_S8_UINT -> "D32_SFLOAT_S8_UINT";
             default -> "Unknown";
         };
-    }
-
-    private VKCore() {
     }
 }

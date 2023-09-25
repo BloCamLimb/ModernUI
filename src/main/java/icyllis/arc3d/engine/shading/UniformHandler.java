@@ -35,7 +35,7 @@ import static icyllis.arc3d.engine.Engine.ShaderFlags;
  * <pre><code>
  * // Anonymous block
  * layout(std140, binding = 0) uniform UniformBlock {
- *     layout(offset = 0) vec4 u_Projection;
+ *     layout(offset = 0) vec4 SV_Projection;
  *     // per-effect uniforms...
  * }</code></pre>
  * Per-effect uniforms are updated more frequently (generally, each draw op).
@@ -43,15 +43,13 @@ import static icyllis.arc3d.engine.Engine.ShaderFlags;
  */
 public abstract class UniformHandler {
 
-    /**
-     * The Render Block are shared across pipelines.
-     */
-    public static final String NO_MANGLE_PREFIX = "u_";
+    public static final String NO_MANGLE_PREFIX = "SV_";
 
     /**
-     * Common uniforms.
+     * The 2D orthographic projection matrix has only 4 values (others are identity),
+     * so this is a vec4. Projection maps device space into normalized device space.
      */
-    public static final String PROJECTION_NAME = "u_Projection";
+    public static final String PROJECTION_NAME = "SV_Projection";
 
     public static class UniformInfo {
 

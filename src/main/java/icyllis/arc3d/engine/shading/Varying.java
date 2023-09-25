@@ -22,6 +22,9 @@ package icyllis.arc3d.engine.shading;
 import icyllis.arc3d.core.SLDataType;
 import icyllis.arc3d.engine.ShaderVar;
 
+/**
+ * Shader stage inputs and outputs.
+ */
 public final class Varying {
 
     byte mType;

@@ -28,7 +28,7 @@ import javax.annotation.concurrent.Immutable;
 import java.util.*;
 
 import static icyllis.arc3d.engine.Engine.*;
-import static icyllis.arc3d.engine.shading.UniformHandler.*;
+import static icyllis.arc3d.engine.shading.UniformHandler.SamplerHandle;
 
 /**
  * The GeometryProcessor represents some kind of geometric primitive. This includes the shape
@@ -179,18 +179,6 @@ public abstract class GeometryProcessor extends Processor {
      */
     @Immutable
     public static class AttributeSet implements Iterable<Attribute> {
-
-        private static final Iterator<Attribute> EMPTY_ITER = new Iterator<>() {
-            @Override
-            public boolean hasNext() {
-                return false;
-            }
-
-            @Override
-            public Attribute next() {
-                throw new NoSuchElementException();
-            }
-        };
 
         private final Attribute[] mAttributes;
         private final int mStride;

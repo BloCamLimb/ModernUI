@@ -129,6 +129,20 @@ public class Rect2f {
     }
 
     /**
+     * Returns the rectangle's left.
+     */
+    public final float x() {
+        return mLeft;
+    }
+
+    /**
+     * Return the rectangle's top.
+     */
+    public final float y() {
+        return mTop;
+    }
+
+    /**
      * @return the rectangle's width. This does not check for a valid rectangle
      * (i.e. left <= right) so the result may be negative.
      */

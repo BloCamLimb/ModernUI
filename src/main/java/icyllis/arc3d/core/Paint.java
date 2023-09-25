@@ -22,9 +22,7 @@ package icyllis.arc3d.core;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.annotation.concurrent.GuardedBy;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Objects;
@@ -69,7 +67,9 @@ public class Paint {
     /**
      * Geometry (path) drawn with this style will be both filled and
      * stroked at the same time, respecting the stroke-related fields on
-     * the paint.
+     * the paint. This shares all paint attributes; for instance, they
+     * are drawn with the same color. Use this to avoid hitting the same
+     * pixels twice with a stroke draw and a fill draw.
      */
     public static final int STROKE_AND_FILL = 0x02;
     public static final int FILL_AND_STROKE = 0x02; // alias
@@ -167,22 +167,71 @@ public class Paint {
 
     private static final int ALIGN_MASK = 0xC0;
 
-    private static final int ANTI_ALIAS_MASK = 0x100;
-    private static final int DITHER_MASK = 0x200;
+    /**
+     * The {@code FilterMode} specifies the sampling method on transformed texture images.
+     * The default is {@link #FILTER_MODE_LINEAR}.
+     */
+    @MagicConstant(intValues = {FILTER_MODE_NEAREST, FILTER_MODE_LINEAR})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface FilterMode {
+    }
 
-    // the recycle bin, see take()
-    private static final Paint[] sBag = new Paint[8];
-    @GuardedBy("sBag")
-    private static int sBagSize;
+    /**
+     * Single sample point (nearest neighbor).
+     */
+    public static final int FILTER_MODE_NEAREST = 0x000;
 
-    // color components using straight alpha
-    private float mR; // may out of range
-    private float mG; // may out of range
-    private float mB; // may out of range
+    /**
+     * Interpolate between 2x2 sample points (bilinear interpolation).
+     */
+    public static final int FILTER_MODE_LINEAR = 0x100;
+
+    private static final int FILTER_MODE_MASK = 0x100;
+
+    /**
+     * The {@code MipmapMode} specifies the interpolation method for MIP image levels when
+     * down-sampling texture images. The default is {@link #MIPMAP_MODE_LINEAR}.
+     */
+    @MagicConstant(intValues = {MIPMAP_MODE_NONE, MIPMAP_MODE_NEAREST, MIPMAP_MODE_LINEAR})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface MipmapMode {
+    }
+
+    /**
+     * Ignore mipmap levels, sample from the "base".
+     */
+    public static final int MIPMAP_MODE_NONE = 0x000;
+
+    /**
+     * Sample from the nearest level.
+     */
+    public static final int MIPMAP_MODE_NEAREST = 0x200;
+
+    /**
+     * Interpolate between the two nearest levels.
+     */
+    public static final int MIPMAP_MODE_LINEAR = 0x400;
+
+    private static final int MIPMAP_MODE_MASK = 0x600;
+
+    private static final int MAX_ANISOTROPY_SHIFT = 11;
+    private static final int MAX_ANISOTROPY_MASK = 0x1F << MAX_ANISOTROPY_SHIFT;
+
+    private static final int ANTI_ALIAS_MASK = 0x10000;
+    private static final int DITHER_MASK = 0x20000;
+
+    private static final int DEFAULT_FLAGS = FILL |
+            CAP_ROUND | JOIN_ROUND | ALIGN_CENTER |
+            FILTER_MODE_LINEAR | MIPMAP_MODE_LINEAR | ANTI_ALIAS_MASK;
+
+    // color components using non-premultiplied alpha
+    private float mR; // 0..1
+    private float mG; // 0..1
+    private float mB; // 0..1
     private float mA; // 0..1
 
-    private float mWidth;
-    private float mMiterLimit;
+    private float mWidth;       // stroke-width
+    private float mMiterLimit;  // stroke-miterlimit
     private float mSmoothWidth;
 
     // optional objects
@@ -194,100 +243,60 @@ public class Paint {
 
     /*
      * bitfield
-     * |--------|--------|
-     *                 00  FILL
-     *                 01  STROKE
-     *                 10  STROKE_AND_FILL
-     *               00    CAP_ROUND
-     *               01    CAP_SQUARE
-     *               10    CAP_BUTT
-     *             00      JOIN_ROUND
-     *             01      JOIN_BEVEL
-     *             10      JOIN_MITER
-     *           00        ALIGN_CENTER
-     *           01        ALIGN_INSIDE
-     *           10        ALIGN_OUTSET
-     * |--------|--------|
-     *         1           ANTI_ALIAS
-     *        1            DITHER
-     * |--------|--------|
+     * 24       16       8        0
+     * |--------|--------|--------|
+     *                          00  FILL             (def)
+     *                          01  STROKE
+     *                          10  STROKE_AND_FILL
+     *                        00    CAP_BUTT
+     *                        01    CAP_ROUND        (def)
+     *                        10    CAP_SQUARE
+     *                      00      JOIN_MITER
+     *                      01      JOIN_ROUND       (def)
+     *                      10      JOIN_BEVEL
+     *                    00        ALIGN_CENTER     (def)
+     *                    01        ALIGN_INSIDE
+     *                    10        ALIGN_OUTSIDE
+     * |--------|--------|--------|
+     *                  0           FILTER_NEAREST
+     *                  1           FILTER_LINEAR       (def)
+     *                00            MIPMAP_MODE_NONE
+     *                01            MIPMAP_MODE_NEAREST
+     *                11            MIPMAP_MODE_LINEAR  (def)
+     *           11111              MAX_ANISOTROPY_MASK (range: 0-16, def: 0)
+     * |--------|--------|--------|
+     *         1                    ANTI_ALIAS       (def)
+     *        1                     DITHER
+     * |--------|--------|--------|
      */
     private int mFlags;
 
     /**
-     * Creates a new Paint with default values.
-     *
-     * @see #take()
+     * Creates a new Paint with defaults.
      */
     public Paint() {
         reset();
     }
 
     /**
-     * Create a new Paint, initialized with the contents in the specified
+     * Create a new paint, initialized with the attributes in the specified
      * paint parameter.
      *
-     * @param paint an existing paint used to initialize the contents of the
-     *              new paint
+     * @param paint Existing paint used to initialize the attributes of the
+     *              new paint.
      */
-    public Paint(Paint paint) {
+    public Paint(@Nullable Paint paint) {
         set(paint);
-    }
-
-    /**
-     * Returns a reset {@code Paint} from the globally shared pool. A {@link #drop()}
-     * is expected (but not strictly necessary) before scope exit.
-     * <p>
-     * For example:
-     * <pre>{@code
-     * void draw(Canvas canvas) {
-     *     var p = Paint.take();
-     *     p.setColor(mColorA);
-     *     canvas.drawRect(mRectA, p);
-     *     // ...
-     *     p.setColor(mColorB);
-     *     canvas.drawRect(mRectB, p);
-     *     p.drop();
-     * }
-     * }</pre>
-     *
-     * @return a shared paint
-     * @see #drop()
-     */
-    @Nonnull
-    public static Paint take() {
-        Paint paint;
-        synchronized (sBag) {
-            if (sBagSize == 0)
-                return new Paint();
-            paint = sBag[--sBagSize];
-            // still hold strong reference
-        }
-        paint.reset();
-        return paint;
-    }
-
-    /**
-     * Recycles this {@code Paint} to the shared pool.
-     *
-     * @see #take()
-     */
-    public final void drop() {
-        synchronized (sBag) {
-            if (sBagSize != sBag.length) {
-                sBag[sBagSize++] = this;
-            }
-        }
     }
 
     /**
      * Set all contents of this paint to their initial values.
      */
-    public final void reset() {
-        mR = 0;
-        mG = 0;
-        mB = 0;
-        mA = 1; // opaque black
+    public void reset() {
+        mR = 1;
+        mG = 1;
+        mB = 1;
+        mA = 1; // opaque white
         mWidth = 2;
         mMiterLimit = 4;
         mSmoothWidth = 0;
@@ -296,7 +305,7 @@ public class Paint {
         mMaskFilter = null;
         mColorFilter = null;
         mImageFilter = null;
-        mFlags = CAP_ROUND | JOIN_ROUND | ANTI_ALIAS_MASK;
+        mFlags = DEFAULT_FLAGS;
     }
 
     /**
@@ -304,7 +313,7 @@ public class Paint {
      *
      * @param paint the paint to set this paint from
      */
-    public final void set(Paint paint) {
+    public void set(Paint paint) {
         if (paint == null) {
             reset();
         } else {
@@ -324,6 +333,8 @@ public class Paint {
         }
     }
 
+    ///// Solid Color
+
     /**
      * Return the paint's solid color in sRGB. Note that the color is a 32-bit value
      * containing alpha as well as r,g,b. This 32-bit value is not premultiplied,
@@ -331,7 +342,6 @@ public class Paint {
      *
      * @return the paint's color (and alpha).
      */
-    @ColorInt
     public final int getColor() {
         return ((int) (mA * 255.0f + 0.5f) << 24) |
                 ((int) (mR * 255.0f + 0.5f) << 16) |
@@ -346,7 +356,7 @@ public class Paint {
      *
      * @param color the new color (including alpha) to set in the paint.
      */
-    public final void setColor(@ColorInt int color) {
+    public final void setColor(int color) {
         mR = ((color >> 16) & 0xff) / 255.0f;
         mG = ((color >> 8) & 0xff) / 255.0f;
         mB = (color & 0xff) / 255.0f;
@@ -358,7 +368,7 @@ public class Paint {
      *
      * @return alpha ranging from zero, fully transparent, to one, fully opaque
      */
-    public final float getAlphaf() {
+    public final float getAlphaF() {
         return mA;
     }
 
@@ -381,7 +391,7 @@ public class Paint {
      *
      * @param a the alpha component [0..1] of the paint's color
      */
-    public final void setAlphaf(float a) {
+    public final void setAlphaF(float a) {
         mA = MathUtil.clamp(a, 0.0f, 1.0f);
     }
 
@@ -398,44 +408,44 @@ public class Paint {
     /**
      * Returns the value of the red component.
      *
-     * @see #alpha()
-     * @see #green()
-     * @see #blue()
+     * @see #a()
+     * @see #g()
+     * @see #b()
      */
-    public final float red() {
+    public final float r() {
         return mR;
     }
 
     /**
      * Returns the value of the green component.
      *
-     * @see #alpha()
-     * @see #red()
-     * @see #blue()
+     * @see #a()
+     * @see #r()
+     * @see #b()
      */
-    public final float green() {
+    public final float g() {
         return mG;
     }
 
     /**
      * Returns the value of the blue component.
      *
-     * @see #alpha()
-     * @see #red()
-     * @see #green()
+     * @see #a()
+     * @see #r()
+     * @see #g()
      */
-    public final float blue() {
+    public final float b() {
         return mB;
     }
 
     /**
      * Returns the value of the alpha component.
      *
-     * @see #alpha()
-     * @see #red()
-     * @see #green()
+     * @see #a()
+     * @see #r()
+     * @see #g()
      */
-    public final float alpha() {
+    public final float a() {
         return mA;
     }
 
@@ -527,6 +537,8 @@ public class Paint {
         mA = MathUtil.clamp(a, 0.0f, 1.0f);
     }
 
+    ///// Basic Flags
+
     /**
      * Returns true if distance-to-edge anti-aliasing should be used.
      * If true, the AA step is calculated in screen space.
@@ -601,6 +613,8 @@ public class Paint {
     public final void setStyle(@Style int style) {
         mFlags = (mFlags & ~STYLE_MASK) | (style & STYLE_MASK);
     }
+
+    ///// Stroke Parameters
 
     /**
      * Sets paint's style to STROKE if true, or FILL if false.
@@ -742,6 +756,117 @@ public class Paint {
         mSmoothWidth = Math.max(smooth, 0);
     }
 
+    ///// Sampler Parameters
+
+    /**
+     * Returns the bilinear interpolation for sampling texture images. True means
+     * {@link #FILTER_MODE_LINEAR}, while false means {@link #FILTER_MODE_NEAREST}.
+     * The value is ignored when anisotropic filtering is used. The default value
+     * is true.
+     *
+     * @return whether to use bilinear filter on images, or nearest neighbor
+     * @see #setFilter(boolean)
+     */
+    public final boolean isFilter() {
+        return (mFlags & FILTER_MODE_MASK) != 0;
+    }
+
+    /**
+     * Set the bilinear interpolation for sampling texture images. True means
+     * {@link #FILTER_MODE_LINEAR}, while false means {@link #FILTER_MODE_NEAREST}.
+     * Calling this method disables anisotropic filtering. The default value
+     * is true.
+     *
+     * @param filter whether to use bilinear filter on images, or nearest neighbor
+     * @see #isFilter()
+     */
+    public final void setFilter(boolean filter) {
+        if (filter) {
+            mFlags = (mFlags | FILTER_MODE_LINEAR) & ~MAX_ANISOTROPY_MASK;
+        } else {
+            mFlags &= ~(FILTER_MODE_MASK | MAX_ANISOTROPY_MASK);
+        }
+    }
+
+    /**
+     * Returns the current filter. The default is {@link #FILTER_MODE_LINEAR}.
+     * The value is ignored when anisotropic filtering is used.
+     *
+     * @return the current filter
+     * @see #setFilterMode(int)
+     */
+    @FilterMode
+    public final int getFilterMode() {
+        return mFlags & FILTER_MODE_MASK;
+    }
+
+    /**
+     * Set the interpolation method for sampling texture images.
+     * The default is {@link #FILTER_MODE_LINEAR}.
+     * Calling this method does NOT affect anisotropic filtering.
+     *
+     * @param filter the paint's filter
+     * @see #getFilterMode()
+     */
+    public final void setFilterMode(@FilterMode int filter) {
+        mFlags = (mFlags & ~FILTER_MODE_MASK) | (filter & FILTER_MODE_MASK);
+    }
+
+    /**
+     * Returns the mipmap mode. The value is ignored when anisotropic filtering is used.
+     * The default is {@link #MIPMAP_MODE_LINEAR}.
+     *
+     * @return the mipmap mode
+     */
+    @MipmapMode
+    public final int getMipmapMode() {
+        return mFlags & MIPMAP_MODE_MASK;
+    }
+
+    /**
+     * Set the mipmap mode for sampling texture images. The value is ignored when
+     * anisotropic filtering is used. The default is {@link #MIPMAP_MODE_LINEAR}.
+     *
+     * @param mipmap the mipmap mode
+     */
+    public final void setMipmapMode(@MipmapMode int mipmap) {
+        mFlags = (mFlags & ~MIPMAP_MODE_MASK) | (mipmap & MIPMAP_MODE_MASK);
+    }
+
+    /**
+     * Returns whether the anisotropic filtering is enabled.
+     * If enabled, {@link #getFilterMode()} and {@link #getMipmapMode()} are ignored.
+     *
+     * @return true if anisotropic filtering will be used for sampling images.
+     */
+    public final boolean isAnisotropy() {
+        return (mFlags & MAX_ANISOTROPY_MASK) != 0;
+    }
+
+    /**
+     * Returns the maximum level of anisotropic filtering. The default value is 0 (OFF).
+     *
+     * @return the max anisotropy
+     */
+    public final int getMaxAnisotropy() {
+        return (mFlags & MAX_ANISOTROPY_MASK) >> MAX_ANISOTROPY_SHIFT;
+    }
+
+    /**
+     * Set the maximum level of anisotropic filtering. A value greater than 0 means
+     * anisotropic filtering is used, and {@link #getFilterMode()} and {@link #getMipmapMode()}
+     * are ignored. If the device does not support anisotropic filtering, this method will
+     * be downgraded to bilinear filtering. The default value is 0 (OFF).
+     *
+     * @param maxAnisotropy the max anisotropy level ranged from 0 to 16
+     */
+    public final void setMaxAnisotropy(int maxAnisotropy) {
+        mFlags = (mFlags & ~MAX_ANISOTROPY_MASK) |
+                (MathUtil.clamp(maxAnisotropy, 0, 16) << MAX_ANISOTROPY_SHIFT);
+    }
+
+    ///// Effects
+
     /**
      * Returns optional colors used when filling a path, such as a gradient.
      *
@@ -781,36 +906,42 @@ public class Paint {
     }
 
     /**
-     * Set or clear the blend mode. A blend mode defines how source pixels
-     * (generated by a drawing command) are composited with the destination pixels
-     * (content of the render target).
-     * <p>
-     * Pass null to clear any previous blend mode.
+     * Returns true if BlendMode is {@link BlendMode#SRC_OVER}, the default.
      *
-     * @param blendMode the blend mode to be installed in the paint, may be null
-     * @see BlendMode
-     */
-    public final void setBlendMode(@Nullable BlendMode blendMode) {
-        //TODO
-    }
-
-    /**
-     * Get the paint's blend mode. By default, returns {@link BlendMode#SRC_OVER}.
-     *
-     * @return the paint's blend mode used to combine source color with destination color
-     */
-    @Nonnull
-    public final BlendMode getBlendMode() {
-        return BlendMode.SRC_OVER;
-    }
-
-    /**
-     * Returns true if BlendMode is SRC_OVER, the default.
-     *
-     * @return true if BlendMode is SRC_OVER
+     * @return true if BlendMode is {@link BlendMode#SRC_OVER}
      */
     public final boolean isSrcOver() {
-        return mBlender == null;
+        return mBlender == null || mBlender.asBlendMode() == BlendMode.SRC_OVER;
+    }
+
+    /**
+     * Sets the current blender.
+     * <p>
+     * A null blender signifies the default {@link BlendMode#SRC_OVER} behavior.
+     * <p>
+     * For convenience, you can pass {@link BlendMode} if the blend effect can be
+     * expressed as one of those values. A blend mode defines how source pixels
+     * (generated by a drawing command) are composited with the destination pixels
+     * (content of the render target).
+     *
+     * @param blender the blender to be installed in the paint, may be null
+     * @see #getBlender()
+     */
+    public final void setBlender(@Nullable Blender blender) {
+        mBlender = blender;
+    }
+
+    /**
+     * Returns the user-supplied blend function, if one has been set.
+     * <p>
+     * A null blender signifies the default {@link BlendMode#SRC_OVER} behavior.
+     *
+     * @return the blender assigned to this paint, otherwise null
+     * @see #setBlender(Blender)
+     */
+    @Nullable
+    public final Blender getBlender() {
+        return mBlender;
     }
 
     /**
@@ -853,6 +984,8 @@ public class Paint {
         mImageFilter = imageFilter;
     }
 
+    ///// Utility
+
     /**
      * Returns true if the paint prevents all drawing; otherwise, the paint may or
      * may not allow drawing.
@@ -862,15 +995,18 @@ public class Paint {
      *
      * @return true if the paint prevents all drawing
      */
-    public final boolean nothingToDraw() {
-        switch (getBlendMode()) {
-            case SRC_OVER, SRC_ATOP, DST_OUT, DST_OVER, PLUS, MINUS -> {
-                if (mShader == null && getAlpha() == 0) {
-                    return !isBlendedColorFilter(mColorFilter) && !isBlendedImageFilter(mImageFilter);
+    public boolean nothingToDraw() {
+        var mode = getBlendModeDirect(this);
+        if (mode != null) {
+            switch (mode) {
+                case SRC_OVER, SRC_ATOP, DST_OUT, DST_OVER, PLUS -> {
+                    if (getAlpha() == 0) {
+                        return !isBlendedImageFilter(mImageFilter);
+                    }
                 }
-            }
-            case DST -> {
-                return true;
+                case DST -> {
+                    return true;
+                }
             }
         }
         return false;
@@ -926,7 +1062,7 @@ public class Paint {
             // width or radius
             float stroke = mWidth * multiplier;
             if (align == ALIGN_CENTER) {
-                stroke *= 0.5;
+                stroke *= 0.5f;
             } // ALIGN_OUTSIDE
             storage.inset(-stroke, -stroke);
         }
@@ -938,25 +1074,6 @@ public class Paint {
         if (mImageFilter != null) {
             mImageFilter.computeFastBounds(storage, storage);
         }
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Paint paint)) return false;
-        return mFlags == paint.mFlags &&
-                mR == paint.mR &&
-                mG == paint.mG &&
-                mB == paint.mB &&
-                mA == paint.mA &&
-                mWidth == paint.mWidth &&
-                mMiterLimit == paint.mMiterLimit &&
-                mSmoothWidth == paint.mSmoothWidth &&
-                Objects.equals(mShader, paint.mShader) &&
-                Objects.equals(mBlender, paint.mBlender) &&
-                Objects.equals(mMaskFilter, paint.mMaskFilter) &&
-                Objects.equals(mColorFilter, paint.mColorFilter) &&
-                Objects.equals(mImageFilter, paint.mImageFilter);
     }
 
     @Override
@@ -975,6 +1092,29 @@ public class Paint {
         result = 31 * result + Objects.hashCode(mColorFilter);
         result = 31 * result + Objects.hashCode(mImageFilter);
         return result;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Paint paint)) return false;
+        return equals(paint);
+    }
+
+    protected final boolean equals(Paint paint) {
+        return mFlags == paint.mFlags &&
+                mR == paint.mR &&
+                mG == paint.mG &&
+                mB == paint.mB &&
+                mA == paint.mA &&
+                mWidth == paint.mWidth &&
+                mMiterLimit == paint.mMiterLimit &&
+                mSmoothWidth == paint.mSmoothWidth &&
+                Objects.equals(mShader, paint.mShader) &&
+                Objects.equals(mBlender, paint.mBlender) &&
+                Objects.equals(mMaskFilter, paint.mMaskFilter) &&
+                Objects.equals(mColorFilter, paint.mColorFilter) &&
+                Objects.equals(mImageFilter, paint.mImageFilter);
     }
 
     @Override
@@ -1048,6 +1188,20 @@ public class Paint {
         return s.toString();
     }
 
+    public static int getAlphaDirect(@Nullable Paint paint) {
+        return paint != null ? paint.getAlpha() : 0xFF;
+    }
+
+    public static BlendMode getBlendModeDirect(@Nullable Paint paint) {
+        if (paint != null) {
+            var blender = paint.getBlender();
+            if (blender != null) {
+                return blender.asBlendMode();
+            }
+        }
+        return BlendMode.SRC_OVER;
+    }
+
     public static boolean isBlendedShader(@Nullable Shader shader) {
         return shader != null && !shader.isOpaque();
     }
@@ -1072,16 +1226,7 @@ public class Paint {
             return false;
         }
         // Only let simple srcOver / src blending modes declare opaque, since behavior is clear.
-        BlendMode mode = paint.getBlendMode();
+        var mode = getBlendModeDirect(paint);
         return mode == BlendMode.SRC_OVER || mode == BlendMode.SRC;
-    }
-
-    public static int getAlphaDirect(@Nullable Paint paint) {
-        return paint != null ? paint.getAlpha() : 0xFF;
-    }
-
-    @Nonnull
-    public static BlendMode getBlendModeDirect(@Nullable Paint paint) {
-        return paint != null ? paint.getBlendMode() : BlendMode.SRC_OVER;
     }
 }

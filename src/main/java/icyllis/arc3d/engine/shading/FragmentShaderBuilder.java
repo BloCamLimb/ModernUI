@@ -67,7 +67,8 @@ public class FragmentShaderBuilder extends ShaderBuilderBase implements FPFragme
     public void enableSecondaryOutput() {
         assert (mSecondaryOutput == null);
         String layoutQualifier = "location = " + MAIN_DRAW_BUFFER_INDEX;
-        mSecondaryOutput = new ShaderVar(SECONDARY_COLOR_OUTPUT_NAME, SLDataType.kFloat4, ShaderVar.kOut_TypeModifier,
+        mSecondaryOutput = new ShaderVar(SECONDARY_COLOR_OUTPUT_NAME, SLDataType.kFloat4,
+                ShaderVar.kOut_TypeModifier,
                 ShaderVar.kNonArray, layoutQualifier, "");
         mSecondaryOutput.addLayoutQualifier("index = " + SECONDARY_COLOR_OUTPUT_INDEX);
     }

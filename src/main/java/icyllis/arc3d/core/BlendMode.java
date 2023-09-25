@@ -24,7 +24,7 @@ import javax.annotation.Nonnull;
 /**
  * Blend modes.
  */
-public enum BlendMode {
+public enum BlendMode implements Blender {
     /**
      * <p>
      * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_CLEAR.png" />
@@ -383,11 +383,12 @@ public enum BlendMode {
     private static final BlendMode[] BLEND_MODES = values();
 
     @Nonnull
-    public static BlendMode fromValue(int value) {
+    public static BlendMode mode(int value) {
         return BLEND_MODES[value];
     }
 
-    public static int toValue(@Nonnull BlendMode mode) {
-        return mode.ordinal();
+    @Override
+    public BlendMode asBlendMode() {
+        return this;
     }
 }

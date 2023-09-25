@@ -20,19 +20,21 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.engine.BackendFormat;
-import it.unimi.dsi.fastutil.HashCommon;
+import it.unimi.dsi.fastutil.Hash;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import org.lwjgl.system.NativeType;
 
 import javax.annotation.Nonnull;
+import javax.annotation.concurrent.Immutable;
 
 import static icyllis.arc3d.engine.Engine.BackendApi;
 import static icyllis.arc3d.opengl.GLCore.*;
 
+@Immutable
 public final class GLBackendFormat extends BackendFormat {
 
     private static final Int2ObjectOpenHashMap<GLBackendFormat> FORMATS =
-            new Int2ObjectOpenHashMap<>(LAST_FORMAT_INDEX + 1, 0.8f);
+            new Int2ObjectOpenHashMap<>(LAST_FORMAT_INDEX + 1, Hash.FAST_LOAD_FACTOR);
 
     private final int mFormat;
     private final boolean mIsExternal;
@@ -53,11 +55,9 @@ public final class GLBackendFormat extends BackendFormat {
     @Nonnull
     public static GLBackendFormat make(@NativeType("GLenum") int format, boolean isExternal) {
         if (glFormatIsSupported(format)) {
-            if (format < 0) {
-                throw new IllegalArgumentException();
-            }
+            assert (format > 0);
             return FORMATS.computeIfAbsent((format) | (isExternal ? Integer.MIN_VALUE : 0),
-                    k -> new GLBackendFormat(Math.abs(k), k < 0));
+                    k -> new GLBackendFormat(k & Integer.MAX_VALUE, k < 0));
         }
         return new GLBackendFormat(format, isExternal);
     }
@@ -118,7 +118,7 @@ public final class GLBackendFormat extends BackendFormat {
 
     @Override
     public int hashCode() {
-        return HashCommon.mix(mFormat);
+        return mFormat;
     }
 
     @Override

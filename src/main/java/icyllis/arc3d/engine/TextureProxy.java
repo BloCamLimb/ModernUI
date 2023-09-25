@@ -27,8 +27,6 @@ import javax.annotation.Nullable;
 
 import java.util.Objects;
 
-import static icyllis.arc3d.engine.Engine.*;
-
 public class TextureProxy extends SurfaceProxy {
 
     boolean mIsPromiseProxy = false;
@@ -270,12 +268,6 @@ public class TextureProxy extends SurfaceProxy {
     @Override
     public Texture peekTexture() {
         return mTexture;
-    }
-
-    @Nullable
-    @Override
-    public RenderTarget peekRenderTarget() {
-        return mTexture != null ? mTexture.getRenderTarget() : null;
     }
 
     @Override

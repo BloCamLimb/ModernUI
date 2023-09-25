@@ -24,7 +24,7 @@ import javax.annotation.Nonnull;
 public interface MatrixProvider {
 
     /**
-     * {@code const Matrix4& getLocalToDevice() const;}
+     * Returns the backing local-to-device matrix (no copy).
      *
      * @return the backing local-to-device matrix
      */

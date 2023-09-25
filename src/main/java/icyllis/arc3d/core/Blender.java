@@ -22,7 +22,19 @@ package icyllis.arc3d.core;
 /**
  * {@code Blender} represents a custom blend function in the pipeline. A blender
  * combines a source color (from the paint) and destination color (from the
- * draw buffer) into a final color.
+ * canvas) into a new color.
+ *
+ * @see BlendMode
  */
-public class Blender {
+public interface Blender {
+
+    /**
+     * Returns the blender's BlendMode in 'mode' if this Blender represents any BlendMode.
+     * Returns null for other types of blends.
+     * <p>
+     * This method is equivalent to <code>(x instanceof BlendMode)</code> check.
+     */
+    default BlendMode asBlendMode() {
+        return null;
+    }
 }

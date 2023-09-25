@@ -21,6 +21,7 @@ package icyllis.arc3d.test;
 
 import icyllis.arc3d.core.MathUtil;
 import icyllis.arc3d.core.*;
+import icyllis.arc3d.engine.Surface;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.geom.RoundRectProcessor;
 import icyllis.arc3d.opengl.*;
@@ -44,7 +45,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
 
-import static icyllis.arc3d.core.Core.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
 public class TestManagedResource {
@@ -296,7 +296,7 @@ public class TestManagedResource {
         TextureProxy target = dContext.getProxyProvider().createRenderTextureProxy(
                 GLBackendFormat.make(GLCore.GL_RGBA8),
                 800, 800, 4,
-                SurfaceFlags.Budgeted | SurfaceFlags.Renderable
+                Surface.FLAG_BUDGETED | Surface.FLAG_RENDERABLE
         );
         Objects.requireNonNull(target);
         GLPipelineState pso = (GLPipelineState) dContext.findOrCreatePipelineState(
@@ -328,9 +328,9 @@ public class TestManagedResource {
             Texture texture = dContext.getServer().createTexture(
                     x[0], y[0],
                     GLBackendFormat.make(GLCore.GL_RGBA8),
-                    1, SurfaceFlags.Mipmapped |
-                            SurfaceFlags.Budgeted |
-                            SurfaceFlags.Renderable,
+                    1, Surface.FLAG_MIPMAPPED |
+                            Surface.FLAG_BUDGETED |
+                            Surface.FLAG_RENDERABLE,
                     "MyTexture");
             if (texture != null) {
                 pw.println(texture);
@@ -340,11 +340,11 @@ public class TestManagedResource {
             texture = dContext.getResourceProvider().createTexture(
                     x[0], y[0],
                     GLBackendFormat.make(GLCore.GL_RGBA8),
-                    1, SurfaceFlags.Mipmapped |
-                            SurfaceFlags.Budgeted |
-                            SurfaceFlags.Renderable,
-                    ColorType.kRGBA_8888,
-                    ColorType.kRGBA_8888,
+                    1, Surface.FLAG_MIPMAPPED |
+                            Surface.FLAG_BUDGETED |
+                            Surface.FLAG_RENDERABLE,
+                    ImageInfo.CT_RGBA_8888,
+                    ImageInfo.CT_RGBA_8888,
                     0,
                     memAddress(pixels),
                     null);

@@ -87,10 +87,10 @@ public class OpsTask extends RenderTask {
             int cur = alloc.curOp();
             alloc.addInterval(getTarget(), cur, cur + mOpChains.size() - 1, true);
 
-            var gather = (TextureProxyVisitor) (p, __) -> alloc.addInterval(p,
+            TextureProxyVisitor gather = (p, __) -> alloc.addInterval(p,
                     alloc.curOp(),
                     alloc.curOp(),
-                    true);
+                    /*actualUse*/true);
             for (OpChain chain : mOpChains) {
                 chain.visitProxies(gather);
                 alloc.incOps();

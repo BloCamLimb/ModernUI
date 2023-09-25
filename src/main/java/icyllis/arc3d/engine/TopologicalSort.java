@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.engine;
 
-import javax.annotation.Nonnull;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -40,7 +40,7 @@ public final class TopologicalSort {
      * @param <T>     the node type of the graph
      * @throws IllegalStateException if the graph contains loops
      */
-    public static <T> void topologicalSort(@Nonnull List<T> graph, @Nonnull Adapter<T> adapter) {
+    public static <T> void topologicalSort(List<T> graph, Adapter<T> adapter) {
         assert checkAllUnmarked(graph, adapter);
 
         int index = 0;
@@ -68,7 +68,7 @@ public final class TopologicalSort {
     /**
      * Recursively visit a node and all the other nodes it depends on.
      */
-    private static <T> int dfsVisit(final T node, @Nonnull Adapter<T> adapter, int index) {
+    private static <T> int dfsVisit(final T node, Adapter<T> adapter, int index) {
         if (adapter.getIndex(node) != -1) {
             // If the node under consideration has been already been output it means it
             // (and all the nodes it depends on) are already in 'result'.
@@ -76,9 +76,9 @@ public final class TopologicalSort {
         }
         if (adapter.isTempMarked(node)) {
             // There was a loop
-            throw new IllegalStateException();
+            throw new IllegalStateException("cyclic dependency: " + node);
         }
-        final List<T> edges = adapter.getIncomingEdges(node);
+        final Collection<T> edges = adapter.getIncomingEdges(node);
         if (edges != null && !edges.isEmpty()) {
             // Temporarily mark the node
             adapter.setTempMarked(node, true);
@@ -94,7 +94,7 @@ public final class TopologicalSort {
         return index + 1;
     }
 
-    private static <T> boolean checkAllUnmarked(@Nonnull List<T> graph, @Nonnull Adapter<T> adapter) {
+    private static <T> boolean checkAllUnmarked(List<T> graph, Adapter<T> adapter) {
         for (final T node : graph) {
             assert adapter.getIndex(node) == -1;
             assert !adapter.isTempMarked(node);
@@ -102,7 +102,7 @@ public final class TopologicalSort {
         return true;
     }
 
-    private static <T> boolean cleanExit(@Nonnull List<T> graph, @Nonnull Adapter<T> adapter) {
+    private static <T> boolean cleanExit(List<T> graph, Adapter<T> adapter) {
         for (int i = 0, e = graph.size(); i < e; i++) {
             final T node = graph.get(i);
             assert adapter.getIndex(node) == i;
@@ -160,6 +160,6 @@ public final class TopologicalSort {
          * @param node a node of the graph
          * @return a list containing any incoming edges, or null if there are none
          */
-        List<T> getIncomingEdges(T node);
+        Collection<T> getIncomingEdges(T node);
     }
 }

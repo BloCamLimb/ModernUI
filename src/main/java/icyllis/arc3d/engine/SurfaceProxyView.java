@@ -26,7 +26,7 @@ import static icyllis.arc3d.engine.Engine.SurfaceOrigin;
 /**
  * Views a {@link SurfaceProxy} in the pipeline.
  */
-public final class SurfaceProxyView implements AutoCloseable {
+public class SurfaceProxyView implements AutoCloseable {
 
     @SharedPtr
     SurfaceProxy mProxy;
@@ -101,9 +101,9 @@ public final class SurfaceProxyView implements AutoCloseable {
     }
 
     /**
-     * Merge swizzle.
+     * Concat swizzle.
      */
-    public void merge(short swizzle) {
+    public void concat(short swizzle) {
         mSwizzle = Swizzle.concat(mSwizzle, swizzle);
     }
 
