@@ -19,12 +19,12 @@
 
 package icyllis.arc3d.vulkan;
 
-import static icyllis.arc3d.vulkan.VKCore.VK_NULL_HANDLE;
+import static org.lwjgl.vulkan.VK10.VK_NULL_HANDLE;
 
 /**
  * Holds Vulkan memory allocation information.
  */
-public class VkAlloc {
+public class VulkanAllocation {
 
     /**
      * Memory flags.
@@ -34,13 +34,14 @@ public class VkAlloc {
             COHERENT_FLAG = 0x2,            // memory is host coherent (flushed to device after mapping)
             LAZILY_ALLOCATED_FLAG = 0x4;    // memory is created with lazy allocation
 
+    // device memory block
     public long mMemory = VK_NULL_HANDLE;       // can be VK_NULL_HANDLE if is an RT and is borrowed
     public long mOffset = 0;
     public long mSize = 0;                      // can be indeterminate if texture uses borrow semantics
     public int mMemoryFlags = 0;                // property flags for memory allocation
-    public long mAllocation = VK_NULL_HANDLE;   // handle to memory allocated via VkMemoryAllocator
+    public long mAllocation = VK_NULL_HANDLE;   // handle to memory allocated via VulkanMemoryAllocator
 
-    public void set(VkAlloc alloc) {
+    public void set(VulkanAllocation alloc) {
         mMemory = alloc.mMemory;
         mOffset = alloc.mOffset;
         mSize = alloc.mSize;
@@ -52,7 +53,7 @@ public class VkAlloc {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        VkAlloc vkAlloc = (VkAlloc) o;
+        VulkanAllocation vkAlloc = (VulkanAllocation) o;
         if (mMemory != vkAlloc.mMemory) return false;
         if (mOffset != vkAlloc.mOffset) return false;
         if (mSize != vkAlloc.mSize) return false;

@@ -31,11 +31,11 @@ public abstract class ReleaseCallback extends RefCnt {
 
     @Override
     protected final void deallocate() {
-        onRelease();
+        invoke();
     }
 
     /**
      * This callback is invoked when the resource is released.
      */
-    public abstract void onRelease();
+    public abstract void invoke();
 }

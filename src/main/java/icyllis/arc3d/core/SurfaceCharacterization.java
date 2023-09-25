@@ -21,7 +21,7 @@ package icyllis.arc3d.core;
 
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.vulkan.VKCore;
-import icyllis.arc3d.vulkan.VkImageInfo;
+import icyllis.arc3d.vulkan.VulkanImageInfo;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nullable;
@@ -30,8 +30,8 @@ import static icyllis.arc3d.engine.Engine.BackendApi;
 
 /**
  * A surface characterization contains all the information Engine requires to make its internal
- * rendering decisions. When passed into a {@link DeferredListRecorder} it will copy the
- * data and pass it on to the {@link DeferredList} if/when it is created. Note that both of
+ * rendering decisions. When passed into a {@link DisplayListRecorder} it will copy the
+ * data and pass it on to the {@link DisplayList} if/when it is created. Note that both of
  * those objects (the Recorder and the DisplayList) will take a ref on the
  * {@link ContextThreadSafeProxy} object.
  */
@@ -254,7 +254,7 @@ public final class SurfaceCharacterization {
             if (texture.getBackend() != BackendApi.kVulkan) {
                 return false;
             }
-            VkImageInfo vkInfo = new VkImageInfo();
+            VulkanImageInfo vkInfo = new VulkanImageInfo();
             if (!texture.getVkImageInfo(vkInfo)) {
                 return false;
             }

@@ -19,19 +19,21 @@
 
 package icyllis.arc3d.engine;
 
-import javax.annotation.Nonnull;
+import icyllis.arc3d.core.Size;
 
 /**
- * Represents a rgba swizzle. It's packed as a <code>short</code>.
+ * Represents a color component mapping. It's packed as a <code>short</code> value.
  * <p>
- * Note: max swizzle value is 0x5555, so (AND 0xFFFF) is not required when implicitly cast to int.
+ * <b>Do NOT change the packing format, there are inlined code in other places</b>.
  */
+//TODO Project Valhalla, make this as primitive (record) class
 public final class Swizzle {
 
     // default value
     public static final short RGBA = 0x3210;
     public static final short BGRA = 0x3012;
     public static final short RGB1 = 0x5210;
+    public static final short BGR1 = 0x5012;
     public static final short AAAA = 0x3333;
 
     static {
@@ -39,7 +41,9 @@ public final class Swizzle {
         assert make('r', 'g', 'b', 'a') == RGBA;
         assert make('b', 'g', 'r', 'a') == BGRA;
         assert make('r', 'g', 'b', '1') == RGB1;
+        assert make('b', 'g', 'r', '1') == BGR1;
         assert make('a', 'a', 'a', 'a') == AAAA;
+        assert concat(make('1', '1', '1', 'r'), AAAA) == make('r', 'r', 'r', 'r');
     }
 
     public static int charToIndex(char c) {
@@ -51,7 +55,7 @@ public final class Swizzle {
             case 'a' -> 3;
             case '0' -> 4;
             case '1' -> 5;
-            default -> throw new IllegalArgumentException();
+            default -> throw new AssertionError(c);
         };
     }
 
@@ -63,14 +67,14 @@ public final class Swizzle {
             case 3 -> 'a';
             case 4 -> '0';
             case 5 -> '1';
-            default -> throw new IllegalArgumentException();
+            default -> throw new AssertionError(idx);
         };
     }
 
     /**
      * Compact representation of the swizzle suitable for a key. Letters must be lowercase.
      */
-    public static short make(@Nonnull String s) {
+    public static short make(String s) {
         return make(s.charAt(0), s.charAt(1), s.charAt(2), s.charAt(3));
     }
 
@@ -81,8 +85,11 @@ public final class Swizzle {
         return (short) (charToIndex(r) | (charToIndex(g) << 4) | (charToIndex(b) << 8) | (charToIndex(a) << 12));
     }
 
+    /**
+     * Concatenates two swizzles (e.g. concat("111R", "AAAA") -> "RRRR").
+     */
     public static short concat(short a, short b) {
-        short swizzle = 0;
+        int swizzle = 0;
         for (int i = 0; i < 4; ++i) {
             int idx = (b >> (4 * i)) & 0xF;
             if (idx != 4 && idx != 5) {
@@ -92,16 +99,20 @@ public final class Swizzle {
             }
             swizzle |= (idx << (4 * i));
         }
-        return swizzle;
+        return (short) swizzle;
     }
 
     /**
      * Applies this swizzle to the input color and returns the swizzled color.
      */
-    public static void apply(short swizzle, @Nonnull float[] color) {
-        float r = color[0], g = color[1], b = color[2], a = color[3];
+    public static float[] apply(short swizzle, @Size(min = 4) float[] v) {
+        final float
+                r = v[0],
+                g = v[1],
+                b = v[2],
+                a = v[3];
         for (int i = 0; i < 4; ++i) {
-            color[i] = switch (swizzle & 0xF) {
+            v[i] = switch (swizzle & 0xF) {
                 case 0 -> r;
                 case 1 -> g;
                 case 2 -> b;
@@ -112,11 +123,11 @@ public final class Swizzle {
             };
             swizzle >>= 4;
         }
+        return v;
     }
 
-    @Nonnull
     public static String toString(short swizzle) {
-        return String.valueOf(indexToChar(swizzle & 0xF)) +
+        return "" + indexToChar(swizzle & 0xF) +
                 indexToChar((swizzle >> 4) & 0xF) +
                 indexToChar((swizzle >> 8) & 0xF) +
                 indexToChar(swizzle >>> 12);

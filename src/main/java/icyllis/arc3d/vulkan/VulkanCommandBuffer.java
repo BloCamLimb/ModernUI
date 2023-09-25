@@ -17,30 +17,33 @@
  * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine;
+package icyllis.arc3d.vulkan;
 
-import java.util.Locale;
+import org.lwjgl.vulkan.VkCommandBuffer;
+import org.lwjgl.vulkan.VkDevice;
 
-/**
- * Callback interface to report errors when compiling shaders.
- */
-@FunctionalInterface
-public interface ShaderErrorHandler {
+import static icyllis.arc3d.vulkan.VKCore.vkCmdDraw;
 
-    /**
-     * Used when no error handler is set.
-     */
-    ShaderErrorHandler DEFAULT = (shader, errors) -> {
-        System.err.println("Shader compilation error");
-        System.err.println("------------------------");
-        String[] lines = shader.split("\n");
-        for (int i = 0; i < lines.length; ++i) {
-            System.err.printf(Locale.ROOT, "%4s\t%s\n", i + 1, lines[i]);
-        }
-        System.err.println("Errors:");
-        System.err.println(errors);
-        assert false;
-    };
+public abstract class VulkanCommandBuffer extends VkCommandBuffer {
 
-    void handleCompileError(String shader, String errors);
+    protected boolean mIsRecording = false;
+
+    public VulkanCommandBuffer(VkDevice device, long handle) {
+        super(handle, device);
+    }
+
+    public void draw(int vertexCount,
+                     int instanceCount,
+                     int firstVertex,
+                     int firstInstance) {
+        vkCmdDraw(this,
+                vertexCount,
+                instanceCount,
+                firstVertex,
+                firstInstance);
+    }
+
+    public boolean isRecording() {
+        return mIsRecording;
+    }
 }

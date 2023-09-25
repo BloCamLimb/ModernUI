@@ -76,16 +76,18 @@ public class VertexShaderBuilder extends ShaderBuilderBase implements VertexGeom
     }
 
     @Override
-    public void emitNormalizedPosition(ShaderVar worldPos) {
-        if (worldPos.getType() == SLDataType.kFloat3) {
+    public void emitNormalizedPosition(ShaderVar devicePos) {
+        if (devicePos.getType() == SLDataType.kFloat3) {
+            // xy0w
             codeAppendf("""
                     gl_Position = vec4(%1$s.xy * %2$s.xz + %1$s.zz * %2$s.yw, 0.0, %1$s.z);
-                    """, worldPos.getName(), UniformHandler.PROJECTION_NAME);
+                    """, devicePos.getName(), UniformHandler.PROJECTION_NAME);
         } else {
-            assert (worldPos.getType() == SLDataType.kFloat2);
+            assert (devicePos.getType() == SLDataType.kFloat2);
+            // xy01
             codeAppendf("""
                     gl_Position = vec4(%1$s.xy * %2$s.xz + %2$s.yw, 0.0, 1.0);
-                    """, worldPos.getName(), UniformHandler.PROJECTION_NAME);
+                    """, devicePos.getName(), UniformHandler.PROJECTION_NAME);
         }
     }
 }

@@ -37,7 +37,7 @@ import static icyllis.arc3d.vulkan.VKCore.*;
  * as <code>void*</code>, we can safely truncate it because Win32 handles are 32-bit significant).
  * If it is an NT handle, it must be released manually by the memory exporter (e.g. Vulkan).
  */
-public final class VkImageInfo extends VkAlloc {
+public final class VulkanImageInfo extends VulkanAllocation {
 
     public long mImage = VK_NULL_HANDLE;
     public int mImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -51,7 +51,7 @@ public final class VkImageInfo extends VkAlloc {
     public int mMemoryHandle = -1;
     public boolean mProtected = false;
 
-    public void set(VkImageInfo info) {
+    public void set(VulkanImageInfo info) {
         super.set(info);
         mImage = info.mImage;
         mImageLayout = info.mImageLayout;
@@ -71,7 +71,7 @@ public final class VkImageInfo extends VkAlloc {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
-        VkImageInfo that = (VkImageInfo) o;
+        VulkanImageInfo that = (VulkanImageInfo) o;
         if (mImage != that.mImage) return false;
         if (mImageLayout != that.mImageLayout) return false;
         if (mImageTiling != that.mImageTiling) return false;

@@ -26,9 +26,9 @@ import javax.annotation.Nonnull;
 /**
  * Represents Vulkan 2D images, can be used as textures.
  */
-public final class VkTexture extends Texture {
+public final class VulkanTexture extends Texture {
 
-    public VkTexture(VkServer server, int width, int height) {
+    public VulkanTexture(VulkanServer server, int width, int height) {
         super(server, width, height);
     }
 

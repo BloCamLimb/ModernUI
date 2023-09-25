@@ -20,10 +20,20 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.Rect2f;
+import icyllis.arc3d.core.Rect2i;
 
+/**
+ * {@link Clip} is an abstract base class for producing a clip. It constructs a
+ * clip mask if necessary, and fills out a {@link ClipResult} instructing the
+ * caller on how to set up the draw state.
+ */
 public abstract class Clip {
 
     public abstract int apply(SurfaceDrawContext sdc,
                               ClipResult out,
                               Rect2f bounds);
+
+    public static void getPixelBounds(Rect2f bounds, boolean aa,
+                                      boolean exterior, Rect2i out) {
+    }
 }

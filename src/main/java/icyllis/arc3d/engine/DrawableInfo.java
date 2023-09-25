@@ -17,11 +17,7 @@
  * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.core;
+package icyllis.arc3d.engine;
 
-/**
- * This class contains pre-processed graphics operations that can be replayed into
- * a {@link Surface} via Surface::draw(DeferredDisplayList*).
- */
-public class DeferredList {
+public abstract class DrawableInfo {
 }

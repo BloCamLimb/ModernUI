@@ -19,7 +19,6 @@
 
 package icyllis.arc3d.mock;
 
-import icyllis.arc3d.core.Core;
 import icyllis.arc3d.core.ImageInfo;
 import icyllis.arc3d.engine.BackendFormat;
 import icyllis.arc3d.engine.Engine;
@@ -76,7 +75,7 @@ public class MockBackendFormat extends BackendFormat {
 
     @Override
     public boolean isSRGB() {
-        return mCompressionType == Core.CompressionType.None && mColorType == ImageInfo.CT_RGBA_8888_SRGB;
+        return mCompressionType == ImageInfo.COMPRESSION_NONE && mColorType == ImageInfo.CT_RGBA_8888_SRGB;
     }
 
     @Override
@@ -86,7 +85,7 @@ public class MockBackendFormat extends BackendFormat {
 
     @Override
     public int getBytesPerBlock() {
-        if (mCompressionType != Core.CompressionType.None) {
+        if (mCompressionType != ImageInfo.COMPRESSION_NONE) {
             return 8; // 1 * ETC1Block or BC1Block
         } else if (mIsStencilFormat) {
             return 4;

@@ -154,12 +154,12 @@ public final class ResourceCache implements AutoCloseable {
     }
 
     /**
-     * Sets the max server memory byte size of the cache.
+     * Sets the max GPU memory byte size of the cache.
      * A {@link #purge()} is followed by this method call.
      * The passed value can be retrieved by {@link #getMaxResourceBytes()}.
      */
-    public void setCacheLimit(long bytes) {
-        mMaxBytes = bytes;
+    public void setCacheLimit(long maxBytes) {
+        mMaxBytes = maxBytes;
         purge();
     }
 

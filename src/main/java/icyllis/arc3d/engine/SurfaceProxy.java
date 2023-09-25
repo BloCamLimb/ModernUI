@@ -432,6 +432,7 @@ public abstract class SurfaceProxy extends RefCnt {
         return 0;
     }
 
+    @ApiStatus.Internal
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    abstract boolean doLazyInstantiation(ResourceProvider resourceProvider);
+    public abstract boolean doLazyInstantiation(ResourceProvider resourceProvider);
 }

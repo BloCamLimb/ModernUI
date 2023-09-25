@@ -22,9 +22,9 @@ package icyllis.arc3d.vulkan;
 import icyllis.arc3d.engine.Buffer;
 
 //TODO
-public final class VkBuffer extends Buffer {
+public final class VulkanBuffer extends Buffer {
 
-    public VkBuffer(VkServer server) {
+    public VulkanBuffer(VulkanServer server) {
         super(server, 0, 0);
     }
 

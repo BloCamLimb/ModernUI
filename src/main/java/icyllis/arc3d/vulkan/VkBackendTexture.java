@@ -19,12 +19,10 @@
 
 package icyllis.arc3d.vulkan;
 
-import icyllis.arc3d.engine.BackendFormat;
-import icyllis.arc3d.engine.BackendTexture;
+import icyllis.arc3d.engine.*;
 
 import javax.annotation.Nonnull;
 
-import static icyllis.arc3d.engine.Engine.BackendApi;
 import static icyllis.arc3d.vulkan.VKCore.*;
 import static org.lwjgl.vulkan.EXTImageDrmFormatModifier.VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
 
@@ -37,19 +35,19 @@ public final class VkBackendTexture extends BackendTexture {
             VK_IMAGE_USAGE_SAMPLED_BIT |
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    private final VkImageInfo mInfo;
-    final VkSharedImageInfo mState;
+    private final VulkanImageInfo mInfo;
+    final VulkanSharedImageInfo mState;
 
     private final BackendFormat mBackendFormat;
 
     // The VkImageInfo can NOT be modified anymore.
-    public VkBackendTexture(int width, int height, VkImageInfo info) {
-        this(width, height, info, new VkSharedImageInfo(info), VkBackendFormat.make(info.mFormat,
+    public VkBackendTexture(int width, int height, VulkanImageInfo info) {
+        this(width, height, info, new VulkanSharedImageInfo(info), VkBackendFormat.make(info.mFormat,
                 info.mMemoryHandle != -1 || info.mImageTiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT));
     }
 
-    VkBackendTexture(int width, int height, VkImageInfo info,
-                     VkSharedImageInfo state, BackendFormat backendFormat) {
+    VkBackendTexture(int width, int height, VulkanImageInfo info,
+                     VulkanSharedImageInfo state, BackendFormat backendFormat) {
         super(width, height);
         if (info.mImageUsageFlags == 0) {
             info.mImageUsageFlags = DEFAULT_USAGE_FLAGS;
@@ -61,7 +59,7 @@ public final class VkBackendTexture extends BackendTexture {
 
     @Override
     public int getBackend() {
-        return BackendApi.kVulkan;
+        return Engine.BackendApi.kVulkan;
     }
 
     @Override
@@ -75,7 +73,7 @@ public final class VkBackendTexture extends BackendTexture {
     }
 
     @Override
-    public boolean getVkImageInfo(VkImageInfo info) {
+    public boolean getVkImageInfo(VulkanImageInfo info) {
         info.set(mInfo);
         info.mImageLayout = mState.getImageLayout();
         info.mCurrentQueueFamily = mState.getQueueFamilyIndex();

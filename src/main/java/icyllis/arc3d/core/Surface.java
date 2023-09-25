@@ -73,7 +73,7 @@ public class Surface extends RefCnt {
                                                  int origin, int sampleCount,
                                                  int colorType,
                                                  Runnable releaseCallback) {
-        if (context == null || sampleCount < 1 || colorType == Core.ColorType.kUnknown) {
+        if (context == null || sampleCount < 1 || colorType == ImageInfo.CT_UNKNOWN) {
             if (releaseCallback != null) {
                 releaseCallback.run();
             }
@@ -123,6 +123,30 @@ public class Surface extends RefCnt {
         }
 
         return null;
+    }
+
+    @Nullable
+    public static Surface wrapBackendRenderTarget(RecordingContext rContext,
+                                                  BackendRenderTarget backendRenderTarget,
+                                                  int origin,
+                                                  int colorType) {
+        if (colorType == ImageInfo.CT_UNKNOWN) {
+            return null;
+        }
+        var proxyProvider = rContext.getProxyProvider();
+        var fsp = proxyProvider.wrapBackendRenderTarget(backendRenderTarget, null);
+        if (fsp == null) {
+            return null;
+        }
+        var dev = ServerDevice.make(rContext,
+                colorType,
+                fsp,
+                origin,
+                false);
+        if (dev == null) {
+            return null;
+        }
+        return new Surface(dev);
     }
 
     private static boolean validateBackendTexture(Caps caps,

@@ -20,15 +20,17 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.engine.ShaderErrorHandler;
 import icyllis.arc3d.engine.PipelineStateCache;
 import org.lwjgl.opengl.GL45C;
 import org.lwjgl.system.*;
 
+import javax.annotation.Nonnull;
 import java.io.PrintWriter;
 import java.nio.ByteBuffer;
 import java.util.Locale;
 
+import static org.lwjgl.opengl.AMDDebugOutput.*;
+import static org.lwjgl.opengl.ARBDebugOutput.*;
 import static org.lwjgl.opengl.EXTTextureCompressionS3TC.*;
 
 /**
@@ -344,5 +346,104 @@ public final class GLCore extends GL45C {
         pw.println("Errors:");
         pw.println(errors);
         assert false;
+    }
+
+    @Nonnull
+    public static String getDebugSource(int source) {
+        return switch (source) {
+            case GL_DEBUG_SOURCE_API -> "API";
+            case GL_DEBUG_SOURCE_WINDOW_SYSTEM -> "Window System";
+            case GL_DEBUG_SOURCE_SHADER_COMPILER -> "Shader Compiler";
+            case GL_DEBUG_SOURCE_THIRD_PARTY -> "Third Party";
+            case GL_DEBUG_SOURCE_APPLICATION -> "Application";
+            case GL_DEBUG_SOURCE_OTHER -> "Other";
+            default -> APIUtil.apiUnknownToken(source);
+        };
+    }
+
+    @Nonnull
+    public static String getDebugType(int type) {
+        return switch (type) {
+            case GL_DEBUG_TYPE_ERROR -> "Error";
+            case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR -> "Deprecated Behavior";
+            case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR -> "Undefined Behavior";
+            case GL_DEBUG_TYPE_PORTABILITY -> "Portability";
+            case GL_DEBUG_TYPE_PERFORMANCE -> "Performance";
+            case GL_DEBUG_TYPE_OTHER -> "Other";
+            case GL_DEBUG_TYPE_MARKER -> "Marker";
+            default -> APIUtil.apiUnknownToken(type);
+        };
+    }
+
+    @Nonnull
+    public static String getDebugSeverity(int severity) {
+        return switch (severity) {
+            case GL_DEBUG_SEVERITY_HIGH -> "High";
+            case GL_DEBUG_SEVERITY_MEDIUM -> "Medium";
+            case GL_DEBUG_SEVERITY_LOW -> "Low";
+            case GL_DEBUG_SEVERITY_NOTIFICATION -> "Notification";
+            default -> APIUtil.apiUnknownToken(severity);
+        };
+    }
+
+    @Nonnull
+    public static String getSourceARB(int source) {
+        return switch (source) {
+            case GL_DEBUG_SOURCE_API_ARB -> "API";
+            case GL_DEBUG_SOURCE_WINDOW_SYSTEM_ARB -> "Window System";
+            case GL_DEBUG_SOURCE_SHADER_COMPILER_ARB -> "Shader Compiler";
+            case GL_DEBUG_SOURCE_THIRD_PARTY_ARB -> "Third Party";
+            case GL_DEBUG_SOURCE_APPLICATION_ARB -> "Application";
+            case GL_DEBUG_SOURCE_OTHER_ARB -> "Other";
+            default -> APIUtil.apiUnknownToken(source);
+        };
+    }
+
+    @Nonnull
+    public static String getTypeARB(int type) {
+        return switch (type) {
+            case GL_DEBUG_TYPE_ERROR_ARB -> "Error";
+            case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR_ARB -> "Deprecated Behavior";
+            case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB -> "Undefined Behavior";
+            case GL_DEBUG_TYPE_PORTABILITY_ARB -> "Portability";
+            case GL_DEBUG_TYPE_PERFORMANCE_ARB -> "Performance";
+            case GL_DEBUG_TYPE_OTHER_ARB -> "Other";
+            default -> APIUtil.apiUnknownToken(type);
+        };
+    }
+
+    @Nonnull
+    public static String getSeverityARB(int severity) {
+        return switch (severity) {
+            case GL_DEBUG_SEVERITY_HIGH_ARB -> "High";
+            case GL_DEBUG_SEVERITY_MEDIUM_ARB -> "Medium";
+            case GL_DEBUG_SEVERITY_LOW_ARB -> "Low";
+            default -> APIUtil.apiUnknownToken(severity);
+        };
+    }
+
+    @Nonnull
+    public static String getCategoryAMD(int category) {
+        return switch (category) {
+            case GL_DEBUG_CATEGORY_API_ERROR_AMD -> "API Error";
+            case GL_DEBUG_CATEGORY_WINDOW_SYSTEM_AMD -> "Window System";
+            case GL_DEBUG_CATEGORY_DEPRECATION_AMD -> "Deprecation";
+            case GL_DEBUG_CATEGORY_UNDEFINED_BEHAVIOR_AMD -> "Undefined Behavior";
+            case GL_DEBUG_CATEGORY_PERFORMANCE_AMD -> "Performance";
+            case GL_DEBUG_CATEGORY_SHADER_COMPILER_AMD -> "Shader Compiler";
+            case GL_DEBUG_CATEGORY_APPLICATION_AMD -> "Application";
+            case GL_DEBUG_CATEGORY_OTHER_AMD -> "Other";
+            default -> APIUtil.apiUnknownToken(category);
+        };
+    }
+
+    @Nonnull
+    public static String getSeverityAMD(int severity) {
+        return switch (severity) {
+            case GL_DEBUG_SEVERITY_HIGH_AMD -> "High";
+            case GL_DEBUG_SEVERITY_MEDIUM_AMD -> "Medium";
+            case GL_DEBUG_SEVERITY_LOW_AMD -> "Low";
+            default -> APIUtil.apiUnknownToken(severity);
+        };
     }
 }

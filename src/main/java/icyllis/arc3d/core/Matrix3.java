@@ -19,6 +19,8 @@
 
 package icyllis.arc3d.core;
 
+import org.lwjgl.system.MemoryUtil;
+
 import javax.annotation.Nonnull;
 
 public class Matrix3 {
@@ -61,5 +63,42 @@ public class Matrix3 {
         m31 = 0.0f;
         m32 = 0.0f;
         m33 = 1.0f;
+    }
+
+    /**
+     * Get this matrix data, store them into an address (UNSAFE).
+     * NOTE: This method does not perform memory security checks.
+     *
+     * @param p the pointer of the array to store
+     */
+    public void store(long p) {
+        MemoryUtil.memPutFloat(p, m11);
+        MemoryUtil.memPutFloat(p + 4, m12);
+        MemoryUtil.memPutFloat(p + 8, m13);
+        MemoryUtil.memPutFloat(p + 12, m21);
+        MemoryUtil.memPutFloat(p + 16, m22);
+        MemoryUtil.memPutFloat(p + 20, m23);
+        MemoryUtil.memPutFloat(p + 24, m31);
+        MemoryUtil.memPutFloat(p + 28, m32);
+        MemoryUtil.memPutFloat(p + 32, m33);
+    }
+
+    /**
+     * Get this matrix data, store them into an address (UNSAFE).
+     * The data matches std140 layout so it is not tightly packed.
+     * NOTE: This method does not perform memory security checks.
+     *
+     * @param p the pointer of the array to store, must be aligned
+     */
+    public void storeAligned(long p) {
+        MemoryUtil.memPutFloat(p, m11);
+        MemoryUtil.memPutFloat(p + 4, m12);
+        MemoryUtil.memPutFloat(p + 8, m13);
+        MemoryUtil.memPutFloat(p + 16, m21);
+        MemoryUtil.memPutFloat(p + 20, m22);
+        MemoryUtil.memPutFloat(p + 24, m23);
+        MemoryUtil.memPutFloat(p + 32, m31);
+        MemoryUtil.memPutFloat(p + 36, m32);
+        MemoryUtil.memPutFloat(p + 40, m33);
     }
 }

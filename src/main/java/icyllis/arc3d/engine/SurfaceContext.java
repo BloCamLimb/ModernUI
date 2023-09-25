@@ -19,10 +19,9 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.Core;
 import icyllis.arc3d.core.ImageInfo;
 
-import static icyllis.arc3d.engine.Engine.*;
+import static icyllis.arc3d.engine.Engine.SurfaceOrigin;
 
 /**
  * Helper to orchestrate commands for a particular surface.
@@ -73,14 +72,14 @@ public class SurfaceContext implements AutoCloseable {
     }
 
     /**
-     * @see ColorType
+     * @see ImageInfo#CT_UNKNOWN
      */
     public final int getColorType() {
         return ImageInfo.colorType(mColorInfo);
     }
 
     /**
-     * @see Core.AlphaType
+     * @see ImageInfo#AT_UNKNOWN
      */
     public final int getAlphaType() {
         return ImageInfo.alphaType(mColorInfo);

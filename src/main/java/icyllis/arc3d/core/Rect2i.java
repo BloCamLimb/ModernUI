@@ -102,6 +102,20 @@ public class Rect2i {
     }
 
     /**
+     * Returns the rectangle's left.
+     */
+    public final int x() {
+        return mLeft;
+    }
+
+    /**
+     * Return the rectangle's top.
+     */
+    public final int y() {
+        return mTop;
+    }
+
+    /**
      * @return the rectangle's width. This does not check for a valid rectangle
      * (i.e. left <= right) so the result may be negative.
      */

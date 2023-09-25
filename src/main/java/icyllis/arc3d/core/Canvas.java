@@ -50,37 +50,16 @@ import java.lang.annotation.RetentionPolicy;
  * don't need to update the buffer in GPU. This is not recommended for frequently
  * updated scenes.
  * <p>
- * The Canvas uses analytic geometry to draw geometry, instead of meshing or
- * tessellation. This will produce very high quality rendering results (analytical
- * solution rather than approximate solution), but requires GPU to solve cubic
- * equations for quadratic curves.
- * <p>
  * The Canvas supports multiple color buffers in one off-screen rendering target,
  * which can be used for many complex color blending and temporary operations.
  * Note that depth buffer and depth test is not enabled, Z ordering or transparency
  * sorting is required on the client pipeline before drawing onto the Canvas. All
  * layers are considered translucent and drawn from far to near.
  * <p>
- * For tree structures, each child canvas may use its transition layers for rendering.
- * These transition layers are designed for short-time alpha animation, and it avoids
- * creating a large number framebuffers.
- * <p>
- * The root canvas and device is backed by the main render target (a custom framebuffer).
- * Multisampling anti-aliasing (MSAA) should be always enabled.
- * <p>
- * The projection matrix is globally shared, and the one of surface canvas must be
- * an orthographic projection matrix. Canvas's matrix stack is the local model view
- * matrix on client side, it should be an affine transformation. The pipeline will
- * calculate the world coordinates in advance.
- * <p>
  * You may never access the pixels of the canvas directly on the current thread,
  * because canvas is backed by GPU and uses deferred rendering. You must wait for
  * GPU to finish all rendering tasks and then use thread scheduling before you can
  * download the surface data to CPU side memory.
- * <p>
- * This API is stable.
- *
- * @author BloCamLimb
  */
 @SuppressWarnings("unused")
 public class Canvas implements AutoCloseable {
@@ -169,7 +148,7 @@ public class Canvas implements AutoCloseable {
 
     /**
      * Returns ImageInfo for Canvas. If Canvas is not associated with raster surface or
-     * GPU surface, returned ColorType is set to {@link Core.ColorType#kUnknown}.
+     * GPU surface, returned ColorType is set to {@link ImageInfo#CT_UNKNOWN}.
      *
      * @return dimensions and ColorType of Canvas
      */
@@ -898,7 +877,7 @@ public class Canvas implements AutoCloseable {
     public final void drawColor(@ColorInt int color, BlendMode mode) {
         Paint paint = mTmpPaint;
         paint.setColor(color);
-        paint.setBlendMode(mode);
+        paint.setBlender(mode);
         drawPaint(paint);
         paint.reset();
     }
@@ -913,7 +892,7 @@ public class Canvas implements AutoCloseable {
     public final void drawColor(Color color, BlendMode mode) {
         Paint paint = mTmpPaint;
         paint.setRGBA(color.mR, color.mG, color.mB, color.mA);
-        paint.setBlendMode(mode);
+        paint.setBlender(mode);
         drawPaint(paint);
         paint.reset();
     }
@@ -931,7 +910,7 @@ public class Canvas implements AutoCloseable {
     public final void drawColor(float r, float g, float b, float a, BlendMode mode) {
         Paint paint = mTmpPaint;
         paint.setRGBA(r, g, b, a);
-        paint.setBlendMode(mode);
+        paint.setBlender(mode);
         drawPaint(paint);
         paint.reset();
     }

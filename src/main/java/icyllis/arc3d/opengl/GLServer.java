@@ -332,6 +332,12 @@ public final class GLServer extends Server {
         }
     }
 
+    //FIXME this is temp, wait for beginRenderPass()
+    public void forceResetContext(int state) {
+        markContextDirty(state);
+        handleDirtyContext();
+    }
+
     @Nullable
     @Override
     protected Texture onCreateTexture(int width, int height,
