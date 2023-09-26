@@ -25,7 +25,7 @@ import javax.annotation.Nonnull;
 
 /**
  * This class represents a 3x3 matrix and a 2D transformation, its components
- * correspond to x, y, and w of a 4x4 matrix, where z is arbitrary.
+ * correspond to x, y, and w of a 4x4 matrix, where z is discarded.
  * <p>
  * This class also computes a type mask to simplify some operations, while
  * {@link Matrix3} and {@link Matrix4} do not have this feature.
@@ -44,14 +44,14 @@ public class Matrix implements Cloneable {
      * TypeMask
      * <p>
      * Enum of bit fields for mask returned by getType().
-     * Used to identify the complexity of Matrix3, to optimize performance.
+     * Used to identify the complexity of Matrix, for optimizations.
      */
     public static final int
-            Identity_Mask = 0,          // identity; all bits clear
-            Translate_Mask = 0x01,      // translation
-            Scale_Mask = 0x02,          // scale
-            Affine_Mask = 0x04,         // shear or rotate
-            Perspective_Mask = 0x08;    // perspective
+            kIdentity_Mask = 0,          // identity; all bits clear
+            kTranslate_Mask = 0x01,      // translation
+            kScale_Mask = 0x02,          // scale
+            kAffine_Mask = 0x04,         // shear or rotate
+            kPerspective_Mask = 0x08;    // perspective
     /**
      * Set if the matrix will map a rectangle to another rectangle. This
      * can be true if the matrix is scale-only, or rotates a multiple of
@@ -69,18 +69,18 @@ public class Matrix implements Cloneable {
 
     // sequential matrix elements, m(ij) (row, column)
     // directly using primitives will be faster than array in Java
-    // [m11 m12 m13]
-    // [m21 m22 m23]
-    // [m31 m32 m33] <- [m31 m32] represents the origin
+    // [m11 m12 m14]
+    // [m21 m22 m24]
+    // [m41 m42 m44] <- [m41 m42] represents the origin
     protected float m11;
     protected float m12;
-    protected float m13;
+    protected float m14;
     protected float m21;
     protected float m22;
-    protected float m23;
-    protected float m31;
-    protected float m32;
-    protected float m33;
+    protected float m24;
+    protected float m41;
+    protected float m42;
+    protected float m44;
 
     protected int mTypeMask;
 
@@ -88,8 +88,8 @@ public class Matrix implements Cloneable {
      * Create a new identity matrix.
      */
     public Matrix() {
-        m11 = m22 = m33 = 1.0f;
-        mTypeMask = Identity_Mask | AxisAligned_Mask;
+        m11 = m22 = m44 = 1.0f;
+        mTypeMask = kIdentity_Mask | AxisAligned_Mask;
     }
 
     public Matrix(Matrix m) {
@@ -103,10 +103,7 @@ public class Matrix implements Cloneable {
      */
     @Nonnull
     public static Matrix identity() {
-        final Matrix m = new Matrix();
-        m.m11 = m.m22 = m.m33 = 1.0f;
-        m.mTypeMask = Identity_Mask | AxisAligned_Mask;
-        return m;
+        return new Matrix();
     }
 
     /**
@@ -140,8 +137,8 @@ public class Matrix implements Cloneable {
         return m12;
     }
 
-    public float m13() {
-        return m13;
+    public float m14() {
+        return m14;
     }
 
     public float m21() {
@@ -152,20 +149,20 @@ public class Matrix implements Cloneable {
         return m22;
     }
 
-    public float m23() {
-        return m23;
+    public float m24() {
+        return m24;
     }
 
-    public float m31() {
-        return m31;
+    public float m41() {
+        return m41;
     }
 
-    public float m32() {
-        return m32;
+    public float m42() {
+        return m42;
     }
 
-    public float m33() {
-        return m33;
+    public float m44() {
+        return m44;
     }
 
     /**
@@ -217,7 +214,7 @@ public class Matrix implements Cloneable {
      * @return horizontal translation factor
      */
     public float getTranslateX() {
-        return m31;
+        return m41;
     }
 
     /**
@@ -227,7 +224,7 @@ public class Matrix implements Cloneable {
      * @return vertical translation factor
      */
     public float getTranslateY() {
-        return m32;
+        return m42;
     }
 
     /**
@@ -236,7 +233,7 @@ public class Matrix implements Cloneable {
      * @return input x-axis perspective factor
      */
     public float getPerspX() {
-        return m13;
+        return m14;
     }
 
     /**
@@ -245,7 +242,7 @@ public class Matrix implements Cloneable {
      * @return input y-axis perspective factor
      */
     public float getPerspY() {
-        return m23;
+        return m24;
     }
 
     /**
@@ -271,7 +268,7 @@ public class Matrix implements Cloneable {
      * @return {@code true} if this matrix is identity.
      */
     public boolean isIdentity() {
-        return getType() == Identity_Mask;
+        return getType() == kIdentity_Mask;
     }
 
     /**
@@ -280,7 +277,7 @@ public class Matrix implements Cloneable {
      * @return {@code true} if this matrix is scales, translates, or both.
      */
     public boolean isScaleTranslate() {
-        return (getType() & ~(Scale_Mask | Translate_Mask)) == 0;
+        return (getType() & ~(kScale_Mask | kTranslate_Mask)) == 0;
     }
 
     /**
@@ -289,7 +286,7 @@ public class Matrix implements Cloneable {
      * @return {@code true} if this matrix is identity, or translates
      */
     public boolean isTranslate() {
-        return (getType() & ~(Translate_Mask)) == 0;
+        return (getType() & ~(kTranslate_Mask)) == 0;
     }
 
     /**
@@ -306,6 +303,41 @@ public class Matrix implements Cloneable {
     }
 
     /**
+     * Returns true if SkMatrix contains only translation, rotation, reflection, and
+     * scale. Scale may differ along rotated axes.
+     * Returns false if SkMatrix skewing, perspective, or degenerate forms that collapse
+     * to a line or point.
+     * <p>
+     * Preserves right angles, but not requiring that the arms of the angle
+     * retain equal lengths.
+     *
+     * @return true if Matrix only rotates, scales, translates
+     */
+    public boolean preservesRightAngles() {
+        int mask = getType();
+
+        if (mask <= kTranslate_Mask) {
+            // identity, translate and/or scale
+            return true;
+        }
+        if ((mask & kPerspective_Mask) != 0) {
+            return false;
+        }
+
+        float mx = m11;
+        float my = m22;
+        float sx = m21;
+        float sy = m12;
+
+        // check if upper-left 2x2 of matrix is degenerate
+        if (MathUtil.isApproxZero(mx * my - sx * sy)) {
+            return false;
+        }
+
+        return MathUtil.isApproxZero(mx * sx + sy * my);
+    }
+
+    /**
      * Returns whether this matrix contains perspective elements.
      *
      * @return true if this matrix is in most general form
@@ -315,7 +347,7 @@ public class Matrix implements Cloneable {
                 (mTypeMask & OnlyPerspectiveValid_Mask) == 0) {
             mTypeMask = computePerspectiveTypeMask();
         }
-        return (mTypeMask & Perspective_Mask) != 0;
+        return (mTypeMask & kPerspective_Mask) != 0;
     }
 
     /**
@@ -334,17 +366,17 @@ public class Matrix implements Cloneable {
     public boolean isSimilarity() {
         // if identity or translate matrix
         int mask = getType();
-        if (mask <= Translate_Mask) {
+        if (mask <= kTranslate_Mask) {
             return true;
         }
-        if ((mask & Perspective_Mask) != 0) {
+        if ((mask & kPerspective_Mask) != 0) {
             return false;
         }
 
         float mx = m11;
         float my = m22;
         // if no shear, can just compare scale factors
-        if ((mask & Affine_Mask) == 0) {
+        if ((mask & kAffine_Mask) == 0) {
             return !MathUtil.isApproxZero(mx) && MathUtil.isApproxEqual(Math.abs(mx), Math.abs(my));
         }
         float sx = m21;
@@ -368,24 +400,24 @@ public class Matrix implements Cloneable {
      * @param mat the matrix to multiply
      */
     public void preConcat(@Nonnull Matrix mat) {
-        final float f11 = mat.m11 * m11 + mat.m12 * m21 + mat.m13 * m31;
-        final float f12 = mat.m11 * m12 + mat.m12 * m22 + mat.m13 * m32;
-        final float f13 = mat.m11 * m13 + mat.m12 * m23 + mat.m13 * m33;
-        final float f21 = mat.m21 * m11 + mat.m22 * m21 + mat.m23 * m31;
-        final float f22 = mat.m21 * m12 + mat.m22 * m22 + mat.m23 * m32;
-        final float f23 = mat.m21 * m13 + mat.m22 * m23 + mat.m23 * m33;
-        final float f31 = mat.m31 * m11 + mat.m32 * m21 + mat.m33 * m31;
-        final float f32 = mat.m31 * m12 + mat.m32 * m22 + mat.m33 * m32;
-        final float f33 = mat.m31 * m13 + mat.m32 * m23 + mat.m33 * m33;
+        final float f11 = mat.m11 * m11 + mat.m12 * m21 + mat.m14 * m41;
+        final float f12 = mat.m11 * m12 + mat.m12 * m22 + mat.m14 * m42;
+        final float f13 = mat.m11 * m14 + mat.m12 * m24 + mat.m14 * m44;
+        final float f21 = mat.m21 * m11 + mat.m22 * m21 + mat.m24 * m41;
+        final float f22 = mat.m21 * m12 + mat.m22 * m22 + mat.m24 * m42;
+        final float f23 = mat.m21 * m14 + mat.m22 * m24 + mat.m24 * m44;
+        final float f31 = mat.m41 * m11 + mat.m42 * m21 + mat.m44 * m41;
+        final float f32 = mat.m41 * m12 + mat.m42 * m22 + mat.m44 * m42;
+        final float f33 = mat.m41 * m14 + mat.m42 * m24 + mat.m44 * m44;
         m11 = f11;
         m12 = f12;
-        m13 = f13;
+        m14 = f13;
         m21 = f21;
         m22 = f22;
-        m23 = f23;
-        m31 = f31;
-        m32 = f32;
-        m33 = f33;
+        m24 = f23;
+        m41 = f31;
+        m42 = f32;
+        m44 = f33;
     }
 
     /**
@@ -395,24 +427,24 @@ public class Matrix implements Cloneable {
      * @param mat the matrix to multiply
      */
     public void postConcat(@Nonnull Matrix mat) {
-        final float f11 = m11 * mat.m11 + m12 * mat.m21 + m13 * mat.m31;
-        final float f12 = m11 * mat.m12 + m12 * mat.m22 + m13 * mat.m32;
-        final float f13 = m11 * mat.m13 + m12 * mat.m23 + m13 * mat.m33;
-        final float f21 = m21 * mat.m11 + m22 * mat.m21 + m23 * mat.m31;
-        final float f22 = m21 * mat.m12 + m22 * mat.m22 + m23 * mat.m32;
-        final float f23 = m21 * mat.m13 + m22 * mat.m23 + m23 * mat.m33;
-        final float f31 = m31 * mat.m11 + m32 * mat.m21 + m33 * mat.m31;
-        final float f32 = m31 * mat.m12 + m32 * mat.m22 + m33 * mat.m32;
-        final float f33 = m31 * mat.m13 + m32 * mat.m23 + m33 * mat.m33;
+        final float f11 = m11 * mat.m11 + m12 * mat.m21 + m14 * mat.m41;
+        final float f12 = m11 * mat.m12 + m12 * mat.m22 + m14 * mat.m42;
+        final float f13 = m11 * mat.m14 + m12 * mat.m24 + m14 * mat.m44;
+        final float f21 = m21 * mat.m11 + m22 * mat.m21 + m24 * mat.m41;
+        final float f22 = m21 * mat.m12 + m22 * mat.m22 + m24 * mat.m42;
+        final float f23 = m21 * mat.m14 + m22 * mat.m24 + m24 * mat.m44;
+        final float f31 = m41 * mat.m11 + m42 * mat.m21 + m44 * mat.m41;
+        final float f32 = m41 * mat.m12 + m42 * mat.m22 + m44 * mat.m42;
+        final float f33 = m41 * mat.m14 + m42 * mat.m24 + m44 * mat.m44;
         m11 = f11;
         m12 = f12;
-        m13 = f13;
+        m14 = f13;
         m21 = f21;
         m22 = f22;
-        m23 = f23;
-        m31 = f31;
-        m32 = f32;
-        m33 = f33;
+        m24 = f23;
+        m41 = f31;
+        m42 = f32;
+        m44 = f33;
     }
 
     /**
@@ -421,14 +453,14 @@ public class Matrix implements Cloneable {
     public void setIdentity() {
         m11 = 1.0f;
         m12 = 0.0f;
-        m13 = 0.0f;
+        m14 = 0.0f;
         m21 = 0.0f;
         m22 = 1.0f;
-        m23 = 0.0f;
-        m31 = 0.0f;
-        m32 = 0.0f;
-        m33 = 1.0f;
-        mTypeMask = Identity_Mask | AxisAligned_Mask;
+        m24 = 0.0f;
+        m41 = 0.0f;
+        m42 = 0.0f;
+        m44 = 1.0f;
+        mTypeMask = kIdentity_Mask | AxisAligned_Mask;
     }
 
     /**
@@ -439,13 +471,13 @@ public class Matrix implements Cloneable {
     public void set(@Nonnull Matrix m) {
         m11 = m.m11;
         m12 = m.m12;
-        m13 = m.m13;
+        m14 = m.m14;
         m21 = m.m21;
         m22 = m.m22;
-        m23 = m.m23;
-        m31 = m.m31;
-        m32 = m.m32;
-        m33 = m.m33;
+        m24 = m.m24;
+        m41 = m.m41;
+        m42 = m.m42;
+        m44 = m.m44;
         mTypeMask = m.mTypeMask;
     }
 
@@ -467,13 +499,13 @@ public class Matrix implements Cloneable {
                        float transX, float transY, float persp2) {
         m11 = scaleX;
         m12 = shearY;
-        m13 = persp0;
+        m14 = persp0;
         m21 = shearX;
         m22 = scaleY;
-        m23 = persp1;
-        m31 = transX;
-        m32 = transY;
-        m33 = persp2;
+        m24 = persp1;
+        m41 = transX;
+        m42 = transY;
+        m44 = persp2;
         mTypeMask = Matrix.Unknown_Mask;
     }
 
@@ -486,13 +518,13 @@ public class Matrix implements Cloneable {
     public void store(long p) {
         MemoryUtil.memPutFloat(p, m11);
         MemoryUtil.memPutFloat(p + 4, m12);
-        MemoryUtil.memPutFloat(p + 8, m13);
+        MemoryUtil.memPutFloat(p + 8, m14);
         MemoryUtil.memPutFloat(p + 12, m21);
         MemoryUtil.memPutFloat(p + 16, m22);
-        MemoryUtil.memPutFloat(p + 20, m23);
-        MemoryUtil.memPutFloat(p + 24, m31);
-        MemoryUtil.memPutFloat(p + 28, m32);
-        MemoryUtil.memPutFloat(p + 32, m33);
+        MemoryUtil.memPutFloat(p + 20, m24);
+        MemoryUtil.memPutFloat(p + 24, m41);
+        MemoryUtil.memPutFloat(p + 28, m42);
+        MemoryUtil.memPutFloat(p + 32, m44);
     }
 
     /**
@@ -505,13 +537,13 @@ public class Matrix implements Cloneable {
     public void storeAligned(long p) {
         MemoryUtil.memPutFloat(p, m11);
         MemoryUtil.memPutFloat(p + 4, m12);
-        MemoryUtil.memPutFloat(p + 8, m13);
+        MemoryUtil.memPutFloat(p + 8, m14);
         MemoryUtil.memPutFloat(p + 16, m21);
         MemoryUtil.memPutFloat(p + 20, m22);
-        MemoryUtil.memPutFloat(p + 24, m23);
-        MemoryUtil.memPutFloat(p + 32, m31);
-        MemoryUtil.memPutFloat(p + 36, m32);
-        MemoryUtil.memPutFloat(p + 40, m33);
+        MemoryUtil.memPutFloat(p + 24, m24);
+        MemoryUtil.memPutFloat(p + 32, m41);
+        MemoryUtil.memPutFloat(p + 36, m42);
+        MemoryUtil.memPutFloat(p + 40, m44);
     }
 
     /**
@@ -520,9 +552,9 @@ public class Matrix implements Cloneable {
      * @return the determinant
      */
     public float determinant() {
-        return (m11 * m22 - m12 * m21) * m33 +
-                (m13 * m21 - m11 * m23) * m32 +
-                (m12 * m23 - m13 * m22) * m31;
+        return (m11 * m22 - m12 * m21) * m44 +
+                (m14 * m21 - m11 * m24) * m42 +
+                (m12 * m24 - m14 * m22) * m41;
     }
 
     /**
@@ -531,7 +563,7 @@ public class Matrix implements Cloneable {
      * @return the trace of this matrix
      */
     public float trace() {
-        return m11 + m22 + m33;
+        return m11 + m22 + m44;
     }
 
     /**
@@ -539,17 +571,17 @@ public class Matrix implements Cloneable {
      */
     public void transpose() {
         final float f12 = m21;
-        final float f13 = m31;
+        final float f13 = m41;
         final float f21 = m12;
-        final float f23 = m32;
-        final float f31 = m13;
-        final float f32 = m23;
+        final float f23 = m42;
+        final float f31 = m14;
+        final float f32 = m24;
         m12 = f12;
-        m13 = f13;
+        m14 = f13;
         m21 = f21;
-        m23 = f23;
-        m31 = f31;
-        m32 = f32;
+        m24 = f23;
+        m41 = f31;
+        m42 = f32;
     }
 
     /**
@@ -571,30 +603,30 @@ public class Matrix implements Cloneable {
      */
     public boolean invert(@Nonnull Matrix mat) {
         float a = m11 * m22 - m12 * m21;
-        float b = m13 * m21 - m11 * m23;
-        float c = m12 * m23 - m13 * m22;
+        float b = m14 * m21 - m11 * m24;
+        float c = m12 * m24 - m14 * m22;
         // calc the determinant
-        float det = a * m33 + b * m32 + c * m31;
+        float det = a * m44 + b * m42 + c * m41;
         if (MathUtil.isApproxZero(det)) {
             return false;
         }
         // calc algebraic cofactor and transpose
         det = 1.0f / det;
-        float f11 = (m22 * m33 - m32 * m23) * det; // 11
-        float f12 = (m32 * m13 - m12 * m33) * det; // -21
-        float f21 = (m31 * m23 - m21 * m33) * det; // -12
-        float f22 = (m11 * m33 - m31 * m13) * det; // 22
-        float f31 = (m21 * m32 - m31 * m22) * det; // 13
-        float f32 = (m31 * m12 - m11 * m32) * det; // -23
+        float f11 = (m22 * m44 - m42 * m24) * det; // 11
+        float f12 = (m42 * m14 - m12 * m44) * det; // -21
+        float f21 = (m41 * m24 - m21 * m44) * det; // -12
+        float f22 = (m11 * m44 - m41 * m14) * det; // 22
+        float f31 = (m21 * m42 - m41 * m22) * det; // 13
+        float f32 = (m41 * m12 - m11 * m42) * det; // -23
         m11 = f11;
         m12 = f12;
-        m13 = c * det;
+        m14 = c * det;
         m21 = f21;
         m22 = f22;
-        m23 = b * det;
-        m31 = f31;
-        m32 = f32;
-        m33 = a * det;
+        m24 = b * det;
+        m41 = f31;
+        m42 = f32;
+        m44 = a * det;
         return true;
     }
 
@@ -607,18 +639,18 @@ public class Matrix implements Cloneable {
      */
     public void preTranslate(float dx, float dy) {
         int type = getType();
-        if (type <= Translate_Mask) {
-            m31 += dx;
-            m32 += dy;
+        if (type <= kTranslate_Mask) {
+            m41 += dx;
+            m42 += dy;
         } else {
-            m31 += dx * m11 + dy * m21;
-            m32 += dx * m12 + dy * m22;
-            m33 += dx * m13 + dy * m23;
+            m41 += dx * m11 + dy * m21;
+            m42 += dx * m12 + dy * m22;
+            m44 += dx * m14 + dy * m24;
         }
-        if (m31 != 0 || m32 != 0) {
-            mTypeMask |= Translate_Mask;
+        if (m41 != 0 || m42 != 0) {
+            mTypeMask |= kTranslate_Mask;
         } else {
-            mTypeMask &= ~Translate_Mask;
+            mTypeMask &= ~kTranslate_Mask;
         }
     }
 
@@ -631,21 +663,21 @@ public class Matrix implements Cloneable {
      */
     public void postTranslate(float dx, float dy) {
         int type = getType();
-        if (type <= Translate_Mask) {
-            m31 += dx;
-            m32 += dy;
+        if (type <= kTranslate_Mask) {
+            m41 += dx;
+            m42 += dy;
         } else {
-            m11 += dx * m13;
-            m12 += dy * m13;
-            m21 += dx * m23;
-            m22 += dy * m23;
-            m31 += dx * m33;
-            m32 += dy * m33;
+            m11 += dx * m14;
+            m12 += dy * m14;
+            m21 += dx * m24;
+            m22 += dy * m24;
+            m41 += dx * m44;
+            m42 += dy * m44;
         }
-        if (m31 != 0 || m32 != 0) {
-            mTypeMask |= Translate_Mask;
+        if (m41 != 0 || m42 != 0) {
+            mTypeMask |= kTranslate_Mask;
         } else {
-            mTypeMask &= ~Translate_Mask;
+            mTypeMask &= ~kTranslate_Mask;
         }
     }
 
@@ -658,17 +690,17 @@ public class Matrix implements Cloneable {
     public void setTranslate(float x, float y) {
         m11 = 1.0f;
         m12 = 0.0f;
-        m13 = 0.0f;
+        m14 = 0.0f;
         m21 = 0.0f;
         m22 = 1.0f;
-        m23 = 0.0f;
-        m31 = x;
-        m32 = y;
-        m33 = 1.0f;
+        m24 = 0.0f;
+        m41 = x;
+        m42 = y;
+        m44 = 1.0f;
         if (x != 0 || y != 0) {
-            mTypeMask = Translate_Mask | AxisAligned_Mask;
+            mTypeMask = kTranslate_Mask | AxisAligned_Mask;
         } else {
-            mTypeMask = Identity_Mask | AxisAligned_Mask;
+            mTypeMask = kIdentity_Mask | AxisAligned_Mask;
         }
     }
 
@@ -687,10 +719,10 @@ public class Matrix implements Cloneable {
     public void preScale(float sx, float sy) {
         m11 *= sx;
         m12 *= sx;
-        m13 *= sx;
+        m14 *= sx;
         m21 *= sy;
         m22 *= sy;
-        m23 *= sy;
+        m24 *= sy;
         mTypeMask = Unknown_Mask;
     }
 
@@ -701,40 +733,40 @@ public class Matrix implements Cloneable {
     //@formatter:off
     public final boolean mapRect(Rect2f src, Rect2f dst) {
         int typeMask = getType();
-        if (typeMask <= Translate_Mask) {
-            dst.mLeft   = src.mLeft   + m31;
-            dst.mTop    = src.mTop    + m32;
-            dst.mRight  = src.mRight  + m31;
-            dst.mBottom = src.mBottom + m32;
+        if (typeMask <= kTranslate_Mask) {
+            dst.mLeft   = src.mLeft   + m41;
+            dst.mTop    = src.mTop    + m42;
+            dst.mRight  = src.mRight  + m41;
+            dst.mBottom = src.mBottom + m42;
             return true;
         }
-        if ((typeMask & ~(Scale_Mask | Translate_Mask)) == 0) {
-            dst.mLeft =   src.mLeft   * m11 + m31;
-            dst.mTop =    src.mTop    * m22 + m32;
-            dst.mRight =  src.mRight  * m11 + m31;
-            dst.mBottom = src.mBottom * m22 + m32;
+        if ((typeMask & ~(kScale_Mask | kTranslate_Mask)) == 0) {
+            dst.mLeft =   src.mLeft   * m11 + m41;
+            dst.mTop =    src.mTop    * m22 + m42;
+            dst.mRight =  src.mRight  * m11 + m41;
+            dst.mBottom = src.mBottom * m22 + m42;
             return true;
         }
-        float x1 = m11 * src.mLeft +  m21 * src.mTop    + m31;
-        float y1 = m12 * src.mLeft +  m22 * src.mTop    + m32;
-        float x2 = m11 * src.mRight + m21 * src.mTop    + m31;
-        float y2 = m12 * src.mRight + m22 * src.mTop    + m32;
-        float x3 = m11 * src.mLeft +  m21 * src.mBottom + m31;
-        float y3 = m12 * src.mLeft +  m22 * src.mBottom + m32;
-        float x4 = m11 * src.mRight + m21 * src.mBottom + m31;
-        float y4 = m12 * src.mRight + m22 * src.mBottom + m32;
-        if ((typeMask & Perspective_Mask) != 0) {
+        float x1 = m11 * src.mLeft +  m21 * src.mTop    + m41;
+        float y1 = m12 * src.mLeft +  m22 * src.mTop    + m42;
+        float x2 = m11 * src.mRight + m21 * src.mTop    + m41;
+        float y2 = m12 * src.mRight + m22 * src.mTop    + m42;
+        float x3 = m11 * src.mLeft +  m21 * src.mBottom + m41;
+        float y3 = m12 * src.mLeft +  m22 * src.mBottom + m42;
+        float x4 = m11 * src.mRight + m21 * src.mBottom + m41;
+        float y4 = m12 * src.mRight + m22 * src.mBottom + m42;
+        if ((typeMask & kPerspective_Mask) != 0) {
             float w;
-            w = 1.0f / (m13 * src.mLeft  + m23 * src.mTop    + m33);
+            w = 1.0f / (m14 * src.mLeft  + m24 * src.mTop    + m44);
             x1 *= w;
             y1 *= w;
-            w = 1.0f / (m13 * src.mRight + m23 * src.mTop    + m33);
+            w = 1.0f / (m14 * src.mRight + m24 * src.mTop    + m44);
             x2 *= w;
             y2 *= w;
-            w = 1.0f / (m13 * src.mLeft  + m23 * src.mBottom + m33);
+            w = 1.0f / (m14 * src.mLeft  + m24 * src.mBottom + m44);
             x3 *= w;
             y3 *= w;
-            w = 1.0f / (m13 * src.mRight + m23 * src.mBottom + m33);
+            w = 1.0f / (m14 * src.mRight + m24 * src.mBottom + m44);
             x4 *= w;
             y4 *= w;
         }
@@ -778,26 +810,26 @@ public class Matrix implements Cloneable {
      * @param out the round values
      */
     public void mapRect(float l, float t, float r, float b, @Nonnull Rect2i out) {
-        float x1 = m11 * l + m21 * t + m31;
-        float y1 = m12 * l + m22 * t + m32;
-        float x2 = m11 * r + m21 * t + m31;
-        float y2 = m12 * r + m22 * t + m32;
-        float x3 = m11 * l + m21 * b + m31;
-        float y3 = m12 * l + m22 * b + m32;
-        float x4 = m11 * r + m21 * b + m31;
-        float y4 = m12 * r + m22 * b + m32;
+        float x1 = m11 * l + m21 * t + m41;
+        float y1 = m12 * l + m22 * t + m42;
+        float x2 = m11 * r + m21 * t + m41;
+        float y2 = m12 * r + m22 * t + m42;
+        float x3 = m11 * l + m21 * b + m41;
+        float y3 = m12 * l + m22 * b + m42;
+        float x4 = m11 * r + m21 * b + m41;
+        float y4 = m12 * r + m22 * b + m42;
         if (hasPerspective()) {
             // project
-            float w = 1.0f / (m13 * l + m23 * t + m33);
+            float w = 1.0f / (m14 * l + m24 * t + m44);
             x1 *= w;
             y1 *= w;
-            w = 1.0f / (m13 * r + m23 * t + m33);
+            w = 1.0f / (m14 * r + m24 * t + m44);
             x2 *= w;
             y2 *= w;
-            w = 1.0f / (m13 * l + m23 * b + m33);
+            w = 1.0f / (m14 * l + m24 * b + m44);
             x3 *= w;
             y3 *= w;
-            w = 1.0f / (m13 * r + m23 * b + m33);
+            w = 1.0f / (m14 * r + m24 * b + m44);
             x4 *= w;
             y4 *= w;
         }
@@ -822,26 +854,26 @@ public class Matrix implements Cloneable {
      * @param result the round out values
      */
     public void mapRectOut(float l, float t, float r, float b, @Nonnull Rect2i result) {
-        float x1 = m11 * l + m21 * t + m31;
-        float y1 = m12 * l + m22 * t + m32;
-        float x2 = m11 * r + m21 * t + m31;
-        float y2 = m12 * r + m22 * t + m32;
-        float x3 = m11 * l + m21 * b + m31;
-        float y3 = m12 * l + m22 * b + m32;
-        float x4 = m11 * r + m21 * b + m31;
-        float y4 = m12 * r + m22 * b + m32;
+        float x1 = m11 * l + m21 * t + m41;
+        float y1 = m12 * l + m22 * t + m42;
+        float x2 = m11 * r + m21 * t + m41;
+        float y2 = m12 * r + m22 * t + m42;
+        float x3 = m11 * l + m21 * b + m41;
+        float y3 = m12 * l + m22 * b + m42;
+        float x4 = m11 * r + m21 * b + m41;
+        float y4 = m12 * r + m22 * b + m42;
         if (hasPerspective()) {
             // project
-            float w = 1.0f / (m13 * l + m23 * t + m33);
+            float w = 1.0f / (m14 * l + m24 * t + m44);
             x1 *= w;
             y1 *= w;
-            w = 1.0f / (m13 * r + m23 * t + m33);
+            w = 1.0f / (m14 * r + m24 * t + m44);
             x2 *= w;
             y2 *= w;
-            w = 1.0f / (m13 * l + m23 * b + m33);
+            w = 1.0f / (m14 * l + m24 * b + m44);
             x3 *= w;
             y3 *= w;
-            w = 1.0f / (m13 * r + m23 * b + m33);
+            w = 1.0f / (m14 * r + m24 * b + m44);
             x4 *= w;
             y4 *= w;
         }
@@ -852,10 +884,10 @@ public class Matrix implements Cloneable {
     }
 
     public void mapPoint(float[] p) {
-        float x1 = m11 * p[0] + m21 * p[1] + m31;
-        float y1 = m12 * p[0] + m22 * p[1] + m32;
+        float x1 = m11 * p[0] + m21 * p[1] + m41;
+        float y1 = m12 * p[0] + m22 * p[1] + m42;
         // project
-        float w = 1.0f / (m13 * p[0] + m23 * p[1] + m33);
+        float w = 1.0f / (m14 * p[0] + m24 * p[1] + m44);
         x1 *= w;
         y1 *= w;
         p[0] = x1;
@@ -869,28 +901,28 @@ public class Matrix implements Cloneable {
      * and therefore faster (e.g. clients can forward-difference calculations).
      */
     public void normalizePerspective() {
-        if (m33 != 1 && m33 != 0 && m13 == 0 && m23 == 0) {
-            float inv = 1.0f / m33;
+        if (m44 != 1 && m44 != 0 && m14 == 0 && m24 == 0) {
+            float inv = 1.0f / m44;
             m11 *= inv;
             m12 *= inv;
             m21 *= inv;
             m22 *= inv;
-            m31 *= inv;
-            m32 *= inv;
-            m33 = 1.0f;
+            m41 *= inv;
+            m42 *= inv;
+            m44 = 1.0f;
         }
     }
 
-    public boolean equal(@Nonnull Matrix4 mat) {
+    public boolean equal(@Nonnull Matrix mat) {
         return m11 == mat.m11 &&
                 m12 == mat.m12 &&
-                m13 == mat.m13 &&
+                m14 == mat.m14 &&
                 m21 == mat.m21 &&
                 m22 == mat.m22 &&
-                m23 == mat.m23 &&
-                m31 == mat.m31 &&
-                m32 == mat.m32 &&
-                m33 == mat.m33;
+                m24 == mat.m24 &&
+                m41 == mat.m41 &&
+                m42 == mat.m42 &&
+                m44 == mat.m44;
     }
 
     /**
@@ -904,29 +936,29 @@ public class Matrix implements Cloneable {
         if (this == m) return true;
         if (Float.floatToIntBits(m.m11) != Float.floatToIntBits(m11)) return false;
         if (Float.floatToIntBits(m.m12) != Float.floatToIntBits(m12)) return false;
-        if (Float.floatToIntBits(m.m13) != Float.floatToIntBits(m13)) return false;
+        if (Float.floatToIntBits(m.m14) != Float.floatToIntBits(m14)) return false;
         if (Float.floatToIntBits(m.m21) != Float.floatToIntBits(m21)) return false;
         if (Float.floatToIntBits(m.m22) != Float.floatToIntBits(m22)) return false;
-        if (Float.floatToIntBits(m.m23) != Float.floatToIntBits(m23)) return false;
-        if (Float.floatToIntBits(m.m31) != Float.floatToIntBits(m31)) return false;
-        if (Float.floatToIntBits(m.m32) != Float.floatToIntBits(m32)) return false;
-        return Float.floatToIntBits(m.m33) == Float.floatToIntBits(m33);
+        if (Float.floatToIntBits(m.m24) != Float.floatToIntBits(m24)) return false;
+        if (Float.floatToIntBits(m.m41) != Float.floatToIntBits(m41)) return false;
+        if (Float.floatToIntBits(m.m42) != Float.floatToIntBits(m42)) return false;
+        return Float.floatToIntBits(m.m44) == Float.floatToIntBits(m44);
     }
 
     private int computeTypeMask() {
         int mask = 0;
 
-        if (m13 != 0 || m23 != 0 || m33 != 1) {
+        if (m14 != 0 || m24 != 0 || m44 != 1) {
             // Once it is determined that this is a perspective transform,
             // all other flags are moot as far as optimizations are concerned.
-            return Translate_Mask |
-                    Scale_Mask |
-                    Affine_Mask |
-                    Perspective_Mask;
+            return kTranslate_Mask |
+                    kScale_Mask |
+                    kAffine_Mask |
+                    kPerspective_Mask;
         }
 
-        if (m31 != 0 || m32 != 0) {
-            mask |= Translate_Mask;
+        if (m41 != 0 || m42 != 0) {
+            mask |= kTranslate_Mask;
         }
 
         boolean shearX = m21 != 0;
@@ -939,7 +971,7 @@ public class Matrix implements Cloneable {
             // along with affine.
             // By doing this, we are also ensuring that matrices have the same
             // type masks as their inverses.
-            mask |= Affine_Mask | Scale_Mask;
+            mask |= kAffine_Mask | kScale_Mask;
 
             // For axis aligned, in the affine case, we only need check that
             // the primary diagonal is all zeros and that the secondary diagonal
@@ -951,7 +983,7 @@ public class Matrix implements Cloneable {
             // Only test for scale explicitly if not affine, since affine sets the
             // scale bit.
             if (m11 != 1 || m22 != 1) {
-                mask |= Scale_Mask;
+                mask |= kScale_Mask;
             }
 
             // Not affine, therefore we already know secondary diagonal is
@@ -968,15 +1000,15 @@ public class Matrix implements Cloneable {
     }
 
     private int computePerspectiveTypeMask() {
-        if (m13 != 0 || m23 != 0 || m33 != 1) {
+        if (m14 != 0 || m24 != 0 || m44 != 1) {
             // If this is a perspective transform, we return true for all other
             // transform flags - this does not disable any optimizations, respects
             // the rule that the type mask must be conservative, and speeds up
             // type mask computation.
-            return Translate_Mask |
-                    Scale_Mask |
-                    Affine_Mask |
-                    Perspective_Mask;
+            return kTranslate_Mask |
+                    kScale_Mask |
+                    kAffine_Mask |
+                    kPerspective_Mask;
         }
 
         return OnlyPerspectiveValid_Mask | Unknown_Mask;
@@ -991,26 +1023,26 @@ public class Matrix implements Cloneable {
     public boolean isApproxEqual(@Nonnull Matrix m) {
         return MathUtil.isApproxEqual(m11, m.m11) &&
                 MathUtil.isApproxEqual(m12, m.m12) &&
-                MathUtil.isApproxEqual(m13, m.m13) &&
+                MathUtil.isApproxEqual(m14, m.m14) &&
                 MathUtil.isApproxEqual(m21, m.m21) &&
                 MathUtil.isApproxEqual(m22, m.m22) &&
-                MathUtil.isApproxEqual(m23, m.m23) &&
-                MathUtil.isApproxEqual(m31, m.m31) &&
-                MathUtil.isApproxEqual(m32, m.m32) &&
-                MathUtil.isApproxEqual(m33, m.m33);
+                MathUtil.isApproxEqual(m24, m.m24) &&
+                MathUtil.isApproxEqual(m41, m.m41) &&
+                MathUtil.isApproxEqual(m42, m.m42) &&
+                MathUtil.isApproxEqual(m44, m.m44);
     }
 
     @Override
     public int hashCode() {
         int result = Float.floatToIntBits(m11);
         result = 31 * result + Float.floatToIntBits(m12);
-        result = 31 * result + Float.floatToIntBits(m13);
+        result = 31 * result + Float.floatToIntBits(m14);
         result = 31 * result + Float.floatToIntBits(m21);
         result = 31 * result + Float.floatToIntBits(m22);
-        result = 31 * result + Float.floatToIntBits(m23);
-        result = 31 * result + Float.floatToIntBits(m31);
-        result = 31 * result + Float.floatToIntBits(m32);
-        result = 31 * result + Float.floatToIntBits(m33);
+        result = 31 * result + Float.floatToIntBits(m24);
+        result = 31 * result + Float.floatToIntBits(m41);
+        result = 31 * result + Float.floatToIntBits(m42);
+        result = 31 * result + Float.floatToIntBits(m44);
         return result;
     }
 
@@ -1027,13 +1059,13 @@ public class Matrix implements Cloneable {
         }
         return m11 == m.m11 &&
                 m12 == m.m12 &&
-                m13 == m.m13 &&
+                m14 == m.m14 &&
                 m21 == m.m21 &&
                 m22 == m.m22 &&
-                m23 == m.m23 &&
-                m31 == m.m31 &&
-                m32 == m.m32 &&
-                m33 == m.m33;
+                m24 == m.m24 &&
+                m41 == m.m41 &&
+                m42 == m.m42 &&
+                m44 == m.m44;
     }
 
     @Override
@@ -1044,9 +1076,9 @@ public class Matrix implements Cloneable {
                         %10.5f %10.5f %10.5f
                         %10.5f %10.5f %10.5f
                         """,
-                m11, m12, m13,
-                m21, m22, m23,
-                m31, m32, m33);
+                m11, m12, m14,
+                m21, m22, m24,
+                m41, m42, m44);
     }
 
     /**
