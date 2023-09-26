@@ -125,7 +125,7 @@ public class TestManagedResource {
 
         testTexture(pw, dContext);
 
-        //tokenize(pw);
+        tokenize(pw);
 
         if (Platform.get() == Platform.WINDOWS) {
             if (!Kernel32.CloseHandle(959595595959595959L)) {
@@ -153,7 +153,7 @@ public class TestManagedResource {
     }
 
     public static void tokenize(PrintWriter pw) {
-        List<String> tokens = List.of("END_OF_FILE",
+        String[] tokens = {"END_OF_FILE",
                 "INTLITERAL",
                 "FLOATLITERAL",
                 "TRUE",
@@ -240,7 +240,7 @@ public class TestManagedResource {
                 "WHITESPACE",
                 "LINE_COMMENT",
                 "BLOCK_COMMENT",
-                "INVALID");
+                "INVALID"};
         Lexer lexer = new Lexer("""
                 layout(std140, binding = 0) uniform UniformBlock {
                     mat4 u_Projection;
@@ -268,7 +268,7 @@ public class TestManagedResource {
         while ((kind = Token.kind(token = lexer.next())) != Lexer.TK_END_OF_FILE) {
             if (kind == Lexer.TK_WHITESPACE) continue;
             int offset = Token.offset(token);
-            pw.println("(" + offset + ", " + (offset + Token.length(token)) + ") " + tokens.get(kind));
+            pw.println("(" + offset + ", " + (offset + Token.length(token)) + ") " + tokens[kind]);
         }
     }
 

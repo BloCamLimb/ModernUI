@@ -20,6 +20,7 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.Size;
+import org.jetbrains.annotations.Contract;
 
 /**
  * Represents a color component mapping. It's packed as a <code>short</code> value.
@@ -46,6 +47,7 @@ public final class Swizzle {
         assert concat(make('1', '1', '1', 'r'), AAAA) == make('r', 'r', 'r', 'r');
     }
 
+    @Contract(pure = true)
     public static int charToIndex(char c) {
         return switch (c) {
             // r...a must map to 0...3 because other methods use them as indices into mSwiz.
@@ -59,6 +61,7 @@ public final class Swizzle {
         };
     }
 
+    @Contract(pure = true)
     public static char indexToChar(int idx) {
         return switch (idx) {
             case 0 -> 'r';
@@ -74,6 +77,7 @@ public final class Swizzle {
     /**
      * Compact representation of the swizzle suitable for a key. Letters must be lowercase.
      */
+    @Contract(pure = true)
     public static short make(String s) {
         return make(s.charAt(0), s.charAt(1), s.charAt(2), s.charAt(3));
     }
@@ -81,6 +85,7 @@ public final class Swizzle {
     /**
      * Compact representation of the swizzle suitable for a key. Letters must be lowercase.
      */
+    @Contract(pure = true)
     public static short make(char r, char g, char b, char a) {
         return (short) (charToIndex(r) | (charToIndex(g) << 4) | (charToIndex(b) << 8) | (charToIndex(a) << 12));
     }

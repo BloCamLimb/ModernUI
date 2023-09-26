@@ -554,18 +554,18 @@ public class Matrix4 implements Cloneable {
      */
     public void preConcat2D(@Nonnull Matrix lhs) {
         // 36 multiplications
-        final float f11 = lhs.m11 * m11 + lhs.m12 * m21 + lhs.m13 * m41;
-        final float f12 = lhs.m11 * m12 + lhs.m12 * m22 + lhs.m13 * m42;
-        final float f13 = lhs.m11 * m13 + lhs.m12 * m23 + lhs.m13 * m43;
-        final float f14 = lhs.m11 * m14 + lhs.m12 * m24 + lhs.m13 * m44;
-        final float f21 = lhs.m21 * m11 + lhs.m22 * m21 + lhs.m23 * m41;
-        final float f22 = lhs.m21 * m12 + lhs.m22 * m22 + lhs.m23 * m42;
-        final float f23 = lhs.m21 * m13 + lhs.m22 * m23 + lhs.m23 * m43;
-        final float f24 = lhs.m21 * m14 + lhs.m22 * m24 + lhs.m23 * m44;
-        final float f41 = lhs.m31 * m11 + lhs.m32 * m21 + lhs.m33 * m41;
-        final float f42 = lhs.m31 * m12 + lhs.m32 * m22 + lhs.m33 * m42;
-        final float f43 = lhs.m31 * m13 + lhs.m32 * m23 + lhs.m33 * m43;
-        final float f44 = lhs.m31 * m14 + lhs.m32 * m24 + lhs.m33 * m44;
+        final float f11 = lhs.m11 * m11 + lhs.m12 * m21 + lhs.m14 * m41;
+        final float f12 = lhs.m11 * m12 + lhs.m12 * m22 + lhs.m14 * m42;
+        final float f13 = lhs.m11 * m13 + lhs.m12 * m23 + lhs.m14 * m43;
+        final float f14 = lhs.m11 * m14 + lhs.m12 * m24 + lhs.m14 * m44;
+        final float f21 = lhs.m21 * m11 + lhs.m22 * m21 + lhs.m24 * m41;
+        final float f22 = lhs.m21 * m12 + lhs.m22 * m22 + lhs.m24 * m42;
+        final float f23 = lhs.m21 * m13 + lhs.m22 * m23 + lhs.m24 * m43;
+        final float f24 = lhs.m21 * m14 + lhs.m22 * m24 + lhs.m24 * m44;
+        final float f41 = lhs.m41 * m11 + lhs.m42 * m21 + lhs.m44 * m41;
+        final float f42 = lhs.m41 * m12 + lhs.m42 * m22 + lhs.m44 * m42;
+        final float f43 = lhs.m41 * m13 + lhs.m42 * m23 + lhs.m44 * m43;
+        final float f44 = lhs.m41 * m14 + lhs.m42 * m24 + lhs.m44 * m44;
         m11 = f11;
         m12 = f12;
         m13 = f13;
@@ -598,18 +598,18 @@ public class Matrix4 implements Cloneable {
      */
     public void postConcat2D(@Nonnull Matrix rhs) {
         // 36 multiplications
-        final float f11 = m11 * rhs.m11 + m12 * rhs.m21 + m14 * rhs.m31;
-        final float f12 = m11 * rhs.m12 + m12 * rhs.m22 + m14 * rhs.m32;
-        final float f14 = m11 * rhs.m13 + m12 * rhs.m23 + m14 * rhs.m33;
-        final float f21 = m21 * rhs.m11 + m22 * rhs.m21 + m24 * rhs.m31;
-        final float f22 = m21 * rhs.m12 + m22 * rhs.m22 + m24 * rhs.m32;
-        final float f24 = m21 * rhs.m13 + m22 * rhs.m23 + m24 * rhs.m33;
-        final float f31 = m31 * rhs.m11 + m32 * rhs.m21 + m34 * rhs.m31;
-        final float f32 = m31 * rhs.m12 + m32 * rhs.m22 + m34 * rhs.m32;
-        final float f34 = m31 * rhs.m13 + m32 * rhs.m23 + m34 * rhs.m33;
-        final float f41 = m41 * rhs.m11 + m42 * rhs.m21 + m44 * rhs.m31;
-        final float f42 = m41 * rhs.m12 + m42 * rhs.m22 + m44 * rhs.m32;
-        final float f44 = m41 * rhs.m13 + m42 * rhs.m23 + m44 * rhs.m33;
+        final float f11 = m11 * rhs.m11 + m12 * rhs.m21 + m14 * rhs.m41;
+        final float f12 = m11 * rhs.m12 + m12 * rhs.m22 + m14 * rhs.m42;
+        final float f14 = m11 * rhs.m14 + m12 * rhs.m24 + m14 * rhs.m44;
+        final float f21 = m21 * rhs.m11 + m22 * rhs.m21 + m24 * rhs.m41;
+        final float f22 = m21 * rhs.m12 + m22 * rhs.m22 + m24 * rhs.m42;
+        final float f24 = m21 * rhs.m14 + m22 * rhs.m24 + m24 * rhs.m44;
+        final float f31 = m31 * rhs.m11 + m32 * rhs.m21 + m34 * rhs.m41;
+        final float f32 = m31 * rhs.m12 + m32 * rhs.m22 + m34 * rhs.m42;
+        final float f34 = m31 * rhs.m14 + m32 * rhs.m24 + m34 * rhs.m44;
+        final float f41 = m41 * rhs.m11 + m42 * rhs.m21 + m44 * rhs.m41;
+        final float f42 = m41 * rhs.m12 + m42 * rhs.m22 + m44 * rhs.m42;
+        final float f44 = m41 * rhs.m14 + m42 * rhs.m24 + m44 * rhs.m44;
         m11 = f11;
         m12 = f12;
         m14 = f14;
