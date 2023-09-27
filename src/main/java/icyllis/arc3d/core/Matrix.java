@@ -1071,7 +1071,7 @@ public class Matrix implements Cloneable {
     @Override
     public String toString() {
         return String.format("""
-                        Matrix3:
+                        Matrix:
                         %10.5f %10.5f %10.5f
                         %10.5f %10.5f %10.5f
                         %10.5f %10.5f %10.5f
