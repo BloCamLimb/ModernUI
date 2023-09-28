@@ -461,6 +461,26 @@ public final class ClipStack extends Clip {
             mAA = aa;
         }
 
+        // local rect
+        // do not modify
+        public Rect2f shape() {
+            return mRect;
+        }
+
+        // local to device
+        // do not modify
+        public Matrix viewMatrix() {
+            return mViewMatrix;
+        }
+
+        public int clipOp() {
+            return mClipOp;
+        }
+
+        public boolean aa() {
+            return mAA;
+        }
+
         @Override
         public String toString() {
             return "Element{" +

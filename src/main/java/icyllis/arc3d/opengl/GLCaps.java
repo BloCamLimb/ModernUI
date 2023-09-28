@@ -39,6 +39,10 @@ import static org.lwjgl.opengl.EXTTextureCompressionS3TC.*;
  */
 public final class GLCaps extends Caps {
 
+    /**
+     * Contains missing extensions on the last creation of GPU.
+     * No synchronization.
+     */
     public static final List<String> MISSING_EXTENSIONS = new ArrayList<>();
 
     public final int[] mProgramBinaryFormats;
@@ -78,14 +82,55 @@ public final class GLCaps extends Caps {
     @VisibleForTesting
     public GLCaps(ContextOptions options, GLCapabilities caps) {
         super(options);
+        List<String> missingExtensions = MISSING_EXTENSIONS;
+        missingExtensions.clear();
         // Your GPU is not modern...
         if (!caps.OpenGL45) {
-            // we don't check CONTEXT_PROFILE_MASK, we assume it's always core profile if OpenGL 3.2 is available.
-            if (!caps.OpenGL32) {
-                throw new UnsupportedOperationException("OpenGL 3.2 core profile is unavailable");
+            if (!caps.OpenGL21) {
+                throw new UnsupportedOperationException("OpenGL 2.1 is unavailable");
             }
-            List<String> missingExtensions = MISSING_EXTENSIONS;
-            missingExtensions.clear();
+            if (!caps.OpenGL30) {
+                if (!caps.GL_ARB_framebuffer_object) {
+                    missingExtensions.add("ARB_framebuffer_object");
+                }
+                if (!caps.GL_ARB_map_buffer_range) {
+                    missingExtensions.add("ARB_map_buffer_range");
+                }
+                if (!caps.GL_ARB_texture_float) {
+                    missingExtensions.add("ARB_texture_float");
+                }
+                if (!caps.GL_ARB_texture_rg) {
+                    missingExtensions.add("ARB_texture_rg");
+                }
+                if (!caps.GL_ARB_vertex_array_object) {
+                    missingExtensions.add("ARB_vertex_array_object");
+                }
+                if (!caps.GL_ARB_shader_texture_lod) {
+                    missingExtensions.add("ARB_shader_texture_lod");
+                }
+            }
+            if (!caps.OpenGL31) {
+                if (!caps.GL_ARB_uniform_buffer_object) {
+                    missingExtensions.add("ARB_uniform_buffer_object");
+                }
+                if (!caps.GL_ARB_copy_buffer) {
+                    missingExtensions.add("ARB_copy_buffer");
+                }
+                if (!caps.GL_ARB_draw_instanced) {
+                    missingExtensions.add("ARB_draw_instanced");
+                }
+            }
+            if (!caps.OpenGL32) {
+                if (!caps.GL_ARB_draw_elements_base_vertex) {
+                    missingExtensions.add("ARB_draw_elements_base_vertex");
+                }
+                if (!caps.GL_ARB_sync) {
+                    missingExtensions.add("ARB_sync");
+                }
+                if (!caps.GL_ARB_fragment_coord_conventions) {
+                    missingExtensions.add("ARB_fragment_coord_conventions");
+                }
+            }
             if (!caps.OpenGL33) {
                 if (!caps.GL_ARB_blend_func_extended) {
                     missingExtensions.add("ARB_blend_func_extended");
@@ -104,18 +149,21 @@ public final class GLCaps extends Caps {
                 }
             }
             // OpenGL 3.3 is the minimum requirement
+            // Note that having these extensions does not mean OpenGL 3.3 is available
+            // but some drivers report wrong values, we just assume OpenGL 3.3 is available
+            // calling missing functions will throw exceptions
             if (!missingExtensions.isEmpty()) {
                 throw new UnsupportedOperationException("Missing required extensions: " + missingExtensions);
             }
             if (!caps.OpenGL41) {
-                // macOS supports
+                // macOS supports this
                 if (!caps.GL_ARB_ES2_compatibility) {
                     missingExtensions.add("ARB_ES2_compatibility");
                 }
                 if (!caps.GL_ARB_get_program_binary) {
                     missingExtensions.add("ARB_get_program_binary");
                 }
-                // macOS supports
+                // macOS supports this
                 if (!caps.GL_ARB_viewport_array) {
                     missingExtensions.add("ARB_viewport_array");
                 }
@@ -124,11 +172,11 @@ public final class GLCaps extends Caps {
                 if (!caps.GL_ARB_base_instance) {
                     missingExtensions.add("ARB_base_instance");
                 }
-                // macOS supports
+                // macOS supports this
                 if (!caps.GL_ARB_texture_storage) {
                     missingExtensions.add("ARB_texture_storage");
                 }
-                // macOS supports
+                // macOS supports this
                 if (!caps.GL_ARB_internalformat_query) {
                     missingExtensions.add("ARB_internalformat_query");
                 }
