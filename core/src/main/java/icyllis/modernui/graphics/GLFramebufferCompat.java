@@ -59,6 +59,13 @@ public final class GLFramebufferCompat extends GLObjectCompat {
 
     /**
      * Creates a framebuffer.
+     */
+    public GLFramebufferCompat() {
+        this(1);
+    }
+
+    /**
+     * Creates a framebuffer.
      *
      * @param sampleCount number of samples
      */
