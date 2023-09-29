@@ -259,7 +259,7 @@ public class ShapeDrawable extends Drawable {
                 } else {
                     // Modern UI added, both are the same
                     mFillPaint.setStrokeCap(st.mRadius > 0 ? Paint.CAP_ROUND : Paint.CAP_SQUARE);
-                    canvas.drawLine(r.left, y, r.right, y, r.height() * 0.5f, mFillPaint);
+                    canvas.drawLine(r.left, y, r.right, y, r.height(), mFillPaint);
                 }
             }
             case VLINE -> {
@@ -270,7 +270,7 @@ public class ShapeDrawable extends Drawable {
                 } else {
                     // Modern UI added, both are the same
                     mFillPaint.setStrokeCap(st.mRadius > 0 ? Paint.CAP_ROUND : Paint.CAP_SQUARE);
-                    canvas.drawLine(x, r.top, x, r.bottom, r.width() * 0.5f, mFillPaint);
+                    canvas.drawLine(x, r.top, x, r.bottom, r.width(), mFillPaint);
                 }
             }
         }
