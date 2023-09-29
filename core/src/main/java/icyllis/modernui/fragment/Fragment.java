@@ -26,6 +26,9 @@ import icyllis.modernui.lifecycle.*;
 import icyllis.modernui.transition.*;
 import icyllis.modernui.util.DataSet;
 import icyllis.modernui.view.*;
+import icyllis.modernui.view.ContextMenu.ContextMenuInfo;
+import icyllis.modernui.view.View.OnCreateContextMenuListener;
+import icyllis.modernui.widget.AdapterView;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
@@ -43,7 +46,8 @@ import java.util.concurrent.TimeUnit;
  * For more information about using fragments, read the Android Fragments
  * developer guide.
  */
-public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
+public class Fragment implements LifecycleOwner, ViewModelStoreOwner,
+        OnCreateContextMenuListener {
 
     static final Transition USE_DEFAULT_TRANSITION = new AutoTransition();
 
@@ -987,6 +991,50 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
     @CallSuper
     public void onDetach() {
         mCalled = true;
+    }
+
+    /**
+     * Called when a context menu for the {@code view} is about to be shown.
+     * Unlike {@link #onCreateOptionsMenu}, this will be called every
+     * time the context menu is about to be shown and should be populated for
+     * the view (or item inside the view for {@link AdapterView} subclasses,
+     * this can be found in the {@code menuInfo})).
+     * <p>
+     * Use {@link #onContextItemSelected(MenuItem)} to know when an
+     * item has been selected.
+     * <p>
+     * It is not safe to hold onto the context menu after this method returns.
+     * {@inheritDoc}
+     */
+    @UiThread
+    @Override
+    public void onCreateContextMenu(@NonNull ContextMenu menu, @NonNull View v,
+                                    @Nullable ContextMenuInfo menuInfo) {
+    }
+
+    /**
+     * Registers a context menu to be shown for the given view (multiple views
+     * can show the context menu). This method will set the
+     * {@link OnCreateContextMenuListener} on the view to this fragment, so
+     * {@link #onCreateContextMenu(ContextMenu, View, ContextMenuInfo)} will be
+     * called when it is time to show the context menu.
+     *
+     * @param view The view that should show a context menu.
+     * @see #unregisterForContextMenu(View)
+     */
+    public void registerForContextMenu(@NonNull View view) {
+        view.setOnCreateContextMenuListener(this);
+    }
+
+    /**
+     * Prevents a context menu to be shown for the given view. This method will
+     * remove the {@link OnCreateContextMenuListener} on the view.
+     *
+     * @param view The view that should stop showing a context menu.
+     * @see #registerForContextMenu(View)
+     */
+    public void unregisterForContextMenu(@NonNull View view) {
+        view.setOnCreateContextMenuListener(null);
     }
 
     /**

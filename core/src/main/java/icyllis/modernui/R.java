@@ -47,10 +47,6 @@ public final class R {
          */
         public static final int state_enabled = 0x0101009e;
         /**
-         * Set when the user is pressing down in a view.
-         */
-        public static final int state_pressed = 0x010100a7;
-        /**
          * Set when a view or its parent has been "activated" meaning the user has currently
          * marked it as being of interest.
          */
@@ -68,6 +64,24 @@ public final class R {
          * Set when a view is currently positioned over by a drag operation.
          */
         public static final int state_drag_hovered = 0x01010369;
+        /**
+         * State value for StateListDrawable, set when a view or drawable is in the last position
+         * in an ordered set. Actual usage may vary between views. Consult the host view
+         * documentation for details.
+         */
+        public static final int state_last = 0x010100a6;
+        /**
+         * State value for StateListDrawable, set when the user is pressing down in a view.
+         */
+        public static final int state_pressed = 0x010100a7;
+        /**
+         * State identifier indicating the group is expanded.
+         */
+        public static final int state_expanded = 0x010100a8;
+        /**
+         * State identifier indicating the group is empty (has no children).
+         */
+        public static final int state_empty =0x010100a9;
 
         static {
             __();

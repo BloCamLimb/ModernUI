@@ -20,6 +20,8 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.animation.TimeInterpolator;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
@@ -31,9 +33,8 @@ import it.unimi.dsi.fastutil.longs.*;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+import icyllis.modernui.view.ContextMenu.ContextMenuInfo;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -380,7 +381,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
      */
     int mResurrectToPosition = INVALID_POSITION;
 
-    private Object mContextMenuInfo = null;
+    private ContextMenuInfo mContextMenuInfo = null;
 
     /**
      * Maximum distance to record overscroll
@@ -505,7 +506,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
      *
      * @hide
      */
-    @Nonnull
+    @NonNull
     private final EdgeEffect mEdgeGlowTop;
 
     /**
@@ -516,7 +517,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
      *
      * @hide
      */
-    @Nonnull
+    @NonNull
     private final EdgeEffect mEdgeGlowBottom;
 
     /**
@@ -1036,7 +1037,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
     }
 
     @Override
-    public void getFocusedRect(@Nonnull Rect r) {
+    public void getFocusedRect(@NonNull Rect r) {
         View view = getSelectedView();
         if (view != null && view.getParent() == this) {
             // the focused rectangle of the selected view offset into the
@@ -1052,7 +1053,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
     private void useDefaultSelector() {
         setSelector(new Drawable() {
             @Override
-            public void draw(@Nonnull Canvas canvas) {
+            public void draw(@NonNull Canvas canvas) {
                 Paint paint = Paint.obtain();
                 paint.setAlpha(25);
                 canvas.drawRect(getBounds(), paint);
@@ -1436,7 +1437,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
         }
     }
 
-    private boolean isItemClickable(@Nonnull View view) {
+    private boolean isItemClickable(@NonNull View view) {
         return !view.hasExplicitFocusable();
     }
 
@@ -1512,7 +1513,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
     }
 
     @Override
-    protected void dispatchDraw(@Nonnull Canvas canvas) {
+    protected void dispatchDraw(@NonNull Canvas canvas) {
         final boolean clipToPadding = hasBooleanFlag(CLIP_TO_PADDING_MASK);
         if (clipToPadding) {
             canvas.save();
@@ -1771,7 +1772,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
     }
 
     @Override
-    public boolean verifyDrawable(@Nonnull Drawable dr) {
+    public boolean verifyDrawable(@NonNull Drawable dr) {
         return mSelector == dr || super.verifyDrawable(dr);
     }
 
@@ -1888,7 +1889,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
      * @return The extra information that should be returned by
      * {@link #getContextMenuInfo()}.
      */
-    Object createContextMenuInfo(View view, int position, long id) {
+    ContextMenuInfo createContextMenuInfo(View view, int position, long id) {
         return new AdapterContextMenuInfo(view, position, id);
     }
 
@@ -2072,7 +2073,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
     }
 
     @Override
-    protected Object getContextMenuInfo() {
+    protected ContextMenuInfo getContextMenuInfo() {
         return mContextMenuInfo;
     }
 
@@ -2116,12 +2117,12 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
     }
 
     @Override
-    public boolean onKeyDown(int keyCode, @Nonnull KeyEvent event) {
+    public boolean onKeyDown(int keyCode, @NonNull KeyEvent event) {
         return false;
     }
 
     @Override
-    public boolean onKeyUp(int keyCode, @Nonnull KeyEvent event) {
+    public boolean onKeyUp(int keyCode, @NonNull KeyEvent event) {
         if (keyCode == KeyEvent.KEY_ENTER || keyCode == KeyEvent.KEY_KP_ENTER) {
             if (!isEnabled()) {
                 return true;
@@ -2561,7 +2562,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
     }
 
     @Override
-    public boolean onTouchEvent(@Nonnull MotionEvent ev) {
+    public boolean onTouchEvent(@NonNull MotionEvent ev) {
         if (!isEnabled()) {
             // A disabled view that is clickable still consumes the touch
             // events, it just doesn't respond to them.
@@ -2604,7 +2605,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
         return true;
     }
 
-    private void onTouchDown(@Nonnull MotionEvent ev) {
+    private void onTouchDown(@NonNull MotionEvent ev) {
         mHasPerformedLongPress = false;
         hideSelector();
 
@@ -2682,7 +2683,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
         }
     }
 
-    private void onTouchMove(@Nonnull MotionEvent ev, @Nonnull MotionEvent vtev) {
+    private void onTouchMove(@NonNull MotionEvent ev, @NonNull MotionEvent vtev) {
         if (mHasPerformedLongPress) {
             // Consume all move events following a successful long press.
             return;
@@ -2729,7 +2730,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
         }
     }
 
-    private void onTouchUp(@Nonnull MotionEvent ev) {
+    private void onTouchUp(@NonNull MotionEvent ev) {
         switch (mTouchMode) {
             case TOUCH_MODE_DOWN, TOUCH_MODE_TAP, TOUCH_MODE_DONE_WAITING -> {
                 final int motionPosition = mMotionPosition;
@@ -2936,7 +2937,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
     }
 
     @Override
-    public boolean onGenericMotionEvent(@Nonnull MotionEvent event) {
+    public boolean onGenericMotionEvent(@NonNull MotionEvent event) {
         switch (event.getAction()) {
             case MotionEvent.ACTION_SCROLL -> {
                 final float axisValue = event.getAxisValue(MotionEvent.AXIS_VSCROLL);
@@ -2980,19 +2981,19 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
     }
 
     @Override
-    public boolean onStartNestedScroll(@Nonnull View child, @Nonnull View target, int axes, int type) {
+    public boolean onStartNestedScroll(@NonNull View child, @NonNull View target, int axes, int type) {
         return ((axes & SCROLL_AXIS_VERTICAL) != 0);
     }
 
     @Override
-    public void onNestedScrollAccepted(@Nonnull View child, @Nonnull View target, int axes, int type) {
+    public void onNestedScrollAccepted(@NonNull View child, @NonNull View target, int axes, int type) {
         super.onNestedScrollAccepted(child, target, axes, type);
         startNestedScroll(SCROLL_AXIS_VERTICAL, type);
     }
 
     @Override
-    public void onNestedScroll(@Nonnull View target, int dxConsumed, int dyConsumed,
-                               int dxUnconsumed, int dyUnconsumed, int type, @Nonnull int[] consumed) {
+    public void onNestedScroll(@NonNull View target, int dxConsumed, int dyConsumed,
+                               int dxUnconsumed, int dyUnconsumed, int type, @NonNull int[] consumed) {
         final int motionIndex = getChildCount() / 2;
         final View motionView = getChildAt(motionIndex);
         final int oldTop = motionView != null ? motionView.getTop() : 0;
@@ -3009,7 +3010,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
     }
 
     @Override
-    public boolean onNestedFling(@Nonnull View target, float velocityX, float velocityY, boolean consumed) {
+    public boolean onNestedFling(@NonNull View target, float velocityX, float velocityY, boolean consumed) {
         final int childCount = getChildCount();
         if (!consumed && childCount > 0 && canScrollList((int) velocityY) &&
                 Math.abs(velocityY) > mMinimumVelocity) {
@@ -3026,7 +3027,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
     }
 
     @Override
-    public void onDrawForeground(@Nonnull Canvas canvas) {
+    public void onDrawForeground(@NonNull Canvas canvas) {
         super.onDrawForeground(canvas);
         if (shouldDisplayEdgeEffects()) {
             final int scrollY = mScrollY;
@@ -3107,7 +3108,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
     }
 
     @Override
-    public boolean onInterceptTouchEvent(@Nonnull MotionEvent ev) {
+    public boolean onInterceptTouchEvent(@NonNull MotionEvent ev) {
         final int action = ev.getAction();
         View v;
 
@@ -3182,7 +3183,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
      * {@inheritDoc}
      */
     @Override
-    public void addTouchables(@Nonnull ArrayList<View> views) {
+    public void addTouchables(@NonNull ArrayList<View> views) {
         final int count = getChildCount();
         final int firstPosition = mFirstPosition;
         final ListAdapter adapter = mAdapter;
@@ -4258,7 +4259,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
      * @param direction the direction
      * @return the distance between the rectangles
      */
-    static int getDistance(@Nonnull Rect source, @Nonnull Rect dest, @FocusDirection int direction) {
+    static int getDistance(@NonNull Rect source, @NonNull Rect dest, @FocusDirection int direction) {
         int sX, sY; // source x, y
         int dX, dY; // dest x, y
         switch (direction) {
@@ -4309,16 +4310,16 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
         }
     }
 
-    @Nonnull
+    @NonNull
     @Override
     protected ViewGroup.LayoutParams generateDefaultLayoutParams() {
         return new AbsListView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT, 0);
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    protected ViewGroup.LayoutParams generateLayoutParams(@Nonnull ViewGroup.LayoutParams p) {
+    protected ViewGroup.LayoutParams generateLayoutParams(@NonNull ViewGroup.LayoutParams p) {
         return new LayoutParams(p);
     }
 
@@ -4357,7 +4358,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
      *
      * @param views A list into which to put the reclaimed views
      */
-    public void reclaimViews(@Nonnull List<View> views) {
+    public void reclaimViews(@NonNull List<View> views) {
         int childCount = getChildCount();
         RecyclerListener listener = mRecycler.mRecyclerListener;
 
@@ -4483,7 +4484,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
          * @param checked  <code>true</code> if the item is now checked, <code>false</code>
          *                 if the item is now unchecked.
          */
-        void onItemCheckedStateChanged(@Nonnull ActionMode mode,
+        void onItemCheckedStateChanged(@NonNull ActionMode mode,
                                        int position, long id, boolean checked);
     }
 
@@ -4535,7 +4536,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
         }
 
         @Override
-        public void onItemCheckedStateChanged(@Nonnull ActionMode mode,
+        public void onItemCheckedStateChanged(@NonNull ActionMode mode,
                                               int position, long id, boolean checked) {
             mWrapped.onItemCheckedStateChanged(mode, position, id, checked);
 
@@ -4624,7 +4625,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
          *
          * @param view the view
          */
-        void onMovedToScrapHeap(@Nonnull View view);
+        void onMovedToScrapHeap(@NonNull View view);
     }
 
     /**
@@ -4850,7 +4851,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
          * @param scrap    The view to add
          * @param position The view's position within its parent
          */
-        void addScrapView(@Nonnull View scrap, int position) {
+        void addScrapView(@NonNull View scrap, int position) {
             final AbsListView.LayoutParams lp = (AbsListView.LayoutParams) scrap.getLayoutParams();
             if (lp == null) {
                 // Can't recycle, but we don't know anything about the view.
@@ -4911,7 +4912,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
             }
         }
 
-        @Nonnull
+        @NonNull
         private ArrayList<View> getSkippedScrap() {
             if (mSkippedScrap == null) {
                 mSkippedScrap = new ArrayList<>();
@@ -5060,7 +5061,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
         /**
          * Puts all views in the scrap heap into the supplied list.
          */
-        void reclaimScrapViews(@Nonnull List<View> views) {
+        void reclaimScrapViews(@NonNull List<View> views) {
             if (mViewTypeCount == 1) {
                 views.addAll(mCurrentScrap);
             } else {
@@ -5074,7 +5075,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
         }
 
         @Nullable
-        private View retrieveFromScrap(@Nonnull ArrayList<View> scrapViews, int position) {
+        private View retrieveFromScrap(@NonNull ArrayList<View> scrapViews, int position) {
             final int size = scrapViews.size();
             if (size > 0) {
                 // See if we still have a view for this position or ID.
@@ -5103,14 +5104,14 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
             }
         }
 
-        private void clearScrap(@Nonnull final ArrayList<View> scrap) {
+        private void clearScrap(@NonNull final ArrayList<View> scrap) {
             final int scrapCount = scrap.size();
             for (int j = 0; j < scrapCount; j++) {
                 removeDetachedView(scrap.remove(scrapCount - 1 - j));
             }
         }
 
-        private void clearScrapForRebind(@Nonnull View view) {
+        private void clearScrapForRebind(@NonNull View view) {
         }
 
         private void removeDetachedView(View child) {

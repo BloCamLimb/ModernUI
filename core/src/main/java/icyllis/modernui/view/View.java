@@ -29,6 +29,7 @@ import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.transition.Fade;
 import icyllis.modernui.transition.Transition;
 import icyllis.modernui.util.*;
+import icyllis.modernui.view.ContextMenu.ContextMenuInfo;
 import icyllis.modernui.view.menu.MenuBuilder;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
@@ -11396,7 +11397,7 @@ public class View implements Drawable.Callback {
      * @param menu The context menu to populate
      */
     public final void createContextMenu(@NonNull ContextMenu menu) {
-        Object menuInfo = getContextMenuInfo();
+        ContextMenuInfo menuInfo = getContextMenuInfo();
 
         // Sets the current menu info so all items added to menu will have
         // my extra info set.
@@ -11420,14 +11421,14 @@ public class View implements Drawable.Callback {
     /**
      * Views should implement this if they have extra information to associate
      * with the context menu. The return result is supplied as a parameter to
-     * the {@link OnCreateContextMenuListener#onCreateContextMenu(ContextMenu, View, Object)}
+     * the {@link OnCreateContextMenuListener#onCreateContextMenu(ContextMenu, View, ContextMenuInfo)}
      * callback.
      *
      * @return Extra information about the item for which the context menu
      * should be shown. This information will vary across different
      * subclasses of View.
      */
-    protected Object getContextMenuInfo() {
+    protected ContextMenuInfo getContextMenuInfo() {
         return null;
     }
 
@@ -12908,7 +12909,7 @@ public class View implements Drawable.Callback {
          *                 context menu should be shown. This information will vary
          *                 depending on the class of v.
          */
-        void onCreateContextMenu(ContextMenu menu, View v, Object menuInfo);
+        void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo);
     }
 
     /**

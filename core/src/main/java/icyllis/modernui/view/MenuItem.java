@@ -18,11 +18,11 @@
 
 package icyllis.modernui.view;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.util.ColorStateList;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import icyllis.modernui.view.ContextMenu.ContextMenuInfo;
 
 /**
  * Interface for direct access to a previously created menu item.
@@ -85,7 +85,7 @@ public interface MenuItem {
          * @return Return true to consume this click and prevent others from
          * executing.
          */
-        boolean onMenuItemClick(@Nonnull MenuItem item);
+        boolean onMenuItemClick(@NonNull MenuItem item);
     }
 
     /**
@@ -106,7 +106,7 @@ public interface MenuItem {
          * @param item Item that was expanded
          * @return true if the item should expand, false if expansion should be suppressed.
          */
-        boolean onMenuItemActionExpand(@Nonnull MenuItem item);
+        boolean onMenuItemActionExpand(@NonNull MenuItem item);
 
         /**
          * Called when a menu item with {@link MenuItem#SHOW_AS_ACTION_COLLAPSE_ACTION_VIEW}
@@ -115,7 +115,7 @@ public interface MenuItem {
          * @param item Item that was collapsed
          * @return true if the item should collapse, false if collapsing should be suppressed.
          */
-        boolean onMenuItemActionCollapse(@Nonnull MenuItem item);
+        boolean onMenuItemActionCollapse(@NonNull MenuItem item);
     }
 
     /**
@@ -507,7 +507,8 @@ public interface MenuItem {
      * menu item to the menu. This can be null.
      * @see View.OnCreateContextMenuListener
      */
-    Object getMenuInfo();
+    @Nullable
+    ContextMenuInfo getMenuInfo();
 
     /**
      * Sets how this item should display in the presence of an Action Bar.

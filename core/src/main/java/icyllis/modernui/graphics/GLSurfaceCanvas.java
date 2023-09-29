@@ -1391,10 +1391,13 @@ public final class GLSurfaceCanvas extends GLCanvas {
         }
         mSaves.push(s);
 
-        if (alpha <= 0) {
+        alpha = MathUtil.clamp(alpha, 0, 255);
+
+        if (alpha == 0) {
             // will be quick rejected
             s.mClip.setEmpty();
-        } else if (alpha < 255) {
+        } /*else*/ //TODO quick reject doesn't work for primitives now
+        if (alpha < 255) {
             // we have three render targets in the framebuffer
             if (s.mColorBuf < 2) {
                 s.mColorBuf++;

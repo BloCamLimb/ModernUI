@@ -18,12 +18,12 @@
 
 package icyllis.modernui.view.menu;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.view.*;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import icyllis.modernui.view.ContextMenu.ContextMenuInfo;
 
 public final class MenuItemImpl implements MenuItem {
 
@@ -82,7 +82,7 @@ public final class MenuItemImpl implements MenuItem {
      * Current use case is for context menu: Extra information linked to the
      * View that added this item to the context menu.
      */
-    private Object mMenuInfo;
+    private ContextMenuInfo mMenuInfo;
 
     private CharSequence mContentDescription;
     private CharSequence mTooltipText;
@@ -98,7 +98,7 @@ public final class MenuItemImpl implements MenuItem {
      * @param categoryOrder The ordering for this item.
      * @param title         The text to display for the item.
      */
-    MenuItemImpl(@Nonnull MenuBuilder menu, int group, int id, int categoryOrder, int ordering,
+    MenuItemImpl(@NonNull MenuBuilder menu, int group, int id, int categoryOrder, int ordering,
                  @Nullable CharSequence title, int showAsAction) {
         mMenu = menu;
         mId = id;
@@ -284,7 +284,7 @@ public final class MenuItemImpl implements MenuItem {
      * key (for example 'Menu+a'). Also, any non-human readable
      * characters should be human-readable (for example 'Menu+enter').
      */
-    @Nonnull
+    @NonNull
     String getShortcutLabel() {
 
         char shortcut = getShortcut();
@@ -330,7 +330,7 @@ public final class MenuItemImpl implements MenuItem {
         return mSubMenu != null;
     }
 
-    void setSubMenu(@Nonnull SubMenuBuilder subMenu) {
+    void setSubMenu(@NonNull SubMenuBuilder subMenu) {
         mSubMenu = subMenu;
 
         subMenu.setHeaderTitle(getTitle());
@@ -520,18 +520,18 @@ public final class MenuItemImpl implements MenuItem {
         return this;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         return mTitle != null ? mTitle.toString() : "";
     }
 
-    void setMenuInfo(Object menuInfo) {
+    void setMenuInfo(ContextMenuInfo menuInfo) {
         mMenuInfo = menuInfo;
     }
 
     @Override
-    public Object getMenuInfo() {
+    public ContextMenuInfo getMenuInfo() {
         return mMenuInfo;
     }
 
