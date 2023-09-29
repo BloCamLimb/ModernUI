@@ -319,11 +319,10 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         glEnable(GL_STENCIL_TEST);
         glEnable(GL_MULTISAMPLE);
 
-        final GLFramebufferCompat framebuffer = new GLFramebufferCompat(4);
+        final GLFramebufferCompat framebuffer = new GLFramebufferCompat();
         framebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT0, GL_RGBA8);
         framebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT1, GL_RGBA8);
         framebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT2, GL_RGBA8);
-        framebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT3, GL_RGBA8);
         framebuffer.addRenderbufferAttachment(GL_STENCIL_ATTACHMENT, GL_STENCIL_INDEX8);
 
         window.swapInterval(1);

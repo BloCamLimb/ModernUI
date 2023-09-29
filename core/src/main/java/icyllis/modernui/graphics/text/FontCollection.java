@@ -95,11 +95,6 @@ public class FontCollection {
         if (families.length == 0) {
             throw new IllegalArgumentException("Font set cannot be empty");
         }
-        // we use font indices array to save memory
-        // the number of families in a FontCollection cannot exceed UByte.Max
-        if (families.length > 0xFF) {
-            throw new IllegalArgumentException("Too many families: " + families.length + " > 255");
-        }
         mFamilies = List.of(families);
     }
 

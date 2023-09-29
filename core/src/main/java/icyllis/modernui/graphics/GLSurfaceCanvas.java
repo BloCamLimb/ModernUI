@@ -1104,11 +1104,16 @@ public final class GLSurfaceCanvas extends GLCanvas {
                 }
                 case DRAW_LAYER_POP -> {
                     assert framebuffer != null;
-                    GLFramebufferCompat resolve = GLFramebufferCompat.resolve(framebuffer,
-                            colorBuffer, mWidth, mHeight);
-                    framebuffer.setReadBuffer(GL_COLOR_ATTACHMENT0);
-                    framebuffer.bindDraw();
-                    GLTextureCompat layer = resolve.getAttachedTexture(GL_COLOR_ATTACHMENT0);
+                    final GLTextureCompat layer;
+                    if (framebuffer.isMultisampled()) {
+                        GLFramebufferCompat resolve = GLFramebufferCompat.resolve(framebuffer,
+                                colorBuffer, mWidth, mHeight);
+                        framebuffer.setReadBuffer(GL_COLOR_ATTACHMENT0);
+                        framebuffer.bindDraw();
+                        layer = resolve.getAttachedTexture(GL_COLOR_ATTACHMENT0);
+                    } else {
+                        layer = framebuffer.getAttachedTexture(colorBuffer);
+                    }
 
                     float alpha = mLayerStack.popInt() / 255f;
                     putRectColorUV(mLayerImageMemory, 0, 0, mWidth, mHeight,
@@ -1389,10 +1394,15 @@ public final class GLSurfaceCanvas extends GLCanvas {
         if (alpha <= 0) {
             // will be quick rejected
             s.mClip.setEmpty();
-        } else if (alpha < 255 && s.mColorBuf < 3) {
-            s.mColorBuf++;
-            mLayerAlphas.add(alpha);
-            mDrawOps.add(DRAW_LAYER_PUSH);
+        } else if (alpha < 255) {
+            // we have three render targets in the framebuffer
+            if (s.mColorBuf < 2) {
+                s.mColorBuf++;
+                mLayerAlphas.add(alpha);
+                mDrawOps.add(DRAW_LAYER_PUSH);
+            } else {
+                // ignored...
+            }
         }
 
         return saveCount;
@@ -1409,7 +1419,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
      */
     @Override
     public void restore() {
-        if (mSaves.size() < 1) {
+        if (mSaves.isEmpty()) {
             throw new IllegalStateException("Underflow in restore");
         }
         Save save = mSaves.poll();
