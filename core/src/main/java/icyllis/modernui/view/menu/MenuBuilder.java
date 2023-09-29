@@ -18,13 +18,13 @@
 
 package icyllis.modernui.view.menu;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.view.*;
-import org.checkerframework.checker.units.qual.C;
+import icyllis.modernui.view.ContextMenu.ContextMenuInfo;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
@@ -106,7 +106,7 @@ public class MenuBuilder implements Menu {
      * extra information that should be passed along.  This is the current menu info that
      * should be set on all items added to this menu.
      */
-    private Object mCurrentMenuInfo;
+    private ContextMenuInfo mCurrentMenuInfo;
 
     /**
      * Header title for menu types that have a header (context and submenus)
@@ -201,7 +201,7 @@ public class MenuBuilder implements Menu {
      *
      * @param presenter The presenter to add
      */
-    public void addMenuPresenter(@Nonnull MenuPresenter presenter) {
+    public void addMenuPresenter(@NonNull MenuPresenter presenter) {
         mPresenters.add(new WeakReference<>(presenter));
         presenter.initForMenu(this);
         mIsActionItemsStale = true;
@@ -266,7 +266,7 @@ public class MenuBuilder implements Menu {
     /**
      * Adds an item to the menu.  The other add methods funnel to this.
      */
-    @Nonnull
+    @NonNull
     private MenuItemImpl addInternal(int group, int id, int categoryOrder, @Nullable CharSequence title) {
         final int ordering = getOrdering(categoryOrder);
 
@@ -284,25 +284,25 @@ public class MenuBuilder implements Menu {
         return item;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public MenuItem add(@Nullable CharSequence title) {
         return addInternal(NONE, NONE, NONE, title);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public MenuItem add(int group, int id, int categoryOrder, @Nullable CharSequence title) {
         return addInternal(group, id, categoryOrder, title);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public SubMenu addSubMenu(@Nullable CharSequence title) {
         return addSubMenu(NONE, NONE, NONE, title);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public SubMenu addSubMenu(int group, int id, int categoryOrder, @Nullable CharSequence title) {
         final MenuItemImpl item = addInternal(group, id, categoryOrder, title);
@@ -385,7 +385,7 @@ public class MenuBuilder implements Menu {
         onItemsChanged(true);
     }
 
-    void setExclusiveItemChecked(@Nonnull MenuItem item) {
+    void setExclusiveItemChecked(@NonNull MenuItem item) {
         final int group = item.getGroupId();
 
         for (MenuItemImpl curItem : mItems) {
@@ -510,14 +510,14 @@ public class MenuBuilder implements Menu {
     /**
      * {@inheritDoc}
      */
-    @Nonnull
+    @NonNull
     @Override
     public MenuItem getItem(int index) {
         return mItems.get(index);
     }
 
     @Override
-    public boolean isShortcutKey(int keyCode, @Nonnull KeyEvent event) {
+    public boolean isShortcutKey(int keyCode, @NonNull KeyEvent event) {
         return findItemWithShortcutForKey(event) != null;
     }
 
@@ -599,7 +599,7 @@ public class MenuBuilder implements Menu {
         }
     }
 
-    private static int findInsertIndex(@Nonnull ArrayList<MenuItemImpl> items, int ordering) {
+    private static int findInsertIndex(@NonNull ArrayList<MenuItemImpl> items, int ordering) {
         for (int i = items.size() - 1; i >= 0; i--) {
             MenuItemImpl item = items.get(i);
             if (item.getOrdering() <= ordering) {
@@ -611,7 +611,7 @@ public class MenuBuilder implements Menu {
     }
 
     @Override
-    public boolean performShortcut(int keyCode, @Nonnull KeyEvent event, int flags) {
+    public boolean performShortcut(int keyCode, @NonNull KeyEvent event, int flags) {
         final MenuItemImpl item = findItemWithShortcutForKey(event);
 
         boolean handled = false;
@@ -633,7 +633,7 @@ public class MenuBuilder implements Menu {
      * (the ALT-enabled char corresponds to the shortcut) associated
      * with the keyCode.
      */
-    void findItemsWithShortcutForKey(List<MenuItemImpl> items, @Nonnull KeyEvent event) {
+    void findItemsWithShortcutForKey(List<MenuItemImpl> items, @NonNull KeyEvent event) {
         final boolean qwerty = isQwertyMode();
         final int modifierState = event.getModifiers();
         final char possibleChar = event.getMappedChar();
@@ -825,7 +825,7 @@ public class MenuBuilder implements Menu {
         onItemsChanged(true);
     }
 
-    @Nonnull
+    @NonNull
     public ArrayList<MenuItemImpl> getVisibleItems() {
         if (!mIsVisibleItemsStale) return mVisibleItems;
 
@@ -1011,7 +1011,7 @@ public class MenuBuilder implements Menu {
      *
      * @param menuInfo The extra menu information to add.
      */
-    public void setCurrentMenuInfo(Object menuInfo) {
+    public void setCurrentMenuInfo(ContextMenuInfo menuInfo) {
         mCurrentMenuInfo = menuInfo;
     }
 

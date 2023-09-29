@@ -18,11 +18,11 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.util.DataSetObserver;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
@@ -40,7 +40,7 @@ public interface Adapter {
      *
      * @param observer the object that gets notified when the data set changes.
      */
-    void registerDataSetObserver(@Nonnull DataSetObserver observer);
+    void registerDataSetObserver(@NonNull DataSetObserver observer);
 
     /**
      * Unregister an observer that has previously been registered with this
@@ -48,7 +48,7 @@ public interface Adapter {
      *
      * @param observer the object to unregister.
      */
-    void unregisterDataSetObserver(@Nonnull DataSetObserver observer);
+    void unregisterDataSetObserver(@NonNull DataSetObserver observer);
 
     /**
      * How many items are in the data set represented by this Adapter.
@@ -99,7 +99,7 @@ public interface Adapter {
      * @param parent      The parent that this view will eventually be attached to
      * @return A View corresponding to the data at the specified position.
      */
-    View getView(int position, @Nullable View convertView, @Nonnull ViewGroup parent);
+    View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent);
 
     /**
      * An item view type that causes the {@link AdapterView} to ignore the item

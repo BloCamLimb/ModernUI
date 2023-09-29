@@ -18,9 +18,9 @@
 
 package icyllis.modernui.view;
 
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.drawable.Drawable;
-
-import javax.annotation.Nonnull;
+import icyllis.modernui.widget.AdapterView;
 
 /**
  * Extension of {@link Menu} for context menus providing functionality to modify
@@ -42,7 +42,7 @@ public interface ContextMenu extends Menu {
      * @param title The character sequence used for the title.
      * @return This ContextMenu so additional setters can be called.
      */
-    @Nonnull
+    @NonNull
     ContextMenu setHeaderTitle(CharSequence title);
 
     /**
@@ -52,7 +52,7 @@ public interface ContextMenu extends Menu {
      * @param icon The {@link Drawable} used for the icon.
      * @return This ContextMenu so additional setters can be called.
      */
-    @Nonnull
+    @NonNull
     ContextMenu setHeaderIcon(Drawable icon);
 
     /**
@@ -63,11 +63,19 @@ public interface ContextMenu extends Menu {
      * @param view The {@link View} used for the header.
      * @return This ContextMenu so additional setters can be called.
      */
-    @Nonnull
+    @NonNull
     ContextMenu setHeaderView(View view);
 
     /**
      * Clears the header of the context menu.
      */
     void clearHeader();
+
+    /**
+     * Additional information regarding the creation of the context menu.  For example,
+     * {@link AdapterView}s use this to pass the exact item position within the adapter
+     * that initiated the context menu.
+     */
+    interface ContextMenuInfo {
+    }
 }
