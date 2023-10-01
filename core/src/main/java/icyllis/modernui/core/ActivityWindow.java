@@ -35,11 +35,11 @@ import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 /**
- * The main window is the default implementation for almost everything.
+ * The activity window is the default implementation for almost everything.
  */
-public final class MainWindow extends Window {
+public final class ActivityWindow extends Window {
 
-    private static volatile MainWindow sMainWindow;
+    private static volatile ActivityWindow sMainWindow;
 
     private int mScreenX;
     private int mScreenY;
@@ -53,7 +53,7 @@ public final class MainWindow extends Window {
 
     private int mButtonState;
 
-    MainWindow(long handle) {
+    ActivityWindow(long handle) {
         super(handle);
         sMainWindow = this;
 
@@ -100,12 +100,12 @@ public final class MainWindow extends Window {
      * @return the main window
      */
     @NonNull
-    public static MainWindow initialize(@NonNull String title, int width, int height) {
-        return initialize(title, width, height, null);
+    public static ActivityWindow createMainWindow(@NonNull String title, int width, int height) {
+        return createMainWindow(title, width, height, null);
     }
 
     @NonNull
-    public static MainWindow initialize(@NonNull String title, int width, int height, @Nullable Monitor monitor) {
+    public static ActivityWindow createMainWindow(@NonNull String title, int width, int height, @Nullable Monitor monitor) {
         Core.checkMainThread();
         if (sMainWindow != null) {
             throw new IllegalStateException("Multiple main windows");
@@ -114,7 +114,7 @@ public final class MainWindow extends Window {
         if (handle == NULL) {
             throw new IllegalStateException("Failed to create window");
         }
-        return new MainWindow(handle);
+        return new ActivityWindow(handle);
     }
 
     private void onPosCallback(long w, int xPos, int yPos) {
