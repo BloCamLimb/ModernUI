@@ -1,12 +1,8 @@
 import org.gradle.internal.os.OperatingSystem
 
-plugins {
-    id 'maven-publish'
-}
-
 apply plugin: 'java'
 
-version = "${core_version}" as String
+version = 'b' + new Date().format('yyyyMMddHHmmss')
 group = 'icyllis.arc3d'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
@@ -47,7 +43,6 @@ dependencies {
     implementation platform("org.lwjgl:lwjgl-bom:${lwjgl_version}")
 
     implementation "org.lwjgl:lwjgl"
-    implementation "org.lwjgl:lwjgl-assimp"
     implementation "org.lwjgl:lwjgl-glfw"
     implementation "org.lwjgl:lwjgl-jemalloc"
     implementation "org.lwjgl:lwjgl-openal"
@@ -59,7 +54,6 @@ dependencies {
     implementation "org.lwjgl:lwjgl-vma"
     implementation "org.lwjgl:lwjgl-vulkan"
     runtimeOnly "org.lwjgl:lwjgl::$lwjglNatives"
-    runtimeOnly "org.lwjgl:lwjgl-assimp::$lwjglNatives"
     runtimeOnly "org.lwjgl:lwjgl-glfw::$lwjglNatives"
     runtimeOnly "org.lwjgl:lwjgl-jemalloc::$lwjglNatives"
     runtimeOnly "org.lwjgl:lwjgl-openal::$lwjglNatives"
@@ -94,94 +88,5 @@ jar {
                 "Implementation-Vendor": "BloCamLimb",
                 "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
         )
-    }
-}
-
-if (project.hasProperty("jks")) {
-    jar.doLast {
-        ant.signjar(
-                keypass: project.getProperty("jks_keypass"),
-                storepass: project.getProperty("jks_pass"),
-                jar: jar.archiveFile.get(),
-                storetype: 'jks',
-                keystore: project.getProperty("jks"),
-                alias: project.getProperty("jks_alias")
-        )
-    }
-}
-
-publishing {
-    repositories {
-        maven {
-            name 'IzzelAliz'
-            url 'https://maven.izzel.io/releases'
-            credentials {
-                username = project.findProperty("maven_user")
-                password = project.findProperty("izzel_maven_token")
-            }
-        }
-    }
-    publications {
-        mavenCore(MavenPublication) {
-            artifact(jar.archiveFile) {
-                builtBy build
-            }
-            artifact(sourcesJar.archiveFile) {
-                builtBy build
-                classifier 'sources'
-            }
-            artifactId = project.name
-            groupId = project.group
-            version = project.version
-
-            pom {
-                artifactId = project.name
-                groupId = project.group
-                version = project.version
-                name = rootProject.name
-                packaging = 'pom'
-                scm {
-                    url = 'https://github.com/BloCamLimb/Arc3D.git'
-                }
-                issueManagement {
-                    system = 'github'
-                    url = 'https://github.com/BloCamLimb/Arc3D/issues'
-                }
-                licenses {
-                    license {
-                        name = 'LGPL-3.0-or-later'
-                        url = 'https://www.gnu.org/licenses/lgpl-3.0.en.html'
-                        distribution = 'repo'
-                    }
-                }
-                withXml {
-                    def dependenciesNode = asNode().appendNode('dependencies')
-                    configurations.implementation.allDependencies.each {
-                        if (it.group == 'org.lwjgl') return
-                        def dependencyNode = dependenciesNode.appendNode('dependency')
-                        dependencyNode.appendNode('groupId', it.group)
-                        dependencyNode.appendNode('artifactId', it.name)
-                        dependencyNode.appendNode('version', it.version)
-                        dependencyNode.appendNode('scope', 'compile')
-                    }
-                    configurations.compileOnly.allDependencies.each {
-                        if (it.group == 'org.lwjgl') return
-                        def dependencyNode = dependenciesNode.appendNode('dependency')
-                        dependencyNode.appendNode('groupId', it.group)
-                        dependencyNode.appendNode('artifactId', it.name)
-                        dependencyNode.appendNode('version', it.version)
-                        dependencyNode.appendNode('scope', 'compile')
-                    }
-                    configurations.runtimeOnly.allDependencies.each {
-                        if (it.group == 'org.lwjgl') return
-                        def dependencyNode = dependenciesNode.appendNode('dependency')
-                        dependencyNode.appendNode('groupId', it.group)
-                        dependencyNode.appendNode('artifactId', it.name)
-                        dependencyNode.appendNode('version', it.version)
-                        dependencyNode.appendNode('scope', 'runtime')
-                    }
-                }
-            }
-        }
     }
 }
