@@ -47,6 +47,7 @@ import java.nio.channels.*;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 
 import static icyllis.arc3d.opengl.GLCore.*;
@@ -63,6 +64,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
     public static final Logger LOGGER = LogManager.getLogger(NAME_CPT);
     public static final Marker MARKER = MarkerManager.getMarker("Core");
 
+    @SuppressWarnings("unused")
     public static final Properties props = new Properties();
 
     private static volatile ModernUI sInstance;
@@ -90,9 +92,8 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
     private ViewModelStore mViewModelStore;
     private FragmentController mFragmentController;
 
-    private Typeface mDefaultTypeface;
+    private volatile Typeface mDefaultTypeface;
 
-    private volatile Looper mUiLooper;
     private volatile Thread mRenderThread;
 
     private volatile Looper mRenderLooper;
@@ -129,19 +130,26 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
     public void run(@NonNull Fragment fragment) {
         Thread.currentThread().setName("Main-Thread");
         // should be true
-        LOGGER.info(MARKER, "AWT headless: {}", java.awt.GraphicsEnvironment.isHeadless());
+        if (!java.awt.GraphicsEnvironment.isHeadless()) {
+            throw new IllegalStateException("AWT must be headless");
+        }
 
         Core.initialize();
 
+        LOGGER.debug(MARKER, "Preparing main thread");
+        Looper.prepareMainLooper();
+
+        var loadTypeface = CompletableFuture.runAsync(this::loadDefaultTypeface);
+
         //mVulkanManager.initialize();
 
-        LOGGER.info(MARKER, "Initializing window system");
+        LOGGER.debug(MARKER, "Initializing window system");
         Monitor monitor = Monitor.getPrimary();
 
         String name = Configuration.OPENGL_LIBRARY_NAME.get();
         if (name != null) {
             // non-system library should load before window creation
-            LOGGER.info(ModernUI.MARKER, "OpenGL library: {}", name);
+            LOGGER.debug(ModernUI.MARKER, "OpenGL library: {}", name);
             Objects.requireNonNull(GL.getFunctionProvider(), "Implicit OpenGL loading is required");
         }
 
@@ -162,6 +170,27 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
             VideoMode mode = monitor.getCurrentMode();
             mWindow = ActivityWindow.createMainWindow("Modern UI",
                     (int) (mode.getWidth() * 0.75), (int) (mode.getHeight() * 0.75));
+        }
+
+        CountDownLatch latch = new CountDownLatch(1);
+
+        LOGGER.debug(MARKER, "Preparing render thread");
+        mRenderThread = new Thread(() -> runRender(latch), "Render-Thread");
+        mRenderThread.start();
+
+        CompletableFuture.supplyAsync(() -> {
+            try {
+                Bitmap i16 = BitmapFactory.decodeStream(getResourceStream(ID, "AppLogo16x.png"));
+                Bitmap i32 = BitmapFactory.decodeStream(getResourceStream(ID, "AppLogo32x.png"));
+                Bitmap i48 = BitmapFactory.decodeStream(getResourceStream(ID, "AppLogo48x.png"));
+                return new Bitmap[]{i16, i32, i48};
+            } catch (IOException e) {
+                LOGGER.info(MARKER, "Failed to load window icons", e);
+            }
+            return null;
+        }).thenAcceptAsync(icons -> mWindow.setIcon(icons), Core.getMainThreadExecutor());
+
+        if (monitor != null) {
             mWindow.center(monitor);
             int[] physw = {0}, physh = {0};
             glfwGetMonitorPhysicalSize(monitor.getHandle(), physw, physh);
@@ -171,6 +200,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
             metrics.setToDefaults();
             metrics.widthPixels = mWindow.getWidth();
             metrics.heightPixels = mWindow.getHeight();
+            VideoMode mode = monitor.getCurrentMode();
             metrics.xdpi = 25.4f * mode.getWidth() / physw[0];
             metrics.ydpi = 25.4f * mode.getHeight() / physh[0];
             LOGGER.info(MARKER, "Primary monitor physical size: {}x{} mm, xScale: {}, yScale: {}",
@@ -183,31 +213,13 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
             mResources.updateMetrics(metrics);
         }
 
-        loadDefaultTypeface();
-
-        LOGGER.info(MARKER, "Preparing threads");
-        Looper.prepareMainLooper();
-
         glfwSetWindowCloseCallback(mWindow.getHandle(), new GLFWWindowCloseCallback() {
             @Override
             public void invoke(long window) {
-                LOGGER.info(MARKER, "Window closed from callback");
+                LOGGER.debug(MARKER, "Window closed from callback");
                 stop();
             }
         });
-
-        CountDownLatch latch = new CountDownLatch(1);
-
-        mRenderThread = new Thread(() -> runRender(latch), "Render-Thread");
-        mRenderThread.start();
-
-        try (Bitmap i16 = BitmapFactory.decodeStream(getResourceStream(ID, "AppLogo16x.png"));
-             Bitmap i32 = BitmapFactory.decodeStream(getResourceStream(ID, "AppLogo32x.png"));
-             Bitmap i48 = BitmapFactory.decodeStream(getResourceStream(ID, "AppLogo48x.png"))) {
-            mWindow.setIcon(i16, i32, i48);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
 
         // wait render thread init
         try {
@@ -216,15 +228,37 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
             throw new RuntimeException(e);
         }
 
-        LOGGER.info(MARKER, "Initializing UI system");
+        LOGGER.debug(MARKER, "Initializing UI system");
 
-        mUiLooper = Core.initUiThread();
+        Core.initUiThread();
 
         mRoot = new ViewRootImpl();
 
         mDecor = new WindowGroup(this);
         mDecor.setWillNotDraw(true);
         mDecor.setId(R.id.content);
+
+        CompletableFuture.supplyAsync(() -> {
+            Path p = Path.of("assets/modernui/raw/eromanga.png").toAbsolutePath();
+            try (FileChannel channel = FileChannel.open(p, StandardOpenOption.READ)) {
+                return BitmapFactory.decodeChannel(channel);
+            } catch (IOException e) {
+                LOGGER.info(MARKER, "Failed to load background image", e);
+            }
+            return null;
+        }).thenAcceptAsync(bitmap -> {
+            try (bitmap) {
+                Image image = Image.createTextureFromBitmap(bitmap);
+                if (image != null) {
+                    Drawable drawable = new ImageDrawable(image);
+                    drawable.setTint(0xFF808080);
+                    mDecor.setBackground(drawable);
+                    synchronized (Core.class) {
+                        mBackgroundImage = image;
+                    }
+                }
+            }
+        }, Core.getUiThreadExecutor());
 
         mFragmentContainerView = new FragmentContainerView(this);
         mFragmentContainerView.setLayoutParams(new WindowManager.LayoutParams());
@@ -234,23 +268,9 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         mDecor.setLayoutDirection(View.LAYOUT_DIRECTION_LOCALE);
         mDecor.setIsRootNamespace(true);
 
-        try {
-            Path p = Path.of("assets/modernui/raw/eromanga.png").toAbsolutePath();
-            FileChannel channel = FileChannel.open(p, StandardOpenOption.READ);
-            Image image = ImageStore.getInstance().create(channel);
-            if (image != null) {
-                Drawable drawable = new ImageDrawable(image);
-                drawable.setTint(0xFF808080);
-                mDecor.setBackground(drawable);
-                mBackgroundImage = image;
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
         mRoot.setView(mDecor);
 
-        LOGGER.info(MARKER, "Installing view protocol");
+        LOGGER.debug(MARKER, "Installing view protocol");
 
         mWindow.install(mRoot);
 
@@ -273,8 +293,6 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START);
         mFragmentController.dispatchStart();
 
-        LOGGER.info(MARKER, "Starting main fragment");
-
         mFragmentController.getFragmentManager().beginTransaction()
                 .add(fragment_container, fragment, "main")
                 .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
@@ -283,9 +301,10 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
 
         mWindow.show();
 
+        loadTypeface.join();
+
         LOGGER.info(MARKER, "Looping main thread");
         Looper.loop();
-
 
         Core.requireUiRecordingContext().unref();
         LOGGER.info(MARKER, "Quited main thread");
@@ -293,7 +312,6 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
 
     @RenderThread
     private void runRender(CountDownLatch latch) {
-        LOGGER.info(MARKER, "Initializing render thread");
         final Window window = mWindow;
         window.makeCurrent();
         try {
@@ -303,20 +321,20 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
             }
             mRenderLooper = Looper.prepare();
             mRenderHandler = new Handler(mRenderLooper);
+
+            Core.glSetupDebugCallback();
+
+            GLSurfaceCanvas.initialize();
         } finally {
             latch.countDown();
         }
-
-        Core.glSetupDebugCallback();
-
-        GLSurfaceCanvas.initialize();
 
         glDisable(GL_CULL_FACE);
         glEnable(GL_BLEND);
         glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         glDisable(GL_DEPTH_TEST);
         glEnable(GL_STENCIL_TEST);
-        glEnable(GL_MULTISAMPLE);
+        glDisable(GL_MULTISAMPLE);
 
         final GLFramebufferCompat framebuffer = new GLFramebufferCompat();
         framebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT0, GL_RGBA8);
@@ -459,19 +477,18 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
                     mBackgroundImage = null;
                 }
             }
-            LOGGER.info(MARKER, "Quiting render thread");
             mRenderLooper.quit();
             if (mRenderThread != null && mRenderThread.isAlive()) {
                 try {
                     mRenderThread.join(1000);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    Thread.currentThread().interrupt();
                 }
             }
 
             if (mWindow != null) {
                 mWindow.close();
-                LOGGER.info(MARKER, "Closed main window");
+                LOGGER.debug(MARKER, "Closed main window");
             }
             GLFWMonitorCallback cb = glfwSetMonitorCallback(null);
             if (cb != null) {
@@ -481,7 +498,6 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         } finally {
             Core.terminate();
         }
-        LOGGER.info(MARKER, "Stopped");
     }
 
     @UiThread

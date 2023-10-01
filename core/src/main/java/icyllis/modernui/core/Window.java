@@ -110,8 +110,8 @@ public class Window implements AutoCloseable {
     /**
      * Sets window icon.
      */
-    public void setIcon(@NonNull Bitmap... icons) {
-        if (icons.length == 0) {
+    public void setIcon(@Nullable Bitmap... icons) {
+        if (icons == null || icons.length == 0) {
             nglfwSetWindowIcon(mHandle, 0, NULL);
             return;
         }
