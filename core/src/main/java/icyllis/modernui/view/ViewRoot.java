@@ -19,8 +19,7 @@
 package icyllis.modernui.view;
 
 import icyllis.modernui.animation.LayoutTransition;
-import icyllis.modernui.annotation.MainThread;
-import icyllis.modernui.annotation.UiThread;
+import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.*;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.view.View.FocusDirection;
@@ -28,8 +27,6 @@ import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.ApiStatus;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -65,7 +62,6 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
     boolean mProcessInputEventsScheduled;
 
     protected final Object mRenderLock = new Object();
-    protected boolean mRedrawn;
 
     private int mPointerIconType = PointerIcon.TYPE_DEFAULT;
 
@@ -124,7 +120,7 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
         }
     }
 
-    protected boolean handleMessage(@Nonnull Message msg) {
+    protected boolean handleMessage(@NonNull Message msg) {
         switch (msg.what) {
             case MSG_INVALIDATE -> ((View) msg.obj).invalidate();
             case MSG_PROCESS_INPUT_EVENTS -> {
@@ -135,7 +131,7 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
         return true;
     }
 
-    public void setView(@Nonnull View view) {
+    public void setView(@NonNull View view) {
         synchronized (this) {
             if (mView == null) {
                 mView = view;
@@ -160,7 +156,7 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
         return mView;
     }
 
-    boolean startDragAndDrop(@Nonnull View view, @Nullable Object data, @Nullable View.DragShadow shadow, int flags) {
+    boolean startDragAndDrop(@NonNull View view, @Nullable Object data, @Nullable View.DragShadow shadow, int flags) {
         /*if (master.dragEvent != null) {
             ModernUI.LOGGER.error(View.MARKER, "startDragAndDrop failed by another ongoing operation");
             return false;
@@ -308,7 +304,7 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
         boolean cancelDraw = mAttachInfo.mTreeObserver.dispatchOnPreDraw();
 
         synchronized (mRenderLock) {
-            if (!cancelDraw && !mRedrawn) {
+            if (!cancelDraw) {
                 if (mPendingTransitions != null && mPendingTransitions.size() > 0) {
                     for (LayoutTransition pendingTransition : mPendingTransitions) {
                         pendingTransition.startChangingAnimations();
@@ -323,9 +319,10 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
 
                 if (mInvalidated) {
                     mIsDrawing = true;
-                    Canvas canvas = beginRecording(width, height);
+                    Canvas canvas = beginDrawLocked(width, height);
                     if (canvas != null) {
                         host.draw(canvas);
+                        endDrawLocked(canvas);
                     }
                     mIsDrawing = false;
                     if (mKeepInvalidated) {
@@ -333,7 +330,6 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
                     } else {
                         mInvalidated = false;
                     }
-                    mRedrawn = true;
                 }
             } else {
                 scheduleTraversals();
@@ -352,7 +348,7 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
      *                             If so, the FORCE_LAYOUT flag was not set on requesters.
      * @return A list of the actual views that still need to be laid out.
      */
-    private ArrayList<View> getValidLayoutRequesters(@Nonnull ArrayList<View> layoutRequesters,
+    private ArrayList<View> getValidLayoutRequesters(@NonNull ArrayList<View> layoutRequesters,
                                                      boolean secondLayoutRequests) {
         ArrayList<View> validLayoutRequesters = null;
         for (View view : layoutRequesters) {
@@ -430,7 +426,7 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
      * @param view the view that requested the layout.
      * @return true if request should proceed, false otherwise.
      */
-    boolean requestLayoutDuringLayout(@Nonnull final View view) {
+    boolean requestLayoutDuringLayout(@NonNull final View view) {
         if (view.mParent == null || view.mAttachInfo == null) {
             // Would not normally trigger another layout, so just let it pass through as usual
             return true;
@@ -446,10 +442,12 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
     }
 
     @Nullable
-    protected abstract Canvas beginRecording(int width, int height);
+    protected abstract Canvas beginDrawLocked(int width, int height);
+    
+    protected abstract void endDrawLocked(@NonNull Canvas canvas);
 
     @MainThread
-    public void enqueueInputEvent(@Nonnull InputEvent event) {
+    public void enqueueInputEvent(@NonNull InputEvent event) {
         mInputEvents.offer(event);
         scheduleProcessInputEvents();
     }
@@ -530,7 +528,7 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
         }
     }
 
-    private boolean performFocusNavigation(@Nonnull KeyEvent event) {
+    private boolean performFocusNavigation(@NonNull KeyEvent event) {
         int direction = 0;
         switch (event.getKeyCode()) {
             case KeyEvent.KEY_LEFT:
@@ -751,7 +749,7 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
         mInvalidateOnAnimationRunnable.removeView(view);
     }
 
-    private boolean updatePointerIcon(@Nonnull MotionEvent e) {
+    private boolean updatePointerIcon(@NonNull MotionEvent e) {
         if (mView == null) {
             return false;
         }
@@ -959,34 +957,34 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
     }
 
     @Override
-    public boolean onStartNestedScroll(@Nonnull View child, @Nonnull View target, int axes, int type) {
+    public boolean onStartNestedScroll(@NonNull View child, @NonNull View target, int axes, int type) {
         return false;
     }
 
     @Override
-    public void onNestedScrollAccepted(@Nonnull View child, @Nonnull View target, int axes, int type) {
+    public void onNestedScrollAccepted(@NonNull View child, @NonNull View target, int axes, int type) {
     }
 
     @Override
-    public void onStopNestedScroll(@Nonnull View target, int type) {
+    public void onStopNestedScroll(@NonNull View target, int type) {
     }
 
     @Override
-    public void onNestedScroll(@Nonnull View target, int dxConsumed, int dyConsumed, int dxUnconsumed,
-                               int dyUnconsumed, int type, @Nonnull int[] consumed) {
+    public void onNestedScroll(@NonNull View target, int dxConsumed, int dyConsumed, int dxUnconsumed,
+                               int dyUnconsumed, int type, @NonNull int[] consumed) {
     }
 
     @Override
-    public void onNestedPreScroll(@Nonnull View target, int dx, int dy, @Nonnull int[] consumed, int type) {
+    public void onNestedPreScroll(@NonNull View target, int dx, int dy, @NonNull int[] consumed, int type) {
     }
 
     @Override
-    public boolean onNestedFling(@Nonnull View target, float velocityX, float velocityY, boolean consumed) {
+    public boolean onNestedFling(@NonNull View target, float velocityX, float velocityY, boolean consumed) {
         return false;
     }
 
     @Override
-    public boolean onNestedPreFling(@Nonnull View target, float velocityX, float velocityY) {
+    public boolean onNestedPreFling(@NonNull View target, float velocityX, float velocityY) {
         return false;
     }
 

@@ -23,7 +23,7 @@ import icyllis.arc3d.opengl.GLBackendFormat
 import icyllis.arc3d.opengl.GLCore
 import icyllis.arc3d.opengl.GLRenderTarget
 import icyllis.modernui.core.Core
-import icyllis.modernui.core.MainWindow
+import icyllis.modernui.core.ActivityWindow
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.core.config.Configurator
 import org.lwjgl.glfw.GLFW
@@ -42,7 +42,7 @@ fun main() {
     GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 3)
     GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GLFW.GLFW_FALSE)
 
-    val window = MainWindow.initialize("ProxyWindow", 16, 16)
+    val window = ActivityWindow.createMainWindow("ProxyWindow", 16, 16)
     window.makeCurrent()
     check(Core.initOpenGL()) { "Failed to initialize OpenGL" }
     Core.glSetupDebugCallback()

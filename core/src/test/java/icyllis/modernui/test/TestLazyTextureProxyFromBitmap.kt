@@ -21,7 +21,7 @@ package icyllis.modernui.test
 import icyllis.arc3d.engine.Surface
 import icyllis.arc3d.opengl.GLTexture
 import icyllis.modernui.core.Core
-import icyllis.modernui.core.MainWindow
+import icyllis.modernui.core.ActivityWindow
 import icyllis.modernui.graphics.Bitmap
 import icyllis.modernui.graphics.BitmapFactory
 import org.apache.logging.log4j.Level
@@ -50,7 +50,7 @@ fun main() {
     GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 3)
     GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GLFW.GLFW_FALSE)
 
-    val window = MainWindow.initialize("ProxyWindow", 16, 16)
+    val window = ActivityWindow.createMainWindow("ProxyWindow", 16, 16)
     window.makeCurrent()
     check(Core.initOpenGL()) { "Failed to initialize OpenGL" }
     Core.glSetupDebugCallback()

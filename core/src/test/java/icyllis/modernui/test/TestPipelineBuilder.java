@@ -49,7 +49,7 @@ public class TestPipelineBuilder {
         GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 5);
         //GLFW.glfwWindowHint(GLFW.GLFW_TRANSPARENT_FRAMEBUFFER, GLFW.GLFW_TRUE);
 
-        var window = MainWindow.initialize("Window", WIDTH, HEIGHT);
+        var window = ActivityWindow.createMainWindow("Window", WIDTH, HEIGHT);
         Monitor monitor = Monitor.getPrimary();
         if (monitor != null) {
             window.center(monitor);

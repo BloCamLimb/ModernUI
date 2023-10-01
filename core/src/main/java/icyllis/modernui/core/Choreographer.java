@@ -20,12 +20,15 @@ package icyllis.modernui.core;
 
 import icyllis.modernui.animation.AnimationUtils;
 import icyllis.modernui.animation.ValueAnimator;
-import icyllis.modernui.annotation.*;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.view.View;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.ApiStatus;
+
+import java.util.Objects;
 
 import static icyllis.modernui.ModernUI.LOGGER;
 
@@ -79,6 +82,9 @@ public final class Choreographer {
     // Prints debug messages about every frame and callback registered (high volume).
     private static final boolean DEBUG_FRAMES = false;
 
+    // The number of milliseconds between animation frames.
+    private static volatile long sFrameDelay = 1;
+
     // Thread local storage for the choreographer.
     private static final ThreadLocal<Choreographer> sThreadInstance = ThreadLocal.withInitial(() -> {
         if (Core.isOnRenderThread()) {
@@ -106,17 +112,20 @@ public final class Choreographer {
     /**
      * Callback type: Input callback.  Runs first.
      */
+    @ApiStatus.Internal
     public static final int CALLBACK_INPUT = 0;
 
     /**
      * Callback type: Animation callback.  Runs before {@link #CALLBACK_TRAVERSAL}.
      */
+    @ApiStatus.Internal
     public static final int CALLBACK_ANIMATION = 1;
 
     /**
      * Callback type: Traversal callback.  Handles layout and draw.  Runs
      * after all other asynchronous messages have been handled.
      */
+    @ApiStatus.Internal
     public static final int CALLBACK_TRAVERSAL = 2;
 
     /**
@@ -128,6 +137,7 @@ public final class Choreographer {
      * estimate of the start time of the frame in which animations (and other updates
      * to the view hierarchy state) actually took effect.
      */
+    @ApiStatus.Internal
     public static final int CALLBACK_COMMIT = 3;
 
     private static final int CALLBACK_LAST = CALLBACK_COMMIT;
@@ -143,10 +153,10 @@ public final class Choreographer {
     private boolean mFrameScheduled;
     private boolean mCallbacksRunning;
     private long mLastFrameTimeNanos;
-    private long mTimestampNanos;
 
     private Choreographer(@NonNull Looper looper) {
         mHandler = new Handler(looper, this::handleMessage);
+        mLastFrameTimeNanos = Long.MIN_VALUE;
 
         mCallbackQueues = new CallbackQueue[CALLBACK_LAST + 1];
         for (int i = 0; i <= CALLBACK_LAST; i++) {
@@ -168,6 +178,65 @@ public final class Choreographer {
     }
 
     /**
+     * The amount of time, in milliseconds, between each frame of the animation.
+     * <p>
+     * This is a requested time that the animation will attempt to honor, but the actual delay
+     * between frames may be different, depending on system load and capabilities. This is a static
+     * function because the same delay will be applied to all animations, since they are all
+     * run off of a single timing loop.
+     * </p>
+     *
+     * @return the requested time between frames, in milliseconds
+     */
+    @ApiStatus.Internal
+    public static long getFrameDelay() {
+        return sFrameDelay;
+    }
+
+    /**
+     * The amount of time, in milliseconds, between each frame of the animation.
+     * <p>
+     * This is a requested time that the animation will attempt to honor, but the actual delay
+     * between frames may be different, depending on system load and capabilities. This is a static
+     * function because the same delay will be applied to all animations, since they are all
+     * run off of a single timing loop.
+     * </p>
+     *
+     * @param frameDelay the requested time between frames, in milliseconds
+     */
+    @ApiStatus.Internal
+    public static void setFrameDelay(long frameDelay) {
+        sFrameDelay = frameDelay;
+    }
+
+    /**
+     * Subtracts typical frame delay time from a delay interval in milliseconds.
+     * <p>
+     * This method can be used to compensate for animation delay times that have baked
+     * in assumptions about the frame delay.  For example, it's quite common for code to
+     * assume a 60Hz frame time and bake in a 16ms delay.  When we call
+     * {@link #postCallbackDelayed} on animation we want to know how long to wait before
+     * posting the animation callback but let the animation timer take care of the remaining
+     * frame delay time.
+     * </p><p>
+     * This method is somewhat conservative about how much of the frame delay it
+     * subtracts.  It uses the same value returned by {@link #getFrameDelay} which by
+     * default is 10ms even though many parts of the system assume 16ms.  Consequently,
+     * we might still wait 6ms before posting an animation callback that we want to run
+     * on the next frame, but this is much better than waiting a whole 16ms and likely
+     * missing the deadline.
+     * </p>
+     *
+     * @param delayMillis The original delay time including an assumed frame delay.
+     * @return The adjusted delay time with the assumed frame delay subtracted out.
+     */
+    @ApiStatus.Internal
+    public static long subtractFrameDelay(long delayMillis) {
+        final long frameDelay = sFrameDelay;
+        return delayMillis <= frameDelay ? 0 : delayMillis - frameDelay;
+    }
+
+    /**
      * Posts a callback to run on the next frame.
      * <p>
      * The callback runs once then is automatically removed.
@@ -178,8 +247,9 @@ public final class Choreographer {
      * @param token        The callback token, or null if none.
      * @see #removeCallbacks(int, Runnable, Object)
      */
+    @ApiStatus.Internal
     public void postCallback(int callbackType, @NonNull Runnable action, @Nullable Object token) {
-        postCallbackDelayedInternal(callbackType, action, token, 0);
+        postCallbackDelayed(callbackType, action, token, 0);
     }
 
     /**
@@ -194,15 +264,20 @@ public final class Choreographer {
      * @param delayMillis  The delay time in milliseconds.
      * @see #removeCallbacks(int, Runnable, Object)
      */
+    @ApiStatus.Internal
     public void postCallbackDelayed(int callbackType, @NonNull Runnable action, @Nullable Object token,
                                     long delayMillis) {
+        Objects.requireNonNull(action);
+        if (callbackType < 0 || callbackType > CALLBACK_LAST) {
+            throw new AssertionError(callbackType);
+        }
         postCallbackDelayedInternal(callbackType, action, token, delayMillis);
     }
 
     private void postCallbackDelayedInternal(int callbackType, @NonNull Object action, @Nullable Object token,
                                              long delayMillis) {
         if (DEBUG_FRAMES) {
-            LOGGER.info(MARKER, "PostCallback: type=" + callbackType
+            LOGGER.debug(MARKER, "PostCallback: type=" + callbackType
                     + ", action=" + action + ", token=" + token
                     + ", delayMillis=" + delayMillis);
         }
@@ -213,7 +288,7 @@ public final class Choreographer {
             mCallbackQueues[callbackType].addCallbackLocked(dueTime, action, token);
 
             if (dueTime <= now) {
-                scheduleFrameLocked();
+                scheduleFrameLocked(now);
             } else {
                 Message msg = mHandler.obtainMessage(MSG_DO_SCHEDULE_CALLBACK, action);
                 msg.arg1 = callbackType;
@@ -234,13 +309,17 @@ public final class Choreographer {
      * @see #postCallback
      * @see #postCallbackDelayed
      */
+    @ApiStatus.Internal
     public void removeCallbacks(int callbackType, @Nullable Runnable action, @Nullable Object token) {
+        if (callbackType < 0 || callbackType > CALLBACK_LAST) {
+            throw new AssertionError(callbackType);
+        }
         removeCallbacksInternal(callbackType, action, token);
     }
 
     private void removeCallbacksInternal(int callbackType, @Nullable Object action, @Nullable Object token) {
         if (DEBUG_FRAMES) {
-            LOGGER.info(MARKER, "RemoveCallbacks: type=" + callbackType
+            LOGGER.debug(MARKER, "RemoveCallbacks: type=" + callbackType
                     + ", action=" + action + ", token=" + token);
         }
 
@@ -263,7 +342,7 @@ public final class Choreographer {
      * @see #removeFrameCallback
      */
     public void postFrameCallback(@NonNull FrameCallback callback) {
-        postCallbackDelayedInternal(CALLBACK_ANIMATION, callback, FRAME_CALLBACK_TOKEN, 0);
+        postFrameCallbackDelayed(callback, 0);
     }
 
     /**
@@ -278,6 +357,7 @@ public final class Choreographer {
      * @see #removeFrameCallback
      */
     public void postFrameCallbackDelayed(@NonNull FrameCallback callback, long delayMillis) {
+        Objects.requireNonNull(callback);
         postCallbackDelayedInternal(CALLBACK_ANIMATION, callback, FRAME_CALLBACK_TOKEN, delayMillis);
     }
 
@@ -289,6 +369,7 @@ public final class Choreographer {
      * @see #postFrameCallbackDelayed
      */
     public void removeFrameCallback(@NonNull FrameCallback callback) {
+        Objects.requireNonNull(callback);
         removeCallbacksInternal(CALLBACK_ANIMATION, callback, FRAME_CALLBACK_TOKEN);
     }
 
@@ -315,6 +396,7 @@ public final class Choreographer {
      * @return The frame start time, in the {@link Core#timeMillis()} time base.
      * @throws IllegalStateException if no frame is in progress.
      */
+    @ApiStatus.Internal
     public long getFrameTime() {
         return getFrameTimeNanos() / 1000000;
     }
@@ -325,6 +407,7 @@ public final class Choreographer {
      * @return The frame start time, in the {@link Core#timeNanos()} time base.
      * @throws IllegalStateException if no frame is in progress.
      */
+    @ApiStatus.Internal
     public long getFrameTimeNanos() {
         synchronized (mLock) {
             if (!mCallbacksRunning) {
@@ -341,56 +424,35 @@ public final class Choreographer {
      *
      * @return The frame start time of the last frame, in the {@link Core#timeNanos()} time base.
      */
+    @ApiStatus.Internal
     public long getLastFrameTimeNanos() {
         synchronized (mLock) {
             return mLastFrameTimeNanos;
         }
     }
 
-    /**
-     * Schedule a frame on render thread.
-     *
-     * @param timestampNanos synced frame time during a render call
-     */
-    @RenderThread
-    public void scheduleFrameAsync(long timestampNanos) {
-        Core.checkRenderThread();
-        synchronized (mLock) {
-            if (!mFrameScheduled) {
-                return;
-            }
-            final long now = Core.timeNanos();
-            if (timestampNanos > now) {
-                timestampNanos = now;
-            }
-            mTimestampNanos = timestampNanos;
-
+    private void scheduleFrameLocked(long now) {
+        if (!mFrameScheduled) {
+            mFrameScheduled = true;
+            final long nextFrameTime = Math.max(
+                    mLastFrameTimeNanos / 1000000 + sFrameDelay, now);
             if (DEBUG_FRAMES) {
-                LOGGER.info(MARKER, "Scheduling next frame in " + (timestampNanos - now) / 1000000 + " ms.");
+                LOGGER.debug(MARKER, "Scheduling next frame in " + (nextFrameTime - now) + " ms.");
             }
             Message msg = mHandler.obtainMessage(MSG_DO_FRAME);
             msg.setAsynchronous(true);
-            mHandler.sendMessageAtTime(msg, timestampNanos / 1000000);
-        }
-    }
-
-    private void scheduleFrameLocked() {
-        if (!mFrameScheduled) {
-            mFrameScheduled = true;
+            mHandler.sendMessageAtTime(msg, nextFrameTime);
         }
     }
 
     void doFrame() {
-        final long frameTimeNanos = mTimestampNanos;
-        final long startNanos;
+        final long frameTimeNanos = Core.timeNanos();
         try {
             synchronized (mLock) {
                 if (!mFrameScheduled) {
                     // nothing to do
                     return;
                 }
-
-                startNanos = Core.timeNanos();
 
                 if (frameTimeNanos < mLastFrameTimeNanos) {
                     // should not happen
@@ -417,8 +479,7 @@ public final class Choreographer {
         if (DEBUG_FRAMES) {
             final long endNanos = Core.timeNanos();
             LOGGER.info(MARKER, "Frame : Finished, took "
-                    + (endNanos - startNanos) * 0.000001f + " ms, latency "
-                    + (startNanos - frameTimeNanos) * 0.000001f + " ms.");
+                    + (endNanos - frameTimeNanos) * 0.000001f + " ms.");
         }
     }
 
@@ -461,7 +522,7 @@ public final class Choreographer {
             if (!mFrameScheduled) {
                 final long now = Core.timeMillis();
                 if (mCallbackQueues[callbackType].hasDueCallbacksLocked(now)) {
-                    scheduleFrameLocked();
+                    scheduleFrameLocked(now);
                 }
             }
         }

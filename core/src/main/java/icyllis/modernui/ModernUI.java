@@ -19,7 +19,6 @@
 package icyllis.modernui;
 
 import icyllis.arc3d.core.Matrix4;
-import icyllis.modernui.graphics.GLFramebufferCompat;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.app.Activity;
 import icyllis.modernui.core.*;
@@ -49,7 +48,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.locks.LockSupport;
 
 import static icyllis.arc3d.opengl.GLCore.*;
 import static org.lwjgl.glfw.GLFW.*;
@@ -79,7 +77,8 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
 
     //private final VulkanManager mVulkanManager = VulkanManager.getInstance();
 
-    private volatile MainWindow mWindow;
+    private volatile ActivityWindow mWindow;
+    private volatile GLFramebufferCompat mFramebuffer;
 
     private ViewRootImpl mRoot;
     private WindowGroup mDecor;
@@ -95,6 +94,9 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
 
     private volatile Looper mUiLooper;
     private volatile Thread mRenderThread;
+
+    private volatile Looper mRenderLooper;
+    private volatile Handler mRenderHandler;
 
     private Resources mResources = new Resources();
 
@@ -155,10 +157,10 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         //glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
         if (monitor == null) {
             LOGGER.info(MARKER, "No monitor connected");
-            mWindow = MainWindow.initialize("Modern UI", 1280, 720);
+            mWindow = ActivityWindow.createMainWindow("Modern UI", 1280, 720);
         } else {
             VideoMode mode = monitor.getCurrentMode();
-            mWindow = MainWindow.initialize("Modern UI",
+            mWindow = ActivityWindow.createMainWindow("Modern UI",
                     (int) (mode.getWidth() * 0.75), (int) (mode.getHeight() * 0.75));
             mWindow.center(monitor);
             int[] physw = {0}, physh = {0};
@@ -190,7 +192,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
             @Override
             public void invoke(long window) {
                 LOGGER.info(MARKER, "Window closed from callback");
-                Looper.getMainLooper().quitSafely();
+                stop();
             }
         });
 
@@ -255,7 +257,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         mLifecycleRegistry = new LifecycleRegistry(this);
         mOnBackPressedDispatcher = new OnBackPressedDispatcher(() -> {
             mWindow.setShouldClose(true);
-            Looper.getMainLooper().quitSafely();
+            stop();
         });
         mViewModelStore = new ViewModelStore();
         mFragmentController = FragmentController.createController(new HostCallbacks());
@@ -284,11 +286,6 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         LOGGER.info(MARKER, "Looping main thread");
         Looper.loop();
 
-        mFragmentController.dispatchStop();
-        mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_STOP);
-
-        mFragmentController.dispatchDestroy();
-        mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY);
 
         Core.requireUiRecordingContext().unref();
         LOGGER.info(MARKER, "Quited main thread");
@@ -304,13 +301,15 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
                 Core.glShowCapsErrorDialog();
                 throw new IllegalStateException("Failed to initialize OpenGL");
             }
+            mRenderLooper = Looper.prepare();
+            mRenderHandler = new Handler(mRenderLooper);
         } finally {
             latch.countDown();
         }
 
         Core.glSetupDebugCallback();
 
-        final GLSurfaceCanvas canvas = GLSurfaceCanvas.initialize();
+        GLSurfaceCanvas.initialize();
 
         glDisable(GL_CULL_FACE);
         glEnable(GL_BLEND);
@@ -324,50 +323,13 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         framebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT1, GL_RGBA8);
         framebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT2, GL_RGBA8);
         framebuffer.addRenderbufferAttachment(GL_STENCIL_ATTACHMENT, GL_STENCIL_INDEX8);
+        mFramebuffer = framebuffer;
 
         window.swapInterval(1);
         LOGGER.info(MARKER, "Looping render thread");
 
-        if (Boolean.parseBoolean(System.getProperty("icyllis.modernui.newRenderLoop")))
-            while (!window.shouldClose()) {
-                boolean flushSurface = false;
-                if (mRoot != null) {
-                    flushSurface = mRoot.flushDrawCommands(canvas, window, framebuffer);
-                }
-                if (mRoot != null) {
-                    mRoot.mChoreographer.scheduleFrameAsync(Core.timeNanos());
-                }
-                if (flushSurface) {
-                    int width = window.getWidth(), height = window.getHeight();
-                    if (framebuffer.getAttachment(GL_COLOR_ATTACHMENT0).getWidth() > 0) {
-                        glBlitNamedFramebuffer(framebuffer.get(), DEFAULT_FRAMEBUFFER, 0, 0,
-                                width, height, 0, 0,
-                                width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-                    }
-                    window.swapBuffers();
-                } else {
-                    LockSupport.parkNanos((long) (1.0 / 576 * 1e9));
-                }
-            }
-        else
-            while (!window.shouldClose()) {
-                int width = window.getWidth(), height = window.getHeight();
-                glBindFramebuffer(GL_FRAMEBUFFER, DEFAULT_FRAMEBUFFER);
-                glDisable(GL_CULL_FACE);
-                Core.glResetFrame(window);
-                if (mRoot != null) {
-                    mRoot.flushDrawCommands(canvas, window, framebuffer);
-                }
-                if (framebuffer.getAttachment(GL_COLOR_ATTACHMENT0).getWidth() > 0) {
-                    glBlitNamedFramebuffer(framebuffer.get(), DEFAULT_FRAMEBUFFER, 0, 0,
-                            width, height, 0, 0,
-                            width, height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
-                }
-                if (mRoot != null) {
-                    mRoot.mChoreographer.scheduleFrameAsync(Core.timeNanos());
-                }
-                window.swapBuffers();
-            }
+        Looper.loop();
+
         GLSurfaceCanvas.getInstance().destroy();
         Core.requireDirectContext().unref();
         LOGGER.info(MARKER, "Quited render thread");
@@ -389,6 +351,16 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         }
 
         mDefaultTypeface = Typeface.createTypeface(set.toArray(new FontFamily[0]));
+    }
+
+    private void stop() {
+        mFragmentController.dispatchStop();
+        mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_STOP);
+
+        mFragmentController.dispatchDestroy();
+        mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY);
+
+        Looper.getMainLooper().quitSafely();
     }
 
     @NonNull
@@ -486,13 +458,14 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
                     mBackgroundImage.close();
                     mBackgroundImage = null;
                 }
-                if (mRenderThread != null && mRenderThread.isAlive()) {
-                    LOGGER.info(MARKER, "Quiting render thread");
-                    try {
-                        mRenderThread.join(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+            }
+            LOGGER.info(MARKER, "Quiting render thread");
+            mRenderLooper.quit();
+            if (mRenderThread != null && mRenderThread.isAlive()) {
+                try {
+                    mRenderThread.join(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
             }
 
@@ -515,14 +488,6 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
     class ViewRootImpl extends ViewRoot {
 
         private final Rect mGlobalRect = new Rect();
-
-        @NonNull
-        @Override
-        protected Canvas beginRecording(int width, int height) {
-            GLSurfaceCanvas canvas = GLSurfaceCanvas.getInstance();
-            canvas.reset(width, height);
-            return canvas;
-        }
 
         @Override
         protected boolean dispatchTouchEvent(MotionEvent event) {
@@ -552,19 +517,45 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
             }
         }
 
+        @NonNull
+        @Override
+        protected Canvas beginDrawLocked(int width, int height) {
+            GLSurfaceCanvas canvas = GLSurfaceCanvas.getInstance();
+            canvas.reset(width, height);
+            return canvas;
+        }
+
+        @Override
+        protected void endDrawLocked(@NonNull Canvas canvas) {
+            mRenderHandler.post(this::render);
+            try {
+                mRenderLock.wait();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+
         @RenderThread
-        private boolean flushDrawCommands(GLSurfaceCanvas canvas, Window window, GLFramebufferCompat framebuffer) {
+        private void render() {
+            GLSurfaceCanvas canvas = GLSurfaceCanvas.getInstance();
+            Window window = mWindow;
+            GLFramebufferCompat framebuffer = mFramebuffer;
+            int width = window.getWidth(), height = window.getHeight();
+            glViewport(0, 0, width, height);
             synchronized (mRenderLock) {
-                int width = window.getWidth(), height = window.getHeight();
-                if (mRedrawn) {
-                    final Matrix4 projection = new Matrix4();
-                    canvas.setProjection(projection.setOrthographic(width, height, 0, Window.LAST_SYSTEM_WINDOW * 2 + 1,
-                            true));
-                    mRedrawn = false;
-                    canvas.executeDrawOps(framebuffer);
-                    return true;
-                }
-                return false;
+                final Matrix4 projection = new Matrix4();
+                canvas.setProjection(projection.setOrthographic(width, height, 0, Window.LAST_SYSTEM_WINDOW * 2 + 1,
+                        true));
+                canvas.executeDrawOps(framebuffer);
+                //TODO, we should swap the command list, and signal the lock early
+                mRenderLock.notifyAll();
+            }
+            if (framebuffer.getAttachment(GL_COLOR_ATTACHMENT0).getWidth() > 0) {
+                glBlitNamedFramebuffer(framebuffer.get(), DEFAULT_FRAMEBUFFER,
+                        0, 0, width, height,
+                        0, 0, width, height,
+                        GL_COLOR_BUFFER_BIT, GL_NEAREST);
+                window.swapBuffers();
             }
         }
 

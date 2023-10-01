@@ -279,19 +279,24 @@ public class LongSparseArray<E> implements Cloneable {
      * Adds a mapping from the specified key to the specified value,
      * replacing the previous mapping from the specified key if there
      * was one.
+     *
+     * @return Returns the previous mapped value or null.
      */
-    public void put(long key, E value) {
+    @Nullable
+    public E put(long key, E value) {
         int i = Arrays.binarySearch(mKeys, 0, mSize, key);
 
         if (i >= 0) {
+            E oldValue = (E) mValues[i];
             mValues[i] = value;
+            return oldValue;
         } else {
             i = ~i;
 
             if (i < mSize && mValues[i] == DELETED) {
                 mKeys[i] = key;
                 mValues[i] = value;
-                return;
+                return null;
             }
 
             if (mGarbage && mSize >= mKeys.length) {
@@ -304,6 +309,7 @@ public class LongSparseArray<E> implements Cloneable {
             mKeys = GrowingArrayUtils.insert(mKeys, mSize, i, key);
             mValues = GrowingArrayUtils.insert(mValues, mSize, i, value);
             mSize++;
+            return null;
         }
     }
 

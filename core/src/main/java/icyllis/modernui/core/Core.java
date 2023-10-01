@@ -301,20 +301,6 @@ public final class Core {
         }, "GL-Error-Dialog").start();
     }
 
-    /**
-     * Resets states before rendering a new frame.
-     *
-     * @param window the window for rendering.
-     */
-    @RenderThread
-    public static void glResetFrame(@NonNull Window window) {
-        Core.checkRenderThread();
-
-        glViewport(0, 0, window.getWidth(), window.getHeight());
-
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    }
-
     @RenderThread
     public static boolean initVulkan() {
         return initVulkan(new ContextOptions());
