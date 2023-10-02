@@ -44,6 +44,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
+import java.util.regex.Pattern;
 
 import static org.lwjgl.system.MemoryUtil.*;
 
@@ -76,6 +77,14 @@ public class TestManagedResource {
         pw.println("Max vertex bindings: " + GLCore.glGetInteger(GLCore.GL_MAX_VERTEX_ATTRIB_BINDINGS));
         pw.println("Max vertex stride: " + GLCore.glGetInteger(GLCore.GL_MAX_VERTEX_ATTRIB_STRIDE));
         pw.println("Max label length: " + GLCore.glGetInteger(GLCore.GL_MAX_LABEL_LENGTH));
+
+        if (glVersion != null) {
+            var pattern = Pattern.compile("(\\d+)\\.(\\d+)");
+            var matcher = pattern.matcher(glVersion);
+            if (matcher.find()) {
+                pw.println("Version major " + matcher.group(1) + " minor " + matcher.group(2));
+            }
+        }
 
         {
             ModuleLoader moduleLoader = ModuleLoader.getInstance();
@@ -125,7 +134,7 @@ public class TestManagedResource {
 
         testTexture(pw, dContext);
 
-        tokenize(pw);
+        //tokenize(pw);
 
         if (Platform.get() == Platform.WINDOWS) {
             if (!Kernel32.CloseHandle(959595595959595959L)) {

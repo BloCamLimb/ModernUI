@@ -25,6 +25,7 @@ import org.jetbrains.annotations.VisibleForTesting;
 import org.lwjgl.opengl.GL46C;
 import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.Platform;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -47,6 +48,9 @@ public final class GLCaps extends Caps {
 
     public final int[] mProgramBinaryFormats;
 
+    final int mVendor;
+    final int mDriver;
+
     final int mMaxFragmentUniformVectors;
     private float mMaxTextureMaxAnisotropy = 1.f;
     final boolean mSupportsProtected = false;
@@ -64,6 +68,8 @@ public final class GLCaps extends Caps {
             INVALIDATE_BUFFER_TYPE_NULL_DATA = 1,
             INVALIDATE_BUFFER_TYPE_INVALIDATE = 2;
     final int mInvalidateBufferType;
+
+    final boolean mDSAElementBufferIsBroken;
 
     /**
      * Format table for textures.
@@ -227,6 +233,16 @@ public final class GLCaps extends Caps {
             mBaseInstanceSupport = true;
             mBufferStorageSupport = true;
         }
+
+        String versionString = glGetString(GL_VERSION);
+        String vendorString = glGetString(GL_VENDOR);
+        mVendor = getVendor(vendorString);
+        mDriver = getDriver(mVendor, vendorString, versionString);
+
+        // DirectStateAccess's glVertexArrayElementBuffer doesn't work well with NVIDIA on Linux.
+        // Sometimes it will cause segfault on glDrawElementsBaseVertex.
+        mDSAElementBufferIsBroken =
+                mDriver == GL_DRIVER_NVIDIA && Platform.get() == Platform.LINUX;
 
         mMaxFragmentUniformVectors = glGetInteger(GL_MAX_FRAGMENT_UNIFORM_VECTORS);
         mMaxVertexAttributes = Math.min(32, glGetInteger(GL_MAX_VERTEX_ATTRIBS));
@@ -1593,6 +1609,10 @@ public final class GLCaps extends Caps {
 
     public float maxTextureMaxAnisotropy() {
         return mMaxTextureMaxAnisotropy;
+    }
+
+    public boolean dsaElementBufferIsBroken() {
+        return mDSAElementBufferIsBroken;
     }
 
     @Override

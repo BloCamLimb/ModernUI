@@ -19,7 +19,8 @@
 
 package icyllis.arc3d.opengl;
 
-import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.Color;
+import icyllis.arc3d.core.ImageInfo;
 import icyllis.arc3d.engine.PipelineStateCache;
 import org.lwjgl.opengl.GL45C;
 import org.lwjgl.system.*;
@@ -28,6 +29,8 @@ import javax.annotation.Nonnull;
 import java.io.PrintWriter;
 import java.nio.ByteBuffer;
 import java.util.Locale;
+import java.util.Objects;
+import java.util.regex.Pattern;
 
 import static org.lwjgl.opengl.AMDDebugOutput.*;
 import static org.lwjgl.opengl.ARBDebugOutput.*;
@@ -63,6 +66,68 @@ public final class GLCore extends GL45C {
         //noinspection StatementWithEmptyBody
         while (glGetError() != GL_NO_ERROR)
             ;
+    }
+
+    /**
+     * Known vendors. Internal use only.
+     */
+    public static final int GL_VENDOR_OTHER = 0;
+    public static final int GL_VENDOR_NVIDIA = 1;
+    public static final int GL_VENDOR_ATI = 2;
+    public static final int GL_VENDOR_INTEL = 3;
+    public static final int GL_VENDOR_QUALCOMM = 4;
+
+    /**
+     * Known drivers. Internal use only.
+     */
+    public static final int GL_DRIVER_OTHER = 0;
+    public static final int GL_DRIVER_NVIDIA = 1;
+    public static final int GL_DRIVER_AMD = 2;
+    public static final int GL_DRIVER_INTEL = 3;
+    public static final int GL_DRIVER_FREEDRENO = 4;
+    public static final int GL_DRIVER_MESA = 5;
+
+    public static int getVendor(String vendorString) {
+        Objects.requireNonNull(vendorString);
+        if (vendorString.equals("NVIDIA Corporation")) {
+            return GL_VENDOR_NVIDIA;
+        }
+        if (vendorString.equals("ATI Technologies Inc.")) {
+            return GL_VENDOR_ATI;
+        }
+        if (vendorString.startsWith("Intel ") || vendorString.equals("Intel")) {
+            return GL_VENDOR_INTEL;
+        }
+        if (vendorString.equals("Qualcomm") || vendorString.equals("freedreno")) {
+            return GL_VENDOR_QUALCOMM;
+        }
+        return GL_VENDOR_OTHER;
+    }
+
+    public static int getDriver(int vendor,
+                                String vendorString,
+                                String versionString) {
+        Objects.requireNonNull(vendorString);
+        if (vendorString.equals("freedreno")) {
+            return GL_DRIVER_FREEDRENO;
+        }
+        if (vendor == GL_VENDOR_NVIDIA) {
+            return GL_DRIVER_NVIDIA;
+        }
+        {
+            var matcher = Pattern.compile("\\d+\\.\\d+( \\(Core Profile\\))? Mesa \\d+\\.\\d+")
+                    .matcher(versionString);
+            if (matcher.find()) {
+                return GL_DRIVER_MESA;
+            }
+        }
+        if (vendor == GL_VENDOR_ATI) {
+            return GL_DRIVER_AMD;
+        }
+        if (vendor == GL_VENDOR_INTEL) {
+            return GL_DRIVER_INTEL;
+        }
+        return GL_DRIVER_OTHER;
     }
 
     /**
