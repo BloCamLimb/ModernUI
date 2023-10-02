@@ -19,8 +19,8 @@
 
 package icyllis.arc3d.opengl;
 
-import icyllis.arc3d.engine.*;
 import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.engine.*;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -403,7 +403,8 @@ public final class GLVertexArray extends ManagedResource {
             return;
         }
         if (mIndexBuffer != buffer.getUniqueID()) {
-            if (mAttributes == null) {
+            if (mAttributes == null &&
+                    !getServer().getCaps().dsaElementBufferIsBroken()) {
                 // OpenGL 4.5
                 glVertexArrayElementBuffer(mVertexArray, buffer.getHandle());
             } else {
