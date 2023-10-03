@@ -655,8 +655,8 @@ public final class Core {
 
     /**
      * Allocates native memory and read buffered resource. The memory <b>MUST</b> be
-     * manually freed by {@link MemoryUtil#memFree(Buffer)}. The channel can NOT be
-     * larger than 2 GB. This method does NOT close the channel.
+     * manually freed by {@link MemoryUtil#memFree(Buffer)}. This method can read up
+     * to 2GB. This method does NOT close the channel.
      *
      * @param channel where to read input from
      * @return the native pointer to {@code unsigned char *data}
@@ -668,12 +668,10 @@ public final class Core {
         try {
             if (channel instanceof final SeekableByteChannel ch) {
                 long rem = ch.size() - ch.position() + 1;
-                if (rem > Integer.MAX_VALUE) {
-                    throw new IOException("File is too big, found " + (rem - 1) + " bytes");
-                }
-                p = memAlloc((int) rem);
+                p = memAlloc((int) Math.min(rem,
+                        Integer.MAX_VALUE));
                 //noinspection StatementWithEmptyBody
-                while (ch.read(p) != -1)
+                while (ch.read(p) > 0)
                     ;
             } else {
                 p = memAlloc(4096);
@@ -683,7 +681,7 @@ public final class Core {
                     }
                     long cap = p.capacity();
                     if (cap == Integer.MAX_VALUE) {
-                        throw new IOException("File is too big");
+                        break;
                     }
                     p = memRealloc(p, (int) Math.min(cap + (cap >> 1), // grow 50%
                             Integer.MAX_VALUE));
@@ -698,8 +696,8 @@ public final class Core {
 
     /**
      * Allocates native memory and read buffered resource. The memory <b>MUST</b> be
-     * manually freed by {@link MemoryUtil#memFree(Buffer)}. The stream can NOT be
-     * larger than 2 GB. This method does NOT close the stream.
+     * manually freed by {@link MemoryUtil#memFree(Buffer)}. This method can read up
+     * to 2GB. This method does NOT close the stream.
      *
      * @param stream where to read input from
      * @return the native pointer to {@code unsigned char *data}
