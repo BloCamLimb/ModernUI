@@ -831,6 +831,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
 
         glStencilFunc(GL_EQUAL, 0, 0xff);
         glStencilMask(0xff);
+        mServer.setTextureUnit(0);
         glActiveTexture(GL_TEXTURE0);
         glBindSampler(0, 0);
         glBindVertexArray(0);

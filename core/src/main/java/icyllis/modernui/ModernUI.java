@@ -129,10 +129,6 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
     @MainThread
     public void run(@NonNull Fragment fragment) {
         Thread.currentThread().setName("Main-Thread");
-        // should be true
-        if (!java.awt.GraphicsEnvironment.isHeadless()) {
-            throw new IllegalStateException("AWT must be headless");
-        }
 
         Core.initialize();
 
@@ -205,7 +201,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
             metrics.ydpi = 25.4f * mode.getHeight() / physh[0];
             LOGGER.info(MARKER, "Primary monitor physical size: {}x{} mm, xScale: {}, yScale: {}",
                     physw[0], physh[0], xscale[0], yscale[0]);
-            int density = Math.round(metrics.xdpi * xscale[0] / 12) * 12;
+            int density = 96;/*Math.round(metrics.xdpi * xscale[0] / 12) * 12;*/
             metrics.density = density * DisplayMetrics.DENSITY_DEFAULT_SCALE;
             metrics.densityDpi = density;
             metrics.scaledDensity = metrics.density;
@@ -567,8 +563,9 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
                 mRenderLock.notifyAll();
             }
             if (framebuffer.getAttachment(GL_COLOR_ATTACHMENT0).getWidth() > 0) {
-                glBlitNamedFramebuffer(framebuffer.get(), DEFAULT_FRAMEBUFFER,
-                        0, 0, width, height,
+                framebuffer.bindRead();
+                glBindFramebuffer(GL_DRAW_FRAMEBUFFER, DEFAULT_FRAMEBUFFER);
+                glBlitFramebuffer(0, 0, width, height,
                         0, 0, width, height,
                         GL_COLOR_BUFFER_BIT, GL_NEAREST);
                 window.swapBuffers();
