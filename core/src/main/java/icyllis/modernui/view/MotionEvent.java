@@ -18,14 +18,13 @@
 
 package icyllis.modernui.view;
 
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.core.Core;
 import icyllis.arc3d.core.Matrix4;
 import icyllis.modernui.graphics.Matrix;
 import icyllis.modernui.util.Pools;
 import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.glfw.GLFW;
-
-import javax.annotation.Nonnull;
 
 /**
  * Object that indicates movement events (mouse, touchpad etc.).
@@ -421,7 +420,7 @@ public final class MotionEvent extends InputEvent {
     private MotionEvent() {
     }
 
-    @Nonnull
+    @NonNull
     private static MotionEvent obtain() {
         final MotionEvent event = sPool.acquire();
         if (event == null) {
@@ -430,7 +429,7 @@ public final class MotionEvent extends InputEvent {
         return event;
     }
 
-    @Nonnull
+    @NonNull
     public static MotionEvent obtain(long eventTime, int action,
                                      float x, float y, int modifiers) {
         return obtain(eventTime, action, 0, x, y, modifiers, 0, 0);
@@ -450,7 +449,7 @@ public final class MotionEvent extends InputEvent {
      * @param buttonState  The state of buttons that are pressed.
      * @param flags        The motion event flags.
      */
-    @Nonnull
+    @NonNull
     public static MotionEvent obtain(long eventTime, int action,
                                      int actionButton, float x, float y,
                                      int modifiers, int buttonState, int flags) {
@@ -465,7 +464,7 @@ public final class MotionEvent extends InputEvent {
         return event;
     }
 
-    private void copyFrom(@Nonnull MotionEvent other) {
+    private void copyFrom(@NonNull MotionEvent other) {
         mAction = other.mAction;
         mActionButton = other.mActionButton;
         mFlags = other.mFlags;
@@ -709,7 +708,7 @@ public final class MotionEvent extends InputEvent {
     /**
      * Create a new MotionEvent, copying from this one.
      */
-    @Nonnull
+    @NonNull
     @Override
     public MotionEvent copy() {
         MotionEvent ev = obtain();
@@ -1009,7 +1008,7 @@ public final class MotionEvent extends InputEvent {
      *
      * @param matrix The transformation matrix to apply.
      */
-    public void transform(@Nonnull Matrix matrix) {
+    public void transform(@NonNull Matrix matrix) {
         mTransform.preConcat2D(matrix);
     }
 
@@ -1100,7 +1099,7 @@ public final class MotionEvent extends InputEvent {
         return (mModifiers & GLFW.GLFW_MOD_NUM_LOCK) != 0;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         StringBuilder msg = new StringBuilder();
@@ -1131,7 +1130,7 @@ public final class MotionEvent extends InputEvent {
      * @return The symbolic name of the specified action.
      * @see #getAction()
      */
-    @Nonnull
+    @NonNull
     public static String actionToString(int action) {
         switch (action) {
             case ACTION_DOWN:
@@ -1232,7 +1231,7 @@ public final class MotionEvent extends InputEvent {
             copyFrom(other);
         }
 
-        @Nonnull
+        @NonNull
         public static PointerCoords[] createArray(int size) {
             PointerCoords[] array = new PointerCoords[size];
             for (int i = 0; i < size; i++) {
@@ -1254,7 +1253,7 @@ public final class MotionEvent extends InputEvent {
          *
          * @param other The pointer coords object to copy.
          */
-        public void copyFrom(@Nonnull PointerCoords other) {
+        public void copyFrom(@NonNull PointerCoords other) {
             final long bits = other.mPackedAxisBits;
             mPackedAxisBits = bits;
             if (bits != 0) {
@@ -1374,7 +1373,7 @@ public final class MotionEvent extends InputEvent {
             copyFrom(other);
         }
 
-        @Nonnull
+        @NonNull
         public static PointerProperties[] createArray(int size) {
             PointerProperties[] array = new PointerProperties[size];
             for (int i = 0; i < size; i++) {
@@ -1396,7 +1395,7 @@ public final class MotionEvent extends InputEvent {
          *
          * @param other The pointer properties object to copy.
          */
-        public void copyFrom(@Nonnull PointerProperties other) {
+        public void copyFrom(@NonNull PointerProperties other) {
             id = other.id;
             toolType = other.toolType;
         }

@@ -18,8 +18,9 @@
 
 package icyllis.modernui.view;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
+
 import java.util.ArrayList;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -118,7 +119,7 @@ public final class ViewTreeObserver {
      *
      * @param observer The ViewTreeObserver whose listeners must be added to this observer
      */
-    void merge(@Nonnull ViewTreeObserver observer) {
+    void merge(@NonNull ViewTreeObserver observer) {
         if (observer.mOnGlobalFocusListeners != null) {
             if (mOnGlobalFocusListeners != null) {
                 mOnGlobalFocusListeners.addAll(observer.mOnGlobalFocusListeners);
@@ -160,7 +161,7 @@ public final class ViewTreeObserver {
      * @param listener The callback to add
      * @throws IllegalStateException If {@link #isAlive()} returns false
      */
-    public void addOnGlobalFocusChangeListener(@Nonnull OnGlobalFocusChangeListener listener) {
+    public void addOnGlobalFocusChangeListener(@NonNull OnGlobalFocusChangeListener listener) {
         checkIsAlive();
         if (mOnGlobalFocusListeners == null) {
             mOnGlobalFocusListeners = new CopyOnWriteArrayList<>();
@@ -175,7 +176,7 @@ public final class ViewTreeObserver {
      * @throws IllegalStateException If {@link #isAlive()} returns false
      * @see #addOnGlobalFocusChangeListener(OnGlobalFocusChangeListener)
      */
-    public void removeOnGlobalFocusChangeListener(@Nonnull OnGlobalFocusChangeListener victim) {
+    public void removeOnGlobalFocusChangeListener(@NonNull OnGlobalFocusChangeListener victim) {
         checkIsAlive();
         if (mOnGlobalFocusListeners == null) {
             return;
@@ -190,7 +191,7 @@ public final class ViewTreeObserver {
      * @param listener The callback to add
      * @throws IllegalStateException If {@link #isAlive()} returns false
      */
-    public void addOnGlobalLayoutListener(@Nonnull OnGlobalLayoutListener listener) {
+    public void addOnGlobalLayoutListener(@NonNull OnGlobalLayoutListener listener) {
         checkIsAlive();
         if (mOnGlobalLayoutListeners == null) {
             mOnGlobalLayoutListeners = new CopyOnWriteArray<>();
@@ -205,7 +206,7 @@ public final class ViewTreeObserver {
      * @throws IllegalStateException If {@link #isAlive()} returns false
      * @see #addOnGlobalLayoutListener(OnGlobalLayoutListener)
      */
-    public void removeOnGlobalLayoutListener(@Nonnull OnGlobalLayoutListener victim) {
+    public void removeOnGlobalLayoutListener(@NonNull OnGlobalLayoutListener victim) {
         checkIsAlive();
         if (mOnGlobalLayoutListeners == null) {
             return;
@@ -219,7 +220,7 @@ public final class ViewTreeObserver {
      * @param listener The callback to add
      * @throws IllegalStateException If {@link #isAlive()} returns false
      */
-    public void addOnPreDrawListener(@Nonnull OnPreDrawListener listener) {
+    public void addOnPreDrawListener(@NonNull OnPreDrawListener listener) {
         checkIsAlive();
         if (mOnPreDrawListeners == null) {
             mOnPreDrawListeners = new CopyOnWriteArray<>();
@@ -234,7 +235,7 @@ public final class ViewTreeObserver {
      * @throws IllegalStateException If {@link #isAlive()} returns false
      * @see #addOnPreDrawListener(OnPreDrawListener)
      */
-    public void removeOnPreDrawListener(@Nonnull OnPreDrawListener victim) {
+    public void removeOnPreDrawListener(@NonNull OnPreDrawListener victim) {
         checkIsAlive();
         if (mOnPreDrawListeners == null) {
             return;
@@ -248,7 +249,7 @@ public final class ViewTreeObserver {
      * @param listener The callback to add
      * @throws IllegalStateException If {@link #isAlive()} returns false
      */
-    public void addOnScrollChangedListener(@Nonnull OnScrollChangedListener listener) {
+    public void addOnScrollChangedListener(@NonNull OnScrollChangedListener listener) {
         checkIsAlive();
         if (mOnScrollChangedListeners == null) {
             mOnScrollChangedListeners = new CopyOnWriteArray<>();
@@ -263,7 +264,7 @@ public final class ViewTreeObserver {
      * @throws IllegalStateException If {@link #isAlive()} returns false
      * @see #addOnScrollChangedListener(OnScrollChangedListener)
      */
-    public void removeOnScrollChangedListener(@Nonnull OnScrollChangedListener victim) {
+    public void removeOnScrollChangedListener(@NonNull OnScrollChangedListener victim) {
         checkIsAlive();
         if (mOnScrollChangedListeners == null) {
             return;
@@ -464,7 +465,7 @@ public final class ViewTreeObserver {
             getArray().add(item);
         }
 
-        void addAll(@Nonnull CopyOnWriteArray<T> array) {
+        void addAll(@NonNull CopyOnWriteArray<T> array) {
             getArray().addAll(array.mData);
         }
 

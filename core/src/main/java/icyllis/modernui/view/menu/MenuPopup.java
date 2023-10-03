@@ -18,16 +18,12 @@
 
 package icyllis.modernui.view.menu;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Rect;
-import icyllis.modernui.view.MeasureSpec;
-import icyllis.modernui.view.MenuItem;
-import icyllis.modernui.view.View;
-import icyllis.modernui.view.ViewGroup;
+import icyllis.modernui.view.*;
 import icyllis.modernui.widget.*;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * Base class for a menu popup abstraction - i.e., some type of menu, housed in a popup window
@@ -91,7 +87,7 @@ public abstract class MenuPopup implements ShowableListMenu, MenuPresenter, Adap
     public abstract void setOnDismissListener(PopupWindow.OnDismissListener listener);
 
     @Override
-    public void initForMenu(@Nullable MenuBuilder menu) {
+    public void initForMenu(@NonNull Context context, @Nullable MenuBuilder menu) {
         // Don't need to do anything; we added as a presenter in the constructor.
     }
 
@@ -116,7 +112,7 @@ public abstract class MenuPopup implements ShowableListMenu, MenuPresenter, Adap
     }
 
     @Override
-    public void onItemClick(@Nonnull AdapterView<?> parent, View view, int position, long id) {
+    public void onItemClick(@NonNull AdapterView<?> parent, View view, int position, long id) {
         ListAdapter outerAdapter = (ListAdapter) parent.getAdapter();
         MenuAdapter wrappedAdapter = toMenuAdapter(outerAdapter);
 
@@ -130,7 +126,7 @@ public abstract class MenuPopup implements ShowableListMenu, MenuPresenter, Adap
      *
      * @return The width.
      */
-    protected static int measureIndividualMenuWidth(@Nonnull ListAdapter adapter, @Nullable ViewGroup parent,
+    protected static int measureIndividualMenuWidth(@NonNull ListAdapter adapter, @Nullable ViewGroup parent,
                                                     Context context, int maxAllowedWidth) {
         // Menus don't tend to be long, so this is more valid than it looks.
         int maxWidth = 0;
@@ -180,14 +176,14 @@ public abstract class MenuPopup implements ShowableListMenu, MenuPresenter, Adap
     /**
      * Returns whether icon spacing needs to be preserved for the given menu, based on whether any
      * of its items contains an icon.
-     *
+     * <p>
      * NOTE: This should only be used for non-overflow-only menus, because this method does not
      * take into account whether the menu items are being shown as part of the popup or or being
      * shown as actions in the action bar.
      *
      * @return Whether to preserve icon spacing.
      */
-    protected static boolean shouldPreserveIconSpacing(@Nonnull MenuBuilder menu) {
+    protected static boolean shouldPreserveIconSpacing(@NonNull MenuBuilder menu) {
         boolean preserveIconSpacing = false;
         final int count = menu.size();
 

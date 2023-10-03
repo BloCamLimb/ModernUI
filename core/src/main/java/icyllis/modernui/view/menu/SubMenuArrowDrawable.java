@@ -26,7 +26,6 @@ import icyllis.modernui.material.MaterialDrawable;
 import icyllis.modernui.util.LayoutDirection;
 import icyllis.modernui.util.TypedValue;
 
-import javax.annotation.Nonnull;
 import java.nio.FloatBuffer;
 
 public class SubMenuArrowDrawable extends MaterialDrawable {
@@ -41,7 +40,7 @@ public class SubMenuArrowDrawable extends MaterialDrawable {
     }
 
     @Override
-    public void draw(@Nonnull Canvas canvas) {
+    public void draw(@NonNull Canvas canvas) {
         Paint paint = Paint.obtain();
         paint.setColor(mColor);
         paint.setAlpha(ShapeDrawable.modulateAlpha(paint.getAlpha(), mAlpha));

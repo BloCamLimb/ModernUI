@@ -18,8 +18,8 @@
 
 package icyllis.modernui.view;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 
 /**
  * Interface for managing the items in a menu.
@@ -127,7 +127,7 @@ public interface Menu {
      * @param title The text to display for the item.
      * @return The newly added menu item.
      */
-    @Nonnull
+    @NonNull
     MenuItem add(CharSequence title);
 
     /**
@@ -145,7 +145,7 @@ public interface Menu {
      * @param title   The text to display for the item.
      * @return The newly added menu item.
      */
-    @Nonnull
+    @NonNull
     MenuItem add(int groupId, int itemId, int order, CharSequence title);
 
     /**
@@ -156,7 +156,7 @@ public interface Menu {
      * @param title The text to display for the item.
      * @return The newly added sub-menu
      */
-    @Nonnull
+    @NonNull
     SubMenu addSubMenu(CharSequence title);
 
     /**
@@ -179,7 +179,7 @@ public interface Menu {
      * @param title   The text to display for the item.
      * @return The newly added sub-menu
      */
-    @Nonnull
+    @NonNull
     SubMenu addSubMenu(int groupId, int itemId, int order, CharSequence title);
 
     /**
@@ -274,7 +274,7 @@ public interface Menu {
      * @return The menu item.
      * @throws IndexOutOfBoundsException when {@code index < 0 || >= size()}
      */
-    @Nonnull
+    @NonNull
     MenuItem getItem(int index);
 
     /**
@@ -293,7 +293,7 @@ public interface Menu {
      * true; else returns false.
      * @see #FLAG_PERFORM_NO_CLOSE
      */
-    boolean performShortcut(int keyCode, @Nonnull KeyEvent event, int flags);
+    boolean performShortcut(int keyCode, @NonNull KeyEvent event, int flags);
 
     /**
      * Is a keypress one of the defined shortcut keys for this window.
@@ -301,7 +301,7 @@ public interface Menu {
      * @param keyCode the key code from {@link KeyEvent} to check.
      * @param event   the {@link KeyEvent} to use to help check.
      */
-    boolean isShortcutKey(int keyCode, @Nonnull KeyEvent event);
+    boolean isShortcutKey(int keyCode, @NonNull KeyEvent event);
 
     /**
      * Execute the menu item action associated with the given menu identifier.

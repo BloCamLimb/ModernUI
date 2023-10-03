@@ -18,9 +18,8 @@
 
 package icyllis.modernui.view;
 
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.drawable.Drawable;
-
-import javax.annotation.Nonnull;
 
 /**
  * Subclass of {@link Menu} for sub menus.
@@ -41,7 +40,7 @@ public interface SubMenu extends Menu {
      * @param title The character sequence used for the title.
      * @return This SubMenu so additional setters can be called.
      */
-    @Nonnull
+    @NonNull
     SubMenu setHeaderTitle(CharSequence title);
 
     /**
@@ -51,7 +50,7 @@ public interface SubMenu extends Menu {
      * @param icon The {@link Drawable} used for the icon.
      * @return This SubMenu so additional setters can be called.
      */
-    @Nonnull
+    @NonNull
     SubMenu setHeaderIcon(Drawable icon);
 
     /**
@@ -62,7 +61,7 @@ public interface SubMenu extends Menu {
      * @param view The {@link View} used for the header.
      * @return This SubMenu so additional setters can be called.
      */
-    @Nonnull
+    @NonNull
     SubMenu setHeaderView(View view);
 
     /**
@@ -77,7 +76,7 @@ public interface SubMenu extends Menu {
      * @return This SubMenu so additional setters can be called.
      * @see MenuItem#setIcon(Drawable)
      */
-    @Nonnull
+    @NonNull
     SubMenu setIcon(Drawable icon);
 
     /**
@@ -86,6 +85,6 @@ public interface SubMenu extends Menu {
      *
      * @return The {@link MenuItem} that launches the submenu when invoked.
      */
-    @Nonnull
+    @NonNull
     MenuItem getItem();
 }

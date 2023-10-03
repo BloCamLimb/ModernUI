@@ -19,6 +19,8 @@
 package icyllis.modernui.view.menu;
 
 import icyllis.modernui.R;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
@@ -29,9 +31,6 @@ import icyllis.modernui.util.StateSet;
 import icyllis.modernui.view.*;
 import icyllis.modernui.widget.*;
 import icyllis.modernui.widget.ImageView.ScaleType;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import static icyllis.modernui.view.ViewGroup.LayoutParams.*;
 
@@ -67,7 +66,7 @@ public class ListMenuItemView extends LinearLayout implements MenuView.ItemView,
         setOrientation(VERTICAL);
         setDividerDrawable(new Drawable() {
             @Override
-            public void draw(@Nonnull Canvas canvas) {
+            public void draw(@NonNull Canvas canvas) {
                 Paint paint = Paint.obtain();
                 paint.setRGBA(255, 255, 255, 32);
                 canvas.drawRect(getBounds(), paint);
@@ -139,7 +138,7 @@ public class ListMenuItemView extends LinearLayout implements MenuView.ItemView,
     }
 
     @Override
-    public void initialize(@Nonnull MenuItemImpl itemData, int menuType) {
+    public void initialize(@NonNull MenuItemImpl itemData, int menuType) {
         mItemData = itemData;
 
         setVisibility(itemData.isVisible() ? View.VISIBLE : View.GONE);
@@ -376,7 +375,7 @@ public class ListMenuItemView extends LinearLayout implements MenuView.ItemView,
     }
 
     @Override
-    public void adjustListItemSelectionBounds(@Nonnull Rect rect) {
+    public void adjustListItemSelectionBounds(@NonNull Rect rect) {
         rect.inset(dp(4), dp(2));
         if (getShowDividers() != SHOW_DIVIDER_NONE) {
             // groupDivider is a part of MenuItemListView.

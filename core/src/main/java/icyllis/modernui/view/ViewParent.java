@@ -18,13 +18,12 @@
 
 package icyllis.modernui.view;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Point;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.view.View.NestedScrollType;
 import icyllis.modernui.view.View.ScrollAxis;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * Defines an object that can work as a parent of a View.
@@ -355,7 +354,7 @@ public interface ViewParent {
      * @param type   the type of input which cause this scroll event
      * @return true if this ViewParent accepts the nested scroll operation
      */
-    boolean onStartNestedScroll(@Nonnull View child, @Nonnull View target, @ScrollAxis int axes,
+    boolean onStartNestedScroll(@NonNull View child, @NonNull View target, @ScrollAxis int axes,
                                 @NestedScrollType int type);
 
     /**
@@ -375,7 +374,7 @@ public interface ViewParent {
      * @see #onStartNestedScroll(View, View, int, int)
      * @see #onStopNestedScroll(View, int)
      */
-    void onNestedScrollAccepted(@Nonnull View child, @Nonnull View target, @ScrollAxis int axes,
+    void onNestedScrollAccepted(@NonNull View child, @NonNull View target, @ScrollAxis int axes,
                                 @NestedScrollType int type);
 
     /**
@@ -390,7 +389,7 @@ public interface ViewParent {
      * @param target View that initiated the nested scroll
      * @param type   the type of input which cause this scroll event
      */
-    void onStopNestedScroll(@Nonnull View target, @NestedScrollType int type);
+    void onStopNestedScroll(@NonNull View target, @NestedScrollType int type);
 
     /**
      * React to a nested scroll in progress.
@@ -428,8 +427,8 @@ public interface ViewParent {
      *                     consumed by any other parent up the view hierarchy
      * @see View#dispatchNestedScroll(int, int, int, int, int[], int, int[])
      */
-    void onNestedScroll(@Nonnull View target, int dxConsumed, int dyConsumed, int dxUnconsumed,
-                        int dyUnconsumed, @NestedScrollType int type, @Nonnull int[] consumed);
+    void onNestedScroll(@NonNull View target, int dxConsumed, int dyConsumed, int dxUnconsumed,
+                        int dyUnconsumed, @NestedScrollType int type, @NonNull int[] consumed);
 
     /**
      * React to a nested scroll in progress before the target view consumes a portion of the scroll.
@@ -452,7 +451,7 @@ public interface ViewParent {
      * @param consumed Output. The horizontal and vertical scroll distance consumed by this parent
      * @param type     the type of input which cause this scroll event
      */
-    void onNestedPreScroll(@Nonnull View target, int dx, int dy, @Nonnull int[] consumed,
+    void onNestedPreScroll(@NonNull View target, int dx, int dy, @NonNull int[] consumed,
                            @NestedScrollType int type);
 
     /**
@@ -474,7 +473,7 @@ public interface ViewParent {
      * @param consumed  true if the child consumed the fling, false otherwise
      * @return true if this parent consumed or otherwise reacted to the fling
      */
-    boolean onNestedFling(@Nonnull View target, float velocityX, float velocityY, boolean consumed);
+    boolean onNestedFling(@NonNull View target, float velocityX, float velocityY, boolean consumed);
 
     /**
      * React to a nested fling before the target view consumes it.
@@ -496,7 +495,7 @@ public interface ViewParent {
      * @param velocityY Vertical velocity in pixels per second
      * @return true if this parent consumed the fling ahead of the target view
      */
-    boolean onNestedPreFling(@Nonnull View target, float velocityX, float velocityY);
+    boolean onNestedPreFling(@NonNull View target, float velocityX, float velocityY);
 
     /**
      * Return the current axes of nested scrolling for this NestedScrollingParent.
