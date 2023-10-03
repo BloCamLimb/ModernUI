@@ -18,12 +18,11 @@
 
 package icyllis.modernui.view;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.Rect;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import icyllis.modernui.graphics.drawable.Drawable;
 
 final class ScrollBar extends Drawable implements Drawable.Callback {
 
@@ -107,13 +106,13 @@ final class ScrollBar extends Drawable implements Drawable.Callback {
     }
 
     @Override
-    protected void onBoundsChange(@Nonnull Rect bounds) {
+    protected void onBoundsChange(@NonNull Rect bounds) {
         super.onBoundsChange(bounds);
         mBoundsChanged = true;
     }
 
     @Override
-    public void draw(@Nonnull Canvas canvas) {
+    public void draw(@NonNull Canvas canvas) {
         final Rect r = getBounds();
         if (canvas.quickReject(r.left, r.top, r.right, r.bottom)) {
             return;
@@ -289,17 +288,17 @@ final class ScrollBar extends Drawable implements Drawable.Callback {
     }
 
     @Override
-    public void invalidateDrawable(@Nonnull Drawable drawable) {
+    public void invalidateDrawable(@NonNull Drawable drawable) {
         invalidateSelf();
     }
 
     @Override
-    public void scheduleDrawable(@Nonnull Drawable who, @Nonnull Runnable what, long when) {
+    public void scheduleDrawable(@NonNull Drawable who, @NonNull Runnable what, long when) {
         scheduleSelf(what, when);
     }
 
     @Override
-    public void unscheduleDrawable(@Nonnull Drawable who, @Nonnull Runnable what) {
+    public void unscheduleDrawable(@NonNull Drawable who, @NonNull Runnable what) {
         unscheduleSelf(what);
     }
 }

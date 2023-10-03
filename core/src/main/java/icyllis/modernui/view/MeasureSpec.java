@@ -18,7 +18,7 @@
 
 package icyllis.modernui.view;
 
-import javax.annotation.Nonnull;
+import icyllis.modernui.annotation.NonNull;
 
 /**
  * A MeasureSpec encapsulates the layout requirements passed from parent to child.
@@ -117,7 +117,7 @@ public class MeasureSpec {
      * @param measureSpec the measure specification to convert to a String
      * @return a String with the following format: "MeasureSpec: MODE SIZE"
      */
-    @Nonnull
+    @NonNull
     public static String toString(int measureSpec) {
         int mode = getMode(measureSpec);
         int size = getSize(measureSpec);

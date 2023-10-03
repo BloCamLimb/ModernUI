@@ -18,12 +18,11 @@
 
 package icyllis.modernui.view;
 
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.util.Pools;
-import it.unimi.dsi.fastutil.ints.Int2BooleanArrayMap;
+import icyllis.modernui.util.SparseBooleanArray;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.system.Platform;
-
-import javax.annotation.Nonnull;
 
 /**
  * Object that reports key events (keyboard etc.).
@@ -283,7 +282,7 @@ public class KeyEvent extends InputEvent {
     private KeyEvent() {
     }
 
-    @Nonnull
+    @NonNull
     private static KeyEvent obtain() {
         final KeyEvent event = sPool.acquire();
         if (event == null) {
@@ -292,7 +291,7 @@ public class KeyEvent extends InputEvent {
         return event;
     }
 
-    @Nonnull
+    @NonNull
     public static KeyEvent obtain(long eventTime, int action,
                                   int code, int repeat, int modifiers,
                                   int scancode, int flags) {
@@ -307,7 +306,7 @@ public class KeyEvent extends InputEvent {
         return ev;
     }
 
-    private void copyFrom(@Nonnull KeyEvent other) {
+    private void copyFrom(@NonNull KeyEvent other) {
         mEventTime = other.mEventTime;
         mAction = other.mAction;
         mKeyCode = other.mKeyCode;
@@ -475,7 +474,7 @@ public class KeyEvent extends InputEvent {
         sPool.release(this);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public InputEvent copy() {
         KeyEvent ev = obtain();
@@ -557,7 +556,7 @@ public class KeyEvent extends InputEvent {
 
         int mDownKeyCode;
         Object mDownTarget;
-        Int2BooleanArrayMap mActiveLongPresses = new Int2BooleanArrayMap();
+        SparseBooleanArray mActiveLongPresses = new SparseBooleanArray();
 
         /**
          * Reset back to initial state.
@@ -588,7 +587,7 @@ public class KeyEvent extends InputEvent {
          * <p>This is only needed if you are directly dispatching events, rather
          * than handling them in {@link Callback#onKeyDown}.
          */
-        public void startTracking(@Nonnull KeyEvent event, Object target) {
+        public void startTracking(@NonNull KeyEvent event, Object target) {
             if (event.getAction() != ACTION_DOWN) {
                 throw new IllegalArgumentException(
                         "Can only start tracking on a down event");
@@ -601,7 +600,7 @@ public class KeyEvent extends InputEvent {
          * Return true if the key event is for a key code that is currently
          * being tracked by the dispatcher.
          */
-        public boolean isTracking(@Nonnull KeyEvent event) {
+        public boolean isTracking(@NonNull KeyEvent event) {
             return mDownKeyCode == event.getKeyCode();
         }
 
@@ -611,7 +610,7 @@ public class KeyEvent extends InputEvent {
          * <p>This is only needed if you are directly dispatching events, rather
          * than handling them in {@link Callback#onKeyLongPress}.
          */
-        public void performedLongPress(@Nonnull KeyEvent event) {
+        public void performedLongPress(@NonNull KeyEvent event) {
             mActiveLongPresses.put(event.getKeyCode(), true);
         }
 
@@ -621,10 +620,12 @@ public class KeyEvent extends InputEvent {
          * <p>This is only needed if you are directly dispatching events, rather
          * than handling them in {@link Callback#onKeyUp}.
          */
-        public void handleUpEvent(@Nonnull KeyEvent event) {
+        public void handleUpEvent(@NonNull KeyEvent event) {
             final int keyCode = event.getKeyCode();
-            if (mActiveLongPresses.remove(keyCode)) {
+            int index = mActiveLongPresses.indexOfKey(keyCode);
+            if (index >= 0) {
                 event.mFlags |= FLAG_CANCELED | FLAG_CANCELED_LONG_PRESS;
+                mActiveLongPresses.removeAt(index);
             }
             if (mDownKeyCode == keyCode) {
                 event.mFlags |= FLAG_TRACKING;

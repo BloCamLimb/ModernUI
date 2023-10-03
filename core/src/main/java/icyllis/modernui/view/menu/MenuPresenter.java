@@ -18,9 +18,10 @@
 
 package icyllis.modernui.view.menu;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.core.Context;
 import icyllis.modernui.view.ViewGroup;
-
-import javax.annotation.Nullable;
 
 /**
  * A MenuPresenter is responsible for building views for a Menu object.
@@ -56,13 +57,15 @@ public interface MenuPresenter {
      * This method is called by MenuBuilder when a presenter is added. See
      * {@link MenuBuilder#addMenuPresenter(MenuPresenter)}.
      *
-     * @param menu the menu to host, or {@code null} to clear the hosted menu
+     * @param context the context for this presenter; used for view creation
+     *                and resource management, must be non-{@code null}
+     * @param menu    the menu to host, or {@code null} to clear the hosted menu
      */
-    void initForMenu(@Nullable MenuBuilder menu);
+    void initForMenu(@NonNull Context context, @Nullable MenuBuilder menu);
 
     /**
      * Retrieve a MenuView to display the menu specified in
-     * {@link #initForMenu(MenuBuilder)}.
+     * {@link #initForMenu(Context, MenuBuilder)}.
      *
      * @param root Intended parent of the MenuView.
      * @return A freshly created MenuView.

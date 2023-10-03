@@ -1009,12 +1009,24 @@ public class PopupWindow {
         // setting the x and y offsets to match the anchor's bottom-left
         // corner.
         p.gravity = computeGravity();
+        p.flags = computeFlags(p.flags);
         p.type = mWindowLayoutType;
 
         p.height = mHeight;
         p.width = mWidth;
 
         return p;
+    }
+
+    private int computeFlags(int curFlags) {
+        curFlags &= ~(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
+        if (!mFocusable) {
+            curFlags |= WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+        }
+        if (mNotTouchModal) {
+            curFlags |= WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
+        }
+        return curFlags;
     }
 
     /**
@@ -1433,7 +1445,25 @@ public class PopupWindow {
             return;
         }
 
-        mContentView.setFocusable(mFocusable);
+        final WindowManager.LayoutParams p = getDecorViewLayoutParams();
+
+        boolean update = false;
+
+        final int newFlags = computeFlags(p.flags);
+        if (newFlags != p.flags) {
+            p.flags = newFlags;
+            update = true;
+        }
+
+        final int newGravity = computeGravity();
+        if (newGravity != p.gravity) {
+            p.gravity = newGravity;
+            update = true;
+        }
+
+        if (update) {
+            update(mAnchor != null ? mAnchor.get() : null, p);
+        }
     }
 
     /**
@@ -1526,7 +1556,17 @@ public class PopupWindow {
             update = true;
         }
 
-        mContentView.setFocusable(mFocusable);
+        final int newFlags = computeFlags(p.flags);
+        if (newFlags != p.flags) {
+            p.flags = newFlags;
+            update = true;
+        }
+
+        final int newGravity = computeGravity();
+        if (newGravity != p.gravity) {
+            p.gravity = newGravity;
+            update = true;
+        }
 
         View anchor = null;
 

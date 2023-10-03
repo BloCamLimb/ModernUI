@@ -18,7 +18,8 @@
 
 package icyllis.modernui.view;
 
-import javax.annotation.Nonnull;
+import icyllis.modernui.annotation.NonNull;
+
 import java.util.Objects;
 
 /**
@@ -41,7 +42,7 @@ public final class OneShotPreDrawListener implements ViewTreeObserver.OnPreDrawL
     private ViewTreeObserver mViewTreeObserver;
     private final Runnable mRunnable;
 
-    private OneShotPreDrawListener(@Nonnull View view, @Nonnull Runnable runnable) {
+    private OneShotPreDrawListener(@NonNull View view, @NonNull Runnable runnable) {
         mView = view;
         mViewTreeObserver = view.getViewTreeObserver();
         mRunnable = runnable;
@@ -55,8 +56,8 @@ public final class OneShotPreDrawListener implements ViewTreeObserver.OnPreDrawL
      * @return The added OneShotPreDrawListener. It can be removed prior to
      * the onPreDraw by calling {@link #removeListener()}.
      */
-    @Nonnull
-    public static OneShotPreDrawListener add(@Nonnull View view, @Nonnull Runnable runnable) {
+    @NonNull
+    public static OneShotPreDrawListener add(@NonNull View view, @NonNull Runnable runnable) {
         Objects.requireNonNull(view);
         Objects.requireNonNull(runnable);
 
@@ -87,12 +88,12 @@ public final class OneShotPreDrawListener implements ViewTreeObserver.OnPreDrawL
     }
 
     @Override
-    public void onViewAttachedToWindow(@Nonnull View v) {
+    public void onViewAttachedToWindow(@NonNull View v) {
         mViewTreeObserver = v.getViewTreeObserver();
     }
 
     @Override
-    public void onViewDetachedFromWindow(@Nonnull View v) {
+    public void onViewDetachedFromWindow(@NonNull View v) {
         removeListener();
     }
 }

@@ -18,12 +18,12 @@
 
 package icyllis.modernui.view;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.util.ArrayMap;
 import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.*;
 
 /**
@@ -67,7 +67,7 @@ public class FocusFinder {
      * @param direction Direction to look.
      * @return The next focusable view, or null if none exists.
      */
-    public final View findNextFocus(@Nonnull ViewGroup root, @Nullable View focused, int direction) {
+    public final View findNextFocus(@NonNull ViewGroup root, @Nullable View focused, int direction) {
         return findNextFocus(root, focused, null, direction);
     }
 
@@ -80,12 +80,12 @@ public class FocusFinder {
      * @param direction   Direction to look.
      * @return The next focusable view, or null if none exists.
      */
-    public View findNextFocusFromRect(@Nonnull ViewGroup root, @Nonnull Rect focusedRect, int direction) {
+    public View findNextFocusFromRect(@NonNull ViewGroup root, @NonNull Rect focusedRect, int direction) {
         mFocusedRect.set(focusedRect);
         return findNextFocus(root, null, mFocusedRect, direction);
     }
 
-    private View findNextFocus(@Nonnull ViewGroup root, @Nullable View focused, @Nullable Rect focusedRect,
+    private View findNextFocus(@NonNull ViewGroup root, @Nullable View focused, @Nullable Rect focusedRect,
                                int direction) {
         View next = null;
         ViewGroup effectiveRoot = getEffectiveRoot(root, focused);
@@ -117,7 +117,7 @@ public class FocusFinder {
      *
      * @return the "effective" root of {@param focused}
      */
-    private ViewGroup getEffectiveRoot(@Nonnull ViewGroup root, @Nullable View focused) {
+    private ViewGroup getEffectiveRoot(@NonNull ViewGroup root, @Nullable View focused) {
         if (focused == null || focused == root) {
             return root;
         }
@@ -148,7 +148,7 @@ public class FocusFinder {
      * @param direction      Direction to look
      * @return The next cluster, or null if none exists
      */
-    public View findNextKeyboardNavigationCluster(@Nonnull View root, @Nullable View currentCluster,
+    public View findNextKeyboardNavigationCluster(@NonNull View root, @Nullable View currentCluster,
                                                   @View.FocusDirection int direction) {
         View next = null;
         if (currentCluster != null) {
@@ -173,7 +173,7 @@ public class FocusFinder {
     }
 
     @Nullable
-    private View findNextUserSpecifiedKeyboardNavigationCluster(View root, @Nonnull View currentCluster,
+    private View findNextUserSpecifiedKeyboardNavigationCluster(View root, @NonNull View currentCluster,
                                                                 int direction) {
         View userSetNextCluster =
                 currentCluster.findUserSetNextKeyboardNavigationCluster(root, direction);
@@ -184,7 +184,7 @@ public class FocusFinder {
     }
 
     @Nullable
-    private View findNextUserSpecifiedFocus(ViewGroup root, @Nonnull View focused, int direction) {
+    private View findNextUserSpecifiedFocus(ViewGroup root, @NonNull View focused, int direction) {
         // check for user specified next focus
         View userSetNextFocus = focused.findUserSetNextFocus(root, direction);
         View cycleCheck = userSetNextFocus;
@@ -302,13 +302,13 @@ public class FocusFinder {
         };
     }
 
-    private void setFocusBottomRight(@Nonnull ViewGroup root, @Nonnull Rect focusedRect) {
+    private void setFocusBottomRight(@NonNull ViewGroup root, @NonNull Rect focusedRect) {
         final int rootBottom = root.getScrollY() + root.getHeight();
         final int rootRight = root.getScrollX() + root.getWidth();
         focusedRect.set(rootRight, rootBottom, rootRight, rootBottom);
     }
 
-    private void setFocusTopLeft(@Nonnull ViewGroup root, @Nonnull Rect focusedRect) {
+    private void setFocusTopLeft(@NonNull ViewGroup root, @NonNull Rect focusedRect) {
         final int rootTop = root.getScrollY();
         final int rootLeft = root.getScrollX();
         focusedRect.set(rootLeft, rootTop, rootLeft, rootTop);
@@ -664,7 +664,7 @@ public class FocusFinder {
      *                  may already be populated with values.
      * @return The nearest touchable view, or null if none exists.
      */
-    public View findNearestTouchable(@Nonnull ViewGroup root, int x, int y, int direction, int[] deltas) {
+    public View findNearestTouchable(@NonNull ViewGroup root, int x, int y, int direction, int[] deltas) {
         ArrayList<View> touchables = root.getTouchables();
         int minDistance = Integer.MAX_VALUE;
         View closest = null;
@@ -856,7 +856,7 @@ public class FocusFinder {
             mNextFoci.clear();
         }
 
-        public void setFocusables(@Nonnull List<View> focusables, View root) {
+        public void setFocusables(@NonNull List<View> focusables, View root) {
             mRoot = root;
             for (int i = 0; i < focusables.size(); ++i) {
                 mOriginalOrdinal.put(focusables.get(i), i);

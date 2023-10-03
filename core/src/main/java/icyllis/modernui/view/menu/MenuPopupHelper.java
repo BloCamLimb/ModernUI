@@ -20,8 +20,10 @@ package icyllis.modernui.view.menu;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.app.Activity;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Rect;
+import icyllis.modernui.util.TypedValue;
 import icyllis.modernui.view.*;
 import icyllis.modernui.widget.PopupMenu;
 import icyllis.modernui.widget.PopupWindow;
@@ -199,21 +201,21 @@ public class MenuPopupHelper implements MenuHelper {
      */
     @NonNull
     private MenuPopup createPopup() {
-        /*final WindowManager windowManager = mContext.getSystemService(WindowManager.class);
+        /*final WindowManager windowManager = ((Activity)mContext).getWindowManager();
         final Rect maxWindowBounds = windowManager.getMaximumWindowMetrics().getBounds();
 
         final int smallestWidth = Math.min(maxWindowBounds.width(), maxWindowBounds.height());
-        final int minSmallestWidthCascading = mContext.getResources().getDimensionPixelSize(
-                com.android.internal.R.dimen.cascading_menus_min_smallest_width);
-        final boolean enableCascadingSubmenus = smallestWidth >= minSmallestWidthCascading;*/
+        final int minSmallestWidthCascading = (int) (TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DP, 720, mContext.getResources().getDisplayMetrics()
+        ) + 0.5f);*/
+        final boolean enableCascadingSubmenus = true/*smallestWidth >= minSmallestWidthCascading*/;
 
         final MenuPopup popup;
-        /*if (enableCascadingSubmenus) {
-            popup = new CascadingMenuPopup(mContext, mAnchorView, mPopupStyleAttr,
-                    mPopupStyleRes, mOverflowOnly);
-        } else {*/
-        popup = new StandardMenuPopup(mContext, mMenu, mAnchorView, mOverflowOnly);
-        //}
+        if (enableCascadingSubmenus) {
+            popup = new CascadingMenuPopup(mContext, mAnchorView, mOverflowOnly);
+        } else {
+            popup = new StandardMenuPopup(mContext, mMenu, mAnchorView, mOverflowOnly);
+        }
 
         // Assign immutable properties.
         popup.addMenu(mMenu);

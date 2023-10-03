@@ -18,12 +18,11 @@
 
 package icyllis.modernui.view.menu;
 
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.view.ContextMenu;
 import icyllis.modernui.view.View;
-
-import javax.annotation.Nonnull;
 
 /**
  * Implementation of the {@link ContextMenu} interface.
@@ -45,21 +44,21 @@ public class ContextMenuBuilder extends MenuBuilder implements ContextMenu {
         super(context);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public ContextMenu setHeaderIcon(Drawable icon) {
         super.setHeaderIconInt(icon);
         return this;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public ContextMenu setHeaderTitle(CharSequence title) {
         super.setHeaderTitleInt(title);
         return this;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public ContextMenu setHeaderView(View view) {
         super.setHeaderViewInt(view);

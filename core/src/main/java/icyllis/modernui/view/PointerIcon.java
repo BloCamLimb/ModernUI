@@ -18,10 +18,9 @@
 
 package icyllis.modernui.view;
 
+import icyllis.modernui.annotation.NonNull;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.system.MemoryUtil;
-
-import javax.annotation.Nonnull;
 
 /**
  * Represents an icon that can be used as a mouse pointer.
@@ -68,7 +67,7 @@ public final class PointerIcon {
         return mHandle;
     }
 
-    @Nonnull
+    @NonNull
     public static PointerIcon getSystemIcon(int type) {
         return switch (type) {
             case TYPE_HAND -> HAND_CURSOR;

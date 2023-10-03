@@ -18,22 +18,22 @@
 
 package icyllis.modernui.view.menu;
 
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.core.Context;
-import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.Paint;
+import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.transition.AutoTransition;
 import icyllis.modernui.util.TypedValue;
 import icyllis.modernui.view.*;
 import icyllis.modernui.widget.*;
 
-import javax.annotation.Nonnull;
+import static icyllis.modernui.view.ViewGroup.LayoutParams.*;
 
-import static icyllis.modernui.view.ViewGroup.LayoutParams.MATCH_PARENT;
-import static icyllis.modernui.view.ViewGroup.LayoutParams.WRAP_CONTENT;
-
-public class StandardMenuPopup extends MenuPopup implements PopupWindow.OnDismissListener,
+/**
+ * A standard menu popup in which when a submenu is opened, it replaces its parent menu in the
+ * viewport.
+ */
+public final class StandardMenuPopup extends MenuPopup implements PopupWindow.OnDismissListener,
         AdapterView.OnItemClickListener, MenuPresenter, View.OnKeyListener {
 
     private final Context mContext;
@@ -107,8 +107,8 @@ public class StandardMenuPopup extends MenuPopup implements PopupWindow.OnDismis
 
     private boolean mShowTitle;
 
-    public StandardMenuPopup(Context context, @Nonnull MenuBuilder menu,
-                             @Nonnull View anchorView, boolean overflowOnly) {
+    public StandardMenuPopup(Context context, @NonNull MenuBuilder menu,
+                             @NonNull View anchorView, boolean overflowOnly) {
         mContext = context;
         mMenu = menu;
         mOverflowOnly = overflowOnly;
@@ -124,7 +124,7 @@ public class StandardMenuPopup extends MenuPopup implements PopupWindow.OnDismis
                     8, context.getResources().getDisplayMetrics());
 
             @Override
-            public void draw(@Nonnull Canvas canvas) {
+            public void draw(@NonNull Canvas canvas) {
                 Paint paint = Paint.obtain();
                 paint.setColor(0xec303030);
                 Rect b = getBounds();
@@ -133,7 +133,7 @@ public class StandardMenuPopup extends MenuPopup implements PopupWindow.OnDismis
             }
 
             @Override
-            public boolean getPadding(@Nonnull Rect padding) {
+            public boolean getPadding(@NonNull Rect padding) {
                 int r = (int) Math.ceil(mRadius / 2f);
                 padding.set(r, r, r, r);
                 return true;
@@ -274,7 +274,7 @@ public class StandardMenuPopup extends MenuPopup implements PopupWindow.OnDismis
     }
 
     @Override
-    public boolean onSubMenuSelected(@Nonnull SubMenuBuilder subMenu) {
+    public boolean onSubMenuSelected(@NonNull SubMenuBuilder subMenu) {
         if (subMenu.hasVisibleItems()) {
             final MenuPopupHelper subPopup = new MenuPopupHelper(mContext, subMenu,
                     mShownAnchorView, mOverflowOnly);

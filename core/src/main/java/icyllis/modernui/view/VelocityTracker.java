@@ -18,10 +18,9 @@
 
 package icyllis.modernui.view;
 
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.util.Pools;
 import org.jetbrains.annotations.ApiStatus;
-
-import javax.annotation.Nonnull;
 
 /**
  * Helper for tracking the velocity of touch events, for implementing
@@ -148,7 +147,7 @@ public final class VelocityTracker {
      *
      * @return Returns a new VelocityTracker.
      */
-    @Nonnull
+    @NonNull
     public static VelocityTracker obtain() {
         VelocityTracker instance = sPool.acquire();
         return (instance != null) ? instance : new VelocityTracker(VELOCITY_TRACKER_STRATEGY_DEFAULT);
@@ -162,7 +161,7 @@ public final class VelocityTracker {
      * @return The velocity tracker.
      * @hide
      */
-    @Nonnull
+    @NonNull
     public static VelocityTracker obtain(int strategy) {
         return new VelocityTracker(strategy);
     }
@@ -207,7 +206,7 @@ public final class VelocityTracker {
      *
      * @param event The MotionEvent you received and would like to track.
      */
-    public void addMovement(@Nonnull MotionEvent event) {
+    public void addMovement(@NonNull MotionEvent event) {
         int action = event.getAction();
 
         switch (action) {
@@ -322,7 +321,7 @@ public final class VelocityTracker {
      * available about the pointer.
      */
     @ApiStatus.Internal
-    public boolean getEstimator(@Nonnull Estimator outEstimator) {
+    public boolean getEstimator(@NonNull Estimator outEstimator) {
         return mStrategy.getEstimator(outEstimator);
     }
 
@@ -335,7 +334,7 @@ public final class VelocityTracker {
 
         void addMovement(long eventTime, float x, float y);
 
-        boolean getEstimator(@Nonnull Estimator outEstimator);
+        boolean getEstimator(@NonNull Estimator outEstimator);
     }
 
     static abstract class CommonStrategy implements Strategy {
@@ -497,7 +496,7 @@ public final class VelocityTracker {
         }
 
         @Override
-        public boolean getEstimator(@Nonnull Estimator outEstimator) {
+        public boolean getEstimator(@NonNull Estimator outEstimator) {
             outEstimator.clear();
 
             // Iterate over movement samples in reverse time order and collect samples.
@@ -768,7 +767,7 @@ public final class VelocityTracker {
         }
 
         @Override
-        public boolean getEstimator(@Nonnull Estimator outEstimator) {
+        public boolean getEstimator(@NonNull Estimator outEstimator) {
             outEstimator.clear();
 
             // Iterate over movement samples in reverse time order and collect samples.

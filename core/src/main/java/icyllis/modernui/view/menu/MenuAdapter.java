@@ -18,13 +18,13 @@
 
 package icyllis.modernui.view.menu;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.widget.BaseAdapter;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 
 public class MenuAdapter extends BaseAdapter {
@@ -66,7 +66,7 @@ public class MenuAdapter extends BaseAdapter {
         return mAdapterMenu;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public MenuItemImpl getItem(int position) {
         ArrayList<MenuItemImpl> items = mOverflowOnly ?
@@ -84,9 +84,9 @@ public class MenuAdapter extends BaseAdapter {
         return position;
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public View getView(int position, @Nullable View convertView, @Nonnull ViewGroup parent) {
+    public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
         final ListMenuItemView view;
         if (convertView == null) {
             view = new ListMenuItemView(mContext);
