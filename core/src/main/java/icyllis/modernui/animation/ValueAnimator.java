@@ -20,10 +20,13 @@ package icyllis.modernui.animation;
 
 import icyllis.modernui.annotation.CallSuper;
 import icyllis.modernui.core.Looper;
+import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.Objects;
 
@@ -68,6 +71,12 @@ public class ValueAnimator extends Animator implements AnimationHandler.FrameCal
     /*
      * Public constants
      */
+
+    @ApiStatus.Internal
+    @MagicConstant(intValues = {RESTART, REVERSE})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface RepeatMode {
+    }
 
     /**
      * When the animation reaches the end and <code>repeatCount</code> is INFINITE
@@ -648,7 +657,7 @@ public class ValueAnimator extends Animator implements AnimationHandler.FrameCal
      *
      * @param value {@link #RESTART} or {@link #REVERSE}
      */
-    public void setRepeatMode(int value) {
+    public void setRepeatMode(@RepeatMode int value) {
         mRepeatMode = value;
     }
 
@@ -657,6 +666,7 @@ public class ValueAnimator extends Animator implements AnimationHandler.FrameCal
      *
      * @return either one of {@link #REVERSE} or {@link #RESTART}
      */
+    @RepeatMode
     public int getRepeatMode() {
         return mRepeatMode;
     }

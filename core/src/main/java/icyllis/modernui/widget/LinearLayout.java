@@ -21,13 +21,14 @@ package icyllis.modernui.widget;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.view.Gravity;
-import icyllis.modernui.view.MeasureSpec;
-import icyllis.modernui.view.View;
-import icyllis.modernui.view.ViewGroup;
+import icyllis.modernui.view.*;
+import org.intellij.lang.annotations.MagicConstant;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 /**
  * A layout that arranges other views either horizontally in a single column
@@ -57,6 +58,12 @@ import javax.annotation.Nullable;
  */
 public class LinearLayout extends ViewGroup {
 
+    @ApiStatus.Internal
+    @MagicConstant(intValues = {HORIZONTAL, VERTICAL})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface OrientationMode {
+    }
+
     /**
      * Orientation horizontal.
      */
@@ -65,6 +72,17 @@ public class LinearLayout extends ViewGroup {
      * Orientation vertical.
      */
     public static final int VERTICAL = 1;
+
+    @ApiStatus.Internal
+    @MagicConstant(flags = {
+            SHOW_DIVIDER_NONE,
+            SHOW_DIVIDER_BEGINNING,
+            SHOW_DIVIDER_MIDDLE,
+            SHOW_DIVIDER_END
+    })
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface DividerMode {
+    }
 
     /**
      * Don't show any dividers.
@@ -152,7 +170,7 @@ public class LinearLayout extends ViewGroup {
      *                     {@link #SHOW_DIVIDER_MIDDLE}, or {@link #SHOW_DIVIDER_END}
      *                     to show dividers, or {@link #SHOW_DIVIDER_NONE} to show no dividers.
      */
-    public void setShowDividers(int showDividers) {
+    public void setShowDividers(@DividerMode int showDividers) {
         if (showDividers == mShowDividers) {
             return;
         }
@@ -166,6 +184,7 @@ public class LinearLayout extends ViewGroup {
      * @return A flag set indicating how dividers should be shown around items.
      * @see #setShowDividers(int)
      */
+    @DividerMode
     public int getShowDividers() {
         return mShowDividers;
     }
@@ -1414,7 +1433,7 @@ public class LinearLayout extends ViewGroup {
 
         childTop = switch (majorGravity) {
             case Gravity.BOTTOM ->
-                    // mTotalLength contains the padding already
+                // mTotalLength contains the padding already
                     mPaddingTop + bottom - top - mTotalLength;
 
             // mTotalLength contains the padding already
@@ -1506,10 +1525,10 @@ public class LinearLayout extends ViewGroup {
         final int layoutDirection = getLayoutDirection();
         childLeft = switch (Gravity.getAbsoluteGravity(majorGravity, layoutDirection)) {
             case Gravity.RIGHT ->
-                    // mTotalLength contains the padding already
+                // mTotalLength contains the padding already
                     mPaddingLeft + right - left - mTotalLength;
             case Gravity.CENTER_HORIZONTAL ->
-                    // mTotalLength contains the padding already
+                // mTotalLength contains the padding already
                     mPaddingLeft + (right - left - mTotalLength) / 2;
             default -> mPaddingLeft;
         };
@@ -1552,17 +1571,17 @@ public class LinearLayout extends ViewGroup {
                         }
                     }
                     case Gravity.CENTER_VERTICAL ->
-                            // Removed support for baseline alignment when layout_gravity or
-                            // gravity == center_vertical. See bug #1038483.
-                            // Keep the code around if we need to re-enable this feature
-                            // if (childBaseline != -1) {
-                            //     // Align baselines vertically only if the child is smaller than us
-                            //     if (childSpace - childHeight > 0) {
-                            //         childTop = paddingTop + (childSpace / 2) - childBaseline;
-                            //     } else {
-                            //         childTop = paddingTop + (childSpace - childHeight) / 2;
-                            //     }
-                            // } else {
+                        // Removed support for baseline alignment when layout_gravity or
+                        // gravity == center_vertical. See bug #1038483.
+                        // Keep the code around if we need to re-enable this feature
+                        // if (childBaseline != -1) {
+                        //     // Align baselines vertically only if the child is smaller than us
+                        //     if (childSpace - childHeight > 0) {
+                        //         childTop = paddingTop + (childSpace / 2) - childBaseline;
+                        //     } else {
+                        //         childTop = paddingTop + (childSpace - childHeight) / 2;
+                        //     }
+                        // } else {
                             childTop = paddingTop + ((childSpace - childHeight) / 2)
                                     + lp.topMargin - lp.bottomMargin;
                     case Gravity.BOTTOM -> {
@@ -1600,7 +1619,7 @@ public class LinearLayout extends ViewGroup {
      * @param orientation Pass {@link #HORIZONTAL} or {@link #VERTICAL}. Default
      *                    value is {@link #HORIZONTAL}.
      */
-    public void setOrientation(int orientation) {
+    public void setOrientation(@OrientationMode int orientation) {
         if (mOrientation != orientation) {
             mOrientation = orientation;
             requestLayout();
@@ -1612,6 +1631,7 @@ public class LinearLayout extends ViewGroup {
      *
      * @return either {@link #HORIZONTAL} or {@link #VERTICAL}
      */
+    @OrientationMode
     public int getOrientation() {
         return mOrientation;
     }
