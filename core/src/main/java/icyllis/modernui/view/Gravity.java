@@ -18,7 +18,14 @@
 
 package icyllis.modernui.view;
 
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.Rect;
+import org.intellij.lang.annotations.MagicConstant;
+import org.jetbrains.annotations.ApiStatus;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.util.StringJoiner;
 
 /**
  * Standard constants and tools for placing an object within a potentially
@@ -171,6 +178,30 @@ public class Gravity {
      */
     public static final int RELATIVE_HORIZONTAL_GRAVITY_MASK = START | END;
 
+    @ApiStatus.Internal
+    @Retention(RetentionPolicy.SOURCE)
+    @MagicConstant(flags = {
+            Gravity.FILL,
+            Gravity.FILL_HORIZONTAL,
+            Gravity.FILL_VERTICAL,
+            Gravity.START,
+            Gravity.END,
+            Gravity.LEFT,
+            Gravity.RIGHT,
+            Gravity.TOP,
+            Gravity.BOTTOM,
+            Gravity.CENTER,
+            Gravity.CENTER_HORIZONTAL,
+            Gravity.CENTER_VERTICAL,
+            Gravity.DISPLAY_CLIP_HORIZONTAL,
+            Gravity.DISPLAY_CLIP_VERTICAL,
+            Gravity.CLIP_HORIZONTAL,
+            Gravity.CLIP_VERTICAL,
+            Gravity.NO_GRAVITY
+    })
+    public @interface GravityFlags {
+    }
+
     /**
      * Apply a gravity constant to an object. This supposes that the layout direction is LTR.
      *
@@ -184,7 +215,8 @@ public class Gravity {
      * @param outRect   Receives the computed frame of the object in its
      *                  container.
      */
-    public static void apply(int gravity, int w, int h, Rect container, Rect outRect) {
+    public static void apply(int gravity, int w, int h, @NonNull Rect container,
+                             @NonNull Rect outRect) {
         apply(gravity, w, h, container, 0, 0, outRect);
     }
 
@@ -204,8 +236,8 @@ public class Gravity {
      * @see View#LAYOUT_DIRECTION_LTR
      * @see View#LAYOUT_DIRECTION_RTL
      */
-    public static void apply(int gravity, int w, int h, Rect container,
-                             Rect outRect, int layoutDirection) {
+    public static void apply(int gravity, int w, int h, @NonNull Rect container,
+                             @NonNull Rect outRect, int layoutDirection) {
         int absGravity = getAbsoluteGravity(gravity, layoutDirection);
         apply(absGravity, w, h, container, 0, 0, outRect);
     }
@@ -231,10 +263,10 @@ public class Gravity {
      * @param outRect   Receives the computed frame of the object in its
      *                  container.
      */
-    public static void apply(int gravity, int w, int h, Rect container,
-                             int xAdj, int yAdj, Rect outRect) {
+    public static void apply(int gravity, int w, int h, @NonNull Rect container,
+                             int xAdj, int yAdj, @NonNull Rect outRect) {
         switch (gravity & ((AXIS_PULL_BEFORE | AXIS_PULL_AFTER) << AXIS_X_SHIFT)) {
-            case 0 -> {
+            case 0:
                 outRect.left = container.left
                         + ((container.right - container.left - w) / 2) + xAdj;
                 outRect.right = outRect.left + w;
@@ -247,8 +279,8 @@ public class Gravity {
                         outRect.right = container.right;
                     }
                 }
-            }
-            case AXIS_PULL_BEFORE << AXIS_X_SHIFT -> {
+                break;
+            case AXIS_PULL_BEFORE << AXIS_X_SHIFT:
                 outRect.left = container.left + xAdj;
                 outRect.right = outRect.left + w;
                 if ((gravity & (AXIS_CLIP << AXIS_X_SHIFT))
@@ -257,8 +289,8 @@ public class Gravity {
                         outRect.right = container.right;
                     }
                 }
-            }
-            case AXIS_PULL_AFTER << AXIS_X_SHIFT -> {
+                break;
+            case AXIS_PULL_AFTER << AXIS_X_SHIFT:
                 outRect.right = container.right - xAdj;
                 outRect.left = outRect.right - w;
                 if ((gravity & (AXIS_CLIP << AXIS_X_SHIFT))
@@ -267,15 +299,15 @@ public class Gravity {
                         outRect.left = container.left;
                     }
                 }
-            }
-            default -> {
+                break;
+            default:
                 outRect.left = container.left + xAdj;
                 outRect.right = container.right + xAdj;
-            }
+                break;
         }
 
         switch (gravity & ((AXIS_PULL_BEFORE | AXIS_PULL_AFTER) << AXIS_Y_SHIFT)) {
-            case 0 -> {
+            case 0:
                 outRect.top = container.top
                         + ((container.bottom - container.top - h) / 2) + yAdj;
                 outRect.bottom = outRect.top + h;
@@ -288,8 +320,8 @@ public class Gravity {
                         outRect.bottom = container.bottom;
                     }
                 }
-            }
-            case AXIS_PULL_BEFORE << AXIS_Y_SHIFT -> {
+                break;
+            case AXIS_PULL_BEFORE << AXIS_Y_SHIFT:
                 outRect.top = container.top + yAdj;
                 outRect.bottom = outRect.top + h;
                 if ((gravity & (AXIS_CLIP << AXIS_Y_SHIFT))
@@ -298,8 +330,8 @@ public class Gravity {
                         outRect.bottom = container.bottom;
                     }
                 }
-            }
-            case AXIS_PULL_AFTER << AXIS_Y_SHIFT -> {
+                break;
+            case AXIS_PULL_AFTER << AXIS_Y_SHIFT:
                 outRect.bottom = container.bottom - yAdj;
                 outRect.top = outRect.bottom - h;
                 if ((gravity & (AXIS_CLIP << AXIS_Y_SHIFT))
@@ -308,11 +340,11 @@ public class Gravity {
                         outRect.top = container.top;
                     }
                 }
-            }
-            default -> {
+                break;
+            default:
                 outRect.top = container.top + yAdj;
                 outRect.bottom = container.bottom + yAdj;
-            }
+                break;
         }
     }
 
@@ -340,8 +372,8 @@ public class Gravity {
      * @see View#LAYOUT_DIRECTION_LTR
      * @see View#LAYOUT_DIRECTION_RTL
      */
-    public static void apply(int gravity, int w, int h, Rect container,
-                             int xAdj, int yAdj, Rect outRect, int layoutDirection) {
+    public static void apply(int gravity, int w, int h, @NonNull Rect container,
+                             int xAdj, int yAdj, @NonNull Rect outRect, int layoutDirection) {
         int absGravity = getAbsoluteGravity(gravity, layoutDirection);
         apply(absGravity, w, h, container, xAdj, yAdj, outRect);
     }
@@ -362,7 +394,7 @@ public class Gravity {
      * @param inoutObj Supplies the current object position; returns with it
      *                 modified if needed to fit in the display.
      */
-    public static void applyDisplay(int gravity, Rect display, Rect inoutObj) {
+    public static void applyDisplay(int gravity, @NonNull Rect display, @NonNull Rect inoutObj) {
         if ((gravity & DISPLAY_CLIP_VERTICAL) != 0) {
             if (inoutObj.top < display.top) inoutObj.top = display.top;
             if (inoutObj.bottom > display.bottom) inoutObj.bottom = display.bottom;
@@ -419,7 +451,8 @@ public class Gravity {
      * @see View#LAYOUT_DIRECTION_LTR
      * @see View#LAYOUT_DIRECTION_RTL
      */
-    public static void applyDisplay(int gravity, Rect display, Rect inoutObj, int layoutDirection) {
+    public static void applyDisplay(int gravity, @NonNull Rect display, @NonNull Rect inoutObj,
+                                    int layoutDirection) {
         int absGravity = getAbsoluteGravity(gravity, layoutDirection);
         applyDisplay(absGravity, display, inoutObj);
     }
@@ -486,59 +519,56 @@ public class Gravity {
         return result;
     }
 
-    /**
-     * @hide
-     */
+    @ApiStatus.Internal
     public static String toString(int gravity) {
-        final StringBuilder result = new StringBuilder();
+        final StringJoiner result = new StringJoiner(" ");
         if ((gravity & FILL) == FILL) {
-            result.append("FILL").append(' ');
+            result.add("FILL");
         } else {
             if ((gravity & FILL_VERTICAL) == FILL_VERTICAL) {
-                result.append("FILL_VERTICAL").append(' ');
+                result.add("FILL_VERTICAL");
             } else {
                 if ((gravity & TOP) == TOP) {
-                    result.append("TOP").append(' ');
+                    result.add("TOP");
                 }
                 if ((gravity & BOTTOM) == BOTTOM) {
-                    result.append("BOTTOM").append(' ');
+                    result.add("BOTTOM");
                 }
             }
             if ((gravity & FILL_HORIZONTAL) == FILL_HORIZONTAL) {
-                result.append("FILL_HORIZONTAL").append(' ');
+                result.add("FILL_HORIZONTAL");
             } else {
                 if ((gravity & START) == START) {
-                    result.append("START").append(' ');
+                    result.add("START");
                 } else if ((gravity & LEFT) == LEFT) {
-                    result.append("LEFT").append(' ');
+                    result.add("LEFT");
                 }
                 if ((gravity & END) == END) {
-                    result.append("END").append(' ');
+                    result.add("END");
                 } else if ((gravity & RIGHT) == RIGHT) {
-                    result.append("RIGHT").append(' ');
+                    result.add("RIGHT");
                 }
             }
         }
         if ((gravity & CENTER) == CENTER) {
-            result.append("CENTER").append(' ');
+            result.add("CENTER");
         } else {
             if ((gravity & CENTER_VERTICAL) == CENTER_VERTICAL) {
-                result.append("CENTER_VERTICAL").append(' ');
+                result.add("CENTER_VERTICAL");
             }
             if ((gravity & CENTER_HORIZONTAL) == CENTER_HORIZONTAL) {
-                result.append("CENTER_HORIZONTAL").append(' ');
+                result.add("CENTER_HORIZONTAL");
             }
         }
         if (result.length() == 0) {
-            result.append("NO GRAVITY").append(' ');
+            result.add("NO GRAVITY");
         }
         if ((gravity & DISPLAY_CLIP_VERTICAL) == DISPLAY_CLIP_VERTICAL) {
-            result.append("DISPLAY_CLIP_VERTICAL").append(' ');
+            result.add("DISPLAY_CLIP_VERTICAL");
         }
         if ((gravity & DISPLAY_CLIP_HORIZONTAL) == DISPLAY_CLIP_HORIZONTAL) {
-            result.append("DISPLAY_CLIP_HORIZONTAL").append(' ');
+            result.add("DISPLAY_CLIP_HORIZONTAL");
         }
-        result.deleteCharAt(result.length() - 1);
         return result.toString();
     }
 }

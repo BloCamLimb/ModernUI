@@ -969,7 +969,7 @@ public class TestFragment extends Fragment {
 
             public DView(Context context, TimeInterpolator interpolator) {
                 super(context);
-                mTextPaint.setTextSize(8);
+                mTextPaint.setTextSize(10);
                 /*animation = new Animation(200)
                         .applyTo(new Applier(0, 60, () -> offsetY, v -> {
                             offsetY = v;

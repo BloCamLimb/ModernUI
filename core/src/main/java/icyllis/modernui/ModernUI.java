@@ -201,7 +201,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
             metrics.ydpi = 25.4f * mode.getHeight() / physh[0];
             LOGGER.info(MARKER, "Primary monitor physical size: {}x{} mm, xScale: {}, yScale: {}",
                     physw[0], physh[0], xscale[0], yscale[0]);
-            int density = 96;/*Math.round(metrics.xdpi * xscale[0] / 12) * 12;*/
+            int density = Math.round(metrics.xdpi * xscale[0] / 12) * 12;
             metrics.density = density * DisplayMetrics.DENSITY_DEFAULT_SCALE;
             metrics.densityDpi = density;
             metrics.scaledDensity = metrics.density;
