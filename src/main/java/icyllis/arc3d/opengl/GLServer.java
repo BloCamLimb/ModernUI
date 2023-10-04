@@ -20,8 +20,8 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.Surface;
+import icyllis.arc3d.engine.*;
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GLCapabilities;
@@ -471,14 +471,28 @@ public final class GLServer extends Server {
         int glFormat = glTexture.getFormat();
         assert (mCaps.isFormatTexturable(glFormat));
 
+        boolean dsa = mCaps.hasDSASupport();
+        if (!dsa) {
+            bindTextureForSetup(glTexture.getHandle());
+        }
+
         GLTextureParameters parameters = glTexture.getParameters();
         if (parameters.baseMipmapLevel != 0) {
-            glTextureParameteri(glTexture.getHandle(), GL_TEXTURE_BASE_LEVEL, 0);
+            if (dsa) {
+                glTextureParameteri(glTexture.getHandle(), GL_TEXTURE_BASE_LEVEL, 0);
+            } else {
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+            }
             parameters.baseMipmapLevel = 0;
         }
         int maxLevel = glTexture.getMaxMipmapLevel();
         if (parameters.maxMipmapLevel != maxLevel) {
-            glTextureParameteri(glTexture.getHandle(), GL_TEXTURE_MAX_LEVEL, maxLevel);
+            if (dsa) {
+                glTextureParameteri(glTexture.getHandle(), GL_TEXTURE_MAX_LEVEL, maxLevel);
+            } else {
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, maxLevel);
+            }
+            // Bug fixed by Arc 3D
             parameters.maxMipmapLevel = maxLevel;
         }
 
@@ -506,8 +520,13 @@ public final class GLServer extends Server {
             restoreRowLength = true;
         }
 
-        glTextureSubImage2D(glTexture.getHandle(), 0,
-                x, y, width, height, srcFormat, srcType, pixels);
+        if (dsa) {
+            glTextureSubImage2D(glTexture.getHandle(), 0,
+                    x, y, width, height, srcFormat, srcType, pixels);
+        } else {
+            glTexSubImage2D(GL_TEXTURE_2D, 0,
+                    x, y, width, height, srcFormat, srcType, pixels);
+        }
 
         if (restoreRowLength) {
             glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
