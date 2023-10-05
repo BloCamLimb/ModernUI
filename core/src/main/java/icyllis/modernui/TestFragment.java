@@ -478,38 +478,36 @@ public class TestFragment extends Fragment {
                     button.setTextColor(0xFF28A3F3);
                     button.setTextStyle(Typeface.BOLD);
                     button.setOnClickListener(v1 -> {
-                        v1.setClickable(false);
-                        CompletableFuture.runAsync(() -> {
-                            String path;
-                            try (MemoryStack stack = MemoryStack.stackPush()) {
-                                PointerBuffer filters = stack.mallocPointer(1);
-                                stack.nUTF8("*.ogg", true);
-                                filters.put(stack.getPointerAddress());
-                                filters.rewind();
-                                path = TinyFileDialogs.tinyfd_openFileDialog(null, null,
-                                        filters, "Ogg Vorbis (*.ogg)", false);
-                            }
-                            if (path != null) {
-                                try {
-                                    FileChannel channel = FileChannel.open(Path.of(path), StandardOpenOption.READ);
-                                    OggDecoder decoder = new OggDecoder(channel);
-                                    Track track = new Track(decoder);
-                                    sSpectrumGraph = new SpectrumGraph(track, TestLinearLayout.this, true, 600);
-                                    track.play();
+                        String path;
+                        try (MemoryStack stack = MemoryStack.stackPush()) {
+                            PointerBuffer filters = stack.mallocPointer(1);
+                            stack.nUTF8("*.ogg", true);
+                            filters.put(stack.getPointerAddress());
+                            filters.rewind();
+                            path = TinyFileDialogs.tinyfd_openFileDialog(null, null,
+                                    filters, "Ogg Vorbis (*.ogg)", false);
+                        }
+                        if (path != null) {
+                            v1.setClickable(false);
+                            try {
+                                FileChannel channel = FileChannel.open(Path.of(path), StandardOpenOption.READ);
+                                OggDecoder decoder = new OggDecoder(channel);
+                                Track track = new Track(decoder);
+                                sSpectrumGraph = new SpectrumGraph(track, TestLinearLayout.this, true, 600);
+                                track.play();
 
-                                    if (v1.isAttachedToWindow()) {
-                                        v1.post(() -> {
-                                            v1.invalidate();
-                                            if (mGoodAnim != null) {
-                                                mGoodAnim.start();
-                                            }
-                                        });
-                                    }
-                                } catch (IOException e) {
-                                    e.printStackTrace();
+                                if (v1.isAttachedToWindow()) {
+                                    v1.post(() -> {
+                                        v1.invalidate();
+                                        if (mGoodAnim != null) {
+                                            mGoodAnim.start();
+                                        }
+                                    });
                                 }
+                            } catch (IOException e) {
+                                e.printStackTrace();
                             }
-                        });
+                        }
                     });
                     v = button;
                     p = new LayoutParams(WRAP_CONTENT, WRAP_CONTENT);

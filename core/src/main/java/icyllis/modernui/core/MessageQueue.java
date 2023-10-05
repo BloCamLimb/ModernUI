@@ -149,6 +149,18 @@ public final class MessageQueue {
                 } else if (nextPollTimeoutMillis == 0) {
                     GLFW.glfwPollEvents();
                 } else {
+                    // There is a GLFW bug on Windows:
+                    // glfwWaitEventsTimeout doesn't process QS_SENDMESSAGE on Windows, if our
+                    // MessageQueue is not empty, running TinyFileDialogs on a background thread
+                    // will cause glfwWaitEventsTimeout won't process Dialogs input event.
+                    //
+                    // Workaround is running TinyFileDialogs on main thread and cause our UI to
+                    // block, or always use glfwWaitEvents/glfwPollEvents (Minecraft does this).
+                    // If Modern UI runs independently, UI thread is main thread. If Modern UI
+                    // runs with Minecraft, UI thread is another thread. Thus, the conclusion is
+                    // to run TinyFileDialogs on the UI thread.
+                    //
+                    // UI thread never block render thread, so this doesn't matter.
                     GLFW.glfwWaitEventsTimeout(nextPollTimeoutMillis / 1000D);
                 }
                 mPolling = false;
