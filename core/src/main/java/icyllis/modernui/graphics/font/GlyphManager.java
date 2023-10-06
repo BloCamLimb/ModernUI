@@ -231,7 +231,7 @@ public class GlyphManager {
 
     public int getCurrentTexture(int maskFormat) {
         if (maskFormat == Engine.MASK_FORMAT_A8) {
-            return mA8Atlas.mTexture.get();
+            return mA8Atlas.mTexture.getHandle();
         }
         return 0;
     }
