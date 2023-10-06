@@ -130,7 +130,7 @@ public class Pixmap extends RefCnt {
     @Nonnull
     @Override
     public String toString() {
-        return "Pixels{" +
+        return "Pixmap{" +
                 "mAddress=0x" + Long.toHexString(mPixels) +
                 ", mInfo=" + mInfo +
                 ", mRowStride=" + mRowStride +

@@ -91,7 +91,7 @@ public final class GLBackendTexture extends BackendTexture {
     @Override
     public boolean isSameTexture(BackendTexture texture) {
         if (texture instanceof GLBackendTexture t) {
-            return mInfo.texture == t.mInfo.texture;
+            return mInfo.handle == t.mInfo.handle;
         }
         return false;
     }

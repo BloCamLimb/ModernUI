@@ -50,7 +50,7 @@ public class GLTexture extends Texture {
               boolean budgeted,
               boolean register) {
         super(server, width, height);
-        assert info.texture != 0;
+        assert info.handle != 0;
         assert glFormatIsSupported(format.getGLFormat());
         mInfo = info;
         mBackendTexture = new GLBackendTexture(width, height, info, new GLTextureParameters(), format);
@@ -79,7 +79,7 @@ public class GLTexture extends Texture {
                      boolean cacheable,
                      boolean ownership) {
         super(server, width, height);
-        assert info.texture != 0;
+        assert info.handle != 0;
         assert glFormatIsSupported(format.getGLFormat());
         mInfo = info;
         mBackendTexture = new GLBackendTexture(width, height, info, params, format);
@@ -105,10 +105,10 @@ public class GLTexture extends Texture {
     }
 
     public int getHandle() {
-        return mInfo.texture;
+        return mInfo.handle;
     }
 
-    public int getFormat() {
+    public int getGLFormat() {
         return getBackendFormat().getGLFormat();
     }
 
@@ -143,11 +143,11 @@ public class GLTexture extends Texture {
         if (getServer().getCaps().hasDebugSupport()) {
             assert mInfo != null;
             if (label.isEmpty()) {
-                nglObjectLabel(GL_TEXTURE, mInfo.texture, 0, MemoryUtil.NULL);
+                nglObjectLabel(GL_TEXTURE, mInfo.handle, 0, MemoryUtil.NULL);
             } else {
                 label = label.substring(0, Math.min(label.length(),
                         getServer().getCaps().maxLabelLength()));
-                glObjectLabel(GL_TEXTURE, mInfo.texture, label);
+                glObjectLabel(GL_TEXTURE, mInfo.handle, label);
             }
         }
     }
@@ -156,8 +156,8 @@ public class GLTexture extends Texture {
     protected void onRelease() {
         final GLTextureInfo info = mInfo;
         if (mOwnership) {
-            if (info.texture != 0) {
-                glDeleteTextures(info.texture);
+            if (info.handle != 0) {
+                glDeleteTextures(info.handle);
             }
             if (info.memoryObject != 0) {
                 EXTMemoryObject.glDeleteMemoryObjectsEXT(info.memoryObject);

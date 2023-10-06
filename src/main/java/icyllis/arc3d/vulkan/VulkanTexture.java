@@ -59,7 +59,7 @@ public final class VulkanTexture extends Texture {
     }
 
     @Override
-    public RenderTarget getRenderTarget() {
+    public RenderTarget asRenderTarget() {
         return null;
     }
 

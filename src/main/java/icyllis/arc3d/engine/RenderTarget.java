@@ -20,7 +20,6 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.SharedPtr;
-import icyllis.arc3d.core.Surface;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -28,14 +27,14 @@ import javax.annotation.Nullable;
 /**
  * The {@link RenderTarget} manages all objects used by a renderable primary surface,
  * which are framebuffers, render passes and a set of attachments. This is the target
- * of {@link OpsRenderPass}, and may be associated with {@link Surface}.
+ * of {@link OpsRenderPass}, and may be associated with {@link icyllis.arc3d.core.Surface}.
  * <p>
  * A {@link RenderTarget} is always associated with a renderable primary surface, which
  * can be either a renderable {@link Texture} or a wrapped {@link RenderSurface}.
  * This class is used by the pipeline internally. Use {@link RenderTextureProxy}
- * and {@link RenderSurfaceProxy} for high-level operations.
+ * and {@link RenderTargetProxy} for high-level operations.
  */
-public abstract class RenderTarget extends ManagedResource {
+public abstract class RenderTarget extends ManagedResource implements Surface {
 
     private final int mWidth;
     private final int mHeight;
@@ -51,7 +50,7 @@ public abstract class RenderTarget extends ManagedResource {
     protected Attachment mStencilBuffer;
 
     // determined by subclass constructors
-    protected int mSurfaceFlags;
+    protected int mSurfaceFlags = FLAG_RENDERABLE;
 
     protected RenderTarget(Server server,
                            int width, int height,
@@ -99,7 +98,12 @@ public abstract class RenderTarget extends ManagedResource {
 
     //TODO can we remove texture access?
     @Nullable
-    public abstract Texture getColorBuffer();
+    public abstract Texture asTexture();
+
+    @Override
+    public final RenderTarget asRenderTarget() {
+        return this;
+    }
 
     public int getSurfaceFlags() {
         return mSurfaceFlags;

@@ -62,6 +62,7 @@ public final class GLCaps extends Caps {
     final boolean mBufferStorageSupport;
 
     final boolean mBaseInstanceSupport;
+    final boolean mCopyImageSupport;
     final boolean mDSASupport;
 
     public static final int
@@ -225,12 +226,15 @@ public final class GLCaps extends Caps {
 
             mDebugSupport = caps.OpenGL43 || caps.GL_KHR_debug;
             mBaseInstanceSupport = caps.OpenGL42 || caps.GL_ARB_base_instance;
+            mCopyImageSupport = caps.OpenGL43 ||
+                    (caps.GL_ARB_copy_image && caps.GL_ARB_internalformat_query2);
             mBufferStorageSupport = caps.OpenGL44 || caps.GL_ARB_buffer_storage;
 
         } else {
             mDSASupport = true;
             mDebugSupport = true;
             mBaseInstanceSupport = true;
+            mCopyImageSupport = true;
             mBufferStorageSupport = true;
         }
 
@@ -1185,6 +1189,11 @@ public final class GLCaps extends Caps {
 
         // Init samples
         for (FormatInfo info : mFormatTable) {
+            if (mCopyImageSupport && info.mInternalFormatForTexture != 0) {
+                info.mViewCompatibilityClass = glGetInternalformati(
+                        GL_TEXTURE_2D, info.mInternalFormatForTexture, GL_VIEW_COMPATIBILITY_CLASS
+                );
+            }
             if ((info.mFlags & FormatInfo.COLOR_ATTACHMENT_WITH_MSAA_FLAG) != 0) {
                 // We assume that MSAA rendering is supported only if we support non-MSAA rendering.
                 assert (info.mFlags & FormatInfo.COLOR_ATTACHMENT_FLAG) != 0;
@@ -1309,6 +1318,10 @@ public final class GLCaps extends Caps {
 
     public boolean hasBaseInstanceSupport() {
         return mBaseInstanceSupport;
+    }
+
+    public boolean hasCopyImageSupport() {
+        return mCopyImageSupport;
     }
 
     public boolean hasBufferStorageSupport() {
@@ -1596,6 +1609,34 @@ public final class GLCaps extends Caps {
                 dstColorType, srcColorType);
     }
 
+    public boolean canCopyImage(int srcFormat, int srcSampleCount,
+                                int dstFormat, int dstSampleCount) {
+        if (!mCopyImageSupport) {
+            return false;
+        }
+        if ((dstSampleCount > 1 || srcSampleCount > 1) &&
+                dstSampleCount != srcSampleCount) {
+            return false;
+        }
+        if (srcFormat == dstFormat) {
+            return true;
+        }
+        return getFormatInfo(srcFormat).mViewCompatibilityClass ==
+                getFormatInfo(dstFormat).mViewCompatibilityClass;
+    }
+
+    public boolean canCopyTexSubImage(int srcFormat, int dstFormat) {
+        // channels should be compatible
+        if (getFormatDefaultExternalType(dstFormat) !=
+                getFormatDefaultExternalType(srcFormat)) {
+            return false;
+        }
+        if (glFormatIsSRGB(dstFormat) != glFormatIsSRGB(srcFormat)) {
+            return false;
+        }
+        return (getFormatInfo(srcFormat).mFlags & FormatInfo.COLOR_ATTACHMENT_FLAG) != 0;
+    }
+
     /**
      * Skip checks for GL errors, shader compilation success, program link success.
      */
@@ -1769,6 +1810,9 @@ public final class GLCaps extends Caps {
         // When the above two values are used to initialize a texture by uploading cleared data to
         // it the data should be of this color type.
         int mDefaultColorType = ImageInfo.CT_UNKNOWN;
+
+        // OpenGL 4.3 ViewCompatibilityClass
+        int mViewCompatibilityClass = 0;
 
         int[] mColorSampleCounts = {};
 

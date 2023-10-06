@@ -95,7 +95,7 @@ public class TextureProxy extends SurfaceProxy {
     public TextureProxy(@SharedPtr Texture texture,
                         int surfaceFlags) {
         super(texture, surfaceFlags);
-        mMipmapsDirty = texture.isMipmapsDirty();
+        mMipmapsDirty = texture.isMipmapped() && texture.isMipmapsDirty();
         assert (mSurfaceFlags & Surface.FLAG_APPROX_FIT) == 0;
         assert (mFormat.isExternal() == texture.isExternal());
         assert (texture.isMipmapped()) == ((mSurfaceFlags & Surface.FLAG_MIPMAPPED) != 0);

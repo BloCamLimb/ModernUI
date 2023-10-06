@@ -409,7 +409,7 @@ public final class ResourceAllocator {
                 texture = Resource.create(mTexture);
             }
             assert (texture != null);
-            assert (proxy.mSurfaceFlags & Surface.FLAG_RENDERABLE) == 0 || texture.getRenderTarget() != null;
+            assert (proxy.mSurfaceFlags & Surface.FLAG_RENDERABLE) == 0 || texture.asRenderTarget() != null;
 
             // Make texture budgeted if this proxy is budgeted.
             if (proxy.isBudgeted() && texture.getBudgetType() != BudgetType.Budgeted) {

@@ -20,14 +20,12 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.shaderc.Compiler;
 import icyllis.arc3d.engine.ops.OpsTask;
+import icyllis.arc3d.shaderc.Compiler;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Set;
-
-import static icyllis.arc3d.engine.Engine.*;
 
 /**
  * Abstract base class that represents the logical device and graphics queue of the
@@ -180,7 +178,7 @@ public abstract class Server implements Engine {
         if (texture != null) {
             // we don't copy the backend format object, use identity rather than equals()
             assert texture.getBackendFormat() == format;
-            assert (surfaceFlags & Surface.FLAG_RENDERABLE) == 0 || texture.getRenderTarget() != null;
+            assert (surfaceFlags & Surface.FLAG_RENDERABLE) == 0 || texture.asRenderTarget() != null;
             if (label != null) {
                 texture.setLabel(label);
             }
@@ -247,7 +245,7 @@ public abstract class Server implements Engine {
 
     @Nullable
     @SharedPtr
-    public RenderSurface wrapBackendRenderTarget(BackendRenderTarget backendRenderTarget) {
+    public RenderTarget wrapBackendRenderTarget(BackendRenderTarget backendRenderTarget) {
         if (!getCaps().isFormatRenderable(backendRenderTarget.getBackendFormat(),
                 backendRenderTarget.getSampleCount())) {
             return null;
@@ -257,7 +255,7 @@ public abstract class Server implements Engine {
 
     @Nullable
     @SharedPtr
-    public abstract RenderSurface onWrapBackendRenderTarget(BackendRenderTarget backendRenderTarget);
+    public abstract RenderTarget onWrapBackendRenderTarget(BackendRenderTarget backendRenderTarget);
 
     /**
      * Updates the pixels in a rectangle of a texture. No sRGB/linear conversions are performed.
@@ -346,6 +344,58 @@ public abstract class Server implements Engine {
     }
 
     protected abstract boolean onGenerateMipmaps(Texture texture);
+
+    /**
+     * Special case of {@link #copySurface} that has same dimensions.
+     */
+    public final boolean copySurface(Surface src, int srcX, int srcY,
+                                     Surface dst, int dstX, int dstY,
+                                     int width, int height) {
+        return copySurface(
+                src,
+                srcX, srcY, srcX + width, srcY + height,
+                dst,
+                dstX, dstY, dstX + width, dstY + height,
+                SamplerState.FILTER_NEAREST
+        );
+    }
+
+    /**
+     * Perform a surface-to-surface copy, with the specified regions.
+     * <p>
+     * If their dimensions are same and formats are compatible, then this method will
+     * attempt to perform copy. Otherwise, this method will attempt to perform blit,
+     * which may include resampling and format conversion. <var>filter</var> can be one
+     * of {@link SamplerState#FILTER_NEAREST} and {@link SamplerState#FILTER_LINEAR}.
+     * <p>
+     * Only mipmap level 0 of 2D images will be copied, without any multisampled buffer
+     * and depth/stencil buffer.
+     *
+     * @return success or not
+     */
+    public final boolean copySurface(Surface src,
+                                     int srcL, int srcT, int srcR, int srcB,
+                                     Surface dst,
+                                     int dstL, int dstT, int dstR, int dstB,
+                                     int filter) {
+        if ((dst.getSurfaceFlags() & Surface.FLAG_READ_ONLY) != 0) {
+            return false;
+        }
+        handleDirtyContext();
+        return onCopySurface(
+                src,
+                srcL, srcT, srcR, srcB,
+                dst,
+                dstL, dstT, dstR, dstB,
+                filter
+        );
+    }
+
+    protected abstract boolean onCopySurface(Surface src,
+                                             int srcL, int srcT, int srcR, int srcB,
+                                             Surface dst,
+                                             int dstL, int dstT, int dstR, int dstB,
+                                             int filter);
 
     /**
      * Returns a {@link OpsRenderPass} which {@link OpsTask OpsTasks} record draw commands to.
