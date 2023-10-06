@@ -18,21 +18,22 @@
 
 package icyllis.modernui.graphics.font;
 
-import icyllis.arc3d.core.Rect2i;
-import icyllis.arc3d.core.RectanglePacker;
-import icyllis.arc3d.engine.Engine;
-import icyllis.modernui.graphics.GLTextureCompat;
+import icyllis.arc3d.core.*;
+import icyllis.arc3d.engine.Surface;
+import icyllis.arc3d.engine.*;
+import icyllis.arc3d.opengl.*;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.Bitmap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import org.lwjgl.system.MemoryStack;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 import static icyllis.arc3d.opengl.GLCore.*;
 
@@ -54,10 +55,10 @@ import static icyllis.arc3d.opengl.GLCore.*;
 public class GLFontAtlas implements AutoCloseable {
 
     public static final int CHUNK_SIZE = 512;
-    /**
+    /*
      * Max mipmap level.
      */
-    public static final int MIPMAP_LEVEL = 4;
+    //public static final int MIPMAP_LEVEL = 4;
 
     /**
      * Config values.
@@ -65,41 +66,35 @@ public class GLFontAtlas implements AutoCloseable {
      */
     public static volatile boolean sLinearSampling = true;
 
-    /**
-     * A framebuffer used to copy texture to texture for compatibility
-     */
-    private static int sCopyFramebuffer;
-
     // OpenHashMap uses less memory than RBTree/AVLTree, but higher than ArrayMap
     private final Long2ObjectMap<BakedGlyph> mGlyphs = new Long2ObjectOpenHashMap<>();
 
     // texture can change by resizing
-    public GLTextureCompat mTexture = new GLTextureCompat(GL_TEXTURE_2D);
+    GLTexture mTexture = null;
 
     private final List<Chunk> mChunks = new ArrayList<>();
 
     // current texture size
-    private int mWidth;
-    private int mHeight;
+    private int mWidth = 0;
+    private int mHeight = 0;
 
     private final Rect2i mRect = new Rect2i();
 
     private record Chunk(int x, int y, RectanglePacker packer) {
     }
 
+    private final DirectContext mContext;
     private final int mMaskFormat;
     private final int mMaxTextureSize;
 
-    // create from any thread
-    @Deprecated
-    public GLFontAtlas(boolean colored) {
-        this(colored ? Engine.MASK_FORMAT_ARGB : Engine.MASK_FORMAT_A8);
-    }
-
-    // create from any thread
+    // render thread
     public GLFontAtlas(int maskFormat) {
+        mContext = Core.requireDirectContext();
         mMaskFormat = maskFormat;
-        mMaxTextureSize = Math.min(Core.requireDirectContext().getMaxTextureSize(), 8192);
+        mMaxTextureSize = Math.min(
+                mContext.getMaxTextureSize(),
+                8192
+        );
     }
 
     /**
@@ -155,11 +150,24 @@ public class GLFontAtlas implements AutoCloseable {
         }
 
         // include border
-        mTexture.upload(0, rect.x(), rect.y(),
+        int colorType = mMaskFormat == Engine.MASK_FORMAT_ARGB ? ImageInfo.CT_RGBA_8888 : ImageInfo.CT_ALPHA_8;
+        int rowBytes = rect.width() * ImageInfo.bytesPerPixel(colorType);
+        boolean res = mContext.getServer().writePixels(
+                mTexture,
+                rect.x(), rect.y(),
                 rect.width(), rect.height(),
-                0, 0, 0, 1,
-                mMaskFormat == Engine.MASK_FORMAT_ARGB ? GL_RGBA : GL_RED, GL_UNSIGNED_BYTE, pixels);
-        mTexture.generateMipmap();
+                colorType,
+                colorType,
+                rowBytes,
+                pixels
+        );
+        if (!res) {
+            ModernUI.LOGGER.warn(GlyphManager.MARKER, "Failed to write glyph pixels");
+        }
+        res = mContext.getServer().generateMipmaps(mTexture);
+        if (!res) {
+            ModernUI.LOGGER.warn(GlyphManager.MARKER, "Failed to generate glyph mipmaps");
+        }
 
         // exclude border
         glyph.u1 = (float) (rect.mLeft + GlyphManager.GLYPH_BORDER) / mWidth;
@@ -171,11 +179,10 @@ public class GLFontAtlas implements AutoCloseable {
     }
 
     private boolean resize() {
-        if (mWidth == 0) {
+        if (mTexture == null) {
             // initialize 4 chunks
             mWidth = mHeight = CHUNK_SIZE * 2;
-            mTexture.allocate2D(mMaskFormat == Engine.MASK_FORMAT_ARGB ? GL_RGBA8 : GL_R8,
-                    mWidth, mHeight, MIPMAP_LEVEL);
+            mTexture = createTexture();
             for (int x = 0; x < mWidth; x += CHUNK_SIZE) {
                 for (int y = 0; y < mHeight; y += CHUNK_SIZE) {
                     mChunks.add(new Chunk(x, y, RectanglePacker.make(CHUNK_SIZE, CHUNK_SIZE)));
@@ -186,6 +193,8 @@ public class GLFontAtlas implements AutoCloseable {
             final int oldHeight = mHeight;
 
             if (oldWidth == mMaxTextureSize && oldHeight == mMaxTextureSize) {
+                ModernUI.LOGGER.warn(GlyphManager.MARKER, "Font atlas reached max texture size, " +
+                        "mask format: {}, max size: {}, current texture: {}", mMaskFormat, mMaxTextureSize, mTexture);
                 return false;
             }
 
@@ -209,27 +218,19 @@ public class GLFontAtlas implements AutoCloseable {
             }
 
             // copy to new texture
-            GLTextureCompat newTexture = new GLTextureCompat(GL_TEXTURE_2D);
-            newTexture.allocate2D(mMaskFormat == Engine.MASK_FORMAT_ARGB ? GL_RGBA8 : GL_R8, mWidth, mHeight,
-                    MIPMAP_LEVEL);
-            if (sCopyFramebuffer == 0) {
-                sCopyFramebuffer = glGenFramebuffers();
+            GLTexture newTexture = createTexture();
+            boolean res = mContext.getServer().copySurface(
+                    mTexture,
+                    0, 0,
+                    newTexture,
+                    0, 0,
+                    oldWidth, oldHeight
+            );
+            if (!res) {
+                ModernUI.LOGGER.warn(GlyphManager.MARKER, "Failed to copy to new texture");
             }
-            final int lastKnownTexture = glGetInteger(GL_TEXTURE_BINDING_2D);
-            glBindTexture(GL_TEXTURE_2D, newTexture.get());
-            final int lastKnownFramebuffer = glGetInteger(GL_FRAMEBUFFER_BINDING);
-            glBindFramebuffer(GL_FRAMEBUFFER, sCopyFramebuffer);
 
-            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, mTexture.get(), 0);
-            glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, oldWidth, oldHeight);
-            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, 0, 0);
-
-            // restore GL context
-            glBindTexture(GL_TEXTURE_2D, lastKnownTexture);
-            glBindFramebuffer(GL_FRAMEBUFFER, lastKnownFramebuffer);
-
-            mTexture.close();
-            mTexture = newTexture;
+            mTexture = Resource.move(mTexture, newTexture);
 
             if (vertical) {
                 //mTexture.clear(0, 0, mHeight >> 1, mWidth, mHeight >> 1);
@@ -237,8 +238,8 @@ public class GLFontAtlas implements AutoCloseable {
                     if (glyph == null) {
                         continue;
                     }
-                    glyph.v1 *= 0.5;
-                    glyph.v2 *= 0.5;
+                    glyph.v1 *= 0.5f;
+                    glyph.v2 *= 0.5f;
                 }
             } else {
                 //mTexture.clear(0, mWidth >> 1, 0, mWidth >> 1, mHeight);
@@ -246,19 +247,61 @@ public class GLFontAtlas implements AutoCloseable {
                     if (glyph == null) {
                         continue;
                     }
-                    glyph.u1 *= 0.5;
-                    glyph.u2 *= 0.5;
+                    glyph.u1 *= 0.5f;
+                    glyph.u2 *= 0.5f;
                 }
             }
 
             // we later generate mipmap
         }
-        mTexture.setFilter(sLinearSampling ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST, GL_NEAREST);
+
+        int boundTexture = glGetInteger(GL_TEXTURE_BINDING_2D);
+        glBindTexture(GL_TEXTURE_2D, mTexture.getHandle());
+
+        glTexParameteri(
+                GL_TEXTURE_2D,
+                GL_TEXTURE_MAG_FILTER,
+                GL_NEAREST
+        );
+        glTexParameteri(
+                GL_TEXTURE_2D,
+                GL_TEXTURE_MIN_FILTER,
+                sLinearSampling
+                        ? GL_LINEAR_MIPMAP_LINEAR
+                        : GL_NEAREST
+        );
+
         if (mMaskFormat == Engine.MASK_FORMAT_A8) {
             //XXX: un-premultiplied
-            mTexture.setSwizzle(GL_ONE, GL_ONE, GL_ONE, GL_RED);
+            try (var stack = MemoryStack.stackPush()) {
+                var swizzle = stack.ints(GL_ONE, GL_ONE, GL_ONE, GL_RED);
+                glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzle);
+            }
         }
+
+        glBindTexture(GL_TEXTURE_2D, boundTexture);
+
         return true;
+    }
+
+    private GLTexture createTexture() {
+        return (GLTexture) Objects.requireNonNull(mContext
+                .getResourceProvider()
+                .createTexture(
+                        mWidth, mHeight,
+                        GLBackendFormat.make(
+                                mMaskFormat == Engine.MASK_FORMAT_ARGB
+                                        ? GL_RGBA8
+                                        : GL_R8
+                        ),
+                        1,
+                        Surface.FLAG_BUDGETED | Surface.FLAG_MIPMAPPED,
+                        "FontAtlas" + mMaskFormat
+                ), "Failed to create font atlas");
+    }
+
+    public GLTexture getTexture() {
+        return mTexture;
     }
 
     public void debug(@Nullable String path) {
@@ -269,38 +312,57 @@ public class GLFontAtlas implements AutoCloseable {
             }
         } else if (Core.isOnRenderThread()) {
             ModernUI.LOGGER.info(GlyphManager.MARKER, "Glyphs: {}", mGlyphs.size());
-            if (mWidth == 0)
+            if (mTexture == null)
                 return;
-            try (Bitmap bitmap = Bitmap.download(
+            dumpAtlas((GLCaps) mContext.getCaps(), mTexture,
                     mMaskFormat == Engine.MASK_FORMAT_ARGB
                             ? Bitmap.Format.RGBA_8888
                             : Bitmap.Format.GRAY_8,
-                    mTexture)) {
-                bitmap.saveToPath(Bitmap.SaveFormat.PNG, 100, Path.of(path));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+                    path);
+        }
+    }
+
+    @RenderThread
+    public static void dumpAtlas(GLCaps caps, GLTexture texture, Bitmap.Format format, String path) {
+        // debug only
+        if (caps.hasDSASupport()) {
+            final int width = texture.getWidth();
+            final int height = texture.getHeight();
+            @SuppressWarnings("resource") final Bitmap bitmap =
+                    Bitmap.createBitmap(width, height, format);
+            glPixelStorei(GL_PACK_ROW_LENGTH, 0);
+            glPixelStorei(GL_PACK_SKIP_ROWS, 0);
+            glPixelStorei(GL_PACK_SKIP_PIXELS, 0);
+            glPixelStorei(GL_PACK_ALIGNMENT, 1);
+            int externalGlFormat = switch (format) {
+                case GRAY_8 -> GL_RED;
+                case GRAY_ALPHA_88 -> GL_RG;
+                case RGB_888 -> GL_RGB;
+                case RGBA_8888 -> GL_RGBA;
+                default -> throw new IllegalArgumentException();
+            };
+            glGetTextureImage(texture.getHandle(), 0, externalGlFormat, GL_UNSIGNED_BYTE,
+                    bitmap.getSize(), bitmap.getAddress());
+            CompletableFuture.runAsync(() -> {
+                try (bitmap) {
+                    bitmap.saveToPath(Bitmap.SaveFormat.PNG, 0, Path.of(path));
+                } catch (IOException e) {
+                    ModernUI.LOGGER.warn(GlyphManager.MARKER, "Failed to save font atlas", e);
+                }
+            });
         }
     }
 
     @Override
     public void close() {
-        if (mTexture != null) {
-            mTexture.close();
-            mTexture = null;
-        }
+        mTexture = Resource.move(mTexture);
     }
 
     public int getGlyphCount() {
         return mGlyphs.size();
     }
 
-    public int getMemorySize() {
-        int size = mTexture.getWidth() * mTexture.getHeight();
-        if (mMaskFormat == Engine.MASK_FORMAT_ARGB) {
-            size <<= 2;
-        }
-        size = ((size - (size >> ((MIPMAP_LEVEL + 1) << 1))) << 2) / 3;
-        return size;
+    public long getMemorySize() {
+        return mTexture != null ? mTexture.getMemorySize() : 0;
     }
 }

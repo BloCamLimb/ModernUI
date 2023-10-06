@@ -26,16 +26,19 @@ import icyllis.arc3d.opengl.*;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Core;
+import icyllis.modernui.core.Window;
 import icyllis.modernui.graphics.font.BakedGlyph;
 import icyllis.modernui.graphics.font.GlyphManager;
 import icyllis.modernui.graphics.text.Font;
 import icyllis.modernui.graphics.text.StandardFont;
+import icyllis.modernui.util.Pools;
 import icyllis.modernui.view.Gravity;
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import it.unimi.dsi.fastutil.ints.*;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.system.MemoryUtil;
 
+import javax.annotation.Nonnull;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.io.IOException;
 import java.nio.*;
@@ -45,8 +48,10 @@ import static icyllis.arc3d.opengl.GLCore.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
 /**
- * Modern OpenGL implementation to Canvas, handling multithreaded rendering.
- * This requires OpenGL 4.5 core profile.
+ * The OpenGL implementation to Canvas, handling multithreaded rendering.
+ * This requires OpenGL 3.3 core profile.
+ * <p>
+ * This class is the legacy, integrated rendering pipeline, will be deprecated.
  * <p>
  * Modern UI Canvas is designed for high-performance real-time rendering of
  * vector graphics with infinite precision. Thus, you can't draw other things
@@ -63,7 +68,7 @@ import static org.lwjgl.system.MemoryUtil.*;
  * This class is used to build OpenGL buffers from one thread, using multiple
  * vertex arrays, uniform buffers and vertex buffers. All drawing methods are
  * recording commands and must be called from one thread. Later call
- * {@link #executeDrawOps(GLFramebufferCompat)} for calling OpenGL functions on the render thread.
+ * {@link #executeRenderPass(GLSurface)} for calling OpenGL functions on the render thread.
  * The color buffer drawn to must be at index 0, and stencil buffer must be 8-bit.
  * <p>
  * For multiple off-screen rendering targets, Modern UI allocates up to four
@@ -77,7 +82,7 @@ import static org.lwjgl.system.MemoryUtil.*;
  * @author BloCamLimb
  */
 @NotThreadSafe
-public final class GLSurfaceCanvas extends GLCanvas {
+public final class GLSurfaceCanvas extends Canvas {
 
     private static volatile GLSurfaceCanvas sInstance;
 
@@ -153,6 +158,12 @@ public final class GLSurfaceCanvas extends GLCanvas {
         //POS_TEX = new GLVertexFormat(POS, UV);
     }
 
+    // shared pools
+    static final Pools.Pool<Save> sSavePool = Pools.newSynchronizedPool(60);
+
+    // see window
+    static final Matrix4 RESET_MATRIX = Matrix4.makeTranslate(0, 0, -Window.LAST_SYSTEM_WINDOW - 1);
+
     /**
      * Pipelines.
      */
@@ -215,12 +226,12 @@ public final class GLSurfaceCanvas extends GLCanvas {
     private ByteBuffer mUniformRingBuffer = memAlloc(8192);
 
     // immutable uniform buffer objects
-    private final GLUniformBufferCompat mMatrixUBO = new GLUniformBufferCompat();
-    private final GLUniformBufferCompat mSmoothUBO = new GLUniformBufferCompat();
-    private final GLUniformBufferCompat mArcUBO = new GLUniformBufferCompat();
-    private final GLUniformBufferCompat mBezierUBO = new GLUniformBufferCompat();
-    private final GLUniformBufferCompat mCircleUBO = new GLUniformBufferCompat();
-    private final GLUniformBufferCompat mRoundRectUBO = new GLUniformBufferCompat();
+    private final UniformBuffer mMatrixUBO = new UniformBuffer();
+    private final UniformBuffer mSmoothUBO = new UniformBuffer();
+    private final UniformBuffer mArcUBO = new UniformBuffer();
+    private final UniformBuffer mBezierUBO = new UniformBuffer();
+    private final UniformBuffer mCircleUBO = new UniformBuffer();
+    private final UniformBuffer mRoundRectUBO = new UniformBuffer();
 
     // mag filter = linear
     @SharedPtr
@@ -239,7 +250,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     private final IntStack mLayerStack = new IntArrayList(3);
 
     // using textures of draw states, in the order of calling
-    private final Queue<Object> mTextures = new ArrayDeque<>();
+    private final Queue<SurfaceProxyView> mTextures = new ArrayDeque<>();
     private final List<DrawTextOp> mDrawTexts = new ArrayList<>();
     private final Queue<CustomDrawable.DrawHandler> mCustoms = new ArrayDeque<>();
 
@@ -251,6 +262,18 @@ public final class GLSurfaceCanvas extends GLCanvas {
     private final GLServer mServer;
 
     private boolean mNeedsTexBinding;
+
+    // local MCRec stack
+    final ArrayDeque<Save> mSaves = new ArrayDeque<>();
+
+    final Matrix4 mLastMatrix = new Matrix4();
+    float mLastSmooth;
+
+    int mWidth;
+    int mHeight;
+
+    final Rect2i mTmpRectI = new Rect2i();
+    final Rect2f mTmpRectF = new Rect2f();
 
     @RenderThread
     public GLSurfaceCanvas(GLServer server) {
@@ -654,9 +677,26 @@ public final class GLSurfaceCanvas extends GLCanvas {
 
     private ImageInfo mInfo;
 
-    @Override
+    /**
+     * Resets the clip bounds and matrix to root.
+     *
+     * @param width  the width in pixels
+     * @param height the height in pixels
+     */
     public void reset(int width, int height) {
-        super.reset(width, height);
+        while (mSaves.size() > 1) {
+            sSavePool.release(mSaves.poll());
+        }
+        Save s = mSaves.element();
+        s.mClip.set(0, 0, width, height);
+        s.mMatrix.set(RESET_MATRIX);
+        s.mClipRef = 0;
+        s.mColorBuf = 0;
+        mLastMatrix.setZero();
+        mLastSmooth = -1;
+        mWidth = width;
+        mHeight = height;
+
         mDrawOps.clear();
         mClipRefs.clear();
         mLayerAlphas.clear();
@@ -665,6 +705,58 @@ public final class GLSurfaceCanvas extends GLCanvas {
         mTextureMeshStagingBuffer.clear();
         mUniformRingBuffer.clear();
         mInfo = ImageInfo.make(width, height, ImageInfo.CT_RGBA_8888, ImageInfo.AT_PREMUL, null);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    @Override
+    public int getSaveCount() {
+        return mSaves.size();
+    }
+
+    /**
+     * @inheritDoc
+     */
+    @Nonnull
+    @Override
+    public Matrix4 getMatrix() {
+        return mSaves.element().mMatrix;
+    }
+
+    @Nonnull
+    Save getSave() {
+        return mSaves.getFirst();
+    }
+
+    static final class Save {
+
+        // maximum clip bounds transformed by model view matrix
+        final Rect2i mClip = new Rect2i();
+
+        // model view matrix
+        final Matrix4 mMatrix = Matrix4.identity();
+
+        // stencil reference
+        int mClipRef;
+
+        // stack depth of color buffers
+        int mColorBuf;
+
+        void set(@Nonnull Save s) {
+            mClip.set(s.mClip);
+            mMatrix.set(s.mMatrix);
+            mClipRef = s.mClipRef;
+            mColorBuf = s.mColorBuf;
+        }
+
+        // deep copy
+        @Nonnull
+        Save copy() {
+            Save s = new Save();
+            s.set(this);
+            return s;
+        }
     }
 
     public void destroy() {
@@ -692,12 +784,17 @@ public final class GLSurfaceCanvas extends GLCanvas {
         POS_COLOR_TEX.unref();
         POS_TEX.unref();
 
+        mMatrixUBO.close();
+        mSmoothUBO.close();
+        mArcUBO.close();
+        mBezierUBO.close();
+        mCircleUBO.close();
+        mRoundRectUBO.close();
+
         mLinearSampler.unref();
-        mTextures.forEach(o -> {
-            if (o instanceof SurfaceProxyView v) {
-                if (v.getProxy() != null) {
-                    v.getProxy().unref();
-                }
+        mTextures.forEach(v -> {
+            if (v.getProxy() != null) {
+                v.getProxy().unref();
             }
         });
         mTextures.clear();
@@ -742,62 +839,62 @@ public final class GLSurfaceCanvas extends GLCanvas {
         }
     }
 
-    private void bindNextTexture() {
-        var tex = mTextures.remove();
-        if (tex instanceof GLTextureCompat compat) {
-            bindSampler(null);
-            bindTexture(compat.get());
-        } else {
-            var view = (SurfaceProxyView) tex;
-            var proxy = view.getProxy();
-            boolean success = true;
-            if (!proxy.isInstantiated()) {
-                var resourceProvider = mServer.getResourceProvider();
-                success = proxy.doLazyInstantiation(resourceProvider);
-            }
-            if (success) {
-                var glTex = (GLTexture) Objects.requireNonNull(proxy.peekTexture());
-                bindSampler(mLinearSampler);
-                bindTexture(glTex.getHandle());
-
-                mServer.generateMipmaps(glTex);
-
-                var swizzle = view.getSwizzle();
-                var parameters = glTex.getParameters();
-                var swizzleChanged = false;
-                for (int i = 0; i < 4; ++i) {
-                    int swiz = switch (swizzle & 0xF) {
-                        case 0 -> GL_RED;
-                        case 1 -> GL_GREEN;
-                        case 2 -> GL_BLUE;
-                        case 3 -> GL_ALPHA;
-                        case 4 -> GL_ZERO;
-                        case 5 -> GL_ONE;
-                        default -> throw new AssertionError(swizzle);
-                    };
-                    if (parameters.swizzle[i] != swiz) {
-                        parameters.swizzle[i] = swiz;
-                        swizzleChanged = true;
-                    }
-                    swizzle >>= 4;
-                }
-                if (swizzleChanged) {
-                    glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, parameters.swizzle);
-                }
-            }
-            mTexturesToClean.add(proxy);
+    private void bindNextTexture(boolean texSampling) {
+        var textureView = mTextures.remove();
+        var textureProxy = textureView.getProxy();
+        boolean success = true;
+        if (!textureProxy.isInstantiated()) {
+            var resourceProvider = mServer.getResourceProvider();
+            success = textureProxy.doLazyInstantiation(resourceProvider);
         }
+        if (success) {
+            var glTexture = (GLTexture) Objects.requireNonNull(textureProxy.peekTexture());
+            if (texSampling) {
+                bindSampler(null);
+            } else {
+                bindSampler(mLinearSampler);
+            }
+            bindTexture(glTexture.getHandle());
+
+            if (glTexture.isMipmapped()) {
+                mServer.generateMipmaps(glTexture);
+            }
+
+            var swizzle = textureView.getSwizzle();
+            var parameters = glTexture.getParameters();
+            var swizzleChanged = false;
+            for (int i = 0; i < 4; ++i) {
+                int swiz = switch (swizzle & 0xF) {
+                    case 0 -> GL_RED;
+                    case 1 -> GL_GREEN;
+                    case 2 -> GL_BLUE;
+                    case 3 -> GL_ALPHA;
+                    case 4 -> GL_ZERO;
+                    case 5 -> GL_ONE;
+                    default -> throw new AssertionError(swizzle);
+                };
+                if (parameters.swizzle[i] != swiz) {
+                    parameters.swizzle[i] = swiz;
+                    swizzleChanged = true;
+                }
+                swizzle >>= 4;
+            }
+            if (swizzleChanged) {
+                glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, parameters.swizzle);
+            }
+        }
+        mTexturesToClean.add(textureProxy);
     }
 
     @RenderThread
-    public boolean executeDrawOps(@Nullable GLFramebufferCompat framebuffer) {
+    public boolean executeRenderPass(@Nullable GLSurface framebuffer) {
         Core.checkRenderThread();
         Core.flushRenderCalls();
         if (framebuffer != null) {
             framebuffer.bindDraw();
             framebuffer.makeBuffers(mWidth, mHeight, false);
             framebuffer.clearColorBuffer();
-            framebuffer.clearDepthStencilBuffer();
+            framebuffer.clearStencilBuffer();
         }
         if (mDrawOps.isEmpty()) {
             return false;
@@ -897,7 +994,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                 case DRAW_ROUND_IMAGE -> {
                     bindPipeline(ROUND_RECT_TEX, POS_COLOR_TEX)
                             .bindVertexBuffer(mTextureMeshVertexBuffer, 0);
-                    bindNextTexture();
+                    bindNextTexture(false);
                     mRoundRectUBO.upload(0, 20, uniformDataPtr);
                     uniformDataPtr += 20;
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorTexIndex, 4);
@@ -943,7 +1040,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                 case DRAW_IMAGE -> {
                     bindPipeline(COLOR_TEX, POS_COLOR_TEX)
                             .bindVertexBuffer(mTextureMeshVertexBuffer, 0);
-                    bindNextTexture();
+                    bindNextTexture(false);
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorTexIndex, 4);
                     nDraws++;
                     posColorTexIndex += 4;
@@ -951,8 +1048,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                 case DRAW_IMAGE_LAYER -> {
                     bindPipeline(COLOR_TEX_PRE, POS_COLOR_TEX)
                             .bindVertexBuffer(mTextureMeshVertexBuffer, 0);
-                    bindSampler(null);
-                    bindTexture(((GLTextureCompat) mTextures.remove()).get());
+                    bindNextTexture(true);
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorTexIndex, 4);
                     nDraws++;
                     posColorTexIndex += 4;
@@ -1105,16 +1201,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                 }
                 case DRAW_LAYER_POP -> {
                     assert framebuffer != null;
-                    final GLTextureCompat layer;
-                    if (framebuffer.isMultisampled()) {
-                        GLFramebufferCompat resolve = GLFramebufferCompat.resolve(framebuffer,
-                                colorBuffer, mWidth, mHeight);
-                        framebuffer.setReadBuffer(GL_COLOR_ATTACHMENT0);
-                        framebuffer.bindDraw();
-                        layer = resolve.getAttachedTexture(GL_COLOR_ATTACHMENT0);
-                    } else {
-                        layer = framebuffer.getAttachedTexture(colorBuffer);
-                    }
+                    final GLTexture layer = framebuffer.getAttachedTexture(colorBuffer);
 
                     float alpha = mLayerStack.popInt() / 255f;
                     putRectColorUV(mLayerImageMemory, 0, 0, mWidth, mHeight,
@@ -1130,7 +1217,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     bindPipeline(COLOR_TEX_PRE, POS_COLOR_TEX)
                             .bindVertexBuffer(mTextureMeshVertexBuffer, 0);
                     bindSampler(null);
-                    bindTexture(layer.get());
+                    bindTexture(layer.getHandle());
                     framebuffer.setDrawBuffer(--colorBuffer);
                     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
                     nDraws++;
@@ -2176,18 +2263,15 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     // this is only used for offscreen
-    public void drawLayer(@NonNull GLTextureCompat texture, float w, float h, float alpha, boolean flipY) {
-        int target = texture.getTarget();
-        if (target == GL_TEXTURE_2D) {
-            drawMatrix();
-            putRectColorUV(checkTextureMeshStagingBuffer(), 0, 0, w, h, 1, 1, 1, alpha,
-                    0, flipY ? h / texture.getHeight() : 0,
-                    w / texture.getWidth(), flipY ? 0 : h / texture.getHeight());
-            mTextures.add(texture);
-            mDrawOps.add(DRAW_IMAGE_LAYER);
-        } else {
-            ModernUI.LOGGER.warn(MARKER, "Cannot draw texture target {}", target);
-        }
+    public void drawLayer(@NonNull GLTexture texture, float w, float h, float alpha, boolean flipY) {
+        drawMatrix();
+        putRectColorUV(checkTextureMeshStagingBuffer(), 0, 0, w, h, 1, 1, 1, alpha,
+                0, flipY ? h / texture.getHeight() : 0,
+                w / texture.getWidth(), flipY ? 0 : h / texture.getHeight());
+        // layer has premultiplied alpha
+        texture.ref();
+        mTextures.add(new SurfaceProxyView(new TextureProxy(texture, 0)));
+        mDrawOps.add(DRAW_IMAGE_LAYER);
     }
 
     @Override
@@ -2217,7 +2301,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         mDrawOps.add(DRAW_IMAGE);
     }
 
-    public void drawTexture(@NonNull GLTextureCompat texture, float srcLeft, float srcTop, float srcRight,
+    /*public void drawTexture(@NonNull GLTextureCompat texture, float srcLeft, float srcTop, float srcRight,
                             float srcBottom,
                             float dstLeft, float dstTop, float dstRight, float dstBottom) {
         if (quickReject(dstLeft, dstTop, dstRight, dstBottom)) {
@@ -2237,7 +2321,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                 srcLeft / w, srcTop / h, srcRight / w, srcBottom / h);
         mTextures.add(texture);
         mDrawOps.add(DRAW_IMAGE);
-    }
+    }*/
 
     @Override
     public void drawLine(float startX, float startY, float stopX, float stopY,
@@ -2589,6 +2673,89 @@ public final class GLSurfaceCanvas extends GLCanvas {
         if (draw != null) {
             mCustoms.add(draw);
             mDrawOps.add(DRAW_CUSTOM);
+        }
+    }
+
+    /**
+     * Represents a OpenGL buffer object.
+     */
+    public static class UniformBuffer implements AutoCloseable {
+
+        private int mBuffer;
+
+        public UniformBuffer() {
+        }
+
+        /**
+         * Returns the OpenGL buffer object name currently associated with this
+         * object, or create and initialize it if not available. It may change in
+         * the future if it is explicitly deleted.
+         *
+         * @return OpenGL buffer object
+         */
+        public final int getBufferID() {
+            if (mBuffer == 0) {
+                mBuffer = glGenBuffers();
+            }
+            return mBuffer;
+        }
+
+        /**
+         * Binds this buffer to the indexed buffer target, as well as entirely to the binding
+         * point in the array given by index. Each target has its own indexed array of buffer object
+         * binding points.
+         *
+         * @param target the target of the bind operation
+         * @param index  the index of the binding point within the array specified by {@code target}
+         */
+        public void bindBase(int target, int index) {
+            glBindBufferBase(target, index, getBufferID());
+        }
+
+        /**
+         * Binds this buffer to the indexed buffer target, as well as a range within it to the
+         * binding point in the array given by index. Each target has its own indexed array of buffer
+         * object binding points.
+         *
+         * @param target the target of the bind operation
+         * @param index  the index of the binding point within the array specified by {@code target}
+         * @param offset the start offset in bytes into the buffer
+         * @param size   the amount of data in bytes that can be read from the buffer object while used as an indexed
+         *               target
+         */
+        public void bindRange(int target, int index, long offset, long size) {
+            glBindBufferRange(target, index, getBufferID(), offset, size);
+        }
+
+        /**
+         * Creates the immutable data store of this buffer object.
+         *
+         * @param size the size of the data store in bytes
+         */
+        public void allocate(long size) {
+            glBindBuffer(GL_UNIFORM_BUFFER, getBufferID());
+            nglBufferData(GL_UNIFORM_BUFFER, size, 0, GL_DYNAMIC_DRAW);
+        }
+
+        /**
+         * Modifies a subset of this buffer object's data store.
+         *
+         * @param offset the offset into the buffer object's data store where data replacement will begin, measured in
+         *               bytes
+         * @param size   the size in bytes of the data store region being replaced
+         * @param data   a pointer to the new data that will be copied into the data store, can't be {@code NULL}
+         */
+        public void upload(long offset, long size, long data) {
+            glBindBuffer(GL_UNIFORM_BUFFER, getBufferID());
+            nglBufferSubData(GL_UNIFORM_BUFFER, offset, size, data);
+        }
+
+        @Override
+        public void close() {
+            if (mBuffer != 0) {
+                glDeleteBuffers(mBuffer);
+            }
+            mBuffer = 0;
         }
     }
 }

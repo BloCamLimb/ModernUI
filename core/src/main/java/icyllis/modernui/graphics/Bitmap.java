@@ -46,7 +46,6 @@ import java.util.function.LongConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static icyllis.arc3d.opengl.GLCore.*;
 import static icyllis.modernui.ModernUI.LOGGER;
 import static org.lwjgl.system.MemoryUtil.*;
 
@@ -207,39 +206,6 @@ public final class Bitmap implements AutoCloseable {
                             ? format.getDescription()
                             : SaveFormat.getAllDescription());
         }
-    }
-
-    /**
-     * Creates a bitmap whose image downloaded from the given texture. The image of
-     * the level-of-detail 0 will be taken.
-     *
-     * @param format  the bitmap format to convert the image to
-     * @param texture the texture to download from
-     * @return the created bitmap
-     * @deprecated remove soon
-     */
-    @Deprecated
-    @NonNull
-    @RenderThread
-    public static Bitmap download(@NonNull Format format, @NonNull GLTextureCompat texture) {
-        Core.checkRenderThread();
-        final int width = texture.getWidth();
-        final int height = texture.getHeight();
-        final Bitmap bitmap = createBitmap(width, height, format);
-        glPixelStorei(GL_PACK_ROW_LENGTH, 0);
-        glPixelStorei(GL_PACK_SKIP_ROWS, 0);
-        glPixelStorei(GL_PACK_SKIP_PIXELS, 0);
-        glPixelStorei(GL_PACK_ALIGNMENT, 1);
-        int externalGlFormat = switch (format) {
-            case GRAY_8 -> GL_RED;
-            case GRAY_ALPHA_88 -> GL_RG;
-            case RGB_888 -> GL_RGB;
-            case RGBA_8888 -> GL_RGBA;
-            default -> throw new IllegalArgumentException();
-        };
-        glGetTextureImage(texture.get(), 0, externalGlFormat, GL_UNSIGNED_BYTE,
-                bitmap.getSize(), bitmap.getAddress());
-        return bitmap;
     }
 
     @ApiStatus.Internal

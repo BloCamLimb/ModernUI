@@ -80,7 +80,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
     //private final VulkanManager mVulkanManager = VulkanManager.getInstance();
 
     private volatile ActivityWindow mWindow;
-    private volatile GLFramebufferCompat mFramebuffer;
+    private volatile GLSurface mSurface;
 
     private ViewRootImpl mRoot;
     private WindowGroup mDecor;
@@ -332,17 +332,14 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         glEnable(GL_STENCIL_TEST);
         glDisable(GL_MULTISAMPLE);
 
-        final GLFramebufferCompat framebuffer = new GLFramebufferCompat();
-        framebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT0, GL_RGBA8);
-        framebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT1, GL_RGBA8);
-        framebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT2, GL_RGBA8);
-        framebuffer.addRenderbufferAttachment(GL_STENCIL_ATTACHMENT, GL_STENCIL_INDEX8);
-        mFramebuffer = framebuffer;
+        mSurface = new GLSurface();
 
         window.swapInterval(1);
         LOGGER.info(MARKER, "Looping render thread");
 
         Looper.loop();
+
+        mSurface.close();
 
         GLSurfaceCanvas.getInstance().destroy();
         Core.requireDirectContext().unref();
@@ -551,18 +548,18 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         private void render() {
             GLSurfaceCanvas canvas = GLSurfaceCanvas.getInstance();
             Window window = mWindow;
-            GLFramebufferCompat framebuffer = mFramebuffer;
+            GLSurface framebuffer = mSurface;
             int width = window.getWidth(), height = window.getHeight();
             glViewport(0, 0, width, height);
             synchronized (mRenderLock) {
                 final Matrix4 projection = new Matrix4();
                 canvas.setProjection(projection.setOrthographic(width, height, 0, Window.LAST_SYSTEM_WINDOW * 2 + 1,
                         true));
-                canvas.executeDrawOps(framebuffer);
+                canvas.executeRenderPass(framebuffer);
                 //TODO, we should swap the command list, and signal the lock early
                 mRenderLock.notifyAll();
             }
-            if (framebuffer.getAttachment(GL_COLOR_ATTACHMENT0).getWidth() > 0) {
+            if (framebuffer.getBackingWidth() > 0) {
                 framebuffer.bindRead();
                 glBindFramebuffer(GL_DRAW_FRAMEBUFFER, DEFAULT_FRAMEBUFFER);
                 glBlitFramebuffer(0, 0, width, height,
