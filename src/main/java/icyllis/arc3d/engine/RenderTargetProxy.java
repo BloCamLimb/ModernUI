@@ -29,38 +29,38 @@ import javax.annotation.Nullable;
  */
 //TODO
 @VisibleForTesting
-public final class RenderSurfaceProxy extends SurfaceProxy {
+public final class RenderTargetProxy extends SurfaceProxy {
 
     @SharedPtr
-    private RenderSurface mSurface;
+    private RenderTarget mRenderTarget;
     private int mSampleCount;
 
-    RenderSurfaceProxy(BackendFormat format, int width, int height, int surfaceFlags) {
+    RenderTargetProxy(BackendFormat format, int width, int height, int surfaceFlags) {
         super(format, width, height, surfaceFlags);
         assert hashCode() == System.identityHashCode(this);
     }
 
-    RenderSurfaceProxy(RenderSurface surface, int surfaceFlags) {
-        super(surface, surfaceFlags);
-        mSurface = surface;
-        mSampleCount = surface.getSampleCount();
+    RenderTargetProxy(RenderTarget renderTarget, int surfaceFlags) {
+        super(renderTarget, surfaceFlags);
+        mRenderTarget = renderTarget;
+        mSampleCount = renderTarget.getSampleCount();
     }
 
     @Override
     protected void deallocate() {
-        mSurface = move(mSurface);
+        mRenderTarget = move(mRenderTarget);
     }
 
     @Override
     public boolean isLazy() {
-        return mSurface == null && mLazyInstantiateCallback != null;
+        return mRenderTarget == null && mLazyInstantiateCallback != null;
     }
 
     @Override
     public int getBackingWidth() {
         assert (!isLazyMost());
-        if (mSurface != null) {
-            return mSurface.getWidth();
+        if (mRenderTarget != null) {
+            return mRenderTarget.getWidth();
         }
         if ((mSurfaceFlags & Surface.FLAG_APPROX_FIT) != 0) {
             return ResourceProvider.makeApprox(mWidth);
@@ -71,8 +71,8 @@ public final class RenderSurfaceProxy extends SurfaceProxy {
     @Override
     public int getBackingHeight() {
         assert (!isLazyMost());
-        if (mSurface != null) {
-            return mSurface.getHeight();
+        if (mRenderTarget != null) {
+            return mRenderTarget.getHeight();
         }
         if ((mSurfaceFlags & Surface.FLAG_APPROX_FIT) != 0) {
             return ResourceProvider.makeApprox(mHeight);
@@ -87,15 +87,15 @@ public final class RenderSurfaceProxy extends SurfaceProxy {
 
     @Override
     public Object getBackingUniqueID() {
-        if (mSurface != null) {
-            return mSurface;
+        if (mRenderTarget != null) {
+            return mRenderTarget;
         }
         return mUniqueID;
     }
 
     @Override
     public boolean isInstantiated() {
-        return mSurface != null;
+        return mRenderTarget != null;
     }
 
     @Override
@@ -103,14 +103,14 @@ public final class RenderSurfaceProxy extends SurfaceProxy {
         if (isLazy()) {
             return false;
         }
-        return mSurface != null;
+        return mRenderTarget != null;
     }
 
     @Override
     public void clear() {
-        assert mSurface != null;
-        mSurface.unref();
-        mSurface = null;
+        assert mRenderTarget != null;
+        mRenderTarget.unref();
+        mRenderTarget = null;
     }
 
     @Override
@@ -119,24 +119,24 @@ public final class RenderSurfaceProxy extends SurfaceProxy {
             // Usually an atlas or onFlush proxy
             return true;
         }
-        return mSurface != null;
+        return mRenderTarget != null;
     }
 
     @Override
     public boolean isBackingWrapped() {
-        return mSurface != null;
+        return mRenderTarget != null;
     }
 
     @Nullable
     @Override
     public Surface peekSurface() {
-        return mSurface;
+        return mRenderTarget;
     }
 
     @Nullable
     @Override
     public RenderTarget peekRenderTarget() {
-        return mSurface != null ? mSurface.getRenderTarget() : null;
+        return mRenderTarget != null ? mRenderTarget.asRenderTarget() : null;
     }
 
     @Override
@@ -144,7 +144,7 @@ public final class RenderSurfaceProxy extends SurfaceProxy {
         assert isLazy();
 
         @SharedPtr
-        RenderSurface surface = null;
+        RenderTarget surface = null;
 
         boolean releaseCallback = false;
         int width = isLazyMost() ? -1 : getWidth();
@@ -156,7 +156,7 @@ public final class RenderSurfaceProxy extends SurfaceProxy {
                 mSurfaceFlags,
                 "");
         if (result != null) {
-            surface = (RenderSurface) result.mSurface;
+            surface = (RenderTarget) result.mSurface;
             releaseCallback = result.mReleaseCallback;
         }
         if (surface == null) {
@@ -175,7 +175,7 @@ public final class RenderSurfaceProxy extends SurfaceProxy {
         assert getWidth() <= surface.getWidth();
         assert getHeight() <= surface.getHeight();
 
-        mSurface = move(mSurface, surface);
+        mRenderTarget = move(mRenderTarget, surface);
         if (releaseCallback) {
             mLazyInstantiateCallback = null;
         }

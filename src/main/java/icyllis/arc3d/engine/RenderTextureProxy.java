@@ -61,7 +61,7 @@ public final class RenderTextureProxy extends TextureProxy {
     @Nullable
     @Override
     public RenderTarget peekRenderTarget() {
-        return mTexture != null ? mTexture.getRenderTarget() : null;
+        return mTexture != null ? mTexture.asRenderTarget() : null;
     }
 
     @Override

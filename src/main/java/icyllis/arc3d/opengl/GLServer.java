@@ -155,6 +155,13 @@ public final class GLServer extends Server {
 
     private final HWSamplerState[] mHWSamplerStates;
 
+    /**
+     * Framebuffer used for pixel transfer operations, compatibility only.
+     * We use array as pointers, lazily init.
+     */
+    private final int[] mCopySrcFramebuffer = new int[1];
+    private final int[] mCopyDstFramebuffer = new int[1];
+
     private boolean mNeedsFlush;
 
     private GLServer(DirectContext context, GLCaps caps) {
@@ -371,7 +378,7 @@ public final class GLServer extends Server {
             }
         }
         final GLTextureInfo info = new GLTextureInfo();
-        info.texture = texture;
+        info.handle = texture;
         info.format = format.getGLFormat();
         info.levels = mipLevelCount;
         if (target == null) {
@@ -401,7 +408,7 @@ public final class GLServer extends Server {
             return null;
         }
         final GLTextureInfo info = new GLTextureInfo();
-        if (!texture.getGLTextureInfo(info) || info.texture == 0 || info.format == 0) {
+        if (!texture.getGLTextureInfo(info) || info.handle == 0 || info.format == 0) {
             return null;
         }
         /*if (info.mTarget != GL_TEXTURE_2D) {
@@ -417,7 +424,7 @@ public final class GLServer extends Server {
         sampleCount = mCaps.getRenderTargetSampleCount(sampleCount, format);
         assert sampleCount > 0;
 
-        var objects = createRTObjects(info.texture,
+        var objects = createRTObjects(info.handle,
                 texture.getWidth(), texture.getHeight(),
                 format,
                 sampleCount);
@@ -434,7 +441,7 @@ public final class GLServer extends Server {
 
     @Nullable
     @Override
-    public RenderSurface onWrapBackendRenderTarget(BackendRenderTarget backendRenderTarget) {
+    public RenderTarget onWrapBackendRenderTarget(BackendRenderTarget backendRenderTarget) {
         GLFramebufferInfo info = new GLFramebufferInfo();
         if (!backendRenderTarget.getGLFramebufferInfo(info)) {
             return null;
@@ -446,8 +453,7 @@ public final class GLServer extends Server {
             return null;
         }
         int actualSamplerCount = mCaps.getRenderTargetSampleCount(backendRenderTarget.getSampleCount(), info.mFormat);
-        @SharedPtr
-        var rt = GLRenderTarget.makeWrapped(this,
+        return GLRenderTarget.makeWrapped(this,
                 backendRenderTarget.getWidth(),
                 backendRenderTarget.getHeight(),
                 info.mFormat,
@@ -455,7 +461,6 @@ public final class GLServer extends Server {
                 info.mFramebuffer,
                 backendRenderTarget.getStencilBits(),
                 false);
-        return new RenderSurface(rt);
     }
 
     @Override
@@ -468,18 +473,36 @@ public final class GLServer extends Server {
         assert (!texture.isExternal());
         assert (!texture.getBackendFormat().isCompressed());
         GLTexture glTexture = (GLTexture) texture;
-        int glFormat = glTexture.getFormat();
+        int glFormat = glTexture.getGLFormat();
         assert (mCaps.isFormatTexturable(glFormat));
 
+        int srcFormat = mCaps.getPixelsExternalFormat(
+                glFormat, dstColorType, srcColorType, /*write*/true
+        );
+        if (srcFormat == 0) {
+            return false;
+        }
+        int srcType = mCaps.getPixelsExternalType(
+                glFormat, dstColorType, srcColorType
+        );
+        if (srcType == 0) {
+            return false;
+        }
+
         boolean dsa = mCaps.hasDSASupport();
+        int texName = glTexture.getHandle();
+        int boundTexture = 0;
         if (!dsa) {
-            bindTextureForSetup(glTexture.getHandle());
+            boundTexture = glGetInteger(GL_TEXTURE_BINDING_2D);
+            if (texName != boundTexture) {
+                glBindTexture(GL_TEXTURE_2D, texName);
+            }
         }
 
         GLTextureParameters parameters = glTexture.getParameters();
         if (parameters.baseMipmapLevel != 0) {
             if (dsa) {
-                glTextureParameteri(glTexture.getHandle(), GL_TEXTURE_BASE_LEVEL, 0);
+                glTextureParameteri(texName, GL_TEXTURE_BASE_LEVEL, 0);
             } else {
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
             }
@@ -488,7 +511,7 @@ public final class GLServer extends Server {
         int maxLevel = glTexture.getMaxMipmapLevel();
         if (parameters.maxMipmapLevel != maxLevel) {
             if (dsa) {
-                glTextureParameteri(glTexture.getHandle(), GL_TEXTURE_MAX_LEVEL, maxLevel);
+                glTextureParameteri(texName, GL_TEXTURE_MAX_LEVEL, maxLevel);
             } else {
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, maxLevel);
             }
@@ -496,40 +519,34 @@ public final class GLServer extends Server {
             parameters.maxMipmapLevel = maxLevel;
         }
 
-        int srcFormat = mCaps.getPixelsExternalFormat(glFormat, dstColorType, srcColorType, /*write*/true);
-        if (srcFormat == 0) {
-            return false;
-        }
-        int srcType = mCaps.getPixelsExternalType(glFormat, dstColorType, srcColorType);
-        if (srcType == 0) {
-            return false;
-        }
-
         assert (x >= 0 && y >= 0 && width > 0 && height > 0);
         assert (pixels != 0);
         int bpp = ImageInfo.bytesPerPixel(srcColorType);
-
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
-        boolean restoreRowLength = false;
 
         int trimRowBytes = width * bpp;
         if (rowBytes != trimRowBytes) {
             int rowLength = rowBytes / bpp;
             glPixelStorei(GL_UNPACK_ROW_LENGTH, rowLength);
-            restoreRowLength = true;
+        } else {
+            glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
         }
 
+        glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
+        glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
         if (dsa) {
-            glTextureSubImage2D(glTexture.getHandle(), 0,
+            glTextureSubImage2D(texName, 0,
                     x, y, width, height, srcFormat, srcType, pixels);
         } else {
             glTexSubImage2D(GL_TEXTURE_2D, 0,
                     x, y, width, height, srcFormat, srcType, pixels);
         }
 
-        if (restoreRowLength) {
-            glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+        if (!dsa) {
+            if (texName != boundTexture) {
+                glBindTexture(GL_TEXTURE_2D, boundTexture);
+            }
         }
 
         return true;
@@ -537,14 +554,109 @@ public final class GLServer extends Server {
 
     @Override
     protected boolean onGenerateMipmaps(Texture texture) {
-        GLTexture tex = (GLTexture) texture;
+        var glTexture = (GLTexture) texture;
         if (mCaps.hasDSASupport()) {
-            glGenerateTextureMipmap(tex.getHandle());
+            glGenerateTextureMipmap(glTexture.getHandle());
         } else {
-            bindTextureForSetup(tex.getHandle());
+            var texName = glTexture.getHandle();
+            var boundTexture = glGetInteger(GL_TEXTURE_BINDING_2D);
+            if (texName != boundTexture) {
+                glBindTexture(GL_TEXTURE_2D, texName);
+            }
             glGenerateMipmap(GL_TEXTURE_2D);
+            if (texName != boundTexture) {
+                glBindTexture(GL_TEXTURE_2D, boundTexture);
+            }
         }
         return true;
+    }
+
+    @Override
+    protected boolean onCopySurface(Surface src,
+                                    int srcL, int srcT, int srcR, int srcB,
+                                    Surface dst,
+                                    int dstL, int dstT, int dstR, int dstB,
+                                    int filter) {
+        int srcWidth = srcR - srcL;
+        int srcHeight = srcB - srcT;
+        int dstWidth = dstR - dstL;
+        int dstHeight = dstB - dstT;
+
+        if (srcWidth == dstWidth && srcHeight == dstHeight) {
+            // no scaling
+            if (mCaps.hasCopyImageSupport() &&
+                    src.asTexture() instanceof GLTexture srcTex &&
+                    dst.asTexture() instanceof GLTexture dstTex &&
+                    mCaps.canCopyImage(
+                            srcTex.getGLFormat(), 1,
+                            dstTex.getGLFormat(), 1
+                    )) {
+                glCopyImageSubData(
+                        srcTex.getHandle(),
+                        GL_TEXTURE_2D,
+                        0,
+                        srcL, srcT, 0,
+                        dstTex.getHandle(),
+                        GL_TEXTURE_2D,
+                        0,
+                        dstL, dstT, 0,
+                        srcWidth, srcHeight, 1
+                );
+                return true;
+            }
+
+            if (src.asTexture() instanceof GLTexture srcTex &&
+                    dst.asTexture() instanceof GLTexture dstTex &&
+                    mCaps.canCopyTexSubImage(
+                            srcTex.getGLFormat(),
+                            dstTex.getGLFormat()
+                    )) {
+
+                int dstTexName = dstTex.getHandle();
+                int boundTexture = glGetInteger(GL_TEXTURE_BINDING_2D);
+                if (dstTexName != boundTexture) {
+                    glBindTexture(GL_TEXTURE_2D, dstTexName);
+                }
+
+                int[] framebuffer = mCopySrcFramebuffer;
+                if (framebuffer[0] == 0) {
+                    glGenFramebuffers(framebuffer);
+                }
+                int boundFramebuffer = glGetInteger(GL_READ_FRAMEBUFFER_BINDING);
+                glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer[0]);
+                glFramebufferTexture(
+                        GL_READ_FRAMEBUFFER,
+                        GL_COLOR_ATTACHMENT0,
+                        srcTex.getHandle(),
+                        0
+                );
+
+                glCopyTexSubImage2D(
+                        GL_TEXTURE_2D,
+                        0,
+                        dstL, dstT,
+                        srcL, srcT,
+                        srcWidth, srcHeight
+                );
+
+                glFramebufferTexture(
+                        GL_READ_FRAMEBUFFER,
+                        GL_COLOR_ATTACHMENT0,
+                        DEFAULT_TEXTURE,
+                        0);
+                glBindFramebuffer(GL_READ_FRAMEBUFFER, boundFramebuffer);
+
+                if (dstTexName != boundTexture) {
+                    glBindTexture(GL_TEXTURE_2D, boundTexture);
+                }
+
+                return true;
+            }
+        }
+
+        //TODO
+
+        return false;
     }
 
     @Override
@@ -751,6 +863,19 @@ public final class GLServer extends Server {
         return bufferState.mTarget;
     }
 
+    public void bindIndexBufferInPipe(@Nonnull GLBuffer buffer) {
+        assert !getCaps().hasDSASupport();
+
+        handleDirtyContext();
+
+        assert bufferUsageToType(buffer.getUsage()) == BUFFER_TYPE_INDEX;
+
+        // force rebind
+        var bufferState = mHWBufferStates[BUFFER_TYPE_INDEX];
+        glBindBuffer(bufferState.mTarget, buffer.getHandle());
+        bufferState.mBoundBufferUniqueID = buffer.getUniqueID();
+    }
+
     /**
      * Bind raw buffer ID to context (below OpenGL 4.5).
      *
@@ -773,19 +898,6 @@ public final class GLServer extends Server {
         bufferState.mBoundBufferUniqueID = INVALID_UNIQUE_ID;
 
         return bufferState.mTarget;
-    }
-
-    public void bindIndexBufferInPipe(@Nonnull GLBuffer buffer) {
-        assert !getCaps().hasDSASupport();
-
-        handleDirtyContext();
-
-        assert bufferUsageToType(buffer.getUsage()) == BUFFER_TYPE_INDEX;
-
-        // force rebind
-        var bufferState = mHWBufferStates[BUFFER_TYPE_INDEX];
-        glBindBuffer(bufferState.mTarget, buffer.getHandle());
-        bufferState.mBoundBufferUniqueID = buffer.getUniqueID();
     }
 
     public void bindTexture(int binding, GLTexture texture,
@@ -868,18 +980,6 @@ public final class GLServer extends Server {
         }
     }
 
-    /**
-     * Bind raw texture ID to a less used texture unit (below OpenGL 4.5).
-     *
-     * @param texture the nonzero texture ID
-     */
-    public void bindTextureForSetup(int texture) {
-        int lastUnit = mHWTextureStates.length - 1;
-        setTextureUnit(lastUnit);
-        mHWTextureStates[lastUnit] = INVALID_UNIQUE_ID;
-        glBindTexture(GL_TEXTURE_2D, texture);
-    }
-
     private int createTexture(int width, int height, int format, int levels) {
         assert (glFormatIsSupported(format));
         assert (!glFormatIsCompressed(format));
@@ -890,7 +990,7 @@ public final class GLServer extends Server {
         }
 
         assert (mCaps.isFormatTexturable(format));
-        int texture;
+        final int texture;
         if (mCaps.hasDSASupport()) {
             assert (mCaps.isTextureStorageCompatible(format));
             texture = glCreateTextures(GL_TEXTURE_2D);
@@ -912,41 +1012,45 @@ public final class GLServer extends Server {
             if (texture == 0) {
                 return 0;
             }
-            bindTextureForSetup(texture);
-
-            if (mCaps.isTextureStorageCompatible(format)) {
-                if (mCaps.skipErrorChecks()) {
-                    glTexStorage2D(GL_TEXTURE_2D, levels, internalFormat, width, height);
+            int boundTexture = glGetInteger(GL_TEXTURE_BINDING_2D);
+            glBindTexture(GL_TEXTURE_2D, texture);
+            try {
+                if (mCaps.isTextureStorageCompatible(format)) {
+                    if (mCaps.skipErrorChecks()) {
+                        glTexStorage2D(GL_TEXTURE_2D, levels, internalFormat, width, height);
+                    } else {
+                        glClearErrors();
+                        glTexStorage2D(GL_TEXTURE_2D, levels, internalFormat, width, height);
+                        if (glGetError() != GL_NO_ERROR) {
+                            glDeleteTextures(texture);
+                            return 0;
+                        }
+                    }
                 } else {
-                    glClearErrors();
-                    glTexStorage2D(GL_TEXTURE_2D, levels, internalFormat, width, height);
-                    if (glGetError() != GL_NO_ERROR) {
+                    final int externalFormat = mCaps.getFormatDefaultExternalFormat(format);
+                    final int externalType = mCaps.getFormatDefaultExternalType(format);
+                    final boolean checks = !mCaps.skipErrorChecks();
+                    int error = 0;
+                    if (checks) {
+                        glClearErrors();
+                    }
+                    for (int level = 0; level < levels; level++) {
+                        int currentWidth = Math.max(1, width >> level);
+                        int currentHeight = Math.max(1, height >> level);
+                        nglTexImage2D(GL_TEXTURE_2D, level, internalFormat,
+                                currentWidth, currentHeight,
+                                0, externalFormat, externalType, MemoryUtil.NULL);
+                        if (checks) {
+                            error |= glGetError();
+                        }
+                    }
+                    if (error != 0) {
                         glDeleteTextures(texture);
                         return 0;
                     }
                 }
-            } else {
-                final int externalFormat = mCaps.getFormatDefaultExternalFormat(format);
-                final int externalType = mCaps.getFormatDefaultExternalType(format);
-                final boolean checks = !mCaps.skipErrorChecks();
-                int error = 0;
-                if (checks) {
-                    glClearErrors();
-                }
-                for (int level = 0; level < levels; level++) {
-                    int currentWidth = Math.max(1, width >> level);
-                    int currentHeight = Math.max(1, height >> level);
-                    nglTexImage2D(GL_TEXTURE_2D, level, internalFormat,
-                            currentWidth, currentHeight,
-                            0, externalFormat, externalType, MemoryUtil.NULL);
-                    if (checks) {
-                        error |= glGetError();
-                    }
-                }
-                if (error != 0) {
-                    glDeleteTextures(texture);
-                    return 0;
-                }
+            } finally {
+                glBindTexture(GL_TEXTURE_2D, boundTexture);
             }
         }
 
@@ -1031,7 +1135,7 @@ public final class GLServer extends Server {
         return colorBuffer -> new GLRenderTarget(this,
                 colorBuffer.getWidth(),
                 colorBuffer.getHeight(),
-                colorBuffer.getFormat(),
+                colorBuffer.getGLFormat(),
                 samples,
                 framebuffer,
                 msaaFramebuffer,

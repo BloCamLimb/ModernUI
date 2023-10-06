@@ -35,17 +35,25 @@ package icyllis.arc3d.opengl;
 public final class GLTextureInfo {
 
     /**
-     * <code>GLuint</code> - texture name
+     * <code>GLenum</code> - image namespace
      */
-    public int texture;
+    public int target = GLCore.GL_TEXTURE_2D;
+    /**
+     * <code>GLuint</code> - image name
+     */
+    public int handle;
     /**
      * <code>GLenum</code> - sized internal format
      */
     public int format;
     /**
-     * <code>GLsizei</code> - number of texture levels
+     * <code>GLsizei</code> - number of mip levels
      */
     public int levels = 0;
+    /**
+     * <code>GLsizei</code> - number of samples
+     */
+    public int samples = 0;
     /**
      * <code>GLuint</code> - memory
      */
@@ -61,18 +69,22 @@ public final class GLTextureInfo {
     public int memoryHandle = -1;
 
     public void set(GLTextureInfo info) {
-        texture = info.texture;
+        target = info.target;
+        handle = info.handle;
         format = info.format;
         levels = info.levels;
+        samples = info.samples;
         memoryObject = info.memoryObject;
         memoryHandle = info.memoryHandle;
     }
 
     @Override
     public int hashCode() {
-        int h = texture;
+        int h = target;
+        h = 31 * h + handle;
         h = 31 * h + format;
         h = 31 * h + levels;
+        h = 31 * h + samples;
         h = 31 * h + memoryObject;
         h = 31 * h + memoryHandle;
         return h;
@@ -82,9 +94,11 @@ public final class GLTextureInfo {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o instanceof GLTextureInfo info)
-            return texture == info.texture &&
+            return target == info.target &&
+                    handle == info.handle &&
                     format == info.format &&
                     levels == info.levels &&
+                    samples == info.samples &&
                     memoryObject == info.memoryObject &&
                     memoryHandle == info.memoryHandle;
         return false;
@@ -93,9 +107,11 @@ public final class GLTextureInfo {
     @Override
     public String toString() {
         return '{' +
-                "texture=" + texture +
+                "target=" + target +
+                ", handle=" + handle +
                 ", format=" + GLCore.glFormatName(format) +
                 ", levels=" + levels +
+                ", samples=" + samples +
                 ", memoryObject=" + memoryObject +
                 ", memoryHandle=" + memoryHandle +
                 '}';

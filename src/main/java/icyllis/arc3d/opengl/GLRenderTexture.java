@@ -55,7 +55,7 @@ public final class GLRenderTexture extends GLTexture {
 
     @Nonnull
     @Override
-    public GLRenderTarget getRenderTarget() {
+    public GLRenderTarget asRenderTarget() {
         return mRenderTarget;
     }
 

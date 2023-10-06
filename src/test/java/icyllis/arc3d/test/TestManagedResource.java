@@ -343,7 +343,7 @@ public class TestManagedResource {
                     "MyTexture");
             if (texture != null) {
                 pw.println(texture);
-                pw.println(texture.getRenderTarget());
+                pw.println(texture.asRenderTarget());
                 texture.unref();
             }
             texture = dContext.getResourceProvider().createTexture(

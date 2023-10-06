@@ -74,6 +74,7 @@ public final class GLRenderTarget extends RenderTarget {
         mOwnership = true;
         mColorBuffer = colorBuffer;
         mMultisampleColorBuffer = msaaColorBuffer;
+        mSurfaceFlags |= colorBuffer.getSurfaceFlags();
     }
 
     // Constructor for instances wrapping backend objects. (no texture access)
@@ -215,7 +216,7 @@ public final class GLRenderTarget extends RenderTarget {
     }
 
     @Override
-    public GLTexture getColorBuffer() {
+    public GLTexture asTexture() {
         return mColorBuffer;
     }
 

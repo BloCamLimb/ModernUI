@@ -270,8 +270,8 @@ public final class ProxyProvider {
 
     @Nullable
     @SharedPtr
-    public RenderSurfaceProxy wrapBackendRenderTarget(BackendRenderTarget backendRenderTarget,
-                                                      Runnable rcReleaseCB) {
+    public RenderTargetProxy wrapBackendRenderTarget(BackendRenderTarget backendRenderTarget,
+                                                     Runnable rcReleaseCB) {
         if (mContext.isDiscarded()) {
             return null;
         }
@@ -288,7 +288,7 @@ public final class ProxyProvider {
             return null;
         }
 
-        return new RenderSurfaceProxy(fsr, 0);
+        return new RenderTargetProxy(fsr, 0);
     }
 
     /**

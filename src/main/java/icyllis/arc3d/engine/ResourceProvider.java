@@ -23,8 +23,6 @@ import icyllis.arc3d.core.*;
 
 import javax.annotation.Nullable;
 
-import static icyllis.arc3d.engine.Engine.*;
-
 /**
  * Provides resources with cache.
  */
@@ -106,7 +104,7 @@ public class ResourceProvider {
      * If {@link Surface#FLAG_APPROX_FIT} is also set, it always has no mipmaps.
      * <p>
      * When {@link Surface#FLAG_RENDERABLE} is set, the texture can be rendered to and
-     * {@link Surface#getRenderTarget()} will return nonnull. The <code>sampleCount</code>
+     * {@link Surface#asRenderTarget()} will return nonnull. The <code>sampleCount</code>
      * specifies the number of samples to use for rendering.
      * <p>
      * When {@link Surface#FLAG_PROTECTED} is set, the texture will be created as protected.
@@ -334,7 +332,7 @@ public class ResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public final RenderSurface wrapBackendRenderTarget(BackendRenderTarget backendRenderTarget) {
+    public final RenderTarget wrapBackendRenderTarget(BackendRenderTarget backendRenderTarget) {
         if (mServer.getContext().isDiscarded()) {
             return null;
         }

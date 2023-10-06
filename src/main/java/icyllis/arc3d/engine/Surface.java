@@ -161,6 +161,18 @@ public interface Surface {
      */
     int getSurfaceFlags();
 
+    /**
+     * If this object is texture, returns this.
+     * <p>
+     * If this object is framebuffer, returns the associated color buffer 0 if available,
+     * or null (only OpenGL can return null).
+     *
+     * @return raw ptr to the texture
+     */
+    default Texture asTexture() {
+        return null;
+    }
+
     ///// Common interface between RenderTexture and RenderSurface
     ///// The following methods are only valid when FLAG_RENDERABLE is set
 
@@ -174,11 +186,13 @@ public interface Surface {
     }
 
     /**
-     * Returns the underlying object who owns the framebuffers and additional surfaces of this RT.
+     * If this object is framebuffer, returns this.
+     * <p>
+     * If this object is texture, returns the associated framebuffer if renderable, otherwise null.
      *
-     * @return raw ptr to the framebuffer set associated with the RT, non-null or exception
+     * @return raw ptr to the framebuffer set associated with the RT, or null if non-renderable
      */
-    default RenderTarget getRenderTarget() {
-        throw new UnsupportedOperationException();
+    default RenderTarget asRenderTarget() {
+        return null;
     }
 }

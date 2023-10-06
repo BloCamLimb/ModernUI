@@ -146,6 +146,11 @@ public abstract class Texture extends Resource implements Surface {
         return flags;
     }
 
+    @Override
+    public Texture asTexture() {
+        return this;
+    }
+
     /**
      * @return external texture
      */
