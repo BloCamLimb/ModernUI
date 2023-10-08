@@ -22,6 +22,8 @@ package icyllis.arc3d.core;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.*;
+import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 
 /**
  * This class represents a 3x3 matrix and a 2D transformation, its components
@@ -118,7 +120,7 @@ public class Matrix implements Cloneable {
     public Matrix(float scaleX, float shearY, float persp0,
                   float shearX, float scaleY, float persp1,
                   float transX, float transY, float persp2) {
-        setAll(scaleX, shearY, persp0, shearX, scaleY, persp1, transX, transY, persp2);
+        set(scaleX, shearY, persp0, shearX, scaleY, persp1, transX, transY, persp2);
     }
 
     /**
@@ -627,9 +629,9 @@ public class Matrix implements Cloneable {
      * @param persp1 input y-axis values perspective factor to store
      * @param persp2 perspective scale factor to store
      */
-    public void setAll(float scaleX, float shearY, float persp0,
-                       float shearX, float scaleY, float persp1,
-                       float transX, float transY, float persp2) {
+    public void set(float scaleX, float shearY, float persp0,
+                    float shearX, float scaleY, float persp1,
+                    float transX, float transY, float persp2) {
         m11 = scaleX;
         m12 = shearY;
         m14 = persp0;
@@ -640,6 +642,222 @@ public class Matrix implements Cloneable {
         m42 = transY;
         m44 = persp2;
         mTypeMask = kUnknown_Mask;
+    }
+
+    /**
+     * Set the values in the matrix using a float array that contains
+     * the matrix elements in row-major order.
+     *
+     * @param a the array to copy from
+     */
+    public void set(@Nonnull float[] a) {
+        m11 = a[0];
+        m12 = a[1];
+        m14 = a[2];
+        m21 = a[3];
+        m22 = a[4];
+        m24 = a[5];
+        m41 = a[6];
+        m42 = a[7];
+        m44 = a[8];
+        mTypeMask = kUnknown_Mask;
+    }
+
+    /**
+     * Set the values in the matrix using a float array that contains
+     * the matrix elements in row-major order.
+     *
+     * @param a      the array to copy from
+     * @param offset the element offset
+     */
+    public void set(@Nonnull float[] a, int offset) {
+        m11 = a[offset];
+        m12 = a[offset + 1];
+        m14 = a[offset + 2];
+        m21 = a[offset + 3];
+        m22 = a[offset + 4];
+        m24 = a[offset + 5];
+        m41 = a[offset + 6];
+        m42 = a[offset + 7];
+        m44 = a[offset + 8];
+        mTypeMask = kUnknown_Mask;
+    }
+
+    /**
+     * Set the values in the matrix using a float array that contains
+     * the matrix elements in row-major order.
+     *
+     * @param a the array to copy from
+     */
+    public void set(@Nonnull ByteBuffer a) {
+        int offset = a.position();
+        m11 = a.getFloat(offset);
+        m12 = a.getFloat(offset + 4);
+        m14 = a.getFloat(offset + 8);
+        m21 = a.getFloat(offset + 12);
+        m22 = a.getFloat(offset + 16);
+        m24 = a.getFloat(offset + 20);
+        m41 = a.getFloat(offset + 24);
+        m42 = a.getFloat(offset + 28);
+        m44 = a.getFloat(offset + 32);
+        mTypeMask = kUnknown_Mask;
+    }
+
+    /**
+     * Set the values in the matrix using a float array that contains
+     * the matrix elements in row-major order.
+     *
+     * @param a the array to copy from
+     */
+    public void set(@Nonnull FloatBuffer a) {
+        int offset = a.position();
+        m11 = a.get(offset);
+        m12 = a.get(offset + 1);
+        m14 = a.get(offset + 2);
+        m21 = a.get(offset + 3);
+        m22 = a.get(offset + 4);
+        m24 = a.get(offset + 5);
+        m41 = a.get(offset + 6);
+        m42 = a.get(offset + 7);
+        m44 = a.get(offset + 8);
+        mTypeMask = kUnknown_Mask;
+    }
+
+    /**
+     * Set the values in the matrix using an address that contains
+     * the matrix elements in row-major order (UNSAFE).
+     *
+     * @param p the pointer of the array to copy from
+     */
+    public void set(long p) {
+        m11 = MemoryUtil.memGetFloat(p);
+        m12 = MemoryUtil.memGetFloat(p + 4);
+        m14 = MemoryUtil.memGetFloat(p + 8);
+        m21 = MemoryUtil.memGetFloat(p + 12);
+        m22 = MemoryUtil.memGetFloat(p + 16);
+        m24 = MemoryUtil.memGetFloat(p + 20);
+        m41 = MemoryUtil.memGetFloat(p + 24);
+        m42 = MemoryUtil.memGetFloat(p + 28);
+        m44 = MemoryUtil.memGetFloat(p + 32);
+        mTypeMask = kUnknown_Mask;
+    }
+
+    /**
+     * Set this matrix elements to be given matrix.
+     *
+     * @param m the matrix to store
+     */
+    public void store(@Nonnull Matrix m) {
+        m.set(this);
+    }
+
+    /**
+     * Store this matrix into the give float array in row-major order.
+     *
+     * @param a the array to store into
+     */
+    public void store(@Nonnull float[] a) {
+        a[0] = m11;
+        a[1] = m12;
+        a[2] = m14;
+        a[3] = m21;
+        a[4] = m22;
+        a[5] = m24;
+        a[6] = m41;
+        a[7] = m42;
+        a[8] = m44;
+    }
+
+    /**
+     * Store this matrix into the give float array in row-major order.
+     *
+     * @param a      the array to store into
+     * @param offset the element offset
+     */
+    public void store(@Nonnull float[] a, int offset) {
+        a[offset] = m11;
+        a[offset + 1] = m12;
+        a[offset + 2] = m14;
+        a[offset + 3] = m21;
+        a[offset + 4] = m22;
+        a[offset + 5] = m24;
+        a[offset + 6] = m41;
+        a[offset + 7] = m42;
+        a[offset + 8] = m44;
+    }
+
+    /**
+     * Store this matrix into the give float array in row-major order.
+     *
+     * @param a the pointer of the array to store
+     */
+    public void store(@Nonnull ByteBuffer a) {
+        int offset = a.position();
+        a.putFloat(offset, m11);
+        a.putFloat(offset + 4, m12);
+        a.putFloat(offset + 8, m14);
+        a.putFloat(offset + 12, m21);
+        a.putFloat(offset + 16, m22);
+        a.putFloat(offset + 20, m24);
+        a.putFloat(offset + 24, m41);
+        a.putFloat(offset + 28, m42);
+        a.putFloat(offset + 32, m44);
+    }
+
+    /**
+     * Store this matrix into the give float array in row-major order.
+     * The data matches std140 layout so it is not tightly packed.
+     *
+     * @param a the pointer of the array to store
+     */
+    public void storeAligned(@Nonnull ByteBuffer a) {
+        int offset = a.position();
+        a.putFloat(offset, m11);
+        a.putFloat(offset + 4, m12);
+        a.putFloat(offset + 8, m14);
+        a.putFloat(offset + 16, m21);
+        a.putFloat(offset + 20, m22);
+        a.putFloat(offset + 24, m24);
+        a.putFloat(offset + 32, m41);
+        a.putFloat(offset + 36, m42);
+        a.putFloat(offset + 40, m44);
+    }
+
+    /**
+     * Store this matrix into the give float array in row-major order.
+     *
+     * @param a the pointer of the array to store
+     */
+    public void store(@Nonnull FloatBuffer a) {
+        int offset = a.position();
+        a.put(offset, m11);
+        a.put(offset + 1, m12);
+        a.put(offset + 2, m14);
+        a.put(offset + 3, m21);
+        a.put(offset + 4, m22);
+        a.put(offset + 5, m24);
+        a.put(offset + 6, m41);
+        a.put(offset + 7, m42);
+        a.put(offset + 8, m44);
+    }
+
+    /**
+     * Store this matrix into the give float array in row-major order.
+     * The data matches std140 layout so it is not tightly packed.
+     *
+     * @param a the pointer of the array to store
+     */
+    public void storeAligned(@Nonnull FloatBuffer a) {
+        int offset = a.position();
+        a.put(offset, m11);
+        a.put(offset + 1, m12);
+        a.put(offset + 2, m14);
+        a.put(offset + 4, m21);
+        a.put(offset + 5, m22);
+        a.put(offset + 6, m24);
+        a.put(offset + 8, m41);
+        a.put(offset + 9, m42);
+        a.put(offset + 10, m44);
     }
 
     /**
@@ -685,9 +903,13 @@ public class Matrix implements Cloneable {
      * @return the determinant
      */
     public float determinant() {
-        return (m11 * m22 - m12 * m21) * m44 +
-                (m14 * m21 - m11 * m24) * m42 +
-                (m12 * m24 - m14 * m22) * m41;
+        if (hasPerspective()) {
+            return (m11 * m22 - m12 * m21) * m44 +
+                    (m14 * m21 - m11 * m24) * m42 +
+                    (m12 * m24 - m14 * m22) * m41;
+        } else {
+            return m11 * m22 - m12 * m21;
+        }
     }
 
     /**
@@ -697,24 +919,6 @@ public class Matrix implements Cloneable {
      */
     public float trace() {
         return m11 + m22 + m44;
-    }
-
-    /**
-     * Transpose this matrix.
-     */
-    public void transpose() {
-        final float f12 = m21;
-        final float f14 = m41;
-        final float f21 = m12;
-        final float f24 = m42;
-        final float f41 = m14;
-        final float f42 = m24;
-        m12 = f12;
-        m14 = f14;
-        m21 = f21;
-        m24 = f24;
-        m41 = f41;
-        m42 = f42;
     }
 
     /**
@@ -1273,6 +1477,134 @@ public class Matrix implements Cloneable {
     }
 
     /**
+     * Pre-multiplied this matrix by a shearing matrix (sx, sy) about pivot point (0, 0).
+     *
+     * @param sx horizontal shear factor
+     * @param sy vertical shear factor
+     */
+    public void preShear(float sx, float sy) {
+        int mask = getType();
+        if (mask == kIdentity_Mask) {
+            setShear(sx, sy);
+            return;
+        }
+        final float f11;
+        final float f12;
+        final float f14;
+        final float f21;
+        final float f22;
+        final float f24;
+        if ((mask & kPerspective_Mask) == 0) {
+            f11 = m11 + sy * m21;
+            f12 = m12 + sy * m22;
+            f14 = 0;
+            f21 = sx * m11 + m21;
+            f22 = sx * m12 + m22;
+            f24 = 0;
+            mTypeMask = kOnlyPerspectiveValid_Mask | kUnknown_Mask;
+        } else {
+            f11 = m11 + sy * m21;
+            f12 = m12 + sy * m22;
+            f14 = m14 + sy * m24;
+            f21 = sx * m11 + m21;
+            f22 = sx * m12 + m22;
+            f24 = sx * m14 + m24;
+            mTypeMask = kUnknown_Mask;
+        }
+        m11 = f11;
+        m12 = f12;
+        m14 = f14;
+        m21 = f21;
+        m22 = f22;
+        m24 = f24;
+    }
+
+    /**
+     * Post-multiplied this matrix by a shearing matrix (sx, sy) about pivot point (0, 0).
+     *
+     * @param sx horizontal shear factor
+     * @param sy vertical shear factor
+     */
+    public void postShear(float sx, float sy) {
+        int mask = getType();
+        if (mask == kIdentity_Mask) {
+            setShear(sx, sy);
+            return;
+        }
+        final float f11;
+        final float f12;
+        final float f21;
+        final float f22;
+        final float f41;
+        final float f42;
+        if ((mask & kPerspective_Mask) == 0) {
+            // both have no perspective
+            f11 = m11 + m12 * sx;
+            f12 = m11 * sy + m12;
+            f21 = m21 + m22 * sx;
+            f22 = m21 * sy + m22;
+            f41 = m41 + m42 * sx;
+            f42 = m41 * sy + m42;
+            mTypeMask = kOnlyPerspectiveValid_Mask | kUnknown_Mask;
+        } else {
+            f11 = m11 + m12 * sx;
+            f12 = m11 * sy + m12;
+            f21 = m21 + m22 * sx;
+            f22 = m21 * sy + m22;
+            f41 = m41 + m42 * sx;
+            f42 = m41 * sy + m42;
+            mTypeMask = kUnknown_Mask;
+        }
+        m11 = f11;
+        m12 = f12;
+        m21 = f21;
+        m22 = f22;
+        m41 = f41;
+        m42 = f42;
+    }
+
+    /**
+     * Set this matrix to shear by kx and ky, about a pivot point at (0, 0).
+     *
+     * @param sx horizontal shear factor
+     * @param sy vertical shear factor
+     */
+    public void setShear(float sx, float sy) {
+        m11 = 1;
+        m12 = sy;
+        m14 = 0;
+        m21 = sx;
+        m22 = 1;
+        m24 = 0;
+        m41 = 0;
+        m42 = 0;
+        m44 = 1;
+        mTypeMask = kOnlyPerspectiveValid_Mask | kUnknown_Mask;
+    }
+
+    /**
+     * Set this matrix to shear by kx and ky, about a pivot point at (px, py).
+     * The pivot point is unchanged when mapped with this matrix.
+     *
+     * @param sx horizontal shear factor
+     * @param sy vertical shear factor
+     * @param px pivot on x-axis
+     * @param py pivot on y-axis
+     */
+    public void setShear(float sx, float sy, float px, float py) {
+        m11 = 1;
+        m12 = sy;
+        m14 = 0;
+        m21 = sx;
+        m22 = 1;
+        m24 = 0;
+        m41 = -sx * py;
+        m42 = -sy * px;
+        m44 = 1;
+        mTypeMask = kOnlyPerspectiveValid_Mask | kUnknown_Mask;
+    }
+
+    /**
      * Sets rect to bounds of rect corners mapped by this matrix.
      * Returns true if mapped corners are dst corners.
      */
@@ -1334,6 +1666,13 @@ public class Matrix implements Cloneable {
 
     /**
      * Map a rectangle points in the X-Y plane to get the maximum bounds.
+     */
+    public void mapRect(@Nonnull Rect2i r) {
+        mapRect(r.mLeft, r.mTop, r.mRight, r.mBottom, r);
+    }
+
+    /**
+     * Map a rectangle points in the X-Y plane to get the maximum bounds.
      *
      * @param out the round values
      */
@@ -1353,81 +1692,131 @@ public class Matrix implements Cloneable {
     /**
      * Map a rectangle points in the X-Y plane to get the maximum bounds.
      *
-     * @param out the round values
+     * @param dst the round values
      */
-    public void mapRect(float l, float t, float r, float b, @Nonnull Rect2i out) {
-        float x1 = m11 * l + m21 * t + m41;
-        float y1 = m12 * l + m22 * t + m42;
-        float x2 = m11 * r + m21 * t + m41;
-        float y2 = m12 * r + m22 * t + m42;
-        float x3 = m11 * l + m21 * b + m41;
-        float y3 = m12 * l + m22 * b + m42;
-        float x4 = m11 * r + m21 * b + m41;
-        float y4 = m12 * r + m22 * b + m42;
-        if (hasPerspective()) {
-            // project
-            float w = 1.0f / (m14 * l + m24 * t + m44);
+    //@formatter:off
+    public void mapRect(float left, float top, float right, float bottom, @Nonnull Rect2i dst) {
+        int typeMask = getType();
+        if (typeMask <= kTranslate_Mask) {
+            dst.mLeft   = Math.round(left   + m41);
+            dst.mTop    = Math.round(top    + m42);
+            dst.mRight  = Math.round(right  + m41);
+            dst.mBottom = Math.round(bottom + m42);
+            return;
+        }
+        if ((typeMask & ~(kScale_Mask | kTranslate_Mask)) == 0) {
+            dst.mLeft =   Math.round(left   * m11 + m41);
+            dst.mTop =    Math.round(top    * m22 + m42);
+            dst.mRight =  Math.round(right  * m11 + m41);
+            dst.mBottom = Math.round(bottom * m22 + m42);
+            return;
+        }
+        float x1 = m11 * left +  m21 * top    + m41;
+        float y1 = m12 * left +  m22 * top    + m42;
+        float x2 = m11 * right + m21 * top    + m41;
+        float y2 = m12 * right + m22 * top    + m42;
+        float x3 = m11 * left +  m21 * bottom + m41;
+        float y3 = m12 * left +  m22 * bottom + m42;
+        float x4 = m11 * right + m21 * bottom + m41;
+        float y4 = m12 * right + m22 * bottom + m42;
+        if ((typeMask & kPerspective_Mask) != 0) {
+            float w;
+            w = 1.0f / (m14 * left  + m24 * top    + m44);
             x1 *= w;
             y1 *= w;
-            w = 1.0f / (m14 * r + m24 * t + m44);
+            w = 1.0f / (m14 * right + m24 * top    + m44);
             x2 *= w;
             y2 *= w;
-            w = 1.0f / (m14 * l + m24 * b + m44);
+            w = 1.0f / (m14 * left  + m24 * bottom + m44);
             x3 *= w;
             y3 *= w;
-            w = 1.0f / (m14 * r + m24 * b + m44);
+            w = 1.0f / (m14 * right + m24 * bottom + m44);
             x4 *= w;
             y4 *= w;
         }
-        out.mLeft = Math.round(MathUtil.min(x1, x2, x3, x4));
-        out.mTop = Math.round(MathUtil.min(y1, y2, y3, y4));
-        out.mRight = Math.round(MathUtil.max(x1, x2, x3, x4));
-        out.mBottom = Math.round(MathUtil.max(y1, y2, y3, y4));
+        dst.mLeft   = Math.round(MathUtil.min(x1, x2, x3, x4));
+        dst.mTop    = Math.round(MathUtil.min(y1, y2, y3, y4));
+        dst.mRight  = Math.round(MathUtil.max(x1, x2, x3, x4));
+        dst.mBottom = Math.round(MathUtil.max(y1, y2, y3, y4));
+    }
+    //@formatter:on
+
+    /**
+     * Map a rectangle points in the X-Y plane to get the maximum bounds.
+     */
+    public void mapRectOut(@Nonnull Rect2i r) {
+        mapRectOut(r.mLeft, r.mTop, r.mRight, r.mBottom, r);
     }
 
     /**
      * Map a rectangle points in the X-Y plane to get the maximum bounds.
      *
-     * @param result the round out values
+     * @param dst the round out values
      */
-    public void mapRectOut(@Nonnull Rect2i r, @Nonnull Rect2i result) {
-        mapRectOut(r.mLeft, r.mTop, r.mRight, r.mBottom, result);
+    public void mapRectOut(@Nonnull Rect2i r, @Nonnull Rect2i dst) {
+        mapRectOut(r.mLeft, r.mTop, r.mRight, r.mBottom, dst);
     }
 
     /**
      * Map a rectangle points in the X-Y plane to get the maximum bounds.
      *
-     * @param result the round out values
+     * @param dst the round out values
      */
-    public void mapRectOut(float l, float t, float r, float b, @Nonnull Rect2i result) {
-        float x1 = m11 * l + m21 * t + m41;
-        float y1 = m12 * l + m22 * t + m42;
-        float x2 = m11 * r + m21 * t + m41;
-        float y2 = m12 * r + m22 * t + m42;
-        float x3 = m11 * l + m21 * b + m41;
-        float y3 = m12 * l + m22 * b + m42;
-        float x4 = m11 * r + m21 * b + m41;
-        float y4 = m12 * r + m22 * b + m42;
-        if (hasPerspective()) {
-            // project
-            float w = 1.0f / (m14 * l + m24 * t + m44);
+    public void mapRectOut(@Nonnull Rect2f r, @Nonnull Rect2i dst) {
+        mapRectOut(r.mLeft, r.mTop, r.mRight, r.mBottom, dst);
+    }
+
+    /**
+     * Map a rectangle points in the X-Y plane to get the maximum bounds.
+     *
+     * @param dst the round out values
+     */
+    //@formatter:off
+    public void mapRectOut(float left, float top, float right, float bottom, @Nonnull Rect2i dst) {
+        int typeMask = getType();
+        if (typeMask <= kTranslate_Mask) {
+            dst.mLeft   = (int) Math.floor(left   + m41);
+            dst.mTop    = (int) Math.floor(top    + m42);
+            dst.mRight  = (int) Math.ceil (right  + m41);
+            dst.mBottom = (int) Math.ceil (bottom + m42);
+            return;
+        }
+        if ((typeMask & ~(kScale_Mask | kTranslate_Mask)) == 0) {
+            dst.mLeft =   (int) Math.floor(left   * m11 + m41);
+            dst.mTop =    (int) Math.floor(top    * m22 + m42);
+            dst.mRight =  (int) Math.ceil (right  * m11 + m41);
+            dst.mBottom = (int) Math.ceil (bottom * m22 + m42);
+            return;
+        }
+        float x1 = m11 * left +  m21 * top    + m41;
+        float y1 = m12 * left +  m22 * top    + m42;
+        float x2 = m11 * right + m21 * top    + m41;
+        float y2 = m12 * right + m22 * top    + m42;
+        float x3 = m11 * left +  m21 * bottom + m41;
+        float y3 = m12 * left +  m22 * bottom + m42;
+        float x4 = m11 * right + m21 * bottom + m41;
+        float y4 = m12 * right + m22 * bottom + m42;
+        if ((typeMask & kPerspective_Mask) != 0) {
+            float w;
+            w = 1.0f / (m14 * left  + m24 * top    + m44);
             x1 *= w;
             y1 *= w;
-            w = 1.0f / (m14 * r + m24 * t + m44);
+            w = 1.0f / (m14 * right + m24 * top    + m44);
             x2 *= w;
             y2 *= w;
-            w = 1.0f / (m14 * l + m24 * b + m44);
+            w = 1.0f / (m14 * left  + m24 * bottom + m44);
             x3 *= w;
             y3 *= w;
-            w = 1.0f / (m14 * r + m24 * b + m44);
+            w = 1.0f / (m14 * right + m24 * bottom + m44);
             x4 *= w;
             y4 *= w;
         }
-        result.mLeft = (int) Math.floor(MathUtil.min(x1, x2, x3, x4));
-        result.mTop = (int) Math.floor(MathUtil.min(y1, y2, y3, y4));
-        result.mRight = (int) Math.ceil(MathUtil.max(x1, x2, x3, x4));
-        result.mBottom = (int) Math.ceil(MathUtil.max(y1, y2, y3, y4));
+        dst.mLeft   = (int) Math.floor(MathUtil.min(x1, x2, x3, x4));
+        dst.mTop    = (int) Math.floor(MathUtil.min(y1, y2, y3, y4));
+        dst.mRight  = (int) Math.ceil (MathUtil.max(x1, x2, x3, x4));
+        dst.mBottom = (int) Math.ceil (MathUtil.max(y1, y2, y3, y4));
     }
+    //@formatter:on
 
     public void mapPoint(float[] p) {
         float x1 = m11 * p[0] + m21 * p[1] + m41;
@@ -1447,15 +1836,18 @@ public class Matrix implements Cloneable {
      * and therefore faster (e.g. clients can forward-difference calculations).
      */
     public void normalizePerspective() {
-        if (m44 != 1 && m44 != 0 && m14 == 0 && m24 == 0) {
-            float inv = 1.0f / m44;
-            m11 *= inv;
-            m12 *= inv;
-            m21 *= inv;
-            m22 *= inv;
-            m41 *= inv;
-            m42 *= inv;
-            m44 = 1.0f;
+        if (m44 != 1 && m14 == 0 && m24 == 0) {
+            if (m44 != 0) {
+                double inv = 1.0 / m44;
+                m11 = (float) (m11 * inv);
+                m12 = (float) (m12 * inv);
+                m21 = (float) (m21 * inv);
+                m22 = (float) (m22 * inv);
+                m41 = (float) (m41 * inv);
+                m42 = (float) (m42 * inv);
+                m44 = 1.0f;
+            }
+            mTypeMask = kUnknown_Mask;
         }
     }
 
