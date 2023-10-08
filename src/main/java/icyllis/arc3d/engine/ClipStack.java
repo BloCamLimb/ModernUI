@@ -596,7 +596,7 @@ public final class ClipStack extends Clip {
             // treated as a degenerate case of rrect+rrect).
             boolean shapeUpdated = false;
 
-            if (mViewMatrix.equal(other.mViewMatrix)) {
+            if (Matrix.equals(mViewMatrix, other.mInverseViewMatrix)) {
                 if (!mRect.intersect(other.mRect)) {
                     // By floating point, it turns out the combination should be empty
                     mRect.setEmpty();
@@ -720,7 +720,7 @@ public final class ClipStack extends Clip {
         // we can compare the original shapes. When the modes are mixed, we outset B in device space first.
         static boolean rectContainsRect(Rect2f a, Matrix aToDevice, Matrix deviceToA,
                                         Rect2f b, Matrix bToDevice, boolean mixedAAMode) {
-            if (!mixedAAMode && aToDevice.equal(bToDevice)) {
+            if (!mixedAAMode && Matrix.equals(aToDevice, bToDevice)) {
                 // A and B are in the same coordinate space, so don't bother mapping
                 return a.contains(b);
             } else if (bToDevice.isIdentity() && aToDevice.isAxisAligned()) {

@@ -25,7 +25,7 @@ import javax.annotation.Nonnull;
  * The NoPixelsDevice draws nothing, but tracks device's clip.
  * Used for deferred rendering.
  */
-public class NoPixelsDevice extends BaseDevice {
+public class NoPixelsDevice extends Device {
 
     // cache some objects and their references for performance
     private static final int CLIP_POOL_SIZE = 16;
@@ -159,7 +159,11 @@ public class NoPixelsDevice extends BaseDevice {
     }
 
     @Override
-    protected void drawPaint(Paint paint) {
+    public void drawPaint(Paint paint) {
+    }
+
+    @Override
+    public void drawRect(Rect2f r, Paint paint) {
     }
 
     /**

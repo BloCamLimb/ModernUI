@@ -24,18 +24,18 @@ import icyllis.arc3d.core.*;
 /**
  * The drawing device is backed by GPU.
  */
-public final class ServerDevice extends BaseDevice {
+public final class SurfaceDevice extends Device {
 
     private ClipStack mClipStack;
 
-    private ServerDevice(SurfaceDrawContext context, ImageInfo info, boolean clear) {
+    private SurfaceDevice(SurfaceDrawContext context, ImageInfo info, boolean clear) {
         super(info);
     }
 
     @SharedPtr
-    private static ServerDevice make(SurfaceDrawContext sdc,
-                                     int alphaType,
-                                     boolean clear) {
+    private static SurfaceDevice make(SurfaceDrawContext sdc,
+                                      int alphaType,
+                                      boolean clear) {
         if (sdc == null) {
             return null;
         }
@@ -49,20 +49,20 @@ public final class ServerDevice extends BaseDevice {
         int colorType = Engine.colorTypeToPublic(sdc.getColorType());
         if (rContext.isSurfaceCompatible(colorType)) {
             ImageInfo info = new ImageInfo(sdc.getWidth(), sdc.getHeight(), colorType, alphaType, null);
-            return new ServerDevice(sdc, info, clear);
+            return new SurfaceDevice(sdc, info, clear);
         }
         return null;
     }
 
     @SharedPtr
-    public static ServerDevice make(RecordingContext rContext,
-                                    int colorType,
-                                    int alphaType,
-                                    int width, int height,
-                                    int sampleCount,
-                                    int surfaceFlags,
-                                    int origin,
-                                    boolean clear) {
+    public static SurfaceDevice make(RecordingContext rContext,
+                                     int colorType,
+                                     int alphaType,
+                                     int width, int height,
+                                     int sampleCount,
+                                     int surfaceFlags,
+                                     int origin,
+                                     boolean clear) {
         if (rContext == null) {
             return null;
         }
@@ -72,11 +72,11 @@ public final class ServerDevice extends BaseDevice {
     }
 
     @SharedPtr
-    public static ServerDevice make(RecordingContext rContext,
-                                    int colorType,
-                                    SurfaceProxy proxy,
-                                    int origin,
-                                    boolean clear) {
+    public static SurfaceDevice make(RecordingContext rContext,
+                                     int colorType,
+                                     SurfaceProxy proxy,
+                                     int origin,
+                                     boolean clear) {
         if (rContext == null) {
             return null;
         }
@@ -106,7 +106,12 @@ public final class ServerDevice extends BaseDevice {
     }
 
     @Override
-    protected void drawPaint(Paint paint) {
+    public void drawPaint(Paint paint) {
+
+    }
+
+    @Override
+    public void drawRect(Rect2f r, Paint paint) {
 
     }
 }

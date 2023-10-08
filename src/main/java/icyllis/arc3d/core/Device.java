@@ -28,23 +28,24 @@ import javax.annotation.Nullable;
 /**
  * Base class for drawing devices.
  */
-public abstract class BaseDevice extends RefCnt implements MatrixProvider {
+public abstract class Device extends RefCnt implements MatrixProvider {
 
     protected static final int
             CLIP_TYPE_EMPTY = 0,
             CLIP_TYPE_RECT = 1,
             CLIP_TYPE_COMPLEX = 2;
 
-    final ImageInfo mInfo;
+    protected final ImageInfo mInfo;
     protected final Rect2i mBounds = new Rect2i();
 
     final Matrix4 mLocalToDevice = Matrix4.identity();
+    final Matrix mLocalToDevice33 = new Matrix();
 
     // mDeviceToGlobal and mGlobalToDevice are inverses of each other
     final Matrix4 mDeviceToGlobal = Matrix4.identity();
     final Matrix4 mGlobalToDevice = Matrix4.identity();
 
-    public BaseDevice(ImageInfo info) {
+    public Device(ImageInfo info) {
         mInfo = info;
         mBounds.set(0, 0, info.width(), info.height());
     }
@@ -151,7 +152,7 @@ public abstract class BaseDevice extends RefCnt implements MatrixProvider {
      * that device is drawn to the root device, the net effect will be that this device's contents
      * have been transformed by the global transform.
      */
-    public final void getRelativeTransform(@Nonnull BaseDevice device, @Nonnull Matrix4 dest) {
+    public final void getRelativeTransform(@Nonnull Device device, @Nonnull Matrix4 dest) {
         // To get the transform from this space to the other device's, transform from our space to
         // global and then from global to the other device.
         dest.set(mDeviceToGlobal);
@@ -271,12 +272,10 @@ public abstract class BaseDevice extends RefCnt implements MatrixProvider {
 
     protected abstract Rect2i getClipBounds();
 
-    /**
-     * These are called inside the per-device-layer loop for each draw call.
-     * When these are called, we have already applied any saveLayer operations,
-     * and are handling any looping from the paint.
-     */
-    protected abstract void drawPaint(Paint paint);
+    public abstract void drawPaint(Paint paint);
+
+    public abstract void drawRect(Rect2f r,
+                                  Paint paint);
 
     @Nullable
     protected Surface makeSurface(ImageInfo info) {
@@ -293,7 +292,7 @@ public abstract class BaseDevice extends RefCnt implements MatrixProvider {
      * that contract it should return null.
      */
     @Nullable
-    protected BaseDevice createDevice(ImageInfo info, @Nullable Paint paint) {
+    protected Device createDevice(ImageInfo info, @Nullable Paint paint) {
         return null;
     }
 }
