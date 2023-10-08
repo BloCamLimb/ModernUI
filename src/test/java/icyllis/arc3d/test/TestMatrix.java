@@ -33,11 +33,11 @@ public class TestMatrix {
 
         float epsilon = calcMachineEpsilon();
 
-        log(pw, m -> m.setAll(1, 0, 0,
+        log(pw, m -> m.set(1, 0, 0,
                 0, 1, 0,
                 Float.NaN, 0, 1));
 
-        log(pw, m -> m.setAll(0.7f, 0, 0,
+        log(pw, m -> m.set(0.7f, 0, 0,
                 0, 0.5f, 0,
                 0, 0, 1));
 
@@ -47,12 +47,30 @@ public class TestMatrix {
         });
 
         log(pw, m -> {
-            m.setAll(2.5f, 0, 0,
+            m.set(2.5f, 0, 0,
                     0, 3.5f, 0,
                     20, 50, 1);
             boolean res = m.invert();
             pw.println("Invert: " + res);
         });
+
+        log(pw, m -> {
+            m.set(2.5f, 0, 0,
+                    0, 3.5f, 1,
+                    20, 50, 1);
+        });
+
+        Matrix m1 = new Matrix(2.5f, 0, 0,
+                0, 3.5f, 1,
+                20, 50, 1);
+        Matrix m2 = new Matrix(m1);
+
+        m1.preShear(0.2f, -0.25f);
+        Matrix m3 = new Matrix();
+        m3.setShear(0.2f, -0.25f);
+        m2.preConcat(m3);
+
+        pw.println(Matrix.equals(m1, m2));
     }
 
     public static void log(PrintWriter pw, Consumer<Matrix> c) {
