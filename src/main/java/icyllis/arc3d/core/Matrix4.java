@@ -2964,7 +2964,7 @@ public class Matrix4 implements Cloneable {
      */
     @Nonnull
     public Matrix toMatrix() {
-        return Matrix.makeAll(
+        return new Matrix(
                 m11, m12, m14,
                 m21, m22, m24,
                 m41, m42, m44
@@ -3087,11 +3087,10 @@ public class Matrix4 implements Cloneable {
     public String toString() {
         return String.format("""
                         Matrix4:
-                        %10.5f %10.5f %10.5f %10.5f
-                        %10.5f %10.5f %10.5f %10.5f
-                        %10.5f %10.5f %10.5f %10.5f
-                        %10.5f %10.5f %10.5f %10.5f
-                        """,
+                        %10.6f %10.6f %10.6f %10.6f
+                        %10.6f %10.6f %10.6f %10.6f
+                        %10.6f %10.6f %10.6f %10.6f
+                        %10.6f %10.6f %10.6f %10.6f""",
                 m11, m12, m13, m14,
                 m21, m22, m23, m24,
                 m31, m32, m33, m34,

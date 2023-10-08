@@ -829,7 +829,7 @@ public final class GLCaps extends Caps {
                 }
             }
 
-            // Added by Modern UI, this is useful for grayscale PNG image rendering.
+            // Added by Arc 3D, this is useful for grayscale PNG image rendering.
             // Format: RG8, Surface: kGrayAlpha_88
             {
                 ColorTypeInfo ctInfo = info.mColorTypeInfos[1] = new ColorTypeInfo();

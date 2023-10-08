@@ -34,12 +34,12 @@ import javax.annotation.Nullable;
 public class Surface extends RefCnt {
 
     @SharedPtr
-    private BaseDevice mDevice;
+    private Device mDevice;
 
     // unique ptr
     private Canvas mCachedCanvas;
 
-    public Surface(@SharedPtr BaseDevice device) {
+    public Surface(@SharedPtr Device device) {
         mDevice = device;
     }
 
@@ -138,7 +138,7 @@ public class Surface extends RefCnt {
         if (fsp == null) {
             return null;
         }
-        var dev = ServerDevice.make(rContext,
+        var dev = SurfaceDevice.make(rContext,
                 colorType,
                 fsp,
                 origin,

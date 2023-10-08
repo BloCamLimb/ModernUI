@@ -59,13 +59,15 @@ public class Matrix implements Cloneable {
      * <p>
      * This bit will be set on identity matrices
      */
-    private static final int AxisAligned_Mask = 0x10;
+    protected static final int kAxisAligned_Mask = 0x10;
     /**
      * Set if the perspective bit is valid even though the rest of
      * the matrix is Unknown.
      */
-    private static final int OnlyPerspectiveValid_Mask = 0x40;
-    private static final int Unknown_Mask = 0x80;
+    protected static final int kOnlyPerspectiveValid_Mask = 0x40;
+    protected static final int kUnknown_Mask = 0x80;
+
+    protected static final int kAxisAligned_Shift = 4;
 
     // sequential matrix elements, m(ij) (row, column)
     // directly using primitives will be faster than array in Java
@@ -89,11 +91,34 @@ public class Matrix implements Cloneable {
      */
     public Matrix() {
         m11 = m22 = m44 = 1.0f;
-        mTypeMask = kIdentity_Mask | AxisAligned_Mask;
+        mTypeMask = kIdentity_Mask | kAxisAligned_Mask;
     }
 
-    public Matrix(Matrix m) {
+    /**
+     * Create a new matrix copied from the given matrix.
+     */
+    public Matrix(@Nonnull Matrix m) {
         set(m);
+    }
+
+    /**
+     * Create a new matrix from the given elements.
+     * The order matches GLSL's column major.
+     *
+     * @param scaleX the value of m11
+     * @param shearY the value of m12
+     * @param persp0 the value of m14
+     * @param shearX the value of m21
+     * @param scaleY the value of m22
+     * @param persp1 the value of m24
+     * @param transX the value of m41
+     * @param transY the value of m42
+     * @param persp2 the value of m44
+     */
+    public Matrix(float scaleX, float shearY, float persp0,
+                  float shearX, float scaleY, float persp1,
+                  float transX, float transY, float persp2) {
+        setAll(scaleX, shearY, persp0, shearX, scaleY, persp1, transX, transY, persp2);
     }
 
     /**
@@ -104,29 +129,6 @@ public class Matrix implements Cloneable {
     @Nonnull
     public static Matrix identity() {
         return new Matrix();
-    }
-
-    /**
-     * Create a new matrix from the given elements.
-     *
-     * @param scaleX the value of m11
-     * @param shearY the value of m12
-     * @param persp0 the value of m13
-     * @param shearX the value of m21
-     * @param scaleY the value of m22
-     * @param persp1 the value of m23
-     * @param transX the value of m31
-     * @param transY the value of m32
-     * @param persp2 the value of m33
-     * @return the matrix
-     */
-    @Nonnull
-    public static Matrix makeAll(float scaleX, float shearY, float persp0,
-                                 float shearX, float scaleY, float persp1,
-                                 float transX, float transY, float persp2) {
-        final Matrix m = new Matrix();
-        m.setAll(scaleX, shearY, persp0, shearX, scaleY, persp1, transX, transY, persp2);
-        return m;
     }
 
     public float m11() {
@@ -255,7 +257,7 @@ public class Matrix implements Cloneable {
      * Affine_Mask, Perspective_Mask
      */
     public int getType() {
-        if ((mTypeMask & Unknown_Mask) != 0) {
+        if ((mTypeMask & kUnknown_Mask) != 0) {
             mTypeMask = computeTypeMask();
         }
         // only return the public masks
@@ -296,22 +298,22 @@ public class Matrix implements Cloneable {
      * @return true if this matrix transform one rect into another
      */
     public boolean isAxisAligned() {
-        if ((mTypeMask & Unknown_Mask) != 0) {
+        if ((mTypeMask & kUnknown_Mask) != 0) {
             mTypeMask = computeTypeMask();
         }
-        return (mTypeMask & AxisAligned_Mask) != 0;
+        return (mTypeMask & kAxisAligned_Mask) != 0;
     }
 
     /**
-     * Returns true if SkMatrix contains only translation, rotation, reflection, and
-     * scale. Scale may differ along rotated axes.
-     * Returns false if SkMatrix skewing, perspective, or degenerate forms that collapse
+     * Returns true if this matrix contains only translation, rotation, reflection, and
+     * scale. Scale may differ along rotated axes.<br>
+     * Returns false if this matrix shearing, perspective, or degenerate forms that collapse
      * to a line or point.
      * <p>
      * Preserves right angles, but not requiring that the arms of the angle
      * retain equal lengths.
      *
-     * @return true if Matrix only rotates, scales, translates
+     * @return true if this matrix only rotates, scales, translates
      */
     public boolean preservesRightAngles() {
         int mask = getType();
@@ -324,16 +326,20 @@ public class Matrix implements Cloneable {
             return false;
         }
 
+        assert (mask & (kAffine_Mask | kScale_Mask)) != 0;
+
         float mx = m11;
         float my = m22;
         float sx = m21;
         float sy = m12;
 
         // check if upper-left 2x2 of matrix is degenerate
-        if (MathUtil.isApproxZero(mx * my - sx * sy)) {
+        float det22 = mx * my - sx * sy;
+        if (MathUtil.isApproxZero(det22)) {
             return false;
         }
 
+        // upper 2x2 is scale + rotation/reflection if basis vectors are orthogonal
         return MathUtil.isApproxZero(mx * sx + sy * my);
     }
 
@@ -343,8 +349,8 @@ public class Matrix implements Cloneable {
      * @return true if this matrix is in most general form
      */
     public boolean hasPerspective() {
-        if ((mTypeMask & Unknown_Mask) != 0 &&
-                (mTypeMask & OnlyPerspectiveValid_Mask) == 0) {
+        if ((mTypeMask & kUnknown_Mask) != 0 &&
+                (mTypeMask & kOnlyPerspectiveValid_Mask) == 0) {
             mTypeMask = computePerspectiveTypeMask();
         }
         return (mTypeMask & kPerspective_Mask) != 0;
@@ -377,74 +383,170 @@ public class Matrix implements Cloneable {
         float my = m22;
         // if no shear, can just compare scale factors
         if ((mask & kAffine_Mask) == 0) {
-            return !MathUtil.isApproxZero(mx) && MathUtil.isApproxEqual(Math.abs(mx), Math.abs(my));
+            return !MathUtil.isApproxZero(mx) &&
+                    MathUtil.isApproxEqual(Math.abs(mx), Math.abs(my));
         }
         float sx = m21;
         float sy = m12;
 
         // check if upper-left 2x2 of matrix is degenerate
-        if (MathUtil.isApproxZero(mx * my - sx * sy)) {
+        float det22 = mx * my - sx * sy;
+        if (MathUtil.isApproxZero(det22)) {
             return false;
         }
 
         // upper 2x2 is rotation/reflection + uniform scale if basis vectors
         // are 90 degree rotations of each other
-        return (MathUtil.isApproxEqual(mx, my) && MathUtil.isApproxEqual(sx, -sy))
-                || (MathUtil.isApproxEqual(mx, -my) && MathUtil.isApproxEqual(sx, sy));
+        return (MathUtil.isApproxEqual(mx, my) && MathUtil.isApproxEqual(sx, -sy)) ||
+                (MathUtil.isApproxEqual(mx, -my) && MathUtil.isApproxEqual(sx, sy));
     }
 
     /**
-     * Pre-multiply this matrix by the given matrix.
-     * (mat3 * this)
+     * Pre-multiply this matrix by the given <code>lhs</code> matrix.
+     * <p>
+     * If <code>M</code> is <code>this</code> matrix and <code>L</code> the <code>lhs</code>
+     * matrix, then the new matrix will be <code>L * M</code> (row-major). So when transforming
+     * a vector <code>v</code> with the new matrix by using <code>v * L * M</code>, the
+     * transformation of the left-hand side matrix will be applied first.
      *
-     * @param mat the matrix to multiply
+     * @param lhs the left-hand side matrix to multiply
      */
-    public void preConcat(@Nonnull Matrix mat) {
-        final float f11 = mat.m11 * m11 + mat.m12 * m21 + mat.m14 * m41;
-        final float f12 = mat.m11 * m12 + mat.m12 * m22 + mat.m14 * m42;
-        final float f13 = mat.m11 * m14 + mat.m12 * m24 + mat.m14 * m44;
-        final float f21 = mat.m21 * m11 + mat.m22 * m21 + mat.m24 * m41;
-        final float f22 = mat.m21 * m12 + mat.m22 * m22 + mat.m24 * m42;
-        final float f23 = mat.m21 * m14 + mat.m22 * m24 + mat.m24 * m44;
-        final float f31 = mat.m41 * m11 + mat.m42 * m21 + mat.m44 * m41;
-        final float f32 = mat.m41 * m12 + mat.m42 * m22 + mat.m44 * m42;
-        final float f33 = mat.m41 * m14 + mat.m42 * m24 + mat.m44 * m44;
+    public void preConcat(@Nonnull Matrix lhs) {
+        int bMask = getType();
+        if (bMask == kIdentity_Mask) {
+            set(lhs);
+            return;
+        }
+        int aMask = lhs.getType();
+        if (aMask == kIdentity_Mask) {
+            return;
+        }
+        if (((aMask | bMask) & (kAffine_Mask | kPerspective_Mask)) == 0) {
+            // both are ScaleTranslate
+            setScaleTranslate(
+                    /*m11*/ lhs.m11 * m11,
+                    /*m22*/ lhs.m22 * m22,
+                    /*m41*/ lhs.m41 * m11 + m41,
+                    /*m42*/ lhs.m42 * m22 + m42
+            );
+            return;
+        }
+        final float f11;
+        final float f12;
+        final float f14;
+        final float f21;
+        final float f22;
+        final float f24;
+        final float f41;
+        final float f42;
+        final float f44;
+        if (((aMask | bMask) & kPerspective_Mask) == 0) {
+            // both have no perspective
+            f11 = lhs.m11 * m11 + lhs.m12 * m21;
+            f12 = lhs.m11 * m12 + lhs.m12 * m22;
+            f14 = 0;
+            f21 = lhs.m21 * m11 + lhs.m22 * m21;
+            f22 = lhs.m21 * m12 + lhs.m22 * m22;
+            f24 = 0;
+            f41 = lhs.m41 * m11 + lhs.m42 * m21 + m41;
+            f42 = lhs.m41 * m12 + lhs.m42 * m22 + m42;
+            f44 = 1;
+            mTypeMask = kOnlyPerspectiveValid_Mask | kUnknown_Mask;
+        } else {
+            f11 = lhs.m11 * m11 + lhs.m12 * m21 + lhs.m14 * m41;
+            f12 = lhs.m11 * m12 + lhs.m12 * m22 + lhs.m14 * m42;
+            f14 = lhs.m11 * m14 + lhs.m12 * m24 + lhs.m14 * m44;
+            f21 = lhs.m21 * m11 + lhs.m22 * m21 + lhs.m24 * m41;
+            f22 = lhs.m21 * m12 + lhs.m22 * m22 + lhs.m24 * m42;
+            f24 = lhs.m21 * m14 + lhs.m22 * m24 + lhs.m24 * m44;
+            f41 = lhs.m41 * m11 + lhs.m42 * m21 + lhs.m44 * m41;
+            f42 = lhs.m41 * m12 + lhs.m42 * m22 + lhs.m44 * m42;
+            f44 = lhs.m41 * m14 + lhs.m42 * m24 + lhs.m44 * m44;
+            mTypeMask = kUnknown_Mask;
+        }
         m11 = f11;
         m12 = f12;
-        m14 = f13;
+        m14 = f14;
         m21 = f21;
         m22 = f22;
-        m24 = f23;
-        m41 = f31;
-        m42 = f32;
-        m44 = f33;
+        m24 = f24;
+        m41 = f41;
+        m42 = f42;
+        m44 = f44;
     }
 
     /**
-     * Post-multiply this matrix by the given matrix.
-     * (this * mat3)
+     * Post-multiply this matrix by the given <code>rhs</code> matrix.
+     * <p>
+     * If <code>M</code> is <code>this</code> matrix and <code>R</code> the <code>rhs</code>
+     * matrix, then the new matrix will be <code>M * R</code> (row-major). So when transforming
+     * a vector <code>v</code> with the new matrix by using <code>v * M * R</code>, the
+     * transformation of <code>this</code> matrix will be applied first.
      *
-     * @param mat the matrix to multiply
+     * @param rhs the right-hand side matrix to multiply
      */
-    public void postConcat(@Nonnull Matrix mat) {
-        final float f11 = m11 * mat.m11 + m12 * mat.m21 + m14 * mat.m41;
-        final float f12 = m11 * mat.m12 + m12 * mat.m22 + m14 * mat.m42;
-        final float f13 = m11 * mat.m14 + m12 * mat.m24 + m14 * mat.m44;
-        final float f21 = m21 * mat.m11 + m22 * mat.m21 + m24 * mat.m41;
-        final float f22 = m21 * mat.m12 + m22 * mat.m22 + m24 * mat.m42;
-        final float f23 = m21 * mat.m14 + m22 * mat.m24 + m24 * mat.m44;
-        final float f31 = m41 * mat.m11 + m42 * mat.m21 + m44 * mat.m41;
-        final float f32 = m41 * mat.m12 + m42 * mat.m22 + m44 * mat.m42;
-        final float f33 = m41 * mat.m14 + m42 * mat.m24 + m44 * mat.m44;
+    public void postConcat(@Nonnull Matrix rhs) {
+        int aMask = getType();
+        if (aMask == kIdentity_Mask) {
+            set(rhs);
+            return;
+        }
+        int bMask = rhs.getType();
+        if (bMask == kIdentity_Mask) {
+            return;
+        }
+        if (((aMask | bMask) & (kAffine_Mask | kPerspective_Mask)) == 0) {
+            // both are ScaleTranslate
+            setScaleTranslate(
+                    /*m11*/ m11 * rhs.m11,
+                    /*m22*/ m22 * rhs.m22,
+                    /*m41*/ m41 * rhs.m11 + rhs.m41,
+                    /*m42*/ m42 * rhs.m22 + rhs.m42
+            );
+            return;
+        }
+        final float f11;
+        final float f12;
+        final float f14;
+        final float f21;
+        final float f22;
+        final float f24;
+        final float f41;
+        final float f42;
+        final float f44;
+        if (((aMask | bMask) & kPerspective_Mask) == 0) {
+            // both have no perspective
+            f11 = m11 * rhs.m11 + m12 * rhs.m21;
+            f12 = m11 * rhs.m12 + m12 * rhs.m22;
+            f14 = 0;
+            f21 = m21 * rhs.m11 + m22 * rhs.m21;
+            f22 = m21 * rhs.m12 + m22 * rhs.m22;
+            f24 = 0;
+            f41 = m41 * rhs.m11 + m42 * rhs.m21 + rhs.m41;
+            f42 = m41 * rhs.m12 + m42 * rhs.m22 + rhs.m42;
+            f44 = 1;
+            mTypeMask = kOnlyPerspectiveValid_Mask | kUnknown_Mask;
+        } else {
+            f11 = m11 * rhs.m11 + m12 * rhs.m21 + m14 * rhs.m41;
+            f12 = m11 * rhs.m12 + m12 * rhs.m22 + m14 * rhs.m42;
+            f14 = m11 * rhs.m14 + m12 * rhs.m24 + m14 * rhs.m44;
+            f21 = m21 * rhs.m11 + m22 * rhs.m21 + m24 * rhs.m41;
+            f22 = m21 * rhs.m12 + m22 * rhs.m22 + m24 * rhs.m42;
+            f24 = m21 * rhs.m14 + m22 * rhs.m24 + m24 * rhs.m44;
+            f41 = m41 * rhs.m11 + m42 * rhs.m21 + m44 * rhs.m41;
+            f42 = m41 * rhs.m12 + m42 * rhs.m22 + m44 * rhs.m42;
+            f44 = m41 * rhs.m14 + m42 * rhs.m24 + m44 * rhs.m44;
+            mTypeMask = kUnknown_Mask;
+        }
         m11 = f11;
         m12 = f12;
-        m14 = f13;
+        m14 = f14;
         m21 = f21;
         m22 = f22;
-        m24 = f23;
-        m41 = f31;
-        m42 = f32;
-        m44 = f33;
+        m24 = f24;
+        m41 = f41;
+        m42 = f42;
+        m44 = f44;
     }
 
     /**
@@ -460,7 +562,38 @@ public class Matrix implements Cloneable {
         m41 = 0.0f;
         m42 = 0.0f;
         m44 = 1.0f;
-        mTypeMask = kIdentity_Mask | AxisAligned_Mask;
+        mTypeMask = kIdentity_Mask | kAxisAligned_Mask;
+    }
+
+    /**
+     * Reset this matrix with scale and translate elements.
+     *
+     * @param sx horizontal scale factor to store
+     * @param sy vertical scale factor to store
+     * @param tx horizontal translation to store
+     * @param ty vertical translation to store
+     */
+    public void setScaleTranslate(float sx, float sy, float tx, float ty) {
+        m11 = sx;
+        m12 = 0.0f;
+        m14 = 0.0f;
+        m21 = 0.0f;
+        m22 = sy;
+        m24 = 0.0f;
+        m41 = tx;
+        m42 = ty;
+        m44 = 1.0f;
+        int mask = 0;
+        if (sx != 1 || sy != 1) {
+            mask |= kScale_Mask;
+        }
+        if (tx != 0.0f || ty != 0.0f) {
+            mask |= kTranslate_Mask;
+        }
+        if (sx != 0 && sy != 0) {
+            mask |= kAxisAligned_Mask;
+        }
+        mTypeMask = mask;
     }
 
     /**
@@ -506,7 +639,7 @@ public class Matrix implements Cloneable {
         m41 = transX;
         m42 = transY;
         m44 = persp2;
-        mTypeMask = Matrix.Unknown_Mask;
+        mTypeMask = kUnknown_Mask;
     }
 
     /**
@@ -571,17 +704,17 @@ public class Matrix implements Cloneable {
      */
     public void transpose() {
         final float f12 = m21;
-        final float f13 = m41;
+        final float f14 = m41;
         final float f21 = m12;
-        final float f23 = m42;
-        final float f31 = m14;
-        final float f32 = m24;
+        final float f24 = m42;
+        final float f41 = m14;
+        final float f42 = m24;
         m12 = f12;
-        m14 = f13;
+        m14 = f14;
         m21 = f21;
-        m24 = f23;
-        m41 = f31;
-        m42 = f32;
+        m24 = f24;
+        m41 = f41;
+        m42 = f42;
     }
 
     /**
@@ -595,13 +728,14 @@ public class Matrix implements Cloneable {
     }
 
     /**
-     * Compute the inverse of this matrix. The matrix will be inverted
-     * if this matrix is invertible, otherwise it keeps the same as before.
+     * Compute the inverse of this matrix. The <var>dest</var> matrix will be
+     * the inverse of this matrix if this matrix is invertible, otherwise its
+     * values will be preserved.
      *
-     * @param mat the destination matrix
+     * @param dest the destination matrix
      * @return {@code true} if this matrix is invertible.
      */
-    public boolean invert(@Nonnull Matrix mat) {
+    public boolean invert(@Nonnull Matrix dest) {
         float a = m11 * m22 - m12 * m21;
         float b = m14 * m21 - m11 * m24;
         float c = m12 * m24 - m14 * m22;
@@ -616,16 +750,16 @@ public class Matrix implements Cloneable {
         float f12 = (m42 * m14 - m12 * m44) * det; // -21
         float f21 = (m41 * m24 - m21 * m44) * det; // -12
         float f22 = (m11 * m44 - m41 * m14) * det; // 22
-        float f31 = (m21 * m42 - m41 * m22) * det; // 13
-        float f32 = (m41 * m12 - m11 * m42) * det; // -23
+        float f41 = (m21 * m42 - m41 * m22) * det; // 13
+        float f42 = (m41 * m12 - m11 * m42) * det; // -23
         m11 = f11;
         m12 = f12;
         m14 = c * det;
         m21 = f21;
         m22 = f22;
         m24 = b * det;
-        m41 = f31;
-        m42 = f32;
+        m41 = f41;
+        m42 = f42;
         m44 = a * det;
         return true;
     }
@@ -638,14 +772,20 @@ public class Matrix implements Cloneable {
      * @param dy the y-component of the translation
      */
     public void preTranslate(float dx, float dy) {
-        int type = getType();
-        if (type <= kTranslate_Mask) {
+        int mask = getType();
+        if ((mask & kPerspective_Mask) != 0) {
+            m41 += dx * m11 + dy * m21;
+            m42 += dx * m12 + dy * m22;
+            m44 += dx * m14 + dy * m24;
+            mTypeMask = kUnknown_Mask;
+            return;
+        }
+        if (mask <= kTranslate_Mask) {
             m41 += dx;
             m42 += dy;
         } else {
             m41 += dx * m11 + dy * m21;
             m42 += dx * m12 + dy * m22;
-            m44 += dx * m14 + dy * m24;
         }
         if (m41 != 0 || m42 != 0) {
             mTypeMask |= kTranslate_Mask;
@@ -662,18 +802,19 @@ public class Matrix implements Cloneable {
      * @param dy the y-component of the translation
      */
     public void postTranslate(float dx, float dy) {
-        int type = getType();
-        if (type <= kTranslate_Mask) {
-            m41 += dx;
-            m42 += dy;
-        } else {
+        int mask = getType();
+        if ((mask & kPerspective_Mask) != 0) {
             m11 += dx * m14;
             m12 += dy * m14;
             m21 += dx * m24;
             m22 += dy * m24;
             m41 += dx * m44;
             m42 += dy * m44;
+            mTypeMask = kUnknown_Mask;
+            return;
         }
+        m41 += dx;
+        m42 += dy;
         if (m41 != 0 || m42 != 0) {
             mTypeMask |= kTranslate_Mask;
         } else {
@@ -684,29 +825,29 @@ public class Matrix implements Cloneable {
     /**
      * Set this matrix to be a simple translation matrix.
      *
-     * @param x the x-component of the translation
-     * @param y the y-component of the translation
+     * @param dx the x-component of the translation
+     * @param dy the y-component of the translation
      */
-    public void setTranslate(float x, float y) {
+    public void setTranslate(float dx, float dy) {
         m11 = 1.0f;
         m12 = 0.0f;
         m14 = 0.0f;
         m21 = 0.0f;
         m22 = 1.0f;
         m24 = 0.0f;
-        m41 = x;
-        m42 = y;
+        m41 = dx;
+        m42 = dy;
         m44 = 1.0f;
-        if (x != 0 || y != 0) {
-            mTypeMask = kTranslate_Mask | AxisAligned_Mask;
+        if (dx != 0 || dy != 0) {
+            mTypeMask = kTranslate_Mask | kAxisAligned_Mask;
         } else {
-            mTypeMask = kIdentity_Mask | AxisAligned_Mask;
+            mTypeMask = kIdentity_Mask | kAxisAligned_Mask;
         }
     }
 
     /**
      * Apply scaling to <code>this</code> matrix by scaling the base axes by the given x,
-     * y and z factors and store the result in <code>dest</code>.
+     * y and z factors.
      * <p>
      * If <code>M</code> is <code>this</code> matrix and <code>S</code> the scaling matrix,
      * then the new matrix will be <code>S * M</code> (row-major). So when transforming a
@@ -717,17 +858,327 @@ public class Matrix implements Cloneable {
      * @param sy the y-component of the scale
      */
     public void preScale(float sx, float sy) {
+        if (sx == 1 && sy == 1) {
+            return;
+        }
+        int mask = getType();
+        if (mask == kIdentity_Mask) {
+            setScale(sx, sy);
+            return;
+        }
+        if ((mask & (kAffine_Mask | kPerspective_Mask)) == 0) {
+            setScaleTranslate(
+                    sx * m11,
+                    sy * m22,
+                    m41,
+                    m42
+            );
+            return;
+        }
         m11 *= sx;
         m12 *= sx;
-        m14 *= sx;
         m21 *= sy;
         m22 *= sy;
-        m24 *= sy;
-        mTypeMask = Unknown_Mask;
+        if ((mask & kPerspective_Mask) == 0) {
+            mTypeMask = kOnlyPerspectiveValid_Mask | kUnknown_Mask;
+        } else {
+            m14 *= sx;
+            m24 *= sy;
+            mTypeMask = kUnknown_Mask;
+        }
     }
 
     /**
-     * Sets dst to bounds of src corners mapped by Matrix.
+     * Post-multiply scaling to <code>this</code> matrix by scaling the base axes by the given x,
+     * y and z factors.
+     * <p>
+     * If <code>M</code> is <code>this</code> matrix and <code>S</code> the scaling matrix,
+     * then the new matrix will be <code>M * S</code> (row-major). So when transforming a
+     * vector <code>v</code> with the new matrix by using <code>v * M * S</code>,
+     * the scaling will be applied last.
+     *
+     * @param sx the x-component of the scale
+     * @param sy the y-component of the scale
+     */
+    public void postScale(float sx, float sy) {
+        if (sx == 1 && sy == 1) {
+            return;
+        }
+        int mask = getType();
+        if (mask == kIdentity_Mask) {
+            setScale(sx, sy);
+            return;
+        }
+        if ((mask & (kAffine_Mask | kPerspective_Mask)) == 0) {
+            setScaleTranslate(
+                    m11 * sx,
+                    m22 * sy,
+                    m41 * sx,
+                    m42 * sy
+            );
+            return;
+        }
+        m11 *= sx;
+        m21 *= sx;
+        m41 *= sx;
+        m12 *= sy;
+        m22 *= sy;
+        m42 *= sy;
+        if ((mask & kPerspective_Mask) == 0) {
+            mTypeMask = kOnlyPerspectiveValid_Mask | kUnknown_Mask;
+        } else {
+            mTypeMask = kUnknown_Mask;
+        }
+    }
+
+    /**
+     * Set this matrix to scale by sx and sy about at pivot point at (0, 0).
+     *
+     * @param sx horizontal scale factor
+     * @param sy vertical scale factor
+     */
+    public void setScale(float sx, float sy) {
+        m11 = sx;
+        m12 = 0.0f;
+        m14 = 0.0f;
+        m21 = 0.0f;
+        m22 = sy;
+        m24 = 0.0f;
+        m41 = 0.0f;
+        m42 = 0.0f;
+        m44 = 1.0f;
+        if (sx == 1 && sy == 1) {
+            mTypeMask = kIdentity_Mask | kAxisAligned_Mask;
+        } else {
+            mTypeMask = kScale_Mask |
+                    (sx != 0 && sy != 0 ? kAxisAligned_Mask : 0);
+        }
+    }
+
+    /**
+     * Set this matrix to scale by sx and sy, about a pivot point at (px, py).
+     * The pivot point is unchanged when mapped with this matrix.
+     *
+     * @param sx horizontal scale factor
+     * @param sy vertical scale factor
+     * @param px pivot on x-axis
+     * @param py pivot on y-axis
+     */
+    public void setScale(float sx, float sy, float px, float py) {
+        if (sx == 1 && sy == 1) {
+            setIdentity();
+        } else {
+            setScaleTranslate(sx, sy, px - sx * px, py - sy * py);
+        }
+    }
+
+    /**
+     * Rotates this matrix about the Z-axis with the given angle in radians.
+     * <p>
+     * When used with a right-handed coordinate system, the produced rotation
+     * will rotate a vector counter-clockwise around the rotation axis, when
+     * viewing along the negative axis direction towards the origin. When
+     * used with a left-handed coordinate system, the rotation is clockwise.
+     * <p>
+     * This is equivalent to pre-multiplying by a rotation matrix.
+     * <table border="1">
+     *   <tr>
+     *     <td>cos&theta;</th>
+     *     <td>sin&theta;</th>
+     *     <td>0</th>
+     *   </tr>
+     *   <tr>
+     *     <td>-sin&theta;</th>
+     *     <td>cos&theta;</th>
+     *     <td>0</th>
+     *   </tr>
+     *   <tr>
+     *     <td>0</th>
+     *     <td>0</th>
+     *     <td>1</th>
+     *   </tr>
+     * </table>
+     *
+     * @param angle the rotation angle in radians.
+     */
+    public void preRotate(float angle) {
+        if (angle == 0) {
+            return;
+        }
+        int mask = getType();
+        if (mask == kIdentity_Mask) {
+            setRotate(angle);
+            return;
+        }
+        final double s = Math.sin(angle);
+        final double c = Math.cos(angle);
+        final double f11 = c * m11 + s * m21;
+        final double f12 = c * m12 + s * m22;
+        final double f14 = c * m14 + s * m24;
+        m21 = (float) (c * m21 - s * m11);
+        m22 = (float) (c * m22 - s * m12);
+        m24 = (float) (c * m24 - s * m14);
+        m11 = (float) f11;
+        m12 = (float) f12;
+        m14 = (float) f14;
+        if ((mask & kPerspective_Mask) == 0) {
+            mTypeMask = kOnlyPerspectiveValid_Mask | kUnknown_Mask;
+        } else {
+            mTypeMask = kUnknown_Mask;
+        }
+    }
+
+    /**
+     * Post-rotates this matrix about the Z-axis with the given angle in radians.
+     * <p>
+     * When used with a right-handed coordinate system, the produced rotation
+     * will rotate a vector counter-clockwise around the rotation axis, when
+     * viewing along the negative axis direction towards the origin. When
+     * used with a left-handed coordinate system, the rotation is clockwise.
+     * <p>
+     * This is equivalent to post-multiplying by a rotation matrix.
+     * <table border="1">
+     *   <tr>
+     *     <td>cos&theta;</th>
+     *     <td>sin&theta;</th>
+     *     <td>0</th>
+     *   </tr>
+     *   <tr>
+     *     <td>-sin&theta;</th>
+     *     <td>cos&theta;</th>
+     *     <td>0</th>
+     *   </tr>
+     *   <tr>
+     *     <td>0</th>
+     *     <td>0</th>
+     *     <td>1</th>
+     *   </tr>
+     * </table>
+     *
+     * @param angle the rotation angle in radians.
+     */
+    public void postRotate(float angle) {
+        if (angle == 0) {
+            return;
+        }
+        int mask = getType();
+        if (mask == kIdentity_Mask) {
+            setRotate(angle);
+            return;
+        }
+        final double s = Math.sin(angle);
+        final double c = Math.cos(angle);
+        final double f12 = c * m12 + s * m11;
+        final double f22 = c * m22 + s * m21;
+        final double f42 = c * m42 + s * m41;
+        m11 = (float) (c * m11 - s * m12);
+        m21 = (float) (c * m21 - s * m22);
+        m41 = (float) (c * m41 - s * m42);
+        m12 = (float) f12;
+        m22 = (float) f22;
+        m42 = (float) f42;
+        if ((mask & kPerspective_Mask) == 0) {
+            mTypeMask = kOnlyPerspectiveValid_Mask | kUnknown_Mask;
+        } else {
+            mTypeMask = kUnknown_Mask;
+        }
+    }
+
+    /**
+     * Set this matrix to rotate by radians about a pivot point at (0, 0).
+     * Positive radians rotates clockwise.
+     *
+     * @param angle angle of axes relative to upright axes
+     */
+    public void setRotate(float angle) {
+        if (angle == 0) {
+            setIdentity();
+        } else {
+            float s = (float) Math.sin(angle);
+            float c = (float) Math.cos(angle);
+            setSinCos(
+                    MathUtil.isApproxZero(s) ? 0.0f : s,
+                    MathUtil.isApproxZero(c) ? 0.0f : c
+            );
+        }
+    }
+
+    /**
+     * Set this matrix to rotate by radians about a pivot point at (px, py).
+     * The pivot point is unchanged when mapped with this matrix.
+     * <p>
+     * Positive radians rotates clockwise.
+     *
+     * @param angle angle of axes relative to upright axes
+     * @param px    pivot on x-axis
+     * @param py    pivot on y-axis
+     */
+    public void setRotate(float angle, float px, float py) {
+        if (angle == 0) {
+            setIdentity();
+        } else {
+            float s = (float) Math.sin(angle);
+            float c = (float) Math.cos(angle);
+            setSinCos(
+                    MathUtil.isApproxZero(s) ? 0.0f : s,
+                    MathUtil.isApproxZero(c) ? 0.0f : c,
+                    px, py
+            );
+        }
+    }
+
+    /**
+     * Set this matrix to rotate by sinValue and cosValue, about a pivot point at (0, 0).
+     *
+     * @param sin rotation vector x-axis component
+     * @param cos rotation vector y-axis component
+     */
+    public void setSinCos(float sin, float cos) {
+        m11 = cos;
+        m12 = sin;
+        m14 = 0;
+        m21 = -sin;
+        m22 = cos;
+        m24 = 0;
+        m41 = 0;
+        m42 = 0;
+        m44 = 1;
+        mTypeMask = kOnlyPerspectiveValid_Mask | kUnknown_Mask;
+    }
+
+    /**
+     * Set this matrix to rotate by sinValue and cosValue, about a pivot point at (px, py).
+     * The pivot point is unchanged when mapped with this matrix.
+     *
+     * @param sin rotation vector x-axis component
+     * @param cos rotation vector y-axis component
+     * @param px  pivot on x-axis
+     * @param py  pivot on y-axis
+     */
+    public void setSinCos(float sin, float cos, float px, float py) {
+        float oc = 1 - cos;
+        m11 = cos;
+        m12 = sin;
+        m14 = 0;
+        m21 = -sin;
+        m22 = cos;
+        m24 = 0;
+        m41 = oc * px + sin * py;
+        m42 = oc * py - sin * px;
+        m44 = 1;
+        mTypeMask = kOnlyPerspectiveValid_Mask | kUnknown_Mask;
+    }
+
+    /**
+     * Sets rect to bounds of rect corners mapped by this matrix.
+     * Returns true if mapped corners are dst corners.
+     */
+    public final boolean mapRect(Rect2f rect) {
+        return mapRect(rect, rect);
+    }
+
+    /**
+     * Sets dst to bounds of src corners mapped by this matrix.
      * Returns true if mapped corners are dst corners.
      */
     //@formatter:off
@@ -774,17 +1225,9 @@ public class Matrix implements Cloneable {
         dst.mTop    = MathUtil.min(y1, y2, y3, y4);
         dst.mRight  = MathUtil.max(x1, x2, x3, x4);
         dst.mBottom = MathUtil.max(y1, y2, y3, y4);
-        return (typeMask & AxisAligned_Mask) != 0;
+        return (typeMask & kAxisAligned_Mask) != 0;
     }
     //@formatter:on
-
-    /**
-     * Sets rect to bounds of rect corners mapped by Matrix.
-     * Returns true if mapped corners are dst corners.
-     */
-    public final boolean mapRect(Rect2f rect) {
-        return mapRect(rect, rect);
-    }
 
     /**
      * Map a rectangle points in the X-Y plane to get the maximum bounds.
@@ -913,36 +1356,25 @@ public class Matrix implements Cloneable {
         }
     }
 
-    public boolean equal(@Nonnull Matrix mat) {
-        return m11 == mat.m11 &&
-                m12 == mat.m12 &&
-                m14 == mat.m14 &&
-                m21 == mat.m21 &&
-                m22 == mat.m22 &&
-                m24 == mat.m24 &&
-                m41 == mat.m41 &&
-                m42 == mat.m42 &&
-                m44 == mat.m44;
+    /**
+     * Returns true if all elements of the matrix are finite. Returns false if any
+     * element is infinity, or NaN.
+     *
+     * @return true if matrix has only finite elements
+     */
+    public boolean isFinite() {
+        // product will either be NaN or 0, if product is NaN, this check will return false
+        return 0 * m11 * m12 * m14 *
+                m21 * m22 * m24 *
+                m41 * m42 * m44 == 0;
     }
 
-    /**
-     * Returns true if this matrix is exactly equal to the given matrix.
-     * In this case, -0.f is not equal to 0.f, NaN is equal to NaN.
-     *
-     * @param m the matrix to compare.
-     * @return {@code true} if this matrix is equivalent to other matrix.
-     */
-    public boolean equals(@Nonnull Matrix m) {
-        if (this == m) return true;
-        if (Float.floatToIntBits(m.m11) != Float.floatToIntBits(m11)) return false;
-        if (Float.floatToIntBits(m.m12) != Float.floatToIntBits(m12)) return false;
-        if (Float.floatToIntBits(m.m14) != Float.floatToIntBits(m14)) return false;
-        if (Float.floatToIntBits(m.m21) != Float.floatToIntBits(m21)) return false;
-        if (Float.floatToIntBits(m.m22) != Float.floatToIntBits(m22)) return false;
-        if (Float.floatToIntBits(m.m24) != Float.floatToIntBits(m24)) return false;
-        if (Float.floatToIntBits(m.m41) != Float.floatToIntBits(m41)) return false;
-        if (Float.floatToIntBits(m.m42) != Float.floatToIntBits(m42)) return false;
-        return Float.floatToIntBits(m.m44) == Float.floatToIntBits(m44);
+    private static int floatTo2sCompliment(float x) {
+        int bits = Float.floatToRawIntBits(x);
+        if (bits < 0) {
+            return -(bits & 0x7FFFFFFF);
+        }
+        return bits;
     }
 
     private int computeTypeMask() {
@@ -961,10 +1393,12 @@ public class Matrix implements Cloneable {
             mask |= kTranslate_Mask;
         }
 
-        boolean shearX = m21 != 0;
-        boolean shearY = m12 != 0;
+        int m00 = floatTo2sCompliment(m11);
+        int m01 = floatTo2sCompliment(m21);
+        int m10 = floatTo2sCompliment(m12);
+        int m11 = floatTo2sCompliment(m22);
 
-        if (shearX || shearY) {
+        if ((m01 | m10) != 0) {
             // The shear components may be scale-inducing, unless we are dealing
             // with a pure rotation.  Testing for a pure rotation is expensive,
             // so we opt for being conservative by always setting the scale bit.
@@ -976,13 +1410,18 @@ public class Matrix implements Cloneable {
             // For axis aligned, in the affine case, we only need check that
             // the primary diagonal is all zeros and that the secondary diagonal
             // is all non-zero.
-            if (shearX && shearY && m11 == 0 && m22 == 0) {
-                mask |= AxisAligned_Mask;
-            }
+
+            // map non-zero to 1
+            m01 = m01 != 0 ? 1 : 0;
+            m10 = m10 != 0 ? 1 : 0;
+
+            int dp0 = (m00 | m11) == 0 ? 1 : 0; // true if both are 0
+            int ds1 = (m01 & m10);              // true if both are 1
+            mask |= (dp0 & ds1) << kAxisAligned_Shift;
         } else {
             // Only test for scale explicitly if not affine, since affine sets the
             // scale bit.
-            if (m11 != 1 || m22 != 1) {
+            if (((m00 ^ 0x3f800000) | (m11 ^ 0x3f800000)) != 0) {
                 mask |= kScale_Mask;
             }
 
@@ -990,10 +1429,12 @@ public class Matrix implements Cloneable {
             // all zeros, so we just need to check that primary diagonal is
             // all non-zero.
 
+            // map non-zero to 1
+            m00 = m00 != 0 ? 1 : 0;
+            m11 = m11 != 0 ? 1 : 0;
+
             // record if the (p)rimary diagonal is all non-zero
-            if (m11 != 0 && m22 != 0) {
-                mask |= AxisAligned_Mask;
-            }
+            mask |= (m00 & m11) << kAxisAligned_Shift;
         }
 
         return mask;
@@ -1011,11 +1452,11 @@ public class Matrix implements Cloneable {
                     kPerspective_Mask;
         }
 
-        return OnlyPerspectiveValid_Mask | Unknown_Mask;
+        return kOnlyPerspectiveValid_Mask | kUnknown_Mask;
     }
 
     /**
-     * Returns whether this matrix is equivalent to given matrix.
+     * Returns whether this matrix elements are equivalent to given matrix.
      *
      * @param m the matrix to compare.
      * @return {@code true} if this matrix is equivalent to other matrix.
@@ -1030,6 +1471,25 @@ public class Matrix implements Cloneable {
                 MathUtil.isApproxEqual(m41, m.m41) &&
                 MathUtil.isApproxEqual(m42, m.m42) &&
                 MathUtil.isApproxEqual(m44, m.m44);
+    }
+
+    /**
+     * Returns whether two matrices' elements are equal, using
+     * <code>==</code> operator. Note <code>-0.0f == 0.0f</code> is true.
+     * {@link #getType()} is ignored.
+     * <p>
+     * Keep consistent with {@link #equals(Object)}.
+     */
+    public static boolean equals(@Nonnull Matrix a, @Nonnull Matrix b) {
+        return a.m11 == b.m11 &&
+                a.m12 == b.m12 &&
+                a.m14 == b.m14 &&
+                a.m21 == b.m21 &&
+                a.m22 == b.m22 &&
+                a.m24 == b.m24 &&
+                a.m41 == b.m41 &&
+                a.m42 == b.m42 &&
+                a.m44 == b.m44;
     }
 
     @Override
@@ -1047,7 +1507,9 @@ public class Matrix implements Cloneable {
     }
 
     /**
-     * Returns whether this matrix is exactly equal to another matrix.
+     * Returns whether this matrix elements are equal to another matrix, using
+     * <code>==</code> operator. Note <code>-0.0f == 0.0f</code> is true.
+     * {@link #getType()} is ignored.
      *
      * @param o the reference object with which to compare.
      * @return {@code true} if this object is the same as the o values.
@@ -1057,32 +1519,23 @@ public class Matrix implements Cloneable {
         if (!(o instanceof Matrix m)) {
             return false;
         }
-        return m11 == m.m11 &&
-                m12 == m.m12 &&
-                m14 == m.m14 &&
-                m21 == m.m21 &&
-                m22 == m.m22 &&
-                m24 == m.m24 &&
-                m41 == m.m41 &&
-                m42 == m.m42 &&
-                m44 == m.m44;
+        return equals(this, m);
     }
 
     @Override
     public String toString() {
         return String.format("""
                         Matrix:
-                        %10.5f %10.5f %10.5f
-                        %10.5f %10.5f %10.5f
-                        %10.5f %10.5f %10.5f
-                        """,
+                        %10.6f %10.6f %10.6f
+                        %10.6f %10.6f %10.6f
+                        %10.6f %10.6f %10.6f""",
                 m11, m12, m14,
                 m21, m22, m24,
                 m41, m42, m44);
     }
 
     /**
-     * @return a deep copy of this matrix
+     * @return a copy of this matrix
      */
     @Nonnull
     @Override

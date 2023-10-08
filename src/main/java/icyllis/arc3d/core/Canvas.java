@@ -96,7 +96,7 @@ public class Canvas implements AutoCloseable {
 
     // the bottom-most device in the stack, only changed by init(). Image properties and the final
     // canvas pixels are determined by this device
-    private final BaseDevice mBaseDevice;
+    private final Device mBaseDevice;
 
     // keep track of the device clip bounds in the canvas' global space to reject draws before
     // invoking the top-level device.
@@ -139,7 +139,7 @@ public class Canvas implements AutoCloseable {
         this(new NoPixelsDevice(0, 0, Math.max(width, 0), Math.max(height, 0)));
     }
 
-    Canvas(BaseDevice device) {
+    Canvas(Device device) {
         mSaveCount = 1;
         mMCStack[0] = new MCRec(device);
         mBaseDevice = device;
@@ -762,8 +762,8 @@ public class Canvas implements AutoCloseable {
      * @return true if clip bounds is not empty
      */
     public final boolean getLocalClipBounds(Rect2f bounds) {
-        BaseDevice device = getTopDevice();
-        if (device.getClipType() == BaseDevice.CLIP_TYPE_EMPTY) {
+        Device device = getTopDevice();
+        if (device.getClipType() == Device.CLIP_TYPE_EMPTY) {
             bounds.setEmpty();
             return false;
         } else {
@@ -793,8 +793,8 @@ public class Canvas implements AutoCloseable {
      * @return true if clip bounds is not empty
      */
     public final boolean getDeviceClipBounds(Rect2i bounds) {
-        BaseDevice device = getTopDevice();
-        if (device.getClipType() == BaseDevice.CLIP_TYPE_EMPTY) {
+        Device device = getTopDevice();
+        if (device.getClipType() == Device.CLIP_TYPE_EMPTY) {
             bounds.setEmpty();
             return false;
         } else {
@@ -1225,7 +1225,7 @@ public class Canvas implements AutoCloseable {
      * @return true if clip is empty
      */
     public final boolean isClipEmpty() {
-        return getTopDevice().getClipType() == BaseDevice.CLIP_TYPE_EMPTY;
+        return getTopDevice().getClipType() == Device.CLIP_TYPE_EMPTY;
     }
 
     /**
@@ -1235,7 +1235,7 @@ public class Canvas implements AutoCloseable {
      * @return true if clip is a Rect and not empty
      */
     public final boolean isClipRect() {
-        return getTopDevice().getClipType() == BaseDevice.CLIP_TYPE_RECT;
+        return getTopDevice().getClipType() == Device.CLIP_TYPE_RECT;
     }
 
     /**
@@ -1333,7 +1333,7 @@ public class Canvas implements AutoCloseable {
     // the top-most device in the stack, will change within saveLayer()'s. All drawing and clipping
     // operations should route to this device.
     @Nonnull
-    private BaseDevice getTopDevice() {
+    private Device getTopDevice() {
         return top().mDevice;
     }
 
@@ -1423,8 +1423,8 @@ public class Canvas implements AutoCloseable {
      * into the canvas' global space.
      */
     private void computeQuickRejectBounds() {
-        BaseDevice device = getTopDevice();
-        if (device.getClipType() == BaseDevice.CLIP_TYPE_EMPTY) {
+        Device device = getTopDevice();
+        if (device.getClipType() == Device.CLIP_TYPE_EMPTY) {
             mQuickRejectBounds.setEmpty();
         } else {
             mQuickRejectBounds.set(device.getClipBounds());
@@ -1447,7 +1447,7 @@ public class Canvas implements AutoCloseable {
 
         // This points to the device of the top-most layer (which may be lower in the stack), or
         // to the canvas's fBaseDevice. The MCRec does not own the device.
-        BaseDevice mDevice;
+        Device mDevice;
 
         final Matrix4 mMatrix = new Matrix4();
         int mDeferredSaveCount;
@@ -1455,7 +1455,7 @@ public class Canvas implements AutoCloseable {
         MCRec() {
         }
 
-        MCRec(BaseDevice device) {
+        MCRec(Device device) {
             mDevice = device;
             mMatrix.setIdentity();
             mDeferredSaveCount = 0;
