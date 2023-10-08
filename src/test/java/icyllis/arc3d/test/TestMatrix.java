@@ -31,11 +31,28 @@ public class TestMatrix {
     public static void main(String[] args) {
         var pw = new PrintWriter(System.out, true, StandardCharsets.UTF_8);
 
-        log(pw, m -> m.setAll(0.5f, 0, 0,
-                0, 0.7f, 0,
+        float epsilon = calcMachineEpsilon();
+
+        log(pw, m -> m.setAll(1, 0, 0,
+                0, 1, 0,
+                Float.NaN, 0, 1));
+
+        log(pw, m -> m.setAll(0.7f, 0, 0,
+                0, 0.5f, 0,
                 0, 0, 1));
 
-        log(pw, m -> m.setRotate(180 * MathUtil.DEG_TO_RAD));
+        log(pw, m -> {
+            m.setRotate(90 * MathUtil.DEG_TO_RAD);
+            m.preRotate(90 * MathUtil.DEG_TO_RAD);
+        });
+
+        log(pw, m -> {
+            m.setAll(2.5f, 0, 0,
+                    0, 3.5f, 0,
+                    20, 50, 1);
+            boolean res = m.invert();
+            pw.println("Invert: " + res);
+        });
     }
 
     public static void log(PrintWriter pw, Consumer<Matrix> c) {
@@ -48,5 +65,13 @@ public class TestMatrix {
         pw.println("AxisAligned: " + m.isAxisAligned());
         pw.println("PreservesRightAngles: " + m.preservesRightAngles());
         pw.println();
+    }
+
+    public static float calcMachineEpsilon() {
+        float machEps = 1.0f;
+        do {
+            machEps /= 2.0f;
+        } while (1.0f + (machEps / 2.0f) != 1.0f);
+        return machEps;
     }
 }

@@ -21,7 +21,7 @@ package icyllis.arc3d.core;
 
 import org.lwjgl.system.MemoryUtil;
 
-import javax.annotation.Nonnull;
+import javax.annotation.*;
 
 /**
  * This class represents a 3x3 matrix and a 2D transformation, its components
@@ -719,10 +719,11 @@ public class Matrix implements Cloneable {
 
     /**
      * Compute the inverse of this matrix. This matrix will be inverted
-     * if it is invertible, otherwise it keeps the same as before.
+     * if this matrix is invertible, otherwise its values will be preserved.
      *
      * @return {@code true} if this matrix is invertible.
      */
+    @CheckReturnValue
     public boolean invert() {
         return invert(this);
     }
@@ -732,35 +733,137 @@ public class Matrix implements Cloneable {
      * the inverse of this matrix if this matrix is invertible, otherwise its
      * values will be preserved.
      *
-     * @param dest the destination matrix
+     * @param dest the destination matrix, may be null
      * @return {@code true} if this matrix is invertible.
      */
-    public boolean invert(@Nonnull Matrix dest) {
-        float a = m11 * m22 - m12 * m21;
-        float b = m14 * m21 - m11 * m24;
-        float c = m12 * m24 - m14 * m22;
+    @CheckReturnValue
+    public boolean invert(@Nullable Matrix dest) {
+        int mask = getType();
+        if (mask == kIdentity_Mask) {
+            if (dest != null) {
+                dest.setIdentity();
+            }
+            return true;
+        }
+        if ((mask & ~(kScale_Mask | kTranslate_Mask)) == 0) {
+            return invertScaleTranslate(mask, dest);
+        } else if ((mask & kPerspective_Mask) != 0) {
+            return invertPerspective(dest);
+        } else {
+            return invertAffine(dest);
+        }
+    }
+
+    private boolean invertScaleTranslate(int mask, Matrix dest) {
+        if ((mask & kScale_Mask) != 0) {
+            float invX = 1.0f / m11;
+            float invY = 1.0f / m22;
+            // Denormalized (non-zero) scale factors will overflow when inverted, in which case
+            // the inverse matrix would not be finite, so return false.
+            if (!Float.isFinite(invX) || !Float.isFinite(invY)) {
+                return false;
+            }
+            float f41 = (float) ((double) -m41 / m11);
+            float f42 = (float) ((double) -m42 / m22);
+            if (!Float.isFinite(f41) || !Float.isFinite(f42)) {
+                return false;
+            }
+            if (dest != null) {
+                dest.m11 = invX;
+                dest.m12 = 0;
+                dest.m14 = 0;
+                dest.m21 = 0;
+                dest.m22 = invY;
+                dest.m24 = 0;
+                dest.m41 = f41;
+                dest.m42 = f42;
+                dest.m44 = 1;
+                dest.mTypeMask = mask | kAxisAligned_Mask;
+            }
+        } else {
+            // translate only
+            if (!Float.isFinite(m41) || !Float.isFinite(m42)) {
+                return false;
+            }
+            if (dest != null) {
+                dest.setTranslate(-m41, -m42);
+            }
+        }
+        return true;
+    }
+
+    private boolean invertPerspective(Matrix dest) {
+        double a = m11 * m22 - m12 * m21;
+        double b = m14 * m21 - m11 * m24;
+        double c = m12 * m24 - m14 * m22;
         // calc the determinant
-        float det = a * m44 + b * m42 + c * m41;
-        if (MathUtil.isApproxZero(det)) {
+        double det = a * m44 + b * m42 + c * m41;
+        if (det == 0) {
             return false;
         }
         // calc algebraic cofactor and transpose
+        det = 1.0 / det;
+        float f11 = (float) ((m22 * m44 - m42 * m24) * det); // 11
+        float f12 = (float) ((m42 * m14 - m12 * m44) * det); // -21
+        float f21 = (float) ((m41 * m24 - m21 * m44) * det); // -12
+        float f22 = (float) ((m11 * m44 - m41 * m14) * det); // 22
+        float f41 = (float) ((m21 * m42 - m41 * m22) * det); // 13
+        float f42 = (float) ((m41 * m12 - m11 * m42) * det); // -23
+        float f14 = (float) (c * det);
+        float f24 = (float) (b * det);
+        float f44 = (float) (a * det);
+        if (0f * f11 * f12 * f14 *
+                f21 * f22 * f24 *
+                f41 * f42 * f44 != 0) {
+            // not finite, NaN or infinity
+            return false;
+        }
+        if (dest != null) {
+            dest.m11 = f11;
+            dest.m12 = f12;
+            dest.m14 = f14;
+            dest.m21 = f21;
+            dest.m22 = f22;
+            dest.m24 = f24;
+            dest.m41 = f41;
+            dest.m42 = f42;
+            dest.m44 = f44;
+            dest.mTypeMask = mTypeMask;
+        }
+        return true;
+    }
+
+    private boolean invertAffine(Matrix dest) {
+        // not perspective
+        double det = m11 * m22 - m12 * m21;
+        if (det == 0) {
+            return false;
+        }
         det = 1.0f / det;
-        float f11 = (m22 * m44 - m42 * m24) * det; // 11
-        float f12 = (m42 * m14 - m12 * m44) * det; // -21
-        float f21 = (m41 * m24 - m21 * m44) * det; // -12
-        float f22 = (m11 * m44 - m41 * m14) * det; // 22
-        float f41 = (m21 * m42 - m41 * m22) * det; // 13
-        float f42 = (m41 * m12 - m11 * m42) * det; // -23
-        m11 = f11;
-        m12 = f12;
-        m14 = c * det;
-        m21 = f21;
-        m22 = f22;
-        m24 = b * det;
-        m41 = f41;
-        m42 = f42;
-        m44 = a * det;
+        float f11 = (float) (m22 * det);
+        float f12 = (float) (-m12 * det);
+        float f21 = (float) (-m21 * det);
+        float f22 = (float) (m11 * det);
+        float f41 = (float) ((m21 * m42 - m41 * m22) * det); // 13
+        float f42 = (float) ((m41 * m12 - m11 * m42) * det); // -23
+        if (0f * f11 * f12 *
+                f21 * f22 *
+                f41 * f42 != 0) {
+            // not finite, NaN or infinity
+            return false;
+        }
+        if (dest != null) {
+            dest.m11 = f11;
+            dest.m12 = f12;
+            dest.m14 = 0;
+            dest.m21 = f21;
+            dest.m22 = f22;
+            dest.m24 = 0;
+            dest.m41 = f41;
+            dest.m42 = f42;
+            dest.m44 = 1;
+            dest.mTypeMask = mTypeMask;
+        }
         return true;
     }
 
@@ -1156,15 +1259,15 @@ public class Matrix implements Cloneable {
      * @param py  pivot on y-axis
      */
     public void setSinCos(float sin, float cos, float px, float py) {
-        float oc = 1 - cos;
+        double omc = 1 - cos;
         m11 = cos;
         m12 = sin;
         m14 = 0;
         m21 = -sin;
         m22 = cos;
         m24 = 0;
-        m41 = oc * px + sin * py;
-        m42 = oc * py - sin * px;
+        m41 = (float) (omc * px + sin * py);
+        m42 = (float) (omc * py - sin * px);
         m44 = 1;
         mTypeMask = kOnlyPerspectiveValid_Mask | kUnknown_Mask;
     }
@@ -1364,7 +1467,7 @@ public class Matrix implements Cloneable {
      */
     public boolean isFinite() {
         // product will either be NaN or 0, if product is NaN, this check will return false
-        return 0 * m11 * m12 * m14 *
+        return 0f * m11 * m12 * m14 *
                 m21 * m22 * m24 *
                 m41 * m42 * m44 == 0;
     }
