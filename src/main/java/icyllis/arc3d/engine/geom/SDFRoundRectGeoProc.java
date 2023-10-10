@@ -20,6 +20,8 @@
 package icyllis.arc3d.engine.geom;
 
 import icyllis.arc3d.core.SLDataType;
+import icyllis.arc3d.engine.Engine.PrimitiveType;
+import icyllis.arc3d.engine.Engine.VertexAttribType;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.shading.*;
 
@@ -37,21 +39,21 @@ public class SDFRoundRectGeoProc extends GeometryProcessor {
      */
     // {(-1,-1), (-1, 1), (1, -1), (1, 1)}
     public static final Attribute
-            POSITION = new Attribute("Position", Engine.VertexAttribType.kFloat2, SLDataType.kFloat2);
+            POSITION = new Attribute("Position", VertexAttribType.kFloat2, SLDataType.kFloat2);
     /**
      * Per-instance attributes.
      */
     // per-multiplied color
     public static final Attribute
-            COLOR = new Attribute("Color", Engine.VertexAttribType.kFloat4, SLDataType.kFloat4);
+            COLOR = new Attribute("Color", VertexAttribType.kFloat4, SLDataType.kFloat4);
     // scale x, translate x, scale y, translate y
     public static final Attribute
-            LOCAL_RECT = new Attribute("LocalRect", Engine.VertexAttribType.kFloat4, SLDataType.kFloat4);
+            LOCAL_RECT = new Attribute("LocalRect", VertexAttribType.kFloat4, SLDataType.kFloat4);
     // radius, stroke radius (if stroke, or 0)
     public static final Attribute
-            RADII = new Attribute("Radii", Engine.VertexAttribType.kFloat2, SLDataType.kFloat2);
+            RADII = new Attribute("Radii", VertexAttribType.kFloat2, SLDataType.kFloat2);
     public static final Attribute
-            MODEL_VIEW = new Attribute("ModelView", Engine.VertexAttribType.kFloat3, SLDataType.kFloat3x3);
+            MODEL_VIEW = new Attribute("ModelView", VertexAttribType.kFloat3, SLDataType.kFloat3x3);
 
     public static final AttributeSet VERTEX_ATTRIBS = AttributeSet.makeImplicit(
             POSITION);
@@ -75,7 +77,7 @@ public class SDFRoundRectGeoProc extends GeometryProcessor {
 
     @Override
     public byte primitiveType() {
-        return Engine.PrimitiveType.TriangleStrip;
+        return PrimitiveType.TriangleStrip;
     }
 
     @Override
@@ -167,9 +169,9 @@ public class SDFRoundRectGeoProc extends GeometryProcessor {
             }
             // use L2-norm of grad SDF
             fragBuilder.codeAppend("""
-                        float afwidth = length(vec2(dFdx(d),dFdy(d)))*0.7;
-                        float edgeAlpha = 1.0 - smoothstep(-afwidth,afwidth,d);
-                        """);
+                    float afwidth = length(vec2(dFdx(d),dFdy(d)))*0.7;
+                    float edgeAlpha = 1.0 - smoothstep(-afwidth,afwidth,d);
+                    """);
             fragBuilder.codeAppendf("""
                     vec4 %s = vec4(edgeAlpha);
                     """, outputCoverage);
