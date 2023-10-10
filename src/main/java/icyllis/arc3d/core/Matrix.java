@@ -38,7 +38,6 @@ import java.nio.FloatBuffer;
  * @see Matrix3
  * @see Matrix4
  */
-//TODO type mask and others are WIP
 @SuppressWarnings("unused")
 public class Matrix implements Cloneable {
 
@@ -1818,15 +1817,248 @@ public class Matrix implements Cloneable {
     }
     //@formatter:on
 
+    /**
+     * @see #mapPoints(float[], int, float[], int, int)
+     */
     public void mapPoint(float[] p) {
-        float x1 = m11 * p[0] + m21 * p[1] + m41;
-        float y1 = m12 * p[0] + m22 * p[1] + m42;
-        // project
-        float w = 1.0f / (m14 * p[0] + m24 * p[1] + m44);
-        x1 *= w;
-        y1 *= w;
-        p[0] = x1;
-        p[1] = y1;
+        mapPoints(p, 0, p, 0, 1);
+    }
+
+    /**
+     * @see #mapPoints(float[], int, float[], int, int)
+     */
+    public void mapPoints(float[] pts) {
+        mapPoints(pts, 0, pts, 0, pts.length >> 1);
+    }
+
+    /**
+     * @see #mapPoints(float[], int, float[], int, int)
+     */
+    public void mapPoints(float[] pts, int count) {
+        mapPoints(pts, 0, pts, 0, count);
+    }
+
+    /**
+     * @see #mapPoints(float[], int, float[], int, int)
+     */
+    public void mapPoints(float[] pts, int pos, int count) {
+        mapPoints(pts, pos, pts, pos, count);
+    }
+
+    /**
+     * @see #mapPoints(float[], int, float[], int, int)
+     */
+    public void mapPoints(float[] src, float[] dst, int count) {
+        mapPoints(src, 0, dst, 0, count);
+    }
+
+    /**
+     * Maps src point array of length count to dst point array of equal or greater
+     * length. Points are mapped by multiplying each point by this matrix. Given:
+     * <pre>
+     *  | A B C |        | x |
+     *  | D E F |,  pt = | y |
+     *  | G H I |        | 1 |
+     * </pre>
+     * where
+     * <pre>
+     *  for (i = 0; i < count; ++i) {
+     *      x = src[srcPos + (i << 1)]
+     *      y = src[srcPos + (i << 1) + 1]
+     *  }
+     * </pre>
+     * each dst point is computed as:
+     * <pre>
+     *  |A B C| |x|                               Ax+By+C   Dx+Ey+F
+     *  |D E F| |y| = |Ax+By+C Dx+Ey+F Gx+Hy+I| = ------- , -------
+     *  |G H I| |1|                               Gx+Hy+I   Gx+Hy+I
+     * </pre>
+     * <p>
+     * src and dst may point to the same array.
+     *
+     * @param src   points to transform
+     * @param dst   array for mapped points
+     * @param count number of points to transform
+     */
+    public void mapPoints(float[] src, int srcPos, float[] dst, int dstPos, int count) {
+        int mask = getType();
+        if (mask == kIdentity_Mask) {
+            if (src != dst && count > 0) {
+                System.arraycopy(src, srcPos, dst, dstPos, count << 1);
+            }
+        } else if (mask <= kTranslate_Mask) {
+            mapPoints1(src, srcPos, dst, dstPos, count);
+        } else if (mask <= (kTranslate_Mask | kScale_Mask)) {
+            mapPoints2(src, srcPos, dst, dstPos, count);
+        } else if (mask <= (kTranslate_Mask | kScale_Mask | kAffine_Mask)) {
+            mapPoints4(src, srcPos, dst, dstPos, count);
+        } else {
+            mapPoints8(src, srcPos, dst, dstPos, count);
+        }
+    }
+
+    //@formatter:off
+    private void mapPoints1(float[] src, int srcPos, float[] dst, int dstPos, int count) {
+        float m41 = this.m41;
+        float m42 = this.m42;
+        while (count-- != 0) {
+            dst[dstPos    ] = src[srcPos    ] + m41;
+            dst[dstPos + 1] = src[srcPos + 1] + m42;
+            srcPos += 2;
+            dstPos += 2;
+        }
+    }
+
+    private void mapPoints2(float[] src, int srcPos, float[] dst, int dstPos, int count) {
+        float m11 = this.m11;
+        float m22 = this.m22;
+        float m41 = this.m41;
+        float m42 = this.m42;
+        while (count-- != 0) {
+            dst[dstPos    ] = m11 * src[srcPos    ] + m41;
+            dst[dstPos + 1] = m22 * src[srcPos + 1] + m42;
+            srcPos += 2;
+            dstPos += 2;
+        }
+    }
+
+    private void mapPoints4(float[] src, int srcPos, float[] dst, int dstPos, int count) {
+        float m11 = this.m11;
+        float m12 = this.m12;
+        float m21 = this.m21;
+        float m22 = this.m22;
+        float m41 = this.m41;
+        float m42 = this.m42;
+        while (count-- != 0) {
+            float p0 = src[srcPos    ];
+            float p1 = src[srcPos + 1];
+            float x = m11 * p0 + m21 * p1 + m41;
+            float y = m12 * p0 + m22 * p1 + m42;
+            dst[dstPos    ] = x;
+            dst[dstPos + 1] = y;
+            srcPos += 2;
+            dstPos += 2;
+        }
+    }
+
+    private void mapPoints8(float[] src, int srcPos, float[] dst, int dstPos, int count) {
+        float m11 = this.m11;
+        float m12 = this.m12;
+        float m14 = this.m14;
+        float m21 = this.m21;
+        float m22 = this.m22;
+        float m24 = this.m24;
+        float m41 = this.m41;
+        float m42 = this.m42;
+        float m44 = this.m44;
+        while (count-- != 0) {
+            float p0 = src[srcPos    ];
+            float p1 = src[srcPos + 1];
+            float x = m11 * p0 + m21 * p1 + m41;
+            float y = m12 * p0 + m22 * p1 + m42;
+            float w = m14 * p0 + m24 * p1 + m44;
+            if (w != 0) {
+                w = 1 / w;
+            }
+            dst[dstPos    ] = x * w;
+            dst[dstPos + 1] = y * w;
+            srcPos += 2;
+            dstPos += 2;
+        }
+    }
+    //@formatter:on
+
+    /**
+     * Returns the minimum scaling factor of this matrix by decomposing the scaling and
+     * shearing elements.<br>
+     * Returns -1 if scale factor overflows or this matrix contains perspective.
+     *
+     * @return minimum scale factor
+     */
+    public float getMinScale() {
+        int mask = getType();
+        if (mask == kIdentity_Mask) {
+            return 1;
+        }
+        if ((mask & kPerspective_Mask) != 0) {
+            return -1;
+        }
+        if ((mask & kAffine_Mask) == 0) {
+            return Math.min(
+                    Math.abs(m11),
+                    Math.abs(m22)
+            );
+        }
+        // ignore the translation part of the matrix, just look at 2x2 portion.
+        // compute singular values, take largest or smallest abs value.
+        // [a b; b c] = A^T*A
+        float a = m11 * m11 + m12 * m12;
+        float b = m11 * m21 + m22 * m12;
+        float c = m21 * m21 + m22 * m22;
+        // eigenvalues of A^T*A are the squared singular values of A.
+        // characteristic equation is det((A^T*A) - l*I) = 0
+        // l^2 - (a + c)l + (ac-b^2)
+        // solve using quadratic equation (divisor is non-zero since l^2 has 1 coeff
+        // and roots are guaranteed to be pos and real).
+        float result;
+        // if upper left 2x2 is orthogonal save some math
+        if (MathUtil.isApproxZero(b)) {
+            result = Math.min(a, c);
+        } else {
+            float amc = a - c;
+            float x = (float) (Math.sqrt(amc * amc + 4 * b * b) * 0.5);
+            result = (a + c) * 0.5f - x;
+        }
+        if (!Float.isFinite(result)) {
+            return -1;
+        }
+        // Due to the floating point inaccuracy, there might be an error in a, b, c
+        // calculated by dot, further deepened by subsequent arithmetic operations
+        // on them. Therefore, we allow and cap the nearly-zero negative values.
+        return (float) Math.sqrt(
+                Math.abs(result)
+        );
+    }
+
+    /**
+     * Returns the maximum scaling factor of this matrix by decomposing the scaling and
+     * shearing elements.<br>
+     * Returns -1 if scale factor overflows or this matrix contains perspective.
+     *
+     * @return maximum scale factor
+     */
+    public float getMaxScale() {
+        // similar to getMinScale()
+        int mask = getType();
+        if (mask == kIdentity_Mask) {
+            return 1;
+        }
+        if ((mask & kPerspective_Mask) != 0) {
+            return -1;
+        }
+        if ((mask & kAffine_Mask) == 0) {
+            return Math.max(
+                    Math.abs(m11),
+                    Math.abs(m22)
+            );
+        }
+        float a = m11 * m11 + m12 * m12;
+        float b = m11 * m21 + m22 * m12;
+        float c = m21 * m21 + m22 * m22;
+        float result;
+        if (MathUtil.isApproxZero(b)) {
+            result = Math.max(a, c);
+        } else {
+            float amc = a - c;
+            float x = (float) (Math.sqrt(amc * amc + 4 * b * b) * 0.5);
+            result = (a + c) * 0.5f + x;
+        }
+        if (!Float.isFinite(result)) {
+            return -1;
+        }
+        return (float) Math.sqrt(
+                Math.abs(result)
+        );
     }
 
     /**

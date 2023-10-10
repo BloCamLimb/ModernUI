@@ -23,7 +23,7 @@ import icyllis.arc3d.core.MathUtil;
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.Surface;
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.engine.geom.RoundRectProcessor;
+import icyllis.arc3d.engine.geom.SDFRoundRectGeoProc;
 import icyllis.arc3d.opengl.*;
 import icyllis.arc3d.shaderc.*;
 import icyllis.arc3d.shaderc.parser.Lexer;
@@ -309,7 +309,7 @@ public class TestManagedResource {
         );
         Objects.requireNonNull(target);
         GLPipelineState pso = (GLPipelineState) dContext.findOrCreatePipelineState(
-                new PipelineInfo(new SurfaceProxyView(target), new RoundRectProcessor(true),
+                new PipelineInfo(new SurfaceProxyView(target), new SDFRoundRectGeoProc(true),
                         null, null, null, null,
                         PipelineInfo.kNone_Flag));
         {

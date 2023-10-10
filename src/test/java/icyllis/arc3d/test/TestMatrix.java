@@ -55,22 +55,16 @@ public class TestMatrix {
         });
 
         log(pw, m -> {
-            m.set(2.5f, 0, 0,
-                    0, 3.5f, 1,
-                    20, 50, 1);
+            m.setRotate(MathUtil.DEG_TO_RAD * 45);
         });
 
-        Matrix m1 = new Matrix(2.5f, 0, 0,
-                0, 3.5f, 1,
+        Matrix m1 = new Matrix(1.0f, 0, 0,
+                0, 1.0f, 1,
                 20, 50, 1);
-        Matrix m2 = new Matrix(m1);
 
-        m1.preShear(0.2f, -0.25f);
-        Matrix m3 = new Matrix();
-        m3.setShear(0.2f, -0.25f);
-        m2.preConcat(m3);
+        m1.preShear(2.0f, 0);
 
-        pw.println(Matrix.equals(m1, m2));
+        log(pw, m -> m.set(m1));
     }
 
     public static void log(PrintWriter pw, Consumer<Matrix> c) {

@@ -21,7 +21,6 @@ package icyllis.arc3d.engine.ops;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.engine.geom.RoundRectProcessor;
 import icyllis.arc3d.engine.geom.SDFRoundRectGeoProc;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.system.MemoryUtil;
