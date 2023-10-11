@@ -44,7 +44,7 @@ public class Matrix implements Cloneable {
     /**
      * TypeMask
      * <p>
-     * Enum of bit fields for mask returned by getType().
+     * Enum of bit fields for mask returned by {@link #getType()}.
      * Used to identify the complexity of Matrix, for optimizations.
      */
     public static final int
@@ -60,15 +60,14 @@ public class Matrix implements Cloneable {
      * <p>
      * This bit will be set on identity matrices
      */
-    protected static final int kAxisAligned_Mask = 0x10;
+    private static final int kAxisAligned_Mask = 0x10;
+    private static final int kAxisAligned_Shift = 4;
     /**
      * Set if the perspective bit is valid even though the rest of
      * the matrix is Unknown.
      */
-    protected static final int kOnlyPerspectiveValid_Mask = 0x40;
-    protected static final int kUnknown_Mask = 0x80;
-
-    protected static final int kAxisAligned_Shift = 4;
+    private static final int kOnlyPerspectiveValid_Mask = 0x40;
+    private static final int kUnknown_Mask = 0x80;
 
     // sequential matrix elements, m(ij) (row, column)
     // directly using primitives will be faster than array in Java
@@ -85,7 +84,7 @@ public class Matrix implements Cloneable {
     protected float m42;
     protected float m44;
 
-    protected int mTypeMask;
+    private int mTypeMask;
 
     /**
      * Create a new identity matrix.
@@ -359,7 +358,7 @@ public class Matrix implements Cloneable {
 
     /**
      * Returns true if this matrix contains only translation, rotation, reflection, and
-     * uniform scale. Returns false if this matrix contains different scales, skewing,
+     * uniform scale. Returns false if this matrix contains different scales, shearing,
      * perspective, or degenerate forms that collapse to a line or point.
      * <p>
      * Describes that the matrix makes rendering with and without the matrix are
@@ -619,9 +618,9 @@ public class Matrix implements Cloneable {
      * Sets all values from parameters.
      *
      * @param scaleX horizontal scale factor to store
-     * @param shearX horizontal skew factor to store
+     * @param shearX horizontal shear factor to store
      * @param transX horizontal translation to store
-     * @param shearY vertical skew factor to store
+     * @param shearY vertical shear factor to store
      * @param scaleY vertical scale factor to store
      * @param transY vertical translation to store
      * @param persp0 input x-axis values perspective factor to store
@@ -742,12 +741,21 @@ public class Matrix implements Cloneable {
     }
 
     /**
-     * Set this matrix elements to be given matrix.
+     * Store this matrix elements to the given matrix.
      *
      * @param m the matrix to store
      */
     public void store(@Nonnull Matrix m) {
-        m.set(this);
+        m.m11 = m11;
+        m.m12 = m12;
+        m.m14 = m14;
+        m.m21 = m21;
+        m.m22 = m22;
+        m.m24 = m24;
+        m.m41 = m41;
+        m.m42 = m42;
+        m.m44 = m44;
+        m.mTypeMask = mTypeMask;
     }
 
     /**

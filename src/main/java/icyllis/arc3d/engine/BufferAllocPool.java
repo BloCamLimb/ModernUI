@@ -375,8 +375,8 @@ public abstract class BufferAllocPool {
             mesh.setVertexBuffer(buffer, offset / vertexSize, vertexCount);
 
             ByteBuffer writer = getMappedBuffer(mCachedWriter, mBufferPtr, buffer.getSize());
-            writer.position(offset);
             writer.limit(offset + totalSize);
+            writer.position(offset);
             mCachedWriter = writer;
             return writer;
         }
@@ -450,8 +450,8 @@ public abstract class BufferAllocPool {
             mesh.setInstanceBuffer(buffer, offset / instanceSize, instanceCount);
 
             ByteBuffer writer = getMappedBuffer(mCachedWriter, mBufferPtr, buffer.getSize());
-            writer.position(offset);
             writer.limit(offset + totalSize);
+            writer.position(offset);
             mCachedWriter = writer;
             return writer;
         }
@@ -524,8 +524,8 @@ public abstract class BufferAllocPool {
             mesh.setIndexBuffer(buffer, offset / indexSize, indexCount);
 
             ByteBuffer writer = getMappedBuffer(mCachedWriter, mBufferPtr, buffer.getSize());
-            writer.position(offset);
             writer.limit(offset + totalSize);
+            writer.position(offset);
             mCachedWriter = writer;
             return writer;
         }

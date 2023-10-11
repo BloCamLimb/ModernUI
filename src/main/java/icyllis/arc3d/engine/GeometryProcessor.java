@@ -576,6 +576,17 @@ public abstract class GeometryProcessor extends Processor {
             return matrix;
         }
 
+        protected static void writePassthroughWorldPosition(
+                VertexGeomBuilder vertBuilder,
+                ShaderVar inPos,
+                ShaderVar outPos) {
+            assert (inPos.getType() == SLDataType.kFloat2 || inPos.getType() == SLDataType.kFloat3);
+            vertBuilder.codeAppendf("vec%d _worldPos = %s;\n",
+                    SLDataType.vectorDim(inPos.getType()),
+                    inPos.getName());
+            outPos.set("_worldPos", inPos.getType());
+        }
+
         /**
          * Helpers for adding code to write the transformed vertex position. The first simple version
          * just writes a variable named by 'posName' into the position output variable with the
