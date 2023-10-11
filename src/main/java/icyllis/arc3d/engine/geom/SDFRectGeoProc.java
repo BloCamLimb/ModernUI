@@ -66,7 +66,7 @@ public class SDFRectGeoProc extends GeometryProcessor {
      */
     // per-multiplied color
     public static final Attribute
-            COLOR = new Attribute("Color", VertexAttribType.kFloat4, SLDataType.kFloat4);
+            COLOR = new Attribute("Color", VertexAttribType.kUByte4_norm, SLDataType.kFloat4);
     // scale x, translate x, scale y, translate y
     public static final Attribute
             BOX = new Attribute("Box", VertexAttribType.kFloat4, SLDataType.kFloat4);
@@ -75,6 +75,11 @@ public class SDFRectGeoProc extends GeometryProcessor {
             STROKE = new Attribute("Stroke", VertexAttribType.kFloat2, SLDataType.kFloat2);
     public static final Attribute
             VIEW_MATRIX = new Attribute("ViewMatrix", VertexAttribType.kFloat3, SLDataType.kFloat3x3);
+
+    public static final AttributeSet VERTEX_ATTRIBS = AttributeSet.makeImplicit(
+            POSITION);
+    public static final AttributeSet INSTANCE_ATTRIBS = AttributeSet.makeImplicit(
+            COLOR, BOX, STROKE, VIEW_MATRIX);
 
     public static final int FLAG_ANTIALIASING = 0x1;
     public static final int FLAG_STROKE = 0x2;
@@ -85,6 +90,8 @@ public class SDFRectGeoProc extends GeometryProcessor {
     public SDFRectGeoProc(int flags) {
         super(SDFRect_GeoProc_ClassID);
         mFlags = flags;
+        setVertexAttributes(VERTEX_ATTRIBS, 0x1);
+        setInstanceAttributes(INSTANCE_ATTRIBS, 0x3 | ((flags & 0x6) << 1));
     }
 
     @Nonnull
@@ -100,6 +107,7 @@ public class SDFRectGeoProc extends GeometryProcessor {
 
     @Override
     public void addToKey(Key.Builder b) {
+        b.addBits(3, mFlags, "gpFlags");
     }
 
     @Nonnull
@@ -139,12 +147,64 @@ public class SDFRectGeoProc extends GeometryProcessor {
             varyingHandler.addVarying("RectEdge", rectEdge);
             // add stroke radius and a full pixel bloat
             vertBuilder.codeAppendf("""
-                    vec2 rectEdge = (%s.xz + %s.x + 1.0) * %s;
+                    vec2 rectEdge = (%s.xz + %s.x - %s.y + 1.0) * %s;
                     %s = rectEdge;
-                    """, BOX.name(), STROKE.name(), POSITION.name(), rectEdge.vsOut());
+                    """, BOX.name(), STROKE.name(), STROKE.name(), POSITION.name(), rectEdge.vsOut());
             fragBuilder.codeAppendf("""
                     vec2 rectEdge = %s;
                     """, rectEdge.fsIn());
+
+            // setup pass through color
+            fragBuilder.codeAppendf("""
+                    vec4 %s;
+                    """, outputColor);
+            varyingHandler.addPassThroughAttribute(COLOR, outputColor,
+                    VaryingHandler.INTERPOLATION_CAN_BE_FLAT);
+
+            Varying sizeAndRadii = new Varying(SLDataType.kFloat4);
+            varyingHandler.addVarying("SizeAndRadii", sizeAndRadii,
+                    VaryingHandler.INTERPOLATION_CAN_BE_FLAT);
+            vertBuilder.codeAppendf("""
+                    %s = vec4(%s.xz, %s);
+                    """, sizeAndRadii.vsOut(), BOX.name(), STROKE.name());
+            fragBuilder.codeAppendf("""
+                    vec4 sizeAndRadii = %s;
+                    """, sizeAndRadii.fsIn());
+
+            // setup position
+            vertBuilder.codeAppendf("""
+                    vec2 localPos = rectEdge + %s.yw;
+                    """, BOX.name());
+            localPos.set("localPos", SLDataType.kFloat2);
+            if (gpMatrix) {
+                writeWorldPosition(vertBuilder, localPos, VIEW_MATRIX.name(), worldPos);
+            } else {
+                writePassthroughWorldPosition(vertBuilder, localPos, worldPos);
+            }
+
+            fragBuilder.codeAppend("""
+                        vec2 q = abs(rectEdge) - sizeAndRadii.xy;
+                        float d = min(max(q.x, q.y), 0.0) + length(max(q, 0.0));
+                        """);
+            if (gpStroke) {
+                fragBuilder.codeAppend("""
+                        d = abs(d + sizeAndRadii.w) - sizeAndRadii.z;
+                        """);
+            }
+            if (gpAA) {
+                // use L2-norm of grad SDF
+                fragBuilder.codeAppend("""
+                        float afwidth = length(vec2(dFdx(d),dFdy(d)))*0.7;
+                        float edgeAlpha = 1.0 - smoothstep(-afwidth,afwidth,d);
+                        """);
+            } else {
+                fragBuilder.codeAppend("""
+                        float edgeAlpha = step(d,0.0);
+                        """);
+            }
+            fragBuilder.codeAppendf("""
+                    vec4 %s = vec4(edgeAlpha);
+                    """, outputCoverage);
         }
     }
 }

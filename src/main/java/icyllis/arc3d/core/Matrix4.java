@@ -951,12 +951,27 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Set this matrix elements to be given matrix.
+     * Store this matrix elements to the given matrix.
      *
      * @param m the matrix to store
      */
     public void store(@Nonnull Matrix4 m) {
-        m.set(this);
+        m.m11 = m11;
+        m.m12 = m12;
+        m.m13 = m13;
+        m.m14 = m14;
+        m.m21 = m21;
+        m.m22 = m22;
+        m.m23 = m23;
+        m.m24 = m24;
+        m.m31 = m31;
+        m.m32 = m32;
+        m.m33 = m33;
+        m.m34 = m34;
+        m.m41 = m41;
+        m.m42 = m42;
+        m.m43 = m43;
+        m.m44 = m44;
     }
 
     /**
