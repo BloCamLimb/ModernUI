@@ -18,8 +18,8 @@
 
 package icyllis.modernui.test;
 
-import icyllis.modernui.ModernUI;
 import icyllis.arc3d.image.GIFDecoder;
+import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.Bitmap;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
@@ -46,7 +46,8 @@ public class TestGIFDecode {
                 fc.read(buf);
                 buf.flip();
                 GIFDecoder dec = new GIFDecoder(buf);
-                ModernUI.LOGGER.info("FileSize {}, ScreenDim {}x{}", buf.limit(), dec.getScreenWidth(), dec.getScreenHeight());
+                ModernUI.LOGGER.info("FileSize {}, ScreenDim {}x{}", buf.limit(), dec.getScreenWidth(),
+                        dec.getScreenHeight());
                 pixels = MemoryUtil.memAlloc(dec.getScreenWidth() * dec.getScreenHeight() * 4);
                 for (int i = 0; i < 500; i++) {
                     pixels.position(0);
