@@ -20,8 +20,7 @@ package icyllis.modernui.test;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.engine.ops.OpsTask;
-import icyllis.arc3d.engine.ops.RoundRectOp;
+import icyllis.arc3d.engine.ops.*;
 import icyllis.arc3d.opengl.*;
 import icyllis.modernui.core.*;
 import org.apache.logging.log4j.Level;
@@ -94,9 +93,26 @@ public class TestPipelineBuilder {
             int shift = i++ * 200;
             float x = 10 + shift;
             float y = 10 + shift / 2f;
+            var mat = new Matrix();
             var op = new RoundRectOp(new float[]{1 - i * 0.12f, i * 0.075f, i * 0.11f, 1},
                     new Rect2f(x, y, x + 160, y + 90),
-                    i * 4, Math.min(i * 2, 6), Matrix.identity(), true);
+                    i * 4, Math.min(i * 2, 6), mat, true);
+            task.addDrawOp(op, null, 0);
+        }
+        for (int i = 0; i < 7; ) {
+            int shift = i++ * 200;
+            float x = 1300 - shift;
+            float y = 10 + shift / 2f;
+            float strokeRadius = Math.min(i * 2, 6);
+            float strokePos = switch (i % 3) {
+                case 0 -> 0;
+                case 1 -> strokeRadius;
+                case 2 -> -strokeRadius;
+                default -> throw new IllegalStateException("Unexpected value: " + i % 3);
+            };
+            var op = new RectOp(0xEFCAC3 | ((255 - i * 4) << 24),
+                    new Rect2f(x, y, x + 160, y + 90),
+                    strokeRadius, strokePos, null, true, i > 3);
             task.addDrawOp(op, null, 0);
         }
         task.makeClosed(dContext);
@@ -104,6 +120,9 @@ public class TestPipelineBuilder {
         task.prepare(drawingManager.getFlushState());
         server.getVertexPool().flush();
         server.getInstancePool().flush();
+
+        GLCore.glEnable(GLCore.GL_BLEND);
+        GLCore.glBlendFunc(GLCore.GL_ONE, GLCore.GL_ONE_MINUS_SRC_ALPHA);
 
         task.execute(drawingManager.getFlushState());
         task.detach(drawingManager);
