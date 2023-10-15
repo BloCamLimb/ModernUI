@@ -107,7 +107,7 @@ public class ArrowKeyMovementMethod extends BaseMovementMethod {
         final boolean selecting = isSelecting(buffer);
         final int targetY = getCurrentLineTop(buffer, layout) - getPageHeight(widget);
         boolean handled = false;
-        for (; ; ) {
+        for (;;) {
             final int previousSelectionEnd = Selection.getSelectionEnd(buffer);
             if (selecting) {
                 Selection.extendUp(buffer, layout);
@@ -131,7 +131,7 @@ public class ArrowKeyMovementMethod extends BaseMovementMethod {
         final boolean selecting = isSelecting(buffer);
         final int targetY = getCurrentLineTop(buffer, layout) + getPageHeight(widget);
         boolean handled = false;
-        for (; ; ) {
+        for (;;) {
             final int previousSelectionEnd = Selection.getSelectionEnd(buffer);
             if (selecting) {
                 Selection.extendDown(buffer, layout);
@@ -264,7 +264,7 @@ public class ArrowKeyMovementMethod extends BaseMovementMethod {
 
                     // Get the current touch position
                     final int offset = widget.getOffsetForPosition(event.getX(), event.getY());
-                    // Added: keep current offset as the selection end, see bringPointIntoView()
+                    // Modern UI Changed: keep current offset as the selection end, see bringPointIntoView()
                     // in TextView.onPreDraw(), preventing scrolling back after Touch.scrollTo().
                     // For ACTION_UP, this should not need to be considered
                     Selection.setSelection(buffer, startOffset, offset);

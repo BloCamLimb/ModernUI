@@ -81,7 +81,7 @@ public class ViewConfiguration {
      * applications that do not provide a Context for determining density/configuration-dependent
      * values.
      */
-    public static final int TOUCH_SLOP = 8;
+    public static final int TOUCH_SLOP = 4;
 
     /**
      * Defines the minimum size of the touch target for a scrollbar in dips
@@ -168,7 +168,7 @@ public class ViewConfiguration {
         mScrollbarSize = (int) (density * SCROLL_BAR_SIZE + 0.5f);
 
         mTouchSlop = (int) (density * TOUCH_SLOP + 0.5f);
-        mHoverSlop = mTouchSlop / 2;
+        mHoverSlop = mTouchSlop;
         mMinScrollbarTouchTarget = (int) (density * MIN_SCROLLBAR_TOUCH_TARGET + 0.5f);
 
         mMinimumFlingVelocity = (int) (density * MINIMUM_FLING_VELOCITY + 0.5f);
