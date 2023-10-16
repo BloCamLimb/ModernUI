@@ -398,7 +398,7 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
                     }
                 } else {
                     if (ss != null) {
-                        ss.add(found, (T) spans[i], spanStart, spanEnd, data[base + FLAGS]);
+                        ss.add((T) spans[i], spanStart, spanEnd, data[base + FLAGS]);
                     } else {
                         dest.add((T) spans[i]);
                     }
