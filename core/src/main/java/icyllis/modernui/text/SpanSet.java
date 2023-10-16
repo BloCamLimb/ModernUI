@@ -19,8 +19,8 @@
 package icyllis.modernui.text;
 
 import icyllis.modernui.annotation.NonNull;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 
 /**
@@ -31,7 +31,7 @@ import java.util.Iterator;
  * <p>
  * Note that empty spans are ignored by this class by default.
  */
-public class SpanSet<E> extends ObjectArrayList<E> {
+public class SpanSet<E> extends ArrayList<E> {
 
     final Class<? extends E> mType;
     final boolean mIgnoreEmptySpans;
@@ -49,7 +49,17 @@ public class SpanSet<E> extends ObjectArrayList<E> {
         mIgnoreEmptySpans = ignoreEmptySpans;
     }
 
+    void add(E span, int start, int end, int flags) {
+        int size = size();
+        grow(size + 1);
+        mSpanStarts[size] = start;
+        mSpanEnds[size] = end;
+        mSpanFlags[size] = flags;
+        add(span);
+    }
+
     void add(int index, E span, int start, int end, int flags) {
+        int size = size();
         grow(size + 1);
         if (index != size) {
             System.arraycopy(mSpanStarts, index, mSpanStarts, index + 1, size - index);
@@ -59,7 +69,7 @@ public class SpanSet<E> extends ObjectArrayList<E> {
         mSpanStarts[index] = start;
         mSpanEnds[index] = end;
         mSpanFlags[index] = flags;
-        add(span);
+        add(index, span);
     }
 
     private void grow(int length) {
@@ -83,28 +93,30 @@ public class SpanSet<E> extends ObjectArrayList<E> {
         final int length = size();
 
         if (length > 0) {
-            if (!(spanned instanceof SpannableStringInternal)) {
-                grow(length);
-
-                int size = 0;
-                for (Iterator<E> it = iterator(); it.hasNext(); ) {
-                    E span = it.next();
-                    final int spanStart = spanned.getSpanStart(span);
-                    final int spanEnd = spanned.getSpanEnd(span);
-                    if (mIgnoreEmptySpans && spanStart == spanEnd) {
-                        it.remove();
-                        continue;
-                    }
-
-                    final int spanFlag = spanned.getSpanFlags(span);
-
-                    mSpanStarts[size] = spanStart;
-                    mSpanEnds[size] = spanEnd;
-                    mSpanFlags[size] = spanFlag;
-
-                    size++;
-                }
+            if (spanned instanceof SpannableStringInternal) {
+                return true;
             }
+            grow(length);
+
+            int size = 0;
+            for (Iterator<E> it = iterator(); it.hasNext(); ) {
+                E span = it.next();
+                final int spanStart = spanned.getSpanStart(span);
+                final int spanEnd = spanned.getSpanEnd(span);
+                if (mIgnoreEmptySpans && spanStart == spanEnd) {
+                    it.remove();
+                    continue;
+                }
+
+                final int spanFlag = spanned.getSpanFlags(span);
+
+                mSpanStarts[size] = spanStart;
+                mSpanEnds[size] = spanEnd;
+                mSpanFlags[size] = spanFlag;
+
+                size++;
+            }
+            assert size == size();
             return size > 0;
         }
         return false;
