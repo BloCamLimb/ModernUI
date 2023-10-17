@@ -49,15 +49,15 @@ fun main() {
 
     val dContext = Core.requireDirectContext()
 
-    val proxy = dContext.proxyProvider.createRenderTextureProxy(
+    val renderTexture = dContext.surfaceProvider.createRenderTexture(
         GLBackendFormat.make(GLCore.GL_RGBA8),
         1600, 900, 4,
         Surface.FLAG_BUDGETED + Surface.FLAG_MIPMAPPED
     )
-    check(proxy != null) { "Failed to create proxy" }
-    check(proxy.instantiate(dContext.resourceProvider))
+    check(renderTexture != null) { "Failed to create RT" }
+    check(renderTexture.instantiate(dContext.resourceProvider))
 
-    val rt = proxy.peekRenderTarget() as GLRenderTarget
+    val rt = renderTexture.peekRenderTarget() as GLRenderTarget
     println(rt)
     println(rt.stencilBuffer)
     println(rt.sampleFramebuffer)

@@ -650,7 +650,7 @@ public final class FragmentManager implements FragmentResultOwner {
      */
     @Nullable
     private static Fragment findViewFragment(@Nonnull View view) {
-        for (; ; ) {
+        for (;;) {
             Fragment fragment = getViewFragment(view);
             if (fragment != null) {
                 return fragment;

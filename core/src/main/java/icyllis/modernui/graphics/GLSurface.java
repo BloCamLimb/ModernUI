@@ -18,8 +18,8 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.arc3d.engine.Resource;
-import icyllis.arc3d.engine.Surface;
+import icyllis.arc3d.engine.GPUResource;
+import icyllis.arc3d.engine.ISurface;
 import icyllis.arc3d.opengl.*;
 import icyllis.modernui.core.Core;
 import org.lwjgl.BufferUtils;
@@ -167,7 +167,7 @@ public final class GLSurface implements AutoCloseable {
                     .createTexture(width, height,
                             GLBackendFormat.make(GL_RGBA8),
                             1,
-                            Surface.FLAG_BUDGETED,
+                            ISurface.FLAG_BUDGETED,
                             null
                     );
             Objects.requireNonNull(mColorAttachments[i], "Failed to create G-buffer " + i);
@@ -182,7 +182,7 @@ public final class GLSurface implements AutoCloseable {
             mStencilAttachment.unref();
         }
         mStencilAttachment = GLAttachment.makeStencil(
-                (GLServer) dContext.getServer(),
+                (GLDevice) dContext.getDevice(),
                 width, height,
                 1, GL_STENCIL_INDEX8
         );
@@ -206,8 +206,8 @@ public final class GLSurface implements AutoCloseable {
         }
         mFramebuffer = 0;
         for (int i = 0; i < NUM_RENDER_TARGETS; i++) {
-            mColorAttachments[i] = Resource.move(mColorAttachments[i]);
+            mColorAttachments[i] = GPUResource.move(mColorAttachments[i]);
         }
-        mStencilAttachment = Resource.move(mStencilAttachment);
+        mStencilAttachment = GPUResource.move(mStencilAttachment);
     }
 }

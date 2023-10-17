@@ -67,7 +67,7 @@ public class TestPipelineBuilder {
                 GLCore.GL_FRAMEBUFFER, GLCore.GL_BACK_LEFT, GLCore.GL_FRAMEBUFFER_ATTACHMENT_ALPHA_SIZE));
 
         var dContext = Core.requireDirectContext();
-        var server = (GLServer) dContext.getServer();
+        var device = (GLDevice) dContext.getDevice();
 
         System.out.printf("Uniform Buffer Offset Alignment: %d\n",
                 GLCore.glGetInteger(GLCore.GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT));
@@ -77,7 +77,7 @@ public class TestPipelineBuilder {
         framebufferInfo.mFormat = GLCore.GL_RGBA8;
 
         @SharedPtr
-        var fsp = dContext.getProxyProvider().wrapBackendRenderTarget(
+        var fsp = dContext.getSurfaceProvider().wrapBackendRenderTarget(
                 new GLBackendRenderTarget(
                         WIDTH, HEIGHT, 0, 8, framebufferInfo
                 ),
@@ -85,10 +85,10 @@ public class TestPipelineBuilder {
         );
         Objects.requireNonNull(fsp);
 
-        DrawingManager drawingManager = dContext.getDrawingManager();
+        RenderTaskManager taskManager = dContext.getRenderTaskManager();
 
-        var target = new SurfaceProxyView(fsp, Engine.SurfaceOrigin.kLowerLeft, Swizzle.RGBA);
-        var task = new OpsTask(drawingManager, target);
+        var target = new SurfaceView(fsp, Engine.SurfaceOrigin.kLowerLeft, Swizzle.RGBA);
+        var task = new OpsTask(taskManager, target);
         for (int i = 0; i < 7; ) {
             int shift = i++ * 200;
             float x = 10 + shift;
@@ -117,15 +117,15 @@ public class TestPipelineBuilder {
         }
         task.makeClosed(dContext);
 
-        task.prepare(drawingManager.getFlushState());
-        server.getVertexPool().flush();
-        server.getInstancePool().flush();
+        task.prepare(taskManager.getFlushState());
+        device.getVertexPool().flush();
+        device.getInstancePool().flush();
 
         GLCore.glEnable(GLCore.GL_BLEND);
         GLCore.glBlendFunc(GLCore.GL_ONE, GLCore.GL_ONE_MINUS_SRC_ALPHA);
 
-        task.execute(drawingManager.getFlushState());
-        task.detach(drawingManager);
+        task.execute(taskManager.getFlushState());
+        task.detach(taskManager);
         task.unref();
         target.close();
 
@@ -135,7 +135,7 @@ public class TestPipelineBuilder {
         }
 
         System.out.println(dContext.getPipelineStateCache().getStats());
-        System.out.println(server.getStats());
+        System.out.println(device.getStats());
 
         dContext.unref();
         window.close();

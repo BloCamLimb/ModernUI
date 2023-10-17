@@ -3316,7 +3316,8 @@ public class View implements Drawable.Callback {
      * @return a generated ID value
      */
     public static int generateViewId() {
-        for (; ; ) {
+        //@formatter:off
+        for (;;) {
             final int result = sNextGeneratedId.get();
             // aapt-generated IDs have the high byte nonzero; clamp to the range under that.
             int newValue = result + 1;
@@ -3325,6 +3326,7 @@ public class View implements Drawable.Callback {
                 return result;
             }
         }
+        //@formatter:on
     }
 
     /**
@@ -9676,7 +9678,8 @@ public class View implements Drawable.Callback {
     public final <T extends View> T findViewByPredicateInsideOut(
             @NonNull View start, Predicate<View> predicate) {
         View childToSkip = null;
-        for (; ; ) {
+        //@formatter:off
+        for (;;) {
             T view = start.findViewByPredicateTraversal(predicate, childToSkip);
             if (view != null || start == this) {
                 return view;
@@ -9690,6 +9693,7 @@ public class View implements Drawable.Callback {
             childToSkip = start;
             start = (View) parent;
         }
+        //@formatter:on
     }
 
     /**
