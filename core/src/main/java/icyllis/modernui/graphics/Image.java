@@ -32,7 +32,7 @@ import java.lang.ref.Cleaner;
  * {@code Image} describes a two-dimensional array of pixels to draw. The pixels are
  * located in GPU memory as a GPU texture.
  * <ul>
- * <li>{@code Image} cannot be modified after it is created.</li>
+ * <li>{@code Image} cannot be modified by CPU after it is created.</li>
  * <li>{@code Image} width and height are greater than zero.</li>
  * <li>{@code Image} may be created from {@link Bitmap}, Surface, Picture
  * and GPU texture.</li>
@@ -46,10 +46,10 @@ public class Image implements AutoCloseable {
     private final RecordingContext mContext;
     private ViewReference mView;
 
-    private Image(ImageInfo info, RecordingContext context, @SharedPtr TextureProxy proxy, short swizzle) {
+    private Image(ImageInfo info, RecordingContext context, @SharedPtr Texture texture, short swizzle) {
         mInfo = info;
         mContext = context;
-        mView = new ViewReference(this, proxy, swizzle);
+        mView = new ViewReference(this, texture, swizzle);
     }
 
     // must be called after render system and UI system are initialized successfully,
@@ -90,16 +90,16 @@ public class Image implements AutoCloseable {
             flags |= Surface.FLAG_MIPMAPPED;
         }
         @SharedPtr
-        var proxy = rContext.getProxyProvider().createProxyFromPixmap(
+        var texture = rContext.getSurfaceProvider().createTextureFromPixmap(
                 bitmap.getPixels(), ct, flags
         );
-        if (proxy == null) {
+        if (texture == null) {
             return null;
         }
-        var swizzle = caps.getReadSwizzle(proxy.getBackendFormat(), ct);
+        var swizzle = caps.getReadSwizzle(texture.getBackendFormat(), ct);
         return new Image(bitmap.getInfo(),
                 rContext,
-                proxy,
+                texture,
                 swizzle);
     }
 
@@ -147,7 +147,7 @@ public class Image implements AutoCloseable {
 
     // do not close this!
     @ApiStatus.Internal
-    public SurfaceProxyView asTextureView() {
+    public SurfaceView asTextureView() {
         return mView;
     }
 
@@ -163,12 +163,12 @@ public class Image implements AutoCloseable {
         return mView == null;
     }
 
-    private static final class ViewReference extends SurfaceProxyView implements Runnable {
+    private static final class ViewReference extends SurfaceView implements Runnable {
 
         private final Cleaner.Cleanable mCleanup;
 
-        private ViewReference(Image owner, @SharedPtr TextureProxy proxy, short swizzle) {
-            super(proxy,
+        private ViewReference(Image owner, @SharedPtr Texture texture, short swizzle) {
+            super(texture,
                     Engine.SurfaceOrigin.kUpperLeft,
                     swizzle);
             mCleanup = Core.registerCleanup(owner, this);

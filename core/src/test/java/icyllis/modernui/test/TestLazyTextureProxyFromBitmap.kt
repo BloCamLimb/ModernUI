@@ -58,13 +58,13 @@ fun main() {
 
     val dContext = Core.requireDirectContext()
 
-    var proxy = dContext.proxyProvider.createProxyFromPixmap(sourceBm.pixels, sourceBm.colorType, Surface.FLAG_BUDGETED)
+    var proxy = dContext.surfaceProvider.createTextureFromPixmap(sourceBm.pixels, sourceBm.colorType, Surface.FLAG_BUDGETED)
     check(proxy != null) { "Failed to create proxy" }
     proxy.instantiate(dContext.resourceProvider)
 
     proxy.unref()
 
-    proxy = dContext.proxyProvider.createProxyFromPixmap(sourceBm.pixels, sourceBm.colorType, Surface.FLAG_BUDGETED)
+    proxy = dContext.surfaceProvider.createTextureFromPixmap(sourceBm.pixels, sourceBm.colorType, Surface.FLAG_BUDGETED)
     check(proxy != null) { "Failed to create proxy" }
     proxy.instantiate(dContext.resourceProvider)
 
@@ -81,7 +81,7 @@ fun main() {
         outBm.close()
     }
 
-    println(dContext.server.stats)
+    println(dContext.device.stats)
 
     dContext.unref()
     window.close()

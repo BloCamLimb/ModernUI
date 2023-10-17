@@ -514,7 +514,7 @@ public final class Core {
                         sUiRecordingContext = RefCnt.create(sDirectContext);
                     } else {
                         sUiRecordingContext = RecordingContext.makeRecording(
-                                sDirectContext.getThreadSafeProxy()
+                                sDirectContext.getContextInfo()
                         );
                     }
                     Objects.requireNonNull(sUiRecordingContext);

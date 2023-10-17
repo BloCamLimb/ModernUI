@@ -152,7 +152,7 @@ public class GLFontAtlas implements AutoCloseable {
         // include border
         int colorType = mMaskFormat == Engine.MASK_FORMAT_ARGB ? ImageInfo.CT_RGBA_8888 : ImageInfo.CT_ALPHA_8;
         int rowBytes = rect.width() * ImageInfo.bytesPerPixel(colorType);
-        boolean res = mContext.getServer().writePixels(
+        boolean res = mContext.getDevice().writePixels(
                 mTexture,
                 rect.x(), rect.y(),
                 rect.width(), rect.height(),
@@ -164,7 +164,7 @@ public class GLFontAtlas implements AutoCloseable {
         if (!res) {
             ModernUI.LOGGER.warn(GlyphManager.MARKER, "Failed to write glyph pixels");
         }
-        res = mContext.getServer().generateMipmaps(mTexture);
+        res = mContext.getDevice().generateMipmaps(mTexture);
         if (!res) {
             ModernUI.LOGGER.warn(GlyphManager.MARKER, "Failed to generate glyph mipmaps");
         }
@@ -219,7 +219,7 @@ public class GLFontAtlas implements AutoCloseable {
 
             // copy to new texture
             GLTexture newTexture = createTexture();
-            boolean res = mContext.getServer().copySurface(
+            boolean res = mContext.getDevice().copySurface(
                     mTexture,
                     0, 0,
                     newTexture,
@@ -230,7 +230,7 @@ public class GLFontAtlas implements AutoCloseable {
                 ModernUI.LOGGER.warn(GlyphManager.MARKER, "Failed to copy to new texture");
             }
 
-            mTexture = Resource.move(mTexture, newTexture);
+            mTexture = GPUResource.move(mTexture, newTexture);
 
             if (vertical) {
                 //mTexture.clear(0, 0, mHeight >> 1, mWidth, mHeight >> 1);
@@ -355,7 +355,7 @@ public class GLFontAtlas implements AutoCloseable {
 
     @Override
     public void close() {
-        mTexture = Resource.move(mTexture);
+        mTexture = GPUResource.move(mTexture);
     }
 
     public int getGlyphCount() {
