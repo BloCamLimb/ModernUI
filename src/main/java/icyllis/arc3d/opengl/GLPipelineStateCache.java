@@ -20,8 +20,6 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.engine.*;
-import it.unimi.dsi.fastutil.Hash;
-import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenCustomHashMap;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import javax.annotation.Nonnull;
@@ -31,50 +29,53 @@ import java.util.concurrent.ConcurrentHashMap;
 //TODO cache trim
 public class GLPipelineStateCache extends PipelineStateCache {
 
-    private final GLServer mServer;
+    private final GLDevice mDevice;
 
     private final int mCacheSize;
-    private final ConcurrentHashMap<Key, GLPipelineState> mCache;
+    private final ConcurrentHashMap<Key, GLGraphicsPipelineState> mCache;
 
     @VisibleForTesting
-    public GLPipelineStateCache(GLServer server, int cacheSize) {
-        mServer = server;
+    public GLPipelineStateCache(GLDevice device, int cacheSize) {
+        mDevice = device;
         mCacheSize = cacheSize;
-        mCache = new ConcurrentHashMap<>(cacheSize, Hash.FAST_LOAD_FACTOR);
+        mCache = new ConcurrentHashMap<>(cacheSize, 0.5f);
     }
 
     public void discard() {
-        mCache.values().forEach(GLPipelineState::discard);
+        mCache.values().forEach(GLGraphicsPipelineState::discard);
         release();
     }
 
     public void release() {
-        mCache.values().forEach(GLPipelineState::release);
+        mCache.values().forEach(GLGraphicsPipelineState::release);
         mCache.clear();
     }
 
     @Nullable
-    public GLPipelineState findOrCreatePipelineState(final PipelineDesc desc,
-                                                     final PipelineInfo pipelineInfo) {
+    public GLGraphicsPipelineState findOrCreateGraphicsPipelineState(
+            final PipelineDesc desc,
+            final PipelineInfo pipelineInfo) {
         if (desc.isEmpty()) {
-            final Caps caps = mServer.getCaps();
+            final Caps caps = mDevice.getCaps();
             caps.makeDesc(desc, /*renderTarget*/null, pipelineInfo);
         }
         assert (!desc.isEmpty());
-        return findOrCreatePipelineStateImpl(desc, pipelineInfo);
+        return findOrCreateGraphicsPipelineStateImpl(desc, pipelineInfo);
     }
 
     @Nonnull
-    private GLPipelineState findOrCreatePipelineStateImpl(PipelineDesc desc,
-                                                          final PipelineInfo pipelineInfo) {
-        GLPipelineState existing = mCache.get(desc);
+    private GLGraphicsPipelineState findOrCreateGraphicsPipelineStateImpl(
+            PipelineDesc desc,
+            final PipelineInfo pipelineInfo) {
+        GLGraphicsPipelineState existing = mCache.get(desc);
         if (existing != null) {
             return existing;
         }
         // We have a cache miss
         desc = new PipelineDesc(desc);
-        GLPipelineState newPipelineState = GLPipelineStateBuilder.createPipelineState(mServer, desc, pipelineInfo);
-        existing = mCache.putIfAbsent(desc.toKey(), newPipelineState);
+        GLGraphicsPipelineState newPipelineState = GLPipelineStateBuilder.createGraphicsPipelineState(mDevice, desc,
+                pipelineInfo);
+        existing = mCache.putIfAbsent(desc.toStorageKey(), newPipelineState);
         if (existing != null) {
             // there's a race, reuse existing
             newPipelineState.discard();

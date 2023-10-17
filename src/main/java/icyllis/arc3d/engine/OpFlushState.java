@@ -30,69 +30,70 @@ import java.util.Set;
  */
 public class OpFlushState implements MeshDrawTarget {
 
-    private final Server mServer;
+    private final GPUDevice mDevice;
 
     private OpsRenderPass mOpsRenderPass;
 
-    public OpFlushState(Server server,
-                        ResourceProvider resourceProvider) {
-        mServer = server;
+    public OpFlushState(GPUDevice device,
+                        GPUResourceProvider resourceProvider) {
+        mDevice = device;
     }
 
-    public Server getServer() {
-        return mServer;
+    public GPUDevice getDevice() {
+        return mDevice;
     }
 
-    public final PipelineState findOrCreatePipelineState(final PipelineInfo pipelineInfo) {
-        return mServer.getContext().findOrCreatePipelineState(pipelineInfo);
+    public final GraphicsPipelineState findOrCreateGraphicsPipelineState(
+            final PipelineInfo pipelineInfo) {
+        return mDevice.getContext().findOrCreateGraphicsPipelineState(pipelineInfo);
     }
 
     @Override
     public long makeVertexSpace(Mesh mesh) {
-        return mServer.getVertexPool().makeSpace(mesh);
+        return mDevice.getVertexPool().makeSpace(mesh);
     }
 
     @Override
     public long makeInstanceSpace(Mesh mesh) {
-        return mServer.getInstancePool().makeSpace(mesh);
+        return mDevice.getInstancePool().makeSpace(mesh);
     }
 
     @Override
     public long makeIndexSpace(Mesh mesh) {
-        return mServer.getIndexPool().makeSpace(mesh);
+        return mDevice.getIndexPool().makeSpace(mesh);
     }
 
     @Nullable
     @Override
     public ByteBuffer makeVertexWriter(Mesh mesh) {
-        return mServer.getVertexPool().makeWriter(mesh);
+        return mDevice.getVertexPool().makeWriter(mesh);
     }
 
     @Nullable
     @Override
     public ByteBuffer makeInstanceWriter(Mesh mesh) {
-        return mServer.getInstancePool().makeWriter(mesh);
+        return mDevice.getInstancePool().makeWriter(mesh);
     }
 
     @Nullable
     @Override
     public ByteBuffer makeIndexWriter(Mesh mesh) {
-        return mServer.getIndexPool().makeWriter(mesh);
+        return mDevice.getIndexPool().makeWriter(mesh);
     }
 
     public OpsRenderPass getOpsRenderPass() {
         return mOpsRenderPass;
     }
 
-    public OpsRenderPass beginOpsRenderPass(SurfaceProxyView writeView,
+    public OpsRenderPass beginOpsRenderPass(SurfaceView writeView,
                                             Rect2i contentBounds,
                                             byte colorOps,
                                             byte stencilOps,
                                             float[] clearColor,
-                                            Set<TextureProxy> sampledTextures,
+                                            Set<Texture> sampledTextures,
                                             int pipelineFlags) {
         assert (mOpsRenderPass == null);
-        OpsRenderPass opsRenderPass = mServer.getOpsRenderPass(writeView, contentBounds,
+        OpsRenderPass opsRenderPass = mDevice.getOpsRenderPass(writeView, contentBounds,
                 colorOps, stencilOps, clearColor,
                 sampledTextures, pipelineFlags);
         if (opsRenderPass == null) {

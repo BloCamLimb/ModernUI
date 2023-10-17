@@ -33,11 +33,11 @@ import static icyllis.arc3d.engine.Engine.BackendApi;
  * rendering decisions. When passed into a {@link DisplayListRecorder} it will copy the
  * data and pass it on to the {@link DisplayList} if/when it is created. Note that both of
  * those objects (the Recorder and the DisplayList) will take a ref on the
- * {@link ContextThreadSafeProxy} object.
+ * {@link SharedContextInfo} object.
  */
 public final class SurfaceCharacterization {
 
-    private final ContextThreadSafeProxy mContextInfo;
+    private final SharedContextInfo mContextInfo;
     private final long mCacheMaxResourceBytes;
 
     private final ImageInfo mImageInfo;
@@ -52,10 +52,10 @@ public final class SurfaceCharacterization {
     private final boolean mIsProtected;
 
     /**
-     * Create via {@link ContextThreadSafeProxy#createCharacterization}.
+     * Create via {@link SharedContextInfo#createCharacterization}.
      */
     @ApiStatus.Internal
-    public SurfaceCharacterization(ContextThreadSafeProxy contextInfo,
+    public SurfaceCharacterization(SharedContextInfo contextInfo,
                                    long cacheMaxResourceBytes,
                                    ImageInfo imageInfo,
                                    BackendFormat backendFormat,
@@ -159,7 +159,7 @@ public final class SurfaceCharacterization {
     }
 
     @ApiStatus.Internal
-    public ContextThreadSafeProxy getContextInfo() {
+    public SharedContextInfo getContextInfo() {
         return mContextInfo;
     }
 

@@ -30,7 +30,7 @@ import static icyllis.arc3d.engine.Engine.*;
 import static icyllis.arc3d.engine.shading.UniformHandler.UniformHandle;
 import static icyllis.arc3d.engine.shading.UniformHandler.SamplerHandle;
 
-public abstract class ProgramBuilder {
+public abstract class PipelineBuilder {
 
     /**
      * Each root processor has an stage index. The GP is stage 0. The first root FP is stage 1,
@@ -64,7 +64,7 @@ public abstract class ProgramBuilder {
     // This is used to check that we don't exceed the allowable number of resources in a shader.
     private int mNumFragmentSamplers;
 
-    public ProgramBuilder(PipelineDesc desc, PipelineInfo pipelineInfo) {
+    public PipelineBuilder(PipelineDesc desc, PipelineInfo pipelineInfo) {
         mDesc = desc;
         mPipelineInfo = pipelineInfo;
         mVS = new VertexShaderBuilder(this);

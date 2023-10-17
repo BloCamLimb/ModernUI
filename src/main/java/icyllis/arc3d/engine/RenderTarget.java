@@ -20,128 +20,166 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.SharedPtr;
+import org.jetbrains.annotations.VisibleForTesting;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * The {@link RenderTarget} manages all objects used by a renderable primary surface,
- * which are framebuffers, render passes and a set of attachments. This is the target
- * of {@link OpsRenderPass}, and may be associated with {@link icyllis.arc3d.core.Surface}.
- * <p>
- * A {@link RenderTarget} is always associated with a renderable primary surface, which
- * can be either a renderable {@link Texture} or a wrapped {@link RenderSurface}.
- * This class is used by the pipeline internally. Use {@link RenderTextureProxy}
- * and {@link RenderTargetProxy} for high-level operations.
+ * Lazy-callback or wrapped a render target (no texture access).
  */
-public abstract class RenderTarget extends ManagedResource implements Surface {
+//TODO
+@VisibleForTesting
+public final class RenderTarget extends Surface {
 
-    private final int mWidth;
-    private final int mHeight;
-
-    private final int mSampleCount;
-
-    /**
-     * The stencil buffer is set at first only with wrapped <code>GLRenderTarget</code>,
-     * the stencil attachment is fake and made beforehand (renderbuffer id 0). For example,
-     * wrapping OpenGL default framebuffer (framebuffer id 0).
-     */
     @SharedPtr
-    protected Attachment mStencilBuffer;
+    private GPURenderTarget mRenderTarget;
+    private int mSampleCount;
 
-    // determined by subclass constructors
-    protected int mSurfaceFlags = FLAG_RENDERABLE;
-
-    protected RenderTarget(Server server,
-                           int width, int height,
-                           int sampleCount) {
-        super(server);
-        mWidth = width;
-        mHeight = height;
-        mSampleCount = sampleCount;
+    RenderTarget(BackendFormat format, int width, int height, int surfaceFlags) {
+        super(format, width, height, surfaceFlags);
+        assert hashCode() == System.identityHashCode(this);
     }
 
-    /**
-     * Returns the effective width (intersection) of color buffers.
-     */
-    public final int getWidth() {
-        return mWidth;
-    }
-
-    /**
-     * Returns the effective height (intersection) of color buffers.
-     */
-    public final int getHeight() {
-        return mHeight;
-    }
-
-    /**
-     * Returns the number of samples per pixel in color buffers (One if non-MSAA).
-     *
-     * @return the number of samples, greater than (multisample) or equal to one
-     */
-    public final int getSampleCount() {
-        return mSampleCount;
-    }
-
-    /**
-     * Describes the backend format of color buffers.
-     */
-    @Nonnull
-    public abstract BackendFormat getBackendFormat();
-
-    /**
-     * Describes the backend render target of this render target.
-     */
-    @Nonnull
-    public abstract BackendRenderTarget getBackendRenderTarget();
-
-    //TODO can we remove texture access?
-    @Nullable
-    public abstract Texture asTexture();
-
-    @Override
-    public final RenderTarget asRenderTarget() {
-        return this;
-    }
-
-    public int getSurfaceFlags() {
-        return mSurfaceFlags;
-    }
-
-    /**
-     * Get the dynamic or implicit stencil buffer, or null if no stencil.
-     */
-    public final Attachment getStencilBuffer() {
-        return mStencilBuffer;
-    }
-
-    /**
-     * Get the number of dynamic or implicit stencil bits, or 0 if no stencil.
-     */
-    public final int getStencilBits() {
-        return mStencilBuffer != null ? mStencilBuffer.getBackendFormat().getStencilBits() : 0;
+    RenderTarget(GPURenderTarget renderTarget, int surfaceFlags) {
+        super(renderTarget, surfaceFlags);
+        mRenderTarget = renderTarget;
+        mSampleCount = renderTarget.getSampleCount();
     }
 
     @Override
     protected void deallocate() {
-        if (mStencilBuffer != null) {
-            mStencilBuffer.unref();
-        }
-        mStencilBuffer = null;
+        mRenderTarget = move(mRenderTarget);
     }
 
-    /**
-     * @return whether a stencil buffer can be attached to this render target.
-     */
-    protected abstract boolean canAttachStencil();
+    @Override
+    public boolean isLazy() {
+        return mRenderTarget == null && mLazyInstantiateCallback != null;
+    }
 
-    /**
-     * Allows the backends to perform any additional work that is required for attaching an
-     * Attachment. When this is called, the Attachment has already been put onto the RenderTarget.
-     * This method must return false if any failures occur when completing the stencil attachment.
-     *
-     * @see ResourceProvider
-     */
-    protected abstract void attachStencilBuffer(@SharedPtr Attachment stencilBuffer);
+    @Override
+    public int getBackingWidth() {
+        assert (!isLazyMost());
+        if (mRenderTarget != null) {
+            return mRenderTarget.getWidth();
+        }
+        if ((mSurfaceFlags & IGPUSurface.FLAG_APPROX_FIT) != 0) {
+            return GPUResourceProvider.makeApprox(mWidth);
+        }
+        return mWidth;
+    }
+
+    @Override
+    public int getBackingHeight() {
+        assert (!isLazyMost());
+        if (mRenderTarget != null) {
+            return mRenderTarget.getHeight();
+        }
+        if ((mSurfaceFlags & IGPUSurface.FLAG_APPROX_FIT) != 0) {
+            return GPUResourceProvider.makeApprox(mHeight);
+        }
+        return mHeight;
+    }
+
+    @Override
+    public int getSampleCount() {
+        return mSampleCount;
+    }
+
+    @Override
+    public Object getBackingUniqueID() {
+        if (mRenderTarget != null) {
+            return mRenderTarget;
+        }
+        return mUniqueID;
+    }
+
+    @Override
+    public boolean isInstantiated() {
+        return mRenderTarget != null;
+    }
+
+    @Override
+    public boolean instantiate(GPUResourceProvider resourceProvider) {
+        if (isLazy()) {
+            return false;
+        }
+        return mRenderTarget != null;
+    }
+
+    @Override
+    public void clear() {
+        assert mRenderTarget != null;
+        mRenderTarget.unref();
+        mRenderTarget = null;
+    }
+
+    @Override
+    public boolean shouldSkipAllocator() {
+        if ((mSurfaceFlags & IGPUSurface.FLAG_SKIP_ALLOCATOR) != 0) {
+            // Usually an atlas or onFlush proxy
+            return true;
+        }
+        return mRenderTarget != null;
+    }
+
+    @Override
+    public boolean isBackingWrapped() {
+        return mRenderTarget != null;
+    }
+
+    @Nullable
+    @Override
+    public IGPUSurface peekGPUSurface() {
+        return mRenderTarget;
+    }
+
+    @Nullable
+    @Override
+    public GPURenderTarget peekGPURenderTarget() {
+        return mRenderTarget != null ? mRenderTarget.asRenderTarget() : null;
+    }
+
+    @Override
+    public boolean doLazyInstantiation(GPUResourceProvider resourceProvider) {
+        assert isLazy();
+
+        @SharedPtr
+        GPURenderTarget surface = null;
+
+        boolean releaseCallback = false;
+        int width = isLazyMost() ? -1 : getWidth();
+        int height = isLazyMost() ? -1 : getHeight();
+        LazyCallbackResult result = mLazyInstantiateCallback.onLazyInstantiate(resourceProvider,
+                mFormat,
+                width, height,
+                getSampleCount(),
+                mSurfaceFlags,
+                "");
+        if (result != null) {
+            surface = (GPURenderTarget) result.mSurface;
+            releaseCallback = result.mReleaseCallback;
+        }
+        if (surface == null) {
+            mWidth = mHeight = 0;
+            return false;
+        }
+
+        if (isLazyMost()) {
+            // This was a lazy-most proxy. We need to fill in the width & height. For normal
+            // lazy proxies we must preserve the original width & height since that indicates
+            // the content area.
+            mWidth = surface.getWidth();
+            mHeight = surface.getHeight();
+        }
+
+        assert getWidth() <= surface.getWidth();
+        assert getHeight() <= surface.getHeight();
+
+        mRenderTarget = move(mRenderTarget, surface);
+        if (releaseCallback) {
+            mLazyInstantiateCallback = null;
+        }
+
+        return true;
+    }
 }

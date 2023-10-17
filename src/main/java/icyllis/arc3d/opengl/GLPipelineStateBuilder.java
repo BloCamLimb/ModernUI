@@ -25,8 +25,6 @@ import icyllis.arc3d.engine.shading.*;
 import org.lwjgl.system.MemoryStack;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import java.io.PrintWriter;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
@@ -34,9 +32,9 @@ import java.util.concurrent.CompletableFuture;
 
 import static icyllis.arc3d.opengl.GLCore.*;
 
-public class GLPipelineStateBuilder extends ProgramBuilder {
+public class GLPipelineStateBuilder extends PipelineBuilder {
 
-    private final GLServer mServer;
+    private final GLDevice mDevice;
 
     private final VaryingHandler mVaryingHandler;
     private final GLUniformHandler mUniformHandler;
@@ -44,21 +42,22 @@ public class GLPipelineStateBuilder extends ProgramBuilder {
     private String mVertSource;
     private String mFragSource;
 
-    private GLPipelineStateBuilder(GLServer server,
+    private GLPipelineStateBuilder(GLDevice device,
                                    PipelineDesc desc,
                                    PipelineInfo pipelineInfo) {
         super(desc, pipelineInfo);
-        mServer = server;
+        mDevice = device;
         mVaryingHandler = new VaryingHandler(this);
         mUniformHandler = new GLUniformHandler(this);
     }
 
     @Nonnull
-    public static GLPipelineState createPipelineState(final GLServer server,
-                                                      final PipelineDesc desc,
-                                                      final PipelineInfo pipelineInfo) {
-        return new GLPipelineState(server, CompletableFuture.supplyAsync(() -> {
-            GLPipelineStateBuilder builder = new GLPipelineStateBuilder(server, desc, pipelineInfo);
+    public static GLGraphicsPipelineState createGraphicsPipelineState(
+            final GLDevice device,
+            final PipelineDesc desc,
+            final PipelineInfo pipelineInfo) {
+        return new GLGraphicsPipelineState(device, CompletableFuture.supplyAsync(() -> {
+            GLPipelineStateBuilder builder = new GLPipelineStateBuilder(device, desc, pipelineInfo);
             builder.buildAsync();
             return builder;
         }));
@@ -82,7 +81,7 @@ public class GLPipelineStateBuilder extends ProgramBuilder {
         System.out.printf("%s: %s\n", Thread.currentThread(), allShaders);
     }
 
-    boolean finish(GLPipelineState result) {
+    boolean finish(GLGraphicsPipelineState dest) {
         if (mVertSource == null || mFragSource == null) {
             return false;
         }
@@ -91,17 +90,17 @@ public class GLPipelineStateBuilder extends ProgramBuilder {
             return false;
         }
 
-        PrintWriter errorWriter = mServer.getContext().getErrorWriter();
+        PrintWriter errorWriter = mDevice.getContext().getErrorWriter();
 
         int frag = glCompileAndAttachShader(program, GL_FRAGMENT_SHADER, mFragSource,
-                mServer.getPipelineStateCache().getStats(), errorWriter);
+                mDevice.getPipelineStateCache().getStats(), errorWriter);
         if (frag == 0) {
             glDeleteProgram(program);
             return false;
         }
 
         int vert = glCompileAndAttachShader(program, GL_VERTEX_SHADER, mVertSource,
-                mServer.getPipelineStateCache().getStats(), errorWriter);
+                mDevice.getPipelineStateCache().getStats(), errorWriter);
         if (vert == 0) {
             glDeleteProgram(program);
             glDeleteShader(frag);
@@ -149,13 +148,13 @@ public class GLPipelineStateBuilder extends ProgramBuilder {
 
         //TODO share vertex arrays
         @SharedPtr
-        GLVertexArray vertexArray = GLVertexArray.make(mServer, mPipelineInfo.geomProc());
+        GLVertexArray vertexArray = GLVertexArray.make(mDevice, mPipelineInfo.geomProc());
         if (vertexArray == null) {
             glDeleteProgram(program);
             return false;
         }
 
-        result.init(new GLProgram(mServer, program),
+        dest.init(new GLProgram(mDevice, program),
                 vertexArray,
                 mUniformHandler.mUniforms,
                 mUniformHandler.mCurrentOffset,
@@ -166,7 +165,7 @@ public class GLPipelineStateBuilder extends ProgramBuilder {
 
     @Override
     public Caps caps() {
-        return mServer.getCaps();
+        return mDevice.getCaps();
     }
 
     @Override

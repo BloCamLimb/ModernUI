@@ -20,11 +20,11 @@
 package icyllis.arc3d.engine;
 
 @FunctionalInterface
-public interface TextureProxyVisitor {
+public interface TextureVisitor {
 
     /**
-     * @param proxy        raw ptr to texture proxy
+     * @param texture      raw ptr to U texture
      * @param samplerState see {@link SamplerState}
      */
-    void visit(TextureProxy proxy, int samplerState);
+    void visit(Texture texture, int samplerState);
 }

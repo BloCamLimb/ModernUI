@@ -26,7 +26,7 @@ import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 
 import java.util.ArrayList;
 
-public class DrawingManager {
+public class RenderTaskManager {
 
     private final RecordingContext mContext;
     private final DirectContext mDirect;
@@ -39,21 +39,21 @@ public class DrawingManager {
     private OpsTask mActiveOpsTask = null;
 
     private final OpFlushState mFlushState;
-    private final ResourceAllocator mResourceAllocator;
+    private final GPUSurfaceAllocator mSurfaceAllocator;
 
     private boolean mFlushing;
 
-    public DrawingManager(RecordingContext context) {
+    public RenderTaskManager(RecordingContext context) {
         mContext = context;
         if (context instanceof DirectContext direct) {
             mDirect = direct;
-            mFlushState = new OpFlushState(direct.getServer(), direct.getResourceProvider());
-            mResourceAllocator = new ResourceAllocator(direct);
+            mFlushState = new OpFlushState(direct.getDevice(), direct.getResourceProvider());
+            mSurfaceAllocator = new GPUSurfaceAllocator(direct);
         } else {
             // deferred
             mDirect = null;
             mFlushState = null;
-            mResourceAllocator = null;
+            mSurfaceAllocator = null;
         }
     }
 
@@ -87,8 +87,8 @@ public class DrawingManager {
 
         final DirectContext context = mDirect;
         assert (context != null);
-        final Server server = context.getServer();
-        assert (server != null);
+        final GPUDevice device = context.getDevice();
+        assert (device != null);
 
         closeTasks();
         mActiveOpsTask = null;
@@ -96,17 +96,17 @@ public class DrawingManager {
         TopologicalSort.topologicalSort(mDAG, RenderTask.SORT_ADAPTER);
 
         for (RenderTask task : mDAG) {
-            task.gatherProxyIntervals(mResourceAllocator);
+            task.gatherSurfaceIntervals(mSurfaceAllocator);
         }
-        mResourceAllocator.simulate();
-        mResourceAllocator.allocate();
+        mSurfaceAllocator.simulate();
+        mSurfaceAllocator.allocate();
 
         boolean purge = false;
-        if (!mResourceAllocator.isInstantiationFailed()) {
+        if (!mSurfaceAllocator.isInstantiationFailed()) {
             purge = executeRenderTasks();
         }
 
-        mResourceAllocator.reset();
+        mSurfaceAllocator.reset();
 
         clearTasks();
 
@@ -149,20 +149,20 @@ public class DrawingManager {
         return task;
     }
 
-    public void setLastRenderTask(SurfaceProxy proxy, RenderTask task) {
+    public void setLastRenderTask(Surface surface, RenderTask task) {
         if (task != null) {
-            mLastRenderTasks.put(proxy.getUniqueID(), task);
+            mLastRenderTasks.put(surface.getUniqueID(), task);
         } else {
-            mLastRenderTasks.remove(proxy);
+            mLastRenderTasks.remove(surface);
         }
     }
 
-    public RenderTask getLastRenderTask(SurfaceProxy proxy) {
+    public RenderTask getLastRenderTask(Surface proxy) {
         return mLastRenderTasks.get(proxy.getUniqueID());
     }
 
     @SharedPtr
-    public OpsTask newOpsTask(SurfaceProxyView writeView) {
+    public OpsTask newOpsTask(SurfaceView writeView) {
 
         OpsTask opsTask = new OpsTask(this, writeView);
 

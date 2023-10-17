@@ -20,7 +20,7 @@
 package icyllis.arc3d.engine;
 
 /**
- * Pipeline state object.
+ * Graphics pipeline state object (PSO of graphics pipeline).
  */
-public abstract class PipelineState {
+public abstract class GraphicsPipelineState {
 }

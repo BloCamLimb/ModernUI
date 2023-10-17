@@ -33,19 +33,19 @@ public sealed class RecordingContext extends Context
 
     private final Thread mOwnerThread;
 
-    private final ProxyProvider mProxyProvider;
-    private DrawingManager mDrawingManager;
+    private final SurfaceProvider mSurfaceProvider;
+    private RenderTaskManager mRenderTaskManager;
 
     private final PipelineDesc mLookupDesc = new PipelineDesc();
 
-    protected RecordingContext(ContextThreadSafeProxy proxy) {
-        super(proxy);
+    protected RecordingContext(SharedContextInfo context) {
+        super(context);
         mOwnerThread = Thread.currentThread();
-        mProxyProvider = new ProxyProvider(this);
+        mSurfaceProvider = new SurfaceProvider(this);
     }
 
     @Nullable
-    public static RecordingContext makeRecording(ContextThreadSafeProxy context) {
+    public static RecordingContext makeRecording(SharedContextInfo context) {
         RecordingContext rContext = new RecordingContext(context);
         if (rContext.init()) {
             return rContext;
@@ -61,7 +61,7 @@ public sealed class RecordingContext extends Context
      * calling this method will transition the {@link DirectContext} to the discarded state.
      */
     public boolean isDiscarded() {
-        return mThreadSafeProxy.isDiscarded();
+        return mContextInfo.isDiscarded();
     }
 
     /**
@@ -108,29 +108,33 @@ public sealed class RecordingContext extends Context
     }
 
     @ApiStatus.Internal
-    public final ProxyProvider getProxyProvider() {
-        return mProxyProvider;
+    public final SurfaceProvider getSurfaceProvider() {
+        return mSurfaceProvider;
     }
 
     @ApiStatus.Internal
-    public final DrawingManager getDrawingManager() {
-        return mDrawingManager;
+    public final RenderTaskManager getRenderTaskManager() {
+        return mRenderTaskManager;
     }
 
     @ApiStatus.Internal
     public final ThreadSafeCache getThreadSafeCache() {
-        return mThreadSafeProxy.getThreadSafeCache();
+        return mContextInfo.getThreadSafeCache();
     }
 
     @ApiStatus.Internal
     public final PipelineStateCache getPipelineStateCache() {
-        return mThreadSafeProxy.getPipelineStateCache();
+        return mContextInfo.getPipelineStateCache();
     }
 
     @ApiStatus.Internal
-    public final PipelineState findOrCreatePipelineState(final PipelineInfo pipelineInfo) {
+    public final GraphicsPipelineState findOrCreateGraphicsPipelineState(
+            final PipelineInfo pipelineInfo) {
         mLookupDesc.clear();
-        return getPipelineStateCache().findOrCreatePipelineState(mLookupDesc, pipelineInfo);
+        return getPipelineStateCache().findOrCreateGraphicsPipelineState(
+                mLookupDesc,
+                pipelineInfo
+        );
     }
 
     @Override
@@ -138,29 +142,29 @@ public sealed class RecordingContext extends Context
         if (!super.init()) {
             return false;
         }
-        if (mDrawingManager != null) {
-            mDrawingManager.destroy();
+        if (mRenderTaskManager != null) {
+            mRenderTaskManager.destroy();
         }
-        mDrawingManager = new DrawingManager(this);
+        mRenderTaskManager = new RenderTaskManager(this);
         return true;
     }
 
     protected void discard() {
-        if (mThreadSafeProxy.discard() && mDrawingManager != null) {
+        if (mContextInfo.discard() && mRenderTaskManager != null) {
             throw new AssertionError();
         }
-        if (mDrawingManager != null) {
-            mDrawingManager.destroy();
+        if (mRenderTaskManager != null) {
+            mRenderTaskManager.destroy();
         }
-        mDrawingManager = null;
+        mRenderTaskManager = null;
     }
 
     @Override
     protected void deallocate() {
-        if (mDrawingManager != null) {
-            mDrawingManager.destroy();
+        if (mRenderTaskManager != null) {
+            mRenderTaskManager.destroy();
         }
-        mDrawingManager = null;
+        mRenderTaskManager = null;
     }
 
     /**

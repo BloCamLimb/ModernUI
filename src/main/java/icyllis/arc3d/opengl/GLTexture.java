@@ -21,7 +21,7 @@ package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.engine.Surface;
+import icyllis.arc3d.engine.IGPUSurface;
 import org.lwjgl.opengl.EXTMemoryObject;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.system.Platform;
@@ -34,7 +34,7 @@ import static icyllis.arc3d.opengl.GLCore.*;
 /**
  * Represents OpenGL 2D textures.
  */
-public class GLTexture extends Texture {
+public class GLTexture extends GPUTexture {
 
     private GLTextureInfo mInfo;
     private final GLBackendTexture mBackendTexture;
@@ -43,13 +43,13 @@ public class GLTexture extends Texture {
     private final long mMemorySize;
 
     // Constructor for instances created by ourselves.
-    GLTexture(GLServer server,
+    GLTexture(GLDevice device,
               int width, int height,
               GLTextureInfo info,
               BackendFormat format,
               boolean budgeted,
               boolean register) {
-        super(server, width, height);
+        super(device, width, height);
         assert info.handle != 0;
         assert glFormatIsSupported(format.getGLFormat());
         mInfo = info;
@@ -57,10 +57,10 @@ public class GLTexture extends Texture {
         mOwnership = true;
 
         if (glFormatIsCompressed(format.getGLFormat()) || format.isExternal()) {
-            mFlags |= Surface.FLAG_READ_ONLY;
+            mFlags |= IGPUSurface.FLAG_READ_ONLY;
         }
         if (mBackendTexture.isMipmapped()) {
-            mFlags |= Surface.FLAG_MIPMAPPED;
+            mFlags |= IGPUSurface.FLAG_MIPMAPPED;
         }
 
         mMemorySize = computeSize(format, width, height, 1, info.levels);
@@ -70,7 +70,7 @@ public class GLTexture extends Texture {
     }
 
     // Constructor for instances wrapping backend objects.
-    public GLTexture(GLServer server,
+    public GLTexture(GLDevice device,
                      int width, int height,
                      GLTextureInfo info,
                      GLTextureParameters params,
@@ -78,7 +78,7 @@ public class GLTexture extends Texture {
                      int ioType,
                      boolean cacheable,
                      boolean ownership) {
-        super(server, width, height);
+        super(device, width, height);
         assert info.handle != 0;
         assert glFormatIsSupported(format.getGLFormat());
         mInfo = info;
@@ -140,13 +140,13 @@ public class GLTexture extends Texture {
 
     @Override
     protected void onSetLabel(@Nonnull String label) {
-        if (getServer().getCaps().hasDebugSupport()) {
+        if (getDevice().getCaps().hasDebugSupport()) {
             assert mInfo != null;
             if (label.isEmpty()) {
                 nglObjectLabel(GL_TEXTURE, mInfo.handle, 0, MemoryUtil.NULL);
             } else {
                 label = label.substring(0, Math.min(label.length(),
-                        getServer().getCaps().maxLabelLength()));
+                        getDevice().getCaps().maxLabelLength()));
                 glObjectLabel(GL_TEXTURE, mInfo.handle, label);
             }
         }
@@ -179,8 +179,8 @@ public class GLTexture extends Texture {
     }
 
     @Override
-    protected GLServer getServer() {
-        return (GLServer) super.getServer();
+    protected GLDevice getDevice() {
+        return (GLDevice) super.getDevice();
     }
 
     @Override

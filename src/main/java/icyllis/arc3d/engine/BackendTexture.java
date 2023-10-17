@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.opengl.GLServer;
+import icyllis.arc3d.opengl.GLDevice;
 import icyllis.arc3d.opengl.GLTextureInfo;
 import icyllis.arc3d.vulkan.VulkanImageInfo;
 
@@ -80,7 +80,7 @@ public abstract class BackendTexture {
      * externally to Context.
      * <p>
      * Tells client that these parameters of the texture are changed out of client control
-     * (for example, you called glTexParameteri without using {@link GLServer}).
+     * (for example, you called glTexParameteri without using {@link GLDevice}).
      * The local states will be forced to reset to a known state when next use.
      */
     public void glTextureParametersModified() {

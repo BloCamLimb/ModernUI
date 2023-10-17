@@ -30,8 +30,9 @@ public abstract class PipelineStateCache {
     public PipelineStateCache() {
     }
 
-    public abstract PipelineState findOrCreatePipelineState(final PipelineDesc desc,
-                                                            final PipelineInfo pipelineInfo);
+    public abstract GraphicsPipelineState findOrCreateGraphicsPipelineState(
+            final PipelineDesc desc,
+            final PipelineInfo pipelineInfo);
 
     protected abstract void close();
 

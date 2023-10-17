@@ -28,8 +28,8 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * This class abstracts a task that targets a single {@link SurfaceProxy}, participates in the
- * {@link DrawingManager}'s DAG, and implements the {@link #execute(OpFlushState)} method to
+ * This class abstracts a task that targets a single {@link Surface}, participates in the
+ * {@link RenderTaskManager}'s DAG, and implements the {@link #execute(OpFlushState)} method to
  * modify its target proxy's contents. (e.g., an {@link OpsTask} that executes a command buffer,
  * a {@link TextureResolveTask} that regenerates mipmaps, etc.)
  */
@@ -112,14 +112,14 @@ public abstract class RenderTask extends RefCnt {
 
     // multiple targets for texture resolve task
     @SharedPtr
-    protected final List<SurfaceProxy> mTargets = new ArrayList<>(1);
-    protected DrawingManager mDrawingMgr;
+    protected final List<Surface> mTargets = new ArrayList<>(1);
+    protected RenderTaskManager mTaskManager;
 
     /**
-     * @param drawingMgr the creating drawing manager
+     * @param taskManager the creating drawing manager
      */
-    protected RenderTask(@Nonnull DrawingManager drawingMgr) {
-        mDrawingMgr = drawingMgr;
+    protected RenderTask(@Nonnull RenderTaskManager taskManager) {
+        mTaskManager = taskManager;
         mUniqueID = createUniqueID();
     }
 
@@ -131,11 +131,11 @@ public abstract class RenderTask extends RefCnt {
         return mTargets.size();
     }
 
-    public final SurfaceProxy getTarget(int index) {
+    public final Surface getTarget(int index) {
         return mTargets.get(index);
     }
 
-    public final SurfaceProxy getTarget() {
+    public final Surface getTarget() {
         assert getNumTargets() == 1;
         return mTargets.get(0);
     }
@@ -153,12 +153,12 @@ public abstract class RenderTask extends RefCnt {
         return -1;
     }
 
-    protected final void addTarget(@SharedPtr SurfaceProxy proxy) {
-        assert (mDrawingMgr.getContext().isOwnerThread());
+    protected final void addTarget(@SharedPtr Surface surface) {
+        assert (mTaskManager.getContext().isOwnerThread());
         assert (!isClosed());
-        mDrawingMgr.setLastRenderTask(proxy, this);
-        proxy.isUsedAsTaskTarget();
-        mTargets.add(proxy);
+        mTaskManager.setLastRenderTask(surface, this);
+        surface.isUsedAsTaskTarget();
+        mTargets.add(surface);
     }
 
     @Override
@@ -168,8 +168,8 @@ public abstract class RenderTask extends RefCnt {
         assert (mFlags & DETACHED_FLAG) != 0;
     }
 
-    public void gatherProxyIntervals(ResourceAllocator alloc) {
-        // Default implementation is no proxies
+    public void gatherSurfaceIntervals(GPUSurfaceAllocator alloc) {
+        // Default implementation is no surfaces
     }
 
     /**
@@ -197,7 +197,7 @@ public abstract class RenderTask extends RefCnt {
         if (isClosed()) {
             return;
         }
-        assert (mDrawingMgr.getContext().isOwnerThread());
+        assert (mTaskManager.getContext().isOwnerThread());
 
         onMakeClosed(context);
 
@@ -222,19 +222,19 @@ public abstract class RenderTask extends RefCnt {
      * practice this just means telling the drawing manager to forget the relevant
      * mappings from surface proxy to last modifying render task.
      */
-    public final void detach(DrawingManager drawingMgr) {
+    public final void detach(RenderTaskManager taskManager) {
         assert (isClosed());
-        assert (mDrawingMgr == drawingMgr);
+        assert (mTaskManager == taskManager);
         if ((mFlags & DETACHED_FLAG) != 0) {
             return;
         }
-        assert (drawingMgr.getContext().isOwnerThread());
-        mDrawingMgr = null;
+        assert (taskManager.getContext().isOwnerThread());
+        mTaskManager = null;
         mFlags |= DETACHED_FLAG;
 
-        for (SurfaceProxy target : mTargets) {
-            if (drawingMgr.getLastRenderTask(target) == this) {
-                drawingMgr.setLastRenderTask(target, null);
+        for (Surface target : mTargets) {
+            if (taskManager.getLastRenderTask(target) == this) {
+                taskManager.setLastRenderTask(target, null);
             }
         }
     }
@@ -252,7 +252,7 @@ public abstract class RenderTask extends RefCnt {
     public final void makeSkippable() {
         assert (isClosed());
         if (!isSkippable()) {
-            assert (mDrawingMgr.getContext().isOwnerThread());
+            assert (mTaskManager.getContext().isOwnerThread());
             mFlags |= SKIPPABLE_FLAG;
             onMakeSkippable();
         }
@@ -265,11 +265,11 @@ public abstract class RenderTask extends RefCnt {
         return (mFlags & SKIPPABLE_FLAG) != 0;
     }
 
-    public final void addDependency(TextureProxy dependency, int samplerState) {
-        assert (mDrawingMgr.getContext().isOwnerThread());
+    public final void addDependency(Texture dependency, int samplerState) {
+        assert (mTaskManager.getContext().isOwnerThread());
         assert (!isClosed());
 
-        RenderTask dependencyTask = mDrawingMgr.getLastRenderTask(dependency);
+        RenderTask dependencyTask = mTaskManager.getLastRenderTask(dependency);
 
         if (dependencyTask == this) {
             // no self dependency
@@ -286,7 +286,7 @@ public abstract class RenderTask extends RefCnt {
                 // We are closing 'dependencyTask' here bc the current contents of it are what 'this'
                 // renderTask depends on. We need a break in 'dependencyTask' so that the usage of
                 // that state has a chance to execute.
-                dependencyTask.makeClosed(mDrawingMgr.getContext());
+                dependencyTask.makeClosed(mTaskManager.getContext());
             }
         }
 
@@ -303,14 +303,14 @@ public abstract class RenderTask extends RefCnt {
 
         if (resolveFlags != 0) {
             if (mTextureResolveTask == null) {
-                mTextureResolveTask = new TextureResolveTask(mDrawingMgr);
+                mTextureResolveTask = new TextureResolveTask(mTaskManager);
             }
-            mTextureResolveTask.addProxy(RefCnt.create(dependency), resolveFlags);
+            mTextureResolveTask.addTexture(RefCnt.create(dependency), resolveFlags);
 
             // addProxy() should have closed the texture proxy's previous task.
             assert (dependencyTask == null ||
                     dependencyTask.isClosed());
-            assert (mDrawingMgr.getLastRenderTask(dependency) == mTextureResolveTask);
+            assert (mTaskManager.getLastRenderTask(dependency) == mTextureResolveTask);
 
             assert (dependencyTask == null ||
                     mTextureResolveTask.dependsOn(dependencyTask));
@@ -337,11 +337,11 @@ public abstract class RenderTask extends RefCnt {
     }
 
     public final boolean isInstantiated() {
-        for (SurfaceProxy proxy : mTargets) {
-            if (!proxy.isInstantiated()) {
+        for (Surface target : mTargets) {
+            if (!target.isInstantiated()) {
                 return false;
             }
-            Texture texture = proxy.peekTexture();
+            GPUTexture texture = target.peekGPUTexture();
             if (texture != null && texture.isDestroyed()) {
                 return false;
             }

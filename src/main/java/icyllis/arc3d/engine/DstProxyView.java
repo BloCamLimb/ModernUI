@@ -25,7 +25,7 @@ public class DstProxyView  {
     public static final int REQUIRES_TEXTURE_BARRIER_FLAG = 0x2;
     public static final int AS_INPUT_ATTACHMENT_FLAG = 0x4;
 
-    SurfaceProxyView mProxyView;
+    SurfaceView mProxyView;
     int mOffsetX;
     int mOffsetY;
     int mFlags;

@@ -23,8 +23,8 @@ import org.lwjgl.vulkan.*;
 
 /**
  * The {@link VkBackendContext} contains all the base Vulkan objects needed by the
- * {@link VulkanServer}. The assumption is that the client will set these up and pass
- * them to the {@link VulkanServer} constructor. The {@link VulkanServer} created must
+ * {@link VulkanDevice}. The assumption is that the client will set these up and pass
+ * them to the {@link VulkanDevice} constructor. The {@link VulkanDevice} created must
  * support at least one graphics queue, which is passed in as well.
  * The QueueFamilyIndex must match the family of the given queue. It is needed for CommandPool
  * creation, and any BackendObjects handed to us (e.g., for wrapped textures) needs to be created

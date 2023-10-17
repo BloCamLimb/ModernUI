@@ -41,7 +41,7 @@ public abstract class ShaderBuilderBase implements ShaderBuilder {
     // Reasonable upper bound on number of processor stages
     protected static final int PREALLOC = CODE + 7;
 
-    protected final ProgramBuilder mProgramBuilder;
+    protected final PipelineBuilder mPipelineBuilder;
     protected final StringBuilder[] mShaderStrings = new StringBuilder[PREALLOC];
 
     protected int mCodeIndex;
@@ -49,8 +49,8 @@ public abstract class ShaderBuilderBase implements ShaderBuilder {
     private Formatter mCodeFormatter;
     private Formatter mCodeFormatterPre;
 
-    public ShaderBuilderBase(ProgramBuilder programBuilder) {
-        mProgramBuilder = programBuilder;
+    public ShaderBuilderBase(PipelineBuilder pipelineBuilder) {
+        mPipelineBuilder = pipelineBuilder;
         for (int i = 0; i <= CODE; i++) {
             mShaderStrings[i] = new StringBuilder();
         }
@@ -98,7 +98,7 @@ public abstract class ShaderBuilderBase implements ShaderBuilder {
 
     @Override
     public String getMangledName(String baseName) {
-        return mProgramBuilder.nameVariable('\0', baseName);
+        return mPipelineBuilder.nameVariable('\0', baseName);
     }
 
     protected final void nextStage() {

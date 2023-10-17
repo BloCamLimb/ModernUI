@@ -28,19 +28,19 @@ import javax.annotation.Nullable;
 /**
  * Provides OpenGL objects with cache.
  */
-public final class GLResourceProvider extends ResourceProvider {
+public final class GLResourceProvider extends GPUResourceProvider {
 
     private static final int SAMPLER_CACHE_SIZE = 32;
 
-    private final GLServer mServer;
+    private final GLDevice mDevice;
 
     // LRU cache, samplers are shared by mHWTextureSamplers and mSamplerCache
     private final Int2ObjectLinkedOpenHashMap<GLSampler> mSamplerCache =
             new Int2ObjectLinkedOpenHashMap<>(SAMPLER_CACHE_SIZE);
 
-    GLResourceProvider(GLServer server, DirectContext context) {
-        super(server, context);
-        mServer = server;
+    GLResourceProvider(GLDevice device, DirectContext context) {
+        super(device, context);
+        mDevice = device;
     }
 
     void discard() {
@@ -64,7 +64,7 @@ public final class GLResourceProvider extends ResourceProvider {
     public GLSampler findOrCreateCompatibleSampler(int samplerState) {
         GLSampler sampler = mSamplerCache.getAndMoveToFirst(samplerState);
         if (sampler == null) {
-            sampler = GLSampler.create(mServer, samplerState);
+            sampler = GLSampler.create(mDevice, samplerState);
             if (sampler == null) {
                 return null;
             }

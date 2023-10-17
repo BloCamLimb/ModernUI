@@ -35,7 +35,7 @@ public interface MeshDrawTarget {
      * the buffer (in 'vertexSize' units) where the data will be placed.
      * <p>
      * This method requires {@link Mesh#getVertexSize()} and {@link Mesh#getVertexCount()} as
-     * arguments and {@link Mesh#setVertexBuffer(Buffer, int, int)} as results.
+     * arguments and {@link Mesh#setVertexBuffer(GPUBuffer, int, int)} as results.
      *
      * @return may NULL if failed
      */
@@ -47,7 +47,7 @@ public interface MeshDrawTarget {
      * the buffer (in 'instanceSize' units) where the data will be placed.
      * <p>
      * This method requires {@link Mesh#getInstanceSize()} and {@link Mesh#getInstanceCount()} as
-     * arguments and {@link Mesh#setInstanceBuffer(Buffer, int, int)} as results.
+     * arguments and {@link Mesh#setInstanceBuffer(GPUBuffer, int, int)} as results.
      *
      * @return may NULL if failed
      */
@@ -59,7 +59,7 @@ public interface MeshDrawTarget {
      * the buffer (in 'ushort' units) where the data will be placed.
      * <p>
      * This method requires {@link Mesh#getIndexCount()} as
-     * arguments and {@link Mesh#setIndexBuffer(Buffer, int, int)} as results.
+     * arguments and {@link Mesh#setIndexBuffer(GPUBuffer, int, int)} as results.
      *
      * @return may NULL if failed
      */

@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.opengl.GLServer;
+import icyllis.arc3d.opengl.GLDevice;
 import icyllis.arc3d.vulkan.VkBackendContext;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -30,12 +30,12 @@ import javax.annotation.Nullable;
  */
 public final class DirectContext extends RecordingContext {
 
-    private Server mServer;
-    private ResourceCache mResourceCache;
-    private ResourceProvider mResourceProvider;
+    private GPUDevice mDevice;
+    private GPUResourceCache mResourceCache;
+    private GPUResourceProvider mResourceProvider;
 
     private DirectContext(int backend, ContextOptions options) {
-        super(new ContextThreadSafeProxy(backend, options));
+        super(new SharedContextInfo(backend, options));
     }
 
     /**
@@ -85,7 +85,7 @@ public final class DirectContext extends RecordingContext {
     @Nullable
     public static DirectContext makeOpenGL(ContextOptions options) {
         DirectContext context = new DirectContext(Engine.BackendApi.kOpenGL, options);
-        context.mServer = GLServer.make(context, options);
+        context.mDevice = GLDevice.make(context, options);
         if (context.init()) {
             return context;
         }
@@ -132,40 +132,40 @@ public final class DirectContext extends RecordingContext {
      */
     public void resetContext(int state) {
         checkOwnerThread();
-        mServer.markContextDirty(state);
+        mDevice.markContextDirty(state);
     }
 
     @ApiStatus.Internal
-    public Server getServer() {
-        return mServer;
+    public GPUDevice getDevice() {
+        return mDevice;
     }
 
     @ApiStatus.Internal
-    public ResourceCache getResourceCache() {
+    public GPUResourceCache getResourceCache() {
         return mResourceCache;
     }
 
     @ApiStatus.Internal
-    public ResourceProvider getResourceProvider() {
+    public GPUResourceProvider getResourceProvider() {
         return mResourceProvider;
     }
 
     @Override
     protected boolean init() {
         assert isOwnerThread();
-        if (mServer == null) {
+        if (mDevice == null) {
             return false;
         }
 
-        mThreadSafeProxy.init(mServer.getCaps(), mServer.getPipelineStateCache());
+        mContextInfo.init(mDevice.getCaps(), mDevice.getPipelineStateCache());
         if (!super.init()) {
             return false;
         }
 
         assert getThreadSafeCache() != null;
 
-        mResourceCache = new ResourceCache(getContextID());
-        mResourceProvider = mServer.getResourceProvider();
+        mResourceCache = new GPUResourceCache(getContextID());
+        mResourceProvider = mDevice.getResourceProvider();
         return true;
     }
 
@@ -175,6 +175,6 @@ public final class DirectContext extends RecordingContext {
         if (mResourceCache != null) {
             mResourceCache.releaseAll();
         }
-        mServer.disconnect(true);
+        mDevice.disconnect(true);
     }
 }

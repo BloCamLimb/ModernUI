@@ -41,9 +41,9 @@ public class OpsTask extends RenderTask {
 
     private final ArrayList<OpChain> mOpChains = new ArrayList<>(25);
 
-    private final ObjectOpenHashSet<TextureProxy> mSampledTextures = new ObjectOpenHashSet<>();
+    private final ObjectOpenHashSet<Texture> mSampledTextures = new ObjectOpenHashSet<>();
 
-    private final SurfaceProxyView mWriteView;
+    private final SurfaceView mWriteView;
     private int mPipelineFlags;
 
     private final Rect2f mTotalBounds = new Rect2f();
@@ -56,11 +56,11 @@ public class OpsTask extends RenderTask {
     /**
      * @param writeView the reference to the owner's write view
      */
-    public OpsTask(@Nonnull DrawingManager drawingMgr,
-                   @Nonnull SurfaceProxyView writeView) {
+    public OpsTask(@Nonnull RenderTaskManager drawingMgr,
+                   @Nonnull SurfaceView writeView) {
         super(drawingMgr);
         mWriteView = writeView;             // move
-        addTarget(writeView.refProxy());    // inc
+        addTarget(writeView.refSurface());    // inc
     }
 
     public void setColorLoadOp(byte loadOp, float red, float green, float blue, float alpha) {
@@ -71,7 +71,7 @@ public class OpsTask extends RenderTask {
         mLoadClearColor[3] = alpha;
         Swizzle.apply(mWriteView.getSwizzle(), mLoadClearColor);
         if (loadOp == LoadOp.Clear) {
-            SurfaceProxy target = getTarget();
+            Surface target = getTarget();
             mTotalBounds.set(0, 0,
                     target.getBackingWidth(), target.getBackingHeight());
         }
@@ -82,12 +82,12 @@ public class OpsTask extends RenderTask {
     }
 
     @Override
-    public void gatherProxyIntervals(ResourceAllocator alloc) {
+    public void gatherSurfaceIntervals(GPUSurfaceAllocator alloc) {
         if (!mOpChains.isEmpty()) {
             int cur = alloc.curOp();
             alloc.addInterval(getTarget(), cur, cur + mOpChains.size() - 1, true);
 
-            TextureProxyVisitor gather = (p, __) -> alloc.addInterval(p,
+            TextureVisitor gather = (p, __) -> alloc.addInterval(p,
                     alloc.curOp(),
                     alloc.curOp(),
                     /*actualUse*/true);
@@ -122,8 +122,8 @@ public class OpsTask extends RenderTask {
     @Override
     public boolean execute(OpFlushState flushState) {
         assert (getNumTargets() == 1);
-        SurfaceProxy target = getTarget();
-        assert (target != null && target == mWriteView.getProxy());
+        Surface target = getTarget();
+        assert (target != null && target == mWriteView.getSurface());
 
         OpsRenderPass opsRenderPass = flushState.beginOpsRenderPass(mWriteView,
                 mContentBounds,
@@ -149,15 +149,15 @@ public class OpsTask extends RenderTask {
         if (mOpChains.isEmpty() && mColorLoadOp == LoadOp.Load) {
             return;
         }
-        SurfaceProxy target = getTarget();
+        Surface target = getTarget();
         int rtHeight = target.getBackingHeight();
         Rect2f clippedContentBounds = new Rect2f(0, 0, target.getBackingWidth(), rtHeight);
         boolean result = clippedContentBounds.intersect(mTotalBounds);
         assert result;
         clippedContentBounds.roundOut(mContentBounds);
-        TextureProxy textureProxy = target.asTextureProxy();
-        if (textureProxy != null) {
-            if (textureProxy.isManualMSAAResolve()) {
+        Texture userTexture = target.asTexture();
+        if (userTexture != null) {
+            if (userTexture.isManualMSAAResolve()) {
                 int msaaTop;
                 int msaaBottom;
                 if (mWriteView.getOrigin() == SurfaceOrigin.kLowerLeft) {
@@ -167,11 +167,11 @@ public class OpsTask extends RenderTask {
                     msaaTop = mContentBounds.mTop;
                     msaaBottom = mContentBounds.mBottom;
                 }
-                textureProxy.setMSAADirty(mContentBounds.mLeft, msaaTop,
+                userTexture.setMSAADirty(mContentBounds.mLeft, msaaTop,
                         mContentBounds.mRight, msaaBottom);
             }
-            if (textureProxy.isMipmapped()) {
-                textureProxy.setMipmapsDirty(true);
+            if (userTexture.isMipmapped()) {
+                userTexture.setMipmapsDirty(true);
             }
         }
     }
@@ -181,7 +181,7 @@ public class OpsTask extends RenderTask {
     }
 
     public void addDrawOp(@Nonnull DrawOp op, @Nullable ClipResult clip, int processorAnalysis) {
-        TextureProxyVisitor addDependency = (p, ss) -> {
+        TextureVisitor addDependency = (p, ss) -> {
             mSampledTextures.add(p);
             addDependency(p, ss);
         };
@@ -252,7 +252,7 @@ public class OpsTask extends RenderTask {
             assert (validate());
         }
 
-        public void visitProxies(TextureProxyVisitor func) {
+        public void visitProxies(TextureVisitor func) {
             for (Op op = mHead; op != null; op = op.nextInChain()) {
                 op.visitProxies(func);
             }

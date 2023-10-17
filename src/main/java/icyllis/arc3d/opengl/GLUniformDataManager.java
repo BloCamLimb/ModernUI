@@ -40,7 +40,7 @@ public class GLUniformDataManager extends UniformDataManager {
     private GLUniformBuffer mUniformBuffer;
 
     /**
-     * Created by {@link GLPipelineState}.
+     * Created by {@link GLGraphicsPipelineState}.
      *
      * @param uniforms    the uniforms
      * @param uniformSize the uniform block size in bytes
@@ -78,13 +78,13 @@ public class GLUniformDataManager extends UniformDataManager {
         }
     }
 
-    public boolean bindAndUploadUniforms(GLServer server,
+    public boolean bindAndUploadUniforms(GLDevice device,
                                          GLCommandBuffer commandBuffer) {
         if (!mUniformsDirty) {
             return true;
         }
         if (mUniformBuffer == null) {
-            mUniformBuffer = GLUniformBuffer.make(server, mUniformSize, GLUniformHandler.UNIFORM_BINDING);
+            mUniformBuffer = GLUniformBuffer.make(device, mUniformSize, GLUniformHandler.UNIFORM_BINDING);
         }
         if (mUniformBuffer == null) {
             return false;

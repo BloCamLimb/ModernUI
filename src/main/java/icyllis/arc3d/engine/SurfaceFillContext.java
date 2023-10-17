@@ -28,11 +28,11 @@ public class SurfaceFillContext extends SurfaceContext {
     @SharedPtr
     private OpsTask mOpsTask;
 
-    private final SurfaceProxyView mWriteView;
+    private final SurfaceView mWriteView;
 
     public SurfaceFillContext(RecordingContext context,
-                              SurfaceProxyView readView,
-                              SurfaceProxyView writeView,
+                              SurfaceView readView,
+                              SurfaceView writeView,
                               int colorInfo) {
         super(context, readView, colorInfo);
         mWriteView = writeView;

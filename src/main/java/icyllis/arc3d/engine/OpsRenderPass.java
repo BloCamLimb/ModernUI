@@ -42,16 +42,16 @@ public abstract class OpsRenderPass {
 
     private int mDrawPipelineStatus = kNotConfigured_DrawPipelineStatus;
 
-    protected RenderTarget mRenderTarget;
+    protected GPURenderTarget mRenderTarget;
     protected int mSurfaceOrigin;
 
-    private TextureProxy[] mGeomTextures = new TextureProxy[1];
+    private Texture[] mGeomTextures = new Texture[1];
 
     public OpsRenderPass() {
         this(null, SurfaceOrigin.kUpperLeft);
     }
 
-    public OpsRenderPass(RenderTarget fs, int origin) {
+    public OpsRenderPass(GPURenderTarget fs, int origin) {
         mRenderTarget = fs;
         mSurfaceOrigin = origin;
     }
@@ -89,7 +89,7 @@ public abstract class OpsRenderPass {
      * @param pipelineState the pipeline state object
      * @param drawBounds    the sub-area of render target for subsequent draw calls
      */
-    public void bindPipeline(PipelineInfo pipelineInfo, PipelineState pipelineState, Rect2f drawBounds) {
+    public void bindPipeline(PipelineInfo pipelineInfo, GraphicsPipelineState pipelineState, Rect2f drawBounds) {
         assert (pipelineInfo.origin() == mSurfaceOrigin);
         if (!onBindPipeline(pipelineInfo, pipelineState, drawBounds)) {
             mDrawPipelineStatus = kFailedToBind_DrawPipelineStatus;
@@ -100,11 +100,11 @@ public abstract class OpsRenderPass {
     }
 
     /**
-     * Single texture version of {@link #bindTextures(TextureProxy[])}.
+     * Single texture version of {@link #bindTextures(Texture[])}.
      *
      * @param geomTexture the raw ptr to textures at binding 0
      */
-    public final void bindTexture(TextureProxy geomTexture) {
+    public final void bindTexture(Texture geomTexture) {
         mGeomTextures[0] = geomTexture;
         bindTextures(mGeomTextures);
         mGeomTextures[0] = null;
@@ -122,7 +122,7 @@ public abstract class OpsRenderPass {
      *
      * @param geomTextures the raw ptr to textures starting from binding 0
      */
-    public final void bindTextures(TextureProxy[] geomTextures) {
+    public final void bindTextures(Texture[] geomTextures) {
         //TODO
     }
 
@@ -133,9 +133,9 @@ public abstract class OpsRenderPass {
      * @param vertexBuffer   raw ptr to the vertex buffer, can be nullptr
      * @param instanceBuffer raw ptr to the instance buffer if using instanced rendering, or nullptr
      */
-    public final void bindBuffers(Buffer indexBuffer,
-                                  Buffer vertexBuffer,
-                                  Buffer instanceBuffer) {
+    public final void bindBuffers(GPUBuffer indexBuffer,
+                                  GPUBuffer vertexBuffer,
+                                  GPUBuffer instanceBuffer) {
         if (vertexBuffer == null && instanceBuffer == null) {
             mDrawPipelineStatus = kFailedToBind_DrawPipelineStatus;
             return;
@@ -156,10 +156,10 @@ public abstract class OpsRenderPass {
     public final void draw(int vertexCount, int baseVertex) {
         if (mDrawPipelineStatus == kConfigured_DrawPipelineStatus) {
             onDraw(vertexCount, baseVertex);
-            getServer().getStats().incNumDraws();
+            getDevice().getStats().incNumDraws();
         } else {
             assert (mDrawPipelineStatus == kFailedToBind_DrawPipelineStatus);
-            getServer().getStats().incNumFailedDraws();
+            getDevice().getStats().incNumFailedDraws();
         }
     }
 
@@ -174,10 +174,10 @@ public abstract class OpsRenderPass {
                                   int baseVertex) {
         if (mDrawPipelineStatus == kConfigured_DrawPipelineStatus) {
             onDrawIndexed(indexCount, baseIndex, baseVertex);
-            getServer().getStats().incNumDraws();
+            getDevice().getStats().incNumDraws();
         } else {
             assert (mDrawPipelineStatus == kFailedToBind_DrawPipelineStatus);
-            getServer().getStats().incNumFailedDraws();
+            getDevice().getStats().incNumFailedDraws();
         }
     }
 
@@ -193,10 +193,10 @@ public abstract class OpsRenderPass {
                                     int vertexCount, int baseVertex) {
         if (mDrawPipelineStatus == kConfigured_DrawPipelineStatus) {
             onDrawInstanced(instanceCount, baseInstance, vertexCount, baseVertex);
-            getServer().getStats().incNumDraws();
+            getDevice().getStats().incNumDraws();
         } else {
             assert (mDrawPipelineStatus == kFailedToBind_DrawPipelineStatus);
-            getServer().getStats().incNumFailedDraws();
+            getDevice().getStats().incNumFailedDraws();
         }
     }
 
@@ -214,28 +214,28 @@ public abstract class OpsRenderPass {
                                            int baseVertex) {
         if (mDrawPipelineStatus == kConfigured_DrawPipelineStatus) {
             onDrawIndexedInstanced(indexCount, baseIndex, instanceCount, baseInstance, baseVertex);
-            getServer().getStats().incNumDraws();
+            getDevice().getStats().incNumDraws();
         } else {
             assert (mDrawPipelineStatus == kFailedToBind_DrawPipelineStatus);
-            getServer().getStats().incNumFailedDraws();
+            getDevice().getStats().incNumFailedDraws();
         }
     }
 
-    protected void set(RenderTarget rt, int origin) {
+    protected void set(GPURenderTarget rt, int origin) {
         assert (mRenderTarget == null);
         mRenderTarget = rt;
         mSurfaceOrigin = origin;
     }
 
-    protected abstract Server getServer();
+    protected abstract GPUDevice getDevice();
 
     protected abstract boolean onBindPipeline(PipelineInfo pipelineInfo,
-                                              PipelineState pipelineState,
+                                              GraphicsPipelineState pipelineState,
                                               Rect2f drawBounds);
 
-    protected abstract void onBindBuffers(@SharedPtr Buffer indexBuffer,
-                                          @SharedPtr Buffer vertexBuffer,
-                                          @SharedPtr Buffer instanceBuffer);
+    protected abstract void onBindBuffers(@SharedPtr GPUBuffer indexBuffer,
+                                          @SharedPtr GPUBuffer vertexBuffer,
+                                          @SharedPtr GPUBuffer instanceBuffer);
 
     protected abstract void onDraw(int vertexCount, int baseVertex);
 

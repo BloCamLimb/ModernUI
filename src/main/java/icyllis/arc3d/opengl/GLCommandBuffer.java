@@ -30,10 +30,10 @@ import static icyllis.arc3d.opengl.GLCore.*;
 
 /**
  * The main command buffer of OpenGL context. The commands executed on {@link GLCommandBuffer} are
- * mostly the same as that on {@link GLServer}, but {@link GLCommandBuffer} assumes some values
+ * mostly the same as that on {@link GLDevice}, but {@link GLCommandBuffer} assumes some values
  * and will not handle dirty context.
  *
- * @see GLServer#beginRenderPass
+ * @see GLDevice#beginRenderPass
  */
 public final class GLCommandBuffer extends CommandBuffer {
 
@@ -42,7 +42,7 @@ public final class GLCommandBuffer extends CommandBuffer {
             TriState_Enabled = 1,
             TriState_Unknown = 2;
 
-    private final GLServer mServer;
+    private final GLDevice mDevice;
 
     private int mHWViewportWidth;
     private int mHWViewportHeight;
@@ -70,8 +70,8 @@ public final class GLCommandBuffer extends CommandBuffer {
 
     private long mSubmitFence;
 
-    GLCommandBuffer(GLServer server) {
-        mServer = server;
+    GLCommandBuffer(GLDevice device) {
+        mDevice = device;
 
         mBoundUniformBuffers = new GLUniformBuffer[4];
     }
@@ -290,6 +290,6 @@ public final class GLCommandBuffer extends CommandBuffer {
                 assert (!texture.isMipmapsDirty());
             }
         }
-        mServer.bindTexture(binding, texture, samplerState, readSwizzle);
+        mDevice.bindTexture(binding, texture, samplerState, readSwizzle);
     }
 }

@@ -107,10 +107,10 @@ public abstract class UniformHandler {
      */
     public static final int INPUT_BINDING = 0;
 
-    protected final ProgramBuilder mProgramBuilder;
+    protected final PipelineBuilder mPipelineBuilder;
 
-    protected UniformHandler(ProgramBuilder programBuilder) {
-        mProgramBuilder = programBuilder;
+    protected UniformHandler(PipelineBuilder pipelineBuilder) {
+        mPipelineBuilder = pipelineBuilder;
     }
 
     /**
