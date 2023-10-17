@@ -41,9 +41,9 @@ import java.util.concurrent.CompletableFuture;
  * Supports OpenGL 3.3 and OpenGL 4.5.
  */
 //TODO set and bind textures
-public class GLPipelineState extends PipelineState {
+public class GLGraphicsPipelineState extends GraphicsPipelineState {
 
-    private final GLServer mServer;
+    private final GLDevice mDevice;
 
     @SharedPtr
     private GLProgram mProgram;
@@ -59,9 +59,9 @@ public class GLPipelineState extends PipelineState {
 
     private CompletableFuture<GLPipelineStateBuilder> mAsyncWork;
 
-    GLPipelineState(GLServer server,
-                    CompletableFuture<GLPipelineStateBuilder> asyncWork) {
-        mServer = server;
+    GLGraphicsPipelineState(GLDevice device,
+                            CompletableFuture<GLPipelineStateBuilder> asyncWork) {
+        mDevice = device;
         mAsyncWork = asyncWork;
     }
 
@@ -100,7 +100,7 @@ public class GLPipelineState extends PipelineState {
     private void checkAsyncWork() {
         if (mAsyncWork != null) {
             boolean success = mAsyncWork.join().finish(this);
-            var stats = mServer.getPipelineStateCache().getStats();
+            var stats = mDevice.getPipelineStateCache().getStats();
             if (success) {
                 stats.incNumCompilationSuccesses();
             } else {
@@ -128,7 +128,7 @@ public class GLPipelineState extends PipelineState {
         mGPImpl.setData(mDataManager, pipelineInfo.geomProc());
         //TODO FP and upload
 
-        return mDataManager.bindAndUploadUniforms(mServer, commandBuffer);
+        return mDataManager.bindAndUploadUniforms(mDevice, commandBuffer);
     }
 
     /**
@@ -136,10 +136,10 @@ public class GLPipelineState extends PipelineState {
      */
     public boolean bindTextures(GLCommandBuffer commandBuffer,
                                 PipelineInfo pipelineInfo,
-                                TextureProxy[] geomTextures) {
+                                Texture[] geomTextures) {
         int unit = 0;
         for (int i = 0, n = pipelineInfo.geomProc().numTextureSamplers(); i < n; i++) {
-            GLTexture texture = (GLTexture) geomTextures[i].peekTexture();
+            GLTexture texture = (GLTexture) geomTextures[i].peekGPUTexture();
             commandBuffer.bindTexture(unit++, texture,
                     pipelineInfo.geomProc().textureSamplerState(i),
                     pipelineInfo.geomProc().textureSamplerSwizzle(i));
@@ -153,10 +153,10 @@ public class GLPipelineState extends PipelineState {
     /**
      * Binds all geometric buffers.
      */
-    public void bindBuffers(@Nullable Buffer indexBuffer,
-                            @Nullable Buffer vertexBuffer,
+    public void bindBuffers(@Nullable GPUBuffer indexBuffer,
+                            @Nullable GPUBuffer vertexBuffer,
                             long vertexOffset,
-                            @Nullable Buffer instanceBuffer,
+                            @Nullable GPUBuffer instanceBuffer,
                             long instanceOffset) {
         if (indexBuffer != null) {
             bindIndexBuffer((GLBuffer) indexBuffer);

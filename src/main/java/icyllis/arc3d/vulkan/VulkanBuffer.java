@@ -19,13 +19,13 @@
 
 package icyllis.arc3d.vulkan;
 
-import icyllis.arc3d.engine.Buffer;
+import icyllis.arc3d.engine.GPUBuffer;
 
 //TODO
-public final class VulkanBuffer extends Buffer {
+public final class VulkanBuffer extends GPUBuffer {
 
-    public VulkanBuffer(VulkanServer server) {
-        super(server, 0, 0);
+    public VulkanBuffer(VulkanDevice device) {
+        super(device, 0, 0);
     }
 
     @Override

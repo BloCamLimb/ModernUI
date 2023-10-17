@@ -70,7 +70,7 @@ public abstract class Op extends Rect2f {
     public Op() {
     }
 
-    public void visitProxies(TextureProxyVisitor func) {
+    public void visitProxies(TextureVisitor func) {
         // This default implementation assumes the op has no proxies
     }
 
@@ -106,6 +106,11 @@ public abstract class Op extends Rect2f {
                 (zeroArea ? BoundsFlag_ZeroArea : 0);
     }
 
+    public final void setClippedBounds(Rect2f clippedBounds) {
+        set(clippedBounds);
+        mBoundsFlags = 0;
+    }
+
     /**
      * @return true if this has DEAA bloat when determining coverage (outset by 0.5)
      */
@@ -127,7 +132,7 @@ public abstract class Op extends Rect2f {
      */
     //TODO more params
     public abstract void onPrePrepare(RecordingContext context,
-                                      SurfaceProxyView writeView,
+                                      SurfaceView writeView,
                                       int pipelineFlags);
 
     /**
@@ -135,7 +140,7 @@ public abstract class Op extends Rect2f {
      * necessary before execute() is called.
      */
     public abstract void onPrepare(OpFlushState state,
-                                   SurfaceProxyView writeView,
+                                   SurfaceView writeView,
                                    int pipelineFlags);
 
     /**

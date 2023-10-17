@@ -20,7 +20,6 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.engine.Surface;
 import icyllis.arc3d.engine.*;
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
 import org.lwjgl.opengl.GL;
@@ -37,9 +36,9 @@ import static icyllis.arc3d.opengl.GLCore.*;
 import static org.lwjgl.system.MemoryUtil.memPutInt;
 
 /**
- * The OpenGL graphics engine/device/server.
+ * The OpenGL device.
  */
-public final class GLServer extends Server {
+public final class GLDevice extends GPUDevice {
 
     private final GLCaps mCaps;
 
@@ -50,9 +49,9 @@ public final class GLServer extends Server {
 
     private final CpuBufferCache mCpuBufferCache;
 
-    private final BufferAllocPool mVertexPool;
-    private final BufferAllocPool mInstancePool;
-    private final BufferAllocPool mIndexPool;
+    private final GPUBufferPool mVertexPool;
+    private final GPUBufferPool mInstancePool;
+    private final GPUBufferPool mIndexPool;
 
     // unique ptr
     private GLOpsRenderPass mCachedOpsRenderPass;
@@ -61,10 +60,10 @@ public final class GLServer extends Server {
     private final LongArrayFIFOQueue mFinishedFences = new LongArrayFIFOQueue();
 
     /**
-     * Represents a certain resource ID is bound, but no {@link Resource} object is associated with.
+     * Represents a certain resource ID is bound, but no {@link GPUResource} object is associated with.
      */
     // OpenGL 3 only.
-    static final Resource.UniqueID INVALID_UNIQUE_ID = new Resource.UniqueID();
+    static final GPUResource.UniqueID INVALID_UNIQUE_ID = new GPUResource.UniqueID();
 
     //@formatter:off
     static final int BUFFER_TYPE_VERTEX         = 0;
@@ -164,16 +163,16 @@ public final class GLServer extends Server {
 
     private boolean mNeedsFlush;
 
-    private GLServer(DirectContext context, GLCaps caps) {
+    private GLDevice(DirectContext context, GLCaps caps) {
         super(context, caps);
         mCaps = caps;
         mMainCmdBuffer = new GLCommandBuffer(this);
         mResourceProvider = new GLResourceProvider(this, context);
         mPipelineStateCache = new GLPipelineStateCache(this, 256);
         mCpuBufferCache = new CpuBufferCache(6);
-        mVertexPool = BufferAllocPool.makeVertexPool(context);
-        mInstancePool = BufferAllocPool.makeInstancePool(context);
-        mIndexPool = BufferAllocPool.makeIndexPool(context);
+        mVertexPool = GPUBufferPool.makeVertexPool(mResourceProvider);
+        mInstancePool = GPUBufferPool.makeInstancePool(mResourceProvider);
+        mIndexPool = GPUBufferPool.makeIndexPool(mResourceProvider);
 
         int maxTextureUnits = caps.shaderCaps().mMaxFragmentSamplers;
         mHWTextureStates = new GLTexture.UniqueID[maxTextureUnits];
@@ -184,14 +183,14 @@ public final class GLServer extends Server {
     }
 
     /**
-     * Create a {@link GLServer} with OpenGL context current in the current thread.
+     * Create a {@link GLDevice} with OpenGL context current in the current thread.
      *
      * @param context the owner context
      * @param options the context options
      * @return the engine or null if failed to create
      */
     @Nullable
-    public static GLServer make(DirectContext context, ContextOptions options) {
+    public static GLDevice make(DirectContext context, ContextOptions options) {
         GLCapabilities capabilities;
         try {
             capabilities = Objects.requireNonNullElseGet(
@@ -208,7 +207,7 @@ public final class GLServer extends Server {
         }
         try {
             GLCaps caps = new GLCaps(options, capabilities);
-            return new GLServer(context, caps);
+            return new GLDevice(context, caps);
         } catch (Exception e) {
             e.printStackTrace(context.getErrorWriter());
             return null;
@@ -268,17 +267,17 @@ public final class GLServer extends Server {
     }
 
     @Override
-    public BufferAllocPool getVertexPool() {
+    public GPUBufferPool getVertexPool() {
         return mVertexPool;
     }
 
     @Override
-    public BufferAllocPool getInstancePool() {
+    public GPUBufferPool getInstancePool() {
         return mInstancePool;
     }
 
     @Override
-    public BufferAllocPool getIndexPool() {
+    public GPUBufferPool getIndexPool() {
         return mIndexPool;
     }
 
@@ -347,14 +346,14 @@ public final class GLServer extends Server {
 
     @Nullable
     @Override
-    protected Texture onCreateTexture(int width, int height,
-                                      BackendFormat format,
-                                      int mipLevelCount,
-                                      int sampleCount,
-                                      int surfaceFlags) {
+    protected GPUTexture onCreateTexture(int width, int height,
+                                         BackendFormat format,
+                                         int mipLevelCount,
+                                         int sampleCount,
+                                         int surfaceFlags) {
         assert (mipLevelCount > 0 && sampleCount > 0);
         // We don't support protected textures in OpenGL.
-        if ((surfaceFlags & Surface.FLAG_PROTECTED) != 0) {
+        if ((surfaceFlags & IGPUSurface.FLAG_PROTECTED) != 0) {
             return null;
         }
         if (format.isExternal()) {
@@ -366,7 +365,7 @@ public final class GLServer extends Server {
             return null;
         }
         Function<GLTexture, GLRenderTarget> target = null;
-        if ((surfaceFlags & Surface.FLAG_RENDERABLE) != 0) {
+        if ((surfaceFlags & IGPUSurface.FLAG_RENDERABLE) != 0) {
             target = createRTObjects(
                     texture,
                     width, height,
@@ -386,23 +385,23 @@ public final class GLServer extends Server {
                     width, height,
                     info,
                     format,
-                    (surfaceFlags & Surface.FLAG_BUDGETED) != 0,
+                    (surfaceFlags & IGPUSurface.FLAG_BUDGETED) != 0,
                     true);
         } else {
             return new GLRenderTexture(this,
                     width, height,
                     info,
                     format,
-                    (surfaceFlags & Surface.FLAG_BUDGETED) != 0,
+                    (surfaceFlags & IGPUSurface.FLAG_BUDGETED) != 0,
                     target);
         }
     }
 
     @Nullable
     @Override
-    protected Texture onWrapRenderableBackendTexture(BackendTexture texture,
-                                                     int sampleCount,
-                                                     boolean ownership) {
+    protected GPUTexture onWrapRenderableBackendTexture(BackendTexture texture,
+                                                        int sampleCount,
+                                                        boolean ownership) {
         if (texture.isProtected()) {
             // Not supported in GL backend at this time.
             return null;
@@ -441,7 +440,7 @@ public final class GLServer extends Server {
 
     @Nullable
     @Override
-    public RenderTarget onWrapBackendRenderTarget(BackendRenderTarget backendRenderTarget) {
+    public GPURenderTarget onWrapBackendRenderTarget(BackendRenderTarget backendRenderTarget) {
         GLFramebufferInfo info = new GLFramebufferInfo();
         if (!backendRenderTarget.getGLFramebufferInfo(info)) {
             return null;
@@ -464,7 +463,7 @@ public final class GLServer extends Server {
     }
 
     @Override
-    protected boolean onWritePixels(Texture texture,
+    protected boolean onWritePixels(GPUTexture texture,
                                     int x, int y,
                                     int width, int height,
                                     int dstColorType,
@@ -553,7 +552,7 @@ public final class GLServer extends Server {
     }
 
     @Override
-    protected boolean onGenerateMipmaps(Texture texture) {
+    protected boolean onGenerateMipmaps(GPUTexture texture) {
         var glTexture = (GLTexture) texture;
         if (mCaps.hasDSASupport()) {
             glGenerateTextureMipmap(glTexture.getHandle());
@@ -572,9 +571,9 @@ public final class GLServer extends Server {
     }
 
     @Override
-    protected boolean onCopySurface(Surface src,
+    protected boolean onCopySurface(IGPUSurface src,
                                     int srcL, int srcT, int srcR, int srcB,
-                                    Surface dst,
+                                    IGPUSurface dst,
                                     int dstL, int dstT, int dstR, int dstB,
                                     int filter) {
         int srcWidth = srcR - srcL;
@@ -660,18 +659,18 @@ public final class GLServer extends Server {
     }
 
     @Override
-    protected OpsRenderPass onGetOpsRenderPass(SurfaceProxyView writeView,
+    protected OpsRenderPass onGetOpsRenderPass(SurfaceView writeView,
                                                Rect2i contentBounds,
                                                byte colorOps,
                                                byte stencilOps,
                                                float[] clearColor,
-                                               Set<TextureProxy> sampledTextures,
+                                               Set<Texture> sampledTextures,
                                                int pipelineFlags) {
         mStats.incRenderPasses();
         if (mCachedOpsRenderPass == null) {
             mCachedOpsRenderPass = new GLOpsRenderPass(this);
         }
-        return mCachedOpsRenderPass.set(writeView.getProxy().peekRenderTarget(),
+        return mCachedOpsRenderPass.set(writeView.getSurface().peekGPURenderTarget(),
                 contentBounds,
                 writeView.getOrigin(),
                 colorOps,
@@ -745,13 +744,13 @@ public final class GLServer extends Server {
 
     @Nullable
     @Override
-    protected Buffer onCreateBuffer(int size, int flags) {
+    protected GPUBuffer onCreateBuffer(int size, int flags) {
         handleDirtyContext();
         return GLBuffer.make(this, size, flags);
     }
 
     @Override
-    protected void onResolveRenderTarget(RenderTarget renderTarget,
+    protected void onResolveRenderTarget(GPURenderTarget renderTarget,
                                          int resolveLeft, int resolveTop,
                                          int resolveRight, int resolveBottom) {
         GLRenderTarget glRenderTarget = (GLRenderTarget) renderTarget;

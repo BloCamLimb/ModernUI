@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.vulkan;
 
-import icyllis.arc3d.engine.ManagedResource;
+import icyllis.arc3d.engine.GPUManagedResource;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.VkCommandPoolCreateInfo;
 import org.lwjgl.vulkan.VkFenceCreateInfo;
@@ -34,7 +34,7 @@ import static icyllis.arc3d.vulkan.VKCore.*;
  * the in flight state, and we will continuously check whether the GPU has finished
  * the work to recycle the VkCommandPool (and its command buffers).
  */
-public class VulkanCommandPool extends ManagedResource {
+public class VulkanCommandPool extends GPUManagedResource {
 
     private VulkanPrimaryCommandBuffer mPrimaryCommandBuffer;
 
@@ -43,30 +43,30 @@ public class VulkanCommandPool extends ManagedResource {
 
     private final long[] mSubmitFence = new long[1];
 
-    private VulkanCommandPool(VulkanServer server, long handle,
+    private VulkanCommandPool(VulkanDevice device, long handle,
                               VulkanPrimaryCommandBuffer primaryCommandBuffer) {
-        super(server);
+        super(device);
         mCommandPool = handle;
         mPrimaryCommandBuffer = primaryCommandBuffer;
     }
 
     @Nullable
-    public static VulkanCommandPool create(VulkanServer server) {
+    public static VulkanCommandPool create(VulkanDevice device) {
         int cmdPoolCreateFlags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
-        if (server.isProtectedContext()) {
+        if (device.isProtectedContext()) {
             cmdPoolCreateFlags |= VK_COMMAND_POOL_CREATE_PROTECTED_BIT;
         }
         long commandPool;
         try (var stack = MemoryStack.stackPush()) {
             var pCommandPool = stack.mallocLong(1);
             var result = vkCreateCommandPool(
-                    server.device(),
+                    device.device(),
                     VkCommandPoolCreateInfo
                             .malloc(stack)
                             .sType$Default()
                             .pNext(0)
                             .flags(cmdPoolCreateFlags)
-                            .queueFamilyIndex(server.getQueueIndex()),
+                            .queueFamilyIndex(device.getQueueIndex()),
                     null,
                     pCommandPool
             );
@@ -76,22 +76,22 @@ public class VulkanCommandPool extends ManagedResource {
             commandPool = pCommandPool.get(0);
         }
         VulkanPrimaryCommandBuffer primaryCommandBuffer =
-                VulkanPrimaryCommandBuffer.create(server, commandPool);
+                VulkanPrimaryCommandBuffer.create(device, commandPool);
         if (primaryCommandBuffer == null) {
             vkDestroyCommandPool(
-                    server.device(),
+                    device.device(),
                     commandPool,
                     null
             );
             return null;
         }
-        return new VulkanCommandPool(server, commandPool, primaryCommandBuffer);
+        return new VulkanCommandPool(device, commandPool, primaryCommandBuffer);
     }
 
     @Override
     protected void deallocate() {
         vkDestroyCommandPool(
-                getServer().device(),
+                getDevice().device(),
                 mCommandPool,
                 null
         );
@@ -103,7 +103,7 @@ public class VulkanCommandPool extends ManagedResource {
         if (mSubmitFence[0] == VK_NULL_HANDLE) {
             try (var stack = MemoryStack.stackPush()) {
                 var result = vkCreateFence(
-                        getServer().device(),
+                        getDevice().device(),
                         VkFenceCreateInfo
                                 .calloc(stack)
                                 .sType$Default(),
@@ -117,7 +117,7 @@ public class VulkanCommandPool extends ManagedResource {
             }
         } else {
             _CHECK_ERROR_(vkResetFences(
-                    getServer().device(),
+                    getDevice().device(),
                     mSubmitFence
             ));
         }
@@ -133,7 +133,7 @@ public class VulkanCommandPool extends ManagedResource {
             return true;
         }
         var result = vkGetFenceStatus(
-                getServer().device(),
+                getDevice().device(),
                 mSubmitFence[0]
         );
         if (result == VK_SUCCESS ||
@@ -150,7 +150,7 @@ public class VulkanCommandPool extends ManagedResource {
         assert isSubmitted();
 
         vkResetCommandPool(
-                getServer().device(),
+                getDevice().device(),
                 mCommandPool,
                 0
         );
@@ -163,7 +163,7 @@ public class VulkanCommandPool extends ManagedResource {
     }
 
     @Override
-    protected VulkanServer getServer() {
-        return (VulkanServer) super.getServer();
+    protected VulkanDevice getDevice() {
+        return (VulkanDevice) super.getDevice();
     }
 }

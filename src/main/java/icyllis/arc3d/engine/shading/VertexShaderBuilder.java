@@ -35,8 +35,8 @@ public class VertexShaderBuilder extends ShaderBuilderBase implements VertexGeom
     // vertex shader inputs are vertex attributes
     private final ArrayList<ShaderVar> mInputs = new ArrayList<>();
 
-    public VertexShaderBuilder(ProgramBuilder programBuilder) {
-        super(programBuilder);
+    public VertexShaderBuilder(PipelineBuilder pipelineBuilder) {
+        super(pipelineBuilder);
     }
 
     @Override
@@ -56,9 +56,9 @@ public class VertexShaderBuilder extends ShaderBuilderBase implements VertexGeom
             locationIndex += locationSize;
         }
 
-        mProgramBuilder.uniformHandler().appendUniformDecls(ShaderFlags.kVertex, uniforms());
-        mProgramBuilder.appendDecls(mInputs, inputs());
-        mProgramBuilder.varyingHandler().getVertDecls(outputs());
+        mPipelineBuilder.uniformHandler().appendUniformDecls(ShaderFlags.kVertex, uniforms());
+        mPipelineBuilder.appendDecls(mInputs, inputs());
+        mPipelineBuilder.varyingHandler().getVertDecls(outputs());
     }
 
     @Override

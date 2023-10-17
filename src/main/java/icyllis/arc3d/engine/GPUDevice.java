@@ -33,7 +33,7 @@ import java.util.Set;
  * creating/deleting 3D API objects, transferring data, submitting 3D API commands, etc.
  * Most methods are only permitted on render thread (a.k.a. direct/RHI thread).
  */
-public abstract class Server implements Engine {
+public abstract class GPUDevice implements Engine {
 
     // @formatter:off
     static {
@@ -49,7 +49,7 @@ public abstract class Server implements Engine {
     }
     // @formatter:on
 
-    // this server is managed by this context
+    // this device is managed by this context
     protected final DirectContext mContext;
     protected final Caps mCaps;
     protected final Compiler mCompiler;
@@ -59,7 +59,7 @@ public abstract class Server implements Engine {
     private final ArrayList<FlushInfo.SubmittedCallback> mSubmittedCallbacks = new ArrayList<>();
     private int mResetBits = ~0;
 
-    protected Server(DirectContext context, Caps caps) {
+    protected GPUDevice(DirectContext context, Caps caps) {
         assert context != null && caps != null;
         mContext = context;
         mCaps = caps;
@@ -84,7 +84,7 @@ public abstract class Server implements Engine {
         return mCompiler;
     }
 
-    public abstract ResourceProvider getResourceProvider();
+    public abstract GPUResourceProvider getResourceProvider();
 
     public abstract PipelineStateCache getPipelineStateCache();
 
@@ -92,7 +92,7 @@ public abstract class Server implements Engine {
      * Called by context when the underlying backend context is already or will be destroyed
      * before {@link DirectContext}.
      * <p>
-     * If cleanup is true, free allocated resources (other than {@link ResourceCache}) before
+     * If cleanup is true, free allocated resources (other than {@link GPUResourceCache}) before
      * returning and ensure no backend 3D API calls will be made after this method returns.
      * Otherwise, no cleanup should be attempted, immediately cease making backend API calls.
      */
@@ -127,11 +127,11 @@ public abstract class Server implements Engine {
     protected void onResetContext(int resetBits) {
     }
 
-    public abstract BufferAllocPool getVertexPool();
+    public abstract GPUBufferPool getVertexPool();
 
-    public abstract BufferAllocPool getInstancePool();
+    public abstract GPUBufferPool getInstancePool();
 
-    public abstract BufferAllocPool getIndexPool();
+    public abstract GPUBufferPool getIndexPool();
 
     /**
      * Creates a texture object and allocates its GPU memory. In other words, the
@@ -144,18 +144,18 @@ public abstract class Server implements Engine {
      * @param height the height of the texture to be created
      * @param format the backend format for the texture
      * @return the texture object if successful, otherwise nullptr
-     * @see Surface#FLAG_BUDGETED
-     * @see Surface#FLAG_MIPMAPPED
-     * @see Surface#FLAG_RENDERABLE
-     * @see Surface#FLAG_PROTECTED
+     * @see IGPUSurface#FLAG_BUDGETED
+     * @see IGPUSurface#FLAG_MIPMAPPED
+     * @see IGPUSurface#FLAG_RENDERABLE
+     * @see IGPUSurface#FLAG_PROTECTED
      */
     @Nullable
     @SharedPtr
-    public final Texture createTexture(int width, int height,
-                                       BackendFormat format,
-                                       int sampleCount,
-                                       int surfaceFlags,
-                                       String label) {
+    public final GPUTexture createTexture(int width, int height,
+                                          BackendFormat format,
+                                          int sampleCount,
+                                          int surfaceFlags,
+                                          String label) {
         if (format.isCompressed()) {
             // use createCompressedTexture
             return null;
@@ -164,21 +164,21 @@ public abstract class Server implements Engine {
                 sampleCount, surfaceFlags)) {
             return null;
         }
-        int maxMipLevel = (surfaceFlags & Surface.FLAG_MIPMAPPED) != 0
+        int maxMipLevel = (surfaceFlags & IGPUSurface.FLAG_MIPMAPPED) != 0
                 ? MathUtil.floorLog2(Math.max(width, height))
                 : 0;
         int mipLevelCount = maxMipLevel + 1; // +1 base level 0
-        if ((surfaceFlags & Surface.FLAG_RENDERABLE) != 0) {
+        if ((surfaceFlags & IGPUSurface.FLAG_RENDERABLE) != 0) {
             sampleCount = mCaps.getRenderTargetSampleCount(sampleCount, format);
         }
         assert (sampleCount > 0 && sampleCount <= 64);
         handleDirtyContext();
-        final Texture texture = onCreateTexture(width, height, format,
+        final GPUTexture texture = onCreateTexture(width, height, format,
                 mipLevelCount, sampleCount, surfaceFlags);
         if (texture != null) {
             // we don't copy the backend format object, use identity rather than equals()
             assert texture.getBackendFormat() == format;
-            assert (surfaceFlags & Surface.FLAG_RENDERABLE) == 0 || texture.asRenderTarget() != null;
+            assert (surfaceFlags & IGPUSurface.FLAG_RENDERABLE) == 0 || texture.asRenderTarget() != null;
             if (label != null) {
                 texture.setLabel(label);
             }
@@ -195,11 +195,11 @@ public abstract class Server implements Engine {
      */
     @Nullable
     @SharedPtr
-    protected abstract Texture onCreateTexture(int width, int height,
-                                               BackendFormat format,
-                                               int mipLevelCount,
-                                               int sampleCount,
-                                               int surfaceFlags);
+    protected abstract GPUTexture onCreateTexture(int width, int height,
+                                                  BackendFormat format,
+                                                  int mipLevelCount,
+                                                  int sampleCount,
+                                                  int surfaceFlags);
 
     /**
      * This makes the backend texture be renderable. If <code>sampleCount</code> is > 1 and
@@ -215,9 +215,9 @@ public abstract class Server implements Engine {
      */
     @Nullable
     @SharedPtr
-    public Texture wrapRenderableBackendTexture(BackendTexture texture,
-                                                int sampleCount,
-                                                boolean ownership) {
+    public GPUTexture wrapRenderableBackendTexture(BackendTexture texture,
+                                                   int sampleCount,
+                                                   boolean ownership) {
         handleDirtyContext();
         if (sampleCount < 1) {
             return null;
@@ -239,13 +239,13 @@ public abstract class Server implements Engine {
 
     @Nullable
     @SharedPtr
-    protected abstract Texture onWrapRenderableBackendTexture(BackendTexture texture,
-                                                              int sampleCount,
-                                                              boolean ownership);
+    protected abstract GPUTexture onWrapRenderableBackendTexture(BackendTexture texture,
+                                                                 int sampleCount,
+                                                                 boolean ownership);
 
     @Nullable
     @SharedPtr
-    public RenderTarget wrapBackendRenderTarget(BackendRenderTarget backendRenderTarget) {
+    public GPURenderTarget wrapBackendRenderTarget(BackendRenderTarget backendRenderTarget) {
         if (!getCaps().isFormatRenderable(backendRenderTarget.getBackendFormat(),
                 backendRenderTarget.getSampleCount())) {
             return null;
@@ -255,7 +255,7 @@ public abstract class Server implements Engine {
 
     @Nullable
     @SharedPtr
-    public abstract RenderTarget onWrapBackendRenderTarget(BackendRenderTarget backendRenderTarget);
+    public abstract GPURenderTarget onWrapBackendRenderTarget(BackendRenderTarget backendRenderTarget);
 
     /**
      * Updates the pixels in a rectangle of a texture. No sRGB/linear conversions are performed.
@@ -270,7 +270,7 @@ public abstract class Server implements Engine {
      * @param pixels       the pointer to the texel data for base level image
      * @return true if succeeded, false if not
      */
-    public boolean writePixels(Texture texture,
+    public boolean writePixels(GPUTexture texture,
                                int x, int y,
                                int width, int height,
                                int dstColorType,
@@ -314,7 +314,7 @@ public abstract class Server implements Engine {
     }
 
     // overridden by backend-specific derived class to perform the surface write
-    protected abstract boolean onWritePixels(Texture texture,
+    protected abstract boolean onWritePixels(GPUTexture texture,
                                              int x, int y,
                                              int width, int height,
                                              int dstColorType,
@@ -327,7 +327,7 @@ public abstract class Server implements Engine {
      *
      * @return success or not
      */
-    public final boolean generateMipmaps(Texture texture) {
+    public final boolean generateMipmaps(GPUTexture texture) {
         assert texture != null;
         assert texture.isMipmapped();
         if (!texture.isMipmapsDirty()) {
@@ -343,13 +343,13 @@ public abstract class Server implements Engine {
         return false;
     }
 
-    protected abstract boolean onGenerateMipmaps(Texture texture);
+    protected abstract boolean onGenerateMipmaps(GPUTexture texture);
 
     /**
      * Special case of {@link #copySurface} that has same dimensions.
      */
-    public final boolean copySurface(Surface src, int srcX, int srcY,
-                                     Surface dst, int dstX, int dstY,
+    public final boolean copySurface(IGPUSurface src, int srcX, int srcY,
+                                     IGPUSurface dst, int dstX, int dstY,
                                      int width, int height) {
         return copySurface(
                 src,
@@ -373,12 +373,12 @@ public abstract class Server implements Engine {
      *
      * @return success or not
      */
-    public final boolean copySurface(Surface src,
+    public final boolean copySurface(IGPUSurface src,
                                      int srcL, int srcT, int srcR, int srcB,
-                                     Surface dst,
+                                     IGPUSurface dst,
                                      int dstL, int dstT, int dstR, int dstB,
                                      int filter) {
-        if ((dst.getSurfaceFlags() & Surface.FLAG_READ_ONLY) != 0) {
+        if ((dst.getSurfaceFlags() & IGPUSurface.FLAG_READ_ONLY) != 0) {
             return false;
         }
         handleDirtyContext();
@@ -391,9 +391,9 @@ public abstract class Server implements Engine {
         );
     }
 
-    protected abstract boolean onCopySurface(Surface src,
+    protected abstract boolean onCopySurface(IGPUSurface src,
                                              int srcL, int srcT, int srcR, int srcB,
-                                             Surface dst,
+                                             IGPUSurface dst,
                                              int dstL, int dstT, int dstR, int dstB,
                                              int filter);
 
@@ -410,12 +410,12 @@ public abstract class Server implements Engine {
      * @return a render pass used to record draw commands, or null if failed
      */
     @Nullable
-    public final OpsRenderPass getOpsRenderPass(SurfaceProxyView writeView,
+    public final OpsRenderPass getOpsRenderPass(SurfaceView writeView,
                                                 Rect2i contentBounds,
                                                 byte colorOps,
                                                 byte stencilOps,
                                                 float[] clearColor,
-                                                Set<TextureProxy> sampledTextures,
+                                                Set<Texture> sampledTextures,
                                                 int pipelineFlags) {
         mStats.incRenderPasses();
         return onGetOpsRenderPass(writeView, contentBounds,
@@ -423,18 +423,18 @@ public abstract class Server implements Engine {
                 sampledTextures, pipelineFlags);
     }
 
-    protected abstract OpsRenderPass onGetOpsRenderPass(SurfaceProxyView writeView,
+    protected abstract OpsRenderPass onGetOpsRenderPass(SurfaceView writeView,
                                                         Rect2i contentBounds,
                                                         byte colorOps,
                                                         byte stencilOps,
                                                         float[] clearColor,
-                                                        Set<TextureProxy> sampledTextures,
+                                                        Set<Texture> sampledTextures,
                                                         int pipelineFlags);
 
     /**
      * Resolves MSAA. The resolve rectangle must already be in the native destination space.
      */
-    public void resolveRenderTarget(RenderTarget renderTarget,
+    public void resolveRenderTarget(GPURenderTarget renderTarget,
                                     int resolveLeft, int resolveTop,
                                     int resolveRight, int resolveBottom) {
         assert (renderTarget != null);
@@ -443,13 +443,13 @@ public abstract class Server implements Engine {
     }
 
     // overridden by backend-specific derived class to perform the resolve
-    protected abstract void onResolveRenderTarget(RenderTarget renderTarget,
+    protected abstract void onResolveRenderTarget(GPURenderTarget renderTarget,
                                                   int resolveLeft, int resolveTop,
                                                   int resolveRight, int resolveBottom);
 
     @Nullable
     @SharedPtr
-    public final Buffer createBuffer(int size, int flags) {
+    public final GPUBuffer createBuffer(int size, int flags) {
         if (size <= 0) {
             new Throwable("RHICreateBuffer, invalid size: " + size)
                     .printStackTrace(getContext().getErrorWriter());
@@ -464,7 +464,7 @@ public abstract class Server implements Engine {
 
     @Nullable
     @SharedPtr
-    protected abstract Buffer onCreateBuffer(int size, int flags);
+    protected abstract GPUBuffer onCreateBuffer(int size, int flags);
 
     /**
      * Creates a new fence and inserts it into the graphics queue.
@@ -633,7 +633,7 @@ public abstract class Server implements Engine {
 
         @Override
         public String toString() {
-            return "Server.Stats{" +
+            return "Device.Stats{" +
                     "mTextureCreates=" + mTextureCreates +
                     ", mTextureUploads=" + mTextureUploads +
                     ", mTransfersToTexture=" + mTransfersToTexture +

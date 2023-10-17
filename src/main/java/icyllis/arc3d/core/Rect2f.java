@@ -269,6 +269,16 @@ public class Rect2f {
     }
 
     /**
+     * Outset the rectangle by (dx,dy).
+     *
+     * @param dx the amount to subtract(add) from the rectangle's left(right)
+     * @param dy the amount to subtract(add) from the rectangle's top(bottom)
+     */
+    public final void outset(float dx, float dy) {
+        inset(-dx, -dy);
+    }
+
+    /**
      * Insets the rectangle on all sides specified by the insets.
      *
      * @param left   the amount to add from the rectangle's left

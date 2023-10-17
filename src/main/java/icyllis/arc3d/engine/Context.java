@@ -31,19 +31,19 @@ import java.util.Objects;
  */
 public abstract class Context extends RefCnt {
 
-    protected final ContextThreadSafeProxy mThreadSafeProxy;
+    protected final SharedContextInfo mContextInfo;
 
-    protected Context(ContextThreadSafeProxy threadSafeProxy) {
-        mThreadSafeProxy = threadSafeProxy;
+    protected Context(SharedContextInfo contextInfo) {
+        mContextInfo = contextInfo;
     }
 
     /**
      * The 3D API backing this context.
      *
-     * @return see {@link Server.BackendApi}
+     * @return see {@link GPUDevice.BackendApi}
      */
     public final int getBackend() {
-        return mThreadSafeProxy.getBackend();
+        return mContextInfo.getBackend();
     }
 
     /**
@@ -58,7 +58,7 @@ public abstract class Context extends RefCnt {
      */
     @Nullable
     public final BackendFormat getDefaultBackendFormat(int colorType, boolean renderable) {
-        return mThreadSafeProxy.getDefaultBackendFormat(colorType, renderable);
+        return mContextInfo.getDefaultBackendFormat(colorType, renderable);
     }
 
     /**
@@ -72,7 +72,7 @@ public abstract class Context extends RefCnt {
      */
     @Nullable
     public final BackendFormat getCompressedBackendFormat(int compressionType) {
-        return mThreadSafeProxy.getCompressedBackendFormat(compressionType);
+        return mContextInfo.getCompressedBackendFormat(compressionType);
     }
 
     /**
@@ -83,21 +83,21 @@ public abstract class Context extends RefCnt {
      * @param colorType see {@link ImageInfo}
      */
     public final int getMaxSurfaceSampleCount(int colorType) {
-        return mThreadSafeProxy.getMaxSurfaceSampleCount(colorType);
+        return mContextInfo.getMaxSurfaceSampleCount(colorType);
     }
 
-    public final ContextThreadSafeProxy getThreadSafeProxy() {
-        return mThreadSafeProxy;
+    public final SharedContextInfo getContextInfo() {
+        return mContextInfo;
     }
 
     @ApiStatus.Internal
     public final boolean matches(Context c) {
-        return mThreadSafeProxy.matches(c);
+        return mContextInfo.matches(c);
     }
 
     @ApiStatus.Internal
     public final ContextOptions getOptions() {
-        return mThreadSafeProxy.getOptions();
+        return mContextInfo.getOptions();
     }
 
     /**
@@ -109,12 +109,12 @@ public abstract class Context extends RefCnt {
      */
     @ApiStatus.Internal
     public final int getContextID() {
-        return mThreadSafeProxy.getContextID();
+        return mContextInfo.getContextID();
     }
 
     @ApiStatus.Internal
     public final Caps getCaps() {
-        return mThreadSafeProxy.getCaps();
+        return mContextInfo.getCaps();
     }
 
     @ApiStatus.Internal
@@ -123,7 +123,7 @@ public abstract class Context extends RefCnt {
     }
 
     protected boolean init() {
-        return mThreadSafeProxy.isValid();
+        return mContextInfo.isValid();
     }
 
     private static PrintWriter sDefaultErrorWriter;

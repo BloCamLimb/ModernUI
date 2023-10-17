@@ -519,7 +519,7 @@ public abstract class Caps {
         if (!isFormatTexturable(format)) {
             return false;
         }
-        if ((surfaceFlags & Surface.FLAG_RENDERABLE) != 0) {
+        if ((surfaceFlags & IGPUSurface.FLAG_RENDERABLE) != 0) {
             final int maxSize = maxRenderTargetSize();
             if (width > maxSize || height > maxSize) {
                 return false;
@@ -602,7 +602,7 @@ public abstract class Caps {
 
     @Nonnull
     public abstract PipelineDesc makeDesc(PipelineDesc desc,
-                                          RenderTarget renderTarget,
+                                          GPURenderTarget renderTarget,
                                           final PipelineInfo pipelineInfo);
 
     public final short getReadSwizzle(BackendFormat format, int colorType) {

@@ -19,34 +19,34 @@
 
 package icyllis.arc3d.opengl;
 
-import icyllis.arc3d.engine.ManagedResource;
+import icyllis.arc3d.engine.GPUManagedResource;
 import icyllis.arc3d.core.SharedPtr;
 
 import javax.annotation.Nullable;
 
 import static icyllis.arc3d.opengl.GLCore.*;
 
-public class GLUniformBuffer extends ManagedResource {
+public class GLUniformBuffer extends GPUManagedResource {
 
     private final int mBinding;
     private final int mSize;
     private int mBuffer;
 
-    private GLUniformBuffer(GLServer server,
+    private GLUniformBuffer(GLDevice device,
                             int binding,
                             int size,
                             int buffer) {
-        super(server);
+        super(device);
         mSize = size;
         mBuffer = buffer;
         mBinding = binding;
 
         // OpenGL 3.3 uses mutable allocation
-        if (!server.getCaps().hasDSASupport()) {
+        if (!device.getCaps().hasDSASupport()) {
 
-            server.currentCommandBuffer().bindUniformBuffer(this);
+            device.currentCommandBuffer().bindUniformBuffer(this);
 
-            if (server.getCaps().skipErrorChecks()) {
+            if (device.getCaps().skipErrorChecks()) {
                 glBufferData(GL_UNIFORM_BUFFER, size, GL_DYNAMIC_DRAW);
             } else {
                 glClearErrors();
@@ -64,17 +64,17 @@ public class GLUniformBuffer extends ManagedResource {
      */
     @Nullable
     @SharedPtr
-    public static GLUniformBuffer make(GLServer server,
+    public static GLUniformBuffer make(GLDevice device,
                                        int size,
                                        int binding) {
         assert (size > 0);
 
-        if (server.getCaps().hasDSASupport()) {
+        if (device.getCaps().hasDSASupport()) {
             int buffer = glCreateBuffers();
             if (buffer == 0) {
                 return null;
             }
-            if (server.getCaps().skipErrorChecks()) {
+            if (device.getCaps().skipErrorChecks()) {
                 glNamedBufferStorage(buffer, size, GL_DYNAMIC_STORAGE_BIT);
             } else {
                 glClearErrors();
@@ -85,14 +85,14 @@ public class GLUniformBuffer extends ManagedResource {
                 }
             }
 
-            return new GLUniformBuffer(server, binding, size, buffer);
+            return new GLUniformBuffer(device, binding, size, buffer);
         } else {
             int buffer = glGenBuffers();
             if (buffer == 0) {
                 return null;
             }
 
-            GLUniformBuffer res = new GLUniformBuffer(server, binding, size, buffer);
+            GLUniformBuffer res = new GLUniformBuffer(device, binding, size, buffer);
             if (res.mBuffer == 0) {
                 res.unref();
                 return null;

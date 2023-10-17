@@ -21,7 +21,7 @@ package icyllis.arc3d.test;
 
 import icyllis.arc3d.core.MathUtil;
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.engine.Surface;
+import icyllis.arc3d.engine.IGPUSurface;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.geom.SDFRoundRectGeoProc;
 import icyllis.arc3d.opengl.*;
@@ -302,14 +302,14 @@ public class TestManagedResource {
 
     public static void testShaderBuilder(PrintWriter pw, DirectContext dContext) {
         @SharedPtr
-        TextureProxy target = dContext.getProxyProvider().createRenderTextureProxy(
+        Texture target = dContext.getSurfaceProvider().createRenderTexture(
                 GLBackendFormat.make(GLCore.GL_RGBA8),
                 800, 800, 4,
-                Surface.FLAG_BUDGETED | Surface.FLAG_RENDERABLE
+                IGPUSurface.FLAG_BUDGETED | IGPUSurface.FLAG_RENDERABLE
         );
         Objects.requireNonNull(target);
-        GLPipelineState pso = (GLPipelineState) dContext.findOrCreatePipelineState(
-                new PipelineInfo(new SurfaceProxyView(target), new SDFRoundRectGeoProc(true),
+        GLGraphicsPipelineState pso = (GLGraphicsPipelineState) dContext.findOrCreateGraphicsPipelineState(
+                new PipelineInfo(new SurfaceView(target), new SDFRoundRectGeoProc(true),
                         null, null, null, null,
                         PipelineInfo.kNone_Flag));
         {
@@ -334,12 +334,12 @@ public class TestManagedResource {
             assert pixels != null;
             pw.println("Image Bytes: " + pixels.remaining());
 
-            Texture texture = dContext.getServer().createTexture(
+            GPUTexture texture = dContext.getDevice().createTexture(
                     x[0], y[0],
                     GLBackendFormat.make(GLCore.GL_RGBA8),
-                    1, Surface.FLAG_MIPMAPPED |
-                            Surface.FLAG_BUDGETED |
-                            Surface.FLAG_RENDERABLE,
+                    1, IGPUSurface.FLAG_MIPMAPPED |
+                            IGPUSurface.FLAG_BUDGETED |
+                            IGPUSurface.FLAG_RENDERABLE,
                     "MyTexture");
             if (texture != null) {
                 pw.println(texture);
@@ -349,9 +349,9 @@ public class TestManagedResource {
             texture = dContext.getResourceProvider().createTexture(
                     x[0], y[0],
                     GLBackendFormat.make(GLCore.GL_RGBA8),
-                    1, Surface.FLAG_MIPMAPPED |
-                            Surface.FLAG_BUDGETED |
-                            Surface.FLAG_RENDERABLE,
+                    1, IGPUSurface.FLAG_MIPMAPPED |
+                            IGPUSurface.FLAG_BUDGETED |
+                            IGPUSurface.FLAG_RENDERABLE,
                     ImageInfo.CT_RGBA_8888,
                     ImageInfo.CT_RGBA_8888,
                     0,
@@ -386,7 +386,7 @@ public class TestManagedResource {
     }
 
     public static void testKeyBuilder(PrintWriter pw) {
-        Key.Builder keyBuilder = new Key.StringBuilder();
+        KeyBuilder keyBuilder = new KeyBuilder.StringKeyBuilder();
         keyBuilder.addBits(6, 0x2F, "A");
         keyBuilder.addInt32(0xF111_1111, "B");
         keyBuilder.flush();

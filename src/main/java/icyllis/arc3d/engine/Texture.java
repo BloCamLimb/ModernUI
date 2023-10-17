@@ -19,131 +19,348 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.RefCnt;
+import icyllis.arc3d.core.Rect2i;
 import icyllis.arc3d.core.SharedPtr;
+import org.jetbrains.annotations.ApiStatus;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-
-import static icyllis.arc3d.engine.Engine.BudgetType;
+import java.util.Objects;
 
 /**
- * Represents 2D textures can be sampled by shaders, can also be used as attachments
- * of render targets.
+ * The {@link Texture} targets an actual {@link GPUTexture} with three instantiation
+ * methods: deferred, lazy-callback and wrapped.
  * <p>
- * By default, a Texture is not renderable, all mipmaps (including the base level) are
- * dirty. But it can be renderable on creation, then we call it a RenderTexture or
- * TextureRenderTarget. The texture will be the main color buffer of the single sample
- * framebuffer of the render target. So we can cache these framebuffers with texture.
- * Additionally, it may create more surfaces and attach them to it. These surfaces are
- * budgeted but cannot be reused. In most cases, we reuse textures, so these surfaces
- * are reused together, see {@link RenderTarget}.
+ * Use {@link SurfaceProvider} to obtain {@link Texture} objects.
  */
-public abstract class Texture extends Resource implements Surface {
+public class Texture extends Surface {
 
-    protected final int mWidth;
-    protected final int mHeight;
-
-    /**
-     * Note: budgeted is a dynamic state, it can be returned by {@link #getSurfaceFlags()}.
-     * This field is OR-ed only and immutable when created.
-     */
-    protected int mFlags;
+    boolean mIsPromiseProxy = false;
 
     /**
-     * Only valid when isMipmapped=true.
-     * By default, we can't say mipmaps dirty or not, since texel data is undefined.
+     * For deferred proxies it will be null until the proxy is instantiated.
+     * For wrapped proxies it will point to the wrapped resource.
      */
-    private boolean mMipmapsDirty;
-
     @SharedPtr
-    private ReleaseCallback mReleaseCallback;
+    GPUTexture mGPUTexture;
 
-    protected Texture(Server server, int width, int height) {
-        super(server);
-        assert width > 0 && height > 0;
-        mWidth = width;
-        mHeight = height;
+    /**
+     * This tracks the mipmap status at the proxy level and is thus somewhat distinct from the
+     * backing Texture's mipmap status. In particular, this status is used to determine when
+     * mipmap levels need to be explicitly regenerated during the execution of a DAG of opsTasks.
+     * <p>
+     * Only meaningful if {@link #isUserMipmapped} returns true.
+     */
+    boolean mMipmapsDirty = true;
+
+    /**
+     * Should the target's unique key be synced with ours.
+     */
+    boolean mSyncTargetKey = true;
+
+    Object mUniqueKey;
+    /**
+     * Only set when 'mUniqueKey' is non-null.
+     */
+    SurfaceProvider mSurfaceProvider;
+
+    /**
+     * Deferred version - no data
+     */
+    public Texture(BackendFormat format,
+                   int width, int height,
+                   int surfaceFlags) {
+        super(format, width, height, surfaceFlags);
+        assert (width > 0 && height > 0); // non-lazy
     }
 
     /**
-     * @return the width of the texture
+     * Lazy-callback version - takes a new UniqueID from the shared resource/proxy pool.
      */
+    public Texture(BackendFormat format,
+                   int width, int height,
+                   int surfaceFlags,
+                   LazyInstantiateCallback callback) {
+        super(format, width, height, surfaceFlags);
+        mLazyInstantiateCallback = Objects.requireNonNull(callback);
+        // A "fully" lazy proxy's width and height are not known until instantiation time.
+        // So fully lazy proxies are created with width and height < 0. Regular lazy proxies must be
+        // created with positive widths and heights. The width and height are set to 0 only after a
+        // failed instantiation. The former must be "approximate" fit while the latter can be either.
+        assert (width < 0 && height < 0 && (surfaceFlags & IGPUSurface.FLAG_APPROX_FIT) != 0) ||
+                (width > 0 && height > 0);
+    }
+
+    /**
+     * Wrapped version - shares the UniqueID of the passed texture.
+     * <p>
+     * Takes UseAllocator because even though this is already instantiated it still can participate
+     * in allocation by having its backing resource recycled to other uninstantiated proxies or
+     * not depending on UseAllocator.
+     */
+    public Texture(@SharedPtr GPUTexture texture,
+                   int surfaceFlags) {
+        super(texture, surfaceFlags);
+        mMipmapsDirty = texture.isMipmapped() && texture.isMipmapsDirty();
+        assert (mSurfaceFlags & IGPUSurface.FLAG_APPROX_FIT) == 0;
+        assert (mFormat.isExternal() == texture.isExternal());
+        assert (texture.isMipmapped()) == ((mSurfaceFlags & IGPUSurface.FLAG_MIPMAPPED) != 0);
+        assert (texture.getBudgetType() == Engine.BudgetType.Budgeted) == ((mSurfaceFlags & IGPUSurface.FLAG_BUDGETED) != 0);
+        assert (!texture.isExternal()) || ((mSurfaceFlags & IGPUSurface.FLAG_READ_ONLY) != 0);
+        assert (texture.getBudgetType() == Engine.BudgetType.Budgeted) == isBudgeted();
+        assert (!texture.isExternal() || isReadOnly());
+        mGPUTexture = texture; // std::move
+        if (texture.getUniqueKey() != null) {
+            assert (texture.getContext() != null);
+            mSurfaceProvider = texture.getContext().getSurfaceProvider();
+            mSurfaceProvider.adoptUniqueKeyFromSurface(this, texture);
+        }
+    }
+
     @Override
-    public final int getWidth() {
+    protected void deallocate() {
+        // Due to the order of cleanup the Texture this proxy may have wrapped may have gone away
+        // at this point. Zero out the pointer so the cache invalidation code doesn't try to use it.
+        mGPUTexture = GPUResource.move(mGPUTexture);
+
+        if (mLazyInstantiateCallback != null) {
+            mLazyInstantiateCallback.close();
+            mLazyInstantiateCallback = null;
+        }
+
+        // In DDL-mode, uniquely keyed proxies keep their key even after their originating
+        // proxy provider has gone away. In that case there is no-one to send the invalid key
+        // message to (Note: in this case we don't want to remove its cached resource).
+        if (mUniqueKey != null && mSurfaceProvider != null) {
+            mSurfaceProvider.processInvalidUniqueKey(mUniqueKey, this, false);
+        } else {
+            assert (mSurfaceProvider == null);
+        }
+    }
+
+    @Override
+    public boolean isLazy() {
+        return mGPUTexture == null && mLazyInstantiateCallback != null;
+    }
+
+    @Override
+    public int getBackingWidth() {
+        assert (!isLazyMost());
+        if (mGPUTexture != null) {
+            return mGPUTexture.getWidth();
+        }
+        if ((mSurfaceFlags & IGPUSurface.FLAG_APPROX_FIT) != 0) {
+            return GPUResourceProvider.makeApprox(mWidth);
+        }
         return mWidth;
     }
 
-    /**
-     * @return the height of the texture
-     */
     @Override
-    public final int getHeight() {
+    public int getBackingHeight() {
+        assert (!isLazyMost());
+        if (mGPUTexture != null) {
+            return mGPUTexture.getHeight();
+        }
+        if ((mSurfaceFlags & IGPUSurface.FLAG_APPROX_FIT) != 0) {
+            return GPUResourceProvider.makeApprox(mHeight);
+        }
         return mHeight;
     }
 
-    /**
-     * @return true if this surface has mipmaps and have been allocated
-     */
-    public final boolean isMipmapped() {
-        return (mFlags & FLAG_MIPMAPPED) != 0;
+    @Override
+    public int getSampleCount() {
+        return 1;
+    }
+
+    @Override
+    public Object getBackingUniqueID() {
+        if (mGPUTexture != null) {
+            return mGPUTexture;
+        }
+        return mUniqueID;
+    }
+
+    @Override
+    public boolean isInstantiated() {
+        return mGPUTexture != null;
+    }
+
+    @Override
+    public boolean instantiate(GPUResourceProvider resourceProvider) {
+        if (isLazy()) {
+            return false;
+        }
+        if (mGPUTexture != null) {
+            assert mUniqueKey == null ||
+                    mGPUTexture.mUniqueKey != null && mGPUTexture.mUniqueKey.equals(mUniqueKey);
+            return true;
+        }
+
+        assert ((mSurfaceFlags & IGPUSurface.FLAG_MIPMAPPED) == 0) ||
+                ((mSurfaceFlags & IGPUSurface.FLAG_APPROX_FIT) == 0);
+
+        final GPUTexture texture = resourceProvider.createTexture(mWidth, mHeight, mFormat,
+                getSampleCount(), mSurfaceFlags, "");
+        if (texture == null) {
+            return false;
+        }
+
+        // If there was an invalidation message pending for this key, we might have just processed it,
+        // causing the key (stored on this proxy) to become invalid.
+        if (mUniqueKey != null) {
+            resourceProvider.assignUniqueKeyToResource(mUniqueKey, texture);
+        }
+
+        assert mGPUTexture == null;
+        assert texture.getBackendFormat().equals(mFormat);
+        mGPUTexture = texture;
+
+        return true;
+    }
+
+    @Override
+    public void clear() {
+        assert mGPUTexture != null;
+        mGPUTexture.unref();
+        mGPUTexture = null;
+    }
+
+    @Override
+    public final boolean shouldSkipAllocator() {
+        if ((mSurfaceFlags & IGPUSurface.FLAG_SKIP_ALLOCATOR) != 0) {
+            // Usually an atlas or onFlush proxy
+            return true;
+        }
+        if (mGPUTexture == null) {
+            return false;
+        }
+        // If this resource is already allocated and not recyclable then the resource allocator does
+        // not need to do anything with it.
+        return mGPUTexture.getScratchKey() == null;
     }
 
     /**
-     * The pixel values of this surface cannot be modified (e.g. doesn't support write pixels or
-     * mipmap regeneration). To be exact, only wrapped textures, external textures, stencil
-     * attachments and MSAA color attachments can be read only.
-     *
-     * @return true if pixels in this surface are read-only
+     * Return the texture proxy's unique key. It will be null if the proxy doesn't have one.
      */
-    public final boolean isReadOnly() {
-        return (mFlags & FLAG_READ_ONLY) != 0;
+    @Nullable
+    public final Object getUniqueKey() {
+        return mUniqueKey;
+    }
+
+    public void setMSAADirty(int left, int top, int right, int bottom) {
+        throw new UnsupportedOperationException();
+    }
+
+    public boolean isMSAADirty() {
+        throw new UnsupportedOperationException();
+    }
+
+    public Rect2i getMSAADirtyRect() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isBackingWrapped() {
+        return mGPUTexture != null && mGPUTexture.isWrapped();
+    }
+
+    @Nullable
+    @Override
+    public IGPUSurface peekGPUSurface() {
+        return mGPUTexture;
+    }
+
+    @Nullable
+    @Override
+    public GPUTexture peekGPUTexture() {
+        return mGPUTexture;
+    }
+
+    @Override
+    public long getMemorySize() {
+        // use user params
+        return GPUTexture.computeSize(mFormat, mWidth, mHeight, getSampleCount(),
+                (mSurfaceFlags & IGPUSurface.FLAG_MIPMAPPED) != 0,
+                (mSurfaceFlags & IGPUSurface.FLAG_APPROX_FIT) != 0);
+    }
+
+    public final boolean isPromiseProxy() {
+        return mIsPromiseProxy;
     }
 
     /**
-     * @return true if we are working with protected content
+     * If we are instantiated and have a target, return the mip state of that target. Otherwise,
+     * returns the proxy's mip state from creation time. This is useful for lazy proxies which may
+     * claim to not need mips at creation time, but the instantiation happens to give us a mipmapped
+     * target. In that case we should use that for our benefit to avoid possible copies/mip
+     * generation later.
      */
-    public final boolean isProtected() {
-        return (mFlags & FLAG_PROTECTED) != 0;
+    public boolean isMipmapped() {
+        if (mGPUTexture != null) {
+            return mGPUTexture.isMipmapped();
+        }
+        return (mSurfaceFlags & IGPUSurface.FLAG_MIPMAPPED) != 0;
+    }
+
+    public final boolean isMipmapsDirty() {
+        return mMipmapsDirty && isUserMipmapped();
+    }
+
+    public final void setMipmapsDirty(boolean dirty) {
+        assert isUserMipmapped();
+        mMipmapsDirty = dirty;
     }
 
     /**
-     * Surface flags, but no render target level flags.
-     *
-     * <ul>
-     * <li>{@link #FLAG_BUDGETED} -
-     *  Indicates whether an allocation should count against a cache budget. Budgeted when
-     *  set, otherwise not budgeted. {@link Texture} only.
-     * </li>
-     *
-     * <li>{@link #FLAG_MIPMAPPED} -
-     *  Used to say whether a texture has mip levels allocated or not. Mipmaps are allocated
-     *  when set, otherwise mipmaps are not allocated. {@link Texture} only.
-     * </li>
-     *
-     * <li>{@link #FLAG_RENDERABLE} -
-     *  Used to say whether a surface can be rendered to, whether a texture can be used as
-     *  color attachments. Renderable when set, otherwise not renderable.
-     * </li>
-     *
-     * <li>{@link #FLAG_PROTECTED} -
-     *  Used to say whether texture is backed by protected memory. Protected when set, otherwise
-     *  not protected.
-     * </li>
-     *
-     * <li>{@link #FLAG_READ_ONLY} -
-     *  Means the pixels in the texture are read-only. {@link Texture} only.
-     * </li>
-     *
-     * @return combination of the above flags
+     * Returns the Mipmapped value of the proxy from creation time regardless of whether it has
+     * been instantiated or not.
+     */
+    public final boolean isUserMipmapped() {
+        return (mSurfaceFlags & IGPUSurface.FLAG_MIPMAPPED) != 0;
+    }
+
+    /**
+     * If true then the texture does not support MIP maps and only supports clamp wrap mode.
+     */
+    public final boolean hasRestrictedSampling() {
+        return mFormat.isExternal();
+    }
+
+    /**
+     * Same as {@link GPUTexture.ScratchKey} for {@link GPUSurfaceAllocator}.
      */
     @Override
-    public final int getSurfaceFlags() {
-        int flags = mFlags;
-        if (getBudgetType() == BudgetType.Budgeted) {
-            flags |= Surface.FLAG_BUDGETED;
+    public int hashCode() {
+        int result = getBackingWidth();
+        result = 31 * result + getBackingHeight();
+        result = 31 * result + mFormat.getFormatKey();
+        result = 31 * result + ((mSurfaceFlags & (IGPUSurface.FLAG_RENDERABLE | IGPUSurface.FLAG_PROTECTED)) |
+                (isMipmapped() ? IGPUSurface.FLAG_MIPMAPPED : 0));
+        return result;
+    }
+
+    /**
+     * Same as {@link GPUTexture.ScratchKey} for {@link GPUSurfaceAllocator}.
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o instanceof GPUTexture.ScratchKey key) {
+            // ResourceProvider
+            return key.mWidth == getBackingWidth() &&
+                    key.mHeight == getBackingHeight() &&
+                    key.mFormat == mFormat.getFormatKey() &&
+                    key.mFlags == ((mSurfaceFlags & (IGPUSurface.FLAG_RENDERABLE | IGPUSurface.FLAG_PROTECTED)) |
+                            (isMipmapped() ? IGPUSurface.FLAG_MIPMAPPED : 0));
+        } else if (o instanceof Texture proxy) {
+            // ResourceAllocator
+            return proxy.getBackingWidth() == getBackingWidth() &&
+                    proxy.getBackingHeight() == getBackingHeight() &&
+                    proxy.mFormat.getFormatKey() == mFormat.getFormatKey() &&
+                    proxy.isMipmapped() == isMipmapped() &&
+                    (proxy.mSurfaceFlags & (IGPUSurface.FLAG_RENDERABLE | IGPUSurface.FLAG_PROTECTED)) ==
+                            (mSurfaceFlags & (IGPUSurface.FLAG_RENDERABLE | IGPUSurface.FLAG_PROTECTED));
         }
-        return flags;
+        return false;
     }
 
     @Override
@@ -151,199 +368,139 @@ public abstract class Texture extends Resource implements Surface {
         return this;
     }
 
-    /**
-     * @return external texture
-     */
-    public abstract boolean isExternal();
-
-    /**
-     * @return the backend texture of this texture
-     */
-    @Nonnull
-    public abstract BackendTexture getBackendTexture();
-
-    /**
-     * Return <code>true</code> if mipmaps are dirty and need to regenerate before sampling.
-     * The value is valid only when {@link #isMipmapped()} returns <code>true</code>.
-     *
-     * @return whether mipmaps are dirty
-     */
-    public final boolean isMipmapsDirty() {
-        assert isMipmapped();
-        return mMipmapsDirty && isMipmapped();
-    }
-
-    /**
-     * Set whether mipmaps are dirty or not. Call only when {@link #isMipmapped()} returns <code>true</code>.
-     *
-     * @param mipmapsDirty whether mipmaps are dirty
-     */
-    public final void setMipmapsDirty(boolean mipmapsDirty) {
-        assert isMipmapped();
-        mMipmapsDirty = mipmapsDirty;
-    }
-
-    public abstract int getMaxMipmapLevel();
-
-    /**
-     * Unmanaged backends (e.g. Vulkan) may want to specially handle the release proc in order to
-     * ensure it isn't called until GPU work related to the resource is completed.
-     */
-    public void setReleaseCallback(@SharedPtr ReleaseCallback callback) {
-        mReleaseCallback = RefCnt.move(mReleaseCallback, callback);
-    }
-
-    @Override
-    protected void onRelease() {
-        if (mReleaseCallback != null) {
-            mReleaseCallback.unref();
+    @ApiStatus.Internal
+    public final void makeProxyExact(boolean allocatedCaseOnly) {
+        assert !isLazyMost();
+        if ((mSurfaceFlags & IGPUSurface.FLAG_APPROX_FIT) == 0) {
+            return;
         }
-        mReleaseCallback = null;
-    }
 
-    @Override
-    protected void onDiscard() {
-        if (mReleaseCallback != null) {
-            mReleaseCallback.unref();
+        final GPUTexture texture = peekGPUTexture();
+        if (texture != null) {
+            // The Approx but already instantiated case. Setting the proxy's width & height to
+            // the instantiated width & height could have side-effects going forward, since we're
+            // obliterating the area of interest information. This call only used
+            // when converting an SpecialImage to an Image so the proxy shouldn't be
+            // used for additional draws.
+            mWidth = texture.getWidth();
+            mHeight = texture.getHeight();
+            return;
         }
-        mReleaseCallback = null;
-    }
 
-    @Nullable
-    @Override
-    protected ScratchKey computeScratchKey() {
-        BackendFormat format = getBackendFormat();
-        if (format.isCompressed()) {
-            return null;
+        // In the post-implicit-allocation world we can't convert this proxy to be exact fit
+        // at this point. With explicit allocation switching this to exact will result in a
+        // different allocation at flush time. With implicit allocation, allocation would occur
+        // at draw time (rather than flush time) so this pathway was encountered less often (if
+        // at all).
+        if (allocatedCaseOnly) {
+            return;
         }
-        assert (getBudgetType() == BudgetType.Budgeted);
-        return new ScratchKey().compute(
-                format,
-                mWidth, mHeight,
-                1,
-                mFlags); // budgeted flag is not included, this method is called only when budgeted
+
+        // The Approx uninstantiated case. Making this proxy be exact should be okay.
+        // It could mess things up if prior decisions were based on the approximate size.
+        mSurfaceFlags &= ~IGPUSurface.FLAG_APPROX_FIT;
+        // If GpuMemorySize is used when caching specialImages for the image filter DAG. If it has
+        // already been computed we want to leave it alone so that amount will be removed when
+        // the special image goes away. If it hasn't been computed yet it might as well compute the
+        // exact amount.
     }
 
-    public static long computeSize(BackendFormat format,
-                                   int width, int height,
-                                   int sampleCount,
-                                   boolean mipmapped,
-                                   boolean approx) {
+    // Once the dimensions of a fully-lazy proxy are decided, and before it gets instantiated, the
+    // client can use this optional method to specify the proxy's dimensions. (A proxy's dimensions
+    // can be less than the GPU surface that backs it. e.g., BackingFit_Approx.) Otherwise,
+    // the proxy's dimensions will be set to match the underlying GPU surface upon instantiation.
+    @ApiStatus.Internal
+    public final void setLazyDimension(int width, int height) {
+        assert isLazyMost();
         assert width > 0 && height > 0;
-        assert sampleCount > 0;
-        assert sampleCount == 1 || !mipmapped;
-        // For external formats we do not actually know the real size of the resource, so we just return
-        // 0 here to indicate this.
-        if (format.isExternal()) {
-            return 0;
-        }
-        if (approx) {
-            width = ResourceProvider.makeApprox(width);
-            height = ResourceProvider.makeApprox(height);
-        }
-        long size = DataUtils.numBlocks(format.getCompressionType(), width, height) *
-                format.getBytesPerBlock();
-        assert size > 0;
-        if (mipmapped) {
-            size = (size << 2) / 3;
-        } else {
-            size *= sampleCount;
-        }
-        assert size > 0;
-        return size;
+        mWidth = width;
+        mHeight = height;
     }
 
-    public static long computeSize(BackendFormat format,
-                                   int width, int height,
-                                   int sampleCount,
-                                   int levelCount) {
-        return computeSize(format, width, height, sampleCount, levelCount, false);
+    @SharedPtr
+    GPUTexture createGPUTexture(GPUResourceProvider resourceProvider) {
+        assert ((mSurfaceFlags & IGPUSurface.FLAG_MIPMAPPED) == 0 ||
+                (mSurfaceFlags & IGPUSurface.FLAG_APPROX_FIT) == 0);
+        assert !isLazy();
+        assert mGPUTexture == null;
+
+        return resourceProvider.createTexture(mWidth, mHeight,
+                mFormat,
+                getSampleCount(),
+                mSurfaceFlags,
+                "");
     }
 
-    public static long computeSize(BackendFormat format,
-                                   int width, int height,
-                                   int sampleCount,
-                                   int levelCount,
-                                   boolean approx) {
-        assert width > 0 && height > 0;
-        assert sampleCount > 0 && levelCount > 0;
-        assert sampleCount == 1 || levelCount == 1;
-        // For external formats we do not actually know the real size of the resource, so we just return
-        // 0 here to indicate this.
-        if (format.isExternal()) {
-            return 0;
+    @Override
+    public final boolean doLazyInstantiation(GPUResourceProvider resourceProvider) {
+        assert isLazy();
+
+        @SharedPtr
+        GPUTexture textureResource = null;
+        if (mUniqueKey != null) {
+            textureResource = resourceProvider.findByUniqueKey(mUniqueKey);
         }
-        if (approx) {
-            width = ResourceProvider.makeApprox(width);
-            height = ResourceProvider.makeApprox(height);
+
+        boolean syncTargetKey = true;
+        boolean releaseCallback = false;
+        if (textureResource == null) {
+            int width = isLazyMost() ? -1 : getWidth();
+            int height = isLazyMost() ? -1 : getHeight();
+            LazyCallbackResult result = mLazyInstantiateCallback.onLazyInstantiate(resourceProvider,
+                    mFormat,
+                    width, height,
+                    getSampleCount(),
+                    mSurfaceFlags,
+                    "");
+            if (result != null) {
+                textureResource = (GPUTexture) result.mSurface;
+                syncTargetKey = result.mSyncTargetKey;
+                releaseCallback = result.mReleaseCallback;
+            }
         }
-        long size = DataUtils.numBlocks(format.getCompressionType(), width, height) *
-                format.getBytesPerBlock();
-        assert size > 0;
-        if (levelCount > 1) {
-            // geometric sequence, S=a1(1-q^n)/(1-q), q=2^(-2)
-            size = ((size - (size >> (levelCount << 1))) << 2) / 3;
-        } else {
-            size *= sampleCount;
+        if (textureResource == null) {
+            mWidth = mHeight = 0;
+            return false;
         }
-        assert size > 0;
-        return size;
+
+        if (isLazyMost()) {
+            // This was a lazy-most proxy. We need to fill in the width & height. For normal
+            // lazy proxies we must preserve the original width & height since that indicates
+            // the content area.
+            mWidth = textureResource.getWidth();
+            mHeight = textureResource.getHeight();
+        }
+
+        assert getWidth() <= textureResource.getWidth();
+        assert getHeight() <= textureResource.getHeight();
+
+        mSyncTargetKey = syncTargetKey;
+        if (syncTargetKey) {
+            if (mUniqueKey != null) {
+                if (textureResource.getUniqueKey() == null) {
+                    // If 'texture' is newly created, attach the unique key
+                    resourceProvider.assignUniqueKeyToResource(mUniqueKey, textureResource);
+                } else {
+                    // otherwise we had better have reattached to a cached version
+                    assert textureResource.getUniqueKey().equals(mUniqueKey);
+                }
+            } else {
+                assert textureResource.getUniqueKey() == null;
+            }
+        }
+
+        assert mGPUTexture == null;
+        mGPUTexture = textureResource;
+        if (releaseCallback) {
+            mLazyInstantiateCallback.close();
+            mLazyInstantiateCallback = null;
+        }
+
+        return true;
     }
 
-    /**
-     * Storage key of {@link Texture}, may be compared with {@link TextureProxy}.
-     */
-    public static final class ScratchKey {
-
-        public int mWidth;
-        public int mHeight;
-        public int mFormat;
-        public int mFlags;
-
-        /**
-         * Compute a {@link Texture} key, format can not be compressed.
-         *
-         * @return the scratch key
-         */
-        @Nonnull
-        public ScratchKey compute(BackendFormat format,
-                                  int width, int height,
-                                  int sampleCount,
-                                  int surfaceFlags) {
-            assert (width > 0 && height > 0);
-            assert (!format.isCompressed());
-            mWidth = width;
-            mHeight = height;
-            mFormat = format.getFormatKey();
-            mFlags = (surfaceFlags & (Surface.FLAG_MIPMAPPED |
-                    Surface.FLAG_RENDERABLE |
-                    Surface.FLAG_PROTECTED)) | (sampleCount << 16);
-            return this;
-        }
-
-        /**
-         * Keep {@link TextureProxy#hashCode()} sync with this.
-         */
-        @Override
-        public int hashCode() {
-            int result = mWidth;
-            result = 31 * result + mHeight;
-            result = 31 * result + mFormat;
-            result = 31 * result + mFlags;
-            return result;
-        }
-
-        /**
-         * Keep {@link TextureProxy#equals(Object)}} sync with this.
-         */
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            return o instanceof ScratchKey key &&
-                    mWidth == key.mWidth &&
-                    mHeight == key.mHeight &&
-                    mFormat == key.mFormat &&
-                    mFlags == key.mFlags;
-        }
+    @ApiStatus.Internal
+    public void setIsPromiseProxy() {
+        mIsPromiseProxy = true;
     }
 }

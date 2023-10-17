@@ -25,30 +25,30 @@ import org.jetbrains.annotations.VisibleForTesting;
 import javax.annotation.Nullable;
 
 /**
- * Subclass of {@link TextureProxy} that also provides render target info.
+ * Subclass of {@link Texture} that also provides render target info.
  */
 //TODO
 @VisibleForTesting
-public final class RenderTextureProxy extends TextureProxy {
+public final class RenderTexture extends Texture {
 
     private final int mSampleCount;
     private final Rect2i mMSAADirtyRect = new Rect2i();
 
     // Deferred version - no data
-    RenderTextureProxy(BackendFormat format,
-                       int width, int height,
-                       int sampleCount,
-                       int surfaceFlags) {
+    RenderTexture(BackendFormat format,
+                  int width, int height,
+                  int sampleCount,
+                  int surfaceFlags) {
         super(format, width, height, surfaceFlags);
         mSampleCount = sampleCount;
     }
 
     // Lazy-callback version - takes a new UniqueID from the shared resource/proxy pool.
-    RenderTextureProxy(BackendFormat format,
-                       int width, int height,
-                       int sampleCount,
-                       int surfaceFlags,
-                       LazyInstantiateCallback callback) {
+    RenderTexture(BackendFormat format,
+                  int width, int height,
+                  int sampleCount,
+                  int surfaceFlags,
+                  LazyInstantiateCallback callback) {
         super(format, width, height, surfaceFlags, callback);
         mSampleCount = sampleCount;
     }
@@ -60,8 +60,8 @@ public final class RenderTextureProxy extends TextureProxy {
 
     @Nullable
     @Override
-    public RenderTarget peekRenderTarget() {
-        return mTexture != null ? mTexture.asRenderTarget() : null;
+    public GPURenderTarget peekGPURenderTarget() {
+        return mGPUTexture != null ? mGPUTexture.asRenderTarget() : null;
     }
 
     @Override

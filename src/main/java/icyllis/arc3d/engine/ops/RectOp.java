@@ -1,19 +1,20 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
+ * This file is part of Arc 3D.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ *
+ * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * Arc 3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.engine.ops;
@@ -30,10 +31,10 @@ import java.nio.ByteBuffer;
 //TODO
 public class RectOp extends MeshDrawOp {
 
-    private Buffer mVertexBuffer;
+    private GPUBuffer mVertexBuffer;
     private int mBaseVertex;
 
-    private Buffer mInstanceBuffer;
+    private GPUBuffer mInstanceBuffer;
     private int mBaseInstance;
 
     private final int mColor;
@@ -92,7 +93,7 @@ public class RectOp extends MeshDrawOp {
 
     @Nonnull
     @Override
-    protected PipelineInfo onCreatePipelineInfo(SurfaceProxyView writeView, int pipelineFlags) {
+    protected PipelineInfo onCreatePipelineInfo(SurfaceView writeView, int pipelineFlags) {
         return new PipelineInfo(writeView,
                 new SDFRectGeoProc(mGPFlags), null, null, null,
                 null, pipelineFlags);
@@ -109,14 +110,14 @@ public class RectOp extends MeshDrawOp {
     }
 
     @Override
-    public void setVertexBuffer(@SharedPtr Buffer buffer, int baseVertex, int actualVertexCount) {
+    public void setVertexBuffer(@SharedPtr GPUBuffer buffer, int baseVertex, int actualVertexCount) {
         assert mVertexBuffer == null;
         mVertexBuffer = buffer;
         mBaseVertex = baseVertex;
     }
 
     @Override
-    public void setInstanceBuffer(@SharedPtr Buffer buffer, int baseInstance, int actualInstanceCount) {
+    public void setInstanceBuffer(@SharedPtr GPUBuffer buffer, int baseInstance, int actualInstanceCount) {
         assert mInstanceBuffer == null;
         mInstanceBuffer = buffer;
         mBaseInstance = baseInstance;

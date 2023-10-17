@@ -20,7 +20,7 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.SharedPtr;
-import icyllis.arc3d.engine.ManagedResource;
+import icyllis.arc3d.engine.GPUManagedResource;
 import icyllis.arc3d.engine.SamplerState;
 import org.lwjgl.opengl.GL46C;
 
@@ -31,18 +31,18 @@ import static icyllis.arc3d.opengl.GLCore.*;
 /**
  * Represents OpenGL sampler objects.
  */
-public final class GLSampler extends ManagedResource {
+public final class GLSampler extends GPUManagedResource {
 
     private int mSampler;
 
-    private GLSampler(GLServer server, int sampler) {
-        super(server);
+    private GLSampler(GLDevice device, int sampler) {
+        super(device);
         mSampler = sampler;
     }
 
     @Nullable
     @SharedPtr
-    public static GLSampler create(GLServer server,
+    public static GLSampler create(GLDevice device,
                                    int samplerState) {
         int sampler = glGenSamplers();
         if (sampler == 0) {
@@ -65,13 +65,13 @@ public final class GLSampler extends ManagedResource {
         glSamplerParameteri(sampler, GL_TEXTURE_MIN_FILTER, minFilter);
         glSamplerParameteri(sampler, GL_TEXTURE_WRAP_S, wrapX);
         glSamplerParameteri(sampler, GL_TEXTURE_WRAP_T, wrapY);
-        if (server.getCaps().hasAnisotropySupport()) {
+        if (device.getCaps().hasAnisotropySupport()) {
             float maxAnisotropy = Math.min(SamplerState.getMaxAnisotropy(samplerState),
-                    server.getCaps().maxTextureMaxAnisotropy());
+                    device.getCaps().maxTextureMaxAnisotropy());
             assert (maxAnisotropy >= 1.0f);
             glSamplerParameterf(sampler, GL46C.GL_TEXTURE_MAX_ANISOTROPY, maxAnisotropy);
         }
-        return new GLSampler(server, sampler);
+        return new GLSampler(device, sampler);
     }
 
     //@formatter:off

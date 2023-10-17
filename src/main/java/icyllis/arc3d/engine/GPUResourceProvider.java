@@ -26,18 +26,18 @@ import javax.annotation.Nullable;
 /**
  * Provides resources with cache.
  */
-public class ResourceProvider {
+public class GPUResourceProvider {
 
     public static final int MIN_SCRATCH_TEXTURE_SIZE = 16;
 
-    private final Server mServer;
+    private final GPUDevice mDevice;
     private final DirectContext mContext;
 
     // lookup key
-    private final Texture.ScratchKey mTextureScratchKey = new Texture.ScratchKey();
+    private final GPUTexture.ScratchKey mTextureScratchKey = new GPUTexture.ScratchKey();
 
-    protected ResourceProvider(Server server, DirectContext context) {
-        mServer = server;
+    protected GPUResourceProvider(GPUDevice device, DirectContext context) {
+        mDevice = device;
         mContext = context;
     }
 
@@ -71,16 +71,16 @@ public class ResourceProvider {
     /**
      * Finds a resource in the cache, based on the specified key. Prior to calling this, the caller
      * must be sure that if a resource of exists in the cache with the given unique key then it is
-     * of type T. If the resource is no longer used, then {@link Resource#unref()} must be called.
+     * of type T. If the resource is no longer used, then {@link GPUResource#unref()} must be called.
      *
      * @param key the resource unique key
      */
     @Nullable
     @SharedPtr
     @SuppressWarnings("unchecked")
-    public final <T extends Resource> T findByUniqueKey(Object key) {
-        assert mServer.getContext().isOwnerThread();
-        return mServer.getContext().isDiscarded() ? null :
+    public final <T extends GPUResource> T findByUniqueKey(Object key) {
+        assert mDevice.getContext().isOwnerThread();
+        return mDevice.getContext().isDiscarded() ? null :
                 (T) mContext.getResourceCache().findAndRefUniqueResource(key);
     }
 
@@ -91,23 +91,23 @@ public class ResourceProvider {
      * Finds or creates a texture that matches the descriptor. The texture's format will always
      * match the request. The contents of the texture are undefined.
      * <p>
-     * When {@link Surface#FLAG_BUDGETED} is set, the texture will count against the resource
-     * cache budget. If {@link Surface#FLAG_APPROX_FIT} is also set, it's always budgeted.
+     * When {@link IGPUSurface#FLAG_BUDGETED} is set, the texture will count against the resource
+     * cache budget. If {@link IGPUSurface#FLAG_APPROX_FIT} is also set, it's always budgeted.
      * <p>
-     * When {@link Surface#FLAG_APPROX_FIT} is set, the method returns a potentially approx fit
+     * When {@link IGPUSurface#FLAG_APPROX_FIT} is set, the method returns a potentially approx fit
      * texture that approximately matches the descriptor. Will be at least as large in width and
-     * height as desc specifies. In this case, {@link Surface#FLAG_MIPMAPPED} and
-     * {@link Surface#FLAG_BUDGETED} are ignored. Otherwise, the method returns an exact fit
+     * height as desc specifies. In this case, {@link IGPUSurface#FLAG_MIPMAPPED} and
+     * {@link IGPUSurface#FLAG_BUDGETED} are ignored. Otherwise, the method returns an exact fit
      * texture.
      * <p>
-     * When {@link Surface#FLAG_MIPMAPPED} is set, the texture will be allocated with mipmaps.
-     * If {@link Surface#FLAG_APPROX_FIT} is also set, it always has no mipmaps.
+     * When {@link IGPUSurface#FLAG_MIPMAPPED} is set, the texture will be allocated with mipmaps.
+     * If {@link IGPUSurface#FLAG_APPROX_FIT} is also set, it always has no mipmaps.
      * <p>
-     * When {@link Surface#FLAG_RENDERABLE} is set, the texture can be rendered to and
-     * {@link Surface#asRenderTarget()} will return nonnull. The <code>sampleCount</code>
+     * When {@link IGPUSurface#FLAG_RENDERABLE} is set, the texture can be rendered to and
+     * {@link IGPUSurface#asRenderTarget()} will return nonnull. The <code>sampleCount</code>
      * specifies the number of samples to use for rendering.
      * <p>
-     * When {@link Surface#FLAG_PROTECTED} is set, the texture will be created as protected.
+     * When {@link IGPUSurface#FLAG_PROTECTED} is set, the texture will be created as protected.
      *
      * @param width        the desired width of the texture to be created
      * @param height       the desired height of the texture to be created
@@ -117,21 +117,21 @@ public class ResourceProvider {
      * @param surfaceFlags the combination of the above flags
      * @param label        the label for debugging purposes, can be empty to clear the label,
      *                     or null to leave the label unchanged
-     * @see Surface#FLAG_BUDGETED
-     * @see Surface#FLAG_APPROX_FIT
-     * @see Surface#FLAG_MIPMAPPED
-     * @see Surface#FLAG_RENDERABLE
-     * @see Surface#FLAG_PROTECTED
+     * @see IGPUSurface#FLAG_BUDGETED
+     * @see IGPUSurface#FLAG_APPROX_FIT
+     * @see IGPUSurface#FLAG_MIPMAPPED
+     * @see IGPUSurface#FLAG_RENDERABLE
+     * @see IGPUSurface#FLAG_PROTECTED
      */
     @Nullable
     @SharedPtr
-    public final Texture createTexture(int width, int height,
-                                       BackendFormat format,
-                                       int sampleCount,
-                                       int surfaceFlags,
-                                       String label) {
-        assert mServer.getContext().isOwnerThread();
-        if (mServer.getContext().isDiscarded()) {
+    public final GPUTexture createTexture(int width, int height,
+                                          BackendFormat format,
+                                          int sampleCount,
+                                          int surfaceFlags,
+                                          String label) {
+        assert mDevice.getContext().isOwnerThread();
+        if (mDevice.getContext().isDiscarded()) {
             return null;
         }
 
@@ -139,28 +139,28 @@ public class ResourceProvider {
         // textures should be created through the createCompressedTexture function.
         assert !format.isCompressed();
 
-        if (!mServer.getCaps().validateSurfaceParams(width, height, format,
+        if (!mDevice.getCaps().validateSurfaceParams(width, height, format,
                 sampleCount, surfaceFlags)) {
             return null;
         }
 
-        if ((surfaceFlags & Surface.FLAG_APPROX_FIT) != 0) {
+        if ((surfaceFlags & IGPUSurface.FLAG_APPROX_FIT) != 0) {
             width = makeApprox(width);
             height = makeApprox(height);
-            surfaceFlags &= Surface.FLAG_RENDERABLE | Surface.FLAG_PROTECTED;
-            surfaceFlags |= Surface.FLAG_BUDGETED;
+            surfaceFlags &= IGPUSurface.FLAG_RENDERABLE | IGPUSurface.FLAG_PROTECTED;
+            surfaceFlags |= IGPUSurface.FLAG_BUDGETED;
         }
 
-        final Texture texture = findAndRefScratchTexture(width, height, format,
+        final GPUTexture texture = findAndRefScratchTexture(width, height, format,
                 sampleCount, surfaceFlags, label);
         if (texture != null) {
-            if ((surfaceFlags & Surface.FLAG_BUDGETED) == 0) {
+            if ((surfaceFlags & IGPUSurface.FLAG_BUDGETED) == 0) {
                 texture.makeBudgeted(false);
             }
             return texture;
         }
 
-        return mServer.createTexture(width, height, format,
+        return mDevice.createTexture(width, height, format,
                 sampleCount, surfaceFlags, label);
     }
 
@@ -182,25 +182,25 @@ public class ResourceProvider {
      * @param pixels       the pointer to the texel data for base level image
      * @param label        the label for debugging purposes, can be empty to clear the label,
      *                     or null to leave the label unchanged
-     * @see Surface#FLAG_BUDGETED
-     * @see Surface#FLAG_APPROX_FIT
-     * @see Surface#FLAG_MIPMAPPED
-     * @see Surface#FLAG_RENDERABLE
-     * @see Surface#FLAG_PROTECTED
+     * @see IGPUSurface#FLAG_BUDGETED
+     * @see IGPUSurface#FLAG_APPROX_FIT
+     * @see IGPUSurface#FLAG_MIPMAPPED
+     * @see IGPUSurface#FLAG_RENDERABLE
+     * @see IGPUSurface#FLAG_PROTECTED
      */
     @Nullable
     @SharedPtr
-    public final Texture createTexture(int width, int height,
-                                       BackendFormat format,
-                                       int sampleCount,
-                                       int surfaceFlags,
-                                       int dstColorType,
-                                       int srcColorType,
-                                       int rowBytes,
-                                       long pixels,
-                                       String label) {
-        assert mServer.getContext().isOwnerThread();
-        if (mServer.getContext().isDiscarded()) {
+    public final GPUTexture createTexture(int width, int height,
+                                          BackendFormat format,
+                                          int sampleCount,
+                                          int surfaceFlags,
+                                          int dstColorType,
+                                          int srcColorType,
+                                          int rowBytes,
+                                          long pixels,
+                                          String label) {
+        assert mDevice.getContext().isOwnerThread();
+        if (mDevice.getContext().isDiscarded()) {
             return null;
         }
 
@@ -214,7 +214,7 @@ public class ResourceProvider {
         if (actualRowBytes < minRowBytes) {
             return null;
         }
-        int actualColorType = (int) mServer.getCaps().getSupportedWriteColorType(
+        int actualColorType = (int) mDevice.getCaps().getSupportedWriteColorType(
                 dstColorType,
                 format,
                 srcColorType);
@@ -222,7 +222,7 @@ public class ResourceProvider {
             return null;
         }
 
-        final Texture texture = createTexture(width, height, format,
+        final GPUTexture texture = createTexture(width, height, format,
                 sampleCount, surfaceFlags, label);
         if (texture == null) {
             return null;
@@ -230,7 +230,7 @@ public class ResourceProvider {
         if (pixels == 0) {
             return texture;
         }
-        boolean result = mServer.writePixels(texture, 0, 0, width, height,
+        boolean result = mDevice.writePixels(texture, 0, 0, width, height,
                 dstColorType, actualColorType, actualRowBytes, pixels);
         assert result;
 
@@ -246,18 +246,18 @@ public class ResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public final Texture findAndRefScratchTexture(Object key, String label) {
-        assert mServer.getContext().isOwnerThread();
-        assert !mServer.getContext().isDiscarded();
+    public final GPUTexture findAndRefScratchTexture(Object key, String label) {
+        assert mDevice.getContext().isOwnerThread();
+        assert !mDevice.getContext().isDiscarded();
         assert key != null;
 
-        Resource resource = mContext.getResourceCache().findAndRefScratchResource(key);
+        GPUResource resource = mContext.getResourceCache().findAndRefScratchResource(key);
         if (resource != null) {
-            mServer.getStats().incNumScratchTexturesReused();
+            mDevice.getStats().incNumScratchTexturesReused();
             if (label != null) {
                 resource.setLabel(label);
             }
-            return (Texture) resource;
+            return (GPUTexture) resource;
         }
         return null;
     }
@@ -268,21 +268,21 @@ public class ResourceProvider {
      *
      * @param label the label for debugging purposes, can be empty to clear the label,
      *              or null to leave the label unchanged
-     * @see Surface#FLAG_MIPMAPPED
-     * @see Surface#FLAG_RENDERABLE
-     * @see Surface#FLAG_PROTECTED
+     * @see IGPUSurface#FLAG_MIPMAPPED
+     * @see IGPUSurface#FLAG_RENDERABLE
+     * @see IGPUSurface#FLAG_PROTECTED
      */
     @Nullable
     @SharedPtr
-    public final Texture findAndRefScratchTexture(int width, int height,
-                                                  BackendFormat format,
-                                                  int sampleCount,
-                                                  int surfaceFlags,
-                                                  String label) {
-        assert mServer.getContext().isOwnerThread();
-        assert !mServer.getContext().isDiscarded();
+    public final GPUTexture findAndRefScratchTexture(int width, int height,
+                                                     BackendFormat format,
+                                                     int sampleCount,
+                                                     int surfaceFlags,
+                                                     String label) {
+        assert mDevice.getContext().isOwnerThread();
+        assert !mDevice.getContext().isDiscarded();
         assert !format.isCompressed();
-        assert mServer.getCaps().validateSurfaceParams(width, height, format,
+        assert mDevice.getCaps().validateSurfaceParams(width, height, format,
                 sampleCount, surfaceFlags);
 
         return findAndRefScratchTexture(mTextureScratchKey.compute(
@@ -311,13 +311,13 @@ public class ResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public final Texture wrapRenderableBackendTexture(BackendTexture texture,
-                                                      int sampleCount,
-                                                      boolean ownership) {
-        if (mServer.getContext().isDiscarded()) {
+    public final GPUTexture wrapRenderableBackendTexture(BackendTexture texture,
+                                                         int sampleCount,
+                                                         boolean ownership) {
+        if (mDevice.getContext().isDiscarded()) {
             return null;
         }
-        return mServer.wrapRenderableBackendTexture(texture, sampleCount, ownership);
+        return mDevice.wrapRenderableBackendTexture(texture, sampleCount, ownership);
     }
 
     /**
@@ -332,11 +332,11 @@ public class ResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public final RenderTarget wrapBackendRenderTarget(BackendRenderTarget backendRenderTarget) {
-        if (mServer.getContext().isDiscarded()) {
+    public final GPURenderTarget wrapBackendRenderTarget(BackendRenderTarget backendRenderTarget) {
+        if (mDevice.getContext().isDiscarded()) {
             return null;
         }
-        return mServer.wrapBackendRenderTarget(backendRenderTarget);
+        return mDevice.wrapBackendRenderTarget(backendRenderTarget);
     }
 
     /**
@@ -345,21 +345,21 @@ public class ResourceProvider {
      * @param size  minimum size of buffer to return.
      * @param usage hint to the graphics subsystem about what the buffer will be used for.
      * @return the buffer if successful, otherwise nullptr.
-     * @see Server.BufferUsageFlags
+     * @see GPUDevice.BufferUsageFlags
      */
     @Nullable
     @SharedPtr
-    public final Buffer createBuffer(int size, int usage) {
-        if (mServer.getContext().isDiscarded()) {
+    public final GPUBuffer createBuffer(int size, int usage) {
+        if (mDevice.getContext().isDiscarded()) {
             return null;
         }
         //TODO scratch
-        return mServer.createBuffer(size, usage);
+        return mDevice.createBuffer(size, usage);
     }
 
-    public final void assignUniqueKeyToResource(Object key, Resource resource) {
-        assert mServer.getContext().isOwnerThread();
-        if (mServer.getContext().isDiscarded() || resource == null) {
+    public final void assignUniqueKeyToResource(Object key, GPUResource resource) {
+        assert mDevice.getContext().isOwnerThread();
+        if (mDevice.getContext().isDiscarded() || resource == null) {
             return;
         }
         resource.setUniqueKey(key);

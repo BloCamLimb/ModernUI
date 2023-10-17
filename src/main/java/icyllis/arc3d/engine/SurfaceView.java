@@ -24,54 +24,54 @@ import icyllis.arc3d.core.SharedPtr;
 import static icyllis.arc3d.engine.Engine.SurfaceOrigin;
 
 /**
- * Views a {@link SurfaceProxy} in the pipeline.
+ * Views a {@link Surface} in the pipeline.
  */
-public class SurfaceProxyView implements AutoCloseable {
+public class SurfaceView implements AutoCloseable {
 
     @SharedPtr
-    SurfaceProxy mProxy;
+    Surface mSurface;
     int mOrigin;
     short mSwizzle;
 
-    public SurfaceProxyView(@SharedPtr SurfaceProxy proxy) {
-        mProxy = proxy; // std::move()
+    public SurfaceView(@SharedPtr Surface surface) {
+        mSurface = surface; // std::move()
         mOrigin = SurfaceOrigin.kUpperLeft;
         mSwizzle = Swizzle.RGBA;
     }
 
-    public SurfaceProxyView(@SharedPtr SurfaceProxy proxy, int origin, short swizzle) {
-        mProxy = proxy; // std::move()
+    public SurfaceView(@SharedPtr Surface surface, int origin, short swizzle) {
+        mSurface = surface; // std::move()
         mOrigin = origin;
         mSwizzle = swizzle;
     }
 
     public int getWidth() {
-        return mProxy.getWidth();
+        return mSurface.getWidth();
     }
 
     public int getHeight() {
-        return mProxy.getHeight();
+        return mSurface.getHeight();
     }
 
     public boolean isMipmapped() {
-        TextureProxy textureProxy = mProxy.asTextureProxy();
+        Texture textureProxy = mSurface.asTexture();
         return textureProxy != null && textureProxy.isMipmapped();
     }
 
     /**
      * Returns smart pointer value (raw ptr).
      */
-    public SurfaceProxy getProxy() {
-        return mProxy;
+    public Surface getSurface() {
+        return mSurface;
     }
 
     /**
      * Returns a smart pointer (as if on the stack).
      */
     @SharedPtr
-    public SurfaceProxy refProxy() {
-        mProxy.ref();
-        return mProxy;
+    public Surface refSurface() {
+        mSurface.ref();
+        return mSurface;
     }
 
     /**
@@ -79,11 +79,11 @@ public class SurfaceProxyView implements AutoCloseable {
      * properties associated with the detached proxy.
      */
     @SharedPtr
-    public SurfaceProxy detachProxy() {
+    public Surface detachSurface() {
         // just like std::move(), R-value reference
-        SurfaceProxy proxy = mProxy;
-        mProxy = null;
-        return proxy;
+        Surface surface = mSurface;
+        mSurface = null;
+        return surface;
     }
 
     /**
@@ -111,10 +111,10 @@ public class SurfaceProxyView implements AutoCloseable {
      * Recycle this view.
      */
     public void reset() {
-        if (mProxy != null) {
-            mProxy.unref();
+        if (mSurface != null) {
+            mSurface.unref();
         }
-        mProxy = null;
+        mSurface = null;
         mOrigin = SurfaceOrigin.kUpperLeft;
         mSwizzle = Swizzle.RGBA;
     }
@@ -124,9 +124,9 @@ public class SurfaceProxyView implements AutoCloseable {
      */
     @Override
     public void close() {
-        if (mProxy != null) {
-            mProxy.unref();
+        if (mSurface != null) {
+            mSurface.unref();
         }
-        mProxy = null;
+        mSurface = null;
     }
 }

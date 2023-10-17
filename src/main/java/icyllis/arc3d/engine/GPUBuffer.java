@@ -21,7 +21,6 @@ package icyllis.arc3d.engine;
 
 import java.util.Objects;
 
-import static icyllis.arc3d.engine.Engine.BufferUsageFlags;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 /**
@@ -29,7 +28,7 @@ import static org.lwjgl.system.MemoryUtil.NULL;
  * staging buffers. A buffer cannot be accessed by both CPU and GPU simultaneously, it's
  * either locked by engine or executing in command list.
  */
-public abstract class Buffer extends Resource {
+public abstract class GPUBuffer extends GPUResource {
 
     /**
      * Locks for reading. The effect of writes is undefined.
@@ -48,10 +47,10 @@ public abstract class Buffer extends Resource {
     private int mLockOffset;
     private int mLockSize;
 
-    protected Buffer(Server server,
-                     int size,
-                     int usage) {
-        super(server);
+    protected GPUBuffer(GPUDevice device,
+                        int size,
+                        int usage) {
+        super(device);
         mSize = size;
         mUsage = usage;
     }

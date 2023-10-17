@@ -105,7 +105,7 @@ public class CircleProcessor extends GeometryProcessor {
     }
 
     @Override
-    public void addToKey(Key.Builder b) {
+    public void addToKey(KeyBuilder b) {
         b.addBits(5, mFlags, "stroke|clipPlane|isectPlane|unionPlane|roundCaps");
     }
 

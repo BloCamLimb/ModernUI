@@ -35,12 +35,12 @@ import static icyllis.arc3d.engine.Engine.*;
  * <p>
  * This class is a public API, except where noted.
  */
-public final class ContextThreadSafeProxy {
+public final class SharedContextInfo {
 
     private static final AtomicInteger sNextID = new AtomicInteger(1);
 
     private static int createUniqueID() {
-        for (; ; ) {
+        for (;;) {
             final int value = sNextID.get();
             final int newValue = value == -1 ? 1 : value + 1; // 0 is reserved
             if (sNextID.weakCompareAndSetVolatile(value, newValue)) {
@@ -59,7 +59,7 @@ public final class ContextThreadSafeProxy {
 
     private final AtomicBoolean mDiscarded = new AtomicBoolean(false);
 
-    ContextThreadSafeProxy(int backend, ContextOptions options) {
+    SharedContextInfo(int backend, ContextOptions options) {
         mBackend = backend;
         mOptions = options;
         mContextID = createUniqueID();
@@ -78,17 +78,17 @@ public final class ContextThreadSafeProxy {
      *                                 all resource allocation decisions are made at record time
      *                                 and at playback time the budget limits will be ignored.
      * @param imageInfo                The image info specifying properties of the
-     *                                 {@link icyllis.arc3d.engine.Surface} that the DDL created
+     *                                 {@link IGPUSurface} that the DDL created
      *                                 with this characterization will be replayed into.
      *                                 Note: Engine doesn't make use of the
      *                                 {@link ImageInfo#alphaType()}.
      * @param backendFormat            Information about the format of the GPU surface that
-     *                                 will back the {@link icyllis.arc3d.engine.Surface} upon
+     *                                 will back the {@link IGPUSurface} upon
      *                                 replay.
-     * @param origin                   The origin of the {@link icyllis.arc3d.engine.Surface} that
+     * @param origin                   The origin of the {@link IGPUSurface} that
      *                                 the DDL created with this characterization will be
      *                                 replayed into.
-     * @param sampleCount              The sample count of the {@link Surface}
+     * @param sampleCount              The sample count of the {@link IGPUSurface}
      *                                 that the DDL created with this characterization will be
      *                                 replayed into.
      * @param texturable               Will the surface be able to act as a texture?
@@ -249,7 +249,7 @@ public final class ContextThreadSafeProxy {
 
     @ApiStatus.Internal
     public boolean matches(Context c) {
-        return c != null && this == c.mThreadSafeProxy;
+        return c != null && this == c.mContextInfo;
     }
 
     @ApiStatus.Internal

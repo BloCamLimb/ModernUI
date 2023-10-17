@@ -20,16 +20,16 @@
 package icyllis.arc3d.vulkan;
 
 import icyllis.arc3d.engine.DirectContext;
-import icyllis.arc3d.engine.Server;
+import icyllis.arc3d.engine.GPUDevice;
 import org.lwjgl.vulkan.VkDevice;
 
-public abstract class VulkanServer extends Server {
+public abstract class VulkanDevice extends GPUDevice {
 
     private VkDevice mDevice;
     private boolean mProtectedContext;
     private int mQueueIndex;
 
-    public VulkanServer(DirectContext context) {
+    public VulkanDevice(DirectContext context) {
         super(context, null);
     }
 

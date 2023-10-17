@@ -49,13 +49,13 @@ public class VaryingHandler {
     protected final ArrayList<ShaderVar> mVertexOutputs = new ArrayList<>();
     protected final ArrayList<ShaderVar> mFragInputs = new ArrayList<>();
 
-    protected final ProgramBuilder mProgramBuilder;
+    protected final PipelineBuilder mPipelineBuilder;
 
     // the default interpolation qualifier is smooth (with perspective)
     private String mDefaultInterpolationModifier = "";
 
-    public VaryingHandler(ProgramBuilder programBuilder) {
-        mProgramBuilder = programBuilder;
+    public VaryingHandler(PipelineBuilder pipelineBuilder) {
+        mPipelineBuilder = pipelineBuilder;
     }
 
     /**
@@ -92,8 +92,8 @@ public class VaryingHandler {
         var v = new VaryingInfo();
 
         v.mType = varying.mType;
-        v.mIsFlat = useFlatInterpolation(interpolation, mProgramBuilder.shaderCaps());
-        v.mVsOut = mProgramBuilder.nameVariable('f', name);
+        v.mIsFlat = useFlatInterpolation(interpolation, mPipelineBuilder.shaderCaps());
+        v.mVsOut = mPipelineBuilder.nameVariable('f', name);
         v.mVisibility = 0;
         if (varying.isInVertexShader()) {
             varying.mVsOut = v.mVsOut;
@@ -127,8 +127,8 @@ public class VaryingHandler {
         assert (!output.isEmpty());
         Varying v = new Varying(attr.dstType());
         addVarying(attr.name(), v, interpolation);
-        mProgramBuilder.mVS.codeAppendf("%s = %s;\n", v.vsOut(), attr.name());
-        mProgramBuilder.mFS.codeAppendf("%s = %s;\n", output, v.fsIn());
+        mPipelineBuilder.mVS.codeAppendf("%s = %s;\n", v.vsOut(), attr.name());
+        mPipelineBuilder.mFS.codeAppendf("%s = %s;\n", output, v.fsIn());
     }
 
     private static boolean useFlatInterpolation(int interpolation, ShaderCaps shaderCaps) {
@@ -149,7 +149,7 @@ public class VaryingHandler {
         int locationIndex = 0;
         for (var v : mVaryings) {
             String layoutQualifier;
-            if (mProgramBuilder.shaderCaps().mGLSLVersion >= 440) {
+            if (mPipelineBuilder.shaderCaps().mGLSLVersion >= 440) {
                 // ARB_enhanced_layouts or GLSL 440
                 layoutQualifier = "location = " + locationIndex;
             } else {
@@ -177,11 +177,11 @@ public class VaryingHandler {
 
     // called after end
     public final void getVertDecls(StringBuilder outputDecls) {
-        mProgramBuilder.appendDecls(mVertexOutputs, outputDecls);
+        mPipelineBuilder.appendDecls(mVertexOutputs, outputDecls);
     }
 
     // called after end
     public final void getFragDecls(StringBuilder inputDecls) {
-        mProgramBuilder.appendDecls(mFragInputs, inputDecls);
+        mPipelineBuilder.appendDecls(mFragInputs, inputDecls);
     }
 }

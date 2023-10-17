@@ -25,7 +25,7 @@ import javax.annotation.Nonnull;
  * This class is used to generate a generic pipeline cache key.
  * Also used to lookup pipeline state objects in cache.
  */
-public final class PipelineDesc extends Key.Builder {
+public final class PipelineDesc extends KeyBuilder {
 
     private int mShaderKeyLength;
 
@@ -65,12 +65,12 @@ public final class PipelineDesc extends Key.Builder {
     }
 
     public static String describe(PipelineInfo info, Caps caps) {
-        StringBuilder b = new StringBuilder();
+        StringKeyBuilder b = new StringKeyBuilder();
         genKey(b, info, caps);
         return b.toString();
     }
 
-    static void genKey(Builder b,
+    static void genKey(KeyBuilder b,
                        PipelineInfo info,
                        Caps caps) {
         genGPKey(info.geomProc(), b);
@@ -91,7 +91,7 @@ public final class PipelineDesc extends Key.Builder {
      * Shader code may be dependent on properties of the effect not placed in the key by the effect
      * (e.g. pixel format of textures used).
      */
-    static void genGPKey(GeometryProcessor geomProc, Builder b) {
+    static void genGPKey(GeometryProcessor geomProc, KeyBuilder b) {
         b.appendComment(geomProc.name());
         // Currently we allow 8 bits for the class id
         b.addBits(8, geomProc.classID(), "gpClassID");

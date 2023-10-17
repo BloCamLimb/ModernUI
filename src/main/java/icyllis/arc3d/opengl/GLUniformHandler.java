@@ -21,7 +21,7 @@ package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.SLDataType;
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.engine.shading.ProgramBuilder;
+import icyllis.arc3d.engine.shading.PipelineBuilder;
 import icyllis.arc3d.engine.shading.UniformHandler;
 import it.unimi.dsi.fastutil.shorts.ShortArrayList;
 
@@ -38,8 +38,8 @@ public class GLUniformHandler extends UniformHandler {
 
     int mCurrentOffset;
 
-    GLUniformHandler(ProgramBuilder programBuilder) {
-        super(programBuilder);
+    GLUniformHandler(PipelineBuilder pipelineBuilder) {
+        super(pipelineBuilder);
     }
 
     @Override
@@ -71,7 +71,7 @@ public class GLUniformHandler extends UniformHandler {
         if (name.startsWith(NO_MANGLE_PREFIX)) {
             resolvedName = name;
         } else {
-            resolvedName = mProgramBuilder.nameVariable('u', name);
+            resolvedName = mPipelineBuilder.nameVariable('u', name);
         }
         assert (!resolvedName.contains("__"));
 
@@ -82,7 +82,7 @@ public class GLUniformHandler extends UniformHandler {
         int handle = mUniforms.size();
 
         String layoutQualifier;
-        if (mProgramBuilder.shaderCaps().mGLSLVersion >= 440) {
+        if (mPipelineBuilder.shaderCaps().mGLSLVersion >= 440) {
             // ARB_enhanced_layouts or GLSL 440
             layoutQualifier = "offset = " + offset;
         } else {
@@ -109,12 +109,12 @@ public class GLUniformHandler extends UniformHandler {
     protected int addSampler(int samplerState, short swizzle, String name) {
         assert (name != null && !name.isEmpty());
 
-        String resolvedName = mProgramBuilder.nameVariable('u', name);
+        String resolvedName = mPipelineBuilder.nameVariable('u', name);
 
         int handle = mSamplers.size();
 
         String layoutQualifier;
-        if (mProgramBuilder.shaderCaps().mGLSLVersion >= 420) {
+        if (mPipelineBuilder.shaderCaps().mGLSLVersion >= 420) {
             // ARB_shading_language_420pack
             // equivalent to setting texture unit to index
             layoutQualifier = "binding = " + handle;
@@ -171,7 +171,7 @@ public class GLUniformHandler extends UniformHandler {
         // The uniform block definition for all shader stages must be exactly the same
         if (firstVisible) {
             out.append("layout(std140");
-            if (mProgramBuilder.shaderCaps().mGLSLVersion >= 420) {
+            if (mPipelineBuilder.shaderCaps().mGLSLVersion >= 420) {
                 // ARB_shading_language_420pack
                 out.append(", binding = ");
                 out.append(UNIFORM_BINDING);

@@ -29,11 +29,11 @@ import static icyllis.arc3d.opengl.GLCore.*;
 
 /**
  * This class manages the lifetime of the vertex array object and is used to track the state of the
- * vertex array to avoid redundant GL calls. May be shared by multiple {@link GLPipelineState}.
+ * vertex array to avoid redundant GL calls. May be shared by multiple {@link GLGraphicsPipelineState}.
  * <p>
  * Supports OpenGL 3.3 and OpenGL 4.5.
  */
-public final class GLVertexArray extends ManagedResource {
+public final class GLVertexArray extends GPUManagedResource {
 
     private static final int INVALID_BINDING = -1;
 
@@ -65,7 +65,7 @@ public final class GLVertexArray extends ManagedResource {
     private long mVertexOffset;
     private long mInstanceOffset;
 
-    private GLVertexArray(GLServer server,
+    private GLVertexArray(GLDevice device,
                           int vertexArray,
                           int vertexBinding,
                           int instanceBinding,
@@ -74,7 +74,7 @@ public final class GLVertexArray extends ManagedResource {
                           int numVertexLocations,
                           int numInstanceLocations,
                           int[] attributes) {
-        super(server);
+        super(device);
         assert (vertexArray != 0);
         assert (vertexBinding == INVALID_BINDING || vertexStride > 0);
         assert (instanceBinding == INVALID_BINDING || instanceStride > 0);
@@ -90,9 +90,9 @@ public final class GLVertexArray extends ManagedResource {
 
     @Nullable
     @SharedPtr
-    public static GLVertexArray make(@Nonnull GLServer server,
+    public static GLVertexArray make(@Nonnull GLDevice device,
                                      @Nonnull GeometryProcessor geomProc) {
-        final boolean dsa = server.getCaps().hasDSASupport();
+        final boolean dsa = device.getCaps().hasDSASupport();
         final int vertexArray;
 
         if (dsa) {
@@ -154,7 +154,7 @@ public final class GLVertexArray extends ManagedResource {
 
         assert index == numVertexLocations + numInstanceLocations;
 
-        if (index > server.getCaps().maxVertexAttributes()) {
+        if (index > device.getCaps().maxVertexAttributes()) {
             glDeleteVertexArrays(vertexArray);
             if (!dsa) {
                 glBindVertexArray(oldVertexArray);
@@ -184,16 +184,16 @@ public final class GLVertexArray extends ManagedResource {
             glBindVertexArray(oldVertexArray);
         }
 
-        if (server.getCaps().hasDebugSupport()) {
+        if (device.getCaps().hasDebugSupport()) {
             String label = geomProc.name();
             if (!label.isEmpty()) {
                 label = label.substring(0, Math.min(label.length(),
-                        server.getCaps().maxLabelLength()));
+                        device.getCaps().maxLabelLength()));
                 glObjectLabel(GL_VERTEX_ARRAY, vertexArray, label);
             }
         }
 
-        return new GLVertexArray(server,
+        return new GLVertexArray(device,
                 vertexArray,
                 vertexBinding,
                 instanceBinding,
@@ -404,13 +404,13 @@ public final class GLVertexArray extends ManagedResource {
         }
         if (mIndexBuffer != buffer.getUniqueID()) {
             if (mAttributes == null &&
-                    !getServer().getCaps().dsaElementBufferIsBroken()) {
+                    !getDevice().getCaps().dsaElementBufferIsBroken()) {
                 // OpenGL 4.5
                 glVertexArrayElementBuffer(mVertexArray, buffer.getHandle());
             } else {
                 // OpenGL 3.3
                 // this binding state is associated with current VAO
-                getServer().bindIndexBufferInPipe(buffer);
+                getDevice().bindIndexBufferInPipe(buffer);
             }
             mIndexBuffer = buffer.getUniqueID();
         }
@@ -445,7 +445,7 @@ public final class GLVertexArray extends ManagedResource {
             } else if (mAttributes != null) {
                 // OpenGL 3.3, you must bind pipeline before
                 // 'offset' should translate into 'baseVertex'
-                int target = getServer().bindBuffer(buffer);
+                int target = getDevice().bindBuffer(buffer);
                 assert target == GL_ARRAY_BUFFER;
                 for (int index = 0;
                      index < mNumVertexLocations;
@@ -489,7 +489,7 @@ public final class GLVertexArray extends ManagedResource {
             } else if (mAttributes != null) {
                 // OpenGL 3.3, you must bind pipeline before
                 // 'offset' should translate into 'baseInstance'
-                int target = getServer().bindBuffer(buffer);
+                int target = getDevice().bindBuffer(buffer);
                 assert target == GL_ARRAY_BUFFER;
                 for (int index = mNumVertexLocations;
                      index < mNumVertexLocations + mNumInstanceLocations;
@@ -507,7 +507,7 @@ public final class GLVertexArray extends ManagedResource {
     }
 
     @Override
-    protected GLServer getServer() {
-        return (GLServer) super.getServer();
+    protected GLDevice getDevice() {
+        return (GLDevice) super.getDevice();
     }
 }

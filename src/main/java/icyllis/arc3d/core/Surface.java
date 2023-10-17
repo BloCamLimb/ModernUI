@@ -133,8 +133,8 @@ public class Surface extends RefCnt {
         if (colorType == ImageInfo.CT_UNKNOWN) {
             return null;
         }
-        var proxyProvider = rContext.getProxyProvider();
-        var fsp = proxyProvider.wrapBackendRenderTarget(backendRenderTarget, null);
+        var provider = rContext.getSurfaceProvider();
+        var fsp = provider.wrapBackendRenderTarget(backendRenderTarget, null);
         if (fsp == null) {
             return null;
         }

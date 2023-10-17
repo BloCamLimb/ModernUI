@@ -36,7 +36,7 @@ public final class CircularRRectOp extends MeshDrawOp {
     }
 
     @Override
-    protected @NotNull PipelineInfo onCreatePipelineInfo(SurfaceProxyView writeView,
+    protected @NotNull PipelineInfo onCreatePipelineInfo(SurfaceView writeView,
                                                          int pipelineFlags) {
         return null;
     }
@@ -71,7 +71,7 @@ public final class CircularRRectOp extends MeshDrawOp {
         }
 
         @Override
-        public void addToKey(Key.Builder b) {
+        public void addToKey(KeyBuilder b) {
 
         }
 

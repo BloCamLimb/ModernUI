@@ -29,7 +29,7 @@ import javax.annotation.Nonnull;
 public abstract class MeshDrawOp extends DrawOp implements Mesh {
 
     private PipelineInfo mPipelineInfo;
-    private PipelineState mPipelineState;
+    private GraphicsPipelineState mPipelineState;
 
     public MeshDrawOp() {
     }
@@ -38,7 +38,7 @@ public abstract class MeshDrawOp extends DrawOp implements Mesh {
         return mPipelineInfo;
     }
 
-    public PipelineState getPipelineState() {
+    public GraphicsPipelineState getPipelineState() {
         return mPipelineState;
     }
 
@@ -54,28 +54,28 @@ public abstract class MeshDrawOp extends DrawOp implements Mesh {
 
     @Override
     public void onPrePrepare(RecordingContext context,
-                             SurfaceProxyView writeView,
+                             SurfaceView writeView,
                              int pipelineFlags) {
         assert (mPipelineInfo == null);
         mPipelineInfo = onCreatePipelineInfo(writeView, pipelineFlags);
-        mPipelineState = context.findOrCreatePipelineState(mPipelineInfo);
+        mPipelineState = context.findOrCreateGraphicsPipelineState(mPipelineInfo);
     }
 
     @Override
     public final void onPrepare(OpFlushState state,
-                                SurfaceProxyView writeView,
+                                SurfaceView writeView,
                                 int pipelineFlags) {
         if (mPipelineInfo == null) {
             mPipelineInfo = onCreatePipelineInfo(writeView, pipelineFlags);
         }
         if (mPipelineState == null) {
-            mPipelineState = state.findOrCreatePipelineState(mPipelineInfo);
+            mPipelineState = state.findOrCreateGraphicsPipelineState(mPipelineInfo);
         }
         onPrepareDraws(state);
     }
 
     @Nonnull
-    protected abstract PipelineInfo onCreatePipelineInfo(SurfaceProxyView writeView,
+    protected abstract PipelineInfo onCreatePipelineInfo(SurfaceView writeView,
                                                          int pipelineFlags);
 
     protected abstract void onPrepareDraws(MeshDrawTarget target);

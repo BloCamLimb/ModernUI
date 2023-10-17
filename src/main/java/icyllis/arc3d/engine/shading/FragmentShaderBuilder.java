@@ -42,8 +42,8 @@ public class FragmentShaderBuilder extends ShaderBuilderBase implements FPFragme
     private final ShaderVar mPrimaryOutput;
     private ShaderVar mSecondaryOutput;
 
-    public FragmentShaderBuilder(ProgramBuilder programBuilder) {
-        super(programBuilder);
+    public FragmentShaderBuilder(PipelineBuilder pipelineBuilder) {
+        super(pipelineBuilder);
 
         String layoutQualifier = "location = " + MAIN_DRAW_BUFFER_INDEX;
         mPrimaryOutput = new ShaderVar(PRIMARY_COLOR_OUTPUT_NAME, SLDataType.kFloat4, ShaderVar.kOut_TypeModifier,
@@ -53,8 +53,8 @@ public class FragmentShaderBuilder extends ShaderBuilderBase implements FPFragme
 
     @Override
     protected void onFinish() {
-        mProgramBuilder.uniformHandler().appendUniformDecls(Engine.ShaderFlags.kFragment, uniforms());
-        mProgramBuilder.varyingHandler().getFragDecls(inputs());
+        mPipelineBuilder.uniformHandler().appendUniformDecls(Engine.ShaderFlags.kFragment, uniforms());
+        mPipelineBuilder.varyingHandler().getFragDecls(inputs());
 
         mPrimaryOutput.appendDecl(outputs());
         outputs().append(";\n");

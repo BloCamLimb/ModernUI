@@ -31,10 +31,10 @@ import java.nio.ByteBuffer;
 //TODO
 public class RoundRectOp extends MeshDrawOp {
 
-    private Buffer mVertexBuffer;
+    private GPUBuffer mVertexBuffer;
     private int mBaseVertex;
 
-    private Buffer mInstanceBuffer;
+    private GPUBuffer mInstanceBuffer;
     private int mBaseInstance;
 
     private float[] mColor;
@@ -78,7 +78,7 @@ public class RoundRectOp extends MeshDrawOp {
 
     @Nonnull
     @Override
-    protected @NotNull PipelineInfo onCreatePipelineInfo(SurfaceProxyView writeView, int pipelineFlags) {
+    protected @NotNull PipelineInfo onCreatePipelineInfo(SurfaceView writeView, int pipelineFlags) {
         return new PipelineInfo(writeView,
                 new SDFRoundRectGeoProc(mStroke), null, null, null,
                 null, pipelineFlags);
@@ -95,14 +95,14 @@ public class RoundRectOp extends MeshDrawOp {
     }
 
     @Override
-    public void setVertexBuffer(@SharedPtr Buffer buffer, int baseVertex, int actualVertexCount) {
+    public void setVertexBuffer(@SharedPtr GPUBuffer buffer, int baseVertex, int actualVertexCount) {
         assert mVertexBuffer == null;
         mVertexBuffer = buffer;
         mBaseVertex = baseVertex;
     }
 
     @Override
-    public void setInstanceBuffer(@SharedPtr Buffer buffer, int baseInstance, int actualInstanceCount) {
+    public void setInstanceBuffer(@SharedPtr GPUBuffer buffer, int baseInstance, int actualInstanceCount) {
         assert mInstanceBuffer == null;
         mInstanceBuffer = buffer;
         mBaseInstance = baseInstance;

@@ -32,27 +32,27 @@ public final class TextureResolveTask extends RenderTask {
 
     private final List<Resolve> mResolves = new ArrayList<>(4);
 
-    public TextureResolveTask(DrawingManager drawingMgr) {
-        super(drawingMgr);
+    public TextureResolveTask(RenderTaskManager taskManager) {
+        super(taskManager);
     }
 
-    public void addProxy(@SharedPtr TextureProxy proxy, int resolveFlags) {
+    public void addTexture(@SharedPtr Texture userTexture, int resolveFlags) {
         // Ensure the last render task that operated on the proxy is closed. That's where msaa and
         // mipmaps should have been marked dirty.
-        assert (mDrawingMgr.getLastRenderTask(proxy) == null ||
-                mDrawingMgr.getLastRenderTask(proxy).isClosed());
+        assert (mTaskManager.getLastRenderTask(userTexture) == null ||
+                mTaskManager.getLastRenderTask(userTexture).isClosed());
         assert (resolveFlags != 0);
 
         Rect2i msaaRect = null;
         if ((resolveFlags & RESOLVE_FLAG_MSAA) != 0) {
-            assert (proxy.isMSAADirty());
-            msaaRect = proxy.getMSAADirtyRect();
-            proxy.setMSAADirty(0, 0, 0, 0);
+            assert (userTexture.isMSAADirty());
+            msaaRect = userTexture.getMSAADirtyRect();
+            userTexture.setMSAADirty(0, 0, 0, 0);
         }
 
         if ((resolveFlags & RESOLVE_FLAG_MIPMAPS) != 0) {
-            assert (proxy.isMipmapped() && proxy.isMipmapsDirty());
-            proxy.setMipmapsDirty(false);
+            assert (userTexture.isMipmapped() && userTexture.isMipmapsDirty());
+            userTexture.setMipmapsDirty(false);
         }
 
         mResolves.add(new Resolve(resolveFlags,
@@ -63,8 +63,8 @@ public final class TextureResolveTask extends RenderTask {
 
         // Add the proxy as a dependency: We will read the existing contents of this texture while
         // generating mipmap levels and/or resolving MSAA.
-        addDependency(proxy, SamplerState.DEFAULT);
-        addTarget(proxy);
+        addDependency(userTexture, SamplerState.DEFAULT);
+        addTarget(userTexture);
     }
 
     @Override
