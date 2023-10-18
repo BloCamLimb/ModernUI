@@ -23,7 +23,7 @@ jar {
 }
 
 publishing {
-    publications {
+    /*publications {
         mavenViewPager(MavenPublication) {
             from components.java
             artifactId = project.name
@@ -52,5 +52,5 @@ publishing {
                 }
             }
         }
-    }
+    }*/
 }
