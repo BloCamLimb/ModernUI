@@ -58,26 +58,26 @@ fun main() {
 
     val dContext = Core.requireDirectContext()
 
-    var proxy = dContext.surfaceProvider.createTextureFromPixmap(sourceBm.pixels, sourceBm.colorType, Surface.FLAG_BUDGETED)
-    check(proxy != null) { "Failed to create proxy" }
-    proxy.instantiate(dContext.resourceProvider)
+    var texture = dContext.surfaceProvider.createTextureFromPixmap(sourceBm.pixels, sourceBm.colorType, Surface.FLAG_BUDGETED)
+    check(texture != null) { "Failed to create proxy" }
+    texture.instantiate(dContext.resourceProvider)
 
-    proxy.unref()
+    texture.unref()
 
-    proxy = dContext.surfaceProvider.createTextureFromPixmap(sourceBm.pixels, sourceBm.colorType, Surface.FLAG_BUDGETED)
-    check(proxy != null) { "Failed to create proxy" }
-    proxy.instantiate(dContext.resourceProvider)
+    texture = dContext.surfaceProvider.createTextureFromPixmap(sourceBm.pixels, sourceBm.colorType, Surface.FLAG_BUDGETED)
+    check(texture != null) { "Failed to create proxy" }
+    texture.instantiate(dContext.resourceProvider)
 
     val outBm = Bitmap.createBitmap(sourceBm.width, sourceBm.height, Bitmap.Format.RGBA_8888)
     try {
         GL45C.glGetTextureImage(
-            (proxy.peekTexture() as GLTexture).handle, 0, GL11C.GL_RGBA, GL11C.GL_UNSIGNED_BYTE,
+            (texture.gpuTexture as GLTexture).handle, 0, GL11C.GL_RGBA, GL11C.GL_UNSIGNED_BYTE,
             outBm.size, outBm.address
         )
         outBm.saveDialog(Bitmap.SaveFormat.PNG, 100, null)
     } finally {
         sourceBm.close()
-        proxy.unref()
+        texture.unref()
         outBm.close()
     }
 

@@ -19,7 +19,11 @@
 package icyllis.modernui.graphics.font;
 
 import icyllis.arc3d.engine.Engine;
+import icyllis.arc3d.opengl.GLDevice;
+import icyllis.arc3d.opengl.GLTexture;
+import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.*;
+import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.Bitmap;
 import icyllis.modernui.graphics.text.FontCollection;
 import icyllis.modernui.text.TextUtils;
@@ -77,6 +81,7 @@ public class GlyphManager {
     private static volatile GlyphManager sInstance;
 
     private GLFontAtlas mA8Atlas;
+    private GLDevice mDevice;
 
     /**
      * Font (with size and style) to int key.
@@ -221,6 +226,7 @@ public class GlyphManager {
         long key = computeGlyphKey(font, glyphCode);
         if (mA8Atlas == null) {
             mA8Atlas = new GLFontAtlas(Engine.MASK_FORMAT_A8);
+            mDevice = (GLDevice) Core.requireDirectContext().getDevice();
         }
         BakedGlyph glyph = mA8Atlas.getGlyph(key);
         if (glyph != null && glyph.x == Short.MIN_VALUE) {
@@ -231,7 +237,14 @@ public class GlyphManager {
 
     public int getCurrentTexture(int maskFormat) {
         if (maskFormat == Engine.MASK_FORMAT_A8) {
-            return mA8Atlas.mTexture.getHandle();
+            GLTexture texture;
+            if (mA8Atlas != null && (texture = mA8Atlas.mTexture) != null) {
+                boolean res = mDevice.generateMipmaps(texture);
+                if (!res) {
+                    ModernUI.LOGGER.warn(GlyphManager.MARKER, "Failed to generate glyph mipmaps");
+                }
+                return texture.getHandle();
+            }
         }
         return 0;
     }

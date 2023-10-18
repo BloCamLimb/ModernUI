@@ -849,7 +849,7 @@ public final class GLSurfaceCanvas extends Canvas {
             success = userTexture.doLazyInstantiation(resourceProvider);
         }
         if (success) {
-            var glTexture = (GLTexture) Objects.requireNonNull(userTexture.peekGPUTexture());
+            var glTexture = (GLTexture) Objects.requireNonNull(userTexture.getGpuTexture());
             if (texSampling) {
                 bindSampler(null);
             } else {
