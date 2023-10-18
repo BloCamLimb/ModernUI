@@ -23,33 +23,33 @@ import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SharedPtr;
 
 /**
- * A cache object that can be shared by multiple {@link GPUBufferPool} instances. It caches
+ * A cache object that can be shared by multiple {@link GpuBufferPool} instances. It caches
  * cpu buffer allocations to avoid reallocating them.
  * <p>
  * <b>NOTE:</b> You must call {@link #releaseAll()} when this cache is no longer used.
  */
-public class CpuBufferCache {
+public class CpuBufferPool {
 
     private final CpuBuffer[] mBuffers;
 
-    public CpuBufferCache(int cacheSize) {
-        mBuffers = new CpuBuffer[cacheSize];
+    public CpuBufferPool(int maxCount) {
+        mBuffers = new CpuBuffer[maxCount];
     }
 
     @SharedPtr
     public CpuBuffer makeBuffer(int size) {
         assert (size > 0);
         CpuBuffer result = null;
-        if (size <= GPUBufferPool.DEFAULT_BUFFER_SIZE) {
+        if (size <= GpuBufferPool.DEFAULT_BUFFER_SIZE) {
             int i = 0;
             for (; i < mBuffers.length && mBuffers[i] != null; ++i) {
-                assert (mBuffers[i].size() == GPUBufferPool.DEFAULT_BUFFER_SIZE);
+                assert (mBuffers[i].size() == GpuBufferPool.DEFAULT_BUFFER_SIZE);
                 if (mBuffers[i].unique()) {
                     result = mBuffers[i];
                 }
             }
             if (result == null && i < mBuffers.length) {
-                mBuffers[i] = result = new CpuBuffer(GPUBufferPool.DEFAULT_BUFFER_SIZE);
+                mBuffers[i] = result = new CpuBuffer(GpuBufferPool.DEFAULT_BUFFER_SIZE);
             }
         }
         if (result == null) {

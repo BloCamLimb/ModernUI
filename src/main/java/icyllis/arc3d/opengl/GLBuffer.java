@@ -21,7 +21,7 @@ package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SharedPtr;
-import icyllis.arc3d.engine.GPUBuffer;
+import icyllis.arc3d.engine.GpuBuffer;
 import icyllis.arc3d.engine.CpuBuffer;
 import org.lwjgl.system.MemoryUtil;
 
@@ -32,7 +32,7 @@ import static icyllis.arc3d.engine.Engine.BufferUsageFlags;
 import static icyllis.arc3d.opengl.GLCore.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
-public final class GLBuffer extends GPUBuffer {
+public final class GLBuffer extends GpuBuffer {
 
     private int mBuffer;
 
@@ -293,7 +293,7 @@ public final class GLBuffer extends GPUBuffer {
         } else {
             // prefer CPU staging buffer
             assert (mode == kWriteDiscard_LockMode);
-            mStagingBuffer = getDevice().getCpuBufferCache().makeBuffer(size);
+            mStagingBuffer = getDevice().getCpuBufferPool().makeBuffer(size);
             assert (mStagingBuffer != null);
             return mStagingBuffer.data();
         }

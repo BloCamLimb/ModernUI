@@ -23,7 +23,7 @@ import icyllis.arc3d.engine.*;
 
 /**
  * Base class for {@link Op Ops} that draw. These ops can draw into an {@link OpsRenderPass}'s
- * {@link GPURenderTarget}.
+ * {@link GpuRenderTarget}.
  */
 public abstract class DrawOp extends Op {
 

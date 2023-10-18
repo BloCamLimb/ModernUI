@@ -19,14 +19,14 @@
 
 package icyllis.arc3d.opengl;
 
-import icyllis.arc3d.engine.GPUManagedResource;
+import icyllis.arc3d.engine.ManagedResource;
 import icyllis.arc3d.core.SharedPtr;
 
 import javax.annotation.Nullable;
 
 import static icyllis.arc3d.opengl.GLCore.*;
 
-public class GLUniformBuffer extends GPUManagedResource {
+public class GLUniformBuffer extends ManagedResource {
 
     private final int mBinding;
     private final int mSize;

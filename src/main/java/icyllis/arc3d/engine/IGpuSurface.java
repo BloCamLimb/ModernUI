@@ -22,7 +22,7 @@ package icyllis.arc3d.engine;
 /**
  * Interface representing primary surface data.
  */
-public interface IGPUSurface extends ISurface {
+public interface IGpuSurface extends ISurface {
 
     /**
      * Surface flags.
@@ -30,12 +30,12 @@ public interface IGPUSurface extends ISurface {
      * <ul>
      * <li>{@link #FLAG_BUDGETED} -
      *  Indicates whether an allocation should count against a cache budget. Budgeted when
-     *  set, otherwise not budgeted. {@link GPUTexture} or RenderTexture only.
+     *  set, otherwise not budgeted. {@link GpuTexture} or RenderTexture only.
      * </li>
      *
      * <li>{@link #FLAG_MIPMAPPED} -
      *  Used to say whether a texture has mip levels allocated or not. Mipmaps are allocated
-     *  when set, otherwise mipmaps are not allocated. {@link GPUTexture} or RenderTexture only.
+     *  when set, otherwise mipmaps are not allocated. {@link GpuTexture} or RenderTexture only.
      * </li>
      *
      * <li>{@link #FLAG_RENDERABLE} -
@@ -49,7 +49,7 @@ public interface IGPUSurface extends ISurface {
      * </li>
      *
      * <li>{@link #FLAG_READ_ONLY} -
-     *  Means the pixels in the texture are read-only. Non-renderable {@link GPUTexture} only.
+     *  Means the pixels in the texture are read-only. Non-renderable {@link GpuTexture} only.
      * </li>
      *
      * @return combination of the above flags
@@ -64,7 +64,7 @@ public interface IGPUSurface extends ISurface {
      *
      * @return raw ptr to the texture
      */
-    default GPUTexture asTexture() {
+    default GpuTexture asTexture() {
         return null;
     }
 
@@ -78,7 +78,7 @@ public interface IGPUSurface extends ISurface {
      *
      * @return raw ptr to the framebuffer set associated with the RT, or null if non-renderable
      */
-    default GPURenderTarget asRenderTarget() {
+    default GpuRenderTarget asRenderTarget() {
         return null;
     }
 }

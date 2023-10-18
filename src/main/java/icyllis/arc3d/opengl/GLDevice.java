@@ -38,7 +38,7 @@ import static org.lwjgl.system.MemoryUtil.memPutInt;
 /**
  * The OpenGL device.
  */
-public final class GLDevice extends GPUDevice {
+public final class GLDevice extends GpuDevice {
 
     private final GLCaps mCaps;
 
@@ -47,11 +47,11 @@ public final class GLDevice extends GPUDevice {
     private final GLResourceProvider mResourceProvider;
     private final GLPipelineStateCache mPipelineStateCache;
 
-    private final CpuBufferCache mCpuBufferCache;
+    private final CpuBufferPool mCpuBufferPool;
 
-    private final GPUBufferPool mVertexPool;
-    private final GPUBufferPool mInstancePool;
-    private final GPUBufferPool mIndexPool;
+    private final GpuBufferPool mVertexPool;
+    private final GpuBufferPool mInstancePool;
+    private final GpuBufferPool mIndexPool;
 
     // unique ptr
     private GLOpsRenderPass mCachedOpsRenderPass;
@@ -60,10 +60,10 @@ public final class GLDevice extends GPUDevice {
     private final LongArrayFIFOQueue mFinishedFences = new LongArrayFIFOQueue();
 
     /**
-     * Represents a certain resource ID is bound, but no {@link GPUResource} object is associated with.
+     * Represents a certain resource ID is bound, but no {@link GpuResource} object is associated with.
      */
     // OpenGL 3 only.
-    static final GPUResource.UniqueID INVALID_UNIQUE_ID = new GPUResource.UniqueID();
+    static final GpuResource.UniqueID INVALID_UNIQUE_ID = new GpuResource.UniqueID();
 
     //@formatter:off
     static final int BUFFER_TYPE_VERTEX         = 0;
@@ -169,10 +169,10 @@ public final class GLDevice extends GPUDevice {
         mMainCmdBuffer = new GLCommandBuffer(this);
         mResourceProvider = new GLResourceProvider(this, context);
         mPipelineStateCache = new GLPipelineStateCache(this, 256);
-        mCpuBufferCache = new CpuBufferCache(6);
-        mVertexPool = GPUBufferPool.makeVertexPool(mResourceProvider);
-        mInstancePool = GPUBufferPool.makeInstancePool(mResourceProvider);
-        mIndexPool = GPUBufferPool.makeIndexPool(mResourceProvider);
+        mCpuBufferPool = new CpuBufferPool(6);
+        mVertexPool = GpuBufferPool.makeVertexPool(mResourceProvider);
+        mInstancePool = GpuBufferPool.makeInstancePool(mResourceProvider);
+        mIndexPool = GpuBufferPool.makeIndexPool(mResourceProvider);
 
         int maxTextureUnits = caps.shaderCaps().mMaxFragmentSamplers;
         mHWTextureStates = new GLTexture.UniqueID[maxTextureUnits];
@@ -225,7 +225,7 @@ public final class GLDevice extends GPUDevice {
         mVertexPool.reset();
         mInstancePool.reset();
         mIndexPool.reset();
-        mCpuBufferCache.releaseAll();
+        mCpuBufferPool.releaseAll();
 
         mMainCmdBuffer.resetStates(~0);
 
@@ -262,22 +262,22 @@ public final class GLDevice extends GPUDevice {
     /**
      * As staging buffers.
      */
-    public CpuBufferCache getCpuBufferCache() {
-        return mCpuBufferCache;
+    public CpuBufferPool getCpuBufferPool() {
+        return mCpuBufferPool;
     }
 
     @Override
-    public GPUBufferPool getVertexPool() {
+    public GpuBufferPool getVertexPool() {
         return mVertexPool;
     }
 
     @Override
-    public GPUBufferPool getInstancePool() {
+    public GpuBufferPool getInstancePool() {
         return mInstancePool;
     }
 
     @Override
-    public GPUBufferPool getIndexPool() {
+    public GpuBufferPool getIndexPool() {
         return mIndexPool;
     }
 
@@ -346,14 +346,14 @@ public final class GLDevice extends GPUDevice {
 
     @Nullable
     @Override
-    protected GPUTexture onCreateTexture(int width, int height,
+    protected GpuTexture onCreateTexture(int width, int height,
                                          BackendFormat format,
                                          int mipLevelCount,
                                          int sampleCount,
                                          int surfaceFlags) {
         assert (mipLevelCount > 0 && sampleCount > 0);
         // We don't support protected textures in OpenGL.
-        if ((surfaceFlags & IGPUSurface.FLAG_PROTECTED) != 0) {
+        if ((surfaceFlags & IGpuSurface.FLAG_PROTECTED) != 0) {
             return null;
         }
         if (format.isExternal()) {
@@ -365,7 +365,7 @@ public final class GLDevice extends GPUDevice {
             return null;
         }
         Function<GLTexture, GLRenderTarget> target = null;
-        if ((surfaceFlags & IGPUSurface.FLAG_RENDERABLE) != 0) {
+        if ((surfaceFlags & IGpuSurface.FLAG_RENDERABLE) != 0) {
             target = createRTObjects(
                     texture,
                     width, height,
@@ -385,21 +385,21 @@ public final class GLDevice extends GPUDevice {
                     width, height,
                     info,
                     format,
-                    (surfaceFlags & IGPUSurface.FLAG_BUDGETED) != 0,
+                    (surfaceFlags & IGpuSurface.FLAG_BUDGETED) != 0,
                     true);
         } else {
             return new GLRenderTexture(this,
                     width, height,
                     info,
                     format,
-                    (surfaceFlags & IGPUSurface.FLAG_BUDGETED) != 0,
+                    (surfaceFlags & IGpuSurface.FLAG_BUDGETED) != 0,
                     target);
         }
     }
 
     @Nullable
     @Override
-    protected GPUTexture onWrapRenderableBackendTexture(BackendTexture texture,
+    protected GpuTexture onWrapRenderableBackendTexture(BackendTexture texture,
                                                         int sampleCount,
                                                         boolean ownership) {
         if (texture.isProtected()) {
@@ -440,7 +440,7 @@ public final class GLDevice extends GPUDevice {
 
     @Nullable
     @Override
-    public GPURenderTarget onWrapBackendRenderTarget(BackendRenderTarget backendRenderTarget) {
+    public GpuRenderTarget onWrapBackendRenderTarget(BackendRenderTarget backendRenderTarget) {
         GLFramebufferInfo info = new GLFramebufferInfo();
         if (!backendRenderTarget.getGLFramebufferInfo(info)) {
             return null;
@@ -463,7 +463,7 @@ public final class GLDevice extends GPUDevice {
     }
 
     @Override
-    protected boolean onWritePixels(GPUTexture texture,
+    protected boolean onWritePixels(GpuTexture texture,
                                     int x, int y,
                                     int width, int height,
                                     int dstColorType,
@@ -552,7 +552,7 @@ public final class GLDevice extends GPUDevice {
     }
 
     @Override
-    protected boolean onGenerateMipmaps(GPUTexture texture) {
+    protected boolean onGenerateMipmaps(GpuTexture texture) {
         var glTexture = (GLTexture) texture;
         if (mCaps.hasDSASupport()) {
             glGenerateTextureMipmap(glTexture.getHandle());
@@ -571,9 +571,9 @@ public final class GLDevice extends GPUDevice {
     }
 
     @Override
-    protected boolean onCopySurface(IGPUSurface src,
+    protected boolean onCopySurface(IGpuSurface src,
                                     int srcL, int srcT, int srcR, int srcB,
-                                    IGPUSurface dst,
+                                    IGpuSurface dst,
                                     int dstL, int dstT, int dstR, int dstB,
                                     int filter) {
         int srcWidth = srcR - srcL;
@@ -670,7 +670,7 @@ public final class GLDevice extends GPUDevice {
         if (mCachedOpsRenderPass == null) {
             mCachedOpsRenderPass = new GLOpsRenderPass(this);
         }
-        return mCachedOpsRenderPass.set(writeView.getSurface().peekGPURenderTarget(),
+        return mCachedOpsRenderPass.set(writeView.getSurface().getGpuRenderTarget(),
                 contentBounds,
                 writeView.getOrigin(),
                 colorOps,
@@ -744,13 +744,13 @@ public final class GLDevice extends GPUDevice {
 
     @Nullable
     @Override
-    protected GPUBuffer onCreateBuffer(int size, int flags) {
+    protected GpuBuffer onCreateBuffer(int size, int flags) {
         handleDirtyContext();
         return GLBuffer.make(this, size, flags);
     }
 
     @Override
-    protected void onResolveRenderTarget(GPURenderTarget renderTarget,
+    protected void onResolveRenderTarget(GpuRenderTarget renderTarget,
                                          int resolveLeft, int resolveTop,
                                          int resolveRight, int resolveBottom) {
         GLRenderTarget glRenderTarget = (GLRenderTarget) renderTarget;

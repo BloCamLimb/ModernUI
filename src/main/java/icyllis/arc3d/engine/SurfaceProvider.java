@@ -60,7 +60,7 @@ public final class SurfaceProvider {
         }
 
         // Only the provider that created a texture should be assigning unique keys to it.
-        assert isDeferredProvider() == ((texture.mSurfaceFlags & IGPUSurface.FLAG_DEFERRED_PROVIDER) != 0);
+        assert isDeferredProvider() == ((texture.mSurfaceFlags & IGpuSurface.FLAG_DEFERRED_PROVIDER) != 0);
 
         // If there is already a Resource with this key then the caller has violated the
         // normal usage pattern of uniquely keyed resources (e.g., they have created one w/o
@@ -79,7 +79,7 @@ public final class SurfaceProvider {
      * Sets the unique key of the provided texture to the unique key of the GPU texture.
      * The GPU texture must have a valid unique key.
      */
-    public void adoptUniqueKeyFromSurface(Texture texture, GPUTexture textureResource) {
+    public void adoptUniqueKeyFromSurface(Texture texture, GpuTexture textureResource) {
         //TODO
     }
 
@@ -184,14 +184,14 @@ public final class SurfaceProvider {
 
         @Override
         public Surface.LazyCallbackResult onLazyInstantiate(
-                GPUResourceProvider provider,
+                ResourceProvider provider,
                 BackendFormat format,
                 int width, int height,
                 int sampleCount,
                 int surfaceFlags,
                 String label) {
             @SharedPtr
-            GPUTexture texture = provider.createTexture(
+            GpuTexture texture = provider.createTexture(
                     width, height,
                     format,
                     sampleCount,

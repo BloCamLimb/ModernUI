@@ -25,13 +25,13 @@ import javax.annotation.Nonnull;
  * Base class that represents something that can be color or depth/stencil
  * attachments of framebuffers. It provides the backing store of 2D images.
  */
-public abstract class Attachment extends GPUResource {
+public abstract class Attachment extends GpuResource {
 
     protected final int mWidth;
     protected final int mHeight;
     protected final int mSampleCount;
 
-    protected Attachment(GPUDevice device, int width, int height, int sampleCount) {
+    protected Attachment(GpuDevice device, int width, int height, int sampleCount) {
         super(device);
         assert width > 0 && height > 0 && sampleCount > 0;
         mWidth = width;

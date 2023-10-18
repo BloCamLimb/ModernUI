@@ -39,7 +39,7 @@ public class RenderTaskManager {
     private OpsTask mActiveOpsTask = null;
 
     private final OpFlushState mFlushState;
-    private final GPUSurfaceAllocator mSurfaceAllocator;
+    private final SurfaceAllocator mSurfaceAllocator;
 
     private boolean mFlushing;
 
@@ -48,7 +48,7 @@ public class RenderTaskManager {
         if (context instanceof DirectContext direct) {
             mDirect = direct;
             mFlushState = new OpFlushState(direct.getDevice(), direct.getResourceProvider());
-            mSurfaceAllocator = new GPUSurfaceAllocator(direct);
+            mSurfaceAllocator = new SurfaceAllocator(direct);
         } else {
             // deferred
             mDirect = null;
@@ -87,7 +87,7 @@ public class RenderTaskManager {
 
         final DirectContext context = mDirect;
         assert (context != null);
-        final GPUDevice device = context.getDevice();
+        final GpuDevice device = context.getDevice();
         assert (device != null);
 
         closeTasks();

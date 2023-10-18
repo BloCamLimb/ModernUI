@@ -32,7 +32,7 @@ import javax.annotation.Nullable;
 public final class RenderTarget extends Surface {
 
     @SharedPtr
-    private GPURenderTarget mRenderTarget;
+    private GpuRenderTarget mRenderTarget;
     private int mSampleCount;
 
     RenderTarget(BackendFormat format, int width, int height, int surfaceFlags) {
@@ -40,7 +40,7 @@ public final class RenderTarget extends Surface {
         assert hashCode() == System.identityHashCode(this);
     }
 
-    RenderTarget(GPURenderTarget renderTarget, int surfaceFlags) {
+    RenderTarget(GpuRenderTarget renderTarget, int surfaceFlags) {
         super(renderTarget, surfaceFlags);
         mRenderTarget = renderTarget;
         mSampleCount = renderTarget.getSampleCount();
@@ -62,8 +62,8 @@ public final class RenderTarget extends Surface {
         if (mRenderTarget != null) {
             return mRenderTarget.getWidth();
         }
-        if ((mSurfaceFlags & IGPUSurface.FLAG_APPROX_FIT) != 0) {
-            return GPUResourceProvider.makeApprox(mWidth);
+        if ((mSurfaceFlags & IGpuSurface.FLAG_APPROX_FIT) != 0) {
+            return ResourceProvider.makeApprox(mWidth);
         }
         return mWidth;
     }
@@ -74,8 +74,8 @@ public final class RenderTarget extends Surface {
         if (mRenderTarget != null) {
             return mRenderTarget.getHeight();
         }
-        if ((mSurfaceFlags & IGPUSurface.FLAG_APPROX_FIT) != 0) {
-            return GPUResourceProvider.makeApprox(mHeight);
+        if ((mSurfaceFlags & IGpuSurface.FLAG_APPROX_FIT) != 0) {
+            return ResourceProvider.makeApprox(mHeight);
         }
         return mHeight;
     }
@@ -99,7 +99,7 @@ public final class RenderTarget extends Surface {
     }
 
     @Override
-    public boolean instantiate(GPUResourceProvider resourceProvider) {
+    public boolean instantiate(ResourceProvider resourceProvider) {
         if (isLazy()) {
             return false;
         }
@@ -115,7 +115,7 @@ public final class RenderTarget extends Surface {
 
     @Override
     public boolean shouldSkipAllocator() {
-        if ((mSurfaceFlags & IGPUSurface.FLAG_SKIP_ALLOCATOR) != 0) {
+        if ((mSurfaceFlags & IGpuSurface.FLAG_SKIP_ALLOCATOR) != 0) {
             // Usually an atlas or onFlush proxy
             return true;
         }
@@ -129,22 +129,22 @@ public final class RenderTarget extends Surface {
 
     @Nullable
     @Override
-    public IGPUSurface peekGPUSurface() {
+    public IGpuSurface getGpuSurface() {
         return mRenderTarget;
     }
 
     @Nullable
     @Override
-    public GPURenderTarget peekGPURenderTarget() {
+    public GpuRenderTarget getGpuRenderTarget() {
         return mRenderTarget != null ? mRenderTarget.asRenderTarget() : null;
     }
 
     @Override
-    public boolean doLazyInstantiation(GPUResourceProvider resourceProvider) {
+    public boolean doLazyInstantiation(ResourceProvider resourceProvider) {
         assert isLazy();
 
         @SharedPtr
-        GPURenderTarget surface = null;
+        GpuRenderTarget surface = null;
 
         boolean releaseCallback = false;
         int width = isLazyMost() ? -1 : getWidth();
@@ -156,7 +156,7 @@ public final class RenderTarget extends Surface {
                 mSurfaceFlags,
                 "");
         if (result != null) {
-            surface = (GPURenderTarget) result.mSurface;
+            surface = (GpuRenderTarget) result.mSurface;
             releaseCallback = result.mReleaseCallback;
         }
         if (surface == null) {

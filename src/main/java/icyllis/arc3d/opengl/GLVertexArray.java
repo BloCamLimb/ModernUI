@@ -33,7 +33,7 @@ import static icyllis.arc3d.opengl.GLCore.*;
  * <p>
  * Supports OpenGL 3.3 and OpenGL 4.5.
  */
-public final class GLVertexArray extends GPUManagedResource {
+public final class GLVertexArray extends ManagedResource {
 
     private static final int INVALID_BINDING = -1;
 

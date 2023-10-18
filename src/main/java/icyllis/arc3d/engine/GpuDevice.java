@@ -33,7 +33,7 @@ import java.util.Set;
  * creating/deleting 3D API objects, transferring data, submitting 3D API commands, etc.
  * Most methods are only permitted on render thread (a.k.a. direct/RHI thread).
  */
-public abstract class GPUDevice implements Engine {
+public abstract class GpuDevice implements Engine {
 
     // @formatter:off
     static {
@@ -59,7 +59,7 @@ public abstract class GPUDevice implements Engine {
     private final ArrayList<FlushInfo.SubmittedCallback> mSubmittedCallbacks = new ArrayList<>();
     private int mResetBits = ~0;
 
-    protected GPUDevice(DirectContext context, Caps caps) {
+    protected GpuDevice(DirectContext context, Caps caps) {
         assert context != null && caps != null;
         mContext = context;
         mCaps = caps;
@@ -84,7 +84,7 @@ public abstract class GPUDevice implements Engine {
         return mCompiler;
     }
 
-    public abstract GPUResourceProvider getResourceProvider();
+    public abstract ResourceProvider getResourceProvider();
 
     public abstract PipelineStateCache getPipelineStateCache();
 
@@ -92,7 +92,7 @@ public abstract class GPUDevice implements Engine {
      * Called by context when the underlying backend context is already or will be destroyed
      * before {@link DirectContext}.
      * <p>
-     * If cleanup is true, free allocated resources (other than {@link GPUResourceCache}) before
+     * If cleanup is true, free allocated resources (other than {@link ResourceCache}) before
      * returning and ensure no backend 3D API calls will be made after this method returns.
      * Otherwise, no cleanup should be attempted, immediately cease making backend API calls.
      */
@@ -127,11 +127,11 @@ public abstract class GPUDevice implements Engine {
     protected void onResetContext(int resetBits) {
     }
 
-    public abstract GPUBufferPool getVertexPool();
+    public abstract GpuBufferPool getVertexPool();
 
-    public abstract GPUBufferPool getInstancePool();
+    public abstract GpuBufferPool getInstancePool();
 
-    public abstract GPUBufferPool getIndexPool();
+    public abstract GpuBufferPool getIndexPool();
 
     /**
      * Creates a texture object and allocates its GPU memory. In other words, the
@@ -144,14 +144,14 @@ public abstract class GPUDevice implements Engine {
      * @param height the height of the texture to be created
      * @param format the backend format for the texture
      * @return the texture object if successful, otherwise nullptr
-     * @see IGPUSurface#FLAG_BUDGETED
-     * @see IGPUSurface#FLAG_MIPMAPPED
-     * @see IGPUSurface#FLAG_RENDERABLE
-     * @see IGPUSurface#FLAG_PROTECTED
+     * @see IGpuSurface#FLAG_BUDGETED
+     * @see IGpuSurface#FLAG_MIPMAPPED
+     * @see IGpuSurface#FLAG_RENDERABLE
+     * @see IGpuSurface#FLAG_PROTECTED
      */
     @Nullable
     @SharedPtr
-    public final GPUTexture createTexture(int width, int height,
+    public final GpuTexture createTexture(int width, int height,
                                           BackendFormat format,
                                           int sampleCount,
                                           int surfaceFlags,
@@ -164,21 +164,21 @@ public abstract class GPUDevice implements Engine {
                 sampleCount, surfaceFlags)) {
             return null;
         }
-        int maxMipLevel = (surfaceFlags & IGPUSurface.FLAG_MIPMAPPED) != 0
+        int maxMipLevel = (surfaceFlags & IGpuSurface.FLAG_MIPMAPPED) != 0
                 ? MathUtil.floorLog2(Math.max(width, height))
                 : 0;
         int mipLevelCount = maxMipLevel + 1; // +1 base level 0
-        if ((surfaceFlags & IGPUSurface.FLAG_RENDERABLE) != 0) {
+        if ((surfaceFlags & IGpuSurface.FLAG_RENDERABLE) != 0) {
             sampleCount = mCaps.getRenderTargetSampleCount(sampleCount, format);
         }
         assert (sampleCount > 0 && sampleCount <= 64);
         handleDirtyContext();
-        final GPUTexture texture = onCreateTexture(width, height, format,
+        final GpuTexture texture = onCreateTexture(width, height, format,
                 mipLevelCount, sampleCount, surfaceFlags);
         if (texture != null) {
             // we don't copy the backend format object, use identity rather than equals()
             assert texture.getBackendFormat() == format;
-            assert (surfaceFlags & IGPUSurface.FLAG_RENDERABLE) == 0 || texture.asRenderTarget() != null;
+            assert (surfaceFlags & IGpuSurface.FLAG_RENDERABLE) == 0 || texture.asRenderTarget() != null;
             if (label != null) {
                 texture.setLabel(label);
             }
@@ -195,7 +195,7 @@ public abstract class GPUDevice implements Engine {
      */
     @Nullable
     @SharedPtr
-    protected abstract GPUTexture onCreateTexture(int width, int height,
+    protected abstract GpuTexture onCreateTexture(int width, int height,
                                                   BackendFormat format,
                                                   int mipLevelCount,
                                                   int sampleCount,
@@ -215,7 +215,7 @@ public abstract class GPUDevice implements Engine {
      */
     @Nullable
     @SharedPtr
-    public GPUTexture wrapRenderableBackendTexture(BackendTexture texture,
+    public GpuTexture wrapRenderableBackendTexture(BackendTexture texture,
                                                    int sampleCount,
                                                    boolean ownership) {
         handleDirtyContext();
@@ -239,13 +239,13 @@ public abstract class GPUDevice implements Engine {
 
     @Nullable
     @SharedPtr
-    protected abstract GPUTexture onWrapRenderableBackendTexture(BackendTexture texture,
+    protected abstract GpuTexture onWrapRenderableBackendTexture(BackendTexture texture,
                                                                  int sampleCount,
                                                                  boolean ownership);
 
     @Nullable
     @SharedPtr
-    public GPURenderTarget wrapBackendRenderTarget(BackendRenderTarget backendRenderTarget) {
+    public GpuRenderTarget wrapBackendRenderTarget(BackendRenderTarget backendRenderTarget) {
         if (!getCaps().isFormatRenderable(backendRenderTarget.getBackendFormat(),
                 backendRenderTarget.getSampleCount())) {
             return null;
@@ -255,7 +255,7 @@ public abstract class GPUDevice implements Engine {
 
     @Nullable
     @SharedPtr
-    public abstract GPURenderTarget onWrapBackendRenderTarget(BackendRenderTarget backendRenderTarget);
+    public abstract GpuRenderTarget onWrapBackendRenderTarget(BackendRenderTarget backendRenderTarget);
 
     /**
      * Updates the pixels in a rectangle of a texture. No sRGB/linear conversions are performed.
@@ -270,7 +270,7 @@ public abstract class GPUDevice implements Engine {
      * @param pixels       the pointer to the texel data for base level image
      * @return true if succeeded, false if not
      */
-    public boolean writePixels(GPUTexture texture,
+    public boolean writePixels(GpuTexture texture,
                                int x, int y,
                                int width, int height,
                                int dstColorType,
@@ -314,7 +314,7 @@ public abstract class GPUDevice implements Engine {
     }
 
     // overridden by backend-specific derived class to perform the surface write
-    protected abstract boolean onWritePixels(GPUTexture texture,
+    protected abstract boolean onWritePixels(GpuTexture texture,
                                              int x, int y,
                                              int width, int height,
                                              int dstColorType,
@@ -327,7 +327,7 @@ public abstract class GPUDevice implements Engine {
      *
      * @return success or not
      */
-    public final boolean generateMipmaps(GPUTexture texture) {
+    public final boolean generateMipmaps(GpuTexture texture) {
         assert texture != null;
         assert texture.isMipmapped();
         if (!texture.isMipmapsDirty()) {
@@ -343,13 +343,13 @@ public abstract class GPUDevice implements Engine {
         return false;
     }
 
-    protected abstract boolean onGenerateMipmaps(GPUTexture texture);
+    protected abstract boolean onGenerateMipmaps(GpuTexture texture);
 
     /**
      * Special case of {@link #copySurface} that has same dimensions.
      */
-    public final boolean copySurface(IGPUSurface src, int srcX, int srcY,
-                                     IGPUSurface dst, int dstX, int dstY,
+    public final boolean copySurface(IGpuSurface src, int srcX, int srcY,
+                                     IGpuSurface dst, int dstX, int dstY,
                                      int width, int height) {
         return copySurface(
                 src,
@@ -373,12 +373,12 @@ public abstract class GPUDevice implements Engine {
      *
      * @return success or not
      */
-    public final boolean copySurface(IGPUSurface src,
+    public final boolean copySurface(IGpuSurface src,
                                      int srcL, int srcT, int srcR, int srcB,
-                                     IGPUSurface dst,
+                                     IGpuSurface dst,
                                      int dstL, int dstT, int dstR, int dstB,
                                      int filter) {
-        if ((dst.getSurfaceFlags() & IGPUSurface.FLAG_READ_ONLY) != 0) {
+        if ((dst.getSurfaceFlags() & IGpuSurface.FLAG_READ_ONLY) != 0) {
             return false;
         }
         handleDirtyContext();
@@ -391,9 +391,9 @@ public abstract class GPUDevice implements Engine {
         );
     }
 
-    protected abstract boolean onCopySurface(IGPUSurface src,
+    protected abstract boolean onCopySurface(IGpuSurface src,
                                              int srcL, int srcT, int srcR, int srcB,
-                                             IGPUSurface dst,
+                                             IGpuSurface dst,
                                              int dstL, int dstT, int dstR, int dstB,
                                              int filter);
 
@@ -434,7 +434,7 @@ public abstract class GPUDevice implements Engine {
     /**
      * Resolves MSAA. The resolve rectangle must already be in the native destination space.
      */
-    public void resolveRenderTarget(GPURenderTarget renderTarget,
+    public void resolveRenderTarget(GpuRenderTarget renderTarget,
                                     int resolveLeft, int resolveTop,
                                     int resolveRight, int resolveBottom) {
         assert (renderTarget != null);
@@ -443,13 +443,13 @@ public abstract class GPUDevice implements Engine {
     }
 
     // overridden by backend-specific derived class to perform the resolve
-    protected abstract void onResolveRenderTarget(GPURenderTarget renderTarget,
+    protected abstract void onResolveRenderTarget(GpuRenderTarget renderTarget,
                                                   int resolveLeft, int resolveTop,
                                                   int resolveRight, int resolveBottom);
 
     @Nullable
     @SharedPtr
-    public final GPUBuffer createBuffer(int size, int flags) {
+    public final GpuBuffer createBuffer(int size, int flags) {
         if (size <= 0) {
             new Throwable("RHICreateBuffer, invalid size: " + size)
                     .printStackTrace(getContext().getErrorWriter());
@@ -464,7 +464,7 @@ public abstract class GPUDevice implements Engine {
 
     @Nullable
     @SharedPtr
-    protected abstract GPUBuffer onCreateBuffer(int size, int flags);
+    protected abstract GpuBuffer onCreateBuffer(int size, int flags);
 
     /**
      * Creates a new fence and inserts it into the graphics queue.

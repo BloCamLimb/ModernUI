@@ -28,7 +28,7 @@ import javax.annotation.Nullable;
 /**
  * Provides OpenGL objects with cache.
  */
-public final class GLResourceProvider extends GPUResourceProvider {
+public final class GLResourceProvider extends ResourceProvider {
 
     private static final int SAMPLER_CACHE_SIZE = 32;
 

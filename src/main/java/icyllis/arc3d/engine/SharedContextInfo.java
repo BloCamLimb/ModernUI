@@ -78,17 +78,17 @@ public final class SharedContextInfo {
      *                                 all resource allocation decisions are made at record time
      *                                 and at playback time the budget limits will be ignored.
      * @param imageInfo                The image info specifying properties of the
-     *                                 {@link IGPUSurface} that the DDL created
+     *                                 {@link IGpuSurface} that the DDL created
      *                                 with this characterization will be replayed into.
      *                                 Note: Engine doesn't make use of the
      *                                 {@link ImageInfo#alphaType()}.
      * @param backendFormat            Information about the format of the GPU surface that
-     *                                 will back the {@link IGPUSurface} upon
+     *                                 will back the {@link IGpuSurface} upon
      *                                 replay.
-     * @param origin                   The origin of the {@link IGPUSurface} that
+     * @param origin                   The origin of the {@link IGpuSurface} that
      *                                 the DDL created with this characterization will be
      *                                 replayed into.
-     * @param sampleCount              The sample count of the {@link IGPUSurface}
+     * @param sampleCount              The sample count of the {@link IGpuSurface}
      *                                 that the DDL created with this characterization will be
      *                                 replayed into.
      * @param texturable               Will the surface be able to act as a texture?

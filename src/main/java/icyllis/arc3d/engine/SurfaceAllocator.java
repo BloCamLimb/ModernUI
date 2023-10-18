@@ -28,7 +28,7 @@ import javax.annotation.Nonnull;
 import static icyllis.arc3d.engine.Engine.BudgetType;
 
 /**
- * The {@link GPUSurfaceAllocator} explicitly distributes {@link GPUResource} at flush time.
+ * The {@link SurfaceAllocator} explicitly distributes {@link IGpuSurface} at flush time.
  * It operates by being given the usage intervals of the various {@link Surface}. It keeps these
  * intervals in a singly linked list sorted by increasing start index. (It also maintains a hash
  * table from ID to interval to find surface reuse). The ResourceAllocator uses Registers (in the
@@ -60,7 +60,7 @@ import static icyllis.arc3d.engine.Engine.BudgetType;
  * How does instantiation failure handling work when explicitly allocating?
  * <p>
  * In the gather usage intervals pass all the SurfaceProxies used in the flush should be
- * gathered (i.e., in {@link RenderTask#gatherSurfaceIntervals(GPUSurfaceAllocator)}).
+ * gathered (i.e., in {@link RenderTask#gatherSurfaceIntervals(SurfaceAllocator)}).
  * <p>
  * During addInterval, read-only lazy proxies are instantiated. If that fails, the resource
  * allocator will note the failure and ignore pretty much anything else until `reset`.
@@ -73,7 +73,7 @@ import static icyllis.arc3d.engine.Engine.BudgetType;
  * <p>
  * The task manager will drop the flush if any proxies fail to instantiate.
  */
-public final class GPUSurfaceAllocator {
+public final class SurfaceAllocator {
 
     private final DirectContext mContext;
 
@@ -102,7 +102,7 @@ public final class GPUSurfaceAllocator {
 
     private boolean mInstantiationFailed;
 
-    public GPUSurfaceAllocator(DirectContext context) {
+    public SurfaceAllocator(DirectContext context) {
         mContext = context;
     }
 
@@ -141,7 +141,7 @@ public final class GPUSurfaceAllocator {
         // recycled. We don't need to assign a texture to it and no other proxy can be instantiated
         // with the same texture.
         if (proxy.isReadOnly()) {
-            GPUResourceProvider resourceProvider = mContext.getResourceProvider();
+            ResourceProvider resourceProvider = mContext.getResourceProvider();
             if (proxy.isLazy() && !proxy.doLazyInstantiation(resourceProvider)) {
                 mInstantiationFailed = true;
             } else {
@@ -189,7 +189,7 @@ public final class GPUSurfaceAllocator {
         assert (!mSimulated && !mAllocated);
         mSimulated = true;
 
-        GPUResourceProvider resourceProvider = mContext.getResourceProvider();
+        ResourceProvider resourceProvider = mContext.getResourceProvider();
         for (Interval cur = mIntervalList.peekHead(); cur != null; cur = cur.mNext) {
             expire(cur.mStart);
             mLiveIntervals.insertByIncreasingEnd(cur);
@@ -215,7 +215,7 @@ public final class GPUSurfaceAllocator {
             Texture textureProxy = cur.mSurface.asTexture();
             assert (textureProxy != null);
             Register r = findOrCreateRegister(textureProxy, resourceProvider);
-            assert (textureProxy.peekGPUTexture() == null);
+            assert (textureProxy.getGpuTexture() == null);
             cur.mRegister = r;
         }
 
@@ -233,7 +233,7 @@ public final class GPUSurfaceAllocator {
         }
         assert (mSimulated && !mAllocated);
         mAllocated = true;
-        GPUResourceProvider resourceProvider = mContext.getResourceProvider();
+        ResourceProvider resourceProvider = mContext.getResourceProvider();
         Interval cur;
         while ((cur = mFinishedIntervals.popHead()) != null) {
             if (mInstantiationFailed) {
@@ -301,7 +301,7 @@ public final class GPUSurfaceAllocator {
     }
 
     private Register findOrCreateRegister(@Nonnull Texture proxy,
-                                          GPUResourceProvider provider) {
+                                          ResourceProvider provider) {
         Register r;
         // Handle uniquely keyed proxies
         Object uniqueKey = proxy.getUniqueKey();
@@ -336,18 +336,18 @@ public final class GPUSurfaceAllocator {
          */
         private Texture mUserTexture;
         @SharedPtr
-        private GPUTexture mTextureResource;
+        private GpuTexture mTextureResource;
 
         private boolean mInit;
 
         public Register(Texture userTexture,
-                        GPUResourceProvider provider,
+                        ResourceProvider provider,
                         boolean scratch) {
             init(userTexture, provider, scratch);
         }
 
         public Register init(Texture proxy,
-                             GPUResourceProvider provider,
+                             ResourceProvider provider,
                              boolean scratch) {
             assert (!mInit);
             assert (proxy != null);
@@ -393,38 +393,38 @@ public final class GPUSurfaceAllocator {
         // Resolve the register allocation to an actual Texture. 'mUserTexture' is used
         // to cache the allocation when a given register is used by multiple proxies.
         public boolean instantiateTexture(Texture userTexture,
-                                          GPUResourceProvider resourceProvider) {
-            assert (userTexture.peekGPUTexture() == null);
-            final GPUTexture textureResource;
+                                          ResourceProvider resourceProvider) {
+            assert (userTexture.getGpuTexture() == null);
+            final GpuTexture gpuTexture;
             if (mTextureResource == null) {
                 if (mUserTexture == userTexture) {
-                    textureResource = userTexture.createGPUTexture(resourceProvider);
+                    gpuTexture = userTexture.createGpuTexture(resourceProvider);
                 } else {
-                    textureResource = GPUResource.create(mUserTexture.peekGPUTexture());
+                    gpuTexture = GpuResource.create(mUserTexture.getGpuTexture());
                 }
-                if (textureResource == null) {
+                if (gpuTexture == null) {
                     return false;
                 }
             } else {
-                textureResource = GPUResource.create(mTextureResource);
+                gpuTexture = GpuResource.create(mTextureResource);
             }
-            assert (textureResource != null);
-            assert (userTexture.mSurfaceFlags & IGPUSurface.FLAG_RENDERABLE) == 0 || textureResource.asRenderTarget() != null;
+            assert (gpuTexture != null);
+            assert (userTexture.mSurfaceFlags & IGpuSurface.FLAG_RENDERABLE) == 0 || gpuTexture.asRenderTarget() != null;
 
             // Make texture budgeted if this proxy is budgeted.
-            if (userTexture.isBudgeted() && textureResource.getBudgetType() != BudgetType.Budgeted) {
-                textureResource.makeBudgeted(true);
+            if (userTexture.isBudgeted() && gpuTexture.getBudgetType() != BudgetType.Budgeted) {
+                gpuTexture.makeBudgeted(true);
             }
 
             // Propagate the proxy unique key to the texture if we have one.
             if (userTexture.getUniqueKey() != null) {
-                if (textureResource.getUniqueKey() == null) {
-                    resourceProvider.assignUniqueKeyToResource(userTexture.getUniqueKey(), textureResource);
+                if (gpuTexture.getUniqueKey() == null) {
+                    resourceProvider.assignUniqueKeyToResource(userTexture.getUniqueKey(), gpuTexture);
                 }
-                assert userTexture.getUniqueKey().equals(textureResource.getUniqueKey());
+                assert userTexture.getUniqueKey().equals(gpuTexture.getUniqueKey());
             }
-            assert userTexture.mGPUTexture == null;
-            userTexture.mGPUTexture = textureResource;
+            assert userTexture.mGpuTexture == null;
+            userTexture.mGpuTexture = gpuTexture;
             return true;
         }
 
@@ -436,7 +436,7 @@ public final class GPUSurfaceAllocator {
         public boolean reset() {
             if (mInit) {
                 mUserTexture = null;
-                mTextureResource = GPUResource.move(mTextureResource);
+                mTextureResource = GpuResource.move(mTextureResource);
                 mInit = false;
                 return true;
             }
@@ -593,7 +593,7 @@ public final class GPUSurfaceAllocator {
     private int mIntervalPoolSize;
 
     private Register makeRegister(@Nonnull Texture proxy,
-                                  GPUResourceProvider provider,
+                                  ResourceProvider provider,
                                   boolean scratch) {
         if (mRegisterPoolSize == 0)
             return new Register(proxy, provider, scratch);

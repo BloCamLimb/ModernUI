@@ -26,9 +26,9 @@ import java.util.ArrayList;
 public abstract class CommandBuffer {
 
     @SharedPtr
-    private final ArrayList<GPUBuffer> mTrackingGPUBuffers = new ArrayList<>();
+    private final ArrayList<GpuBuffer> mTrackingGpuBuffers = new ArrayList<>();
 
-    public void moveAndTrackGPUBuffer(@SharedPtr GPUBuffer buffer) {
-        mTrackingGPUBuffers.add(buffer);
+    public void moveAndTrackGpuBuffer(@SharedPtr GpuBuffer buffer) {
+        mTrackingGpuBuffers.add(buffer);
     }
 }

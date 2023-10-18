@@ -62,23 +62,23 @@ public interface ISurface {
      */
     int FLAG_PROTECTED = 1 << 4;
     /**
-     * Means the pixels in the texture are read-only. {@link GPUTexture} and {@link Texture}
+     * Means the pixels in the texture are read-only. {@link GpuTexture} and {@link Texture}
      * only.
      */
     @ApiStatus.Internal
     int FLAG_READ_ONLY = FLAG_PROTECTED << 1;
     /**
      * When set, the proxy will be instantiated outside the allocator (e.g. for proxies that are
-     * instantiated in on-flush callbacks). Otherwise, {@link GPUSurfaceAllocator} should instantiate
+     * instantiated in on-flush callbacks). Otherwise, {@link SurfaceAllocator} should instantiate
      * the proxy. {@link Surface} only.
      */
     @ApiStatus.Internal
     int FLAG_SKIP_ALLOCATOR = FLAG_PROTECTED << 2;
     /**
      * For TextureProxies created in a deferred list recording thread it is possible for the
-     * unique key to be cleared on the backing {@link GPUTexture} while the unique key remains on
+     * unique key to be cleared on the backing {@link GpuTexture} while the unique key remains on
      * the proxy. When set, it loosens up asserts that the key of an instantiated uniquely-keyed
-     * texture proxy is also always set on the backing {@link GPUTexture}. {@link Texture} only.
+     * texture proxy is also always set on the backing {@link GpuTexture}. {@link Texture} only.
      */
     @ApiStatus.Internal
     int FLAG_DEFERRED_PROVIDER = FLAG_PROTECTED << 3;

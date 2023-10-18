@@ -32,7 +32,7 @@ import static icyllis.arc3d.engine.Engine.BudgetType;
 
 /**
  * Base class for operating backend memory objects that can be kept in the
- * {@link GPUResourceCache}. Such resources will have a large memory allocation.
+ * {@link ResourceCache}. Such resources will have a large memory allocation.
  * Possible implementations:
  * <ul>
  *   <li>GLBuffer</li>
@@ -48,11 +48,11 @@ import static icyllis.arc3d.engine.Engine.BudgetType;
  * otherwise they tend to be used as raw pointers (no ref/unref calls should be
  * made). Java object's reference, or identity, can be used as unique identifiers.
  * <p>
- * Each {@link GPUResource} should be created with immutable GPU memory allocation.
- * Use {@link GPUResourceProvider} to obtain {@link GPUResource} objects.
+ * Each {@link GpuResource} should be created with immutable GPU memory allocation.
+ * Use {@link ResourceProvider} to obtain {@link GpuResource} objects.
  */
 @NotThreadSafe
-public abstract class GPUResource {
+public abstract class GpuResource {
 
     private static final VarHandle REF_CNT;
     private static final VarHandle COMMAND_BUFFER_USAGE_CNT;
@@ -60,8 +60,8 @@ public abstract class GPUResource {
     static {
         MethodHandles.Lookup lookup = MethodHandles.lookup();
         try {
-            REF_CNT = lookup.findVarHandle(GPUResource.class, "mRefCnt", int.class);
-            COMMAND_BUFFER_USAGE_CNT = lookup.findVarHandle(GPUResource.class, "mCommandBufferUsageCnt", int.class);
+            REF_CNT = lookup.findVarHandle(GpuResource.class, "mRefCnt", int.class);
+            COMMAND_BUFFER_USAGE_CNT = lookup.findVarHandle(GpuResource.class, "mCommandBufferUsageCnt", int.class);
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
@@ -72,14 +72,14 @@ public abstract class GPUResource {
     @SuppressWarnings("FieldMayBeFinal")
     private volatile int mCommandBufferUsageCnt = 0;
 
-    static final PriorityQueue.Accessor<GPUResource> QUEUE_ACCESSOR = new PriorityQueue.Accessor<>() {
+    static final PriorityQueue.Accessor<GpuResource> QUEUE_ACCESSOR = new PriorityQueue.Accessor<>() {
         @Override
-        public void setIndex(GPUResource resource, int index) {
+        public void setIndex(GpuResource resource, int index) {
             resource.mCacheIndex = index;
         }
 
         @Override
-        public int getIndex(GPUResource resource) {
+        public int getIndex(GpuResource resource) {
             return resource.mCacheIndex;
         }
     };
@@ -97,7 +97,7 @@ public abstract class GPUResource {
     Object mUniqueKey;
 
     // set once in constructor, clear to null after being destroyed
-    GPUDevice mDevice;
+    GpuDevice mDevice;
 
     private byte mBudgetType = BudgetType.NotBudgeted;
     private boolean mWrapped = false;
@@ -123,34 +123,34 @@ public abstract class GPUResource {
 
     private final UniqueID mUniqueID = new UniqueID();
 
-    protected GPUResource(GPUDevice device) {
+    protected GpuResource(GpuDevice device) {
         assert (device != null);
         mDevice = device;
     }
 
     @SharedPtr
-    public static <T extends GPUResource> T move(@SharedPtr T sp) {
+    public static <T extends GpuResource> T move(@SharedPtr T sp) {
         if (sp != null)
             sp.unref();
         return null;
     }
 
     @SharedPtr
-    public static <T extends GPUResource> T move(@SharedPtr T sp, @SharedPtr T that) {
+    public static <T extends GpuResource> T move(@SharedPtr T sp, @SharedPtr T that) {
         if (sp != null)
             sp.unref();
         return that;
     }
 
     @SharedPtr
-    public static <T extends GPUResource> T create(@SharedPtr T that) {
+    public static <T extends GpuResource> T create(@SharedPtr T that) {
         if (that != null)
             that.ref();
         return that;
     }
 
     @SharedPtr
-    public static <T extends GPUResource> T create(@SharedPtr T sp, @SharedPtr T that) {
+    public static <T extends GpuResource> T create(@SharedPtr T sp, @SharedPtr T that) {
         if (sp != null)
             sp.unref();
         if (that != null)
@@ -474,7 +474,7 @@ public abstract class GPUResource {
     /**
      * @return the device or null if destroyed
      */
-    protected GPUDevice getDevice() {
+    protected GpuDevice getDevice() {
         return mDevice;
     }
 

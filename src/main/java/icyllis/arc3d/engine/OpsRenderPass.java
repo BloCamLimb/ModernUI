@@ -42,7 +42,7 @@ public abstract class OpsRenderPass {
 
     private int mDrawPipelineStatus = kNotConfigured_DrawPipelineStatus;
 
-    protected GPURenderTarget mRenderTarget;
+    protected GpuRenderTarget mRenderTarget;
     protected int mSurfaceOrigin;
 
     private Texture[] mGeomTextures = new Texture[1];
@@ -51,7 +51,7 @@ public abstract class OpsRenderPass {
         this(null, SurfaceOrigin.kUpperLeft);
     }
 
-    public OpsRenderPass(GPURenderTarget fs, int origin) {
+    public OpsRenderPass(GpuRenderTarget fs, int origin) {
         mRenderTarget = fs;
         mSurfaceOrigin = origin;
     }
@@ -133,9 +133,9 @@ public abstract class OpsRenderPass {
      * @param vertexBuffer   raw ptr to the vertex buffer, can be nullptr
      * @param instanceBuffer raw ptr to the instance buffer if using instanced rendering, or nullptr
      */
-    public final void bindBuffers(GPUBuffer indexBuffer,
-                                  GPUBuffer vertexBuffer,
-                                  GPUBuffer instanceBuffer) {
+    public final void bindBuffers(GpuBuffer indexBuffer,
+                                  GpuBuffer vertexBuffer,
+                                  GpuBuffer instanceBuffer) {
         if (vertexBuffer == null && instanceBuffer == null) {
             mDrawPipelineStatus = kFailedToBind_DrawPipelineStatus;
             return;
@@ -221,21 +221,21 @@ public abstract class OpsRenderPass {
         }
     }
 
-    protected void set(GPURenderTarget rt, int origin) {
+    protected void set(GpuRenderTarget rt, int origin) {
         assert (mRenderTarget == null);
         mRenderTarget = rt;
         mSurfaceOrigin = origin;
     }
 
-    protected abstract GPUDevice getDevice();
+    protected abstract GpuDevice getDevice();
 
     protected abstract boolean onBindPipeline(PipelineInfo pipelineInfo,
                                               GraphicsPipelineState pipelineState,
                                               Rect2f drawBounds);
 
-    protected abstract void onBindBuffers(@SharedPtr GPUBuffer indexBuffer,
-                                          @SharedPtr GPUBuffer vertexBuffer,
-                                          @SharedPtr GPUBuffer instanceBuffer);
+    protected abstract void onBindBuffers(@SharedPtr GpuBuffer indexBuffer,
+                                          @SharedPtr GpuBuffer vertexBuffer,
+                                          @SharedPtr GpuBuffer instanceBuffer);
 
     protected abstract void onDraw(int vertexCount, int baseVertex);
 

@@ -30,16 +30,16 @@ import java.util.Set;
  */
 public class OpFlushState implements MeshDrawTarget {
 
-    private final GPUDevice mDevice;
+    private final GpuDevice mDevice;
 
     private OpsRenderPass mOpsRenderPass;
 
-    public OpFlushState(GPUDevice device,
-                        GPUResourceProvider resourceProvider) {
+    public OpFlushState(GpuDevice device,
+                        ResourceProvider resourceProvider) {
         mDevice = device;
     }
 
-    public GPUDevice getDevice() {
+    public GpuDevice getDevice() {
         return mDevice;
     }
 

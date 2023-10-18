@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.vulkan;
 
-import icyllis.arc3d.engine.GPUManagedResource;
+import icyllis.arc3d.engine.ManagedResource;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.VkCommandPoolCreateInfo;
 import org.lwjgl.vulkan.VkFenceCreateInfo;
@@ -34,7 +34,7 @@ import static icyllis.arc3d.vulkan.VKCore.*;
  * the in flight state, and we will continuously check whether the GPU has finished
  * the work to recycle the VkCommandPool (and its command buffers).
  */
-public class VulkanCommandPool extends GPUManagedResource {
+public class VulkanCommandPool extends ManagedResource {
 
     private VulkanPrimaryCommandBuffer mPrimaryCommandBuffer;
 

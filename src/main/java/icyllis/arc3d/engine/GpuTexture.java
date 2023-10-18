@@ -37,9 +37,9 @@ import static icyllis.arc3d.engine.Engine.BudgetType;
  * framebuffer of the render target. So we can cache these framebuffers with texture.
  * Additionally, it may create more surfaces and attach them to it. These surfaces are
  * budgeted but cannot be reused. In most cases, we reuse textures, so these surfaces
- * are reused together, see {@link GPURenderTarget}.
+ * are reused together, see {@link GpuRenderTarget}.
  */
-public abstract class GPUTexture extends GPUResource implements IGPUSurface {
+public abstract class GpuTexture extends GpuResource implements IGpuSurface {
 
     protected final int mWidth;
     protected final int mHeight;
@@ -59,7 +59,7 @@ public abstract class GPUTexture extends GPUResource implements IGPUSurface {
     @SharedPtr
     private ReleaseCallback mReleaseCallback;
 
-    protected GPUTexture(GPUDevice device, int width, int height) {
+    protected GpuTexture(GpuDevice device, int width, int height) {
         super(device);
         assert width > 0 && height > 0;
         mWidth = width;
@@ -113,12 +113,12 @@ public abstract class GPUTexture extends GPUResource implements IGPUSurface {
      * <ul>
      * <li>{@link #FLAG_BUDGETED} -
      *  Indicates whether an allocation should count against a cache budget. Budgeted when
-     *  set, otherwise not budgeted. {@link GPUTexture} only.
+     *  set, otherwise not budgeted. {@link GpuTexture} only.
      * </li>
      *
      * <li>{@link #FLAG_MIPMAPPED} -
      *  Used to say whether a texture has mip levels allocated or not. Mipmaps are allocated
-     *  when set, otherwise mipmaps are not allocated. {@link GPUTexture} only.
+     *  when set, otherwise mipmaps are not allocated. {@link GpuTexture} only.
      * </li>
      *
      * <li>{@link #FLAG_RENDERABLE} -
@@ -132,7 +132,7 @@ public abstract class GPUTexture extends GPUResource implements IGPUSurface {
      * </li>
      *
      * <li>{@link #FLAG_READ_ONLY} -
-     *  Means the pixels in the texture are read-only. {@link GPUTexture} only.
+     *  Means the pixels in the texture are read-only. {@link GpuTexture} only.
      * </li>
      *
      * @return combination of the above flags
@@ -141,13 +141,13 @@ public abstract class GPUTexture extends GPUResource implements IGPUSurface {
     public final int getSurfaceFlags() {
         int flags = mFlags;
         if (getBudgetType() == BudgetType.Budgeted) {
-            flags |= IGPUSurface.FLAG_BUDGETED;
+            flags |= IGpuSurface.FLAG_BUDGETED;
         }
         return flags;
     }
 
     @Override
-    public GPUTexture asTexture() {
+    public GpuTexture asTexture() {
         return this;
     }
 
@@ -238,8 +238,8 @@ public abstract class GPUTexture extends GPUResource implements IGPUSurface {
             return 0;
         }
         if (approx) {
-            width = GPUResourceProvider.makeApprox(width);
-            height = GPUResourceProvider.makeApprox(height);
+            width = ResourceProvider.makeApprox(width);
+            height = ResourceProvider.makeApprox(height);
         }
         long size = DataUtils.numBlocks(format.getCompressionType(), width, height) *
                 format.getBytesPerBlock();
@@ -274,8 +274,8 @@ public abstract class GPUTexture extends GPUResource implements IGPUSurface {
             return 0;
         }
         if (approx) {
-            width = GPUResourceProvider.makeApprox(width);
-            height = GPUResourceProvider.makeApprox(height);
+            width = ResourceProvider.makeApprox(width);
+            height = ResourceProvider.makeApprox(height);
         }
         long size = DataUtils.numBlocks(format.getCompressionType(), width, height) *
                 format.getBytesPerBlock();
@@ -291,7 +291,7 @@ public abstract class GPUTexture extends GPUResource implements IGPUSurface {
     }
 
     /**
-     * Storage key of {@link GPUTexture}, may be compared with {@link Texture}.
+     * Storage key of {@link GpuTexture}, may be compared with {@link Texture}.
      */
     public static final class ScratchKey {
 
@@ -301,7 +301,7 @@ public abstract class GPUTexture extends GPUResource implements IGPUSurface {
         public int mFlags;
 
         /**
-         * Compute a {@link GPUTexture} key, format can not be compressed.
+         * Compute a {@link GpuTexture} key, format can not be compressed.
          *
          * @return the scratch key
          */
@@ -315,9 +315,9 @@ public abstract class GPUTexture extends GPUResource implements IGPUSurface {
             mWidth = width;
             mHeight = height;
             mFormat = format.getFormatKey();
-            mFlags = (surfaceFlags & (IGPUSurface.FLAG_MIPMAPPED |
-                    IGPUSurface.FLAG_RENDERABLE |
-                    IGPUSurface.FLAG_PROTECTED)) | (sampleCount << 16);
+            mFlags = (surfaceFlags & (IGpuSurface.FLAG_MIPMAPPED |
+                    IGpuSurface.FLAG_RENDERABLE |
+                    IGpuSurface.FLAG_PROTECTED)) | (sampleCount << 16);
             return this;
         }
 

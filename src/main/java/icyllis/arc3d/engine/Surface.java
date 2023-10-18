@@ -27,12 +27,12 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * The {@link Surface} targets a {@link IGPUSurface} with three instantiation
+ * The {@link Surface} targets a {@link IGpuSurface} with three instantiation
  * methods: deferred, lazy-callback and wrapped.
  * <p>
  * Target: The backing GPU texture or render target that referenced by this surface.
  * <p>
- * Instantiate: Create new GPU surfaces or find surfaces in {@link GPUResourceCache}
+ * Instantiate: Create new GPU surfaces or find surfaces in {@link ResourceCache}
  * when they are actually required on flush.
  * <p>
  * BackingFit: Indicates whether a backing store needs to be an exact match or
@@ -43,7 +43,7 @@ import javax.annotation.Nullable;
  * <ul>
  *     <li>False: This surface will be instantiated outside the allocator (e.g.
  *     for surfaces that are instantiated in on-flush callbacks).</li>
- *     <li>True: {@link GPUSurfaceAllocator} should instantiate this surface.</li>
+ *     <li>True: {@link SurfaceAllocator} should instantiate this surface.</li>
  * </ul>
  * <p>
  * Use {@link SurfaceProvider} to obtain {@link Surface} objects.
@@ -74,24 +74,24 @@ public abstract class Surface extends RefCnt implements ISurface {
      * <ul>
      *     <li>False: This surface will be instantiated outside the allocator (e.g.
      *     for proxies that are instantiated in on-flush callbacks).</li>
-     *     <li>True: {@link GPUSurfaceAllocator} should instantiate this surface.</li>
+     *     <li>True: {@link SurfaceAllocator} should instantiate this surface.</li>
      * </ul>
      * <p>
      * DeferredProvider: For TextureProxies created in a deferred list recording thread it is
      * possible for the uniqueKey to be cleared on the backing Texture while the uniqueKey
      * remains on the surface. A 'mDeferredProvider' of 'true' loosens up asserts that the key of an
-     * instantiated uniquely-keyed texture is also always set on the backing {@link GPUTexture}.
+     * instantiated uniquely-keyed texture is also always set on the backing {@link GpuTexture}.
      * <p>
      * In many cases these flags aren't actually known until the surface has been instantiated.
      * However, Engine frequently needs to change its behavior based on these settings. For
      * internally create proxies we will know these properties ahead of time. For wrapped
-     * proxies we will copy the properties off of the {@link GPUTexture}. For lazy proxies we
+     * proxies we will copy the properties off of the {@link GpuTexture}. For lazy proxies we
      * force the call sites to provide the required information ahead of time. At
      * instantiation time we verify that the assumed properties match the actual properties.
      *
-     * @see IGPUSurface#FLAG_BUDGETED
-     * @see IGPUSurface#FLAG_APPROX_FIT
-     * @see IGPUSurface#FLAG_SKIP_ALLOCATOR
+     * @see IGpuSurface#FLAG_BUDGETED
+     * @see IGpuSurface#FLAG_APPROX_FIT
+     * @see IGpuSurface#FLAG_SKIP_ALLOCATOR
      */
     int mSurfaceFlags;
 
@@ -115,40 +115,40 @@ public abstract class Surface extends RefCnt implements ISurface {
         mHeight = height;
         mSurfaceFlags = surfaceFlags;
         if (format.isExternal()) {
-            mSurfaceFlags |= IGPUSurface.FLAG_READ_ONLY;
+            mSurfaceFlags |= IGpuSurface.FLAG_READ_ONLY;
         }
         mUniqueID = this;
     }
 
     // Wrapped version
-    Surface(@SharedPtr IGPUSurface surface,
+    Surface(@SharedPtr IGpuSurface surface,
             int surfaceFlags) {
         assert (surface != null);
         mFormat = surface.getBackendFormat();
         mWidth = surface.getWidth();
         mHeight = surface.getHeight();
         mSurfaceFlags = surface.getSurfaceFlags() | surfaceFlags;
-        assert (mSurfaceFlags & IGPUSurface.FLAG_APPROX_FIT) == 0;
+        assert (mSurfaceFlags & IGpuSurface.FLAG_APPROX_FIT) == 0;
         mUniqueID = surface; // converting from unique resource ID to a surface ID
     }
 
     public static class LazyCallbackResult {
 
         @SharedPtr
-        public IGPUSurface mSurface;
+        public IGpuSurface mSurface;
         /**
-         * Some lazy callbacks want to set their own (or no key) on the {@link GPUTexture}
-         * they return. Others want the {@link GPUTexture}'s key to be kept in sync with the surface's
+         * Some lazy callbacks want to set their own (or no key) on the {@link GpuTexture}
+         * they return. Others want the {@link GpuTexture}'s key to be kept in sync with the surface's
          * key. This flag controls the key relationship between proxies and their targets.
          * <ul>
-         *     <li>False: Don't key the {@link GPUTexture} with the surface's key. The lazy
-         *     instantiation callback is free to return a {@link GPUTexture} that already
+         *     <li>False: Don't key the {@link GpuTexture} with the surface's key. The lazy
+         *     instantiation callback is free to return a {@link GpuTexture} that already
          *     has a unique key unrelated to the surface's key.</li>
-         *     <li>True: Keep the {@link GPUTexture}'s unique key in sync with the surface's
-         *     unique key. The {@link GPUTexture} returned from the lazy instantiation callback
+         *     <li>True: Keep the {@link GpuTexture}'s unique key in sync with the surface's
+         *     unique key. The {@link GpuTexture} returned from the lazy instantiation callback
          *     must not have a unique key or have the same same unique key as the surface.
          *     If the surface is later assigned a key it is in turn assigned to the
-         *     {@link GPUTexture}.</li>
+         *     {@link GpuTexture}.</li>
          * </ul>
          */
         public boolean mSyncTargetKey = true;
@@ -161,11 +161,11 @@ public abstract class Surface extends RefCnt implements ISurface {
         public LazyCallbackResult() {
         }
 
-        public LazyCallbackResult(@SharedPtr IGPUSurface surface) {
+        public LazyCallbackResult(@SharedPtr IGpuSurface surface) {
             mSurface = surface;
         }
 
-        public LazyCallbackResult(@SharedPtr IGPUSurface surface,
+        public LazyCallbackResult(@SharedPtr IGpuSurface surface,
                                   boolean syncTargetKey,
                                   boolean releaseCallback) {
             mSurface = surface;
@@ -181,10 +181,10 @@ public abstract class Surface extends RefCnt implements ISurface {
     public interface LazyInstantiateCallback extends AutoCloseable {
 
         /**
-         * Specifies the expected properties of the {@link IGPUSurface} returned by a lazy instantiation
+         * Specifies the expected properties of the {@link IGpuSurface} returned by a lazy instantiation
          * callback. The dimensions will be negative in the case of a lazy-most surface.
          */
-        LazyCallbackResult onLazyInstantiate(GPUResourceProvider provider,
+        LazyCallbackResult onLazyInstantiate(ResourceProvider provider,
                                              BackendFormat format,
                                              int width, int height,
                                              int sampleCount,
@@ -213,6 +213,7 @@ public abstract class Surface extends RefCnt implements ISurface {
     }
 
     /**
+     * Returns the logical width of this surface.
      * The result is undefined if {@link #isLazyMost()} returns true.
      *
      * @return the desired width of the surface
@@ -223,6 +224,7 @@ public abstract class Surface extends RefCnt implements ISurface {
     }
 
     /**
+     * Returns the logical height of this surface.
      * The result is undefined if {@link #isLazyMost()} returns true.
      *
      * @return the desired height of the surface
@@ -233,6 +235,7 @@ public abstract class Surface extends RefCnt implements ISurface {
     }
 
     /**
+     * Returns the physical width of the backing surface.
      * The result is undefined if {@link #isLazyMost()} returns true.
      *
      * @return the width of the backing store
@@ -240,6 +243,7 @@ public abstract class Surface extends RefCnt implements ISurface {
     public abstract int getBackingWidth();
 
     /**
+     * Returns the physical height of the backing surface.
      * The result is undefined if {@link #isLazyMost()} returns true.
      *
      * @return the height of the backing store
@@ -247,7 +251,7 @@ public abstract class Surface extends RefCnt implements ISurface {
     public abstract int getBackingHeight();
 
     /**
-     * If set to exact or approx size is equal to exact size. Must call when not fully lazy.
+     * If set to exact or approx size is equal to exact size. Must call when not lazy-most.
      * Equivalent to getWidth() == getBackingWidth() && getHeight() == getBackingHeight();
      *
      * @return true if backing fit is (as if) exact
@@ -255,11 +259,13 @@ public abstract class Surface extends RefCnt implements ISurface {
      */
     public final boolean isExact() {
         assert (!isLazyMost());
-        if ((mSurfaceFlags & IGPUSurface.FLAG_APPROX_FIT) == 0) {
+        if ((mSurfaceFlags & IGpuSurface.FLAG_APPROX_FIT) == 0) {
+            // user-set Exact
             return true;
         }
-        return mWidth == GPUResourceProvider.makeApprox(mWidth) &&
-                mHeight == GPUResourceProvider.makeApprox(mHeight);
+        // equivalent to Exact
+        return mWidth == ResourceProvider.makeApprox(mWidth) &&
+                mHeight == ResourceProvider.makeApprox(mHeight);
     }
 
     /**
@@ -314,7 +320,7 @@ public abstract class Surface extends RefCnt implements ISurface {
      * @param resourceProvider the resource provider to create textures
      * @return success or not
      */
-    public abstract boolean instantiate(GPUResourceProvider resourceProvider);
+    public abstract boolean instantiate(ResourceProvider resourceProvider);
 
     /**
      * De-instantiate. Called after instantiated.
@@ -323,7 +329,7 @@ public abstract class Surface extends RefCnt implements ISurface {
 
     /**
      * Proxies that are already instantiated and whose backing texture cannot be recycled to
-     * instantiate other proxies do not need to be considered by {@link GPUSurfaceAllocator}.
+     * instantiate other proxies do not need to be considered by {@link SurfaceAllocator}.
      */
     public abstract boolean shouldSkipAllocator();
 
@@ -348,23 +354,23 @@ public abstract class Surface extends RefCnt implements ISurface {
     }
 
     @Nullable
-    public abstract IGPUSurface peekGPUSurface();
+    public abstract IGpuSurface getGpuSurface();
 
     /**
-     * If this is a texture surface and the surface is already instantiated, return its
-     * backing {@link GPUTexture}; if not, return null.
+     * If this is a texturable surface and the surface is already instantiated, return its
+     * backing {@link GpuTexture}; if not, return null.
      */
     @Nullable
-    public GPUTexture peekGPUTexture() {
+    public GpuTexture getGpuTexture() {
         return null;
     }
 
     /**
      * If this is a renderable surface and the surface is already instantiated, return its
-     * backing {@link GPURenderTarget}; if not, return null.
+     * backing {@link GpuRenderTarget}; if not, return null.
      */
     @Nullable
-    public GPURenderTarget peekGPURenderTarget() {
+    public GpuRenderTarget getGpuRenderTarget() {
         return null;
     }
 
@@ -376,7 +382,7 @@ public abstract class Surface extends RefCnt implements ISurface {
      * only meaningful if 'mLazyInstantiateCallback' is non-null.
      */
     public final boolean isBudgeted() {
-        return (mSurfaceFlags & IGPUSurface.FLAG_BUDGETED) != 0;
+        return (mSurfaceFlags & IGpuSurface.FLAG_BUDGETED) != 0;
     }
 
     /**
@@ -385,23 +391,23 @@ public abstract class Surface extends RefCnt implements ISurface {
      * assignment in ResourceAllocator.
      */
     public final boolean isReadOnly() {
-        return (mSurfaceFlags & IGPUSurface.FLAG_READ_ONLY) != 0;
+        return (mSurfaceFlags & IGpuSurface.FLAG_READ_ONLY) != 0;
     }
 
     public final boolean isProtected() {
-        return (mSurfaceFlags & IGPUSurface.FLAG_PROTECTED) != 0;
+        return (mSurfaceFlags & IGpuSurface.FLAG_PROTECTED) != 0;
     }
 
     public final boolean isManualMSAAResolve() {
-        return (mSurfaceFlags & IGPUSurface.FLAG_MANUAL_MSAA_RESOLVE) != 0;
+        return (mSurfaceFlags & IGpuSurface.FLAG_MANUAL_MSAA_RESOLVE) != 0;
     }
 
     public final boolean wrapsGLDefaultFB() {
-        return (mSurfaceFlags & IGPUSurface.FLAG_GL_WRAP_DEFAULT_FB) != 0;
+        return (mSurfaceFlags & IGpuSurface.FLAG_GL_WRAP_DEFAULT_FB) != 0;
     }
 
     public final boolean wrapsVkSecondaryCB() {
-        return (mSurfaceFlags & IGPUSurface.FLAG_VK_WRAP_SECONDARY_CB) != 0;
+        return (mSurfaceFlags & IGpuSurface.FLAG_VK_WRAP_SECONDARY_CB) != 0;
     }
 
     public final boolean isDeferredListTarget() {
@@ -415,7 +421,7 @@ public abstract class Surface extends RefCnt implements ISurface {
 
     @ApiStatus.Internal
     public final boolean isUserExact() {
-        return (mSurfaceFlags & IGPUSurface.FLAG_APPROX_FIT) == 0;
+        return (mSurfaceFlags & IGpuSurface.FLAG_APPROX_FIT) == 0;
     }
 
     public Texture asTexture() {
@@ -445,5 +451,5 @@ public abstract class Surface extends RefCnt implements ISurface {
 
     @ApiStatus.Internal
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    public abstract boolean doLazyInstantiation(GPUResourceProvider resourceProvider);
+    public abstract boolean doLazyInstantiation(ResourceProvider resourceProvider);
 }

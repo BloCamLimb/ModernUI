@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.opengl;
 
-import icyllis.arc3d.engine.GPUManagedResource;
+import icyllis.arc3d.engine.ManagedResource;
 
 import javax.annotation.Nonnull;
 
@@ -28,7 +28,7 @@ import static org.lwjgl.opengl.GL20C.glDeleteProgram;
 /**
  * Represents OpenGL programs.
  */
-public final class GLProgram extends GPUManagedResource {
+public final class GLProgram extends ManagedResource {
 
     private int mProgram;
 

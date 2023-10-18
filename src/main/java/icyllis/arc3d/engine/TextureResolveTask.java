@@ -45,9 +45,9 @@ public final class TextureResolveTask extends RenderTask {
 
         Rect2i msaaRect = null;
         if ((resolveFlags & RESOLVE_FLAG_MSAA) != 0) {
-            assert (userTexture.isMSAADirty());
-            msaaRect = userTexture.getMSAADirtyRect();
-            userTexture.setMSAADirty(0, 0, 0, 0);
+            assert (userTexture.needsResolve());
+            msaaRect = userTexture.getResolveRect();
+            userTexture.setResolveRect(0, 0, 0, 0);
         }
 
         if ((resolveFlags & RESOLVE_FLAG_MIPMAPS) != 0) {
