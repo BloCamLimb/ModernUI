@@ -57,7 +57,7 @@ fun main() {
     check(renderTexture != null) { "Failed to create RT" }
     check(renderTexture.instantiate(dContext.resourceProvider))
 
-    val rt = renderTexture.peekRenderTarget() as GLRenderTarget
+    val rt = renderTexture.getGpuRenderTarget() as GLRenderTarget
     println(rt)
     println(rt.stencilBuffer)
     println(rt.sampleFramebuffer)

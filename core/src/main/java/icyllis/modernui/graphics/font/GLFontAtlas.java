@@ -164,10 +164,6 @@ public class GLFontAtlas implements AutoCloseable {
         if (!res) {
             ModernUI.LOGGER.warn(GlyphManager.MARKER, "Failed to write glyph pixels");
         }
-        res = mContext.getDevice().generateMipmaps(mTexture);
-        if (!res) {
-            ModernUI.LOGGER.warn(GlyphManager.MARKER, "Failed to generate glyph mipmaps");
-        }
 
         // exclude border
         glyph.u1 = (float) (rect.mLeft + GlyphManager.GLYPH_BORDER) / mWidth;
@@ -230,7 +226,7 @@ public class GLFontAtlas implements AutoCloseable {
                 ModernUI.LOGGER.warn(GlyphManager.MARKER, "Failed to copy to new texture");
             }
 
-            mTexture = GPUResource.move(mTexture, newTexture);
+            mTexture = GpuResource.move(mTexture, newTexture);
 
             if (vertical) {
                 //mTexture.clear(0, 0, mHeight >> 1, mWidth, mHeight >> 1);
@@ -355,7 +351,7 @@ public class GLFontAtlas implements AutoCloseable {
 
     @Override
     public void close() {
-        mTexture = GPUResource.move(mTexture);
+        mTexture = GpuResource.move(mTexture);
     }
 
     public int getGlyphCount() {

@@ -91,7 +91,7 @@ public class TestJ2D {
 
         g2d.setColor(Color.white);
         g2d.setBackground(Color.black);
-        g2d.clearRect(0, 0, 800, 450);
+        g2d.clearRect(0, 0, 800, 225);
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
         g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_OFF);
@@ -103,7 +103,7 @@ public class TestJ2D {
 
         Font font = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
         font = Font.createFonts(new File("E:\\Free Fonts\\biliw.otf"))[0];
-        font = font.deriveFont(12f);
+        font = font.deriveFont(8f);
         //font = new Font("Nirmala Text", Font.PLAIN, 16);
 
         String s = "Microsoft ClearType antialiasing";
@@ -137,18 +137,28 @@ public class TestJ2D {
         //printGlyphVector(gv2);
 
         g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
-        //g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+        g2d.setRenderingHint(RenderingHints.KEY_TEXT_LCD_CONTRAST, 100);
+        g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
         var gv5 = font.layoutGlyphVector(g2d.getFontRenderContext(),
                 s.toCharArray(), 0, s.length(), Font.LAYOUT_LEFT_TO_RIGHT);
         g2d.drawGlyphVector(gv5, 2, 88);
 
         //printGlyphVector(gv5);
 
-        g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_OFF);
-        //g2d.setRenderingHint(RenderingHints.KEY_TEXT_LCD_CONTRAST, 120);
+        g2d.setColor(Color.gray);
         var gv7 = font.layoutGlyphVector(g2d.getFontRenderContext(),
                 s.toCharArray(), 0, s.length(), Font.LAYOUT_LEFT_TO_RIGHT);
         g2d.drawGlyphVector(gv7, 2, 106);
+
+        g2d.setBackground(Color.gray);
+        g2d.clearRect(0, 225, 800, 225);
+
+        g2d.setColor(Color.black);
+        g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+        drawText(g2d, font, s.toCharArray(), 250);
+
+        g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_OFF);
+        drawText(g2d, font, s.toCharArray(), 270);
 
 
         font = new Font("SimSun", Font.PLAIN, 16);
@@ -190,6 +200,12 @@ public class TestJ2D {
         }
 
         ImageIO.write(bm, "png", new File("F:/testj2d.png"));
+    }
+
+    public static void drawText(Graphics2D g2d, Font font, char[] text, int y) {
+        var gv = font.layoutGlyphVector(g2d.getFontRenderContext(),
+                text, 0, text.length, Font.LAYOUT_LEFT_TO_RIGHT);
+        g2d.drawGlyphVector(gv, 2, y);
     }
 
     public static void printGlyphVector(GlyphVector gv) {

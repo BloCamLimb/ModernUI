@@ -18,7 +18,7 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.arc3d.engine.GPUResource;
+import icyllis.arc3d.engine.GpuResource;
 import icyllis.arc3d.engine.ISurface;
 import icyllis.arc3d.opengl.*;
 import icyllis.modernui.core.Core;
@@ -206,8 +206,8 @@ public final class GLSurface implements AutoCloseable {
         }
         mFramebuffer = 0;
         for (int i = 0; i < NUM_RENDER_TARGETS; i++) {
-            mColorAttachments[i] = GPUResource.move(mColorAttachments[i]);
+            mColorAttachments[i] = GpuResource.move(mColorAttachments[i]);
         }
-        mStencilAttachment = GPUResource.move(mStencilAttachment);
+        mStencilAttachment = GpuResource.move(mStencilAttachment);
     }
 }
