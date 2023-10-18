@@ -26,11 +26,7 @@ import icyllis.modernui.view.LayoutInflater
 import icyllis.modernui.view.View
 import icyllis.modernui.view.View.OnFocusChangeListener
 import icyllis.modernui.view.ViewGroup
-import icyllis.modernui.viewpager.widget.LinearPagerIndicator
-import icyllis.modernui.viewpager.widget.PagerAdapter
-import icyllis.modernui.viewpager.widget.ViewPager
-import icyllis.modernui.widget.FrameLayout
-import icyllis.modernui.widget.TextView
+import icyllis.modernui.widget.*
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.core.config.Configurator
 

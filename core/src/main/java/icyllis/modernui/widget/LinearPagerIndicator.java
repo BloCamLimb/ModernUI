@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.viewpager.widget;
+package icyllis.modernui.widget;
 
 import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.annotation.NonNull;
@@ -25,7 +25,9 @@ import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.util.DataSetObserver;
 import icyllis.modernui.view.View;
+import org.jetbrains.annotations.ApiStatus;
 
+@ApiStatus.Internal
 public class LinearPagerIndicator extends View {
 
     private float mLineWidth = 6;

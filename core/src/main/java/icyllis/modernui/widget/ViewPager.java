@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.viewpager.widget;
+package icyllis.modernui.widget;
 
 import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.annotation.*;
@@ -27,8 +27,6 @@ import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.util.DataSetObserver;
 import icyllis.modernui.view.*;
-import icyllis.modernui.widget.EdgeEffect;
-import icyllis.modernui.widget.OverScroller;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
