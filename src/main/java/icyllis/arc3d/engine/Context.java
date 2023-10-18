@@ -40,7 +40,7 @@ public abstract class Context extends RefCnt {
     /**
      * The 3D API backing this context.
      *
-     * @return see {@link GPUDevice.BackendApi}
+     * @return see {@link GpuDevice.BackendApi}
      */
     public final int getBackend() {
         return mContextInfo.getBackend();

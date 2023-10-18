@@ -32,7 +32,7 @@ import javax.annotation.Nullable;
 public final class RenderTexture extends Texture {
 
     private final int mSampleCount;
-    private final Rect2i mMSAADirtyRect = new Rect2i();
+    private final Rect2i mResolveRect = new Rect2i();
 
     // Deferred version - no data
     RenderTexture(BackendFormat format,
@@ -60,31 +60,31 @@ public final class RenderTexture extends Texture {
 
     @Nullable
     @Override
-    public GPURenderTarget peekGPURenderTarget() {
-        return mGPUTexture != null ? mGPUTexture.asRenderTarget() : null;
+    public GpuRenderTarget getGpuRenderTarget() {
+        return mGpuTexture != null ? mGpuTexture.asRenderTarget() : null;
     }
 
     @Override
-    public void setMSAADirty(int left, int top, int right, int bottom) {
+    public void setResolveRect(int left, int top, int right, int bottom) {
         assert isManualMSAAResolve();
         if (left == 0 && top == 0 && right == 0 && bottom == 0) {
-            mMSAADirtyRect.setEmpty();
+            mResolveRect.setEmpty();
         } else {
             assert right > left && bottom > top;
             assert left >= 0 && right <= getBackingWidth() && top >= 0 && bottom <= getBackingHeight();
-            mMSAADirtyRect.join(left, top, right, bottom);
+            mResolveRect.join(left, top, right, bottom);
         }
     }
 
     @Override
-    public boolean isMSAADirty() {
-        assert mMSAADirtyRect.isEmpty() || isManualMSAAResolve();
-        return isManualMSAAResolve() && !mMSAADirtyRect.isEmpty();
+    public boolean needsResolve() {
+        assert mResolveRect.isEmpty() || isManualMSAAResolve();
+        return isManualMSAAResolve() && !mResolveRect.isEmpty();
     }
 
     @Override
-    public Rect2i getMSAADirtyRect() {
+    public Rect2i getResolveRect() {
         assert isManualMSAAResolve();
-        return mMSAADirtyRect;
+        return mResolveRect;
     }
 }

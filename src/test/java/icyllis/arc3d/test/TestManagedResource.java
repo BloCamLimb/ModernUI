@@ -21,7 +21,7 @@ package icyllis.arc3d.test;
 
 import icyllis.arc3d.core.MathUtil;
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.engine.IGPUSurface;
+import icyllis.arc3d.engine.IGpuSurface;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.geom.SDFRoundRectGeoProc;
 import icyllis.arc3d.opengl.*;
@@ -305,7 +305,7 @@ public class TestManagedResource {
         Texture target = dContext.getSurfaceProvider().createRenderTexture(
                 GLBackendFormat.make(GLCore.GL_RGBA8),
                 800, 800, 4,
-                IGPUSurface.FLAG_BUDGETED | IGPUSurface.FLAG_RENDERABLE
+                IGpuSurface.FLAG_BUDGETED | IGpuSurface.FLAG_RENDERABLE
         );
         Objects.requireNonNull(target);
         GLGraphicsPipelineState pso = (GLGraphicsPipelineState) dContext.findOrCreateGraphicsPipelineState(
@@ -334,12 +334,12 @@ public class TestManagedResource {
             assert pixels != null;
             pw.println("Image Bytes: " + pixels.remaining());
 
-            GPUTexture texture = dContext.getDevice().createTexture(
+            GpuTexture texture = dContext.getDevice().createTexture(
                     x[0], y[0],
                     GLBackendFormat.make(GLCore.GL_RGBA8),
-                    1, IGPUSurface.FLAG_MIPMAPPED |
-                            IGPUSurface.FLAG_BUDGETED |
-                            IGPUSurface.FLAG_RENDERABLE,
+                    1, IGpuSurface.FLAG_MIPMAPPED |
+                            IGpuSurface.FLAG_BUDGETED |
+                            IGpuSurface.FLAG_RENDERABLE,
                     "MyTexture");
             if (texture != null) {
                 pw.println(texture);
@@ -349,9 +349,9 @@ public class TestManagedResource {
             texture = dContext.getResourceProvider().createTexture(
                     x[0], y[0],
                     GLBackendFormat.make(GLCore.GL_RGBA8),
-                    1, IGPUSurface.FLAG_MIPMAPPED |
-                            IGPUSurface.FLAG_BUDGETED |
-                            IGPUSurface.FLAG_RENDERABLE,
+                    1, IGpuSurface.FLAG_MIPMAPPED |
+                            IGpuSurface.FLAG_BUDGETED |
+                            IGpuSurface.FLAG_RENDERABLE,
                     ImageInfo.CT_RGBA_8888,
                     ImageInfo.CT_RGBA_8888,
                     0,

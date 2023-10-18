@@ -27,21 +27,26 @@ import javax.annotation.Nullable;
 import java.util.Objects;
 
 /**
- * The {@link Texture} targets an actual {@link GPUTexture} with three instantiation
- * methods: deferred, lazy-callback and wrapped.
+ * The {@link Texture} targets an actual {@link GpuTexture} with three instantiation
+ * methods: deferred, lazy-callback and wrapped. Multiple {@link Texture} objects
+ * may target the same {@link GpuTexture} based on dependencies and actual usage.
+ * See {@link Surface} for more info.
  * <p>
  * Use {@link SurfaceProvider} to obtain {@link Texture} objects.
+ * <p>
+ * This class can only be used on the creating thread of/on a single {@link RecordingContext},
+ * and later used by {@link DirectContext} (render thread).
  */
 public class Texture extends Surface {
 
     boolean mIsPromiseProxy = false;
 
     /**
-     * For deferred proxies it will be null until the proxy is instantiated.
-     * For wrapped proxies it will point to the wrapped resource.
+     * For deferred textures it will be null until the backing store is instantiated.
+     * For wrapped textures it will point to the wrapped resource.
      */
     @SharedPtr
-    GPUTexture mGPUTexture;
+    GpuTexture mGpuTexture;
 
     /**
      * This tracks the mipmap status at the proxy level and is thus somewhat distinct from the
@@ -86,7 +91,7 @@ public class Texture extends Surface {
         // So fully lazy proxies are created with width and height < 0. Regular lazy proxies must be
         // created with positive widths and heights. The width and height are set to 0 only after a
         // failed instantiation. The former must be "approximate" fit while the latter can be either.
-        assert (width < 0 && height < 0 && (surfaceFlags & IGPUSurface.FLAG_APPROX_FIT) != 0) ||
+        assert (width < 0 && height < 0 && (surfaceFlags & IGpuSurface.FLAG_APPROX_FIT) != 0) ||
                 (width > 0 && height > 0);
     }
 
@@ -97,18 +102,18 @@ public class Texture extends Surface {
      * in allocation by having its backing resource recycled to other uninstantiated proxies or
      * not depending on UseAllocator.
      */
-    public Texture(@SharedPtr GPUTexture texture,
+    public Texture(@SharedPtr GpuTexture texture,
                    int surfaceFlags) {
         super(texture, surfaceFlags);
         mMipmapsDirty = texture.isMipmapped() && texture.isMipmapsDirty();
-        assert (mSurfaceFlags & IGPUSurface.FLAG_APPROX_FIT) == 0;
+        assert (mSurfaceFlags & IGpuSurface.FLAG_APPROX_FIT) == 0;
         assert (mFormat.isExternal() == texture.isExternal());
-        assert (texture.isMipmapped()) == ((mSurfaceFlags & IGPUSurface.FLAG_MIPMAPPED) != 0);
-        assert (texture.getBudgetType() == Engine.BudgetType.Budgeted) == ((mSurfaceFlags & IGPUSurface.FLAG_BUDGETED) != 0);
-        assert (!texture.isExternal()) || ((mSurfaceFlags & IGPUSurface.FLAG_READ_ONLY) != 0);
+        assert (texture.isMipmapped()) == ((mSurfaceFlags & IGpuSurface.FLAG_MIPMAPPED) != 0);
+        assert (texture.getBudgetType() == Engine.BudgetType.Budgeted) == ((mSurfaceFlags & IGpuSurface.FLAG_BUDGETED) != 0);
+        assert (!texture.isExternal()) || ((mSurfaceFlags & IGpuSurface.FLAG_READ_ONLY) != 0);
         assert (texture.getBudgetType() == Engine.BudgetType.Budgeted) == isBudgeted();
         assert (!texture.isExternal() || isReadOnly());
-        mGPUTexture = texture; // std::move
+        mGpuTexture = texture; // std::move
         if (texture.getUniqueKey() != null) {
             assert (texture.getContext() != null);
             mSurfaceProvider = texture.getContext().getSurfaceProvider();
@@ -120,7 +125,7 @@ public class Texture extends Surface {
     protected void deallocate() {
         // Due to the order of cleanup the Texture this proxy may have wrapped may have gone away
         // at this point. Zero out the pointer so the cache invalidation code doesn't try to use it.
-        mGPUTexture = GPUResource.move(mGPUTexture);
+        mGpuTexture = GpuResource.move(mGpuTexture);
 
         if (mLazyInstantiateCallback != null) {
             mLazyInstantiateCallback.close();
@@ -139,17 +144,17 @@ public class Texture extends Surface {
 
     @Override
     public boolean isLazy() {
-        return mGPUTexture == null && mLazyInstantiateCallback != null;
+        return mGpuTexture == null && mLazyInstantiateCallback != null;
     }
 
     @Override
     public int getBackingWidth() {
         assert (!isLazyMost());
-        if (mGPUTexture != null) {
-            return mGPUTexture.getWidth();
+        if (mGpuTexture != null) {
+            return mGpuTexture.getWidth();
         }
-        if ((mSurfaceFlags & IGPUSurface.FLAG_APPROX_FIT) != 0) {
-            return GPUResourceProvider.makeApprox(mWidth);
+        if ((mSurfaceFlags & IGpuSurface.FLAG_APPROX_FIT) != 0) {
+            return ResourceProvider.makeApprox(mWidth);
         }
         return mWidth;
     }
@@ -157,11 +162,11 @@ public class Texture extends Surface {
     @Override
     public int getBackingHeight() {
         assert (!isLazyMost());
-        if (mGPUTexture != null) {
-            return mGPUTexture.getHeight();
+        if (mGpuTexture != null) {
+            return mGpuTexture.getHeight();
         }
-        if ((mSurfaceFlags & IGPUSurface.FLAG_APPROX_FIT) != 0) {
-            return GPUResourceProvider.makeApprox(mHeight);
+        if ((mSurfaceFlags & IGpuSurface.FLAG_APPROX_FIT) != 0) {
+            return ResourceProvider.makeApprox(mHeight);
         }
         return mHeight;
     }
@@ -173,32 +178,32 @@ public class Texture extends Surface {
 
     @Override
     public Object getBackingUniqueID() {
-        if (mGPUTexture != null) {
-            return mGPUTexture;
+        if (mGpuTexture != null) {
+            return mGpuTexture;
         }
         return mUniqueID;
     }
 
     @Override
     public boolean isInstantiated() {
-        return mGPUTexture != null;
+        return mGpuTexture != null;
     }
 
     @Override
-    public boolean instantiate(GPUResourceProvider resourceProvider) {
+    public boolean instantiate(ResourceProvider resourceProvider) {
         if (isLazy()) {
             return false;
         }
-        if (mGPUTexture != null) {
+        if (mGpuTexture != null) {
             assert mUniqueKey == null ||
-                    mGPUTexture.mUniqueKey != null && mGPUTexture.mUniqueKey.equals(mUniqueKey);
+                    mGpuTexture.mUniqueKey != null && mGpuTexture.mUniqueKey.equals(mUniqueKey);
             return true;
         }
 
-        assert ((mSurfaceFlags & IGPUSurface.FLAG_MIPMAPPED) == 0) ||
-                ((mSurfaceFlags & IGPUSurface.FLAG_APPROX_FIT) == 0);
+        assert ((mSurfaceFlags & IGpuSurface.FLAG_MIPMAPPED) == 0) ||
+                ((mSurfaceFlags & IGpuSurface.FLAG_APPROX_FIT) == 0);
 
-        final GPUTexture texture = resourceProvider.createTexture(mWidth, mHeight, mFormat,
+        final GpuTexture texture = resourceProvider.createTexture(mWidth, mHeight, mFormat,
                 getSampleCount(), mSurfaceFlags, "");
         if (texture == null) {
             return false;
@@ -210,32 +215,32 @@ public class Texture extends Surface {
             resourceProvider.assignUniqueKeyToResource(mUniqueKey, texture);
         }
 
-        assert mGPUTexture == null;
+        assert mGpuTexture == null;
         assert texture.getBackendFormat().equals(mFormat);
-        mGPUTexture = texture;
+        mGpuTexture = texture;
 
         return true;
     }
 
     @Override
     public void clear() {
-        assert mGPUTexture != null;
-        mGPUTexture.unref();
-        mGPUTexture = null;
+        assert mGpuTexture != null;
+        mGpuTexture.unref();
+        mGpuTexture = null;
     }
 
     @Override
     public final boolean shouldSkipAllocator() {
-        if ((mSurfaceFlags & IGPUSurface.FLAG_SKIP_ALLOCATOR) != 0) {
+        if ((mSurfaceFlags & IGpuSurface.FLAG_SKIP_ALLOCATOR) != 0) {
             // Usually an atlas or onFlush proxy
             return true;
         }
-        if (mGPUTexture == null) {
+        if (mGpuTexture == null) {
             return false;
         }
         // If this resource is already allocated and not recyclable then the resource allocator does
         // not need to do anything with it.
-        return mGPUTexture.getScratchKey() == null;
+        return mGpuTexture.getScratchKey() == null;
     }
 
     /**
@@ -246,41 +251,41 @@ public class Texture extends Surface {
         return mUniqueKey;
     }
 
-    public void setMSAADirty(int left, int top, int right, int bottom) {
+    public void setResolveRect(int left, int top, int right, int bottom) {
         throw new UnsupportedOperationException();
     }
 
-    public boolean isMSAADirty() {
+    public boolean needsResolve() {
         throw new UnsupportedOperationException();
     }
 
-    public Rect2i getMSAADirtyRect() {
+    public Rect2i getResolveRect() {
         throw new UnsupportedOperationException();
     }
 
     @Override
     public boolean isBackingWrapped() {
-        return mGPUTexture != null && mGPUTexture.isWrapped();
+        return mGpuTexture != null && mGpuTexture.isWrapped();
     }
 
     @Nullable
     @Override
-    public IGPUSurface peekGPUSurface() {
-        return mGPUTexture;
+    public IGpuSurface getGpuSurface() {
+        return mGpuTexture;
     }
 
     @Nullable
     @Override
-    public GPUTexture peekGPUTexture() {
-        return mGPUTexture;
+    public GpuTexture getGpuTexture() {
+        return mGpuTexture;
     }
 
     @Override
     public long getMemorySize() {
         // use user params
-        return GPUTexture.computeSize(mFormat, mWidth, mHeight, getSampleCount(),
-                (mSurfaceFlags & IGPUSurface.FLAG_MIPMAPPED) != 0,
-                (mSurfaceFlags & IGPUSurface.FLAG_APPROX_FIT) != 0);
+        return GpuTexture.computeSize(mFormat, mWidth, mHeight, getSampleCount(),
+                (mSurfaceFlags & IGpuSurface.FLAG_MIPMAPPED) != 0,
+                (mSurfaceFlags & IGpuSurface.FLAG_APPROX_FIT) != 0);
     }
 
     public final boolean isPromiseProxy() {
@@ -295,10 +300,10 @@ public class Texture extends Surface {
      * generation later.
      */
     public boolean isMipmapped() {
-        if (mGPUTexture != null) {
-            return mGPUTexture.isMipmapped();
+        if (mGpuTexture != null) {
+            return mGpuTexture.isMipmapped();
         }
-        return (mSurfaceFlags & IGPUSurface.FLAG_MIPMAPPED) != 0;
+        return (mSurfaceFlags & IGpuSurface.FLAG_MIPMAPPED) != 0;
     }
 
     public final boolean isMipmapsDirty() {
@@ -315,7 +320,7 @@ public class Texture extends Surface {
      * been instantiated or not.
      */
     public final boolean isUserMipmapped() {
-        return (mSurfaceFlags & IGPUSurface.FLAG_MIPMAPPED) != 0;
+        return (mSurfaceFlags & IGpuSurface.FLAG_MIPMAPPED) != 0;
     }
 
     /**
@@ -326,39 +331,39 @@ public class Texture extends Surface {
     }
 
     /**
-     * Same as {@link GPUTexture.ScratchKey} for {@link GPUSurfaceAllocator}.
+     * Same as {@link GpuTexture.ScratchKey} for {@link SurfaceAllocator}.
      */
     @Override
     public int hashCode() {
         int result = getBackingWidth();
         result = 31 * result + getBackingHeight();
         result = 31 * result + mFormat.getFormatKey();
-        result = 31 * result + ((mSurfaceFlags & (IGPUSurface.FLAG_RENDERABLE | IGPUSurface.FLAG_PROTECTED)) |
-                (isMipmapped() ? IGPUSurface.FLAG_MIPMAPPED : 0));
+        result = 31 * result + ((mSurfaceFlags & (IGpuSurface.FLAG_RENDERABLE | IGpuSurface.FLAG_PROTECTED)) |
+                (isMipmapped() ? IGpuSurface.FLAG_MIPMAPPED : 0));
         return result;
     }
 
     /**
-     * Same as {@link GPUTexture.ScratchKey} for {@link GPUSurfaceAllocator}.
+     * Same as {@link GpuTexture.ScratchKey} for {@link SurfaceAllocator}.
      */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o instanceof GPUTexture.ScratchKey key) {
+        if (o instanceof GpuTexture.ScratchKey key) {
             // ResourceProvider
             return key.mWidth == getBackingWidth() &&
                     key.mHeight == getBackingHeight() &&
                     key.mFormat == mFormat.getFormatKey() &&
-                    key.mFlags == ((mSurfaceFlags & (IGPUSurface.FLAG_RENDERABLE | IGPUSurface.FLAG_PROTECTED)) |
-                            (isMipmapped() ? IGPUSurface.FLAG_MIPMAPPED : 0));
+                    key.mFlags == ((mSurfaceFlags & (IGpuSurface.FLAG_RENDERABLE | IGpuSurface.FLAG_PROTECTED)) |
+                            (isMipmapped() ? IGpuSurface.FLAG_MIPMAPPED : 0));
         } else if (o instanceof Texture proxy) {
             // ResourceAllocator
             return proxy.getBackingWidth() == getBackingWidth() &&
                     proxy.getBackingHeight() == getBackingHeight() &&
                     proxy.mFormat.getFormatKey() == mFormat.getFormatKey() &&
                     proxy.isMipmapped() == isMipmapped() &&
-                    (proxy.mSurfaceFlags & (IGPUSurface.FLAG_RENDERABLE | IGPUSurface.FLAG_PROTECTED)) ==
-                            (mSurfaceFlags & (IGPUSurface.FLAG_RENDERABLE | IGPUSurface.FLAG_PROTECTED));
+                    (proxy.mSurfaceFlags & (IGpuSurface.FLAG_RENDERABLE | IGpuSurface.FLAG_PROTECTED)) ==
+                            (mSurfaceFlags & (IGpuSurface.FLAG_RENDERABLE | IGpuSurface.FLAG_PROTECTED));
         }
         return false;
     }
@@ -369,13 +374,13 @@ public class Texture extends Surface {
     }
 
     @ApiStatus.Internal
-    public final void makeProxyExact(boolean allocatedCaseOnly) {
+    public final void makeUserExact(boolean allocatedCaseOnly) {
         assert !isLazyMost();
-        if ((mSurfaceFlags & IGPUSurface.FLAG_APPROX_FIT) == 0) {
+        if ((mSurfaceFlags & IGpuSurface.FLAG_APPROX_FIT) == 0) {
             return;
         }
 
-        final GPUTexture texture = peekGPUTexture();
+        final GpuTexture texture = getGpuTexture();
         if (texture != null) {
             // The Approx but already instantiated case. Setting the proxy's width & height to
             // the instantiated width & height could have side-effects going forward, since we're
@@ -398,7 +403,7 @@ public class Texture extends Surface {
 
         // The Approx uninstantiated case. Making this proxy be exact should be okay.
         // It could mess things up if prior decisions were based on the approximate size.
-        mSurfaceFlags &= ~IGPUSurface.FLAG_APPROX_FIT;
+        mSurfaceFlags &= ~IGpuSurface.FLAG_APPROX_FIT;
         // If GpuMemorySize is used when caching specialImages for the image filter DAG. If it has
         // already been computed we want to leave it alone so that amount will be removed when
         // the special image goes away. If it hasn't been computed yet it might as well compute the
@@ -418,11 +423,11 @@ public class Texture extends Surface {
     }
 
     @SharedPtr
-    GPUTexture createGPUTexture(GPUResourceProvider resourceProvider) {
-        assert ((mSurfaceFlags & IGPUSurface.FLAG_MIPMAPPED) == 0 ||
-                (mSurfaceFlags & IGPUSurface.FLAG_APPROX_FIT) == 0);
+    GpuTexture createGpuTexture(ResourceProvider resourceProvider) {
+        assert ((mSurfaceFlags & IGpuSurface.FLAG_MIPMAPPED) == 0 ||
+                (mSurfaceFlags & IGpuSurface.FLAG_APPROX_FIT) == 0);
         assert !isLazy();
-        assert mGPUTexture == null;
+        assert mGpuTexture == null;
 
         return resourceProvider.createTexture(mWidth, mHeight,
                 mFormat,
@@ -432,11 +437,11 @@ public class Texture extends Surface {
     }
 
     @Override
-    public final boolean doLazyInstantiation(GPUResourceProvider resourceProvider) {
+    public final boolean doLazyInstantiation(ResourceProvider resourceProvider) {
         assert isLazy();
 
         @SharedPtr
-        GPUTexture textureResource = null;
+        GpuTexture textureResource = null;
         if (mUniqueKey != null) {
             textureResource = resourceProvider.findByUniqueKey(mUniqueKey);
         }
@@ -453,7 +458,7 @@ public class Texture extends Surface {
                     mSurfaceFlags,
                     "");
             if (result != null) {
-                textureResource = (GPUTexture) result.mSurface;
+                textureResource = (GpuTexture) result.mSurface;
                 syncTargetKey = result.mSyncTargetKey;
                 releaseCallback = result.mReleaseCallback;
             }
@@ -489,8 +494,8 @@ public class Texture extends Surface {
             }
         }
 
-        assert mGPUTexture == null;
-        mGPUTexture = textureResource;
+        assert mGpuTexture == null;
+        mGpuTexture = textureResource;
         if (releaseCallback) {
             mLazyInstantiateCallback.close();
             mLazyInstantiateCallback = null;

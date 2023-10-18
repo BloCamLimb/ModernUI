@@ -21,7 +21,7 @@ package icyllis.arc3d.engine;
 
 public final class ThreadSafeCache {
 
-    public void dropUniqueRefs(GPUResourceCache resourceCache) {
+    public void dropUniqueRefs(ResourceCache resourceCache) {
 
     }
 

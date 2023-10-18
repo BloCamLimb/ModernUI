@@ -139,7 +139,7 @@ public class GLGraphicsPipelineState extends GraphicsPipelineState {
                                 Texture[] geomTextures) {
         int unit = 0;
         for (int i = 0, n = pipelineInfo.geomProc().numTextureSamplers(); i < n; i++) {
-            GLTexture texture = (GLTexture) geomTextures[i].peekGPUTexture();
+            GLTexture texture = (GLTexture) geomTextures[i].getGpuTexture();
             commandBuffer.bindTexture(unit++, texture,
                     pipelineInfo.geomProc().textureSamplerState(i),
                     pipelineInfo.geomProc().textureSamplerSwizzle(i));
@@ -153,10 +153,10 @@ public class GLGraphicsPipelineState extends GraphicsPipelineState {
     /**
      * Binds all geometric buffers.
      */
-    public void bindBuffers(@Nullable GPUBuffer indexBuffer,
-                            @Nullable GPUBuffer vertexBuffer,
+    public void bindBuffers(@Nullable GpuBuffer indexBuffer,
+                            @Nullable GpuBuffer vertexBuffer,
                             long vertexOffset,
-                            @Nullable GPUBuffer instanceBuffer,
+                            @Nullable GpuBuffer instanceBuffer,
                             long instanceOffset) {
         if (indexBuffer != null) {
             bindIndexBuffer((GLBuffer) indexBuffer);

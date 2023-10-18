@@ -22,9 +22,9 @@ package icyllis.arc3d.engine;
 /**
  * The subclass that supports recycling.
  */
-public abstract class GPURecycledResource extends GPUManagedResource {
+public abstract class RecycledResource extends ManagedResource {
 
-    public GPURecycledResource(GPUDevice device) {
+    public RecycledResource(GpuDevice device) {
         super(device);
     }
 

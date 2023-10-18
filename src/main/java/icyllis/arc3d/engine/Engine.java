@@ -360,7 +360,7 @@ public interface Engine {
     /**
      * Budget types. Used with resources that have a large memory allocation.
      *
-     * @see GPUResource
+     * @see GpuResource
      */
     // @formatter:off
     interface BudgetType {

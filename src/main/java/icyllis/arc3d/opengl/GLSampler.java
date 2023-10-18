@@ -20,7 +20,7 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.SharedPtr;
-import icyllis.arc3d.engine.GPUManagedResource;
+import icyllis.arc3d.engine.ManagedResource;
 import icyllis.arc3d.engine.SamplerState;
 import org.lwjgl.opengl.GL46C;
 
@@ -31,7 +31,7 @@ import static icyllis.arc3d.opengl.GLCore.*;
 /**
  * Represents OpenGL sampler objects.
  */
-public final class GLSampler extends GPUManagedResource {
+public final class GLSampler extends ManagedResource {
 
     private int mSampler;
 

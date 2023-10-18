@@ -168,7 +168,7 @@ public abstract class RenderTask extends RefCnt {
         assert (mFlags & DETACHED_FLAG) != 0;
     }
 
-    public void gatherSurfaceIntervals(GPUSurfaceAllocator alloc) {
+    public void gatherSurfaceIntervals(SurfaceAllocator alloc) {
         // Default implementation is no surfaces
     }
 
@@ -292,7 +292,7 @@ public abstract class RenderTask extends RefCnt {
 
         int resolveFlags = 0;
 
-        if (dependency.isManualMSAAResolve() && dependency.isMSAADirty()) {
+        if (dependency.isManualMSAAResolve() && dependency.needsResolve()) {
             resolveFlags |= RESOLVE_FLAG_MSAA;
         }
 
@@ -316,7 +316,7 @@ public abstract class RenderTask extends RefCnt {
                     mTextureResolveTask.dependsOn(dependencyTask));
 
             assert (!dependency.isManualMSAAResolve() ||
-                    !dependency.isMSAADirty());
+                    !dependency.needsResolve());
             assert (!dependency.isMipmapped() ||
                     !dependency.isMipmapsDirty());
             return;
@@ -341,7 +341,7 @@ public abstract class RenderTask extends RefCnt {
             if (!target.isInstantiated()) {
                 return false;
             }
-            GPUTexture texture = target.peekGPUTexture();
+            GpuTexture texture = target.getGpuTexture();
             if (texture != null && texture.isDestroyed()) {
                 return false;
             }

@@ -24,7 +24,7 @@ import icyllis.arc3d.core.RefCnt;
 /**
  * Base class for operating GPU resources that may be shared by multiple
  * objects, in particular objects that are tracked by a command buffer.
- * Unlike {@link GPUResource}, these resources will not have a large memory
+ * Unlike {@link GpuResource}, these resources will not have a large memory
  * allocation, but a set of constant states instead. When an existing owner
  * wants to share a reference, it calls {@link #ref()}. When an owner wants
  * to release its reference, it calls {@link #unref()}. When the shared
@@ -33,15 +33,15 @@ import icyllis.arc3d.core.RefCnt;
  * to be called explicitly (or via the object going out of scope on the
  * stack or calling {@link #deallocate()}) if {@link #getRefCnt()} > 1.
  */
-public abstract class GPUManagedResource extends RefCnt {
+public abstract class ManagedResource extends RefCnt {
 
-    private final GPUDevice mDevice;
+    private final GpuDevice mDevice;
 
-    public GPUManagedResource(GPUDevice device) {
+    public ManagedResource(GpuDevice device) {
         mDevice = device;
     }
 
-    protected GPUDevice getDevice() {
+    protected GpuDevice getDevice() {
         return mDevice;
     }
 }

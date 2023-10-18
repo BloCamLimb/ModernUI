@@ -26,17 +26,17 @@ import javax.annotation.Nullable;
 /**
  * Provides resources with cache.
  */
-public class GPUResourceProvider {
+public class ResourceProvider {
 
     public static final int MIN_SCRATCH_TEXTURE_SIZE = 16;
 
-    private final GPUDevice mDevice;
+    private final GpuDevice mDevice;
     private final DirectContext mContext;
 
     // lookup key
-    private final GPUTexture.ScratchKey mTextureScratchKey = new GPUTexture.ScratchKey();
+    private final GpuTexture.ScratchKey mTextureScratchKey = new GpuTexture.ScratchKey();
 
-    protected GPUResourceProvider(GPUDevice device, DirectContext context) {
+    protected ResourceProvider(GpuDevice device, DirectContext context) {
         mDevice = device;
         mContext = context;
     }
@@ -71,14 +71,14 @@ public class GPUResourceProvider {
     /**
      * Finds a resource in the cache, based on the specified key. Prior to calling this, the caller
      * must be sure that if a resource of exists in the cache with the given unique key then it is
-     * of type T. If the resource is no longer used, then {@link GPUResource#unref()} must be called.
+     * of type T. If the resource is no longer used, then {@link GpuResource#unref()} must be called.
      *
      * @param key the resource unique key
      */
     @Nullable
     @SharedPtr
     @SuppressWarnings("unchecked")
-    public final <T extends GPUResource> T findByUniqueKey(Object key) {
+    public final <T extends GpuResource> T findByUniqueKey(Object key) {
         assert mDevice.getContext().isOwnerThread();
         return mDevice.getContext().isDiscarded() ? null :
                 (T) mContext.getResourceCache().findAndRefUniqueResource(key);
@@ -91,23 +91,23 @@ public class GPUResourceProvider {
      * Finds or creates a texture that matches the descriptor. The texture's format will always
      * match the request. The contents of the texture are undefined.
      * <p>
-     * When {@link IGPUSurface#FLAG_BUDGETED} is set, the texture will count against the resource
-     * cache budget. If {@link IGPUSurface#FLAG_APPROX_FIT} is also set, it's always budgeted.
+     * When {@link IGpuSurface#FLAG_BUDGETED} is set, the texture will count against the resource
+     * cache budget. If {@link IGpuSurface#FLAG_APPROX_FIT} is also set, it's always budgeted.
      * <p>
-     * When {@link IGPUSurface#FLAG_APPROX_FIT} is set, the method returns a potentially approx fit
+     * When {@link IGpuSurface#FLAG_APPROX_FIT} is set, the method returns a potentially approx fit
      * texture that approximately matches the descriptor. Will be at least as large in width and
-     * height as desc specifies. In this case, {@link IGPUSurface#FLAG_MIPMAPPED} and
-     * {@link IGPUSurface#FLAG_BUDGETED} are ignored. Otherwise, the method returns an exact fit
+     * height as desc specifies. In this case, {@link IGpuSurface#FLAG_MIPMAPPED} and
+     * {@link IGpuSurface#FLAG_BUDGETED} are ignored. Otherwise, the method returns an exact fit
      * texture.
      * <p>
-     * When {@link IGPUSurface#FLAG_MIPMAPPED} is set, the texture will be allocated with mipmaps.
-     * If {@link IGPUSurface#FLAG_APPROX_FIT} is also set, it always has no mipmaps.
+     * When {@link IGpuSurface#FLAG_MIPMAPPED} is set, the texture will be allocated with mipmaps.
+     * If {@link IGpuSurface#FLAG_APPROX_FIT} is also set, it always has no mipmaps.
      * <p>
-     * When {@link IGPUSurface#FLAG_RENDERABLE} is set, the texture can be rendered to and
-     * {@link IGPUSurface#asRenderTarget()} will return nonnull. The <code>sampleCount</code>
+     * When {@link IGpuSurface#FLAG_RENDERABLE} is set, the texture can be rendered to and
+     * {@link IGpuSurface#asRenderTarget()} will return nonnull. The <code>sampleCount</code>
      * specifies the number of samples to use for rendering.
      * <p>
-     * When {@link IGPUSurface#FLAG_PROTECTED} is set, the texture will be created as protected.
+     * When {@link IGpuSurface#FLAG_PROTECTED} is set, the texture will be created as protected.
      *
      * @param width        the desired width of the texture to be created
      * @param height       the desired height of the texture to be created
@@ -117,15 +117,15 @@ public class GPUResourceProvider {
      * @param surfaceFlags the combination of the above flags
      * @param label        the label for debugging purposes, can be empty to clear the label,
      *                     or null to leave the label unchanged
-     * @see IGPUSurface#FLAG_BUDGETED
-     * @see IGPUSurface#FLAG_APPROX_FIT
-     * @see IGPUSurface#FLAG_MIPMAPPED
-     * @see IGPUSurface#FLAG_RENDERABLE
-     * @see IGPUSurface#FLAG_PROTECTED
+     * @see IGpuSurface#FLAG_BUDGETED
+     * @see IGpuSurface#FLAG_APPROX_FIT
+     * @see IGpuSurface#FLAG_MIPMAPPED
+     * @see IGpuSurface#FLAG_RENDERABLE
+     * @see IGpuSurface#FLAG_PROTECTED
      */
     @Nullable
     @SharedPtr
-    public final GPUTexture createTexture(int width, int height,
+    public final GpuTexture createTexture(int width, int height,
                                           BackendFormat format,
                                           int sampleCount,
                                           int surfaceFlags,
@@ -144,17 +144,17 @@ public class GPUResourceProvider {
             return null;
         }
 
-        if ((surfaceFlags & IGPUSurface.FLAG_APPROX_FIT) != 0) {
+        if ((surfaceFlags & IGpuSurface.FLAG_APPROX_FIT) != 0) {
             width = makeApprox(width);
             height = makeApprox(height);
-            surfaceFlags &= IGPUSurface.FLAG_RENDERABLE | IGPUSurface.FLAG_PROTECTED;
-            surfaceFlags |= IGPUSurface.FLAG_BUDGETED;
+            surfaceFlags &= IGpuSurface.FLAG_RENDERABLE | IGpuSurface.FLAG_PROTECTED;
+            surfaceFlags |= IGpuSurface.FLAG_BUDGETED;
         }
 
-        final GPUTexture texture = findAndRefScratchTexture(width, height, format,
+        final GpuTexture texture = findAndRefScratchTexture(width, height, format,
                 sampleCount, surfaceFlags, label);
         if (texture != null) {
-            if ((surfaceFlags & IGPUSurface.FLAG_BUDGETED) == 0) {
+            if ((surfaceFlags & IGpuSurface.FLAG_BUDGETED) == 0) {
                 texture.makeBudgeted(false);
             }
             return texture;
@@ -182,15 +182,15 @@ public class GPUResourceProvider {
      * @param pixels       the pointer to the texel data for base level image
      * @param label        the label for debugging purposes, can be empty to clear the label,
      *                     or null to leave the label unchanged
-     * @see IGPUSurface#FLAG_BUDGETED
-     * @see IGPUSurface#FLAG_APPROX_FIT
-     * @see IGPUSurface#FLAG_MIPMAPPED
-     * @see IGPUSurface#FLAG_RENDERABLE
-     * @see IGPUSurface#FLAG_PROTECTED
+     * @see IGpuSurface#FLAG_BUDGETED
+     * @see IGpuSurface#FLAG_APPROX_FIT
+     * @see IGpuSurface#FLAG_MIPMAPPED
+     * @see IGpuSurface#FLAG_RENDERABLE
+     * @see IGpuSurface#FLAG_PROTECTED
      */
     @Nullable
     @SharedPtr
-    public final GPUTexture createTexture(int width, int height,
+    public final GpuTexture createTexture(int width, int height,
                                           BackendFormat format,
                                           int sampleCount,
                                           int surfaceFlags,
@@ -222,7 +222,7 @@ public class GPUResourceProvider {
             return null;
         }
 
-        final GPUTexture texture = createTexture(width, height, format,
+        final GpuTexture texture = createTexture(width, height, format,
                 sampleCount, surfaceFlags, label);
         if (texture == null) {
             return null;
@@ -246,18 +246,18 @@ public class GPUResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public final GPUTexture findAndRefScratchTexture(Object key, String label) {
+    public final GpuTexture findAndRefScratchTexture(Object key, String label) {
         assert mDevice.getContext().isOwnerThread();
         assert !mDevice.getContext().isDiscarded();
         assert key != null;
 
-        GPUResource resource = mContext.getResourceCache().findAndRefScratchResource(key);
+        GpuResource resource = mContext.getResourceCache().findAndRefScratchResource(key);
         if (resource != null) {
             mDevice.getStats().incNumScratchTexturesReused();
             if (label != null) {
                 resource.setLabel(label);
             }
-            return (GPUTexture) resource;
+            return (GpuTexture) resource;
         }
         return null;
     }
@@ -268,13 +268,13 @@ public class GPUResourceProvider {
      *
      * @param label the label for debugging purposes, can be empty to clear the label,
      *              or null to leave the label unchanged
-     * @see IGPUSurface#FLAG_MIPMAPPED
-     * @see IGPUSurface#FLAG_RENDERABLE
-     * @see IGPUSurface#FLAG_PROTECTED
+     * @see IGpuSurface#FLAG_MIPMAPPED
+     * @see IGpuSurface#FLAG_RENDERABLE
+     * @see IGpuSurface#FLAG_PROTECTED
      */
     @Nullable
     @SharedPtr
-    public final GPUTexture findAndRefScratchTexture(int width, int height,
+    public final GpuTexture findAndRefScratchTexture(int width, int height,
                                                      BackendFormat format,
                                                      int sampleCount,
                                                      int surfaceFlags,
@@ -311,7 +311,7 @@ public class GPUResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public final GPUTexture wrapRenderableBackendTexture(BackendTexture texture,
+    public final GpuTexture wrapRenderableBackendTexture(BackendTexture texture,
                                                          int sampleCount,
                                                          boolean ownership) {
         if (mDevice.getContext().isDiscarded()) {
@@ -332,7 +332,7 @@ public class GPUResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public final GPURenderTarget wrapBackendRenderTarget(BackendRenderTarget backendRenderTarget) {
+    public final GpuRenderTarget wrapBackendRenderTarget(BackendRenderTarget backendRenderTarget) {
         if (mDevice.getContext().isDiscarded()) {
             return null;
         }
@@ -345,11 +345,11 @@ public class GPUResourceProvider {
      * @param size  minimum size of buffer to return.
      * @param usage hint to the graphics subsystem about what the buffer will be used for.
      * @return the buffer if successful, otherwise nullptr.
-     * @see GPUDevice.BufferUsageFlags
+     * @see GpuDevice.BufferUsageFlags
      */
     @Nullable
     @SharedPtr
-    public final GPUBuffer createBuffer(int size, int usage) {
+    public final GpuBuffer createBuffer(int size, int usage) {
         if (mDevice.getContext().isDiscarded()) {
             return null;
         }
@@ -357,7 +357,7 @@ public class GPUResourceProvider {
         return mDevice.createBuffer(size, usage);
     }
 
-    public final void assignUniqueKeyToResource(Object key, GPUResource resource) {
+    public final void assignUniqueKeyToResource(Object key, GpuResource resource) {
         assert mDevice.getContext().isOwnerThread();
         if (mDevice.getContext().isDiscarded() || resource == null) {
             return;

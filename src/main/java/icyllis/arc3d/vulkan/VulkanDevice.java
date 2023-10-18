@@ -20,10 +20,10 @@
 package icyllis.arc3d.vulkan;
 
 import icyllis.arc3d.engine.DirectContext;
-import icyllis.arc3d.engine.GPUDevice;
+import icyllis.arc3d.engine.GpuDevice;
 import org.lwjgl.vulkan.VkDevice;
 
-public abstract class VulkanDevice extends GPUDevice {
+public abstract class VulkanDevice extends GpuDevice {
 
     private VkDevice mDevice;
     private boolean mProtectedContext;

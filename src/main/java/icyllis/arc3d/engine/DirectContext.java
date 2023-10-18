@@ -30,9 +30,9 @@ import javax.annotation.Nullable;
  */
 public final class DirectContext extends RecordingContext {
 
-    private GPUDevice mDevice;
-    private GPUResourceCache mResourceCache;
-    private GPUResourceProvider mResourceProvider;
+    private GpuDevice mDevice;
+    private ResourceCache mResourceCache;
+    private ResourceProvider mResourceProvider;
 
     private DirectContext(int backend, ContextOptions options) {
         super(new SharedContextInfo(backend, options));
@@ -136,17 +136,17 @@ public final class DirectContext extends RecordingContext {
     }
 
     @ApiStatus.Internal
-    public GPUDevice getDevice() {
+    public GpuDevice getDevice() {
         return mDevice;
     }
 
     @ApiStatus.Internal
-    public GPUResourceCache getResourceCache() {
+    public ResourceCache getResourceCache() {
         return mResourceCache;
     }
 
     @ApiStatus.Internal
-    public GPUResourceProvider getResourceProvider() {
+    public ResourceProvider getResourceProvider() {
         return mResourceProvider;
     }
 
@@ -164,7 +164,7 @@ public final class DirectContext extends RecordingContext {
 
         assert getThreadSafeCache() != null;
 
-        mResourceCache = new GPUResourceCache(getContextID());
+        mResourceCache = new ResourceCache(getContextID());
         mResourceProvider = mDevice.getResourceProvider();
         return true;
     }

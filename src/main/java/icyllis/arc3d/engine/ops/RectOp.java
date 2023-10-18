@@ -31,10 +31,10 @@ import java.nio.ByteBuffer;
 //TODO
 public class RectOp extends MeshDrawOp {
 
-    private GPUBuffer mVertexBuffer;
+    private GpuBuffer mVertexBuffer;
     private int mBaseVertex;
 
-    private GPUBuffer mInstanceBuffer;
+    private GpuBuffer mInstanceBuffer;
     private int mBaseInstance;
 
     private final int mColor;
@@ -110,14 +110,14 @@ public class RectOp extends MeshDrawOp {
     }
 
     @Override
-    public void setVertexBuffer(@SharedPtr GPUBuffer buffer, int baseVertex, int actualVertexCount) {
+    public void setVertexBuffer(@SharedPtr GpuBuffer buffer, int baseVertex, int actualVertexCount) {
         assert mVertexBuffer == null;
         mVertexBuffer = buffer;
         mBaseVertex = baseVertex;
     }
 
     @Override
-    public void setInstanceBuffer(@SharedPtr GPUBuffer buffer, int baseInstance, int actualInstanceCount) {
+    public void setInstanceBuffer(@SharedPtr GpuBuffer buffer, int baseInstance, int actualInstanceCount) {
         assert mInstanceBuffer == null;
         mInstanceBuffer = buffer;
         mBaseInstance = baseInstance;

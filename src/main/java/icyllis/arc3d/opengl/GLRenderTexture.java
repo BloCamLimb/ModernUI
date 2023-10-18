@@ -22,7 +22,7 @@ package icyllis.arc3d.opengl;
 import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.BackendFormat;
-import icyllis.arc3d.engine.IGPUSurface;
+import icyllis.arc3d.engine.IGpuSurface;
 
 import javax.annotation.Nonnull;
 import java.util.function.Function;
@@ -43,7 +43,7 @@ public final class GLRenderTexture extends GLTexture {
                     Function<GLTexture, GLRenderTarget> function) {
         super(device, width, height, info, format, budgeted, false);
         mRenderTarget = function.apply(this);
-        mFlags |= IGPUSurface.FLAG_RENDERABLE;
+        mFlags |= IGpuSurface.FLAG_RENDERABLE;
 
         registerWithCache(budgeted);
     }

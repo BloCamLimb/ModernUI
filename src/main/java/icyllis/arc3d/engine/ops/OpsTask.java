@@ -82,7 +82,7 @@ public class OpsTask extends RenderTask {
     }
 
     @Override
-    public void gatherSurfaceIntervals(GPUSurfaceAllocator alloc) {
+    public void gatherSurfaceIntervals(SurfaceAllocator alloc) {
         if (!mOpChains.isEmpty()) {
             int cur = alloc.curOp();
             alloc.addInterval(getTarget(), cur, cur + mOpChains.size() - 1, true);
@@ -167,7 +167,7 @@ public class OpsTask extends RenderTask {
                     msaaTop = mContentBounds.mTop;
                     msaaBottom = mContentBounds.mBottom;
                 }
-                userTexture.setMSAADirty(mContentBounds.mLeft, msaaTop,
+                userTexture.setResolveRect(mContentBounds.mLeft, msaaTop,
                         mContentBounds.mRight, msaaBottom);
             }
             if (userTexture.isMipmapped()) {

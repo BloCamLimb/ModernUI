@@ -21,7 +21,7 @@ package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.engine.IGPUSurface;
+import icyllis.arc3d.engine.IGpuSurface;
 import org.lwjgl.opengl.EXTMemoryObject;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.system.Platform;
@@ -34,7 +34,7 @@ import static icyllis.arc3d.opengl.GLCore.*;
 /**
  * Represents OpenGL 2D textures.
  */
-public class GLTexture extends GPUTexture {
+public class GLTexture extends GpuTexture {
 
     private GLTextureInfo mInfo;
     private final GLBackendTexture mBackendTexture;
@@ -57,10 +57,10 @@ public class GLTexture extends GPUTexture {
         mOwnership = true;
 
         if (glFormatIsCompressed(format.getGLFormat()) || format.isExternal()) {
-            mFlags |= IGPUSurface.FLAG_READ_ONLY;
+            mFlags |= IGpuSurface.FLAG_READ_ONLY;
         }
         if (mBackendTexture.isMipmapped()) {
-            mFlags |= IGPUSurface.FLAG_MIPMAPPED;
+            mFlags |= IGpuSurface.FLAG_MIPMAPPED;
         }
 
         mMemorySize = computeSize(format, width, height, 1, info.levels);

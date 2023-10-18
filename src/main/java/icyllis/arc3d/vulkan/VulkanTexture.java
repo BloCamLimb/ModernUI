@@ -26,7 +26,7 @@ import javax.annotation.Nonnull;
 /**
  * Represents Vulkan 2D images, can be used as textures.
  */
-public final class VulkanTexture extends GPUTexture {
+public final class VulkanTexture extends GpuTexture {
 
     public VulkanTexture(VulkanDevice device, int width, int height) {
         super(device, width, height);
@@ -59,7 +59,7 @@ public final class VulkanTexture extends GPUTexture {
     }
 
     @Override
-    public GPURenderTarget asRenderTarget() {
+    public GpuRenderTarget asRenderTarget() {
         return null;
     }
 

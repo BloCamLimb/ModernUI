@@ -37,11 +37,11 @@ public final class GLOpsRenderPass extends OpsRenderPass {
     private float[] mClearColor;
 
     @SharedPtr
-    private GPUBuffer mActiveIndexBuffer;
+    private GpuBuffer mActiveIndexBuffer;
     @SharedPtr
-    private GPUBuffer mActiveVertexBuffer;
+    private GpuBuffer mActiveVertexBuffer;
     @SharedPtr
-    private GPUBuffer mActiveInstanceBuffer;
+    private GpuBuffer mActiveInstanceBuffer;
 
     private int mPrimitiveType;
 
@@ -54,7 +54,7 @@ public final class GLOpsRenderPass extends OpsRenderPass {
         return mDevice;
     }
 
-    public GLOpsRenderPass set(GPURenderTarget rt,
+    public GLOpsRenderPass set(GpuRenderTarget rt,
                                Rect2i bounds, int origin,
                                byte colorOps,
                                byte stencilOps,
@@ -78,9 +78,9 @@ public final class GLOpsRenderPass extends OpsRenderPass {
 
     @Override
     public void end() {
-        mActiveIndexBuffer = GPUResource.move(mActiveIndexBuffer);
-        mActiveVertexBuffer = GPUResource.move(mActiveVertexBuffer);
-        mActiveInstanceBuffer = GPUResource.move(mActiveInstanceBuffer);
+        mActiveIndexBuffer = GpuResource.move(mActiveIndexBuffer);
+        mActiveVertexBuffer = GpuResource.move(mActiveVertexBuffer);
+        mActiveInstanceBuffer = GpuResource.move(mActiveInstanceBuffer);
         GLRenderTarget glRenderTarget = (GLRenderTarget) mRenderTarget;
         mDevice.endRenderPass(glRenderTarget,
                 mColorOps,
@@ -92,9 +92,9 @@ public final class GLOpsRenderPass extends OpsRenderPass {
     protected boolean onBindPipeline(PipelineInfo pipelineInfo,
                                      GraphicsPipelineState pipelineState,
                                      Rect2f drawBounds) {
-        mActiveIndexBuffer = GPUResource.move(mActiveIndexBuffer);
-        mActiveVertexBuffer = GPUResource.move(mActiveVertexBuffer);
-        mActiveInstanceBuffer = GPUResource.move(mActiveInstanceBuffer);
+        mActiveIndexBuffer = GpuResource.move(mActiveIndexBuffer);
+        mActiveVertexBuffer = GpuResource.move(mActiveVertexBuffer);
+        mActiveInstanceBuffer = GpuResource.move(mActiveInstanceBuffer);
 
         mPipelineState = (GLGraphicsPipelineState) pipelineState;
         if (mPipelineState == null) {
@@ -131,9 +131,9 @@ public final class GLOpsRenderPass extends OpsRenderPass {
     }
 
     @Override
-    protected void onBindBuffers(GPUBuffer indexBuffer,
-                                 GPUBuffer vertexBuffer,
-                                 GPUBuffer instanceBuffer) {
+    protected void onBindBuffers(GpuBuffer indexBuffer,
+                                 GpuBuffer vertexBuffer,
+                                 GpuBuffer instanceBuffer) {
         assert (mPipelineState != null);
         if (mDevice.getCaps().hasBaseInstanceSupport()) {
             mPipelineState.bindBuffers(indexBuffer, vertexBuffer, 0, instanceBuffer, 0);
@@ -141,9 +141,9 @@ public final class GLOpsRenderPass extends OpsRenderPass {
             // bind instance buffer on drawInstanced()
             mPipelineState.bindBuffers(indexBuffer, vertexBuffer, 0, null, 0);
         }
-        mActiveIndexBuffer = GPUResource.create(mActiveIndexBuffer, indexBuffer);
-        mActiveVertexBuffer = GPUResource.create(mActiveVertexBuffer, vertexBuffer);
-        mActiveInstanceBuffer = GPUResource.create(mActiveInstanceBuffer, instanceBuffer);
+        mActiveIndexBuffer = GpuResource.create(mActiveIndexBuffer, indexBuffer);
+        mActiveVertexBuffer = GpuResource.create(mActiveVertexBuffer, vertexBuffer);
+        mActiveInstanceBuffer = GpuResource.create(mActiveInstanceBuffer, instanceBuffer);
     }
 
     @Override

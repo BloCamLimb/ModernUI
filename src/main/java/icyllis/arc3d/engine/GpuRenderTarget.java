@@ -25,16 +25,16 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * The {@link GPURenderTarget} manages all objects used by a renderable primary surface,
+ * The {@link GpuRenderTarget} manages all objects used by a renderable primary surface,
  * which are framebuffers, render passes and a set of attachments. This is the target
  * of {@link OpsRenderPass}, and may be associated with {@link icyllis.arc3d.core.Surface}.
  * <p>
- * A {@link GPURenderTarget} is always associated with a renderable primary surface, which
- * can be either a renderable {@link GPUTexture} or a wrapped {@link RenderSurface}.
+ * A {@link GpuRenderTarget} is always associated with a renderable primary surface, which
+ * can be either a renderable {@link GpuTexture} or a wrapped {@link BackendRenderTarget}.
  * This class is used by the pipeline internally. Use {@link RenderTexture}
  * and {@link RenderTarget} for high-level operations.
  */
-public abstract class GPURenderTarget extends GPUManagedResource implements IGPUSurface {
+public abstract class GpuRenderTarget extends ManagedResource implements IGpuSurface {
 
     private final int mWidth;
     private final int mHeight;
@@ -52,7 +52,7 @@ public abstract class GPURenderTarget extends GPUManagedResource implements IGPU
     // determined by subclass constructors
     protected int mSurfaceFlags = FLAG_RENDERABLE;
 
-    protected GPURenderTarget(GPUDevice device,
+    protected GpuRenderTarget(GpuDevice device,
                               int width, int height,
                               int sampleCount) {
         super(device);
@@ -98,10 +98,10 @@ public abstract class GPURenderTarget extends GPUManagedResource implements IGPU
 
     //TODO can we remove texture access?
     @Nullable
-    public abstract GPUTexture asTexture();
+    public abstract GpuTexture asTexture();
 
     @Override
-    public final GPURenderTarget asRenderTarget() {
+    public final GpuRenderTarget asRenderTarget() {
         return this;
     }
 
@@ -141,7 +141,7 @@ public abstract class GPURenderTarget extends GPUManagedResource implements IGPU
      * Attachment. When this is called, the Attachment has already been put onto the RenderTarget.
      * This method must return false if any failures occur when completing the stencil attachment.
      *
-     * @see GPUResourceProvider
+     * @see ResourceProvider
      */
     protected abstract void attachStencilBuffer(@SharedPtr Attachment stencilBuffer);
 }

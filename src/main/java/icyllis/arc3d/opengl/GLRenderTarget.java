@@ -29,7 +29,7 @@ import static icyllis.arc3d.opengl.GLCore.*;
 /**
  * Represents OpenGL render targets.
  */
-public final class GLRenderTarget extends GPURenderTarget {
+public final class GLRenderTarget extends GpuRenderTarget {
 
     /**
      * The GL format for all color attachments.
@@ -94,7 +94,7 @@ public final class GLRenderTarget extends GPURenderTarget {
         mOwnership = ownership;
         mStencilBuffer = stencilBuffer; // std::move
         if (framebuffer == 0) {
-            mSurfaceFlags |= IGPUSurface.FLAG_GL_WRAP_DEFAULT_FB;
+            mSurfaceFlags |= IGpuSurface.FLAG_GL_WRAP_DEFAULT_FB;
         }
     }
 
@@ -254,7 +254,7 @@ public final class GLRenderTarget extends GPURenderTarget {
             mRebindStencilBuffer = true;
         }
 
-        mStencilBuffer = GPUResource.move(mStencilBuffer, stencilBuffer);
+        mStencilBuffer = GpuResource.move(mStencilBuffer, stencilBuffer);
     }
 
     @Override
