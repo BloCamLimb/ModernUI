@@ -31,21 +31,13 @@ public class NUIST2023F {
         }
     }
 
-    static long nextULong() {
-        try {
-            return Long.parseUnsignedLong(br.readLine());
-        } catch (IOException e) {
-            return 0;
-        }
-    }
-
     public static void main(String[] args) {
         PrintWriter w = new PrintWriter(System.out);
         int t = nextInt();
         while (t-- != 0) {
-            long a = nextULong(), r = 1;
+            int a = nextInt(), r = 1;
             do ++r;
-            while (Long.remainderUnsigned(a, r) == 0);
+            while (a % r == 0);
             w.println(r);
         }
         w.flush();
