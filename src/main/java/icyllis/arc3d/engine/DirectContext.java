@@ -165,6 +165,8 @@ public final class DirectContext extends RecordingContext {
         assert getThreadSafeCache() != null;
 
         mResourceCache = new ResourceCache(getContextID());
+        mResourceCache.setSurfaceProvider(getSurfaceProvider());
+        mResourceCache.setThreadSafeCache(getThreadSafeCache());
         mResourceProvider = mDevice.getResourceProvider();
         return true;
     }

@@ -311,6 +311,14 @@ public final class ResourceCache implements AutoCloseable {
         return mUniqueMap.containsKey(key);
     }
 
+    public void setSurfaceProvider(SurfaceProvider surfaceProvider) {
+        mSurfaceProvider = surfaceProvider;
+    }
+
+    public void setThreadSafeCache(ThreadSafeCache threadSafeCache) {
+        mThreadSafeCache = threadSafeCache;
+    }
+
     /**
      * Purges resources to become under budget and processes resources with invalidated unique
      * keys.
