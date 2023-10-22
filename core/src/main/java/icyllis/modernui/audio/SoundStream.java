@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,19 +18,22 @@
 
 package icyllis.modernui.audio;
 
+import icyllis.modernui.graphics.MathUtil;
+
+import javax.annotation.Nullable;
 import java.io.IOException;
-import java.nio.ShortBuffer;
+import java.nio.FloatBuffer;
 
 /**
- * Sampled sound provides uncompressed PCM audio samples decoded from an
+ * Sound stream provides uncompressed PCM audio samples decoded from an
  * {@link java.io.InputStream InputStream} or a {@link java.nio.channels.FileChannel FileChannel}.
- * This is the pulling API.
+ * This is the pushing API, no seeking.
  */
-public abstract class SoundSample implements AutoCloseable {
+public abstract class SoundStream implements AutoCloseable {
 
     protected int mSampleRate;
     protected int mChannels;
-    protected int mTotalSamples;
+    protected int mSampleOffset;
 
     public int getSampleRate() {
         return mSampleRate;
@@ -46,33 +49,29 @@ public abstract class SoundSample implements AutoCloseable {
     }
 
     /**
-     * Get numbers of samples in one channel.
+     * Get sample offset of the start of next frame.
      *
-     * @return total samples
+     * @return offset in samples
      */
-    public int getTotalSamples() {
-        return mTotalSamples;
+    public int getSampleOffset() {
+        return mSampleOffset;
     }
 
-    /**
-     * Get the length of the sound in seconds.
-     *
-     * @return total length
-     */
-    public float getTotalLength() {
-        return (float) mTotalSamples / mSampleRate;
-    }
-
-    /**
-     * @return success or not
-     */
-    public abstract boolean seek(int sampleOffset);
-
-    /**
-     * @return samples per channel
-     */
-    public abstract int getSamplesShortInterleaved(ShortBuffer pcmBuffer);
+    @Nullable
+    public abstract FloatBuffer decodeFrame(@Nullable FloatBuffer output) throws IOException;
 
     @Override
-    public abstract void close();
+    public abstract void close() throws IOException;
+
+    // there are programs using 32767, which is not correct
+
+    // [-1,1] to [-32768,32767]
+    public static short f_to_s16(float s) {
+        return (short) (s * 32767.5f - 0.5f);
+    }
+
+    // [-32768,32767] to [-1,1]
+    public static float s16_to_f(short s) {
+        return (s + 0.5f) / 32767.5f;
+    }
 }

@@ -36,39 +36,41 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 /**
  * Support for Ogg Vorbis.
  */
-public class OggDecoder extends SoundSample {
+public class VorbisPushDecoder extends SoundStream {
 
     private final FileChannel mChannel;
     private ByteBuffer mBuffer;
 
-    private long mDecoder;
+    private int mTotalSamples;
 
-    public OggDecoder(@Nonnull FileChannel channel) throws IOException {
+    private long mHandle;
+
+    public VorbisPushDecoder(@Nonnull FileChannel channel) throws IOException {
         mChannel = channel;
         // ogg page is 4 KB ~ 16 KB
         mBuffer = MemoryUtil.memAlloc(0x1000).flip();
         try (MemoryStack stack = MemoryStack.stackPush()) {
             final IntBuffer consumed = stack.mallocInt(1);
             final IntBuffer error = stack.mallocInt(1);
-            long decoder;
+            long handle;
             do {
                 if (read()) {
-                    throw new IOException("No Ogg header found");
+                    throw new IOException("No header found");
                 }
-                decoder = STBVorbis.stb_vorbis_open_pushdata(mBuffer, consumed, error, null);
+                handle = STBVorbis.stb_vorbis_open_pushdata(mBuffer, consumed, error, null);
                 int er = error.get(0);
                 if (er == STBVorbis.VORBIS_need_more_data) {
                     forward();
                 } else if (er != STBVorbis.VORBIS__no_error) {
-                    throw new IOException("Failed to open Ogg file " + er);
+                    throw new IOException("Failed to open Vorbis file " + er);
                 }
-            } while (decoder == NULL);
-            mDecoder = decoder;
+            } while (handle == NULL);
+            mHandle = handle;
             int headerSize = consumed.get(0);
             mBuffer.position(mBuffer.position() + headerSize);
 
             STBVorbisInfo info = STBVorbisInfo.malloc(stack);
-            STBVorbis.stb_vorbis_get_info(decoder, info);
+            STBVorbis.stb_vorbis_get_info(handle, info);
             mSampleRate = info.sample_rate();
             int channels = info.channels();
             if (channels != 1 && channels != 2) {
@@ -92,8 +94,8 @@ public class OggDecoder extends SoundSample {
         }
     }
 
-    public void getSamplesShortInterleaved(ShortBuffer buffer) {
-        STBVorbis.stb_vorbis_get_samples_short_interleaved(mDecoder, mChannels, buffer);
+    public int getTotalSamples() {
+        return mTotalSamples;
     }
 
     /**
@@ -141,7 +143,7 @@ public class OggDecoder extends SoundSample {
             final PointerBuffer samples = stack.mallocPointer(1);
             final IntBuffer count = stack.mallocInt(1);
             for (;;) {
-                int n = STBVorbis.stb_vorbis_decode_frame_pushdata(mDecoder, mBuffer, null, samples, count);
+                int n = STBVorbis.stb_vorbis_decode_frame_pushdata(mHandle, mBuffer, null, samples, count);
                 mBuffer.position(mBuffer.position() + n);
                 if (n == 0) {
                     forward();
@@ -149,7 +151,7 @@ public class OggDecoder extends SoundSample {
                         return null;
                     }
                 } else if ((n = count.get(0)) > 0) {
-                    mOffset = STBVorbis.stb_vorbis_get_sample_offset(mDecoder);
+                    mSampleOffset = STBVorbis.stb_vorbis_get_sample_offset(mHandle);
                     PointerBuffer data = samples.getPointerBuffer(mChannels);
                     if (mChannels == 1) {
                         FloatBuffer src = data.getFloatBuffer(0, n);
@@ -180,15 +182,11 @@ public class OggDecoder extends SoundSample {
         }
     }
 
-    private static short f2s16(float s) {
-        return (short) MathUtil.clamp((int)(s * 32767.5f - 0.5f), Short.MIN_VALUE, Short.MAX_VALUE);
-    }
-
     @Override
     public void close() throws IOException {
-        if (mDecoder != NULL) {
-            STBVorbis.stb_vorbis_close(mDecoder);
-            mDecoder = NULL;
+        if (mHandle != NULL) {
+            STBVorbis.stb_vorbis_close(mHandle);
+            mHandle = NULL;
         }
         MemoryUtil.memFree(mBuffer);
         mBuffer = null;
