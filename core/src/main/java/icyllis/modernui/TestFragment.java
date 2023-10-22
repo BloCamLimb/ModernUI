@@ -47,8 +47,7 @@ import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
+import java.nio.*;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -489,24 +488,26 @@ public class TestFragment extends Fragment {
                         }
                         if (path != null) {
                             v1.setClickable(false);
-                            try {
-                                FileChannel channel = FileChannel.open(Path.of(path), StandardOpenOption.READ);
-                                OggDecoder decoder = new OggDecoder(channel);
-                                Track track = new Track(decoder);
-                                sSpectrumGraph = new SpectrumGraph(track, TestLinearLayout.this, true, 600);
-                                track.play();
+                            CompletableFuture.runAsync(() -> {
+                                try (FileChannel channel = FileChannel.open(Path.of(path), StandardOpenOption.READ)) {
+                                    ByteBuffer nativeEncodedData = Core.readIntoNativeBuffer(channel).flip();
+                                    VorbisPullDecoder decoder = new VorbisPullDecoder(nativeEncodedData);
+                                    Track track = new Track(decoder);
+                                    sSpectrumGraph = new SpectrumGraph(track, TestLinearLayout.this, false, 600);
+                                    track.play();
 
-                                if (v1.isAttachedToWindow()) {
-                                    v1.post(() -> {
-                                        v1.invalidate();
-                                        if (mGoodAnim != null) {
-                                            mGoodAnim.start();
-                                        }
-                                    });
+                                    if (v1.isAttachedToWindow()) {
+                                        v1.post(() -> {
+                                            v1.invalidate();
+                                            if (mGoodAnim != null) {
+                                                mGoodAnim.start();
+                                            }
+                                        });
+                                    }
+                                } catch (IOException e) {
+                                    e.printStackTrace();
                                 }
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
+                            });
                         }
                     });
                     v = button;

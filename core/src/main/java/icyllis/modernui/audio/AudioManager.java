@@ -23,16 +23,13 @@ import icyllis.modernui.annotation.MainThread;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.openal.*;
-import org.lwjgl.system.MemoryStack;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.IOException;
-import java.nio.IntBuffer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.*;
 
-import static org.lwjgl.openal.AL11.alEnable;
 import static org.lwjgl.openal.ALC11.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
@@ -51,9 +48,10 @@ public class AudioManager implements AutoCloseable {
 
     private final List<String> mDeviceList = new ArrayList<>();
 
-    private final Set<Track> mTracks = new HashSet<>();
+    private final CopyOnWriteArrayList<Track> mTracks = new CopyOnWriteArrayList<>();
 
     private boolean mInitialized;
+    private boolean mIntegrated;
     private int mTimer;
 
     private AudioManager() {
@@ -77,14 +75,22 @@ public class AudioManager implements AutoCloseable {
     }
 
     @MainThread
-    public synchronized void initialize() {
+    public void initialize() {
+        initialize(false);
+    }
+
+    @MainThread
+    public synchronized void initialize(boolean integrated) {
         if (mInitialized) {
             return;
         }
-        setDevice(null);
-        List<String> devices = ALUtil.getStringList(NULL, ALC_ALL_DEVICES_SPECIFIER);
-        if (devices != null) {
-            mDeviceList.addAll(devices);
+        mIntegrated = integrated;
+        if (!integrated) {
+            setDevice(null);
+            List<String> devices = ALUtil.getStringList(NULL, ALC_ALL_DEVICES_SPECIFIER);
+            if (devices != null) {
+                mDeviceList.addAll(devices);
+            }
         }
         mExecutorService.scheduleAtFixedRate(this::tick, 0, TICK_PERIOD, TimeUnit.MILLISECONDS);
         mInitialized = true;
@@ -133,7 +139,7 @@ public class AudioManager implements AutoCloseable {
     private void tick() {
         int timer = (mTimer + 1) & 0x7f;
         try {
-            if (timer == 0) {
+            if (timer == 0 && !mIntegrated) {
                 List<String> devices = ALUtil.getStringList(NULL, ALC_ALL_DEVICES_SPECIFIER);
                 if (!mDeviceList.equals(devices)) {
                     mDeviceList.clear();
@@ -170,16 +176,23 @@ public class AudioManager implements AutoCloseable {
         mTracks.add(track);
     }
 
+    public void removeTrack(@Nonnull Track track) {
+        mTracks.remove(track);
+    }
+
     @Override
     public void close() {
         mExecutorService.shutdown();
-        for (Track track : mTracks) {
+        ArrayList<Track> tracks = new ArrayList<>(mTracks);
+        for (Track track : tracks) {
             try {
                 track.close();
-            } catch (IOException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
-        destroy();
+        if (!mIntegrated) {
+            destroy();
+        }
     }
 }
