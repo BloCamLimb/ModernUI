@@ -81,6 +81,11 @@ public class Track implements AutoCloseable {
                 if (mBaseSampleOffset != 0) {
                     mSample.seek(0);
                     mBaseSampleOffset = 0;
+                    int count = alGetSourcei(mSource, AL_BUFFERS_QUEUED);
+                    while (count-- != 0) {
+                        alSourceUnqueueBuffers(mSource);
+                    }
+                    mMixedSampleCount = 0;
                 }
                 for (int i = 0; i < BUFFER_COUNT; i++) {
                     forward(mBuffers[i]);
