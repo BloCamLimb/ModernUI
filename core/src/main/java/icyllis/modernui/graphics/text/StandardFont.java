@@ -190,30 +190,36 @@ public final class StandardFont implements Font {
         if (layoutLimit == contextLimit) {
             layoutFlags |= java.awt.Font.LAYOUT_NO_LIMIT_CONTEXT;
         }
-        var vector = chooseFont(paint.getFontSize())
-                .layoutGlyphVector(
-                        getFontRenderContext(paint.getRenderFlags()),
-                        buf, layoutStart, layoutLimit, layoutFlags
-                );
+        var face = chooseFont(paint.getFontSize());
+        var frc = getFontRenderContext(paint.getRenderFlags());
+        var vector = face.layoutGlyphVector(
+                frc, buf,
+                layoutStart, layoutLimit,
+                layoutFlags
+        );
         int nGlyphs = vector.getNumGlyphs();
 
         if (advances != null) {
-            for (int i = 0; i < nGlyphs; i++) {
-                int charIndex = vector.getGlyphCharIndex(i);
-                advances[charIndex + layoutStart - advanceOffset] =
-                        vector.getGlyphMetrics(i).getAdvanceX();
-            }
-
+            final int baseFlags = isRtl
+                    ? java.awt.Font.LAYOUT_RIGHT_TO_LEFT
+                    : java.awt.Font.LAYOUT_LEFT_TO_RIGHT;
             // this is a bit slow
             GraphemeBreak.forTextRun(buf, paint.mLocale, layoutStart, layoutLimit,
                     (clusterStart, clusterLimit) -> {
-                        int rStart = clusterStart - advanceOffset;
-                        int rLimit = clusterLimit - advanceOffset;
-                        // accumulate advance to cluster
-                        for (int i = rStart + 1; i < rLimit; i++) {
-                            advances[rStart] += advances[i];
-                            advances[i] = 0;
+                        int flags = baseFlags;
+                        if (clusterStart == contextStart) {
+                            flags |= java.awt.Font.LAYOUT_NO_START_CONTEXT;
                         }
+                        if (clusterLimit == contextLimit) {
+                            flags |= java.awt.Font.LAYOUT_NO_LIMIT_CONTEXT;
+                        }
+                        var vec = face.layoutGlyphVector(
+                                frc, buf,
+                                clusterStart, clusterLimit,
+                                flags
+                        );
+                        advances[clusterStart - advanceOffset] =
+                                (float) vec.getGlyphPosition(vec.getNumGlyphs()).getX();
                     });
         }
 
