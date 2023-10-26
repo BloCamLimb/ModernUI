@@ -18,8 +18,8 @@
 
 package icyllis.modernui.text.method;
 
-import com.ibm.icu.lang.UCharacter;
-import com.ibm.icu.lang.UProperty;
+import com.ibm.icu.impl.UCharacterProperty;
+import com.ibm.icu.lang.*;
 import com.ibm.icu.text.BreakIterator;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.text.CharSequenceIterator;
@@ -34,6 +34,8 @@ import java.util.Locale;
  * <p>
  * Also provides methods to determine word boundaries.
  */
+//TODO don't use isLetterOrDigit, use wb.getRuleStatus() != BreakIterator.WORD_NONE
+// to work with Emoji
 public class WordIterator {
 
     // Size of the window for the word iterator, should be greater than the longest word's length
@@ -279,21 +281,23 @@ public class WordIterator {
         return !isOnPunctuation(offset) && isAfterPunctuation(offset);
     }
 
-    private static boolean isPunctuation(int cp) {
-        final int type = Character.getType(cp);
-        return (type == Character.CONNECTOR_PUNCTUATION
-                || type == Character.DASH_PUNCTUATION
-                || type == Character.END_PUNCTUATION
-                || type == Character.FINAL_QUOTE_PUNCTUATION
-                || type == Character.INITIAL_QUOTE_PUNCTUATION
-                || type == Character.OTHER_PUNCTUATION
-                || type == Character.START_PUNCTUATION);
+    public static final int GC_P_MASK =
+            UCharacterProperty.getMask(UCharacterCategory.CONNECTOR_PUNCTUATION) |
+                    UCharacterProperty.getMask(UCharacterCategory.DASH_PUNCTUATION) |
+                    UCharacterProperty.getMask(UCharacterCategory.END_PUNCTUATION) |
+                    UCharacterProperty.getMask(UCharacterCategory.FINAL_QUOTE_PUNCTUATION) |
+                    UCharacterProperty.getMask(UCharacterCategory.INITIAL_QUOTE_PUNCTUATION) |
+                    UCharacterProperty.getMask(UCharacterCategory.OTHER_PUNCTUATION) |
+                    UCharacterProperty.getMask(UCharacterCategory.START_PUNCTUATION);
+
+    public static boolean isPunctuation(int cp) {
+        return (UCharacterProperty.getMask(UCharacter.getType(cp)) & GC_P_MASK) != 0;
     }
 
     private boolean isAfterLetterOrDigit(int offset) {
         if (mStart < offset && offset <= mEnd) {
             final int codePoint = Character.codePointBefore(mCharSeq, offset);
-            return Character.isLetterOrDigit(codePoint);
+            return UCharacter.isLetterOrDigit(codePoint);
         }
         return false;
     }
@@ -301,7 +305,7 @@ public class WordIterator {
     private boolean isOnLetterOrDigit(int offset) {
         if (mStart <= offset && offset < mEnd) {
             final int codePoint = Character.codePointAt(mCharSeq, offset);
-            return Character.isLetterOrDigit(codePoint);
+            return UCharacter.isLetterOrDigit(codePoint);
         }
         return false;
     }
