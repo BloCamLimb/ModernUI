@@ -52,6 +52,7 @@ public final class ActivityWindow extends Window {
     private int mButtonState;
 
     private final StringBuilder mCharInputBuffer = new StringBuilder();
+    private final Runnable mCommitCharInput = this::commitCharInput;
 
     ActivityWindow(long handle) {
         super(handle);
@@ -210,10 +211,10 @@ public final class ActivityWindow extends Window {
             return;
         }
         mCharInputBuffer.appendCodePoint(codepoint);
-        Core.postOnMainThread(this::postCharInput);
+        Core.postOnMainThread(mCommitCharInput);
     }
 
-    private void postCharInput() {
+    private void commitCharInput() {
         if (mCharInputBuffer.isEmpty()) {
             return;
         }
