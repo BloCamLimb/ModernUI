@@ -22,9 +22,7 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.text.Editable;
 import icyllis.modernui.text.Selection;
-import icyllis.modernui.view.KeyEvent;
-import icyllis.modernui.view.MotionEvent;
-import icyllis.modernui.view.ViewRoot;
+import icyllis.modernui.view.*;
 import icyllis.modernui.widget.EditText;
 import org.lwjgl.system.MemoryStack;
 
@@ -52,6 +50,8 @@ public final class ActivityWindow extends Window {
     private volatile ViewRoot mRoot;
 
     private int mButtonState;
+
+    private final StringBuilder mCharInputBuffer = new StringBuilder();
 
     ActivityWindow(long handle) {
         super(handle);
@@ -105,7 +105,8 @@ public final class ActivityWindow extends Window {
     }
 
     @NonNull
-    public static ActivityWindow createMainWindow(@NonNull String title, int width, int height, @Nullable Monitor monitor) {
+    public static ActivityWindow createMainWindow(@NonNull String title, int width, int height,
+                                                  @Nullable Monitor monitor) {
         Core.checkMainThread();
         if (sMainWindow != null) {
             throw new IllegalStateException("Multiple main windows");
@@ -208,6 +209,16 @@ public final class ActivityWindow extends Window {
         if (codepoint == 0 || codepoint == 0x007F) {
             return;
         }
+        mCharInputBuffer.appendCodePoint(codepoint);
+        Core.postOnMainThread(this::postCharInput);
+    }
+
+    private void postCharInput() {
+        if (mCharInputBuffer.isEmpty()) {
+            return;
+        }
+        final String input = mCharInputBuffer.toString();
+        mCharInputBuffer.setLength(0);
         Message msg = Message.obtain(mRoot.mHandler, () -> {
             if (mRoot != null && mRoot.getView().findFocus() instanceof EditText text) {
                 final Editable content = text.getText();
@@ -215,8 +226,7 @@ public final class ActivityWindow extends Window {
                 int selEnd = text.getSelectionEnd();
                 if (selStart >= 0 && selEnd >= 0) {
                     Selection.setSelection(content, Math.max(selStart, selEnd));
-                    content.replace(Math.min(selStart, selEnd), Math.max(selStart, selEnd),
-                            Character.toString(codepoint));
+                    content.replace(Math.min(selStart, selEnd), Math.max(selStart, selEnd), input);
                 }
             }
         });
