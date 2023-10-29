@@ -72,7 +72,7 @@ public abstract class GpuResource {
     @SuppressWarnings("FieldMayBeFinal")
     private volatile int mCommandBufferUsageCnt = 0;
 
-    static final PriorityQueue.Accessor<GpuResource> QUEUE_ACCESSOR = new PriorityQueue.Accessor<>() {
+    static final PriorityQueue.Access<GpuResource> QUEUE_ACCESS = new PriorityQueue.Access<>() {
         @Override
         public void setIndex(GpuResource resource, int index) {
             resource.mCacheIndex = index;
@@ -90,11 +90,11 @@ public abstract class GpuResource {
     // the value reflects how recently this resource was accessed in the cache,
     // this is maintained by the cache
     int mTimestamp;
-    private long mCleanUpTime;
+    private long mLastUsedTime;
 
     // null meaning invalid, lazy initialized
-    Object mScratchKey;
-    Object mUniqueKey;
+    IScratchKey mScratchKey;
+    IUniqueKey mUniqueKey;
 
     // set once in constructor, clear to null after being destroyed
     GpuDevice mDevice;
@@ -287,7 +287,7 @@ public abstract class GpuResource {
      * associated unique key.
      */
     @Nullable
-    public final Object getUniqueKey() {
+    public final IUniqueKey getUniqueKey() {
         return mUniqueKey;
     }
 
@@ -330,7 +330,7 @@ public abstract class GpuResource {
      * this resource takes over the key.
      */
     @ApiStatus.Internal
-    public final void setUniqueKey(Object key) {
+    public final void setUniqueKey(IUniqueKey key) {
         assert hasRef();
 
         // Uncached resources can never have a unique key, unless they're wrapped resources. Wrapped
@@ -414,7 +414,7 @@ public abstract class GpuResource {
      */
     @ApiStatus.Internal
     @Nullable
-    public final Object getScratchKey() {
+    public final IScratchKey getScratchKey() {
         return mScratchKey;
     }
 
@@ -431,9 +431,9 @@ public abstract class GpuResource {
     }
 
     @ApiStatus.Internal
-    public final boolean isCleanable() {
-        // Resources in the cacheable budgeted state are never cleanable when they have a unique
-        // key. The key must be removed/invalidated to make them cleanable.
+    public final boolean isFree() {
+        // Resources in the cacheable budgeted state are never free when they have a unique
+        // key. The key must be removed/invalidated to make them free.
         return !hasRef() && !hasCommandBufferUsage() &&
                 !(mBudgetType == BudgetType.WrapCacheable && mUniqueKey != null);
     }
@@ -500,7 +500,7 @@ public abstract class GpuResource {
      * By default, resources are not recycled as scratch.
      */
     @Nullable
-    protected Object computeScratchKey() {
+    protected IScratchKey computeScratchKey() {
         return null;
     }
 
@@ -538,17 +538,17 @@ public abstract class GpuResource {
         mDevice = null;
     }
 
-    final void setCleanUpTime() {
-        assert isCleanable();
-        mCleanUpTime = System.nanoTime();
+    final void setLastUsedTime() {
+        assert isFree();
+        mLastUsedTime = System.currentTimeMillis();
     }
 
     /**
      * Called by the cache to determine whether this resource should be cleaned up based on the length
      * of time it has been available for cleaning.
      */
-    final long getCleanUpTime() {
-        assert isCleanable();
-        return mCleanUpTime;
+    final long getLastUsedTime() {
+        assert isFree();
+        return mLastUsedTime;
     }
 }

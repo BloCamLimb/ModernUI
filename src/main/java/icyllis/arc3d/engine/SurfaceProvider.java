@@ -53,7 +53,7 @@ public final class SurfaceProvider {
      * Assigns a unique key to a texture. The texture will be findable via this key using
      * {@link #findProxyByUniqueKey()}. It is an error if an existing texture already has a key.
      */
-    public boolean assignUniqueKeyToProxy(Object key, Texture texture) {
+    public boolean assignUniqueKeyToProxy(IUniqueKey key, Texture texture) {
         assert key != null;
         if (mContext.isDiscarded() || texture == null) {
             return false;

@@ -863,7 +863,7 @@ public final class GLDevice extends GpuDevice {
     }
 
     public void bindIndexBufferInPipe(@Nonnull GLBuffer buffer) {
-        assert !getCaps().hasDSASupport();
+        assert !getCaps().hasDSASupport() || getCaps().dsaElementBufferIsBroken();
 
         handleDirtyContext();
 

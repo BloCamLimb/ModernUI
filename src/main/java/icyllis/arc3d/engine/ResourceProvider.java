@@ -78,7 +78,7 @@ public class ResourceProvider {
     @Nullable
     @SharedPtr
     @SuppressWarnings("unchecked")
-    public final <T extends GpuResource> T findByUniqueKey(Object key) {
+    public final <T extends GpuResource> T findByUniqueKey(IUniqueKey key) {
         assert mDevice.getContext().isOwnerThread();
         return mDevice.getContext().isDiscarded() ? null :
                 (T) mContext.getResourceCache().findAndRefUniqueResource(key);
@@ -246,7 +246,7 @@ public class ResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public final GpuTexture findAndRefScratchTexture(Object key, String label) {
+    public final GpuTexture findAndRefScratchTexture(IScratchKey key, String label) {
         assert mDevice.getContext().isOwnerThread();
         assert !mDevice.getContext().isDiscarded();
         assert key != null;
@@ -357,7 +357,7 @@ public class ResourceProvider {
         return mDevice.createBuffer(size, usage);
     }
 
-    public final void assignUniqueKeyToResource(Object key, GpuResource resource) {
+    public final void assignUniqueKeyToResource(IUniqueKey key, GpuResource resource) {
         assert mDevice.getContext().isOwnerThread();
         if (mDevice.getContext().isDiscarded() || resource == null) {
             return;

@@ -1,0 +1,74 @@
+/*
+ * Modern UI.
+ * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
+ *
+ * Modern UI is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Modern UI is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+import java.io.*;
+import java.util.StringTokenizer;
+
+public class CF1883E {
+
+    public static void main(String[] args) {
+        var sc = new Scanner(System.in);
+        var pw = new PrintWriter(System.out);
+        int t = sc.nextInt();
+        while (t-- != 0) {
+            int n = sc.nextInt();
+            int res = 0;
+            int shift = 0;
+            long prev = sc.nextInt();
+            for (int i = 1; i < n; ++i) {
+                long curr = sc.nextInt();
+                long div = (prev + curr - 1) / curr;
+                int cnt = 64 - Long.numberOfLeadingZeros(div - 1);
+                if (prev > Integer.MAX_VALUE) {
+                    shift += cnt;
+                    res += shift;
+                } else {
+                    res += cnt;
+                    prev = curr << cnt;
+                }
+            }
+            pw.println(res);
+        }
+        pw.flush();
+    }
+
+    static class Scanner {
+
+        final BufferedReader br;
+        StringTokenizer st;
+
+        Scanner(InputStream in) {
+            br = new BufferedReader(new InputStreamReader(in));
+        }
+
+        String next() {
+            while (st == null || !st.hasMoreElements()) {
+                try {
+                    st = new StringTokenizer(br.readLine());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            return st.nextToken();
+        }
+
+        int nextInt() {
+            return Integer.parseInt(next());
+        }
+    }
+}

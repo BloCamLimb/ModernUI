@@ -93,7 +93,7 @@ public class RenderTaskManager {
         closeTasks();
         mActiveOpsTask = null;
 
-        TopologicalSort.topologicalSort(mDAG, RenderTask.SORT_ADAPTER);
+        TopologicalSort.topologicalSort(mDAG, RenderTask.SORT_ACCESS);
 
         for (RenderTask task : mDAG) {
             task.gatherSurfaceIntervals(mSurfaceAllocator);
@@ -101,17 +101,17 @@ public class RenderTaskManager {
         mSurfaceAllocator.simulate();
         mSurfaceAllocator.allocate();
 
-        boolean purge = false;
+        boolean cleanup = false;
         if (!mSurfaceAllocator.isInstantiationFailed()) {
-            purge = executeRenderTasks();
+            cleanup = executeRenderTasks();
         }
 
         mSurfaceAllocator.reset();
 
         clearTasks();
 
-        if (purge) {
-            context.getResourceCache().purge();
+        if (cleanup) {
+            context.getResourceCache().cleanup();
         }
         mFlushing = false;
 

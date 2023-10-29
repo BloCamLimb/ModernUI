@@ -25,7 +25,7 @@ public final class ThreadSafeCache {
 
     }
 
-    public void dropUniqueRefsSince(long purgeTime) {
+    public void dropUniqueRefsOlderThan(long nanoTime) {
 
     }
 }
