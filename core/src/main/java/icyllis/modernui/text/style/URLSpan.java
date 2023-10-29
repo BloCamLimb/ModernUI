@@ -18,14 +18,12 @@
 
 package icyllis.modernui.text.style;
 
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.text.ParcelableSpan;
 import icyllis.modernui.text.TextUtils;
-import icyllis.modernui.util.BinaryIO;
+import icyllis.modernui.util.Parcel;
 import icyllis.modernui.view.View;
-
-import javax.annotation.Nonnull;
-import java.io.*;
 
 /**
  * Implementation of the {@link ClickableSpan} that allows setting a url string. When
@@ -56,8 +54,8 @@ public class URLSpan extends ClickableSpan implements ParcelableSpan {
     /**
      * Constructs a {@link URLSpan} from a parcel.
      */
-    public URLSpan(@Nonnull DataInput src) throws IOException {
-        mURL = BinaryIO.readString(src);
+    public URLSpan(@NonNull Parcel src) {
+        mURL = src.readString();
     }
 
     @Override
@@ -66,8 +64,8 @@ public class URLSpan extends ClickableSpan implements ParcelableSpan {
     }
 
     @Override
-    public void write(@Nonnull DataOutput dest) throws IOException {
-        BinaryIO.writeString(dest, mURL);
+    public void writeToParcel(@NonNull Parcel dest, int flags) {
+        dest.writeString(mURL);
     }
 
     /**
@@ -80,7 +78,7 @@ public class URLSpan extends ClickableSpan implements ParcelableSpan {
     }
 
     @Override
-    public void onClick(@Nonnull View widget) {
+    public void onClick(@NonNull View widget) {
         Core.openURI(mURL);
     }
 }

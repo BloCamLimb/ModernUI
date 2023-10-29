@@ -18,10 +18,9 @@
 
 package icyllis.modernui.text.style;
 
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.text.*;
-
-import javax.annotation.Nonnull;
-import java.io.*;
+import icyllis.modernui.util.Parcel;
 
 /**
  * Uniformly scales the size of the text to which it's attached by a certain proportion.
@@ -46,9 +45,9 @@ public class RelativeSizeSpan extends MetricAffectingSpan implements ParcelableS
     }
 
     /**
-     * Creates a {@link RelativeSizeSpan} from a stream.
+     * Creates a {@link RelativeSizeSpan} from a parcel.
      */
-    public RelativeSizeSpan(@Nonnull DataInput src) throws IOException {
+    public RelativeSizeSpan(@NonNull Parcel src) {
         mProportion = src.readFloat();
     }
 
@@ -58,7 +57,7 @@ public class RelativeSizeSpan extends MetricAffectingSpan implements ParcelableS
     }
 
     @Override
-    public void write(@Nonnull DataOutput dest) throws IOException {
+    public void writeToParcel(@NonNull Parcel dest, int flags) {
         dest.writeFloat(mProportion);
     }
 
@@ -70,7 +69,7 @@ public class RelativeSizeSpan extends MetricAffectingSpan implements ParcelableS
     }
 
     @Override
-    public void updateMeasureState(@Nonnull TextPaint paint) {
+    public void updateMeasureState(@NonNull TextPaint paint) {
         paint.setTextSize(paint.getTextSize() * mProportion);
     }
 }

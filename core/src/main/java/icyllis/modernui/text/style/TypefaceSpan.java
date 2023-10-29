@@ -21,9 +21,7 @@ package icyllis.modernui.text.style;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.text.*;
-import icyllis.modernui.util.BinaryIO;
-
-import java.io.*;
+import icyllis.modernui.util.Parcel;
 
 public class TypefaceSpan extends MetricAffectingSpan implements ParcelableSpan {
 
@@ -54,8 +52,8 @@ public class TypefaceSpan extends MetricAffectingSpan implements ParcelableSpan 
         this(null, typeface);
     }
 
-    public TypefaceSpan(@NonNull DataInput src) throws IOException {
-        mFamily = BinaryIO.readString(src);
+    public TypefaceSpan(@NonNull Parcel src) {
+        mFamily = src.readString();
         mTypeface = null;
     }
 
@@ -70,8 +68,8 @@ public class TypefaceSpan extends MetricAffectingSpan implements ParcelableSpan 
     }
 
     @Override
-    public void write(@NonNull DataOutput dest) throws IOException {
-        BinaryIO.writeString(dest, mFamily);
+    public void writeToParcel(@NonNull Parcel dest, int flags) {
+        dest.writeString(mFamily);
     }
 
     /**

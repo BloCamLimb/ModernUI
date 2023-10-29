@@ -18,8 +18,8 @@
 
 package icyllis.modernui.test
 
-import icyllis.modernui.util.BinaryIO
 import icyllis.modernui.util.DataSet
+import icyllis.modernui.util.Parcel
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.core.config.Configurator
 import java.io.ByteArrayInputStream
@@ -27,7 +27,7 @@ import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.io.OutputStream
 
-fun main(args: Array<String>) {
+fun main() {
     Configurator.setRootLevel(Level.ALL)
     val output = ByteArrayOutputStream();
     write(output)
@@ -37,19 +37,19 @@ fun main(args: Array<String>) {
 }
 
 fun write(output: OutputStream) {
-    val data = DataSet()
-    data["health"] = 5
-    data["velocity"] = 9.2f
+    val bundle = DataSet()
+    bundle["health"] = 5
+    bundle["velocity"] = 9.2f
     val pos = DataSet()
     pos["x"] = 6.1f
     pos["y"] = 56.2f
-    data["pos"] = pos
-    if ("pos" in data)
+    bundle["pos"] = pos
+    if ("pos" in bundle)
         println("Ok")
-    BinaryIO.deflate(output, data)
+    Parcel.deflate(output, bundle)
 }
 
 fun read(input: InputStream) {
-    val data = BinaryIO.inflate(input, null)
-    println(data) // {health=5, velocity=9.2, pos={x=6.1, y=56.2}}
+    val bundle = Parcel.inflate(input, null)
+    println(bundle) // {health=5, velocity=9.2, pos={x=6.1, y=56.2}}
 }

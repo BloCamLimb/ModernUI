@@ -20,9 +20,7 @@ package icyllis.modernui.text.style;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.text.*;
-import icyllis.modernui.util.BinaryIO;
-
-import java.io.*;
+import icyllis.modernui.util.Parcel;
 
 /**
  * Span that allows defining the alignment of text at the paragraph level.
@@ -49,8 +47,8 @@ public interface AlignmentSpan extends ParagraphStyle {
         /**
          * Constructs a {@link Standard} from a parcel.
          */
-        public Standard(@NonNull DataInput in) throws IOException {
-            mAlignment = Layout.Alignment.valueOf(BinaryIO.readString(in));
+        public Standard(@NonNull Parcel src) {
+            mAlignment = Layout.Alignment.valueOf(src.readString());
         }
 
         @Override
@@ -64,8 +62,8 @@ public interface AlignmentSpan extends ParagraphStyle {
         }
 
         @Override
-        public void write(@NonNull DataOutput dest) throws IOException {
-            BinaryIO.writeString(dest, mAlignment.name());
+        public void writeToParcel(@NonNull Parcel dest, int flags) {
+            dest.writeString(mAlignment.name());
         }
     }
 }

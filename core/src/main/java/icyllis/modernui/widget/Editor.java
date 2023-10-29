@@ -18,17 +18,17 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.core.*;
 import icyllis.modernui.text.*;
 import icyllis.modernui.text.method.MovementMethod;
 import icyllis.modernui.text.method.WordIterator;
-import icyllis.modernui.util.BinaryIO;
+import icyllis.modernui.util.Parcel;
 import icyllis.modernui.view.*;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
 import javax.annotation.Nonnull;
-import java.io.*;
 
 /**
  * Helper class used by TextView to handle editable text views.
@@ -471,8 +471,8 @@ public class Editor {
         }
 
         @Override
-        public CharSequence filter(CharSequence source, int start, int end,
-                                   Spanned dest, int dstart, int dend) {
+        public CharSequence filter(@NonNull CharSequence source, int start, int end,
+                                   @NonNull Spanned dest, int dstart, int dend) {
             // Check to see if this edit should be tracked for undo.
             if (!canUndoEdit(source, start, end, dest, dstart, dend)) {
                 return null;
@@ -619,9 +619,9 @@ public class Editor {
             mNewText = newText;
 
             // Determine the type of the edit.
-            if (mNewText.length() > 0 && mOldText.length() == 0) {
+            if (!mNewText.isEmpty() && mOldText.isEmpty()) {
                 mType = TYPE_INSERT;
-            } else if (mNewText.length() == 0 && mOldText.length() > 0) {
+            } else if (mNewText.isEmpty() && !mOldText.isEmpty()) {
                 mType = TYPE_DELETE;
             } else {
                 mType = TYPE_REPLACE;
@@ -633,11 +633,11 @@ public class Editor {
             mNewCursorPos = dstart + mNewText.length();
         }
 
-        public EditOperation(DataInput src, ClassLoader loader) throws IOException {
+        public EditOperation(Parcel src, ClassLoader loader) {
             super(src, loader);
             mType = src.readInt();
-            mOldText = BinaryIO.readString(src);
-            mNewText = BinaryIO.readString(src);
+            mOldText = src.readString();
+            mNewText = src.readString();
             mStart = src.readInt();
             mOldCursorPos = src.readInt();
             mNewCursorPos = src.readInt();
@@ -646,10 +646,10 @@ public class Editor {
         }
 
         @Override
-        public void write(DataOutput dest) throws IOException {
+        public void writeToParcel(@NonNull Parcel dest, int flags) {
             dest.writeInt(mType);
-            BinaryIO.writeString(dest, mOldText);
-            BinaryIO.writeString(dest, mNewText);
+            dest.writeString(mOldText);
+            dest.writeString(mNewText);
             dest.writeInt(mStart);
             dest.writeInt(mOldCursorPos);
             dest.writeInt(mNewCursorPos);
@@ -725,7 +725,7 @@ public class Editor {
                     && mStart <= edit.mStart && getNewTextEnd() >= edit.getOldTextEnd()) {
                 // Merge insertion with replace as they can be single insertion.
                 mNewText = mNewText.substring(0, edit.mStart - mStart) + edit.mNewText
-                        + mNewText.substring(edit.getOldTextEnd() - mStart, mNewText.length());
+                        + mNewText.substring(edit.getOldTextEnd() - mStart);
                 mNewCursorPos = edit.mNewCursorPos;
                 mIsComposition = edit.mIsComposition;
                 return true;
@@ -764,7 +764,7 @@ public class Editor {
                     && getNewTextEnd() >= edit.getOldTextEnd()) {
                 // Merge with delete as they can be single operation.
                 mNewText = mNewText.substring(0, edit.mStart - mStart)
-                        + mNewText.substring(edit.getOldTextEnd() - mStart, mNewText.length());
+                        + mNewText.substring(edit.getOldTextEnd() - mStart);
                 if (mNewText.isEmpty()) {
                     mType = TYPE_DELETE;
                 }
@@ -826,7 +826,7 @@ public class Editor {
                 if (deleteFrom != deleteTo) {
                     text.delete(deleteFrom, deleteTo);
                 }
-                if (newText.length() != 0) {
+                if (!newText.isEmpty()) {
                     text.insert(newTextInsertAt, newText);
                 }
             }

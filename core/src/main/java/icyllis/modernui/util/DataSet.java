@@ -25,8 +25,6 @@ import icyllis.modernui.graphics.MathUtil;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
-import java.io.DataOutput;
-import java.io.IOException;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -44,9 +42,9 @@ import java.util.function.Consumer;
  * The implementation of this class is a linked hash map, which is fast and
  * small-footprint.
  *
- * @see BinaryIO
+ * @see Parcel
  */
-//TODO not finished yet
+//TODO still unstable?
 @SuppressWarnings({"unchecked", "unused"})
 public final class DataSet implements Map<String, Object>, Parcelable {
 
@@ -54,7 +52,7 @@ public final class DataSet implements Map<String, Object>, Parcelable {
 
     @NonNull
     public static final Parcelable.ClassLoaderCreator<DataSet> CREATOR
-            = BinaryIO::readDataSet;
+            = Parcel::readDataSet;
 
     // derived from LinkedOpenHashMap
 
@@ -1868,8 +1866,8 @@ public final class DataSet implements Map<String, Object>, Parcelable {
     }
 
     @Override
-    public void write(@NonNull DataOutput dest) throws IOException {
-        BinaryIO.writeDataSet(dest, this);
+    public void writeToParcel(@NonNull Parcel dest, int flags) {
+        dest.writeDataSet(this);
     }
 
     @Override

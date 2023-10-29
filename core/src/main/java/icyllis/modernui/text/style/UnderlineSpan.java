@@ -18,11 +18,9 @@
 
 package icyllis.modernui.text.style;
 
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.text.*;
-
-import javax.annotation.Nonnull;
-import java.io.DataInput;
-import java.io.DataOutput;
+import icyllis.modernui.util.Parcel;
 
 /**
  * A span that underlines the text it's attached to.
@@ -42,9 +40,9 @@ public class UnderlineSpan extends CharacterStyle
     }
 
     /**
-     * Creates an {@link UnderlineSpan} from a stream.
+     * Creates an {@link UnderlineSpan} from a parcel.
      */
-    public UnderlineSpan(@Nonnull DataInput src) {
+    public UnderlineSpan(@NonNull Parcel src) {
     }
 
     @Override
@@ -53,11 +51,11 @@ public class UnderlineSpan extends CharacterStyle
     }
 
     @Override
-    public void write(@Nonnull DataOutput dest) {
+    public void writeToParcel(@NonNull Parcel dest, int flags) {
     }
 
     @Override
-    public void updateDrawState(@Nonnull TextPaint paint) {
+    public void updateDrawState(@NonNull TextPaint paint) {
         paint.setUnderline(true);
     }
 }

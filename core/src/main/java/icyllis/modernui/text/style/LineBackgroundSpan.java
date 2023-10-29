@@ -24,8 +24,7 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.text.ParcelableSpan;
 import icyllis.modernui.text.TextUtils;
-
-import java.io.*;
+import icyllis.modernui.util.Parcel;
 
 /**
  * Used to change the background of lines where the span is attached to.
@@ -73,7 +72,7 @@ public interface LineBackgroundSpan extends ParagraphStyle {
         /**
          * Creates a {@link LineBackgroundSpan.Standard} from a parcel
          */
-        public Standard(@NonNull DataInput src) throws IOException {
+        public Standard(@NonNull Parcel src) {
             mColor = src.readInt();
         }
 
@@ -83,7 +82,7 @@ public interface LineBackgroundSpan extends ParagraphStyle {
         }
 
         @Override
-        public void write(@NonNull DataOutput dest) throws IOException {
+        public void writeToParcel(@NonNull Parcel dest, int flags) {
             dest.writeInt(mColor);
         }
 

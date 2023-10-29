@@ -18,10 +18,8 @@
 
 package icyllis.modernui.core;
 
+import icyllis.modernui.util.Parcel;
 import icyllis.modernui.util.Parcelable;
-
-import java.io.DataInput;
-import java.io.IOException;
 
 /**
  * A single undoable operation.<br>You must subclass this to implement the state
@@ -47,7 +45,7 @@ public abstract class UndoOperation<DATA> implements Parcelable {
     /**
      * Construct from a Parcel.
      */
-    protected UndoOperation(DataInput src, ClassLoader loader) throws IOException {
+    protected UndoOperation(Parcel src, ClassLoader loader) {
     }
 
     /**
