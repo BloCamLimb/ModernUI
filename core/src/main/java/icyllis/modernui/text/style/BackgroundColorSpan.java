@@ -19,10 +19,9 @@
 package icyllis.modernui.text.style;
 
 import icyllis.modernui.annotation.ColorInt;
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.text.*;
-
-import javax.annotation.Nonnull;
-import java.io.*;
+import icyllis.modernui.util.Parcel;
 
 /**
  * Changes the background color of the text to which the span is attached.
@@ -48,9 +47,9 @@ public class BackgroundColorSpan extends CharacterStyle
     }
 
     /**
-     * Creates a {@link BackgroundColorSpan} from a stream.
+     * Creates a {@link BackgroundColorSpan} from a parcel.
      */
-    public BackgroundColorSpan(@Nonnull DataInput src) throws IOException {
+    public BackgroundColorSpan(@NonNull Parcel src) {
         mColor = src.readInt();
     }
 
@@ -60,7 +59,7 @@ public class BackgroundColorSpan extends CharacterStyle
     }
 
     @Override
-    public void write(@Nonnull DataOutput dest) throws IOException {
+    public void writeToParcel(@NonNull Parcel dest, int flags) {
         dest.writeInt(mColor);
     }
 
@@ -77,7 +76,7 @@ public class BackgroundColorSpan extends CharacterStyle
      * Updates the background color of the TextPaint.
      */
     @Override
-    public void updateDrawState(@Nonnull TextPaint paint) {
+    public void updateDrawState(@NonNull TextPaint paint) {
         paint.bgColor = mColor;
     }
 }

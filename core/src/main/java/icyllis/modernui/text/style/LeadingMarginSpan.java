@@ -21,8 +21,7 @@ package icyllis.modernui.text.style;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.text.*;
-
-import java.io.*;
+import icyllis.modernui.util.Parcel;
 
 /**
  * A paragraph style affecting the leading margin. There can be multiple leading
@@ -136,7 +135,7 @@ public interface LeadingMarginSpan extends ParagraphStyle {
             this(every, every);
         }
 
-        public Standard(@NonNull DataInput src) throws IOException {
+        public Standard(@NonNull Parcel src) {
             mFirst = src.readInt();
             mRest = src.readInt();
         }
@@ -147,7 +146,7 @@ public interface LeadingMarginSpan extends ParagraphStyle {
         }
 
         @Override
-        public void write(@NonNull DataOutput dest) throws IOException {
+        public void writeToParcel(@NonNull Parcel dest, int flags) {
             dest.writeInt(mFirst);
             dest.writeInt(mRest);
         }

@@ -20,9 +20,8 @@ package icyllis.modernui.core;
 
 import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.util.ArrayMap;
-import icyllis.modernui.util.BinaryIO;
+import icyllis.modernui.util.Parcel;
 
-import java.io.*;
 import java.util.ArrayList;
 import java.util.Objects;
 
@@ -96,9 +95,9 @@ public class UndoManager {
 
     /**
      * Flatten the current undo state into a Parcel object, which can later be restored
-     * with {@link #restoreInstanceState(java.io.DataInput, java.lang.ClassLoader)}.
+     * with {@link #restoreInstanceState(Parcel, java.lang.ClassLoader)}.
      */
-    public void saveInstanceState(DataOutput p) throws IOException {
+    public void saveInstanceState(Parcel p) {
         if (mUpdateCount > 0) {
             throw new IllegalStateException("Can't save state while updating");
         }
@@ -126,27 +125,27 @@ public class UndoManager {
         p.writeInt(0);
     }
 
-    void saveOwner(UndoOwner owner, DataOutput out) throws IOException {
+    void saveOwner(UndoOwner owner, Parcel out) {
         if (owner.mStateSeq == mStateSeq) {
             out.writeInt(owner.mSavedIdx);
         } else {
             owner.mStateSeq = mStateSeq;
             owner.mSavedIdx = mNextSavedIdx;
             out.writeInt(owner.mSavedIdx);
-            BinaryIO.writeString(out, owner.mTag);
+            out.writeString(owner.mTag);
             out.writeInt(owner.mOpCount);
             mNextSavedIdx++;
         }
     }
 
     /**
-     * Restore an undo state previously created with {@link #saveInstanceState(DataOutput)}.  This
+     * Restore an undo state previously created with {@link #saveInstanceState(Parcel)}.  This
      * will restore the UndoManager's state to almost exactly what it was at the point it had
      * been previously saved; the only information not restored is the data object
      * associated with each {@link UndoOwner}, which requires separate calls to
      * {@link #getOwner(String, Object)} to re-associate the owner with its data.
      */
-    public void restoreInstanceState(DataInput p, ClassLoader loader) throws IOException {
+    public void restoreInstanceState(Parcel p, ClassLoader loader) {
         if (mUpdateCount > 0) {
             throw new IllegalStateException("Can't save state while updating");
         }
@@ -166,11 +165,11 @@ public class UndoManager {
         }
     }
 
-    UndoOwner restoreOwner(DataInput in) throws IOException {
+    UndoOwner restoreOwner(Parcel in) {
         int idx = in.readInt();
         UndoOwner owner = mStateOwners[idx];
         if (owner == null) {
-            String tag = BinaryIO.readString(in);
+            String tag = in.readString();
             int opCount = in.readInt();
             owner = new UndoOwner(tag, this);
             owner.mOpCount = opCount;
@@ -738,33 +737,33 @@ public class UndoManager {
             mCommitId = commitId;
         }
 
-        UndoState(UndoManager manager, DataInput p, ClassLoader loader) throws IOException {
+        UndoState(UndoManager manager, Parcel p, ClassLoader loader) {
             mManager = manager;
             mCommitId = p.readInt();
             mCanMerge = p.readInt() != 0;
             mExecuted = p.readInt() != 0;
-            mLabel = TextUtils.read(p);
+            mLabel = TextUtils.createFromParcel(p);
             final int N = p.readInt();
             for (int i = 0; i < N; i++) {
                 UndoOwner owner = mManager.restoreOwner(p);
-                UndoOperation<?> op = BinaryIO.readParcelable(p, loader, UndoOperation.class);
+                UndoOperation<?> op = p.readParcelable(loader, UndoOperation.class);
                 Objects.requireNonNull(op).mOwner = owner;
                 mOperations.add(op);
             }
         }
 
-        void writeToParcel(DataOutput p) throws IOException {
+        void writeToParcel(Parcel p) {
             if (mRecent != null) {
                 throw new IllegalStateException("Can't save state before committing");
             }
             p.writeInt(mCommitId);
             p.writeInt(mCanMerge ? 1 : 0);
             p.writeInt(mExecuted ? 1 : 0);
-            TextUtils.write(p, mLabel);
+            TextUtils.writeToParcel(mLabel, p, 0);
             p.writeInt(mOperations.size());
             for (UndoOperation<?> op : mOperations) {
                 mManager.saveOwner(op.mOwner, p);
-                op.write(p);
+                op.writeToParcel(p, 0);
             }
         }
 

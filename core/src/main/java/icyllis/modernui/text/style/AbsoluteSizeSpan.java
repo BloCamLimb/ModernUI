@@ -18,10 +18,9 @@
 
 package icyllis.modernui.text.style;
 
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.text.*;
-
-import javax.annotation.Nonnull;
-import java.io.*;
+import icyllis.modernui.util.Parcel;
 
 /**
  * A span that changes the size of the text it's attached to.
@@ -53,9 +52,9 @@ public class AbsoluteSizeSpan extends MetricAffectingSpan implements ParcelableS
     }
 
     /**
-     * Creates an {@link AbsoluteSizeSpan} from a stream.
+     * Creates an {@link AbsoluteSizeSpan} from a parcel.
      */
-    public AbsoluteSizeSpan(@Nonnull DataInput src) throws IOException {
+    public AbsoluteSizeSpan(@NonNull Parcel src) {
         mSize = src.readInt();
         mScaled = src.readBoolean();
     }
@@ -66,7 +65,7 @@ public class AbsoluteSizeSpan extends MetricAffectingSpan implements ParcelableS
     }
 
     @Override
-    public void write(@Nonnull DataOutput dest) throws IOException {
+    public void writeToParcel(@NonNull Parcel dest, int flags) {
         dest.writeInt(mSize);
         dest.writeBoolean(mScaled);
     }
@@ -95,7 +94,7 @@ public class AbsoluteSizeSpan extends MetricAffectingSpan implements ParcelableS
     }
 
     @Override
-    public void updateMeasureState(@Nonnull TextPaint paint) {
+    public void updateMeasureState(@NonNull TextPaint paint) {
         if (mScaled) {
             paint.setTextSize(mSize * paint.density);
         } else {

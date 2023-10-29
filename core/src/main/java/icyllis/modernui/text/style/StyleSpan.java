@@ -18,11 +18,10 @@
 
 package icyllis.modernui.text.style;
 
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.text.*;
-
-import javax.annotation.Nonnull;
-import java.io.*;
+import icyllis.modernui.util.Parcel;
 
 /**
  * Span that allows setting the style of the text it's attached to.
@@ -57,9 +56,9 @@ public class StyleSpan extends MetricAffectingSpan implements ParcelableSpan {
     }
 
     /**
-     * Creates a {@link StyleSpan} from a stream.
+     * Creates a {@link StyleSpan} from a parcel.
      */
-    public StyleSpan(@Nonnull DataInput src) throws IOException {
+    public StyleSpan(@NonNull Parcel src) {
         mStyle = src.readInt();
     }
 
@@ -69,7 +68,7 @@ public class StyleSpan extends MetricAffectingSpan implements ParcelableSpan {
     }
 
     @Override
-    public void write(@Nonnull DataOutput dest) throws IOException {
+    public void writeToParcel(@NonNull Parcel dest, int flags) {
         dest.writeInt(mStyle);
     }
 
@@ -82,7 +81,7 @@ public class StyleSpan extends MetricAffectingSpan implements ParcelableSpan {
     }
 
     @Override
-    public void updateMeasureState(@Nonnull TextPaint paint) {
+    public void updateMeasureState(@NonNull TextPaint paint) {
         paint.setTextStyle(mStyle);
     }
 }

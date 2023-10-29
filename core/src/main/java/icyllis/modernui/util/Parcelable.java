@@ -18,14 +18,18 @@
 
 package icyllis.modernui.util;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.io.*;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
+import org.intellij.lang.annotations.MagicConstant;
+import org.jetbrains.annotations.ApiStatus;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 /**
  * {@code Parcelable} is a serialization method alternative to standard Java
- * serialization. Instances can be written to a {@link DataOutput} and restored
- * from a {@link DataInput}, avoiding the heavy overhead of {@link Externalizable}.
+ * serialization. Instances can be written to and restored from a {@link Parcel},
+ * avoiding the heavy overhead of {@link java.io.Externalizable}.
  * <br>
  * Classes implementing the {@code Parcelable} interface must also have a
  * non-null static field called <var>CREATOR</var> of a type that implements the
@@ -39,49 +43,54 @@ import java.io.*;
  *     public static final Parcelable.Creator<MyParcelable> CREATOR
  *             = MyParcelable::new;
  *
- *     private int mData;
+ *     private final int mData;
  *
- *     private MyParcelable(DataInput in) throws IOException {
- *         mData = in.readInt();
+ *     public MyParcelable(@NonNull Parcel src) {
+ *         mData = src.readInt();
  *     }
  *
  *     @Override
- *     public void write(DataOutput out) throws IOException {
- *         out.writeInt(mData);
+ *     public void writeToParcel(@NonNull Parcel dest, int flags) {
+ *         dest.writeInt(mData);
  *     }
  * }}</pre>
  *
- * @see BinaryIO
+ * @see Parcel
  * @since 3.7
  */
 public interface Parcelable {
 
+    @ApiStatus.Internal
+    @MagicConstant()
+    @Retention(RetentionPolicy.SOURCE)
+    @interface WriteFlags {
+    }
+
     /**
      * The subclass implements the method to flatten its contents by calling
-     * the methods of {@link DataOutput} for its primitive values.
+     * the methods of {@link Parcel} for its primitive values.
      *
-     * @param dest the stream to write the object's data to
-     * @throws IOException if an I/O error occurs
+     * @param dest  the parcel to write the object's data to
+     * @param flags the flags about how the object should be written
      */
-    void write(@Nonnull DataOutput dest) throws IOException;
+    void writeToParcel(@NonNull Parcel dest, @WriteFlags int flags);
 
     /**
      * Interface that must be implemented and provided as a public <var>CREATOR</var>
-     * field that creates instances of your {@link Parcelable} class from a {@link DataInput}.
+     * field that creates instances of your {@link Parcelable} class from a {@link Parcel}.
      */
     @FunctionalInterface
     interface Creator<T> {
 
         /**
          * Create a new instance of the {@link Parcelable} class, instantiating it
-         * from the given {@link DataInput} whose data had previously been written by
-         * {@link Parcelable#write(DataOutput)}.
+         * from the given {@link Parcel} whose data had previously been written by
+         * {@link Parcelable#writeToParcel(Parcel, int)}.
          *
          * @param source the stream to read the object's data from
          * @return a new instance of the {@link Parcelable} class
-         * @throws IOException if an I/O error occurs
          */
-        T create(@Nonnull DataInput source) throws IOException;
+        T createFromParcel(@NonNull Parcel source);
     }
 
     /**
@@ -92,20 +101,19 @@ public interface Parcelable {
     interface ClassLoaderCreator<T> extends Creator<T> {
 
         @Override
-        default T create(@Nonnull DataInput source) throws IOException {
-            return create(source, null);
+        default T createFromParcel(@NonNull Parcel source) {
+            return createFromParcel(source, null);
         }
 
         /**
          * Create a new instance of the {@link Parcelable} class, instantiating it
-         * from the given {@link DataInput} whose data had previously been written by
-         * {@link Parcelable#write(DataOutput)} and using the given {@link ClassLoader}.
+         * from the given {@link Parcel} whose data had previously been written by
+         * {@link Parcelable#writeToParcel(Parcel, int)} and using the given {@link ClassLoader}.
          *
          * @param source the stream to read the object's data from
          * @param loader the class loader that this object is being created in
          * @return a new instance of the {@link Parcelable} class
-         * @throws IOException if an I/O error occurs
          */
-        T create(@Nonnull DataInput source, @Nullable ClassLoader loader) throws IOException;
+        T createFromParcel(@NonNull Parcel source, @Nullable ClassLoader loader);
     }
 }

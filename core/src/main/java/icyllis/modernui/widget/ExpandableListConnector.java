@@ -31,14 +31,11 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.core.Core;
-import icyllis.modernui.util.DataSetObserver;
-import icyllis.modernui.util.Parcelable;
+import icyllis.modernui.util.*;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 
 import javax.annotation.Nullable;
-import java.io.DataOutput;
-import java.io.IOException;
 import java.util.*;
 
 /**
@@ -929,7 +926,7 @@ class ExpandableListConnector extends BaseAdapter implements Filterable {
         }
 
         @Override
-        public void write(DataOutput dest) throws IOException {
+        public void writeToParcel(@NonNull Parcel dest, int flags) {
             dest.writeInt(flPos);
             dest.writeInt(lastChildFlPos);
             dest.writeInt(gPos);

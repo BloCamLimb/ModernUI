@@ -26,7 +26,7 @@ import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.text.LayoutPiece;
 import icyllis.modernui.graphics.text.ShapedText;
 import icyllis.modernui.text.style.*;
-import icyllis.modernui.util.BinaryIO;
+import icyllis.modernui.util.Parcel;
 import icyllis.modernui.view.View;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -370,12 +370,13 @@ public final class TextUtils {
      * Flatten a {@link CharSequence} and whatever styles can be copied across processes
      * into the output.
      */
-    public static void write(@NonNull DataOutput out, @Nullable CharSequence cs) throws IOException {
+    public static void writeToParcel(@Nullable CharSequence cs,
+                                     @NonNull Parcel dest, int flags) {
         if (cs == null) {
-            out.writeInt(0);
+            dest.writeInt(0);
         } else if (cs instanceof Spanned sp) {
-            out.writeInt(2);
-            BinaryIO.writeString8(out, cs.toString());
+            dest.writeInt(2);
+            dest.writeString8(cs.toString());
 
             final List<Object> os = sp.getSpans(0, cs.length(), Object.class);
             for (final Object o : os) {
@@ -390,53 +391,53 @@ public final class TextUtils {
                     if (id < FIRST_SPAN || id > LAST_SPAN) {
                         throw new AssertionError(id);
                     } else {
-                        out.writeInt(id);
-                        span.write(out);
-                        out.writeInt(sp.getSpanStart(o));
-                        out.writeInt(sp.getSpanEnd(o));
-                        out.writeInt(sp.getSpanFlags(o));
+                        dest.writeInt(id);
+                        span.writeToParcel(dest, flags);
+                        dest.writeInt(sp.getSpanStart(o));
+                        dest.writeInt(sp.getSpanEnd(o));
+                        dest.writeInt(sp.getSpanFlags(o));
                     }
                 }
             }
-            out.writeInt(0);
+            dest.writeInt(0);
         } else {
-            out.writeInt(1);
-            BinaryIO.writeString8(out, cs.toString());
+            dest.writeInt(1);
+            dest.writeString8(cs.toString());
         }
     }
 
     @Nullable
-    public static CharSequence read(@NonNull DataInput in) throws IOException {
-        int type = in.readInt();
+    public static CharSequence createFromParcel(@NonNull Parcel p) {
+        int type = p.readInt();
         if (type == 0)
             return null;
-        final String s = BinaryIO.readString8(in);
+        final String s = p.readString8();
         if (type == 1)
             return s;
         assert type == 2 && s != null;
         final var sp = new SpannableString(s);
-        while ((type = in.readInt()) != 0) {
+        while ((type = p.readInt()) != 0) {
             switch (type) {
-                case ALIGNMENT_SPAN -> readSpan(in, sp, new AlignmentSpan.Standard(in));
-                case FOREGROUND_COLOR_SPAN -> readSpan(in, sp, new ForegroundColorSpan(in));
-                case RELATIVE_SIZE_SPAN -> readSpan(in, sp, new RelativeSizeSpan(in));
-                case STRIKETHROUGH_SPAN -> readSpan(in, sp, new StrikethroughSpan(in));
-                case UNDERLINE_SPAN -> readSpan(in, sp, new UnderlineSpan(in));
-                case STYLE_SPAN -> readSpan(in, sp, new StyleSpan(in));
-                case LEADING_MARGIN_SPAN -> readSpan(in, sp, new LeadingMarginSpan.Standard(in));
-                case URL_SPAN -> readSpan(in, sp, new URLSpan(in));
-                case BACKGROUND_COLOR_SPAN -> readSpan(in, sp, new BackgroundColorSpan(in));
-                case TYPEFACE_SPAN -> readSpan(in, sp, new TypefaceSpan(in));
-                case ABSOLUTE_SIZE_SPAN -> readSpan(in, sp, new AbsoluteSizeSpan(in));
-                case LINE_BACKGROUND_SPAN -> readSpan(in, sp, new LineBackgroundSpan.Standard(in));
-                case TRAILING_MARGIN_SPAN -> readSpan(in, sp, new TrailingMarginSpan.Standard(in));
+                case ALIGNMENT_SPAN -> readSpan(p, sp, new AlignmentSpan.Standard(p));
+                case FOREGROUND_COLOR_SPAN -> readSpan(p, sp, new ForegroundColorSpan(p));
+                case RELATIVE_SIZE_SPAN -> readSpan(p, sp, new RelativeSizeSpan(p));
+                case STRIKETHROUGH_SPAN -> readSpan(p, sp, new StrikethroughSpan(p));
+                case UNDERLINE_SPAN -> readSpan(p, sp, new UnderlineSpan(p));
+                case STYLE_SPAN -> readSpan(p, sp, new StyleSpan(p));
+                case LEADING_MARGIN_SPAN -> readSpan(p, sp, new LeadingMarginSpan.Standard(p));
+                case URL_SPAN -> readSpan(p, sp, new URLSpan(p));
+                case BACKGROUND_COLOR_SPAN -> readSpan(p, sp, new BackgroundColorSpan(p));
+                case TYPEFACE_SPAN -> readSpan(p, sp, new TypefaceSpan(p));
+                case ABSOLUTE_SIZE_SPAN -> readSpan(p, sp, new AbsoluteSizeSpan(p));
+                case LINE_BACKGROUND_SPAN -> readSpan(p, sp, new LineBackgroundSpan.Standard(p));
+                case TRAILING_MARGIN_SPAN -> readSpan(p, sp, new TrailingMarginSpan.Standard(p));
             }
         }
         return sp;
     }
 
-    private static void readSpan(DataInput in, Spannable sp, Object o) throws IOException {
-        sp.setSpan(o, in.readInt(), in.readInt(), in.readInt());
+    private static void readSpan(Parcel p, Spannable sp, Object o) {
+        sp.setSpan(o, p.readInt(), p.readInt(), p.readInt());
     }
 
     /**
@@ -734,14 +735,18 @@ public final class TextUtils {
         }
     }
 
-    private static final String[] sBinaryCompacts = {" bytes", " KB", " MB", " GB", " TB", " PB", " EB"};
+    private static final String[] sBinaryCompacts = {"bytes", "KB", "MB", "GB", "TB", "PB", "EB"};
 
     @NonNull
     public static String binaryCompact(long num) {
         if (num <= 0)
             return "0 bytes";
+        if (num < 1024)
+            return num + " bytes";
         int i = (63 - Long.numberOfLeadingZeros(num)) / 10;
-        return num / (1L << (i * 10)) + sBinaryCompacts[i];
+        return String.format("%.1f %s",
+                (double) num / (1L << (i * 10)),
+                sBinaryCompacts[i]);
     }
 
     /**
