@@ -69,7 +69,7 @@ public abstract class RenderTask extends RefCnt {
             IN_RESULT_FLAG = 0x10,  // Flag for topological sorting
             TEMP_MARK_FLAG = 0x20;  // Flag for topological sorting
 
-    static final TopologicalSort.Adapter<RenderTask> SORT_ADAPTER = new TopologicalSort.Adapter<>() {
+    static final TopologicalSort.Access<RenderTask> SORT_ACCESS = new TopologicalSort.Access<>() {
         @Override
         public void setIndex(@Nonnull RenderTask node, int index) {
             node.setIndex(index);

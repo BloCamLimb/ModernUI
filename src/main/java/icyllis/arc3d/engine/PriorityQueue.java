@@ -22,7 +22,7 @@ package icyllis.arc3d.engine;
 import java.util.*;
 
 /**
- * Similar to {@link java.util.PriorityQueue}, but supports {@link Accessor}.
+ * Similar to {@link java.util.PriorityQueue}, but supports {@link Access}.
  *
  * @param <E> the type of elements held in this queue
  */
@@ -49,7 +49,7 @@ public class PriorityQueue<E> extends AbstractQueue<E> {
     /**
      * The type-specific index accessor used in this queue.
      */
-    protected Accessor<? super E> mAccessor;
+    protected Access<? super E> mAccess;
 
     public PriorityQueue() {
         this(DEFAULT_INITIAL_CAPACITY, null, null);
@@ -59,16 +59,16 @@ public class PriorityQueue<E> extends AbstractQueue<E> {
         this(priority, null, null);
     }
 
-    public PriorityQueue(Accessor<? super E> accessor) {
-        this(DEFAULT_INITIAL_CAPACITY, null, accessor);
+    public PriorityQueue(Access<? super E> access) {
+        this(DEFAULT_INITIAL_CAPACITY, null, access);
     }
 
-    public PriorityQueue(int capacity, Accessor<? super E> accessor) {
-        this(capacity, null, accessor);
+    public PriorityQueue(int capacity, Access<? super E> access) {
+        this(capacity, null, access);
     }
 
-    public PriorityQueue(Comparator<? super E> comparator, Accessor<? super E> accessor) {
-        this(DEFAULT_INITIAL_CAPACITY, comparator, accessor);
+    public PriorityQueue(Comparator<? super E> comparator, Access<? super E> access) {
+        this(DEFAULT_INITIAL_CAPACITY, comparator, access);
     }
 
     /**
@@ -76,12 +76,12 @@ public class PriorityQueue<E> extends AbstractQueue<E> {
      *
      * @param capacity   the initial capacity of this queue.
      * @param comparator the comparator used in this queue, or {@code null} for the natural order.
-     * @param accessor   the index accessor used in this queue, or {@code null}.
+     * @param access   the index accessor used in this queue, or {@code null}.
      */
-    public PriorityQueue(int capacity, Comparator<? super E> comparator, Accessor<? super E> accessor) {
+    public PriorityQueue(int capacity, Comparator<? super E> comparator, Access<? super E> access) {
         mHeap = (E[]) new Object[Math.max(1, capacity)];
         mComparator = comparator;
-        mAccessor = accessor;
+        mAccess = access;
     }
 
     /**
@@ -136,8 +136,8 @@ public class PriorityQueue<E> extends AbstractQueue<E> {
 
     private int indexOf(Object o) {
         if (o != null) {
-            if (mAccessor != null)
-                return mAccessor.getIndex((E) o);
+            if (mAccess != null)
+                return mAccess.getIndex((E) o);
             final E[] es = mHeap;
             for (int i = 0, n = mSize; i < n; i++)
                 if (o.equals(es[i]))
@@ -291,9 +291,9 @@ public class PriorityQueue<E> extends AbstractQueue<E> {
     @Override
     public void clear() {
         final E[] es = mHeap;
-        if (mAccessor != null) {
+        if (mAccess != null) {
             for (int i = 0, n = mSize; i < n; i++) {
-                mAccessor.setIndex(es[i], -1);
+                mAccess.setIndex(es[i], -1);
                 es[i] = null;
             }
         } else {
@@ -325,13 +325,13 @@ public class PriorityQueue<E> extends AbstractQueue<E> {
         final E[] es = mHeap;
         int s = --mSize;
         if (s == i) { // removed last element
-            if (mAccessor != null)
-                mAccessor.setIndex(es[i], -1);
+            if (mAccess != null)
+                mAccess.setIndex(es[i], -1);
             es[i] = null;
         } else {
             E moved = es[s];
-            if (mAccessor != null)
-                mAccessor.setIndex(moved, -1);
+            if (mAccess != null)
+                mAccess.setIndex(moved, -1);
             es[s] = null;
             siftDown(i, moved);
             if (es[i] == moved)
@@ -356,7 +356,7 @@ public class PriorityQueue<E> extends AbstractQueue<E> {
         if (n > 1) {
             final E[] es = mHeap;
             Arrays.sort(es, 0, n, mComparator);
-            final Accessor<? super E> access = mAccessor;
+            final Access<? super E> access = mAccess;
             if (access != null)
                 for (int i = 0; i < n; i++)
                     access.setIndex(es[i], i);
@@ -375,7 +375,7 @@ public class PriorityQueue<E> extends AbstractQueue<E> {
         else
             for (; i >= 0; i--)
                 siftDownUsingComparator(i, es[i], es, n, mComparator);
-        final Accessor<? super E> access = mAccessor;
+        final Access<? super E> access = mAccess;
         if (access != null)
             for (i = 0; i < n; i++)
                 access.setIndex(es[i], i);
@@ -405,12 +405,12 @@ public class PriorityQueue<E> extends AbstractQueue<E> {
      */
     private void siftUp(int k, E x) {
         if (mComparator != null)
-            if (mAccessor != null)
-                siftUpUsingComparator(k, x, mHeap, mComparator, mAccessor);
+            if (mAccess != null)
+                siftUpUsingComparator(k, x, mHeap, mComparator, mAccess);
             else
                 siftUpUsingComparator(k, x, mHeap, mComparator);
-        else if (mAccessor != null)
-            siftUpComparable(k, x, mHeap, mAccessor);
+        else if (mAccess != null)
+            siftUpComparable(k, x, mHeap, mAccess);
         else
             siftUpComparable(k, x, mHeap);
     }
@@ -428,7 +428,7 @@ public class PriorityQueue<E> extends AbstractQueue<E> {
         es[k] = x;
     }
 
-    private static <T> void siftUpComparable(int k, T x, T[] es, Accessor<? super T> access) {
+    private static <T> void siftUpComparable(int k, T x, T[] es, Access<? super T> access) {
         Comparable<? super T> key = (Comparable<? super T>) x;
         while (k > 0) {
             int parent = (k - 1) >>> 1;
@@ -456,7 +456,7 @@ public class PriorityQueue<E> extends AbstractQueue<E> {
     }
 
     private static <T> void siftUpUsingComparator(int k, T x, T[] es, Comparator<? super T> c,
-                                                  Accessor<? super T> access) {
+                                                  Access<? super T> access) {
         while (k > 0) {
             int parent = (k - 1) >>> 1;
             T e = es[parent];
@@ -480,12 +480,12 @@ public class PriorityQueue<E> extends AbstractQueue<E> {
      */
     private void siftDown(int k, E x) {
         if (mComparator != null)
-            if (mAccessor != null)
-                siftDownUsingComparator(k, x, mHeap, mSize, mComparator, mAccessor);
+            if (mAccess != null)
+                siftDownUsingComparator(k, x, mHeap, mSize, mComparator, mAccess);
             else
                 siftDownUsingComparator(k, x, mHeap, mSize, mComparator);
-        else if (mAccessor != null)
-            siftDownComparable(k, x, mHeap, mSize, mAccessor);
+        else if (mAccess != null)
+            siftDownComparable(k, x, mHeap, mSize, mAccess);
         else
             siftDownComparable(k, x, mHeap, mSize);
     }
@@ -510,7 +510,7 @@ public class PriorityQueue<E> extends AbstractQueue<E> {
     }
 
     private static <T> void siftDownComparable(int k, T x, T[] es, int n,
-                                               Accessor<? super T> access) {
+                                               Access<? super T> access) {
         assert n > 0;
         Comparable<? super T> key = (Comparable<? super T>) x;
         int half = n >>> 1;           // loop while a non-leaf
@@ -549,7 +549,7 @@ public class PriorityQueue<E> extends AbstractQueue<E> {
     }
 
     private static <T> void siftDownUsingComparator(int k, T x, T[] es, int n, Comparator<? super T> cmp,
-                                                    Accessor<? super T> access) {
+                                                    Access<? super T> access) {
         assert n > 0;
         int half = n >>> 1;
         while (k < half) {
@@ -581,8 +581,8 @@ public class PriorityQueue<E> extends AbstractQueue<E> {
         return mComparator;
     }
 
-    public Accessor<? super E> accessor() {
-        return mAccessor;
+    public Access<? super E> access() {
+        return mAccess;
     }
 
     /**
@@ -592,7 +592,7 @@ public class PriorityQueue<E> extends AbstractQueue<E> {
      *
      * @param <E> the type of elements held in this queue
      */
-    public interface Accessor<E> {
+    public interface Access<E> {
 
         /**
          * Stores the new index into the element.

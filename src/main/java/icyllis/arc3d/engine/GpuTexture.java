@@ -293,7 +293,7 @@ public abstract class GpuTexture extends GpuResource implements IGpuSurface {
     /**
      * Storage key of {@link GpuTexture}, may be compared with {@link Texture}.
      */
-    public static final class ScratchKey {
+    public static final class ScratchKey implements IScratchKey {
 
         public int mWidth;
         public int mHeight;

@@ -19,21 +19,17 @@
 
 package icyllis.arc3d.engine;
 
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.objects.ObjectIterator;
-
-import javax.annotation.concurrent.NotThreadSafe;
-import java.util.ArrayDeque;
+import java.util.*;
 import java.util.function.BiFunction;
 
 /**
- * High performance implementation to multimap.
+ * Implementation of {@code Multimap} that uses an {@code ArrayDeque} to store the values for a given
+ * key. A {@link HashMap} associates each key with an {@link ArrayDeque} of values.
  *
- * @see Object2ObjectOpenHashMap
+ * @see HashMap
  * @see ArrayDeque
  */
-@NotThreadSafe
-public class ArrayDequeMultimap<K, V> extends Object2ObjectOpenHashMap<K, ArrayDeque<V>> {
+public class ArrayDequeMultimap<K, V> extends HashMap<K, ArrayDeque<V>> {
 
     private V mTmpValue;
 
@@ -43,6 +39,10 @@ public class ArrayDequeMultimap<K, V> extends Object2ObjectOpenHashMap<K, ArrayD
             (__, queue) -> queue.removeLastOccurrence(mTmpValue) && queue.isEmpty() ? null : queue;
 
     public ArrayDequeMultimap() {
+    }
+
+    public ArrayDequeMultimap(Map<? extends K, ? extends ArrayDeque<V>> other) {
+        super(other);
     }
 
     public void addFirstEntry(K k, V v) {
@@ -87,16 +87,5 @@ public class ArrayDequeMultimap<K, V> extends Object2ObjectOpenHashMap<K, ArrayD
         computeIfPresent(k, mRemoveLastEntry);
         assert (mTmpValue == v);
         mTmpValue = null;
-    }
-
-    @Override
-    public boolean trim(final int n) {
-        // release the backing buffer if queue is empty
-        for (ObjectIterator<Entry<K, ArrayDeque<V>>> it = object2ObjectEntrySet().fastIterator(); it.hasNext();) {
-            if (it.next().getValue().isEmpty()) {
-                it.remove();
-            }
-        }
-        return super.trim(n);
     }
 }

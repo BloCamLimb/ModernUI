@@ -37,7 +37,7 @@ import java.util.Objects;
  * This class can only be used on the creating thread of/on a single {@link RecordingContext},
  * and later used by {@link DirectContext} (render thread).
  */
-public class Texture extends Surface {
+public class Texture extends Surface implements IScratchKey {
 
     boolean mIsPromiseProxy = false;
 
@@ -62,7 +62,7 @@ public class Texture extends Surface {
      */
     boolean mSyncTargetKey = true;
 
-    Object mUniqueKey;
+    IUniqueKey mUniqueKey;
     /**
      * Only set when 'mUniqueKey' is non-null.
      */
@@ -247,7 +247,7 @@ public class Texture extends Surface {
      * Return the texture proxy's unique key. It will be null if the proxy doesn't have one.
      */
     @Nullable
-    public final Object getUniqueKey() {
+    public final IUniqueKey getUniqueKey() {
         return mUniqueKey;
     }
 
