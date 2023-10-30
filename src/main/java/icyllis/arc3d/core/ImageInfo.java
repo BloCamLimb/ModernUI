@@ -329,6 +329,42 @@ public final class ImageInfo {
         return makeColorInfo(colorType(colorInfo), newAlphaType);
     }
 
+    //@formatter:off
+    public static String colorTypeToString(@ColorType int ct) {
+        return switch (ct) {
+            case CT_UNKNOWN             -> "UNKNOWN";
+            case CT_R_8                 -> "R_8";
+            case CT_ALPHA_8             -> "ALPHA_8";
+            case CT_GRAY_8              -> "GRAY_8";
+            case CT_RGB_565             -> "RGB_565";
+            case CT_RG_88               -> "RG_88";
+            case CT_R_16                -> "R_16";
+            case CT_R_F16               -> "R_F16";
+            case CT_ALPHA_16            -> "ALPHA_16";
+            case CT_ALPHA_F16           -> "ALPHA_F16";
+            case CT_GRAY_ALPHA_88       -> "GRAY_ALPHA_88";
+            case CT_RGB_888             -> "RGB_888";
+            case CT_RGB_888x            -> "RGB_888x";
+            case CT_RGBA_8888           -> "RGBA_8888";
+            case CT_BGRA_8888           -> "BGRA_8888";
+            case CT_BGRA_1010102        -> "BGRA_1010102";
+            case CT_RGBA_1010102        -> "RGBA_1010102";
+            case CT_RG_1616             -> "RG_1616";
+            case CT_RG_F16              -> "RG_F16";
+            case CT_R_8xxx              -> "R_8xxx";
+            case CT_ALPHA_8xxx          -> "ALPHA_8xxx";
+            case CT_GRAY_8xxx           -> "GRAY_8xxx";
+            case CT_RGBA_8888_SRGB      -> "RGBA_8888_SRGB";
+            case CT_RGBA_16161616       -> "RGBA_16161616";
+            case CT_RGBA_F16            -> "RGBA_F16";
+            case CT_RGBA_F16_CLAMPED    -> "RGBA_F16_CLAMPED";
+            case CT_RGBA_F32            -> "RGBA_F32";
+            case CT_ALPHA_F32xxx        -> "ALPHA_F32xxx";
+            default -> throw new AssertionError(ct);
+        };
+    }
+    //@formatter:on
+
     @Size(min = 0)
     private int width;
     @Size(min = 0)

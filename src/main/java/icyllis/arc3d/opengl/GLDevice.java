@@ -241,8 +241,8 @@ public final class GLDevice extends GpuDevice {
     }
 
     @Override
-    protected void handleDirtyContext() {
-        super.handleDirtyContext();
+    protected void handleDirtyContext(int state) {
+        super.handleDirtyContext(state);
     }
 
     public GLCommandBuffer currentCommandBuffer() {
@@ -341,7 +341,7 @@ public final class GLDevice extends GpuDevice {
     //FIXME this is temp, wait for beginRenderPass()
     public void forceResetContext(int state) {
         markContextDirty(state);
-        handleDirtyContext();
+        handleDirtyContext(state);
     }
 
     @Nullable
@@ -359,6 +359,7 @@ public final class GLDevice extends GpuDevice {
         if (format.isExternal()) {
             return null;
         }
+        handleDirtyContext(GLBackendState.kTexture);
         int glFormat = format.getGLFormat();
         int texture = createTexture(width, height, glFormat, mipLevelCount);
         if (texture == 0) {
@@ -417,6 +418,7 @@ public final class GLDevice extends GpuDevice {
         if (!glFormatIsSupported(format)) {
             return null;
         }
+        handleDirtyContext(GLBackendState.kTexture);
         assert mCaps.isFormatRenderable(format, sampleCount);
         assert mCaps.isFormatTexturable(format);
 
@@ -487,6 +489,7 @@ public final class GLDevice extends GpuDevice {
         if (srcType == 0) {
             return false;
         }
+        handleDirtyContext(GLBackendState.kTexture | GLBackendState.kPixelStore);
 
         boolean dsa = mCaps.hasDSASupport();
         int texName = glTexture.getHandle();
@@ -580,6 +583,9 @@ public final class GLDevice extends GpuDevice {
         int srcHeight = srcB - srcT;
         int dstWidth = dstR - dstL;
         int dstHeight = dstB - dstT;
+
+        // we restore the context, no need to handle
+        // handleDirtyContext();
 
         if (srcWidth == dstWidth && srcHeight == dstHeight) {
             // no scaling
@@ -682,7 +688,7 @@ public final class GLDevice extends GpuDevice {
                                            byte colorOps,
                                            byte stencilOps,
                                            float[] clearColor) {
-        handleDirtyContext();
+        handleDirtyContext(GLBackendState.kRenderTarget);
 
         GLCommandBuffer cmdBuffer = currentCommandBuffer();
 
@@ -714,7 +720,7 @@ public final class GLDevice extends GpuDevice {
     public void endRenderPass(GLRenderTarget fs,
                               byte colorOps,
                               byte stencilOps) {
-        handleDirtyContext();
+        handleDirtyContext(GLBackendState.kRenderTarget);
 
         boolean colorStoreDiscard = LoadStoreOps.storeOp(colorOps) == StoreOp.DontCare;
         boolean stencilStoreDiscard = LoadStoreOps.storeOp(stencilOps) == StoreOp.DontCare;
@@ -745,7 +751,7 @@ public final class GLDevice extends GpuDevice {
     @Nullable
     @Override
     protected GpuBuffer onCreateBuffer(int size, int flags) {
-        handleDirtyContext();
+        handleDirtyContext(GLBackendState.kPipeline);
         return GLBuffer.make(this, size, flags);
     }
 
@@ -754,6 +760,8 @@ public final class GLDevice extends GpuDevice {
                                          int resolveLeft, int resolveTop,
                                          int resolveRight, int resolveBottom) {
         GLRenderTarget glRenderTarget = (GLRenderTarget) renderTarget;
+        //TODO handle non-DSA case
+        //handleDirtyContext();
 
         int framebuffer = glRenderTarget.getSampleFramebuffer();
         int resolveFramebuffer = glRenderTarget.getResolveFramebuffer();
@@ -845,7 +853,7 @@ public final class GLDevice extends GpuDevice {
     public int bindBuffer(@Nonnull GLBuffer buffer) {
         assert !getCaps().hasDSASupport();
 
-        handleDirtyContext();
+        handleDirtyContext(GLBackendState.kPipeline);
 
         int type = bufferUsageToType(buffer.getUsage());
         if (type == BUFFER_TYPE_INDEX) {
@@ -865,13 +873,16 @@ public final class GLDevice extends GpuDevice {
     public void bindIndexBufferInPipe(@Nonnull GLBuffer buffer) {
         assert !getCaps().hasDSASupport() || getCaps().dsaElementBufferIsBroken();
 
-        handleDirtyContext();
+        // pipeline is already handled
+        //handleDirtyContext(GLBackendState.kPipeline);
 
         assert bufferUsageToType(buffer.getUsage()) == BUFFER_TYPE_INDEX;
 
         // force rebind
         var bufferState = mHWBufferStates[BUFFER_TYPE_INDEX];
-        glBindBuffer(bufferState.mTarget, buffer.getHandle());
+        assert bufferState.mTarget == GL_ELEMENT_ARRAY_BUFFER;
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.getHandle());
         bufferState.mBoundBufferUniqueID = buffer.getUniqueID();
     }
 
@@ -884,7 +895,7 @@ public final class GLDevice extends GpuDevice {
     public int bindBufferForSetup(int usage, int buffer) {
         assert !getCaps().hasDSASupport();
 
-        handleDirtyContext();
+        handleDirtyContext(GLBackendState.kPipeline);
 
         int type = bufferUsageToType(usage);
         if (type == BUFFER_TYPE_INDEX) {

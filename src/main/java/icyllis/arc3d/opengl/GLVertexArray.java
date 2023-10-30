@@ -50,6 +50,8 @@ public final class GLVertexArray extends ManagedResource {
     private final int mNumVertexLocations;
     private final int mNumInstanceLocations;
 
+    private final boolean mDSAElementBuffer;
+
     // OpenGL 3 only
     // lower 24 bits: offset
     // high 8 bits: VertexAttribType
@@ -86,6 +88,9 @@ public final class GLVertexArray extends ManagedResource {
         mNumVertexLocations = numVertexLocations;
         mNumInstanceLocations = numInstanceLocations;
         mAttributes = attributes;
+
+        mDSAElementBuffer = attributes == null &&
+                !device.getCaps().dsaElementBufferIsBroken();
     }
 
     @Nullable
@@ -403,8 +408,7 @@ public final class GLVertexArray extends ManagedResource {
             return;
         }
         if (mIndexBuffer != buffer.getUniqueID()) {
-            if (mAttributes == null &&
-                    !getDevice().getCaps().dsaElementBufferIsBroken()) {
+            if (mDSAElementBuffer) {
                 // OpenGL 4.5
                 glVertexArrayElementBuffer(mVertexArray, buffer.getHandle());
             } else {
