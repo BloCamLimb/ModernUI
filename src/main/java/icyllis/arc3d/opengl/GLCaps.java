@@ -243,10 +243,11 @@ public final class GLCaps extends Caps {
         mVendor = getVendor(vendorString);
         mDriver = getDriver(mVendor, vendorString, versionString);
 
-        // DirectStateAccess's glVertexArrayElementBuffer doesn't work well with NVIDIA on Linux.
+        // DirectStateAccess glVertexArrayElementBuffer doesn't work well with NVIDIA on Linux.
         // Sometimes it will cause segfault on glDrawElementsBaseVertex.
-        mDSAElementBufferIsBroken =
-                mDriver == GL_DRIVER_NVIDIA && Platform.get() == Platform.LINUX;
+        // This won't affect performance.
+        mDSAElementBufferIsBroken = mDSASupport &&
+                (mDriver == GL_DRIVER_NVIDIA && Platform.get() == Platform.LINUX);
 
         mMaxFragmentUniformVectors = glGetInteger(GL_MAX_FRAGMENT_UNIFORM_VECTORS);
         mMaxVertexAttributes = Math.min(32, glGetInteger(GL_MAX_VERTEX_ATTRIBS));
@@ -1653,6 +1654,7 @@ public final class GLCaps extends Caps {
     }
 
     public boolean dsaElementBufferIsBroken() {
+        assert hasDSASupport();
         return mDSAElementBufferIsBroken;
     }
 
@@ -1673,6 +1675,7 @@ public final class GLCaps extends Caps {
                 ", mBufferStorageSupport=" + mBufferStorageSupport +
                 ", mBaseInstanceSupport=" + mBaseInstanceSupport +
                 ", mDSASupport=" + mDSASupport +
+                ", mDSAElementBufferIsBroken=" + mDSAElementBufferIsBroken +
                 ", mInvalidateBufferType=" + mInvalidateBufferType +
                 (includeFormatTable ? ", mFormatTable=" + Arrays.toString(mFormatTable) : "") +
                 ", mColorTypeToBackendFormat=" + Arrays.toString(mColorTypeToBackendFormat) +
@@ -1715,7 +1718,7 @@ public final class GLCaps extends Caps {
         @Override
         public String toString() {
             return "ExternalIOFormat{" +
-                    "mColorType=" + mColorType +
+                    "mColorType=" + ImageInfo.colorTypeToString(mColorType) +
                     ", mExternalType=" + mExternalType +
                     ", mExternalWriteFormat=" + mExternalWriteFormat +
                     ", mExternalReadFormat=" + mExternalReadFormat +
@@ -1762,7 +1765,7 @@ public final class GLCaps extends Caps {
         @Override
         public String toString() {
             return "ColorTypeInfo{" +
-                    "mColorType=" + mColorType +
+                    "mColorType=" + ImageInfo.colorTypeToString(mColorType) +
                     ", mFlags=0x" + Integer.toHexString(mFlags) +
                     ", mReadSwizzle=" + Swizzle.toString(mReadSwizzle) +
                     ", mWriteSwizzle=" + Swizzle.toString(mWriteSwizzle) +
@@ -1848,13 +1851,13 @@ public final class GLCaps extends Caps {
         @Override
         public String toString() {
             return "FormatInfo{" +
-                    "mFlags=" + mFlags +
+                    "mFlags=0x" + Integer.toHexString(mFlags) +
                     ", mFormatType=" + mFormatType +
                     ", mInternalFormatForTexture=" + mInternalFormatForTexture +
                     ", mInternalFormatForRenderbuffer=" + mInternalFormatForRenderbuffer +
                     ", mDefaultExternalFormat=" + mDefaultExternalFormat +
                     ", mDefaultExternalType=" + mDefaultExternalType +
-                    ", mDefaultColorType=" + mDefaultColorType +
+                    ", mDefaultColorType=" + ImageInfo.colorTypeToString(mDefaultColorType) +
                     ", mColorSampleCounts=" + Arrays.toString(mColorSampleCounts) +
                     ", mColorTypeInfos=" + Arrays.toString(mColorTypeInfos) +
                     '}';

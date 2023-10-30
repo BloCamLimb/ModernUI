@@ -113,10 +113,11 @@ public abstract class GpuDevice implements Engine {
         mResetBits |= state;
     }
 
-    protected void handleDirtyContext() {
-        if (mResetBits != 0) {
-            onResetContext(mResetBits);
-            mResetBits = 0;
+    protected void handleDirtyContext(int state) {
+        int dirtyBits = (mResetBits & state);
+        if (dirtyBits != 0) {
+            onResetContext(dirtyBits);
+            mResetBits &= ~dirtyBits;
         }
     }
 
@@ -172,7 +173,6 @@ public abstract class GpuDevice implements Engine {
             sampleCount = mCaps.getRenderTargetSampleCount(sampleCount, format);
         }
         assert (sampleCount > 0 && sampleCount <= 64);
-        handleDirtyContext();
         final GpuTexture texture = onCreateTexture(width, height, format,
                 mipLevelCount, sampleCount, surfaceFlags);
         if (texture != null) {
@@ -218,7 +218,6 @@ public abstract class GpuDevice implements Engine {
     public GpuTexture wrapRenderableBackendTexture(BackendTexture texture,
                                                    int sampleCount,
                                                    boolean ownership) {
-        handleDirtyContext();
         if (sampleCount < 1) {
             return null;
         }
@@ -298,7 +297,6 @@ public abstract class GpuDevice implements Engine {
         if (pixels == 0) {
             return true;
         }
-        handleDirtyContext();
         if (!onWritePixels(texture,
                 x, y, width, height,
                 dstColorType,
@@ -381,7 +379,6 @@ public abstract class GpuDevice implements Engine {
         if ((dst.getSurfaceFlags() & IGpuSurface.FLAG_READ_ONLY) != 0) {
             return false;
         }
-        handleDirtyContext();
         return onCopySurface(
                 src,
                 srcL, srcT, srcR, srcB,
@@ -438,7 +435,6 @@ public abstract class GpuDevice implements Engine {
                                     int resolveLeft, int resolveTop,
                                     int resolveRight, int resolveBottom) {
         assert (renderTarget != null);
-        handleDirtyContext();
         onResolveRenderTarget(renderTarget, resolveLeft, resolveTop, resolveRight, resolveBottom);
     }
 
