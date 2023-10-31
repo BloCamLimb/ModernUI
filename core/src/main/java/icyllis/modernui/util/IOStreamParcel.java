@@ -18,56 +18,96 @@
 
 package icyllis.modernui.util;
 
-import java.io.IOException;
-import java.io.InputStream;
+import org.jetbrains.annotations.ApiStatus;
+
+import java.io.*;
 
 //TODO TEST ONLY, WILL BE REMOVED
-public class InputStreamParcel extends Parcel implements AutoCloseable {
+@ApiStatus.Internal
+public class IOStreamParcel extends Parcel implements AutoCloseable {
 
-    private final InputStream mStream;
+    private final InputStream mIn;
+    private final OutputStream mOut;
 
-    public InputStreamParcel(InputStream stream) {
-        mStream = stream;
+    public IOStreamParcel(InputStream in, OutputStream out) {
+        mIn = in;
+        mOut = out;
+    }
+
+    @Override
+    protected void ensureCapacity(int len) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void position(int newPosition) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void limit(int newLimit) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void writeBytes(byte[] src, int off, int len) {
-        throw new RuntimeException("Read only");
+        try {
+            mOut.write(src, off, len);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public void writeByte(int v) {
-        throw new RuntimeException("Read only");
+        try {
+            mOut.write(v);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public void writeShort(int v) {
-        throw new RuntimeException("Read only");
+        mTmpBuffer[0] = (byte) (v >>> 8);
+        mTmpBuffer[1] = (byte) (v);
+        try {
+            mOut.write(mTmpBuffer, 0, 2);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public void writeInt(int v) {
-        throw new RuntimeException("Read only");
+        mTmpBuffer[0] = (byte) (v >>> 24);
+        mTmpBuffer[1] = (byte) (v >>> 16);
+        mTmpBuffer[2] = (byte) (v >>> 8);
+        mTmpBuffer[3] = (byte) (v);
+        try {
+            mOut.write(mTmpBuffer, 0, 4);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
+
+    private final byte[] mTmpBuffer = new byte[8];
 
     @Override
     public void writeLong(long v) {
-        throw new RuntimeException("Read only");
-    }
-
-    @Override
-    public void writeChar(int v) {
-        throw new RuntimeException("Read only");
-    }
-
-    @Override
-    public void writeFloat(float v) {
-        throw new RuntimeException("Read only");
-    }
-
-    @Override
-    public void writeDouble(double v) {
-        throw new RuntimeException("Read only");
+        mTmpBuffer[0] = (byte) (v >>> 56);
+        mTmpBuffer[1] = (byte) (v >>> 48);
+        mTmpBuffer[2] = (byte) (v >>> 40);
+        mTmpBuffer[3] = (byte) (v >>> 32);
+        mTmpBuffer[4] = (byte) (v >>> 24);
+        mTmpBuffer[5] = (byte) (v >>> 16);
+        mTmpBuffer[6] = (byte) (v >>> 8);
+        mTmpBuffer[7] = (byte) (v);
+        try {
+            mOut.write(mTmpBuffer, 0, 8);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -75,7 +115,7 @@ public class InputStreamParcel extends Parcel implements AutoCloseable {
         try {
             int n = 0;
             while (n < len) {
-                int count = mStream.read(dst, off + n, len - n);
+                int count = mIn.read(dst, off + n, len - n);
                 if (count < 0)
                     throw new RuntimeException("Not enough data");
                 n += count;
@@ -88,7 +128,7 @@ public class InputStreamParcel extends Parcel implements AutoCloseable {
     @Override
     public byte readByte() {
         try {
-            int ch = mStream.read();
+            int ch = mIn.read();
             if (ch < 0)
                 throw new RuntimeException("Not enough data");
             return (byte) (ch);
@@ -100,8 +140,8 @@ public class InputStreamParcel extends Parcel implements AutoCloseable {
     @Override
     public short readShort() {
         try {
-            int ch1 = mStream.read();
-            int ch2 = mStream.read();
+            int ch1 = mIn.read();
+            int ch2 = mIn.read();
             if ((ch1 | ch2) < 0)
                 throw new RuntimeException("Not enough data");
             return (short) ((ch1 << 8) + (ch2));
@@ -113,10 +153,10 @@ public class InputStreamParcel extends Parcel implements AutoCloseable {
     @Override
     public int readInt() {
         try {
-            int ch1 = mStream.read();
-            int ch2 = mStream.read();
-            int ch3 = mStream.read();
-            int ch4 = mStream.read();
+            int ch1 = mIn.read();
+            int ch2 = mIn.read();
+            int ch3 = mIn.read();
+            int ch4 = mIn.read();
             if ((ch1 | ch2 | ch3 | ch4) < 0)
                 throw new RuntimeException("Not enough data");
             return ((ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4));
@@ -124,8 +164,6 @@ public class InputStreamParcel extends Parcel implements AutoCloseable {
             throw new RuntimeException(e);
         }
     }
-
-    private final byte[] mTmpBuffer = new byte[8];
 
     @Override
     public long readLong() {
@@ -141,30 +179,9 @@ public class InputStreamParcel extends Parcel implements AutoCloseable {
     }
 
     @Override
-    public char readChar() {
-        try {
-            int ch1 = mStream.read();
-            int ch2 = mStream.read();
-            if ((ch1 | ch2) < 0)
-                throw new RuntimeException("Not enough data");
-            return (char) ((ch1 << 8) + (ch2));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public float readFloat() {
-        return Float.intBitsToFloat(readInt());
-    }
-
-    @Override
-    public double readDouble() {
-        return Double.longBitsToDouble(readLong());
-    }
-
-    @Override
     public void close() throws IOException {
-        mStream.close();
+        // not correct
+        mIn.close();
+        mOut.close();
     }
 }

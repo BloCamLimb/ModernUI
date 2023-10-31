@@ -22,21 +22,20 @@ import icyllis.modernui.util.DataSet
 import icyllis.modernui.util.Parcel
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.core.config.Configurator
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
-import java.io.InputStream
-import java.io.OutputStream
 
 fun main() {
     Configurator.setRootLevel(Level.ALL)
-    val output = ByteArrayOutputStream();
-    write(output)
-    val bytes = output.toByteArray()
-    val input = ByteArrayInputStream(bytes)
-    read(input)
+    val parcel = Parcel()
+    write(parcel)
+    val pos = parcel.position()
+    val cap = parcel.capacity()
+    println("Bytes: $pos, Cap: $cap")
+    parcel.position(0)
+    read(parcel)
+    parcel.freeData()
 }
 
-fun write(output: OutputStream) {
+fun write(parcel: Parcel) {
     val bundle = DataSet()
     bundle["health"] = 5
     bundle["velocity"] = 9.2f
@@ -44,12 +43,13 @@ fun write(output: OutputStream) {
     pos["x"] = 6.1f
     pos["y"] = 56.2f
     bundle["pos"] = pos
+    bundle["extra"] = "MODERNUI MODERNUI MODERNUI MODERNUI MODERNUI"
     if ("pos" in bundle)
         println("Ok")
-    Parcel.deflate(output, bundle)
+    parcel.writeDataSet(bundle)
 }
 
-fun read(input: InputStream) {
-    val bundle = Parcel.inflate(input, null)
+fun read(parcel: Parcel) {
+    val bundle = parcel.readDataSet(null)
     println(bundle) // {health=5, velocity=9.2, pos={x=6.1, y=56.2}}
 }
