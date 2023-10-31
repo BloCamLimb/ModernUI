@@ -77,7 +77,10 @@ public abstract class Caps {
     protected int mInternalMultisampleCount = 0;
     protected int mMaxPushConstantsSize = 0;
 
+    protected final DriverBugWorkarounds mDriverBugWorkarounds = new DriverBugWorkarounds();
+
     public Caps(ContextOptions options) {
+        mDriverBugWorkarounds.applyOverrides(options.mDriverBugWorkarounds);
     }
 
     /**
@@ -622,6 +625,11 @@ public abstract class Caps {
 
     public abstract short getWriteSwizzle(BackendFormat format, int colorType);
 
+    // unmodifiable
+    public final DriverBugWorkarounds workarounds() {
+        return mDriverBugWorkarounds;
+    }
+
     protected final void finishInitialization(ContextOptions options) {
         mShaderCaps.applyOptionsOverrides(options);
         onApplyOptionsOverrides(options);
@@ -634,5 +642,6 @@ public abstract class Caps {
     }
 
     protected void onApplyOptionsOverrides(ContextOptions options) {
+        mDriverBugWorkarounds.applyOverrides(options.mDriverBugWorkarounds);
     }
 }

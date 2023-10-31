@@ -116,6 +116,8 @@ public final class ContextOptions {
      */
     public int mMaxVkSecondaryCommandBufferCacheSize = -1;
 
+    public DriverBugWorkarounds mDriverBugWorkarounds;
+
     public ContextOptions() {
     }
 }

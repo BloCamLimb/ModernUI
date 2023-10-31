@@ -25,7 +25,6 @@ import org.jetbrains.annotations.VisibleForTesting;
 import org.lwjgl.opengl.GL46C;
 import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.system.MemoryStack;
-import org.lwjgl.system.Platform;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -70,7 +69,7 @@ public final class GLCaps extends Caps {
             INVALIDATE_BUFFER_TYPE_INVALIDATE = 2;
     final int mInvalidateBufferType;
 
-    final boolean mDSAElementBufferIsBroken;
+    final boolean mDSAElementBufferBroken;
 
     /**
      * Format table for textures.
@@ -243,11 +242,24 @@ public final class GLCaps extends Caps {
         mVendor = getVendor(vendorString);
         mDriver = getDriver(mVendor, vendorString, versionString);
 
-        // DirectStateAccess glVertexArrayElementBuffer doesn't work well with NVIDIA on Linux.
-        // Sometimes it will cause segfault on glDrawElementsBaseVertex.
-        // This won't affect performance.
-        mDSAElementBufferIsBroken = mDSASupport &&
-                (mDriver == GL_DRIVER_NVIDIA && Platform.get() == Platform.LINUX);
+        // apply driver workarounds
+        {
+            var workarounds = mDriverBugWorkarounds;
+            // Sometimes glVertexArrayElementBuffer will cause segfault on glDrawElementsBaseVertex.
+            // This won't affect performance.
+            if (mDSASupport) {
+                if (DriverBugWorkarounds.isEnabled(workarounds.dsa_element_buffer_broken)) {
+                    mDSAElementBufferBroken = true;
+                } else if (DriverBugWorkarounds.isDisabled(workarounds.dsa_element_buffer_broken)) {
+                    mDSAElementBufferBroken = false;
+                } else {
+                    // for NVIDIA, disable for all platforms
+                    mDSAElementBufferBroken = (mDriver == GL_DRIVER_NVIDIA);
+                }
+            } else {
+                mDSAElementBufferBroken = false;
+            }
+        }
 
         mMaxFragmentUniformVectors = glGetInteger(GL_MAX_FRAGMENT_UNIFORM_VECTORS);
         mMaxVertexAttributes = Math.min(32, glGetInteger(GL_MAX_VERTEX_ATTRIBS));
@@ -1653,9 +1665,9 @@ public final class GLCaps extends Caps {
         return mMaxTextureMaxAnisotropy;
     }
 
-    public boolean dsaElementBufferIsBroken() {
+    public boolean dsaElementBufferBroken() {
         assert hasDSASupport();
-        return mDSAElementBufferIsBroken;
+        return mDSAElementBufferBroken;
     }
 
     @Override
@@ -1675,7 +1687,7 @@ public final class GLCaps extends Caps {
                 ", mBufferStorageSupport=" + mBufferStorageSupport +
                 ", mBaseInstanceSupport=" + mBaseInstanceSupport +
                 ", mDSASupport=" + mDSASupport +
-                ", mDSAElementBufferIsBroken=" + mDSAElementBufferIsBroken +
+                ", mDSAElementBufferBroken=" + mDSAElementBufferBroken +
                 ", mInvalidateBufferType=" + mInvalidateBufferType +
                 (includeFormatTable ? ", mFormatTable=" + Arrays.toString(mFormatTable) : "") +
                 ", mColorTypeToBackendFormat=" + Arrays.toString(mColorTypeToBackendFormat) +
