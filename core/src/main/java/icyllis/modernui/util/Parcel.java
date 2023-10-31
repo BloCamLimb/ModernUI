@@ -21,10 +21,13 @@ package icyllis.modernui.util;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.text.TextUtils;
+import org.jetbrains.annotations.ApiStatus;
+import org.lwjgl.system.MemoryUtil;
 
 import java.io.*;
 import java.lang.reflect.Array;
 import java.lang.reflect.Modifier;
+import java.nio.*;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
@@ -33,9 +36,8 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 /**
- * A Parcel is a container for a sequence of bytes, or an abstract view of NIO
- * ByteBuffer, Netty ByteBuf, that performs non-blocking binary I/O on various
- * data objects.
+ * A Parcel is a message container for a sequence of bytes, that performs
+ * non-blocking binary I/O on various data objects.
  * <p>
  * Parcel provides methods for converting arbitrary objects to and from binaries.
  * This is mainly used for in-memory communication between activities, network
@@ -46,7 +48,7 @@ import java.util.zip.GZIPOutputStream;
  * @since 3.9
  */
 //TODO review
-public abstract class Parcel {
+public class Parcel {
 
     /**
      * Value types, version 3.7, do not change.
@@ -86,6 +88,13 @@ public abstract class Parcel {
     private static final ConcurrentHashMap<ClassLoader, ConcurrentHashMap<String, Parcelable.Creator<?>>>
             gCreators = new ConcurrentHashMap<>();
 
+    //TODO ByteBuffer heap and native?
+    protected ByteBuffer mNativeBuffer;
+
+    /**
+     * @see #freeData()
+     */
+    @ApiStatus.Internal
     public Parcel() {
     }
 
@@ -99,10 +108,10 @@ public abstract class Parcel {
      * @return the data set
      */
     @NonNull
-    public static DataSet inflate(@NonNull InputStream stream,
-                                  @Nullable ClassLoader loader) throws IOException {
-        try (var in = new InputStreamParcel(new GZIPInputStream(
-                new BufferedInputStream(stream, 4096)))) {
+    private static DataSet inflate(@NonNull InputStream stream,
+                                   @Nullable ClassLoader loader) throws IOException {
+        try (var in = new IOStreamParcel(new GZIPInputStream(
+                new BufferedInputStream(stream, 4096)), null)) {
             var res = in.readDataSet(loader);
             if (res == null) {
                 throw new IOException("Insufficient data");
@@ -125,9 +134,9 @@ public abstract class Parcel {
      * @param stream a FileOutputStream or a ChannelOutputStream over FileChannel
      * @param source the data set
      */
-    public static void deflate(@NonNull OutputStream stream,
-                               @NonNull DataSet source) throws IOException {
-        try (var out = new OutputStreamParcel(new GZIPOutputStream(
+    private static void deflate(@NonNull OutputStream stream,
+                                @NonNull DataSet source) throws IOException {
+        try (var out = new IOStreamParcel(null, new GZIPOutputStream(
                 new BufferedOutputStream(stream, 4096)))) {
             out.writeDataSet(source);
         } catch (RuntimeException e) {
@@ -138,53 +147,173 @@ public abstract class Parcel {
         }
     }
 
+    protected void ensureCapacity(int len) {
+        if (mNativeBuffer != null && mNativeBuffer.remaining() >= len) {
+            return;
+        }
+        long size = (mNativeBuffer == null ? 0 : mNativeBuffer.limit()) + len;
+        size += size >> 1;
+        if (size > Integer.MAX_VALUE) {
+            throw new BufferOverflowException();
+        }
+        setCapacity((int) Math.max(size, 128));
+    }
+
+    protected void setCapacity(int size) {
+        if (mNativeBuffer != null && mNativeBuffer.capacity() >= size) {
+            mNativeBuffer.limit(size);
+        } else if (mNativeBuffer == null) {
+            mNativeBuffer = MemoryUtil.memAlloc(size);
+        } else {
+            mNativeBuffer = MemoryUtil.memRealloc(mNativeBuffer, size);
+        }
+    }
+
+    public int position() {
+        return mNativeBuffer == null ? 0 : mNativeBuffer.position();
+    }
+
+    public void position(int newPosition) {
+        ensureCapacity(0);
+        mNativeBuffer.position(newPosition);
+    }
+
+    public int limit() {
+        return mNativeBuffer == null ? 0 : mNativeBuffer.limit();
+    }
+
+    public void limit(int newLimit) {
+        ensureCapacity(0);
+        mNativeBuffer.limit(newLimit);
+    }
+
+    public int capacity() {
+        return mNativeBuffer == null ? 0 : mNativeBuffer.capacity();
+    }
+
     public void writeBytes(byte[] src) {
         writeBytes(src, 0, src.length);
     }
 
-    public abstract void writeBytes(byte[] src, int off, int len);
+    public void writeBytes(byte[] src, int off, int len) {
+        ensureCapacity(len);
+        mNativeBuffer.put(src, off, len);
+    }
 
+    /**
+     * Write a boolean value into the parcel.
+     */
     public void writeBoolean(boolean b) {
         writeByte(b ? 1 : 0);
     }
 
-    public abstract void writeByte(int v);
+    /**
+     * Write a char value into the parcel.
+     */
+    public void writeChar(int v) {
+        writeShort(v);
+    }
 
-    public abstract void writeShort(int v);
+    /**
+     * Write a byte value into the parcel.
+     */
+    public void writeByte(int v) {
+        ensureCapacity(1);
+        mNativeBuffer.put((byte) v);
+    }
 
-    public abstract void writeInt(int v);
+    /**
+     * Write a short integer value into the parcel.
+     */
+    public void writeShort(int v) {
+        ensureCapacity(2);
+        mNativeBuffer.putShort((short) v);
+    }
 
-    public abstract void writeLong(long v);
+    /**
+     * Write an integer value into the parcel.
+     */
+    public void writeInt(int v) {
+        ensureCapacity(4);
+        mNativeBuffer.putInt(v);
+    }
 
-    public abstract void writeChar(int v);
+    /**
+     * Write a long integer value into the parcel.
+     */
+    public void writeLong(long v) {
+        ensureCapacity(8);
+        mNativeBuffer.putLong(v);
+    }
 
-    public abstract void writeFloat(float v);
+    /**
+     * Write a floating point value into the parcel.
+     */
+    public void writeFloat(float v) {
+        writeInt(Float.floatToRawIntBits(v));
+    }
 
-    public abstract void writeDouble(double v);
+    /**
+     * Write a double precision floating point value into the parcel.
+     */
+    public void writeDouble(double v) {
+        writeLong(Double.doubleToRawLongBits(v));
+    }
 
     public void readBytes(byte[] dst) {
         readBytes(dst, 0, dst.length);
     }
 
-    public abstract void readBytes(byte[] dst, int off, int len);
+    public void readBytes(byte[] dst, int off, int len) {
+        if (mNativeBuffer == null) {
+            throw new BufferUnderflowException();
+        }
+        mNativeBuffer.get(dst, off, len);
+    }
 
     public boolean readBoolean() {
         return readByte() != 0;
     }
 
-    public abstract byte readByte();
+    public char readChar() {
+        return (char) readShort();
+    }
 
-    public abstract short readShort();
+    public byte readByte() {
+        if (mNativeBuffer == null) {
+            throw new BufferUnderflowException();
+        }
+        return mNativeBuffer.get();
+    }
 
-    public abstract int readInt();
+    public short readShort() {
+        if (mNativeBuffer == null) {
+            throw new BufferUnderflowException();
+        }
+        return mNativeBuffer.getShort();
+    }
 
-    public abstract long readLong();
+    public int readInt() {
+        if (mNativeBuffer == null) {
+            throw new BufferUnderflowException();
+        }
+        return mNativeBuffer.getInt();
+    }
 
-    public abstract char readChar();
+    public long readLong() {
+        if (mNativeBuffer == null) {
+            throw new BufferUnderflowException();
+        }
+        return mNativeBuffer.getLong();
+    }
 
-    public abstract float readFloat();
+    public float readFloat() {
+        return Float.intBitsToFloat(readInt());
+    }
 
-    public abstract double readDouble();
+    public double readDouble() {
+        return Double.longBitsToDouble(readLong());
+    }
 
     /**
      * Write a value and its type.
@@ -221,14 +350,12 @@ public abstract class Parcel {
         } else if (v instanceof Boolean) {
             writeByte(VAL_BOOLEAN);
             writeBoolean((Boolean) v);
-        } else if (v instanceof UUID value) {
+        } else if (v instanceof UUID) {
             writeByte(VAL_UUID);
-            writeLong(value.getMostSignificantBits());
-            writeLong(value.getLeastSignificantBits());
-        } else if (v instanceof Instant value) {
+            writeUUID((UUID) v);
+        } else if (v instanceof Instant) {
             writeByte(VAL_INSTANT);
-            writeLong(value.getEpochSecond());
-            writeInt(value.getNano());
+            writeInstant((Instant) v);
         } else if (v instanceof int[]) {
             writeByte(VAL_INT_ARRAY);
             writeIntArray((int[]) v);
@@ -241,13 +368,12 @@ public abstract class Parcel {
         } else if (v instanceof DataSet) {
             writeByte(VAL_DATA_SET);
             writeDataSet((DataSet) v);
-        } else if (v instanceof Parcelable value) {
+        } else if (v instanceof Parcelable) {
             writeByte(VAL_PARCELABLE);
-            writeString(value.getClass().getName());
-            value.writeToParcel(this, 0);
+            writeParcelable((Parcelable) v, 0);
         } else if (v instanceof CharSequence) {
             writeByte(VAL_CHAR_SEQUENCE);
-            TextUtils.writeToParcel((CharSequence) v, this, 0);
+            writeCharSequence((CharSequence) v);
         } else if (v instanceof List) {
             writeByte(VAL_LIST);
             writeList((List<?>) v);
@@ -316,11 +442,11 @@ public abstract class Parcel {
             case VAL_BOOLEAN_ARRAY -> readBooleanArray();
             case VAL_CHAR_ARRAY -> readCharArray();
             case VAL_STRING -> readString();
-            case VAL_UUID -> new UUID(readLong(), readLong());
-            case VAL_INSTANT -> Instant.ofEpochSecond(readLong(), readInt());
+            case VAL_UUID -> readUUID();
+            case VAL_INSTANT -> readInstant();
             case VAL_DATA_SET -> readDataSet(loader);
             case VAL_PARCELABLE -> readParcelable0(loader, clazz);
-            case VAL_CHAR_SEQUENCE -> TextUtils.createFromParcel(this);
+            case VAL_CHAR_SEQUENCE -> readCharSequence();
             case VAL_LIST -> readList(loader, elemType);
             case VAL_OBJECT_ARRAY -> {
                 if (elemType == null) {
@@ -752,7 +878,7 @@ public abstract class Parcel {
     }
 
     /**
-     * Write a string in UTF-16 BE format.
+     * Write a string in UTF-16 format.
      *
      * @param s the string to write
      */
@@ -790,7 +916,7 @@ public abstract class Parcel {
     }
 
     /**
-     * Read a string in UTF-16 BE format.
+     * Read a string in UTF-16 format.
      */
     @Nullable
     public String readString16() {
@@ -801,6 +927,21 @@ public abstract class Parcel {
         for (int i = 0; i < n; i++)
             value[i] = readChar();
         return new String(value);
+    }
+
+    /**
+     * Write a CharSequence value into the parcel. May be Spanned.
+     */
+    public void writeCharSequence(@Nullable CharSequence cs) {
+        TextUtils.writeToParcel(cs, this, 0);
+    }
+
+    /**
+     * Read a CharSequence value from the parcel. May be Spanned.
+     */
+    @Nullable
+    public CharSequence readCharSequence() {
+        return TextUtils.createFromParcel(this);
     }
 
     /**
@@ -874,5 +1015,45 @@ public abstract class Parcel {
             res.put(readString(), readValue(loader, null, null));
         }
         return res;
+    }
+
+    /**
+     * Write UUID as a value.
+     */
+    public void writeUUID(@NonNull UUID value) {
+        writeLong(value.getMostSignificantBits());
+        writeLong(value.getLeastSignificantBits());
+    }
+
+    /**
+     * Read UUID as a value.
+     */
+    @NonNull
+    public UUID readUUID() {
+        return new UUID(readLong(), readLong());
+    }
+
+    /**
+     * Write Instant as a value.
+     */
+    public void writeInstant(@NonNull Instant value) {
+        writeLong(value.getEpochSecond());
+        writeInt(value.getNano());
+    }
+
+    /**
+     * Read Instant as a value.
+     */
+    @NonNull
+    public Instant readInstant() {
+        return Instant.ofEpochSecond(readLong(), readInt());
+    }
+
+    @ApiStatus.Internal
+    public void freeData() {
+        if (mNativeBuffer != null) {
+            MemoryUtil.memFree(mNativeBuffer);
+            mNativeBuffer = null;
+        }
     }
 }
