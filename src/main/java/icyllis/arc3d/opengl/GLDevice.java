@@ -871,7 +871,7 @@ public final class GLDevice extends GpuDevice {
     }
 
     public void bindIndexBufferInPipe(@Nonnull GLBuffer buffer) {
-        assert !getCaps().hasDSASupport() || getCaps().dsaElementBufferIsBroken();
+        assert !getCaps().hasDSASupport() || getCaps().dsaElementBufferBroken();
 
         // pipeline is already handled
         //handleDirtyContext(GLBackendState.kPipeline);

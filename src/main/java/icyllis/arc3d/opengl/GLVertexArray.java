@@ -90,7 +90,7 @@ public final class GLVertexArray extends ManagedResource {
         mAttributes = attributes;
 
         mDSAElementBuffer = attributes == null &&
-                !device.getCaps().dsaElementBufferIsBroken();
+                !device.getCaps().dsaElementBufferBroken();
     }
 
     @Nullable
