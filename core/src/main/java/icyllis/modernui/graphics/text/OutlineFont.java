@@ -31,7 +31,7 @@ import java.awt.font.FontRenderContext;
 import java.awt.image.BufferedImage;
 import java.util.*;
 
-public final class StandardFont implements Font {
+public final class OutlineFont implements Font {
 
     static final Graphics2D[] sGraphics = new Graphics2D[4];
 
@@ -64,7 +64,7 @@ public final class StandardFont implements Font {
 
     private final boolean mIsLogicalFont;
 
-    public StandardFont(java.awt.Font font) {
+    public OutlineFont(java.awt.Font font) {
         mFont = Objects.requireNonNull(font);
         mIsLogicalFont = Arrays.stream(LOGICAL_FONT_NAMES)
                 .anyMatch(s -> s.equalsIgnoreCase(font.getName()));

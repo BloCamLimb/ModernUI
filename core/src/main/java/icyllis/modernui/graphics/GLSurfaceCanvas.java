@@ -19,8 +19,8 @@
 package icyllis.modernui.graphics;
 
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.Surface;
+import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.geom.DefaultGeoProc;
 import icyllis.arc3d.engine.shading.UniformHandler;
 import icyllis.arc3d.opengl.*;
@@ -30,8 +30,8 @@ import icyllis.modernui.core.Core;
 import icyllis.modernui.core.Window;
 import icyllis.modernui.graphics.font.BakedGlyph;
 import icyllis.modernui.graphics.font.GlyphManager;
+import icyllis.modernui.graphics.text.EmojiFont;
 import icyllis.modernui.graphics.text.Font;
-import icyllis.modernui.graphics.text.StandardFont;
 import icyllis.modernui.util.Pools;
 import icyllis.modernui.view.Gravity;
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
@@ -1873,6 +1873,28 @@ public final class GLSurfaceCanvas extends Canvas {
                 .putFloat(glyph.u2).putFloat(glyph.v1);
     }
 
+    @RenderThread
+    private void putGlyphScaled(@NonNull BakedGlyph glyph, float left, float top,
+                                float scale) {
+        ByteBuffer buffer = checkGlyphStagingBuffer();
+        left += glyph.x * scale;
+        top += glyph.y * scale;
+        float right = left + glyph.width * scale;
+        float bottom = top + glyph.height * scale;
+        buffer.putFloat(left)
+                .putFloat(bottom)
+                .putFloat(glyph.u1).putFloat(glyph.v2);
+        buffer.putFloat(right)
+                .putFloat(bottom)
+                .putFloat(glyph.u2).putFloat(glyph.v2);
+        buffer.putFloat(left)
+                .putFloat(top)
+                .putFloat(glyph.u1).putFloat(glyph.v1);
+        buffer.putFloat(right)
+                .putFloat(top)
+                .putFloat(glyph.u2).putFloat(glyph.v1);
+    }
+
     /**
      * Record an operation to update smooth radius later for geometries that use smooth radius.
      *
@@ -2591,23 +2613,22 @@ public final class GLSurfaceCanvas extends Canvas {
                            int glyphCount, @NonNull Font font,
                            float x, float y,
                            @NonNull Paint paint) {
-        if (font instanceof StandardFont ff) {
-            drawMatrix();
-            int color = paint.getColor();
-            float alpha = (color >>> 24) / 255.0f;
-            float red = ((color >> 16) & 0xff) / 255.0f;
-            float green = ((color >> 8) & 0xff) / 255.0f;
-            float blue = (color & 0xff) / 255.0f;
-            mDrawTexts.add(new DrawTextOp(glyphs, glyphOffset,
-                    positions, positionOffset, glyphCount,
-                    x, y, ff.chooseFont(paint.getFontSize())));
-            checkUniformStagingBuffer()
-                    .putFloat(red * alpha)
-                    .putFloat(green * alpha)
-                    .putFloat(blue * alpha)
-                    .putFloat(alpha);
-            mDrawOps.add(DRAW_TEXT);
-        }
+        drawMatrix();
+        int color = paint.getColor();
+        float alpha = (color >>> 24) / 255.0f;
+        float red = ((color >> 16) & 0xff) / 255.0f;
+        float green = ((color >> 8) & 0xff) / 255.0f;
+        float blue = (color & 0xff) / 255.0f;
+        var op = new DrawTextOp(glyphs, glyphOffset,
+                positions, positionOffset, glyphCount,
+                x, y, font, paint.getFontSize());
+        mDrawTexts.add(op);
+        checkUniformStagingBuffer()
+                .putFloat(red * alpha)
+                .putFloat(green * alpha)
+                .putFloat(blue * alpha)
+                .putFloat(alpha);
+        mDrawOps.add(DRAW_TEXT);
     }
 
     private static class DrawTextOp {
@@ -2619,13 +2640,15 @@ public final class GLSurfaceCanvas extends Canvas {
         private final int mGlyphCount;
         private final float mOffsetX;
         private final float mOffsetY;
-        private final java.awt.Font mFont;
+        private final Font mFont;
+        private final int mFontSize;
+        private final float mScaleFactor;
 
         private int mTexture;
         private int mVisibleGlyphCount;
 
         public DrawTextOp(int[] glyphs, int glyphOffset, float[] positions, int positionOffset, int glyphCount,
-                          float offsetX, float offsetY, java.awt.Font font) {
+                          float offsetX, float offsetY, Font font, int fontSize) {
             mGlyphs = glyphs;
             mGlyphOffset = glyphOffset;
             mPositions = positions;
@@ -2634,27 +2657,48 @@ public final class GLSurfaceCanvas extends Canvas {
             mOffsetX = offsetX;
             mOffsetY = offsetY;
             mFont = font;
+            mFontSize = fontSize;
+            if (font instanceof EmojiFont) {
+                mScaleFactor = (float) fontSize / GlyphManager.EMOJI_BASE;
+            } else {
+                mScaleFactor = 1;
+            }
         }
 
         private void writeMeshData(@NonNull GLSurfaceCanvas canvas) {
             GlyphManager glyphManager = GlyphManager.getInstance();
-            final int[] glyphs = mGlyphs;
             int glyphOffset = mGlyphOffset;
-            final float[] positions = mPositions;
             int positionOffset = mPositionOffset;
             int visibleGlyphCount = 0;
             for (int i = 0; i < mGlyphCount; i++) {
-                BakedGlyph bakedGlyph = glyphManager.lookupGlyph(mFont, glyphs[glyphOffset++]);
+                BakedGlyph bakedGlyph = glyphManager.lookupGlyph(
+                        mFont,
+                        mFontSize,
+                        mGlyphs[glyphOffset++]
+                );
                 if (bakedGlyph != null) {
-                    canvas.putGlyph(bakedGlyph,
-                            mOffsetX + positions[positionOffset++],
-                            mOffsetY + positions[positionOffset++]);
+                    float x = mOffsetX + mPositions[positionOffset++];
+                    float y = mOffsetY + mPositions[positionOffset++];
+                    if (mScaleFactor != 1) {
+                        canvas.putGlyphScaled(
+                                bakedGlyph,
+                                x,
+                                y,
+                                mScaleFactor
+                        );
+                    } else {
+                        canvas.putGlyph(
+                                bakedGlyph,
+                                x,
+                                y
+                        );
+                    }
                     visibleGlyphCount++;
                 } else {
                     positionOffset += 2;
                 }
             }
-            mTexture = glyphManager.getCurrentTexture(Engine.MASK_FORMAT_A8);
+            mTexture = glyphManager.getCurrentTexture(mFont);
             mVisibleGlyphCount = visibleGlyphCount;
         }
     }

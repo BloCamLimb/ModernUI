@@ -1072,11 +1072,11 @@ public abstract class Canvas {
         if (text.length == 0) {
             return;
         }
-        if (font instanceof StandardFont ff) {
-            var fff = ff.chooseFont(paint.getFontSize());
-            var frc = StandardFont.getFontRenderContext(
+        if (font instanceof OutlineFont of) {
+            var off = of.chooseFont(paint.getFontSize());
+            var frc = OutlineFont.getFontRenderContext(
                     FontPaint.computeRenderFlags(paint));
-            var gv = fff.createGlyphVector(frc, text);
+            var gv = off.createGlyphVector(frc, text);
             int nGlyphs = gv.getNumGlyphs();
             drawGlyphs(gv.getGlyphCodes(0, nGlyphs, null),
                     0,

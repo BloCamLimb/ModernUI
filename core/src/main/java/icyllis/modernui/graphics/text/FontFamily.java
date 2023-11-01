@@ -140,10 +140,10 @@ public final class FontFamily {
     }
 
     private FontFamily(@NonNull java.awt.Font font) {
-        mFont = new StandardFont(font);
-        mBold = new StandardFont(font.deriveFont(java.awt.Font.BOLD));
-        mItalic = new StandardFont(font.deriveFont(java.awt.Font.ITALIC));
-        mBoldItalic = new StandardFont(font.deriveFont(java.awt.Font.BOLD | java.awt.Font.ITALIC));
+        mFont = new OutlineFont(font);
+        mBold = new OutlineFont(font.deriveFont(java.awt.Font.BOLD));
+        mItalic = new OutlineFont(font.deriveFont(java.awt.Font.ITALIC));
+        mBoldItalic = new OutlineFont(font.deriveFont(java.awt.Font.BOLD | java.awt.Font.ITALIC));
         mIsColorEmoji = false;
     }
 
