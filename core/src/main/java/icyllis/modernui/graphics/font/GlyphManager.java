@@ -25,7 +25,9 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.Bitmap;
-import icyllis.modernui.graphics.text.FontCollection;
+import icyllis.modernui.graphics.BitmapFactory;
+import icyllis.modernui.graphics.text.Font;
+import icyllis.modernui.graphics.text.*;
 import icyllis.modernui.text.TextUtils;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import org.apache.logging.log4j.Marker;
@@ -36,12 +38,15 @@ import org.lwjgl.system.MemoryUtil;
 import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
 import java.util.function.ToIntFunction;
+
+import static icyllis.modernui.ModernUI.LOGGER;
 
 /**
  * Manages all glyphs, font atlases, measures glyph metrics and draw them of
@@ -76,23 +81,32 @@ public class GlyphManager {
     public static volatile boolean sFractionalMetrics = false;
 
     /**
+     * Emoji font design.
+     */
+    public static final int EMOJI_SIZE = 72;
+    public static final int EMOJI_ASCENT = 56;
+    public static final int EMOJI_SPACING = 4;
+    public static final int EMOJI_BASE = 64;
+
+    /**
      * The global instance.
      */
     private static volatile GlyphManager sInstance;
 
-    private GLFontAtlas mA8Atlas;
+    private GLFontAtlas mFontAtlas;
+    private GLFontAtlas mEmojiAtlas;
     private GLDevice mDevice;
 
     /**
      * Font (with size and style) to int key.
      */
-    private final Object2IntOpenHashMap<Font> mFontTable = new Object2IntOpenHashMap<>();
+    private final Object2IntOpenHashMap<java.awt.Font> mFontTable = new Object2IntOpenHashMap<>();
 
-    private final ArrayList<Font> mReverseFontTable = new ArrayList<>();
-    private final ToIntFunction<Font> mFontTableMapper = f -> {
-        mReverseFontTable.add(f);
-        return mFontTable.size() + 1;
-    };
+    private final ToIntFunction<java.awt.Font> mFontTableMapper = f -> mFontTable.size() + 1;
+
+    private final Object2IntOpenHashMap<EmojiFont> mEmojiFontTable = new Object2IntOpenHashMap<>();
+
+    private final ToIntFunction<EmojiFont> mEmojiFontTableMapper = f -> mEmojiFontTable.size() + 1;
 
     /**
      * Draw a single glyph onto this image and then loaded from here into an OpenGL texture.
@@ -114,7 +128,13 @@ public class GlyphManager {
      */
     private ByteBuffer mImageBuffer;
 
-    private final CopyOnWriteArrayList<Runnable> mAtlasInvalidationCallbacks = new CopyOnWriteArrayList<>();
+    //private ByteBuffer mEmojiBuffer;
+
+    private final CopyOnWriteArrayList<Consumer<AtlasInvalidationInfo>> mAtlasInvalidationCallbacks
+            = new CopyOnWriteArrayList<>();
+
+    public record AtlasInvalidationInfo(int maskFormat) {
+    }
 
     private GlyphManager() {
         // init
@@ -136,15 +156,20 @@ public class GlyphManager {
     /**
      * Reload the glyph manager, clear all created textures.
      */
+    @RenderThread
     public void reload() {
-        if (mA8Atlas != null) {
-            mA8Atlas.close();
+        if (mFontAtlas != null) {
+            mFontAtlas.close();
         }
-        mA8Atlas = null;
+        if (mEmojiAtlas != null) {
+            mEmojiAtlas.close();
+        }
+        mFontAtlas = null;
+        mEmojiAtlas = null;
         mFontTable.clear();
         mFontTable.trim();
-        mReverseFontTable.clear();
-        mReverseFontTable.trimToSize();
+        /*mReverseFontTable.clear();
+        mReverseFontTable.trimToSize();*/
         allocateImage(64, 64);
     }
 
@@ -158,10 +183,10 @@ public class GlyphManager {
      * @return the newly laid-out GlyphVector
      */
     @NonNull
-    public GlyphVector layoutGlyphVector(@NonNull Font font, @NonNull char[] text,
+    public GlyphVector layoutGlyphVector(@NonNull java.awt.Font awtFont, @NonNull char[] text,
                                          int start, int limit, boolean isRtl) {
-        return font.layoutGlyphVector(mGraphics.getFontRenderContext(), text, start, limit,
-                isRtl ? Font.LAYOUT_RIGHT_TO_LEFT : Font.LAYOUT_LEFT_TO_RIGHT);
+        return awtFont.layoutGlyphVector(mGraphics.getFontRenderContext(), text, start, limit,
+                isRtl ? java.awt.Font.LAYOUT_RIGHT_TO_LEFT : java.awt.Font.LAYOUT_LEFT_TO_RIGHT);
     }
 
     /**
@@ -172,8 +197,8 @@ public class GlyphManager {
      * @return the newly created GlyphVector
      */
     @NonNull
-    public GlyphVector createGlyphVector(@NonNull Font font, @NonNull char[] text) {
-        return font.createGlyphVector(mGraphics.getFontRenderContext(), text);
+    public GlyphVector createGlyphVector(@NonNull java.awt.Font awtFont, @NonNull char[] text) {
+        return awtFont.createGlyphVector(mGraphics.getFontRenderContext(), text);
     }
 
     /**
@@ -183,66 +208,104 @@ public class GlyphManager {
      * @param glyphCode the font specific glyph code
      * @return a key
      */
-    public long computeGlyphKey(@NonNull Font font, int glyphCode) {
-        long fontKey = mFontTable.computeIfAbsent(font, mFontTableMapper);
+    private long computeGlyphKey(@NonNull java.awt.Font awtFont, int glyphCode) {
+        long fontKey = mFontTable.computeIfAbsent(awtFont, mFontTableMapper);
         return (fontKey << 32) | glyphCode;
     }
 
-    public Font getFontFromKey(long key) {
-        return mReverseFontTable.get((int) (key >> 32) - 1);
-    }
-
-    public static int getGlyphCodeFromKey(long key) {
-        return (int) key;
-    }
-
-    @Nullable
-    public BakedGlyph lookupGlyph(long key) {
-        if (mA8Atlas == null) {
-            mA8Atlas = new GLFontAtlas(Engine.MASK_FORMAT_A8);
-        }
-        BakedGlyph glyph = mA8Atlas.getGlyph(key);
-        if (glyph != null && glyph.x == Short.MIN_VALUE) {
-            Font font = getFontFromKey(key);
-            int glyphCode = getGlyphCodeFromKey(key);
-            return cacheGlyph(font, glyphCode, mA8Atlas, glyph, key);
-        }
-        return glyph;
+    private long computeEmojiKey(@NonNull EmojiFont font, int glyphId) {
+        long fontKey = mEmojiFontTable.computeIfAbsent(font, mEmojiFontTableMapper);
+        return (fontKey << 32) | glyphId;
     }
 
     /**
-     * Given a derived font and a glyph code within that font, locate the glyph's pre-rendered image
+     * Given a font and a glyph ID within that font, locate the glyph's pre-rendered image
      * in the glyph atlas and return its cache entry. The entry stores the texture with the
      * pre-rendered glyph image, as well as the position and size of that image within the texture.
      *
-     * @param font      the font (with size and style) to which this glyphCode belongs and which
-     *                  was used to pre-render the glyph
-     * @param glyphCode the font specific glyph code (should be laid-out) to lookup in the atlas
+     * @param font     the font (with style) to which this glyph ID belongs and which
+     *                 was used to pre-render the glyph
+     * @param fontSize the font size in device space
+     * @param glyphId  the font specific glyph ID (should be laid-out) to lookup in the atlas
      * @return the cached glyph sprite or null if the glyph has nothing to render
      */
     @Nullable
     @RenderThread
-    public BakedGlyph lookupGlyph(@NonNull Font font, int glyphCode) {
-        long key = computeGlyphKey(font, glyphCode);
-        if (mA8Atlas == null) {
-            mA8Atlas = new GLFontAtlas(Engine.MASK_FORMAT_A8);
-            mDevice = (GLDevice) Core.requireDirectContext().getDevice();
+    public BakedGlyph lookupGlyph(@NonNull Font font, int fontSize, int glyphId) {
+        if (glyphId == 0) {
+            return null;
         }
-        BakedGlyph glyph = mA8Atlas.getGlyph(key);
-        if (glyph != null && glyph.x == Short.MIN_VALUE) {
-            return cacheGlyph(font, glyphCode, mA8Atlas, glyph, key);
+        if (font instanceof OutlineFont) {
+            java.awt.Font awtFont = ((OutlineFont) font).chooseFont(fontSize);
+            long key = computeGlyphKey(awtFont, glyphId);
+            if (mFontAtlas == null) {
+                // we use mipmapping and SDF, so 2px width border around it
+                mFontAtlas = new GLFontAtlas(Engine.MASK_FORMAT_A8, GLYPH_BORDER);
+                mDevice = (GLDevice) Core.requireDirectContext().getDevice();
+            }
+            BakedGlyph glyph = mFontAtlas.getGlyph(key);
+            if (glyph != null && glyph.x == Short.MIN_VALUE) {
+                return cacheGlyph(
+                        awtFont,
+                        glyphId,
+                        mFontAtlas,
+                        glyph,
+                        key
+                );
+            }
+            return glyph;
+        } else if (font instanceof EmojiFont emojiFont) {
+            long key = computeEmojiKey(emojiFont, glyphId);
+            if (mEmojiAtlas == null) {
+                // we assume emoji images have a border, and no additional border
+                mEmojiAtlas = new GLFontAtlas(Engine.MASK_FORMAT_ARGB, 0);
+                mDevice = (GLDevice) Core.requireDirectContext().getDevice();
+            }
+            BakedGlyph glyph = mEmojiAtlas.getGlyph(key);
+            if (glyph != null && glyph.x == Short.MIN_VALUE) {
+                return cacheEmoji(
+                        emojiFont,
+                        glyphId,
+                        mEmojiAtlas,
+                        glyph,
+                        key
+                );
+            }
+            return glyph;
         }
-        return glyph;
+        return null;
     }
 
+    @RenderThread
     public int getCurrentTexture(int maskFormat) {
         if (maskFormat == Engine.MASK_FORMAT_A8) {
             GLTexture texture;
-            if (mA8Atlas != null && (texture = mA8Atlas.mTexture) != null) {
-                boolean res = mDevice.generateMipmaps(texture);
-                if (!res) {
-                    ModernUI.LOGGER.warn(GlyphManager.MARKER, "Failed to generate glyph mipmaps");
-                }
+            if (mFontAtlas != null && (texture = mFontAtlas.mTexture) != null) {
+                mDevice.generateMipmaps(texture);
+                return texture.getHandle();
+            }
+        } else if (maskFormat == Engine.MASK_FORMAT_ARGB) {
+            GLTexture texture;
+            if (mEmojiAtlas != null && (texture = mEmojiAtlas.mTexture) != null) {
+                mDevice.generateMipmaps(texture);
+                return texture.getHandle();
+            }
+        }
+        return 0;
+    }
+
+    @RenderThread
+    public int getCurrentTexture(Font font) {
+        if (font instanceof OutlineFont) {
+            GLTexture texture;
+            if (mFontAtlas != null && (texture = mFontAtlas.mTexture) != null) {
+                mDevice.generateMipmaps(texture);
+                return texture.getHandle();
+            }
+        } else if (font instanceof EmojiFont) {
+            GLTexture texture;
+            if (mEmojiAtlas != null && (texture = mEmojiAtlas.mTexture) != null) {
+                mDevice.generateMipmaps(texture);
                 return texture.getHandle();
             }
         }
@@ -251,36 +314,41 @@ public class GlyphManager {
 
     @RenderThread
     public void debug() {
-        String basePath = Bitmap.saveDialogGet(Bitmap.SaveFormat.PNG, null, "FontAtlas");
-        if (basePath != null) {
-            // XXX: remove extension name
-            basePath = basePath.substring(0, basePath.length() - 4);
-        }
-        if (mA8Atlas != null) {
-            if (basePath != null) {
-                mA8Atlas.debug(basePath + ".png");
-            } else {
-                mA8Atlas.debug(null);
-            }
+        debug(mFontAtlas, "FontAtlas");
+        debug(mEmojiAtlas, "EmojiAtlas");
+    }
+
+    private static void debug(GLFontAtlas atlas, String name) {
+        if (atlas != null) {
+            String path = Bitmap.saveDialogGet(Bitmap.SaveFormat.PNG, null, name);
+            atlas.debug(path);
         }
     }
 
     public void dumpInfo(PrintWriter pw) {
-        int glyphCount = 0;
-        long memorySize = 0;
-        if (mA8Atlas != null) {
-            glyphCount += mA8Atlas.getGlyphCount();
-            memorySize += mA8Atlas.getMemorySize();
+        dumpInfo(pw, mFontAtlas, "FontAtlas");
+        dumpInfo(pw, mEmojiAtlas, "EmojiAtlas");
+    }
+
+    private static void dumpInfo(PrintWriter pw, GLFontAtlas atlas, String name) {
+        if (atlas != null) {
+            pw.print(name);
+            pw.print(": Glyphs=");
+            pw.print(atlas.getGlyphCount());
+            pw.print(", Coverage=");
+            pw.print(atlas.getCoverage());
+            pw.print(", GPUMemorySize=");
+            long memorySize = atlas.getMemorySize();
+            pw.print(TextUtils.binaryCompact(memorySize));
+            pw.print(" (");
+            pw.print(memorySize);
+            pw.println(" bytes)");
         }
-        pw.print("GlyphManager: ");
-        pw.print("Atlases=" + (mA8Atlas != null ? 1 : 0));
-        pw.print(", Glyphs=" + glyphCount);
-        pw.println(", GPUMemorySize=" + TextUtils.binaryCompact(memorySize) + " (" + memorySize + " bytes)");
     }
 
     @Nullable
     @RenderThread
-    private BakedGlyph cacheGlyph(@NonNull Font font, int glyphCode,
+    private BakedGlyph cacheGlyph(@NonNull java.awt.Font font, int glyphCode,
                                   @NonNull GLFontAtlas atlas, @NonNull BakedGlyph glyph,
                                   long key) {
         // there's no need to layout glyph vector, we only draw the specific glyphCode
@@ -317,16 +385,50 @@ public class GlyphManager {
             // alpha channel for grayscale texture
             mImageBuffer.put((byte) (mImageData[i] >>> 24));
         }
-        mImageBuffer.flip();
+        long src = MemoryUtil.memAddress(mImageBuffer.flip());
 
-        boolean invalidated = atlas.stitch(glyph, MemoryUtil.memAddress(mImageBuffer));
+        boolean invalidated = atlas.stitch(glyph, src);
         if (invalidated) {
-            mAtlasInvalidationCallbacks.forEach(Runnable::run);
+            var info = new AtlasInvalidationInfo(Engine.MASK_FORMAT_A8);
+            for (var callback : mAtlasInvalidationCallbacks) {
+                callback.accept(info);
+            }
         }
 
         mGraphics.clearRect(0, 0, mImage.getWidth(), mImage.getHeight());
         mImageBuffer.clear();
         return glyph;
+    }
+
+    @Nullable
+    @RenderThread
+    private BakedGlyph cacheEmoji(@NonNull EmojiFont font, int glyphId,
+                                  @NonNull GLFontAtlas atlas, @NonNull BakedGlyph glyph,
+                                  long key) {
+        String path = "emoji/" + font.getFileName(glyphId);
+        var opts = new BitmapFactory.Options();
+        opts.inPreferredFormat = Bitmap.Format.RGBA_8888;
+        try (InputStream inputStream = ModernUI.getInstance().getResourceStream(ModernUI.ID, path);
+             Bitmap bitmap = BitmapFactory.decodeStream(inputStream, opts)) {
+            if (bitmap.getWidth() == EMOJI_SIZE && bitmap.getHeight() == EMOJI_SIZE) {
+                long src = bitmap.getAddress();
+                glyph.x = 0;
+                glyph.y = -EMOJI_ASCENT;
+                glyph.width = EMOJI_SIZE;
+                glyph.height = EMOJI_SIZE;
+                atlas.stitch(glyph, src);
+                return glyph;
+            } else {
+                atlas.setNoPixels(key);
+                LOGGER.warn(MARKER, "Emoji is not {}x{}: {} {}", EMOJI_SIZE, EMOJI_SIZE,
+                        font.getFamilyName(), path);
+                return null;
+            }
+        } catch (Exception e) {
+            atlas.setNoPixels(key);
+            LOGGER.warn(MARKER, "Failed to load emoji: {} {}", font.getFamilyName(), path, e);
+            return null;
+        }
     }
 
     private void allocateImage(int width, int height) {
@@ -365,11 +467,11 @@ public class GlyphManager {
      * Called when the atlas resized or fully reset, which means
      * texture ID changed or previous {@link BakedGlyph}s become invalid.
      */
-    public void addAtlasInvalidationCallback(Runnable callback) {
+    public void addAtlasInvalidationCallback(Consumer<AtlasInvalidationInfo> callback) {
         mAtlasInvalidationCallbacks.add(Objects.requireNonNull(callback));
     }
 
-    public void removeAtlasInvalidationCallback(Runnable callback) {
+    public void removeAtlasInvalidationCallback(Consumer<AtlasInvalidationInfo> callback) {
         mAtlasInvalidationCallbacks.remove(Objects.requireNonNull(callback));
     }
 

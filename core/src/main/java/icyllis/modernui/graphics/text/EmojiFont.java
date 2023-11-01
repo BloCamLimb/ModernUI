@@ -28,6 +28,7 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -42,12 +43,16 @@ public final class EmojiFont implements Font {
     private final float mBaseDescent;
     private final float mBaseSpacing;
 
+    // emoji char sequence to glyph ID, 1-based
     private final Object2IntMap<CharSequence> mMap;
+
+    // glyph ID to res name, /assets/modernui/emoji/[res name], 0-based
+    private final List<String> mFiles;
 
     private final CharSequenceBuilder mLookupKey = new CharSequenceBuilder();
 
     public EmojiFont(String name, IntSet coverage, int size, int ascent, int spacing,
-                     int base, Object2IntMap<CharSequence> map) {
+                     int base, Object2IntMap<CharSequence> map, List<String> files) {
         mName = name;
         mCoverage = coverage;
         mBaseSize = (float) size / base;
@@ -55,6 +60,12 @@ public final class EmojiFont implements Font {
         mBaseDescent = (float) (size - ascent) / base;
         mBaseSpacing = (float) spacing / base;
         mMap = map;
+        mFiles = files;
+    }
+
+    public String getFileName(int glyphId) {
+        // 1-based to 0-based
+        return mFiles.get(glyphId - 1);
     }
 
     @Override
@@ -98,8 +109,8 @@ public final class EmojiFont implements Font {
         int prevPos = start;
         int currPos;
         while ((currPos = breaker.following(prevPos)) != BreakIterator.DONE) {
-            int code = find(buf, prevPos, currPos);
-            if (code == 0) {
+            int glyphId = find(buf, prevPos, currPos);
+            if (glyphId == 0) {
                 return prevPos;
             }
             prevPos = currPos;
@@ -109,24 +120,24 @@ public final class EmojiFont implements Font {
     }
 
     private int find(char[] buf, int start, int limit) {
-        int code;
+        int glyphId;
         synchronized (mLookupKey) {
-            code = mMap.getInt(
+            glyphId = mMap.getInt(
                     mLookupKey.updateChars(buf, start, limit)
             );
         }
-        if (code == 0) {
+        if (glyphId == 0) {
             char vs = buf[limit - 1];
             if (vs == Emoji.VARIATION_SELECTOR_16) {
                 // try w/o
                 synchronized (mLookupKey) {
-                    code = mMap.getInt(
+                    glyphId = mMap.getInt(
                             mLookupKey.updateChars(buf, start, limit - 1)
                     );
                 }
             }
         }
-        return code;
+        return glyphId;
     }
 
     @Override
@@ -184,14 +195,14 @@ public final class EmojiFont implements Font {
             int pieceStart = Math.min(prevPos, currPos);
             int pieceLimit = Math.max(prevPos, currPos);
 
-            int code = find(buf, pieceStart, pieceLimit);
-            if (code != 0) {
+            int glyphId = find(buf, pieceStart, pieceLimit);
+            if (glyphId != 0) {
                 if (advances != null) {
                     advances[pieceStart - advanceOffset] = adv;
                 }
 
                 if (glyphs != null) {
-                    glyphs.add(code);
+                    glyphs.add(glyphId);
                 }
                 if (positions != null) {
                     positions.add(x + currAdvance + add);

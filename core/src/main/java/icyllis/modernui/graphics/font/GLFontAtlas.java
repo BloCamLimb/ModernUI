@@ -85,15 +85,19 @@ public class GLFontAtlas implements AutoCloseable {
 
     private final DirectContext mContext;
     private final int mMaskFormat;
+    private final int mBorderWidth;
     private final int mMaxTextureSize;
 
-    // render thread
-    public GLFontAtlas(int maskFormat) {
+    @RenderThread
+    public GLFontAtlas(int maskFormat, int borderWidth) {
         mContext = Core.requireDirectContext();
         mMaskFormat = maskFormat;
+        mBorderWidth = borderWidth;
         mMaxTextureSize = Math.min(
                 mContext.getMaxTextureSize(),
-                8192
+                maskFormat == Engine.MASK_FORMAT_A8
+                        ? 8192
+                        : 4096
         );
     }
 
@@ -124,7 +128,7 @@ public class GLFontAtlas implements AutoCloseable {
         // the source image includes border, but glyph.width/height does not include
         var rect = mRect;
         rect.set(0, 0,
-                glyph.width + GlyphManager.GLYPH_BORDER * 2, glyph.height + GlyphManager.GLYPH_BORDER * 2);
+                glyph.width + mBorderWidth * 2, glyph.height + mBorderWidth * 2);
         boolean inserted = false;
         for (Chunk chunk : mChunks) {
             if (chunk.packer.addRect(rect)) {
@@ -150,7 +154,9 @@ public class GLFontAtlas implements AutoCloseable {
         }
 
         // include border
-        int colorType = mMaskFormat == Engine.MASK_FORMAT_ARGB ? ImageInfo.CT_RGBA_8888 : ImageInfo.CT_ALPHA_8;
+        int colorType = mMaskFormat == Engine.MASK_FORMAT_ARGB
+                ? ImageInfo.CT_RGBA_8888
+                : ImageInfo.CT_ALPHA_8;
         int rowBytes = rect.width() * ImageInfo.bytesPerPixel(colorType);
         boolean res = mContext.getDevice().writePixels(
                 mTexture,
@@ -166,10 +172,10 @@ public class GLFontAtlas implements AutoCloseable {
         }
 
         // exclude border
-        glyph.u1 = (float) (rect.mLeft + GlyphManager.GLYPH_BORDER) / mWidth;
-        glyph.v1 = (float) (rect.mTop + GlyphManager.GLYPH_BORDER) / mHeight;
-        glyph.u2 = (float) (rect.mRight - GlyphManager.GLYPH_BORDER) / mWidth;
-        glyph.v2 = (float) (rect.mBottom - GlyphManager.GLYPH_BORDER) / mHeight;
+        glyph.u1 = (float) (rect.mLeft + mBorderWidth) / mWidth;
+        glyph.v1 = (float) (rect.mTop + mBorderWidth) / mHeight;
+        glyph.u2 = (float) (rect.mRight - mBorderWidth) / mWidth;
+        glyph.v2 = (float) (rect.mBottom - mBorderWidth) / mHeight;
 
         return invalidated;
     }
@@ -354,11 +360,33 @@ public class GLFontAtlas implements AutoCloseable {
         mTexture = GpuResource.move(mTexture);
     }
 
+    public int getWidth() {
+        return mWidth;
+    }
+
+    public int getHeight() {
+        return mHeight;
+    }
+
     public int getGlyphCount() {
         return mGlyphs.size();
     }
 
     public long getMemorySize() {
         return mTexture != null ? mTexture.getMemorySize() : 0;
+    }
+
+    /**
+     * @return 0..1
+     */
+    public float getCoverage() {
+        if (mChunks.isEmpty()) {
+            return 0;
+        }
+        float coverage = 0;
+        for (Chunk chunk : mChunks) {
+            coverage += chunk.packer.getCoverage();
+        }
+        return coverage / mChunks.size();
     }
 }

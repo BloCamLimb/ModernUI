@@ -436,8 +436,8 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
 
     @ApiStatus.Experimental
     @NonNull
-    public InputStream getResourceStream(@NonNull String res, @NonNull String path) throws IOException {
-        InputStream stream = ModernUI.class.getResourceAsStream("/assets/" + res + "/" + path);
+    public InputStream getResourceStream(@NonNull String namespace, @NonNull String path) throws IOException {
+        InputStream stream = ModernUI.class.getResourceAsStream("/assets/" + namespace + "/" + path);
         if (stream == null) {
             throw new FileNotFoundException();
         }
@@ -446,8 +446,8 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
 
     @ApiStatus.Experimental
     @NonNull
-    public ReadableByteChannel getResourceChannel(@NonNull String res, @NonNull String path) throws IOException {
-        return Channels.newChannel(getResourceStream(res, path));
+    public ReadableByteChannel getResourceChannel(@NonNull String namespace, @NonNull String path) throws IOException {
+        return Channels.newChannel(getResourceStream(namespace, path));
     }
 
     /**
