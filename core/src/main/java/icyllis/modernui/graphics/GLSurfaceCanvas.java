@@ -2614,20 +2614,23 @@ public final class GLSurfaceCanvas extends Canvas {
                            float x, float y,
                            @NonNull Paint paint) {
         drawMatrix();
-        int color = paint.getColor();
-        float alpha = (color >>> 24) / 255.0f;
-        float red = ((color >> 16) & 0xff) / 255.0f;
-        float green = ((color >> 8) & 0xff) / 255.0f;
-        float blue = (color & 0xff) / 255.0f;
         var op = new DrawTextOp(glyphs, glyphOffset,
                 positions, positionOffset, glyphCount,
                 x, y, font, paint.getFontSize());
         mDrawTexts.add(op);
-        checkUniformStagingBuffer()
-                .putFloat(red * alpha)
-                .putFloat(green * alpha)
-                .putFloat(blue * alpha)
-                .putFloat(alpha);
+        float alpha = paint.a();
+        var uniforms = checkUniformStagingBuffer();
+        if (font instanceof EmojiFont) {
+            // (1 1 1 a) premul -> (a a a a)
+            uniforms.putFloat(alpha)
+                    .putFloat(alpha)
+                    .putFloat(alpha);
+        } else {
+            uniforms.putFloat(paint.r() * alpha)
+                    .putFloat(paint.g() * alpha)
+                    .putFloat(paint.b() * alpha);
+        }
+        uniforms.putFloat(alpha);
         mDrawOps.add(DRAW_TEXT);
     }
 
