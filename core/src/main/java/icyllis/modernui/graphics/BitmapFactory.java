@@ -52,10 +52,10 @@ public final class BitmapFactory {
      * <p>Unlike Android (with its Skia graphics engine), it is not necessary to
      * pre-multiply alpha of image data in Modern UI framework. We allow images
      * to be directly drawn by the view system or through a {@link Canvas} either
-     * pre-multiplied or un-pre-multiplied. Although pre-multiplied alpha can
-     * simplify draw-time blending, but it results in precision loss since images
+     * pre-multiplied or non-pre-multiplied. Although pre-multiplied alpha can
+     * help draw-time blending, but it results in precision loss since images
      * are 8-bit per channel in memory. Instead, Modern UI will pre-multiply alpha
-     * when sampling textures.</p>
+     * in the shading pipeline.</p>
      */
     public static class Options {
 
