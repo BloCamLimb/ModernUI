@@ -88,14 +88,18 @@ public class SpanSet<E> extends ArrayList<E> {
         }
     }
 
+    /**
+     * @return true if non-empty
+     */
     public boolean init(@NonNull Spanned spanned, int start, int limit) {
+        if (spanned instanceof SpannableStringInternal internal) {
+            internal.getSpansSpanSet(start, limit, mType, this);
+            return !isEmpty();
+        }
         spanned.getSpans(start, limit, mType, this);
         final int length = size();
 
         if (length > 0) {
-            if (spanned instanceof SpannableStringInternal) {
-                return true;
-            }
             grow(length);
 
             int size = 0;
@@ -117,7 +121,7 @@ public class SpanSet<E> extends ArrayList<E> {
                 size++;
             }
             assert size == size();
-            return size > 0;
+            return size != 0;
         }
         return false;
     }

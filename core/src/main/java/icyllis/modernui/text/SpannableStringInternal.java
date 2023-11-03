@@ -176,32 +176,12 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
         return false;
     }
 
-    public final void setSpan(@NonNull Object span, int start, int end, int flags) {
+    public void setSpan(@NonNull Object span, int start, int end, int flags) {
         setSpan(span, start, end, flags, true);
     }
 
     private boolean isIndexFollowsNextLine(int index) {
         return index != 0 && index != length() && charAt(index - 1) != '\n';
-    }
-
-    // compare 'start' then 'end'
-    private int binarySearch(int start, int end) {
-        int low = 0, high = mSpanCount - 1;
-        final int[] data = mSpanData;
-        while (low <= high) {
-            final int mid = (low + high) >>> 1;
-            final int base = mid * COLUMNS;
-            int cmp = Integer.compare(data[base + START], start);
-            if (cmp == 0)
-                cmp = Integer.compare(data[base + END], end);
-            if (cmp < 0)
-                low = mid + 1;
-            else if (cmp > 0)
-                high = mid - 1;
-            else
-                return mid;
-        }
-        return low;
     }
 
     private void setSpan(@NonNull Object span, int start, int end, int flags, boolean enforceParagraph) {
@@ -239,12 +219,13 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
 
         for (int i = 0; i < count; i++) {
             if (spans[i] == span) {
-                int ost = data[i * COLUMNS + START];
-                int oen = data[i * COLUMNS + END];
+                int ic = i * COLUMNS;
+                int ost = data[ic + START];
+                int oen = data[ic + END];
 
-                data[i * COLUMNS + START] = start;
-                data[i * COLUMNS + END] = end;
-                data[i * COLUMNS + FLAGS] = flags;
+                data[ic + START] = start;
+                data[ic + END] = end;
+                data[ic + FLAGS] = flags;
 
                 sendSpanChanged(span, ost, oen, start, end);
                 return;
@@ -252,7 +233,16 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
         }
 
         if (count == spans.length) {
-            int newSize = count == 0 ? 10 : count + (count >> 1);
+            int newSize;
+            if (count == 0) {
+                newSize = 10;
+            } else if (count < 1000) {
+                // grow 50%
+                newSize = count + (count >> 1);
+            } else {
+                // grow 25%
+                newSize = count + (count >> 2);
+            }
             Object[] newSpans = new Object[newSize];
             int[] newData = new int[newSize * COLUMNS];
 
@@ -263,20 +253,11 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
             mSpanData = newData;
         }
 
-        int pos = binarySearch(start, end);
-        int base = pos * COLUMNS;
-        if (pos != mSpanCount) {
-            System.arraycopy(mSpans, pos,
-                    mSpans, pos + 1,
-                    mSpanCount - pos);
-            System.arraycopy(mSpanData, base,
-                    mSpanData, base + COLUMNS,
-                    mSpanCount * COLUMNS - base);
-        }
-        mSpans[pos] = span;
-        mSpanData[base + START] = start;
-        mSpanData[base + END] = end;
-        mSpanData[base + FLAGS] = flags;
+        int ic = count * COLUMNS;
+        mSpans[count] = span;
+        mSpanData[ic + START] = start;
+        mSpanData[ic + END] = end;
+        mSpanData[ic + FLAGS] = flags;
         mSpanCount++;
 
         if (this instanceof Spannable) {
@@ -284,11 +265,11 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
         }
     }
 
-    public final void removeSpan(@NonNull Object span) {
+    public void removeSpan(@NonNull Object span) {
         removeSpan(span, 0);
     }
 
-    public final void removeSpan(@NonNull Object span, int flags) {
+    public void removeSpan(@NonNull Object span, int flags) {
         final int count = mSpanCount;
         final Object[] spans = mSpans;
         final int[] data = mSpanData;
@@ -319,8 +300,8 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
     @SuppressWarnings("unchecked")
     @NonNull
     @Override
-    public final <T> List<T> getSpans(int start, int end, Class<? extends T> type,
-                                      @Nullable List<T> dest) {
+    public <T> List<T> getSpans(int start, int end, Class<? extends T> type,
+                                @Nullable List<T> dest) {
         if (dest != null) {
             dest.clear();
         }
@@ -328,30 +309,20 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
             return dest != null ? dest : Collections.emptyList();
         }
 
+        final int count = mSpanCount;
         final Object[] spans = mSpans;
         final int[] data = mSpanData;
 
         final boolean check = type != null && type != Object.class;
-        final SpanSet<T> ss;
-        final boolean ignoreEmptySpans;
-        if (dest instanceof SpanSet<T>) {
-            ss = (SpanSet<T>) dest;
-            ignoreEmptySpans = ss.mIgnoreEmptySpans;
-        } else {
-            ss = null;
-            ignoreEmptySpans = false;
-        }
 
         int found = 0;
         T first = null;
 
-        int limit = binarySearch(end + 1, 0);
-
-        for (int i = 0, base = 0;
-             i < limit;
-             i++, base += COLUMNS) {
-            int spanStart = data[base + START];
-            int spanEnd = data[base + END];
+        for (int i = 0, ic = 0;
+             i < count;
+             i++, ic += COLUMNS) {
+            int spanStart = data[ic + START];
+            int spanEnd = data[ic + END];
 
             if (spanStart > end || spanEnd < start) {
                 continue;
@@ -367,41 +338,24 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
                 continue;
             }
 
-            if (ignoreEmptySpans && spanStart == spanEnd) {
-                continue;
-            }
-
             if (dest != null || found > 0) {
                 if (dest == null) {
                     dest = new ArrayList<>();
                     dest.add(first);
                 }
 
-                final int priority = data[base + FLAGS] & Spanned.SPAN_PRIORITY;
+                final int priority = data[ic + FLAGS] & Spanned.SPAN_PRIORITY;
                 if (priority != 0) {
                     int j = 0;
                     for (; j < found; j++) {
-                        final int jPriority;
-                        if (ss != null) {
-                            jPriority = ss.mSpanFlags[j] & Spanned.SPAN_PRIORITY;
-                        } else {
-                            jPriority = getSpanFlags(dest.get(j)) & Spanned.SPAN_PRIORITY;
-                        }
-                        if (priority > jPriority) {
+                        int p = getSpanFlags(dest.get(j)) & Spanned.SPAN_PRIORITY;
+                        if (priority > p) {
                             break;
                         }
                     }
-                    if (ss != null) {
-                        ss.add(j, (T) spans[i], spanStart, spanEnd, data[base + FLAGS]);
-                    } else {
-                        dest.add(j, (T) spans[i]);
-                    }
+                    dest.add(j, (T) spans[i]);
                 } else {
-                    if (ss != null) {
-                        ss.add((T) spans[i], spanStart, spanEnd, data[base + FLAGS]);
-                    } else {
-                        dest.add((T) spans[i]);
-                    }
+                    dest.add((T) spans[i]);
                 }
             } else {
                 assert found == 0;
@@ -420,6 +374,61 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
             assert found == 1;
             assert first != null;
             return List.of(first);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    final <T> void getSpansSpanSet(int start, int end, Class<? extends T> type,
+                                   @NonNull SpanSet<T> dest) {
+        dest.clear();
+        if (mSpanCount == 0) {
+            return;
+        }
+
+        final int count = mSpanCount;
+        final Object[] spans = mSpans;
+        final int[] data = mSpanData;
+
+        final boolean check = type != null && type != Object.class;
+
+        for (int i = 0, ic = 0;
+             i < count;
+             i++, ic += COLUMNS) {
+            int spanStart = data[ic + START];
+            int spanEnd = data[ic + END];
+
+            if (spanStart > end || spanEnd < start) {
+                continue;
+            }
+
+            if (spanStart != spanEnd && start != end) {
+                if (spanStart == end || spanEnd == start) {
+                    continue;
+                }
+            }
+
+            if (check && !type.isInstance(spans[i])) {
+                continue;
+            }
+
+            if (dest.mIgnoreEmptySpans && spanStart == spanEnd) {
+                continue;
+            }
+
+            final int flags = data[ic + FLAGS];
+            final int priority = flags & Spanned.SPAN_PRIORITY;
+            if (priority != 0) {
+                int j = 0;
+                for (; j < dest.size(); j++) {
+                    int p = dest.mSpanFlags[j] & Spanned.SPAN_PRIORITY;
+                    if (priority > p) {
+                        break;
+                    }
+                }
+                dest.add(j, (T) spans[i], spanStart, spanEnd, flags);
+            } else {
+                dest.add((T) spans[i], spanStart, spanEnd, flags);
+            }
         }
     }
 

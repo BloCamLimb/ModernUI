@@ -18,7 +18,7 @@
 
 package icyllis.modernui.text;
 
-import javax.annotation.Nonnull;
+import icyllis.modernui.annotation.NonNull;
 
 /**
  * This is the class for text whose content is immutable but to which
@@ -30,20 +30,24 @@ public class SpannableString extends SpannableStringInternal implements Spannabl
      * @param source           source object to copy from
      * @param ignoreNoCopySpan whether to copy NoCopySpans in the {@code source}
      */
-    public SpannableString(@Nonnull CharSequence source, boolean ignoreNoCopySpan) {
+    public SpannableString(@NonNull CharSequence source, boolean ignoreNoCopySpan) {
         super(source, 0, source.length(), ignoreNoCopySpan);
     }
 
-    public SpannableString(@Nonnull CharSequence source) {
+    public SpannableString(@NonNull CharSequence source, int start, int end, boolean ignoreNoCopySpan) {
+        super(source, start, end, ignoreNoCopySpan);
+    }
+
+    public SpannableString(@NonNull CharSequence source) {
         this(source, false);
     }
 
-    private SpannableString(@Nonnull CharSequence source, int start, int end) {
+    public SpannableString(@NonNull CharSequence source, int start, int end) {
         super(source, start, end, false);
     }
 
-    @Nonnull
-    public static SpannableString valueOf(@Nonnull CharSequence source) {
+    @NonNull
+    public static SpannableString valueOf(@NonNull CharSequence source) {
         if (source instanceof SpannableString) {
             return (SpannableString) source;
         } else {
@@ -51,9 +55,9 @@ public class SpannableString extends SpannableStringInternal implements Spannabl
         }
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public final CharSequence subSequence(int start, int end) {
+    public CharSequence subSequence(int start, int end) {
         return new SpannableString(this, start, end);
     }
 }
