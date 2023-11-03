@@ -54,6 +54,8 @@ import static icyllis.arc3d.opengl.GLCore.*;
 @RenderThread
 public class GLFontAtlas implements AutoCloseable {
 
+    // max texture size is 1024 at least
+    // we compact texture at 1/4 max area
     public static final int CHUNK_SIZE = 512;
     /*
      * Max mipmap level.
@@ -88,17 +90,22 @@ public class GLFontAtlas implements AutoCloseable {
     private final int mBorderWidth;
     private final int mMaxTextureSize;
 
+    // overflow and wrap
+    private int mLastCompactChunkIndex;
+
     @RenderThread
-    public GLFontAtlas(int maskFormat, int borderWidth) {
-        mContext = Core.requireDirectContext();
+    public GLFontAtlas(DirectContext context, int maskFormat, int borderWidth) {
+        mContext = context;
         mMaskFormat = maskFormat;
         mBorderWidth = borderWidth;
+        // 64MB at most
         mMaxTextureSize = Math.min(
                 mContext.getMaxTextureSize(),
                 maskFormat == Engine.MASK_FORMAT_A8
                         ? 8192
                         : 4096
         );
+        assert mMaxTextureSize >= 1024;
     }
 
     /**
@@ -304,6 +311,56 @@ public class GLFontAtlas implements AutoCloseable {
 
     public GLTexture getTexture() {
         return mTexture;
+    }
+
+    public boolean compact() {
+        if (mWidth < mMaxTextureSize &&
+                mHeight < mMaxTextureSize) {
+            // not reach 1/4 of max area
+            return false;
+        }
+        assert mChunks.size() > 1;
+        //TODO this implementation is not ideal and we need a review
+        float coverage = 0;
+        for (Chunk chunk : mChunks) {
+            coverage += chunk.packer.getCoverage();
+        }
+        int chunksPerDim = mMaxTextureSize / CHUNK_SIZE;
+        // clear 1/4 coverage of max
+        float maxCoverage = chunksPerDim * chunksPerDim * 0.25f;
+        if (coverage <= maxCoverage) {
+            return false;
+        }
+        float coverageToClean = Math.max(coverage - maxCoverage, maxCoverage);
+        boolean cleared = false;
+        // clear 16 chunks at most
+        for (int iChunk = 0;
+             iChunk < Math.min(16, mChunks.size()) && coverageToClean > 0;
+             iChunk++) {
+            // let index overflow and wrap
+            assert MathUtil.isPow2(mChunks.size());
+            int index = (mLastCompactChunkIndex++) & (mChunks.size() - 1);
+            Chunk chunk = mChunks.get(index);
+            float cc = chunk.packer.getCoverage();
+            if (cc == 0) {
+                continue;
+            }
+            coverageToClean -= cc;
+            chunk.packer.clear();
+            float cu1 = (float) chunk.x / mWidth;
+            float cv1 = (float) chunk.y / mHeight;
+            float cu2 = cu1 + (float) CHUNK_SIZE / mWidth;
+            float cv2 = cv1 + (float) CHUNK_SIZE / mHeight;
+            for (var glyph : mGlyphs.values()) {
+                if (glyph.u1 >= cu1 && glyph.u2 < cu2 &&
+                        glyph.v1 >= cv1 && glyph.v2 < cv2) {
+                    // invalidate glyph image
+                    glyph.x = Short.MIN_VALUE;
+                }
+            }
+            cleared = true;
+        }
+        return cleared;
     }
 
     public void debug(@Nullable String path) {

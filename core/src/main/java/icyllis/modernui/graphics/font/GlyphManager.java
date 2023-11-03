@@ -18,6 +18,7 @@
 
 package icyllis.modernui.graphics.font;
 
+import icyllis.arc3d.engine.DirectContext;
 import icyllis.arc3d.engine.Engine;
 import icyllis.arc3d.opengl.GLDevice;
 import icyllis.arc3d.opengl.GLTexture;
@@ -133,7 +134,13 @@ public class GlyphManager {
     private final CopyOnWriteArrayList<Consumer<AtlasInvalidationInfo>> mAtlasInvalidationCallbacks
             = new CopyOnWriteArrayList<>();
 
-    public record AtlasInvalidationInfo(int maskFormat) {
+    /**
+     * Called when atlas resize or evict entries
+     *
+     * @param maskFormat type of atlas, {@link Engine#MASK_FORMAT_A8}
+     * @param resize     true=texture resize, false=evict
+     */
+    public record AtlasInvalidationInfo(int maskFormat, boolean resize) {
     }
 
     private GlyphManager() {
@@ -240,8 +247,9 @@ public class GlyphManager {
             long key = computeGlyphKey(awtFont, glyphId);
             if (mFontAtlas == null) {
                 // we use mipmapping and SDF, so 2px width border around it
-                mFontAtlas = new GLFontAtlas(Engine.MASK_FORMAT_A8, GLYPH_BORDER);
-                mDevice = (GLDevice) Core.requireDirectContext().getDevice();
+                DirectContext context = Core.requireDirectContext();
+                mFontAtlas = new GLFontAtlas(context, Engine.MASK_FORMAT_A8, GLYPH_BORDER);
+                mDevice = (GLDevice) context.getDevice();
             }
             BakedGlyph glyph = mFontAtlas.getGlyph(key);
             if (glyph != null && glyph.x == Short.MIN_VALUE) {
@@ -258,8 +266,9 @@ public class GlyphManager {
             long key = computeEmojiKey(emojiFont, glyphId);
             if (mEmojiAtlas == null) {
                 // we assume emoji images have a border, and no additional border
-                mEmojiAtlas = new GLFontAtlas(Engine.MASK_FORMAT_ARGB, 0);
-                mDevice = (GLDevice) Core.requireDirectContext().getDevice();
+                DirectContext context = Core.requireDirectContext();
+                mEmojiAtlas = new GLFontAtlas(context, Engine.MASK_FORMAT_ARGB, 0);
+                mDevice = (GLDevice) context.getDevice();
             }
             BakedGlyph glyph = mEmojiAtlas.getGlyph(key);
             if (glyph != null && glyph.x == Short.MIN_VALUE) {
@@ -310,6 +319,25 @@ public class GlyphManager {
             }
         }
         return 0;
+    }
+
+    /**
+     * Compact atlases immediately.
+     */
+    @RenderThread
+    public void compact() {
+        if (mFontAtlas != null && mFontAtlas.compact()) {
+            var info = new AtlasInvalidationInfo(Engine.MASK_FORMAT_A8, false);
+            for (var callback : mAtlasInvalidationCallbacks) {
+                callback.accept(info);
+            }
+        }
+        if (mEmojiAtlas != null && mEmojiAtlas.compact()) {
+            var info = new AtlasInvalidationInfo(Engine.MASK_FORMAT_ARGB, false);
+            for (var callback : mAtlasInvalidationCallbacks) {
+                callback.accept(info);
+            }
+        }
     }
 
     @RenderThread
@@ -389,7 +417,7 @@ public class GlyphManager {
 
         boolean invalidated = atlas.stitch(glyph, src);
         if (invalidated) {
-            var info = new AtlasInvalidationInfo(Engine.MASK_FORMAT_A8);
+            var info = new AtlasInvalidationInfo(Engine.MASK_FORMAT_A8, true);
             for (var callback : mAtlasInvalidationCallbacks) {
                 callback.accept(info);
             }
@@ -416,7 +444,13 @@ public class GlyphManager {
                 glyph.y = -EMOJI_ASCENT;
                 glyph.width = EMOJI_SIZE;
                 glyph.height = EMOJI_SIZE;
-                atlas.stitch(glyph, src);
+                boolean invalidated = atlas.stitch(glyph, src);
+                if (invalidated) {
+                    var info = new AtlasInvalidationInfo(Engine.MASK_FORMAT_ARGB, true);
+                    for (var callback : mAtlasInvalidationCallbacks) {
+                        callback.accept(info);
+                    }
+                }
                 return glyph;
             } else {
                 atlas.setNoPixels(key);

@@ -19,8 +19,8 @@
 package icyllis.modernui.graphics.font;
 
 /**
- * This class holds information for a glyph about its pre-rendered image in an
- * OpenGL texture. The glyph must be laid-out so that it has something to render
+ * This class holds information for a glyph about its pre-rendered image in a
+ * GPU texture. The glyph must be laid-out so that it has something to render
  * in a context.
  *
  * @see GlyphManager
@@ -32,7 +32,7 @@ public class BakedGlyph {
     /**
      * The horizontal offset to baseline in pixels.
      */
-    public short x;
+    public short x; // x = Short.MIN_VALUE means invalid
 
     /**
      * The vertical offset to baseline in pixels.
