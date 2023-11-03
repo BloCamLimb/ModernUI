@@ -55,8 +55,9 @@ import static org.lwjgl.system.MemoryUtil.*;
  * generally uploaded to GPU side {@link Image} for drawing on the screen,
  * or downloaded from GPU side {@link Image} for encoding to streams.
  * <p>
- * This class is not thread safe, but memory safe. It's always recommended
- * to call {@link #close()} explicitly, or within a try-with-resource block.
+ * This class is not thread safe, but memory safe. Its internal state may
+ * be shared by multiple threads. Nevertheless, it's recommended to call
+ * {@link #close()} explicitly, or within a try-with-resource block.
  *
  * @see BitmapFactory
  */
@@ -210,18 +211,28 @@ public final class Bitmap implements AutoCloseable {
 
     @ApiStatus.Internal
     public static void flipVertically(@NonNull Bitmap bitmap) {
+        assert !bitmap.isImmutable();
         final int height = bitmap.getHeight();
         final int rowStride = bitmap.getRowBytes();
-        final long temp = nmemAllocChecked(rowStride);
         final long addr = bitmap.getAddress();
-        for (int i = 0, lim = height >> 1; i < lim; i++) {
-            final int srcOff = i * rowStride;
-            final int dstOff = (height - i - 1) * rowStride;
-            memCopy(addr + srcOff, temp, rowStride);
-            memCopy(addr + dstOff, addr + srcOff, rowStride);
-            memCopy(temp, addr + dstOff, rowStride);
+        if (addr == NULL) {
+            throw new IllegalStateException("src pixels is null");
         }
-        nmemFree(temp);
+        final long temp = nmemAlloc(rowStride);
+        if (temp == NULL) {
+            throw new IllegalStateException("temp pixels is null");
+        }
+        try {
+            for (int i = 0, lim = height >> 1; i < lim; i++) {
+                final int srcOff = i * rowStride;
+                final int dstOff = (height - i - 1) * rowStride;
+                memCopy(addr + srcOff, temp, rowStride);
+                memCopy(addr + dstOff, addr + srcOff, rowStride);
+                memCopy(temp, addr + dstOff, rowStride);
+            }
+        } finally {
+            nmemFree(temp);
+        }
     }
 
     @NonNull

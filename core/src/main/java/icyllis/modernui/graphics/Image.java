@@ -20,9 +20,9 @@ package icyllis.modernui.graphics;
 
 import icyllis.arc3d.core.ImageInfo;
 import icyllis.arc3d.core.SharedPtr;
-import icyllis.arc3d.engine.Surface;
 import icyllis.arc3d.engine.*;
-import icyllis.modernui.annotation.*;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Core;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -38,7 +38,7 @@ import java.lang.ref.Cleaner;
  * and GPU texture.</li>
  * </ul>
  */
-//TODO wip
+//TODO wip, only create from Bitmap, only drawImage works now
 public class Image implements AutoCloseable {
 
     private final ImageInfo mInfo;
@@ -151,6 +151,13 @@ public class Image implements AutoCloseable {
         return mView;
     }
 
+    /**
+     * Manually mark the underlying resources closed, if needed. After this, you
+     * will not be able to operate this object.
+     * <p>
+     * When this object becomes phantom-reachable, the system will automatically
+     * do this cleanup operation.
+     */
     @Override
     public void close() {
         if (mView != null) {
@@ -176,7 +183,8 @@ public class Image implements AutoCloseable {
 
         @Override
         public void run() {
-            super.close();
+            // texture can be created from any thread, but must be closed on render thread
+            Core.executeOnRenderThread(super::close);
         }
 
         @Override
