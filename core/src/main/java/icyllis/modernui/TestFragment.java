@@ -62,7 +62,7 @@ import static icyllis.modernui.view.ViewGroup.LayoutParams.*;
  */
 public class TestFragment extends Fragment {
 
-    public static SpectrumGraph sSpectrumGraph;
+    //public static SpectrumGraph sSpectrumGraph;
 
     public static void main(String[] args) {
         System.setProperty("java.awt.headless", "true");
@@ -90,7 +90,7 @@ public class TestFragment extends Fragment {
                 .replace(660, new FragmentA(), null)
                 .commit();
 
-        CompletableFuture.runAsync(() -> {
+        /*CompletableFuture.runAsync(() -> {
             String text = "My name is van";
             var tp = new TextPaint();
             tp.setTextStyle(TextPaint.BOLD);
@@ -104,7 +104,7 @@ public class TestFragment extends Fragment {
         }).exceptionally(e -> {
             LOGGER.info("Shape", e);
             return null;
-        });
+        });*/
 
         AudioManager.getInstance().initialize();
     }
@@ -127,7 +127,7 @@ public class TestFragment extends Fragment {
                 canvas.drawRoundRect(b.left, b.top, b.right, b.bottom, 8, paint);
                 paint.recycle();
 
-                SpectrumGraph graph = sSpectrumGraph;
+                /*SpectrumGraph graph = sSpectrumGraph;
                 long time = AnimationUtils.currentAnimationTimeMillis();
                 long delta = time - lastTime;
                 lastTime = time;
@@ -137,7 +137,7 @@ public class TestFragment extends Fragment {
                         graph.draw(canvas, cx, cy);
                         invalidateSelf();
                     }
-                }
+                }*/
             }
         });
         {
@@ -465,7 +465,7 @@ public class TestFragment extends Fragment {
                 anim.setInterpolator(TimeInterpolator.ACCELERATE_DECELERATE);
                 //anim.setRepeatCount(ValueAnimator.INFINITE);
                 //anim.start();
-                //mGoodAnim = anim;
+                mGoodAnim = anim;
             }
 
             for (int i = 0; i < 12; i++) {
@@ -476,7 +476,12 @@ public class TestFragment extends Fragment {
                     button.setText("Play A Music!");
                     button.setTextColor(0xFF28A3F3);
                     button.setTextStyle(Typeface.BOLD);
-                    button.setOnClickListener(v1 -> {
+                    button.setOnClickListener(__ -> {
+                        if (mGoodAnim != null) {
+                            mGoodAnim.start();
+                        }
+                    });
+                    /*button.setOnClickListener(v1 -> {
                         String path;
                         try (MemoryStack stack = MemoryStack.stackPush()) {
                             PointerBuffer filters = stack.mallocPointer(1);
@@ -509,7 +514,7 @@ public class TestFragment extends Fragment {
                                 }
                             });
                         }
-                    });
+                    });*/
                     v = button;
                     p = new LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
                 } else if (i == 4) {
