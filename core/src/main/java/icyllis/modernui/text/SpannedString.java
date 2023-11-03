@@ -34,7 +34,7 @@
 
 package icyllis.modernui.text;
 
-import javax.annotation.Nonnull;
+import icyllis.modernui.annotation.NonNull;
 
 /**
  * This is the class for text whose content and markup are immutable.
@@ -46,20 +46,28 @@ public final class SpannedString extends SpannableStringInternal implements Span
      * @param source           source object to copy from
      * @param ignoreNoCopySpan whether to copy NoCopySpans in the {@code source}
      */
-    public SpannedString(@Nonnull CharSequence source, boolean ignoreNoCopySpan) {
+    public SpannedString(@NonNull CharSequence source, boolean ignoreNoCopySpan) {
         super(source, 0, source.length(), ignoreNoCopySpan);
     }
 
-    public SpannedString(@Nonnull CharSequence source) {
+    /**
+     * @param source           source object to copy from
+     * @param ignoreNoCopySpan whether to copy NoCopySpans in the {@code source}
+     */
+    public SpannedString(@NonNull CharSequence source, int start, int end, boolean ignoreNoCopySpan) {
+        super(source, start, end, ignoreNoCopySpan);
+    }
+
+    public SpannedString(@NonNull CharSequence source) {
         this(source, false);
     }
 
-    private SpannedString(@Nonnull CharSequence source, int start, int end) {
+    public SpannedString(@NonNull CharSequence source, int start, int end) {
         super(source, start, end, false);
     }
 
-    @Nonnull
-    public static SpannedString valueOf(@Nonnull CharSequence source) {
+    @NonNull
+    public static SpannedString valueOf(@NonNull CharSequence source) {
         if (source instanceof SpannedString) {
             return (SpannedString) source;
         } else {
@@ -67,7 +75,7 @@ public final class SpannedString extends SpannableStringInternal implements Span
         }
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public CharSequence subSequence(int start, int end) {
         return new SpannedString(this, start, end);
