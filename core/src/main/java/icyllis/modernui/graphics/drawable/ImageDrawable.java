@@ -60,8 +60,8 @@ public class ImageDrawable extends Drawable {
     /**
      * Create a drawable by opening a given file path and decoding the image.
      */
-    public ImageDrawable(@Nonnull String ns, @Nonnull String path) {
-        Image image = Image.create(ns, path);
+    public ImageDrawable(@Nonnull String namespace, @Nonnull String path) {
+        Image image = Image.create(namespace, path);
         init(new ImageState(image));
     }
 
