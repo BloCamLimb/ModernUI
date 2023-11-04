@@ -91,7 +91,7 @@ public final class SurfaceAllocator {
     private final IntervalList mFinishedIntervals = new IntervalList();
 
     // Recently created/used textures
-    private final ArrayDequeMultimap<Texture, Register> mFreePool = new ArrayDequeMultimap<>();
+    private final LinkedListMultimap<Texture, Register> mFreePool = new LinkedListMultimap<>();
 
     private final Object2ObjectOpenHashMap<Object, Register> mUniqueKeyRegisters =
             new Object2ObjectOpenHashMap<>();

@@ -66,9 +66,9 @@ public final class ResourceCache implements AutoCloseable {
     private int mNonFreeSize;
 
     // This map holds all resources that can be used as scratch resources.
-    private ArrayDequeMultimap<IScratchKey, GpuResource> mScratchMap;
+    private final LinkedListMultimap<IScratchKey, GpuResource> mScratchMap;
     // This map holds all resources that have unique keys.
-    private HashMap<IUniqueKey, GpuResource> mUniqueMap;
+    private final HashMap<IUniqueKey, GpuResource> mUniqueMap;
 
     // our budget, used in clean()
     private long mMaxBytes = 1 << 28;
@@ -95,7 +95,7 @@ public final class ResourceCache implements AutoCloseable {
         mFreeQueue = new PriorityQueue<>(TIMESTAMP_COMPARATOR, GpuResource.QUEUE_ACCESS);
         mNonFreeList = new GpuResource[10]; // initial size must > 2
 
-        mScratchMap = new ArrayDequeMultimap<>();
+        mScratchMap = new LinkedListMultimap<>();
         mUniqueMap = new HashMap<>();
     }
 
@@ -383,9 +383,6 @@ public final class ResourceCache implements AutoCloseable {
 
         // trim internal arrays
         mFreeQueue.trim();
-        mScratchMap.values().removeIf(ArrayDeque::isEmpty);
-        mScratchMap = new ArrayDequeMultimap<>(mScratchMap);
-        mUniqueMap = new HashMap<>(mUniqueMap);
     }
 
     /**
@@ -677,10 +674,10 @@ public final class ResourceCache implements AutoCloseable {
         // Fill the hole we will create in the array with the tail object, adjust its index, and
         // then pop the array
         final int pos = resource.mCacheIndex;
+        assert es[pos] == resource;
         final int s = --mNonFreeSize;
         final GpuResource tail = es[s];
         es[s] = null;
-        assert es[pos] == resource;
         es[pos] = tail;
         tail.mCacheIndex = pos;
         resource.mCacheIndex = -1;
