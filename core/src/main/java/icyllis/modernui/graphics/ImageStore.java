@@ -24,17 +24,17 @@ import icyllis.modernui.annotation.Nullable;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.ref.SoftReference;
 import java.nio.channels.ReadableByteChannel;
 import java.util.HashMap;
-import java.util.Map;
 
-// temp class
+//TODO under review
 public class ImageStore {
 
     private static final ImageStore INSTANCE = new ImageStore();
 
     private final Object mLock = new Object();
-    private Map<String, Map<String, Image>> mImages = new HashMap<>();
+    private HashMap<String, HashMap<String, SoftReference<Image>>> mImages = new HashMap<>();
 
     private ImageStore() {
     }
@@ -51,7 +51,10 @@ public class ImageStore {
         synchronized (mLock) {
             for (var cache : mImages.values()) {
                 for (var entry : cache.values()) {
-                    entry.close();
+                    var image = entry.get();
+                    if (image != null) {
+                        image.close();
+                    }
                 }
             }
             mImages = new HashMap<>();
@@ -70,22 +73,34 @@ public class ImageStore {
         synchronized (mLock) {
             var cache = mImages.computeIfAbsent(namespace, __ -> new HashMap<>());
             var image = cache.get(path);
-            if (image != null) {
-                return image;
-            } else {
-                try (var stream = ModernUI.getInstance().getResourceStream(namespace, path);
-                     var bitmap = BitmapFactory.decodeStream(stream)) {
-                    image = Image.createTextureFromBitmap(bitmap);
-                    if (image != null) {
-                        cache.put(path, image);
-                        return image;
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                return null;
+            Image imageObj;
+            if (image != null && (imageObj = image.get()) != null && !imageObj.isClosed()) {
+                return imageObj;
             }
         }
+        try (var stream = ModernUI.getInstance().getResourceStream(namespace, path);
+             var bitmap = BitmapFactory.decodeStream(stream)) {
+            var newImage = Image.createTextureFromBitmap(bitmap);
+            synchronized (mLock) {
+                var cache = mImages.computeIfAbsent(namespace, __ -> new HashMap<>());
+                var image = cache.get(path);
+                Image imageObj;
+                if (image != null && (imageObj = image.get()) != null && !imageObj.isClosed()) {
+                    // race
+                    if (newImage != null) {
+                        newImage.close();
+                    }
+                    return imageObj;
+                }
+                if (newImage != null) {
+                    cache.put(path, new SoftReference<>(newImage));
+                    return newImage;
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     /**

@@ -840,7 +840,7 @@ public final class GLSurfaceCanvas extends Canvas {
         }
     }
 
-    private void bindNextTexture(boolean texSampling) {
+    private boolean bindNextTexture(boolean texSampling) {
         var textureView = mTextures.remove();
         var userTexture = textureView.getSurface();
         boolean success = true;
@@ -885,6 +885,7 @@ public final class GLSurfaceCanvas extends Canvas {
             }
         }
         mTexturesToClean.add(userTexture);
+        return success;
     }
 
     @RenderThread
@@ -995,11 +996,12 @@ public final class GLSurfaceCanvas extends Canvas {
                 case DRAW_ROUND_IMAGE -> {
                     bindPipeline(ROUND_RECT_TEX, POS_COLOR_TEX)
                             .bindVertexBuffer(mTextureMeshVertexBuffer, 0);
-                    bindNextTexture(false);
-                    mRoundRectUBO.upload(0, 20, uniformDataPtr);
+                    if (bindNextTexture(false)) {
+                        mRoundRectUBO.upload(0, 20, uniformDataPtr);
+                        glDrawArrays(GL_TRIANGLE_STRIP, posColorTexIndex, 4);
+                        nDraws++;
+                    }
                     uniformDataPtr += 20;
-                    glDrawArrays(GL_TRIANGLE_STRIP, posColorTexIndex, 4);
-                    nDraws++;
                     posColorTexIndex += 4;
                 }
                 case DRAW_ROUND_LINE_FILL -> {
@@ -1041,17 +1043,19 @@ public final class GLSurfaceCanvas extends Canvas {
                 case DRAW_IMAGE -> {
                     bindPipeline(COLOR_TEX, POS_COLOR_TEX)
                             .bindVertexBuffer(mTextureMeshVertexBuffer, 0);
-                    bindNextTexture(false);
-                    glDrawArrays(GL_TRIANGLE_STRIP, posColorTexIndex, 4);
-                    nDraws++;
+                    if (bindNextTexture(false)) {
+                        glDrawArrays(GL_TRIANGLE_STRIP, posColorTexIndex, 4);
+                        nDraws++;
+                    }
                     posColorTexIndex += 4;
                 }
                 case DRAW_IMAGE_LAYER -> {
                     bindPipeline(COLOR_TEX_PRE, POS_COLOR_TEX)
                             .bindVertexBuffer(mTextureMeshVertexBuffer, 0);
-                    bindNextTexture(true);
-                    glDrawArrays(GL_TRIANGLE_STRIP, posColorTexIndex, 4);
-                    nDraws++;
+                    if (bindNextTexture(true)) {
+                        glDrawArrays(GL_TRIANGLE_STRIP, posColorTexIndex, 4);
+                        nDraws++;
+                    }
                     posColorTexIndex += 4;
                 }
                 case DRAW_CIRCLE_FILL -> {

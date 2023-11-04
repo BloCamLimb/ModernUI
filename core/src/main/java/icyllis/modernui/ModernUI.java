@@ -341,6 +341,13 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
 
         mSurface.close();
 
+        synchronized (Core.class) {
+            if (mBackgroundImage != null) {
+                mBackgroundImage.close();
+                mBackgroundImage = null;
+            }
+        }
+
         GLSurfaceCanvas.getInstance().destroy();
         Core.requireDirectContext().unref();
         LOGGER.info(MARKER, "Quited render thread");
@@ -464,12 +471,6 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
     @Override
     public void close() {
         try {
-            synchronized (Core.class) {
-                if (mBackgroundImage != null) {
-                    mBackgroundImage.close();
-                    mBackgroundImage = null;
-                }
-            }
             mRenderLooper.quit();
             if (mRenderThread != null && mRenderThread.isAlive()) {
                 try {

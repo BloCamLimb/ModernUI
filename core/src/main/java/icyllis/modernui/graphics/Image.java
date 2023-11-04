@@ -74,6 +74,7 @@ public class Image implements AutoCloseable {
      * @param rContext the recording graphics context on the current thread
      * @param bitmap   the source bitmap
      * @return image, or null if failed
+     * @throws NullPointerException bitmap is null or released
      */
     @Nullable
     public static Image createTextureFromBitmap(@NonNull RecordingContext rContext,
@@ -158,6 +159,8 @@ public class Image implements AutoCloseable {
      * When this object becomes phantom-reachable, the system will automatically
      * do this cleanup operation.
      */
+    //FIXME explicit close may cause leakage in drawImage
+    @ApiStatus.Experimental
     @Override
     public void close() {
         if (mView != null) {
