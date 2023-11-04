@@ -216,7 +216,7 @@ public abstract class GpuTexture extends GpuResource implements IGpuSurface {
         if (format.isCompressed()) {
             return null;
         }
-        assert (getBudgetType() == BudgetType.Budgeted);
+        assert (getBudgetType() != BudgetType.WrapCacheable);
         return new ScratchKey().compute(
                 format,
                 mWidth, mHeight,
