@@ -12,8 +12,8 @@ include 'core'
 project(':core').name = 'ModernUI-Core'
 
 // extensions
-include 'x-viewpager'
-project(':x-viewpager').name = "ModernUI-ViewPager"
+//include 'x-viewpager'
+//project(':x-viewpager').name = "ModernUI-ViewPager"
 
 include 'x-markdown'
 project(':x-markdown').name = "ModernUI-Markdown"
