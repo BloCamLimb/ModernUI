@@ -364,7 +364,7 @@ public class GlyphManager {
             pw.print(": Glyphs=");
             pw.print(atlas.getGlyphCount());
             pw.print(", Coverage=");
-            pw.print(atlas.getCoverage());
+            pw.printf("%.4f", atlas.getCoverage());
             pw.print(", GPUMemorySize=");
             long memorySize = atlas.getMemorySize();
             pw.print(TextUtils.binaryCompact(memorySize));

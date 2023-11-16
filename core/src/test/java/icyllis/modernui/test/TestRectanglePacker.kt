@@ -20,10 +20,12 @@ package icyllis.modernui.test
 
 import icyllis.arc3d.core.Rect2i
 import icyllis.arc3d.core.RectanglePacker
+import icyllis.modernui.graphics.MathUtil
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.core.config.Configurator
 import org.lwjgl.glfw.GLFW
 import java.awt.Color
+import java.awt.Graphics2D
 import java.awt.image.BufferedImage
 import java.io.File
 import java.util.*
@@ -36,140 +38,95 @@ fun main() {
     System.setProperty("java.awt.headless", "true")
     Configurator.setRootLevel(Level.INFO)
 
-    val bm1 = BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB)
-    val g2d1 = bm1.createGraphics()!!
+    val packer1 = TestRectanglePacker(RectanglePacker.ALGORITHM_SKYLINE)
+    val packer2 = TestRectanglePacker(RectanglePacker.ALGORITHM_HORIZON)
+    val packer3 = TestRectanglePacker(RectanglePacker.ALGORITHM_HORIZON_OLD)
+    val packer4 = TestRectanglePacker(RectanglePacker.ALGORITHM_BINARY_TREE)
+    val packer5 = TestRectanglePacker(RectanglePacker.ALGORITHM_POWER2_LINE)
 
-    val bm2 = BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB)
-    val g2d2 = bm2.createGraphics()!!
-
-    val bm3 = BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB)
-    val g2d3 = bm3.createGraphics()!!
-
-    val bm4 = BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB)
-    val g2d4 = bm4.createGraphics()!!
-
-    val bm5 = BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB)
-    val g2d5 = bm5.createGraphics()!!
-
-    val packer1 = RectanglePacker.make(WIDTH, HEIGHT, RectanglePacker.ALGORITHM_SKYLINE)
-    val packer2 = RectanglePacker.make(WIDTH, HEIGHT, RectanglePacker.ALGORITHM_HORIZON)
-    val packer3 = RectanglePacker.make(WIDTH, HEIGHT, RectanglePacker.ALGORITHM_HORIZON_OLD)
-    val packer4 = RectanglePacker.make(WIDTH, HEIGHT, RectanglePacker.ALGORITHM_BINARY_TREE)
-    val packer5 = RectanglePacker.make(WIDTH, HEIGHT, RectanglePacker.ALGORITHM_POWER2_LINE)
     val random = Random()
-
-    var time1 = 0.0
-    var time2 = 0.0
-    var time3 = 0.0
-    var time4 = 0.0
-    var time5 = 0.0
 
     GLFW.glfwInit()
 
-    var n1 = 0
-    var n2 = 0
-    var n3 = 0
-    var n4 = 0
-    var n5 = 0
-    var fails = 0
-    while (fails < 3000) {
-        val w = random.nextInt(8, 33)
-        val h = random.nextInt(12, 37)
-        val col = Color(random.nextInt(0x1000000))
-
-        val rect = Rect2i(0, 0, w, h)
-        var start = GLFW.glfwGetTime()
-        if (packer1.addRect(rect)) {
-            g2d1.color = col
-            g2d1.drawRect(rect.mLeft, rect.mTop, rect.width() - 1, rect.height() - 1)
-            ++n1
-        } else {
-            ++fails
-        }
-        time1 += GLFW.glfwGetTime() - start
-
-        rect.set(0, 0, w, h)
-        start = GLFW.glfwGetTime()
-        if (packer2.addRect(rect)) {
-            g2d2.color = col
-            g2d2.drawRect(rect.mLeft, rect.mTop, rect.width() - 1, rect.height() - 1)
-            ++n2
-        } else {
-            ++fails
-        }
-        time2 += GLFW.glfwGetTime() - start
-
-        rect.set(0, 0, w, h)
-        start = GLFW.glfwGetTime()
-        if (packer3.addRect(rect)) {
-            g2d3.color = col
-            g2d3.drawRect(rect.mLeft, rect.mTop, rect.width() - 1, rect.height() - 1)
-            ++n3
-        } else {
-            ++fails
-        }
-        time3 += GLFW.glfwGetTime() - start
-
-        rect.set(0, 0, w, h)
-        start = GLFW.glfwGetTime()
-        if (packer4.addRect(rect)) {
-            g2d4.color = col
-            g2d4.drawRect(rect.mLeft, rect.mTop, rect.width() - 1, rect.height() - 1)
-            ++n4
-        } else {
-            ++fails
-        }
-        time4 += GLFW.glfwGetTime() - start
-
-        rect.set(0, 0, w, h)
-        start = GLFW.glfwGetTime()
-        if (packer5.addRect(rect)) {
-            g2d5.color = col
-            g2d5.drawRect(rect.mLeft, rect.mTop, rect.width() - 1, rect.height() - 1)
-            ++n5
-        } else {
-            ++fails
-        }
-        time5 += GLFW.glfwGetTime() - start
-    }
+    var hue = 0f
+    do {
+        val w = MathUtil.clamp(20 + (6 * random.nextGaussian()).toInt(), 8, 32)
+        val h = MathUtil.clamp(24 + (6 * random.nextGaussian()).toInt(), 12, 36)
+        val col = Color(icyllis.arc3d.core.Color.HSVToColor(hue, 1f, 1f))
+        hue += 1f / 6f
+    } while (
+        packer1.add(w, h, col) or
+        packer2.add(w, h, col) or
+        packer3.add(w, h, col) or
+        packer4.add(w, h, col) or
+        packer5.add(w, h, col)
+    )
     println("Algorithm Skyline:")
-    println("$n1 rectangles")
-    println("Coverage: " + packer1.coverage + " (↑)")
-    System.out.printf("Took %d microseconds (↓)\n", (time1 * 1000000).toInt())
+    packer1.print()
 
     println("-".repeat(20))
 
-    println("Algorithm Horizontal Line:")
-    println("$n2 rectangles")
-    println("Coverage: " + packer2.coverage + " (↑)")
-    System.out.printf("Took %d microseconds (↓)\n", (time2 * 1000000).toInt())
+    println("Algorithm Horizon:")
+    packer2.print()
 
     println("-".repeat(20))
 
-    println("Algorithm Horizontal Line Memoryless:")
-    println("$n3 rectangles")
-    println("Coverage: " + packer3.coverage + " (↑)")
-    System.out.printf("Took %d microseconds (↓)\n", (time3 * 1000000).toInt())
+    println("Algorithm Horizon (Old):")
+    packer3.print()
 
     println("-".repeat(20))
 
     println("Algorithm Binary Tree:")
-    println("$n4 rectangles")
-    println("Coverage: " + packer4.coverage + " (↑)")
-    System.out.printf("Took %d microseconds (↓)\n", (time4 * 1000000).toInt())
+    packer4.print()
 
     println("-".repeat(20))
 
-    println("Algorithm Power 2 Line:")
-    println("$n5 rectangles")
-    println("Coverage: " + packer5.coverage + " (↑)")
-    System.out.printf("Took %d microseconds (↓)\n", (time5 * 1000000).toInt())
+    println("Algorithm Power Of Two:")
+    packer5.print()
 
-    ImageIO.write(bm1, "png", File("rect_packer1.png"))
-    ImageIO.write(bm2, "png", File("rect_packer2.png"))
-    ImageIO.write(bm3, "png", File("rect_packer3.png"))
-    ImageIO.write(bm4, "png", File("rect_packer4.png"))
-    ImageIO.write(bm5, "png", File("rect_packer5.png"))
+    ImageIO.write(packer1.bm, "png", File("rect_packer1.png"))
+    ImageIO.write(packer2.bm, "png", File("rect_packer2.png"))
+    ImageIO.write(packer3.bm, "png", File("rect_packer3.png"))
+    ImageIO.write(packer4.bm, "png", File("rect_packer4.png"))
+    ImageIO.write(packer5.bm, "png", File("rect_packer5.png"))
 
     GLFW.glfwTerminate()
+}
+
+class TestRectanglePacker(algorithm: Int) {
+    private val packer: RectanglePacker
+    val bm: BufferedImage
+    private val g2d: Graphics2D
+
+    private var time = 0.0
+    private var n = 0
+    private var fails = 0
+
+    init {
+        packer = RectanglePacker.make(WIDTH, HEIGHT, algorithm)
+        bm = BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB)
+        g2d = bm.createGraphics()!!
+    }
+
+    fun add(w: Int, h: Int, color: Color): Boolean {
+        if (fails >= 30) return false
+        val rect = Rect2i(0, 0, w, h)
+        val start = GLFW.glfwGetTime()
+        val result = packer.addRect(rect)
+        time += GLFW.glfwGetTime() - start
+        if (result) {
+            g2d.color = color
+            g2d.fillRect(rect.x(), rect.y(), w, h)
+            ++n
+        } else {
+            ++fails
+        }
+        return true
+    }
+
+    fun print() {
+        println("$n rectangles")
+        println("Coverage: " + packer.coverage + " (higher is better)")
+        println("" + (time * 1.0E9 / n).toInt() + " nanoseconds per rectangle (lower is better)")
+    }
 }

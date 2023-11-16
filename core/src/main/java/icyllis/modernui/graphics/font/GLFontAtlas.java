@@ -321,17 +321,17 @@ public class GLFontAtlas implements AutoCloseable {
         }
         assert mChunks.size() > 1;
         //TODO this implementation is not ideal and we need a review
-        float coverage = 0;
+        double coverage = 0;
         for (Chunk chunk : mChunks) {
             coverage += chunk.packer.getCoverage();
         }
         int chunksPerDim = mMaxTextureSize / CHUNK_SIZE;
         // clear 1/4 coverage of max
-        float maxCoverage = chunksPerDim * chunksPerDim * 0.25f;
+        double maxCoverage = chunksPerDim * chunksPerDim * 0.25f;
         if (coverage <= maxCoverage) {
             return false;
         }
-        float coverageToClean = Math.max(coverage - maxCoverage, maxCoverage);
+        double coverageToClean = Math.max(coverage - maxCoverage, maxCoverage);
         boolean cleared = false;
         // clear 16 chunks at most
         for (int iChunk = 0;
@@ -341,7 +341,7 @@ public class GLFontAtlas implements AutoCloseable {
             assert MathUtil.isPow2(mChunks.size());
             int index = (mLastCompactChunkIndex++) & (mChunks.size() - 1);
             Chunk chunk = mChunks.get(index);
-            float cc = chunk.packer.getCoverage();
+            double cc = chunk.packer.getCoverage();
             if (cc == 0) {
                 continue;
             }
@@ -436,11 +436,11 @@ public class GLFontAtlas implements AutoCloseable {
     /**
      * @return 0..1
      */
-    public float getCoverage() {
+    public double getCoverage() {
         if (mChunks.isEmpty()) {
             return 0;
         }
-        float coverage = 0;
+        double coverage = 0;
         for (Chunk chunk : mChunks) {
             coverage += chunk.packer.getCoverage();
         }
