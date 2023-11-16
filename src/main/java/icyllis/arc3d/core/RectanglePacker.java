@@ -19,8 +19,11 @@
 
 package icyllis.arc3d.core;
 
+import org.lwjgl.stb.*;
+
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Packs rectangles into a larger rectangle.
@@ -35,23 +38,28 @@ public abstract class RectanglePacker {
     public static final int ALGORITHM_HORIZON_OLD = 2;
     public static final int ALGORITHM_BINARY_TREE = 3;
     public static final int ALGORITHM_POWER2_LINE = 4;
+    public static final int ALGORITHM_STB_SKYLINE = 5;
+    public static final int ALGORITHM_STB_SKYLINE_BEST = 6;
+    public static final int ALGORITHM_SKYLINE_NEW = 7;
 
-    protected final short mWidth;
-    protected final short mHeight;
+    protected final int mWidth;
+    protected final int mHeight;
 
     protected int mArea;
 
     /**
-     * Constructor assumes both width and height > 0 && <= 32767.
+     * Constructor assumes both width and height are in the range 1..32768.
      *
      * @param width  the max width
      * @param height the max height
      */
-    public RectanglePacker(int width, int height) {
-        assert width > 0 && height > 0;
-        assert width <= Short.MAX_VALUE && height <= Short.MAX_VALUE;
-        mWidth = (short) width;
-        mHeight = (short) height;
+    protected RectanglePacker(int width, int height) {
+        if (width < 1 || height < 1 || width > 32768 || height > 32768) {
+            throw new IllegalArgumentException("width " + width + " or height " + height +
+                    " is out of range 1..32768");
+        }
+        mWidth = width;
+        mHeight = height;
     }
 
     /**
@@ -65,6 +73,7 @@ public abstract class RectanglePacker {
         return new Skyline(width, height);
     }
 
+    // test only
     public static RectanglePacker make(int width, int height, int algorithm) {
         return switch (algorithm) {
             case ALGORITHM_SKYLINE -> new Skyline(width, height);
@@ -72,6 +81,11 @@ public abstract class RectanglePacker {
             case ALGORITHM_HORIZON_OLD -> new HorizonOld(width, height);
             case ALGORITHM_BINARY_TREE -> new BinaryTree(width, height);
             case ALGORITHM_POWER2_LINE -> new Power2Line(width, height);
+            case ALGORITHM_STB_SKYLINE -> new STBSkyline(width, height,
+                    STBRectPack.STBRP_HEURISTIC_Skyline_BL_sortHeight);
+            case ALGORITHM_STB_SKYLINE_BEST -> new STBSkyline(width, height,
+                    STBRectPack.STBRP_HEURISTIC_Skyline_BF_sortHeight);
+            case ALGORITHM_SKYLINE_NEW -> new SkylineNew(width, height);
             default -> throw new AssertionError(algorithm);
         };
     }
@@ -98,12 +112,18 @@ public abstract class RectanglePacker {
     public abstract boolean addRect(Rect2i rect);
 
     /**
-     * Gets the ratio of current area to total area, higher values indicate better packing.
+     * Returns the ratio of the used area to the maximum area, higher is better.
      *
-     * @return a fractional value
+     * @return the ratio of coverage, 0..1
      */
-    public final float getCoverage() {
-        return mArea / ((float) mWidth * mHeight);
+    public final double getCoverage() {
+        return (double) mArea / mWidth / mHeight;
+    }
+
+    /**
+     * For native rectangle packer, this must be called to free its native resources.
+     */
+    public void free() {
     }
 
     /**
@@ -117,19 +137,19 @@ public abstract class RectanglePacker {
         private static final int COLUMNS = 3;
 
         // skylines
-        private short[] mData;
+        private final short[] mData;
         private int mSize;
 
         /**
-         * Constructor assumes both width and height > 0 && <= 32767.
+         * Constructor assumes both width and height are in the range 1..32768.
          *
          * @param width  the max width
          * @param height the max height
          */
         public Skyline(int width, int height) {
             super(width, height);
-            mData = new short[10 * COLUMNS];
-            mData[WIDTH] = mWidth;
+            mData = new short[(width + 10) * COLUMNS];
+            mData[WIDTH] = (short) mWidth;
             mSize = 1;
         }
 
@@ -138,7 +158,7 @@ public abstract class RectanglePacker {
             mArea = 0;
             mData[X] = 0;
             mData[Y] = 0;
-            mData[WIDTH] = mWidth;
+            mData[WIDTH] = (short) mWidth;
             mSize = 1;
         }
 
@@ -146,7 +166,10 @@ public abstract class RectanglePacker {
         public boolean addRect(Rect2i rect) {
             final int width = rect.width();
             final int height = rect.height();
-            assert width > 0 && height > 0;
+            if (width <= 0 || height <= 0) {
+                rect.offsetTo(0, 0);
+                return true;
+            }
             if (width > mWidth || height > mHeight) {
                 return false;
             }
@@ -156,31 +179,32 @@ public abstract class RectanglePacker {
             int bestX = 0;
             int bestY = mHeight + 1;
             int bestIndex = -1;
-            final var data = mData;
+            final short[] data = mData;
             FITTING:
             for (int index = 0, limit = mSize * COLUMNS; index < limit; index += COLUMNS) {
                 // Can a width x height rectangle fit in the free space represented by
                 // the skyline segments >= 'index'?
-                int x = data[index + X];
+                int x = data[index + X] & 0xFFFF;
                 if (x + width > mWidth) {
                     continue;
                 }
 
-                int y = data[index + Y];
+                int y = data[index + Y] & 0xFFFF;
                 for (int i = index, widthLeft = width; widthLeft > 0; ) {
-                    y = Math.max(y, data[i + Y]);
+                    y = Math.max(y, data[i + Y] & 0xFFFF);
                     if (y + height > mHeight) {
                         continue FITTING;
                     }
-                    widthLeft -= data[i + WIDTH];
+                    widthLeft -= data[i + WIDTH] & 0xFFFF;
                     i += COLUMNS;
                     assert (i < limit || widthLeft <= 0);
                 }
 
                 // minimize y position first, then width of skyline
-                if (y < bestY || (y == bestY && data[index + WIDTH] < bestWidth)) {
+                int w = data[index + WIDTH] & 0xFFFF;
+                if (y < bestY || (y == bestY && w < bestWidth)) {
                     bestIndex = index;
-                    bestWidth = data[index + WIDTH];
+                    bestWidth = w;
                     bestX = x;
                     bestY = y;
                 }
@@ -202,37 +226,36 @@ public abstract class RectanglePacker {
         private void addLevel(int index, int x, int y, int width, int height) {
             assert x + width <= mWidth;
             assert y + height <= mHeight;
-            int s = mSize;
-            if (s * COLUMNS == mData.length) {
-                int newSize = (s + (s >> 1)) * COLUMNS;
-                mData = Arrays.copyOf(mData, newSize);
-            }
-            final var data = mData;
+            final short[] data = mData;
             System.arraycopy(data, index,
-                    data, index + COLUMNS, s * COLUMNS - index);
+                    data, index + COLUMNS,
+                    mSize * COLUMNS - index);
             data[index + X] = (short) x;
             data[index + Y] = (short) (y + height);
             data[index + WIDTH] = (short) width;
-            mSize = s + 1;
+            ++mSize;
 
             // delete width of the new skylines from following ones
             for (int i = index + COLUMNS; i < mSize * COLUMNS; ) {
                 // The new segment subsumes all or part of i
-                assert data[i + X] >= data[i - COLUMNS + X];
-
-                if (data[i + X] < data[i - COLUMNS + X] + data[i - COLUMNS + WIDTH]) {
-                    int shrink = data[i - COLUMNS + X] + data[i - COLUMNS + WIDTH] - data[i + X];
-
-                    data[i + X] += shrink;
-                    data[i + WIDTH] -= shrink;
-
-                    if (data[i + WIDTH] <= 0) {
+                int cx = (data[i + X] & 0xFFFF);
+                int px = (data[i - COLUMNS + X] & 0xFFFF);
+                assert cx >= px;
+                int cw = (data[i + WIDTH] & 0xFFFF);
+                int pw = (data[i - COLUMNS + WIDTH] & 0xFFFF);
+                int shrink = px + pw - cx;
+                if (shrink > 0) {
+                    int nw = cw - shrink;
+                    if (nw <= 0) {
                         // fully consumed, remove i
                         System.arraycopy(data, i + COLUMNS,
-                                data, i, (mSize - 1) * COLUMNS - i);
+                                data, i,
+                                (mSize - 1) * COLUMNS - i);
                         --mSize;
                     } else {
                         // only partially consumed
+                        data[i + X] = (short) (cx + shrink);
+                        data[i + WIDTH] = (short) nw;
                         break;
                     }
                 } else {
@@ -243,13 +266,205 @@ public abstract class RectanglePacker {
             // merge skylines
             for (int i = 0; i < (mSize - 1) * COLUMNS; ) {
                 if (data[i + Y] == data[i + COLUMNS + Y]) {
-                    data[i + WIDTH] += data[i + COLUMNS + WIDTH];
+                    data[i + WIDTH] = (short) ((data[i + WIDTH] & 0xFFFF) + (data[i + COLUMNS + WIDTH] & 0xFFFF));
                     // remove i + 1
                     System.arraycopy(data, i + 2 * COLUMNS,
-                            data, i + COLUMNS, (mSize - 2) * COLUMNS - i);
+                            data, i + COLUMNS,
+                            (mSize - 2) * COLUMNS - i);
                     --mSize;
                 } else {
                     i += COLUMNS;
+                }
+            }
+        }
+    }
+
+    private static final class SkylineNew extends RectanglePacker {
+
+        private static final int X_SHIFT = 0;
+        private static final int Y_SHIFT = 16;
+        private static final int WIDTH_SHIFT = 32;
+        private static final int NEXT_SHIFT = 48;
+        // each value is uint16
+        private static final int SLOT_MASK = 0xFFFF;
+
+        // 'next' points to 'null'
+        private static final int NULL_PTR = 0xFFFF;
+
+        // skylines
+        private final long[] mData;
+
+        private int mActiveHead;
+        private int mFreeHead;
+
+        private SkylineNew(int width, int height) {
+            super(width, height);
+            mData = new long[width + 10];
+            clear();
+        }
+
+        @Override
+        public void clear() {
+            mArea = 0;
+            mData[mActiveHead = 0] = ((long) mWidth << WIDTH_SHIFT) | ((long) NULL_PTR << NEXT_SHIFT);
+            for (int i = mFreeHead = 1, e = mData.length; i < e; i++) {
+                mData[i] = (long) (i + 1) << NEXT_SHIFT;
+            }
+        }
+
+        @Override
+        public boolean addRect(Rect2i rect) {
+            final int width = rect.width();
+            final int height = rect.height();
+            if (width <= 0 || height <= 0) {
+                rect.offsetTo(0, 0);
+                return true;
+            }
+            if (width > mWidth || height > mHeight) {
+                return false;
+            }
+
+            // find position for new rectangle
+            int bestWidth = mWidth + 1;
+            int bestX = 0;
+            int bestY = mHeight + 1;
+            int bestIndex = -1;
+            int bestPrev = -1;
+            final long[] data = mData;
+            int index = mActiveHead;
+            int prev = NULL_PTR;
+            FITTING:
+            for (; index != NULL_PTR; prev = index, index = (int) (data[prev] >>> NEXT_SHIFT)) {
+                // Can a width x height rectangle fit in the free space represented by
+                // the skyline segments >= 'index'?
+                long value = data[index];
+                int x = (int) ((value >> X_SHIFT) & SLOT_MASK);
+                if (x + width > mWidth) {
+                    continue;
+                }
+
+                int y = (int) ((value >> Y_SHIFT) & SLOT_MASK);
+                for (int i = index, widthLeft = width; widthLeft > 0; ) {
+                    long v = data[i];
+                    y = Math.max(y, (int) ((v >> Y_SHIFT) & SLOT_MASK));
+                    if (y + height > mHeight) {
+                        continue FITTING;
+                    }
+                    widthLeft -= (int) ((v >> WIDTH_SHIFT) & SLOT_MASK);
+                    i = (int) (v >>> NEXT_SHIFT);
+                    assert (i != NULL_PTR || widthLeft <= 0);
+                }
+
+                // minimize y position first, then width of skyline
+                int w = (int) ((value >> WIDTH_SHIFT) & SLOT_MASK);
+                if (y < bestY || (y == bestY && w < bestWidth)) {
+                    bestIndex = index;
+                    bestPrev = prev;
+                    bestWidth = w;
+                    bestX = x;
+                    bestY = y;
+                }
+            }
+
+            if (bestIndex != -1) {
+                addLevel(bestPrev, bestIndex, bestX, bestY, width, height);
+                rect.offsetTo(bestX, bestY);
+
+                mArea += width * height;
+                return true;
+            }
+
+            return false;
+        }
+
+        // Update the skyline structure to include a width x height rect located
+        // at x,y.
+        private void addLevel(int prev, int index, int x, int y, int width, int height) {
+            assert x + width <= mWidth;
+            assert y + height <= mHeight;
+
+            final long[] data = mData;
+            // insert at index
+            {
+                int freeIndex = mFreeHead;
+                assert freeIndex != NULL_PTR;
+                mFreeHead = (int) (data[freeIndex] >>> NEXT_SHIFT);
+                data[freeIndex] = ((long) x << X_SHIFT) | ((long) (y + height) << Y_SHIFT) |
+                        ((long) width << WIDTH_SHIFT) | ((long) index << NEXT_SHIFT);
+                if (prev == NULL_PTR) {
+                    assert index == mActiveHead;
+                    mActiveHead = freeIndex;
+                } else {
+                    assert index != mActiveHead;
+                    assert (int) (data[prev] >>> NEXT_SHIFT) == index;
+                    data[prev] &= ~((long) SLOT_MASK << NEXT_SHIFT);
+                    data[prev] |= ((long) freeIndex << NEXT_SHIFT);
+                }
+                prev = freeIndex;
+            }
+
+            // delete width of the new skylines from following ones
+            for (int i = index; i != NULL_PTR; ) {
+                // The new segment subsumes all or part of i
+                long value = data[i];
+                int cx = (int) ((data[i] >> X_SHIFT) & SLOT_MASK);
+                assert cx >= ((data[prev] >> X_SHIFT) & SLOT_MASK);
+
+                int right = (int) (((data[prev] >> X_SHIFT) & SLOT_MASK) + ((data[prev] >> WIDTH_SHIFT) & SLOT_MASK));
+                if (cx < right) {
+                    int shrink = right - cx;
+                    int newWidth = (int) ((value >> WIDTH_SHIFT) & SLOT_MASK) - shrink;
+
+                    if (newWidth <= 0) {
+                        // fully consumed, remove i
+                        int next = (int) (value >>> NEXT_SHIFT);
+                        data[i] = ((long) mFreeHead << NEXT_SHIFT);
+                        mFreeHead = i;
+
+                        data[prev] &= ~((long) SLOT_MASK << NEXT_SHIFT);
+                        data[prev] |= (long) next << NEXT_SHIFT;
+
+                        i = next;
+                    } else {
+                        // only partially consumed
+                        data[i] &= ~(((long) SLOT_MASK << X_SHIFT) | ((long) SLOT_MASK << WIDTH_SHIFT));
+                        data[i] |= ((long) (cx + shrink) << X_SHIFT);
+                        data[i] |= ((long) newWidth << WIDTH_SHIFT);
+                        break;
+                    }
+                } else {
+                    break;
+                }
+            }
+
+            // merge skylines
+            for (int i = mActiveHead; ; ) {
+                long value = data[i];
+                int next = (int) (value >>> NEXT_SHIFT);
+                if (next == NULL_PTR) {
+                    break;
+                }
+                int cy = (int) ((value >> Y_SHIFT) & SLOT_MASK);
+                int ny = (int) ((data[next] >> Y_SHIFT) & SLOT_MASK);
+                if (cy == ny) {
+                    data[i] &= ~((long) SLOT_MASK << WIDTH_SHIFT);
+                    int cw = (int) ((value >> WIDTH_SHIFT) & SLOT_MASK);
+                    int nw = (int) ((data[next] >> WIDTH_SHIFT) & SLOT_MASK);
+                    data[i] |= (long) (cw + nw) << WIDTH_SHIFT;
+                    // remove i + 1
+                    int nextNext = (int) (data[next] >>> NEXT_SHIFT);
+                    data[next] = ((long) mFreeHead << NEXT_SHIFT);
+                    mFreeHead = next;
+
+                    data[i] &= ~((long) SLOT_MASK << NEXT_SHIFT);
+                    data[i] |= (long) nextNext << NEXT_SHIFT;
+
+                    i = nextNext;
+                } else {
+                    i = next;
+                }
+                if (i == NULL_PTR) {
+                    break;
                 }
             }
         }
@@ -571,28 +786,29 @@ public abstract class RectanglePacker {
                         node = right.insert(width, height);
                     }
                     return node;
-                } else if (filled) {
-                    return null;
-                } else if (width <= this.width && height <= this.height) {
-                    if (width == this.width && height == this.height) {
-                        filled = true;
-                        return this;
-                    } else {
-                        int widthLeft = this.width - width;
-                        int heightLeft = this.height - height;
-                        if (widthLeft > heightLeft) {
-                            left = new Node(this.x, this.y, width, this.height);
-                            right = new Node(this.x + width + 1, this.y,
-                                    this.width - width - 1, this.height);
-                        } else {
-                            left = new Node(this.x, this.y, this.width, height);
-                            right = new Node(this.x, this.y + height + 1,
-                                    this.width, this.height - height - 1);
-                        }
-                        return left.insert(width, height);
-                    }
                 }
-                return null;
+                if (filled) {
+                    return null;
+                }
+                if (width > this.width || height > this.height) {
+                    return null;
+                }
+                if (width == this.width && height == this.height) {
+                    filled = true;
+                    return this;
+                }
+                int widthLeft = this.width - width;
+                int heightLeft = this.height - height;
+                if (widthLeft > heightLeft) {
+                    left = new Node(x, y, width, this.height);
+                    right = new Node(x + width, y,
+                            widthLeft, this.height);
+                } else {
+                    left = new Node(x, y, this.width, height);
+                    right = new Node(x, y + height,
+                            this.width, heightLeft);
+                }
+                return left.insert(width, height);
             }
         }
     }
@@ -689,6 +905,64 @@ public abstract class RectanglePacker {
             int index = 32 - Integer.numberOfLeadingZeros(height - 1);
             assert (index < 16);
             return index;
+        }
+    }
+
+    public static final class STBSkyline extends RectanglePacker implements AutoCloseable {
+
+        private final int mHeuristic;
+
+        private final STBRPContext mContext;
+        private final STBRPNode.Buffer mNodes;
+        private final STBRPRect.Buffer mRects;
+
+        public STBSkyline(int width, int height, int heuristic) {
+            super(width, height);
+            mHeuristic = heuristic;
+            mContext = STBRPContext.malloc();
+            mNodes = STBRPNode.malloc(width + 16);
+            mRects = STBRPRect.malloc(1);
+            clear();
+        }
+
+        @Override
+        public void clear() {
+            mArea = 0;
+            STBRectPack.stbrp_init_target(mContext, mWidth, mHeight, mNodes);
+            STBRectPack.stbrp_setup_heuristic(mContext, mHeuristic);
+        }
+
+        @Override
+        public boolean addRect(Rect2i rect) {
+            final int width = rect.width();
+            final int height = rect.height();
+            if (width <= 0 || height <= 0) {
+                rect.offsetTo(0, 0);
+                return true;
+            }
+            if (width > mWidth || height > mHeight) {
+                return false;
+            }
+            var rects = mRects.w(width).h(height);
+            if (STBRectPack.stbrp_pack_rects(mContext, rects) != 0) {
+                rect.offsetTo(rects.x(), rects.y());
+                mArea += width * height;
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        @Override
+        public void free() {
+            mRects.free();
+            mNodes.free();
+            mContext.free();
+        }
+
+        @Override
+        public void close() {
+            free();
         }
     }
 }
