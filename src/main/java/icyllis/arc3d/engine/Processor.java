@@ -38,7 +38,8 @@ public abstract class Processor {
             Circle_Geom_ClassID = 2,
             RoundRect_GeoProc_ClassID = 3,
             DefaultGeoProc_ClassID = 4,
-            SDFRect_GeoProc_ClassID = 5;
+            SDFRect_GeoProc_ClassID = 5,
+            Hard_XferProc_ClassID = 6;
 
     protected final int mClassID;
 

@@ -17,18 +17,30 @@
  * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine.effects;
+package icyllis.arc3d.engine;
 
 /**
- * Wraps the shader outputs and HW blend state that comprise a Porter Duff blend mode with coverage.
+ * BlendInfo is an immutable object holding info for setting-up
+ * GPU blend states.
+ * <p>
+ * Note: constant color is premultiplied
  */
-public class BlendFormula {
+public record BlendInfo(
+        int equation,
+        int srcFactor,
+        int dstFactor,
+        float constantR,
+        float constantG,
+        float constantB,
+        float constantA,
+        boolean writeColor
+) {
 
-    public static final int
-            OUTPUT_TYPE_ZERO = 0, //<! 0
-            OUTPUT_TYPE_COVERAGE = 1,    //<! inputCoverage
-            OUTPUT_TYPE_MODULATE = 2,    //<! inputColor * inputCoverage
-            OUTPUT_TYPE_SRC_ALPHA_MODULATE = 3,  //<! inputColor.a * inputCoverage
-            OUTPUT_TYPE_ONE_MINUS_SRC_ALPHA_MODULATE = 4, //<! (1 - inputColor.a) * inputCoverage
-            OUTPUT_TYPE_ONE_MINUS_SRC_COLOR_MODULATE = 5; //<! (1 - inputColor) * inputCoverage
+    public static final BlendInfo SRC = new BlendInfo(
+            Blend.EQUATION_ADD,
+            Blend.FACTOR_ONE,
+            Blend.FACTOR_ZERO,
+            0, 0, 0, 0,
+            true
+    );
 }

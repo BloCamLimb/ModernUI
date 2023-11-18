@@ -19,6 +19,8 @@
 
 package icyllis.arc3d.engine.shading;
 
+import org.intellij.lang.annotations.PrintFormat;
+
 /**
  * Interface for all shaders builders.
  */
@@ -35,12 +37,12 @@ public interface ShaderBuilder {
      *
      * @see java.util.Formatter#format(String, Object...)
      */
-    void codeAppendf(String format, Object... args);
+    void codeAppendf(@PrintFormat String format, Object... args);
 
     /**
      * Similar to {@link #codeAppendf(String, Object...)}, but writes at the beginning.
      */
-    void codePrependf(String format, Object... args);
+    void codePrependf(@PrintFormat String format, Object... args);
 
     /**
      * Generates a mangled name for a helper function in the fragment shader. Will give consistent
