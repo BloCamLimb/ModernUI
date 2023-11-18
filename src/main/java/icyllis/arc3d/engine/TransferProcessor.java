@@ -19,12 +19,110 @@
 
 package icyllis.arc3d.engine;
 
+import icyllis.arc3d.engine.shading.UniformHandler;
+import icyllis.arc3d.engine.shading.XPFragmentBuilder;
+
+import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
 
 @Immutable
 public abstract class TransferProcessor extends Processor {
 
+    protected final boolean mReadsDstColor;
+    protected final boolean mIsLCDCoverage;
+
     protected TransferProcessor(int classID) {
+        this(classID, false, false);
+    }
+
+    protected TransferProcessor(int classID, boolean readsDstColor, boolean isLCDCoverage) {
         super(classID);
+        mReadsDstColor = readsDstColor;
+        mIsLCDCoverage = isLCDCoverage;
+    }
+
+    public void addToKey(KeyBuilder b) {
+
+    }
+
+    /**
+     * Returns a new instance of the appropriate implementation class
+     * for the given TransferProcessor.
+     */
+    @Nonnull
+    public abstract ProgramImpl makeProgramImpl();
+
+    // must override by subclass if XP will not read dst color
+    @Nonnull
+    public BlendInfo getBlendInfo() {
+        assert readsDstColor();
+        return BlendInfo.SRC;
+    }
+
+    // must override by subclass if XP will not read dst color
+    public boolean hasSecondaryOutput() {
+        assert readsDstColor();
+        return false;
+    }
+
+    public final boolean readsDstColor() {
+        return mReadsDstColor;
+    }
+
+    public final boolean isLCDCoverage() {
+        return mIsLCDCoverage;
+    }
+
+    /**
+     * Every {@link TransferProcessor} must be capable of creating a subclass of ProgramImpl. The
+     * ProgramImpl emits the shader code combines determines the fragment shader output(s) from
+     * the color and coverage FP outputs, is attached to the generated backend API pipeline/program,
+     * and used to extract uniform data from TransferProcessor instances.
+     */
+    public static abstract class ProgramImpl {
+
+        public static final class EmitArgs {
+
+            public XPFragmentBuilder fragBuilder;
+            public UniformHandler uniformHandler;
+            public TransferProcessor xferProc;
+
+            public String inputColor;
+            public String inputCoverage;
+            public String outputPrimary;
+            public String outputSecondary;
+
+            public EmitArgs(XPFragmentBuilder fragBuilder,
+                            UniformHandler uniformHandler,
+                            TransferProcessor xferProc,
+                            String inputColor,
+                            String inputCoverage,
+                            String outputPrimary,
+                            String outputSecondary) {
+                this.fragBuilder = fragBuilder;
+                this.uniformHandler = uniformHandler;
+                this.xferProc = xferProc;
+                this.inputColor = inputColor;
+                this.inputCoverage = inputCoverage;
+                this.outputPrimary = outputPrimary;
+                this.outputSecondary = outputSecondary;
+            }
+        }
+
+        public final void emitCode(EmitArgs args) {
+            if (args.xferProc.readsDstColor()) {
+
+            } else {
+                emitOutputsForBlendState(args);
+            }
+        }
+
+        protected void emitOutputsForBlendState(EmitArgs args) {
+            throw new UnsupportedOperationException("emitOutputsForBlendState not implemented");
+        }
+
+        protected void emitBlendCodeForDstRead(EmitArgs args) {
+            throw new UnsupportedOperationException("emitBlendCodeForDstRead not implemented");
+        }
     }
 }

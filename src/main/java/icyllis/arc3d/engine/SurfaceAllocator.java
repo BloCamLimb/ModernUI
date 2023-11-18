@@ -83,9 +83,9 @@ public final class SurfaceAllocator {
 
     // All the intervals sorted by increasing start
     private final IntervalList mIntervalList = new IntervalList();
-    // List of live intervals during dispatch
+    // List of active intervals during dispatch
     // (sorted by increasing end)
-    private final IntervalList mLiveIntervals = new IntervalList();
+    private final IntervalList mActiveIntervals = new IntervalList();
     // All the completed intervals
     // (sorted by increasing start)
     private final IntervalList mFinishedIntervals = new IntervalList();
@@ -192,7 +192,7 @@ public final class SurfaceAllocator {
         ResourceProvider resourceProvider = mContext.getResourceProvider();
         for (Interval cur = mIntervalList.peekHead(); cur != null; cur = cur.mNext) {
             expire(cur.mStart);
-            mLiveIntervals.insertByIncreasingEnd(cur);
+            mActiveIntervals.insertByIncreasingEnd(cur);
 
             // Already-instantiated proxies and lazy proxies don't use registers.
             if (cur.mSurface.isInstantiated()) {
@@ -265,7 +265,7 @@ public final class SurfaceAllocator {
         mSimulated = false;
         mAllocated = false;
         mInstantiationFailed = false;
-        assert (mLiveIntervals.isEmpty());
+        assert (mActiveIntervals.isEmpty());
         mFinishedIntervals.clear();
         Interval cur;
         while ((cur = mIntervalList.popHead()) != null) {
@@ -288,8 +288,8 @@ public final class SurfaceAllocator {
     // Remove any intervals that end before the current index. Add their registers
     // to the free pool if possible.
     private void expire(int curIndex) {
-        while (!mLiveIntervals.isEmpty() && mLiveIntervals.peekHead().mEnd < curIndex) {
-            Interval interval = mLiveIntervals.popHead();
+        while (!mActiveIntervals.isEmpty() && mActiveIntervals.peekHead().mEnd < curIndex) {
+            Interval interval = mActiveIntervals.popHead();
             assert (interval.mNext == null);
 
             Register r = interval.mRegister;
