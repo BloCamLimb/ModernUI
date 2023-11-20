@@ -19,6 +19,7 @@
 
 package icyllis.arc3d.engine;
 
+import icyllis.arc3d.core.RefCounted;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
@@ -26,7 +27,7 @@ import javax.annotation.Nonnull;
 /**
  * Defines Surface-hierarchy constants. Do NOT directly this class as type.
  */
-public interface ISurface {
+public interface ISurface extends RefCounted {
 
     /**
      * Surface flags shared between the Surface & SurfaceProxy class hierarchies.

@@ -19,11 +19,11 @@
 
 package icyllis.arc3d.core;
 
-import it.unimi.dsi.fastutil.objects.*;
-
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.util.Comparator;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
  * Base class for objects that may be shared by multiple objects. When an
@@ -34,10 +34,10 @@ import java.util.Comparator;
  * error for the destructor to be called explicitly (or calling
  * {@link #deallocate()}) if {@link #getRefCnt()} > 1.
  */
-public abstract class RefCnt {
+public abstract class RefCnt implements RefCounted {
 
     private static final VarHandle REF_CNT;
-    private static final Object2BooleanMap<RefCnt> TRACKER;
+    private static final ConcurrentMap<RefCnt, Boolean> TRACKER;
 
     static {
         MethodHandles.Lookup lookup = MethodHandles.lookup();
@@ -46,9 +46,8 @@ public abstract class RefCnt {
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
-        // linked structure will not create large arrays and we don't care about the CPU overhead
-        TRACKER = Object2BooleanMaps.synchronize(
-                new Object2BooleanRBTreeMap<>(Comparator.comparingInt(System::identityHashCode)));
+        // tree structure will not create large arrays and we don't care about the CPU overhead
+        TRACKER = new ConcurrentSkipListMap<>(Comparator.comparingInt(System::identityHashCode));
         try {
             assert false;
         } catch (AssertionError e) {
@@ -66,8 +65,9 @@ public abstract class RefCnt {
     /**
      * Default constructor, initializing the reference count to 1.
      */
+    @SuppressWarnings("AssertWithSideEffects")
     public RefCnt() {
-        assert !TRACKER.put(this, true);
+        assert TRACKER.put(this, Boolean.TRUE) == null;
     }
 
     @SharedPtr
@@ -119,7 +119,7 @@ public abstract class RefCnt {
     public final void ref() {
         // stronger than std::memory_order_relaxed
         var refCnt = (int) REF_CNT.getAndAddAcquire(this, 1);
-        assert refCnt > 0 : "Reference count has reached zero";
+        assert refCnt > 0 : "Reference count has reached zero " + this;
     }
 
     /**
@@ -127,13 +127,14 @@ public abstract class RefCnt {
      * the decrement, then {@link #deallocate()} is called. It's an error to call this method
      * if the reference count has already reached zero.
      */
+    @SuppressWarnings("AssertWithSideEffects")
     public final void unref() {
         // stronger than std::memory_order_acq_rel
         var refCnt = (int) REF_CNT.getAndAdd(this, -1);
-        assert refCnt > 0 : "Reference count has reached zero";
+        assert refCnt > 0 : "Reference count has reached zero " + this;
         if (refCnt == 1) {
             deallocate();
-            assert TRACKER.removeBoolean(this);
+            assert TRACKER.remove(this) == Boolean.TRUE;
         }
     }
 

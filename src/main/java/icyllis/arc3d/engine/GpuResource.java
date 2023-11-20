@@ -19,6 +19,7 @@
 
 package icyllis.arc3d.engine;
 
+import icyllis.arc3d.core.RefCounted;
 import icyllis.arc3d.core.SharedPtr;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -52,7 +53,7 @@ import static icyllis.arc3d.engine.Engine.BudgetType;
  * Use {@link ResourceProvider} to obtain {@link GpuResource} objects.
  */
 @NotThreadSafe
-public abstract class GpuResource {
+public abstract class GpuResource implements RefCounted {
 
     private static final VarHandle REF_CNT;
     private static final VarHandle COMMAND_BUFFER_USAGE_CNT;
@@ -111,13 +112,12 @@ public abstract class GpuResource {
         private String mLabel = "";
 
         public UniqueID() {
-            assert hashCode() == System.identityHashCode(this);
         }
 
         @Nonnull
         @Override
         public String toString() {
-            return "GpuResource.UniqueID" + "@" + Integer.toHexString(hashCode()) + "{" + mLabel + "}";
+            return "GpuResource.UniqueID@" + Integer.toHexString(hashCode()) + "{" + mLabel + "}";
         }
     }
 

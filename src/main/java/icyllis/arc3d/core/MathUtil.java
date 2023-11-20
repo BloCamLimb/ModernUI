@@ -308,21 +308,21 @@ public class MathUtil {
     }
 
     /**
-     * 2D bilinear interpolation between four values (a quad).
+     * 2D bilinear interpolation between four values (a rect).
      */
     public static float biLerp(float q00, float q10, float q01, float q11, float tx, float ty) {
         return lerp(lerp(q00, q10, tx), lerp(q01, q11, tx), ty);
     }
 
     /**
-     * 2D bilinear interpolation between four values (a quad).
+     * 2D bilinear interpolation between four values (a rect).
      */
     public static double biLerp(double q00, double q10, double q01, double q11, double tx, double ty) {
         return lerp(lerp(q00, q10, tx), lerp(q01, q11, tx), ty);
     }
 
     /**
-     * 3D trilinear interpolation between eight values (a cube).
+     * 3D trilinear interpolation between eight values (a cuboid).
      */
     public static float triLerp(float c000, float c100, float c010, float c110,
                                 float c001, float c101, float c011, float c111,
@@ -332,7 +332,7 @@ public class MathUtil {
     }
 
     /**
-     * 3D trilinear interpolation between eight values (a cube).
+     * 3D trilinear interpolation between eight values (a cuboid).
      */
     public static double triLerp(double c000, double c100, double c010, double c110,
                                  double c001, double c101, double c011, double c111,
