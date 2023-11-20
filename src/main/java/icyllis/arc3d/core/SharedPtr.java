@@ -38,6 +38,8 @@ import java.lang.annotation.*;
  * or there is no need for immediacy. They may implement {@link AutoCloseable},
  * which is equivalent to "free" (or similar methods), you just need to manage
  * their finalizing.
+ *
+ * @see RefCounted
  */
 @Documented
 @Retention(RetentionPolicy.CLASS)
