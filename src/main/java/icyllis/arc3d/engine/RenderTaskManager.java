@@ -149,15 +149,15 @@ public class RenderTaskManager {
         return task;
     }
 
-    public void setLastRenderTask(Surface surface, RenderTask task) {
+    public void setLastRenderTask(SurfaceDelegate surfaceDelegate, RenderTask task) {
         if (task != null) {
-            mLastRenderTasks.put(surface.getUniqueID(), task);
+            mLastRenderTasks.put(surfaceDelegate.getUniqueID(), task);
         } else {
-            mLastRenderTasks.remove(surface);
+            mLastRenderTasks.remove(surfaceDelegate);
         }
     }
 
-    public RenderTask getLastRenderTask(Surface proxy) {
+    public RenderTask getLastRenderTask(SurfaceDelegate proxy) {
         return mLastRenderTasks.get(proxy.getUniqueID());
     }
 

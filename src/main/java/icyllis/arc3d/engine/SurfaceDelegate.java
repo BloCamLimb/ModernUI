@@ -27,7 +27,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * The {@link Surface} targets a {@link IGpuSurface} with three instantiation
+ * The {@link SurfaceDelegate} targets a {@link IGpuSurface} with three instantiation
  * methods: deferred, lazy-callback and wrapped.
  * <p>
  * Target: The backing GPU texture or render target that referenced by this surface.
@@ -46,12 +46,12 @@ import javax.annotation.Nullable;
  *     <li>True: {@link SurfaceAllocator} should instantiate this surface.</li>
  * </ul>
  * <p>
- * Use {@link SurfaceProvider} to obtain {@link Surface} objects.
+ * Use {@link SurfaceProvider} to obtain {@link SurfaceDelegate} objects.
  * <p>
  * Note: the object itself is also used as the scratch key, see {@link #hashCode()}
  * and {@link #equals(Object)}
  */
-public abstract class Surface extends RefCnt implements ISurface {
+public abstract class SurfaceDelegate extends RefCnt implements ISurface {
 
     /**
      * For wrapped resources, 'mFormat' and 'mDimensions' will always be filled in from the
@@ -106,9 +106,9 @@ public abstract class Surface extends RefCnt implements ISurface {
     boolean mIsDeferredListTarget = false;
 
     // Deferred version and lazy-callback version
-    Surface(BackendFormat format,
-            int width, int height,
-            int surfaceFlags) {
+    SurfaceDelegate(BackendFormat format,
+                    int width, int height,
+                    int surfaceFlags) {
         assert (format != null);
         mFormat = format;
         mWidth = width;
@@ -121,8 +121,8 @@ public abstract class Surface extends RefCnt implements ISurface {
     }
 
     // Wrapped version
-    Surface(@SharedPtr IGpuSurface surface,
-            int surfaceFlags) {
+    SurfaceDelegate(@SharedPtr IGpuSurface surface,
+                    int surfaceFlags) {
         assert (surface != null);
         mFormat = surface.getBackendFormat();
         mWidth = surface.getWidth();
@@ -424,7 +424,7 @@ public abstract class Surface extends RefCnt implements ISurface {
         return (mSurfaceFlags & IGpuSurface.FLAG_APPROX_FIT) == 0;
     }
 
-    public Texture asTexture() {
+    public TextureDelegate asTexture() {
         return null;
     }
 

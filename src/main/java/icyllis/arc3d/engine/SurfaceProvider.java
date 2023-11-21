@@ -26,7 +26,7 @@ import javax.annotation.Nullable;
 import java.util.Objects;
 
 /**
- * A factory for creating {@link Surface}-derived objects. This class may be used on
+ * A factory for creating {@link SurfaceDelegate}-derived objects. This class may be used on
  * the creating thread of {@link RecordingContext}.
  */
 public final class SurfaceProvider {
@@ -36,7 +36,7 @@ public final class SurfaceProvider {
 
     // This holds the texture proxies that have unique keys. The resourceCache does not get a ref
     // on these proxies, but they must send a message to the resourceCache when they are deleted.
-    private final Object2ObjectOpenHashMap<Object, Texture> mUniquelyKeyedProxies;
+    private final Object2ObjectOpenHashMap<Object, TextureDelegate> mUniquelyKeyedProxies;
 
     SurfaceProvider(RecordingContext context) {
         mContext = context;
@@ -53,7 +53,7 @@ public final class SurfaceProvider {
      * Assigns a unique key to a texture. The texture will be findable via this key using
      * {@link #findProxyByUniqueKey()}. It is an error if an existing texture already has a key.
      */
-    public boolean assignUniqueKeyToProxy(IUniqueKey key, Texture texture) {
+    public boolean assignUniqueKeyToProxy(IUniqueKey key, TextureDelegate texture) {
         assert key != null;
         if (mContext.isDiscarded() || texture == null) {
             return false;
@@ -79,17 +79,17 @@ public final class SurfaceProvider {
      * Sets the unique key of the provided texture to the unique key of the GPU texture.
      * The GPU texture must have a valid unique key.
      */
-    public void adoptUniqueKeyFromSurface(Texture texture, GpuTexture textureResource) {
+    public void adoptUniqueKeyFromSurface(TextureDelegate texture, GpuTexture textureResource) {
         //TODO
     }
 
-    public void processInvalidUniqueKey(Object key, Texture texture, boolean invalidateResource) {
+    public void processInvalidUniqueKey(Object key, TextureDelegate texture, boolean invalidateResource) {
     }
 
     /**
-     * Create a lazy {@link Texture} without any data.
+     * Create a lazy {@link TextureDelegate} without any data.
      *
-     * @see Texture
+     * @see TextureDelegate
      * @see ISurface#FLAG_BUDGETED
      * @see ISurface#FLAG_APPROX_FIT
      * @see ISurface#FLAG_MIPMAPPED
@@ -98,9 +98,9 @@ public final class SurfaceProvider {
      */
     @Nullable
     @SharedPtr
-    public Texture createTexture(BackendFormat format,
-                                 int width, int height,
-                                 int surfaceFlags) {
+    public TextureDelegate createTexture(BackendFormat format,
+                                         int width, int height,
+                                         int surfaceFlags) {
         assert mContext.isOwnerThread();
         if (mContext.isDiscarded()) {
             return null;
@@ -121,11 +121,11 @@ public final class SurfaceProvider {
             assert (surfaceFlags & ISurface.FLAG_DEFERRED_PROVIDER) == 0;
         }
 
-        return new Texture(format, width, height, surfaceFlags);
+        return new TextureDelegate(format, width, height, surfaceFlags);
     }
 
     /**
-     * Creates a lazy {@link Texture} for the pixmap.
+     * Creates a lazy {@link TextureDelegate} for the pixmap.
      *
      * @param pixmap       raw ptr to pixels holder, must be immutable
      * @param dstColorType a color type for surface usage, see {@link ImageInfo}
@@ -136,7 +136,7 @@ public final class SurfaceProvider {
      */
     @Nullable
     @SharedPtr
-    public Texture createTextureFromPixmap(Pixmap pixmap, int dstColorType, int surfaceFlags) {
+    public TextureDelegate createTextureFromPixmap(Pixmap pixmap, int dstColorType, int surfaceFlags) {
         mContext.checkOwnerThread();
         assert ((surfaceFlags & ISurface.FLAG_APPROX_FIT) == 0) ||
                 ((surfaceFlags & ISurface.FLAG_MIPMAPPED) == 0);
@@ -169,7 +169,7 @@ public final class SurfaceProvider {
         return texture;
     }
 
-    private static final class PixmapCallback implements Surface.LazyInstantiateCallback {
+    private static final class PixmapCallback implements SurfaceDelegate.LazyInstantiateCallback {
 
         private Pixmap pixmap;
         private final int srcColorType;
@@ -183,7 +183,7 @@ public final class SurfaceProvider {
         }
 
         @Override
-        public Surface.LazyCallbackResult onLazyInstantiate(
+        public SurfaceDelegate.LazyCallbackResult onLazyInstantiate(
                 ResourceProvider provider,
                 BackendFormat format,
                 int width, int height,
@@ -203,7 +203,7 @@ public final class SurfaceProvider {
                     label);
             pixmap.unref();
             pixmap = null;
-            return new Surface.LazyCallbackResult(texture);
+            return new SurfaceDelegate.LazyCallbackResult(texture);
         }
 
         @Override
@@ -221,10 +221,10 @@ public final class SurfaceProvider {
      */
     @Nullable
     @SharedPtr
-    public RenderTexture createRenderTexture(BackendFormat format,
-                                             int width, int height,
-                                             int sampleCount,
-                                             int surfaceFlags) {
+    public RenderTextureDelegate createRenderTexture(BackendFormat format,
+                                                     int width, int height,
+                                                     int sampleCount,
+                                                     int surfaceFlags) {
         assert mContext.isOwnerThread();
         if (mContext.isDiscarded()) {
             return null;
@@ -245,7 +245,7 @@ public final class SurfaceProvider {
             assert (surfaceFlags & ISurface.FLAG_DEFERRED_PROVIDER) == 0;
         }
 
-        return new RenderTexture(format, width, height, sampleCount, surfaceFlags);
+        return new RenderTextureDelegate(format, width, height, sampleCount, surfaceFlags);
     }
 
     /**
@@ -257,11 +257,11 @@ public final class SurfaceProvider {
      */
     @Nullable
     @SharedPtr
-    public RenderTexture wrapRenderableBackendTexture(BackendTexture texture,
-                                                      int sampleCount,
-                                                      boolean ownership,
-                                                      boolean cacheable,
-                                                      Runnable releaseCallback) {
+    public RenderTextureDelegate wrapRenderableBackendTexture(BackendTexture texture,
+                                                              int sampleCount,
+                                                              boolean ownership,
+                                                              boolean cacheable,
+                                                              Runnable releaseCallback) {
         if (mContext.isDiscarded()) {
             return null;
         }
@@ -279,8 +279,8 @@ public final class SurfaceProvider {
 
     @Nullable
     @SharedPtr
-    public RenderTarget wrapBackendRenderTarget(BackendRenderTarget backendRenderTarget,
-                                                Runnable rcReleaseCB) {
+    public RenderTargetDelegate wrapBackendRenderTarget(BackendRenderTarget backendRenderTarget,
+                                                        Runnable rcReleaseCB) {
         if (mContext.isDiscarded()) {
             return null;
         }
@@ -297,7 +297,7 @@ public final class SurfaceProvider {
             return null;
         }
 
-        return new RenderTarget(fsr, 0);
+        return new RenderTargetDelegate(fsr, 0);
     }
 
     /**
@@ -315,10 +315,10 @@ public final class SurfaceProvider {
      */
     @Nullable
     @SharedPtr
-    public Texture createLazyTexture(BackendFormat format,
-                                     int width, int height,
-                                     int surfaceFlags,
-                                     Surface.LazyInstantiateCallback callback) {
+    public TextureDelegate createLazyTexture(BackendFormat format,
+                                             int width, int height,
+                                             int surfaceFlags,
+                                             SurfaceDelegate.LazyInstantiateCallback callback) {
         mContext.checkOwnerThread();
         if (mContext.isDiscarded()) {
             return null;
@@ -338,7 +338,7 @@ public final class SurfaceProvider {
         } else {
             assert (surfaceFlags & ISurface.FLAG_DEFERRED_PROVIDER) == 0;
         }
-        return new Texture(format, width, height, surfaceFlags, callback);
+        return new TextureDelegate(format, width, height, surfaceFlags, callback);
     }
 
     public boolean isDeferredProvider() {

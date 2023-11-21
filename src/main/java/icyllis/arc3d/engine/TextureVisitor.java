@@ -26,5 +26,5 @@ public interface TextureVisitor {
      * @param texture      raw ptr to U texture
      * @param samplerState see {@link SamplerState}
      */
-    void visit(Texture texture, int samplerState);
+    void visit(TextureDelegate texture, int samplerState);
 }

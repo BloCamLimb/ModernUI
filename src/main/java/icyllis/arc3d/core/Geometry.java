@@ -135,19 +135,21 @@ public class Geometry {
     }
 
     public static int findCubicInflectionPoints(
-            final float X0, final float Y0, final float X1, final float Y1,
-            final float X2, final float Y2, final float X3, final float Y3,
+            final float x0, final float y0,
+            final float x1, final float y1,
+            final float x2, final float y2,
+            final float x3, final float y3,
             final float[] roots, final int off) {
 
         // find the parameter value `t` where curvature is zero
         // P(t) = (1-t)^3 * b0 + 3*t * (1-t)^2 * b1 + 3*t^2 * (1-t) * b2 + t^3 * b3
-        // let curvature(t) = |P'(t) cross P''(t)| / |P'(t)^3| = 0
-        float Ax = X1 - X0;
-        float Ay = Y1 - Y0;
-        float Bx = X2 - 2 * X1 + X0;
-        float By = Y2 - 2 * Y1 + Y0;
-        float Cx = X3 + 3 * (X1 - X2) - X0;
-        float Cy = Y3 + 3 * (Y1 - Y2) - Y0;
+        // let curvature k(t) = |P'(t) cross P''(t)| / |P'(t)^3| = 0
+        final float Ax = x1 - x0;
+        final float Ay = y1 - y0;
+        final float Bx = x2 - 2 * x1 + x0;
+        final float By = y2 - 2 * y1 + y0;
+        final float Cx = x3 + 3 * (x1 - x2) - x0;
+        final float Cy = y3 + 3 * (y1 - y2) - y0;
 
         return findUnitQuadRoots(
                 Bx * Cy - By * Cx,
@@ -157,83 +159,106 @@ public class Geometry {
     }
 
     static void eval_cubic_derivative(
-            final float X0, final float Y0, final float X1, final float Y1,
-            final float X2, final float Y2, final float X3, final float Y3,
+            final float x0, final float y0,
+            final float x1, final float y1,
+            final float x2, final float y2,
+            final float x3, final float y3,
             final float t,
             final float[] dst, final int off
     ) {
 
-        float Ax = X3 + 3 * (X1 - X2) - X0;
-        float Ay = Y3 + 3 * (Y1 - Y2) - Y0;
-        float Bx = 2 * (X2 - (X1 + X1) + X0);
-        float By = 2 * (Y2 - (Y1 + Y1) + Y0);
-        float Cx = (X1 - X0);
-        float Cy = (Y1 - Y0);
+        float Ax = x3 + 3 * (x1 - x2) - x0;
+        float Ay = y3 + 3 * (y1 - y2) - y0;
+        float Bx = 2 * (x2 - (x1 + x1) + x0);
+        float By = 2 * (y2 - (y1 + y1) + y0);
+        float Cx = (x1 - x0);
+        float Cy = (y1 - y0);
 
         dst[off]   = (Ax * t + Bx) * t + Cx;
         dst[off+1] = (Ay * t + By) * t + Cy;
     }
 
-    public static void evalCubicAt(
-            final float X0, final float Y0, final float X1, final float Y1,
-            final float X2, final float Y2, final float X3, final float Y3,
+    static void eval_cubic_second_derivative(
+            final float x0, final float y0,
+            final float x1, final float y1,
+            final float x2, final float y2,
+            final float x3, final float y3,
             final float t,
-            @Nullable final float[] loc, final int locOff,
+            final float[] dst, final int off
+    ) {
+
+        float Ax = x3 + 3 * (x1 - x2) - x0;
+        float Ay = y3 + 3 * (y1 - y2) - y0;
+        float Bx = (x2 - (x1 + x1) + x0);
+        float By = (y2 - (y1 + y1) + y0);
+
+        dst[off]   = Ax * t + Bx;
+        dst[off+1] = Ay * t + By;
+    }
+
+    public static void evalCubicAt(
+            final float x0, final float y0,
+            final float x1, final float y1,
+            final float x2, final float y2,
+            final float x3, final float y3,
+            final float t,
+            @Nullable final float[] pos, final int posOff,
             @Nullable final float[] tangent, final int tangentOff,
             @Nullable final float[] curvature, final int curvatureOff
     ) {
         assert t >= 0 && t <= 1;
 
-        float Ax = X3 + 3 * (X1 - X2) - X0;
-        float Ay = Y3 + 3 * (Y1 - Y2) - Y0;
+        float Ax = x3 + 3 * (x1 - x2) - x0;
+        float Ay = y3 + 3 * (y1 - y2) - y0;
 
-        if (loc != null) {
-            float Bx = 3 * (X2 - (X1 + X1) + X0);
-            float By = 3 * (Y2 - (Y1 + Y1) + Y0);
-            float Cx = 3 * (X1 - X0);
-            float Cy = 3 * (Y1 - Y0);
+        if (pos != null) {
+            float Bx = 3 * (x2 - (x1 + x1) + x0);
+            float By = 3 * (y2 - (y1 + y1) + y0);
+            float Cx = 3 * (x1 - x0);
+            float Cy = 3 * (y1 - y0);
 
-            loc[locOff]   = ((Ax * t + Bx) * t + Cx) * t + X0;
-            loc[locOff+1] = ((Ay * t + By) * t + Cy) * t + Y0;
+            pos[posOff]   = ((Ax * t + Bx) * t + Cx) * t + x0;
+            pos[posOff+1] = ((Ay * t + By) * t + Cy) * t + y0;
         }
 
         if (tangent != null) {
             // The derivative equation returns a zero tangent vector when t is 0 or 1, and the
             // adjacent control point is equal to the end point. In this case, use the
             // next control point or the end points to compute the tangent.
-            if ((t == 0 && X0 == X1 && Y0 == Y1) ||
-                    (t == 1 && X2 == X3 && Y2 == Y3)) {
+            if ((t == 0 && x0 == x1 && y0 == y1) ||
+                    (t == 1 && x2 == x3 && y2 == y3)) {
                 float Tx;
                 float Ty;
                 if (t == 0) {
-                    Tx = X2 - X0;
-                    Ty = Y2 - Y0;
+                    Tx = x2 - x0;
+                    Ty = y2 - y0;
                 } else {
-                    Tx = X3 - X1;
-                    Ty = Y3 - Y1;
+                    Tx = x3 - x1;
+                    Ty = y3 - y1;
                 }
                 if (Tx == 0 && Ty == 0) {
-                    tangent[tangentOff]   = X3 - X0;
-                    tangent[tangentOff+1] = Y3 - Y0;
+                    tangent[tangentOff]   = x3 - x0;
+                    tangent[tangentOff+1] = y3 - y0;
                 } else {
                     tangent[tangentOff]   = Tx;
                     tangent[tangentOff+1] = Ty;
                 }
             } else {
-                eval_cubic_derivative(
-                        X0, Y0,
-                        X1, Y1,
-                        X2, Y2,
-                        X3, Y3,
-                        t,
-                        tangent, tangentOff
-                );
+                // inline eval_cubic_derivative
+                float Bx = 2 * (x2 - (x1 + x1) + x0);
+                float By = 2 * (y2 - (y1 + y1) + y0);
+                float Cx = (x1 - x0);
+                float Cy = (y1 - y0);
+
+                tangent[tangentOff]   = (Ax * t + Bx) * t + Cx;
+                tangent[tangentOff+1] = (Ay * t + By) * t + Cy;
             }
         }
 
         if (curvature != null) {
-            float Bx = (X2 - (X1 + X1) + X0);
-            float By = (Y2 - (Y1 + Y1) + Y0);
+            // inline eval_cubic_second_derivative
+            float Bx = (x2 - (x1 + x1) + x0);
+            float By = (y2 - (y1 + y1) + y0);
 
             curvature[curvatureOff]   = Ax * t + Bx;
             curvature[curvatureOff+1] = Ay * t + By;
@@ -241,46 +266,49 @@ public class Geometry {
     }
 
     public static void chopCubicAt(
-            final float X0, final float Y0, final float X1, final float Y1,
-            final float X2, final float Y2, final float X3, final float Y3,
+            final float x0, final float y0,
+            final float x1, final float y1,
+            final float x2, final float y2,
+            final float x3, final float y3,
             final float t,
             final float[] dst, final int off
     ) {
         assert t >= 0 && t <= 1;
 
         if (t == 1) {
-            dst[off]    = X0;
-            dst[off+1]  = Y0;
-            dst[off+2]  = X1;
-            dst[off+3]  = Y1;
-            dst[off+4]  = X2;
-            dst[off+5]  = Y2;
-            dst[off+6]  = X3;
-            dst[off+7]  = Y3;
-            dst[off+8]  = X3;
-            dst[off+9]  = Y3;
-            dst[off+10] = X3;
-            dst[off+11] = Y3;
-            dst[off+12] = X3;
-            dst[off+13] = Y3;
+            dst[off]    = x0;
+            dst[off+1]  = y0;
+            dst[off+2]  = x1;
+            dst[off+3]  = y1;
+            dst[off+4]  = x2;
+            dst[off+5]  = y2;
+            dst[off+6]  = x3;
+            dst[off+7]  = y3;
+
+            dst[off+8]  = x3;
+            dst[off+9]  = y3;
+            dst[off+10] = x3;
+            dst[off+11] = y3;
+            dst[off+12] = x3;
+            dst[off+13] = y3;
             return;
         }
 
-        float abx = MathUtil.lerpStable(X0, X1, t);
-        float aby = MathUtil.lerpStable(Y0, Y1, t);
-        float bcx = MathUtil.lerpStable(X1, X2, t);
-        float bcy = MathUtil.lerpStable(Y1, Y2, t);
-        float cdx = MathUtil.lerpStable(X2, X3, t);
-        float cdy = MathUtil.lerpStable(Y2, Y3, t);
-        float abcx = MathUtil.lerpStable(abx, bcx, t);
-        float abcy = MathUtil.lerpStable(aby, bcy, t);
-        float bcdx = MathUtil.lerpStable(bcx, cdx, t);
-        float bcdy = MathUtil.lerpStable(bcy, cdy, t);
+        float abx   = MathUtil.lerpStable(x0,   x1,   t);
+        float aby   = MathUtil.lerpStable(y0,   y1,   t);
+        float bcx   = MathUtil.lerpStable(x1,   x2,   t);
+        float bcy   = MathUtil.lerpStable(y1,   y2,   t);
+        float cdx   = MathUtil.lerpStable(x2,   x3,   t);
+        float cdy   = MathUtil.lerpStable(y2,   y3,   t);
+        float abcx  = MathUtil.lerpStable(abx,  bcx,  t);
+        float abcy  = MathUtil.lerpStable(aby,  bcy,  t);
+        float bcdx  = MathUtil.lerpStable(bcx,  cdx,  t);
+        float bcdy  = MathUtil.lerpStable(bcy,  cdy,  t);
         float abcdx = MathUtil.lerpStable(abcx, bcdx, t);
         float abcdy = MathUtil.lerpStable(abcy, bcdy, t);
 
-        dst[off]    = X0;
-        dst[off+1]  = Y0;
+        dst[off]    = x0;
+        dst[off+1]  = y0;
         dst[off+2]  = abx;
         dst[off+3]  = aby;
         dst[off+4]  = abcx;
@@ -291,8 +319,8 @@ public class Geometry {
         dst[off+9]  = bcdy;
         dst[off+10] = cdx;
         dst[off+11] = cdy;
-        dst[off+12] = X3;
-        dst[off+13] = Y3;
+        dst[off+12] = x3;
+        dst[off+13] = y3;
     }
 
     protected Geometry() {

@@ -27,17 +27,17 @@ import javax.annotation.Nullable;
 import java.util.Objects;
 
 /**
- * The {@link Texture} targets an actual {@link GpuTexture} with three instantiation
- * methods: deferred, lazy-callback and wrapped. Multiple {@link Texture} objects
+ * The {@link TextureDelegate} targets an actual {@link GpuTexture} with three instantiation
+ * methods: deferred, lazy-callback and wrapped. Multiple {@link TextureDelegate} objects
  * may target the same {@link GpuTexture} based on dependencies and actual usage.
- * See {@link Surface} for more info.
+ * See {@link SurfaceDelegate} for more info.
  * <p>
- * Use {@link SurfaceProvider} to obtain {@link Texture} objects.
+ * Use {@link SurfaceProvider} to obtain {@link TextureDelegate} objects.
  * <p>
  * This class can only be used on the creating thread of/on a single {@link RecordingContext},
  * and later used by {@link DirectContext} (render thread).
  */
-public class Texture extends Surface implements IScratchKey {
+public class TextureDelegate extends SurfaceDelegate implements IScratchKey {
 
     boolean mIsPromiseProxy = false;
 
@@ -71,9 +71,9 @@ public class Texture extends Surface implements IScratchKey {
     /**
      * Deferred version - no data
      */
-    public Texture(BackendFormat format,
-                   int width, int height,
-                   int surfaceFlags) {
+    public TextureDelegate(BackendFormat format,
+                           int width, int height,
+                           int surfaceFlags) {
         super(format, width, height, surfaceFlags);
         assert (width > 0 && height > 0); // non-lazy
     }
@@ -81,10 +81,10 @@ public class Texture extends Surface implements IScratchKey {
     /**
      * Lazy-callback version - takes a new UniqueID from the shared resource/proxy pool.
      */
-    public Texture(BackendFormat format,
-                   int width, int height,
-                   int surfaceFlags,
-                   LazyInstantiateCallback callback) {
+    public TextureDelegate(BackendFormat format,
+                           int width, int height,
+                           int surfaceFlags,
+                           LazyInstantiateCallback callback) {
         super(format, width, height, surfaceFlags);
         mLazyInstantiateCallback = Objects.requireNonNull(callback);
         // A "fully" lazy proxy's width and height are not known until instantiation time.
@@ -102,8 +102,8 @@ public class Texture extends Surface implements IScratchKey {
      * in allocation by having its backing resource recycled to other uninstantiated proxies or
      * not depending on UseAllocator.
      */
-    public Texture(@SharedPtr GpuTexture texture,
-                   int surfaceFlags) {
+    public TextureDelegate(@SharedPtr GpuTexture texture,
+                           int surfaceFlags) {
         super(texture, surfaceFlags);
         mMipmapsDirty = texture.isMipmapped() && texture.isMipmapsDirty();
         assert (mSurfaceFlags & IGpuSurface.FLAG_APPROX_FIT) == 0;
@@ -356,7 +356,7 @@ public class Texture extends Surface implements IScratchKey {
                     key.mFormat == mFormat.getFormatKey() &&
                     key.mFlags == ((mSurfaceFlags & (IGpuSurface.FLAG_RENDERABLE | IGpuSurface.FLAG_PROTECTED)) |
                             (isMipmapped() ? IGpuSurface.FLAG_MIPMAPPED : 0));
-        } else if (o instanceof Texture proxy) {
+        } else if (o instanceof TextureDelegate proxy) {
             // ResourceAllocator
             return proxy.getBackingWidth() == getBackingWidth() &&
                     proxy.getBackingHeight() == getBackingHeight() &&
@@ -369,7 +369,7 @@ public class Texture extends Surface implements IScratchKey {
     }
 
     @Override
-    public Texture asTexture() {
+    public TextureDelegate asTexture() {
         return this;
     }
 

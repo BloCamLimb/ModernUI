@@ -31,8 +31,8 @@ import javax.annotation.Nullable;
  * <p>
  * A {@link GpuRenderTarget} is always associated with a renderable primary surface, which
  * can be either a renderable {@link GpuTexture} or a wrapped {@link BackendRenderTarget}.
- * This class is used by the pipeline internally. Use {@link RenderTexture}
- * and {@link RenderTarget} for high-level operations.
+ * This class is used by the pipeline internally. Use {@link RenderTextureDelegate}
+ * and {@link RenderTargetDelegate} for high-level operations.
  */
 public abstract class GpuRenderTarget extends ManagedResource implements IGpuSurface {
 

@@ -670,7 +670,7 @@ public final class GLDevice extends GpuDevice {
                                                byte colorOps,
                                                byte stencilOps,
                                                float[] clearColor,
-                                               Set<Texture> sampledTextures,
+                                               Set<TextureDelegate> sampledTextures,
                                                int pipelineFlags) {
         mStats.incRenderPasses();
         if (mCachedOpsRenderPass == null) {
