@@ -36,7 +36,7 @@ public final class TextureResolveTask extends RenderTask {
         super(taskManager);
     }
 
-    public void addTexture(@SharedPtr Texture userTexture, int resolveFlags) {
+    public void addTexture(@SharedPtr TextureDelegate userTexture, int resolveFlags) {
         // Ensure the last render task that operated on the proxy is closed. That's where msaa and
         // mipmaps should have been marked dirty.
         assert (mTaskManager.getLastRenderTask(userTexture) == null ||

@@ -74,7 +74,7 @@ public final class SurfaceDevice extends Device {
     @SharedPtr
     public static SurfaceDevice make(RecordingContext rContext,
                                      int colorType,
-                                     Surface proxy,
+                                     SurfaceDelegate proxy,
                                      int origin,
                                      boolean clear) {
         if (rContext == null) {

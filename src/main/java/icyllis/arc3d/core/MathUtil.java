@@ -554,12 +554,12 @@ public class MathUtil {
      * Returns 0 if value <= 0:<br>
      * Never returns a negative number, even if value is NaN.
      * <pre>
-     * CeilLog2((-inf..1]) -> 0
-     * CeilLog2((1..2]) -> 1
-     * CeilLog2((2..4]) -> 2
-     * CeilLog2((4..8]) -> 3
-     * CeilLog2(+inf) -> 128
-     * CeilLog2(NaN) -> 0
+     *     ceilLog2((-inf..1]) -> 0
+     *     ceilLog2((1..2])    -> 1
+     *     ceilLog2((2..4])    -> 2
+     *     ceilLog2((4..8])    -> 3
+     *     ceilLog2(+inf)      -> 128
+     *     ceilLog2(NaN)       -> 0
      * </pre>
      * NextLog2.
      */
@@ -568,10 +568,22 @@ public class MathUtil {
         return exp & ~(exp >> 31);
     }
 
+    /**
+     * Returns ceil(log2(sqrt(x))):
+     * <pre>
+     *     log2(sqrt(x)) == log2(x^(1/2)) == log2(x)/2 == log2(x)/log2(4) == log4(x)
+     * </pre>
+     */
     public static int ceilLog4(float v) {
         return (ceilLog2(v) + 1) >> 1;
     }
 
+    /**
+     * Returns ceil(log2(sqrt(sqrt(x)))):
+     * <pre>
+     *     log2(sqrt(sqrt(x))) == log2(x^(1/4)) == log2(x)/4 == log2(x)/log2(16) == log16(x)
+     * </pre>
+     */
     public static int ceilLog16(float v) {
         return (ceilLog2(v) + 3) >> 2;
     }

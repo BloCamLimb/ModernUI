@@ -90,7 +90,7 @@ public class OpFlushState implements MeshDrawTarget {
                                             byte colorOps,
                                             byte stencilOps,
                                             float[] clearColor,
-                                            Set<Texture> sampledTextures,
+                                            Set<TextureDelegate> sampledTextures,
                                             int pipelineFlags) {
         assert (mOpsRenderPass == null);
         OpsRenderPass opsRenderPass = mDevice.getOpsRenderPass(writeView, contentBounds,

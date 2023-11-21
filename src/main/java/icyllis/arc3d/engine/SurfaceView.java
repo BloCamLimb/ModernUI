@@ -24,54 +24,54 @@ import icyllis.arc3d.core.SharedPtr;
 import static icyllis.arc3d.engine.Engine.SurfaceOrigin;
 
 /**
- * Views a {@link Surface} in the pipeline.
+ * Views a {@link SurfaceDelegate} in the pipeline.
  */
 public class SurfaceView implements AutoCloseable {
 
     @SharedPtr
-    Surface mSurface;
+    SurfaceDelegate mDelegate;
     int mOrigin;
     short mSwizzle;
 
-    public SurfaceView(@SharedPtr Surface surface) {
-        mSurface = surface; // std::move()
+    public SurfaceView(@SharedPtr SurfaceDelegate delegate) {
+        mDelegate = delegate; // std::move()
         mOrigin = SurfaceOrigin.kUpperLeft;
         mSwizzle = Swizzle.RGBA;
     }
 
-    public SurfaceView(@SharedPtr Surface surface, int origin, short swizzle) {
-        mSurface = surface; // std::move()
+    public SurfaceView(@SharedPtr SurfaceDelegate delegate, int origin, short swizzle) {
+        mDelegate = delegate; // std::move()
         mOrigin = origin;
         mSwizzle = swizzle;
     }
 
     public int getWidth() {
-        return mSurface.getWidth();
+        return mDelegate.getWidth();
     }
 
     public int getHeight() {
-        return mSurface.getHeight();
+        return mDelegate.getHeight();
     }
 
     public boolean isMipmapped() {
-        Texture textureProxy = mSurface.asTexture();
-        return textureProxy != null && textureProxy.isMipmapped();
+        TextureDelegate delegate = mDelegate.asTexture();
+        return delegate != null && delegate.isMipmapped();
     }
 
     /**
      * Returns smart pointer value (raw ptr).
      */
-    public Surface getSurface() {
-        return mSurface;
+    public SurfaceDelegate getSurface() {
+        return mDelegate;
     }
 
     /**
      * Returns a smart pointer (as if on the stack).
      */
     @SharedPtr
-    public Surface refSurface() {
-        mSurface.ref();
-        return mSurface;
+    public SurfaceDelegate refSurface() {
+        mDelegate.ref();
+        return mDelegate;
     }
 
     /**
@@ -79,11 +79,11 @@ public class SurfaceView implements AutoCloseable {
      * properties associated with the detached proxy.
      */
     @SharedPtr
-    public Surface detachSurface() {
+    public SurfaceDelegate detachSurface() {
         // just like std::move(), R-value reference
-        Surface surface = mSurface;
-        mSurface = null;
-        return surface;
+        SurfaceDelegate surfaceDelegate = mDelegate;
+        mDelegate = null;
+        return surfaceDelegate;
     }
 
     /**
@@ -111,10 +111,10 @@ public class SurfaceView implements AutoCloseable {
      * Recycle this view.
      */
     public void reset() {
-        if (mSurface != null) {
-            mSurface.unref();
+        if (mDelegate != null) {
+            mDelegate.unref();
         }
-        mSurface = null;
+        mDelegate = null;
         mOrigin = SurfaceOrigin.kUpperLeft;
         mSwizzle = Swizzle.RGBA;
     }
@@ -124,9 +124,9 @@ public class SurfaceView implements AutoCloseable {
      */
     @Override
     public void close() {
-        if (mSurface != null) {
-            mSurface.unref();
+        if (mDelegate != null) {
+            mDelegate.unref();
         }
-        mSurface = null;
+        mDelegate = null;
     }
 }
