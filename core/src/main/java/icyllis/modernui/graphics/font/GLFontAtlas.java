@@ -19,7 +19,6 @@
 package icyllis.modernui.graphics.font;
 
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.engine.Surface;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.opengl.*;
 import icyllis.modernui.ModernUI;
@@ -304,7 +303,7 @@ public class GLFontAtlas implements AutoCloseable {
                                         : GL_R8
                         ),
                         1,
-                        Surface.FLAG_BUDGETED | Surface.FLAG_MIPMAPPED,
+                        ISurface.FLAG_BUDGETED | ISurface.FLAG_MIPMAPPED,
                         "FontAtlas" + mMaskFormat
                 ), "Failed to create font atlas");
     }

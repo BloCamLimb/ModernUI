@@ -38,7 +38,7 @@ import java.lang.ref.Cleaner;
  * and GPU texture.</li>
  * </ul>
  */
-//TODO wip, only create from Bitmap, only drawImage works now
+//TODO wip, now image can only create from Bitmap, only used for drawImage()
 public class Image implements AutoCloseable {
 
     private final ImageInfo mInfo;
@@ -46,10 +46,13 @@ public class Image implements AutoCloseable {
     private final RecordingContext mContext;
     private ViewReference mView;
 
-    private Image(ImageInfo info, RecordingContext context, @SharedPtr Texture texture, short swizzle) {
+    private Image(ImageInfo info,
+                  RecordingContext context,
+                  @SharedPtr TextureDelegate delegate,
+                  short swizzle) {
         mInfo = info;
         mContext = context;
-        mView = new ViewReference(this, texture, swizzle);
+        mView = new ViewReference(this, delegate, swizzle);
     }
 
     // must be called after render system and UI system are initialized successfully,
@@ -81,26 +84,28 @@ public class Image implements AutoCloseable {
                                                 @NonNull Bitmap bitmap) {
         var caps = rContext.getCaps();
         var ct = (bitmap.getFormat() == Bitmap.Format.RGB_888)
-                ? ImageInfo.CT_RGB_888x
+                ? ImageInfo.CT_RGB_888x // GPU surface is padded
                 : bitmap.getColorType();
         if (caps.getDefaultBackendFormat(ct, /*renderable*/false) == null) {
             return null;
         }
-        var flags = Surface.FLAG_BUDGETED;
+        int flags = ISurface.FLAG_BUDGETED;
         if (bitmap.getWidth() > 1 || bitmap.getHeight() > 1) {
-            flags |= Surface.FLAG_MIPMAPPED;
+            flags |= ISurface.FLAG_MIPMAPPED;
         }
         @SharedPtr
-        var texture = rContext.getSurfaceProvider().createTextureFromPixmap(
-                bitmap.getPixels(), ct, flags
-        );
-        if (texture == null) {
+        TextureDelegate delegate = rContext
+                .getSurfaceProvider()
+                .createTextureFromPixmap(
+                        bitmap.getPixels(), ct, flags
+                );
+        if (delegate == null) {
             return null;
         }
-        var swizzle = caps.getReadSwizzle(texture.getBackendFormat(), ct);
+        var swizzle = caps.getReadSwizzle(delegate.getBackendFormat(), ct);
         return new Image(bitmap.getInfo(),
                 rContext,
-                texture,
+                delegate,
                 swizzle);
     }
 
@@ -173,12 +178,14 @@ public class Image implements AutoCloseable {
         return mView == null;
     }
 
-    private static final class ViewReference extends SurfaceView implements Runnable {
+    private static class ViewReference extends SurfaceView implements Runnable {
 
-        private final Cleaner.Cleanable mCleanup;
+        final Cleaner.Cleanable mCleanup;
 
-        private ViewReference(Image owner, @SharedPtr Texture texture, short swizzle) {
-            super(texture,
+        ViewReference(Image owner,
+                              @SharedPtr TextureDelegate delegate,
+                              short swizzle) {
+            super(delegate,
                     Engine.SurfaceOrigin.kUpperLeft,
                     swizzle);
             mCleanup = Core.registerCleanup(owner, this);
