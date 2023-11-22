@@ -43,6 +43,31 @@ public final class FontFamily {
     @UnmodifiableView
     private static final Map<String, String> sSystemFontAliasesView;
 
+    // typical characters in East Asian scripts
+    private static final int[] EAST_ASIAN_TEST_CHARS = {
+            0x1100, 0x1101, // Hangul Jamo
+            0x2E80, 0x2E81, // CJK Radicals Supplement
+            0x2F00, 0x2F01, // Kangxi Radicals
+            0x3000, 0x3001, // CJK Symbols and Punctuation
+            0x3041, 0x3042, // Hiragana
+            0x30A1, 0x30A2, // Katakana
+            0x3111, 0x3112, // Bopomofo
+            0x3131, 0x3132, // Hangul Compatibility Jamo
+            0x3190, 0x3191, // Kanbun
+            0x31A0, 0x31A1, // Bopomofo Extended
+            0x31C0, 0x31C1, // CJK Strokes
+            0x31F0, 0x31F1, // Katakana Phonetic Extensions
+            0x3200, 0x3201, // Enclosed CJK Letters and Months
+            0x3300, 0x3301, // CJK Compatibility
+            0xF900, 0xF901, // CJK Compatibility Ideographs
+            0x16F00, 0x16F01, // Miao
+            0x17000, 0x17001, // Tangut
+            0x18800, 0x18801, // Tangut Components
+            0x18B00, 0x18B01, // Khitan Small Script
+            0x1B000, 0x1B001, // Kana Supplement
+            0x1B170, 0x1B171, // Nushu
+    };
+
     static {
         // Use Java's logical font as the default initial font if user does not override it in some configuration files
         java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment().preferLocaleFonts();
@@ -132,10 +157,16 @@ public final class FontFamily {
     private Font mItalic;
     private Font mBoldItalic;
 
+    private final boolean mIsEastAsian;
     private final boolean mIsColorEmoji;
 
     public FontFamily(Font font) {
         mFont = Objects.requireNonNull(font);
+        if (font instanceof OutlineFont) {
+            // use factory method instead
+            throw new IllegalArgumentException();
+        }
+        mIsEastAsian = false;
         mIsColorEmoji = font instanceof EmojiFont;
     }
 
@@ -144,7 +175,39 @@ public final class FontFamily {
         mBold = new OutlineFont(font.deriveFont(java.awt.Font.BOLD));
         mItalic = new OutlineFont(font.deriveFont(java.awt.Font.ITALIC));
         mBoldItalic = new OutlineFont(font.deriveFont(java.awt.Font.BOLD | java.awt.Font.ITALIC));
+        mIsEastAsian = isEastAsianFont(font);
         mIsColorEmoji = false;
+    }
+
+    /**
+     * Returns true if the font is very likely to be an East Asian font.
+     */
+    private static boolean isEastAsianFont(java.awt.Font font) {
+        for (int ch : EAST_ASIAN_TEST_CHARS) {
+            if (font.canDisplay(ch)) {
+                return true;
+            }
+        }
+        // CJK Unified Ideographs Extension A
+        // Yijing Hexagram Symbols
+        // CJK Unified Ideographs
+        // Yi Syllables
+        // Yi Radicals
+        // Lisu
+        for (int ch = 0x3400; ch < 0xA500; ch += 256) {
+            if (font.canDisplay(ch)) {
+                return true;
+            }
+        }
+        // Hangul Syllables
+        // Hangul Jamo Extended-B
+        for (int ch = 0xAC00; ch < 0xD800; ch += 256) {
+            if (font.canDisplay(ch)) {
+                return true;
+            }
+        }
+        // Other CJK Unified Ideographs Extensions are ignored
+        return false;
     }
 
     public Font getClosestMatch(int style) {
@@ -155,6 +218,14 @@ public final class FontFamily {
             case FontPaint.BOLD | FontPaint.ITALIC -> mBoldItalic != null ? mBoldItalic : mFont;
             default -> null;
         };
+    }
+
+    /**
+     * Returns true if the family is very likely to be an East Asian family.
+     * Even true, the family can still be used for other scripts.
+     */
+    public boolean isEastAsianFamily() {
+        return mIsEastAsian;
     }
 
     public boolean isColorEmojiFamily() {
@@ -197,6 +268,8 @@ public final class FontFamily {
                 ", mBold=" + mBold +
                 ", mItalic=" + mItalic +
                 ", mBoldItalic=" + mBoldItalic +
+                ", mIsEastAsian=" + mIsEastAsian +
+                ", mIsColorEmoji=" + mIsColorEmoji +
                 '}';
     }
 }
