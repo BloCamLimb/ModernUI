@@ -21,6 +21,7 @@ package icyllis.modernui.graphics.text;
 import com.ibm.icu.impl.UCharacterProperty;
 import com.ibm.icu.lang.*;
 import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Unmodifiable;
 
@@ -90,12 +91,23 @@ public class FontCollection {
     // an array of base fonts
     @NonNull
     private final List<FontFamily> mFamilies;
+    private final BitSet mExclusiveEastAsianBits;
 
     public FontCollection(@NonNull FontFamily... families) {
+        this(families, null);
+    }
+
+    /**
+     * <var>exclusiveEastAsianBits</var> determines which families in the <var>families</var>
+     * array will be used as exclusive East Asian families. This means for non East Asian text,
+     * such families will be skipped.
+     */
+    public FontCollection(@NonNull FontFamily[] families, @Nullable BitSet exclusiveEastAsianBits) {
         if (families.length == 0) {
-            throw new IllegalArgumentException("Font set cannot be empty");
+            throw new IllegalArgumentException("families cannot be empty");
         }
         mFamilies = List.of(families);
+        mExclusiveEastAsianBits = exclusiveEastAsianBits;
     }
 
     /**
@@ -135,10 +147,8 @@ public class FontCollection {
             if (Character.isLowSurrogate(_c2)) {
                 nextCh = Character.toCodePoint(_c1, _c2);
                 ++index;
-            } else if (Character.isSurrogate(_c1)) {
-                nextCh = REPLACEMENT_CHARACTER;
             } else {
-                nextCh = _c1;
+                nextCh = REPLACEMENT_CHARACTER;
             }
         } else if (Character.isSurrogate(_c1)) {
             nextCh = REPLACEMENT_CHARACTER;
@@ -160,10 +170,8 @@ public class FontCollection {
                     if (Character.isLowSurrogate(_c2)) {
                         nextCh = Character.toCodePoint(_c1, _c2);
                         ++index;
-                    } else if (Character.isSurrogate(_c1)) {
-                        nextCh = REPLACEMENT_CHARACTER;
                     } else {
-                        nextCh = _c1;
+                        nextCh = REPLACEMENT_CHARACTER;
                     }
                 } else if (Character.isSurrogate(_c1)) {
                     nextCh = REPLACEMENT_CHARACTER;
@@ -289,7 +297,23 @@ public class FontCollection {
 
     public static final int UNSUPPORTED_FONT_SCORE = 0;
 
-    private int calcCoverageScore(int ch, int vs, FontFamily family) {
+    private int calcCoverageScore(int ch, int vs, @NonNull FontFamily family,
+                                  boolean isExclusiveEastAsianFamily) {
+        if (isExclusiveEastAsianFamily) {
+            int script = UScript.getScript(ch);
+            if (script > UScript.INHERITED) {
+                // East Asian scripts
+                switch (script) {
+                    case UScript.HAN, UScript.BOPOMOFO, UScript.HIRAGANA, UScript.KATAKANA,
+                            UScript.HANGUL, UScript.YI, UScript.NUSHU, UScript.LISU,
+                            UScript.MIAO, UScript.TANGUT, UScript.KHITAN_SMALL_SCRIPT:
+                        break;
+                    default:
+                        // skip the family for non East Asian scripts
+                        return UNSUPPORTED_FONT_SCORE;
+                }
+            }
+        }
         if (!family.hasGlyph(ch, vs)) {
             return UNSUPPORTED_FONT_SCORE;
         }
@@ -308,8 +332,10 @@ public class FontCollection {
     private List<FontFamily> getFamilyForChar(int ch, int vs) {
         List<FontFamily> families = null;
         int bestScore = UNSUPPORTED_FONT_SCORE;
-        for (FontFamily family : mFamilies) {
-            int score = calcCoverageScore(ch, vs, family);
+        for (int i = 0, e = mFamilies.size(); i < e; i++) {
+            FontFamily family = mFamilies.get(i);
+            int score = calcCoverageScore(ch, vs, family,
+                    mExclusiveEastAsianBits != null && mExclusiveEastAsianBits.get(i));
             if (score != UNSUPPORTED_FONT_SCORE && score >= bestScore) {
                 if (families == null) {
                     families = new ArrayList<>(2);
@@ -328,7 +354,7 @@ public class FontCollection {
             return families;
         }
         for (FontFamily family : FontFamily.getSystemFontMap().values()) {
-            int score = calcCoverageScore(ch, vs, family);
+            int score = calcCoverageScore(ch, vs, family, false);
             if (score != UNSUPPORTED_FONT_SCORE && score >= bestScore) {
                 if (families == null) {
                     families = new ArrayList<>(8);
@@ -365,15 +391,18 @@ public class FontCollection {
 
     @Override
     public String toString() {
-        StringBuilder s = new StringBuilder();
-        s.append('{');
+        StringBuilder s = new StringBuilder("FontCollection");
+        s.append('{').append("mFamilies").append('=').append('[');
         for (int i = 0, e = mFamilies.size(); i < e; i++) {
             if (i > 0) {
-                s.append(',');
+                s.append(',').append(' ');
             }
             s.append(mFamilies.get(i).getFamilyName());
         }
-        return s.append('}').toString();
+        return s.append(']').append(',').append(' ')
+                .append("mExclusiveEastAsianBits").append('=')
+                .append(mExclusiveEastAsianBits)
+                .append('}').toString();
     }
 
     public static final class Run {
