@@ -18,12 +18,12 @@
 
 package icyllis.modernui.test
 
-import icyllis.arc3d.engine.Surface
+import icyllis.arc3d.engine.ISurface
 import icyllis.arc3d.opengl.GLBackendFormat
 import icyllis.arc3d.opengl.GLCore
 import icyllis.arc3d.opengl.GLRenderTarget
-import icyllis.modernui.core.Core
 import icyllis.modernui.core.ActivityWindow
+import icyllis.modernui.core.Core
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.core.config.Configurator
 import org.lwjgl.glfw.GLFW
@@ -49,15 +49,15 @@ fun main() {
 
     val dContext = Core.requireDirectContext()
 
-    val renderTexture = dContext.surfaceProvider.createRenderTexture(
+    val delegate = dContext.surfaceProvider.createRenderTexture(
         GLBackendFormat.make(GLCore.GL_RGBA8),
         1600, 900, 4,
-        Surface.FLAG_BUDGETED + Surface.FLAG_MIPMAPPED
+        ISurface.FLAG_BUDGETED + ISurface.FLAG_MIPMAPPED
     )
-    check(renderTexture != null) { "Failed to create RT" }
-    check(renderTexture.instantiate(dContext.resourceProvider))
+    check(delegate != null) { "Failed to create RT" }
+    check(delegate.instantiate(dContext.resourceProvider))
 
-    val rt = renderTexture.getGpuRenderTarget() as GLRenderTarget
+    val rt = delegate.gpuRenderTarget as GLRenderTarget
     println(rt)
     println(rt.stencilBuffer)
     println(rt.sampleFramebuffer)

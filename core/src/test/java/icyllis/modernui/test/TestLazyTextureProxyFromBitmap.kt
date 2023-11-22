@@ -18,10 +18,10 @@
 
 package icyllis.modernui.test
 
-import icyllis.arc3d.engine.Surface
+import icyllis.arc3d.engine.ISurface
 import icyllis.arc3d.opengl.GLTexture
-import icyllis.modernui.core.Core
 import icyllis.modernui.core.ActivityWindow
+import icyllis.modernui.core.Core
 import icyllis.modernui.graphics.Bitmap
 import icyllis.modernui.graphics.BitmapFactory
 import org.apache.logging.log4j.Level
@@ -58,26 +58,30 @@ fun main() {
 
     val dContext = Core.requireDirectContext()
 
-    var texture = dContext.surfaceProvider.createTextureFromPixmap(sourceBm.pixels, sourceBm.colorType, Surface.FLAG_BUDGETED)
-    check(texture != null) { "Failed to create proxy" }
-    texture.instantiate(dContext.resourceProvider)
+    var delegate = dContext.surfaceProvider.createTextureFromPixmap(
+        sourceBm.pixels, sourceBm.colorType, ISurface.FLAG_BUDGETED
+    )
+    check(delegate != null) { "Failed to create delegate" }
+    delegate.instantiate(dContext.resourceProvider)
 
-    texture.unref()
+    delegate.unref()
 
-    texture = dContext.surfaceProvider.createTextureFromPixmap(sourceBm.pixels, sourceBm.colorType, Surface.FLAG_BUDGETED)
-    check(texture != null) { "Failed to create proxy" }
-    texture.instantiate(dContext.resourceProvider)
+    delegate = dContext.surfaceProvider.createTextureFromPixmap(
+        sourceBm.pixels, sourceBm.colorType, ISurface.FLAG_BUDGETED
+    )
+    check(delegate != null) { "Failed to create delegate" }
+    delegate.instantiate(dContext.resourceProvider)
 
     val outBm = Bitmap.createBitmap(sourceBm.width, sourceBm.height, Bitmap.Format.RGBA_8888)
     try {
         GL45C.glGetTextureImage(
-            (texture.gpuTexture as GLTexture).handle, 0, GL11C.GL_RGBA, GL11C.GL_UNSIGNED_BYTE,
+            (delegate.gpuTexture as GLTexture).handle, 0, GL11C.GL_RGBA, GL11C.GL_UNSIGNED_BYTE,
             outBm.size, outBm.address
         )
         outBm.saveDialog(Bitmap.SaveFormat.PNG, 100, null)
     } finally {
         sourceBm.close()
-        texture.unref()
+        delegate.unref()
         outBm.close()
     }
 
