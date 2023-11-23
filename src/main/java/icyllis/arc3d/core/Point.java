@@ -19,13 +19,102 @@
 
 package icyllis.arc3d.core;
 
+import org.jetbrains.annotations.Contract;
+
 public class Point {
 
-    public static float distanceToLineSegmentSq(
-            float px, float py,
-            float ax, float ay,
-            float bx, float by
+    /**
+     * Returns the dot product of vector a and vector b.
+     *
+     * @return product of input magnitudes and cosine of the angle between them
+     */
+    @Contract(pure = true)
+    public static float dotProduct(
+            final float ax, final float ay,
+            final float bx, final float by
     ) {
+        return ax * bx + ay * by;
+    }
+
+    /**
+     * Returns the cross product of vector a and vector b.
+     * <p>
+     * a and b form three-dimensional vectors with z-axis value equal to zero. The
+     * cross product is a three-dimensional vector with x-axis and y-axis values equal
+     * to zero. The cross product z-axis component is returned.
+     *
+     * @return area spanned by vectors signed by angle direction
+     */
+    @Contract(pure = true)
+    public static float crossProduct(
+            final float ax, final float ay,
+            final float bx, final float by
+    ) {
+        return ax * by - ay * bx;
+    }
+
+    @Contract(pure = true)
+    public static float distanceToSq(
+            final float ax, final float ay,
+            final float bx, final float by
+    ) {
+        float dx = ax - bx;
+        float dy = ay - by;
+        return dx * dx + dy * dy;
+    }
+
+    public static float distanceToLineBetweenSq(
+            final float px, final float py,
+            final float ax, final float ay,
+            final float bx, final float by
+    ) {
+        float ux = bx - ax;
+        float uy = by - ay;
+        float vx = px - ax;
+        float vy = py - ay;
+
+        float uLengthSq = ux * ux + uy * uy;
+        float det = ux * vy - uy * vx;
+        float temp = det / uLengthSq * det;
+        // It's possible we have a degenerate segment, or we're so far away it looks degenerate
+        // In this case, return squared distance to point A.
+        if (!Float.isFinite(temp)) {
+            return vx * vx + vy * vy;
+        }
+        return temp;
+    }
+
+    public static float distanceToLineBetween(
+            final float px, final float py,
+            final float ax, final float ay,
+            final float bx, final float by
+    ) {
+        return (float) Math.sqrt(
+                distanceToLineBetweenSq(px, py, ax, ay, bx, by)
+        );
+    }
+
+    public static float distanceToLineSegmentBetweenSq(
+            final float px, final float py,
+            final float ax, final float ay,
+            final float bx, final float by
+    ) {
+        // See comments to distanceToLineBetweenSq. If the projection of c onto
+        // u is between a and b then this returns the same result as that
+        // function. Otherwise, it returns the distance to the closest of a and
+        // b. Let the projection of v onto u be v'.  There are three cases:
+        //    1. v' points opposite to u. c is not between a and b and is closer
+        //       to a than b.
+        //    2. v' points along u and has magnitude less than y. c is between
+        //       a and b and the distance to the segment is the same as distance
+        //       to the line ab.
+        //    3. v' points along u and has greater magnitude than u. c is not
+        //       between a and b and is closer to b than a.
+        // v' = (u dot v) * u / |u|. So if (u dot v)/|u| is less than zero we're
+        // in case 1. If (u dot v)/|u| is > |u| we are in case 3. Otherwise,
+        // we're in case 2. We actually compare (u dot v) to 0 and |u|^2 to
+        // avoid a sqrt to compute |u|.
+
         float ux = bx - ax;
         float uy = by - ay;
         float vx = px - ax;
@@ -56,20 +145,13 @@ public class Point {
         return temp;
     }
 
-    public static float distanceToLineSegment(
-            float px, float py,
-            float ax, float ay,
-            float bx, float by
+    public static float distanceToLineSegmentBetween(
+            final float px, final float py,
+            final float ax, final float ay,
+            final float bx, final float by
     ) {
-        return (float) Math.sqrt(distanceToLineSegmentSq(px, py, ax, ay, bx, by));
-    }
-
-    public static float distanceToSq(
-            float px, float py,
-            float ax, float ay
-    ) {
-        float dx = px - ax;
-        float dy = py - ay;
-        return dx * dx + dy * dy;
+        return (float) Math.sqrt(
+                distanceToLineSegmentBetweenSq(px, py, ax, ay, bx, by)
+        );
     }
 }

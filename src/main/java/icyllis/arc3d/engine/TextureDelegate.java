@@ -36,6 +36,9 @@ import java.util.Objects;
  * <p>
  * This class can only be used on the creating thread of/on a single {@link RecordingContext},
  * and later used by {@link DirectContext} (render thread).
+ * <p>
+ * Note: the object itself is also used as the scratch key, see {@link #hashCode()}
+ * and {@link #equals(Object)}
  */
 public class TextureDelegate extends SurfaceDelegate implements IScratchKey {
 
