@@ -30,7 +30,7 @@ import javax.annotation.Nullable;
  * The {@link SurfaceDelegate} targets a {@link IGpuSurface} with three instantiation
  * methods: deferred, lazy-callback and wrapped.
  * <p>
- * Target: The backing GPU texture or render target that referenced by this surface.
+ * Target: The backing GPU texture or render target that referenced by this delegate.
  * <p>
  * Instantiate: Create new GPU surfaces or find surfaces in {@link ResourceCache}
  * when they are actually required on flush.
@@ -46,10 +46,15 @@ import javax.annotation.Nullable;
  *     <li>True: {@link SurfaceAllocator} should instantiate this surface.</li>
  * </ul>
  * <p>
- * Use {@link SurfaceProvider} to obtain {@link SurfaceDelegate} objects.
+ * Threading: Delegates can be created on any thread, and change the reference count
+ * through ref() and unref(). If delegate is, or will be used by render thread, its
+ * final unref() must be called on render thread (the case where render thread will
+ * have ownership).
  * <p>
- * Note: the object itself is also used as the scratch key, see {@link #hashCode()}
- * and {@link #equals(Object)}
+ * Use {@link SurfaceProvider} to obtain {@link SurfaceDelegate} objects.
+ *
+ * @see TextureDelegate
+ * @see SurfaceView
  */
 public abstract class SurfaceDelegate extends RefCnt implements ISurface {
 
