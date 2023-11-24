@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.core;
 
-public class Path {
+public class Path implements PathConsumer {
 
     /**
      * The winding rule constant for specifying an even-odd rule
@@ -65,15 +65,14 @@ public class Path {
         mWindingRule = WIND_NON_ZERO;
     }
 
-    public final Path moveTo(float x, float y) {
+    public void moveTo(float x, float y) {
         editor(1, 2)
                 .addVerb(VERB_MOVETO)
                 .addPoint(x, y);
         mHasInitialPoint = true;
-        return this;
     }
 
-    public final Path moveToRel(float dx, float dy) {
+    public void moveToRel(float dx, float dy) {
         final float px, py;
         final int n = mRef.mNumCoords;
         if (n > 1) {
@@ -83,7 +82,7 @@ public class Path {
             assert false;
             px = py = 0;
         }
-        return moveTo(px + dx, py + dy);
+        moveTo(px + dx, py + dy);
     }
 
     /**
@@ -92,13 +91,14 @@ public class Path {
      * @param x the end of a line on x-axis
      * @param y the end of a line on y-axis
      */
-    public final Path lineTo(float x, float y) {
-        if (mHasInitialPoint)
+    public void lineTo(float x, float y) {
+        if (mHasInitialPoint) {
             editor(1, 2)
                     .addVerb(VERB_LINETO)
                     .addPoint(x, y);
-        else assert false;
-        return this;
+        } else {
+            assert false;
+        }
     }
 
     /**
@@ -107,15 +107,15 @@ public class Path {
      * @param dx the offset from last point to line end on x-axis
      * @param dy the offset from last point to line end on y-axis
      */
-    public final Path lineToRel(float dx, float dy) {
+    public void lineToRel(float dx, float dy) {
         int n = mRef.mNumCoords;
         if (n > 1) {
             float px = mRef.mCoords[n - 2];
             float py = mRef.mCoords[n - 1];
-            return lineTo(px + dx, py + dy);
+            lineTo(px + dx, py + dy);
+        } else {
+            assert false;
         }
-        assert false;
-        return this;
     }
 
     /**
@@ -130,53 +130,76 @@ public class Path {
      * @param x2 the X coordinate of the final end point
      * @param y2 the Y coordinate of the final end point
      */
-    public final Path quadTo(float x1, float y1,
-                             float x2, float y2) {
-        if (mHasInitialPoint)
+    public void quadTo(float x1, float y1,
+                       float x2, float y2) {
+        if (mHasInitialPoint) {
             editor(1, 4)
                     .addVerb(VERB_QUADTO)
                     .addPoint(x1, y1)
                     .addPoint(x2, y2);
-        else assert false;
-        return this;
+        } else {
+            assert false;
+        }
     }
 
-    public final Path quadToRel(float dx1, float dy1,
-                                float dx2, float dy2) {
+    public void quadToRel(float dx1, float dy1,
+                          float dx2, float dy2) {
         int n = mRef.mNumCoords;
         if (n > 1) {
             float px = mRef.mCoords[n - 2];
             float py = mRef.mCoords[n - 1];
-            return quadTo(px + dx1, py + dy1, px + dx2, py + dy2);
+            quadTo(px + dx1, py + dy1, px + dx2, py + dy2);
+        } else {
+            assert false;
         }
-        assert false;
-        return this;
     }
 
-    public final Path cubicTo(float x1, float y1,
-                              float x2, float y2,
-                              float x3, float y3) {
-        if (mHasInitialPoint)
+    public void cubicTo(float x1, float y1,
+                        float x2, float y2,
+                        float x3, float y3) {
+        if (mHasInitialPoint) {
             editor(1, 6)
                     .addVerb(VERB_CUBICTO)
                     .addPoint(x1, y1)
                     .addPoint(x2, y2)
                     .addPoint(x3, y3);
-        else assert false;
-        return this;
+        } else {
+            assert false;
+        }
     }
 
-    public final Path cubicToRel(float dx1, float dy1,
-                                 float dx2, float dy2,
-                                 float dx3, float dy3) {
+    public void cubicToRel(float dx1, float dy1,
+                           float dx2, float dy2,
+                           float dx3, float dy3) {
         int n = mRef.mNumCoords;
         if (n > 1) {
             float px = mRef.mCoords[n - 2];
             float py = mRef.mCoords[n - 1];
-            return cubicTo(px + dx1, py + dy1, px + dx2, py + dy2, px + dx3, py + dy3);
+            cubicTo(px + dx1, py + dy1, px + dx2, py + dy2, px + dx3, py + dy3);
+        } else {
+            assert false;
         }
-        assert false;
-        return this;
+    }
+
+    @Override
+    public void closePath() {
+        int count = mRef.mNumVerbs;
+        if (count != 0) {
+            switch (mRef.mVerbs[count - 1]) {
+                case VERB_MOVETO:
+                case VERB_LINETO:
+                case VERB_QUADTO:
+                case VERB_CUBICTO: {
+                    editor(1, 0)
+                            .addVerb(VERB_CLOSE);
+                    break;
+                }
+                case VERB_CLOSE:
+                    break;
+                default:
+                    throw new AssertionError();
+            }
+        }
     }
 
     // make a deep copy of PathRef if shared, grow buffers if needed
@@ -190,5 +213,9 @@ public class Path {
             mRef = RefCnt.move(mRef, copy);
         }
         return mRef;
+    }
+
+    @Override
+    public void pathDone() {
     }
 }
