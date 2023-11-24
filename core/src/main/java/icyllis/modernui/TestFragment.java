@@ -394,7 +394,7 @@ public class TestFragment extends Fragment {
                     "\u0020\u0644\u064a\u0648\u0646\u064a\u0643\u0648\u062f\u0020\u0028\u0055\u006e\u0069\u0063\u006f" +
                     "\u0064\u0065\u0020\u0043\u006f\u006e\u0066\u0065\u0072\u0065\u006e\u0063\u0065\u0029\n";
             int firstPara = text.length();
-            text += "\t\t红 日（迫真) \n";
+            text += "\t\t红 日（迫真）\n";
             int secondsPara = text.length();
             text += "\t\tMy name is Van, I'm 30 years old, and I'm from Japan. I'm an artist, I'm a performance " +
                     "artist. " +
@@ -423,11 +423,13 @@ public class TestFragment extends Fragment {
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             spannable.setSpan(new StyleSpan(Typeface.BOLD), text.length() - 50, text.length() - 40,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            spannable.setSpan(new URLSpan("https://www.bilibili.com/video/BV1HA41147a4"), firstPara, secondsPara - 2,
+            spannable.setSpan(new URLSpan("https://www.bilibili.com/video/BV1HA41147a4"), firstPara, secondsPara - 1,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            spannable.setSpan(new ForegroundColorSpan(0xff4f81bd), firstPara, secondsPara - 2,
+            spannable.setSpan(new ForegroundColorSpan(0xff4f81bd), firstPara, secondsPara - 1,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            spannable.setSpan(new UnderlineSpan(), text.length() / 2, text.length(),
+            spannable.setSpan(new UnderlineSpan(), text.length() / 2, text.length() / 4 * 3,
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            spannable.setSpan(new StrikethroughSpan(), text.length() / 4 * 3, text.length(),
                     Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
             CompletableFuture.runAsync(() -> {
                 long startNanos = System.nanoTime();
