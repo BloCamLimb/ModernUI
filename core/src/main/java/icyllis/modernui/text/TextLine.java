@@ -1049,15 +1049,17 @@ public class TextLine {
                 } else {
                     paint.reset();
                 }
+                //TODO we assume these values for now, should we extract these values from TrueType file?
+                // Also, TextPaint is not yet synchronized with this
                 if ((flags & TextPaint.UNDERLINE_FLAG) != 0) {
-                    float thickness = -mCachedFontExtent.ascent / 12f;
-                    float strokeTop = y + mCachedFontExtent.descent / 3f;
+                    float thickness = wp.getFontSize() / 18f;
+                    float strokeTop = y + wp.getFontSize() * (1f / 9f) - thickness * 0.5f;
                     paint.setColor(wp.getColor());
                     c.drawRect(leftX, strokeTop, rightX, strokeTop + thickness, paint);
                 }
                 if ((flags & TextPaint.STRIKETHROUGH_FLAG) != 0) {
-                    float thickness = -mCachedFontExtent.ascent / 12f;
-                    float strokeTop = y + mCachedFontExtent.descent / -2f;
+                    float thickness = wp.getFontSize() / 18f;
+                    float strokeTop = y - wp.getFontSize() * (1f / 3f) - thickness * 0.5f;
                     paint.setColor(wp.getColor());
                     c.drawRect(leftX, strokeTop, rightX, strokeTop + thickness, paint);
                 }
