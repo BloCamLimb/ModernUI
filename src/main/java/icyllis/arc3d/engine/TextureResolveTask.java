@@ -36,23 +36,23 @@ public final class TextureResolveTask extends RenderTask {
         super(taskManager);
     }
 
-    public void addTexture(@SharedPtr TextureDelegate userTexture, int resolveFlags) {
+    public void addTexture(@SharedPtr TextureProxy proxy, int resolveFlags) {
         // Ensure the last render task that operated on the proxy is closed. That's where msaa and
         // mipmaps should have been marked dirty.
-        assert (mTaskManager.getLastRenderTask(userTexture) == null ||
-                mTaskManager.getLastRenderTask(userTexture).isClosed());
+        assert (mTaskManager.getLastRenderTask(proxy) == null ||
+                mTaskManager.getLastRenderTask(proxy).isClosed());
         assert (resolveFlags != 0);
 
         Rect2i msaaRect = null;
         if ((resolveFlags & RESOLVE_FLAG_MSAA) != 0) {
-            assert (userTexture.needsResolve());
-            msaaRect = userTexture.getResolveRect();
-            userTexture.setResolveRect(0, 0, 0, 0);
+            assert (proxy.needsResolve());
+            msaaRect = proxy.getResolveRect();
+            proxy.setResolveRect(0, 0, 0, 0);
         }
 
         if ((resolveFlags & RESOLVE_FLAG_MIPMAPS) != 0) {
-            assert (userTexture.isMipmapped() && userTexture.isMipmapsDirty());
-            userTexture.setMipmapsDirty(false);
+            assert (proxy.isMipmapped() && proxy.isMipmapsDirty());
+            proxy.setMipmapsDirty(false);
         }
 
         mResolves.add(new Resolve(resolveFlags,
@@ -63,8 +63,8 @@ public final class TextureResolveTask extends RenderTask {
 
         // Add the proxy as a dependency: We will read the existing contents of this texture while
         // generating mipmap levels and/or resolving MSAA.
-        addDependency(userTexture, SamplerState.DEFAULT);
-        addTarget(userTexture);
+        addDependency(proxy, SamplerState.DEFAULT);
+        addTarget(proxy);
     }
 
     @Override

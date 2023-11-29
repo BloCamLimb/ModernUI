@@ -52,7 +52,7 @@ public class SurfaceDrawContext extends SurfaceFillContext {
         }
 
         @SharedPtr
-        TextureDelegate texture = rContext.getSurfaceProvider().createRenderTexture(
+        TextureProxy texture = rContext.getSurfaceProvider().createRenderTexture(
                 format,
                 width,
                 height,
@@ -76,17 +76,17 @@ public class SurfaceDrawContext extends SurfaceFillContext {
 
     public static SurfaceDrawContext make(RecordingContext rContext,
                                           int colorType,
-                                          SurfaceDelegate surfaceDelegate,
+                                          SurfaceProxy surfaceProxy,
                                           int origin) {
-        BackendFormat format = surfaceDelegate.getBackendFormat();
+        BackendFormat format = surfaceProxy.getBackendFormat();
 
         short readSwizzle = rContext.getCaps().getReadSwizzle(format, colorType);
         short writeSwizzle = rContext.getCaps().getWriteSwizzle(format, colorType);
 
         // two views, inc one more ref
-        surfaceDelegate.ref();
-        SurfaceView readView = new SurfaceView(surfaceDelegate, origin, readSwizzle);
-        SurfaceView writeView = new SurfaceView(surfaceDelegate, origin, writeSwizzle);
+        surfaceProxy.ref();
+        SurfaceView readView = new SurfaceView(surfaceProxy, origin, readSwizzle);
+        SurfaceView writeView = new SurfaceView(surfaceProxy, origin, writeSwizzle);
 
         return new SurfaceDrawContext(rContext, readView, writeView, colorType);
     }

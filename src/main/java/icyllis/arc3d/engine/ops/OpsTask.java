@@ -41,7 +41,7 @@ public class OpsTask extends RenderTask {
 
     private final ArrayList<OpChain> mOpChains = new ArrayList<>(25);
 
-    private final ObjectOpenHashSet<TextureDelegate> mSampledTextures = new ObjectOpenHashSet<>();
+    private final ObjectOpenHashSet<TextureProxy> mSampledTextures = new ObjectOpenHashSet<>();
 
     private final SurfaceView mWriteView;
     private int mPipelineFlags;
@@ -71,7 +71,7 @@ public class OpsTask extends RenderTask {
         mLoadClearColor[3] = alpha;
         Swizzle.apply(mWriteView.getSwizzle(), mLoadClearColor);
         if (loadOp == LoadOp.Clear) {
-            SurfaceDelegate target = getTarget();
+            SurfaceProxy target = getTarget();
             mTotalBounds.set(0, 0,
                     target.getBackingWidth(), target.getBackingHeight());
         }
@@ -122,7 +122,7 @@ public class OpsTask extends RenderTask {
     @Override
     public boolean execute(OpFlushState flushState) {
         assert (getNumTargets() == 1);
-        SurfaceDelegate target = getTarget();
+        SurfaceProxy target = getTarget();
         assert (target != null && target == mWriteView.getSurface());
 
         OpsRenderPass opsRenderPass = flushState.beginOpsRenderPass(mWriteView,
@@ -149,15 +149,15 @@ public class OpsTask extends RenderTask {
         if (mOpChains.isEmpty() && mColorLoadOp == LoadOp.Load) {
             return;
         }
-        SurfaceDelegate target = getTarget();
+        SurfaceProxy target = getTarget();
         int rtHeight = target.getBackingHeight();
         Rect2f clippedContentBounds = new Rect2f(0, 0, target.getBackingWidth(), rtHeight);
         boolean result = clippedContentBounds.intersect(mTotalBounds);
         assert result;
         clippedContentBounds.roundOut(mContentBounds);
-        TextureDelegate userTexture = target.asTexture();
-        if (userTexture != null) {
-            if (userTexture.isManualMSAAResolve()) {
+        TextureProxy proxy = target.asTexture();
+        if (proxy != null) {
+            if (proxy.isManualMSAAResolve()) {
                 int msaaTop;
                 int msaaBottom;
                 if (mWriteView.getOrigin() == SurfaceOrigin.kLowerLeft) {
@@ -167,11 +167,11 @@ public class OpsTask extends RenderTask {
                     msaaTop = mContentBounds.mTop;
                     msaaBottom = mContentBounds.mBottom;
                 }
-                userTexture.setResolveRect(mContentBounds.mLeft, msaaTop,
+                proxy.setResolveRect(mContentBounds.mLeft, msaaTop,
                         mContentBounds.mRight, msaaBottom);
             }
-            if (userTexture.isMipmapped()) {
-                userTexture.setMipmapsDirty(true);
+            if (proxy.isMipmapped()) {
+                proxy.setMipmapsDirty(true);
             }
         }
     }

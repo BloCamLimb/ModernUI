@@ -31,8 +31,8 @@ import javax.annotation.Nullable;
  * <p>
  * A {@link GpuRenderTarget} is always associated with a renderable primary surface, which
  * can be either a renderable {@link GpuTexture} or a wrapped {@link BackendRenderTarget}.
- * This class is used by the pipeline internally. Use {@link RenderTextureDelegate}
- * and {@link RenderTargetDelegate} for high-level operations.
+ * This class is used by the pipeline internally. Use {@link RenderTextureProxy}
+ * and {@link RenderTargetProxy} for high-level operations.
  */
 public abstract class GpuRenderTarget extends ManagedResource implements IGpuSurface {
 
@@ -64,6 +64,7 @@ public abstract class GpuRenderTarget extends ManagedResource implements IGpuSur
     /**
      * Returns the effective width (intersection) of color buffers.
      */
+    @Override
     public final int getWidth() {
         return mWidth;
     }
@@ -71,6 +72,7 @@ public abstract class GpuRenderTarget extends ManagedResource implements IGpuSur
     /**
      * Returns the effective height (intersection) of color buffers.
      */
+    @Override
     public final int getHeight() {
         return mHeight;
     }
@@ -80,6 +82,7 @@ public abstract class GpuRenderTarget extends ManagedResource implements IGpuSur
      *
      * @return the number of samples, greater than (multisample) or equal to one
      */
+    @Override
     public final int getSampleCount() {
         return mSampleCount;
     }
@@ -88,6 +91,7 @@ public abstract class GpuRenderTarget extends ManagedResource implements IGpuSur
      * Describes the backend format of color buffers.
      */
     @Nonnull
+    @Override
     public abstract BackendFormat getBackendFormat();
 
     /**
@@ -96,8 +100,8 @@ public abstract class GpuRenderTarget extends ManagedResource implements IGpuSur
     @Nonnull
     public abstract BackendRenderTarget getBackendRenderTarget();
 
-    //TODO can we remove texture access?
     @Nullable
+    @Override
     public abstract GpuTexture asTexture();
 
     @Override
@@ -105,6 +109,7 @@ public abstract class GpuRenderTarget extends ManagedResource implements IGpuSur
         return this;
     }
 
+    @Override
     public int getSurfaceFlags() {
         return mSurfaceFlags;
     }

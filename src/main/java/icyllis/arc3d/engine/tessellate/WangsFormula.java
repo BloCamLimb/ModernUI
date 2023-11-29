@@ -40,6 +40,7 @@ public class WangsFormula {
     // Degree = 3, (N * (N - 1) / 8)^2
     private static final float N3_P2_F = 0.5625f;
 
+    // Returns Wang's formula, raised to the 4th power, specialized for a quadratic curve.
     public static float quadratic_p4(
             final float precision,
             final float x0, final float y0,
@@ -47,12 +48,13 @@ public class WangsFormula {
             final float x2, final float y2
     ) {
         // precision = 1/tolerance
-        final float Mx = x2 - 2 * x1 + x0;
+        final float Mx = x2 - 2 * x1 + x0; // [p0, p1, p2]
         final float My = y2 - 2 * y1 + y0;
         return (Mx * Mx + My * My) *
                 (N2_P2_F * (precision * precision));
     }
 
+    // Returns Wang's formula specialized for a quadratic curve.
     public static float quadratic(
             final float precision,
             final float x0, final float y0,
@@ -69,6 +71,8 @@ public class WangsFormula {
         ));
     }
 
+    // Returns the log2 value of Wang's formula specialized for a quadratic curve, rounded up to the
+    // next int.
     public static int quadratic_log2(
             final float precision,
             final float x0, final float y0,
@@ -87,6 +91,7 @@ public class WangsFormula {
         );
     }
 
+    // Returns Wang's formula, raised to the 4th power, specialized for a cubic curve.
     public static float cubic_p4(
             final float precision,
             final float x0, final float y0,
@@ -95,9 +100,9 @@ public class WangsFormula {
             final float x3, final float y3
     ) {
         // precision = 1/tolerance
-        final float Mx0 = x2 - 2 * x1 + x0;
+        final float Mx0 = x2 - 2 * x1 + x0; // [p0, p1, p2]
         final float My0 = y2 - 2 * y1 + y0;
-        final float Mx1 = x3 - 2 * x2 + x1;
+        final float Mx1 = x3 - 2 * x2 + x1; // [p1, p2, p3]
         final float My1 = y3 - 2 * y2 + y1;
         return Math.max(
                 Mx0 * Mx0 + My0 * My0,
@@ -106,6 +111,7 @@ public class WangsFormula {
                 (N3_P2_F * (precision * precision));
     }
 
+    // Returns Wang's formula specialized for a cubic curve.
     public static float cubic(
             final float precision,
             final float x0, final float y0,
@@ -124,6 +130,8 @@ public class WangsFormula {
         ));
     }
 
+    // Returns the log2 value of Wang's formula specialized for a cubic curve, rounded up to the next
+    // int.
     public static int cubic_log2(
             final float precision,
             final float x0, final float y0,
@@ -144,7 +152,11 @@ public class WangsFormula {
         );
     }
 
-    public static float worse_cubic_p4(
+    // Returns the maximum number of line segments a cubic with the given device-space bounding box size
+    // would ever need to be divided into, raised to the 4th power. This is simply a special case of the
+    // cubic formula where we maximize its value by placing control points on specific corners of the
+    // bounding box.
+    public static float worst_cubic_p4(
             final float precision,
             final float devWidth, float devHeight
     ) {
@@ -153,26 +165,30 @@ public class WangsFormula {
                 (devWidth * devWidth + devHeight * devHeight);
     }
 
-    public static float worse_cubic(
+    // Returns the maximum number of line segments a cubic with the given device-space bounding box size
+    // would ever need to be divided into.
+    public static float worst_cubic(
             final float precision,
             final float devWidth, float devHeight
     ) {
         return (float) Math.sqrt(Math.sqrt(
-                worse_cubic_p4(
+                worst_cubic_p4(
                         precision,
                         devWidth, devHeight
                 )
         ));
     }
 
-    public static int worse_cubic_log2(
+    // Returns the maximum log2 number of line segments a cubic with the given device-space bounding box
+    // size would ever need to be divided into.
+    public static int worst_cubic_log2(
             final float precision,
             final float devWidth, float devHeight
     ) {
         // ceilLog16(x) == ceil(log2(sqrt(sqrt(x))))
         // ceilLog16(x) == ceil(log4(sqrt(x)))
         return MathUtil.ceilLog16(
-                worse_cubic_p4(
+                worst_cubic_p4(
                         precision,
                         devWidth, devHeight
                 )

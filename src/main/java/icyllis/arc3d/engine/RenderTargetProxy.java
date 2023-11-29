@@ -29,18 +29,18 @@ import javax.annotation.Nullable;
  */
 //TODO
 @VisibleForTesting
-public final class RenderTargetDelegate extends SurfaceDelegate {
+public final class RenderTargetProxy extends SurfaceProxy {
 
     @SharedPtr
     private GpuRenderTarget mRenderTarget;
     private int mSampleCount;
 
-    RenderTargetDelegate(BackendFormat format, int width, int height, int surfaceFlags) {
+    RenderTargetProxy(BackendFormat format, int width, int height, int surfaceFlags) {
         super(format, width, height, surfaceFlags);
         assert hashCode() == System.identityHashCode(this);
     }
 
-    RenderTargetDelegate(GpuRenderTarget renderTarget, int surfaceFlags) {
+    RenderTargetProxy(GpuRenderTarget renderTarget, int surfaceFlags) {
         super(renderTarget, surfaceFlags);
         mRenderTarget = renderTarget;
         mSampleCount = renderTarget.getSampleCount();

@@ -25,30 +25,30 @@ import org.jetbrains.annotations.VisibleForTesting;
 import javax.annotation.Nullable;
 
 /**
- * Subclass of {@link TextureDelegate} that also provides render target info.
+ * Subclass of {@link TextureProxy} that also provides render target info.
  */
 //TODO
 @VisibleForTesting
-public final class RenderTextureDelegate extends TextureDelegate {
+public final class RenderTextureProxy extends TextureProxy {
 
     private final int mSampleCount;
     private final Rect2i mResolveRect = new Rect2i();
 
     // Deferred version - no data
-    RenderTextureDelegate(BackendFormat format,
-                          int width, int height,
-                          int sampleCount,
-                          int surfaceFlags) {
+    RenderTextureProxy(BackendFormat format,
+                       int width, int height,
+                       int sampleCount,
+                       int surfaceFlags) {
         super(format, width, height, surfaceFlags);
         mSampleCount = sampleCount;
     }
 
     // Lazy-callback version - takes a new UniqueID from the shared resource/proxy pool.
-    RenderTextureDelegate(BackendFormat format,
-                          int width, int height,
-                          int sampleCount,
-                          int surfaceFlags,
-                          LazyInstantiateCallback callback) {
+    RenderTextureProxy(BackendFormat format,
+                       int width, int height,
+                       int sampleCount,
+                       int surfaceFlags,
+                       LazyInstantiateCallback callback) {
         super(format, width, height, surfaceFlags, callback);
         mSampleCount = sampleCount;
     }

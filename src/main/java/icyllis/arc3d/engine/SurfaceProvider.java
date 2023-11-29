@@ -26,7 +26,7 @@ import javax.annotation.Nullable;
 import java.util.Objects;
 
 /**
- * A factory for creating {@link SurfaceDelegate}-derived objects. This class may be used on
+ * A factory for creating {@link SurfaceProxy}-derived objects. This class may be used on
  * the creating thread of {@link RecordingContext}.
  */
 public final class SurfaceProvider {
@@ -36,7 +36,7 @@ public final class SurfaceProvider {
 
     // This holds the texture proxies that have unique keys. The resourceCache does not get a ref
     // on these proxies, but they must send a message to the resourceCache when they are deleted.
-    private final Object2ObjectOpenHashMap<Object, TextureDelegate> mUniquelyKeyedProxies;
+    private final Object2ObjectOpenHashMap<Object, TextureProxy> mUniquelyKeyedProxies;
 
     SurfaceProvider(RecordingContext context) {
         mContext = context;
@@ -53,14 +53,14 @@ public final class SurfaceProvider {
      * Assigns a unique key to a texture. The texture will be findable via this key using
      * {@link #findProxyByUniqueKey()}. It is an error if an existing texture already has a key.
      */
-    public boolean assignUniqueKeyToProxy(IUniqueKey key, TextureDelegate texture) {
+    public boolean assignUniqueKeyToProxy(IUniqueKey key, TextureProxy proxy) {
         assert key != null;
-        if (mContext.isDiscarded() || texture == null) {
+        if (mContext.isDiscarded() || proxy == null) {
             return false;
         }
 
         // Only the provider that created a texture should be assigning unique keys to it.
-        assert isDeferredProvider() == ((texture.mSurfaceFlags & IGpuSurface.FLAG_DEFERRED_PROVIDER) != 0);
+        assert isDeferredProvider() == ((proxy.mSurfaceFlags & IGpuSurface.FLAG_DEFERRED_PROVIDER) != 0);
 
         // If there is already a Resource with this key then the caller has violated the
         // normal usage pattern of uniquely keyed resources (e.g., they have created one w/o
@@ -71,7 +71,7 @@ public final class SurfaceProvider {
         assert !mUniquelyKeyedProxies.containsKey(key);
         //TODO set
 
-        mUniquelyKeyedProxies.put(key, texture);
+        mUniquelyKeyedProxies.put(key, proxy);
         return true;
     }
 
@@ -79,17 +79,17 @@ public final class SurfaceProvider {
      * Sets the unique key of the provided texture to the unique key of the GPU texture.
      * The GPU texture must have a valid unique key.
      */
-    public void adoptUniqueKeyFromSurface(TextureDelegate texture, GpuTexture textureResource) {
+    public void adoptUniqueKeyFromSurface(TextureProxy proxy, GpuTexture texture) {
         //TODO
     }
 
-    public void processInvalidUniqueKey(Object key, TextureDelegate texture, boolean invalidateResource) {
+    public void processInvalidUniqueKey(Object key, TextureProxy proxy, boolean invalidateResource) {
     }
 
     /**
-     * Create a lazy {@link TextureDelegate} without any data.
+     * Create a lazy {@link TextureProxy} without any data.
      *
-     * @see TextureDelegate
+     * @see TextureProxy
      * @see ISurface#FLAG_BUDGETED
      * @see ISurface#FLAG_APPROX_FIT
      * @see ISurface#FLAG_MIPMAPPED
@@ -98,9 +98,9 @@ public final class SurfaceProvider {
      */
     @Nullable
     @SharedPtr
-    public TextureDelegate createTexture(BackendFormat format,
-                                         int width, int height,
-                                         int surfaceFlags) {
+    public TextureProxy createTexture(BackendFormat format,
+                                      int width, int height,
+                                      int surfaceFlags) {
         assert mContext.isOwnerThread();
         if (mContext.isDiscarded()) {
             return null;
@@ -121,11 +121,11 @@ public final class SurfaceProvider {
             assert (surfaceFlags & ISurface.FLAG_DEFERRED_PROVIDER) == 0;
         }
 
-        return new TextureDelegate(format, width, height, surfaceFlags);
+        return new TextureProxy(format, width, height, surfaceFlags);
     }
 
     /**
-     * Creates a lazy {@link TextureDelegate} for the pixmap.
+     * Creates a lazy {@link TextureProxy} for the pixmap.
      *
      * @param pixmap       raw ptr to pixels holder, must be immutable
      * @param dstColorType a color type for surface usage, see {@link ImageInfo}
@@ -136,7 +136,7 @@ public final class SurfaceProvider {
      */
     @Nullable
     @SharedPtr
-    public TextureDelegate createTextureFromPixmap(Pixmap pixmap, int dstColorType, int surfaceFlags) {
+    public TextureProxy createTextureFromPixmap(Pixmap pixmap, int dstColorType, int surfaceFlags) {
         mContext.checkOwnerThread();
         assert ((surfaceFlags & ISurface.FLAG_APPROX_FIT) == 0) ||
                 ((surfaceFlags & ISurface.FLAG_MIPMAPPED) == 0);
@@ -169,7 +169,7 @@ public final class SurfaceProvider {
         return texture;
     }
 
-    private static final class PixmapCallback implements SurfaceDelegate.LazyInstantiateCallback {
+    private static final class PixmapCallback implements SurfaceProxy.LazyInstantiateCallback {
 
         private Pixmap pixmap;
         private final int srcColorType;
@@ -183,7 +183,7 @@ public final class SurfaceProvider {
         }
 
         @Override
-        public SurfaceDelegate.LazyCallbackResult onLazyInstantiate(
+        public SurfaceProxy.LazyCallbackResult onLazyInstantiate(
                 ResourceProvider provider,
                 BackendFormat format,
                 int width, int height,
@@ -203,7 +203,7 @@ public final class SurfaceProvider {
                     label);
             pixmap.unref();
             pixmap = null;
-            return new SurfaceDelegate.LazyCallbackResult(texture);
+            return new SurfaceProxy.LazyCallbackResult(texture);
         }
 
         @Override
@@ -221,10 +221,10 @@ public final class SurfaceProvider {
      */
     @Nullable
     @SharedPtr
-    public RenderTextureDelegate createRenderTexture(BackendFormat format,
-                                                     int width, int height,
-                                                     int sampleCount,
-                                                     int surfaceFlags) {
+    public RenderTextureProxy createRenderTexture(BackendFormat format,
+                                                  int width, int height,
+                                                  int sampleCount,
+                                                  int surfaceFlags) {
         assert mContext.isOwnerThread();
         if (mContext.isDiscarded()) {
             return null;
@@ -245,7 +245,7 @@ public final class SurfaceProvider {
             assert (surfaceFlags & ISurface.FLAG_DEFERRED_PROVIDER) == 0;
         }
 
-        return new RenderTextureDelegate(format, width, height, sampleCount, surfaceFlags);
+        return new RenderTextureProxy(format, width, height, sampleCount, surfaceFlags);
     }
 
     /**
@@ -257,11 +257,11 @@ public final class SurfaceProvider {
      */
     @Nullable
     @SharedPtr
-    public RenderTextureDelegate wrapRenderableBackendTexture(BackendTexture texture,
-                                                              int sampleCount,
-                                                              boolean ownership,
-                                                              boolean cacheable,
-                                                              Runnable releaseCallback) {
+    public RenderTextureProxy wrapRenderableBackendTexture(BackendTexture texture,
+                                                           int sampleCount,
+                                                           boolean ownership,
+                                                           boolean cacheable,
+                                                           Runnable releaseCallback) {
         if (mContext.isDiscarded()) {
             return null;
         }
@@ -279,8 +279,8 @@ public final class SurfaceProvider {
 
     @Nullable
     @SharedPtr
-    public RenderTargetDelegate wrapBackendRenderTarget(BackendRenderTarget backendRenderTarget,
-                                                        Runnable rcReleaseCB) {
+    public RenderTargetProxy wrapBackendRenderTarget(BackendRenderTarget backendRenderTarget,
+                                                     Runnable rcReleaseCB) {
         if (mContext.isDiscarded()) {
             return null;
         }
@@ -297,7 +297,7 @@ public final class SurfaceProvider {
             return null;
         }
 
-        return new RenderTargetDelegate(fsr, 0);
+        return new RenderTargetProxy(fsr, 0);
     }
 
     /**
@@ -315,10 +315,10 @@ public final class SurfaceProvider {
      */
     @Nullable
     @SharedPtr
-    public TextureDelegate createLazyTexture(BackendFormat format,
-                                             int width, int height,
-                                             int surfaceFlags,
-                                             SurfaceDelegate.LazyInstantiateCallback callback) {
+    public TextureProxy createLazyTexture(BackendFormat format,
+                                          int width, int height,
+                                          int surfaceFlags,
+                                          SurfaceProxy.LazyInstantiateCallback callback) {
         mContext.checkOwnerThread();
         if (mContext.isDiscarded()) {
             return null;
@@ -338,7 +338,7 @@ public final class SurfaceProvider {
         } else {
             assert (surfaceFlags & ISurface.FLAG_DEFERRED_PROVIDER) == 0;
         }
-        return new TextureDelegate(format, width, height, surfaceFlags, callback);
+        return new TextureProxy(format, width, height, surfaceFlags, callback);
     }
 
     public boolean isDeferredProvider() {

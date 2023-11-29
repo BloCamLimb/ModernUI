@@ -412,7 +412,7 @@ public abstract class GpuDevice implements Engine {
                                                 byte colorOps,
                                                 byte stencilOps,
                                                 float[] clearColor,
-                                                Set<TextureDelegate> sampledTextures,
+                                                Set<TextureProxy> sampledTextures,
                                                 int pipelineFlags) {
         mStats.incRenderPasses();
         return onGetOpsRenderPass(writeView, contentBounds,
@@ -425,7 +425,7 @@ public abstract class GpuDevice implements Engine {
                                                         byte colorOps,
                                                         byte stencilOps,
                                                         float[] clearColor,
-                                                        Set<TextureDelegate> sampledTextures,
+                                                        Set<TextureProxy> sampledTextures,
                                                         int pipelineFlags);
 
     /**

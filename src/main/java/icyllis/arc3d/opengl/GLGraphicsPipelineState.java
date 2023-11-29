@@ -136,7 +136,7 @@ public class GLGraphicsPipelineState extends GraphicsPipelineState {
      */
     public boolean bindTextures(GLCommandBuffer commandBuffer,
                                 PipelineInfo pipelineInfo,
-                                TextureDelegate[] geomTextures) {
+                                TextureProxy[] geomTextures) {
         int unit = 0;
         for (int i = 0, n = pipelineInfo.geomProc().numTextureSamplers(); i < n; i++) {
             GLTexture texture = (GLTexture) geomTextures[i].getGpuTexture();

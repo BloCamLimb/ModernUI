@@ -27,12 +27,12 @@ import javax.annotation.Nullable;
 import java.util.Objects;
 
 /**
- * The {@link TextureDelegate} targets an actual {@link GpuTexture} with three instantiation
- * methods: deferred, lazy-callback and wrapped. Multiple {@link TextureDelegate} objects
+ * The {@link TextureProxy} targets an actual {@link GpuTexture} with three instantiation
+ * methods: deferred, lazy-callback and wrapped. Multiple {@link TextureProxy} objects
  * may target the same {@link GpuTexture} based on dependencies and actual usage.
- * See {@link SurfaceDelegate} for more info.
+ * See {@link SurfaceProxy} for more info.
  * <p>
- * Use {@link SurfaceProvider} to obtain {@link TextureDelegate} objects.
+ * Use {@link SurfaceProvider} to obtain {@link TextureProxy} objects.
  * <p>
  * This class can only be used on the creating thread of/on a single {@link RecordingContext},
  * and later used by {@link DirectContext} (render thread).
@@ -40,7 +40,7 @@ import java.util.Objects;
  * Note: the object itself is also used as the scratch key, see {@link #hashCode()}
  * and {@link #equals(Object)}
  */
-public class TextureDelegate extends SurfaceDelegate implements IScratchKey {
+public class TextureProxy extends SurfaceProxy implements IScratchKey {
 
     boolean mIsPromiseProxy = false;
 
@@ -74,9 +74,9 @@ public class TextureDelegate extends SurfaceDelegate implements IScratchKey {
     /**
      * Deferred version - no data
      */
-    public TextureDelegate(BackendFormat format,
-                           int width, int height,
-                           int surfaceFlags) {
+    public TextureProxy(BackendFormat format,
+                        int width, int height,
+                        int surfaceFlags) {
         super(format, width, height, surfaceFlags);
         assert (width > 0 && height > 0); // non-lazy
     }
@@ -84,10 +84,10 @@ public class TextureDelegate extends SurfaceDelegate implements IScratchKey {
     /**
      * Lazy-callback version - takes a new UniqueID from the shared resource/proxy pool.
      */
-    public TextureDelegate(BackendFormat format,
-                           int width, int height,
-                           int surfaceFlags,
-                           LazyInstantiateCallback callback) {
+    public TextureProxy(BackendFormat format,
+                        int width, int height,
+                        int surfaceFlags,
+                        LazyInstantiateCallback callback) {
         super(format, width, height, surfaceFlags);
         mLazyInstantiateCallback = Objects.requireNonNull(callback);
         // A "fully" lazy proxy's width and height are not known until instantiation time.
@@ -105,8 +105,8 @@ public class TextureDelegate extends SurfaceDelegate implements IScratchKey {
      * in allocation by having its backing resource recycled to other uninstantiated proxies or
      * not depending on UseAllocator.
      */
-    public TextureDelegate(@SharedPtr GpuTexture texture,
-                           int surfaceFlags) {
+    public TextureProxy(@SharedPtr GpuTexture texture,
+                        int surfaceFlags) {
         super(texture, surfaceFlags);
         mMipmapsDirty = texture.isMipmapped() && texture.isMipmapsDirty();
         assert (mSurfaceFlags & IGpuSurface.FLAG_APPROX_FIT) == 0;
@@ -359,7 +359,7 @@ public class TextureDelegate extends SurfaceDelegate implements IScratchKey {
                     key.mFormat == mFormat.getFormatKey() &&
                     key.mFlags == ((mSurfaceFlags & (IGpuSurface.FLAG_RENDERABLE | IGpuSurface.FLAG_PROTECTED)) |
                             (isMipmapped() ? IGpuSurface.FLAG_MIPMAPPED : 0));
-        } else if (o instanceof TextureDelegate proxy) {
+        } else if (o instanceof TextureProxy proxy) {
             // ResourceAllocator
             return proxy.getBackingWidth() == getBackingWidth() &&
                     proxy.getBackingHeight() == getBackingHeight() &&
@@ -372,7 +372,7 @@ public class TextureDelegate extends SurfaceDelegate implements IScratchKey {
     }
 
     @Override
-    public TextureDelegate asTexture() {
+    public TextureProxy asTexture() {
         return this;
     }
 

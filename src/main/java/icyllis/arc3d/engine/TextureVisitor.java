@@ -23,8 +23,8 @@ package icyllis.arc3d.engine;
 public interface TextureVisitor {
 
     /**
-     * @param texture      raw ptr to U texture
+     * @param texture      raw ptr to texture proxy
      * @param samplerState see {@link SamplerState}
      */
-    void visit(TextureDelegate texture, int samplerState);
+    void visit(TextureProxy texture, int samplerState);
 }
