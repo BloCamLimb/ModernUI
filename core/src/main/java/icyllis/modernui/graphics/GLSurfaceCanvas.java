@@ -254,7 +254,7 @@ public final class GLSurfaceCanvas extends Canvas {
     private final List<DrawTextOp> mDrawTexts = new ArrayList<>();
     private final Queue<CustomDrawable.DrawHandler> mCustoms = new ArrayDeque<>();
 
-    private final List<SurfaceDelegate> mTexturesToClean = new ArrayList<>();
+    private final List<SurfaceProxy> mTexturesToClean = new ArrayList<>();
 
     private final Matrix4 mProjection = new Matrix4();
     private final FloatBuffer mProjectionUpload = memAllocFloat(16);
@@ -798,7 +798,7 @@ public final class GLSurfaceCanvas extends Canvas {
             }
         });
         mTextures.clear();
-        mTexturesToClean.forEach(SurfaceDelegate::unref);
+        mTexturesToClean.forEach(RefCnt::unref);
         mTexturesToClean.clear();
     }
 
@@ -2296,7 +2296,7 @@ public final class GLSurfaceCanvas extends Canvas {
                 w / texture.getWidth(), flipY ? 0 : h / texture.getHeight());
         // layer has premultiplied alpha
         texture.ref();
-        mTextures.add(new SurfaceView(new TextureDelegate(texture, 0)));
+        mTextures.add(new SurfaceView(new TextureProxy(texture, 0)));
         mDrawOps.add(DRAW_IMAGE_LAYER);
     }
 
