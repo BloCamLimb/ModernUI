@@ -291,7 +291,7 @@ public abstract class GpuTexture extends GpuResource implements IGpuSurface {
     }
 
     /**
-     * Storage key of {@link GpuTexture}, may be compared with {@link TextureDelegate}.
+     * Storage key of {@link GpuTexture}, may be compared with {@link TextureProxy}.
      */
     public static final class ScratchKey implements IScratchKey {
 
@@ -322,7 +322,7 @@ public abstract class GpuTexture extends GpuResource implements IGpuSurface {
         }
 
         /**
-         * Keep {@link TextureDelegate#hashCode()} sync with this.
+         * Keep {@link TextureProxy#hashCode()} sync with this.
          */
         @Override
         public int hashCode() {
@@ -334,7 +334,7 @@ public abstract class GpuTexture extends GpuResource implements IGpuSurface {
         }
 
         /**
-         * Keep {@link TextureDelegate#equals(Object)}} sync with this.
+         * Keep {@link TextureProxy#equals(Object)}} sync with this.
          */
         @Override
         public boolean equals(Object o) {

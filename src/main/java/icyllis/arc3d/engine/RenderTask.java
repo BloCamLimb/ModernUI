@@ -28,7 +28,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * This class abstracts a task that targets a single {@link SurfaceDelegate}, participates in the
+ * This class abstracts a task that targets a single {@link SurfaceProxy}, participates in the
  * {@link RenderTaskManager}'s DAG, and implements the {@link #execute(OpFlushState)} method to
  * modify its target proxy's contents. (e.g., an {@link OpsTask} that executes a command buffer,
  * a {@link TextureResolveTask} that regenerates mipmaps, etc.)
@@ -112,7 +112,7 @@ public abstract class RenderTask extends RefCnt {
 
     // multiple targets for texture resolve task
     @SharedPtr
-    protected final List<SurfaceDelegate> mTargets = new ArrayList<>(1);
+    protected final List<SurfaceProxy> mTargets = new ArrayList<>(1);
     protected RenderTaskManager mTaskManager;
 
     /**
@@ -131,11 +131,11 @@ public abstract class RenderTask extends RefCnt {
         return mTargets.size();
     }
 
-    public final SurfaceDelegate getTarget(int index) {
+    public final SurfaceProxy getTarget(int index) {
         return mTargets.get(index);
     }
 
-    public final SurfaceDelegate getTarget() {
+    public final SurfaceProxy getTarget() {
         assert getNumTargets() == 1;
         return mTargets.get(0);
     }
@@ -153,12 +153,12 @@ public abstract class RenderTask extends RefCnt {
         return -1;
     }
 
-    protected final void addTarget(@SharedPtr SurfaceDelegate surfaceDelegate) {
+    protected final void addTarget(@SharedPtr SurfaceProxy surfaceProxy) {
         assert (mTaskManager.getContext().isOwnerThread());
         assert (!isClosed());
-        mTaskManager.setLastRenderTask(surfaceDelegate, this);
-        surfaceDelegate.isUsedAsTaskTarget();
-        mTargets.add(surfaceDelegate);
+        mTaskManager.setLastRenderTask(surfaceProxy, this);
+        surfaceProxy.isUsedAsTaskTarget();
+        mTargets.add(surfaceProxy);
     }
 
     @Override
@@ -232,7 +232,7 @@ public abstract class RenderTask extends RefCnt {
         mTaskManager = null;
         mFlags |= DETACHED_FLAG;
 
-        for (SurfaceDelegate target : mTargets) {
+        for (SurfaceProxy target : mTargets) {
             if (taskManager.getLastRenderTask(target) == this) {
                 taskManager.setLastRenderTask(target, null);
             }
@@ -265,7 +265,7 @@ public abstract class RenderTask extends RefCnt {
         return (mFlags & SKIPPABLE_FLAG) != 0;
     }
 
-    public final void addDependency(TextureDelegate dependency, int samplerState) {
+    public final void addDependency(TextureProxy dependency, int samplerState) {
         assert (mTaskManager.getContext().isOwnerThread());
         assert (!isClosed());
 
@@ -337,7 +337,7 @@ public abstract class RenderTask extends RefCnt {
     }
 
     public final boolean isInstantiated() {
-        for (SurfaceDelegate target : mTargets) {
+        for (SurfaceProxy target : mTargets) {
             if (!target.isInstantiated()) {
                 return false;
             }

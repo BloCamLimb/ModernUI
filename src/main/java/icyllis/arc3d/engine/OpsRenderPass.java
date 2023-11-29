@@ -45,7 +45,7 @@ public abstract class OpsRenderPass {
     protected GpuRenderTarget mRenderTarget;
     protected int mSurfaceOrigin;
 
-    private TextureDelegate[] mGeomTextures = new TextureDelegate[1];
+    private TextureProxy[] mGeomTextures = new TextureProxy[1];
 
     public OpsRenderPass() {
         this(null, SurfaceOrigin.kUpperLeft);
@@ -100,11 +100,11 @@ public abstract class OpsRenderPass {
     }
 
     /**
-     * Single texture version of {@link #bindTextures(TextureDelegate[])}.
+     * Single texture version of {@link #bindTextures(TextureProxy[])}.
      *
      * @param geomTexture the raw ptr to textures at binding 0
      */
-    public final void bindTexture(TextureDelegate geomTexture) {
+    public final void bindTexture(TextureProxy geomTexture) {
         mGeomTextures[0] = geomTexture;
         bindTextures(mGeomTextures);
         mGeomTextures[0] = null;
@@ -122,7 +122,7 @@ public abstract class OpsRenderPass {
      *
      * @param geomTextures the raw ptr to textures starting from binding 0
      */
-    public final void bindTextures(TextureDelegate[] geomTextures) {
+    public final void bindTextures(TextureProxy[] geomTextures) {
         //TODO
     }
 

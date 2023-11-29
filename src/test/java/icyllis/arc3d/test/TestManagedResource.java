@@ -302,7 +302,7 @@ public class TestManagedResource {
 
     public static void testShaderBuilder(PrintWriter pw, DirectContext dContext) {
         @SharedPtr
-        TextureDelegate target = dContext.getSurfaceProvider().createRenderTexture(
+        TextureProxy target = dContext.getSurfaceProvider().createRenderTexture(
                 GLBackendFormat.make(GLCore.GL_RGBA8),
                 800, 800, 4,
                 IGpuSurface.FLAG_BUDGETED | IGpuSurface.FLAG_RENDERABLE

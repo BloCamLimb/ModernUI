@@ -27,10 +27,11 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * The {@link SurfaceDelegate} targets a {@link IGpuSurface} with three instantiation
- * methods: deferred, lazy-callback and wrapped.
+ * The {@link SurfaceProxy} implements the proxy pattern for {@link ISurface},
+ * it targets a {@link IGpuSurface} with three instantiation methods: deferred,
+ * lazy-callback and wrapped.
  * <p>
- * Target: The backing GPU texture or render target that referenced by this delegate.
+ * Target: The backing GPU texture or framebuffer that referenced by this proxy.
  * <p>
  * Instantiate: Create new GPU surfaces or find surfaces in {@link ResourceCache}
  * when they are actually required on flush.
@@ -46,17 +47,18 @@ import javax.annotation.Nullable;
  *     <li>True: {@link SurfaceAllocator} should instantiate this surface.</li>
  * </ul>
  * <p>
- * Threading: Delegates can be created on any thread, and change the reference count
- * through ref() and unref(). If delegate is, or will be used by render thread, its
- * final unref() must be called on render thread (the case where render thread will
- * have ownership).
+ * Threading: Proxies can be created on any thread, and change the reference count
+ * through {@link #ref()} and {@link #unref()}. If proxy is, or will be used by
+ * render thread, its final {@link #unref()} must be called on render thread (the
+ * case where render thread will have ownership). This is because the backing GPU
+ * texture can only be operated on render thread.
  * <p>
- * Use {@link SurfaceProvider} to obtain {@link SurfaceDelegate} objects.
+ * Use {@link SurfaceProvider} to obtain {@link SurfaceProxy} objects.
  *
- * @see TextureDelegate
+ * @see TextureProxy
  * @see SurfaceView
  */
-public abstract class SurfaceDelegate extends RefCnt implements ISurface {
+public abstract class SurfaceProxy extends RefCnt implements ISurface {
 
     /**
      * For wrapped resources, 'mFormat' and 'mDimensions' will always be filled in from the
@@ -111,9 +113,9 @@ public abstract class SurfaceDelegate extends RefCnt implements ISurface {
     boolean mIsDeferredListTarget = false;
 
     // Deferred version and lazy-callback version
-    SurfaceDelegate(BackendFormat format,
-                    int width, int height,
-                    int surfaceFlags) {
+    SurfaceProxy(BackendFormat format,
+                 int width, int height,
+                 int surfaceFlags) {
         assert (format != null);
         mFormat = format;
         mWidth = width;
@@ -126,8 +128,8 @@ public abstract class SurfaceDelegate extends RefCnt implements ISurface {
     }
 
     // Wrapped version
-    SurfaceDelegate(@SharedPtr IGpuSurface surface,
-                    int surfaceFlags) {
+    SurfaceProxy(@SharedPtr IGpuSurface surface,
+                 int surfaceFlags) {
         assert (surface != null);
         mFormat = surface.getBackendFormat();
         mWidth = surface.getWidth();
@@ -429,7 +431,7 @@ public abstract class SurfaceDelegate extends RefCnt implements ISurface {
         return (mSurfaceFlags & IGpuSurface.FLAG_APPROX_FIT) == 0;
     }
 
-    public TextureDelegate asTexture() {
+    public TextureProxy asTexture() {
         return null;
     }
 
