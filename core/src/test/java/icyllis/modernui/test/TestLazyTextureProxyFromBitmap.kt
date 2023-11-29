@@ -58,30 +58,30 @@ fun main() {
 
     val dContext = Core.requireDirectContext()
 
-    var delegate = dContext.surfaceProvider.createTextureFromPixmap(
+    var proxy = dContext.surfaceProvider.createTextureFromPixmap(
         sourceBm.pixels, sourceBm.colorType, ISurface.FLAG_BUDGETED
     )
-    check(delegate != null) { "Failed to create delegate" }
-    delegate.instantiate(dContext.resourceProvider)
+    check(proxy != null) { "Failed to create delegate" }
+    proxy.instantiate(dContext.resourceProvider)
 
-    delegate.unref()
+    proxy.unref()
 
-    delegate = dContext.surfaceProvider.createTextureFromPixmap(
+    proxy = dContext.surfaceProvider.createTextureFromPixmap(
         sourceBm.pixels, sourceBm.colorType, ISurface.FLAG_BUDGETED
     )
-    check(delegate != null) { "Failed to create delegate" }
-    delegate.instantiate(dContext.resourceProvider)
+    check(proxy != null) { "Failed to create delegate" }
+    proxy.instantiate(dContext.resourceProvider)
 
     val outBm = Bitmap.createBitmap(sourceBm.width, sourceBm.height, Bitmap.Format.RGBA_8888)
     try {
         GL45C.glGetTextureImage(
-            (delegate.gpuTexture as GLTexture).handle, 0, GL11C.GL_RGBA, GL11C.GL_UNSIGNED_BYTE,
+            (proxy.gpuTexture as GLTexture).handle, 0, GL11C.GL_RGBA, GL11C.GL_UNSIGNED_BYTE,
             outBm.size, outBm.address
         )
         outBm.saveDialog(Bitmap.SaveFormat.PNG, 100, null)
     } finally {
         sourceBm.close()
-        delegate.unref()
+        proxy.unref()
         outBm.close()
     }
 

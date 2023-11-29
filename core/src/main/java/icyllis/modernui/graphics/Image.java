@@ -48,11 +48,11 @@ public class Image implements AutoCloseable {
 
     private Image(ImageInfo info,
                   RecordingContext context,
-                  @SharedPtr TextureDelegate delegate,
+                  @SharedPtr TextureProxy proxy,
                   short swizzle) {
         mInfo = info;
         mContext = context;
-        mView = new ViewReference(this, delegate, swizzle);
+        mView = new ViewReference(this, proxy, swizzle);
     }
 
     // must be called after render system and UI system are initialized successfully,
@@ -94,18 +94,18 @@ public class Image implements AutoCloseable {
             flags |= ISurface.FLAG_MIPMAPPED;
         }
         @SharedPtr
-        TextureDelegate delegate = rContext
+        TextureProxy proxy = rContext
                 .getSurfaceProvider()
                 .createTextureFromPixmap(
                         bitmap.getPixels(), ct, flags
                 );
-        if (delegate == null) {
+        if (proxy == null) {
             return null;
         }
-        var swizzle = caps.getReadSwizzle(delegate.getBackendFormat(), ct);
+        var swizzle = caps.getReadSwizzle(proxy.getBackendFormat(), ct);
         return new Image(bitmap.getInfo(),
                 rContext,
-                delegate,
+                proxy,
                 swizzle);
     }
 
@@ -183,9 +183,9 @@ public class Image implements AutoCloseable {
         final Cleaner.Cleanable mCleanup;
 
         ViewReference(Image owner,
-                              @SharedPtr TextureDelegate delegate,
-                              short swizzle) {
-            super(delegate,
+                      @SharedPtr TextureProxy proxy,
+                      short swizzle) {
+            super(proxy,
                     Engine.SurfaceOrigin.kUpperLeft,
                     swizzle);
             mCleanup = Core.registerCleanup(owner, this);
