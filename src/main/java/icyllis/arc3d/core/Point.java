@@ -24,6 +24,30 @@ import org.jetbrains.annotations.Contract;
 public class Point {
 
     /**
+     * Returns true if the given vector is degenerate or infinite.
+     * If so, the vector cannot be normalized.
+     */
+    @Contract(pure = true)
+    public static boolean isDegenerate(
+            final float dx, final float dy
+    ) {
+        return !Float.isFinite(dx) || !Float.isFinite(dy) || (dx == 0 && dy == 0);
+    }
+
+    /**
+     * Returns true if two points are equal within the given tolerance.
+     */
+    @Contract(pure = true)
+    public static boolean isApproxEqual(
+            final float x1, final float y1,
+            final float x2, final float y2,
+            final float tolerance
+    ) {
+        assert tolerance >= 0;
+        return Math.abs(x2 - x1) <= tolerance && Math.abs(y2 - y1) <= tolerance;
+    }
+
+    /**
      * Returns the dot product of vector a and vector b.
      *
      * @return product of input magnitudes and cosine of the angle between them

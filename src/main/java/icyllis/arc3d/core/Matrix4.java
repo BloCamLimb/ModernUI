@@ -33,8 +33,10 @@ import java.nio.FloatBuffer;
  * The memory layout (order of components) is the same as GLSL's column-major and
  * HLSL's row-major, this is just a difference in naming and writing.
  *
+ * @author BloCamLimb
  * @see Matrix
  */
+//TODO replace with Vector API and Primitive Classes
 @SuppressWarnings("unused")
 public class Matrix4 implements Cloneable {
 

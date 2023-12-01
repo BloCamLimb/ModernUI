@@ -43,13 +43,34 @@ public interface PathIterator {
      */
     int WIND_NON_ZERO = 1;
 
-    byte
-            VERB_MOVETO = 0,
-            VERB_LINETO = 1,
-            VERB_QUADTO = 2,
-            VERB_CUBICTO = 3,
-            VERB_CLOSE = 4;
-    byte VERB_DONE = -1;
+    int
+            VERB_MOVETO = 0,  // returns 1 point
+            VERB_LINETO = 1,  // returns 1 point
+            VERB_QUADTO = 2,  // returns 2 points
+            VERB_CUBICTO = 3, // returns 3 points
+            VERB_CLOSE = 4;   // returns 0 points
+    int VERB_DONE = -1;
 
-    byte next(float[] points);
+    /**
+     * Returns next verb, and advances iterator.
+     * If there are no more elements, returns {@link #VERB_DONE}.
+     * <p>
+     * Zero to three points are stored in <var>coords</var>, depending on the
+     * command type.
+     * <p>
+     * A float array of length >= 6 must be passed in and can be used to
+     * store the coordinates of the point(s).
+     * Each point is stored as a pair of float x,y coordinates.
+     * <ul>
+     *     <li>MOVETO returns 1 point</li>
+     *     <li>LINETO returns 1 point</li>
+     *     <li>QUADTO returns 2 points</li>
+     *     <li>CUBICTO returns 3 points</li>
+     *     <li>CLOSE does not return any points</li>
+     * </ul>
+     *
+     * @param coords array for point data describing returned verb
+     * @return next verb
+     */
+    int next(float[] coords);
 }
