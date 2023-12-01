@@ -323,6 +323,48 @@ public class Geometry {
         dst[off+13] = y3;
     }
 
+    // returns true if (a <= b <= c) || (a >= b >= c)
+    static boolean between(float a, float b, float c) {
+        return (a - b) * (c - b) <= 0;
+    }
+
+    /**
+     * Given a Conic representing a circular arc that does not exceed 90 degrees.
+     * Subdivide it into two quadratic Bézier curves. The weight must be sqrt(2)/2.
+     */
+    public static void subdivideQuadrantConicToQuads(
+            final float x0, final float y0,
+            final float x1, final float y1,
+            final float x2, final float y2,
+            final float[] dst, final int off
+    ) {
+        float scale = 1 / (1 + MathUtil.INV_SQRT2);
+        float t0x = x0 * scale;
+        float t0y = y0 * scale;
+        float t1x = x1 * (MathUtil.INV_SQRT2 * scale);
+        float t1y = y1 * (MathUtil.INV_SQRT2 * scale);
+        float t2x = x2 * scale;
+        float t2y = y2 * scale;
+
+        float p1x = t0x + t1x;
+        float p1y = t0y + t1y;
+        float p3x = t1x + t2x;
+        float p3y = t1y + t2y;
+        float p2x = 0.5f * t0x + t1x + 0.5f * t2x;
+        float p2y = 0.5f * t0y + t1y + 0.5f * t2y;
+
+        dst[off] = x0;
+        dst[off+1] = y0;
+        dst[off+2] = p1x;
+        dst[off+3] = p1y;
+        dst[off+4] = p2x;
+        dst[off+5] = p2y;
+        dst[off+6] = p3x;
+        dst[off+7] = p3y;
+        dst[off+8] = x2;
+        dst[off+9] = y2;
+    }
+
     protected Geometry() {
         throw new UnsupportedOperationException();
     }
