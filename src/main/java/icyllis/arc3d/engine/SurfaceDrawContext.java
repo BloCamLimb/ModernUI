@@ -97,7 +97,7 @@ public class SurfaceDrawContext extends SurfaceFillContext {
     public void fillRect(@Nullable Clip clip,
                          int color,
                          Rect2f rect,
-                         @Nullable Matrix viewMatrix,
+                         Matrixc viewMatrix,
                          boolean aa) {
 
         var op = new RectOp(color, rect, 0, 0, viewMatrix, false, aa);

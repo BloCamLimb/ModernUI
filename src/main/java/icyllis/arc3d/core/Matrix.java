@@ -39,20 +39,8 @@ import java.nio.FloatBuffer;
  * @see Matrix4
  */
 @SuppressWarnings("unused")
-public class Matrix implements Cloneable {
+public class Matrix implements Matrixc, Cloneable {
 
-    /**
-     * TypeMask
-     * <p>
-     * Enum of bit fields for mask returned by {@link #getType()}.
-     * Used to identify the complexity of Matrix, for optimizations.
-     */
-    public static final int
-            kIdentity_Mask = 0,          // identity; all bits clear
-            kTranslate_Mask = 0x01,      // translation
-            kScale_Mask = 0x02,          // scale
-            kAffine_Mask = 0x04,         // shear or rotate
-            kPerspective_Mask = 0x08;    // perspective
     /**
      * Set if the matrix will map a rectangle to another rectangle. This
      * can be true if the matrix is scale-only, or rotates a multiple of
@@ -97,8 +85,8 @@ public class Matrix implements Cloneable {
     /**
      * Create a new matrix copied from the given matrix.
      */
-    public Matrix(@Nonnull Matrix m) {
-        set(m);
+    public Matrix(@Nonnull Matrixc m) {
+        m.store(this);
     }
 
     /**
@@ -122,47 +110,74 @@ public class Matrix implements Cloneable {
     }
 
     /**
-     * Create a new identity matrix.
+     * Returns a read-only identity matrix.
      *
      * @return an identity matrix
      */
     @Nonnull
-    public static Matrix identity() {
-        return new Matrix();
+    public static Matrixc identity() {
+        return Identity.INSTANCE;
     }
 
+    /**
+     * Same as {@link #getScaleX()}.
+     */
     public float m11() {
         return m11;
     }
 
+    /**
+     * Same as {@link #getShearY()}.
+     */
     public float m12() {
         return m12;
     }
 
+    /**
+     * Same as {@link #getPerspX()}.
+     */
     public float m14() {
         return m14;
     }
 
+    /**
+     * Same as {@link #getShearX()}.
+     */
     public float m21() {
         return m21;
     }
 
+    /**
+     * Same as {@link #getScaleY()}.
+     */
     public float m22() {
         return m22;
     }
 
+    /**
+     * Same as {@link #getPerspY()}.
+     */
     public float m24() {
         return m24;
     }
 
+    /**
+     * Same as {@link #getTranslateX()}.
+     */
     public float m41() {
         return m41;
     }
 
+    /**
+     * Same as {@link #getTranslateY()}.
+     */
     public float m42() {
         return m42;
     }
 
+    /**
+     * Returns the last element of the matrix, the perspective bias.
+     */
     public float m44() {
         return m44;
     }
@@ -411,7 +426,7 @@ public class Matrix implements Cloneable {
      *
      * @param lhs the left-hand side matrix to multiply
      */
-    public void preConcat(@Nonnull Matrix lhs) {
+    public void preConcat(@Nonnull Matrixc lhs) {
         int bMask = getType();
         if (bMask == kIdentity_Mask) {
             set(lhs);
@@ -424,10 +439,10 @@ public class Matrix implements Cloneable {
         if (((aMask | bMask) & (kAffine_Mask | kPerspective_Mask)) == 0) {
             // both are ScaleTranslate
             setScaleTranslate(
-                    /*m11*/ lhs.m11 * m11,
-                    /*m22*/ lhs.m22 * m22,
-                    /*m41*/ lhs.m41 * m11 + m41,
-                    /*m42*/ lhs.m42 * m22 + m42
+                    /*m11*/ lhs.m11() * m11,
+                    /*m22*/ lhs.m22() * m22,
+                    /*m41*/ lhs.m41() * m11 + m41,
+                    /*m42*/ lhs.m42() * m22 + m42
             );
             return;
         }
@@ -442,26 +457,26 @@ public class Matrix implements Cloneable {
         final float f44;
         if (((aMask | bMask) & kPerspective_Mask) == 0) {
             // both have no perspective
-            f11 = lhs.m11 * m11 + lhs.m12 * m21;
-            f12 = lhs.m11 * m12 + lhs.m12 * m22;
+            f11 = lhs.m11() * m11 + lhs.m12() * m21;
+            f12 = lhs.m11() * m12 + lhs.m12() * m22;
             f14 = 0;
-            f21 = lhs.m21 * m11 + lhs.m22 * m21;
-            f22 = lhs.m21 * m12 + lhs.m22 * m22;
+            f21 = lhs.m21() * m11 + lhs.m22() * m21;
+            f22 = lhs.m21() * m12 + lhs.m22() * m22;
             f24 = 0;
-            f41 = lhs.m41 * m11 + lhs.m42 * m21 + m41;
-            f42 = lhs.m41 * m12 + lhs.m42 * m22 + m42;
+            f41 = lhs.m41() * m11 + lhs.m42() * m21 + m41;
+            f42 = lhs.m41() * m12 + lhs.m42() * m22 + m42;
             f44 = 1;
             mTypeMask = kOnlyPerspectiveValid_Mask | kUnknown_Mask;
         } else {
-            f11 = lhs.m11 * m11 + lhs.m12 * m21 + lhs.m14 * m41;
-            f12 = lhs.m11 * m12 + lhs.m12 * m22 + lhs.m14 * m42;
-            f14 = lhs.m11 * m14 + lhs.m12 * m24 + lhs.m14 * m44;
-            f21 = lhs.m21 * m11 + lhs.m22 * m21 + lhs.m24 * m41;
-            f22 = lhs.m21 * m12 + lhs.m22 * m22 + lhs.m24 * m42;
-            f24 = lhs.m21 * m14 + lhs.m22 * m24 + lhs.m24 * m44;
-            f41 = lhs.m41 * m11 + lhs.m42 * m21 + lhs.m44 * m41;
-            f42 = lhs.m41 * m12 + lhs.m42 * m22 + lhs.m44 * m42;
-            f44 = lhs.m41 * m14 + lhs.m42 * m24 + lhs.m44 * m44;
+            f11 = lhs.m11() * m11 + lhs.m12() * m21 + lhs.m14() * m41;
+            f12 = lhs.m11() * m12 + lhs.m12() * m22 + lhs.m14() * m42;
+            f14 = lhs.m11() * m14 + lhs.m12() * m24 + lhs.m14() * m44;
+            f21 = lhs.m21() * m11 + lhs.m22() * m21 + lhs.m24() * m41;
+            f22 = lhs.m21() * m12 + lhs.m22() * m22 + lhs.m24() * m42;
+            f24 = lhs.m21() * m14 + lhs.m22() * m24 + lhs.m24() * m44;
+            f41 = lhs.m41() * m11 + lhs.m42() * m21 + lhs.m44() * m41;
+            f42 = lhs.m41() * m12 + lhs.m42() * m22 + lhs.m44() * m42;
+            f44 = lhs.m41() * m14 + lhs.m42() * m24 + lhs.m44() * m44;
             mTypeMask = kUnknown_Mask;
         }
         m11 = f11;
@@ -485,7 +500,7 @@ public class Matrix implements Cloneable {
      *
      * @param rhs the right-hand side matrix to multiply
      */
-    public void postConcat(@Nonnull Matrix rhs) {
+    public void postConcat(@Nonnull Matrixc rhs) {
         int aMask = getType();
         if (aMask == kIdentity_Mask) {
             set(rhs);
@@ -498,10 +513,10 @@ public class Matrix implements Cloneable {
         if (((aMask | bMask) & (kAffine_Mask | kPerspective_Mask)) == 0) {
             // both are ScaleTranslate
             setScaleTranslate(
-                    /*m11*/ m11 * rhs.m11,
-                    /*m22*/ m22 * rhs.m22,
-                    /*m41*/ m41 * rhs.m11 + rhs.m41,
-                    /*m42*/ m42 * rhs.m22 + rhs.m42
+                    /*m11*/ m11 * rhs.m11(),
+                    /*m22*/ m22 * rhs.m22(),
+                    /*m41*/ m41 * rhs.m11() + rhs.m41(),
+                    /*m42*/ m42 * rhs.m22() + rhs.m42()
             );
             return;
         }
@@ -516,26 +531,26 @@ public class Matrix implements Cloneable {
         final float f44;
         if (((aMask | bMask) & kPerspective_Mask) == 0) {
             // both have no perspective
-            f11 = m11 * rhs.m11 + m12 * rhs.m21;
-            f12 = m11 * rhs.m12 + m12 * rhs.m22;
+            f11 = m11 * rhs.m11() + m12 * rhs.m21();
+            f12 = m11 * rhs.m12() + m12 * rhs.m22();
             f14 = 0;
-            f21 = m21 * rhs.m11 + m22 * rhs.m21;
-            f22 = m21 * rhs.m12 + m22 * rhs.m22;
+            f21 = m21 * rhs.m11() + m22 * rhs.m21();
+            f22 = m21 * rhs.m12() + m22 * rhs.m22();
             f24 = 0;
-            f41 = m41 * rhs.m11 + m42 * rhs.m21 + rhs.m41;
-            f42 = m41 * rhs.m12 + m42 * rhs.m22 + rhs.m42;
+            f41 = m41 * rhs.m11() + m42 * rhs.m21() + rhs.m41();
+            f42 = m41 * rhs.m12() + m42 * rhs.m22() + rhs.m42();
             f44 = 1;
             mTypeMask = kOnlyPerspectiveValid_Mask | kUnknown_Mask;
         } else {
-            f11 = m11 * rhs.m11 + m12 * rhs.m21 + m14 * rhs.m41;
-            f12 = m11 * rhs.m12 + m12 * rhs.m22 + m14 * rhs.m42;
-            f14 = m11 * rhs.m14 + m12 * rhs.m24 + m14 * rhs.m44;
-            f21 = m21 * rhs.m11 + m22 * rhs.m21 + m24 * rhs.m41;
-            f22 = m21 * rhs.m12 + m22 * rhs.m22 + m24 * rhs.m42;
-            f24 = m21 * rhs.m14 + m22 * rhs.m24 + m24 * rhs.m44;
-            f41 = m41 * rhs.m11 + m42 * rhs.m21 + m44 * rhs.m41;
-            f42 = m41 * rhs.m12 + m42 * rhs.m22 + m44 * rhs.m42;
-            f44 = m41 * rhs.m14 + m42 * rhs.m24 + m44 * rhs.m44;
+            f11 = m11 * rhs.m11() + m12 * rhs.m21() + m14 * rhs.m41();
+            f12 = m11 * rhs.m12() + m12 * rhs.m22() + m14 * rhs.m42();
+            f14 = m11 * rhs.m14() + m12 * rhs.m24() + m14 * rhs.m44();
+            f21 = m21 * rhs.m11() + m22 * rhs.m21() + m24 * rhs.m41();
+            f22 = m21 * rhs.m12() + m22 * rhs.m22() + m24 * rhs.m42();
+            f24 = m21 * rhs.m14() + m22 * rhs.m24() + m24 * rhs.m44();
+            f41 = m41 * rhs.m11() + m42 * rhs.m21() + m44 * rhs.m41();
+            f42 = m41 * rhs.m12() + m42 * rhs.m22() + m44 * rhs.m42();
+            f44 = m41 * rhs.m14() + m42 * rhs.m24() + m44 * rhs.m44();
             mTypeMask = kUnknown_Mask;
         }
         m11 = f11;
@@ -601,17 +616,8 @@ public class Matrix implements Cloneable {
      *
      * @param m the matrix to copy from
      */
-    public void set(@Nonnull Matrix m) {
-        m11 = m.m11;
-        m12 = m.m12;
-        m14 = m.m14;
-        m21 = m.m21;
-        m22 = m.m22;
-        m24 = m.m24;
-        m41 = m.m41;
-        m42 = m.m42;
-        m44 = m.m44;
-        mTypeMask = m.mTypeMask;
+    public void set(@Nonnull Matrixc m) {
+        m.store(this);
     }
 
     /**
@@ -1612,19 +1618,11 @@ public class Matrix implements Cloneable {
     }
 
     /**
-     * Sets rect to bounds of rect corners mapped by this matrix.
-     * Returns true if mapped corners are dst corners.
-     */
-    public final boolean mapRect(Rect2f rect) {
-        return mapRect(rect, rect);
-    }
-
-    /**
      * Sets dst to bounds of src corners mapped by this matrix.
      * Returns true if mapped corners are dst corners.
      */
     //@formatter:off
-    public final boolean mapRect(Rect2f src, Rect2f dst) {
+    public boolean mapRect(Rect2f src, Rect2f dst) {
         int typeMask = getType();
         if (typeMask <= kTranslate_Mask) {
             dst.mLeft   = src.mLeft   + m41;
@@ -1670,31 +1668,6 @@ public class Matrix implements Cloneable {
         return (typeMask & kAxisAligned_Mask) != 0;
     }
     //@formatter:on
-
-    /**
-     * Map a rectangle points in the X-Y plane to get the maximum bounds.
-     */
-    public void mapRect(@Nonnull Rect2i r) {
-        mapRect(r.mLeft, r.mTop, r.mRight, r.mBottom, r);
-    }
-
-    /**
-     * Map a rectangle points in the X-Y plane to get the maximum bounds.
-     *
-     * @param out the round values
-     */
-    public void mapRect(@Nonnull Rect2f r, @Nonnull Rect2i out) {
-        mapRect(r.mLeft, r.mTop, r.mRight, r.mBottom, out);
-    }
-
-    /**
-     * Map a rectangle points in the X-Y plane to get the maximum bounds.
-     *
-     * @param out the round values
-     */
-    public void mapRect(@Nonnull Rect2i r, @Nonnull Rect2i out) {
-        mapRect(r.mLeft, r.mTop, r.mRight, r.mBottom, out);
-    }
 
     /**
      * Map a rectangle points in the X-Y plane to get the maximum bounds.
@@ -1750,31 +1723,6 @@ public class Matrix implements Cloneable {
 
     /**
      * Map a rectangle points in the X-Y plane to get the maximum bounds.
-     */
-    public void mapRectOut(@Nonnull Rect2i r) {
-        mapRectOut(r.mLeft, r.mTop, r.mRight, r.mBottom, r);
-    }
-
-    /**
-     * Map a rectangle points in the X-Y plane to get the maximum bounds.
-     *
-     * @param dst the round out values
-     */
-    public void mapRectOut(@Nonnull Rect2i r, @Nonnull Rect2i dst) {
-        mapRectOut(r.mLeft, r.mTop, r.mRight, r.mBottom, dst);
-    }
-
-    /**
-     * Map a rectangle points in the X-Y plane to get the maximum bounds.
-     *
-     * @param dst the round out values
-     */
-    public void mapRectOut(@Nonnull Rect2f r, @Nonnull Rect2i dst) {
-        mapRectOut(r.mLeft, r.mTop, r.mRight, r.mBottom, dst);
-    }
-
-    /**
-     * Map a rectangle points in the X-Y plane to get the maximum bounds.
      *
      * @param dst the round out values
      */
@@ -1824,41 +1772,6 @@ public class Matrix implements Cloneable {
         dst.mBottom = (int) Math.ceil (MathUtil.max(y1, y2, y3, y4));
     }
     //@formatter:on
-
-    /**
-     * @see #mapPoints(float[], int, float[], int, int)
-     */
-    public void mapPoint(float[] p) {
-        mapPoints(p, 0, p, 0, 1);
-    }
-
-    /**
-     * @see #mapPoints(float[], int, float[], int, int)
-     */
-    public void mapPoints(float[] pts) {
-        mapPoints(pts, 0, pts, 0, pts.length >> 1);
-    }
-
-    /**
-     * @see #mapPoints(float[], int, float[], int, int)
-     */
-    public void mapPoints(float[] pts, int count) {
-        mapPoints(pts, 0, pts, 0, count);
-    }
-
-    /**
-     * @see #mapPoints(float[], int, float[], int, int)
-     */
-    public void mapPoints(float[] pts, int pos, int count) {
-        mapPoints(pts, pos, pts, pos, count);
-    }
-
-    /**
-     * @see #mapPoints(float[], int, float[], int, int)
-     */
-    public void mapPoints(float[] src, float[] dst, int count) {
-        mapPoints(src, 0, dst, 0, count);
-    }
 
     /**
      * Maps src point array of length count to dst point array of equal or greater
@@ -2215,16 +2128,16 @@ public class Matrix implements Cloneable {
      * <p>
      * Keep consistent with {@link #equals(Object)}.
      */
-    public static boolean equals(@Nonnull Matrix a, @Nonnull Matrix b) {
-        return a.m11 == b.m11 &&
-                a.m12 == b.m12 &&
-                a.m14 == b.m14 &&
-                a.m21 == b.m21 &&
-                a.m22 == b.m22 &&
-                a.m24 == b.m24 &&
-                a.m41 == b.m41 &&
-                a.m42 == b.m42 &&
-                a.m44 == b.m44;
+    public static boolean equals(@Nonnull Matrixc a, @Nonnull Matrixc b) {
+        return a.m11() == b.m11() &&
+                a.m12() == b.m12() &&
+                a.m14() == b.m14() &&
+                a.m21() == b.m21() &&
+                a.m22() == b.m22() &&
+                a.m24() == b.m24() &&
+                a.m41() == b.m41() &&
+                a.m42() == b.m42() &&
+                a.m44() == b.m44();
     }
 
     @Override
@@ -2251,10 +2164,10 @@ public class Matrix implements Cloneable {
      */
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof Matrix m)) {
+        if (!(o instanceof Matrixc m)) {
             return false;
         }
-        return equals(this, m);
+        return Matrix.equals(this, m);
     }
 
     @Override
@@ -2279,6 +2192,339 @@ public class Matrix implements Cloneable {
             return (Matrix) super.clone();
         } catch (CloneNotSupportedException e) {
             throw new InternalError(e);
+        }
+    }
+
+    // specialization
+    static final class Identity implements Matrixc {
+
+        static Identity INSTANCE = new Identity();
+
+        private Identity() {
+        }
+
+        @Override
+        public int getType() {
+            return kIdentity_Mask;
+        }
+
+        @Override
+        public boolean isIdentity() {
+            return true;
+        }
+
+        @Override
+        public boolean isScaleTranslate() {
+            return true;
+        }
+
+        @Override
+        public boolean isTranslate() {
+            return true;
+        }
+
+        @Override
+        public boolean isAxisAligned() {
+            return true;
+        }
+
+        @Override
+        public boolean preservesRightAngles() {
+            return true;
+        }
+
+        @Override
+        public boolean hasPerspective() {
+            return false;
+        }
+
+        @Override
+        public boolean isSimilarity() {
+            return true;
+        }
+
+        @Override
+        public float m11() {
+            return 1;
+        }
+
+        @Override
+        public float m12() {
+            return 0;
+        }
+
+        @Override
+        public float m14() {
+            return 0;
+        }
+
+        @Override
+        public float m21() {
+            return 0;
+        }
+
+        @Override
+        public float m22() {
+            return 1;
+        }
+
+        @Override
+        public float m24() {
+            return 0;
+        }
+
+        @Override
+        public float m41() {
+            return 0;
+        }
+
+        @Override
+        public float m42() {
+            return 0;
+        }
+
+        @Override
+        public float m44() {
+            return 1;
+        }
+
+        @Override
+        public float getScaleX() {
+            return 1;
+        }
+
+        @Override
+        public float getScaleY() {
+            return 1;
+        }
+
+        @Override
+        public float getShearY() {
+            return 0;
+        }
+
+        @Override
+        public float getShearX() {
+            return 0;
+        }
+
+        @Override
+        public float getTranslateX() {
+            return 0;
+        }
+
+        @Override
+        public float getTranslateY() {
+            return 0;
+        }
+
+        @Override
+        public float getPerspX() {
+            return 0;
+        }
+
+        @Override
+        public float getPerspY() {
+            return 0;
+        }
+
+        @Override
+        public void store(@Nonnull Matrix m) {
+            m.setIdentity();
+        }
+
+        @Override
+        public void store(@Nonnull float[] a) {
+            a[0] = 1;
+            a[1] = 0;
+            a[2] = 0;
+            a[3] = 0;
+            a[4] = 1;
+            a[5] = 0;
+            a[6] = 0;
+            a[7] = 0;
+            a[8] = 1;
+        }
+
+        @Override
+        public void store(@Nonnull float[] a, int offset) {
+            a[offset] = 1;
+            a[offset + 1] = 0;
+            a[offset + 2] = 0;
+            a[offset + 3] = 0;
+            a[offset + 4] = 1;
+            a[offset + 5] = 0;
+            a[offset + 6] = 0;
+            a[offset + 7] = 0;
+            a[offset + 8] = 1;
+        }
+
+        @Override
+        public void store(@Nonnull ByteBuffer a) {
+            int offset = a.position();
+            a.putFloat(offset, 1);
+            a.putFloat(offset + 4, 0);
+            a.putFloat(offset + 8, 0);
+            a.putFloat(offset + 12, 0);
+            a.putFloat(offset + 16, 1);
+            a.putFloat(offset + 20, 0);
+            a.putFloat(offset + 24, 0);
+            a.putFloat(offset + 28, 0);
+            a.putFloat(offset + 32, 1);
+        }
+
+        @Override
+        public void storeAligned(@Nonnull ByteBuffer a) {
+            int offset = a.position();
+            a.putFloat(offset, 1);
+            a.putFloat(offset + 4, 0);
+            a.putFloat(offset + 8, 0);
+            a.putFloat(offset + 16, 0);
+            a.putFloat(offset + 20, 1);
+            a.putFloat(offset + 24, 0);
+            a.putFloat(offset + 32, 0);
+            a.putFloat(offset + 36, 0);
+            a.putFloat(offset + 40, 1);
+        }
+
+        @Override
+        public void store(@Nonnull FloatBuffer a) {
+            int offset = a.position();
+            a.put(offset, 1);
+            a.put(offset + 1, 0);
+            a.put(offset + 2, 0);
+            a.put(offset + 3, 0);
+            a.put(offset + 4, 1);
+            a.put(offset + 5, 0);
+            a.put(offset + 6, 0);
+            a.put(offset + 7, 0);
+            a.put(offset + 8, 1);
+        }
+
+        @Override
+        public void storeAligned(@Nonnull FloatBuffer a) {
+            int offset = a.position();
+            a.put(offset, 1);
+            a.put(offset + 1, 0);
+            a.put(offset + 2, 0);
+            a.put(offset + 4, 0);
+            a.put(offset + 5, 1);
+            a.put(offset + 6, 0);
+            a.put(offset + 8, 0);
+            a.put(offset + 9, 0);
+            a.put(offset + 10, 1);
+        }
+
+        @Override
+        public void store(long p) {
+            MemoryUtil.memPutFloat(p, 1);
+            MemoryUtil.memPutFloat(p + 4, 0);
+            MemoryUtil.memPutFloat(p + 8, 0);
+            MemoryUtil.memPutFloat(p + 12, 0);
+            MemoryUtil.memPutFloat(p + 16, 1);
+            MemoryUtil.memPutFloat(p + 20, 0);
+            MemoryUtil.memPutFloat(p + 24, 0);
+            MemoryUtil.memPutFloat(p + 28, 0);
+            MemoryUtil.memPutFloat(p + 32, 1);
+        }
+
+        @Override
+        public void storeAligned(long p) {
+            MemoryUtil.memPutFloat(p, 1);
+            MemoryUtil.memPutFloat(p + 4, 0);
+            MemoryUtil.memPutFloat(p + 8, 0);
+            MemoryUtil.memPutFloat(p + 16, 0);
+            MemoryUtil.memPutFloat(p + 20, 1);
+            MemoryUtil.memPutFloat(p + 24, 0);
+            MemoryUtil.memPutFloat(p + 32, 0);
+            MemoryUtil.memPutFloat(p + 36, 0);
+            MemoryUtil.memPutFloat(p + 40, 1);
+        }
+
+        @Override
+        public boolean invert(@Nullable Matrix dest) {
+            if (dest != null) {
+                dest.setIdentity();
+            }
+            return true;
+        }
+
+        @Override
+        public boolean mapRect(Rect2f src, Rect2f dst) {
+            dst.set(src);
+            return true;
+        }
+
+        @Override
+        public void mapRect(float left, float top, float right, float bottom, @Nonnull Rect2i dst) {
+            dst.mLeft = Math.round(left);
+            dst.mTop = Math.round(top);
+            dst.mRight = Math.round(right);
+            dst.mBottom = Math.round(bottom);
+        }
+
+        @Override
+        public void mapRectOut(float left, float top, float right, float bottom, @Nonnull Rect2i dst) {
+            dst.mLeft = (int) Math.floor(left);
+            dst.mTop = (int) Math.floor(top);
+            dst.mRight = (int) Math.ceil(right);
+            dst.mBottom = (int) Math.ceil(bottom);
+        }
+
+        @Override
+        public void mapPoints(float[] src, int srcPos, float[] dst, int dstPos, int count) {
+            if (src != dst && count > 0) {
+                System.arraycopy(src, srcPos, dst, dstPos, count << 1);
+            }
+        }
+
+        @Override
+        public float getMinScale() {
+            return 1;
+        }
+
+        @Override
+        public float getMaxScale() {
+            return 1;
+        }
+
+        @Override
+        public boolean isFinite() {
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = Float.floatToIntBits(1);
+            result = 31 * result + Float.floatToIntBits(0);
+            result = 31 * result + Float.floatToIntBits(0);
+            result = 31 * result + Float.floatToIntBits(0);
+            result = 31 * result + Float.floatToIntBits(1);
+            result = 31 * result + Float.floatToIntBits(0);
+            result = 31 * result + Float.floatToIntBits(0);
+            result = 31 * result + Float.floatToIntBits(0);
+            result = 31 * result + Float.floatToIntBits(1);
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (!(o instanceof Matrixc m)) {
+                return false;
+            }
+            return Matrix.equals(this, m);
+        }
+
+        @Override
+        public String toString() {
+            return String.format("""
+                            Matrix:
+                            %10.6f %10.6f %10.6f
+                            %10.6f %10.6f %10.6f
+                            %10.6f %10.6f %10.6f""",
+                    1F, 0F, 0F,
+                    0F, 1F, 0F,
+                    0F, 0F, 1F);
         }
     }
 }

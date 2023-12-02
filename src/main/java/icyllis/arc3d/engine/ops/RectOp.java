@@ -25,7 +25,6 @@ import icyllis.arc3d.engine.geom.SDFRectGeoProc;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 
 //TODO
@@ -47,12 +46,16 @@ public class RectOp extends MeshDrawOp {
     private int mNumInstances = 1;
 
     public RectOp(int argb, Rect2f localRect, float strokeRadius, float strokePos,
-                  @Nullable Matrix viewMatrix, boolean stroke, boolean aa) {
+                  Matrixc viewMatrix, boolean stroke, boolean aa) {
         mColor = argb;
         mLocalRect = localRect;
         mStrokeRadius = strokeRadius;
         mStrokePos = strokePos;
-        mViewMatrix = viewMatrix;
+        if (!viewMatrix.isIdentity()) {
+            mViewMatrix = new Matrix(viewMatrix);
+        } else {
+            mViewMatrix = null;
+        }
         int gpFlags = 0;
         if (aa) {
             gpFlags |= SDFRectGeoProc.FLAG_ANTIALIASING;
@@ -60,12 +63,12 @@ public class RectOp extends MeshDrawOp {
         if (stroke) {
             gpFlags |= SDFRectGeoProc.FLAG_STROKE;
         }
-        if (viewMatrix != null) {
+        if (mViewMatrix != null) {
             gpFlags |= SDFRectGeoProc.FLAG_INSTANCED_MATRIX;
         }
         mGPFlags = gpFlags;
-        if (viewMatrix != null) {
-            viewMatrix.mapRect(localRect, this);
+        if (mViewMatrix != null) {
+            mViewMatrix.mapRect(localRect, this);
         } else {
             set(localRect);
         }

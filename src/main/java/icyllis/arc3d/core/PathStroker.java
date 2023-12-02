@@ -351,18 +351,19 @@ public class PathStroker implements PathConsumer {
             return beforeX * afterY > beforeY * afterX;
         }
 
-        static void doMiterJoin(PathConsumer outer,
-                                PathConsumer inner,
-                                float beforeUnitNormalX,
-                                float beforeUnitNormalY,
-                                float pivotX,
-                                float pivotY,
-                                float afterUnitNormalX,
-                                float afterUnitNormalY,
-                                float radius,
-                                float invMiterLimit,
-                                boolean prevIsLine,
-                                boolean currIsLine) {
+        static void doMiterJoin(
+                PathConsumer outer,
+                PathConsumer inner,
+                float beforeUnitNormalX,
+                float beforeUnitNormalY,
+                float pivotX,
+                float pivotY,
+                float afterUnitNormalX,
+                float afterUnitNormalY,
+                float radius,
+                float invMiterLimit,
+                boolean prevIsLine,
+                boolean currIsLine) {
             float dot = Point.dotProduct(
                     beforeUnitNormalX, beforeUnitNormalY,
                     afterUnitNormalX, afterUnitNormalY
@@ -458,40 +459,99 @@ public class PathStroker implements PathConsumer {
             inner.lineTo(pivotX - afterX, pivotY - afterY);
         }
 
-        static void doRoundJoin(PathConsumer outer,
-                                PathConsumer inner,
-                                float beforeUnitNormalX,
-                                float beforeUnitNormalY,
-                                float pivotX,
-                                float pivotY,
-                                float afterUnitNormalX,
-                                float afterUnitNormalY,
-                                float radius,
-                                float invMiterLimit,
-                                boolean prevIsLine,
-                                boolean currIsLine) {
+        static void doRoundJoin(
+                PathConsumer outer,
+                PathConsumer inner,
+                float beforeUnitNormalX,
+                float beforeUnitNormalY,
+                float pivotX,
+                float pivotY,
+                float afterUnitNormalX,
+                float afterUnitNormalY,
+                float radius,
+                float invMiterLimit,
+                boolean prevIsLine,
+                boolean currIsLine) {
             float dot = Point.dotProduct(
                     beforeUnitNormalX, beforeUnitNormalY,
                     afterUnitNormalX, afterUnitNormalY
             );
-            if (dot >= 1f - MathUtil.EPS) {
+            // 0 - 0 degrees
+            // 1 - (0,90) degrees
+            // 2 - 180 degrees
+            // 3 - (90,180) degrees
+            // 4 - 90 degrees
+            int angleType;
+            if (MathUtil.isApproxZero(dot)) {
+                angleType = 4;
+            } else if (dot >= 0) {
+                angleType = dot >= 1f - MathUtil.EPS ? 0 : 1;
+            } else {
+                angleType = dot <= MathUtil.EPS - 1f ? 2 : 3;
+            }
+            if (angleType == 0) {
                 // 0 degrees, no need to join
                 return;
             }
+
+            boolean cw = isClockwise(
+                    beforeUnitNormalX, beforeUnitNormalY,
+                    afterUnitNormalX, afterUnitNormalY
+            );
+            if (!cw) {
+                var tmp = outer;
+                outer = inner;
+                inner = tmp;
+                beforeUnitNormalX = -beforeUnitNormalX;
+                beforeUnitNormalY = -beforeUnitNormalY;
+                afterUnitNormalX = -afterUnitNormalX;
+                afterUnitNormalY = -afterUnitNormalY;
+            }
+
+            if (angleType == 1) {
+                // (0,90) degrees, add one fast approx arc
+            } else if (angleType == 2) {
+                // 180 degrees, add two approx arcs
+                /*final float Cmx = Capper.C * normalX;
+                final float Cmy = Capper.C * normalY;
+                path.cubicTo(
+                        pivotX + normalX - Cmy, pivotY + normalY + Cmx,
+                        pivotX - normalY + Cmx, pivotY + normalX + Cmy,
+                        pivotX - normalY, pivotY + normalX
+                );
+                path.cubicTo(
+                        pivotX - normalY - Cmx, pivotY + normalX - Cmy,
+                        pivotX - normalX - Cmy, pivotY - normalY + Cmx,
+                        pivotX - normalX, pivotY - normalY
+                );*/
+            } else if (angleType == 3) {
+                // (90,180) degrees, add two fast approx arcs
+            } else {
+                // 90 degrees, add one approx arc
+            }
+
+            float afterX = afterUnitNormalX * radius;
+            float afterY = afterUnitNormalY * radius;
+            inner.lineTo(pivotX - afterX, pivotY - afterY);
         }
 
-        static void doBevelJoin(PathConsumer outer,
-                                PathConsumer inner,
-                                float beforeUnitNormalX,
-                                float beforeUnitNormalY,
-                                float pivotX,
-                                float pivotY,
-                                float afterUnitNormalX,
-                                float afterUnitNormalY,
-                                float radius,
-                                float invMiterLimit,
-                                boolean prevIsLine,
-                                boolean currIsLine) {
+        static void doBezierApproxForArc() {
+
+        }
+
+        static void doBevelJoin(
+                PathConsumer outer,
+                PathConsumer inner,
+                float beforeUnitNormalX,
+                float beforeUnitNormalY,
+                float pivotX,
+                float pivotY,
+                float afterUnitNormalX,
+                float afterUnitNormalY,
+                float radius,
+                float invMiterLimit,
+                boolean prevIsLine,
+                boolean currIsLine) {
             float afterX = afterUnitNormalX * radius;
             float afterY = afterUnitNormalY * radius;
             outer.lineTo(pivotX + afterX, pivotY + afterY);

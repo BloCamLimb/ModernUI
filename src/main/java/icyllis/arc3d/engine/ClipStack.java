@@ -95,7 +95,7 @@ public final class ClipStack extends Clip {
     private final ClipElement mTmpElement = new ClipElement();
     private final Rect2f mTmpOuter = new Rect2f();
 
-    public void clipRect(@Nullable Matrix viewMatrix,
+    public void clipRect(@Nullable Matrixc viewMatrix,
                          @Nonnull Rect2f localRect,
                          int clipOp) {
         clip(mTmpElement.init(
@@ -104,7 +104,7 @@ public final class ClipStack extends Clip {
         ));
     }
 
-    public void clipRect(@Nullable Matrix viewMatrix,
+    public void clipRect(@Nullable Matrixc viewMatrix,
                          float left, float top, float right, float bottom,
                          int clipOp) {
         clip(mTmpElement.init(
@@ -454,7 +454,7 @@ public final class ClipStack extends Clip {
             mViewMatrix = new Matrix();
         }
 
-        Element(Rect2f rect, Matrix viewMatrix, int clipOp, boolean aa) {
+        Element(Rect2f rect, Matrixc viewMatrix, int clipOp, boolean aa) {
             mRect = new Rect2f(rect);
             mViewMatrix = new Matrix(viewMatrix);
             mClipOp = clipOp;
@@ -469,7 +469,7 @@ public final class ClipStack extends Clip {
 
         // local to device
         // do not modify
-        public Matrix viewMatrix() {
+        public Matrixc viewMatrix() {
             return mViewMatrix;
         }
 
@@ -512,7 +512,7 @@ public final class ClipStack extends Clip {
         public ClipElement() {
         }
 
-        public ClipElement(Rect2f rect, Matrix viewMatrix, int clipOp, boolean aa) {
+        public ClipElement(Rect2f rect, Matrixc viewMatrix, int clipOp, boolean aa) {
             super(rect, viewMatrix, clipOp, aa);
             if (!viewMatrix.invert(mInverseViewMatrix)) {
                 // If the transform can't be inverted, it means that two dimensions are collapsed to 0 or
@@ -522,7 +522,7 @@ public final class ClipStack extends Clip {
         }
 
         public ClipElement(ClipElement e) {
-            super(e.mRect, e.mViewMatrix, e.mClipOp, e.mAA);
+            super(e.shape(), e.viewMatrix(), e.clipOp(), e.aa());
             mInverseViewMatrix.set(e.mInverseViewMatrix);
             mInnerBounds.set(e.mInnerBounds);
             mOuterBounds.set(e.mOuterBounds);
@@ -530,7 +530,7 @@ public final class ClipStack extends Clip {
         }
 
         public ClipElement init(float left, float top, float right, float bottom,
-                                Matrix viewMatrix, int clipOp, boolean aa) {
+                                Matrixc viewMatrix, int clipOp, boolean aa) {
             mRect.set(left, top, right, bottom);
             if (viewMatrix != null) {
                 mViewMatrix.set(viewMatrix);
@@ -556,10 +556,10 @@ public final class ClipStack extends Clip {
         }
 
         public void set(ClipElement e) {
-            mRect.set(e.mRect);
-            mViewMatrix.set(e.mViewMatrix);
-            mClipOp = e.mClipOp;
-            mAA = e.mAA;
+            mRect.set(e.shape());
+            mViewMatrix.set(e.viewMatrix());
+            mClipOp = e.clipOp();
+            mAA = e.aa();
             mInverseViewMatrix.set(e.mInverseViewMatrix);
             mInnerBounds.set(e.mInnerBounds);
             mOuterBounds.set(e.mOuterBounds);
@@ -686,7 +686,7 @@ public final class ClipStack extends Clip {
                 // If the draw is non-AA, use the already computed outer bounds so we don't need to use
                 // device-space outsetting inside shape_contains_rect.
                 Rect2f queryBounds = d.mAA ? d.bounds() : d.mTmpBounds;
-                return rectContainsRect(mRect, mViewMatrix, mInverseViewMatrix,
+                return rect_contains_rect(mRect, mViewMatrix, mInverseViewMatrix,
                         queryBounds, Matrix.identity(), /* mixed-aa */ false);
             }
         }
@@ -696,7 +696,7 @@ public final class ClipStack extends Clip {
                 return true;
             }
 
-            return rectContainsRect(mRect, mViewMatrix, mInverseViewMatrix,
+            return rect_contains_rect(mRect, mViewMatrix, mInverseViewMatrix,
                     new Rect2f(s.mOuterBounds), Matrix.identity(), false);
         }
 
@@ -709,7 +709,7 @@ public final class ClipStack extends Clip {
 
             boolean mixedAA = mAA != e.mAA;
 
-            return rectContainsRect(mRect, mViewMatrix, mInverseViewMatrix,
+            return rect_contains_rect(mRect, mViewMatrix, mInverseViewMatrix,
                     e.mRect, e.mViewMatrix, mixedAA);
         }
 
@@ -718,8 +718,8 @@ public final class ClipStack extends Clip {
         // Automatically takes into account if the anti-aliasing policies differ. When the policies match,
         // we assume that coverage AA or GPU's non-AA rasterization will apply to A and B equivalently, so
         // we can compare the original shapes. When the modes are mixed, we outset B in device space first.
-        static boolean rectContainsRect(Rect2f a, Matrix aToDevice, Matrix deviceToA,
-                                        Rect2f b, Matrix bToDevice, boolean mixedAAMode) {
+        static boolean rect_contains_rect(Rect2f a, Matrixc aToDevice, Matrixc deviceToA,
+                                          Rect2f b, Matrixc bToDevice, boolean mixedAAMode) {
             if (!mixedAAMode && Matrix.equals(aToDevice, bToDevice)) {
                 // A and B are in the same coordinate space, so don't bother mapping
                 return a.contains(b);
