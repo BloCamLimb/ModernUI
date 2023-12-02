@@ -92,6 +92,20 @@ public class Path implements PathConsumer {
     }
 
     /**
+     * Creates a deep copy of an existing Path object.
+     */
+    @SuppressWarnings("IncompleteCopyConstructor")
+    public Path(@Nonnull Path other) {
+        // trim internal arrays
+        mNumVerbs = other.mNumVerbs;
+        mVerbs = Arrays.copyOf(other.mVerbs, other.mNumVerbs);
+        mNumCoords = other.mNumCoords;
+        mCoords = Arrays.copyOf(other.mCoords, other.mNumCoords);
+        mWindingRule = other.mWindingRule;
+        mHasInitialPoint = other.mHasInitialPoint;
+    }
+
+    /**
      * Adds a point to the path by moving to the specified point {@code (x,y)}.
      * A new contour begins at {@code (x,y)}.
      *
@@ -318,7 +332,7 @@ public class Path implements PathConsumer {
     /**
      * Iterates the Path and feeds the given consumer.
      */
-    public void forEach(PathConsumer action) {
+    public void forEach(@Nonnull PathConsumer action) {
         byte[] vs = mVerbs;
         float[] cs = mCoords;
         int vi = 0;
@@ -359,7 +373,7 @@ public class Path implements PathConsumer {
         action.pathDone();
     }
 
-    void reversePop(PathConsumer action) {
+    void reversePop(@Nonnull PathConsumer out) {
         byte[] vs = mVerbs;
         float[] cs = mCoords;
         int vi = mNumVerbs;
@@ -372,20 +386,20 @@ public class Path implements PathConsumer {
                 }
                 case VERB_LINETO -> {
                     ci -= 2;
-                    action.lineTo(
+                    out.lineTo(
                             cs[ci], cs[ci + 1]
                     );
                 }
                 case VERB_QUADTO -> {
                     ci -= 4;
-                    action.quadTo(
+                    out.quadTo(
                             cs[ci], cs[ci + 1],
                             cs[ci + 2], cs[ci + 3]
                     );
                 }
                 case VERB_CUBICTO -> {
                     ci -= 6;
-                    action.cubicTo(
+                    out.cubicTo(
                             cs[ci], cs[ci + 1],
                             cs[ci + 2], cs[ci + 3],
                             cs[ci + 4], cs[ci + 5]

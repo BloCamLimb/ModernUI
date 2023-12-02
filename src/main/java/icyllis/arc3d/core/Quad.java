@@ -51,7 +51,7 @@ public class Quad {
         type = kAxisAligned;
     }
 
-    public Quad(Rect2f rect, Matrix m) {
+    public Quad(Rect2f rect, Matrixc m) {
         int mask = m.getType();
         if (mask <= (Matrix.kScale_Mask | Matrix.kTranslate_Mask)) {
             float r0 = rect.mLeft;
@@ -60,15 +60,15 @@ public class Quad {
             float r3 = rect.mBottom;
             if (mask > Matrix.kIdentity_Mask) {
                 if (mask > Matrix.kTranslate_Mask) {
-                    r0 *= m.m11;
-                    r1 *= m.m22;
-                    r2 *= m.m11;
-                    r3 *= m.m22;
+                    r0 *= m.m11();
+                    r1 *= m.m22();
+                    r2 *= m.m11();
+                    r3 *= m.m22();
                 }
-                r0 += m.m41;
-                r1 += m.m42;
-                r2 += m.m41;
-                r3 += m.m42;
+                r0 += m.m41();
+                r1 += m.m42();
+                r2 += m.m41();
+                r3 += m.m42();
             }
             x0 = x1 = r0;
             y0 = y2 = r1;
@@ -83,19 +83,19 @@ public class Quad {
             ry0 = ry2 = rect.mTop;
             rx2 = rx3 = rect.mRight;
             ry1 = ry3 = rect.mBottom;
-            x0 = m.m11 * rx0 + (m.m21 * ry0 + m.m41);
-            x1 = m.m11 * rx1 + (m.m21 * ry1 + m.m41);
-            x2 = m.m11 * rx2 + (m.m21 * ry2 + m.m41);
-            x3 = m.m11 * rx3 + (m.m21 * ry3 + m.m41);
-            y0 = m.m22 * rx0 + (m.m12 * ry0 + m.m42);
-            y1 = m.m22 * rx1 + (m.m12 * ry1 + m.m42);
-            y2 = m.m22 * rx2 + (m.m12 * ry2 + m.m42);
-            y3 = m.m22 * rx3 + (m.m12 * ry3 + m.m42);
+            x0 = m.m11() * rx0 + (m.m21() * ry0 + m.m41());
+            x1 = m.m11() * rx1 + (m.m21() * ry1 + m.m41());
+            x2 = m.m11() * rx2 + (m.m21() * ry2 + m.m41());
+            x3 = m.m11() * rx3 + (m.m21() * ry3 + m.m41());
+            y0 = m.m22() * rx0 + (m.m12() * ry0 + m.m42());
+            y1 = m.m22() * rx1 + (m.m12() * ry1 + m.m42());
+            y2 = m.m22() * rx2 + (m.m12() * ry2 + m.m42());
+            y3 = m.m22() * rx3 + (m.m12() * ry3 + m.m42());
             if (m.hasPerspective()) {
-                w0 = m.m14 * rx0 + (m.m24 * ry0 + m.m44);
-                w1 = m.m14 * rx1 + (m.m24 * ry1 + m.m44);
-                w2 = m.m14 * rx2 + (m.m24 * ry2 + m.m44);
-                w3 = m.m14 * rx3 + (m.m24 * ry3 + m.m44);
+                w0 = m.m14() * rx0 + (m.m24() * ry0 + m.m44());
+                w1 = m.m14() * rx1 + (m.m24() * ry1 + m.m44());
+                w2 = m.m14() * rx2 + (m.m24() * ry2 + m.m44());
+                w3 = m.m14() * rx3 + (m.m24() * ry3 + m.m44());
             } else {
                 w0 = w1 = w2 = w3 = 1.f;
             }

@@ -688,7 +688,7 @@ public abstract class UniformDataManager extends RefCnt {
     /**
      * Convenience method for uploading a Matrix to a 3x3 matrix uniform.
      */
-    public void setMatrix3f(@UniformHandle int u, Matrix matrix) {
+    public void setMatrix3f(@UniformHandle int u, Matrixc matrix) {
         int uni = mUniforms[u];
         assert ((uni >> 24) == SLDataType.kFloat3x3);
         long buffer = getBufferPtrAndMarkDirty(uni);
