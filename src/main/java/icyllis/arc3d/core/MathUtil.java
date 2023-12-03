@@ -90,56 +90,56 @@ public class MathUtil {
      * @return true if <code>a</code> is approximately equal to zero
      */
     public static boolean isApproxZero(float a) {
-        return Math.abs(a) < EPS;
+        return Math.abs(a) <= EPS;
     }
 
     /**
      * @return true if <code>a</code> is approximately equal to zero
      */
     public static boolean isApproxZero(float a, float b) {
-        return Math.abs(a) < EPS && Math.abs(b) < EPS;
+        return Math.abs(a) <= EPS && Math.abs(b) <= EPS;
     }
 
     /**
      * @return true if <code>a</code> is approximately equal to zero
      */
     public static boolean isApproxZero(float a, float b, float c) {
-        return Math.abs(a) < EPS && Math.abs(b) < EPS && Math.abs(c) < EPS;
+        return Math.abs(a) <= EPS && Math.abs(b) <= EPS && Math.abs(c) <= EPS;
     }
 
     /**
      * @return true if <code>a</code> is approximately equal to zero
      */
     public static boolean isApproxZero(float a, float b, float c, float d) {
-        return Math.abs(a) < EPS && Math.abs(b) < EPS && Math.abs(c) < EPS && Math.abs(d) < EPS;
+        return Math.abs(a) <= EPS && Math.abs(b) <= EPS && Math.abs(c) <= EPS && Math.abs(d) <= EPS;
     }
 
     /**
      * @return true if <code>a</code> is approximately equal to <code>b</code>
      */
     public static boolean isApproxEqual(float a, float b) {
-        return Math.abs(b - a) < EPS;
+        return Math.abs(b - a) <= EPS;
     }
 
     /**
      * @return true if <code>a</code> is approximately equal to <code>b</code>
      */
     public static boolean isApproxEqual(float a, float b, float c) {
-        return Math.abs(b - a) < EPS && Math.abs(c - a) < EPS;
+        return Math.abs(b - a) <= EPS && Math.abs(c - a) <= EPS;
     }
 
     /**
      * @return true if <code>a</code> is approximately equal to <code>b</code>
      */
     public static boolean isApproxEqual(float a, float b, float c, float d) {
-        return Math.abs(b - a) < EPS && Math.abs(c - a) < EPS && Math.abs(d - a) < EPS;
+        return Math.abs(b - a) <= EPS && Math.abs(c - a) <= EPS && Math.abs(d - a) <= EPS;
     }
 
     /**
      * @return true if <code>a</code> is approximately equal to <code>b</code>
      */
     public static boolean isApproxEqual(float a, float b, float c, float d, float e) {
-        return Math.abs(b - a) < EPS && Math.abs(c - a) < EPS && Math.abs(d - a) < EPS && Math.abs(e - a) < EPS;
+        return Math.abs(b - a) <= EPS && Math.abs(c - a) <= EPS && Math.abs(d - a) <= EPS && Math.abs(e - a) <= EPS;
     }
 
     // square root
@@ -160,11 +160,6 @@ public class MathUtil {
     // atan2 (b, a)
     public static float atan2(float a, float b) {
         return (float) Math.atan2(a, b);
-    }
-
-    // hypot
-    public static float hypot(float x, float y) {
-        return (float) Math.hypot(x, y);
     }
 
     /**

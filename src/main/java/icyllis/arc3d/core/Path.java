@@ -373,6 +373,9 @@ public class Path implements PathConsumer {
         action.pathDone();
     }
 
+    // ignore the last point of the contour
+    // there must be moveTo() for this contour
+    // also reset the path
     void reversePop(@Nonnull PathConsumer out) {
         byte[] vs = mVerbs;
         float[] cs = mCoords;
@@ -382,28 +385,32 @@ public class Path implements PathConsumer {
         while (vi != 0) {
             switch (vs[--vi]) {
                 case VERB_MOVETO -> {
+                    assert vi == 0 && ci == 0;
                     break ITR;
                 }
                 case VERB_LINETO -> {
-                    ci -= 2;
                     out.lineTo(
-                            cs[ci], cs[ci + 1]
+                            cs[ci - 2], cs[ci - 1]
                     );
+                    ci -= 2;
                 }
                 case VERB_QUADTO -> {
-                    ci -= 4;
                     out.quadTo(
-                            cs[ci], cs[ci + 1],
-                            cs[ci + 2], cs[ci + 3]
+                            cs[ci - 2], cs[ci - 1],
+                            cs[ci - 4], cs[ci - 3]
                     );
+                    ci -= 4;
                 }
                 case VERB_CUBICTO -> {
-                    ci -= 6;
                     out.cubicTo(
-                            cs[ci], cs[ci + 1],
-                            cs[ci + 2], cs[ci + 3],
-                            cs[ci + 4], cs[ci + 5]
+                            cs[ci - 2], cs[ci - 1],
+                            cs[ci - 4], cs[ci - 3],
+                            cs[ci - 6], cs[ci - 5]
                     );
+                    ci -= 6;
+                }
+                default -> {
+                    assert false;
                 }
             }
         }

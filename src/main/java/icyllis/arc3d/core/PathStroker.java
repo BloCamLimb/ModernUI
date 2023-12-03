@@ -27,7 +27,7 @@ import javax.annotation.Nonnull;
  * PathStroker is a {@link PathConsumer} that converts paths by stroking paths.
  * This is invoked when a {@link Path} is drawn in a canvas with the
  * {@link Paint#STROKE} bit set in the paint. The new path consists of
- * contours, and the style change from thick stroke to fill.
+ * closed contours, and the style change from thick stroke to fill.
  *
  * @author BloCamLimb
  */
@@ -74,6 +74,10 @@ public class PathStroker implements PathConsumer {
 
     private boolean mPrevIsLine;
 
+    private static final int NORMAL_X = 0;
+    private static final int NORMAL_Y = 1;
+    private static final int UNIT_NORMAL_X = 2;
+    private static final int UNIT_NORMAL_Y = 3;
     // (m0,m1) is normal
     // (m2,m3) is unit normal
     private final float[] mNormal = new float[4];
@@ -140,23 +144,23 @@ public class PathStroker implements PathConsumer {
             /* Square caps and round caps draw even if the segment length is zero.
                Since the zero length segment has no direction, set the orientation
                to upright as the default orientation */
-            mNormal[0] = mRadius;
-            mNormal[1] = 0;
-            mNormal[2] = 1;
-            mNormal[3] = 0;
+            mNormal[NORMAL_X] = mRadius;
+            mNormal[NORMAL_Y] = 0;
+            mNormal[UNIT_NORMAL_X] = 1;
+            mNormal[UNIT_NORMAL_Y] = 0;
         } else {
             // Rotate CCW
-            mNormal[0] = ty * mRadius;
-            mNormal[1] = -tx * mRadius;
-            mNormal[2] = ty;
-            mNormal[3] = -tx;
+            mNormal[NORMAL_X] = ty * mRadius;
+            mNormal[NORMAL_Y] = -tx * mRadius;
+            mNormal[UNIT_NORMAL_X] = ty;
+            mNormal[UNIT_NORMAL_Y] = -tx;
         }
 
         if (mSegmentCount == 0) {
-            mFirstNormalX = mNormal[0];
-            mFirstNormalY = mNormal[1];
-            mFirstUnitNormalX = mNormal[2];
-            mFirstUnitNormalY = mNormal[3];
+            mFirstNormalX = mNormal[NORMAL_X];
+            mFirstNormalY = mNormal[NORMAL_Y];
+            mFirstUnitNormalX = mNormal[UNIT_NORMAL_X];
+            mFirstUnitNormalY = mNormal[UNIT_NORMAL_Y];
             mFirstOuterX = mPrevX + mFirstNormalX;
             mFirstOuterY = mPrevY + mFirstNormalY;
 
@@ -167,7 +171,7 @@ public class PathStroker implements PathConsumer {
                     mOuter, mInner,
                     mPrevUnitNormalX, mPrevUnitNormalY,
                     mPrevX, mPrevY,
-                    mNormal[2], mNormal[3],
+                    mNormal[UNIT_NORMAL_X], mNormal[UNIT_NORMAL_Y],
                     mRadius,
                     mInvMiterLimit,
                     mPrevIsLine,
@@ -182,10 +186,10 @@ public class PathStroker implements PathConsumer {
         mJoinCompleted = true;
         mPrevX = x;
         mPrevY = y;
-        mPrevNormalX = mNormal[0];
-        mPrevNormalY = mNormal[1];
-        mPrevUnitNormalX = mNormal[2];
-        mPrevUnitNormalY = mNormal[3];
+        mPrevNormalX = mNormal[NORMAL_X];
+        mPrevNormalY = mNormal[NORMAL_Y];
+        mPrevUnitNormalX = mNormal[UNIT_NORMAL_X];
+        mPrevUnitNormalY = mNormal[UNIT_NORMAL_Y];
         mSegmentCount++;
     }
 
@@ -200,8 +204,8 @@ public class PathStroker implements PathConsumer {
             return;
         }
         if (preJoinTo(x, y, true)) {
-            mOuter.lineTo(x + mNormal[0], y + mNormal[1]);
-            mInner.lineTo(x - mNormal[0], y - mNormal[1]);
+            mOuter.lineTo(x + mNormal[NORMAL_X], y + mNormal[NORMAL_Y]);
+            mInner.lineTo(x - mNormal[NORMAL_X], y - mNormal[NORMAL_Y]);
             postJoinTo(x, y);
         }
     }
@@ -249,6 +253,9 @@ public class PathStroker implements PathConsumer {
         mSegmentCount = -1;
     }
 
+    /**
+     * @author BloCamLimb
+     */
     public interface Capper {
 
         void cap(
@@ -319,6 +326,9 @@ public class PathStroker implements PathConsumer {
         }
     }
 
+    /**
+     * @author BloCamLimb
+     */
     public interface Joiner {
 
         void join(
@@ -345,11 +355,19 @@ public class PathStroker implements PathConsumer {
             };
         }
 
+        // assumes the origin is top left, y-down
+        // then the counter-clockwise direction is the reverse direction (inner)
         @Contract(pure = true)
-        static boolean isClockwise(float beforeX, float beforeY,
-                                   float afterX, float afterY) {
-            return beforeX * afterY > beforeY * afterX;
+        static boolean isCCW(float beforeX, float beforeY,
+                             float afterX, float afterY) {
+            return Point.crossProduct(beforeX, beforeY, afterX, afterY) <= 0;
         }
+
+        int ANGLE_NEARLY_0 = 0;   // 0 degrees
+        int ANGLE_ACUTE = 1;      // (0,90) degrees
+        int ANGLE_NEARLY_180 = 2; // 180 degrees
+        int ANGLE_OBTUSE = 3;     // (90,180) degrees
+        int ANGLE_NEARLY_90 = 4;  // 90 degrees
 
         static void doMiterJoin(
                 PathConsumer outer,
@@ -374,19 +392,16 @@ public class PathStroker implements PathConsumer {
             // 3 - (90,180) degrees
             int angleType;
             if (dot >= 0) {
-                angleType = dot >= 1f - MathUtil.EPS ? 0 : 1;
+                angleType = dot >= 1f - MathUtil.EPS ? ANGLE_NEARLY_0 : ANGLE_ACUTE;
             } else {
-                angleType = dot <= MathUtil.EPS - 1f ? 2 : 3;
+                angleType = dot <= MathUtil.EPS - 1f ? ANGLE_NEARLY_180 : ANGLE_OBTUSE;
             }
-            if (angleType == 0) {
+            if (angleType == ANGLE_NEARLY_0) {
                 // 0 degrees, no need to join
                 return;
             }
 
-            float afterX = afterUnitNormalX;
-            float afterY = afterUnitNormalY;
-
-            if (angleType == 2) {
+            if (angleType == ANGLE_NEARLY_180) {
                 // 180 degrees
                 currIsLine = false;
             } else {
@@ -394,7 +409,10 @@ public class PathStroker implements PathConsumer {
                 float midX = 0;
                 float midY = 0;
 
-                boolean ccw = !isClockwise(beforeUnitNormalX, beforeUnitNormalY, afterX, afterY);
+                boolean ccw = isCCW(
+                        beforeUnitNormalX, beforeUnitNormalY,
+                        afterUnitNormalX, afterUnitNormalY
+                );
 
                 /*  Before we enter the world of square-roots and divides,
                     check if we're trying to join an upright right angle
@@ -403,8 +421,8 @@ public class PathStroker implements PathConsumer {
                     Note: we only need to check one normal if dot==0
                 */
                 if (0 == dot && invMiterLimit <= MathUtil.INV_SQRT2) {
-                    midX = (beforeUnitNormalX + afterX) * radius;
-                    midY = (beforeUnitNormalY + afterY) * radius;
+                    midX = (beforeUnitNormalX + afterUnitNormalX) * radius;
+                    midY = (beforeUnitNormalY + afterUnitNormalY) * radius;
                 } else {
                     /*  midLength = radius / sinHalfAngle
                         if (midLength > miterLimit * radius) abort
@@ -420,22 +438,22 @@ public class PathStroker implements PathConsumer {
                         doMiter = false;
                     } else {
                         // choose the most accurate way to form the initial mid-vector
-                        if (angleType == 3) {
-                            // (90,180) degrees
+                        if (angleType == ANGLE_OBTUSE) {
+                            // (90,180) degrees, sharp
                             if (ccw) {
-                                midX = beforeUnitNormalY - afterY;
-                                midY = afterX - beforeUnitNormalX;
+                                midX = beforeUnitNormalY - afterUnitNormalY;
+                                midY = afterUnitNormalX - beforeUnitNormalX;
                             } else {
-                                midX = afterY - beforeUnitNormalY;
-                                midY = beforeUnitNormalX - afterX;
+                                midX = afterUnitNormalY - beforeUnitNormalY;
+                                midY = beforeUnitNormalX - afterUnitNormalX;
                             }
                         } else {
-                            // (0,90] degrees
-                            midX = beforeUnitNormalX + afterX;
-                            midY = beforeUnitNormalY + afterY;
+                            // (0,90] degrees, shallow
+                            midX = beforeUnitNormalX + afterUnitNormalX;
+                            midY = beforeUnitNormalY + afterUnitNormalY;
                         }
 
-                        // normalize mid-vector
+                        // normalize mid-vector to (radius / sinHalfAngle)
                         double dmag = Math.sqrt(
                                 (double) midX * (double) midX +
                                         (double) midY * (double) midY
@@ -451,8 +469,8 @@ public class PathStroker implements PathConsumer {
                 }
             }
 
-            afterX *= radius;
-            afterY *= radius;
+            float afterX = afterUnitNormalX * radius;
+            float afterY = afterUnitNormalY * radius;
             if (!currIsLine) {
                 outer.lineTo(pivotX + afterX, pivotY + afterY);
             }
@@ -482,23 +500,23 @@ public class PathStroker implements PathConsumer {
             // 3 - (90,180) degrees
             // 4 - 90 degrees
             int angleType;
-            if (MathUtil.isApproxZero(dot)) {
-                angleType = 4;
+            if (-MathUtil.EPS <= dot && dot <= MathUtil.EPS) {
+                angleType = ANGLE_NEARLY_90;
             } else if (dot >= 0) {
-                angleType = dot >= 1f - MathUtil.EPS ? 0 : 1;
+                angleType = dot >= 1f - MathUtil.EPS ? ANGLE_NEARLY_0 : ANGLE_ACUTE;
             } else {
-                angleType = dot <= MathUtil.EPS - 1f ? 2 : 3;
+                angleType = dot <= MathUtil.EPS - 1f ? ANGLE_NEARLY_180 : ANGLE_OBTUSE;
             }
-            if (angleType == 0) {
+            if (angleType == ANGLE_NEARLY_0) {
                 // 0 degrees, no need to join
                 return;
             }
 
-            boolean cw = isClockwise(
+            boolean ccw = isCCW(
                     beforeUnitNormalX, beforeUnitNormalY,
                     afterUnitNormalX, afterUnitNormalY
             );
-            if (!cw) {
+            if (ccw) {
                 var tmp = outer;
                 outer = inner;
                 inner = tmp;
@@ -508,35 +526,169 @@ public class PathStroker implements PathConsumer {
                 afterUnitNormalY = -afterUnitNormalY;
             }
 
-            if (angleType == 1) {
+            float afterX;
+            float afterY;
+            if (angleType == ANGLE_ACUTE) {
                 // (0,90) degrees, add one fast approx arc
-            } else if (angleType == 2) {
-                // 180 degrees, add two approx arcs
-                /*final float Cmx = Capper.C * normalX;
-                final float Cmy = Capper.C * normalY;
-                path.cubicTo(
-                        pivotX + normalX - Cmy, pivotY + normalY + Cmx,
-                        pivotX - normalY + Cmx, pivotY + normalX + Cmy,
-                        pivotX - normalY, pivotY + normalX
+                doBezierApproxForArc(
+                        outer,
+                        beforeUnitNormalX,
+                        beforeUnitNormalY,
+                        pivotX,
+                        pivotY,
+                        afterUnitNormalX,
+                        afterUnitNormalY,
+                        radius,
+                        ccw
                 );
-                path.cubicTo(
-                        pivotX - normalY - Cmx, pivotY + normalX - Cmy,
-                        pivotX - normalX - Cmy, pivotY - normalY + Cmx,
-                        pivotX - normalX, pivotY - normalY
-                );*/
-            } else if (angleType == 3) {
-                // (90,180) degrees, add two fast approx arcs
-            } else {
+                afterX = afterUnitNormalX * radius;
+                afterY = afterUnitNormalY * radius;
+            } else if (angleType == ANGLE_NEARLY_90) {
                 // 90 degrees, add one approx arc
+                afterX = afterUnitNormalX * radius;
+                afterY = afterUnitNormalY * radius;
+                doBezierApproxForArc(
+                        outer,
+                        beforeUnitNormalX * radius,
+                        beforeUnitNormalY * radius,
+                        pivotX,
+                        pivotY,
+                        afterX,
+                        afterY,
+                        ccw ? -Capper.C : Capper.C
+                );
+            } else {
+                // split the arc into 2 arcs spanning the same angle
+                float unitNormalX;
+                float unitNormalY;
+                if (ccw) {
+                    unitNormalX = beforeUnitNormalY - afterUnitNormalY;
+                    unitNormalY = afterUnitNormalX - beforeUnitNormalX;
+                } else {
+                    unitNormalX = afterUnitNormalY - beforeUnitNormalY;
+                    unitNormalY = beforeUnitNormalX - afterUnitNormalX;
+                }
+                double dmag = Math.sqrt(
+                        (double) unitNormalX * (double) unitNormalX +
+                                (double) unitNormalY * (double) unitNormalY
+                );
+                double dscale = 1.0 / dmag;
+                unitNormalX = (float) (unitNormalX * dscale);
+                unitNormalY = (float) (unitNormalY * dscale);
+                if (angleType == ANGLE_OBTUSE) {
+                    // (90,180) degrees, add two fast approx arcs
+                    doBezierApproxForArc(
+                            outer,
+                            beforeUnitNormalX,
+                            beforeUnitNormalY,
+                            pivotX,
+                            pivotY,
+                            unitNormalX,
+                            unitNormalY,
+                            radius,
+                            ccw
+                    );
+                    doBezierApproxForArc(
+                            outer,
+                            unitNormalX,
+                            unitNormalY,
+                            pivotX,
+                            pivotY,
+                            afterUnitNormalX,
+                            afterUnitNormalY,
+                            radius,
+                            ccw
+                    );
+                    afterX = afterUnitNormalX * radius;
+                    afterY = afterUnitNormalY * radius;
+                } else {
+                    // 180 degrees, add two approx arcs
+                    float normalX = unitNormalX * radius;
+                    float normalY = unitNormalY * radius;
+                    afterX = afterUnitNormalX * radius;
+                    afterY = afterUnitNormalY * radius;
+                    doBezierApproxForArc(
+                            outer,
+                            beforeUnitNormalX * radius,
+                            beforeUnitNormalY * radius,
+                            pivotX,
+                            pivotY,
+                            normalX,
+                            normalY,
+                            ccw ? -Capper.C : Capper.C
+                    );
+                    doBezierApproxForArc(
+                            outer,
+                            normalX,
+                            normalY,
+                            pivotX,
+                            pivotY,
+                            afterX,
+                            afterY,
+                            ccw ? -Capper.C : Capper.C
+                    );
+                }
             }
 
-            float afterX = afterUnitNormalX * radius;
-            float afterY = afterUnitNormalY * radius;
             inner.lineTo(pivotX - afterX, pivotY - afterY);
         }
 
-        static void doBezierApproxForArc() {
+        // fast approximation for arcs (span < 90 degrees)
+        static void doBezierApproxForArc(
+                PathConsumer path,
+                float beforeUnitNormalX,
+                float beforeUnitNormalY,
+                float pivotX,
+                float pivotY,
+                float afterUnitNormalX,
+                float afterUnitNormalY,
+                float radius,
+                boolean ccw) {
+            // dot = cos(a)
+            float halfCosAngle = Point.dotProduct(
+                    beforeUnitNormalX, beforeUnitNormalY,
+                    afterUnitNormalX, afterUnitNormalY
+            ) * 0.5f;
+            // C = 4/3 * tan(a/4)
+            //   = 4/3 * sin(a/2) / (1 + cos(a/2))
+            // sin(a/2) = sqrt((1 - cos(a)) / 2)
+            // cos(a/2) = sqrt((1 + cos(a)) / 2)
+            float C = (float) ((4.0 / 3.0) * Math.sqrt(0.5 - halfCosAngle) /
+                    (1.0 + Math.sqrt(0.5 + halfCosAngle)));
+            doBezierApproxForArc(
+                    path,
+                    beforeUnitNormalX * radius,
+                    beforeUnitNormalY * radius,
+                    pivotX,
+                    pivotY,
+                    afterUnitNormalX * radius,
+                    afterUnitNormalY * radius,
+                    ccw ? -C : C
+            );
+        }
 
+        static void doBezierApproxForArc(
+                PathConsumer path,
+                float beforeX,
+                float beforeY,
+                float pivotX,
+                float pivotY,
+                float afterX,
+                float afterY,
+                float k) {
+            float x0 = pivotX + beforeX;
+            float y0 = pivotY + beforeY;
+            float x1 = x0 - k * beforeY;
+            float y1 = y0 + k * beforeX;
+            float x3 = pivotX + afterX;
+            float y3 = pivotY + afterY;
+            float x2 = x3 + k * afterY;
+            float y2 = y3 - k * afterX;
+            path.cubicTo(
+                    x1, y1,
+                    x2, y2,
+                    x3, y3
+            );
         }
 
         static void doBevelJoin(
