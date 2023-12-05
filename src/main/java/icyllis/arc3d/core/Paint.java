@@ -29,7 +29,7 @@ import java.util.Objects;
 
 /**
  * {@code Paint} controls options applied when drawing. {@code Paint} collects
- * all options outside the {@code Canvas} clip and {@code Canvas} matrix.
+ * all options outside the {@code Canvas} clip and {@code Canvas} matrix,
  * such as style and color information, applied to geometries and images.
  * <p>
  * {@code Paint} collects effects and filters that describe single-pass and

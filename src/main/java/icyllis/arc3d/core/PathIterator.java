@@ -44,11 +44,11 @@ public interface PathIterator {
     int WIND_NON_ZERO = 1;
 
     int
-            VERB_MOVETO = 0,  // returns 1 point
-            VERB_LINETO = 1,  // returns 1 point
-            VERB_QUADTO = 2,  // returns 2 points
-            VERB_CUBICTO = 3, // returns 3 points
-            VERB_CLOSE = 4;   // returns 0 points
+            VERB_MOVE = 0,  // returns 1 point
+            VERB_LINE = 1,  // returns 1 point
+            VERB_QUAD = 2,  // returns 2 points
+            VERB_CUBIC = 3, // returns 3 points
+            VERB_CLOSE = 4; // returns 0 points
     int VERB_DONE = -1;
 
     /**
