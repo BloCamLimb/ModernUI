@@ -19,6 +19,7 @@
 package icyllis.modernui.graphics;
 
 import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 
 /**
  * This class represents a 3x3 matrix and a 2D transformation, its components
@@ -31,10 +32,49 @@ public class Matrix extends icyllis.arc3d.core.Matrix {
      * Create a new identity matrix.
      */
     public Matrix() {
+        super();
     }
 
-    public Matrix(Matrix m) {
-        super(m);
+    /**
+     * Create a new matrix copied from the given matrix.
+     */
+    public Matrix(@Nullable Matrix m) {
+        super();
+        if (m != null) {
+            m.store(this);
+        }
+    }
+
+    /**
+     * Create a new matrix from the given elements.
+     * The order matches GLSL's column major.
+     *
+     * @param scaleX the value of m11
+     * @param shearY the value of m12
+     * @param persp0 the value of m14
+     * @param shearX the value of m21
+     * @param scaleY the value of m22
+     * @param persp1 the value of m24
+     * @param transX the value of m41
+     * @param transY the value of m42
+     * @param persp2 the value of m44
+     */
+    public Matrix(float scaleX, float shearY, float persp0,
+                  float shearX, float scaleY, float persp1,
+                  float transX, float transY, float persp2) {
+        super(scaleX, shearY, persp0, shearX, scaleY, persp1, transX, transY, persp2);
+    }
+
+    /**
+     * Copy the given matrix into this matrix. If m is null, reset this matrix to the
+     * identity matrix.
+     */
+    public void set(@Nullable Matrix m) {
+        if (m != null) {
+            m.store(this);
+        } else {
+            setIdentity();
+        }
     }
 
     /**
@@ -249,14 +289,5 @@ public class Matrix extends icyllis.arc3d.core.Matrix {
             p.x = x * w;
             p.y = y * w;
         }
-    }
-
-    /**
-     * Map a point in the X-Y plane.
-     *
-     * @param p the point to transform
-     */
-    public void mapPoint(@NonNull float[] p) {
-        super.mapPoint(p);
     }
 }
