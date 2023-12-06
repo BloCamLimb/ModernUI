@@ -290,6 +290,7 @@ public class PathStroker implements PathConsumer {
 
         // we find a better approximation, see
         // https://spencermortensen.com/articles/bezier-circle/
+        // radius 5102 pixels to get 1 pixel error
         float C = 0.5519150244935105707435627f;
 
         static void doRoundCap(
@@ -634,6 +635,7 @@ public class PathStroker implements PathConsumer {
         }
 
         // fast approximation for arcs (span < 90 degrees)
+        // radius 3663 pixels to get 1 pixel error
         static void doBezierApproxForArc(
                 PathConsumer path,
                 float beforeUnitNormalX,
