@@ -83,6 +83,9 @@ public class Path implements PathConsumer {
     private static final byte CONVEXITY_CONCAVE = 1;
     private static final byte CONVEXITY_UNKNOWN = 2;
 
+    public static final int APPROXIMATE_ARC_WITH_CUBICS = 0;
+    public static final int APPROXIMATE_CONIC_WITH_QUADS = 1;
+
     @SharedPtr
     private Ref mRef;
 
@@ -378,40 +381,41 @@ public class Path implements PathConsumer {
 
     private class Iterator implements PathIterator {
 
-        private final int mNumVerbs = numVerbs();
-        private int mVerbPos;
-        private int mCoordPos;
+        private final int numVerbs = numVerbs();
+        private int verbPos;
+        private int coordPos;
 
         @Override
-        public int next(float[] coords) {
-            if (mVerbPos == mNumVerbs) {
+        public int next(float[] coords, int offset) {
+            if (verbPos == numVerbs) {
                 return VERB_DONE;
             }
-            byte verb = mRef.mVerbs[mVerbPos++];
+            byte verb = mRef.mVerbs[verbPos++];
             switch (verb) {
                 case VERB_MOVE -> {
-                    if (mVerbPos == mNumVerbs) {
+                    if (verbPos == numVerbs) {
                         return VERB_DONE;
                     }
-                    coords[0] = mRef.mCoords[mCoordPos++];
-                    coords[1] = mRef.mCoords[mCoordPos++];
+                    coords[offset] = mRef.mCoords[coordPos++];
+                    coords[offset + 1] = mRef.mCoords[coordPos++];
                 }
                 case VERB_LINE -> {
-                    coords[0] = mRef.mCoords[mCoordPos++];
-                    coords[1] = mRef.mCoords[mCoordPos++];
+                    coords[offset] = mRef.mCoords[coordPos++];
+                    coords[offset + 1] = mRef.mCoords[coordPos++];
                 }
                 case VERB_QUAD -> {
-                    coords[0] = mRef.mCoords[mCoordPos++];
-                    coords[1] = mRef.mCoords[mCoordPos++];
-                    coords[2] = mRef.mCoords[mCoordPos++];
-                    coords[3] = mRef.mCoords[mCoordPos++];
+                    System.arraycopy(
+                            mRef.mCoords, coordPos,
+                            coords, offset, 4
+                    );
+                    coordPos += 4;
                 }
                 case VERB_CUBIC -> {
                     System.arraycopy(
-                            mRef.mCoords, mCoordPos,
-                            coords, 0, 6
+                            mRef.mCoords, coordPos,
+                            coords, offset, 6
                     );
-                    mCoordPos += 6;
+                    coordPos += 6;
                 }
             }
             return verb;

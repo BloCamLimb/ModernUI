@@ -323,46 +323,194 @@ public class Geometry {
         dst[off+13] = y3;
     }
 
+    // radius 4220.2324 to get 1 pixel error
+    public static final int MAX_CONIC_TO_QUADS_LEVEL = 5;
+
+    /**
+     * Return the log2 number of quadratic Bézier curves needed to approximate the conic
+     * with a sequence of quadratic Bézier curves. Will be 0 to 5.
+     */
+    public static int computeConicToQuadsLevel(
+            final float x0, final float y0,
+            final float x1, final float y1,
+            final float x2, final float y2,
+            final float w1,
+            final float tol
+    ) {
+        // "High order approximation of conic sections by quadratic splines"
+        // by Michael Floater, 1993
+        float a = w1 - 1;
+        float k = a / (4 * (2 + a));
+        float x = k * (x0 - 2 * x1 + x2);
+        float y = k * (y0 - 2 * y1 + y2);
+
+        int level = MathUtil.ceilLog16((x * x + y * y) / (tol * tol));
+
+        return Math.min(level, MAX_CONIC_TO_QUADS_LEVEL);
+    }
+
+    /**
+     * Chop the conic into N quads, stored continuously in <var>dst</var>, where
+     * N = 1 << level. The amount of storage needed is (4 * N + 2)
+     *
+     * @param w1    conic weight
+     * @param level 0 to 5 (1 to 32 quad curves)
+     * @return actual number of quad curves
+     */
+    public static int computeConicToQuads(
+            final float x0, final float y0,
+            final float x1, final float y1,
+            final float x2, final float y2,
+            final float w1,
+            final float[] dst, final int off,
+            int level
+    ) {
+        if (level < 0 || level > MAX_CONIC_TO_QUADS_LEVEL) {
+            throw new IllegalArgumentException();
+        }
+        dst[off] = x0;
+        dst[off+1] = y0;
+        int count = subdivideConic(
+                x0, y0,
+                x1, y1,
+                x2, y2,
+                w1,
+                dst, off + 2,
+                level
+        );
+        if (count == ~8) {
+            // special case
+            level = 1;
+            count = 8;
+        } else {
+            assert 4 * (1 << level) == count;
+        }
+        float prod = 0;
+        for (int i = off; i < off + count + 2; i++) {
+            prod *= dst[i];
+        }
+        if (prod != 0) {
+            // if we generated a non-finite, pin ourselves to the middle of the hull,
+            // as our first and last are already on the first/last pts of the hull.
+            for (int i = off + 2; i < off + count; i += 2) {
+                dst[i] = x1;
+                dst[i+1] = y1;
+            }
+        }
+        return 1 << level;
+    }
+
     // returns true if (a <= b <= c) || (a >= b >= c)
     static boolean between(float a, float b, float c) {
         return (a - b) * (c - b) <= 0;
     }
 
-    /**
-     * Given a Conic representing a circular arc that does not exceed 90 degrees.
-     * Subdivide it into two quadratic Bézier curves. The weight must be sqrt(2)/2.
-     */
-    public static void subdivideQuadrantConicToQuads(
-            final float x0, final float y0,
-            final float x1, final float y1,
-            final float x2, final float y2,
-            final float[] dst, final int off
+    static int subdivideConic(
+            final float p0x, final float p0y,
+            final float p1x, final float p1y,
+            final float p2x, final float p2y,
+            float w1,
+            final float[] dst, final int off,
+            int level
     ) {
-        float scale = 1 / (1 + MathUtil.INV_SQRT2);
-        float t0x = x0 * scale;
-        float t0y = y0 * scale;
-        float t1x = x1 * (MathUtil.INV_SQRT2 * scale);
-        float t1y = y1 * (MathUtil.INV_SQRT2 * scale);
-        float t2x = x2 * scale;
-        float t2y = y2 * scale;
+        assert level >= 0;
+        if (level == 0) {
+            dst[off] = p1x;
+            dst[off+1] = p1y;
+            dst[off+2] = p2x;
+            dst[off+3] = p2y;
+            return 4;
+        }
 
-        float p1x = t0x + t1x;
-        float p1y = t0y + t1y;
-        float p3x = t1x + t2x;
-        float p3y = t1y + t2y;
-        float p2x = 0.5f * t0x + t1x + 0.5f * t2x;
-        float p2y = 0.5f * t0y + t1y + 0.5f * t2y;
+        // observe that scale will always be smaller than 1 because w1 > 0.
+        final float scale = 1 / (1 + w1);
 
-        dst[off] = x0;
-        dst[off+1] = y0;
-        dst[off+2] = p1x;
-        dst[off+3] = p1y;
-        dst[off+4] = p2x;
-        dst[off+5] = p2y;
-        dst[off+6] = p3x;
-        dst[off+7] = p3y;
-        dst[off+8] = x2;
-        dst[off+9] = y2;
+        // The subdivided control points below are the sums of the following three terms. Because the
+        // terms are multiplied by something <1, and the resulting control points lie within the
+        // control points of the original then the terms and the sums below will not overflow. Note
+        // that w1 * scale approaches 1 as w1 becomes very large.
+        final float t0x = p0x * scale;
+        final float t0y = p0y * scale;
+        final float t1x = p1x * (w1 * scale);
+        final float t1y = p1y * (w1 * scale);
+        final float t2x = p2x * scale;
+        final float t2y = p2y * scale;
+
+        // Calculate the subdivided control points
+        float q1x = t0x + t1x;
+        float q1y = t0y + t1y;
+        // p2 = (t0 + 2*t1 + t2) / 2. Divide the terms by 2 before the sum to keep the sum for p2
+        // from overflowing.
+        float q2x = 0.5f * t0x + t1x + 0.5f * t2x;
+        float q2y = 0.5f * t0y + t1y + 0.5f * t2y;
+        float q3x = t1x + t2x;
+        float q3y = t1y + t2y;
+
+        if (level == MAX_CONIC_TO_QUADS_LEVEL) {
+            // If an extreme weight generates many quads
+            // check to see if the first chop generates a pair of lines
+            if (Point.equals(q1x, q1y, q2x, q2y) &&
+                    Point.equals(q2x, q2y, q3x, q3y)) {
+                // make lines
+                dst[off] =   q1x;
+                dst[off+1] = q1y;
+                dst[off+2] = q1x;
+                dst[off+3] = q1y;
+                dst[off+4] = q1x;
+                dst[off+5] = q1y;
+
+                dst[off+6] = p2x;
+                dst[off+7] = p2y;
+                return ~8;
+            }
+        }
+
+        // Update w.
+        w1 = MathUtil.sqrt(0.5f + w1 * 0.5f);
+
+        if (between(p0y, p1y, p2y)) {
+            // If the input is monotonic and the output is not, the scan converter hangs.
+            // Ensure that the chopped conics maintain their y-order.
+            float midY = q2y;
+            if (!between(p0y, midY, p2y)) {
+                // If the computed midpoint is outside the ends, move it to the closer one.
+                q2y = Math.abs(midY - p0y) < Math.abs(midY - p2y) ? p0y : p2y;
+            }
+            if (!between(p0y, q1y, q2y)) {
+                // If the 1st control is not between the start and end, put it at the start.
+                // This also reduces the quad to a line.
+                q1y = p0y;
+            }
+            if (!between(q2y, q3y, p2y)) {
+                // If the 2nd control is not between the start and end, put it at the end.
+                // This also reduces the quad to a line.
+                q3y = p2y;
+            }
+            // Verify that all five points are in order.
+            assert (between(p0y, q1y, q2y));
+            assert (between(q1y, q2y, q3y));
+            assert (between(q2y, q3y, p2y));
+        }
+
+        --level;
+        int ret = off;
+        ret += subdivideConic(
+                p0x, p0y,
+                q1x, q1y,
+                q2x, q2y,
+                w1,
+                dst, ret,
+                level
+        );
+        ret += subdivideConic(
+                q2x, q2y,
+                q3x, q3y,
+                p2x, p2y,
+                w1,
+                dst, ret,
+                level
+        );
+        return ret - off;
     }
 
     protected Geometry() {

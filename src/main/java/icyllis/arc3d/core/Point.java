@@ -35,6 +35,17 @@ public class Point {
     }
 
     /**
+     * Returns true if two points are equal.
+     */
+    @Contract(pure = true)
+    public static boolean equals(
+            final float x1, final float y1,
+            final float x2, final float y2
+    ) {
+        return isDegenerate(x1 - x2, y1 - y2);
+    }
+
+    /**
      * Returns true if two points are equal within the given tolerance.
      */
     @Contract(pure = true)

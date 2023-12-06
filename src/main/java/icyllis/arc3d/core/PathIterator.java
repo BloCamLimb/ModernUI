@@ -43,13 +43,16 @@ public interface PathIterator {
      */
     int WIND_NON_ZERO = 1;
 
+    /**
+     * Basic commands of path segments.
+     */
     int
             VERB_MOVE = 0,  // returns 1 point
             VERB_LINE = 1,  // returns 1 point
             VERB_QUAD = 2,  // returns 2 points
-            VERB_CUBIC = 3, // returns 3 points
-            VERB_CLOSE = 4; // returns 0 points
-    int VERB_DONE = -1;
+            VERB_CUBIC = 4, // returns 3 points
+            VERB_CLOSE = 5, // returns 0 points
+            VERB_DONE = 6;
 
     /**
      * Returns next verb, and advances iterator.
@@ -62,15 +65,15 @@ public interface PathIterator {
      * store the coordinates of the point(s).
      * Each point is stored as a pair of float x,y coordinates.
      * <ul>
-     *     <li>MOVETO returns 1 point</li>
-     *     <li>LINETO returns 1 point</li>
-     *     <li>QUADTO returns 2 points</li>
-     *     <li>CUBICTO returns 3 points</li>
+     *     <li>MOVE returns 1 point</li>
+     *     <li>LINE returns 1 point</li>
+     *     <li>QUAD returns 2 points</li>
+     *     <li>CUBIC returns 3 points</li>
      *     <li>CLOSE does not return any points</li>
      * </ul>
      *
      * @param coords array for point data describing returned verb
      * @return next verb
      */
-    int next(float[] coords);
+    int next(float[] coords, int offset);
 }
