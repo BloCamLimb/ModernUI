@@ -392,7 +392,7 @@ public class Paint {
      * @param a the alpha component [0..1] of the paint's color
      */
     public void setAlphaF(float a) {
-        mA = MathUtil.clamp(a, 0.0f, 1.0f);
+        mA = MathUtil.pin(a, 0.0f, 1.0f);
     }
 
     /**
@@ -402,7 +402,7 @@ public class Paint {
      * @param a the alpha component [0..255] of the paint's color
      */
     public void setAlpha(int a) {
-        mA = MathUtil.clamp(a / 255.0f, 0.0f, 1.0f);
+        mA = MathUtil.pin(a / 255.0f, 0.0f, 1.0f);
     }
 
     /**
@@ -458,9 +458,9 @@ public class Paint {
      * @param b the new blue component (0..255) of the paint's color.
      */
     public final void setRGB(int r, int g, int b) {
-        mR = MathUtil.clamp(r / 255.0f, 0.0f, 1.0f);
-        mG = MathUtil.clamp(g / 255.0f, 0.0f, 1.0f);
-        mB = MathUtil.clamp(b / 255.0f, 0.0f, 1.0f);
+        mR = MathUtil.pin(r / 255.0f, 0.0f, 1.0f);
+        mG = MathUtil.pin(g / 255.0f, 0.0f, 1.0f);
+        mB = MathUtil.pin(b / 255.0f, 0.0f, 1.0f);
     }
 
     /**
@@ -472,9 +472,9 @@ public class Paint {
      * @param b the new blue component (0..1) of the paint's color.
      */
     public final void setRGB(float r, float g, float b) {
-        mR = MathUtil.clamp(r, 0.0f, 1.0f);
-        mG = MathUtil.clamp(g, 0.0f, 1.0f);
-        mB = MathUtil.clamp(b, 0.0f, 1.0f);
+        mR = MathUtil.pin(r, 0.0f, 1.0f);
+        mG = MathUtil.pin(g, 0.0f, 1.0f);
+        mB = MathUtil.pin(b, 0.0f, 1.0f);
     }
 
     /**
@@ -486,10 +486,10 @@ public class Paint {
      * @param a the new alpha component (0..255) of the paint's color.
      */
     public final void setRGBA(int r, int g, int b, int a) {
-        mR = MathUtil.clamp(r / 255.0f, 0.0f, 1.0f);
-        mG = MathUtil.clamp(g / 255.0f, 0.0f, 1.0f);
-        mB = MathUtil.clamp(b / 255.0f, 0.0f, 1.0f);
-        mA = MathUtil.clamp(a / 255.0f, 0.0f, 1.0f);
+        mR = MathUtil.pin(r / 255.0f, 0.0f, 1.0f);
+        mG = MathUtil.pin(g / 255.0f, 0.0f, 1.0f);
+        mB = MathUtil.pin(b / 255.0f, 0.0f, 1.0f);
+        mA = MathUtil.pin(a / 255.0f, 0.0f, 1.0f);
     }
 
     /**
@@ -501,10 +501,10 @@ public class Paint {
      * @param a the new alpha component (0..1) of the paint's color.
      */
     public final void setRGBA(float r, float g, float b, float a) {
-        mR = MathUtil.clamp(r, 0.0f, 1.0f);
-        mG = MathUtil.clamp(g, 0.0f, 1.0f);
-        mB = MathUtil.clamp(b, 0.0f, 1.0f);
-        mA = MathUtil.clamp(a, 0.0f, 1.0f);
+        mR = MathUtil.pin(r, 0.0f, 1.0f);
+        mG = MathUtil.pin(g, 0.0f, 1.0f);
+        mB = MathUtil.pin(b, 0.0f, 1.0f);
+        mA = MathUtil.pin(a, 0.0f, 1.0f);
     }
 
     /**
@@ -516,10 +516,10 @@ public class Paint {
      * @param b the new blue component (0..255) of the paint's color.
      */
     public void setARGB(int a, int r, int g, int b) {
-        mR = MathUtil.clamp(r / 255.0f, 0.0f, 1.0f);
-        mG = MathUtil.clamp(g / 255.0f, 0.0f, 1.0f);
-        mB = MathUtil.clamp(b / 255.0f, 0.0f, 1.0f);
-        mA = MathUtil.clamp(a / 255.0f, 0.0f, 1.0f);
+        mR = MathUtil.pin(r / 255.0f, 0.0f, 1.0f);
+        mG = MathUtil.pin(g / 255.0f, 0.0f, 1.0f);
+        mB = MathUtil.pin(b / 255.0f, 0.0f, 1.0f);
+        mA = MathUtil.pin(a / 255.0f, 0.0f, 1.0f);
     }
 
     /**
@@ -531,10 +531,10 @@ public class Paint {
      * @param a the new alpha component (0..1) of the paint's color.
      */
     public void setARGB(float a, float r, float g, float b) {
-        mR = MathUtil.clamp(r, 0.0f, 1.0f);
-        mG = MathUtil.clamp(g, 0.0f, 1.0f);
-        mB = MathUtil.clamp(b, 0.0f, 1.0f);
-        mA = MathUtil.clamp(a, 0.0f, 1.0f);
+        mR = MathUtil.pin(r, 0.0f, 1.0f);
+        mG = MathUtil.pin(g, 0.0f, 1.0f);
+        mB = MathUtil.pin(b, 0.0f, 1.0f);
+        mA = MathUtil.pin(a, 0.0f, 1.0f);
     }
 
     ///// Basic Flags

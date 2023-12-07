@@ -195,8 +195,11 @@ public class PathStroker implements PathConsumer {
 
     @Override
     public void lineTo(float x, float y) {
-        boolean degenerate =
-                Point.isApproxEqual(mPrevX, mPrevY, x, y, MathUtil.EPS);
+        boolean degenerate = Point.isApproxEqual(
+                mPrevX, mPrevY,
+                x, y,
+                MathUtil.EPS * mInvResScale
+        );
         if (degenerate && mCapStyle == Paint.CAP_BUTT) {
             return;
         }
@@ -209,6 +212,68 @@ public class PathStroker implements PathConsumer {
             postJoinTo(x, y);
         }
     }
+
+    static class QuadState {
+        float q0x;
+        float q0y;
+        float q1x;
+        float q1y;
+        float q2x;
+        float q2y;
+        float tan0x;
+        float tan0y;
+        float tan2x;
+        float tan2y;
+        float t0;
+        float t1;
+        float t2;
+        boolean set0;
+        boolean set2;
+        boolean opposite_tangents;
+
+        boolean init(float t0, float t2) {
+            this.t0 = t0;
+            t1 = (t0 + t2) * 0.5f;
+            this.t2 = t2;
+            set0 = set2 = false;
+            return t0 < t1 && t1 < t2;
+        }
+
+        boolean init0(QuadState prev) {
+            if (!init(prev.t0, prev.t1)) {
+                return false;
+            }
+            q0x = prev.q0x;
+            q0y = prev.q0y;
+            tan0x = prev.tan0x;
+            tan0y = prev.tan0y;
+            set0 = true;
+            return true;
+        }
+
+        boolean init2(QuadState prev) {
+            if (!init(prev.t1, prev.t2)) {
+                return false;
+            }
+            q2x = prev.q2x;
+            q2y = prev.q2y;
+            tan2x = prev.tan2x;
+            tan2y = prev.tan2y;
+            set2 = true;
+            return true;
+        }
+    }
+
+    static final int MAX_TANGENT_RECURSION_DEPTH = 15;
+    static final int MAX_CUBIC_RECURSION_DEPTH = 24;
+    static final int MAX_QUAD_RECURSION_DEPTH = 33;
+
+    // stack depth
+    private int mRecursionDepth;
+    private boolean mFoundTangents;
+
+    private final QuadState[] mQuadStack =
+            new QuadState[MAX_QUAD_RECURSION_DEPTH + 1];
 
     @Override
     public void quadTo(float x1, float y1, float x2, float y2) {
