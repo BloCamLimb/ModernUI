@@ -183,23 +183,45 @@ public class MathUtil {
     }
 
     /**
-     * If x compares less than min, returns min; otherwise if max compares less than x,
-     * returns max; otherwise returns x.
+     * Clamps x between min and max, exactly. If x is NaN, returns NaN.
      *
-     * @return x clamped between min and max, inclusively.
+     * @return x clamped between min and max
      */
     public static float clamp(float x, float min, float max) {
         return Math.max(min, Math.min(x, max));
     }
 
     /**
-     * If x compares less than min, returns min; otherwise if max compares less than x,
-     * returns max; otherwise returns x.
+     * Clamps x between min and max, exactly. If x is NaN, returns NaN.
      *
-     * @return x clamped between min and max, inclusively.
+     * @return x clamped between min and max
      */
     public static double clamp(double x, double min, double max) {
         return Math.max(min, Math.min(x, max));
+    }
+
+    /**
+     * Clamps x between min and max. If x is NaN, returns min.
+     * Note the result is incorrect if min is negative zero.
+     *
+     * @return x clamped between min and max
+     */
+    @SuppressWarnings("ManualMinMaxCalculation")
+    public static float pin(float x, float min, float max) {
+        float y = max < x ? max : x;
+        return min < y ? y : min;
+    }
+
+    /**
+     * Clamps x between min and max. If x is NaN, returns min.
+     * Note the result is incorrect if min is negative zero.
+     *
+     * @return x clamped between min and max
+     */
+    @SuppressWarnings("ManualMinMaxCalculation")
+    public static double pin(double x, double min, double max) {
+        double y = max < x ? max : x;
+        return min < y ? y : min;
     }
 
     /**
@@ -290,7 +312,7 @@ public class MathUtil {
      * Linear interpolation between two values, matches GLSL {@code mix} intrinsic function.
      * Slower than {@link #lerp(float, float, float)} but without intermediate overflow or underflow.
      */
-    public static float lerpStable(float a, float b, float t) {
+    public static float mix(float a, float b, float t) {
         return a * (1 - t) + b * t;
     }
 
@@ -298,7 +320,7 @@ public class MathUtil {
      * Linear interpolation between two values, matches GLSL {@code mix} intrinsic function.
      * Slower than {@link #lerp(double, double, double)} but without intermediate overflow or underflow.
      */
-    public static double lerpStable(double a, double b, double t) {
+    public static double mix(double a, double b, double t) {
         return a * (1 - t) + b * t;
     }
 

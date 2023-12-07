@@ -19,12 +19,82 @@
 
 package icyllis.arc3d.core;
 
-import javax.annotation.Nullable;
+import java.util.Arrays;
 
 /**
- * Geometry helper class.
+ * Geometry solvers.
  */
 public class Geometry {
+
+    public static int findQuadRoots(final float A, final float B, final float C,
+                                    final float[] roots, final int off) {
+        if (A == 0.0f) {
+            return valid_divide(-C, B, roots, off);
+        }
+
+        // use doubles so we don't overflow temporarily trying to compute R
+        double dis = (double) B * B - 4.0d * A * C;
+        if (dis < 0) {
+            return 0;
+        }
+        float R = (float) Math.sqrt(dis);
+        if (!Float.isFinite(R)) {
+            return 0;
+        }
+
+        int ret = off;
+
+        float Q;
+        if (B < 0) {
+            Q = -(B - R) / 2;
+            ret += valid_divide(Q, A, roots, ret);
+            ret += valid_divide(C, Q, roots, ret);
+        } else {
+            Q = -(B + R) / 2;
+            ret += valid_divide(C, Q, roots, ret);
+            ret += valid_divide(Q, A, roots, ret);
+        }
+
+        if (ret - off == 2 && roots[off] == roots[off + 1]) {
+            return 1; // skip the multiple root
+        }
+        return ret - off;
+    }
+
+    // roots are sorted, roots are between 0 and 1, eliminating duplicate roots
+    public static int findUnitQuadRoots(final float A, final float B, final float C,
+                                        final float[] roots, final int off) {
+        if (A == 0.0f) {
+            return valid_unit_divide(-C, B, roots, off);
+        }
+
+        // use doubles so we don't overflow temporarily trying to compute R
+        double dis = (double) B * B - 4.0d * A * C;
+        if (dis < 0) {
+            return 0;
+        }
+        float R = (float) Math.sqrt(dis);
+        if (!Float.isFinite(R)) {
+            return 0;
+        }
+
+        int ret = off;
+
+        float Q = (B < 0) ? -(B - R) / 2 : -(B + R) / 2;
+        ret += valid_unit_divide(Q, A, roots, ret);
+        ret += valid_unit_divide(C, Q, roots, ret);
+
+        if (ret - off == 2) {
+            if (roots[off] > roots[off + 1]) {
+                float tmp = roots[off];
+                roots[off] = roots[off + 1];
+                roots[off + 1] = tmp;
+            } else if (roots[off] == roots[off + 1]) {
+                ret--; // skip the multiple root
+            }
+        }
+        return ret - off;
+    }
 
     static int valid_divide(float numer, float denom,
                             final float[] ratio, final int off) {
@@ -64,86 +134,144 @@ public class Geometry {
         return 1;
     }
 
-    public static int findQuadRoots(final float A, final float B, final float C,
-                                    final float[] roots, final int off) {
-        if (A == 0.0f) {
-            return valid_divide(-C, B, roots, off);
-        }
+    /**
+     * Given 3 points on a quadratic bezier, if the point of maximum
+     * curvature exists on the segment, returns the t value for this
+     * point along the curve. Otherwise it will return a value of 0.
+     */
+    public static float findQuadMaxCurvature(
+            final float x0, final float y0,
+            final float x1, final float y1,
+            final float x2, final float y2
+    ) {
+        //  P(t)    = (1-t)^2 * p0 + 2t (1-t) * p1 + t^2 * p2
+        //          =   (p2 - 2p1 + p0) t^2 + 2 (p1 - p0) t + p0
+        //  P'(t)   = 2 (p2 - 2p1 + p0) t   + 2 (p1 - p0)
+        //  P''(t)  = 2 (p2 - 2p1 + p0)
+        //
+        //  A = (p1 - p0)
+        //  B = (p2 - 2p1 + p0)
+        //
+        //  solve |P'(t) dot P''(t)| = 0
+        //        Px' Px'' + Py' Py'' = 0
+        //
+        //  t = - (Ax Bx + Ay By) / (Bx ^ 2 + By ^ 2)
+        //
+        final float Ax = x1 - x0;
+        final float Ay = y1 - y0;
+        final float Bx = x2 - 2 * x1 + x0;
+        final float By = y2 - 2 * y1 + y0;
 
-        // use doubles so we don't overflow temporarily trying to compute R
-        double dis = (double) B * B - 4.0d * A * C;
-        if (dis < 0) {
+        float numer = -(Ax * Bx + Ay * By);
+        float denom = Bx * Bx + By * By;
+        if (denom < 0) {
+            numer = -numer;
+            denom = -denom;
+        }
+        if (numer <= 0) {
             return 0;
         }
-        float R = (float) Math.sqrt(dis);
-        if (!Float.isFinite(R)) {
-            return 0;
+        if (numer >= denom) {
+            // Also catches denom=0.
+            return 1;
         }
-
-        int ret = off;
-
-        float Q;
-        if (B < 0) {
-            Q = -(B - R) / 2;
-            ret += valid_divide(Q, A, roots, ret);
-            ret += valid_divide(C, Q, roots, ret);
-        } else {
-            Q = -(B + R) / 2;
-            ret += valid_divide(C, Q, roots, ret);
-            ret += valid_divide(Q, A, roots, ret);
-        }
-
-        if (ret - off == 2 && roots[off] == roots[off + 1]) {
-            return 1; // skip the multiple root
-        }
-        return ret - off;
+        float t = numer / denom;
+        assert (0 <= t && t < 1) || Float.isNaN(t);
+        return t;
     }
 
-    // roots are sorted
-    public static int findUnitQuadRoots(final float A, final float B, final float C,
-                                        final float[] roots, final int off) {
-        if (A == 0.0f) {
-            return valid_unit_divide(-C, B, roots, off);
+    /**
+     * <var>t</var> must be 0 <= t <= 1.0
+     */
+    public static void evalQuadAt(
+            final float x0, final float y0,
+            final float x1, final float y1,
+            final float x2, final float y2,
+            final float t,
+            final float[] pos, final int off
+    ) {
+        assert t >= 0 && t <= 1;
+        final float Ax = x2 - (x1 + x1) + x0;
+        final float Ay = y2 - (y1 + y1) + y0;
+        final float Bx = 2 * (x1 - x0);
+        final float By = 2 * (y1 - y0);
+
+        pos[off]   = (Ax * t + Bx) * t + x0;
+        pos[off+1] = (Ay * t + By) * t + y0;
+    }
+
+    /**
+     * <var>t</var> must be 0 <= t <= 1.0;
+     * <var>tangent</var> vector is not normalized
+     */
+    public static void evalQuadAt(
+            final float x0, final float y0,
+            final float x1, final float y1,
+            final float x2, final float y2,
+            final float t,
+            final float[] pos, final int posOff,
+            final float[] tangent, final int tangentOff
+    ) {
+        assert t >= 0 && t <= 1;
+        //  P(t)    = (1-t)^2 * p0 + 2t (1-t) * p1 + t^2 * p2
+        //          =   (p2 - 2p1 + p0) t^2 + 2 (p1 - p0) t + p0
+        //  P'(t)   = 2 (p2 - 2p1 + p0) t   + 2 (p1 - p0)
+
+        final float Ax = x2 - (x1 + x1) + x0;
+        final float Ay = y2 - (y1 + y1) + y0;
+
+        if (pos != null) {
+            float Bx = 2 * (x1 - x0);
+            float By = 2 * (y1 - y0);
+
+            pos[posOff]   = (Ax * t + Bx) * t + x0;
+            pos[posOff+1] = (Ay * t + By) * t + y0;
         }
 
-        // use doubles so we don't overflow temporarily trying to compute R
-        double dis = (double) B * B - 4.0d * A * C;
-        if (dis < 0) {
-            return 0;
-        }
-        float R = (float) Math.sqrt(dis);
-        if (!Float.isFinite(R)) {
-            return 0;
-        }
+        if (tangent != null) {
+            // The derivative equation is 2(b - a +(a - 2b +c)t). This returns a
+            // zero tangent vector when t is 0 or 1, and the control point is equal
+            // to the end point. In this case, use the quad end points to compute the tangent.
+            if ((t == 0 && x0 == x1 && y0 == y1) ||
+                    (t == 1 && x1 == x2 && y1 == y2)) {
+                tangent[tangentOff]   = x2 - x0;
+                tangent[tangentOff+1] = y2 - y0;
+            } else {
+                float Bx = x1 - x0;
+                float By = y1 - y0;
 
-        int ret = off;
-
-        float Q = (B < 0) ? -(B - R) / 2 : -(B + R) / 2;
-        ret += valid_unit_divide(Q, A, roots, ret);
-        ret += valid_unit_divide(C, Q, roots, ret);
-
-        if (ret - off == 2) {
-            if (roots[off] > roots[off + 1]) {
-                float tmp = roots[off];
-                roots[off] = roots[off + 1];
-                roots[off + 1] = tmp;
-            } else if (roots[off] == roots[off + 1]) {
-                ret--; // skip the multiple root
+                tangent[tangentOff]   = Ax * t + Bx;
+                tangent[tangentOff+1] = Ay * t + By;
             }
         }
-        return ret - off;
     }
 
+    /**
+     * Given a cubic bezier, return 0, 1, or 2 t-values that represent the
+     * inflection points.
+     */
     public static int findCubicInflectionPoints(
             final float x0, final float y0,
             final float x1, final float y1,
             final float x2, final float y2,
             final float x3, final float y3,
-            final float[] roots, final int off) {
-
-        // find the parameter value `t` where curvature is zero
-        // P(t) = (1-t)^3 * b0 + 3*t * (1-t)^2 * b1 + 3*t^2 * (1-t) * b2 + t^3 * b3
-        // let curvature k(t) = |P'(t) cross P''(t)| / |P'(t)^3| = 0
+            final float[] roots, final int off
+    ) {
+        //  find the parameter value `t` where curvature is zero
+        //  P(t)    = (1-t)^3 * p0 + 3t (1-t)^2 * p1 + 3t^2 (1-t) * p2 + t^3 * p3
+        //          =   (p3 - 3p2 + 3p1 - p0) t^3 + 3 (p2 - 2p1 + p0) t^2 + 3 (p1 - p0) t + p0
+        //  P'(t)   = 3 (p3 - 3p2 + 3p1 - p0) t^2 + 6 (p2 - 2p1 + p0) t   + 3 (p1 - p0)
+        //  P''(t)  = 6 (p3 - 3p2 + 3p1 - p0) t   + 6 (p2 - 2p1 + p0)
+        //
+        //  A = (p1 - p0)
+        //  B = (p2 - 2p1 + p0)
+        //  C = (p3 - 3p2 + 3p1 - p0)
+        //
+        //  solve |P'(t) cross P''(t)| = 0
+        //        Px' Py'' - Py' Px'' = 0
+        //
+        //  solve (B cross C) t^2 + (A cross C) t + (A cross B) = 0
+        //
         final float Ax = x1 - x0;
         final float Ay = y1 - y0;
         final float Bx = x2 - 2 * x1 + x0;
@@ -158,55 +286,46 @@ public class Geometry {
                 roots, off);
     }
 
-    static void eval_cubic_derivative(
-            final float x0, final float y0,
-            final float x1, final float y1,
-            final float x2, final float y2,
-            final float x3, final float y3,
-            final float t,
-            final float[] dst, final int off
-    ) {
-
-        float Ax = x3 + 3 * (x1 - x2) - x0;
-        float Ay = y3 + 3 * (y1 - y2) - y0;
-        float Bx = 2 * (x2 - (x1 + x1) + x0);
-        float By = 2 * (y2 - (y1 + y1) + y0);
-        float Cx = (x1 - x0);
-        float Cy = (y1 - y0);
-
-        dst[off]   = (Ax * t + Bx) * t + Cx;
-        dst[off+1] = (Ay * t + By) * t + Cy;
-    }
-
-    static void eval_cubic_second_derivative(
-            final float x0, final float y0,
-            final float x1, final float y1,
-            final float x2, final float y2,
-            final float x3, final float y3,
-            final float t,
-            final float[] dst, final int off
-    ) {
-
-        float Ax = x3 + 3 * (x1 - x2) - x0;
-        float Ay = y3 + 3 * (y1 - y2) - y0;
-        float Bx = (x2 - (x1 + x1) + x0);
-        float By = (y2 - (y1 + y1) + y0);
-
-        dst[off]   = Ax * t + Bx;
-        dst[off+1] = Ay * t + By;
-    }
-
+    /**
+     * <var>t</var> must be 0 <= t <= 1.0
+     */
     public static void evalCubicAt(
             final float x0, final float y0,
             final float x1, final float y1,
             final float x2, final float y2,
             final float x3, final float y3,
             final float t,
-            @Nullable final float[] pos, final int posOff,
-            @Nullable final float[] tangent, final int tangentOff,
-            @Nullable final float[] curvature, final int curvatureOff
+            final float[] pos, final int off
     ) {
         assert t >= 0 && t <= 1;
+        float Ax = x3 + 3 * (x1 - x2) - x0;
+        float Ay = y3 + 3 * (y1 - y2) - y0;
+        float Bx = 3 * (x2 - (x1 + x1) + x0);
+        float By = 3 * (y2 - (y1 + y1) + y0);
+        float Cx = 3 * (x1 - x0);
+        float Cy = 3 * (y1 - y0);
+
+        pos[off]   = ((Ax * t + Bx) * t + Cx) * t + x0;
+        pos[off+1] = ((Ay * t + By) * t + Cy) * t + y0;
+    }
+
+    /**
+     * <var>t</var> must be 0 <= t <= 1.0;
+     * <var>tangent</var> vector is not normalized
+     */
+    public static void evalCubicAt(
+            final float x0, final float y0,
+            final float x1, final float y1,
+            final float x2, final float y2,
+            final float x3, final float y3,
+            final float t,
+            final float[] pos, final int posOff,
+            final float[] tangent, final int tangentOff
+    ) {
+        assert t >= 0 && t <= 1;
+        //  P(t)    = (1-t)^3 * p0 + 3t (1-t)^2 * p1 + 3t^2 (1-t) * p2 + t^3 * p3
+        //          =   (p3 - 3p2 + 3p1 - p0) t^3 + 3 (p2 - 2p1 + p0) t^2 + 3 (p1 - p0) t + p0
+        //  P'(t)   = 3 (p3 - 3p2 + 3p1 - p0) t^2 + 6 (p2 - 2p1 + p0) t   + 3 (p1 - p0)
 
         float Ax = x3 + 3 * (x1 - x2) - x0;
         float Ay = y3 + 3 * (y1 - y2) - y0;
@@ -247,22 +366,32 @@ public class Geometry {
                 // inline eval_cubic_derivative
                 float Bx = 2 * (x2 - (x1 + x1) + x0);
                 float By = 2 * (y2 - (y1 + y1) + y0);
-                float Cx = (x1 - x0);
-                float Cy = (y1 - y0);
+                float Cx = x1 - x0;
+                float Cy = y1 - y0;
 
                 tangent[tangentOff]   = (Ax * t + Bx) * t + Cx;
                 tangent[tangentOff+1] = (Ay * t + By) * t + Cy;
             }
         }
+    }
 
-        if (curvature != null) {
-            // inline eval_cubic_second_derivative
-            float Bx = (x2 - (x1 + x1) + x0);
-            float By = (y2 - (y1 + y1) + y0);
+    public static void eval_cubic_derivative(
+            final float x0, final float y0,
+            final float x1, final float y1,
+            final float x2, final float y2,
+            final float x3, final float y3,
+            final float t,
+            final float[] dst, final int off
+    ) {
+        float Ax = x3 + 3 * (x1 - x2) - x0;
+        float Ay = y3 + 3 * (y1 - y2) - y0;
+        float Bx = 2 * (x2 - (x1 + x1) + x0);
+        float By = 2 * (y2 - (y1 + y1) + y0);
+        float Cx = x1 - x0;
+        float Cy = y1 - y0;
 
-            curvature[curvatureOff]   = Ax * t + Bx;
-            curvature[curvatureOff+1] = Ay * t + By;
-        }
+        dst[off]   = (Ax * t + Bx) * t + Cx;
+        dst[off+1] = (Ay * t + By) * t + Cy;
     }
 
     public static void chopCubicAt(
@@ -294,18 +423,18 @@ public class Geometry {
             return;
         }
 
-        float abx   = MathUtil.lerpStable(x0,   x1,   t);
-        float aby   = MathUtil.lerpStable(y0,   y1,   t);
-        float bcx   = MathUtil.lerpStable(x1,   x2,   t);
-        float bcy   = MathUtil.lerpStable(y1,   y2,   t);
-        float cdx   = MathUtil.lerpStable(x2,   x3,   t);
-        float cdy   = MathUtil.lerpStable(y2,   y3,   t);
-        float abcx  = MathUtil.lerpStable(abx,  bcx,  t);
-        float abcy  = MathUtil.lerpStable(aby,  bcy,  t);
-        float bcdx  = MathUtil.lerpStable(bcx,  cdx,  t);
-        float bcdy  = MathUtil.lerpStable(bcy,  cdy,  t);
-        float abcdx = MathUtil.lerpStable(abcx, bcdx, t);
-        float abcdy = MathUtil.lerpStable(abcy, bcdy, t);
+        float abx   = MathUtil.mix(x0,   x1,   t);
+        float aby   = MathUtil.mix(y0,   y1,   t);
+        float bcx   = MathUtil.mix(x1,   x2,   t);
+        float bcy   = MathUtil.mix(y1,   y2,   t);
+        float cdx   = MathUtil.mix(x2,   x3,   t);
+        float cdy   = MathUtil.mix(y2,   y3,   t);
+        float abcx  = MathUtil.mix(abx,  bcx,  t);
+        float abcy  = MathUtil.mix(aby,  bcy,  t);
+        float bcdx  = MathUtil.mix(bcx,  cdx,  t);
+        float bcdy  = MathUtil.mix(bcy,  cdy,  t);
+        float abcdx = MathUtil.mix(abcx, bcdx, t);
+        float abcdy = MathUtil.mix(abcy, bcdy, t);
 
         dst[off]    = x0;
         dst[off+1]  = y0;
@@ -323,7 +452,123 @@ public class Geometry {
         dst[off+13] = y3;
     }
 
-    // radius 4220.2324 to get 1 pixel error
+    /**
+     * Given an array and count, remove all pair-wise duplicates from the array,
+     * keeping the existing sorting, and return the new count
+     */
+    public static int deduplicate_pairs(float[] arr, int off, int count) {
+        for (int n = count; n > 1; --n) {
+            if (arr[off] == arr[off+1]) {
+                for (int i = 1; i < n; ++i) {
+                    arr[off+i-1] = arr[off+i];
+                }
+                --count;
+            } else {
+                ++off;
+            }
+        }
+        return count;
+    }
+
+    // roots are sorted, roots are between 0 and 1, eliminating duplicate roots
+    public static int findUnitCubicRoots(final float A, final float B, final float C, final float D,
+                                         final float[] roots, final int off) {
+        if (A == 0.0f) {
+            return findUnitQuadRoots(B, C, D, roots, off);
+        }
+
+        final double a, b, c;
+        {
+            double inv = 1.0 / A;
+            a = B * inv;
+            b = C * inv;
+            c = D * inv;
+        }
+
+        final double Q = (a * a - b * 3) / 9;
+        final double R = (2 * a * a * a - 9 * a * b + 27 * c) / 54;
+
+        final double Q3 = Q * Q * Q;
+        final double R2MinusQ3 = R * R - Q3;
+        final double aDiv3 = a / 3;
+
+        if (R2MinusQ3 < 0) {
+            // we have 3 real roots
+            // the divide/root can, due to finite precisions, be slightly outside of -1...1
+            final double theta = Math.acos(MathUtil.pin(R / Math.sqrt(Q3), 1.0, 1.0));
+            final double neg2RootQ = -2 * Math.sqrt(Q);
+
+            roots[off]   = (float) MathUtil.pin(
+                    neg2RootQ * Math.cos(theta / 3) - aDiv3,
+                    0.0, 1.0
+            );
+            roots[off+1] = (float) MathUtil.pin(
+                    neg2RootQ * Math.cos((theta + 2 * Math.PI) / 3) - aDiv3,
+                    0.0, 1.0
+            );
+            roots[off+2] = (float) MathUtil.pin(
+                    neg2RootQ * Math.cos((theta - 2 * Math.PI) / 3) - aDiv3,
+                    0.0, 1.0
+            );
+
+            Arrays.sort(roots, off, off + 3);
+            return deduplicate_pairs(roots, off, 3);
+        } else {
+            // we have 1 real root
+            double S = Math.abs(R) + Math.sqrt(R2MinusQ3);
+            S = Math.cbrt(S);
+            if (R > 0) {
+                S = -S;
+            }
+            if (S != 0) {
+                S += Q / S;
+            }
+            roots[off] = (float) MathUtil.pin(S - aDiv3, 0.0, 1.0);
+            return 1;
+        }
+    }
+
+    /**
+     * Returns 1, 2 or 3 t-values.
+     */
+    public static int findCubicMaxCurvature(
+            final float x0, final float y0,
+            final float x1, final float y1,
+            final float x2, final float y2,
+            final float x3, final float y3,
+            final float[] roots, final int off
+    ) {
+        //  P(t)    = (1-t)^3 * p0 + 3t (1-t)^2 * p1 + 3t^2 (1-t) * p2 + t^3 * p3
+        //          =   (p3 - 3p2 + 3p1 - p0) t^3 + 3 (p2 - 2p1 + p0) t^2 + 3 (p1 - p0) t + p0
+        //  P'(t)   = 3 (p3 - 3p2 + 3p1 - p0) t^2 + 6 (p2 - 2p1 + p0) t   + 3 (p1 - p0)
+        //  P''(t)  = 6 (p3 - 3p2 + 3p1 - p0) t   + 6 (p2 - 2p1 + p0)
+        //
+        //  A = (p1 - p0)
+        //  B = (p2 - 2p1 + p0)
+        //  C = (p3 - 3p2 + 3p1 - p0)
+        //
+        //  solve |P'(t) dot P''(t)| = 0
+        //        Px' Px'' - Py' Py'' = 0
+        //
+        //  solve (C dot C) t^3 + (3 (B dot C)) t^2 + (2 (B dot B) + (C dot A)) t + (A dot B) = 0
+        //
+        final float Ax = x1 - x0;
+        final float Ay = y1 - y0;
+        final float Bx = x2 - 2 * x1 + x0;
+        final float By = y2 - 2 * y1 + y0;
+        final float Cx = x3 + 3 * (x1 - x2) - x0;
+        final float Cy = y3 + 3 * (y1 - y2) - y0;
+
+        return findUnitCubicRoots(
+                Cx * Cx + Cy * Cy,
+                3 * (Bx * Cx + By * Cy),
+                2 * (Bx * Bx + By * By) + (Cx * Ax + Cy * Ay),
+                Ax * Bx + Ay * By,
+                roots, off
+        );
+    }
+
+    // radius 8440.4648 to get 1 pixel error
     public static final int MAX_CONIC_TO_QUADS_LEVEL = 5;
 
     /**
