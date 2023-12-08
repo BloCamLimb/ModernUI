@@ -52,7 +52,37 @@ public class Path extends icyllis.arc3d.core.Path {
         super(path);
     }
 
-    public final void rMoveTo(float dx, float dy) {
+    /**
+     * Resets the path to empty.
+     * <p>
+     * If internal storage is shared, unref it.
+     * Otherwise, preserves internal storage.
+     */
+    @Override
+    public void reset() {
+        super.reset();
+    }
+
+    /**
+     * Resets the path to empty.
+     * <p>
+     * If internal storage is shared, create new internal storage.
+     * Otherwise, preserves internal storage.
+     */
+    @Override
+    public void clear() {
+        super.clear();
+    }
+
+    /**
+     * Resets the path to empty and removes internal storage.
+     */
+    @Override
+    public void recycle() {
+        super.recycle();
+    }
+
+    public final void relativeMoveTo(float dx, float dy) {
         super.moveToRel(dx, dy);
     }
 
@@ -62,16 +92,16 @@ public class Path extends icyllis.arc3d.core.Path {
      * @param dx the offset from last point to line end on x-axis
      * @param dy the offset from last point to line end on y-axis
      */
-    public final void rLineTo(float dx, float dy) {
+    public final void relativeLineTo(float dx, float dy) {
         super.lineToRel(dx, dy);
     }
 
-    public final void rQuadTo(float dx1, float dy1,
+    public final void relativeQuadTo(float dx1, float dy1,
                               float dx2, float dy2) {
         super.quadToRel(dx1, dy1, dx2, dy2);
     }
 
-    public final void rCubicTo(float dx1, float dy1,
+    public final void relativeCubicTo(float dx1, float dy1,
                                float dx2, float dy2,
                                float dx3, float dy3) {
         super.cubicToRel(dx1, dy1, dx2, dy2, dx3, dy3);
