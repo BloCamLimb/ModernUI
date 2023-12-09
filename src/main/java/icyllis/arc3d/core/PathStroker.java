@@ -19,6 +19,7 @@
 
 package icyllis.arc3d.core;
 
+import org.intellij.lang.annotations.PrintFormat;
 import org.jetbrains.annotations.Contract;
 
 import javax.annotation.Nonnull;
@@ -32,6 +33,8 @@ import javax.annotation.Nonnull;
  * @author BloCamLimb
  */
 public class PathStroker implements PathConsumer {
+
+    private static final boolean DEBUG = true;
 
     private PathConsumer mOuter;
     private final Path mInner = new Path();
@@ -74,14 +77,6 @@ public class PathStroker implements PathConsumer {
 
     private boolean mPrevIsLine;
 
-    private static final int NORMAL_X = 0;
-    private static final int NORMAL_Y = 1;
-    private static final int UNIT_NORMAL_X = 2;
-    private static final int UNIT_NORMAL_Y = 3;
-    // (m0,m1) is normal
-    // (m2,m3) is unit normal
-    private final float[] mNormal = new float[4];
-
     public void init(@Nonnull PathConsumer out,
                      float radius,
                      int cap,
@@ -113,6 +108,18 @@ public class PathStroker implements PathConsumer {
         mInvResScaleSquared = mInvResScale * mInvResScale;
     }
 
+    private void log(int result, QuadState pp, @PrintFormat String format, Object... args) {
+        System.out.printf("[%d] ", mRecursionDepth);
+        System.out.printf(format, args);
+        String resultStr = switch (result) {
+            case INTERSECT_SUBDIVIDE -> "Subdivide";
+            case INTERSECT_DEGENERATE -> "Degenerate";
+            case INTERSECT_QUADRATIC -> "Quadratic";
+            default -> throw new AssertionError();
+        };
+        System.out.printf("\n  %s t=(%g,%g)\n", resultStr, pp.t_from, pp.t_to);
+    }
+
     @Override
     public void moveTo(float x, float y) {
         if (mSegmentCount > 0) {
@@ -124,20 +131,18 @@ public class PathStroker implements PathConsumer {
         mJoinCompleted = false;
     }
 
+    private static final int NORMAL_X = 0;
+    private static final int NORMAL_Y = 1;
+    private static final int UNIT_NORMAL_X = 2;
+    private static final int UNIT_NORMAL_Y = 3;
+    private final float[] mNormal = new float[4];
+
     private boolean preJoinTo(float x, float y, boolean isLine) {
         assert mSegmentCount >= 0;
 
-        float dxs = (x - mPrevX) * mResScale;
-        float dys = (y - mPrevY) * mResScale;
-        // normalize (dx,dy)
-        double dmag = Math.sqrt(
-                (double) dxs * (double) dxs +
-                        (double) dys * (double) dys
-        );
-        double dscale = 1.0 / dmag;
-        float tx = (float) (dxs * dscale);
-        float ty = (float) (dys * dscale);
-        if (Point.isDegenerate(tx, ty)) {
+        mNormal[0] = (x - mPrevX) * mResScale;
+        mNormal[1] = (y - mPrevY) * mResScale;
+        if (!Point.normalize(mNormal, 0)) {
             if (mCapStyle == Paint.CAP_BUTT) {
                 return false;
             }
@@ -150,10 +155,12 @@ public class PathStroker implements PathConsumer {
             mNormal[UNIT_NORMAL_Y] = 0;
         } else {
             // Rotate CCW
-            mNormal[NORMAL_X] = ty * mRadius;
-            mNormal[NORMAL_Y] = -tx * mRadius;
-            mNormal[UNIT_NORMAL_X] = ty;
-            mNormal[UNIT_NORMAL_Y] = -tx;
+            float newX = mNormal[1];
+            float newY = -mNormal[0];
+            mNormal[NORMAL_X] = newX * mRadius;
+            mNormal[NORMAL_Y] = newY * mRadius;
+            mNormal[UNIT_NORMAL_X] = newX;
+            mNormal[UNIT_NORMAL_Y] = newY;
         }
 
         if (mSegmentCount == 0) {
@@ -213,52 +220,63 @@ public class PathStroker implements PathConsumer {
         }
     }
 
+    // the state of the quad stroke
     static class QuadState {
-        float q0x;
+
+        // the stroked quad parallel to the original curve
+        float q0x; // Quad[0], start point
         float q0y;
-        float q1x;
+        float q1x; // Quad[1], control point
         float q1y;
-        float q2x;
+        float q2x; // Quad[2], end point
         float q2y;
-        float tan0x;
+
+        float tan0x; // a point tangent to Quad[0]
         float tan0y;
-        float tan2x;
+        float tan2x; // a point tangent to Quad[2]
         float tan2y;
-        float t0;
-        float t1;
-        float t2;
+
+        // a segment of the original curve
+        float t_from;
+        float t_mid;
+        float t_to;
+
+        // state to share common points across depths
         boolean set0;
         boolean set2;
+
+        // set if coincident tangents have opposite directions
         boolean opposite_tangents;
 
-        boolean init(float t0, float t2) {
-            this.t0 = t0;
-            t1 = (t0 + t2) * 0.5f;
-            this.t2 = t2;
+        // return false if from and to are too close to have a unique middle
+        boolean init(float from, float to) {
+            t_from = from;
+            t_mid = (from + to) * 0.5f;
+            t_to = to;
             set0 = set2 = false;
-            return t0 < t1 && t1 < t2;
+            return from < t_mid && t_mid < to;
         }
 
-        boolean init0(QuadState prev) {
-            if (!init(prev.t0, prev.t1)) {
+        boolean init0(QuadState pp) {
+            if (!init(pp.t_from, pp.t_mid)) {
                 return false;
             }
-            q0x = prev.q0x;
-            q0y = prev.q0y;
-            tan0x = prev.tan0x;
-            tan0y = prev.tan0y;
+            q0x = pp.q0x;
+            q0y = pp.q0y;
+            tan0x = pp.tan0x;
+            tan0y = pp.tan0y;
             set0 = true;
             return true;
         }
 
-        boolean init2(QuadState prev) {
-            if (!init(prev.t1, prev.t2)) {
+        boolean init2(QuadState pp) {
+            if (!init(pp.t_mid, pp.t_to)) {
                 return false;
             }
-            q2x = prev.q2x;
-            q2y = prev.q2y;
-            tan2x = prev.tan2x;
-            tan2y = prev.tan2y;
+            q2x = pp.q2x;
+            q2y = pp.q2y;
+            tan2x = pp.tan2x;
+            tan2y = pp.tan2y;
             set2 = true;
             return true;
         }
@@ -272,12 +290,509 @@ public class PathStroker implements PathConsumer {
     private int mRecursionDepth;
     private boolean mFoundTangents;
 
+    // simulate the stack
     private final QuadState[] mQuadStack =
             new QuadState[MAX_QUAD_RECURSION_DEPTH + 1];
 
+    {
+        for (int i = 0; i < mQuadStack.length; i++) {
+            mQuadStack[i] = new QuadState();
+        }
+    }
+
+    // use sign-opposite values later to flip perpendicular axis
+    private static final int STROKE_TYPE_OUTER = 1;
+    private static final int STROKE_TYPE_INNER = -1;
+
+    private int mStrokeType;
+
+    private void initStroke(int type, QuadState pp, float tFrom, float tTo) {
+        assert mRecursionDepth == 0;
+        assert type == STROKE_TYPE_OUTER ||
+                type == STROKE_TYPE_INNER;
+        mStrokeType = type;
+        mFoundTangents = false;
+        pp.init(tFrom, tTo);
+    }
+
+    // the first 4 points (8 floats) for curve points
+    // the next 4 points (8 floats) for method results
+    private final float[] mCurve = new float[8 + 8];
+
+    // load quadratic curve
+    private float[] getQuad(
+            float x1, float y1,
+            float x2, float y2
+    ) {
+        var c = mCurve;
+        c[0]=mPrevX;
+        c[1]=mPrevY;
+        c[2]=x1;
+        c[3]=y1;
+        c[4]=x2;
+        c[5]=y2;
+        return c;
+    }
+
+    private static boolean quad_in_line(float[] quad) {
+        float pMax = -1;
+        int outer1 = 0;
+        int outer2 = 0;
+        for (int index = 0; index < 2; ++index) {
+            for (int inner = index + 1; inner < 3; ++inner) {
+                float testMax = Math.max(
+                        Math.abs(quad[inner << 1] - quad[index << 1]),
+                        Math.abs(quad[inner << 1 | 1] - quad[index << 1 | 1])
+                );
+                if (pMax < testMax) {
+                    outer1 = index;
+                    outer2 = inner;
+                    pMax = testMax;
+                }
+            }
+        }
+        assert outer1 >= 0;
+        assert outer2 >= 1;
+        assert outer1 < outer2;
+        int mid = outer1 ^ outer2 ^ 3;
+        float lineSlop =  pMax * pMax *
+                0.000005f; // this multiplier is pulled out of the air
+        return Point.distanceToLineSegmentBetweenSq(
+                quad[mid << 1],   quad[mid << 1 | 1],
+                quad[outer1 << 1],quad[outer1 << 1 | 1],
+                quad[outer2 << 1],quad[outer2 << 1 | 1]
+        ) <= lineSlop;
+    }
+
+    private static final int INTERSECT_SUBDIVIDE = 0;
+    private static final int INTERSECT_DEGENERATE = 1;
+    private static final int INTERSECT_QUADRATIC = 2;
+
+    // Find the intersection of the stroke tangents to construct a stroke quad.
+    // Return whether the stroke is a degenerate (a line), a quad, or must be split.
+    // Optionally compute the quad's control point.
+    private int intersect_ray(
+            QuadState pp, boolean computeControlPoint
+    ) {
+        float startX = pp.q0x;
+        float startY = pp.q0y;
+        float endX = pp.q2x;
+        float endY = pp.q2y;
+
+        float aLenX = pp.tan0x - startX;
+        float aLenY = pp.tan0y - startY;
+        float bLenX = pp.tan2x - endX;
+        float bLenY = pp.tan2y - endY;
+
+        float denom = Point.crossProduct(
+                aLenX, aLenY,
+                bLenX, bLenY
+        );
+        if (denom == 0 || !Float.isFinite(denom)) {
+            pp.opposite_tangents = Point.dotProduct(
+                    aLenX, aLenY,
+                    bLenX, bLenY
+            ) < 0;
+            if (DEBUG) {
+                log(INTERSECT_DEGENERATE, pp, "denom == 0");
+            }
+            return INTERSECT_DEGENERATE;
+        }
+        pp.opposite_tangents = false;
+
+        float ab0x = startX - endX;
+        float ab0y = startY - endY;
+
+        float numerA = Point.crossProduct(
+                bLenX, bLenY,
+                ab0x, ab0y
+        );
+        float numerB = Point.crossProduct(
+                aLenX, aLenY,
+                ab0x, ab0y
+        );
+
+        if ((numerA >= 0) == (numerB >= 0)) {
+            // if the control point is outside the quad ends
+            // if the perpendicular distances from the quad points to the opposite tangent line
+            // are small, a straight line is good enough
+            float dist1 = Point.distanceToLineSegmentBetweenSq(
+                    startX, startY,
+                    endX, endY,
+                    pp.tan2x, pp.tan2y
+            );
+            float dist2 = Point.distanceToLineSegmentBetweenSq(
+                    endX, endY,
+                    startX, startY,
+                    pp.tan0x, pp.tan0y
+            );
+            if (Math.max(dist1, dist2) <= mInvResScaleSquared) {
+                if (DEBUG) {
+                    log(INTERSECT_DEGENERATE, pp,
+                            "max(dist1=%g, dist2=%g) <= mInvResScaleSquared", dist1, dist2);
+                }
+                return INTERSECT_DEGENERATE;
+            }
+            if (DEBUG) {
+                log(INTERSECT_SUBDIVIDE, pp,
+                        "(numerA=%g >= 0) == (numerB=%g >= 0)", numerA, numerB);
+            }
+            return INTERSECT_SUBDIVIDE;
+        }
+
+        // check to see if the denominator is teeny relative to the numerator
+        // if the offset by one will be lost, the ratio is too large
+        numerA /= denom;
+
+        boolean validDivide = numerA > numerA - 1;
+        if (validDivide) {
+            if (computeControlPoint) {
+                // the intersection of the tangents need not be on the tangent segment
+                // so 0 <= numerA <= 1 is not necessarily true
+                pp.q1x = startX * (1 - numerA) + pp.tan0x * numerA;
+                pp.q1y = startY * (1 - numerA) + pp.tan0y * numerA;
+            }
+            if (DEBUG) {
+                log(INTERSECT_QUADRATIC, pp,
+                        "(numerA=%g >= 0) != (numerB=%g >= 0)", numerA, numerB);
+            }
+            return INTERSECT_QUADRATIC;
+        }
+
+        pp.opposite_tangents = Point.dotProduct(
+                aLenX, aLenY,
+                bLenX, bLenY
+        ) < 0;
+        // if the lines are parallel, straight line is good enough
+        if (DEBUG) {
+            log(INTERSECT_DEGENERATE, pp,
+                    "ApproxZero(denom=%g)", denom);
+        }
+        return INTERSECT_DEGENERATE;
+    }
+
+    // Given a point on the curve and its derivative, scale the derivative by the radius, and
+    // compute the perpendicular point and its tangent.
+    // 0-7 CURVE POINTS
+    // 8,9 POINT
+    // 10,11 TANGENT
+    // 12,13 RAY POINT
+    // 14,15 RAY TANGENT
+    private void set_perpendicular_ray(float[] v) {
+        // normalize tangent
+        if (!Point.setLength(v, 8+2, mRadius)) {
+            v[8+2] = mRadius;
+            v[8+3] = 0;
+        }
+        // go opposite ways for outer, inner
+        float axis = mStrokeType;
+        // ray point
+        v[8+4] = v[8]   + axis * v[8+3];
+        v[8+5] = v[8+1] - axis * v[8+2];
+        // ray tangent = ray point + tangent
+        v[8+6] = v[8+4] + v[8+2];
+        v[8+7] = v[8+5] + v[8+3];
+    }
+
+    // Given a quad and t, return the point on curve, its perpendicular, and the perpendicular tangent.
+    // 0-7 CURVE POINTS
+    // 8,9 POINT at T
+    // 10,11 TANGENT at T
+    // 12,13 RAY POINT
+    // 14,15 RAY TANGENT
+    private void quad_perpendicular_ray(float[] quad, float t) {
+        Geometry.evalQuadAt(
+                quad[0], quad[1], quad[2], quad[3], quad[4], quad[5],
+                t, quad, /*pos*/ 8, quad, /*tangent*/ 8+2
+        );
+        if (quad[8+2] == 0 && quad[8+3] == 0) {
+            quad[8+2] = quad[4] - quad[0];
+            quad[8+3] = quad[5] - quad[1];
+        }
+        set_perpendicular_ray(quad);
+    }
+
+    private int check_quad_quad(float[] quad, QuadState pp) {
+        // get the quadratic approximation of the stroke
+        if (!pp.set0) {
+            quad_perpendicular_ray(quad, pp.t_from);
+            pp.q0x = quad[8+4];
+            pp.q0y = quad[8+5];
+            pp.tan0x = quad[8+6];
+            pp.tan0y = quad[8+7];
+            pp.set0 = true;
+        }
+        if (!pp.set2) {
+            quad_perpendicular_ray(quad, pp.t_to);
+            pp.q2x = quad[8+4];
+            pp.q2y = quad[8+5];
+            pp.tan2x = quad[8+6];
+            pp.tan2y = quad[8+7];
+            pp.set2 = true;
+        }
+        var result = intersect_ray(pp, true);
+        if (result != INTERSECT_QUADRATIC) {
+            return result;
+        }
+        // project a ray from the curve to the stroke
+        quad_perpendicular_ray(quad, pp.t_mid);
+        return check_close_enough(
+                pp,
+                quad[8+4], quad[8+5], // perpendicular ray
+                quad[8]  , quad[8+1], // curve point
+                quad
+        );
+    }
+
+    private static boolean sharp_angle(QuadState pp, float[] v) {
+        float ax = pp.q1x - pp.q0x;
+        float ay = pp.q1y - pp.q0y;
+        float bx = pp.q1x - pp.q2x;
+        float by = pp.q1y - pp.q2y;
+        float aLen = Point.lengthSq(ax, ay);
+        float bLen = Point.lengthSq(bx, by);
+        if (aLen > bLen) {
+            float t = ax;
+            ax = bx;
+            bx = t;
+            t = ay;
+            ay = by;
+            by = t;
+            bLen = aLen;
+        }
+        v[8] = ax;
+        v[9] = ay;
+        if (Point.setLength(v, 8, bLen)) {
+            return Point.dotProduct(v[8], v[9], bx, by) > 0;
+        }
+        return false;
+    }
+
+    // Return true if the point is conservatively not within the bounds of the quadratic curve
+    private boolean quick_reject(
+            QuadState pp,
+            float x, float y
+    ) {
+        float xMin = MathUtil.min(pp.q0x, pp.q1x, pp.q2x);
+        if (x + mInvResScale < xMin) {
+            return true;
+        }
+        float xMax = MathUtil.max(pp.q0x, pp.q1x, pp.q2x);
+        if (x - mInvResScale > xMax) {
+            return true;
+        }
+        float yMin = MathUtil.min(pp.q0y, pp.q1y, pp.q2y);
+        if (y + mInvResScale < yMin) {
+            return true;
+        }
+        float yMax = MathUtil.max(pp.q0y, pp.q1y, pp.q2y);
+        return y - mInvResScale > yMax;
+    }
+
+    private int check_close_enough(
+            QuadState pp,
+            float ray0x, float ray0y, // perpendicular ray
+            float ray1x, float ray1y, // curve point
+            float[] v
+    ) {
+        // measure the distance from the curve to the quad-stroke midpoint, compare to radius
+        Geometry.evalQuadAt(
+                pp.q0x, pp.q0y, pp.q1x, pp.q1y, pp.q2x, pp.q2y,
+                0.5f, v, 8
+        );
+        if (Point.distanceToSq(ray0x, ray0y, v[8], v[9]) <= mInvResScaleSquared) {
+            // if the difference is small
+            if (sharp_angle(pp, v)) {
+                if (DEBUG) {
+                    log(INTERSECT_SUBDIVIDE, pp,
+                            "sharp_angle (1) =%g,%g, %g,%g, %g,%g",
+                            pp.q0x, pp.q0y,
+                            pp.q1x, pp.q1y,
+                            pp.q2x, pp.q2y);
+                }
+                return INTERSECT_SUBDIVIDE;
+            }
+            if (DEBUG) {
+                log(INTERSECT_QUADRATIC, pp,
+                        "points_within_dist(ray[0]=%g,%g, strokeMid=%g,%g, mInvResScale=%g)",
+                        ray0x, ray0y, v[8], v[9], mInvResScale);
+            }
+            return INTERSECT_QUADRATIC;
+        }
+
+        // measure the distance to quad's bounds
+        if (quick_reject(pp, ray0x, ray0y)) {
+            // if far, subdivide
+            if (DEBUG) {
+                log(INTERSECT_SUBDIVIDE, pp,
+                        "!quick_reject(stroke=(%g,%g %g,%g %g,%g), ray[0]=%g,%g)",
+                        pp.q0x, pp.q0y,
+                        pp.q1x, pp.q1y,
+                        pp.q2x, pp.q2y,
+                        ray0x, ray0y);
+            }
+            return INTERSECT_SUBDIVIDE;
+        }
+
+        // measure the curve ray distance to the quad-stroke
+        int nRoots;
+        {
+            // Intersect the line with the quad and return the t values on the quad where the line crosses.
+            float dx = ray1x - ray0x;
+            float dy = ray1y - ray0y;
+            float A = (pp.q2y - ray0y) * dx - (pp.q2x - ray0x) * dy;
+            float B = (pp.q1y - ray0y) * dx - (pp.q1x - ray0x) * dy;
+            float C = (pp.q0y - ray0y) * dx - (pp.q0x - ray0x) * dy;
+            A += C - 2 * B; // A = a - 2*b + c
+            B -= C;         // B = -(b - c)
+            nRoots = Geometry.findUnitQuadRoots(A, 2 * B, C, v, 8);
+        }
+        if (nRoots != 1) {
+            if (DEBUG) {
+                log(INTERSECT_SUBDIVIDE, pp, "nRoots=%d != 1", nRoots);
+            }
+            return INTERSECT_SUBDIVIDE;
+        }
+        float t = v[8];
+        Geometry.evalQuadAt(
+                pp.q0x, pp.q0y, pp.q1x, pp.q1y, pp.q2x, pp.q2y,
+                t, v, 8
+        );
+        float error = mInvResScale * (1 - Math.abs(t - 0.5f) * 2);
+        if (Point.distanceToSq(ray0x, ray0y, v[8], v[9]) <= (error * error)) {
+            // if the difference is small, we're done
+            if (sharp_angle(pp, v)) {
+                if (DEBUG) {
+                    log(INTERSECT_SUBDIVIDE, pp,
+                            "sharp_angle (2) =%g,%g, %g,%g, %g,%g",
+                            pp.q0x, pp.q0y,
+                            pp.q1x, pp.q1y,
+                            pp.q2x, pp.q2y);
+                }
+                return INTERSECT_SUBDIVIDE;
+            }
+            if (DEBUG) {
+                log(INTERSECT_QUADRATIC, pp,
+                        "points_within_dist(ray[0]=%g,%g, quadPt=%g,%g, error=%g)",
+                        ray0x, ray0y, v[8], v[9], error);
+            }
+            return INTERSECT_QUADRATIC;
+        }
+        // otherwise, subdivide
+        if (DEBUG) {
+            log(INTERSECT_SUBDIVIDE, pp,
+                    "fallthrough");
+        }
+        return INTERSECT_SUBDIVIDE;
+    }
+
+    private void strokeDegenerateLine(QuadState pp) {
+        PathConsumer path = mStrokeType == STROKE_TYPE_OUTER ? mOuter : mInner;
+        path.lineTo(pp.q2x, pp.q2y);
+    }
+
+    private boolean strokeQuad(float[] quad, QuadState pp) {
+        var result = check_quad_quad(quad, pp);
+        if (result == INTERSECT_QUADRATIC) {
+            PathConsumer path = mStrokeType == STROKE_TYPE_OUTER ? mOuter : mInner;
+            path.quadTo(pp.q1x, pp.q1y, pp.q2x, pp.q2y);
+            return true;
+        }
+        if (result == INTERSECT_DEGENERATE) {
+            strokeDegenerateLine(pp);
+            return true;
+        }
+        if (++mRecursionDepth > MAX_QUAD_RECURSION_DEPTH) {
+            return false;
+        }
+        QuadState mid = mQuadStack[mRecursionDepth];
+        mid.init0(pp);
+        if (!strokeQuad(quad, mid)) {
+            return false;
+        }
+        mid.init2(pp);
+        if (!strokeQuad(quad, mid)) {
+            return false;
+        }
+        --mRecursionDepth;
+        return true;
+    }
+
     @Override
     public void quadTo(float x1, float y1, float x2, float y2) {
+        boolean degenerateAB = Point.isDegenerate(
+                x1 - mPrevX,
+                y1 - mPrevY
+        );
+        boolean degenerateBC = Point.isDegenerate(
+                x2 - x1,
+                y2 - y1
+        );
 
+        if (degenerateAB & degenerateBC) {
+            // Degenerate into a point.
+            // If the stroke consists of a moveTo followed by a degenerate curve, treat it
+            // as if it were followed by a zero-length line. Lines without length
+            // can have square and round end caps.
+            lineTo(x2, y2);
+            return;
+        }
+
+        if (degenerateAB | degenerateBC) {
+            // Degenerate into a line.
+            lineTo(x2, y2);
+            return;
+        }
+
+        float[] quad = getQuad(x1, y1, x2, y2);
+        if (quad_in_line(quad)) {
+            float t = Geometry.findQuadMaxCurvature(
+                    mPrevX, mPrevY, x1, y1, x2, y2
+            );
+            if (t == 0 || t == 1) {
+                // Degenerate into a line.
+                lineTo(x2, y2);
+                return;
+            }
+            Geometry.evalQuadAt(
+                    mPrevX, mPrevY, x1, y1, x2, y2,
+                    t, quad, 8
+            );
+            lineTo(quad[8], quad[9]);
+            var saveJoiner = mJoiner;
+            mJoiner = Joiner.get(Paint.JOIN_ROUND);
+            lineTo(x2, y2);
+            mJoiner = saveJoiner;
+            return;
+        }
+
+        if (preJoinTo(x1, y1, false)) {
+            assert mRecursionDepth == 0;
+            QuadState pp = mQuadStack[0];
+            initStroke(STROKE_TYPE_OUTER, pp, 0, 1);
+            strokeQuad(quad, pp);
+            initStroke(STROKE_TYPE_INNER, pp, 0, 1);
+            strokeQuad(quad, pp);
+            assert mRecursionDepth == 0;
+
+            // compute normal BC
+            quad[8] = (x2 - x1) * mResScale;
+            quad[9] = (y2 - y1) * mResScale;
+            if (Point.normalize(quad, 8)) {
+                // Rotate CCW
+                // newX = oldY, newY = -oldX
+                float newX = quad[9];
+                float newY = -quad[8];
+                mNormal[NORMAL_X] = newX * mRadius;
+                mNormal[NORMAL_Y] = newY * mRadius;
+                mNormal[UNIT_NORMAL_X] = newX;
+                mNormal[UNIT_NORMAL_Y] = newY;
+            } // else use normal AB, see preJoinTo
+
+            postJoinTo(x2, y2);
+        } else {
+            lineTo(x2, y2);
+        }
     }
 
     @Override

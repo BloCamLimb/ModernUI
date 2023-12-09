@@ -88,6 +88,40 @@ public class Point {
         return ax * by - ay * bx;
     }
 
+    public static boolean normalize(final float[] pos, final int off) {
+        return setLength(pos, off, 1);
+    }
+
+    /**
+     * Sets vector to (x, y) scaled to <var>length</var>, if possible. If new
+     * length is zero or NaN, returns false; otherwise returns true.
+     * <p>
+     * The vector is given by (v[off], v[off+1]), <var>off</var> must be even.
+     * <var>length</var> must be >= 0.
+     */
+    public static boolean setLength(final float[] pos, final int off, final float length) {
+        assert (off & 1) == 0;
+        double x = pos[off];
+        double y = pos[off | 1];
+        double dmag = Math.sqrt(x * x + y * y);
+        double dscale = (double) length / dmag;
+        float newX = (float) (x * dscale);
+        float newY = (float) (y * dscale);
+        if (isDegenerate(newX, newY)) {
+            return false;
+        }
+        pos[off] = newX;
+        pos[off | 1] = newY;
+        return true;
+    }
+
+    @Contract(pure = true)
+    public static float lengthSq(
+            final float x, final float y
+    ) {
+        return x * x + y * y;
+    }
+
     @Contract(pure = true)
     public static float distanceToSq(
             final float ax, final float ay,
@@ -157,15 +191,15 @@ public class Point {
 
         float uDotV = ux * vx + uy * vy;
 
-        // closest point is point A
         if (uDotV <= 0) {
+            // closest point is point A
             return vx * vx + vy * vy;
         }
 
         float uLengthSq = ux * ux + uy * uy;
 
-        // closest point is point B
-        if (uDotV > uLengthSq) {
+        if (uDotV >= uLengthSq) {
+            // closest point is point B
             return distanceToSq(bx, by, px, py);
         }
 

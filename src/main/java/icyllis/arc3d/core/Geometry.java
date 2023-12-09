@@ -188,16 +188,16 @@ public class Geometry {
             final float x1, final float y1,
             final float x2, final float y2,
             final float t,
-            final float[] pos, final int off
+            final float[] dst, final int off
     ) {
         assert t >= 0 && t <= 1;
         final float Ax = x2 - (x1 + x1) + x0;
         final float Ay = y2 - (y1 + y1) + y0;
-        final float Bx = 2 * (x1 - x0);
-        final float By = 2 * (y1 - y0);
+        final float Bx = x1 - x0;
+        final float By = y1 - y0;
 
-        pos[off]   = (Ax * t + Bx) * t + x0;
-        pos[off+1] = (Ay * t + By) * t + y0;
+        dst[off]   = (Ax * t + Bx + Bx) * t + x0;
+        dst[off|1] = (Ay * t + By + By) * t + y0;
     }
 
     /**
@@ -219,13 +219,12 @@ public class Geometry {
 
         final float Ax = x2 - (x1 + x1) + x0;
         final float Ay = y2 - (y1 + y1) + y0;
+        final float Bx = x1 - x0;
+        final float By = y1 - y0;
 
         if (pos != null) {
-            float Bx = 2 * (x1 - x0);
-            float By = 2 * (y1 - y0);
-
-            pos[posOff]   = (Ax * t + Bx) * t + x0;
-            pos[posOff+1] = (Ay * t + By) * t + y0;
+            pos[posOff]   = (Ax * t + Bx + Bx) * t + x0;
+            pos[posOff|1] = (Ay * t + By + By) * t + y0;
         }
 
         if (tangent != null) {
@@ -235,13 +234,10 @@ public class Geometry {
             if ((t == 0 && x0 == x1 && y0 == y1) ||
                     (t == 1 && x1 == x2 && y1 == y2)) {
                 tangent[tangentOff]   = x2 - x0;
-                tangent[tangentOff+1] = y2 - y0;
+                tangent[tangentOff|1] = y2 - y0;
             } else {
-                float Bx = x1 - x0;
-                float By = y1 - y0;
-
                 tangent[tangentOff]   = Ax * t + Bx;
-                tangent[tangentOff+1] = Ay * t + By;
+                tangent[tangentOff|1] = Ay * t + By;
             }
         }
     }
@@ -568,6 +564,87 @@ public class Geometry {
         );
     }
 
+    // Returns true if both points s1, s2 are in the same half plane defined
+    // by the line segment d1, d2.
+    static boolean same_side(
+            float s0x, float s0y,
+            float s1x, float s1y,
+            float d0x, float d0y,
+            float d1x, float d1y
+    ) {
+        float lx = d1x - d0x;
+        float ly = d1y - d0y;
+        return Point.crossProduct(lx, ly, s0x - d0x, s0y - d0y)
+                *
+                Point.crossProduct(lx, ly, s1x - d0x, s1y - d0y)
+                >= 0;
+    }
+
+    /**
+     * Returns t value of cusp if cubic has one; returns -1 otherwise.
+     */
+    public static float findCubicCusp(
+            final float x0, final float y0,
+            final float x1, final float y1,
+            final float x2, final float y2,
+            final float x3, final float y3
+    ) {
+        // When the adjacent control point matches the end point, it behaves as if
+        // the cubic has a cusp: there's a point of max curvature where the derivative
+        // goes to zero. Ideally, this would be where t is zero or one, but math
+        // error makes not so. It is not uncommon to create cubics this way; skip them.
+        if (x0 == x1 && y0 == y1) {
+            return -1;
+        }
+        if (x2 == x3 && y2 == y3) {
+            return -1;
+        }
+        // Cubics only have a cusp if the line segments formed by the control and end points cross.
+        // Detect crossing if line ends are on opposite sides of plane formed by the other line.
+        if (same_side(x0, y0, x1, y1, x2, y2, x3, y3)
+                ||
+                same_side(x2, y2, x3, y3, x0, y0, x1, y1)) {
+            return -1;
+        }
+        // Cubics may have multiple points of maximum curvature, although at most only
+        // one is a cusp.
+        float[] storage = new float[3 + 2];
+        int roots = findCubicMaxCurvature(
+                x0, y0,
+                x1, y1,
+                x2, y2,
+                x3, y3,
+                storage, 0
+        );
+        for (int index = 0; index < roots; ++index) {
+            float testT = storage[index];
+            if (testT <= 0 || testT >= 1) {  // no need to consider max curvature on the end
+                continue;
+            }
+            // A cusp is at the max curvature, and also has a derivative close to zero.
+            // Choose the 'close to zero' meaning by comparing the derivative length
+            // with the overall cubic size.
+            eval_cubic_derivative(
+                    x0, y0,
+                    x1, y1,
+                    x2, y2,
+                    x3, y3,
+                    testT,
+                    storage, 3
+            );
+            float magnitude = Point.lengthSq(storage[3], storage[4]);
+            float precision = (Point.distanceToSq(x1, y1, x0, y0) +
+                    Point.distanceToSq(x2, y2, x1, y1) +
+                    Point.distanceToSq(x3, y3, x2, y2)) * 1e-8f;
+            if (magnitude < precision) {
+                // All three max curvature t values may be close to the cusp;
+                // return the first one.
+                return testT;
+            }
+        }
+        return -1;
+    }
+
     // radius 8440.4648 to get 1 pixel error
     public static final int MAX_CONIC_TO_QUADS_LEVEL = 5;
 
@@ -589,6 +666,7 @@ public class Geometry {
         float x = k * (x0 - 2 * x1 + x2);
         float y = k * (y0 - 2 * y1 + y2);
 
+        // fast approach
         int level = MathUtil.ceilLog16((x * x + y * y) / (tol * tol));
 
         return Math.min(level, MAX_CONIC_TO_QUADS_LEVEL);

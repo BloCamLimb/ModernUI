@@ -139,14 +139,16 @@ public class TestPath {
         //src.lineTo(100, 200);
         //src.lineTo(180, 140);
         //src.lineTo(170, 130);
-        src.lineTo(170, 120);
+        //src.lineTo(170, 120);
+        src.quadTo(160, 130, 120, 100);
         src.forEach(PRINTER);
 
         Path dst = new Path();
         PathStroker stroker = new PathStroker();
-        stroker.init(dst, 15, Paint.CAP_ROUND, Paint.JOIN_ROUND, 4, 1);
+        stroker.init(dst, 5, Paint.CAP_ROUND, Paint.JOIN_ROUND, 4, 1);
         src.forEach(stroker);
         dst.forEach(PRINTER);
+
         return dst;
     }
 
