@@ -20,6 +20,8 @@
 package icyllis.arc3d.core;
 
 import javax.annotation.Nonnull;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.util.Arrays;
 
 /**
@@ -560,12 +562,25 @@ public class Path implements PathConsumer {
      * are uniquely referenced by a Path object, otherwise when any of these
      * shared Path objects are modified, these buffers will be copied.
      *
-     * @see RefCnt#unique()
+     * @see #unique()
      */
-    static final class Ref extends RefCnt {
+    static final class Ref implements RefCounted {
+
+        private static final VarHandle USAGE_CNT;
+
+        static {
+            MethodHandles.Lookup lookup = MethodHandles.lookup();
+            try {
+                USAGE_CNT = lookup.findVarHandle(Ref.class, "mUsageCnt", int.class);
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+        }
 
         static final byte[] EMPTY_VERBS = {};
         static final float[] EMPTY_COORDS = {};
+
+        transient volatile int mUsageCnt = 1;
 
         byte[] mVerbs;
         float[] mCoords; // x0 y0 x1 y1 x2 y2 ...
@@ -602,9 +617,18 @@ public class Path implements PathConsumer {
             mNumCoords = other.mNumCoords;
         }
 
-        @Override
-        protected void deallocate() {
-            // noop
+        boolean unique() {
+            return (int) USAGE_CNT.getAcquire(this) == 1;
+        }
+
+        public void ref() {
+            var refCnt = (int) USAGE_CNT.getAndAddAcquire(this, 1);
+            assert refCnt > 0;
+        }
+
+        public void unref() {
+            var refCnt = (int) USAGE_CNT.getAndAdd(this, -1);
+            assert refCnt > 0;
         }
 
         void reserve(int incVerbs, int incCoords) {
