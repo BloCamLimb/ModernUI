@@ -140,7 +140,7 @@ public class TestPath {
         //src.lineTo(180, 140);
         //src.lineTo(170, 130);
         //src.lineTo(170, 120);
-        src.quadTo(160, 130, 120, 100);
+        src.cubicTo(160, 130, 120, 100, 190, 60);
         src.forEach(PRINTER);
 
         Path dst = new Path();

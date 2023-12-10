@@ -307,17 +307,17 @@ public class PathStroker implements PathConsumer {
     private int mStrokeType;
 
     private void initStroke(int type, QuadState pp, float tFrom, float tTo) {
-        assert mRecursionDepth == 0;
         assert type == STROKE_TYPE_OUTER ||
                 type == STROKE_TYPE_INNER;
         mStrokeType = type;
         mFoundTangents = false;
+        mRecursionDepth = 0;
         pp.init(tFrom, tTo);
     }
 
     // the first 4 points (8 floats) for curve points
-    // the next 4 points (8 floats) for method results
-    private final float[] mCurve = new float[8 + 8];
+    // the next 12 points (24 floats) for method results
+    private final float[] mCurve = new float[8 + 24];
 
     // load quadratic curve
     private float[] getQuad(
@@ -334,6 +334,31 @@ public class PathStroker implements PathConsumer {
         return c;
     }
 
+    // load cubic curve
+    private float[] getCubic(
+            float x1, float y1,
+            float x2, float y2,
+            float x3, float y3
+    ) {
+        var c = mCurve;
+        c[0]=mPrevX;
+        c[1]=mPrevY;
+        c[2]=x1;
+        c[3]=y1;
+        c[4]=x2;
+        c[5]=y2;
+        c[6]=x3;
+        c[7]=y3;
+        return c;
+    }
+
+    /* Given quad, see if all there points are in a line.
+       Return true if the inside point is close to a line connecting the outermost points.
+
+       Find the outermost point by looking for the largest difference in X or Y.
+       Since the XOR of the indices is 3  (0 ^ 1 ^ 2)
+       the missing index equals: outer_1 ^ outer_2 ^ 3
+     */
     private static boolean quad_in_line(float[] quad) {
         float pMax = -1;
         int outer1 = 0;
@@ -361,6 +386,68 @@ public class PathStroker implements PathConsumer {
                 quad[mid << 1],   quad[mid << 1 | 1],
                 quad[outer1 << 1],quad[outer1 << 1 | 1],
                 quad[outer2 << 1],quad[outer2 << 1 | 1]
+        ) <= lineSlop;
+    }
+
+    /*  Given a cubic, determine if all four points are in a line.
+        Return true if the inner points is close to a line connecting the outermost points.
+
+        Find the outermost point by looking for the largest difference in X or Y.
+        Given the indices of the outermost points, and that outer_1 is greater than outer_2,
+        this table shows the index of the smaller of the remaining points:
+
+                          outer_2
+                      0    1    2    3
+          outer_1     ----------------
+             0     |  -    2    1    1
+             1     |  -    -    0    0
+             2     |  -    -    -    0
+             3     |  -    -    -    -
+
+        If outer_1 == 0 and outer_2 == 1, the smaller of the remaining indices (2 and 3) is 2.
+
+        This table can be collapsed to: (1 + (2 >> outer_2)) >> outer_1
+
+        Given three indices (outer_1 outer_2 mid_1) from 0..3, the remaining index is:
+
+                   mid_2 == (outer_1 ^ outer_2 ^ mid_1)
+     */
+    private static boolean cubic_in_line(float[] cubic) {
+        float pMax = -1;
+        int outer1 = 0;
+        int outer2 = 0;
+        for (int index = 0; index < 3; ++index) {
+            for (int inner = index + 1; inner < 4; ++inner) {
+                float testMax = Math.max(
+                        Math.abs(cubic[inner << 1] - cubic[index << 1]),
+                        Math.abs(cubic[inner << 1 | 1] - cubic[index << 1 | 1])
+                );
+                if (pMax < testMax) {
+                    outer1 = index;
+                    outer2 = inner;
+                    pMax = testMax;
+                }
+            }
+        }
+        assert outer1 >= 0;
+        assert outer2 >= 1;
+        assert outer1 < outer2;
+        int mid1 = (1 + (2 >> outer2)) >> outer1;
+        assert (outer1 != mid1 && outer2 != mid1);
+        int mid2 = outer1 ^ outer2 ^ mid1;
+        assert mid2 >= 1;
+        assert (mid2 != outer1 && mid2 != outer2 && mid2 != mid1);
+        assert (((1 << outer1) | (1 << outer2) | (1 << mid1) | (1 << mid2)) == 0x0f);
+        float lineSlop = pMax * pMax *
+                0.00001f;  // this multiplier is pulled out of the air
+        return Point.distanceToLineSegmentBetweenSq(
+                cubic[mid1 << 1], cubic[mid1 << 1 | 1],
+                cubic[outer1 << 1], cubic[outer1 << 1 | 1],
+                cubic[outer2 << 1], cubic[outer2 << 1 | 1]
+        ) <= lineSlop && Point.distanceToLineSegmentBetweenSq(
+                cubic[mid2 << 1], cubic[mid2 << 1 | 1],
+                cubic[outer1 << 1], cubic[outer1 << 1 | 1],
+                cubic[outer2 << 1], cubic[outer2 << 1 | 1]
         ) <= lineSlop;
     }
 
@@ -512,8 +599,58 @@ public class PathStroker implements PathConsumer {
         set_perpendicular_ray(quad);
     }
 
-    private int check_quad_quad(float[] quad, QuadState pp) {
-        // get the quadratic approximation of the stroke
+    // Given a cubic and t, return the point on curve, its perpendicular, and the perpendicular tangent.
+    // 0-7 CURVE POINTS
+    // 8,9 POINT at T
+    // 10,11 TANGENT at T
+    // 12,13 RAY POINT
+    // 14,15 RAY TANGENT
+    private void cubic_perpendicular_ray(float[] cubic, float t) {
+        Geometry.evalCubicAt(
+                cubic[0], cubic[1], cubic[2], cubic[3],
+                cubic[4], cubic[5], cubic[6], cubic[7],
+                t, cubic, /*pos*/ 8, cubic, /*tangent*/ 8+2
+        );
+        if (cubic[8+2] == 0 && cubic[8+3] == 0) {
+            int c = 0;
+            if (MathUtil.isApproxZero(t)) {
+                // P2 - P0
+                cubic[8+2] = cubic[4] - cubic[0];
+                cubic[8+3] = cubic[5] - cubic[1];
+            } else if (MathUtil.isApproxEqual(t, 1)) {
+                // P3 - P1
+                cubic[8+2] = cubic[6] - cubic[2];
+                cubic[8+3] = cubic[7] - cubic[3];
+            } else {
+                // If the cubic inflection falls on the cusp, subdivide the cubic
+                // to find the tangent at that point.
+                Geometry.chopCubicAt(
+                        cubic[0], cubic[1], cubic[2], cubic[3],
+                        cubic[4], cubic[5], cubic[6], cubic[7],
+                        t,
+                        cubic, 8+4
+                );
+                // CHOPPED_P3 - CHOPPED_P2
+                cubic[8+2] = cubic[8+4+6] - cubic[8+4+4];
+                cubic[8+3] = cubic[8+4+7] - cubic[8+4+5];
+                if (cubic[8+2] == 0 && cubic[8+3] == 0) {
+                    // CHOPPED_P3 - CHOPPED_P1
+                    cubic[8+2] = cubic[8+4+6] - cubic[8+4+2];
+                    cubic[8+3] = cubic[8+4+7] - cubic[8+4+3];
+                    c = 8+4;
+                }
+            }
+            if (cubic[8+2] == 0 && cubic[8+3] == 0) {
+                // P3 - P0
+                cubic[8+2] = cubic[c+6] - cubic[c];
+                cubic[8+3] = cubic[c+7] - cubic[c+1];
+            }
+        }
+        set_perpendicular_ray(cubic);
+    }
+
+    // Given a quad and a t range, find the start and end if they haven't been found already.
+    private void quad_quad_ends(float[] quad, QuadState pp) {
         if (!pp.set0) {
             quad_perpendicular_ray(quad, pp.t_from);
             pp.q0x = quad[8+4];
@@ -530,6 +667,31 @@ public class PathStroker implements PathConsumer {
             pp.tan2y = quad[8+7];
             pp.set2 = true;
         }
+    }
+
+    // Given a cubic and a t range, find the start and end if they haven't been found already.
+    private void cubic_quad_ends(float[] cubic, QuadState pp) {
+        if (!pp.set0) {
+            cubic_perpendicular_ray(cubic, pp.t_from);
+            pp.q0x = cubic[8+4];
+            pp.q0y = cubic[8+5];
+            pp.tan0x = cubic[8+6];
+            pp.tan0y = cubic[8+7];
+            pp.set0 = true;
+        }
+        if (!pp.set2) {
+            cubic_perpendicular_ray(cubic, pp.t_to);
+            pp.q2x = cubic[8+4];
+            pp.q2y = cubic[8+5];
+            pp.tan2x = cubic[8+6];
+            pp.tan2y = cubic[8+7];
+            pp.set2 = true;
+        }
+    }
+
+    private int check_quad_quad(float[] quad, QuadState pp) {
+        // get the quadratic approximation of the stroke
+        quad_quad_ends(quad, pp);
         var result = intersect_ray(pp, true);
         if (result != INTERSECT_QUADRATIC) {
             return result;
@@ -542,6 +704,29 @@ public class PathStroker implements PathConsumer {
                 quad[8]  , quad[8+1], // curve point
                 quad
         );
+    }
+
+    private int check_quad_cubic(float[] cubic, QuadState pp) {
+        // get the quadratic approximation of the stroke
+        cubic_quad_ends(cubic, pp);
+        var result = intersect_ray(pp, true);
+        if (result != INTERSECT_QUADRATIC) {
+            return result;
+        }
+        // project a ray from the curve to the stroke
+        cubic_perpendicular_ray(cubic, pp.t_mid);
+        return check_close_enough(
+                pp,
+                cubic[8+4], cubic[8+5], // perpendicular ray
+                cubic[8]  , cubic[8+1], // curve point
+                cubic
+        );
+    }
+
+    // Given a cubic and a t-range, determine if the stroke can be described by a quadratic.
+    private int find_tangents(float[] cubic, QuadState pp) {
+        cubic_quad_ends(cubic, pp);
+        return intersect_ray(pp, false);
     }
 
     private static boolean sharp_angle(QuadState pp, float[] v) {
@@ -686,7 +871,7 @@ public class PathStroker implements PathConsumer {
         return INTERSECT_SUBDIVIDE;
     }
 
-    private void strokeDegenerateLine(QuadState pp) {
+    private void emitDegenerateLine(QuadState pp) {
         PathConsumer path = mStrokeType == STROKE_TYPE_OUTER ? mOuter : mInner;
         path.lineTo(pp.q2x, pp.q2y);
     }
@@ -699,7 +884,7 @@ public class PathStroker implements PathConsumer {
             return true;
         }
         if (result == INTERSECT_DEGENERATE) {
-            strokeDegenerateLine(pp);
+            emitDegenerateLine(pp);
             return true;
         }
         if (++mRecursionDepth > MAX_QUAD_RECURSION_DEPTH) {
@@ -749,7 +934,7 @@ public class PathStroker implements PathConsumer {
             float t = Geometry.findQuadMaxCurvature(
                     mPrevX, mPrevY, x1, y1, x2, y2
             );
-            if (t == 0 || t == 1) {
+            if (t <= 0 || t >= 1) {
                 // Degenerate into a line.
                 lineTo(x2, y2);
                 return;
@@ -795,9 +980,214 @@ public class PathStroker implements PathConsumer {
         }
     }
 
+    private boolean strokeCubic(float[] cubic, QuadState pp) {
+        if (!mFoundTangents) {
+            var result = find_tangents(cubic, pp);
+            if (result != INTERSECT_QUADRATIC) {
+                if (result == INTERSECT_DEGENERATE
+                        || Point.distanceToSq(pp.q0x, pp.q0y, pp.q2x, pp.q2y)
+                        <= mInvResScaleSquared) {
+                    cubic_perpendicular_ray(cubic, pp.t_mid);
+                    if (Point.distanceToLineSegmentBetweenSq(
+                            cubic[8+4], cubic[8+5],
+                            pp.q0x, pp.q0y, pp.q2x, pp.q2y
+                    ) <= mInvResScaleSquared) {
+                        emitDegenerateLine(pp);
+                        return true;
+                    }
+                }
+            } else {
+                mFoundTangents = true;
+            }
+        }
+        if (mFoundTangents) {
+            var result = check_quad_cubic(cubic, pp);
+            if (result == INTERSECT_QUADRATIC) {
+                PathConsumer path = mStrokeType == STROKE_TYPE_OUTER ? mOuter : mInner;
+                path.quadTo(pp.q1x, pp.q1y, pp.q2x, pp.q2y);
+                return true;
+            }
+            if (result == INTERSECT_DEGENERATE) {
+                if (!pp.opposite_tangents) {
+                    emitDegenerateLine(pp);
+                    return true;
+                }
+            }
+        }
+        if (!Float.isFinite(pp.q2x) || !Float.isFinite(pp.q2y)) {
+            return false;
+        }
+        if (++mRecursionDepth > (mFoundTangents ? MAX_CUBIC_RECURSION_DEPTH : MAX_TANGENT_RECURSION_DEPTH)) {
+            return false;
+        }
+        QuadState mid = mQuadStack[mRecursionDepth];
+        if (!mid.init0(pp)) {
+            emitDegenerateLine(pp);
+            --mRecursionDepth;
+            return true;
+        }
+        if (!strokeCubic(cubic, mid)) {
+            return false;
+        }
+        if (!mid.init2(pp)) {
+            emitDegenerateLine(pp);
+            --mRecursionDepth;
+            return true;
+        }
+        if (!strokeCubic(cubic, mid)) {
+            return false;
+        }
+        --mRecursionDepth;
+        return true;
+    }
+
     @Override
     public void cubicTo(float x1, float y1, float x2, float y2, float x3, float y3) {
+        boolean degenerateAB = Point.isDegenerate(
+                x1 - mPrevX,
+                y1 - mPrevY
+        );
+        boolean degenerateBC = Point.isDegenerate(
+                x2 - x1,
+                y2 - y1
+        );
+        boolean degenerateCD = Point.isDegenerate(
+                x3 - x2,
+                y3 - y2
+        );
 
+        if (degenerateAB & degenerateBC & degenerateCD) {
+            // Degenerate into a point.
+            // If the stroke consists of a moveTo followed by a degenerate curve, treat it
+            // as if it were followed by a zero-length line. Lines without length
+            // can have square and round end caps.
+            lineTo(x3, y3);
+            return;
+        }
+
+        if ((degenerateAB?1:0) + (degenerateBC?1:0) + (degenerateCD?1:0) == 2) {
+            // Degenerate into a line.
+            lineTo(x3, y3);
+            return;
+        }
+
+        float[] cubic = getCubic(x1, y1, x2, y2, x3, y3);
+        if (cubic_in_line(cubic)) {
+            // degenerate into 1 to 4 lines, round join if > 1
+            // 8,9,10 for t-values
+            // (12,13) for evalCubicAt
+            int count = Geometry.findCubicMaxCurvature(
+                    mPrevX, mPrevY, x1, y1, x2, y2, x3, y3,
+                    cubic, 8
+            );
+            boolean any = false;
+            var saveJoiner = mJoiner;
+            // Now loop over the t-values, and reject any that evaluate to either end-point
+            for (int index = 0; index < count; ++index) {
+                float t = cubic[8 + index];
+                if (t <= 0 || t >= 1) {
+                    continue;
+                }
+                Geometry.evalCubicAt(
+                        mPrevX, mPrevY, x1, y1, x2, y2, x3, y3,
+                        t, cubic, 12
+                );
+                // not P0 or P3
+                if (cubic[12] != cubic[0] && cubic[13] != cubic[1] &&
+                        cubic[12] != cubic[6] && cubic[13] != cubic[7]) {
+                    lineTo(cubic[12], cubic[13]);
+                    if (!any) {
+                        mJoiner = Joiner.get(Paint.JOIN_ROUND);
+                        any = true;
+                    }
+                }
+            }
+            lineTo(x3, y3);
+            if (any) {
+                mJoiner = saveJoiner;
+            }
+            return;
+        }
+
+        final float tangentX, tangentY;
+        if (degenerateAB) {
+            tangentX = x2;
+            tangentY = y2;
+        } else {
+            tangentX = x1;
+            tangentY = y1;
+        }
+        if (preJoinTo(tangentX, tangentY, false)) {
+            int infCount = Geometry.findCubicInflectionPoints(
+                    mPrevX, mPrevY, x1, y1, x2, y2, x3, y3,
+                    cubic, 8
+            );
+            // save ts in advance
+            float t0 = cubic[8];
+            float t1 = cubic[9];
+            float lastT = 0;
+            for (int index = 0; index <= infCount; ++index) {
+                float nextT;
+                if (index < infCount) {
+                    assert index == 0 || index == 1;
+                    if (index == 0) {
+                        nextT = t0;
+                    } else {
+                        nextT = t1;
+                    }
+                } else {
+                    nextT = 1;
+                }
+                assert mRecursionDepth == 0;
+                QuadState pp = mQuadStack[0];
+                initStroke(STROKE_TYPE_OUTER, pp, lastT, nextT);
+                strokeCubic(cubic, pp);
+                initStroke(STROKE_TYPE_INNER, pp, lastT, nextT);
+                strokeCubic(cubic, pp);
+                assert mRecursionDepth == 0;
+                lastT = nextT;
+            }
+            float cusp = Geometry.findCubicCusp(
+                    mPrevX, mPrevY, x1, y1, x2, y2, x3, y3
+            );
+            if (cusp > 0) {
+
+            }
+
+            // compute normal CD
+            // emit the join even if one stroke succeeded but the last one failed
+            // this avoids reversing an inner stroke with a partial path followed by another moveto
+            //assert (!degenerateAB || !degenerateCD);
+            if (degenerateAB) {
+                // use AC instead
+                degenerateAB = Point.isDegenerate(x2 - mPrevX, y2 - mPrevY);
+            }
+            if (degenerateCD) {
+                // use BD instead
+                degenerateCD = Point.isDegenerate(x3 - x1, y3 - y1);
+                cubic[8] = (x3 - x1) * mResScale;
+                cubic[9] = (y3 - y1) * mResScale;
+            } else {
+                // use CD
+                cubic[8] = (x3 - x2) * mResScale;
+                cubic[9] = (y3 - y2) * mResScale;
+            }
+            if (!degenerateAB && !degenerateCD &&
+                    Point.normalize(cubic, 8)) {
+                // Rotate CCW
+                // newX = oldY, newY = -oldX
+                float newX = cubic[9];
+                float newY = -cubic[8];
+                mNormal[NORMAL_X] = newX * mRadius;
+                mNormal[NORMAL_Y] = newY * mRadius;
+                mNormal[UNIT_NORMAL_X] = newX;
+                mNormal[UNIT_NORMAL_Y] = newY;
+            } // else use normal AB, see preJoinTo
+
+            postJoinTo(x3, y3);
+        } else {
+            lineTo(x3, y3);
+        }
     }
 
     @Override
