@@ -20,6 +20,7 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.Rect2i;
+import icyllis.arc3d.core.Rect2ic;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import javax.annotation.Nullable;
@@ -83,7 +84,7 @@ public final class RenderTextureProxy extends TextureProxy {
     }
 
     @Override
-    public Rect2i getResolveRect() {
+    public Rect2ic getResolveRect() {
         assert isManualMSAAResolve();
         return mResolveRect;
     }

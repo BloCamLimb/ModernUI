@@ -1037,7 +1037,7 @@ public class Paint {
      * @param storage fast computed bounds of geometry
      */
     @ApiStatus.Internal
-    public final void computeFastBounds(Rect2f orig, Rect2f storage) {
+    public final void computeFastBounds(Rect2fc orig, Rect2f storage) {
         int style = getStyle();
         // ultra fast-case: filling with no effects that affect geometry
         if (style == FILL) {

@@ -58,7 +58,7 @@ public final class ClipStack extends Clip {
     private final Rect2i mDeviceBounds;
     private final boolean mMSAA;
 
-    public ClipStack(Rect2i deviceBounds, boolean msaa) {
+    public ClipStack(Rect2ic deviceBounds, boolean msaa) {
         mDeviceBounds = new Rect2i(deviceBounds);
         mMSAA = msaa;
         mSaves.add(new SaveRecord(deviceBounds));
@@ -96,10 +96,10 @@ public final class ClipStack extends Clip {
     private final Rect2f mTmpOuter = new Rect2f();
 
     public void clipRect(@Nullable Matrixc viewMatrix,
-                         @Nonnull Rect2f localRect,
+                         @Nonnull Rect2fc localRect,
                          int clipOp) {
         clip(mTmpElement.init(
-                localRect.mLeft, localRect.mTop, localRect.mRight, localRect.mBottom,
+                localRect.left(), localRect.top(), localRect.right(), localRect.bottom(),
                 viewMatrix, clipOp, false
         ));
     }
@@ -129,8 +129,8 @@ public final class ClipStack extends Clip {
 
         // An empty op means do nothing (for difference), or close the save record, so we try and detect
         // that early before doing additional unnecessary save record allocation.
-        if (element.mRect.isEmpty()) {
-            if (element.mClipOp == OP_DIFFERENCE) {
+        if (element.shape().isEmpty()) {
+            if (element.clipOp() == OP_DIFFERENCE) {
                 // If the shape is empty and we're subtracting, this has no effect on the clip
                 return;
             }
@@ -188,7 +188,7 @@ public final class ClipStack extends Clip {
     public int apply(SurfaceDrawContext sdc, boolean aa, ClipResult out, Rect2f bounds) {
 
         Draw draw = mTmpDraw.init(bounds, aa);
-        if (!draw.outerBounds().intersect(mDeviceBounds)) {
+        if (!draw.mBounds.intersect(mDeviceBounds)) {
             return CLIPPED_OUT;
         }
 
@@ -226,14 +226,14 @@ public final class ClipStack extends Clip {
             // Initially we keep this as large as possible; if the clip is applied solely with coverage
             // FPs then using a loose scissor increases the chance we can batch the draws.
             // We tighten it later if any form of mask or atlas element is needed.
-            scissorBounds = save.outerBounds();
+            scissorBounds = new Rect2i(save.outerBounds());
         } else {
             assert save.op() == OP_DIFFERENCE;
             var diff = new Rect2i();
             if (Rect2i.subtract(draw.outerBounds(), save.innerBounds(), diff)) {
                 scissorBounds = diff;
             } else {
-                scissorBounds = draw.outerBounds();
+                scissorBounds = new Rect2i(draw.outerBounds());
             }
         }
 
@@ -304,8 +304,7 @@ public final class ClipStack extends Clip {
         }
 
         if (!scissorBounds.contains(draw.outerBounds())) {
-            out.addScissor(scissorBounds.mLeft, scissorBounds.mTop, scissorBounds.mRight, scissorBounds.mBottom,
-                    bounds);
+            out.addScissor(scissorBounds, bounds);
         }
 
         // render stencil mask
@@ -324,7 +323,7 @@ public final class ClipStack extends Clip {
 
         int op();
 
-        Rect2i outerBounds();
+        Rect2ic outerBounds();
 
         boolean contains(Geometry other);
     }
@@ -454,7 +453,7 @@ public final class ClipStack extends Clip {
             mViewMatrix = new Matrix();
         }
 
-        Element(Rect2f rect, Matrixc viewMatrix, int clipOp, boolean aa) {
+        Element(Rect2fc rect, Matrixc viewMatrix, int clipOp, boolean aa) {
             mRect = new Rect2f(rect);
             mViewMatrix = new Matrix(viewMatrix);
             mClipOp = clipOp;
@@ -463,7 +462,7 @@ public final class ClipStack extends Clip {
 
         // local rect
         // do not modify
-        public Rect2f shape() {
+        public Rect2fc shape() {
             return mRect;
         }
 
@@ -512,7 +511,7 @@ public final class ClipStack extends Clip {
         public ClipElement() {
         }
 
-        public ClipElement(Rect2f rect, Matrixc viewMatrix, int clipOp, boolean aa) {
+        public ClipElement(Rect2fc rect, Matrixc viewMatrix, int clipOp, boolean aa) {
             super(rect, viewMatrix, clipOp, aa);
             if (!viewMatrix.invert(mInverseViewMatrix)) {
                 // If the transform can't be inverted, it means that two dimensions are collapsed to 0 or
@@ -660,12 +659,12 @@ public final class ClipStack extends Clip {
             return mClipOp;
         }
 
-        public Rect2i innerBounds() {
+        public Rect2ic innerBounds() {
             return mInnerBounds;
         }
 
         // reference to unmodifiable rect
-        public Rect2i outerBounds() {
+        public Rect2ic outerBounds() {
             return mOuterBounds;
         }
 
@@ -685,7 +684,7 @@ public final class ClipStack extends Clip {
             } else {
                 // If the draw is non-AA, use the already computed outer bounds so we don't need to use
                 // device-space outsetting inside shape_contains_rect.
-                Rect2f queryBounds = d.mAA ? d.bounds() : d.mTmpBounds;
+                Rect2fc queryBounds = d.mAA ? d.bounds() : d.mTmpBounds;
                 return rect_contains_rect(mRect, mViewMatrix, mInverseViewMatrix,
                         queryBounds, Matrix.identity(), /* mixed-aa */ false);
             }
@@ -718,8 +717,8 @@ public final class ClipStack extends Clip {
         // Automatically takes into account if the anti-aliasing policies differ. When the policies match,
         // we assume that coverage AA or GPU's non-AA rasterization will apply to A and B equivalently, so
         // we can compare the original shapes. When the modes are mixed, we outset B in device space first.
-        static boolean rect_contains_rect(Rect2f a, Matrixc aToDevice, Matrixc deviceToA,
-                                          Rect2f b, Matrixc bToDevice, boolean mixedAAMode) {
+        static boolean rect_contains_rect(Rect2fc a, Matrixc aToDevice, Matrixc deviceToA,
+                                          Rect2fc b, Matrixc bToDevice, boolean mixedAAMode) {
             if (!mixedAAMode && Matrix.equals(aToDevice, bToDevice)) {
                 // A and B are in the same coordinate space, so don't bother mapping
                 return a.contains(b);
@@ -759,7 +758,7 @@ public final class ClipStack extends Clip {
             return true;
         }
 
-        public void simplify(Rect2i deviceBounds, boolean msaa, Rect2f outer) {
+        public void simplify(Rect2ic deviceBounds, boolean msaa, Rect2f outer) {
             // Then simplify the base shape, if it becomes empty, no need to update the bounds
             mRect.sort();
             if (mRect.isEmpty()) {
@@ -816,7 +815,7 @@ public final class ClipStack extends Clip {
         }
     }
 
-    static void subtract(Rect2i a, Rect2i b, Rect2i out, boolean exact) {
+    static void subtract(Rect2ic a, Rect2ic b, Rect2i out, boolean exact) {
         Rect2i diff = new Rect2i();
         if (Rect2i.subtract(a, b, diff) || !exact) {
             // Either A-B is exactly the rectangle stored in diff, or we don't need an exact answer
@@ -844,7 +843,7 @@ public final class ClipStack extends Clip {
         private int mState;
         private int mOp;
 
-        SaveRecord(Rect2i deviceBounds) {
+        SaveRecord(Rect2ic deviceBounds) {
             mInnerBounds = new Rect2i(deviceBounds);
             mOuterBounds = new Rect2i(deviceBounds);
             mStartingElementIndex = 0;
@@ -870,11 +869,11 @@ public final class ClipStack extends Clip {
             return mOp;
         }
 
-        public Rect2i outerBounds() {
+        public Rect2ic outerBounds() {
             return mOuterBounds;
         }
 
-        public Rect2i innerBounds() {
+        public Rect2ic innerBounds() {
             return mInnerBounds;
         }
 
@@ -924,7 +923,7 @@ public final class ClipStack extends Clip {
         public boolean addElement(ClipElement toAdd, ArrayDeque<ClipElement> elements) {
             // Validity check the element's state first; if the shape class isn't empty, the outer bounds
             // shouldn't be empty; if the inner bounds are not empty, they must be contained in outer.
-            assert ((toAdd.mRect.isEmpty() || !toAdd.mOuterBounds.isEmpty()) &&
+            assert ((toAdd.shape().isEmpty() || !toAdd.mOuterBounds.isEmpty()) &&
                     (toAdd.mInnerBounds.isEmpty() || toAdd.mOuterBounds.contains(toAdd.mInnerBounds)));
             // And we shouldn't be adding an element if we have a deferred save
             assert (canBeUpdated());
@@ -932,9 +931,9 @@ public final class ClipStack extends Clip {
             if (mState == STATE_EMPTY) {
                 // The clip is already empty, and we only shrink, so there's no need to record this element.
                 return false;
-            } else if (toAdd.mRect.isEmpty()) {
+            } else if (toAdd.shape().isEmpty()) {
                 // An empty difference op should have been detected earlier, since it's a no-op
-                assert (toAdd.mClipOp == OP_INTERSECT);
+                assert (toAdd.clipOp() == OP_INTERSECT);
                 mState = STATE_EMPTY;
                 return true;
             }
@@ -1115,7 +1114,7 @@ public final class ClipStack extends Clip {
             mInnerBounds.set(toAdd.mInnerBounds);
             mOuterBounds.set(toAdd.mOuterBounds);
 
-            mOp = toAdd.mClipOp;
+            mOp = toAdd.clipOp();
             mState = toAdd.clipType();
 
             // All prior active element can be removed from the stack: [startingIndex, count - 1]
@@ -1160,7 +1159,7 @@ public final class ClipStack extends Clip {
 
         boolean mAA;
 
-        public Draw init(Rect2f drawBounds, boolean aa) {
+        public Draw init(Rect2fc drawBounds, boolean aa) {
             getPixelBounds(drawBounds, aa, true, mBounds);
             mAA = aa;
             // Be slightly more forgiving on whether or not a draw is inside a clip element.
@@ -1179,7 +1178,7 @@ public final class ClipStack extends Clip {
         }
 
         @Override
-        public Rect2i outerBounds() {
+        public Rect2ic outerBounds() {
             return mBounds;
         }
 
@@ -1190,7 +1189,7 @@ public final class ClipStack extends Clip {
             return false;
         }
 
-        public Rect2f bounds() {
+        public Rect2fc bounds() {
             return mOriginalBounds;
         }
     }

@@ -42,22 +42,22 @@ public class Quad {
 
     private int type;
 
-    public Quad(Rect2f rect) {
-        x0 = x1 = rect.mLeft;
-        y0 = y2 = rect.mTop;
-        x2 = x3 = rect.mRight;
-        y1 = y3 = rect.mBottom;
+    public Quad(Rect2fc rect) {
+        x0 = x1 = rect.left();
+        y0 = y2 = rect.top();
+        x2 = x3 = rect.right();
+        y1 = y3 = rect.bottom();
         w0 = w1 = w2 = w3 = 1.f;
         type = kAxisAligned;
     }
 
-    public Quad(Rect2f rect, Matrixc m) {
+    public Quad(Rect2fc rect, Matrixc m) {
         int mask = m.getType();
         if (mask <= (Matrix.kScale_Mask | Matrix.kTranslate_Mask)) {
-            float r0 = rect.mLeft;
-            float r1 = rect.mTop;
-            float r2 = rect.mRight;
-            float r3 = rect.mBottom;
+            float r0 = rect.left();
+            float r1 = rect.top();
+            float r2 = rect.right();
+            float r3 = rect.bottom();
             if (mask > Matrix.kIdentity_Mask) {
                 if (mask > Matrix.kTranslate_Mask) {
                     r0 *= m.m11();
@@ -79,10 +79,10 @@ public class Quad {
         } else {
             float rx0, rx1, rx2, rx3;
             float ry0, ry1, ry2, ry3;
-            rx0 = rx1 = rect.mLeft;
-            ry0 = ry2 = rect.mTop;
-            rx2 = rx3 = rect.mRight;
-            ry1 = ry3 = rect.mBottom;
+            rx0 = rx1 = rect.left();
+            ry0 = ry2 = rect.top();
+            rx2 = rx3 = rect.right();
+            ry1 = ry3 = rect.bottom();
             x0 = m.m11() * rx0 + (m.m21() * ry0 + m.m41());
             x1 = m.m11() * rx1 + (m.m21() * ry1 + m.m41());
             x2 = m.m11() * rx2 + (m.m21() * ry2 + m.m41());

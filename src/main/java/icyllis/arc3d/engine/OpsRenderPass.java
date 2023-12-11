@@ -19,8 +19,7 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.Rect2f;
-import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.ops.Op;
 
 import static icyllis.arc3d.engine.Engine.SurfaceOrigin;
@@ -89,7 +88,7 @@ public abstract class OpsRenderPass {
      * @param pipelineState the pipeline state object
      * @param drawBounds    the sub-area of render target for subsequent draw calls
      */
-    public void bindPipeline(PipelineInfo pipelineInfo, GraphicsPipelineState pipelineState, Rect2f drawBounds) {
+    public void bindPipeline(PipelineInfo pipelineInfo, GraphicsPipelineState pipelineState, Rect2fc drawBounds) {
         assert (pipelineInfo.origin() == mSurfaceOrigin);
         if (!onBindPipeline(pipelineInfo, pipelineState, drawBounds)) {
             mDrawPipelineStatus = kFailedToBind_DrawPipelineStatus;
@@ -231,7 +230,7 @@ public abstract class OpsRenderPass {
 
     protected abstract boolean onBindPipeline(PipelineInfo pipelineInfo,
                                               GraphicsPipelineState pipelineState,
-                                              Rect2f drawBounds);
+                                              Rect2fc drawBounds);
 
     protected abstract void onBindBuffers(@SharedPtr GpuBuffer indexBuffer,
                                           @SharedPtr GpuBuffer vertexBuffer,

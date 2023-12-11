@@ -81,7 +81,7 @@ public abstract class Device extends RefCnt implements MatrixProvider {
     /**
      * @return read-only bounds
      */
-    public final Rect2i bounds() {
+    public final Rect2ic bounds() {
         return mBounds;
     }
 
@@ -270,7 +270,7 @@ public abstract class Device extends RefCnt implements MatrixProvider {
 
     protected abstract int getClipType();
 
-    protected abstract Rect2i getClipBounds();
+    protected abstract Rect2ic getClipBounds();
 
     public abstract void drawPaint(Paint paint);
 

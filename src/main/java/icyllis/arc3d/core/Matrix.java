@@ -39,7 +39,7 @@ import java.nio.FloatBuffer;
  * @see Matrix4
  */
 @SuppressWarnings("unused")
-public class Matrix implements Matrixc, Cloneable {
+public non-sealed class Matrix implements Matrixc, Cloneable {
 
     /**
      * Set if the matrix will map a rectangle to another rectangle. This
@@ -56,6 +56,8 @@ public class Matrix implements Matrixc, Cloneable {
      */
     private static final int kOnlyPerspectiveValid_Mask = 0x40;
     private static final int kUnknown_Mask = 0x80;
+
+    private static final Matrixc IDENTITY = new Matrix();
 
     // sequential matrix elements, m(ij) (row, column)
     // directly using primitives will be faster than array in Java
@@ -116,7 +118,7 @@ public class Matrix implements Matrixc, Cloneable {
      */
     @Nonnull
     public static Matrixc identity() {
-        return Identity.INSTANCE;
+        return IDENTITY;
     }
 
     /**
@@ -749,19 +751,19 @@ public class Matrix implements Matrixc, Cloneable {
     /**
      * Store this matrix elements to the given matrix.
      *
-     * @param m the matrix to store
+     * @param dst the matrix to store
      */
-    public void store(@Nonnull Matrix m) {
-        m.m11 = m11;
-        m.m12 = m12;
-        m.m14 = m14;
-        m.m21 = m21;
-        m.m22 = m22;
-        m.m24 = m24;
-        m.m41 = m41;
-        m.m42 = m42;
-        m.m44 = m44;
-        m.mTypeMask = mTypeMask;
+    public void store(@Nonnull Matrix dst) {
+        dst.m11 = m11;
+        dst.m12 = m12;
+        dst.m14 = m14;
+        dst.m21 = m21;
+        dst.m22 = m22;
+        dst.m24 = m24;
+        dst.m41 = m41;
+        dst.m42 = m42;
+        dst.m44 = m44;
+        dst.mTypeMask = mTypeMask;
     }
 
     /**
@@ -1622,42 +1624,46 @@ public class Matrix implements Matrixc, Cloneable {
      * Returns true if mapped corners are dst corners.
      */
     //@formatter:off
-    public boolean mapRect(Rect2f src, Rect2f dst) {
+    public boolean mapRect(@Nonnull Rect2fc src, @Nonnull Rect2f dst) {
         int typeMask = getType();
+        final float left   = src.left();
+        final float top    = src.top();
+        final float right  = src.right();
+        final float bottom = src.bottom();
         if (typeMask <= kTranslate_Mask) {
-            dst.mLeft   = src.mLeft   + m41;
-            dst.mTop    = src.mTop    + m42;
-            dst.mRight  = src.mRight  + m41;
-            dst.mBottom = src.mBottom + m42;
+            dst.mLeft   = left   + m41;
+            dst.mTop    = top    + m42;
+            dst.mRight  = right  + m41;
+            dst.mBottom = bottom + m42;
             return true;
         }
         if ((typeMask & ~(kScale_Mask | kTranslate_Mask)) == 0) {
-            dst.mLeft =   src.mLeft   * m11 + m41;
-            dst.mTop =    src.mTop    * m22 + m42;
-            dst.mRight =  src.mRight  * m11 + m41;
-            dst.mBottom = src.mBottom * m22 + m42;
+            dst.mLeft =   left   * m11 + m41;
+            dst.mTop =    top    * m22 + m42;
+            dst.mRight =  right  * m11 + m41;
+            dst.mBottom = bottom * m22 + m42;
             return true;
         }
-        float x1 = m11 * src.mLeft +  m21 * src.mTop    + m41;
-        float y1 = m12 * src.mLeft +  m22 * src.mTop    + m42;
-        float x2 = m11 * src.mRight + m21 * src.mTop    + m41;
-        float y2 = m12 * src.mRight + m22 * src.mTop    + m42;
-        float x3 = m11 * src.mLeft +  m21 * src.mBottom + m41;
-        float y3 = m12 * src.mLeft +  m22 * src.mBottom + m42;
-        float x4 = m11 * src.mRight + m21 * src.mBottom + m41;
-        float y4 = m12 * src.mRight + m22 * src.mBottom + m42;
+        float x1 = m11 * left +  m21 * top    + m41;
+        float y1 = m12 * left +  m22 * top    + m42;
+        float x2 = m11 * right + m21 * top    + m41;
+        float y2 = m12 * right + m22 * top    + m42;
+        float x3 = m11 * left +  m21 * bottom + m41;
+        float y3 = m12 * left +  m22 * bottom + m42;
+        float x4 = m11 * right + m21 * bottom + m41;
+        float y4 = m12 * right + m22 * bottom + m42;
         if ((typeMask & kPerspective_Mask) != 0) {
             float w;
-            w = 1.0f / (m14 * src.mLeft  + m24 * src.mTop    + m44);
+            w = 1.0f / (m14 * left  + m24 * top    + m44);
             x1 *= w;
             y1 *= w;
-            w = 1.0f / (m14 * src.mRight + m24 * src.mTop    + m44);
+            w = 1.0f / (m14 * right + m24 * top    + m44);
             x2 *= w;
             y2 *= w;
-            w = 1.0f / (m14 * src.mLeft  + m24 * src.mBottom + m44);
+            w = 1.0f / (m14 * left  + m24 * bottom + m44);
             x3 *= w;
             y3 *= w;
-            w = 1.0f / (m14 * src.mRight + m24 * src.mBottom + m44);
+            w = 1.0f / (m14 * right + m24 * bottom + m44);
             x4 *= w;
             y4 *= w;
         }
@@ -2192,339 +2198,6 @@ public class Matrix implements Matrixc, Cloneable {
             return (Matrix) super.clone();
         } catch (CloneNotSupportedException e) {
             throw new InternalError(e);
-        }
-    }
-
-    // specialization
-    static final class Identity implements Matrixc {
-
-        static Identity INSTANCE = new Identity();
-
-        private Identity() {
-        }
-
-        @Override
-        public int getType() {
-            return kIdentity_Mask;
-        }
-
-        @Override
-        public boolean isIdentity() {
-            return true;
-        }
-
-        @Override
-        public boolean isScaleTranslate() {
-            return true;
-        }
-
-        @Override
-        public boolean isTranslate() {
-            return true;
-        }
-
-        @Override
-        public boolean isAxisAligned() {
-            return true;
-        }
-
-        @Override
-        public boolean preservesRightAngles() {
-            return true;
-        }
-
-        @Override
-        public boolean hasPerspective() {
-            return false;
-        }
-
-        @Override
-        public boolean isSimilarity() {
-            return true;
-        }
-
-        @Override
-        public float m11() {
-            return 1;
-        }
-
-        @Override
-        public float m12() {
-            return 0;
-        }
-
-        @Override
-        public float m14() {
-            return 0;
-        }
-
-        @Override
-        public float m21() {
-            return 0;
-        }
-
-        @Override
-        public float m22() {
-            return 1;
-        }
-
-        @Override
-        public float m24() {
-            return 0;
-        }
-
-        @Override
-        public float m41() {
-            return 0;
-        }
-
-        @Override
-        public float m42() {
-            return 0;
-        }
-
-        @Override
-        public float m44() {
-            return 1;
-        }
-
-        @Override
-        public float getScaleX() {
-            return 1;
-        }
-
-        @Override
-        public float getScaleY() {
-            return 1;
-        }
-
-        @Override
-        public float getShearY() {
-            return 0;
-        }
-
-        @Override
-        public float getShearX() {
-            return 0;
-        }
-
-        @Override
-        public float getTranslateX() {
-            return 0;
-        }
-
-        @Override
-        public float getTranslateY() {
-            return 0;
-        }
-
-        @Override
-        public float getPerspX() {
-            return 0;
-        }
-
-        @Override
-        public float getPerspY() {
-            return 0;
-        }
-
-        @Override
-        public void store(@Nonnull Matrix m) {
-            m.setIdentity();
-        }
-
-        @Override
-        public void store(@Nonnull float[] a) {
-            a[0] = 1;
-            a[1] = 0;
-            a[2] = 0;
-            a[3] = 0;
-            a[4] = 1;
-            a[5] = 0;
-            a[6] = 0;
-            a[7] = 0;
-            a[8] = 1;
-        }
-
-        @Override
-        public void store(@Nonnull float[] a, int offset) {
-            a[offset] = 1;
-            a[offset + 1] = 0;
-            a[offset + 2] = 0;
-            a[offset + 3] = 0;
-            a[offset + 4] = 1;
-            a[offset + 5] = 0;
-            a[offset + 6] = 0;
-            a[offset + 7] = 0;
-            a[offset + 8] = 1;
-        }
-
-        @Override
-        public void store(@Nonnull ByteBuffer a) {
-            int offset = a.position();
-            a.putFloat(offset, 1);
-            a.putFloat(offset + 4, 0);
-            a.putFloat(offset + 8, 0);
-            a.putFloat(offset + 12, 0);
-            a.putFloat(offset + 16, 1);
-            a.putFloat(offset + 20, 0);
-            a.putFloat(offset + 24, 0);
-            a.putFloat(offset + 28, 0);
-            a.putFloat(offset + 32, 1);
-        }
-
-        @Override
-        public void storeAligned(@Nonnull ByteBuffer a) {
-            int offset = a.position();
-            a.putFloat(offset, 1);
-            a.putFloat(offset + 4, 0);
-            a.putFloat(offset + 8, 0);
-            a.putFloat(offset + 16, 0);
-            a.putFloat(offset + 20, 1);
-            a.putFloat(offset + 24, 0);
-            a.putFloat(offset + 32, 0);
-            a.putFloat(offset + 36, 0);
-            a.putFloat(offset + 40, 1);
-        }
-
-        @Override
-        public void store(@Nonnull FloatBuffer a) {
-            int offset = a.position();
-            a.put(offset, 1);
-            a.put(offset + 1, 0);
-            a.put(offset + 2, 0);
-            a.put(offset + 3, 0);
-            a.put(offset + 4, 1);
-            a.put(offset + 5, 0);
-            a.put(offset + 6, 0);
-            a.put(offset + 7, 0);
-            a.put(offset + 8, 1);
-        }
-
-        @Override
-        public void storeAligned(@Nonnull FloatBuffer a) {
-            int offset = a.position();
-            a.put(offset, 1);
-            a.put(offset + 1, 0);
-            a.put(offset + 2, 0);
-            a.put(offset + 4, 0);
-            a.put(offset + 5, 1);
-            a.put(offset + 6, 0);
-            a.put(offset + 8, 0);
-            a.put(offset + 9, 0);
-            a.put(offset + 10, 1);
-        }
-
-        @Override
-        public void store(long p) {
-            MemoryUtil.memPutFloat(p, 1);
-            MemoryUtil.memPutFloat(p + 4, 0);
-            MemoryUtil.memPutFloat(p + 8, 0);
-            MemoryUtil.memPutFloat(p + 12, 0);
-            MemoryUtil.memPutFloat(p + 16, 1);
-            MemoryUtil.memPutFloat(p + 20, 0);
-            MemoryUtil.memPutFloat(p + 24, 0);
-            MemoryUtil.memPutFloat(p + 28, 0);
-            MemoryUtil.memPutFloat(p + 32, 1);
-        }
-
-        @Override
-        public void storeAligned(long p) {
-            MemoryUtil.memPutFloat(p, 1);
-            MemoryUtil.memPutFloat(p + 4, 0);
-            MemoryUtil.memPutFloat(p + 8, 0);
-            MemoryUtil.memPutFloat(p + 16, 0);
-            MemoryUtil.memPutFloat(p + 20, 1);
-            MemoryUtil.memPutFloat(p + 24, 0);
-            MemoryUtil.memPutFloat(p + 32, 0);
-            MemoryUtil.memPutFloat(p + 36, 0);
-            MemoryUtil.memPutFloat(p + 40, 1);
-        }
-
-        @Override
-        public boolean invert(@Nullable Matrix dest) {
-            if (dest != null) {
-                dest.setIdentity();
-            }
-            return true;
-        }
-
-        @Override
-        public boolean mapRect(Rect2f src, Rect2f dst) {
-            dst.set(src);
-            return true;
-        }
-
-        @Override
-        public void mapRect(float left, float top, float right, float bottom, @Nonnull Rect2i dst) {
-            dst.mLeft = Math.round(left);
-            dst.mTop = Math.round(top);
-            dst.mRight = Math.round(right);
-            dst.mBottom = Math.round(bottom);
-        }
-
-        @Override
-        public void mapRectOut(float left, float top, float right, float bottom, @Nonnull Rect2i dst) {
-            dst.mLeft = (int) Math.floor(left);
-            dst.mTop = (int) Math.floor(top);
-            dst.mRight = (int) Math.ceil(right);
-            dst.mBottom = (int) Math.ceil(bottom);
-        }
-
-        @Override
-        public void mapPoints(float[] src, int srcPos, float[] dst, int dstPos, int count) {
-            if (src != dst && count > 0) {
-                System.arraycopy(src, srcPos, dst, dstPos, count << 1);
-            }
-        }
-
-        @Override
-        public float getMinScale() {
-            return 1;
-        }
-
-        @Override
-        public float getMaxScale() {
-            return 1;
-        }
-
-        @Override
-        public boolean isFinite() {
-            return true;
-        }
-
-        @Override
-        public int hashCode() {
-            int result = Float.floatToIntBits(1);
-            result = 31 * result + Float.floatToIntBits(0);
-            result = 31 * result + Float.floatToIntBits(0);
-            result = 31 * result + Float.floatToIntBits(0);
-            result = 31 * result + Float.floatToIntBits(1);
-            result = 31 * result + Float.floatToIntBits(0);
-            result = 31 * result + Float.floatToIntBits(0);
-            result = 31 * result + Float.floatToIntBits(0);
-            result = 31 * result + Float.floatToIntBits(1);
-            return result;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (!(o instanceof Matrixc m)) {
-                return false;
-            }
-            return Matrix.equals(this, m);
-        }
-
-        @Override
-        public String toString() {
-            return String.format("""
-                            Matrix:
-                            %10.6f %10.6f %10.6f
-                            %10.6f %10.6f %10.6f
-                            %10.6f %10.6f %10.6f""",
-                    1F, 0F, 0F,
-                    0F, 1F, 0F,
-                    0F, 0F, 1F);
         }
     }
 }

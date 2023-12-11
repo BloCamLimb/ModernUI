@@ -35,7 +35,8 @@ import java.nio.FloatBuffer;
  * @author BloCamLimb
  * @see Matrix
  */
-public interface Matrixc {
+public sealed interface Matrixc permits Matrix {
+    // one implementation is fast
 
     /**
      * TypeMask
@@ -237,9 +238,9 @@ public interface Matrixc {
     /**
      * Store this matrix elements to the given matrix.
      *
-     * @param m the matrix to store
+     * @param dst the matrix to store
      */
-    void store(@Nonnull Matrix m);
+    void store(@Nonnull Matrix dst);
 
     /**
      * Store this matrix into the give float array in row-major order.
@@ -318,7 +319,7 @@ public interface Matrixc {
      * Sets rect to bounds of rect corners mapped by this matrix.
      * Returns true if mapped corners are dst corners.
      */
-    default boolean mapRect(Rect2f rect) {
+    default boolean mapRect(@Nonnull Rect2f rect) {
         return mapRect(rect, rect);
     }
 
@@ -326,7 +327,7 @@ public interface Matrixc {
      * Sets dst to bounds of src corners mapped by this matrix.
      * Returns true if mapped corners are dst corners.
      */
-    boolean mapRect(Rect2f src, Rect2f dst);
+    boolean mapRect(@Nonnull Rect2fc src, @Nonnull Rect2f dst);
 
     /**
      * Map a rectangle points in the X-Y plane to get the maximum bounds.
@@ -340,8 +341,8 @@ public interface Matrixc {
      *
      * @param out the round values
      */
-    default void mapRect(@Nonnull Rect2f r, @Nonnull Rect2i out) {
-        mapRect(r.mLeft, r.mTop, r.mRight, r.mBottom, out);
+    default void mapRect(@Nonnull Rect2fc r, @Nonnull Rect2i out) {
+        mapRect(r.left(), r.top(), r.right(), r.bottom(), out);
     }
 
     /**
@@ -349,8 +350,8 @@ public interface Matrixc {
      *
      * @param out the round values
      */
-    default void mapRect(@Nonnull Rect2i r, @Nonnull Rect2i out) {
-        mapRect(r.mLeft, r.mTop, r.mRight, r.mBottom, out);
+    default void mapRect(@Nonnull Rect2ic r, @Nonnull Rect2i out) {
+        mapRect(r.left(), r.top(), r.right(), r.bottom(), out);
     }
 
     /**
@@ -372,8 +373,8 @@ public interface Matrixc {
      *
      * @param dst the round out values
      */
-    default void mapRectOut(@Nonnull Rect2i r, @Nonnull Rect2i dst) {
-        mapRectOut(r.mLeft, r.mTop, r.mRight, r.mBottom, dst);
+    default void mapRectOut(@Nonnull Rect2ic r, @Nonnull Rect2i dst) {
+        mapRectOut(r.left(), r.top(), r.right(), r.bottom(), dst);
     }
 
     /**
@@ -381,8 +382,8 @@ public interface Matrixc {
      *
      * @param dst the round out values
      */
-    default void mapRectOut(@Nonnull Rect2f r, @Nonnull Rect2i dst) {
-        mapRectOut(r.mLeft, r.mTop, r.mRight, r.mBottom, dst);
+    default void mapRectOut(@Nonnull Rect2fc r, @Nonnull Rect2i dst) {
+        mapRectOut(r.left(), r.top(), r.right(), r.bottom(), dst);
     }
 
     /**
