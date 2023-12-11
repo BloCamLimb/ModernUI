@@ -91,7 +91,7 @@ public final class GLOpsRenderPass extends OpsRenderPass {
     @Override
     protected boolean onBindPipeline(PipelineInfo pipelineInfo,
                                      GraphicsPipelineState pipelineState,
-                                     Rect2f drawBounds) {
+                                     Rect2fc drawBounds) {
         mActiveIndexBuffer = GpuResource.move(mActiveIndexBuffer);
         mActiveVertexBuffer = GpuResource.move(mActiveVertexBuffer);
         mActiveInstanceBuffer = GpuResource.move(mActiveInstanceBuffer);

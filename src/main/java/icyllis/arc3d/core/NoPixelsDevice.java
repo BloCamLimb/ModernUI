@@ -154,7 +154,7 @@ public class NoPixelsDevice extends Device {
     }
 
     @Override
-    protected Rect2i getClipBounds() {
+    protected Rect2ic getClipBounds() {
         return clip().getBounds();
     }
 
@@ -192,7 +192,7 @@ public class NoPixelsDevice extends Device {
         }
 
         // do not modify
-        public Rect2i getBounds() {
+        public Rect2ic getBounds() {
             return mClipBounds;
         }
 

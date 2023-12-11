@@ -2665,8 +2665,8 @@ public class Matrix4 implements Cloneable {
      * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
      * rectangle will be the bounding box of the projected points after being clipped to w > 0.
      */
-    public void mapRect(@Nonnull Rect2f r, @Nonnull Rect2f dest) {
-        mapRect(r.mLeft, r.mTop, r.mRight, r.mBottom, dest);
+    public void mapRect(@Nonnull Rect2fc r, @Nonnull Rect2f dest) {
+        mapRect(r.left(), r.top(), r.right(), r.bottom(), dest);
     }
 
     /**
@@ -2710,8 +2710,8 @@ public class Matrix4 implements Cloneable {
      * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
      * rectangle will be the bounding box of the projected points after being clipped to w > 0.
      */
-    public void mapRect(@Nonnull Rect2f r, @Nonnull Rect2i dest) {
-        mapRect(r.mLeft, r.mTop, r.mRight, r.mBottom, dest);
+    public void mapRect(@Nonnull Rect2fc r, @Nonnull Rect2i dest) {
+        mapRect(r.left(), r.top(), r.right(), r.bottom(), dest);
     }
 
     /**
@@ -2719,8 +2719,8 @@ public class Matrix4 implements Cloneable {
      * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
      * rectangle will be the bounding box of the projected points after being clipped to w > 0.
      */
-    public void mapRect(@Nonnull Rect2i r, @Nonnull Rect2i dest) {
-        mapRect(r.mLeft, r.mTop, r.mRight, r.mBottom, dest);
+    public void mapRect(@Nonnull Rect2ic r, @Nonnull Rect2i dest) {
+        mapRect(r.left(), r.top(), r.right(), r.bottom(), dest);
     }
 
     /**
@@ -2764,8 +2764,8 @@ public class Matrix4 implements Cloneable {
      * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
      * rectangle will be the bounding box of the projected points after being clipped to w > 0.
      */
-    public void mapRectOut(@Nonnull Rect2i r, @Nonnull Rect2i dest) {
-        mapRectOut(r.mLeft, r.mTop, r.mRight, r.mBottom, dest);
+    public void mapRectOut(@Nonnull Rect2ic r, @Nonnull Rect2i dest) {
+        mapRectOut(r.left(), r.top(), r.right(), r.bottom(), dest);
     }
 
     /**
@@ -2773,8 +2773,8 @@ public class Matrix4 implements Cloneable {
      * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
      * rectangle will be the bounding box of the projected points after being clipped to w > 0.
      */
-    public void mapRectOut(@Nonnull Rect2f r, @Nonnull Rect2i dest) {
-        mapRectOut(r.mLeft, r.mTop, r.mRight, r.mBottom, dest);
+    public void mapRectOut(@Nonnull Rect2fc r, @Nonnull Rect2i dest) {
+        mapRectOut(r.left(), r.top(), r.right(), r.bottom(), dest);
     }
 
     /**

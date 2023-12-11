@@ -101,7 +101,7 @@ public final class SurfaceDevice extends Device {
     }
 
     @Override
-    protected Rect2i getClipBounds() {
+    protected Rect2ic getClipBounds() {
         return null;
     }
 

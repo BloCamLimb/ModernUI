@@ -19,8 +19,7 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.Rect2i;
-import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.core.*;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nullable;
@@ -262,7 +261,7 @@ public class TextureProxy extends SurfaceProxy implements IScratchKey {
         throw new UnsupportedOperationException();
     }
 
-    public Rect2i getResolveRect() {
+    public Rect2ic getResolveRect() {
         throw new UnsupportedOperationException();
     }
 

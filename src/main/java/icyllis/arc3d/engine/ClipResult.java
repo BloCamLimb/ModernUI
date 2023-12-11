@@ -20,6 +20,7 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.Rect2f;
+import icyllis.arc3d.core.Rect2ic;
 
 /**
  * Produced by {@link Clip}. It provides a set of modifications to the drawing state that
@@ -60,13 +61,13 @@ public final class ClipResult implements Cloneable {
 
     /**
      * Intersects the clip state with the provided rect. Returns false if the draw became empty.
-     * 'bounds' will be intersected with 'rect'. This returns false if the clip becomes
+     * 'clippedBounds' will be intersected with 'rect'. This returns false if the clip becomes
      * empty or the draw no longer intersects the clip. In either case the draw can be skipped.
      */
-    public boolean addScissor(int l, int t, int r, int b,
-                              Rect2f bounds) {
-        return intersect(l, t, r, b) &&
-                bounds.intersect(l, t, r, b);
+    public boolean addScissor(Rect2ic rect,
+                              Rect2f clippedBounds) {
+        return intersect(rect.left(), rect.top(), rect.right(), rect.bottom()) &&
+                clippedBounds.intersect(rect);
     }
 
     public void setScissor(int l, int t, int r, int b) {

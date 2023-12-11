@@ -19,8 +19,7 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.Rect2f;
-import icyllis.arc3d.core.Rect2i;
+import icyllis.arc3d.core.*;
 
 /**
  * {@link Clip} is an abstract base class for producing a clip. It constructs a
@@ -73,18 +72,18 @@ public abstract class Clip {
      * center outside of these bounds but will evaluate to 0 coverage. This is visually acceptable,
      * but an additional outset of 1px should be used for dst proxy access.
      */
-    public static void getPixelBounds(Rect2f bounds, boolean aa,
+    public static void getPixelBounds(Rect2fc bounds, boolean aa,
                                       boolean exterior, Rect2i out) {
         if (bounds.isEmpty()) {
             out.setEmpty();
             return;
         }
         if (exterior) {
-            out.set(roundLow(aa, bounds.mLeft), roundLow(aa, bounds.mTop),
-                    roundHigh(aa, bounds.mRight), roundHigh(aa, bounds.mBottom));
+            out.set(roundLow(aa, bounds.left()), roundLow(aa, bounds.top()),
+                    roundHigh(aa, bounds.right()), roundHigh(aa, bounds.bottom()));
         } else {
-            out.set(roundHigh(aa, bounds.mLeft), roundHigh(aa, bounds.mTop),
-                    roundLow(aa, bounds.mRight), roundLow(aa, bounds.mBottom));
+            out.set(roundHigh(aa, bounds.left()), roundHigh(aa, bounds.top()),
+                    roundLow(aa, bounds.right()), roundLow(aa, bounds.bottom()));
         }
     }
 

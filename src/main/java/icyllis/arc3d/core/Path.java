@@ -65,11 +65,11 @@ public class Path implements PathConsumer {
     public static final int WIND_NON_ZERO = PathIterator.WIND_NON_ZERO;
 
     /**
-     * Clockwise direction for adding closed contours.
+     * Clockwise direction for adding closed contours, assumes the origin is top left, y-down.
      */
     public static final int DIRECTION_CW = 0;
     /**
-     * Counter-clockwise direction for adding closed contours.
+     * Counter-clockwise direction for adding closed contours, assumes the origin is top left, y-down.
      */
     public static final int DIRECTION_CCW = 1;
     private static final byte DIRECTION_UNKNOWN = 2;
