@@ -34,6 +34,8 @@ import javax.annotation.Nonnull;
 @SuppressWarnings("unused")
 public non-sealed class Rect2f implements Rect2fc {
 
+    private static final Rect2fc EMPTY = new Rect2f();
+
     public float mLeft;
     public float mTop;
     public float mRight;
@@ -82,6 +84,16 @@ public non-sealed class Rect2f implements Rect2fc {
      */
     public Rect2f(@Nonnull Rect2ic r) {
         r.store(this);
+    }
+
+    /**
+     * Returns a read-only empty rect.
+     *
+     * @return an empty rect
+     */
+    @Nonnull
+    public static Rect2fc empty() {
+        return EMPTY;
     }
 
     /**
@@ -254,6 +266,69 @@ public non-sealed class Rect2f implements Rect2fc {
      */
     public final void set(Rect2ic src) {
         src.store(this);
+    }
+
+    /**
+     * Sets to bounds of <var>pts</var> array with <var>count</var> points. Returns
+     * false if <var>pts</var> array contains an infinity or NaN; in this case
+     * sets rect to (0, 0, 0, 0).
+     *
+     * @param pts   pts array
+     * @param pos   starting offset
+     * @param count number of points
+     * @return true if all values are finite
+     */
+    public final boolean setBounds(float[] pts, int pos, int count) {
+        if (count <= 0) {
+            setEmpty();
+            return true;
+        }
+
+        float minX, minY;
+        float maxX, maxY;
+
+        minX = maxX = pts[pos++];
+        minY = maxY = pts[pos++];
+        count--;
+
+        float prodX, prodY;
+        prodX = 0 * minX;
+        prodY = 0 * minY;
+
+        // auto vectorization
+        while (count != 0) {
+            float x = pts[pos++];
+            float y = pts[pos++];
+            prodX *= x;
+            prodY *= y;
+            minX = Math.min(minX, x);
+            minY = Math.min(minY, y);
+            maxX = Math.max(maxX, x);
+            maxY = Math.max(maxY, y);
+            count--;
+        }
+
+        if (prodX == 0 && prodY == 0) {
+            set(minX, minY, maxX, maxY);
+            return true;
+        } else {
+            setEmpty();
+            return false;
+        }
+    }
+
+    /**
+     * Sets to bounds of <var>pts</var> array with <var>count</var> points. If
+     * <var>pts</var> array contains an infinity or NaN, all rect values are set to NaN.
+     *
+     * @param pts   pts array
+     * @param pos   starting offset
+     * @param count number of points
+     */
+    public final void setBoundsNoCheck(float[] pts, int pos, int count) {
+        if (!setBounds(pts, pos, count)) {
+            set(Float.NaN, Float.NaN, Float.NaN, Float.NaN);
+        }
     }
 
     /**

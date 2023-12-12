@@ -39,6 +39,8 @@ import javax.annotation.Nonnull;
 @SuppressWarnings("unused")
 public non-sealed class Rect2i implements Rect2ic {
 
+    private static final Rect2ic EMPTY = new Rect2i();
+
     public int mLeft;
     public int mTop;
     public int mRight;
@@ -76,6 +78,16 @@ public non-sealed class Rect2i implements Rect2ic {
      */
     public Rect2i(@Nonnull Rect2ic r) {
         r.store(this);
+    }
+
+    /**
+     * Returns a read-only empty rect.
+     *
+     * @return an empty rect
+     */
+    @Nonnull
+    public static Rect2ic empty() {
+        return EMPTY;
     }
 
     /**

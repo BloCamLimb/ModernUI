@@ -72,7 +72,7 @@ public interface PathIterator {
      *     <li>CLOSE does not return any points</li>
      * </ul>
      *
-     * @param coords array for point data describing returned verb
+     * @param coords array for point data describing returned verb, can be null
      * @return next verb
      */
     int next(float[] coords, int offset);
