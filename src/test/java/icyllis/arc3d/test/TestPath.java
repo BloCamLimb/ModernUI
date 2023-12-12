@@ -113,7 +113,7 @@ public class TestPath {
         testMiterJoin();
         {
             var path = testRoundJoin();
-            drawStrokedPath(path, false, "test_path_stroke_round_join.png");
+            //drawStrokedPath(path, false, "test_path_stroke_round_join.png");
         }
     }
 
@@ -148,6 +148,9 @@ public class TestPath {
         stroker.init(dst, 5, Paint.CAP_ROUND, Paint.JOIN_ROUND, 4, 1);
         src.forEach(stroker);
         dst.forEach(PRINTER);
+
+        System.out.println("Src bounds: " + src.getBounds() + ", bytes: " + src.getMemorySize());
+        System.out.println("Dst bounds: " + dst.getBounds() + ", bytes: " + dst.getMemorySize());
 
         return dst;
     }

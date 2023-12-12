@@ -140,8 +140,8 @@ public class Path implements PathConsumer {
     public void reset() {
         if (mRef != null) {
             if (mRef.unique()) {
-                mRef.mNumVerbs = 0;
-                mRef.mNumCoords = 0;
+                mRef.mVerbSize = 0;
+                mRef.mCoordSize = 0;
             } else {
                 mRef = RefCnt.move(mRef);
             }
@@ -158,12 +158,12 @@ public class Path implements PathConsumer {
     public void clear() {
         if (mRef != null) {
             if (mRef.unique()) {
-                mRef.mNumVerbs = 0;
-                mRef.mNumCoords = 0;
+                mRef.mVerbSize = 0;
+                mRef.mCoordSize = 0;
             } else {
-                int numVerbs = mRef.mNumVerbs;
-                int numCoords = mRef.mNumCoords;
-                mRef = RefCnt.move(mRef, new Ref(numVerbs, numCoords));
+                int verbSize = mRef.mVerbSize;
+                int coordSize = mRef.mCoordSize;
+                mRef = RefCnt.move(mRef, new Ref(verbSize, coordSize));
             }
         }
         resetFields();
@@ -190,6 +190,11 @@ public class Path implements PathConsumer {
         }
     }
 
+    private void dirtyAfterEdit() {
+        mConvexity = CONVEXITY_UNKNOWN;
+        mFirstDirection = DIRECTION_UNKNOWN;
+    }
+
     /**
      * Adds a point to the path by moving to the specified point {@code (x,y)}.
      * A new contour begins at {@code (x,y)}.
@@ -199,10 +204,10 @@ public class Path implements PathConsumer {
      */
     @Override
     public void moveTo(float x, float y) {
-        mLastMoveToIndex = numCoords();
-        editor(1, 2)
-                .addVerb(VERB_MOVE)
+        mLastMoveToIndex = countCoords();
+        editor().addVerb(VERB_MOVE)
                 .addPoint(x, y);
+        dirtyAfterEdit();
     }
 
     /**
@@ -213,15 +218,14 @@ public class Path implements PathConsumer {
      * @throws IllegalStateException Path is empty
      */
     public void moveToRel(float dx, float dy) {
-        final float px, py;
-        final int n = numCoords();
+        int n = countCoords();
         if (n != 0) {
-            px = mRef.mCoords[n - 2];
-            py = mRef.mCoords[n - 1];
+            float px = mRef.mCoords[n - 2];
+            float py = mRef.mCoords[n - 1];
+            moveTo(px + dx, py + dy);
         } else {
             throw new IllegalStateException("No first point");
         }
-        moveTo(px + dx, py + dy);
     }
 
     /**
@@ -235,9 +239,9 @@ public class Path implements PathConsumer {
     @Override
     public void lineTo(float x, float y) {
         if (mLastMoveToIndex >= 0) {
-            editor(1, 2)
-                    .addVerb(VERB_LINE)
+            editor().addVerb(VERB_LINE)
                     .addPoint(x, y);
+            dirtyAfterEdit();
         } else {
             throw new IllegalStateException("No initial point");
         }
@@ -250,7 +254,7 @@ public class Path implements PathConsumer {
      * @param dy the offset from last point to line end on y-axis
      */
     public void lineToRel(float dx, float dy) {
-        int n = numCoords();
+        int n = countCoords();
         if (n != 0) {
             float px = mRef.mCoords[n - 2];
             float py = mRef.mCoords[n - 1];
@@ -275,10 +279,10 @@ public class Path implements PathConsumer {
     public void quadTo(float x1, float y1,
                        float x2, float y2) {
         if (mLastMoveToIndex >= 0) {
-            editor(1, 4)
-                    .addVerb(VERB_QUAD)
+            editor().addVerb(VERB_QUAD)
                     .addPoint(x1, y1)
                     .addPoint(x2, y2);
+            dirtyAfterEdit();
         } else {
             throw new IllegalStateException("No initial point");
         }
@@ -289,7 +293,7 @@ public class Path implements PathConsumer {
      */
     public void quadToRel(float dx1, float dy1,
                           float dx2, float dy2) {
-        int n = numCoords();
+        int n = countCoords();
         if (n != 0) {
             float px = mRef.mCoords[n - 2];
             float py = mRef.mCoords[n - 1];
@@ -317,11 +321,11 @@ public class Path implements PathConsumer {
                         float x2, float y2,
                         float x3, float y3) {
         if (mLastMoveToIndex >= 0) {
-            editor(1, 6)
-                    .addVerb(VERB_CUBIC)
+            editor().addVerb(VERB_CUBIC)
                     .addPoint(x1, y1)
                     .addPoint(x2, y2)
                     .addPoint(x3, y3);
+            dirtyAfterEdit();
         } else {
             throw new IllegalStateException("No initial point");
         }
@@ -333,7 +337,7 @@ public class Path implements PathConsumer {
     public void cubicToRel(float dx1, float dy1,
                            float dx2, float dy2,
                            float dx3, float dy3) {
-        int n = numCoords();
+        int n = countCoords();
         if (n != 0) {
             float px = mRef.mCoords[n - 2];
             float py = mRef.mCoords[n - 1];
@@ -345,15 +349,14 @@ public class Path implements PathConsumer {
 
     @Override
     public void closePath() {
-        int count = numVerbs();
+        int count = countVerbs();
         if (count != 0) {
             switch (mRef.mVerbs[count - 1]) {
                 case VERB_MOVE:
                 case VERB_LINE:
                 case VERB_QUAD:
                 case VERB_CUBIC: {
-                    editor(1, 0)
-                            .addVerb(VERB_CLOSE);
+                    editor().addVerb(VERB_CLOSE);
                     break;
                 }
                 case VERB_CLOSE:
@@ -362,19 +365,45 @@ public class Path implements PathConsumer {
                     throw new AssertionError();
             }
         }
-        mLastMoveToIndex = ~mLastMoveToIndex;
+        mLastMoveToIndex ^= ~mLastMoveToIndex >> (Integer.SIZE - 1);
     }
 
     @Override
     public void pathDone() {
     }
 
-    public int numVerbs() {
-        return mRef != null ? mRef.mNumVerbs : 0;
+    /**
+     * Returns the number of verbs added to path.
+     *
+     * @return size of verb list
+     */
+    public int countVerbs() {
+        return mRef != null ? mRef.mVerbSize : 0;
     }
 
-    public int numCoords() {
-        return mRef != null ? mRef.mNumCoords : 0;
+    /**
+     * Returns the number of coordinates in path. This is always an even number.
+     *
+     * @return size of coord list
+     */
+    public int countCoords() {
+        return mRef != null ? mRef.mCoordSize : 0;
+    }
+
+    /**
+     * Returns minimum and maximum axes values of coordinates. Returns empty
+     * if path contains no points.
+     * <p>
+     * Returned bounds includes all points added to path, including points
+     * associated with MOVE that define empty contours.
+     * <p>
+     * The return value is cached and recalculated only after path is changed.
+     *
+     * @return reference to bounds of all points, read-only
+     */
+    @Nonnull
+    public Rect2fc getBounds() {
+        return mRef != null ? mRef.getBounds() : Rect2f.empty();
     }
 
     public PathIterator getPathIterator() {
@@ -383,40 +412,50 @@ public class Path implements PathConsumer {
 
     private class Iterator implements PathIterator {
 
-        private final int numVerbs = numVerbs();
+        private final int count = countVerbs();
         private int verbPos;
         private int coordPos;
 
         @Override
         public int next(float[] coords, int offset) {
-            if (verbPos == numVerbs) {
+            if (verbPos == count) {
                 return VERB_DONE;
             }
             byte verb = mRef.mVerbs[verbPos++];
             switch (verb) {
                 case VERB_MOVE -> {
-                    if (verbPos == numVerbs) {
+                    if (verbPos == count) {
                         return VERB_DONE;
                     }
-                    coords[offset] = mRef.mCoords[coordPos++];
-                    coords[offset + 1] = mRef.mCoords[coordPos++];
+                    if (coords != null) {
+                        coords[offset] = mRef.mCoords[coordPos];
+                        coords[offset + 1] = mRef.mCoords[coordPos + 1];
+                    }
+                    coordPos += 2;
                 }
                 case VERB_LINE -> {
-                    coords[offset] = mRef.mCoords[coordPos++];
-                    coords[offset + 1] = mRef.mCoords[coordPos++];
+                    if (coords != null) {
+                        coords[offset] = mRef.mCoords[coordPos];
+                        coords[offset + 1] = mRef.mCoords[coordPos + 1];
+                    }
+                    coordPos += 2;
                 }
                 case VERB_QUAD -> {
-                    System.arraycopy(
-                            mRef.mCoords, coordPos,
-                            coords, offset, 4
-                    );
+                    if (coords != null) {
+                        System.arraycopy(
+                                mRef.mCoords, coordPos,
+                                coords, offset, 4
+                        );
+                    }
                     coordPos += 4;
                 }
                 case VERB_CUBIC -> {
-                    System.arraycopy(
-                            mRef.mCoords, coordPos,
-                            coords, offset, 6
-                    );
+                    if (coords != null) {
+                        System.arraycopy(
+                                mRef.mCoords, coordPos,
+                                coords, offset, 6
+                        );
+                    }
                     coordPos += 6;
                 }
             }
@@ -428,7 +467,7 @@ public class Path implements PathConsumer {
      * Iterates the Path and feeds the given consumer.
      */
     public void forEach(@Nonnull PathConsumer action) {
-        int n = numVerbs();
+        int n = countVerbs();
         if (n != 0) {
             byte[] vs = mRef.mVerbs;
             float[] cs = mRef.mCoords;
@@ -470,14 +509,25 @@ public class Path implements PathConsumer {
         action.pathDone();
     }
 
+    /**
+     * Returns the approximate byte size of path in memory.
+     */
+    public long getMemorySize() {
+        long size = 24;
+        if (mRef != null) {
+            size += mRef.getMemorySize();
+        }
+        return size;
+    }
+
     // ignore the last point of the contour
     // there must be moveTo() for the contour
     void reversePop(@Nonnull PathConsumer out) {
         assert mRef != null;
         byte[] vs = mRef.mVerbs;
         float[] cs = mRef.mCoords;
-        int vi = mRef.mNumVerbs;
-        int ci = mRef.mNumCoords - 2;
+        int vi = mRef.mVerbSize;
+        int ci = mRef.mCoordSize - 2;
         ITR:
         while (vi != 0) {
             switch (vs[--vi]) {
@@ -514,44 +564,62 @@ public class Path implements PathConsumer {
         clear();
     }
 
-    private Ref editor(int incVerbs, int incCoords) {
-        assert incVerbs >= 0 && incCoords >= 0;
+    private Ref editor() {
         if (mRef == null) {
-            mRef = new Ref(incVerbs, incCoords);
+            mRef = new Ref();
         } else {
-            if (mRef.unique()) {
-                mRef.reserve(incVerbs, incCoords);
-            } else {
-                mRef = RefCnt.move(mRef, new Ref(mRef, incVerbs, incCoords));
+            if (!mRef.unique()) {
+                mRef = RefCnt.move(mRef, new Ref(mRef));
             }
+            mRef.mBounds.set(0, 0, -1, -1);
         }
         return mRef;
     }
 
     @Nonnull
     private static byte[] growVerbs(@Nonnull byte[] old, int minGrow) {
-        final int cap = old.length, grow;
-        if (cap < 10) {
-            grow = 10;
-        } else if (cap > 500) {
-            grow = Math.max(250, cap >> 3);
+        final int oldCap = old.length, grow;
+        if (oldCap < 10) {
+            grow = 10 - oldCap;
+        } else if (oldCap > 500) {
+            grow = Math.max(250, oldCap >> 3); // 1.125x
         } else {
-            grow = cap >> 1;
+            grow = oldCap >> 1; // 1.5x
         }
-        return Arrays.copyOf(old, cap + Math.max(grow, minGrow));
+        int newCap = oldCap + Math.max(grow, minGrow); // may overflow
+        if (newCap < 0) {
+            newCap = oldCap + minGrow; // may overflow
+            if (newCap < 0) {
+                throw new IllegalStateException("Path is too big " + oldCap + " + " + minGrow);
+            }
+            newCap = Integer.MAX_VALUE;
+        }
+        return Arrays.copyOf(old, newCap);
     }
 
     @Nonnull
     private static float[] growCoords(@Nonnull float[] old, int minGrow) {
-        final int cap = old.length, grow;
-        if (cap < 20) {
-            grow = 20;
-        } else if (cap > 1000) {
-            grow = Math.max(500, cap >> 3);
+        final int oldCap = old.length, grow;
+        if (oldCap < 20) {
+            grow = 20 - oldCap;
+        } else if (oldCap > 1000) {
+            // align down to 2
+            grow = Math.max(500, (oldCap >> 4) << 1); // 1.125x
         } else {
-            grow = cap >> 1;
+            // align down to 2
+            grow = (oldCap >> 2) << 1; // 1.5x
         }
-        return Arrays.copyOf(old, cap + Math.max(grow, minGrow));
+        assert oldCap % 2 == 0 && minGrow % 2 == 0;
+        int newCap = oldCap + Math.max(grow, minGrow); // may overflow
+        if (newCap < 0) {
+            newCap = oldCap + minGrow; // may overflow
+            if (newCap < 0) {
+                throw new IllegalStateException("Path is too big " + oldCap + " + " + minGrow);
+            }
+            // align down to 2
+            newCap = Integer.MAX_VALUE - 1;
+        }
+        return Arrays.copyOf(old, newCap);
     }
 
     /**
@@ -582,39 +650,50 @@ public class Path implements PathConsumer {
 
         transient volatile int mUsageCnt = 1;
 
+        // unsorted = dirty
+        final Rect2f mBounds = new Rect2f(0, 0, -1, -1);
+
         byte[] mVerbs;
         float[] mCoords; // x0 y0 x1 y1 x2 y2 ...
 
-        int mNumVerbs;
-        int mNumCoords;
+        int mVerbSize;
+        int mCoordSize;
 
         Ref() {
             this(EMPTY_VERBS, EMPTY_COORDS);
         }
 
-        Ref(int numVerbs, int numCoords) {
-            this(new byte[numVerbs], new float[numCoords]);
+        Ref(int verbSize, int coordSize) {
+            assert coordSize % 2 == 0;
+            mVerbs = new byte[verbSize];
+            mCoords = new float[coordSize];
         }
 
         Ref(byte[] verbs, float[] coords) {
+            assert coords.length % 2 == 0;
             mVerbs = verbs;
             mCoords = coords;
         }
 
         @SuppressWarnings("IncompleteCopyConstructor")
         Ref(@Nonnull Ref other) {
-            mVerbs = Arrays.copyOf(other.mVerbs, other.mNumVerbs);
-            mCoords = Arrays.copyOf(other.mCoords, other.mNumCoords);
-            mNumVerbs = other.mNumVerbs;
-            mNumCoords = other.mNumCoords;
+            mBounds.set(other.mBounds);
+            mVerbs = Arrays.copyOf(other.mVerbs, other.mVerbSize);
+            mCoords = Arrays.copyOf(other.mCoords, other.mCoordSize);
+            mVerbSize = other.mVerbSize;
+            mCoordSize = other.mCoordSize;
         }
 
         Ref(@Nonnull Ref other, int incVerbs, int incCoords) {
-            this(other.mNumVerbs + incVerbs, other.mNumCoords + incCoords);
-            System.arraycopy(other.mVerbs, 0, mVerbs, 0, other.mNumVerbs);
-            System.arraycopy(other.mCoords, 0, mCoords, 0, other.mNumCoords);
-            mNumVerbs = other.mNumVerbs;
-            mNumCoords = other.mNumCoords;
+            assert incVerbs >= 0 && incCoords >= 0;
+            assert incCoords % 2 == 0;
+            mVerbs = new byte[other.mVerbSize + incVerbs];
+            mCoords = new float[other.mCoordSize + incCoords];
+            mBounds.set(other.mBounds);
+            System.arraycopy(other.mVerbs, 0, mVerbs, 0, other.mVerbSize);
+            System.arraycopy(other.mCoords, 0, mCoords, 0, other.mCoordSize);
+            mVerbSize = other.mVerbSize;
+            mCoordSize = other.mCoordSize;
         }
 
         boolean unique() {
@@ -633,32 +712,55 @@ public class Path implements PathConsumer {
 
         void reserve(int incVerbs, int incCoords) {
             assert incVerbs >= 0 && incCoords >= 0;
-            if (mNumVerbs + incVerbs > mVerbs.length) {
+            assert incCoords % 2 == 0;
+            if (mVerbSize > mVerbs.length - incVerbs) { // prevent overflow
                 mVerbs = growVerbs(mVerbs, incVerbs);
             }
-            if (mNumCoords + incCoords > mCoords.length) {
+            if (mCoordSize > mCoords.length - incCoords) { // prevent overflow
                 mCoords = growCoords(mCoords, incCoords);
             }
         }
 
         void trimToSize() {
-            if (mNumVerbs < mVerbs.length) {
-                mVerbs = Arrays.copyOf(mVerbs, mNumVerbs);
+            if (mVerbSize < mVerbs.length) {
+                mVerbs = Arrays.copyOf(mVerbs, mVerbSize);
             }
-            if (mNumCoords < mCoords.length) {
-                mCoords = Arrays.copyOf(mCoords, mNumCoords);
+            if (mCoordSize < mCoords.length) {
+                mCoords = Arrays.copyOf(mCoords, mCoordSize);
             }
         }
 
         Ref addVerb(byte verb) {
-            mVerbs[mNumVerbs++] = verb;
+            int coords = switch (verb) {
+                case VERB_MOVE, VERB_LINE -> 2;
+                case VERB_QUAD -> 4;
+                case VERB_CUBIC -> 6;
+                default -> 0;
+            };
+            reserve(1, coords);
+            mVerbs[mVerbSize++] = verb;
             return this;
         }
 
         Ref addPoint(float x, float y) {
-            mCoords[mNumCoords++] = x;
-            mCoords[mNumCoords++] = y;
+            mCoords[mCoordSize++] = x;
+            mCoords[mCoordSize++] = y;
             return this;
+        }
+
+        Rect2fc getBounds() {
+            if (!mBounds.isSorted()) {
+                mBounds.setBounds(mCoords, 0, mCoordSize >> 1);
+            }
+            return mBounds;
+        }
+
+        long getMemorySize() {
+            long size = 16 + 24 + 16 + 16;
+            size += 16 + MathUtil.align8(mVerbs.length);
+            assert mCoords.length % 2 == 0;
+            size += 16 + ((long) mCoords.length << 2);
+            return size;
         }
     }
 }

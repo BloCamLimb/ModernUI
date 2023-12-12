@@ -19,8 +19,7 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.Rect2i;
-import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.core.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,11 +42,13 @@ public final class TextureResolveTask extends RenderTask {
                 mTaskManager.getLastRenderTask(proxy).isClosed());
         assert (resolveFlags != 0);
 
-        Rect2i msaaRect = null;
+        Rect2ic msaaRect;
         if ((resolveFlags & RESOLVE_FLAG_MSAA) != 0) {
             assert (proxy.needsResolve());
             msaaRect = proxy.getResolveRect();
             proxy.setResolveRect(0, 0, 0, 0);
+        } else {
+            msaaRect = Rect2i.empty();
         }
 
         if ((resolveFlags & RESOLVE_FLAG_MIPMAPS) != 0) {
@@ -56,10 +57,11 @@ public final class TextureResolveTask extends RenderTask {
         }
 
         mResolves.add(new Resolve(resolveFlags,
-                msaaRect != null ? msaaRect.mLeft : 0,
-                msaaRect != null ? msaaRect.mTop : 0,
-                msaaRect != null ? msaaRect.mRight : 0,
-                msaaRect != null ? msaaRect.mBottom : 0));
+                msaaRect.left(),
+                msaaRect.top(),
+                msaaRect.right(),
+                msaaRect.bottom())
+        );
 
         // Add the proxy as a dependency: We will read the existing contents of this texture while
         // generating mipmap levels and/or resolving MSAA.
