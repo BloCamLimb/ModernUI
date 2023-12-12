@@ -25,15 +25,7 @@ package icyllis.arc3d.core;
 public interface PathIterator {
 
     /**
-     * The winding rule constant for specifying an even-odd rule
-     * for determining the interior of a path.<br>
-     * The even-odd rule specifies that a point lies inside the
-     * path if a ray drawn in any direction from that point to
-     * infinity is crossed by path segments an odd number of times.
-     */
-    int WIND_EVEN_ODD = 0;
-    /**
-     * The winding rule constant for specifying a non-zero rule
+     * The fill rule constant for specifying a non-zero rule
      * for determining the interior of a path.<br>
      * The non-zero rule specifies that a point lies inside the
      * path if a ray drawn in any direction from that point to
@@ -41,10 +33,18 @@ public interface PathIterator {
      * of times in the counter-clockwise direction than the
      * clockwise direction.
      */
-    int WIND_NON_ZERO = 1;
+    int FILL_NON_ZERO = 0;
+    /**
+     * The fill rule constant for specifying an even-odd rule
+     * for determining the interior of a path.<br>
+     * The even-odd rule specifies that a point lies inside the
+     * path if a ray drawn in any direction from that point to
+     * infinity is crossed by path segments an odd number of times.
+     */
+    int FILL_EVEN_ODD = 1;
 
     /**
-     * Basic commands of path segments.
+     * Primitive commands of path segments.
      */
     int
             VERB_MOVE = 0,  // returns 1 point
