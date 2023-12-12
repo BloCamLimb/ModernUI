@@ -150,7 +150,10 @@ public class TestPath {
         dst.forEach(PRINTER);
 
         System.out.println("Src bounds: " + src.getBounds() + ", bytes: " + src.getMemorySize());
-        System.out.println("Dst bounds: " + dst.getBounds() + ", bytes: " + dst.getMemorySize());
+        for (int i = 0; i < 2; i++) {
+            System.out.println("Dst bounds: " + dst.getBounds() + ", bytes: " + dst.getMemorySize());
+            dst.trimToSize();
+        }
 
         return dst;
     }

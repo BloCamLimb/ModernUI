@@ -74,7 +74,7 @@ public interface PathConsumer {
                  float x3, float y3);
 
     /**
-     * Closes the current sub-path by drawing a straight line back to
+     * Closes the current contour by drawing a straight line back to
      * the point of the last {@link #moveTo}.  If the path is already
      * closed then this method has no effect.
      */

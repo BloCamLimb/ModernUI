@@ -41,20 +41,12 @@ import java.util.Arrays;
  * overlapping contours.
  * <p>
  * Note: Path lazily computes metrics likes bounds and convexity. Call
- * Path::updateBoundsCache to make Path thread safe.
+ * {@link #updateBoundsCache()} to make path thread safe.
  */
 public class Path implements PathConsumer {
 
     /**
-     * The winding rule constant for specifying an even-odd rule
-     * for determining the interior of a path.<br>
-     * The even-odd rule specifies that a point lies inside the
-     * path if a ray drawn in any direction from that point to
-     * infinity is crossed by path segments an odd number of times.
-     */
-    public static final int WIND_EVEN_ODD = PathIterator.WIND_EVEN_ODD;
-    /**
-     * The winding rule constant for specifying a non-zero rule
+     * The fill rule constant for specifying a non-zero rule
      * for determining the interior of a path.<br>
      * The non-zero rule specifies that a point lies inside the
      * path if a ray drawn in any direction from that point to
@@ -62,7 +54,25 @@ public class Path implements PathConsumer {
      * of times in the counter-clockwise direction than the
      * clockwise direction.
      */
-    public static final int WIND_NON_ZERO = PathIterator.WIND_NON_ZERO;
+    public static final int FILL_NON_ZERO = PathIterator.FILL_NON_ZERO;
+    /**
+     * The fill rule constant for specifying an even-odd rule
+     * for determining the interior of a path.<br>
+     * The even-odd rule specifies that a point lies inside the
+     * path if a ray drawn in any direction from that point to
+     * infinity is crossed by path segments an odd number of times.
+     */
+    public static final int FILL_EVEN_ODD = PathIterator.FILL_EVEN_ODD;
+
+    /**
+     * Primitive commands of path segments.
+     */
+    public static final byte
+            VERB_MOVE = PathIterator.VERB_MOVE,   // returns 1 point
+            VERB_LINE = PathIterator.VERB_LINE,   // returns 1 point
+            VERB_QUAD = PathIterator.VERB_QUAD,   // returns 2 points
+            VERB_CUBIC = PathIterator.VERB_CUBIC, // returns 3 points
+            VERB_CLOSE = PathIterator.VERB_CLOSE; // returns 0 points
 
     /**
      * Clockwise direction for adding closed contours, assumes the origin is top left, y-down.
@@ -72,18 +82,25 @@ public class Path implements PathConsumer {
      * Counter-clockwise direction for adding closed contours, assumes the origin is top left, y-down.
      */
     public static final int DIRECTION_CCW = 1;
-    private static final byte DIRECTION_UNKNOWN = 2;
 
-    public static final byte
-            VERB_MOVE = PathIterator.VERB_MOVE,
-            VERB_LINE = PathIterator.VERB_LINE,
-            VERB_QUAD = PathIterator.VERB_QUAD,
-            VERB_CUBIC = PathIterator.VERB_CUBIC,
-            VERB_CLOSE = PathIterator.VERB_CLOSE;
+    /**
+     * Segment constants correspond to each drawing verb type in path; for
+     * instance, if path contains only lines, only the Line bit is set.
+     *
+     * @see #getSegmentMask()
+     */
+    public static final int
+            SEGMENT_LINE = 1,
+            SEGMENT_QUAD = 1 << 1,
+            SEGMENT_CUBIC = 1 << 3;
 
     private static final byte CONVEXITY_CONVEX = 0;
     private static final byte CONVEXITY_CONCAVE = 1;
     private static final byte CONVEXITY_UNKNOWN = 2;
+
+    private static final byte FIRST_DIRECTION_CW = DIRECTION_CW;
+    private static final byte FIRST_DIRECTION_CCW = DIRECTION_CCW;
+    private static final byte FIRST_DIRECTION_UNKNOWN = 2;
 
     public static final int APPROXIMATE_ARC_WITH_CUBICS = 0;
     public static final int APPROXIMATE_CONIC_WITH_QUADS = 1;
@@ -95,18 +112,21 @@ public class Path implements PathConsumer {
 
     private byte mConvexity;
     private byte mFirstDirection;
-    private byte mWindingRule;
+    private byte mFillRule;
 
     /**
-     * Creates an empty Path with a default winding rule of {@link #WIND_NON_ZERO}.
+     * Creates an empty Path with a default fill rule of {@link #FILL_NON_ZERO}.
      */
     public Path() {
-        mRef = null;
+        mRef = RefCnt.create(Ref.EMPTY);
         resetFields();
     }
 
     /**
      * Creates a copy of an existing Path object.
+     * <p>
+     * Internally, the two paths share reference values. The underlying
+     * verb array, coordinate array and weights are copied when modified.
      */
     @SuppressWarnings("IncompleteCopyConstructor")
     public Path(@Nonnull Path other) {
@@ -119,80 +139,98 @@ public class Path implements PathConsumer {
      */
     private void resetFields() {
         mLastMoveToIndex = ~0;
-        mWindingRule = WIND_NON_ZERO;
+        mFillRule = FILL_NON_ZERO;
         mConvexity = CONVEXITY_UNKNOWN;
-        mFirstDirection = DIRECTION_UNKNOWN;
+        mFirstDirection = FIRST_DIRECTION_UNKNOWN;
     }
 
     private void copyFields(@Nonnull Path other) {
         mLastMoveToIndex = other.mLastMoveToIndex;
         mConvexity = other.mConvexity;
         mFirstDirection = other.mFirstDirection;
-        mWindingRule = other.mWindingRule;
+        mFillRule = other.mFillRule;
     }
 
     /**
-     * Resets the path to empty.
+     * Resets the path to its initial state, clears points and verbs and
+     * sets fill rule to {@link #FILL_NON_ZERO}.
      * <p>
-     * If internal storage is shared, unref it.
-     * Otherwise, preserves internal storage.
+     * Preserves internal storage if it's unique, otherwise discards.
      */
     public void reset() {
-        if (mRef != null) {
-            if (mRef.unique()) {
-                mRef.mVerbSize = 0;
-                mRef.mCoordSize = 0;
-            } else {
-                mRef = RefCnt.move(mRef);
-            }
+        if (mRef.unique()) {
+            mRef.reset();
+        } else {
+            mRef = RefCnt.create(mRef, Ref.EMPTY);
         }
         resetFields();
     }
 
     /**
-     * Resets the path to empty.
+     * Resets the path to its initial state, clears points and verbs and
+     * sets fill rule to {@link #FILL_NON_ZERO}.
      * <p>
-     * If internal storage is shared, create new internal storage.
-     * Otherwise, preserves internal storage.
+     * Preserves internal storage if it's unique, otherwise allocates new
+     * storage with the same size.
      */
     public void clear() {
-        if (mRef != null) {
-            if (mRef.unique()) {
-                mRef.mVerbSize = 0;
-                mRef.mCoordSize = 0;
-            } else {
-                int verbSize = mRef.mVerbSize;
-                int coordSize = mRef.mCoordSize;
-                mRef = RefCnt.move(mRef, new Ref(verbSize, coordSize));
-            }
+        if (mRef.unique()) {
+            mRef.reset();
+        } else {
+            int verbSize = mRef.mVerbSize;
+            int coordSize = mRef.mCoordSize;
+            mRef = RefCnt.move(mRef, new Ref(verbSize, coordSize));
         }
         resetFields();
     }
 
     /**
-     * Resets the path to empty and removes internal storage.
+     * Resets the path to its initial state, clears points and verbs and
+     * sets fill rule to {@link #FILL_NON_ZERO}.
+     * <p>
+     * This explicitly discards the internal storage, it is recommended to
+     * call when the path object will be no longer used.
      */
     public void recycle() {
-        mRef = RefCnt.move(mRef);
+        mRef = RefCnt.create(mRef, Ref.EMPTY);
         resetFields();
     }
 
     /**
-     * Trims the internal storage to current size.
+     * Trims the internal storage to the current size.
+     * This operation can minimize memory usage, see {@link #getMemorySize()}.
      */
     public void trimToSize() {
-        if (mRef != null) {
-            if (mRef.unique()) {
-                mRef.trimToSize();
-            } else {
-                mRef = RefCnt.move(mRef, new Ref(mRef));
-            }
+        if (mRef.unique()) {
+            mRef.trimToSize();
+        } else {
+            mRef = RefCnt.move(mRef, new Ref(mRef));
         }
+    }
+
+    /**
+     * Returns true if path has no point and verb. {@link #reset()},
+     * {@link #clear()} and {@link #recycle()} make path empty.
+     *
+     * @return true if the path contains no verb
+     */
+    public boolean isEmpty() {
+        assert (mRef.mVerbSize == 0) == (mRef.mCoordSize == 0);
+        return mRef.mVerbSize == 0;
+    }
+
+    /**
+     * Returns false for any coordinate value of infinity or NaN.
+     *
+     * @return true if all point coordinates are finite
+     */
+    public boolean isFinite() {
+        return mRef.isFinite();
     }
 
     private void dirtyAfterEdit() {
         mConvexity = CONVEXITY_UNKNOWN;
-        mFirstDirection = DIRECTION_UNKNOWN;
+        mFirstDirection = FIRST_DIRECTION_UNKNOWN;
     }
 
     /**
@@ -347,6 +385,11 @@ public class Path implements PathConsumer {
         }
     }
 
+    /**
+     * Closes the current contour by drawing a straight line back to
+     * the point of the last {@link #moveTo}.  If the path is already
+     * closed then this method has no effect.
+     */
     @Override
     public void closePath() {
         int count = countVerbs();
@@ -378,35 +421,64 @@ public class Path implements PathConsumer {
      * @return size of verb list
      */
     public int countVerbs() {
-        return mRef != null ? mRef.mVerbSize : 0;
+        return mRef.mVerbSize;
     }
 
     /**
-     * Returns the number of coordinates in path. This is always an even number.
+     * Returns the number of coordinates in path. This is always an even number,
+     * then the number of points is {@code countCoords() >> 1}.
      *
      * @return size of coord list
      */
     public int countCoords() {
-        return mRef != null ? mRef.mCoordSize : 0;
+        return mRef.mCoordSize;
     }
 
     /**
      * Returns minimum and maximum axes values of coordinates. Returns empty
-     * if path contains no points.
+     * if path contains no points or is not finite.
      * <p>
      * Returned bounds includes all points added to path, including points
      * associated with MOVE that define empty contours.
      * <p>
-     * The return value is cached and recalculated only after path is changed.
+     * This method returns a cached result; it is recalculated only after
+     * this path is altered.
      *
      * @return reference to bounds of all points, read-only
      */
     @Nonnull
     public Rect2fc getBounds() {
-        return mRef != null ? mRef.getBounds() : Rect2f.empty();
+        return mRef.getBounds();
     }
 
-    public PathIterator getPathIterator() {
+    /**
+     * Updates internal bounds so that subsequent calls to {@link #getBounds()}
+     * are instantaneous. Unaltered copies of path may also access cached bounds
+     * through {@link #getBounds()}.
+     * <p>
+     * For now, identical to calling {@link #getBounds()} and ignoring the returned
+     * value.
+     * <p>
+     * Call to prepare path subsequently drawn from multiple threads, to avoid
+     * a race condition where each draw separately computes the bounds.
+     */
+    public void updateBoundsCache() {
+        mRef.updateBounds();
+    }
+
+    /**
+     * Returns a mask, where each set bit corresponds to a Segment constant
+     * if path contains one or more verbs of that type.
+     * <p>
+     * This method returns a cached result; it is very fast.
+     *
+     * @return Segment bits or zero
+     */
+    public int getSegmentMask() {
+        return mRef.mSegmentMask;
+    }
+
+    public PathIterator iterator() {
         return this.new Iterator();
     }
 
@@ -510,14 +582,31 @@ public class Path implements PathConsumer {
     }
 
     /**
-     * Returns the approximate byte size of path in memory.
+     * Returns the approximate byte size of path object in memory.
+     * This method does not take into account whether internal storage is shared or not.
      */
     public long getMemorySize() {
         long size = 24;
-        if (mRef != null) {
-            size += mRef.getMemorySize();
-        }
+        size += mRef.getMemorySize();
         return size;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = mRef.hashCode();
+        hash = 31 * hash + mFillRule;
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) {
+            return true;
+        }
+        if (obj instanceof Path other) {
+            return mFillRule == other.mFillRule && mRef.equals(other.mRef);
+        }
+        return false;
     }
 
     // ignore the last point of the contour
@@ -565,14 +654,10 @@ public class Path implements PathConsumer {
     }
 
     private Ref editor() {
-        if (mRef == null) {
-            mRef = new Ref();
-        } else {
-            if (!mRef.unique()) {
-                mRef = RefCnt.move(mRef, new Ref(mRef));
-            }
-            mRef.mBounds.set(0, 0, -1, -1);
+        if (!mRef.unique()) {
+            mRef = RefCnt.move(mRef, new Ref(mRef));
         }
+        mRef.mBounds.set(0, 0, -1, -1);
         return mRef;
     }
 
@@ -648,6 +733,13 @@ public class Path implements PathConsumer {
         static final byte[] EMPTY_VERBS = {};
         static final float[] EMPTY_COORDS = {};
 
+        static final Ref EMPTY;
+
+        static {
+            EMPTY = new Ref();
+            EMPTY.updateBounds();
+        }
+
         transient volatile int mUsageCnt = 1;
 
         // unsorted = dirty
@@ -659,14 +751,22 @@ public class Path implements PathConsumer {
         int mVerbSize;
         int mCoordSize;
 
+        byte mSegmentMask;
+
         Ref() {
             this(EMPTY_VERBS, EMPTY_COORDS);
         }
 
         Ref(int verbSize, int coordSize) {
             assert coordSize % 2 == 0;
-            mVerbs = new byte[verbSize];
-            mCoords = new float[coordSize];
+            if (verbSize > 0) {
+                assert coordSize > 0;
+                mVerbs = new byte[verbSize];
+                mCoords = new float[coordSize];
+            } else {
+                mVerbs = EMPTY_VERBS;
+                mCoords = EMPTY_COORDS;
+            }
         }
 
         Ref(byte[] verbs, float[] coords) {
@@ -678,10 +778,18 @@ public class Path implements PathConsumer {
         @SuppressWarnings("IncompleteCopyConstructor")
         Ref(@Nonnull Ref other) {
             mBounds.set(other.mBounds);
-            mVerbs = Arrays.copyOf(other.mVerbs, other.mVerbSize);
-            mCoords = Arrays.copyOf(other.mCoords, other.mCoordSize);
+            // trim
+            if (other.mVerbSize > 0) {
+                assert other.mCoordSize > 0;
+                mVerbs = Arrays.copyOf(other.mVerbs, other.mVerbSize);
+                mCoords = Arrays.copyOf(other.mCoords, other.mCoordSize);
+            } else {
+                mVerbs = EMPTY_VERBS;
+                mCoords = EMPTY_COORDS;
+            }
             mVerbSize = other.mVerbSize;
             mCoordSize = other.mCoordSize;
+            mSegmentMask = other.mSegmentMask;
         }
 
         Ref(@Nonnull Ref other, int incVerbs, int incCoords) {
@@ -694,20 +802,27 @@ public class Path implements PathConsumer {
             System.arraycopy(other.mCoords, 0, mCoords, 0, other.mCoordSize);
             mVerbSize = other.mVerbSize;
             mCoordSize = other.mCoordSize;
+            mSegmentMask = other.mSegmentMask;
         }
 
         boolean unique() {
-            return (int) USAGE_CNT.getAcquire(this) == 1;
+            return (int) USAGE_CNT.getAcquire(this) == 1
+                    && this != EMPTY; // the EMPTY's usage cnt is wild
         }
 
         public void ref() {
-            var refCnt = (int) USAGE_CNT.getAndAddAcquire(this, 1);
-            assert refCnt > 0;
+            USAGE_CNT.getAndAddAcquire(this, 1);
         }
 
         public void unref() {
-            var refCnt = (int) USAGE_CNT.getAndAdd(this, -1);
-            assert refCnt > 0;
+            USAGE_CNT.getAndAdd(this, -1);
+        }
+
+        void reset() {
+            mBounds.set(0, 0, -1, -1);
+            mSegmentMask = 0;
+            mVerbSize = 0;
+            mCoordSize = 0;
         }
 
         void reserve(int incVerbs, int incCoords) {
@@ -722,19 +837,35 @@ public class Path implements PathConsumer {
         }
 
         void trimToSize() {
-            if (mVerbSize < mVerbs.length) {
-                mVerbs = Arrays.copyOf(mVerbs, mVerbSize);
-            }
-            if (mCoordSize < mCoords.length) {
-                mCoords = Arrays.copyOf(mCoords, mCoordSize);
+            if (mVerbSize > 0) {
+                assert mCoordSize > 0;
+                if (mVerbSize < mVerbs.length) {
+                    mVerbs = Arrays.copyOf(mVerbs, mVerbSize);
+                }
+                if (mCoordSize < mCoords.length) {
+                    mCoords = Arrays.copyOf(mCoords, mCoordSize);
+                }
+            } else {
+                mVerbs = EMPTY_VERBS;
+                mCoords = EMPTY_COORDS;
             }
         }
 
         Ref addVerb(byte verb) {
             int coords = switch (verb) {
-                case VERB_MOVE, VERB_LINE -> 2;
-                case VERB_QUAD -> 4;
-                case VERB_CUBIC -> 6;
+                case VERB_MOVE -> 2;
+                case VERB_LINE -> {
+                    mSegmentMask |= SEGMENT_LINE;
+                    yield 2;
+                }
+                case VERB_QUAD -> {
+                    mSegmentMask |= SEGMENT_QUAD;
+                    yield 4;
+                }
+                case VERB_CUBIC -> {
+                    mSegmentMask |= SEGMENT_CUBIC;
+                    yield 6;
+                }
                 default -> 0;
             };
             reserve(1, coords);
@@ -748,19 +879,76 @@ public class Path implements PathConsumer {
             return this;
         }
 
-        Rect2fc getBounds() {
-            if (!mBounds.isSorted()) {
-                mBounds.setBounds(mCoords, 0, mCoordSize >> 1);
+        void updateBounds() {
+            if (!mBounds.isSorted() && mBounds.isFinite()) {
+                assert mCoordSize % 2 == 0;
+                mBounds.setBoundsNoCheck(mCoords, 0, mCoordSize >> 1);
             }
-            return mBounds;
+        }
+
+        boolean isFinite() {
+            updateBounds();
+            return mBounds.isFinite();
+        }
+
+        Rect2fc getBounds() {
+            if (isFinite()) {
+                return mBounds;
+            }
+            return Rect2f.empty();
         }
 
         long getMemorySize() {
             long size = 16 + 24 + 16 + 16;
-            size += 16 + MathUtil.align8(mVerbs.length);
-            assert mCoords.length % 2 == 0;
-            size += 16 + ((long) mCoords.length << 2);
+            if (mVerbs != EMPTY_VERBS) {
+                size += 16 + MathUtil.align8(mVerbs.length);
+            }
+            if (mCoords != EMPTY_COORDS) {
+                assert mCoords.length % 2 == 0;
+                size += 16 + ((long) mCoords.length << 2);
+            }
             return size;
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 7;
+            for (int i = 0, count = mVerbSize; i < count; i++) {
+                hash = 11 * hash + mVerbs[i];
+            }
+            for (int i = 0, count = mCoordSize; i < count; i++) {
+                hash = 11 * hash + Float.floatToIntBits(mCoords[i]);
+            }
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (!(obj instanceof Ref other)) {
+                return false;
+            }
+            // quick reject
+            if (mSegmentMask != other.mSegmentMask) {
+                return false;
+            }
+            if (mCoordSize != other.mCoordSize) {
+                return false;
+            }
+            if (!Arrays.equals(
+                    mVerbs, 0, mVerbSize,
+                    other.mVerbs, 0, other.mVerbSize)) {
+                return false;
+            }
+            // use IEEE comparison rather than memory comparison
+            for (int i = 0, count = mCoordSize; i < count; i++) {
+                if (mCoords[i] != other.mCoords[i]) {
+                    return false;
+                }
+            }
+            return true;
         }
     }
 }
