@@ -79,8 +79,8 @@ public class PathStroker implements PathConsumer {
 
     public void init(@Nonnull PathConsumer out,
                      float radius,
-                     int cap,
-                     int join,
+                     @Paint.Cap int cap,
+                     @Paint.Join int join,
                      float miterLimit,
                      float resScale) {
         assert out != this;
@@ -1198,6 +1198,8 @@ public class PathStroker implements PathConsumer {
     @Override
     public void pathDone() {
         finish(false, mPrevIsLine);
+        mOuter = null;
+        assert mInner.isEmpty();
     }
 
     // finish the current contour

@@ -110,14 +110,15 @@ public class TestPath {
     private static final J2DPathConverter J2D_PATH_CONVERTER = new J2DPathConverter();
 
     public static void main(String[] args) {
-        testMiterJoin();
-        {
-            var path = testRoundJoin();
-            //drawStrokedPath(path, false, "test_path_stroke_round_join.png");
-        }
+        Path result;
+        PathStroker stroker = new PathStroker();
+        result = testMiterJoin(stroker);
+        result = testRoundJoin(stroker);
+        //writePath(result, false, "test_path_stroke_round_join.png");
+        System.out.println("Empty path bytes: " + new Path().estimatedByteSize());
     }
 
-    public static Path testMiterJoin() {
+    public static Path testMiterJoin(PathStroker stroker) {
         Path src = new Path();
         src.moveTo(100, 120);
         src.lineTo(130, 160);
@@ -125,14 +126,20 @@ public class TestPath {
         src.forEach(PRINTER);
 
         Path dst = new Path();
-        PathStroker stroker = new PathStroker();
         stroker.init(dst, 5, Paint.CAP_ROUND, Paint.JOIN_MITER, 4, 1);
         src.forEach(stroker);
         dst.forEach(PRINTER);
+
+        System.out.println("Src bounds: " + src.getBounds() + ", bytes: " + src.estimatedByteSize());
+        for (int i = 0; i < 2; i++) {
+            System.out.println("Dst bounds: " + dst.getBounds() + ", bytes: " + dst.estimatedByteSize());
+            dst.trimToSize();
+        }
+
         return dst;
     }
 
-    public static Path testRoundJoin() {
+    public static Path testRoundJoin(PathStroker stroker) {
         Path src = new Path();
         src.moveTo(100, 120);
         src.lineTo(130, 160);
@@ -144,21 +151,20 @@ public class TestPath {
         src.forEach(PRINTER);
 
         Path dst = new Path();
-        PathStroker stroker = new PathStroker();
         stroker.init(dst, 5, Paint.CAP_ROUND, Paint.JOIN_ROUND, 4, 1);
         src.forEach(stroker);
         dst.forEach(PRINTER);
 
-        System.out.println("Src bounds: " + src.getBounds() + ", bytes: " + src.getMemorySize());
+        System.out.println("Src bounds: " + src.getBounds() + ", bytes: " + src.estimatedByteSize());
         for (int i = 0; i < 2; i++) {
-            System.out.println("Dst bounds: " + dst.getBounds() + ", bytes: " + dst.getMemorySize());
+            System.out.println("Dst bounds: " + dst.getBounds() + ", bytes: " + dst.estimatedByteSize());
             dst.trimToSize();
         }
 
         return dst;
     }
 
-    public static void drawStrokedPath(Path src, boolean stroke, String outName) {
+    public static void writePath(Path src, boolean stroke, String outName) {
         var path = J2D_PATH_CONVERTER.convert(src);
         var image = new BufferedImage(256, 256, BufferedImage.TYPE_BYTE_GRAY);
         var graphics = image.createGraphics();
