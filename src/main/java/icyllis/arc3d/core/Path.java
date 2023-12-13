@@ -19,7 +19,11 @@
 
 package icyllis.arc3d.core;
 
+import org.intellij.lang.annotations.MagicConstant;
+
 import javax.annotation.Nonnull;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.util.Arrays;
@@ -44,6 +48,11 @@ import java.util.Arrays;
  * {@link #updateBoundsCache()} to make path thread safe.
  */
 public class Path implements PathConsumer {
+
+    @MagicConstant(intValues = {FILL_NON_ZERO, FILL_EVEN_ODD})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface FillRule {
+    }
 
     /**
      * The fill rule constant for specifying a non-zero rule
@@ -89,6 +98,11 @@ public class Path implements PathConsumer {
      *
      * @see #getSegmentMask()
      */
+    @MagicConstant(flags = {SEGMENT_LINE, SEGMENT_QUAD, SEGMENT_CUBIC})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface SegmentMask {
+    }
+
     public static final int
             SEGMENT_LINE = 1,
             SEGMENT_QUAD = 1 << 1,
@@ -112,6 +126,7 @@ public class Path implements PathConsumer {
 
     private byte mConvexity;
     private byte mFirstDirection;
+    @FillRule
     private byte mFillRule;
 
     /**
@@ -149,6 +164,54 @@ public class Path implements PathConsumer {
         mConvexity = other.mConvexity;
         mFirstDirection = other.mFirstDirection;
         mFillRule = other.mFillRule;
+    }
+
+    /**
+     * Returns the rule used to fill path.
+     *
+     * @return current fill rule
+     */
+    @FillRule
+    public int getFillRule() {
+        return mFillRule;
+    }
+
+    /**
+     * Sets the rule used to fill path. <var>rule</var> is either {@link #FILL_NON_ZERO}
+     * or {@link #FILL_EVEN_ODD} .
+     */
+    public void setFillRule(@FillRule int rule) {
+        if ((rule & ~1) != 0) {
+            throw new IllegalArgumentException();
+        }
+        assert rule == FILL_NON_ZERO || rule == FILL_EVEN_ODD;
+        mFillRule = (byte) rule;
+    }
+
+    /**
+     * Creates a copy of an existing Path object.
+     * <p>
+     * Internally, the two paths share reference values. The underlying
+     * verb array, coordinate array and weights are copied when modified.
+     */
+    public void set(@Nonnull Path other) {
+        if (other != this) {
+            mRef = RefCnt.create(mRef, other.mRef);
+            copyFields(other);
+        }
+    }
+
+    /**
+     * Moves contents from other path into this path. This is equivalent to call
+     * {@code this.set(other)} and then {@code other.recycle()}.
+     */
+    public void move(@Nonnull Path other) {
+        if (other != this) {
+            mRef = RefCnt.move(mRef, other.mRef);
+            other.mRef = RefCnt.create(Ref.EMPTY);
+            copyFields(other);
+            other.resetFields();
+        }
     }
 
     /**
@@ -197,8 +260,8 @@ public class Path implements PathConsumer {
     }
 
     /**
-     * Trims the internal storage to the current size.
-     * This operation can minimize memory usage, see {@link #getMemorySize()}.
+     * Trims the internal storage to the current size. This operation can
+     * minimize memory usage, see {@link #estimatedByteSize()}.
      */
     public void trimToSize() {
         if (mRef.unique()) {
@@ -242,7 +305,7 @@ public class Path implements PathConsumer {
      */
     @Override
     public void moveTo(float x, float y) {
-        mLastMoveToIndex = countCoords();
+        mLastMoveToIndex = mRef.mCoordSize;
         editor().addVerb(VERB_MOVE)
                 .addPoint(x, y);
         dirtyAfterEdit();
@@ -256,7 +319,7 @@ public class Path implements PathConsumer {
      * @throws IllegalStateException Path is empty
      */
     public void moveToRel(float dx, float dy) {
-        int n = countCoords();
+        int n = mRef.mCoordSize;
         if (n != 0) {
             float px = mRef.mCoords[n - 2];
             float py = mRef.mCoords[n - 1];
@@ -286,13 +349,15 @@ public class Path implements PathConsumer {
     }
 
     /**
+     * Relative version of "line to".
+     * <p>
      * Adds a line from the last point to the specified vector (dx, dy).
      *
      * @param dx the offset from last point to line end on x-axis
      * @param dy the offset from last point to line end on y-axis
      */
     public void lineToRel(float dx, float dy) {
-        int n = countCoords();
+        int n = mRef.mCoordSize;
         if (n != 0) {
             float px = mRef.mCoords[n - 2];
             float py = mRef.mCoords[n - 1];
@@ -328,10 +393,17 @@ public class Path implements PathConsumer {
 
     /**
      * Relative version of "quad to".
+     * <p>
+     * Adds quad from last point towards vector (dx1, dy1), to vector (dx2, dy2).
+     *
+     * @param dx1 offset from last point to quad control on x-axis
+     * @param dy1 offset from last point to quad control on y-axis
+     * @param dx2 offset from last point to quad end on x-axis
+     * @param dy2 offset from last point to quad end on y-axis
      */
     public void quadToRel(float dx1, float dy1,
                           float dx2, float dy2) {
-        int n = countCoords();
+        int n = mRef.mCoordSize;
         if (n != 0) {
             float px = mRef.mCoords[n - 2];
             float py = mRef.mCoords[n - 1];
@@ -371,11 +443,21 @@ public class Path implements PathConsumer {
 
     /**
      * Relative version of "cubic to".
+     * <p>
+     * Adds cubic from last point towards vector (dx1, dy1), vector (dx2, dy2),
+     * to vector (dx3, dy3).
+     *
+     * @param dx1 offset from last point to first cubic control on x-axis
+     * @param dy1 offset from last point to first cubic control on y-axis
+     * @param dx2 offset from last point to second cubic control on x-axis
+     * @param dy2 offset from last point to second cubic control on y-axis
+     * @param dx3 offset from last point to cubic end on x-axis
+     * @param dy3 offset from last point to cubic end on y-axis
      */
     public void cubicToRel(float dx1, float dy1,
                            float dx2, float dy2,
                            float dx3, float dy3) {
-        int n = countCoords();
+        int n = mRef.mCoordSize;
         if (n != 0) {
             float px = mRef.mCoords[n - 2];
             float py = mRef.mCoords[n - 1];
@@ -425,13 +507,13 @@ public class Path implements PathConsumer {
     }
 
     /**
-     * Returns the number of coordinates in path. This is always an even number,
-     * then the number of points is {@code countCoords() >> 1}.
+     * Returns the number of points (x,y pairs) in path.
      *
-     * @return size of coord list
+     * @return size of point list
      */
-    public int countCoords() {
-        return mRef.mCoordSize;
+    public int countPoints() {
+        assert mRef.mCoordSize % 2 == 0;
+        return mRef.mCoordSize >> 1;
     }
 
     /**
@@ -444,7 +526,8 @@ public class Path implements PathConsumer {
      * This method returns a cached result; it is recalculated only after
      * this path is altered.
      *
-     * @return reference to bounds of all points, read-only
+     * @return bounds of all points, read-only
+     * @see #isFinite()
      */
     @Nonnull
     public Rect2fc getBounds() {
@@ -474,6 +557,7 @@ public class Path implements PathConsumer {
      *
      * @return Segment bits or zero
      */
+    @SegmentMask
     public int getSegmentMask() {
         return mRef.mSegmentMask;
     }
@@ -582,12 +666,12 @@ public class Path implements PathConsumer {
     }
 
     /**
-     * Returns the approximate byte size of path object in memory.
+     * Returns the estimated byte size of path object in memory.
      * This method does not take into account whether internal storage is shared or not.
      */
-    public long getMemorySize() {
+    public long estimatedByteSize() {
         long size = 24;
-        size += mRef.getMemorySize();
+        size += mRef.estimatedByteSize();
         return size;
     }
 
@@ -742,7 +826,7 @@ public class Path implements PathConsumer {
 
         transient volatile int mUsageCnt = 1;
 
-        // unsorted = dirty
+        // unsorted and finite = dirty
         final Rect2f mBounds = new Rect2f(0, 0, -1, -1);
 
         byte[] mVerbs;
@@ -751,6 +835,7 @@ public class Path implements PathConsumer {
         int mVerbSize;
         int mCoordSize;
 
+        @SegmentMask
         byte mSegmentMask;
 
         Ref() {
@@ -898,7 +983,10 @@ public class Path implements PathConsumer {
             return Rect2f.empty();
         }
 
-        long getMemorySize() {
+        long estimatedByteSize() {
+            if (this == EMPTY) {
+                return 0;
+            }
             long size = 16 + 24 + 16 + 16;
             if (mVerbs != EMPTY_VERBS) {
                 size += 16 + MathUtil.align8(mVerbs.length);
