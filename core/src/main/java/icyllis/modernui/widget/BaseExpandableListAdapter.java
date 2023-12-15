@@ -28,7 +28,6 @@ import icyllis.modernui.util.DataSetObserver;
  * Adapters inheriting this class should verify that the base implementations of
  * {@link #getCombinedChildId(long, long)} and {@link #getCombinedGroupId(long)}
  * are correct in generating unique IDs from the group/children IDs.
- * <p>
  */
 public abstract class BaseExpandableListAdapter implements ExpandableListAdapter,
         HeterogeneousExpandableList {

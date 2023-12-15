@@ -40,7 +40,7 @@ import java.io.PrintWriter;
  *     manually call {@link FragmentManager#addFragmentOnAttachListener} from your
  *     host in order to receive {@link FragmentOnAttachListener#onAttachFragment} callbacks
  *     for the {@link FragmentController#getFragmentManager()}.</li>
- *     <li><strong>{@link androidx.activity.OnBackPressedDispatcherOwner}</strong>: Removes
+ *     <li><strong>{@link OnBackPressedDispatcherOwner}</strong>: Removes
  *     the need to manually call
  *     {@link FragmentManager#popBackStackImmediate()} when handling the system
  *     back button.</li>

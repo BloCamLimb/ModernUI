@@ -33,9 +33,9 @@ import icyllis.modernui.view.View;
  * view was added directly to the window manager) and needs to show
  * context menus, it will use this class.
  * <p>
- * To use this class, instantiate it via {@link #ContextMenuBuilder()},
+ * To use this class, instantiate it via {@link #ContextMenuBuilder(Context)},
  * and optionally populate it with any of your custom items.  Finally,
- * call {@link #showPopup(View, float, float)} which will populate the menu
+ * call {@link #showPopup(Context, View, float, float)} which will populate the menu
  * with a view's context menu items and show the context menu.
  */
 public class ContextMenuBuilder extends MenuBuilder implements ContextMenu {

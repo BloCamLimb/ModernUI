@@ -34,6 +34,7 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import icyllis.modernui.view.ContextMenu.ContextMenuInfo;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -1616,9 +1617,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
         }
     }
 
-    /**
-     * @hide
-     */
+    @ApiStatus.Internal
     public final boolean shouldDrawSelector() {
         return !mSelectorRect.isEmpty();
     }

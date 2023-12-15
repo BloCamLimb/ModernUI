@@ -91,7 +91,6 @@ import static icyllis.modernui.ModernUI.LOGGER;
  * <li><strong>Set visibility:</strong> You can hide or show views using
  * {@link #setVisibility(int)}.</li>
  * </ul>
- * </p>
  * <p><em>
  * Note: Modern UI view system is responsible for measuring, laying out and
  * drawing views. You should not call methods that perform these actions on
@@ -109,11 +108,11 @@ import static icyllis.modernui.ModernUI.LOGGER;
  * <p>
  * Drawing Contents ...
  * <p>
- * Text Input & Drawing ...
+ * Text Input &amp; Drawing ...
  * <p>
  * Scrolling ...
  * <p>
- * Event Handling ... Native Events & Derivative Events
+ * Event Handling ... Native Events &amp; Derivative Events
  * <p>
  * Listeners ...
  * <p>
@@ -1153,9 +1152,8 @@ public class View implements Drawable.Callback {
 
     /**
      * A flag to indicate that the layout direction of this view has not been defined yet.
-     *
-     * @hide
      */
+    @ApiStatus.Internal
     public static final int LAYOUT_DIRECTION_UNDEFINED = LayoutDirection.UNDEFINED;
 
     /**
@@ -5836,8 +5834,6 @@ public class View implements Drawable.Callback {
      * Multiple indicator types may be enabled or disabled by passing the
      * logical OR of the desired types. If multiple types are specified, they
      * will all be set to the same enabled state.
-     * <p>
-     * For example, to enable the top scroll indicatorExample: {@code setScrollIndicators
      *
      * @param indicators the indicator direction, or the logical OR of multiple
      *                   indicator directions. One or more of:
@@ -7214,7 +7210,7 @@ public class View implements Drawable.Callback {
      * Returns whether this View has content which overlaps.
      *
      * <p>This function, intended to be overridden by specific View types, is an optimization when
-     * alpha is set on a view. If rendering overlaps in a view with alpha < 1, that view is drawn to
+     * alpha is set on a view. If rendering overlaps in a view with alpha &lt; 1, that view is drawn to
      * an offscreen buffer and then composited into place, which can be expensive. If the view has
      * no overlapping rendering, the view can draw each primitive with the appropriate alpha value
      * directly. An example of overlapping rendering is a TextView with a background image, such as
@@ -8185,9 +8181,8 @@ public class View implements Drawable.Callback {
     /**
      * Reset resolved text direction. Text direction will be resolved during a call to
      * {@link #onMeasure(int, int)}.
-     *
-     * @hide
      */
+    @ApiStatus.Internal
     void resetResolvedTextDirection() {
         // Reset any previous text direction resolution
         mPrivateFlags2 &= ~(PFLAG2_TEXT_DIRECTION_RESOLVED | PFLAG2_TEXT_DIRECTION_RESOLVED_MASK);
@@ -8381,9 +8376,8 @@ public class View implements Drawable.Callback {
     /**
      * Reset resolved text alignment. Text alignment will be resolved during a call to
      * {@link #onMeasure(int, int)}.
-     *
-     * @hide
      */
+    @ApiStatus.Internal
     void resetResolvedTextAlignment() {
         // Reset any previous text alignment resolution
         mPrivateFlags2 &= ~(PFLAG2_TEXT_ALIGNMENT_RESOLVED | PFLAG2_TEXT_ALIGNMENT_RESOLVED_MASK);
@@ -8408,9 +8402,8 @@ public class View implements Drawable.Callback {
 
     /**
      * Return if padding has been resolved
-     *
-     * @hide
      */
+    @ApiStatus.Internal
     boolean isPaddingResolved() {
         return (mPrivateFlags2 & PFLAG2_PADDING_RESOLVED) == PFLAG2_PADDING_RESOLVED;
     }
@@ -8480,9 +8473,8 @@ public class View implements Drawable.Callback {
      * <p>
      * Used when we only want to reset *this* view's padding and not trigger overrides
      * in ViewGroup that reset children too.
-     *
-     * @hide
      */
+    @ApiStatus.Internal
     void resetResolvedPadding() {
         mPrivateFlags2 &= ~PFLAG2_PADDING_RESOLVED;
     }
@@ -8629,9 +8621,8 @@ public class View implements Drawable.Callback {
      * that the View directionality can and will be resolved before its Drawables.
      * <p>
      * Will call {@link View#onResolveDrawables} when resolution is done.
-     *
-     * @hide
      */
+    @ApiStatus.Internal
     protected void resolveDrawables() {
         // Drawables resolution may need to happen before resolving the layout direction (which is
         // done only during the measure() call).
@@ -8671,16 +8662,14 @@ public class View implements Drawable.Callback {
      * The default implementation does nothing.
      *
      * @param layoutDirection The resolved layout direction.
-     * @hide
      * @see #LAYOUT_DIRECTION_LTR
      * @see #LAYOUT_DIRECTION_RTL
      */
+    @ApiStatus.Internal
     public void onResolveDrawables(@ResolvedLayoutDir int layoutDirection) {
     }
 
-    /**
-     * @hide
-     */
+    @ApiStatus.Internal
     protected void resetResolvedDrawables() {
         resetResolvedDrawablesInternal();
     }
@@ -8716,9 +8705,7 @@ public class View implements Drawable.Callback {
         internalSetPadding(left, top, right, bottom);
     }
 
-    /**
-     * @hide
-     */
+    @ApiStatus.Internal
     protected void internalSetPadding(int left, int top, int right, int bottom) {
         mUserPaddingLeft = left;
         mUserPaddingRight = right;
@@ -9536,9 +9523,7 @@ public class View implements Drawable.Callback {
         transformFromViewToWindowSpace(outLocation);
     }
 
-    /**
-     * @hide
-     */
+    @ApiStatus.Internal
     public void transformFromViewToWindowSpace(@NonNull int[] inOutLocation) {
         if (inOutLocation.length < 2) {
             throw new IllegalArgumentException("inOutLocation must be an array of two integers");
@@ -9584,7 +9569,7 @@ public class View implements Drawable.Callback {
     /**
      * Finds the first descendant view with the given ID, the view itself if
      * the ID matches {@link #getId()}, or {@code null} if the ID is invalid
-     * (< 0) or there is no matching view in the hierarchy.
+     * (&lt; 0) or there is no matching view in the hierarchy.
      *
      * @param id the id to search for
      * @return a view with given id if found, or {@code null} otherwise
@@ -9619,8 +9604,8 @@ public class View implements Drawable.Callback {
     /**
      * @param id the id of the view to be found
      * @return the view of the specified id, null if cannot be found
-     * @hide
      */
+    @ApiStatus.Internal
     @Nullable
     @SuppressWarnings("unchecked")
     protected <T extends View> T findViewTraversal(int id) {
@@ -9636,8 +9621,8 @@ public class View implements Drawable.Callback {
      *
      * @param predicate The predicate to evaluate.
      * @return The first view that matches the predicate or null.
-     * @hide
      */
+    @ApiStatus.Internal
     public final <T extends View> T findViewByPredicate(@NonNull Predicate<View> predicate) {
         return findViewByPredicateTraversal(predicate, null);
     }
@@ -9646,8 +9631,8 @@ public class View implements Drawable.Callback {
      * @param predicate   The predicate to evaluate.
      * @param childToSkip If not null, ignores this child during the recursive traversal.
      * @return The first view that matches the predicate or null.
-     * @hide
      */
+    @ApiStatus.Internal
     @Nullable
     @SuppressWarnings("unchecked")
     protected <T extends View> T findViewByPredicateTraversal(@NonNull Predicate<View> predicate,
@@ -9672,8 +9657,8 @@ public class View implements Drawable.Callback {
      * @param start     The view to start from.
      * @param predicate The predicate to evaluate.
      * @return The first view that matches the predicate or null.
-     * @hide
      */
+    @ApiStatus.Internal
     @Nullable
     public final <T extends View> T findViewByPredicateInsideOut(
             @NonNull View start, Predicate<View> predicate) {
@@ -10602,8 +10587,8 @@ public class View implements Drawable.Callback {
 
     /**
      * @return the registered {@link OnLongClickListener} if there is one, {@code null} otherwise.
-     * @hide
      */
+    @ApiStatus.Internal
     @Nullable
     public OnLongClickListener getOnLongClickListener() {
         ListenerInfo li = mListenerInfo;
@@ -10991,8 +10976,8 @@ public class View implements Drawable.Callback {
      *
      * @param event The motion event.
      * @return true if the event was handled as a scroll bar dragging, false otherwise.
-     * @hide
      */
+    @ApiStatus.Internal
     protected boolean handleScrollBarDragging(MotionEvent event) {
         if (mScrollCache == null) {
             return false;
@@ -11088,9 +11073,7 @@ public class View implements Drawable.Callback {
         return false;
     }
 
-    /**
-     * @hide
-     */
+    @ApiStatus.Internal
     public boolean isInScrollingContainer() {
         ViewParent p = getParent();
         while (p instanceof ViewGroup) {
@@ -11324,8 +11307,8 @@ public class View implements Drawable.Callback {
      *
      * @param event The event.
      * @return True if the down was consumed.
-     * @hide
      */
+    @ApiStatus.Internal
     protected boolean performButtonActionOnTouchDown(@NonNull MotionEvent event) {
         // Added: check if the view is long clickable
         if (isLongClickable() && (event.getButtonState() & MotionEvent.BUTTON_SECONDARY) != 0) {
@@ -11653,9 +11636,8 @@ public class View implements Drawable.Callback {
      * is inside the view, where the area of the view is expanded by the slop factor.
      * This method is called while processing touch-move events to determine if the event
      * is still within the view.
-     *
-     * @hide
      */
+    @ApiStatus.Internal
     public boolean pointInView(float localX, float localY, float slop) {
         return localX >= -slop && localY >= -slop && localX < ((mRight - mLeft) + slop) &&
                 localY < ((mBottom - mTop) + slop);

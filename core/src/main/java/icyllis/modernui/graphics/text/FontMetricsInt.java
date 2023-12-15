@@ -21,7 +21,7 @@ package icyllis.modernui.graphics.text;
 import javax.annotation.Nonnull;
 
 /**
- * Also used as Font Extent (just ascent & descent).
+ * Also used as Font Extent (just ascent &amp; descent).
  */
 public class FontMetricsInt {
 

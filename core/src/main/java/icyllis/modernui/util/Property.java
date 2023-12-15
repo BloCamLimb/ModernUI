@@ -19,7 +19,7 @@
 package icyllis.modernui.util;
 
 /**
- * A property is an abstraction that can be used to represent a <emb>mutable</em> value that is held
+ * A property is an abstraction that can be used to represent a <em>mutable</em> value that is held
  * in a <em>host</em> object. The Property's {@link #set(Object, Object)} or {@link #get(Object)}
  * methods can be implemented in terms of the private fields of the host object, or via "setter" and
  * "getter" methods or by some other mechanism, as appropriate.
