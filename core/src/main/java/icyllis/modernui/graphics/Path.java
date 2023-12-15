@@ -39,7 +39,7 @@ import icyllis.modernui.annotation.NonNull;
 public class Path extends icyllis.arc3d.core.Path {
 
     /**
-     * Creates an empty Path with a default winding rule of {@link #WIND_NON_ZERO}.
+     * Creates an empty Path with a default fill rule of {@link #FILL_NON_ZERO}.
      */
     public Path() {
         super();
@@ -47,16 +47,19 @@ public class Path extends icyllis.arc3d.core.Path {
 
     /**
      * Creates a copy of an existing Path object.
+     * <p>
+     * Internally, the two paths share reference values. The underlying
+     * verb array, coordinate array and weights are copied when modified.
      */
     public Path(@NonNull Path path) {
         super(path);
     }
 
     /**
-     * Resets the path to empty.
+     * Resets the path to its initial state, clears points and verbs and
+     * sets fill rule to {@link #FILL_NON_ZERO}.
      * <p>
-     * If internal storage is shared, unref it.
-     * Otherwise, preserves internal storage.
+     * Preserves internal storage if it's unique, otherwise discards.
      */
     @Override
     public void reset() {
@@ -64,10 +67,11 @@ public class Path extends icyllis.arc3d.core.Path {
     }
 
     /**
-     * Resets the path to empty.
+     * Resets the path to its initial state, clears points and verbs and
+     * sets fill rule to {@link #FILL_NON_ZERO}.
      * <p>
-     * If internal storage is shared, create new internal storage.
-     * Otherwise, preserves internal storage.
+     * Preserves internal storage if it's unique, otherwise allocates new
+     * storage with the same size.
      */
     @Override
     public void clear() {
@@ -75,18 +79,30 @@ public class Path extends icyllis.arc3d.core.Path {
     }
 
     /**
-     * Resets the path to empty and removes internal storage.
+     * Resets the path to its initial state, clears points and verbs and
+     * sets fill rule to {@link #FILL_NON_ZERO}.
+     * <p>
+     * This explicitly discards the internal storage, it is recommended to
+     * call when the path object will be no longer used.
      */
     @Override
     public void recycle() {
         super.recycle();
     }
 
+    /**
+     * Relative version of "move to".
+     *
+     * @param dx offset from last point to contour start on x-axis
+     * @param dy offset from last point to contour start on y-axis
+     */
     public final void relativeMoveTo(float dx, float dy) {
         super.moveToRel(dx, dy);
     }
 
     /**
+     * Relative version of "line to".
+     * <p>
      * Adds a line from the last point to the specified vector (dx, dy).
      *
      * @param dx the offset from last point to line end on x-axis
@@ -96,14 +112,42 @@ public class Path extends icyllis.arc3d.core.Path {
         super.lineToRel(dx, dy);
     }
 
+    /**
+     * Relative version of "quad to".
+     * <p>
+     * Adds quad from last point towards vector (dx1, dy1), to vector (dx2, dy2).
+     *
+     * @param dx1 offset from last point to quad control on x-axis
+     * @param dy1 offset from last point to quad control on y-axis
+     * @param dx2 offset from last point to quad end on x-axis
+     * @param dy2 offset from last point to quad end on y-axis
+     */
     public final void relativeQuadTo(float dx1, float dy1,
-                              float dx2, float dy2) {
+                                     float dx2, float dy2) {
         super.quadToRel(dx1, dy1, dx2, dy2);
     }
 
+    /**
+     * Relative version of "cubic to".
+     * <p>
+     * Adds cubic from last point towards vector (dx1, dy1), vector (dx2, dy2),
+     * to vector (dx3, dy3).
+     *
+     * @param dx1 offset from last point to first cubic control on x-axis
+     * @param dy1 offset from last point to first cubic control on y-axis
+     * @param dx2 offset from last point to second cubic control on x-axis
+     * @param dy2 offset from last point to second cubic control on y-axis
+     * @param dx3 offset from last point to cubic end on x-axis
+     * @param dy3 offset from last point to cubic end on y-axis
+     */
     public final void relativeCubicTo(float dx1, float dy1,
-                               float dx2, float dy2,
-                               float dx3, float dy3) {
+                                      float dx2, float dy2,
+                                      float dx3, float dy3) {
         super.cubicToRel(dx1, dy1, dx2, dy2, dx3, dy3);
+    }
+
+    public final void getBounds(@NonNull RectF out) {
+        var r = super.getBounds();
+        out.set(r.left(), r.top(), r.right(), r.bottom());
     }
 }

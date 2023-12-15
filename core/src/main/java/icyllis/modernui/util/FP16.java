@@ -191,6 +191,31 @@ public final class FP16 {
     private static final int FP32_DENORMAL_MAGIC = 126 << 23;
     private static final float FP32_DENORMAL_FLOAT = Float.intBitsToFloat(FP32_DENORMAL_MAGIC);
 
+    //TODO make use of Java 20
+    private static final boolean HAS_FLOAT16_TO_FLOAT = hasFloat16ToFloat();
+
+    // VCVTPH2PS, convert packed half to packed single
+    private static boolean hasFloat16ToFloat() {
+        try {
+            Float.class.getDeclaredMethod("float16ToFloat", short.class);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private static final boolean HAS_FLOAT_TO_FLOAT16 = hasFloatToFloat16();
+
+    // VCVTPS2PH, convert packed single to packed half
+    private static boolean hasFloatToFloat16() {
+        try {
+            Float.class.getDeclaredMethod("floatToFloat16", float.class);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     /** Hidden constructor to prevent instantiation. */
     private FP16() {}
 

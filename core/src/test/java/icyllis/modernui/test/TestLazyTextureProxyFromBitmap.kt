@@ -58,16 +58,18 @@ fun main() {
 
     val dContext = Core.requireDirectContext()
 
-    var proxy = dContext.surfaceProvider.createTextureFromPixmap(
-        sourceBm.pixels, sourceBm.colorType, ISurface.FLAG_BUDGETED
+    var proxy = dContext.surfaceProvider.createTextureFromPixels(
+        sourceBm, sourceBm.pixelRef,
+        sourceBm.colorType, ISurface.FLAG_BUDGETED
     )
     check(proxy != null) { "Failed to create delegate" }
     proxy.instantiate(dContext.resourceProvider)
 
     proxy.unref()
 
-    proxy = dContext.surfaceProvider.createTextureFromPixmap(
-        sourceBm.pixels, sourceBm.colorType, ISurface.FLAG_BUDGETED
+    proxy = dContext.surfaceProvider.createTextureFromPixels(
+        sourceBm, sourceBm.pixelRef,
+        sourceBm.colorType, ISurface.FLAG_BUDGETED
     )
     check(proxy != null) { "Failed to create delegate" }
     proxy.instantiate(dContext.resourceProvider)
