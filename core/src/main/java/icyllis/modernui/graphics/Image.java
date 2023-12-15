@@ -96,8 +96,8 @@ public class Image implements AutoCloseable {
         @SharedPtr
         TextureProxy proxy = rContext
                 .getSurfaceProvider()
-                .createTextureFromPixmap(
-                        bitmap.getPixels(), ct, flags
+                .createTextureFromPixels(
+                        bitmap, bitmap.getPixelRef(), ct, flags
                 );
         if (proxy == null) {
             return null;

@@ -62,23 +62,20 @@ import static org.lwjgl.system.MemoryUtil.*;
  * @see BitmapFactory
  */
 @SuppressWarnings("unused")
-public final class Bitmap implements AutoCloseable {
+public final class Bitmap extends PixelMap implements AutoCloseable {
 
     public static final Marker MARKER = MarkerManager.getMarker("Bitmap");
     public static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss");
 
     @NonNull
     private final Format mFormat;
-    @NonNull
-    private final ImageInfo mInfo;
-
-    private volatile SafePixels mPixels;
+    private volatile SafePixelRef mPixelRef;
 
     Bitmap(@NonNull Format format, @NonNull ImageInfo info, long addr, int rowStride,
-           @NonNull LongConsumer freeFn) {
+           @Nullable LongConsumer freeFn) {
+        super(info, null, addr, rowStride);
         mFormat = format;
-        mInfo = info;
-        mPixels = new SafePixels(this, info, addr, rowStride, freeFn);
+        mPixelRef = new SafePixelRef(this, info, null, addr, rowStride, freeFn);
     }
 
     /**
@@ -212,8 +209,9 @@ public final class Bitmap implements AutoCloseable {
     @ApiStatus.Internal
     public static void flipVertically(@NonNull Bitmap bitmap) {
         assert !bitmap.isImmutable();
+        assert bitmap.getBase() == null;
         final int height = bitmap.getHeight();
-        final int rowStride = bitmap.getRowBytes();
+        final int rowStride = bitmap.getRowStride();
         final long addr = bitmap.getAddress();
         if (addr == NULL) {
             throw new IllegalStateException("src pixels is null");
@@ -241,6 +239,7 @@ public final class Bitmap implements AutoCloseable {
     }
 
     @NonNull
+    @Override
     public ImageInfo getInfo() {
         return mInfo;
     }
@@ -255,21 +254,23 @@ public final class Bitmap implements AutoCloseable {
     /**
      * Returns the width of the bitmap.
      */
+    @Override
     public int getWidth() {
-        if (mPixels == null) {
+        if (mPixelRef == null) {
             LOGGER.warn(MARKER, "Called getWidth() on a recycle()'d bitmap! This is undefined behavior!");
         }
-        return mInfo.width();
+        return super.getWidth();
     }
 
     /**
      * Returns the height of the bitmap.
      */
+    @Override
     public int getHeight() {
-        if (mPixels == null) {
+        if (mPixelRef == null) {
             LOGGER.warn(MARKER, "Called getHeight() on a recycle()'d bitmap! This is undefined behavior!");
         }
-        return mInfo.height();
+        return super.getHeight();
     }
 
     @ApiStatus.Internal
@@ -278,17 +279,33 @@ public final class Bitmap implements AutoCloseable {
     }
 
     /**
-     * The base address of {@code unsigned char *pixels} in native.
+     * The heap array that holds pixels, or null if in native.
+     *
+     * @return the pointer of pixel data, or null if released
+     */
+    @ApiStatus.Internal
+    @Nullable
+    @Override
+    public Object getBase() {
+        if (mPixelRef == null) {
+            return null;
+        }
+        return super.getBase();
+    }
+
+    /**
+     * The address of {@code void *pixels} in native, or 0.
      * The address is valid until bitmap closed.
      *
      * @return the pointer of pixel data, or NULL if released
      */
     @ApiStatus.Internal
+    @Override
     public long getAddress() {
-        if (mPixels != null) {
-            return mPixels.getPixels();
+        if (mPixelRef == null) {
+            return NULL;
         }
-        return NULL;
+        return super.getAddress();
     }
 
     /**
@@ -297,27 +314,31 @@ public final class Bitmap implements AutoCloseable {
      *
      * @return the scanline size in bytes
      */
-    public int getRowBytes() {
+    @Override
+    public int getRowStride() {
         // XXX: row stride is always (width * bpp) in Modern UI
-        if (mPixels == null) {
-            throw new IllegalStateException("Can't call getRowBytes() on a recycled bitmap");
+        if (mPixelRef == null) {
+            throw new IllegalStateException("Can't call getRowStride() on a recycled bitmap");
         }
-        return mPixels.getRowStride();
+        return super.getRowStride();
     }
 
     @ApiStatus.Internal
+    @Override
     public int getColorType() {
-        return mInfo.colorType();
+        return super.getColorType();
     }
 
     @ApiStatus.Internal
+    @Override
     public int getAlphaType() {
-        return mInfo.alphaType();
+        return super.getAlphaType();
     }
 
     @Nullable
+    @Override
     public ColorSpace getColorSpace() {
-        return mInfo.colorSpace();
+        return super.getColorSpace();
     }
 
     /**
@@ -331,7 +352,7 @@ public final class Bitmap implements AutoCloseable {
      * by default.
      */
     public boolean hasAlpha() {
-        assert mPixels != null;
+        assert mPixelRef != null;
         return !mInfo.isOpaque();
     }
 
@@ -339,8 +360,8 @@ public final class Bitmap implements AutoCloseable {
      * Returns true if the bitmap is marked as immutable.
      */
     public boolean isImmutable() {
-        if (mPixels != null) {
-            return mPixels.isImmutable();
+        if (mPixelRef != null) {
+            return mPixelRef.isImmutable();
         }
         assert false;
         return false;
@@ -351,8 +372,8 @@ public final class Bitmap implements AutoCloseable {
      * After this method is called, this Bitmap cannot be made mutable again.
      */
     public void setImmutable() {
-        if (mPixels != null) {
-            mPixels.setImmutable();
+        if (mPixelRef != null) {
+            mPixelRef.setImmutable();
         }
     }
 
@@ -371,9 +392,9 @@ public final class Bitmap implements AutoCloseable {
      * otherwise
      */
     public boolean isPremultiplied() {
-        assert mPixels != null;
+        assert mPixelRef != null;
         // XXX: always false in Modern UI, and will be premul in GPU fragment shaders
-        return mInfo.alphaType() == ImageInfo.AT_PREMUL;
+        return getAlphaType() == ImageInfo.AT_PREMUL;
     }
 
     private void checkOutOfBounds(int x, int y) {
@@ -406,8 +427,9 @@ public final class Bitmap implements AutoCloseable {
     public int getPixelARGB(int x, int y) {
         checkReleased();
         checkOutOfBounds(x, y);
-        int n32 = MemoryUtil.memGetInt(mPixels.getPixels() +
-                (long) y * getRowBytes() +
+        assert getBase() == null;
+        int n32 = MemoryUtil.memGetInt(getAddress() +
+                (long) y * getRowStride() +
                 (long) x * mFormat.getBytesPerPixel());
         int argb;
         if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN) {
@@ -453,15 +475,15 @@ public final class Bitmap implements AutoCloseable {
     /**
      * The ref of current pixel data, which may be shared across instances.
      * Calling this method won't affect the ref cnt. Every bitmap object
-     * ref the {@link Pixmap} on create, and unref on {@link #close()}.
+     * ref the {@link PixelRef} on create, and unref on {@link #close()}.
      * <p>
      * This method is <b>UNSAFE</b>, use with caution!
      *
      * @return the ref of pixel data, or null if released
      */
     @ApiStatus.Internal
-    public Pixmap getPixels() {
-        return mPixels;
+    public PixelRef getPixelRef() {
+        return mPixelRef;
     }
 
     /**
@@ -564,7 +586,10 @@ public final class Bitmap implements AutoCloseable {
             LOGGER.warn(MARKER, "Called save() on core thread! This will hang the application!",
                     new Exception().fillInStackTrace());
         }
-        assert getRowBytes() == getWidth() * getFormat().getBytesPerPixel();
+        if (getRowStride() != getWidth() * getFormat().getBytesPerPixel()) {
+            // not implemented yet
+            throw new AssertionError();
+        }
         final var callback = new STBIWriteCallback() {
             private IOException exception;
 
@@ -577,9 +602,17 @@ public final class Bitmap implements AutoCloseable {
                 }
             }
         };
+        final Object base = getBase();
+        final long address;
+        if (base != null) {
+            address = PixelRef.getBaseElements(base);
+        } else {
+            address = getAddress();
+        }
+        assert address != NULL;
         try (callback) {
             final boolean success = format.write(callback, mInfo.width(), mInfo.height(),
-                    mFormat, getAddress(), quality);
+                    mFormat, address, quality);
             if (success) {
                 if (callback.exception != null) {
                     throw new IOException("Failed to save image", callback.exception);
@@ -587,11 +620,15 @@ public final class Bitmap implements AutoCloseable {
             } else {
                 throw new IOException("Failed to encode image: " + STBImage.stbi_failure_reason());
             }
+        } finally {
+            if (base != null) {
+                PixelRef.releaseBaseElements(base, address, false);
+            }
         }
     }
 
     private void checkReleased() {
-        if (mPixels == null) {
+        if (mPixelRef == null) {
             throw new IllegalStateException("Cannot operate released bitmap");
         }
     }
@@ -606,10 +643,10 @@ public final class Bitmap implements AutoCloseable {
      */
     @Override
     public void close() {
-        if (mPixels != null) {
+        if (mPixelRef != null) {
             // Cleaner is synchronized
-            mPixels.mCleanup.clean();
-            mPixels = null;
+            mPixelRef.mCleanup.clean();
+            mPixelRef = null;
         }
     }
 
@@ -627,14 +664,14 @@ public final class Bitmap implements AutoCloseable {
      * @return true if the bitmap has been closed
      */
     public boolean isClosed() {
-        return mPixels == null;
+        return mPixelRef == null;
     }
 
     /**
      * @return the same as {@link #isClosed()}
      */
     public boolean isRecycled() {
-        return mPixels == null;
+        return mPixelRef == null;
     }
 
     @NonNull
@@ -643,7 +680,7 @@ public final class Bitmap implements AutoCloseable {
         return "Bitmap{" +
                 "mFormat=" + mFormat +
                 ", mInfo=" + mInfo +
-                ", mRef=" + mPixels +
+                ", mPixelRef=" + mPixelRef +
                 '}';
     }
 
@@ -964,13 +1001,14 @@ public final class Bitmap implements AutoCloseable {
 
     // this ensures unref being called when Bitmap become phantom-reachable
     // but never called to close
-    private static final class SafePixels extends Pixmap implements Runnable {
+    private static final class SafePixelRef extends PixelRef implements Runnable {
 
         final Cleaner.Cleanable mCleanup;
 
-        private SafePixels(@NonNull Bitmap owner, ImageInfo info,
-                           long addr, int rowStride, @NonNull LongConsumer freeFn) {
-            super(info, addr, rowStride, freeFn);
+        private SafePixelRef(@NonNull Bitmap owner, @NonNull ImageInfo info,
+                             @Nullable Object base, long address,
+                             int rowStride, @Nullable LongConsumer freeFn) {
+            super(info.width(), info.height(), base, address, rowStride, freeFn);
             mCleanup = Core.registerCleanup(owner, this);
         }
 
