@@ -25,16 +25,17 @@ import icyllis.modernui.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
 import java.nio.channels.ReadableByteChannel;
 import java.util.HashMap;
 
-//TODO under review
+@Deprecated //TODO will be replaced by Resources
 public class ImageStore {
 
     private static final ImageStore INSTANCE = new ImageStore();
 
     private final Object mLock = new Object();
-    private HashMap<String, HashMap<String, SoftReference<Image>>> mImages = new HashMap<>();
+    private HashMap<String, HashMap<String, WeakReference<Image>>> mImages = new HashMap<>();
 
     private ImageStore() {
     }
@@ -72,10 +73,10 @@ public class ImageStore {
     public Image getOrCreate(@NonNull String namespace, @NonNull String path) {
         synchronized (mLock) {
             var cache = mImages.computeIfAbsent(namespace, __ -> new HashMap<>());
-            var image = cache.get(path);
-            Image imageObj;
-            if (image != null && (imageObj = image.get()) != null && !imageObj.isClosed()) {
-                return imageObj;
+            var imageRef = cache.get(path);
+            Image image;
+            if (imageRef != null && (image = imageRef.get()) != null && !image.isClosed()) {
+                return image;
             }
         }
         try (var stream = ModernUI.getInstance().getResourceStream(namespace, path);
@@ -83,54 +84,20 @@ public class ImageStore {
             var newImage = Image.createTextureFromBitmap(bitmap);
             synchronized (mLock) {
                 var cache = mImages.computeIfAbsent(namespace, __ -> new HashMap<>());
-                var image = cache.get(path);
-                Image imageObj;
-                if (image != null && (imageObj = image.get()) != null && !imageObj.isClosed()) {
+                var imageRef = cache.get(path);
+                Image image;
+                if (imageRef != null && (image = imageRef.get()) != null && !image.isClosed()) {
                     // race
                     if (newImage != null) {
                         newImage.close();
                     }
-                    return imageObj;
+                    return image;
                 }
                 if (newImage != null) {
-                    cache.put(path, new SoftReference<>(newImage));
+                    cache.put(path, new WeakReference<>(newImage));
                     return newImage;
                 }
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    /**
-     * Create the texture from stream, cache will not be used, stream will be closed
-     * automatically.
-     *
-     * @param stream resource stream
-     * @return texture
-     */
-    @Nullable
-    public Image create(@NonNull InputStream stream) {
-        try (stream; var bitmap = BitmapFactory.decodeStream(stream)) {
-            return Image.createTextureFromBitmap(bitmap);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    /**
-     * Create the texture from channel, cache will not be used, channel will be closed
-     * automatically.
-     *
-     * @param channel resource channel
-     * @return texture
-     */
-    @Nullable
-    public Image create(@NonNull ReadableByteChannel channel) {
-        try (channel; var bitmap = BitmapFactory.decodeChannel(channel)) {
-            return Image.createTextureFromBitmap(bitmap);
         } catch (IOException e) {
             e.printStackTrace();
         }

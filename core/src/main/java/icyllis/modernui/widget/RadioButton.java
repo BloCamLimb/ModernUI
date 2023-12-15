@@ -31,7 +31,7 @@ import icyllis.modernui.core.Context;
  * <p>
  * Radio buttons are normally used together in a
  * {@link RadioGroup}. When several radio buttons live inside
- * a radio group, checking one radio button unchecks all the others.</p>
+ * a radio group, checking one radio button unchecks all the others.
  * </p>
  *
  * <p>See the <a href="https://developer.android.com/guide/topics/ui/controls/radiobutton.html">Radio Buttons</a>

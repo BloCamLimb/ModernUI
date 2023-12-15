@@ -210,7 +210,7 @@ public interface ViewParent {
      *   <li>nothing will change if the rectangle is already visible</li>
      *   <li>the view port will be scrolled only just enough to make the
      *       rectangle visible</li>
-     * <ul>
+     * </ul>
      *
      * @param child     The direct child making the request.
      * @param rectangle The rectangle in the child's coordinates the child

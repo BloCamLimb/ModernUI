@@ -21,6 +21,7 @@ package icyllis.modernui.animation;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.core.Looper;
 import icyllis.modernui.util.ArrayMap;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -282,7 +283,7 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Fram
      * will not affect the AnimatorSet, although changes to the underlying Animator objects
      * will affect those objects being managed by the AnimatorSet.
      *
-     * @return ArrayList<Animator> The list of child animations of this AnimatorSet.
+     * @return The list of child animations of this AnimatorSet.
      */
     @Nonnull
     public ArrayList<Animator> getChildAnimations() {
@@ -360,7 +361,7 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Fram
      *             in a null <code>Builder</code> return value.
      * @return Builder The object that constructs the AnimatorSet based on the dependencies
      * outlined in the calls to <code>play</code> and the other methods in the
-     * <code>Builder</code object.
+     * <code>Builder</code> object.
      */
     public Builder play(Animator anim) {
         if (anim != null) {
@@ -933,8 +934,8 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Fram
 
     /**
      * @param frameTime The frame start time, in the {@link Core#timeMillis()} time base
-     * @hide
      */
+    @ApiStatus.Internal
     @Override
     public boolean doAnimationFrame(long frameTime) {
         float durationScale = ValueAnimator.sDurationScale;
@@ -1029,9 +1030,7 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Fram
         return false;
     }
 
-    /**
-     * @hide
-     */
+    @ApiStatus.Internal
     public void commitAnimationFrame(long frameTime) {
         // No op.
     }
@@ -1341,9 +1340,8 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Fram
     /**
      * AnimatorSet is only reversible when the set contains no sequential animation, and no child
      * animators have a start delay.
-     *
-     * @hide
      */
+    @ApiStatus.Internal
     @Override
     public boolean canReverse() {
         return getTotalDuration() != DURATION_INFINITE;
@@ -1655,10 +1653,10 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Fram
 
     /**
      * @return whether all the animators in the set are supposed to play together
-     * @hide TODO: For animatorSet defined in XML, we can use a flag to indicate what the play order
-     * if defined (i.e. sequential or together), then we can use the flag instead of calculating
-     * dynamically. Note that when AnimatorSet is empty this method returns true.
      */
+    //TODO: For animatorSet defined in XML, we can use a flag to indicate what the play order
+    // if defined (i.e. sequential or together), then we can use the flag instead of calculating
+    // dynamically. Note that when AnimatorSet is empty this method returns true.
     public boolean shouldPlayTogether() {
         updateAnimatorsDuration();
         createDependencyGraph();
@@ -1904,11 +1902,11 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Fram
      * use the {@link AnimatorSet#playTogether(Animator[]) playTogether()} and {@link
      * AnimatorSet#playSequentially(Animator[]) playSequentially()} methods if these suit the need,
      * but it might be easier in some situations to express the AnimatorSet of animations in pairs.
-     * <p/>
-     * <p>The <code>Builder</code> object cannot be constructed directly, but is rather constructed
+     * <p>
+     * The <code>Builder</code> object cannot be constructed directly, but is rather constructed
      * internally via a call to {@link AnimatorSet#play(Animator)}.</p>
-     * <p/>
-     * <p>For example, this sets up a AnimatorSet to play anim1 and anim2 at the same time, anim3 to
+     * <p>
+     * For example, this sets up a AnimatorSet to play anim1 and anim2 at the same time, anim3 to
      * play when anim2 finishes, and anim4 to play when anim3 finishes:</p>
      * <pre>
      *     AnimatorSet s = new AnimatorSet();
@@ -1916,13 +1914,13 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Fram
      *     s.play(anim2).before(anim3);
      *     s.play(anim4).after(anim3);
      * </pre>
-     * <p/>
-     * <p>Note in the example that both {@link Builder#before(Animator)} and {@link
+     * <p>
+     * Note in the example that both {@link Builder#before(Animator)} and {@link
      * Builder#after(Animator)} are used. These are just different ways of expressing the same
      * relationship and are provided to make it easier to say things in a way that is more natural,
      * depending on the situation.</p>
-     * <p/>
-     * <p>It is possible to make several calls into the same <code>Builder</code> object to express
+     * <p>
+     * It is possible to make several calls into the same <code>Builder</code> object to express
      * multiple relationships. However, note that it is only the animation passed into the initial
      * {@link AnimatorSet#play(Animator)} method that is the dependency in any of the successive
      * calls to the <code>Builder</code> object. For example, the following code starts both anim2
@@ -1933,14 +1931,14 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Fram
      *   s.play(anim1).before(anim2).before(anim3);
      * </pre>
      * If the desired result is to play anim1 then anim2 then anim3, this code expresses the
-     * relationship correctly:</p>
+     * relationship correctly:
      * <pre>
      *   AnimatorSet s = new AnimatorSet();
      *   s.play(anim1).before(anim2);
      *   s.play(anim2).before(anim3);
      * </pre>
-     * <p/>
-     * <p>Note that it is possible to express relationships that cannot be resolved and will not
+     * <p>
+     * Note that it is possible to express relationships that cannot be resolved and will not
      * result in sensible results. For example, <code>play(anim1).after(anim1)</code> makes no
      * sense. In general, circular dependencies like this one (or more indirect ones where a depends
      * on b, which depends on c, which depends on a) should be avoided. Only create AnimatorSets

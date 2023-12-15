@@ -248,7 +248,6 @@ public abstract class ActionMode {
      * present an action mode UI that requires focus, such as an EditText as a custom view.
      *
      * @return true if the UI used to show this action mode can take focus
-     * @hide Internal use only
      */
     @ApiStatus.Internal
     public boolean isUiFocusable() {

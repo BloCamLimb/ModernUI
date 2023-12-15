@@ -21,6 +21,7 @@ package icyllis.modernui.widget;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.view.MotionEvent;
 import icyllis.modernui.view.View;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 
@@ -29,9 +30,8 @@ import javax.annotation.Nonnull;
  * make sure the list uses the appropriate drawables and states when
  * displayed on screen within a drop down. The focus is never actually
  * passed to the drop down in this mode; the list only looks focused.
- *
- * @hide
  */
+@ApiStatus.Internal
 public class DropDownListView extends ListView {
     /*
      * WARNING: This is a workaround for a touch mode issue.

@@ -18,8 +18,10 @@
 
 package icyllis.modernui.view;
 
+import icyllis.modernui.fragment.Fragment;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+import org.jetbrains.annotations.ApiStatus;
 
 import static icyllis.modernui.ModernUI.LOGGER;
 
@@ -42,7 +44,6 @@ import static icyllis.modernui.ModernUI.LOGGER;
  * {@link MenuItem#setActionProvider(ActionProvider)}.
  * </li>
  * </ul>
- * </p>
  *
  * @see MenuItem#setActionProvider(ActionProvider)
  * @see MenuItem#getActionProvider()
@@ -123,7 +124,7 @@ public abstract class ActionProvider {
      *  MenuItem.OnMenuItemClickListener.onMenuItemClick}.
      * </li>
      * <li>
-     * Receiving a call to {@link android.app.Fragment#onOptionsItemSelected(MenuItem)
+     * Receiving a call to {@link Fragment#onOptionsItemSelected(MenuItem)
      *  Fragment.onOptionsItemSelected(MenuItem)}
      * </li>
      * <li>
@@ -178,9 +179,7 @@ public abstract class ActionProvider {
         }
     }
 
-    /**
-     * @hide Internal use only
-     */
+    @ApiStatus.Internal
     public void setSubUiVisibilityListener(SubUiVisibilityListener listener) {
         mSubUiVisibilityListener = listener;
     }
@@ -200,17 +199,13 @@ public abstract class ActionProvider {
         mVisibilityListener = listener;
     }
 
-    /**
-     * @hide
-     */
+    @ApiStatus.Internal
     public void reset() {
         mVisibilityListener = null;
         mSubUiVisibilityListener = null;
     }
 
-    /**
-     * @hide Internal use only
-     */
+    @ApiStatus.Internal
     @FunctionalInterface
     public interface SubUiVisibilityListener {
 

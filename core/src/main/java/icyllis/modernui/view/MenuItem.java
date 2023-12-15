@@ -23,6 +23,7 @@ import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.view.ContextMenu.ContextMenuInfo;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
  * Interface for direct access to a previously created menu item.
@@ -678,9 +679,8 @@ public interface MenuItem {
     /**
      * Returns true if {@link #setShowAsAction(int)} was set to {@link #SHOW_AS_ACTION_ALWAYS}.
      * Default value is {@code false}.
-     *
-     * @hide
      */
+    @ApiStatus.Internal
     default boolean requiresActionButton() {
         return false;
     }
@@ -688,9 +688,8 @@ public interface MenuItem {
     /**
      * Returns true if {@link #setShowAsAction(int)} was set to {@link #SHOW_AS_ACTION_NEVER}.
      * Default value is {@code true}.
-     *
-     * @hide
      */
+    @ApiStatus.Internal
     default boolean requiresOverflow() {
         return true;
     }

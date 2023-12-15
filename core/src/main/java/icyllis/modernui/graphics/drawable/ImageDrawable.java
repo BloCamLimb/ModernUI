@@ -18,17 +18,14 @@
 
 package icyllis.modernui.graphics.drawable;
 
-import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.Image;
-import icyllis.modernui.graphics.Paint;
-import icyllis.modernui.graphics.Rect;
-import icyllis.modernui.graphics.ImageStore;
+import icyllis.modernui.graphics.*;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.LayoutDirection;
 import icyllis.modernui.view.Gravity;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.io.InputStream;
 
 /**
@@ -67,9 +64,19 @@ public class ImageDrawable extends Drawable {
 
     /**
      * Create a drawable by decoding an image from the given input stream.
+     * <p>
+     * This method silently ignores any IO exception. This method <em>does not</em> closed
+     * the given stream after read operation has completed. The stream will be at end if
+     * read operation succeeds.
+     * <p>
+     * This method may be called from either render thread or UI thread.
      */
-    public ImageDrawable(@Nonnull InputStream is) {
-        Image image = ImageStore.getInstance().create(is);
+    public ImageDrawable(@Nonnull InputStream stream) {
+        Image image = null;
+        try (var bitmap = BitmapFactory.decodeStream(stream)) {
+            image = Image.createTextureFromBitmap(bitmap);
+        } catch (IOException ignored) {
+        }
         init(new ImageState(image));
     }
 

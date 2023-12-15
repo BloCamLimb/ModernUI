@@ -20,13 +20,13 @@ package icyllis.modernui.view.menu;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.drawable.Drawable;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
  * Minimal interface for a menu view.  {@link #initialize(MenuBuilder)} must be called for the
  * menu to be functional.
- *
- * @hide
  */
+@ApiStatus.Internal
 public interface MenuView {
 
     /**

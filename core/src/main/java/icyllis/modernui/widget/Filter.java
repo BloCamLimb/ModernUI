@@ -24,6 +24,7 @@ import icyllis.modernui.core.Looper;
 import icyllis.modernui.core.Message;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 
@@ -320,9 +321,7 @@ public abstract class Filter {
         FilterResults results;
     }
 
-    /**
-     * @hide
-     */
+    @ApiStatus.Internal
     public interface Delayer {
 
         /**
