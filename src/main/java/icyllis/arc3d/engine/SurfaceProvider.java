@@ -125,9 +125,10 @@ public final class SurfaceProvider {
     }
 
     /**
-     * Creates a lazy {@link TextureProxy} for the pixmap.
+     * Creates a lazy {@link TextureProxy} for the pixel map.
      *
-     * @param pixmap       raw ptr to pixels holder, must be immutable
+     * @param pixelMap     pixel map
+     * @param pixelRef     pixel ref, must be immutable
      * @param dstColorType a color type for surface usage, see {@link ImageInfo}
      * @param surfaceFlags flags described as follows
      * @see ISurface#FLAG_BUDGETED
@@ -136,17 +137,20 @@ public final class SurfaceProvider {
      */
     @Nullable
     @SharedPtr
-    public TextureProxy createTextureFromPixmap(Pixmap pixmap, int dstColorType, int surfaceFlags) {
+    public TextureProxy createTextureFromPixels(PixelMap pixelMap,
+                                                PixelRef pixelRef,
+                                                int dstColorType,
+                                                int surfaceFlags) {
         mContext.checkOwnerThread();
         assert ((surfaceFlags & ISurface.FLAG_APPROX_FIT) == 0) ||
                 ((surfaceFlags & ISurface.FLAG_MIPMAPPED) == 0);
         if (mContext.isDiscarded()) {
             return null;
         }
-        if (!pixmap.getInfo().isValid()) {
+        if (!pixelMap.getInfo().isValid()) {
             return null;
         }
-        if (!pixmap.isImmutable()) {
+        if (!pixelRef.isImmutable()) {
             return null;
         }
         var format = mContext.getCaps()
@@ -154,12 +158,12 @@ public final class SurfaceProvider {
         if (format == null) {
             return null;
         }
-        var srcColorType = pixmap.getColorType();
-        var width = pixmap.getWidth();
-        var height = pixmap.getHeight();
+        var srcColorType = pixelMap.getColorType();
+        var width = pixelMap.getWidth();
+        var height = pixelMap.getHeight();
         @SharedPtr
         var texture = createLazyTexture(format, width, height, surfaceFlags,
-                new PixmapCallback(pixmap, srcColorType, dstColorType));
+                new PixelsCallback(pixelRef, srcColorType, dstColorType));
         if (texture == null) {
             return null;
         }
@@ -169,17 +173,16 @@ public final class SurfaceProvider {
         return texture;
     }
 
-    private static final class PixmapCallback implements SurfaceProxy.LazyInstantiateCallback {
+    private static final class PixelsCallback implements SurfaceProxy.LazyInstantiateCallback {
 
-        private Pixmap pixmap;
-        private final int srcColorType;
-        private final int dstColorType;
+        private PixelRef mPixelRef;
+        private final int mSrcColorType;
+        private final int mDstColorType;
 
-        public PixmapCallback(Pixmap pixmap, int srcColorType, int dstColorType) {
-            pixmap.ref();
-            this.pixmap = pixmap;
-            this.srcColorType = srcColorType;
-            this.dstColorType = dstColorType;
+        public PixelsCallback(PixelRef pixelRef, int srcColorType, int dstColorType) {
+            mPixelRef = RefCnt.create(pixelRef);
+            mSrcColorType = srcColorType;
+            mDstColorType = dstColorType;
         }
 
         @Override
@@ -190,25 +193,26 @@ public final class SurfaceProvider {
                 int sampleCount,
                 int surfaceFlags,
                 String label) {
+            //TODO implement fast pixel transfer from heap array
+            assert mPixelRef.getBase() == null;
             @SharedPtr
             GpuTexture texture = provider.createTexture(
                     width, height,
                     format,
                     sampleCount,
                     surfaceFlags,
-                    dstColorType,
-                    srcColorType,
-                    pixmap.getRowStride(),
-                    pixmap.getPixels(),
+                    mDstColorType,
+                    mSrcColorType,
+                    mPixelRef.getRowStride(),
+                    mPixelRef.getAddress(),
                     label);
-            pixmap.unref();
-            pixmap = null;
+            close();
             return new SurfaceProxy.LazyCallbackResult(texture);
         }
 
         @Override
         public void close() {
-            pixmap = RefCnt.move(pixmap);
+            mPixelRef = RefCnt.move(mPixelRef);
         }
     }
 
