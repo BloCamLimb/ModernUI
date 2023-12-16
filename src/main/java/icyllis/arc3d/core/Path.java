@@ -745,6 +745,18 @@ public class Path implements PathConsumer {
         return mRef;
     }
 
+    // the state of the convex computation
+    static class ConvexState {
+
+    }
+
+    int computeConvexity() {
+        if (!isFinite()) {
+            return CONVEXITY_CONCAVE;
+        }
+        return 0;
+    }
+
     @Nonnull
     private static byte[] growVerbs(@Nonnull byte[] old, int minGrow) {
         final int oldCap = old.length, grow;

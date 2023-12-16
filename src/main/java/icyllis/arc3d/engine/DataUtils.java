@@ -19,8 +19,7 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.*;
-import org.lwjgl.system.libc.LibCString;
+import icyllis.arc3d.core.ImageInfo;
 
 public final class DataUtils {
 
@@ -50,25 +49,6 @@ public final class DataUtils {
             }
             default -> throw new AssertionError(compression);
         };
-    }
-
-    /**
-     * Mem copy row by row.
-     */
-    public static void copyImage(long src, long srcRowBytes,
-                                 long dst, long dstRowBytes,
-                                 long minRowBytes, int rows) {
-        if (srcRowBytes == minRowBytes && dstRowBytes == minRowBytes) {
-            LibCString.nmemcpy(dst, src, minRowBytes * rows);
-        } else {
-            assert srcRowBytes >= minRowBytes;
-            assert dstRowBytes >= minRowBytes;
-            while (rows-- != 0) {
-                LibCString.nmemcpy(dst, src, minRowBytes);
-                src += srcRowBytes;
-                dst += dstRowBytes;
-            }
-        }
     }
 
     private DataUtils() {

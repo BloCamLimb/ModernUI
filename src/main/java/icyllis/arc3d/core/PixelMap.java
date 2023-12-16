@@ -46,8 +46,8 @@ public class PixelMap {
      * The memory lifetime of pixels is managed by the caller.
      *
      * @param info      width, height, AlphaType, ColorType and ColorSpace
-     * @param base      heap buffer; may be null
-     * @param address   native buffer or 0; may be NULL
+     * @param base      array if heap buffer; may be null
+     * @param address   address if native buffer, or array base offset; may be NULL
      * @param rowStride size of one row of buffer; width times bpp, or larger
      */
     public PixelMap(ImageInfo info,
@@ -96,6 +96,35 @@ public class PixelMap {
 
     public int getRowStride() {
         return mRowStride;
+    }
+
+    public boolean clear(float red, float green, float blue, float alpha,
+                         @Nullable Rect2ic subset) {
+        if (getColorType() == ImageInfo.CT_UNKNOWN) {
+            return false;
+        }
+
+        var clip = new Rect2i(0, 0, getWidth(), getHeight());
+        if (subset != null && !clip.intersect(subset)) {
+            return true;
+        }
+
+        if (getColorType() == ImageInfo.CT_RGBA_8888) {
+            int c = ((int) (alpha * 255.0f + 0.5f) << 24) |
+                    ((int) (blue * 255.0f + 0.5f) << 16) |
+                    ((int) (green * 255.0f + 0.5f) << 8) |
+                    (int) (red * 255.0f + 0.5f);
+
+            Object base = getBase();
+            for (int y = clip.mTop; y < clip.mBottom; ++y) {
+                long addr = getAddress() + (long) y * getRowStride() + (long) clip.x() << 2;
+                PixelUtils.setPixel32(base, addr, c, clip.width());
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     @Override

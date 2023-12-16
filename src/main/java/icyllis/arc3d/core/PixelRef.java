@@ -45,8 +45,8 @@ public class PixelRef extends RefCnt {
      * <var>rowStride</var> should be width times bpp, or larger.
      * <var>freeFn</var> is used to free the <var>address</var>.
      *
-     * @param base      heap buffer; may be null
-     * @param address   native buffer or 0; may be NULL
+     * @param base      array if heap buffer; may be null
+     * @param address   address if native buffer, or array base offset; may be NULL
      * @param rowStride size of one row of buffer; width times bpp, or larger
      * @param freeFn    free function for native buffer; may be null
      */

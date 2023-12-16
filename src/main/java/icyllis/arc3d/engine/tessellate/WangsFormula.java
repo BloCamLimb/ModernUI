@@ -26,7 +26,7 @@ import icyllis.arc3d.core.MathUtil;
  * degree N Bézier curve in order to ensure that the control points of each new segment
  * lie on a straight line to within some pre-specified tolerance EPS:
  * <pre>
- *  M = max([length( p[i+2] - 2p[i+1] + p[i] ) for (0 <= i <= n-2)])
+ *  M = max([length( p[i+2] - 2p[i+1] + p[i] ) for (0 &le; i &le; n-2)])
  *  D = log4( N*(N-1)*M / (8*EPS) )
  * </pre>
  * Wang, Guo-Zhao (1984), The subdivision method for finding the intersection between
