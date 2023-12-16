@@ -36,7 +36,6 @@ import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
 import java.io.*;
 import java.lang.ref.Cleaner;
-import java.nio.ByteOrder;
 import java.nio.channels.*;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -84,8 +83,8 @@ public final class Bitmap extends PixelMap implements AutoCloseable {
      * @param width  width in pixels, ranged from 1 to 32768
      * @param height height in pixels, ranged from 1 to 32768
      * @param format the number of channels and the bit depth
-     * @throws IllegalArgumentException width or height out of range, or allocation size >= 2GB
-     * @throws OutOfMemoryError         out of off-heap memory
+     * @throws IllegalArgumentException width or height out of range
+     * @throws OutOfMemoryError         out of native memory
      */
     @NonNull
     public static Bitmap createBitmap(@Size(min = 1, max = 32768) int width,
@@ -99,18 +98,14 @@ public final class Bitmap extends PixelMap implements AutoCloseable {
             throw new IllegalArgumentException("Image dimensions " + width + "x" + height
                     + " must be less than or equal to 32768");
         }
-        int rowStride = width * format.getBytesPerPixel(); // no overflow
-        long size = (long) rowStride * height;
-        if (size > Integer.MAX_VALUE) {
-            throw new IllegalArgumentException("Image allocation size " + size
-                    + " must be less than or equal to 2GB");
-        }
+        int minRowStride = width * format.getBytesPerPixel(); // no overflow
+        long size = (long) minRowStride * height; // <= 16GB
         long address = nmemCalloc(size, 1);
         if (address == NULL) {
             // execute ref.Cleaner
             System.gc();
             try {
-                Thread.sleep(10);
+                Thread.sleep(100);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
@@ -119,15 +114,15 @@ public final class Bitmap extends PixelMap implements AutoCloseable {
                 throw new OutOfMemoryError("Failed to allocate " + size + " bytes");
             }
         }
-        ColorSpace cs = format.isChannelHDR()
+        var cs = format.isChannelHDR()
                 ? ColorSpace.get(ColorSpace.Named.LINEAR_EXTENDED_SRGB)
                 : ColorSpace.get(ColorSpace.Named.SRGB);
-        int at = format.hasAlpha() && !format.isChannelHDR()
+        var at = format.hasAlpha() && !format.isChannelHDR()
                 ? ImageInfo.AT_UNPREMUL
                 : ImageInfo.AT_OPAQUE;
         return new Bitmap(format,
                 ImageInfo.make(width, height, format.getColorType(), at, cs),
-                address, rowStride, MemoryUtil::nmemFree);
+                address, minRowStride, MemoryUtil::nmemFree);
     }
 
     /**
@@ -294,7 +289,7 @@ public final class Bitmap extends PixelMap implements AutoCloseable {
     }
 
     /**
-     * The address of {@code void *pixels} in native, or 0.
+     * The address of {@code void *pixels} in native, or array base offset.
      * The address is valid until bitmap closed.
      *
      * @return the pointer of pixel data, or NULL if released
@@ -335,6 +330,10 @@ public final class Bitmap extends PixelMap implements AutoCloseable {
         return super.getAlphaType();
     }
 
+    /**
+     * Returns the color space associated with this bitmap. If the color
+     * space is unknown, this method returns null.
+     */
     @Nullable
     @Override
     public ColorSpace getColorSpace() {
@@ -428,41 +427,27 @@ public final class Bitmap extends PixelMap implements AutoCloseable {
         checkReleased();
         checkOutOfBounds(x, y);
         assert getBase() == null;
-        int n32 = MemoryUtil.memGetInt(getAddress() +
+        int c = MemoryUtil.memGetInt(getAddress() +
                 (long) y * getRowStride() +
                 (long) x * mFormat.getBytesPerPixel());
-        int argb;
-        if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN) {
-            argb = switch (mFormat) {
-                case GRAY_8 -> {
-                    int lum = n32 >>> 24;
-                    yield 0xFF000000 | (lum << 16) | (lum << 8) | lum;
-                }
-                case GRAY_ALPHA_88 -> {
-                    int lum = n32 >>> 24;
-                    yield ((n32 & 0xFF0000) << 8) | (lum << 16) | (lum << 8) | lum;
-                }
-                case RGB_888 -> 0xFF000000 | (n32 >>> 8);
-                case RGBA_8888 -> ((n32 & 0xFF) << 24) | (n32 >>> 8);
-                default -> throw new UnsupportedOperationException();
-            };
-        } else {
-            argb = switch (mFormat) {
-                case GRAY_8 -> { // to RRR1
-                    int lum = n32 & 0xFF;
-                    yield 0xFF000000 | (lum << 16) | (lum << 8) | lum;
-                }
-                case GRAY_ALPHA_88 -> { // to RRRG
-                    int lum = n32 & 0xFF;
-                    yield (n32 << 16) | (lum << 8) | lum;
-                }
-                case RGB_888 -> // to BGR1
-                        0xFF000000 | ((n32 & 0xFF) << 16) | (n32 & 0xFF00) | ((n32 >> 16) & 0xFF);
-                case RGBA_8888 -> // to BGRA
-                        (n32 & 0xFF00FF00) | ((n32 & 0xFF) << 16) | ((n32 >> 16) & 0xFF);
-                default -> throw new UnsupportedOperationException();
-            };
+        if (PixelUtils.NATIVE_BIG_ENDIAN) {
+            c = Integer.reverseBytes(c);
         }
+        int argb = switch (mFormat) {
+            case GRAY_8 -> { // to RRR1
+                int lum = c & 0xFF;
+                yield 0xFF000000 | (lum << 16) | (lum << 8) | lum;
+            }
+            case GRAY_ALPHA_88 -> { // to RRRG
+                int lum = c & 0xFF;
+                yield (c << 16) | (lum << 8) | lum;
+            }
+            case RGB_888 -> // to BGR1
+                    0xFF000000 | ((c & 0xFF) << 16) | (c & 0xFF00) | ((c >> 16) & 0xFF);
+            case RGBA_8888 -> // to BGRA
+                    (c & 0xFF00FF00) | ((c & 0xFF) << 16) | ((c >> 16) & 0xFF);
+            default -> throw new UnsupportedOperationException();
+        };
         // linear to gamma
         if (getColorSpace() != null && !getColorSpace().isSrgb()) {
             float[] v = {Color.red(argb) / 255.0f, Color.green(argb) / 255.0f, Color.blue(argb) / 255.0f};
@@ -482,6 +467,7 @@ public final class Bitmap extends PixelMap implements AutoCloseable {
      * @return the ref of pixel data, or null if released
      */
     @ApiStatus.Internal
+    @Nullable
     public PixelRef getPixelRef() {
         return mPixelRef;
     }
@@ -495,7 +481,9 @@ public final class Bitmap extends PixelMap implements AutoCloseable {
      * @param quality the compress quality, 0-100, only work for JPEG format.
      * @param name    the file name without extension name
      * @return true if selected a path, otherwise canceled
-     * @throws IOException selected a path, but saving is not successful
+     * @throws IOException              selected a path, but saving is not successful
+     * @throws IllegalArgumentException bad arguments
+     * @throws IllegalStateException    failed to process
      */
     @WorkerThread
     public boolean saveDialog(@NonNull SaveFormat format, int quality,
@@ -514,7 +502,9 @@ public final class Bitmap extends PixelMap implements AutoCloseable {
      * @param format  the format of the saved image
      * @param quality the compress quality, 0-100, only work for JPEG format.
      * @param file    the image file
-     * @throws IOException saving is not successful
+     * @throws IOException              saving is not successful
+     * @throws IllegalArgumentException bad arguments
+     * @throws IllegalStateException    failed to process
      */
     @WorkerThread
     public void saveToFile(@NonNull SaveFormat format, int quality,
@@ -534,7 +524,9 @@ public final class Bitmap extends PixelMap implements AutoCloseable {
      * @param format  the format of the saved image
      * @param quality the compress quality, 0-100, only work for JPEG format.
      * @param path    the image path
-     * @throws IOException saving is not successful
+     * @throws IOException              saving is not successful
+     * @throws IllegalArgumentException bad arguments
+     * @throws IllegalStateException    failed to process
      */
     @WorkerThread
     public void saveToPath(@NonNull SaveFormat format, int quality,
@@ -558,7 +550,9 @@ public final class Bitmap extends PixelMap implements AutoCloseable {
      * @param format  the format of the saved image
      * @param quality the compress quality, 0-100, only work for JPEG format
      * @param stream  the stream to write image data
-     * @throws IOException saving is not successful
+     * @throws IOException              saving is not successful
+     * @throws IllegalArgumentException bad arguments
+     * @throws IllegalStateException    failed to process
      */
     @WorkerThread
     public void saveToStream(@NonNull SaveFormat format, int quality,
@@ -573,7 +567,9 @@ public final class Bitmap extends PixelMap implements AutoCloseable {
      * @param format  the format of the saved image
      * @param quality the compress quality, 0-100, only work for JPEG format
      * @param channel the channel to write image data
-     * @throws IOException saving is not successful
+     * @throws IOException              saving is not successful
+     * @throws IllegalArgumentException bad arguments
+     * @throws IllegalStateException    failed to process
      */
     @WorkerThread
     public void saveToChannel(@NonNull SaveFormat format, int quality,
@@ -588,7 +584,7 @@ public final class Bitmap extends PixelMap implements AutoCloseable {
         }
         if (getRowStride() != getWidth() * getFormat().getBytesPerPixel()) {
             // not implemented yet
-            throw new AssertionError();
+            throw new IllegalStateException("Pixel data is not tightly packed");
         }
         final var callback = new STBIWriteCallback() {
             private IOException exception;
@@ -596,7 +592,10 @@ public final class Bitmap extends PixelMap implements AutoCloseable {
             @Override
             public void invoke(long context, long data, int size) {
                 try {
-                    channel.write(STBIWriteCallback.getData(data, size));
+                    int n = channel.write(STBIWriteCallback.getData(data, size));
+                    if (n != size) {
+                        exception = new IOException("Channel does not consume all the data");
+                    }
                 } catch (IOException e) {
                     exception = e;
                 }
@@ -609,7 +608,9 @@ public final class Bitmap extends PixelMap implements AutoCloseable {
         } else {
             address = getAddress();
         }
-        assert address != NULL;
+        if (address == NULL) {
+            throw new IllegalStateException("Cannot get the address of pixel memory");
+        }
         try (callback) {
             final boolean success = format.write(callback, mInfo.width(), mInfo.height(),
                     mFormat, address, quality);
@@ -629,7 +630,7 @@ public final class Bitmap extends PixelMap implements AutoCloseable {
 
     private void checkReleased() {
         if (mPixelRef == null) {
-            throw new IllegalStateException("Cannot operate released bitmap");
+            throw new IllegalStateException("Cannot operate a recycled bitmap!");
         }
     }
 
