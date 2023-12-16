@@ -53,7 +53,7 @@ import javax.annotation.Nonnull;
  * <h4>Encoding</h4>
  * <p>The four components of a color int are encoded in the following way:</p>
  * <pre class="prettyprint">
- * int color = (A & 0xff) << 24 | (R & 0xff) << 16 | (G & 0xff) << 8 | (B & 0xff);
+ * int color = (A &amp; 0xff) &lt;&lt; 24 | (R &amp; 0xff) &lt;&lt; 16 | (G &amp; 0xff) &lt;&lt; 8 | (B &amp; 0xff);
  * </pre>
  *
  * <p>Because of this encoding, color ints can easily be described as an integer
@@ -71,10 +71,10 @@ import javax.annotation.Nonnull;
  * <p>The four ARGB components can be individually extracted from a color int
  * using the following expressions:</p>
  * <pre class="prettyprint">
- * int A = (color >> 24) & 0xff; // or color >>> 24
- * int R = (color >> 16) & 0xff;
- * int G = (color >>  8) & 0xff;
- * int B = (color      ) & 0xff;
+ * int A = (color >> 24) &amp; 0xff; // or color >>> 24
+ * int R = (color >> 16) &amp; 0xff;
+ * int G = (color >>  8) &amp; 0xff;
+ * int B = (color      ) &amp; 0xff;
  * </pre>
  *
  * <p>This class offers convenience methods to easily extract these components:</p>
