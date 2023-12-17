@@ -589,7 +589,7 @@ public class PathStroker implements PathConsumer {
     // 14,15 RAY TANGENT
     private void quad_perpendicular_ray(float[] quad, float t) {
         Geometry.evalQuadAt(
-                quad[0], quad[1], quad[2], quad[3], quad[4], quad[5],
+                quad, 0,
                 t, quad, /*pos*/ 8, quad, /*tangent*/ 8+2
         );
         if (quad[8+2] == 0 && quad[8+3] == 0) {
@@ -607,8 +607,7 @@ public class PathStroker implements PathConsumer {
     // 14,15 RAY TANGENT
     private void cubic_perpendicular_ray(float[] cubic, float t) {
         Geometry.evalCubicAt(
-                cubic[0], cubic[1], cubic[2], cubic[3],
-                cubic[4], cubic[5], cubic[6], cubic[7],
+                cubic, 0,
                 t, cubic, /*pos*/ 8, cubic, /*tangent*/ 8+2
         );
         if (cubic[8+2] == 0 && cubic[8+3] == 0) {
@@ -625,10 +624,9 @@ public class PathStroker implements PathConsumer {
                 // If the cubic inflection falls on the cusp, subdivide the cubic
                 // to find the tangent at that point.
                 Geometry.chopCubicAt(
-                        cubic[0], cubic[1], cubic[2], cubic[3],
-                        cubic[4], cubic[5], cubic[6], cubic[7],
-                        t,
-                        cubic, 8+4
+                        cubic, 0,
+                        cubic, 8+4,
+                        t
                 );
                 // CHOPPED_P3 - CHOPPED_P2
                 cubic[8+2] = cubic[8+4+6] - cubic[8+4+4];

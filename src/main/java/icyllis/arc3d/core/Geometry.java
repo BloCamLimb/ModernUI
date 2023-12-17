@@ -23,6 +23,8 @@ import java.util.Arrays;
 
 /**
  * Geometry solvers.
+ *
+ * @author BloCamLimb
  */
 public class Geometry {
 
@@ -197,7 +199,23 @@ public class Geometry {
         final float By = y1 - y0;
 
         dst[off]   = (Ax * t + Bx + Bx) * t + x0;
-        dst[off|1] = (Ay * t + By + By) * t + y0;
+        dst[off+1] = (Ay * t + By + By) * t + y0;
+    }
+
+    public static void evalQuadAt(
+            final float[] src, final int off,
+            final float t,
+            final float[] pos, final int posOff,
+            final float[] tangent, final int tangentOff
+    ) {
+        evalQuadAt(
+                src[off]  , src[off+1],
+                src[off+2], src[off+3],
+                src[off+4], src[off+5],
+                t,
+                pos, posOff,
+                tangent, tangentOff
+        );
     }
 
     /**
@@ -224,7 +242,7 @@ public class Geometry {
 
         if (pos != null) {
             pos[posOff]   = (Ax * t + Bx + Bx) * t + x0;
-            pos[posOff|1] = (Ay * t + By + By) * t + y0;
+            pos[posOff+1] = (Ay * t + By + By) * t + y0;
         }
 
         if (tangent != null) {
@@ -234,12 +252,69 @@ public class Geometry {
             if ((t == 0 && x0 == x1 && y0 == y1) ||
                     (t == 1 && x1 == x2 && y1 == y2)) {
                 tangent[tangentOff]   = x2 - x0;
-                tangent[tangentOff|1] = y2 - y0;
+                tangent[tangentOff+1] = y2 - y0;
             } else {
                 tangent[tangentOff]   = Ax * t + Bx;
-                tangent[tangentOff|1] = Ay * t + By;
+                tangent[tangentOff+1] = Ay * t + By;
             }
         }
+    }
+
+    public static void chopQuadAt(
+            final float[] src, final int srcOff,
+            final float[] dst, final int dstOff,
+            final float t
+    ) {
+        chopQuadAt(
+                src[srcOff]  , src[srcOff+1],
+                src[srcOff+2], src[srcOff+3],
+                src[srcOff+4], src[srcOff+5],
+                t,
+                dst, dstOff
+        );
+    }
+
+    public static void chopQuadAt(
+            final float x0, final float y0,
+            final float x1, final float y1,
+            final float x2, final float y2,
+            final float t,
+            final float[] dst, final int off
+    ) {
+        assert t >= 0 && t <= 1;
+
+        if (t == 1) {
+            dst[off]   = x0;
+            dst[off+1] = y0;
+            dst[off+2] = x1;
+            dst[off+3] = y1;
+            dst[off+4] = x2;
+            dst[off+5] = y2;
+
+            dst[off+6] = x2;
+            dst[off+7] = y2;
+            dst[off+8] = x2;
+            dst[off+9] = y2;
+            return;
+        }
+
+        float abx  = MathUtil.mix(x0,  x1,  t);
+        float aby  = MathUtil.mix(y0,  y1,  t);
+        float bcx  = MathUtil.mix(x1,  x2,  t);
+        float bcy  = MathUtil.mix(y1,  y2,  t);
+        float abcx = MathUtil.mix(abx, bcx, t);
+        float abcy = MathUtil.mix(aby, bcy, t);
+
+        dst[off]   = x0;
+        dst[off+1] = y0;
+        dst[off+2] = abx;
+        dst[off+3] = aby;
+        dst[off+4] = abcx;
+        dst[off+5] = abcy;
+        dst[off+6] = bcx;
+        dst[off+7] = bcy;
+        dst[off+8] = x2;
+        dst[off+9] = y2;
     }
 
     /**
@@ -303,6 +378,23 @@ public class Geometry {
 
         pos[off]   = ((Ax * t + Bx) * t + Cx) * t + x0;
         pos[off+1] = ((Ay * t + By) * t + Cy) * t + y0;
+    }
+
+    public static void evalCubicAt(
+            final float[] src, final int off,
+            final float t,
+            final float[] pos, final int posOff,
+            final float[] tangent, final int tangentOff
+    ) {
+        evalCubicAt(
+                src[off]  , src[off+1],
+                src[off+2], src[off+3],
+                src[off+4], src[off+5],
+                src[off+6], src[off+7],
+                t,
+                pos, posOff,
+                tangent, tangentOff
+        );
     }
 
     /**
@@ -388,6 +480,21 @@ public class Geometry {
 
         dst[off]   = (Ax * t + Bx) * t + Cx;
         dst[off+1] = (Ay * t + By) * t + Cy;
+    }
+
+    public static void chopCubicAt(
+            final float[] src, final int srcOff,
+            final float[] dst, final int dstOff,
+            final float t
+    ) {
+        chopCubicAt(
+                src[srcOff]  , src[srcOff+1],
+                src[srcOff+2], src[srcOff+3],
+                src[srcOff+4], src[srcOff+5],
+                src[srcOff+6], src[srcOff+7],
+                t,
+                dst, dstOff
+        );
     }
 
     public static void chopCubicAt(
