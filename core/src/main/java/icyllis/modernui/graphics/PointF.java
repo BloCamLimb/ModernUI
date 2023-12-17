@@ -18,8 +18,8 @@
 
 package icyllis.modernui.graphics;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 
 /**
  * Represents a point holding two float values.
@@ -37,12 +37,17 @@ public class PointF {
         this.y = y;
     }
 
-    public PointF(@Nonnull Point p) {
+    public PointF(@NonNull Point p) {
         x = p.x;
         y = p.y;
     }
 
-    @Nonnull
+    public PointF(@NonNull PointF p) {
+        x = p.x;
+        y = p.y;
+    }
+
+    @NonNull
     public static PointF copy(@Nullable PointF p) {
         return p == null ? new PointF() : p.copy();
     }
@@ -52,12 +57,12 @@ public class PointF {
         this.y = y;
     }
 
-    public void set(@Nonnull Point p) {
+    public void set(@NonNull Point p) {
         x = p.x;
         y = p.y;
     }
 
-    public void set(@Nonnull PointF p) {
+    public void set(@NonNull PointF p) {
         x = p.x;
         y = p.y;
     }
@@ -76,29 +81,42 @@ public class PointF {
      * Return the Euclidean distance from (0,0) to the point
      */
     public float length() {
-        return MathUtil.sqrt(x * x + y * y);
+        return icyllis.arc3d.core.Point.length(x, y);
     }
 
-    public void round(@Nonnull Point dst) {
+    public boolean normalize() {
+        double x = this.x;
+        double y = this.y;
+        double dmag = Math.sqrt(x * x + y * y);
+        double dscale = 1.0 / dmag;
+        float newX = (float) (x * dscale);
+        float newY = (float) (y * dscale);
+        if (icyllis.arc3d.core.Point.isDegenerate(newX, newY)) {
+            return false;
+        }
+        this.x = newX;
+        this.y = newY;
+        return true;
+    }
+
+    public void round(@NonNull Point dst) {
         dst.set(Math.round(x), Math.round(y));
+    }
+
+    @Override
+    public int hashCode() {
+        int result = (x != 0.0f ? Float.floatToIntBits(x) : 0);
+        result = 31 * result + (y != 0.0f ? Float.floatToIntBits(y) : 0);
+        return result;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        PointF pointF = (PointF) o;
-
-        if (Float.compare(pointF.x, x) != 0) return false;
-        return Float.compare(pointF.y, y) == 0;
-    }
-
-    @Override
-    public int hashCode() {
-        int result = (x != +0.0f ? Float.floatToIntBits(x) : 0);
-        result = 31 * result + (y != +0.0f ? Float.floatToIntBits(y) : 0);
-        return result;
+        if (o instanceof PointF p) {
+            return this.x == p.x && this.y == p.y;
+        }
+        return false;
     }
 
     @Override
@@ -108,7 +126,7 @@ public class PointF {
                 ')';
     }
 
-    @Nonnull
+    @NonNull
     public PointF copy() {
         return new PointF(x, y);
     }

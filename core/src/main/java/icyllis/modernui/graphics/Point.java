@@ -18,8 +18,8 @@
 
 package icyllis.modernui.graphics;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 
 /**
  * Represents a point holding two integer values.
@@ -37,7 +37,12 @@ public class Point {
         this.y = y;
     }
 
-    @Nonnull
+    public Point(@NonNull Point p) {
+        x = p.x;
+        y = p.y;
+    }
+
+    @NonNull
     public static Point copy(@Nullable Point p) {
         return p == null ? new Point() : p.copy();
     }
@@ -47,7 +52,7 @@ public class Point {
         this.y = y;
     }
 
-    public void set(@Nonnull Point p) {
+    public void set(@NonNull Point p) {
         x = p.x;
         y = p.y;
     }
@@ -63,21 +68,19 @@ public class Point {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        Point point = (Point) o;
-
-        if (x != point.x) return false;
-        return y == point.y;
-    }
-
-    @Override
     public int hashCode() {
         int result = x;
         result = 31 * result + y;
         return result;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o instanceof Point p) {
+            return this.x == p.x && this.y == p.y;
+        }
+        return false;
     }
 
     @Override
@@ -87,7 +90,7 @@ public class Point {
                 ')';
     }
 
-    @Nonnull
+    @NonNull
     public Point copy() {
         return new Point(x, y);
     }
