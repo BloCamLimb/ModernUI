@@ -56,6 +56,11 @@ public interface PathConsumer {
     void quadTo(float x1, float y1,
                 float x2, float y2);
 
+    // forward arguments
+    default void quadTo(float[] pts, int off) {
+        quadTo(pts[off], pts[off+1], pts[off+2], pts[off+3]);
+    }
+
     /**
      * Accepts a curved segment, defined by three new points, to the path by
      * drawing a cubic Bézier curve that intersects both the current
@@ -72,6 +77,11 @@ public interface PathConsumer {
     void cubicTo(float x1, float y1,
                  float x2, float y2,
                  float x3, float y3);
+
+    // forward arguments
+    default void cubicTo(float[] pts, int off) {
+        cubicTo(pts[off], pts[off+1], pts[off+2], pts[off+3], pts[off+4], pts[off+5]);
+    }
 
     /**
      * Closes the current contour by drawing a straight line back to

@@ -100,9 +100,8 @@ public class Point {
      * <var>length</var> must be >= 0.
      */
     public static boolean setLength(final float[] pos, final int off, final float length) {
-        assert (off & 1) == 0;
         double x = pos[off];
-        double y = pos[off | 1];
+        double y = pos[off+1];
         double dmag = Math.sqrt(x * x + y * y);
         double dscale = (double) length / dmag;
         float newX = (float) (x * dscale);
@@ -111,8 +110,15 @@ public class Point {
             return false;
         }
         pos[off] = newX;
-        pos[off | 1] = newY;
+        pos[off+1] = newY;
         return true;
+    }
+
+    @Contract(pure = true)
+    public static float length(
+            final float x, final float y
+    ) {
+        return (float) Math.sqrt((double) x * x + (double) y * y);
     }
 
     @Contract(pure = true)
@@ -120,6 +126,14 @@ public class Point {
             final float x, final float y
     ) {
         return x * x + y * y;
+    }
+
+    @Contract(pure = true)
+    public static float distanceTo(
+            final float ax, final float ay,
+            final float bx, final float by
+    ) {
+        return length(ax - bx, ay - by);
     }
 
     @Contract(pure = true)

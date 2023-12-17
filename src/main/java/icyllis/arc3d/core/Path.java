@@ -20,6 +20,7 @@
 package icyllis.arc3d.core;
 
 import org.intellij.lang.annotations.MagicConstant;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import java.lang.annotation.Retention;
@@ -644,18 +645,11 @@ public class Path implements PathConsumer {
                             cs[ci++], cs[ci++]
                     );
                     case PathIterator.VERB_QUAD -> {
-                        action.quadTo(
-                                cs[ci], cs[ci + 1],
-                                cs[ci + 2], cs[ci + 3]
-                        );
+                        action.quadTo(cs, ci);
                         ci += 4;
                     }
                     case PathIterator.VERB_CUBIC -> {
-                        action.cubicTo(
-                                cs[ci], cs[ci + 1],
-                                cs[ci + 2], cs[ci + 3],
-                                cs[ci + 4], cs[ci + 5]
-                        );
+                        action.cubicTo(cs, ci);
                         ci += 6;
                     }
                     case PathIterator.VERB_CLOSE -> action.closePath();
@@ -663,6 +657,73 @@ public class Path implements PathConsumer {
             } while (vi < n);
         }
         action.pathDone();
+    }
+
+    /**
+     * Low-level access to path elements.
+     */
+    @ApiStatus.Internal
+    public class RawIterator {
+
+        private final int count = countVerbs();
+        private int verbPos;
+        private int coordPos;
+        private int coordOff;
+        private int coordInc;
+
+        public boolean hasNext() {
+            return verbPos < count;
+        }
+
+        public byte next() {
+            if (verbPos == count) {
+                return PathIterator.VERB_DONE;
+            }
+            byte verb = mRef.mVerbs[verbPos++];
+            coordPos += coordInc;
+            switch (verb) {
+                case VERB_MOVE, VERB_LINE -> coordInc = 2;
+                case VERB_QUAD -> coordInc = 4;
+                case VERB_CUBIC -> coordInc = 6;
+                case VERB_CLOSE -> coordInc = 0;
+            }
+            // -2 is used to peek the current point
+            coordOff = verb == VERB_MOVE ? 0 : -2;
+            return verb;
+        }
+
+        //TODO use arraycopy
+        public float x0() {
+            return mRef.mCoords[coordPos + coordOff];
+        }
+
+        public float y0() {
+            return mRef.mCoords[coordPos + coordOff + 1];
+        }
+
+        public float x1() {
+            return mRef.mCoords[coordPos + coordOff + 2];
+        }
+
+        public float y1() {
+            return mRef.mCoords[coordPos + coordOff + 3];
+        }
+
+        public float x2() {
+            return mRef.mCoords[coordPos + coordOff + 4];
+        }
+
+        public float y2() {
+            return mRef.mCoords[coordPos + coordOff + 5];
+        }
+
+        public float x3() {
+            return mRef.mCoords[coordPos + coordOff + 6];
+        }
+
+        public float y3() {
+            return mRef.mCoords[coordPos + coordOff + 7];
+        }
     }
 
     /**
@@ -904,13 +965,16 @@ public class Path implements PathConsumer {
 
         boolean unique() {
             return (int) USAGE_CNT.getAcquire(this) == 1
-                    && this != EMPTY; // the EMPTY's usage cnt is wild
+                    // the EMPTY's usage is not counted normally, must be excluded here!!
+                    && this != EMPTY;
         }
 
+        @Override
         public void ref() {
             USAGE_CNT.getAndAddAcquire(this, 1);
         }
 
+        @Override
         public void unref() {
             USAGE_CNT.getAndAdd(this, -1);
         }
