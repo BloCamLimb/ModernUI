@@ -202,9 +202,6 @@ public abstract class ColorSpace {
     private static final Rgb.TransferParameters SRGB_TRANSFER_PARAMETERS =
             new Rgb.TransferParameters(1 / 1.055, 0.055 / 1.055, 1 / 12.92, 0.04045, 2.4);
 
-    // See static initialization block next to #get(Named)
-    private static final ColorSpace[] sNamedColorSpaces = new ColorSpace[Named.values().length];
-
     @Nonnull
     private final String mName;
     @Nonnull
@@ -711,8 +708,137 @@ public abstract class ColorSpace {
          *     <tr><td>Range</td><td colspan="4">\(L: [0.0, 100.0], a: [-128, 128], b: [-128, 128]\)</td></tr>
          * </table>
          */
-        CIE_LAB
+        CIE_LAB;
         // Update the initialization block next to #get(Named) when adding new values
+
+        // See static initialization block next to #get(Named)
+        static final ColorSpace[] sNamedColorSpaces = new ColorSpace[Named.values().length];
+
+        static {
+            sNamedColorSpaces[Named.SRGB.ordinal()] = new ColorSpace.Rgb(
+                    "sRGB IEC61966-2.1",
+                    SRGB_PRIMARIES,
+                    ILLUMINANT_D65,
+                    null,
+                    SRGB_TRANSFER_PARAMETERS,
+                    Named.SRGB.ordinal()
+            );
+            sNamedColorSpaces[Named.LINEAR_SRGB.ordinal()] = new ColorSpace.Rgb(
+                    "sRGB IEC61966-2.1 (Linear)",
+                    SRGB_PRIMARIES,
+                    ILLUMINANT_D65,
+                    1.0,
+                    0.0f, 1.0f,
+                    Named.LINEAR_SRGB.ordinal()
+            );
+            sNamedColorSpaces[Named.EXTENDED_SRGB.ordinal()] = new ColorSpace.Rgb(
+                    "scRGB-nl IEC 61966-2-2:2003",
+                    SRGB_PRIMARIES,
+                    ILLUMINANT_D65,
+                    null,
+                    x -> absRcpResponse(x, 1 / 1.055, 0.055 / 1.055, 1 / 12.92, 0.04045, 2.4),
+                    x -> absResponse(x, 1 / 1.055, 0.055 / 1.055, 1 / 12.92, 0.04045, 2.4),
+                    -0.799f, 2.399f,
+                    SRGB_TRANSFER_PARAMETERS,
+                    Named.EXTENDED_SRGB.ordinal()
+            );
+            sNamedColorSpaces[Named.LINEAR_EXTENDED_SRGB.ordinal()] = new ColorSpace.Rgb(
+                    "scRGB IEC 61966-2-2:2003",
+                    SRGB_PRIMARIES,
+                    ILLUMINANT_D65,
+                    1.0,
+                    -0.5f, 7.499f,
+                    Named.LINEAR_EXTENDED_SRGB.ordinal()
+            );
+            sNamedColorSpaces[Named.BT709.ordinal()] = new ColorSpace.Rgb(
+                    "Rec. ITU-R BT.709-5",
+                    new float[]{0.640f, 0.330f, 0.300f, 0.600f, 0.150f, 0.060f},
+                    ILLUMINANT_D65,
+                    null,
+                    new Rgb.TransferParameters(1 / 1.099, 0.099 / 1.099, 1 / 4.5, 0.081, 1 / 0.45),
+                    Named.BT709.ordinal()
+            );
+            sNamedColorSpaces[Named.BT2020.ordinal()] = new ColorSpace.Rgb(
+                    "Rec. ITU-R BT.2020-1",
+                    new float[]{0.708f, 0.292f, 0.170f, 0.797f, 0.131f, 0.046f},
+                    ILLUMINANT_D65,
+                    null,
+                    new Rgb.TransferParameters(1 / 1.0993, 0.0993 / 1.0993, 1 / 4.5, 0.08145, 1 / 0.45),
+                    Named.BT2020.ordinal()
+            );
+            sNamedColorSpaces[Named.DCI_P3.ordinal()] = new ColorSpace.Rgb(
+                    "SMPTE RP 431-2-2007 DCI (P3)",
+                    new float[]{0.680f, 0.320f, 0.265f, 0.690f, 0.150f, 0.060f},
+                    new float[]{0.314f, 0.351f},
+                    2.6,
+                    0.0f, 1.0f,
+                    Named.DCI_P3.ordinal()
+            );
+            sNamedColorSpaces[Named.DISPLAY_P3.ordinal()] = new ColorSpace.Rgb(
+                    "Display P3",
+                    new float[]{0.680f, 0.320f, 0.265f, 0.690f, 0.150f, 0.060f},
+                    ILLUMINANT_D65,
+                    null,
+                    SRGB_TRANSFER_PARAMETERS,
+                    Named.DISPLAY_P3.ordinal()
+            );
+            sNamedColorSpaces[Named.NTSC_1953.ordinal()] = new ColorSpace.Rgb(
+                    "NTSC (1953)",
+                    NTSC_1953_PRIMARIES,
+                    ILLUMINANT_C,
+                    null,
+                    new Rgb.TransferParameters(1 / 1.099, 0.099 / 1.099, 1 / 4.5, 0.081, 1 / 0.45),
+                    Named.NTSC_1953.ordinal()
+            );
+            sNamedColorSpaces[Named.SMPTE_C.ordinal()] = new ColorSpace.Rgb(
+                    "SMPTE-C RGB",
+                    new float[]{0.630f, 0.340f, 0.310f, 0.595f, 0.155f, 0.070f},
+                    ILLUMINANT_D65,
+                    null,
+                    new Rgb.TransferParameters(1 / 1.099, 0.099 / 1.099, 1 / 4.5, 0.081, 1 / 0.45),
+                    Named.SMPTE_C.ordinal()
+            );
+            sNamedColorSpaces[Named.ADOBE_RGB.ordinal()] = new ColorSpace.Rgb(
+                    "Adobe RGB (1998)",
+                    new float[]{0.64f, 0.33f, 0.21f, 0.71f, 0.15f, 0.06f},
+                    ILLUMINANT_D65,
+                    2.2,
+                    0.0f, 1.0f,
+                    Named.ADOBE_RGB.ordinal()
+            );
+            sNamedColorSpaces[Named.PRO_PHOTO_RGB.ordinal()] = new ColorSpace.Rgb(
+                    "ROMM RGB ISO 22028-2:2013",
+                    new float[]{0.7347f, 0.2653f, 0.1596f, 0.8404f, 0.0366f, 0.0001f},
+                    ILLUMINANT_D50,
+                    null,
+                    new Rgb.TransferParameters(1.0, 0.0, 1 / 16.0, 0.031248, 1.8),
+                    Named.PRO_PHOTO_RGB.ordinal()
+            );
+            sNamedColorSpaces[Named.ACES.ordinal()] = new ColorSpace.Rgb(
+                    "SMPTE ST 2065-1:2012 ACES",
+                    new float[]{0.73470f, 0.26530f, 0.0f, 1.0f, 0.00010f, -0.0770f},
+                    ILLUMINANT_D60,
+                    1.0,
+                    -65504.0f, 65504.0f,
+                    Named.ACES.ordinal()
+            );
+            sNamedColorSpaces[Named.ACESCG.ordinal()] = new ColorSpace.Rgb(
+                    "Academy S-2014-004 ACEScg",
+                    new float[]{0.713f, 0.293f, 0.165f, 0.830f, 0.128f, 0.044f},
+                    ILLUMINANT_D60,
+                    1.0,
+                    -65504.0f, 65504.0f,
+                    Named.ACESCG.ordinal()
+            );
+            sNamedColorSpaces[Named.CIE_XYZ.ordinal()] = new ColorSpace.Xyz(
+                    "Generic XYZ",
+                    Named.CIE_XYZ.ordinal()
+            );
+            sNamedColorSpaces[Named.CIE_LAB.ordinal()] = new ColorSpace.Lab(
+                    "Generic L*a*b*",
+                    Named.CIE_LAB.ordinal()
+            );
+        }
     }
 
     /**
@@ -883,7 +1009,7 @@ public abstract class ColorSpace {
     ColorSpace(@Nonnull @Size(min = 1) String name,
                @Nonnull Model model,
                @Range(from = MIN_ID, to = MAX_ID) int id) {
-        if (name.length() < 1) {
+        if (name.isEmpty()) {
             throw new IllegalArgumentException("The name of a color space cannot be null and " +
                     "must contain at least 1 character");
         }
@@ -1347,11 +1473,11 @@ public abstract class ColorSpace {
      */
     @Nonnull
     static ColorSpace get(@Range(from = MIN_ID, to = MAX_ID) int index) {
-        if (index < 0 || index >= sNamedColorSpaces.length) {
+        if (index < 0 || index >= Named.sNamedColorSpaces.length) {
             throw new IllegalArgumentException("Invalid ID, must be in the range [0.." +
-                    sNamedColorSpaces.length + ")");
+                    Named.sNamedColorSpaces.length + ")");
         }
-        return sNamedColorSpaces[index];
+        return Named.sNamedColorSpaces[index];
     }
 
     /**
@@ -1368,7 +1494,7 @@ public abstract class ColorSpace {
      */
     @Nonnull
     public static ColorSpace get(@Nonnull Named name) {
-        return sNamedColorSpaces[name.ordinal()];
+        return Named.sNamedColorSpaces[name.ordinal()];
     }
 
     /**
@@ -1389,7 +1515,7 @@ public abstract class ColorSpace {
             @Nonnull @Size(9) float[] toXYZD50,
             @Nonnull Rgb.TransferParameters function) {
 
-        for (ColorSpace colorSpace : sNamedColorSpaces) {
+        for (ColorSpace colorSpace : Named.sNamedColorSpaces) {
             if (colorSpace.getModel() == Model.RGB) {
                 ColorSpace.Rgb rgb = (ColorSpace.Rgb) adapt(colorSpace, ILLUMINANT_D50_XYZ);
                 if (compare(toXYZD50, rgb.mTransform) &&
@@ -1719,13 +1845,6 @@ public abstract class ColorSpace {
      */
     private static final class Xyz extends ColorSpace {
 
-        static {
-            sNamedColorSpaces[Named.CIE_XYZ.ordinal()] = new Xyz(
-                    "Generic XYZ",
-                    Named.CIE_XYZ.ordinal()
-            );
-        }
-
         private Xyz(@Nonnull String name, @Range(from = MIN_ID, to = MAX_ID) int id) {
             super(name, Model.XYZ, id);
         }
@@ -1774,13 +1893,6 @@ public abstract class ColorSpace {
         private static final float B = 841.0f / 108.0f;
         private static final float C = 4.0f / 29.0f;
         private static final float D = 6.0f / 29.0f;
-
-        static {
-            sNamedColorSpaces[Named.CIE_LAB.ordinal()] = new ColorSpace.Lab(
-                    "Generic L*a*b*",
-                    Named.CIE_LAB.ordinal()
-            );
-        }
 
         private Lab(@Nonnull String name,
                     @Range(from = MIN_ID, to = MAX_ID) int id) {
@@ -2144,124 +2256,6 @@ public abstract class ColorSpace {
                 result = 31 * result + (int) (temp ^ (temp >>> 32));
                 return result;
             }
-        }
-
-        static {
-            sNamedColorSpaces[Named.SRGB.ordinal()] = new ColorSpace.Rgb(
-                    "sRGB IEC61966-2.1",
-                    SRGB_PRIMARIES,
-                    ILLUMINANT_D65,
-                    null,
-                    SRGB_TRANSFER_PARAMETERS,
-                    Named.SRGB.ordinal()
-            );
-            sNamedColorSpaces[Named.LINEAR_SRGB.ordinal()] = new ColorSpace.Rgb(
-                    "sRGB IEC61966-2.1 (Linear)",
-                    SRGB_PRIMARIES,
-                    ILLUMINANT_D65,
-                    1.0,
-                    0.0f, 1.0f,
-                    Named.LINEAR_SRGB.ordinal()
-            );
-            sNamedColorSpaces[Named.EXTENDED_SRGB.ordinal()] = new ColorSpace.Rgb(
-                    "scRGB-nl IEC 61966-2-2:2003",
-                    SRGB_PRIMARIES,
-                    ILLUMINANT_D65,
-                    null,
-                    x -> absRcpResponse(x, 1 / 1.055, 0.055 / 1.055, 1 / 12.92, 0.04045, 2.4),
-                    x -> absResponse(x, 1 / 1.055, 0.055 / 1.055, 1 / 12.92, 0.04045, 2.4),
-                    -0.799f, 2.399f,
-                    SRGB_TRANSFER_PARAMETERS,
-                    Named.EXTENDED_SRGB.ordinal()
-            );
-            sNamedColorSpaces[Named.LINEAR_EXTENDED_SRGB.ordinal()] = new ColorSpace.Rgb(
-                    "scRGB IEC 61966-2-2:2003",
-                    SRGB_PRIMARIES,
-                    ILLUMINANT_D65,
-                    1.0,
-                    -0.5f, 7.499f,
-                    Named.LINEAR_EXTENDED_SRGB.ordinal()
-            );
-            sNamedColorSpaces[Named.BT709.ordinal()] = new ColorSpace.Rgb(
-                    "Rec. ITU-R BT.709-5",
-                    new float[]{0.640f, 0.330f, 0.300f, 0.600f, 0.150f, 0.060f},
-                    ILLUMINANT_D65,
-                    null,
-                    new Rgb.TransferParameters(1 / 1.099, 0.099 / 1.099, 1 / 4.5, 0.081, 1 / 0.45),
-                    Named.BT709.ordinal()
-            );
-            sNamedColorSpaces[Named.BT2020.ordinal()] = new ColorSpace.Rgb(
-                    "Rec. ITU-R BT.2020-1",
-                    new float[]{0.708f, 0.292f, 0.170f, 0.797f, 0.131f, 0.046f},
-                    ILLUMINANT_D65,
-                    null,
-                    new Rgb.TransferParameters(1 / 1.0993, 0.0993 / 1.0993, 1 / 4.5, 0.08145, 1 / 0.45),
-                    Named.BT2020.ordinal()
-            );
-            sNamedColorSpaces[Named.DCI_P3.ordinal()] = new ColorSpace.Rgb(
-                    "SMPTE RP 431-2-2007 DCI (P3)",
-                    new float[]{0.680f, 0.320f, 0.265f, 0.690f, 0.150f, 0.060f},
-                    new float[]{0.314f, 0.351f},
-                    2.6,
-                    0.0f, 1.0f,
-                    Named.DCI_P3.ordinal()
-            );
-            sNamedColorSpaces[Named.DISPLAY_P3.ordinal()] = new ColorSpace.Rgb(
-                    "Display P3",
-                    new float[]{0.680f, 0.320f, 0.265f, 0.690f, 0.150f, 0.060f},
-                    ILLUMINANT_D65,
-                    null,
-                    SRGB_TRANSFER_PARAMETERS,
-                    Named.DISPLAY_P3.ordinal()
-            );
-            sNamedColorSpaces[Named.NTSC_1953.ordinal()] = new ColorSpace.Rgb(
-                    "NTSC (1953)",
-                    NTSC_1953_PRIMARIES,
-                    ILLUMINANT_C,
-                    null,
-                    new Rgb.TransferParameters(1 / 1.099, 0.099 / 1.099, 1 / 4.5, 0.081, 1 / 0.45),
-                    Named.NTSC_1953.ordinal()
-            );
-            sNamedColorSpaces[Named.SMPTE_C.ordinal()] = new ColorSpace.Rgb(
-                    "SMPTE-C RGB",
-                    new float[]{0.630f, 0.340f, 0.310f, 0.595f, 0.155f, 0.070f},
-                    ILLUMINANT_D65,
-                    null,
-                    new Rgb.TransferParameters(1 / 1.099, 0.099 / 1.099, 1 / 4.5, 0.081, 1 / 0.45),
-                    Named.SMPTE_C.ordinal()
-            );
-            sNamedColorSpaces[Named.ADOBE_RGB.ordinal()] = new ColorSpace.Rgb(
-                    "Adobe RGB (1998)",
-                    new float[]{0.64f, 0.33f, 0.21f, 0.71f, 0.15f, 0.06f},
-                    ILLUMINANT_D65,
-                    2.2,
-                    0.0f, 1.0f,
-                    Named.ADOBE_RGB.ordinal()
-            );
-            sNamedColorSpaces[Named.PRO_PHOTO_RGB.ordinal()] = new ColorSpace.Rgb(
-                    "ROMM RGB ISO 22028-2:2013",
-                    new float[]{0.7347f, 0.2653f, 0.1596f, 0.8404f, 0.0366f, 0.0001f},
-                    ILLUMINANT_D50,
-                    null,
-                    new Rgb.TransferParameters(1.0, 0.0, 1 / 16.0, 0.031248, 1.8),
-                    Named.PRO_PHOTO_RGB.ordinal()
-            );
-            sNamedColorSpaces[Named.ACES.ordinal()] = new ColorSpace.Rgb(
-                    "SMPTE ST 2065-1:2012 ACES",
-                    new float[]{0.73470f, 0.26530f, 0.0f, 1.0f, 0.00010f, -0.0770f},
-                    ILLUMINANT_D60,
-                    1.0,
-                    -65504.0f, 65504.0f,
-                    Named.ACES.ordinal()
-            );
-            sNamedColorSpaces[Named.ACESCG.ordinal()] = new ColorSpace.Rgb(
-                    "Academy S-2014-004 ACEScg",
-                    new float[]{0.713f, 0.293f, 0.165f, 0.830f, 0.128f, 0.044f},
-                    ILLUMINANT_D60,
-                    1.0,
-                    -65504.0f, 65504.0f,
-                    Named.ACESCG.ordinal()
-            );
         }
 
         @Nonnull

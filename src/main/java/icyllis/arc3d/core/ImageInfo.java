@@ -123,9 +123,9 @@ public final class ImageInfo {
      * converted into floating-point values.
      */
     public static final int
-            AT_UNKNOWN  = 0,  // uninitialized
-            AT_OPAQUE   = 1,   // pixel is opaque
-            AT_PREMUL   = 2,   // pixel components are premultiplied by alpha
+            AT_UNKNOWN  = 0, // uninitialized
+            AT_OPAQUE   = 1, // pixel is opaque
+            AT_PREMUL   = 2, // pixel components are premultiplied by alpha
             AT_UNPREMUL = 3; // pixel components are unassociated with alpha
 
     /**
@@ -176,12 +176,16 @@ public final class ImageInfo {
     /**
      * Color types.
      * <p>
-     * Describes a layout of pixel data in CPU memory. A pixel may be an alpha mask, a grayscale,
+     * Describes a layout of pixel data in CPU or GPU memory. A pixel may be an alpha mask, a grayscale,
      * RGB, or RGBA. It specifies the channels, their type, and width. It does not refer to a texture
      * format and the mapping to texture formats may be many-to-many. It does not specify the sRGB
      * encoding of the stored values. The components are listed in order of where they appear in
      * memory, except for {@link #CT_RGB_565}. In other words the first component listed is in the
      * low bits and the last component in the high bits, reverse for {@link #CT_RGB_565}.
+     * <p>
+     * Note: Skia doesn't support big-endian machines, because SkColorType doesn't match GrColorType.
+     * We support that because we don't use bit shifts for most operations. When needed, we check
+     * {@link PixelUtils#NATIVE_BIG_ENDIAN} and do conversion.
      */
     public static final int
             CT_UNKNOWN          = 0, // uninitialized
