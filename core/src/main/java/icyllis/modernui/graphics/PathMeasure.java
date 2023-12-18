@@ -150,6 +150,35 @@ public class PathMeasure extends icyllis.arc3d.core.PathMeasure {
 
     /**
      * Clamps <var>distance</var> between 0 and {@link #getContourLength()}, and then
+     * computes the corresponding position and tangent vector (un-normalized).
+     * Returns false if there is no contour, or a zero-length path was specified,
+     * in which case <var>position</var> and <var>tangent</var> are unchanged.
+     *
+     * @param distance the distance along the current contour to sample
+     * @param position if non-null, returns the sampled position
+     * @param tangent  if non-null, returns the sampled tangent vector
+     * @return success or not
+     */
+    @CheckReturnValue
+    public boolean getPosTan(float distance,
+                             @Nullable PointF position,
+                             @Nullable PointF tangent) {
+        boolean result = super.getPosTan(distance,
+                position != null ? mTmp : null, 0,
+                tangent != null ? mTmp : null, 2);
+        if (result) {
+            if (position != null) {
+                position.set(mTmp[0], mTmp[1]);
+            }
+            if (tangent != null) {
+                tangent.set(mTmp[2], mTmp[3]);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Clamps <var>distance</var> between 0 and {@link #getContourLength()}, and then
      * computes the corresponding matrix (by calling {@link #getPosTan}).
      * Returns false if there is no contour, or a zero-length path was specified,
      * in which case <var>matrix</var> is unchanged.

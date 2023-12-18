@@ -74,7 +74,7 @@ public final class Bitmap extends PixelMap implements AutoCloseable {
            @Nullable LongConsumer freeFn) {
         super(info, null, addr, rowStride);
         mFormat = format;
-        mPixelRef = new SafePixelRef(this, info, null, addr, rowStride, freeFn);
+        mPixelRef = new SafePixelRef(this, info, addr, rowStride, freeFn);
     }
 
     /**
@@ -98,8 +98,8 @@ public final class Bitmap extends PixelMap implements AutoCloseable {
             throw new IllegalArgumentException("Image dimensions " + width + "x" + height
                     + " must be less than or equal to 32768");
         }
-        int minRowStride = width * format.getBytesPerPixel(); // no overflow
-        long size = (long) minRowStride * height; // <= 16GB
+        int rowStride = width * format.getBytesPerPixel(); // no overflow
+        long size = (long) rowStride * height; // <= 16GB
         long address = nmemCalloc(size, 1);
         if (address == NULL) {
             // execute ref.Cleaner
@@ -122,7 +122,7 @@ public final class Bitmap extends PixelMap implements AutoCloseable {
                 : ImageInfo.AT_OPAQUE;
         return new Bitmap(format,
                 ImageInfo.make(width, height, format.getColorType(), at, cs),
-                address, minRowStride, MemoryUtil::nmemFree);
+                address, rowStride, MemoryUtil::nmemFree);
     }
 
     /**
@@ -204,7 +204,6 @@ public final class Bitmap extends PixelMap implements AutoCloseable {
     @ApiStatus.Internal
     public static void flipVertically(@NonNull Bitmap bitmap) {
         assert !bitmap.isImmutable();
-        assert bitmap.getBase() == null;
         final int height = bitmap.getHeight();
         final int rowStride = bitmap.getRowStride();
         final long addr = bitmap.getAddress();
@@ -274,22 +273,7 @@ public final class Bitmap extends PixelMap implements AutoCloseable {
     }
 
     /**
-     * The heap array that holds pixels, or null if in native.
-     *
-     * @return the pointer of pixel data, or null if released
-     */
-    @ApiStatus.Internal
-    @Nullable
-    @Override
-    public Object getBase() {
-        if (mPixelRef == null) {
-            return null;
-        }
-        return super.getBase();
-    }
-
-    /**
-     * The address of {@code void *pixels} in native, or array base offset.
+     * The address of {@code void *pixels} in native.
      * The address is valid until bitmap closed.
      *
      * @return the pointer of pixel data, or NULL if released
@@ -426,7 +410,6 @@ public final class Bitmap extends PixelMap implements AutoCloseable {
     public int getPixelARGB(int x, int y) {
         checkReleased();
         checkOutOfBounds(x, y);
-        assert getBase() == null;
         int c = MemoryUtil.memGetInt(getAddress() +
                 (long) y * getRowStride() +
                 (long) x * mFormat.getBytesPerPixel());
@@ -601,29 +584,15 @@ public final class Bitmap extends PixelMap implements AutoCloseable {
                 }
             }
         };
-        final Object base = getBase();
-        final long address;
-        if (base != null) {
-            address = PixelRef.getBaseElements(base);
-        } else {
-            address = getAddress();
-        }
-        if (address == NULL) {
-            throw new IllegalStateException("Cannot get the address of pixel memory");
-        }
         try (callback) {
             final boolean success = format.write(callback, mInfo.width(), mInfo.height(),
-                    mFormat, address, quality);
+                    mFormat, getAddress(), quality);
             if (success) {
                 if (callback.exception != null) {
                     throw new IOException("Failed to save image", callback.exception);
                 }
             } else {
                 throw new IOException("Failed to encode image: " + STBImage.stbi_failure_reason());
-            }
-        } finally {
-            if (base != null) {
-                PixelRef.releaseBaseElements(base, address, false);
             }
         }
     }
@@ -1006,10 +975,12 @@ public final class Bitmap extends PixelMap implements AutoCloseable {
 
         final Cleaner.Cleanable mCleanup;
 
-        private SafePixelRef(@NonNull Bitmap owner, @NonNull ImageInfo info,
-                             @Nullable Object base, long address,
-                             int rowStride, @Nullable LongConsumer freeFn) {
-            super(info.width(), info.height(), base, address, rowStride, freeFn);
+        private SafePixelRef(@NonNull Bitmap owner,
+                             @NonNull ImageInfo info,
+                             long address,
+                             int rowStride,
+                             @Nullable LongConsumer freeFn) {
+            super(info.width(), info.height(), null, address, rowStride, freeFn);
             mCleanup = Core.registerCleanup(owner, this);
         }
 
