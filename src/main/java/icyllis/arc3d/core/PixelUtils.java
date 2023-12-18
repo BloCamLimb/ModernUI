@@ -29,12 +29,11 @@ import java.nio.ByteOrder;
  */
 public class PixelUtils {
 
-    public static final sun.misc.Unsafe UNSAFE = getUnsafe();
+    static final sun.misc.Unsafe UNSAFE = getUnsafe();
 
+    // we assume little-endian and do conversion if we're on big-endian machines
     public static final boolean NATIVE_BIG_ENDIAN =
             (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN);
-    // we process pixel via bit shifts, as if it's little endian
-    // i.e. low bit = low address
 
     private static sun.misc.Unsafe getUnsafe() {
         try {
@@ -66,23 +65,23 @@ public class PixelUtils {
         }
     }
 
-    public static void setPixel8(Object base, long addr,
+    public static void setPixel8(long addr,
                                  byte value, int count) {
         long wideValue = (long) value << 8 | value;
         wideValue |= wideValue << 16;
         wideValue |= wideValue << 32;
         while (count >= 8) {
-            UNSAFE.putLong(base, addr, wideValue);
+            MemoryUtil.memPutLong(addr, wideValue);
             addr += 8;
             count -= 8;
         }
         while (count-- != 0) {
-            UNSAFE.putByte(base, addr, value);
+            MemoryUtil.memPutByte(addr, value);
             addr += 1;
         }
     }
 
-    public static void setPixel16(Object base, long addr,
+    public static void setPixel16(long addr,
                                   short value, int count) {
         if (NATIVE_BIG_ENDIAN) {
             value = Short.reverseBytes(value);
@@ -90,40 +89,40 @@ public class PixelUtils {
         long wideValue = (long) value << 16 | value;
         wideValue |= wideValue << 32;
         while (count >= 4) {
-            UNSAFE.putLong(base, addr, wideValue);
+            MemoryUtil.memPutLong(addr, wideValue);
             addr += 8;
             count -= 4;
         }
         while (count-- != 0) {
-            UNSAFE.putShort(base, addr, value);
+            MemoryUtil.memPutShort(addr, value);
             addr += 2;
         }
     }
 
-    public static void setPixel32(Object base, long addr,
+    public static void setPixel32(long addr,
                                   int value, int count) {
         if (NATIVE_BIG_ENDIAN) {
             value = Integer.reverseBytes(value);
         }
         long wideValue = (long) value << 32 | value;
         while (count >= 2) {
-            UNSAFE.putLong(base, addr, wideValue);
+            MemoryUtil.memPutLong(addr, wideValue);
             addr += 8;
             count -= 2;
         }
         if (count != 0) {
             assert count == 1;
-            UNSAFE.putInt(base, addr, value);
+            MemoryUtil.memPutInt(addr, value);
         }
     }
 
-    public static void setPixel64(Object base, long addr,
+    public static void setPixel64(long addr,
                                   long value, int count) {
         if (NATIVE_BIG_ENDIAN) {
             value = Long.reverseBytes(value);
         }
         while (count-- != 0) {
-            UNSAFE.putLong(base, addr, value);
+            MemoryUtil.memPutLong(addr, value);
             addr += 8;
         }
     }

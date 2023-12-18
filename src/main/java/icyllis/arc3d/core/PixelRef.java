@@ -20,7 +20,6 @@
 package icyllis.arc3d.core;
 
 import org.lwjgl.system.NativeType;
-import org.lwjgl.system.jni.JNINativeInterface;
 
 import javax.annotation.Nullable;
 import java.util.function.LongConsumer;
@@ -33,7 +32,6 @@ public class PixelRef extends RefCnt {
 
     protected final int mWidth;
     protected final int mHeight;
-    protected final Object mBase;
     protected final long mAddress;
     protected final int mRowStride;
     protected final LongConsumer mFreeFn;
@@ -45,20 +43,17 @@ public class PixelRef extends RefCnt {
      * <var>rowStride</var> should be width times bpp, or larger.
      * <var>freeFn</var> is used to free the <var>address</var>.
      *
-     * @param base      array if heap buffer; may be null
-     * @param address   address if native buffer, or array base offset; may be NULL
+     * @param address   address of pixel buffer, may be NULL
      * @param rowStride size of one row of buffer; width times bpp, or larger
      * @param freeFn    free function for native buffer; may be null
      */
     public PixelRef(int width,
                     int height,
-                    @Nullable @NativeType("jarray") Object base,
                     @NativeType("void *") long address,
                     int rowStride,
                     @Nullable LongConsumer freeFn) {
         mWidth = width;
         mHeight = height;
-        mBase = base;
         mAddress = address;
         mRowStride = rowStride;
         mFreeFn = freeFn;
@@ -77,11 +72,6 @@ public class PixelRef extends RefCnt {
 
     public int getHeight() {
         return mHeight;
-    }
-
-    @Nullable
-    public Object getBase() {
-        return mBase;
     }
 
     public long getAddress() {
@@ -114,80 +104,9 @@ public class PixelRef extends RefCnt {
         return "PixelRef{" +
                 "mWidth=" + mWidth +
                 ", mHeight=" + mHeight +
-                ", mBase=" + mBase +
                 ", mAddress=0x" + Long.toHexString(mAddress) +
                 ", mRowStride=" + mRowStride +
                 ", mImmutable=" + mImmutable +
                 '}';
-    }
-
-    /**
-     * Make a copy of heap buffer into native. Must be released later, via try-finally.
-     *
-     * @param base heap buffer
-     * @return native buffer
-     */
-    public static long getBaseElements(Object base) {
-        // HotSpot always copy
-        Class<?> clazz = base.getClass();
-        long elems;
-        if (clazz == int[].class) {
-            elems = JNINativeInterface.nGetIntArrayElements((int[]) base, 0);
-        } else if (clazz == short[].class) {
-            elems = JNINativeInterface.nGetShortArrayElements((short[]) base, 0);
-        } else if (clazz == byte[].class) {
-            elems = JNINativeInterface.nGetByteArrayElements((byte[]) base, 0);
-        } else if (clazz == float[].class) {
-            elems = JNINativeInterface.nGetFloatArrayElements((float[]) base, 0);
-        } else {
-            throw new UnsupportedOperationException();
-        }
-        return elems;
-    }
-
-    /**
-     * Release the native buffer returned by {@link #getBaseElements(Object)}.
-     *
-     * @param base  heap buffer
-     * @param elems native buffer
-     * @param write true to copy native buffer back to heap buffer
-     */
-    public static void releaseBaseElements(Object base, long elems, boolean write) {
-        Class<?> clazz = base.getClass();
-        int mode = write ? 0 : JNINativeInterface.JNI_ABORT;
-        if (clazz == int[].class) {
-            JNINativeInterface.nReleaseIntArrayElements((int[]) base, elems, mode);
-        } else if (clazz == short[].class) {
-            JNINativeInterface.nReleaseShortArrayElements((short[]) base, elems, mode);
-        } else if (clazz == byte[].class) {
-            JNINativeInterface.nReleaseByteArrayElements((byte[]) base, elems, mode);
-        } else if (clazz == float[].class) {
-            JNINativeInterface.nReleaseFloatArrayElements((float[]) base, elems, mode);
-        } else {
-            throw new UnsupportedOperationException();
-        }
-    }
-
-    /**
-     * Copy a region of heap buffer into native buffer.
-     *
-     * @param base  heap buffer
-     * @param start start offset
-     * @param len   length
-     * @param buf   native buffer
-     */
-    public static void getBaseRegion(Object base, int start, int len, long buf) {
-        Class<?> clazz = base.getClass();
-        if (clazz == int[].class) {
-            JNINativeInterface.nGetIntArrayRegion((int[]) base, start, len, buf);
-        } else if (clazz == short[].class) {
-            JNINativeInterface.nGetShortArrayRegion((short[]) base, start, len, buf);
-        } else if (clazz == byte[].class) {
-            JNINativeInterface.nGetByteArrayRegion((byte[]) base, start, len, buf);
-        } else if (clazz == float[].class) {
-            JNINativeInterface.nGetFloatArrayRegion((float[]) base, start, len, buf);
-        } else {
-            throw new UnsupportedOperationException();
-        }
     }
 }
