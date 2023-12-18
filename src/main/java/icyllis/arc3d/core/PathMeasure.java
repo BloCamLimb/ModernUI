@@ -83,7 +83,7 @@ public class PathMeasure {
     private float mContourLength;
     private boolean mContourClosed;
 
-    private final float[] mTmp = new float[28];
+    protected final float[] mTmp = new float[28];
 
     /**
      * Create an empty PathMeasure object.

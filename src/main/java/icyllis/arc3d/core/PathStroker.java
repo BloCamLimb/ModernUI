@@ -930,7 +930,7 @@ public class PathStroker implements PathConsumer {
         float[] quad = getQuad(x1, y1, x2, y2);
         if (quad_in_line(quad)) {
             float t = Geometry.findQuadMaxCurvature(
-                    mPrevX, mPrevY, x1, y1, x2, y2
+                    quad, 0
             );
             if (t <= 0 || t >= 1) {
                 // Degenerate into a line.
@@ -938,8 +938,9 @@ public class PathStroker implements PathConsumer {
                 return;
             }
             Geometry.evalQuadAt(
-                    mPrevX, mPrevY, x1, y1, x2, y2,
-                    t, quad, 8
+                    quad, 0,
+                    quad, 8,
+                    t
             );
             lineTo(quad[8], quad[9]);
             var saveJoiner = mJoiner;
@@ -1075,7 +1076,7 @@ public class PathStroker implements PathConsumer {
             // 8,9,10 for t-values
             // (12,13) for evalCubicAt
             int count = Geometry.findCubicMaxCurvature(
-                    mPrevX, mPrevY, x1, y1, x2, y2, x3, y3,
+                    cubic, 0,
                     cubic, 8
             );
             boolean any = false;
@@ -1087,13 +1088,16 @@ public class PathStroker implements PathConsumer {
                     continue;
                 }
                 Geometry.evalCubicAt(
-                        mPrevX, mPrevY, x1, y1, x2, y2, x3, y3,
-                        t, cubic, 12
+                        cubic, 0,
+                        cubic, 12,
+                        t
                 );
+                float evalX = cubic[12];
+                float evalY = cubic[13];
                 // not P0 or P3
-                if (cubic[12] != cubic[0] && cubic[13] != cubic[1] &&
-                        cubic[12] != cubic[6] && cubic[13] != cubic[7]) {
-                    lineTo(cubic[12], cubic[13]);
+                if (evalX != cubic[0] && evalY != cubic[1] &&
+                        evalX != cubic[6] && evalY != cubic[7]) {
+                    lineTo(evalX, evalY);
                     if (!any) {
                         mJoiner = Joiner.get(Paint.JOIN_ROUND);
                         any = true;
@@ -1117,7 +1121,7 @@ public class PathStroker implements PathConsumer {
         }
         if (preJoinTo(tangentX, tangentY, false)) {
             int infCount = Geometry.findCubicInflectionPoints(
-                    mPrevX, mPrevY, x1, y1, x2, y2, x3, y3,
+                    cubic, 0,
                     cubic, 8
             );
             // save ts in advance
@@ -1146,7 +1150,7 @@ public class PathStroker implements PathConsumer {
                 lastT = nextT;
             }
             float cusp = Geometry.findCubicCusp(
-                    mPrevX, mPrevY, x1, y1, x2, y2, x3, y3
+                    cubic, 0
             );
             if (cusp > 0) {
 

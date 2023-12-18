@@ -136,6 +136,16 @@ public class Geometry {
         return 1;
     }
 
+    public static float findQuadMaxCurvature(
+            @Size(min = 6) final float[] src, final int off
+    ) {
+        return findQuadMaxCurvature(
+                src[off]  , src[off+1],
+                src[off+2], src[off+3],
+                src[off+4], src[off+5]
+        );
+    }
+
     /**
      * Given 3 points on a quadratic bezier, if the point of maximum
      * curvature exists on the segment, returns the t value for this
@@ -182,6 +192,20 @@ public class Geometry {
         return t;
     }
 
+    public static void evalQuadAt(
+            @Size(min = 6) final float[] src, final int srcOff,
+            @Size(min = 2) final float[] dst, final int dstOff,
+            final float t
+    ) {
+        evalQuadAt(
+                src[srcOff]  , src[srcOff+1],
+                src[srcOff+2], src[srcOff+3],
+                src[srcOff+4], src[srcOff+5],
+                t,
+                dst, dstOff
+        );
+    }
+
     /**
      * <var>t</var> must be 0 <= t <= 1.0
      */
@@ -190,7 +214,7 @@ public class Geometry {
             final float x1, final float y1,
             final float x2, final float y2,
             final float t,
-            final float[] dst, final int off
+            @Size(min = 2) final float[] dst, final int off
     ) {
         assert t >= 0 && t <= 1;
         final float Ax = x2 - (x1 + x1) + x0;
@@ -203,15 +227,15 @@ public class Geometry {
     }
 
     public static void evalQuadAt(
-            final float[] src, final int off,
+            @Size(min = 6) final float[] src, final int srcOff,
             final float t,
-            final float[] pos, final int posOff,
-            final float[] tangent, final int tangentOff
+            @Size(min = 2) final float[] pos, final int posOff,
+            @Size(min = 2) final float[] tangent, final int tangentOff
     ) {
         evalQuadAt(
-                src[off]  , src[off+1],
-                src[off+2], src[off+3],
-                src[off+4], src[off+5],
+                src[srcOff]  , src[srcOff+1],
+                src[srcOff+2], src[srcOff+3],
+                src[srcOff+4], src[srcOff+5],
                 t,
                 pos, posOff,
                 tangent, tangentOff
@@ -227,8 +251,8 @@ public class Geometry {
             final float x1, final float y1,
             final float x2, final float y2,
             final float t,
-            final float[] pos, final int posOff,
-            final float[] tangent, final int tangentOff
+            @Size(min = 2) final float[] pos, final int posOff,
+            @Size(min = 2) final float[] tangent, final int tangentOff
     ) {
         assert t >= 0 && t <= 1;
         //  P(t)    = (1-t)^2 * p0 + 2t (1-t) * p1 + t^2 * p2
@@ -261,8 +285,8 @@ public class Geometry {
     }
 
     public static void chopQuadAt(
-            final float[] src, final int srcOff,
-            final float[] dst, final int dstOff,
+            @Size(min = 6) final float[] src, final int srcOff,
+            @Size(min = 10) final float[] dst, final int dstOff,
             final float t
     ) {
         chopQuadAt(
@@ -279,7 +303,7 @@ public class Geometry {
             final float x1, final float y1,
             final float x2, final float y2,
             final float t,
-            final float[] dst, final int off
+            @Size(min = 10) final float[] dst, final int off
     ) {
         assert t >= 0 && t <= 1;
 
@@ -317,6 +341,19 @@ public class Geometry {
         dst[off+9] = y2;
     }
 
+    public static int findCubicInflectionPoints(
+            @Size(min = 8) final float[] src, final int srcOff,
+            @Size(min = 2) final float[] dst, final int dstOff
+    ) {
+        return findCubicInflectionPoints(
+                src[srcOff]  , src[srcOff+1],
+                src[srcOff+2], src[srcOff+3],
+                src[srcOff+4], src[srcOff+5],
+                src[srcOff+6], src[srcOff+7],
+                dst, dstOff
+        );
+    }
+
     /**
      * Given a cubic bezier, return 0, 1, or 2 t-values that represent the
      * inflection points.
@@ -326,7 +363,7 @@ public class Geometry {
             final float x1, final float y1,
             final float x2, final float y2,
             final float x3, final float y3,
-            final float[] roots, final int off
+            @Size(min = 2) final float[] roots, final int off
     ) {
         //  find the parameter value `t` where curvature is zero
         //  P(t)    = (1-t)^3 * p0 + 3t (1-t)^2 * p1 + 3t^2 (1-t) * p2 + t^3 * p3
@@ -357,6 +394,21 @@ public class Geometry {
                 roots, off);
     }
 
+    public static void evalCubicAt(
+            @Size(min = 8) final float[] src, final int srcOff,
+            @Size(min = 2) final float[] dst, final int dstOff,
+            final float t
+    ) {
+        evalCubicAt(
+                src[srcOff]  , src[srcOff+1],
+                src[srcOff+2], src[srcOff+3],
+                src[srcOff+4], src[srcOff+5],
+                src[srcOff+6], src[srcOff+7],
+                t,
+                dst, dstOff
+        );
+    }
+
     /**
      * <var>t</var> must be 0 <= t <= 1.0
      */
@@ -366,7 +418,7 @@ public class Geometry {
             final float x2, final float y2,
             final float x3, final float y3,
             final float t,
-            final float[] pos, final int off
+            @Size(min = 2) final float[] dst, final int off
     ) {
         assert t >= 0 && t <= 1;
         float Ax = x3 + 3 * (x1 - x2) - x0;
@@ -376,21 +428,21 @@ public class Geometry {
         float Cx = 3 * (x1 - x0);
         float Cy = 3 * (y1 - y0);
 
-        pos[off]   = ((Ax * t + Bx) * t + Cx) * t + x0;
-        pos[off+1] = ((Ay * t + By) * t + Cy) * t + y0;
+        dst[off]   = ((Ax * t + Bx) * t + Cx) * t + x0;
+        dst[off+1] = ((Ay * t + By) * t + Cy) * t + y0;
     }
 
     public static void evalCubicAt(
-            final float[] src, final int off,
+            @Size(min = 8) final float[] src, final int srcOff,
             final float t,
-            final float[] pos, final int posOff,
-            final float[] tangent, final int tangentOff
+            @Size(min = 2) final float[] pos, final int posOff,
+            @Size(min = 2) final float[] tangent, final int tangentOff
     ) {
         evalCubicAt(
-                src[off]  , src[off+1],
-                src[off+2], src[off+3],
-                src[off+4], src[off+5],
-                src[off+6], src[off+7],
+                src[srcOff]  , src[srcOff+1],
+                src[srcOff+2], src[srcOff+3],
+                src[srcOff+4], src[srcOff+5],
+                src[srcOff+6], src[srcOff+7],
                 t,
                 pos, posOff,
                 tangent, tangentOff
@@ -407,8 +459,8 @@ public class Geometry {
             final float x2, final float y2,
             final float x3, final float y3,
             final float t,
-            final float[] pos, final int posOff,
-            final float[] tangent, final int tangentOff
+            @Size(min = 2) final float[] pos, final int posOff,
+            @Size(min = 2) final float[] tangent, final int tangentOff
     ) {
         assert t >= 0 && t <= 1;
         //  P(t)    = (1-t)^3 * p0 + 3t (1-t)^2 * p1 + 3t^2 (1-t) * p2 + t^3 * p3
@@ -469,7 +521,7 @@ public class Geometry {
             final float x2, final float y2,
             final float x3, final float y3,
             final float t,
-            final float[] dst, final int off
+            @Size(min = 2) final float[] dst, final int off
     ) {
         float Ax = x3 + 3 * (x1 - x2) - x0;
         float Ay = y3 + 3 * (y1 - y2) - y0;
@@ -483,8 +535,8 @@ public class Geometry {
     }
 
     public static void chopCubicAt(
-            final float[] src, final int srcOff,
-            final float[] dst, final int dstOff,
+            @Size(min = 8) final float[] src, final int srcOff,
+            @Size(min = 14) final float[] dst, final int dstOff,
             final float t
     ) {
         chopCubicAt(
@@ -503,7 +555,7 @@ public class Geometry {
             final float x2, final float y2,
             final float x3, final float y3,
             final float t,
-            final float[] dst, final int off
+            @Size(min = 14) final float[] dst, final int off
     ) {
         assert t >= 0 && t <= 1;
 
@@ -631,6 +683,19 @@ public class Geometry {
         }
     }
 
+    public static int findCubicMaxCurvature(
+            @Size(min = 8) final float[] src, final int srcOff,
+            @Size(min = 3) final float[] dst, final int dstOff
+    ) {
+        return findCubicMaxCurvature(
+                src[srcOff]  , src[srcOff+1],
+                src[srcOff+2], src[srcOff+3],
+                src[srcOff+4], src[srcOff+5],
+                src[srcOff+6], src[srcOff+7],
+                dst, dstOff
+        );
+    }
+
     /**
      * Returns 1, 2 or 3 t-values.
      */
@@ -639,7 +704,7 @@ public class Geometry {
             final float x1, final float y1,
             final float x2, final float y2,
             final float x3, final float y3,
-            final float[] roots, final int off
+            @Size(min = 3) final float[] roots, final int off
     ) {
         //  P(t)    = (1-t)^3 * p0 + 3t (1-t)^2 * p1 + 3t^2 (1-t) * p2 + t^3 * p3
         //          =   (p3 - 3p2 + 3p1 - p0) t^3 + 3 (p2 - 2p1 + p0) t^2 + 3 (p1 - p0) t + p0
@@ -685,6 +750,17 @@ public class Geometry {
                 *
                 Point.crossProduct(lx, ly, s1x - d0x, s1y - d0y)
                 >= 0;
+    }
+
+    public static float findCubicCusp(
+            @Size(min = 8) final float[] src, final int off
+    ) {
+        return findCubicCusp(
+                src[off]  , src[off+1],
+                src[off+2], src[off+3],
+                src[off+4], src[off+5],
+                src[off+6], src[off+7]
+        );
     }
 
     /**
