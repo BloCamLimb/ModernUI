@@ -21,7 +21,9 @@ package icyllis.arc3d.core;
 
 import org.lwjgl.system.NativeType;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.lang.ref.WeakReference;
 
 /**
  * Immutable structure that pairs ImageInfo with pixels and row stride.
@@ -30,7 +32,10 @@ import javax.annotation.Nullable;
  */
 public class PixelMap {
 
+    @Nonnull
     protected final ImageInfo mInfo;
+    @Nullable
+    protected final WeakReference<Object> mBase;
     protected final long mAddress;
     protected final int mRowStride;
 
@@ -44,17 +49,21 @@ public class PixelMap {
      * The memory lifetime of pixels is managed by the caller.
      *
      * @param info      width, height, AlphaType, ColorType and ColorSpace
-     * @param address   address of pixel buffer, may be NULL
+     * @param base      array if heap buffer; may be null
+     * @param address   address if native buffer, or array base offset; may be NULL
      * @param rowStride size of one row of buffer; width times bpp, or larger
      */
-    public PixelMap(ImageInfo info,
+    public PixelMap(@Nonnull ImageInfo info,
+                    @Nullable Object base,
                     @NativeType("const void *") long address,
                     int rowStride) {
         mInfo = info;
+        mBase = base != null ? new WeakReference<>(base) : null;
         mAddress = address;
         mRowStride = rowStride;
     }
 
+    @Nonnull
     public ImageInfo getInfo() {
         return mInfo;
     }
@@ -78,6 +87,11 @@ public class PixelMap {
     @Nullable
     public ColorSpace getColorSpace() {
         return mInfo.colorSpace();
+    }
+
+    @Nullable
+    public Object getBase() {
+        return mBase != null ? mBase.get() : null;
     }
 
     public long getAddress() {
@@ -105,9 +119,10 @@ public class PixelMap {
                     ((int) (green * 255.0f + 0.5f) << 8) |
                     (int) (red * 255.0f + 0.5f);
 
+            Object base = getBase();
             for (int y = clip.mTop; y < clip.mBottom; ++y) {
                 long addr = getAddress() + (long) y * getRowStride() + (long) clip.x() << 2;
-                PixelUtils.setPixel32(addr, c, clip.width());
+                PixelUtils.setPixel32(base, addr, c, clip.width());
             }
 
             return true;
@@ -120,6 +135,7 @@ public class PixelMap {
     public String toString() {
         return "PixelMap{" +
                 "mInfo=" + mInfo +
+                ", mBase=" + getBase() +
                 ", mAddress=0x" + Long.toHexString(mAddress) +
                 ", mRowStride=" + mRowStride +
                 '}';
