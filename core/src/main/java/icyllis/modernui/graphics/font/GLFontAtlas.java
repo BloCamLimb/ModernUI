@@ -400,7 +400,7 @@ public class GLFontAtlas implements AutoCloseable {
                 default -> throw new IllegalArgumentException();
             };
             glGetTextureImage(texture.getHandle(), 0, externalGlFormat, GL_UNSIGNED_BYTE,
-                    bitmap.getSize(), bitmap.getAddress());
+                    (int) bitmap.getSize(), bitmap.getAddress());
             CompletableFuture.runAsync(() -> {
                 try (bitmap) {
                     bitmap.saveToPath(Bitmap.SaveFormat.PNG, 0, Path.of(path));
