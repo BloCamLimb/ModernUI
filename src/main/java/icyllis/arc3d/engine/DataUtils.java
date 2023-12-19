@@ -23,7 +23,7 @@ import icyllis.arc3d.core.ImageInfo;
 
 public final class DataUtils {
 
-    public static boolean compressionTypeIsOpaque(int compression) {
+    public static boolean compressionTypeIsOpaque(@ImageInfo.CompressionType int compression) {
         return switch (compression) {
             case ImageInfo.COMPRESSION_NONE,
                     ImageInfo.COMPRESSION_BC1_RGB8_UNORM,
@@ -37,7 +37,7 @@ public final class DataUtils {
         return (size + 3) >> 2;
     }
 
-    public static long numBlocks(int compression, int width, int height) {
+    public static long numBlocks(@ImageInfo.CompressionType int compression, int width, int height) {
         return switch (compression) {
             case ImageInfo.COMPRESSION_NONE -> (long) width * height;
             case ImageInfo.COMPRESSION_ETC2_RGB8_UNORM,

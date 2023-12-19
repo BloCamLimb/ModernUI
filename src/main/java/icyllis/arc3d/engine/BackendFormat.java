@@ -75,6 +75,7 @@ public abstract class BackendFormat {
     /**
      * @see ImageInfo#COMPRESSION_NONE
      */
+    @ImageInfo.CompressionType
     public abstract int getCompressionType();
 
     public final boolean isCompressed() {

@@ -259,6 +259,7 @@ public final class GLCore extends GL45C {
     /**
      * @see ImageInfo#COMPRESSION_NONE
      */
+    @ImageInfo.CompressionType
     public static int glFormatCompressionType(@NativeType("GLenum") int format) {
         return switch (format) {
             case GL_COMPRESSED_RGB8_ETC2 -> ImageInfo.COMPRESSION_ETC2_RGB8_UNORM;
