@@ -61,19 +61,22 @@ import static org.lwjgl.system.MemoryUtil.*;
  * @see BitmapFactory
  */
 @SuppressWarnings("unused")
-public final class Bitmap extends PixelMap implements AutoCloseable {
+public final class Bitmap implements AutoCloseable {
 
     public static final Marker MARKER = MarkerManager.getMarker("Bitmap");
     public static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss");
 
     @NonNull
     private final Format mFormat;
-    private volatile SafePixelRef mPixelRef;
+    @NonNull
+    private PixelMap mPixelMap;
+    @Nullable
+    private SafePixelRef mPixelRef;
 
     Bitmap(@NonNull Format format, @NonNull ImageInfo info, long addr, int rowStride,
            @Nullable LongConsumer freeFn) {
-        super(info, null, addr, rowStride);
         mFormat = format;
+        mPixelMap = new PixelMap(info, null, addr, rowStride);
         mPixelRef = new SafePixelRef(this, info, addr, rowStride, freeFn);
     }
 
@@ -233,9 +236,8 @@ public final class Bitmap extends PixelMap implements AutoCloseable {
     }
 
     @NonNull
-    @Override
     public ImageInfo getInfo() {
-        return mInfo;
+        return mPixelMap.getInfo();
     }
 
     /**
@@ -248,28 +250,118 @@ public final class Bitmap extends PixelMap implements AutoCloseable {
     /**
      * Returns the width of the bitmap.
      */
-    @Override
     public int getWidth() {
         if (mPixelRef == null) {
             LOGGER.warn(MARKER, "Called getWidth() on a recycle()'d bitmap! This is undefined behavior!");
         }
-        return super.getWidth();
+        return mPixelMap.getWidth();
     }
 
     /**
      * Returns the height of the bitmap.
      */
-    @Override
     public int getHeight() {
         if (mPixelRef == null) {
             LOGGER.warn(MARKER, "Called getHeight() on a recycle()'d bitmap! This is undefined behavior!");
         }
-        return super.getHeight();
+        return mPixelMap.getHeight();
+    }
+
+    /**
+     * Returns the number of bytes that can be used to store this bitmap's pixels.
+     */
+    public long getSize() {
+        if (mPixelRef == null) {
+            LOGGER.warn(MARKER, "Called getSize() on a recycle()'d bitmap! This is undefined behavior!");
+            return 0;
+        }
+        return (long) getRowStride() * getHeight();
     }
 
     @ApiStatus.Internal
-    public int getSize() {
-        return mFormat.getBytesPerPixel() * getWidth() * getHeight();
+    public int getColorType() {
+        return mPixelMap.getColorType();
+    }
+
+    @ApiStatus.Internal
+    public int getAlphaType() {
+        return mPixelMap.getAlphaType();
+    }
+
+    /**
+     * Reinterpret pixels with newColorType and newAlphaType.
+     *
+     * @throws IllegalArgumentException newColorType has alpha but newAlphaType is unknown,
+     *                                  or new bpp is not equal to old bpp
+     */
+    @ApiStatus.Internal
+    public void setColorInfo(int newColorType, int newAlphaType) {
+        newAlphaType = ImageInfo.validateAlphaType(newColorType, newAlphaType);
+        var oldInfo = getInfo();
+        if (oldInfo.bytesPerPixel() != ImageInfo.bytesPerPixel(newColorType)) {
+            throw new IllegalArgumentException();
+        }
+        var newInfo = new ImageInfo(
+                oldInfo.width(), oldInfo.height(),
+                newColorType, newAlphaType,
+                oldInfo.colorSpace()
+        );
+        mPixelMap = new PixelMap(newInfo, mPixelMap);
+    }
+
+    /**
+     * Returns the color space associated with this bitmap. If the color
+     * space is unknown, this method returns null.
+     */
+    @Nullable
+    public ColorSpace getColorSpace() {
+        return mPixelMap.getColorSpace();
+    }
+
+    /**
+     * <p>Modifies the bitmap to have the specified {@link ColorSpace}, without
+     * affecting the underlying allocation backing the bitmap.</p>
+     *
+     * <p>This affects how the framework will interpret the color at each pixel.</p>
+     *
+     * @param newColorSpace to assign to the bitmap
+     * @throws IllegalArgumentException If the specified color space is not {@link ColorSpace.Model#RGB RGB},
+     *                                  has a transfer function that is not an
+     *                                  {@link ColorSpace.Rgb.TransferParameters ICC parametric curve}, or whose
+     *                                  components min/max values reduce the numerical range compared to the
+     *                                  previously assigned color space.
+     */
+    public void setColorSpace(@Nullable ColorSpace newColorSpace) {
+        var oldInfo = getInfo();
+        var oldColorSpace = oldInfo.colorSpace();
+        if (oldColorSpace == newColorSpace) {
+            return;
+        }
+        if (newColorSpace != null) {
+            if (!(newColorSpace instanceof ColorSpace.Rgb rgbColorSpace)) {
+                throw new IllegalArgumentException("The new ColorSpace must use the RGB color model");
+            }
+            if (rgbColorSpace.getTransferParameters() == null) {
+                throw new IllegalArgumentException("The new ColorSpace must use an ICC parametric transfer function");
+            }
+        }
+        if (oldColorSpace != null && newColorSpace != null) {
+            for (int i = 0; i < oldColorSpace.getComponentCount(); i++) {
+                if (oldColorSpace.getMinValue(i) < newColorSpace.getMinValue(i)) {
+                    throw new IllegalArgumentException("The new ColorSpace cannot increase the "
+                            + "minimum value for any of the components compared to the current "
+                            + "ColorSpace. To perform this type of conversion create a new "
+                            + "Bitmap in the desired ColorSpace and draw this Bitmap into it.");
+                }
+                if (oldColorSpace.getMaxValue(i) > newColorSpace.getMaxValue(i)) {
+                    throw new IllegalArgumentException("The new ColorSpace cannot decrease the "
+                            + "maximum value for any of the components compared to the current "
+                            + "ColorSpace/ To perform this type of conversion create a new "
+                            + "Bitmap in the desired ColorSpace and draw this Bitmap into it.");
+                }
+            }
+        }
+        mPixelMap = new PixelMap(oldInfo.makeColorSpace(newColorSpace), mPixelMap);
     }
 
     /**
@@ -279,12 +371,11 @@ public final class Bitmap extends PixelMap implements AutoCloseable {
      * @return the pointer of pixel data, or NULL if released
      */
     @ApiStatus.Internal
-    @Override
     public long getAddress() {
         if (mPixelRef == null) {
             return NULL;
         }
-        return super.getAddress();
+        return mPixelMap.getAddress();
     }
 
     /**
@@ -293,35 +384,12 @@ public final class Bitmap extends PixelMap implements AutoCloseable {
      *
      * @return the scanline size in bytes
      */
-    @Override
     public int getRowStride() {
         // XXX: row stride is always (width * bpp) in Modern UI
         if (mPixelRef == null) {
             throw new IllegalStateException("Can't call getRowStride() on a recycled bitmap");
         }
-        return super.getRowStride();
-    }
-
-    @ApiStatus.Internal
-    @Override
-    public int getColorType() {
-        return super.getColorType();
-    }
-
-    @ApiStatus.Internal
-    @Override
-    public int getAlphaType() {
-        return super.getAlphaType();
-    }
-
-    /**
-     * Returns the color space associated with this bitmap. If the color
-     * space is unknown, this method returns null.
-     */
-    @Nullable
-    @Override
-    public ColorSpace getColorSpace() {
-        return super.getColorSpace();
+        return mPixelMap.getRowStride();
     }
 
     /**
@@ -336,7 +404,7 @@ public final class Bitmap extends PixelMap implements AutoCloseable {
      */
     public boolean hasAlpha() {
         assert mPixelRef != null;
-        return !mInfo.isOpaque();
+        return !getInfo().isOpaque();
     }
 
     /**
@@ -438,6 +506,18 @@ public final class Bitmap extends PixelMap implements AutoCloseable {
             return Color.argb(Color.alpha(argb), v[0], v[1], v[2]);
         }
         return argb;
+    }
+
+    /**
+     * The current pixel map, which is usually paired with {@link PixelRef}.
+     * This method is <b>UNSAFE</b>, use with caution!
+     *
+     * @return the current pixel map
+     */
+    @ApiStatus.Internal
+    @NonNull
+    public PixelMap getPixelMap() {
+        return mPixelMap;
     }
 
     /**
@@ -585,7 +665,7 @@ public final class Bitmap extends PixelMap implements AutoCloseable {
             }
         };
         try (callback) {
-            final boolean success = format.write(callback, mInfo.width(), mInfo.height(),
+            final boolean success = format.write(callback, getWidth(), getHeight(),
                     mFormat, getAddress(), quality);
             if (success) {
                 if (callback.exception != null) {
@@ -649,7 +729,7 @@ public final class Bitmap extends PixelMap implements AutoCloseable {
     public String toString() {
         return "Bitmap{" +
                 "mFormat=" + mFormat +
-                ", mInfo=" + mInfo +
+                ", mInfo=" + getInfo() +
                 ", mPixelRef=" + mPixelRef +
                 '}';
     }

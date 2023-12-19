@@ -135,11 +135,11 @@ public final class BitmapFactory {
         if (opts == null) return;
 
         if (opts.inPreferredColorSpace != null) {
-            if (!(opts.inPreferredColorSpace instanceof ColorSpace.Rgb)) {
+            if (!(opts.inPreferredColorSpace instanceof ColorSpace.Rgb rgbColorSpace)) {
                 throw new IllegalArgumentException("The destination color space must use the " +
                         "RGB color model");
             }
-            if (((ColorSpace.Rgb) opts.inPreferredColorSpace).getTransferParameters() == null) {
+            if (rgbColorSpace.getTransferParameters() == null) {
                 throw new IllegalArgumentException("The destination color space must use an " +
                         "ICC parametric transfer function");
             }
