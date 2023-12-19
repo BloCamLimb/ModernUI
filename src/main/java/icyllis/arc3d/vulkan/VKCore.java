@@ -141,6 +141,7 @@ public final class VKCore extends VK11 {
         };
     }
 
+    @ImageInfo.CompressionType
     public static int vkFormatCompressionType(@NativeType("VkFormat") int vkFormat) {
         return switch (vkFormat) {
             case VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK -> ImageInfo.COMPRESSION_ETC2_RGB8_UNORM;

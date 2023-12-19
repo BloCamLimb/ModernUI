@@ -25,7 +25,6 @@ import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Objects;
@@ -369,6 +368,51 @@ public final class ImageInfo {
     }
     //@formatter:on
 
+    @AlphaType
+    public static int validateAlphaType(@ColorType int ct, @AlphaType int at) {
+        switch (ct) {
+            case CT_UNKNOWN:
+                at = AT_UNKNOWN;
+                break;
+            case CT_ALPHA_8:
+            case CT_ALPHA_16:
+            case CT_ALPHA_F16:
+                if (at == AT_UNPREMUL) {
+                    at = AT_PREMUL;
+                }
+                // fallthrough
+            case CT_GRAY_ALPHA_88:
+            case CT_RGBA_8888:
+            case CT_BGRA_8888:
+            case CT_RGBA_8888_SRGB:
+            case CT_RGBA_1010102:
+            case CT_BGRA_1010102:
+            case CT_RGBA_F16:
+            case CT_RGBA_F16_CLAMPED:
+            case CT_RGBA_F32:
+            case CT_RGBA_16161616:
+                if (at != AT_OPAQUE && at != AT_PREMUL && at != AT_UNPREMUL) {
+                    throw new IllegalArgumentException("at is unknown");
+                }
+                break;
+            case CT_GRAY_8:
+            case CT_R_8:
+            case CT_RG_88:
+            case CT_RGB_565:
+            case CT_RGB_888:
+            case CT_RGB_888x:
+            case CT_R_16:
+            case CT_R_F16:
+            case CT_RG_1616:
+            case CT_RG_F16:
+                at = AT_OPAQUE;
+                break;
+            default:
+                throw new AssertionError("ct is not valid");
+        }
+        return at;
+    }
+
     @Size(min = 0)
     private int width;
     @Size(min = 0)
@@ -597,7 +641,8 @@ public final class ImageInfo {
     }
 
     /**
-     * Creates ImageInfo with same ColorType, width, and height, with AlphaType set to newAlphaType.
+     * Creates ImageInfo with same ColorSpace, ColorType, width, and height,
+     * with AlphaType set to newAlphaType.
      *
      * @return created ImageInfo
      */
@@ -607,13 +652,25 @@ public final class ImageInfo {
     }
 
     /**
-     * Creates ImageInfo with same AlphaType, width, and height, with ColorType set to newColorType.
+     * Creates ImageInfo with same ColorSpace, AlphaType, width, and height,
+     * with ColorType set to newColorType.
      *
      * @return created ImageInfo
      */
     @Nonnull
     public ImageInfo makeColorType(@ColorType int newColorType) {
         return new ImageInfo(width, height, newColorType, alphaType, colorSpace);
+    }
+
+    /**
+     * Creates ImageInfo with same ColorType, AlphaType, width, and height,
+     * with ColorSpace set to newColorSpace.
+     *
+     * @return created ImageInfo
+     */
+    @Nonnull
+    public ImageInfo makeColorSpace(@Nullable ColorSpace newColorSpace) {
+        return new ImageInfo(width, height, colorType, alphaType, newColorSpace);
     }
 
     @Override

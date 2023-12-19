@@ -24,6 +24,7 @@ import org.lwjgl.system.NativeType;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
+import java.util.Objects;
 
 /**
  * Immutable structure that pairs ImageInfo with pixels and row stride.
@@ -57,8 +58,19 @@ public class PixelMap {
                     @Nullable Object base,
                     @NativeType("const void *") long address,
                     int rowStride) {
-        mInfo = info;
-        mBase = base != null ? new WeakReference<>(base) : null;
+        this(info, base != null ? new WeakReference<>(base) : null, address, rowStride);
+    }
+
+    public PixelMap(@Nonnull ImageInfo newInfo, @Nonnull PixelMap oldPixelMap) {
+        this(newInfo, oldPixelMap.mBase, oldPixelMap.mAddress, oldPixelMap.mRowStride);
+    }
+
+    PixelMap(@Nonnull ImageInfo info,
+             @Nullable WeakReference<Object> base,
+             @NativeType("const void *") long address,
+             int rowStride) {
+        mInfo = Objects.requireNonNull(info);
+        mBase = base;
         mAddress = address;
         mRowStride = rowStride;
     }
