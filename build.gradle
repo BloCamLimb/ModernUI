@@ -14,9 +14,9 @@ repositories {
 
 dependencies {
     compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
-    compileOnly 'org.jetbrains:annotations:23.0.0'
+    compileOnly 'org.jetbrains:annotations:23.1.0'
 
-    implementation "it.unimi.dsi:fastutil:8.5.8"
+    implementation "it.unimi.dsi:fastutil:${fastutil_version}"
 
     testImplementation 'org.openjdk.jmh:jmh-core:1.35'
     testAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.35'
