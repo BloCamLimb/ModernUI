@@ -19,8 +19,7 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.RefCnt;
-import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.ops.OpsTask;
 
 public class SurfaceFillContext extends SurfaceContext {
@@ -33,8 +32,10 @@ public class SurfaceFillContext extends SurfaceContext {
     public SurfaceFillContext(RecordingContext context,
                               SurfaceView readView,
                               SurfaceView writeView,
-                              int colorInfo) {
-        super(context, readView, colorInfo);
+                              int colorType,
+                              int alphaType,
+                              ColorSpace colorSpace) {
+        super(context, readView, colorType, alphaType, colorSpace);
         mWriteView = writeView;
     }
 

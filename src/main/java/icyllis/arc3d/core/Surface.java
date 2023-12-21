@@ -129,18 +129,20 @@ public class Surface extends RefCnt {
     public static Surface wrapBackendRenderTarget(RecordingContext rContext,
                                                   BackendRenderTarget backendRenderTarget,
                                                   int origin,
-                                                  int colorType) {
+                                                  int colorType,
+                                                  ColorSpace colorSpace) {
         if (colorType == ImageInfo.CT_UNKNOWN) {
             return null;
         }
         var provider = rContext.getSurfaceProvider();
-        var fsp = provider.wrapBackendRenderTarget(backendRenderTarget, null);
-        if (fsp == null) {
+        var rtProxy = provider.wrapBackendRenderTarget(backendRenderTarget, null);
+        if (rtProxy == null) {
             return null;
         }
         var dev = SurfaceDevice.make(rContext,
                 colorType,
-                fsp,
+                colorSpace,
+                rtProxy,
                 origin,
                 false);
         if (dev == null) {

@@ -19,7 +19,6 @@
 
 package icyllis.arc3d.core;
 
-import icyllis.arc3d.engine.Engine;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -35,12 +34,7 @@ import java.util.Objects;
  * ImageInfo contains dimensions, the pixel integral width and height. It encodes
  * how pixel bits describe alpha, transparency; color components red, blue, and green.
  * <p>
- * ColorInfo is used to interpret a color (GPU side): color type + alpha type.
- * The color space is always sRGB, no color space transformation is needed.
- * <p>
- * ColorInfo are implemented as ints to reduce object allocation. This class
- * is provided to pack and unpack the &lt;color type, alpha type&gt; tuple
- * into the int.
+ * ColorInfo is used to interpret a color: color type + alpha type + color space.
  */
 public final class ImageInfo {
 
@@ -179,8 +173,8 @@ public final class ImageInfo {
      * RGB, or RGBA. It specifies the channels, their type, and width. It does not refer to a texture
      * format and the mapping to texture formats may be many-to-many. It does not specify the sRGB
      * encoding of the stored values. The components are listed in order of where they appear in
-     * memory, except for {@link #CT_RGB_565}. In other words the first component listed is in the
-     * low bits and the last component in the high bits, reverse for {@link #CT_RGB_565}.
+     * memory, except for packed formats {@link #CT_RGB_565}, {@link #CT_RGBA_1010102} and
+     * {@link #CT_BGRA_1010102}, the first component appear in most-significant bits.
      * <p>
      * Note: Skia doesn't support big-endian machines, because SkColorType doesn't match GrColorType.
      * We support that because we don't use bit shifts for most operations. When needed, we check
@@ -250,6 +244,11 @@ public final class ImageInfo {
             CT_COUNT        = 28;
     //@formatter:on
 
+    /**
+     * Returns the number of bytes required to store a pixel.
+     *
+     * @return bytes per pixel
+     */
     public static int bytesPerPixel(@ColorType int ct) {
         return switch (ct) {
             case CT_UNKNOWN -> 0;
@@ -285,89 +284,13 @@ public final class ImageInfo {
     }
 
     /**
-     * Creates a color info based on the supplied color type and alpha type.
+     * Returns a valid AlphaType for <var>ct</var>. If there is more than one valid
+     * AlphaType, returns <var>at</var>, if valid.
      *
-     * @param colorType the color type of the color info
-     * @param alphaType the alpha type of the color info
-     * @return the color info based on color type and alpha type
+     * @return a valid AlphaType
+     * @throws IllegalArgumentException <var>at</var> is unknown, <var>ct</var> is not
+     *                                  unknown, and <var>ct</var> has alpha channel.
      */
-    public static int makeColorInfo(int colorType, int alphaType) {
-        assert ((alphaType & ~3) == 0);
-        return colorType | (alphaType << 16);
-    }
-
-    /**
-     * Extracts the color type from the supplied color info.
-     *
-     * @param colorInfo the color info to extract the color type from
-     * @return the color type defined in the supplied color info
-     */
-    public static int colorType(int colorInfo) {
-        assert ((colorInfo & ~0x3001F) == 0);
-        return colorInfo & 0xFFFF;
-    }
-
-    /**
-     * Extracts the alpha type from the supplied color info.
-     *
-     * @param colorInfo the color info to extract the alpha type from
-     * @return the alpha type defined in the supplied color info
-     */
-    public static int alphaType(int colorInfo) {
-        assert ((colorInfo & ~0x3001F) == 0);
-        return colorInfo >>> 16;
-    }
-
-    /**
-     * Creates new ColorInfo with same AlphaType, with ColorType set to newColorType.
-     */
-    public static int makeColorType(int colorInfo, int newColorType) {
-        return makeColorInfo(newColorType, alphaType(colorInfo));
-    }
-
-    /**
-     * Creates new ColorInfo with same ColorType, with AlphaType set to newAlphaType.
-     */
-    public static int makeAlphaType(int colorInfo, int newAlphaType) {
-        return makeColorInfo(colorType(colorInfo), newAlphaType);
-    }
-
-    //@formatter:off
-    public static String colorTypeToString(@ColorType int ct) {
-        return switch (ct) {
-            case CT_UNKNOWN             -> "UNKNOWN";
-            case CT_R_8                 -> "R_8";
-            case CT_ALPHA_8             -> "ALPHA_8";
-            case CT_GRAY_8              -> "GRAY_8";
-            case CT_RGB_565             -> "RGB_565";
-            case CT_RG_88               -> "RG_88";
-            case CT_R_16                -> "R_16";
-            case CT_R_F16               -> "R_F16";
-            case CT_ALPHA_16            -> "ALPHA_16";
-            case CT_ALPHA_F16           -> "ALPHA_F16";
-            case CT_GRAY_ALPHA_88       -> "GRAY_ALPHA_88";
-            case CT_RGB_888             -> "RGB_888";
-            case CT_RGB_888x            -> "RGB_888x";
-            case CT_RGBA_8888           -> "RGBA_8888";
-            case CT_BGRA_8888           -> "BGRA_8888";
-            case CT_BGRA_1010102        -> "BGRA_1010102";
-            case CT_RGBA_1010102        -> "RGBA_1010102";
-            case CT_RG_1616             -> "RG_1616";
-            case CT_RG_F16              -> "RG_F16";
-            case CT_R_8xxx              -> "R_8xxx";
-            case CT_ALPHA_8xxx          -> "ALPHA_8xxx";
-            case CT_GRAY_8xxx           -> "GRAY_8xxx";
-            case CT_RGBA_8888_SRGB      -> "RGBA_8888_SRGB";
-            case CT_RGBA_16161616       -> "RGBA_16161616";
-            case CT_RGBA_F16            -> "RGBA_F16";
-            case CT_RGBA_F16_CLAMPED    -> "RGBA_F16_CLAMPED";
-            case CT_RGBA_F32            -> "RGBA_F32";
-            case CT_ALPHA_F32xxx        -> "ALPHA_F32xxx";
-            default -> throw new AssertionError(ct);
-        };
-    }
-    //@formatter:on
-
     @AlphaType
     public static int validateAlphaType(@ColorType int ct, @AlphaType int at) {
         switch (ct) {
@@ -408,10 +331,81 @@ public final class ImageInfo {
                 at = AT_OPAQUE;
                 break;
             default:
-                throw new AssertionError("ct is not valid");
+                throw new AssertionError(ct);
         }
         return at;
     }
+
+    @ApiStatus.Internal
+    public static int colorTypeChannelFlags(@ColorType int ct) {
+        return switch (ct) {
+            case CT_UNKNOWN -> 0;
+            case CT_ALPHA_8,
+                    CT_ALPHA_16,
+                    CT_ALPHA_F16,
+                    CT_ALPHA_8xxx,
+                    CT_ALPHA_F32xxx -> Color.COLOR_CHANNEL_FLAG_ALPHA;
+            case CT_RGB_565,
+                    CT_RGB_888,
+                    CT_RGB_888x -> Color.COLOR_CHANNEL_FLAGS_RGB;
+            case CT_RGBA_16161616,
+                    CT_RGBA_F32,
+                    CT_RGBA_F16_CLAMPED,
+                    CT_RGBA_F16,
+                    CT_BGRA_1010102,
+                    CT_RGBA_1010102,
+                    CT_BGRA_8888,
+                    CT_RGBA_8888_SRGB,
+                    CT_RGBA_8888 -> Color.COLOR_CHANNEL_FLAGS_RGBA;
+            case CT_RG_88,
+                    CT_RG_1616,
+                    CT_RG_F16 -> Color.COLOR_CHANNEL_FLAGS_RG;
+            case CT_GRAY_8,
+                    CT_GRAY_8xxx -> Color.COLOR_CHANNEL_FLAG_GRAY;
+            case CT_R_8,
+                    CT_R_16,
+                    CT_R_F16,
+                    CT_R_8xxx -> Color.COLOR_CHANNEL_FLAG_RED;
+            case CT_GRAY_ALPHA_88 -> Color.COLOR_CHANNEL_FLAG_GRAY | Color.COLOR_CHANNEL_FLAG_ALPHA;
+            default -> throw new AssertionError(ct);
+        };
+    }
+
+    //@formatter:off
+    public static String colorTypeToString(@ColorType int ct) {
+        return switch (ct) {
+            case CT_UNKNOWN             -> "UNKNOWN";
+            case CT_R_8                 -> "R_8";
+            case CT_ALPHA_8             -> "ALPHA_8";
+            case CT_GRAY_8              -> "GRAY_8";
+            case CT_RGB_565             -> "RGB_565";
+            case CT_RG_88               -> "RG_88";
+            case CT_R_16                -> "R_16";
+            case CT_R_F16               -> "R_F16";
+            case CT_ALPHA_16            -> "ALPHA_16";
+            case CT_ALPHA_F16           -> "ALPHA_F16";
+            case CT_GRAY_ALPHA_88       -> "GRAY_ALPHA_88";
+            case CT_RGB_888             -> "RGB_888";
+            case CT_RGB_888x            -> "RGB_888x";
+            case CT_RGBA_8888           -> "RGBA_8888";
+            case CT_BGRA_8888           -> "BGRA_8888";
+            case CT_BGRA_1010102        -> "BGRA_1010102";
+            case CT_RGBA_1010102        -> "RGBA_1010102";
+            case CT_RG_1616             -> "RG_1616";
+            case CT_RG_F16              -> "RG_F16";
+            case CT_R_8xxx              -> "R_8xxx";
+            case CT_ALPHA_8xxx          -> "ALPHA_8xxx";
+            case CT_GRAY_8xxx           -> "GRAY_8xxx";
+            case CT_RGBA_8888_SRGB      -> "RGBA_8888_SRGB";
+            case CT_RGBA_16161616       -> "RGBA_16161616";
+            case CT_RGBA_F16            -> "RGBA_F16";
+            case CT_RGBA_F16_CLAMPED    -> "RGBA_F16_CLAMPED";
+            case CT_RGBA_F32            -> "RGBA_F32";
+            case CT_ALPHA_F32xxx        -> "ALPHA_F32xxx";
+            default -> throw new AssertionError(ct);
+        };
+    }
+    //@formatter:on
 
     @Size(min = 0)
     private int width;
@@ -611,7 +605,7 @@ public final class ImageInfo {
      */
     public boolean isOpaque() {
         return alphaType == AT_OPAQUE ||
-                (Engine.colorTypeChannelFlags(colorType) & Color.COLOR_CHANNEL_FLAG_ALPHA) == 0;
+                (colorTypeChannelFlags(colorType) & Color.COLOR_CHANNEL_FLAG_ALPHA) == 0;
     }
 
     /**
@@ -622,7 +616,6 @@ public final class ImageInfo {
      */
     public boolean isValid() {
         return width > 0 && height > 0 &&
-                width <= 32767 && height <= 32767 &&
                 colorType != CT_UNKNOWN &&
                 alphaType != AT_UNKNOWN;
     }

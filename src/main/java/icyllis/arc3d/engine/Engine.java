@@ -29,6 +29,7 @@ public interface Engine {
     /**
      * Block engine-private values.
      */
+    @ImageInfo.ColorType
     static int colorTypeToPublic(int ct) {
         return switch (ct) {
             case ImageInfo.CT_UNKNOWN,
@@ -211,40 +212,6 @@ public interface Engine {
         int kFragment = 1 << 1;
     }
 
-    static int colorTypeChannelFlags(int ct) {
-        return switch (ct) {
-            case ImageInfo.CT_UNKNOWN -> 0;
-            case ImageInfo.CT_ALPHA_8,
-                    ImageInfo.CT_ALPHA_16,
-                    ImageInfo.CT_ALPHA_F16,
-                    ImageInfo.CT_ALPHA_8xxx,
-                    ImageInfo.CT_ALPHA_F32xxx -> Color.COLOR_CHANNEL_FLAG_ALPHA;
-            case ImageInfo.CT_RGB_565,
-                    ImageInfo.CT_RGB_888,
-                    ImageInfo.CT_RGB_888x -> Color.COLOR_CHANNEL_FLAGS_RGB;
-            case ImageInfo.CT_RGBA_16161616,
-                    ImageInfo.CT_RGBA_F32,
-                    ImageInfo.CT_RGBA_F16_CLAMPED,
-                    ImageInfo.CT_RGBA_F16,
-                    ImageInfo.CT_BGRA_1010102,
-                    ImageInfo.CT_RGBA_1010102,
-                    ImageInfo.CT_BGRA_8888,
-                    ImageInfo.CT_RGBA_8888_SRGB,
-                    ImageInfo.CT_RGBA_8888 -> Color.COLOR_CHANNEL_FLAGS_RGBA;
-            case ImageInfo.CT_RG_88,
-                    ImageInfo.CT_RG_1616,
-                    ImageInfo.CT_RG_F16 -> Color.COLOR_CHANNEL_FLAGS_RG;
-            case ImageInfo.CT_GRAY_8,
-                    ImageInfo.CT_GRAY_8xxx -> Color.COLOR_CHANNEL_FLAG_GRAY;
-            case ImageInfo.CT_R_8,
-                    ImageInfo.CT_R_16,
-                    ImageInfo.CT_R_F16,
-                    ImageInfo.CT_R_8xxx -> Color.COLOR_CHANNEL_FLAG_RED;
-            case ImageInfo.CT_GRAY_ALPHA_88 -> Color.COLOR_CHANNEL_FLAG_GRAY | Color.COLOR_CHANNEL_FLAG_ALPHA;
-            default -> throw new AssertionError(ct);
-        };
-    }
-
     /**
      * Describes the encoding of channel data in a ColorType.
      *
@@ -252,20 +219,19 @@ public interface Engine {
      */
     int
             COLOR_ENCODING_UNORM = 0,
-            COLOR_ENCODING_SRGB_UNORM = 1,
-            COLOR_ENCODING_FLOAT = 2;
+            COLOR_ENCODING_UNORM_PACK16 = 1,
+            COLOR_ENCODING_UNORM_PACK32 = 2,
+            COLOR_ENCODING_UNORM_SRGB = 3,
+            COLOR_ENCODING_FLOAT = 4;
 
     static int colorTypeEncoding(int ct) {
         return switch (ct) {
             case ImageInfo.CT_UNKNOWN,
                     ImageInfo.CT_ALPHA_8,
-                    ImageInfo.CT_RGB_565,
                     ImageInfo.CT_RGBA_8888,
                     ImageInfo.CT_RGB_888x,
                     ImageInfo.CT_RG_88,
                     ImageInfo.CT_BGRA_8888,
-                    ImageInfo.CT_RGBA_1010102,
-                    ImageInfo.CT_BGRA_1010102,
                     ImageInfo.CT_GRAY_8,
                     ImageInfo.CT_ALPHA_8xxx,
                     ImageInfo.CT_GRAY_8xxx,
@@ -277,7 +243,10 @@ public interface Engine {
                     ImageInfo.CT_R_8,
                     ImageInfo.CT_R_16,
                     ImageInfo.CT_GRAY_ALPHA_88 -> COLOR_ENCODING_UNORM;
-            case ImageInfo.CT_RGBA_8888_SRGB -> COLOR_ENCODING_SRGB_UNORM;
+            case ImageInfo.CT_RGB_565 -> COLOR_ENCODING_UNORM_PACK16;
+            case ImageInfo.CT_RGBA_1010102,
+                    ImageInfo.CT_BGRA_1010102 -> COLOR_ENCODING_UNORM_PACK32;
+            case ImageInfo.CT_RGBA_8888_SRGB -> COLOR_ENCODING_UNORM_SRGB;
             case ImageInfo.CT_ALPHA_F16,
                     ImageInfo.CT_RGBA_F16,
                     ImageInfo.CT_RGBA_F16_CLAMPED,
@@ -321,7 +290,8 @@ public interface Engine {
                     ImageInfo.CT_RGBA_16161616,
                     ImageInfo.CT_RGB_888,
                     ImageInfo.CT_R_8,
-                    ImageInfo.CT_R_16 -> CLAMP_TYPE_AUTO;
+                    ImageInfo.CT_R_16,
+                    ImageInfo.CT_GRAY_ALPHA_88 -> CLAMP_TYPE_AUTO;
             case ImageInfo.CT_RGBA_F16_CLAMPED -> CLAMP_TYPE_MANUAL;
             case ImageInfo.CT_ALPHA_F16,
                     ImageInfo.CT_RGBA_F16,
