@@ -21,7 +21,6 @@ package icyllis.arc3d.mock;
 
 import icyllis.arc3d.core.ImageInfo;
 import icyllis.arc3d.engine.BackendFormat;
-import icyllis.arc3d.engine.Engine;
 
 import javax.annotation.Nonnull;
 
@@ -64,7 +63,7 @@ public class MockBackendFormat extends BackendFormat {
 
     @Override
     public int getChannelFlags() {
-        return Engine.colorTypeChannelFlags(mColorType);
+        return ImageInfo.colorTypeChannelFlags(mColorType);
     }
 
     @Nonnull

@@ -30,14 +30,15 @@ public class SurfaceDrawContext extends SurfaceFillContext {
     public SurfaceDrawContext(RecordingContext context,
                               SurfaceView readView,
                               SurfaceView writeView,
-                              int colorType) {
-        super(context, readView, writeView,
-                ImageInfo.makeColorInfo(colorType, ImageInfo.AT_PREMUL));
+                              int colorType,
+                              ColorSpace colorSpace) {
+        super(context, readView, writeView, colorType, ImageInfo.AT_PREMUL, colorSpace);
     }
 
     public static SurfaceDrawContext make(
             RecordingContext rContext,
             int colorType,
+            ColorSpace colorSpace,
             int width, int height,
             int sampleCount,
             int surfaceFlags,
@@ -71,11 +72,12 @@ public class SurfaceDrawContext extends SurfaceFillContext {
         SurfaceView readView = new SurfaceView(texture, origin, readSwizzle);
         SurfaceView writeView = new SurfaceView(texture, origin, writeSwizzle);
 
-        return new SurfaceDrawContext(rContext, readView, writeView, colorType);
+        return new SurfaceDrawContext(rContext, readView, writeView, colorType, colorSpace);
     }
 
     public static SurfaceDrawContext make(RecordingContext rContext,
                                           int colorType,
+                                          ColorSpace colorSpace,
                                           SurfaceProxy surfaceProxy,
                                           int origin) {
         BackendFormat format = surfaceProxy.getBackendFormat();
@@ -88,7 +90,7 @@ public class SurfaceDrawContext extends SurfaceFillContext {
         SurfaceView readView = new SurfaceView(surfaceProxy, origin, readSwizzle);
         SurfaceView writeView = new SurfaceView(surfaceProxy, origin, writeSwizzle);
 
-        return new SurfaceDrawContext(rContext, readView, writeView, colorType);
+        return new SurfaceDrawContext(rContext, readView, writeView, colorType, colorSpace);
     }
 
     private final Rect2f mTmpBounds = new Rect2f();

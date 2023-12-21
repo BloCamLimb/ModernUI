@@ -58,6 +58,7 @@ public final class SurfaceDevice extends Device {
     public static SurfaceDevice make(RecordingContext rContext,
                                      int colorType,
                                      int alphaType,
+                                     ColorSpace colorSpace,
                                      int width, int height,
                                      int sampleCount,
                                      int surfaceFlags,
@@ -67,13 +68,14 @@ public final class SurfaceDevice extends Device {
             return null;
         }
         SurfaceDrawContext sdc = SurfaceDrawContext.make(rContext,
-                colorType, width, height, sampleCount, surfaceFlags, origin);
+                colorType, colorSpace, width, height, sampleCount, surfaceFlags, origin);
         return make(sdc, alphaType, clear);
     }
 
     @SharedPtr
     public static SurfaceDevice make(RecordingContext rContext,
                                      int colorType,
+                                     ColorSpace colorSpace,
                                      SurfaceProxy proxy,
                                      int origin,
                                      boolean clear) {
@@ -81,7 +83,7 @@ public final class SurfaceDevice extends Device {
             return null;
         }
         SurfaceDrawContext sdc = SurfaceDrawContext.make(rContext,
-                colorType, proxy, origin);
+                colorType, colorSpace, proxy, origin);
         return make(sdc, ImageInfo.AT_PREMUL, clear);
     }
 

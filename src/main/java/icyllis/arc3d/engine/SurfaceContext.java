@@ -19,6 +19,7 @@
 
 package icyllis.arc3d.engine;
 
+import icyllis.arc3d.core.ColorSpace;
 import icyllis.arc3d.core.ImageInfo;
 
 import static icyllis.arc3d.engine.Engine.SurfaceOrigin;
@@ -34,20 +35,24 @@ public class SurfaceContext implements AutoCloseable {
     protected final RecordingContext mContext;
     protected final SurfaceView mReadView;
 
-    private final int mColorInfo;
+    private final ImageInfo mImageInfo;
 
     /**
-     * @param context   raw ptr to the context
-     * @param readView  raw ptr to the read view
-     * @param colorInfo see {@link ImageInfo#makeColorInfo(int, int)}
+     * @param context  raw ptr to the context
+     * @param readView raw ptr to the read view
      */
     public SurfaceContext(RecordingContext context,
                           SurfaceView readView,
-                          int colorInfo) {
+                          int colorType,
+                          int alphaType,
+                          ColorSpace colorSpace) {
         assert !context.isDiscarded();
         mContext = context;
         mReadView = readView;
-        mColorInfo = colorInfo;
+        mImageInfo = new ImageInfo(
+                getWidth(), getHeight(),
+                colorType, alphaType, colorSpace
+        );
     }
 
     /**
@@ -64,25 +69,22 @@ public class SurfaceContext implements AutoCloseable {
         return mReadView;
     }
 
-    /**
-     * @see ImageInfo#makeColorInfo(int, int)
-     */
-    public final int getColorInfo() {
-        return mColorInfo;
+    public final ImageInfo getImageInfo() {
+        return mImageInfo;
     }
 
     /**
-     * @see ImageInfo#CT_UNKNOWN
+     * @see ImageInfo.ColorType
      */
     public final int getColorType() {
-        return ImageInfo.colorType(mColorInfo);
+        return mImageInfo.colorType();
     }
 
     /**
-     * @see ImageInfo#AT_UNKNOWN
+     * @see ImageInfo.AlphaType
      */
     public final int getAlphaType() {
-        return ImageInfo.alphaType(mColorInfo);
+        return mImageInfo.alphaType();
     }
 
     public final int getWidth() {

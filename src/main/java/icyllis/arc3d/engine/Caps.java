@@ -383,7 +383,7 @@ public abstract class Caps {
         }
         // It's very convenient to access 1 byte-per-channel 32-bit color types as uint32_t on the CPU.
         // Make those aligned reads out of the buffer even if the underlying API doesn't require it.
-        int channelFlags = Engine.colorTypeChannelFlags(colorType);
+        int channelFlags = ImageInfo.colorTypeChannelFlags(colorType);
         if ((channelFlags == Color.COLOR_CHANNEL_FLAGS_RGBA || channelFlags == Color.COLOR_CHANNEL_FLAGS_RGB ||
                 channelFlags == Color.COLOR_CHANNEL_FLAG_ALPHA || channelFlags == Color.COLOR_CHANNEL_FLAG_GRAY) &&
                 ImageInfo.bytesPerPixel(colorType) == 4) {
