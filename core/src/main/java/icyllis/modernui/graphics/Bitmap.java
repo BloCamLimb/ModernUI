@@ -50,9 +50,16 @@ import static org.lwjgl.system.MemoryUtil.*;
 
 /**
  * Describes a 2D raster image (pixel map), with its pixels in native memory.
- * This is used for CPU side operations, such as decoding or encoding. It is
- * generally uploaded to GPU side {@link Image} for drawing on the screen,
- * or downloaded from GPU side {@link Image} for encoding to streams.
+ * This class can be used for CPU-side encoding, decoding and resampling;
+ * pixel transfer between CPU and GPU. You cannot draw content to Bitmap.
+ * <p>
+ * Bitmap is created with immutable width, height and memory allocation
+ * (memory address), its contents may be changed. You can obtain Bitmap from
+ * encoded data (PNG, TGA, BMP, JPEG, HDR, PSD, PBM, PGM, and PPM) via
+ * {@link BitmapFactory}.
+ * <p>
+ * The color space of Bitmap defaults to sRGB and can only be in RGB space.
+ * The alpha defaults to non-premultiplied (independent of RGB channels).
  * <p>
  * This class is not thread safe, but memory safe. Its internal state may
  * be shared by multiple threads. Nevertheless, it's recommended to call
@@ -290,16 +297,19 @@ public final class Bitmap implements AutoCloseable {
 
     /**
      * Reinterpret pixels with newColorType and newAlphaType.
+     * <p>
+     * You must be careful with packed formats and CPU byte order.
      *
-     * @throws IllegalArgumentException newColorType has alpha but newAlphaType is unknown,
-     *                                  or new bpp is not equal to old bpp
+     * @throws IllegalArgumentException colorType has alpha but alphaType is unknown,
+     *                                  or bytesPerPixels mismatch
      */
     @ApiStatus.Internal
-    public void setColorInfo(int newColorType, int newAlphaType) {
+    public void setColorInfo(@ImageInfo.ColorType int newColorType,
+                             @ImageInfo.AlphaType int newAlphaType) {
         newAlphaType = ImageInfo.validateAlphaType(newColorType, newAlphaType);
         var oldInfo = getInfo();
         if (oldInfo.bytesPerPixel() != ImageInfo.bytesPerPixel(newColorType)) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("bpp mismatch");
         }
         var newInfo = new ImageInfo(
                 oldInfo.width(), oldInfo.height(),
