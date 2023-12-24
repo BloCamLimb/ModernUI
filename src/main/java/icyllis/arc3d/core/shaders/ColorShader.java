@@ -17,11 +17,9 @@
  * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.core;
+package icyllis.arc3d.core.shaders;
 
-public abstract class Shader {
+import icyllis.arc3d.core.Shader;
 
-    public boolean isOpaque() {
-        return false;
-    }
+public class ColorShader extends Shader {
 }
