@@ -21,7 +21,7 @@ package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.ops.OpsTask;
-import icyllis.arc3d.shaderc.Compiler;
+import icyllis.arc3d.compiler.Compiler;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
