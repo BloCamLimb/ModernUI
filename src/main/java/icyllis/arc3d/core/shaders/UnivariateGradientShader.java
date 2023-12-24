@@ -17,11 +17,7 @@
  * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.core;
+package icyllis.arc3d.core.shaders;
 
-public abstract class Shader {
-
-    public boolean isOpaque() {
-        return false;
-    }
+public abstract class UnivariateGradientShader extends GradientShader {
 }

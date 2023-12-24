@@ -128,7 +128,7 @@ public final class SurfaceProvider {
      * Creates a lazy {@link TextureProxy} for the pixel map.
      *
      * @param pixelMap     pixel map
-     * @param pixelRef     pixel ref, must be immutable
+     * @param pixelRef     raw ptr to pixel ref, must be immutable
      * @param dstColorType a color type for surface usage, see {@link ImageInfo}
      * @param surfaceFlags flags described as follows
      * @see ISurface#FLAG_BUDGETED

@@ -19,24 +19,79 @@
 
 package icyllis.arc3d.core;
 
-//TODO
-public class Image {
+import icyllis.arc3d.engine.RecordingContext;
+import org.jetbrains.annotations.ApiStatus;
 
-    /**
-     * Returns the full width of this image (as its texture).
-     *
-     * @return image width in pixels
-     */
-    public final int getWidth() {
-        return 0;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+//TODO
+public abstract class Image extends RefCnt {
+
+    protected final ImageInfo mInfo;
+
+    protected Image(@Nonnull ImageInfo info) {
+        if (info.isEmpty()) {
+            throw new IllegalArgumentException();
+        }
+        mInfo = info;
+    }
+
+    @Nonnull
+    public ImageInfo getInfo() {
+        return mInfo;
     }
 
     /**
-     * Returns the full height of this image (as its texture).
+     * Returns the full width of this image.
+     *
+     * @return image width in pixels
+     */
+    public int getWidth() {
+        return mInfo.width();
+    }
+
+    /**
+     * Returns the full height of this image.
      *
      * @return image height in pixels
      */
-    public final int getHeight() {
+    public int getHeight() {
+        return mInfo.height();
+    }
+
+    public int getColorType() {
+        return mInfo.colorType();
+    }
+
+    public int getAlphaType() {
+        return mInfo.alphaType();
+    }
+
+    @Nullable
+    public ColorSpace getColorSpace() {
+        return mInfo.colorSpace();
+    }
+
+    @ApiStatus.Internal
+    @Nullable
+    public RecordingContext getContext() {
+        return null;
+    }
+
+    public abstract boolean isValid(@Nullable RecordingContext context);
+
+    @ApiStatus.Internal
+    public boolean isRasterBacked() {
+        return false;
+    }
+
+    @ApiStatus.Internal
+    public boolean isTextureBacked() {
+        return false;
+    }
+
+    public long getTextureMemorySize() {
         return 0;
     }
 }

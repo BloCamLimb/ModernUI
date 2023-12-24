@@ -61,7 +61,8 @@ public class PixelMap {
         this(info, base != null ? new WeakReference<>(base) : null, address, rowStride);
     }
 
-    public PixelMap(@Nonnull ImageInfo newInfo, @Nonnull PixelMap oldPixelMap) {
+    public PixelMap(@Nonnull ImageInfo newInfo,
+                    @Nonnull PixelMap oldPixelMap) {
         this(newInfo, oldPixelMap.mBase, oldPixelMap.mAddress, oldPixelMap.mRowStride);
     }
 

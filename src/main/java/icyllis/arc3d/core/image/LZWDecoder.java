@@ -17,7 +17,7 @@
  * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.image;
+package icyllis.arc3d.core.image;
 
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;

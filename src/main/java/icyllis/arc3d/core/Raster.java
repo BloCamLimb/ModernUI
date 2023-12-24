@@ -34,15 +34,11 @@ import java.nio.ByteOrder;
  * {@link Raster} is similar to Bitmap, they are all "raster" (pixel map), but this class
  * wraps Java2D's {@link java.awt.image.Raster}. Pixels are allocated on the Java heap,
  * and can be used with Java2D's software renderer.
- * <p>
- * This class is required because the byte mapping of Java2D pixels depends on
- * {@link ByteOrder#nativeOrder()} and cannot be accepted by GPU, see
- * {@link ImageInfo#CT_UNKNOWN}.
  */
 public class Raster {
 
     /**
-     * Describes the usage of Raster, rather than pixel layout.
+     * Describes the usage of Raster.
      */
     @ApiStatus.Internal
     @MagicConstant(intValues = {
@@ -50,8 +46,7 @@ public class Raster {
             FORMAT_GRAY_8,
             FORMAT_GRAY_16,
             FORMAT_RGB_565,
-            FORMAT_RGB_888,
-            FORMAT_ARGB_8888
+            FORMAT_RGB_888
     })
     @Retention(RetentionPolicy.SOURCE)
     public @interface Format {
@@ -64,6 +59,8 @@ public class Raster {
     public static final int FORMAT_GRAY_8 = 1; // not endian-aware
     /**
      * Grayscale, one channel, 16-bit per channel.
+     * <p>
+     * Represented as a short on Java heap (native order).
      */
     public static final int FORMAT_GRAY_16 = 2; // not endian-aware
     /**
@@ -71,9 +68,7 @@ public class Raster {
      * <p>
      * Represented as a short on Java heap (native order).
      * <p>
-     * To GPU: always RGB_565 (R5G6B5), R is in most-significant bits.
-     * <p>
-     * To Bitmap: need conversion.
+     * To GPU: RGB_565 (R5G6B5), R is in most-significant bits.
      */
     public static final int FORMAT_RGB_565 = 3; // not endian-aware
     /**
@@ -81,24 +76,11 @@ public class Raster {
      * <p>
      * Represented as three bytes on Java heap.
      * <p>
-     * To GPU: always BGR_888 (B8G8R8), B is in the lowest address.
-     * <p>
-     * To Bitmap: need conversion.
+     * To GPU: BGR_888 (B8G8R8), B is in the lowest address.
      */
     public static final int FORMAT_RGB_888 = 4; // not endian-aware
-    /**
-     * RGB, with premultiplied alpha, four channels, 8-bit per channel.
-     * <p>
-     * Represented as an int on Java heap.
-     * <p>
-     * To GPU:
-     * <ul>
-     * <li>Little-endian: BGRA_8888 (B8G8R8A8), B is in the lowest address.</li>
-     * <li>Big-endian: need conversion, default to BGRA_8888.</li>
-     * </ul>
-     * To Bitmap: need conversion.
-     */
-    public static final int FORMAT_ARGB_8888 = 5;
+
+    // Other BufferedImage types are endian-aware
 
     @Nullable
     protected final BufferedImage mBufImg;
@@ -106,7 +88,7 @@ public class Raster {
     protected final PixelRef mPixelRef;
 
     public Raster(@Nullable BufferedImage bufImg, @Nonnull ImageInfo info,
-                  @Nullable Object data, long baseOffset, int rowStride) {
+                  @Nullable Object data, int baseOffset, int rowStride) {
         mBufImg = bufImg;
         mPixelMap = new PixelMap(info, data, baseOffset, rowStride);
         mPixelRef = new PixelRef(info.width(), info.height(), data, baseOffset, rowStride, null);
@@ -146,22 +128,14 @@ public class Raster {
                 yield BufferedImage.TYPE_USHORT_565_RGB;
             }
             case FORMAT_RGB_888 -> {
+                //TODO add BGR_888 color type
+                ct = ImageInfo.CT_UNKNOWN;
+                at = ImageInfo.AT_OPAQUE;
                 rowStride = width * 3;
                 if (rowStride * height < 0) {
                     throw new IllegalArgumentException("Image is too large");
                 }
-                //TODO add BGR_888 color type
-                ct = ImageInfo.CT_UNKNOWN;
-                at = ImageInfo.AT_OPAQUE;
                 yield BufferedImage.TYPE_3BYTE_BGR;
-            }
-            case FORMAT_ARGB_8888 -> {
-                // we assume little-endian, and swap bytes when needed
-                ct = ImageInfo.CT_BGRA_8888;
-                // as render target, it should have premultiplied alpha
-                at = ImageInfo.AT_PREMUL;
-                rowStride = width << 2;
-                yield BufferedImage.TYPE_INT_ARGB_PRE;
             }
             case FORMAT_UNKNOWN -> {
                 ct = ImageInfo.CT_UNKNOWN;
@@ -174,7 +148,7 @@ public class Raster {
         var info = new ImageInfo(width, height, ct, at);
         final BufferedImage bufImg;
         final Object data;
-        final long baseOffset;
+        final int baseOffset;
         if (imageType != BufferedImage.TYPE_CUSTOM) {
             bufImg = new BufferedImage(width, height, imageType);
             // steal backing array
@@ -192,13 +166,6 @@ public class Raster {
                     assert dataBuffer.getNumBanks() == 1;
                     baseOffset = Unsafe.ARRAY_SHORT_BASE_OFFSET;
                     yield dataBuffer.getData(); // short[]
-                }
-                case BufferedImage.TYPE_INT_ARGB_PRE -> {
-                    DataBufferInt dataBuffer =
-                            (DataBufferInt) bufImg.getRaster().getDataBuffer();
-                    assert dataBuffer.getNumBanks() == 1;
-                    baseOffset = Unsafe.ARRAY_INT_BASE_OFFSET;
-                    yield dataBuffer.getData(); // int[]
                 }
                 default -> {
                     assert false;
@@ -223,7 +190,6 @@ public class Raster {
             case BufferedImage.TYPE_USHORT_GRAY -> FORMAT_GRAY_16;
             case BufferedImage.TYPE_USHORT_565_RGB -> FORMAT_RGB_565;
             case BufferedImage.TYPE_3BYTE_BGR -> FORMAT_RGB_888;
-            case BufferedImage.TYPE_INT_ARGB_PRE -> FORMAT_ARGB_8888;
             default -> {
                 assert false;
                 yield FORMAT_UNKNOWN;
