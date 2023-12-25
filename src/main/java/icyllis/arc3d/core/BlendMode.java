@@ -27,275 +27,519 @@ import javax.annotation.Nonnull;
 public enum BlendMode implements Blender {
     /**
      * <p>
-     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_CLEAR.png" />
-     * <figcaption>Destination pixels covered by the source are cleared to 0.</figcaption>
+     * Destination pixels covered by the source are cleared to 0.
      * </p>
      * <p>a<sub>out</sub> = 0</p>
      * <p>C<sub>out</sub> = 0</p>
      */
-    CLEAR,
+    CLEAR {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+            for (int i = 0; i < 4; i++) {
+                out[i] = 0;
+            }
+        }
+    },
 
     /**
      * <p>
-     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_SRC.png" />
-     * <figcaption>The source pixels replace the destination pixels.</figcaption>
+     * The source pixels replace the destination pixels.
      * </p>
      * <p>a<sub>out</sub> = a<sub>src</sub></p>
      * <p>C<sub>out</sub> = C<sub>src</sub></p>
      */
-    SRC,
+    SRC {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+            System.arraycopy(src, 0, out, 0, 4);
+        }
+    },
 
     /**
      * <p>
-     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_DST.png" />
-     * <figcaption>The source pixels are discarded, leaving the destination intact.</figcaption>
+     * The source pixels are discarded, leaving the destination intact.
      * </p>
      * <p>a<sub>out</sub> = a<sub>dst</sub></p>
      * <p>C<sub>out</sub> = C<sub>dst</sub></p>
      */
-    DST,
+    DST {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+            System.arraycopy(dst, 0, out, 0, 4);
+        }
+    },
 
     /**
      * <p>
-     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_SRC_OVER.png" />
-     * <figcaption>The source pixels are drawn over the destination pixels.</figcaption>
+     * The source pixels are drawn over the destination pixels.
      * </p>
      * <p>a<sub>out</sub> = a<sub>src</sub> + (1 - a<sub>src</sub>) * a<sub>dst</sub></p>
      * <p>C<sub>out</sub> = C<sub>src</sub> + (1 - a<sub>src</sub>) * C<sub>dst</sub></p>
      */
-    SRC_OVER,
+    SRC_OVER {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+            float df = 1 - src[3];
+            for (int i = 0; i < 4; i++) {
+                out[i] = dst[i] * df + src[i];
+            }
+        }
+    },
 
     /**
      * <p>
-     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_DST_OVER.png" />
-     * <figcaption>The source pixels are drawn behind the destination pixels.</figcaption>
+     * The source pixels are drawn behind the destination pixels.
      * </p>
      * <p>a<sub>out</sub> = a<sub>dst</sub> + (1 - a<sub>dst</sub>) * a<sub>src</sub></p>
      * <p>C<sub>out</sub> = C<sub>dst</sub> + (1 - a<sub>dst</sub>) * C<sub>src</sub></p>
      */
-    DST_OVER,
+    DST_OVER {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+            float sf = 1 - dst[3];
+            for (int i = 0; i < 4; i++) {
+                out[i] = src[i] * sf + dst[i];
+            }
+        }
+    },
 
     /**
      * <p>
-     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_SRC_IN.png" />
-     * <figcaption>Keeps the source pixels that cover the destination pixels,
-     * discards the remaining source and destination pixels.</figcaption>
+     * Keeps the source pixels that cover the destination pixels,
+     * discards the remaining source and destination pixels.
      * </p>
      * <p>a<sub>out</sub> = a<sub>src</sub> * a<sub>dst</sub></p>
      * <p>C<sub>out</sub> = C<sub>src</sub> * a<sub>dst</sub></p>
      */
-    SRC_IN,
+    SRC_IN {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+            float sf = dst[3];
+            for (int i = 0; i < 4; i++) {
+                out[i] = src[i] * sf;
+            }
+        }
+    },
 
     /**
      * <p>
-     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_DST_IN.png" />
-     * <figcaption>Keeps the destination pixels that cover source pixels,
-     * discards the remaining source and destination pixels.</figcaption>
+     * Keeps the destination pixels that cover source pixels,
+     * discards the remaining source and destination pixels.
      * </p>
-     * <p>a<sub>out</sub> = a<sub>src</sub> * a<sub>dst</sub></p>
+     * <p>a<sub>out</sub> = a<sub>dst</sub> * a<sub>src</sub></p>
      * <p>C<sub>out</sub> = C<sub>dst</sub> * a<sub>src</sub></p>
      */
-    DST_IN,
+    DST_IN {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+            float df = src[3];
+            for (int i = 0; i < 4; i++) {
+                out[i] = dst[i] * df;
+            }
+        }
+    },
 
     /**
      * <p>
-     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_SRC_OUT.png" />
-     * <figcaption>Keeps the source pixels that do not cover destination pixels.
+     * Keeps the source pixels that do not cover destination pixels.
      * Discards source pixels that cover destination pixels. Discards all
-     * destination pixels.</figcaption>
+     * destination pixels.
      * </p>
      * <p>a<sub>out</sub> = (1 - a<sub>dst</sub>) * a<sub>src</sub></p>
      * <p>C<sub>out</sub> = (1 - a<sub>dst</sub>) * C<sub>src</sub></p>
      */
-    SRC_OUT,
+    SRC_OUT {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+            float sf = 1 - dst[3];
+            for (int i = 0; i < 4; i++) {
+                out[i] = src[i] * sf;
+            }
+        }
+    },
 
     /**
      * <p>
-     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_DST_OUT.png" />
-     * <figcaption>Keeps the destination pixels that are not covered by source pixels.
+     * Keeps the destination pixels that are not covered by source pixels.
      * Discards destination pixels that are covered by source pixels. Discards all
-     * source pixels.</figcaption>
+     * source pixels.
      * </p>
      * <p>a<sub>out</sub> = (1 - a<sub>src</sub>) * a<sub>dst</sub></p>
      * <p>C<sub>out</sub> = (1 - a<sub>src</sub>) * C<sub>dst</sub></p>
      */
-    DST_OUT,
+    DST_OUT {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+            float df = 1 - src[3];
+            for (int i = 0; i < 4; i++) {
+                out[i] = dst[i] * df;
+            }
+        }
+    },
 
     /**
      * <p>
-     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_SRC_ATOP.png" />
-     * <figcaption>Discards the source pixels that do not cover destination pixels.
-     * Draws remaining source pixels over destination pixels.</figcaption>
+     * Discards the source pixels that do not cover destination pixels.
+     * Draws remaining source pixels over destination pixels.
      * </p>
      * <p>a<sub>out</sub> = a<sub>dst</sub></p>
      * <p>C<sub>out</sub> = a<sub>dst</sub> * C<sub>src</sub> + (1 - a<sub>src</sub>) * C<sub>dst</sub></p>
      */
-    SRC_ATOP,
+    SRC_ATOP {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+            float sf = dst[3];
+            float df = 1 - src[3];
+            for (int i = 0; i < 4; i++) {
+                out[i] = src[i] * sf + dst[i] * df;
+            }
+        }
+    },
 
     /**
      * <p>
-     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_DST_ATOP.png" />
-     * <figcaption>Discards the destination pixels that are not covered by source pixels.
-     * Draws remaining destination pixels over source pixels.</figcaption>
+     * Discards the destination pixels that are not covered by source pixels.
+     * Draws remaining destination pixels over source pixels.
      * </p>
      * <p>a<sub>out</sub> = a<sub>src</sub></p>
      * <p>C<sub>out</sub> = a<sub>src</sub> * C<sub>dst</sub> + (1 - a<sub>dst</sub>) * C<sub>src</sub></p>
      */
-    DST_ATOP,
+    DST_ATOP {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+            float sf = 1 - dst[3];
+            float df = src[3];
+            for (int i = 0; i < 4; i++) {
+                out[i] = src[i] * sf + dst[i] * df;
+            }
+        }
+    },
 
     /**
      * <p>
-     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_XOR.png" />
-     * <figcaption>Discards the source and destination pixels where source pixels
-     * cover destination pixels. Draws remaining source pixels.</figcaption>
+     * Discards the source and destination pixels where source pixels
+     * cover destination pixels. Draws remaining source pixels.
      * </p>
-     * <p>
-     * a<sub>out</sub> = (1 - a<sub>dst</sub>) * a<sub>src</sub> + (1 - a<sub>src</sub>) * a<sub>dst</sub>
-     * </p>
+     * <p>a<sub>out</sub> = (1 - a<sub>dst</sub>) * a<sub>src</sub> + (1 - a<sub>src</sub>) * a<sub>dst</sub></p>
      * <p>C<sub>out</sub> = (1 - a<sub>dst</sub>) * C<sub>src</sub> + (1 - a<sub>src</sub>) * C<sub>dst</sub></p>
      */
-    XOR,
+    XOR {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+            float sf = 1 - dst[3];
+            float df = 1 - src[3];
+            for (int i = 0; i < 4; i++) {
+                out[i] = src[i] * sf + dst[i] * df;
+            }
+        }
+    },
 
     /**
-     * Alias: ADD, PLUS_CLAMPED
      * <p>
-     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_PLUS.png" />
-     * <figcaption>Adds the source pixels to the destination pixels and saturates
-     * the result.</figcaption>
+     * Adds the source pixels to the destination pixels.
+     * </p>
+     * <p>a<sub>out</sub> = a<sub>src</sub> + a<sub>dst</sub></p>
+     * <p>C<sub>out</sub> = C<sub>src</sub> + C<sub>dst</sub></p>
+     */
+    PLUS {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+            for (int i = 0; i < 4; i++) {
+                out[i] = src[i] + dst[i];
+            }
+        }
+    },
+
+    /**
+     * <p>
+     * Adds the source pixels to the destination pixels and saturates
+     * the result. This is an advanced blend equation.
      * </p>
      * <p>a<sub>out</sub> = max(0, min(a<sub>src</sub> + a<sub>dst</sub>, 1))</p>
      * <p>C<sub>out</sub> = max(0, min(C<sub>src</sub> + C<sub>dst</sub>, 1))</p>
      */
-    PLUS,
+    PLUS_CLAMPED {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+            for (int i = 0; i < 4; i++) {
+                out[i] = Math.min(src[i] + dst[i], 1);
+            }
+        }
+    },
 
     /**
-     * Alias: SUBTRACT, MINUS_CLAMPED
      * <p>
      * Subtracts the destination pixels from the source pixels.
+     * </p>
+     * <p>a<sub>out</sub> = a<sub>src</sub> - a<sub>dst</sub></p>
+     * <p>C<sub>out</sub> = C<sub>src</sub> - C<sub>dst</sub></p>
+     */
+    MINUS {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+            for (int i = 0; i < 4; i++) {
+                out[i] = src[i] - dst[i];
+            }
+        }
+    },
+
+    /**
+     * <p>
+     * Subtracts the destination pixels from the source pixels and saturates
+     * the result. This is an advanced blend equation.
      * </p>
      * <p>a<sub>out</sub> = max(0, min(a<sub>src</sub> - a<sub>dst</sub>, 1))</p>
      * <p>C<sub>out</sub> = max(0, min(C<sub>src</sub> - C<sub>dst</sub>, 1))</p>
      */
-    MINUS,
+    MINUS_CLAMPED {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+            for (int i = 0; i < 4; i++) {
+                out[i] = Math.max(src[i] - dst[i], 0);
+            }
+        }
+    },
 
     /**
-     * Alias: MODULATE
      * <p>
-     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_MODULATE.png" />
-     * <figcaption>Multiplies the source and destination pixels.</figcaption>
+     * Multiplies the source and destination pixels.
      * </p>
      * <p>a<sub>out</sub> = a<sub>src</sub> * a<sub>dst</sub></p>
      * <p>C<sub>out</sub> = C<sub>src</sub> * C<sub>dst</sub></p>
      */
-    MULTIPLY,
+    MODULATE {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+            for (int i = 0; i < 4; i++) {
+                out[i] = src[i] * dst[i];
+            }
+        }
+    },
 
     /**
      * <p>
-     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_SCREEN.png" />
-     * <figcaption>
+     * Multiplies the source and destination pixels. This is an advanced blend equation.
+     * </p>
+     * <p>a<sub>out</sub> = a<sub>src</sub> + a<sub>dst</sub> - a<sub>src</sub> * a<sub>dst</sub></p>
+     * <p>C<sub>out</sub> = C<sub>src</sub> * C<sub>dst</sub> + (1 - a<sub>dst</sub>) * C<sub>src</sub> + (1 -
+     * a<sub>src</sub>) * C<sub>dst</sub></p>
+     */
+    MULTIPLY {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+            float sf = 1 - dst[3];
+            float df = 1 - src[3];
+            for (int i = 0; i < 4; i++) {
+                out[i] = src[i] * dst[i] + src[i] * sf + dst[i] * df;
+            }
+        }
+    },
+
+    /**
+     * <p>
      * Adds the source and destination pixels, then subtracts the
      * source pixels multiplied by the destination.
-     * </figcaption>
      * </p>
      * <p>a<sub>out</sub> = a<sub>src</sub> + a<sub>dst</sub> - a<sub>src</sub> * a<sub>dst</sub></p>
      * <p>C<sub>out</sub> = C<sub>src</sub> + C<sub>dst</sub> - C<sub>src</sub> * C<sub>dst</sub></p>
      */
-    SCREEN,
+    SCREEN {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+            for (int i = 0; i < 4; i++) {
+                out[i] = src[i] + dst[i] - src[i] * dst[i];
+            }
+        }
+    },
 
     /**
      * <p>
-     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_OVERLAY.png" />
-     * <figcaption>
      * Multiplies or screens the source and destination depending on the
-     * destination color.
-     * </figcaption>
+     * destination color. This is an advanced blend equation.
+     * </p>
+     * <p>a<sub>out</sub> = a<sub>src</sub> + a<sub>dst</sub> - a<sub>src</sub> * a<sub>dst</sub></p>
+     *
+     * <p>if C<sub>dst</sub> &le; 0.5 * a<sub>dst</sub>:<br>
+     * C<sub>out</sub> = 2 * C<sub>src</sub> * C<sub>dst</sub> + (1 - a<sub>dst</sub>) * C<sub>src</sub> +
+     * (1 - a<sub>src</sub>) * C<sub>dst</sub>
+     * </p>
+     *
+     * <p>otherwise:<br>
+     * C<sub>out</sub> = a<sub>src</sub> * a<sub>dst</sub> - 2 * (a<sub>src</sub> - C<sub>src</sub>) *
+     * (a<sub>dst</sub> - C<sub>dst</sub>) + (1 - a<sub>dst</sub>) * C<sub>src</sub> + (1 - a<sub>src</sub>) *
+     * C<sub>dst</sub>
      * </p>
      */
-    OVERLAY,
+    OVERLAY {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+            float sa = src[3];
+            float da = dst[3];
+            for (int i = 0; i < 4; i++) {
+                out[i] = src[i] * (1 - da) + dst[i] * (1 - sa) +
+                        (2 * dst[i] <= da
+                                ? 2 * src[i] * dst[i]
+                                : sa * da - 2 * (sa - src[i]) * (da - dst[i]));
+            }
+        }
+    },
 
     /**
      * <p>
-     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_DARKEN.png" />
-     * <figcaption>
      * Retains the smallest component of the source and
-     * destination pixels.
-     * </figcaption>
+     * destination pixels. This is an advanced blend equation.
      * </p>
      * <p>a<sub>out</sub> = a<sub>src</sub> + a<sub>dst</sub> - a<sub>src</sub> * a<sub>dst</sub></p>
      * <p>
-     * C<sub>out</sub> =
-     * (1 - a<sub>dst</sub>) * C<sub>src</sub> + (1 - a<sub>src</sub>) * C<sub>dst</sub> + min(C<sub>src</sub>,
-     * C<sub>dst</sub>)
+     * C<sub>out</sub> = min(C<sub>src</sub>, C<sub>dst</sub>) +
+     * (1 - a<sub>dst</sub>) * C<sub>src</sub> + (1 - a<sub>src</sub>) * C<sub>dst</sub>
      * </p>
      */
-    DARKEN,
+    DARKEN {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+            float sa = src[3];
+            float da = dst[3];
+            for (int i = 0; i < 4; i++) {
+                out[i] = src[i] + dst[i] - Math.max(src[i] * da, dst[i] * sa);
+            }
+        }
+    },
 
     /**
      * <p>
-     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_LIGHTEN.png" />
-     * <figcaption>Retains the largest component of the source and
-     * destination pixel.</figcaption>
+     * Retains the largest component of the source and
+     * destination pixel. This is an advanced blend equation.
      * </p>
      * <p>a<sub>out</sub> = a<sub>src</sub> + a<sub>dst</sub> - a<sub>src</sub> * a<sub>dst</sub></p>
      * <p>
-     * C<sub>out</sub> =
-     * (1 - a<sub>dst</sub>) * C<sub>src</sub> + (1 - a<sub>src</sub>) * C<sub>dst</sub> + max(C<sub>src</sub>,
-     * C<sub>dst</sub>)
+     * C<sub>out</sub> = max(C<sub>src</sub>, C<sub>dst</sub>) +
+     * (1 - a<sub>dst</sub>) * C<sub>src</sub> + (1 - a<sub>src</sub>) * C<sub>dst</sub>
      * </p>
      */
-    LIGHTEN,
+    LIGHTEN {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+            float sa = src[3];
+            float da = dst[3];
+            for (int i = 0; i < 4; i++) {
+                out[i] = src[i] + dst[i] - Math.min(src[i] * da, dst[i] * sa);
+            }
+        }
+    },
 
     /**
      * <p>
-     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_COLOR_DODGE.png" />
-     * <figcaption>Makes destination brighter to reflect source.</figcaption>
+     * Makes destination brighter to reflect source.
+     * This is an advanced blend equation.
+     * </p>
+     * <p>a<sub>out</sub> = a<sub>src</sub> + a<sub>dst</sub> - a<sub>src</sub> * a<sub>dst</sub></p>
+     *
+     * <p>if C<sub>dst</sub> &le; 0:<br>
+     * C<sub>out</sub> = C<sub>src</sub> * (1 - a<sub>dst</sub>)
+     * </p>
+     *
+     * <p>if C<sub>src</sub> &ge; a<sub>src</sub>:<br>
+     * C<sub>out</sub> = a<sub>src</sub> * a<sub>dst</sub> + (1 - a<sub>dst</sub>) * C<sub>src</sub> +
+     * (1 - a<sub>src</sub>) * C<sub>dst</sub>
+     * </p>
+     *
+     * <p>otherwise:<br>
+     * C<sub>out</sub> = a<sub>src</sub> * min(a<sub>dst</sub>, C<sub>dst</sub> * a<sub>src</sub> /
+     * (a<sub>src</sub> - C<sub>src</sub>)) + (1 - a<sub>dst</sub>) * C<sub>src</sub> +
+     * (1 - a<sub>src</sub>) * C<sub>dst</sub>
      * </p>
      */
-    COLOR_DODGE,
+    COLOR_DODGE {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+
+        }
+    },
 
     /**
      * <p>
-     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_COLOR_BURN.png" />
-     * <figcaption>Makes destination darker to reflect source.</figcaption>
+     * Makes destination darker to reflect source.
+     * This is an advanced blend equation.
+     * </p>
+     * <p>a<sub>out</sub> = a<sub>src</sub> + a<sub>dst</sub> - a<sub>src</sub> * a<sub>dst</sub></p>
+     *
+     * <p>if C<sub>dst</sub> &ge; a<sub>dst</sub>:<br>
+     * C<sub>out</sub> = a<sub>src</sub> * a<sub>dst</sub> + (1 - a<sub>dst</sub>) * C<sub>src</sub> +
+     * (1 - a<sub>src</sub>) * C<sub>dst</sub>
+     * </p>
+     *
+     * <p>if C<sub>src</sub> &le; 0:<br>
+     * C<sub>out</sub> = C<sub>src</sub> * (1 - a<sub>dst</sub>)
+     * </p>
+     *
+     * <p>otherwise:<br>
+     * C<sub>out</sub> = a<sub>src</sub> * (a<sub>dst</sub> - min(a<sub>dst</sub>, (a<sub>dst</sub> -
+     * C<sub>dst</sub>) * a<sub>src</sub> / C<sub>dst</sub>)) + (1 - a<sub>dst</sub>) * C<sub>src</sub> +
+     * (1 - a<sub>src</sub>) * C<sub>dst</sub>
      * </p>
      */
-    COLOR_BURN,
+    COLOR_BURN {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+
+        }
+    },
 
     /**
      * <p>
-     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_HARD_LIGHT.png" />
-     * <figcaption>Makes destination lighter or darker, depending on source.</figcaption>
+     * Makes destination lighter or darker, depending on source.
+     * This is an advanced blend equation.
      * </p>
      */
-    HARD_LIGHT,
+    HARD_LIGHT {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+
+        }
+    },
 
     /**
      * <p>
-     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_SOFT_LIGHT.png" />
-     * <figcaption>Makes destination lighter or darker, depending on source.</figcaption>
+     * Makes destination lighter or darker, depending on source.
+     * This is an advanced blend equation.
      * </p>
      */
-    SOFT_LIGHT,
+    SOFT_LIGHT {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+
+        }
+    },
 
     /**
      * <p>
-     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_DIFFERENCE.png" />
-     * <figcaption>Subtracts darker from lighter with higher contrast.</figcaption>
+     * Subtracts darker from lighter with higher contrast.
+     * This is an advanced blend equation.
      * </p>
      * <p>
      * a<sub>out</sub> = a<sub>src</sub> + a<sub>dst</sub> - a<sub>src</sub> * a<sub>dst</sub>
      * </p>
      * <p>
-     * C<sub>out</sub> = C<sub>src</sub> + C<sub>dst</sub> - 2 * min(C<sub>src</sub>
-     * * a<sub>dst</sub>, C<sub>dst</sub> * a<sub>src</sub>)
+     * C<sub>out</sub> = C<sub>src</sub> + C<sub>dst</sub> - 2 * min(C<sub>src</sub> *
+     * a<sub>dst</sub>, C<sub>dst</sub> * a<sub>src</sub>)
      * </p>
      */
-    DIFFERENCE,
+    DIFFERENCE {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+            float sa = src[3];
+            float da = dst[3];
+            for (int i = 0; i < 4; i++) {
+                out[i] = src[i] + dst[i] - 2 * Math.min(src[i] * da, dst[i] * sa);
+            }
+        }
+    },
 
     /**
      * <p>
-     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_DIFFERENCE.png" />
-     * <figcaption>Subtracts darker from lighter with lower contrast.</figcaption>
+     * Subtracts darker from lighter with lower contrast.
+     * This is an advanced blend equation.
      * </p>
      * <p>
      * a<sub>out</sub> = a<sub>src</sub> + a<sub>dst</sub> - a<sub>src</sub> * a<sub>dst</sub>
@@ -304,81 +548,144 @@ public enum BlendMode implements Blender {
      * C<sub>out</sub> = C<sub>src</sub> + C<sub>dst</sub> - 2 * C<sub>src</sub> * C<sub>dst</sub>
      * </p>
      */
-    EXCLUSION,
+    EXCLUSION {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+            for (int i = 0; i < 4; i++) {
+                out[i] = src[i] + dst[i] - 2 * (src[i] * dst[i]);
+            }
+        }
+    },
 
     /**
+     * <p>
      * Lightens the destination pixels to reflect the source pixels while also increasing contrast.
+     * This is an extended advanced blend equation.
+     * </p>
      */
-    LINEAR_DODGE,
+    LINEAR_DODGE {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+
+        }
+    },
 
     /**
+     * <p>
      * Darkens the destination pixels to reflect the source pixels while also increasing contrast.
+     * This is an extended advanced blend equation.
+     * </p>
      */
-    LINEAR_BURN,
+    LINEAR_BURN {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+
+        }
+    },
 
     /**
+     * <p>
      * Burns or dodges colors by changing contrast, depending on the blend color.
+     * This is an extended advanced blend equation.
+     * </p>
      */
-    VIVID_LIGHT,
+    VIVID_LIGHT {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+
+        }
+    },
 
     /**
-     * burns or dodges colors by changing brightness, depending on the blend color.
+     * <p>
+     * Burns or dodges colors by changing brightness, depending on the blend color.
+     * This is an extended advanced blend equation.
+     * </p>
      */
-    LINEAR_LIGHT,
+    LINEAR_LIGHT {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+
+        }
+    },
 
     /**
+     * <p>
      * Conditionally replaces destination pixels with source pixels depending on the brightness of the source pixels.
+     * This is an extended advanced blend equation.
+     * </p>
      */
-    PIN_LIGHT,
+    PIN_LIGHT {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+
+        }
+    },
 
     /**
+     * <p>
      * Adds two images together, setting each color channel value to either 0 or 1.
+     * This is an extended advanced blend equation.
+     * </p>
      */
-    HARD_MIX,
+    HARD_MIX {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+
+        }
+    },
 
     /**
      * <p>
-     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_HUE.png" />
-     * <figcaption>
      * Replaces hue of destination with hue of source, leaving saturation
-     * and luminosity unchanged.
-     * </figcaption>
+     * and luminosity unchanged. This is an advanced blend equation.
      * </p>
      */
-    HUE,
+    HUE {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+
+        }
+    },
 
     /**
      * <p>
-     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_SATURATION.png" />
-     * <figcaption>
      * Replaces saturation of destination saturation hue of source, leaving hue and
-     * luminosity unchanged.
-     * </figcaption>
+     * luminosity unchanged. This is an advanced blend equation.
      * </p>
      */
-    SATURATION,
+    SATURATION {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+
+        }
+    },
 
     /**
      * <p>
-     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_COLOR.png" />
-     * <figcaption>
      * Replaces hue and saturation of destination with hue and saturation of source,
-     * leaving luminosity unchanged.
-     * </figcaption>
+     * leaving luminosity unchanged. This is an advanced blend equation.
      * </p>
      */
-    COLOR,
+    COLOR {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+
+        }
+    },
 
     /**
      * <p>
-     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_LUMINOSITY.png" />
-     * <figcaption>
      * Replaces luminosity of destination with luminosity of source, leaving hue and
-     * saturation unchanged.
-     * </figcaption>
+     * saturation unchanged. This is an advanced blend equation.
      * </p>
      */
-    LUMINOSITY;
+    LUMINOSITY {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+
+        }
+    };
 
     private static final BlendMode[] BLEND_MODES = values();
 
@@ -391,4 +698,11 @@ public enum BlendMode implements Blender {
     public BlendMode asBlendMode() {
         return this;
     }
+
+    /**
+     * Applies this blend mode with RGBA colors. src, dst and out are all premultiplied.
+     */
+    public abstract void apply(@Size(min = 4) float[] src,
+                               @Size(min = 4) float[] dst,
+                               @Size(min = 4) float[] out);
 }
