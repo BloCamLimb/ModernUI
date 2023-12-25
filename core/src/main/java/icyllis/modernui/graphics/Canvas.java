@@ -1124,7 +1124,7 @@ public abstract class Canvas {
      * If there is <var>tex</var>, then it is used to specify the coordinate in UV
      * coordinates to use at each vertex (the paint must have a shader in this case).
      * If there is also <var>color</var>, then they behave as before, but blend with
-     * paint shader. The default is {@link BlendMode#MULTIPLY} in this case.
+     * paint shader. The default is {@link BlendMode#MODULATE} in this case.
      * <p>
      * If there is <var>indices</var> array, then it is used to specify the index of
      * each topology, rather than just walking through the arrays in order.
