@@ -271,14 +271,14 @@ public enum BlendMode implements Blender {
      * <p>
      * Subtracts the destination pixels from the source pixels.
      * </p>
-     * <p>a<sub>out</sub> = a<sub>src</sub> - a<sub>dst</sub></p>
-     * <p>C<sub>out</sub> = C<sub>src</sub> - C<sub>dst</sub></p>
+     * <p>a<sub>out</sub> = a<sub>dst</sub> - a<sub>src</sub></p>
+     * <p>C<sub>out</sub> = C<sub>dst</sub> - C<sub>src</sub></p>
      */
     MINUS {
         @Override
         public void apply(float[] src, float[] dst, float[] out) {
             for (int i = 0; i < 4; i++) {
-                out[i] = src[i] - dst[i];
+                out[i] = dst[i] - src[i];
             }
         }
     },
@@ -288,14 +288,14 @@ public enum BlendMode implements Blender {
      * Subtracts the destination pixels from the source pixels and saturates
      * the result. This is an advanced blend equation.
      * </p>
-     * <p>a<sub>out</sub> = max(0, min(a<sub>src</sub> - a<sub>dst</sub>, 1))</p>
-     * <p>C<sub>out</sub> = max(0, min(C<sub>src</sub> - C<sub>dst</sub>, 1))</p>
+     * <p>a<sub>out</sub> = max(0, min(a<sub>dst</sub> - a<sub>src</sub>, 1))</p>
+     * <p>C<sub>out</sub> = max(0, min(C<sub>dst</sub> - C<sub>src</sub>, 1))</p>
      */
     MINUS_CLAMPED {
         @Override
         public void apply(float[] src, float[] dst, float[] out) {
             for (int i = 0; i < 4; i++) {
-                out[i] = Math.max(src[i] - dst[i], 0);
+                out[i] = Math.max(dst[i] - src[i], 0);
             }
         }
     },
@@ -347,7 +347,7 @@ public enum BlendMode implements Blender {
         @Override
         public void apply(float[] src, float[] dst, float[] out) {
             for (int i = 0; i < 4; i++) {
-                out[i] = src[i] + dst[i] - src[i] * dst[i];
+                out[i] = src[i] + dst[i] * (1 - src[i]);
             }
         }
     },
@@ -530,9 +530,10 @@ public enum BlendMode implements Blender {
         public void apply(float[] src, float[] dst, float[] out) {
             float sa = src[3];
             float da = dst[3];
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < 3; i++) {
                 out[i] = src[i] + dst[i] - 2 * Math.min(src[i] * da, dst[i] * sa);
             }
+            out[3] = sa + da * (1 - sa);
         }
     },
 
@@ -551,9 +552,10 @@ public enum BlendMode implements Blender {
     EXCLUSION {
         @Override
         public void apply(float[] src, float[] dst, float[] out) {
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < 3; i++) {
                 out[i] = src[i] + dst[i] - 2 * (src[i] * dst[i]);
             }
+            out[3] = src[3] + dst[3] * (1 - src[3]);
         }
     },
 
@@ -688,6 +690,7 @@ public enum BlendMode implements Blender {
     };
 
     private static final BlendMode[] BLEND_MODES = values();
+    public static final int COUNT = BLEND_MODES.length;
 
     @Nonnull
     public static BlendMode mode(int value) {
