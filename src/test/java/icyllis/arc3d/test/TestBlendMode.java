@@ -25,10 +25,16 @@ import icyllis.arc3d.core.Color;
 public class TestBlendMode {
 
     public static void main(String[] args) {
-        int src = Color.argb(240, 33, 150, 243);
-        int dst = Color.argb(220, 233, 30, 99);
-        int result = Color.blend(BlendMode.OVERLAY, src, dst);
-        System.out.printf("(%d, %d, %d, %d)",
+        int src = Color.argb(204, 33, 150, 243);
+        int dst = Color.argb(255, 233, 30, 99);
+        for (int i = 0; i < BlendMode.COUNT; i++) {
+            blend(BlendMode.mode(i), src, dst);
+        }
+    }
+
+    public static void blend(BlendMode mode, int src, int dst) {
+        int result = Color.blend(mode, src, dst);
+        System.out.printf("%s (%d, %d, %d, %d)\n", mode,
                 Color.alpha(result), Color.red(result), Color.green(result), Color.blue(result));
     }
 }

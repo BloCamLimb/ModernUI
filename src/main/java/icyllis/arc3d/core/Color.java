@@ -853,6 +853,8 @@ public final class Color {
             case DST -> {
                 return dst;
             }
+            case PLUS -> mode = BlendMode.PLUS_CLAMPED;   // UNorm always clamps
+            case MINUS -> mode = BlendMode.MINUS_CLAMPED; // UNorm always clamps
         }
         float[] src4 = load_and_premul(src);
         float[] dst4 = load_and_premul(dst);
