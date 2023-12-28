@@ -88,7 +88,7 @@ public enum BlendMode implements Blender {
         public void apply(float[] src, float[] dst, float[] out) {
             float df = 1 - src[3];
             for (int i = 0; i < 4; i++) {
-                out[i] = dst[i] * df + src[i];
+                out[i] = src[i] + dst[i] * df;
             }
         }
     },
@@ -907,7 +907,15 @@ public enum BlendMode implements Blender {
     HUE {
         @Override
         public void apply(float[] src, float[] dst, float[] out) {
-
+            float sa = src[3];
+            float da = dst[3];
+            float alpha = sa * da;
+            float[] c = {src[0] * da, src[1] * da, src[2] * da};
+            BlendMode.set_lum_sat(c, dst, sa, dst, sa, alpha);
+            for (int i = 0; i < 3; i++) {
+                out[i] = c[i] + src[i] * (1 - da) + dst[i] * (1 - sa);
+            }
+            out[3] = sa + da - alpha;
         }
     },
 
@@ -920,7 +928,15 @@ public enum BlendMode implements Blender {
     SATURATION {
         @Override
         public void apply(float[] src, float[] dst, float[] out) {
-
+            float sa = src[3];
+            float da = dst[3];
+            float alpha = sa * da;
+            float[] c = {dst[0] * sa, dst[1] * sa, dst[2] * sa};
+            BlendMode.set_lum_sat(c, src, da, dst, sa, alpha);
+            for (int i = 0; i < 3; i++) {
+                out[i] = c[i] + src[i] * (1 - da) + dst[i] * (1 - sa);
+            }
+            out[3] = sa + da - alpha;
         }
     },
 
@@ -933,7 +949,15 @@ public enum BlendMode implements Blender {
     COLOR {
         @Override
         public void apply(float[] src, float[] dst, float[] out) {
-
+            float sa = src[3];
+            float da = dst[3];
+            float alpha = sa * da;
+            float[] c = {src[0] * da, src[1] * da, src[2] * da};
+            BlendMode.set_lum(c, dst, sa, alpha);
+            for (int i = 0; i < 3; i++) {
+                out[i] = c[i] + src[i] * (1 - da) + dst[i] * (1 - sa);
+            }
+            out[3] = sa + da - alpha;
         }
     },
 
@@ -946,7 +970,15 @@ public enum BlendMode implements Blender {
     LUMINOSITY {
         @Override
         public void apply(float[] src, float[] dst, float[] out) {
-
+            float sa = src[3];
+            float da = dst[3];
+            float alpha = sa * da;
+            float[] c = {dst[0] * sa, dst[1] * sa, dst[2] * sa};
+            BlendMode.set_lum(c, src, da, alpha);
+            for (int i = 0; i < 3; i++) {
+                out[i] = c[i] + src[i] * (1 - da) + dst[i] * (1 - sa);
+            }
+            out[3] = sa + da - alpha;
         }
     };
 
@@ -978,9 +1010,57 @@ public enum BlendMode implements Blender {
     }
 
     /**
-     * Applies this blend mode with RGBA colors. src, dst and out are all premultiplied.
+     * Applies this blend mode with RGBA colors. src, dst and out store premultiplied
+     * R,G,B,A components from index 0 to 3. src, dst and out can be the same pointer.
      */
-    public abstract void apply(@Size(min = 4) float[] src,
-                               @Size(min = 4) float[] dst,
-                               @Size(min = 4) float[] out);
+    public abstract void apply(@Size(4) float[] src,
+                               @Size(4) float[] dst,
+                               @Size(4) float[] out);
+
+    private static float lum(float[] c) {
+        // we know that Photoshop uses these values
+        // instead of (0.3, 0.59, 0.11)
+        return 0.299f * c[0] + 0.587f * c[1] + 0.114f * c[2];
+    }
+
+    private static void set_lum(float[] cbase,
+                                float[] clum, float alum,
+                                float alpha) {
+        float ldiff = lum(clum) * alum - lum(cbase);
+        for (int i = 0; i < 3; i++) {
+            cbase[i] += ldiff;
+        }
+        float lum = lum(cbase);
+        float mincol = MathUtil.min3(cbase);
+        float maxcol = MathUtil.max3(cbase);
+        if (mincol < 0 && lum != mincol) {
+            for (int i = 0; i < 3; i++) {
+                cbase[i] = lum + ((cbase[i] - lum) * lum) / (lum - mincol);
+            }
+        }
+        if (maxcol > alpha && maxcol != lum) {
+            for (int i = 0; i < 3; i++) {
+                cbase[i] = lum + ((cbase[i] - lum) * (alpha - lum)) / (maxcol - lum);
+            }
+        }
+    }
+
+    private static void set_lum_sat(float[] cbase,
+                                    float[] csat, float asat,
+                                    float[] clum, float alum,
+                                    float alpha) {
+        float minbase = MathUtil.min3(cbase);
+        float sbase = MathUtil.max3(cbase) - minbase;
+        if (sbase > 0) {
+            float ssat = (MathUtil.max3(csat) - MathUtil.min3(csat)) * asat;
+            for (int i = 0; i < 3; i++) {
+                cbase[i] = (cbase[i] - minbase) * ssat / sbase;
+            }
+        } else {
+            for (int i = 0; i < 3; i++) {
+                cbase[i] = 0;
+            }
+        }
+        set_lum(cbase, clum, alum, alpha);
+    }
 }
