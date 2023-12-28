@@ -22,16 +22,27 @@ package icyllis.arc3d.test;
 import icyllis.arc3d.core.Color;
 import icyllis.arc3d.core.ColorSpace;
 
-import java.util.Arrays;
-
 public class TestColorSpace {
 
     public static void main(String[] args) {
-        var cs = ColorSpace.get(ColorSpace.Named.LINEAR_SRGB);
-        float[] v = {0.7f, 0.5f, 0.6f};
-        var lum = Color.luminance(v);
-        System.out.println(lum);
-        var res = cs.toXyz(v);
-        System.out.println(res[1]);
+        var cs = (ColorSpace.Rgb) ColorSpace.get(ColorSpace.Named.SRGB);
+        float[] v = {0.4f, 0.8f, 0.7f};
+        {
+            float[] linear = v.clone();
+            Color.GammaToLinear(linear);
+            float lum = Color.luminance(linear);
+            System.out.println(lum);
+            System.out.println(Color.LinearToGamma(lum));
+        }
+        {
+            float lum = cs.toXyz(v)[1];
+            System.out.println(lum);
+            System.out.println(cs.fromLinear(lum, lum, lum)[0]);
+        }
+        {
+            float lum = 0.299f * v[0] + 0.587f * v[1] + 0.114f * v[2];
+            // ????
+            System.out.println(lum);
+        }
     }
 }
