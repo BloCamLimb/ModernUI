@@ -22,7 +22,14 @@ package icyllis.arc3d.core;
 import javax.annotation.Nonnull;
 
 /**
- * Blend modes.
+ * Blend modes, all the blend equations apply to premultiplied colors.
+ * Source color is blend color or paint color, destination color is
+ * base color or canvas color.
+ * <p>
+ * Non-clamped blend modes &le; {@link #MODULATE}, plus {@link #SCREEN} are
+ * Porter-Duff blend modes. They can be directly implemented by GPU hardware.
+ * The others are advanced blend equations, which need to be implemented in
+ * fragment shaders, or require an extension.
  */
 public enum BlendMode implements Blender {
     /**
@@ -670,6 +677,16 @@ public enum BlendMode implements Blender {
      * destination are opaque, then this is the same as {@link #PLUS_CLAMPED}.
      * This is an extended advanced blend equation.
      * </p>
+     * <p>a<sub>out</sub> = a<sub>src</sub> + a<sub>dst</sub> - a<sub>src</sub> * a<sub>dst</sub></p>
+     *
+     * <p>if C<sub>src</sub> / a<sub>src</sub> + C<sub>dst</sub> / a<sub>dst</sub> &le; 1:<br>
+     * C<sub>out</sub> = C<sub>src</sub> + C<sub>dst</sub>
+     * </p>
+     *
+     * <p>otherwise:<br>
+     * C<sub>out</sub> = a<sub>src</sub> * a<sub>dst</sub> + (1 - a<sub>dst</sub>) * C<sub>src</sub> +
+     * (1 - a<sub>src</sub>) * C<sub>dst</sub>
+     * </p>
      *
      * @see #PLUS
      * @see #PLUS_CLAMPED
@@ -691,11 +708,25 @@ public enum BlendMode implements Blender {
      * Darkens the destination pixels to reflect the source pixels while also increasing contrast.
      * This is an extended advanced blend equation.
      * </p>
+     * <p>a<sub>out</sub> = a<sub>src</sub> + a<sub>dst</sub> - a<sub>src</sub> * a<sub>dst</sub></p>
+     *
+     * <p>if C<sub>src</sub> / a<sub>src</sub> + C<sub>dst</sub> / a<sub>dst</sub> &gt; 1:<br>
+     * C<sub>out</sub> = C<sub>src</sub> + C<sub>dst</sub> - a<sub>src</sub> * a<sub>dst</sub>
+     * </p>
+     *
+     * <p>otherwise:<br>
+     * C<sub>out</sub> = (1 - a<sub>dst</sub>) * C<sub>src</sub> + (1 - a<sub>src</sub>) * C<sub>dst</sub>
+     * </p>
      */
     LINEAR_BURN {
         @Override
         public void apply(float[] src, float[] dst, float[] out) {
-
+            float sa = src[3];
+            float da = dst[3];
+            for (int i = 0; i < 3; i++) {
+                out[i] = Math.max(src[i] + dst[i] - sa * da, src[i] * (1 - da) + dst[i] * (1 - sa));
+            }
+            out[3] = sa + da * (1 - sa);
         }
     },
 
@@ -704,11 +735,54 @@ public enum BlendMode implements Blender {
      * Burns or dodges colors by changing contrast, depending on the blend color.
      * This is an extended advanced blend equation.
      * </p>
+     * <p>a<sub>out</sub> = a<sub>src</sub> + a<sub>dst</sub> - a<sub>src</sub> * a<sub>dst</sub></p>
+     *
+     * <p>if C<sub>src</sub> &le; 0:<br>
+     * C<sub>out</sub> = C<sub>dst</sub> * (1 - a<sub>src</sub>)
+     * </p>
+     *
+     * <p>if C<sub>src</sub> &lt; 0.5 * a<sub>src</sub>:<br>
+     * C<sub>out</sub> = a<sub>src</sub> * (a<sub>dst</sub> - min(a<sub>dst</sub>, (a<sub>dst</sub> -
+     * C<sub>dst</sub>) * a<sub>src</sub> / (2 * C<sub>dst</sub>))) + (1 - a<sub>dst</sub>) * C<sub>src</sub> +
+     * (1 - a<sub>src</sub>) * C<sub>dst</sub>
+     * </p>
+     *
+     * <p>if C<sub>src</sub> &ge; a<sub>src</sub>:<br>
+     * C<sub>out</sub> = a<sub>src</sub> * a<sub>dst</sub> + (1 - a<sub>dst</sub>) * C<sub>src</sub> +
+     * (1 - a<sub>src</sub>) * C<sub>dst</sub>
+     * </p>
+     *
+     * <p>otherwise:<br>
+     * C<sub>out</sub> = a<sub>src</sub> * min(a<sub>dst</sub>, C<sub>dst</sub> * a<sub>src</sub> /
+     * (2 * (a<sub>src</sub> - C<sub>src</sub>))) + (1 - a<sub>dst</sub>) * C<sub>src</sub> +
+     * (1 - a<sub>src</sub>) * C<sub>dst</sub>
+     * </p>
      */
     VIVID_LIGHT {
         @Override
         public void apply(float[] src, float[] dst, float[] out) {
-
+            float sa = src[3];
+            float da = dst[3];
+            for (int i = 0; i < 3; i++) {
+                float s = src[i];
+                float d = dst[i];
+                if (2 * s < sa) {
+                    // burn
+                    if (s <= 0) {
+                        out[i] = d * (1 - sa);
+                    } else {
+                        out[i] = sa * Math.max(0, da - (da - d) * sa / (2 * s)) + s * (1 - da) + d * (1 - sa);
+                    }
+                } else {
+                    // dodge
+                    if (s >= sa) {
+                        out[i] = sa * da + s * (1 - da) + d * (1 - sa);
+                    } else {
+                        out[i] = sa * Math.min(da, d * sa / (2 * (sa - s))) + s * (1 - da) + d * (1 - sa);
+                    }
+                }
+            }
+            out[3] = sa + da * (1 - sa);
         }
     },
 
@@ -717,11 +791,35 @@ public enum BlendMode implements Blender {
      * Burns or dodges colors by changing brightness, depending on the blend color.
      * This is an extended advanced blend equation.
      * </p>
+     * <p>a<sub>out</sub> = a<sub>src</sub> + a<sub>dst</sub> - a<sub>src</sub> * a<sub>dst</sub></p>
+     *
+     * <p>if 2 * C<sub>src</sub> / a<sub>src</sub> + C<sub>dst</sub> / a<sub>dst</sub> &gt; 2:<br>
+     * C<sub>out</sub> = a<sub>src</sub> * a<sub>dst</sub> + (1 - a<sub>dst</sub>) * C<sub>src</sub> +
+     * (1 - a<sub>src</sub>) * C<sub>dst</sub>
+     * </p>
+     *
+     * <p>if 2 * C<sub>src</sub> / a<sub>src</sub> + C<sub>dst</sub> / a<sub>dst</sub> &le; 1:<br>
+     * C<sub>out</sub> = (1 - a<sub>dst</sub>) * C<sub>src</sub> + (1 - a<sub>src</sub>) * C<sub>dst</sub>
+     * </p>
+     *
+     * <p>otherwise:<br>
+     * C<sub>out</sub> = 2 * C<sub>src</sub> * a<sub>dst</sub> + C<sub>dst</sub> * a<sub>src</sub> -
+     * a<sub>src</sub> * a<sub>dst</sub> + (1 - a<sub>dst</sub>) * C<sub>src</sub> +
+     * (1 - a<sub>src</sub>) * C<sub>dst</sub>
+     * </p>
      */
     LINEAR_LIGHT {
         @Override
         public void apply(float[] src, float[] dst, float[] out) {
-
+            float sa = src[3];
+            float da = dst[3];
+            for (int i = 0; i < 3; i++) {
+                float s = src[i];
+                float d = dst[i];
+                out[i] = MathUtil.clamp(2 * s * da + d * sa - sa * da, 0, sa * da) +
+                        s * (1 - da) + d * (1 - sa);
+            }
+            out[3] = sa + da * (1 - sa);
         }
     },
 
@@ -730,11 +828,43 @@ public enum BlendMode implements Blender {
      * Conditionally replaces destination pixels with source pixels depending on the brightness of the source pixels.
      * This is an extended advanced blend equation.
      * </p>
+     * <p>a<sub>out</sub> = a<sub>src</sub> + a<sub>dst</sub> - a<sub>src</sub> * a<sub>dst</sub></p>
+     *
+     * <p>if 2 * C<sub>src</sub> / a<sub>src</sub> - C<sub>dst</sub> / a<sub>dst</sub> &gt; 1 &amp;&amp;
+     * C<sub>src</sub> &lt; 0.5 * a<sub>src</sub>:<br>
+     * C<sub>out</sub> = (1 - a<sub>dst</sub>) * C<sub>src</sub> + (1 - a<sub>src</sub>) * C<sub>dst</sub>
+     * </p>
+     *
+     * <p>if 2 * C<sub>src</sub> / a<sub>src</sub> - C<sub>dst</sub> / a<sub>dst</sub> &gt; 1 &amp;&amp;
+     * C<sub>src</sub> &ge; 0.5 * a<sub>src</sub>:<br>
+     * C<sub>out</sub> = 2 * C<sub>src</sub> * a<sub>dst</sub> - a<sub>src</sub> * a<sub>dst</sub> +
+     * (1 - a<sub>dst</sub>) * C<sub>src</sub> + (1 - a<sub>src</sub>) * C<sub>dst</sub>
+     * </p>
+     *
+     * <p>if 2 * C<sub>src</sub> / a<sub>src</sub> - C<sub>dst</sub> / a<sub>dst</sub> &le; 1 &amp;&amp;
+     * C<sub>src</sub> * a<sub>dst</sub> &lt; 0.5 * C<sub>dst</sub> * a<sub>src</sub>:<br>
+     * C<sub>out</sub> = 2 * C<sub>src</sub> * a<sub>dst</sub> + (1 - a<sub>dst</sub>) * C<sub>src</sub> +
+     * (1 - a<sub>src</sub>) * C<sub>dst</sub>
+     * </p>
+     *
+     * <p>otherwise:<br>
+     * C<sub>out</sub> = C<sub>dst</sub> * a<sub>src</sub> + (1 - a<sub>dst</sub>) * C<sub>src</sub> +
+     * (1 - a<sub>src</sub>) * C<sub>dst</sub>
+     * </p>
      */
     PIN_LIGHT {
         @Override
         public void apply(float[] src, float[] dst, float[] out) {
-
+            float sa = src[3];
+            float da = dst[3];
+            for (int i = 0; i < 3; i++) {
+                float x = 2 * src[i] * da;
+                float y = x - sa * da;
+                float z = dst[i] * sa;
+                out[i] = (y > z ? (2 * src[i] < sa ? 0 : y) : Math.min(x, z)) +
+                        src[i] * (1 - da) + dst[i] * (1 - sa);
+            }
+            out[3] = sa + da * (1 - sa);
         }
     },
 
@@ -743,11 +873,28 @@ public enum BlendMode implements Blender {
      * Adds two images together, setting each color channel value to either 0 or 1.
      * This is an extended advanced blend equation.
      * </p>
+     * <p>a<sub>out</sub> = a<sub>src</sub> + a<sub>dst</sub> - a<sub>src</sub> * a<sub>dst</sub></p>
+     *
+     * <p>if C<sub>src</sub> / a<sub>src</sub> + C<sub>dst</sub> / a<sub>dst</sub> &lt; 1:<br>
+     * C<sub>out</sub> = (1 - a<sub>dst</sub>) * C<sub>src</sub> + (1 - a<sub>src</sub>) * C<sub>dst</sub>
+     * </p>
+     *
+     * <p>otherwise:<br>
+     * C<sub>out</sub> = a<sub>src</sub> * a<sub>dst</sub> + (1 - a<sub>dst</sub>) * C<sub>src</sub> +
+     * (1 - a<sub>src</sub>) * C<sub>dst</sub>
+     * </p>
      */
     HARD_MIX {
         @Override
         public void apply(float[] src, float[] dst, float[] out) {
-
+            float sa = src[3];
+            float da = dst[3];
+            for (int i = 0; i < 3; i++) {
+                float b = src[i] * da + dst[i] * sa;
+                float c = sa * da;
+                out[i] = src[i] + dst[i] - b + (b < c ? 0 : c);
+            }
+            out[3] = sa + da * (1 - sa);
         }
     },
 

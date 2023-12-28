@@ -853,13 +853,11 @@ public final class Color {
             case DST -> {
                 return dst;
             }
-            case PLUS -> mode = BlendMode.PLUS_CLAMPED;   // UNorm always clamps
-            case MINUS -> mode = BlendMode.MINUS_CLAMPED; // UNorm always clamps
         }
         float[] src4 = load_and_premul(src);
         float[] dst4 = load_and_premul(dst);
         mode.apply(src4, dst4, dst4);
-        float a = dst4[3];
+        float a = MathUtil.clamp(dst4[3], 0, 1);
         if (a == 0) {
             return TRANSPARENT;
         }
@@ -867,7 +865,7 @@ public final class Color {
         int result = (int) (a * 255.0f + 0.5f) << 24;
         a = 255.0f / a;
         for (int i = 0; i < 3; i++) {
-            result |= (int) (dst4[2 - i] * a + 0.5f) << (i << 3);
+            result |= (int) MathUtil.clamp(dst4[2 - i] * a + 0.5f, 0, 255) << (i << 3);
         }
         return result;
     }
