@@ -234,6 +234,13 @@ public class MathUtil {
     /**
      * Component-wise minimum of a vector.
      */
+    public static float min3(float[] v) {
+        return Math.min(Math.min(v[0], v[1]), v[2]);
+    }
+
+    /**
+     * Component-wise minimum of a vector.
+     */
     public static double min(double a, double b, double c) {
         return Math.min(Math.min(a, b), c);
     }
@@ -257,6 +264,13 @@ public class MathUtil {
      */
     public static float max(float a, float b, float c) {
         return Math.max(Math.max(a, b), c);
+    }
+
+    /**
+     * Component-wise maximum of a vector.
+     */
+    public static float max3(float[] v) {
+        return Math.max(Math.max(v[0], v[1]), v[2]);
     }
 
     /**
