@@ -284,13 +284,14 @@ public enum BlendMode implements Blender {
 
     /**
      * <p>
-     * Subtracts the destination pixels from the source pixels, without alpha blending.
+     * Subtracts the source pixels from the destination pixels, without alpha blending.
      * For floating-point textures, color components may be less than 0.0.
      * </p>
      * <p>a<sub>out</sub> = a<sub>dst</sub> - a<sub>src</sub></p>
      * <p>C<sub>out</sub> = C<sub>dst</sub> - C<sub>src</sub></p>
      *
      * @see #MINUS_CLAMPED
+     * @see #SUBTRACT
      */
     MINUS {
         @Override
@@ -303,7 +304,7 @@ public enum BlendMode implements Blender {
 
     /**
      * <p>
-     * Subtracts the destination pixels from the source pixels and saturates
+     * Subtracts the source pixels from the destination pixels and saturates
      * the result, without alpha blending. For unsigned fixed-point textures,
      * this is the same as {@link #MINUS}. This is an advanced blend equation.
      * </p>
@@ -311,6 +312,7 @@ public enum BlendMode implements Blender {
      * <p>C<sub>out</sub> = max(0, min(C<sub>dst</sub> - C<sub>src</sub>, 1))</p>
      *
      * @see #MINUS
+     * @see #SUBTRACT
      */
     MINUS_CLAMPED {
         @Override
@@ -672,6 +674,66 @@ public enum BlendMode implements Blender {
 
     /**
      * <p>
+     * Subtracts the source pixels from the destination pixels and saturates
+     * the result, with alpha blending. If both the source and destination are
+     * opaque, then this is the same as {@link #MINUS_CLAMPED}. This is a custom
+     * blend equation.
+     * </p>
+     * <p>a<sub>out</sub> = a<sub>src</sub> + a<sub>dst</sub> - a<sub>src</sub> * a<sub>dst</sub></p>
+     *
+     * <p>if C<sub>dst</sub> / a<sub>dst</sub> - C<sub>src</sub> / a<sub>src</sub> &ge; 0:<br>
+     * C<sub>out</sub> = C<sub>src</sub> + C<sub>dst</sub> - 2 * C<sub>src</sub> * a<sub>dst</sub>
+     * </p>
+     *
+     * <p>otherwise:<br>
+     * C<sub>out</sub> = (1 - a<sub>dst</sub>) * C<sub>src</sub> + (1 - a<sub>src</sub>) * C<sub>dst</sub>
+     * </p>
+     *
+     * @see #MINUS
+     * @see #MINUS_CLAMPED
+     */
+    SUBTRACT {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+            float sa = src[3];
+            float da = dst[3];
+            for (int i = 0; i < 3; i++) {
+                out[i] = src[i] * (1 - da) + dst[i] - Math.min(src[i] * da, dst[i] * sa);
+            }
+            out[3] = sa + da * (1 - sa);
+        }
+    },
+
+    /**
+     * <p>
+     * Divides the destination pixels by the source pixels and saturates the result.
+     * For negative and NaN values, the result color is black (XOR). This is a custom
+     * blend equation.
+     * </p>
+     * <p>
+     * a<sub>out</sub> = a<sub>src</sub> + a<sub>dst</sub> - a<sub>src</sub> * a<sub>dst</sub>
+     * </p>
+     * <p>
+     * C<sub>out</sub> = pin((C<sub>dst</sub> * a<sub>src</sub>) / (C<sub>src</sub> * a<sub>dst</sub>), 0, 1) *
+     * a<sub>src</sub> * a<sub>dst</sub> + (1 - a<sub>dst</sub>) * C<sub>src</sub> +
+     * (1 - a<sub>src</sub>) * C<sub>dst</sub>
+     * </p>
+     */
+    DIVIDE {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+            float sa = src[3];
+            float da = dst[3];
+            for (int i = 0; i < 3; i++) {
+                out[i] = MathUtil.pin((dst[i] * sa) / (src[i] * da), 0, 1) * sa * da +
+                        src[i] * (1 - da) + dst[i] * (1 - sa);
+            }
+            out[3] = sa + da * (1 - sa);
+        }
+    },
+
+    /**
+     * <p>
      * Lightens the destination pixels to reflect the source pixels while also increasing contrast.
      * This is {@link #PLUS_CLAMPED} with alpha blending. If both the source and
      * destination are opaque, then this is the same as {@link #PLUS_CLAMPED}.
@@ -895,6 +957,72 @@ public enum BlendMode implements Blender {
                 out[i] = src[i] + dst[i] - b + (b < c ? 0 : c);
             }
             out[3] = sa + da * (1 - sa);
+        }
+    },
+
+    /**
+     * <p>
+     * Similar to {@link #DARKEN}, but darkens on the composite channel, instead of
+     * separate RGB color channels. It compares the source and destination color,
+     * and keep the one with lower luminosity between the two.
+     * </p>
+     * <p>if lum(C<sub>src</sub>) &le; lum(C<sub>dst</sub>):<br>
+     * Equivalent to {@link #SRC_OVER}
+     * </p>
+     *
+     * <p>otherwise:<br>
+     * Equivalent to {@link #DST_OVER}
+     * </p>
+     */
+    DARKER_COLOR {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+            if (BlendMode.lum(src) <= BlendMode.lum(dst)) {
+                // src_over
+                float df = 1 - src[3];
+                for (int i = 0; i < 4; i++) {
+                    out[i] = src[i] + dst[i] * df;
+                }
+            } else {
+                // dst_over
+                float sf = 1 - dst[3];
+                for (int i = 0; i < 4; i++) {
+                    out[i] = src[i] * sf + dst[i];
+                }
+            }
+        }
+    },
+
+    /**
+     * <p>
+     * Similar to {@link #LIGHTEN}, but lightens on the composite channel, instead of
+     * separate RGB color channels. It compares the source and destination color,
+     * and keep the one with higher luminosity between the two.
+     * </p>
+     * <p>if lum(C<sub>src</sub>) &ge; lum(C<sub>dst</sub>):<br>
+     * Equivalent to {@link #SRC_OVER}
+     * </p>
+     *
+     * <p>otherwise:<br>
+     * Equivalent to {@link #DST_OVER}
+     * </p>
+     */
+    LIGHTER_COLOR {
+        @Override
+        public void apply(float[] src, float[] dst, float[] out) {
+            if (BlendMode.lum(src) >= BlendMode.lum(dst)) {
+                // src_over
+                float df = 1 - src[3];
+                for (int i = 0; i < 4; i++) {
+                    out[i] = src[i] + dst[i] * df;
+                }
+            } else {
+                // dst_over
+                float sf = 1 - dst[3];
+                for (int i = 0; i < 4; i++) {
+                    out[i] = src[i] * sf + dst[i];
+                }
+            }
         }
     },
 

@@ -39,10 +39,12 @@ public class TestBlendMode {
         m[BlendMode.MULTIPLY.ordinal()] = 0x47145f;
         m[BlendMode.COLOR_BURN.ordinal()] = 0x73065d;
         m[BlendMode.LINEAR_BURN.ordinal()] = 0x370659;
+        m[BlendMode.DARKER_COLOR.ordinal()] = 0xe91e63;
         m[BlendMode.LIGHTEN.ordinal()] = 0xe97ed6;
         m[BlendMode.SCREEN.ordinal()] = 0xeb88da;
         m[BlendMode.COLOR_DODGE.ordinal()] = 0xfb40e0;
         m[BlendMode.LINEAR_DODGE.ordinal()] = 0xfb96e0;
+        m[BlendMode.LIGHTER_COLOR.ordinal()] = 0x497ed6;
         m[BlendMode.OVERLAY.ordinal()] = 0xdc22ab;
         m[BlendMode.SOFT_LIGHT.ordinal()] = 0xdd258e;
         m[BlendMode.HARD_LIGHT.ordinal()] = 0x5f3dd4;
@@ -52,20 +54,23 @@ public class TestBlendMode {
         m[BlendMode.HARD_MIX.ordinal()] = 0xfb06e0;
         m[BlendMode.DIFFERENCE.ordinal()] = 0xcf6687;
         m[BlendMode.EXCLUSION.ordinal()] = 0xd3798f;
+        m[BlendMode.SUBTRACT.ordinal()] = 0xcf0614;
+        m[BlendMode.DIVIDE.ordinal()] = 0xfb2f67;
         m[BlendMode.HUE.ordinal()] = 0x3668bd;
         m[BlendMode.SATURATION.ordinal()] = 0xec1c62;
         m[BlendMode.COLOR.ordinal()] = 0x3368c1;
         m[BlendMode.LUMINOSITY.ordinal()] = 0xfb3779;
-        // missing: darker color, lighter color, subtract, divide
         return m;
     }
 
     public static void main(String[] args) {
         int src = Color.argb(204, 33, 150, 243);
         int dst = Color.argb(255, 233, 30, 99);
-        for (int i = 0; i < BlendMode.COUNT; i++) {
+        int i = 0;
+        for (; i < BlendMode.COUNT; i++) {
             blend(BlendMode.mode(i), src, dst);
         }
+        System.out.println(i);
     }
 
     public static void blend(BlendMode mode, int src, int dst) {
