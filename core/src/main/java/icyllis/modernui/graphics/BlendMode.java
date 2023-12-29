@@ -159,9 +159,13 @@ public enum BlendMode {
      * <p>
      * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_PLUS.png" />
      * <figcaption>Adds the source pixels to the destination pixels.</figcaption>
+     * For floating-point textures, color components may be greater than 1.0.
      * </p>
      * <p>a<sub>out</sub> = a<sub>src</sub> + a<sub>dst</sub></p>
      * <p>C<sub>out</sub> = C<sub>src</sub> + C<sub>dst</sub></p>
+     *
+     * @see #PLUS_CLAMPED
+     * @see #LINEAR_DODGE
      */
     PLUS,
 
@@ -170,28 +174,41 @@ public enum BlendMode {
      * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_PLUS.png" />
      * <figcaption>Adds the source pixels to the destination pixels and saturates
      * the result.</figcaption>
+     * For unsigned fixed-point textures,
+     * this is the same as {@link #PLUS}. This is an advanced blend equation.
      * </p>
      * <p>a<sub>out</sub> = max(0, min(a<sub>src</sub> + a<sub>dst</sub>, 1))</p>
      * <p>C<sub>out</sub> = max(0, min(C<sub>src</sub> + C<sub>dst</sub>, 1))</p>
+     *
+     * @see #PLUS
+     * @see #LINEAR_DODGE
      */
     PLUS_CLAMPED,
 
     /**
      * <p>
-     * Subtracts the destination pixels from the source pixels.
+     * Subtracts the source pixels from the destination pixels, without alpha blending.
+     * For floating-point textures, color components may be less than 0.0.
      * </p>
-     * <p>a<sub>out</sub> = a<sub>src</sub> - a<sub>dst</sub></p>
-     * <p>C<sub>out</sub> = C<sub>src</sub> - C<sub>dst</sub></p>
+     * <p>a<sub>out</sub> = a<sub>dst</sub> - a<sub>src</sub></p>
+     * <p>C<sub>out</sub> = C<sub>dst</sub> - C<sub>src</sub></p>
+     *
+     * @see #MINUS_CLAMPED
+     * @see #SUBTRACT
      */
     MINUS,
 
     /**
      * <p>
-     * Subtracts the destination pixels from the source pixels and saturates
-     * the result.
+     * Subtracts the source pixels from the destination pixels and saturates
+     * the result, without alpha blending. For unsigned fixed-point textures,
+     * this is the same as {@link #MINUS}. This is an advanced blend equation.
      * </p>
-     * <p>a<sub>out</sub> = max(0, min(a<sub>src</sub> - a<sub>dst</sub>, 1))</p>
-     * <p>C<sub>out</sub> = max(0, min(C<sub>src</sub> - C<sub>dst</sub>, 1))</p>
+     * <p>a<sub>out</sub> = max(0, min(a<sub>dst</sub> - a<sub>src</sub>, 1))</p>
+     * <p>C<sub>out</sub> = max(0, min(C<sub>dst</sub> - C<sub>src</sub>, 1))</p>
+     *
+     * @see #MINUS
+     * @see #SUBTRACT
      */
     MINUS_CLAMPED,
 
@@ -202,6 +219,8 @@ public enum BlendMode {
      * </p>
      * <p>a<sub>out</sub> = a<sub>src</sub> * a<sub>dst</sub></p>
      * <p>C<sub>out</sub> = C<sub>src</sub> * C<sub>dst</sub></p>
+     *
+     * @see #MULTIPLY
      */
     MODULATE,
 
@@ -209,10 +228,15 @@ public enum BlendMode {
      * <p>
      * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_MODULATE.png" />
      * <figcaption>Multiplies the source and destination pixels.</figcaption>
+     * This is {@link #MODULATE} with alpha blending. If both the source and
+     * destination are opaque, then this is the same as {@link #MODULATE}.
+     * This is an advanced blend equation.
      * </p>
      * <p>a<sub>out</sub> = a<sub>src</sub> + a<sub>dst</sub> - a<sub>src</sub> * a<sub>dst</sub></p>
      * <p>C<sub>out</sub> = C<sub>src</sub> * C<sub>dst</sub> + (1 - a<sub>dst</sub>) * C<sub>src</sub> + (1 -
      * a<sub>src</sub>) * C<sub>dst</sub></p>
+     *
+     * @see #MODULATE
      */
     MULTIPLY,
 
@@ -335,6 +359,18 @@ public enum BlendMode {
      * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_HARD_LIGHT.png" />
      * <figcaption>Makes destination lighter or darker, depending on source.</figcaption>
      * </p>
+     * <p>a<sub>out</sub> = a<sub>src</sub> + a<sub>dst</sub> - a<sub>src</sub> * a<sub>dst</sub></p>
+     *
+     * <p>if C<sub>src</sub> &le; 0.5 * a<sub>src</sub>:<br>
+     * C<sub>out</sub> = 2 * C<sub>src</sub> * C<sub>dst</sub> + (1 - a<sub>dst</sub>) * C<sub>src</sub> +
+     * (1 - a<sub>src</sub>) * C<sub>dst</sub>
+     * </p>
+     *
+     * <p>otherwise:<br>
+     * C<sub>out</sub> = a<sub>src</sub> * a<sub>dst</sub> - 2 * (a<sub>src</sub> - C<sub>src</sub>) *
+     * (a<sub>dst</sub> - C<sub>dst</sub>) + (1 - a<sub>dst</sub>) * C<sub>src</sub> + (1 - a<sub>src</sub>) *
+     * C<sub>dst</sub>
+     * </p>
      */
     HARD_LIGHT,
 
@@ -342,6 +378,26 @@ public enum BlendMode {
      * <p>
      * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_SOFT_LIGHT.png" />
      * <figcaption>Makes destination lighter or darker, depending on source.</figcaption>
+     * </p>
+     * <p>a<sub>out</sub> = a<sub>src</sub> + a<sub>dst</sub> - a<sub>src</sub> * a<sub>dst</sub></p>
+     *
+     * <p>if C<sub>src</sub> &le; 0.5 * a<sub>src</sub>:<br>
+     * C<sub>out</sub> = C<sub>dst</sub> * C<sub>dst</sub> * (a<sub>src</sub> - 2 * C<sub>src</sub>) /
+     * a<sub>dst</sub> + (1 - a<sub>dst</sub>) * C<sub>src</sub> + C<sub>dst</sub> *
+     * (2 * C<sub>src</sub> + 1 - a<sub>src</sub>)
+     * </p>
+     *
+     * <p>if C<sub>dst</sub> &le; 0.25 * a<sub>dst</sub>:<br>
+     * C<sub>out</sub> = (a<sub>dst</sub> * a<sub>dst</sub> * (C<sub>src</sub> + C<sub>dst</sub> *
+     * (6 * C<sub>src</sub> - 3 * a<sub>src</sub> + 1)) + 12 * a<sub>dst</sub> * C<sub>dst</sub> * C<sub>dst</sub> *
+     * (a<sub>src</sub> - 2 * C<sub>src</sub>) - 16 * C<sub>dst</sub> * C<sub>dst</sub> * C<sub>dst</sub> *
+     * (a<sub>src</sub> - 2 * C<sub>src</sub>) - a<sub>dst</sub> * a<sub>dst</sub> * a<sub>dst</sub> *
+     * C<sub>src</sub>) / a<sub>dst</sub> * a<sub>dst</sub>
+     * </p>
+     *
+     * <p>otherwise:<br>
+     * C<sub>out</sub> = C<sub>dst</sub> * (a<sub>src</sub> - 2 * C<sub>src</sub> + 1) + C<sub>src</sub> *
+     * (1 - a<sub>dst</sub>) - sqrt(C<sub>dst</sub> * a<sub>dst</sub>) * (a<sub>src</sub> - 2 * C<sub>src</sub>)
      * </p>
      */
     SOFT_LIGHT,
@@ -377,9 +433,63 @@ public enum BlendMode {
 
     /**
      * <p>
+     * Subtracts the source pixels from the destination pixels and saturates
+     * the result, with alpha blending. If both the source and destination are
+     * opaque, then this is the same as {@link #MINUS_CLAMPED}. This is a custom
+     * blend equation.
+     * </p>
+     * <p>a<sub>out</sub> = a<sub>src</sub> + a<sub>dst</sub> - a<sub>src</sub> * a<sub>dst</sub></p>
+     *
+     * <p>if C<sub>dst</sub> / a<sub>dst</sub> - C<sub>src</sub> / a<sub>src</sub> &ge; 0:<br>
+     * C<sub>out</sub> = C<sub>src</sub> + C<sub>dst</sub> - 2 * C<sub>src</sub> * a<sub>dst</sub>
+     * </p>
+     *
+     * <p>otherwise:<br>
+     * C<sub>out</sub> = (1 - a<sub>dst</sub>) * C<sub>src</sub> + (1 - a<sub>src</sub>) * C<sub>dst</sub>
+     * </p>
+     *
+     * @see #MINUS
+     * @see #MINUS_CLAMPED
+     */
+    SUBTRACT,
+
+    /**
+     * <p>
+     * Divides the destination pixels by the source pixels and saturates the result.
+     * For negative and NaN values, the result color is black (XOR). This is a custom
+     * blend equation.
+     * </p>
+     * <p>
+     * a<sub>out</sub> = a<sub>src</sub> + a<sub>dst</sub> - a<sub>src</sub> * a<sub>dst</sub>
+     * </p>
+     * <p>
+     * C<sub>out</sub> = pin((C<sub>dst</sub> * a<sub>src</sub>) / (C<sub>src</sub> * a<sub>dst</sub>), 0, 1) *
+     * a<sub>src</sub> * a<sub>dst</sub> + (1 - a<sub>dst</sub>) * C<sub>src</sub> +
+     * (1 - a<sub>src</sub>) * C<sub>dst</sub>
+     * </p>
+     */
+    DIVIDE,
+
+    /**
+     * <p>
      * Lightens the destination pixels to reflect the source pixels while also increasing contrast.
+     * This is {@link #PLUS_CLAMPED} with alpha blending. If both the source and
+     * destination are opaque, then this is the same as {@link #PLUS_CLAMPED}.
      * This is an extended advanced blend equation.
      * </p>
+     * <p>a<sub>out</sub> = a<sub>src</sub> + a<sub>dst</sub> - a<sub>src</sub> * a<sub>dst</sub></p>
+     *
+     * <p>if C<sub>src</sub> / a<sub>src</sub> + C<sub>dst</sub> / a<sub>dst</sub> &le; 1:<br>
+     * C<sub>out</sub> = C<sub>src</sub> + C<sub>dst</sub>
+     * </p>
+     *
+     * <p>otherwise:<br>
+     * C<sub>out</sub> = a<sub>src</sub> * a<sub>dst</sub> + (1 - a<sub>dst</sub>) * C<sub>src</sub> +
+     * (1 - a<sub>src</sub>) * C<sub>dst</sub>
+     * </p>
+     *
+     * @see #PLUS
+     * @see #PLUS_CLAMPED
      */
     LINEAR_DODGE,
 
@@ -387,6 +497,15 @@ public enum BlendMode {
      * <p>
      * Darkens the destination pixels to reflect the source pixels while also increasing contrast.
      * This is an extended advanced blend equation.
+     * </p>
+     * <p>a<sub>out</sub> = a<sub>src</sub> + a<sub>dst</sub> - a<sub>src</sub> * a<sub>dst</sub></p>
+     *
+     * <p>if C<sub>src</sub> / a<sub>src</sub> + C<sub>dst</sub> / a<sub>dst</sub> &gt; 1:<br>
+     * C<sub>out</sub> = C<sub>src</sub> + C<sub>dst</sub> - a<sub>src</sub> * a<sub>dst</sub>
+     * </p>
+     *
+     * <p>otherwise:<br>
+     * C<sub>out</sub> = (1 - a<sub>dst</sub>) * C<sub>src</sub> + (1 - a<sub>src</sub>) * C<sub>dst</sub>
      * </p>
      */
     LINEAR_BURN,
@@ -396,6 +515,28 @@ public enum BlendMode {
      * Burns or dodges colors by changing contrast, depending on the blend color.
      * This is an extended advanced blend equation.
      * </p>
+     * <p>a<sub>out</sub> = a<sub>src</sub> + a<sub>dst</sub> - a<sub>src</sub> * a<sub>dst</sub></p>
+     *
+     * <p>if C<sub>src</sub> &le; 0:<br>
+     * C<sub>out</sub> = C<sub>dst</sub> * (1 - a<sub>src</sub>)
+     * </p>
+     *
+     * <p>if C<sub>src</sub> &lt; 0.5 * a<sub>src</sub>:<br>
+     * C<sub>out</sub> = a<sub>src</sub> * (a<sub>dst</sub> - min(a<sub>dst</sub>, (a<sub>dst</sub> -
+     * C<sub>dst</sub>) * a<sub>src</sub> / (2 * C<sub>dst</sub>))) + (1 - a<sub>dst</sub>) * C<sub>src</sub> +
+     * (1 - a<sub>src</sub>) * C<sub>dst</sub>
+     * </p>
+     *
+     * <p>if C<sub>src</sub> &ge; a<sub>src</sub>:<br>
+     * C<sub>out</sub> = a<sub>src</sub> * a<sub>dst</sub> + (1 - a<sub>dst</sub>) * C<sub>src</sub> +
+     * (1 - a<sub>src</sub>) * C<sub>dst</sub>
+     * </p>
+     *
+     * <p>otherwise:<br>
+     * C<sub>out</sub> = a<sub>src</sub> * min(a<sub>dst</sub>, C<sub>dst</sub> * a<sub>src</sub> /
+     * (2 * (a<sub>src</sub> - C<sub>src</sub>))) + (1 - a<sub>dst</sub>) * C<sub>src</sub> +
+     * (1 - a<sub>src</sub>) * C<sub>dst</sub>
+     * </p>
      */
     VIVID_LIGHT,
 
@@ -403,6 +544,22 @@ public enum BlendMode {
      * <p>
      * Burns or dodges colors by changing brightness, depending on the blend color.
      * This is an extended advanced blend equation.
+     * </p>
+     * <p>a<sub>out</sub> = a<sub>src</sub> + a<sub>dst</sub> - a<sub>src</sub> * a<sub>dst</sub></p>
+     *
+     * <p>if 2 * C<sub>src</sub> / a<sub>src</sub> + C<sub>dst</sub> / a<sub>dst</sub> &gt; 2:<br>
+     * C<sub>out</sub> = a<sub>src</sub> * a<sub>dst</sub> + (1 - a<sub>dst</sub>) * C<sub>src</sub> +
+     * (1 - a<sub>src</sub>) * C<sub>dst</sub>
+     * </p>
+     *
+     * <p>if 2 * C<sub>src</sub> / a<sub>src</sub> + C<sub>dst</sub> / a<sub>dst</sub> &le; 1:<br>
+     * C<sub>out</sub> = (1 - a<sub>dst</sub>) * C<sub>src</sub> + (1 - a<sub>src</sub>) * C<sub>dst</sub>
+     * </p>
+     *
+     * <p>otherwise:<br>
+     * C<sub>out</sub> = 2 * C<sub>src</sub> * a<sub>dst</sub> + C<sub>dst</sub> * a<sub>src</sub> -
+     * a<sub>src</sub> * a<sub>dst</sub> + (1 - a<sub>dst</sub>) * C<sub>src</sub> +
+     * (1 - a<sub>src</sub>) * C<sub>dst</sub>
      * </p>
      */
     LINEAR_LIGHT,
@@ -412,6 +569,29 @@ public enum BlendMode {
      * Conditionally replaces destination pixels with source pixels depending on the brightness of the source pixels.
      * This is an extended advanced blend equation.
      * </p>
+     * <p>a<sub>out</sub> = a<sub>src</sub> + a<sub>dst</sub> - a<sub>src</sub> * a<sub>dst</sub></p>
+     *
+     * <p>if 2 * C<sub>src</sub> / a<sub>src</sub> - C<sub>dst</sub> / a<sub>dst</sub> &gt; 1 &amp;&amp;
+     * C<sub>src</sub> &lt; 0.5 * a<sub>src</sub>:<br>
+     * C<sub>out</sub> = (1 - a<sub>dst</sub>) * C<sub>src</sub> + (1 - a<sub>src</sub>) * C<sub>dst</sub>
+     * </p>
+     *
+     * <p>if 2 * C<sub>src</sub> / a<sub>src</sub> - C<sub>dst</sub> / a<sub>dst</sub> &gt; 1 &amp;&amp;
+     * C<sub>src</sub> &ge; 0.5 * a<sub>src</sub>:<br>
+     * C<sub>out</sub> = 2 * C<sub>src</sub> * a<sub>dst</sub> - a<sub>src</sub> * a<sub>dst</sub> +
+     * (1 - a<sub>dst</sub>) * C<sub>src</sub> + (1 - a<sub>src</sub>) * C<sub>dst</sub>
+     * </p>
+     *
+     * <p>if 2 * C<sub>src</sub> / a<sub>src</sub> - C<sub>dst</sub> / a<sub>dst</sub> &le; 1 &amp;&amp;
+     * C<sub>src</sub> * a<sub>dst</sub> &lt; 0.5 * C<sub>dst</sub> * a<sub>src</sub>:<br>
+     * C<sub>out</sub> = 2 * C<sub>src</sub> * a<sub>dst</sub> + (1 - a<sub>dst</sub>) * C<sub>src</sub> +
+     * (1 - a<sub>src</sub>) * C<sub>dst</sub>
+     * </p>
+     *
+     * <p>otherwise:<br>
+     * C<sub>out</sub> = C<sub>dst</sub> * a<sub>src</sub> + (1 - a<sub>dst</sub>) * C<sub>src</sub> +
+     * (1 - a<sub>src</sub>) * C<sub>dst</sub>
+     * </p>
      */
     PIN_LIGHT,
 
@@ -420,8 +600,50 @@ public enum BlendMode {
      * Adds two images together, setting each color channel value to either 0 or 1.
      * This is an extended advanced blend equation.
      * </p>
+     * <p>a<sub>out</sub> = a<sub>src</sub> + a<sub>dst</sub> - a<sub>src</sub> * a<sub>dst</sub></p>
+     *
+     * <p>if C<sub>src</sub> / a<sub>src</sub> + C<sub>dst</sub> / a<sub>dst</sub> &lt; 1:<br>
+     * C<sub>out</sub> = (1 - a<sub>dst</sub>) * C<sub>src</sub> + (1 - a<sub>src</sub>) * C<sub>dst</sub>
+     * </p>
+     *
+     * <p>otherwise:<br>
+     * C<sub>out</sub> = a<sub>src</sub> * a<sub>dst</sub> + (1 - a<sub>dst</sub>) * C<sub>src</sub> +
+     * (1 - a<sub>src</sub>) * C<sub>dst</sub>
+     * </p>
      */
     HARD_MIX,
+
+    /**
+     * <p>
+     * Similar to {@link #DARKEN}, but darkens on the composite channel, instead of
+     * separate RGB color channels. It compares the source and destination color,
+     * and keep the one with lower luminosity between the two.
+     * </p>
+     * <p>if lum(C<sub>src</sub>) &le; lum(C<sub>dst</sub>):<br>
+     * Equivalent to {@link #SRC_OVER}
+     * </p>
+     *
+     * <p>otherwise:<br>
+     * Equivalent to {@link #DST_OVER}
+     * </p>
+     */
+    DARKER_COLOR,
+
+    /**
+     * <p>
+     * Similar to {@link #LIGHTEN}, but lightens on the composite channel, instead of
+     * separate RGB color channels. It compares the source and destination color,
+     * and keep the one with higher luminosity between the two.
+     * </p>
+     * <p>if lum(C<sub>src</sub>) &ge; lum(C<sub>dst</sub>):<br>
+     * Equivalent to {@link #SRC_OVER}
+     * </p>
+     *
+     * <p>otherwise:<br>
+     * Equivalent to {@link #DST_OVER}
+     * </p>
+     */
+    LIGHTER_COLOR,
 
     /**
      * <p>
@@ -467,9 +689,14 @@ public enum BlendMode {
      */
     LUMINOSITY;
 
-    static final BlendMode[] BLEND_MODES = values();
+    /**
+     * Name alias of {@link #LINEAR_DODGE}.
+     */
+    public static final BlendMode ADD = LINEAR_DODGE;
 
-    // exact mapping
+    static final BlendMode[] VALUES = values();
+
+    // exact mapping, interchangeable
     final icyllis.arc3d.core.BlendMode mBlendMode = icyllis.arc3d.core.BlendMode.mode(ordinal());
 
     {

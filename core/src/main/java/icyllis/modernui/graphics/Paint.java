@@ -503,7 +503,7 @@ public class Paint extends icyllis.arc3d.core.Paint {
     @Nullable
     public final BlendMode getBlendMode() {
         var mode = getBlendModeDirect(this);
-        return mode != null ? BlendMode.BLEND_MODES[mode.ordinal()] : null;
+        return mode != null ? BlendMode.VALUES[mode.ordinal()] : null;
     }
 
     /**
