@@ -32,7 +32,7 @@ If you have any questions, feel free to join our [Discord](https://discord.gg/km
   - [log4j](https://github.com/apache/logging-log4j2) licensed under Apache-2.0
   - [icu4j](https://github.com/unicode-org/icu) by Unicode, Inc. see [LICENSE](https://github.com/unicode-org/icu/blob/main/LICENSE)
 ### Documentation
-[Javadoc](https://blocamlimb.github.io/modernui/javadoc/index.html)  
+[JavaDoc](https://blocamlimb.github.io/ModernUI/javadoc/index.html)  
 Specification (WIP)
 
 #### Environment requirements
