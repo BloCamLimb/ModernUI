@@ -429,6 +429,7 @@ public final class TextUtils {
                 case BACKGROUND_COLOR_SPAN -> readSpan(p, sp, new BackgroundColorSpan(p));
                 case TYPEFACE_SPAN -> readSpan(p, sp, new TypefaceSpan(p));
                 case ABSOLUTE_SIZE_SPAN -> readSpan(p, sp, new AbsoluteSizeSpan(p));
+                case LOCALE_SPAN -> readSpan(p, sp, new LocaleSpan(p));
                 case LINE_BACKGROUND_SPAN -> readSpan(p, sp, new LineBackgroundSpan.Standard(p));
                 case TRAILING_MARGIN_SPAN -> readSpan(p, sp, new TrailingMarginSpan.Standard(p));
             }
