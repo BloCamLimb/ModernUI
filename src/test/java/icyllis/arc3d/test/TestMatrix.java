@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -65,6 +65,8 @@ public class TestMatrix {
         m1.preShear(2.0f, 0);
 
         log(pw, m -> m.set(m1));
+
+        print5x4Mul(pw, "lhs", "rhs");
     }
 
     public static void log(PrintWriter pw, Consumer<Matrix> c) {
@@ -85,5 +87,54 @@ public class TestMatrix {
             machEps /= 2.0f;
         } while (1.0f + (machEps / 2.0f) != 1.0f);
         return machEps;
+    }
+
+    public static void print5x4Mul(PrintWriter pw, String lhs, String rhs) {
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 4; j++) {
+                pw.print("float f");
+                pw.print(i + 1);
+                pw.print(j + 1);
+                pw.print("=");
+                for (int k = 0; k < 4; k++) {
+                    pw.print(lhs);
+                    pw.print('[');
+                    pw.print(i * 4 + k);
+                    pw.print(']');
+                    pw.print('*');
+                    pw.print(rhs);
+                    pw.print('[');
+                    pw.print(k * 4 + j);
+                    pw.print(']');
+                    if (k < 3) {
+                        pw.print('+');
+                    }
+                }
+                pw.println(';');
+            }
+        }
+        for (int j = 0; j < 4; j++) {
+            pw.print("float f");
+            pw.print(5);
+            pw.print(j + 1);
+            pw.print("=");
+            for (int k = 0; k < 5; k++) {
+                if (k < 4) {
+                    pw.print(lhs);
+                    pw.print('[');
+                    pw.print(16 + k);
+                    pw.print(']');
+                    pw.print('*');
+                }
+                pw.print(rhs);
+                pw.print('[');
+                pw.print(k * 4 + j);
+                pw.print(']');
+                if (k < 4) {
+                    pw.print('+');
+                }
+            }
+            pw.println(';');
+        }
     }
 }

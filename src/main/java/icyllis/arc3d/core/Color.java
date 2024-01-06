@@ -871,7 +871,7 @@ public final class Color {
     }
 
     @Nonnull
-    private static float[] load_and_premul(int col) {
+    public static float[] load_and_premul(int col) {
         float[] col4 = new float[4];
         float a = (col4[3] = (col >>> 24) * (1 / 255.0f)) * (1 / 255.0f);
         col4[0] = ((col >> 16) & 0xFF) * a;
