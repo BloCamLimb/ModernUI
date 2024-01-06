@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -71,6 +71,19 @@ public class TestBlendMode {
             blend(BlendMode.mode(i), src, dst);
         }
         System.out.println(i);
+        checkBlend();
+    }
+
+    public static void checkBlend() {
+        int src = Color.argb(0, 210, 200, 150);
+        int dst = Color.argb(233, 233, 30, 99);
+        for (int i = 0; i < BlendMode.COUNT; i++) {
+            var modeA = BlendMode.mode(i);
+            int resultA = Color.blend(modeA, src, dst);
+            if (resultA == dst) {
+                System.out.println(modeA);
+            }
+        }
     }
 
     public static void blend(BlendMode mode, int src, int dst) {

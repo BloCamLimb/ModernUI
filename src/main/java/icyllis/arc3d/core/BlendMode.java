@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -265,7 +265,7 @@ public enum BlendMode implements Blender {
      * <p>
      * Adds the source pixels to the destination pixels and saturates
      * the result, without alpha blending. For unsigned fixed-point textures,
-     * this is the same as {@link #PLUS}. This is an advanced blend equation.
+     * this is the same as {@link #PLUS}. This is a special blend equation.
      * </p>
      * <p>a<sub>out</sub> = max(0, min(a<sub>src</sub> + a<sub>dst</sub>, 1))</p>
      * <p>C<sub>out</sub> = max(0, min(C<sub>src</sub> + C<sub>dst</sub>, 1))</p>
@@ -306,7 +306,7 @@ public enum BlendMode implements Blender {
      * <p>
      * Subtracts the source pixels from the destination pixels and saturates
      * the result, without alpha blending. For unsigned fixed-point textures,
-     * this is the same as {@link #MINUS}. This is an advanced blend equation.
+     * this is the same as {@link #MINUS}. This is a special blend equation.
      * </p>
      * <p>a<sub>out</sub> = max(0, min(a<sub>dst</sub> - a<sub>src</sub>, 1))</p>
      * <p>C<sub>out</sub> = max(0, min(C<sub>dst</sub> - C<sub>src</sub>, 1))</p>
@@ -422,7 +422,8 @@ public enum BlendMode implements Blender {
      * </p>
      * <p>a<sub>out</sub> = a<sub>src</sub> + a<sub>dst</sub> - a<sub>src</sub> * a<sub>dst</sub></p>
      * <p>
-     * C<sub>out</sub> = min(C<sub>src</sub>, C<sub>dst</sub>) +
+     * C<sub>out</sub> = min(C<sub>src</sub> / a<sub>src</sub>, C<sub>dst</sub> / a<sub>dst</sub>) *
+     * a<sub>src</sub> * a<sub>dst</sub> +
      * (1 - a<sub>dst</sub>) * C<sub>src</sub> + (1 - a<sub>src</sub>) * C<sub>dst</sub>
      * </p>
      */
@@ -444,7 +445,8 @@ public enum BlendMode implements Blender {
      * </p>
      * <p>a<sub>out</sub> = a<sub>src</sub> + a<sub>dst</sub> - a<sub>src</sub> * a<sub>dst</sub></p>
      * <p>
-     * C<sub>out</sub> = max(C<sub>src</sub>, C<sub>dst</sub>) +
+     * C<sub>out</sub> = max(C<sub>src</sub> / a<sub>src</sub>, C<sub>dst</sub> / a<sub>dst</sub>) *
+     * a<sub>src</sub> * a<sub>dst</sub> +
      * (1 - a<sub>dst</sub>) * C<sub>src</sub> + (1 - a<sub>src</sub>) * C<sub>dst</sub>
      * </p>
      */
@@ -1138,8 +1140,16 @@ public enum BlendMode implements Blender {
     }
 
     /**
+     * 25 blend modes after {@link #MULTIPLY} are advanced.
+     */
+    public boolean isAdvanced() {
+        return ordinal() >= MULTIPLY.ordinal();
+    }
+
+    /**
      * Applies this blend mode with RGBA colors. src, dst and out store premultiplied
      * R,G,B,A components from index 0 to 3. src, dst and out can be the same pointer.
+     * src and dst are read-only, out may be written multiple times.
      */
     public abstract void apply(@Size(4) float[] src,
                                @Size(4) float[] dst,
