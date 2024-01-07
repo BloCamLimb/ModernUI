@@ -1032,27 +1032,27 @@ public abstract class Canvas {
      * where a single style run may contain multiple BiDi runs and font runs.
      * The Paint must be the same as the one passed to any of {@link icyllis.modernui.text.TextShaper} methods.
      *
-     * @param text  A sequence of positioned glyphs.
-     * @param start Number of glyphs to skip before drawing text.
-     * @param count Number of glyphs to be drawn.
-     * @param x     Additional amount of x offset of the glyph X positions, i.e. left position
-     * @param y     Additional amount of y offset of the glyph Y positions, i.e. baseline position
-     * @param paint Paint used for drawing.
+     * @param text       A sequence of positioned glyphs.
+     * @param glyphStart Number of glyphs to skip before drawing text.
+     * @param glyphCount Number of glyphs to be drawn.
+     * @param x          Additional amount of x offset of the glyph X positions, i.e. left position
+     * @param y          Additional amount of y offset of the glyph Y positions, i.e. baseline position
+     * @param paint      Paint used for drawing.
      * @see icyllis.modernui.text.TextShaper
      */
-    public final void drawShapedText(@NonNull ShapedText text, int start, int count,
+    public final void drawShapedText(@NonNull ShapedText text, int glyphStart, int glyphCount,
                                      float x, float y, @NonNull Paint paint) {
-        if ((start | count | start + count |
-                text.getGlyphCount() - start - count) < 0) {
+        if ((glyphStart | glyphCount | glyphStart + glyphCount |
+                text.getGlyphCount() - glyphStart - glyphCount) < 0) {
             throw new IndexOutOfBoundsException();
         }
-        if (count == 0) {
+        if (glyphCount == 0) {
             return;
         }
-        var lastFont = text.getFont(start);
-        int lastPos = start;
-        int currPos = start + 1;
-        for (int end = start + count; currPos < end; currPos++) {
+        var lastFont = text.getFont(glyphStart);
+        int lastPos = glyphStart;
+        int currPos = glyphStart + 1;
+        for (int end = glyphStart + glyphCount; currPos < end; currPos++) {
             var curFont = text.getFont(currPos);
             if (lastFont != curFont) {
                 drawGlyphs(text.getGlyphs(), lastPos,
@@ -1073,10 +1073,10 @@ public abstract class Canvas {
             return;
         }
         if (font instanceof OutlineFont of) {
-            var off = of.chooseFont(paint.getFontSize());
+            var f = of.chooseFont(paint.getFontSize());
             var frc = OutlineFont.getFontRenderContext(
                     FontPaint.computeRenderFlags(paint));
-            var gv = off.createGlyphVector(frc, text);
+            var gv = f.createGlyphVector(frc, text);
             int nGlyphs = gv.getNumGlyphs();
             drawGlyphs(gv.getGlyphCodes(0, nGlyphs, null),
                     0,

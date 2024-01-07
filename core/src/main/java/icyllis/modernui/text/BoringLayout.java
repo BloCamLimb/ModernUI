@@ -236,16 +236,13 @@ public class BoringLayout extends Layout implements TextUtils.EllipsizeCallback 
                 (align == Alignment.ALIGN_NORMAL || align == Alignment.ALIGN_LEFT)) {
             String direct = source.toString();
             int len = direct.length();
-            char[] buf = TextUtils.obtain(len);
-            direct.getChars(0, len, buf, 0);
-            mDirect = new ShapedText(
-                    buf,
+            mDirect = TextShaper.shapeTextRun(
+                    direct,
                     0, len,
                     0, len,
-                    ShapedText.BIDI_OVERRIDE_LTR,
-                    paint.getInternalPaint()
+                    false,
+                    paint
             );
-            TextUtils.recycle(buf);
         } else {
             mDirect = null;
         }
