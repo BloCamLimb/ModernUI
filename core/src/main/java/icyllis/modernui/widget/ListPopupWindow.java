@@ -431,6 +431,9 @@ public class ListPopupWindow implements ShowableListMenu {
      */
     @Override
     public void show() {
+        // Fixed by Modern UI
+        // buildDropDown() needs to know OverlapAnchor or not
+        mPopup.setOverlapAnchor(mOverlapAnchor);
         int height = buildDropDown();
 
         if (mPopup.isShowing()) {
@@ -501,7 +504,7 @@ public class ListPopupWindow implements ShowableListMenu {
             mPopup.setOutsideTouchable(!mForceIgnoreOutsideTouch && !mDropDownAlwaysVisible);
             mPopup.setTouchInterceptor(mTouchInterceptor);
             mPopup.setEpicenterBounds(mEpicenterBounds);
-            mPopup.setOverlapAnchor(mOverlapAnchor);
+            //mPopup.setOverlapAnchor(mOverlapAnchor);
             mPopup.showAsDropDown(mDropDownAnchorView, mDropDownHorizontalOffset,
                     mDropDownVerticalOffset, mDropDownGravity);
             mDropDownList.setSelection(ListView.INVALID_POSITION);

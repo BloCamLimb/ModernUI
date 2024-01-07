@@ -218,6 +218,7 @@ public final class CascadingMenuPopup extends MenuPopup implements MenuPresenter
         MenuPopupWindow popupWindow = new MenuPopupWindow(
                 mContext);
 
+        //TODO Added by ModernUI, use Resources in the future
         popupWindow.setBackgroundDrawable(new Drawable() {
             private final float mRadius = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DP,
                     8, mContext.getResources().getDisplayMetrics());
@@ -240,6 +241,8 @@ public final class CascadingMenuPopup extends MenuPopup implements MenuPresenter
         });
         popupWindow.setEnterTransition(new AutoTransition());
         popupWindow.setExitTransition(new AutoTransition());
+        // always overlap
+        popupWindow.setOverlapAnchor(true);
 
         popupWindow.setHoverListener(mMenuItemHoverListener);
         popupWindow.setOnItemClickListener(this);

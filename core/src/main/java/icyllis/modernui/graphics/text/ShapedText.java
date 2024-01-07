@@ -148,6 +148,7 @@ public class ShapedText {
     /**
      * Returns the number of characters (i.e. constructor <code>limit - start</code> in code units).
      */
+    @ApiStatus.Internal
     public int getCharCount() {
         return mAdvances.length;
     }
@@ -161,6 +162,7 @@ public class ShapedText {
      * @return advances, or null
      * @see GraphemeBreak
      */
+    @ApiStatus.Internal
     public float[] getAdvances() {
         return mAdvances;
     }
@@ -168,6 +170,7 @@ public class ShapedText {
     /**
      * Helper of {@link #getAdvances()}.
      */
+    @ApiStatus.Internal
     public float getAdvance(int i) {
         if (i == mAdvances.length) {
             return mAdvance;
@@ -213,6 +216,7 @@ public class ShapedText {
         return mAdvance;
     }
 
+    @ApiStatus.Internal
     public int getMemoryUsage() {
         int m = 48;
         m += 16 + MathUtil.align8(mGlyphs.length << 2);

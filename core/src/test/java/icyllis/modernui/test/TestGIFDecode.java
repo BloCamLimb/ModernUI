@@ -18,7 +18,7 @@
 
 package icyllis.modernui.test;
 
-import icyllis.arc3d.image.GIFDecoder;
+import icyllis.arc3d.core.image.GIFDecoder;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.Bitmap;
 import org.apache.logging.log4j.Level;

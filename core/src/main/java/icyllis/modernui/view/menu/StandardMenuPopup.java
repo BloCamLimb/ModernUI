@@ -118,6 +118,7 @@ public final class StandardMenuPopup extends MenuPopup implements PopupWindow.On
 
         mAnchorView = anchorView;
 
+        //TODO Added by ModernUI, use Resources in the future
         mPopup = new MenuPopupWindow(context);
         mPopup.setBackgroundDrawable(new Drawable() {
             private final float mRadius = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DP,
@@ -141,6 +142,7 @@ public final class StandardMenuPopup extends MenuPopup implements PopupWindow.On
         });
         mPopup.setEnterTransition(new AutoTransition());
         mPopup.setExitTransition(new AutoTransition());
+        // always overlap
         mPopup.setOverlapAnchor(true);
 
         // Present the menu using our context, not the menu builder's context.
