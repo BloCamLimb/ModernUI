@@ -261,9 +261,15 @@ public class ShapedText {
 
     /**
      * Generate the shaped text layout. The layout object will not be associated with the
-     * text array and the paint after construction, thus the buffer may be a shared object.
-     * The context range will affect BiDi analysis and shaping results, it can be larger
-     * than the layout range.
+     * text array and the paint after construction.
+     * <p>
+     * If <var>bidiFlags</var> are not OVERRIDE, the text array is the entire context, the
+     * caller is responsible for creating a copy of the context. Otherwise, the text array
+     * can be larger than context range, which is specified by <var>contextStart</var> and
+     * <var>contextLimit</var>.
+     * <p>
+     * The context range will affect BiDi analysis and shaping results, it can be slightly
+     * larger than the layout range.
      *
      * @param text         text buffer, cannot be null
      * @param contextStart the context start index of text array
@@ -274,13 +280,24 @@ public class ShapedText {
      * @param paint        layout params
      */
     public ShapedText(@NonNull char[] text, int contextStart, int contextLimit,
-                      int start, int limit, int bidiFlags, FontPaint paint) {
-        Objects.checkFromToIndex(contextStart, contextLimit, text.length);
+                      int start, int limit, int bidiFlags, @NonNull FontPaint paint) {
+        int length = text.length;
+        Objects.checkFromToIndex(contextStart, contextLimit, length);
         if (contextStart > start || contextLimit < limit) {
-            throw new IndexOutOfBoundsException();
+            throw new IndexOutOfBoundsException(
+                    String.format("context range [%d,%d) must be no smaller than layout range [%d,%d)",
+                            contextStart, contextLimit, start, limit)
+            );
         }
         if (bidiFlags < 0 || bidiFlags > 0b111) {
             throw new IllegalArgumentException();
+        }
+        final boolean isOverride = (bidiFlags & 0b100) != 0;
+        if (!isOverride && (contextStart != 0 || contextLimit != length)) {
+            throw new IllegalArgumentException(
+                    String.format("text array [0,%d) must be context range [%d,%d) for non-override bidi flags 0x%X",
+                            length, contextStart, contextLimit, bidiFlags)
+            );
         }
         int count = limit - start;
         // we allow for an empty range
@@ -319,7 +336,6 @@ public class ShapedText {
 
         float advance = 0;
 
-        final boolean isOverride = (bidiFlags & 0b100) != 0;
         if (isOverride) {
             final boolean isRtl = (bidiFlags & 0b001) != 0;
             advance += doLayoutRun(text, contextStart, contextLimit,
@@ -327,6 +343,7 @@ public class ShapedText {
                     mAdvances, advance, glyphs, positions, fontIndices, idGet, extent,
                     null);
         } else {
+            // here, text array is the entire context
             final byte paraLevel = switch (bidiFlags) {
                 case BIDI_LTR -> Bidi.LTR;
                 case BIDI_RTL -> Bidi.RTL;
@@ -335,18 +352,18 @@ public class ShapedText {
                 default -> throw new AssertionError();
             };
             // reserve memory
-            Bidi bidi = new Bidi(contextLimit - contextStart, 0);
+            Bidi bidi = new Bidi(length, 0);
             bidi.setPara(text, paraLevel, null);
             // entirely right-to-left
             if (bidi.isRightToLeft()) {
-                advance += doLayoutRun(text, contextStart, contextLimit,
+                advance += doLayoutRun(text, 0, length,
                         start, limit, true, paint, start,
                         mAdvances, advance, glyphs, positions, fontIndices, idGet, extent,
                         null);
             }
             // entirely left-to-right
             else if (bidi.isLeftToRight()) {
-                advance += doLayoutRun(text, contextStart, contextLimit,
+                advance += doLayoutRun(text, 0, length,
                         start, limit, false, paint, start,
                         mAdvances, advance, glyphs, positions, fontIndices, idGet, extent,
                         null);
@@ -358,7 +375,7 @@ public class ShapedText {
                     BidiRun run = bidi.getVisualRun(visualIndex);
                     int runStart = Math.max(run.getStart(), start);
                     int runEnd = Math.min(run.getLimit(), limit);
-                    advance += doLayoutRun(text, contextStart, contextLimit,
+                    advance += doLayoutRun(text, 0, length,
                             runStart, runEnd, run.isOddRun(), paint, start,
                             mAdvances, advance, glyphs, positions, fontIndices, idGet, extent,
                             null);

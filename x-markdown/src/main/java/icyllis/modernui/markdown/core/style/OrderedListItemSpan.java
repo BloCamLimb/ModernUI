@@ -67,7 +67,6 @@ public class OrderedListItemSpan implements LeadingMarginSpan {
         mShapedNumber = TextShaper.shapeText(
                 mNumber,
                 0, mNumber.length(),
-                0, mNumber.length(),
                 dir, paint
         );
     }

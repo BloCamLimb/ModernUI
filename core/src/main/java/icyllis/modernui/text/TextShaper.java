@@ -85,9 +85,10 @@ public class TextShaper {
             @NonNull CharSequence text, @IntRange(from = 0) int start,
             @IntRange(from = 0) int count, @NonNull TextDirectionHeuristic dir,
             @NonNull TextPaint paint, @NonNull GlyphsConsumer consumer) {
+        Objects.requireNonNull(text);
         if (!(text instanceof Spanned)) {
             consumer.accept(start, count,
-                    shapeText(text, start, count, start, count, dir, paint),
+                    shapeText(text, start, count, dir, paint),
                     paint, 0, 0);
             return;
         }
@@ -117,29 +118,26 @@ public class TextShaper {
      * Some script, e.g. Arabic or Devanagari, changes letter shape based on its location or
      * surrounding characters.
      *
-     * @param text         a text buffer to be shaped
-     * @param start        a start index of shaping target in the buffer.
-     * @param count        a length of shaping target in the buffer.
-     * @param contextStart a start index of context used for shaping in the buffer.
-     * @param contextCount a length of context used for shaping in the buffer.
-     * @param dir          a text direction.
-     * @param paint        a paint used for shaping text.
+     * @param text  a text buffer to be shaped
+     * @param start a start index of shaping target in the buffer.
+     * @param count a length of shaping target in the buffer.
+     * @param dir   a text direction.
+     * @param paint a paint used for shaping text.
      * @return a shape result.
      */
     @NonNull
     public static ShapedText shapeText(
             @NonNull char[] text, @IntRange(from = 0) int start,
-            @IntRange(from = 0) int count, int contextStart, int contextCount,
+            @IntRange(from = 0) int count,
             @NonNull TextDirectionHeuristic dir, @NonNull TextPaint paint) {
-        Objects.requireNonNull(text);
         Objects.requireNonNull(dir);
-        Objects.requireNonNull(paint);
-        Objects.checkFromIndexSize(contextStart, contextCount, text.length);
+        Objects.checkFromIndexSize(start, count, text.length);
+        // similar to MeasuredParagraph.buildForBidi()
         final int bidiFlags;
         if ((dir == TextDirectionHeuristics.LTR
                 || dir == TextDirectionHeuristics.FIRSTSTRONG_LTR
                 || dir == TextDirectionHeuristics.ANYRTL_LTR)
-                && !Bidi.requiresBidi(text, contextStart, contextStart + contextCount)) {
+                && !Bidi.requiresBidi(text, start, start + count)) {
             bidiFlags = ShapedText.BIDI_OVERRIDE_LTR;
         } else if (dir == TextDirectionHeuristics.LTR) {
             bidiFlags = ShapedText.BIDI_LTR;
@@ -150,11 +148,20 @@ public class TextShaper {
         } else if (dir == TextDirectionHeuristics.FIRSTSTRONG_RTL) {
             bidiFlags = ShapedText.BIDI_DEFAULT_RTL;
         } else {
-            final boolean isRtl = dir.isRtl(text, contextStart, contextStart + contextCount);
+            final boolean isRtl = dir.isRtl(text, start, start + count);
             bidiFlags = isRtl ? ShapedText.BIDI_RTL : ShapedText.BIDI_LTR;
         }
-        return new ShapedText(text, contextStart, contextStart + contextCount,
-                start, start + count, bidiFlags, paint.getInternalPaint());
+        if (bidiFlags == ShapedText.BIDI_OVERRIDE_LTR ||
+                (start == 0 && count == text.length)) {
+            return new ShapedText(text, start, start + count,
+                    start, start + count, bidiFlags, paint.getInternalPaint());
+        } else {
+            // make a copy for bidi analysis
+            char[] para = new char[count];
+            System.arraycopy(text, start, para, 0, count);
+            return new ShapedText(para, 0, count,
+                    0, count, bidiFlags, paint.getInternalPaint());
+        }
     }
 
     /**
@@ -164,29 +171,36 @@ public class TextShaper {
      * Some script, e.g. Arabic or Devanagari, changes letter shape based on its location or
      * surrounding characters.
      *
-     * @param text         a text buffer to be shaped. Any styled spans stored in this text are ignored.
-     * @param start        a start index of shaping target in the buffer.
-     * @param count        a length of shaping target in the buffer.
-     * @param contextStart a start index of context used for shaping in the buffer.
-     * @param contextCount a length of context used for shaping in the buffer.
-     * @param dir          a text direction.
-     * @param paint        a paint used for shaping text.
+     * @param text  a text buffer to be shaped. Any styled spans stored in this text are ignored.
+     * @param start a start index of shaping target in the buffer.
+     * @param count a length of shaping target in the buffer.
+     * @param dir   a text direction.
+     * @param paint a paint used for shaping text.
      * @return a shape result
      */
     @NonNull
     public static ShapedText shapeText(
             @NonNull CharSequence text, @IntRange(from = 0) int start,
-            @IntRange(from = 0) int count, int contextStart, int contextCount,
+            @IntRange(from = 0) int count,
             @NonNull TextDirectionHeuristic dir, @NonNull TextPaint paint) {
-        Objects.requireNonNull(text);
-        Objects.checkFromIndexSize(contextStart, contextCount, text.length());
-        char[] buf = TextUtils.obtain(contextCount);
+        Objects.checkFromIndexSize(start, count, text.length());
+        // for these three cases, a new array may not be necessary
+        boolean mayTemp = (dir == TextDirectionHeuristics.LTR
+                || dir == TextDirectionHeuristics.FIRSTSTRONG_LTR
+                || dir == TextDirectionHeuristics.ANYRTL_LTR);
+        char[] buf;
+        if (mayTemp) {
+            buf = TextUtils.obtain(count);
+        } else {
+            buf = new char[count];
+        }
         try {
-            TextUtils.getChars(text, contextStart, contextStart + contextCount, buf, 0);
-            return shapeText(buf, start - contextStart, count,
-                    0, contextCount, dir, paint);
+            TextUtils.getChars(text, start, start + count, buf, 0);
+            return shapeText(buf, 0, count, dir, paint);
         } finally {
-            TextUtils.recycle(buf);
+            if (mayTemp) {
+                TextUtils.recycle(buf);
+            }
         }
     }
 
@@ -211,8 +225,6 @@ public class TextShaper {
             @NonNull char[] text, @IntRange(from = 0) int start,
             @IntRange(from = 0) int count, int contextStart, int contextCount,
             boolean isRtl, @NonNull TextPaint paint) {
-        Objects.requireNonNull(text);
-        Objects.requireNonNull(paint);
         int bidiFlags = isRtl ? ShapedText.BIDI_OVERRIDE_RTL : ShapedText.BIDI_OVERRIDE_LTR;
         return new ShapedText(text, contextStart, contextStart + contextCount,
                 start, start + count, bidiFlags, paint.getInternalPaint());
@@ -239,7 +251,6 @@ public class TextShaper {
             @NonNull CharSequence text, @IntRange(from = 0) int start,
             @IntRange(from = 0) int count, int contextStart, int contextCount,
             boolean isRtl, @NonNull TextPaint paint) {
-        Objects.requireNonNull(text);
         Objects.checkFromIndexSize(contextStart, contextCount, text.length());
         char[] buf = TextUtils.obtain(contextCount);
         try {
