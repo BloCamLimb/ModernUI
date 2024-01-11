@@ -18,24 +18,21 @@
 
 package icyllis.modernui.graphics.drawable;
 
-import icyllis.modernui.annotation.ColorInt;
-import icyllis.modernui.graphics.BlendMode;
-import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.Color;
-import icyllis.modernui.graphics.Paint;
+import icyllis.arc3d.core.ColorFilter;
+import icyllis.arc3d.core.effects.BlendModeColorFilter;
+import icyllis.modernui.annotation.*;
+import icyllis.modernui.graphics.*;
 import icyllis.modernui.util.ColorStateList;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * A specialized Drawable that fills the Canvas with a specified color.
  */
 public class ColorDrawable extends Drawable {
 
+    private final Paint mPaint = new Paint();
+
     private ColorState mColorState;
-    private BlendMode mBlendMode;
-    private int mBlendColor;
+    private BlendModeColorFilter mBlendModeColorFilter;
 
     private boolean mMutated;
 
@@ -56,7 +53,7 @@ public class ColorDrawable extends Drawable {
         setColor(color);
     }
 
-    private ColorDrawable(@Nonnull ColorState state) {
+    private ColorDrawable(@NonNull ColorState state) {
         mColorState = state;
         updateLocalState();
     }
@@ -65,12 +62,8 @@ public class ColorDrawable extends Drawable {
      * Initializes local dynamic properties from state.
      */
     private void updateLocalState() {
-        if (mColorState.mTint == null || mColorState.mBlendMode == null) {
-            mBlendMode = null;
-            return;
-        }
-        mBlendMode = mColorState.mBlendMode;
-        mBlendColor = mColorState.mTint.getColorForState(getState(), Color.TRANSPARENT);
+        mBlendModeColorFilter = updateBlendModeFilter(mBlendModeColorFilter,
+                mColorState.mTint, mColorState.mBlendMode);
     }
 
     /**
@@ -79,7 +72,7 @@ public class ColorDrawable extends Drawable {
      *
      * @return This drawable.
      */
-    @Nonnull
+    @NonNull
     @Override
     public Drawable mutate() {
         if (!mMutated && super.mutate() == this) {
@@ -96,19 +89,19 @@ public class ColorDrawable extends Drawable {
     }
 
     @Override
-    public void draw(@Nonnull Canvas canvas) {
-        int color = mColorState.mUseColor;
-        if (Color.alpha(color) != 0 || mBlendMode != null) {
-            if (mBlendMode != null) {
-                color = Color.blend(mBlendMode, mBlendColor, color);
-                if (Color.alpha(color) == 0) {
-                    return;
-                }
+    public void draw(@NonNull Canvas canvas) {
+        final int color = mColorState.mUseColor;
+        final ColorFilter colorFilter = mPaint.getColorFilter();
+        if (Color.alpha(color) != 0 || colorFilter != null
+                || mBlendModeColorFilter != null) {
+            if (colorFilter == null) {
+                mPaint.setColorFilter(mBlendModeColorFilter);
             }
-            Paint paint = Paint.obtain();
-            paint.setColor(color);
-            canvas.drawRect(getBounds(), paint);
-            paint.recycle();
+
+            mPaint.setColor(color);
+            canvas.drawRect(getBounds(), mPaint);
+
+            mPaint.setColorFilter(colorFilter);
         }
     }
 
@@ -171,23 +164,25 @@ public class ColorDrawable extends Drawable {
     @Override
     public void setTintList(@Nullable ColorStateList tint) {
         mColorState.mTint = tint;
-        updateLocalState();
+        mBlendModeColorFilter = updateBlendModeFilter(mBlendModeColorFilter, tint,
+                mColorState.mBlendMode);
         invalidateSelf();
     }
 
     @Override
-    public void setTintBlendMode(@Nonnull BlendMode blendMode) {
+    public void setTintBlendMode(@NonNull BlendMode blendMode) {
         mColorState.mBlendMode = blendMode;
-        updateLocalState();
+        mBlendModeColorFilter = updateBlendModeFilter(mBlendModeColorFilter, mColorState.mTint,
+                blendMode);
         invalidateSelf();
     }
 
     @Override
-    protected boolean onStateChange(@Nonnull int[] stateSet) {
+    protected boolean onStateChange(@NonNull int[] stateSet) {
         final ColorState state = mColorState;
         if (state.mTint != null && state.mBlendMode != null) {
-            mBlendMode = mColorState.mBlendMode;
-            mBlendColor = mColorState.mTint.getColorForState(getState(), Color.TRANSPARENT);
+            mBlendModeColorFilter = updateBlendModeFilter(mBlendModeColorFilter, state.mTint,
+                    state.mBlendMode);
             return true;
         }
         return false;
@@ -219,14 +214,14 @@ public class ColorDrawable extends Drawable {
             // Empty constructor.
         }
 
-        ColorState(@Nonnull ColorState state) {
+        ColorState(@NonNull ColorState state) {
             mBaseColor = state.mBaseColor;
             mUseColor = state.mUseColor;
             mTint = state.mTint;
             mBlendMode = state.mBlendMode;
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public Drawable newDrawable() {
             return new ColorDrawable(this);

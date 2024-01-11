@@ -18,6 +18,8 @@
 
 package icyllis.modernui.graphics;
 
+import org.jetbrains.annotations.ApiStatus;
+
 /**
  * Blends are operators that take in two colors (source, destination) and return a new color.
  * Many of these operate the same on all 4 components: red, green, blue, alpha. For these,
@@ -701,5 +703,9 @@ public enum BlendMode {
 
     {
         assert mBlendMode.name().equals(name());
+    }
+
+    public icyllis.arc3d.core.BlendMode nativeBlendMode() {
+        return mBlendMode;
     }
 }

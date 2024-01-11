@@ -18,16 +18,11 @@
 
 package icyllis.modernui.graphics.drawable;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Core;
-import icyllis.modernui.graphics.BlendMode;
-import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.Rect;
-import icyllis.modernui.util.ColorStateList;
-import icyllis.modernui.util.LayoutDirection;
-import icyllis.modernui.util.SparseArray;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import icyllis.modernui.graphics.*;
+import icyllis.modernui.util.*;
 
 /**
  * A helper class that contains several {@link Drawable}s and selects which one to use.
@@ -64,7 +59,7 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
     }
 
     @Override
-    public void draw(@Nonnull Canvas canvas) {
+    public void draw(@NonNull Canvas canvas) {
         if (mCurrDrawable != null) {
             mCurrDrawable.draw(canvas);
         }
@@ -78,7 +73,7 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
     }
 
     @Override
-    public boolean getPadding(@Nonnull Rect padding) {
+    public boolean getPadding(@NonNull Rect padding) {
         final Rect r = mDrawableContainerState.getConstantPadding();
         boolean result;
         if (r != null) {
@@ -133,7 +128,7 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
     }
 
     @Override
-    public void setTintBlendMode(@Nonnull BlendMode blendMode) {
+    public void setTintBlendMode(@NonNull BlendMode blendMode) {
         mDrawableContainerState.mHasTintMode = true;
 
         if (mDrawableContainerState.mBlendMode != blendMode) {
@@ -166,7 +161,7 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
     }
 
     @Override
-    protected void onBoundsChange(@Nonnull Rect bounds) {
+    protected void onBoundsChange(@NonNull Rect bounds) {
         if (mLastDrawable != null) {
             mLastDrawable.setBounds(bounds);
         }
@@ -254,7 +249,7 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
     }
 
     @Override
-    public void getHotspotBounds(@Nonnull Rect outRect) {
+    public void getHotspotBounds(@NonNull Rect outRect) {
         if (mHotspotBounds != null) {
             outRect.set(mHotspotBounds);
         } else {
@@ -263,7 +258,7 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
     }
 
     @Override
-    protected boolean onStateChange(@Nonnull int[] state) {
+    protected boolean onStateChange(@NonNull int[] state) {
         if (mLastDrawable != null) {
             return mLastDrawable.setState(state);
         }
@@ -324,7 +319,7 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
     }
 
     @Override
-    public void invalidateDrawable(@Nonnull Drawable who) {
+    public void invalidateDrawable(@NonNull Drawable who) {
         // This may have been called as the result of a tint changing, in
         // which case we may need to refresh the cached statefulness
         if (mDrawableContainerState != null) {
@@ -337,14 +332,14 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
     }
 
     @Override
-    public void scheduleDrawable(@Nonnull Drawable who, @Nonnull Runnable what, long when) {
+    public void scheduleDrawable(@NonNull Drawable who, @NonNull Runnable what, long when) {
         if (who == mCurrDrawable && getCallback() != null) {
             getCallback().scheduleDrawable(this, what, when);
         }
     }
 
     @Override
-    public void unscheduleDrawable(@Nonnull Drawable who, @Nonnull Runnable what) {
+    public void unscheduleDrawable(@NonNull Drawable who, @NonNull Runnable what) {
         if (who == mCurrDrawable && getCallback() != null) {
             getCallback().unscheduleDrawable(this, what);
         }
@@ -435,7 +430,7 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
      *
      * @param d The drawable to initialize.
      */
-    private void initializeDrawableForDisplay(@Nonnull Drawable d) {
+    private void initializeDrawableForDisplay(@NonNull Drawable d) {
         if (mBlockInvalidateCallback == null) {
             mBlockInvalidateCallback = new BlockInvalidateCallback();
         }
@@ -530,7 +525,7 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
         return null;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Drawable mutate() {
         if (!mMutated && super.mutate() == this) {
@@ -726,8 +721,8 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
             }
         }
 
-        @Nonnull
-        private Drawable prepareDrawable(@Nonnull Drawable child) {
+        @NonNull
+        private Drawable prepareDrawable(@NonNull Drawable child) {
             child.setLayoutDirection(mLayoutDirection);
             child = child.mutate();
             child.setCallback(mOwner);
@@ -1007,19 +1002,19 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
         }
 
         @Override
-        public void invalidateDrawable(@Nonnull Drawable who) {
+        public void invalidateDrawable(@NonNull Drawable who) {
             // Ignore invalidation.
         }
 
         @Override
-        public void scheduleDrawable(@Nonnull Drawable who, @Nonnull Runnable what, long when) {
+        public void scheduleDrawable(@NonNull Drawable who, @NonNull Runnable what, long when) {
             if (mCallback != null) {
                 mCallback.scheduleDrawable(who, what, when);
             }
         }
 
         @Override
-        public void unscheduleDrawable(@Nonnull Drawable who, @Nonnull Runnable what) {
+        public void unscheduleDrawable(@NonNull Drawable who, @NonNull Runnable what) {
             if (mCallback != null) {
                 mCallback.unscheduleDrawable(who, what);
             }

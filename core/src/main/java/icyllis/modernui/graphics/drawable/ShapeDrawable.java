@@ -18,6 +18,8 @@
 
 package icyllis.modernui.graphics.drawable;
 
+import icyllis.arc3d.core.ColorFilter;
+import icyllis.arc3d.core.effects.BlendModeColorFilter;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.resources.Resources;
@@ -96,6 +98,7 @@ public class ShapeDrawable extends Drawable {
 
     private final Paint mFillPaint = new Paint();
     private Paint mStrokePaint;   // optional, set by the caller
+    private BlendModeColorFilter mBlendModeColorFilter;
     private boolean mShapeIsDirty;
 
     private final RectF mRect = new RectF();
@@ -139,6 +142,9 @@ public class ShapeDrawable extends Drawable {
             }
         }
 
+        mBlendModeColorFilter = updateBlendModeFilter(mBlendModeColorFilter,
+                state.mTint, state.mBlendMode);
+
         mShapeIsDirty = true;
     }
 
@@ -181,10 +187,16 @@ public class ShapeDrawable extends Drawable {
                 mStrokePaint.getStrokeWidth() > 0;
         //TODO Google bug: also check BlendMode/Shader/ColorFilter to determine there's fill or stroke
         final ShapeState st = mShapeState;
+        final ColorFilter colorFilter = mBlendModeColorFilter;
 
         mFillPaint.setAlpha(currFillAlpha);
+        mFillPaint.setColorFilter(colorFilter);
+        if (colorFilter != null && st.mSolidColors == null) {
+            mFillPaint.setColor(mAlpha << 24);
+        }
         if (haveStroke) {
             mStrokePaint.setAlpha(currStrokeAlpha);
+            mStrokePaint.setColorFilter(colorFilter);
         }
 
         RectF r = mRect;
@@ -206,6 +218,7 @@ public class ShapeDrawable extends Drawable {
                     }
                 } else {
                     if (mFillPaint.getColor() != 0 ||
+                            colorFilter != null ||
                             mFillPaint.getShader() != null) {
                         canvas.drawRect(r, mFillPaint);
                     }
@@ -627,6 +640,12 @@ public class ShapeDrawable extends Drawable {
             }
         }
 
+        if (s.mTint != null && s.mBlendMode != null) {
+            mBlendModeColorFilter = updateBlendModeFilter(mBlendModeColorFilter,
+                    s.mTint, s.mBlendMode);
+            invalidateSelf = true;
+        }
+
         if (invalidateSelf) {
             invalidateSelf();
             return true;
@@ -661,6 +680,22 @@ public class ShapeDrawable extends Drawable {
     @Override
     public int getAlpha() {
         return mAlpha;
+    }
+
+    @Override
+    public void setTintList(@Nullable ColorStateList tint) {
+        mShapeState.mTint = tint;
+        mBlendModeColorFilter =
+                updateBlendModeFilter(mBlendModeColorFilter, tint, mShapeState.mBlendMode);
+        invalidateSelf();
+    }
+
+    @Override
+    public void setTintBlendMode(@NonNull BlendMode blendMode) {
+        mShapeState.mBlendMode = blendMode;
+        mBlendModeColorFilter =
+                updateBlendModeFilter(mBlendModeColorFilter, mShapeState.mTint, blendMode);
+        invalidateSelf();
     }
 
     @Override
@@ -731,6 +766,9 @@ public class ShapeDrawable extends Drawable {
         public int mThickness = -1;
 
         boolean mUseLevelForShape = true;
+
+        ColorStateList mTint = null;
+        BlendMode mBlendMode = DEFAULT_BLEND_MODE;
 
         public ShapeState() {
         }

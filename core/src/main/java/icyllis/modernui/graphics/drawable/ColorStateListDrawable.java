@@ -18,13 +18,11 @@
 
 package icyllis.modernui.graphics.drawable;
 
-import icyllis.modernui.graphics.BlendMode;
-import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.Rect;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.graphics.*;
 import icyllis.modernui.util.ColorStateList;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Objects;
 
 /**
@@ -42,20 +40,20 @@ public class ColorStateListDrawable extends Drawable implements Drawable.Callbac
         initializeColorDrawable();
     }
 
-    public ColorStateListDrawable(@Nonnull ColorStateList colorStateList) {
+    public ColorStateListDrawable(@NonNull ColorStateList colorStateList) {
         mState = new ColorStateListDrawableState();
         initializeColorDrawable();
         setColorStateList(colorStateList);
     }
 
-    private ColorStateListDrawable(@Nonnull ColorStateListDrawableState state) {
+    private ColorStateListDrawable(@NonNull ColorStateListDrawableState state) {
         mState = state;
         initializeColorDrawable();
         onStateChange(getState());
     }
 
     @Override
-    public void draw(@Nonnull Canvas canvas) {
+    public void draw(@NonNull Canvas canvas) {
         mColorDrawable.draw(canvas);
     }
 
@@ -74,7 +72,7 @@ public class ColorStateListDrawable extends Drawable implements Drawable.Callbac
         return mState.hasFocusStateSpecified();
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Drawable getCurrent() {
         return mColorDrawable;
@@ -103,20 +101,20 @@ public class ColorStateListDrawable extends Drawable implements Drawable.Callbac
     }
 
     @Override
-    public void setTintBlendMode(@Nonnull BlendMode blendMode) {
+    public void setTintBlendMode(@NonNull BlendMode blendMode) {
         mState.mBlendMode = blendMode;
         mColorDrawable.setTintBlendMode(blendMode);
         onStateChange(getState());
     }
 
     @Override
-    protected void onBoundsChange(@Nonnull Rect bounds) {
+    protected void onBoundsChange(@NonNull Rect bounds) {
         super.onBoundsChange(bounds);
         mColorDrawable.setBounds(bounds);
     }
 
     @Override
-    protected boolean onStateChange(@Nonnull int[] state) {
+    protected boolean onStateChange(@NonNull int[] state) {
         if (mState.mColor != null) {
             int color = mState.mColor.getColorForState(state, mState.mColor.getDefaultColor());
 
@@ -137,27 +135,27 @@ public class ColorStateListDrawable extends Drawable implements Drawable.Callbac
     }
 
     @Override
-    public void invalidateDrawable(@Nonnull Drawable who) {
+    public void invalidateDrawable(@NonNull Drawable who) {
         if (who == mColorDrawable && getCallback() != null) {
             getCallback().invalidateDrawable(this);
         }
     }
 
     @Override
-    public void scheduleDrawable(@Nonnull Drawable who, @Nonnull Runnable what, long when) {
+    public void scheduleDrawable(@NonNull Drawable who, @NonNull Runnable what, long when) {
         if (who == mColorDrawable && getCallback() != null) {
             getCallback().scheduleDrawable(this, what, when);
         }
     }
 
     @Override
-    public void unscheduleDrawable(@Nonnull Drawable who, @Nonnull Runnable what) {
+    public void unscheduleDrawable(@NonNull Drawable who, @NonNull Runnable what) {
         if (who == mColorDrawable && getCallback() != null) {
             getCallback().unscheduleDrawable(this, what);
         }
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public ConstantState getConstantState() {
         return mState;
@@ -169,12 +167,12 @@ public class ColorStateListDrawable extends Drawable implements Drawable.Callbac
      *
      * @return a ColorStateList
      */
-    @Nonnull
+    @NonNull
     public ColorStateList getColorStateList() {
         return Objects.requireNonNullElseGet(mState.mColor, () -> ColorStateList.valueOf(mColorDrawable.getColor()));
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Drawable mutate() {
         if (!mMutated && super.mutate() == this) {
@@ -196,7 +194,7 @@ public class ColorStateListDrawable extends Drawable implements Drawable.Callbac
      *
      * @param colorStateList A color state list to attach.
      */
-    public void setColorStateList(@Nonnull ColorStateList colorStateList) {
+    public void setColorStateList(@NonNull ColorStateList colorStateList) {
         mState.mColor = colorStateList;
         onStateChange(getState());
     }
@@ -218,7 +216,7 @@ public class ColorStateListDrawable extends Drawable implements Drawable.Callbac
             mBlendMode = state.mBlendMode;
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public Drawable newDrawable() {
             return new ColorStateListDrawable(this);
