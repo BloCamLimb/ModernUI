@@ -18,13 +18,13 @@
 
 package icyllis.modernui.graphics.drawable;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.LayoutDirection;
 import icyllis.modernui.view.Gravity;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -32,7 +32,7 @@ import java.io.InputStream;
  * A Drawable that wraps an image and can be tiled, stretched, or aligned. You can create a
  * ImageDrawable from a file path, an input stream, or from a {@link Image} object.
  */
-//TODO texture tint blending, current it's MULTIPLY
+//TODO texture tint blending, current it's MODULATE
 public class ImageDrawable extends Drawable {
 
     // lazily init
@@ -57,7 +57,7 @@ public class ImageDrawable extends Drawable {
     /**
      * Create a drawable by opening a given file path and decoding the image.
      */
-    public ImageDrawable(@Nonnull String namespace, @Nonnull String path) {
+    public ImageDrawable(@NonNull String namespace, @NonNull String path) {
         Image image = Image.create(namespace, path);
         init(new ImageState(image));
     }
@@ -71,7 +71,7 @@ public class ImageDrawable extends Drawable {
      * <p>
      * This method may be called from either render thread or UI thread.
      */
-    public ImageDrawable(@Nonnull InputStream stream) {
+    public ImageDrawable(@NonNull InputStream stream) {
         Image image = null;
         try (var bitmap = BitmapFactory.decodeStream(stream)) {
             image = Image.createTextureFromBitmap(bitmap);
@@ -83,7 +83,7 @@ public class ImageDrawable extends Drawable {
     /**
      * Returns the paint used to render this drawable.
      */
-    @Nonnull
+    @NonNull
     public final Paint getPaint() {
         return mImageState.mPaint;
     }
@@ -204,7 +204,7 @@ public class ImageDrawable extends Drawable {
     }
 
     @Override
-    protected void onBoundsChange(@Nonnull Rect bounds) {
+    protected void onBoundsChange(@NonNull Rect bounds) {
         mDstRectAndInsetsDirty = true;
     }
 
@@ -221,7 +221,7 @@ public class ImageDrawable extends Drawable {
     }
 
     @Override
-    public void draw(@Nonnull Canvas canvas) {
+    public void draw(@NonNull Canvas canvas) {
         final Image image = mImageState.mImage;
         if (image == null) {
             return;
@@ -294,7 +294,7 @@ public class ImageDrawable extends Drawable {
      *
      * @return This drawable.
      */
-    @Nonnull
+    @NonNull
     @Override
     public Drawable mutate() {
         if (!mMutated && super.mutate() == this) {
@@ -311,7 +311,7 @@ public class ImageDrawable extends Drawable {
     }
 
     @Override
-    protected boolean onStateChange(@Nonnull int[] stateSet) {
+    protected boolean onStateChange(@NonNull int[] stateSet) {
         final ImageState state = mImageState;
         if (state.mTint != null) {
             mBlendColor = state.mTint.getColorForState(stateSet, ~0);
@@ -374,7 +374,7 @@ public class ImageDrawable extends Drawable {
             mPaint = new Paint();
         }
 
-        ImageState(@Nonnull ImageState imageState) {
+        ImageState(@NonNull ImageState imageState) {
             mImage = imageState.mImage;
             mTint = imageState.mTint;
             mGravity = imageState.mGravity;
@@ -382,7 +382,7 @@ public class ImageDrawable extends Drawable {
             mAutoMirrored = imageState.mAutoMirrored;
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public Drawable newDrawable() {
             return new ImageDrawable(this);

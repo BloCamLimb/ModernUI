@@ -18,8 +18,8 @@
 
 package icyllis.modernui.graphics.drawable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 
 /**
  * A resource that manages a number of alternate Drawables, each assigned a maximum numerical value.
@@ -63,7 +63,7 @@ public class LevelListDrawable extends DrawableContainer {
         return super.onLevelChange(level);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Drawable mutate() {
         if (!mMutated && super.mutate() == this) {
@@ -85,7 +85,7 @@ public class LevelListDrawable extends DrawableContainer {
     }
 
     @Override
-    protected void setConstantState(@Nonnull DrawableContainerState state) {
+    protected void setConstantState(@NonNull DrawableContainerState state) {
         super.setConstantState(state);
 
         if (state instanceof LevelListState) {
@@ -134,7 +134,7 @@ public class LevelListDrawable extends DrawableContainer {
             return -1;
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public Drawable newDrawable() {
             return new LevelListDrawable(this, null);

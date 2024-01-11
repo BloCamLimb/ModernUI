@@ -1599,7 +1599,7 @@ public final class GLSurfaceCanvas extends Canvas {
         } else {
             drawMatrix(RESET_MATRIX);
             // must have a color
-            putRectColor(b.mLeft, b.mTop, b.mRight, b.mBottom, 1, 1, 1, 1);
+            putRectPMColor(b.mLeft, b.mTop, b.mRight, b.mBottom, null);
             mClipRefs.add(getSave().mClipRef);
         }
         mDrawOps.add(DRAW_CLIP_POP);
@@ -1641,7 +1641,7 @@ public final class GLSurfaceCanvas extends Canvas {
         if (intersects) {
             drawMatrix();
             // updating stencil must have a color
-            putRectColor(left - 1, top - 1, right + 1, bottom + 1, 1.0f, 1.0f, 1.0f, 1.0f);
+            putRectPMColor(left - 1, top - 1, right + 1, bottom + 1, null);
             mClipRefs.add(save.mClipRef);
         } else {
             // empty
@@ -1673,8 +1673,22 @@ public final class GLSurfaceCanvas extends Canvas {
         return !Rect2i.intersects(clip, test);
     }
 
+    private final float[] mTmpColor = new float[4];
+
+    private float[] load_premul_filter(@NonNull Paint paint) {
+        var col = mTmpColor;
+        float alpha = col[3] = paint.a();
+        col[0] = paint.r() * alpha;
+        col[1] = paint.g() * alpha;
+        col[2] = paint.b() * alpha;
+        if (paint.getColorFilter() != null) {
+            paint.getColorFilter().filterColor4f(col, col);
+        }
+        return col;
+    }
+
     private void putRectColor(float left, float top, float right, float bottom, @NonNull Paint paint) {
-        putRectColor(left, top, right, bottom, paint.r(), paint.g(), paint.b(), paint.a());
+        putRectPMColor(left, top, right, bottom, load_premul_filter(paint));
     }
 
     private void putRectColorGrad(float left, float top, float right, float bottom,
@@ -1735,14 +1749,24 @@ public final class GLSurfaceCanvas extends Canvas {
                 .put(r).put(g).put(b).put(a);
     }
 
-    private void putRectColor(float left, float top, float right, float bottom,
-                              float red, float green, float blue, float alpha) {
+    private void putRectPMColor(float left, float top, float right, float bottom,
+                                float[] color) {
         ByteBuffer buffer = checkColorMeshStagingBuffer();
-        float factor = alpha * 255.0f;
-        byte r = (byte) (red * factor + 0.5f);
-        byte g = (byte) (green * factor + 0.5f);
-        byte b = (byte) (blue * factor + 0.5f);
-        byte a = (byte) (factor + 0.5f);
+        byte r;
+        byte g;
+        byte b;
+        byte a;
+        if (color != null) {
+            r = (byte) (color[0] * 255.0f + 0.5f);
+            g = (byte) (color[1] * 255.0f + 0.5f);
+            b = (byte) (color[2] * 255.0f + 0.5f);
+            a = (byte) (color[3] * 255.0f + 0.5f);
+        } else {
+            r = (byte) 255;
+            g = (byte) 255;
+            b = (byte) 255;
+            a = (byte) 255;
+        }
         buffer.putFloat(left)
                 .putFloat(bottom)
                 .put(r).put(g).put(b).put(a);
@@ -2263,7 +2287,7 @@ public final class GLSurfaceCanvas extends Canvas {
                 -1 - left / ((right - left) * 0.5f),
                 (-1 - top / ((bottom - top) * 0.5f)) / aspect);
         drawMatrix();
-        putRectColor(-1, -1 / aspect, 1, 1 / aspect, 1, 1, 1, 1);
+        putRectPMColor(-1, -1 / aspect, 1, 1 / aspect, null);
         ByteBuffer buffer = checkUniformStagingBuffer();
         buffer.putFloat((float) GLFW.glfwGetTime());
         restore();

@@ -19,6 +19,8 @@
 package icyllis.modernui.graphics;
 
 import icyllis.modernui.annotation.ColorInt;
+import icyllis.modernui.annotation.Size;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 
@@ -415,6 +417,18 @@ public class Color {
      */
     @ColorInt
     public static int blend(@Nonnull BlendMode mode, @ColorInt int src, @ColorInt int dst) {
-        return icyllis.arc3d.core.Color.blend(mode.mBlendMode, src, dst);
+        return icyllis.arc3d.core.Color.blend(mode.nativeBlendMode(), src, dst);
+    }
+
+    @ApiStatus.Internal
+    public static boolean equals_within_tolerance(@Size(4) float[] colA, @Size(4) float[] colB,
+                                                  float tol) {
+        for (int i = 0; i < 4; i++) {
+            // !( <= ) also captures NaN
+            if (!(Math.abs(colA[i] - colB[i]) <= tol)) {
+                return false;
+            }
+        }
+        return true;
     }
 }

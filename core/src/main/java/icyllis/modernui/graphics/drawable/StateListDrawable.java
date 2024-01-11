@@ -19,10 +19,9 @@
 package icyllis.modernui.graphics.drawable;
 
 import icyllis.modernui.R;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.util.StateSet;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * Lets you assign a number of graphic images to a single Drawable and swap out the visible item by a string
@@ -82,7 +81,7 @@ public class StateListDrawable extends DrawableContainer {
     }
 
     @Override
-    protected boolean onStateChange(@Nonnull int[] stateSet) {
+    protected boolean onStateChange(@NonNull int[] stateSet) {
         final boolean changed = super.onStateChange(stateSet);
 
         int idx = mStateListState.indexOfStateSet(stateSet);
@@ -116,7 +115,7 @@ public class StateListDrawable extends DrawableContainer {
      * @see #getStateCount()
      * @see #getStateDrawable(int)
      */
-    @Nonnull
+    @NonNull
     public int[] getStateSet(int index) {
         return mStateListState.mStateSets[index];
     }
@@ -142,11 +141,11 @@ public class StateListDrawable extends DrawableContainer {
      * @see #getStateDrawable(int)
      * @see #getStateSet(int)
      */
-    public int findStateDrawableIndex(@Nonnull int[] stateSet) {
+    public int findStateDrawableIndex(@NonNull int[] stateSet) {
         return mStateListState.indexOfStateSet(stateSet);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Drawable mutate() {
         if (!mMutated && super.mutate() == this) {
@@ -168,7 +167,7 @@ public class StateListDrawable extends DrawableContainer {
     }
 
     @Override
-    protected void setConstantState(@Nonnull DrawableContainerState state) {
+    protected void setConstantState(@NonNull DrawableContainerState state) {
         super.setConstantState(state);
 
         if (state instanceof StateListState) {
@@ -220,7 +219,7 @@ public class StateListDrawable extends DrawableContainer {
             return StateSet.containsAttribute(mStateSets, R.attr.state_focused);
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public Drawable newDrawable() {
             return new StateListDrawable(this, null);

@@ -18,6 +18,7 @@
 
 package icyllis.modernui.graphics.drawable;
 
+import icyllis.arc3d.core.effects.BlendModeColorFilter;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.core.Handler;
@@ -791,6 +792,24 @@ public abstract class Drawable {
     @Nullable
     public ConstantState getConstantState() {
         return null;
+    }
+
+    @Nullable
+    BlendModeColorFilter updateBlendModeFilter(@Nullable BlendModeColorFilter oldBlendFilter,
+                                               @Nullable ColorStateList tint, @Nullable BlendMode blendMode) {
+        if (tint == null || blendMode == null) {
+            return null;
+        }
+
+        final int color = tint.getColorForState(getState(), Color.TRANSPARENT);
+        if (oldBlendFilter != null && oldBlendFilter.getMode() == blendMode.nativeBlendMode()) {
+            float[] color4f = icyllis.arc3d.core.Color.load_and_premul(color);
+            if (Color.equals_within_tolerance(oldBlendFilter.getColor4f(), color4f, 1 / 1024.0f)) {
+                return oldBlendFilter;
+            }
+            return BlendModeColorFilter.make(color4f, /*srcIsPremul*/ true, blendMode.nativeBlendMode());
+        }
+        return BlendModeColorFilter.make(color, blendMode.nativeBlendMode());
     }
 
     /**
