@@ -26,7 +26,7 @@ import java.util.Objects;
 
 public class BlendModeColorFilter extends ColorFilter {
 
-    private static final ColorFilter CLEAR = new BlendModeColorFilter(BlendMode.SRC);
+    private static final BlendModeColorFilter CLEAR = new BlendModeColorFilter(BlendMode.SRC);
 
     // premultiplied blend color in sRGB space
     private final float[] mColor;
@@ -37,12 +37,16 @@ public class BlendModeColorFilter extends ColorFilter {
         mMode = mode;
     }
 
-    public BlendModeColorFilter(@Size(4) float[] color, BlendMode mode) {
+    public BlendModeColorFilter(@Size(4) float[] color, boolean srcIsPremul, BlendMode mode) {
         this(mode);
-        float alpha = mColor[3] = color[3];
-        mColor[0] = color[0] * alpha;
-        mColor[1] = color[1] * alpha;
-        mColor[2] = color[2] * alpha;
+        if (srcIsPremul) {
+            System.arraycopy(color, 0, mColor, 0, 4);
+        } else {
+            float alpha = mColor[3] = color[3];
+            mColor[0] = color[0] * alpha;
+            mColor[1] = color[1] * alpha;
+            mColor[2] = color[2] * alpha;
+        }
     }
 
     private BlendModeColorFilter(BlendMode mode) {
@@ -51,7 +55,7 @@ public class BlendModeColorFilter extends ColorFilter {
     }
 
     @Nullable
-    public static ColorFilter make(int color, BlendMode mode) {
+    public static BlendModeColorFilter make(int color, BlendMode mode) {
         Objects.requireNonNull(mode);
         // Next collapse some modes if possible
         if (mode == BlendMode.CLEAR) {
@@ -96,7 +100,7 @@ public class BlendModeColorFilter extends ColorFilter {
     }
 
     @Nullable
-    public static ColorFilter make(@Size(4) float[] color, BlendMode mode) {
+    public static BlendModeColorFilter make(@Size(4) float[] color, boolean srcIsPremul, BlendMode mode) {
         Objects.requireNonNull(mode);
         // Next collapse some modes if possible
         if (mode == BlendMode.CLEAR) {
@@ -137,13 +141,13 @@ public class BlendModeColorFilter extends ColorFilter {
             return null;
         }
 
-        return new BlendModeColorFilter(color, mode);
+        return new BlendModeColorFilter(color, srcIsPremul, mode);
     }
 
     /**
      * @return premultiplied source color in sRGB space, unmodifiable.
      */
-    public float[] getColor() {
+    public float[] getColor4f() {
         return mColor;
     }
 

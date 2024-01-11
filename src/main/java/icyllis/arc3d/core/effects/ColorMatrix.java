@@ -31,6 +31,32 @@ import java.util.Arrays;
  * The memory layout (order of components) is the same as GLSL's column-major.
  * Interpret first 16 elements as mat4 m and last 4 elements as vec4 v, then
  * <code>newColor = m * color + v;</code>
+ * <p>
+ * The matrix can be passed as single array, and is treated as follows:
+ *
+ * <pre>
+ *  [ a, b, c, d,
+ *    e, f, g, h,
+ *    i, j, k, l,
+ *    m, n, o, p,
+ *    q, r, s, t ]</pre>
+ *
+ * <p>
+ * When applied to a color <code>[R, G, B, A]</code>, the resulting color
+ * is computed as:
+ * </p>
+ *
+ * <pre>
+ *   R&rsquo; = a*R + e*G + i*B + m*A + q;
+ *   G&rsquo; = b*R + f*G + j*B + n*A + r;
+ *   B&rsquo; = c*R + g*G + k*B + o*A + s;
+ *   A&rsquo; = d*R + h*G + l*B + p*A + t;</pre>
+ *
+ * <p>
+ * That resulting color <code>[R&rsquo;, G&rsquo;, B&rsquo;, A&rsquo;]</code>
+ * then has each channel clamped to the <code>0.0</code> to <code>1.0</code>
+ * range.
+ * </p>
  */
 public class ColorMatrix {
 
@@ -369,9 +395,15 @@ public class ColorMatrix {
         final float G = 0.715f * (1 - sat);
         final float B = 0.072f * (1 - sat);
 
-        m[0] = R + sat; m[1] = R;       m[2] = R;
-        m[4] = G;       m[5] = G + sat; m[6] = G;
-        m[8] = B;       m[9] = B;       m[10] = B + sat;
+        m[0] = R + sat;
+        m[1] = R;
+        m[2] = R;
+        m[4] = G;
+        m[5] = G + sat;
+        m[6] = G;
+        m[8] = B;
+        m[9] = B;
+        m[10] = B + sat;
         m[kScaleA] = 1;
     }
 
