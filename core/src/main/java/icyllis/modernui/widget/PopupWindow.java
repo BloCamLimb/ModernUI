@@ -990,8 +990,6 @@ public class PopupWindow {
         if (mIsDropdown && (mClipToScreen || mClippingEnabled)) {
             gravity |= Gravity.DISPLAY_CLIP_VERTICAL;
         }
-        // window state doesn't consume relative direction, but layout container does
-        gravity &= ~Gravity.RELATIVE_LAYOUT_DIRECTION;
         return gravity;
     }
 
@@ -1071,7 +1069,7 @@ public class PopupWindow {
         outParams.y = drawingLocation[1] + anchorHeight + yOffset;
 
         // Let the window manager know to align the top to y.
-        outParams.gravity = Gravity.TOP | Gravity.LEFT;
+        outParams.gravity = computeGravity();
         outParams.width = width;
         outParams.height = height;
 
@@ -1079,9 +1077,9 @@ public class PopupWindow {
         // corner of the anchor (still accounting for offsets).
         final int hGrav = Gravity.getAbsoluteGravity(gravity, anchor.getLayoutDirection())
                 & Gravity.HORIZONTAL_GRAVITY_MASK;
-        /*if (hGrav == Gravity.RIGHT) {
-            outParams.leftMargin += anchorWidth;
-        }*/
+        if (hGrav == Gravity.RIGHT) {
+            outParams.x -= width - anchorWidth;
+        }
 
         // First, attempt to fit the popup vertically without resizing.
         final boolean fitsVertical = tryFitVertical(outParams, yOffset, height,
@@ -1109,7 +1107,7 @@ public class PopupWindow {
 
                 // Preserve the gravity adjustment.
                 if (hGrav == Gravity.RIGHT) {
-                    outParams.x += anchorWidth;
+                    outParams.x -= width - anchorWidth;
                 }
             }
 
