@@ -20,41 +20,34 @@ package icyllis.modernui.test
 
 import icyllis.modernui.ModernUI
 import icyllis.modernui.fragment.Fragment
-import icyllis.modernui.graphics.Color
-import icyllis.modernui.graphics.drawable.ColorDrawable
+import icyllis.modernui.graphics.text.FontFamily
 import icyllis.modernui.util.DataSet
+import icyllis.modernui.util.Log
 import icyllis.modernui.view.LayoutInflater
 import icyllis.modernui.view.View
 import icyllis.modernui.view.ViewGroup
-import org.apache.logging.log4j.Level
-import org.apache.logging.log4j.core.config.Configurator
+import icyllis.modernui.widget.ArrayAdapter
+import icyllis.modernui.widget.GridView
 
 fun main() {
     System.setProperty("java.awt.headless", "true")
-    Configurator.setRootLevel(Level.ALL)
-    ModernUI().use { app -> app.run(TestContextMenu()) }
+    Log.setLevel(Log.DEBUG)
+    ModernUI().use { app -> app.run(TestGridView()) }
 }
 
-class TestContextMenu : Fragment() {
+class TestGridView : Fragment() {
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: DataSet?
     ): View {
-        val view = View(context)
-        val color = Color.rgb(0, 0, 0)
-        view.background = ColorDrawable(color)
-        view.layoutParams =
-            ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
-        view.setOnCreateContextMenuListener { menu, _, _ ->
-            menu.add("1")
-            menu.add("2")
-            menu.add("3")
-            menu.add("4")
-            menu.add("5")
-            menu.add("6")
-        }
+        val view = GridView(context)
+        view.numColumns = 3
+        val list = ArrayList(FontFamily.getSystemFontMap().keys)
+        list.sort()
+        view.adapter = ArrayAdapter(context, list)
+
         return view
     }
 }

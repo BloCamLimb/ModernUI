@@ -11,6 +11,9 @@ includeBuild '../Arc3D'
 include 'core'
 project(':core').name = 'ModernUI-Core'
 
+include 'core-ktx'
+project(':core-ktx').name = 'ModernUI-Core-KTX'
+
 // extensions
 //include 'x-viewpager'
 //project(':x-viewpager').name = "ModernUI-ViewPager"

@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2024 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,12 +19,11 @@
 package icyllis.modernui.test
 
 import icyllis.modernui.util.DataSet
+import icyllis.modernui.util.Log
 import icyllis.modernui.util.Parcel
-import org.apache.logging.log4j.Level
-import org.apache.logging.log4j.core.config.Configurator
 
 fun main() {
-    Configurator.setRootLevel(Level.ALL)
+    Log.setLevel(Log.DEBUG)
     val parcel = Parcel()
     write(parcel)
     val pos = parcel.position()

@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2024 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,18 +21,17 @@ package icyllis.modernui.test
 import icyllis.modernui.ModernUI
 import icyllis.modernui.fragment.Fragment
 import icyllis.modernui.util.DataSet
+import icyllis.modernui.util.Log
 import icyllis.modernui.view.Gravity
 import icyllis.modernui.view.LayoutInflater
 import icyllis.modernui.view.View
 import icyllis.modernui.view.View.OnFocusChangeListener
 import icyllis.modernui.view.ViewGroup
 import icyllis.modernui.widget.*
-import org.apache.logging.log4j.Level
-import org.apache.logging.log4j.core.config.Configurator
 
 fun main() {
     System.setProperty("java.awt.headless", "true")
-    Configurator.setRootLevel(Level.ALL)
+    Log.setLevel(Log.DEBUG)
     ModernUI().use { app -> app.run(TestViewPager()) }
 }
 
@@ -49,7 +48,8 @@ class TestViewPager : Fragment() {
 
         // press 'tab' key to take focus, and use arrow keys
         pager.onFocusChangeListener = OnFocusChangeListener { v, hasFocus ->
-            ModernUI.LOGGER.info(
+            Log.info(
+                null,
                 "{} focus change: {}",
                 v,
                 hasFocus

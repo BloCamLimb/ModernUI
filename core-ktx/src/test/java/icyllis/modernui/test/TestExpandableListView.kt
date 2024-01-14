@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2024 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,20 +19,20 @@
 package icyllis.modernui.test
 
 import icyllis.modernui.ModernUI
-import icyllis.modernui.animation.LayoutTransition
 import icyllis.modernui.fragment.Fragment
 import icyllis.modernui.util.DataSet
-import icyllis.modernui.view.Gravity
+import icyllis.modernui.util.Log
 import icyllis.modernui.view.LayoutInflater
 import icyllis.modernui.view.View
 import icyllis.modernui.view.ViewGroup
-import icyllis.modernui.widget.*
-import org.apache.logging.log4j.Level
-import org.apache.logging.log4j.core.config.Configurator
+import icyllis.modernui.widget.BaseExpandableListAdapter
+import icyllis.modernui.widget.ExpandableListView
+import icyllis.modernui.widget.TextView
+import icyllis.modernui.widget.Toast
 
 fun main() {
     System.setProperty("java.awt.headless", "true")
-    Configurator.setRootLevel(Level.ALL)
+    Log.setLevel(Log.DEBUG)
     ModernUI().use { app -> app.run(TestExpandableListView()) }
 }
 
