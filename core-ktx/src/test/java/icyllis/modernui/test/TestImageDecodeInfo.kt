@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2024 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,17 +18,15 @@
 
 package icyllis.modernui.test
 
-import icyllis.modernui.ModernUI
 import icyllis.modernui.graphics.Bitmap
 import icyllis.modernui.graphics.BitmapFactory
-import org.apache.logging.log4j.Level
-import org.apache.logging.log4j.core.config.Configurator
+import icyllis.modernui.util.Log
 import java.io.IOException
 import java.nio.file.Path
 import java.util.*
 
 fun main() {
-    Configurator.setRootLevel(Level.INFO)
+    Log.setLevel(Log.DEBUG)
     val gets = Bitmap.openDialogGets(null, null, null)
     if (gets != null) {
         val opts = BitmapFactory.Options()
@@ -36,8 +34,11 @@ fun main() {
         Arrays.stream(gets).map { s: String -> Path.of(s) }.forEach { p: Path ->
             try {
                 BitmapFactory.decodePathInfo(p, opts)
-                ModernUI.LOGGER.info("file: {}\ndimensions: {}x{}, format: {}, mimeType: {}",
-                        p, opts.outWidth, opts.outHeight, opts.outFormat, opts.outMimeType)
+                Log.info(
+                    null,
+                    "file: {}\ndimensions: {}x{}, format: {}, mimeType: {}",
+                    p, opts.outWidth, opts.outHeight, opts.outFormat, opts.outMimeType
+                )
             } catch (e: IOException) {
                 e.printStackTrace()
             }

@@ -1,9 +1,6 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
-
 plugins {
     id 'maven-publish'
-    id "org.jetbrains.kotlin.jvm" version "1.8.21" apply false
+    id "org.jetbrains.kotlin.jvm" version "1.9.22" apply false
 }
 
 publishing {
@@ -21,16 +18,12 @@ publishing {
 
 allprojects {
     apply plugin: 'java'
-    apply plugin: 'idea'
-    apply plugin: 'eclipse'
-    apply plugin: 'org.jetbrains.kotlin.jvm'
+    apply plugin: 'java-library'
 
     group = 'icyllis.modernui'
     version = "${modernui_version}" as String
 
     java.toolchain.languageVersion = JavaLanguageVersion.of(17)
-
-    kotlin.jvmToolchain(17)
 
     repositories {
         mavenCentral()
@@ -47,10 +40,6 @@ allprojects {
     tasks.withType(JavaCompile).configureEach {
         options.encoding = "UTF-8"
         options.release.set(17)
-    }
-
-    tasks.withType(KotlinCompilationTask).configureEach {
-        compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
     }
 
     java {
