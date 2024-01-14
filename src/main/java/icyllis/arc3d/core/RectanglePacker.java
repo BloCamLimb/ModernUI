@@ -19,8 +19,6 @@
 
 package icyllis.arc3d.core;
 
-import org.lwjgl.stb.*;
-
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,8 +36,6 @@ public abstract class RectanglePacker {
     public static final int ALGORITHM_HORIZON_OLD = 2;
     public static final int ALGORITHM_BINARY_TREE = 3;
     public static final int ALGORITHM_POWER2_LINE = 4;
-    public static final int ALGORITHM_STB_SKYLINE = 5;
-    public static final int ALGORITHM_STB_SKYLINE_BEST = 6;
     public static final int ALGORITHM_SKYLINE_NEW = 7;
 
     protected final int mWidth;
@@ -81,10 +77,6 @@ public abstract class RectanglePacker {
             case ALGORITHM_HORIZON_OLD -> new HorizonOld(width, height);
             case ALGORITHM_BINARY_TREE -> new BinaryTree(width, height);
             case ALGORITHM_POWER2_LINE -> new Power2Line(width, height);
-            case ALGORITHM_STB_SKYLINE -> new STBSkyline(width, height,
-                    STBRectPack.STBRP_HEURISTIC_Skyline_BL_sortHeight);
-            case ALGORITHM_STB_SKYLINE_BEST -> new STBSkyline(width, height,
-                    STBRectPack.STBRP_HEURISTIC_Skyline_BF_sortHeight);
             case ALGORITHM_SKYLINE_NEW -> new SkylineNew(width, height);
             default -> throw new AssertionError(algorithm);
         };
@@ -905,64 +897,6 @@ public abstract class RectanglePacker {
             int index = 32 - Integer.numberOfLeadingZeros(height - 1);
             assert (index < 16);
             return index;
-        }
-    }
-
-    public static final class STBSkyline extends RectanglePacker implements AutoCloseable {
-
-        private final int mHeuristic;
-
-        private final STBRPContext mContext;
-        private final STBRPNode.Buffer mNodes;
-        private final STBRPRect.Buffer mRects;
-
-        public STBSkyline(int width, int height, int heuristic) {
-            super(width, height);
-            mHeuristic = heuristic;
-            mContext = STBRPContext.malloc();
-            mNodes = STBRPNode.malloc(width + 16);
-            mRects = STBRPRect.malloc(1);
-            clear();
-        }
-
-        @Override
-        public void clear() {
-            mArea = 0;
-            STBRectPack.stbrp_init_target(mContext, mWidth, mHeight, mNodes);
-            STBRectPack.stbrp_setup_heuristic(mContext, mHeuristic);
-        }
-
-        @Override
-        public boolean addRect(Rect2i rect) {
-            final int width = rect.width();
-            final int height = rect.height();
-            if (width <= 0 || height <= 0) {
-                rect.offsetTo(0, 0);
-                return true;
-            }
-            if (width > mWidth || height > mHeight) {
-                return false;
-            }
-            var rects = mRects.w(width).h(height);
-            if (STBRectPack.stbrp_pack_rects(mContext, rects) != 0) {
-                rect.offsetTo(rects.x(), rects.y());
-                mArea += width * height;
-                return true;
-            } else {
-                return false;
-            }
-        }
-
-        @Override
-        public void free() {
-            mRects.free();
-            mNodes.free();
-            mContext.free();
-        }
-
-        @Override
-        public void close() {
-            free();
         }
     }
 }
