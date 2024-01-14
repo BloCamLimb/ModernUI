@@ -21,6 +21,8 @@ publishing {
 
 allprojects {
     apply plugin: 'java'
+    apply plugin: 'idea'
+    apply plugin: 'eclipse'
     apply plugin: 'org.jetbrains.kotlin.jvm'
 
     group = 'icyllis.modernui'
@@ -36,13 +38,10 @@ allprojects {
     }
 
     dependencies {
-        compileOnly "icyllis.arc3d:Arc3D"
         compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
         compileOnly 'org.jetbrains:annotations:23.1.0'
         testCompileOnly 'com.google.code.findbugs:jsr305:3.0.2'
         testCompileOnly 'org.jetbrains:annotations:23.1.0'
-        implementation "org.apache.logging.log4j:log4j-api:${log4j_version}"
-        implementation "org.apache.logging.log4j:log4j-core:${log4j_version}"
     }
 
     tasks.withType(JavaCompile).configureEach {

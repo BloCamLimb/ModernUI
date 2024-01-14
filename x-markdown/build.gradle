@@ -1,5 +1,3 @@
-archivesBaseName = 'ModernUI-Markdown'
-
 repositories {
     mavenCentral()
 }
@@ -12,7 +10,7 @@ dependencies {
 jar {
     manifest {
         attributes(
-                "Specification-Title": "ModernUI-Markdown",
+                "Specification-Title": project.name,
                 "Specification-Vendor": "BloCamLimb",
                 "Specification-Version": "1",
                 "Implementation-Title": project.name,

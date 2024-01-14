@@ -14,7 +14,10 @@ dependencies {
     implementation "com.ibm.icu:icu4j:${icu4j_version}"
     implementation "it.unimi.dsi:fastutil:${fastutil_version}"
 
-    implementation("icyllis.arc3d:Arc3D")
+    api "org.apache.logging.log4j:log4j-api:${log4j_version}"
+    api "org.apache.logging.log4j:log4j-core:${log4j_version}"
+
+    api("icyllis.arc3d:Arc3D")
     shadow("icyllis.arc3d:Arc3D") {
         transitive = false
     }
@@ -72,15 +75,21 @@ shadowJar {
     configurations = [project.configurations.shadow]
 }
 
+tasks.register('shadowSourcesJar', Jar) {
+    archiveClassifier.set("shadow-sources")
+    from sourceSets.main.allSource
+    from fileTree(new File(gradle.includedBuild("Arc3D").projectDir, "src/main/java"))
+}
+
 tasks.register('copyDependencies', Copy) {
-    from configurations.default
-    into "${buildDir}/output/libs"
+    from configurations.runtimeClasspath
+    into layout.buildDirectory.dir("output/libs")
 }
 
 jar {
     manifest {
         attributes(
-                "Specification-Title": "ModernUI-Core",
+                "Specification-Title": project.name,
                 "Specification-Vendor": "BloCamLimb",
                 "Specification-Version": "1",
                 "Implementation-Title": project.name,
@@ -97,7 +106,7 @@ publishing {
             artifact(shadowJar.archiveFile) {
                 builtBy build
             }
-            artifact(sourcesJar.archiveFile) {
+            artifact(shadowSourcesJar.archiveFile) {
                 builtBy build
                 classifier 'sources'
             }

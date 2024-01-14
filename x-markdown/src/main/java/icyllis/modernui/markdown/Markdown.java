@@ -304,14 +304,14 @@ public final class Markdown {
                 if (plugin == null) {
                     plugin = find(mAll, clazz);
                     if (plugin == null) {
-                        throw new IllegalStateException("Requested plugin is not added: " +
-                                "" + clazz.getName() + ", plugins: " + mAll);
+                        throw new IllegalStateException("Requested plugin is not added: " + clazz.getName() + ", plugins: " + mAll);
                     }
                     load(plugin);
                 }
                 return plugin;
             }
 
+            @SuppressWarnings("unchecked")
             @Nullable
             private <P extends MarkdownPlugin> P find(Set<MarkdownPlugin> set, @NonNull Class<? extends P> clazz) {
                 for (MarkdownPlugin plugin : set) {
