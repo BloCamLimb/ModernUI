@@ -165,6 +165,7 @@ public final class Markdown {
         }
     }
 
+    @SuppressWarnings("unchecked")
     @Nullable
     public <P extends MarkdownPlugin> P getPlugin(@NonNull Class<P> type) {
         MarkdownPlugin out = null;
@@ -173,7 +174,6 @@ public final class Markdown {
                 out = plugin;
             }
         }
-        //noinspection unchecked
         return (P) out;
     }
 
@@ -304,7 +304,8 @@ public final class Markdown {
                 if (plugin == null) {
                     plugin = find(mAll, clazz);
                     if (plugin == null) {
-                        throw new IllegalStateException("Requested plugin is not added: " + clazz.getName() + ", plugins: " + mAll);
+                        throw new IllegalStateException("Requested plugin is not added: " + clazz.getName() + ", " +
+                                "plugins: " + mAll);
                     }
                     load(plugin);
                 }

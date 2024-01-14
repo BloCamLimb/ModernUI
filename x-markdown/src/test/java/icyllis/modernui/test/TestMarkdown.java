@@ -24,17 +24,16 @@ import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.fragment.Fragment;
 import icyllis.modernui.markdown.Markdown;
 import icyllis.modernui.util.DataSet;
+import icyllis.modernui.util.Log;
 import icyllis.modernui.view.*;
 import icyllis.modernui.widget.FrameLayout;
 import icyllis.modernui.widget.TextView;
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.core.config.Configurator;
 
 public class TestMarkdown extends Fragment {
 
     public static void main(String[] args) {
         System.setProperty("java.awt.headless", "true");
-        Configurator.setRootLevel(Level.DEBUG);
+        Log.setLevel(Log.DEBUG);
         try (ModernUI app = new ModernUI()) {
             app.run(new TestMarkdown());
         }
