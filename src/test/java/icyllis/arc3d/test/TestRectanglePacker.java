@@ -20,6 +20,7 @@
 package icyllis.arc3d.test;
 
 import icyllis.arc3d.core.*;
+import org.lwjgl.stb.*;
 
 import javax.imageio.ImageIO;
 import java.awt.Color;
@@ -30,6 +31,9 @@ import java.util.Random;
 
 public class TestRectanglePacker {
 
+    public static final int ALGORITHM_STB_SKYLINE = 10005;
+    public static final int ALGORITHM_STB_SKYLINE_BEST = 10006;
+
     public static final int WIDTH = 1024;
     public static final int HEIGHT = 1024;
 
@@ -38,8 +42,8 @@ public class TestRectanglePacker {
         var packer2 = new Packer(RectanglePacker.ALGORITHM_HORIZON);
         var packer4 = new Packer(RectanglePacker.ALGORITHM_BINARY_TREE);
         var packer5 = new Packer(RectanglePacker.ALGORITHM_POWER2_LINE);
-        var packer6 = new Packer(RectanglePacker.ALGORITHM_STB_SKYLINE);
-        var packer7 = new Packer(RectanglePacker.ALGORITHM_STB_SKYLINE_BEST);
+        var packer6 = new Packer(ALGORITHM_STB_SKYLINE);
+        var packer7 = new Packer(ALGORITHM_STB_SKYLINE_BEST);
         var packer8 = new Packer(RectanglePacker.ALGORITHM_SKYLINE_NEW);
 
         var random = new Random();
@@ -117,7 +121,13 @@ public class TestRectanglePacker {
         final Rect2i rect = new Rect2i();
 
         public Packer(int algorithm) {
-            packer = RectanglePacker.make(WIDTH, HEIGHT, algorithm);
+            packer = switch (algorithm) {
+                case ALGORITHM_STB_SKYLINE -> new STBSkyline(WIDTH, HEIGHT,
+                        STBRectPack.STBRP_HEURISTIC_Skyline_BL_sortHeight);
+                case ALGORITHM_STB_SKYLINE_BEST -> new STBSkyline(WIDTH, HEIGHT,
+                        STBRectPack.STBRP_HEURISTIC_Skyline_BF_sortHeight);
+                default -> RectanglePacker.make(WIDTH, HEIGHT, algorithm);
+            };
             bm = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB);
             g2d = bm.createGraphics();
         }
@@ -148,6 +158,64 @@ public class TestRectanglePacker {
 
         public void free() {
             packer.free();
+        }
+    }
+
+    public static final class STBSkyline extends RectanglePacker implements AutoCloseable {
+
+        private final int mHeuristic;
+
+        private final STBRPContext mContext;
+        private final STBRPNode.Buffer mNodes;
+        private final STBRPRect.Buffer mRects;
+
+        public STBSkyline(int width, int height, int heuristic) {
+            super(width, height);
+            mHeuristic = heuristic;
+            mContext = STBRPContext.malloc();
+            mNodes = STBRPNode.malloc(width + 16);
+            mRects = STBRPRect.malloc(1);
+            clear();
+        }
+
+        @Override
+        public void clear() {
+            mArea = 0;
+            STBRectPack.stbrp_init_target(mContext, mWidth, mHeight, mNodes);
+            STBRectPack.stbrp_setup_heuristic(mContext, mHeuristic);
+        }
+
+        @Override
+        public boolean addRect(Rect2i rect) {
+            final int width = rect.width();
+            final int height = rect.height();
+            if (width <= 0 || height <= 0) {
+                rect.offsetTo(0, 0);
+                return true;
+            }
+            if (width > mWidth || height > mHeight) {
+                return false;
+            }
+            var rects = mRects.w(width).h(height);
+            if (STBRectPack.stbrp_pack_rects(mContext, rects) != 0) {
+                rect.offsetTo(rects.x(), rects.y());
+                mArea += width * height;
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        @Override
+        public void free() {
+            mRects.free();
+            mNodes.free();
+            mContext.free();
+        }
+
+        @Override
+        public void close() {
+            free();
         }
     }
 }
