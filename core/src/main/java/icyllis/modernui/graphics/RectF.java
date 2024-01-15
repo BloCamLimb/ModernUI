@@ -18,8 +18,8 @@
 
 package icyllis.modernui.graphics;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 
 /**
  * Represents a rectangle holding four float coordinates.
@@ -86,7 +86,7 @@ public class RectF {
      *
      * @param r the rect to copy from
      */
-    @Nonnull
+    @NonNull
     public static RectF copy(@Nullable RectF r) {
         return r == null ? new RectF() : r.copy();
     }
@@ -184,7 +184,7 @@ public class RectF {
      * @param src The rectangle whose coordinates are copied into this
      *            rectangle.
      */
-    public void set(@Nonnull RectF src) {
+    public void set(@NonNull RectF src) {
         this.left = src.left;
         this.top = src.top;
         this.right = src.right;
@@ -197,7 +197,7 @@ public class RectF {
      * @param src The rectangle whose coordinates are copied into this
      *            rectangle.
      */
-    public void set(@Nonnull Rect src) {
+    public void set(@NonNull Rect src) {
         this.left = src.left;
         this.top = src.top;
         this.right = src.right;
@@ -292,7 +292,7 @@ public class RectF {
      * @return true if the specified rectangle r is inside or equal to this
      * rectangle
      */
-    public boolean contains(@Nonnull RectF r) {
+    public boolean contains(@NonNull RectF r) {
         // check for empty first
         return this.left < this.right && this.top < this.bottom
                 // now check for containment
@@ -349,7 +349,7 @@ public class RectF {
      * (and this rectangle is then set to that intersection) else
      * return false and do not change this rectangle.
      */
-    public boolean intersect(@Nonnull RectF r) {
+    public boolean intersect(@NonNull RectF r) {
         return intersect(r.left, r.top, r.right, r.bottom);
     }
 
@@ -365,7 +365,7 @@ public class RectF {
      * this rectangle to that intersection. If they do not, return
      * false and do not change this rectangle.
      */
-    public boolean setIntersect(@Nonnull RectF a, @Nonnull RectF b) {
+    public boolean setIntersect(@NonNull RectF a, @NonNull RectF b) {
         if (a.left < b.right && b.left < a.right
                 && a.top < b.bottom && b.top < a.bottom) {
             left = Math.max(a.left, b.left);
@@ -407,7 +407,7 @@ public class RectF {
      * @return true if the two specified rectangles intersect. In no event are
      * either of the rectangles modified.
      */
-    public static boolean intersects(@Nonnull RectF a, @Nonnull RectF b) {
+    public static boolean intersects(@NonNull RectF a, @NonNull RectF b) {
         return a.left < b.right && b.left < a.right
                 && a.top < b.bottom && b.top < a.bottom;
     }
@@ -416,7 +416,7 @@ public class RectF {
      * Set the dst integer Rect by rounding this rectangle's coordinates
      * to their nearest integer values.
      */
-    public void round(@Nonnull Rect dst) {
+    public void round(@NonNull Rect dst) {
         dst.set(Math.round(left), Math.round(top),
                 Math.round(right), Math.round(bottom));
     }
@@ -425,7 +425,7 @@ public class RectF {
      * Set the dst integer Rect by rounding "out" this rectangle, choosing the
      * floor of top and left, and the ceiling of right and bottom.
      */
-    public void roundOut(@Nonnull Rect dst) {
+    public void roundOut(@NonNull Rect dst) {
         dst.set((int) Math.floor(left), (int) Math.floor(top),
                 (int) Math.ceil(right), (int) Math.ceil(bottom));
     }
@@ -467,7 +467,7 @@ public class RectF {
      *
      * @param r The rectangle being unioned with this rectangle
      */
-    public void union(@Nonnull RectF r) {
+    public void union(@NonNull RectF r) {
         union(r.left, r.top, r.right, r.bottom);
     }
 
@@ -511,6 +511,13 @@ public class RectF {
         }
     }
 
+    /**
+     * Transform this rectangle in place using the supplied Matrix <var>m</var>.
+     */
+    public void transform(@NonNull Matrix m) {
+        m.mapRect(this);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -535,7 +542,7 @@ public class RectF {
                 + right + ", " + bottom + ")";
     }
 
-    @Nonnull
+    @NonNull
     public RectF copy() {
         return new RectF(left, top, right, bottom);
     }

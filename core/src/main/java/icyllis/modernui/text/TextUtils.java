@@ -811,6 +811,7 @@ public final class TextUtils {
      * <p>
      * Be careful: this code will need to be updated when vertical scripts will be supported
      */
+    @View.ResolvedLayoutDir
     public static int getLayoutDirectionFromLocale(@Nullable Locale locale) {
         return (locale != null && !locale.equals(Locale.ROOT)
                 && ULocale.forLocale(locale).isRightToLeft())

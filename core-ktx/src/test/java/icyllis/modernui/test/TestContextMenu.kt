@@ -21,7 +21,7 @@ package icyllis.modernui.test
 import icyllis.modernui.ModernUI
 import icyllis.modernui.fragment.Fragment
 import icyllis.modernui.graphics.Color
-import icyllis.modernui.graphics.drawable.ColorDrawable
+import icyllis.modernui.graphics.drawable.toDrawable
 import icyllis.modernui.util.DataSet
 import icyllis.modernui.util.Log
 import icyllis.modernui.view.LayoutInflater
@@ -35,7 +35,6 @@ fun main() {
 }
 
 class TestContextMenu : Fragment() {
-
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -43,7 +42,7 @@ class TestContextMenu : Fragment() {
     ): View {
         val view = View(context)
         val color = Color.rgb(0, 0, 0)
-        view.background = ColorDrawable(color)
+        view.background = color.toDrawable()
         view.layoutParams =
             ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         view.setOnCreateContextMenuListener { menu, _, _ ->

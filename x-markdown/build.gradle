@@ -3,8 +3,8 @@ repositories {
 }
 
 dependencies {
-    implementation project(':ModernUI-Core')
-    implementation "com.vladsch.flexmark:flexmark:${flexmark_version}"
+    api project(':ModernUI-Core')
+    api "com.vladsch.flexmark:flexmark:${flexmark_version}"
 }
 
 jar {
