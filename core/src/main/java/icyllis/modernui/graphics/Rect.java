@@ -18,8 +18,8 @@
 
 package icyllis.modernui.graphics;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 
 /**
  * Represents a rectangle.
@@ -77,7 +77,7 @@ public class Rect {
      *
      * @param r the rect to copy from
      */
-    @Nonnull
+    @NonNull
     public static Rect copy(@Nullable Rect r) {
         return r == null ? new Rect() : r.copy();
     }
@@ -181,7 +181,7 @@ public class Rect {
      * @param src The rectangle whose coordinates are copied into this
      *            rectangle.
      */
-    public void set(@Nonnull Rect src) {
+    public void set(@NonNull Rect src) {
         this.left = src.left;
         this.top = src.top;
         this.right = src.right;
@@ -238,7 +238,7 @@ public class Rect {
      *
      * @param insets The rectangle specifying the insets on all side.
      */
-    public void inset(@Nonnull Rect insets) {
+    public void inset(@NonNull Rect insets) {
         left += insets.left;
         top += insets.top;
         right -= insets.right;
@@ -304,7 +304,7 @@ public class Rect {
      * @return true if the specified rectangle r is inside or equal to this
      * rectangle
      */
-    public boolean contains(@Nonnull Rect r) {
+    public boolean contains(@NonNull Rect r) {
         // check for empty first
         return this.left < this.right && this.top < this.bottom
                 // now check for containment
@@ -351,7 +351,7 @@ public class Rect {
      * (and this rectangle is then set to that intersection) else
      * return false and do not change this rectangle.
      */
-    public boolean intersect(@Nonnull Rect r) {
+    public boolean intersect(@NonNull Rect r) {
         return intersect(r.left, r.top, r.right, r.bottom);
     }
 
@@ -361,7 +361,7 @@ public class Rect {
      *
      * @see #inset(int, int, int, int) but without checking if the rects overlap.
      */
-    public void intersectUnchecked(@Nonnull Rect other) {
+    public void intersectUnchecked(@NonNull Rect other) {
         left = Math.max(left, other.left);
         top = Math.max(top, other.top);
         right = Math.min(right, other.right);
@@ -380,7 +380,7 @@ public class Rect {
      * this rectangle to that intersection. If they do not, return
      * false and do not change this rectangle.
      */
-    public boolean setIntersect(@Nonnull Rect a, @Nonnull Rect b) {
+    public boolean setIntersect(@NonNull Rect a, @NonNull Rect b) {
         if (a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom) {
             left = Math.max(a.left, b.left);
             top = Math.max(a.top, b.top);
@@ -419,7 +419,7 @@ public class Rect {
      * @return true if the two specified rectangles intersect. In no event are
      * either of the rectangles modified.
      */
-    public static boolean intersects(@Nonnull Rect a, @Nonnull Rect b) {
+    public static boolean intersects(@NonNull Rect a, @NonNull Rect b) {
         return a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
     }
 
@@ -485,7 +485,7 @@ public class Rect {
      *
      * @param r The rectangle being unioned with this rectangle
      */
-    public void union(@Nonnull Rect r) {
+    public void union(@NonNull Rect r) {
         union(r.left, r.top, r.right, r.bottom);
     }
 
@@ -558,14 +558,14 @@ public class Rect {
      *
      * @hide
      */
-    @Nonnull
+    @NonNull
     public String toShortString() {
         return "[" + left + ',' +
                 top + "][" + right +
                 ',' + bottom + ']';
     }
 
-    @Nonnull
+    @NonNull
     public Rect copy() {
         return new Rect(left, top, right, bottom);
     }

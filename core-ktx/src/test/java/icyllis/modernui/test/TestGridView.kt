@@ -44,7 +44,7 @@ class TestGridView : Fragment() {
     ): View {
         val view = GridView(context)
         view.numColumns = 3
-        val list = ArrayList(FontFamily.getSystemFontMap().keys)
+        val list = FontFamily.getSystemFontMap().keys.toMutableList()
         list.sort()
         view.adapter = ArrayAdapter(context, list)
 

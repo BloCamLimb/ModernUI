@@ -6,7 +6,12 @@ apply plugin: 'org.jetbrains.kotlin.jvm'
 kotlin.jvmToolchain(17)
 
 dependencies {
-    implementation project(':ModernUI-Core')
+    api project(':ModernUI-Core')
+}
+
+// for IntelliJ IDEA, you must set up this in IDEA Settings, Kotlin Compiler
+tasks.withType(KotlinCompilationTask).configureEach {
+    compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
 }
 
 jar {
@@ -23,7 +28,35 @@ jar {
     }
 }
 
-// for IntelliJ IDEA, you must set up this in IDEA Settings, Kotlin Compiler
-tasks.withType(KotlinCompilationTask).configureEach {
-    compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
+publishing {
+    publications {
+        mavenCoreKTX(MavenPublication) {
+            from components.java
+            artifactId = project.name
+            groupId = project.group
+            version = project.version
+
+            pom {
+                artifactId = project.name
+                groupId = project.group
+                version = project.version
+                name = rootProject.name
+                packaging = 'pom'
+                scm {
+                    url = 'https://github.com/BloCamLimb/ModernUI.git'
+                }
+                issueManagement {
+                    system = 'github'
+                    url = 'https://github.com/BloCamLimb/ModernUI/issues'
+                }
+                licenses {
+                    license {
+                        name = 'LGPL-3.0-or-later'
+                        url = 'https://www.gnu.org/licenses/lgpl-3.0.en.html'
+                        distribution = 'repo'
+                    }
+                }
+            }
+        }
+    }
 }
