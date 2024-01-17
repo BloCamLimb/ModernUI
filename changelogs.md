@@ -1,5 +1,68 @@
 Changelogs
 ===
+### Modern UI 3.10.0 (2024-01-17)
+#### Core Framework 3.10.0
+* Move kotlin extension to a separate module (Core-KTX)
+* Add Log class to avoid using log4j in submodules
+* Implement blend mode filter for ShapeDrawable, ColorDrawable and other Drawable classes
+* Fix incorrect drop-down position in RTL layout direction
+* Fix MenuPopup overlap anchor (google-bug) (fix #199)
+* Fix TextShaper context range for BiDi analysis
+* Add LocaleSpan
+* Add all 42 blend modes that used in Photoshop (currently no shader implementation)
+* Update BlendMode and Color.blend()
+* Change Bitmap.getSize() type to long
+* Make Bitmap's color info mutable (for reinterpretation)
+* Add path measurement implementation (PathMeasure class)
+* Remove 2GB restriction on Bitmap creation, add more sanitizations
+* Deprecate ImageStore, fix javadoc errors
+* Update Bitmap with Arc3D
+* Update Matrix and Path with Arc3D
+* Fix Underline and Strikethrough offset
+* Add "exclusive" East Asian family support (currently not used)
+* Public Menu.setOptionalIconsVisible() method
+* Change atlas coverage type to double
+#### Core Framework - Kotlin Extension 3.10.0
+* Add kotlin-flavored methods, update annotations
+#### Markdown 3.10.0
+* Suppress unchecked warning
+#### Arc 3D Graphics Engine 3.10.0
+* Add color filters and color matrix
+* Add/update all blend modes and their raster implementations: PLUS, MINUS, DIFFERENCE, EXCLUSION, COLOR_DODGE, COLOR_BURN, HARD_LIGHT, SOFT_LIGHT, LINEAR_DODGE, LINEAR_BURN, VIVID_LIGHT, LINEAR_LIGHT, PIN_LIGHT, HARD_MIX and HSL blend modes (HUE, SATURATION, COLOR, LUMINOSITY)
+* Rename shaderc package to compiler
+* Add Image-derived and Shader-derived skeleton classes
+* Add UNORM_PACK16 and UNORM_PACK32 encoding constant
+* Public ColorType.channelFlags
+* Add missing GRAY_ALPHA_88 for ColorType.encoding
+* Add alpha type validation
+* Make owner's reference to pixel map mutable
+* Fix ColorSpace initializer
+* Add Raster, remove heap version of Bitmap
+* Add full path measurement implementation
+* Add PixelUtils for pixel conversion
+* Add PixelMap and PixelRef, remove Pixmap
+* Add and optimize Path methods
+* Add Path.bounds computation, optimize Path allocation
+* Add Rect2fc and Rect2ic for read-only usage
+* Inline Path.Ref usage count implementation
+* Finish approximation of cubic strokes by quadratic splines
+* Finish approximation of quadratic strokes by quadratic splines
+* Add MathUtil.pin() method for capturing NaN values, replace some use of clamp()
+* Add conic section to quadratic curves conversion
+* Add several methods to reset the Path
+* Finish RoundJoiner, fix Path reversePop
+* Add Matrixc interface for read-only usage of Matrix
+* Update and optimize PathStroker
+* Optimize approximation of conic sections by quadratic splines
+* Add PathConsumer
+* Add Path tessellation for quadratic and cubic splines
+* Add PathUtils and WangsFormula for subdivisions
+* Add Path, add Path.Ref, add PathIterator
+* Add Geometry class for finding inflection points, tangent, curvature, max curvature, cusp, solving quadratic equations, cubic equations, etc
+* Add RefCounted interface
+* Add Hardware transfer processor
+* Optimize rectangle packer
+
 ### Modern UI 3.9.0 (2023-11-04)
 #### Core Framework 3.9.0
 * Separate Arc 3D from core framework
