@@ -17,21 +17,14 @@
  * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.compiler.dsl;
+package icyllis.arc3d.compiler;
 
-import icyllis.arc3d.compiler.tree.*;
-
-import javax.annotation.Nonnull;
-
-public class DSLCore {
-
-    @Nonnull
-    public static Expression Conditional(int position, Expression condition,
-                                         Expression trueExpr, Expression falseExpr) {
-        Expression result = ConditionalExpression.convert(position, condition, trueExpr, falseExpr);
-        if (result != null) {
-            return result;
-        }
-        return Poison.make(position);
-    }
+/**
+ * We support several module kinds.
+ */
+public enum ExecutionModel {
+    GENERIC,
+    VERTEX,
+    FRAGMENT,
+    COMPUTE
 }

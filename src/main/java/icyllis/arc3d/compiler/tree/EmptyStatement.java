@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,21 +17,39 @@
  * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.compiler;
+package icyllis.arc3d.compiler.tree;
 
-import icyllis.arc3d.compiler.tree.Element;
+import icyllis.arc3d.compiler.analysis.NodeVisitor;
 
-import java.util.ArrayList;
+import javax.annotation.Nonnull;
 
 /**
- * Represents a base module that can be used to compile other modules.
+ * A no-op statement ";".
  */
-public final class Module {
+public final class EmptyStatement extends Statement {
 
-    Module mParent;
-    SymbolTable mSymbols;
-    ArrayList<Element> mElements;
+    public EmptyStatement(int position) {
+        super(position);
+    }
 
-    Module() {
+    @Override
+    public StatementKind getKind() {
+        return StatementKind.EMPTY;
+    }
+
+    @Override
+    public boolean accept(@Nonnull NodeVisitor visitor) {
+        return visitor.visitEmpty(this);
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return true;
+    }
+
+    @Nonnull
+    @Override
+    public String toString() {
+        return ";";
     }
 }

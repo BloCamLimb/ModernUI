@@ -19,10 +19,19 @@
 
 package icyllis.arc3d.compiler;
 
+import icyllis.arc3d.compiler.tree.Element;
+
+import java.util.ArrayList;
+
 /**
- * Holds the compiler options for a shader module.
+ * Represents a shared library that can be used to compile other files.
  */
-public class ModuleOptions {
+public final class SharedLibrary {
 
+    SharedLibrary mParent;
+    SymbolTable mSymbols;
+    ArrayList<Element> mElements;
 
+    SharedLibrary() {
+    }
 }

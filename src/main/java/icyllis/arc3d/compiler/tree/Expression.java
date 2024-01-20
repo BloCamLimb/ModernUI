@@ -129,7 +129,7 @@ public abstract class Expression extends Node {
     @Nonnull
     @Override
     public final String toString() {
-        return toString(Operator.PRECEDENCE_SEQUENCE);
+        return toString(Operator.PRECEDENCE_EXPRESSION);
     }
 
     @Nonnull

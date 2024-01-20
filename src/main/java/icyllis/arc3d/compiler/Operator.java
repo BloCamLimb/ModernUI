@@ -83,7 +83,9 @@ public enum Operator {
             PRECEDENCE_LOGICAL_OR     = 14, // ||
             PRECEDENCE_CONDITIONAL    = 15, // ?:
             PRECEDENCE_ASSIGNMENT     = 16, // = += -= *= /= %= <<= >>= &= ^= |=
-            PRECEDENCE_SEQUENCE       = 17; // ,
+            PRECEDENCE_SEQUENCE       = 17, // ,
+            PRECEDENCE_EXPRESSION     = PRECEDENCE_SEQUENCE,
+            PRECEDENCE_STATEMENT      = 18;
 
     Operator() {
     }

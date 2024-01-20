@@ -19,6 +19,10 @@
 
 package icyllis.arc3d.compiler;
 
+import icyllis.arc3d.compiler.analysis.NodeVisitor;
+import icyllis.arc3d.compiler.tree.Node;
+
+import javax.annotation.Nonnull;
 import java.util.StringJoiner;
 
 /**
@@ -31,7 +35,7 @@ import java.util.StringJoiner;
  * };
  * }</pre>
  */
-public final class Modifiers {
+public final class Modifiers extends Node {
 
     // GLSL layout qualifiers, order-independent.
     public static final int
@@ -124,6 +128,10 @@ public final class Modifiers {
      */
     private int mFlags;
 
+    public Modifiers(int position) {
+        super(position);
+    }
+
     public void setLayoutFlag(int mask, String name, int pos) {
         if ((mLayoutFlags & mask) != 0) {
             ThreadContext.getInstance().error(pos, "layout qualifier '" + name +
@@ -138,7 +146,7 @@ public final class Modifiers {
 
     public void setFlag(int mask, int pos) {
         if ((mFlags & mask) != 0) {
-            ThreadContext.getInstance().error(pos, "qualifier '" + describeFlags(mask) +
+            ThreadContext.getInstance().error(pos, "qualifier '" + describeFlags(mFlags & mask) +
                     "' appears more than once");
         }
         mFlags |= mask;
@@ -146,6 +154,11 @@ public final class Modifiers {
 
     public int flags() {
         return mFlags;
+    }
+
+    @Override
+    public boolean accept(@Nonnull NodeVisitor visitor) {
+        return false;
     }
 
     @Override
@@ -184,6 +197,7 @@ public final class Modifiers {
         return result;
     }
 
+    @Nonnull
     @Override
     public String toString() {
         StringJoiner layout = new StringJoiner(", ", "layout (", ") ");

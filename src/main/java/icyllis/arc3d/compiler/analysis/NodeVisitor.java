@@ -47,66 +47,86 @@ public abstract class NodeVisitor {
     }
 
     public boolean visitFunctionReference(FunctionReference expr) {
-        return visitExpression(expr);
+        return visitAnyExpression(expr);
     }
 
     public boolean visitVariableReference(VariableReference expr) {
-        return visitExpression(expr);
+        return visitAnyExpression(expr);
     }
 
     public boolean visitTypeReference(TypeReference expr) {
-        return visitExpression(expr);
+        return visitAnyExpression(expr);
     }
 
     public boolean visitLiteral(Literal expr) {
-        return visitExpression(expr);
+        return visitAnyExpression(expr);
     }
 
     public boolean visitFieldAccess(FieldExpression expr) {
-        return visitExpression(expr);
+        return visitAnyExpression(expr);
     }
 
     public boolean visitPostfix(PostfixExpression expr) {
-        return visitExpression(expr);
+        return visitAnyExpression(expr);
     }
 
     public boolean visitPrefix(PrefixExpression expr) {
-        return visitExpression(expr);
+        return visitAnyExpression(expr);
     }
 
     public boolean visitBinary(BinaryExpression expr) {
-        return visitExpression(expr);
+        return visitAnyExpression(expr);
     }
 
     public boolean visitConditional(ConditionalExpression expr) {
-        return visitExpression(expr);
+        return visitAnyExpression(expr);
     }
 
     public boolean visitSwizzle(Swizzle expr) {
-        return visitExpression(expr);
+        return visitAnyExpression(expr);
     }
 
     public boolean visitFunctionCall(FunctionCall expr) {
-        return visitExpression(expr);
+        return visitAnyExpression(expr);
     }
 
     public boolean visitConstructorCall(ConstructorCall expr) {
-        return visitExpression(expr);
+        return visitAnyExpression(expr);
     }
 
     /**
      * Fallback method for any expression kind that has not been overridden.
      */
-    protected boolean visitExpression(Expression expr) {
+    protected boolean visitAnyExpression(Expression expr) {
         return false;
     }
 
-    public boolean visitStatement(Statement stmt) {
+    public boolean visitBlock(BlockStatement stmt) {
+        return visitAnyStatement(stmt);
+    }
+
+    public boolean visitEmpty(EmptyStatement stmt) {
+        return visitAnyStatement(stmt);
+    }
+
+    public boolean visitExpression(ExpressionStatement stmt) {
+        return visitAnyStatement(stmt);
+    }
+
+    public boolean visitFor(ForStatement stmt) {
+        return visitAnyStatement(stmt);
+    }
+
+    public boolean visitIf(IfStatement stmt) {
+        return visitAnyStatement(stmt);
+    }
+
+    protected boolean visitAnyStatement(Statement stmt) {
         return switch (stmt.getKind()) {
             case BREAK,
                     CONTINUE,
                     DISCARD,
-                    NOP -> false; // Leaf expressions return false
+                    EMPTY -> false; // Leaf expressions return false
             default -> true;
         };
     }

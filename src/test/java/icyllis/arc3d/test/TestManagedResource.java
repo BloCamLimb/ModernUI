@@ -87,11 +87,11 @@ public class TestManagedResource {
         }
 
         {
-            ModuleLoader moduleLoader = ModuleLoader.getInstance();
-            DSL.start(ModuleKind.GENERIC, new ModuleOptions(), moduleLoader.getRootModule());
+            LibraryLoader libraryLoader = LibraryLoader.getInstance();
+            DSL.start(ExecutionModel.GENERIC, new CompileOptions(), libraryLoader.getRootLibrary());
             Type[] types = new Type[3];
-            boolean success = Operator.MUL.determineBinaryType(moduleLoader.getBuiltinTypes().mHalf3x4,
-                    moduleLoader.getBuiltinTypes().mFloat3, types);
+            boolean success = Operator.MUL.determineBinaryType(libraryLoader.getBuiltinTypes().mHalf3x4,
+                    libraryLoader.getBuiltinTypes().mFloat3, types);
             pw.println("Operator types: " + success + ", " + Arrays.toString(types));
             DSL.end();
         }

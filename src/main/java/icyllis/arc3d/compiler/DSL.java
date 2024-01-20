@@ -26,21 +26,21 @@ public final class DSL {
     /**
      * Starts the DSL on the current thread for compiling programs.
      */
-    public static void start(ModuleKind kind, ModuleOptions options, Module parent) {
+    public static void start(ExecutionModel model, CompileOptions options, SharedLibrary parent) {
         if (ThreadContext.isActive()) {
             throw new IllegalStateException("DSL is already started");
         }
-        new ThreadContext(kind, options, parent, false);
+        new ThreadContext(model, options, parent, false);
     }
 
     /**
-     * Starts the DSL on the current thread for compiling modules (include files).
+     * Starts the DSL on the current thread for compiling shared libraries (include files).
      */
-    public static void startModule(ModuleKind kind, ModuleOptions options, Module parent) {
+    public static void startLibrary(ExecutionModel model, CompileOptions options, SharedLibrary parent) {
         if (ThreadContext.isActive()) {
             throw new IllegalStateException("DSL is already started");
         }
-        new ThreadContext(kind, options, parent, true);
+        new ThreadContext(model, options, parent, true);
     }
 
     /**

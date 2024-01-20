@@ -68,19 +68,19 @@ public abstract class Node {
     }
 
     public enum StatementKind {
-        BLOCK(Statement.class),
+        BLOCK(BlockStatement.class),
         BREAK(Statement.class),
         CONTINUE(Statement.class),
         DISCARD(Statement.class),
         DO(Statement.class),
-        EXPRESSION(Statement.class),
-        FOR(Statement.class),
-        IF(Statement.class),
-        NOP(Statement.class),
+        EMPTY(EmptyStatement.class),
+        EXPRESSION(ExpressionStatement.class),
+        FOR(ForStatement.class),
+        IF(IfStatement.class),
         RETURN(Statement.class),
         SWITCH(Statement.class),
         SWITCH_CASE(Statement.class),
-        VAR_DECLARATION(Statement.class);
+        VAR_DECLARATION(VarDeclaration.class);
 
         private final Class<? extends Statement> mType;
 
