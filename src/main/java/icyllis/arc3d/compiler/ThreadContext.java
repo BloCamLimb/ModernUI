@@ -34,8 +34,8 @@ public final class ThreadContext {
     private static final ThreadLocal<ThreadContext> TLS = new ThreadLocal<>();
 
     // The Context holds a pointer to the configuration of the program being compiled.
-    private final ModuleKind mKind;
-    private final ModuleOptions mOptions;
+    private final ExecutionModel mModel;
+    private final CompileOptions mOptions;
     private final boolean mIsBuiltin;
 
     // The Context holds all of the built-in types.
@@ -61,16 +61,16 @@ public final class ThreadContext {
     /**
      * @param isBuiltin true if we are processing include files
      */
-    ThreadContext(ModuleKind kind, ModuleOptions options,
-                  Module parent, boolean isBuiltin) {
-        mKind = Objects.requireNonNull(kind);
+    ThreadContext(ExecutionModel model, CompileOptions options,
+                  SharedLibrary parent, boolean isBuiltin) {
+        mModel = Objects.requireNonNull(model);
         mOptions = Objects.requireNonNull(options);
         Objects.requireNonNull(parent);
         mIsBuiltin = isBuiltin;
 
-        mTypes = ModuleLoader.getInstance().getBuiltinTypes();
+        mTypes = LibraryLoader.getInstance().getBuiltinTypes();
 
-        mSymbolTable = parent.mSymbols.enterModule(isBuiltin);
+        mSymbolTable = parent.mSymbols.enterClass(isBuiltin);
         mParentElements = Collections.unmodifiableList(parent.mElements);
 
         TLS.set(this);
@@ -96,11 +96,11 @@ public final class ThreadContext {
         return Objects.requireNonNull(TLS.get(), "DSL is not started");
     }
 
-    public ModuleKind getKind() {
-        return mKind;
+    public ExecutionModel getModel() {
+        return mModel;
     }
 
-    public ModuleOptions getOptions() {
+    public CompileOptions getOptions() {
         return mOptions;
     }
 

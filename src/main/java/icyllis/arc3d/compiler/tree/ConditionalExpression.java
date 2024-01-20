@@ -26,58 +26,58 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * A conditional expression (condition ? trueExpr : falseExpr).
+ * A conditional expression (condition ? true-expression : false-expression).
  */
 public final class ConditionalExpression extends Expression {
 
     private Expression mCondition;
-    private Expression mTrueExpr;
-    private Expression mFalseExpr;
+    private Expression mWhenTrue;
+    private Expression mWhenFalse;
 
     private ConditionalExpression(int position, Expression condition,
-                                  Expression trueExpr, Expression falseExpr) {
-        super(position, trueExpr.getType());
+                                  Expression whenTrue, Expression whenFalse) {
+        super(position, whenTrue.getType());
         mCondition = condition;
-        mTrueExpr = trueExpr;
-        mFalseExpr = falseExpr;
-        assert trueExpr.getType().matches(falseExpr.getType());
+        mWhenTrue = whenTrue;
+        mWhenFalse = whenFalse;
+        assert whenTrue.getType().matches(whenFalse.getType());
     }
 
     // Creates a potentially-simplified form of the ternary. Typechecks and coerces input
     // expressions; reports errors via ErrorReporter.
     @Nullable
     public static Expression convert(int position, Expression condition,
-                                     Expression trueExpr, Expression falseExpr) {
+                                     Expression whenTrue, Expression whenFalse) {
         ThreadContext context = ThreadContext.getInstance();
         condition = context.getTypes().mBool.coerceExpression(condition);
-        if (condition == null || trueExpr == null || falseExpr == null) {
+        if (condition == null || whenTrue == null || whenFalse == null) {
             return null;
         }
 
-        if (trueExpr.getType().getComponentType().isOpaque()) {
+        if (whenTrue.getType().getComponentType().isOpaque()) {
             context.error(position, "ternary expression of opaque type '" +
-                    trueExpr.getType().getName() + "' not allowed");
+                    whenTrue.getType().getName() + "' not allowed");
             return null;
         }
 
         Type[] types = new Type[3];
-        if (!Operator.EQ.determineBinaryType(trueExpr.getType(), falseExpr.getType(), types) ||
+        if (!Operator.EQ.determineBinaryType(whenTrue.getType(), whenFalse.getType(), types) ||
                 !types[0].matches(types[1])) {
-            context.error(Position.range(trueExpr.getStartOffset(), falseExpr.getEndOffset()),
-                    "conditional operator result mismatch: '" + trueExpr.getType().getName() + "', '" +
-                            falseExpr.getType().getName() + "'");
+            context.error(Position.range(whenTrue.getStartOffset(), whenFalse.getEndOffset()),
+                    "conditional operator result mismatch: '" + whenTrue.getType().getName() + "', '" +
+                            whenFalse.getType().getName() + "'");
             return null;
         }
-        trueExpr = types[0].coerceExpression(trueExpr);
-        if (trueExpr == null) {
+        whenTrue = types[0].coerceExpression(whenTrue);
+        if (whenTrue == null) {
             return null;
         }
-        falseExpr = types[1].coerceExpression(falseExpr);
-        if (falseExpr == null) {
+        whenFalse = types[1].coerceExpression(whenFalse);
+        if (whenFalse == null) {
             return null;
         }
 
-        return new ConditionalExpression(position, condition, trueExpr, falseExpr);
+        return new ConditionalExpression(position, condition, whenTrue, whenFalse);
     }
 
     @Override
@@ -91,32 +91,32 @@ public final class ConditionalExpression extends Expression {
             return true;
         }
         return mCondition.accept(visitor) ||
-                (mTrueExpr != null && mTrueExpr.accept(visitor)) ||
-                (mFalseExpr != null && mFalseExpr.accept(visitor));
+                (mWhenTrue != null && mWhenTrue.accept(visitor)) ||
+                (mWhenFalse != null && mWhenFalse.accept(visitor));
     }
 
     public Expression getCondition() {
         return mCondition;
     }
 
-    public Expression getTrueExpression() {
-        return mTrueExpr;
-    }
-
-    public Expression getFalseExpression() {
-        return mFalseExpr;
-    }
-
     public void setCondition(Expression condition) {
         mCondition = condition;
     }
 
-    public void setTrueExpression(Expression trueExpr) {
-        mTrueExpr = trueExpr;
+    public Expression getWhenTrue() {
+        return mWhenTrue;
     }
 
-    public void setFalseExpression(Expression falseExpr) {
-        mFalseExpr = falseExpr;
+    public void setWhenTrue(Expression whenTrue) {
+        mWhenTrue = whenTrue;
+    }
+
+    public Expression getWhenFalse() {
+        return mWhenFalse;
+    }
+
+    public void setWhenFalse(Expression whenFalse) {
+        mWhenFalse = whenFalse;
     }
 
     @Nonnull
@@ -124,8 +124,8 @@ public final class ConditionalExpression extends Expression {
     public Expression clone(int position) {
         return new ConditionalExpression(position,
                 mCondition.clone(),
-                mTrueExpr.clone(),
-                mFalseExpr.clone());
+                mWhenTrue.clone(),
+                mWhenFalse.clone());
     }
 
     @Nonnull
@@ -134,8 +134,8 @@ public final class ConditionalExpression extends Expression {
         boolean needsParens = (Operator.PRECEDENCE_CONDITIONAL >= parentPrecedence);
         return (needsParens ? "(" : "") +
                 mCondition.toString(Operator.PRECEDENCE_CONDITIONAL) + " ? " +
-                mTrueExpr.toString(Operator.PRECEDENCE_CONDITIONAL) + " : " +
-                mFalseExpr.toString(Operator.PRECEDENCE_CONDITIONAL) +
+                mWhenTrue.toString(Operator.PRECEDENCE_CONDITIONAL) + " : " +
+                mWhenFalse.toString(Operator.PRECEDENCE_CONDITIONAL) +
                 (needsParens ? ")" : "");
     }
 }

@@ -20,11 +20,9 @@
 package icyllis.arc3d.compiler;
 
 /**
- * We support several module kinds.
+ * Holds the options for compiling an executable program.
  */
-public enum ModuleKind {
-    GENERIC,
-    VERTEX,
-    FRAGMENT,
-    COMPUTE
+public class CompileOptions {
+
+
 }

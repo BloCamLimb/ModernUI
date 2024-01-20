@@ -115,16 +115,16 @@ public class Compiler {
      * @return the program, or null if there's an error
      */
     @Nullable
-    public Program parse(ModuleKind kind,
-                         ModuleOptions options,
+    public Program parse(ExecutionModel kind,
+                         CompileOptions options,
                          String source,
-                         Module parent) {
+                         SharedLibrary parent) {
         Objects.requireNonNull(kind);
         Objects.requireNonNull(parent);
         Objects.requireNonNull(source);
         resetLog(); // make a clean start
         Parser parser = new Parser(this, kind,
-                Objects.requireNonNullElseGet(options, ModuleOptions::new), source);
+                Objects.requireNonNullElseGet(options, CompileOptions::new), source);
         return parser.parse(parent);
     }
 
@@ -137,16 +137,16 @@ public class Compiler {
      * @return the module, or null if there's an error
      */
     @Nullable
-    public Module parseModule(ModuleKind kind,
-                              String source,
-                              Module parent) {
+    public SharedLibrary parseLibrary(ExecutionModel kind,
+                                      String source,
+                                      SharedLibrary parent) {
         Objects.requireNonNull(kind);
         Objects.requireNonNull(parent);
         Objects.requireNonNull(source);
         resetLog(); // make a clean start
         Parser parser = new Parser(this, kind,
-                new ModuleOptions(), source);
-        return parser.parseModule(parent);
+                new CompileOptions(), source);
+        return parser.parseLibrary(parent);
     }
 
     /**

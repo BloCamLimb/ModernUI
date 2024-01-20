@@ -24,7 +24,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 /**
  * A list of every supported intrinsic.
  */
-public final class IntrinsicKind {
+public final class IntrinsicList {
 
     public static final int kNotIntrinsic = -1;
 
@@ -356,6 +356,6 @@ public final class IntrinsicKind {
         return sIntrinsicMap.getInt(name);
     }
 
-    private IntrinsicKind() {
+    private IntrinsicList() {
     }
 }

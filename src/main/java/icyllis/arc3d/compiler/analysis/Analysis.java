@@ -39,7 +39,7 @@ public final class Analysis {
             }
 
             @Override
-            protected boolean visitExpression(Expression expr) {
+            protected boolean visitAnyExpression(Expression expr) {
                 return switch (expr.getKind()) {
                     case CONSTRUCTOR_ARRAY,
                             CONSTRUCTOR_COMPOUND,
@@ -48,7 +48,7 @@ public final class Analysis {
                             CONSTRUCTOR_STRUCT,
                             CONSTRUCTOR_VECTOR_SCALAR ->
                         // Constructors might be compile-time constants.
-                            super.visitExpression(expr);
+                            super.visitAnyExpression(expr);
                     // This expression isn't a compile-time constant.
                     default -> true;
                 };

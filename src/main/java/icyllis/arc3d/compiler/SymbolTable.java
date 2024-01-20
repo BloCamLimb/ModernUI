@@ -34,7 +34,7 @@ public final class SymbolTable {
 
     private final SymbolTable mParent;
     private final boolean mIsBuiltin;
-    private final boolean mIsBoundary;
+    private final boolean mIsClassBoundary;
 
     /**
      * Constructor for the root symbol table.
@@ -43,10 +43,10 @@ public final class SymbolTable {
         this(null, true, false);
     }
 
-    private SymbolTable(SymbolTable parent, boolean isBuiltin, boolean isBoundary) {
+    private SymbolTable(SymbolTable parent, boolean isBuiltin, boolean isClassBoundary) {
         mParent = parent;
         mIsBuiltin = isBuiltin;
-        mIsBoundary = isBoundary;
+        mIsClassBoundary = isClassBoundary;
     }
 
     /**
@@ -54,23 +54,23 @@ public final class SymbolTable {
      */
     @Nonnull
     SymbolTable enterScope() {
-        return new SymbolTable(this, mIsBuiltin, /*isBoundary*/false);
+        return new SymbolTable(this, mIsBuiltin, /*isClassBoundary*/ false);
     }
 
     /**
-     * Enters a module level.
+     * Enters a class level.
      */
     @Nonnull
-    SymbolTable enterModule(boolean isBuiltin) {
+    SymbolTable enterClass(boolean isBuiltin) {
         if ((isBuiltin && !mIsBuiltin) ||
-                (!mIsBoundary && mParent != null)) {
+                (!mIsClassBoundary && mParent != null)) {
             throw new AssertionError();
         }
-        return new SymbolTable(this, isBuiltin, /*isBoundary*/true);
+        return new SymbolTable(this, isBuiltin, /*isClassBoundary*/ true);
     }
 
     SymbolTable leaveScope() {
-        if (mIsBoundary || mParent == null) {
+        if (mIsClassBoundary || mParent == null) {
             throw new AssertionError();
         }
         return mParent;
@@ -146,7 +146,7 @@ public final class SymbolTable {
             }
         }
 
-        if (!mIsBoundary || mParent == null || mParent.find(key) == null) {
+        if (!mIsClassBoundary || mParent == null || mParent.find(key) == null) {
             if (mTable.putIfAbsent(key, symbol) == null) {
                 return symbol;
             }
@@ -166,7 +166,7 @@ public final class SymbolTable {
         }
         // If this is a builtin type, we add it as high as possible in the symbol table tree (at the
         // module boundary), to enable additional reuse of the array-type.
-        if (!mIsBoundary && mParent != null && type.isInBuiltinTypes()) {
+        if (!mIsClassBoundary && mParent != null && type.isInBuiltinTypes()) {
             return mParent.getArrayType(type, size);
         }
         // Reuse an existing array type with this name if one already exists in our symbol table.

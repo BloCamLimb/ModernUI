@@ -36,16 +36,14 @@ public final class Variable extends Symbol {
             VariableStorage_Local = 2,
             VariableStorage_Parameter = 3;
 
-    public final int mModifiersPos;
     private final Modifiers mModifiers;
     private final Type mType;
     private final byte mStorage;
     private final boolean mBuiltin;
 
-    public Variable(int position, int modifiersPos, Modifiers modifiers,
+    public Variable(int position, Modifiers modifiers,
                     String name, Type type, boolean builtin, byte storage) {
         super(position, name);
-        mModifiersPos = modifiersPos;
         mModifiers = modifiers;
         mType = type;
         mStorage = storage;
