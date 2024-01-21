@@ -29,6 +29,16 @@ public class VarDeclaration extends Statement {
         super(position);
     }
 
+    // Checks the modifiers, baseType, and storage for compatibility with one another and reports
+    // errors if needed. This method is implicitly called during Convert(), but is also explicitly
+    // called while processing interface block fields.
+    public static void checkError(int pos, Modifiers modifiers,
+                                  Type type, Type baseType, byte storage) {
+        assert type.isArray()
+                ? baseType.matches(type.getElementType())
+                : baseType.matches(type);
+    }
+
     @Override
     public StatementKind getKind() {
         return StatementKind.VAR_DECLARATION;

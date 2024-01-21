@@ -300,45 +300,6 @@ public class Parser {
         return false;
     }
 
-    /**
-     * LAYOUT LPAREN IDENTIFIER (EQ INT_LITERAL)? (COMMA IDENTIFIER (EQ INT_LITERAL)?)* RPAREN
-     */
-    private Layout layout() {
-        if (checkNext(Lexer.TK_LAYOUT) == -1) {
-            return null;
-        }
-        expect(Lexer.TK_LPAREN, "'('");
-        int flags = 0;
-        int location = 0;
-        int component = 0;
-        int index = 0;
-        int binding = 0;
-        int offset = 0;
-        int align = 0;
-        int set = 0;
-        int inputAttachmentIndex = 0;
-        int builtin = 0;
-        for (;;) {
-            long t = nextToken();
-            String text = text(t);
-            int pos = position(t);
-            switch (text) {
-                case "origin_upper_left" -> flags = Layout.flag(flags, Layout.kOriginUpperLeft_Flag, text, pos);
-                case "pixel_center_integer" -> flags = Layout.flag(flags, Layout.kPixelCenterInteger_Flag, text, pos);
-                case "early_fragment_tests" -> flags = Layout.flag(flags, Layout.kEarlyFragmentTests_Flag, text, pos);
-                case "blend_support_all_equations" ->
-                        flags = Layout.flag(flags, Layout.kBlendSupportAllEquations_Flag, text, pos);
-                case "push_constant" -> flags = Layout.flag(flags, Layout.kPushConstant_Flag, text, pos);
-            }
-        }
-    }
-
-    private int layoutInt() {
-        expect(Lexer.TK_EQ, "'='");
-
-        return -1;
-    }
-
     @Nullable
     private Expression operatorRight(Expression left, Operator op,
                                      java.util.function.Function<Parser, Expression> rightFn) {
@@ -956,25 +917,127 @@ public class Parser {
         };
     }
 
+    /**
+     * <pre>{@literal
+     * Modifiers
+     *     : (LAYOUT LPAREN IDENTIFIER (EQ INT_LITERAL)? (COMMA IDENTIFIER (EQ INT_LITERAL)?)* RPAREN)?
+     *       (UNIFORM | CONST | IN | OUT | INOUT | FLAT | NOPERSPECTIVE | EXPORT |
+     *        PURE | INLINE | NOINLINE | READONLY | WRITEONLY | BUFFER | WORKGROUP)*
+     * }</pre>
+     */
     @Nonnull
     private Modifiers modifiers() {
         long start = peek();
         Modifiers modifiers = new Modifiers(Position.NO_POS);
+        if (checkNext(Lexer.TK_LAYOUT) != -1) {
+            expect(Lexer.TK_LPAREN, "'('");
+            for (;;) {
+                long t = nextToken();
+                String text = text(t);
+                int pos = position(t);
+                switch (text) {
+                    case "origin_upper_left" ->
+                            modifiers.setLayoutFlag(Layout.kOriginUpperLeft_LayoutFlag, text, pos);
+                    case "pixel_center_integer" ->
+                            modifiers.setLayoutFlag(Layout.kPixelCenterInteger_LayoutFlag, text, pos);
+                    case "early_fragment_tests" ->
+                            modifiers.setLayoutFlag(Layout.kEarlyFragmentTests_LayoutFlag, text, pos);
+                    case "blend_support_all_equations" ->
+                            modifiers.setLayoutFlag(Layout.kBlendSupportAllEquations_LayoutFlag, text, pos);
+                    case "push_constant" ->
+                            modifiers.setLayoutFlag(Layout.kPushConstant_LayoutFlag, text, pos);
+                    case "location" -> {
+                        modifiers.setLayoutFlag(Layout.kLocation_LayoutFlag, text, pos);
+                        modifiers.layout().mLocation = LayoutInt();
+                    }
+                    case "component" -> {
+                        modifiers.setLayoutFlag(Layout.kComponent_LayoutFlag, text, pos);
+                        modifiers.layout().mComponent = LayoutInt();
+                    }
+                    case "index" -> {
+                        modifiers.setLayoutFlag(Layout.kIndex_LayoutFlag, text, pos);
+                        modifiers.layout().mIndex = LayoutInt();
+                    }
+                    case "binding" -> {
+                        modifiers.setLayoutFlag(Layout.kBinding_LayoutFlag, text, pos);
+                        modifiers.layout().mBinding = LayoutInt();
+                    }
+                    case "offset" -> {
+                        modifiers.setLayoutFlag(Layout.kOffset_LayoutFlag, text, pos);
+                        modifiers.layout().mOffset = LayoutInt();
+                    }
+                    case "align" -> {
+                        modifiers.setLayoutFlag(Layout.kAlign_LayoutFlag, text, pos);
+                        modifiers.layout().mAlign = LayoutInt();
+                    }
+                    case "set" -> {
+                        modifiers.setLayoutFlag(Layout.kSet_LayoutFlag, text, pos);
+                        modifiers.layout().mSet = LayoutInt();
+                    }
+                    case "input_attachment_index" -> {
+                        modifiers.setLayoutFlag(Layout.kInputAttachmentIndex_LayoutFlag, text, pos);
+                        modifiers.layout().mInputAttachmentIndex = LayoutInt();
+                    }
+                    case "builtin" -> {
+                        modifiers.setLayoutFlag(Layout.kBuiltin_LayoutFlag, text, pos);
+                        modifiers.layout().mBuiltin = LayoutInt();
+                    }
+                }
+
+                if (checkNext(Lexer.TK_COMMA) != -1) {
+                    continue;
+                }
+                expect(Lexer.TK_RPAREN, "')'");
+                break;
+            }
+        }
         for (;;) {
-            int tokenFlag = switch (Token.kind(peek())) {
+            int mask = switch (Token.kind(peek())) {
+                case Lexer.TK_FLAT -> Modifiers.kFlat_Flag;
+                case Lexer.TK_NOPERSPECTIVE -> Modifiers.kNoPerspective_Flag;
                 case Lexer.TK_CONST -> Modifiers.kConst_Flag;
+                case Lexer.TK_UNIFORM -> Modifiers.kUniform_Flag;
                 case Lexer.TK_IN -> Modifiers.kIn_Flag;
                 case Lexer.TK_OUT -> Modifiers.kOut_Flag;
+                case Lexer.TK_INOUT -> Modifiers.kIn_Flag | Modifiers.kOut_Flag;
+                case Lexer.TK_READONLY -> Modifiers.kReadOnly_Flag;
+                case Lexer.TK_WRITEONLY -> Modifiers.kWriteOnly_Flag;
+                case Lexer.TK_BUFFER -> Modifiers.kBuffer_Flag;
+                case Lexer.TK_WORKGROUP -> Modifiers.kWorkgroup_Flag;
+                case Lexer.TK_PURE -> Modifiers.kPure_Flag;
+                case Lexer.TK_INLINE -> Modifiers.kInline_Flag;
+                case Lexer.TK_NOINLINE -> Modifiers.kNoInline_Flag;
+                case Lexer.TK_EXPORT -> Modifiers.kExport_Flag;
                 default -> 0;
             };
-            if (tokenFlag == 0) {
+            if (mask == 0) {
                 break;
             }
             long token = nextToken();
-            modifiers.setFlag(tokenFlag, position(token));
+            modifiers.setFlag(mask, position(token));
         }
         modifiers.mPosition = rangeFrom(start);
         return modifiers;
+    }
+
+    private int LayoutInt() {
+        expect(Lexer.TK_EQ, "'='");
+        long token = expect(Lexer.TK_INTLITERAL, "integer literal");
+        String s = text(token);
+        if (s.endsWith("u") || s.endsWith("U")) {
+            s = s.substring(0, s.length() - 1);
+        }
+        try {
+            long value = Long.decode(s);
+            if (value <= 0x7FFF_FFFFL) {
+                return (int) value;
+            }
+            error(token, "integer value is too large: " + s);
+            return -1;
+        } catch (NumberFormatException e) {
+            error(token, "invalid integer value: " + e.getMessage());
+            return -1;
+        }
     }
 
     private boolean allowUnsizedArrays() {

@@ -23,8 +23,26 @@ package icyllis.arc3d.compiler;
  * We support several module kinds.
  */
 public enum ExecutionModel {
-    GENERIC,
+    BASE,
     VERTEX,
     FRAGMENT,
-    COMPUTE
+    COMPUTE,
+    /**
+     * A function.
+     */
+    BASE_SUBROUTINE,
+    CUSTOM_SHADER,
+    CUSTOM_COLOR_FILTER,
+    CUSTOM_BLENDER,
+    PRIVATE_CUSTOM_SHADER,
+    PRIVATE_CUSTOM_COLOR_FILTER,
+    PRIVATE_CUSTOM_BLENDER;
+
+    public boolean isCompute() {
+        return this == COMPUTE;
+    }
+
+    public boolean isSubroutine() {
+        return this.compareTo(BASE_SUBROUTINE) >= 0;
+    }
 }

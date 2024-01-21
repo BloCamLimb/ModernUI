@@ -26,102 +26,165 @@ import java.util.StringJoiner;
  * Represents a layout block appearing before a variable declaration, as in:
  * <p>
  * layout (location = 0) int x;
- *
- * @param location             (in / out, expect for compute) individual variable, interface block, block member
- * @param component            (in / out, expect for compute) individual variable, block member
- * @param index                (fragment out) individual variable
- * @param binding              (UBO / SSBO) individual variable (opaque types only), interface block
- * @param offset               (UBO / SSBO) individual variable (atomic counters only), block member
- * @param align                (UBO / SSBO) interface block, block member
- * @param set                  (UBO / SSBO, Vulkan only) individual variable (opaque types only), interface block
- * @param inputAttachmentIndex (UBO, Vulkan only) individual variable (subpass types only), connect a shader variable
- *                             to the corresponding attachment on the subpass in which the shader is being used
- * @param builtin              (SpvBuiltIn) identify which particular built-in value this object represents
  */
-public record Layout(int flags, int location, int component, int index,
-                     int binding, int offset, int align, int set,
-                     int inputAttachmentIndex, int builtin) {
-
-    private static final Layout EMPTY = new Layout(0, -1, -1, -1, -1, -1, -1, -1, -1, -1);
+public class Layout {
 
     // GLSL layout qualifiers, order-independent.
     public static final int
-            kOriginUpperLeft_Flag = 1,
-            kPixelCenterInteger_Flag = 1 << 1,
-            kEarlyFragmentTests_Flag = 1 << 2,
-            kBlendSupportAllEquations_Flag = 1 << 3,  // OpenGL only
-            kPushConstant_Flag = 1 << 4;              // Vulkan only
+            kOriginUpperLeft_LayoutFlag = 1,
+            kPixelCenterInteger_LayoutFlag = 1 << 1,
+            kEarlyFragmentTests_LayoutFlag = 1 << 2,
+            kBlendSupportAllEquations_LayoutFlag = 1 << 3,  // OpenGL only
+            kPushConstant_LayoutFlag = 1 << 4;              // Vulkan only
     // These flags indicate if the qualifier appeared, regardless of the accompanying value.
     public static final int
-            kLocation_Flag = 1 << 5,
-            kComponent_Flag = 1 << 6,
-            kIndex_Flag = 1 << 7,
-            kBinding_Flag = 1 << 8,
-            kOffset_Flag = 1 << 9,
-            kAlign_Flag = 1 << 10,
-            kSet_Flag = 1 << 11,
-            kInputAttachmentIndex_Flag = 1 << 12,
-            kBuiltin_Flag = 1 << 13;
+            kLocation_LayoutFlag = 1 << 5,
+            kComponent_LayoutFlag = 1 << 6,
+            kIndex_LayoutFlag = 1 << 7,
+            kBinding_LayoutFlag = 1 << 8,
+            kOffset_LayoutFlag = 1 << 9,
+            kAlign_LayoutFlag = 1 << 10,
+            kSet_LayoutFlag = 1 << 11,
+            kInputAttachmentIndex_LayoutFlag = 1 << 12,
+            kBuiltin_LayoutFlag = 1 << 13;
 
-    @Nonnull
-    public static Layout empty() {
-        return EMPTY;
+    /**
+     * Layout keyword flags.
+     */
+    private int mLayoutFlags = 0;
+    /**
+     * (in / out, expect for compute) individual variable, interface block, block member.
+     */
+    public int mLocation = -1;
+    /**
+     * (in / out, expect for compute) individual variable, block member.
+     */
+    public int mComponent = -1;
+    /**
+     * (fragment out) individual variable.
+     */
+    public int mIndex = -1;
+    /**
+     * (UBO / SSBO) individual variable (opaque types only), interface block.
+     */
+    public int mBinding = -1;
+    /**
+     * (UBO / SSBO) individual variable (atomic counters only), block member.
+     */
+    public int mOffset = -1;
+    /**
+     * (UBO / SSBO) interface block, block member.
+     */
+    public int mAlign = -1;
+    /**
+     * (UBO / SSBO, Vulkan only) individual variable (opaque types only), interface block.
+     */
+    public int mSet = -1;
+    /**
+     * (UBO, Vulkan only) individual variable (subpass types only), connect a shader variable
+     * to the corresponding attachment on the subpass in which the shader is being used.
+     */
+    public int mInputAttachmentIndex = -1;
+    /**
+     * (SpvBuiltIn) identify which particular built-in value this object represents.
+     */
+    public int mBuiltin = -1;
+
+    public Layout() {
+    }
+
+    public int layoutFlags() {
+        return mLayoutFlags;
+    }
+
+    public void setLayoutFlag(int mask, String name, int pos) {
+        if ((mLayoutFlags & mask) != 0) {
+            ThreadContext.getInstance().error(pos, "layout qualifier '" + name +
+                    "' appears more than once");
+        }
+        mLayoutFlags |= mask;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = mLayoutFlags;
+        result = 31 * result + mLocation;
+        result = 31 * result + mComponent;
+        result = 31 * result + mIndex;
+        result = 31 * result + mBinding;
+        result = 31 * result + mOffset;
+        result = 31 * result + mAlign;
+        result = 31 * result + mSet;
+        result = 31 * result + mInputAttachmentIndex;
+        result = 31 * result + mBuiltin;
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Layout layout = (Layout) o;
+
+        if (mLayoutFlags != layout.mLayoutFlags) return false;
+        if (mLocation != layout.mLocation) return false;
+        if (mComponent != layout.mComponent) return false;
+        if (mIndex != layout.mIndex) return false;
+        if (mBinding != layout.mBinding) return false;
+        if (mOffset != layout.mOffset) return false;
+        if (mAlign != layout.mAlign) return false;
+        if (mSet != layout.mSet) return false;
+        if (mInputAttachmentIndex != layout.mInputAttachmentIndex) return false;
+        return mBuiltin == layout.mBuiltin;
     }
 
     @Nonnull
     @Override
     public String toString() {
         StringJoiner joiner = new StringJoiner(", ", "layout (", ") ");
-        if (location >= 0) {
-            joiner.add("location = " + location);
+        if (mLocation >= 0) {
+            joiner.add("location = " + mLocation);
         }
-        if (component >= 0) {
-            joiner.add("component = " + component);
+        if (mComponent >= 0) {
+            joiner.add("component = " + mComponent);
         }
-        if (index >= 0) {
-            joiner.add("index = " + index);
+        if (mIndex >= 0) {
+            joiner.add("index = " + mIndex);
         }
-        if (binding >= 0) {
-            joiner.add("binding = " + binding);
+        if (mBinding >= 0) {
+            joiner.add("binding = " + mBinding);
         }
-        if (offset >= 0) {
-            joiner.add("offset = " + offset);
+        if (mOffset >= 0) {
+            joiner.add("offset = " + mOffset);
         }
-        if (align >= 0) {
-            joiner.add("align = " + align);
+        if (mAlign >= 0) {
+            joiner.add("align = " + mAlign);
         }
-        if (set >= 0) {
-            joiner.add("set = " + set);
+        if (mSet >= 0) {
+            joiner.add("set = " + mSet);
         }
-        if (inputAttachmentIndex >= 0) {
-            joiner.add("input_attachment_index = " + inputAttachmentIndex);
+        if (mInputAttachmentIndex >= 0) {
+            joiner.add("input_attachment_index = " + mInputAttachmentIndex);
         }
-        if (builtin >= 0) {
-            joiner.add("builtin = " + builtin);
+        if (mBuiltin >= 0) {
+            joiner.add("builtin = " + mBuiltin);
         }
-        if ((flags & kOriginUpperLeft_Flag) != 0) {
+        if ((mLayoutFlags & kOriginUpperLeft_LayoutFlag) != 0) {
             joiner.add("origin_upper_left");
         }
-        if ((flags & kPixelCenterInteger_Flag) != 0) {
+        if ((mLayoutFlags & kPixelCenterInteger_LayoutFlag) != 0) {
             joiner.add("pixel_center_integer");
         }
-        if ((flags & kEarlyFragmentTests_Flag) != 0) {
+        if ((mLayoutFlags & kEarlyFragmentTests_LayoutFlag) != 0) {
             joiner.add("early_fragment_tests");
         }
-        if ((flags & kBlendSupportAllEquations_Flag) != 0) {
+        if ((mLayoutFlags & kBlendSupportAllEquations_LayoutFlag) != 0) {
             joiner.add("blend_support_all_equations");
         }
-        if ((flags & kPushConstant_Flag) != 0) {
+        if ((mLayoutFlags & kPushConstant_LayoutFlag) != 0) {
             joiner.add("push_constant");
         }
         return joiner.toString();
-    }
-
-    public static int flag(int flags, int mask, String name, int position) {
-        if ((flags & mask) != 0) {
-            ThreadContext.getInstance().error(position, "layout qualifier '" + name +
-                    "' appears more than once");
-        }
-        return flags | mask;
     }
 }

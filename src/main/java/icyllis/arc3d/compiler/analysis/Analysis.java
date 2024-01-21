@@ -19,7 +19,6 @@
 
 package icyllis.arc3d.compiler.analysis;
 
-import icyllis.arc3d.compiler.Modifiers;
 import icyllis.arc3d.compiler.Operator;
 import icyllis.arc3d.compiler.tree.*;
 

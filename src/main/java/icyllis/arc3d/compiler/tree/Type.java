@@ -239,7 +239,7 @@ public class Type extends Symbol {
                 context.error(field.position(),
                         "qualifier '" + desc + "' is not permitted on a struct field");
             }
-            if ((modifiers.layoutFlags() & Modifiers.kIndex_LayoutFlag) != 0) {
+            if ((modifiers.layoutFlags() & Layout.kIndex_LayoutFlag) != 0) {
                 context.error(field.position(),
                         "layout qualifier 'index' is not permitted on a struct field");
             }
@@ -307,7 +307,8 @@ public class Type extends Symbol {
     /**
      * For matrices and vectors, returns the scalar type of individual cells (e.g. mat2 has a component
      * type of Float). For textures, returns the sampled type (e.g. texture2D has a component type
-     * of Half). For all other types, returns the type itself.
+     * of Half). For arrays, returns the component type of their base type. For all other types,
+     * returns the type itself.
      */
     @Nonnull
     public Type getComponentType() {
@@ -625,6 +626,10 @@ public class Type extends Symbol {
         return false;
     }
 
+    public boolean isUnsizedArray() {
+        return false;
+    }
+
     public boolean isStruct() {
         return false;
     }
@@ -641,11 +646,24 @@ public class Type extends Symbol {
         throw new AssertionError();
     }
 
+    /**
+     * @return true for texture with sampler
+     */
     public boolean isCombinedSampler() {
         throw new AssertionError();
     }
 
+    /**
+     * @return true for pure sampler
+     */
     public boolean isSeparateSampler() {
+        throw new AssertionError();
+    }
+
+    /**
+     * @return true for image, except subpass input
+     */
+    public boolean isStorageImage() {
         throw new AssertionError();
     }
 
@@ -1015,6 +1033,11 @@ public class Type extends Symbol {
         }
 
         @Override
+        public boolean isUnsizedArray() {
+            return mUnderlyingType.isUnsizedArray();
+        }
+
+        @Override
         public boolean isStruct() {
             return mUnderlyingType.isStruct();
         }
@@ -1042,6 +1065,11 @@ public class Type extends Symbol {
         @Override
         public boolean isSeparateSampler() {
             return mUnderlyingType.isSeparateSampler();
+        }
+
+        @Override
+        public boolean isStorageImage() {
+            return mUnderlyingType.isStorageImage();
         }
 
         @Nonnull
@@ -1073,6 +1101,11 @@ public class Type extends Symbol {
         @Override
         public boolean isArray() {
             return true;
+        }
+
+        @Override
+        public boolean isUnsizedArray() {
+            return mArraySize == kUnsizedArray;
         }
 
         @Override
@@ -1232,7 +1265,7 @@ public class Type extends Symbol {
             super(name, abbr, kMatrix_TypeKind);
             assert (rows >= 2 && rows <= 4);
             assert (cols >= 2 && cols <= 4);
-            assert (abbr.equals(type.getDesc() + cols + "" + rows));
+            assert (abbr.equals(type.getDesc() + cols + rows));
             assert (name.equals(type.getName() + cols + "x" + rows));
             mComponentType = (ScalarType) type;
             mCols = (byte) cols;
@@ -1328,6 +1361,11 @@ public class Type extends Symbol {
         @Override
         public boolean isSeparateSampler() {
             return !mIsSampled && mIsSampler;
+        }
+
+        @Override
+        public boolean isStorageImage() {
+            return !mIsSampled && !mIsSampler && mDimensions != Spv.SpvDimSubpassData;
         }
     }
 
