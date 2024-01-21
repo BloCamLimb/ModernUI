@@ -88,7 +88,7 @@ public class TestManagedResource {
 
         {
             LibraryLoader libraryLoader = LibraryLoader.getInstance();
-            DSL.start(ExecutionModel.GENERIC, new CompileOptions(), libraryLoader.getRootLibrary());
+            DSL.start(ExecutionModel.BASE, new CompileOptions(), libraryLoader.getRootLibrary());
             Type[] types = new Type[3];
             boolean success = Operator.MUL.determineBinaryType(libraryLoader.getBuiltinTypes().mHalf3x4,
                     libraryLoader.getBuiltinTypes().mFloat3, types);

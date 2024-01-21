@@ -19,8 +19,6 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import icyllis.arc3d.compiler.Modifiers;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;

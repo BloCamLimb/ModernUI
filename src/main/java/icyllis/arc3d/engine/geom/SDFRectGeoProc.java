@@ -159,11 +159,11 @@ public class SDFRectGeoProc extends GeometryProcessor {
                     vec4 %s;
                     """, outputColor);
             varyingHandler.addPassThroughAttribute(COLOR, outputColor,
-                    VaryingHandler.INTERPOLATION_CAN_BE_FLAT);
+                    VaryingHandler.kCanBeFlat_Interpolation);
 
             Varying sizeAndRadii = new Varying(SLDataType.kFloat4);
             varyingHandler.addVarying("SizeAndRadii", sizeAndRadii,
-                    VaryingHandler.INTERPOLATION_CAN_BE_FLAT);
+                    VaryingHandler.kCanBeFlat_Interpolation);
             vertBuilder.codeAppendf("""
                     %s = vec4(%s.xz, %s);
                     """, sizeAndRadii.vsOut(), BOX.name(), STROKE.name());

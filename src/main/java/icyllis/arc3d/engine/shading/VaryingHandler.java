@@ -29,9 +29,9 @@ import static icyllis.arc3d.engine.Engine.ShaderFlags;
 public class VaryingHandler {
 
     public static final int
-            INTERPOLATION_SMOOTH = 0,
-            INTERPOLATION_CAN_BE_FLAT = 1,  // Use "flat" if it will be faster.
-            INTERPOLATION_MUST_BE_FLAT = 2; // Use "flat" even if it is known to be slow.
+            kSmooth_Interpolation = 0,
+            kCanBeFlat_Interpolation = 1,  // Use "flat" if it will be faster.
+            kRequiredToBeFlat_Interpolation = 2; // Use "flat" even if it is known to be slow.
 
     protected static class VaryingInfo {
 
@@ -74,7 +74,7 @@ public class VaryingHandler {
      */
     public final void addVarying(String name,
                                  Varying varying) {
-        addVarying(name, varying, INTERPOLATION_SMOOTH);
+        addVarying(name, varying, kSmooth_Interpolation);
     }
 
     /**
@@ -88,7 +88,7 @@ public class VaryingHandler {
                                  Varying varying,
                                  int interpolation) {
         assert (varying.mType != SLDataType.kVoid);
-        assert (SLDataType.isFloatType(varying.mType) || interpolation == INTERPOLATION_MUST_BE_FLAT);
+        assert (SLDataType.isFloatType(varying.mType) || interpolation == kRequiredToBeFlat_Interpolation);
         var v = new VaryingInfo();
 
         v.mType = varying.mType;
@@ -112,7 +112,7 @@ public class VaryingHandler {
      */
     public final void addPassThroughAttribute(GeometryProcessor.Attribute attr,
                                               String output) {
-        addPassThroughAttribute(attr, output, INTERPOLATION_SMOOTH);
+        addPassThroughAttribute(attr, output, kSmooth_Interpolation);
     }
 
     /**
@@ -132,15 +132,12 @@ public class VaryingHandler {
     }
 
     private static boolean useFlatInterpolation(int interpolation, ShaderCaps shaderCaps) {
-        switch (interpolation) {
-            case INTERPOLATION_SMOOTH:
-                return false;
-            case INTERPOLATION_CAN_BE_FLAT:
-                return shaderCaps.mPreferFlatInterpolation;
-            case INTERPOLATION_MUST_BE_FLAT:
-                return true;
-        }
-        throw new IllegalArgumentException(String.valueOf(interpolation));
+        return switch (interpolation) {
+            case kSmooth_Interpolation -> false;
+            case kCanBeFlat_Interpolation -> shaderCaps.mPreferFlatInterpolation;
+            case kRequiredToBeFlat_Interpolation -> true;
+            default -> throw new AssertionError(interpolation);
+        };
     }
 
     // This should be called once all attributes and varyings have been added to the

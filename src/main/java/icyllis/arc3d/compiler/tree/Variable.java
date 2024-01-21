@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import icyllis.arc3d.compiler.Modifiers;
+import icyllis.arc3d.compiler.ThreadContext;
 
 import javax.annotation.Nonnull;
 
@@ -31,10 +31,10 @@ import javax.annotation.Nonnull;
 public final class Variable extends Symbol {
 
     public static final byte
-            VariableStorage_Global = 0,
-            VariableStorage_InterfaceBlock = 1,
-            VariableStorage_Local = 2,
-            VariableStorage_Parameter = 3;
+            kGlobal_Storage = 0,
+            kInterfaceBlock_Storage = 1,
+            kLocal_Storage = 2,
+            kParameter_Storage = 3;
 
     private final Modifiers mModifiers;
     private final Type mType;
@@ -48,6 +48,34 @@ public final class Variable extends Symbol {
         mType = type;
         mStorage = storage;
         mBuiltin = builtin;
+    }
+
+    public static Variable convert(int pos,
+                                   Modifiers modifiers,
+                                   Type type,
+                                   String name,
+                                   byte storage) {
+        var context = ThreadContext.getInstance();
+        if (type.isUnsizedArray() && storage != kInterfaceBlock_Storage) {
+            context.error(pos, "unsized arrays are not permitted here");
+        }
+        if (storage == kParameter_Storage) {
+            // The `in` modifier on function parameters is implicit, so we can replace `in float x` with
+            // `float x`. This prevents any ambiguity when matching a function by its param types.
+            if ((modifiers.flags() & (Modifiers.kOut_Flag | Modifiers.kIn_Flag)) == Modifiers.kIn_Flag) {
+                modifiers.clearFlag(Modifiers.kOut_Flag | Modifiers.kIn_Flag);
+            }
+        }
+        return make(pos, modifiers, type, name, storage, context.isBuiltin());
+    }
+
+    public static Variable make(int pos,
+                                Modifiers modifiers,
+                                Type type,
+                                String name,
+                                byte storage,
+                                boolean builtin) {
+        return new Variable(pos, modifiers, name, type, builtin, storage);
     }
 
     @Nonnull
