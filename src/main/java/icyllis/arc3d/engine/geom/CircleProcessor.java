@@ -89,8 +89,8 @@ public class CircleProcessor extends GeometryProcessor {
                 (unionPlane ? 1 << 3 : 0) |
                 (roundCaps ? 1 << 4 : 0);
         mFlags = (stroke ? 1 : 0) | instanceMask;
-        setVertexAttributes(VERTEX_FORMAT, 0x3);
-        setInstanceAttributes(INSTANCE_FORMAT, 0x1 | instanceMask | 0x20);
+        setVertexAttributes(0x3);
+        setInstanceAttributes(0x1 | instanceMask | 0x20);
     }
 
     @Nonnull
@@ -105,7 +105,7 @@ public class CircleProcessor extends GeometryProcessor {
     }
 
     @Override
-    public void addToKey(KeyBuilder b) {
+    public void appendToKey(@Nonnull KeyBuilder b) {
         b.addBits(5, mFlags, "stroke|clipPlane|isectPlane|unionPlane|roundCaps");
     }
 
@@ -113,6 +113,16 @@ public class CircleProcessor extends GeometryProcessor {
     @Override
     public ProgramImpl makeProgramImpl(ShaderCaps caps) {
         return new Impl();
+    }
+
+    @Override
+    protected AttributeSet allVertexAttributes() {
+        return VERTEX_FORMAT;
+    }
+
+    @Override
+    protected AttributeSet allInstanceAttributes() {
+        return INSTANCE_FORMAT;
     }
 
     private static class Impl extends ProgramImpl {

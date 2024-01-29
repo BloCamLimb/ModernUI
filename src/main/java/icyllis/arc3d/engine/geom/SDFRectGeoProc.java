@@ -90,8 +90,8 @@ public class SDFRectGeoProc extends GeometryProcessor {
     public SDFRectGeoProc(int flags) {
         super(SDFRect_GeoProc_ClassID);
         mFlags = flags;
-        setVertexAttributes(VERTEX_ATTRIBS, 0x1);
-        setInstanceAttributes(INSTANCE_ATTRIBS, 0x3 | ((flags & 0x6) << 1));
+        setVertexAttributes(0x1);
+        setInstanceAttributes(0x3 | ((flags & 0x6) << 1));
     }
 
     @Nonnull
@@ -106,7 +106,7 @@ public class SDFRectGeoProc extends GeometryProcessor {
     }
 
     @Override
-    public void addToKey(KeyBuilder b) {
+    public void appendToKey(@Nonnull KeyBuilder b) {
         b.addBits(3, mFlags, "gpFlags");
     }
 
@@ -114,6 +114,16 @@ public class SDFRectGeoProc extends GeometryProcessor {
     @Override
     public ProgramImpl makeProgramImpl(ShaderCaps caps) {
         return new Impl();
+    }
+
+    @Override
+    protected AttributeSet allVertexAttributes() {
+        return VERTEX_ATTRIBS;
+    }
+
+    @Override
+    protected AttributeSet allInstanceAttributes() {
+        return INSTANCE_ATTRIBS;
     }
 
     private static class Impl extends ProgramImpl {
@@ -183,9 +193,9 @@ public class SDFRectGeoProc extends GeometryProcessor {
             }
 
             fragBuilder.codeAppend("""
-                        vec2 q = abs(rectEdge) - sizeAndRadii.xy;
-                        float d = min(max(q.x, q.y), 0.0) + length(max(q, 0.0));
-                        """);
+                    vec2 q = abs(rectEdge) - sizeAndRadii.xy;
+                    float d = min(max(q.x, q.y), 0.0) + length(max(q, 0.0));
+                    """);
             if (gpStroke) {
                 fragBuilder.codeAppend("""
                         d = abs(d + sizeAndRadii.w) - sizeAndRadii.z;

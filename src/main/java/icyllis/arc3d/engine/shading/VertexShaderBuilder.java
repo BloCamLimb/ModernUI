@@ -49,11 +49,11 @@ public class VertexShaderBuilder extends ShaderBuilderBase implements VertexGeom
             var.addLayoutQualifier(location);
 
             // may contain matrix that takes up multiple locations
-            int locationSize = SLDataType.locationSize(var.getType());
-            assert (locationSize > 0);
+            int locations = SLDataType.locations(var.getType());
+            assert (locations > 0);
             // we have no arrays
             assert (!var.isArray());
-            locationIndex += locationSize;
+            locationIndex += locations;
         }
 
         mPipelineBuilder.uniformHandler().appendUniformDecls(ShaderFlags.kVertex, uniforms());
@@ -63,12 +63,12 @@ public class VertexShaderBuilder extends ShaderBuilderBase implements VertexGeom
 
     @Override
     public void emitAttributes(GeometryProcessor geomProc) {
-        for (var attr : geomProc.getVertexAttributes()) {
+        for (var attr : geomProc.vertexAttributes()) {
             ShaderVar var = attr.asShaderVar();
             assert (var.getTypeModifier() == ShaderVar.kIn_TypeModifier);
             mInputs.add(var);
         }
-        for (var attr : geomProc.getInstanceAttributes()) {
+        for (var attr : geomProc.instanceAttributes()) {
             ShaderVar var = attr.asShaderVar();
             assert (var.getTypeModifier() == ShaderVar.kIn_TypeModifier);
             mInputs.add(var);

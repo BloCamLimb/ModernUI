@@ -84,12 +84,16 @@ public abstract class GeometryProcessor extends Processor {
          * @param srcType the data type in vertex buffer, see {@link VertexAttribType}
          * @param dstType the data type in vertex shader, see {@link SLDataType}
          */
-        public Attribute(String name, byte srcType, byte dstType) {
-            assert (name != null && dstType != SLDataType.kVoid);
-            assert (srcType >= 0 && srcType <= VertexAttribType.kLast);
-            assert (SLDataType.checkSLType(dstType));
-            assert (!name.isEmpty() && !name.startsWith("_"));
-            assert (SLDataType.locationSize(dstType) > 0);
+        public Attribute(@Nonnull String name, byte srcType, byte dstType) {
+            if (name.isEmpty() || name.startsWith("_")) {
+                throw new IllegalArgumentException();
+            }
+            if (srcType < 0 || srcType > VertexAttribType.kLast) {
+                throw new IllegalArgumentException();
+            }
+            if (SLDataType.locations(dstType) <= 0) {
+                throw new IllegalArgumentException();
+            }
             mName = name;
             mSrcType = srcType;
             mDstType = dstType;
@@ -104,13 +108,19 @@ public abstract class GeometryProcessor extends Processor {
          * @param dstType the data type in vertex shader, see {@link SLDataType}
          * @param offset  N-aligned offset
          */
-        public Attribute(String name, byte srcType, byte dstType, int offset) {
-            assert (name != null && dstType != SLDataType.kVoid);
-            assert (srcType >= 0 && srcType <= VertexAttribType.kLast);
-            assert (SLDataType.checkSLType(dstType));
-            assert (!name.isEmpty() && !name.startsWith("_"));
-            assert (SLDataType.locationSize(dstType) > 0);
-            assert (offset != IMPLICIT_OFFSET && alignOffset(offset) == offset);
+        public Attribute(@Nonnull String name, byte srcType, byte dstType, int offset) {
+            if (name.isEmpty() || name.startsWith("_")) {
+                throw new IllegalArgumentException();
+            }
+            if (srcType < 0 || srcType > VertexAttribType.kLast) {
+                throw new IllegalArgumentException();
+            }
+            if (SLDataType.locations(dstType) <= 0) {
+                throw new IllegalArgumentException();
+            }
+            if (offset < 0 || offset >= 32768 || alignOffset(offset) != offset) {
+                throw new IllegalArgumentException();
+            }
             mName = name;
             mSrcType = srcType;
             mDstType = dstType;
@@ -147,23 +157,23 @@ public abstract class GeometryProcessor extends Processor {
         /**
          * @return the size of the source data in bytes
          */
-        public final int stepSize() {
+        public final int size() {
             return VertexAttribType.size(mSrcType);
         }
 
         /**
          * @return the number of locations
          */
-        public final int locationSize() {
-            return SLDataType.locationSize(mDstType);
+        public final int locations() {
+            return SLDataType.locations(mDstType);
         }
 
         /**
          * @return the total size for this attribute in bytes
          */
-        public final int totalSize() {
-            int size = stepSize();
-            int count = locationSize();
+        public final int stride() {
+            int size = size();
+            int count = locations();
             assert (size > 0 && count > 0);
             return size * count;
         }
@@ -183,61 +193,79 @@ public abstract class GeometryProcessor extends Processor {
         private final Attribute[] mAttributes;
         private final int mStride;
 
-        private AttributeSet(Attribute[] attributes, int stride) {
+        final int mAllMask;
+
+        private AttributeSet(@Nonnull Attribute[] attributes, int stride) {
+            int offset = 0;
+            for (Attribute attr : attributes) {
+                if (attr.offset() != Attribute.IMPLICIT_OFFSET) {
+                    // offset must be not descending no matter what the mask is
+                    if (attr.offset() < offset) {
+                        throw new IllegalArgumentException();
+                    }
+                    offset = attr.offset();
+                    assert Attribute.alignOffset(offset) == offset;
+                }
+            }
             mAttributes = attributes;
             mStride = stride;
+            mAllMask = ~0 >>> (Integer.SIZE - mAttributes.length);
         }
 
         /**
-         * Create an attribute set with implicit offsets and stride. No attributes can have a
-         * predetermined stride.
+         * Create an attribute set with an implicit stride. Each attribute can either
+         * have an implicit offset or an explicit offset aligned to 4 bytes. No attribute
+         * can cross stride boundaries.
+         * <p>
+         * Note: GPU does not reorder vertex attributes, so when a vertex attribute has an
+         * explicit offset, the subsequent implicit offsets will start from there.
          */
         @Nonnull
         public static AttributeSet makeImplicit(@Nonnull Attribute... attrs) {
-            assert (attrs.length > 0 && attrs.length <= Integer.SIZE);
-            int stride = 0;
-            for (Attribute attr : attrs) {
-                assert (attr != null);
-                assert (attr.offset() == Attribute.IMPLICIT_OFFSET);
-                stride += Attribute.alignOffset(attr.totalSize());
+            if (attrs.length == 0 || attrs.length > Integer.SIZE) {
+                throw new IllegalArgumentException();
             }
-            assert (stride <= 0xFFFF);
             return new AttributeSet(attrs, Attribute.IMPLICIT_OFFSET);
         }
 
         /**
-         * Create an attribute set with explicit offsets and stride. All attributes must be
-         * initialized and have an explicit offset aligned to 4 bytes and with no attribute
-         * crossing stride boundaries.
+         * Create an attribute set with an explicit stride. Each attribute can either
+         * have an implicit offset or an explicit offset aligned to 4 bytes. No attribute
+         * can cross stride boundaries.
+         * <p>
+         * Note: GPU does not reorder vertex attributes, so when a vertex attribute has an
+         * explicit offset, the subsequent implicit offsets will start from there.
          */
         @Nonnull
         public static AttributeSet makeExplicit(int stride, @Nonnull Attribute... attrs) {
-            assert (stride > 0 && stride <= 0xFFFF);
-            assert (Attribute.alignOffset(stride) == stride);
-            assert (attrs.length > 0 && attrs.length <= Integer.SIZE);
-            for (Attribute attr : attrs) {
-                assert (attr != null);
-                assert (attr.offset() != Attribute.IMPLICIT_OFFSET);
-                assert (Attribute.alignOffset(attr.offset()) == attr.offset());
-                assert (attr.offset() + attr.totalSize() <= stride);
+            if (attrs.length == 0 || attrs.length > Integer.SIZE) {
+                throw new IllegalArgumentException();
+            }
+            if (stride <= 0 || stride > 32768) {
+                throw new IllegalArgumentException();
+            }
+            if (Attribute.alignOffset(stride) != stride) {
+                throw new IllegalArgumentException();
             }
             return new AttributeSet(attrs, stride);
         }
 
         final int stride(int mask) {
-            if (mStride == Attribute.IMPLICIT_OFFSET) {
-                final int rawCount = mAttributes.length;
-                int stride = 0;
-                for (int i = 0, bit = 1; i < rawCount; i++, bit <<= 1) {
-                    final Attribute attr = mAttributes[i];
-                    if ((mask & bit) != 0) {
-                        assert (attr.offset() == Attribute.IMPLICIT_OFFSET);
-                        stride += Attribute.alignOffset(attr.totalSize());
-                    }
-                }
-                return stride;
+            if (mStride != Attribute.IMPLICIT_OFFSET) {
+                return mStride;
             }
-            return mStride;
+            final int rawCount = mAttributes.length;
+            int stride = 0;
+            for (int i = 0, bit = 1; i < rawCount; i++, bit <<= 1) {
+                final Attribute attr = mAttributes[i];
+                if ((mask & bit) != 0) {
+                    if (attr.offset() != Attribute.IMPLICIT_OFFSET) {
+                        stride = attr.offset();
+                    }
+                    stride += Attribute.alignOffset(attr.stride());
+                }
+            }
+            return stride;
         }
 
         final int numLocations(int mask) {
@@ -246,32 +274,29 @@ public abstract class GeometryProcessor extends Processor {
             for (int i = 0, bit = 1; i < rawCount; i++, bit <<= 1) {
                 final Attribute attr = mAttributes[i];
                 if ((mask & bit) != 0) {
-                    locations += attr.locationSize();
+                    locations += attr.locations();
                 }
             }
             return locations;
         }
 
-        final void addToKey(@Nonnull KeyBuilder b, int mask) {
+        final void appendToKey(@Nonnull KeyBuilder b, int mask) {
             final int rawCount = mAttributes.length;
-            // max attribs is no less than 16, we assume the minimum
+            // max attribs is no less than 16
             b.addBits(6, rawCount, "attribute count");
-            int implicitOffset = 0;
+            int offset = 0;
             for (int i = 0, bit = 1; i < rawCount; i++, bit <<= 1) {
                 final Attribute attr = mAttributes[i];
                 if ((mask & bit) != 0) {
                     b.appendComment(attr.name());
                     b.addBits(8, attr.srcType() & 0xFF, "attrType");
                     b.addBits(8, attr.dstType() & 0xFF, "attrGpuType");
-                    int offset;
                     if (attr.offset() != Attribute.IMPLICIT_OFFSET) {
                         offset = attr.offset();
-                    } else {
-                        offset = implicitOffset;
-                        implicitOffset += Attribute.alignOffset(attr.totalSize());
                     }
-                    assert (offset >= 0 && offset <= 0xFFFF);
+                    assert (offset >= 0 && offset < 32768);
                     b.addBits(16, offset, "attrOffset");
+                    offset += Attribute.alignOffset(attr.stride());
                 } else {
                     b.appendComment("unusedAttr");
                     b.addBits(8, 0xFF, "attrType");
@@ -281,12 +306,15 @@ public abstract class GeometryProcessor extends Processor {
             }
             final int stride;
             if (mStride == Attribute.IMPLICIT_OFFSET) {
-                stride = implicitOffset;
+                stride = offset;
             } else {
                 stride = mStride;
+                if (stride < offset) {
+                    throw new IllegalStateException();
+                }
             }
-            // max stride is no less than 2048, we assume the minimum
-            assert (stride > 0 && stride <= 0xFFFF);
+            // max stride is no less than 2048
+            assert (stride > 0 && stride <= 32768);
             assert (Attribute.alignOffset(stride) == stride);
             b.addBits(16, stride, "stride");
         }
@@ -294,44 +322,48 @@ public abstract class GeometryProcessor extends Processor {
         @Nonnull
         @Override
         public Iterator<Attribute> iterator() {
-            return new Iter(~0 >>> Integer.SIZE - mAttributes.length);
+            return new Iter(mAllMask);
         }
 
         private class Iter implements Iterator<Attribute> {
 
             private final int mMask;
-            private final int mCount;
 
             private int mIndex;
-            private int mImplicitOffset;
+            private int mOffset;
 
-            public Iter(int mask) {
+            Iter(int mask) {
                 mMask = mask;
-                mCount = Integer.bitCount(mask);
             }
 
             @Override
             public boolean hasNext() {
-                return mIndex < mCount;
+                forward();
+                return mIndex < mAttributes.length;
             }
 
             @Nonnull
             @Override
             public Attribute next() {
+                forward();
                 try {
-                    while ((mMask & (1 << mIndex)) == 0) {
-                        mIndex++; // skip unused
-                    }
                     final Attribute ret, curr = mAttributes[mIndex++];
                     if (curr.offset() == Attribute.IMPLICIT_OFFSET) {
-                        ret = new Attribute(curr.name(), curr.srcType(), curr.dstType(), mImplicitOffset);
+                        ret = new Attribute(curr.name(), curr.srcType(), curr.dstType(), mOffset);
                     } else {
                         ret = curr;
+                        mOffset = curr.offset();
                     }
-                    mImplicitOffset += Attribute.alignOffset(curr.totalSize());
+                    mOffset += Attribute.alignOffset(curr.stride());
                     return ret;
-                } catch (Exception e) {
+                } catch (IndexOutOfBoundsException e) {
                     throw new NoSuchElementException(e);
+                }
+            }
+
+            private void forward() {
+                while (mIndex < mAttributes.length && (mMask & (1 << mIndex)) == 0) {
+                    mIndex++; // skip unused
                 }
             }
         }
@@ -343,20 +375,27 @@ public abstract class GeometryProcessor extends Processor {
      */
     @Nonnull
     protected static Attribute makeColorAttribute(String name, boolean wideColor) {
-        return new Attribute(name, wideColor ? VertexAttribType.kFloat4 : VertexAttribType.kUByte4_norm,
-                SLDataType.kFloat4);
+        return new Attribute(
+                name,
+                wideColor
+                        ? VertexAttribType.kFloat4
+                        : VertexAttribType.kUByte4_norm,
+                SLDataType.kFloat4
+        );
     }
 
-    private AttributeSet mVertexAttributes;      // binding = 0, divisor = 0
-    private AttributeSet mInstanceAttributes;    // binding = 1, divisor = 1
-    private int mVertexAttributesMask;
-    private int mInstanceAttributesMask;
+    private int mVertexAttributesMask;      // binding = 0, divisor = 0
+    private int mInstanceAttributesMask;    // binding = 1, divisor = 1
 
     protected GeometryProcessor(int classID) {
         super(classID);
     }
 
     /**
+     * Returns a primitive topology for render passes. If the return values of
+     * different instances are different, they must be reflected in the key,
+     * see {@link #appendToKey(KeyBuilder)}.
+     *
      * @see PrimitiveType
      */
     public abstract byte primitiveType();
@@ -377,20 +416,28 @@ public abstract class GeometryProcessor extends Processor {
      * @see SamplerState
      */
     public int textureSamplerState(int i) {
-        assert false;
-        return SamplerState.DEFAULT;
+        throw new IndexOutOfBoundsException(i);
     }
 
     /**
      * @see Swizzle
      */
     public short textureSamplerSwizzle(int i) {
-        assert false;
-        return Swizzle.RGBA;
+        throw new IndexOutOfBoundsException(i);
     }
 
     /**
-     * Returns the number of used per-vertex attributes.
+     * Returns true if {@link #numVertexAttributes()} will return non-zero.
+     *
+     * @return true if there are per-vertex attributes
+     */
+    public final boolean hasVertexAttributes() {
+        assert (mVertexAttributesMask == 0 || allVertexAttributes() != null);
+        return mVertexAttributesMask != 0;
+    }
+
+    /**
+     * Returns the number of used per-vertex attributes (input variables).
      * Note: attribute of a matrix type counts as just one.
      *
      * @see #numVertexLocations()
@@ -400,33 +447,70 @@ public abstract class GeometryProcessor extends Processor {
     }
 
     /**
-     * Returns the number of used per-vertex attribute locations.
+     * Returns the number of used per-vertex attribute locations (slots).
+     * An attribute (variable) may take up multiple consecutive locations.
      *
-     * @see SLDataType#locationSize(byte)
+     * @see SLDataType#locations(byte)
      * @see #numVertexAttributes()
      */
     public final int numVertexLocations() {
-        assert (mVertexAttributesMask == 0 || mVertexAttributes != null);
-        return mVertexAttributesMask == 0 ? 0 : mVertexAttributes.numLocations(mVertexAttributesMask);
+        assert (mVertexAttributesMask == 0 || allVertexAttributes() != null);
+        return mVertexAttributesMask == 0
+                ? 0
+                : allVertexAttributes().numLocations(mVertexAttributesMask);
     }
 
     /**
-     * Returns an iterator of used per-vertex attributes. It's safe to call even if there's no attribute.
+     * Returns an iterable of used per-vertex attributes. It's safe to call even if there's no attribute.
      * The iterator handles hides two pieces of complexity:
      * <ol>
-     * <li>It skips uninitialized attributes.</li>
+     * <li>It skips unused attributes (see mask in {@link #setVertexAttributes(int)}).</li>
      * <li>It always returns an attribute with a known offset.</li>
      * </ol>
      */
     @Nonnull
-    public final Iterable<Attribute> getVertexAttributes() {
-        assert (mVertexAttributesMask == 0 || mVertexAttributes != null);
-        return mVertexAttributesMask == 0 ? Collections.emptyList() :
-                () -> mVertexAttributes.new Iter(mVertexAttributesMask);
+    public final Iterable<Attribute> vertexAttributes() {
+        assert (mVertexAttributesMask == 0 || allVertexAttributes() != null);
+        if (mVertexAttributesMask == 0) {
+            return Collections.emptySet();
+        }
+        AttributeSet attrs = allVertexAttributes();
+        if (mVertexAttributesMask == attrs.mAllMask) {
+            return attrs;
+        }
+        return new Iterable<>() {
+            @Nonnull
+            @Override
+            public Iterator<Attribute> iterator() {
+                return allVertexAttributes().new Iter(mVertexAttributesMask);
+            }
+        };
     }
 
     /**
-     * Returns the number of used per-instance attributes.
+     * Returns the number of bytes from one vertex to the next vertex, including paddings.
+     * A common practice is to populate the vertex's memory using an implicit array of
+     * structs. In this case, it is best to assert that: stride == sizeof(struct).
+     */
+    public final int vertexStride() {
+        assert (mVertexAttributesMask == 0 || allVertexAttributes() != null);
+        return mVertexAttributesMask == 0
+                ? 0
+                : allVertexAttributes().stride(mVertexAttributesMask);
+    }
+
+    /**
+     * Returns true if {@link #numInstanceAttributes()} will return non-zero.
+     *
+     * @return true if there are per-instance attributes
+     */
+    public final boolean hasInstanceAttributes() {
+        assert (mInstanceAttributesMask == 0 || allInstanceAttributes() != null);
+        return mInstanceAttributesMask != 0;
+    }
+
+    /**
+     * Returns the number of used per-instance attributes (input variables).
      * Note: attribute of a matrix type counts as just one.
      *
      * @see #numInstanceLocations()
@@ -436,67 +520,77 @@ public abstract class GeometryProcessor extends Processor {
     }
 
     /**
-     * Returns the number of used per-instance attribute locations.
+     * Returns the number of used per-instance attribute locations. (slots).
+     * An attribute (variable) may take up multiple consecutive locations.
      *
-     * @see SLDataType#locationSize(byte)
+     * @see SLDataType#locations(byte)
      * @see #numInstanceAttributes()
      */
     public final int numInstanceLocations() {
-        assert (mInstanceAttributesMask == 0 || mInstanceAttributes != null);
-        return mInstanceAttributesMask == 0 ? 0 : mInstanceAttributes.numLocations(mInstanceAttributesMask);
+        assert (mInstanceAttributesMask == 0 || allInstanceAttributes() != null);
+        return mInstanceAttributesMask == 0
+                ? 0
+                : allInstanceAttributes().numLocations(mInstanceAttributesMask);
     }
 
     /**
-     * Returns an iterator of used per-instance attributes. It's safe to call even if there's no attribute.
+     * Returns an iterable of used per-instance attributes. It's safe to call even if there's no attribute.
      * The iterator handles hides two pieces of complexity:
      * <ol>
-     * <li>It skips uninitialized attributes.</li>
+     * <li>It skips unused attributes (see mask in {@link #setInstanceAttributes(int)}).</li>
      * <li>It always returns an attribute with a known offset.</li>
      * </ol>
      */
     @Nonnull
-    public final Iterable<Attribute> getInstanceAttributes() {
-        assert (mInstanceAttributesMask == 0 || mInstanceAttributes != null);
-        return mInstanceAttributesMask == 0 ? Collections.emptyList() :
-                () -> mInstanceAttributes.new Iter(mInstanceAttributesMask);
-    }
-
-    public final boolean hasVertexAttributes() {
-        assert (mVertexAttributesMask == 0 || mVertexAttributes != null);
-        return mVertexAttributesMask != 0;
-    }
-
-    public final boolean hasInstanceAttributes() {
-        assert (mInstanceAttributesMask == 0 || mInstanceAttributes != null);
-        return mInstanceAttributesMask != 0;
+    public final Iterable<Attribute> instanceAttributes() {
+        assert (mInstanceAttributesMask == 0 || allInstanceAttributes() != null);
+        if (mInstanceAttributesMask == 0) {
+            return Collections.emptySet();
+        }
+        AttributeSet attrs = allInstanceAttributes();
+        if (mInstanceAttributesMask == attrs.mAllMask) {
+            return attrs;
+        }
+        return new Iterable<>() {
+            @Nonnull
+            @Override
+            public Iterator<Attribute> iterator() {
+                return allInstanceAttributes().new Iter(mInstanceAttributesMask);
+            }
+        };
     }
 
     /**
-     * A common practice is to populate the vertex/instance's memory using an implicit array of
+     * Returns the number of bytes from one instance to the next instance, including paddings.
+     * A common practice is to populate the instance's memory using an implicit array of
      * structs. In this case, it is best to assert that: stride == sizeof(struct).
      */
-    public final int vertexStride() {
-        return mVertexAttributes == null ? 0 : mVertexAttributes.stride(mVertexAttributesMask);
-    }
-
-    /**
-     * @see #vertexStride()
-     */
     public final int instanceStride() {
-        return mInstanceAttributes == null ? 0 : mInstanceAttributes.stride(mInstanceAttributesMask);
+        assert (mInstanceAttributesMask == 0 || allInstanceAttributes() != null);
+        return mInstanceAttributesMask == 0
+                ? 0
+                : allInstanceAttributes().stride(mInstanceAttributesMask);
     }
 
     /**
-     * Adds a key on the KeyBuilder that reflects any variety in the code that the
+     * Appends a key on the KeyBuilder that reflects any variety in the code that the
      * geometry processor subclass can emit.
+     *
+     * @see #makeProgramImpl(ShaderCaps)
      */
-    public abstract void addToKey(KeyBuilder b);
+    public abstract void appendToKey(@Nonnull KeyBuilder b);
 
-    public final void getAttributeKey(KeyBuilder b) {
-        b.appendComment("vertex attributes");
-        mVertexAttributes.addToKey(b, mVertexAttributesMask);
-        b.appendComment("instance attributes");
-        mInstanceAttributes.addToKey(b, mInstanceAttributesMask);
+    public final void appendAttributesToKey(@Nonnull KeyBuilder b) {
+        AttributeSet vertexAttributes = allVertexAttributes();
+        if (vertexAttributes != null) {
+            b.appendComment("vertex attributes");
+            vertexAttributes.appendToKey(b, mVertexAttributesMask);
+        }
+        AttributeSet instanceAttributes = allInstanceAttributes();
+        if (instanceAttributes != null) {
+            b.appendComment("instance attributes");
+            instanceAttributes.appendToKey(b, mInstanceAttributesMask);
+        }
     }
 
     /**
@@ -504,38 +598,63 @@ public abstract class GeometryProcessor extends Processor {
      * GeometryProcessor. This method is called only when the specified key does not
      * exist in the program cache.
      *
-     * @see #addToKey(KeyBuilder)
+     * @see #appendToKey(KeyBuilder)
      */
     @Nonnull
     public abstract ProgramImpl makeProgramImpl(ShaderCaps caps);
 
     /**
-     * Sets per-vertex attributes. Passes a shared {@link AttributeSet} containing all attributes,
-     * and then use mask to control which of them are used by this GeometryProcessor instance.
-     * Note: Call this in subclasses constructor.
+     * Returns a shared {@link AttributeSet} containing all per-vertex attributes for
+     * the GeometryProcess class. Returns null if there is no per-vertex attributes.
+     * <p>
+     * For the same GeometryProcess instance, the implementation must ensure that the
+     * return value always remains the same. If the return value is not null, then
+     * {@link #setVertexAttributes(int)} must be called within the constructor.
+     * In addition, for the same GeometryProcess class, the implementation should ensure
+     * that the nullability of the return value always remains the same.
      *
-     * @param attrs all per-vertex attributes
-     * @param mask  a mask determining which attributes to use, can be zero
+     * @see #setVertexAttributes(int)
      */
-    protected final void setVertexAttributes(AttributeSet attrs, int mask) {
-        assert (mVertexAttributes == null && attrs != null);
-        mVertexAttributes = attrs;
-        mVertexAttributesMask = mask & (~0 >>> (Integer.SIZE - attrs.mAttributes.length));
+    @Nullable
+    protected abstract AttributeSet allVertexAttributes();
+
+    /**
+     * Sets per-vertex attributes mask, which is used to control which of them are used
+     * by this GeometryProcessor instance. Note: Call this in subclasses constructor.
+     *
+     * @param mask a bit mask determining which attributes to use, can be zero
+     */
+    protected final void setVertexAttributes(int mask) {
+        AttributeSet attrs = allVertexAttributes();
+        assert attrs != null;
+        mVertexAttributesMask |= mask & attrs.mAllMask; // sanitize
     }
 
     /**
-     * Sets per-instance attributes. Passes a shared {@link AttributeSet} containing all attributes,
-     * and then use mask to control which of them are used by this GeometryProcessor instance.
-     * Note: Call this in subclasses constructor.
+     * Returns a shared {@link AttributeSet} containing all per-instance attributes for
+     * the GeometryProcess class. Returns null if there is no per-instance attributes.
+     * <p>
+     * For the same GeometryProcess instance, the implementation must ensure that the
+     * return value always remains the same. If the return value is not null, then
+     * {@link #setInstanceAttributes(int)} must be called within the constructor.
+     * In addition, for the same GeometryProcess class, the implementation should ensure
+     * that the nullability of the return value always remains the same.
      *
-     * @param attrs all per-instance attributes
-     * @param mask  a mask determining which attributes to use, can be zero
+     * @see #setInstanceAttributes(int)
      */
-    protected final void setInstanceAttributes(AttributeSet attrs, int mask) {
-        assert (mInstanceAttributes == null && attrs != null);
-        assert (Integer.SIZE - Integer.numberOfLeadingZeros(mask) <= attrs.mAttributes.length);
-        mInstanceAttributes = attrs;
-        mInstanceAttributesMask = mask & (~0 >>> (Integer.SIZE - attrs.mAttributes.length));
+    @Nullable
+    protected abstract AttributeSet allInstanceAttributes();
+
+    /**
+     * Sets per-instance attributes mask, which is used to control which of them are used
+     * by this GeometryProcessor instance. Note: Call this in subclasses constructor.
+     *
+     * @param mask a bit mask determining which attributes to use, can be zero
+     */
+    protected final void setInstanceAttributes(int mask) {
+        AttributeSet attrs = allInstanceAttributes();
+        assert attrs != null;
+        mInstanceAttributesMask |= mask & attrs.mAllMask; // sanitize
     }
 
     /**
