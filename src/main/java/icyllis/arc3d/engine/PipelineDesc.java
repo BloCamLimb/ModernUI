@@ -93,16 +93,17 @@ public final class PipelineDesc extends KeyBuilder {
      */
     static void genGPKey(GeometryProcessor geomProc, KeyBuilder b) {
         b.appendComment(geomProc.name());
-        // Currently we allow 8 bits for the class id
-        b.addBits(8, geomProc.classID(), "gpClassID");
+        // We allow 32 bits for the class id
+        b.addInt32(geomProc.classID(), "gpClassID");
 
-        geomProc.addToKey(b);
-        geomProc.getAttributeKey(b);
+        geomProc.appendToKey(b);
+        geomProc.appendAttributesToKey(b);
 
-        int numSamplers = geomProc.numTextureSamplers();
+        // read swizzles are implemented as texture views, will not affect the shader code
+        /*int numSamplers = geomProc.numTextureSamplers();
         b.addBits(4, numSamplers, "gpNumSamplers");
         for (int i = 0; i < numSamplers; i++) {
             b.addBits(16, geomProc.textureSamplerSwizzle(i), "swizzle");
-        }
+        }*/
     }
 }

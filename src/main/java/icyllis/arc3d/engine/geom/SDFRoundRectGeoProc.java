@@ -65,8 +65,8 @@ public class SDFRoundRectGeoProc extends GeometryProcessor {
     public SDFRoundRectGeoProc(boolean stroke) {
         super(RoundRect_GeoProc_ClassID);
         mStroke = stroke;
-        setVertexAttributes(VERTEX_ATTRIBS, 0x1);
-        setInstanceAttributes(INSTANCE_ATTRIBS, 0xF);
+        setVertexAttributes(0x1);
+        setInstanceAttributes(0xF);
     }
 
     @Nonnull
@@ -81,7 +81,7 @@ public class SDFRoundRectGeoProc extends GeometryProcessor {
     }
 
     @Override
-    public void addToKey(KeyBuilder b) {
+    public void appendToKey(@Nonnull KeyBuilder b) {
         b.addBool(mStroke, "stroke");
     }
 
@@ -89,6 +89,16 @@ public class SDFRoundRectGeoProc extends GeometryProcessor {
     @Override
     public ProgramImpl makeProgramImpl(ShaderCaps caps) {
         return new Impl();
+    }
+
+    @Override
+    protected AttributeSet allVertexAttributes() {
+        return VERTEX_ATTRIBS;
+    }
+
+    @Override
+    protected AttributeSet allInstanceAttributes() {
+        return INSTANCE_ATTRIBS;
     }
 
     private static class Impl extends ProgramImpl {

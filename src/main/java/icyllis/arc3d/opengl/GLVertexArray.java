@@ -128,7 +128,7 @@ public final class GLVertexArray extends ManagedResource {
         if (geomProc.hasVertexAttributes()) {
             if (dsa) {
                 int prevIndex = index;
-                index = set_vertex_format_4(geomProc.getVertexAttributes(),
+                index = set_vertex_format_4(geomProc.vertexAttributes(),
                         vertexArray,
                         index,
                         bindingIndex,
@@ -144,7 +144,7 @@ public final class GLVertexArray extends ManagedResource {
         if (geomProc.hasInstanceAttributes()) {
             if (dsa) {
                 int prevIndex = index;
-                index = set_vertex_format_4(geomProc.getInstanceAttributes(),
+                index = set_vertex_format_4(geomProc.instanceAttributes(),
                         vertexArray,
                         index,
                         bindingIndex,
@@ -173,13 +173,13 @@ public final class GLVertexArray extends ManagedResource {
             attributes = new int[index];
             index = 0;
             if (numVertexLocations > 0) {
-                index = set_vertex_format_3(geomProc.getVertexAttributes(),
+                index = set_vertex_format_3(geomProc.vertexAttributes(),
                         index,
                         0,  // per-vertex
                         attributes);
             }
             if (numInstanceLocations > 0) {
-                index = set_vertex_format_3(geomProc.getInstanceAttributes(),
+                index = set_vertex_format_3(geomProc.instanceAttributes(),
                         index,
                         1,  // per-instance
                         attributes);
@@ -212,15 +212,15 @@ public final class GLVertexArray extends ManagedResource {
     private static int set_vertex_format_3(@Nonnull Iterable<GeometryProcessor.Attribute> attribs,
                                            int index, int divisor, int[] attributes) {
         for (var attrib : attribs) {
-            int locations = attrib.locationSize();
+            int locations = attrib.locations();
             int offset = attrib.offset();
             while (locations-- != 0) {
                 glEnableVertexAttribArray(index);
                 glVertexAttribDivisor(index, divisor);
                 assert offset >= 0 && offset <= 0xFFFFFF;
-                attributes[index] = (offset & 0xFFFFFF) | (attrib.srcType() << 24);
+                attributes[index] = (offset & 0xFFFFFF) | ((attrib.srcType() & 0xFF) << 24);
                 index++;
-                offset += attrib.stepSize();
+                offset += attrib.size();
             }
         }
         return index;
@@ -296,14 +296,14 @@ public final class GLVertexArray extends ManagedResource {
                                            int divisor) {
         for (var attrib : attribs) {
             // a matrix can take up multiple locations
-            int locations = attrib.locationSize();
+            int locations = attrib.locations();
             int offset = attrib.offset();
             while (locations-- != 0) {
                 glEnableVertexArrayAttrib(array, index);
                 glVertexArrayAttribBinding(array, index, binding);
                 set_attrib_format_4(attrib.srcType(), array, index, offset);
                 index++;
-                offset += attrib.stepSize();
+                offset += attrib.size();
             }
         }
         glVertexArrayBindingDivisor(array,
@@ -454,11 +454,11 @@ public final class GLVertexArray extends ManagedResource {
                 for (int index = 0;
                      index < mNumVertexLocations;
                      index++) {
-                    int attr = mAttributes[index];
-                    set_attrib_format_3(/*type*/attr >>> 24,
+                    int info = mAttributes[index];
+                    set_attrib_format_3(/*type*/info >> 24,
                             index,
                             mVertexStride,
-                            /*base_offset*/offset + /*relative_offset*/(attr & 0xFFFFFF));
+                            /*base_offset*/offset + /*relative_offset*/(info & 0xFFFFFF));
                 }
             } else assert false;
             mVertexBuffer = buffer.getUniqueID();
@@ -498,11 +498,11 @@ public final class GLVertexArray extends ManagedResource {
                 for (int index = mNumVertexLocations;
                      index < mNumVertexLocations + mNumInstanceLocations;
                      index++) {
-                    int attr = mAttributes[index];
-                    set_attrib_format_3(/*type*/attr >>> 24,
+                    int info = mAttributes[index];
+                    set_attrib_format_3(/*type*/info >> 24,
                             index,
                             mInstanceStride,
-                            /*base_offset*/offset + /*relative_offset*/(attr & 0xFFFFFF));
+                            /*base_offset*/offset + /*relative_offset*/(info & 0xFFFFFF));
                 }
             } else assert false;
             mInstanceBuffer = buffer.getUniqueID();

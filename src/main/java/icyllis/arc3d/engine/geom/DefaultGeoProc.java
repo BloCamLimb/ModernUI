@@ -23,6 +23,7 @@ import icyllis.arc3d.core.SLDataType;
 import icyllis.arc3d.engine.*;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public final class DefaultGeoProc extends GeometryProcessor {
 
@@ -50,7 +51,7 @@ public final class DefaultGeoProc extends GeometryProcessor {
         if ((flags & FLAG_TEX_COORD_ATTRIBUTE) != 0) {
             mask |= 0x4;
         }
-        setVertexAttributes(VERTEX_ATTRIBS, mask);
+        setVertexAttributes(mask);
     }
 
     @Nonnull
@@ -65,13 +66,25 @@ public final class DefaultGeoProc extends GeometryProcessor {
     }
 
     @Override
-    public void addToKey(KeyBuilder b) {
+    public void appendToKey(@Nonnull KeyBuilder b) {
         b.addBits(3, mFlags, "gpFlags");
     }
 
     @Nonnull
     @Override
     public ProgramImpl makeProgramImpl(ShaderCaps caps) {
+        //TODO
+        return null;
+    }
+
+    @Override
+    protected AttributeSet allVertexAttributes() {
+        return VERTEX_ATTRIBS;
+    }
+
+    @Nullable
+    @Override
+    protected AttributeSet allInstanceAttributes() {
         return null;
     }
 }

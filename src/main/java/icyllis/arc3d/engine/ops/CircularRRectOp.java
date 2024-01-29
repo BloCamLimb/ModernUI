@@ -26,6 +26,7 @@ import icyllis.arc3d.engine.shading.*;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import static icyllis.arc3d.engine.Engine.VertexAttribType;
 
@@ -71,7 +72,7 @@ public final class CircularRRectOp extends MeshDrawOp {
         }
 
         @Override
-        public void addToKey(KeyBuilder b) {
+        public void appendToKey(@Nonnull KeyBuilder b) {
 
         }
 
@@ -79,6 +80,18 @@ public final class CircularRRectOp extends MeshDrawOp {
         @Override
         public ProgramImpl makeProgramImpl(ShaderCaps caps) {
             return new Impl();
+        }
+
+        @Nullable
+        @Override
+        protected AttributeSet allVertexAttributes() {
+            return null;
+        }
+
+        @Nullable
+        @Override
+        protected AttributeSet allInstanceAttributes() {
+            return null;
         }
 
         private static class Impl extends ProgramImpl {

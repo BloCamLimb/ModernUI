@@ -339,10 +339,16 @@ public final class SLDataType {
     }
 
     /**
-     * Returns the number of locations take up by a given SLType. We assume that all
-     * scalar values are 32 bits.
+     * Returns the number of locations take up by a given SLType.
+     * <p>
+     * 16-bit scalar and vector types, and 32-bit scalar and vector types
+     * consume a single location.
+     * <p>
+     * n x m 16- or 32-bit matrix types consume n consecutive locations.
+     * <p>
+     * Returns 0 for opaque types.
      */
-    public static int locationSize(byte type) {
+    public static int locations(byte type) {
         switch (type) {
             case kBool:
             case kBool2:
