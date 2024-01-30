@@ -341,15 +341,25 @@ public class MathUtil {
     /**
      * 2D bilinear interpolation between four values (a rect).
      */
-    public static float biLerp(float q00, float q10, float q01, float q11, float tx, float ty) {
-        return lerp(lerp(q00, q10, tx), lerp(q01, q11, tx), ty);
+    public static float biLerp(float q00, float q10, float q01, float q11,
+                               float tx, float ty) {
+        return lerp(
+                lerp(q00, q10, tx),
+                lerp(q01, q11, tx),
+                ty
+        );
     }
 
     /**
      * 2D bilinear interpolation between four values (a rect).
      */
-    public static double biLerp(double q00, double q10, double q01, double q11, double tx, double ty) {
-        return lerp(lerp(q00, q10, tx), lerp(q01, q11, tx), ty);
+    public static double biLerp(double q00, double q10, double q01, double q11,
+                                double tx, double ty) {
+        return lerp(
+                lerp(q00, q10, tx),
+                lerp(q01, q11, tx),
+                ty
+        );
     }
 
     /**
@@ -358,8 +368,11 @@ public class MathUtil {
     public static float triLerp(float c000, float c100, float c010, float c110,
                                 float c001, float c101, float c011, float c111,
                                 float tx, float ty, float tz) {
-        return lerp(lerp(lerp(c000, c100, tx), lerp(c010, c110, tx), ty),
-                lerp(lerp(c001, c101, tx), lerp(c011, c111, tx), ty), tz);
+        return lerp(
+                biLerp(c000, c100, c010, c110, tx, ty),
+                biLerp(c001, c101, c011, c111, tx, ty),
+                tz
+        );
     }
 
     /**
@@ -368,8 +381,11 @@ public class MathUtil {
     public static double triLerp(double c000, double c100, double c010, double c110,
                                  double c001, double c101, double c011, double c111,
                                  double tx, double ty, double tz) {
-        return lerp(lerp(lerp(c000, c100, tx), lerp(c010, c110, tx), ty),
-                lerp(lerp(c001, c101, tx), lerp(c011, c111, tx), ty), tz);
+        return lerp(
+                biLerp(c000, c100, c010, c110, tx, ty),
+                biLerp(c001, c101, c011, c111, tx, ty),
+                tz
+        );
     }
 
     /**

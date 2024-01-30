@@ -23,4 +23,14 @@ package icyllis.arc3d.engine;
  * Graphics pipeline state object (PSO of graphics pipeline).
  */
 public abstract class GraphicsPipelineState {
+
+    private final GpuDevice mDevice;
+
+    public GraphicsPipelineState(GpuDevice device) {
+        mDevice = device;
+    }
+
+    protected GpuDevice getDevice() {
+        return mDevice;
+    }
 }
