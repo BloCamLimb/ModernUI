@@ -43,8 +43,6 @@ import java.util.concurrent.CompletableFuture;
 //TODO set and bind textures
 public class GLGraphicsPipelineState extends GraphicsPipelineState {
 
-    private final GLDevice mDevice;
-
     @SharedPtr
     private GLProgram mProgram;
     @SharedPtr
@@ -61,7 +59,7 @@ public class GLGraphicsPipelineState extends GraphicsPipelineState {
 
     GLGraphicsPipelineState(GLDevice device,
                             CompletableFuture<GLPipelineStateBuilder> asyncWork) {
-        mDevice = device;
+        super(device);
         mAsyncWork = asyncWork;
     }
 
@@ -100,7 +98,7 @@ public class GLGraphicsPipelineState extends GraphicsPipelineState {
     private void checkAsyncWork() {
         if (mAsyncWork != null) {
             boolean success = mAsyncWork.join().finish(this);
-            var stats = mDevice.getPipelineStateCache().getStats();
+            var stats = getDevice().getPipelineStateCache().getStats();
             if (success) {
                 stats.incNumCompilationSuccesses();
             } else {
@@ -128,7 +126,7 @@ public class GLGraphicsPipelineState extends GraphicsPipelineState {
         mGPImpl.setData(mDataManager, pipelineInfo.geomProc());
         //TODO FP and upload
 
-        return mDataManager.bindAndUploadUniforms(mDevice, commandBuffer);
+        return mDataManager.bindAndUploadUniforms(getDevice(), commandBuffer);
     }
 
     /**
@@ -220,5 +218,10 @@ public class GLGraphicsPipelineState extends GraphicsPipelineState {
         if (mVertexArray != null) {
             mVertexArray.bindInstanceBuffer(buffer, offset);
         }
+    }
+
+    @Override
+    protected GLDevice getDevice() {
+        return (GLDevice) super.getDevice();
     }
 }

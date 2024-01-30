@@ -62,7 +62,8 @@ public abstract class GeometryProcessor extends Processor {
     @Immutable
     public static class Attribute {
 
-        public static final int IMPLICIT_OFFSET = -1;
+        // 1 is not valid because it isn't aligned.
+        static final int IMPLICIT_OFFSET = 1;
 
         /**
          * It must be N-aligned for all types, where N is sizeof(float).
@@ -74,7 +75,7 @@ public abstract class GeometryProcessor extends Processor {
         private final String mName;
         private final byte mSrcType;
         private final byte mDstType;
-        private final int mOffset;
+        private final short mOffset;
 
         /**
          * Makes an attribute whose offset will be implicitly determined by the types and ordering
@@ -124,7 +125,7 @@ public abstract class GeometryProcessor extends Processor {
             mName = name;
             mSrcType = srcType;
             mDstType = dstType;
-            mOffset = offset;
+            mOffset = (short) offset;
         }
 
         public final String name() {
@@ -151,6 +152,7 @@ public abstract class GeometryProcessor extends Processor {
          * types. See {@link #IMPLICIT_OFFSET}.
          */
         public final int offset() {
+            assert mOffset >= 0;
             return mOffset;
         }
 
