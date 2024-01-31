@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -32,10 +32,10 @@ import java.util.StringJoiner;
  */
 public final class FunctionCall extends Expression {
 
-    private final Function mFunction;
+    private final FunctionDecl mFunction;
     private final Expression[] mArguments;
 
-    private FunctionCall(int position, Type type, Function function,
+    private FunctionCall(int position, Type type, FunctionDecl function,
                          Expression... arguments) {
         super(position, type);
         mFunction = function;
@@ -60,7 +60,7 @@ public final class FunctionCall extends Expression {
         return false;
     }
 
-    public Function getFunction() {
+    public FunctionDecl getFunction() {
         return mFunction;
     }
 

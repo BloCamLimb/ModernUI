@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -27,27 +27,14 @@ import it.unimi.dsi.fastutil.longs.LongList;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * Consumes AkSL text and invokes DSL functions to instantiate the program.
  */
 public class Parser {
 
-    public static final byte
-            LAYOUT_TOKEN_LOCATION = 0,
-            LAYOUT_TOKEN_OFFSET = 1,
-            LAYOUT_TOKEN_BINDING = 2,
-            LAYOUT_TOKEN_INDEX = 3,
-            LAYOUT_TOKEN_SET = 4,
-            LAYOUT_TOKEN_BUILTIN = 5,
-            LAYOUT_TOKEN_INPUT_ATTACHMENT_INDEX = 6,
-            LAYOUT_TOKEN_ORIGIN_UPPER_LEFT = 7,
-            LAYOUT_TOKEN_BLEND_SUPPORT_ALL_EQUATIONS = 8,
-            LAYOUT_TOKEN_PUSH_CONSTANT = 9,
-            LAYOUT_TOKEN_COLOR = 10;
-
-    private final Compiler mCompiler;
+    private final ShaderCompiler mCompiler;
 
     private final ExecutionModel mModel;
     private final CompileOptions mOptions;
@@ -57,7 +44,7 @@ public class Parser {
 
     private final LongList mPushback = new LongArrayList();
 
-    public Parser(Compiler compiler, ExecutionModel model, CompileOptions options, String source) {
+    public Parser(ShaderCompiler compiler, ExecutionModel model, CompileOptions options, String source) {
         // ideally we can break long text into pieces, but shader code should not be too long
         if (source.length() > 0x7FFFFE) {
             throw new IllegalArgumentException("Source code is too long, " + source.length() + " > 8,388,606");
@@ -76,7 +63,7 @@ public class Parser {
         DSL.start(mModel, mOptions, parent);
         DSL.setErrorHandler(errorHandler);
         errorHandler.setSource(mSource);
-        //TODO declarations
+        TranslationUnit();
         errorHandler.setSource(null);
         DSL.end();
         return null;
@@ -89,7 +76,7 @@ public class Parser {
         DSL.startLibrary(mModel, mOptions, parent);
         DSL.setErrorHandler(errorHandler);
         errorHandler.setSource(mSource);
-        //TODO declarations
+        TranslationUnit();
         final SharedLibrary result;
         if (DSL.getErrorHandler().getNumErrors() == 0) {
             result = new SharedLibrary();
@@ -213,15 +200,16 @@ public class Parser {
     }
 
     /**
-     * Checks to see if the next token is of the specified type. If so, stores it in result (if
-     * result is non-null) and returns true. Otherwise, pushes it back and returns -1.
+     * Checks to see if the next token is of the specified type. If so, consumes it
+     * and returns true. Otherwise, pushes it back and returns false.
      */
-    private long checkNext(int kind) {
+    private boolean checkNext(int kind) {
         long next = peek();
         if (Token.kind(next) == kind) {
-            return nextToken();
+            nextToken();
+            return true;
         }
-        return -1;
+        return false;
     }
 
     /**
@@ -289,15 +277,192 @@ public class Parser {
         return false;
     }
 
-    private boolean declaration() {
-        long token = peek();
-        if (Token.kind(token) == Lexer.TK_SEMICOLON) {
+    private void TranslationUnit() {
+        for (;;) {
+            switch (Token.kind(peek())) {
+                case Lexer.TK_END_OF_FILE -> {
+                    return;
+                }
+                case Lexer.TK_INVALID -> {
+                    error(peek(), "invalid token");
+                    return;
+                }
+                default -> {
+                    try {
+                        if (!GlobalDeclaration()) {
+                            return;
+                        }
+                    } catch (IllegalStateException e) {
+                        // fatal error
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    private boolean GlobalDeclaration() {
+        long start = peek();
+        if (Token.kind(start) == Lexer.TK_SEMICOLON) {
+            // empty declaration
             nextToken();
-            error(token, "expected a declaration, but found ';'");
+            return true;
+        }
+        Modifiers modifiers = modifiers();
+        long peek = peek();
+
+        if (peek == Lexer.TK_IDENTIFIER &&
+                !ThreadContext.getInstance().getSymbolTable().isType(text(peek))) {
+            //TODO interface block
+            return true;
+        }
+
+        if (peek == Lexer.TK_SEMICOLON) {
+            nextToken();
+            return true;
+        }
+
+        if (peek == Lexer.TK_STRUCT) {
+            StructDeclaration();
+            return true;
+        }
+
+        Type type = TypeSpecifier(modifiers);
+        if (type == null) {
             return false;
         }
 
-        return false;
+        long name = expectIdentifier();
+
+        if (checkNext(Lexer.TK_LPAREN)) {
+            return FunctionDeclarationRest(position(start), modifiers, type, name);
+        } else {
+            //TODO global var rest
+            return true;
+        }
+    }
+
+    private boolean FunctionDeclarationRest(int start,
+                                            Modifiers modifiers,
+                                            Type returnType,
+                                            long name) {
+        long peek = peek();
+        List<Variable> parameters = new ArrayList<>();
+        if (Token.kind(peek) != Lexer.TK_RPAREN) {
+            if (Token.kind(peek) == Lexer.TK_IDENTIFIER && "void".equals(text(peek))) {
+                // '(void)' means no parameters.
+                nextToken();
+            } else {
+                do {
+                    Variable parameter = Parameter();
+                    if (parameter == null) {
+                        return false;
+                    }
+                    parameters.add(parameter);
+                } while (checkNext(Lexer.TK_COMMA));
+            }
+        }
+        expect(Lexer.TK_RPAREN, "')'");
+
+        FunctionDecl decl = FunctionDecl.convert(
+                rangeFrom(start),
+                modifiers,
+                text(name),
+                parameters,
+                returnType
+        );
+
+        ThreadContext context = ThreadContext.getInstance();
+        if (peek(Lexer.TK_SEMICOLON)) {
+            nextToken();
+            if (decl == null) {
+                return false;
+            }
+            context.getUniqueElements().add(
+                    new FunctionPrototype(decl.mPosition, decl, context.isBuiltin())
+            );
+            return true;
+        } else {
+            ThreadContext.getInstance().
+                    enterScope();
+            try {
+                if (decl != null) {
+                    for (Variable param : decl.getParameters()) {
+                        context.getSymbolTable().insert(param);
+                    }
+                }
+
+                long blockStart = peek();
+                BlockStatement block = ScopedBlock();
+
+                if (decl == null || block == null) {
+                    return false;
+                }
+
+                int pos = rangeFrom(blockStart);
+                FunctionDefinition function = FunctionDefinition.convert(
+                        pos,
+                        decl,
+                        false,
+                        block
+                );
+
+                if (function == null) {
+                    return false;
+                }
+                decl.setDefinition(function);
+                context.getUniqueElements().add(function);
+                return true;
+            } finally {
+                ThreadContext.getInstance()
+                        .leaveScope();
+            }
+        }
+    }
+
+    /**
+     * Parameter declaration.
+     */
+    @Nullable
+    private Variable Parameter() {
+        int pos = position(peek());
+        Modifiers modifiers = modifiers();
+        Type type = TypeSpecifier(modifiers);
+        if (type == null) {
+            return null;
+        }
+        long name = checkIdentifier();
+        String nameText = "";
+        if (name != -1) {
+            nameText = text(name);
+        }
+        type = ArraySpecifier(pos, type);
+        if (type == null) {
+            return null;
+        }
+        return Variable.convert(
+                rangeFrom(pos),
+                modifiers,
+                type,
+                nameText,
+                Variable.kParameter_Storage
+        );
+    }
+
+    private BlockStatement ScopedBlock() {
+        long start = expect(Lexer.TK_LBRACE, "'{'");
+        List<Statement> statements = new ArrayList<>();
+        for (;;) {
+            if (checkNext(Lexer.TK_RBRACE)) {
+                int pos = rangeFrom(start);
+                return BlockStatement.makeBlock(pos, statements);
+            } else {
+                Statement statement = Statement();
+                if (statement != null) {
+                    statements.add(statement);
+                }
+            }
+        }
     }
 
     @Nullable
@@ -801,7 +966,7 @@ public class Parser {
                 case Lexer.TK_LPAREN:
                 case Lexer.TK_PLUSPLUS:
                 case Lexer.TK_MINUSMINUS:
-                    // ..
+                    //TODO
                     break;
                 default:
                     return result;
@@ -929,7 +1094,7 @@ public class Parser {
     private Modifiers modifiers() {
         long start = peek();
         Modifiers modifiers = new Modifiers(Position.NO_POS);
-        if (checkNext(Lexer.TK_LAYOUT) != -1) {
+        if (checkNext(Lexer.TK_LAYOUT)) {
             expect(Lexer.TK_LPAREN, "'('");
             for (;;) {
                 long t = nextToken();
@@ -984,7 +1149,7 @@ public class Parser {
                     }
                 }
 
-                if (checkNext(Lexer.TK_COMMA) != -1) {
+                if (checkNext(Lexer.TK_COMMA)) {
                     continue;
                 }
                 expect(Lexer.TK_RPAREN, "')'");
@@ -1075,9 +1240,9 @@ public class Parser {
 
     @Nullable
     private Type ArraySpecifier(int pos, Type type) {
-        long bracket;
-        while ((bracket = checkNext(Lexer.TK_LBRACKET)) != -1) {
-            if (checkNext(Lexer.TK_RBRACKET) != -1) {
+        while (peek(Lexer.TK_LBRACKET)) {
+            long bracket = nextToken();
+            if (checkNext(Lexer.TK_RBRACKET)) {
                 if (allowUnsizedArrays()) {
                     type = UnsizedArrayType(type, rangeFrom(pos));
                 } else {
@@ -1117,6 +1282,7 @@ public class Parser {
      *       IDENTIFIER ArraySpecifier* (EQ AssignmentExpression)?)* SEMICOLON
      * }</pre>
      */
+    @Nullable
     private Statement VarDeclarationRest(int pos, Modifiers modifiers, Type baseType) {
         long name = expectIdentifier();
         Type type = ArraySpecifier(pos, baseType);
@@ -1124,16 +1290,23 @@ public class Parser {
             return null;
         }
         Expression init = null;
-        if (checkNext(Lexer.TK_EQ) != -1) {
+        if (checkNext(Lexer.TK_EQ)) {
             init = AssignmentExpression();
             if (init == null) {
                 return null;
             }
         }
-        Statement result = null; // TODO
+        Statement result = VariableDecl.convert(
+                rangeFrom(name),
+                modifiers,
+                type,
+                text(name),
+                Variable.kLocal_Storage,
+                init
+        );
 
         for (;;) {
-            if (checkNext(Lexer.TK_COMMA) == -1) {
+            if (checkNext(Lexer.TK_COMMA)) {
                 expect(Lexer.TK_SEMICOLON, "';'");
                 break;
             }
@@ -1143,13 +1316,20 @@ public class Parser {
                 break;
             }
             init = null;
-            if (checkNext(Lexer.TK_EQ) != -1) {
+            if (checkNext(Lexer.TK_EQ)) {
                 init = AssignmentExpression();
                 if (init == null) {
                     break;
                 }
             }
-            Statement next = null; // TODO
+            Statement next = VariableDecl.convert(
+                    rangeFrom(name),
+                    modifiers,
+                    type,
+                    text(name),
+                    Variable.kLocal_Storage,
+                    init
+            );
 
             result = BlockStatement.makeCompound(result, next);
         }
@@ -1157,6 +1337,7 @@ public class Parser {
         return statementOrEmpty(pos, result);
     }
 
+    @Nullable
     private Statement VarDeclarationOrExpressionStatement() {
         long peek = peek();
         if (Token.kind(peek) == Lexer.TK_CONST) {
@@ -1225,18 +1406,57 @@ public class Parser {
         return stmt;
     }
 
+    @Nullable
     private Statement Statement() {
-        return null;
+        return switch (Token.kind(peek())) {
+            case Lexer.TK_BREAK -> {
+                long start = nextToken();
+                expect(Lexer.TK_SEMICOLON, "';'");
+                yield BreakStatement.make(rangeFrom(start));
+            }
+            case Lexer.TK_CONTINUE -> {
+                long start = nextToken();
+                expect(Lexer.TK_SEMICOLON, "';'");
+                yield ContinueStatement.make(rangeFrom(start));
+            }
+            case Lexer.TK_DISCARD -> {
+                long start = nextToken();
+                expect(Lexer.TK_SEMICOLON, "';'");
+                int pos = rangeFrom(start);
+                yield statementOrEmpty(pos, DiscardStatement.convert(pos));
+            }
+            case Lexer.TK_RETURN -> {
+                long start = nextToken();
+                Expression expression = null;
+                if (!peek(Lexer.TK_SEMICOLON)) {
+                    expression = Expression();
+                    if (expression == null) {
+                        yield null;
+                    }
+                }
+                expect(Lexer.TK_SEMICOLON, "';'");
+                yield ReturnStatement.make(rangeFrom(start), expression);
+            }
+            case Lexer.TK_IF -> IfStatement();
+            case Lexer.TK_FOR -> ForStatement();
+            case Lexer.TK_SWITCH -> SwitchStatement();
+            case Lexer.TK_SEMICOLON -> {
+                long t = nextToken();
+                yield new EmptyStatement(position(t));
+            }
+            case Lexer.TK_CONST, Lexer.TK_IDENTIFIER -> VarDeclarationOrExpressionStatement();
+            default -> ExpressionStatement();
+        };
     }
 
     /**
      * <pre>{@literal
-     * SelectionStatement
+     * IfStatement
      *     : IF LPAREN Expression RPAREN Statement (ELSE Statement)?
      * }</pre>
      */
     @Nullable
-    private Statement SelectionStatement() {
+    private Statement IfStatement() {
         long start = expect(Lexer.TK_IF, "'if'");
         expect(Lexer.TK_LPAREN, "'('");
         Expression test = Expression();
@@ -1249,7 +1469,7 @@ public class Parser {
             return null;
         }
         Statement whenFalse = null;
-        if (checkNext(Lexer.TK_ELSE) != -1) {
+        if (checkNext(Lexer.TK_ELSE)) {
             whenFalse = Statement();
             if (whenFalse == null) {
                 return null;
@@ -1279,22 +1499,58 @@ public class Parser {
      *     : (DeclarationStatement | ExpressionStatement)?
      * }</pre>
      */
+    @Nullable
     private Statement ForStatement() {
         long start = expect(Lexer.TK_FOR, "'for'");
-        long lparen = expect(Lexer.TK_LPAREN, "'('");
+        expect(Lexer.TK_LPAREN, "'('");
         ThreadContext.getInstance()
                 .enterScope();
         try {
             Statement init = null;
-            int firstSemicolonOffset;
             if (peek(Lexer.TK_SEMICOLON)) {
                 // An empty init-statement.
-                firstSemicolonOffset = Token.offset(nextToken());
+                nextToken();
             } else {
-
+                init = VarDeclarationOrExpressionStatement();
+                if (init == null) {
+                    return null;
+                }
             }
 
-            return null;
+            Expression cond = null;
+            if (!peek(Lexer.TK_SEMICOLON)) {
+                cond = Expression();
+                if (cond == null) {
+                    return null;
+                }
+            }
+
+            expect(Lexer.TK_SEMICOLON, "';'");
+
+            Expression step = null;
+            if (!peek(Lexer.TK_SEMICOLON)) {
+                step = Expression();
+                if (step == null) {
+                    return null;
+                }
+            }
+
+            expect(Lexer.TK_RPAREN, "')'");
+
+            Statement statement = Statement();
+            if (statement == null) {
+                return null;
+            }
+
+            int pos = rangeFrom(start);
+
+            return statementOrEmpty(pos, ForStatement.convert(
+                    pos,
+                    init,
+                    cond,
+                    step,
+                    statement
+            ));
         } finally {
             ThreadContext.getInstance()
                     .leaveScope();

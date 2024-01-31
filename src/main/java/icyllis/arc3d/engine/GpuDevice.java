@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,7 +21,7 @@ package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.ops.OpsTask;
-import icyllis.arc3d.compiler.Compiler;
+import icyllis.arc3d.compiler.ShaderCompiler;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -52,7 +52,7 @@ public abstract class GpuDevice implements Engine {
     // this device is managed by this context
     protected final DirectContext mContext;
     protected final Caps mCaps;
-    protected final Compiler mCompiler;
+    protected final ShaderCompiler mCompiler;
 
     protected final Stats mStats = new Stats();
 
@@ -63,7 +63,7 @@ public abstract class GpuDevice implements Engine {
         assert context != null && caps != null;
         mContext = context;
         mCaps = caps;
-        mCompiler = new Compiler();
+        mCompiler = new ShaderCompiler();
     }
 
     public final DirectContext getContext() {
@@ -80,7 +80,7 @@ public abstract class GpuDevice implements Engine {
     /**
      * Gets the compiler used for compiling AkSL into backend shader code.
      */
-    public final Compiler getShaderCompiler() {
+    public final ShaderCompiler getShaderCompiler() {
         return mCompiler;
     }
 

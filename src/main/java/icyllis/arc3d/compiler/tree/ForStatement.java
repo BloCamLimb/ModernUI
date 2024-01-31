@@ -19,9 +19,11 @@
 
 package icyllis.arc3d.compiler.tree;
 
+import icyllis.arc3d.compiler.ThreadContext;
 import icyllis.arc3d.compiler.analysis.NodeVisitor;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * <pre>
@@ -42,6 +44,36 @@ public final class ForStatement extends Statement {
         mCondition = condition;
         mStep = step;
         mStatement = statement;
+    }
+
+    @Nullable
+    public static Statement convert(int pos,
+                                    Statement init,
+                                    Expression cond,
+                                    Expression step,
+                                    Statement statement) {
+
+        ThreadContext context = ThreadContext.getInstance();
+        if (cond != null) {
+            cond = context.getTypes().mBool.coerceExpression(cond);
+            if (cond == null) {
+                return null;
+            }
+        }
+
+        if (step != null && step.isIncomplete()) {
+            return null;
+        }
+
+        return make(pos, init, cond, step, statement);
+    }
+
+    public static Statement make(int pos,
+                                 Statement init,
+                                 Expression cond,
+                                 Expression step,
+                                 Statement statement) {
+        return new ForStatement(pos, init, cond, step, statement);
     }
 
     @Override

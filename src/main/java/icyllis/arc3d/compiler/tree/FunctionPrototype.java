@@ -19,29 +19,35 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import icyllis.arc3d.compiler.ShaderCompiler;
-import icyllis.arc3d.compiler.ThreadContext;
 import icyllis.arc3d.compiler.analysis.NodeVisitor;
 
 import javax.annotation.Nonnull;
 
 /**
- * Represents an ill-formed expression. This is needed so that parser can go further.
+ * A function prototype (a function declaration as a top-level element)
  */
-public final class Poison extends Expression {
+public final class FunctionPrototype extends Element {
 
-    private Poison(int position, Type type) {
-        super(position, type);
+    private final FunctionDecl mFunctionDecl;
+    private final boolean mBuiltin;
+
+    public FunctionPrototype(int position, FunctionDecl functionDecl, boolean builtin) {
+        super(position);
+        mFunctionDecl = functionDecl;
+        mBuiltin = builtin;
     }
 
-    @Nonnull
-    public static Expression make(int position) {
-        return new Poison(position, ThreadContext.getInstance().getTypes().mPoison);
+    public FunctionDecl getFunctionDecl() {
+        return mFunctionDecl;
+    }
+
+    public boolean isBuiltin() {
+        return mBuiltin;
     }
 
     @Override
-    public ExpressionKind getKind() {
-        return ExpressionKind.POISON;
+    public ElementKind getKind() {
+        return ElementKind.FUNCTION_PROTOTYPE;
     }
 
     @Override
@@ -51,13 +57,7 @@ public final class Poison extends Expression {
 
     @Nonnull
     @Override
-    public Expression clone(int position) {
-        return new Poison(position, getType());
-    }
-
-    @Nonnull
-    @Override
-    public String toString(int parentPrecedence) {
-        return ShaderCompiler.POISON_TAG;
+    public String toString() {
+        return mFunctionDecl.toString() + ";";
     }
 }

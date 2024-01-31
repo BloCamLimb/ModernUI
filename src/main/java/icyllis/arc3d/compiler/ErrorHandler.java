@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -71,7 +71,7 @@ public abstract class ErrorHandler {
     public final void error(int start, int end, String msg) {
         assert (start == -1 && end == -1)
                 || (start >= 0 && start <= end && end <= Position.MAX_OFFSET);
-        if (msg.contains(Compiler.POISON_TAG)) {
+        if (msg.contains(ShaderCompiler.POISON_TAG)) {
             // Don't report errors on poison values.
             return;
         }

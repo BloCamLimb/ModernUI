@@ -69,6 +69,11 @@ public final class BlockStatement extends Statement {
         return statements.get(0);
     }
 
+    public static BlockStatement makeBlock(int pos,
+                                           List<Statement> statements) {
+        return new BlockStatement(pos, statements, true);
+    }
+
     public static Statement makeCompound(Statement before, Statement after) {
         if (before == null || before.isEmpty()) {
             return after;

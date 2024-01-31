@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -40,6 +40,8 @@ public final class Variable extends Symbol {
     private final Type mType;
     private final byte mStorage;
     private final boolean mBuiltin;
+
+    private Node mDecl;
 
     public Variable(int position, Modifiers modifiers,
                     String name, Type type, boolean builtin, byte storage) {
@@ -104,6 +106,19 @@ public final class Variable extends Symbol {
 
     public Expression initialValue() {
         return null;
+    }
+
+    public VariableDecl getVarDecl() {
+        if (mDecl instanceof VariableDecl) {
+            return (VariableDecl) mDecl;
+        }
+        return null;
+    }
+
+    public void setVarDecl(VariableDecl varDecl) {
+        if (mDecl == null) {
+            mDecl = varDecl;
+        }
     }
 
     @Nonnull

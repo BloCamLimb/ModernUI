@@ -23,35 +23,32 @@ import icyllis.arc3d.compiler.analysis.NodeVisitor;
 
 import javax.annotation.Nonnull;
 
-public class VarDeclaration extends Statement {
+/**
+ * A break statement.
+ */
+public final class BreakStatement extends Statement {
 
-    protected VarDeclaration(int position) {
+    private BreakStatement(int position) {
         super(position);
     }
 
-    // Checks the modifiers, baseType, and storage for compatibility with one another and reports
-    // errors if needed. This method is implicitly called during Convert(), but is also explicitly
-    // called while processing interface block fields.
-    public static void checkError(int pos, Modifiers modifiers,
-                                  Type type, Type baseType, byte storage) {
-        assert type.isArray()
-                ? baseType.matches(type.getElementType())
-                : baseType.matches(type);
+    public static Statement make(int pos) {
+        return new BreakStatement(pos);
     }
 
     @Override
     public StatementKind getKind() {
-        return StatementKind.VAR_DECLARATION;
+        return StatementKind.BREAK;
     }
 
     @Override
     public boolean accept(@Nonnull NodeVisitor visitor) {
-        return false;
+        return visitor.visitBreak(this);
     }
 
     @Nonnull
     @Override
     public String toString() {
-        return null;
+        return "break;";
     }
 }

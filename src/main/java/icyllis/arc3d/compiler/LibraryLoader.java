@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -259,7 +259,7 @@ public class LibraryLoader {
     }
 
     @Nonnull
-    private SharedLibrary loadLibrary(Compiler compiler,
+    private SharedLibrary loadLibrary(ShaderCompiler compiler,
                                       ExecutionModel kind,
                                       String source,
                                       SharedLibrary parent) {
@@ -302,7 +302,7 @@ public class LibraryLoader {
     }
 
     @Nonnull
-    public SharedLibrary loadCommonLibrary(Compiler compiler) {
+    public SharedLibrary loadCommonLibrary(ShaderCompiler compiler) {
         if (mCommonLibrary != null) {
             return mCommonLibrary;
         }

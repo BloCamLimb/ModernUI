@@ -19,45 +19,49 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import icyllis.arc3d.compiler.ShaderCompiler;
 import icyllis.arc3d.compiler.ThreadContext;
 import icyllis.arc3d.compiler.analysis.NodeVisitor;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
- * Represents an ill-formed expression. This is needed so that parser can go further.
+ * A discard statement, fragment shader only.
  */
-public final class Poison extends Expression {
+public final class DiscardStatement extends Statement {
 
-    private Poison(int position, Type type) {
-        super(position, type);
+    private DiscardStatement(int position) {
+        super(position);
+    }
+
+    @Nullable
+    public static Statement convert(int pos) {
+        ThreadContext context = ThreadContext.getInstance();
+        if (!context.getModel().isFragment()) {
+            context.error(pos, "discard statement is only permitted in fragment shaders");
+            return null;
+        }
+        return make(pos);
     }
 
     @Nonnull
-    public static Expression make(int position) {
-        return new Poison(position, ThreadContext.getInstance().getTypes().mPoison);
+    public static Statement make(int pos) {
+        return new DiscardStatement(pos);
     }
 
     @Override
-    public ExpressionKind getKind() {
-        return ExpressionKind.POISON;
+    public StatementKind getKind() {
+        return StatementKind.DISCARD;
     }
 
     @Override
     public boolean accept(@Nonnull NodeVisitor visitor) {
-        return false;
+        return visitor.visitDiscard(this);
     }
 
     @Nonnull
     @Override
-    public Expression clone(int position) {
-        return new Poison(position, getType());
-    }
-
-    @Nonnull
-    @Override
-    public String toString(int parentPrecedence) {
-        return ShaderCompiler.POISON_TAG;
+    public String toString() {
+        return "discard;";
     }
 }
