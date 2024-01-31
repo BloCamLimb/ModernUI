@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -33,7 +33,7 @@ import java.util.Objects;
  * dead-code elimination. Then the {@link Program} is passed into a {@link CodeGenerator}
  * to produce compiled output.
  */
-public class Compiler {
+public class ShaderCompiler {
 
     public static final String INVALID_TAG = "<INVALID>";
     public static final String POISON_TAG = "<POISON>"; // error value
@@ -101,7 +101,7 @@ public class Compiler {
 
     final Inliner mInliner;
 
-    public Compiler() {
+    public ShaderCompiler() {
         mInliner = new Inliner();
     }
 

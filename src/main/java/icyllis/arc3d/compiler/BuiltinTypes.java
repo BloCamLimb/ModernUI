@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -562,7 +562,7 @@ public final class BuiltinTypes {
         mSamplerCubeArrayShadow = Type.makeCombinedType("samplerCubeArrayShadow", "ZXA", mHalf,
                 Spv.SpvDimCube, /*isShadow*/true, /*isArrayed=*/true, /*isMultiSampled=*/false);
 
-        mInvalid = Type.makeSpecialType(Compiler.INVALID_TAG, "O", Type.kOther_TypeKind);
+        mInvalid = Type.makeSpecialType(ShaderCompiler.INVALID_TAG, "O", Type.kOther_TypeKind);
 
         mGenFType = Type.makeGenericType("__genFType", mFloat, mFloat2, mFloat3, mFloat4);
         mGenIType = Type.makeGenericType("__genIType", mInt, mInt2, mInt3, mInt4);
@@ -587,6 +587,6 @@ public final class BuiltinTypes {
         mUSVec = Type.makeGenericType("__usvec", mInvalid, mUShort2, mUShort3, mUShort4);
         mBVec = Type.makeGenericType("__bvec", mInvalid, mBool2, mBool3, mBool4);
 
-        mPoison = Type.makeSpecialType(Compiler.POISON_TAG, "P", Type.kOther_TypeKind);
+        mPoison = Type.makeSpecialType(ShaderCompiler.POISON_TAG, "P", Type.kOther_TypeKind);
     }
 }

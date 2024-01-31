@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -26,7 +26,7 @@ import javax.annotation.Nullable;
 import java.util.*;
 
 /**
- * Thread-safe class that tracks per-thread state associated with {@link Compiler}
+ * Thread-safe class that tracks per-thread state associated with {@link ShaderCompiler}
  * (i.e. {@link Parser} or CodeGenerator).
  */
 public final class ThreadContext {
@@ -181,8 +181,8 @@ public final class ThreadContext {
             return null;
         }
         return switch (result.getKind()) {
-            case FUNCTION -> {
-                var overloadChain = (Function) result;
+            case FUNCTION_DECL -> {
+                var overloadChain = (FunctionDecl) result;
                 yield FunctionReference.make(position, overloadChain);
             }
             case VARIABLE -> {

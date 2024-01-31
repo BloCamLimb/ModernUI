@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -105,6 +105,18 @@ public abstract class NodeVisitor {
         return visitAnyStatement(stmt);
     }
 
+    public boolean visitBreak(BreakStatement stmt) {
+        return visitAnyStatement(stmt);
+    }
+
+    public boolean visitContinue(ContinueStatement stmt) {
+        return visitAnyStatement(stmt);
+    }
+
+    public boolean visitDiscard(DiscardStatement stmt) {
+        return visitAnyStatement(stmt);
+    }
+
     public boolean visitEmpty(EmptyStatement stmt) {
         return visitAnyStatement(stmt);
     }
@@ -118,6 +130,10 @@ public abstract class NodeVisitor {
     }
 
     public boolean visitIf(IfStatement stmt) {
+        return visitAnyStatement(stmt);
+    }
+
+    public boolean visitReturn(ReturnStatement stmt) {
         return visitAnyStatement(stmt);
     }
 

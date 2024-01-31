@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,6 +19,9 @@
 
 package icyllis.arc3d.compiler.tree;
 
+import icyllis.arc3d.compiler.IntrinsicList;
+import icyllis.arc3d.compiler.ThreadContext;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
@@ -28,7 +31,7 @@ import java.util.StringJoiner;
  * Represents a function declaration (function symbol). If the function is overloaded,
  * it will serve as a singly linked list.
  */
-public final class Function extends Symbol {
+public final class FunctionDecl extends Symbol {
 
     private final Modifiers mModifiers;
     private final List<Variable> mParameters;
@@ -38,26 +41,73 @@ public final class Function extends Symbol {
     private boolean mEntryPoint;
     private int mIntrinsicKind;
 
-    private Function mNextOverload;
+    private FunctionDecl mNextOverload;
     private FunctionDefinition mDefinition;
 
-    public Function(int position, Modifiers modifiers, String name, List<Variable> parameters, Type returnType) {
+    public FunctionDecl(int position, Modifiers modifiers, String name,
+                        List<Variable> parameters, Type returnType,
+                        boolean builtin, boolean entryPoint, int intrinsicKind) {
         super(position, name);
         mModifiers = modifiers;
         mParameters = parameters;
         mReturnType = returnType;
+        mBuiltin = builtin;
+        mEntryPoint = entryPoint;
+        mIntrinsicKind = intrinsicKind;
+    }
+
+    public static FunctionDecl convert(int pos,
+                                       Modifiers modifiers,
+                                       String name,
+                                       List<Variable> parameters,
+                                       Type returnType) {
+        ThreadContext context = ThreadContext.getInstance();
+
+        int intrinsicKind = context.isBuiltin()
+                ? IntrinsicList.findIntrinsicKind(name)
+                : IntrinsicList.kNotIntrinsic;
+        boolean isEntryPoint = "main".equals(name);
+
+        return context.getSymbolTable().insert(
+                new FunctionDecl(
+                        pos,
+                        modifiers,
+                        name,
+                        parameters,
+                        returnType,
+                        context.isBuiltin(),
+                        isEntryPoint,
+                        intrinsicKind
+                )
+        );
     }
 
     @Nonnull
     @Override
     public SymbolKind getKind() {
-        return SymbolKind.FUNCTION;
+        return SymbolKind.FUNCTION_DECL;
     }
 
     @Nonnull
     @Override
     public Type getType() {
         return mReturnType;
+    }
+
+    public boolean isIntrinsic() {
+        return mIntrinsicKind != IntrinsicList.kNotIntrinsic;
+    }
+
+    public FunctionDefinition getDefinition() {
+        return mDefinition;
+    }
+
+    public void setDefinition(FunctionDefinition definition) {
+        mDefinition = definition;
+    }
+
+    public List<Variable> getParameters() {
+        return mParameters;
     }
 
     @Nonnull
@@ -71,14 +121,14 @@ public final class Function extends Symbol {
     }
 
     @Nullable
-    public Function getNextOverload() {
+    public FunctionDecl getNextOverload() {
         return mNextOverload;
     }
 
     /**
      * Sets the previously defined function symbol with the same function name.
      */
-    public void setNextOverload(Function overload) {
+    public void setNextOverload(FunctionDecl overload) {
         assert (overload == null || overload.getName().equals(getName()));
         mNextOverload = overload;
     }

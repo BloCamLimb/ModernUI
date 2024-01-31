@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -137,10 +137,10 @@ public final class SymbolTable {
         String key = symbol.getName();
 
         // If this is a function declaration, we need to keep the overload chain in sync.
-        if (symbol instanceof Function) {
+        if (symbol instanceof FunctionDecl) {
             // If we have a function with the same name...
-            if (find(key) instanceof Function next) {
-                ((Function) symbol).setNextOverload(next);
+            if (find(key) instanceof FunctionDecl next) {
+                ((FunctionDecl) symbol).setNextOverload(next);
                 mTable.put(key, symbol);
                 return symbol;
             }

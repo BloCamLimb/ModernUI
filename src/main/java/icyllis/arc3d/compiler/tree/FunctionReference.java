@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -30,15 +30,15 @@ import javax.annotation.Nonnull;
  */
 public final class FunctionReference extends Expression {
 
-    private final Function mOverloadChain;
+    private final FunctionDecl mOverloadChain;
 
-    private FunctionReference(int position, Function overloadChain, Type type) {
+    private FunctionReference(int position, FunctionDecl overloadChain, Type type) {
         super(position, type);
         mOverloadChain = overloadChain;
     }
 
     @Nonnull
-    public static Expression make(int position, Function overloadChain) {
+    public static Expression make(int position, FunctionDecl overloadChain) {
         ThreadContext context = ThreadContext.getInstance();
         return new FunctionReference(position, overloadChain, context.getTypes().mInvalid);
     }
@@ -53,7 +53,7 @@ public final class FunctionReference extends Expression {
         return visitor.visitFunctionReference(this);
     }
 
-    public Function getOverloadChain() {
+    public FunctionDecl getOverloadChain() {
         return mOverloadChain;
     }
 

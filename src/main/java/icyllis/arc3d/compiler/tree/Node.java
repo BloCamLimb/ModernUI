@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -33,7 +33,7 @@ public abstract class Node {
     public enum ElementKind {
         EXTENSION(Element.class),
         FUNCTION_DEFINITION(FunctionDefinition.class),
-        FUNCTION_PROTOTYPE(Element.class),
+        FUNCTION_PROTOTYPE(FunctionPrototype.class),
         GLOBAL_VAR(Element.class),
         INTERFACE_BLOCK(Element.class),
         MODIFIERS(Element.class),
@@ -52,7 +52,7 @@ public abstract class Node {
 
     public enum SymbolKind {
         ANONYMOUS_FIELD(AnonymousField.class),
-        FUNCTION(Function.class),
+        FUNCTION_DECL(FunctionDecl.class),
         TYPE(Type.class),
         VARIABLE(Variable.class);
 
@@ -69,18 +69,18 @@ public abstract class Node {
 
     public enum StatementKind {
         BLOCK(BlockStatement.class),
-        BREAK(Statement.class),
-        CONTINUE(Statement.class),
-        DISCARD(Statement.class),
+        BREAK(BreakStatement.class),
+        CONTINUE(ContinueStatement.class),
+        DISCARD(DiscardStatement.class),
         DO(Statement.class),
         EMPTY(EmptyStatement.class),
         EXPRESSION(ExpressionStatement.class),
         FOR(ForStatement.class),
         IF(IfStatement.class),
-        RETURN(Statement.class),
+        RETURN(ReturnStatement.class),
         SWITCH(Statement.class),
         SWITCH_CASE(Statement.class),
-        VAR_DECLARATION(VarDeclaration.class);
+        VARIABLE_DECL(VariableDecl.class);
 
         private final Class<? extends Statement> mType;
 

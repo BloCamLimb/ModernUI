@@ -17,30 +17,38 @@
  * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.compiler;
+package icyllis.arc3d.compiler.tree;
 
-import icyllis.arc3d.compiler.tree.Element;
+import icyllis.arc3d.compiler.analysis.NodeVisitor;
 
-import java.util.ArrayList;
+import javax.annotation.Nonnull;
 
 /**
- * Represents a shared library that can be used to compile other files.
+ * A continue statement.
  */
-public final class SharedLibrary {
+public final class ContinueStatement extends Statement {
 
-    SharedLibrary mParent;
-    SymbolTable mSymbols;
-    ArrayList<Element> mElements;
+    private ContinueStatement(int position) {
+        super(position);
+    }
 
-    SharedLibrary() {
+    public static Statement make(int pos) {
+        return new ContinueStatement(pos);
     }
 
     @Override
+    public StatementKind getKind() {
+        return StatementKind.CONTINUE;
+    }
+
+    @Override
+    public boolean accept(@Nonnull NodeVisitor visitor) {
+        return visitor.visitContinue(this);
+    }
+
+    @Nonnull
+    @Override
     public String toString() {
-        return "SharedLibrary{" +
-                "mParent=" + mParent +
-                ", mSymbols=" + mSymbols +
-                ", mElements=" + mElements +
-                '}';
+        return "continue;";
     }
 }

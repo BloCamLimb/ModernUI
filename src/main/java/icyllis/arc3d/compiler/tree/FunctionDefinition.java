@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,6 +19,7 @@
 
 package icyllis.arc3d.compiler.tree;
 
+import icyllis.arc3d.compiler.ThreadContext;
 import icyllis.arc3d.compiler.analysis.NodeVisitor;
 
 import javax.annotation.Nonnull;
@@ -28,12 +29,64 @@ import javax.annotation.Nonnull;
  */
 public final class FunctionDefinition extends Element {
 
-    private final Function mDecl;
-    private final Statement mBody;
+    private final FunctionDecl mFunctionDecl;
+    private final boolean mBuiltin;
+    private Statement mBody;
 
-    private FunctionDefinition(int position, Function decl, Statement body) {
+    private FunctionDefinition(int position, FunctionDecl functionDecl, boolean builtin, Statement body) {
         super(position);
-        mDecl = decl;
+        mFunctionDecl = functionDecl;
+        mBuiltin = builtin;
+        mBody = body;
+    }
+
+    public static FunctionDefinition convert(int pos,
+                                             FunctionDecl functionDecl,
+                                             boolean builtin,
+                                             Statement body) {
+        ThreadContext context = ThreadContext.getInstance();
+        if (functionDecl.isIntrinsic()) {
+            context.error(pos, "Intrinsic function '" +
+                    functionDecl.getName() +
+                    "' should not have a definition");
+            return null;
+        }
+
+        if (body == null || !(body instanceof BlockStatement block) || !block.isScoped()) {
+            context.error(pos, "function body '" + functionDecl +
+                    "' must be a braced block");
+            return null;
+        }
+
+        if (functionDecl.getDefinition() != null) {
+            context.error(pos, "function '" + functionDecl +
+                    "' was already defined");
+            return null;
+        }
+
+        return make(pos, functionDecl, builtin, body);
+    }
+
+    public static FunctionDefinition make(int pos,
+                                          FunctionDecl functionDecl,
+                                          boolean builtin,
+                                          Statement body) {
+        return new FunctionDefinition(pos, functionDecl, builtin, body);
+    }
+
+    public FunctionDecl getFunctionDecl() {
+        return mFunctionDecl;
+    }
+
+    public boolean isBuiltin() {
+        return mBuiltin;
+    }
+
+    public Statement getBody() {
+        return mBody;
+    }
+
+    public void setBody(Statement body) {
         mBody = body;
     }
 
@@ -47,17 +100,9 @@ public final class FunctionDefinition extends Element {
         return false;
     }
 
-    public Function getDecl() {
-        return mDecl;
-    }
-
-    public Statement getBody() {
-        return mBody;
-    }
-
     @Nonnull
     @Override
     public String toString() {
-        return mDecl.toString() + mBody.toString();
+        return mFunctionDecl.toString() + " " + mBody.toString();
     }
 }
