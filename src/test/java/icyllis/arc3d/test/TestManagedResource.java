@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -87,11 +87,11 @@ public class TestManagedResource {
         }
 
         {
-            LibraryLoader libraryLoader = LibraryLoader.getInstance();
-            DSL.start(ExecutionModel.BASE, new CompileOptions(), libraryLoader.getRootLibrary());
+            ModuleLoader moduleLoader = ModuleLoader.getInstance();
+            DSL.start(ExecutionModel.BASE, new CompileOptions(), moduleLoader.getRootModule());
             Type[] types = new Type[3];
-            boolean success = Operator.MUL.determineBinaryType(libraryLoader.getBuiltinTypes().mHalf3x4,
-                    libraryLoader.getBuiltinTypes().mFloat3, types);
+            boolean success = Operator.MUL.determineBinaryType(moduleLoader.getBuiltinTypes().mHalf3x4,
+                    moduleLoader.getBuiltinTypes().mFloat3, types);
             pw.println("Operator types: " + success + ", " + Arrays.toString(types));
             DSL.end();
         }

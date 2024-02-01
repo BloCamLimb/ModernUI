@@ -26,7 +26,7 @@ import javax.annotation.Nonnull;
 /**
  * A function prototype (a function declaration as a top-level element)
  */
-public final class FunctionPrototype extends Element {
+public final class FunctionPrototype extends TopLevelElement {
 
     private final FunctionDecl mFunctionDecl;
     private final boolean mBuiltin;

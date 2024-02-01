@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -26,7 +26,7 @@ public final class DSL {
     /**
      * Starts the DSL on the current thread for compiling programs.
      */
-    public static void start(ExecutionModel model, CompileOptions options, SharedLibrary parent) {
+    public static void start(ExecutionModel model, CompileOptions options, ModuleUnit parent) {
         if (ThreadContext.isActive()) {
             throw new IllegalStateException("DSL is already started");
         }
@@ -34,9 +34,9 @@ public final class DSL {
     }
 
     /**
-     * Starts the DSL on the current thread for compiling shared libraries (include files).
+     * Starts the DSL on the current thread for compiling modules (include files).
      */
-    public static void startLibrary(ExecutionModel model, CompileOptions options, SharedLibrary parent) {
+    public static void startModule(ExecutionModel model, CompileOptions options, ModuleUnit parent) {
         if (ThreadContext.isActive()) {
             throw new IllegalStateException("DSL is already started");
         }

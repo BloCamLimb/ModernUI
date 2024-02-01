@@ -26,14 +26,18 @@ public class TestCompiler {
     public static void main(String[] args) {
         var compiler = new ShaderCompiler();
 
-        SharedLibrary lib = compiler.parseLibrary(
+        ModuleUnit parsed = compiler.parseModule(
                 ExecutionModel.BASE,
                 """
+                float rr(vec2 a, vec2 b) {
+                    return 1;
+                }
+                float sa(float a) {return a;}
                 float rand(vec2 n) {
-                    return fract(sin(dot(n, vec2(12.9898,12.1414))) * 83758.5453);
+                    return sa(sa(rr(n, vec2(12.9898,12.1414))) * 83758.5453);
                 }
                 void main() {
-                    vec2 pos = f_Position;
+                    vec2 pos = vec2(2);
                     float dist = abs(pos.y-sin(pos.x*10.0-u_Color.x*5.0)*0.1-cos(pos.x*5.0)*0.05);
                     dist = pow(0.1/dist,0.8);
                     vec4 col = vec4(mix(vec3(0.2,0.85,0.95),vec3(0.85,0.5,0.75),pos.x*0.5+0.5),1.0);
@@ -42,10 +46,10 @@ public class TestCompiler {
                     FragColor0 = col;
                 }
                 """,
-                LibraryLoader.getInstance().getRootLibrary()
+                ModuleLoader.getInstance().getRootModule()
         );
 
         System.out.println(compiler.getLogMessage());
-        System.out.println(lib);
+        System.out.println(parsed);
     }
 }

@@ -17,30 +17,19 @@
  * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.compiler;
-
-import icyllis.arc3d.compiler.tree.Element;
-
-import java.util.ArrayList;
+package icyllis.arc3d.compiler.tree;
 
 /**
- * Represents a shared library that can be used to compile other files.
+ * Represents a top-level element (e.g. function or global variable) in a program.
  */
-public final class SharedLibrary {
+public abstract class TopLevelElement extends Node {
 
-    SharedLibrary mParent;
-    SymbolTable mSymbols;
-    ArrayList<Element> mElements;
-
-    SharedLibrary() {
+    protected TopLevelElement(int position) {
+        super(position);
     }
 
-    @Override
-    public String toString() {
-        return "SharedLibrary{" +
-                "mParent=" + mParent +
-                ", mSymbols=" + mSymbols +
-                ", mElements=" + mElements +
-                '}';
-    }
+    /**
+     * @see Node.ElementKind
+     */
+    public abstract ElementKind getKind();
 }

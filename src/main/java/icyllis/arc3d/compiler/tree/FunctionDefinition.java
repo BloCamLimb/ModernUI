@@ -27,7 +27,7 @@ import javax.annotation.Nonnull;
 /**
  * A function definition (a function declaration plus an associated block of code).
  */
-public final class FunctionDefinition extends Element {
+public final class FunctionDefinition extends TopLevelElement {
 
     private final FunctionDecl mFunctionDecl;
     private final boolean mBuiltin;

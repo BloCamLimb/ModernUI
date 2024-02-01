@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -25,27 +25,27 @@ import java.util.*;
 /**
  * A fully-resolved intermediate representation of a program (shader stage), ready for code generation.
  */
-public final class Program implements Iterable<Element> {
+public final class TranslationUnit implements Iterable<TopLevelElement> {
 
-    private final ArrayList<Element> mUniqueElements;
-    private final ArrayList<Element> mSharedElements;
+    private final ArrayList<TopLevelElement> mUniqueElements;
+    private final ArrayList<TopLevelElement> mSharedElements;
 
-    public Program(ArrayList<Element> uniqueElements,
-                   ArrayList<Element> sharedElements) {
+    public TranslationUnit(ArrayList<TopLevelElement> uniqueElements,
+                           ArrayList<TopLevelElement> sharedElements) {
         mUniqueElements = uniqueElements;
         mSharedElements = sharedElements;
     }
 
     @Nonnull
     @Override
-    public Iterator<Element> iterator() {
+    public Iterator<TopLevelElement> iterator() {
         return new ElementIterator();
     }
 
     // shared first, then unique
-    private class ElementIterator implements Iterator<Element> {
+    private class ElementIterator implements Iterator<TopLevelElement> {
 
-        private Iterator<Element> mCurrIter = mSharedElements.iterator();
+        private Iterator<TopLevelElement> mCurrIter = mSharedElements.iterator();
         private boolean mSharedEnded = false;
 
         @Override
@@ -55,7 +55,7 @@ public final class Program implements Iterable<Element> {
         }
 
         @Override
-        public Element next() {
+        public TopLevelElement next() {
             forward();
             return mCurrIter.next();
         }

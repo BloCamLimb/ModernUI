@@ -45,10 +45,10 @@ public final class ThreadContext {
     // compilation
     private SymbolTable mSymbolTable;
     // The element map from the parent module
-    private final List<Element> mParentElements;
+    private final List<TopLevelElement> mParentElements;
 
-    private final ArrayList<Element> mUniqueElements = new ArrayList<>();
-    private final ArrayList<Element> mSharedElements = new ArrayList<>();
+    private final ArrayList<TopLevelElement> mUniqueElements = new ArrayList<>();
+    private final ArrayList<TopLevelElement> mSharedElements = new ArrayList<>();
 
     // The Context holds a pointer to our error handler.
     ErrorHandler mErrorHandler = new ErrorHandler() {
@@ -56,19 +56,23 @@ public final class ThreadContext {
         protected void handleError(int start, int end, String msg) {
             throw new RuntimeException("error: " + msg);
         }
+
+        @Override
+        protected void handleWarning(int start, int end, String msg) {
+        }
     };
 
     /**
      * @param isBuiltin true if we are processing include files
      */
     ThreadContext(ExecutionModel model, CompileOptions options,
-                  SharedLibrary parent, boolean isBuiltin) {
+                  ModuleUnit parent, boolean isBuiltin) {
         mModel = Objects.requireNonNull(model);
         mOptions = Objects.requireNonNull(options);
         Objects.requireNonNull(parent);
         mIsBuiltin = isBuiltin;
 
-        mTypes = LibraryLoader.getInstance().getBuiltinTypes();
+        mTypes = ModuleLoader.getInstance().getBuiltinTypes();
 
         mSymbolTable = parent.mSymbols.enterClass(isBuiltin);
         mParentElements = Collections.unmodifiableList(parent.mElements);
@@ -143,21 +147,21 @@ public final class ThreadContext {
      * Returns the elements of the parent module, unmodifiable.
      */
     @UnmodifiableView
-    public List<Element> getParentElements() {
+    public List<TopLevelElement> getParentElements() {
         return mParentElements;
     }
 
     /**
      * Returns a list for adding unique elements in the target module.
      */
-    public ArrayList<Element> getUniqueElements() {
+    public ArrayList<TopLevelElement> getUniqueElements() {
         return mUniqueElements;
     }
 
     /**
      * Returns a list for adding used elements in the target module shared from {@link #getParentElements()}.
      */
-    public ArrayList<Element> getSharedElements() {
+    public ArrayList<TopLevelElement> getSharedElements() {
         return mSharedElements;
     }
 
@@ -167,6 +171,14 @@ public final class ThreadContext {
 
     public void error(int start, int end, String msg) {
         mErrorHandler.error(start, end, msg);
+    }
+
+    public void warning(int position, String msg) {
+        mErrorHandler.warning(position, msg);
+    }
+
+    public void warning(int start, int end, String msg) {
+        mErrorHandler.warning(start, end, msg);
     }
 
     /**

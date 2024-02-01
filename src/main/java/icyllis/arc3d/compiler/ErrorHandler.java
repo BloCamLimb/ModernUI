@@ -80,7 +80,40 @@ public abstract class ErrorHandler {
     }
 
     /**
+     * Reports a warning.
+     *
+     * @param pos see {@link Position}
+     * @param msg the warning message to report
+     */
+    public final void warning(int pos, String msg) {
+        warning(Position.getStartOffset(pos), Position.getEndOffset(pos), msg);
+    }
+
+    /**
+     * Reports a warning.
+     *
+     * @param start the start offset in the source string, or -1
+     * @param end   the end offset in the source string, or -1
+     * @param msg   the warning message to report
+     */
+    public final void warning(int start, int end, String msg) {
+        assert (start == -1 && end == -1)
+                || (start >= 0 && start <= end && end <= Position.MAX_OFFSET);
+        if (msg.contains(ShaderCompiler.POISON_TAG)) {
+            // Don't report errors on poison values.
+            return;
+        }
+        mWarnings++;
+        handleWarning(start, end, msg);
+    }
+
+    /**
      * Called when an error is reported.
      */
     protected abstract void handleError(int start, int end, String msg);
+
+    /**
+     * Called when a warning is reported.
+     */
+    protected abstract void handleWarning(int start, int end, String msg);
 }

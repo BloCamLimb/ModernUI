@@ -57,7 +57,7 @@ public class Parser {
     }
 
     @Nullable
-    public Program parse(SharedLibrary parent) {
+    public TranslationUnit parse(ModuleUnit parent) {
         Objects.requireNonNull(parent);
         ErrorHandler errorHandler = mCompiler.getErrorHandler();
         DSL.start(mModel, mOptions, parent);
@@ -70,16 +70,16 @@ public class Parser {
     }
 
     @Nullable
-    public SharedLibrary parseLibrary(SharedLibrary parent) {
+    public ModuleUnit parseModule(ModuleUnit parent) {
         Objects.requireNonNull(parent);
         ErrorHandler errorHandler = mCompiler.getErrorHandler();
-        DSL.startLibrary(mModel, mOptions, parent);
+        DSL.startModule(mModel, mOptions, parent);
         DSL.setErrorHandler(errorHandler);
         errorHandler.setSource(mSource);
         TranslationUnit();
-        final SharedLibrary result;
+        final ModuleUnit result;
         if (DSL.getErrorHandler().getNumErrors() == 0) {
-            result = new SharedLibrary();
+            result = new ModuleUnit();
             result.mParent = parent;
             result.mSymbols = ThreadContext.getInstance().getSymbolTable();
             result.mElements = ThreadContext.getInstance().getUniqueElements();
@@ -961,15 +961,67 @@ public class Parser {
         for (;;) {
             long t = peek();
             switch (Token.kind(t)) {
-                case Lexer.TK_LBRACKET:
-                case Lexer.TK_DOT:
-                case Lexer.TK_LPAREN:
-                case Lexer.TK_PLUSPLUS:
-                case Lexer.TK_MINUSMINUS:
-                    //TODO
-                    break;
-                default:
+                case Lexer.TK_LBRACKET -> {
+                    nextToken();
+                    if (checkNext(Lexer.TK_RBRACKET)) {
+                        error(t, "missing index in '[]'");
+                        return Poison.make(rangeFrom(result.mPosition));
+                    }
+                    Expression index = Expression();
+                    if (index == null) {
+                        return null;
+                    }
+                    expect(Lexer.TK_RBRACKET, "']' to complete array access expression");
+                    int pos = rangeFrom(result.mPosition);
+                    result = expressionOrPoison(pos,
+                            IndexExpression.convert(pos, result, index));
+                }
+                case Lexer.TK_DOT -> {
+                    nextToken();
+                    long name = expect(Lexer.TK_IDENTIFIER, "identifier");
+                    String text = text(name);
+                    int pos = rangeFrom(result.mPosition);
+                    if (result.getType().isVector() || result.getType().isScalar()) {
+                        // swizzle mask
+                        int maskPos = rangeFrom(name);
+                        result = expressionOrPoison(pos,
+                                Swizzle.convert(pos, maskPos, result, text));
+                    } else {
+                        // field access, method call
+                        result = expressionOrPoison(pos,
+                                FieldExpression.convert(pos, result, text));
+                    }
+                }
+                case Lexer.TK_LPAREN -> {
+                    // function call
+                    nextToken();
+                    List<Expression> args = new ArrayList<>();
+                    if (!peek(Lexer.TK_RPAREN)) {
+                        do {
+                            Expression expr = AssignmentExpression();
+                            if (expr == null) {
+                                return null;
+                            }
+                            args.add(expr);
+                        } while (checkNext(Lexer.TK_COMMA));
+                    }
+                    expect(Lexer.TK_RPAREN, "')' to complete function call");
+                    int pos = rangeFrom(result.mPosition);
+                    result = expressionOrPoison(pos,
+                            FunctionCall.convert(pos, result, args));
+                }
+                case Lexer.TK_PLUSPLUS, Lexer.TK_MINUSMINUS -> {
+                    nextToken();
+                    Operator op = Token.kind(t) == Lexer.TK_PLUSPLUS
+                            ? Operator.INC
+                            : Operator.DEC;
+                    int pos = rangeFrom(result.mPosition);
+                    result = expressionOrPoison(pos,
+                            PostfixExpression.convert(pos, result, op));
+                }
+                default -> {
                     return result;
+                }
             }
         }
     }
@@ -1253,7 +1305,7 @@ public class Parser {
                 if (size == null) {
                     return null;
                 }
-                expect(Lexer.TK_RBRACKET, "']'");
+                expect(Lexer.TK_RBRACKET, "']' to complete array specifier");
                 type = ArrayType(type, size, rangeFrom(pos));
             }
         }
@@ -1306,8 +1358,8 @@ public class Parser {
         );
 
         for (;;) {
-            if (checkNext(Lexer.TK_COMMA)) {
-                expect(Lexer.TK_SEMICOLON, "';'");
+            if (!checkNext(Lexer.TK_COMMA)) {
+                expect(Lexer.TK_SEMICOLON, "';' to complete variable declaration");
                 break;
             }
             name = expectIdentifier();
@@ -1373,7 +1425,7 @@ public class Parser {
         if (expr == null) {
             return null;
         }
-        expect(Lexer.TK_SEMICOLON, "';'");
+        expect(Lexer.TK_SEMICOLON, "';' to complete expression statement");
         int pos = expr.mPosition;
         return statementOrEmpty(pos, ExpressionStatement.convert(expr));
     }
@@ -1411,17 +1463,17 @@ public class Parser {
         return switch (Token.kind(peek())) {
             case Lexer.TK_BREAK -> {
                 long start = nextToken();
-                expect(Lexer.TK_SEMICOLON, "';'");
+                expect(Lexer.TK_SEMICOLON, "';' after 'break'");
                 yield BreakStatement.make(rangeFrom(start));
             }
             case Lexer.TK_CONTINUE -> {
                 long start = nextToken();
-                expect(Lexer.TK_SEMICOLON, "';'");
+                expect(Lexer.TK_SEMICOLON, "';' after 'continue'");
                 yield ContinueStatement.make(rangeFrom(start));
             }
             case Lexer.TK_DISCARD -> {
                 long start = nextToken();
-                expect(Lexer.TK_SEMICOLON, "';'");
+                expect(Lexer.TK_SEMICOLON, "';' after 'discard'");
                 int pos = rangeFrom(start);
                 yield statementOrEmpty(pos, DiscardStatement.convert(pos));
             }
@@ -1434,7 +1486,7 @@ public class Parser {
                         yield null;
                     }
                 }
-                expect(Lexer.TK_SEMICOLON, "';'");
+                expect(Lexer.TK_SEMICOLON, "';' to complete return expression");
                 yield ReturnStatement.make(rangeFrom(start), expression);
             }
             case Lexer.TK_IF -> IfStatement();
@@ -1525,7 +1577,7 @@ public class Parser {
                 }
             }
 
-            expect(Lexer.TK_SEMICOLON, "';'");
+            expect(Lexer.TK_SEMICOLON, "';' to complete condition statement");
 
             Expression step = null;
             if (!peek(Lexer.TK_SEMICOLON)) {
@@ -1535,7 +1587,7 @@ public class Parser {
                 }
             }
 
-            expect(Lexer.TK_RPAREN, "')'");
+            expect(Lexer.TK_RPAREN, "')' to complete 'for' statement");
 
             Statement statement = Statement();
             if (statement == null) {
