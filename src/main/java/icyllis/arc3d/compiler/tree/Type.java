@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -117,25 +117,25 @@ public class Type extends Symbol {
     /**
      * Create a vector type.
      *
-     * @param component a scalar type
+     * @param componentType a scalar type
      */
     @Nonnull
     public static Type makeVectorType(String name, String desc,
-                                      Type component, int rows) {
-        assert (component == component.resolve());
-        return new VectorType(name, desc, component, rows);
+                                      Type componentType, int rows) {
+        assert (componentType == componentType.resolve());
+        return new VectorType(name, desc, componentType, rows);
     }
 
     /**
      * Create a matrix type.
      *
-     * @param component a scalar type
+     * @param vectorType a vector type
      */
     @Nonnull
     public static Type makeMatrixType(String name, String desc,
-                                      Type component, int cols, int rows) {
-        assert (component == component.resolve());
-        return new MatrixType(name, desc, component, cols, rows);
+                                      Type vectorType, int cols) {
+        assert (vectorType == vectorType.resolve());
+        return new MatrixType(name, desc, vectorType, cols);
     }
 
     /**
@@ -297,7 +297,8 @@ public class Type extends Symbol {
     }
 
     /**
-     * For arrays, returns the base type. For all other types, returns the type itself.
+     * For arrays, returns the base type. For matrices, returns the column vector type.
+     * For vectors, returns the scalar type. For all other types, returns the type itself.
      */
     @Nonnull
     public Type getElementType() {
@@ -435,8 +436,8 @@ public class Type extends Symbol {
      * Returns true if an instance of this type can be freely coerced (implicitly converted) to
      * another type.
      */
-    public final boolean canCoerceTo(Type other) {
-        return CoercionCost.accept(getCoercionCost(other));
+    public final boolean canCoerceTo(Type other, boolean allowNarrowing) {
+        return CoercionCost.accept(getCoercionCost(other), allowNarrowing);
     }
 
     /**
@@ -513,7 +514,7 @@ public class Type extends Symbol {
         }
 
         int pos = expr.mPosition;
-        if (!CoercionCost.accept(expr.getCoercionCost(this))) {
+        if (!CoercionCost.accept(expr.getCoercionCost(this), false)) {
             ThreadContext.getInstance().error(pos, "expected '" + getName() + "', but found '" +
                     expr.getType().getName() + "'");
             return null;
@@ -893,8 +894,8 @@ public class Type extends Symbol {
 
         ///// METHODS
 
-        public static boolean accept(long cost) {
-            return (cost & SATURATE) == 0;
+        public static boolean accept(long cost, boolean allowNarrowing) {
+            return (cost & SATURATE) == 0 && (allowNarrowing || (cost >> 32) == 0);
         }
 
         ///// OPERATORS
@@ -1219,18 +1220,24 @@ public class Type extends Symbol {
         private final ScalarType mComponentType;
         private final byte mRows;
 
-        VectorType(String name, String abbr, Type type, int rows) {
+        VectorType(String name, String abbr, Type componentType, int rows) {
             super(name, abbr, kVector_TypeKind);
             assert (rows >= 2 && rows <= 4);
-            assert (abbr.equals(type.getDesc() + rows));
-            assert (name.equals(type.getName() + rows));
-            mComponentType = (ScalarType) type;
+            assert (abbr.equals(componentType.getDesc() + rows));
+            assert (name.equals(componentType.getName() + rows));
+            mComponentType = (ScalarType) componentType;
             mRows = (byte) rows;
         }
 
         @Override
         public boolean isVector() {
             return true;
+        }
+
+        @Nonnull
+        @Override
+        public Type getElementType() {
+            return mComponentType;
         }
 
         @Nonnull
@@ -1257,19 +1264,19 @@ public class Type extends Symbol {
 
     public static final class MatrixType extends Type {
 
-        private final ScalarType mComponentType;
+        private final VectorType mVectorType;
         private final byte mCols;
-        private final byte mRows;
 
-        MatrixType(String name, String abbr, Type type, int cols, int rows) {
+        MatrixType(String name, String abbr, Type vectorType, int cols) {
             super(name, abbr, kMatrix_TypeKind);
-            assert (rows >= 2 && rows <= 4);
+            assert (vectorType.isVector());
             assert (cols >= 2 && cols <= 4);
-            assert (abbr.equals(type.getDesc() + cols + rows));
-            assert (name.equals(type.getName() + cols + "x" + rows));
-            mComponentType = (ScalarType) type;
+            int rows = vectorType.getRows();
+            Type componentType = vectorType.getComponentType();
+            assert (abbr.equals(componentType.getDesc() + cols + rows));
+            assert (name.equals(componentType.getName() + cols + "x" + rows));
+            mVectorType = (VectorType) vectorType;
             mCols = (byte) cols;
-            mRows = (byte) rows;
         }
 
         @Override
@@ -1279,8 +1286,14 @@ public class Type extends Symbol {
 
         @Nonnull
         @Override
+        public Type getElementType() {
+            return mVectorType;
+        }
+
+        @Nonnull
+        @Override
         public ScalarType getComponentType() {
-            return mComponentType;
+            return mVectorType.getComponentType();
         }
 
         @Override
@@ -1290,12 +1303,12 @@ public class Type extends Symbol {
 
         @Override
         public int getRows() {
-            return mRows;
+            return mVectorType.getRows();
         }
 
         @Override
         public int getScalarWidth() {
-            return mComponentType.getScalarWidth();
+            return mVectorType.getScalarWidth();
         }
     }
 

@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -51,7 +51,7 @@ public final class ConstructorArray extends ConstructorCall {
             Expression arg = arguments[0];
             Type argType = arg.getType();
 
-            if (argType.isArray() && argType.canCoerceTo(type)) {
+            if (argType.isArray() && argType.canCoerceTo(type, false)) {
                 return ConstructorArrayCast.make(position, type, arg);
             }
         }

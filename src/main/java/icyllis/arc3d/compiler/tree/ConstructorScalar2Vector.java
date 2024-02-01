@@ -24,7 +24,7 @@ import icyllis.arc3d.compiler.ConstantFolder;
 import javax.annotation.Nonnull;
 
 /**
- * Represents the construction of a vector splat, such as `float3(n)`.
+ * Represents the construction of a vector splat (broadcast), such as `float3(n)`.
  * <p>
  * These always contain exactly 1 scalar.
  */

@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -23,6 +23,8 @@ import icyllis.arc3d.compiler.ConstantFolder;
 import icyllis.arc3d.compiler.ThreadContext;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.List;
 
 /**
  * Represents the construction of a scalar cast, such as `float(intVariable)`.
@@ -34,6 +36,41 @@ public final class ConstructorScalarCast extends ConstructorCall {
     private ConstructorScalarCast(int position, Type type, Expression... arguments) {
         super(position, type, arguments);
         assert arguments.length == 1;
+    }
+
+    @Nullable
+    public static Expression convert(int pos,
+                                     Type type,
+                                     List<Expression> args) {
+        assert type.isScalar();
+
+        if (args.size() != 1) {
+            ThreadContext.getInstance().error(pos, "invalid arguments to '" + type +
+                    "' constructor, (expected exactly 1 argument, but found " +
+                    args.size() + ")");
+            return null;
+        }
+
+        Type argType = args.get(0).getType();
+        if (!argType.isScalar()) {
+            //TODO Casting a vector-type into its scalar component type is treated as a slice in GLSL.
+            String swizzleHint = "";
+            if (argType.getComponentType().matches(type)) {
+                if (argType.isVector()) {
+                    swizzleHint = "; use '.x' instead";
+                } else if (argType.isMatrix()) {
+                    swizzleHint = "; use '[0][0]' instead";
+                }
+            }
+
+            ThreadContext.getInstance().error(pos,
+                    "'" + argType + "' is not a valid parameter to '" +
+                            type + "' constructor" + swizzleHint);
+            return null;
+        }
+        //TODO check range
+
+        return make(pos, type, args.get(0));
     }
 
     // Casts a scalar expression. Casts that can be evaluated at compile-time will do so

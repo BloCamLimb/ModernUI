@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -357,7 +357,7 @@ public enum Operator {
                 out[0] = left;
                 out[1] = left;
                 out[2] = left;
-                return right.canCoerceTo(left);
+                return right.canCoerceTo(left, false);
             }
             case EQ,            // left == right
                  NE -> {        // left != right
@@ -367,14 +367,14 @@ public enum Operator {
                 long rightToLeft = right.getCoercionCost(left),
                      leftToRight = left.getCoercionCost(right);
                 if (Type.CoercionCost.compare(rightToLeft, leftToRight) < 0) {
-                    if (Type.CoercionCost.accept(rightToLeft)) {
+                    if (Type.CoercionCost.accept(rightToLeft, false)) {
                         out[0] = left;
                         out[1] = left;
                         out[2] = context.getTypes().mBool;
                         return true;
                     }
                 } else {
-                    if (Type.CoercionCost.accept(leftToRight)) {
+                    if (Type.CoercionCost.accept(leftToRight, false)) {
                         out[0] = right;
                         out[1] = right;
                         out[2] = context.getTypes().mBool;
@@ -389,8 +389,8 @@ public enum Operator {
                 out[0] = context.getTypes().mBool;
                 out[1] = context.getTypes().mBool;
                 out[2] = context.getTypes().mBool;
-                return left.canCoerceTo(context.getTypes().mBool) &&
-                       right.canCoerceTo(context.getTypes().mBool);
+                return left.canCoerceTo(context.getTypes().mBool, false) &&
+                       right.canCoerceTo(context.getTypes().mBool, false);
             }
             case COMMA -> {         // left, right
                 if (left.isOpaque() || right.isOpaque()) {
@@ -483,14 +483,14 @@ public enum Operator {
                 }
             }
             if (Type.CoercionCost.compare(rightToLeftCost, leftToRightCost) < 0) {
-                if (Type.CoercionCost.accept(rightToLeftCost)) {
+                if (Type.CoercionCost.accept(rightToLeftCost, false)) {
                     // Right-to-Left conversion is possible and cheaper
                     out[0] = left;
                     out[1] = left;
                     out[2] = left;
                 } else return false;
             } else {
-                if (Type.CoercionCost.accept(leftToRightCost)) {
+                if (Type.CoercionCost.accept(leftToRightCost, false)) {
                     // Left-to-Right conversion is possible (and at least as cheap as Right-to-Left)
                     out[0] = right;
                     out[1] = right;

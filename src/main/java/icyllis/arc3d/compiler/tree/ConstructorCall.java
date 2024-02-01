@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,11 +20,12 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.Operator;
+import icyllis.arc3d.compiler.ThreadContext;
 import icyllis.arc3d.compiler.analysis.NodeVisitor;
 
 import javax.annotation.Nonnull;
-import java.util.OptionalDouble;
-import java.util.StringJoiner;
+import javax.annotation.Nullable;
+import java.util.*;
 
 /**
  * Base class representing a constructor call: type_name( args, ... ).
@@ -40,6 +41,33 @@ public abstract class ConstructorCall extends Expression {
         super(position, type);
         assert (arguments.length != 0);
         mArguments = arguments;
+    }
+
+    @Nullable
+    public static Expression convert(int pos, Type type, List<Expression> args) {
+        if (args.size() == 1 &&
+                args.get(0).getType().matches(type) &&
+                !type.getElementType().isOpaque()) {
+            // Don't generate redundant casts; if the expression is already of the correct type, just
+            // return it as-is.
+            Expression expr = args.get(0);
+            expr.mPosition = pos;
+            return expr;
+        }
+        if (type.isScalar()) {
+            return ConstructorScalarCast.convert(pos, type, args);
+        }
+        if (type.isVector() || type.isMatrix()) {
+            return ConstructorCompound.convert(pos, type, args);
+        }
+        if (type.isArray() && type.getArraySize() > 0) {
+            return ConstructorArray.convert(pos, type, args);
+        }
+        if (type.isStruct() && type.getFields().length > 0) {
+            return ConstructorStruct.convert(pos, type, args);
+        }
+        ThreadContext.getInstance().error(pos, "cannot construct '" + type + "'");
+        return null;
     }
 
     @Override

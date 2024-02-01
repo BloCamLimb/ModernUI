@@ -37,8 +37,8 @@ import icyllis.arc3d.compiler.tree.*;
  */
 public abstract class NodeVisitor {
 
-    public final boolean visit(Program program) {
-        for (Element e : program) {
+    public final boolean visit(TranslationUnit translationUnit) {
+        for (TopLevelElement e : translationUnit) {
             if (visitElement(e)) {
                 return true;
             }
@@ -63,6 +63,10 @@ public abstract class NodeVisitor {
     }
 
     public boolean visitFieldAccess(FieldExpression expr) {
+        return visitAnyExpression(expr);
+    }
+
+    public boolean visitIndex(IndexExpression expr) {
         return visitAnyExpression(expr);
     }
 
@@ -147,7 +151,7 @@ public abstract class NodeVisitor {
         };
     }
 
-    public boolean visitElement(Element e) {
+    public boolean visitElement(TopLevelElement e) {
         return false;
     }
 }

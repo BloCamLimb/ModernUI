@@ -27,21 +27,21 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 /**
- * Thread-safe class that loads shader libs.
+ * Thread-safe class that loads shader modules.
  */
-public class LibraryLoader {
+public class ModuleLoader {
 
-    private static final LibraryLoader sInstance = new LibraryLoader();
+    private static final ModuleLoader sInstance = new ModuleLoader();
 
     private final BuiltinTypes mBuiltinTypes = new BuiltinTypes();
 
-    private final SharedLibrary mRootLibrary;
+    private final ModuleUnit mRootModule;
 
     @GuardedBy("mRootModule")
-    private volatile SharedLibrary mCommonLibrary;
+    private volatile ModuleUnit mCommonModule;
 
-    private LibraryLoader() {
-        mRootLibrary = new SharedLibrary();
+    private ModuleLoader() {
+        mRootModule = new ModuleUnit();
 
         SymbolTable symbols = new SymbolTable();
         BuiltinTypes types = mBuiltinTypes;
@@ -242,11 +242,11 @@ public class LibraryLoader {
         symbols.insert(types.mF32Mat4x3);
         symbols.insert(types.mF32Mat4x4);
 
-        mRootLibrary.mSymbols = symbols;
-        mRootLibrary.mElements = new ArrayList<>();
+        mRootModule.mSymbols = symbols;
+        mRootModule.mElements = new ArrayList<>();
     }
 
-    public static LibraryLoader getInstance() {
+    public static ModuleLoader getInstance() {
         return sInstance;
     }
 
@@ -254,24 +254,24 @@ public class LibraryLoader {
         return mBuiltinTypes;
     }
 
-    public SharedLibrary getRootLibrary() {
-        return mRootLibrary;
+    public ModuleUnit getRootModule() {
+        return mRootModule;
     }
 
     @Nonnull
-    private SharedLibrary loadLibrary(ShaderCompiler compiler,
-                                      ExecutionModel kind,
-                                      String source,
-                                      SharedLibrary parent) {
-        SharedLibrary library = compiler.parseLibrary(kind, source, parent);
-        if (library == null) {
+    private ModuleUnit loadModule(ShaderCompiler compiler,
+                                  ExecutionModel kind,
+                                  String source,
+                                  ModuleUnit parent) {
+        ModuleUnit module = compiler.parseModule(kind, source, parent);
+        if (module == null) {
             System.err.print(compiler.getLogMessage());
             throw new RuntimeException("Failed to load module");
         }
         // We can eliminate FunctionPrototypes without changing the meaning of the module; the function
         // declaration is still safely in the symbol table. This only impacts our ability to recreate
         // the input verbatim, which we don't care about at runtime.
-        library.mElements.removeIf(element -> switch (element.getKind()) {
+        module.mElements.removeIf(element -> switch (element.getKind()) {
             case FUNCTION_DEFINITION,
                     GLOBAL_VAR,
                     INTERFACE_BLOCK ->
@@ -283,13 +283,13 @@ public class LibraryLoader {
                     true;
             default -> throw new IllegalStateException("Unsupported element: " + element);
         });
-        library.mElements.trimToSize();
-        return library;
+        module.mElements.trimToSize();
+        return module;
     }
 
     @Nonnull
-    public String loadLibrarySource(String name) {
-        final InputStream in = LibraryLoader.class
+    public String loadModuleSource(String name) {
+        final InputStream in = ModuleLoader.class
                 .getResourceAsStream("/assets/arc3d/shaders/" + name);
         if (in == null) {
             throw new RuntimeException("Failed to load module: " + name);
@@ -302,18 +302,18 @@ public class LibraryLoader {
     }
 
     @Nonnull
-    public SharedLibrary loadCommonLibrary(ShaderCompiler compiler) {
-        if (mCommonLibrary != null) {
-            return mCommonLibrary;
+    public ModuleUnit loadCommonModule(ShaderCompiler compiler) {
+        if (mCommonModule != null) {
+            return mCommonModule;
         }
-        synchronized (mRootLibrary) {
-            if (mCommonLibrary == null) {
-                mCommonLibrary = loadLibrary(compiler,
+        synchronized (mRootModule) {
+            if (mCommonModule == null) {
+                mCommonModule = loadModule(compiler,
                         ExecutionModel.FRAGMENT,
-                        loadLibrarySource("slang_common.txt"),
-                        mRootLibrary);
+                        loadModuleSource("slang_common.txt"),
+                        mRootModule);
             }
         }
-        return mCommonLibrary;
+        return mCommonModule;
     }
 }

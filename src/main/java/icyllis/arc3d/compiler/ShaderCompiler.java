@@ -21,7 +21,7 @@ package icyllis.arc3d.compiler;
 
 import icyllis.arc3d.compiler.codegen.CodeGenerator;
 import icyllis.arc3d.compiler.tree.Node;
-import icyllis.arc3d.compiler.tree.Program;
+import icyllis.arc3d.compiler.tree.TranslationUnit;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -30,7 +30,7 @@ import java.util.Objects;
 /**
  * Main compiler entry point. The compiler parses the source text directly into a tree of
  * {@link Node Nodes}, while performing basic optimizations such as constant-folding and
- * dead-code elimination. Then the {@link Program} is passed into a {@link CodeGenerator}
+ * dead-code elimination. Then the {@link TranslationUnit} is passed into a {@link CodeGenerator}
  * to produce compiled output.
  */
 public class ShaderCompiler {
@@ -40,9 +40,7 @@ public class ShaderCompiler {
 
     private final StringBuilder mLogBuilder = new StringBuilder();
     private final ErrorHandler mErrorHandler = new ErrorHandler() {
-        @Override
-        protected void handleError(int start, int end, String msg) {
-            mLogBuilder.append("error: ");
+        private void log(int start, int end, String msg) {
             boolean showLocation = false;
             String source = getSource();
             if (start != -1) {
@@ -97,6 +95,18 @@ public class ShaderCompiler {
                 mLogBuilder.append('\n');
             }
         }
+
+        @Override
+        protected void handleError(int start, int end, String msg) {
+            mLogBuilder.append("error: ");
+            log(start, end, msg);
+        }
+
+        @Override
+        protected void handleWarning(int start, int end, String msg) {
+            mLogBuilder.append("warning: ");
+            log(start, end, msg);
+        }
     };
 
     final Inliner mInliner;
@@ -115,10 +125,10 @@ public class ShaderCompiler {
      * @return the program, or null if there's an error
      */
     @Nullable
-    public Program parse(ExecutionModel kind,
-                         CompileOptions options,
-                         String source,
-                         SharedLibrary parent) {
+    public TranslationUnit parse(ExecutionModel kind,
+                                 CompileOptions options,
+                                 String source,
+                                 ModuleUnit parent) {
         Objects.requireNonNull(kind);
         Objects.requireNonNull(parent);
         Objects.requireNonNull(source);
@@ -137,16 +147,16 @@ public class ShaderCompiler {
      * @return the module, or null if there's an error
      */
     @Nullable
-    public SharedLibrary parseLibrary(ExecutionModel kind,
-                                      String source,
-                                      SharedLibrary parent) {
+    public ModuleUnit parseModule(ExecutionModel kind,
+                                  String source,
+                                  ModuleUnit parent) {
         Objects.requireNonNull(kind);
         Objects.requireNonNull(parent);
         Objects.requireNonNull(source);
         resetLog(); // make a clean start
         Parser parser = new Parser(this, kind,
                 new CompileOptions(), source);
-        return parser.parseLibrary(parent);
+        return parser.parseModule(parent);
     }
 
     /**

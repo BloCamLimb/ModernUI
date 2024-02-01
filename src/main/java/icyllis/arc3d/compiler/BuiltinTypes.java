@@ -372,25 +372,25 @@ public final class BuiltinTypes {
 
         // matrix types
 
-        mHalf2x2 = Type.makeMatrixType("half2x2", "h22", mHalf, /*cols=*/2, /*rows=*/2);
-        mHalf2x3 = Type.makeMatrixType("half2x3", "h23", mHalf, /*cols=*/2, /*rows=*/3);
-        mHalf2x4 = Type.makeMatrixType("half2x4", "h24", mHalf, /*cols=*/2, /*rows=*/4);
-        mHalf3x2 = Type.makeMatrixType("half3x2", "h32", mHalf, /*cols=*/3, /*rows=*/2);
-        mHalf3x3 = Type.makeMatrixType("half3x3", "h33", mHalf, /*cols=*/3, /*rows=*/3);
-        mHalf3x4 = Type.makeMatrixType("half3x4", "h34", mHalf, /*cols=*/3, /*rows=*/4);
-        mHalf4x2 = Type.makeMatrixType("half4x2", "h42", mHalf, /*cols=*/4, /*rows=*/2);
-        mHalf4x3 = Type.makeMatrixType("half4x3", "h43", mHalf, /*cols=*/4, /*rows=*/3);
-        mHalf4x4 = Type.makeMatrixType("half4x4", "h44", mHalf, /*cols=*/4, /*rows=*/4);
+        mHalf2x2 = Type.makeMatrixType("half2x2", "h22", mHalf2, /*cols=*/2);
+        mHalf2x3 = Type.makeMatrixType("half2x3", "h23", mHalf3, /*cols=*/2);
+        mHalf2x4 = Type.makeMatrixType("half2x4", "h24", mHalf4, /*cols=*/2);
+        mHalf3x2 = Type.makeMatrixType("half3x2", "h32", mHalf2, /*cols=*/3);
+        mHalf3x3 = Type.makeMatrixType("half3x3", "h33", mHalf3, /*cols=*/3);
+        mHalf3x4 = Type.makeMatrixType("half3x4", "h34", mHalf4, /*cols=*/3);
+        mHalf4x2 = Type.makeMatrixType("half4x2", "h42", mHalf2, /*cols=*/4);
+        mHalf4x3 = Type.makeMatrixType("half4x3", "h43", mHalf3, /*cols=*/4);
+        mHalf4x4 = Type.makeMatrixType("half4x4", "h44", mHalf4, /*cols=*/4);
 
-        mFloat2x2 = Type.makeMatrixType("float2x2", "f22", mFloat, /*cols=*/2, /*rows=*/2);
-        mFloat2x3 = Type.makeMatrixType("float2x3", "f23", mFloat, /*cols=*/2, /*rows=*/3);
-        mFloat2x4 = Type.makeMatrixType("float2x4", "f24", mFloat, /*cols=*/2, /*rows=*/4);
-        mFloat3x2 = Type.makeMatrixType("float3x2", "f32", mFloat, /*cols=*/3, /*rows=*/2);
-        mFloat3x3 = Type.makeMatrixType("float3x3", "f33", mFloat, /*cols=*/3, /*rows=*/3);
-        mFloat3x4 = Type.makeMatrixType("float3x4", "f34", mFloat, /*cols=*/3, /*rows=*/4);
-        mFloat4x2 = Type.makeMatrixType("float4x2", "f42", mFloat, /*cols=*/4, /*rows=*/2);
-        mFloat4x3 = Type.makeMatrixType("float4x3", "f43", mFloat, /*cols=*/4, /*rows=*/3);
-        mFloat4x4 = Type.makeMatrixType("float4x4", "f44", mFloat, /*cols=*/4, /*rows=*/4);
+        mFloat2x2 = Type.makeMatrixType("float2x2", "f22", mFloat2, /*cols=*/2);
+        mFloat2x3 = Type.makeMatrixType("float2x3", "f23", mFloat3, /*cols=*/2);
+        mFloat2x4 = Type.makeMatrixType("float2x4", "f24", mFloat4, /*cols=*/2);
+        mFloat3x2 = Type.makeMatrixType("float3x2", "f32", mFloat2, /*cols=*/3);
+        mFloat3x3 = Type.makeMatrixType("float3x3", "f33", mFloat3, /*cols=*/3);
+        mFloat3x4 = Type.makeMatrixType("float3x4", "f34", mFloat4, /*cols=*/3);
+        mFloat4x2 = Type.makeMatrixType("float4x2", "f42", mFloat2, /*cols=*/4);
+        mFloat4x3 = Type.makeMatrixType("float4x3", "f43", mFloat3, /*cols=*/4);
+        mFloat4x4 = Type.makeMatrixType("float4x4", "f44", mFloat4, /*cols=*/4);
 
         // GLSL vector aliases
 

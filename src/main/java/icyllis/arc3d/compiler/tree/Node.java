@@ -31,21 +31,21 @@ import javax.annotation.Nonnull;
 public abstract class Node {
 
     public enum ElementKind {
-        EXTENSION(Element.class),
+        EXTENSION(TopLevelElement.class),
         FUNCTION_DEFINITION(FunctionDefinition.class),
         FUNCTION_PROTOTYPE(FunctionPrototype.class),
-        GLOBAL_VAR(Element.class),
-        INTERFACE_BLOCK(Element.class),
-        MODIFIERS(Element.class),
-        STRUCT_DEFINITION(Element.class);
+        GLOBAL_VAR(TopLevelElement.class),
+        INTERFACE_BLOCK(TopLevelElement.class),
+        MODIFIERS(TopLevelElement.class),
+        STRUCT_DEFINITION(TopLevelElement.class);
 
-        private final Class<? extends Element> mType;
+        private final Class<? extends TopLevelElement> mType;
 
-        ElementKind(Class<? extends Element> type) {
+        ElementKind(Class<? extends TopLevelElement> type) {
             mType = type;
         }
 
-        public Class<? extends Element> getType() {
+        public Class<? extends TopLevelElement> getType() {
             return mType;
         }
     }
@@ -108,7 +108,7 @@ public abstract class Node {
         FIELD_ACCESS(FieldExpression.class),
         FUNCTION_CALL(FunctionCall.class),
         FUNCTION_REFERENCE(FunctionReference.class),
-        INDEX(Expression.class),
+        INDEX(IndexExpression.class),
         LITERAL(Literal.class),
         POISON(Poison.class),
         POSTFIX(PostfixExpression.class),

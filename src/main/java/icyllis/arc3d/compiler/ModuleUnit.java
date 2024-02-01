@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,19 +17,30 @@
  * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.compiler.tree;
+package icyllis.arc3d.compiler;
+
+import icyllis.arc3d.compiler.tree.TopLevelElement;
+
+import java.util.ArrayList;
 
 /**
- * Represents a top-level element (e.g. function or global variable) in a program.
+ * Represents a precompiled module that can be used to compile other files.
  */
-public abstract class Element extends Node {
+public final class ModuleUnit {
 
-    protected Element(int position) {
-        super(position);
+    ModuleUnit mParent;
+    SymbolTable mSymbols;
+    ArrayList<TopLevelElement> mElements;
+
+    ModuleUnit() {
     }
 
-    /**
-     * @see Node.ElementKind
-     */
-    public abstract ElementKind getKind();
+    @Override
+    public String toString() {
+        return "ModuleUnit{" +
+                "mParent=" + mParent +
+                ", mSymbols=" + mSymbols +
+                ", mElements=" + mElements +
+                '}';
+    }
 }
