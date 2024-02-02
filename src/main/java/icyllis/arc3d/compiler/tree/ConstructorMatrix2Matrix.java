@@ -28,9 +28,9 @@ import java.util.OptionalDouble;
  * These always contain exactly 1 matrix of non-matching size. Cells that aren't present in the
  * input matrix are populated with the identity matrix.
  */
-public final class ConstructorMatrixMatrix extends ConstructorCall {
+public final class ConstructorMatrix2Matrix extends ConstructorCall {
 
-    private ConstructorMatrixMatrix(int position, Type type, Expression... arguments) {
+    private ConstructorMatrix2Matrix(int position, Type type, Expression... arguments) {
         super(position, type, arguments);
         assert arguments.length == 1;
     }
@@ -45,12 +45,12 @@ public final class ConstructorMatrixMatrix extends ConstructorCall {
             return arg;
         }
 
-        return new ConstructorMatrixMatrix(position, type, arg);
+        return new ConstructorMatrix2Matrix(position, type, arg);
     }
 
     @Override
     public ExpressionKind getKind() {
-        return ExpressionKind.CONSTRUCTOR_MATRIX_MATRIX;
+        return ExpressionKind.CONSTRUCTOR_MATRIX_TO_MATRIX;
     }
 
     @Override
@@ -85,6 +85,6 @@ public final class ConstructorMatrixMatrix extends ConstructorCall {
     @Nonnull
     @Override
     public Expression clone(int position) {
-        return new ConstructorMatrixMatrix(position, getType(), cloneArguments());
+        return new ConstructorMatrix2Matrix(position, getType(), cloneArguments());
     }
 }

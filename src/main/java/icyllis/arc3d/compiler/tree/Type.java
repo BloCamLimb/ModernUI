@@ -676,12 +676,19 @@ public class Type extends Symbol {
     }
 
     /**
+     * Returns the corresponding vector type with the specified number of rows.
+     */
+    public final Type toVector(int rows) {
+        return toCompound(1, rows);
+    }
+
+    /**
      * Returns the corresponding vector or matrix type with the specified number of columns and
      * rows.
      */
     public final Type toCompound(int cols, int rows) {
         if (!isScalar()) {
-            throw new IllegalArgumentException("non-scalar");
+            throw new IllegalStateException("non-scalar");
         }
         if (cols == 1 && rows == 1) {
             return this;
@@ -789,7 +796,7 @@ public class Type extends Symbol {
                 };
             }
         }
-        throw new IllegalArgumentException("type mismatch");
+        throw new IllegalStateException("type mismatch");
     }
 
     /**

@@ -105,7 +105,7 @@ public final class ConstructorCompound extends ConstructorCall {
                             argument);
 
                     // Casting a matrix type into another matrix type is a resize.
-                    return ConstructorMatrixMatrix.make(pos, type,
+                    return ConstructorMatrix2Matrix.make(pos, type,
                             argument);
                 }
 
@@ -114,9 +114,7 @@ public final class ConstructorCompound extends ConstructorCall {
                 if (type.isVector() && type.getRows() == 4 && argument.getType().getComponents() == 4) {
                     // Casting a 2x2 matrix to a vector is a form of compound construction.
                     // First, reshape the matrix into a 4-slot vector of the same type.
-                    Type vectorType = argument.getType().getComponentType().toCompound(
-                            /*columns=*/1,
-                            /*rows=*/4);
+                    Type vectorType = argument.getType().getComponentType().toVector(/*rows*/4);
                     Expression vecCtor =
                             ConstructorCompound.make(pos, vectorType, args.toArray(new Expression[0]));
 
@@ -137,12 +135,11 @@ public final class ConstructorCompound extends ConstructorCall {
                 return null;
             }
 
-            // Rely on Constructor::Convert to force this subexpression to the proper type. If it's a
+            // Rely on ConstructorCall.convert() to force this subexpression to the proper type. If it's a
             // literal, this will make sure it's the right type of literal. If an expression of matching
             // type, the expression will be returned as-is. If it's an expression of mismatched type,
             // this adds a cast.
-            Type ctorType = type.getComponentType().toCompound(/*columns*/1,
-                    arg.getType().getRows());
+            Type ctorType = type.getComponentType().toVector(arg.getType().getRows());
             List<Expression> ctorArg = new ArrayList<>(1);
             ctorArg.add(arg);
             arg = ConstructorCall.convert(pos, ctorType, ctorArg);
