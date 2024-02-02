@@ -42,16 +42,16 @@ public class ShaderCompiler {
     private final ErrorHandler mErrorHandler = new ErrorHandler() {
         private void log(int start, int end, String msg) {
             boolean showLocation = false;
-            String source = getSource();
+            char[] source = getSource();
             if (start != -1) {
-                int offset = Math.min(start, source.length());
+                int offset = Math.min(start, source.length);
                 int line = 1;
                 for (int i = 0; i < offset; ++i) {
-                    if (source.charAt(i) == '\n') {
+                    if (source[i] == '\n') {
                         ++line;
                     }
                 }
-                showLocation = start < source.length();
+                showLocation = start < source.length;
                 mLogBuilder.append(line).append(": ");
             }
             mLogBuilder.append(msg).append('\n');
@@ -59,35 +59,35 @@ public class ShaderCompiler {
                 // Find the beginning of the line
                 int lineStart = start;
                 while (lineStart > 0) {
-                    if (source.charAt(lineStart - 1) == '\n') {
+                    if (source[lineStart - 1] == '\n') {
                         break;
                     }
                     --lineStart;
                 }
 
                 // echo the line
-                for (int i = lineStart; i < source.length(); i++) {
-                    switch (source.charAt(i)) {
+                for (int i = lineStart; i < source.length; i++) {
+                    switch (source[i]) {
                         case '\t' -> mLogBuilder.append("    ");
                         case '\0' -> mLogBuilder.append(" ");
-                        case '\n' -> i = source.length();
-                        default -> mLogBuilder.append(source.charAt(i));
+                        case '\n' -> i = source.length;
+                        default -> mLogBuilder.append(source[i]);
                     }
                 }
                 mLogBuilder.append('\n');
 
                 // print the carets underneath it, pointing to the range in question
-                for (int i = lineStart; i < source.length(); i++) {
+                for (int i = lineStart; i < source.length; i++) {
                     if (i >= end) {
                         break;
                     }
-                    switch (source.charAt(i)) {
+                    switch (source[i]) {
                         case '\t' -> mLogBuilder.append((i >= start) ? "^^^^" : "    ");
                         case '\n' -> {
                             assert (i >= start);
                             // use an ellipsis if the error continues past the end of the line
                             mLogBuilder.append((end > i + 1) ? "..." : "^");
-                            i = source.length();
+                            i = source.length;
                         }
                         default -> mLogBuilder.append((i >= start) ? '^' : ' ');
                     }
@@ -118,44 +118,46 @@ public class ShaderCompiler {
     /**
      * Parse the source into an abstract syntax tree.
      *
-     * @param kind    the language
+     * @param model   the language model
      * @param options the compiler options
      * @param source  the source code of the program to be parsed
      * @param parent  the parent module of the program to be parsed
      * @return the program, or null if there's an error
      */
     @Nullable
-    public TranslationUnit parse(ExecutionModel kind,
+    public TranslationUnit parse(ExecutionModel model,
                                  CompileOptions options,
-                                 String source,
+                                 CharSequence source,
                                  ModuleUnit parent) {
-        Objects.requireNonNull(kind);
+        Objects.requireNonNull(model);
         Objects.requireNonNull(parent);
         Objects.requireNonNull(source);
         resetLog(); // make a clean start
-        Parser parser = new Parser(this, kind,
-                Objects.requireNonNullElseGet(options, CompileOptions::new), source);
+        Parser parser = new Parser(this, model,
+                Objects.requireNonNullElseGet(options, CompileOptions::new),
+                source.toString().toCharArray());
         return parser.parse(parent);
     }
 
     /**
      * Parse the source into an abstract syntax tree for further parsing.
      *
-     * @param kind   the language
+     * @param model  the language model
      * @param source the source code of the module to be parsed
      * @param parent the parent module of the module to be parsed
      * @return the module, or null if there's an error
      */
     @Nullable
-    public ModuleUnit parseModule(ExecutionModel kind,
-                                  String source,
+    public ModuleUnit parseModule(ExecutionModel model,
+                                  CharSequence source,
                                   ModuleUnit parent) {
-        Objects.requireNonNull(kind);
+        Objects.requireNonNull(model);
         Objects.requireNonNull(parent);
         Objects.requireNonNull(source);
         resetLog(); // make a clean start
-        Parser parser = new Parser(this, kind,
-                new CompileOptions(), source);
+        Parser parser = new Parser(this, model,
+                new CompileOptions(),
+                source.toString().toCharArray());
         return parser.parseModule(parent);
     }
 

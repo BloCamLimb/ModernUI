@@ -39,15 +39,15 @@ public class Parser {
     private final ExecutionModel mModel;
     private final CompileOptions mOptions;
 
-    private final String mSource;
+    private final char[] mSource;
     private final Lexer mLexer;
 
     private final LongList mPushback = new LongArrayList();
 
-    public Parser(ShaderCompiler compiler, ExecutionModel model, CompileOptions options, String source) {
+    public Parser(ShaderCompiler compiler, ExecutionModel model, CompileOptions options, char[] source) {
         // ideally we can break long text into pieces, but shader code should not be too long
-        if (source.length() > 0x7FFFFE) {
-            throw new IllegalArgumentException("Source code is too long, " + source.length() + " > 8,388,606");
+        if (source.length > 0x7FFFFE) {
+            throw new IllegalArgumentException("Source code is too long, " + source.length + " > 8,388,606");
         }
         mCompiler = Objects.requireNonNull(compiler);
         mOptions = Objects.requireNonNull(options);
@@ -166,7 +166,7 @@ public class Parser {
     private String text(long token) {
         int offset = Token.offset(token);
         int length = Token.length(token);
-        return mSource.substring(offset, offset + length);
+        return new String(mSource, offset, length);
     }
 
     private int position(long token) {
@@ -1210,6 +1210,7 @@ public class Parser {
         }
         for (;;) {
             int mask = switch (Token.kind(peek())) {
+                case Lexer.TK_SMOOTH -> Modifiers.kSmooth_Flag;
                 case Lexer.TK_FLAT -> Modifiers.kFlat_Flag;
                 case Lexer.TK_NOPERSPECTIVE -> Modifiers.kNoPerspective_Flag;
                 case Lexer.TK_CONST -> Modifiers.kConst_Flag;

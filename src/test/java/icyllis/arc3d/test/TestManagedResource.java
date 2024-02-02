@@ -271,7 +271,7 @@ public class TestManagedResource {
                     col = 1.0 - exp(-col*0.5);
                     FragColor0 = col;
                 }
-                """);
+                """.toCharArray());
         long token;
         int kind;
         while ((kind = Token.kind(token = lexer.next())) != Lexer.TK_END_OF_FILE) {

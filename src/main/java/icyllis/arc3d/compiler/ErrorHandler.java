@@ -26,16 +26,16 @@ import java.util.Objects;
  */
 public abstract class ErrorHandler {
 
-    private String mSource = "";
+    private char[] mSource;
     private int mErrors;
     private int mWarnings;
 
-    public final String getSource() {
+    public final char[] getSource() {
         return mSource;
     }
 
-    public final void setSource(String source) {
-        mSource = Objects.requireNonNullElse(source, "");
+    public final void setSource(char[] source) {
+        mSource = source;
     }
 
     public final int getNumErrors() {

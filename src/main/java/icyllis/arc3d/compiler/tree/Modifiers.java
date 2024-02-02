@@ -41,29 +41,30 @@ public final class Modifiers extends Node {
 
     // GLSL interpolation qualifiers, only one qualifier can be used
     public static final int
-            kFlat_Flag = 1,
-            kNoPerspective_Flag = 1 << 1;
+            kSmooth_Flag = 1,
+            kFlat_Flag = 1 << 1,
+            kNoPerspective_Flag = 1 << 2;
     // GLSL storage qualifiers, only one qualifier can be used
     // GLSL parameter qualifiers, one of const, in, out, inout
     public static final int
-            kConst_Flag = 1 << 2,
-            kUniform_Flag = 1 << 3,
-            kIn_Flag = 1 << 4,
-            kOut_Flag = 1 << 5;
+            kConst_Flag = 1 << 3,
+            kUniform_Flag = 1 << 4,
+            kIn_Flag = 1 << 5,
+            kOut_Flag = 1 << 6;
     // GLSL memory qualifiers
     public static final int
-            kReadOnly_Flag = 1 << 6,
-            kWriteOnly_Flag = 1 << 7;
+            kReadOnly_Flag = 1 << 7,
+            kWriteOnly_Flag = 1 << 8;
     // Other GLSL storage qualifiers
     public static final int
-            kBuffer_Flag = 1 << 8,
-            kWorkgroup_Flag = 1 << 9;  // GLSL 'shared'
+            kBuffer_Flag = 1 << 9,
+            kWorkgroup_Flag = 1 << 10;  // GLSL 'shared'
     // Extensions, not present in GLSL
     public static final int
-            kExport_Flag = 1 << 10,
-            kPure_Flag = 1 << 11,
-            kInline_Flag = 1 << 12,
-            kNoInline_Flag = 1 << 13;
+            kExport_Flag = 1 << 11,
+            kPure_Flag = 1 << 12,
+            kInline_Flag = 1 << 13,
+            kNoInline_Flag = 1 << 14;
 
     /**
      * Layout qualifiers.
@@ -151,10 +152,10 @@ public final class Modifiers extends Node {
 
         // Extensions
         if ((flags & kExport_Flag) != 0) {
-            joiner.add("export");
+            joiner.add("__export");
         }
         if ((flags & kPure_Flag) != 0) {
-            joiner.add("pure");
+            joiner.add("__pure");
         }
         if ((flags & kInline_Flag) != 0) {
             joiner.add("inline");
@@ -164,6 +165,9 @@ public final class Modifiers extends Node {
         }
 
         // Real GLSL qualifiers
+        if ((flags & kSmooth_Flag) != 0) {
+            joiner.add("smooth");
+        }
         if ((flags & kFlat_Flag) != 0) {
             joiner.add("flat");
         }

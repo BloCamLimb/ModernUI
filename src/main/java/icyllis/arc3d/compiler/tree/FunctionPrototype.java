@@ -52,7 +52,7 @@ public final class FunctionPrototype extends TopLevelElement {
 
     @Override
     public boolean accept(@Nonnull NodeVisitor visitor) {
-        return false;
+        return visitor.visitFunctionPrototype(this);
     }
 
     @Nonnull

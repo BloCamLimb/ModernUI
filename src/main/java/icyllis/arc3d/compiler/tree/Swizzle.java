@@ -310,7 +310,8 @@ public final class Swizzle extends Expression {
                 default:
                     int offset = Position.getStartOffset(maskPosition) + i;
                     context.error(Position.range(offset, offset + 1),
-                            String.format("invalid swizzle component '%c'", maskString.charAt(i)));
+                            String.format("swizzle component '%c' is out of range for type '%s'",
+                                    maskString.charAt(i), baseType));
                     return null;
             }
         }
