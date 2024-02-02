@@ -38,9 +38,9 @@ public final class ModuleUnit {
     @Override
     public String toString() {
         return "ModuleUnit{" +
-                "mParent=" + mParent +
-                ", mSymbols=" + mSymbols +
-                ", mElements=" + mElements +
+                "\nmParent=" + mParent +
+                "\nmSymbols=" + mSymbols +
+                "\nmElements=" + mElements +
                 '}';
     }
 }

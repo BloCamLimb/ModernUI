@@ -51,7 +51,7 @@ public final class ConstructorScalar2Matrix extends ConstructorCall {
 
     @Override
     public ExpressionKind getKind() {
-        return ExpressionKind.CONSTRUCTOR_MATRIX_SCALAR;
+        return ExpressionKind.CONSTRUCTOR_SCALAR_TO_MATRIX;
     }
 
     @Override

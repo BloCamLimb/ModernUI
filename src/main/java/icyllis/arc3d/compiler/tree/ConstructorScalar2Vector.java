@@ -58,7 +58,7 @@ public final class ConstructorScalar2Vector extends ConstructorCall {
 
     @Override
     public ExpressionKind getKind() {
-        return ExpressionKind.CONSTRUCTOR_VECTOR_SCALAR;
+        return ExpressionKind.CONSTRUCTOR_SCALAR_TO_VECTOR;
     }
 
     @Nonnull

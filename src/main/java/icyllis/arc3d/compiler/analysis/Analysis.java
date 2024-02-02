@@ -22,6 +22,7 @@ package icyllis.arc3d.compiler.analysis;
 import icyllis.arc3d.compiler.Operator;
 import icyllis.arc3d.compiler.tree.*;
 
+import javax.annotation.Nonnull;
 import java.util.Arrays;
 
 public final class Analysis {
@@ -42,10 +43,10 @@ public final class Analysis {
                 return switch (expr.getKind()) {
                     case CONSTRUCTOR_ARRAY,
                             CONSTRUCTOR_COMPOUND,
-                            CONSTRUCTOR_MATRIX_MATRIX,
-                            CONSTRUCTOR_MATRIX_SCALAR,
+                            CONSTRUCTOR_MATRIX_TO_MATRIX,
+                            CONSTRUCTOR_SCALAR_TO_MATRIX,
                             CONSTRUCTOR_STRUCT,
-                            CONSTRUCTOR_VECTOR_SCALAR ->
+                            CONSTRUCTOR_SCALAR_TO_VECTOR ->
                         // Constructors might be compile-time constants.
                             super.visitAnyExpression(expr);
                     // This expression isn't a compile-time constant.
@@ -59,6 +60,62 @@ public final class Analysis {
 
     public static boolean updateVariableRefKind(Expression expr, int refKind) {
         return true;
+    }
+
+    public static boolean isTrivialExpression(@Nonnull Expression expr) {
+        switch (expr.getKind()) {
+            case LITERAL, VARIABLE_REFERENCE -> {
+                return true;
+            }
+            case SWIZZLE -> {
+                // All swizzles are considered to be trivial.
+                return isTrivialExpression(((Swizzle) expr).getBase());
+            }
+            case PREFIX -> {
+                PrefixExpression prefix = (PrefixExpression) expr;
+                return switch (prefix.getOperator()) {
+                    case ADD,
+                            SUB,
+                            LOGICAL_NOT,
+                            BITWISE_NOT -> isTrivialExpression(prefix.getOperand());
+                    default -> false;
+                };
+            }
+            case FIELD_ACCESS -> {
+                // Accessing a field is trivial.
+                return isTrivialExpression(((FieldExpression) expr).getBase());
+            }
+            case INDEX -> {
+                // Accessing a constant array index is trivial.
+                IndexExpression inner = (IndexExpression) expr;
+                return inner.getIndex().isIntLiteral() && isTrivialExpression(inner.getBase());
+            }
+            case CONSTRUCTOR_ARRAY, CONSTRUCTOR_STRUCT -> {
+                // Only consider small arrays/structs of compile-time-constants to be trivial.
+                return expr.getType().getComponents() <= 4 && isCompileTimeConstant(expr);
+            }
+            case CONSTRUCTOR_ARRAY_CAST, CONSTRUCTOR_MATRIX_TO_MATRIX -> {
+                // These operations require function calls in Metal, so they're never trivial.
+                return false;
+            }
+            case CONSTRUCTOR_COMPOUND -> {
+                // Only compile-time-constant compound constructors are considered to be trivial.
+                return isCompileTimeConstant(expr);
+            }
+            case CONSTRUCTOR_COMPOUND_CAST,
+                    CONSTRUCTOR_SCALAR_CAST,
+                    CONSTRUCTOR_SCALAR_TO_VECTOR,
+                    CONSTRUCTOR_SCALAR_TO_MATRIX -> {
+                ConstructorCall ctor = (ConstructorCall) expr;
+                // Single-argument constructors are trivial when their inner expression is trivial.
+                assert (ctor.getArguments().length == 1);
+                Expression inner = ctor.getArguments()[0];
+                return isTrivialExpression(inner);
+            }
+            default -> {
+                return false;
+            }
+        }
     }
 
     /**
@@ -84,11 +141,11 @@ public final class Analysis {
             case CONSTRUCTOR_ARRAY_CAST:
             case CONSTRUCTOR_COMPOUND:
             case CONSTRUCTOR_COMPOUND_CAST:
-            case CONSTRUCTOR_MATRIX_MATRIX:
-            case CONSTRUCTOR_MATRIX_SCALAR:
+            case CONSTRUCTOR_MATRIX_TO_MATRIX:
+            case CONSTRUCTOR_SCALAR_TO_MATRIX:
             case CONSTRUCTOR_SCALAR_CAST:
             case CONSTRUCTOR_STRUCT:
-            case CONSTRUCTOR_VECTOR_SCALAR: {
+            case CONSTRUCTOR_SCALAR_TO_VECTOR: {
                 if (left.getKind() != right.getKind()) {
                     return false;
                 }
