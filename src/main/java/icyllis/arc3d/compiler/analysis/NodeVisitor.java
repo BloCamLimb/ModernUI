@@ -39,10 +39,22 @@ public abstract class NodeVisitor {
 
     public final boolean visit(TranslationUnit translationUnit) {
         for (TopLevelElement e : translationUnit) {
-            if (visitElement(e)) {
+            if (e.accept(this)) {
                 return true;
             }
         }
+        return false;
+    }
+
+    public boolean visitFunctionPrototype(FunctionPrototype prototype) {
+        return visitAnyTopLevelElement(prototype);
+    }
+
+    public boolean visitFunctionDefinition(FunctionDefinition definition) {
+        return visitAnyTopLevelElement(definition);
+    }
+
+    public boolean visitAnyTopLevelElement(TopLevelElement e) {
         return false;
     }
 
@@ -149,9 +161,5 @@ public abstract class NodeVisitor {
                     EMPTY -> false; // Leaf expressions return false
             default -> true;
         };
-    }
-
-    public boolean visitElement(TopLevelElement e) {
-        return false;
     }
 }

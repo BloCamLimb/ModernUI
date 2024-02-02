@@ -58,6 +58,7 @@ public class LexerGenerator {
             UNIFORM        = "uniform"
             BUFFER         = "buffer"
             WORKGROUP      = "workgroup"
+            SMOOTH         = "smooth"
             FLAT           = "flat"
             NOPERSPECTIVE  = "noperspective"
             COHERENT       = "coherent"

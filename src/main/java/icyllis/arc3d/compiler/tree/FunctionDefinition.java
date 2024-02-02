@@ -97,7 +97,10 @@ public final class FunctionDefinition extends TopLevelElement {
 
     @Override
     public boolean accept(@Nonnull NodeVisitor visitor) {
-        return false;
+        if (visitor.visitFunctionDefinition(this)) {
+            return true;
+        }
+        return mBody.accept(visitor);
     }
 
     @Nonnull
