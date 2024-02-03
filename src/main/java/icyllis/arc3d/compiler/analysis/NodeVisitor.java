@@ -74,7 +74,7 @@ public abstract class NodeVisitor {
         return visitAnyExpression(expr);
     }
 
-    public boolean visitFieldAccess(FieldExpression expr) {
+    public boolean visitFieldAccess(FieldAccess expr) {
         return visitAnyExpression(expr);
     }
 

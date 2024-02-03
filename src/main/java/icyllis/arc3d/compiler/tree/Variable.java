@@ -58,8 +58,8 @@ public final class Variable extends Symbol {
                                    String name,
                                    byte storage) {
         var context = ThreadContext.getInstance();
-        if (type.isUnsizedArray() && storage != kInterfaceBlock_Storage) {
-            context.error(pos, "unsized arrays are not permitted here");
+        if (type.isRuntimeArray() && storage != kInterfaceBlock_Storage) {
+            context.error(pos, "runtime-sized arrays are not permitted here");
         }
         if (storage == kParameter_Storage) {
             // The `in` modifier on function parameters is implicit, so we can replace `in float x` with

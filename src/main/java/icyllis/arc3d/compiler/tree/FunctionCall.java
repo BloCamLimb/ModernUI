@@ -46,22 +46,23 @@ public final class FunctionCall extends Expression {
     }
 
     private static String buildArgumentTypeList(List<Expression> arguments) {
-        StringJoiner joiner = new StringJoiner(" ");
+        StringJoiner joiner = new StringJoiner(", ", "(", ")");
         for (Expression arg : arguments) {
             joiner.add(arg.getType().toString());
         }
         return joiner.toString();
     }
 
-    private static FunctionDecl findFunctionOverload(FunctionDecl chain,
-                                                     List<Expression> arguments) {
+    @Nullable
+    private static FunctionDecl findBestCandidate(@Nonnull FunctionDecl chain,
+                                                  @Nonnull List<Expression> arguments) {
         if (chain.getNextOverload() == null) {
             return chain;
         }
         long bestCost = Type.CoercionCost.saturate();
         FunctionDecl best = null;
         for (FunctionDecl f = chain; f != null; f = f.getNextOverload()) {
-            long cost;
+            final long cost;
             if (f.getParameters().size() != arguments.size()) {
                 cost = Type.CoercionCost.saturate();
             } else {
@@ -90,30 +91,30 @@ public final class FunctionCall extends Expression {
     }
 
     @Nullable
-    public static Expression convert(int pos, @Nonnull Expression functionName,
+    public static Expression convert(int pos, @Nonnull Expression identifier,
                                      @Nonnull List<Expression> arguments) {
-        return switch (functionName.getKind()) {
+        return switch (identifier.getKind()) {
             case TYPE_REFERENCE -> {
-                TypeReference ref = (TypeReference) functionName;
+                TypeReference ref = (TypeReference) identifier;
                 yield ConstructorCall.convert(pos, ref.getValue(), arguments);
             }
             case FUNCTION_REFERENCE -> {
-                FunctionReference ref = (FunctionReference) functionName;
-                FunctionDecl best = findFunctionOverload(ref.getOverloadChain(), arguments);
-                if (best == null) {
-                    String msg = "no match for " + ref.getOverloadChain().getName() +
-                            buildArgumentTypeList(arguments);
-                    ThreadContext.getInstance().error(pos, msg);
-                    yield null;
+                FunctionReference ref = (FunctionReference) identifier;
+                FunctionDecl best = findBestCandidate(ref.getOverloadChain(), arguments);
+                if (best != null) {
+                    yield FunctionCall.convert(pos, best, arguments);
                 }
-                yield convert(pos, best, arguments);
+                String msg = "no candidate found for function call " +
+                        ref.getOverloadChain().getName() + buildArgumentTypeList(arguments);
+                ThreadContext.getInstance().error(pos, msg);
+                yield null;
             }
             case POISON -> {
-                functionName.mPosition = pos;
-                yield functionName;
+                identifier.mPosition = pos;
+                yield identifier;
             }
             default -> {
-                ThreadContext.getInstance().error(pos, "not a function call");
+                ThreadContext.getInstance().error(pos, "not an invocation");
                 yield null;
             }
         };

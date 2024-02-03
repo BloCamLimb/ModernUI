@@ -83,7 +83,7 @@ public final class Analysis {
             }
             case FIELD_ACCESS -> {
                 // Accessing a field is trivial.
-                return isTrivialExpression(((FieldExpression) expr).getBase());
+                return isTrivialExpression(((FieldAccess) expr).getBase());
             }
             case INDEX -> {
                 // Accessing a constant array index is trivial.
@@ -162,8 +162,8 @@ public final class Analysis {
                 return true;
             }
             case FIELD_ACCESS: {
-                var leftExpr = (FieldExpression) left;
-                var rightExpr = (FieldExpression) right;
+                var leftExpr = (FieldAccess) left;
+                var rightExpr = (FieldAccess) right;
                 return leftExpr.getFieldIndex() == rightExpr.getFieldIndex() &&
                         isSameExpressionTree(leftExpr.getBase(), rightExpr.getBase());
             }

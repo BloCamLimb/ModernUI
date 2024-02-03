@@ -33,8 +33,14 @@ public final class SymbolTable {
     private final Map<String, Symbol> mTable = new HashMap<>();
 
     private final SymbolTable mParent;
+    /**
+     * True if at built-in level.
+     */
     private final boolean mIsBuiltin;
-    private final boolean mIsClassBoundary;
+    /**
+     * True if at global level.
+     */
+    private final boolean mIsModuleLevel;
 
     /**
      * Constructor for the root symbol table.
@@ -43,10 +49,10 @@ public final class SymbolTable {
         this(null, true, false);
     }
 
-    private SymbolTable(SymbolTable parent, boolean isBuiltin, boolean isClassBoundary) {
+    private SymbolTable(SymbolTable parent, boolean isBuiltin, boolean isModuleLevel) {
         mParent = parent;
         mIsBuiltin = isBuiltin;
-        mIsClassBoundary = isClassBoundary;
+        mIsModuleLevel = isModuleLevel;
     }
 
     /**
@@ -54,23 +60,23 @@ public final class SymbolTable {
      */
     @Nonnull
     SymbolTable enterScope() {
-        return new SymbolTable(this, mIsBuiltin, /*isClassBoundary*/ false);
+        return new SymbolTable(this, mIsBuiltin, /*isModuleLevel*/false);
     }
 
     /**
-     * Enters a class level.
+     * Enters a module level.
      */
     @Nonnull
-    SymbolTable enterClass(boolean isBuiltin) {
+    SymbolTable enterModule(boolean isBuiltin) {
         if ((isBuiltin && !mIsBuiltin) ||
-                (!mIsClassBoundary && mParent != null)) {
+                (!mIsModuleLevel && mParent != null)) {
             throw new AssertionError();
         }
-        return new SymbolTable(this, isBuiltin, /*isClassBoundary*/ true);
+        return new SymbolTable(this, isBuiltin, /*isModuleLevel*/true);
     }
 
     SymbolTable leaveScope() {
-        if (mIsClassBoundary || mParent == null) {
+        if (mIsModuleLevel || mParent == null) {
             throw new AssertionError();
         }
         return mParent;
@@ -81,7 +87,7 @@ public final class SymbolTable {
     }
 
     /**
-     * @return true if this symbol table is at builtin level
+     * @return true if this symbol table is at built-in level
      */
     public boolean isBuiltin() {
         return mIsBuiltin;
@@ -133,20 +139,22 @@ public final class SymbolTable {
      * @return the given symbol if successful, or null if there was a name collision
      */
     @Nullable
-    public <T extends Symbol> T insert(T symbol) {
+    public <T extends Symbol> T insert(@Nonnull T symbol) {
         String key = symbol.getName();
 
         // If this is a function declaration, we need to keep the overload chain in sync.
         if (symbol instanceof FunctionDecl) {
             // If we have a function with the same name...
             if (find(key) instanceof FunctionDecl next) {
+                // The new definition is at the top
                 ((FunctionDecl) symbol).setNextOverload(next);
                 mTable.put(key, symbol);
                 return symbol;
             }
         }
 
-        if (!mIsClassBoundary || mParent == null || mParent.find(key) == null) {
+        // the symbol cannot be defined at parent's global scope
+        if (!mIsModuleLevel || mParent == null || mParent.find(key) == null) {
             if (mTable.putIfAbsent(key, symbol) == null) {
                 return symbol;
             }
@@ -164,9 +172,9 @@ public final class SymbolTable {
         if (size == 0) {
             return type;
         }
-        // If this is a builtin type, we add it as high as possible in the symbol table tree (at the
-        // module boundary), to enable additional reuse of the array-type.
-        if (!mIsClassBoundary && mParent != null && type.isInBuiltinTypes()) {
+        // If this is a builtin type, we add it as high as possible in the symbol table tree
+        // (at the module level), to enable additional reuse of the array-type.
+        if (!mIsModuleLevel && mParent != null && type.isInBuiltinTypes()) {
             return mParent.getArrayType(type, size);
         }
         // Reuse an existing array type with this name if one already exists in our symbol table.

@@ -105,7 +105,7 @@ public abstract class Node {
         CONSTRUCTOR_SCALAR_TO_MATRIX(ConstructorScalar2Matrix.class),
         CONSTRUCTOR_SCALAR_TO_VECTOR(ConstructorScalar2Vector.class),
         CONSTRUCTOR_STRUCT(ConstructorStruct.class),
-        FIELD_ACCESS(FieldExpression.class),
+        FIELD_ACCESS(FieldAccess.class),
         FUNCTION_CALL(FunctionCall.class),
         FUNCTION_REFERENCE(FunctionReference.class),
         INDEX(IndexExpression.class),

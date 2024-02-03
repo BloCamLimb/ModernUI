@@ -30,13 +30,13 @@ import java.util.Objects;
 /**
  * An expression which selects a field from a struct/block, as in 'foo.bar'.
  */
-public final class FieldExpression extends Expression {
+public final class FieldAccess extends Expression {
 
     private final Expression mBase;
     private final int mFieldIndex;
     private final boolean mAnonymousBlock;
 
-    private FieldExpression(int position, Expression base, int fieldIndex, boolean anonymousBlock) {
+    private FieldAccess(int position, Expression base, int fieldIndex, boolean anonymousBlock) {
         super(position, base.getType().getFields()[fieldIndex].type());
         mBase = base;
         mFieldIndex = fieldIndex;
@@ -48,19 +48,24 @@ public final class FieldExpression extends Expression {
      */
     @Nullable
     public static Expression convert(int position,
-                                     Expression base,
-                                     String fieldName) {
+                                     @Nonnull Expression base,
+                                     int namePosition,
+                                     @Nonnull String name) {
         Type baseType = base.getType();
+        if (baseType.isVector() || baseType.isScalar()) {
+            return Swizzle.convert(position, base, namePosition, name);
+        }
+        //TODO length() method for vector, matrix and array
         if (baseType.isStruct()) {
             final Type.Field[] fields = baseType.getFields();
             for (int i = 0; i < fields.length; i++) {
-                if (fields[i].name().equals(fieldName)) {
-                    return make(position, base, i, false);
+                if (fields[i].name().equals(name)) {
+                    return FieldAccess.make(position, base, i, false);
                 }
             }
         }
         ThreadContext.getInstance().error(position, "type '" + baseType.getName() +
-                "' does not have a field named '" + fieldName + "'");
+                "' does not have a member named '" + name + "'");
         return null;
     }
 
@@ -78,7 +83,7 @@ public final class FieldExpression extends Expression {
         }
         Objects.checkIndex(fieldIndex, baseType.getFields().length);
 
-        return new FieldExpression(position, base, fieldIndex, anonymousBlock);
+        return new FieldAccess(position, base, fieldIndex, anonymousBlock);
     }
 
     @Override
@@ -109,7 +114,7 @@ public final class FieldExpression extends Expression {
     @Nonnull
     @Override
     public Expression clone(int position) {
-        return new FieldExpression(position,
+        return new FieldAccess(position,
                 mBase.clone(),
                 mFieldIndex,
                 mAnonymousBlock);

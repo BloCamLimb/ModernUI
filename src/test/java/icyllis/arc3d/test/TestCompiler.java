@@ -29,15 +29,22 @@ public class TestCompiler {
         ModuleUnit parsed = compiler.parseModule(
                 ExecutionModel.BASE,
                 """
-                float rr(float2 a, float2 b) {
+                float rr(uint2 a, uint2 b) {
                     // this will compile into 1.0
-                    return a.x1.y.x;
+                    return float(a.x1.y.x);
+                }
+                float rr(int2 a, int2 b) {
+                    // this will compile into 1.0
+                    return float(a.x1.y.x);
                 }
                 float sa(float a) {
                     return a;
                 }
-                float rand(float2 n) {
-                    return sa(sa(rr(n, float2(12.9898,12.1414))) * 83758.5453);
+                half sa(half a) {
+                    return a;
+                }
+                float rand(half2 n) {
+                    return sa(sa(rr(n, half2(12.9898,12.1414))) * 83758.5453);
                 }
                 """,
                 ModuleLoader.getInstance().getRootModule()

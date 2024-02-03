@@ -261,7 +261,7 @@ public class ModuleLoader {
     @Nonnull
     private ModuleUnit loadModule(ShaderCompiler compiler,
                                   ExecutionModel kind,
-                                  String source,
+                                  CharSequence source,
                                   ModuleUnit parent) {
         ModuleUnit module = compiler.parseModule(kind, source, parent);
         if (module == null) {

@@ -223,8 +223,8 @@ public final class Swizzle extends Expression {
      * combines constructors and native swizzles (comprised solely of X/Y/W/Z).
      */
     @Nullable
-    public static Expression convert(int position, int maskPosition,
-                                     Expression base, @Nonnull String maskString) {
+    public static Expression convert(int position, @Nonnull Expression base,
+                                     int maskPosition, @Nonnull String maskString) {
         ThreadContext context = ThreadContext.getInstance();
         if (maskString.length() > 4) {
             context.error(maskPosition,
