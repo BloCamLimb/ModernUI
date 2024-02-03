@@ -50,7 +50,7 @@ public final class IndexExpression extends Expression {
         Type baseType = base.getType();
         if (index >= 0) {
             if (baseType.isArray()) {
-                if (baseType.isUnsizedArray()) {
+                if (baseType.isRuntimeArray()) {
                     return false;
                 }
                 if (index < baseType.getArraySize()) {
@@ -91,7 +91,7 @@ public final class IndexExpression extends Expression {
         }
         Expression indexExpr = ConstantFolder.getConstantValueForVariable(index);
         if (indexExpr.isIntLiteral()) {
-            long indexValue = ((Literal)indexExpr).getIntegerValue();
+            long indexValue = ((Literal) indexExpr).getIntegerValue();
             if (indexOutOfBounds(index.mPosition, indexValue, base)) {
                 return null;
             }

@@ -22,8 +22,7 @@ package icyllis.arc3d.compiler;
 import icyllis.arc3d.compiler.parser.Lexer;
 import icyllis.arc3d.compiler.parser.Token;
 import icyllis.arc3d.compiler.tree.*;
-import it.unimi.dsi.fastutil.longs.LongArrayList;
-import it.unimi.dsi.fastutil.longs.LongList;
+import it.unimi.dsi.fastutil.longs.*;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -42,7 +41,7 @@ public class Parser {
     private final char[] mSource;
     private final Lexer mLexer;
 
-    private final LongList mPushback = new LongArrayList();
+    private final LongStack mPushback = new LongArrayList();
 
     public Parser(ShaderCompiler compiler, ExecutionModel model, CompileOptions options, char[] source) {
         // ideally we can break long text into pieces, but shader code should not be too long
@@ -98,7 +97,7 @@ public class Parser {
         final long token;
         if (!mPushback.isEmpty()) {
             // Retrieve the token from the pushback buffer.
-            token = mPushback.removeLong(0);
+            token = mPushback.popLong();
         } else {
             // Fetch a token from the lexer.
             token = mLexer.next();
@@ -143,7 +142,7 @@ public class Parser {
      * an intervening nextToken()).
      */
     private void pushback(long token) {
-        mPushback.add(token);
+        mPushback.push(token);
     }
 
     /**
@@ -152,10 +151,10 @@ public class Parser {
     private long peek() {
         if (mPushback.isEmpty()) {
             long token = nextToken();
-            mPushback.add(token);
+            mPushback.push(token);
             return token;
         }
-        return mPushback.getLong(0);
+        return mPushback.topLong();
     }
 
     private boolean peek(int kind) {
@@ -184,19 +183,19 @@ public class Parser {
     }
 
     // Returns the range from `start` to the current parse position.
-    private int rangeFrom0(int startOffset) {
+    private int rangeFromOffset(int startOffset) {
         int endOffset = mPushback.isEmpty()
                 ? mLexer.offset()
-                : Token.offset(mPushback.getLong(0));
+                : Token.offset(mPushback.topLong());
         return Position.range(startOffset, endOffset);
     }
 
     private int rangeFrom(int startPos) {
-        return rangeFrom0(Position.getStartOffset(startPos));
+        return rangeFromOffset(Position.getStartOffset(startPos));
     }
 
     private int rangeFrom(long startToken) {
-        return rangeFrom0(Token.offset(startToken));
+        return rangeFromOffset(Token.offset(startToken));
     }
 
     /**
@@ -337,7 +336,7 @@ public class Parser {
         if (checkNext(Lexer.TK_LPAREN)) {
             return FunctionDeclarationRest(position(start), modifiers, type, name);
         } else {
-            //TODO global var rest
+            //TODO global var decl rest
             return true;
         }
     }
@@ -346,10 +345,9 @@ public class Parser {
                                             Modifiers modifiers,
                                             Type returnType,
                                             long name) {
-        long peek = peek();
         List<Variable> parameters = new ArrayList<>();
-        if (Token.kind(peek) != Lexer.TK_RPAREN) {
-            if (Token.kind(peek) == Lexer.TK_IDENTIFIER && "void".equals(text(peek))) {
+        if (!peek(Lexer.TK_RPAREN)) {
+            if (peek(Lexer.TK_IDENTIFIER) && "void".equals(text(peek()))) {
                 // '(void)' means no parameters.
                 nextToken();
             } else {
@@ -362,7 +360,7 @@ public class Parser {
                 } while (checkNext(Lexer.TK_COMMA));
             }
         }
-        expect(Lexer.TK_RPAREN, "')'");
+        expect(Lexer.TK_RPAREN, "')' to complete parameter list");
 
         FunctionDecl decl = FunctionDecl.convert(
                 rangeFrom(start),
@@ -978,34 +976,33 @@ public class Parser {
                 }
                 case Lexer.TK_DOT -> {
                     nextToken();
+                    // swizzle mask, field access, method reference
                     long name = expect(Lexer.TK_IDENTIFIER, "identifier");
                     String text = text(name);
                     int pos = rangeFrom(result.mPosition);
-                    if (result.getType().isVector() || result.getType().isScalar()) {
-                        // swizzle mask
-                        int maskPos = rangeFrom(name);
-                        result = expressionOrPoison(pos,
-                                Swizzle.convert(pos, maskPos, result, text));
-                    } else {
-                        // field access, method call
-                        result = expressionOrPoison(pos,
-                                FieldExpression.convert(pos, result, text));
-                    }
+                    int namePos = rangeFrom(name);
+                    result = expressionOrPoison(pos,
+                            FieldAccess.convert(pos, result, namePos, text));
                 }
                 case Lexer.TK_LPAREN -> {
-                    // function call
                     nextToken();
+                    // constructor call, function call, method call
                     List<Expression> args = new ArrayList<>();
                     if (!peek(Lexer.TK_RPAREN)) {
-                        do {
-                            Expression expr = AssignmentExpression();
-                            if (expr == null) {
-                                return null;
-                            }
-                            args.add(expr);
-                        } while (checkNext(Lexer.TK_COMMA));
+                        if (peek(Lexer.TK_IDENTIFIER) && "void".equals(text(peek()))) {
+                            // '(void)' means no arguments.
+                            nextToken();
+                        } else {
+                            do {
+                                Expression expr = AssignmentExpression();
+                                if (expr == null) {
+                                    return null;
+                                }
+                                args.add(expr);
+                            } while (checkNext(Lexer.TK_COMMA));
+                        }
                     }
-                    expect(Lexer.TK_RPAREN, "')' to complete function call");
+                    expect(Lexer.TK_RPAREN, "')' to complete invocation");
                     int pos = rangeFrom(result.mPosition);
                     result = expressionOrPoison(pos,
                             FunctionCall.convert(pos, result, args));
@@ -1258,12 +1255,6 @@ public class Parser {
         }
     }
 
-    private boolean allowUnsizedArrays() {
-        return mModel == ExecutionModel.COMPUTE ||
-                mModel == ExecutionModel.VERTEX ||
-                mModel == ExecutionModel.FRAGMENT;
-    }
-
     /**
      * <pre>{@literal
      * TypeSpecifier
@@ -1276,7 +1267,7 @@ public class Parser {
         String name = text(start);
         var symbol = ThreadContext.getInstance().getSymbolTable().find(name);
         if (symbol == null) {
-            error(start, "no symbol named '" + name + "'");
+            error(start, "no type named '" + name + "'");
             return ThreadContext.getInstance().getTypes().mPoison;
         }
         if (!(symbol instanceof Type result)) {
@@ -1296,10 +1287,12 @@ public class Parser {
         while (peek(Lexer.TK_LBRACKET)) {
             long bracket = nextToken();
             if (checkNext(Lexer.TK_RBRACKET)) {
-                if (allowUnsizedArrays()) {
-                    type = UnsizedArrayType(type, rangeFrom(pos));
+                if (mModel == ExecutionModel.COMPUTE ||
+                        mModel == ExecutionModel.VERTEX ||
+                        mModel == ExecutionModel.FRAGMENT) {
+                    type = RuntimeArrayType(type, rangeFrom(pos));
                 } else {
-                    error(rangeFrom(bracket), "unsized arrays are not permitted here");
+                    error(rangeFrom(bracket), "runtime-sized arrays are not permitted here");
                 }
             } else {
                 Expression size = Expression();
@@ -1321,11 +1314,11 @@ public class Parser {
         return ThreadContext.getInstance().getSymbolTable().getArrayType(elemType, arraySize);
     }
 
-    private Type UnsizedArrayType(@Nonnull Type elemType, int pos) {
+    private Type RuntimeArrayType(@Nonnull Type elemType, int pos) {
         if (!elemType.isUsableInArray(pos)) {
             return ThreadContext.getInstance().getTypes().mPoison;
         }
-        return ThreadContext.getInstance().getSymbolTable().getArrayType(elemType, Type.kUnsizedArray);
+        return ThreadContext.getInstance().getSymbolTable().getArrayType(elemType, Type.kRuntimeArray);
     }
 
     /**

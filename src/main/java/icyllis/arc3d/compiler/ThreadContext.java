@@ -74,7 +74,7 @@ public final class ThreadContext {
 
         mTypes = ModuleLoader.getInstance().getBuiltinTypes();
 
-        mSymbolTable = parent.mSymbols.enterClass(isBuiltin);
+        mSymbolTable = parent.mSymbols.enterModule(isBuiltin);
         mParentElements = Collections.unmodifiableList(parent.mElements);
 
         TLS.set(this);
@@ -206,7 +206,7 @@ public final class ThreadContext {
                 var field = (AnonymousField) result;
                 Expression base = VariableReference.make(position, field.getContainer(),
                         VariableReference.kRead_ReferenceKind);
-                yield FieldExpression.make(position, base, field.getFieldIndex(),
+                yield FieldAccess.make(position, base, field.getFieldIndex(),
                         /*anonymousBlock*/true);
             }
             case TYPE -> {

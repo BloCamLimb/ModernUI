@@ -117,7 +117,7 @@ public final class FunctionDecl extends Symbol {
         for (Variable p : mParameters) {
             mangledName.append(p.getType().getDesc()).append(';');
         }
-        return  mangledName.toString();
+        return mangledName.toString();
     }
 
     @Nullable
@@ -137,12 +137,12 @@ public final class FunctionDecl extends Symbol {
         return mModifiers;
     }
 
-    private static int find_generic_index(Type concreteType,
-                                              Type genericType,
-                                              boolean allowNarrowing) {
-        Type[] genericTypes = genericType.getCoercibleTypes();
-        for (int index = 0; index < genericTypes.length; index++) {
-            if (concreteType.canCoerceTo(genericTypes[index], allowNarrowing)) {
+    private static int findGenericIndex(Type concreteType,
+                                        Type genericType,
+                                        boolean allowNarrowing) {
+        Type[] types = genericType.getCoercibleTypes();
+        for (int index = 0; index < types.length; index++) {
+            if (concreteType.canCoerceTo(types[index], allowNarrowing)) {
                 return index;
             }
         }
@@ -173,9 +173,9 @@ public final class FunctionDecl extends Symbol {
                 continue;
             }
             // We use the first generic parameter we find to lock in the generic index;
-            // e.g. if we find `float3` here, all `$genType`s will be assumed to be `float3`.
+            // e.g. if we find `float3` here, all `__genFType`s will be assumed to be `float3`.
             if (genericIndex == -1) {
-                genericIndex = find_generic_index(arguments.get(i).getType(), parameterType,
+                genericIndex = findGenericIndex(arguments.get(i).getType(), parameterType,
                         /*allowNarrowing=*/true);
                 if (genericIndex == -1) {
                     // The passed-in type wasn't a match for ANY of the generic possibilities.

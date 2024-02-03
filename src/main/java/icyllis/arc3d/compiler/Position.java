@@ -60,14 +60,14 @@ public final class Position {
         return (pos & 0xFFFFFF) + (pos >>> 24);
     }
 
-    public static int getLine(int pos, String source) {
+    public static int getLine(int pos, char[] source) {
         if (pos == NO_POS || source == null) {
             return -1;
         }
-        int offset = Math.min(pos & 0xFFFFFF, source.length());
+        int offset = Math.min(pos & 0xFFFFFF, source.length);
         int line = 1;
         for (int i = 0; i < offset; ++i) {
-            if (source.charAt(i) == '\n') {
+            if (source[i] == '\n') {
                 ++line;
             }
         }

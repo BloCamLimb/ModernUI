@@ -20,23 +20,36 @@
 package icyllis.arc3d.compiler;
 
 /**
- * We support several module kinds.
+ * We support several execution models.
  */
 public enum ExecutionModel {
+    /**
+     * For base modules.
+     */
     BASE,
+    /**
+     * For vertex shaders.
+     */
     VERTEX,
+    /**
+     * For fragment shaders.
+     */
     FRAGMENT,
+    /**
+     * For compute shaders.
+     */
     COMPUTE,
     /**
-     * A function.
+     * A substage of shader code, working as a function.
      */
-    BASE_SUBROUTINE,
-    CUSTOM_SHADER,
-    CUSTOM_COLOR_FILTER,
-    CUSTOM_BLENDER,
-    PRIVATE_CUSTOM_SHADER,
-    PRIVATE_CUSTOM_COLOR_FILTER,
-    PRIVATE_CUSTOM_BLENDER;
+    SUBROUTINE,
+    // the following are all specialization of SUBROUTINE
+    SUBROUTINE_SHADER,          // subroutine shader(float2 uv) -> float4
+    SUBROUTINE_COLOR_FILTER,    // subroutine colorFilter(float4 col) -> float4
+    SUBROUTINE_BLENDER,         // subroutine blender(float4 src, float4 dst) -> float4
+    PRIVATE_SUBROUTINE_SHADER,  //TODO Do we really need private versions?
+    PRIVATE_SUBROUTINE_COLOR_FILTER,
+    PRIVATE_SUBROUTINE_BLENDER;
 
     public boolean isFragment() {
         return this == FRAGMENT;
@@ -46,7 +59,7 @@ public enum ExecutionModel {
         return this == COMPUTE;
     }
 
-    public boolean isSubroutine() {
-        return this.compareTo(BASE_SUBROUTINE) >= 0;
+    public boolean isAnySubroutine() {
+        return this.compareTo(SUBROUTINE) >= 0;
     }
 }

@@ -31,7 +31,7 @@ import java.util.OptionalLong;
  */
 public class Type extends Symbol {
 
-    public static final int kUnsizedArray = -1; // an unsized array (declared with [])
+    public static final int kRuntimeArray = -1; // a runtime sized array (declared with [])
 
     /**
      * @param position see {@link Position}
@@ -572,7 +572,7 @@ public class Type extends Symbol {
     }
 
     /**
-     * For arrays, returns either the size of the array (if known) or -1 (unsized).
+     * For arrays, returns either the size of the array (if known) or -1 (runtime sized).
      * For all other types, causes an assertion failure.
      */
     public int getArraySize() {
@@ -627,7 +627,7 @@ public class Type extends Symbol {
         return false;
     }
 
-    public boolean isUnsizedArray() {
+    public boolean isRuntimeArray() {
         return false;
     }
 
@@ -809,7 +809,7 @@ public class Type extends Symbol {
 
     @Nonnull
     static String getArrayNameOrDesc(String base, int size) {
-        if (size == kUnsizedArray) {
+        if (size == kRuntimeArray) {
             return base + "[]";
         }
         assert (size > 0);
@@ -853,7 +853,7 @@ public class Type extends Symbol {
         }
         OptionalLong value = ConstantFolder.getConstantInt(size);
         if (value.isEmpty()) {
-            context.error(size.mPosition, "array size must be an integer");
+            context.error(size.mPosition, "array size must be an integer constant");
             return 0;
         }
         if (value.getAsLong() <= 0) {
@@ -1041,8 +1041,8 @@ public class Type extends Symbol {
         }
 
         @Override
-        public boolean isUnsizedArray() {
-            return mUnderlyingType.isUnsizedArray();
+        public boolean isRuntimeArray() {
+            return mUnderlyingType.isRuntimeArray();
         }
 
         @Override
@@ -1112,8 +1112,8 @@ public class Type extends Symbol {
         }
 
         @Override
-        public boolean isUnsizedArray() {
-            return mArraySize == kUnsizedArray;
+        public boolean isRuntimeArray() {
+            return mArraySize == kRuntimeArray;
         }
 
         @Override
@@ -1123,7 +1123,7 @@ public class Type extends Symbol {
 
         @Override
         public int getComponents() {
-            assert (mArraySize != kUnsizedArray);
+            assert (mArraySize != kRuntimeArray);
             return super.getComponents() * mArraySize;
         }
 

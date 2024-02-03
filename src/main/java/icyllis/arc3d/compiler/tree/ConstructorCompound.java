@@ -128,7 +128,8 @@ public final class ConstructorCompound extends ConstructorCall {
         // For more complex cases, we walk the argument list and fix up the arguments as needed.
         int expected = type.getRows() * type.getCols();
         int actual = 0;
-        for (Expression arg : args) {
+        for (var it = args.listIterator(); it.hasNext(); ) {
+            var arg = it.next();
             if (!arg.getType().isScalar() && !arg.getType().isVector()) {
                 ThreadContext.getInstance().error(pos, "'" + arg.getType() +
                         "' is not a valid parameter to '" + type + "' constructor");
@@ -146,6 +147,7 @@ public final class ConstructorCompound extends ConstructorCall {
             if (arg == null) {
                 return null;
             }
+            it.set(arg);
             actual += ctorType.getRows();
         }
 
