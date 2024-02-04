@@ -150,7 +150,8 @@ public class ShaderCompiler {
     @Nullable
     public ModuleUnit parseModule(ExecutionModel model,
                                   CharSequence source,
-                                  ModuleUnit parent) {
+                                  ModuleUnit parent,
+                                  boolean builtin) {
         Objects.requireNonNull(model);
         Objects.requireNonNull(parent);
         Objects.requireNonNull(source);
@@ -158,7 +159,7 @@ public class ShaderCompiler {
         Parser parser = new Parser(this, model,
                 new CompileOptions(),
                 source.toString().toCharArray());
-        return parser.parseModule(parent);
+        return parser.parseModule(parent, builtin);
     }
 
     /**

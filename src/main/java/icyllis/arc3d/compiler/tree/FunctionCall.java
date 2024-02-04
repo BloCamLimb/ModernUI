@@ -72,7 +72,7 @@ public final class FunctionCall extends Expression {
                 } else {
                     long total = Type.CoercionCost.free();
                     for (int i = 0; i < arguments.size(); i++) {
-                        total = Type.CoercionCost.concat(
+                        total = Type.CoercionCost.plus(
                                 total,
                                 arguments.get(i).getCoercionCost(paramTypes.get(i))
                         );

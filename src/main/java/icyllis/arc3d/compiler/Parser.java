@@ -23,6 +23,7 @@ import icyllis.arc3d.compiler.parser.Lexer;
 import icyllis.arc3d.compiler.parser.Token;
 import icyllis.arc3d.compiler.tree.*;
 import it.unimi.dsi.fastutil.longs.*;
+import org.lwjgl.util.spvc.Spv;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -69,10 +70,10 @@ public class Parser {
     }
 
     @Nullable
-    public ModuleUnit parseModule(ModuleUnit parent) {
+    public ModuleUnit parseModule(ModuleUnit parent, boolean builtin) {
         Objects.requireNonNull(parent);
         ErrorHandler errorHandler = mCompiler.getErrorHandler();
-        DSL.startModule(mModel, mOptions, parent);
+        DSL.startModule(mModel, mOptions, parent, builtin);
         DSL.setErrorHandler(errorHandler);
         errorHandler.setSource(mSource);
         TranslationUnit();
@@ -180,6 +181,15 @@ public class Parser {
 
     private void error(int start, int end, String msg) {
         ThreadContext.getInstance().error(start, end, msg);
+    }
+
+    private void warning(long token, String msg) {
+        int offset = Token.offset(token);
+        warning(offset, offset + Token.length(token), msg);
+    }
+
+    private void warning(int start, int end, String msg) {
+        ThreadContext.getInstance().warning(start, end, msg);
     }
 
     // Returns the range from `start` to the current parse position.
@@ -1134,9 +1144,10 @@ public class Parser {
     /**
      * <pre>{@literal
      * Modifiers
-     *     : (LAYOUT LPAREN IDENTIFIER (EQ INT_LITERAL)? (COMMA IDENTIFIER (EQ INT_LITERAL)?)* RPAREN)?
-     *       (UNIFORM | CONST | IN | OUT | INOUT | FLAT | NOPERSPECTIVE | EXPORT |
-     *        PURE | INLINE | NOINLINE | READONLY | WRITEONLY | BUFFER | WORKGROUP)*
+     *     : (LAYOUT Layout)?
+     *       (UNIFORM | CONST | IN | OUT | INOUT | SMOOTH | FLAT |
+     *        NOPERSPECTIVE | SUBROUTINE | PURE | INLINE | NOINLINE |
+     *        READONLY | WRITEONLY | BUFFER | WORKGROUP)*
      * }</pre>
      */
     @Nonnull
@@ -1144,66 +1155,7 @@ public class Parser {
         long start = peek();
         Modifiers modifiers = new Modifiers(Position.NO_POS);
         if (checkNext(Lexer.TK_LAYOUT)) {
-            expect(Lexer.TK_LPAREN, "'('");
-            for (;;) {
-                long t = nextToken();
-                String text = text(t);
-                int pos = position(t);
-                switch (text) {
-                    case "origin_upper_left" ->
-                            modifiers.setLayoutFlag(Layout.kOriginUpperLeft_LayoutFlag, text, pos);
-                    case "pixel_center_integer" ->
-                            modifiers.setLayoutFlag(Layout.kPixelCenterInteger_LayoutFlag, text, pos);
-                    case "early_fragment_tests" ->
-                            modifiers.setLayoutFlag(Layout.kEarlyFragmentTests_LayoutFlag, text, pos);
-                    case "blend_support_all_equations" ->
-                            modifiers.setLayoutFlag(Layout.kBlendSupportAllEquations_LayoutFlag, text, pos);
-                    case "push_constant" ->
-                            modifiers.setLayoutFlag(Layout.kPushConstant_LayoutFlag, text, pos);
-                    case "location" -> {
-                        modifiers.setLayoutFlag(Layout.kLocation_LayoutFlag, text, pos);
-                        modifiers.layout().mLocation = LayoutInt();
-                    }
-                    case "component" -> {
-                        modifiers.setLayoutFlag(Layout.kComponent_LayoutFlag, text, pos);
-                        modifiers.layout().mComponent = LayoutInt();
-                    }
-                    case "index" -> {
-                        modifiers.setLayoutFlag(Layout.kIndex_LayoutFlag, text, pos);
-                        modifiers.layout().mIndex = LayoutInt();
-                    }
-                    case "binding" -> {
-                        modifiers.setLayoutFlag(Layout.kBinding_LayoutFlag, text, pos);
-                        modifiers.layout().mBinding = LayoutInt();
-                    }
-                    case "offset" -> {
-                        modifiers.setLayoutFlag(Layout.kOffset_LayoutFlag, text, pos);
-                        modifiers.layout().mOffset = LayoutInt();
-                    }
-                    case "align" -> {
-                        modifiers.setLayoutFlag(Layout.kAlign_LayoutFlag, text, pos);
-                        modifiers.layout().mAlign = LayoutInt();
-                    }
-                    case "set" -> {
-                        modifiers.setLayoutFlag(Layout.kSet_LayoutFlag, text, pos);
-                        modifiers.layout().mSet = LayoutInt();
-                    }
-                    case "input_attachment_index" -> {
-                        modifiers.setLayoutFlag(Layout.kInputAttachmentIndex_LayoutFlag, text, pos);
-                        modifiers.layout().mInputAttachmentIndex = LayoutInt();
-                    }
-                    case "builtin" -> {
-                        modifiers.setLayoutFlag(Layout.kBuiltin_LayoutFlag, text, pos);
-                        modifiers.layout().mBuiltin = LayoutInt();
-                    }
-                }
-
-                if (checkNext(Lexer.TK_COMMA)) {
-                    continue;
-                }
-                expect(Lexer.TK_RPAREN, "')'");
-                break;
-            }
+            Layout(modifiers);
         }
         for (;;) {
             int mask = switch (Token.kind(peek())) {
@@ -1219,10 +1171,10 @@ public class Parser {
                 case Lexer.TK_WRITEONLY -> Modifiers.kWriteOnly_Flag;
                 case Lexer.TK_BUFFER -> Modifiers.kBuffer_Flag;
                 case Lexer.TK_WORKGROUP -> Modifiers.kWorkgroup_Flag;
+                case Lexer.TK_SUBROUTINE -> Modifiers.kSubroutine_Flag;
                 case Lexer.TK_PURE -> Modifiers.kPure_Flag;
                 case Lexer.TK_INLINE -> Modifiers.kInline_Flag;
                 case Lexer.TK_NOINLINE -> Modifiers.kNoInline_Flag;
-                case Lexer.TK_EXPORT -> Modifiers.kExport_Flag;
                 default -> 0;
             };
             if (mask == 0) {
@@ -1235,16 +1187,120 @@ public class Parser {
         return modifiers;
     }
 
+    /**
+     * <pre>{@literal
+     * Layout
+     *     : LPAREN SingleLayout (COMMA SingleLayout)* RPAREN
+     * SingleLayout
+     *     : IDENTIFIER (EQ (INTLITERAL | IDENTIFIER))?
+     * }</pre>
+     */
+    private void Layout(Modifiers modifiers) {
+        expect(Lexer.TK_LPAREN, "'('");
+        do {
+            long name = expect(Lexer.TK_IDENTIFIER, "identifier");
+            String text = text(name);
+            int pos = position(name);
+            switch (text) {
+                case "origin_upper_left" ->
+                        modifiers.setLayoutFlag(Layout.kOriginUpperLeft_LayoutFlag, text, pos);
+                case "pixel_center_integer" ->
+                        modifiers.setLayoutFlag(Layout.kPixelCenterInteger_LayoutFlag, text, pos);
+                case "early_fragment_tests" ->
+                        modifiers.setLayoutFlag(Layout.kEarlyFragmentTests_LayoutFlag, text, pos);
+                case "blend_support_all_equations" ->
+                        modifiers.setLayoutFlag(Layout.kBlendSupportAllEquations_LayoutFlag, text, pos);
+                case "push_constant" ->
+                        modifiers.setLayoutFlag(Layout.kPushConstant_LayoutFlag, text, pos);
+                case "location" -> {
+                    modifiers.setLayoutFlag(Layout.kLocation_LayoutFlag, text, pos);
+                    modifiers.layout().mLocation = LayoutInt();
+                }
+                case "component" -> {
+                    modifiers.setLayoutFlag(Layout.kComponent_LayoutFlag, text, pos);
+                    modifiers.layout().mComponent = LayoutInt();
+                }
+                case "index" -> {
+                    modifiers.setLayoutFlag(Layout.kIndex_LayoutFlag, text, pos);
+                    modifiers.layout().mIndex = LayoutInt();
+                }
+                case "binding" -> {
+                    modifiers.setLayoutFlag(Layout.kBinding_LayoutFlag, text, pos);
+                    modifiers.layout().mBinding = LayoutInt();
+                }
+                case "offset" -> {
+                    modifiers.setLayoutFlag(Layout.kOffset_LayoutFlag, text, pos);
+                    modifiers.layout().mOffset = LayoutInt();
+                }
+                case "align" -> {
+                    modifiers.setLayoutFlag(Layout.kAlign_LayoutFlag, text, pos);
+                    modifiers.layout().mAlign = LayoutInt();
+                }
+                case "set" -> {
+                    modifiers.setLayoutFlag(Layout.kSet_LayoutFlag, text, pos);
+                    modifiers.layout().mSet = LayoutInt();
+                }
+                case "input_attachment_index" -> {
+                    modifiers.setLayoutFlag(Layout.kInputAttachmentIndex_LayoutFlag, text, pos);
+                    modifiers.layout().mInputAttachmentIndex = LayoutInt();
+                }
+                case "builtin" -> {
+                    modifiers.setLayoutFlag(Layout.kBuiltin_LayoutFlag, text, pos);
+                    modifiers.layout().mBuiltin = LayoutBuiltin();
+                }
+                default -> {
+                    warning(name, "unrecognized layout qualifier '" + text + "'");
+                    if (checkNext(Lexer.TK_EQ)) {
+                        nextToken();
+                    }
+                }
+            }
+        } while (checkNext(Lexer.TK_COMMA));
+        expect(Lexer.TK_RPAREN, "')'");
+    }
+
     private int LayoutInt() {
         expect(Lexer.TK_EQ, "'='");
         long token = expect(Lexer.TK_INTLITERAL, "integer literal");
+        return LayoutIntValue(token);
+    }
+
+    private int LayoutBuiltin() {
+        expect(Lexer.TK_EQ, "'='");
+        if (peek(Lexer.TK_INTLITERAL)) {
+            long token = nextToken();
+            return LayoutIntValue(token);
+        }
+        long name = expectIdentifier();
+        String text = text(name);
+        return switch (text) {
+            case "position" -> Spv.SpvBuiltInPosition;
+            case "vertex_index" -> Spv.SpvBuiltInVertexIndex;
+            case "instance_index" -> Spv.SpvBuiltInInstanceIndex;
+            case "frag_coord" -> Spv.SpvBuiltInFragCoord;
+            case "front_facing" -> Spv.SpvBuiltInFrontFacing;
+            case "sample_mask" -> Spv.SpvBuiltInSampleMask; // in/out
+            case "frag_depth" -> Spv.SpvBuiltInFragDepth;
+            case "num_workgroups" -> Spv.SpvBuiltInNumWorkgroups;
+            case "workgroup_id" -> Spv.SpvBuiltInWorkgroupId;
+            case "local_invocation_id" -> Spv.SpvBuiltInLocalInvocationId;
+            case "global_invocation_id" -> Spv.SpvBuiltInGlobalInvocationId;
+            case "local_invocation_index" -> Spv.SpvBuiltInLocalInvocationIndex;
+            default -> {
+                error(name, "unrecognized built-in name '" + text + "'");
+                yield -1;
+            }
+        };
+    }
+
+    private int LayoutIntValue(long token) {
         String s = text(token);
         if (s.endsWith("u") || s.endsWith("U")) {
             s = s.substring(0, s.length() - 1);
         }
         try {
             long value = Long.decode(s);
-            if (value <= 0x7FFF_FFFFL) {
+            if (value <= Integer.MAX_VALUE) {
                 return (int) value;
             }
             error(token, "integer value is too large: " + s);

@@ -37,6 +37,7 @@ public final class ThreadContext {
     private final ExecutionModel mModel;
     private final CompileOptions mOptions;
     private final boolean mIsBuiltin;
+    private final boolean mIsModule;
 
     // The Context holds all of the built-in types.
     private final BuiltinTypes mTypes;
@@ -62,15 +63,13 @@ public final class ThreadContext {
         }
     };
 
-    /**
-     * @param isBuiltin true if we are processing include files
-     */
     ThreadContext(ExecutionModel model, CompileOptions options,
-                  ModuleUnit parent, boolean isBuiltin) {
+                  ModuleUnit parent, boolean isBuiltin, boolean isModule) {
         mModel = Objects.requireNonNull(model);
         mOptions = Objects.requireNonNull(options);
         Objects.requireNonNull(parent);
         mIsBuiltin = isBuiltin;
+        mIsModule = isModule;
 
         mTypes = ModuleLoader.getInstance().getBuiltinTypes();
 
@@ -109,10 +108,17 @@ public final class ThreadContext {
     }
 
     /**
-     * @return true if we are processing include files
+     * @return true if we are at built-in level
      */
     public boolean isBuiltin() {
         return mIsBuiltin;
+    }
+
+    /**
+     * @return true if we are processing include files
+     */
+    public boolean isModule() {
+        return mIsModule;
     }
 
     /**

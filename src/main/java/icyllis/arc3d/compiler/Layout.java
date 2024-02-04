@@ -47,6 +47,27 @@ public class Layout {
             kSet_LayoutFlag = 1 << 11,
             kInputAttachmentIndex_LayoutFlag = 1 << 12,
             kBuiltin_LayoutFlag = 1 << 13;
+    public static final int kCount_LayoutFlag = 14;
+
+    public static String describeLayoutFlag(int flag) {
+        return switch (Integer.numberOfTrailingZeros(flag)) {
+            case 0 -> "origin_upper_left";
+            case 1 -> "pixel_center_integer";
+            case 2 -> "early_fragment_tests";
+            case 3 -> "blend_support_all_equations";
+            case 4 -> "push_constant";
+            case 5 -> "location";
+            case 6 -> "component";
+            case 7 -> "index";
+            case 8 -> "binding";
+            case 9 -> "offset";
+            case 10 -> "align";
+            case 11 -> "set";
+            case 12 -> "input_attachment_index";
+            case 13 -> "builtin";
+            default -> "";
+        };
+    }
 
     /**
      * Layout keyword flags.
@@ -103,6 +124,25 @@ public class Layout {
                     "' appears more than once");
         }
         mLayoutFlags |= mask;
+    }
+
+    public void clearLayoutFlag(int mask) {
+        mLayoutFlags &= ~mask;
+    }
+
+    public boolean checkLayoutFlags(int pos, int permittedLayoutFlags) {
+        boolean success = true;
+
+        for (int i = 0; i < kCount_LayoutFlag; i++) {
+            int flag = 1 << i;
+            if ((mLayoutFlags & flag) != 0 && (permittedLayoutFlags & flag) == 0) {
+                ThreadContext.getInstance().error(pos, "layout qualifier '" +
+                        describeLayoutFlag(flag) + "' is not permitted here");
+                success = false;
+            }
+        }
+
+        return success;
     }
 
     @Override

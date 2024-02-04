@@ -262,8 +262,9 @@ public class ModuleLoader {
     private ModuleUnit loadModule(ShaderCompiler compiler,
                                   ExecutionModel kind,
                                   CharSequence source,
-                                  ModuleUnit parent) {
-        ModuleUnit module = compiler.parseModule(kind, source, parent);
+                                  ModuleUnit parent,
+                                  boolean builtin) {
+        ModuleUnit module = compiler.parseModule(kind, source, parent, builtin);
         if (module == null) {
             System.err.print(compiler.getLogMessage());
             throw new RuntimeException("Failed to load module");
@@ -311,7 +312,8 @@ public class ModuleLoader {
                 mCommonModule = loadModule(compiler,
                         ExecutionModel.FRAGMENT,
                         loadModuleSource("slang_common.txt"),
-                        mRootModule);
+                        mRootModule,
+                        true);
             }
         }
         return mCommonModule;

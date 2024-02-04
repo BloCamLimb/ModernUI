@@ -141,6 +141,11 @@ public final class SymbolTable {
     @Nullable
     public <T extends Symbol> T insert(@Nonnull T symbol) {
         String key = symbol.getName();
+        if (key.isEmpty()) {
+            // We have legitimate use cases of nameless symbols, such as anonymous function parameters.
+            // If we find one here, we don't need to add its name to the symbol table.
+            return symbol;
+        }
 
         // If this is a function declaration, we need to keep the overload chain in sync.
         if (symbol instanceof FunctionDecl) {
