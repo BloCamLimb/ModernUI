@@ -908,7 +908,7 @@ public class Type extends Symbol {
         ///// OPERATORS
 
         // Addition of two costs.
-        public static long concat(long lhs, long rhs) {
+        public static long plus(long lhs, long rhs) {
             if (((lhs & SATURATE) | (rhs & SATURATE)) != 0) {
                 return SATURATE;
             }

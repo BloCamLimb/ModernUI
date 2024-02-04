@@ -29,11 +29,10 @@ public class TestCompiler {
         ModuleUnit parsed = compiler.parseModule(
                 ExecutionModel.BASE,
                 """
-                float rr(uint2 a, uint2 b) {
-                    // this will compile into 1.0
-                    return float(a.x1.y.x);
-                }
-                float rr(int2 a, int2 b) {
+                layout(location = 0) smooth in vec2 f_Position;
+                layout(location = 1) smooth in vec4 f_Color;
+                layout(location = 0, index = 0) out vec4 FragColor0;
+                float rr(float2 a, float2 b) {
                     // this will compile into 1.0
                     return float(a.x1.y.x);
                 }
@@ -47,7 +46,8 @@ public class TestCompiler {
                     return sa(sa(rr(n, half2(12.9898,12.1414))) * 83758.5453);
                 }
                 """,
-                ModuleLoader.getInstance().getRootModule()
+                ModuleLoader.getInstance().getRootModule(),
+                false
         );
 
         System.out.println(compiler.getLogMessage());

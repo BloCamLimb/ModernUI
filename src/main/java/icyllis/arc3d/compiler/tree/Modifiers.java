@@ -61,10 +61,32 @@ public final class Modifiers extends Node {
             kWorkgroup_Flag = 1 << 10;  // GLSL 'shared'
     // Extensions, not present in GLSL
     public static final int
-            kExport_Flag = 1 << 11,
+            kSubroutine_Flag = 1 << 11,
             kPure_Flag = 1 << 12,
             kInline_Flag = 1 << 13,
             kNoInline_Flag = 1 << 14;
+    public static final int kCount_Flag = 15;
+
+    public static String describeFlag(int flag) {
+        return switch (Integer.numberOfTrailingZeros(flag)) {
+            case 0 -> "smooth";
+            case 1 -> "flat";
+            case 2 -> "noperspective";
+            case 3 -> "const";
+            case 4 -> "uniform";
+            case 5 -> "in";
+            case 6 -> "out";
+            case 7 -> "readonly";
+            case 8 -> "writeonly";
+            case 9 -> "buffer";
+            case 10 -> "workgroup";
+            case 11 -> "subroutine";
+            case 12 -> "__pure";
+            case 13 -> "inline";
+            case 14 -> "noinline";
+            default -> "";
+        };
+    }
 
     /**
      * Layout qualifiers.
@@ -96,6 +118,19 @@ public final class Modifiers extends Node {
         layout.setLayoutFlag(mask, name, pos);
     }
 
+    public void clearLayoutFlag(int mask) {
+        if (mLayout != null) {
+            mLayout.clearLayoutFlag(mask);
+        }
+    }
+
+    public boolean checkLayoutFlags(int permittedLayoutFlags) {
+        if (mLayout != null) {
+            return mLayout.checkLayoutFlags(mPosition, permittedLayoutFlags);
+        }
+        return true;
+    }
+
     public int flags() {
         return mFlags;
     }
@@ -110,6 +145,21 @@ public final class Modifiers extends Node {
 
     public void clearFlag(int mask) {
         mFlags &= ~mask;
+    }
+
+    public boolean checkFlags(int permittedFlags) {
+        boolean success = true;
+
+        for (int i = 0; i < kCount_Flag; i++) {
+            int flag = 1 << i;
+            if ((mFlags & flag) != 0 && (permittedFlags & flag) == 0) {
+                ThreadContext.getInstance().error(mPosition, "qualifier '" +
+                        describeFlag(flag) + "' is not permitted here");
+                success = false;
+            }
+        }
+
+        return success;
     }
 
     @Override
@@ -151,8 +201,8 @@ public final class Modifiers extends Node {
         StringJoiner joiner = new StringJoiner(" ");
 
         // Extensions
-        if ((flags & kExport_Flag) != 0) {
-            joiner.add("__export");
+        if ((flags & kSubroutine_Flag) != 0) {
+            joiner.add("subroutine");
         }
         if ((flags & kPure_Flag) != 0) {
             joiner.add("__pure");

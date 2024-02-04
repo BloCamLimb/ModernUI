@@ -66,13 +66,13 @@ public class LexerGenerator {
             RESTRICT       = "restrict"
             READONLY       = "readonly"
             WRITEONLY      = "writeonly"
+            SUBROUTINE     = "subroutine"
             LAYOUT         = "layout"
             STRUCT         = "struct"
             INLINE         = "inline"
             NOINLINE       = "noinline"
             PURE           = "__pure"
-            EXPORT         = "__export"
-            RESERVED       = shared|attribute|varying|atomic_uint|lowp|mediump|highp|precision|subroutine|common|partition|active|asm|class|union|enum|typedef|template|this|resource|goto|public|static|extern|external|interface|long|double|fixed|unsigned|superp|input|output|hvec[234]|dvec[234]|fvec[234]|filter|sizeof|cast|namespace|using|[iu]?(sampler|image|texture)2DRect|sampler2DRectShadow|sampler3DRect|gl_\\w*
+            RESERVED       = shared|attribute|varying|atomic_uint|lowp|mediump|highp|precision|common|partition|active|asm|class|union|enum|typedef|template|this|resource|goto|public|static|extern|external|interface|long|double|fixed|unsigned|superp|input|output|hvec[234]|dvec[234]|fvec[234]|filter|sizeof|cast|namespace|using|[iu]?(sampler|image|texture)2DRect|sampler2DRectShadow|sampler3DRect|gl_\\w*
             IDENTIFIER     = [a-zA-Z_]\\w*
             LPAREN         = "("
             RPAREN         = ")"

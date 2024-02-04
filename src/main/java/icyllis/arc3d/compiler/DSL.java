@@ -30,17 +30,17 @@ public final class DSL {
         if (ThreadContext.isActive()) {
             throw new IllegalStateException("DSL is already started");
         }
-        new ThreadContext(model, options, parent, false);
+        new ThreadContext(model, options, parent, false, false);
     }
 
     /**
      * Starts the DSL on the current thread for compiling modules (include files).
      */
-    public static void startModule(ExecutionModel model, CompileOptions options, ModuleUnit parent) {
+    public static void startModule(ExecutionModel model, CompileOptions options, ModuleUnit parent, boolean builtin) {
         if (ThreadContext.isActive()) {
             throw new IllegalStateException("DSL is already started");
         }
-        new ThreadContext(model, options, parent, true);
+        new ThreadContext(model, options, parent, builtin, true);
     }
 
     /**

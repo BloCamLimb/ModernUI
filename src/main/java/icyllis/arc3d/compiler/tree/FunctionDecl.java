@@ -56,17 +56,241 @@ public final class FunctionDecl extends Symbol {
         mIntrinsicKind = intrinsicKind;
     }
 
+    private static boolean checkModifiers(@Nonnull ThreadContext context,
+                                          @Nonnull Modifiers modifiers) {
+        // No layout flag is permissible on a function.
+        boolean success = modifiers.checkLayoutFlags(0);
+        int permittedFlags = Modifiers.kInline_Flag |
+                Modifiers.kNoInline_Flag |
+                (context.isModule() ? Modifiers.kPure_Flag
+                        : 0);
+        success &= modifiers.checkFlags(permittedFlags);
+        if ((modifiers.flags() & (Modifiers.kInline_Flag | Modifiers.kNoInline_Flag)) ==
+                (Modifiers.kInline_Flag | Modifiers.kNoInline_Flag)) {
+            context.error(modifiers.mPosition, "functions cannot be both 'inline' and 'noinline'");
+            return false;
+        }
+        return success;
+    }
+
+    private static boolean checkReturnType(@Nonnull ThreadContext context,
+                                           int pos, @Nonnull Type returnType) {
+        if (returnType.isOpaque()) {
+            context.error(pos, "functions may not return opaque type '" +
+                    returnType.getName() + "'");
+            return false;
+        }
+        if (returnType.isGeneric()) {
+            context.error(pos, "functions may not return generic type '" +
+                    returnType.getName() + "'");
+            return false;
+        }
+        if (returnType.isRuntimeArray()) {
+            context.error(pos, "functions may not return runtime-sized array type '" +
+                    returnType.getName() + "'");
+            return false;
+        }
+        return true;
+    }
+
+    private static boolean checkParameters(@Nonnull ThreadContext context,
+                                           @Nonnull List<Variable> parameters,
+                                           @Nonnull Modifiers modifiers) {
+        boolean success = true;
+        for (var param : parameters) {
+            Type type = param.getType();
+            int permittedFlags = Modifiers.kConst_Flag | Modifiers.kIn_Flag;
+            int permittedLayoutFlags = 0;
+            if (!type.isOpaque()) {
+                permittedFlags |= Modifiers.kOut_Flag;
+            } else if (type.isStorageImage()) {
+                permittedFlags |= Modifiers.kReadOnly_Flag | Modifiers.kWriteOnly_Flag;
+            }
+            success &= param.getModifiers().checkFlags(permittedFlags);
+            success &= param.getModifiers().checkLayoutFlags(permittedLayoutFlags);
+
+            // Pure functions should not change any state, and should be safe to eliminate if their
+            // result is not used; this is incompatible with out-parameters, so we forbid it here.
+            // (We don't exhaustively guard against pure functions changing global state in other ways,
+            // though, since they aren't allowed in user code.)
+            if ((modifiers.flags() & Modifiers.kPure_Flag) != 0 &&
+                    (param.getModifiers().flags() & Modifiers.kOut_Flag) != 0) {
+                context.error(param.getModifiers().mPosition,
+                        "pure functions cannot have out parameters");
+                success = false;
+            }
+        }
+        return success;
+    }
+
+    private static boolean checkEntryPointSignature(@Nonnull ThreadContext context,
+                                                    int pos,
+                                                    @Nonnull Type returnType,
+                                                    @Nonnull List<Variable> parameters) {
+        switch (context.getModel()) {
+            case VERTEX, FRAGMENT, COMPUTE -> {
+                if (!returnType.matches(context.getTypes().mVoid)) {
+                    context.error(pos, "entry point must return 'void'");
+                    return false;
+                }
+                if (!parameters.isEmpty()) {
+                    context.error(pos, "entry point must have zero parameters");
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Given a concrete type (`float3`) and a generic type (`__genFType`), returns the index of the
+     * concrete type within the generic type's typelist. Returns -1 if there is no match.
+     */
+    private static int findGenericIndex(@Nonnull Type concreteType,
+                                        @Nonnull Type genericType,
+                                        boolean allowNarrowing) {
+        Type[] types = genericType.getCoercibleTypes();
+        for (int index = 0; index < types.length; index++) {
+            if (concreteType.canCoerceTo(types[index], allowNarrowing)) {
+                return index;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Returns true if the types match, or if `concreteType` can be found in `maybeGenericType`.
+     */
+    private static boolean typeMatches(@Nonnull Type concreteType,
+                                       @Nonnull Type maybeGenericType) {
+        return maybeGenericType.isGeneric()
+                ? findGenericIndex(concreteType, maybeGenericType, false) != -1
+                : concreteType.matches(maybeGenericType);
+    }
+
+    /**
+     * Checks a parameter list (params) against the parameters of a function that was declared earlier
+     * (otherParams). Returns true if they match, even if the parameters in `otherParams` contain
+     * generic types.
+     */
+    private static boolean parametersMatch(@Nonnull List<Variable> params,
+                                           @Nonnull List<Variable> otherParams) {
+        // If the param lists are different lengths, they're definitely not a match.
+        if (params.size() != otherParams.size()) {
+            return false;
+        }
+
+        // Figure out a consistent generic index (or bail if we find a contradiction).
+        int genericIndex = -1;
+        for (int i = 0; i < params.size(); ++i) {
+            Type paramType = params.get(i).getType();
+            Type otherParamType = otherParams.get(i).getType();
+
+            if (otherParamType.isGeneric()) {
+                int genericIndexForThisParam = findGenericIndex(paramType, otherParamType,
+                        /*allowNarrowing=*/false);
+                if (genericIndexForThisParam == -1) {
+                    // The type wasn't a match for this generic at all; these params can't be a match.
+                    return false;
+                }
+                if (genericIndex != -1 && genericIndex != genericIndexForThisParam) {
+                    // The generic index mismatches from what we determined on a previous parameter.
+                    return false;
+                }
+                genericIndex = genericIndexForThisParam;
+            }
+        }
+
+        // Now that we've determined a generic index (if we needed one), do a parameter check.
+        for (int i = 0; i < params.size(); i++) {
+            Type paramType = params.get(i).getType();
+            Type otherParamType = otherParams.get(i).getType();
+
+            // Make generic types concrete.
+            if (otherParamType.isGeneric()) {
+                otherParamType = otherParamType.getCoercibleTypes()[genericIndex];
+            }
+            // Detect type mismatches.
+            if (!paramType.matches(otherParamType)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Nullable
     public static FunctionDecl convert(int pos,
-                                       Modifiers modifiers,
-                                       String name,
-                                       List<Variable> parameters,
-                                       Type returnType) {
+                                       @Nonnull Modifiers modifiers,
+                                       @Nonnull String name,
+                                       @Nonnull List<Variable> parameters,
+                                       @Nonnull Type returnType) {
         ThreadContext context = ThreadContext.getInstance();
 
         int intrinsicKind = context.isBuiltin()
                 ? IntrinsicList.findIntrinsicKind(name)
                 : IntrinsicList.kNotIntrinsic;
         boolean isEntryPoint = "main".equals(name);
+
+        if (!checkModifiers(context, modifiers)) {
+            return null;
+        }
+        if (!checkReturnType(context, pos, returnType)) {
+            return null;
+        }
+        if (!checkParameters(context, parameters, modifiers)) {
+            return null;
+        }
+        if (isEntryPoint && !checkEntryPointSignature(context, pos, returnType, parameters)) {
+            return null;
+        }
+
+        Symbol entry = context.getSymbolTable().find(name);
+        if (entry != null) {
+            if (!(entry instanceof FunctionDecl chain)) {
+                context.error(pos, "symbol '" + name + "' was already defined");
+                return null;
+            }
+            FunctionDecl existingDecl = null;
+            for (FunctionDecl other = chain;
+                 other != null;
+                 other = other.getNextOverload()) {
+                if (!parametersMatch(parameters, other.getParameters())) {
+                    continue;
+                }
+                if (!typeMatches(returnType, other.getReturnType())) {
+                    var invalidDecl = new FunctionDecl(pos, modifiers, name, parameters, returnType,
+                            context.isBuiltin(), isEntryPoint, intrinsicKind);
+                    context.error(pos, "functions '" + invalidDecl + "' and '" +
+                            other + "' differ only in return type");
+                    return null;
+                }
+                for (int i = 0; i < parameters.size(); i++) {
+                    if (!parameters.get(i).getModifiers().equals(
+                            other.getParameters().get(i).getModifiers())) {
+                        context.error(parameters.get(i).mPosition,
+                                "modifiers on parameter " + (i + 1) +
+                                " differ between declaration and definition");
+                        return null;
+                    }
+                }
+                if (other.getDefinition() != null || other.isIntrinsic() ||
+                        !modifiers.equals(other.getModifiers())) {
+                    var invalidDecl = new FunctionDecl(pos, modifiers, name, parameters, returnType,
+                            context.isBuiltin(), isEntryPoint, intrinsicKind);
+                    context.error(pos, "redefinition of '" + invalidDecl + "'");
+                    return null;
+                }
+                existingDecl = other;
+                break;
+            }
+            if (existingDecl == null && chain.isEntryPoint()) {
+                context.error(pos, "redefinition of entry point");
+                return null;
+            }
+            if (existingDecl != null) {
+                return existingDecl;
+            }
+        }
 
         return context.getSymbolTable().insert(
                 new FunctionDecl(
@@ -91,6 +315,11 @@ public final class FunctionDecl extends Symbol {
     @Nonnull
     @Override
     public Type getType() {
+        throw new AssertionError();
+    }
+
+    @Nonnull
+    public Type getReturnType() {
         return mReturnType;
     }
 
@@ -135,18 +364,6 @@ public final class FunctionDecl extends Symbol {
 
     public Modifiers getModifiers() {
         return mModifiers;
-    }
-
-    private static int findGenericIndex(Type concreteType,
-                                        Type genericType,
-                                        boolean allowNarrowing) {
-        Type[] types = genericType.getCoercibleTypes();
-        for (int index = 0; index < types.length; index++) {
-            if (concreteType.canCoerceTo(types[index], allowNarrowing)) {
-                return index;
-            }
-        }
-        return -1;
     }
 
     public boolean isBuiltin() {
