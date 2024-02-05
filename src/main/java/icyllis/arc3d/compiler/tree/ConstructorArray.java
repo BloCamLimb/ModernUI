@@ -23,6 +23,7 @@ import icyllis.arc3d.compiler.ThreadContext;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.List;
 
 /**
  * Represents the construction of an array type, such as "float[5](x, y, z, w, 1)".
@@ -39,16 +40,16 @@ public final class ConstructorArray extends ConstructorCall {
      * Perform explicit check and report errors via ErrorHandler; returns null on error.
      */
     @Nullable
-    public static Expression convert(int position, Type type, Expression[] arguments) {
-        assert type.isArray() && type.getArraySize() > 0 : type.toString();
+    public static Expression convert(int position, @Nonnull Type type, @Nonnull List<Expression> arguments) {
+        assert type.isArray();
 
         // If there is a single argument containing an array of matching size and the types are
         // coercible, this is actually a cast. i.e., `half[10](myFloat10Array)`. This isn't a GLSL
         // feature, but the Pipeline stage code generator needs this functionality so that code which
         // was originally compiled with "allow narrowing conversions" enabled can be later recompiled
         // without narrowing conversions (we patch over these conversions with an explicit cast).
-        if (arguments.length == 1) {
-            Expression arg = arguments[0];
+        if (arguments.size() == 1) {
+            Expression arg = arguments.get(0);
             Type argType = arg.getType();
 
             if (argType.isArray() && argType.canCoerceTo(type, false)) {
@@ -56,25 +57,36 @@ public final class ConstructorArray extends ConstructorCall {
             }
         }
 
-        // Check that the number of constructor arguments matches the array size.
-        if (type.getArraySize() != arguments.length) {
-            ThreadContext.getInstance().error(position, String.format("invalid arguments to '%s' constructor " +
-                            "(expected %d elements, but found %d)", type.getName(), type.getArraySize(),
-                    arguments.length));
-            return null;
+        ThreadContext context = ThreadContext.getInstance();
+        if (type.isUnsizedArray()) {
+            // implicitly sized array
+            if (arguments.isEmpty()) {
+                context.error(position, "implicitly sized array constructor must have at least one argument");
+                return null;
+            }
+            type = context.getSymbolTable().getArrayType(
+                    type.getElementType(), arguments.size());
+        } else {
+            // Check that the number of constructor arguments matches the array size.
+            if (type.getArraySize() != arguments.size()) {
+                context.error(position, String.format("invalid arguments to '%s' constructor " +
+                                "(expected %d elements, but found %d)", type.getName(), type.getArraySize(),
+                        arguments.size()));
+                return null;
+            }
         }
 
         // Convert each constructor argument to the array's element type.
         Type baseType = type.getElementType();
-        Expression[] immutableArgs = new Expression[arguments.length];
-        for (int i = 0; i < arguments.length; i++) {
-            immutableArgs[i] = baseType.coerceExpression(arguments[i]);
+        Expression[] immutableArgs = new Expression[arguments.size()];
+        for (int i = 0; i < arguments.size(); i++) {
+            immutableArgs[i] = baseType.coerceExpression(arguments.get(i));
             if (immutableArgs[i] == null) {
                 return null;
             }
         }
 
-        return make(position, type, immutableArgs);
+        return ConstructorArray.make(position, type, immutableArgs);
     }
 
     /**
@@ -83,7 +95,7 @@ public final class ConstructorArray extends ConstructorCall {
      * No explicit check, assuming that the input array is immutable.
      */
     @Nonnull
-    public static Expression make(int position, Type type, Expression[] arguments) {
+    public static Expression make(int position, @Nonnull Type type, @Nonnull Expression[] arguments) {
         assert type.getArraySize() == arguments.length;
         for (Expression arg : arguments) {
             assert type.getElementType().matches(arg.getType());

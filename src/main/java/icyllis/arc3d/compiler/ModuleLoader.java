@@ -274,7 +274,7 @@ public class ModuleLoader {
         // the input verbatim, which we don't care about at runtime.
         module.mElements.removeIf(element -> switch (element.getKind()) {
             case FUNCTION_DEFINITION,
-                    GLOBAL_VAR,
+                    GLOBAL_VARIABLE,
                     INTERFACE_BLOCK ->
                 // We need to preserve these.
                     false;

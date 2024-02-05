@@ -23,6 +23,7 @@ import icyllis.arc3d.compiler.ThreadContext;
 import icyllis.arc3d.compiler.analysis.NodeVisitor;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Represents an identifier referring to a type. This is an intermediate value: TypeReferences are
@@ -38,7 +39,7 @@ public final class TypeReference extends Expression {
     }
 
     @Nonnull
-    public static Expression make(int position, Type value) {
+    public static TypeReference make(int position, @Nonnull Type value) {
         ThreadContext context = ThreadContext.getInstance();
         return new TypeReference(position, value, context.getTypes().mInvalid);
     }

@@ -50,7 +50,7 @@ public final class IndexExpression extends Expression {
         Type baseType = base.getType();
         if (index >= 0) {
             if (baseType.isArray()) {
-                if (baseType.isRuntimeArray()) {
+                if (baseType.isUnsizedArray()) {
                     return false;
                 }
                 if (index < baseType.getArraySize()) {
@@ -75,8 +75,27 @@ public final class IndexExpression extends Expression {
     @Nullable
     public static Expression convert(int pos,
                                      @Nonnull Expression base,
-                                     @Nonnull Expression index) {
+                                     @Nullable Expression index) {
         ThreadContext context = ThreadContext.getInstance();
+        // Convert an array type reference.
+        if (base instanceof TypeReference) {
+            Type baseType = ((TypeReference) base).getValue();
+            final int arraySize;
+            if (index != null) {
+                arraySize = baseType.convertArraySize(pos, index);
+            } else {
+                arraySize = Type.kUnsizedArray;
+            }
+            if (arraySize == 0) {
+                return null;
+            }
+            return TypeReference.make(
+                    pos, context.getSymbolTable().getArrayType(baseType, arraySize));
+        }
+        if (index == null) {
+            context.error(pos, "missing index in '[]'");
+            return null;
+        }
         Type baseType = base.getType();
         if (!baseType.isArray() && !baseType.isMatrix() && !baseType.isVector()) {
             context.error(base.mPosition,

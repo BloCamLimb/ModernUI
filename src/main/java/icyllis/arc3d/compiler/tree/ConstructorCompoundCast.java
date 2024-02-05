@@ -37,7 +37,7 @@ public final class ConstructorCompoundCast extends ConstructorCall {
     }
 
     @Nonnull
-    public static Expression make(int position, Type type, Expression arg) {
+    public static Expression make(int position, @Nonnull Type type, @Nonnull Expression arg) {
         // Only vectors or matrices of the same dimensions are allowed.
         assert (type.isVector() || type.isMatrix());
         assert (arg.getType().isVector() == type.isVector());

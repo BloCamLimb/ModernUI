@@ -42,8 +42,9 @@ public class TestCompiler {
                 half sa(half a) {
                     return a;
                 }
-                float rand(half2 n) {
-                    return sa(sa(rr(n, half2(12.9898,12.1414))) * 83758.5453);
+                float rand(float2 n) {
+                    const float[] a = float[](12.9898, n.x), b = float[](12.9898, n.x, n.y);
+                    return sa(sa(rr(n, float2(a[0],12.1414))) * 83758.5453);
                 }
                 """,
                 ModuleLoader.getInstance().getRootModule(),
