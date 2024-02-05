@@ -40,8 +40,8 @@ public final class ConstructorScalarCast extends ConstructorCall {
 
     @Nullable
     public static Expression convert(int pos,
-                                     Type type,
-                                     List<Expression> args) {
+                                     @Nonnull Type type,
+                                     @Nonnull List<Expression> args) {
         assert type.isScalar();
 
         if (args.size() != 1) {

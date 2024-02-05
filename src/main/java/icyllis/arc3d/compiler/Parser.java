@@ -346,7 +346,7 @@ public class Parser {
         if (checkNext(Lexer.TK_LPAREN)) {
             return FunctionDeclarationRest(position(start), modifiers, type, name);
         } else {
-            //TODO global var decl rest
+            GlobalVarDeclarationRest(position(start), modifiers, type, name);
             return true;
         }
     }
@@ -471,6 +471,66 @@ public class Parser {
                 }
             }
         }
+    }
+
+    private void GlobalVarDeclarationRest(int pos,
+                                          Modifiers modifiers,
+                                          Type baseType,
+                                          long name) {
+        Type type = ArraySpecifier(pos, baseType);
+        if (type == null) {
+            return;
+        }
+        Expression init = null;
+        if (checkNext(Lexer.TK_EQ)) {
+            init = AssignmentExpression();
+            if (init == null) {
+                return;
+            }
+        }
+
+        VariableDecl variableDecl = VariableDecl.convert(
+                rangeFrom(pos),
+                modifiers,
+                type,
+                text(name),
+                Variable.kGlobal_Storage,
+                init);
+        if (variableDecl != null) {
+            ThreadContext.getInstance().getUniqueElements().add(
+                    new GlobalVariableDecl(variableDecl)
+            );
+        }
+
+        while (checkNext(Lexer.TK_COMMA)) {
+            name = expectIdentifier();
+            type = ArraySpecifier(pos, baseType);
+            if (type == null) {
+                return;
+            }
+            init = null;
+            if (checkNext(Lexer.TK_EQ)) {
+                init = AssignmentExpression();
+                if (init == null) {
+                    return;
+                }
+            }
+
+            variableDecl = VariableDecl.convert(
+                    rangeFrom(pos),
+                    modifiers,
+                    type,
+                    text(name),
+                    Variable.kGlobal_Storage,
+                    init);
+            if (variableDecl != null) {
+                ThreadContext.getInstance().getUniqueElements().add(
+                        new GlobalVariableDecl(variableDecl)
+                );
+            }
+        }
+
+        expect(Lexer.TK_SEMICOLON, "';' to complete global variable declaration");
     }
 
     @Nullable
@@ -971,15 +1031,14 @@ public class Parser {
             switch (Token.kind(t)) {
                 case Lexer.TK_LBRACKET -> {
                     nextToken();
-                    if (checkNext(Lexer.TK_RBRACKET)) {
-                        error(t, "missing index in '[]'");
-                        return Poison.make(rangeFrom(result.mPosition));
+                    Expression index = null;
+                    if (!peek(Lexer.TK_RBRACKET)) {
+                        index = Expression();
+                        if (index == null) {
+                            return null;
+                        }
                     }
-                    Expression index = Expression();
-                    if (index == null) {
-                        return null;
-                    }
-                    expect(Lexer.TK_RBRACKET, "']' to complete array access expression");
+                    expect(Lexer.TK_RBRACKET, "']' to complete array specifier");
                     int pos = rangeFrom(result.mPosition);
                     result = expressionOrPoison(pos,
                             IndexExpression.convert(pos, result, index));
@@ -1339,42 +1398,36 @@ public class Parser {
     }
 
     @Nullable
-    private Type ArraySpecifier(int pos, Type type) {
+    private Type ArraySpecifier(int startPos, Type type) {
+        ThreadContext context = ThreadContext.getInstance();
         while (peek(Lexer.TK_LBRACKET)) {
-            long bracket = nextToken();
-            if (checkNext(Lexer.TK_RBRACKET)) {
-                if (mModel == ExecutionModel.COMPUTE ||
-                        mModel == ExecutionModel.VERTEX ||
-                        mModel == ExecutionModel.FRAGMENT) {
-                    type = RuntimeArrayType(type, rangeFrom(pos));
-                } else {
-                    error(rangeFrom(bracket), "runtime-sized arrays are not permitted here");
-                }
-            } else {
-                Expression size = Expression();
+            nextToken();
+            Expression size = null;
+            if (!peek(Lexer.TK_RBRACKET)) {
+                size = Expression();
                 if (size == null) {
                     return null;
                 }
-                expect(Lexer.TK_RBRACKET, "']' to complete array specifier");
-                type = ArrayType(type, size, rangeFrom(pos));
+            }
+            expect(Lexer.TK_RBRACKET, "']' to complete array specifier");
+            int pos = rangeFrom(startPos);
+            final int arraySize;
+            if (size != null) {
+                arraySize = type.convertArraySize(pos, size);
+            } else {
+                if (!type.isUsableInArray(pos)) {
+                    arraySize = 0;
+                } else {
+                    arraySize = Type.kUnsizedArray;
+                }
+            }
+            if (arraySize == 0) {
+                type = context.getTypes().mPoison;
+            } else {
+                type = context.getSymbolTable().getArrayType(type, arraySize);
             }
         }
         return type;
-    }
-
-    private Type ArrayType(@Nonnull Type elemType, Expression size, int pos) {
-        int arraySize = elemType.convertArraySize(pos, size);
-        if (arraySize == 0) {
-            return ThreadContext.getInstance().getTypes().mPoison;
-        }
-        return ThreadContext.getInstance().getSymbolTable().getArrayType(elemType, arraySize);
-    }
-
-    private Type RuntimeArrayType(@Nonnull Type elemType, int pos) {
-        if (!elemType.isUsableInArray(pos)) {
-            return ThreadContext.getInstance().getTypes().mPoison;
-        }
-        return ThreadContext.getInstance().getSymbolTable().getArrayType(elemType, Type.kRuntimeArray);
     }
 
     /**
@@ -1409,7 +1462,7 @@ public class Parser {
 
         for (;;) {
             if (!checkNext(Lexer.TK_COMMA)) {
-                expect(Lexer.TK_SEMICOLON, "';' to complete variable declaration");
+                expect(Lexer.TK_SEMICOLON, "';' to complete local variable declaration");
                 break;
             }
             name = expectIdentifier();

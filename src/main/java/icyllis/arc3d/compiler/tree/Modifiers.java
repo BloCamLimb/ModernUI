@@ -189,16 +189,20 @@ public final class Modifiers extends Node {
     @Override
     public String toString() {
         if (mLayout == null) {
-            return describeFlags(mFlags);
+            return describeFlags(mFlags, true);
         }
-        return mLayout + describeFlags(mFlags);
+        return mLayout + describeFlags(mFlags, true);
     }
 
     public static String describeFlags(int flags) {
+        return describeFlags(flags, false);
+    }
+
+    public static String describeFlags(int flags, boolean padded) {
         if (flags == 0) {
             return "";
         }
-        StringJoiner joiner = new StringJoiner(" ");
+        StringJoiner joiner = new StringJoiner(" ", "", padded ? " " : "");
 
         // Extensions
         if ((flags & kSubroutine_Flag) != 0) {

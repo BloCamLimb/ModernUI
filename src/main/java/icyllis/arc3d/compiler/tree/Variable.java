@@ -19,9 +19,11 @@
 
 package icyllis.arc3d.compiler.tree;
 
+import icyllis.arc3d.compiler.Layout;
 import icyllis.arc3d.compiler.ThreadContext;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Represents a variable symbol, whether local, global, or a function parameter.
@@ -52,14 +54,24 @@ public final class Variable extends Symbol {
         mBuiltin = builtin;
     }
 
+    @Nonnull
     public static Variable convert(int pos,
-                                   Modifiers modifiers,
-                                   Type type,
-                                   String name,
+                                   @Nonnull Modifiers modifiers,
+                                   @Nonnull Type type,
+                                   @Nonnull String name,
                                    byte storage) {
         var context = ThreadContext.getInstance();
-        if (type.isRuntimeArray() && storage != kInterfaceBlock_Storage) {
-            context.error(pos, "runtime-sized arrays are not permitted here");
+        if (type.isUnsizedArray() && storage != kInterfaceBlock_Storage) {
+            context.error(pos, "runtime sized arrays are only permitted in interface blocks");
+        }
+        if (context.getModel().isCompute() && (modifiers.layoutFlags() & Layout.kBuiltin_LayoutFlag) == 0) {
+            if (storage == Variable.kGlobal_Storage) {
+                if ((modifiers.flags() & Modifiers.kIn_Flag) != 0) {
+                    context.error(pos, "pipeline inputs not permitted in compute shaders");
+                } else if ((modifiers.flags() & Modifiers.kOut_Flag) != 0) {
+                    context.error(pos, "pipeline outputs not permitted in compute shaders");
+                }
+            }
         }
         if (storage == kParameter_Storage) {
             // The `in` modifier on function parameters is implicit, so we can replace `in float x` with
@@ -71,10 +83,11 @@ public final class Variable extends Symbol {
         return make(pos, modifiers, type, name, storage, context.isBuiltin());
     }
 
+    @Nonnull
     public static Variable make(int pos,
-                                Modifiers modifiers,
-                                Type type,
-                                String name,
+                                @Nonnull Modifiers modifiers,
+                                @Nonnull Type type,
+                                @Nonnull String name,
                                 byte storage,
                                 boolean builtin) {
         return new Variable(pos, modifiers, name, type, builtin, storage);
@@ -104,26 +117,50 @@ public final class Variable extends Symbol {
         return mStorage;
     }
 
+    @Nullable
     public Expression initialValue() {
-        return null;
+        VariableDecl decl = getVariableDecl();
+        return decl != null ? decl.getInit() : null;
     }
 
-    public VariableDecl getVarDecl() {
+    @Nullable
+    public VariableDecl getVariableDecl() {
         if (mDecl instanceof VariableDecl) {
             return (VariableDecl) mDecl;
         }
+        if (mDecl instanceof GlobalVariableDecl) {
+            return ((GlobalVariableDecl) mDecl).getVariableDecl();
+        }
         return null;
     }
 
-    public void setVarDecl(VariableDecl varDecl) {
-        if (mDecl == null) {
-            mDecl = varDecl;
+    @Nullable
+    public GlobalVariableDecl getGlobalVariableDecl() {
+        if (mDecl instanceof GlobalVariableDecl) {
+            return (GlobalVariableDecl) mDecl;
         }
+        return null;
+    }
+
+    public void setVariableDecl(VariableDecl decl) {
+        if (mDecl != null && decl.getVariable() != this) {
+            throw new AssertionError();
+        }
+        if (mDecl == null) {
+            mDecl = decl;
+        }
+    }
+
+    public void setGlobalVariableDecl(GlobalVariableDecl globalDecl) {
+        if (mDecl != null && globalDecl.getVariableDecl().getVariable() != this) {
+            throw new AssertionError();
+        }
+        mDecl = globalDecl;
     }
 
     @Nonnull
     @Override
     public String toString() {
-        return mModifiers.toString() + " " + getType().getName() + " " + getName();
+        return mModifiers.toString() + mType.getName() + " " + getName();
     }
 }

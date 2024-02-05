@@ -43,8 +43,8 @@ public final class ConstructorCompound extends ConstructorCall {
 
     @Nullable
     public static Expression convert(int pos,
-                                     Type type,
-                                     List<Expression> args) {
+                                     @Nonnull Type type,
+                                     @Nonnull List<Expression> args) {
         assert (type.isVector() || type.isMatrix());
 
         // The meaning of a compound constructor containing a single argument varies significantly in

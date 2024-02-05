@@ -37,7 +37,7 @@ public final class ConstructorScalar2Vector extends ConstructorCall {
 
     // The input argument must be scalar. A "splat" to a scalar type will be optimized into a no-op.
     @Nonnull
-    public static Expression make(int position, Type type, Expression arg) {
+    public static Expression make(int position, @Nonnull Type type, @Nonnull Expression arg) {
         assert (type.isScalar() || type.isVector());
         assert (arg.getType().matches(type.getComponentType()));
         assert (arg.getType().isScalar());

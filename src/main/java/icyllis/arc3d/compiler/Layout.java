@@ -182,7 +182,7 @@ public class Layout {
     @Nonnull
     @Override
     public String toString() {
-        StringJoiner joiner = new StringJoiner(", ", "layout (", ") ");
+        StringJoiner joiner = new StringJoiner(", ", "layout(", ") ");
         if (mLocation >= 0) {
             joiner.add("location = " + mLocation);
         }

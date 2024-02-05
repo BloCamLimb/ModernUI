@@ -37,7 +37,7 @@ public final class ConstructorArrayCast extends ConstructorCall {
     }
 
     @Nonnull
-    public static Expression make(int position, Type type, Expression arg) {
+    public static Expression make(int position, @Nonnull Type type, @Nonnull Expression arg) {
         // Only arrays of the same size are allowed.
         assert (type.isArray());
         assert (arg.getType().isArray());

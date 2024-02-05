@@ -34,7 +34,7 @@ public abstract class Node {
         EXTENSION(TopLevelElement.class),
         FUNCTION_DEFINITION(FunctionDefinition.class),
         FUNCTION_PROTOTYPE(FunctionPrototype.class),
-        GLOBAL_VAR(TopLevelElement.class),
+        GLOBAL_VARIABLE(GlobalVariableDecl.class),
         INTERFACE_BLOCK(TopLevelElement.class),
         MODIFIERS(TopLevelElement.class),
         STRUCT_DEFINITION(TopLevelElement.class);

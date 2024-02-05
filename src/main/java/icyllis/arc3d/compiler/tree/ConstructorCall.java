@@ -44,7 +44,7 @@ public abstract class ConstructorCall extends Expression {
     }
 
     @Nullable
-    public static Expression convert(int pos, Type type, List<Expression> args) {
+    public static Expression convert(int pos, @Nonnull Type type, @Nonnull List<Expression> args) {
         if (args.size() == 1 &&
                 args.get(0).getType().matches(type) &&
                 !type.getElementType().isOpaque()) {
@@ -60,7 +60,7 @@ public abstract class ConstructorCall extends Expression {
         if (type.isVector() || type.isMatrix()) {
             return ConstructorCompound.convert(pos, type, args);
         }
-        if (type.isArray() && type.getArraySize() > 0) {
+        if (type.isArray()) {
             return ConstructorArray.convert(pos, type, args);
         }
         if (type.isStruct() && type.getFields().length > 0) {

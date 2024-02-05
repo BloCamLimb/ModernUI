@@ -85,8 +85,8 @@ public final class FunctionDecl extends Symbol {
                     returnType.getName() + "'");
             return false;
         }
-        if (returnType.isRuntimeArray()) {
-            context.error(pos, "functions may not return runtime-sized array type '" +
+        if (returnType.isUnsizedArray()) {
+            context.error(pos, "functions may not return unsized array type '" +
                     returnType.getName() + "'");
             return false;
         }
@@ -418,20 +418,12 @@ public final class FunctionDecl extends Symbol {
     @Nonnull
     @Override
     public String toString() {
-        String result =
-                (mModifiers.flags() != 0 ? Modifiers.describeFlags(mModifiers.flags()) + " " : "") +
+        String header = mModifiers.toString() +
                         mReturnType.getName() + " " + getName() + "(";
         StringJoiner joiner = new StringJoiner(", ");
         for (Variable p : mParameters) {
-            String s = "";
-            if (p.getModifiers().flags() != 0) {
-                s += Modifiers.describeFlags(p.getModifiers().flags()) + " ";
-            }
-            s += p.getType().getName();
-            s += " ";
-            s += p.getName();
-            joiner.add(s);
+            joiner.add(p.toString());
         }
-        return result + joiner + ")";
+        return header + joiner + ")";
     }
 }

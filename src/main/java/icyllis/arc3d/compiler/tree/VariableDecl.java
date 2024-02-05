@@ -30,16 +30,12 @@ import javax.annotation.Nullable;
  */
 public final class VariableDecl extends Statement {
 
-    private Variable mVar;
-    private final Type mBaseType;
-    private final int mArraySize;
+    private Variable mVariable;
     private Expression mInit;
 
-    public VariableDecl(Variable var, Type baseType, int arraySize, Expression init) {
-        super(var.mPosition);
-        mVar = var;
-        mBaseType = baseType;
-        mArraySize = arraySize;
+    public VariableDecl(Variable variable, Expression init) {
+        super(variable.mPosition);
+        mVariable = variable;
         mInit = init;
     }
 
@@ -51,91 +47,113 @@ public final class VariableDecl extends Statement {
         assert type.isArray()
                 ? baseType.matches(type.getElementType())
                 : baseType.matches(type);
+        //TODO more checks
     }
 
+    // For use when no Variable yet exists. The newly-created variable will be added to the active
+    // symbol table. Performs proper error checking and type coercion; reports errors via
+    // ErrorReporter.
+    @Nullable
     public static VariableDecl convert(int pos,
-                                       Modifiers modifiers,
-                                       Type type,
-                                       String name,
+                                       @Nonnull Modifiers modifiers,
+                                       @Nonnull Type type,
+                                       @Nonnull String name,
                                        byte storage,
                                        @Nullable Expression init) {
-        Variable var = Variable.convert(pos, modifiers, type, name, storage);
+        // Parameter declaration-statements do not exist in the grammar (unlike, say, K&R C).
+        assert (storage != Variable.kParameter_Storage);
 
-        if (var == null) {
-            return null;
+        if (init != null && type.isUnsizedArray() && init.getType().isArray()) {
+            // implicitly sized array
+            int arraySize = init.getType().getArraySize();
+            if (arraySize > 0) {
+                type = ThreadContext.getInstance().getSymbolTable().getArrayType(
+                        type.getElementType(), arraySize);
+            }
         }
-        return convert(var, init);
+
+        Variable variable = Variable.convert(pos, modifiers, type, name, storage);
+
+        return VariableDecl.convert(variable, init);
     }
 
     @Nullable
-    public static VariableDecl convert(@Nonnull Variable var,
+    public static VariableDecl convert(@Nonnull Variable variable,
                                        @Nullable Expression init) {
-        Type baseType = var.getType();
-        int arraySize = 0;
+        Type baseType = variable.getType();
         if (baseType.isArray()) {
-            arraySize = baseType.getArraySize();
             baseType = baseType.getElementType();
         }
 
         ThreadContext context = ThreadContext.getInstance();
         if (baseType.matches(context.getTypes().mInvalid)) {
-            context.error(var.mPosition, "invalid type");
+            context.error(variable.mPosition, "invalid type");
             return null;
         }
         if (baseType.isVoid()) {
-            context.error(var.mPosition, "variables of type 'void' are not allowed");
+            context.error(variable.mPosition, "variables of type 'void' are not allowed");
             return null;
         }
 
-        checkError(var.mPosition, var.getModifiers(), var.getType(), baseType, var.getStorage());
+        checkError(variable.mPosition, variable.getModifiers(), variable.getType(), baseType, variable.getStorage());
 
         if (init != null) {
-            init = var.getType().coerceExpression(init);
+            if ((variable.getModifiers().flags() & Modifiers.kIn_Flag) != 0) {
+                context.error(init.mPosition,
+                        "'in' variables cannot use initializer expressions");
+                return null;
+            }
+            if ((variable.getModifiers().flags() & Modifiers.kUniform_Flag) != 0) {
+                context.error(init.mPosition,
+                        "'uniform' variables cannot use initializer expressions");
+                return null;
+            }
+            if (variable.getStorage() == Variable.kInterfaceBlock_Storage) {
+                context.error(init.mPosition,
+                        "initializers are not permitted in interface blocks");
+                return null;
+            }
+            init = variable.getType().coerceExpression(init);
             if (init == null) {
                 return null;
             }
         }
 
-        if ((var.getModifiers().flags() & Modifiers.kConst_Flag) != 0) {
+        if ((variable.getModifiers().flags() & Modifiers.kConst_Flag) != 0) {
             if (init == null) {
-                context.error(var.mPosition, "'const' variables must be initialized");
+                context.error(variable.mPosition, "'const' variables must be initialized");
+                return null;
+            }
+            //TODO check const expression
+        }
+        if (variable.getStorage() == Variable.kInterfaceBlock_Storage) {
+            if (variable.getType().isOpaque()) {
+                context.error(variable.mPosition, "opaque type '" + variable.getType() +
+                        "' is not permitted in interface blocks");
                 return null;
             }
         }
 
-        VariableDecl varDecl = make(var, baseType, arraySize, init);
+        VariableDecl variableDecl = make(variable, init);
 
-        if (varDecl == null) {
-            return null;
-        }
-
-        context.getSymbolTable().insert(var);
-        return varDecl;
+        context.getSymbolTable().insert(variable);
+        return variableDecl;
     }
 
-    public static VariableDecl make(Variable var,
-                                    Type baseType,
-                                    int arraySize,
+    @Nonnull
+    public static VariableDecl make(Variable variable,
                                     Expression init) {
-        var result = new VariableDecl(var, baseType, arraySize, init);
-        var.setVarDecl(result);
+        var result = new VariableDecl(variable, init);
+        variable.setVariableDecl(result);
         return result;
     }
 
-    public Variable getVar() {
-        return mVar;
+    public Variable getVariable() {
+        return mVariable;
     }
 
-    public void setVar(Variable var) {
-        mVar = var;
-    }
-
-    public Type getBaseType() {
-        return mBaseType;
-    }
-
-    public int getArraySize() {
-        return mArraySize;
+    public void setVariable(Variable variable) {
+        mVariable = variable;
     }
 
     public Expression getInit() {
@@ -159,6 +177,10 @@ public final class VariableDecl extends Statement {
     @Nonnull
     @Override
     public String toString() {
-        return null;
+        String result = mVariable.toString();
+        if (mInit != null) {
+            result += " = " + mInit;
+        }
+        return result + ";";
     }
 }

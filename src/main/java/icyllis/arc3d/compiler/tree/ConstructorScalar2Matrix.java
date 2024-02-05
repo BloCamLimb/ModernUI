@@ -37,7 +37,7 @@ public final class ConstructorScalar2Matrix extends ConstructorCall {
     }
 
     @Nonnull
-    public static Expression make(int position, Type type, Expression arg) {
+    public static Expression make(int position, @Nonnull Type type, @Nonnull Expression arg) {
         assert (type.isMatrix());
         assert (arg.getType().isScalar());
         assert (arg.getType().matches(type.getComponentType()));
