@@ -26,18 +26,16 @@ import javax.annotation.Nullable;
 import java.util.*;
 
 /**
- * Thread-safe class that tracks per-thread state associated with {@link ShaderCompiler}
+ * Contains objects and state associated with {@link ShaderCompiler}
  * (i.e. {@link Parser} or CodeGenerator).
  */
-public final class ThreadContext {
-
-    private static final ThreadLocal<ThreadContext> TLS = new ThreadLocal<>();
+public final class Context {
 
     // The Context holds a pointer to the configuration of the program being compiled.
-    private final ExecutionModel mModel;
-    private final CompileOptions mOptions;
-    private final boolean mIsBuiltin;
-    private final boolean mIsModule;
+    private ExecutionModel mModel;
+    private CompileOptions mOptions;
+    private boolean mIsBuiltin;
+    private boolean mIsModule;
 
     // The Context holds all of the built-in types.
     private final BuiltinTypes mTypes;
@@ -46,57 +44,58 @@ public final class ThreadContext {
     // compilation
     private SymbolTable mSymbolTable;
     // The element map from the parent module
-    private final List<TopLevelElement> mParentElements;
+    private List<TopLevelElement> mParentElements;
 
     private final ArrayList<TopLevelElement> mUniqueElements = new ArrayList<>();
     private final ArrayList<TopLevelElement> mSharedElements = new ArrayList<>();
 
     // The Context holds a pointer to our error handler.
-    ErrorHandler mErrorHandler = new ErrorHandler() {
-        @Override
-        protected void handleError(int start, int end, String msg) {
-            throw new RuntimeException("error: " + msg);
-        }
+    ErrorHandler mErrorHandler;
 
-        @Override
-        protected void handleWarning(int start, int end, String msg) {
-        }
-    };
+    private boolean mActive;
 
-    ThreadContext(ExecutionModel model, CompileOptions options,
-                  ModuleUnit parent, boolean isBuiltin, boolean isModule) {
+    Context(ErrorHandler errorHandler) {
+        mTypes = ModuleLoader.getInstance().getBuiltinTypes();
+        mErrorHandler = errorHandler;
+    }
+
+    /**
+     * Starts the DSL on the current thread for compiling programs and modules (include files).
+     */
+    void start(ExecutionModel model, CompileOptions options,
+               ModuleUnit parent, boolean isBuiltin, boolean isModule) {
+        if (isActive()) {
+            throw new IllegalStateException("DSL is already started");
+        }
         mModel = Objects.requireNonNull(model);
         mOptions = Objects.requireNonNull(options);
         Objects.requireNonNull(parent);
         mIsBuiltin = isBuiltin;
         mIsModule = isModule;
 
-        mTypes = ModuleLoader.getInstance().getBuiltinTypes();
-
         mSymbolTable = parent.mSymbols.enterModule(isBuiltin);
         mParentElements = Collections.unmodifiableList(parent.mElements);
 
-        TLS.set(this);
+        mActive = true;
     }
 
+    /**
+     * Ends the DSL on the current thread.
+     */
     void end() {
-        TLS.remove();
+        mModel = null;
+        mOptions = null;
+        mSymbolTable = null;
+        mParentElements = null;
+
+        mActive = false;
     }
 
     /**
      * Returns true if the DSL has been started.
      */
-    public static boolean isActive() {
-        return TLS.get() != null;
-    }
-
-    /**
-     * Returns the Context on the current thread.
-     *
-     * @throws NullPointerException DSL is not started
-     */
-    public static ThreadContext getInstance() {
-        return Objects.requireNonNull(TLS.get(), "DSL is not started");
+    public boolean isActive() {
+        return mActive;
     }
 
     public ExecutionModel getModel() {
@@ -188,6 +187,21 @@ public final class ThreadContext {
     }
 
     /**
+     * Returns the ErrorHandler which will be notified of any errors that occur during DSL calls.
+     * The default error handler throws RuntimeException on any error.
+     */
+    public ErrorHandler getErrorHandler() {
+        return mErrorHandler;
+    }
+
+    /**
+     * Installs an ErrorHandler which will be notified of any errors that occur during DSL calls.
+     */
+    public void setErrorHandler(ErrorHandler errorHandler) {
+        mErrorHandler = Objects.requireNonNull(errorHandler);
+    }
+
+    /**
      * Create expressions with the given identifier name and current symbol table.
      * Report errors via {@link ErrorHandler}; return null on error.
      */
@@ -201,7 +215,7 @@ public final class ThreadContext {
         return switch (result.getKind()) {
             case FUNCTION_DECL -> {
                 var overloadChain = (FunctionDecl) result;
-                yield FunctionReference.make(position, overloadChain);
+                yield FunctionReference.make(this, position, overloadChain);
             }
             case VARIABLE -> {
                 var variable = (Variable) result;
@@ -221,7 +235,7 @@ public final class ThreadContext {
                     error(position, "type '" + type.getName() + "' is generic");
                     type = getTypes().mPoison;
                 }
-                yield TypeReference.make(position, type);
+                yield TypeReference.make(this, position, type);
             }
         };
     }

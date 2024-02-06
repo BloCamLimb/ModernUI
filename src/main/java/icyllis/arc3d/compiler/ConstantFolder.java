@@ -22,6 +22,7 @@ package icyllis.arc3d.compiler;
 import icyllis.arc3d.compiler.analysis.Analysis;
 import icyllis.arc3d.compiler.tree.*;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.OptionalDouble;
 import java.util.OptionalLong;
@@ -93,7 +94,8 @@ public class ConstantFolder {
      * Simplifies the binary expression `left OP right`. Returns null if it can't be simplified.
      */
     @Nullable
-    public static Expression fold(int pos, Expression left, Operator op,
+    public static Expression fold(@Nonnull Context context,
+                                  int pos, Expression left, Operator op,
                                   Expression right, Type resultType) {
         // Replace constant variables with their literal values.
         left = getConstantValueForVariable(left);
@@ -119,7 +121,7 @@ public class ConstantFolder {
                 case NE:          result = leftVal != rightVal; break;
                 default: return null;
             }
-            return Literal.makeBoolean(pos, result);
+            return Literal.makeBoolean(context, pos, result);
         }
 
         // If the left side is a Boolean literal, apply short-circuit optimizations.
@@ -179,13 +181,13 @@ public class ConstantFolder {
         if (op == Operator.EQ && Analysis.isSameExpressionTree(left, right)) {
             // With == comparison, if both sides are the same trivial expression, this is
             // self-comparison and is always true. (We are not concerned with NaN.)
-            return Literal.makeBoolean(pos, /*value=*/true);
+            return Literal.makeBoolean(context, pos, /*value=*/true);
         }
 
         if (op == Operator.NE && Analysis.isSameExpressionTree(left, right)) {
             // With != comparison, if both sides are the same trivial expression, this is
             // self-comparison and is always false. (We are not concerned with NaN.)
-            return Literal.makeBoolean(pos, /*value=*/false);
+            return Literal.makeBoolean(context, pos, /*value=*/false);
         }
 
         switch (op) {
@@ -194,7 +196,7 @@ public class ConstantFolder {
                 for (int i = 0; i < components; ++i) {
                     OptionalDouble value = right.getConstantValue(i);
                     if (value.isPresent() && value.getAsDouble() == 0.0) {
-                        ThreadContext.getInstance().error(pos, "division by zero");
+                        context.error(pos, "division by zero");
                         return null;
                     }
                 }

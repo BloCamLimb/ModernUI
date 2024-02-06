@@ -20,7 +20,7 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.ConstantFolder;
-import icyllis.arc3d.compiler.ThreadContext;
+import icyllis.arc3d.compiler.Context;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -39,13 +39,14 @@ public final class ConstructorScalarCast extends ConstructorCall {
     }
 
     @Nullable
-    public static Expression convert(int pos,
+    public static Expression convert(@Nonnull Context context,
+                                     int pos,
                                      @Nonnull Type type,
                                      @Nonnull List<Expression> args) {
         assert type.isScalar();
 
         if (args.size() != 1) {
-            ThreadContext.getInstance().error(pos, "invalid arguments to '" + type +
+            context.error(pos, "invalid arguments to '" + type +
                     "' constructor, (expected exactly 1 argument, but found " +
                     args.size() + ")");
             return null;
@@ -63,19 +64,20 @@ public final class ConstructorScalarCast extends ConstructorCall {
                 }
             }
 
-            ThreadContext.getInstance().error(pos,
+            context.error(pos,
                     "'" + argType + "' is not a valid parameter to '" +
                             type + "' constructor" + swizzleHint);
             return null;
         }
         //TODO check range
 
-        return make(pos, type, args.get(0));
+        return ConstructorScalarCast.make(context, pos, type, args.get(0));
     }
 
     // Casts a scalar expression. Casts that can be evaluated at compile-time will do so
     // (e.g. `int(4.1)` --> `Literal(int 4)`).
-    public static Expression make(int position, Type type, Expression arg) {
+    public static Expression make(@Nonnull Context context,
+                                  int position, Type type, Expression arg) {
         assert type.isScalar();
         assert arg.getType().isScalar();
 
@@ -95,7 +97,7 @@ public final class ConstructorScalarCast extends ConstructorCall {
             double value = literal.getValue();
             if (type.isNumeric() &&
                     (value < type.getMinValue() || value > type.getMaxValue())) {
-                ThreadContext.getInstance().error(position,
+                context.error(position,
                         String.format("value is out of range for type '%s': %.0f",
                                 type.getName(), value));
                 value = 0.0;

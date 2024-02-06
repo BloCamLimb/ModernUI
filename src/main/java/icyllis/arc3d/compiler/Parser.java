@@ -59,35 +59,23 @@ public class Parser {
     @Nullable
     public TranslationUnit parse(ModuleUnit parent) {
         Objects.requireNonNull(parent);
-        ErrorHandler errorHandler = mCompiler.getErrorHandler();
-        DSL.start(mModel, mOptions, parent);
-        DSL.setErrorHandler(errorHandler);
-        errorHandler.setSource(mSource);
         TranslationUnit();
-        errorHandler.setSource(null);
-        DSL.end();
         return null;
     }
 
     @Nullable
-    public ModuleUnit parseModule(ModuleUnit parent, boolean builtin) {
+    public ModuleUnit parseModule(ModuleUnit parent) {
         Objects.requireNonNull(parent);
-        ErrorHandler errorHandler = mCompiler.getErrorHandler();
-        DSL.startModule(mModel, mOptions, parent, builtin);
-        DSL.setErrorHandler(errorHandler);
-        errorHandler.setSource(mSource);
         TranslationUnit();
         final ModuleUnit result;
-        if (DSL.getErrorHandler().getNumErrors() == 0) {
+        if (mCompiler.getContext().getErrorHandler().getNumErrors() == 0) {
             result = new ModuleUnit();
             result.mParent = parent;
-            result.mSymbols = ThreadContext.getInstance().getSymbolTable();
-            result.mElements = ThreadContext.getInstance().getUniqueElements();
+            result.mSymbols = mCompiler.getContext().getSymbolTable();
+            result.mElements = mCompiler.getContext().getUniqueElements();
         } else {
             result = null;
         }
-        errorHandler.setSource(null);
-        DSL.end();
         return result;
     }
 
@@ -180,7 +168,7 @@ public class Parser {
     }
 
     private void error(int start, int end, String msg) {
-        ThreadContext.getInstance().error(start, end, msg);
+        mCompiler.getContext().error(start, end, msg);
     }
 
     private void warning(long token, String msg) {
@@ -189,7 +177,7 @@ public class Parser {
     }
 
     private void warning(int start, int end, String msg) {
-        ThreadContext.getInstance().warning(start, end, msg);
+        mCompiler.getContext().warning(start, end, msg);
     }
 
     // Returns the range from `start` to the current parse position.
@@ -229,7 +217,7 @@ public class Parser {
     private long checkIdentifier() {
         long next = peek();
         if (Token.kind(next) == Lexer.TK_IDENTIFIER &&
-                !ThreadContext.getInstance().getSymbolTable().isBuiltinType(text(next))) {
+                !mCompiler.getContext().getSymbolTable().isBuiltinType(text(next))) {
             return nextToken();
         }
         return -1;
@@ -259,7 +247,7 @@ public class Parser {
      */
     private long expectIdentifier() {
         long token = expect(Lexer.TK_IDENTIFIER, "an identifier");
-        if (ThreadContext.getInstance().getSymbolTable().isBuiltinType(text(token))) {
+        if (mCompiler.getContext().getSymbolTable().isBuiltinType(text(token))) {
             String msg = "expected an identifier, but found type '" + text(token) + "'";
             error(token, msg);
             throw new IllegalStateException(msg);
@@ -321,7 +309,7 @@ public class Parser {
         long peek = peek();
 
         if (peek == Lexer.TK_IDENTIFIER &&
-                !ThreadContext.getInstance().getSymbolTable().isType(text(peek))) {
+                !mCompiler.getContext().getSymbolTable().isType(text(peek))) {
             //TODO interface block
             return true;
         }
@@ -373,6 +361,7 @@ public class Parser {
         expect(Lexer.TK_RPAREN, "')' to complete parameter list");
 
         FunctionDecl decl = FunctionDecl.convert(
+                mCompiler.getContext(),
                 rangeFrom(start),
                 modifiers,
                 text(name),
@@ -380,7 +369,7 @@ public class Parser {
                 returnType
         );
 
-        ThreadContext context = ThreadContext.getInstance();
+        Context context = mCompiler.getContext();
         if (peek(Lexer.TK_SEMICOLON)) {
             nextToken();
             if (decl == null) {
@@ -391,12 +380,12 @@ public class Parser {
             );
             return true;
         } else {
-            ThreadContext.getInstance().
+            mCompiler.getContext().
                     enterScope();
             try {
                 if (decl != null) {
                     for (Variable param : decl.getParameters()) {
-                        context.getSymbolTable().insert(param);
+                        context.getSymbolTable().insert(mCompiler.getContext(), param);
                     }
                 }
 
@@ -409,6 +398,7 @@ public class Parser {
 
                 int pos = rangeFrom(blockStart);
                 FunctionDefinition function = FunctionDefinition.convert(
+                        mCompiler.getContext(),
                         pos,
                         decl,
                         false,
@@ -422,7 +412,7 @@ public class Parser {
                 context.getUniqueElements().add(function);
                 return true;
             } finally {
-                ThreadContext.getInstance()
+                mCompiler.getContext()
                         .leaveScope();
             }
         }
@@ -449,6 +439,7 @@ public class Parser {
             return null;
         }
         return Variable.convert(
+                mCompiler.getContext(),
                 rangeFrom(pos),
                 modifiers,
                 type,
@@ -477,38 +468,18 @@ public class Parser {
                                           Modifiers modifiers,
                                           Type baseType,
                                           long name) {
-        Type type = ArraySpecifier(pos, baseType);
-        if (type == null) {
-            return;
-        }
-        Expression init = null;
-        if (checkNext(Lexer.TK_EQ)) {
-            init = AssignmentExpression();
-            if (init == null) {
-                return;
+        boolean first = true;
+        do {
+            if (first) {
+                first = false;
+            } else {
+                name = expectIdentifier();
             }
-        }
-
-        VariableDecl variableDecl = VariableDecl.convert(
-                rangeFrom(pos),
-                modifiers,
-                type,
-                text(name),
-                Variable.kGlobal_Storage,
-                init);
-        if (variableDecl != null) {
-            ThreadContext.getInstance().getUniqueElements().add(
-                    new GlobalVariableDecl(variableDecl)
-            );
-        }
-
-        while (checkNext(Lexer.TK_COMMA)) {
-            name = expectIdentifier();
-            type = ArraySpecifier(pos, baseType);
+            Type type = ArraySpecifier(pos, baseType);
             if (type == null) {
                 return;
             }
-            init = null;
+            Expression init = null;
             if (checkNext(Lexer.TK_EQ)) {
                 init = AssignmentExpression();
                 if (init == null) {
@@ -516,7 +487,8 @@ public class Parser {
                 }
             }
 
-            variableDecl = VariableDecl.convert(
+            VariableDecl variableDecl = VariableDecl.convert(
+                    mCompiler.getContext(),
                     rangeFrom(pos),
                     modifiers,
                     type,
@@ -524,29 +496,29 @@ public class Parser {
                     Variable.kGlobal_Storage,
                     init);
             if (variableDecl != null) {
-                ThreadContext.getInstance().getUniqueElements().add(
+                mCompiler.getContext().getUniqueElements().add(
                         new GlobalVariableDecl(variableDecl)
                 );
             }
-        }
+        } while (checkNext(Lexer.TK_COMMA));
 
         expect(Lexer.TK_SEMICOLON, "';' to complete global variable declaration");
     }
 
     @Nullable
     private Expression operatorRight(Expression left, Operator op,
-                                     java.util.function.Function<Parser, Expression> rightFn) {
+                                     @Nonnull java.util.function.Function<Parser, Expression> rightFn) {
         nextToken();
         Expression right = rightFn.apply(this);
         if (right == null) {
             return null;
         }
         int pos = Position.range(left.getStartOffset(), right.getEndOffset());
-        Expression result = BinaryExpression.convert(pos, left, op, right);
+        Expression result = BinaryExpression.convert(mCompiler.getContext(), pos, left, op, right);
         if (result != null) {
             return result;
         }
-        return Poison.make(pos);
+        return Poison.make(mCompiler.getContext(), pos);
     }
 
     /**
@@ -628,7 +600,7 @@ public class Parser {
     @Nonnull
     private Expression expressionOrPoison(int pos, @Nullable Expression expr) {
         if (expr == null) {
-            expr = Poison.make(pos);
+            expr = Poison.make(mCompiler.getContext(), pos);
         }
         return expr;
     }
@@ -661,7 +633,7 @@ public class Parser {
         }
         int pos = Position.range(base.getStartOffset(), whenFalse.getEndOffset());
         return expressionOrPoison(pos,
-                ConditionalExpression.convert(pos, base, whenTrue, whenFalse));
+                ConditionalExpression.convert(mCompiler.getContext(), pos, base, whenTrue, whenFalse));
     }
 
     /**
@@ -1003,7 +975,7 @@ public class Parser {
             }
             int pos = Position.range(Token.offset(prefix), base.getEndOffset());
             return expressionOrPoison(pos,
-                    PrefixExpression.convert(pos, op, base));
+                    PrefixExpression.convert(mCompiler.getContext(), pos, op, base));
         }
         return PostfixExpression();
     }
@@ -1041,7 +1013,7 @@ public class Parser {
                     expect(Lexer.TK_RBRACKET, "']' to complete array specifier");
                     int pos = rangeFrom(result.mPosition);
                     result = expressionOrPoison(pos,
-                            IndexExpression.convert(pos, result, index));
+                            IndexExpression.convert(mCompiler.getContext(), pos, result, index));
                 }
                 case Lexer.TK_DOT -> {
                     nextToken();
@@ -1051,7 +1023,7 @@ public class Parser {
                     int pos = rangeFrom(result.mPosition);
                     int namePos = rangeFrom(name);
                     result = expressionOrPoison(pos,
-                            FieldAccess.convert(pos, result, namePos, text));
+                            FieldAccess.convert(mCompiler.getContext(), pos, result, namePos, text));
                 }
                 case Lexer.TK_LPAREN -> {
                     nextToken();
@@ -1074,7 +1046,7 @@ public class Parser {
                     expect(Lexer.TK_RPAREN, "')' to complete invocation");
                     int pos = rangeFrom(result.mPosition);
                     result = expressionOrPoison(pos,
-                            FunctionCall.convert(pos, result, args));
+                            FunctionCall.convert(mCompiler.getContext(), pos, result, args));
                 }
                 case Lexer.TK_PLUSPLUS, Lexer.TK_MINUSMINUS -> {
                     nextToken();
@@ -1083,7 +1055,7 @@ public class Parser {
                             : Operator.DEC;
                     int pos = rangeFrom(result.mPosition);
                     result = expressionOrPoison(pos,
-                            PostfixExpression.convert(pos, result, op));
+                            PostfixExpression.convert(mCompiler.getContext(), pos, result, op));
                 }
                 default -> {
                     return result;
@@ -1108,7 +1080,7 @@ public class Parser {
         return switch (Token.kind(t)) {
             case Lexer.TK_IDENTIFIER -> {
                 nextToken();
-                yield ThreadContext.getInstance().convertIdentifier(position(t), text(t));
+                yield mCompiler.getContext().convertIdentifier(position(t), text(t));
             }
             case Lexer.TK_INTLITERAL -> IntLiteral();
             case Lexer.TK_FLOATLITERAL -> FloatLiteral();
@@ -1146,6 +1118,7 @@ public class Parser {
             long value = Long.decode(s);
             if (value <= 0xFFFF_FFFFL) {
                 return Literal.makeInteger(
+                        mCompiler.getContext(),
                         position(token),
                         value);
             }
@@ -1168,6 +1141,7 @@ public class Parser {
             float value = Float.parseFloat(s);
             if (Float.isFinite(value)) {
                 return Literal.makeFloat(
+                        mCompiler.getContext(),
                         position(token),
                         value);
             }
@@ -1187,9 +1161,11 @@ public class Parser {
         long token = nextToken();
         return switch (Token.kind(token)) {
             case Lexer.TK_TRUE -> Literal.makeBoolean(
+                    mCompiler.getContext(),
                     position(token),
                     true);
             case Lexer.TK_FALSE -> Literal.makeBoolean(
+                    mCompiler.getContext(),
                     position(token),
                     false);
             default -> {
@@ -1240,7 +1216,7 @@ public class Parser {
                 break;
             }
             long token = nextToken();
-            modifiers.setFlag(mask, position(token));
+            modifiers.setFlag(mCompiler.getContext(), mask, position(token));
         }
         modifiers.mPosition = rangeFrom(start);
         return modifiers;
@@ -1260,58 +1236,41 @@ public class Parser {
             long name = expect(Lexer.TK_IDENTIFIER, "identifier");
             String text = text(name);
             int pos = position(name);
-            switch (text) {
-                case "origin_upper_left" ->
-                        modifiers.setLayoutFlag(Layout.kOriginUpperLeft_LayoutFlag, text, pos);
-                case "pixel_center_integer" ->
-                        modifiers.setLayoutFlag(Layout.kPixelCenterInteger_LayoutFlag, text, pos);
-                case "early_fragment_tests" ->
-                        modifiers.setLayoutFlag(Layout.kEarlyFragmentTests_LayoutFlag, text, pos);
-                case "blend_support_all_equations" ->
-                        modifiers.setLayoutFlag(Layout.kBlendSupportAllEquations_LayoutFlag, text, pos);
-                case "push_constant" ->
-                        modifiers.setLayoutFlag(Layout.kPushConstant_LayoutFlag, text, pos);
-                case "location" -> {
-                    modifiers.setLayoutFlag(Layout.kLocation_LayoutFlag, text, pos);
-                    modifiers.layout().mLocation = LayoutInt();
+            int mask = switch (text) {
+                case "origin_upper_left" ->Layout.kOriginUpperLeft_LayoutFlag;
+                case "pixel_center_integer" ->Layout.kPixelCenterInteger_LayoutFlag;
+                case "early_fragment_tests" ->Layout.kEarlyFragmentTests_LayoutFlag;
+                case "blend_support_all_equations" ->Layout.kBlendSupportAllEquations_LayoutFlag;
+                case "push_constant" ->Layout.kPushConstant_LayoutFlag;
+                case "location" -> Layout.kLocation_LayoutFlag;
+                case "component" -> Layout.kComponent_LayoutFlag;
+                case "index" -> Layout.kIndex_LayoutFlag;
+                case "binding" ->Layout.kBinding_LayoutFlag;
+                case "offset" ->Layout.kOffset_LayoutFlag;
+                case "align" -> Layout.kAlign_LayoutFlag;
+                case "set" -> Layout.kSet_LayoutFlag;
+                case "input_attachment_index" ->Layout.kInputAttachmentIndex_LayoutFlag;
+                case "builtin" -> Layout.kBuiltin_LayoutFlag;
+                default -> 0;
+            };
+            if (mask != 0) {
+                modifiers.setLayoutFlag(mCompiler.getContext(), mask, text, pos);
+                Layout layout = modifiers.layout();
+                switch (mask) {
+                    case Layout.kLocation_LayoutFlag -> layout.mLocation = LayoutInt();
+                    case Layout.kComponent_LayoutFlag -> layout.mComponent = LayoutInt();
+                    case Layout.kIndex_LayoutFlag -> layout.mIndex = LayoutInt();
+                    case Layout.kBinding_LayoutFlag -> layout.mBinding = LayoutInt();
+                    case Layout.kOffset_LayoutFlag -> layout.mOffset = LayoutInt();
+                    case Layout.kAlign_LayoutFlag -> layout.mAlign = LayoutInt();
+                    case Layout.kSet_LayoutFlag -> layout.mSet = LayoutInt();
+                    case Layout.kInputAttachmentIndex_LayoutFlag -> layout.mInputAttachmentIndex = LayoutInt();
+                    case Layout.kBuiltin_LayoutFlag -> layout.mBuiltin = LayoutBuiltin();
                 }
-                case "component" -> {
-                    modifiers.setLayoutFlag(Layout.kComponent_LayoutFlag, text, pos);
-                    modifiers.layout().mComponent = LayoutInt();
-                }
-                case "index" -> {
-                    modifiers.setLayoutFlag(Layout.kIndex_LayoutFlag, text, pos);
-                    modifiers.layout().mIndex = LayoutInt();
-                }
-                case "binding" -> {
-                    modifiers.setLayoutFlag(Layout.kBinding_LayoutFlag, text, pos);
-                    modifiers.layout().mBinding = LayoutInt();
-                }
-                case "offset" -> {
-                    modifiers.setLayoutFlag(Layout.kOffset_LayoutFlag, text, pos);
-                    modifiers.layout().mOffset = LayoutInt();
-                }
-                case "align" -> {
-                    modifiers.setLayoutFlag(Layout.kAlign_LayoutFlag, text, pos);
-                    modifiers.layout().mAlign = LayoutInt();
-                }
-                case "set" -> {
-                    modifiers.setLayoutFlag(Layout.kSet_LayoutFlag, text, pos);
-                    modifiers.layout().mSet = LayoutInt();
-                }
-                case "input_attachment_index" -> {
-                    modifiers.setLayoutFlag(Layout.kInputAttachmentIndex_LayoutFlag, text, pos);
-                    modifiers.layout().mInputAttachmentIndex = LayoutInt();
-                }
-                case "builtin" -> {
-                    modifiers.setLayoutFlag(Layout.kBuiltin_LayoutFlag, text, pos);
-                    modifiers.layout().mBuiltin = LayoutBuiltin();
-                }
-                default -> {
-                    warning(name, "unrecognized layout qualifier '" + text + "'");
-                    if (checkNext(Lexer.TK_EQ)) {
-                        nextToken();
-                    }
+            } else {
+                warning(name, "unrecognized layout qualifier '" + text + "'");
+                if (checkNext(Lexer.TK_EQ)) {
+                    nextToken();
                 }
             }
         } while (checkNext(Lexer.TK_COMMA));
@@ -1380,18 +1339,18 @@ public class Parser {
     private Type TypeSpecifier(Modifiers modifiers) {
         long start = expect(Lexer.TK_IDENTIFIER, "a type name");
         String name = text(start);
-        var symbol = ThreadContext.getInstance().getSymbolTable().find(name);
+        var symbol = mCompiler.getContext().getSymbolTable().find(name);
         if (symbol == null) {
             error(start, "no type named '" + name + "'");
-            return ThreadContext.getInstance().getTypes().mPoison;
+            return mCompiler.getContext().getTypes().mPoison;
         }
         if (!(symbol instanceof Type result)) {
             error(start, "symbol '" + name + "' is not a type");
-            return ThreadContext.getInstance().getTypes().mPoison;
+            return mCompiler.getContext().getTypes().mPoison;
         }
         if (result.isInterfaceBlock()) {
             error(start, "expected a type, found interface block '" + name + "'");
-            return ThreadContext.getInstance().getTypes().mInvalid;
+            return mCompiler.getContext().getTypes().mInvalid;
         }
         result = ArraySpecifier(position(start), result);
         return result;
@@ -1399,7 +1358,7 @@ public class Parser {
 
     @Nullable
     private Type ArraySpecifier(int startPos, Type type) {
-        ThreadContext context = ThreadContext.getInstance();
+        Context context = mCompiler.getContext();
         while (peek(Lexer.TK_LBRACKET)) {
             nextToken();
             Expression size = null;
@@ -1413,9 +1372,9 @@ public class Parser {
             int pos = rangeFrom(startPos);
             final int arraySize;
             if (size != null) {
-                arraySize = type.convertArraySize(pos, size);
+                arraySize = type.convertArraySize(mCompiler.getContext(), pos, size);
             } else {
-                if (!type.isUsableInArray(pos)) {
+                if (!type.isUsableInArray(mCompiler.getContext(), pos)) {
                     arraySize = 0;
                 } else {
                     arraySize = Type.kUnsizedArray;
@@ -1452,6 +1411,7 @@ public class Parser {
             }
         }
         Statement result = VariableDecl.convert(
+                mCompiler.getContext(),
                 rangeFrom(name),
                 modifiers,
                 type,
@@ -1460,11 +1420,7 @@ public class Parser {
                 init
         );
 
-        for (;;) {
-            if (!checkNext(Lexer.TK_COMMA)) {
-                expect(Lexer.TK_SEMICOLON, "';' to complete local variable declaration");
-                break;
-            }
+        while (checkNext(Lexer.TK_COMMA)) {
             name = expectIdentifier();
             type = ArraySpecifier(pos, baseType);
             if (type == null) {
@@ -1478,6 +1434,7 @@ public class Parser {
                 }
             }
             Statement next = VariableDecl.convert(
+                    mCompiler.getContext(),
                     rangeFrom(name),
                     modifiers,
                     type,
@@ -1488,6 +1445,7 @@ public class Parser {
 
             result = BlockStatement.makeCompound(result, next);
         }
+        expect(Lexer.TK_SEMICOLON, "';' to complete local variable declaration");
         pos = rangeFrom(pos);
         return statementOrEmpty(pos, result);
     }
@@ -1504,7 +1462,7 @@ public class Parser {
             }
             return VarDeclarationRest(pos, modifiers, type);
         }
-        if (ThreadContext.getInstance().getSymbolTable().isType(text(peek))) {
+        if (mCompiler.getContext().getSymbolTable().isType(text(peek))) {
             int pos = position(peek);
             Modifiers modifiers = new Modifiers(pos);
             Type type = TypeSpecifier(modifiers);
@@ -1530,7 +1488,7 @@ public class Parser {
         }
         expect(Lexer.TK_SEMICOLON, "';' to complete expression statement");
         int pos = expr.mPosition;
-        return statementOrEmpty(pos, ExpressionStatement.convert(expr));
+        return statementOrEmpty(pos, ExpressionStatement.convert(mCompiler.getContext(), expr));
     }
 
     /**
@@ -1578,7 +1536,7 @@ public class Parser {
                 long start = nextToken();
                 expect(Lexer.TK_SEMICOLON, "';' after 'discard'");
                 int pos = rangeFrom(start);
-                yield statementOrEmpty(pos, DiscardStatement.convert(pos));
+                yield statementOrEmpty(pos, DiscardStatement.convert(mCompiler.getContext(), pos));
             }
             case Lexer.TK_RETURN -> {
                 long start = nextToken();
@@ -1632,7 +1590,7 @@ public class Parser {
         }
         int pos = rangeFrom(start);
         return statementOrEmpty(pos,
-                IfStatement.convert(pos, test, whenTrue, whenFalse));
+                IfStatement.convert(mCompiler.getContext(), pos, test, whenTrue, whenFalse));
     }
 
     /**
@@ -1658,7 +1616,7 @@ public class Parser {
     private Statement ForStatement() {
         long start = expect(Lexer.TK_FOR, "'for'");
         expect(Lexer.TK_LPAREN, "'('");
-        ThreadContext.getInstance()
+        mCompiler.getContext()
                 .enterScope();
         try {
             Statement init = null;
@@ -1699,7 +1657,8 @@ public class Parser {
 
             int pos = rangeFrom(start);
 
-            return statementOrEmpty(pos, ForStatement.convert(
+            return statementOrEmpty(pos, ForLoop.convert(
+                    mCompiler.getContext(),
                     pos,
                     init,
                     cond,
@@ -1707,7 +1666,7 @@ public class Parser {
                     statement
             ));
         } finally {
-            ThreadContext.getInstance()
+            mCompiler.getContext()
                     .leaveScope();
         }
     }

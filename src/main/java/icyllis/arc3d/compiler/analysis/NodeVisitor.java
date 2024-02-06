@@ -141,7 +141,7 @@ public abstract class NodeVisitor {
         return visitAnyStatement(stmt);
     }
 
-    public boolean visitFor(ForStatement stmt) {
+    public boolean visitForLoop(ForLoop stmt) {
         return visitAnyStatement(stmt);
     }
 

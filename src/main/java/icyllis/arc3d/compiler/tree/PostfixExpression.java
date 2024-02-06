@@ -20,7 +20,7 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.Operator;
-import icyllis.arc3d.compiler.ThreadContext;
+import icyllis.arc3d.compiler.Context;
 import icyllis.arc3d.compiler.analysis.NodeVisitor;
 
 import javax.annotation.Nonnull;
@@ -45,8 +45,8 @@ public final class PostfixExpression extends Expression {
     }
 
     @Nullable
-    public static Expression convert(int position, Expression base, Operator op) {
-        ThreadContext context = ThreadContext.getInstance();
+    public static Expression convert(@Nonnull Context context,
+                                     int position, Expression base, Operator op) {
         Type baseType = base.getType();
         if (!baseType.isNumeric()) {
             context.error(position, "'" + op +

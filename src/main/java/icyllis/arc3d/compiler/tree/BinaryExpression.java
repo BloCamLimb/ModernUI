@@ -20,7 +20,7 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.Operator;
-import icyllis.arc3d.compiler.ThreadContext;
+import icyllis.arc3d.compiler.Context;
 import icyllis.arc3d.compiler.analysis.NodeVisitor;
 
 import javax.annotation.Nonnull;
@@ -49,11 +49,11 @@ public final class BinaryExpression extends Expression {
      * programmatically.
      */
     @Nullable
-    public static Expression convert(int position,
+    public static Expression convert(@Nonnull Context context,
+                                     int position,
                                      Expression left,
                                      Operator op,
                                      Expression right) {
-        ThreadContext context = ThreadContext.getInstance();
         Type rawLeftType = (left.isIntLiteral() && right.getType().isInteger())
                 ? right.getType()
                 : left.getType();
@@ -64,7 +64,7 @@ public final class BinaryExpression extends Expression {
         boolean isAssignment = op.isAssignment();
 
         Type[] types = new Type[3];
-        if (!op.determineBinaryType(rawLeftType, rawRightType, types)) {
+        if (!op.determineBinaryType(context, rawLeftType, rawRightType, types)) {
             context.error(position, "type mismatch: '" + op +
                     "' cannot operate on '" + left.getType().getName() + "', '" +
                     right.getType().getName() + "'");
@@ -80,11 +80,11 @@ public final class BinaryExpression extends Expression {
             return null;
         }
 
-        left = leftType.coerceExpression(left);
+        left = leftType.coerceExpression(context, left);
         if (left == null) {
             return null;
         }
-        right = rightType.coerceExpression(right);
+        right = rightType.coerceExpression(context, right);
         if (right == null) {
             return null;
         }

@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import icyllis.arc3d.compiler.ThreadContext;
+import icyllis.arc3d.compiler.Context;
 import icyllis.arc3d.compiler.analysis.NodeVisitor;
 
 import javax.annotation.Nonnull;
@@ -35,8 +35,7 @@ public final class DiscardStatement extends Statement {
     }
 
     @Nullable
-    public static Statement convert(int pos) {
-        ThreadContext context = ThreadContext.getInstance();
+    public static Statement convert(@Nonnull Context context, int pos) {
         if (!context.getModel().isFragment()) {
             context.error(pos, "discard statement is only permitted in fragment shaders");
             return null;

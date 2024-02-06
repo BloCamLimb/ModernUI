@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import icyllis.arc3d.compiler.ThreadContext;
+import icyllis.arc3d.compiler.Context;
 import icyllis.arc3d.compiler.analysis.NodeVisitor;
 
 import javax.annotation.Nonnull;
@@ -47,9 +47,9 @@ public final class IfStatement extends Statement {
     }
 
     @Nullable
-    public static Statement convert(int position, Expression condition, Statement whenTrue, Statement whenFalse) {
-        ThreadContext context = ThreadContext.getInstance();
-        condition = context.getTypes().mBool.coerceExpression(condition);
+    public static Statement convert(@Nonnull Context context,
+                                    int position, Expression condition, Statement whenTrue, Statement whenFalse) {
+        condition = context.getTypes().mBool.coerceExpression(context, condition);
         if (condition == null) {
             return null;
         }

@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import icyllis.arc3d.compiler.ThreadContext;
+import icyllis.arc3d.compiler.Context;
 import icyllis.arc3d.compiler.analysis.NodeVisitor;
 
 import javax.annotation.Nonnull;
@@ -31,14 +31,14 @@ import javax.annotation.Nullable;
  *     loop-statement
  * </pre>
  */
-public final class ForStatement extends Statement {
+public final class ForLoop extends Statement {
 
     private Statement mInit;
     private Expression mCondition;
     private Expression mStep;
     private Statement mStatement;
 
-    public ForStatement(int position, Statement init, Expression condition, Expression step, Statement statement) {
+    public ForLoop(int position, Statement init, Expression condition, Expression step, Statement statement) {
         super(position);
         mInit = init;
         mCondition = condition;
@@ -47,21 +47,20 @@ public final class ForStatement extends Statement {
     }
 
     @Nullable
-    public static Statement convert(int pos,
+    public static Statement convert(@Nonnull Context context,
+                                    int pos,
                                     Statement init,
                                     Expression cond,
                                     Expression step,
                                     Statement statement) {
-
-        ThreadContext context = ThreadContext.getInstance();
         if (cond != null) {
-            cond = context.getTypes().mBool.coerceExpression(cond);
+            cond = context.getTypes().mBool.coerceExpression(context, cond);
             if (cond == null) {
                 return null;
             }
         }
 
-        if (step != null && step.isIncomplete()) {
+        if (step != null && step.isIncomplete(context)) {
             return null;
         }
 
@@ -73,17 +72,17 @@ public final class ForStatement extends Statement {
                                  Expression cond,
                                  Expression step,
                                  Statement statement) {
-        return new ForStatement(pos, init, cond, step, statement);
+        return new ForLoop(pos, init, cond, step, statement);
     }
 
     @Override
     public StatementKind getKind() {
-        return StatementKind.FOR;
+        return StatementKind.FOR_LOOP;
     }
 
     @Override
     public boolean accept(@Nonnull NodeVisitor visitor) {
-        if (visitor.visitFor(this)) {
+        if (visitor.visitForLoop(this)) {
             return true;
         }
         return (mInit != null && mInit.accept(visitor)) ||

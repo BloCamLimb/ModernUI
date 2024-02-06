@@ -230,8 +230,8 @@ public class Type extends Symbol {
      * Creates a struct type with the given fields. Reports an error if the struct is ill-formed.
      */
     @Nonnull
-    public static Type makeStructType(int position, String name, Field[] fields, boolean interfaceBlock) {
-        ThreadContext context = ThreadContext.getInstance();
+    public static Type makeStructType(@Nonnull Context context,
+                                      int position, String name, Field[] fields, boolean interfaceBlock) {
         for (Field field : fields) {
             Modifiers modifiers = field.modifiers();
             if (modifiers.flags() != 0) {
@@ -505,8 +505,9 @@ public class Type extends Symbol {
      * error and returns null.
      */
     @Nullable
-    public final Expression coerceExpression(Expression expr) {
-        if (expr == null || expr.isIncomplete()) {
+    public final Expression coerceExpression(@Nonnull Context context,
+                                             @Nullable Expression expr) {
+        if (expr == null || expr.isIncomplete(context)) {
             return null;
         }
         if (expr.getType().matches(this)) {
@@ -515,21 +516,21 @@ public class Type extends Symbol {
 
         int pos = expr.mPosition;
         if (!CoercionCost.accept(expr.getCoercionCost(this), false)) {
-            ThreadContext.getInstance().error(pos, "expected '" + getName() + "', but found '" +
+            context.error(pos, "expected '" + getName() + "', but found '" +
                     expr.getType().getName() + "'");
             return null;
         }
 
         if (isScalar()) {
-            return ConstructorScalarCast.make(pos, this, expr);
+            return ConstructorScalarCast.make(context, pos, this, expr);
         }
         if (isVector() || isMatrix()) {
             return ConstructorCompoundCast.make(pos, this, expr);
         }
         if (isArray()) {
-            return ConstructorArrayCast.make(pos, this, expr);
+            return ConstructorArrayCast.make(context, pos, this, expr);
         }
-        ThreadContext.getInstance().error(pos, "cannot construct '" + getName() + "'");
+        context.error(pos, "cannot construct '" + getName() + "'");
         return null;
     }
 
@@ -678,22 +679,22 @@ public class Type extends Symbol {
     /**
      * Returns the corresponding vector type with the specified number of rows.
      */
-    public final Type toVector(int rows) {
-        return toCompound(1, rows);
+    public final Type toVector(@Nonnull Context context, int rows) {
+        return toCompound(context, 1, rows);
     }
 
     /**
      * Returns the corresponding vector or matrix type with the specified number of columns and
      * rows.
      */
-    public final Type toCompound(int cols, int rows) {
+    public final Type toCompound(@Nonnull Context context, int cols, int rows) {
         if (!isScalar()) {
             throw new IllegalStateException("non-scalar");
         }
         if (cols == 1 && rows == 1) {
             return this;
         }
-        BuiltinTypes types = ThreadContext.getInstance().getTypes();
+        BuiltinTypes types = context.getTypes();
         if (matches(types.mFloat)) {
             return switch (cols) {
                 case 1 -> switch (rows) {
@@ -819,8 +820,7 @@ public class Type extends Symbol {
     /**
      * Reports errors and returns false if this type cannot be used as the element type for an array.
      */
-    public boolean isUsableInArray(int position) {
-        ThreadContext context = ThreadContext.getInstance();
+    public boolean isUsableInArray(@Nonnull Context context, int position) {
         if (isArray()) {
             // Vulkan: disallow multi-dimensional arrays
             context.error(position, "multi-dimensional arrays are not allowed");
@@ -842,13 +842,12 @@ public class Type extends Symbol {
      * Verifies that the expression is a valid constant array size for this type. Returns the array
      * size, or reports errors and returns zero if the expression isn't a valid literal value.
      */
-    public int convertArraySize(int position, Expression size) {
-        ThreadContext context = ThreadContext.getInstance();
-        size = context.getTypes().mInt.coerceExpression(size);
+    public int convertArraySize(@Nonnull Context context, int position, Expression size) {
+        size = context.getTypes().mInt.coerceExpression(context, size);
         if (size == null) {
             return 0;
         }
-        if (!isUsableInArray(position)) {
+        if (!isUsableInArray(context, position)) {
             return 0;
         }
         OptionalLong value = ConstantFolder.getConstantInt(size);

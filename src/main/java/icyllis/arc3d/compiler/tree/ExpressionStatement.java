@@ -19,10 +19,12 @@
 
 package icyllis.arc3d.compiler.tree;
 
+import icyllis.arc3d.compiler.Context;
 import icyllis.arc3d.compiler.Operator;
 import icyllis.arc3d.compiler.analysis.NodeVisitor;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * A lone expression being used as a statement.
@@ -36,11 +38,12 @@ public final class ExpressionStatement extends Statement {
         mExpression = expression;
     }
 
-    public static Statement convert(Expression expr) {
-        if (expr.isIncomplete()) {
+    @Nullable
+    public static Statement convert(@Nonnull Context context, Expression expr) {
+        if (expr.isIncomplete(context)) {
             return null;
         }
-        return make(expr);
+        return ExpressionStatement.make(expr);
     }
 
     public static Statement make(Expression expr) {

@@ -118,9 +118,10 @@ public class Layout {
         return mLayoutFlags;
     }
 
-    public void setLayoutFlag(int mask, String name, int pos) {
+    public void setLayoutFlag(@Nonnull Context context,
+                              int mask, String name, int pos) {
         if ((mLayoutFlags & mask) != 0) {
-            ThreadContext.getInstance().error(pos, "layout qualifier '" + name +
+            context.error(pos, "layout qualifier '" + name +
                     "' appears more than once");
         }
         mLayoutFlags |= mask;
@@ -130,13 +131,14 @@ public class Layout {
         mLayoutFlags &= ~mask;
     }
 
-    public boolean checkLayoutFlags(int pos, int permittedLayoutFlags) {
+    public boolean checkLayoutFlags(@Nonnull Context context,
+                                    int pos, int permittedLayoutFlags) {
         boolean success = true;
 
         for (int i = 0; i < kCount_LayoutFlag; i++) {
             int flag = 1 << i;
             if ((mLayoutFlags & flag) != 0 && (permittedLayoutFlags & flag) == 0) {
-                ThreadContext.getInstance().error(pos, "layout qualifier '" +
+                context.error(pos, "layout qualifier '" +
                         describeLayoutFlag(flag) + "' is not permitted here");
                 success = false;
             }

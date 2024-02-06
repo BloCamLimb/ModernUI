@@ -133,13 +133,17 @@ public final class SymbolTable {
         return mParent != null && mParent.isBuiltinType(name);
     }
 
+    <T extends Symbol> T insert(@Nonnull T symbol) {
+        return Objects.requireNonNull(insert(null, symbol));
+    }
+
     /**
      * Inserts a symbol into the symbol table, reports errors if there was a name collision.
      *
      * @return the given symbol if successful, or null if there was a name collision
      */
     @Nullable
-    public <T extends Symbol> T insert(@Nonnull T symbol) {
+    public <T extends Symbol> T insert(Context context, @Nonnull T symbol) {
         String key = symbol.getName();
         if (key.isEmpty()) {
             // We have legitimate use cases of nameless symbols, such as anonymous function parameters.
@@ -165,7 +169,7 @@ public final class SymbolTable {
             }
         }
 
-        ThreadContext.getInstance().error(symbol.mPosition,
+        context.error(symbol.mPosition,
                 "symbol '" + key + "' is already defined");
         return null;
     }
@@ -189,6 +193,6 @@ public final class SymbolTable {
             return (Type) symbol;
         }
         Type result = Type.makeArrayType(name, type, size);
-        return Objects.requireNonNull(insert(result));
+        return insert(result);
     }
 }

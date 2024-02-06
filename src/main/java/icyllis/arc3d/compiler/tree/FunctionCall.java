@@ -20,7 +20,7 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.Operator;
-import icyllis.arc3d.compiler.ThreadContext;
+import icyllis.arc3d.compiler.Context;
 import icyllis.arc3d.compiler.analysis.Analysis;
 import icyllis.arc3d.compiler.analysis.NodeVisitor;
 
@@ -91,22 +91,23 @@ public final class FunctionCall extends Expression {
     }
 
     @Nullable
-    public static Expression convert(int pos, @Nonnull Expression identifier,
+    public static Expression convert(@Nonnull Context context,
+                                     int pos, @Nonnull Expression identifier,
                                      @Nonnull List<Expression> arguments) {
         return switch (identifier.getKind()) {
             case TYPE_REFERENCE -> {
                 TypeReference ref = (TypeReference) identifier;
-                yield ConstructorCall.convert(pos, ref.getValue(), arguments);
+                yield ConstructorCall.convert(context, pos, ref.getValue(), arguments);
             }
             case FUNCTION_REFERENCE -> {
                 FunctionReference ref = (FunctionReference) identifier;
                 FunctionDecl best = findBestCandidate(ref.getOverloadChain(), arguments);
                 if (best != null) {
-                    yield FunctionCall.convert(pos, best, arguments);
+                    yield FunctionCall.convert(context, pos, best, arguments);
                 }
                 String msg = "no candidate found for function call " +
                         ref.getOverloadChain().getName() + buildArgumentTypeList(arguments);
-                ThreadContext.getInstance().error(pos, msg);
+                context.error(pos, msg);
                 yield null;
             }
             case POISON -> {
@@ -114,14 +115,15 @@ public final class FunctionCall extends Expression {
                 yield identifier;
             }
             default -> {
-                ThreadContext.getInstance().error(pos, "not an invocation");
+                context.error(pos, "not an invocation");
                 yield null;
             }
         };
     }
 
     @Nullable
-    public static Expression convert(int pos, @Nonnull FunctionDecl function,
+    public static Expression convert(@Nonnull Context context,
+                                     int pos, @Nonnull FunctionDecl function,
                                      @Nonnull List<Expression> arguments) {
         if (function.getParameters().size() != arguments.size()) {
             String msg = "call to '" + function.getName() + "' expected " +
@@ -130,7 +132,7 @@ public final class FunctionCall extends Expression {
                 msg += "s";
             }
             msg += ", but found " + arguments.size();
-            ThreadContext.getInstance().error(pos, msg);
+            context.error(pos, msg);
             return null;
         }
 
@@ -139,13 +141,13 @@ public final class FunctionCall extends Expression {
         if (returnType == null) {
             String msg = "no match for " + function.getName() +
                     buildArgumentTypeList(arguments);
-            ThreadContext.getInstance().error(pos, msg);
+            context.error(pos, msg);
             return null;
         }
 
         for (int i = 0; i < arguments.size(); i++) {
             // Coerce each argument to the proper type.
-            arguments.set(i, paramTypes.get(i).coerceExpression(arguments.get(i)));
+            arguments.set(i, paramTypes.get(i).coerceExpression(context, arguments.get(i)));
             if (arguments.get(i) == null) {
                 return null;
             }
@@ -162,7 +164,7 @@ public final class FunctionCall extends Expression {
         }
 
         if (function.isEntryPoint()) {
-            ThreadContext.getInstance().error(pos, "call to entry point is not allowed");
+            context.error(pos, "call to entry point is not allowed");
             return null;
         }
 

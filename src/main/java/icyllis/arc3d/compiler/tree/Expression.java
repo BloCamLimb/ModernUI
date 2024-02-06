@@ -83,18 +83,18 @@ public abstract class Expression extends Node {
      * references that were never invoked, or type references that were never constructed, are
      * considered incomplete expressions and should result in an error.
      */
-    public final boolean isIncomplete() {
+    public final boolean isIncomplete(@Nonnull Context context) {
         return switch (getKind()) {
             case FUNCTION_REFERENCE -> {
                 int pos = getEndOffset();
                 pos = Position.range(pos, pos + 1);
-                ThreadContext.getInstance().error(pos, "expected '(' to begin function invocation");
+                context.error(pos, "expected '(' to begin function invocation");
                 yield true;
             }
             case TYPE_REFERENCE -> {
                 int pos = getEndOffset();
                 pos = Position.range(pos, pos + 1);
-                ThreadContext.getInstance().error(pos, "expected '(' to begin constructor invocation");
+                context.error(pos, "expected '(' to begin constructor invocation");
                 yield true;
             }
             default -> false;
@@ -112,7 +112,7 @@ public abstract class Expression extends Node {
     }
 
     /**
-     * Returns a clone at the same position.
+     * Returns a deep copy at the same position.
      */
     @Nonnull
     @Override

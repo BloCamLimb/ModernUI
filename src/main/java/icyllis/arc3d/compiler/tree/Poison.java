@@ -20,7 +20,7 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.ShaderCompiler;
-import icyllis.arc3d.compiler.ThreadContext;
+import icyllis.arc3d.compiler.Context;
 import icyllis.arc3d.compiler.analysis.NodeVisitor;
 
 import javax.annotation.Nonnull;
@@ -35,8 +35,8 @@ public final class Poison extends Expression {
     }
 
     @Nonnull
-    public static Expression make(int position) {
-        return new Poison(position, ThreadContext.getInstance().getTypes().mPoison);
+    public static Expression make(@Nonnull Context context, int position) {
+        return new Poison(position, context.getTypes().mPoison);
     }
 
     @Override

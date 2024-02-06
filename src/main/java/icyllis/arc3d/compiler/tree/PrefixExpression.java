@@ -20,7 +20,7 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.Operator;
-import icyllis.arc3d.compiler.ThreadContext;
+import icyllis.arc3d.compiler.Context;
 import icyllis.arc3d.compiler.analysis.Analysis;
 import icyllis.arc3d.compiler.analysis.NodeVisitor;
 
@@ -44,8 +44,8 @@ public final class PrefixExpression extends Expression {
         mOperand = operand;
     }
 
-    public static Expression convert(int position, Operator op, Expression base) {
-        ThreadContext context = ThreadContext.getInstance();
+    public static Expression convert(@Nonnull Context context,
+                                     int position, Operator op, Expression base) {
         Type baseType = base.getType();
         switch (op) {
             case ADD:
@@ -89,7 +89,7 @@ public final class PrefixExpression extends Expression {
                 }
                 if (base.isLiteral()) {
                     // The expression `~123` is no longer a literal; coerce to the actual type.
-                    base = baseType.coerceExpression(base);
+                    base = baseType.coerceExpression(context, base);
                     if (base == null) {
                         return null;
                     }

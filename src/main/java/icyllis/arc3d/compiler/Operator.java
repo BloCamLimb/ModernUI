@@ -344,11 +344,11 @@ public enum Operator {
      * @param out left type, right type and result type, respectively
      */
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    public boolean determineBinaryType(Type left,
+    public boolean determineBinaryType(Context context,
+                                       Type left,
                                        Type right,
                                        Type[] out) {
         assert (out.length >= 3);
-        ThreadContext context = ThreadContext.getInstance();
         switch (this) {
             case ASSIGN -> {    // left = right
                 if (left.isVoid()) {
@@ -414,14 +414,14 @@ public enum Operator {
         boolean isAssignment = isAssignment();
         if (isMatrixMultiply(left, right)) {  // left * right
             // Determine final component type.
-            if (!determineBinaryType(leftComponentType, rightComponentType, out)) {
+            if (!determineBinaryType(context, leftComponentType, rightComponentType, out)) {
                 return false;
             }
             int leftCols = left.getCols(), leftRows = left.getRows();
             int rightCols = right.getCols(), rightRows = right.getRows();
             // Convert component type to compound.
-            out[0] = out[2].toCompound(leftCols, leftRows);
-            out[1] = out[2].toCompound(rightCols, rightRows);
+            out[0] = out[2].toCompound(context, leftCols, leftRows);
+            out[1] = out[2].toCompound(context, rightCols, rightRows);
             if (left.isVector()) {
                 // `vector * matrix` treats the vector as a row vector; we need to transpose it.
                 int t = leftCols;
@@ -430,10 +430,10 @@ public enum Operator {
                 assert (leftRows == 1);
             }
             if (leftRows > 1) {
-                out[2] = out[2].toCompound(rightCols, leftRows);
+                out[2] = out[2].toCompound(context, rightCols, leftRows);
             } else {
                 // The result was a row vector. Transpose it back to a column.
-                out[2] = out[2].toCompound(leftRows, rightCols);
+                out[2] = out[2].toCompound(context, leftRows, rightCols);
             }
             if (isAssignment && (out[2].getCols() != leftCols ||
                                  out[2].getRows() != leftRows)) {
@@ -447,13 +447,13 @@ public enum Operator {
 
         if (leftIsVectorOrMatrix && right.isScalar()) {
             // Determine final component type.
-            if (!determineBinaryType(leftComponentType, right, out)) {
+            if (!determineBinaryType(context, leftComponentType, right, out)) {
                 return false;
             }
             // Convert component type to compound.
-            out[0] = out[0].toCompound(left.getCols(), left.getRows());
+            out[0] = out[0].toCompound(context, left.getCols(), left.getRows());
             assert !isRelational();
-            out[2] = out[2].toCompound(left.getCols(), left.getRows());
+            out[2] = out[2].toCompound(context, left.getCols(), left.getRows());
             return true;
         }
 
@@ -462,13 +462,13 @@ public enum Operator {
 
         if (!isAssignment && rightIsVectorOrMatrix && left.isScalar()) {
             // Determine final component type.
-            if (!determineBinaryType(left, rightComponentType, out)) {
+            if (!determineBinaryType(context, left, rightComponentType, out)) {
                 return false;
             }
             // Convert component type to compound.
-            out[1] = out[1].toCompound(right.getCols(), right.getRows());
+            out[1] = out[1].toCompound(context, right.getCols(), right.getRows());
             assert !isRelational();
-            out[2] = out[2].toCompound(right.getCols(), right.getRows());
+            out[2] = out[2].toCompound(context, right.getCols(), right.getRows());
             return true;
         }
 

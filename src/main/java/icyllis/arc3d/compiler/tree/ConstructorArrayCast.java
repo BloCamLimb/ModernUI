@@ -20,6 +20,7 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.ConstantFolder;
+import icyllis.arc3d.compiler.Context;
 import icyllis.arc3d.compiler.analysis.Analysis;
 
 import javax.annotation.Nonnull;
@@ -37,7 +38,8 @@ public final class ConstructorArrayCast extends ConstructorCall {
     }
 
     @Nonnull
-    public static Expression make(int position, @Nonnull Type type, @Nonnull Expression arg) {
+    public static Expression make(@Nonnull Context context,
+                                  int position, @Nonnull Type type, @Nonnull Expression arg) {
         // Only arrays of the same size are allowed.
         assert (type.isArray());
         assert (arg.getType().isArray());
@@ -63,7 +65,7 @@ public final class ConstructorArrayCast extends ConstructorCall {
             for (int i = 0; i < inputArgs.length; i++) {
                 Expression inputArg = inputArgs[i];
                 if (inputArg.getType().isScalar()) {
-                    typecastArgs[i] = ConstructorScalarCast.make(inputArg.mPosition, scalarType, inputArg);
+                    typecastArgs[i] = ConstructorScalarCast.make(context, inputArg.mPosition, scalarType, inputArg);
                 } else {
                     typecastArgs[i] = ConstructorCompoundCast.make(inputArg.mPosition, scalarType, inputArg);
                 }
