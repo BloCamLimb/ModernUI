@@ -93,7 +93,7 @@ public class TextureProxy extends SurfaceProxy implements IScratchKey {
         // So fully lazy proxies are created with width and height < 0. Regular lazy proxies must be
         // created with positive widths and heights. The width and height are set to 0 only after a
         // failed instantiation. The former must be "approximate" fit while the latter can be either.
-        assert (width < 0 && height < 0 && (surfaceFlags & IGpuSurface.FLAG_APPROX_FIT) != 0) ||
+        assert (width < 0 && height < 0 && (surfaceFlags & ISurface.FLAG_APPROX_FIT) != 0) ||
                 (width > 0 && height > 0);
     }
 
@@ -108,11 +108,11 @@ public class TextureProxy extends SurfaceProxy implements IScratchKey {
                         int surfaceFlags) {
         super(texture, surfaceFlags);
         mMipmapsDirty = texture.isMipmapped() && texture.isMipmapsDirty();
-        assert (mSurfaceFlags & IGpuSurface.FLAG_APPROX_FIT) == 0;
+        assert (mSurfaceFlags & ISurface.FLAG_APPROX_FIT) == 0;
         assert (mFormat.isExternal() == texture.isExternal());
-        assert (texture.isMipmapped()) == ((mSurfaceFlags & IGpuSurface.FLAG_MIPMAPPED) != 0);
-        assert (texture.getBudgetType() == Engine.BudgetType.Budgeted) == ((mSurfaceFlags & IGpuSurface.FLAG_BUDGETED) != 0);
-        assert (!texture.isExternal()) || ((mSurfaceFlags & IGpuSurface.FLAG_READ_ONLY) != 0);
+        assert (texture.isMipmapped()) == ((mSurfaceFlags & ISurface.FLAG_MIPMAPPED) != 0);
+        assert (texture.getBudgetType() == Engine.BudgetType.Budgeted) == ((mSurfaceFlags & ISurface.FLAG_BUDGETED) != 0);
+        assert (!texture.isExternal()) || ((mSurfaceFlags & ISurface.FLAG_READ_ONLY) != 0);
         assert (texture.getBudgetType() == Engine.BudgetType.Budgeted) == isBudgeted();
         assert (!texture.isExternal() || isReadOnly());
         mGpuTexture = texture; // std::move
@@ -155,8 +155,8 @@ public class TextureProxy extends SurfaceProxy implements IScratchKey {
         if (mGpuTexture != null) {
             return mGpuTexture.getWidth();
         }
-        if ((mSurfaceFlags & IGpuSurface.FLAG_APPROX_FIT) != 0) {
-            return ResourceProvider.makeApprox(mWidth);
+        if ((mSurfaceFlags & ISurface.FLAG_APPROX_FIT) != 0) {
+            return ISurface.getApproxSize(mWidth);
         }
         return mWidth;
     }
@@ -167,8 +167,8 @@ public class TextureProxy extends SurfaceProxy implements IScratchKey {
         if (mGpuTexture != null) {
             return mGpuTexture.getHeight();
         }
-        if ((mSurfaceFlags & IGpuSurface.FLAG_APPROX_FIT) != 0) {
-            return ResourceProvider.makeApprox(mHeight);
+        if ((mSurfaceFlags & ISurface.FLAG_APPROX_FIT) != 0) {
+            return ISurface.getApproxSize(mHeight);
         }
         return mHeight;
     }
@@ -202,8 +202,8 @@ public class TextureProxy extends SurfaceProxy implements IScratchKey {
             return true;
         }
 
-        assert ((mSurfaceFlags & IGpuSurface.FLAG_MIPMAPPED) == 0) ||
-                ((mSurfaceFlags & IGpuSurface.FLAG_APPROX_FIT) == 0);
+        assert ((mSurfaceFlags & ISurface.FLAG_MIPMAPPED) == 0) ||
+                ((mSurfaceFlags & ISurface.FLAG_APPROX_FIT) == 0);
 
         final GpuTexture texture = resourceProvider.createTexture(mWidth, mHeight, mFormat,
                 getSampleCount(), mSurfaceFlags, "");
@@ -233,7 +233,7 @@ public class TextureProxy extends SurfaceProxy implements IScratchKey {
 
     @Override
     public final boolean shouldSkipAllocator() {
-        if ((mSurfaceFlags & IGpuSurface.FLAG_SKIP_ALLOCATOR) != 0) {
+        if ((mSurfaceFlags & ISurface.FLAG_SKIP_ALLOCATOR) != 0) {
             // Usually an atlas or onFlush proxy
             return true;
         }
@@ -286,8 +286,8 @@ public class TextureProxy extends SurfaceProxy implements IScratchKey {
     public long getMemorySize() {
         // use user params
         return GpuTexture.computeSize(mFormat, mWidth, mHeight, getSampleCount(),
-                (mSurfaceFlags & IGpuSurface.FLAG_MIPMAPPED) != 0,
-                (mSurfaceFlags & IGpuSurface.FLAG_APPROX_FIT) != 0);
+                (mSurfaceFlags & ISurface.FLAG_MIPMAPPED) != 0,
+                (mSurfaceFlags & ISurface.FLAG_APPROX_FIT) != 0);
     }
 
     public final boolean isPromiseProxy() {
@@ -305,7 +305,7 @@ public class TextureProxy extends SurfaceProxy implements IScratchKey {
         if (mGpuTexture != null) {
             return mGpuTexture.isMipmapped();
         }
-        return (mSurfaceFlags & IGpuSurface.FLAG_MIPMAPPED) != 0;
+        return (mSurfaceFlags & ISurface.FLAG_MIPMAPPED) != 0;
     }
 
     public final boolean isMipmapsDirty() {
@@ -322,7 +322,7 @@ public class TextureProxy extends SurfaceProxy implements IScratchKey {
      * been instantiated or not.
      */
     public final boolean isUserMipmapped() {
-        return (mSurfaceFlags & IGpuSurface.FLAG_MIPMAPPED) != 0;
+        return (mSurfaceFlags & ISurface.FLAG_MIPMAPPED) != 0;
     }
 
     /**
@@ -340,8 +340,8 @@ public class TextureProxy extends SurfaceProxy implements IScratchKey {
         int result = getBackingWidth();
         result = 31 * result + getBackingHeight();
         result = 31 * result + mFormat.getFormatKey();
-        result = 31 * result + ((mSurfaceFlags & (IGpuSurface.FLAG_RENDERABLE | IGpuSurface.FLAG_PROTECTED)) |
-                (isMipmapped() ? IGpuSurface.FLAG_MIPMAPPED : 0));
+        result = 31 * result + ((mSurfaceFlags & (ISurface.FLAG_RENDERABLE | ISurface.FLAG_PROTECTED)) |
+                (isMipmapped() ? ISurface.FLAG_MIPMAPPED : 0));
         return result;
     }
 
@@ -356,16 +356,16 @@ public class TextureProxy extends SurfaceProxy implements IScratchKey {
             return key.mWidth == getBackingWidth() &&
                     key.mHeight == getBackingHeight() &&
                     key.mFormat == mFormat.getFormatKey() &&
-                    key.mFlags == ((mSurfaceFlags & (IGpuSurface.FLAG_RENDERABLE | IGpuSurface.FLAG_PROTECTED)) |
-                            (isMipmapped() ? IGpuSurface.FLAG_MIPMAPPED : 0));
+                    key.mFlags == ((mSurfaceFlags & (ISurface.FLAG_RENDERABLE | ISurface.FLAG_PROTECTED)) |
+                            (isMipmapped() ? ISurface.FLAG_MIPMAPPED : 0));
         } else if (o instanceof TextureProxy proxy) {
             // ResourceAllocator
             return proxy.getBackingWidth() == getBackingWidth() &&
                     proxy.getBackingHeight() == getBackingHeight() &&
                     proxy.mFormat.getFormatKey() == mFormat.getFormatKey() &&
                     proxy.isMipmapped() == isMipmapped() &&
-                    (proxy.mSurfaceFlags & (IGpuSurface.FLAG_RENDERABLE | IGpuSurface.FLAG_PROTECTED)) ==
-                            (mSurfaceFlags & (IGpuSurface.FLAG_RENDERABLE | IGpuSurface.FLAG_PROTECTED));
+                    (proxy.mSurfaceFlags & (ISurface.FLAG_RENDERABLE | ISurface.FLAG_PROTECTED)) ==
+                            (mSurfaceFlags & (ISurface.FLAG_RENDERABLE | ISurface.FLAG_PROTECTED));
         }
         return false;
     }
@@ -378,7 +378,7 @@ public class TextureProxy extends SurfaceProxy implements IScratchKey {
     @ApiStatus.Internal
     public final void makeUserExact(boolean allocatedCaseOnly) {
         assert !isLazyMost();
-        if ((mSurfaceFlags & IGpuSurface.FLAG_APPROX_FIT) == 0) {
+        if ((mSurfaceFlags & ISurface.FLAG_APPROX_FIT) == 0) {
             return;
         }
 
@@ -405,7 +405,7 @@ public class TextureProxy extends SurfaceProxy implements IScratchKey {
 
         // The Approx uninstantiated case. Making this proxy be exact should be okay.
         // It could mess things up if prior decisions were based on the approximate size.
-        mSurfaceFlags &= ~IGpuSurface.FLAG_APPROX_FIT;
+        mSurfaceFlags &= ~ISurface.FLAG_APPROX_FIT;
         // If GpuMemorySize is used when caching specialImages for the image filter DAG. If it has
         // already been computed we want to leave it alone so that amount will be removed when
         // the special image goes away. If it hasn't been computed yet it might as well compute the
@@ -426,8 +426,8 @@ public class TextureProxy extends SurfaceProxy implements IScratchKey {
 
     @SharedPtr
     GpuTexture createGpuTexture(ResourceProvider resourceProvider) {
-        assert ((mSurfaceFlags & IGpuSurface.FLAG_MIPMAPPED) == 0 ||
-                (mSurfaceFlags & IGpuSurface.FLAG_APPROX_FIT) == 0);
+        assert ((mSurfaceFlags & ISurface.FLAG_MIPMAPPED) == 0 ||
+                (mSurfaceFlags & ISurface.FLAG_APPROX_FIT) == 0);
         assert !isLazy();
         assert mGpuTexture == null;
 

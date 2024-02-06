@@ -522,7 +522,7 @@ public abstract class Caps {
         if (!isFormatTexturable(format)) {
             return false;
         }
-        if ((surfaceFlags & IGpuSurface.FLAG_RENDERABLE) != 0) {
+        if ((surfaceFlags & ISurface.FLAG_RENDERABLE) != 0) {
             final int maxSize = maxRenderTargetSize();
             if (width > maxSize || height > maxSize) {
                 return false;

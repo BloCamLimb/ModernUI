@@ -60,7 +60,7 @@ public final class SurfaceProvider {
         }
 
         // Only the provider that created a texture should be assigning unique keys to it.
-        assert isDeferredProvider() == ((proxy.mSurfaceFlags & IGpuSurface.FLAG_DEFERRED_PROVIDER) != 0);
+        assert isDeferredProvider() == ((proxy.mSurfaceFlags & ISurface.FLAG_DEFERRED_PROVIDER) != 0);
 
         // If there is already a Resource with this key then the caller has violated the
         // normal usage pattern of uniquely keyed resources (e.g., they have created one w/o

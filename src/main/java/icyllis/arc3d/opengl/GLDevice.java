@@ -353,7 +353,7 @@ public final class GLDevice extends GpuDevice {
                                          int surfaceFlags) {
         assert (mipLevelCount > 0 && sampleCount > 0);
         // We don't support protected textures in OpenGL.
-        if ((surfaceFlags & IGpuSurface.FLAG_PROTECTED) != 0) {
+        if ((surfaceFlags & ISurface.FLAG_PROTECTED) != 0) {
             return null;
         }
         if (format.isExternal()) {
@@ -366,7 +366,7 @@ public final class GLDevice extends GpuDevice {
             return null;
         }
         Function<GLTexture, GLRenderTarget> target = null;
-        if ((surfaceFlags & IGpuSurface.FLAG_RENDERABLE) != 0) {
+        if ((surfaceFlags & ISurface.FLAG_RENDERABLE) != 0) {
             target = createRTObjects(
                     texture,
                     width, height,
@@ -386,14 +386,14 @@ public final class GLDevice extends GpuDevice {
                     width, height,
                     info,
                     format,
-                    (surfaceFlags & IGpuSurface.FLAG_BUDGETED) != 0,
+                    (surfaceFlags & ISurface.FLAG_BUDGETED) != 0,
                     true);
         } else {
             return new GLRenderTexture(this,
                     width, height,
                     info,
                     format,
-                    (surfaceFlags & IGpuSurface.FLAG_BUDGETED) != 0,
+                    (surfaceFlags & ISurface.FLAG_BUDGETED) != 0,
                     target);
         }
     }

@@ -94,7 +94,7 @@ public final class GLRenderTarget extends GpuRenderTarget {
         mOwnership = ownership;
         mStencilBuffer = stencilBuffer; // std::move
         if (framebuffer == 0) {
-            mSurfaceFlags |= IGpuSurface.FLAG_GL_WRAP_DEFAULT_FB;
+            mSurfaceFlags |= ISurface.FLAG_GL_WRAP_DEFAULT_FB;
         }
     }
 

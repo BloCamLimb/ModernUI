@@ -141,7 +141,7 @@ public abstract class GpuTexture extends GpuResource implements IGpuSurface {
     public final int getSurfaceFlags() {
         int flags = mFlags;
         if (getBudgetType() == BudgetType.Budgeted) {
-            flags |= IGpuSurface.FLAG_BUDGETED;
+            flags |= ISurface.FLAG_BUDGETED;
         }
         return flags;
     }
@@ -238,8 +238,8 @@ public abstract class GpuTexture extends GpuResource implements IGpuSurface {
             return 0;
         }
         if (approx) {
-            width = ResourceProvider.makeApprox(width);
-            height = ResourceProvider.makeApprox(height);
+            width = ISurface.getApproxSize(width);
+            height = ISurface.getApproxSize(height);
         }
         long size = DataUtils.numBlocks(format.getCompressionType(), width, height) *
                 format.getBytesPerBlock();
@@ -274,8 +274,8 @@ public abstract class GpuTexture extends GpuResource implements IGpuSurface {
             return 0;
         }
         if (approx) {
-            width = ResourceProvider.makeApprox(width);
-            height = ResourceProvider.makeApprox(height);
+            width = ISurface.getApproxSize(width);
+            height = ISurface.getApproxSize(height);
         }
         long size = DataUtils.numBlocks(format.getCompressionType(), width, height) *
                 format.getBytesPerBlock();
@@ -315,9 +315,9 @@ public abstract class GpuTexture extends GpuResource implements IGpuSurface {
             mWidth = width;
             mHeight = height;
             mFormat = format.getFormatKey();
-            mFlags = (surfaceFlags & (IGpuSurface.FLAG_MIPMAPPED |
-                    IGpuSurface.FLAG_RENDERABLE |
-                    IGpuSurface.FLAG_PROTECTED)) | (sampleCount << 16);
+            mFlags = (surfaceFlags & (ISurface.FLAG_MIPMAPPED |
+                    ISurface.FLAG_RENDERABLE |
+                    ISurface.FLAG_PROTECTED)) | (sampleCount << 16);
             return this;
         }
 

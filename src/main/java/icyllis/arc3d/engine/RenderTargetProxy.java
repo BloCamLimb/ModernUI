@@ -62,8 +62,8 @@ public final class RenderTargetProxy extends SurfaceProxy {
         if (mRenderTarget != null) {
             return mRenderTarget.getWidth();
         }
-        if ((mSurfaceFlags & IGpuSurface.FLAG_APPROX_FIT) != 0) {
-            return ResourceProvider.makeApprox(mWidth);
+        if ((mSurfaceFlags & ISurface.FLAG_APPROX_FIT) != 0) {
+            return ISurface.getApproxSize(mWidth);
         }
         return mWidth;
     }
@@ -74,8 +74,8 @@ public final class RenderTargetProxy extends SurfaceProxy {
         if (mRenderTarget != null) {
             return mRenderTarget.getHeight();
         }
-        if ((mSurfaceFlags & IGpuSurface.FLAG_APPROX_FIT) != 0) {
-            return ResourceProvider.makeApprox(mHeight);
+        if ((mSurfaceFlags & ISurface.FLAG_APPROX_FIT) != 0) {
+            return ISurface.getApproxSize(mHeight);
         }
         return mHeight;
     }
@@ -115,7 +115,7 @@ public final class RenderTargetProxy extends SurfaceProxy {
 
     @Override
     public boolean shouldSkipAllocator() {
-        if ((mSurfaceFlags & IGpuSurface.FLAG_SKIP_ALLOCATOR) != 0) {
+        if ((mSurfaceFlags & ISurface.FLAG_SKIP_ALLOCATOR) != 0) {
             // Usually an atlas or onFlush proxy
             return true;
         }
