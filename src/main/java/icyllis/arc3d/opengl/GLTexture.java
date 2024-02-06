@@ -57,10 +57,10 @@ public class GLTexture extends GpuTexture {
         mOwnership = true;
 
         if (glFormatIsCompressed(format.getGLFormat()) || format.isExternal()) {
-            mFlags |= IGpuSurface.FLAG_READ_ONLY;
+            mFlags |= ISurface.FLAG_READ_ONLY;
         }
         if (mBackendTexture.isMipmapped()) {
-            mFlags |= IGpuSurface.FLAG_MIPMAPPED;
+            mFlags |= ISurface.FLAG_MIPMAPPED;
         }
 
         mMemorySize = computeSize(format, width, height, 1, info.levels);

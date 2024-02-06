@@ -28,8 +28,6 @@ import javax.annotation.Nullable;
  */
 public class ResourceProvider {
 
-    public static final int MIN_SCRATCH_TEXTURE_SIZE = 16;
-
     private final GpuDevice mDevice;
     private final DirectContext mContext;
 
@@ -39,33 +37,6 @@ public class ResourceProvider {
     protected ResourceProvider(GpuDevice device, DirectContext context) {
         mDevice = device;
         mContext = context;
-    }
-
-    /**
-     * Map <code>size</code> to a larger multiple of 2. Values <= 1024 will pop up to
-     * the next power of 2. Those above 1024 will only go up half the floor power of 2.
-     * <p>
-     * Possible values: 16, 32, 64, 128, 256, 512, 1024, 1536, 2048, 3072, 4096, 6144, 8192
-     */
-    public static int makeApprox(int size) {
-        size = Math.max(MIN_SCRATCH_TEXTURE_SIZE, size);
-
-        if (MathUtil.isPow2(size)) {
-            return size;
-        }
-
-        int ceilPow2 = MathUtil.ceilPow2(size);
-        if (size <= 1024) {
-            return ceilPow2;
-        }
-
-        int floorPow2 = ceilPow2 >> 1;
-        int mid = floorPow2 + (floorPow2 >> 1);
-
-        if (size <= mid) {
-            return mid;
-        }
-        return ceilPow2;
     }
 
     /**
@@ -144,17 +115,17 @@ public class ResourceProvider {
             return null;
         }
 
-        if ((surfaceFlags & IGpuSurface.FLAG_APPROX_FIT) != 0) {
-            width = makeApprox(width);
-            height = makeApprox(height);
-            surfaceFlags &= IGpuSurface.FLAG_RENDERABLE | IGpuSurface.FLAG_PROTECTED;
-            surfaceFlags |= IGpuSurface.FLAG_BUDGETED;
+        if ((surfaceFlags & ISurface.FLAG_APPROX_FIT) != 0) {
+            width = ISurface.getApproxSize(width);
+            height = ISurface.getApproxSize(height);
+            surfaceFlags &= ISurface.FLAG_RENDERABLE | ISurface.FLAG_PROTECTED;
+            surfaceFlags |= ISurface.FLAG_BUDGETED;
         }
 
         final GpuTexture texture = findAndRefScratchTexture(width, height, format,
                 sampleCount, surfaceFlags, label);
         if (texture != null) {
-            if ((surfaceFlags & IGpuSurface.FLAG_BUDGETED) == 0) {
+            if ((surfaceFlags & ISurface.FLAG_BUDGETED) == 0) {
                 texture.makeBudgeted(false);
             }
             return texture;

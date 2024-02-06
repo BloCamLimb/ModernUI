@@ -305,7 +305,7 @@ public class TestManagedResource {
         TextureProxy target = dContext.getSurfaceProvider().createRenderTexture(
                 GLBackendFormat.make(GLCore.GL_RGBA8),
                 800, 800, 4,
-                IGpuSurface.FLAG_BUDGETED | IGpuSurface.FLAG_RENDERABLE
+                ISurface.FLAG_BUDGETED | ISurface.FLAG_RENDERABLE
         );
         Objects.requireNonNull(target);
         GLGraphicsPipelineState pso = (GLGraphicsPipelineState) dContext.findOrCreateGraphicsPipelineState(
@@ -337,9 +337,9 @@ public class TestManagedResource {
             GpuTexture texture = dContext.getDevice().createTexture(
                     x[0], y[0],
                     GLBackendFormat.make(GLCore.GL_RGBA8),
-                    1, IGpuSurface.FLAG_MIPMAPPED |
-                            IGpuSurface.FLAG_BUDGETED |
-                            IGpuSurface.FLAG_RENDERABLE,
+                    1, ISurface.FLAG_MIPMAPPED |
+                            ISurface.FLAG_BUDGETED |
+                            ISurface.FLAG_RENDERABLE,
                     "MyTexture");
             if (texture != null) {
                 pw.println(texture);
@@ -349,9 +349,9 @@ public class TestManagedResource {
             texture = dContext.getResourceProvider().createTexture(
                     x[0], y[0],
                     GLBackendFormat.make(GLCore.GL_RGBA8),
-                    1, IGpuSurface.FLAG_MIPMAPPED |
-                            IGpuSurface.FLAG_BUDGETED |
-                            IGpuSurface.FLAG_RENDERABLE,
+                    1, ISurface.FLAG_MIPMAPPED |
+                            ISurface.FLAG_BUDGETED |
+                            ISurface.FLAG_RENDERABLE,
                     ImageInfo.CT_RGBA_8888,
                     ImageInfo.CT_RGBA_8888,
                     0,

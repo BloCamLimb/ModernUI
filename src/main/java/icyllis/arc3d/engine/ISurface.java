@@ -19,6 +19,7 @@
 
 package icyllis.arc3d.engine;
 
+import icyllis.arc3d.core.MathUtil;
 import icyllis.arc3d.core.RefCounted;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -103,6 +104,41 @@ public interface ISurface extends RefCounted {
      */
     @ApiStatus.Internal
     int FLAG_VK_WRAP_SECONDARY_CB = FLAG_PROTECTED << 6;
+
+    /**
+     * Map <code>size</code> to a larger multiple of 2. Values <= 1024 will pop up to
+     * the next power of 2. Those above 1024 will only go up half the floor power of 2.
+     * <p>
+     * Possible values: 16, 32, 64, 128, 256, 512, 1024, 1536, 2048, 3072, 4096, 6144, 8192,
+     * 12288, 16384
+     *
+     * @see #FLAG_APPROX_FIT
+     */
+    static int getApproxSize(int size) {
+        final int MIN_SCRATCH_TEXTURE_SIZE = 16;
+        size = Math.max(MIN_SCRATCH_TEXTURE_SIZE, size);
+
+        if (MathUtil.isPow2(size)) {
+            return size;
+        }
+
+        int ceilPow2 = MathUtil.ceilPow2(size);
+        if (size <= 1024) {
+            return ceilPow2;
+        }
+
+        if (size <= 16384) {
+            int floorPow2 = ceilPow2 >> 1;
+            int mid = floorPow2 + (floorPow2 >> 1);
+
+            if (size <= mid) {
+                return mid;
+            }
+            return ceilPow2;
+        }
+
+        return MathUtil.alignTo(size, 4096);
+    }
 
     /**
      * Increases the reference count by 1 on the client pipeline.

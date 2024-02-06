@@ -409,7 +409,7 @@ public final class SurfaceAllocator {
                 gpuTexture = GpuResource.create(mTextureResource);
             }
             assert (gpuTexture != null);
-            assert (proxy.mSurfaceFlags & IGpuSurface.FLAG_RENDERABLE) == 0 || gpuTexture.asRenderTarget() != null;
+            assert (proxy.mSurfaceFlags & ISurface.FLAG_RENDERABLE) == 0 || gpuTexture.asRenderTarget() != null;
 
             // Make texture budgeted if this proxy is budgeted.
             if (proxy.isBudgeted() && gpuTexture.getBudgetType() != BudgetType.Budgeted) {

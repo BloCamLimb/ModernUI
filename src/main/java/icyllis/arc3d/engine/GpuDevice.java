@@ -165,11 +165,11 @@ public abstract class GpuDevice implements Engine {
                 sampleCount, surfaceFlags)) {
             return null;
         }
-        int maxMipLevel = (surfaceFlags & IGpuSurface.FLAG_MIPMAPPED) != 0
+        int maxMipLevel = (surfaceFlags & ISurface.FLAG_MIPMAPPED) != 0
                 ? MathUtil.floorLog2(Math.max(width, height))
                 : 0;
         int mipLevelCount = maxMipLevel + 1; // +1 base level 0
-        if ((surfaceFlags & IGpuSurface.FLAG_RENDERABLE) != 0) {
+        if ((surfaceFlags & ISurface.FLAG_RENDERABLE) != 0) {
             sampleCount = mCaps.getRenderTargetSampleCount(sampleCount, format);
         }
         assert (sampleCount > 0 && sampleCount <= 64);
@@ -178,7 +178,7 @@ public abstract class GpuDevice implements Engine {
         if (texture != null) {
             // we don't copy the backend format object, use identity rather than equals()
             assert texture.getBackendFormat() == format;
-            assert (surfaceFlags & IGpuSurface.FLAG_RENDERABLE) == 0 || texture.asRenderTarget() != null;
+            assert (surfaceFlags & ISurface.FLAG_RENDERABLE) == 0 || texture.asRenderTarget() != null;
             if (label != null) {
                 texture.setLabel(label);
             }
@@ -376,7 +376,7 @@ public abstract class GpuDevice implements Engine {
                                      IGpuSurface dst,
                                      int dstL, int dstT, int dstR, int dstB,
                                      int filter) {
-        if ((dst.getSurfaceFlags() & IGpuSurface.FLAG_READ_ONLY) != 0) {
+        if ((dst.getSurfaceFlags() & ISurface.FLAG_READ_ONLY) != 0) {
             return false;
         }
         return onCopySurface(

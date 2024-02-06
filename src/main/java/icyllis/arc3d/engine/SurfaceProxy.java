@@ -122,7 +122,7 @@ public abstract class SurfaceProxy extends RefCnt implements ISurface {
         mHeight = height;
         mSurfaceFlags = surfaceFlags;
         if (format.isExternal()) {
-            mSurfaceFlags |= IGpuSurface.FLAG_READ_ONLY;
+            mSurfaceFlags |= ISurface.FLAG_READ_ONLY;
         }
         mUniqueID = this;
     }
@@ -135,7 +135,7 @@ public abstract class SurfaceProxy extends RefCnt implements ISurface {
         mWidth = surface.getWidth();
         mHeight = surface.getHeight();
         mSurfaceFlags = surface.getSurfaceFlags() | surfaceFlags;
-        assert (mSurfaceFlags & IGpuSurface.FLAG_APPROX_FIT) == 0;
+        assert (mSurfaceFlags & ISurface.FLAG_APPROX_FIT) == 0;
         mUniqueID = surface; // converting from unique resource ID to a surface ID
     }
 
@@ -266,13 +266,13 @@ public abstract class SurfaceProxy extends RefCnt implements ISurface {
      */
     public final boolean isExact() {
         assert (!isLazyMost());
-        if ((mSurfaceFlags & IGpuSurface.FLAG_APPROX_FIT) == 0) {
+        if ((mSurfaceFlags & ISurface.FLAG_APPROX_FIT) == 0) {
             // user-set Exact
             return true;
         }
         // equivalent to Exact
-        return mWidth == ResourceProvider.makeApprox(mWidth) &&
-                mHeight == ResourceProvider.makeApprox(mHeight);
+        return mWidth == ISurface.getApproxSize(mWidth) &&
+                mHeight == ISurface.getApproxSize(mHeight);
     }
 
     /**
@@ -389,7 +389,7 @@ public abstract class SurfaceProxy extends RefCnt implements ISurface {
      * only meaningful if 'mLazyInstantiateCallback' is non-null.
      */
     public final boolean isBudgeted() {
-        return (mSurfaceFlags & IGpuSurface.FLAG_BUDGETED) != 0;
+        return (mSurfaceFlags & ISurface.FLAG_BUDGETED) != 0;
     }
 
     /**
@@ -398,23 +398,23 @@ public abstract class SurfaceProxy extends RefCnt implements ISurface {
      * assignment in ResourceAllocator.
      */
     public final boolean isReadOnly() {
-        return (mSurfaceFlags & IGpuSurface.FLAG_READ_ONLY) != 0;
+        return (mSurfaceFlags & ISurface.FLAG_READ_ONLY) != 0;
     }
 
     public final boolean isProtected() {
-        return (mSurfaceFlags & IGpuSurface.FLAG_PROTECTED) != 0;
+        return (mSurfaceFlags & ISurface.FLAG_PROTECTED) != 0;
     }
 
     public final boolean isManualMSAAResolve() {
-        return (mSurfaceFlags & IGpuSurface.FLAG_MANUAL_MSAA_RESOLVE) != 0;
+        return (mSurfaceFlags & ISurface.FLAG_MANUAL_MSAA_RESOLVE) != 0;
     }
 
     public final boolean wrapsGLDefaultFB() {
-        return (mSurfaceFlags & IGpuSurface.FLAG_GL_WRAP_DEFAULT_FB) != 0;
+        return (mSurfaceFlags & ISurface.FLAG_GL_WRAP_DEFAULT_FB) != 0;
     }
 
     public final boolean wrapsVkSecondaryCB() {
-        return (mSurfaceFlags & IGpuSurface.FLAG_VK_WRAP_SECONDARY_CB) != 0;
+        return (mSurfaceFlags & ISurface.FLAG_VK_WRAP_SECONDARY_CB) != 0;
     }
 
     public final boolean isDeferredListTarget() {
@@ -428,7 +428,7 @@ public abstract class SurfaceProxy extends RefCnt implements ISurface {
 
     @ApiStatus.Internal
     public final boolean isUserExact() {
-        return (mSurfaceFlags & IGpuSurface.FLAG_APPROX_FIT) == 0;
+        return (mSurfaceFlags & ISurface.FLAG_APPROX_FIT) == 0;
     }
 
     public TextureProxy asTexture() {
