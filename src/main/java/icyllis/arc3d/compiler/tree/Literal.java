@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import icyllis.arc3d.compiler.ThreadContext;
+import icyllis.arc3d.compiler.Context;
 import icyllis.arc3d.compiler.analysis.NodeVisitor;
 
 import javax.annotation.Nonnull;
@@ -37,8 +37,8 @@ public final class Literal extends Expression {
     }
 
     @Nonnull
-    public static Literal makeFloat(int position, float value) {
-        return new Literal(position, value, ThreadContext.getInstance().getTypes().mFloat);
+    public static Literal makeFloat(@Nonnull Context context, int position, float value) {
+        return new Literal(position, value, context.getTypes().mFloat);
     }
 
     @Nonnull
@@ -50,8 +50,8 @@ public final class Literal extends Expression {
     }
 
     @Nonnull
-    public static Literal makeInteger(int position, long value) {
-        return new Literal(position, value, ThreadContext.getInstance().getTypes().mInt);
+    public static Literal makeInteger(@Nonnull Context context, int position, long value) {
+        return new Literal(position, value, context.getTypes().mInt);
     }
 
     @Nonnull
@@ -63,8 +63,8 @@ public final class Literal extends Expression {
     }
 
     @Nonnull
-    public static Literal makeBoolean(int position, boolean value) {
-        return new Literal(position, value ? 1 : 0, ThreadContext.getInstance().getTypes().mBool);
+    public static Literal makeBoolean(@Nonnull Context context, int position, boolean value) {
+        return new Literal(position, value ? 1 : 0, context.getTypes().mBool);
     }
 
     @Nonnull

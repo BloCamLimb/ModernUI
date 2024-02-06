@@ -20,7 +20,7 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.ConstantFolder;
-import icyllis.arc3d.compiler.ThreadContext;
+import icyllis.arc3d.compiler.Context;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -42,7 +42,8 @@ public final class ConstructorCompound extends ConstructorCall {
     }
 
     @Nullable
-    public static Expression convert(int pos,
+    public static Expression convert(@Nonnull Context context,
+                                     int pos,
                                      @Nonnull Type type,
                                      @Nonnull List<Expression> args) {
         assert (type.isVector() || type.isMatrix());
@@ -64,7 +65,7 @@ public final class ConstructorCompound extends ConstructorCall {
                     default -> "";
                 };
 
-                ThreadContext.getInstance().error(pos, "'" + argument.getType() +
+                context.error(pos, "'" + argument.getType() +
                         "' is not a valid parameter to '" + type + "' constructor" +
                         swizzleHint);
                 return null;
@@ -76,7 +77,7 @@ public final class ConstructorCompound extends ConstructorCall {
                 // conversion to the proper type. (This cast is a no-op if it's unnecessary; it can fail
                 // if we're casting a literal that exceeds the limits of the type.)
                 Expression typecast = ConstructorScalarCast.convert(
-                        pos, type.getComponentType(), args);
+                        context, pos, type.getComponentType(), args);
                 if (typecast == null) {
                     return null;
                 }
@@ -99,6 +100,7 @@ public final class ConstructorCompound extends ConstructorCall {
                     // destination type with the argument's rows/columns. (This will be a no-op if it's
                     // already the right type.)
                     Type typecastType = type.getComponentType().toCompound(
+                            context,
                             argument.getType().getCols(),
                             argument.getType().getRows());
                     argument = ConstructorCompoundCast.make(pos, typecastType,
@@ -114,9 +116,9 @@ public final class ConstructorCompound extends ConstructorCall {
                 if (type.isVector() && type.getRows() == 4 && argument.getType().getComponents() == 4) {
                     // Casting a 2x2 matrix to a vector is a form of compound construction.
                     // First, reshape the matrix into a 4-slot vector of the same type.
-                    Type vectorType = argument.getType().getComponentType().toVector(/*rows*/4);
+                    Type vectorType = argument.getType().getComponentType().toVector(context, /*rows*/4);
                     Expression vecCtor =
-                            ConstructorCompound.make(pos, vectorType, args.toArray(new Expression[0]));
+                            ConstructorCompound.make(context, pos, vectorType, args.toArray(new Expression[0]));
 
                     // Then, add a typecast to the result expression to ensure the types match.
                     // This will be a no-op if no typecasting is needed.
@@ -131,7 +133,7 @@ public final class ConstructorCompound extends ConstructorCall {
         for (var it = args.listIterator(); it.hasNext(); ) {
             var arg = it.next();
             if (!arg.getType().isScalar() && !arg.getType().isVector()) {
-                ThreadContext.getInstance().error(pos, "'" + arg.getType() +
+                context.error(pos, "'" + arg.getType() +
                         "' is not a valid parameter to '" + type + "' constructor");
                 return null;
             }
@@ -140,10 +142,10 @@ public final class ConstructorCompound extends ConstructorCall {
             // literal, this will make sure it's the right type of literal. If an expression of matching
             // type, the expression will be returned as-is. If it's an expression of mismatched type,
             // this adds a cast.
-            Type ctorType = type.getComponentType().toVector(arg.getType().getRows());
+            Type ctorType = type.getComponentType().toVector(context, arg.getType().getRows());
             List<Expression> ctorArg = new ArrayList<>(1);
             ctorArg.add(arg);
-            arg = ConstructorCall.convert(pos, ctorType, ctorArg);
+            arg = ConstructorCall.convert(context, pos, ctorType, ctorArg);
             if (arg == null) {
                 return null;
             }
@@ -152,17 +154,18 @@ public final class ConstructorCompound extends ConstructorCall {
         }
 
         if (actual != expected) {
-            ThreadContext.getInstance().error(pos, "invalid arguments to '" + type +
+            context.error(pos, "invalid arguments to '" + type +
                     "' constructor (expected " + expected +
                     " scalars, but found " + actual + ")");
             return null;
         }
 
-        return ConstructorCompound.make(pos, type, args.toArray(new Expression[0]));
+        return ConstructorCompound.make(context, pos, type, args.toArray(new Expression[0]));
     }
 
     @Nonnull
-    public static Expression make(int position, Type type, Expression[] arguments) {
+    public static Expression make(@Nonnull Context context,
+                                  int position, Type type, Expression[] arguments) {
         int n = 0;
         // All the arguments must have matching component type.
         for (Expression arg : arguments) {

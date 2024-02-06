@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import icyllis.arc3d.compiler.ThreadContext;
+import icyllis.arc3d.compiler.Context;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -40,7 +40,8 @@ public final class ConstructorArray extends ConstructorCall {
      * Perform explicit check and report errors via ErrorHandler; returns null on error.
      */
     @Nullable
-    public static Expression convert(int position, @Nonnull Type type, @Nonnull List<Expression> arguments) {
+    public static Expression convert(@Nonnull Context context,
+                                     int position, @Nonnull Type type, @Nonnull List<Expression> arguments) {
         assert type.isArray();
 
         // If there is a single argument containing an array of matching size and the types are
@@ -53,11 +54,10 @@ public final class ConstructorArray extends ConstructorCall {
             Type argType = arg.getType();
 
             if (argType.isArray() && argType.canCoerceTo(type, false)) {
-                return ConstructorArrayCast.make(position, type, arg);
+                return ConstructorArrayCast.make(context, position, type, arg);
             }
         }
 
-        ThreadContext context = ThreadContext.getInstance();
         if (type.isUnsizedArray()) {
             // implicitly sized array
             if (arguments.isEmpty()) {
@@ -80,7 +80,7 @@ public final class ConstructorArray extends ConstructorCall {
         Type baseType = type.getElementType();
         Expression[] immutableArgs = new Expression[arguments.size()];
         for (int i = 0; i < arguments.size(); i++) {
-            immutableArgs[i] = baseType.coerceExpression(arguments.get(i));
+            immutableArgs[i] = baseType.coerceExpression(context, arguments.get(i));
             if (immutableArgs[i] == null) {
                 return null;
             }

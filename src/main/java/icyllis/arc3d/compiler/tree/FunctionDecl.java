@@ -20,7 +20,7 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.IntrinsicList;
-import icyllis.arc3d.compiler.ThreadContext;
+import icyllis.arc3d.compiler.Context;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -56,15 +56,15 @@ public final class FunctionDecl extends Symbol {
         mIntrinsicKind = intrinsicKind;
     }
 
-    private static boolean checkModifiers(@Nonnull ThreadContext context,
+    private static boolean checkModifiers(@Nonnull Context context,
                                           @Nonnull Modifiers modifiers) {
         // No layout flag is permissible on a function.
-        boolean success = modifiers.checkLayoutFlags(0);
+        boolean success = modifiers.checkLayoutFlags(context, 0);
         int permittedFlags = Modifiers.kInline_Flag |
                 Modifiers.kNoInline_Flag |
                 (context.isModule() ? Modifiers.kPure_Flag
                         : 0);
-        success &= modifiers.checkFlags(permittedFlags);
+        success &= modifiers.checkFlags(context, permittedFlags);
         if ((modifiers.flags() & (Modifiers.kInline_Flag | Modifiers.kNoInline_Flag)) ==
                 (Modifiers.kInline_Flag | Modifiers.kNoInline_Flag)) {
             context.error(modifiers.mPosition, "functions cannot be both 'inline' and 'noinline'");
@@ -73,7 +73,7 @@ public final class FunctionDecl extends Symbol {
         return success;
     }
 
-    private static boolean checkReturnType(@Nonnull ThreadContext context,
+    private static boolean checkReturnType(@Nonnull Context context,
                                            int pos, @Nonnull Type returnType) {
         if (returnType.isOpaque()) {
             context.error(pos, "functions may not return opaque type '" +
@@ -93,7 +93,7 @@ public final class FunctionDecl extends Symbol {
         return true;
     }
 
-    private static boolean checkParameters(@Nonnull ThreadContext context,
+    private static boolean checkParameters(@Nonnull Context context,
                                            @Nonnull List<Variable> parameters,
                                            @Nonnull Modifiers modifiers) {
         boolean success = true;
@@ -106,8 +106,8 @@ public final class FunctionDecl extends Symbol {
             } else if (type.isStorageImage()) {
                 permittedFlags |= Modifiers.kReadOnly_Flag | Modifiers.kWriteOnly_Flag;
             }
-            success &= param.getModifiers().checkFlags(permittedFlags);
-            success &= param.getModifiers().checkLayoutFlags(permittedLayoutFlags);
+            success &= param.getModifiers().checkFlags(context, permittedFlags);
+            success &= param.getModifiers().checkLayoutFlags(context, permittedLayoutFlags);
 
             // Pure functions should not change any state, and should be safe to eliminate if their
             // result is not used; this is incompatible with out-parameters, so we forbid it here.
@@ -123,7 +123,7 @@ public final class FunctionDecl extends Symbol {
         return success;
     }
 
-    private static boolean checkEntryPointSignature(@Nonnull ThreadContext context,
+    private static boolean checkEntryPointSignature(@Nonnull Context context,
                                                     int pos,
                                                     @Nonnull Type returnType,
                                                     @Nonnull List<Variable> parameters) {
@@ -219,13 +219,12 @@ public final class FunctionDecl extends Symbol {
     }
 
     @Nullable
-    public static FunctionDecl convert(int pos,
+    public static FunctionDecl convert(@Nonnull Context context,
+                                       int pos,
                                        @Nonnull Modifiers modifiers,
                                        @Nonnull String name,
                                        @Nonnull List<Variable> parameters,
                                        @Nonnull Type returnType) {
-        ThreadContext context = ThreadContext.getInstance();
-
         int intrinsicKind = context.isBuiltin()
                 ? IntrinsicList.findIntrinsicKind(name)
                 : IntrinsicList.kNotIntrinsic;
@@ -293,6 +292,7 @@ public final class FunctionDecl extends Symbol {
         }
 
         return context.getSymbolTable().insert(
+                context,
                 new FunctionDecl(
                         pos,
                         modifiers,

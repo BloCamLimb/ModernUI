@@ -46,7 +46,9 @@ public final class IndexExpression extends Expression {
         mIndex = index;
     }
 
-    private static boolean indexOutOfBounds(int pos, long index, Expression base) {
+    private static boolean indexOutOfBounds(@Nonnull Context context,
+                                            int pos, long index,
+                                            @Nonnull Expression base) {
         Type baseType = base.getType();
         if (index >= 0) {
             if (baseType.isArray()) {
@@ -67,29 +69,29 @@ public final class IndexExpression extends Expression {
                 }
             }
         }
-        ThreadContext.getInstance().error(pos, "index " + index + " out of range for '" +
+        context.error(pos, "index " + index + " out of range for '" +
                 baseType + "'");
         return true;
     }
 
     @Nullable
-    public static Expression convert(int pos,
+    public static Expression convert(@Nonnull Context context,
+                                     int pos,
                                      @Nonnull Expression base,
                                      @Nullable Expression index) {
-        ThreadContext context = ThreadContext.getInstance();
         // Convert an array type reference.
         if (base instanceof TypeReference) {
             Type baseType = ((TypeReference) base).getValue();
             final int arraySize;
             if (index != null) {
-                arraySize = baseType.convertArraySize(pos, index);
+                arraySize = baseType.convertArraySize(context, pos, index);
             } else {
                 arraySize = Type.kUnsizedArray;
             }
             if (arraySize == 0) {
                 return null;
             }
-            return TypeReference.make(
+            return TypeReference.make(context,
                     pos, context.getSymbolTable().getArrayType(baseType, arraySize));
         }
         if (index == null) {
@@ -103,7 +105,7 @@ public final class IndexExpression extends Expression {
             return null;
         }
         if (!index.getType().isInteger()) {
-            index = context.getTypes().mInt.coerceExpression(index);
+            index = context.getTypes().mInt.coerceExpression(context, index);
             if (index == null) {
                 return null;
             }
@@ -111,14 +113,15 @@ public final class IndexExpression extends Expression {
         Expression indexExpr = ConstantFolder.getConstantValueForVariable(index);
         if (indexExpr.isIntLiteral()) {
             long indexValue = ((Literal) indexExpr).getIntegerValue();
-            if (indexOutOfBounds(index.mPosition, indexValue, base)) {
+            if (indexOutOfBounds(context, index.mPosition, indexValue, base)) {
                 return null;
             }
         }
-        return make(pos, base, index);
+        return IndexExpression.make(context, pos, base, index);
     }
 
-    public static Expression make(int pos,
+    public static Expression make(@Nonnull Context context,
+                                  int pos,
                                   @Nonnull Expression base,
                                   @Nonnull Expression index) {
         return new IndexExpression(pos, base, index);

@@ -20,7 +20,7 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.Layout;
-import icyllis.arc3d.compiler.ThreadContext;
+import icyllis.arc3d.compiler.Context;
 import icyllis.arc3d.compiler.analysis.NodeVisitor;
 
 import javax.annotation.Nonnull;
@@ -110,12 +110,13 @@ public final class Modifiers extends Node {
         return mLayout != null ? mLayout.layoutFlags() : 0;
     }
 
-    public void setLayoutFlag(int mask, String name, int pos) {
+    public void setLayoutFlag(@Nonnull Context context,
+                              int mask, String name, int pos) {
         Layout layout = mLayout;
         if (layout == null) {
             layout = mLayout = new Layout();
         }
-        layout.setLayoutFlag(mask, name, pos);
+        layout.setLayoutFlag(context, mask, name, pos);
     }
 
     public void clearLayoutFlag(int mask) {
@@ -124,9 +125,10 @@ public final class Modifiers extends Node {
         }
     }
 
-    public boolean checkLayoutFlags(int permittedLayoutFlags) {
+    public boolean checkLayoutFlags(@Nonnull Context context,
+                                    int permittedLayoutFlags) {
         if (mLayout != null) {
-            return mLayout.checkLayoutFlags(mPosition, permittedLayoutFlags);
+            return mLayout.checkLayoutFlags(context, mPosition, permittedLayoutFlags);
         }
         return true;
     }
@@ -135,9 +137,10 @@ public final class Modifiers extends Node {
         return mFlags;
     }
 
-    public void setFlag(int mask, int pos) {
+    public void setFlag(@Nonnull Context context,
+                        int mask, int pos) {
         if ((mFlags & mask) != 0) {
-            ThreadContext.getInstance().error(pos, "qualifier '" + describeFlags(mFlags & mask) +
+            context.error(pos, "qualifier '" + describeFlags(mFlags & mask) +
                     "' appears more than once");
         }
         mFlags |= mask;
@@ -147,13 +150,14 @@ public final class Modifiers extends Node {
         mFlags &= ~mask;
     }
 
-    public boolean checkFlags(int permittedFlags) {
+    public boolean checkFlags(@Nonnull Context context,
+                              int permittedFlags) {
         boolean success = true;
 
         for (int i = 0; i < kCount_Flag; i++) {
             int flag = 1 << i;
             if ((mFlags & flag) != 0 && (permittedFlags & flag) == 0) {
-                ThreadContext.getInstance().error(mPosition, "qualifier '" +
+                context.error(mPosition, "qualifier '" +
                         describeFlag(flag) + "' is not permitted here");
                 success = false;
             }

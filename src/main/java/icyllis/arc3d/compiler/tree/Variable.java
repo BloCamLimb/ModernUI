@@ -20,7 +20,7 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.Layout;
-import icyllis.arc3d.compiler.ThreadContext;
+import icyllis.arc3d.compiler.Context;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -55,12 +55,12 @@ public final class Variable extends Symbol {
     }
 
     @Nonnull
-    public static Variable convert(int pos,
+    public static Variable convert(@Nonnull Context context,
+                                   int pos,
                                    @Nonnull Modifiers modifiers,
                                    @Nonnull Type type,
                                    @Nonnull String name,
                                    byte storage) {
-        var context = ThreadContext.getInstance();
         if (type.isUnsizedArray() && storage != kInterfaceBlock_Storage) {
             context.error(pos, "runtime sized arrays are only permitted in interface blocks");
         }

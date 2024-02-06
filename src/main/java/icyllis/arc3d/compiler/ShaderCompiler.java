@@ -43,7 +43,7 @@ public class ShaderCompiler {
         private void log(int start, int end, String msg) {
             boolean showLocation = false;
             char[] source = getSource();
-            if (start != -1) {
+            if (start != -1 && source != null) {
                 int offset = Math.min(start, source.length);
                 int line = 1;
                 for (int i = 0; i < offset; ++i) {
@@ -109,10 +109,19 @@ public class ShaderCompiler {
         }
     };
 
+    final Context mContext;
     final Inliner mInliner;
 
     public ShaderCompiler() {
+        mContext = new Context(mErrorHandler);
         mInliner = new Inliner();
+    }
+
+    public Context getContext() {
+        if (mContext.isActive()) {
+            return mContext;
+        }
+        throw new IllegalStateException("DSL is not started");
     }
 
     /**
@@ -133,10 +142,15 @@ public class ShaderCompiler {
         Objects.requireNonNull(parent);
         Objects.requireNonNull(source);
         resetLog(); // make a clean start
+        char[] buffer = source.toString().toCharArray();
+        options = Objects.requireNonNullElseGet(options, CompileOptions::new);
         Parser parser = new Parser(this, model,
-                Objects.requireNonNullElseGet(options, CompileOptions::new),
-                source.toString().toCharArray());
-        return parser.parse(parent);
+                options,
+                buffer);
+        startContext(model, options, parent, false, false, buffer);
+        TranslationUnit parsed = parser.parse(parent);
+        endContext();
+        return parsed;
     }
 
     /**
@@ -156,10 +170,30 @@ public class ShaderCompiler {
         Objects.requireNonNull(parent);
         Objects.requireNonNull(source);
         resetLog(); // make a clean start
+        char[] buffer = source.toString().toCharArray();
+        CompileOptions options = new CompileOptions();
         Parser parser = new Parser(this, model,
-                new CompileOptions(),
-                source.toString().toCharArray());
-        return parser.parseModule(parent, builtin);
+                options,
+                buffer);
+        startContext(model, options, parent, builtin, true, buffer);
+        ModuleUnit parsed = parser.parseModule(parent);
+        endContext();
+        return parsed;
+    }
+
+    public void startContext(ExecutionModel model,
+                             CompileOptions options,
+                             ModuleUnit parent,
+                             boolean isBuiltin,
+                             boolean isModule,
+                             char[] source) {
+        mContext.start(model, options, parent, isBuiltin, isModule);
+        mContext.getErrorHandler().setSource(source);
+    }
+
+    public void endContext() {
+        mContext.end();
+        mContext.getErrorHandler().setSource(null);
     }
 
     /**

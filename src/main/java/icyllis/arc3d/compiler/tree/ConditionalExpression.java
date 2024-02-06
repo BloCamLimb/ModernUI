@@ -46,10 +46,10 @@ public final class ConditionalExpression extends Expression {
     // Creates a potentially-simplified form of the ternary. Typechecks and coerces input
     // expressions; reports errors via ErrorReporter.
     @Nullable
-    public static Expression convert(int position, Expression condition,
+    public static Expression convert(@Nonnull Context context,
+                                     int position, Expression condition,
                                      Expression whenTrue, Expression whenFalse) {
-        ThreadContext context = ThreadContext.getInstance();
-        condition = context.getTypes().mBool.coerceExpression(condition);
+        condition = context.getTypes().mBool.coerceExpression(context, condition);
         if (condition == null || whenTrue == null || whenFalse == null) {
             return null;
         }
@@ -61,18 +61,18 @@ public final class ConditionalExpression extends Expression {
         }
 
         Type[] types = new Type[3];
-        if (!Operator.EQ.determineBinaryType(whenTrue.getType(), whenFalse.getType(), types) ||
+        if (!Operator.EQ.determineBinaryType(context, whenTrue.getType(), whenFalse.getType(), types) ||
                 !types[0].matches(types[1])) {
             context.error(Position.range(whenTrue.getStartOffset(), whenFalse.getEndOffset()),
                     "conditional operator result mismatch: '" + whenTrue.getType().getName() + "', '" +
                             whenFalse.getType().getName() + "'");
             return null;
         }
-        whenTrue = types[0].coerceExpression(whenTrue);
+        whenTrue = types[0].coerceExpression(context, whenTrue);
         if (whenTrue == null) {
             return null;
         }
-        whenFalse = types[1].coerceExpression(whenFalse);
+        whenFalse = types[1].coerceExpression(context, whenFalse);
         if (whenFalse == null) {
             return null;
         }

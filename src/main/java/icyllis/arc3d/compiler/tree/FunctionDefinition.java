@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import icyllis.arc3d.compiler.ThreadContext;
+import icyllis.arc3d.compiler.Context;
 import icyllis.arc3d.compiler.analysis.NodeVisitor;
 
 import javax.annotation.Nonnull;
@@ -40,11 +40,11 @@ public final class FunctionDefinition extends TopLevelElement {
         mBody = body;
     }
 
-    public static FunctionDefinition convert(int pos,
+    public static FunctionDefinition convert(@Nonnull Context context,
+                                             int pos,
                                              FunctionDecl functionDecl,
                                              boolean builtin,
                                              Statement body) {
-        ThreadContext context = ThreadContext.getInstance();
         if (functionDecl.isIntrinsic()) {
             context.error(pos, "Intrinsic function '" +
                     functionDecl.getName() +

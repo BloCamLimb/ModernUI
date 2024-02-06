@@ -20,7 +20,7 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.Operator;
-import icyllis.arc3d.compiler.ThreadContext;
+import icyllis.arc3d.compiler.Context;
 import icyllis.arc3d.compiler.analysis.NodeVisitor;
 
 import javax.annotation.Nonnull;
@@ -47,13 +47,14 @@ public final class FieldAccess extends Expression {
      * Returns a field-access expression.
      */
     @Nullable
-    public static Expression convert(int position,
+    public static Expression convert(@Nonnull Context context,
+                                     int position,
                                      @Nonnull Expression base,
                                      int namePosition,
                                      @Nonnull String name) {
         Type baseType = base.getType();
         if (baseType.isVector() || baseType.isScalar()) {
-            return Swizzle.convert(position, base, namePosition, name);
+            return Swizzle.convert(context, position, base, namePosition, name);
         }
         //TODO length() method for vector, matrix and array
         if (baseType.isStruct()) {
@@ -64,7 +65,7 @@ public final class FieldAccess extends Expression {
                 }
             }
         }
-        ThreadContext.getInstance().error(position, "type '" + baseType.getName() +
+        context.error(position, "type '" + baseType.getName() +
                 "' does not have a member named '" + name + "'");
         return null;
     }

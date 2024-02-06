@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import icyllis.arc3d.compiler.ThreadContext;
+import icyllis.arc3d.compiler.Context;
 import icyllis.arc3d.compiler.analysis.NodeVisitor;
 
 import javax.annotation.Nonnull;
@@ -54,7 +54,8 @@ public final class VariableDecl extends Statement {
     // symbol table. Performs proper error checking and type coercion; reports errors via
     // ErrorReporter.
     @Nullable
-    public static VariableDecl convert(int pos,
+    public static VariableDecl convert(@Nonnull Context context,
+                                       int pos,
                                        @Nonnull Modifiers modifiers,
                                        @Nonnull Type type,
                                        @Nonnull String name,
@@ -67,25 +68,25 @@ public final class VariableDecl extends Statement {
             // implicitly sized array
             int arraySize = init.getType().getArraySize();
             if (arraySize > 0) {
-                type = ThreadContext.getInstance().getSymbolTable().getArrayType(
+                type = context.getSymbolTable().getArrayType(
                         type.getElementType(), arraySize);
             }
         }
 
-        Variable variable = Variable.convert(pos, modifiers, type, name, storage);
+        Variable variable = Variable.convert(context, pos, modifiers, type, name, storage);
 
-        return VariableDecl.convert(variable, init);
+        return VariableDecl.convert(context, variable, init);
     }
 
     @Nullable
-    public static VariableDecl convert(@Nonnull Variable variable,
+    public static VariableDecl convert(@Nonnull Context context,
+                                       @Nonnull Variable variable,
                                        @Nullable Expression init) {
         Type baseType = variable.getType();
         if (baseType.isArray()) {
             baseType = baseType.getElementType();
         }
 
-        ThreadContext context = ThreadContext.getInstance();
         if (baseType.matches(context.getTypes().mInvalid)) {
             context.error(variable.mPosition, "invalid type");
             return null;
@@ -113,7 +114,7 @@ public final class VariableDecl extends Statement {
                         "initializers are not permitted in interface blocks");
                 return null;
             }
-            init = variable.getType().coerceExpression(init);
+            init = variable.getType().coerceExpression(context, init);
             if (init == null) {
                 return null;
             }
@@ -136,7 +137,7 @@ public final class VariableDecl extends Statement {
 
         VariableDecl variableDecl = make(variable, init);
 
-        context.getSymbolTable().insert(variable);
+        context.getSymbolTable().insert(context, variable);
         return variableDecl;
     }
 

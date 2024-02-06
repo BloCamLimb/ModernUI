@@ -20,7 +20,7 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.Operator;
-import icyllis.arc3d.compiler.ThreadContext;
+import icyllis.arc3d.compiler.Context;
 import icyllis.arc3d.compiler.analysis.NodeVisitor;
 
 import javax.annotation.Nonnull;
@@ -44,7 +44,8 @@ public abstract class ConstructorCall extends Expression {
     }
 
     @Nullable
-    public static Expression convert(int pos, @Nonnull Type type, @Nonnull List<Expression> args) {
+    public static Expression convert(@Nonnull Context context,
+                                     int pos, @Nonnull Type type, @Nonnull List<Expression> args) {
         if (args.size() == 1 &&
                 args.get(0).getType().matches(type) &&
                 !type.getElementType().isOpaque()) {
@@ -55,18 +56,18 @@ public abstract class ConstructorCall extends Expression {
             return expr;
         }
         if (type.isScalar()) {
-            return ConstructorScalarCast.convert(pos, type, args);
+            return ConstructorScalarCast.convert(context, pos, type, args);
         }
         if (type.isVector() || type.isMatrix()) {
-            return ConstructorCompound.convert(pos, type, args);
+            return ConstructorCompound.convert(context, pos, type, args);
         }
         if (type.isArray()) {
-            return ConstructorArray.convert(pos, type, args);
+            return ConstructorArray.convert(context, pos, type, args);
         }
         if (type.isStruct() && type.getFields().length > 0) {
-            return ConstructorStruct.convert(pos, type, args);
+            return ConstructorStruct.convert(context, pos, type, args);
         }
-        ThreadContext.getInstance().error(pos, "cannot construct '" + type + "'");
+        context.error(pos, "cannot construct '" + type + "'");
         return null;
     }
 

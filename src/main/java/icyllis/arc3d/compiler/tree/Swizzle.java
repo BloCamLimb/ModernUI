@@ -81,7 +81,8 @@ public final class Swizzle extends Expression {
     }
 
     @Nullable
-    private static Expression optimizeSwizzle(int pos,
+    private static Expression optimizeSwizzle(@Nonnull Context context,
+                                              int pos,
                                               @Nonnull ConstructorCompound base,
                                               byte[] components,
                                               int numComponents) {
@@ -202,6 +203,7 @@ public final class Swizzle extends Expression {
                 newArgs[i] = newArg;
             } else {
                 newArgs[i] = Swizzle.make(
+                        context,
                         pos,
                         newArg,
                         reorderedArg.mComponents,
@@ -212,8 +214,9 @@ public final class Swizzle extends Expression {
 
         // Wrap the new argument list in a compound constructor.
         return ConstructorCompound.make(
+                context,
                 pos,
-                componentType.toVector(numComponents),
+                componentType.toVector(context, numComponents),
                 newArgs);
     }
 
@@ -223,9 +226,9 @@ public final class Swizzle extends Expression {
      * combines constructors and native swizzles (comprised solely of X/Y/W/Z).
      */
     @Nullable
-    public static Expression convert(int position, @Nonnull Expression base,
+    public static Expression convert(@Nonnull Context context,
+                                     int position, @Nonnull Expression base,
                                      int maskPosition, @Nonnull String maskString) {
-        ThreadContext context = ThreadContext.getInstance();
         if (maskString.length() > 4) {
             context.error(maskPosition,
                     "too many components in swizzle mask");
@@ -322,7 +325,7 @@ public final class Swizzle extends Expression {
         }
 
         // Coerce literals in expressions such as `(12345).xxx` to their actual type.
-        base = baseType.coerceExpression(base);
+        base = baseType.coerceExpression(context, base);
         if (base == null) {
             return null;
         }
@@ -332,7 +335,7 @@ public final class Swizzle extends Expression {
         //   scalar.x0x0 -> type2(scalar)
         //   vector.zyx  -> vector.zyx
         //   vector.x0y0 -> vector.xy
-        Expression expr = make(position, base, maskComponents, numComponents);
+        Expression expr = make(context, position, base, maskComponents, numComponents);
 
         // If we have processed the entire swizzle, we're done.
         if (numComponents == inComponents.length) {
@@ -387,17 +390,18 @@ public final class Swizzle extends Expression {
             }
         }
 
-        expr = ConstructorCompound.make(position,
-                scalarType.toVector(constantFieldIdx),
+        expr = ConstructorCompound.make(context, position,
+                scalarType.toVector(context, constantFieldIdx),
                 constructorArgs.toArray(new Expression[0]));
 
         // Create (and potentially optimize-away) the resulting swizzle-expression.
-        return Swizzle.make(position, expr, maskComponents, numComponents);
+        return Swizzle.make(context, position, expr, maskComponents, numComponents);
     }
 
     // input array must be immutable
     @Nonnull
-    public static Expression make(int position, @Nonnull Expression base,
+    public static Expression make(@Nonnull Context context,
+                                  int position, @Nonnull Expression base,
                                   byte[] components, int numComponents) {
         Type baseType = base.getType();
         assert baseType.isVector() || baseType.isScalar();
@@ -416,7 +420,7 @@ public final class Swizzle extends Expression {
         // Replace swizzles with equivalent splat constructors (`scalar.xxx` --> `half3(value)`).
         if (baseType.isScalar()) {
             return ConstructorScalar2Vector.make(position,
-                    baseType.toVector(numComponents), base);
+                    baseType.toVector(context, numComponents), base);
         }
 
         // Detect identity swizzles like `color.rgba` and optimize it away.
@@ -444,7 +448,7 @@ public final class Swizzle extends Expression {
 
             // It may actually be possible to further simplify this swizzle. Go again.
             // (e.g. `color.abgr.abgr` --> `color.rgba` --> `color`.)
-            return make(position, b.getBase(), combined, numComponents);
+            return make(context, position, b.getBase(), combined, numComponents);
         }
 
         // If we are swizzling a constant expression, we can use its value instead here (so that
@@ -455,7 +459,7 @@ public final class Swizzle extends Expression {
         // optimized to just `scalar`. The swizzle components don't actually matter, as every field
         // in a splat constructor holds the same value.
         if (value instanceof ConstructorScalar2Vector ctor) {
-            Type ctorType = ctor.getComponentType().toVector(numComponents);
+            Type ctorType = ctor.getComponentType().toVector(context, numComponents);
             return ConstructorScalar2Vector.make(
                     position,
                     ctorType,
@@ -464,18 +468,19 @@ public final class Swizzle extends Expression {
 
         // Swizzles on casts, like `half4(myFloat4).zyy`, can optimize to `half3(myFloat4.zyy)`.
         if (value instanceof ConstructorCompoundCast ctor) {
-            Type ctorType = ctor.getComponentType().toVector(numComponents);
-            Expression swizzled = make(position, ctor.getArguments()[0].clone(), components, numComponents);
+            Type ctorType = ctor.getComponentType().toVector(context, numComponents);
+            Expression swizzled = make(context,
+                    position, ctor.getArguments()[0].clone(), components, numComponents);
             Objects.requireNonNull(swizzled);
             return (ctorType.getRows() > 1)
                     ? ConstructorCompoundCast.make(position, ctorType, swizzled)
-                    : ConstructorScalarCast.make(position, ctorType, swizzled);
+                    : ConstructorScalarCast.make(context, position, ctorType, swizzled);
         }
 
         // Swizzles on compound constructors, like `half4(1, 2, 3, 4).yw`, can become `half2(2, 4)`.
         if (value.getKind() == ExpressionKind.CONSTRUCTOR_COMPOUND) {
             var ctor = (ConstructorCompound) value;
-            var replacement = optimizeSwizzle(position, ctor, components, numComponents);
+            var replacement = optimizeSwizzle(context, position, ctor, components, numComponents);
             if (replacement != null) {
                 return replacement;
             }
@@ -483,7 +488,7 @@ public final class Swizzle extends Expression {
 
         // The swizzle could not be simplified, so apply the requested swizzle to the base expression.
         return new Swizzle(position,
-                baseType.getComponentType().toVector(numComponents),
+                baseType.getComponentType().toVector(context, numComponents),
                 base, Arrays.copyOf(components, numComponents));
     }
 
