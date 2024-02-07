@@ -37,15 +37,6 @@ import icyllis.arc3d.compiler.tree.*;
  */
 public abstract class NodeVisitor {
 
-    public final boolean visit(TranslationUnit translationUnit) {
-        for (TopLevelElement e : translationUnit) {
-            if (e.accept(this)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     public boolean visitFunctionPrototype(FunctionPrototype prototype) {
         return visitAnyTopLevelElement(prototype);
     }

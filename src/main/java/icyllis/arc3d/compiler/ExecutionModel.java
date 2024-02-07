@@ -51,6 +51,10 @@ public enum ExecutionModel {
     PRIVATE_SUBROUTINE_COLOR_FILTER,
     PRIVATE_SUBROUTINE_BLENDER;
 
+    public boolean isVertex() {
+        return this == VERTEX;
+    }
+
     public boolean isFragment() {
         return this == FRAGMENT;
     }

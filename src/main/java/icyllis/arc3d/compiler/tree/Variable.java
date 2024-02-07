@@ -19,11 +19,11 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import icyllis.arc3d.compiler.Layout;
 import icyllis.arc3d.compiler.Context;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.lang.ref.WeakReference;
 
 /**
  * Represents a variable symbol, whether local, global, or a function parameter.
@@ -33,10 +33,9 @@ import javax.annotation.Nullable;
 public final class Variable extends Symbol {
 
     public static final byte
-            kGlobal_Storage = 0,
-            kInterfaceBlock_Storage = 1,
-            kLocal_Storage = 2,
-            kParameter_Storage = 3;
+            kLocal_Storage = 0,
+            kGlobal_Storage = 1,
+            kParameter_Storage = 2;
 
     private final Modifiers mModifiers;
     private final Type mType;
@@ -44,9 +43,10 @@ public final class Variable extends Symbol {
     private final boolean mBuiltin;
 
     private Node mDecl;
+    private WeakReference<InterfaceBlock> mInterfaceBlock;
 
     public Variable(int position, Modifiers modifiers,
-                    String name, Type type, boolean builtin, byte storage) {
+                    Type type, String name, byte storage, boolean builtin) {
         super(position, name);
         mModifiers = modifiers;
         mType = type;
@@ -61,9 +61,6 @@ public final class Variable extends Symbol {
                                    @Nonnull Type type,
                                    @Nonnull String name,
                                    byte storage) {
-        if (type.isUnsizedArray() && storage != kInterfaceBlock_Storage) {
-            context.error(pos, "runtime sized arrays are only permitted in interface blocks");
-        }
         if (context.getModel().isCompute() && (modifiers.layoutFlags() & Layout.kBuiltin_LayoutFlag) == 0) {
             if (storage == Variable.kGlobal_Storage) {
                 if ((modifiers.flags() & Modifiers.kIn_Flag) != 0) {
@@ -90,7 +87,7 @@ public final class Variable extends Symbol {
                                 @Nonnull String name,
                                 byte storage,
                                 boolean builtin) {
-        return new Variable(pos, modifiers, name, type, builtin, storage);
+        return new Variable(pos, modifiers, type, name, storage, builtin);
     }
 
     @Nonnull
@@ -156,6 +153,15 @@ public final class Variable extends Symbol {
             throw new AssertionError();
         }
         mDecl = globalDecl;
+    }
+
+    @Nullable
+    public InterfaceBlock getInterfaceBlock() {
+        return mInterfaceBlock != null ? mInterfaceBlock.get() : null;
+    }
+
+    public void setInterfaceBlock(InterfaceBlock interfaceBlock) {
+        mInterfaceBlock = new WeakReference<>(interfaceBlock);
     }
 
     @Nonnull

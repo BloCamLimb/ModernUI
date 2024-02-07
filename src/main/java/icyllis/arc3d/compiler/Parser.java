@@ -301,25 +301,26 @@ public class Parser {
     private boolean GlobalDeclaration() {
         long start = peek();
         if (Token.kind(start) == Lexer.TK_SEMICOLON) {
-            // empty declaration
+            // empty declaration, no elements
             nextToken();
             return true;
         }
-        Modifiers modifiers = modifiers();
+        Modifiers modifiers = Modifiers();
         long peek = peek();
 
-        if (peek == Lexer.TK_IDENTIFIER &&
+        if (Token.kind(peek) == Lexer.TK_IDENTIFIER &&
                 !mCompiler.getContext().getSymbolTable().isType(text(peek))) {
-            //TODO interface block
-            return true;
+            // we have an identifier that's not a type, could be the start of an interface block
+            return InterfaceBlock(modifiers);
         }
 
-        if (peek == Lexer.TK_SEMICOLON) {
+        if (Token.kind(peek) == Lexer.TK_SEMICOLON) {
             nextToken();
+            //TODO pure modifiers decl
             return true;
         }
 
-        if (peek == Lexer.TK_STRUCT) {
+        if (Token.kind(peek) == Lexer.TK_STRUCT) {
             StructDeclaration();
             return true;
         }
@@ -337,6 +338,75 @@ public class Parser {
             GlobalVarDeclarationRest(position(start), modifiers, type, name);
             return true;
         }
+    }
+
+    private boolean InterfaceBlock(@Nonnull Modifiers modifiers) {
+        long name = expectIdentifier();
+        String blockName = text(name);
+        int pos = rangeFrom(modifiers.mPosition);
+        if (!peek(Lexer.TK_LBRACE)) {
+            error(name, "no type named '" + blockName + "'");
+            return false;
+        }
+        nextToken();
+        Context context = mCompiler.getContext();
+        List<Type.Field> fields = new ArrayList<>();
+        do {
+            int startPos = position(peek());
+            Modifiers fieldModifiers = Modifiers();
+            Type baseType = TypeSpecifier(fieldModifiers);
+            if (baseType == null) {
+                return false;
+            }
+            do {
+                long fieldName = expectIdentifier();
+                Type fieldType = ArraySpecifier(startPos, baseType);
+                if (fieldType == null) {
+                    return false;
+                }
+                if (checkNext(Lexer.TK_EQ)) {
+                    Expression init = AssignmentExpression();
+                    if (init == null) {
+                        return false;
+                    }
+                    context.error(init.mPosition, "initializers are not permitted in interface blocks");
+                }
+                fields.add(new Type.Field(
+                        rangeFrom(startPos),
+                        fieldModifiers,
+                        fieldType,
+                        text(fieldName)
+                ));
+            } while (checkNext(Lexer.TK_COMMA));
+
+            expect(Lexer.TK_SEMICOLON, "';' to complete member declaration");
+        } while (!checkNext(Lexer.TK_RBRACE));
+
+        Type type = Type.makeStructType(
+                context,
+                pos,
+                blockName,
+                fields,
+                /*interfaceBlock*/ true);
+        context.getSymbolTable().insert(context, type);
+
+        long instanceName = checkIdentifier();
+        String instanceNameText = "";
+        if (instanceName != -1) {
+            instanceNameText = text(instanceName);
+            type = ArraySpecifier(pos, type);
+            if (type == null) {
+                return false;
+            }
+        }
+        expect(Lexer.TK_SEMICOLON, "';' to complete interface block");
+
+        InterfaceBlock block = InterfaceBlock.convert(context, pos, modifiers, type, instanceNameText);
+        if (block != null) {
+            context.getUniqueElements().add(block);
+            return true;
+        }
+        return false;
     }
 
     private boolean FunctionDeclarationRest(int start,
@@ -424,7 +494,7 @@ public class Parser {
     @Nullable
     private Variable Parameter() {
         int pos = position(peek());
-        Modifiers modifiers = modifiers();
+        Modifiers modifiers = Modifiers();
         Type type = TypeSpecifier(modifiers);
         if (type == null) {
             return null;
@@ -433,10 +503,10 @@ public class Parser {
         String nameText = "";
         if (name != -1) {
             nameText = text(name);
-        }
-        type = ArraySpecifier(pos, type);
-        if (type == null) {
-            return null;
+            type = ArraySpecifier(pos, type);
+            if (type == null) {
+                return null;
+            }
         }
         return Variable.convert(
                 mCompiler.getContext(),
@@ -1186,7 +1256,7 @@ public class Parser {
      * }</pre>
      */
     @Nonnull
-    private Modifiers modifiers() {
+    private Modifiers Modifiers() {
         long start = peek();
         Modifiers modifiers = new Modifiers(Position.NO_POS);
         if (checkNext(Lexer.TK_LAYOUT)) {
@@ -1237,19 +1307,18 @@ public class Parser {
             String text = text(name);
             int pos = position(name);
             int mask = switch (text) {
-                case "origin_upper_left" ->Layout.kOriginUpperLeft_LayoutFlag;
-                case "pixel_center_integer" ->Layout.kPixelCenterInteger_LayoutFlag;
-                case "early_fragment_tests" ->Layout.kEarlyFragmentTests_LayoutFlag;
-                case "blend_support_all_equations" ->Layout.kBlendSupportAllEquations_LayoutFlag;
-                case "push_constant" ->Layout.kPushConstant_LayoutFlag;
+                case "origin_upper_left" -> Layout.kOriginUpperLeft_LayoutFlag;
+                case "pixel_center_integer" -> Layout.kPixelCenterInteger_LayoutFlag;
+                case "early_fragment_tests" -> Layout.kEarlyFragmentTests_LayoutFlag;
+                case "blend_support_all_equations" -> Layout.kBlendSupportAllEquations_LayoutFlag;
+                case "push_constant" -> Layout.kPushConstant_LayoutFlag;
                 case "location" -> Layout.kLocation_LayoutFlag;
                 case "component" -> Layout.kComponent_LayoutFlag;
                 case "index" -> Layout.kIndex_LayoutFlag;
-                case "binding" ->Layout.kBinding_LayoutFlag;
-                case "offset" ->Layout.kOffset_LayoutFlag;
-                case "align" -> Layout.kAlign_LayoutFlag;
+                case "binding" -> Layout.kBinding_LayoutFlag;
+                case "offset" -> Layout.kOffset_LayoutFlag;
                 case "set" -> Layout.kSet_LayoutFlag;
-                case "input_attachment_index" ->Layout.kInputAttachmentIndex_LayoutFlag;
+                case "input_attachment_index" -> Layout.kInputAttachmentIndex_LayoutFlag;
                 case "builtin" -> Layout.kBuiltin_LayoutFlag;
                 default -> 0;
             };
@@ -1262,15 +1331,20 @@ public class Parser {
                     case Layout.kIndex_LayoutFlag -> layout.mIndex = LayoutInt();
                     case Layout.kBinding_LayoutFlag -> layout.mBinding = LayoutInt();
                     case Layout.kOffset_LayoutFlag -> layout.mOffset = LayoutInt();
-                    case Layout.kAlign_LayoutFlag -> layout.mAlign = LayoutInt();
                     case Layout.kSet_LayoutFlag -> layout.mSet = LayoutInt();
                     case Layout.kInputAttachmentIndex_LayoutFlag -> layout.mInputAttachmentIndex = LayoutInt();
                     case Layout.kBuiltin_LayoutFlag -> layout.mBuiltin = LayoutBuiltin();
                 }
             } else {
-                warning(name, "unrecognized layout qualifier '" + text + "'");
-                if (checkNext(Lexer.TK_EQ)) {
-                    nextToken();
+                int builtin = findBuiltinValue(text);
+                if (builtin != -1) {
+                    modifiers.setLayoutFlag(mCompiler.getContext(), Layout.kBuiltin_LayoutFlag, text, pos);
+                    modifiers.layout().mBuiltin = builtin;
+                } else {
+                    warning(name, "unrecognized layout qualifier '" + text + "'");
+                    if (checkNext(Lexer.TK_EQ)) {
+                        nextToken();
+                    }
                 }
             }
         } while (checkNext(Lexer.TK_COMMA));
@@ -1291,24 +1365,11 @@ public class Parser {
         }
         long name = expectIdentifier();
         String text = text(name);
-        return switch (text) {
-            case "position" -> Spv.SpvBuiltInPosition;
-            case "vertex_index" -> Spv.SpvBuiltInVertexIndex;
-            case "instance_index" -> Spv.SpvBuiltInInstanceIndex;
-            case "frag_coord" -> Spv.SpvBuiltInFragCoord;
-            case "front_facing" -> Spv.SpvBuiltInFrontFacing;
-            case "sample_mask" -> Spv.SpvBuiltInSampleMask; // in/out
-            case "frag_depth" -> Spv.SpvBuiltInFragDepth;
-            case "num_workgroups" -> Spv.SpvBuiltInNumWorkgroups;
-            case "workgroup_id" -> Spv.SpvBuiltInWorkgroupId;
-            case "local_invocation_id" -> Spv.SpvBuiltInLocalInvocationId;
-            case "global_invocation_id" -> Spv.SpvBuiltInGlobalInvocationId;
-            case "local_invocation_index" -> Spv.SpvBuiltInLocalInvocationIndex;
-            default -> {
-                error(name, "unrecognized built-in name '" + text + "'");
-                yield -1;
-            }
-        };
+        int builtin = findBuiltinValue(text);
+        if (builtin == -1) {
+            error(name, "unrecognized built-in name '" + text + "'");
+        }
+        return builtin;
     }
 
     private int LayoutIntValue(long token) {
@@ -1327,6 +1388,24 @@ public class Parser {
             error(token, "invalid integer value: " + e.getMessage());
             return -1;
         }
+    }
+
+    private static int findBuiltinValue(@Nonnull String text) {
+        return switch (text) {
+            case "position" -> Spv.SpvBuiltInPosition;
+            case "vertex_index" -> Spv.SpvBuiltInVertexIndex;
+            case "instance_index" -> Spv.SpvBuiltInInstanceIndex;
+            case "frag_coord" -> Spv.SpvBuiltInFragCoord;
+            case "front_facing" -> Spv.SpvBuiltInFrontFacing;
+            case "sample_mask" -> Spv.SpvBuiltInSampleMask; // in/out
+            case "frag_depth" -> Spv.SpvBuiltInFragDepth;
+            case "num_workgroups" -> Spv.SpvBuiltInNumWorkgroups;
+            case "workgroup_id" -> Spv.SpvBuiltInWorkgroupId;
+            case "local_invocation_id" -> Spv.SpvBuiltInLocalInvocationId;
+            case "global_invocation_id" -> Spv.SpvBuiltInGlobalInvocationId;
+            case "local_invocation_index" -> Spv.SpvBuiltInLocalInvocationIndex;
+            default -> -1;
+        };
     }
 
     /**
@@ -1455,7 +1534,7 @@ public class Parser {
         long peek = peek();
         if (Token.kind(peek) == Lexer.TK_CONST) {
             int pos = position(peek);
-            Modifiers modifiers = modifiers();
+            Modifiers modifiers = Modifiers();
             Type type = TypeSpecifier(modifiers);
             if (type == null) {
                 return null;

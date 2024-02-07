@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,7 +17,9 @@
  * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.compiler;
+package icyllis.arc3d.compiler.tree;
+
+import icyllis.arc3d.compiler.Context;
 
 import javax.annotation.Nonnull;
 import java.util.StringJoiner;
@@ -27,7 +29,7 @@ import java.util.StringJoiner;
  * <p>
  * layout (location = 0) int x;
  */
-public class Layout {
+public final class Layout {
 
     // GLSL layout qualifiers, order-independent.
     public static final int
@@ -43,13 +45,13 @@ public class Layout {
             kIndex_LayoutFlag = 1 << 7,
             kBinding_LayoutFlag = 1 << 8,
             kOffset_LayoutFlag = 1 << 9,
-            kAlign_LayoutFlag = 1 << 10,
-            kSet_LayoutFlag = 1 << 11,
-            kInputAttachmentIndex_LayoutFlag = 1 << 12,
-            kBuiltin_LayoutFlag = 1 << 13;
-    public static final int kCount_LayoutFlag = 14;
+            kSet_LayoutFlag = 1 << 10,
+            kInputAttachmentIndex_LayoutFlag = 1 << 11,
+            kBuiltin_LayoutFlag = 1 << 12;
+    public static final int kCount_LayoutFlag = 13;
 
     public static String describeLayoutFlag(int flag) {
+        assert Integer.bitCount(flag) == 1;
         return switch (Integer.numberOfTrailingZeros(flag)) {
             case 0 -> "origin_upper_left";
             case 1 -> "pixel_center_integer";
@@ -61,10 +63,9 @@ public class Layout {
             case 7 -> "index";
             case 8 -> "binding";
             case 9 -> "offset";
-            case 10 -> "align";
-            case 11 -> "set";
-            case 12 -> "input_attachment_index";
-            case 13 -> "builtin";
+            case 10 -> "set";
+            case 11 -> "input_attachment_index";
+            case 12 -> "builtin";
             default -> "";
         };
     }
@@ -93,10 +94,6 @@ public class Layout {
      * (UBO / SSBO) individual variable (atomic counters only), block member.
      */
     public int mOffset = -1;
-    /**
-     * (UBO / SSBO) interface block, block member.
-     */
-    public int mAlign = -1;
     /**
      * (UBO / SSBO, Vulkan only) individual variable (opaque types only), interface block.
      */
@@ -155,7 +152,6 @@ public class Layout {
         result = 31 * result + mIndex;
         result = 31 * result + mBinding;
         result = 31 * result + mOffset;
-        result = 31 * result + mAlign;
         result = 31 * result + mSet;
         result = 31 * result + mInputAttachmentIndex;
         result = 31 * result + mBuiltin;
@@ -175,7 +171,6 @@ public class Layout {
         if (mIndex != layout.mIndex) return false;
         if (mBinding != layout.mBinding) return false;
         if (mOffset != layout.mOffset) return false;
-        if (mAlign != layout.mAlign) return false;
         if (mSet != layout.mSet) return false;
         if (mInputAttachmentIndex != layout.mInputAttachmentIndex) return false;
         return mBuiltin == layout.mBuiltin;
@@ -199,9 +194,6 @@ public class Layout {
         }
         if (mOffset >= 0) {
             joiner.add("offset = " + mOffset);
-        }
-        if (mAlign >= 0) {
-            joiner.add("align = " + mAlign);
         }
         if (mSet >= 0) {
             joiner.add("set = " + mSet);

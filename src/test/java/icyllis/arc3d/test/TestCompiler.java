@@ -27,8 +27,16 @@ public class TestCompiler {
         var compiler = new ShaderCompiler();
 
         ModuleUnit parsed = compiler.parseModule(
-                ExecutionModel.BASE,
+                ExecutionModel.VERTEX,
                 """
+                layout(binding = 0) uniform UniformBlock {
+                    mat4 u_Projection;
+                    mat4 u_ModelView;
+                    vec4 u_Color;
+                } u_Buffer0[2];
+                out SV_PerVertex {
+                  layout(position) float4 SV_Position;
+                };
                 layout(location = 0) smooth in vec2 f_Position;
                 layout(location = 1) smooth in vec4 f_Color;
                 layout(location = 0, index = 0) out vec4 FragColor0;

@@ -19,27 +19,113 @@
 
 package icyllis.arc3d.compiler.tree;
 
+import icyllis.arc3d.compiler.*;
+import icyllis.arc3d.compiler.analysis.NodeVisitor;
+
 import javax.annotation.Nonnull;
 import java.util.*;
 
 /**
- * A fully-resolved intermediate representation of a program (shader stage), ready for code generation.
+ * A fully-resolved intermediate representation of a single shader stage, ready for code generation.
  */
-public final class TranslationUnit implements Iterable<TopLevelElement> {
+public final class TranslationUnit extends Node implements Iterable<TopLevelElement> {
+
+    private final char[] mSource;
+
+    private final ExecutionModel mModel;
+    private final CompileOptions mOptions;
+    private final boolean mIsBuiltin;
+    private final boolean mIsModule;
+
+    private final BuiltinTypes mTypes;
+
+    private final SymbolTable mSymbolTable;
 
     private final ArrayList<TopLevelElement> mUniqueElements;
     private final ArrayList<TopLevelElement> mSharedElements;
 
-    public TranslationUnit(ArrayList<TopLevelElement> uniqueElements,
-                           ArrayList<TopLevelElement> sharedElements) {
+    public TranslationUnit(int position,
+                           char[] source,
+                           ExecutionModel model,
+                           CompileOptions options,
+                           boolean isBuiltin,
+                           boolean isModule,
+                           BuiltinTypes types,
+                           SymbolTable symbolTable,
+                           ArrayList<TopLevelElement> uniqueElements) {
+        super(position);
+        mSource = source;
+        mModel = model;
+        mOptions = options;
+        mIsBuiltin = isBuiltin;
+        mIsModule = isModule;
+        mTypes = types;
+        mSymbolTable = symbolTable;
         mUniqueElements = uniqueElements;
-        mSharedElements = sharedElements;
+        mSharedElements = new ArrayList<>();
+    }
+
+    public char[] getSource() {
+        return mSource;
+    }
+
+    public ExecutionModel getModel() {
+        return mModel;
+    }
+
+    public CompileOptions getOptions() {
+        return mOptions;
+    }
+
+    public boolean isBuiltin() {
+        return mIsBuiltin;
+    }
+
+    public boolean isModule() {
+        return mIsModule;
+    }
+
+    public BuiltinTypes getTypes() {
+        return mTypes;
+    }
+
+    public SymbolTable getSymbolTable() {
+        return mSymbolTable;
+    }
+
+    public ArrayList<TopLevelElement> getUniqueElements() {
+        return mUniqueElements;
+    }
+
+    public ArrayList<TopLevelElement> getSharedElements() {
+        return mSharedElements;
     }
 
     @Nonnull
     @Override
     public Iterator<TopLevelElement> iterator() {
         return new ElementIterator();
+    }
+
+    @Override
+    public boolean accept(@Nonnull NodeVisitor visitor) {
+        for (TopLevelElement e : this) {
+            if (e.accept(visitor)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Nonnull
+    @Override
+    public String toString() {
+        StringBuilder s = new StringBuilder();
+        for (TopLevelElement e : this) {
+            s.append(e.toString());
+            s.append('\n');
+        }
+        return s.toString();
     }
 
     // shared first, then unique
