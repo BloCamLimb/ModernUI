@@ -24,6 +24,7 @@ import org.lwjgl.util.spvc.Spv;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.List;
 import java.util.OptionalLong;
 
 /**
@@ -34,14 +35,16 @@ public class Type extends Symbol {
     public static final int kUnsizedArray = -1; // an unsized array (declared with [])
 
     /**
+     * Represents a single field in a struct/block type. Not associated with Variable.
+     *
      * @param position see {@link Position}
      */
-    public record Field(int position, Modifiers modifiers, String name, Type type) {
+    public record Field(int position, Modifiers modifiers, Type type, String name) {
 
         @Nonnull
         @Override
         public String toString() {
-            return type.getName() + " " + name + ";";
+            return modifiers.toString() + type.getName() + " " + name + ";";
         }
     }
 
@@ -216,7 +219,7 @@ public class Type extends Symbol {
     }
 
     /**
-     * Creates an array type. Call {@link #isUsableInArray(int)} first.
+     * Creates an array type. Call {@link #isUsableInArray(Context, int)} first.
      *
      * @param type the element type
      */
@@ -230,25 +233,12 @@ public class Type extends Symbol {
      * Creates a struct type with the given fields. Reports an error if the struct is ill-formed.
      */
     @Nonnull
-    public static Type makeStructType(@Nonnull Context context,
-                                      int position, String name, Field[] fields, boolean interfaceBlock) {
+    public static Type makeStructType(@Nonnull Context context, int position,
+                                      @Nonnull String name, @Nonnull List<Field> fields,
+                                      boolean interfaceBlock) {
         for (Field field : fields) {
-            Modifiers modifiers = field.modifiers();
-            if (modifiers.flags() != 0) {
-                String desc = Modifiers.describeFlags(modifiers.flags());
-                context.error(field.position(),
-                        "qualifier '" + desc + "' is not permitted on a struct field");
-            }
-            if ((modifiers.layoutFlags() & Layout.kIndex_LayoutFlag) != 0) {
-                context.error(field.position(),
-                        "layout qualifier 'index' is not permitted on a struct field");
-            }
             if (field.type().isVoid()) {
                 context.error(field.position(), "type 'void' is not permitted in a struct");
-            }
-            if (interfaceBlock && field.type().isOpaque()) {
-                context.error(field.position(), "opaque type '" + field.type().getName() +
-                        "' is not permitted in a interface block");
             }
         }
         for (Field field : fields) {
@@ -257,7 +247,7 @@ public class Type extends Symbol {
                 break;
             }
         }
-        return new StructType(position, name, fields, interfaceBlock);
+        return new StructType(position, name, fields.toArray(new Field[0]), interfaceBlock);
     }
 
     private static boolean isTooDeeplyNested(Type t, int limit) {
@@ -847,23 +837,27 @@ public class Type extends Symbol {
         if (size == null) {
             return 0;
         }
-        if (!isUsableInArray(context, position)) {
-            return 0;
-        }
         OptionalLong value = ConstantFolder.getConstantInt(size);
         if (value.isEmpty()) {
             context.error(size.mPosition, "array size must be an integer constant");
             return 0;
         }
-        if (value.getAsLong() <= 0) {
-            context.error(size.mPosition, "array size must be positive");
+        return convertArraySize(context, position, size.mPosition, value.getAsLong());
+    }
+
+    public int convertArraySize(@Nonnull Context context, int position, int sizePosition, long size) {
+        if (!isUsableInArray(context, position)) {
             return 0;
         }
-        if (value.getAsLong() > Integer.MAX_VALUE) {
-            context.error(size.mPosition, "array size is too large");
+        if (size <= 0) {
+            context.error(sizePosition, "array size must be positive");
             return 0;
         }
-        return (int) value.getAsLong();
+        if (size > Integer.MAX_VALUE) {
+            context.error(sizePosition, "array size is too large");
+            return 0;
+        }
+        return (int) size;
     }
 
     /**

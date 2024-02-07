@@ -109,11 +109,6 @@ public final class VariableDecl extends Statement {
                         "'uniform' variables cannot use initializer expressions");
                 return null;
             }
-            if (variable.getStorage() == Variable.kInterfaceBlock_Storage) {
-                context.error(init.mPosition,
-                        "initializers are not permitted in interface blocks");
-                return null;
-            }
             init = variable.getType().coerceExpression(context, init);
             if (init == null) {
                 return null;
@@ -126,13 +121,6 @@ public final class VariableDecl extends Statement {
                 return null;
             }
             //TODO check const expression
-        }
-        if (variable.getStorage() == Variable.kInterfaceBlock_Storage) {
-            if (variable.getType().isOpaque()) {
-                context.error(variable.mPosition, "opaque type '" + variable.getType() +
-                        "' is not permitted in interface blocks");
-                return null;
-            }
         }
 
         VariableDecl variableDecl = make(variable, init);

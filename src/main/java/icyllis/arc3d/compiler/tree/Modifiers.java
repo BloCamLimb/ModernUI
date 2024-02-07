@@ -19,7 +19,6 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import icyllis.arc3d.compiler.Layout;
 import icyllis.arc3d.compiler.Context;
 import icyllis.arc3d.compiler.analysis.NodeVisitor;
 
@@ -67,7 +66,10 @@ public final class Modifiers extends Node {
             kNoInline_Flag = 1 << 14;
     public static final int kCount_Flag = 15;
 
+    public static final int kInterpolation_Flags = kSmooth_Flag | kFlat_Flag | kNoPerspective_Flag;
+
     public static String describeFlag(int flag) {
+        assert Integer.bitCount(flag) == 1;
         return switch (Integer.numberOfTrailingZeros(flag)) {
             case 0 -> "smooth";
             case 1 -> "flat";
@@ -161,6 +163,11 @@ public final class Modifiers extends Node {
                         describeFlag(flag) + "' is not permitted here");
                 success = false;
             }
+        }
+
+        if (Integer.bitCount(mFlags & kInterpolation_Flags) > 1) {
+            context.error(mPosition, "at most one interpolation qualifier can be used");
+            success = false;
         }
 
         return success;
