@@ -20,7 +20,7 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.*;
-import icyllis.arc3d.compiler.analysis.NodeVisitor;
+import icyllis.arc3d.compiler.analysis.TreeVisitor;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -174,6 +174,7 @@ public final class InterfaceBlock extends TopLevelElement {
         return InterfaceBlock.make(context, pos, variable);
     }
 
+    @Nonnull
     public static InterfaceBlock make(@Nonnull Context context,
                                       int pos,
                                       @Nonnull Variable variable) {
@@ -196,8 +197,9 @@ public final class InterfaceBlock extends TopLevelElement {
         return new InterfaceBlock(pos, variable);
     }
 
+    @Nonnull
     public Variable getVariable() {
-        return Objects.requireNonNull(mVariable.get(), "symbol table is gone");
+        return Objects.requireNonNull(mVariable.get(), "your symbol table is gone");
     }
 
     @Nonnull
@@ -216,8 +218,8 @@ public final class InterfaceBlock extends TopLevelElement {
     }
 
     @Override
-    public boolean accept(@Nonnull NodeVisitor visitor) {
-        return false;
+    public boolean accept(@Nonnull TreeVisitor visitor) {
+        return visitor.visitInterfaceBlock(this);
     }
 
     @Nonnull

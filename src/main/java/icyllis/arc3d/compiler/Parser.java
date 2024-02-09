@@ -44,6 +44,8 @@ public class Parser {
 
     private final LongStack mPushback = new LongArrayList();
 
+    private ArrayList<TopLevelElement> mUniqueElements = new ArrayList<>();
+
     public Parser(ShaderCompiler compiler, ExecutionModel model, CompileOptions options, char[] source) {
         // ideally we can break long text into pieces, but shader code should not be too long
         if (source.length > 0x7FFFFE) {
@@ -59,23 +61,45 @@ public class Parser {
     @Nullable
     public TranslationUnit parse(ModuleUnit parent) {
         Objects.requireNonNull(parent);
+        mUniqueElements = new ArrayList<>();
         TranslationUnit();
-        return null;
+        Context context = mCompiler.getContext();
+        final TranslationUnit result;
+        if (context.getErrorHandler().getNumErrors() == 0) {
+            result = new TranslationUnit(
+                    rangeFromOffset(0),
+                    mSource,
+                    mModel,
+                    mOptions,
+                    context.isBuiltin(),
+                    context.isModule(),
+                    context.getTypes(),
+                    context.getSymbolTable(),
+                    mUniqueElements
+            );
+        } else {
+            result = null;
+        }
+        mUniqueElements = null;
+        return result;
     }
 
     @Nullable
     public ModuleUnit parseModule(ModuleUnit parent) {
         Objects.requireNonNull(parent);
+        mUniqueElements = new ArrayList<>();
         TranslationUnit();
+        Context context = mCompiler.getContext();
         final ModuleUnit result;
-        if (mCompiler.getContext().getErrorHandler().getNumErrors() == 0) {
+        if (context.getErrorHandler().getNumErrors() == 0) {
             result = new ModuleUnit();
             result.mParent = parent;
-            result.mSymbols = mCompiler.getContext().getSymbolTable();
-            result.mElements = mCompiler.getContext().getUniqueElements();
+            result.mSymbols = context.getSymbolTable();
+            result.mElements = mUniqueElements;
         } else {
             result = null;
         }
+        mUniqueElements = null;
         return result;
     }
 
@@ -403,7 +427,7 @@ public class Parser {
 
         InterfaceBlock block = InterfaceBlock.convert(context, pos, modifiers, type, instanceNameText);
         if (block != null) {
-            context.getUniqueElements().add(block);
+            mUniqueElements.add(block);
             return true;
         }
         return false;
@@ -445,7 +469,7 @@ public class Parser {
             if (decl == null) {
                 return false;
             }
-            context.getUniqueElements().add(
+            mUniqueElements.add(
                     new FunctionPrototype(decl.mPosition, decl, context.isBuiltin())
             );
             return true;
@@ -462,7 +486,7 @@ public class Parser {
                 long blockStart = peek();
                 BlockStatement block = ScopedBlock();
 
-                if (decl == null || block == null) {
+                if (decl == null) {
                     return false;
                 }
 
@@ -479,7 +503,7 @@ public class Parser {
                     return false;
                 }
                 decl.setDefinition(function);
-                context.getUniqueElements().add(function);
+                mUniqueElements.add(function);
                 return true;
             } finally {
                 mCompiler.getContext()
@@ -566,7 +590,7 @@ public class Parser {
                     Variable.kGlobal_Storage,
                     init);
             if (variableDecl != null) {
-                mCompiler.getContext().getUniqueElements().add(
+                mUniqueElements.add(
                         new GlobalVariableDecl(variableDecl)
                 );
             }

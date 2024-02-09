@@ -131,7 +131,7 @@ public class ShaderCompiler {
      * @param options the compiler options
      * @param source  the source code of the program to be parsed
      * @param parent  the parent module of the program to be parsed
-     * @return the program, or null if there's an error
+     * @return the module, or null if there's an error
      */
     @Nullable
     public TranslationUnit parse(ExecutionModel model,

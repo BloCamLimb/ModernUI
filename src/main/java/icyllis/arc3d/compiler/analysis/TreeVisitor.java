@@ -35,7 +35,9 @@ import icyllis.arc3d.compiler.tree.*;
  * any visit call returns true, the default behavior stops recursion and propagates true up the
  * stack.
  */
-public abstract class NodeVisitor {
+public abstract class TreeVisitor {
+
+    /// Top level elements
 
     public boolean visitFunctionPrototype(FunctionPrototype prototype) {
         return visitAnyTopLevelElement(prototype);
@@ -45,9 +47,19 @@ public abstract class NodeVisitor {
         return visitAnyTopLevelElement(definition);
     }
 
+    public boolean visitGlobalVariableDecl(GlobalVariableDecl variableDecl) {
+        return visitAnyTopLevelElement(variableDecl);
+    }
+
+    public boolean visitInterfaceBlock(InterfaceBlock interfaceBlock) {
+        return visitAnyTopLevelElement(interfaceBlock);
+    }
+
     public boolean visitAnyTopLevelElement(TopLevelElement e) {
         return false;
     }
+
+    /// Expressions
 
     public boolean visitFunctionReference(FunctionReference expr) {
         return visitAnyExpression(expr);
@@ -108,6 +120,8 @@ public abstract class NodeVisitor {
         return false;
     }
 
+    /// Statements
+
     public boolean visitBlock(BlockStatement stmt) {
         return visitAnyStatement(stmt);
     }
@@ -144,13 +158,14 @@ public abstract class NodeVisitor {
         return visitAnyStatement(stmt);
     }
 
+    public boolean visitVariableDecl(VariableDecl variableDecl) {
+        return visitAnyStatement(variableDecl);
+    }
+
+    /**
+     * Fallback method for any statement kind that has not been overridden.
+     */
     protected boolean visitAnyStatement(Statement stmt) {
-        return switch (stmt.getKind()) {
-            case BREAK,
-                    CONTINUE,
-                    DISCARD,
-                    EMPTY -> false; // Leaf expressions return false
-            default -> true;
-        };
+        return false;
     }
 }

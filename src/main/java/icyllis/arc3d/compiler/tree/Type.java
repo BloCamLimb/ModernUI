@@ -660,7 +660,7 @@ public class Type extends Symbol {
     }
 
     /**
-     * Returns the minimum size in bits of the type.
+     * For scalars, returns the minimum size in bits of the type.
      */
     public int getScalarWidth() {
         return 0;
@@ -1131,11 +1131,6 @@ public class Type extends Symbol {
         public Type getComponentType() {
             return mElementType.getComponentType();
         }
-
-        @Override
-        public int getScalarWidth() {
-            return mElementType.getScalarWidth();
-        }
     }
 
     public static final class ScalarType extends Type {
@@ -1255,11 +1250,6 @@ public class Type extends Symbol {
         public int getRows() {
             return mRows;
         }
-
-        @Override
-        public int getScalarWidth() {
-            return mComponentType.getScalarWidth();
-        }
     }
 
     public static final class MatrixType extends Type {
@@ -1304,11 +1294,6 @@ public class Type extends Symbol {
         @Override
         public int getRows() {
             return mVectorType.getRows();
-        }
-
-        @Override
-        public int getScalarWidth() {
-            return mVectorType.getScalarWidth();
         }
     }
 

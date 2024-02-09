@@ -20,13 +20,14 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.*;
-import icyllis.arc3d.compiler.analysis.NodeVisitor;
+import icyllis.arc3d.compiler.analysis.ModuleUsage;
+import icyllis.arc3d.compiler.analysis.TreeVisitor;
 
 import javax.annotation.Nonnull;
 import java.util.*;
 
 /**
- * A fully-resolved intermediate representation of a single shader stage, ready for code generation.
+ * A fully-resolved AST of a single shader module, ready for code generation.
  */
 public final class TranslationUnit extends Node implements Iterable<TopLevelElement> {
 
@@ -43,6 +44,8 @@ public final class TranslationUnit extends Node implements Iterable<TopLevelElem
 
     private final ArrayList<TopLevelElement> mUniqueElements;
     private final ArrayList<TopLevelElement> mSharedElements;
+
+    private final ModuleUsage mUsage;
 
     public TranslationUnit(int position,
                            char[] source,
@@ -63,6 +66,8 @@ public final class TranslationUnit extends Node implements Iterable<TopLevelElem
         mSymbolTable = symbolTable;
         mUniqueElements = uniqueElements;
         mSharedElements = new ArrayList<>();
+        mUsage = new ModuleUsage();
+        mUsage.add(this);
     }
 
     public char[] getSource() {
@@ -101,6 +106,10 @@ public final class TranslationUnit extends Node implements Iterable<TopLevelElem
         return mSharedElements;
     }
 
+    public ModuleUsage getUsage() {
+        return mUsage;
+    }
+
     @Nonnull
     @Override
     public Iterator<TopLevelElement> iterator() {
@@ -108,7 +117,7 @@ public final class TranslationUnit extends Node implements Iterable<TopLevelElem
     }
 
     @Override
-    public boolean accept(@Nonnull NodeVisitor visitor) {
+    public boolean accept(@Nonnull TreeVisitor visitor) {
         for (TopLevelElement e : this) {
             if (e.accept(visitor)) {
                 return true;

@@ -20,7 +20,7 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.Position;
-import icyllis.arc3d.compiler.analysis.NodeVisitor;
+import icyllis.arc3d.compiler.analysis.TreeVisitor;
 
 import javax.annotation.Nonnull;
 
@@ -154,7 +154,7 @@ public abstract class Node {
      *
      * @return true to stop recursion and propagate true up the stack, false to continue
      */
-    public abstract boolean accept(@Nonnull NodeVisitor visitor);
+    public abstract boolean accept(@Nonnull TreeVisitor visitor);
 
     /**
      * @return a string representation of this AST node

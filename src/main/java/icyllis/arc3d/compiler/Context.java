@@ -43,11 +43,6 @@ public final class Context {
     // This is the current symbol table of the code we are processing, and therefore changes during
     // compilation
     private SymbolTable mSymbolTable;
-    // The element map from the parent module
-    private List<TopLevelElement> mParentElements;
-
-    private final ArrayList<TopLevelElement> mUniqueElements = new ArrayList<>();
-    private final ArrayList<TopLevelElement> mSharedElements = new ArrayList<>();
 
     // The Context holds a pointer to our error handler.
     ErrorHandler mErrorHandler;
@@ -60,7 +55,7 @@ public final class Context {
     }
 
     /**
-     * Starts the DSL on the current thread for compiling programs and modules (include files).
+     * Starts the DSL on the current thread for compiling modules.
      */
     void start(ExecutionModel model, CompileOptions options,
                ModuleUnit parent, boolean isBuiltin, boolean isModule) {
@@ -74,7 +69,6 @@ public final class Context {
         mIsModule = isModule;
 
         mSymbolTable = parent.mSymbols.enterModule(isBuiltin);
-        mParentElements = Collections.unmodifiableList(parent.mElements);
 
         mActive = true;
     }
@@ -86,7 +80,6 @@ public final class Context {
         mModel = null;
         mOptions = null;
         mSymbolTable = null;
-        mParentElements = null;
 
         mActive = false;
     }
@@ -146,28 +139,6 @@ public final class Context {
      */
     public void leaveScope() {
         mSymbolTable = mSymbolTable.leaveScope();
-    }
-
-    /**
-     * Returns the elements of the parent module, unmodifiable.
-     */
-    @UnmodifiableView
-    public List<TopLevelElement> getParentElements() {
-        return mParentElements;
-    }
-
-    /**
-     * Returns a list for adding unique elements in the target module.
-     */
-    public ArrayList<TopLevelElement> getUniqueElements() {
-        return mUniqueElements;
-    }
-
-    /**
-     * Returns a list for adding used elements in the target module shared from {@link #getParentElements()}.
-     */
-    public ArrayList<TopLevelElement> getSharedElements() {
-        return mSharedElements;
     }
 
     public void error(int position, String msg) {

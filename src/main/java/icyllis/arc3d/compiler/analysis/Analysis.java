@@ -31,7 +31,7 @@ public final class Analysis {
      * Determines if `expr` is a compile-time constant (composed of just constructors and literals).
      */
     public static boolean isCompileTimeConstant(Expression expr) {
-        class IsCompileTimeConstantVisitor extends NodeVisitor {
+        class IsCompileTimeConstantVisitor extends TreeVisitor {
             @Override
             public boolean visitLiteral(Literal expr) {
                 // Literals are compile-time constants.
@@ -204,7 +204,7 @@ public final class Analysis {
      * Determines if `expr` has any side effects. (Is the expression state-altering or pure?)
      */
     public static boolean hasSideEffects(Expression expr) {
-        class HasSideEffectsVisitor extends NodeVisitor {
+        class HasSideEffectsVisitor extends TreeVisitor {
             @Override
             public boolean visitFunctionCall(FunctionCall expr) {
                 return (expr.getFunction().getModifiers().flags() & Modifiers.kPure_Flag) == 0;
