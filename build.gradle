@@ -42,17 +42,17 @@ dependencies {
     implementation "org.lwjgl:lwjgl"
     implementation "org.lwjgl:lwjgl-jemalloc"
     implementation "org.lwjgl:lwjgl-opengl"
-    implementation "org.lwjgl:lwjgl-spvc"
     implementation "org.lwjgl:lwjgl-vma"
     implementation "org.lwjgl:lwjgl-vulkan"
     runtimeOnly "org.lwjgl:lwjgl::$lwjglNatives"
     runtimeOnly "org.lwjgl:lwjgl-jemalloc::$lwjglNatives"
     runtimeOnly "org.lwjgl:lwjgl-opengl::$lwjglNatives"
-    runtimeOnly "org.lwjgl:lwjgl-spvc::$lwjglNatives"
     runtimeOnly "org.lwjgl:lwjgl-vma::$lwjglNatives"
     if (lwjglNatives == "natives-macos" || lwjglNatives == "natives-macos-arm64") {
         runtimeOnly "org.lwjgl:lwjgl-vulkan::$lwjglNatives"
     }
+
+    compileOnly "org.lwjgl:lwjgl-spvc" // we only use the Spv header
 
     testImplementation "org.lwjgl:lwjgl-glfw"
     testImplementation "org.lwjgl:lwjgl-stb"

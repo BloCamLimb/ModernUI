@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,13 +19,14 @@
 
 package icyllis.arc3d.compiler;
 
-public final class SpvExt {
+/**
+ * See <a href="https://github.com/KhronosGroup/SPIRV-Headers/blob/main/include/spirv/unified1/GLSL.std.450.h">
+ * GLSL.std.450</a>
+ */
+public final class GLSLstd450 {
 
-    /**
-     * See <a href="https://github.com/KhronosGroup/SPIRV-Headers/blob/master/include/spirv/unified1/GLSL.std.450.h">
-     * GLSL.std.450</a>
-     */
     public static final int GLSLstd450Version = 100;
+
     public static final int GLSLstd450Revision = 3;
 
     /**
@@ -115,5 +116,9 @@ public final class SpvExt {
             GLSLstd450InterpolateAtOffset = 78,
             GLSLstd450NMin = 79,
             GLSLstd450NMax = 80,
-            GLSLstd450NClamp = 81;
+            GLSLstd450NClamp = 81,
+            GLSLstd450Count = 82;
+
+    private GLSLstd450() {
+    }
 }

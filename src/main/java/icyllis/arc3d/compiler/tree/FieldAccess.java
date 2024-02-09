@@ -21,7 +21,7 @@ package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.Operator;
 import icyllis.arc3d.compiler.Context;
-import icyllis.arc3d.compiler.analysis.NodeVisitor;
+import icyllis.arc3d.compiler.analysis.TreeVisitor;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -93,7 +93,7 @@ public final class FieldAccess extends Expression {
     }
 
     @Override
-    public boolean accept(@Nonnull NodeVisitor visitor) {
+    public boolean accept(@Nonnull TreeVisitor visitor) {
         if (visitor.visitFieldAccess(this)) {
             return true;
         }

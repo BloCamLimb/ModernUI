@@ -20,14 +20,16 @@
 package icyllis.arc3d.test;
 
 import icyllis.arc3d.compiler.*;
+import icyllis.arc3d.compiler.tree.TranslationUnit;
 
 public class TestCompiler {
 
     public static void main(String[] args) {
         var compiler = new ShaderCompiler();
 
-        ModuleUnit parsed = compiler.parseModule(
+        TranslationUnit parsed = compiler.parse(
                 ExecutionModel.VERTEX,
+                new CompileOptions(),
                 """
                 layout(binding = 0) uniform UniformBlock {
                     mat4 u_Projection;
@@ -55,11 +57,13 @@ public class TestCompiler {
                     return sa(sa(rr(n, float2(a[0],12.1414))) * 83758.5453);
                 }
                 """,
-                ModuleLoader.getInstance().getRootModule(),
-                false
+                ModuleLoader.getInstance().getRootModule()
         );
 
         System.out.println(compiler.getLogMessage());
-        System.out.println(parsed);
+        if (parsed != null) {
+            System.out.println(parsed);
+            System.out.println(parsed.getUsage());
+        }
     }
 }

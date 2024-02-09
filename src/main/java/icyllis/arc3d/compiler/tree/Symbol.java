@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import icyllis.arc3d.compiler.analysis.NodeVisitor;
+import icyllis.arc3d.compiler.analysis.TreeVisitor;
 
 import javax.annotation.Nonnull;
 
@@ -36,7 +36,7 @@ public abstract class Symbol extends Node {
     }
 
     @Override
-    public final boolean accept(@Nonnull NodeVisitor visitor) {
+    public final boolean accept(@Nonnull TreeVisitor visitor) {
         // symbols will not be visited
         throw new AssertionError();
     }
