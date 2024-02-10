@@ -19,22 +19,52 @@
 
 package icyllis.arc3d.compiler.codegen;
 
+import icyllis.arc3d.compiler.Context;
 import icyllis.arc3d.compiler.tree.TranslationUnit;
-import icyllis.arc3d.engine.Context;
+import org.lwjgl.BufferUtils;
+
+import javax.annotation.Nonnull;
+import java.nio.ByteBuffer;
 
 /**
- * Abstract superclass of all code generators, which take a Program as input and produce code as
- * output.
+ * Abstract superclass of all code generators, which take a {@link TranslationUnit} as input
+ * and produce code as output.
  */
 public abstract class CodeGenerator {
 
     public final Context mContext;
     public final TranslationUnit mTranslationUnit;
-    public StringBuilder mOut;
 
-    public CodeGenerator(Context context, TranslationUnit translationUnit, StringBuilder out) {
+    protected ByteBuffer mBuffer;
+
+    public CodeGenerator(Context context,
+                         TranslationUnit translationUnit) {
         mContext = context;
         mTranslationUnit = translationUnit;
-        mOut = out;
+    }
+
+    /**
+     * Generates the code and returns the pointer value. The code size in bytes is
+     * {@link ByteBuffer#remaining()}. Check errors via {@link Context#getErrorHandler()}.
+     * <p>
+     * The return value is a direct buffer, see {@link ByteBuffer#allocateDirect(int)}.
+     * A direct buffer wraps an address that points to off-heap memory, i.e. a native
+     * pointer. The byte order is {@link java.nio.ByteOrder#nativeOrder()} and it's
+     * safe to pass the result to OpenGL and Vulkan API. There is no way to free this
+     * buffer explicitly, as it is subject to GC.
+     *
+     * @return the generated code, regardless of errors
+     */
+    @Nonnull
+    public abstract ByteBuffer generateCode();
+
+    protected ByteBuffer grow(int minCapacity) {
+        if (minCapacity > mBuffer.capacity()) {
+            // double the buffer, overflow will throw exception
+            int newCapacity = Math.max(minCapacity, mBuffer.capacity() << 1);
+            mBuffer = BufferUtils.createByteBuffer(newCapacity)
+                    .put(mBuffer.flip());
+        }
+        return mBuffer;
     }
 }

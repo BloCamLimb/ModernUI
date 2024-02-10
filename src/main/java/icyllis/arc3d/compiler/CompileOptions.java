@@ -24,5 +24,5 @@ package icyllis.arc3d.compiler;
  */
 public class CompileOptions {
 
-
+    public boolean mForceHighPrecision;
 }
