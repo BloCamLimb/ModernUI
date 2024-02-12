@@ -19,8 +19,6 @@
 
 package icyllis.arc3d.compiler;
 
-import java.util.Objects;
-
 /**
  * Class which is notified in the event of an error.
  */
@@ -38,11 +36,11 @@ public abstract class ErrorHandler {
         mSource = source;
     }
 
-    public final int getNumErrors() {
+    public final int errorCount() {
         return mErrors;
     }
 
-    public final int getNumWarnings() {
+    public final int warningCount() {
         return mWarnings;
     }
 

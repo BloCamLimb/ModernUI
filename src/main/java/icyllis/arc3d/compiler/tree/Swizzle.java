@@ -28,7 +28,7 @@ import javax.annotation.Nullable;
 import java.util.*;
 
 /**
- * Represents a vector component selection such as 'float3(1, 2, 3).zyx'.
+ * Represents a vector component selection (shuffling) such as 'float3(1, 2, 3).zyx'.
  */
 public final class Swizzle extends Expression {
 
@@ -418,6 +418,7 @@ public final class Swizzle extends Expression {
 
         // GLSL supports splatting a scalar via `scalar.xxxx`, but not all versions of GLSL allow this.
         // Replace swizzles with equivalent splat constructors (`scalar.xxx` --> `half3(value)`).
+        //TODO
         if (baseType.isScalar()) {
             return ConstructorScalar2Vector.make(position,
                     baseType.toVector(context, numComponents), base);
