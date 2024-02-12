@@ -19,7 +19,6 @@
 
 package icyllis.arc3d.compiler;
 
-import icyllis.arc3d.compiler.codegen.CodeGenerator;
 import icyllis.arc3d.compiler.tree.Node;
 import icyllis.arc3d.compiler.tree.TranslationUnit;
 
@@ -201,8 +200,8 @@ public class ShaderCompiler {
      */
     @Nonnull
     public String getLogMessage() {
-        int errors = getNumErrors();
-        int warnings = getNumWarnings();
+        int errors = errorCount();
+        int warnings = warningCount();
         if (errors > 0 || warnings > 0) {
             mLogBuilder.append(errors).append(" error");
             if (errors > 1) {
@@ -227,12 +226,12 @@ public class ShaderCompiler {
         return mErrorHandler;
     }
 
-    public int getNumErrors() {
-        return mErrorHandler.getNumErrors();
+    public int errorCount() {
+        return mErrorHandler.errorCount();
     }
 
-    public int getNumWarnings() {
-        return mErrorHandler.getNumWarnings();
+    public int warningCount() {
+        return mErrorHandler.warningCount();
     }
 
     private void resetLog() {

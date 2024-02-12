@@ -17,9 +17,8 @@
  * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.compiler.codegen;
+package icyllis.arc3d.compiler;
 
-import icyllis.arc3d.compiler.Context;
 import icyllis.arc3d.compiler.tree.TranslationUnit;
 import org.lwjgl.BufferUtils;
 

@@ -121,7 +121,7 @@ public class OpsTask extends RenderTask {
 
     @Override
     public boolean execute(OpFlushState flushState) {
-        assert (getNumTargets() == 1);
+        assert (numTargets() == 1);
         SurfaceProxy target = getTarget();
         assert (target != null && target == mWriteView.getSurface());
 

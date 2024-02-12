@@ -17,10 +17,9 @@
  * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.compiler.codegen;
+package icyllis.arc3d.compiler.spirv;
 
-import icyllis.arc3d.compiler.Context;
-import icyllis.arc3d.compiler.Position;
+import icyllis.arc3d.compiler.*;
 import icyllis.arc3d.compiler.tree.*;
 import icyllis.arc3d.core.MathUtil;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
@@ -28,9 +27,7 @@ import it.unimi.dsi.fastutil.ints.IntSet;
 import org.lwjgl.BufferUtils;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.IdentityHashMap;
 
 import static org.lwjgl.util.spvc.Spv.*;
@@ -38,111 +35,13 @@ import static org.lwjgl.util.spvc.Spv.*;
 /**
  * SPIR-V code generator for OpenGL 4.6 and Vulkan 1.1.
  */
-public final class SPIRVCodeGenerator extends CodeGenerator {
+public final class SPIRVCodeGenerator extends CodeGenerator implements Output {
 
-    public enum SPIRVVersion {
-        /**
-         * SPIR-V version 1.0 for OpenGL 4.6.
-         */
-        VERSION_100(0x00010000),
-        /**
-         * SPIR-V version 1.3 for Vulkan 1.1.
-         */
-        VERSION_130(0x00010300);
-
-        public final int mVersionNumber;
-
-        SPIRVVersion(int versionNumber) {
-            mVersionNumber = versionNumber;
-        }
-    }
+    // Arc 3D is not registered, so higher 16 bits are zero
+    // we use 0x32D2 and 0x6D5C for the lower 16 bits
+    public static final int GENERATOR_MAGIC_NUMBER = 0x00000000;
 
     public final SPIRVVersion mOutputVersion;
-
-    private interface Output {
-        // write a 4-byte word
-        void writeWord(int word);
-
-        // write a sequence of 4-byte words
-        void writeWords(int[] words, int size);
-
-        // write a string as UTF-8 encoded, null-terminated and 4-byte aligned in LITTLE-ENDIAN order
-        // however, our compiler only allows ASCII characters
-        void writeString8(String s);
-    }
-
-    private final Output mMainOutput = new Output() {
-        @Override
-        public void writeWord(int word) {
-            grow(mBuffer.limit() + 4);
-            mBuffer.putInt(word);
-        }
-
-        @Override
-        public void writeWords(int[] words, int size) {
-            grow(mBuffer.limit() + (size << 2));
-            mBuffer.asIntBuffer().put(words, 0, size);
-        }
-
-        @Override
-        public void writeString8(String s) {
-            int len = s.length();
-            ByteBuffer buffer = grow(mBuffer.limit() +
-                    MathUtil.align4(len + 1)); // +1 null-terminator
-            int word = 0;
-            int shift = 0;
-            for (int i = 0; i < len; i++) {
-                char c = s.charAt(i);
-                if (c == 0 || c >= 0x80) {
-                    mContext.error(Position.NO_POS, "invalid character '" + c + "'");
-                }
-                word |= c << shift;
-                shift += 8;
-                if (shift == 32) {
-                    buffer.putInt(word);
-                    word = 0;
-                    shift = 0;
-                }
-            }
-            // null-terminator and padding
-            buffer.putInt(word);
-        }
-    };
-
-    private static class WordBuffer implements Output {
-        int[] a;
-        int size;
-
-        WordBuffer() {
-            a = new int[16];
-        }
-
-        @Override
-        public void writeWord(int word) {
-            int s = size;
-            grow(s + 1)[s] = word;
-            size = s + 1;
-        }
-
-        @Override
-        public void writeWords(int[] words, int size) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void writeString8(String s) {
-            throw new UnsupportedOperationException();
-        }
-
-        private int[] grow(int minCapacity) {
-            if (minCapacity > a.length) {
-                // double the buffer, overflow will throw exception
-                int newCapacity = Math.max(minCapacity, a.length << 1);
-                a = Arrays.copyOf(a, newCapacity);
-            }
-            return a;
-        }
-    }
 
     private WordBuffer mConstantBuffer;
     private WordBuffer mDecorationBuffer;
@@ -166,17 +65,17 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     @Nonnull
     @Override
     public ByteBuffer generateCode() {
-        assert mContext.getErrorHandler().getNumErrors() == 0;
+        assert mContext.getErrorHandler().errorCount() == 0;
         // Header
         // 0 - magic number
         // 1 - version number
-        // 2 - generator's magic number (Arc 3D is not registered, so this is zero)
+        // 2 - generator magic
         // 3 - bound (set later)
-        // 4 - reserved (always zero)
+        // 4 - schema (reserved)
         mBuffer = BufferUtils.createByteBuffer(1024)
                 .putInt(SpvMagicNumber)
                 .putInt(mOutputVersion.mVersionNumber)
-                .putInt(0x00000000)
+                .putInt(GENERATOR_MAGIC_NUMBER)
                 .putInt(0)
                 .putInt(0);
 
@@ -187,18 +86,67 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         return buffer.flip();
     }
 
-    private int nextId(@Nonnull Type type) {
-        return nextId(type.getComponentType().getScalarWidth() == 16);
+    @Override
+    public void writeWord(int word) {
+        grow(mBuffer.limit() + 4)
+                .putInt(word);
     }
 
-    private int nextId(boolean relaxed) {
-        if (relaxed) {
+    @Override
+    public void writeWords(int[] words, int size) {
+        // int array is in host endianness (native byte order)
+        grow(mBuffer.limit() + (size << 2))
+                .asIntBuffer()
+                .put(words, 0, size);
+    }
 
+    @Override
+    public void writeString8(String s) {
+        int len = s.length();
+        ByteBuffer buffer = grow(mBuffer.limit() +
+                MathUtil.align4(len + 1)); // +1 null-terminator
+        int word = 0;
+        int shift = 0;
+        for (int i = 0; i < len; i++) {
+            char c = s.charAt(i);
+            if (c == 0 || c >= 0x80) {
+                mContext.error(Position.NO_POS, "invalid character '" + c + "'");
+            }
+            word |= c << shift;
+            shift += 8;
+            if (shift == 32) {
+                buffer.putInt(word);
+                word = 0;
+                shift = 0;
+            }
         }
-        return nextId();
+        // null-terminator and padding
+        buffer.putInt(word);
     }
 
-    private int nextId() {
+    private void writeCapabilities(Output output) {
+        for (var it = mCapabilities.iterator(); it.hasNext(); ) {
+            writeInstruction(SpvOpCapability, it.nextInt(),
+                    output);
+        }
+        writeInstruction(SpvOpCapability, SpvCapabilityShader,
+                output);
+    }
+
+    private int getUniqueId(@Nonnull Type type) {
+        return getUniqueId(type.isRelaxedPrecision());
+    }
+
+    private int getUniqueId(boolean relaxedPrecision) {
+        int id = getUniqueId();
+        if (relaxedPrecision) {
+            writeInstruction(SpvOpDecorate, id, SpvDecorationRelaxedPrecision,
+                    mDecorationBuffer);
+        }
+        return id;
+    }
+
+    private int getUniqueId() {
         return mIdCount++;
     }
 

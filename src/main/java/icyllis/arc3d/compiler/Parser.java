@@ -65,7 +65,7 @@ public class Parser {
         TranslationUnit();
         Context context = mCompiler.getContext();
         final TranslationUnit result;
-        if (context.getErrorHandler().getNumErrors() == 0) {
+        if (context.getErrorHandler().errorCount() == 0) {
             result = new TranslationUnit(
                     rangeFromOffset(0),
                     mSource,
@@ -91,7 +91,7 @@ public class Parser {
         TranslationUnit();
         Context context = mCompiler.getContext();
         final ModuleUnit result;
-        if (context.getErrorHandler().getNumErrors() == 0) {
+        if (context.getErrorHandler().errorCount() == 0) {
             result = new ModuleUnit();
             result.mParent = parent;
             result.mSymbols = context.getSymbolTable();

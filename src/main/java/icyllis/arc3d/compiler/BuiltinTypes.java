@@ -335,13 +335,13 @@ public final class BuiltinTypes {
         mBool4 = Type.makeVectorType("bool4", "b4", mBool, /*rows*/4);
 
         mShort = Type.makeScalarType(
-                "short", "s", Type.kSigned_ScalarKind, /*rank=*/3, /*width=*/16);
+                "short", "s", Type.kSigned_ScalarKind, /*rank=*/3, /*minWidth=*/16, /*width=*/32);
         mShort2 = Type.makeVectorType("short2", "s2", mShort, /*rows*/2);
         mShort3 = Type.makeVectorType("short3", "s3", mShort, /*rows*/3);
         mShort4 = Type.makeVectorType("short4", "s4", mShort, /*rows*/4);
 
         mUShort = Type.makeScalarType(
-                "ushort", "S", Type.kUnsigned_ScalarKind, /*rank=*/4, /*width=*/16);
+                "ushort", "S", Type.kUnsigned_ScalarKind, /*rank=*/4, /*minWidth=*/16, /*width=*/32);
         mUShort2 = Type.makeVectorType("ushort2", "S2", mUShort, /*rows*/2);
         mUShort3 = Type.makeVectorType("ushort3", "S3", mUShort, /*rows*/3);
         mUShort4 = Type.makeVectorType("ushort4", "S4", mUShort, /*rows*/4);
@@ -359,7 +359,7 @@ public final class BuiltinTypes {
         mUInt4 = Type.makeVectorType("uint4", "I4", mUInt, /*rows*/4);
 
         mHalf = Type.makeScalarType(
-                "half", "h", Type.kFloat_ScalarKind, /*rank=*/9, /*width=*/16);
+                "half", "h", Type.kFloat_ScalarKind, /*rank=*/9, /*minWidth=*/16, /*width=*/32);
         mHalf2 = Type.makeVectorType("half2", "h2", mHalf, /*rows*/2);
         mHalf3 = Type.makeVectorType("half3", "h3", mHalf, /*rows*/3);
         mHalf4 = Type.makeVectorType("half4", "h4", mHalf, /*rows*/4);

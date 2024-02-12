@@ -127,7 +127,7 @@ public abstract class RenderTask extends RefCnt {
         return mUniqueID;
     }
 
-    public final int getNumTargets() {
+    public final int numTargets() {
         return mTargets.size();
     }
 
@@ -136,7 +136,7 @@ public abstract class RenderTask extends RefCnt {
     }
 
     public final SurfaceProxy getTarget() {
-        assert getNumTargets() == 1;
+        assert numTargets() == 1;
         return mTargets.get(0);
     }
 
@@ -364,7 +364,7 @@ public abstract class RenderTask extends RefCnt {
     @Override
     public String toString() {
         StringBuilder out = new StringBuilder();
-        int numTargets = getNumTargets();
+        int numTargets = numTargets();
         if (numTargets > 0) {
             out.append("Targets: \n");
             for (int i = 0; i < numTargets; i++) {

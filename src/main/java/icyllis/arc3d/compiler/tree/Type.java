@@ -114,7 +114,19 @@ public class Type extends Symbol {
     @Nonnull
     public static Type makeScalarType(String name, String desc,
                                       byte kind, int rank, int width) {
-        return new ScalarType(name, desc, kind, rank, width);
+        return makeScalarType(name, desc, kind, rank, width, width);
+    }
+
+    /**
+     * Create a scalar type with minimum precision.
+     *
+     * @param kind a scalar kind
+     */
+    @Nonnull
+    public static Type makeScalarType(String name, String desc,
+                                      byte kind, int rank, int minWidth, int width) {
+        assert minWidth <= width;
+        return new ScalarType(name, desc, kind, rank, minWidth, width);
     }
 
     /**
@@ -662,8 +674,23 @@ public class Type extends Symbol {
     /**
      * For scalars, returns the minimum size in bits of the type.
      */
-    public int getScalarWidth() {
+    public int getMinWidth() {
         return 0;
+    }
+
+    /**
+     * For scalars, returns the size in bits of the type.
+     */
+    public int getWidth() {
+        return 0;
+    }
+
+    /**
+     * Returns true if the component type has relaxed precision.
+     */
+    public boolean isRelaxedPrecision() {
+        Type componentType = getComponentType();
+        return componentType.getWidth() == 32 && componentType.getMinWidth() < 32;
     }
 
     /**
@@ -994,8 +1021,13 @@ public class Type extends Symbol {
         }
 
         @Override
-        public int getScalarWidth() {
-            return mUnderlyingType.getScalarWidth();
+        public int getMinWidth() {
+            return mUnderlyingType.getMinWidth();
+        }
+
+        @Override
+        public int getWidth() {
+            return mUnderlyingType.getWidth();
         }
 
         @Override
@@ -1137,12 +1169,14 @@ public class Type extends Symbol {
 
         private final byte mScalarKind;
         private final byte mRank;
+        private final byte mMinWidth;
         private final byte mWidth;
 
-        ScalarType(String name, String desc, byte kind, int rank, int width) {
+        ScalarType(String name, String desc, byte kind, int rank, int minWidth, int width) {
             super(name, desc, kScalar_TypeKind);
             mScalarKind = kind;
             mRank = (byte) rank;
+            mMinWidth = (byte) minWidth;
             mWidth = (byte) width;
         }
 
@@ -1162,7 +1196,12 @@ public class Type extends Symbol {
         }
 
         @Override
-        public int getScalarWidth() {
+        public int getMinWidth() {
+            return mMinWidth;
+        }
+
+        @Override
+        public int getWidth() {
             return mWidth;
         }
 
