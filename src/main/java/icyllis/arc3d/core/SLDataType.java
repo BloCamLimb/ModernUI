@@ -187,7 +187,7 @@ public final class SLDataType {
      * Is the shading language type supported as a uniform block member.
      */
     public static boolean canBeUniformValue(byte type) {
-        return isFloatType(type) || isIntegralType(type) || isBooleanType(type);
+        return isFloatType(type) || isIntegralType(type);
     }
 
     /**

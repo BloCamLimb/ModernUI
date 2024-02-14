@@ -125,7 +125,7 @@ public class Type extends Symbol {
     @Nonnull
     public static Type makeScalarType(String name, String desc,
                                       byte kind, int rank, int minWidth, int width) {
-        assert minWidth <= width;
+        assert minWidth == width || (width == 32 && minWidth < width);
         return new ScalarType(name, desc, kind, rank, minWidth, width);
     }
 
@@ -144,13 +144,13 @@ public class Type extends Symbol {
     /**
      * Create a matrix type.
      *
-     * @param vectorType a vector type
+     * @param columnType a vector type
      */
     @Nonnull
     public static Type makeMatrixType(String name, String desc,
-                                      Type vectorType, int cols) {
-        assert (vectorType == vectorType.resolve());
-        return new MatrixType(name, desc, vectorType, cols);
+                                      Type columnType, int cols) {
+        assert (columnType == columnType.resolve());
+        return new MatrixType(name, desc, columnType, cols);
     }
 
     /**
@@ -479,7 +479,7 @@ public class Type extends Symbol {
                 return CoercionCost.saturate();
             } else if (other.getRank() >= getRank()) {
                 return CoercionCost.widening(other.getRank() - getRank());
-            } else {
+            } else if (getWidth() == other.getWidth()) {
                 return CoercionCost.narrowing(getRank() - other.getRank());
             }
         }
@@ -1223,7 +1223,7 @@ public class Type extends Symbol {
         @Override
         public double getMinValue() {
             return switch (mScalarKind) {
-                case kSigned_ScalarKind -> mWidth == 32
+                case kSigned_ScalarKind -> mMinWidth == 32
                         ? 0x8000_0000
                         : 0xFFFF_8000;
                 case kUnsigned_ScalarKind -> 0;
@@ -1236,10 +1236,10 @@ public class Type extends Symbol {
         @Override
         public double getMaxValue() {
             return switch (mScalarKind) {
-                case kSigned_ScalarKind -> mWidth == 32
+                case kSigned_ScalarKind -> mMinWidth == 32
                         ? 0x7FFF_FFFF
                         : 0x7FFF;
-                case kUnsigned_ScalarKind -> mWidth == 32
+                case kUnsigned_ScalarKind -> mMinWidth == 32
                         ? 0xFFFF_FFFFL
                         : 0xFFFFL;
                 default -> mWidth == 64
@@ -1293,18 +1293,18 @@ public class Type extends Symbol {
 
     public static final class MatrixType extends Type {
 
-        private final VectorType mVectorType;
+        private final VectorType mColumnType;
         private final byte mCols;
 
-        MatrixType(String name, String abbr, Type vectorType, int cols) {
+        MatrixType(String name, String abbr, Type columnType, int cols) {
             super(name, abbr, kMatrix_TypeKind);
-            assert (vectorType.isVector());
+            assert (columnType.isVector());
             assert (cols >= 2 && cols <= 4);
-            int rows = vectorType.getRows();
-            Type componentType = vectorType.getComponentType();
+            int rows = columnType.getRows();
+            Type componentType = columnType.getComponentType();
             assert (abbr.equals(componentType.getDesc() + cols + rows));
             assert (name.equals(componentType.getName() + cols + "x" + rows));
-            mVectorType = (VectorType) vectorType;
+            mColumnType = (VectorType) columnType;
             mCols = (byte) cols;
         }
 
@@ -1316,13 +1316,13 @@ public class Type extends Symbol {
         @Nonnull
         @Override
         public Type getElementType() {
-            return mVectorType;
+            return mColumnType;
         }
 
         @Nonnull
         @Override
         public ScalarType getComponentType() {
-            return mVectorType.getComponentType();
+            return mColumnType.getComponentType();
         }
 
         @Override
@@ -1332,7 +1332,14 @@ public class Type extends Symbol {
 
         @Override
         public int getRows() {
-            return mVectorType.getRows();
+            return mColumnType.getRows();
+        }
+    }
+
+    public static final class ImageType extends Type {
+
+        ImageType(String name, String desc, byte kind) {
+            super(name, desc, kind);
         }
     }
 

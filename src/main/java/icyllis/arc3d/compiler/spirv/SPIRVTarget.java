@@ -19,23 +19,16 @@
 
 package icyllis.arc3d.compiler.spirv;
 
-public enum SPIRVVersion {
+/**
+ * Specify a backend API for validation.
+ */
+public enum SPIRVTarget {
     /**
-     * SPIR-V version 1.0 for OpenGL 4.6.
+     * Targeting OpenGL.
      */
-    VERSION_1_0(0x00010000),
+    OPENGL,
     /**
-     * SPIR-V version 1.3 for Vulkan 1.1.
+     * Targeting Vulkan.
      */
-    VERSION_1_3(0x00010300),
-    /**
-     * SPIR-V version 1.6 for Vulkan 1.3.
-     */
-    VERSION_1_6(0x00010600);
-
-    public final int mVersionNumber;
-
-    SPIRVVersion(int versionNumber) {
-        mVersionNumber = versionNumber;
-    }
+    VULKAN
 }
