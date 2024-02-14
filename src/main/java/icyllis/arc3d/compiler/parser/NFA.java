@@ -68,7 +68,7 @@ public class NFA {
      * we instead transition to all of the {@code shadow} states.
      */
     public IntList replace(int index, IntList shadow) {
-        assert (mStates.get(index) == NFAState.PLACEHOLDER);
+        assert (mStates.get(index) == null);
         mStates.set(index, NFAState.Replace(shadow));
         return shadow;
     }

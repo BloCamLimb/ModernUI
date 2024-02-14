@@ -130,7 +130,7 @@ public interface RegexNode {
         return (nfa, next) -> {
             int[] loop = new int[next.size() + 1];
             next.getElements(0, loop, 0, next.size());
-            int state = nfa.add(NFAState.PLACEHOLDER);
+            int state = nfa.add((NFAState) null);
             loop[next.size()] = state;
             IntList left = x.transition(nfa, IntList.of(loop));
             int[] result = new int[left.size() + next.size()];
@@ -150,7 +150,7 @@ public interface RegexNode {
         return (nfa, next) -> {
             int[] loop = new int[next.size() + 1];
             next.getElements(0, loop, 0, next.size());
-            int state = nfa.add(NFAState.PLACEHOLDER);
+            int state = nfa.add((NFAState) null);
             loop[next.size()] = state;
             IntList result = x.transition(nfa, IntList.of(loop));
             return nfa.replace(state, result);
@@ -230,7 +230,7 @@ public interface RegexNode {
                 if (x instanceof Char node) {
                     set(node.mChar);
                 } else if (x instanceof Range node) {
-                    set(node.mStart, node.mEnd);
+                    set(node.mStart, node.mEnd + 1);
                 } else if (x instanceof CharClass node) {
                     if (node.mExclusive) {
                         assert false;

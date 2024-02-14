@@ -27,8 +27,6 @@ import java.util.function.IntPredicate;
 
 public interface NFAState {
 
-    NFAState PLACEHOLDER = NFAState.Replace(IntList.of());
-
     boolean accept(char c);
 
     // states we transition to upon a successful match from this state
