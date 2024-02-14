@@ -21,7 +21,6 @@ package icyllis.arc3d.compiler.spirv;
 
 import icyllis.arc3d.compiler.*;
 import icyllis.arc3d.compiler.tree.*;
-import icyllis.arc3d.core.MathUtil;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import org.lwjgl.BufferUtils;
@@ -41,6 +40,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator implements Output {
     // we use 0x32D2 and 0x6D5C for the lower 16 bits
     public static final int GENERATOR_MAGIC_NUMBER = 0x00000000;
 
+    public final SPIRVTarget mOutputTarget;
     public final SPIRVVersion mOutputVersion;
 
     private WordBuffer mConstantBuffer;
@@ -57,8 +57,10 @@ public final class SPIRVCodeGenerator extends CodeGenerator implements Output {
 
     public SPIRVCodeGenerator(Context context,
                               TranslationUnit translationUnit,
+                              SPIRVTarget outputTarget,
                               SPIRVVersion outputVersion) {
         super(context, translationUnit);
+        mOutputTarget = outputTarget;
         mOutputVersion = outputVersion;
     }
 
@@ -104,13 +106,13 @@ public final class SPIRVCodeGenerator extends CodeGenerator implements Output {
     public void writeString8(String s) {
         int len = s.length();
         ByteBuffer buffer = grow(mBuffer.limit() +
-                MathUtil.align4(len + 1)); // +1 null-terminator
+                (len + 4 & -4)); // +1 null-terminator
         int word = 0;
         int shift = 0;
         for (int i = 0; i < len; i++) {
             char c = s.charAt(i);
             if (c == 0 || c >= 0x80) {
-                mContext.error(Position.NO_POS, "invalid character '" + c + "'");
+                throw new AssertionError(c);
             }
             word |= c << shift;
             shift += 8;

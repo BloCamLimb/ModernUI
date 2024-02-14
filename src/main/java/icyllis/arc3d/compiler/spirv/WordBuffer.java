@@ -19,11 +19,14 @@
 
 package icyllis.arc3d.compiler.spirv;
 
-import icyllis.arc3d.core.MathUtil;
-
 import java.util.Arrays;
 
+/**
+ * Word list that backed by a heap array.
+ */
 class WordBuffer implements Output {
+    // JVM int primitive is in host endianness, see Unsafe
+    // transferring to native buffer is just a memory copy
     int[] a;
     int size;
 
@@ -48,7 +51,7 @@ class WordBuffer implements Output {
         int p = size;
         int len = s.length();
         int[] a = grow(p +
-                MathUtil.align4(len + 1)); // +1 null-terminator
+                (len + 4 >> 2)); // +1 null-terminator
         int word = 0;
         int shift = 0;
         for (int i = 0; i < len; i++) {
