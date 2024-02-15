@@ -212,6 +212,19 @@ public final class ConstructorCompound extends ConstructorCall {
         return new ConstructorCompound(position, type, arguments);
     }
 
+    @Nonnull
+    public static Expression makeFromConstants(@Nonnull Context context,
+                                               int pos,
+                                               Type type,
+                                               double[] values) {
+        int components = type.getComponents();
+        Expression[] args = new Expression[components];
+        for (int index = 0; index < components; ++index) {
+            args[index] = Literal.make(pos, values[index], type.getComponentType());
+        }
+        return ConstructorCompound.make(context, pos, type, args);
+    }
+
     @Override
     public ExpressionKind getKind() {
         return ExpressionKind.CONSTRUCTOR_COMPOUND;

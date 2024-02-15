@@ -835,6 +835,25 @@ public class Type extends Symbol {
     }
 
     /**
+     * Checks if `value` can fit in this type. The type must be scalar.
+     */
+    public boolean checkLiteralOutOfRange(Context context,
+                                          int pos,
+                                          double value) {
+        assert isScalar();
+        if (!isNumeric()) {
+            return false;
+        }
+        if (value >= getMinValue() && value <= getMaxValue()) {
+            return false;
+        }
+        // We found a value that can't fit in our type. Flag it as an error.
+        context.error(pos, String.format("value is out of range for type '%s': %.0f",
+                this, value));
+        return true;
+    }
+
+    /**
      * Reports errors and returns false if this type cannot be used as the element type for an array.
      */
     public boolean isUsableInArray(@Nonnull Context context, int position) {
@@ -866,7 +885,7 @@ public class Type extends Symbol {
         }
         OptionalLong value = ConstantFolder.getConstantInt(size);
         if (value.isEmpty()) {
-            context.error(size.mPosition, "array size must be an integer constant");
+            context.error(size.mPosition, "array size must be a constant integer expression");
             return 0;
         }
         return convertArraySize(context, position, size.mPosition, value.getAsLong());

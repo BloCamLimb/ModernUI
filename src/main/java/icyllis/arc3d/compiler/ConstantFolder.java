@@ -24,8 +24,8 @@ import icyllis.arc3d.compiler.tree.*;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.OptionalDouble;
-import java.util.OptionalLong;
+import java.util.*;
+import java.util.function.DoubleUnaryOperator;
 
 /**
  * Performs constant folding on AST expressions. This simplifies expressions containing
@@ -203,6 +203,219 @@ public class ConstantFolder {
             }
         }
 
+        // Perform full constant folding when both sides are compile-time constants.
+        Type leftType = left.getType();
+        Type rightType = right.getType();
+        boolean leftSideIsConstant = Analysis.isCompileTimeConstant(left);
+        boolean rightSideIsConstant = Analysis.isCompileTimeConstant(right);
+
+        if (leftSideIsConstant && rightSideIsConstant) {
+            // Handle pairs of integer literals.
+            if (left.isIntLiteral() && right.isIntLiteral()) {
+                long leftVal = ((Literal) left).getIntegerValue();
+                long rightVal = ((Literal) right).getIntegerValue();
+
+                final long resultVal;
+                switch (op) {
+                    case ADD -> resultVal = leftVal + rightVal;
+                    case SUB -> resultVal = leftVal - rightVal;
+                    case MUL -> resultVal = leftVal * rightVal;
+                    case DIV -> resultVal = leftVal / rightVal;
+                    case MOD -> resultVal = leftVal % rightVal;
+                    case BITWISE_AND -> resultVal = leftVal & rightVal;
+                    case BITWISE_OR ->  resultVal = leftVal | rightVal;
+                    case BITWISE_XOR -> resultVal = leftVal ^ rightVal;
+                    case EQ -> resultVal = leftVal == rightVal ? 1 : 0;
+                    case NE -> resultVal = leftVal != rightVal ? 1 : 0;
+                    case GT -> resultVal = leftVal > rightVal ? 1 : 0;
+                    case GE -> resultVal = leftVal >= rightVal ? 1 : 0;
+                    case LT -> resultVal = leftVal < rightVal ? 1 : 0;
+                    case LE -> resultVal = leftVal <= rightVal ? 1 : 0;
+                    case SHL -> {
+                        if (rightVal >= 0 && rightVal <= 31) {
+                            resultVal = leftVal << rightVal;
+                        } else {
+                            context.error(pos, "shift value out of range");
+                            return null;
+                        }
+                    }
+                    case SHR -> {
+                        if (rightVal >= 0 && rightVal <= 31) {
+                            resultVal = leftVal >> rightVal;
+                        } else {
+                            context.error(pos, "shift value out of range");
+                            return null;
+                        }
+                    }
+                    default -> {
+                        return null;
+                    }
+                }
+                return makeConstant(pos, resultVal, resultType);
+            }
+        }
+
         return null;
+    }
+
+    @Nullable
+    private static Expression makeConstant(int pos, double result, Type resultType) {
+        if (resultType.isNumeric()) {
+            // use !(a && b) to catch NaN values
+            if (!(result >= resultType.getMinValue() && result <= resultType.getMaxValue())) {
+                // The value is outside the range or is NaN (all if-checks fail); do not optimize.
+                return null;
+            }
+        }
+        return Literal.make(pos, result, resultType);
+    }
+
+    //TODO buggy
+
+    /**
+     * Simplifies the prefix expression `OP base`. Returns null if it can't be simplified.
+     */
+    @Nullable
+    public static Expression fold(@Nonnull Context context,
+                                  int pos, Operator op, Expression base) {
+        // Replace constant variables with their literal values.
+        base = getConstantValueForVariable(base);
+
+        Type baseType = base.getType();
+        switch (op) {
+            case ADD: // unary plus
+                assert (!baseType.isArray());
+                assert (baseType.getComponentType().isNumeric());
+                base.mPosition = pos;
+                return base;
+            case SUB: // unary minus
+                assert (!baseType.isArray());
+                assert (baseType.getComponentType().isNumeric());
+                return foldNegation(context, pos, base);
+            case LOGICAL_NOT:
+                switch (base.getKind()) {
+                    case LITERAL -> {
+                        // Convert !boolLiteral(true) to boolLiteral(false).
+                        assert (base.getType().isBoolean());
+                        return Literal.makeBoolean(pos, !((Literal) base).getBooleanValue(), base.getType());
+                    }
+                    case PREFIX -> {
+                        // Convert `!(!expression)` into `expression`.
+                        PrefixExpression prefix = (PrefixExpression) base;
+                        if (prefix.getOperator() == Operator.LOGICAL_NOT) {
+                            prefix.getOperand().mPosition = pos;
+                            return prefix.getOperand();
+                        }
+                    }
+                }
+                break;
+            case BITWISE_NOT:
+                assert (!baseType.isArray());
+                assert (baseType.getComponentType().isInteger());
+                switch (base.getKind()) {
+                    case LITERAL, CONSTRUCTOR_SCALAR_TO_VECTOR, CONSTRUCTOR_COMPOUND -> {
+                        // Convert ~vecN(1, 2, ...) to vecN(~1, ~2, ...).
+                        Expression expr = applyToComponents(context, pos, base, v -> ~(long) v);
+                        if (expr != null) {
+                            return expr;
+                        }
+                    }
+                    case PREFIX -> {
+                        // Convert `~(~expression)` into `expression`.
+                        PrefixExpression prefix = (PrefixExpression) base;
+                        if (prefix.getOperator() == Operator.BITWISE_NOT) {
+                            prefix.getOperand().mPosition = pos;
+                            return prefix.getOperand();
+                        }
+                    }
+                }
+                break;
+            case INC:
+            case DEC:
+                assert (baseType.isNumeric());
+                break;
+            default: throw new AssertionError(op);
+        }
+        return null;
+    }
+
+    @Nullable
+    private static Expression foldNegation(Context context,
+                                           int pos,
+                                           Expression orig) {
+        Expression value = getConstantValueForVariable(orig);
+        switch (value.getKind()) {
+            case LITERAL, CONSTRUCTOR_SCALAR_TO_VECTOR, CONSTRUCTOR_COMPOUND -> {
+                // Convert `-vecN(literal, ...)` into `vecN(-literal, ...)`.
+                Expression expr = applyToComponents(context, pos, value, v -> -v);
+                if (expr != null) {
+                    return expr;
+                }
+            }
+            case PREFIX -> {
+                // Convert `-(-expression)` into `expression`.
+                PrefixExpression prefix = (PrefixExpression) value;
+                if (prefix.getOperator() == Operator.SUB) {
+                    return prefix.getOperand().clone(pos);
+                }
+            }
+            case CONSTRUCTOR_ARRAY -> {
+                // Convert `-array[N](literal, ...)` into `array[N](-literal, ...)`.
+                if (Analysis.isCompileTimeConstant(value)) {
+                    ConstructorArray ctor = (ConstructorArray) value;
+                    Expression[] ctorArgs = ctor.getArguments();
+                    Expression[] newArgs = new Expression[ctorArgs.length];
+                    for (int i = 0; i < ctorArgs.length; i++) {
+                        Expression arg = ctorArgs[i];
+                        Expression folded = foldNegation(context, pos, arg);
+                        if (folded == null) {
+                            folded = new PrefixExpression(pos, Operator.SUB, arg.clone());
+                        }
+                        newArgs[i] = folded;
+                    }
+                    return ConstructorArray.make(pos, ctor.getType(), newArgs);
+                }
+            }
+            case CONSTRUCTOR_SCALAR_TO_MATRIX ->  {
+                // Convert `-matrix(literal)` into `matrix(-literal)`.
+                if (Analysis.isCompileTimeConstant(value)) {
+                    ConstructorScalar2Matrix ctor = (ConstructorScalar2Matrix) value;
+                    Expression folded = foldNegation(context, pos, ctor.getArguments()[0]);
+                    if (folded != null) {
+                        return ConstructorScalar2Matrix.make(pos, ctor.getType(),
+                                folded);
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private static Expression applyToComponents(Context context,
+                                                int pos,
+                                                Expression expr,
+                                                DoubleUnaryOperator op) {
+        int components = expr.getType().getComponents();
+        if (components > 16) {
+            // The expression has more slots than we expected.
+            return null;
+        }
+        double[] values = new double[components];
+        Type componentType = expr.getType().getComponentType();
+
+        for (int index = 0; index < components; ++index) {
+            OptionalDouble value = expr.getConstantValue(index);
+            if (value.isPresent()) {
+                values[index] = op.applyAsDouble(value.getAsDouble());
+                if (componentType.checkLiteralOutOfRange(context, pos, values[index])) {
+                    // We can't simplify the expression if the new value is out-of-range for the type.
+                    return null;
+                }
+            } else {
+                // There's a non-constant element; we can't simplify this expression.
+                return null;
+            }
+        }
+        return ConstructorCompound.makeFromConstants(context, pos, expr.getType(), values);
     }
 }

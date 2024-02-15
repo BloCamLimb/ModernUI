@@ -19,8 +19,7 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import icyllis.arc3d.compiler.Operator;
-import icyllis.arc3d.compiler.Context;
+import icyllis.arc3d.compiler.*;
 import icyllis.arc3d.compiler.analysis.TreeVisitor;
 
 import javax.annotation.Nonnull;
@@ -89,7 +88,24 @@ public final class BinaryExpression extends Expression {
             return null;
         }
 
-        return new BinaryExpression(position, left, op, right, resultType);
+        return BinaryExpression.make(context, position, left, op, right, resultType);
+    }
+
+    @Nonnull
+    public static Expression make(@Nonnull Context context,
+                                  int pos,
+                                  Expression left,
+                                  Operator op,
+                                  Expression right,
+                                  Type resultType) {
+        // Perform constant-folding on the expression.
+        Expression folded = ConstantFolder.fold(context, pos,
+                left, op, right, resultType);
+        if (folded != null) {
+            return folded;
+        }
+
+        return new BinaryExpression(pos, left, op, right, resultType);
     }
 
     @Override
