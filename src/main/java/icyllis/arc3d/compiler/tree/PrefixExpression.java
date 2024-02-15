@@ -19,8 +19,7 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import icyllis.arc3d.compiler.Operator;
-import icyllis.arc3d.compiler.Context;
+import icyllis.arc3d.compiler.*;
 import icyllis.arc3d.compiler.analysis.Analysis;
 import icyllis.arc3d.compiler.analysis.TreeVisitor;
 
@@ -38,7 +37,7 @@ public final class PrefixExpression extends Expression {
     private final Operator mOperator;
     private final Expression mOperand;
 
-    private PrefixExpression(int position, Operator op, Expression operand) {
+    public PrefixExpression(int position, Operator op, Expression operand) {
         super(position, operand.getType());
         mOperator = op;
         mOperand = operand;
@@ -100,42 +99,17 @@ public final class PrefixExpression extends Expression {
                 throw new AssertionError(op);
         }
 
-        Expression result = make(position, op, base);
+        Expression result = PrefixExpression.make(context, position, op, base);
         assert (result.mPosition == position);
         return result;
     }
 
     @Nonnull
-    public static Expression make(int position, Operator op, Expression base) {
-        switch (op) {
-            case ADD: // unary plus
-                assert (!base.getType().isArray());
-                assert (base.getType().getComponentType().isNumeric());
-                base.mPosition = position;
-                return base;
-
-            case SUB: // unary minus
-                assert (!base.getType().isArray());
-                assert (base.getType().getComponentType().isNumeric());
-                //return negate_operand(context, pos, std::move (base));
-
-            case LOGICAL_NOT:
-                assert (base.getType().isBoolean());
-                //return logical_not_operand(context, pos, std::move (base));
-
-            case INC:
-            case DEC:
-                assert (base.getType().isNumeric());
-                break;
-
-            case BITWISE_NOT:
-                assert (!base.getType().isArray());
-                assert (base.getType().getComponentType().isInteger());
-                assert (!base.isLiteral());
-                break;
-
-            default:
-                throw new AssertionError(op);
+    public static Expression make(@Nonnull Context context,
+                                  int position, Operator op, Expression base) {
+        Expression folded = ConstantFolder.fold(context, position, op, base);
+        if (folded != null) {
+            return folded;
         }
 
         return new PrefixExpression(position, op, base);

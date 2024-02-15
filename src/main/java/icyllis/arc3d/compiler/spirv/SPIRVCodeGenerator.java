@@ -54,6 +54,9 @@ public final class SPIRVCodeGenerator extends CodeGenerator implements Output {
 
     // id 0 is reserved
     private int mIdCount = 1;
+    private int mGLSLExtendedInstructions;
+
+    private boolean mEmitNames = false;
 
     public SPIRVCodeGenerator(Context context,
                               TranslationUnit translationUnit,
@@ -62,6 +65,14 @@ public final class SPIRVCodeGenerator extends CodeGenerator implements Output {
         super(context, translationUnit);
         mOutputTarget = outputTarget;
         mOutputVersion = outputVersion;
+    }
+
+    /**
+     * Emit name strings for variables, functions, user-defined types, and members.
+     * This has no semantic impact (debug only). The default is false.
+     */
+    public void setEmitNames(boolean emitNames) {
+        mEmitNames = emitNames;
     }
 
     @Nonnull
@@ -82,6 +93,11 @@ public final class SPIRVCodeGenerator extends CodeGenerator implements Output {
                 .putInt(0);
 
         writeInstructions();
+
+        writeCapabilities(this);
+        writeInstruction(SpvOpExtInstImport, mGLSLExtendedInstructions, "GLSL.std.450", this);
+        writeInstruction(SpvOpMemoryModel, SpvAddressingModelLogical, SpvMemoryModelGLSL450, this);
+
 
         ByteBuffer buffer = mBuffer.putInt(12, mIdCount); // set bound
         mBuffer = null;
@@ -152,6 +168,10 @@ public final class SPIRVCodeGenerator extends CodeGenerator implements Output {
         return mIdCount++;
     }
 
+    private int getType(Type type) {
+        return 0;
+    }
+
     private void writeLayout(@Nonnull Layout layout, int target, int pos) {
         boolean isPushConstant = (layout.layoutFlags() & Layout.kPushConstant_LayoutFlag) != 0;
         if (layout.mLocation >= 0) {
@@ -194,7 +214,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator implements Output {
     }
 
     private void writeInstructions() {
-
+        mGLSLExtendedInstructions = getUniqueId();
     }
 
     private void writeOpcode(int opcode, int count, Output output) {
@@ -215,6 +235,13 @@ public final class SPIRVCodeGenerator extends CodeGenerator implements Output {
         writeOpcode(opcode, 3, output);
         output.writeWord(word1);
         output.writeWord(word2);
+    }
+
+    private void writeInstruction(int opcode, int word1, String string,
+                                  Output output) {
+        writeOpcode(opcode, 2 + (string.length() + 4 >> 2), output);
+        output.writeWord(word1);
+        output.writeString8(string);
     }
 
     private void writeInstruction(int opcode, int word1, int word2,

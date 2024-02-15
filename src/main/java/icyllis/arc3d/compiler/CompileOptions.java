@@ -25,4 +25,6 @@ package icyllis.arc3d.compiler;
 public class CompileOptions {
 
     public boolean mForceHighPrecision;
+
+    public boolean mOptimize = true;
 }

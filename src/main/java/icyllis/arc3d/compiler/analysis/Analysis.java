@@ -47,14 +47,18 @@ public final class Analysis {
                             CONSTRUCTOR_SCALAR_TO_MATRIX,
                             CONSTRUCTOR_STRUCT,
                             CONSTRUCTOR_SCALAR_TO_VECTOR ->
-                        // Constructors might be compile-time constants.
-                            super.visitAnyExpression(expr);
-                    // This expression isn't a compile-time constant.
-                    default -> true;
+                        // Constructors might be compile-time constants, if they are composed entirely
+                        // of literals and constructors. (Casting constructors are intentionally omitted
+                        // here. If the value inside was a compile-time constant, we would have not
+                        // generated a cast at all.)
+                            false;
+                    default ->
+                        // This expression isn't a compile-time constant.
+                            true;
                 };
             }
         }
-        IsCompileTimeConstantVisitor visitor = new IsCompileTimeConstantVisitor();
+        var visitor = new IsCompileTimeConstantVisitor();
         return !expr.accept(visitor);
     }
 

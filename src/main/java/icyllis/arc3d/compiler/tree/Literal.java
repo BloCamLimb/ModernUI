@@ -23,6 +23,7 @@ import icyllis.arc3d.compiler.Context;
 import icyllis.arc3d.compiler.analysis.TreeVisitor;
 
 import javax.annotation.Nonnull;
+import java.util.OptionalDouble;
 
 /**
  * A constant value. These can contain ints, floats, or booleans.
@@ -121,6 +122,12 @@ public final class Literal extends Expression {
 
     public double getValue() {
         return mValue;
+    }
+
+    @Override
+    public OptionalDouble getConstantValue(int i) {
+        assert i == 0;
+        return OptionalDouble.of(mValue);
     }
 
     @Nonnull

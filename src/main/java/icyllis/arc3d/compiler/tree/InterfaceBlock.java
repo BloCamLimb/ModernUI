@@ -154,6 +154,10 @@ public final class InterfaceBlock extends TopLevelElement {
             context.error(pos, "an output block is not allowed in fragment execution model");
             return null;
         }
+        if (!blockType.getElementType().isInterfaceBlock()) {
+            context.error(pos, "type '" + blockType + "' is not an interface block");
+            return null;
+        }
 
         boolean success = checkBlock(context, pos, modifiers, blockType, blockStorage);
         success &= checkFields(context, modifiers, blockType, blockStorage);
