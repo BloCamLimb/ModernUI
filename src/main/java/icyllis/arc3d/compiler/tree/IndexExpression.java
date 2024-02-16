@@ -20,10 +20,12 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.*;
+import icyllis.arc3d.compiler.analysis.Analysis;
 import icyllis.arc3d.compiler.analysis.TreeVisitor;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.OptionalDouble;
 
 /**
  * An expression that accesses an element of an array, vector, or matrix,
@@ -110,12 +112,14 @@ public final class IndexExpression extends Expression {
                 return null;
             }
         }
-        Expression indexExpr = ConstantFolder.getConstantValueForVariable(index);
-        if (indexExpr.isIntLiteral()) {
-            long indexValue = ((Literal) indexExpr).getIntegerValue();
+        base = ConstantFolder.getConstantValueForVariable(base);
+        index = ConstantFolder.getConstantValueForVariable(index);
+        if (index.isIntLiteral()) {
+            long indexValue = ((Literal) index).getIntegerValue();
             if (indexOutOfBounds(context, index.mPosition, indexValue, base)) {
                 return null;
             }
+            //TODO constant folding
         }
         return IndexExpression.make(context, pos, base, index);
     }
