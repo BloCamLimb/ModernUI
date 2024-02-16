@@ -103,8 +103,8 @@ public final class FunctionDecl extends Symbol {
             int permittedLayoutFlags = 0;
             if (!type.isOpaque()) {
                 permittedFlags |= Modifiers.kOut_Flag;
-            } else if (type.isStorageImage()) {
-                permittedFlags |= Modifiers.kReadOnly_Flag | Modifiers.kWriteOnly_Flag;
+            } else if (type.isStorageImage()) { // opaque
+                permittedFlags |= Modifiers.kMemory_Flags;
             }
             success &= param.getModifiers().checkFlags(context, permittedFlags);
             success &= param.getModifiers().checkLayoutFlags(context, permittedLayoutFlags);

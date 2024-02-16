@@ -52,21 +52,29 @@ public final class Modifiers extends Node {
             kOut_Flag = 1 << 6;
     // GLSL memory qualifiers
     public static final int
-            kReadOnly_Flag = 1 << 7,
-            kWriteOnly_Flag = 1 << 8;
+            kCoherent_Flag = 1 << 7,
+            kVolatile_Flag = 1 << 8,
+            kRestrict_Flag = 1 << 9,
+            kReadOnly_Flag = 1 << 10,
+            kWriteOnly_Flag = 1 << 11;
     // Other GLSL storage qualifiers
     public static final int
-            kBuffer_Flag = 1 << 9,
-            kWorkgroup_Flag = 1 << 10;  // GLSL 'shared'
+            kBuffer_Flag = 1 << 12,
+            kWorkgroup_Flag = 1 << 13;  // GLSL 'shared'
     // Extensions, not present in GLSL
     public static final int
-            kSubroutine_Flag = 1 << 11,
-            kPure_Flag = 1 << 12,
-            kInline_Flag = 1 << 13,
-            kNoInline_Flag = 1 << 14;
-    public static final int kCount_Flag = 15;
+            kSubroutine_Flag = 1 << 14,
+            kPure_Flag = 1 << 15,
+            kInline_Flag = 1 << 16,
+            kNoInline_Flag = 1 << 17;
+    public static final int kCount_Flag = 18;
 
-    public static final int kInterpolation_Flags = kSmooth_Flag | kFlat_Flag | kNoPerspective_Flag;
+    public static final int kInterpolation_Flags =
+            kSmooth_Flag | kFlat_Flag | kNoPerspective_Flag;
+    public static final int kMemory_Flags =
+            kCoherent_Flag | kVolatile_Flag | kRestrict_Flag | kReadOnly_Flag | kWriteOnly_Flag;
+    public static final int kStorage_Flags =
+            kIn_Flag | kOut_Flag | kUniform_Flag | kBuffer_Flag | kWorkgroup_Flag;
 
     public static String describeFlag(int flag) {
         assert Integer.bitCount(flag) == 1;
@@ -78,14 +86,17 @@ public final class Modifiers extends Node {
             case 4 -> "uniform";
             case 5 -> "in";
             case 6 -> "out";
-            case 7 -> "readonly";
-            case 8 -> "writeonly";
-            case 9 -> "buffer";
-            case 10 -> "workgroup";
-            case 11 -> "subroutine";
-            case 12 -> "__pure";
-            case 13 -> "inline";
-            case 14 -> "noinline";
+            case 7 -> "coherent";
+            case 8 -> "volatile";
+            case 9 -> "restrict";
+            case 10 -> "readonly";
+            case 11 -> "writeonly";
+            case 12 -> "buffer";
+            case 13 -> "workgroup";
+            case 14 -> "subroutine";
+            case 15 -> "__pure";
+            case 16 -> "inline";
+            case 17 -> "noinline";
             default -> "";
         };
     }
@@ -251,6 +262,15 @@ public final class Modifiers extends Node {
             joiner.add("in");
         } else if ((flags & kOut_Flag) != 0) {
             joiner.add("out");
+        }
+        if ((flags & kCoherent_Flag) != 0) {
+            joiner.add("coherent");
+        }
+        if ((flags & kVolatile_Flag) != 0) {
+            joiner.add("volatile");
+        }
+        if ((flags & kRestrict_Flag) != 0) {
+            joiner.add("restrict");
         }
         if ((flags & kReadOnly_Flag) != 0) {
             joiner.add("readonly");

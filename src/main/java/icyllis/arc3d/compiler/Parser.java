@@ -1296,6 +1296,9 @@ public class Parser {
                 case Lexer.TK_IN -> Modifiers.kIn_Flag;
                 case Lexer.TK_OUT -> Modifiers.kOut_Flag;
                 case Lexer.TK_INOUT -> Modifiers.kIn_Flag | Modifiers.kOut_Flag;
+                case Lexer.TK_COHERENT -> Modifiers.kCoherent_Flag;
+                case Lexer.TK_VOLATILE -> Modifiers.kVolatile_Flag;
+                case Lexer.TK_RESTRICT -> Modifiers.kRestrict_Flag;
                 case Lexer.TK_READONLY -> Modifiers.kReadOnly_Flag;
                 case Lexer.TK_WRITEONLY -> Modifiers.kWriteOnly_Flag;
                 case Lexer.TK_BUFFER -> Modifiers.kBuffer_Flag;
