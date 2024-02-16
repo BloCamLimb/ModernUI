@@ -37,11 +37,6 @@ import java.util.Objects;
  */
 public final class InterfaceBlock extends TopLevelElement {
 
-    private static final int STORAGE_FLAGS = Modifiers.kIn_Flag |
-            Modifiers.kOut_Flag |
-            Modifiers.kUniform_Flag |
-            Modifiers.kBuffer_Flag;
-
     private final WeakReference<Variable> mVariable;
 
     public InterfaceBlock(int position, @Nonnull Variable variable) {
@@ -60,6 +55,7 @@ public final class InterfaceBlock extends TopLevelElement {
             context.error(pos, "interface blocks may not have unsized array type");
             success = false;
         }
+        int permittedFlags = Modifiers.kStorage_Flags;
         int permittedLayoutFlags = 0;
         if ((blockStorage & (Modifiers.kIn_Flag | Modifiers.kOut_Flag)) != 0) {
             permittedLayoutFlags |= Layout.kLocation_LayoutFlag;
@@ -69,29 +65,30 @@ public final class InterfaceBlock extends TopLevelElement {
                     Layout.kSet_LayoutFlag |
                     Layout.kPushConstant_LayoutFlag;
         }
+        if (blockStorage == Modifiers.kBuffer_Flag) {
+            permittedFlags |= Modifiers.kMemory_Flags;
+        }
         if ((modifiers.layoutFlags() & Layout.kPushConstant_LayoutFlag) != 0 &&
                 (modifiers.layoutFlags() & (Layout.kBinding_LayoutFlag | Layout.kSet_LayoutFlag)) != 0) {
             context.error(pos, "'push_constant' cannot be used with 'binding' or 'set'");
             success = false;
         }
-        success &= modifiers.checkFlags(context, STORAGE_FLAGS);
+        success &= modifiers.checkFlags(context, permittedFlags);
         success &= modifiers.checkLayoutFlags(context, permittedLayoutFlags);
         return success;
     }
 
     private static boolean checkFields(@Nonnull Context context,
-                                       @Nonnull Modifiers modifiers,
-                                       @Nonnull Type blockType,
+                                       @Nonnull Type.Field[] fields,
                                        int blockStorage) {
         boolean success = true;
-        Type.Field[] fields = blockType.getElementType().getFields();
         for (int i = 0; i < fields.length; i++) {
             Type.Field field = fields[i];
             Modifiers fieldModifiers = field.modifiers();
-            int permittedFlags = STORAGE_FLAGS;
-            int permittedLayoutFlags = Layout.kBuiltin_LayoutFlag;
-            if ((fieldModifiers.flags() & STORAGE_FLAGS) != 0 &&
-                    (fieldModifiers.flags() & STORAGE_FLAGS) != blockStorage) {
+            int permittedFlags = Modifiers.kStorage_Flags;
+            int permittedLayoutFlags = 0;
+            if ((fieldModifiers.flags() & Modifiers.kStorage_Flags) != 0 &&
+                    (fieldModifiers.flags() & Modifiers.kStorage_Flags) != blockStorage) {
                 context.error(field.modifiers().mPosition,
                         "storage qualifier of a member must be storage qualifier '" +
                         Modifiers.describeFlag(blockStorage) + "' of the block");
@@ -99,10 +96,14 @@ public final class InterfaceBlock extends TopLevelElement {
             }
             if ((blockStorage & (Modifiers.kIn_Flag | Modifiers.kOut_Flag)) != 0) {
                 permittedFlags |= Modifiers.kInterpolation_Flags;
-                permittedLayoutFlags |= Layout.kLocation_LayoutFlag | Layout.kComponent_LayoutFlag;
+                permittedLayoutFlags |= Layout.kBuiltin_LayoutFlag |
+                        Layout.kLocation_LayoutFlag | Layout.kComponent_LayoutFlag;
             }
             if ((blockStorage & (Modifiers.kUniform_Flag | Modifiers.kBuffer_Flag)) != 0) {
                 permittedLayoutFlags |= Layout.kOffset_LayoutFlag;
+            }
+            if (blockStorage == Modifiers.kBuffer_Flag) {
+                permittedFlags |= Modifiers.kMemory_Flags;
             }
             success &= fieldModifiers.checkFlags(context, permittedFlags);
             success &= fieldModifiers.checkLayoutFlags(context, permittedLayoutFlags);
@@ -112,7 +113,7 @@ public final class InterfaceBlock extends TopLevelElement {
                 success = false;
             }
             if (field.type().isUnsizedArray()) {
-                if ((modifiers.flags() & Modifiers.kBuffer_Flag) != 0) {
+                if (blockStorage == Modifiers.kBuffer_Flag) {
                     if (i != fields.length - 1) {
                         context.error(field.position(),
                                 "runtime sized array must be the last member of a shader storage block");
@@ -134,13 +135,22 @@ public final class InterfaceBlock extends TopLevelElement {
                                          @Nonnull Modifiers modifiers,
                                          @Nonnull Type blockType,
                                          @Nonnull String instanceName) {
+        if (!blockType.getElementType().isInterfaceBlock()) {
+            context.error(pos, "type '" + blockType + "' is not an interface block");
+            return null;
+        }
+        boolean success = true;
         ExecutionModel model = context.getModel();
         if (!model.isFragment() && !model.isVertex() && !model.isCompute()) {
             context.error(pos, "interface blocks are not allowed in this execution model");
-            return null;
+            success = false;
         }
 
-        int blockStorage = modifiers.flags() & STORAGE_FLAGS;
+        if ((modifiers.flags() & Modifiers.kWorkgroup_Flag) != 0) {
+            context.error(pos, "workgroup qualifier is not allowed on an interface block");
+            return null;
+        }
+        int blockStorage = modifiers.flags() & Modifiers.kStorage_Flags;
         if (Integer.bitCount(blockStorage) != 1) {
             context.error(pos, "an interface block must start with one of in, out, uniform, or buffer qualifier");
             return null;
@@ -148,19 +158,15 @@ public final class InterfaceBlock extends TopLevelElement {
 
         if (model.isVertex() && blockStorage == Modifiers.kIn_Flag) {
             context.error(pos, "an input block is not allowed in vertex execution model");
-            return null;
+            success = false;
         }
         if (model.isFragment() && blockStorage == Modifiers.kOut_Flag) {
             context.error(pos, "an output block is not allowed in fragment execution model");
-            return null;
-        }
-        if (!blockType.getElementType().isInterfaceBlock()) {
-            context.error(pos, "type '" + blockType + "' is not an interface block");
-            return null;
+            success = false;
         }
 
-        boolean success = checkBlock(context, pos, modifiers, blockType, blockStorage);
-        success &= checkFields(context, modifiers, blockType, blockStorage);
+        success &= checkBlock(context, pos, modifiers, blockType, blockStorage);
+        success &= checkFields(context, blockType.getElementType().getFields(), blockStorage);
 
         if (!success) {
             return null;
