@@ -32,32 +32,41 @@ public enum MemoryLayout {
     /**
      * OpenGL standard layout, for uniform blocks.
      * (GLSL only, OpenGL only)
+     * <p>
+     * The base alignment of an array, matrix, and structure needs to be a multiple of 16.
      */
     Std140,
     /**
-     * Extended alignment, for uniform blocks.
-     * (SPIR-V only, OpenGL or Vulkan)
+     * SPIR-V standard alignment, for uniform blocks.
+     * (WGSL or SPIR-V, WebGPU, OpenGL or Vulkan)
+     * <p>
+     * Similar to std140, the base alignment of an array and structure needs to be a multiple
+     * of 16, but that of a matrix does not.
      */
-    Std140_Extended,
+    Extended,
     /**
      * Vulkan standard layout, for push constants and shader storage blocks.
      * Can be used on uniform blocks for Vulkan, if supported.
-     * (GLSL or SPIR-V, OpenGL or Vulkan)
+     * (GLSL, WGSL or SPIR-V, OpenGL, WebGPU or Vulkan)
      */
-    Std430;
+    Std430,
+    /**
+     * Scalar alignment, may be slower than std430, for Vulkan if supported.
+     */
+    Scalar;
 
     /**
      * Returns the base alignment in bytes.
      */
     public int alignment(@Nonnull Type type) {
-       return alignment(type, null);
+        return alignment(type, null);
     }
 
     /**
      * Returns the base alignment in bytes, also computes the size and stride simultaneously.
-     * out[0] holds {@link #size}, out[1] holds {@link #stride} for array and matrix.
+     * out[0] holds {@link #size}, out[1] holds matrix stride, out[2] holds array stride.
      *
-     * @param out size and stride, respectively, can be null
+     * @param out size, matrix stride, array stride, respectively, can be null
      * @return base alignment
      */
     public int alignment(@Nonnull Type type, @Nullable int[] out) {
@@ -79,32 +88,34 @@ public enum MemoryLayout {
                 }
                 // two-component returns 2N
                 // three- or four-component returns 4N
-                yield scalarAlign << (type.getRows() > 2 ? 2 : 1);
+                yield this != Scalar
+                        ? scalarAlign << (type.getRows() > 2 ? 2 : 1)
+                        : scalarAlign;
             }
             case Type.kMatrix_TypeKind -> {
-                int align = alignment(type.getElementType(), null);
+                int align = alignment(type.getElementType(), out);
                 if (this == Std140) {
                     // alignment > 16 is already a multiple of 16
                     align = Math.max(align, 16);
                     assert (align & 15) == 0;
                 }
                 if (out != null) {
-                    out[1] = align; // simplified
-                    out[0] = align * type.getCols();
+                    out[1] = MathUtil.alignTo(out[0], align); // matrix stride
+                    out[0] = out[1] * type.getCols();
                 }
                 yield align;
             }
             case Type.kArray_TypeKind -> {
                 int align = alignment(type.getElementType(), out);
-                if (this == Std140 || this == Std140_Extended) {
+                if (this == Std140 || this == Extended) {
                     align = Math.max(align, 16);
                     assert (align & 15) == 0;
                 }
                 if (out != null) {
-                    out[1] = MathUtil.alignTo(out[0], align);
+                    out[2] = MathUtil.alignTo(out[0], align); // array stride
                     out[0] = type.isUnsizedArray()
-                            ? out[1] // count 1 for runtime sized array
-                            : out[1] * type.getArraySize();
+                            ? out[2] // count 1 for runtime sized array
+                            : out[2] * type.getArraySize();
                 }
                 yield align;
             }
@@ -118,12 +129,17 @@ public enum MemoryLayout {
                         size += out[0];
                     }
                 }
-                if (this == Std140 || this == Std140_Extended) {
+                if (this == Std140 || this == Extended) {
                     align = Math.max(align, 16);
                     assert (align & 15) == 0;
                 }
                 if (out != null) {
-                    out[0] = MathUtil.alignTo(size, align);
+                    if (this != Scalar) {
+                        // add tail padding
+                        size = MathUtil.alignTo(size, align);
+                    }
+                    out[0] = size;
+                    out[1] = out[2] = 0; // clear matrix and array stride
                 }
                 yield align;
             }
@@ -137,8 +153,10 @@ public enum MemoryLayout {
      */
     public int stride(@Nonnull Type type) {
         return switch (type.getTypeKind()) {
-            case Type.kMatrix_TypeKind -> alignment(type); // simplified
-            case Type.kArray_TypeKind -> {
+            case Type.kMatrix_TypeKind, Type.kArray_TypeKind -> {
+                // 15.5.4. Offset and Stride Assignment
+                // Any ArrayStride or MatrixStride decoration must be a multiple of the alignment of the array or
+                // matrix as defined above.
                 int size = size(type.getElementType());
                 yield MathUtil.alignTo(size, alignment(type));
             }
@@ -179,8 +197,12 @@ public enum MemoryLayout {
                     size = MathUtil.alignTo(size, memberAlign);
                     size += size(field.type());
                 }
-                int align = alignment(type);
-                yield MathUtil.alignTo(size, align);
+                if (this != Scalar) {
+                    int align = alignment(type);
+                    // add tail padding
+                    size = MathUtil.alignTo(size, align);
+                }
+                yield size;
             }
             default -> throw new UnsupportedOperationException();
         };

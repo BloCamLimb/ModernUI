@@ -1168,7 +1168,7 @@ public class Type extends Symbol {
         @Override
         public int getComponents() {
             assert (mArraySize != kUnsizedArray);
-            return super.getComponents() * mArraySize;
+            return mElementType.getComponents() * mArraySize;
         }
 
         @Nonnull
