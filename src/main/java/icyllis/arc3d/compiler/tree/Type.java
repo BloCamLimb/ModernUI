@@ -33,6 +33,7 @@ import java.util.OptionalLong;
 public class Type extends Symbol {
 
     public static final int kUnsizedArray = -1; // an unsized array (declared with [])
+    public static final int kMaxNestingDepth = 8;
 
     /**
      * Represents a single field in a struct/block type. Not associated with Variable.
@@ -248,34 +249,27 @@ public class Type extends Symbol {
     public static Type makeStructType(@Nonnull Context context, int position,
                                       @Nonnull String name, @Nonnull List<Field> fields,
                                       boolean interfaceBlock) {
+        String structOrBlock = interfaceBlock ? "block" : "struct";
+        if (fields.isEmpty()) {
+            context.error(position, structOrBlock + " '" + name +
+                    "' must contain at least one field");
+        }
         for (Field field : fields) {
             if (field.type().isVoid()) {
-                context.error(field.position(), "type 'void' is not permitted in a struct");
+                context.error(field.position(),
+                        "type 'void' is not permitted in a " + structOrBlock);
             }
         }
+        int nestingDepth = 0;
         for (Field field : fields) {
-            if (isTooDeeplyNested(field.type(), 8)) {
-                context.error(position, "struct '" + name + "' is too deeply nested");
-                break;
-            }
+            nestingDepth = Math.max(nestingDepth, field.type().getNestingDepth());
         }
-        return new StructType(position, name, fields.toArray(new Field[0]), interfaceBlock);
-    }
-
-    private static boolean isTooDeeplyNested(Type t, int limit) {
-        if (limit <= 0) {
-            return true;
+        if (nestingDepth >= kMaxNestingDepth) {
+            context.error(position, structOrBlock + " '" + name +
+                    "' is too deeply nested");
         }
-
-        if (t.isStruct()) {
-            for (Field f : t.getFields()) {
-                if (isTooDeeplyNested(f.type(), limit - 1)) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        return new StructType(position, name, fields.toArray(new Field[0]),
+                nestingDepth + 1, interfaceBlock);
     }
 
     @Nonnull
@@ -907,6 +901,13 @@ public class Type extends Symbol {
     }
 
     /**
+     * If the type is a struct, returns the depth of the most deeply-nested field.
+     */
+    public int getNestingDepth() {
+        return 0;
+    }
+
+    /**
      * CoercionCost. The values are packed into a long value.
      *
      * @see #getCoercionCost(Type)
@@ -1167,7 +1168,9 @@ public class Type extends Symbol {
 
         @Override
         public int getComponents() {
-            assert (mArraySize != kUnsizedArray);
+            if (mArraySize == kUnsizedArray) {
+                return 0;
+            }
             return mElementType.getComponents() * mArraySize;
         }
 
@@ -1435,19 +1438,28 @@ public class Type extends Symbol {
     public static final class StructType extends Type {
 
         private final Field[] mFields;
+        private final int mNestingDepth;
         private final boolean mInterfaceBlock;
+        private final int mComponents;
 
         // name - the type name, not instance name
         // (interface block can have no instance name, but there must be type name)
-        StructType(int position, String name, Field[] fields, boolean interfaceBlock) {
+        StructType(int position, String name, Field[] fields, int nestingDepth,
+                   boolean interfaceBlock) {
             super(name, desc(name, fields, interfaceBlock), kStruct_TypeKind, position);
             mFields = fields;
+            mNestingDepth = nestingDepth;
             mInterfaceBlock = interfaceBlock;
+            int components = 0;
+            for (Field field : mFields) {
+                components += field.type().getComponents();
+            }
+            mComponents = components;
         }
 
         @Nonnull
         public static String desc(String name, Field[] fields, boolean interfaceBlock) {
-            StringBuilder s = new StringBuilder(interfaceBlock ? "block-" : "struct-");
+            StringBuilder s = new StringBuilder(interfaceBlock ? "B-" : "S-");
             s.append(name);
             for (Field field : fields) {
                 s.append('-');
@@ -1474,11 +1486,12 @@ public class Type extends Symbol {
 
         @Override
         public int getComponents() {
-            int components = 0;
-            for (Field field : mFields) {
-                components += field.type().getComponents();
-            }
-            return components;
+            return mComponents;
+        }
+
+        @Override
+        public int getNestingDepth() {
+            return mNestingDepth;
         }
     }
 

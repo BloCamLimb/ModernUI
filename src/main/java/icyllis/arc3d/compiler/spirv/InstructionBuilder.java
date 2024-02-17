@@ -34,6 +34,11 @@ final class InstructionBuilder extends Instruction {
     // value kind, doesn't affect hash code
     IntArrayList mKinds = new IntArrayList();
 
+    InstructionBuilder(int opcode) {
+        mOpcode = opcode;
+        mResultKind = kNoResult;
+    }
+
     InstructionBuilder reset(int opcode) {
         mOpcode = opcode;
         mResultKind = kNoResult;

@@ -29,6 +29,7 @@ import org.lwjgl.BufferUtils;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
 
 import static org.lwjgl.util.spvc.Spv.*;
 
@@ -95,12 +96,14 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     };
 
     // key is a pointer to symbol table, hash is based on address (reference equality)
-    private final Object2IntOpenHashMap<Type> mStructTable = new Object2IntOpenHashMap<>();
+    // struct type to SpvId[MemoryLayout.ordinal + 1], no memory layout is at [0]
+    private final HashMap<Type, int[]> mStructTable = new HashMap<>();
     private final Object2IntOpenHashMap<FunctionDecl> mFunctionTable = new Object2IntOpenHashMap<>();
     private final Object2IntOpenHashMap<Variable> mVariableTable = new Object2IntOpenHashMap<>();
 
     // a stack of instruction builders
-    private final InstructionBuilder[] mInstBuilderPool = new InstructionBuilder[8];
+    // used to write nested types or structures
+    private final InstructionBuilder[] mInstBuilderPool = new InstructionBuilder[Type.kMaxNestingDepth + 2];
     private int mInstBuilderPoolSize = 0;
 
     // A map of instruction -> SpvId:
@@ -190,11 +193,12 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     /**
      * For {@link #writeInstructionWithCache(InstructionBuilder, Output)}.
      */
-    private InstructionBuilder getInstBuilder() {
+    private InstructionBuilder getInstBuilder(int opcode) {
         if (mInstBuilderPoolSize == 0) {
-            return new InstructionBuilder();
+            return new InstructionBuilder(opcode);
         }
-        return mInstBuilderPool[--mInstBuilderPoolSize];
+        return mInstBuilderPool[--mInstBuilderPoolSize]
+                .reset(opcode);
     }
 
     /**
@@ -215,24 +219,21 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                           @Nullable MemoryLayout memoryLayout) {
         return switch (type.getTypeKind()) {
             case Type.kVoid_TypeKind -> writeInstructionWithCache(
-                    getInstBuilder()
-                            .reset(SpvOpTypeVoid)
+                    getInstBuilder(SpvOpTypeVoid)
                             .addResult(),
                     mConstantBuffer
             );
             case Type.kScalar_TypeKind -> {
                 if (type.isBoolean()) {
                     yield writeInstructionWithCache(
-                            getInstBuilder()
-                                    .reset(SpvOpTypeBool)
+                            getInstBuilder(SpvOpTypeBool)
                                     .addResult(),
                             mConstantBuffer
                     );
                 } else if (type.isInteger()) {
                     assert type.getWidth() == 32;
                     yield writeInstructionWithCache(
-                            getInstBuilder()
-                                    .reset(SpvOpTypeInt)
+                            getInstBuilder(SpvOpTypeInt)
                                     .addResult()
                                     .addWord(type.getWidth())
                                     .addWord(type.isSigned() ? 1 : 0),
@@ -241,8 +242,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                 } else if (type.isFloat()) {
                     assert type.getWidth() == 32;
                     yield writeInstructionWithCache(
-                            getInstBuilder()
-                                    .reset(SpvOpTypeFloat)
+                            getInstBuilder(SpvOpTypeFloat)
                                     .addResult()
                                     .addWord(type.getWidth()),
                             mConstantBuffer
@@ -254,8 +254,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             case Type.kVector_TypeKind -> {
                 int scalarTypeId = writeType(type.getElementType(), modifiers, memoryLayout);
                 yield writeInstructionWithCache(
-                        getInstBuilder()
-                                .reset(SpvOpTypeVector)
+                        getInstBuilder(SpvOpTypeVector)
                                 .addResult()
                                 .addWord(scalarTypeId)
                                 .addWord(type.getRows()),
@@ -265,8 +264,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             case Type.kMatrix_TypeKind -> {
                 int vectorTypeId = writeType(type.getElementType(), modifiers, memoryLayout);
                 yield writeInstructionWithCache(
-                        getInstBuilder()
-                                .reset(SpvOpTypeMatrix)
+                        getInstBuilder(SpvOpTypeMatrix)
                                 .addResult()
                                 .addWord(vectorTypeId)
                                 .addWord(type.getCols()),
@@ -274,15 +272,15 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                 );
             }
             case Type.kArray_TypeKind -> {
-                if (memoryLayout != null && !memoryLayout.isSupported(type)) {
-                    mContext.error(type.mPosition, "type '" + type +
-                            "' is not permitted here");
-                    yield NONE_ID;
-                }
                 final int stride;
                 if (memoryLayout != null) {
+                    if (!memoryLayout.isSupported(type)) {
+                        mContext.error(type.mPosition, "type '" + type +
+                                "' is not permitted here");
+                        yield NONE_ID;
+                    }
                     stride = memoryLayout.stride(type);
-                    assert stride != 0;
+                    assert stride > 0;
                 } else {
                     stride = 0;
                 }
@@ -290,8 +288,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                 final int resultId;
                 if (type.isUnsizedArray()) {
                     resultId = writeInstructionWithCache(
-                            getInstBuilder()
-                                    .reset(SpvOpTypeRuntimeArray)
+                            getInstBuilder(SpvOpTypeRuntimeArray)
                                     .addKeyedResult(stride)
                                     .addWord(elementTypeId),
                             mConstantBuffer
@@ -304,18 +301,16 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                     }
                     int arraySizeId = writeScalarConstant(arraySize, mContext.getTypes().mInt);
                     resultId = writeInstructionWithCache(
-                            getInstBuilder()
-                                    .reset(SpvOpTypeArray)
+                            getInstBuilder(SpvOpTypeArray)
                                     .addKeyedResult(stride)
                                     .addWord(elementTypeId)
                                     .addWord(arraySizeId),
                             mConstantBuffer
                     );
                 }
-                if (stride != 0) {
+                if (stride > 0) {
                     writeInstructionWithCache(
-                            getInstBuilder()
-                                    .reset(SpvOpDecorate)
+                            getInstBuilder(SpvOpDecorate)
                                     .addWord(resultId)
                                     .addWord(SpvDecorationArrayStride)
                                     .addWord(stride),
@@ -335,47 +330,86 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     }
 
     /**
-     * Make struct-like type with fast cache. Struct/block cannot be redefined, their
-     * member decorations keep the same in the module.
+     * Make struct-like type with fast cache, nested structures are allowed.
+     * <p>
+     * This method ensures that a structure can have different layouts, with deduplication.
+     * Structures that do not require layout can reuse structure types with any layout.
      *
      * @param memoryLayout non-null for uniform and shader storage blocks, null for others
+     * @return structure type id
      */
     private int writeStruct(@Nonnull Type type,
                             @Nullable MemoryLayout memoryLayout) {
         assert type.isStruct();
-        int cachedId = mStructTable.getInt(type);
-        if (cachedId != 0) {
-            return cachedId;
+        int[] cached = mStructTable.computeIfAbsent(type,
+                // no memory layout at [0]
+                // others at [ordinal + 1]
+                // total number = max ordinal + 2
+                __ -> new int[MemoryLayout.Scalar.ordinal() + 2]);
+        int slot = memoryLayout == null
+                ? 0
+                : memoryLayout.ordinal() + 1;
+        int resultId = cached[slot];
+        if (resultId != 0) {
+            return resultId;
+        }
+        //TODO may not be correct for structs in blocks
+        if (slot == 0) {
+            // a structure that does not require layout and can match any structure with layout
+            for (int i = 1; i < cached.length; i++) {
+                resultId = cached[i];
+                if (resultId != 0) {
+                    return resultId;
+                }
+            }
+        } else {
+            // requires layout, try to reuse the one without layout
+            resultId = cached[0];
+            if (resultId != 0) {
+                // a structure can have different layouts, so clear this default
+                // since we are going to decorate it
+                cached[0] = 0;
+            }
         }
 
         var fields = type.getFields();
-        var builder = getInstBuilder()
-                .reset(SpvOpTypeStruct)
-                .addUniqueResult();
-        for (var f : fields) {
-            // use builder stack
-            int typeId = writeType(f.type(), f.modifiers(), memoryLayout);
-            builder.addWord(typeId);
+        final boolean unique;
+        if (resultId == 0) {
+            // cannot reuse
+            unique = true;
+            var builder = getInstBuilder(SpvOpTypeStruct)
+                    .addUniqueResult();
+            for (var f : fields) {
+                // use builder stack
+                int typeId = writeType(f.type(), f.modifiers(), memoryLayout);
+                builder.addWord(typeId);
+            }
+            resultId = writeInstructionWithCache(builder, mConstantBuffer);
+            if (mEmitNames) {
+                writeInstruction(SpvOpName, resultId, type.getName(), mNameBuffer);
+            }
+        } else {
+            unique = false;
         }
-        int resultId = writeInstructionWithCache(builder, mConstantBuffer);
-        if (mEmitNames) {
-            writeInstruction(SpvOpName, resultId, type.getName(), mNameBuffer);
-        }
-        mStructTable.put(type, resultId);
+        // cache it
+        cached[slot] = resultId;
 
         int offset = 0;
         int[] size = new int[3]; // size, matrix stride and array stride
         for (int i = 0; i < fields.length; i++) {
             var field = fields[i];
-            if (mEmitNames) {
-                writeInstruction(SpvOpMemberName, resultId, i, field.name(), mNameBuffer);
+            if (unique) {
+                if (mEmitNames) {
+                    writeInstruction(SpvOpMemberName, resultId, i, field.name(), mNameBuffer);
+                }
+                if (field.type().isRelaxedPrecision()) {
+                    writeInstruction(SpvOpMemberDecorate, resultId, i,
+                            SpvDecorationRelaxedPrecision, mDecorationBuffer);
+                }
+                writeFieldModifiers(field.modifiers(), resultId, i);
             }
-            if (field.type().isRelaxedPrecision()) {
-                writeInstruction(SpvOpMemberDecorate, resultId, i,
-                        SpvDecorationRelaxedPrecision, mDecorationBuffer);
-            }
-            writeFieldModifiers(field.modifiers(), resultId, i);
 
+            // layout will never be unique
             if (memoryLayout != null) {
                 if (!memoryLayout.isSupported(field.type())) {
                     mContext.error(field.position(), "type '" + field.type() +
@@ -383,13 +417,11 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                     return resultId;
                 }
 
-                // clear matrix stride
-                size[1] = 0;
                 int alignment = memoryLayout.alignment(field.type(), size);
 
-                Layout fieldLayout = field.modifiers().layout();
-                int fieldOffset = fieldLayout != null ? fieldLayout.mOffset : -1;
+                int fieldOffset = field.modifiers().layoutOffset();
                 if (fieldOffset >= 0) {
+                    // must be in declaration order
                     if (fieldOffset < offset) {
                         mContext.error(field.position(), "offset of field '" +
                                 field.name() + "' must be at least " + offset);
@@ -403,7 +435,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                     offset = MathUtil.alignTo(offset, alignment);
                 }
 
-                if (fieldLayout != null && fieldLayout.mBuiltin >= 0) {
+                if (field.modifiers().layoutBuiltin() >= 0) {
                     mContext.error(field.position(), "builtin field '" + field.name() +
                             "' cannot be explicitly laid out.");
                 } else {
@@ -411,16 +443,17 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                             SpvDecorationOffset, offset, mDecorationBuffer);
                 }
 
-                // matrix or array-of-matrices
                 int matrixStride = size[1];
                 if (matrixStride > 0) {
+                    // matrix or array-of-matrices
+                    assert field.type().getElementType().isMatrix();
                     writeInstruction(SpvOpMemberDecorate, resultId, i,
                             SpvDecorationColMajor, mDecorationBuffer);
                     writeInstruction(SpvOpMemberDecorate, resultId, i,
                             SpvDecorationMatrixStride, matrixStride, mDecorationBuffer);
                 }
 
-                // here array and struct padding is already included
+                // end padding of matrix, array and struct is already included
                 offset += size[0];
             }
         }
@@ -430,8 +463,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
 
     private int writeFunctionType(@Nonnull FunctionDecl function) {
         int returnTypeId = writeType(function.getReturnType());
-        var builder = getInstBuilder()
-                .reset(SpvOpTypeFunction)
+        var builder = getInstBuilder(SpvOpTypeFunction)
                 .addResult()
                 .addWord(returnTypeId);
         for (var parameter : function.getParameters()) {
@@ -469,8 +501,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                                  int storageClass) {
         int typeId = writeType(type, modifiers, memoryLayout);
         return writeInstructionWithCache(
-                getInstBuilder()
-                        .reset(SpvOpTypePointer)
+                getInstBuilder(SpvOpTypePointer)
                         .addResult()
                         .addWord(storageClass)
                         .addWord(typeId),
@@ -482,8 +513,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         assert type.isBoolean();
         int typeId = writeType(type);
         return writeInstructionWithCache(
-                getInstBuilder()
-                        .reset(SpvOpConstantTrue)
+                getInstBuilder(SpvOpConstantTrue)
                         .addWord(typeId)
                         .addResult(),
                 mConstantBuffer
@@ -494,8 +524,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         assert type.isBoolean();
         int typeId = writeType(type);
         return writeInstructionWithCache(
-                getInstBuilder()
-                        .reset(SpvOpConstantFalse)
+                getInstBuilder(SpvOpConstantFalse)
                         .addWord(typeId)
                         .addResult(),
                 mConstantBuffer
@@ -507,8 +536,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         assert type.getWidth() == 32;
         int typeId = writeType(type);
         return writeInstructionWithCache(
-                getInstBuilder()
-                        .reset(SpvOpConstant)
+                getInstBuilder(SpvOpConstant)
                         .addWord(typeId)
                         .addResult()
                         .addWord(valueBits),
@@ -691,6 +719,9 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     }
 
     private void writeOpcode(int opcode, int count, Output output) {
+        if ((count & 0xFFFF0000) != 0) {
+            mContext.error(Position.NO_POS, "too many words");
+        }
         output.writeWord((count << 16) | opcode);
     }
 
@@ -793,6 +824,9 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         output.writeWord(word8);
     }
 
+    /**
+     * With bidirectional map.
+     */
     private int writeInstructionWithCache(@Nonnull InstructionBuilder key,
                                           @Nonnull Output output) {
         assert (key.mOpcode != SpvOpLoad);
