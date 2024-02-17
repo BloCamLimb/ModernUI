@@ -26,5 +26,15 @@ public class CompileOptions {
 
     public boolean mForceHighPrecision;
 
+    /**
+     * Force no short-circuit operators.
+     * <p>
+     * For '&&', '||' and '?:', always evaluate both sides and use OpSelect.
+     * No branching is usually more performant.
+     * <p>
+     * Use with caution, may have side effects.
+     */
+    public boolean mNoShortCircuit;
+
     public boolean mOptimize = true;
 }

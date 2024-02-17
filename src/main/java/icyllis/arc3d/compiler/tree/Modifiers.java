@@ -184,6 +184,14 @@ public final class Modifiers extends Node {
         return success;
     }
 
+    public int layoutOffset() {
+        return mLayout != null ? mLayout.mOffset : -1;
+    }
+
+    public int layoutBuiltin() {
+        return mLayout != null ? mLayout.mBuiltin : -1;
+    }
+
     @Override
     public boolean accept(@Nonnull TreeVisitor visitor) {
         return false;

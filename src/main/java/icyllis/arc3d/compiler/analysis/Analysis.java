@@ -32,6 +32,8 @@ public final class Analysis {
      */
     public static boolean isCompileTimeConstant(Expression expr) {
         class IsCompileTimeConstantVisitor extends TreeVisitor {
+            static final IsCompileTimeConstantVisitor visitor = new IsCompileTimeConstantVisitor();
+
             @Override
             public boolean visitLiteral(Literal expr) {
                 // Literals are compile-time constants.
@@ -58,8 +60,7 @@ public final class Analysis {
                 };
             }
         }
-        var visitor = new IsCompileTimeConstantVisitor();
-        return !expr.accept(visitor);
+        return !expr.accept(IsCompileTimeConstantVisitor.visitor);
     }
 
     public static boolean updateVariableRefKind(Expression expr, int refKind) {

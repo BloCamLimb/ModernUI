@@ -56,8 +56,10 @@ dependencies {
 
     testImplementation "org.lwjgl:lwjgl-glfw"
     testImplementation "org.lwjgl:lwjgl-stb"
+    testImplementation "org.lwjgl:lwjgl-shaderc"
     testRuntimeOnly "org.lwjgl:lwjgl-glfw::$lwjglNatives"
     testRuntimeOnly "org.lwjgl:lwjgl-stb::$lwjglNatives"
+    testRuntimeOnly "org.lwjgl:lwjgl-shaderc::$lwjglNatives"
 
     testImplementation 'org.openjdk.jmh:jmh-core:1.35'
     testAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.35'

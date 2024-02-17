@@ -37,7 +37,7 @@ public enum MemoryLayout {
      */
     Std140,
     /**
-     * SPIR-V standard alignment, for uniform blocks.
+     * SPIR-V extended alignment, for uniform blocks.
      * (WGSL or SPIR-V, WebGPU, OpenGL or Vulkan)
      * <p>
      * Similar to std140, the base alignment of an array and structure needs to be a multiple
@@ -45,26 +45,32 @@ public enum MemoryLayout {
      */
     Extended,
     /**
-     * Vulkan standard layout, for push constants and shader storage blocks.
+     * OpenGL standard layout, for push constants and shader storage blocks.
      * Can be used on uniform blocks for Vulkan, if supported.
      * (GLSL, WGSL or SPIR-V, OpenGL, WebGPU or Vulkan)
      */
     Std430,
     /**
      * Scalar alignment, may be slower than std430, for Vulkan if supported.
+     * <p>
+     * Test only. We're unsure about if we can use the padding between the end of a structure or
+     * an array and the next multiple of alignment of that structure or array. glslang doesn't
+     * use it, but Vulkan spec allows it.
      */
     Scalar;
 
     /**
-     * Returns the base alignment in bytes.
+     * Returns the alignment in bytes.
      */
     public int alignment(@Nonnull Type type) {
         return alignment(type, null);
     }
 
     /**
-     * Returns the base alignment in bytes, also computes the size and stride simultaneously.
+     * Returns the alignment in bytes, also computes the size and stride simultaneously.
      * out[0] holds {@link #size}, out[1] holds matrix stride, out[2] holds array stride.
+     * Matrix stride is non-zero only when the type is matrix or array-of-matrices.
+     * Array stride is non-zero only when the type is array.
      *
      * @param out size, matrix stride, array stride, respectively, can be null
      * @return base alignment
@@ -76,6 +82,7 @@ public enum MemoryLayout {
                 if (width == 32) {
                     if (out != null) {
                         out[0] = 4;
+                        out[1] = out[2] = 0; // clear matrix and array stride
                     }
                     yield 4;
                 }
