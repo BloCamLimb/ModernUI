@@ -19,6 +19,16 @@
 
 package icyllis.arc3d.compiler.spirv;
 
+import icyllis.arc3d.compiler.tree.Type;
+
 // addressable
 interface LValue {
+
+    int getPointer();
+
+    int load(SPIRVCodeGenerator gen, Output output);
+
+    void store(SPIRVCodeGenerator gen, int rvalue, Output output);
+
+    boolean applySwizzle(byte[] components, Type newType);
 }

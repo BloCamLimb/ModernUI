@@ -56,7 +56,7 @@ final class InstructionBuilder extends Instruction {
 
     InstructionBuilder addResult() {
         assert mResultKind == kNoResult;
-        mValues.add(-1);
+        mValues.add(SPIRVCodeGenerator.NONE_ID);
         mKinds.add(kDefaultPrecisionResult);
         mResultKind = kDefaultPrecisionResult;
         return this;
@@ -64,7 +64,7 @@ final class InstructionBuilder extends Instruction {
 
     InstructionBuilder addRelaxedResult() {
         assert mResultKind == kNoResult;
-        mValues.add(-1);
+        mValues.add(SPIRVCodeGenerator.NONE_ID);
         mKinds.add(kRelaxedPrecisionResult);
         mResultKind = kRelaxedPrecisionResult;
         return this;
@@ -72,7 +72,7 @@ final class InstructionBuilder extends Instruction {
 
     InstructionBuilder addUniqueResult() {
         assert mResultKind == kNoResult;
-        mValues.add(-1);
+        mValues.add(SPIRVCodeGenerator.NONE_ID);
         mKinds.add(kUniqueResult);
         mResultKind = kUniqueResult;
         return this;
@@ -82,7 +82,7 @@ final class InstructionBuilder extends Instruction {
     // UniqueResult (which always produces a new instruction), a KeyedResult allows an instruction
     // to be deduplicated among those that share the same `key`.
     InstructionBuilder addKeyedResult(int key) {
-        assert key != -1;
+        assert key != SPIRVCodeGenerator.NONE_ID;
         assert mResultKind == kNoResult;
         mValues.add(key);
         mKinds.add(kKeyedResult);

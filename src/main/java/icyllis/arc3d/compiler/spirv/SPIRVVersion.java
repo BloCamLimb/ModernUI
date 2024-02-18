@@ -21,21 +21,37 @@ package icyllis.arc3d.compiler.spirv;
 
 public enum SPIRVVersion {
     /**
-     * SPIR-V version 1.0 for OpenGL 4.6.
+     * SPIR-V version 1.0 for OpenGL 4.5 and Vulkan 1.0.
      */
-    VERSION_1_0(0x00010000),
+    SPIRV_1_0(0x00010000),
     /**
      * SPIR-V version 1.3 for Vulkan 1.1.
      */
-    VERSION_1_3(0x00010300),
+    SPIRV_1_3(0x00010300),
+    /**
+     * SPIR-V version 1.4 for Vulkan 1.2.
+     */
+    SPIRV_1_4(0x00010400),
+    /**
+     * SPIR-V version 1.5 for Vulkan 1.2.
+     */
+    SPIRV_1_5(0x00010500),
     /**
      * SPIR-V version 1.6 for Vulkan 1.3.
      */
-    VERSION_1_6(0x00010600);
+    SPIRV_1_6(0x00010600);
 
     public final int mVersionNumber;
 
     SPIRVVersion(int versionNumber) {
         mVersionNumber = versionNumber;
+    }
+
+    public boolean isBefore(SPIRVVersion other) {
+        return compareTo(other) < 0;
+    }
+
+    public boolean isAtLeast(SPIRVVersion other) {
+        return compareTo(other) >= 0;
     }
 }

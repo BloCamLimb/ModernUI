@@ -19,11 +19,13 @@
 
 package icyllis.arc3d.compiler;
 
+import icyllis.arc3d.compiler.spirv.*;
 import icyllis.arc3d.compiler.tree.Node;
 import icyllis.arc3d.compiler.tree.TranslationUnit;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.nio.ByteBuffer;
 import java.util.Objects;
 
 /**
@@ -178,6 +180,24 @@ public class ShaderCompiler {
         ModuleUnit parsed = parser.parseModule(parent);
         endContext();
         return parsed;
+    }
+
+    @Nullable
+    public ByteBuffer toSPIRV(@Nonnull TranslationUnit translationUnit,
+                              @Nullable SPIRVTarget outputTarget,
+                              @Nullable SPIRVVersion outputVersion) {
+        startContext(translationUnit.getModel(),
+                translationUnit.getOptions(),
+                null,
+                false,
+                false,
+                translationUnit.getSource());
+        var generator = new SPIRVCodeGenerator(
+                mContext, translationUnit, outputTarget, outputVersion);
+        generator.setEmitNames(true);
+        ByteBuffer code = generator.generateCode();
+        endContext();
+        return code;
     }
 
     public void startContext(ExecutionModel model,

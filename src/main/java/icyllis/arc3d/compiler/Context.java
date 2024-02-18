@@ -64,11 +64,12 @@ public final class Context {
         }
         mModel = Objects.requireNonNull(model);
         mOptions = Objects.requireNonNull(options);
-        Objects.requireNonNull(parent);
         mIsBuiltin = isBuiltin;
         mIsModule = isModule;
 
-        mSymbolTable = parent.mSymbols.enterModule(isBuiltin);
+        if (parent != null) {
+            mSymbolTable = parent.mSymbols.enterModule(isBuiltin);
+        }
 
         mActive = true;
     }

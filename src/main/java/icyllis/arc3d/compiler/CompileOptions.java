@@ -24,12 +24,14 @@ package icyllis.arc3d.compiler;
  */
 public class CompileOptions {
 
+    public String mEntryPointName = "main";
+
     public boolean mForceHighPrecision;
 
     /**
      * Force no short-circuit operators.
      * <p>
-     * For '&&', '||' and '?:', always evaluate both sides and use OpSelect.
+     * For '&&', '||' and '?:', always evaluate both sides.
      * No branching is usually more performant.
      * <p>
      * Use with caution, may have side effects.

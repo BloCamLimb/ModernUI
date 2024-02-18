@@ -228,7 +228,7 @@ public final class FunctionDecl extends Symbol {
         int intrinsicKind = context.isBuiltin()
                 ? IntrinsicList.findIntrinsicKind(name)
                 : IntrinsicList.kNotIntrinsic;
-        boolean isEntryPoint = "main".equals(name);
+        boolean isEntryPoint = name.equals(context.getOptions().mEntryPointName);
 
         if (!checkModifiers(context, modifiers)) {
             return null;

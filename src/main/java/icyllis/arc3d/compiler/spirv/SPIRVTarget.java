@@ -24,11 +24,11 @@ package icyllis.arc3d.compiler.spirv;
  */
 public enum SPIRVTarget {
     /**
-     * Targeting OpenGL.
+     * Targeting OpenGL 4.5.
      */
-    OPENGL,
+    OPENGL_4_5,
     /**
-     * Targeting Vulkan.
+     * Targeting Vulkan 1.0.
      */
-    VULKAN
+    VULKAN_1_0
 }
