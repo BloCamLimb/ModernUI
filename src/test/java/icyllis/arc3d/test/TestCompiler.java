@@ -20,17 +20,25 @@
 package icyllis.arc3d.test;
 
 import icyllis.arc3d.compiler.*;
+import icyllis.arc3d.compiler.spirv.SPIRVTarget;
+import icyllis.arc3d.compiler.spirv.SPIRVVersion;
 import icyllis.arc3d.compiler.tree.TranslationUnit;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 
 public class TestCompiler {
 
     public static final String SOURCE = """
             const int blockSize = -4 + 6;
-            layout(binding = 0) uniform UniformBlock {
+            layout(binding = 0, set = 0) uniform UniformBlock {
                 mat4 u_Projection;
                 mat4 u_ModelView;
                 vec4 u_Color;
-            } u_Buffer0[blockSize];
+            } u_Buffer0;
             out SV_PerVertex {
               layout(position) float4 SV_Position;
             };
@@ -51,6 +59,9 @@ public class TestCompiler {
                 const float[] a = float[](12.9898, n.x), b = float[](12.9898, n.x, n.y);
                 return sa(sa(rr(n, float2(a[0],12.1414))) * 83758.5453);
             }
+            void main(void) {
+                FragColor0 = vec4(0);
+            }
             """;
 
     public static void main(String[] args) {
@@ -64,9 +75,32 @@ public class TestCompiler {
         );
 
         System.out.println(compiler.getLogMessage());
-        if (parsed != null) {
-            System.out.println(parsed);
-            System.out.println(parsed.getUsage());
+        if (parsed == null) {
+            return;
+        }
+
+        System.out.println(parsed);
+        System.out.println(parsed.getUsage());
+
+        ByteBuffer spirv = compiler.toSPIRV(parsed,
+                SPIRVTarget.VULKAN_1_0,
+                SPIRVVersion.SPIRV_1_5);
+        System.out.println(compiler.getLogMessage());
+
+        if (spirv == null) {
+            return;
+        }
+
+        System.out.println(spirv.order());
+        try (var channel = FileChannel.open(Path.of("test_shader.spv"),
+                StandardOpenOption.WRITE,
+                StandardOpenOption.CREATE,
+                StandardOpenOption.TRUNCATE_EXISTING)) {
+            while (spirv.hasRemaining()) {
+                channel.write(spirv);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }
