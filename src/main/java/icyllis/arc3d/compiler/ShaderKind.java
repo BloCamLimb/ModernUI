@@ -20,9 +20,9 @@
 package icyllis.arc3d.compiler;
 
 /**
- * We support several execution models.
+ * We support several shader kinds.
  */
-public enum ExecutionModel {
+public enum ShaderKind {
     /**
      * For base modules.
      */

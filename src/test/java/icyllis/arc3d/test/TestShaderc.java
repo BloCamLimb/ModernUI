@@ -36,28 +36,39 @@ public class TestShaderc {
             throw new RuntimeException("No compiler");
         }
         long options = shaderc_compile_options_initialize();
-        shaderc_compile_options_set_target_env(options, shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_1);
-        shaderc_compile_options_set_target_spirv(options, shaderc_spirv_version_1_3);
+        shaderc_compile_options_set_target_env(options, shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_3);
+        shaderc_compile_options_set_target_spirv(options, shaderc_spirv_version_1_6);
         shaderc_compile_options_set_optimization_level(options, shaderc_optimization_level_zero);
 
         long result = shaderc_compile_into_spv_assembly(
                 compiler,
                 """
-                     #version 450 core
-                     layout(std140, binding = 0) buffer UniformBlock {
-                         layout(offset=0) float[4] u_Projection;
-                         layout(offset=64, row_major) mat2 u_Color;
-                     };
-                     layout(location = 0) smooth in vec2 f_Position;
-                     layout(location = 1) smooth in vec4 f_Color;
-                     layout(location = 0, index = 0) out vec4 FragColor0;
-                     layout(location = 0, index = 1) out vec4 FragColor1;
-                     void main(void) {
-                        mat2 m = u_Color;
-                         FragColor0 = vec4(m[0][0]);
-                         FragColor1 = vec4(m[0][1]);
-                     }
-                     """,
+                        #version 450 core
+                        const int blockSize = -4 + 6;
+                        layout(binding = 0, set = 0) uniform UniformBlock {
+                            mat4 u_Projection;
+                            mat4 u_ModelView;
+                            mat2 u_Color;
+                        } u_Buffer0;
+                        layout(location = 0) smooth in vec2 f_Position;
+                        layout(location = 1) smooth in vec4 f_Color;
+                        layout(location = 0, index = 0) out vec4 FragColor0;
+                        layout(location = 0, index = 1) out vec4 FragColor1;
+                        float rr(vec2 a, vec2 b) {
+                            return float(vec2(a.x,1).y.x);
+                        }
+                        float sa(float a) {
+                            return a;
+                        }
+                        float rand(vec2 n) {
+                            const float[] a = float[](12.9898, n.x), b = float[](12.9898, n.x, n.y);
+                            return sa(sa(rr(n, vec2(a[0],12.1414))) * 83758.5453);
+                        }
+                        void main(void) {
+                           mat2 m = u_Buffer0.u_Color;
+                            FragColor0 = vec4(m[0][0]);
+                            FragColor1 = vec4(m[0][1]);
+                        }""",
                 shaderc_fragment_shader,
                 "test_shader",
                 "main",

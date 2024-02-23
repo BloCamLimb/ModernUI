@@ -20,7 +20,7 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.*;
-import icyllis.arc3d.compiler.analysis.ModuleUsage;
+import icyllis.arc3d.compiler.analysis.SymbolUsage;
 import icyllis.arc3d.compiler.analysis.TreeVisitor;
 
 import javax.annotation.Nonnull;
@@ -33,7 +33,7 @@ public final class TranslationUnit extends Node implements Iterable<TopLevelElem
 
     private final char[] mSource;
 
-    private final ExecutionModel mModel;
+    private final ShaderKind mKind;
     private final CompileOptions mOptions;
     private final boolean mIsBuiltin;
     private final boolean mIsModule;
@@ -45,11 +45,11 @@ public final class TranslationUnit extends Node implements Iterable<TopLevelElem
     private final ArrayList<TopLevelElement> mUniqueElements;
     private final ArrayList<TopLevelElement> mSharedElements;
 
-    private final ModuleUsage mUsage;
+    private final SymbolUsage mUsage;
 
     public TranslationUnit(int position,
                            char[] source,
-                           ExecutionModel model,
+                           ShaderKind kind,
                            CompileOptions options,
                            boolean isBuiltin,
                            boolean isModule,
@@ -58,7 +58,7 @@ public final class TranslationUnit extends Node implements Iterable<TopLevelElem
                            ArrayList<TopLevelElement> uniqueElements) {
         super(position);
         mSource = source;
-        mModel = model;
+        mKind = kind;
         mOptions = options;
         mIsBuiltin = isBuiltin;
         mIsModule = isModule;
@@ -66,7 +66,7 @@ public final class TranslationUnit extends Node implements Iterable<TopLevelElem
         mSymbolTable = symbolTable;
         mUniqueElements = uniqueElements;
         mSharedElements = new ArrayList<>();
-        mUsage = new ModuleUsage();
+        mUsage = new SymbolUsage();
         mUsage.add(this);
     }
 
@@ -74,8 +74,8 @@ public final class TranslationUnit extends Node implements Iterable<TopLevelElem
         return mSource;
     }
 
-    public ExecutionModel getModel() {
-        return mModel;
+    public ShaderKind getKind() {
+        return mKind;
     }
 
     public CompileOptions getOptions() {
@@ -106,7 +106,7 @@ public final class TranslationUnit extends Node implements Iterable<TopLevelElem
         return mSharedElements;
     }
 
-    public ModuleUsage getUsage() {
+    public SymbolUsage getUsage() {
         return mUsage;
     }
 

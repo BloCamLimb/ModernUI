@@ -22,6 +22,7 @@ package icyllis.arc3d.compiler;
 import icyllis.arc3d.compiler.spirv.*;
 import icyllis.arc3d.compiler.tree.Node;
 import icyllis.arc3d.compiler.tree.TranslationUnit;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -33,13 +34,15 @@ import java.util.Objects;
  * {@link Node Nodes}, while performing basic optimizations such as constant-folding and
  * dead-code elimination. Then the {@link TranslationUnit} is passed into a {@link CodeGenerator}
  * to produce compiled output.
+ * <p>
+ * This class is not thread-safe, you may want a thread-local instance.
  */
 public class ShaderCompiler {
 
     public static final String INVALID_TAG = "<INVALID>";
     public static final String POISON_TAG = "<POISON>"; // error value
 
-    private final StringBuilder mLogBuilder = new StringBuilder();
+    private final StringBuilder mErrorBuilder = new StringBuilder();
     private final ErrorHandler mErrorHandler = new ErrorHandler() {
         private void log(int start, int end, String msg) {
             boolean showLocation = false;
@@ -53,9 +56,9 @@ public class ShaderCompiler {
                     }
                 }
                 showLocation = start < source.length;
-                mLogBuilder.append(line).append(": ");
+                mErrorBuilder.append(line).append(": ");
             }
-            mLogBuilder.append(msg).append('\n');
+            mErrorBuilder.append(msg).append('\n');
             if (showLocation) {
                 // Find the beginning of the line
                 int lineStart = start;
@@ -69,13 +72,13 @@ public class ShaderCompiler {
                 // echo the line
                 for (int i = lineStart; i < source.length; i++) {
                     switch (source[i]) {
-                        case '\t' -> mLogBuilder.append("    ");
-                        case '\0' -> mLogBuilder.append(" ");
+                        case '\t' -> mErrorBuilder.append("    ");
+                        case '\0' -> mErrorBuilder.append(" ");
                         case '\n' -> i = source.length;
-                        default -> mLogBuilder.append(source[i]);
+                        default -> mErrorBuilder.append(source[i]);
                     }
                 }
-                mLogBuilder.append('\n');
+                mErrorBuilder.append('\n');
 
                 // print the carets underneath it, pointing to the range in question
                 for (int i = lineStart; i < source.length; i++) {
@@ -83,29 +86,29 @@ public class ShaderCompiler {
                         break;
                     }
                     switch (source[i]) {
-                        case '\t' -> mLogBuilder.append((i >= start) ? "^^^^" : "    ");
+                        case '\t' -> mErrorBuilder.append((i >= start) ? "^^^^" : "    ");
                         case '\n' -> {
                             assert (i >= start);
                             // use an ellipsis if the error continues past the end of the line
-                            mLogBuilder.append((end > i + 1) ? "..." : "^");
+                            mErrorBuilder.append((end > i + 1) ? "..." : "^");
                             i = source.length;
                         }
-                        default -> mLogBuilder.append((i >= start) ? '^' : ' ');
+                        default -> mErrorBuilder.append((i >= start) ? '^' : ' ');
                     }
                 }
-                mLogBuilder.append('\n');
+                mErrorBuilder.append('\n');
             }
         }
 
         @Override
         protected void handleError(int start, int end, String msg) {
-            mLogBuilder.append("error: ");
+            mErrorBuilder.append("error: ");
             log(start, end, msg);
         }
 
         @Override
         protected void handleWarning(int start, int end, String msg) {
-            mLogBuilder.append("warning: ");
+            mErrorBuilder.append("warning: ");
             log(start, end, msg);
         }
     };
@@ -128,65 +131,72 @@ public class ShaderCompiler {
     /**
      * Parse the source into an abstract syntax tree.
      *
-     * @param model   the language model
-     * @param options the compiler options
-     * @param source  the source code of the program to be parsed
-     * @param parent  the parent module of the program to be parsed
-     * @return the module, or null if there's an error
+     * @param source  the source text
+     * @param kind    the shader kind
+     * @param options the compile options
+     * @param parent  the parent module
+     * @return the parsed result, or null if there's an error
      */
     @Nullable
-    public TranslationUnit parse(ExecutionModel model,
-                                 CompileOptions options,
-                                 CharSequence source,
-                                 ModuleUnit parent) {
-        Objects.requireNonNull(model);
+    public TranslationUnit parse(@Nonnull CharSequence source,
+                                 @Nonnull ShaderKind kind,
+                                 @Nonnull CompileOptions options,
+                                 @Nonnull ModuleUnit parent) {
+        Objects.requireNonNull(kind);
         Objects.requireNonNull(parent);
-        Objects.requireNonNull(source);
-        resetLog(); // make a clean start
         char[] buffer = source.toString().toCharArray();
-        options = Objects.requireNonNullElseGet(options, CompileOptions::new);
-        Parser parser = new Parser(this, model,
+        Parser parser = new Parser(this, kind,
                 options,
                 buffer);
-        startContext(model, options, parent, false, false, buffer);
-        TranslationUnit parsed = parser.parse(parent);
+        startContext(kind, options, parent, false, false, buffer);
+        TranslationUnit translationUnit = parser.parse(parent);
         endContext();
-        return parsed;
+        return translationUnit;
     }
 
     /**
      * Parse the source into an abstract syntax tree for further parsing.
      *
-     * @param model  the language model
-     * @param source the source code of the module to be parsed
-     * @param parent the parent module of the module to be parsed
-     * @return the module, or null if there's an error
+     * @param source the source text
+     * @param kind   the shader kind
+     * @param parent the parent module
+     * @return the parsed result, or null if there's an error
      */
     @Nullable
-    public ModuleUnit parseModule(ExecutionModel model,
-                                  CharSequence source,
-                                  ModuleUnit parent,
+    public ModuleUnit parseModule(@Nonnull CharSequence source,
+                                  @Nonnull ShaderKind kind,
+                                  @Nonnull ModuleUnit parent,
                                   boolean builtin) {
-        Objects.requireNonNull(model);
+        Objects.requireNonNull(kind);
         Objects.requireNonNull(parent);
-        Objects.requireNonNull(source);
-        resetLog(); // make a clean start
         char[] buffer = source.toString().toCharArray();
         CompileOptions options = new CompileOptions();
-        Parser parser = new Parser(this, model,
+        Parser parser = new Parser(this, kind,
                 options,
                 buffer);
-        startContext(model, options, parent, builtin, true, buffer);
-        ModuleUnit parsed = parser.parseModule(parent);
+        startContext(kind, options, parent, builtin, true, buffer);
+        ModuleUnit moduleUnit = parser.parseModule(parent);
         endContext();
-        return parsed;
+        return moduleUnit;
     }
 
+    /**
+     * Generates SPIR-V code and returns the pointer value. The code size in bytes is
+     * {@link ByteBuffer#remaining()}.
+     * <p>
+     * The return value is a direct buffer, see {@link ByteBuffer#allocateDirect(int)}.
+     * A direct buffer wraps an address that points to off-heap memory, i.e. a native
+     * pointer. The byte order is {@link java.nio.ByteOrder#nativeOrder()} (i.e. host
+     * endianness) and it's safe to pass the result to OpenGL and Vulkan API. There is
+     * no way to free this buffer explicitly, as it is subject to GC.
+     *
+     * @return the generated code (uint32_t *), or null if there's an error
+     */
     @Nullable
     public ByteBuffer toSPIRV(@Nonnull TranslationUnit translationUnit,
                               @Nullable SPIRVTarget outputTarget,
                               @Nullable SPIRVVersion outputVersion) {
-        startContext(translationUnit.getModel(),
+        startContext(translationUnit.getKind(),
                 translationUnit.getOptions(),
                 null,
                 false,
@@ -200,43 +210,59 @@ public class ShaderCompiler {
         return code;
     }
 
-    public void startContext(ExecutionModel model,
+    @ApiStatus.Internal
+    public void startContext(ShaderKind kind,
                              CompileOptions options,
                              ModuleUnit parent,
                              boolean isBuiltin,
                              boolean isModule,
                              char[] source) {
-        mContext.start(model, options, parent, isBuiltin, isModule);
+        resetErrors(); // make a clean start
+        mContext.start(kind, options, parent, isBuiltin, isModule);
         mContext.getErrorHandler().setSource(source);
     }
 
+    @ApiStatus.Internal
     public void endContext() {
         mContext.end();
         mContext.getErrorHandler().setSource(null);
     }
 
+    @Nonnull
+    public String getErrorMessage() {
+        return getErrorMessage(true);
+    }
+
     /**
-     * Returns the concatenated log message and clears the buffer.
+     * Returns the concatenated error (and warning) message during the last parsing
+     * or code generation. This may be empty or contain multiple lines.
+     *
+     * @param showCount show the number of errors and warnings, if there are any
      */
     @Nonnull
-    public String getLogMessage() {
+    public String getErrorMessage(boolean showCount) {
+        if (!showCount) {
+            return mErrorBuilder.toString();
+        }
         int errors = errorCount();
         int warnings = warningCount();
-        if (errors > 0 || warnings > 0) {
-            mLogBuilder.append(errors).append(" error");
-            if (errors > 1) {
-                mLogBuilder.append('s');
-            }
-            mLogBuilder.append(", ");
-            mLogBuilder.append(warnings).append(" warning");
-            if (warnings > 1) {
-                mLogBuilder.append('s');
-            }
-            mLogBuilder.append('\n');
+        if (errors == 0 && warnings == 0) {
+            assert mErrorBuilder.isEmpty();
+            return "";
         }
-        String result = mLogBuilder.toString();
-        resetLog();
-        return result;
+        int start = mErrorBuilder.length();
+        mErrorBuilder.append(errors).append(" error");
+        if (errors != 1) {
+            mErrorBuilder.append('s');
+        }
+        mErrorBuilder.append(", ").append(warnings).append(" warning");
+        if (warnings != 1) {
+            mErrorBuilder.append('s');
+        }
+        mErrorBuilder.append('\n');
+        String msg = mErrorBuilder.toString();
+        mErrorBuilder.delete(start, mErrorBuilder.length());
+        return msg;
     }
 
     /**
@@ -246,19 +272,25 @@ public class ShaderCompiler {
         return mErrorHandler;
     }
 
+    /**
+     * Returns the number of errors during the last parsing or code generation.
+     */
     public int errorCount() {
         return mErrorHandler.errorCount();
     }
 
+    /**
+     * Returns the number of warnings during the last parsing or code generation.
+     */
     public int warningCount() {
         return mErrorHandler.warningCount();
     }
 
-    private void resetLog() {
-        boolean trim = mLogBuilder.length() > 8192;
-        mLogBuilder.setLength(0);
+    private void resetErrors() {
+        boolean trim = mErrorBuilder.length() > 8192;
+        mErrorBuilder.setLength(0);
         if (trim) {
-            mLogBuilder.trimToSize();
+            mErrorBuilder.trimToSize();
         }
         mErrorHandler.reset();
     }

@@ -22,7 +22,7 @@ package icyllis.arc3d.compiler;
 import icyllis.arc3d.compiler.tree.TranslationUnit;
 import org.lwjgl.BufferUtils;
 
-import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 
 /**
@@ -52,9 +52,9 @@ public abstract class CodeGenerator {
      * safe to pass the result to OpenGL and Vulkan API. There is no way to free this
      * buffer explicitly, as it is subject to GC.
      *
-     * @return the generated code, regardless of errors
+     * @return the generated code, or null if there's an error
      */
-    @Nonnull
+    @Nullable
     public abstract ByteBuffer generateCode();
 
     protected ByteBuffer grow(int minCapacity) {

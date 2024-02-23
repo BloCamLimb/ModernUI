@@ -20,7 +20,6 @@
 package icyllis.arc3d.compiler;
 
 import icyllis.arc3d.compiler.tree.*;
-import org.jetbrains.annotations.UnmodifiableView;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -32,7 +31,7 @@ import java.util.*;
 public final class Context {
 
     // The Context holds a pointer to the configuration of the program being compiled.
-    private ExecutionModel mModel;
+    private ShaderKind mKind;
     private CompileOptions mOptions;
     private boolean mIsBuiltin;
     private boolean mIsModule;
@@ -57,12 +56,12 @@ public final class Context {
     /**
      * Starts the DSL on the current thread for compiling modules.
      */
-    void start(ExecutionModel model, CompileOptions options,
+    void start(ShaderKind kind, CompileOptions options,
                ModuleUnit parent, boolean isBuiltin, boolean isModule) {
         if (isActive()) {
             throw new IllegalStateException("DSL is already started");
         }
-        mModel = Objects.requireNonNull(model);
+        mKind = Objects.requireNonNull(kind);
         mOptions = Objects.requireNonNull(options);
         mIsBuiltin = isBuiltin;
         mIsModule = isModule;
@@ -78,7 +77,7 @@ public final class Context {
      * Ends the DSL on the current thread.
      */
     void end() {
-        mModel = null;
+        mKind = null;
         mOptions = null;
         mSymbolTable = null;
 
@@ -92,8 +91,8 @@ public final class Context {
         return mActive;
     }
 
-    public ExecutionModel getModel() {
-        return mModel;
+    public ShaderKind getKind() {
+        return mKind;
     }
 
     public CompileOptions getOptions() {

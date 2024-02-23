@@ -127,7 +127,7 @@ public final class FunctionDecl extends Symbol {
                                                     int pos,
                                                     @Nonnull Type returnType,
                                                     @Nonnull List<Variable> parameters) {
-        switch (context.getModel()) {
+        switch (context.getKind()) {
             case VERTEX, FRAGMENT, COMPUTE -> {
                 if (!returnType.matches(context.getTypes().mVoid)) {
                     context.error(pos, "entry point must return 'void'");

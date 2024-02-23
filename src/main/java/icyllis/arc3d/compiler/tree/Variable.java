@@ -61,7 +61,7 @@ public final class Variable extends Symbol {
                                    @Nonnull Type type,
                                    @Nonnull String name,
                                    byte storage) {
-        if (context.getModel().isCompute() && (modifiers.layoutFlags() & Layout.kBuiltin_LayoutFlag) == 0) {
+        if (context.getKind().isCompute() && (modifiers.layoutFlags() & Layout.kBuiltin_LayoutFlag) == 0) {
             if (storage == Variable.kGlobal_Storage) {
                 if ((modifiers.flags() & Modifiers.kIn_Flag) != 0) {
                     context.error(pos, "pipeline inputs not permitted in compute shaders");
