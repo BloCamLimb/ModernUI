@@ -36,7 +36,7 @@ public final class DiscardStatement extends Statement {
 
     @Nullable
     public static Statement convert(@Nonnull Context context, int pos) {
-        if (!context.getModel().isFragment()) {
+        if (!context.getKind().isFragment()) {
             context.error(pos, "discard statement is only permitted in fragment shaders");
             return null;
         }

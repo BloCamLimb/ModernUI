@@ -21,7 +21,6 @@ package icyllis.arc3d.test;
 
 import icyllis.arc3d.core.MathUtil;
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.engine.IGpuSurface;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.geom.SDFRoundRectGeoProc;
 import icyllis.arc3d.opengl.*;
@@ -89,7 +88,7 @@ public class TestManagedResource {
         {
             ModuleLoader moduleLoader = ModuleLoader.getInstance();
             ShaderCompiler compiler = new ShaderCompiler();
-            compiler.startContext(ExecutionModel.BASE, new CompileOptions(), moduleLoader.getRootModule(),
+            compiler.startContext(ShaderKind.BASE, new CompileOptions(), moduleLoader.getRootModule(),
                     false, false, null);
             Type[] types = new Type[3];
             boolean success = Operator.MUL.determineBinaryType(compiler.getContext(),

@@ -36,7 +36,7 @@ public class Parser {
 
     private final ShaderCompiler mCompiler;
 
-    private final ExecutionModel mModel;
+    private final ShaderKind mKind;
     private final CompileOptions mOptions;
 
     private final char[] mSource;
@@ -46,14 +46,14 @@ public class Parser {
 
     private ArrayList<TopLevelElement> mUniqueElements = new ArrayList<>();
 
-    public Parser(ShaderCompiler compiler, ExecutionModel model, CompileOptions options, char[] source) {
+    public Parser(ShaderCompiler compiler, ShaderKind kind, CompileOptions options, char[] source) {
         // ideally we can break long text into pieces, but shader code should not be too long
         if (source.length > 0x7FFFFE) {
             throw new IllegalArgumentException("Source code is too long, " + source.length + " > 8,388,606");
         }
         mCompiler = Objects.requireNonNull(compiler);
         mOptions = Objects.requireNonNull(options);
-        mModel = Objects.requireNonNull(model);
+        mKind = Objects.requireNonNull(kind);
         mSource = source;
         mLexer = new Lexer(source);
     }
@@ -69,7 +69,7 @@ public class Parser {
             result = new TranslationUnit(
                     rangeFromOffset(0),
                     mSource,
-                    mModel,
+                    mKind,
                     mOptions,
                     context.isBuiltin(),
                     context.isModule(),

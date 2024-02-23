@@ -162,40 +162,59 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         mEmitNames = emitNames;
     }
 
-    @Nonnull
+    @Nullable
     @Override
     public ByteBuffer generateCode() {
         assert mContext.getErrorHandler().errorCount() == 0;
+
+        ShaderKind kind = mTranslationUnit.getKind();
+        if (!kind.isVertex() && !kind.isFragment() && !kind.isCompute()) {
+            mContext.error(Position.NO_POS, "shader kind " + kind + " is not allowed in SPIR-V");
+            return null;
+        }
+
+        buildInstructions(mTranslationUnit);
+
+        if (mContext.getErrorHandler().errorCount() != 0) {
+            return null;
+        }
+
+        // estimate code size in bytes
+        int estimatedSize = 20;
+        estimatedSize += (mCapabilities.size() + 1) * 2 * 4;
+        estimatedSize += 24;
+        estimatedSize += 12;
+        int entryPointWordCount = 3 + (mEntryPointFunction.getName().length() + 4) / 4 + mInterfaceVariables.size();
+        estimatedSize += entryPointWordCount * 4;
+        estimatedSize += mNameBuffer.size * 4;
+        estimatedSize += mDecorationBuffer.size * 4;
+        estimatedSize += mConstantBuffer.size * 4;
+        estimatedSize += mFunctionBuffer.size * 4;
+        estimatedSize = MathUtil.alignTo(estimatedSize + 40, 128);
+
         // Header
         // 0 - magic number
         // 1 - version number
         // 2 - generator magic
-        // 3 - bound (set later)
+        // 3 - bound
         // 4 - schema (reserved)
-        mBuffer = BufferUtils.createByteBuffer(1024)
+        mBuffer = BufferUtils.createByteBuffer(estimatedSize)
                 .putInt(SpvMagicNumber)
                 .putInt(mOutputVersion.mVersionNumber)
                 .putInt(GENERATOR_MAGIC_NUMBER)
-                .putInt(0)
+                .putInt(mIdCount)
                 .putInt(0);
-
-        buildInstructions(mTranslationUnit);
 
         writeCapabilities(mMainOutput);
         writeInstruction(SpvOpExtInstImport, mGLSLExtendedInstructions, "GLSL.std.450", mMainOutput);
         writeInstruction(SpvOpMemoryModel, SpvAddressingModelLogical, SpvMemoryModelGLSL450, mMainOutput);
-        writeOpcode(SpvOpEntryPoint,
-                3 + (mEntryPointFunction.getName().length() + 4) / 4 + mInterfaceVariables.size(),
-                mMainOutput);
-        ExecutionModel model = mTranslationUnit.getModel();
-        if (model.isVertex()) {
+        writeOpcode(SpvOpEntryPoint, entryPointWordCount, mMainOutput);
+        if (kind.isVertex()) {
             mMainOutput.writeWord(SpvExecutionModelVertex);
-        } else if (model.isFragment()) {
+        } else if (kind.isFragment()) {
             mMainOutput.writeWord(SpvExecutionModelFragment);
-        } else if (model.isCompute()) {
+        } else if (kind.isCompute()) {
             mMainOutput.writeWord(SpvExecutionModelGLCompute);
-        } else {
-            mContext.error(Position.NO_POS, "execution model is not allowed in SPIR-V");
         }
 
         int entryPoint = mFunctionTable.getInt(mEntryPointFunction);
@@ -205,7 +224,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             mMainOutput.writeWord(id);
         }
 
-        if (model.isFragment()) {
+        if (kind.isFragment()) {
             writeInstruction(SpvOpExecutionMode,
                     entryPoint,
                     SpvExecutionModeOriginUpperLeft,
@@ -216,7 +235,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         mMainOutput.writeWords(mConstantBuffer.a, mConstantBuffer.size);
         mMainOutput.writeWords(mFunctionBuffer.a, mFunctionBuffer.size);
 
-        ByteBuffer buffer = mBuffer.putInt(12, mIdCount); // set bound
+        ByteBuffer buffer = mBuffer;
         mBuffer = null;
         return buffer.flip();
     }
@@ -692,6 +711,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
      */
     private void writeModifiers(@Nonnull Modifiers modifiers, int targetId) {
         Layout layout = modifiers.layout();
+        boolean hasLocation = false;
         boolean hasBinding = false;
         int descriptorSet = -1;
         if (layout != null) {
@@ -699,6 +719,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             if (layout.mLocation >= 0) {
                 writeInstruction(SpvOpDecorate, targetId, SpvDecorationLocation,
                         layout.mLocation, mDecorationBuffer);
+                hasLocation = true;
             }
             if (layout.mComponent >= 0) {
                 writeInstruction(SpvOpDecorate, targetId, SpvDecorationComponent,
@@ -737,6 +758,8 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                         layout.mBuiltin, mDecorationBuffer);
             }
         }
+
+        // in/out variables must have location
 
         if ((modifiers.flags() & (Modifiers.kUniform_Flag | Modifiers.kBuffer_Flag)) != 0) {
             if (!hasBinding) {

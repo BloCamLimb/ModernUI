@@ -260,13 +260,13 @@ public class ModuleLoader {
 
     @Nonnull
     private ModuleUnit loadModule(ShaderCompiler compiler,
-                                  ExecutionModel kind,
                                   CharSequence source,
+                                  ShaderKind kind,
                                   ModuleUnit parent,
                                   boolean builtin) {
-        ModuleUnit module = compiler.parseModule(kind, source, parent, builtin);
+        ModuleUnit module = compiler.parseModule(source, kind, parent, builtin);
         if (module == null) {
-            System.err.print(compiler.getLogMessage());
+            System.err.print(compiler.getErrorMessage());
             throw new RuntimeException("Failed to load module");
         }
         // We can eliminate FunctionPrototypes without changing the meaning of the module; the function
@@ -310,8 +310,8 @@ public class ModuleLoader {
         synchronized (mRootModule) {
             if (mCommonModule == null) {
                 mCommonModule = loadModule(compiler,
-                        ExecutionModel.FRAGMENT,
                         loadModuleSource("slang_common.txt"),
+                        ShaderKind.FRAGMENT,
                         mRootModule,
                         true);
             }

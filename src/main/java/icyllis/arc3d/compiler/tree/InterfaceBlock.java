@@ -140,9 +140,9 @@ public final class InterfaceBlock extends TopLevelElement {
             return null;
         }
         boolean success = true;
-        ExecutionModel model = context.getModel();
-        if (!model.isFragment() && !model.isVertex() && !model.isCompute()) {
-            context.error(pos, "interface blocks are not allowed in this execution model");
+        ShaderKind kind = context.getKind();
+        if (!kind.isFragment() && !kind.isVertex() && !kind.isCompute()) {
+            context.error(pos, "interface blocks are not allowed in this shader kind");
             success = false;
         }
 
@@ -156,12 +156,12 @@ public final class InterfaceBlock extends TopLevelElement {
             return null;
         }
 
-        if (model.isVertex() && blockStorage == Modifiers.kIn_Flag) {
-            context.error(pos, "an input block is not allowed in vertex execution model");
+        if (kind.isVertex() && blockStorage == Modifiers.kIn_Flag) {
+            context.error(pos, "an input block is not allowed in vertex shader kind");
             success = false;
         }
-        if (model.isFragment() && blockStorage == Modifiers.kOut_Flag) {
-            context.error(pos, "an output block is not allowed in fragment execution model");
+        if (kind.isFragment() && blockStorage == Modifiers.kOut_Flag) {
+            context.error(pos, "an output block is not allowed in fragment shader kind");
             success = false;
         }
 

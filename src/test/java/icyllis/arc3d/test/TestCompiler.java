@@ -67,30 +67,31 @@ public class TestCompiler {
     public static void main(String[] args) {
         var compiler = new ShaderCompiler();
 
-        TranslationUnit parsed = compiler.parse(
-                ExecutionModel.VERTEX,
-                new CompileOptions(),
+        TranslationUnit translationUnit = compiler.parse(
                 SOURCE,
+                ShaderKind.VERTEX,
+                new CompileOptions(),
                 ModuleLoader.getInstance().getRootModule()
         );
 
-        System.out.println(compiler.getLogMessage());
-        if (parsed == null) {
+        System.out.print(compiler.getErrorMessage());
+        if (translationUnit == null) {
             return;
         }
 
-        System.out.println(parsed);
-        System.out.println(parsed.getUsage());
+        System.out.println(translationUnit);
+        System.out.println(translationUnit.getUsage());
 
-        ByteBuffer spirv = compiler.toSPIRV(parsed,
+        ByteBuffer spirv = compiler.toSPIRV(translationUnit,
                 SPIRVTarget.VULKAN_1_0,
                 SPIRVVersion.SPIRV_1_5);
-        System.out.println(compiler.getLogMessage());
+        System.out.print(compiler.getErrorMessage());
 
         if (spirv == null) {
             return;
         }
 
+        System.out.println(spirv);
         System.out.println(spirv.order());
         try (var channel = FileChannel.open(Path.of("test_shader.spv"),
                 StandardOpenOption.WRITE,

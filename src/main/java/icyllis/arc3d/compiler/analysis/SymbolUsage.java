@@ -26,9 +26,9 @@ import javax.annotation.Nullable;
 import java.util.IdentityHashMap;
 
 /**
- * Counts the number of uses of a symbol.
+ * Counts the number of usages of a symbol.
  */
-public final class ModuleUsage extends TreeVisitor {
+public final class SymbolUsage extends TreeVisitor {
 
     public static class Count {
         int use;
