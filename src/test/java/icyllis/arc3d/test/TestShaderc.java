@@ -36,8 +36,8 @@ public class TestShaderc {
             throw new RuntimeException("No compiler");
         }
         long options = shaderc_compile_options_initialize();
-        shaderc_compile_options_set_target_env(options, shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_3);
-        shaderc_compile_options_set_target_spirv(options, shaderc_spirv_version_1_6);
+        shaderc_compile_options_set_target_env(options, shaderc_target_env_opengl, shaderc_env_version_opengl_4_5);
+        shaderc_compile_options_set_target_spirv(options, shaderc_spirv_version_1_5);
         shaderc_compile_options_set_optimization_level(options, shaderc_optimization_level_zero);
 
         long result = shaderc_compile_into_spv_assembly(

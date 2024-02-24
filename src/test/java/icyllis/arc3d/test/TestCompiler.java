@@ -39,12 +39,10 @@ public class TestCompiler {
                 mat4 u_ModelView;
                 vec4 u_Color;
             } u_Buffer0;
-            out SV_PerVertex {
-              layout(position) float4 SV_Position;
-            };
             layout(location = 0) smooth in vec2 f_Position;
             layout(location = 1) smooth in vec4 f_Color;
             layout(location = 0, index = 0) out vec4 FragColor0;
+            layout(location = 0, index = 1) out vec4 FragColor1;
             float rr(float2 a, float2 b) {
                 // this will compile into 1.0
                 return float(a.x1.y.x);
@@ -69,7 +67,7 @@ public class TestCompiler {
 
         TranslationUnit translationUnit = compiler.parse(
                 SOURCE,
-                ShaderKind.VERTEX,
+                ShaderKind.FRAGMENT,
                 new CompileOptions(),
                 ModuleLoader.getInstance().getRootModule()
         );
@@ -83,7 +81,7 @@ public class TestCompiler {
         System.out.println(translationUnit.getUsage());
 
         ByteBuffer spirv = compiler.toSPIRV(translationUnit,
-                SPIRVTarget.VULKAN_1_0,
+                SPIRVTarget.OPENGL_4_5,
                 SPIRVVersion.SPIRV_1_5);
         System.out.print(compiler.getErrorMessage());
 
