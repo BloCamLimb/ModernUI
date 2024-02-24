@@ -30,5 +30,13 @@ public enum SPIRVTarget {
     /**
      * Targeting Vulkan 1.0.
      */
-    VULKAN_1_0
+    VULKAN_1_0;
+
+    public boolean isOpenGL() {
+        return this == OPENGL_4_5;
+    }
+
+    public boolean isVulkan() {
+        return compareTo(VULKAN_1_0) >= 0;
+    }
 }

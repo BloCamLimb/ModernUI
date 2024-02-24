@@ -184,6 +184,10 @@ public final class Modifiers extends Node {
         return success;
     }
 
+    public boolean isConst() {
+        return (mFlags & kConst_Flag) != 0;
+    }
+
     public int layoutOffset() {
         return mLayout != null ? mLayout.mOffset : -1;
     }

@@ -44,6 +44,7 @@ final class InstructionBuilder extends Instruction {
         mResultKind = kNoResult;
         mValues.clear();
         mKinds.clear();
+        mHash = 0;
         return this;
     }
 

@@ -20,6 +20,7 @@
 package icyllis.arc3d.compiler.spirv;
 
 import icyllis.arc3d.compiler.*;
+import icyllis.arc3d.compiler.analysis.Analysis;
 import icyllis.arc3d.compiler.tree.*;
 import icyllis.arc3d.core.MathUtil;
 import it.unimi.dsi.fastutil.ints.*;
@@ -56,6 +57,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     private final WordBuffer mConstantBuffer = new WordBuffer();
     private final WordBuffer mDecorationBuffer = new WordBuffer();
     private final WordBuffer mFunctionBuffer = new WordBuffer();
+    private final WordBuffer mGlobalInitBuffer = new WordBuffer();
 
     private final Output mMainOutput = new Output() {
         @Override
@@ -135,7 +137,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
 
     private final IntOpenHashSet mCapabilities = new IntOpenHashSet(16, 0.5f);
 
-    private final IntOpenHashSet mInterfaceVariables = new IntOpenHashSet();
+    private final IntArrayList mInterfaceVariables = new IntArrayList();
 
     private FunctionDecl mEntryPointFunction;
 
@@ -145,10 +147,10 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
 
     private boolean mEmitNames = false;
 
-    public SPIRVCodeGenerator(Context context,
-                              TranslationUnit translationUnit,
-                              SPIRVTarget outputTarget,
-                              SPIRVVersion outputVersion) {
+    public SPIRVCodeGenerator(@Nonnull Context context,
+                              @Nonnull TranslationUnit translationUnit,
+                              @Nullable SPIRVTarget outputTarget,
+                              @Nullable SPIRVVersion outputVersion) {
         super(context, translationUnit);
         mOutputTarget = Objects.requireNonNullElse(outputTarget, SPIRVTarget.VULKAN_1_0);
         mOutputVersion = Objects.requireNonNullElse(outputVersion, SPIRVVersion.SPIRV_1_0);
@@ -227,7 +229,9 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         if (kind.isFragment()) {
             writeInstruction(SpvOpExecutionMode,
                     entryPoint,
-                    SpvExecutionModeOriginUpperLeft,
+                    mOutputTarget.isOpenGL()
+                            ? SpvExecutionModeOriginLowerLeft
+                            : SpvExecutionModeOriginUpperLeft,
                     mMainOutput);
         }
         mMainOutput.writeWords(mNameBuffer.a, mNameBuffer.size);
@@ -277,7 +281,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             if (type.isInterfaceBlock()) {
                 return SpvStorageClassUniform;
             }
-            if (mOutputTarget != SPIRVTarget.OPENGL_4_5) {
+            if (!mOutputTarget.isOpenGL()) {
                 mContext.error(variable.mPosition, "uniform variables at global scope are not allowed");
             }
             return SpvStorageClassUniformConstant;
@@ -766,10 +770,10 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                 mContext.error(modifiers.mPosition, "'binding' is missing");
             }
             if (descriptorSet < 0) {
-                if (mOutputTarget != SPIRVTarget.OPENGL_4_5) {
+                if (!mOutputTarget.isOpenGL()) {
                     mContext.error(modifiers.mPosition, "'set' is missing");
                 }
-            } else if (mOutputTarget == SPIRVTarget.OPENGL_4_5 && descriptorSet != 0) {
+            } else if (mOutputTarget.isOpenGL() && descriptorSet != 0) {
                 mContext.error(modifiers.mPosition, "'set' must be 0");
             }
         }
@@ -871,6 +875,9 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     }
 
     private int writeInterfaceBlock(@Nonnull InterfaceBlock block) {
+        //TODO resource array is not allowed in OpenGL,
+        // but allowed in Vulkan (VkDescriptorSetLayoutBinding.descriptorCount)
+        // the resource array type doesn't have ArrayStride
         int resultId = getUniqueId();
         Variable variable = block.getVariable();
         Modifiers modifiers = variable.getModifiers();
@@ -910,6 +917,51 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         int ptrTypeId = getUniqueId();
         int storageClass = getStorageClass(variable);
         writeInstruction(SpvOpTypePointer, ptrTypeId, storageClass, typeId, mConstantBuffer);
+        writeInstruction(SpvOpVariable, ptrTypeId, resultId, storageClass, mConstantBuffer);
+        if (mEmitNames) {
+            writeInstruction(SpvOpName, resultId, variable.getName(), mNameBuffer);
+        }
+
+        mVariableTable.put(variable, resultId);
+        return resultId;
+    }
+
+    private static boolean isCompileTimeConstant(VariableDecl variableDecl) {
+        return variableDecl.getVariable().getModifiers().isConst() &&
+                (variableDecl.getVariable().getType().isScalar() ||
+                        variableDecl.getVariable().getType().isVector()) &&
+                (ConstantFolder.getConstantValueOrNullForVariable(variableDecl.getInit()) != null ||
+                        Analysis.isCompileTimeConstant(variableDecl.getInit()));
+    }
+
+    private boolean writeGlobalVariableDecl(VariableDecl variableDecl) {
+        // If this global variable is a compile-time constant then we'll emit OpConstant or
+        // OpConstantComposite later when the variable is referenced. Avoid declaring an OpVariable now.
+        if (isCompileTimeConstant(variableDecl)) {
+            return true;
+        }
+
+        int storageClass = getStorageClass(variableDecl.getVariable());
+
+        int id = writeGlobalVariable(storageClass, variableDecl.getVariable());
+        if (variableDecl.getInit() != null) {
+            int init = writeExpression(variableDecl.getInit(), mGlobalInitBuffer);
+            writeOpStore(storageClass, id, init, mGlobalInitBuffer);
+        }
+
+        return true;
+    }
+
+    private int writeGlobalVariable(int storageClass, Variable variable) {
+        Type type = variable.getType();
+        int resultId = getUniqueId(type);
+
+        Modifiers modifiers = variable.getModifiers();
+        writeModifiers(modifiers, resultId);
+
+        // non-interface block variables have no memory layout
+        int ptrTypeId = writePointerType(type, modifiers,
+                null, storageClass);
         writeInstruction(SpvOpVariable, ptrTypeId, resultId, storageClass, mConstantBuffer);
         if (mEmitNames) {
             writeInstruction(SpvOpName, resultId, variable.getName(), mNameBuffer);
@@ -1042,6 +1094,14 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         }
 
         // Emit global variable declarations.
+        for (var e : translationUnit) {
+            if (e instanceof GlobalVariableDecl globalVariableDecl) {
+                VariableDecl variableDecl = globalVariableDecl.getVariableDecl();
+                if (!writeGlobalVariableDecl(variableDecl)) {
+                    return;
+                }
+            }
+        }
 
         // Emit all the functions.
 
