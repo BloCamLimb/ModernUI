@@ -19,15 +19,22 @@
 package icyllis.modernui.graphics.text;
 
 import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.text.GetChars;
 import it.unimi.dsi.fastutil.chars.CharArrayList;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Objects;
 
 /**
- * Fast approach to compare with CharSequences or build CharSequences that match
- * {@link String}'s hashCode() and equals().
+ * A hashable {@link StringBuilder} to compare with {@link CharSequence} or build
+ * {@link String}. This class matches {@link String}'s hashCode() and equals().
+ * Note that String's hashCode() does not match the hashCode() of List and Array.
+ *
+ * @hidden
  */
-public class CharSequenceBuilder extends CharArrayList implements CharSequence {
+// this class should not extend CharArrayList, internal use only
+@ApiStatus.Internal
+public class CharSequenceBuilder extends CharArrayList implements CharSequence, GetChars {
 
     static {
         int[] codePoints = {0x1f469, 0x1f3fc, 0x200d, 0x2764, 0xfe0f,
@@ -39,7 +46,7 @@ public class CharSequenceBuilder extends CharArrayList implements CharSequence {
         String string = new String(codePoints, 0, codePoints.length);
         if (builder.hashCode() != string.hashCode() ||
                 builder.hashCode() != builder.toString().hashCode()) {
-            throw new RuntimeException("Bad String.hashCode() implementation");
+            throw new AssertionError("Bad String.hashCode() implementation");
         }
     }
 
@@ -96,6 +103,12 @@ public class CharSequenceBuilder extends CharArrayList implements CharSequence {
     }
 
     @Override
+    public void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin) {
+        Objects.checkFromToIndex(srcBegin, srcEnd, size);
+        System.arraycopy(a, srcBegin, dst, dstBegin, srcEnd - srcBegin);
+    }
+
+    @Override
     public int length() {
         return size;
     }
@@ -105,9 +118,14 @@ public class CharSequenceBuilder extends CharArrayList implements CharSequence {
         return getChar(index);
     }
 
+    /**
+     * @return a new string
+     */
+    @NonNull
     @Override
     public CharSequence subSequence(int start, int end) {
-        throw new UnsupportedOperationException();
+        Objects.checkFromToIndex(start, end, size);
+        return new String(a, start, end - start);
     }
 
     /**
@@ -133,6 +151,9 @@ public class CharSequenceBuilder extends CharArrayList implements CharSequence {
         return h;
     }
 
+    /**
+     * Same as {@link String#contentEquals(CharSequence)}.
+     */
     @Override
     public boolean equals(Object o) {
         if (o instanceof CharSequence csq) {

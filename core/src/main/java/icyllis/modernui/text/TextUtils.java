@@ -31,6 +31,7 @@ import icyllis.modernui.view.View;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.io.*;
+import java.nio.CharBuffer;
 import java.util.*;
 
 public final class TextUtils {
@@ -138,17 +139,21 @@ public final class TextUtils {
         return false;
     }
 
+    /**
+     * Copies a block of characters efficiently.
+     */
     public static void getChars(@NonNull CharSequence s, int srcBegin, int srcEnd,
                                 @NonNull char[] dst, int dstBegin) {
-        final Class<? extends CharSequence> c = s.getClass();
-        if (c == String.class)
+        if (s instanceof String)
             ((String) s).getChars(srcBegin, srcEnd, dst, dstBegin);
-        else if (c == StringBuffer.class)
-            ((StringBuffer) s).getChars(srcBegin, srcEnd, dst, dstBegin);
-        else if (c == StringBuilder.class)
-            ((StringBuilder) s).getChars(srcBegin, srcEnd, dst, dstBegin);
         else if (s instanceof GetChars)
             ((GetChars) s).getChars(srcBegin, srcEnd, dst, dstBegin);
+        else if (s instanceof StringBuffer)
+            ((StringBuffer) s).getChars(srcBegin, srcEnd, dst, dstBegin);
+        else if (s instanceof StringBuilder)
+            ((StringBuilder) s).getChars(srcBegin, srcEnd, dst, dstBegin);
+        else if (s instanceof CharBuffer)
+            ((CharBuffer) s).get(srcBegin, dst, dstBegin, srcEnd - srcBegin); // Java 13
         else {
             for (int i = srcBegin; i < srcEnd; i++)
                 dst[dstBegin++] = s.charAt(i);
