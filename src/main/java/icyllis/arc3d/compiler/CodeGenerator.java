@@ -31,14 +31,14 @@ import java.nio.ByteBuffer;
  */
 public abstract class CodeGenerator {
 
-    public final Context mContext;
-    public final TranslationUnit mTranslationUnit;
+    protected final ShaderCompiler mCompiler;
+    protected final TranslationUnit mTranslationUnit;
 
     protected ByteBuffer mBuffer;
 
-    public CodeGenerator(Context context,
+    public CodeGenerator(ShaderCompiler compiler,
                          TranslationUnit translationUnit) {
-        mContext = context;
+        mCompiler = compiler;
         mTranslationUnit = translationUnit;
     }
 
@@ -56,6 +56,10 @@ public abstract class CodeGenerator {
      */
     @Nullable
     public abstract ByteBuffer generateCode();
+
+    protected Context getContext() {
+        return mCompiler.getContext();
+    }
 
     protected ByteBuffer grow(int minCapacity) {
         if (minCapacity > mBuffer.capacity()) {

@@ -58,8 +58,11 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     private final WordBuffer mDecorationBuffer = new WordBuffer();
     private final WordBuffer mFunctionBuffer = new WordBuffer();
     private final WordBuffer mGlobalInitBuffer = new WordBuffer();
+    // reusable buffers
+    private final WordBuffer mVariableBuffer = new WordBuffer();
+    private final WordBuffer mBodyBuffer = new WordBuffer();
 
-    private final Output mMainOutput = new Output() {
+    private final Writer mMainWriter = new Writer() {
         @Override
         public void writeWord(int word) {
             grow(mBuffer.position() + 4)
@@ -67,15 +70,16 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         }
 
         @Override
-        public void writeWords(int[] words, int size) {
+        public void writeWords(int[] words, int n) {
+            if (n == 0) return;
             // int array is in host endianness (native byte order)
-            ByteBuffer buffer = grow(mBuffer.position() + (size << 2));
-            buffer.asIntBuffer().put(words, 0, size);
-            buffer.position(buffer.position() + (size << 2));
+            ByteBuffer buffer = grow(mBuffer.position() + (n << 2));
+            buffer.asIntBuffer().put(words, 0, n); // copyMemory
+            buffer.position(buffer.position() + (n << 2));
         }
 
         @Override
-        public void writeString8(String s) {
+        public void writeString8(Context context, String s) {
             int len = s.length();
             ByteBuffer buffer = grow(mBuffer.position() +
                     (len + 4 & -4)); // +1 null-terminator
@@ -84,7 +88,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             for (int i = 0; i < len; i++) {
                 char c = s.charAt(i);
                 if (c == 0 || c >= 0x80) {
-                    throw new AssertionError(c);
+                    context.error(Position.NO_POS, "unexpected character '" + c + "'");
                 }
                 word |= c << shift;
                 shift += 8;
@@ -132,6 +136,20 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     // store cache.
     private final IntArrayList mStoreOps = new IntArrayList();
 
+    // label of the current block, or 0 if we are not in a block
+    private int mCurrentBlock = 0;
+
+    // Use "BranchIsAbove" for labels which are referenced by OpBranch or OpBranchConditional
+    // ops that are above the label in the code--i.e., the branch skips forward in the code.
+    private static final int kBranchIsAbove = 0,
+
+    // Use "BranchIsBelow" for labels which are referenced by OpBranch or OpBranchConditional
+    // ops below the label in the code--i.e., the branch jumps backward in the code.
+    kBranchIsBelow = 1,
+
+    // Use "BranchesOnBothSides" for labels which have branches coming from both directions.
+    kBranchesOnBothSides = 2;
+
     // our generator tracks a single access chain, like, a.b[c].d
     private final IntArrayList mAccessChain = new IntArrayList();
 
@@ -145,54 +163,52 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     private int mIdCount = 1;
     private int mGLSLExtendedInstructions;
 
-    private boolean mEmitNames = false;
-
-    public SPIRVCodeGenerator(@Nonnull Context context,
-                              @Nonnull TranslationUnit translationUnit,
-                              @Nullable SPIRVTarget outputTarget,
-                              @Nullable SPIRVVersion outputVersion) {
-        super(context, translationUnit);
-        mOutputTarget = Objects.requireNonNullElse(outputTarget, SPIRVTarget.VULKAN_1_0);
-        mOutputVersion = Objects.requireNonNullElse(outputVersion, SPIRVVersion.SPIRV_1_0);
-    }
-
-    /**
+    /*
      * Emit name strings for variables, functions, user-defined types, and members.
      * This has no semantic impact (debug only). The default is false.
      */
-    public void setEmitNames(boolean emitNames) {
-        mEmitNames = emitNames;
+    private boolean mEmitNames;
+
+    public SPIRVCodeGenerator(@Nonnull ShaderCompiler compiler,
+                              @Nonnull TranslationUnit translationUnit,
+                              @Nullable SPIRVTarget outputTarget,
+                              @Nullable SPIRVVersion outputVersion) {
+        super(compiler, translationUnit);
+        mOutputTarget = Objects.requireNonNullElse(outputTarget, SPIRVTarget.VULKAN_1_0);
+        mOutputVersion = Objects.requireNonNullElse(outputVersion, SPIRVVersion.SPIRV_1_0);
     }
 
     @Nullable
     @Override
     public ByteBuffer generateCode() {
-        assert mContext.getErrorHandler().errorCount() == 0;
+        assert getContext().getErrorHandler().errorCount() == 0;
 
         ShaderKind kind = mTranslationUnit.getKind();
         if (!kind.isVertex() && !kind.isFragment() && !kind.isCompute()) {
-            mContext.error(Position.NO_POS, "shader kind " + kind + " is not allowed in SPIR-V");
+            getContext().error(Position.NO_POS, "shader kind " + kind + " is not executable in SPIR-V");
             return null;
         }
 
+        mEmitNames = !getContext().getOptions().mMinifyNames;
+        // build into word buffers
         buildInstructions(mTranslationUnit);
 
-        if (mContext.getErrorHandler().errorCount() != 0) {
+        if (getContext().getErrorHandler().errorCount() != 0) {
             return null;
         }
 
         // estimate code size in bytes
         int estimatedSize = 20;
         estimatedSize += (mCapabilities.size() + 1) * 2 * 4;
-        estimatedSize += 24;
-        estimatedSize += 12;
+        estimatedSize += 24; // ExtInstImport
+        estimatedSize += 12; // MemoryModel
         int entryPointWordCount = 3 + (mEntryPointFunction.getName().length() + 4) / 4 + mInterfaceVariables.size();
         estimatedSize += entryPointWordCount * 4;
-        estimatedSize += mNameBuffer.size * 4;
-        estimatedSize += mDecorationBuffer.size * 4;
-        estimatedSize += mConstantBuffer.size * 4;
-        estimatedSize += mFunctionBuffer.size * 4;
-        estimatedSize = MathUtil.alignTo(estimatedSize + 40, 128);
+        estimatedSize += mNameBuffer.size() * 4;
+        estimatedSize += mDecorationBuffer.size() * 4;
+        estimatedSize += mConstantBuffer.size() * 4;
+        estimatedSize += mFunctionBuffer.size() * 4;
+        estimatedSize = estimatedSize + 40; // ExecutionMode
 
         // Header
         // 0 - magic number
@@ -207,23 +223,23 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                 .putInt(mIdCount)
                 .putInt(0);
 
-        writeCapabilities(mMainOutput);
-        writeInstruction(SpvOpExtInstImport, mGLSLExtendedInstructions, "GLSL.std.450", mMainOutput);
-        writeInstruction(SpvOpMemoryModel, SpvAddressingModelLogical, SpvMemoryModelGLSL450, mMainOutput);
-        writeOpcode(SpvOpEntryPoint, entryPointWordCount, mMainOutput);
+        writeCapabilities(mMainWriter);
+        writeInstruction(SpvOpExtInstImport, mGLSLExtendedInstructions, "GLSL.std.450", mMainWriter);
+        writeInstruction(SpvOpMemoryModel, SpvAddressingModelLogical, SpvMemoryModelGLSL450, mMainWriter);
+        writeOpcode(SpvOpEntryPoint, entryPointWordCount, mMainWriter);
         if (kind.isVertex()) {
-            mMainOutput.writeWord(SpvExecutionModelVertex);
+            mMainWriter.writeWord(SpvExecutionModelVertex);
         } else if (kind.isFragment()) {
-            mMainOutput.writeWord(SpvExecutionModelFragment);
+            mMainWriter.writeWord(SpvExecutionModelFragment);
         } else if (kind.isCompute()) {
-            mMainOutput.writeWord(SpvExecutionModelGLCompute);
+            mMainWriter.writeWord(SpvExecutionModelGLCompute);
         }
 
         int entryPoint = mFunctionTable.getInt(mEntryPointFunction);
-        mMainOutput.writeWord(entryPoint);
-        mMainOutput.writeString8(mEntryPointFunction.getName());
+        mMainWriter.writeWord(entryPoint);
+        mMainWriter.writeString8(getContext(), mEntryPointFunction.getName());
         for (int id : mInterfaceVariables) {
-            mMainOutput.writeWord(id);
+            mMainWriter.writeWord(id);
         }
 
         if (kind.isFragment()) {
@@ -232,23 +248,23 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                     mOutputTarget.isOpenGL()
                             ? SpvExecutionModeOriginLowerLeft
                             : SpvExecutionModeOriginUpperLeft,
-                    mMainOutput);
+                    mMainWriter);
         }
-        mMainOutput.writeWords(mNameBuffer.a, mNameBuffer.size);
-        mMainOutput.writeWords(mDecorationBuffer.a, mDecorationBuffer.size);
-        mMainOutput.writeWords(mConstantBuffer.a, mConstantBuffer.size);
-        mMainOutput.writeWords(mFunctionBuffer.a, mFunctionBuffer.size);
+        mMainWriter.writeWords(mNameBuffer.elements(), mNameBuffer.size());
+        mMainWriter.writeWords(mDecorationBuffer.elements(), mDecorationBuffer.size());
+        mMainWriter.writeWords(mConstantBuffer.elements(), mConstantBuffer.size());
+        mMainWriter.writeWords(mFunctionBuffer.elements(), mFunctionBuffer.size());
 
         ByteBuffer buffer = mBuffer;
         mBuffer = null;
         return buffer.flip();
     }
 
-    private void writeCapabilities(Output output) {
+    private void writeCapabilities(Writer writer) {
         // always enable Shader capability, this implicitly declares Matrix capability
-        writeInstruction(SpvOpCapability, SpvCapabilityShader, output);
+        writeInstruction(SpvOpCapability, SpvCapabilityShader, writer);
         for (var it = mCapabilities.iterator(); it.hasNext(); ) {
-            writeInstruction(SpvOpCapability, it.nextInt(), output);
+            writeInstruction(SpvOpCapability, it.nextInt(), writer);
         }
     }
 
@@ -282,7 +298,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                 return SpvStorageClassUniform;
             }
             if (!mOutputTarget.isOpenGL()) {
-                mContext.error(variable.mPosition, "uniform variables at global scope are not allowed");
+                getContext().error(variable.mPosition, "uniform variables at global scope are not allowed");
             }
             return SpvStorageClassUniformConstant;
         }
@@ -329,7 +345,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     }
 
     /**
-     * For {@link #writeInstructionWithCache(InstructionBuilder, Output)}.
+     * For {@link #writeInstructionWithCache(InstructionBuilder, Writer)}.
      */
     private InstructionBuilder getInstBuilder(int opcode) {
         if (mInstBuilderPoolSize == 0) {
@@ -413,7 +429,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                 final int stride;
                 if (memoryLayout != null) {
                     if (!memoryLayout.isSupported(type)) {
-                        mContext.error(type.mPosition, "type '" + type +
+                        getContext().error(type.mPosition, "type '" + type +
                                 "' is not permitted here");
                         yield NONE_ID;
                     }
@@ -434,10 +450,10 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                 } else {
                     int arraySize = type.getArraySize();
                     if (arraySize <= 0) {
-                        mContext.error(type.mPosition, "array size must be positive");
+                        getContext().error(type.mPosition, "array size must be positive");
                         yield NONE_ID;
                     }
-                    int arraySizeId = writeScalarConstant(arraySize, mContext.getTypes().mInt);
+                    int arraySizeId = writeScalarConstant(arraySize, getContext().getTypes().mInt);
                     resultId = writeInstructionWithCache(
                             getInstBuilder(SpvOpTypeArray)
                                     .addKeyedResult(stride)
@@ -460,7 +476,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             case Type.kStruct_TypeKind -> writeStruct(type, memoryLayout);
             default -> {
                 // compiler defines some intermediate types
-                mContext.error(type.mPosition, "type '" + type +
+                getContext().error(type.mPosition, "type '" + type +
                         "' is not permitted here");
                 yield NONE_ID;
             }
@@ -550,7 +566,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             // layout will never be unique
             if (memoryLayout != null) {
                 if (!memoryLayout.isSupported(field.type())) {
-                    mContext.error(field.position(), "type '" + field.type() +
+                    getContext().error(field.position(), "type '" + field.type() +
                             "' is not permitted here");
                     return resultId;
                 }
@@ -561,11 +577,11 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                 if (fieldOffset >= 0) {
                     // must be in declaration order
                     if (fieldOffset < offset) {
-                        mContext.error(field.position(), "offset of field '" +
+                        getContext().error(field.position(), "offset of field '" +
                                 field.name() + "' must be at least " + offset);
                     }
                     if ((fieldOffset & alignment - 1) != 0) {
-                        mContext.error(field.position(), "offset of field '" +
+                        getContext().error(field.position(), "offset of field '" +
                                 field.name() + "' must round up to " + alignment);
                     }
                     offset = fieldOffset;
@@ -574,7 +590,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                 }
 
                 if (field.modifiers().layoutBuiltin() >= 0) {
-                    mContext.error(field.position(), "builtin field '" + field.name() +
+                    getContext().error(field.position(), "builtin field '" + field.name() +
                             "' cannot be explicitly laid out.");
                 } else {
                     writeInstruction(SpvOpMemberDecorate, resultId, i,
@@ -598,6 +614,59 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         }
 
         return resultId;
+    }
+
+    private int writeFunction(@Nonnull FunctionDefinition func, Writer writer) {
+        int numReachableOps = mReachableOps.size();
+        int numStoreOps = mStoreOps.size();
+
+        mVariableBuffer.clear();
+        int result = writeFunctionDecl(func.getFunctionDecl(), writer);
+        mCurrentBlock = 0;
+        writeLabel(getUniqueId(), writer);
+        mBodyBuffer.clear();
+        writeBlock(func.getBody(), mBodyBuffer);
+        writer.writeWords(mVariableBuffer.elements(), mVariableBuffer.size());
+        if (func.getFunctionDecl().isEntryPoint()) {
+            writer.writeWords(mGlobalInitBuffer.elements(), mGlobalInitBuffer.size());
+        }
+        writer.writeWords(mBodyBuffer.elements(), mBodyBuffer.size());
+
+        if (mCurrentBlock != 0) {
+            if (func.getFunctionDecl().getReturnType().isVoid()) {
+                writeInstruction(SpvOpReturn, writer);
+            } else {
+                writeInstruction(SpvOpUnreachable, writer);
+            }
+        }
+        writeInstruction(SpvOpFunctionEnd, writer);
+        pruneConditionalOps(numReachableOps, numStoreOps);
+        return result;
+    }
+
+    private int writeFunctionDecl(@Nonnull FunctionDecl decl, Writer writer) {
+        int result = mFunctionTable.getInt(decl);
+        int returnTypeId = writeType(decl.getReturnType());
+        int functionTypeId = writeFunctionType(decl);
+        writeInstruction(SpvOpFunction, returnTypeId, result,
+                SpvFunctionControlMaskNone, functionTypeId, writer);
+        if (mEmitNames) {
+            String mangledName = decl.getMangledName();
+            if (mangledName.length() <= 5200) {
+                writeInstruction(SpvOpName,
+                        result,
+                        mangledName,
+                        mNameBuffer);
+            }
+        }
+        for (Variable parameter : decl.getParameters()) {
+            int id = getUniqueId();
+            mVariableTable.put(parameter, id);
+
+            int type = writeFunctionParameterType(parameter.getType(), parameter.getModifiers());
+            writeInstruction(SpvOpFunctionParameter, type, id, writer);
+        }
+        return result;
     }
 
     private int writeFunctionType(@Nonnull FunctionDecl function) {
@@ -735,7 +804,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             }
             if (layout.mBinding >= 0) {
                 if (isPushConstant) {
-                    mContext.error(modifiers.mPosition, "cannot combine 'binding' with 'push_constants'");
+                    getContext().error(modifiers.mPosition, "cannot combine 'binding' with 'push_constants'");
                 } else {
                     writeInstruction(SpvOpDecorate, targetId, SpvDecorationBinding,
                             layout.mBinding, mDecorationBuffer);
@@ -744,7 +813,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             }
             if (layout.mSet >= 0) {
                 if (isPushConstant) {
-                    mContext.error(modifiers.mPosition, "cannot combine 'set' with 'push_constants'");
+                    getContext().error(modifiers.mPosition, "cannot combine 'set' with 'push_constants'");
                 } else {
                     writeInstruction(SpvOpDecorate, targetId, SpvDecorationDescriptorSet,
                             layout.mSet, mDecorationBuffer);
@@ -767,14 +836,14 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
 
         if ((modifiers.flags() & (Modifiers.kUniform_Flag | Modifiers.kBuffer_Flag)) != 0) {
             if (!hasBinding) {
-                mContext.error(modifiers.mPosition, "'binding' is missing");
+                getContext().error(modifiers.mPosition, "'binding' is missing");
             }
             if (descriptorSet < 0) {
                 if (!mOutputTarget.isOpenGL()) {
-                    mContext.error(modifiers.mPosition, "'set' is missing");
+                    getContext().error(modifiers.mPosition, "'set' is missing");
                 }
             } else if (mOutputTarget.isOpenGL() && descriptorSet != 0) {
-                mContext.error(modifiers.mPosition, "'set' must be 0");
+                getContext().error(modifiers.mPosition, "'set' must be 0");
             }
         }
 
@@ -894,7 +963,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         Type type = variable.getType();
         assert type.isInterfaceBlock();
         if (memoryLayout != null && !memoryLayout.isSupported(type)) {
-            mContext.error(type.mPosition, "type '" + type +
+            getContext().error(type.mPosition, "type '" + type +
                     "' is not permitted here");
             return resultId;
         }
@@ -971,31 +1040,254 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         return resultId;
     }
 
-    private int writeExpression(@Nonnull Expression expr, Output output) {
-        //TODO
+    private int writeExpression(@Nonnull Expression expr, Writer writer) {
+        return switch (expr.getKind()) {
+            case BINARY -> writeBinaryExpression((BinaryExpression) expr, writer);
+            case VARIABLE_REFERENCE -> writeVariableReference((VariableReference) expr, writer);
+            case FIELD_ACCESS -> writeLValue(expr, writer).load(this, writer);
+            default -> 0;
+        };
+    }
+
+    private int writeBinaryExpression(@Nonnull BinaryExpression expr, Writer writer) {
+        Expression left = expr.getLeft();
+        Expression right = expr.getRight();
+        Operator op = expr.getOperator();
+
+        switch (op) {
+            case ASSIGN:
+                // Handles assignment.
+                int rvalue = writeExpression(right, writer);
+                writeLValue(left, writer).store(this, rvalue, writer);
+                return rvalue;
+            case LOGICAL_AND:
+                if (!getContext().getOptions().mNoShortCircuit) {
+                    // Handles short-circuiting; we don't necessarily evaluate both LHS and RHS.
+                    return writeLogicalAndSC(left, right, writer);
+                }
+                break;
+            case LOGICAL_OR:
+                if (!getContext().getOptions().mNoShortCircuit) {
+                    // Handles short-circuiting; we don't necessarily evaluate both LHS and RHS.
+                    return writeLogicalOrSC(left, right, writer);
+                }
+                break;
+            default:
+                break;
+        }
+
+        LValue lvalue;
+        int lhs;
+        if (op.isAssignment()) {
+            lvalue = writeLValue(left, writer);
+            lhs = lvalue.load(this, writer);
+        } else {
+            lvalue = null;
+            lhs = writeExpression(left, writer);
+        }
+
+        int rhs = writeExpression(right, writer);
+        int result = writeBinaryOp(left.getType(), lhs, op.removeAssignment(),
+                right.getType(), rhs, expr.getType(), writer);
+        if (lvalue != null) {
+            lvalue.store(this, result, writer);
+        }
+        return result;
+    }
+
+    // short-circuit version '&&'
+    private int writeLogicalAndSC(@Nonnull Expression left, @Nonnull Expression right,
+                                  Writer writer) {
+        int falseConstant = writeScalarConstant(0, getContext().getTypes().mBool);
+        int lhs = writeExpression(left, writer);
+
+        int numReachableOps = mReachableOps.size();
+        int numStoreOps = mStoreOps.size();
+
+        int rhsLabel = getUniqueId();
+        int end = getUniqueId();
+        int lhsBlock = mCurrentBlock;
+        writeInstruction(SpvOpSelectionMerge, end, SpvSelectionControlMaskNone, writer);
+        writeInstruction(SpvOpBranchConditional, lhs, rhsLabel, end, writer);
+        writeLabel(rhsLabel, writer);
+        int rhs = writeExpression(right, writer);
+        int rhsBlock = mCurrentBlock;
+        writeInstruction(SpvOpBranch, end, writer);
+        writeLabel(end, kBranchIsAbove, numReachableOps, numStoreOps, writer);
+        int result = getUniqueId();
+        int typeId = writeType(getContext().getTypes().mBool);
+        writeInstruction(SpvOpPhi, typeId, result, falseConstant,
+                lhsBlock, rhs, rhsBlock, writer);
+
+        return result;
+    }
+
+    // short-circuit version '||'
+    private int writeLogicalOrSC(@Nonnull Expression left, @Nonnull Expression right,
+                                 Writer writer) {
+        int trueConstant = writeScalarConstant(1, getContext().getTypes().mBool);
+        int lhs = writeExpression(left, writer);
+
+        int numReachableOps = mReachableOps.size();
+        int numStoreOps = mStoreOps.size();
+
+        int rhsLabel = getUniqueId();
+        int end = getUniqueId();
+        int lhsBlock = mCurrentBlock;
+        writeInstruction(SpvOpSelectionMerge, end, SpvSelectionControlMaskNone, writer);
+        writeInstruction(SpvOpBranchConditional, lhs, end, rhsLabel, writer);
+        writeLabel(rhsLabel, writer);
+        int rhs = writeExpression(right, writer);
+        int rhsBlock = mCurrentBlock;
+        writeInstruction(SpvOpBranch, end, writer);
+        writeLabel(end, kBranchIsAbove, numReachableOps, numStoreOps, writer);
+        int result = getUniqueId();
+        int typeId = writeType(getContext().getTypes().mBool);
+        writeInstruction(SpvOpPhi, typeId, result, trueConstant,
+                lhsBlock, rhs, rhsBlock, writer);
+
+        return result;
+    }
+
+    // non-assignment, no short-circuit
+    private int writeBinaryOp(Type leftType, int lhs, Operator op,
+                              Type rightType, int rhs,
+                              Type resultType, Writer writer) {
         return 0;
     }
 
-    private void writeAccessChain(@Nonnull Expression expr, Output output, IntList chain) {
+    // raw binary op
+    private int writeBinaryOp(Type resultType, Type operandType,
+                              int lhs, int rhs, // SpvId
+                              int _float, int _signed, int _unsigned, int _boolean, // SpvOp
+                              Writer writer) {
+        int resultId = getUniqueId(resultType);
+        int op = select_by_component_type(operandType, _float, _signed, _unsigned, _boolean);
+        if (op == SpvOpUndef) {
+            getContext().error(operandType.mPosition,
+                    "unsupported operand for binary expression: " + operandType);
+            return NONE_ID;
+        }
+        int typeId = writeType(resultType);
+        writeInstruction(op, typeId, resultId, lhs, rhs, writer);
+        return resultId;
+    }
+
+    private int writeVariableReference(VariableReference ref, Writer writer) {
+        Expression constExpr = ConstantFolder.getConstantValueOrNullForVariable(ref);
+        if (constExpr != null) {
+            return writeExpression(constExpr, writer);
+        }
+        return writeLValue(ref, writer).load(this, writer);
+    }
+
+    private void pruneConditionalOps(int numReachableOps, int numStoreOps) {
+        // Remove ops which are no longer reachable.
+        while (mReachableOps.size() > numReachableOps) {
+            int id = mReachableOps.popInt();
+            Instruction inst = mSpvIdCache.remove(id);
+
+            if (inst != null) {
+                mOpCache.removeInt(inst);
+            } else {
+                throw new AssertionError("reachable-op list contains unrecognized SpvId");
+            }
+        }
+
+        // Remove any cached stores that occurred during the conditional block.
+        while (mStoreOps.size() > numStoreOps) {
+            int id = mStoreOps.popInt();
+            mStoreCache.remove(id);
+        }
+    }
+
+    private void writeStatement(@Nonnull Statement stmt, Writer writer) {
+        switch (stmt.getKind()) {
+            case EXPRESSION -> writeExpression(((ExpressionStatement) stmt).getExpression(), writer);
+            case DISCARD -> {
+                if (mOutputVersion.isAtLeast(SPIRVVersion.SPIRV_1_6)) {
+                    writeInstruction(SpvOpTerminateInvocation, writer);
+                } else {
+                    writeInstruction(SpvOpKill, writer);
+                }
+            }
+        }
+    }
+
+    private static int select_by_component_type(Type type,
+                                                int _float,
+                                                int _signed,
+                                                int _unsigned,
+                                                int _boolean) {
+        if (type.isFloatOrCompound()) {
+            return _float;
+        }
+        if (type.isSignedOrCompound()) {
+            return _signed;
+        }
+        if (type.isUnsignedOrCompound()) {
+            return _unsigned;
+        }
+        if (type.isBooleanOrCompound()) {
+            return _boolean;
+        }
+        throw new AssertionError();
+    }
+
+    private void writeBlock(BlockStatement blockStmt, Writer writer) {
+        for (var stmt : blockStmt.getStatements()) {
+            writeStatement(stmt, writer);
+        }
+    }
+
+    private void writeLabel(int label, Writer writer) {
+        assert mCurrentBlock == 0;
+        mCurrentBlock = label;
+        writeInstruction(SpvOpLabel, label, writer);
+    }
+
+    private void writeLabel(int label, int type, int numReachableOps,
+                            int numStoreOps, Writer writer) {
+        switch (type) {
+            case kBranchIsBelow:
+            case kBranchesOnBothSides:
+                // With a backward or bidirectional branch, we haven't seen the code between the label
+                // and the branch yet, so any stored value is potentially suspect. Without scanning
+                // ahead to check, the only safe option is to ditch the store cache entirely.
+                mStoreCache.clear();
+                // fallthrough
+            case kBranchIsAbove:
+                // With a forward branch, we can rely on stores that we had cached at the start of the
+                // statement/expression, if they haven't been touched yet. Anything newer than that is
+                // pruned.
+                pruneConditionalOps(numReachableOps, numStoreOps);
+                break;
+        }
+
+        // Emit the label.
+        writeLabel(label, writer);
+    }
+
+    private void writeAccessChain(@Nonnull Expression expr, Writer writer, IntList chain) {
         switch (expr.getKind()) {
             case INDEX -> {
                 IndexExpression indexExpr = (IndexExpression) expr;
                 if (indexExpr.getBase() instanceof Swizzle) {
                     //TODO
-                    mContext.error(indexExpr.mPosition, "indexing on swizzle is not allowed");
+                    getContext().error(indexExpr.mPosition, "indexing on swizzle is not allowed");
                 }
-                writeAccessChain(indexExpr.getBase(), output, chain);
-                int id = writeExpression(indexExpr.getIndex(), output);
+                writeAccessChain(indexExpr.getBase(), writer, chain);
+                int id = writeExpression(indexExpr.getIndex(), writer);
                 chain.add(id);
             }
             case FIELD_ACCESS -> {
                 FieldAccess fieldAccess = (FieldAccess) expr;
-                writeAccessChain(fieldAccess.getBase(), output, chain);
-                int id = writeScalarConstant(fieldAccess.getFieldIndex(), mContext.getTypes().mInt);
+                writeAccessChain(fieldAccess.getBase(), writer, chain);
+                int id = writeScalarConstant(fieldAccess.getFieldIndex(), getContext().getTypes().mInt);
                 chain.add(id);
             }
             default -> {
-                int id = writeLValue(expr, output).getPointer();
+                int id = writeLValue(expr, writer).getPointer();
                 assert id != NONE_ID;
                 chain.add(id);
             }
@@ -1003,20 +1295,20 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     }
 
     @Nonnull
-    private LValue writeLValue(@Nonnull Expression expr, Output output) {
+    private LValue writeLValue(@Nonnull Expression expr, Writer writer) {
         Type type = expr.getType();
         boolean relaxedPrecision = type.isRelaxedPrecision();
         switch (expr.getKind()) {
             case INDEX, FIELD_ACCESS -> {
                 IntArrayList chain = mAccessChain;
                 chain.clear();
-                writeAccessChain(expr, output, chain);
+                writeAccessChain(expr, writer, chain);
                 int member = getUniqueId();
                 int storageClass = getStorageClass(expr);
-                writeOpcode(SpvOpAccessChain, 3 + chain.size(), output);
-                output.writeWord(writePointerType(type, storageClass));
-                output.writeWord(member);
-                output.writeWords(chain.elements(), chain.size());
+                writeOpcode(SpvOpAccessChain, 3 + chain.size(), writer);
+                writer.writeWord(writePointerType(type, storageClass));
+                writer.writeWord(member);
+                writer.writeWords(chain.elements(), chain.size());
                 //TODO layout may be wrong
                 int typeId = writeType(type, null, null);
                 return new PointerLValue(member, false, typeId,
@@ -1035,21 +1327,21 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             }
             case SWIZZLE -> {
                 Swizzle swizzle = (Swizzle) expr;
-                LValue lvalue = writeLValue(swizzle.getBase(), output);
+                LValue lvalue = writeLValue(swizzle.getBase(), writer);
                 if (lvalue.applySwizzle(swizzle.getComponents(), type)) {
                     return lvalue;
                 }
                 int base = lvalue.getPointer();
                 if (base == NONE_ID) {
-                    mContext.error(swizzle.mPosition,
+                    getContext().error(swizzle.mPosition,
                             "unable to retrieve lvalue from swizzle");
                 }
                 int storageClass = getStorageClass(swizzle.getBase());
                 if (swizzle.getComponents().length == 1) {
                     int member = getUniqueId();
                     int typeId = writePointerType(type, storageClass);
-                    int indexId = writeScalarConstant(swizzle.getComponents()[0], mContext.getTypes().mInt);
-                    writeInstruction(SpvOpAccessChain, typeId, member, base, indexId, output);
+                    int indexId = writeScalarConstant(swizzle.getComponents()[0], getContext().getTypes().mInt);
+                    writeInstruction(SpvOpAccessChain, typeId, member, base, indexId, writer);
                     return new PointerLValue(member,
                             /*isMemoryObjectPointer=*/false,
                             writeType(type),
@@ -1082,7 +1374,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         }
 
         if (mEntryPointFunction == null) {
-            mContext.error(Position.NO_POS, "translation unit does not contain an entry point");
+            getContext().error(Position.NO_POS, "translation unit does not contain an entry point");
             return;
         }
 
@@ -1104,7 +1396,11 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         }
 
         // Emit all the functions.
-
+        for (var e : translationUnit) {
+            if (e instanceof FunctionDefinition functionDef) {
+                writeFunction(functionDef, mFunctionBuffer);
+            }
+        }
 
         // Add global variables to the list of interface variables.
         for (var e : mVariableTable.object2IntEntrySet()) {
@@ -1127,7 +1423,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     int writeOpLoad(int type,
                     boolean relaxedPrecision,
                     int pointer,
-                    Output output) {
+                    Writer writer) {
         // Look for this pointer in our load-cache.
         int cachedOp = mStoreCache.get(pointer);
         if (cachedOp != 0) {
@@ -1136,16 +1432,16 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
 
         // Write the requested OpLoad instruction.
         int resultId = getUniqueId(relaxedPrecision);
-        writeInstruction(SpvOpLoad, type, resultId, pointer, output);
+        writeInstruction(SpvOpLoad, type, resultId, pointer, writer);
         return resultId;
     }
 
     void writeOpStore(int storageClass,
                       int pointer,
                       int rvalue,
-                      Output output) {
+                      Writer writer) {
         // Write the uncached SpvOpStore directly.
-        writeInstruction(SpvOpStore, pointer, rvalue, output);
+        writeInstruction(SpvOpStore, pointer, rvalue, writer);
 
         if (storageClass == SpvStorageClassFunction) {
             // Insert a pointer-to-SpvId mapping into the load cache. A writeOpLoad to this pointer will
@@ -1155,117 +1451,117 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         }
     }
 
-    void writeOpcode(int opcode, int count, Output output) {
+    void writeOpcode(int opcode, int count, Writer writer) {
         if ((count & 0xFFFF0000) != 0) {
-            mContext.error(Position.NO_POS, "too many words");
+            getContext().error(Position.NO_POS, "too many words");
         }
-        output.writeWord((count << 16) | opcode);
+        writer.writeWord((count << 16) | opcode);
     }
 
-    void writeInstruction(int opcode, Output output) {
-        writeOpcode(opcode, 1, output);
+    void writeInstruction(int opcode, Writer writer) {
+        writeOpcode(opcode, 1, writer);
     }
 
-    void writeInstruction(int opcode, int word1, Output output) {
-        writeOpcode(opcode, 2, output);
-        output.writeWord(word1);
+    void writeInstruction(int opcode, int word1, Writer writer) {
+        writeOpcode(opcode, 2, writer);
+        writer.writeWord(word1);
     }
 
     void writeInstruction(int opcode, int word1, int word2,
-                          Output output) {
-        writeOpcode(opcode, 3, output);
-        output.writeWord(word1);
-        output.writeWord(word2);
+                          Writer writer) {
+        writeOpcode(opcode, 3, writer);
+        writer.writeWord(word1);
+        writer.writeWord(word2);
     }
 
     private void writeInstruction(int opcode, int word1, String string,
-                                  Output output) {
-        writeOpcode(opcode, 2 + (string.length() + 4 >> 2), output);
-        output.writeWord(word1);
-        output.writeString8(string);
+                                  Writer writer) {
+        writeOpcode(opcode, 2 + (string.length() + 4 >> 2), writer);
+        writer.writeWord(word1);
+        writer.writeString8(getContext(), string);
     }
 
     void writeInstruction(int opcode, int word1, int word2,
-                          int word3, Output output) {
-        writeOpcode(opcode, 4, output);
-        output.writeWord(word1);
-        output.writeWord(word2);
-        output.writeWord(word3);
+                          int word3, Writer writer) {
+        writeOpcode(opcode, 4, writer);
+        writer.writeWord(word1);
+        writer.writeWord(word2);
+        writer.writeWord(word3);
     }
 
     private void writeInstruction(int opcode, int word1, int word2,
-                                  String string, Output output) {
-        writeOpcode(opcode, 3 + (string.length() + 4 >> 2), output);
-        output.writeWord(word1);
-        output.writeWord(word2);
-        output.writeString8(string);
+                                  String string, Writer writer) {
+        writeOpcode(opcode, 3 + (string.length() + 4 >> 2), writer);
+        writer.writeWord(word1);
+        writer.writeWord(word2);
+        writer.writeString8(getContext(), string);
     }
 
     void writeInstruction(int opcode, int word1, int word2,
-                          int word3, int word4, Output output) {
-        writeOpcode(opcode, 5, output);
-        output.writeWord(word1);
-        output.writeWord(word2);
-        output.writeWord(word3);
-        output.writeWord(word4);
-    }
-
-    void writeInstruction(int opcode, int word1, int word2,
-                          int word3, int word4, int word5,
-                          Output output) {
-        writeOpcode(opcode, 6, output);
-        output.writeWord(word1);
-        output.writeWord(word2);
-        output.writeWord(word3);
-        output.writeWord(word4);
-        output.writeWord(word5);
+                          int word3, int word4, Writer writer) {
+        writeOpcode(opcode, 5, writer);
+        writer.writeWord(word1);
+        writer.writeWord(word2);
+        writer.writeWord(word3);
+        writer.writeWord(word4);
     }
 
     void writeInstruction(int opcode, int word1, int word2,
                           int word3, int word4, int word5,
-                          int word6, Output output) {
-        writeOpcode(opcode, 7, output);
-        output.writeWord(word1);
-        output.writeWord(word2);
-        output.writeWord(word3);
-        output.writeWord(word4);
-        output.writeWord(word5);
-        output.writeWord(word6);
+                          Writer writer) {
+        writeOpcode(opcode, 6, writer);
+        writer.writeWord(word1);
+        writer.writeWord(word2);
+        writer.writeWord(word3);
+        writer.writeWord(word4);
+        writer.writeWord(word5);
     }
 
     void writeInstruction(int opcode, int word1, int word2,
                           int word3, int word4, int word5,
-                          int word6, int word7, Output output) {
-        writeOpcode(opcode, 8, output);
-        output.writeWord(word1);
-        output.writeWord(word2);
-        output.writeWord(word3);
-        output.writeWord(word4);
-        output.writeWord(word5);
-        output.writeWord(word6);
-        output.writeWord(word7);
+                          int word6, Writer writer) {
+        writeOpcode(opcode, 7, writer);
+        writer.writeWord(word1);
+        writer.writeWord(word2);
+        writer.writeWord(word3);
+        writer.writeWord(word4);
+        writer.writeWord(word5);
+        writer.writeWord(word6);
+    }
+
+    void writeInstruction(int opcode, int word1, int word2,
+                          int word3, int word4, int word5,
+                          int word6, int word7, Writer writer) {
+        writeOpcode(opcode, 8, writer);
+        writer.writeWord(word1);
+        writer.writeWord(word2);
+        writer.writeWord(word3);
+        writer.writeWord(word4);
+        writer.writeWord(word5);
+        writer.writeWord(word6);
+        writer.writeWord(word7);
     }
 
     void writeInstruction(int opcode, int word1, int word2,
                           int word3, int word4, int word5,
                           int word6, int word7, int word8,
-                          Output output) {
-        writeOpcode(opcode, 9, output);
-        output.writeWord(word1);
-        output.writeWord(word2);
-        output.writeWord(word3);
-        output.writeWord(word4);
-        output.writeWord(word5);
-        output.writeWord(word6);
-        output.writeWord(word7);
-        output.writeWord(word8);
+                          Writer writer) {
+        writeOpcode(opcode, 9, writer);
+        writer.writeWord(word1);
+        writer.writeWord(word2);
+        writer.writeWord(word3);
+        writer.writeWord(word4);
+        writer.writeWord(word5);
+        writer.writeWord(word6);
+        writer.writeWord(word7);
+        writer.writeWord(word8);
     }
 
     /**
      * With bidirectional map.
      */
     private int writeInstructionWithCache(@Nonnull InstructionBuilder key,
-                                          @Nonnull Output output) {
+                                          @Nonnull Writer writer) {
         assert (key.mOpcode != SpvOpLoad);
         assert (key.mOpcode != SpvOpStore);
         int cachedId = mOpCache.getInt(key);
@@ -1306,13 +1602,13 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         int[] values = key.mValues.elements();
         int[] kinds = key.mKinds.elements();
         int s = key.mValues.size();
-        writeOpcode(key.mOpcode, s + 1, output);
+        writeOpcode(key.mOpcode, s + 1, writer);
         for (int i = 0; i < s; i++) {
             if (Instruction.isResult(kinds[i])) {
                 assert resultId != NONE_ID;
-                output.writeWord(resultId);
+                writer.writeWord(resultId);
             } else {
-                output.writeWord(values[i]);
+                writer.writeWord(values[i]);
             }
         }
 

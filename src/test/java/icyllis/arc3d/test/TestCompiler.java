@@ -43,32 +43,22 @@ public class TestCompiler {
             layout(location = 1) smooth in vec4 f_Color;
             layout(location = 0, index = 0) out vec4 FragColor0;
             layout(location = 0, index = 1) out vec4 FragColor1;
-            float rr(float2 a, float2 b) {
-                // this will compile into 1.0
-                return float(a.x1.y.x);
-            }
-            float sa(float a) {
-                return a;
-            }
-            half sa(half a) {
-                return a;
-            }
-            float rand(float2 n) {
-                const float[] a = float[](12.9898, n.x), b = float[](12.9898, n.x, n.y);
-                return sa(sa(rr(n, float2(a[0],12.1414))) * 83758.5453);
-            }
             void main(void) {
-                FragColor0 = vec4(0);
+                FragColor0 = u_Buffer0.u_Color;
             }
             """;
 
     public static void main(String[] args) {
         var compiler = new ShaderCompiler();
 
+        System.out.println(SOURCE.length());
+
+        var options = new CompileOptions();
+
         TranslationUnit translationUnit = compiler.parse(
                 SOURCE,
                 ShaderKind.FRAGMENT,
-                new CompileOptions(),
+                options,
                 ModuleLoader.getInstance().getRootModule()
         );
 

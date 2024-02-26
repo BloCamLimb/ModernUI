@@ -145,13 +145,15 @@ public class ShaderCompiler {
         Objects.requireNonNull(kind);
         Objects.requireNonNull(parent);
         char[] buffer = source.toString().toCharArray();
-        Parser parser = new Parser(this, kind,
-                options,
-                buffer);
         startContext(kind, options, parent, false, false, buffer);
-        TranslationUnit translationUnit = parser.parse(parent);
-        endContext();
-        return translationUnit;
+        try {
+            Parser parser = new Parser(this, kind,
+                    options,
+                    buffer);
+            return parser.parse(parent);
+        } finally {
+            endContext();
+        }
     }
 
     /**
@@ -171,13 +173,15 @@ public class ShaderCompiler {
         Objects.requireNonNull(parent);
         char[] buffer = source.toString().toCharArray();
         CompileOptions options = new CompileOptions();
-        Parser parser = new Parser(this, kind,
-                options,
-                buffer);
         startContext(kind, options, parent, builtin, true, buffer);
-        ModuleUnit moduleUnit = parser.parseModule(parent);
-        endContext();
-        return moduleUnit;
+        try {
+            Parser parser = new Parser(this, kind,
+                    options,
+                    buffer);
+            return parser.parseModule(parent);
+        } finally {
+            endContext();
+        }
     }
 
     /**
@@ -202,12 +206,46 @@ public class ShaderCompiler {
                 false,
                 false,
                 translationUnit.getSource());
-        var generator = new SPIRVCodeGenerator(
-                mContext, translationUnit, outputTarget, outputVersion);
-        generator.setEmitNames(true);
-        ByteBuffer code = generator.generateCode();
-        endContext();
-        return code;
+        try {
+            CodeGenerator generator = new SPIRVCodeGenerator(
+                    this, translationUnit, outputTarget, outputVersion);
+            return generator.generateCode();
+        } finally {
+            endContext();
+        }
+    }
+
+    /**
+     * Combination of {@link #parse} and {@link #toSPIRV}.
+     *
+     * @see #parse(CharSequence, ShaderKind, CompileOptions, ModuleUnit)
+     * @see #toSPIRV(TranslationUnit, SPIRVTarget, SPIRVVersion)
+     */
+    @Nullable
+    public ByteBuffer compileToSPIRV(@Nonnull CharSequence source,
+                                     @Nonnull ShaderKind kind,
+                                     @Nonnull CompileOptions options,
+                                     @Nonnull ModuleUnit parent,
+                                     @Nullable SPIRVTarget outputTarget,
+                                     @Nullable SPIRVVersion outputVersion) {
+        Objects.requireNonNull(kind);
+        Objects.requireNonNull(parent);
+        char[] buffer = source.toString().toCharArray();
+        startContext(kind, options, parent, false, false, buffer);
+        try {
+            Parser parser = new Parser(this, kind,
+                    options,
+                    buffer);
+            TranslationUnit translationUnit = parser.parse(parent);
+            if (translationUnit == null) {
+                return null;
+            }
+            CodeGenerator generator = new SPIRVCodeGenerator(
+                    this, translationUnit, outputTarget, outputVersion);
+            return generator.generateCode();
+        } finally {
+            endContext();
+        }
     }
 
     @ApiStatus.Internal

@@ -20,6 +20,7 @@
 package icyllis.arc3d.compiler.analysis;
 
 import icyllis.arc3d.compiler.tree.*;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
  * Utility class to visit every element, statement, and expression in a program IR.
@@ -40,132 +41,138 @@ public abstract class TreeVisitor {
     /// Top level elements
 
     public boolean visitFunctionPrototype(FunctionPrototype prototype) {
-        return visitAnyTopLevelElement(prototype);
+        return visitTopLevelElement(prototype);
     }
 
     public boolean visitFunctionDefinition(FunctionDefinition definition) {
-        return visitAnyTopLevelElement(definition);
+        return visitTopLevelElement(definition);
     }
 
     public boolean visitGlobalVariableDecl(GlobalVariableDecl variableDecl) {
-        return visitAnyTopLevelElement(variableDecl);
+        return visitTopLevelElement(variableDecl);
     }
 
     public boolean visitInterfaceBlock(InterfaceBlock interfaceBlock) {
-        return visitAnyTopLevelElement(interfaceBlock);
+        return visitTopLevelElement(interfaceBlock);
     }
 
-    public boolean visitAnyTopLevelElement(TopLevelElement e) {
+    /**
+     * Fallback method for any element kind that has not been overridden.
+     */
+    @ApiStatus.OverrideOnly
+    protected boolean visitTopLevelElement(TopLevelElement e) {
         return false;
     }
 
     /// Expressions
 
     public boolean visitFunctionReference(FunctionReference expr) {
-        return visitAnyExpression(expr);
+        return visitExpression(expr);
     }
 
     public boolean visitVariableReference(VariableReference expr) {
-        return visitAnyExpression(expr);
+        return visitExpression(expr);
     }
 
     public boolean visitTypeReference(TypeReference expr) {
-        return visitAnyExpression(expr);
+        return visitExpression(expr);
     }
 
     public boolean visitLiteral(Literal expr) {
-        return visitAnyExpression(expr);
+        return visitExpression(expr);
     }
 
     public boolean visitFieldAccess(FieldAccess expr) {
-        return visitAnyExpression(expr);
+        return visitExpression(expr);
     }
 
     public boolean visitIndex(IndexExpression expr) {
-        return visitAnyExpression(expr);
+        return visitExpression(expr);
     }
 
     public boolean visitPostfix(PostfixExpression expr) {
-        return visitAnyExpression(expr);
+        return visitExpression(expr);
     }
 
     public boolean visitPrefix(PrefixExpression expr) {
-        return visitAnyExpression(expr);
+        return visitExpression(expr);
     }
 
     public boolean visitBinary(BinaryExpression expr) {
-        return visitAnyExpression(expr);
+        return visitExpression(expr);
     }
 
     public boolean visitConditional(ConditionalExpression expr) {
-        return visitAnyExpression(expr);
+        return visitExpression(expr);
     }
 
     public boolean visitSwizzle(Swizzle expr) {
-        return visitAnyExpression(expr);
+        return visitExpression(expr);
     }
 
     public boolean visitFunctionCall(FunctionCall expr) {
-        return visitAnyExpression(expr);
+        return visitExpression(expr);
     }
 
     public boolean visitConstructorCall(ConstructorCall expr) {
-        return visitAnyExpression(expr);
+        return visitExpression(expr);
     }
 
     /**
      * Fallback method for any expression kind that has not been overridden.
      */
-    protected boolean visitAnyExpression(Expression expr) {
+    @ApiStatus.OverrideOnly
+    protected boolean visitExpression(Expression expr) {
         return false;
     }
 
     /// Statements
 
     public boolean visitBlock(BlockStatement stmt) {
-        return visitAnyStatement(stmt);
+        return visitStatement(stmt);
     }
 
     public boolean visitBreak(BreakStatement stmt) {
-        return visitAnyStatement(stmt);
+        return visitStatement(stmt);
     }
 
     public boolean visitContinue(ContinueStatement stmt) {
-        return visitAnyStatement(stmt);
+        return visitStatement(stmt);
     }
 
     public boolean visitDiscard(DiscardStatement stmt) {
-        return visitAnyStatement(stmt);
+        return visitStatement(stmt);
     }
 
     public boolean visitEmpty(EmptyStatement stmt) {
-        return visitAnyStatement(stmt);
+        return visitStatement(stmt);
     }
 
     public boolean visitExpression(ExpressionStatement stmt) {
-        return visitAnyStatement(stmt);
+        return visitStatement(stmt);
     }
 
     public boolean visitForLoop(ForLoop stmt) {
-        return visitAnyStatement(stmt);
+        return visitStatement(stmt);
     }
 
     public boolean visitIf(IfStatement stmt) {
-        return visitAnyStatement(stmt);
+        return visitStatement(stmt);
     }
 
     public boolean visitReturn(ReturnStatement stmt) {
-        return visitAnyStatement(stmt);
+        return visitStatement(stmt);
     }
 
     public boolean visitVariableDecl(VariableDecl variableDecl) {
-        return visitAnyStatement(variableDecl);
+        return visitStatement(variableDecl);
     }
 
     /**
      * Fallback method for any statement kind that has not been overridden.
      */
-    protected boolean visitAnyStatement(Statement stmt) {
+    @ApiStatus.OverrideOnly
+    protected boolean visitStatement(Statement stmt) {
         return false;
     }
 }

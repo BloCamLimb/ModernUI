@@ -19,8 +19,8 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import icyllis.arc3d.compiler.IntrinsicList;
 import icyllis.arc3d.compiler.Context;
+import icyllis.arc3d.compiler.IntrinsicList;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -268,7 +268,7 @@ public final class FunctionDecl extends Symbol {
                             other.getParameters().get(i).getModifiers())) {
                         context.error(parameters.get(i).mPosition,
                                 "modifiers on parameter " + (i + 1) +
-                                " differ between declaration and definition");
+                                        " differ between declaration and definition");
                         return null;
                     }
                 }
@@ -341,10 +341,12 @@ public final class FunctionDecl extends Symbol {
 
     @Nonnull
     public String getMangledName() {
+        if (isIntrinsic() || isEntryPoint()) {
+            return getName();
+        }
         StringBuilder mangledName = new StringBuilder(getName());
-        mangledName.append('(');
         for (Variable p : mParameters) {
-            mangledName.append(p.getType().getDesc()).append(';');
+            mangledName.append('_').append(p.getType().getDesc());
         }
         return mangledName.toString();
     }
@@ -419,7 +421,7 @@ public final class FunctionDecl extends Symbol {
     @Override
     public String toString() {
         String header = mModifiers.toString() +
-                        mReturnType.getName() + " " + getName() + "(";
+                mReturnType.getName() + " " + getName() + "(";
         StringJoiner joiner = new StringJoiner(", ");
         for (Variable p : mParameters) {
             joiner.add(p.toString());

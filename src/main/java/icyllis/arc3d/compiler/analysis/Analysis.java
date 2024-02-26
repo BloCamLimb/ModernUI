@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -41,7 +41,7 @@ public final class Analysis {
             }
 
             @Override
-            protected boolean visitAnyExpression(Expression expr) {
+            protected boolean visitExpression(Expression expr) {
                 return switch (expr.getKind()) {
                     case CONSTRUCTOR_ARRAY,
                             CONSTRUCTOR_COMPOUND,

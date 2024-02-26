@@ -19,14 +19,19 @@
 
 package icyllis.arc3d.compiler.spirv;
 
-interface Output {
+import icyllis.arc3d.compiler.Context;
+
+/**
+ * Write to a SPIR-V token stream.
+ */
+interface Writer {
     // write a 4-byte word
     void writeWord(int word);
 
     // write a sequence of 4-byte words
-    void writeWords(int[] words, int size);
+    void writeWords(int[] words, int n);
 
     // write a string as UTF-8 encoded, null-terminated and 4-byte aligned in LITTLE-ENDIAN order
     // however, our compiler only allows ASCII characters, so this can be simplified
-    void writeString8(String s);
+    void writeString8(Context context, String s);
 }
