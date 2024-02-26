@@ -31,9 +31,9 @@ public final class FunctionDefinition extends TopLevelElement {
 
     private final FunctionDecl mFunctionDecl;
     private final boolean mBuiltin;
-    private Statement mBody;
+    private BlockStatement mBody;
 
-    private FunctionDefinition(int position, FunctionDecl functionDecl, boolean builtin, Statement body) {
+    private FunctionDefinition(int position, FunctionDecl functionDecl, boolean builtin, BlockStatement body) {
         super(position);
         mFunctionDecl = functionDecl;
         mBuiltin = builtin;
@@ -64,13 +64,13 @@ public final class FunctionDefinition extends TopLevelElement {
             return null;
         }
 
-        return make(pos, functionDecl, builtin, body);
+        return make(pos, functionDecl, builtin, block);
     }
 
     public static FunctionDefinition make(int pos,
                                           FunctionDecl functionDecl,
                                           boolean builtin,
-                                          Statement body) {
+                                          BlockStatement body) {
         return new FunctionDefinition(pos, functionDecl, builtin, body);
     }
 
@@ -82,11 +82,11 @@ public final class FunctionDefinition extends TopLevelElement {
         return mBuiltin;
     }
 
-    public Statement getBody() {
+    public BlockStatement getBody() {
         return mBody;
     }
 
-    public void setBody(Statement body) {
+    public void setBody(BlockStatement body) {
         mBody = body;
     }
 

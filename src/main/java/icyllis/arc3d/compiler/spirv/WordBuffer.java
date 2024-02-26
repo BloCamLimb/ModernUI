@@ -19,19 +19,33 @@
 
 package icyllis.arc3d.compiler.spirv;
 
-import java.util.Arrays;
+import icyllis.arc3d.compiler.Context;
+import icyllis.arc3d.compiler.Position;
+import it.unimi.dsi.fastutil.ints.IntArrays;
 
 /**
- * Word list that backed by a heap array.
+ * Word buffer that backed by a heap array.
  */
-class WordBuffer implements Output {
+class WordBuffer implements Writer {
     // JVM int primitive is in host endianness, see Unsafe
     // transferring to native buffer is just a memory copy
-    int[] a;
-    int size;
+    private int[] a;
+    private int size;
 
     WordBuffer() {
         a = new int[16];
+    }
+
+    public int size() {
+        return size;
+    }
+
+    public int[] elements() {
+        return a;
+    }
+
+    public void clear() {
+        size = 0;
     }
 
     @Override
@@ -42,12 +56,16 @@ class WordBuffer implements Output {
     }
 
     @Override
-    public void writeWords(int[] words, int size) {
-        throw new UnsupportedOperationException();
+    public void writeWords(int[] words, int n) {
+        if (n == 0) return;
+        int newSize = size + n;
+        System.arraycopy(words, 0,
+                grow(newSize), size, n);
+        size = newSize;
     }
 
     @Override
-    public void writeString8(String s) {
+    public void writeString8(Context context, String s) {
         int p = size;
         int len = s.length();
         int[] a = grow(p +
@@ -57,7 +75,7 @@ class WordBuffer implements Output {
         for (int i = 0; i < len; i++) {
             char c = s.charAt(i);
             if (c == 0 || c >= 0x80) {
-                throw new AssertionError(c);
+                context.error(Position.NO_POS, "unexpected character '" + c + "'");
             }
             word |= c << shift;
             shift += 8;
@@ -74,9 +92,12 @@ class WordBuffer implements Output {
 
     private int[] grow(int minCapacity) {
         if (minCapacity > a.length) {
-            // double the buffer, overflow will throw exception
-            int newCapacity = Math.max(minCapacity, a.length << 1);
-            a = Arrays.copyOf(a, newCapacity);
+            // double the buffer if small, otherwise grow 50%, overflow will throw exception
+            int oldCapacity = a.length;
+            int newCapacity = Math.max(minCapacity, oldCapacity < 1024
+                    ? oldCapacity << 1
+                    : oldCapacity + (oldCapacity >> 1));
+            a = IntArrays.forceCapacity(a, newCapacity, size);
         }
         return a;
     }

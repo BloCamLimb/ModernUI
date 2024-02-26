@@ -47,25 +47,25 @@ class SwizzleLValue implements LValue {
     }
 
     @Override
-    public int load(SPIRVCodeGenerator gen, Output output) {
+    public int load(SPIRVCodeGenerator gen, Writer writer) {
         int base = gen.getUniqueId(mBaseType);
         int baseType = gen.writeType(mBaseType);
-        gen.writeInstruction(SpvOpLoad, baseType, base, mBasePointer, output);
+        gen.writeInstruction(SpvOpLoad, baseType, base, mBasePointer, writer);
         int result = gen.getUniqueId(mBaseType);
-        gen.writeOpcode(SpvOpVectorShuffle, 5 + mComponents.length, output);
+        gen.writeOpcode(SpvOpVectorShuffle, 5 + mComponents.length, writer);
         int resultType = gen.writeType(mResultType);
-        output.writeWord(resultType);
-        output.writeWord(result);
-        output.writeWord(base);
-        output.writeWord(base);
+        writer.writeWord(resultType);
+        writer.writeWord(result);
+        writer.writeWord(base);
+        writer.writeWord(base);
         for (int component : mComponents) {
-            output.writeWord(component);
+            writer.writeWord(component);
         }
         return result;
     }
 
     @Override
-    public void store(SPIRVCodeGenerator gen, int rvalue, Output output) {
+    public void store(SPIRVCodeGenerator gen, int rvalue, Writer writer) {
         // use OpVectorShuffle to mix and match the vector components. We effectively create
         // a virtual vector out of the concatenation of the left and right vectors, and then
         // select components from this virtual vector to make the result vector. For
@@ -78,13 +78,13 @@ class SwizzleLValue implements LValue {
         // (3, 1, 4).
         int base = gen.getUniqueId(mBaseType);
         int baseType = gen.writeType(mBaseType);
-        gen.writeInstruction(SpvOpLoad, baseType, base, mBasePointer, output);
+        gen.writeInstruction(SpvOpLoad, baseType, base, mBasePointer, writer);
         int shuffle = gen.getUniqueId(mBaseType);
-        gen.writeOpcode(SpvOpVectorShuffle, 5 + mBaseType.getRows(), output);
-        output.writeWord(baseType);
-        output.writeWord(shuffle);
-        output.writeWord(base);
-        output.writeWord(rvalue);
+        gen.writeOpcode(SpvOpVectorShuffle, 5 + mBaseType.getRows(), writer);
+        writer.writeWord(baseType);
+        writer.writeWord(shuffle);
+        writer.writeWord(base);
+        writer.writeWord(rvalue);
         for (int i = 0; i < mBaseType.getRows(); i++) {
             // current offset into the virtual vector, defaults to pulling the unmodified
             // value from the left side
@@ -99,9 +99,9 @@ class SwizzleLValue implements LValue {
                     break;
                 }
             }
-            output.writeWord(offset);
+            writer.writeWord(offset);
         }
-        gen.writeOpStore(mStorageClass, mBasePointer, shuffle, output);
+        gen.writeOpStore(mStorageClass, mBasePointer, shuffle, writer);
     }
 
     @Override

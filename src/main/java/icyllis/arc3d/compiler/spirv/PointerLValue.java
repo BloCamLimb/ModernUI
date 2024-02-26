@@ -44,12 +44,12 @@ class PointerLValue implements LValue {
     }
 
     @Override
-    public int load(SPIRVCodeGenerator gen, Output output) {
-        return gen.writeOpLoad(mType, mRelaxedPrecision, mPointer, output);
+    public int load(SPIRVCodeGenerator gen, Writer writer) {
+        return gen.writeOpLoad(mType, mRelaxedPrecision, mPointer, writer);
     }
 
     @Override
-    public void store(SPIRVCodeGenerator gen, int rvalue, Output output) {
+    public void store(SPIRVCodeGenerator gen, int rvalue, Writer writer) {
         if (!mIsMemoryObject) {
             // We are going to write into an access chain; this could represent one component of a
             // vector, or one element of an array. This has the potential to invalidate other,
@@ -59,7 +59,7 @@ class PointerLValue implements LValue {
             gen.mStoreCache.clear();
         }
 
-        gen.writeOpStore(mStorageClass, mPointer, rvalue, output);
+        gen.writeOpStore(mStorageClass, mPointer, rvalue, writer);
     }
 
     @Override

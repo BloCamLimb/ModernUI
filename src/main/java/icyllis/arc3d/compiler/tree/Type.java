@@ -409,6 +409,41 @@ public class Type extends Symbol {
     }
 
     /**
+     * Returns true if this is a floating-point scalar type (float or half),
+     * or its vector/matrix form.
+     */
+    public final boolean isFloatOrCompound() {
+        return (isScalar() || isVector() || isMatrix()) &&
+                getComponentType().isFloat();
+    }
+
+    /**
+     * Returns true if this is a signed scalar type (int or short),
+     * or its vector form.
+     */
+    public final boolean isSignedOrCompound() {
+        return (isScalar() || isVector()) &&
+                getComponentType().isSigned();
+    }
+
+    /**
+     * Returns true if this is an unsigned scalar type (uint or ushort),
+     * or its vector form.
+     */
+    public final boolean isUnsignedOrCompound() {
+        return (isScalar() || isVector()) &&
+                getComponentType().isUnsigned();
+    }
+
+    /**
+     * Returns true if this type is a bool, or its vector form.
+     */
+    public final boolean isBooleanOrCompound() {
+        return (isScalar() || isVector()) &&
+                getComponentType().isBoolean();
+    }
+
+    /**
      * Returns true if this is an "opaque type" (an external object which the shader references in
      * some fashion). <a href="https://www.khronos.org/opengl/wiki/Data_Type_(GLSL)#Opaque_types">Link</a>
      */
@@ -816,16 +851,11 @@ public class Type extends Symbol {
      */
     @Nonnull
     public String getArrayName(int size) {
-        return getArrayNameOrDesc(getName(), size);
-    }
-
-    @Nonnull
-    static String getArrayNameOrDesc(String base, int size) {
         if (size == kUnsizedArray) {
-            return base + "[]";
+            return getName() + "[]";
         }
         assert (size > 0);
-        return base + "[" + size + "]";
+        return getName() + "[" + size + "]";
     }
 
     /**
@@ -1144,9 +1174,9 @@ public class Type extends Symbol {
         private final int mArraySize;
 
         ArrayType(String name, Type type, int size) {
-            super(name, getArrayNameOrDesc(type.getDesc(), size),
+            super(name, type.getDesc() + (size != kUnsizedArray ? "_" + size : "_x"),
                     kArray_TypeKind);
-            assert name.equals(getArrayNameOrDesc(type.getName(), size));
+            assert name.equals(type.getArrayName(size));
             mElementType = type;
             mArraySize = size;
         }
@@ -1446,7 +1476,7 @@ public class Type extends Symbol {
         // (interface block can have no instance name, but there must be type name)
         StructType(int position, String name, Field[] fields, int nestingDepth,
                    boolean interfaceBlock) {
-            super(name, desc(name, fields, interfaceBlock), kStruct_TypeKind, position);
+            super(name, name, kStruct_TypeKind, position);
             mFields = fields;
             mNestingDepth = nestingDepth;
             mInterfaceBlock = interfaceBlock;
@@ -1455,17 +1485,6 @@ public class Type extends Symbol {
                 components += field.type().getComponents();
             }
             mComponents = components;
-        }
-
-        @Nonnull
-        public static String desc(String name, Field[] fields, boolean interfaceBlock) {
-            StringBuilder s = new StringBuilder(interfaceBlock ? "B-" : "S-");
-            s.append(name);
-            for (Field field : fields) {
-                s.append('-');
-                s.append(field.type().getDesc());
-            }
-            return s.toString();
         }
 
         @Override

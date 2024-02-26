@@ -26,9 +26,9 @@ interface LValue {
 
     int getPointer();
 
-    int load(SPIRVCodeGenerator gen, Output output);
+    int load(SPIRVCodeGenerator gen, Writer writer);
 
-    void store(SPIRVCodeGenerator gen, int rvalue, Output output);
+    void store(SPIRVCodeGenerator gen, int rvalue, Writer writer);
 
     boolean applySwizzle(byte[] components, Type newType);
 }

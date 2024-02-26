@@ -37,18 +37,17 @@ public class TestShaderc {
         }
         long options = shaderc_compile_options_initialize();
         shaderc_compile_options_set_target_env(options, shaderc_target_env_opengl, shaderc_env_version_opengl_4_5);
-        shaderc_compile_options_set_target_spirv(options, shaderc_spirv_version_1_5);
+        shaderc_compile_options_set_target_spirv(options, shaderc_spirv_version_1_0);
         shaderc_compile_options_set_optimization_level(options, shaderc_optimization_level_zero);
 
         long result = shaderc_compile_into_spv_assembly(
                 compiler,
                 """
                         #version 450 core
-                        const int blockSize = -4 + 6;
                         layout(binding = 0, set = 0) uniform UniformBlock {
                             mat4 u_Projection;
                             mat4 u_ModelView;
-                            mat2 u_Color;
+                            vec4 u_Color;
                         } u_Buffer0;
                         layout(location = 0) smooth in vec2 f_Position;
                         layout(location = 1) smooth in vec4 f_Color;
@@ -65,9 +64,7 @@ public class TestShaderc {
                             return sa(sa(rr(n, vec2(a[0],12.1414))) * 83758.5453);
                         }
                         void main(void) {
-                           mat2 m = u_Buffer0.u_Color;
-                            FragColor0 = vec4(m[0][0]);
-                            FragColor1 = vec4(m[0][1]);
+                            FragColor0 = u_Buffer0.u_Color;
                         }""",
                 shaderc_fragment_shader,
                 "test_shader",
@@ -84,6 +81,8 @@ public class TestShaderc {
         System.out.println("msg: " + error_message);
         int status = shaderc_result_get_compilation_status(result);
         if (status == shaderc_compilation_status_success) {
+            long len = shaderc_result_get_length(result);
+            System.out.println("Bytes: " + len);
             ByteBuffer bytes = shaderc_result_get_bytes(result);
             if (bytes != null) {
                 String s = MemoryUtil.memASCII(bytes);

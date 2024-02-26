@@ -157,9 +157,9 @@ public final class SymbolUsage extends TreeVisitor {
     }
 
     @Override
-    protected boolean visitAnyExpression(Expression expr) {
+    protected boolean visitExpression(Expression expr) {
         visitType(expr.getType());
-        return super.visitAnyExpression(expr);
+        return super.visitExpression(expr);
     }
 
     @Override

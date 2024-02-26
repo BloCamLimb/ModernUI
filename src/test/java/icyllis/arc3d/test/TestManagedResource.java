@@ -45,6 +45,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.regex.Pattern;
 
+import static icyllis.arc3d.opengl.GLCore.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
 public class TestManagedResource {
@@ -86,6 +87,21 @@ public class TestManagedResource {
         }
 
         {
+            int count = glGetInteger(GL_NUM_PROGRAM_BINARY_FORMATS);
+            var binaryFormats = new int[count];
+            if (count > 0) {
+                glGetIntegerv(GL_PROGRAM_BINARY_FORMATS, binaryFormats);
+            }
+            pw.println("Program binary formats: " + Arrays.toString(binaryFormats));
+            count = glGetInteger(GL_NUM_SHADER_BINARY_FORMATS);
+            binaryFormats = new int[count];
+            if (count > 0) {
+                glGetIntegerv(GL_SHADER_BINARY_FORMATS, binaryFormats);
+            }
+            pw.println("Shader binary formats: " + Arrays.toString(binaryFormats));
+        }
+
+        {
             ModuleLoader moduleLoader = ModuleLoader.getInstance();
             ShaderCompiler compiler = new ShaderCompiler();
             compiler.startContext(ShaderKind.BASE, new CompileOptions(), moduleLoader.getRootModule(),
@@ -98,51 +114,51 @@ public class TestManagedResource {
             compiler.endContext();
         }
 
-         {
-             int vert = GLCore.glCreateShader(GLCore.GL_VERTEX_SHADER);
-             GLCore.glShaderSource(vert, """
-                     #version 450 core
-                     void main(void) {
-                         gl_Position = vec4(1,1,1,0);
-                     }
-                     """);
-             int frag = GLCore.glCreateShader(GLCore.GL_FRAGMENT_SHADER);
-             GLCore.glShaderSource(frag, """
-                     #version 450 core
-                     layout(std430, binding = 0) buffer UniformBlock {
-                         layout(offset=0) vec3 u_Projection;
-                         layout(offset=12) float u_Color;
-                     };
-                     layout(location = 0) smooth in vec2 f_Position;
-                     layout(location = 1) smooth in vec4 f_Color;
-                     layout(location = 0, index = 0) out vec4 FragColor0;
-                     void main(void) {
-                         FragColor0 = vec4(0);
-                     }
-                     """);
-             GLCore.glCompileShader(vert);
-             GLCore.glCompileShader(frag);
+        {
+            int vert = GLCore.glCreateShader(GLCore.GL_VERTEX_SHADER);
+            GLCore.glShaderSource(vert, """
+                    #version 450 core
+                    void main(void) {
+                        gl_Position = vec4(1,1,1,0);
+                    }
+                    """);
+            int frag = GLCore.glCreateShader(GLCore.GL_FRAGMENT_SHADER);
+            GLCore.glShaderSource(frag, """
+                    #version 450 core
+                    layout(std430, binding = 0) buffer UniformBlock {
+                        layout(offset=0) vec3 u_Projection;
+                        layout(offset=12) float u_Color;
+                    };
+                    layout(location = 0) smooth in vec2 f_Position;
+                    layout(location = 1) smooth in vec4 f_Color;
+                    layout(location = 0, index = 0) out vec4 FragColor0;
+                    void main(void) {
+                        FragColor0 = vec4(0);
+                    }
+                    """);
+            GLCore.glCompileShader(vert);
+            GLCore.glCompileShader(frag);
 
-             if (GLCore.glGetShaderi(frag, GLCore.GL_COMPILE_STATUS) == GLCore.GL_FALSE) {
-                 String log = GLCore.glGetShaderInfoLog(frag, 8192).trim();
-                 System.out.println(log);
-             } else {
-                 System.out.println("SUCCESS!");
-             }
-             int prog = GLCore.glCreateProgram();
-             GLCore.glAttachShader(prog, vert);
-             GLCore.glAttachShader(prog, frag);
-             GLCore.glLinkProgram(prog);
+            if (GLCore.glGetShaderi(frag, GLCore.GL_COMPILE_STATUS) == GLCore.GL_FALSE) {
+                String log = GLCore.glGetShaderInfoLog(frag, 8192).trim();
+                System.out.println(log);
+            } else {
+                System.out.println("SUCCESS!");
+            }
+            int prog = GLCore.glCreateProgram();
+            GLCore.glAttachShader(prog, vert);
+            GLCore.glAttachShader(prog, frag);
+            GLCore.glLinkProgram(prog);
 
-             if (GLCore.glGetProgrami(prog, GLCore.GL_LINK_STATUS) == GLCore.GL_FALSE) {
-                 String log = GLCore.glGetProgramInfoLog(prog, 8192).trim();
-                 System.out.println(log);
-             } else {
-                 System.out.println("SUCCESS!");
-             }
-             GLCore.glDeleteProgram(prog);
-             GLCore.glDeleteShader(vert);
-             GLCore.glDeleteShader(frag);
+            if (GLCore.glGetProgrami(prog, GLCore.GL_LINK_STATUS) == GLCore.GL_FALSE) {
+                String log = GLCore.glGetProgramInfoLog(prog, 8192).trim();
+                System.out.println(log);
+            } else {
+                System.out.println("SUCCESS!");
+            }
+            GLCore.glDeleteProgram(prog);
+            GLCore.glDeleteShader(vert);
+            GLCore.glDeleteShader(frag);
         }
 
         {
