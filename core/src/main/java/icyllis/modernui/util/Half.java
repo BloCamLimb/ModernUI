@@ -21,6 +21,8 @@ package icyllis.modernui.util;
 import icyllis.modernui.annotation.HalfFloat;
 import icyllis.modernui.annotation.NonNull;
 
+import java.lang.invoke.*;
+
 /**
  * <p>The {@code Half} class is a wrapper and a utility class to manipulate half-precision 16-bit
  * <a href="https://en.wikipedia.org/wiki/Half-precision_floating-point_format">IEEE 754</a>
@@ -97,6 +99,11 @@ public final class Half extends Number implements Comparable<Half> {
     public static final int SIZE = 16;
 
     /**
+     * The number of bytes used to represent a half-precision float value.
+     */
+    public static final int BYTES = SIZE / Byte.SIZE;
+
+    /**
      * Epsilon is the difference between 1.0 and the next value representable
      * by a half-precision floating-point.
      */
@@ -147,6 +154,31 @@ public final class Half extends Number implements Comparable<Half> {
      * Positive 0 of type half-precision float.
      */
     public static final @HalfFloat short POSITIVE_ZERO = (short) 0x0000;
+
+    //TODO remove MethodHandle when Java 20 becomes the minimum requirement
+    private static final MethodHandle FLOAT16_TO_FLOAT = getFloat16ToFloat();
+
+    // VCVTPH2PS, convert packed half to packed single
+    private static MethodHandle getFloat16ToFloat() {
+        try {
+            return MethodHandles.lookup().findStatic(
+                    Float.class, "float16ToFloat", MethodType.methodType(float.class, short.class));
+        } catch (NoSuchMethodException | IllegalAccessException e) {
+            return null;
+        }
+    }
+
+    private static final MethodHandle FLOAT_TO_FLOAT16 = getFloatToFloat16();
+
+    // VCVTPS2PH, convert packed single to packed half
+    private static MethodHandle getFloatToFloat16() {
+        try {
+            return MethodHandles.lookup().findStatic(
+                    Float.class, "floatToFloat16", MethodType.methodType(short.class, float.class));
+        } catch (NoSuchMethodException | IllegalAccessException e) {
+            return null;
+        }
+    }
 
     private final @HalfFloat short value;
 
@@ -774,6 +806,15 @@ public final class Half extends Number implements Comparable<Half> {
      * @return A normalized single-precision float value
      */
     public static float toFloat(@HalfFloat short h) {
+        // C2-compiler output is VCVTPH2PS
+        if (FLOAT16_TO_FLOAT != null) {
+            try {
+                return (float) FLOAT16_TO_FLOAT.invokeExact(h);
+            } catch (Throwable e) {
+                throw new RuntimeException(e);
+            }
+        }
+        // portable version
         return FP16.toFloat(h);
     }
 
@@ -800,6 +841,15 @@ public final class Half extends Number implements Comparable<Half> {
      * @return A half-precision float value
      */
     public static @HalfFloat short toHalf(float f) {
+        // C2-compiler output is VCVTPS2PH
+        if (FLOAT_TO_FLOAT16 != null) {
+            try {
+                return (short) FLOAT_TO_FLOAT16.invokeExact(f);
+            } catch (Throwable e) {
+                throw new RuntimeException(e);
+            }
+        }
+        // portable version
         return FP16.toHalf(f);
     }
 
