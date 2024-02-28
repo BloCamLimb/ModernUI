@@ -21,13 +21,12 @@ package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.*;
 import icyllis.arc3d.compiler.analysis.SymbolUsage;
-import icyllis.arc3d.compiler.analysis.TreeVisitor;
 
 import javax.annotation.Nonnull;
 import java.util.*;
 
 /**
- * A fully-resolved AST of a single shader module, ready for code generation.
+ * A fully-resolved AST of a single shader executable, ready for code generation.
  */
 public final class TranslationUnit extends Node implements Iterable<TopLevelElement> {
 

@@ -113,8 +113,8 @@ public class ShaderCompiler {
         }
     };
 
-    final Context mContext;
-    final Inliner mInliner;
+    private final Context mContext;
+    private final Inliner mInliner;
 
     public ShaderCompiler() {
         mContext = new Context(mErrorHandler);
@@ -185,21 +185,22 @@ public class ShaderCompiler {
     }
 
     /**
-     * Generates SPIR-V code and returns the pointer value. The code size in bytes is
-     * {@link ByteBuffer#remaining()}.
+     * Generates translated SPIR-V code and returns the pointer result. The code size
+     * in bytes is {@link ByteBuffer#remaining()}.
      * <p>
      * The return value is a direct buffer, see {@link ByteBuffer#allocateDirect(int)}.
      * A direct buffer wraps an address that points to off-heap memory, i.e. a native
      * pointer. The byte order is {@link java.nio.ByteOrder#nativeOrder()} (i.e. host
      * endianness) and it's safe to pass the result to OpenGL and Vulkan API. There is
      * no way to free this buffer explicitly, as it is subject to GC.
+     * <p>
+     * Check errors via {@link #getErrorMessage()}.
      *
-     * @return the generated code (uint32_t *), or null if there's an error
+     * @return the translated shader code (uint32_t *), or null if there's an error
      */
     @Nullable
     public ByteBuffer toSPIRV(@Nonnull TranslationUnit translationUnit,
-                              @Nullable SPIRVTarget outputTarget,
-                              @Nullable SPIRVVersion outputVersion) {
+                              @Nonnull ShaderCaps shaderCaps) {
         startContext(translationUnit.getKind(),
                 translationUnit.getOptions(),
                 null,
@@ -208,7 +209,7 @@ public class ShaderCompiler {
                 translationUnit.getSource());
         try {
             CodeGenerator generator = new SPIRVCodeGenerator(
-                    this, translationUnit, outputTarget, outputVersion);
+                    this, translationUnit, shaderCaps);
             return generator.generateCode();
         } finally {
             endContext();
@@ -219,15 +220,14 @@ public class ShaderCompiler {
      * Combination of {@link #parse} and {@link #toSPIRV}.
      *
      * @see #parse(CharSequence, ShaderKind, CompileOptions, ModuleUnit)
-     * @see #toSPIRV(TranslationUnit, SPIRVTarget, SPIRVVersion)
+     * @see #toSPIRV(TranslationUnit, ShaderCaps)
      */
     @Nullable
     public ByteBuffer compileToSPIRV(@Nonnull CharSequence source,
                                      @Nonnull ShaderKind kind,
+                                     @Nonnull ShaderCaps shaderCaps,
                                      @Nonnull CompileOptions options,
-                                     @Nonnull ModuleUnit parent,
-                                     @Nullable SPIRVTarget outputTarget,
-                                     @Nullable SPIRVVersion outputVersion) {
+                                     @Nonnull ModuleUnit parent) {
         Objects.requireNonNull(kind);
         Objects.requireNonNull(parent);
         char[] buffer = source.toString().toCharArray();
@@ -241,7 +241,7 @@ public class ShaderCompiler {
                 return null;
             }
             CodeGenerator generator = new SPIRVCodeGenerator(
-                    this, translationUnit, outputTarget, outputVersion);
+                    this, translationUnit, shaderCaps);
             return generator.generateCode();
         } finally {
             endContext();
@@ -255,6 +255,7 @@ public class ShaderCompiler {
                              boolean isBuiltin,
                              boolean isModule,
                              char[] source) {
+        assert isModule || !isBuiltin;
         resetErrors(); // make a clean start
         mContext.start(kind, options, parent, isBuiltin, isModule);
         mContext.getErrorHandler().setSource(source);

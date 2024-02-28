@@ -32,6 +32,6 @@ interface Writer {
     void writeWords(int[] words, int n);
 
     // write a string as UTF-8 encoded, null-terminated and 4-byte aligned in LITTLE-ENDIAN order
-    // however, our compiler only allows ASCII characters, so this can be simplified
+    // however, our compiler only outputs ASCII characters, so this can be simplified
     void writeString8(Context context, String s);
 }

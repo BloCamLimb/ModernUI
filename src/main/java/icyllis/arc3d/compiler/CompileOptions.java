@@ -71,6 +71,16 @@ public class CompileOptions {
     public boolean mMinifyNames = true;
 
     /**
+     * Try to minify code when generating GLSL. Whitespaces and unnecessary
+     * characters will be removed. Otherwise, the generated code may be pretty
+     * printed with indentation.
+     * <p>
+     * This option may be useful when generating SPIR-V. This option does not
+     * mean eliminating unused variables and functions, see {@link #mOptimizationLevel}.
+     */
+    public boolean mMinifyCode = true;
+
+    /**
      * Optimization level. (0-2)
      * <p>
      * Even if this is 0, the compiler can still do some optimizations.

@@ -34,8 +34,6 @@ public abstract class CodeGenerator {
     protected final ShaderCompiler mCompiler;
     protected final TranslationUnit mTranslationUnit;
 
-    protected ByteBuffer mBuffer;
-
     public CodeGenerator(ShaderCompiler compiler,
                          TranslationUnit translationUnit) {
         mCompiler = compiler;
@@ -59,15 +57,5 @@ public abstract class CodeGenerator {
 
     protected Context getContext() {
         return mCompiler.getContext();
-    }
-
-    protected ByteBuffer grow(int minCapacity) {
-        if (minCapacity > mBuffer.capacity()) {
-            // double the buffer, overflow will throw exception
-            int newCapacity = Math.max(minCapacity, mBuffer.capacity() << 1);
-            mBuffer = BufferUtils.createByteBuffer(newCapacity)
-                    .put(mBuffer.flip());
-        }
-        return mBuffer;
     }
 }

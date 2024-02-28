@@ -17,7 +17,7 @@
  * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.compiler.analysis;
+package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.tree.*;
 import org.jetbrains.annotations.ApiStatus;
