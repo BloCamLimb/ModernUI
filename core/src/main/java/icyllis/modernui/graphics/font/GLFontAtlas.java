@@ -280,11 +280,12 @@ public class GLFontAtlas implements AutoCloseable {
         );
 
         if (mMaskFormat == Engine.MASK_FORMAT_A8) {
-            //XXX: un-premultiplied
-            try (var stack = MemoryStack.stackPush()) {
-                var swizzle = stack.ints(GL_ONE, GL_ONE, GL_ONE, GL_RED);
-                glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzle);
-            }
+            //XXX: un-premultiplied, so 111r rather than rrrr
+            // in case of some driver bugs, we don't use GL_TEXTURE_SWIZZLE_RGBA
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_ONE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_ONE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_ONE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_RED);
         }
 
         glBindTexture(GL_TEXTURE_2D, boundTexture);

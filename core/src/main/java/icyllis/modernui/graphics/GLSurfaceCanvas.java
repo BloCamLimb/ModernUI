@@ -860,7 +860,7 @@ public final class GLSurfaceCanvas extends Canvas {
                 mDevice.generateMipmaps(glTexture);
             }
 
-            var swizzle = textureView.getSwizzle();
+            /*var swizzle = textureView.getSwizzle();
             var parameters = glTexture.getParameters();
             var swizzleChanged = false;
             for (int i = 0; i < 4; ++i) {
@@ -881,7 +881,7 @@ public final class GLSurfaceCanvas extends Canvas {
             }
             if (swizzleChanged) {
                 glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, parameters.swizzle);
-            }
+            }*/
         }
         mTexturesToClean.add(userTexture);
         return success;
