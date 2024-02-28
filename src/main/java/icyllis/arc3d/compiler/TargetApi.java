@@ -17,36 +17,46 @@
  * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.compiler.tree;
-
-import javax.annotation.Nonnull;
+package icyllis.arc3d.compiler;
 
 /**
- * A continue statement.
+ * Specify a backend API for validation.
  */
-public final class ContinueStatement extends Statement {
+public enum TargetApi {
+    /**
+     * Targeting OpenGL 3.3.
+     */
+    OPENGL_3_3,
+    /**
+     * Targeting OpenGL ES 3.0.
+     */
+    OPENGL_ES_3_0,
+    /**
+     * Targeting OpenGL 4.3.
+     */
+    OPENGL_4_3,
+    /**
+     * Targeting OpenGL ES 3.1.
+     */
+    OPENGL_ES_3_1,
+    /**
+     * Targeting OpenGL 4.5.
+     */
+    OPENGL_4_5,
+    /**
+     * Targeting Vulkan 1.0 or above.
+     */
+    VULKAN_1_0;
 
-    private ContinueStatement(int position) {
-        super(position);
+    public boolean isOpenGL() {
+        return this == OPENGL_3_3 || this == OPENGL_4_3 || this == OPENGL_4_5;
     }
 
-    public static Statement make(int pos) {
-        return new ContinueStatement(pos);
+    public boolean isOpenGLES() {
+        return this == OPENGL_ES_3_0 || this == OPENGL_ES_3_1;
     }
 
-    @Override
-    public StatementKind getKind() {
-        return StatementKind.CONTINUE;
-    }
-
-    @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
-        return visitor.visitContinue(this);
-    }
-
-    @Nonnull
-    @Override
-    public String toString() {
-        return "continue;";
+    public boolean isVulkan() {
+        return compareTo(VULKAN_1_0) >= 0;
     }
 }

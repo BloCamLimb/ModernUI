@@ -17,7 +17,7 @@
  * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.compiler.spirv;
+package icyllis.arc3d.compiler;
 
 public enum SPIRVVersion {
     /**

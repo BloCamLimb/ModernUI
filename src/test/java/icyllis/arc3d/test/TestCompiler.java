@@ -20,8 +20,7 @@
 package icyllis.arc3d.test;
 
 import icyllis.arc3d.compiler.*;
-import icyllis.arc3d.compiler.spirv.SPIRVTarget;
-import icyllis.arc3d.compiler.spirv.SPIRVVersion;
+import icyllis.arc3d.compiler.SPIRVVersion;
 import icyllis.arc3d.compiler.tree.TranslationUnit;
 
 import java.io.IOException;
@@ -70,9 +69,10 @@ public class TestCompiler {
         System.out.println(translationUnit);
         System.out.println(translationUnit.getUsage());
 
-        ByteBuffer spirv = compiler.toSPIRV(translationUnit,
-                SPIRVTarget.OPENGL_4_5,
-                SPIRVVersion.SPIRV_1_5);
+        ShaderCaps shaderCaps = new ShaderCaps();
+        shaderCaps.mSPIRVVersion = SPIRVVersion.SPIRV_1_5;
+
+        ByteBuffer spirv = compiler.toSPIRV(translationUnit, shaderCaps);
         System.out.print(compiler.getErrorMessage());
 
         if (spirv == null) {

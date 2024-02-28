@@ -19,8 +19,6 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import icyllis.arc3d.compiler.analysis.TreeVisitor;
-
 import javax.annotation.Nonnull;
 
 /**

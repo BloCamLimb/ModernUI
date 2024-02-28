@@ -47,10 +47,6 @@ public class Parser {
     private ArrayList<TopLevelElement> mUniqueElements = new ArrayList<>();
 
     public Parser(ShaderCompiler compiler, ShaderKind kind, CompileOptions options, char[] source) {
-        // ideally we can break long text into pieces, but shader code should not be too long
-        if (source.length > 0x7FFFFE) {
-            throw new IllegalArgumentException("Source code is too long, " + source.length + " > 8,388,606");
-        }
         mCompiler = Objects.requireNonNull(compiler);
         mOptions = Objects.requireNonNull(options);
         mKind = Objects.requireNonNull(kind);
@@ -62,7 +58,7 @@ public class Parser {
     public TranslationUnit parse(ModuleUnit parent) {
         Objects.requireNonNull(parent);
         mUniqueElements = new ArrayList<>();
-        TranslationUnit();
+        GlobalDeclarations();
         Context context = mCompiler.getContext();
         final TranslationUnit result;
         if (context.getErrorHandler().errorCount() == 0) {
@@ -88,7 +84,7 @@ public class Parser {
     public ModuleUnit parseModule(ModuleUnit parent) {
         Objects.requireNonNull(parent);
         mUniqueElements = new ArrayList<>();
-        TranslationUnit();
+        GlobalDeclarations();
         Context context = mCompiler.getContext();
         final ModuleUnit result;
         if (context.getErrorHandler().errorCount() == 0) {
@@ -298,7 +294,13 @@ public class Parser {
         return false;
     }
 
-    private void TranslationUnit() {
+    private void GlobalDeclarations() {
+        // ideally we can break long text into pieces, but shader code should not be too long
+        if (mSource.length > 0x7FFFFE) {
+            mCompiler.getContext().error(Position.NO_POS,
+                    "source code is too long, " + mSource.length + " > 8,388,606 chars");
+            return;
+        }
         for (;;) {
             switch (Token.kind(peek())) {
                 case Lexer.TK_END_OF_FILE -> {

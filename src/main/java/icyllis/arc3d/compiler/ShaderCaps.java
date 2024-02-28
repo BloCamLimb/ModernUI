@@ -17,26 +17,14 @@
  * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.compiler.spirv;
+package icyllis.arc3d.compiler;
 
 /**
- * Specify a backend API for validation.
+ * Shader capabilities.
  */
-public enum SPIRVTarget {
-    /**
-     * Targeting OpenGL 4.5.
-     */
-    OPENGL_4_5,
-    /**
-     * Targeting Vulkan 1.0.
-     */
-    VULKAN_1_0;
+public class ShaderCaps {
 
-    public boolean isOpenGL() {
-        return this == OPENGL_4_5;
-    }
-
-    public boolean isVulkan() {
-        return compareTo(VULKAN_1_0) >= 0;
-    }
+    public TargetApi mTargetApi = TargetApi.OPENGL_4_5;
+    public GLSLVersion mGLSLVersion = GLSLVersion.GLSL_450;
+    public SPIRVVersion mSPIRVVersion = SPIRVVersion.SPIRV_1_0;
 }

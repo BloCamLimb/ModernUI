@@ -20,12 +20,9 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.*;
-import icyllis.arc3d.compiler.analysis.Analysis;
-import icyllis.arc3d.compiler.analysis.TreeVisitor;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.OptionalDouble;
 
 /**
  * An expression that accesses an element of an array, vector, or matrix,

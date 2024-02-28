@@ -25,7 +25,6 @@ import icyllis.arc3d.compiler.tree.*;
 import icyllis.arc3d.core.MathUtil;
 import it.unimi.dsi.fastutil.ints.*;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import org.lwjgl.BufferUtils;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -36,7 +35,7 @@ import java.util.Objects;
 import static org.lwjgl.util.spvc.Spv.*;
 
 /**
- * SPIR-V code generator for OpenGL 4.6 and Vulkan 1.1 or above.
+ * SPIR-V code generator for OpenGL 4.5 and Vulkan 1.0 or above.
  * <p>
  * A SPIR-V module is a stream of uint32 words, the generated code is in host endianness,
  * which can be little-endian or big-endian.
@@ -50,7 +49,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     // SpvId 0 is reserved by SPIR-V and also represents absence in map
     public static final int NONE_ID = 0xFFFFFFFF;
 
-    public final SPIRVTarget mOutputTarget;
+    public final TargetApi mOutputTarget;
     public final SPIRVVersion mOutputVersion;
 
     private final WordBuffer mNameBuffer = new WordBuffer();
@@ -61,47 +60,6 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     // reusable buffers
     private final WordBuffer mVariableBuffer = new WordBuffer();
     private final WordBuffer mBodyBuffer = new WordBuffer();
-
-    private final Writer mMainWriter = new Writer() {
-        @Override
-        public void writeWord(int word) {
-            grow(mBuffer.position() + 4)
-                    .putInt(word);
-        }
-
-        @Override
-        public void writeWords(int[] words, int n) {
-            if (n == 0) return;
-            // int array is in host endianness (native byte order)
-            ByteBuffer buffer = grow(mBuffer.position() + (n << 2));
-            buffer.asIntBuffer().put(words, 0, n); // copyMemory
-            buffer.position(buffer.position() + (n << 2));
-        }
-
-        @Override
-        public void writeString8(Context context, String s) {
-            int len = s.length();
-            ByteBuffer buffer = grow(mBuffer.position() +
-                    (len + 4 & -4)); // +1 null-terminator
-            int word = 0;
-            int shift = 0;
-            for (int i = 0; i < len; i++) {
-                char c = s.charAt(i);
-                if (c == 0 || c >= 0x80) {
-                    context.error(Position.NO_POS, "unexpected character '" + c + "'");
-                }
-                word |= c << shift;
-                shift += 8;
-                if (shift == 32) {
-                    buffer.putInt(word);
-                    word = 0;
-                    shift = 0;
-                }
-            }
-            // null-terminator and padding
-            buffer.putInt(word);
-        }
-    };
 
     // key is a pointer to symbol table, hash is based on address (reference equality)
     // struct type to SpvId[MemoryLayout.ordinal + 1], no memory layout is at [0]
@@ -171,11 +129,10 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
 
     public SPIRVCodeGenerator(@Nonnull ShaderCompiler compiler,
                               @Nonnull TranslationUnit translationUnit,
-                              @Nullable SPIRVTarget outputTarget,
-                              @Nullable SPIRVVersion outputVersion) {
+                              @Nonnull ShaderCaps shaderCaps) {
         super(compiler, translationUnit);
-        mOutputTarget = Objects.requireNonNullElse(outputTarget, SPIRVTarget.VULKAN_1_0);
-        mOutputVersion = Objects.requireNonNullElse(outputVersion, SPIRVVersion.SPIRV_1_0);
+        mOutputTarget = Objects.requireNonNullElse(shaderCaps.mTargetApi, TargetApi.VULKAN_1_0);
+        mOutputVersion = Objects.requireNonNullElse(shaderCaps.mSPIRVVersion, SPIRVVersion.SPIRV_1_0);
     }
 
     @Nullable
@@ -183,6 +140,10 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     public ByteBuffer generateCode() {
         assert getContext().getErrorHandler().errorCount() == 0;
 
+        if (mOutputTarget.isOpenGLES()) {
+            getContext().error(Position.NO_POS, "OpenGL ES is not a valid client API for SPIR-V");
+            return null;
+        }
         ShaderKind kind = mTranslationUnit.getKind();
         if (!kind.isVertex() && !kind.isFragment() && !kind.isCompute()) {
             getContext().error(Position.NO_POS, "shader kind " + kind + " is not executable in SPIR-V");
@@ -197,12 +158,14 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             return null;
         }
 
+        String entryPointName = mEntryPointFunction.getName();
+
         // estimate code size in bytes
         int estimatedSize = 20;
-        estimatedSize += (mCapabilities.size() + 1) * 2 * 4;
+        estimatedSize += mCapabilities.size() * 2 * 4;
         estimatedSize += 24; // ExtInstImport
         estimatedSize += 12; // MemoryModel
-        int entryPointWordCount = 3 + (mEntryPointFunction.getName().length() + 4) / 4 + mInterfaceVariables.size();
+        int entryPointWordCount = 3 + (entryPointName.length() + 4) / 4 + mInterfaceVariables.size();
         estimatedSize += entryPointWordCount * 4;
         estimatedSize += mNameBuffer.size() * 4;
         estimatedSize += mDecorationBuffer.size() * 4;
@@ -216,30 +179,32 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         // 2 - generator magic
         // 3 - bound
         // 4 - schema (reserved)
-        mBuffer = BufferUtils.createByteBuffer(estimatedSize)
-                .putInt(SpvMagicNumber)
-                .putInt(mOutputVersion.mVersionNumber)
-                .putInt(GENERATOR_MAGIC_NUMBER)
-                .putInt(mIdCount)
-                .putInt(0);
+        BufferWriter writer = new BufferWriter(estimatedSize);
+        writer.writeWord(SpvMagicNumber);
+        writer.writeWord(mOutputVersion.mVersionNumber);
+        writer.writeWord(GENERATOR_MAGIC_NUMBER);
+        writer.writeWord(mIdCount);
+        writer.writeWord(0);
 
-        writeCapabilities(mMainWriter);
-        writeInstruction(SpvOpExtInstImport, mGLSLExtendedInstructions, "GLSL.std.450", mMainWriter);
-        writeInstruction(SpvOpMemoryModel, SpvAddressingModelLogical, SpvMemoryModelGLSL450, mMainWriter);
-        writeOpcode(SpvOpEntryPoint, entryPointWordCount, mMainWriter);
+        for (var it = mCapabilities.iterator(); it.hasNext(); ) {
+            writeInstruction(SpvOpCapability, it.nextInt(), writer);
+        }
+        writeInstruction(SpvOpExtInstImport, mGLSLExtendedInstructions, "GLSL.std.450", writer);
+        writeInstruction(SpvOpMemoryModel, SpvAddressingModelLogical, SpvMemoryModelGLSL450, writer);
+        writeOpcode(SpvOpEntryPoint, entryPointWordCount, writer);
         if (kind.isVertex()) {
-            mMainWriter.writeWord(SpvExecutionModelVertex);
+            writer.writeWord(SpvExecutionModelVertex);
         } else if (kind.isFragment()) {
-            mMainWriter.writeWord(SpvExecutionModelFragment);
+            writer.writeWord(SpvExecutionModelFragment);
         } else if (kind.isCompute()) {
-            mMainWriter.writeWord(SpvExecutionModelGLCompute);
+            writer.writeWord(SpvExecutionModelGLCompute);
         }
 
         int entryPoint = mFunctionTable.getInt(mEntryPointFunction);
-        mMainWriter.writeWord(entryPoint);
-        mMainWriter.writeString8(getContext(), mEntryPointFunction.getName());
+        writer.writeWord(entryPoint);
+        writer.writeString8(getContext(), entryPointName);
         for (int id : mInterfaceVariables) {
-            mMainWriter.writeWord(id);
+            writer.writeWord(id);
         }
 
         if (kind.isFragment()) {
@@ -248,24 +213,17 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                     mOutputTarget.isOpenGL()
                             ? SpvExecutionModeOriginLowerLeft
                             : SpvExecutionModeOriginUpperLeft,
-                    mMainWriter);
+                    writer);
         }
-        mMainWriter.writeWords(mNameBuffer.elements(), mNameBuffer.size());
-        mMainWriter.writeWords(mDecorationBuffer.elements(), mDecorationBuffer.size());
-        mMainWriter.writeWords(mConstantBuffer.elements(), mConstantBuffer.size());
-        mMainWriter.writeWords(mFunctionBuffer.elements(), mFunctionBuffer.size());
+        writer.writeWords(mNameBuffer.elements(), mNameBuffer.size());
+        writer.writeWords(mDecorationBuffer.elements(), mDecorationBuffer.size());
+        writer.writeWords(mConstantBuffer.elements(), mConstantBuffer.size());
+        writer.writeWords(mFunctionBuffer.elements(), mFunctionBuffer.size());
 
-        ByteBuffer buffer = mBuffer;
-        mBuffer = null;
-        return buffer.flip();
-    }
-
-    private void writeCapabilities(Writer writer) {
-        // always enable Shader capability, this implicitly declares Matrix capability
-        writeInstruction(SpvOpCapability, SpvCapabilityShader, writer);
-        for (var it = mCapabilities.iterator(); it.hasNext(); ) {
-            writeInstruction(SpvOpCapability, it.nextInt(), writer);
+        if (getContext().getErrorHandler().errorCount() != 0) {
+            return null;
         }
+        return writer.detach();
     }
 
     private int getStorageClass(@Nonnull Variable variable) {
@@ -1361,6 +1319,8 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
 
     private void buildInstructions(@Nonnull TranslationUnit translationUnit) {
         mGLSLExtendedInstructions = getUniqueId();
+        // always enable Shader capability, this implicitly declares Matrix capability
+        mCapabilities.add(SpvCapabilityShader);
 
         for (var e : translationUnit) {
             if (e instanceof FunctionDefinition funcDef) {
