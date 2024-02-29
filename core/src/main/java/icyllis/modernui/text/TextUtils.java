@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2024 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -30,7 +30,6 @@ import icyllis.modernui.util.Parcel;
 import icyllis.modernui.view.View;
 import org.jetbrains.annotations.ApiStatus;
 
-import java.io.*;
 import java.nio.CharBuffer;
 import java.util.*;
 
@@ -48,38 +47,45 @@ public final class TextUtils {
 
     private static final char[] ELLIPSIS_NORMAL_ARRAY = ELLIPSIS_NORMAL.toCharArray();
 
+    private TextUtils() {
+    }
+
     @NonNull
     public static String getEllipsisString(@NonNull TextUtils.TruncateAt method) {
         return ELLIPSIS_NORMAL;
     }
 
     //TODO temp, remove in future
+    @ApiStatus.Internal
     @NonNull
     public static char[] getEllipsisChars(@NonNull TextUtils.TruncateAt method) {
         return ELLIPSIS_NORMAL_ARRAY;
     }
 
     /**
-     * Obtain a temporary char buffer.
+     * Returns a temporary char buffer.
      *
      * @param len the length of the buffer
      * @return a char buffer
+     * @hidden
      * @see #recycle(char[]) recycle the buffer
      */
+    @ApiStatus.Internal
     @NonNull
     public static char[] obtain(int len) {
-        if (len > 2048)
+        if (len > 2000)
             return new char[len];
 
         char[] buf = null;
 
         synchronized (sTemp) {
-            final var pool = sTemp;
-            for (int i = pool.length - 1; i >= 0; --i)
+            final char[][] pool = sTemp;
+            for (int i = pool.length - 1; i >= 0; --i) {
                 if ((buf = pool[i]) != null && buf.length >= len) {
                     pool[i] = null;
                     break;
                 }
+            }
         }
 
         if (buf == null || buf.length < len)
@@ -88,17 +94,22 @@ public final class TextUtils {
         return buf;
     }
 
+    /**
+     * @hidden
+     */
+    @ApiStatus.Internal
     public static void recycle(@NonNull char[] temp) {
-        if (temp.length > 2048)
+        if (temp.length > 2000)
             return;
 
         synchronized (sTemp) {
-            final var pool = sTemp;
-            for (int i = 0; i < pool.length; ++i)
+            final char[][] pool = sTemp;
+            for (int i = 0; i < pool.length; ++i) {
                 if (pool[i] == null) {
                     pool[i] = temp;
                     break;
                 }
+            }
         }
     }
 
@@ -152,8 +163,8 @@ public final class TextUtils {
             ((StringBuffer) s).getChars(srcBegin, srcEnd, dst, dstBegin);
         else if (s instanceof StringBuilder)
             ((StringBuilder) s).getChars(srcBegin, srcEnd, dst, dstBegin);
-        else if (s instanceof CharBuffer)
-            ((CharBuffer) s).get(srcBegin, dst, dstBegin, srcEnd - srcBegin); // Java 13
+        else if (s instanceof CharBuffer buf)
+            buf.get(buf.position() + srcBegin, dst, dstBegin, srcEnd - srcBegin); // Java 13
         else {
             for (int i = srcBegin; i < srcEnd; i++)
                 dst[dstBegin++] = s.charAt(i);
@@ -245,7 +256,8 @@ public final class TextUtils {
         final Class<? extends CharSequence> c = s.getClass();
 
         if (s instanceof GetChars || c == StringBuffer.class ||
-                c == StringBuilder.class || c == String.class) {
+                c == StringBuilder.class || c == String.class ||
+                s instanceof CharBuffer) {
             char[] temp = obtain(500);
 
             while (start < end) {
@@ -302,7 +314,8 @@ public final class TextUtils {
         Class<? extends CharSequence> c = s.getClass();
 
         if (s instanceof GetChars || c == StringBuffer.class ||
-                c == StringBuilder.class || c == String.class) {
+                c == StringBuilder.class || c == String.class ||
+                s instanceof CharBuffer) {
             char[] temp = obtain(500);
 
             while (start < end) {
@@ -741,6 +754,162 @@ public final class TextUtils {
         }
     }
 
+    /**
+     * Returns a CharSequence concatenating the specified CharSequences,
+     * retaining their spans if any.
+     * <p>
+     * If there are no parameters, an empty string will be returned.
+     * <p>
+     * If the number of parameters is exactly one, that parameter is returned if it is not null.
+     * Otherwise, the string <code>"null"</code> is returned.
+     * <p>
+     * If the number of parameters is at least two, any null CharSequence among the parameters is
+     * treated as if it was the string <code>"null"</code>.
+     * <p>
+     * If there are paragraph spans in the source CharSequences that satisfy paragraph boundary
+     * requirements in the sources but would no longer satisfy them in the concatenated
+     * CharSequence, they may get extended in the resulting CharSequence or not retained.
+     */
+    @NonNull
+    public static CharSequence concat(@NonNull CharSequence... elements) {
+        if (elements.length == 0) {
+            return "";
+        }
+
+        CharSequence first = elements[0];
+        if (elements.length == 1) {
+            return first == null ? "null" : first;
+        }
+
+        boolean spanned = first instanceof Spanned;
+        for (int i = 1; !spanned && i < elements.length; i++) {
+            spanned = elements[i] instanceof Spanned;
+        }
+
+        if (spanned) {
+            final SpannableStringBuilder ssb = new SpannableStringBuilder();
+            for (CharSequence piece : elements) {
+                ssb.append(piece == null ? "null" : piece);
+            }
+            return new SpannedString(ssb);
+        } else {
+            // join() is faster
+            return String.join("", elements);
+        }
+    }
+
+    /**
+     * Returns a CharSequence concatenating the specified CharSequences,
+     * retaining their spans if any.
+     * <p>
+     * If there are no parameters, an empty string will be returned.
+     * <p>
+     * If the number of parameters is exactly one, that parameter is returned if it is not null.
+     * Otherwise, the string <code>"null"</code> is returned.
+     * <p>
+     * If the number of parameters is at least two, any null CharSequence among the parameters is
+     * treated as if it was the string <code>"null"</code>.
+     * <p>
+     * If there are paragraph spans in the source CharSequences that satisfy paragraph boundary
+     * requirements in the sources but would no longer satisfy them in the concatenated
+     * CharSequence, they may get extended in the resulting CharSequence or not retained.
+     */
+    @NonNull
+    public static CharSequence concat(@NonNull Iterable<? extends CharSequence> elements) {
+        Iterator<? extends CharSequence> it = elements.iterator();
+        if (!it.hasNext()) {
+            return "";
+        }
+
+        CharSequence first = it.next();
+        if (!it.hasNext()) {
+            return first == null ? "null" : first;
+        }
+
+        boolean spanned = first instanceof Spanned;
+        while (!spanned && it.hasNext()) {
+            spanned = it.next() instanceof Spanned;
+        }
+
+        if (spanned) {
+            final SpannableStringBuilder ssb = new SpannableStringBuilder();
+            for (CharSequence piece : elements) {
+                ssb.append(piece == null ? "null" : piece);
+            }
+            return new SpannedString(ssb);
+        } else {
+            // join() is faster
+            return String.join("", elements);
+        }
+    }
+
+    @NonNull
+    public static CharSequence join(@NonNull CharSequence delimiter,
+                                    @NonNull CharSequence... elements) {
+        if (elements.length == 0) {
+            return "";
+        }
+
+        CharSequence first = elements[0];
+        if (elements.length == 1) {
+            return first == null ? "null" : first;
+        }
+
+        boolean spanned = first instanceof Spanned ||
+                delimiter instanceof Spanned;
+        for (int i = 1; !spanned && i < elements.length; i++) {
+            spanned = elements[i] instanceof Spanned;
+        }
+
+        if (spanned) {
+            final SpannableStringBuilder ssb = new SpannableStringBuilder();
+            ssb.append(first == null ? "null" : first);
+            for (int i = 1; i < elements.length; i++) {
+                ssb.append(delimiter);
+                CharSequence piece = elements[i];
+                ssb.append(piece == null ? "null" : piece);
+            }
+            return new SpannedString(ssb);
+        } else {
+            return String.join(delimiter, elements);
+        }
+    }
+
+    @NonNull
+    public static CharSequence join(@NonNull CharSequence delimiter,
+                                    @NonNull Iterable<? extends CharSequence> elements) {
+        Iterator<? extends CharSequence> it = elements.iterator();
+        if (!it.hasNext()) {
+            return "";
+        }
+
+        CharSequence first = it.next();
+        if (!it.hasNext()) {
+            return first == null ? "null" : first;
+        }
+
+        boolean spanned = first instanceof Spanned ||
+                delimiter instanceof Spanned;
+        while (!spanned && it.hasNext()) {
+            spanned = it.next() instanceof Spanned;
+        }
+
+        if (spanned) {
+            final SpannableStringBuilder ssb = new SpannableStringBuilder();
+            it = elements.iterator();
+            it.next();
+            ssb.append(first == null ? "null" : first);
+            do {
+                ssb.append(delimiter);
+                CharSequence piece = it.next();
+                ssb.append(piece == null ? "null" : piece);
+            } while (it.hasNext());
+            return new SpannedString(ssb);
+        } else {
+            return String.join(delimiter, elements);
+        }
+    }
+
     private static final String[] sBinaryCompacts = {"bytes", "KB", "MB", "GB", "TB", "PB", "EB"};
 
     @NonNull
@@ -750,7 +919,7 @@ public final class TextUtils {
         if (num < 1024)
             return num + " bytes";
         int i = (63 - Long.numberOfLeadingZeros(num)) / 10;
-        return String.format("%.1f %s",
+        return String.format("%.2f %s",
                 (double) num / (1L << (i * 10)),
                 sBinaryCompacts[i]);
     }
