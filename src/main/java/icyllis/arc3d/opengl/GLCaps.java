@@ -19,7 +19,9 @@
 
 package icyllis.arc3d.opengl;
 
+import icyllis.arc3d.compiler.*;
 import icyllis.arc3d.core.ImageInfo;
+import icyllis.arc3d.engine.ShaderCaps;
 import icyllis.arc3d.engine.*;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.lwjgl.opengl.GL46C;
@@ -45,8 +47,6 @@ public final class GLCaps extends Caps {
      */
     public static final List<String> MISSING_EXTENSIONS = new ArrayList<>();
 
-    public final int[] mProgramBinaryFormats;
-
     final int mVendor;
     final int mDriver;
 
@@ -61,8 +61,12 @@ public final class GLCaps extends Caps {
     final boolean mBufferStorageSupport;
 
     final boolean mBaseInstanceSupport;
+    final boolean mProgramBinarySupport;
     final boolean mCopyImageSupport;
     final boolean mDSASupport;
+    final boolean mSPIRVSupport;
+
+    final int[] mProgramBinaryFormats;
 
     public static final int
             INVALIDATE_BUFFER_TYPE_NULL_DATA = 1,
@@ -227,6 +231,7 @@ public final class GLCaps extends Caps {
             mBaseInstanceSupport = caps.OpenGL42 || caps.GL_ARB_base_instance;
             mCopyImageSupport = caps.OpenGL43 ||
                     (caps.GL_ARB_copy_image && caps.GL_ARB_internalformat_query2);
+            mProgramBinarySupport = caps.OpenGL41 || caps.GL_ARB_get_program_binary;
             mBufferStorageSupport = caps.OpenGL44 || caps.GL_ARB_buffer_storage;
 
         } else {
@@ -234,6 +239,7 @@ public final class GLCaps extends Caps {
             mDebugSupport = true;
             mBaseInstanceSupport = true;
             mCopyImageSupport = true;
+            mProgramBinarySupport = true;
             mBufferStorageSupport = true;
         }
 
@@ -261,7 +267,11 @@ public final class GLCaps extends Caps {
             }
         }
 
-        mMaxFragmentUniformVectors = glGetInteger(GL_MAX_FRAGMENT_UNIFORM_VECTORS);
+        if (caps.OpenGL41 || caps.GL_ARB_ES2_compatibility) {
+            mMaxFragmentUniformVectors = glGetInteger(GL_MAX_FRAGMENT_UNIFORM_VECTORS);
+        } else {
+            mMaxFragmentUniformVectors = -1;
+        }
         mMaxVertexAttributes = Math.min(32, glGetInteger(GL_MAX_VERTEX_ATTRIBS));
 
         if (caps.OpenGL43 || caps.GL_ARB_invalidate_subdata) {
@@ -275,25 +285,22 @@ public final class GLCaps extends Caps {
         // When we are abandoning the context we cannot call into GL thus we should skip any sync work.
         mMustSyncGpuDuringDiscard = false;
 
-        mMaxLabelLength = glGetInteger(GL_MAX_LABEL_LENGTH);
+        if (mDebugSupport) {
+            mMaxLabelLength = glGetInteger(GL_MAX_LABEL_LENGTH);
+        } else {
+            mMaxLabelLength = 0;
+        }
 
         ShaderCaps shaderCaps = mShaderCaps;
         if (caps.OpenGL45) {
-            shaderCaps.mGLSLVersion = 450;
-        } else if (caps.OpenGL44) {
-            shaderCaps.mGLSLVersion = 440;
+            shaderCaps.mTargetApi = TargetApi.OPENGL_4_5;
+            shaderCaps.mGLSLVersion = GLSLVersion.GLSL_450;
         } else if (caps.OpenGL43) {
-            shaderCaps.mGLSLVersion = 430;
-        } else if (caps.OpenGL42) {
-            shaderCaps.mGLSLVersion = 420;
-        } else if (caps.OpenGL41) {
-            shaderCaps.mGLSLVersion = 410;
-        } else if (caps.OpenGL40) {
-            shaderCaps.mGLSLVersion = 400;
-        } else if (caps.OpenGL33) {
-            shaderCaps.mGLSLVersion = 330;
+            shaderCaps.mTargetApi = TargetApi.OPENGL_4_3;
+            shaderCaps.mGLSLVersion = GLSLVersion.GLSL_430;
         } else {
-            shaderCaps.mGLSLVersion = 150;
+            shaderCaps.mTargetApi = TargetApi.OPENGL_3_3;
+            shaderCaps.mGLSLVersion = GLSLVersion.GLSL_330;
         }
         initGLSL(caps);
 
@@ -336,10 +343,34 @@ public final class GLCaps extends Caps {
 
         mDynamicStateArrayGeometryProcessorTextureSupport = true;
 
-        int count = glGetInteger(GL_NUM_PROGRAM_BINARY_FORMATS);
-        mProgramBinaryFormats = new int[count];
-        if (count > 0) {
-            glGetIntegerv(GL_PROGRAM_BINARY_FORMATS, mProgramBinaryFormats);
+        if (mProgramBinarySupport) {
+            int count = glGetInteger(GL_NUM_PROGRAM_BINARY_FORMATS);
+            mProgramBinaryFormats = new int[count];
+            if (count > 0) {
+                glGetIntegerv(GL_PROGRAM_BINARY_FORMATS, mProgramBinaryFormats);
+            }
+        } else {
+            mProgramBinaryFormats = null;
+        }
+        boolean spirvSupport = false;
+        // we don't use ARB_GL_SPIRV, so check OpenGL 4.6 support
+        if (caps.OpenGL46) {
+            int count = glGetInteger(GL_NUM_SHADER_BINARY_FORMATS);
+            if (count > 0) {
+                int[] shaderBinaryFormats = new int[count];
+                glGetIntegerv(GL_SHADER_BINARY_FORMATS, shaderBinaryFormats);
+                for (int format : shaderBinaryFormats) {
+                    if (format == GL46C.GL_SHADER_BINARY_FORMAT_SPIR_V) {
+                        spirvSupport = true;
+                        break;
+                    }
+                }
+            }
+        }
+        mSPIRVSupport = spirvSupport;
+        // SPIR-V has priority over program binary
+        if (spirvSupport) {
+            shaderCaps.mSPIRVVersion = SPIRVVersion.SPIRV_1_0;
         }
 
         initFormatTable(caps);
@@ -1339,6 +1370,19 @@ public final class GLCaps extends Caps {
 
     public boolean hasBufferStorageSupport() {
         return mBufferStorageSupport;
+    }
+
+    public boolean hasSPIRVSupport() {
+        return mSPIRVSupport;
+    }
+
+    public boolean hasProgramBinarySupport() {
+        return mProgramBinarySupport;
+    }
+
+    @Nullable
+    public int[] getProgramBinaryFormats() {
+        return mProgramBinarySupport ? mProgramBinaryFormats.clone() : null;
     }
 
     @Override

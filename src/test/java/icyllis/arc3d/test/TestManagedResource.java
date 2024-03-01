@@ -186,7 +186,9 @@ public class TestManagedResource {
 
         testShaderBuilder(pw, dContext);
 
-        pw.println("BinaryFormats: " + Arrays.toString(((GLCaps) dContext.getCaps()).mProgramBinaryFormats));
+        GLCaps caps = (GLCaps) dContext.getCaps();
+        pw.println("ProgramBinaryFormats: " + Arrays.toString(caps.getProgramBinaryFormats()));
+        pw.println("SPIR-V support: " + caps.hasSPIRVSupport());
 
         if (dContext.getCaps().isFormatTexturable(
                 GLBackendFormat.make(EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT1_EXT))) {

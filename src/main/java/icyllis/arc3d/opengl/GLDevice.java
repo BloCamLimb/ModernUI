@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -910,27 +910,27 @@ public final class GLDevice extends GpuDevice {
         return bufferState.mTarget;
     }
 
-    public void bindTexture(int binding, GLTexture texture,
+    public void bindTexture(int bindingUnit, GLTexture texture,
                             int samplerState, short readSwizzle) {
         boolean dsa = mCaps.hasDSASupport();
-        if (mHWTextureStates[binding] != texture.getUniqueID()) {
+        if (mHWTextureStates[bindingUnit] != texture.getUniqueID()) {
             if (dsa) {
-                glBindTextureUnit(binding, texture.getHandle());
+                glBindTextureUnit(bindingUnit, texture.getHandle());
             } else {
-                setTextureUnit(binding);
+                setTextureUnit(bindingUnit);
                 glBindTexture(GL_TEXTURE_2D, texture.getHandle());
             }
-            mHWTextureStates[binding] = texture.getUniqueID();
+            mHWTextureStates[bindingUnit] = texture.getUniqueID();
         }
-        var ss = mHWSamplerStates[binding];
-        if (ss.mSamplerState != samplerState) {
+        var state = mHWSamplerStates[bindingUnit];
+        if (state.mSamplerState != samplerState) {
             GLSampler sampler = samplerState != 0
                     ? mResourceProvider.findOrCreateCompatibleSampler(samplerState)
                     : null;
-            glBindSampler(binding, sampler != null
+            glBindSampler(bindingUnit, sampler != null
                     ? sampler.getHandle()
                     : 0);
-            ss.mBoundSampler = RefCnt.move(ss.mBoundSampler, sampler);
+            state.mBoundSampler = RefCnt.move(state.mBoundSampler, sampler);
         }
         GLTextureParameters parameters = texture.getParameters();
         if (parameters.baseMipmapLevel != 0) {
@@ -951,7 +951,8 @@ public final class GLDevice extends GpuDevice {
             parameters.maxMipmapLevel = maxLevel;
         }
         // texture view is available since 4.3, but less used in OpenGL
-        boolean swizzleChanged = false;
+        // in case of some driver bugs, we don't use GL_TEXTURE_SWIZZLE_RGBA
+        // and OpenGL ES does not support GL_TEXTURE_SWIZZLE_RGBA at all
         for (int i = 0; i < 4; ++i) {
             int swiz = switch (readSwizzle & 0xF) {
                 case 0 -> GL_RED;
@@ -962,18 +963,17 @@ public final class GLDevice extends GpuDevice {
                 case 5 -> GL_ONE;
                 default -> throw new AssertionError(readSwizzle);
             };
-            if (parameters.swizzle[i] != swiz) {
-                parameters.swizzle[i] = swiz;
-                swizzleChanged = true;
+            if (parameters.getSwizzle(i) != swiz) {
+                parameters.setSwizzle(i, swiz);
+                // swizzle enums are sequential
+                int channel = GL_TEXTURE_SWIZZLE_R + i;
+                if (dsa) {
+                    glTextureParameteri(texture.getHandle(), channel, swiz);
+                } else {
+                    glTexParameteri(GL_TEXTURE_2D, channel, swiz);
+                }
             }
             readSwizzle >>= 4;
-        }
-        if (swizzleChanged) {
-            if (dsa) {
-                glTextureParameteriv(texture.getHandle(), GL_TEXTURE_SWIZZLE_RGBA, parameters.swizzle);
-            } else {
-                glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, parameters.swizzle);
-            }
         }
     }
 

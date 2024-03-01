@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.engine;
 
-public class ShaderCaps {
+public class ShaderCaps extends icyllis.arc3d.compiler.ShaderCaps {
 
     /**
      * Indicates how GLSL must interact with advanced blend equations. The KHR extension requires
@@ -29,9 +29,6 @@ public class ShaderCaps {
             NotSupported_AdvBlendEqInteraction = 0,     // No _blend_equation_advanced extension
             Automatic_AdvBlendEqInteraction = 1,        // No interaction required
             GeneralEnable_AdvBlendEqInteraction = 2;    // layout(blend_support_all_equations) out
-
-    // GLSL version 450 or 330
-    public int mGLSLVersion = 450;
 
     public boolean mDualSourceBlendingSupport = false;
     public boolean mPreferFlatInterpolation = false;
@@ -72,8 +69,6 @@ public class ShaderCaps {
     public int mAdvBlendEqInteraction = NotSupported_AdvBlendEqInteraction;
 
     public int mMaxFragmentSamplers = 0;
-
-    public String mVersionDeclString = "";
 
     public ShaderCaps() {
     }
