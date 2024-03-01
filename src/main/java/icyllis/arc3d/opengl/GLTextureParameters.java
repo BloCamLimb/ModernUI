@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,8 +19,6 @@
 
 package icyllis.arc3d.opengl;
 
-import java.util.Arrays;
-
 import static org.lwjgl.opengl.GL11C.*;
 
 public final class GLTextureParameters {
@@ -29,7 +27,10 @@ public final class GLTextureParameters {
     public int baseMipmapLevel;
     public int maxMipmapLevel;
     // The read swizzle, identity by default.
-    public final int[] swizzle = {GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA};
+    public int swizzleR = GL_RED;
+    public int swizzleG = GL_GREEN;
+    public int swizzleB = GL_BLUE;
+    public int swizzleA = GL_ALPHA;
 
     public GLTextureParameters() {
         // These are the OpenGL defaults.
@@ -43,7 +44,30 @@ public final class GLTextureParameters {
     public void invalidate() {
         baseMipmapLevel = ~0;
         maxMipmapLevel = ~0;
-        Arrays.fill(swizzle, 0);
+        swizzleR = 0;
+        swizzleG = 0;
+        swizzleB = 0;
+        swizzleA = 0;
+    }
+
+    public int getSwizzle(int i) {
+        return switch (i) {
+            case 0 -> swizzleR;
+            case 1 -> swizzleG;
+            case 2 -> swizzleB;
+            case 3 -> swizzleA;
+            default -> throw new IndexOutOfBoundsException(i);
+        };
+    }
+
+    public void setSwizzle(int i, int swiz) {
+        switch (i) {
+            case 0 -> swizzleR = swiz;
+            case 1 -> swizzleG = swiz;
+            case 2 -> swizzleB = swiz;
+            case 3 -> swizzleA = swiz;
+            default -> throw new IndexOutOfBoundsException(i);
+        }
     }
 
     @Override
@@ -51,7 +75,10 @@ public final class GLTextureParameters {
         return '{' +
                 "baseMipmapLevel=" + baseMipmapLevel +
                 ", maxMipmapLevel=" + maxMipmapLevel +
-                ", swizzle=" + Arrays.toString(swizzle) +
+                ", swizzleR=" + swizzleR +
+                ", swizzleG=" + swizzleG +
+                ", swizzleB=" + swizzleB +
+                ", swizzleA=" + swizzleA +
                 '}';
     }
 }

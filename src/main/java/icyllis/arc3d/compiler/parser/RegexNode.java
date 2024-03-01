@@ -109,13 +109,13 @@ public interface RegexNode {
     }
 
     /**
-     * Wildcard, excluding LF.
+     * Wildcard, excluding LF and CR.
      */
     @Nonnull
     @Contract(pure = true)
     static RegexNode Dot() {
         return (nfa, next) -> {
-            int state = nfa.add(NFAState.Filter(ch -> ch != '\n', next));
+            int state = nfa.add(NFAState.Filter(ch -> ch != '\n' && ch != '\r', next));
             return IntList.of(state);
         };
     }

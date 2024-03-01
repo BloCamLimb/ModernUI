@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.compiler;
 
-import icyllis.arc3d.compiler.spirv.*;
+import icyllis.arc3d.compiler.spirv.SPIRVCodeGenerator;
 import icyllis.arc3d.compiler.tree.Node;
 import icyllis.arc3d.compiler.tree.TranslationUnit;
 import org.jetbrains.annotations.ApiStatus;
@@ -27,6 +27,7 @@ import org.jetbrains.annotations.ApiStatus;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.util.Objects;
 
 /**
@@ -142,14 +143,30 @@ public class ShaderCompiler {
                                  @Nonnull ShaderKind kind,
                                  @Nonnull CompileOptions options,
                                  @Nonnull ModuleUnit parent) {
+        return parse(toChars(source), kind, options, parent);
+    }
+
+    /**
+     * Parse the source into an abstract syntax tree.
+     *
+     * @param source  the source text
+     * @param kind    the shader kind
+     * @param options the compile options
+     * @param parent  the parent module
+     * @return the parsed result, or null if there's an error
+     */
+    @Nullable
+    public TranslationUnit parse(@Nonnull char[] source,
+                                 @Nonnull ShaderKind kind,
+                                 @Nonnull CompileOptions options,
+                                 @Nonnull ModuleUnit parent) {
         Objects.requireNonNull(kind);
         Objects.requireNonNull(parent);
-        char[] buffer = source.toString().toCharArray();
-        startContext(kind, options, parent, false, false, buffer);
+        startContext(kind, options, parent, false, false, source);
         try {
             Parser parser = new Parser(this, kind,
                     options,
-                    buffer);
+                    source);
             return parser.parse(parent);
         } finally {
             endContext();
@@ -169,15 +186,30 @@ public class ShaderCompiler {
                                   @Nonnull ShaderKind kind,
                                   @Nonnull ModuleUnit parent,
                                   boolean builtin) {
+        return parseModule(toChars(source), kind, parent, builtin);
+    }
+
+    /**
+     * Parse the source into an abstract syntax tree for further parsing.
+     *
+     * @param source the source text
+     * @param kind   the shader kind
+     * @param parent the parent module
+     * @return the parsed result, or null if there's an error
+     */
+    @Nullable
+    public ModuleUnit parseModule(@Nonnull char[] source,
+                                  @Nonnull ShaderKind kind,
+                                  @Nonnull ModuleUnit parent,
+                                  boolean builtin) {
         Objects.requireNonNull(kind);
         Objects.requireNonNull(parent);
-        char[] buffer = source.toString().toCharArray();
         CompileOptions options = new CompileOptions();
-        startContext(kind, options, parent, builtin, true, buffer);
+        startContext(kind, options, parent, builtin, true, source);
         try {
             Parser parser = new Parser(this, kind,
                     options,
-                    buffer);
+                    source);
             return parser.parseModule(parent);
         } finally {
             endContext();
@@ -228,14 +260,28 @@ public class ShaderCompiler {
                                      @Nonnull ShaderCaps shaderCaps,
                                      @Nonnull CompileOptions options,
                                      @Nonnull ModuleUnit parent) {
+        return compileToSPIRV(toChars(source), kind, shaderCaps, options, parent);
+    }
+
+    /**
+     * Combination of {@link #parse} and {@link #toSPIRV}.
+     *
+     * @see #parse(char[], ShaderKind, CompileOptions, ModuleUnit)
+     * @see #toSPIRV(TranslationUnit, ShaderCaps)
+     */
+    @Nullable
+    public ByteBuffer compileToSPIRV(@Nonnull char[] source,
+                                     @Nonnull ShaderKind kind,
+                                     @Nonnull ShaderCaps shaderCaps,
+                                     @Nonnull CompileOptions options,
+                                     @Nonnull ModuleUnit parent) {
         Objects.requireNonNull(kind);
         Objects.requireNonNull(parent);
-        char[] buffer = source.toString().toCharArray();
-        startContext(kind, options, parent, false, false, buffer);
+        startContext(kind, options, parent, false, false, source);
         try {
             Parser parser = new Parser(this, kind,
                     options,
-                    buffer);
+                    source);
             TranslationUnit translationUnit = parser.parse(parent);
             if (translationUnit == null) {
                 return null;
@@ -267,6 +313,31 @@ public class ShaderCompiler {
         mContext.getErrorHandler().setSource(null);
     }
 
+    @ApiStatus.Internal
+    @Nonnull
+    public static char[] toChars(@Nonnull CharSequence s) {
+        if (s instanceof String) {
+            return ((String) s).toCharArray();
+        }
+        int n = s.length();
+        char[] chars = new char[n];
+        if (s instanceof StringBuffer)
+            ((StringBuffer) s).getChars(0, n, chars, 0);
+        else if (s instanceof StringBuilder)
+            ((StringBuilder) s).getChars(0, n, chars, 0);
+        else if (s instanceof CharBuffer buf)
+            buf.get(buf.position(), chars, 0, n);
+        else {
+            for (int i = 0; i < n; i++)
+                chars[i] = s.charAt(i);
+        }
+        return chars;
+    }
+
+    /**
+     * Returns the concatenated error (and warning) message during the last parsing
+     * or code generation. This may be empty or contain multiple lines.
+     */
     @Nonnull
     public String getErrorMessage() {
         return getErrorMessage(true);
