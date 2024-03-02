@@ -758,19 +758,21 @@ public final class TextUtils {
      * Returns a CharSequence concatenating the specified CharSequences,
      * retaining their spans if any.
      * <p>
-     * If there are no parameters, an empty string will be returned.
+     * If there are no elements, an empty string will be returned.
      * <p>
-     * If the number of parameters is exactly one, that parameter is returned if it is not null.
-     * Otherwise, the string <code>"null"</code> is returned.
+     * If the number of elements is exactly one, that element is returned, even if it
+     * is null or mutable.
      * <p>
-     * If the number of parameters is at least two, any null CharSequence among the parameters is
-     * treated as if it was the string <code>"null"</code>.
+     * If the number of elements is at least two, any null CharSequence among the elements is
+     * treated as if it was the string <code>"null"</code>, and a new String or SpannedString is
+     * returned.
      * <p>
      * If there are paragraph spans in the source CharSequences that satisfy paragraph boundary
      * requirements in the sources but would no longer satisfy them in the concatenated
      * CharSequence, they may get extended in the resulting CharSequence or not retained.
+     *
+     * @since 3.10.1
      */
-    @NonNull
     public static CharSequence concat(@NonNull CharSequence... elements) {
         if (elements.length == 0) {
             return "";
@@ -778,7 +780,7 @@ public final class TextUtils {
 
         CharSequence first = elements[0];
         if (elements.length == 1) {
-            return first == null ? "null" : first;
+            return first;
         }
 
         boolean spanned = first instanceof Spanned;
@@ -802,19 +804,21 @@ public final class TextUtils {
      * Returns a CharSequence concatenating the specified CharSequences,
      * retaining their spans if any.
      * <p>
-     * If there are no parameters, an empty string will be returned.
+     * If there are no elements, an empty string will be returned.
      * <p>
-     * If the number of parameters is exactly one, that parameter is returned if it is not null.
-     * Otherwise, the string <code>"null"</code> is returned.
+     * If the number of elements is exactly one, that element is returned, even if it
+     * is null or mutable.
      * <p>
-     * If the number of parameters is at least two, any null CharSequence among the parameters is
-     * treated as if it was the string <code>"null"</code>.
+     * If the number of elements is at least two, any null CharSequence among the elements is
+     * treated as if it was the string <code>"null"</code>, and a new String or SpannedString is
+     * returned.
      * <p>
      * If there are paragraph spans in the source CharSequences that satisfy paragraph boundary
      * requirements in the sources but would no longer satisfy them in the concatenated
      * CharSequence, they may get extended in the resulting CharSequence or not retained.
+     *
+     * @since 3.10.1
      */
-    @NonNull
     public static CharSequence concat(@NonNull Iterable<? extends CharSequence> elements) {
         Iterator<? extends CharSequence> it = elements.iterator();
         if (!it.hasNext()) {
@@ -823,7 +827,7 @@ public final class TextUtils {
 
         CharSequence first = it.next();
         if (!it.hasNext()) {
-            return first == null ? "null" : first;
+            return first;
         }
 
         boolean spanned = first instanceof Spanned;
@@ -843,6 +847,25 @@ public final class TextUtils {
         }
     }
 
+    /**
+     * Returns a CharSequence composed of copies of the <var>elements</var> joined together
+     * with the specified <var>delimiter</var>.
+     * <p>
+     * If there are no elements, an empty string will be returned. Otherwise, returns a new
+     * CharSequence. Any null value will be replaced with the string <code>"null"</code>.
+     * <p>
+     * Unlike Android, this method retains their spans if any. If you want to ignore all the
+     * spans, use {@link String#join(CharSequence, CharSequence...)} instead.
+     * <p>
+     * If there are paragraph spans in the source CharSequences that satisfy paragraph boundary
+     * requirements in the sources but would no longer satisfy them in the concatenated
+     * CharSequence, they may get extended in the resulting CharSequence or not retained.
+     *
+     * @param delimiter the delimiter that separates each element, may be {@link Spanned}
+     * @param elements  an array of char sequences to join together, may be {@link Spanned}
+     * @return a String or SpannedString
+     * @since 3.10.1
+     */
     @NonNull
     public static CharSequence join(@NonNull CharSequence delimiter,
                                     @NonNull CharSequence... elements) {
@@ -852,7 +875,9 @@ public final class TextUtils {
 
         CharSequence first = elements[0];
         if (elements.length == 1) {
-            return first == null ? "null" : first;
+            return first instanceof Spanned
+                    ? SpannedString.valueOf(first)
+                    : String.valueOf(first);
         }
 
         boolean spanned = first instanceof Spanned ||
@@ -875,6 +900,25 @@ public final class TextUtils {
         }
     }
 
+    /**
+     * Returns a CharSequence composed of copies of the <var>elements</var> joined together
+     * with the specified <var>delimiter</var>.
+     * <p>
+     * If there are no elements, an empty string will be returned. Otherwise, returns a new
+     * CharSequence. Any null value will be replaced with the string <code>"null"</code>.
+     * <p>
+     * Unlike Android, this method retains their spans if any. If you want to ignore all the
+     * spans, use {@link String#join(CharSequence, Iterable)} instead.
+     * <p>
+     * If there are paragraph spans in the source CharSequences that satisfy paragraph boundary
+     * requirements in the sources but would no longer satisfy them in the concatenated
+     * CharSequence, they may get extended in the resulting CharSequence or not retained.
+     *
+     * @param delimiter the delimiter that separates each element, may be {@link Spanned}
+     * @param elements  an iterable of char sequences to join together, may be {@link Spanned}
+     * @return a String or SpannedString
+     * @since 3.10.1
+     */
     @NonNull
     public static CharSequence join(@NonNull CharSequence delimiter,
                                     @NonNull Iterable<? extends CharSequence> elements) {
@@ -885,7 +929,9 @@ public final class TextUtils {
 
         CharSequence first = it.next();
         if (!it.hasNext()) {
-            return first == null ? "null" : first;
+            return first instanceof Spanned
+                    ? SpannedString.valueOf(first)
+                    : String.valueOf(first);
         }
 
         boolean spanned = first instanceof Spanned ||
