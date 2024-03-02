@@ -22,12 +22,16 @@ package icyllis.arc3d.opengl;
 import icyllis.arc3d.core.Color;
 import icyllis.arc3d.core.ImageInfo;
 import icyllis.arc3d.engine.PipelineStateCache;
+import org.lwjgl.PointerBuffer;
 import org.lwjgl.opengl.GL45C;
+import org.lwjgl.opengl.GL46C;
 import org.lwjgl.system.*;
 
 import javax.annotation.Nonnull;
 import java.io.PrintWriter;
+import java.lang.ref.Reference;
 import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.regex.Pattern;
@@ -87,7 +91,7 @@ public final class GLCore extends GL45C {
     public static final int GL_DRIVER_FREEDRENO = 4;
     public static final int GL_DRIVER_MESA = 5;
 
-    public static int getVendor(String vendorString) {
+    public static int find_vendor(String vendorString) {
         Objects.requireNonNull(vendorString);
         if (vendorString.equals("NVIDIA Corporation")) {
             return GL_VENDOR_NVIDIA;
@@ -104,9 +108,9 @@ public final class GLCore extends GL45C {
         return GL_VENDOR_OTHER;
     }
 
-    public static int getDriver(int vendor,
-                                String vendorString,
-                                String versionString) {
+    public static int find_driver(int vendor,
+                                  String vendorString,
+                                  String versionString) {
         Objects.requireNonNull(vendorString);
         if (vendorString.equals("freedreno")) {
             return GL_DRIVER_FREEDRENO;
@@ -347,8 +351,9 @@ public final class GLCore extends GL45C {
         };
     }
 
-    public static int glCompileShader(int shaderType,
-                                      ByteBuffer source,
+    @NativeType("GLuint")
+    public static int glCompileShader(@NativeType("GLenum") int shaderType,
+                                      @NativeType("GLchar const *") ByteBuffer source,
                                       PipelineStateCache.Stats stats,
                                       PrintWriter pw) {
         int shader = glCreateShader(shaderType);
@@ -356,18 +361,18 @@ public final class GLCore extends GL45C {
             return 0;
         }
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            var string = stack.mallocPointer(1)
-                    .put(0, source);
-            var length = stack.mallocInt(1)
-                    .put(0, source.remaining());
+            PointerBuffer string = stack.pointers(source);
+            IntBuffer length = stack.ints(source.remaining());
             glShaderSource(shader, string, length);
+        } finally {
+            Reference.reachabilityFence(source);
         }
 
         glCompileShader(shader);
         stats.incShaderCompilations();
 
         if (glGetShaderi(shader, GL_COMPILE_STATUS) == GL_FALSE) {
-            String log = glGetShaderInfoLog(shader, 8192).trim();
+            String log = glGetShaderInfoLog(shader);
             glDeleteShader(shader);
             handleCompileError(pw, MemoryUtil.memUTF8(source), log);
             return 0;
@@ -391,7 +396,7 @@ public final class GLCore extends GL45C {
         stats.incShaderCompilations();
 
         if (glGetShaderi(shader, GL_COMPILE_STATUS) == GL_FALSE) {
-            String log = glGetShaderInfoLog(shader, 8192).trim();
+            String log = glGetShaderInfoLog(shader);
             glDeleteShader(shader);
             handleCompileError(pw, source, log);
             return 0;
@@ -402,16 +407,65 @@ public final class GLCore extends GL45C {
         return shader;
     }
 
-    public static void handleCompileError(PrintWriter pw, String shader, String errors) {
+    public static int glSpecializeAndAttachShader(int program,
+                                                  int shaderType,
+                                                  ByteBuffer spirv,
+                                                  PipelineStateCache.Stats stats,
+                                                  PrintWriter pw) {
+        int shader = glCreateShader(shaderType);
+        if (shader == 0) {
+            return 0;
+        }
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            var shaders = stack.ints(shader);
+            glShaderBinary(shaders, GL46C.GL_SHADER_BINARY_FORMAT_SPIR_V, spirv);
+        }
+
+        GL46C.glSpecializeShader(shader, "main", (IntBuffer) null, null);
+        stats.incShaderCompilations();
+
+        if (glGetShaderi(shader, GL_COMPILE_STATUS) == GL_FALSE) {
+            String log = glGetShaderInfoLog(shader);
+            glDeleteShader(shader);
+            pw.println("Shader specialization error");
+            pw.println("Errors:");
+            pw.println(log);
+            return 0;
+        }
+
+        // Attach the shader, but defer deletion until after we have linked the program.
+        glAttachShader(program, shader);
+        return shader;
+    }
+
+    public static void handleCompileError(PrintWriter pw,
+                                          String source,
+                                          String errors) {
         pw.println("Shader compilation error");
         pw.println("------------------------");
-        String[] lines = shader.split("\n");
+        String[] lines = source.split("\n");
         for (int i = 0; i < lines.length; ++i) {
             pw.printf(Locale.ROOT, "%4s\t%s\n", i + 1, lines[i]);
         }
         pw.println("Errors:");
         pw.println(errors);
-        assert false;
+    }
+
+    public static void handleLinkError(PrintWriter pw,
+                                       String[] headers,
+                                       String[] sources,
+                                       String errors) {
+        pw.println("Program linking error");
+        pw.println("------------------------");
+        for (int i = 0; i < headers.length; i++) {
+            pw.println(headers[i]);
+            String[] lines = sources[i].split("\n");
+            for (int j = 0; j < lines.length; ++j) {
+                pw.printf(Locale.ROOT, "%4s\t%s\n", j + 1, lines[j]);
+            }
+        }
+        pw.println("Errors:");
+        pw.println(errors);
     }
 
     @Nonnull
