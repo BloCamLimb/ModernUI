@@ -19,7 +19,6 @@
 
 package icyllis.arc3d.opengl;
 
-import icyllis.arc3d.compiler.GLSLVersion;
 import icyllis.arc3d.core.SLDataType;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.shading.PipelineBuilder;
@@ -83,7 +82,7 @@ public class GLUniformHandler extends UniformHandler {
         int handle = mUniforms.size();
 
         String layoutQualifier;
-        if (mPipelineBuilder.shaderCaps().mGLSLVersion.isAtLeast(GLSLVersion.GLSL_450)) {
+        if (mPipelineBuilder.shaderCaps().mEnhancedLayouts) {
             // ARB_enhanced_layouts or GLSL 440
             layoutQualifier = "offset = " + offset;
         } else {
@@ -115,7 +114,7 @@ public class GLUniformHandler extends UniformHandler {
         int handle = mSamplers.size();
 
         String layoutQualifier;
-        if (mPipelineBuilder.shaderCaps().mGLSLVersion.isAtLeast(GLSLVersion.GLSL_430)) {
+        if (mPipelineBuilder.shaderCaps().mShadingLanguage420Pack) {
             // ARB_shading_language_420pack
             // equivalent to setting texture unit to index
             layoutQualifier = "binding = " + handle;
@@ -172,10 +171,12 @@ public class GLUniformHandler extends UniformHandler {
         // The uniform block definition for all shader stages must be exactly the same
         if (firstVisible) {
             out.append("layout(std140");
-            if (mPipelineBuilder.shaderCaps().mGLSLVersion.isAtLeast(GLSLVersion.GLSL_430)) {
+            if (mPipelineBuilder.shaderCaps().mShadingLanguage420Pack) {
                 // ARB_shading_language_420pack
                 out.append(", binding = ");
                 out.append(UNIFORM_BINDING);
+                String extensionName = mPipelineBuilder.shaderCaps().mShadingLanguage420PackExtensionName;
+                mPipelineBuilder.addExtension(visibility, extensionName);
             }
             out.append(") uniform ");
             out.append(UNIFORM_BLOCK_NAME);
@@ -185,13 +186,22 @@ public class GLUniformHandler extends UniformHandler {
                 out.append(";\n");
             }
             out.append("};\n");
+            if (mPipelineBuilder.shaderCaps().mEnhancedLayouts) {
+                String extensionName = mPipelineBuilder.shaderCaps().mEnhancedLayoutsExtensionName;
+                mPipelineBuilder.addExtension(visibility, extensionName);
+            }
         }
 
         for (var sampler : mSamplers) {
             assert (sampler.mVariable.getType() == SLDataType.kSampler2D);
-            if ((sampler.mVisibility & visibility) != 0) {
-                sampler.mVariable.appendDecl(out);
-                out.append(";\n");
+            if ((sampler.mVisibility & visibility) == 0) {
+                continue;
+            }
+            sampler.mVariable.appendDecl(out);
+            out.append(";\n");
+            if (mPipelineBuilder.shaderCaps().mShadingLanguage420Pack) {
+                String extensionName = mPipelineBuilder.shaderCaps().mShadingLanguage420PackExtensionName;
+                mPipelineBuilder.addExtension(visibility, extensionName);
             }
         }
     }

@@ -37,7 +37,9 @@ import static icyllis.arc3d.opengl.GLCore.*;
 import static org.lwjgl.opengl.EXTTextureCompressionS3TC.*;
 
 /**
- * Stores some capabilities of a OpenGL context.
+ * Stores some capabilities of an OpenGL device.
+ * <p>
+ * OpenGL 3.3 or OpenGL ES 3.0 is the minimum requirement.
  */
 public final class GLCaps extends Caps {
 
@@ -72,6 +74,7 @@ public final class GLCaps extends Caps {
             INVALIDATE_BUFFER_TYPE_NULL_DATA = 1,
             INVALIDATE_BUFFER_TYPE_INVALIDATE = 2;
     final int mInvalidateBufferType;
+    final int mGLSLVersion;
 
     final boolean mDSAElementBufferBroken;
 
@@ -245,8 +248,8 @@ public final class GLCaps extends Caps {
 
         String versionString = glGetString(GL_VERSION);
         String vendorString = glGetString(GL_VENDOR);
-        mVendor = getVendor(vendorString);
-        mDriver = getDriver(mVendor, vendorString, versionString);
+        mVendor = find_vendor(vendorString);
+        mDriver = find_driver(mVendor, vendorString, versionString);
 
         // apply driver workarounds
         {
@@ -292,17 +295,48 @@ public final class GLCaps extends Caps {
         }
 
         ShaderCaps shaderCaps = mShaderCaps;
+        // target API is just for validation
         if (caps.OpenGL45) {
             shaderCaps.mTargetApi = TargetApi.OPENGL_4_5;
-            shaderCaps.mGLSLVersion = GLSLVersion.GLSL_450;
         } else if (caps.OpenGL43) {
             shaderCaps.mTargetApi = TargetApi.OPENGL_4_3;
-            shaderCaps.mGLSLVersion = GLSLVersion.GLSL_430;
         } else {
             shaderCaps.mTargetApi = TargetApi.OPENGL_3_3;
+        }
+        final int glslVersion;
+        if (caps.OpenGL46) {
+            glslVersion = 460;
+        } else if (caps.OpenGL45) {
+            glslVersion = 450;
+        } else if (caps.OpenGL44) {
+            glslVersion = 440;
+        } else if (caps.OpenGL43) {
+            glslVersion = 430;
+        } else if (caps.OpenGL42) {
+            glslVersion = 420;
+        } else if (caps.OpenGL41) {
+            glslVersion = 410;
+        } else if (caps.OpenGL40) {
+            glslVersion = 400;
+        } else {
+            glslVersion = 330;
+        }
+        mGLSLVersion = glslVersion;
+        // round down the version
+        if (glslVersion >= 450) {
+            shaderCaps.mGLSLVersion = GLSLVersion.GLSL_450;
+        } else if (glslVersion == 440) {
+            shaderCaps.mGLSLVersion = GLSLVersion.GLSL_440;
+        } else if (glslVersion == 430) {
+            shaderCaps.mGLSLVersion = GLSLVersion.GLSL_430;
+        } else if (glslVersion == 420) {
+            shaderCaps.mGLSLVersion = GLSLVersion.GLSL_420;
+        } else if (glslVersion >= 400) {
+            shaderCaps.mGLSLVersion = GLSLVersion.GLSL_400;
+        } else {
             shaderCaps.mGLSLVersion = GLSLVersion.GLSL_330;
         }
-        initGLSL(caps);
+        initGLSL(caps, shaderCaps.mGLSLVersion);
 
         // OpenGL 3.3
         shaderCaps.mDualSourceBlendingSupport = true;
@@ -378,7 +412,7 @@ public final class GLCaps extends Caps {
         finishInitialization(options);
     }
 
-    private void initGLSL(GLCapabilities caps) {
+    private void initGLSL(GLCapabilities caps, GLSLVersion version) {
         ShaderCaps shaderCaps = mShaderCaps;
 
         // Desktop
@@ -391,17 +425,34 @@ public final class GLCaps extends Caps {
         // Desktop
         shaderCaps.mNonConstantArrayIndexSupport = true;
         // GLSL 400
-        shaderCaps.mBitManipulationSupport = caps.OpenGL40;
+        shaderCaps.mBitManipulationSupport = version.isAtLeast(GLSLVersion.GLSL_400);
 
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            IntBuffer range = stack.mallocInt(2);
-            int bits = glGetShaderPrecisionFormat(GL_FRAGMENT_SHADER, GL_MEDIUM_FLOAT, range);
-            shaderCaps.mHalfIs32Bits &= range.get(0) >= 127 && range.get(1) >= 127 && bits >= 23;
-            bits = glGetShaderPrecisionFormat(GL_VERTEX_SHADER, GL_MEDIUM_FLOAT, range);
-            shaderCaps.mHalfIs32Bits &= range.get(0) >= 127 && range.get(1) >= 127 && bits >= 23;
+        if (caps.OpenGL40) {
+            shaderCaps.mTextureQueryLod = true;
+        } else if (caps.GL_ARB_texture_query_lod) {
+            shaderCaps.mTextureQueryLod = true;
+            shaderCaps.mTextureQueryLodExtension = "GL_ARB_texture_query_lod";
+        } else {
+            shaderCaps.mTextureQueryLod = false;
         }
 
-        shaderCaps.mHasLowFragmentPrecision = false;
+        if (caps.OpenGL42) {
+            shaderCaps.mShadingLanguage420Pack = true;
+        } else if (caps.GL_ARB_shading_language_420pack) {
+            shaderCaps.mShadingLanguage420Pack = true;
+            shaderCaps.mShadingLanguage420PackExtensionName = "GL_ARB_shading_language_420pack";
+        } else {
+            shaderCaps.mShadingLanguage420Pack = false;
+        }
+
+        if (caps.OpenGL44) {
+            shaderCaps.mEnhancedLayouts = true;
+        } else if (caps.GL_ARB_enhanced_layouts) {
+            shaderCaps.mEnhancedLayouts = true;
+            shaderCaps.mEnhancedLayoutsExtensionName = "GL_ARB_enhanced_layouts";
+        } else {
+            shaderCaps.mEnhancedLayouts = false;
+        }
     }
 
     private void initFormatTable(GLCapabilities caps) {
@@ -1383,6 +1434,18 @@ public final class GLCaps extends Caps {
     @Nullable
     public int[] getProgramBinaryFormats() {
         return mProgramBinarySupport ? mProgramBinaryFormats.clone() : null;
+    }
+
+    /**
+     * Returns the minimum GLSL version that supported by the OpenGL device,
+     * this is based on OpenGL version. May return 300, 310, 320 for es profile,
+     * 330 or above for core profile.
+     * <p>
+     * The effective GLSL version that used by our pipeline and shader builder
+     * is {@link ShaderCaps#mGLSLVersion}.
+     */
+    public int getGLSLVersion() {
+        return mGLSLVersion;
     }
 
     @Override

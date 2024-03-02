@@ -19,6 +19,12 @@
 
 package icyllis.arc3d.engine;
 
+/**
+ * Shader capabilities for our pipeline builder.
+ * <p>
+ * The default values assume GLSL 4.50 is supported and all equivalent extensions
+ * that promoted to GLSL 4.50 core.
+ */
 public class ShaderCaps extends icyllis.arc3d.compiler.ShaderCaps {
 
     /**
@@ -40,13 +46,36 @@ public class ShaderCaps extends icyllis.arc3d.compiler.ShaderCaps {
     public boolean mNonConstantArrayIndexSupport = false;
     // frexp(), ldexp(), findMSB(), findLSB().
     public boolean mBitManipulationSupport = false;
-    public boolean mHalfIs32Bits = false;
-    public boolean mHasLowFragmentPrecision = false;
     // Use a reduced set of rendering algorithms or less optimal effects in order to reduce the
     // number of unique shaders generated.
     public boolean mReducedShaderMode = false;
 
+    /**
+     * True if either 'textureQueryLod' (GLSL 4.00) or 'textureQueryLOD' (ARB/EXT) is supported.
+     */
     public boolean mTextureQueryLod = true;
+    /**
+     * Non-null if {@link #mTextureQueryLod} is supported from an extension (ARB/EXT).
+     */
+    public String mTextureQueryLodExtension = null;
+
+    /**
+     * True if either OpenGL 4.2 or 'ARB_shading_language_420pack' is supported.
+     */
+    public boolean mShadingLanguage420Pack = true;
+    /**
+     * Non-null if {@link #mShadingLanguage420Pack} is supported from an extension.
+     */
+    public String mShadingLanguage420PackExtensionName = null;
+
+    /**
+     * True if either OpenGL 4.4 or 'ARB_enhanced_layouts' is supported.
+     */
+    public boolean mEnhancedLayouts = true;
+    /**
+     * Non-null if {@link #mEnhancedLayouts} is supported from an extension.
+     */
+    public String mEnhancedLayoutsExtensionName = null;
 
     // Used for specific driver bug workarounds
     public boolean mRequiresLocalOutputColorForFBFetch = false;
@@ -64,7 +93,7 @@ public class ShaderCaps extends icyllis.arc3d.compiler.ShaderCaps {
     // required in order to use a secondary output in the shader. This returns a nullptr if no such
     // extension is required. However, the return value of this function does not say whether dual
     // source blending is supported.
-    public String mSecondaryOutputExtensionString = null;
+    public String mSecondaryOutputExtension = null;
 
     public int mAdvBlendEqInteraction = NotSupported_AdvBlendEqInteraction;
 
@@ -92,17 +121,22 @@ public class ShaderCaps extends icyllis.arc3d.compiler.ShaderCaps {
                 ", mInfinitySupport=" + mInfinitySupport +
                 ", mNonConstantArrayIndexSupport=" + mNonConstantArrayIndexSupport +
                 ", mBitManipulationSupport=" + mBitManipulationSupport +
-                ", mHalfIs32Bits=" + mHalfIs32Bits +
-                ", mHasLowFragmentPrecision=" + mHasLowFragmentPrecision +
                 ", mReducedShaderMode=" + mReducedShaderMode +
+                ", mTextureQueryLod=" + mTextureQueryLod +
+                ", mTextureQueryLodExtension='" + mTextureQueryLodExtension + '\'' +
+                ", mEnhancedLayouts=" + mEnhancedLayouts +
+                ", mEnhancedLayoutsExtensionName='" + mEnhancedLayoutsExtensionName + '\'' +
                 ", mRequiresLocalOutputColorForFBFetch=" + mRequiresLocalOutputColorForFBFetch +
                 ", mMustObfuscateUniformColor=" + mMustObfuscateUniformColor +
                 ", mMustWriteToFragColor=" + mMustWriteToFragColor +
                 ", mColorSpaceMathNeedsFloat=" + mColorSpaceMathNeedsFloat +
                 ", mAvoidDfDxForGradientsWhenPossible=" + mAvoidDfDxForGradientsWhenPossible +
-                ", mSecondaryOutputExtensionString='" + mSecondaryOutputExtensionString + '\'' +
+                ", mSecondaryOutputExtension='" + mSecondaryOutputExtension + '\'' +
                 ", mAdvBlendEqInteraction=" + mAdvBlendEqInteraction +
                 ", mMaxFragmentSamplers=" + mMaxFragmentSamplers +
+                ", mTargetApi=" + mTargetApi +
+                ", mGLSLVersion=" + mGLSLVersion +
+                ", mSPIRVVersion=" + mSPIRVVersion +
                 '}';
     }
 }

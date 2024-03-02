@@ -24,6 +24,7 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -47,6 +48,8 @@ public abstract class ShaderBuilderBase implements ShaderBuilder {
 
     protected final PipelineBuilder mPipelineBuilder;
     protected final StringBuilder[] mShaderStrings = new StringBuilder[PREALLOC];
+
+    private final HashSet<String> mExtensions = new HashSet<>();
 
     protected int mCodeIndex;
 
@@ -159,6 +162,15 @@ public abstract class ShaderBuilderBase implements ShaderBuilder {
     protected final StringBuilder code() {
         assert !mFinished;
         return mShaderStrings[mCodeIndex];
+    }
+
+    public void addExtension(@Nullable String extensionName) {
+        if (extensionName == null) return;
+        if (mExtensions.add(extensionName)) {
+            extensions().append("#extension ")
+                    .append(extensionName)
+                    .append(": require\n");
+        }
     }
 
     /**

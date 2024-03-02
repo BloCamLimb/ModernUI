@@ -19,7 +19,6 @@
 
 package icyllis.arc3d.engine.shading;
 
-import icyllis.arc3d.compiler.GLSLVersion;
 import icyllis.arc3d.core.SLDataType;
 import icyllis.arc3d.engine.*;
 
@@ -147,9 +146,12 @@ public class VaryingHandler {
         int locationIndex = 0;
         for (var v : mVaryings) {
             String layoutQualifier;
-            if (mPipelineBuilder.shaderCaps().mGLSLVersion.isAtLeast(GLSLVersion.GLSL_450)) {
+            if (mPipelineBuilder.shaderCaps().mEnhancedLayouts) {
                 // ARB_enhanced_layouts or GLSL 440
                 layoutQualifier = "location = " + locationIndex;
+                String extensionName = mPipelineBuilder.shaderCaps().mEnhancedLayoutsExtensionName;
+                mPipelineBuilder.mVS.addExtension(extensionName);
+                mPipelineBuilder.mFS.addExtension(extensionName);
             } else {
                 layoutQualifier = "";
             }

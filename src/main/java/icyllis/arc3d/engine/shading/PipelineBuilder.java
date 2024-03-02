@@ -24,6 +24,7 @@ import icyllis.arc3d.engine.*;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 
 import static icyllis.arc3d.engine.Engine.*;
@@ -115,6 +116,17 @@ public abstract class PipelineBuilder {
     public abstract UniformHandler uniformHandler();
 
     public abstract VaryingHandler varyingHandler();
+
+    public final void addExtension(int shaderFlags,
+                                   @Nullable String extensionName) {
+        if (extensionName == null) return;
+        if ((shaderFlags & Engine.ShaderFlags.kVertex) != 0) {
+            mVS.addExtension(extensionName);
+        }
+        if ((shaderFlags & Engine.ShaderFlags.kFragment) != 0) {
+            mFS.addExtension(extensionName);
+        }
+    }
 
     protected final boolean emitAndInstallProcs() {
         // inputColor, inputCoverage
