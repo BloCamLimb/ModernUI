@@ -132,10 +132,10 @@ public class ShaderCompiler {
     /**
      * Parse the source into an abstract syntax tree.
      *
-     * @param source  the source text
+     * @param source  the source text, a copy will be created
      * @param kind    the shader kind
      * @param options the compile options
-     * @param parent  the parent module
+     * @param parent  the parent module that contains common declarations
      * @return the parsed result, or null if there's an error
      */
     @Nullable
@@ -149,10 +149,10 @@ public class ShaderCompiler {
     /**
      * Parse the source into an abstract syntax tree.
      *
-     * @param source  the source text
+     * @param source  the source text, will be passed to the returned TranslationUnit
      * @param kind    the shader kind
      * @param options the compile options
-     * @param parent  the parent module
+     * @param parent  the parent module that contains common declarations
      * @return the parsed result, or null if there's an error
      */
     @Nullable
@@ -174,11 +174,14 @@ public class ShaderCompiler {
     }
 
     /**
-     * Parse the source into an abstract syntax tree for further parsing.
+     * Parse the source into an abstract syntax tree.
+     * <p>
+     * A module unit is a pre-compiled result that contains pre-declared variables
+     * and optimized functions, used to compile multiple files.
      *
      * @param source the source text
      * @param kind   the shader kind
-     * @param parent the parent module
+     * @param parent the parent module inherited by the new module
      * @return the parsed result, or null if there's an error
      */
     @Nullable
@@ -190,11 +193,14 @@ public class ShaderCompiler {
     }
 
     /**
-     * Parse the source into an abstract syntax tree for further parsing.
+     * Parse the source into an abstract syntax tree.
+     * <p>
+     * A module unit is a pre-compiled result that contains pre-declared variables
+     * and optimized functions, used to compile multiple files.
      *
      * @param source the source text
      * @param kind   the shader kind
-     * @param parent the parent module
+     * @param parent the parent module inherited by the new module
      * @return the parsed result, or null if there's an error
      */
     @Nullable
@@ -231,8 +237,8 @@ public class ShaderCompiler {
      * @return the translated shader code (uint32_t *), or null if there's an error
      */
     @Nullable
-    public ByteBuffer toSPIRV(@Nonnull TranslationUnit translationUnit,
-                              @Nonnull ShaderCaps shaderCaps) {
+    public ByteBuffer generateSPIRV(@Nonnull TranslationUnit translationUnit,
+                                    @Nonnull ShaderCaps shaderCaps) {
         startContext(translationUnit.getKind(),
                 translationUnit.getOptions(),
                 null,
@@ -249,32 +255,32 @@ public class ShaderCompiler {
     }
 
     /**
-     * Combination of {@link #parse} and {@link #toSPIRV}.
+     * Combination of {@link #parse} and {@link #generateSPIRV}.
      *
      * @see #parse(CharSequence, ShaderKind, CompileOptions, ModuleUnit)
-     * @see #toSPIRV(TranslationUnit, ShaderCaps)
+     * @see #generateSPIRV(TranslationUnit, ShaderCaps)
      */
     @Nullable
-    public ByteBuffer compileToSPIRV(@Nonnull CharSequence source,
-                                     @Nonnull ShaderKind kind,
-                                     @Nonnull ShaderCaps shaderCaps,
-                                     @Nonnull CompileOptions options,
-                                     @Nonnull ModuleUnit parent) {
-        return compileToSPIRV(toChars(source), kind, shaderCaps, options, parent);
+    public ByteBuffer compileIntoSPIRV(@Nonnull CharSequence source,
+                                       @Nonnull ShaderKind kind,
+                                       @Nonnull ShaderCaps shaderCaps,
+                                       @Nonnull CompileOptions options,
+                                       @Nonnull ModuleUnit parent) {
+        return compileIntoSPIRV(toChars(source), kind, shaderCaps, options, parent);
     }
 
     /**
-     * Combination of {@link #parse} and {@link #toSPIRV}.
+     * Combination of {@link #parse} and {@link #generateSPIRV}.
      *
      * @see #parse(char[], ShaderKind, CompileOptions, ModuleUnit)
-     * @see #toSPIRV(TranslationUnit, ShaderCaps)
+     * @see #generateSPIRV(TranslationUnit, ShaderCaps)
      */
     @Nullable
-    public ByteBuffer compileToSPIRV(@Nonnull char[] source,
-                                     @Nonnull ShaderKind kind,
-                                     @Nonnull ShaderCaps shaderCaps,
-                                     @Nonnull CompileOptions options,
-                                     @Nonnull ModuleUnit parent) {
+    public ByteBuffer compileIntoSPIRV(@Nonnull char[] source,
+                                       @Nonnull ShaderKind kind,
+                                       @Nonnull ShaderCaps shaderCaps,
+                                       @Nonnull CompileOptions options,
+                                       @Nonnull ModuleUnit parent) {
         Objects.requireNonNull(kind);
         Objects.requireNonNull(parent);
         startContext(kind, options, parent, false, false, source);

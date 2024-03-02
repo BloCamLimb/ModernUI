@@ -30,7 +30,8 @@ import javax.annotation.Nullable;
 import java.util.*;
 
 /**
- * Consumes AkSL text and invokes DSL functions to instantiate the program.
+ * Consumes Arc 3D shading language source text and invokes DSL functions to
+ * instantiate the AST (parsed IR). A Parser object is not reusable.
  */
 public class Parser {
 
@@ -44,7 +45,7 @@ public class Parser {
 
     private final LongStack mPushback = new LongArrayList();
 
-    private ArrayList<TopLevelElement> mUniqueElements = new ArrayList<>();
+    private ArrayList<TopLevelElement> mUniqueElements;
 
     public Parser(ShaderCompiler compiler, ShaderKind kind, CompileOptions options, char[] source) {
         mCompiler = Objects.requireNonNull(compiler);

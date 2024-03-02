@@ -20,11 +20,20 @@
 package icyllis.arc3d.compiler;
 
 /**
- * Shader capabilities.
+ * Shader capabilities for our DSL compiler.
  */
 public class ShaderCaps {
 
     public TargetApi mTargetApi = TargetApi.OPENGL_4_5;
     public GLSLVersion mGLSLVersion = GLSLVersion.GLSL_450;
     public SPIRVVersion mSPIRVVersion = SPIRVVersion.SPIRV_1_0;
+
+    @Override
+    public String toString() {
+        return "ShaderCaps{" +
+                "mTargetApi=" + mTargetApi +
+                ", mGLSLVersion=" + mGLSLVersion +
+                ", mSPIRVVersion=" + mSPIRVVersion +
+                '}';
+    }
 }

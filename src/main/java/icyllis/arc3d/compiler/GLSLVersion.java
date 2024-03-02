@@ -19,37 +19,63 @@
 
 package icyllis.arc3d.compiler;
 
+/**
+ * Limited set of GLSL versions we generate shaders for. Caller should round
+ * down the GLSL version to one of these enums.
+ * <p>
+ * Note: Do not rely on enum's ordinal.
+ */
 public enum GLSLVersion {
+    /**
+     * GLSL version 3.00 es for OpenGL ES 3.0.
+     */
+    GLSL_300_ES("#version 300 es\n"),
+    /**
+     * GLSL version 3.10 es for OpenGL ES 3.1.
+     */
+    GLSL_310_ES("#version 310 es\n"),
     /**
      * GLSL version 3.30 core for OpenGL 3.3.
      */
     GLSL_330("#version 330 core\n"),
     /**
-     * GLSL version 3.00 es for OpenGL ES 3.0.
+     * GLSL version 4.00 core for OpenGL 4.0.
      */
-    GLSL_300_ES("#version 300 es\n"),
+    GLSL_400("#version 400 core\n"),
+    /**
+     * GLSL version 4.20 core for OpenGL 4.2.
+     */
+    GLSL_420("#version 420 core\n"),
     /**
      * GLSL version 4.30 core for OpenGL 4.3.
      * This version includes all the GLSL ES 3.00 features.
      */
     GLSL_430("#version 430 core\n"),
     /**
-     * GLSL version 3.10 es for OpenGL ES 3.1.
+     * GLSL version 4.40 core for OpenGL 4.4.
      */
-    GLSL_310_ES("#version 310 es\n"),
+    GLSL_440("#version 440 core\n"),
     /**
      * GLSL version 4.50 core for OpenGL 4.5 and Vulkan 1.0 or above.
      * This version includes all the GLSL ES 3.10 features.
      */
     GLSL_450("#version 450 core\n");
 
-    public final String mVersionDeclString;
+    public final String mVersionDecl;
 
-    GLSLVersion(String versionDeclString) {
-        mVersionDeclString = versionDeclString;
+    GLSLVersion(String versionDecl) {
+        mVersionDecl = versionDecl;
     }
 
     public boolean isAtLeast(GLSLVersion other) {
         return compareTo(other) >= 0;
+    }
+
+    public boolean isCoreProfile() {
+        return compareTo(GLSL_330) >= 0;
+    }
+
+    public boolean isEsProfile() {
+        return compareTo(GLSL_310_ES) <= 0;
     }
 }
