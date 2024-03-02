@@ -47,8 +47,8 @@ public abstract class PipelineBuilder {
      */
     private final IntArrayList mSubstageIndices = new IntArrayList();
 
-    public final VertexShaderBuilder mVS;
-    public final FragmentShaderBuilder mFS;
+    public VertexShaderBuilder mVS;
+    public FragmentShaderBuilder mFS;
 
     public final PipelineDesc mDesc;
     public final PipelineInfo mPipelineInfo;

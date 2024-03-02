@@ -20,7 +20,11 @@
 package icyllis.arc3d.engine.shading;
 
 import icyllis.arc3d.engine.ShaderVar;
+import org.lwjgl.BufferUtils;
+import org.lwjgl.system.MemoryUtil;
 
+import javax.annotation.Nonnull;
+import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -48,6 +52,8 @@ public abstract class ShaderBuilderBase implements ShaderBuilder {
 
     private Formatter mCodeFormatter;
     private Formatter mCodeFormatterPre;
+
+    private boolean mFinished;
 
     public ShaderBuilderBase(PipelineBuilder pipelineBuilder) {
         mPipelineBuilder = pipelineBuilder;
@@ -102,58 +108,106 @@ public abstract class ShaderBuilderBase implements ShaderBuilder {
     }
 
     protected final void nextStage() {
+        assert !mFinished;
         mShaderStrings[++mCodeIndex] = new StringBuilder();
         mCodeFormatter = null;
         mCodeFormatterPre = null;
     }
 
     protected final void deleteStage() {
+        assert !mFinished;
         mShaderStrings[mCodeIndex--] = null;
         mCodeFormatter = null;
         mCodeFormatterPre = null;
     }
 
     protected final StringBuilder extensions() {
+        assert !mFinished;
         return mShaderStrings[EXTENSIONS];
     }
 
     protected final StringBuilder definitions() {
+        assert !mFinished;
         return mShaderStrings[DEFINITIONS];
     }
 
     protected final StringBuilder layoutQualifiers() {
+        assert !mFinished;
         return mShaderStrings[LAYOUT_QUALIFIERS];
     }
 
     protected final StringBuilder uniforms() {
+        assert !mFinished;
         return mShaderStrings[UNIFORMS];
     }
 
     protected final StringBuilder inputs() {
+        assert !mFinished;
         return mShaderStrings[INPUTS];
     }
 
     protected final StringBuilder outputs() {
+        assert !mFinished;
         return mShaderStrings[OUTPUTS];
     }
 
     protected final StringBuilder functions() {
+        assert !mFinished;
         return mShaderStrings[FUNCTIONS];
     }
 
     protected final StringBuilder code() {
+        assert !mFinished;
         return mShaderStrings[mCodeIndex];
+    }
+
+    /**
+     * Complete this builder and do post-processing before getting the result.
+     */
+    public final void finish() {
+        if (mFinished) {
+            return;
+        }
+        onFinish();
+        // append the 'footer' to code
+        code().append("}");
+        mFinished = true;
+    }
+
+    public final CharSequence[] getStrings() {
+        return mShaderStrings;
+    }
+
+    public final int getCount() {
+        return mCodeIndex + 1;
+    }
+
+    @Nonnull
+    public final ByteBuffer toUTF8() {
+        finish();
+        int len = 0;
+        for (int i = 0; i <= mCodeIndex; i++) {
+            StringBuilder shaderString = mShaderStrings[i];
+            // we assume ASCII only, so 1 byte per char
+            len += shaderString.length();
+        }
+
+        ByteBuffer buffer = BufferUtils.createByteBuffer(len);
+        len = 0;
+        for (int i = 0; i <= mCodeIndex; i++) {
+            StringBuilder shaderString = mShaderStrings[i];
+            len += MemoryUtil.memUTF8(shaderString, false, buffer, len);
+        }
+        assert len == buffer.capacity() && len == buffer.remaining();
+        return buffer;
     }
 
     @Override
     public final String toString() {
-        onFinish();
-        // append the 'footer' to code
-        code().append("}");
-
-        return Arrays.stream(mShaderStrings, 0, mCodeIndex + 1)
-                .filter(s -> s.length() != 0)
-                .collect(Collectors.joining("\n", "", "\n"));
+        finish();
+        return Arrays.stream(getStrings(), 0, getCount())
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.joining("\n"));
     }
 
     protected abstract void onFinish();

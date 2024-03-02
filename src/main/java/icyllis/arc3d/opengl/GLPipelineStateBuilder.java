@@ -23,9 +23,11 @@ import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.shading.*;
 import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
 import java.io.PrintWriter;
+import java.lang.ref.Reference;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.concurrent.CompletableFuture;
@@ -39,8 +41,8 @@ public class GLPipelineStateBuilder extends PipelineBuilder {
     private final VaryingHandler mVaryingHandler;
     private final GLUniformHandler mUniformHandler;
 
-    private String mVertSource;
-    private String mFragSource;
+    private ByteBuffer mFinalizedVertSource;
+    private ByteBuffer mFinalizedFragSource;
 
     private GLPipelineStateBuilder(GLDevice device,
                                    PipelineDesc desc,
@@ -58,31 +60,25 @@ public class GLPipelineStateBuilder extends PipelineBuilder {
             final PipelineInfo pipelineInfo) {
         return new GLGraphicsPipelineState(device, CompletableFuture.supplyAsync(() -> {
             GLPipelineStateBuilder builder = new GLPipelineStateBuilder(device, desc, pipelineInfo);
-            builder.buildAsync();
+            builder.build();
             return builder;
         }));
     }
 
-    private void buildAsync() {
+    private void build() {
         if (!emitAndInstallProcs()) {
             return;
         }
         mVaryingHandler.finish();
-        mVertSource = mVS.toString();
-        mFragSource = mFS.toString();
-
-        //TODO debug only, will remove
-        String allShaders = String.format("""
-                // Vertex GLSL
-                %s
-                // Fragment GLSL
-                %s
-                """, mVertSource, mFragSource);
-        System.out.printf("%s: %s\n", Thread.currentThread(), allShaders);
+        mFinalizedVertSource = mVS.toUTF8();
+        mFinalizedFragSource = mFS.toUTF8();
+        mVS = null;
+        mFS = null;
     }
 
     boolean finish(GLGraphicsPipelineState dest) {
-        if (mVertSource == null || mFragSource == null) {
+        if (mFinalizedVertSource == null ||
+                mFinalizedFragSource == null) {
             return false;
         }
         int program = glCreateProgram();
@@ -92,14 +88,14 @@ public class GLPipelineStateBuilder extends PipelineBuilder {
 
         PrintWriter errorWriter = mDevice.getContext().getErrorWriter();
 
-        int frag = glCompileAndAttachShader(program, GL_FRAGMENT_SHADER, mFragSource,
+        int frag = glCompileShader(GL_FRAGMENT_SHADER, mFinalizedFragSource,
                 mDevice.getPipelineStateCache().getStats(), errorWriter);
         if (frag == 0) {
             glDeleteProgram(program);
             return false;
         }
 
-        int vert = glCompileAndAttachShader(program, GL_VERTEX_SHADER, mVertSource,
+        int vert = glCompileShader(GL_VERTEX_SHADER, mFinalizedVertSource,
                 mDevice.getPipelineStateCache().getStats(), errorWriter);
         if (vert == 0) {
             glDeleteProgram(program);
@@ -107,20 +103,26 @@ public class GLPipelineStateBuilder extends PipelineBuilder {
             return false;
         }
 
+        glAttachShader(program, vert);
+        glAttachShader(program, frag);
+
         glLinkProgram(program);
 
         if (glGetProgrami(program, GL_LINK_STATUS) == GL_FALSE) {
             try {
-                String allShaders = String.format("""
-                        // Vertex GLSL
-                        %s
-                        // Fragment GLSL
-                        %s
-                        """, mVertSource, mFragSource);
-                String log = glGetProgramInfoLog(program).trim();
-                GLCore.handleCompileError(errorWriter, allShaders, log);
+                String log = glGetProgramInfoLog(program);
+                handleLinkError(errorWriter,
+                        new String[]{
+                                "Vertex GLSL",
+                                "Fragment GLSL"},
+                        new String[]{
+                                MemoryUtil.memUTF8(mFinalizedVertSource),
+                                MemoryUtil.memUTF8(mFinalizedFragSource)},
+                        log);
                 return false;
             } finally {
+                Reference.reachabilityFence(mFinalizedVertSource);
+                Reference.reachabilityFence(mFinalizedFragSource);
                 glDeleteProgram(program);
                 glDeleteShader(frag);
                 glDeleteShader(vert);
@@ -138,11 +140,20 @@ public class GLPipelineStateBuilder extends PipelineBuilder {
             IntBuffer pLength = stack.mallocInt(1);
             IntBuffer pBinaryFormat = stack.mallocInt(1);
             glGetProgramiv(program, GL_PROGRAM_BINARY_LENGTH, pLength);
-            System.out.println(pLength.get(0));
-            if (pLength.get(0) > 0) {
-                ByteBuffer pBinary = stack.malloc(pLength.get(0));
+            int len = pLength.get(0);
+            System.out.println(len);
+            if (len > 0) {
+                ByteBuffer pBinary = stack.malloc(len);
                 glGetProgramBinary(program, pLength, pBinaryFormat, pBinary);
                 System.out.println(pBinaryFormat.get(0));
+                //System.out.println(MemoryUtil.memUTF8(pBinary));
+                /*for (int i = 0; i < len; ) {
+                    System.out.print(pBinary.get(i++) & 0xFF);
+                    System.out.print(", ");
+                    if ((i & 31) == 0) {
+                        System.out.println();
+                    }
+                }*/
             }
         }
 
@@ -164,7 +175,7 @@ public class GLPipelineStateBuilder extends PipelineBuilder {
     }
 
     @Override
-    public Caps caps() {
+    public GLCaps caps() {
         return mDevice.getCaps();
     }
 

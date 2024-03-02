@@ -96,20 +96,20 @@ public class GLGraphicsPipelineState extends GraphicsPipelineState {
     }
 
     private void checkAsyncWork() {
-        if (mAsyncWork != null) {
-            boolean success = mAsyncWork.join().finish(this);
-            var stats = getDevice().getPipelineStateCache().getStats();
-            if (success) {
-                stats.incNumCompilationSuccesses();
-            } else {
-                stats.incNumCompilationFailures();
-            }
-            mAsyncWork = null;
+        boolean success = mAsyncWork.join().finish(this);
+        var stats = getDevice().getPipelineStateCache().getStats();
+        if (success) {
+            stats.incNumCompilationSuccesses();
+        } else {
+            stats.incNumCompilationFailures();
         }
+        mAsyncWork = null;
     }
 
     public boolean bindPipeline(GLCommandBuffer commandBuffer) {
-        checkAsyncWork();
+        if (mAsyncWork != null) {
+            checkAsyncWork();
+        }
         if (mProgram != null) {
             assert (mVertexArray != null);
             commandBuffer.bindPipeline(mProgram, mVertexArray);

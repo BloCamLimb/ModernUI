@@ -28,6 +28,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -149,7 +150,7 @@ public class ShaderCompiler {
     /**
      * Parse the source into an abstract syntax tree.
      *
-     * @param source  the source text, will be passed to the returned TranslationUnit
+     * @param source  the source text, must be immutable
      * @param kind    the shader kind
      * @param options the compile options
      * @param parent  the parent module that contains common declarations
@@ -179,7 +180,7 @@ public class ShaderCompiler {
      * A module unit is a pre-compiled result that contains pre-declared variables
      * and optimized functions, used to compile multiple files.
      *
-     * @param source the source text
+     * @param source the source text, a copy will be created
      * @param kind   the shader kind
      * @param parent the parent module inherited by the new module
      * @return the parsed result, or null if there's an error
@@ -198,7 +199,7 @@ public class ShaderCompiler {
      * A module unit is a pre-compiled result that contains pre-declared variables
      * and optimized functions, used to compile multiple files.
      *
-     * @param source the source text
+     * @param source the source text, must be immutable
      * @param kind   the shader kind
      * @param parent the parent module inherited by the new module
      * @return the parsed result, or null if there's an error
@@ -319,7 +320,11 @@ public class ShaderCompiler {
         mContext.getErrorHandler().setSource(null);
     }
 
-    @ApiStatus.Internal
+    /**
+     * Helper method to copy a char sequence.
+     *
+     * @return a new char buffer copied from the given element
+     */
     @Nonnull
     public static char[] toChars(@Nonnull CharSequence s) {
         if (s instanceof String) {
@@ -327,17 +332,116 @@ public class ShaderCompiler {
         }
         int n = s.length();
         char[] chars = new char[n];
-        if (s instanceof StringBuffer)
-            ((StringBuffer) s).getChars(0, n, chars, 0);
+        getChars(s, chars, 0, n);
+        return chars;
+    }
+
+    /**
+     * Helper method to copy a char sequence array. Character sequences will
+     * be joined together and separated by '\n'.
+     *
+     * @return a new char buffer copied from the given elements
+     */
+    @Nonnull
+    public static char[] toChars(@Nonnull CharSequence... elements) {
+        return toChars(elements, 0, elements.length);
+    }
+
+    /**
+     * Helper method to copy a sub-range of char sequences. Character sequences will
+     * be joined together and separated by '\n'. Empty sequences will be ignored.
+     *
+     * @param start start index (inclusive) in elements
+     * @param end   end index (exclusive) in elements
+     * @return a new char buffer copied from the given elements
+     */
+    @Nonnull
+    public static char[] toChars(@Nonnull CharSequence[] elements, int start, int end) {
+        Objects.checkFromToIndex(start, end, elements.length);
+        if (start == end) {
+            return new char[0];
+        }
+        if (start + 1 == end) {
+            return toChars(elements[start]);
+        }
+        int n = -1;
+        for (int i = start; i < end; i++) {
+            int len = elements[i].length();
+            if (len == 0) continue;
+            n += len + 1;
+        }
+        if (n == -1) {
+            return new char[0];
+        }
+        char[] chars = new char[n];
+        int p = 0;
+        for (int i = start; i < end; i++) {
+            CharSequence s = elements[i];
+            int len = s.length();
+            if (len == 0) continue;
+            p += getChars(s, chars, p, len);
+            if (p < n) {
+                chars[p++] = '\n';
+            }
+        }
+        assert p == n;
+        return chars;
+    }
+
+    /**
+     * Helper method to copy a sequence of char sequences. Character sequences will
+     * be joined together and separated by '\n'. Empty sequences will be ignored.
+     *
+     * @return a new char buffer copied from the given elements
+     */
+    @Nonnull
+    public static char[] toChars(@Nonnull List<CharSequence> elements) {
+        int size = elements.size();
+        if (size == 0) {
+            return new char[0];
+        }
+        if (size == 1) {
+            return toChars(elements.get(0));
+        }
+        int n = -1;
+        for (int i = 0; i < size; i++) {
+            int len = elements.get(i).length();
+            if (len == 0) continue;
+            n += len + 1;
+        }
+        if (n == -1) {
+            return new char[0];
+        }
+        char[] chars = new char[n];
+        int p = 0;
+        for (int i = 0; i < size; i++) {
+            CharSequence s = elements.get(i);
+            int len = s.length();
+            if (len == 0) continue;
+            p += getChars(s, chars, p, len);
+            if (p < n) {
+                chars[p++] = '\n';
+            }
+        }
+        assert p == n;
+        return chars;
+    }
+
+    private static int getChars(@Nonnull CharSequence s,
+                                @Nonnull char[] dst, int offset, int n) {
+        if (s instanceof String)
+            ((String) s).getChars(0, n, dst, offset);
+        else if (s instanceof StringBuffer)
+            ((StringBuffer) s).getChars(0, n, dst, offset);
         else if (s instanceof StringBuilder)
-            ((StringBuilder) s).getChars(0, n, chars, 0);
+            ((StringBuilder) s).getChars(0, n, dst, offset);
         else if (s instanceof CharBuffer buf)
-            buf.get(buf.position(), chars, 0, n);
+            buf.get(buf.position(), dst, offset, n);
         else {
             for (int i = 0; i < n; i++)
-                chars[i] = s.charAt(i);
+                dst[offset++] = s.charAt(i);
         }
-        return chars;
+        return n;
     }
 
     /**
