@@ -72,7 +72,7 @@ public class TestCompiler {
         ShaderCaps shaderCaps = new ShaderCaps();
         shaderCaps.mSPIRVVersion = SPIRVVersion.SPIRV_1_5;
 
-        ByteBuffer spirv = compiler.toSPIRV(translationUnit, shaderCaps);
+        ByteBuffer spirv = compiler.generateSPIRV(translationUnit, shaderCaps);
         System.out.print(compiler.getErrorMessage());
 
         if (spirv == null) {

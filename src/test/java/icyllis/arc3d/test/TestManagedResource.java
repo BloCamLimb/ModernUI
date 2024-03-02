@@ -87,6 +87,14 @@ public class TestManagedResource {
         }
 
         {
+            int numGLSLVersions = glGetInteger(GL_NUM_SHADING_LANGUAGE_VERSIONS);
+            for (int i = 0; i < numGLSLVersions; i++) {
+                pw.println("GLSL version: " + glGetStringi(GL_SHADING_LANGUAGE_VERSION, i));
+            }
+            pw.println("Default GLSL version: " + glGetString(GL_SHADING_LANGUAGE_VERSION));
+        }
+
+        {
             int count = glGetInteger(GL_NUM_PROGRAM_BINARY_FORMATS);
             var binaryFormats = new int[count];
             if (count > 0) {
@@ -383,6 +391,7 @@ public class TestManagedResource {
             pw.println(target);
             target.unref();
         }
+        pso.bindPipeline(((GLDevice)dContext.getDevice()).currentCommandBuffer());
 
         pw.println(dContext.getPipelineStateCache().getStats());
     }

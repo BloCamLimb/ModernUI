@@ -38,6 +38,7 @@ public class TestShaderc {
         long options = shaderc_compile_options_initialize();
         shaderc_compile_options_set_target_env(options, shaderc_target_env_opengl, shaderc_env_version_opengl_4_5);
         shaderc_compile_options_set_target_spirv(options, shaderc_spirv_version_1_0);
+        // SPIRV-Tools optimization LOWER the performance on NVIDIA GPU
         shaderc_compile_options_set_optimization_level(options, shaderc_optimization_level_zero);
 
         long result = shaderc_compile_into_spv_assembly(
@@ -49,6 +50,7 @@ public class TestShaderc {
                             mat4 u_ModelView;
                             vec4 u_Color;
                         } u_Buffer0;
+                        layout(binding = 0) uniform sampler2D u_Sampler0;
                         layout(location = 0) smooth in vec2 f_Position;
                         layout(location = 1) smooth in vec4 f_Color;
                         layout(location = 0, index = 0) out vec4 FragColor0;
@@ -64,6 +66,7 @@ public class TestShaderc {
                             return sa(sa(rr(n, vec2(a[0],12.1414))) * 83758.5453);
                         }
                         void main(void) {
+                            float lod = textureQueryLod(u_Sampler0, f_Position).y;
                             FragColor0 = u_Buffer0.u_Color;
                         }""",
                 shaderc_fragment_shader,
