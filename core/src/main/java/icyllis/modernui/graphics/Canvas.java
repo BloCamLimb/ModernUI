@@ -18,9 +18,9 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.Blender;
+import icyllis.arc3d.core.Matrix4;
 import icyllis.modernui.annotation.*;
-import icyllis.modernui.annotation.ColorInt;
 import icyllis.modernui.graphics.text.*;
 import icyllis.modernui.view.Gravity;
 import org.apache.logging.log4j.Marker;
@@ -214,6 +214,59 @@ public abstract class Canvas {
     }
 
     /**
+     * Pre-multiply the current matrix by the specified skew.
+     * This method is equivalent to calling {@link #shear}.
+     *
+     * @param sx The amount to skew in X
+     * @param sy The amount to skew in Y
+     */
+    public final void skew(float sx, float sy) {
+        shear(sx, sy);
+    }
+
+    /**
+     * Pre-multiply the current matrix by the specified skew.
+     * This method is equivalent to calling {@link #shear}.
+     *
+     * @param sx The amount to skew in X
+     * @param sy The amount to skew in Y
+     * @param px The x-coord for the pivot point (unchanged by the skew)
+     * @param py The y-coord for the pivot point (unchanged by the skew)
+     */
+    public final void skew(float sx, float sy, float px, float py) {
+        shear(sx, sy, px, py);
+    }
+
+    /**
+     * Pre-multiply the current matrix by the specified shearing (skew).
+     *
+     * @param sx the x-component of the shearing, y is unchanged
+     * @param sy the y-component of the shearing, x is unchanged
+     */
+    public final void shear(float sx, float sy) {
+        if (sx != 0.0f || sy != 0.0f) {
+            getMatrix().preShear2D(sx, sy);
+        }
+    }
+
+    /**
+     * Pre-multiply the current matrix by the specified shearing (skew).
+     *
+     * @param sx the x-component of the shearing, y is unchanged
+     * @param sy the y-component of the shearing, x is unchanged
+     * @param px the x-component of the pivot (unchanged by the shear)
+     * @param py the y-component of the pivot (unchanged by the shear)
+     */
+    public final void shear(float sx, float sy, float px, float py) {
+        if (sx != 0.0f || sy != 0.0f) {
+            Matrix4 matrix = getMatrix();
+            matrix.preTranslate(px, py);
+            matrix.preShear2D(sx, sy);
+            matrix.preTranslate(-px, -py);
+        }
+    }
+
+    /**
      * Pre-multiply the current matrix by the specified rotation.
      *
      * @param degrees The angle to rotate, in degrees
@@ -264,10 +317,11 @@ public abstract class Canvas {
     }
 
     /**
-     * Gets the backing matrix for local <strong>modification purposes</strong>.
-     *
      * @return current model view matrix
+     * @hidden
+     * @deprecated internal use only
      */
+    @Deprecated
     @ApiStatus.Internal
     @NonNull
     public abstract Matrix4 getMatrix();
