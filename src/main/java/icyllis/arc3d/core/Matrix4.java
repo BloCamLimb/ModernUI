@@ -32,6 +32,15 @@ import java.nio.FloatBuffer;
  * <p>
  * The memory layout (order of components) is the same as GLSL's column-major and
  * HLSL's row-major, this is just a difference in naming and writing.
+ * A matrix looks like this:
+ * <p>
+ * [m11  m12  m13  m14]<br>
+ * [m21  m22  m23  m24]<br>
+ * [m31  m32  m33  m34]<br>
+ * [m41  m42  m43  m44]<br>
+ * <p>
+ * Where [m41 m42 m43] represents the translation, and they are the last four
+ * elements in memory.
  *
  * @author BloCamLimb
  * @see Matrix
@@ -1967,6 +1976,196 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
+     * Pre-multiply shearing to <code>this</code> matrix by the given shearing coefficients.
+     * <p>
+     * This is equivalent to pre-multiplying by a shearing matrix.
+     * <table border="1">
+     *   <tr>
+     *     <td>1</th>
+     *     <td>sxy</th>
+     *     <td>sxz</th>
+     *   </tr>
+     *   <tr>
+     *     <td>syx</th>
+     *     <td>1</th>
+     *     <td>syz</th>
+     *   </tr>
+     *   <tr>
+     *     <td>szx</th>
+     *     <td>szy</th>
+     *     <td>1</th>
+     *   </tr>
+     * </table>
+     *
+     * @param sxy the y-component of the shearing in x direction, x is unchanged
+     * @param sxz the z-component of the shearing in x direction, x is unchanged
+     * @param syx the x-component of the shearing in y direction, y is unchanged
+     * @param syz the z-component of the shearing in y direction, y is unchanged
+     * @param szx the x-component of the shearing in z direction, z is unchanged
+     * @param szy the y-component of the shearing in z direction, z is unchanged
+     */
+    public void preShear(float sxy, float sxz,
+                         float syx, float syz,
+                         float szx, float szy) {
+        final float f11 = m11 + sxy * m21 + sxz * m31;
+        final float f12 = m12 + sxy * m22 + sxz * m32;
+        final float f13 = m13 + sxy * m23 + sxz * m33;
+        final float f14 = m14 + sxy * m24 + sxz * m34;
+        final float f21 = syx * m11 + m21 + syz * m31;
+        final float f22 = syx * m12 + m22 + syz * m32;
+        final float f23 = syx * m13 + m23 + syz * m33;
+        final float f24 = syx * m14 + m24 + syz * m34;
+        final float f31 = szx * m11 + szy * m21 + m31;
+        final float f32 = szx * m12 + szy * m22 + m32;
+        final float f33 = szx * m13 + szy * m23 + m33;
+        final float f34 = szx * m14 + szy * m24 + m34;
+        m11 = f11;
+        m12 = f12;
+        m13 = f13;
+        m14 = f14;
+        m21 = f21;
+        m22 = f22;
+        m23 = f23;
+        m24 = f24;
+        m31 = f31;
+        m32 = f32;
+        m33 = f33;
+        m34 = f34;
+    }
+
+    /**
+     * Post-multiply shearing to <code>this</code> matrix by the given shearing coefficients.
+     * <p>
+     * This is equivalent to post-multiplying by a shearing matrix.
+     * <table border="1">
+     *   <tr>
+     *     <td>1</th>
+     *     <td>sxy</th>
+     *     <td>sxz</th>
+     *   </tr>
+     *   <tr>
+     *     <td>syx</th>
+     *     <td>1</th>
+     *     <td>syz</th>
+     *   </tr>
+     *   <tr>
+     *     <td>szx</th>
+     *     <td>szy</th>
+     *     <td>1</th>
+     *   </tr>
+     * </table>
+     *
+     * @param sxy the y-component of the shearing in x direction, x is unchanged
+     * @param sxz the z-component of the shearing in x direction, x is unchanged
+     * @param syx the x-component of the shearing in y direction, y is unchanged
+     * @param syz the z-component of the shearing in y direction, y is unchanged
+     * @param szx the x-component of the shearing in z direction, z is unchanged
+     * @param szy the y-component of the shearing in z direction, z is unchanged
+     */
+    public void postShear(float sxy, float sxz,
+                          float syx, float syz,
+                          float szx, float szy) {
+        final float f11 = m11 + m12 * syx + m13 * szx;
+        final float f12 = m11 * sxy + m12 + m13 * szy;
+        final float f13 = m11 * sxz + m12 * syz + m13;
+        final float f21 = m21 + m22 * syx + m23 * szx;
+        final float f22 = m21 * sxy + m22 + m23 * szy;
+        final float f23 = m21 * sxz + m22 * syz + m23;
+        final float f31 = m31 + m32 * syx + m33 * szx;
+        final float f32 = m31 * sxy + m32 + m33 * szy;
+        final float f33 = m31 * sxz + m32 * syz + m33;
+        final float f41 = m41 + m42 * syx + m43 * szx;
+        final float f42 = m41 * sxy + m42 + m43 * szy;
+        final float f43 = m41 * sxz + m42 * syz + m43;
+        m11 = f11;
+        m12 = f12;
+        m13 = f13;
+        m21 = f21;
+        m22 = f22;
+        m23 = f23;
+        m31 = f31;
+        m32 = f32;
+        m33 = f33;
+        m41 = f41;
+        m42 = f42;
+        m43 = f43;
+    }
+
+    /**
+     * Pre-multiply 2D shearing to <code>this</code> matrix by the given shearing coefficients.
+     *
+     * @param sx the x-component of the shearing in y direction, y is unchanged (horizontal shearing)
+     * @param sy the y-component of the shearing in x direction, x is unchanged (vertical shearing)
+     */
+    public void preShear2D(float sx, float sy) {
+        final float f11 = m11 + sy * m21;
+        final float f12 = m12 + sy * m22;
+        final float f13 = m13 + sy * m23;
+        final float f14 = m14 + sy * m24;
+        final float f21 = sx * m11 + m21;
+        final float f22 = sx * m12 + m22;
+        final float f23 = sx * m13 + m23;
+        final float f24 = sx * m14 + m24;
+        m11 = f11;
+        m12 = f12;
+        m13 = f13;
+        m14 = f14;
+        m21 = f21;
+        m22 = f22;
+        m23 = f23;
+        m24 = f24;
+    }
+
+    /**
+     * Post-multiply 2D shearing to <code>this</code> matrix by the given shearing coefficients.
+     *
+     * @param sx the x-component of the shearing in y direction, y is unchanged (horizontal shearing)
+     * @param sy the y-component of the shearing in x direction, x is unchanged (vertical shearing)
+     */
+    public void postShear2D(float sx, float sy) {
+        final float f11 = m11 + m12 * sx;
+        final float f12 = m11 * sy + m12;
+        final float f21 = m21 + m22 * sx;
+        final float f22 = m21 * sy + m22;
+        final float f31 = m31 + m32 * sx;
+        final float f32 = m31 * sy + m32;
+        final float f41 = m41 + m42 * sx;
+        final float f42 = m41 * sy + m42;
+        m11 = f11;
+        m12 = f12;
+        m21 = f21;
+        m22 = f22;
+        m31 = f31;
+        m32 = f32;
+        m41 = f41;
+        m42 = f42;
+    }
+
+    /**
+     * Resets this matrix to a shearing matrix.
+     */
+    public void setShear(float sxy, float sxz,
+                         float syx, float syz,
+                         float szx, float szy) {
+        m11 = 1.0f;
+        m12 = sxy;
+        m13 = sxz;
+        m14 = 0.0f;
+        m21 = syx;
+        m22 = 1.0f;
+        m23 = syz;
+        m24 = 0.0f;
+        m31 = szx;
+        m32 = szy;
+        m33 = 1.0f;
+        m34 = 0.0f;
+        m41 = 0.0f;
+        m42 = 0.0f;
+        m43 = 0.0f;
+        m44 = 1.0f;
+    }
+
+    /**
      * Rotates this matrix about the X-axis with the given angle in radians.
      * <p>
      * When used with a right-handed coordinate system, the produced rotation
@@ -2572,8 +2771,8 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Transform a four-dimensional row vector by post-multiplication
-     * (vec4 * this).
+     * Transform a four-dimensional row vector by pre-multiplication
+     * (vector * matrix). This is equivalent to (matrix * vector) in GLSL.
      *
      * @param vec the vector to transform
      */
@@ -2589,8 +2788,8 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Transform a four-dimensional column vector by pre-multiplication
-     * (this * vec4).
+     * Transform a four-dimensional column vector by post-multiplication
+     * (matrix * vector). This is equivalent to (vector * matrix) in GLSL.
      *
      * @param vec the vector to transform
      */
@@ -2606,7 +2805,7 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Transform a three-dimensional row vector by post-multiplication
+     * Transform a three-dimensional row vector by pre-multiplication
      * (vec3 * this, w-component is considered as 1).
      * This should be used with position vectors.
      *
@@ -2629,7 +2828,7 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Transform a three-dimensional column vector by pre-multiplication
+     * Transform a three-dimensional column vector by post-multiplication
      * (this * vec3, w-component is considered as 1).
      * This should be used with normal vectors.
      *
