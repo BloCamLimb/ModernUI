@@ -17,8 +17,12 @@ dependencies {
     implementation "org.apache.logging.log4j:log4j-api:${log4j_version}"
     implementation "org.apache.logging.log4j:log4j-core:${log4j_version}"
 
-    api("icyllis.arc3d:Arc3D")
+    /*api("icyllis.arc3d:Arc3D")
     shadow("icyllis.arc3d:Arc3D") {
+        transitive = false
+    }*/
+    api(project(':external:Arc3D'))
+    shadow(project(':external:Arc3D')) {
         transitive = false
     }
 
@@ -78,7 +82,8 @@ shadowJar {
 tasks.register('shadowSourcesJar', Jar) {
     archiveClassifier.set("shadow-sources")
     from sourceSets.main.allSource
-    from fileTree(new File(gradle.includedBuild("Arc3D").projectDir, "src/main/java"))
+    //from fileTree(new File(gradle.includedBuild("Arc3D").projectDir, "src/main/java"))
+    from project(':external:Arc3D').sourcesJar.archiveFile.map { zipTree(it) }
 }
 
 tasks.register('copyDependencies', Copy) {
