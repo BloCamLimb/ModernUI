@@ -1,0 +1,4 @@
+__pure __genFType radians(__genFType degrees);
+__pure __genHType radians(__genHType degrees);
+__pure __genFType degrees(__genFType radians);
+__pure __genHType degrees(__genHType radians);
