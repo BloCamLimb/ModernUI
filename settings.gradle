@@ -6,7 +6,7 @@ pluginManagement {
 
 rootProject.name = 'ModernUI'
 
-includeBuild '../Arc3D'
+//includeBuild '../Arc3D'
 
 include 'core'
 project(':core').name = 'ModernUI-Core'
@@ -20,3 +20,6 @@ project(':core-ktx').name = 'ModernUI-Core-KTX'
 
 include 'x-markdown'
 project(':x-markdown').name = "ModernUI-Markdown"
+
+// externals
+include 'external:Arc3D'
