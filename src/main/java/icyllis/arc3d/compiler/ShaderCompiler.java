@@ -53,8 +53,13 @@ public class ShaderCompiler {
                 int offset = Math.min(start, source.length);
                 int line = 1;
                 for (int i = 0; i < offset; ++i) {
-                    if (source[i] == '\n') {
+                    boolean isCR = source[i] == '\r';
+                    if (isCR || source[i] == '\n') {
                         ++line;
+                        if (isCR && i + 1 < offset &&
+                                source[i + 1] == '\n') {
+                            ++i;
+                        }
                     }
                 }
                 showLocation = start < source.length;

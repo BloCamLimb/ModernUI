@@ -19,8 +19,8 @@
 
 package icyllis.arc3d.compiler;
 
-import icyllis.arc3d.compiler.parser.Lexer;
-import icyllis.arc3d.compiler.parser.Token;
+import icyllis.arc3d.compiler.lex.Lexer;
+import icyllis.arc3d.compiler.lex.Token;
 import icyllis.arc3d.compiler.tree.*;
 import it.unimi.dsi.fastutil.longs.*;
 import org.lwjgl.util.spvc.Spv;
@@ -59,7 +59,7 @@ public class Parser {
     public TranslationUnit parse(ModuleUnit parent) {
         Objects.requireNonNull(parent);
         mUniqueElements = new ArrayList<>();
-        GlobalDeclarations();
+        CompilationUnit();
         Context context = mCompiler.getContext();
         final TranslationUnit result;
         if (context.getErrorHandler().errorCount() == 0) {
@@ -85,7 +85,7 @@ public class Parser {
     public ModuleUnit parseModule(ModuleUnit parent) {
         Objects.requireNonNull(parent);
         mUniqueElements = new ArrayList<>();
-        GlobalDeclarations();
+        CompilationUnit();
         Context context = mCompiler.getContext();
         final ModuleUnit result;
         if (context.getErrorHandler().errorCount() == 0) {
@@ -112,25 +112,14 @@ public class Parser {
             // Fetch a token from the lexer.
             token = mLexer.next();
 
-            if (Token.kind(token) == Lexer.TK_RESERVED) {
+            if (Token.kind(token) == Token.TK_RESERVED) {
                 error(token, "'" + text(token) + "' is a reserved keyword");
                 // reduces additional follow-up errors
-                return Token.replace(token, Lexer.TK_IDENTIFIER);
+                return Token.replace(token, Token.TK_IDENTIFIER);
             }
         }
         return token;
     }
-
-    // @formatter:off
-    private static boolean isWhitespace(int kind) {
-        return switch (kind) {
-            case Lexer.TK_WHITESPACE,
-                    Lexer.TK_LINE_COMMENT,
-                    Lexer.TK_BLOCK_COMMENT -> true;
-            default -> false;
-        };
-    }
-    // @formatter:on
 
     /**
      * Return the next non-whitespace token from the parse stream.
@@ -139,17 +128,40 @@ public class Parser {
     private long nextToken() {
         for (;;) {
             long token = nextRawToken();
-            if (!isWhitespace(Token.kind(token))) {
-                return token;
+            switch (Token.kind(token)) {
+                case Token.TK_NEWLINE:
+                case Token.TK_WHITESPACE:
+                case Token.TK_LINE_COMMENT:
+                case Token.TK_BLOCK_COMMENT:
+                    break;
+                default:
+                    return token;
             }
         }
     }
     // @formatter:on
 
     /**
-     * Push a token back onto the parse stream, so that it is the next one read. Only a single level
-     * of pushback is supported (that is, it is an error to call pushback() twice in a row without
-     * an intervening nextToken()).
+     * Return the next non-whitespace token from the parse stream, including newlines.
+     */
+    // @formatter:off
+    private long nextTokenWithNewline() {
+        for (;;) {
+            long token = nextRawToken();
+            switch (Token.kind(token)) {
+                case Token.TK_WHITESPACE:
+                case Token.TK_LINE_COMMENT:
+                case Token.TK_BLOCK_COMMENT:
+                    break;
+                default:
+                    return token;
+            }
+        }
+    }
+    // @formatter:on
+
+    /**
+     * Push a token back onto the parse stream, so that it is the next one read.
      */
     private void pushback(long token) {
         mPushback.push(token);
@@ -232,16 +244,16 @@ public class Parser {
 
     /**
      * Behaves like checkNext(TK_IDENTIFIER), but also verifies that identifier is not a builtin
-     * type. If the token was actually a builtin type, false is returned (the next token is not
-     * considered to be an identifier).
+     * type. If the token was actually a builtin type, {@link Token#NO_TOKEN} is returned (the
+     * next token is not considered to be an identifier).
      */
     private long checkIdentifier() {
         long next = peek();
-        if (Token.kind(next) == Lexer.TK_IDENTIFIER &&
+        if (Token.kind(next) == Token.TK_IDENTIFIER &&
                 !mCompiler.getContext().getSymbolTable().isBuiltinType(text(next))) {
             return nextToken();
         }
-        return -1;
+        return Token.NO_TOKEN;
     }
 
     /**
@@ -267,7 +279,7 @@ public class Parser {
      * "expected an identifier, but found type 'float2'"
      */
     private long expectIdentifier() {
-        long token = expect(Lexer.TK_IDENTIFIER, "an identifier");
+        long token = expect(Token.TK_IDENTIFIER, "an identifier");
         if (mCompiler.getContext().getSymbolTable().isBuiltinType(text(token))) {
             String msg = "expected an identifier, but found type '" + text(token) + "'";
             error(token, msg);
@@ -276,42 +288,50 @@ public class Parser {
         return token;
     }
 
-    /**
-     * If the next token is a newline, consumes it and returns true. If not, returns false.
-     */
-    private boolean expectNewline() {
-        long token = nextRawToken();
-        if (Token.kind(token) == Lexer.TK_WHITESPACE) {
-            // The lexer doesn't distinguish newlines from other forms of whitespace, so we check
-            // for newlines by searching through the token text.
-            String tokenText = text(token);
-            if (tokenText.indexOf('\r') != -1 ||
-                    tokenText.indexOf('\n') != -1) {
-                return true;
-            }
-        }
-        // We didn't find a newline.
-        pushback(token);
-        return false;
-    }
-
-    private void GlobalDeclarations() {
+    private void CompilationUnit() {
         // ideally we can break long text into pieces, but shader code should not be too long
         if (mSource.length > 0x7FFFFE) {
             mCompiler.getContext().error(Position.NO_POS,
                     "source code is too long, " + mSource.length + " > 8,388,606 chars");
             return;
         }
+        if (peek(Token.TK_HASH)) {
+            Directive(true, true);
+        }
+        boolean prevIsNewline = true;
         for (;;) {
-            switch (Token.kind(peek())) {
-                case Lexer.TK_END_OF_FILE -> {
+            final long token;
+            if (mPushback.isEmpty()) {
+                token = nextTokenWithNewline();
+                mPushback.push(token);
+            } else {
+                token = mPushback.topLong();
+            }
+            switch (Token.kind(token)) {
+                case Token.TK_END_OF_FILE -> {
                     return;
                 }
-                case Lexer.TK_INVALID -> {
-                    error(peek(), "invalid token");
+                case Token.TK_INVALID -> {
+                    error(token, "invalid token");
                     return;
+                }
+                case Token.TK_NEWLINE -> {
+                    prevIsNewline = true;
+                    nextRawToken();
+                }
+                // directive starts with newline, ends with newline
+                case Token.TK_HASH -> {
+                    if (!Directive(false, prevIsNewline)) {
+                        return;
+                    }
+                }
+                // others never end with newline
+                case Token.TK_USING -> {
+                    prevIsNewline = false;
+                    UsingDirective();
                 }
                 default -> {
+                    prevIsNewline = false;
                     try {
                         if (!GlobalDeclaration()) {
                             return;
@@ -325,9 +345,67 @@ public class Parser {
         }
     }
 
+    private boolean Directive(boolean first, boolean prevIsNewline) {
+        long start = nextRawToken();
+        if (!prevIsNewline) {
+            error(start, "a directive must start with newline");
+            return false;
+        }
+        long directive = nextTokenWithNewline();
+        String text = text(directive);
+        if (Token.kind(directive) != Token.TK_IDENTIFIER) {
+            error(directive, "expected a directive, but found '" + text + "'");
+            return false;
+        }
+        if ("version".equals(text)) {
+            if (!first) {
+                error(start, "#version directive must appear before anything else");
+                return false;
+            }
+            long version = nextTokenWithNewline();
+            //TODO validate version
+        } else {
+            //TODO extension and include
+            error(directive, "unsupported directive '" + text + "'");
+            return false;
+        }
+        long end = nextTokenWithNewline();
+        if (Token.kind(end) != Token.TK_NEWLINE) {
+            error(end, "a directive must end with newline");
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * <pre>{@literal
+     * UsingDirective
+     *     : USING IDENTIFIER EQ IDENTIFIER SEMICOLON
+     * }</pre>
+     */
+    private void UsingDirective() {
+        // type alias
+        nextRawToken();
+        long left = expectIdentifier();
+        expect(Token.TK_EQ, "'='");
+        long right = expect(Token.TK_IDENTIFIER, "a type name");
+        final Context context = mCompiler.getContext();
+        final String name = text(right);
+        final Type type;
+        if (context.getSymbolTable().find(name) instanceof Type existing) {
+            type = existing;
+        } else {
+            error(right, "no type named '" + name + "'");
+            type = context.getTypes().mPoison;
+        }
+        expect(Token.TK_SEMICOLON, "';'");
+        context.getSymbolTable().insert(context,
+                Type.makeAliasType(position(left), text(left), type.resolve()));
+    }
+
     private boolean GlobalDeclaration() {
         long start = peek();
-        if (Token.kind(start) == Lexer.TK_SEMICOLON) {
+        if (Token.kind(start) == Token.TK_SEMICOLON) {
             // empty declaration, no elements
             nextToken();
             return true;
@@ -335,19 +413,19 @@ public class Parser {
         Modifiers modifiers = Modifiers();
         long peek = peek();
 
-        if (Token.kind(peek) == Lexer.TK_IDENTIFIER &&
+        if (Token.kind(peek) == Token.TK_IDENTIFIER &&
                 !mCompiler.getContext().getSymbolTable().isType(text(peek))) {
             // we have an identifier that's not a type, could be the start of an interface block
             return InterfaceBlock(modifiers);
         }
 
-        if (Token.kind(peek) == Lexer.TK_SEMICOLON) {
+        if (Token.kind(peek) == Token.TK_SEMICOLON) {
             nextToken();
             //TODO pure modifiers decl
             return true;
         }
 
-        if (Token.kind(peek) == Lexer.TK_STRUCT) {
+        if (Token.kind(peek) == Token.TK_STRUCT) {
             StructDeclaration();
             return true;
         }
@@ -359,7 +437,7 @@ public class Parser {
 
         long name = expectIdentifier();
 
-        if (checkNext(Lexer.TK_LPAREN)) {
+        if (checkNext(Token.TK_LPAREN)) {
             return FunctionDeclarationRest(position(start), modifiers, type, name);
         } else {
             GlobalVarDeclarationRest(position(start), modifiers, type, name);
@@ -371,7 +449,7 @@ public class Parser {
         long name = expectIdentifier();
         String blockName = text(name);
         int pos = rangeFrom(modifiers.mPosition);
-        if (!peek(Lexer.TK_LBRACE)) {
+        if (!peek(Token.TK_LBRACE)) {
             error(name, "no type named '" + blockName + "'");
             return false;
         }
@@ -391,7 +469,7 @@ public class Parser {
                 if (fieldType == null) {
                     return false;
                 }
-                if (checkNext(Lexer.TK_EQ)) {
+                if (checkNext(Token.TK_EQ)) {
                     Expression init = AssignmentExpression();
                     if (init == null) {
                         return false;
@@ -404,10 +482,10 @@ public class Parser {
                         fieldType,
                         text(fieldName)
                 ));
-            } while (checkNext(Lexer.TK_COMMA));
+            } while (checkNext(Token.TK_COMMA));
 
-            expect(Lexer.TK_SEMICOLON, "';' to complete member declaration");
-        } while (!checkNext(Lexer.TK_RBRACE));
+            expect(Token.TK_SEMICOLON, "';' to complete member declaration");
+        } while (!checkNext(Token.TK_RBRACE));
 
         Type type = Type.makeStructType(
                 context,
@@ -419,14 +497,14 @@ public class Parser {
 
         long instanceName = checkIdentifier();
         String instanceNameText = "";
-        if (instanceName != -1) {
+        if (instanceName != Token.NO_TOKEN) {
             instanceNameText = text(instanceName);
             type = ArraySpecifier(pos, type);
             if (type == null) {
                 return false;
             }
         }
-        expect(Lexer.TK_SEMICOLON, "';' to complete interface block");
+        expect(Token.TK_SEMICOLON, "';' to complete interface block");
 
         InterfaceBlock block = InterfaceBlock.convert(context, pos, modifiers, type, instanceNameText);
         if (block != null) {
@@ -441,8 +519,8 @@ public class Parser {
                                             Type returnType,
                                             long name) {
         List<Variable> parameters = new ArrayList<>();
-        if (!peek(Lexer.TK_RPAREN)) {
-            if (peek(Lexer.TK_IDENTIFIER) && "void".equals(text(peek()))) {
+        if (!peek(Token.TK_RPAREN)) {
+            if (peek(Token.TK_IDENTIFIER) && "void".equals(text(peek()))) {
                 // '(void)' means no parameters.
                 nextToken();
             } else {
@@ -452,10 +530,10 @@ public class Parser {
                         return false;
                     }
                     parameters.add(parameter);
-                } while (checkNext(Lexer.TK_COMMA));
+                } while (checkNext(Token.TK_COMMA));
             }
         }
-        expect(Lexer.TK_RPAREN, "')' to complete parameter list");
+        expect(Token.TK_RPAREN, "')' to complete parameter list");
 
         FunctionDecl decl = FunctionDecl.convert(
                 mCompiler.getContext(),
@@ -467,7 +545,7 @@ public class Parser {
         );
 
         Context context = mCompiler.getContext();
-        if (peek(Lexer.TK_SEMICOLON)) {
+        if (peek(Token.TK_SEMICOLON)) {
             nextToken();
             if (decl == null) {
                 return false;
@@ -528,7 +606,7 @@ public class Parser {
         }
         long name = checkIdentifier();
         String nameText = "";
-        if (name != -1) {
+        if (name != Token.NO_TOKEN) {
             nameText = text(name);
             type = ArraySpecifier(pos, type);
             if (type == null) {
@@ -546,10 +624,10 @@ public class Parser {
     }
 
     private BlockStatement ScopedBlock() {
-        long start = expect(Lexer.TK_LBRACE, "'{'");
+        long start = expect(Token.TK_LBRACE, "'{'");
         List<Statement> statements = new ArrayList<>();
         for (;;) {
-            if (checkNext(Lexer.TK_RBRACE)) {
+            if (checkNext(Token.TK_RBRACE)) {
                 int pos = rangeFrom(start);
                 return BlockStatement.makeBlock(pos, statements);
             } else {
@@ -577,7 +655,7 @@ public class Parser {
                 return;
             }
             Expression init = null;
-            if (checkNext(Lexer.TK_EQ)) {
+            if (checkNext(Token.TK_EQ)) {
                 init = AssignmentExpression();
                 if (init == null) {
                     return;
@@ -597,9 +675,9 @@ public class Parser {
                         new GlobalVariableDecl(variableDecl)
                 );
             }
-        } while (checkNext(Lexer.TK_COMMA));
+        } while (checkNext(Token.TK_COMMA));
 
-        expect(Lexer.TK_SEMICOLON, "';' to complete global variable declaration");
+        expect(Token.TK_SEMICOLON, "';' to complete global variable declaration");
     }
 
     @Nullable
@@ -631,7 +709,7 @@ public class Parser {
         if (result == null) {
             return null;
         }
-        while (peek(Lexer.TK_COMMA)) {
+        while (peek(Token.TK_COMMA)) {
             if ((result = operatorRight(result, Operator.COMMA,
                     Parser::AssignmentExpression)) == null) {
                 return null;
@@ -669,17 +747,17 @@ public class Parser {
         }
         for (;;) {
             Operator op = switch (Token.kind(peek())) {
-                case Lexer.TK_EQ        -> Operator.    ASSIGN;
-                case Lexer.TK_PLUSEQ    -> Operator.ADD_ASSIGN;
-                case Lexer.TK_MINUSEQ   -> Operator.SUB_ASSIGN;
-                case Lexer.TK_STAREQ    -> Operator.MUL_ASSIGN;
-                case Lexer.TK_SLASHEQ   -> Operator.DIV_ASSIGN;
-                case Lexer.TK_PERCENTEQ -> Operator.MOD_ASSIGN;
-                case Lexer.TK_LTLTEQ    -> Operator.SHL_ASSIGN;
-                case Lexer.TK_GTGTEQ    -> Operator.SHR_ASSIGN;
-                case Lexer.TK_AMPEQ     -> Operator.AND_ASSIGN;
-                case Lexer.TK_PIPEEQ    -> Operator. OR_ASSIGN;
-                case Lexer.TK_CARETEQ   -> Operator.XOR_ASSIGN;
+                case Token.TK_EQ        -> Operator.    ASSIGN;
+                case Token.TK_PLUSEQ    -> Operator.ADD_ASSIGN;
+                case Token.TK_MINUSEQ   -> Operator.SUB_ASSIGN;
+                case Token.TK_STAREQ    -> Operator.MUL_ASSIGN;
+                case Token.TK_SLASHEQ   -> Operator.DIV_ASSIGN;
+                case Token.TK_PERCENTEQ -> Operator.MOD_ASSIGN;
+                case Token.TK_LTLTEQ    -> Operator.SHL_ASSIGN;
+                case Token.TK_GTGTEQ    -> Operator.SHR_ASSIGN;
+                case Token.TK_AMPEQ     -> Operator.AND_ASSIGN;
+                case Token.TK_PIPEEQ    -> Operator. OR_ASSIGN;
+                case Token.TK_CARETEQ   -> Operator.XOR_ASSIGN;
                 default -> null;
             };
             if (op != null) {
@@ -715,7 +793,7 @@ public class Parser {
         if (base == null) {
             return null;
         }
-        if (!peek(Lexer.TK_QUES)) {
+        if (!peek(Token.TK_QUES)) {
             return base;
         }
         nextToken();
@@ -723,7 +801,7 @@ public class Parser {
         if (whenTrue == null) {
             return null;
         }
-        expect(Lexer.TK_COLON, "':'");
+        expect(Token.TK_COLON, "':'");
         Expression whenFalse = AssignmentExpression();
         if (whenFalse == null) {
             return null;
@@ -746,7 +824,7 @@ public class Parser {
         if (result == null) {
             return null;
         }
-        while (peek(Lexer.TK_PIPEPIPE)) {
+        while (peek(Token.TK_PIPEPIPE)) {
             if ((result = operatorRight(result, Operator.LOGICAL_OR,
                     Parser::LogicalXorExpression)) == null) {
                 return null;
@@ -768,7 +846,7 @@ public class Parser {
         if (result == null) {
             return null;
         }
-        while (peek(Lexer.TK_CARETCARET)) {
+        while (peek(Token.TK_CARETCARET)) {
             if ((result = operatorRight(result, Operator.LOGICAL_XOR,
                     Parser::LogicalAndExpression)) == null) {
                 return null;
@@ -790,7 +868,7 @@ public class Parser {
         if (result == null) {
             return null;
         }
-        while (peek(Lexer.TK_AMPAMP)) {
+        while (peek(Token.TK_AMPAMP)) {
             if ((result = operatorRight(result, Operator.LOGICAL_AND,
                     Parser::BitwiseOrExpression)) == null) {
                 return null;
@@ -812,7 +890,7 @@ public class Parser {
         if (result == null) {
             return null;
         }
-        while (peek(Lexer.TK_PIPE)) {
+        while (peek(Token.TK_PIPE)) {
             if ((result = operatorRight(result, Operator.BITWISE_OR,
                     Parser::BitwiseXorExpression)) == null) {
                 return null;
@@ -834,7 +912,7 @@ public class Parser {
         if (result == null) {
             return null;
         }
-        while (peek(Lexer.TK_CARET)) {
+        while (peek(Token.TK_CARET)) {
             if ((result = operatorRight(result, Operator.BITWISE_XOR,
                     Parser::BitwiseAndExpression)) == null) {
                 return null;
@@ -856,7 +934,7 @@ public class Parser {
         if (result == null) {
             return null;
         }
-        while (peek(Lexer.TK_AMP)) {
+        while (peek(Token.TK_AMP)) {
             if ((result = operatorRight(result, Operator.BITWISE_AND,
                     Parser::EqualityExpression)) == null) {
                 return null;
@@ -882,8 +960,8 @@ public class Parser {
         }
         for (;;) {
             Operator op = switch (Token.kind(peek())) {
-                case Lexer.TK_EQEQ   -> Operator.EQ;
-                case Lexer.TK_BANGEQ -> Operator.NE;
+                case Token.TK_EQEQ   -> Operator.EQ;
+                case Token.TK_BANGEQ -> Operator.NE;
                 default -> null;
             };
             if (op != null) {
@@ -917,10 +995,10 @@ public class Parser {
         }
         for (;;) {
             Operator op = switch (Token.kind(peek())) {
-                case Lexer.TK_LT   -> Operator.LT;
-                case Lexer.TK_GT   -> Operator.GT;
-                case Lexer.TK_LTEQ -> Operator.LE;
-                case Lexer.TK_GTEQ -> Operator.GE;
+                case Token.TK_LT   -> Operator.LT;
+                case Token.TK_GT   -> Operator.GT;
+                case Token.TK_LTEQ -> Operator.LE;
+                case Token.TK_GTEQ -> Operator.GE;
                 default -> null;
             };
             if (op != null) {
@@ -952,8 +1030,8 @@ public class Parser {
         }
         for (;;) {
             Operator op = switch (Token.kind(peek())) {
-                case Lexer.TK_LTLT -> Operator.SHL;
-                case Lexer.TK_GTGT -> Operator.SHR;
+                case Token.TK_LTLT -> Operator.SHL;
+                case Token.TK_GTGT -> Operator.SHR;
                 default -> null;
             };
             if (op != null) {
@@ -985,8 +1063,8 @@ public class Parser {
         }
         for (;;) {
             Operator op = switch (Token.kind(peek())) {
-                case Lexer.TK_PLUS  -> Operator.ADD;
-                case Lexer.TK_MINUS -> Operator.SUB;
+                case Token.TK_PLUS  -> Operator.ADD;
+                case Token.TK_MINUS -> Operator.SUB;
                 default -> null;
             };
             if (op != null) {
@@ -1019,9 +1097,9 @@ public class Parser {
         }
         for (;;) {
             Operator op = switch (Token.kind(peek())) {
-                case Lexer.TK_STAR    -> Operator.MUL;
-                case Lexer.TK_SLASH   -> Operator.DIV;
-                case Lexer.TK_PERCENT -> Operator.MOD;
+                case Token.TK_STAR    -> Operator.MUL;
+                case Token.TK_SLASH   -> Operator.DIV;
+                case Token.TK_PERCENT -> Operator.MOD;
                 default -> null;
             };
             if (op != null) {
@@ -1056,12 +1134,12 @@ public class Parser {
     private Expression UnaryExpression() {
         long prefix = peek();
         Operator op = switch (Token.kind(prefix)) {
-            case Lexer.TK_PLUSPLUS   -> Operator.INC;
-            case Lexer.TK_MINUSMINUS -> Operator.DEC;
-            case Lexer.TK_PLUS       -> Operator.ADD;
-            case Lexer.TK_MINUS      -> Operator.SUB;
-            case Lexer.TK_BANG       -> Operator.LOGICAL_NOT;
-            case Lexer.TK_TILDE      -> Operator.BITWISE_NOT;
+            case Token.TK_PLUSPLUS   -> Operator.INC;
+            case Token.TK_MINUSMINUS -> Operator.DEC;
+            case Token.TK_PLUS       -> Operator.ADD;
+            case Token.TK_MINUS      -> Operator.SUB;
+            case Token.TK_BANG       -> Operator.LOGICAL_NOT;
+            case Token.TK_TILDE      -> Operator.BITWISE_NOT;
             default -> null;
         };
         if (op != null) {
@@ -1098,36 +1176,36 @@ public class Parser {
         for (;;) {
             long t = peek();
             switch (Token.kind(t)) {
-                case Lexer.TK_LBRACKET -> {
+                case Token.TK_LBRACKET -> {
                     nextToken();
                     Expression index = null;
-                    if (!peek(Lexer.TK_RBRACKET)) {
+                    if (!peek(Token.TK_RBRACKET)) {
                         index = Expression();
                         if (index == null) {
                             return null;
                         }
                     }
-                    expect(Lexer.TK_RBRACKET, "']' to complete array specifier");
+                    expect(Token.TK_RBRACKET, "']' to complete array specifier");
                     int pos = rangeFrom(result.mPosition);
                     result = expressionOrPoison(pos,
                             IndexExpression.convert(mCompiler.getContext(), pos, result, index));
                 }
-                case Lexer.TK_DOT -> {
+                case Token.TK_DOT -> {
                     nextToken();
                     // swizzle mask, field access, method reference
-                    long name = expect(Lexer.TK_IDENTIFIER, "identifier");
+                    long name = expect(Token.TK_IDENTIFIER, "identifier");
                     String text = text(name);
                     int pos = rangeFrom(result.mPosition);
                     int namePos = rangeFrom(name);
                     result = expressionOrPoison(pos,
                             FieldAccess.convert(mCompiler.getContext(), pos, result, namePos, text));
                 }
-                case Lexer.TK_LPAREN -> {
+                case Token.TK_LPAREN -> {
                     nextToken();
                     // constructor call, function call, method call
                     List<Expression> args = new ArrayList<>();
-                    if (!peek(Lexer.TK_RPAREN)) {
-                        if (peek(Lexer.TK_IDENTIFIER) && "void".equals(text(peek()))) {
+                    if (!peek(Token.TK_RPAREN)) {
+                        if (peek(Token.TK_IDENTIFIER) && "void".equals(text(peek()))) {
                             // '(void)' means no arguments.
                             nextToken();
                         } else {
@@ -1137,17 +1215,17 @@ public class Parser {
                                     return null;
                                 }
                                 args.add(expr);
-                            } while (checkNext(Lexer.TK_COMMA));
+                            } while (checkNext(Token.TK_COMMA));
                         }
                     }
-                    expect(Lexer.TK_RPAREN, "')' to complete invocation");
+                    expect(Token.TK_RPAREN, "')' to complete invocation");
                     int pos = rangeFrom(result.mPosition);
                     result = expressionOrPoison(pos,
                             FunctionCall.convert(mCompiler.getContext(), pos, result, args));
                 }
-                case Lexer.TK_PLUSPLUS, Lexer.TK_MINUSMINUS -> {
+                case Token.TK_PLUSPLUS, Token.TK_MINUSMINUS -> {
                     nextToken();
-                    Operator op = Token.kind(t) == Lexer.TK_PLUSPLUS
+                    Operator op = Token.kind(t) == Token.TK_PLUSPLUS
                             ? Operator.INC
                             : Operator.DEC;
                     int pos = rangeFrom(result.mPosition);
@@ -1175,18 +1253,18 @@ public class Parser {
     private Expression PrimaryExpression() {
         long t = peek();
         return switch (Token.kind(t)) {
-            case Lexer.TK_IDENTIFIER -> {
+            case Token.TK_IDENTIFIER -> {
                 nextToken();
                 yield mCompiler.getContext().convertIdentifier(position(t), text(t));
             }
-            case Lexer.TK_INTLITERAL -> IntLiteral();
-            case Lexer.TK_FLOATLITERAL -> FloatLiteral();
-            case Lexer.TK_TRUE, Lexer.TK_FALSE -> BooleanLiteral();
-            case Lexer.TK_LPAREN -> {
+            case Token.TK_INTLITERAL -> IntLiteral();
+            case Token.TK_FLOATLITERAL -> FloatLiteral();
+            case Token.TK_TRUE, Token.TK_FALSE -> BooleanLiteral();
+            case Token.TK_LPAREN -> {
                 nextToken();
                 Expression result = Expression();
                 if (result != null) {
-                    expect(Lexer.TK_RPAREN, "')' to complete expression");
+                    expect(Token.TK_RPAREN, "')' to complete expression");
                     result.mPosition = rangeFrom(t);
                     yield result;
                 }
@@ -1206,7 +1284,7 @@ public class Parser {
      */
     @Nullable
     private Literal IntLiteral() {
-        long token = expect(Lexer.TK_INTLITERAL, "integer literal");
+        long token = expect(Token.TK_INTLITERAL, "integer literal");
         String s = text(token);
         if (s.endsWith("u") || s.endsWith("U")) {
             s = s.substring(0, s.length() - 1);
@@ -1232,7 +1310,7 @@ public class Parser {
      */
     @Nullable
     private Literal FloatLiteral() {
-        long token = expect(Lexer.TK_FLOATLITERAL, "float literal");
+        long token = expect(Token.TK_FLOATLITERAL, "float literal");
         String s = text(token);
         try {
             float value = Float.parseFloat(s);
@@ -1257,11 +1335,11 @@ public class Parser {
     private Literal BooleanLiteral() {
         long token = nextToken();
         return switch (Token.kind(token)) {
-            case Lexer.TK_TRUE -> Literal.makeBoolean(
+            case Token.TK_TRUE -> Literal.makeBoolean(
                     mCompiler.getContext(),
                     position(token),
                     true);
-            case Lexer.TK_FALSE -> Literal.makeBoolean(
+            case Token.TK_FALSE -> Literal.makeBoolean(
                     mCompiler.getContext(),
                     position(token),
                     false);
@@ -1286,30 +1364,30 @@ public class Parser {
     private Modifiers Modifiers() {
         long start = peek();
         Modifiers modifiers = new Modifiers(Position.NO_POS);
-        if (checkNext(Lexer.TK_LAYOUT)) {
+        if (checkNext(Token.TK_LAYOUT)) {
             Layout(modifiers);
         }
         for (;;) {
             int mask = switch (Token.kind(peek())) {
-                case Lexer.TK_SMOOTH -> Modifiers.kSmooth_Flag;
-                case Lexer.TK_FLAT -> Modifiers.kFlat_Flag;
-                case Lexer.TK_NOPERSPECTIVE -> Modifiers.kNoPerspective_Flag;
-                case Lexer.TK_CONST -> Modifiers.kConst_Flag;
-                case Lexer.TK_UNIFORM -> Modifiers.kUniform_Flag;
-                case Lexer.TK_IN -> Modifiers.kIn_Flag;
-                case Lexer.TK_OUT -> Modifiers.kOut_Flag;
-                case Lexer.TK_INOUT -> Modifiers.kIn_Flag | Modifiers.kOut_Flag;
-                case Lexer.TK_COHERENT -> Modifiers.kCoherent_Flag;
-                case Lexer.TK_VOLATILE -> Modifiers.kVolatile_Flag;
-                case Lexer.TK_RESTRICT -> Modifiers.kRestrict_Flag;
-                case Lexer.TK_READONLY -> Modifiers.kReadOnly_Flag;
-                case Lexer.TK_WRITEONLY -> Modifiers.kWriteOnly_Flag;
-                case Lexer.TK_BUFFER -> Modifiers.kBuffer_Flag;
-                case Lexer.TK_WORKGROUP -> Modifiers.kWorkgroup_Flag;
-                case Lexer.TK_SUBROUTINE -> Modifiers.kSubroutine_Flag;
-                case Lexer.TK_PURE -> Modifiers.kPure_Flag;
-                case Lexer.TK_INLINE -> Modifiers.kInline_Flag;
-                case Lexer.TK_NOINLINE -> Modifiers.kNoInline_Flag;
+                case Token.TK_SMOOTH -> Modifiers.kSmooth_Flag;
+                case Token.TK_FLAT -> Modifiers.kFlat_Flag;
+                case Token.TK_NOPERSPECTIVE -> Modifiers.kNoPerspective_Flag;
+                case Token.TK_CONST -> Modifiers.kConst_Flag;
+                case Token.TK_UNIFORM -> Modifiers.kUniform_Flag;
+                case Token.TK_IN -> Modifiers.kIn_Flag;
+                case Token.TK_OUT -> Modifiers.kOut_Flag;
+                case Token.TK_INOUT -> Modifiers.kIn_Flag | Modifiers.kOut_Flag;
+                case Token.TK_COHERENT -> Modifiers.kCoherent_Flag;
+                case Token.TK_VOLATILE -> Modifiers.kVolatile_Flag;
+                case Token.TK_RESTRICT -> Modifiers.kRestrict_Flag;
+                case Token.TK_READONLY -> Modifiers.kReadOnly_Flag;
+                case Token.TK_WRITEONLY -> Modifiers.kWriteOnly_Flag;
+                case Token.TK_BUFFER -> Modifiers.kBuffer_Flag;
+                case Token.TK_WORKGROUP -> Modifiers.kWorkgroup_Flag;
+                case Token.TK_SUBROUTINE -> Modifiers.kSubroutine_Flag;
+                case Token.TK_PURE -> Modifiers.kPure_Flag;
+                case Token.TK_INLINE -> Modifiers.kInline_Flag;
+                case Token.TK_NOINLINE -> Modifiers.kNoInline_Flag;
                 default -> 0;
             };
             if (mask == 0) {
@@ -1331,9 +1409,9 @@ public class Parser {
      * }</pre>
      */
     private void Layout(Modifiers modifiers) {
-        expect(Lexer.TK_LPAREN, "'('");
+        expect(Token.TK_LPAREN, "'('");
         do {
-            long name = expect(Lexer.TK_IDENTIFIER, "identifier");
+            long name = expect(Token.TK_IDENTIFIER, "identifier");
             String text = text(name);
             int pos = position(name);
             int mask = switch (text) {
@@ -1372,24 +1450,24 @@ public class Parser {
                     modifiers.layout().mBuiltin = builtin;
                 } else {
                     warning(name, "unrecognized layout qualifier '" + text + "'");
-                    if (checkNext(Lexer.TK_EQ)) {
+                    if (checkNext(Token.TK_EQ)) {
                         nextToken();
                     }
                 }
             }
-        } while (checkNext(Lexer.TK_COMMA));
-        expect(Lexer.TK_RPAREN, "')'");
+        } while (checkNext(Token.TK_COMMA));
+        expect(Token.TK_RPAREN, "')'");
     }
 
     private int LayoutInt() {
-        expect(Lexer.TK_EQ, "'='");
-        long token = expect(Lexer.TK_INTLITERAL, "integer literal");
+        expect(Token.TK_EQ, "'='");
+        long token = expect(Token.TK_INTLITERAL, "integer literal");
         return LayoutIntValue(token);
     }
 
     private int LayoutBuiltin() {
-        expect(Lexer.TK_EQ, "'='");
-        if (peek(Lexer.TK_INTLITERAL)) {
+        expect(Token.TK_EQ, "'='");
+        if (peek(Token.TK_INTLITERAL)) {
             long token = nextToken();
             return LayoutIntValue(token);
         }
@@ -1446,7 +1524,7 @@ public class Parser {
      */
     @Nullable
     private Type TypeSpecifier(Modifiers modifiers) {
-        long start = expect(Lexer.TK_IDENTIFIER, "a type name");
+        long start = expect(Token.TK_IDENTIFIER, "a type name");
         String name = text(start);
         var symbol = mCompiler.getContext().getSymbolTable().find(name);
         if (symbol == null) {
@@ -1468,16 +1546,16 @@ public class Parser {
     @Nullable
     private Type ArraySpecifier(int startPos, Type type) {
         Context context = mCompiler.getContext();
-        while (peek(Lexer.TK_LBRACKET)) {
+        while (peek(Token.TK_LBRACKET)) {
             nextToken();
             Expression size = null;
-            if (!peek(Lexer.TK_RBRACKET)) {
+            if (!peek(Token.TK_RBRACKET)) {
                 size = Expression();
                 if (size == null) {
                     return null;
                 }
             }
-            expect(Lexer.TK_RBRACKET, "']' to complete array specifier");
+            expect(Token.TK_RBRACKET, "']' to complete array specifier");
             int pos = rangeFrom(startPos);
             final int arraySize;
             if (size != null) {
@@ -1513,7 +1591,7 @@ public class Parser {
             return null;
         }
         Expression init = null;
-        if (checkNext(Lexer.TK_EQ)) {
+        if (checkNext(Token.TK_EQ)) {
             init = AssignmentExpression();
             if (init == null) {
                 return null;
@@ -1529,14 +1607,14 @@ public class Parser {
                 init
         );
 
-        while (checkNext(Lexer.TK_COMMA)) {
+        while (checkNext(Token.TK_COMMA)) {
             name = expectIdentifier();
             type = ArraySpecifier(pos, baseType);
             if (type == null) {
                 break;
             }
             init = null;
-            if (checkNext(Lexer.TK_EQ)) {
+            if (checkNext(Token.TK_EQ)) {
                 init = AssignmentExpression();
                 if (init == null) {
                     break;
@@ -1554,7 +1632,7 @@ public class Parser {
 
             result = BlockStatement.makeCompound(result, next);
         }
-        expect(Lexer.TK_SEMICOLON, "';' to complete local variable declaration");
+        expect(Token.TK_SEMICOLON, "';' to complete local variable declaration");
         pos = rangeFrom(pos);
         return statementOrEmpty(pos, result);
     }
@@ -1562,7 +1640,7 @@ public class Parser {
     @Nullable
     private Statement VarDeclarationOrExpressionStatement() {
         long peek = peek();
-        if (Token.kind(peek) == Lexer.TK_CONST) {
+        if (Token.kind(peek) == Token.TK_CONST) {
             int pos = position(peek);
             Modifiers modifiers = Modifiers();
             Type type = TypeSpecifier(modifiers);
@@ -1595,7 +1673,7 @@ public class Parser {
         if (expr == null) {
             return null;
         }
-        expect(Lexer.TK_SEMICOLON, "';' to complete expression statement");
+        expect(Token.TK_SEMICOLON, "';' to complete expression statement");
         int pos = expr.mPosition;
         return statementOrEmpty(pos, ExpressionStatement.convert(mCompiler.getContext(), expr));
     }
@@ -1614,9 +1692,9 @@ public class Parser {
      */
     private Type StructDeclaration() {
         long start = peek();
-        expect(Lexer.TK_STRUCT, "'struct'");
+        expect(Token.TK_STRUCT, "'struct'");
         long typeName = expectIdentifier();
-        expect(Lexer.TK_LBRACE, "'{'");
+        expect(Token.TK_LBRACE, "'{'");
         return null;
     }
 
@@ -1631,42 +1709,42 @@ public class Parser {
     @Nullable
     private Statement Statement() {
         return switch (Token.kind(peek())) {
-            case Lexer.TK_BREAK -> {
+            case Token.TK_BREAK -> {
                 long start = nextToken();
-                expect(Lexer.TK_SEMICOLON, "';' after 'break'");
+                expect(Token.TK_SEMICOLON, "';' after 'break'");
                 yield BreakStatement.make(rangeFrom(start));
             }
-            case Lexer.TK_CONTINUE -> {
+            case Token.TK_CONTINUE -> {
                 long start = nextToken();
-                expect(Lexer.TK_SEMICOLON, "';' after 'continue'");
+                expect(Token.TK_SEMICOLON, "';' after 'continue'");
                 yield ContinueStatement.make(rangeFrom(start));
             }
-            case Lexer.TK_DISCARD -> {
+            case Token.TK_DISCARD -> {
                 long start = nextToken();
-                expect(Lexer.TK_SEMICOLON, "';' after 'discard'");
+                expect(Token.TK_SEMICOLON, "';' after 'discard'");
                 int pos = rangeFrom(start);
                 yield statementOrEmpty(pos, DiscardStatement.convert(mCompiler.getContext(), pos));
             }
-            case Lexer.TK_RETURN -> {
+            case Token.TK_RETURN -> {
                 long start = nextToken();
                 Expression expression = null;
-                if (!peek(Lexer.TK_SEMICOLON)) {
+                if (!peek(Token.TK_SEMICOLON)) {
                     expression = Expression();
                     if (expression == null) {
                         yield null;
                     }
                 }
-                expect(Lexer.TK_SEMICOLON, "';' to complete return expression");
+                expect(Token.TK_SEMICOLON, "';' to complete return expression");
                 yield ReturnStatement.make(rangeFrom(start), expression);
             }
-            case Lexer.TK_IF -> IfStatement();
-            case Lexer.TK_FOR -> ForStatement();
-            case Lexer.TK_SWITCH -> SwitchStatement();
-            case Lexer.TK_SEMICOLON -> {
+            case Token.TK_IF -> IfStatement();
+            case Token.TK_FOR -> ForStatement();
+            case Token.TK_SWITCH -> SwitchStatement();
+            case Token.TK_SEMICOLON -> {
                 long t = nextToken();
                 yield new EmptyStatement(position(t));
             }
-            case Lexer.TK_CONST, Lexer.TK_IDENTIFIER -> VarDeclarationOrExpressionStatement();
+            case Token.TK_CONST, Token.TK_IDENTIFIER -> VarDeclarationOrExpressionStatement();
             default -> ExpressionStatement();
         };
     }
@@ -1679,19 +1757,19 @@ public class Parser {
      */
     @Nullable
     private Statement IfStatement() {
-        long start = expect(Lexer.TK_IF, "'if'");
-        expect(Lexer.TK_LPAREN, "'('");
+        long start = expect(Token.TK_IF, "'if'");
+        expect(Token.TK_LPAREN, "'('");
         Expression test = Expression();
         if (test == null) {
             return null;
         }
-        expect(Lexer.TK_RPAREN, "')'");
+        expect(Token.TK_RPAREN, "')'");
         Statement whenTrue = Statement();
         if (whenTrue == null) {
             return null;
         }
         Statement whenFalse = null;
-        if (checkNext(Lexer.TK_ELSE)) {
+        if (checkNext(Token.TK_ELSE)) {
             whenFalse = Statement();
             if (whenFalse == null) {
                 return null;
@@ -1723,13 +1801,13 @@ public class Parser {
      */
     @Nullable
     private Statement ForStatement() {
-        long start = expect(Lexer.TK_FOR, "'for'");
-        expect(Lexer.TK_LPAREN, "'('");
+        long start = expect(Token.TK_FOR, "'for'");
+        expect(Token.TK_LPAREN, "'('");
         mCompiler.getContext()
                 .enterScope();
         try {
             Statement init = null;
-            if (peek(Lexer.TK_SEMICOLON)) {
+            if (peek(Token.TK_SEMICOLON)) {
                 // An empty init-statement.
                 nextToken();
             } else {
@@ -1740,24 +1818,24 @@ public class Parser {
             }
 
             Expression cond = null;
-            if (!peek(Lexer.TK_SEMICOLON)) {
+            if (!peek(Token.TK_SEMICOLON)) {
                 cond = Expression();
                 if (cond == null) {
                     return null;
                 }
             }
 
-            expect(Lexer.TK_SEMICOLON, "';' to complete condition statement");
+            expect(Token.TK_SEMICOLON, "';' to complete condition statement");
 
             Expression step = null;
-            if (!peek(Lexer.TK_SEMICOLON)) {
+            if (!peek(Token.TK_SEMICOLON)) {
                 step = Expression();
                 if (step == null) {
                     return null;
                 }
             }
 
-            expect(Lexer.TK_RPAREN, "')' to complete 'for' statement");
+            expect(Token.TK_RPAREN, "')' to complete 'for' statement");
 
             Statement statement = Statement();
             if (statement == null) {

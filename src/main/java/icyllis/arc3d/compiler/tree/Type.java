@@ -92,7 +92,16 @@ public class Type extends Symbol {
     @Nonnull
     public static Type makeAliasType(String name, Type type) {
         assert (type == type.resolve());
-        return new AliasType(name, type);
+        return new AliasType(type.mPosition, name, type);
+    }
+
+    /**
+     * Creates an alias which maps to another type.
+     */
+    @Nonnull
+    public static Type makeAliasType(int position, String name, Type type) {
+        assert (type == type.resolve());
+        return new AliasType(position, name, type);
     }
 
     /**
@@ -1007,8 +1016,8 @@ public class Type extends Symbol {
 
         private final Type mUnderlyingType;
 
-        AliasType(String name, Type type) {
-            super(name, type.getDesc(), type.getTypeKind());
+        AliasType(int position, String name, Type type) {
+            super(name, type.getDesc(), type.getTypeKind(), position);
             mUnderlyingType = type;
         }
 
