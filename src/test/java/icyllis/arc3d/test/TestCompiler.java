@@ -21,7 +21,10 @@ package icyllis.arc3d.test;
 
 import icyllis.arc3d.compiler.*;
 import icyllis.arc3d.compiler.SPIRVVersion;
+import icyllis.arc3d.compiler.lex.Lexer;
+import icyllis.arc3d.compiler.lex.Token;
 import icyllis.arc3d.compiler.tree.TranslationUnit;
+import icyllis.arc3d.core.MathUtil;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -51,6 +54,28 @@ public class TestCompiler {
         var compiler = new ShaderCompiler();
 
         System.out.println(SOURCE.length());
+
+        {
+            long bytes = 0;
+            bytes += 16 + MathUtil.align8(Lexer.MAPPINGS.length);
+            bytes += 16 + MathUtil.align8(Lexer.ACCEPTS.length);
+            bytes += 16 + MathUtil.align8(Lexer.INDICES.length * 2);
+            bytes += 16 + MathUtil.align8(Lexer.FULL.length * 4);
+            for (short[] elem : Lexer.FULL) {
+                bytes += 16 + MathUtil.align8(elem.length * 2);
+            }
+            bytes += 16 + MathUtil.align8(Lexer.PACKED.length * 4);
+            for (Lexer.PackedEntry elem : Lexer.PACKED) {
+                bytes += 16 + 4 + 4 + 16 + MathUtil.align8(elem.data().length);
+            }
+            System.out.println("Lexer bytes: " + bytes);
+        }
+
+        Lexer lexer = new Lexer("//abc\r\n".toCharArray());
+        long token;
+        while (Token.kind(token = lexer.next()) != Token.TK_END_OF_FILE) {
+            System.out.println(Token.kind(token));
+        }
 
         var options = new CompileOptions();
 

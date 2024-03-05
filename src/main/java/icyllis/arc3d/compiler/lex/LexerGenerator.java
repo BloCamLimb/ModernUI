@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,7 +17,7 @@
  * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.compiler.parser;
+package icyllis.arc3d.compiler.lex;
 
 import icyllis.arc3d.core.MathUtil;
 import it.unimi.dsi.fastutil.ints.*;
@@ -69,11 +69,13 @@ public class LexerGenerator {
             SUBROUTINE     = "subroutine"
             LAYOUT         = "layout"
             STRUCT         = "struct"
+            USING          = "using"
             INLINE         = "inline"
             NOINLINE       = "noinline"
             PURE           = "__pure"
-            RESERVED       = shared|attribute|varying|atomic_uint|lowp|mediump|highp|precision|common|partition|active|asm|class|union|enum|typedef|template|this|resource|goto|public|static|extern|external|interface|long|double|fixed|unsigned|superp|input|output|hvec[234]|dvec[234]|fvec[234]|filter|sizeof|cast|namespace|using|[iu]?(sampler|image|texture)2DRect|sampler2DRectShadow|sampler3DRect|gl_\\w*
+            RESERVED       = shared|attribute|varying|atomic_uint|lowp|mediump|highp|precision|common|partition|active|asm|class|union|enum|typedef|template|this|resource|goto|public|static|extern|external|interface|long|double|fixed|unsigned|superp|input|output|hvec[234]|dvec[234]|fvec[234]|filter|sizeof|cast|namespace|[iu]?(sampler|image|texture)2DRect|sampler2DRectShadow|sampler3DRect
             IDENTIFIER     = [a-zA-Z_]\\w*
+            HASH           = "#"
             LPAREN         = "("
             RPAREN         = ")"
             LBRACE         = "{"
@@ -119,10 +121,12 @@ public class LexerGenerator {
             PIPEEQ         = "|="
             CARETEQ        = "^="
             SEMICOLON      = ";"
+            NEWLINE        = [\\r\\n]+
             WHITESPACE     = \\s+
             LINE_COMMENT   = //.*
-            BLOCK_COMMENT  = /\\*([^*]|\\*[^/])*\\*/
+            BLOCK_COMMENT  = /\\*(/|\\**[^/*])*\\*+/
             INVALID        = .""";
+    // skia's BLOCK_COMMENT does not match odd number of asterisks, e.g. /*****/, we fixed that
 
     // The number of bits to use per entry in our packed transition table. This is customizable:
     // - 1-bit: reasonable in theory. Doesn't actually pack many slices.

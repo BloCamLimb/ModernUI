@@ -19,15 +19,15 @@
 
 package icyllis.arc3d.test;
 
+import icyllis.arc3d.compiler.*;
+import icyllis.arc3d.compiler.lex.Lexer;
+import icyllis.arc3d.compiler.lex.Token;
+import icyllis.arc3d.compiler.tree.Type;
 import icyllis.arc3d.core.MathUtil;
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.geom.SDFRoundRectGeoProc;
 import icyllis.arc3d.opengl.*;
-import icyllis.arc3d.compiler.*;
-import icyllis.arc3d.compiler.parser.Lexer;
-import icyllis.arc3d.compiler.parser.Token;
-import icyllis.arc3d.compiler.tree.Type;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.EXTTextureCompressionS3TC;
@@ -42,11 +42,13 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 import static icyllis.arc3d.opengl.GLCore.*;
 import static org.lwjgl.system.MemoryUtil.*;
+import static org.lwjgl.util.shaderc.Shaderc.*;
 
 public class TestManagedResource {
 
@@ -123,67 +125,118 @@ public class TestManagedResource {
         }
 
         {
-            int vert = GLCore.glCreateShader(GLCore.GL_VERTEX_SHADER);
-            GLCore.glShaderSource(vert, """
-                    #version 450 core
-                    void main(void) {
-                        gl_Position = vec4(1,1,1,0);
-                    }
-                    """);
-            int frag = GLCore.glCreateShader(GLCore.GL_FRAGMENT_SHADER);
-            GLCore.glShaderSource(frag, """
-                    #version 450 core
-                    layout(std430, binding = 0) buffer UniformBlock {
-                        layout(offset=0) vec3 u_Projection;
-                        layout(offset=12) float u_Color;
-                    };
-                    layout(location = 0) smooth in vec2 f_Position;
-                    layout(location = 1) smooth in vec4 f_Color;
-                    layout(location = 0, index = 0) out vec4 FragColor0;
-                    void main(void) {
-                        FragColor0 = vec4(0);
-                    }
-                    """);
-            GLCore.glCompileShader(vert);
-            GLCore.glCompileShader(frag);
+            long compiler = shaderc_compiler_initialize();
+            if (compiler == 0) {
+                throw new RuntimeException("No compiler");
+            }
+            long options = shaderc_compile_options_initialize();
+            shaderc_compile_options_set_target_env(options, shaderc_target_env_opengl, shaderc_env_version_opengl_4_5);
+            shaderc_compile_options_set_target_spirv(options, shaderc_spirv_version_1_0);
+            // SPIRV-Tools optimization LOWER the performance on NVIDIA GPU
+            shaderc_compile_options_set_optimization_level(options, shaderc_optimization_level_zero);
+            long vertResult = compileSpv(compiler, options,
+                    """
+                            #version 450 core
+                            layout(location = 0) smooth out vec2 f_Position;
+                            void main(void) {
+                                f_Position = vec2(0);
+                                gl_Position = vec4(1,1,1,0);
+                            }
+                            """,
+                    shaderc_vertex_shader);
+            long fragResult = compileSpv(compiler, options,
+                    """
+                            #version 450 core
+                            layout(std430, binding = 0) buffer UniformBlock {
+                                layout(offset=0) vec3 u_Projection;
+                                layout(offset=16) vec4 u_Color;
+                            };
+                            layout(location = 0) smooth in vec2 f_Position;
+                            layout(location = 1) smooth in vec4 f_Color;
+                            layout(location = 0, index = 0) out vec4 FragColor0;
+                            void main(void) {
+                                FragColor0.x = mix(u_Color.x, 0.0, step(0.0,f_Position.x));
+                            }
+                            """,
+                    shaderc_fragment_shader);
+            if (vertResult == 0 || fragResult == 0) {
+                throw new RuntimeException("Failed to compile");
+            }
+            int program = GLCore.glCreateProgram();
+            int vert = GLCore.glSpecializeAndAttachShader(
+                    program, GLCore.GL_VERTEX_SHADER,
+                    shaderc_result_get_bytes(vertResult),
+                    dContext.getPipelineStateCache().getStats(),
+                    dContext.getErrorWriter()
+            );
+            int frag = GLCore.glSpecializeAndAttachShader(
+                    program, GLCore.GL_FRAGMENT_SHADER,
+                    shaderc_result_get_bytes(fragResult),
+                    dContext.getPipelineStateCache().getStats(),
+                    dContext.getErrorWriter()
+            );
+            /*int vert = GLCore.glCompileAndAttachShader(
+                    program, GLCore.GL_VERTEX_SHADER,
+                    """
+                            #version 450 core
+                            layout(location = 0) smooth out vec2 f_Position;
+                            void main(void) {
+                                f_Position = vec2(0);
+                                gl_Position = vec4(1,1,1,0);
+                            }
+                            """,
+                    dContext.getPipelineStateCache().getStats(),
+                    dContext.getErrorWriter()
+            );
+            int frag = GLCore.glCompileAndAttachShader(
+                    program, GLCore.GL_FRAGMENT_SHADER,
+                    """
+                            #version 450 core
+                            layout(std430, binding = 0) buffer UniformBlock {
+                                layout(offset=0) vec3 u_Projection;
+                                layout(offset=16) vec4 u_Color;
+                            };
+                            layout(location = 0) smooth in vec2 f_Position;
+                            layout(location = 1) smooth in vec4 f_Color;
+                            layout(location = 0, index = 0) out vec4 FragColor0;
+                            void main(void) {
+                                FragColor0.x = mix(u_Color.x, 0.0, step(0.0,f_Position.x));
+                            }
+                            """,
+                    dContext.getPipelineStateCache().getStats(),
+                    dContext.getErrorWriter()
+            );*/
+            shaderc_result_release(vertResult);
+            shaderc_result_release(fragResult);
+            shaderc_compile_options_release(options);
+            shaderc_compiler_release(compiler);
+            GLCore.glLinkProgram(program);
 
-            if (GLCore.glGetShaderi(frag, GLCore.GL_COMPILE_STATUS) == GLCore.GL_FALSE) {
-                String log = GLCore.glGetShaderInfoLog(frag, 8192).trim();
+            if (GLCore.glGetProgrami(program, GLCore.GL_LINK_STATUS) == GLCore.GL_FALSE) {
+                String log = GLCore.glGetProgramInfoLog(program, 8192).trim();
                 System.out.println(log);
             } else {
                 System.out.println("SUCCESS!");
+                try (MemoryStack stack = MemoryStack.stackPush()) {
+                    IntBuffer pLength = stack.mallocInt(1);
+                    IntBuffer pBinaryFormat = stack.mallocInt(1);
+                    glGetProgramiv(program, GL_PROGRAM_BINARY_LENGTH, pLength);
+                    int len = pLength.get(0);
+                    System.out.println(len);
+                    if (len > 0) {
+                        ByteBuffer pBinary = stack.malloc(len);
+                        glGetProgramBinary(program, pLength, pBinaryFormat, pBinary);
+                        System.out.println(pBinaryFormat.get(0));
+                        System.out.println(MemoryUtil.memUTF8(pBinary));
+                    }
+                }
             }
-            int prog = GLCore.glCreateProgram();
-            GLCore.glAttachShader(prog, vert);
-            GLCore.glAttachShader(prog, frag);
-            GLCore.glLinkProgram(prog);
-
-            if (GLCore.glGetProgrami(prog, GLCore.GL_LINK_STATUS) == GLCore.GL_FALSE) {
-                String log = GLCore.glGetProgramInfoLog(prog, 8192).trim();
-                System.out.println(log);
-            } else {
-                System.out.println("SUCCESS!");
-            }
-            GLCore.glDeleteProgram(prog);
+            GLCore.glDeleteProgram(program);
             GLCore.glDeleteShader(vert);
             GLCore.glDeleteShader(frag);
         }
 
         {
-            long bytes = 0;
-            bytes += 16 + MathUtil.align8(Lexer.MAPPINGS.length);
-            bytes += 16 + MathUtil.align8(Lexer.ACCEPTS.length);
-            bytes += 16 + MathUtil.align8(Lexer.INDICES.length * 2);
-            bytes += 16 + MathUtil.align8(Lexer.FULL.length * 4);
-            for (short[] elem : Lexer.FULL) {
-                bytes += 16 + MathUtil.align8(elem.length * 2);
-            }
-            bytes += 16 + MathUtil.align8(Lexer.PACKED.length * 4);
-            for (Lexer.PackedEntry elem : Lexer.PACKED) {
-                bytes += 16 + 4 + 4 + 16 + MathUtil.align8(elem.data().length);
-            }
-            pw.println("Lexer bytes: " + bytes);
-
             pw.println("Decode int: " + Long.decode("4294967295"));
         }
 
@@ -234,6 +287,43 @@ public class TestManagedResource {
         } catch (AssertionError e) {
             pw.println("Assert: " + (System.nanoTime() - time) / 1000000 + "ms");
         }
+    }
+
+    private static long compileSpv(long compiler, long options,
+                                   String source, int kind) {
+        long result = shaderc_compile_into_spv(compiler,
+                source,
+                kind,
+                "effect",
+                "main",
+                options);
+        if (result == 0) {
+            System.out.println("No result");
+            return 0;
+        }
+        long num_errors = shaderc_result_get_num_errors(result);
+        long num_warnings = shaderc_result_get_num_warnings(result);
+        System.out.println(num_errors + " errors, " + num_warnings + " warnings");
+        String error_message = shaderc_result_get_error_message(result);
+        System.out.println("msg: " + error_message);
+        int status = shaderc_result_get_compilation_status(result);
+        if (status == shaderc_compilation_status_success) {
+
+
+            long asm = shaderc_compile_into_spv_assembly(compiler,
+                    source,
+                    kind,
+                    "effect",
+                    "main",
+                    options);
+            System.out.println(MemoryUtil.memUTF8(shaderc_result_get_bytes(asm)));
+            shaderc_result_release(asm);
+
+            return result;
+        } else {
+            System.out.println("Failed " + status);
+        }
+        return 0;
     }
 
     public static void tokenize(PrintWriter pw) {
@@ -349,8 +439,8 @@ public class TestManagedResource {
                 """.toCharArray());
         long token;
         int kind;
-        while ((kind = Token.kind(token = lexer.next())) != Lexer.TK_END_OF_FILE) {
-            if (kind == Lexer.TK_WHITESPACE) continue;
+        while ((kind = Token.kind(token = lexer.next())) != Token.TK_END_OF_FILE) {
+            if (kind == Token.TK_WHITESPACE) continue;
             int offset = Token.offset(token);
             pw.println("(" + offset + ", " + (offset + Token.length(token)) + ") " + tokens[kind]);
         }
@@ -391,7 +481,7 @@ public class TestManagedResource {
             pw.println(target);
             target.unref();
         }
-        pso.bindPipeline(((GLDevice)dContext.getDevice()).currentCommandBuffer());
+        pso.bindPipeline(((GLDevice) dContext.getDevice()).currentCommandBuffer());
 
         pw.println(dContext.getPipelineStateCache().getStats());
     }
