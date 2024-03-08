@@ -44,29 +44,24 @@ public class TestShaderc {
         long result = shaderc_compile_into_spv_assembly(
                 compiler,
                 """
-                        #version 450 core
+                       #version 450    core
+                            # pragma deep dark # line 2
+                                  
+                                  \s
+                            # extension GL_ARB_enhanced_layouts: enable /*****/ //#  line 2
+                                  \s
+                        const int blockSize = -4 + 6;
                         layout(binding = 0, set = 0) uniform UniformBlock {
                             mat4 u_Projection;
                             mat4 u_ModelView;
                             vec4 u_Color;
                         } u_Buffer0;
-                        layout(binding = 0) uniform sampler2D u_Sampler0;
                         layout(location = 0) smooth in vec2 f_Position;
                         layout(location = 1) smooth in vec4 f_Color;
                         layout(location = 0, index = 0) out vec4 FragColor0;
                         layout(location = 0, index = 1) out vec4 FragColor1;
-                        float rr(vec2 a, vec2 b) {
-                            return float(vec2(a.x,1).y.x);
-                        }
-                        float sa(float a) {
-                            return a;
-                        }
-                        float rand(vec2 n) {
-                            const float[] a = float[](12.9898, n.x), b = float[](12.9898, n.x, n.y);
-                            return sa(sa(rr(n, vec2(a[0],12.1414))) * 83758.5453);
-                        }
                         void main(void) {
-                            float lod = textureQueryLod(u_Sampler0, f_Position).y;
+                            // M4 m = "what?";
                             FragColor0 = u_Buffer0.u_Color;
                         }""",
                 shaderc_fragment_shader,

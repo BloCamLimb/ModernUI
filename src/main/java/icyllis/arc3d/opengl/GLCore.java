@@ -407,6 +407,32 @@ public final class GLCore extends GL45C {
         return shader;
     }
 
+    public static int glCompileAndAttachShader(int program,
+                                               int shaderType,
+                                               String[] source,
+                                               PipelineStateCache.Stats stats,
+                                               PrintWriter pw) {
+        int shader = glCreateShader(shaderType);
+        if (shader == 0) {
+            return 0;
+        }
+        glShaderSource(shader, source);
+
+        glCompileShader(shader);
+        stats.incShaderCompilations();
+
+        if (glGetShaderi(shader, GL_COMPILE_STATUS) == GL_FALSE) {
+            String log = glGetShaderInfoLog(shader);
+            glDeleteShader(shader);
+            pw.println(log);
+            return 0;
+        }
+
+        // Attach the shader, but defer deletion until after we have linked the program.
+        glAttachShader(program, shader);
+        return shader;
+    }
+
     public static int glSpecializeAndAttachShader(int program,
                                                   int shaderType,
                                                   ByteBuffer spirv,
@@ -445,7 +471,8 @@ public final class GLCore extends GL45C {
         pw.println("------------------------");
         String[] lines = source.split("\n");
         for (int i = 0; i < lines.length; ++i) {
-            pw.printf(Locale.ROOT, "%4s\t%s\n", i + 1, lines[i]);
+            pw.printf(Locale.ROOT, "%4s\t%s", i + 1, lines[i]);
+            pw.println();
         }
         pw.println("Errors:");
         pw.println(errors);
@@ -461,7 +488,8 @@ public final class GLCore extends GL45C {
             pw.println(headers[i]);
             String[] lines = sources[i].split("\n");
             for (int j = 0; j < lines.length; ++j) {
-                pw.printf(Locale.ROOT, "%4s\t%s\n", j + 1, lines[j]);
+                pw.printf(Locale.ROOT, "%4s\t%s", j + 1, lines[j]);
+                pw.println();
             }
         }
         pw.println("Errors:");

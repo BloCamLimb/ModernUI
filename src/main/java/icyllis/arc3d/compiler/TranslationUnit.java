@@ -17,10 +17,10 @@
  * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.compiler.tree;
+package icyllis.arc3d.compiler;
 
-import icyllis.arc3d.compiler.*;
 import icyllis.arc3d.compiler.analysis.SymbolUsage;
+import icyllis.arc3d.compiler.tree.*;
 
 import javax.annotation.Nonnull;
 import java.util.*;
@@ -31,11 +31,11 @@ import java.util.*;
 public final class TranslationUnit extends Node implements Iterable<TopLevelElement> {
 
     private final char[] mSource;
+    private final int mSourceOffset;
+    private final int mSourceLength;
 
     private final ShaderKind mKind;
     private final CompileOptions mOptions;
-    private final boolean mIsBuiltin;
-    private final boolean mIsModule;
 
     private final BuiltinTypes mTypes;
 
@@ -44,26 +44,29 @@ public final class TranslationUnit extends Node implements Iterable<TopLevelElem
     private final ArrayList<TopLevelElement> mUniqueElements;
     private final ArrayList<TopLevelElement> mSharedElements;
 
+    private final List<Map.Entry<String, String>> mExtensions;
+
     private final SymbolUsage mUsage;
 
-    public TranslationUnit(int position,
-                           char[] source,
+    public TranslationUnit(char[] source,
+                           int sourceOffset,
+                           int sourceLength,
                            ShaderKind kind,
                            CompileOptions options,
-                           boolean isBuiltin,
-                           boolean isModule,
                            BuiltinTypes types,
                            SymbolTable symbolTable,
-                           ArrayList<TopLevelElement> uniqueElements) {
-        super(position);
+                           ArrayList<TopLevelElement> uniqueElements,
+                           List<Map.Entry<String, String>> extensions) {
+        super(Position.NO_POS);
         mSource = source;
+        mSourceOffset = sourceOffset;
+        mSourceLength = sourceLength;
         mKind = kind;
         mOptions = options;
-        mIsBuiltin = isBuiltin;
-        mIsModule = isModule;
         mTypes = types;
         mSymbolTable = symbolTable;
         mUniqueElements = uniqueElements;
+        mExtensions = extensions;
         mSharedElements = new ArrayList<>();
         mUsage = new SymbolUsage();
         mUsage.add(this);
@@ -73,20 +76,20 @@ public final class TranslationUnit extends Node implements Iterable<TopLevelElem
         return mSource;
     }
 
+    public int getSourceOffset() {
+        return mSourceOffset;
+    }
+
+    public int getSourceLength() {
+        return mSourceLength;
+    }
+
     public ShaderKind getKind() {
         return mKind;
     }
 
     public CompileOptions getOptions() {
         return mOptions;
-    }
-
-    public boolean isBuiltin() {
-        return mIsBuiltin;
-    }
-
-    public boolean isModule() {
-        return mIsModule;
     }
 
     public BuiltinTypes getTypes() {
@@ -103,6 +106,14 @@ public final class TranslationUnit extends Node implements Iterable<TopLevelElem
 
     public ArrayList<TopLevelElement> getSharedElements() {
         return mSharedElements;
+    }
+
+    /**
+     * A list of (extension_name, behavior) pairs. This list is mutable,
+     * you can add or remove elements.
+     */
+    public List<Map.Entry<String, String>> getExtensions() {
+        return mExtensions;
     }
 
     public SymbolUsage getUsage() {

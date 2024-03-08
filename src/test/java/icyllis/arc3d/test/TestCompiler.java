@@ -21,9 +21,8 @@ package icyllis.arc3d.test;
 
 import icyllis.arc3d.compiler.*;
 import icyllis.arc3d.compiler.SPIRVVersion;
-import icyllis.arc3d.compiler.lex.Lexer;
-import icyllis.arc3d.compiler.lex.Token;
-import icyllis.arc3d.compiler.tree.TranslationUnit;
+import icyllis.arc3d.compiler.lex.*;
+import icyllis.arc3d.compiler.TranslationUnit;
 import icyllis.arc3d.core.MathUtil;
 
 import java.io.IOException;
@@ -31,14 +30,22 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Objects;
 
 public class TestCompiler {
 
     public static final String SOURCE = """
+            #version 450    core
+                # pragma deep dark # line 2
+                      \s
+                      
+                # extension GL_ARB_enhanced_layouts: enable /*****/ //#  line 2
+                      using M4          \s
+                      = mat4;
             const int blockSize = -4 + 6;
             layout(binding = 0, set = 0) uniform UniformBlock {
-                mat4 u_Projection;
-                mat4 u_ModelView;
+                M4 u_Projection;
+                M4 u_ModelView;
                 vec4 u_Color;
             } u_Buffer0;
             layout(location = 0) smooth in vec2 f_Position;
@@ -46,6 +53,7 @@ public class TestCompiler {
             layout(location = 0, index = 0) out vec4 FragColor0;
             layout(location = 0, index = 1) out vec4 FragColor1;
             void main(void) {
+                // M4 m = "what?";
                 FragColor0 = u_Buffer0.u_Color;
             }
             """;
@@ -53,7 +61,7 @@ public class TestCompiler {
     public static void main(String[] args) {
         var compiler = new ShaderCompiler();
 
-        System.out.println(SOURCE.length());
+        System.out.println("Source length: " + SOURCE.length());
 
         {
             long bytes = 0;
@@ -69,12 +77,6 @@ public class TestCompiler {
                 bytes += 16 + 4 + 4 + 16 + MathUtil.align8(elem.data().length);
             }
             System.out.println("Lexer bytes: " + bytes);
-        }
-
-        Lexer lexer = new Lexer("//abc\r\n".toCharArray());
-        long token;
-        while (Token.kind(token = lexer.next()) != Token.TK_END_OF_FILE) {
-            System.out.println(Token.kind(token));
         }
 
         var options = new CompileOptions();
@@ -93,6 +95,7 @@ public class TestCompiler {
 
         System.out.println(translationUnit);
         System.out.println(translationUnit.getUsage());
+        System.out.println(translationUnit.getExtensions());
 
         ShaderCaps shaderCaps = new ShaderCaps();
         shaderCaps.mSPIRVVersion = SPIRVVersion.SPIRV_1_5;

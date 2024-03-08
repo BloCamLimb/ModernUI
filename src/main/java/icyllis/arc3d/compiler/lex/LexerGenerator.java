@@ -25,8 +25,7 @@ import it.unimi.dsi.fastutil.ints.*;
 import javax.annotation.Nonnull;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * Generates the {@link Lexer} class.
@@ -37,6 +36,7 @@ public class LexerGenerator {
     public static final String LEXICON = """
             INTLITERAL     = ([1-9]\\d*|0[0-7]*|0[xX][\\da-fA-F]+)[uU]?
             FLOATLITERAL   = (\\d*\\.\\d+([eE][+-]?\\d+)?|\\d+\\.\\d*([eE][+-]?\\d+)?|\\d+([eE][+-]?\\d+))[fF]?
+            STRINGLITERAL  = \\"[^\\"\\\\\\r\\n]*\\"
             TRUE           = "true"
             FALSE          = "false"
             BREAK          = "break"
@@ -122,7 +122,7 @@ public class LexerGenerator {
             CARETEQ        = "^="
             SEMICOLON      = ";"
             NEWLINE        = [\\r\\n]+
-            WHITESPACE     = \\s+
+            WHITESPACE     = [\\t\\013\\014 ]+
             LINE_COMMENT   = //.*
             BLOCK_COMMENT  = /\\*(/|\\**[^/*])*\\*+/
             INVALID        = .""";
@@ -147,14 +147,13 @@ public class LexerGenerator {
         List<String> tokens = new ArrayList<>();
         tokens.add("END_OF_FILE");
         RegexParser parser = new RegexParser();
+        // the line separator in Java text block is always ('\n'), which is system-independent
         for (String line : LEXICON.split("\n")) {
-            String[] split = line.split("\\s+");
-            assert split.length == 3;
-            String name = split[0];
-            String delimiter = split[1];
-            String pattern = split[2];
+            String[] split = line.split("=", 2);
+            assert split.length == 2;
+            String name = split[0].trim();
+            String pattern = split[1].trim();
             assert !name.isEmpty();
-            assert delimiter.equals("=");
             assert !pattern.isEmpty();
             tokens.add(name);
             if (pattern.startsWith("\"")) {

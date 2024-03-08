@@ -150,6 +150,11 @@ public final class SymbolTable {
             // If we find one here, we don't need to add its name to the symbol table.
             return symbol;
         }
+        if (key.length() > 1024) {
+            context.error(symbol.mPosition,
+                    "symbol name '" + key + "' is too long, " + key.length() + " > 1024 chars");
+            return null;
+        }
 
         // If this is a function declaration, we need to keep the overload chain in sync.
         if (symbol instanceof FunctionDecl) {

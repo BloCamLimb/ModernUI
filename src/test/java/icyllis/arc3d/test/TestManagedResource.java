@@ -61,7 +61,7 @@ public class TestManagedResource {
         Objects.requireNonNull(GL.getFunctionProvider());
         GLFW.glfwDefaultWindowHints();
         GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GLFW.GLFW_FALSE);
-        long window = GLFW.glfwCreateWindow(1, 1, "Test Window", 0, 0);
+        long window = GLFW.glfwCreateWindow(800, 600, "Test Window", 0, 0);
         if (window == 0) {
             throw new RuntimeException();
         }
@@ -115,7 +115,7 @@ public class TestManagedResource {
             ModuleLoader moduleLoader = ModuleLoader.getInstance();
             ShaderCompiler compiler = new ShaderCompiler();
             compiler.startContext(ShaderKind.BASE, new CompileOptions(), moduleLoader.getRootModule(),
-                    false, false, null);
+                    false, false, null, 0, 0);
             Type[] types = new Type[3];
             boolean success = Operator.MUL.determineBinaryType(compiler.getContext(),
                     moduleLoader.getBuiltinTypes().mHalf3x4,
@@ -163,7 +163,7 @@ public class TestManagedResource {
                 throw new RuntimeException("Failed to compile");
             }
             int program = GLCore.glCreateProgram();
-            int vert = GLCore.glSpecializeAndAttachShader(
+            /*int vert = GLCore.glSpecializeAndAttachShader(
                     program, GLCore.GL_VERTEX_SHADER,
                     shaderc_result_get_bytes(vertResult),
                     dContext.getPipelineStateCache().getStats(),
@@ -174,8 +174,8 @@ public class TestManagedResource {
                     shaderc_result_get_bytes(fragResult),
                     dContext.getPipelineStateCache().getStats(),
                     dContext.getErrorWriter()
-            );
-            /*int vert = GLCore.glCompileAndAttachShader(
+            );*/
+            int vert = GLCore.glCompileAndAttachShader(
                     program, GLCore.GL_VERTEX_SHADER,
                     """
                             #version 450 core
@@ -190,8 +190,11 @@ public class TestManagedResource {
             );
             int frag = GLCore.glCompileAndAttachShader(
                     program, GLCore.GL_FRAGMENT_SHADER,
-                    """
+                    new String[]{
+                            """
                             #version 450 core
+                            """,
+                            """
                             layout(std430, binding = 0) buffer UniformBlock {
                                 layout(offset=0) vec3 u_Projection;
                                 layout(offset=16) vec4 u_Color;
@@ -202,10 +205,11 @@ public class TestManagedResource {
                             void main(void) {
                                 FragColor0.x = mix(u_Color.x, 0.0, step(0.0,f_Position.x));
                             }
-                            """,
+                            """
+                    },
                     dContext.getPipelineStateCache().getStats(),
                     dContext.getErrorWriter()
-            );*/
+            );
             shaderc_result_release(vertResult);
             shaderc_result_release(fragResult);
             shaderc_compile_options_release(options);
