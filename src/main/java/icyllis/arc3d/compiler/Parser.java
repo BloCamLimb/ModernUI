@@ -41,18 +41,64 @@ public class Parser {
     private final CompileOptions mOptions;
 
     private final char[] mSource;
+    private final int mSourceOffset;
+    private final int mSourceLength;
     private final Lexer mLexer;
 
     private final LongStack mPushback = new LongArrayList();
 
+    private LinkedHashMap<String, String> mExtensions;
+    private ArrayList<Map.Entry<String, Boolean>> mIncludes;
+
     private ArrayList<TopLevelElement> mUniqueElements;
 
-    public Parser(ShaderCompiler compiler, ShaderKind kind, CompileOptions options, char[] source) {
+    public Parser(ShaderCompiler compiler, ShaderKind kind, CompileOptions options,
+                  char[] source, int offset, int length) {
         mCompiler = Objects.requireNonNull(compiler);
         mOptions = Objects.requireNonNull(options);
         mKind = Objects.requireNonNull(kind);
         mSource = source;
-        mLexer = new Lexer(source);
+        mSourceOffset = offset;
+        mSourceLength = length;
+        mLexer = new Lexer(source, offset, length);
+    }
+
+    /**
+     * Preprocess directives. A directive can only appear before any declaration.
+     * <p>
+     * #version 3-digits (core|es)?<br>
+     * The version number has no semantics impact, but must be 300 at least.
+     * <p>
+     * #extension extension_name : behavior<br>
+     * The extension has no semantics impact when generating SPIR-V,
+     * but it's retained when generating GLSL for some GLSL only extensions.
+     * A new behavior will override the earlier one for the same extension name.
+     * <p>
+     * #include &lt;file&gt;<br>
+     * #include "file"<br>
+     * This method returns the include files as a list of (file,boolean) pairs. The second
+     * boolean value of true represents it's angle-bracketed (system include), otherwise it's
+     * double-quoted (relative include). An implementation should normalize the file name and
+     * compile the include files first (via a new Parser's {@link #parseModule}).
+     * The return list is not deduplicated.
+     * <p>
+     * #pragma<br>
+     * The whole line is silently ignored.
+     * <p>
+     * Note that version, extension, and include must appear in order. Other directives can
+     * cause compilation errors. This process is optional.
+     *
+     * @return include files (can be empty) or null if there's an error
+     */
+    @Nullable
+    public List<Map.Entry<String, Boolean>> preprocess() {
+        mIncludes = new ArrayList<>();
+        Directives();
+        Context context = mCompiler.getContext();
+        if (context.getErrorHandler().errorCount() == 0) {
+            return mIncludes;
+        }
+        return null;
     }
 
     @Nullable
@@ -61,18 +107,22 @@ public class Parser {
         mUniqueElements = new ArrayList<>();
         CompilationUnit();
         Context context = mCompiler.getContext();
+        assert !context.isModule();
+        assert !context.isBuiltin();
         final TranslationUnit result;
         if (context.getErrorHandler().errorCount() == 0) {
             result = new TranslationUnit(
-                    rangeFromOffset(0),
                     mSource,
+                    mSourceOffset,
+                    mSourceLength,
                     mKind,
                     mOptions,
-                    context.isBuiltin(),
-                    context.isModule(),
                     context.getTypes(),
                     context.getSymbolTable(),
-                    mUniqueElements
+                    mUniqueElements,
+                    mExtensions != null
+                            ? new ArrayList<>(mExtensions.entrySet())
+                            : new ArrayList<>()
             );
         } else {
             result = null;
@@ -87,6 +137,7 @@ public class Parser {
         mUniqueElements = new ArrayList<>();
         CompilationUnit();
         Context context = mCompiler.getContext();
+        assert context.isModule();
         final ModuleUnit result;
         if (context.getErrorHandler().errorCount() == 0) {
             result = new ModuleUnit();
@@ -122,14 +173,14 @@ public class Parser {
     }
 
     /**
-     * Return the next non-whitespace token from the parse stream.
+     * Return the next non-whitespace token from the parse stream, including newlines.
+     * Pp refers to preprocessor, this is used only in preprocessing.
      */
     // @formatter:off
-    private long nextToken() {
+    private long nextPpToken() {
         for (;;) {
             long token = nextRawToken();
             switch (Token.kind(token)) {
-                case Token.TK_NEWLINE:
                 case Token.TK_WHITESPACE:
                 case Token.TK_LINE_COMMENT:
                 case Token.TK_BLOCK_COMMENT:
@@ -142,13 +193,14 @@ public class Parser {
     // @formatter:on
 
     /**
-     * Return the next non-whitespace token from the parse stream, including newlines.
+     * Return the next non-whitespace token from the parse stream.
      */
     // @formatter:off
-    private long nextTokenWithNewline() {
+    private long nextToken() {
         for (;;) {
             long token = nextRawToken();
             switch (Token.kind(token)) {
+                case Token.TK_NEWLINE:
                 case Token.TK_WHITESPACE:
                 case Token.TK_LINE_COMMENT:
                 case Token.TK_BLOCK_COMMENT:
@@ -187,7 +239,7 @@ public class Parser {
     private String text(long token) {
         int offset = Token.offset(token);
         int length = Token.length(token);
-        return new String(mSource, offset, length);
+        return new String(mSource, offset + mSourceOffset, length);
     }
 
     private int position(long token) {
@@ -267,7 +319,7 @@ public class Parser {
         if (Token.kind(next) != kind) {
             String msg = "expected " + expected + ", but found '" + text(next) + "'";
             error(next, msg);
-            throw new IllegalStateException(msg);
+            throw new FatalError(msg);
         }
         return next;
     }
@@ -283,60 +335,178 @@ public class Parser {
         if (mCompiler.getContext().getSymbolTable().isBuiltinType(text(token))) {
             String msg = "expected an identifier, but found type '" + text(token) + "'";
             error(token, msg);
-            throw new IllegalStateException(msg);
+            throw new FatalError(msg);
         }
         return token;
     }
 
-    private void CompilationUnit() {
+    private void Directives() {
         // ideally we can break long text into pieces, but shader code should not be too long
-        if (mSource.length > 0x7FFFFE) {
+        if (mSourceLength > 0x7FFFFE) {
             mCompiler.getContext().error(Position.NO_POS,
-                    "source code is too long, " + mSource.length + " > 8,388,606 chars");
+                    "source code is too long, " + mSourceLength + " > 8,388,606 chars");
             return;
         }
-        if (peek(Token.TK_HASH)) {
-            Directive(true, true);
-        }
-        boolean prevIsNewline = true;
+        boolean first = true;
         for (;;) {
-            final long token;
-            if (mPushback.isEmpty()) {
-                token = nextTokenWithNewline();
-                mPushback.push(token);
-            } else {
-                token = mPushback.topLong();
+            switch (Token.kind(peek())) {
+                case Token.TK_INVALID -> {
+                    error(peek(), "invalid token");
+                    return;
+                }
+                case Token.TK_HASH -> {
+                    if (!Directive(first)) {
+                        return;
+                    }
+                    first = false;
+                }
+                default -> {
+                    return;
+                }
             }
-            switch (Token.kind(token)) {
+        }
+    }
+
+    // this method never throw FatalError, returns false instead
+    private boolean Directive(boolean first) {
+        long hash = nextPpToken();
+        long directive = nextPpToken();
+        if (Token.kind(directive) == Token.TK_NEWLINE) {
+            // empty directive
+            return true;
+        }
+        String text = text(directive);
+        if (Token.kind(directive) != Token.TK_IDENTIFIER) {
+            error(directive, "expected a directive name, but found '" + text + "'");
+            return false;
+        }
+        switch (text) {
+            case "version": {
+                if (!first) {
+                    mCompiler.getContext().error(rangeFrom(hash),
+                            "version directive must appear before anything else");
+                }
+                long version = nextPpToken();
+                if (Token.kind(version) != Token.TK_INTLITERAL) {
+                    error(version, "version must be an integer literal");
+                    return false;
+                }
+                final int ver;
+                try {
+                    ver = Integer.parseInt(text(version));
+                } catch (NumberFormatException e) {
+                    error(version, "invalid version number");
+                    return false;
+                }
+                final String validProfile;
+                switch (ver) {
+                    case 300, 310, 320 -> validProfile = "es";
+                    case 330, 400, 410, 420, 430, 440, 450, 460 -> validProfile = "core";
+                    default -> {
+                        error(version, "unsupported version number " + ver);
+                        return false;
+                    }
+                }
+                long profile = nextPpToken();
+                if (Token.kind(profile) == Token.TK_NEWLINE) {
+                    return true;
+                }
+                String profileText = text(profile);
+                if (!validProfile.equals(profileText)) {
+                    switch (profileText) {
+                        case "es" -> error(profile,
+                                "only version 300, 310, and 320 support the es profile");
+                        case "core" -> error(profile,
+                                "only version 330, 400, 410, 420, 430, 440, 450, and 460 support the core profile");
+                        default -> error(profile, "unsupported profile");
+                    }
+                }
+                break;
+            }
+            case "extension": {
+                long extension = nextPpToken();
+                if (Token.kind(extension) != Token.TK_IDENTIFIER) {
+                    error(extension, "expected an extension name");
+                    return false;
+                }
+                long colon = nextPpToken();
+                if (Token.kind(colon) != Token.TK_COLON) {
+                    error(colon, "expected ':'");
+                    return false;
+                }
+                long behavior = nextPpToken();
+                String behaviorText = text(behavior);
+                switch (behaviorText) {
+                    case "disable", "require", "enable", "warn" -> {
+                    }
+                    default -> {
+                        error(behavior, "unsupported behavior");
+                        return false;
+                    }
+                }
+                if (!mIncludes.isEmpty()) {
+                    mCompiler.getContext().error(rangeFrom(hash),
+                            "extension directive must appear before any include directive");
+                }
+                if (mExtensions == null) {
+                    mExtensions = new LinkedHashMap<>();
+                }
+                // override
+                mExtensions.put(text(extension), behaviorText);
+                break;
+            }
+            case "include": {
+                long left = nextPpToken();
+                //TODO
+                break;
+            }
+            default:
+                mCompiler.getContext().error(rangeFrom(hash),
+                        "unsupported directive '" + text + "'");
+            case "pragma":
+                //noinspection StatementWithEmptyBody
+                while (Token.kind(nextPpToken()) != Token.TK_NEWLINE)
+                    ;
+                return true;
+        }
+        long end = nextPpToken();
+        if (Token.kind(end) != Token.TK_NEWLINE) {
+            // this guarantees that the next directive starts with newline
+            error(end, "a directive must end with newline");
+            return false;
+        }
+        return true;
+    }
+
+    private void CompilationUnit() {
+        // ideally we can break long text into pieces, but shader code should not be too long
+        if (mSourceLength > 0x7FFFFE) {
+            mCompiler.getContext().error(Position.NO_POS,
+                    "source code is too long, " + mSourceLength + " > 8,388,606 chars");
+            return;
+        }
+        boolean beforeDeclaration = true;
+        for (;;) {
+            switch (Token.kind(peek())) {
                 case Token.TK_END_OF_FILE -> {
                     return;
                 }
                 case Token.TK_INVALID -> {
-                    error(token, "invalid token");
+                    error(peek(), "invalid token");
                     return;
                 }
-                case Token.TK_NEWLINE -> {
-                    prevIsNewline = true;
-                    nextRawToken();
-                }
-                // directive starts with newline, ends with newline
                 case Token.TK_HASH -> {
-                    if (!Directive(false, prevIsNewline)) {
-                        return;
-                    }
+                    error(peek(), "directive must appear before any declaration");
+                    return;
                 }
-                // others never end with newline
-                case Token.TK_USING -> {
-                    prevIsNewline = false;
-                    UsingDirective();
-                }
+                case Token.TK_USING -> UsingDirective(beforeDeclaration);
                 default -> {
-                    prevIsNewline = false;
+                    beforeDeclaration = false;
                     try {
                         if (!GlobalDeclaration()) {
                             return;
                         }
-                    } catch (IllegalStateException e) {
+                    } catch (FatalError e) {
                         // fatal error
                         return;
                     }
@@ -345,47 +515,18 @@ public class Parser {
         }
     }
 
-    private boolean Directive(boolean first, boolean prevIsNewline) {
-        long start = nextRawToken();
-        if (!prevIsNewline) {
-            error(start, "a directive must start with newline");
-            return false;
-        }
-        long directive = nextTokenWithNewline();
-        String text = text(directive);
-        if (Token.kind(directive) != Token.TK_IDENTIFIER) {
-            error(directive, "expected a directive, but found '" + text + "'");
-            return false;
-        }
-        if ("version".equals(text)) {
-            if (!first) {
-                error(start, "#version directive must appear before anything else");
-                return false;
-            }
-            long version = nextTokenWithNewline();
-            //TODO validate version
-        } else {
-            //TODO extension and include
-            error(directive, "unsupported directive '" + text + "'");
-            return false;
-        }
-        long end = nextTokenWithNewline();
-        if (Token.kind(end) != Token.TK_NEWLINE) {
-            error(end, "a directive must end with newline");
-            return false;
-        }
-        return true;
-    }
-
     /**
      * <pre>{@literal
      * UsingDirective
      *     : USING IDENTIFIER EQ IDENTIFIER SEMICOLON
      * }</pre>
      */
-    private void UsingDirective() {
+    private void UsingDirective(boolean beforeDeclaration) {
         // type alias
-        nextRawToken();
+        long start = nextRawToken();
+        if (!beforeDeclaration) {
+            error(start, "'using' directive must appear before any other declaration");
+        }
         long left = expectIdentifier();
         expect(Token.TK_EQ, "'='");
         long right = expect(Token.TK_IDENTIFIER, "a type name");
@@ -1259,6 +1400,11 @@ public class Parser {
             }
             case Token.TK_INTLITERAL -> IntLiteral();
             case Token.TK_FLOATLITERAL -> FloatLiteral();
+            case Token.TK_STRINGLITERAL -> {
+                nextToken();
+                error(t, "string literal '" + text(t) + "' is not permitted");
+                yield null;
+            }
             case Token.TK_TRUE, Token.TK_FALSE -> BooleanLiteral();
             case Token.TK_LPAREN -> {
                 nextToken();
@@ -1274,7 +1420,7 @@ public class Parser {
                 nextToken();
                 error(t, "expected identifier, literal constant or parenthesized expression, but found '" +
                         text(t) + "'");
-                throw new IllegalStateException();
+                throw new FatalError();
             }
         };
     }

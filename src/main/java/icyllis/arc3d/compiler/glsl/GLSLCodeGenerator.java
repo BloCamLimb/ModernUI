@@ -20,7 +20,7 @@
 package icyllis.arc3d.compiler.glsl;
 
 import icyllis.arc3d.compiler.*;
-import icyllis.arc3d.compiler.tree.TranslationUnit;
+import icyllis.arc3d.compiler.TranslationUnit;
 import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.Nonnull;

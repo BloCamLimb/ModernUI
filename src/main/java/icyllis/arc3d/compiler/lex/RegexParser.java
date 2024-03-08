@@ -131,22 +131,44 @@ public final class RegexParser {
     }
     // @formatter:on
 
+    private char octal() {
+        ++mOffset;
+        int n = peek();
+        if (((n - '0') | ('7' - n)) >= 0) {
+            ++mOffset;
+            int m = peek();
+            if (((m - '0') | ('7' - m)) >= 0) {
+                ++mOffset;
+                int o = peek();
+                if ((((o - '0') | ('7' - o)) >= 0) && (((n - '0') | ('3' - n)) >= 0)) {
+                    return (char) ((n - '0') * 64 + (m - '0') * 8 + (o - '0'));
+                }
+                --mOffset;
+                return (char) ((n - '0') * 8 + (m - '0'));
+            }
+            --mOffset;
+            return (char) (n - '0');
+        }
+        throw new IllegalStateException("bad octal");
+    }
+
     /**
      * Returns a node representing the given escape character (e.g. escape('n') returns a
      * node which matches a line feed character).
      */
-    private static RegexNode escape(char c) {
+    private RegexNode escape(char c) {
         return switch (c) {
-            case 't' -> RegexNode.Char('\t');
-            case 'n' -> RegexNode.Char('\n');
-            case 'r' -> RegexNode.Char('\r');
+            case '0' -> RegexNode.Char(octal());
+            case 't' -> RegexNode.Char('\t'); // HT
+            case 'n' -> RegexNode.Char('\n'); // LF
+            case 'r' -> RegexNode.Char('\r'); // CR
             case 's' -> RegexNode.CharClass(
-                    RegexNode.Char('\011'),
-                    RegexNode.Char('\012'),
-                    RegexNode.Char('\013'),
-                    RegexNode.Char('\014'),
-                    RegexNode.Char('\015'),
-                    RegexNode.Char('\040'));
+                    RegexNode.Char('\011'), // HT
+                    RegexNode.Char('\012'), // LF
+                    RegexNode.Char('\013'), // VT
+                    RegexNode.Char('\014'), // FF
+                    RegexNode.Char('\015'), // CR
+                    RegexNode.Char(' '));
             case 'd' -> RegexNode.Range('0', '9');
             case 'w' -> RegexNode.CharClass(
                     RegexNode.Range('a', 'z'),

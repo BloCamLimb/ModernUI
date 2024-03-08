@@ -26,6 +26,16 @@ package icyllis.arc3d.compiler;
 public class CompileOptions {
 
     /**
+     * Whether to do preprocessing? If you have done preprocessing, you may set
+     * this to false.
+     * <p>
+     * Note: Our preprocessor is not available for module units.
+     *
+     * @see Parser#preprocess()
+     */
+    public boolean mPreprocess = true;
+
+    /**
      * Function with this name will be considered as the entry point of
      * a shader executable.
      */

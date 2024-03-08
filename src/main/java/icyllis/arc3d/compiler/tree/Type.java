@@ -1490,8 +1490,12 @@ public class Type extends Symbol {
             mNestingDepth = nestingDepth;
             mInterfaceBlock = interfaceBlock;
             int components = 0;
-            for (Field field : mFields) {
-                components += field.type().getComponents();
+            try {
+                for (Field field : mFields) {
+                    components += field.type().getComponents();
+                }
+            } catch (AssertionError e) {
+                components = 0;
             }
             mComponents = components;
         }

@@ -19,9 +19,6 @@
 
 package icyllis.arc3d.compiler;
 
-import icyllis.arc3d.compiler.tree.TranslationUnit;
-import org.lwjgl.BufferUtils;
-
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 

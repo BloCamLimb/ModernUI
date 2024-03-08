@@ -171,7 +171,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         estimatedSize += mDecorationBuffer.size() * 4;
         estimatedSize += mConstantBuffer.size() * 4;
         estimatedSize += mFunctionBuffer.size() * 4;
-        estimatedSize = estimatedSize + 40; // ExecutionMode
+        estimatedSize = estimatedSize + 12; // ExecutionMode
 
         // Header
         // 0 - magic number
