@@ -37,18 +37,20 @@ public final class Layout {
             kPixelCenterInteger_LayoutFlag = 1 << 1,
             kEarlyFragmentTests_LayoutFlag = 1 << 2,
             kBlendSupportAllEquations_LayoutFlag = 1 << 3,  // OpenGL only
-            kPushConstant_LayoutFlag = 1 << 4;              // Vulkan only
+            kPushConstant_LayoutFlag = 1 << 4,              // Vulkan only
+            kStd140_LayoutFlag = 1 << 5,
+            kStd430_LayoutFlag = 1 << 6;
     // These flags indicate if the qualifier appeared, regardless of the accompanying value.
     public static final int
-            kLocation_LayoutFlag = 1 << 5,
-            kComponent_LayoutFlag = 1 << 6,
-            kIndex_LayoutFlag = 1 << 7,
-            kBinding_LayoutFlag = 1 << 8,
-            kOffset_LayoutFlag = 1 << 9,
-            kSet_LayoutFlag = 1 << 10,
-            kInputAttachmentIndex_LayoutFlag = 1 << 11,
-            kBuiltin_LayoutFlag = 1 << 12;
-    public static final int kCount_LayoutFlag = 13;
+            kLocation_LayoutFlag = 1 << 7,
+            kComponent_LayoutFlag = 1 << 8,
+            kIndex_LayoutFlag = 1 << 9,
+            kBinding_LayoutFlag = 1 << 10,
+            kOffset_LayoutFlag = 1 << 11,
+            kSet_LayoutFlag = 1 << 12,
+            kInputAttachmentIndex_LayoutFlag = 1 << 13,
+            kBuiltin_LayoutFlag = 1 << 14;
+    public static final int kCount_LayoutFlag = 15;
 
     public static String describeLayoutFlag(int flag) {
         assert Integer.bitCount(flag) == 1;
@@ -58,14 +60,16 @@ public final class Layout {
             case 2 -> "early_fragment_tests";
             case 3 -> "blend_support_all_equations";
             case 4 -> "push_constant";
-            case 5 -> "location";
-            case 6 -> "component";
-            case 7 -> "index";
-            case 8 -> "binding";
-            case 9 -> "offset";
-            case 10 -> "set";
-            case 11 -> "input_attachment_index";
-            case 12 -> "builtin";
+            case 5 -> "std140";
+            case 6 -> "std430";
+            case 7 -> "location";
+            case 8 -> "component";
+            case 9 -> "index";
+            case 10 -> "binding";
+            case 11 -> "offset";
+            case 12 -> "set";
+            case 13 -> "input_attachment_index";
+            case 14 -> "builtin";
             default -> "";
         };
     }
@@ -218,6 +222,12 @@ public final class Layout {
         }
         if ((mLayoutFlags & kPushConstant_LayoutFlag) != 0) {
             joiner.add("push_constant");
+        }
+        if ((mLayoutFlags & kStd140_LayoutFlag) != 0) {
+            joiner.add("std140");
+        }
+        if ((mLayoutFlags & kStd430_LayoutFlag) != 0) {
+            joiner.add("std430");
         }
         return joiner.toString();
     }

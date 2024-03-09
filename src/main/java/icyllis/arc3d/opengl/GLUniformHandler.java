@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -175,8 +175,6 @@ public class GLUniformHandler extends UniformHandler {
                 // ARB_shading_language_420pack
                 out.append(", binding = ");
                 out.append(UNIFORM_BINDING);
-                String extensionName = mPipelineBuilder.shaderCaps().mShadingLanguage420PackExtensionName;
-                mPipelineBuilder.addExtension(visibility, extensionName);
             }
             out.append(") uniform ");
             out.append(UNIFORM_BLOCK_NAME);
@@ -186,10 +184,6 @@ public class GLUniformHandler extends UniformHandler {
                 out.append(";\n");
             }
             out.append("};\n");
-            if (mPipelineBuilder.shaderCaps().mEnhancedLayouts) {
-                String extensionName = mPipelineBuilder.shaderCaps().mEnhancedLayoutsExtensionName;
-                mPipelineBuilder.addExtension(visibility, extensionName);
-            }
         }
 
         for (var sampler : mSamplers) {
@@ -199,10 +193,6 @@ public class GLUniformHandler extends UniformHandler {
             }
             sampler.mVariable.appendDecl(out);
             out.append(";\n");
-            if (mPipelineBuilder.shaderCaps().mShadingLanguage420Pack) {
-                String extensionName = mPipelineBuilder.shaderCaps().mShadingLanguage420PackExtensionName;
-                mPipelineBuilder.addExtension(visibility, extensionName);
-            }
         }
     }
 }

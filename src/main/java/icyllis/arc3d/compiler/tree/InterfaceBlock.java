@@ -19,7 +19,8 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import icyllis.arc3d.compiler.*;
+import icyllis.arc3d.compiler.Context;
+import icyllis.arc3d.compiler.ShaderKind;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -62,7 +63,9 @@ public final class InterfaceBlock extends TopLevelElement {
         if ((blockStorage & (Modifiers.kUniform_Flag | Modifiers.kBuffer_Flag)) != 0) {
             permittedLayoutFlags |= Layout.kBinding_LayoutFlag |
                     Layout.kSet_LayoutFlag |
-                    Layout.kPushConstant_LayoutFlag;
+                    Layout.kPushConstant_LayoutFlag |
+                    Layout.kStd140_LayoutFlag |
+                    Layout.kStd430_LayoutFlag;
         }
         if (blockStorage == Modifiers.kBuffer_Flag) {
             permittedFlags |= Modifiers.kMemory_Flags;
@@ -90,7 +93,7 @@ public final class InterfaceBlock extends TopLevelElement {
                     (fieldModifiers.flags() & Modifiers.kStorage_Flags) != blockStorage) {
                 context.error(field.modifiers().mPosition,
                         "storage qualifier of a member must be storage qualifier '" +
-                        Modifiers.describeFlag(blockStorage) + "' of the block");
+                                Modifiers.describeFlag(blockStorage) + "' of the block");
                 success = false;
             }
             if ((blockStorage & (Modifiers.kIn_Flag | Modifiers.kOut_Flag)) != 0) {

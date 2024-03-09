@@ -40,10 +40,11 @@ public class TestCompiler {
                       \s
                       
                 # extension GL_ARB_enhanced_layouts: enable /*****/ //#  line 2
+            # include  <fog>  /*  */
                       using M4          \s
                       = mat4;
             const int blockSize = -4 + 6;
-            layout(binding = 0, set = 0) uniform UniformBlock {
+            layout(std140, binding = 0, set = 0) uniform UniformBlock {
                 M4 u_Projection;
                 M4 u_ModelView;
                 vec4 u_Color;

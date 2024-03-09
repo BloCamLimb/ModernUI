@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -53,7 +53,7 @@ public abstract class RefCnt implements RefCounted {
         } catch (AssertionError e) {
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 // subclasses should override toString() for debug purposes
-                TRACKER.forEach((o, __) -> System.err.printf("RefCnt %d: %s\n", o.getRefCntVolatile(), o));
+                TRACKER.forEach((o, __) -> System.err.printf("RefCnt %d: %s%n", o.getRefCntVolatile(), o));
                 assert TRACKER.isEmpty() : "Memory leaks in reference-counted objects";
             }, "RefCnt-Tracker"));
         }

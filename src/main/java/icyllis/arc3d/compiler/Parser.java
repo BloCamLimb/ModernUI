@@ -45,7 +45,7 @@ public class Parser {
     private final int mSourceLength;
     private final Lexer mLexer;
 
-    private final LongStack mPushback = new LongArrayList();
+    private final LongStack mPushback = new LongArrayList(1);
 
     private LinkedHashMap<String, String> mExtensions;
     private ArrayList<Map.Entry<String, Boolean>> mIncludes;
@@ -239,6 +239,14 @@ public class Parser {
     private String text(long token) {
         int offset = Token.offset(token);
         int length = Token.length(token);
+        return text(offset, length);
+    }
+
+    @Nonnull
+    private String text(int offset, int length) {
+        if (length == 0) {
+            return "EOF";
+        }
         return new String(mSource, offset + mSourceOffset, length);
     }
 
@@ -371,7 +379,8 @@ public class Parser {
     private boolean Directive(boolean first) {
         long hash = nextPpToken();
         long directive = nextPpToken();
-        if (Token.kind(directive) == Token.TK_NEWLINE) {
+        if (Token.kind(directive) == Token.TK_NEWLINE ||
+                Token.kind(directive) == Token.TK_END_OF_FILE) {
             // empty directive
             return true;
         }
@@ -408,8 +417,13 @@ public class Parser {
                     }
                 }
                 long profile = nextPpToken();
-                if (Token.kind(profile) == Token.TK_NEWLINE) {
+                if (Token.kind(profile) == Token.TK_NEWLINE ||
+                        Token.kind(profile) == Token.TK_END_OF_FILE) {
                     return true;
+                }
+                if (Token.kind(profile) != Token.TK_IDENTIFIER) {
+                    error(profile, "expected a profile name");
+                    return false;
                 }
                 String profileText = text(profile);
                 if (!validProfile.equals(profileText)) {
@@ -457,25 +471,62 @@ public class Parser {
             }
             case "include": {
                 long left = nextPpToken();
-                //TODO
+                if (Token.kind(left) == Token.TK_STRINGLITERAL) {
+                    int offset = Token.offset(left);
+                    int length = Token.length(left);
+                    // remove quotes
+                    String file = text(offset + 1, length - 2);
+                    mIncludes.add(Map.entry(file, Boolean.FALSE));
+                } else if (Token.kind(left) == Token.TK_LT) {
+                    long right;
+                    CYCLE:
+                    for (;;) {
+                        right = nextPpToken();
+                        switch (Token.kind(right)) {
+                            case Token.TK_NEWLINE:
+                            case Token.TK_END_OF_FILE:
+                                error(right, "expected right angle bracket");
+                                return false;
+                            case Token.TK_GT:
+                                break CYCLE;
+                            default:
+                                break;
+                        }
+                    }
+                    int offset = Token.offset(left);
+                    // remove the first angle
+                    String file = text(offset + 1, Token.offset(right) - offset - 1);
+                    mIncludes.add(Map.entry(file, Boolean.TRUE));
+                } else {
+                    error(left, "expected quoted string or angle-bracketed string");
+                    return false;
+                }
                 break;
             }
             default:
                 mCompiler.getContext().error(rangeFrom(hash),
                         "unsupported directive '" + text + "'");
             case "pragma":
-                //noinspection StatementWithEmptyBody
-                while (Token.kind(nextPpToken()) != Token.TK_NEWLINE)
-                    ;
-                return true;
+                for (;;) {
+                    long token = nextPpToken();
+                    switch (Token.kind(token)) {
+                        case Token.TK_NEWLINE:
+                        case Token.TK_END_OF_FILE:
+                            return true;
+                        default:
+                            break;
+                    }
+                }
         }
         long end = nextPpToken();
-        if (Token.kind(end) != Token.TK_NEWLINE) {
-            // this guarantees that the next directive starts with newline
-            error(end, "a directive must end with newline");
-            return false;
-        }
-        return true;
+        return switch (Token.kind(end)) {
+            case Token.TK_NEWLINE, Token.TK_END_OF_FILE -> true;
+            default -> {
+                // this guarantees that the next directive starts with newline
+                error(end, "a directive must end with newline");
+                yield false;
+            }
+        };
     }
 
     private void CompilationUnit() {
@@ -1566,6 +1617,8 @@ public class Parser {
                 case "early_fragment_tests" -> Layout.kEarlyFragmentTests_LayoutFlag;
                 case "blend_support_all_equations" -> Layout.kBlendSupportAllEquations_LayoutFlag;
                 case "push_constant" -> Layout.kPushConstant_LayoutFlag;
+                case "std140" -> Layout.kStd140_LayoutFlag;
+                case "std430" -> Layout.kStd430_LayoutFlag;
                 case "location" -> Layout.kLocation_LayoutFlag;
                 case "component" -> Layout.kComponent_LayoutFlag;
                 case "index" -> Layout.kIndex_LayoutFlag;

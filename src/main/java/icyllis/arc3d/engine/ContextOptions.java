@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,14 +20,19 @@
 package icyllis.arc3d.engine;
 
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
+ * Holds the options for creating a {@link DirectContext}, all fields should remain unchanged
+ * after creating the context.
+ * <p>
  * Boolean value represents a tristate:
- * {@link Boolean#FALSE}: Forces an option to be disabled.
- * {@link Boolean#TRUE}: Forces an option to be enabled.
- * {@code null}: Uses default behavior, which may use runtime properties (e.g. driver version).
+ * <ul>
+ * <li>{@link Boolean#FALSE}: Forces an option to be disabled.</li>
+ * <li>{@link Boolean#TRUE}: Forces an option to be enabled.</li>
+ * <li>{@code null}: Uses default behavior, which may use runtime properties (e.g. driver version).</li>
+ * </ul>
+ * <p>
+ * This class is part of public API.
  */
 public final class ContextOptions {
 

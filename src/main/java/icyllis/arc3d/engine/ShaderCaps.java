@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -54,28 +54,16 @@ public class ShaderCaps extends icyllis.arc3d.compiler.ShaderCaps {
      * True if either 'textureQueryLod' (GLSL 4.00) or 'textureQueryLOD' (ARB/EXT) is supported.
      */
     public boolean mTextureQueryLod = true;
-    /**
-     * Non-null if {@link #mTextureQueryLod} is supported from an extension (ARB/EXT).
-     */
-    public String mTextureQueryLodExtension = null;
 
     /**
-     * True if either OpenGL 4.2 or 'ARB_shading_language_420pack' is supported.
+     * True if either OpenGL 4.2 is supported.
      */
     public boolean mShadingLanguage420Pack = true;
-    /**
-     * Non-null if {@link #mShadingLanguage420Pack} is supported from an extension.
-     */
-    public String mShadingLanguage420PackExtensionName = null;
 
     /**
-     * True if either OpenGL 4.4 or 'ARB_enhanced_layouts' is supported.
+     * True if either OpenGL 4.4 is supported.
      */
     public boolean mEnhancedLayouts = true;
-    /**
-     * Non-null if {@link #mEnhancedLayouts} is supported from an extension.
-     */
-    public String mEnhancedLayoutsExtensionName = null;
 
     // Used for specific driver bug workarounds
     public boolean mRequiresLocalOutputColorForFBFetch = false;
@@ -123,9 +111,8 @@ public class ShaderCaps extends icyllis.arc3d.compiler.ShaderCaps {
                 ", mBitManipulationSupport=" + mBitManipulationSupport +
                 ", mReducedShaderMode=" + mReducedShaderMode +
                 ", mTextureQueryLod=" + mTextureQueryLod +
-                ", mTextureQueryLodExtension='" + mTextureQueryLodExtension + '\'' +
+                ", mShadingLanguage420Pack=" + mShadingLanguage420Pack +
                 ", mEnhancedLayouts=" + mEnhancedLayouts +
-                ", mEnhancedLayoutsExtensionName='" + mEnhancedLayoutsExtensionName + '\'' +
                 ", mRequiresLocalOutputColorForFBFetch=" + mRequiresLocalOutputColorForFBFetch +
                 ", mMustObfuscateUniformColor=" + mMustObfuscateUniformColor +
                 ", mMustWriteToFragColor=" + mMustWriteToFragColor +
