@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2024 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -26,11 +26,9 @@ import java.util.Objects;
  * Defines a message containing a description and arbitrary data object that can be
  * sent to a {@link Handler}.  This object contains two extra int fields and an
  * extra object field that allow you to not do allocations in many cases.
- * <p>
- * Modified from Android.
  */
+// Modified from Android.
 public final class Message {
-
     /**
      * User-defined message code so that the recipient can identify
      * what this message is about. Each {@link Handler} has its own name-space
@@ -76,6 +74,12 @@ public final class Message {
     // sometimes we store linked lists of these things
     Message next;
 
+    // Modern UI changed: not worth recycling small objects on desktop JVMs.
+    // A Message takes up 56 bytes. Under 16 threads concurrency:
+    // 'new' + 'GC' takes 25-28 CPU cycles,
+    // whereas pooling 'obtain' + 'recycle' takes 300 CPU cycles.
+    private static final boolean NO_POOLING = true;
+
     private static final Object sPoolSync = new Object();
     private static Message sPool;
     private static int sPoolSize = 0;
@@ -88,15 +92,22 @@ public final class Message {
      */
     @NonNull
     public static Message obtain() {
+        if (NO_POOLING) {
+            return new Message();
+        }
+        // Modern UI changed: if pooling, this is still 8% faster than Android
+        final Message m;
         synchronized (sPoolSync) {
-            if (sPool != null) {
-                Message m = sPool;
+            m = sPool;
+            if (m != null) {
                 sPool = m.next;
-                m.next = null;
-                m.flags = 0; // clear in-use flag
                 sPoolSize--;
-                return m;
             }
+        }
+        if (m != null) {
+            m.next = null;
+            m.flags = 0; // clear in-use flag
+            return m;
         }
         return new Message();
     }
@@ -175,7 +186,7 @@ public final class Message {
      * @return A Message object from the global pool.
      */
     @NonNull
-    public static Message obtain(Handler h, int what, Object obj) {
+    public static Message obtain(@NonNull Handler h, int what, Object obj) {
         Message m = obtain();
         m.target = h;
         m.what = what;
@@ -215,7 +226,7 @@ public final class Message {
      * @return A Message object from the global pool.
      */
     @NonNull
-    public static Message obtain(Handler h, int what, int arg1, int arg2, Object obj) {
+    public static Message obtain(@NonNull Handler h, int what, int arg1, int arg2, Object obj) {
         Message m = obtain();
         m.target = h;
         m.what = what;
@@ -228,7 +239,7 @@ public final class Message {
     /**
      * @see #obtain()
      */
-    private Message() {
+    public Message() {
     }
 
     /**
@@ -262,11 +273,13 @@ public final class Message {
         target = null;
         callback = null;
 
+        if (NO_POOLING) {
+            return;
+        }
         synchronized (sPoolSync) {
-            if (sPoolSize < MAX_POOL_SIZE) {
+            if (sPoolSize++ < MAX_POOL_SIZE) {
                 next = sPool;
                 sPool = this;
-                sPoolSize++;
             }
         }
     }
