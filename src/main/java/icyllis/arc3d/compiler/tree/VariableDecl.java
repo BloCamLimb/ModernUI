@@ -103,7 +103,7 @@ public final class VariableDecl extends Statement {
                         "'in' variables cannot use initializer expressions");
                 return null;
             }
-            if ((variable.getModifiers().flags() & Modifiers.kUniform_Flag) != 0) {
+            if (variable.getModifiers().isUniform()) {
                 context.error(init.mPosition,
                         "'uniform' variables cannot use initializer expressions");
                 return null;
@@ -114,7 +114,7 @@ public final class VariableDecl extends Statement {
             }
         }
 
-        if ((variable.getModifiers().flags() & Modifiers.kConst_Flag) != 0) {
+        if (variable.getModifiers().isConst()) {
             if (init == null) {
                 context.error(variable.mPosition, "'const' variables must be initialized");
                 return null;

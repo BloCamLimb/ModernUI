@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -426,33 +426,10 @@ public final class GLCaps extends Caps {
         shaderCaps.mNonConstantArrayIndexSupport = true;
         // GLSL 400
         shaderCaps.mBitManipulationSupport = version.isAtLeast(GLSLVersion.GLSL_400);
-
-        if (caps.OpenGL40) {
-            shaderCaps.mTextureQueryLod = true;
-        } else if (caps.GL_ARB_texture_query_lod) {
-            shaderCaps.mTextureQueryLod = true;
-            shaderCaps.mTextureQueryLodExtension = "GL_ARB_texture_query_lod";
-        } else {
-            shaderCaps.mTextureQueryLod = false;
-        }
-
-        if (caps.OpenGL42) {
-            shaderCaps.mShadingLanguage420Pack = true;
-        } else if (caps.GL_ARB_shading_language_420pack) {
-            shaderCaps.mShadingLanguage420Pack = true;
-            shaderCaps.mShadingLanguage420PackExtensionName = "GL_ARB_shading_language_420pack";
-        } else {
-            shaderCaps.mShadingLanguage420Pack = false;
-        }
-
-        if (caps.OpenGL44) {
-            shaderCaps.mEnhancedLayouts = true;
-        } else if (caps.GL_ARB_enhanced_layouts) {
-            shaderCaps.mEnhancedLayouts = true;
-            shaderCaps.mEnhancedLayoutsExtensionName = "GL_ARB_enhanced_layouts";
-        } else {
-            shaderCaps.mEnhancedLayouts = false;
-        }
+        // GLSL 400
+        shaderCaps.mTextureQueryLod = version.isAtLeast(GLSLVersion.GLSL_400);
+        shaderCaps.mShadingLanguage420Pack = caps.OpenGL42;
+        shaderCaps.mEnhancedLayouts = caps.OpenGL44;
     }
 
     private void initFormatTable(GLCapabilities caps) {
@@ -840,7 +817,8 @@ public final class GLCaps extends Caps {
             // Even in OpenGL 4.6 GL_RGB8 is required to be color renderable but not required to be
             // a supported render buffer format. Since we usually use render buffers for MSAA on
             // we don't support MSAA for GL_RGB8.
-            if (glGetInternalformati(GL_RENDERBUFFER, GL_RGB8, GL_INTERNALFORMAT_SUPPORTED) == GL_TRUE) {
+            if ((caps.OpenGL43 || caps.GL_ARB_internalformat_query2) &&
+                    glGetInternalformati(GL_RENDERBUFFER, GL_RGB8, GL_INTERNALFORMAT_SUPPORTED) == GL_TRUE) {
                 info.mFlags |= msaaRenderFlags;
             } else {
                 info.mFlags |= nonMSAARenderFlags;
@@ -1292,23 +1270,39 @@ public final class GLCaps extends Caps {
             if ((info.mFlags & FormatInfo.COLOR_ATTACHMENT_WITH_MSAA_FLAG) != 0) {
                 // We assume that MSAA rendering is supported only if we support non-MSAA rendering.
                 assert (info.mFlags & FormatInfo.COLOR_ATTACHMENT_FLAG) != 0;
-                int glFormat = info.mInternalFormatForRenderbuffer;
-                int count = glGetInternalformati(GL_RENDERBUFFER, glFormat, GL_NUM_SAMPLE_COUNTS);
-                if (count > 0) {
-                    try (MemoryStack stack = MemoryStack.stackPush()) {
-                        IntBuffer temp = stack.mallocInt(count);
-                        glGetInternalformativ(GL_RENDERBUFFER, glFormat, GL_SAMPLES, temp);
-                        // GL has a concept of MSAA rasterization with a single sample, but we do not.
-                        if (temp.get(count - 1) == 1) {
-                            --count;
-                            assert (count == 0 || temp.get(count - 1) > 1);
+                if (caps.OpenGL42 || caps.GL_ARB_internalformat_query) {
+                    int glFormat = info.mInternalFormatForRenderbuffer;
+                    int count = glGetInternalformati(GL_RENDERBUFFER, glFormat, GL_NUM_SAMPLE_COUNTS);
+                    if (count > 0) {
+                        try (MemoryStack stack = MemoryStack.stackPush()) {
+                            IntBuffer temp = stack.mallocInt(count);
+                            glGetInternalformativ(GL_RENDERBUFFER, glFormat, GL_SAMPLES, temp);
+                            // GL has a concept of MSAA rasterization with a single sample, but we do not.
+                            if (temp.get(count - 1) == 1) {
+                                --count;
+                                assert (count == 0 || temp.get(count - 1) > 1);
+                            }
+                            info.mColorSampleCounts = new int[count + 1];
+                            // We initialize our supported values with 1 (no msaa) and reverse the order
+                            // returned by GL so that the array is ascending.
+                            info.mColorSampleCounts[0] = 1;
+                            for (int j = 0; j < count; ++j) {
+                                info.mColorSampleCounts[j + 1] = temp.get(count - j - 1);
+                            }
                         }
-                        info.mColorSampleCounts = new int[count + 1];
-                        // We initialize our supported values with 1 (no msaa) and reverse the order
-                        // returned by GL so that the array is ascending.
-                        info.mColorSampleCounts[0] = 1;
-                        for (int j = 0; j < count; ++j) {
-                            info.mColorSampleCounts[j + 1] = temp.get(count - j - 1);
+                    }
+                } else {
+                    int maxSampleCnt = Math.max(1, glGetInteger(GL_MAX_SAMPLES));
+                    int count = 4; // [1, 2, 4, 8]
+                    for (; count > 0; --count) {
+                        if ((1 << (count - 1)) <= maxSampleCnt) {
+                            break;
+                        }
+                    }
+                    if (count > 0) {
+                        info.mColorSampleCounts = new int[count];
+                        for (int i = 0; i < count; i++) {
+                            info.mColorSampleCounts[i] = 1 << i;
                         }
                     }
                 }

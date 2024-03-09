@@ -60,6 +60,9 @@ public class TestManagedResource {
         // load first
         Objects.requireNonNull(GL.getFunctionProvider());
         GLFW.glfwDefaultWindowHints();
+        /*GLFW.glfwWindowHint(GLFW.GLFW_CLIENT_API, GLFW.GLFW_OPENGL_ES_API);
+        GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 3);
+        GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 0);*/
         GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GLFW.GLFW_FALSE);
         long window = GLFW.glfwCreateWindow(800, 600, "Test Window", 0, 0);
         if (window == 0) {
@@ -120,6 +123,10 @@ public class TestManagedResource {
             boolean success = Operator.MUL.determineBinaryType(compiler.getContext(),
                     moduleLoader.getBuiltinTypes().mHalf3x4,
                     moduleLoader.getBuiltinTypes().mFloat3, types);
+            pw.println("Operator types: " + success + ", " + Arrays.toString(types));
+            success = Operator.ADD.determineBinaryType(compiler.getContext(),
+                    moduleLoader.getBuiltinTypes().mFloat4x4,
+                    moduleLoader.getBuiltinTypes().mFloat4, types);
             pw.println("Operator types: " + success + ", " + Arrays.toString(types));
             compiler.endContext();
         }
@@ -219,7 +226,7 @@ public class TestManagedResource {
             if (GLCore.glGetProgrami(program, GLCore.GL_LINK_STATUS) == GLCore.GL_FALSE) {
                 String log = GLCore.glGetProgramInfoLog(program, 8192).trim();
                 System.out.println(log);
-            } else {
+            } else if (((GLCaps)dContext.getCaps()).hasProgramBinarySupport()) {
                 System.out.println("SUCCESS!");
                 try (MemoryStack stack = MemoryStack.stackPush()) {
                     IntBuffer pLength = stack.mallocInt(1);

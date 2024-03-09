@@ -74,7 +74,7 @@ public class ConstantFolder {
                 break;
             }
             Variable variable = r.getVariable();
-            if ((variable.getModifiers().flags() & Modifiers.kConst_Flag) == 0) {
+            if (!variable.getModifiers().isConst()) {
                 break;
             }
             value = variable.initialValue();

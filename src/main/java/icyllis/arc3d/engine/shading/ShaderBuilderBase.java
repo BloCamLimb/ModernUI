@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,6 +20,7 @@
 package icyllis.arc3d.engine.shading;
 
 import icyllis.arc3d.engine.ShaderVar;
+import org.intellij.lang.annotations.PrintFormat;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.system.MemoryUtil;
 
@@ -81,7 +82,7 @@ public abstract class ShaderBuilderBase implements ShaderBuilder {
      * string and arguments.
      */
     @Override
-    public void codeAppendf(String format, Object... args) {
+    public void codeAppendf(@PrintFormat String format, Object... args) {
         if (mCodeFormatter == null)
             mCodeFormatter = new Formatter(code(), Locale.ROOT);
         mCodeFormatter.format(Locale.ROOT, format, args);
@@ -91,7 +92,7 @@ public abstract class ShaderBuilderBase implements ShaderBuilder {
      * Similar to {@link #codeAppendf(String, Object...)}, but writes at the beginning.
      */
     @Override
-    public void codePrependf(String format, Object... args) {
+    public void codePrependf(@PrintFormat String format, Object... args) {
         if (mCodeFormatterPre == null)
             mCodeFormatterPre = new Formatter(new Prependable(code()), Locale.ROOT);
         mCodeFormatterPre.format(Locale.ROOT, format, args);
