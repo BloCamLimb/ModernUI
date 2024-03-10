@@ -71,7 +71,31 @@ public interface LeadingMarginSpan extends ParagraphStyle {
                            CharSequence text, int start, int end,
                            boolean first, Layout layout);
 
-    // this method allows to draw trailing margin at the same time
+    /**
+     * Called when drawing the margin.
+     * <p>
+     * The default implementation is to call {@link #drawLeadingMargin}, where
+     * <var>x</var> is either <var>left</var> or <var>right</var>, depending on
+     * <var>dir</var>. This method allows to draw the trailing margin at the same time,
+     * not just the leading margin.
+     * <p>
+     * Added by Modern UI.
+     *
+     * @param c        the canvas
+     * @param p        the paint. This should be left unchanged on exit.
+     * @param left     the current left position of the margin
+     * @param right    the current right position of the margin
+     * @param dir      the base direction of the paragraph; if negative, the margin
+     *                 is to the right of the text, otherwise it is to the left.
+     * @param top      the top of the line
+     * @param baseline the baseline of the line
+     * @param bottom   the bottom of the line
+     * @param text     the text
+     * @param start    the start of the line
+     * @param end      the end of the line
+     * @param first    true if this is the first line of its paragraph
+     * @param layout   the layout containing this line
+     */
     default void drawMargin(Canvas c, TextPaint p,
                             int left, int right, int dir,
                             int top, int baseline, int bottom,

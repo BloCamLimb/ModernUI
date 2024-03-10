@@ -427,6 +427,8 @@ public class TestFragment extends Fragment {
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             spannable.setSpan(new ForegroundColorSpan(0xff4f81bd), firstPara, secondsPara - 1,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            spannable.setSpan(new SuperscriptSpan(), firstPara + 4, firstPara + 5,
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             spannable.setSpan(new UnderlineSpan(), text.length() / 2, text.length() / 4 * 3,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             spannable.setSpan(new StrikethroughSpan(), text.length() / 4 * 3, text.length(),
