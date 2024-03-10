@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
+ * Copyright (C) 2024 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -23,27 +23,27 @@ import icyllis.modernui.text.*;
 import icyllis.modernui.util.Parcel;
 
 /**
- * The span that moves the position of the text baseline higher.
+ * The span that moves the position of the text baseline lower.
  * <p>
  * Unlike Android, this Span also affects the relative text size.
  */
-public class SuperscriptSpan extends MetricAffectingSpan implements ParcelableSpan {
+public class SubscriptSpan extends MetricAffectingSpan implements ParcelableSpan {
 
     /**
-     * Creates a {@link SuperscriptSpan}.
+     * Creates a {@link SubscriptSpan}.
      */
-    public SuperscriptSpan() {
+    public SubscriptSpan() {
     }
 
     /**
-     * Creates a {@link SuperscriptSpan} from a parcel.
+     * Creates a {@link SubscriptSpan} from a parcel.
      */
-    public SuperscriptSpan(@NonNull Parcel src) {
+    public SubscriptSpan(@NonNull Parcel src) {
     }
 
     @Override
     public int getSpanTypeId() {
-        return TextUtils.SUPERSCRIPT_SPAN;
+        return TextUtils.SUBSCRIPT_SPAN;
     }
 
     @Override
@@ -58,11 +58,11 @@ public class SuperscriptSpan extends MetricAffectingSpan implements ParcelableSp
 
     protected void applyBaselineShift(@NonNull TextPaint textPaint) {
         // at the moment, we choose textSize instead of ascent for performance
-        textPaint.baselineShift -= (int) (textPaint.getTextSize() * 0.375f);
+        textPaint.baselineShift += (int) (textPaint.getTextSize() * 0.125f);
     }
 
     @Override
     public String toString() {
-        return "SuperscriptSpan{}";
+        return "SubscriptSpan{}";
     }
 }

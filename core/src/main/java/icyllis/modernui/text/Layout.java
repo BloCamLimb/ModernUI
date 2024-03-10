@@ -101,6 +101,7 @@ public abstract class Layout {
         // We probably should re-evaluate bgColor.
         if (paint != null) {
             paint.bgColor = 0;
+            paint.baselineShift = 0;
         }
 
         mText = text;

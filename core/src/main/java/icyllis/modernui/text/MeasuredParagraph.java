@@ -528,6 +528,7 @@ public class MeasuredParagraph {
         assert start != end;
         TextPaint tp = TextPaint.obtain();
         tp.set(paint);
+        tp.baselineShift = 0;
 
         ReplacementSpan replacement = null;
         for (MetricAffectingSpan span : spans) {
@@ -551,6 +552,11 @@ public class MeasuredParagraph {
             applyStyleRun(base, start - offset, end - offset, lineBreakConfig, builder);
         }
 
+        if (tp.baselineShift < 0) {
+            mCachedFm.ascent += tp.baselineShift;
+        } else {
+            mCachedFm.descent += tp.baselineShift;
+        }
         mFontMetrics.add(mCachedFm.ascent);
         mFontMetrics.add(mCachedFm.descent);
         tp.recycle();

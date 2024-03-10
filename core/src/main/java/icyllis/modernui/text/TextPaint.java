@@ -75,8 +75,8 @@ public class TextPaint extends Paint {
     }
 
     @ApiStatus.Internal
-    public TextPaint(TextPaint paint) {
-        super(paint);
+    public TextPaint(@NonNull TextPaint paint) {
+        set(paint);
         mTypeface = paint.mTypeface;
         mLocale = paint.mLocale;
     }
@@ -112,6 +112,7 @@ public class TextPaint extends Paint {
         mTypeface = paint.mTypeface;
         mLocale = paint.mLocale;
         bgColor = paint.bgColor;
+        baselineShift = paint.baselineShift;
     }
 
     /**

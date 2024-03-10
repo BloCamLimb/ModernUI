@@ -1040,7 +1040,7 @@ public class TextLine {
             assert pieces.size() == xOffsets.size();
             for (int i = 0, count = pieces.size(); i < count; i++) {
                 TextUtils.drawTextRun(c,
-                        pieces.get(i), leftX + xOffsets.getFloat(i), y, wp);
+                        pieces.get(i), leftX + xOffsets.getFloat(i), y + wp.baselineShift, wp);
             }
 
             if (flags != 0) {
@@ -1053,13 +1053,13 @@ public class TextLine {
                 // Also, TextPaint is not yet synchronized with this
                 if ((flags & TextPaint.UNDERLINE_FLAG) != 0) {
                     float thickness = wp.getFontSize() / 18f;
-                    float strokeTop = y + wp.getFontSize() * (1f / 9f) - thickness * 0.5f;
+                    float strokeTop = y + wp.getFontSize() * (1f / 9f) - thickness * 0.5f + wp.baselineShift;
                     paint.setColor(wp.getColor());
                     c.drawRect(leftX, strokeTop, rightX, strokeTop + thickness, paint);
                 }
                 if ((flags & TextPaint.STRIKETHROUGH_FLAG) != 0) {
                     float thickness = wp.getFontSize() / 18f;
-                    float strokeTop = y - wp.getFontSize() * (1f / 3f) - thickness * 0.5f;
+                    float strokeTop = y - wp.getFontSize() * (1f / 3f) - thickness * 0.5f + wp.baselineShift;
                     paint.setColor(wp.getColor());
                     c.drawRect(leftX, strokeTop, rightX, strokeTop + thickness, paint);
                 }

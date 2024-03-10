@@ -394,7 +394,7 @@ public final class TextUtils {
             dest.writeInt(0);
         } else if (cs instanceof Spanned sp) {
             dest.writeInt(2);
-            dest.writeString8(cs.toString());
+            dest.writeString(cs.toString());
 
             final List<Object> os = sp.getSpans(0, cs.length(), Object.class);
             for (final Object o : os) {
@@ -420,7 +420,7 @@ public final class TextUtils {
             dest.writeInt(0);
         } else {
             dest.writeInt(1);
-            dest.writeString8(cs.toString());
+            dest.writeString(cs.toString());
         }
     }
 
@@ -429,7 +429,7 @@ public final class TextUtils {
         int type = p.readInt();
         if (type == 0)
             return null;
-        final String s = p.readString8();
+        final String s = p.readString();
         if (type == 1)
             return s;
         assert type == 2 && s != null;
@@ -446,6 +446,8 @@ public final class TextUtils {
                 case URL_SPAN -> readSpan(p, sp, new URLSpan(p));
                 case BACKGROUND_COLOR_SPAN -> readSpan(p, sp, new BackgroundColorSpan(p));
                 case TYPEFACE_SPAN -> readSpan(p, sp, new TypefaceSpan(p));
+                case SUPERSCRIPT_SPAN -> readSpan(p, sp, new SuperscriptSpan(p));
+                case SUBSCRIPT_SPAN -> readSpan(p, sp, new SubscriptSpan(p));
                 case ABSOLUTE_SIZE_SPAN -> readSpan(p, sp, new AbsoluteSizeSpan(p));
                 case LOCALE_SPAN -> readSpan(p, sp, new LocaleSpan(p));
                 case LINE_BACKGROUND_SPAN -> readSpan(p, sp, new LineBackgroundSpan.Standard(p));
