@@ -37,15 +37,16 @@ public class ShaderCaps extends icyllis.arc3d.compiler.ShaderCaps {
             GeneralEnable_AdvBlendEqInteraction = 2;    // layout(blend_support_all_equations) out
 
     public boolean mDualSourceBlendingSupport = false;
-    public boolean mPreferFlatInterpolation = false;
-    public boolean mVertexIDSupport = false;
+    public boolean mPreferFlatInterpolation = true;
+    public boolean mVertexIDSupport = true;
     // isinf() is defined, and floating point infinities are handled according to IEEE standards.
-    public boolean mInfinitySupport = false;
+    public boolean mInfinitySupport = true;
     // Returns true if `expr` in `myArray[expr]` can be any integer expression. If false, `expr`
     // must be a constant-index-expression as defined in the OpenGL ES2 specification, Appendix A.5.
-    public boolean mNonConstantArrayIndexSupport = false;
+    public boolean mNonConstantArrayIndexSupport = true;
     // frexp(), ldexp(), findMSB(), findLSB().
     public boolean mBitManipulationSupport = false;
+    public boolean mNoPerspectiveInterpolationSupport = false;
     // Use a reduced set of rendering algorithms or less optimal effects in order to reduce the
     // number of unique shaders generated.
     public boolean mReducedShaderMode = false;
@@ -56,14 +57,25 @@ public class ShaderCaps extends icyllis.arc3d.compiler.ShaderCaps {
     public boolean mTextureQueryLod = true;
 
     /**
-     * True if either OpenGL 4.2 is supported.
+     * True if either OpenGL 4.2 or OpenGL ES 3.1 is supported.
+     * <p>
+     * Add binding on uniform block and samplers.
      */
-    public boolean mShadingLanguage420Pack = true;
+    public boolean mUseUniformBinding = true;
 
     /**
-     * True if either OpenGL 4.4 is supported.
+     * True if either OpenGL 4.4 or OpenGL ES 3.2 is supported.
+     * <p>
+     * Add location for interface matching between shader stages.
      */
-    public boolean mEnhancedLayouts = true;
+    public boolean mUseVaryingLocation = true;
+
+    /**
+     * True if OpenGL 4.4 is supported.
+     * <p>
+     * Add offset on block members for std140/std430 layout validation.
+     */
+    public boolean mUseBlockMemberOffset = true;
 
     // Used for specific driver bug workarounds
     public boolean mRequiresLocalOutputColorForFBFetch = false;
@@ -109,10 +121,12 @@ public class ShaderCaps extends icyllis.arc3d.compiler.ShaderCaps {
                 ", mInfinitySupport=" + mInfinitySupport +
                 ", mNonConstantArrayIndexSupport=" + mNonConstantArrayIndexSupport +
                 ", mBitManipulationSupport=" + mBitManipulationSupport +
+                ", mNoPerspectiveInterpolationSupport=" + mNoPerspectiveInterpolationSupport +
                 ", mReducedShaderMode=" + mReducedShaderMode +
                 ", mTextureQueryLod=" + mTextureQueryLod +
-                ", mShadingLanguage420Pack=" + mShadingLanguage420Pack +
-                ", mEnhancedLayouts=" + mEnhancedLayouts +
+                ", mUseUniformBinding=" + mUseUniformBinding +
+                ", mUseVaryingLocation=" + mUseVaryingLocation +
+                ", mUseBlockMemberOffset=" + mUseBlockMemberOffset +
                 ", mRequiresLocalOutputColorForFBFetch=" + mRequiresLocalOutputColorForFBFetch +
                 ", mMustObfuscateUniformColor=" + mMustObfuscateUniformColor +
                 ", mMustWriteToFragColor=" + mMustWriteToFragColor +
@@ -124,6 +138,7 @@ public class ShaderCaps extends icyllis.arc3d.compiler.ShaderCaps {
                 ", mTargetApi=" + mTargetApi +
                 ", mGLSLVersion=" + mGLSLVersion +
                 ", mSPIRVVersion=" + mSPIRVVersion +
+                ", mFMASupport=" + mFMASupport +
                 '}';
     }
 }

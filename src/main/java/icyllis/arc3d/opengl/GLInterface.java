@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,28 +17,28 @@
  * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.compiler;
+package icyllis.arc3d.opengl;
+
+import org.lwjgl.system.NativeType;
+
+import javax.annotation.Nullable;
 
 /**
- * Shader capabilities for our DSL compiler.
+ * Abstract gl* function access between OpenGL 4.6 Core Profile and OpenGL ES 3.2.
+ * Depending on GLCapabilities or GLESCapabilities.
+ * <p>
+ * No javadoc here, please refer to LWJGL javadoc and OpenGL specification
+ *
+ * @see GLCaps
  */
-public class ShaderCaps {
+public interface GLInterface {
 
-    public TargetApi mTargetApi = TargetApi.OPENGL_4_5;
-    public GLSLVersion mGLSLVersion = GLSLVersion.GLSL_450;
-    public SPIRVVersion mSPIRVVersion = SPIRVVersion.SPIRV_1_0;
+    @Nullable
+    @NativeType("GLubyte const *")
+    String GetString(@NativeType("GLenum") int name);
 
-    /**
-     * GLSL 400 or GLSL 320 ES.
-     */
-    public boolean mFMASupport = true;
+    @NativeType("void")
+    int GetInteger(@NativeType("GLenum") int pname);
 
-    @Override
-    public String toString() {
-        return "ShaderCaps{" +
-                "mTargetApi=" + mTargetApi +
-                ", mGLSLVersion=" + mGLSLVersion +
-                ", mSPIRVVersion=" + mSPIRVVersion +
-                '}';
-    }
+    void TextureBarrier();
 }

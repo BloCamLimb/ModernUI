@@ -22,8 +22,12 @@ package icyllis.arc3d.engine;
 import icyllis.arc3d.opengl.GLDevice;
 import icyllis.arc3d.vulkan.VkBackendContext;
 import org.jetbrains.annotations.ApiStatus;
+import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.GLCapabilities;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Objects;
 
 /**
  * Represents a backend context of 3D graphics API (OpenGL or Vulkan) on the render thread.
@@ -49,6 +53,31 @@ public final class DirectContext extends RecordingContext {
         return makeOpenGL(new ContextOptions());
     }
 
+    @Nullable
+    public static DirectContext makeOpenGL(@Nonnull ContextOptions options) {
+        DirectContext context = new DirectContext(Engine.BackendApi.kOpenGL, options);
+        GLCapabilities capabilities;
+        try {
+            capabilities = Objects.requireNonNullElseGet(
+                    GL.getCapabilities(),
+                    GL::createCapabilities
+            );
+        } catch (Exception x) {
+            try {
+                capabilities = GL.createCapabilities();
+            } catch (Exception e) {
+                e.printStackTrace(context.getErrorWriter());
+                return null;
+            }
+        }
+        context.mDevice = GLDevice.make(context, options, capabilities);
+        if (context.init()) {
+            return context;
+        }
+        context.unref();
+        return null;
+    }
+
     /**
      * Creates a DirectContext for a backend context, using specified context options.
      * <p>
@@ -67,7 +96,9 @@ public final class DirectContext extends RecordingContext {
      *      }
      *      // you can make a thread a render thread
      *      glfwMakeContextCurrent(window);
-     *      DirectContext direct = DirectContext.makeOpenGL();
+     *      DirectContext direct = DirectContext.makeOpenGL(
+     *          GL.createCapabilities()
+     *      );
      *      if (direct == null) {
      *          throw new IllegalStateException();
      *      }
@@ -75,6 +106,7 @@ public final class DirectContext extends RecordingContext {
      *      // destroy and close
      *      direct.discard();
      *      direct.unref();
+     *      GL.setCapabilities(null);
      *      glfwDestroyWindow(window);
      *      glfwTerminate();
      *  }
@@ -83,9 +115,9 @@ public final class DirectContext extends RecordingContext {
      * @return context or null if failed to create
      */
     @Nullable
-    public static DirectContext makeOpenGL(ContextOptions options) {
+    public static DirectContext makeOpenGL(@Nonnull Object capabilities, @Nonnull ContextOptions options) {
         DirectContext context = new DirectContext(Engine.BackendApi.kOpenGL, options);
-        context.mDevice = GLDevice.make(context, options);
+        context.mDevice = GLDevice.make(context, options, capabilities);
         if (context.init()) {
             return context;
         }
@@ -177,6 +209,8 @@ public final class DirectContext extends RecordingContext {
         if (mResourceCache != null) {
             mResourceCache.releaseAll();
         }
-        mDevice.disconnect(true);
+        if (mDevice != null) {
+            mDevice.disconnect(true);
+        }
     }
 }

@@ -34,7 +34,7 @@ import static icyllis.arc3d.opengl.GLCore.*;
 public final class GLBackendFormat extends BackendFormat {
 
     private static final Int2ObjectOpenHashMap<GLBackendFormat> FORMATS =
-            new Int2ObjectOpenHashMap<>(LAST_FORMAT_INDEX + 1, Hash.FAST_LOAD_FACTOR);
+            new Int2ObjectOpenHashMap<>(GLUtil.LAST_FORMAT_INDEX + 1, Hash.FAST_LOAD_FACTOR);
 
     private final int mFormat;
     private final boolean mIsExternal;
@@ -54,7 +54,7 @@ public final class GLBackendFormat extends BackendFormat {
 
     @Nonnull
     public static GLBackendFormat make(@NativeType("GLenum") int format, boolean isExternal) {
-        if (glFormatIsSupported(format)) {
+        if (GLUtil.glFormatIsSupported(format)) {
             assert (format > 0);
             return FORMATS.computeIfAbsent((format) | (isExternal ? Integer.MIN_VALUE : 0),
                     k -> new GLBackendFormat(k & Integer.MAX_VALUE, k < 0));
@@ -79,7 +79,7 @@ public final class GLBackendFormat extends BackendFormat {
 
     @Override
     public int getChannelFlags() {
-        return glFormatChannels(mFormat);
+        return GLUtil.glFormatChannels(mFormat);
     }
 
     @Nonnull
@@ -93,22 +93,22 @@ public final class GLBackendFormat extends BackendFormat {
 
     @Override
     public boolean isSRGB() {
-        return glFormatIsSRGB(mFormat);
+        return GLUtil.glFormatIsSRGB(mFormat);
     }
 
     @Override
     public int getCompressionType() {
-        return glFormatCompressionType(mFormat);
+        return GLUtil.glFormatCompressionType(mFormat);
     }
 
     @Override
     public int getBytesPerBlock() {
-        return glFormatBytesPerBlock(mFormat);
+        return GLUtil.glFormatBytesPerBlock(mFormat);
     }
 
     @Override
     public int getStencilBits() {
-        return glFormatStencilBits(mFormat);
+        return GLUtil.glFormatStencilBits(mFormat);
     }
 
     @Override
@@ -131,7 +131,7 @@ public final class GLBackendFormat extends BackendFormat {
     @Override
     public String toString() {
         return "{mBackend=OpenGL" +
-                ", mFormat=" + glFormatName(mFormat) +
+                ", mFormat=" + GLUtil.glFormatName(mFormat) +
                 ", mIsExternal=" + mIsExternal +
                 '}';
     }

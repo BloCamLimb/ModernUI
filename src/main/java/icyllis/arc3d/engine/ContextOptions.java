@@ -92,6 +92,12 @@ public final class ContextOptions {
     public float mGlyphsAsPathsFontSize = 384;
 
     /**
+     * If present, use this object to print debugging/warning info that generated
+     * by Arc 3D engine.
+     */
+    public PrintWriter mInfoWriter = null;
+
+    /**
      * If present, use this object to print errors. If not, print errors
      * via {@link System#err}.
      */

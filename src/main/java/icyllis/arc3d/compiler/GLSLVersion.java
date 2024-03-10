@@ -35,6 +35,10 @@ public enum GLSLVersion {
      */
     GLSL_310_ES("#version 310 es\n"),
     /**
+     * GLSL version 3.20 es for OpenGL ES 3.2.
+     */
+    GLSL_320_ES("#version 320 es\n"),
+    /**
      * GLSL version 3.30 core for OpenGL 3.3.
      */
     GLSL_330("#version 330 core\n"),
