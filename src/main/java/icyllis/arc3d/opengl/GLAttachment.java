@@ -51,8 +51,8 @@ public final class GLAttachment extends Attachment {
         mFormat = format;
 
         // color buffers may be compressed
-        mMemorySize = DataUtils.numBlocks(GLCore.glFormatCompressionType(format), width, height) *
-                GLCore.glFormatBytesPerBlock(format) * sampleCount;
+        mMemorySize = DataUtils.numBlocks(GLUtil.glFormatCompressionType(format), width, height) *
+                GLUtil.glFormatBytesPerBlock(format) * sampleCount;
 
         registerWithCache(true);
     }
@@ -63,7 +63,7 @@ public final class GLAttachment extends Attachment {
                                            int width, int height,
                                            int sampleCount,
                                            int format) {
-        assert sampleCount > 0 && GLCore.glFormatStencilBits(format) > 0;
+        assert sampleCount > 0 && GLUtil.glFormatStencilBits(format) > 0;
 
         int renderbuffer = glGenRenderbuffers();
         if (renderbuffer == 0) {
@@ -173,7 +173,7 @@ public final class GLAttachment extends Attachment {
     public String toString() {
         return "GLAttachment{" +
                 "mRenderbuffer=" + mRenderbuffer +
-                ", mFormat=" + glFormatName(mFormat) +
+                ", mFormat=" + GLUtil.glFormatName(mFormat) +
                 ", mMemorySize=" + mMemorySize +
                 ", mWidth=" + mWidth +
                 ", mHeight=" + mHeight +

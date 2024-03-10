@@ -44,11 +44,10 @@ public class FragmentShaderBuilder extends ShaderBuilderBase implements FPFragme
 
     public FragmentShaderBuilder(PipelineBuilder pipelineBuilder) {
         super(pipelineBuilder);
-
         String layoutQualifier = "location = " + MAIN_DRAW_BUFFER_INDEX;
-        mPrimaryOutput = new ShaderVar(PRIMARY_COLOR_OUTPUT_NAME, SLDataType.kFloat4, ShaderVar.kOut_TypeModifier,
+        mPrimaryOutput = new ShaderVar(PRIMARY_COLOR_OUTPUT_NAME, SLDataType.kFloat4,
+                ShaderVar.kOut_TypeModifier,
                 ShaderVar.kNonArray, layoutQualifier, "");
-        mPrimaryOutput.addLayoutQualifier("index = " + PRIMARY_COLOR_OUTPUT_INDEX);
     }
 
     @Override
@@ -70,6 +69,7 @@ public class FragmentShaderBuilder extends ShaderBuilderBase implements FPFragme
         mSecondaryOutput = new ShaderVar(SECONDARY_COLOR_OUTPUT_NAME, SLDataType.kFloat4,
                 ShaderVar.kOut_TypeModifier,
                 ShaderVar.kNonArray, layoutQualifier, "");
+        mPrimaryOutput.addLayoutQualifier("index = " + PRIMARY_COLOR_OUTPUT_INDEX);
         mSecondaryOutput.addLayoutQualifier("index = " + SECONDARY_COLOR_OUTPUT_INDEX);
     }
 

@@ -109,7 +109,7 @@ public final class GLTextureInfo {
         return '{' +
                 "target=" + target +
                 ", handle=" + handle +
-                ", format=" + GLCore.glFormatName(format) +
+                ", format=" + GLUtil.glFormatName(format) +
                 ", levels=" + levels +
                 ", samples=" + samples +
                 ", memoryObject=" + memoryObject +

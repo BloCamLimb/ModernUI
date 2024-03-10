@@ -65,6 +65,9 @@ public class VaryingHandler {
      * interpolation.
      */
     public final void setNoPerspective() {
+        if (!mPipelineBuilder.shaderCaps().mNoPerspectiveInterpolationSupport) {
+            return;
+        }
         mDefaultInterpolationModifier = "noperspective";
     }
 
@@ -146,7 +149,7 @@ public class VaryingHandler {
         int locationIndex = 0;
         for (var v : mVaryings) {
             String layoutQualifier;
-            if (mPipelineBuilder.shaderCaps().mEnhancedLayouts) {
+            if (mPipelineBuilder.shaderCaps().mUseVaryingLocation) {
                 // ARB_enhanced_layouts or GLSL 440
                 layoutQualifier = "location = " + locationIndex;
             } else {

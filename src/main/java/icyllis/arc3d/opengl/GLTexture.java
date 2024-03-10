@@ -51,12 +51,12 @@ public class GLTexture extends GpuTexture {
               boolean register) {
         super(device, width, height);
         assert info.handle != 0;
-        assert glFormatIsSupported(format.getGLFormat());
+        assert GLUtil.glFormatIsSupported(format.getGLFormat());
         mInfo = info;
         mBackendTexture = new GLBackendTexture(width, height, info, new GLTextureParameters(), format);
         mOwnership = true;
 
-        if (glFormatIsCompressed(format.getGLFormat()) || format.isExternal()) {
+        if (GLUtil.glFormatIsCompressed(format.getGLFormat()) || format.isExternal()) {
             mFlags |= ISurface.FLAG_READ_ONLY;
         }
         if (mBackendTexture.isMipmapped()) {
@@ -80,7 +80,7 @@ public class GLTexture extends GpuTexture {
                      boolean ownership) {
         super(device, width, height);
         assert info.handle != 0;
-        assert glFormatIsSupported(format.getGLFormat());
+        assert GLUtil.glFormatIsSupported(format.getGLFormat());
         mInfo = info;
         mBackendTexture = new GLBackendTexture(width, height, info, params, format);
         mOwnership = ownership;

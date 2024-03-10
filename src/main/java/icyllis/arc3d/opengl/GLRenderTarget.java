@@ -182,7 +182,7 @@ public final class GLRenderTarget extends GpuRenderTarget {
                     GL_STENCIL_ATTACHMENT,
                     GL_RENDERBUFFER,
                     stencilBuffer.getRenderbufferID());
-            if (GLCore.glFormatIsPackedDepthStencil(stencilBuffer.getFormat())) {
+            if (GLUtil.glFormatIsPackedDepthStencil(stencilBuffer.getFormat())) {
                 glNamedFramebufferRenderbuffer(framebuffer,
                         GL_DEPTH_ATTACHMENT,
                         GL_RENDERBUFFER,
@@ -278,7 +278,7 @@ public final class GLRenderTarget extends GpuRenderTarget {
         return "GLRenderTarget{" +
                 "mRenderFramebuffer=" + mSampleFramebuffer +
                 ", mResolveFramebuffer=" + mResolveFramebuffer +
-                ", mFormat=" + GLCore.glFormatName(mFormat) +
+                ", mFormat=" + GLUtil.glFormatName(mFormat) +
                 ", mSampleCount=" + getSampleCount() +
                 ", mMultisampleColorBuffer=" + mMultisampleColorBuffer +
                 ", mOwnership=" + mOwnership +

@@ -22,8 +22,6 @@ package icyllis.arc3d.opengl;
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
-import org.lwjgl.opengl.GL;
-import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 
@@ -41,6 +39,7 @@ import static org.lwjgl.system.MemoryUtil.memPutInt;
 public final class GLDevice extends GpuDevice {
 
     private final GLCaps mCaps;
+    private final GLInterface mGLInterface;
 
     private final GLCommandBuffer mMainCmdBuffer;
 
@@ -163,9 +162,10 @@ public final class GLDevice extends GpuDevice {
 
     private boolean mNeedsFlush;
 
-    private GLDevice(DirectContext context, GLCaps caps) {
+    private GLDevice(DirectContext context, GLCaps caps, GLInterface glInterface) {
         super(context, caps);
         mCaps = caps;
+        mGLInterface = glInterface;
         mMainCmdBuffer = new GLCommandBuffer(this);
         mResourceProvider = new GLResourceProvider(this, context);
         mPipelineStateCache = new GLPipelineStateCache(this, 256);
@@ -190,24 +190,27 @@ public final class GLDevice extends GpuDevice {
      * @return the engine or null if failed to create
      */
     @Nullable
-    public static GLDevice make(DirectContext context, ContextOptions options) {
-        GLCapabilities capabilities;
+    public static GLDevice make(DirectContext context, ContextOptions options,
+                                Object capabilities) {
         try {
-            capabilities = Objects.requireNonNullElseGet(
-                    GL.getCapabilities(),
-                    GL::createCapabilities
-            );
-        } catch (Exception x) {
-            try {
-                capabilities = GL.createCapabilities();
-            } catch (Exception e) {
-                e.printStackTrace(context.getErrorWriter());
-                return null;
+            final GLCaps caps;
+            final GLInterface glInterface;
+            switch (capabilities.getClass().getName()) {
+                case "org.lwjgl.opengl.GLCapabilities" -> {
+                    var impl = new GLCaps_GL46C(options, capabilities);
+                    caps = impl;
+                    glInterface = impl;
+                }
+                case "org.lwjgl.opengles.GLESCapabilities" -> {
+                    var impl = new GLCaps_GLES32(options, capabilities);
+                    caps = impl;
+                    glInterface = impl;
+                }
+                default -> {
+                    return null;
+                }
             }
-        }
-        try {
-            GLCaps caps = new GLCaps(options, capabilities);
-            return new GLDevice(context, caps);
+            return new GLDevice(context, caps, glInterface);
         } catch (Exception e) {
             e.printStackTrace(context.getErrorWriter());
             return null;
@@ -217,6 +220,10 @@ public final class GLDevice extends GpuDevice {
     @Override
     public GLCaps getCaps() {
         return mCaps;
+    }
+
+    public GLInterface getGL() {
+        return mGLInterface;
     }
 
     @Override
@@ -415,7 +422,7 @@ public final class GLDevice extends GpuDevice {
             return null;
         }*/
         int format = info.format;
-        if (!glFormatIsSupported(format)) {
+        if (!GLUtil.glFormatIsSupported(format)) {
             return null;
         }
         handleDirtyContext(GLBackendState.kTexture);
@@ -991,8 +998,8 @@ public final class GLDevice extends GpuDevice {
     }
 
     private int createTexture(int width, int height, int format, int levels) {
-        assert (glFormatIsSupported(format));
-        assert (!glFormatIsCompressed(format));
+        assert (GLUtil.glFormatIsSupported(format));
+        assert (!GLUtil.glFormatIsCompressed(format));
 
         int internalFormat = mCaps.getTextureInternalFormat(format);
         if (internalFormat == 0) {
@@ -1073,8 +1080,8 @@ public final class GLDevice extends GpuDevice {
                                                                 int format,
                                                                 int samples) {
         assert texture != 0;
-        assert glFormatIsSupported(format);
-        assert !glFormatIsCompressed(format);
+        assert GLUtil.glFormatIsSupported(format);
+        assert !GLUtil.glFormatIsCompressed(format);
 
         // There's an NVIDIA driver bug that creating framebuffer via DSA with attachments of
         // different dimensions will report GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT.

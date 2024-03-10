@@ -19,29 +19,23 @@
 
 package icyllis.arc3d.opengl;
 
-import icyllis.arc3d.compiler.*;
 import icyllis.arc3d.core.ImageInfo;
-import icyllis.arc3d.engine.ShaderCaps;
 import icyllis.arc3d.engine.*;
-import org.jetbrains.annotations.VisibleForTesting;
-import org.lwjgl.opengl.GL46C;
-import org.lwjgl.opengl.GLCapabilities;
-import org.lwjgl.system.MemoryStack;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.nio.IntBuffer;
 import java.util.*;
 
-import static icyllis.arc3d.opengl.GLCore.*;
+import static org.lwjgl.opengl.GL43C.*;
 import static org.lwjgl.opengl.EXTTextureCompressionS3TC.*;
 
 /**
  * Stores some capabilities of an OpenGL device.
  * <p>
+ * OpenGL 3.1 and OpenGL ES 3.0 have a common subset.
  * OpenGL 3.3 or OpenGL ES 3.0 is the minimum requirement.
  */
-public final class GLCaps extends Caps {
+public class GLCaps extends Caps {
 
     /**
      * Contains missing extensions on the last creation of GPU.
@@ -49,42 +43,44 @@ public final class GLCaps extends Caps {
      */
     public static final List<String> MISSING_EXTENSIONS = new ArrayList<>();
 
-    final int mVendor;
-    final int mDriver;
+    GLUtil.GLVendor mVendor;
+    GLUtil.GLDriver mDriver;
 
-    final int mMaxFragmentUniformVectors;
-    private float mMaxTextureMaxAnisotropy = 1.f;
-    final boolean mSupportsProtected = false;
-    private boolean mSkipErrorChecks = false;
-    private final int mMaxLabelLength;
+    int mMaxFragmentUniformVectors;
+    float mMaxTextureMaxAnisotropy = 1.f;
+    boolean mSupportsProtected = false;
+    boolean mSkipErrorChecks = false;
+    int mMaxLabelLength;
 
-    final boolean mDebugSupport;
+    boolean mDebugSupport;
 
-    final boolean mBufferStorageSupport;
+    boolean mBufferStorageSupport;
 
-    final boolean mBaseInstanceSupport;
-    final boolean mProgramBinarySupport;
-    final boolean mCopyImageSupport;
-    final boolean mDSASupport;
-    final boolean mSPIRVSupport;
+    boolean mBaseInstanceSupport;
+    boolean mProgramBinarySupport;
+    boolean mProgramParameterSupport;
+    boolean mCopyImageSupport;
+    boolean mDSASupport;
+    boolean mSPIRVSupport = false;
+    boolean mViewCompatibilityClassSupport = false;
 
-    final int[] mProgramBinaryFormats;
+    int[] mProgramBinaryFormats;
 
     public static final int
             INVALIDATE_BUFFER_TYPE_NULL_DATA = 1,
             INVALIDATE_BUFFER_TYPE_INVALIDATE = 2;
-    final int mInvalidateBufferType;
-    final int mGLSLVersion;
+    int mInvalidateBufferType;
+    int mGLSLVersion;
 
-    final boolean mDSAElementBufferBroken;
+    boolean mDSAElementBufferBroken;
 
     /**
      * Format table for textures.
      *
-     * @see GLCore#glFormatToIndex(int)
+     * @see GLUtil#glFormatToIndex(int)
      */
-    private final FormatInfo[] mFormatTable =
-            new FormatInfo[GLCore.LAST_COLOR_FORMAT_INDEX + 1];
+    final FormatInfo[] mFormatTable =
+            new FormatInfo[GLUtil.LAST_COLOR_FORMAT_INDEX + 1];
 
     // may contain null values that representing invalid
     private final GLBackendFormat[] mColorTypeToBackendFormat =
@@ -92,352 +88,14 @@ public final class GLCaps extends Caps {
     private final GLBackendFormat[] mCompressionTypeToBackendFormat =
             new GLBackendFormat[ImageInfo.COMPRESSION_COUNT];
 
-    @VisibleForTesting
-    public GLCaps(ContextOptions options, GLCapabilities caps) {
+    GLCaps(ContextOptions options) {
         super(options);
-        List<String> missingExtensions = MISSING_EXTENSIONS;
-        missingExtensions.clear();
-        // Your GPU is not modern...
-        if (!caps.OpenGL45) {
-            if (!caps.OpenGL21) {
-                throw new UnsupportedOperationException("OpenGL 2.1 is unavailable");
-            }
-            if (!caps.OpenGL30) {
-                if (!caps.GL_ARB_framebuffer_object) {
-                    missingExtensions.add("ARB_framebuffer_object");
-                }
-                if (!caps.GL_ARB_map_buffer_range) {
-                    missingExtensions.add("ARB_map_buffer_range");
-                }
-                if (!caps.GL_ARB_texture_float) {
-                    missingExtensions.add("ARB_texture_float");
-                }
-                if (!caps.GL_ARB_texture_rg) {
-                    missingExtensions.add("ARB_texture_rg");
-                }
-                if (!caps.GL_ARB_vertex_array_object) {
-                    missingExtensions.add("ARB_vertex_array_object");
-                }
-                if (!caps.GL_ARB_shader_texture_lod) {
-                    missingExtensions.add("ARB_shader_texture_lod");
-                }
-            }
-            if (!caps.OpenGL31) {
-                if (!caps.GL_ARB_uniform_buffer_object) {
-                    missingExtensions.add("ARB_uniform_buffer_object");
-                }
-                if (!caps.GL_ARB_copy_buffer) {
-                    missingExtensions.add("ARB_copy_buffer");
-                }
-                if (!caps.GL_ARB_draw_instanced) {
-                    missingExtensions.add("ARB_draw_instanced");
-                }
-            }
-            if (!caps.OpenGL32) {
-                if (!caps.GL_ARB_draw_elements_base_vertex) {
-                    missingExtensions.add("ARB_draw_elements_base_vertex");
-                }
-                if (!caps.GL_ARB_sync) {
-                    missingExtensions.add("ARB_sync");
-                }
-                if (!caps.GL_ARB_fragment_coord_conventions) {
-                    missingExtensions.add("ARB_fragment_coord_conventions");
-                }
-            }
-            if (!caps.OpenGL33) {
-                if (!caps.GL_ARB_blend_func_extended) {
-                    missingExtensions.add("ARB_blend_func_extended");
-                }
-                if (!caps.GL_ARB_sampler_objects) {
-                    missingExtensions.add("ARB_sampler_objects");
-                }
-                if (!caps.GL_ARB_explicit_attrib_location) {
-                    missingExtensions.add("ARB_explicit_attrib_location");
-                }
-                if (!caps.GL_ARB_instanced_arrays) {
-                    missingExtensions.add("ARB_instanced_arrays");
-                }
-                if (!caps.GL_ARB_texture_swizzle) {
-                    missingExtensions.add("ARB_texture_swizzle");
-                }
-            }
-            // OpenGL 3.3 is the minimum requirement
-            // Note that having these extensions does not mean OpenGL 3.3 is available
-            // but some drivers report wrong values, we just assume OpenGL 3.3 is available
-            // calling missing functions will throw exceptions
-            if (!missingExtensions.isEmpty()) {
-                throw new UnsupportedOperationException("Missing required extensions: " + missingExtensions);
-            }
-            if (!caps.OpenGL41) {
-                // macOS supports this
-                if (!caps.GL_ARB_ES2_compatibility) {
-                    missingExtensions.add("ARB_ES2_compatibility");
-                }
-                if (!caps.GL_ARB_get_program_binary) {
-                    missingExtensions.add("ARB_get_program_binary");
-                }
-                // macOS supports this
-                if (!caps.GL_ARB_viewport_array) {
-                    missingExtensions.add("ARB_viewport_array");
-                }
-            }
-            if (!caps.OpenGL42) {
-                if (!caps.GL_ARB_base_instance) {
-                    missingExtensions.add("ARB_base_instance");
-                }
-                // macOS supports this
-                if (!caps.GL_ARB_texture_storage) {
-                    missingExtensions.add("ARB_texture_storage");
-                }
-                // macOS supports this
-                if (!caps.GL_ARB_internalformat_query) {
-                    missingExtensions.add("ARB_internalformat_query");
-                }
-                if (!caps.GL_ARB_shading_language_420pack) {
-                    missingExtensions.add("ARB_shading_language_420pack");
-                }
-            }
-            if (!caps.OpenGL43) {
-                if (!caps.GL_ARB_invalidate_subdata) {
-                    missingExtensions.add("ARB_invalidate_subdata");
-                }
-                if (!caps.GL_ARB_explicit_uniform_location) {
-                    missingExtensions.add("ARB_explicit_uniform_location");
-                }
-                if (!caps.GL_ARB_vertex_attrib_binding) {
-                    missingExtensions.add("ARB_vertex_attrib_binding");
-                }
-                if (!caps.GL_ARB_ES3_compatibility) {
-                    missingExtensions.add("ARB_ES3_compatibility");
-                }
-            }
-            if (!caps.OpenGL44) {
-                if (!caps.GL_ARB_clear_texture) {
-                    missingExtensions.add("ARB_clear_texture");
-                }
-                if (!caps.GL_ARB_buffer_storage) {
-                    missingExtensions.add("ARB_buffer_storage");
-                }
-                if (!caps.GL_ARB_enhanced_layouts) {
-                    missingExtensions.add("ARB_enhanced_layouts");
-                }
-            }
-            if (!caps.GL_ARB_texture_barrier) {
-                missingExtensions.add("ARB_texture_barrier");
-            }
-            if (!caps.GL_ARB_direct_state_access) {
-                missingExtensions.add("ARB_direct_state_access");
-            }
-            mDSASupport = missingExtensions.isEmpty();
-
-            mDebugSupport = caps.OpenGL43 || caps.GL_KHR_debug;
-            mBaseInstanceSupport = caps.OpenGL42 || caps.GL_ARB_base_instance;
-            mCopyImageSupport = caps.OpenGL43 ||
-                    (caps.GL_ARB_copy_image && caps.GL_ARB_internalformat_query2);
-            mProgramBinarySupport = caps.OpenGL41 || caps.GL_ARB_get_program_binary;
-            mBufferStorageSupport = caps.OpenGL44 || caps.GL_ARB_buffer_storage;
-
-        } else {
-            mDSASupport = true;
-            mDebugSupport = true;
-            mBaseInstanceSupport = true;
-            mCopyImageSupport = true;
-            mProgramBinarySupport = true;
-            mBufferStorageSupport = true;
-        }
-
-        String versionString = glGetString(GL_VERSION);
-        String vendorString = glGetString(GL_VENDOR);
-        mVendor = find_vendor(vendorString);
-        mDriver = find_driver(mVendor, vendorString, versionString);
-
-        // apply driver workarounds
-        {
-            var workarounds = mDriverBugWorkarounds;
-            // Sometimes glVertexArrayElementBuffer will cause segfault on glDrawElementsBaseVertex.
-            // This won't affect performance.
-            if (mDSASupport) {
-                if (DriverBugWorkarounds.isEnabled(workarounds.dsa_element_buffer_broken)) {
-                    mDSAElementBufferBroken = true;
-                } else if (DriverBugWorkarounds.isDisabled(workarounds.dsa_element_buffer_broken)) {
-                    mDSAElementBufferBroken = false;
-                } else {
-                    // for NVIDIA, disable for all platforms
-                    mDSAElementBufferBroken = (mDriver == GL_DRIVER_NVIDIA);
-                }
-            } else {
-                mDSAElementBufferBroken = false;
-            }
-        }
-
-        if (caps.OpenGL41 || caps.GL_ARB_ES2_compatibility) {
-            mMaxFragmentUniformVectors = glGetInteger(GL_MAX_FRAGMENT_UNIFORM_VECTORS);
-        } else {
-            mMaxFragmentUniformVectors = -1;
-        }
-        mMaxVertexAttributes = Math.min(32, glGetInteger(GL_MAX_VERTEX_ATTRIBS));
-
-        if (caps.OpenGL43 || caps.GL_ARB_invalidate_subdata) {
-            mInvalidateBufferType = INVALIDATE_BUFFER_TYPE_INVALIDATE;
-        } else {
-            mInvalidateBufferType = INVALIDATE_BUFFER_TYPE_NULL_DATA;
-        }
-
-        mTransferPixelsToRowBytesSupport = true;
-
-        // When we are abandoning the context we cannot call into GL thus we should skip any sync work.
-        mMustSyncGpuDuringDiscard = false;
-
-        if (mDebugSupport) {
-            mMaxLabelLength = glGetInteger(GL_MAX_LABEL_LENGTH);
-        } else {
-            mMaxLabelLength = 0;
-        }
-
-        ShaderCaps shaderCaps = mShaderCaps;
-        // target API is just for validation
-        if (caps.OpenGL45) {
-            shaderCaps.mTargetApi = TargetApi.OPENGL_4_5;
-        } else if (caps.OpenGL43) {
-            shaderCaps.mTargetApi = TargetApi.OPENGL_4_3;
-        } else {
-            shaderCaps.mTargetApi = TargetApi.OPENGL_3_3;
-        }
-        final int glslVersion;
-        if (caps.OpenGL46) {
-            glslVersion = 460;
-        } else if (caps.OpenGL45) {
-            glslVersion = 450;
-        } else if (caps.OpenGL44) {
-            glslVersion = 440;
-        } else if (caps.OpenGL43) {
-            glslVersion = 430;
-        } else if (caps.OpenGL42) {
-            glslVersion = 420;
-        } else if (caps.OpenGL41) {
-            glslVersion = 410;
-        } else if (caps.OpenGL40) {
-            glslVersion = 400;
-        } else {
-            glslVersion = 330;
-        }
-        mGLSLVersion = glslVersion;
-        // round down the version
-        if (glslVersion >= 450) {
-            shaderCaps.mGLSLVersion = GLSLVersion.GLSL_450;
-        } else if (glslVersion == 440) {
-            shaderCaps.mGLSLVersion = GLSLVersion.GLSL_440;
-        } else if (glslVersion == 430) {
-            shaderCaps.mGLSLVersion = GLSLVersion.GLSL_430;
-        } else if (glslVersion == 420) {
-            shaderCaps.mGLSLVersion = GLSLVersion.GLSL_420;
-        } else if (glslVersion >= 400) {
-            shaderCaps.mGLSLVersion = GLSLVersion.GLSL_400;
-        } else {
-            shaderCaps.mGLSLVersion = GLSLVersion.GLSL_330;
-        }
-        initGLSL(caps, shaderCaps.mGLSLVersion);
-
-        // OpenGL 3.3
-        shaderCaps.mDualSourceBlendingSupport = true;
-
-        if (caps.GL_NV_conservative_raster) {
-            mConservativeRasterSupport = true;
-        }
-
-        // Protect ourselves against tracking huge amounts of texture state.
-        shaderCaps.mMaxFragmentSamplers = Math.min(32, glGetInteger(GL_MAX_TEXTURE_IMAGE_UNITS));
-
-        if (caps.GL_NV_blend_equation_advanced_coherent) {
-            mBlendEquationSupport = BlendEquationSupport.ADVANCED_COHERENT;
-            shaderCaps.mAdvBlendEqInteraction = ShaderCaps.Automatic_AdvBlendEqInteraction;
-        } else if (caps.GL_KHR_blend_equation_advanced_coherent) {
-            mBlendEquationSupport = BlendEquationSupport.ADVANCED_COHERENT;
-            mShaderCaps.mAdvBlendEqInteraction = ShaderCaps.GeneralEnable_AdvBlendEqInteraction;
-        } else if (caps.GL_NV_blend_equation_advanced) {
-            mBlendEquationSupport = BlendEquationSupport.ADVANCED;
-            mShaderCaps.mAdvBlendEqInteraction = ShaderCaps.Automatic_AdvBlendEqInteraction;
-        } else if (caps.GL_KHR_blend_equation_advanced) {
-            mBlendEquationSupport = BlendEquationSupport.ADVANCED;
-            mShaderCaps.mAdvBlendEqInteraction = ShaderCaps.GeneralEnable_AdvBlendEqInteraction;
-        }
-
-        mAnisotropySupport = caps.OpenGL46 ||
-                caps.GL_ARB_texture_filter_anisotropic ||
-                caps.GL_EXT_texture_filter_anisotropic;
-        if (mAnisotropySupport) {
-            mMaxTextureMaxAnisotropy = glGetFloat(GL46C.GL_MAX_TEXTURE_MAX_ANISOTROPY);
-        }
-
-        mMaxTextureSize = glGetInteger(GL_MAX_TEXTURE_SIZE);
-        mMaxRenderTargetSize = glGetInteger(GL_MAX_RENDERBUFFER_SIZE);
-        mMaxPreferredRenderTargetSize = mMaxRenderTargetSize;
-
-        mGpuTracingSupport = caps.GL_EXT_debug_marker;
-
-        mDynamicStateArrayGeometryProcessorTextureSupport = true;
-
-        if (mProgramBinarySupport) {
-            int count = glGetInteger(GL_NUM_PROGRAM_BINARY_FORMATS);
-            mProgramBinaryFormats = new int[count];
-            if (count > 0) {
-                glGetIntegerv(GL_PROGRAM_BINARY_FORMATS, mProgramBinaryFormats);
-            }
-        } else {
-            mProgramBinaryFormats = null;
-        }
-        boolean spirvSupport = false;
-        // we don't use ARB_GL_SPIRV, so check OpenGL 4.6 support
-        if (caps.OpenGL46) {
-            int count = glGetInteger(GL_NUM_SHADER_BINARY_FORMATS);
-            if (count > 0) {
-                int[] shaderBinaryFormats = new int[count];
-                glGetIntegerv(GL_SHADER_BINARY_FORMATS, shaderBinaryFormats);
-                for (int format : shaderBinaryFormats) {
-                    if (format == GL46C.GL_SHADER_BINARY_FORMAT_SPIR_V) {
-                        spirvSupport = true;
-                        break;
-                    }
-                }
-            }
-        }
-        mSPIRVSupport = spirvSupport;
-        // SPIR-V has priority over program binary
-        if (spirvSupport) {
-            shaderCaps.mSPIRVVersion = SPIRVVersion.SPIRV_1_0;
-        }
-
-        initFormatTable(caps);
-
-        finishInitialization(options);
     }
 
-    private void initGLSL(GLCapabilities caps, GLSLVersion version) {
-        ShaderCaps shaderCaps = mShaderCaps;
-
-        // Desktop
-        shaderCaps.mPreferFlatInterpolation = true;
-
-        // Desktop
-        shaderCaps.mVertexIDSupport = true;
-        // GLSL 330
-        shaderCaps.mInfinitySupport = true;
-        // Desktop
-        shaderCaps.mNonConstantArrayIndexSupport = true;
-        // GLSL 400
-        shaderCaps.mBitManipulationSupport = version.isAtLeast(GLSLVersion.GLSL_400);
-        // GLSL 400
-        shaderCaps.mTextureQueryLod = version.isAtLeast(GLSLVersion.GLSL_400);
-        shaderCaps.mShadingLanguage420Pack = caps.OpenGL42;
-        shaderCaps.mEnhancedLayouts = caps.OpenGL44;
-    }
-
-    private void initFormatTable(GLCapabilities caps) {
+    void initFormatTable(boolean textureStorageSupported,
+                         boolean EXT_texture_compression_s3tc) {
         final int nonMSAARenderFlags = FormatInfo.COLOR_ATTACHMENT_FLAG;
         final int msaaRenderFlags = nonMSAARenderFlags | FormatInfo.COLOR_ATTACHMENT_WITH_MSAA_FLAG;
-
-        final boolean textureStorageSupported =
-                caps.OpenGL42 || caps.GL_ARB_texture_storage;
 
         // Reserved for undefined
         mFormatTable[0] = new FormatInfo();
@@ -446,7 +104,7 @@ public final class GLCaps extends Caps {
         {
             final int format = GL_RGBA8;
             FormatInfo info = mFormatTable[1] = new FormatInfo();
-            assert (getFormatInfo(format) == info && GLCore.glIndexToFormat(1) == format);
+            assert (getFormatInfo(format) == info && GLUtil.glIndexToFormat(1) == format);
             info.mFormatType = FormatInfo.FORMAT_TYPE_NORMALIZED_FIXED_POINT;
             info.mInternalFormatForRenderbuffer = format;
             info.mDefaultExternalFormat = GL_RGBA;
@@ -648,8 +306,6 @@ public final class GLCaps extends Caps {
             info.mDefaultExternalFormat = GL_RGB;
             info.mDefaultExternalType = GL_UNSIGNED_SHORT_5_6_5;
             info.mDefaultColorType = ImageInfo.CT_RGB_565;
-            info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
-            info.mFlags |= msaaRenderFlags;
             if (textureStorageSupported) {
                 info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
             }
@@ -814,15 +470,6 @@ public final class GLCaps extends Caps {
             info.mDefaultExternalType = GL_UNSIGNED_BYTE;
             info.mDefaultColorType = ImageInfo.CT_RGB_888;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
-            // Even in OpenGL 4.6 GL_RGB8 is required to be color renderable but not required to be
-            // a supported render buffer format. Since we usually use render buffers for MSAA on
-            // we don't support MSAA for GL_RGB8.
-            if ((caps.OpenGL43 || caps.GL_ARB_internalformat_query2) &&
-                    glGetInternalformati(GL_RENDERBUFFER, GL_RGB8, GL_INTERNALFORMAT_SUPPORTED) == GL_TRUE) {
-                info.mFlags |= msaaRenderFlags;
-            } else {
-                info.mFlags |= nonMSAARenderFlags;
-            }
             if (textureStorageSupported) {
                 info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
             }
@@ -1040,7 +687,6 @@ public final class GLCaps extends Caps {
             FormatInfo info = mFormatTable[10] = new FormatInfo();
             info.mFormatType = FormatInfo.FORMAT_TYPE_NORMALIZED_FIXED_POINT;
             info.mInternalFormatForTexture = GL_COMPRESSED_RGB8_ETC2;
-            info.mFlags = FormatInfo.TEXTURABLE_FLAG;
 
             mCompressionTypeToBackendFormat[ImageInfo.COMPRESSION_ETC2_RGB8_UNORM] =
                     GLBackendFormat.make(GL_COMPRESSED_RGB8_ETC2);
@@ -1053,7 +699,7 @@ public final class GLCaps extends Caps {
             FormatInfo info = mFormatTable[11] = new FormatInfo();
             info.mFormatType = FormatInfo.FORMAT_TYPE_NORMALIZED_FIXED_POINT;
             info.mInternalFormatForTexture = GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
-            if (caps.GL_EXT_texture_compression_s3tc) {
+            if (EXT_texture_compression_s3tc) {
                 info.mFlags = FormatInfo.TEXTURABLE_FLAG;
 
                 mCompressionTypeToBackendFormat[ImageInfo.COMPRESSION_BC1_RGB8_UNORM] =
@@ -1068,7 +714,7 @@ public final class GLCaps extends Caps {
             FormatInfo info = mFormatTable[12] = new FormatInfo();
             info.mFormatType = FormatInfo.FORMAT_TYPE_NORMALIZED_FIXED_POINT;
             info.mInternalFormatForTexture = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
-            if (caps.GL_EXT_texture_compression_s3tc) {
+            if (EXT_texture_compression_s3tc) {
                 info.mFlags = FormatInfo.TEXTURABLE_FLAG;
 
                 mCompressionTypeToBackendFormat[ImageInfo.COMPRESSION_BC1_RGBA8_UNORM] =
@@ -1259,59 +905,9 @@ public final class GLCaps extends Caps {
                 }
             }
         }
+    }
 
-        // Init samples
-        for (FormatInfo info : mFormatTable) {
-            if (mCopyImageSupport && info.mInternalFormatForTexture != 0) {
-                info.mViewCompatibilityClass = glGetInternalformati(
-                        GL_TEXTURE_2D, info.mInternalFormatForTexture, GL_VIEW_COMPATIBILITY_CLASS
-                );
-            }
-            if ((info.mFlags & FormatInfo.COLOR_ATTACHMENT_WITH_MSAA_FLAG) != 0) {
-                // We assume that MSAA rendering is supported only if we support non-MSAA rendering.
-                assert (info.mFlags & FormatInfo.COLOR_ATTACHMENT_FLAG) != 0;
-                if (caps.OpenGL42 || caps.GL_ARB_internalformat_query) {
-                    int glFormat = info.mInternalFormatForRenderbuffer;
-                    int count = glGetInternalformati(GL_RENDERBUFFER, glFormat, GL_NUM_SAMPLE_COUNTS);
-                    if (count > 0) {
-                        try (MemoryStack stack = MemoryStack.stackPush()) {
-                            IntBuffer temp = stack.mallocInt(count);
-                            glGetInternalformativ(GL_RENDERBUFFER, glFormat, GL_SAMPLES, temp);
-                            // GL has a concept of MSAA rasterization with a single sample, but we do not.
-                            if (temp.get(count - 1) == 1) {
-                                --count;
-                                assert (count == 0 || temp.get(count - 1) > 1);
-                            }
-                            info.mColorSampleCounts = new int[count + 1];
-                            // We initialize our supported values with 1 (no msaa) and reverse the order
-                            // returned by GL so that the array is ascending.
-                            info.mColorSampleCounts[0] = 1;
-                            for (int j = 0; j < count; ++j) {
-                                info.mColorSampleCounts[j + 1] = temp.get(count - j - 1);
-                            }
-                        }
-                    }
-                } else {
-                    int maxSampleCnt = Math.max(1, glGetInteger(GL_MAX_SAMPLES));
-                    int count = 4; // [1, 2, 4, 8]
-                    for (; count > 0; --count) {
-                        if ((1 << (count - 1)) <= maxSampleCnt) {
-                            break;
-                        }
-                    }
-                    if (count > 0) {
-                        info.mColorSampleCounts = new int[count];
-                        for (int i = 0; i < count; i++) {
-                            info.mColorSampleCounts[i] = 1 << i;
-                        }
-                    }
-                }
-            } else if ((info.mFlags & FormatInfo.COLOR_ATTACHMENT_FLAG) != 0) {
-                info.mColorSampleCounts = new int[1];
-                info.mColorSampleCounts[0] = 1;
-            }
-        }
-
+    boolean validateFormatTable() {
         // Validate, skip UNKNOWN
         for (int index = 1; index < mFormatTable.length; ++index) {
             FormatInfo info = mFormatTable[index];
@@ -1360,16 +956,43 @@ public final class GLCaps extends Caps {
                 }
             }
         }
+        return true;
     }
 
-    public FormatInfo getFormatInfo(int format) {
-        return mFormatTable[GLCore.glFormatToIndex(format)];
+    void applyDriverWorkaround() {
+        var workarounds = mDriverBugWorkarounds;
+        // Sometimes glVertexArrayElementBuffer will cause segfault on glDrawElementsBaseVertex.
+        // This won't affect performance.
+        if (mDSASupport) {
+            if (DriverBugWorkarounds.isEnabled(workarounds.dsa_element_buffer_broken)) {
+                mDSAElementBufferBroken = true;
+            } else if (DriverBugWorkarounds.isDisabled(workarounds.dsa_element_buffer_broken)) {
+                mDSAElementBufferBroken = false;
+            } else {
+                // for NVIDIA, disable for all platforms
+                mDSAElementBufferBroken = (mDriver == GLUtil.GLDriver.NVIDIA);
+            }
+        } else {
+            mDSAElementBufferBroken = false;
+        }
+    }
+
+    FormatInfo getFormatInfo(int format) {
+        return mFormatTable[GLUtil.glFormatToIndex(format)];
     }
 
     private void setColorTypeFormat(int colorType, int format) {
         assert mColorTypeToBackendFormat[colorType] == null;
-        assert GLCore.glFormatIsSupported(format);
+        assert GLUtil.glFormatIsSupported(format);
         mColorTypeToBackendFormat[colorType] = GLBackendFormat.make(format);
+    }
+
+    public GLUtil.GLVendor getVendor() {
+        return mVendor;
+    }
+
+    public GLUtil.GLDriver getDriver() {
+        return mDriver;
     }
 
     /**
@@ -1735,8 +1358,11 @@ public final class GLCaps extends Caps {
         if (srcFormat == dstFormat) {
             return true;
         }
-        return getFormatInfo(srcFormat).mViewCompatibilityClass ==
-                getFormatInfo(dstFormat).mViewCompatibilityClass;
+        if (mViewCompatibilityClassSupport) {
+            return getFormatInfo(srcFormat).mViewCompatibilityClass ==
+                    getFormatInfo(dstFormat).mViewCompatibilityClass;
+        }
+        return false;
     }
 
     public boolean canCopyTexSubImage(int srcFormat, int dstFormat) {
@@ -1745,7 +1371,7 @@ public final class GLCaps extends Caps {
                 getFormatDefaultExternalType(srcFormat)) {
             return false;
         }
-        if (glFormatIsSRGB(dstFormat) != glFormatIsSRGB(srcFormat)) {
+        if (GLUtil.glFormatIsSRGB(dstFormat) != GLUtil.glFormatIsSRGB(srcFormat)) {
             return false;
         }
         return (getFormatInfo(srcFormat).mFlags & FormatInfo.COLOR_ATTACHMENT_FLAG) != 0;

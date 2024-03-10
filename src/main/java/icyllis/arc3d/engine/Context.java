@@ -118,6 +118,12 @@ public abstract class Context extends RefCnt {
     }
 
     @ApiStatus.Internal
+    @Nullable
+    public final PrintWriter getInfoWriter() {
+        return getOptions().mInfoWriter;
+    }
+
+    @ApiStatus.Internal
     public final PrintWriter getErrorWriter() {
         return Objects.requireNonNullElseGet(getOptions().mErrorWriter, Context::getDefaultErrorWriter);
     }

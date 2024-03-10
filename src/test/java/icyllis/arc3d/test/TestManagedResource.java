@@ -32,6 +32,7 @@ import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.EXTTextureCompressionS3TC;
 import org.lwjgl.opengl.GL;
+import org.lwjgl.opengles.GLES;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.*;
 
@@ -60,9 +61,9 @@ public class TestManagedResource {
         // load first
         Objects.requireNonNull(GL.getFunctionProvider());
         GLFW.glfwDefaultWindowHints();
-        /*GLFW.glfwWindowHint(GLFW.GLFW_CLIENT_API, GLFW.GLFW_OPENGL_ES_API);
+        GLFW.glfwWindowHint(GLFW.GLFW_CLIENT_API, GLFW.GLFW_OPENGL_ES_API);
         GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 3);
-        GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 0);*/
+        GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 0);
         GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GLFW.GLFW_FALSE);
         long window = GLFW.glfwCreateWindow(800, 600, "Test Window", 0, 0);
         if (window == 0) {
@@ -70,18 +71,25 @@ public class TestManagedResource {
         }
         GLFW.glfwMakeContextCurrent(window);
 
-        DirectContext dContext = DirectContext.makeOpenGL();
+        ContextOptions contextOptions = new ContextOptions();
+        contextOptions.mInfoWriter = pw;
+        DirectContext dContext = DirectContext.makeOpenGL(
+                GLES.createCapabilities(),
+                contextOptions
+        );
         if (dContext == null) {
             throw new RuntimeException();
         }
-        String glVersion = GLCore.glGetString(GLCore.GL_VERSION);
+        GLInterface gl = ((GLDevice) dContext.getDevice()).getGL();
+        GLCaps caps = (GLCaps) dContext.getCaps();
+        String glVersion = gl.GetString(GLCore.GL_VERSION);
         pw.println("OpenGL version: " + glVersion);
-        pw.println("OpenGL vendor: " + GLCore.glGetString(GLCore.GL_VENDOR));
-        pw.println("OpenGL renderer: " + GLCore.glGetString(GLCore.GL_RENDERER));
-        pw.println("Max vertex attribs: " + GLCore.glGetInteger(GLCore.GL_MAX_VERTEX_ATTRIBS));
-        pw.println("Max vertex bindings: " + GLCore.glGetInteger(GLCore.GL_MAX_VERTEX_ATTRIB_BINDINGS));
-        pw.println("Max vertex stride: " + GLCore.glGetInteger(GLCore.GL_MAX_VERTEX_ATTRIB_STRIDE));
-        pw.println("Max label length: " + GLCore.glGetInteger(GLCore.GL_MAX_LABEL_LENGTH));
+        pw.println("OpenGL vendor: " + gl.GetString(GLCore.GL_VENDOR));
+        pw.println("OpenGL renderer: " + gl.GetString(GLCore.GL_RENDERER));
+        pw.println("Max vertex attribs: " + gl.GetInteger(GLCore.GL_MAX_VERTEX_ATTRIBS));
+        pw.println("Max vertex bindings: " + gl.GetInteger(GLCore.GL_MAX_VERTEX_ATTRIB_BINDINGS));
+        pw.println("Max vertex stride: " + gl.GetInteger(GLCore.GL_MAX_VERTEX_ATTRIB_STRIDE));
+        pw.println("Max label length: " + gl.GetInteger(GLCore.GL_MAX_LABEL_LENGTH));
 
         if (glVersion != null) {
             var pattern = Pattern.compile("(\\d+)\\.(\\d+)");
@@ -96,22 +104,12 @@ public class TestManagedResource {
             for (int i = 0; i < numGLSLVersions; i++) {
                 pw.println("GLSL version: " + glGetStringi(GL_SHADING_LANGUAGE_VERSION, i));
             }
-            pw.println("Default GLSL version: " + glGetString(GL_SHADING_LANGUAGE_VERSION));
+            pw.println("Default GLSL version: " + gl.GetString(GL_SHADING_LANGUAGE_VERSION));
         }
 
         {
-            int count = glGetInteger(GL_NUM_PROGRAM_BINARY_FORMATS);
-            var binaryFormats = new int[count];
-            if (count > 0) {
-                glGetIntegerv(GL_PROGRAM_BINARY_FORMATS, binaryFormats);
-            }
-            pw.println("Program binary formats: " + Arrays.toString(binaryFormats));
-            count = glGetInteger(GL_NUM_SHADER_BINARY_FORMATS);
-            binaryFormats = new int[count];
-            if (count > 0) {
-                glGetIntegerv(GL_SHADER_BINARY_FORMATS, binaryFormats);
-            }
-            pw.println("Shader binary formats: " + Arrays.toString(binaryFormats));
+            pw.println("Program binary formats: " + Arrays.toString(caps.getProgramBinaryFormats()));
+            pw.println("SPIR-V support: " + caps.hasSPIRVSupport());
         }
 
         {
@@ -257,10 +255,6 @@ public class TestManagedResource {
                         """;
 
         testShaderBuilder(pw, dContext);
-
-        GLCaps caps = (GLCaps) dContext.getCaps();
-        pw.println("ProgramBinaryFormats: " + Arrays.toString(caps.getProgramBinaryFormats()));
-        pw.println("SPIR-V support: " + caps.hasSPIRVSupport());
 
         if (dContext.getCaps().isFormatTexturable(
                 GLBackendFormat.make(EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT1_EXT))) {
