@@ -18,11 +18,8 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.annotation.ColorInt;
-import icyllis.modernui.annotation.Size;
+import icyllis.modernui.annotation.*;
 import org.jetbrains.annotations.ApiStatus;
-
-import javax.annotation.Nonnull;
 
 public class Color {
 
@@ -167,27 +164,26 @@ public class Color {
      * </ul>
      */
     @ColorInt
-    public static int parseColor(@Nonnull String colorString) {
-        if (colorString.charAt(0) == '#') {
-            int color = Integer.parseUnsignedInt(colorString.substring(1), 16);
-            if (colorString.length() == 7) {
-                // Set the alpha value
-                color |= 0xFF000000;
-            } else if (colorString.length() != 9) {
-                throw new IllegalArgumentException("Unknown color: " + colorString);
-            }
-            return color;
-        } else if (colorString.startsWith("0x")) { // do not support upper case
-            int color = Integer.parseUnsignedInt(colorString.substring(2), 16);
-            if (colorString.length() == 8) {
-                // Set the alpha value
-                color |= 0xFF000000;
-            } else if (colorString.length() != 10) {
-                throw new IllegalArgumentException("Unknown color: " + colorString);
-            }
-            return color;
+    public static int parseColor(@NonNull String colorString) {
+        final int index;
+        if (colorString.startsWith("#")) {
+            index = 1;
+        } else if (colorString.startsWith("0x") || colorString.startsWith("0X")) {
+            index = 2;
+        } else {
+            throw new IllegalArgumentException("Unknown color prefix: " + colorString);
         }
-        throw new IllegalArgumentException("Unknown color prefix: " + colorString);
+        int length = colorString.length() - index;
+        if (length != 6 && length != 8) {
+            throw new IllegalArgumentException("Unknown color: " + colorString);
+        }
+        // Java 9
+        int color = Integer.parseUnsignedInt(colorString, index, index + length, 16);
+        if (length == 6) {
+            // Set the alpha value
+            color |= 0xFF000000;
+        }
+        return color;
     }
 
     /**
@@ -415,8 +411,9 @@ public class Color {
      * @param dst  the destination color (straight) on which the source color is to be blended
      * @return the color (straight) resulting from the color blending
      */
+    @ApiStatus.Internal
     @ColorInt
-    public static int blend(@Nonnull BlendMode mode, @ColorInt int src, @ColorInt int dst) {
+    public static int blend(@NonNull BlendMode mode, @ColorInt int src, @ColorInt int dst) {
         return icyllis.arc3d.core.Color.blend(mode.nativeBlendMode(), src, dst);
     }
 

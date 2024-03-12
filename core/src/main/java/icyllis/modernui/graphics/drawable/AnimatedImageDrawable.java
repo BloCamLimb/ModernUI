@@ -18,6 +18,8 @@
 
 package icyllis.modernui.graphics.drawable;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.graphics.Canvas;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.concurrent.*;
@@ -29,7 +31,8 @@ import java.util.concurrent.*;
  * updating when necessary. The drawable will only animate while it is being
  * displayed.</p>
  */
-public class AnimatedImageDrawable {
+//TODO WIP
+public class AnimatedImageDrawable extends Drawable implements Animatable2 {
 
     private static final ExecutorService ANIMATED_IMAGE_EXECUTOR = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "Animated-Image-Thread");
@@ -42,5 +45,40 @@ public class AnimatedImageDrawable {
     public static Executor getAnimatedImageExecutor() {
         //TODO use CompletableFuture.supplyAsync() to decode next frame, and with a lock
         return ANIMATED_IMAGE_EXECUTOR;
+    }
+
+    @Override
+    public void start() {
+
+    }
+
+    @Override
+    public void stop() {
+
+    }
+
+    @Override
+    public boolean isRunning() {
+        return false;
+    }
+
+    @Override
+    public void registerAnimationCallback(@NonNull AnimationCallback callback) {
+
+    }
+
+    @Override
+    public boolean unregisterAnimationCallback(@NonNull AnimationCallback callback) {
+        return false;
+    }
+
+    @Override
+    public void clearAnimationCallbacks() {
+
+    }
+
+    @Override
+    public void draw(@NonNull Canvas canvas) {
+
     }
 }
