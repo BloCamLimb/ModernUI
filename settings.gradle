@@ -18,6 +18,9 @@ project(':core-ktx').name = 'ModernUI-Core-KTX'
 //include 'x-viewpager'
 //project(':x-viewpager').name = "ModernUI-ViewPager"
 
+include 'x-awt'
+project(':x-awt').name = "ModernUI-AWT"
+
 include 'x-markdown'
 project(':x-markdown').name = "ModernUI-Markdown"
 

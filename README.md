@@ -20,7 +20,7 @@ Releases for Minecraft Mod are available on [CurseForge](https://www.curseforge.
 If you have any questions, feel free to join our [Discord](https://discord.gg/kmyGKt2) server.
 ### License
 * Modern UI
-  - Copyright (C) 2019-2023 BloCamLimb
+  - Copyright (C) 2019-2024 BloCamLimb
   - [![License](https://img.shields.io/badge/License-LGPL--3.0--or--later-blue.svg?style=flat-square)](https://www.gnu.org/licenses/lgpl-3.0.en.html)
   - Copyright (C) 2006 The Android Open Source Project
   - [![License](https://img.shields.io/badge/License-Apache%202.0-orange.svg?style=flat-square)](https://opensource.org/licenses/Apache-2.0)
@@ -28,7 +28,6 @@ If you have any questions, feel free to join our [Discord](https://discord.gg/km
   - [lwjgl](https://github.com/LWJGL/lwjgl3) licensed under BSD-3-Clause
   - [fastutil](https://github.com/vigna/fastutil) by Vigna, licensed under Apache-2.0
   - [caffeine](https://github.com/ben-manes/caffeine) by Ben Manes, licensed under Apache-2.0
-  - [flexmark-java](https://github.com/vsch/flexmark-java) by Atlassian Pty Ltd, Vladimir Schneider, licensed under BSD-2-Clause
   - [log4j](https://github.com/apache/logging-log4j2) licensed under Apache-2.0
   - [icu4j](https://github.com/unicode-org/icu) by Unicode, Inc. see [LICENSE](https://github.com/unicode-org/icu/blob/main/LICENSE)
 ### Documentation
