@@ -1,0 +1,26 @@
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    api project(':ModernUI-Core')
+    implementation platform("org.lwjgl:lwjgl-bom:${lwjgl_version}")
+    implementation "org.lwjgl:lwjgl"
+    implementation "org.lwjgl:lwjgl-opengl"
+    implementation "org.lwjgl:lwjgl-vulkan"
+    implementation "org.lwjgl:lwjgl-jawt"
+}
+
+jar {
+    manifest {
+        attributes(
+                "Specification-Title": project.name,
+                "Specification-Vendor": "BloCamLimb",
+                "Specification-Version": "1",
+                "Implementation-Title": project.name,
+                "Implementation-Version": project.version,
+                "Implementation-Vendor": "BloCamLimb",
+                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
+        )
+    }
+}
