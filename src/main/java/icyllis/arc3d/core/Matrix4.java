@@ -21,8 +21,7 @@ package icyllis.arc3d.core;
 
 import org.lwjgl.system.MemoryUtil;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import javax.annotation.*;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 
@@ -1168,6 +1167,7 @@ public class Matrix4 implements Cloneable {
      *
      * @return {@code true} if this matrix is invertible.
      */
+    @CheckReturnValue
     public boolean invert() {
         return invert(this);
     }
@@ -1179,6 +1179,7 @@ public class Matrix4 implements Cloneable {
      * @param dest the destination matrix
      * @return {@code true} if this matrix is invertible.
      */
+    @CheckReturnValue
     public boolean invert(@Nonnull Matrix4 dest) {
         float b00 = m11 * m22 - m12 * m21;
         float b01 = m11 * m23 - m13 * m21;

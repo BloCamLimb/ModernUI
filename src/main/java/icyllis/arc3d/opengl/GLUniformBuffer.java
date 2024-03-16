@@ -26,6 +26,28 @@ import javax.annotation.Nullable;
 
 import static icyllis.arc3d.opengl.GLCore.*;
 
+//TODO
+// We will introduce 4 ways for streaming UBO (which is updated-per-draw or updated-per-frame).
+// 1. Ring Buffer (OpenGL 4.4 Persistent Mapping + Manual Sync)
+//    map with MAP_PERSISTENT_BIT | MAP_COHERENT_BIT
+//    This is the technology used in D3D11 and Vulkan
+//    Possibly create with CLIENT_STORAGE_BIT on Mesa driver (it should be PCIe pinned memory)
+// 2. Legacy Ring Buffer (before OpenGL 4.4 non-persistent mapping)
+//    map with MAP_INVALIDATE_RANGE_BIT | MAP_UNSYNCHRONIZED_BIT with small block size
+//    Use UnmapBuffer or FlushMappedBufferRange to flush, and map next small block
+//    Don't sync, use null data or invalidate buffer if whole buffer wraps
+//    This should be good but may be slow on some drivers, because map bits are just hints
+// 3. BufferSubData multiple times on the same buffer with similar size (alignment 128)
+//    Create buffer with STREAM_DRAW or STATIC_DRAW, one buffer one binding
+//    This should be good, but is implementation-dependent
+// 4. BufferSubData with pool + triple buffering + implicit sync
+//    Since BufferSubData may block for sync, use 3 or 4 buckets of uniform buffers
+//    and assume they are signaled and free to use again after 3 or 4 frames (submits / SwapBuffers)
+//    each bucket is a list of uniform buffers that have similar sizes
+// For non-streaming UBO (updated occasionally), use method 3 or method 4
+// just differ in STREAM_DRAW or STATIC_DRAW hint
+// The first two methods should be avoided on OpenGL ES
+// If method 3 is slow, use method 4 (best compatibility, lowest priority)
 public class GLUniformBuffer extends ManagedResource {
 
     private final int mBinding;

@@ -19,7 +19,8 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.Rect2fc;
+import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.ops.Op;
 
 import static icyllis.arc3d.engine.Engine.SurfaceOrigin;
@@ -128,19 +129,23 @@ public abstract class OpsRenderPass {
     /**
      * Binds geometric (input) buffers to current command buffer.
      *
-     * @param indexBuffer    raw ptr to the index buffer if using indexed rendering, or nullptr
-     * @param vertexBuffer   raw ptr to the vertex buffer, can be nullptr
-     * @param instanceBuffer raw ptr to the instance buffer if using instanced rendering, or nullptr
+     * @param indexBuffer          raw ptr to the index buffer if using indexed rendering, or nullptr
+     * @param indexType            index type, see {@link Engine.IndexType}
+     * @param vertexBuffer         raw ptr to the vertex buffer, can be nullptr
+     * @param vertexStreamOffset   byte offset to first vertex of vertex stream
+     * @param instanceBuffer       raw ptr to the instance buffer if using instanced rendering, or nullptr
+     * @param instanceStreamOffset byte offset to first instance of instance stream
      */
-    public final void bindBuffers(GpuBuffer indexBuffer,
-                                  GpuBuffer vertexBuffer,
-                                  GpuBuffer instanceBuffer) {
+    public final void bindBuffers(GpuBuffer indexBuffer, int indexType,
+                                  GpuBuffer vertexBuffer, int vertexStreamOffset,
+                                  GpuBuffer instanceBuffer, int instanceStreamOffset) {
         if (vertexBuffer == null && instanceBuffer == null) {
             mDrawPipelineStatus = kFailedToBind_DrawPipelineStatus;
             return;
         }
         if (mDrawPipelineStatus == kConfigured_DrawPipelineStatus) {
-            onBindBuffers(indexBuffer, vertexBuffer, instanceBuffer);
+            onBindBuffers(indexBuffer, indexType, vertexBuffer, vertexStreamOffset, instanceBuffer,
+                    instanceStreamOffset);
         } else {
             assert (mDrawPipelineStatus == kFailedToBind_DrawPipelineStatus);
         }
@@ -232,9 +237,9 @@ public abstract class OpsRenderPass {
                                               GraphicsPipelineState pipelineState,
                                               Rect2fc drawBounds);
 
-    protected abstract void onBindBuffers(@SharedPtr GpuBuffer indexBuffer,
-                                          @SharedPtr GpuBuffer vertexBuffer,
-                                          @SharedPtr GpuBuffer instanceBuffer);
+    protected abstract void onBindBuffers(@SharedPtr GpuBuffer indexBuffer, int indexType,
+                                          @SharedPtr GpuBuffer vertexBuffer, int vertexStreamOffset,
+                                          @SharedPtr GpuBuffer instanceBuffer, int instanceStreamOffset);
 
     protected abstract void onDraw(int vertexCount, int baseVertex);
 

@@ -22,11 +22,14 @@ package icyllis.arc3d.opengl;
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.ManagedResource;
 import icyllis.arc3d.engine.SamplerState;
-import org.lwjgl.opengl.GL46C;
 
 import javax.annotation.Nullable;
 
-import static icyllis.arc3d.opengl.GLCore.*;
+import static org.lwjgl.opengl.GL11C.*;
+import static org.lwjgl.opengl.GL12C.GL_CLAMP_TO_EDGE;
+import static org.lwjgl.opengl.GL13C.GL_CLAMP_TO_BORDER;
+import static org.lwjgl.opengl.GL14C.GL_MIRRORED_REPEAT;
+import static org.lwjgl.opengl.GL46C.GL_TEXTURE_MAX_ANISOTROPY;
 
 /**
  * Represents OpenGL sampler objects.
@@ -44,7 +47,7 @@ public final class GLSampler extends ManagedResource {
     @SharedPtr
     public static GLSampler create(GLDevice device,
                                    int samplerState) {
-        int sampler = glGenSamplers();
+        int sampler = device.getGL().glGenSamplers();
         if (sampler == 0) {
             return null;
         }
@@ -61,15 +64,15 @@ public final class GLSampler extends ManagedResource {
         int wrapY = address_mode_to_wrap(
                 SamplerState.getAddressModeY(samplerState)
         );
-        glSamplerParameteri(sampler, GL_TEXTURE_MAG_FILTER, magFilter);
-        glSamplerParameteri(sampler, GL_TEXTURE_MIN_FILTER, minFilter);
-        glSamplerParameteri(sampler, GL_TEXTURE_WRAP_S, wrapX);
-        glSamplerParameteri(sampler, GL_TEXTURE_WRAP_T, wrapY);
+        device.getGL().glSamplerParameteri(sampler, GL_TEXTURE_MAG_FILTER, magFilter);
+        device.getGL().glSamplerParameteri(sampler, GL_TEXTURE_MIN_FILTER, minFilter);
+        device.getGL().glSamplerParameteri(sampler, GL_TEXTURE_WRAP_S, wrapX);
+        device.getGL().glSamplerParameteri(sampler, GL_TEXTURE_WRAP_T, wrapY);
         if (device.getCaps().hasAnisotropySupport()) {
             float maxAnisotropy = Math.min(SamplerState.getMaxAnisotropy(samplerState),
                     device.getCaps().maxTextureMaxAnisotropy());
             assert (maxAnisotropy >= 1.0f);
-            glSamplerParameterf(sampler, GL46C.GL_TEXTURE_MAX_ANISOTROPY, maxAnisotropy);
+            device.getGL().glSamplerParameterf(sampler, GL_TEXTURE_MAX_ANISOTROPY, maxAnisotropy);
         }
         return new GLSampler(device, sampler);
     }
@@ -114,7 +117,7 @@ public final class GLSampler extends ManagedResource {
     @Override
     protected void deallocate() {
         if (mSampler != 0) {
-            glDeleteSamplers(mSampler);
+            ((GLDevice) getDevice()).getGL().glDeleteSamplers(mSampler);
         }
         discard();
     }

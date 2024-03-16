@@ -56,6 +56,8 @@ public abstract class GpuDevice implements Engine {
 
     protected final Stats mStats = new Stats();
 
+    protected boolean mOutOfMemoryEncountered;
+
     private final ArrayList<FlushInfo.SubmittedCallback> mSubmittedCallbacks = new ArrayList<>();
     private int mResetBits = ~0;
 
@@ -493,6 +495,18 @@ public abstract class GpuDevice implements Engine {
      * Blocks the current thread and waits for GPU to finish outstanding works.
      */
     public abstract void waitForQueue();
+
+    /**
+     * Checks if we detected an OOM from the underlying 3D API and if so returns true and resets
+     * the internal OOM state to false. Otherwise, returns false.
+     */
+    public final boolean checkOutOfMemory() {
+        if (mOutOfMemoryEncountered) {
+            mOutOfMemoryEncountered = false;
+            return true;
+        }
+        return false;
+    }
 
     public static final class Stats {
 

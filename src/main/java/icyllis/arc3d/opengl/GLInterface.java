@@ -21,24 +21,60 @@ package icyllis.arc3d.opengl;
 
 import org.lwjgl.system.NativeType;
 
-import javax.annotation.Nullable;
-
 /**
- * Abstract gl* function access between OpenGL 4.6 Core Profile and OpenGL ES 3.2.
- * Depending on GLCapabilities or GLESCapabilities.
+ * Interface for gl* function access between OpenGL 4.6 Core and OpenGL ES 3.2,
+ * depending on GLCapabilities or GLESCapabilities.
  * <p>
- * No javadoc here, please refer to LWJGL javadoc and OpenGL specification
+ * No javadoc here, please refer to LWJGL javadoc and OpenGL specification.
  *
  * @see GLCaps
  */
-public interface GLInterface {
+public interface GLInterface extends GLInterfaceCommon {
 
-    @Nullable
-    @NativeType("GLubyte const *")
-    String GetString(@NativeType("GLenum") int name);
+    void glDrawElementsBaseVertex(@NativeType("GLenum") int mode, @NativeType("GLsizei") int count,
+                                  @NativeType("GLenum") int type, @NativeType("void const *") long indices,
+                                  @NativeType("GLint") int basevertex);
+
+    void glDrawElementsInstancedBaseVertex(@NativeType("GLenum") int mode, @NativeType("GLsizei") int count,
+                                           @NativeType("GLenum") int type, @NativeType("void const *") long indices,
+                                           @NativeType("GLsizei") int instancecount,
+                                           @NativeType("GLint") int basevertex);
+
+    void glDrawArraysInstancedBaseInstance(@NativeType("GLenum") int mode, @NativeType("GLint") int first,
+                                           @NativeType("GLsizei") int count, @NativeType("GLsizei") int instancecount,
+                                           @NativeType("GLuint") int baseinstance);
+
+    void glDrawElementsInstancedBaseVertexBaseInstance(@NativeType("GLenum") int mode, @NativeType("GLsizei") int count,
+                                                       @NativeType("GLenum") int type,
+                                                       @NativeType("void const *") long indices,
+                                                       @NativeType("GLsizei") int instancecount,
+                                                       @NativeType("GLint") int basevertex,
+                                                       @NativeType("GLuint") int baseinstance);
+
+    void glInvalidateBufferSubData(@NativeType("GLuint") int buffer, @NativeType("GLintptr") long offset,
+                                   @NativeType("GLsizeiptr") long length);
+
+    void glObjectLabel(@NativeType("GLenum") int identifier, @NativeType("GLuint") int name,
+                       @NativeType("GLsizei") int length, @NativeType("GLchar const *") long label);
+
+    void glObjectLabel(@NativeType("GLenum") int identifier, @NativeType("GLuint") int name,
+                       @NativeType("GLchar const *") CharSequence label);
+
+    void glTextureBarrier();
 
     @NativeType("void")
-    int GetInteger(@NativeType("GLenum") int pname);
+    int glCreateBuffers();
 
-    void TextureBarrier();
+    void glNamedBufferData(@NativeType("GLuint") int buffer, @NativeType("GLsizeiptr") long size,
+                           @NativeType("void const *") long data, @NativeType("GLenum") int usage);
+
+    void glNamedBufferSubData(@NativeType("GLuint") int buffer, @NativeType("GLintptr") long offset,
+                              @NativeType("GLsizeiptr") long size, @NativeType("void const *") long data);
+
+    @NativeType("void *")
+    long glMapNamedBufferRange(@NativeType("GLuint") int buffer, @NativeType("GLintptr") long offset,
+                               @NativeType("GLsizeiptr") long length, @NativeType("GLbitfield") int access);
+
+    @NativeType("GLboolean")
+    boolean glUnmapNamedBuffer(@NativeType("GLuint") int buffer);
 }

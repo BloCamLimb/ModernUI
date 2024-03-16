@@ -25,7 +25,8 @@ import icyllis.arc3d.engine.*;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import static icyllis.arc3d.opengl.GLCore.*;
+import static org.lwjgl.opengl.GL11C.GL_NO_ERROR;
+import static org.lwjgl.opengl.GL30C.GL_RENDERBUFFER;
 
 /**
  * Renderbuffer can be only used as attachments of framebuffers as an optimization.
@@ -65,29 +66,29 @@ public final class GLAttachment extends Attachment {
                                            int format) {
         assert sampleCount > 0 && GLUtil.glFormatStencilBits(format) > 0;
 
-        int renderbuffer = glGenRenderbuffers();
+        int renderbuffer = device.getGL().glGenRenderbuffers();
         if (renderbuffer == 0) {
             return null;
         }
-        glBindRenderbuffer(GL_RENDERBUFFER, renderbuffer);
+        device.getGL().glBindRenderbuffer(GL_RENDERBUFFER, renderbuffer);
         if (device.getCaps().skipErrorChecks()) {
             // GL has a concept of MSAA rasterization with a single sample, but we do not.
             if (sampleCount > 1) {
-                glRenderbufferStorageMultisample(GL_RENDERBUFFER, sampleCount, format, width, height);
+                device.getGL().glRenderbufferStorageMultisample(GL_RENDERBUFFER, sampleCount, format, width, height);
             } else {
                 // glNamedRenderbufferStorage is equivalent to calling glNamedRenderbufferStorageMultisample
                 // with the samples set to zero. But we don't think sampleCount=1 is multisampled.
-                glRenderbufferStorage(GL_RENDERBUFFER, format, width, height);
+                device.getGL().glRenderbufferStorage(GL_RENDERBUFFER, format, width, height);
             }
         } else {
-            glClearErrors();
+            device.clearErrors();
             if (sampleCount > 1) {
-                glRenderbufferStorageMultisample(GL_RENDERBUFFER, sampleCount, format, width, height);
+                device.getGL().glRenderbufferStorageMultisample(GL_RENDERBUFFER, sampleCount, format, width, height);
             } else {
-                glRenderbufferStorage(GL_RENDERBUFFER, format, width, height);
+                device.getGL().glRenderbufferStorage(GL_RENDERBUFFER, format, width, height);
             }
-            if (glGetError() != GL_NO_ERROR) {
-                glDeleteRenderbuffers(renderbuffer);
+            if (device.getError() != GL_NO_ERROR) {
+                device.getGL().glDeleteRenderbuffers(renderbuffer);
                 return null;
             }
         }
@@ -103,19 +104,21 @@ public final class GLAttachment extends Attachment {
                                          int format) {
         assert sampleCount > 1;
 
-        int renderbuffer = glGenRenderbuffers();
+        int renderbuffer = device.getGL().glGenRenderbuffers();
         if (renderbuffer == 0) {
             return null;
         }
-        glBindRenderbuffer(GL_RENDERBUFFER, renderbuffer);
+        device.getGL().glBindRenderbuffer(GL_RENDERBUFFER, renderbuffer);
         int internalFormat = device.getCaps().getRenderbufferInternalFormat(format);
         if (device.getCaps().skipErrorChecks()) {
-            glRenderbufferStorageMultisample(GL_RENDERBUFFER, sampleCount, internalFormat, width, height);
+            device.getGL().glRenderbufferStorageMultisample(GL_RENDERBUFFER, sampleCount, internalFormat, width,
+                    height);
         } else {
-            glClearErrors();
-            glRenderbufferStorageMultisample(GL_RENDERBUFFER, sampleCount, internalFormat, width, height);
-            if (glGetError() != GL_NO_ERROR) {
-                glDeleteRenderbuffers(renderbuffer);
+            device.clearErrors();
+            device.getGL().glRenderbufferStorageMultisample(GL_RENDERBUFFER, sampleCount, internalFormat, width,
+                    height);
+            if (device.getError() != GL_NO_ERROR) {
+                device.getGL().glDeleteRenderbuffers(renderbuffer);
                 return null;
             }
         }
@@ -159,7 +162,7 @@ public final class GLAttachment extends Attachment {
     @Override
     protected void onRelease() {
         if (mRenderbuffer != 0) {
-            glDeleteRenderbuffers(mRenderbuffer);
+            ((GLDevice) getDevice()).getGL().glDeleteRenderbuffers(mRenderbuffer);
         }
         mRenderbuffer = 0;
     }

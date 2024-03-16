@@ -26,7 +26,7 @@ import icyllis.arc3d.engine.*;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import static icyllis.arc3d.opengl.GLCore.*;
+import static org.lwjgl.opengl.GL32C.*;
 
 /**
  * The main command buffer of OpenGL context. The commands executed on {@link GLCommandBuffer} are
@@ -78,24 +78,25 @@ public final class GLCommandBuffer extends CommandBuffer {
 
     void submit() {
 
-        mSubmitFence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+        mSubmitFence = mDevice.getGL().glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
     }
 
     void checkFinishedAndReset() {
         if (mSubmitFence == 0) {
             return;
         }
-        int status = glClientWaitSync(mSubmitFence, 0, 0);
+        int status = mDevice.getGL().glClientWaitSync(mSubmitFence, 0, 0);
         if (status == GL_CONDITION_SATISFIED ||
                 status == GL_ALREADY_SIGNALED) {
 
-            glDeleteSync(mSubmitFence);
+            mDevice.getGL().glDeleteSync(mSubmitFence);
         }
     }
 
     void resetStates(int states) {
         if ((states & Engine.GLBackendState.kRenderTarget) != 0) {
-            mHWFramebuffer = INVALID_ID;
+            //TODO 0?
+            mHWFramebuffer = 0;
             mHWRenderTarget = RefCnt.move(mHWRenderTarget);
         }
 
@@ -132,8 +133,9 @@ public final class GLCommandBuffer extends CommandBuffer {
     public void flushViewport(int width, int height) {
         assert (width >= 0 && height >= 0);
         if (width != mHWViewportWidth || height != mHWViewportHeight) {
-            glViewportIndexedf(0, 0.0f, 0.0f, width, height);
-            glDepthRangeIndexed(0, 0.0f, 1.0f);
+            /*glViewportIndexedf(0, 0.0f, 0.0f, width, height);
+            glDepthRangeIndexed(0, 0.0f, 1.0f);*/
+            mDevice.getGL().glViewport(0, 0, width, height);
             mHWViewportWidth = width;
             mHWViewportHeight = height;
         }
@@ -168,7 +170,7 @@ public final class GLCommandBuffer extends CommandBuffer {
                 scissorY != mHWScissorY ||
                 scissorWidth != mHWScissorWidth ||
                 scissorHeight != mHWScissorHeight) {
-            glScissorIndexed(0, scissorLeft, scissorY,
+            mDevice.getGL().glScissor(scissorLeft, scissorY,
                     scissorWidth, scissorHeight);
             mHWScissorX = scissorLeft;
             mHWScissorY = scissorY;
@@ -185,12 +187,12 @@ public final class GLCommandBuffer extends CommandBuffer {
     public void flushScissorTest(boolean enable) {
         if (enable) {
             if (mHWScissorTest != TriState_Enabled) {
-                glEnablei(GL_SCISSOR_TEST, 0);
+                mDevice.getGL().glEnable(GL_SCISSOR_TEST);
                 mHWScissorTest = TriState_Enabled;
             }
         } else {
             if (mHWScissorTest != TriState_Disabled) {
-                glDisablei(GL_SCISSOR_TEST, 0);
+                mDevice.getGL().glDisable(GL_SCISSOR_TEST);
                 mHWScissorTest = TriState_Disabled;
             }
         }
@@ -204,12 +206,12 @@ public final class GLCommandBuffer extends CommandBuffer {
     public void flushColorWrite(boolean enable) {
         if (enable) {
             if (mHWColorWrite != TriState_Enabled) {
-                glColorMaski(0, true, true, true, true);
+                mDevice.getGL().glColorMask(true, true, true, true);
                 mHWColorWrite = TriState_Enabled;
             }
         } else {
             if (mHWColorWrite != TriState_Disabled) {
-                glColorMaski(0, false, false, false, false);
+                mDevice.getGL().glColorMask(false, false, false, false);
                 mHWColorWrite = TriState_Disabled;
             }
         }
@@ -219,7 +221,7 @@ public final class GLCommandBuffer extends CommandBuffer {
      * Bind raw framebuffer and flush render target to be invalid.
      */
     public void bindFramebuffer(int framebuffer) {
-        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+        mDevice.getGL().glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
         mHWRenderTarget = null;
     }
 
@@ -235,7 +237,7 @@ public final class GLCommandBuffer extends CommandBuffer {
             int framebuffer = target.getSampleFramebuffer();
             if (mHWFramebuffer != framebuffer ||
                     mHWRenderTarget != target) {
-                glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+                mDevice.getGL().glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
                 mHWFramebuffer = framebuffer;
                 mHWRenderTarget = RefCnt.create(mHWRenderTarget, target);
                 flushViewport(target.getWidth(), target.getHeight());
@@ -247,7 +249,7 @@ public final class GLCommandBuffer extends CommandBuffer {
     public void bindPipeline(@Nonnull GLProgram program, @Nonnull GLVertexArray vertexArray) {
         if (mHWProgram != program) {
             // active program will not be deleted, so no collision
-            glUseProgram(program.getProgram());
+            mDevice.getGL().glUseProgram(program.getProgram());
             bindVertexArray(vertexArray);
             mHWProgram = RefCnt.create(mHWProgram, program);
         }
@@ -257,7 +259,7 @@ public final class GLCommandBuffer extends CommandBuffer {
         if (mHWVertexArrayInvalid ||
                 mHWVertexArray != vertexArray) {
             // active vertex array will not be deleted, so no collision
-            glBindVertexArray(vertexArray == null ? 0 : vertexArray.getHandle());
+            mDevice.getGL().glBindVertexArray(vertexArray == null ? 0 : vertexArray.getHandle());
             mHWVertexArray = RefCnt.create(mHWVertexArray, vertexArray);
             mHWVertexArrayInvalid = false;
         }
@@ -266,7 +268,7 @@ public final class GLCommandBuffer extends CommandBuffer {
     public void bindUniformBuffer(@Nonnull GLUniformBuffer uniformBuffer) {
         int index = uniformBuffer.getBinding();
         if (mBoundUniformBuffers[index] != uniformBuffer) {
-            glBindBufferBase(GL_UNIFORM_BUFFER, index, uniformBuffer.getHandle());
+            mDevice.getGL().glBindBufferBase(GL_UNIFORM_BUFFER, index, uniformBuffer.getHandle());
             mBoundUniformBuffers[index] = RefCnt.create(mBoundUniformBuffers[index], uniformBuffer);
         }
     }
