@@ -155,10 +155,10 @@ public final class GLDevice extends GpuDevice {
 
     /**
      * Framebuffer used for pixel transfer operations, compatibility only.
-     * We use array as pointers, lazily init.
+     * Lazily init.
      */
-    private final int[] mCopySrcFramebuffer = new int[1];
-    private final int[] mCopyDstFramebuffer = new int[1];
+    private int mCopySrcFramebuffer = 0;
+    private int mCopyDstFramebuffer = 0;
 
     private boolean mNeedsFlush;
 
@@ -197,12 +197,12 @@ public final class GLDevice extends GpuDevice {
             final GLInterface glInterface;
             switch (capabilities.getClass().getName()) {
                 case "org.lwjgl.opengl.GLCapabilities" -> {
-                    var impl = new GLCaps_GL46C(options, capabilities);
+                    var impl = new GLCaps_GL(options, capabilities);
                     caps = impl;
                     glInterface = impl;
                 }
                 case "org.lwjgl.opengles.GLESCapabilities" -> {
-                    var impl = new GLCaps_GLES32(options, capabilities);
+                    var impl = new GLCaps_GLES(options, capabilities);
                     caps = impl;
                     glInterface = impl;
                 }
@@ -315,25 +315,25 @@ public final class GLDevice extends GpuDevice {
         mHWActiveTextureUnit = -1; // invalid
 
         if ((resetBits & GLBackendState.kRaster) != 0) {
-            glDisable(GL_LINE_SMOOTH);
-            glDisable(GL_POLYGON_SMOOTH);
+            getGL().glDisable(GL_LINE_SMOOTH);
+            getGL().glDisable(GL_POLYGON_SMOOTH);
 
-            glDisable(GL_DITHER);
-            glEnable(GL_MULTISAMPLE);
+           getGL().glDisable(GL_DITHER);
+           getGL().glEnable(GL_MULTISAMPLE);
         }
 
         if ((resetBits & GLBackendState.kBlend) != 0) {
-            glDisable(GL_COLOR_LOGIC_OP);
+            getGL().glDisable(GL_COLOR_LOGIC_OP);
         }
 
         if ((resetBits & GLBackendState.kMisc) != 0) {
             // we don't use the z-buffer at all
-            glDisable(GL_DEPTH_TEST);
+            getGL().glDisable(GL_DEPTH_TEST);
             glDepthMask(false);
-            glDisable(GL_POLYGON_OFFSET_FILL);
+            getGL().glDisable(GL_POLYGON_OFFSET_FILL);
 
             // We don't use face culling.
-            glDisable(GL_CULL_FACE);
+            getGL().glDisable(GL_CULL_FACE);
             // We do use separate stencil. Our algorithms don't care which face is front vs. back so
             // just set this to the default for self-consistency.
             glFrontFace(GL_CCW);
@@ -341,7 +341,7 @@ public final class GLDevice extends GpuDevice {
             // we only ever use lines in hairline mode
             glLineWidth(1);
             glPointSize(1);
-            glDisable(GL_PROGRAM_POINT_SIZE);
+            getGL().glDisable(GL_PROGRAM_POINT_SIZE);
         }
     }
 
@@ -349,6 +349,20 @@ public final class GLDevice extends GpuDevice {
     public void forceResetContext(int state) {
         markContextDirty(state);
         handleDirtyContext(state);
+    }
+
+    public void clearErrors() {
+        //noinspection StatementWithEmptyBody
+        while (getError() != GL_NO_ERROR)
+            ;
+    }
+
+    public int getError() {
+        int error = getGL().glGetError();
+        if (error == GL_OUT_OF_MEMORY) {
+            mOutOfMemoryEncountered = true;
+        }
+        return error;
     }
 
     @Nullable
@@ -627,15 +641,15 @@ public final class GLDevice extends GpuDevice {
                 int dstTexName = dstTex.getHandle();
                 int boundTexture = glGetInteger(GL_TEXTURE_BINDING_2D);
                 if (dstTexName != boundTexture) {
-                    glBindTexture(GL_TEXTURE_2D, dstTexName);
+                    getGL().glBindTexture(GL_TEXTURE_2D, dstTexName);
                 }
 
-                int[] framebuffer = mCopySrcFramebuffer;
-                if (framebuffer[0] == 0) {
-                    glGenFramebuffers(framebuffer);
+                int framebuffer = mCopySrcFramebuffer;
+                if (framebuffer == 0) {
+                    mCopySrcFramebuffer = framebuffer = getGL().glGenFramebuffers();
                 }
                 int boundFramebuffer = glGetInteger(GL_READ_FRAMEBUFFER_BINDING);
-                glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer[0]);
+                getGL().glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer);
                 glFramebufferTexture(
                         GL_READ_FRAMEBUFFER,
                         GL_COLOR_ATTACHMENT0,
@@ -656,10 +670,10 @@ public final class GLDevice extends GpuDevice {
                         GL_COLOR_ATTACHMENT0,
                         DEFAULT_TEXTURE,
                         0);
-                glBindFramebuffer(GL_READ_FRAMEBUFFER, boundFramebuffer);
+                getGL().glBindFramebuffer(GL_READ_FRAMEBUFFER, boundFramebuffer);
 
                 if (dstTexName != boundTexture) {
-                    glBindTexture(GL_TEXTURE_2D, boundTexture);
+                    getGL().glBindTexture(GL_TEXTURE_2D, boundTexture);
                 }
 
                 return true;
@@ -870,7 +884,7 @@ public final class GLDevice extends GpuDevice {
 
         var bufferState = mHWBufferStates[type];
         if (bufferState.mBoundBufferUniqueID != buffer.getUniqueID()) {
-            glBindBuffer(bufferState.mTarget, buffer.getHandle());
+            getGL().glBindBuffer(bufferState.mTarget, buffer.getHandle());
             bufferState.mBoundBufferUniqueID = buffer.getUniqueID();
         }
 
@@ -889,7 +903,7 @@ public final class GLDevice extends GpuDevice {
         var bufferState = mHWBufferStates[BUFFER_TYPE_INDEX];
         assert bufferState.mTarget == GL_ELEMENT_ARRAY_BUFFER;
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.getHandle());
+        getGL().glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.getHandle());
         bufferState.mBoundBufferUniqueID = buffer.getUniqueID();
     }
 
@@ -911,7 +925,7 @@ public final class GLDevice extends GpuDevice {
         }
 
         var bufferState = mHWBufferStates[type];
-        glBindBuffer(bufferState.mTarget, buffer);
+        getGL().glBindBuffer(bufferState.mTarget, buffer);
         bufferState.mBoundBufferUniqueID = INVALID_UNIQUE_ID;
 
         return bufferState.mTarget;
@@ -925,7 +939,7 @@ public final class GLDevice extends GpuDevice {
                 glBindTextureUnit(bindingUnit, texture.getHandle());
             } else {
                 setTextureUnit(bindingUnit);
-                glBindTexture(GL_TEXTURE_2D, texture.getHandle());
+                getGL().glBindTexture(GL_TEXTURE_2D, texture.getHandle());
             }
             mHWTextureStates[bindingUnit] = texture.getUniqueID();
         }
@@ -934,7 +948,7 @@ public final class GLDevice extends GpuDevice {
             GLSampler sampler = samplerState != 0
                     ? mResourceProvider.findOrCreateCompatibleSampler(samplerState)
                     : null;
-            glBindSampler(bindingUnit, sampler != null
+            getGL().glBindSampler(bindingUnit, sampler != null
                     ? sampler.getHandle()
                     : 0);
             state.mBoundSampler = RefCnt.move(state.mBoundSampler, sampler);
@@ -1087,7 +1101,7 @@ public final class GLDevice extends GpuDevice {
         // different dimensions will report GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT.
         // The workaround is to use traditional glGen* and glBind* (validate).
         // see https://forums.developer.nvidia.com/t/framebuffer-incomplete-when-attaching-color-buffers-of-different-sizes-with-dsa/211550
-        final int framebuffer = glGenFramebuffers();
+        final int framebuffer = getGL().glGenFramebuffers();
         if (framebuffer == 0) {
             return null;
         }
@@ -1100,9 +1114,9 @@ public final class GLDevice extends GpuDevice {
             msaaFramebuffer = 0;
             msaaColorBuffer = null;
         } else {
-            msaaFramebuffer = glGenFramebuffers();
+            msaaFramebuffer = getGL().glGenFramebuffers();
             if (msaaFramebuffer == 0) {
-                glDeleteFramebuffers(framebuffer);
+                getGL().glDeleteFramebuffers(framebuffer);
                 return null;
             }
 
@@ -1111,8 +1125,8 @@ public final class GLDevice extends GpuDevice {
                     samples,
                     format);
             if (msaaColorBuffer == null) {
-                glDeleteFramebuffers(framebuffer);
-                glDeleteFramebuffers(msaaFramebuffer);
+                getGL().glDeleteFramebuffers(framebuffer);
+                getGL().glDeleteFramebuffers(msaaFramebuffer);
                 return null;
             }
 
@@ -1140,8 +1154,8 @@ public final class GLDevice extends GpuDevice {
         if (!mCaps.skipErrorChecks()) {
             int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
             if (status != GL_FRAMEBUFFER_COMPLETE) {
-                glDeleteFramebuffers(framebuffer);
-                glDeleteFramebuffers(msaaFramebuffer);
+                getGL().glDeleteFramebuffers(framebuffer);
+                getGL().glDeleteFramebuffers(msaaFramebuffer);
                 if (msaaColorBuffer != null) {
                     msaaColorBuffer.unref();
                 }

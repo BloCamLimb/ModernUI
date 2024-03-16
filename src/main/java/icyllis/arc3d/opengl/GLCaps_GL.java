@@ -24,63 +24,32 @@ import icyllis.arc3d.engine.ShaderCaps;
 import icyllis.arc3d.engine.*;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
-import org.lwjgl.opengl.GLCapabilities;
-import org.lwjgl.opengl.NVTextureBarrier;
+import org.lwjgl.opengl.*;
 import org.lwjgl.system.MemoryStack;
 
 import java.nio.IntBuffer;
-import java.util.List;
 
-import static org.lwjgl.opengl.GL46C.*;
+import static org.lwjgl.opengl.GL11C.*;
+import static org.lwjgl.opengl.GL20C.*;
+import static org.lwjgl.opengl.GL30C.GL_MAX_RENDERBUFFER_SIZE;
+import static org.lwjgl.opengl.GL41C.*;
+import static org.lwjgl.opengl.GL43C.GL_MAX_LABEL_LENGTH;
+import static org.lwjgl.opengl.GL46C.GL_MAX_TEXTURE_MAX_ANISOTROPY;
 
-public final class GLCaps_GL46C extends GLCaps implements GLInterface {
+/**
+ * OpenGL desktop implementation of OpenGL.
+ */
+public final class GLCaps_GL extends GLCaps implements GLInterface {
 
     private boolean mTextureBarrierNV;
 
     @VisibleForTesting
-    public GLCaps_GL46C(ContextOptions options, Object capabilities) {
+    public GLCaps_GL(ContextOptions options, Object capabilities) {
         super(options);
         GLCapabilities caps = (GLCapabilities) capabilities;
-        List<String> missingExtensions = MISSING_EXTENSIONS;
-        missingExtensions.clear();
-        if (!caps.OpenGL30) {
-            throw new UnsupportedOperationException("OpenGL 3.0 is unavailable");
-        }
-        if (!caps.OpenGL31) {
-            if (!caps.GL_ARB_uniform_buffer_object) {
-                missingExtensions.add("ARB_uniform_buffer_object");
-            }
-            if (!caps.GL_ARB_copy_buffer) {
-                missingExtensions.add("ARB_copy_buffer");
-            }
-            if (!caps.GL_ARB_draw_instanced) {
-                missingExtensions.add("ARB_draw_instanced");
-            }
-        }
-        if (!caps.OpenGL32) {
-            if (!caps.GL_ARB_sync) {
-                missingExtensions.add("ARB_sync");
-            }
-        }
-        if (!caps.OpenGL33) {
-            if (!caps.GL_ARB_sampler_objects) {
-                missingExtensions.add("ARB_sampler_objects");
-            }
-            if (!caps.GL_ARB_explicit_attrib_location) {
-                missingExtensions.add("ARB_explicit_attrib_location");
-            }
-            if (!caps.GL_ARB_instanced_arrays) {
-                missingExtensions.add("ARB_instanced_arrays");
-            }
-            if (!caps.GL_ARB_texture_swizzle) {
-                missingExtensions.add("ARB_texture_swizzle");
-            }
-        }
         // OpenGL 3.3 is the minimum requirement
-        // Note that having these extensions does not mean OpenGL 3.3 is available
-        // But these are required and they are available in OpenGL ES 3.0
-        if (!missingExtensions.isEmpty()) {
-            throw new UnsupportedOperationException("Missing required extensions: " + missingExtensions);
+        if (!caps.OpenGL33) {
+            throw new UnsupportedOperationException("OpenGL 3.3 is unavailable");
         }
 
         /*if (!caps.GL_ARB_draw_elements_base_vertex) {
@@ -90,17 +59,17 @@ public final class GLCaps_GL46C extends GLCaps implements GLInterface {
         if (!caps.OpenGL41) {
             // macOS supports this
             if (!caps.GL_ARB_viewport_array) {
-                missingExtensions.add("ARB_viewport_array");
+                //missingExtensions.add("ARB_viewport_array");
             }
         }
         if (!caps.OpenGL43) {
             if (!caps.GL_ARB_vertex_attrib_binding) {
-                missingExtensions.add("ARB_vertex_attrib_binding");
+                //missingExtensions.add("ARB_vertex_attrib_binding");
             }
         }
         if (!caps.OpenGL44) {
             if (!caps.GL_ARB_clear_texture) {
-                missingExtensions.add("ARB_clear_texture");
+                //missingExtensions.add("ARB_clear_texture");
             }
         }
         if (caps.OpenGL45 || caps.GL_ARB_texture_barrier) {
@@ -113,9 +82,10 @@ public final class GLCaps_GL46C extends GLCaps implements GLInterface {
         } else {
             mTextureBarrierSupport = false;
         }
-        mDSASupport = caps.OpenGL45 || caps.GL_ARB_direct_state_access;
 
         mDebugSupport = caps.OpenGL43 || caps.GL_KHR_debug;
+        // OpenGL 3.2
+        mDrawElementsBaseVertexSupport = true;
         mBaseInstanceSupport = caps.OpenGL42 || caps.GL_ARB_base_instance;
         mCopyImageSupport = caps.OpenGL43 || caps.GL_ARB_copy_image;
         mViewCompatibilityClassSupport = caps.OpenGL43 || caps.GL_ARB_internalformat_query2;
@@ -143,6 +113,10 @@ public final class GLCaps_GL46C extends GLCaps implements GLInterface {
         } else {
             mInvalidateBufferType = INVALIDATE_BUFFER_TYPE_NULL_DATA;
         }
+
+        // DSA-like extensions must be supported as well
+        mDSASupport = caps.OpenGL45 ||
+                (caps.GL_ARB_direct_state_access && mInvalidateBufferType == INVALIDATE_BUFFER_TYPE_INVALIDATE);
 
         mTransferPixelsToRowBytesSupport = true;
 
@@ -200,7 +174,7 @@ public final class GLCaps_GL46C extends GLCaps implements GLInterface {
         initGLSL(caps, shaderCaps.mGLSLVersion);
 
         // OpenGL 3.3
-        shaderCaps.mDualSourceBlendingSupport = caps.OpenGL33 || caps.GL_ARB_blend_func_extended;
+        shaderCaps.mDualSourceBlendingSupport = true;
 
         if (caps.GL_NV_conservative_raster) {
             mConservativeRasterSupport = true;
@@ -227,7 +201,7 @@ public final class GLCaps_GL46C extends GLCaps implements GLInterface {
                 caps.GL_ARB_texture_filter_anisotropic ||
                 caps.GL_EXT_texture_filter_anisotropic;
         if (mAnisotropySupport) {
-            mMaxTextureMaxAnisotropy = glGetFloat(GL_MAX_TEXTURE_MAX_ANISOTROPY);
+            mMaxTextureMaxAnisotropy = GL11C.glGetFloat(GL_MAX_TEXTURE_MAX_ANISOTROPY);
         }
 
         mMaxTextureSize = glGetInteger(GL_MAX_TEXTURE_SIZE);
@@ -242,19 +216,19 @@ public final class GLCaps_GL46C extends GLCaps implements GLInterface {
             int count = glGetInteger(GL_NUM_PROGRAM_BINARY_FORMATS);
             if (count > 0) {
                 mProgramBinaryFormats = new int[count];
-                glGetIntegerv(GL_PROGRAM_BINARY_FORMATS, mProgramBinaryFormats);
+                GL11C.glGetIntegerv(GL_PROGRAM_BINARY_FORMATS, mProgramBinaryFormats);
             } else {
                 mProgramBinarySupport = false;
             }
         }
         // we don't use ARB_GL_SPIRV, so check OpenGL 4.6 support
         if (caps.OpenGL46) {
-            int count = glGetInteger(GL_NUM_SHADER_BINARY_FORMATS);
+            int count = GL11C.glGetInteger(GL41C.GL_NUM_SHADER_BINARY_FORMATS);
             if (count > 0) {
                 int[] shaderBinaryFormats = new int[count];
-                glGetIntegerv(GL_SHADER_BINARY_FORMATS, shaderBinaryFormats);
+                GL11C.glGetIntegerv(GL41C.GL_SHADER_BINARY_FORMATS, shaderBinaryFormats);
                 for (int format : shaderBinaryFormats) {
-                    if (format == GL_SHADER_BINARY_FORMAT_SPIR_V) {
+                    if (format == GL46C.GL_SHADER_BINARY_FORMAT_SPIR_V) {
                         mSPIRVSupport = true;
                         break;
                     }
@@ -310,19 +284,20 @@ public final class GLCaps_GL46C extends GLCaps implements GLInterface {
         // Format: RGB565
         if (caps.OpenGL42 || caps.GL_ARB_ES2_compatibility) {
             // macOS supports this
-            FormatInfo info = getFormatInfo(GL_RGB565);
+            FormatInfo info = getFormatInfo(GL41C.GL_RGB565);
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
         }
 
         // Format: RGB8
         {
-            FormatInfo info = getFormatInfo(GL_RGB8);
+            FormatInfo info = getFormatInfo(GL11C.GL_RGB8);
             // Even in OpenGL 4.6 GL_RGB8 is required to be color renderable but not required to be
             // a supported render buffer format. Since we usually use render buffers for MSAA on
             // we don't support MSAA for GL_RGB8.
             if ((caps.OpenGL43 || caps.GL_ARB_internalformat_query2) &&
-                    glGetInternalformati(GL_RENDERBUFFER, GL_RGB8, GL_INTERNALFORMAT_SUPPORTED) == GL_TRUE) {
+                    GL42C.glGetInternalformati(GL30C.GL_RENDERBUFFER, GL11C.GL_RGB8,
+                            GL43C.GL_INTERNALFORMAT_SUPPORTED) == GL11C.GL_TRUE) {
                 info.mFlags |= msaaRenderFlags;
             } else {
                 info.mFlags |= nonMSAARenderFlags;
@@ -331,15 +306,15 @@ public final class GLCaps_GL46C extends GLCaps implements GLInterface {
 
         // Format: COMPRESSED_RGB8_ETC2
         if (caps.OpenGL43 || caps.GL_ARB_ES3_compatibility) {
-            FormatInfo info = getFormatInfo(GL_COMPRESSED_RGB8_ETC2);
+            FormatInfo info = getFormatInfo(GL43C.GL_COMPRESSED_RGB8_ETC2);
             info.mFlags = FormatInfo.TEXTURABLE_FLAG;
         }
 
         // Init samples
         for (FormatInfo info : mFormatTable) {
             if (mCopyImageSupport && mViewCompatibilityClassSupport && info.mInternalFormatForTexture != 0) {
-                info.mViewCompatibilityClass = glGetInternalformati(
-                        GL_TEXTURE_2D, info.mInternalFormatForTexture, GL_VIEW_COMPATIBILITY_CLASS
+                info.mViewCompatibilityClass = GL42C.glGetInternalformati(
+                        GL11C.GL_TEXTURE_2D, info.mInternalFormatForTexture, GL43C.GL_VIEW_COMPATIBILITY_CLASS
                 );
             }
             if ((info.mFlags & FormatInfo.COLOR_ATTACHMENT_WITH_MSAA_FLAG) != 0) {
@@ -348,11 +323,11 @@ public final class GLCaps_GL46C extends GLCaps implements GLInterface {
                 // macOS supports this
                 if (caps.OpenGL42 || caps.GL_ARB_internalformat_query) {
                     int glFormat = info.mInternalFormatForRenderbuffer;
-                    int count = glGetInternalformati(GL_RENDERBUFFER, glFormat, GL_NUM_SAMPLE_COUNTS);
+                    int count = GL42C.glGetInternalformati(GL30C.GL_RENDERBUFFER, glFormat, GL42C.GL_NUM_SAMPLE_COUNTS);
                     if (count > 0) {
                         try (MemoryStack stack = MemoryStack.stackPush()) {
                             IntBuffer temp = stack.mallocInt(count);
-                            glGetInternalformativ(GL_RENDERBUFFER, glFormat, GL_SAMPLES, temp);
+                            GL42C.glGetInternalformativ(GL30C.GL_RENDERBUFFER, glFormat, GL13C.GL_SAMPLES, temp);
                             // GL has a concept of MSAA rasterization with a single sample, but we do not.
                             if (temp.get(count - 1) == 1) {
                                 --count;
@@ -368,7 +343,7 @@ public final class GLCaps_GL46C extends GLCaps implements GLInterface {
                         }
                     }
                 } else {
-                    int maxSampleCnt = Math.max(1, glGetInteger(GL_MAX_SAMPLES));
+                    int maxSampleCnt = Math.max(1, GL11C.glGetInteger(GL30C.GL_MAX_SAMPLES));
                     int count = 4; // [1, 2, 4, 8]
                     for (; count > 0; --count) {
                         if ((1 << (count - 1)) <= maxSampleCnt) {
@@ -389,24 +364,284 @@ public final class GLCaps_GL46C extends GLCaps implements GLInterface {
         }
     }
 
+    @Override
+    public void glEnable(int cap) {
+        GL11C.glEnable(cap);
+    }
+
+    @Override
+    public void glDisable(int cap) {
+        GL11C.glDisable(cap);
+    }
+
+    @Override
+    public void glBindTexture(int target, int texture) {
+        GL11C.glBindTexture(target, texture);
+    }
+
+    @Override
+    public void glBlendFunc(int sfactor, int dfactor) {
+        GL11C.glBlendFunc(sfactor, dfactor);
+    }
+
+    @Override
+    public void glColorMask(boolean red, boolean green, boolean blue, boolean alpha) {
+        GL11C.glColorMask(red, green, blue, alpha);
+    }
+
+    @Override
+    public void glDrawArrays(int mode, int first, int count) {
+        GL11C.glDrawArrays(mode, first, count);
+    }
+
+    @Override
+    public void glDrawElements(int mode, int count, int type, long indices) {
+        GL11C.nglDrawElements(mode, count, type, indices);
+    }
+
+    @Override
+    public int glGetError() {
+        return GL11C.glGetError();
+    }
+
     @Nullable
     @Override
-    public String GetString(int name) {
-        return glGetString(name);
+    public String glGetString(int name) {
+        return GL11C.glGetString(name);
     }
 
     @Override
-    public int GetInteger(int pname) {
-        return glGetInteger(pname);
+    public int glGetInteger(int pname) {
+        return GL11C.glGetInteger(pname);
     }
 
     @Override
-    public void TextureBarrier() {
+    public void glScissor(int x, int y, int width, int height) {
+        GL11C.glScissor(x, y, width, height);
+    }
+
+    @Override
+    public void glViewport(int x, int y, int width, int height) {
+        GL11C.glViewport(x, y, width, height);
+    }
+
+    @Override
+    public int glGenBuffers() {
+        return GL15C.glGenBuffers();
+    }
+
+    @Override
+    public void glDeleteBuffers(int buffer) {
+        GL15C.glDeleteBuffers(buffer);
+    }
+
+    @Override
+    public void glBindBuffer(int target, int buffer) {
+        GL15C.glBindBuffer(target, buffer);
+    }
+
+    @Override
+    public void glBufferData(int target, long size, long data, int usage) {
+        GL15C.nglBufferData(target, size, data, usage);
+    }
+
+    @Override
+    public void glBufferSubData(int target, long offset, long size, long data) {
+        GL15C.nglBufferSubData(target, offset, size, data);
+    }
+
+    @Override
+    public boolean glUnmapBuffer(int target) {
+        return GL15C.glUnmapBuffer(target);
+    }
+
+    @Override
+    public void glUseProgram(int program) {
+        GL20C.glUseProgram(program);
+    }
+
+    @Override
+    public void glBindVertexArray(int array) {
+        GL30C.glBindVertexArray(array);
+    }
+
+    @Override
+    public int glGenFramebuffers() {
+        return GL30C.glGenFramebuffers();
+    }
+
+    @Override
+    public void glDeleteFramebuffers(int framebuffer) {
+        GL30C.glDeleteFramebuffers(framebuffer);
+    }
+
+    @Override
+    public void glBindFramebuffer(int target, int framebuffer) {
+        GL30C.glBindFramebuffer(target, framebuffer);
+    }
+
+    @Override
+    public void glBindBufferBase(int target, int index, int buffer) {
+        GL30C.glBindBufferBase(target, index, buffer);
+    }
+
+    @Override
+    public int glGenRenderbuffers() {
+        return GL30C.glGenRenderbuffers();
+    }
+
+    @Override
+    public void glDeleteRenderbuffers(int renderbuffer) {
+        GL30C.glDeleteRenderbuffers(renderbuffer);
+    }
+
+    @Override
+    public void glBindRenderbuffer(int target, int renderbuffer) {
+        GL30C.glBindRenderbuffer(target, renderbuffer);
+    }
+
+    @Override
+    public void glRenderbufferStorage(int target, int internalformat, int width, int height) {
+        GL30C.glRenderbufferStorage(target, internalformat, width, height);
+    }
+
+    @Override
+    public void glRenderbufferStorageMultisample(int target, int samples, int internalformat, int width, int height) {
+        GL30C.glRenderbufferStorageMultisample(target, samples, internalformat, width, height);
+    }
+
+    @Override
+    public long glMapBufferRange(int target, long offset, long length, int access) {
+        return GL30C.nglMapBufferRange(target, offset, length, access);
+    }
+
+    @Override
+    public void glDrawArraysInstanced(int mode, int first, int count, int instancecount) {
+        GL31C.glDrawArraysInstanced(mode, first, count, instancecount);
+    }
+
+    @Override
+    public void glDrawElementsInstanced(int mode, int count, int type, long indices, int instancecount) {
+        GL31C.glDrawElementsInstanced(mode, count, type, indices, instancecount);
+    }
+
+    @Override
+    public long glFenceSync(int condition, int flags) {
+        return GL32C.glFenceSync(condition, flags);
+    }
+
+    @Override
+    public void glDeleteSync(long sync) {
+        GL32C.nglDeleteSync(sync);
+    }
+
+    @Override
+    public int glClientWaitSync(long sync, int flags, long timeout) {
+        return GL32C.nglClientWaitSync(sync, flags, timeout);
+    }
+
+    @Override
+    public int glGenSamplers() {
+        return GL33C.glGenSamplers();
+    }
+
+    @Override
+    public void glDeleteSamplers(int sampler) {
+        GL33C.glDeleteSamplers(sampler);
+    }
+
+    @Override
+    public void glBindSampler(int unit, int sampler) {
+        GL33C.glBindSampler(unit, sampler);
+    }
+
+    @Override
+    public void glSamplerParameteri(int sampler, int pname, int param) {
+        GL33C.glSamplerParameteri(sampler, pname, param);
+    }
+
+    @Override
+    public void glSamplerParameterf(int sampler, int pname, float param) {
+        GL33C.glSamplerParameterf(sampler, pname, param);
+    }
+
+    @Override
+    public void glDrawElementsBaseVertex(int mode, int count, int type, long indices, int basevertex) {
+        GL32C.nglDrawElementsBaseVertex(mode, count, type, indices, basevertex);
+    }
+
+    @Override
+    public void glDrawElementsInstancedBaseVertex(int mode, int count, int type, long indices, int instancecount, int basevertex) {
+        GL32C.nglDrawElementsInstancedBaseVertex(mode, count, type, indices, instancecount, basevertex);
+    }
+
+    @Override
+    public void glDrawArraysInstancedBaseInstance(int mode, int first, int count, int instancecount, int baseinstance) {
+        assert mBaseInstanceSupport;
+        GL42C.glDrawArraysInstancedBaseInstance(mode, first, count, instancecount, baseinstance);
+    }
+
+    @Override
+    public void glDrawElementsInstancedBaseVertexBaseInstance(int mode, int count, int type, long indices, int instancecount, int basevertex, int baseinstance) {
+        assert mBaseInstanceSupport;
+        GL42C.nglDrawElementsInstancedBaseVertexBaseInstance(mode, count, type, indices, instancecount, basevertex, baseinstance);
+    }
+
+    @Override
+    public void glInvalidateBufferSubData(int buffer, long offset, long length) {
+        assert mInvalidateBufferType == INVALIDATE_BUFFER_TYPE_INVALIDATE;
+        GL43C.glInvalidateBufferSubData(buffer, offset, length);
+    }
+
+    @Override
+    public void glObjectLabel(int identifier, int name, int length, long label) {
+        assert mDebugSupport;
+        GL43C.nglObjectLabel(identifier, name, length, label);
+    }
+
+    @Override
+    public void glObjectLabel(int identifier, int name, CharSequence label) {
+        assert mDebugSupport;
+        GL43C.glObjectLabel(identifier, name, label);
+    }
+
+    @Override
+    public void glTextureBarrier() {
         assert mTextureBarrierSupport;
         if (mTextureBarrierNV) {
             NVTextureBarrier.glTextureBarrierNV();
         } else {
-            glTextureBarrier();
+            GL45C.glTextureBarrier();
         }
+    }
+
+    @Override
+    public int glCreateBuffers() {
+        assert mDSASupport;
+        return GL45C.glCreateBuffers();
+    }
+
+    @Override
+    public void glNamedBufferData(int buffer, long size, long data, int usage) {
+        assert mDSASupport;
+        GL45C.nglNamedBufferData(buffer, size, data, usage);
+    }
+
+    @Override
+    public void glNamedBufferSubData(int buffer, long offset, long size, long data) {
+        assert mDSASupport;
+        GL45C.nglNamedBufferSubData(buffer, offset, size, data);
+    }
+
+    @Override
+    public long glMapNamedBufferRange(int buffer, long offset, long length, int access) {
+        assert mDSASupport;
+        return GL45C.nglMapNamedBufferRange(buffer, offset, length, access);
+    }
+
+    @Override
+    public boolean glUnmapNamedBuffer(int buffer) {
+        assert mDSASupport;
+        return GL45C.glUnmapNamedBuffer(buffer);
     }
 }

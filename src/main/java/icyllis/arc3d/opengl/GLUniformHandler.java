@@ -26,6 +26,7 @@ import icyllis.arc3d.engine.shading.UniformHandler;
 import it.unimi.dsi.fastutil.shorts.ShortArrayList;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 
 /**
  * Builds a Uniform Block with std140 layout.
@@ -36,7 +37,10 @@ public class GLUniformHandler extends UniformHandler {
     final ArrayList<UniformInfo> mSamplers = new ArrayList<>();
     final ShortArrayList mSamplerSwizzles = new ShortArrayList();
 
+    private ArrayList<UniformInfo> mReorderedUniforms;
+
     int mCurrentOffset;
+    boolean mFinished;
 
     GLUniformHandler(PipelineBuilder pipelineBuilder) {
         super(pipelineBuilder);
@@ -75,31 +79,16 @@ public class GLUniformHandler extends UniformHandler {
         }
         assert (!resolvedName.contains("__"));
 
-        // we can only use std140 layout in OpenGL
-        int offset = getAlignedOffset(mCurrentOffset, type, arrayCount, Std140Layout);
-        mCurrentOffset += getAlignedStride(type, arrayCount, Std140Layout);
-
         int handle = mUniforms.size();
-
-        String layoutQualifier;
-        if (mPipelineBuilder.shaderCaps().mUseBlockMemberOffset) {
-            // ARB_enhanced_layouts or GLSL 440
-            layoutQualifier = "offset = " + offset;
-        } else {
-            layoutQualifier = "";
-        }
 
         var tempInfo = new UniformInfo();
         tempInfo.mVariable = new ShaderVar(resolvedName,
                 type,
                 ShaderVar.kNone_TypeModifier,
-                arrayCount,
-                layoutQualifier,
-                "");
+                arrayCount);
         tempInfo.mVisibility = visibility;
         tempInfo.mOwner = owner;
         tempInfo.mRawName = name;
-        tempInfo.mOffset = offset;
 
         mUniforms.add(tempInfo);
         return handle;
@@ -150,13 +139,49 @@ public class GLUniformHandler extends UniformHandler {
         return mSamplerSwizzles.getShort(handle);
     }
 
+    // reorder to minimize block size
+    private void finishAndReorderUniforms() {
+        if (mFinished) return;
+        mFinished = true;
+
+        mReorderedUniforms = new ArrayList<>(mUniforms);
+        // we can only use std140 layout in OpenGL
+        var cmp = Comparator.comparingInt(
+                (UniformInfo u) -> getAlignmentMask(
+                        u.mVariable.getType(),
+                        !u.mVariable.isArray(),
+                        Std140Layout)
+        );
+        // larger alignment first, stable sort
+        mReorderedUniforms.sort(cmp.reversed());
+
+        for (UniformInfo u : mReorderedUniforms) {
+            int offset = getAlignedOffset(mCurrentOffset,
+                    u.mVariable.getType(),
+                    u.mVariable.getArrayCount(),
+                    Std140Layout);
+            mCurrentOffset += getAlignedStride(u.mVariable.getType(),
+                    u.mVariable.getArrayCount(),
+                    Std140Layout);
+
+            if (mPipelineBuilder.shaderCaps().mUseBlockMemberOffset) {
+                // ARB_enhanced_layouts or GLSL 440
+                // this is used for validation, since we use standard layout
+                u.mVariable.addLayoutQualifier("offset", offset);
+            }
+
+            u.mOffset = offset;
+        }
+    }
+
     @Override
     protected void appendUniformDecls(int visibility, StringBuilder out) {
         assert (visibility != 0);
+        finishAndReorderUniforms();
 
         boolean firstMember = false;
         boolean firstVisible = false;
-        for (var uniform : mUniforms) {
+        for (var uniform : mReorderedUniforms) {
             assert (SLDataType.canBeUniformValue(uniform.mVariable.getType()));
             if (!firstMember) {
                 // Check to make sure we are starting our offset at 0 so the offset qualifier we
@@ -179,7 +204,7 @@ public class GLUniformHandler extends UniformHandler {
             out.append(") uniform ");
             out.append(UNIFORM_BLOCK_NAME);
             out.append(" {\n");
-            for (var uniform : mUniforms) {
+            for (var uniform : mReorderedUniforms) {
                 uniform.mVariable.appendDecl(out);
                 out.append(";\n");
             }

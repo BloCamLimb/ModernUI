@@ -28,7 +28,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
 
 import static icyllis.arc3d.engine.Engine.BackendApi;
-import static icyllis.arc3d.opengl.GLCore.*;
 
 @Immutable
 public final class GLBackendFormat extends BackendFormat {

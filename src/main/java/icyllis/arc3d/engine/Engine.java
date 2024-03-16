@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.ImageInfo;
 
 /**
  * Shared constants, enums and utilities for Arc 3D Engine.
@@ -310,11 +310,11 @@ public interface Engine {
      * the rasterization of one pixel in screen coordinates, may or may not anti-aliased.
      */
     interface PrimitiveType {
-        byte PointList      = 0; // 1 px only
-        byte LineList       = 1; // 1 px wide only
-        byte LineStrip      = 2; // 1 px wide only
-        byte TriangleList   = 3; // separate triangle
-        byte TriangleStrip  = 4; // connected triangle
+        byte PointList = 0; // 1 px only
+        byte LineList = 1; // 1 px wide only
+        byte LineStrip = 2; // 1 px wide only
+        byte TriangleList = 3; // separate triangle
+        byte TriangleStrip = 4; // connected triangle
     }
 
     /**
@@ -419,6 +419,24 @@ public interface Engine {
     boolean
             Ownership_Borrowed = false, // Holder does not destroy the backend object.
             Ownership_Owned = true;     // Holder destroys the backend object.
+
+    /**
+     * Types used to describe format of indices in arrays.
+     */
+    interface IndexType {
+        // DO NOT CHANGE THE ORDER OR THE ENUM VALUE
+        int kUByte = 0,         // 8-bit
+                kUShort = 1,    // 16-bit
+                kUInt = 2;      // 32-bit
+
+        /**
+         * @return size in bytes
+         */
+        static int size(int type) {
+            assert type == kUByte || type == kUShort || type == kUInt;
+            return 1 << type;
+        }
+    }
 
     /**
      * Types used to describe format of vertices in arrays.

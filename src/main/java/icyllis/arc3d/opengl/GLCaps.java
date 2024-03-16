@@ -32,7 +32,6 @@ import static org.lwjgl.opengl.EXTTextureCompressionS3TC.*;
 /**
  * Stores some capabilities of an OpenGL device.
  * <p>
- * OpenGL 3.1 and OpenGL ES 3.0 have a common subset.
  * OpenGL 3.3 or OpenGL ES 3.0 is the minimum requirement.
  */
 public class GLCaps extends Caps {
@@ -56,6 +55,7 @@ public class GLCaps extends Caps {
 
     boolean mBufferStorageSupport;
 
+    boolean mDrawElementsBaseVertexSupport;
     boolean mBaseInstanceSupport;
     boolean mProgramBinarySupport;
     boolean mProgramParameterSupport;
@@ -75,7 +75,7 @@ public class GLCaps extends Caps {
     boolean mDSAElementBufferBroken;
 
     /**
-     * Format table for textures.
+     * OpenGL texture format table.
      *
      * @see GLUtil#glFormatToIndex(int)
      */
@@ -1028,6 +1028,10 @@ public class GLCaps extends Caps {
         return mDebugSupport;
     }
 
+    public boolean hasDrawElementsBaseVertexSupport() {
+        return mDrawElementsBaseVertexSupport;
+    }
+
     public boolean hasBaseInstanceSupport() {
         return mBaseInstanceSupport;
     }
@@ -1412,6 +1416,7 @@ public class GLCaps extends Caps {
                 ", mMaxLabelLength=" + mMaxLabelLength +
                 ", mDebugSupport=" + mDebugSupport +
                 ", mBufferStorageSupport=" + mBufferStorageSupport +
+                ", mDrawElementsBaseVertexSupport=" + mDrawElementsBaseVertexSupport +
                 ", mBaseInstanceSupport=" + mBaseInstanceSupport +
                 ", mDSASupport=" + mDSASupport +
                 ", mDSAElementBufferBroken=" + mDSAElementBufferBroken +

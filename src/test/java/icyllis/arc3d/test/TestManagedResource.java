@@ -82,14 +82,14 @@ public class TestManagedResource {
         }
         GLInterface gl = ((GLDevice) dContext.getDevice()).getGL();
         GLCaps caps = (GLCaps) dContext.getCaps();
-        String glVersion = gl.GetString(GLCore.GL_VERSION);
+        String glVersion = gl.glGetString(GLCore.GL_VERSION);
         pw.println("OpenGL version: " + glVersion);
-        pw.println("OpenGL vendor: " + gl.GetString(GLCore.GL_VENDOR));
-        pw.println("OpenGL renderer: " + gl.GetString(GLCore.GL_RENDERER));
-        pw.println("Max vertex attribs: " + gl.GetInteger(GLCore.GL_MAX_VERTEX_ATTRIBS));
-        pw.println("Max vertex bindings: " + gl.GetInteger(GLCore.GL_MAX_VERTEX_ATTRIB_BINDINGS));
-        pw.println("Max vertex stride: " + gl.GetInteger(GLCore.GL_MAX_VERTEX_ATTRIB_STRIDE));
-        pw.println("Max label length: " + gl.GetInteger(GLCore.GL_MAX_LABEL_LENGTH));
+        pw.println("OpenGL vendor: " + gl.glGetString(GLCore.GL_VENDOR));
+        pw.println("OpenGL renderer: " + gl.glGetString(GLCore.GL_RENDERER));
+        pw.println("Max vertex attribs: " + gl.glGetInteger(GLCore.GL_MAX_VERTEX_ATTRIBS));
+        pw.println("Max vertex bindings: " + gl.glGetInteger(GLCore.GL_MAX_VERTEX_ATTRIB_BINDINGS));
+        pw.println("Max vertex stride: " + gl.glGetInteger(GLCore.GL_MAX_VERTEX_ATTRIB_STRIDE));
+        pw.println("Max label length: " + gl.glGetInteger(GLCore.GL_MAX_LABEL_LENGTH));
 
         if (glVersion != null) {
             var pattern = Pattern.compile("(\\d+)\\.(\\d+)");
@@ -104,7 +104,7 @@ public class TestManagedResource {
             for (int i = 0; i < numGLSLVersions; i++) {
                 pw.println("GLSL version: " + glGetStringi(GL_SHADING_LANGUAGE_VERSION, i));
             }
-            pw.println("Default GLSL version: " + gl.GetString(GL_SHADING_LANGUAGE_VERSION));
+            pw.println("Default GLSL version: " + gl.glGetString(GL_SHADING_LANGUAGE_VERSION));
         }
 
         {

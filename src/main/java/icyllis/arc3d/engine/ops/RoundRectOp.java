@@ -72,7 +72,7 @@ public class RoundRectOp extends MeshDrawOp {
         OpsRenderPass opsRenderPass = state.getOpsRenderPass();
         opsRenderPass.bindPipeline(getPipelineInfo(), getPipelineState(), chainBounds);
         opsRenderPass.bindTextures(null);
-        opsRenderPass.bindBuffers(null, mVertexBuffer, mInstanceBuffer);
+        opsRenderPass.bindBuffers(null, Engine.IndexType.kUByte, mVertexBuffer, 0, mInstanceBuffer, 0);
         opsRenderPass.drawInstanced(getInstanceCount(), mBaseInstance, getVertexCount(), mBaseVertex);
     }
 
