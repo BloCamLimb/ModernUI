@@ -229,6 +229,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         Core.initUiThread();
 
         mRoot = new ViewRootImpl();
+        mRoot.loadSystemProperties(() -> Boolean.getBoolean("icyllis.modernui.display.debug.layout"));
 
         mDecor = new WindowGroup(this);
         mDecor.setWillNotDraw(true);

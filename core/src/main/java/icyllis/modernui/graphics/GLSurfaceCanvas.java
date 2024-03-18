@@ -1366,8 +1366,8 @@ public final class GLSurfaceCanvas extends Canvas {
         mRecreateModelView = false;
     }*/
 
-    private ByteBuffer checkColorMeshStagingBuffer() {
-        if (mColorMeshStagingBuffer.remaining() < 48) {
+    private ByteBuffer checkColorMeshStagingBuffer(int minBytes) {
+        if (mColorMeshStagingBuffer.remaining() < minBytes) {
             int newCap = grow(mColorMeshStagingBuffer.capacity());
             mColorMeshStagingBuffer = memRealloc(mColorMeshStagingBuffer, newCap);
             mColorMeshBufferResized = true;
@@ -1693,7 +1693,7 @@ public final class GLSurfaceCanvas extends Canvas {
 
     private void putRectColorGrad(float left, float top, float right, float bottom,
                                   int colorUL, int colorUR, int colorLR, int colorLL) {
-        final ByteBuffer buffer = checkColorMeshStagingBuffer();
+        final ByteBuffer buffer = checkColorMeshStagingBuffer(48);
 
         // CCW
         int color = colorLL;
@@ -1751,7 +1751,7 @@ public final class GLSurfaceCanvas extends Canvas {
 
     private void putRectPMColor(float left, float top, float right, float bottom,
                                 float[] color) {
-        ByteBuffer buffer = checkColorMeshStagingBuffer();
+        ByteBuffer buffer = checkColorMeshStagingBuffer(48);
         byte r;
         byte g;
         byte b;
@@ -1989,7 +1989,7 @@ public final class GLSurfaceCanvas extends Canvas {
         mDrawOps.add(DRAW_PRIM);
         mDrawPrims.add(numVertices | (prim << 16));
 
-        ByteBuffer buffer = checkColorMeshStagingBuffer();
+        ByteBuffer buffer = checkColorMeshStagingBuffer(12 * numVertices);
         if (color != null) {
             int pb = pos.position(), cb = color.position();
             for (int i = 0; i < numVertices; i++) {
@@ -2383,7 +2383,7 @@ public final class GLSurfaceCanvas extends Canvas {
             mDrawOps.add(DRAW_PRIM);
             mDrawPrims.add(2 | (GLCore.GL_LINES << 16));
 
-            ByteBuffer buffer = checkColorMeshStagingBuffer();
+            ByteBuffer buffer = checkColorMeshStagingBuffer(24);
             float factor = paint.a();
             byte a = (byte) (factor * 255.0f + 0.5f);
             factor *= 255.0f;
