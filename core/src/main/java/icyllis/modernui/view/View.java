@@ -2402,6 +2402,14 @@ public class View implements Drawable.Callback {
     }
 
     /**
+     * Returns {@code true} when the View is attached and the system developer setting to show
+     * the layout bounds is enabled or {@code false} otherwise.
+     */
+    public final boolean isShowingLayoutBounds() {
+        return mAttachInfo != null && mAttachInfo.mDebugLayout;
+    }
+
+    /**
      * This method is called by ViewGroup.drawChild() to have each child view draw itself.
      */
     final void draw(@NonNull Canvas canvas, @NonNull ViewGroup group, boolean clip) {

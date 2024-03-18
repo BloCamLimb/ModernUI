@@ -29,6 +29,7 @@ import org.jetbrains.annotations.ApiStatus;
 
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.BooleanSupplier;
 
 /**
  * The top of a view hierarchy, implementing the needed protocol between View and the Window.
@@ -42,6 +43,7 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
 
     private static final int MSG_INVALIDATE = 1;
     protected static final int MSG_PROCESS_INPUT_EVENTS = 19;
+    private static final int MSG_INVALIDATE_WORLD = 22;
 
     private final ConcurrentLinkedQueue<InputEvent> mInputEvents = new ConcurrentLinkedQueue<>();
 
@@ -126,6 +128,11 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
             case MSG_PROCESS_INPUT_EVENTS -> {
                 mProcessInputEventsScheduled = false;
                 doProcessInputEvents();
+            }
+            case MSG_INVALIDATE_WORLD -> {
+                if (mView != null) {
+                    invalidateWorld(mView);
+                }
             }
         }
         return true;
@@ -639,6 +646,19 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
     protected void onKeyEvent(KeyEvent event) {
     }
 
+    public void loadSystemProperties(BooleanSupplier debugLayoutSupplier) {
+        mHandler.post(() -> {
+            // Layout debugging
+            boolean layout = debugLayoutSupplier.getAsBoolean();
+            if (layout != mAttachInfo.mDebugLayout) {
+                mAttachInfo.mDebugLayout = layout;
+                if (!mHandler.hasMessages(MSG_INVALIDATE_WORLD)) {
+                    mHandler.sendEmptyMessageDelayed(MSG_INVALIDATE_WORLD, 200);
+                }
+            }
+        });
+    }
+
     /*boolean onCursorPosEvent(LinkedList<View> route, double x, double y) {
         if (view != null) {
             return view.onCursorPosEvent(route, x, y);
@@ -677,6 +697,15 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
                 mKeepInvalidated = true;
             }
             scheduleTraversals();
+        }
+    }
+
+    void invalidateWorld(@NonNull View view) {
+        view.invalidate();
+        if (view instanceof ViewGroup parent) {
+            for (int i = 0; i < parent.getChildCount(); i++) {
+                invalidateWorld(parent.getChildAt(i));
+            }
         }
     }
 

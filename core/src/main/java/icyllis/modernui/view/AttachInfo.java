@@ -108,6 +108,11 @@ final class AttachInfo {
     final Matrix mTmpMatrix = new Matrix();
 
     /**
+     * Show where the margins, bounds and layout bounds are for each view.
+     */
+    boolean mDebugLayout = false;
+
+    /**
      * Point used to compute visible regions.
      */
     final Point mPoint = new Point();

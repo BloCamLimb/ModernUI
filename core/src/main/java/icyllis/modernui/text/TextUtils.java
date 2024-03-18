@@ -30,6 +30,7 @@ import icyllis.modernui.util.Parcel;
 import icyllis.modernui.view.View;
 import org.jetbrains.annotations.ApiStatus;
 
+import java.io.IOException;
 import java.nio.CharBuffer;
 import java.util.*;
 
@@ -970,6 +971,27 @@ public final class TextUtils {
         return String.format("%.2f %s",
                 (double) num / (1L << (i * 10)),
                 sBinaryCompacts[i]);
+    }
+
+    public static void binaryCompact(@NonNull Appendable a, long num) {
+        try {
+            if (num <= 0) {
+                a.append("0 bytes");
+            } else if (num < 1024) {
+                if (a instanceof StringBuilder) {
+                    ((StringBuilder) a).append(num);
+                } else {
+                    a.append(String.valueOf(num));
+                }
+                a.append(" bytes");
+            } else {
+                int i = (63 - Long.numberOfLeadingZeros(num)) / 10;
+                new Formatter(a).format("%.2f %s",
+                        (double) num / (1L << (i * 10)),
+                        sBinaryCompacts[i]);
+            }
+        } catch (IOException ignored) {
+        }
     }
 
     /**

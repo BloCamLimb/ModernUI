@@ -27,6 +27,7 @@ import icyllis.modernui.util.Pools;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import org.jetbrains.annotations.ApiStatus;
 
+import java.nio.FloatBuffer;
 import java.util.*;
 import java.util.function.Predicate;
 
@@ -188,6 +189,9 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     // over the view group but not one of its child views.
     private boolean mTooltipHoveredSelf;
 
+    private static final ThreadLocal<FloatBuffer> sDebugDrawBuffer =
+            ThreadLocal.withInitial(() -> FloatBuffer.allocate(3 * 2 * 2 * 8));
+
     // Used to animate add/remove changes in layout
     private LayoutTransition mTransition;
 
@@ -223,6 +227,109 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         setDescendantFocusability(FOCUS_BEFORE_DESCENDANTS);
         mChildren = new View[ARRAY_CAPACITY_INCREMENT];
         mChildrenCount = 0;
+    }
+
+    /**
+     * @hidden
+     */
+    @ApiStatus.Internal
+    protected void onDebugDraw(@NonNull Canvas canvas) {
+        Paint paint = Paint.obtain();
+
+        final int childrenCount = mChildrenCount;
+        final View[] children = mChildren;
+        FloatBuffer positions = null;
+
+        // Draw optical bounds
+        paint.setRGBA(1F, 0F, 0F, 1F);
+        for (int i = 0; i < childrenCount; i++) {
+            View child = children[i];
+            if (child.getVisibility() != View.GONE) {
+                if (positions == null)
+                    positions = sDebugDrawBuffer.get();
+                positions.clear();
+                // draw GPU line strip primitive at pixel center
+                float x1 = child.getLeft() + 0.5f;
+                float y1 = child.getTop() + 0.5f;
+                float x2 = child.getRight() - 0.5f;
+                float y2 = child.getBottom() - 0.5f;
+                positions.put(x1).put(y1)
+                        .put(x2).put(y1)
+                        .put(x2).put(y2)
+                        .put(x1).put(y2)
+                        .put(x1).put(y1);
+                canvas.drawMesh(Canvas.VertexMode.LINE_STRIP,
+                        positions.flip(), null, null, null, null,
+                        paint);
+            }
+        }
+
+        // Draw margins
+        paint.setRGBA(1F, 0F, 1F, 0.25F);
+        onDebugDrawMargins(canvas, paint);
+
+        // Draw clip bounds
+        paint.setRGBA(0.25F, 0.5F, 1F, 1F);
+        int lineLength = dp(4F);
+        int lineWidth = dp(0.5F);
+        for (int i = 0; i < childrenCount; i++) {
+            View child = children[i];
+            if (child.getVisibility() != View.GONE) {
+                if (positions == null)
+                    positions = sDebugDrawBuffer.get();
+                positions.clear();
+                int x1 = child.getLeft();
+                int y1 = child.getTop();
+                int x2 = child.getRight();
+                int y2 = child.getBottom();
+                fillCorner(x1, y1, lineLength, lineLength, lineWidth, positions);
+                fillCorner(x1, y2, lineLength, -lineLength, lineWidth, positions);
+                fillCorner(x2, y1, -lineLength, lineLength, lineWidth, positions);
+                fillCorner(x2, y2, -lineLength, -lineLength, lineWidth, positions);
+                canvas.drawMesh(Canvas.VertexMode.TRIANGLES,
+                        positions.flip(), null, null, null, null,
+                        paint);
+            }
+        }
+
+        paint.recycle();
+    }
+
+    /**
+     * @hidden
+     */
+    @ApiStatus.Internal
+    protected void onDebugDrawMargins(@NonNull Canvas canvas, Paint paint) {
+        final int childrenCount = mChildrenCount;
+        final View[] children = mChildren;
+        for (int i = 0; i < childrenCount; i++) {
+            View child = children[i];
+            child.getLayoutParams().onDebugDraw(child, canvas, paint);
+        }
+    }
+
+    private static void fillRect(int x1, int y1, int x2, int y2,
+                                 FloatBuffer positions) {
+        if (x1 != x2 && y1 != y2) {
+            if (x1 > x2) {
+                int tmp = x1; x1 = x2; x2 = tmp;
+            }
+            if (y1 > y2) {
+                int tmp = y1; y1 = y2; y2 = tmp;
+            }
+            positions.put(x1).put(y2)
+                    .put(x2).put(y2)
+                    .put(x1).put(y1)
+                    .put(x1).put(y1)
+                    .put(x2).put(y2)
+                    .put(x2).put(y1);
+        }
+    }
+
+    private static void fillCorner(int x1, int y1, int dx, int dy, int lw,
+                                   FloatBuffer positions) {
+        fillRect(x1, y1, x1 + dx, y1 + lw * (dy >= 0 ? 1 : -1), positions);
+        fillRect(x1, y1, x1 + lw * (dx >= 0 ? 1 : -1), y1 + dy, positions);
     }
 
     @Override
@@ -285,6 +392,10 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
                 final View child = disappearingChildren.get(i);
                 drawChild(canvas, child, 0);
             }
+        }
+
+        if (isShowingLayoutBounds()) {
+            onDebugDraw(canvas);
         }
 
         if (clipToPadding) {
@@ -4379,6 +4490,18 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
          */
         public void resolveLayoutDirection(int layoutDirection) {
         }
+
+        /**
+         * Use {@code canvas} to draw suitable debugging annotations for these LayoutParameters.
+         *
+         * @param view the view that contains these layout parameters
+         * @param canvas the canvas on which to draw
+         *
+         * @hidden
+         */
+        @ApiStatus.Internal
+        public void onDebugDraw(View view, Canvas canvas, Paint paint) {
+        }
     }
 
     /**
@@ -4700,6 +4823,30 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         @ApiStatus.Internal
         public boolean isLayoutRtl() {
             return ((mMarginFlags & LAYOUT_DIRECTION_MASK) == View.LAYOUT_DIRECTION_RTL);
+        }
+
+        @ApiStatus.Internal
+        @Override
+        public void onDebugDraw(View view, Canvas canvas, Paint paint) {
+            FloatBuffer positions = sDebugDrawBuffer.get()
+                    .clear();
+            int x2 = view.getLeft();
+            int y2 = view.getTop();
+            int x3 = view.getRight();
+            int y3 = view.getBottom();
+            int x1 = x2 - leftMargin;
+            int y1 = y2 - topMargin;
+            int x4 = x3 + rightMargin;
+            int y4 = y3 + bottomMargin;
+
+            fillRect(x1, y1, x4, y2, positions);
+            fillRect(x1, y2, x2, y3, positions);
+            fillRect(x3, y2, x4, y3, positions);
+            fillRect(x1, y3, x4, y4, positions);
+
+            canvas.drawMesh(Canvas.VertexMode.TRIANGLES,
+                    positions.flip(), null, null, null, null,
+                    paint);
         }
     }
 
