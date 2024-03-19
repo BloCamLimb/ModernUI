@@ -43,7 +43,7 @@ public final class Literal extends Expression {
 
     @Nonnull
     public static Literal makeFloat(int position, float value, Type type) {
-        if (type.isFloat()) {
+        if (type.isFloat() && Float.isFinite(value)) {
             return new Literal(position, value, type);
         }
         throw new IllegalArgumentException();

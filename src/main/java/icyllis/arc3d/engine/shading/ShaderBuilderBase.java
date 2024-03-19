@@ -36,21 +36,20 @@ import java.util.stream.Collectors;
 public abstract class ShaderBuilderBase implements ShaderBuilder {
 
     protected static final int
-            EXTENSIONS = 0,
-            DEFINITIONS = 1,
-            LAYOUT_QUALIFIERS = 2,
-            UNIFORMS = 3,
-            INPUTS = 4,
-            OUTPUTS = 5,
-            FUNCTIONS = 6,
-            CODE = 7;
+            DEFINITIONS = 0,
+            LAYOUT_QUALIFIERS = 1,
+            UNIFORMS = 2,
+            INPUTS = 3,
+            OUTPUTS = 4,
+            FUNCTIONS = 5,
+            CODE = 6;
     // Reasonable upper bound on number of processor stages
-    protected static final int PREALLOC = CODE + 7;
+    protected static final int PREALLOC = CODE + 6;
 
     protected final PipelineBuilder mPipelineBuilder;
     protected final StringBuilder[] mShaderStrings = new StringBuilder[PREALLOC];
 
-    private final HashSet<String> mExtensions = new HashSet<>();
+    private final HashMap<String, String> mExtensions = new HashMap<>();
 
     protected int mCodeIndex;
 
@@ -64,7 +63,7 @@ public abstract class ShaderBuilderBase implements ShaderBuilder {
         for (int i = 0; i <= CODE; i++) {
             mShaderStrings[i] = new StringBuilder();
         }
-        extensions().append("#version 450\n");
+        definitions().append("#version 450\n");
         mCodeIndex = CODE;
         codeAppend("void main() {\n");
     }
@@ -125,11 +124,6 @@ public abstract class ShaderBuilderBase implements ShaderBuilder {
         mCodeFormatterPre = null;
     }
 
-    protected final StringBuilder extensions() {
-        assert !mFinished;
-        return mShaderStrings[EXTENSIONS];
-    }
-
     protected final StringBuilder definitions() {
         assert !mFinished;
         return mShaderStrings[DEFINITIONS];
@@ -166,11 +160,8 @@ public abstract class ShaderBuilderBase implements ShaderBuilder {
     }
 
     public void addExtension(@Nullable String extensionName) {
-        if (extensionName == null) return;
-        if (mExtensions.add(extensionName)) {
-            extensions().append("#extension ")
-                    .append(extensionName)
-                    .append(": require\n");
+        if (extensionName != null) {
+            mExtensions.put(extensionName, "require");
         }
     }
 
@@ -193,6 +184,10 @@ public abstract class ShaderBuilderBase implements ShaderBuilder {
 
     public final int getCount() {
         return mCodeIndex + 1;
+    }
+
+    public final Map<String, String> getExtensions() {
+        return mExtensions;
     }
 
     @Nonnull
