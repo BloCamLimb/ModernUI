@@ -45,8 +45,7 @@ public class VertexShaderBuilder extends ShaderBuilderBase implements VertexGeom
         // creating VertexArrayObject or PipelineVertexInputState later
         int locationIndex = 0;
         for (var var : mInputs) {
-            String location = "location = " + locationIndex;
-            var.addLayoutQualifier(location);
+            var.addLayoutQualifier("location", locationIndex);
 
             // may contain matrix that takes up multiple locations
             int locations = SLDataType.locations(var.getType());

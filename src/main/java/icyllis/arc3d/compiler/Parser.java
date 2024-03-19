@@ -61,6 +61,9 @@ public class Parser {
         mSourceOffset = offset;
         mSourceLength = length;
         mLexer = new Lexer(source, offset, length);
+        if (options.mExtensions != null && !options.mExtensions.isEmpty()) {
+            mExtensions = new LinkedHashMap<>(options.mExtensions);
+        }
     }
 
     /**
@@ -76,9 +79,11 @@ public class Parser {
      * <p>
      * #include &lt;file&gt;<br>
      * #include "file"<br>
+     * #import &lt;file&gt;<br>
+     * #import "file"<br>
      * This method returns the include files as a list of (file,boolean) pairs. The second
      * boolean value of true represents it's angle-bracketed (system include), otherwise it's
-     * double-quoted (relative include). An implementation should normalize the file name and
+     * double-quoted (local include). An implementation should normalize the file name and
      * compile the include files first (via a new Parser's {@link #parseModule}).
      * The return list is not deduplicated.
      * <p>
@@ -469,7 +474,7 @@ public class Parser {
                 mExtensions.put(text(extension), behaviorText);
                 break;
             }
-            case "include": {
+            case "include", "import": {
                 long left = nextPpToken();
                 if (Token.kind(left) == Token.TK_STRINGLITERAL) {
                     int offset = Token.offset(left);

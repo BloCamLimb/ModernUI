@@ -19,6 +19,8 @@
 
 package icyllis.arc3d.compiler;
 
+import java.util.Map;
+
 /**
  * Holds the options for compiling a shader executable.
  * This is ignored when pre-parsing a module unit (include file).
@@ -34,6 +36,16 @@ public class CompileOptions {
      * @see Parser#preprocess()
      */
     public boolean mPreprocess = true;
+
+    /**
+     * A pre-defined extensions, before preprocessing. This is a list of
+     * (extensionName, behavior) pairs, no error checking will be performed.
+     * <p>
+     * The extension has no semantics impact when generating SPIR-V,
+     * but it's retained when generating GLSL for some GLSL only extensions.
+     * A new behavior will override the earlier one for the same extension name.
+     */
+    public Map<String, String> mExtensions = null;
 
     /**
      * Function with this name will be considered as the entry point of

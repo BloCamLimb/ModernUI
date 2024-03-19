@@ -69,8 +69,8 @@ public class FragmentShaderBuilder extends ShaderBuilderBase implements FPFragme
         mSecondaryOutput = new ShaderVar(SECONDARY_COLOR_OUTPUT_NAME, SLDataType.kFloat4,
                 ShaderVar.kOut_TypeModifier,
                 ShaderVar.kNonArray, layoutQualifier, "");
-        mPrimaryOutput.addLayoutQualifier("index = " + PRIMARY_COLOR_OUTPUT_INDEX);
-        mSecondaryOutput.addLayoutQualifier("index = " + SECONDARY_COLOR_OUTPUT_INDEX);
+        mPrimaryOutput.addLayoutQualifier("index", PRIMARY_COLOR_OUTPUT_INDEX);
+        mSecondaryOutput.addLayoutQualifier("index", SECONDARY_COLOR_OUTPUT_INDEX);
     }
 
     @Nullable
