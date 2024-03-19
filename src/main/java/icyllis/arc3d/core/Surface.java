@@ -225,6 +225,7 @@ public class Surface extends RefCnt {
      *
      * @return the raw ptr to the drawing canvas for this surface
      */
+    @RawPtr
     public Canvas getCanvas() {
         if (mCachedCanvas == null) {
             mCachedCanvas = new Canvas(mDevice);

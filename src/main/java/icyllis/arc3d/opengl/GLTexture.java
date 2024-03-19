@@ -19,22 +19,21 @@
 
 package icyllis.arc3d.opengl;
 
-import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.Kernel32;
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.engine.IGpuSurface;
 import org.lwjgl.opengl.EXTMemoryObject;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.system.Platform;
 
 import javax.annotation.Nonnull;
 
-import static icyllis.arc3d.engine.Engine.*;
-import static icyllis.arc3d.opengl.GLCore.*;
+import static icyllis.arc3d.engine.Engine.IOType;
+import static org.lwjgl.opengl.GL11C.GL_TEXTURE;
 
 /**
- * Represents OpenGL 2D textures.
+ * Represents OpenGL textures and renderbuffers.
  */
-public class GLTexture extends GpuTexture {
+public final class GLTexture extends GpuTexture {
 
     private GLTextureInfo mInfo;
     private final GLBackendTexture mBackendTexture;
@@ -47,8 +46,7 @@ public class GLTexture extends GpuTexture {
               int width, int height,
               GLTextureInfo info,
               BackendFormat format,
-              boolean budgeted,
-              boolean register) {
+              boolean budgeted) {
         super(device, width, height);
         assert info.handle != 0;
         assert GLUtil.glFormatIsSupported(format.getGLFormat());
@@ -63,10 +61,8 @@ public class GLTexture extends GpuTexture {
             mFlags |= ISurface.FLAG_MIPMAPPED;
         }
 
-        mMemorySize = computeSize(format, width, height, 1, info.levels);
-        if (register) {
-            registerWithCache(budgeted);
-        }
+        mMemorySize = computeSize(format, width, height, info.samples, info.levels);
+        registerWithCache(budgeted);
     }
 
     // Constructor for instances wrapping backend objects.
@@ -102,6 +98,15 @@ public class GLTexture extends GpuTexture {
     @Override
     public BackendFormat getBackendFormat() {
         return mBackendTexture.getBackendFormat();
+    }
+
+    @Override
+    public int getSampleCount() {
+        return mInfo.samples;
+    }
+
+    public int getTarget() {
+        return mInfo.target;
     }
 
     public int getHandle() {
@@ -143,11 +148,11 @@ public class GLTexture extends GpuTexture {
         if (getDevice().getCaps().hasDebugSupport()) {
             assert mInfo != null;
             if (label.isEmpty()) {
-                nglObjectLabel(GL_TEXTURE, mInfo.handle, 0, MemoryUtil.NULL);
+                getDevice().getGL().glObjectLabel(GL_TEXTURE, mInfo.handle, 0, MemoryUtil.NULL);
             } else {
                 label = label.substring(0, Math.min(label.length(),
                         getDevice().getCaps().maxLabelLength()));
-                glObjectLabel(GL_TEXTURE, mInfo.handle, label);
+                getDevice().getGL().glObjectLabel(GL_TEXTURE, mInfo.handle, label);
             }
         }
     }
@@ -157,7 +162,7 @@ public class GLTexture extends GpuTexture {
         final GLTextureInfo info = mInfo;
         if (mOwnership) {
             if (info.handle != 0) {
-                glDeleteTextures(info.handle);
+                getDevice().getGL().glDeleteTextures(info.handle);
             }
             if (info.memoryObject != 0) {
                 EXTMemoryObject.glDeleteMemoryObjectsEXT(info.memoryObject);

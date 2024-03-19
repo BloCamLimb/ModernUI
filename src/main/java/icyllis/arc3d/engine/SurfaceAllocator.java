@@ -19,6 +19,7 @@
 
 package icyllis.arc3d.engine;
 
+import icyllis.arc3d.core.RawPtr;
 import icyllis.arc3d.core.SharedPtr;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
@@ -128,7 +129,7 @@ public final class SurfaceAllocator {
      * @param start the start op
      * @param end   the end op
      */
-    public void addInterval(@Nonnull SurfaceProxy proxy, int start, int end, boolean actualUse) {
+    public void addInterval(@Nonnull @RawPtr SurfaceProxy proxy, int start, int end, boolean actualUse) {
         assert (start <= end);
         // We shouldn't be adding any intervals after (or during) allocation
         assert (!mAllocated);

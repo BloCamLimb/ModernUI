@@ -22,11 +22,14 @@ package icyllis.arc3d.opengl;
 import icyllis.arc3d.core.Color;
 import icyllis.arc3d.core.ImageInfo;
 import icyllis.arc3d.engine.ContextOptions;
-import org.lwjgl.system.APIUtil;
-import org.lwjgl.system.NativeType;
+import icyllis.arc3d.engine.PipelineStateCache;
+import org.lwjgl.system.*;
 
 import javax.annotation.Nonnull;
 import java.io.PrintWriter;
+import java.lang.ref.Reference;
+import java.nio.ByteBuffer;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
@@ -34,6 +37,7 @@ import static org.lwjgl.opengl.AMDDebugOutput.*;
 import static org.lwjgl.opengl.ARBDebugOutput.*;
 import static org.lwjgl.opengl.EXTTextureCompressionS3TC.*;
 import static org.lwjgl.opengl.GL43C.*;
+import static org.lwjgl.opengl.GL46C.GL_SHADER_BINARY_FORMAT_SPIR_V;
 
 /**
  * Provides OpenGL utilities.
@@ -327,7 +331,7 @@ public final class GLUtil {
             case GL_STENCIL_INDEX8 -> "STENCIL_INDEX8";
             case GL_STENCIL_INDEX16 -> "STENCIL_INDEX16";
             case GL_DEPTH24_STENCIL8 -> "DEPTH24_STENCIL8";
-            default -> APIUtil.apiUnknownToken(format);
+            default -> APIUtil.apiUnknownToken("GLenum", format);
         };
     }
 
@@ -428,5 +432,103 @@ public final class GLUtil {
             case GL_DEBUG_SEVERITY_LOW_AMD -> "Low";
             default -> APIUtil.apiUnknownToken(severity);
         };
+    }
+
+    @NativeType("GLuint")
+    public static int glCompileShader(GLInterface gl,
+                                      @NativeType("GLenum") int shaderType,
+                                      @NativeType("GLchar const *") ByteBuffer glsl,
+                                      PipelineStateCache.Stats stats,
+                                      PrintWriter pw) {
+        int shader = gl.glCreateShader(shaderType);
+        if (shader == 0) {
+            return 0;
+        }
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            long string = stack.npointer(glsl);
+            long length = stack.nint(glsl.remaining());
+            gl.glShaderSource(shader, 1, string, length);
+        } finally {
+            Reference.reachabilityFence(glsl);
+        }
+
+        gl.glCompileShader(shader);
+        stats.incShaderCompilations();
+
+        if (gl.glGetShaderi(shader, GL_COMPILE_STATUS) == GL_FALSE) {
+            String log = gl.glGetShaderInfoLog(shader);
+            gl.glDeleteShader(shader);
+            handleCompileError(pw, MemoryUtil.memUTF8(glsl), log);
+            return 0;
+        }
+
+        return shader;
+    }
+
+    @NativeType("GLuint")
+    public static int glSpecializeShader(GLInterface gl,
+                                         @NativeType("GLenum") int shaderType,
+                                         @NativeType("uint32_t *") ByteBuffer spirv,
+                                         String entryPoint,
+                                         PipelineStateCache.Stats stats,
+                                         PrintWriter pw) {
+        int shader = gl.glCreateShader(shaderType);
+        if (shader == 0) {
+            return 0;
+        }
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            var shaders = stack.ints(shader);
+            gl.glShaderBinary(shaders, GL_SHADER_BINARY_FORMAT_SPIR_V, spirv);
+            // no specialization constants, but must pass a valid pointer
+            shaders.limit(0);
+            gl.glSpecializeShader(shader, entryPoint, shaders, shaders);
+        } finally {
+            Reference.reachabilityFence(spirv);
+        }
+
+        stats.incShaderCompilations();
+
+        if (gl.glGetShaderi(shader, GL_COMPILE_STATUS) == GL_FALSE) {
+            String log = gl.glGetShaderInfoLog(shader);
+            gl.glDeleteShader(shader);
+            pw.println("Shader specialization error");
+            pw.println("Errors:");
+            pw.println(log);
+            return 0;
+        }
+
+        return shader;
+    }
+
+    public static void handleCompileError(PrintWriter pw,
+                                          String source,
+                                          String errors) {
+        pw.println("Shader compilation error");
+        pw.println("------------------------");
+        String[] lines = source.split("\n");
+        for (int i = 0; i < lines.length; ++i) {
+            pw.printf(Locale.ROOT, "%4s\t%s", i + 1, lines[i]);
+            pw.println();
+        }
+        pw.println("Errors:");
+        pw.println(errors);
+    }
+
+    public static void handleLinkError(PrintWriter pw,
+                                       String[] headers,
+                                       String[] sources,
+                                       String errors) {
+        pw.println("Program linking error");
+        pw.println("------------------------");
+        for (int i = 0; i < headers.length; i++) {
+            pw.println(headers[i]);
+            String[] lines = sources[i].split("\n");
+            for (int j = 0; j < lines.length; ++j) {
+                pw.printf(Locale.ROOT, "%4d\t%s", j + 1, lines[j]);
+                pw.println();
+            }
+        }
+        pw.println("Errors:");
+        pw.println(errors);
     }
 }

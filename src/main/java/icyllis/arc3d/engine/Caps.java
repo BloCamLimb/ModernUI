@@ -519,7 +519,8 @@ public abstract class Caps {
         if (width < 1 || height < 1) {
             return false;
         }
-        if (!isFormatTexturable(format)) {
+        if ((surfaceFlags & ISurface.FLAG_TEXTURABLE) != 0 &&
+                !isFormatTexturable(format)) {
             return false;
         }
         if ((surfaceFlags & ISurface.FLAG_RENDERABLE) != 0) {
@@ -528,13 +529,13 @@ public abstract class Caps {
                 return false;
             }
             return isFormatRenderable(format, sampleCount);
-        } else {
-            final int maxSize = maxTextureSize();
-            if (width > maxSize || height > maxSize) {
-                return false;
-            }
-            return sampleCount == 1;
         }
+        final int maxSize = maxTextureSize();
+        if (width > maxSize || height > maxSize) {
+            return false;
+        }
+        //TODO allow multisample textures?
+        return sampleCount == 1;
     }
 
     /**

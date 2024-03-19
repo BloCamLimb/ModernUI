@@ -26,6 +26,8 @@ import icyllis.arc3d.vulkan.VulkanImageInfo;
 import javax.annotation.Nonnull;
 
 /**
+ * Descriptor of 3D API texture.
+ * <p>
  * A BackendTexture instance is initialized once, and may be shared.
  */
 public abstract class BackendTexture {
@@ -39,23 +41,28 @@ public abstract class BackendTexture {
     }
 
     /**
-     * @return see Types
+     * @return see {@link Engine.BackendApi}
      */
     public abstract int getBackend();
 
     /**
-     * @return width in pixels
+     * @return width in texels
      */
     public final int getWidth() {
         return mWidth;
     }
 
     /**
-     * @return height in pixels
+     * @return height in texels
      */
     public final int getHeight() {
         return mHeight;
     }
+
+    /**
+     * @return see {@link Engine.TextureType}
+     */
+    public abstract int getTextureType();
 
     /**
      * @return external texture

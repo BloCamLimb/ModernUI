@@ -135,9 +135,9 @@ public final class GLOpsRenderPass extends OpsRenderPass {
     }
 
     @Override
-    protected void onBindBuffers(GpuBuffer indexBuffer, int indexType,
-                                 GpuBuffer vertexBuffer, int vertexStreamOffset,
-                                 GpuBuffer instanceBuffer, int instanceStreamOffset) {
+    protected void onBindBuffers(@RawPtr GpuBuffer indexBuffer, int indexType,
+                                 @RawPtr GpuBuffer vertexBuffer, int vertexStreamOffset,
+                                 @RawPtr GpuBuffer instanceBuffer, int instanceStreamOffset) {
         assert (mPipelineState != null);
         if (mDevice.getCaps().hasBaseInstanceSupport()) {
             mPipelineState.bindBuffers(indexBuffer, vertexBuffer, vertexStreamOffset,

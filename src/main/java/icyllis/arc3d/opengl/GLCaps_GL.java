@@ -27,6 +27,7 @@ import org.jetbrains.annotations.VisibleForTesting;
 import org.lwjgl.opengl.*;
 import org.lwjgl.system.MemoryStack;
 
+import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
 import static org.lwjgl.opengl.GL11C.*;
@@ -41,7 +42,9 @@ import static org.lwjgl.opengl.GL46C.GL_MAX_TEXTURE_MAX_ANISOTROPY;
  */
 public final class GLCaps_GL extends GLCaps implements GLInterface {
 
+    private final boolean mShaderBinarySupport;
     private boolean mTextureBarrierNV;
+    private boolean mSpecializeShaderARB;
 
     @VisibleForTesting
     public GLCaps_GL(ContextOptions options, Object capabilities) {
@@ -60,11 +63,6 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
             // macOS supports this
             if (!caps.GL_ARB_viewport_array) {
                 //missingExtensions.add("ARB_viewport_array");
-            }
-        }
-        if (!caps.OpenGL43) {
-            if (!caps.GL_ARB_vertex_attrib_binding) {
-                //missingExtensions.add("ARB_vertex_attrib_binding");
             }
         }
         if (!caps.OpenGL44) {
@@ -89,8 +87,10 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
         mBaseInstanceSupport = caps.OpenGL42 || caps.GL_ARB_base_instance;
         mCopyImageSupport = caps.OpenGL43 || caps.GL_ARB_copy_image;
         mViewCompatibilityClassSupport = caps.OpenGL43 || caps.GL_ARB_internalformat_query2;
+        mShaderBinarySupport = caps.OpenGL41 || caps.GL_ARB_ES2_compatibility;
         mProgramBinarySupport = caps.OpenGL41 || caps.GL_ARB_get_program_binary;
         mProgramParameterSupport = mProgramBinarySupport;
+        mVertexAttribBindingSupport = caps.OpenGL43 || caps.GL_ARB_vertex_attrib_binding;
         mBufferStorageSupport = caps.OpenGL44 || caps.GL_ARB_buffer_storage;
 
         String versionString = glGetString(GL_VERSION);
@@ -221,15 +221,15 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
                 mProgramBinarySupport = false;
             }
         }
-        // we don't use ARB_GL_SPIRV, so check OpenGL 4.6 support
-        if (caps.OpenGL46) {
-            int count = GL11C.glGetInteger(GL41C.GL_NUM_SHADER_BINARY_FORMATS);
+        if (mShaderBinarySupport && (caps.OpenGL46 || caps.GL_ARB_gl_spirv)) {
+            int count = GL11C.glGetInteger(GL_NUM_SHADER_BINARY_FORMATS);
             if (count > 0) {
                 int[] shaderBinaryFormats = new int[count];
-                GL11C.glGetIntegerv(GL41C.GL_SHADER_BINARY_FORMATS, shaderBinaryFormats);
+                GL11C.glGetIntegerv(GL_SHADER_BINARY_FORMATS, shaderBinaryFormats);
                 for (int format : shaderBinaryFormats) {
                     if (format == GL46C.GL_SHADER_BINARY_FORMAT_SPIR_V) {
                         mSPIRVSupport = true;
+                        mSpecializeShaderARB = !caps.OpenGL46;
                         break;
                     }
                 }
@@ -375,6 +375,16 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
     }
 
     @Override
+    public int glGenTextures() {
+        return GL11C.glGenTextures();
+    }
+
+    @Override
+    public void glDeleteTextures(int texture) {
+        GL11C.glDeleteTextures(texture);
+    }
+
+    @Override
     public void glBindTexture(int target, int texture) {
         GL11C.glBindTexture(target, texture);
     }
@@ -456,8 +466,98 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
     }
 
     @Override
+    public int glCreateProgram() {
+        return GL20C.glCreateProgram();
+    }
+
+    @Override
+    public void glDeleteProgram(int program) {
+        GL20C.glDeleteProgram(program);
+    }
+
+    @Override
+    public int glCreateShader(int type) {
+        return GL20C.glCreateShader(type);
+    }
+
+    @Override
+    public void glDeleteShader(int shader) {
+        GL20C.glDeleteShader(shader);
+    }
+
+    @Override
+    public void glAttachShader(int program, int shader) {
+        GL20C.glAttachShader(program, shader);
+    }
+
+    @Override
+    public void glDetachShader(int program, int shader) {
+        GL20C.glDetachShader(program, shader);
+    }
+
+    @Override
+    public void glShaderSource(int shader, int count, long strings, long length) {
+        GL20C.nglShaderSource(shader, count, strings, length);
+    }
+
+    @Override
+    public void glCompileShader(int shader) {
+        GL20C.glCompileShader(shader);
+    }
+
+    @Override
+    public void glLinkProgram(int program) {
+        GL20C.glLinkProgram(program);
+    }
+
+    @Override
     public void glUseProgram(int program) {
         GL20C.glUseProgram(program);
+    }
+
+    @Override
+    public int glGetShaderi(int shader, int pname) {
+        return GL20C.glGetShaderi(shader, pname);
+    }
+
+    @Override
+    public int glGetProgrami(int program, int pname) {
+        return GL20C.glGetProgrami(program, pname);
+    }
+
+    @Override
+    public String glGetShaderInfoLog(int shader) {
+        return GL20C.glGetShaderInfoLog(shader);
+    }
+
+    @Override
+    public String glGetProgramInfoLog(int program) {
+        return GL20C.glGetProgramInfoLog(program);
+    }
+
+    @Override
+    public void glEnableVertexAttribArray(int index) {
+        GL20C.glEnableVertexAttribArray(index);
+    }
+
+    @Override
+    public void glVertexAttribPointer(int index, int size, int type, boolean normalized, int stride, long pointer) {
+        GL20C.glVertexAttribPointer(index, size, type, normalized, stride, pointer);
+    }
+
+    @Override
+    public void glVertexAttribIPointer(int index, int size, int type, int stride, long pointer) {
+        GL30C.glVertexAttribIPointer(index, size, type, stride, pointer);
+    }
+
+    @Override
+    public int glGenVertexArrays() {
+        return GL30C.glGenVertexArrays();
+    }
+
+    @Override
+    public void glDeleteVertexArrays(int array) {
+        GL30C.glDeleteVertexArrays(array);
     }
 
     @Override
@@ -566,13 +666,25 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
     }
 
     @Override
+    public void glVertexAttribDivisor(int index, int divisor) {
+        GL33C.glVertexAttribDivisor(index, divisor);
+    }
+
+    @Override
     public void glDrawElementsBaseVertex(int mode, int count, int type, long indices, int basevertex) {
         GL32C.nglDrawElementsBaseVertex(mode, count, type, indices, basevertex);
     }
 
     @Override
-    public void glDrawElementsInstancedBaseVertex(int mode, int count, int type, long indices, int instancecount, int basevertex) {
+    public void glDrawElementsInstancedBaseVertex(int mode, int count, int type, long indices, int instancecount,
+                                                  int basevertex) {
         GL32C.nglDrawElementsInstancedBaseVertex(mode, count, type, indices, instancecount, basevertex);
+    }
+
+    @Override
+    public void glShaderBinary(IntBuffer shaders, int binaryformat, ByteBuffer binary) {
+        assert mShaderBinarySupport;
+        GL41C.glShaderBinary(shaders, binaryformat, binary);
     }
 
     @Override
@@ -582,9 +694,11 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
     }
 
     @Override
-    public void glDrawElementsInstancedBaseVertexBaseInstance(int mode, int count, int type, long indices, int instancecount, int basevertex, int baseinstance) {
+    public void glDrawElementsInstancedBaseVertexBaseInstance(int mode, int count, int type, long indices,
+                                                              int instancecount, int basevertex, int baseinstance) {
         assert mBaseInstanceSupport;
-        GL42C.nglDrawElementsInstancedBaseVertexBaseInstance(mode, count, type, indices, instancecount, basevertex, baseinstance);
+        GL42C.nglDrawElementsInstancedBaseVertexBaseInstance(mode, count, type, indices, instancecount, basevertex,
+                baseinstance);
     }
 
     @Override
@@ -603,6 +717,36 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
     public void glObjectLabel(int identifier, int name, CharSequence label) {
         assert mDebugSupport;
         GL43C.glObjectLabel(identifier, name, label);
+    }
+
+    @Override
+    public void glBindVertexBuffer(int bindingindex, int buffer, long offset, int stride) {
+        assert mVertexAttribBindingSupport;
+        GL43C.glBindVertexBuffer(bindingindex, buffer, offset, stride);
+    }
+
+    @Override
+    public void glVertexAttribFormat(int attribindex, int size, int type, boolean normalized, int relativeoffset) {
+        assert mVertexAttribBindingSupport;
+        GL43C.glVertexAttribFormat(attribindex, size, type, normalized, relativeoffset);
+    }
+
+    @Override
+    public void glVertexAttribIFormat(int attribindex, int size, int type, int relativeoffset) {
+        assert mVertexAttribBindingSupport;
+        GL43C.glVertexAttribIFormat(attribindex, size, type, relativeoffset);
+    }
+
+    @Override
+    public void glVertexAttribBinding(int attribindex, int bindingindex) {
+        assert mVertexAttribBindingSupport;
+        GL43C.glVertexAttribBinding(attribindex, bindingindex);
+    }
+
+    @Override
+    public void glVertexBindingDivisor(int bindingindex, int divisor) {
+        assert mVertexAttribBindingSupport;
+        GL43C.glVertexBindingDivisor(bindingindex, divisor);
     }
 
     @Override
@@ -643,5 +787,53 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
     public boolean glUnmapNamedBuffer(int buffer) {
         assert mDSASupport;
         return GL45C.glUnmapNamedBuffer(buffer);
+    }
+
+    @Override
+    public int glCreateVertexArrays() {
+        assert mDSASupport;
+        return GL45C.glCreateVertexArrays();
+    }
+
+    @Override
+    public void glEnableVertexArrayAttrib(int vaobj, int index) {
+        assert mDSASupport;
+        GL45C.glEnableVertexArrayAttrib(vaobj, index);
+    }
+
+    @Override
+    public void glVertexArrayAttribFormat(int vaobj, int attribindex, int size, int type, boolean normalized,
+                                          int relativeoffset) {
+        assert mDSASupport;
+        GL45C.glVertexArrayAttribFormat(vaobj, attribindex, size, type, normalized, relativeoffset);
+    }
+
+    @Override
+    public void glVertexArrayAttribIFormat(int vaobj, int attribindex, int size, int type, int relativeoffset) {
+        assert mDSASupport;
+        GL45C.glVertexArrayAttribIFormat(vaobj, attribindex, size, type, relativeoffset);
+    }
+
+    @Override
+    public void glVertexArrayAttribBinding(int vaobj, int attribindex, int bindingindex) {
+        assert mDSASupport;
+        GL45C.glVertexArrayAttribBinding(vaobj, attribindex, bindingindex);
+    }
+
+    @Override
+    public void glVertexArrayBindingDivisor(int vaobj, int bindingindex, int divisor) {
+        assert mDSASupport;
+        GL45C.glVertexArrayBindingDivisor(vaobj, bindingindex, divisor);
+    }
+
+    @Override
+    public void glSpecializeShader(int shader, CharSequence pEntryPoint, IntBuffer pConstantIndex,
+                                   IntBuffer pConstantValue) {
+        assert mSPIRVSupport;
+        if (mSpecializeShaderARB) {
+            ARBGLSPIRV.glSpecializeShaderARB(shader, pEntryPoint, pConstantIndex, pConstantValue);
+        } else {
+            GL46C.glSpecializeShader(shader, pEntryPoint, pConstantIndex, pConstantValue);
+        }
     }
 }

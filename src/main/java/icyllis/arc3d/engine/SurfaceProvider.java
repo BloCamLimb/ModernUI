@@ -22,6 +22,7 @@ package icyllis.arc3d.engine;
 import icyllis.arc3d.core.*;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Objects;
 
@@ -137,8 +138,8 @@ public final class SurfaceProvider {
      */
     @Nullable
     @SharedPtr
-    public TextureProxy createTextureFromPixels(PixelMap pixelMap,
-                                                PixelRef pixelRef,
+    public TextureProxy createTextureFromPixels(@Nonnull PixelMap pixelMap,
+                                                @Nonnull @RawPtr PixelRef pixelRef,
                                                 int dstColorType,
                                                 int surfaceFlags) {
         mContext.checkOwnerThread();

@@ -133,11 +133,22 @@ public interface Engine {
         int kMisc = 1 << 8;
     }
 
+    interface TextureType {
+        /**
+         * None represents OpenGL renderbuffers.
+         */
+        int kNone = 0;
+        int k2D = 1;
+        int k2DArray = 2;
+        int k3D = 3;
+        int kCube = 4;
+        int kCubeArray = 5;
+    }
+
     /**
      * Indicates the type of pending IO operations that can be recorded for GPU resources.
      */
     interface IOType {
-
         int kRead = 0;
         int kWrite = 1;
         int kRW = 2;

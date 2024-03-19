@@ -101,6 +101,13 @@ public abstract class GpuDevice implements Engine {
     public void disconnect(boolean cleanup) {
     }
 
+    /**
+     * Returns true if GPU is gone.
+     */
+    public boolean isDeviceLost() {
+        return false;
+    }
+
     public final Stats getStats() {
         return mStats;
     }
@@ -174,13 +181,15 @@ public abstract class GpuDevice implements Engine {
         if ((surfaceFlags & ISurface.FLAG_RENDERABLE) != 0) {
             sampleCount = mCaps.getRenderTargetSampleCount(sampleCount, format);
         }
+        if (sampleCount > 1 && mipLevelCount > 1) {
+            return null;
+        }
         assert (sampleCount > 0 && sampleCount <= 64);
         final GpuTexture texture = onCreateTexture(width, height, format,
                 mipLevelCount, sampleCount, surfaceFlags);
         if (texture != null) {
             // we don't copy the backend format object, use identity rather than equals()
             assert texture.getBackendFormat() == format;
-            assert (surfaceFlags & ISurface.FLAG_RENDERABLE) == 0 || texture.asRenderTarget() != null;
             if (label != null) {
                 texture.setLabel(label);
             }
@@ -217,9 +226,9 @@ public abstract class GpuDevice implements Engine {
      */
     @Nullable
     @SharedPtr
-    public GpuTexture wrapRenderableBackendTexture(BackendTexture texture,
-                                                   int sampleCount,
-                                                   boolean ownership) {
+    public GpuRenderTarget wrapRenderableBackendTexture(BackendTexture texture,
+                                                        int sampleCount,
+                                                        boolean ownership) {
         if (sampleCount < 1) {
             return null;
         }
@@ -240,9 +249,9 @@ public abstract class GpuDevice implements Engine {
 
     @Nullable
     @SharedPtr
-    protected abstract GpuTexture onWrapRenderableBackendTexture(BackendTexture texture,
-                                                                 int sampleCount,
-                                                                 boolean ownership);
+    protected abstract GpuRenderTarget onWrapRenderableBackendTexture(BackendTexture texture,
+                                                                      int sampleCount,
+                                                                      boolean ownership);
 
     @Nullable
     @SharedPtr
@@ -281,7 +290,10 @@ public abstract class GpuDevice implements Engine {
         if (x < 0 || y < 0 || width <= 0 || height <= 0) {
             return false;
         }
-        if (texture.isReadOnly()) {
+        if (texture.isReadOnly() || texture.getSampleCount() > 1) {
+            return false;
+        }
+        if ((texture.getSurfaceFlags() & ISurface.FLAG_TEXTURABLE) == 0) {
             return false;
         }
         assert (texture.getWidth() > 0 && texture.getHeight() > 0);

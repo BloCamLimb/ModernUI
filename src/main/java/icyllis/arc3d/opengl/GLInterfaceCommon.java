@@ -22,7 +22,6 @@ package icyllis.arc3d.opengl;
 import org.lwjgl.system.NativeType;
 
 import javax.annotation.Nullable;
-import java.nio.ByteBuffer;
 
 /**
  * OpenGL 3.1 Core and OpenGL ES 3.0 have a common subset.
@@ -34,6 +33,11 @@ public interface GLInterfaceCommon {
     void glEnable(@NativeType("GLenum") int cap);
 
     void glDisable(@NativeType("GLenum") int cap);
+
+    @NativeType("void")
+    int glGenTextures();
+
+    void glDeleteTextures(@NativeType("GLuint const *") int texture);
 
     void glBindTexture(@NativeType("GLenum") int target, @NativeType("GLuint") int texture);
 
@@ -79,7 +83,56 @@ public interface GLInterfaceCommon {
     @NativeType("GLboolean")
     boolean glUnmapBuffer(@NativeType("GLenum") int target);
 
+    @NativeType("GLuint")
+    int glCreateProgram();
+
+    void glDeleteProgram(@NativeType("GLuint") int program);
+
+    @NativeType("GLuint")
+    int glCreateShader(@NativeType("GLenum") int type);
+
+    void glDeleteShader(@NativeType("GLuint") int shader);
+
+    void glAttachShader(@NativeType("GLuint") int program, @NativeType("GLuint") int shader);
+
+    void glDetachShader(@NativeType("GLuint") int program, @NativeType("GLuint") int shader);
+
+    void glShaderSource(@NativeType("GLuint") int shader, @NativeType("GLsizei") int count,
+                        @NativeType("GLchar const * const *") long strings,
+                        @NativeType("GLint const *") long length);
+
+    void glCompileShader(@NativeType("GLuint") int shader);
+
+    void glLinkProgram(@NativeType("GLuint") int program);
+
     void glUseProgram(@NativeType("GLuint") int program);
+
+    @NativeType("void")
+    int glGetShaderi(@NativeType("GLuint") int shader, @NativeType("GLenum") int pname);
+
+    @NativeType("void")
+    int glGetProgrami(@NativeType("GLuint") int program, @NativeType("GLenum") int pname);
+
+    @NativeType("void")
+    String glGetShaderInfoLog(@NativeType("GLuint") int shader);
+
+    @NativeType("void")
+    String glGetProgramInfoLog(@NativeType("GLuint") int program);
+
+    void glEnableVertexAttribArray(@NativeType("GLuint") int index);
+
+    void glVertexAttribPointer(@NativeType("GLuint") int index, @NativeType("GLint") int size,
+                               @NativeType("GLenum") int type, @NativeType("GLboolean") boolean normalized,
+                               @NativeType("GLsizei") int stride, @NativeType("void const *") long pointer);
+
+    void glVertexAttribIPointer(@NativeType("GLuint") int index, @NativeType("GLint") int size,
+                                @NativeType("GLenum") int type, @NativeType("GLsizei") int stride,
+                                @NativeType("void const *") long pointer);
+
+    @NativeType("void")
+    int glGenVertexArrays();
+
+    void glDeleteVertexArrays(@NativeType("GLuint const *") int array);
 
     void glBindVertexArray(@NativeType("GLuint") int array);
 
@@ -139,4 +192,6 @@ public interface GLInterfaceCommon {
 
     void glSamplerParameterf(@NativeType("GLuint") int sampler, @NativeType("GLenum") int pname,
                              @NativeType("GLfloat") float param);
+
+    void glVertexAttribDivisor(@NativeType("GLuint") int index, @NativeType("GLuint") int divisor);
 }

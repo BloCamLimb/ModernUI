@@ -19,8 +19,7 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.RefCounted;
-import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.core.*;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
@@ -143,14 +142,14 @@ public abstract class GpuResource implements RefCounted {
     }
 
     @SharedPtr
-    public static <T extends GpuResource> T create(@SharedPtr T that) {
+    public static <T extends GpuResource> T create(T that) {
         if (that != null)
             that.ref();
         return that;
     }
 
     @SharedPtr
-    public static <T extends GpuResource> T create(@SharedPtr T sp, @SharedPtr T that) {
+    public static <T extends GpuResource> T create(@SharedPtr T sp, T that) {
         if (sp != null)
             sp.unref();
         if (that != null)

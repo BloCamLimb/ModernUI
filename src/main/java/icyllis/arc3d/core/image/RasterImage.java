@@ -35,7 +35,7 @@ public class RasterImage extends Image {
      * @param pixelRef raw ptr to pixel ref
      */
     public RasterImage(@Nonnull PixelMap pixelMap,
-                       @Nonnull PixelRef pixelRef) {
+                       @Nonnull @RawPtr PixelRef pixelRef) {
         super(pixelMap.getInfo());
         mPixelMap = pixelMap;
         mPixelRef = RefCnt.create(pixelRef);

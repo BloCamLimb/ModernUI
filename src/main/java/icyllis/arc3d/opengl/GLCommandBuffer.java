@@ -19,8 +19,7 @@
 
 package icyllis.arc3d.opengl;
 
-import icyllis.arc3d.core.RefCnt;
-import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
 
 import javax.annotation.Nonnull;
@@ -230,7 +229,7 @@ public final class GLCommandBuffer extends CommandBuffer {
      *
      * @param target raw ptr to render target
      */
-    public void flushRenderTarget(GLRenderTarget target) {
+    public void flushRenderTarget(@Nullable @RawPtr GLRenderTarget target) {
         if (target == null) {
             mHWRenderTarget = RefCnt.move(mHWRenderTarget);
         } else {
@@ -246,7 +245,8 @@ public final class GLCommandBuffer extends CommandBuffer {
         }
     }
 
-    public void bindPipeline(@Nonnull GLProgram program, @Nonnull GLVertexArray vertexArray) {
+    public void bindPipeline(@Nonnull @RawPtr GLProgram program,
+                             @Nonnull @RawPtr GLVertexArray vertexArray) {
         if (mHWProgram != program) {
             // active program will not be deleted, so no collision
             mDevice.getGL().glUseProgram(program.getProgram());
@@ -255,7 +255,13 @@ public final class GLCommandBuffer extends CommandBuffer {
         }
     }
 
-    public void bindVertexArray(@Nullable GLVertexArray vertexArray) {
+    public void bindVertexArray(int vertexArray) {
+        mDevice.getGL().glBindVertexArray(vertexArray);
+        mHWVertexArray = RefCnt.move(mHWVertexArray);
+        mHWVertexArrayInvalid = true;
+    }
+
+    public void bindVertexArray(@Nullable @RawPtr GLVertexArray vertexArray) {
         if (mHWVertexArrayInvalid ||
                 mHWVertexArray != vertexArray) {
             // active vertex array will not be deleted, so no collision
@@ -265,7 +271,7 @@ public final class GLCommandBuffer extends CommandBuffer {
         }
     }
 
-    public void bindUniformBuffer(@Nonnull GLUniformBuffer uniformBuffer) {
+    public void bindUniformBuffer(@Nonnull @RawPtr GLUniformBuffer uniformBuffer) {
         int index = uniformBuffer.getBinding();
         if (mBoundUniformBuffers[index] != uniformBuffer) {
             mDevice.getGL().glBindBufferBase(GL_UNIFORM_BUFFER, index, uniformBuffer.getHandle());

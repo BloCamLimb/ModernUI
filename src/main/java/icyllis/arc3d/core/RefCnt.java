@@ -85,14 +85,14 @@ public abstract class RefCnt implements RefCounted {
     }
 
     @SharedPtr
-    public static <T extends RefCounted> T create(@SharedPtr T that) {
+    public static <T extends RefCounted> T create(T that) {
         if (that != null)
             that.ref();
         return that;
     }
 
     @SharedPtr
-    public static <T extends RefCounted> T create(@SharedPtr T sp, @SharedPtr T that) {
+    public static <T extends RefCounted> T create(@SharedPtr T sp, T that) {
         if (sp != null)
             sp.unref();
         if (that != null)

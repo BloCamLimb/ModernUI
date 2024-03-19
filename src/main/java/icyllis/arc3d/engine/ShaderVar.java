@@ -143,8 +143,15 @@ public class ShaderVar {
         if (mLayoutQualifier.isEmpty()) {
             mLayoutQualifier = layoutQualifier;
         } else {
-            mLayoutQualifier += ", " + layoutQualifier;
+            mLayoutQualifier += ',' + layoutQualifier;
         }
+    }
+
+    /**
+     * Appends to the layout qualifier.
+     */
+    public void addLayoutQualifier(String qualifier, int value) {
+        addLayoutQualifier(qualifier + '=' + value);
     }
 
     /**
@@ -155,7 +162,7 @@ public class ShaderVar {
         if (mExtraModifiers.isEmpty()) {
             mExtraModifiers = modifier;
         } else {
-            mExtraModifiers += " " + modifier;
+            mExtraModifiers += ' ' + modifier;
         }
     }
 

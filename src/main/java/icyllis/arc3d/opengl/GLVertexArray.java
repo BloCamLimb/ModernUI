@@ -19,19 +19,24 @@
 
 package icyllis.arc3d.opengl;
 
+import icyllis.arc3d.core.RawPtr;
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.*;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import static icyllis.arc3d.opengl.GLCore.*;
+import static org.lwjgl.opengl.GL11C.*;
+import static org.lwjgl.opengl.GL15C.GL_ARRAY_BUFFER;
+import static org.lwjgl.opengl.GL30C.*;
 
 /**
  * This class manages the lifetime of the vertex array object and is used to track the state of the
- * vertex array to avoid redundant GL calls. May be shared by multiple {@link GLGraphicsPipelineState}.
+ * vertex array to avoid redundant GL calls.
  * <p>
- * Supports OpenGL 3.3 and OpenGL 4.5.
+ * The implementation attempts to utilize ARB_vertex_attrib_binding that is available in OpenGL 4.3
+ * and OpenGL ES 3.1. Except for buffer binding, all other states are immutable after creation. See <a
+ * href="https://registry.khronos.org/OpenGL/extensions/ARB/ARB_vertex_attrib_binding.txt">ARB_vertex_attrib_binding</a>
  */
 public final class GLVertexArray extends ManagedResource {
 
@@ -49,8 +54,6 @@ public final class GLVertexArray extends ManagedResource {
     // OpenGL 3 only
     private final int mNumVertexLocations;
     private final int mNumInstanceLocations;
-
-    private final boolean mDSAElementBuffer;
 
     // OpenGL 3 only
     // lower 24 bits: offset
@@ -88,22 +91,21 @@ public final class GLVertexArray extends ManagedResource {
         mNumVertexLocations = numVertexLocations;
         mNumInstanceLocations = numInstanceLocations;
         mAttributes = attributes;
-
-        mDSAElementBuffer = attributes == null &&
-                !device.getCaps().dsaElementBufferBroken();
     }
 
     @Nullable
     @SharedPtr
     public static GLVertexArray make(@Nonnull GLDevice device,
                                      @Nonnull GeometryProcessor geomProc) {
+        var gl = device.getGL();
         final boolean dsa = device.getCaps().hasDSASupport();
+        final boolean vertexAttribBindingSupport = device.getCaps().hasVertexAttribBindingSupport();
         final int vertexArray;
 
         if (dsa) {
-            vertexArray = glCreateVertexArrays();
+            vertexArray = gl.glCreateVertexArrays();
         } else {
-            vertexArray = glGenVertexArrays();
+            vertexArray = gl.glGenVertexArrays();
         }
         if (vertexArray == 0) {
             return null;
@@ -111,8 +113,8 @@ public final class GLVertexArray extends ManagedResource {
 
         int oldVertexArray = 0;
         if (!dsa) {
-            oldVertexArray = glGetInteger(GL_VERTEX_ARRAY_BINDING);
-            glBindVertexArray(vertexArray);
+            oldVertexArray = gl.glGetInteger(GL_VERTEX_ARRAY_BINDING);
+            gl.glBindVertexArray(vertexArray);
         }
 
         // index is location, they are the same
@@ -126,13 +128,22 @@ public final class GLVertexArray extends ManagedResource {
         int numInstanceLocations = 0;
 
         if (geomProc.hasVertexAttributes()) {
-            if (dsa) {
+            if (dsa || vertexAttribBindingSupport) {
                 int prevIndex = index;
-                index = set_vertex_format_4(geomProc.vertexAttributes(),
-                        vertexArray,
-                        index,
-                        bindingIndex,
-                        0); // per-vertex
+                if (dsa) {
+                    index = set_vertex_format_binding_group_dsa(gl,
+                            geomProc.vertexAttributes(),
+                            vertexArray,
+                            index,
+                            bindingIndex,
+                            0); // per-vertex
+                } else {
+                    index = set_vertex_format_binding_group(gl,
+                            geomProc.vertexAttributes(),
+                            index,
+                            bindingIndex,
+                            0); // per-vertex
+                }
                 numVertexLocations = index - prevIndex;
                 vertexBinding = bindingIndex++;
             } else {
@@ -142,13 +153,22 @@ public final class GLVertexArray extends ManagedResource {
         }
 
         if (geomProc.hasInstanceAttributes()) {
-            if (dsa) {
+            if (dsa || vertexAttribBindingSupport) {
                 int prevIndex = index;
-                index = set_vertex_format_4(geomProc.instanceAttributes(),
-                        vertexArray,
-                        index,
-                        bindingIndex,
-                        1); // per-instance
+                if (dsa) {
+                    index = set_vertex_format_binding_group_dsa(gl,
+                            geomProc.instanceAttributes(),
+                            vertexArray,
+                            index,
+                            bindingIndex,
+                            1); // per-instance
+                } else {
+                    index = set_vertex_format_binding_group(gl,
+                            geomProc.instanceAttributes(),
+                            index,
+                            bindingIndex,
+                            1); // per-instance
+                }
                 numInstanceLocations = index - prevIndex;
                 instanceBinding = bindingIndex;
             } else {
@@ -160,33 +180,36 @@ public final class GLVertexArray extends ManagedResource {
         assert index == numVertexLocations + numInstanceLocations;
 
         if (index > device.getCaps().maxVertexAttributes()) {
-            glDeleteVertexArrays(vertexArray);
+            gl.glDeleteVertexArrays(vertexArray);
             if (!dsa) {
-                glBindVertexArray(oldVertexArray);
+                gl.glBindVertexArray(oldVertexArray);
             }
             return null;
         }
 
         int[] attributes = null;
 
-        if (!dsa) {
+        if (!dsa && !vertexAttribBindingSupport) {
             attributes = new int[index];
             index = 0;
             if (numVertexLocations > 0) {
-                index = set_vertex_format_3(geomProc.vertexAttributes(),
+                index = set_vertex_format_legacy(gl,
+                        geomProc.vertexAttributes(),
                         index,
                         0,  // per-vertex
                         attributes);
             }
             if (numInstanceLocations > 0) {
-                index = set_vertex_format_3(geomProc.instanceAttributes(),
+                index = set_vertex_format_legacy(gl,
+                        geomProc.instanceAttributes(),
                         index,
                         1,  // per-instance
                         attributes);
             }
             assert index == numVertexLocations + numInstanceLocations;
-
-            glBindVertexArray(oldVertexArray);
+        }
+        if (!dsa) {
+            gl.glBindVertexArray(oldVertexArray);
         }
 
         if (device.getCaps().hasDebugSupport()) {
@@ -194,7 +217,7 @@ public final class GLVertexArray extends ManagedResource {
             if (!label.isEmpty()) {
                 label = label.substring(0, Math.min(label.length(),
                         device.getCaps().maxLabelLength()));
-                glObjectLabel(GL_VERTEX_ARRAY, vertexArray, label);
+                gl.glObjectLabel(GL_VERTEX_ARRAY, vertexArray, label);
             }
         }
 
@@ -209,14 +232,15 @@ public final class GLVertexArray extends ManagedResource {
                 attributes);
     }
 
-    private static int set_vertex_format_3(@Nonnull Iterable<GeometryProcessor.Attribute> attribs,
-                                           int index, int divisor, int[] attributes) {
+    private static int set_vertex_format_legacy(GLInterface gl,
+                                                @Nonnull Iterable<GeometryProcessor.Attribute> attribs,
+                                                int index, int divisor, int[] attributes) {
         for (var attrib : attribs) {
             int locations = attrib.locations();
             int offset = attrib.offset();
             while (locations-- != 0) {
-                glEnableVertexAttribArray(index);
-                glVertexAttribDivisor(index, divisor);
+                gl.glEnableVertexAttribArray(index);
+                gl.glVertexAttribDivisor(index, divisor);
                 assert offset >= 0 && offset <= 0xFFFFFF;
                 attributes[index] = (offset & 0xFFFFFF) | ((attrib.srcType() & 0xFF) << 24);
                 index++;
@@ -227,146 +251,232 @@ public final class GLVertexArray extends ManagedResource {
     }
 
     // @formatter:off
-    private static void set_attrib_format_3(int type, int index, int stride, long offset) {
+    private static void set_attrib_format_legacy(GLInterface gl, int type, int index, int stride, long offset) {
         switch (type) {
             case Engine.VertexAttribType.kFloat ->
-                    glVertexAttribPointer(index, 1, GL_FLOAT, /*normalized*/false, stride, offset);
+                    gl.glVertexAttribPointer(index, 1, GL_FLOAT, /*normalized*/false, stride, offset);
             case Engine.VertexAttribType.kFloat2 ->
-                    glVertexAttribPointer(index, 2, GL_FLOAT, /*normalized*/false, stride, offset);
+                    gl.glVertexAttribPointer(index, 2, GL_FLOAT, /*normalized*/false, stride, offset);
             case Engine.VertexAttribType.kFloat3 ->
-                    glVertexAttribPointer(index, 3, GL_FLOAT, /*normalized*/false, stride, offset);
+                    gl.glVertexAttribPointer(index, 3, GL_FLOAT, /*normalized*/false, stride, offset);
             case Engine.VertexAttribType.kFloat4 ->
-                    glVertexAttribPointer(index, 4, GL_FLOAT, /*normalized*/false, stride, offset);
+                    gl.glVertexAttribPointer(index, 4, GL_FLOAT, /*normalized*/false, stride, offset);
             case Engine.VertexAttribType.kHalf ->
-                    glVertexAttribPointer(index, 1, GL_HALF_FLOAT, /*normalized*/false, stride, offset);
+                    gl.glVertexAttribPointer(index, 1, GL_HALF_FLOAT, /*normalized*/false, stride, offset);
             case Engine.VertexAttribType.kHalf2 ->
-                    glVertexAttribPointer(index, 2, GL_HALF_FLOAT, /*normalized*/false, stride, offset);
+                    gl.glVertexAttribPointer(index, 2, GL_HALF_FLOAT, /*normalized*/false, stride, offset);
             case Engine.VertexAttribType.kHalf4 ->
-                    glVertexAttribPointer(index, 4, GL_HALF_FLOAT, /*normalized*/false, stride, offset);
+                    gl.glVertexAttribPointer(index, 4, GL_HALF_FLOAT, /*normalized*/false, stride, offset);
             case Engine.VertexAttribType.kInt2 ->
-                    glVertexAttribIPointer(index, 2, GL_INT, stride, offset);
+                    gl.glVertexAttribIPointer(index, 2, GL_INT, stride, offset);
             case Engine.VertexAttribType.kInt3 ->
-                    glVertexAttribIPointer(index, 3, GL_INT, stride, offset);
+                    gl.glVertexAttribIPointer(index, 3, GL_INT, stride, offset);
             case Engine.VertexAttribType.kInt4 ->
-                    glVertexAttribIPointer(index, 4, GL_INT, stride, offset);
+                    gl.glVertexAttribIPointer(index, 4, GL_INT, stride, offset);
             case Engine.VertexAttribType.kByte ->
-                    glVertexAttribIPointer(index, 1, GL_BYTE, stride, offset);
+                    gl.glVertexAttribIPointer(index, 1, GL_BYTE, stride, offset);
             case Engine.VertexAttribType.kByte2 ->
-                    glVertexAttribIPointer(index, 2, GL_BYTE, stride, offset);
+                    gl.glVertexAttribIPointer(index, 2, GL_BYTE, stride, offset);
             case Engine.VertexAttribType.kByte4 ->
-                    glVertexAttribIPointer(index, 4, GL_BYTE, stride, offset);
+                    gl.glVertexAttribIPointer(index, 4, GL_BYTE, stride, offset);
             case Engine.VertexAttribType.kUByte ->
-                    glVertexAttribIPointer(index, 1, GL_UNSIGNED_BYTE, stride, offset);
+                    gl.glVertexAttribIPointer(index, 1, GL_UNSIGNED_BYTE, stride, offset);
             case Engine.VertexAttribType.kUByte2 ->
-                    glVertexAttribIPointer(index, 2, GL_UNSIGNED_BYTE, stride, offset);
+                    gl.glVertexAttribIPointer(index, 2, GL_UNSIGNED_BYTE, stride, offset);
             case Engine.VertexAttribType.kUByte4 ->
-                    glVertexAttribIPointer(index, 4, GL_UNSIGNED_BYTE, stride, offset);
+                    gl.glVertexAttribIPointer(index, 4, GL_UNSIGNED_BYTE, stride, offset);
             case Engine.VertexAttribType.kUByte_norm ->
-                    glVertexAttribPointer(index, 1, GL_UNSIGNED_BYTE, /*normalized*/true, stride, offset);
+                    gl.glVertexAttribPointer(index, 1, GL_UNSIGNED_BYTE, /*normalized*/true, stride, offset);
             case Engine.VertexAttribType.kUByte4_norm ->
-                    glVertexAttribPointer(index, 4, GL_UNSIGNED_BYTE, /*normalized*/true, stride, offset);
+                    gl.glVertexAttribPointer(index, 4, GL_UNSIGNED_BYTE, /*normalized*/true, stride, offset);
             case Engine.VertexAttribType.kShort2 ->
-                    glVertexAttribIPointer(index, 2, GL_SHORT, stride, offset);
+                    gl.glVertexAttribIPointer(index, 2, GL_SHORT, stride, offset);
             case Engine.VertexAttribType.kShort4 ->
-                    glVertexAttribIPointer(index, 4, GL_SHORT, stride, offset);
+                    gl.glVertexAttribIPointer(index, 4, GL_SHORT, stride, offset);
             case Engine.VertexAttribType.kUShort2 ->
-                    glVertexAttribIPointer(index, 2, GL_UNSIGNED_SHORT, stride, offset);
+                    gl.glVertexAttribIPointer(index, 2, GL_UNSIGNED_SHORT, stride, offset);
             case Engine.VertexAttribType.kUShort2_norm ->
-                    glVertexAttribPointer(index, 2, GL_UNSIGNED_SHORT, /*normalized*/true, stride, offset);
+                    gl.glVertexAttribPointer(index, 2, GL_UNSIGNED_SHORT, /*normalized*/true, stride, offset);
             case Engine.VertexAttribType.kInt ->
-                    glVertexAttribIPointer(index, 1, GL_INT, stride, offset);
+                    gl.glVertexAttribIPointer(index, 1, GL_INT, stride, offset);
             case Engine.VertexAttribType.kUInt ->
-                    glVertexAttribIPointer(index, 1, GL_UNSIGNED_INT, stride, offset);
+                    gl.glVertexAttribIPointer(index, 1, GL_UNSIGNED_INT, stride, offset);
             case Engine.VertexAttribType.kUShort_norm ->
-                    glVertexAttribPointer(index, 1, GL_UNSIGNED_SHORT, /*normalized*/true, stride, offset);
+                    gl.glVertexAttribPointer(index, 1, GL_UNSIGNED_SHORT, /*normalized*/true, stride, offset);
             case Engine.VertexAttribType.kUShort4_norm ->
-                    glVertexAttribPointer(index, 4, GL_UNSIGNED_SHORT, /*normalized*/true, stride, offset);
+                    gl.glVertexAttribPointer(index, 4, GL_UNSIGNED_SHORT, /*normalized*/true, stride, offset);
             default -> throw new AssertionError(type);
         }
     }
     // @formatter:on
 
     /**
-     * See {@link icyllis.arc3d.engine.shading.VertexShaderBuilder} to see how we bind these on GPU side.
+     * See {@link icyllis.arc3d.engine.shading.VertexShaderBuilder}.
      */
-    private static int set_vertex_format_4(@Nonnull Iterable<GeometryProcessor.Attribute> attribs,
-                                           int array,
-                                           int index,
-                                           int binding,
-                                           int divisor) {
+    private static int set_vertex_format_binding_group(GLInterface gl,
+                                                       @Nonnull Iterable<GeometryProcessor.Attribute> attribs,
+                                                       int index,
+                                                       int binding,
+                                                       int divisor) {
         for (var attrib : attribs) {
             // a matrix can take up multiple locations
             int locations = attrib.locations();
             int offset = attrib.offset();
             while (locations-- != 0) {
-                glEnableVertexArrayAttrib(array, index);
-                glVertexArrayAttribBinding(array, index, binding);
-                set_attrib_format_4(attrib.srcType(), array, index, offset);
+                gl.glEnableVertexAttribArray(index);
+                gl.glVertexAttribBinding(index, binding);
+                set_attrib_format_binding_group(gl, attrib.srcType(), index, offset);
                 index++;
                 offset += attrib.size();
             }
         }
-        glVertexArrayBindingDivisor(array,
+        gl.glVertexBindingDivisor(binding,
+                divisor);
+        return index;
+    }
+
+    // @formatter:off
+    private static void set_attrib_format_binding_group(GLInterface gl, int type, int index, int offset) {
+        switch (type) {
+            case Engine.VertexAttribType.kFloat ->
+                    gl.glVertexAttribFormat(index, 1, GL_FLOAT, /*normalized*/false, offset);
+            case Engine.VertexAttribType.kFloat2 ->
+                    gl.glVertexAttribFormat(index, 2, GL_FLOAT, /*normalized*/false, offset);
+            case Engine.VertexAttribType.kFloat3 ->
+                    gl.glVertexAttribFormat(index, 3, GL_FLOAT, /*normalized*/false, offset);
+            case Engine.VertexAttribType.kFloat4 ->
+                    gl.glVertexAttribFormat(index, 4, GL_FLOAT, /*normalized*/false, offset);
+            case Engine.VertexAttribType.kHalf ->
+                    gl.glVertexAttribFormat(index, 1, GL_HALF_FLOAT, /*normalized*/false, offset);
+            case Engine.VertexAttribType.kHalf2 ->
+                    gl.glVertexAttribFormat(index, 2, GL_HALF_FLOAT, /*normalized*/false, offset);
+            case Engine.VertexAttribType.kHalf4 ->
+                    gl.glVertexAttribFormat(index, 4, GL_HALF_FLOAT, /*normalized*/false, offset);
+            case Engine.VertexAttribType.kInt2 ->
+                    gl.glVertexAttribIFormat(index, 2, GL_INT, offset);
+            case Engine.VertexAttribType.kInt3 ->
+                    gl.glVertexAttribIFormat(index, 3, GL_INT, offset);
+            case Engine.VertexAttribType.kInt4 ->
+                    gl.glVertexAttribIFormat(index, 4, GL_INT, offset);
+            case Engine.VertexAttribType.kByte ->
+                    gl.glVertexAttribIFormat(index, 1, GL_BYTE, offset);
+            case Engine.VertexAttribType.kByte2 ->
+                    gl.glVertexAttribIFormat(index, 2, GL_BYTE, offset);
+            case Engine.VertexAttribType.kByte4 ->
+                    gl.glVertexAttribIFormat(index, 4, GL_BYTE, offset);
+            case Engine.VertexAttribType.kUByte ->
+                    gl.glVertexAttribIFormat(index, 1, GL_UNSIGNED_BYTE, offset);
+            case Engine.VertexAttribType.kUByte2 ->
+                    gl.glVertexAttribIFormat(index, 2, GL_UNSIGNED_BYTE, offset);
+            case Engine.VertexAttribType.kUByte4 ->
+                    gl.glVertexAttribIFormat(index, 4, GL_UNSIGNED_BYTE, offset);
+            case Engine.VertexAttribType.kUByte_norm ->
+                    gl.glVertexAttribFormat(index, 1, GL_UNSIGNED_BYTE, /*normalized*/true, offset);
+            case Engine.VertexAttribType.kUByte4_norm ->
+                    gl.glVertexAttribFormat(index, 4, GL_UNSIGNED_BYTE, /*normalized*/true, offset);
+            case Engine.VertexAttribType.kShort2 ->
+                    gl.glVertexAttribIFormat(index, 2, GL_SHORT, offset);
+            case Engine.VertexAttribType.kShort4 ->
+                    gl.glVertexAttribIFormat(index, 4, GL_SHORT, offset);
+            case Engine.VertexAttribType.kUShort2 ->
+                    gl.glVertexAttribIFormat(index, 2, GL_UNSIGNED_SHORT, offset);
+            case Engine.VertexAttribType.kUShort2_norm ->
+                    gl.glVertexAttribFormat(index, 2, GL_UNSIGNED_SHORT, /*normalized*/true, offset);
+            case Engine.VertexAttribType.kInt ->
+                    gl.glVertexAttribIFormat(index, 1, GL_INT, offset);
+            case Engine.VertexAttribType.kUInt ->
+                    gl.glVertexAttribIFormat(index, 1, GL_UNSIGNED_INT, offset);
+            case Engine.VertexAttribType.kUShort_norm ->
+                    gl.glVertexAttribFormat(index, 1, GL_UNSIGNED_SHORT, /*normalized*/true, offset);
+            case Engine.VertexAttribType.kUShort4_norm ->
+                    gl.glVertexAttribFormat(index, 4, GL_UNSIGNED_SHORT, /*normalized*/true, offset);
+            default -> throw new AssertionError(type);
+        }
+    }
+    // @formatter:on
+
+    /**
+     * See {@link icyllis.arc3d.engine.shading.VertexShaderBuilder}.
+     */
+    private static int set_vertex_format_binding_group_dsa(GLInterface gl,
+                                                           @Nonnull Iterable<GeometryProcessor.Attribute> attribs,
+                                                           int array,
+                                                           int index,
+                                                           int binding,
+                                                           int divisor) {
+        for (var attrib : attribs) {
+            // a matrix can take up multiple locations
+            int locations = attrib.locations();
+            int offset = attrib.offset();
+            while (locations-- != 0) {
+                gl.glEnableVertexArrayAttrib(array, index);
+                gl.glVertexArrayAttribBinding(array, index, binding);
+                set_attrib_format_binding_group_dsa(gl, attrib.srcType(), array, index, offset);
+                index++;
+                offset += attrib.size();
+            }
+        }
+        gl.glVertexArrayBindingDivisor(array,
                 binding,
                 divisor);
         return index;
     }
 
     // @formatter:off
-    private static void set_attrib_format_4(int type, int array, int index, int offset) {
+    private static void set_attrib_format_binding_group_dsa(GLInterface gl, int type, int array, int index, int offset) {
         switch (type) {
             case Engine.VertexAttribType.kFloat ->
-                    glVertexArrayAttribFormat(array, index, 1, GL_FLOAT, /*normalized*/false, offset);
+                    gl.glVertexArrayAttribFormat(array, index, 1, GL_FLOAT, /*normalized*/false, offset);
             case Engine.VertexAttribType.kFloat2 ->
-                    glVertexArrayAttribFormat(array, index, 2, GL_FLOAT, /*normalized*/false, offset);
+                    gl.glVertexArrayAttribFormat(array, index, 2, GL_FLOAT, /*normalized*/false, offset);
             case Engine.VertexAttribType.kFloat3 ->
-                    glVertexArrayAttribFormat(array, index, 3, GL_FLOAT, /*normalized*/false, offset);
+                    gl.glVertexArrayAttribFormat(array, index, 3, GL_FLOAT, /*normalized*/false, offset);
             case Engine.VertexAttribType.kFloat4 ->
-                    glVertexArrayAttribFormat(array, index, 4, GL_FLOAT, /*normalized*/false, offset);
+                    gl.glVertexArrayAttribFormat(array, index, 4, GL_FLOAT, /*normalized*/false, offset);
             case Engine.VertexAttribType.kHalf ->
-                    glVertexArrayAttribFormat(array, index, 1, GL_HALF_FLOAT, /*normalized*/false, offset);
+                    gl.glVertexArrayAttribFormat(array, index, 1, GL_HALF_FLOAT, /*normalized*/false, offset);
             case Engine.VertexAttribType.kHalf2 ->
-                    glVertexArrayAttribFormat(array, index, 2, GL_HALF_FLOAT, /*normalized*/false, offset);
+                    gl.glVertexArrayAttribFormat(array, index, 2, GL_HALF_FLOAT, /*normalized*/false, offset);
             case Engine.VertexAttribType.kHalf4 ->
-                    glVertexArrayAttribFormat(array, index, 4, GL_HALF_FLOAT, /*normalized*/false, offset);
+                    gl.glVertexArrayAttribFormat(array, index, 4, GL_HALF_FLOAT, /*normalized*/false, offset);
             case Engine.VertexAttribType.kInt2 ->
-                    glVertexArrayAttribIFormat(array, index, 2, GL_INT, offset);
+                    gl.glVertexArrayAttribIFormat(array, index, 2, GL_INT, offset);
             case Engine.VertexAttribType.kInt3 ->
-                    glVertexArrayAttribIFormat(array, index, 3, GL_INT, offset);
+                    gl.glVertexArrayAttribIFormat(array, index, 3, GL_INT, offset);
             case Engine.VertexAttribType.kInt4 ->
-                    glVertexArrayAttribIFormat(array, index, 4, GL_INT, offset);
+                    gl.glVertexArrayAttribIFormat(array, index, 4, GL_INT, offset);
             case Engine.VertexAttribType.kByte ->
-                    glVertexArrayAttribIFormat(array, index, 1, GL_BYTE, offset);
+                    gl.glVertexArrayAttribIFormat(array, index, 1, GL_BYTE, offset);
             case Engine.VertexAttribType.kByte2 ->
-                    glVertexArrayAttribIFormat(array, index, 2, GL_BYTE, offset);
+                    gl.glVertexArrayAttribIFormat(array, index, 2, GL_BYTE, offset);
             case Engine.VertexAttribType.kByte4 ->
-                    glVertexArrayAttribIFormat(array, index, 4, GL_BYTE, offset);
+                    gl.glVertexArrayAttribIFormat(array, index, 4, GL_BYTE, offset);
             case Engine.VertexAttribType.kUByte ->
-                    glVertexArrayAttribIFormat(array, index, 1, GL_UNSIGNED_BYTE, offset);
+                    gl.glVertexArrayAttribIFormat(array, index, 1, GL_UNSIGNED_BYTE, offset);
             case Engine.VertexAttribType.kUByte2 ->
-                    glVertexArrayAttribIFormat(array, index, 2, GL_UNSIGNED_BYTE, offset);
+                    gl.glVertexArrayAttribIFormat(array, index, 2, GL_UNSIGNED_BYTE, offset);
             case Engine.VertexAttribType.kUByte4 ->
-                    glVertexArrayAttribIFormat(array, index, 4, GL_UNSIGNED_BYTE, offset);
+                    gl.glVertexArrayAttribIFormat(array, index, 4, GL_UNSIGNED_BYTE, offset);
             case Engine.VertexAttribType.kUByte_norm ->
-                    glVertexArrayAttribFormat(array, index, 1, GL_UNSIGNED_BYTE, /*normalized*/true, offset);
+                    gl.glVertexArrayAttribFormat(array, index, 1, GL_UNSIGNED_BYTE, /*normalized*/true, offset);
             case Engine.VertexAttribType.kUByte4_norm ->
-                    glVertexArrayAttribFormat(array, index, 4, GL_UNSIGNED_BYTE, /*normalized*/true, offset);
+                    gl.glVertexArrayAttribFormat(array, index, 4, GL_UNSIGNED_BYTE, /*normalized*/true, offset);
             case Engine.VertexAttribType.kShort2 ->
-                    glVertexArrayAttribIFormat(array, index, 2, GL_SHORT, offset);
+                    gl.glVertexArrayAttribIFormat(array, index, 2, GL_SHORT, offset);
             case Engine.VertexAttribType.kShort4 ->
-                    glVertexArrayAttribIFormat(array, index, 4, GL_SHORT, offset);
+                    gl.glVertexArrayAttribIFormat(array, index, 4, GL_SHORT, offset);
             case Engine.VertexAttribType.kUShort2 ->
-                    glVertexArrayAttribIFormat(array, index, 2, GL_UNSIGNED_SHORT, offset);
+                    gl.glVertexArrayAttribIFormat(array, index, 2, GL_UNSIGNED_SHORT, offset);
             case Engine.VertexAttribType.kUShort2_norm ->
-                    glVertexArrayAttribFormat(array, index, 2, GL_UNSIGNED_SHORT, /*normalized*/true, offset);
+                    gl.glVertexArrayAttribFormat(array, index, 2, GL_UNSIGNED_SHORT, /*normalized*/true, offset);
             case Engine.VertexAttribType.kInt ->
-                    glVertexArrayAttribIFormat(array, index, 1, GL_INT, offset);
+                    gl.glVertexArrayAttribIFormat(array, index, 1, GL_INT, offset);
             case Engine.VertexAttribType.kUInt ->
-                    glVertexArrayAttribIFormat(array, index, 1, GL_UNSIGNED_INT, offset);
+                    gl.glVertexArrayAttribIFormat(array, index, 1, GL_UNSIGNED_INT, offset);
             case Engine.VertexAttribType.kUShort_norm ->
-                    glVertexArrayAttribFormat(array, index, 1, GL_UNSIGNED_SHORT, /*normalized*/true, offset);
+                    gl.glVertexArrayAttribFormat(array, index, 1, GL_UNSIGNED_SHORT, /*normalized*/true, offset);
             case Engine.VertexAttribType.kUShort4_norm ->
-                    glVertexArrayAttribFormat(array, index, 4, GL_UNSIGNED_SHORT, /*normalized*/true, offset);
+                    gl.glVertexArrayAttribFormat(array, index, 4, GL_UNSIGNED_SHORT, /*normalized*/true, offset);
             default -> throw new AssertionError(type);
         }
     }
@@ -375,7 +485,7 @@ public final class GLVertexArray extends ManagedResource {
     @Override
     protected void deallocate() {
         if (mVertexArray != 0) {
-            glDeleteVertexArrays(mVertexArray);
+            getDevice().getGL().glDeleteVertexArrays(mVertexArray);
         }
         discard();
     }
@@ -397,42 +507,32 @@ public final class GLVertexArray extends ManagedResource {
     }
 
     /**
-     * Set element buffer (index buffer).
-     * <p>
-     * In OpenGL 3.3, bind pipeline first.
+     * Set element buffer (index buffer), bind pipeline first.
      *
      * @param buffer the element buffer object, raw ptr
      */
-    public void bindIndexBuffer(@Nonnull GLBuffer buffer) {
+    public void bindIndexBuffer(@Nonnull @RawPtr GLBuffer buffer) {
         if (mVertexArray == 0) {
             return;
         }
         if (mIndexBuffer != buffer.getUniqueID()) {
-            if (mDSAElementBuffer) {
-                // OpenGL 4.5
-                glVertexArrayElementBuffer(mVertexArray, buffer.getHandle());
-            } else {
-                // OpenGL 3.3
-                // this binding state is associated with current VAO
-                getDevice().bindIndexBufferInPipe(buffer);
-            }
+            // Sometimes glVertexArrayElementBuffer will cause segfault on glDrawElementsBaseVertex.
+            // So we just use normal glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer)
+            // NOTE: this binding state is associated with current VAO
+            getDevice().bindIndexBufferInPipe(buffer);
             mIndexBuffer = buffer.getUniqueID();
         }
     }
 
-    // see https://registry.khronos.org/OpenGL/extensions/ARB/ARB_vertex_attrib_binding.txt
-
     /**
-     * Set the buffer that stores the attribute data.
+     * Set the buffer that stores the attribute data, bind pipeline first.
      * <p>
      * The stride, the distance to the next vertex data, in bytes, is determined in constructor.
-     * <p>
-     * In OpenGL 3.3, bind pipeline first.
      *
      * @param buffer the vertex buffer object, raw ptr
      * @param offset first vertex data to the base of the buffer, in bytes
      */
-    public void bindVertexBuffer(@Nonnull GLBuffer buffer, long offset) {
+    public void bindVertexBuffer(@Nonnull @RawPtr GLBuffer buffer, long offset) {
         if (mVertexArray == 0) {
             return;
         }
@@ -441,21 +541,21 @@ public final class GLVertexArray extends ManagedResource {
                 mVertexOffset != offset) {
             if (mVertexBinding != INVALID_BINDING) {
                 // OpenGL 4.5
-                glVertexArrayVertexBuffer(mVertexArray,
+                getDevice().getGL().glBindVertexBuffer(
                         mVertexBinding,
                         buffer.getHandle(),
                         offset,
                         mVertexStride);
             } else if (mAttributes != null) {
-                // OpenGL 3.3, you must bind pipeline before
-                // 'offset' should translate into 'baseVertex'
+                // 'offset' may translate into 'baseVertex'
                 int target = getDevice().bindBuffer(buffer);
                 assert target == GL_ARRAY_BUFFER;
                 for (int index = 0;
                      index < mNumVertexLocations;
                      index++) {
                     int info = mAttributes[index];
-                    set_attrib_format_3(/*type*/info >> 24,
+                    set_attrib_format_legacy(getDevice().getGL(),
+                            /*type*/info >> 24,
                             index,
                             mVertexStride,
                             /*base_offset*/offset + /*relative_offset*/(info & 0xFFFFFF));
@@ -467,16 +567,14 @@ public final class GLVertexArray extends ManagedResource {
     }
 
     /**
-     * Set the buffer that stores the attribute data.
+     * Set the buffer that stores the attribute data, bind pipeline first.
      * <p>
      * The stride, the distance to the next instance data, in bytes, is determined in constructor.
-     * <p>
-     * In OpenGL 3.3, bind pipeline first.
      *
      * @param buffer the vertex buffer object, raw ptr
      * @param offset first instance data to the base of the buffer, in bytes
      */
-    public void bindInstanceBuffer(@Nonnull GLBuffer buffer, long offset) {
+    public void bindInstanceBuffer(@Nonnull @RawPtr GLBuffer buffer, long offset) {
         if (mVertexArray == 0) {
             return;
         }
@@ -484,22 +582,22 @@ public final class GLVertexArray extends ManagedResource {
         if (mInstanceBuffer != buffer.getUniqueID() ||
                 mInstanceOffset != offset) {
             if (mInstanceBinding != INVALID_BINDING) {
-                // OpenGL 4.5
-                glVertexArrayVertexBuffer(mVertexArray,
+                // OpenGL 4.3
+                getDevice().getGL().glBindVertexBuffer(
                         mInstanceBinding,
                         buffer.getHandle(),
                         offset,
                         mInstanceStride);
             } else if (mAttributes != null) {
-                // OpenGL 3.3, you must bind pipeline before
-                // 'offset' should translate into 'baseInstance'
+                // 'offset' may translate into 'baseInstance'
                 int target = getDevice().bindBuffer(buffer);
                 assert target == GL_ARRAY_BUFFER;
                 for (int index = mNumVertexLocations;
                      index < mNumVertexLocations + mNumInstanceLocations;
                      index++) {
                     int info = mAttributes[index];
-                    set_attrib_format_3(/*type*/info >> 24,
+                    set_attrib_format_legacy(getDevice().getGL(),
+                            /*type*/info >> 24,
                             index,
                             mInstanceStride,
                             /*base_offset*/offset + /*relative_offset*/(info & 0xFFFFFF));
