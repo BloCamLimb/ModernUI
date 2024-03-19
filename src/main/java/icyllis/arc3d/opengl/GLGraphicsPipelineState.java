@@ -19,8 +19,7 @@
 
 package icyllis.arc3d.opengl;
 
-import icyllis.arc3d.core.RefCnt;
-import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.shading.UniformHandler;
 
@@ -151,10 +150,10 @@ public class GLGraphicsPipelineState extends GraphicsPipelineState {
     /**
      * Binds all geometric buffers.
      */
-    public void bindBuffers(@Nullable GpuBuffer indexBuffer,
-                            @Nullable GpuBuffer vertexBuffer,
+    public void bindBuffers(@Nullable @RawPtr GpuBuffer indexBuffer,
+                            @Nullable @RawPtr GpuBuffer vertexBuffer,
                             long vertexOffset,
-                            @Nullable GpuBuffer instanceBuffer,
+                            @Nullable @RawPtr GpuBuffer instanceBuffer,
                             long instanceOffset) {
         if (indexBuffer != null) {
             bindIndexBuffer((GLBuffer) indexBuffer);
@@ -182,7 +181,7 @@ public class GLGraphicsPipelineState extends GraphicsPipelineState {
      *
      * @param buffer the element buffer object, raw ptr
      */
-    public void bindIndexBuffer(@Nonnull GLBuffer buffer) {
+    public void bindIndexBuffer(@Nonnull @RawPtr GLBuffer buffer) {
         if (mVertexArray != null) {
             mVertexArray.bindIndexBuffer(buffer);
         }
@@ -198,7 +197,7 @@ public class GLGraphicsPipelineState extends GraphicsPipelineState {
      * @param buffer the vertex buffer object, raw ptr
      * @param offset first vertex data to the head of the buffer, in bytes
      */
-    public void bindVertexBuffer(@Nonnull GLBuffer buffer, long offset) {
+    public void bindVertexBuffer(@Nonnull @RawPtr GLBuffer buffer, long offset) {
         if (mVertexArray != null) {
             mVertexArray.bindVertexBuffer(buffer, offset);
         }
@@ -214,7 +213,7 @@ public class GLGraphicsPipelineState extends GraphicsPipelineState {
      * @param buffer the vertex buffer object, raw ptr
      * @param offset first instance data to the head of the buffer, in bytes
      */
-    public void bindInstanceBuffer(@Nonnull GLBuffer buffer, long offset) {
+    public void bindInstanceBuffer(@Nonnull @RawPtr GLBuffer buffer, long offset) {
         if (mVertexArray != null) {
             mVertexArray.bindInstanceBuffer(buffer, offset);
         }

@@ -28,8 +28,9 @@ import javax.annotation.Nullable;
 import static icyllis.arc3d.engine.Engine.BudgetType;
 
 /**
- * Represents 2D textures can be sampled by shaders, can also be used as attachments
- * of render targets.
+ * Represents 2D/3D textures/surfaces/attachments. Although this class is called Texture, it
+ * may or may not be sampled by shaders, may be used as color/depth/stencil attachments
+ * of render targets. See {@link #FLAG_TEXTURABLE} and {@link #FLAG_RENDERABLE}.
  * <p>
  * By default, a Texture is not renderable, all mipmaps (including the base level) are
  * dirty. But it can be renderable on creation, then we call it a RenderTexture or
@@ -220,7 +221,7 @@ public abstract class GpuTexture extends GpuResource implements IGpuSurface {
         return new ScratchKey().compute(
                 format,
                 mWidth, mHeight,
-                1,
+                getSampleCount(),
                 mFlags); // budgeted flag is not included, this method is called only when budgeted
     }
 
@@ -316,7 +317,9 @@ public abstract class GpuTexture extends GpuResource implements IGpuSurface {
             mHeight = height;
             mFormat = format.getFormatKey();
             mFlags = (surfaceFlags & (ISurface.FLAG_MIPMAPPED |
+                    ISurface.FLAG_TEXTURABLE |
                     ISurface.FLAG_RENDERABLE |
+                    ISurface.FLAG_MEMORYLESS |
                     ISurface.FLAG_PROTECTED)) | (sampleCount << 16);
             return this;
         }

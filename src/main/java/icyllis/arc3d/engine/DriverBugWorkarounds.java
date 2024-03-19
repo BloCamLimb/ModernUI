@@ -28,8 +28,6 @@ public class DriverBugWorkarounds {
     public static final int DISABLED = 0x1;
     public static final int ENABLED = 0x2;
 
-    public byte dsa_element_buffer_broken = DEFAULT;
-
     public DriverBugWorkarounds() {
     }
 
@@ -37,7 +35,6 @@ public class DriverBugWorkarounds {
         if (states == null || states.isEmpty()) return;
         for (var e : states.entrySet()) {
             switch (e.getKey()) {
-                case "dsa_element_buffer_broken" -> dsa_element_buffer_broken |= mask(e);
             }
         }
     }
@@ -63,7 +60,6 @@ public class DriverBugWorkarounds {
 
     public void applyOverrides(DriverBugWorkarounds workarounds) {
         if (workarounds != null) {
-            dsa_element_buffer_broken |= workarounds.dsa_element_buffer_broken;
         }
     }
 }

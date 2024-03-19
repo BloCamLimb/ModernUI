@@ -21,6 +21,9 @@ package icyllis.arc3d.opengl;
 
 import org.lwjgl.system.NativeType;
 
+import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
+
 /**
  * Interface for gl* function access between OpenGL 4.6 Core and OpenGL ES 3.2,
  * depending on GLCapabilities or GLESCapabilities.
@@ -39,6 +42,9 @@ public interface GLInterface extends GLInterfaceCommon {
                                            @NativeType("GLenum") int type, @NativeType("void const *") long indices,
                                            @NativeType("GLsizei") int instancecount,
                                            @NativeType("GLint") int basevertex);
+
+    void glShaderBinary(@NativeType("GLuint const *") IntBuffer shaders, @NativeType("GLenum") int binaryformat,
+                        @NativeType("void const *") ByteBuffer binary);
 
     void glDrawArraysInstancedBaseInstance(@NativeType("GLenum") int mode, @NativeType("GLint") int first,
                                            @NativeType("GLsizei") int count, @NativeType("GLsizei") int instancecount,
@@ -60,6 +66,20 @@ public interface GLInterface extends GLInterfaceCommon {
     void glObjectLabel(@NativeType("GLenum") int identifier, @NativeType("GLuint") int name,
                        @NativeType("GLchar const *") CharSequence label);
 
+    void glBindVertexBuffer(@NativeType("GLuint") int bindingindex, @NativeType("GLuint") int buffer,
+                            @NativeType("GLintptr") long offset, @NativeType("GLsizei") int stride);
+
+    void glVertexAttribFormat(@NativeType("GLuint") int attribindex, @NativeType("GLint") int size,
+                              @NativeType("GLenum") int type, @NativeType("GLboolean") boolean normalized,
+                              @NativeType("GLuint") int relativeoffset);
+
+    void glVertexAttribIFormat(@NativeType("GLuint") int attribindex, @NativeType("GLint") int size,
+                               @NativeType("GLenum") int type, @NativeType("GLuint") int relativeoffset);
+
+    void glVertexAttribBinding(@NativeType("GLuint") int attribindex, @NativeType("GLuint") int bindingindex);
+
+    void glVertexBindingDivisor(@NativeType("GLuint") int bindingindex, @NativeType("GLuint") int divisor);
+
     void glTextureBarrier();
 
     @NativeType("void")
@@ -77,4 +97,28 @@ public interface GLInterface extends GLInterfaceCommon {
 
     @NativeType("GLboolean")
     boolean glUnmapNamedBuffer(@NativeType("GLuint") int buffer);
+
+    @NativeType("void")
+    int glCreateVertexArrays();
+
+    void glEnableVertexArrayAttrib(@NativeType("GLuint") int vaobj, @NativeType("GLuint") int index);
+
+    void glVertexArrayAttribFormat(@NativeType("GLuint") int vaobj, @NativeType("GLuint") int attribindex,
+                                   @NativeType("GLint") int size, @NativeType("GLenum") int type,
+                                   @NativeType("GLboolean") boolean normalized,
+                                   @NativeType("GLuint") int relativeoffset);
+
+    void glVertexArrayAttribIFormat(@NativeType("GLuint") int vaobj, @NativeType("GLuint") int attribindex,
+                                    @NativeType("GLint") int size, @NativeType("GLenum") int type,
+                                    @NativeType("GLuint") int relativeoffset);
+
+    void glVertexArrayAttribBinding(@NativeType("GLuint") int vaobj, @NativeType("GLuint") int attribindex,
+                                    @NativeType("GLuint") int bindingindex);
+
+    void glVertexArrayBindingDivisor(@NativeType("GLuint") int vaobj, @NativeType("GLuint") int bindingindex,
+                                     @NativeType("GLuint") int divisor);
+
+    void glSpecializeShader(@NativeType("GLuint") int shader, @NativeType("GLchar const *") CharSequence pEntryPoint,
+                            @NativeType("GLuint const *") IntBuffer pConstantIndex,
+                            @NativeType("GLuint const *") IntBuffer pConstantValue);
 }

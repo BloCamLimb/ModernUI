@@ -32,6 +32,7 @@ public interface ISurface extends RefCounted {
 
     /**
      * Surface flags shared between the Surface & SurfaceProxy class hierarchies.
+     * These flags can be used to create a surface or represent the state of the created surface.
      * An arbitrary combination of flags may result in unexpected behaviors.
      */
     int FLAG_NONE = 0;
@@ -51,10 +52,24 @@ public interface ISurface extends RefCounted {
      */
     int FLAG_MIPMAPPED = 1 << 2;
     /**
-     * Used to say whether a surface can be rendered to, whether a texture can be used as
-     * color attachments. Renderable when set, otherwise not renderable.
+     * Used to say whether a texture can be sampled by shader. This is not compatible with
+     * {@link #FLAG_MEMORYLESS}. A valid SurfaceFlags must have at least one of Texturable
+     * and {@link #FLAG_RENDERABLE} set. Default is Texturable.
      */
-    int FLAG_RENDERABLE = 1 << 3;
+    int FLAG_TEXTURABLE = 1 << 3;
+    /**
+     * Used to say whether a surface can be rendered to, whether a texture can be used as
+     * color/depth/stencil attachments. Renderable when set, otherwise not renderable.
+     */
+    int FLAG_RENDERABLE = 1 << 4;
+    /**
+     * Used to create memoryless textures, especially for multisample transient attachments.
+     * If so, {@link Engine.LoadOp#Load} and {@link Engine.StoreOp#Store} may not work,
+     * but rendering will be efficient on TBDR GPU.
+     * <p>
+     * Note: Memoryless must be {@link #FLAG_RENDERABLE} and NOT {@link #FLAG_TEXTURABLE}.
+     */
+    int FLAG_MEMORYLESS = 1 << 5;
     /**
      * Used to say whether texture is backed by protected memory. Protected when set, otherwise
      * not protected.
@@ -62,7 +77,7 @@ public interface ISurface extends RefCounted {
      * @see <a href="https://github.com/KhronosGroup/Vulkan-Guide/blob/master/chapters/protected.adoc">
      * Protected Memory</a>
      */
-    int FLAG_PROTECTED = 1 << 4;
+    int FLAG_PROTECTED = 1 << 6;
     /**
      * Means the pixels in the texture are read-only. {@link GpuTexture} and {@link TextureProxy}
      * only.
@@ -165,9 +180,6 @@ public interface ISurface extends RefCounted {
      */
     @Nonnull
     BackendFormat getBackendFormat();
-
-    ///// Common interface between RenderTexture and RenderSurface
-    ///// The following methods are only valid when FLAG_RENDERABLE is set
 
     /**
      * Returns the number of samples per pixel in color buffers (one if non-MSAA).

@@ -20,9 +20,7 @@
 package icyllis.arc3d.test;
 
 import icyllis.arc3d.compiler.*;
-import icyllis.arc3d.compiler.SPIRVVersion;
-import icyllis.arc3d.compiler.lex.*;
-import icyllis.arc3d.compiler.TranslationUnit;
+import icyllis.arc3d.compiler.lex.Lexer;
 import icyllis.arc3d.core.MathUtil;
 
 import java.io.IOException;
@@ -30,7 +28,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Objects;
 
 public class TestCompiler {
 
@@ -40,7 +37,7 @@ public class TestCompiler {
                       \s
                       
                 # extension GL_ARB_enhanced_layouts: enable /*****/ //#  line 2
-            # include  <fog>  /*  */
+            # import  <fog>  /*  */
                       using M4          \s
                       = mat4;
             const int blockSize = -4 + 6;
@@ -63,6 +60,19 @@ public class TestCompiler {
         var compiler = new ShaderCompiler();
 
         System.out.println("Source length: " + SOURCE.length());
+
+        for (int i = 19968; i < 20224; i++) {
+            System.out.printf("\\u%04X", i);
+        }
+        System.out.println();
+        for (int i = 20224; i < 20480; i++) {
+            System.out.printf("\\u%04X", i);
+        }
+        System.out.println();
+        for (int i = 20480; i < 20736; i++) {
+            System.out.printf("\\u%04X", i);
+        }
+        System.out.println();
 
         {
             long bytes = 0;

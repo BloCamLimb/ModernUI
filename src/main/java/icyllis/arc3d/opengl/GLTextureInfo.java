@@ -19,25 +19,25 @@
 
 package icyllis.arc3d.opengl;
 
+import org.lwjgl.opengl.GL11C;
+import org.lwjgl.opengl.GL30C;
+
 /**
  * Types for interacting with GL resources created externally to pipeline. BackendObjects for GL
  * textures are really const GLTexture*. The {@link #format} here should be a sized, internal format
  * for the texture. We use the sized format since the base internal formats are deprecated.
  * <p>
- * Note the target is always {@link GLCore#GL_TEXTURE_2D}. When importing external memory,
- * {@link #memoryHandle} is POSIX file descriptor or Win32 NT handle (though <code>HANDLE</code>
- * is defined as <code>void*</code>, we can safely truncate it because Win32 handles are
- * 32-bit significant). {@link #memoryObject} is OpenGL memory object. If it is an NT handle,
- * it must be released manually by the memory exporter (e.g. Vulkan).
- * <p>
- * We only provide single-sample textures, multisample can be only renderbuffers.
+ * Note the target can be {@link GL30C#GL_RENDERBUFFER}. When importing external memory,
+ * {@link #memoryHandle} is POSIX file descriptor or Win32 NT handle. {@link #memoryObject} is
+ * OpenGL memory object. If it is an NT handle, it must be released manually by the memory exporter
+ * (e.g. Vulkan).
  */
 public final class GLTextureInfo {
 
     /**
      * <code>GLenum</code> - image namespace
      */
-    public int target = GLCore.GL_TEXTURE_2D;
+    public int target = GL11C.GL_TEXTURE_2D;
     /**
      * <code>GLuint</code> - image name
      */
@@ -66,7 +66,7 @@ public final class GLTextureInfo {
      * };
      * }</pre>
      */
-    public int memoryHandle = -1;
+    public long memoryHandle = -1;
 
     public void set(GLTextureInfo info) {
         target = info.target;
@@ -80,14 +80,14 @@ public final class GLTextureInfo {
 
     @Override
     public int hashCode() {
-        int h = target;
-        h = 31 * h + handle;
-        h = 31 * h + format;
-        h = 31 * h + levels;
-        h = 31 * h + samples;
-        h = 31 * h + memoryObject;
-        h = 31 * h + memoryHandle;
-        return h;
+        int result = target;
+        result = 31 * result + handle;
+        result = 31 * result + format;
+        result = 31 * result + levels;
+        result = 31 * result + samples;
+        result = 31 * result + memoryObject;
+        result = 31 * result + (int) (memoryHandle ^ (memoryHandle >>> 32));
+        return result;
     }
 
     @Override

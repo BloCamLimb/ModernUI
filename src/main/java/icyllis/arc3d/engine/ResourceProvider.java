@@ -19,12 +19,18 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.ImageInfo;
+import icyllis.arc3d.core.SharedPtr;
 
 import javax.annotation.Nullable;
 
 /**
- * Provides resources with cache.
+ * Factory class used to obtain GPU resources with cache. A subclass can
+ * provide backend-specific resources.
+ * <p>
+ * This can only be used on render thread. To create Surface-like resources
+ * in other threads, use {@link SurfaceProxy}. To obtain Pipeline resources,
+ * use {@link PipelineStateCache}.
  */
 public class ResourceProvider {
 
@@ -91,7 +97,9 @@ public class ResourceProvider {
      * @see IGpuSurface#FLAG_BUDGETED
      * @see IGpuSurface#FLAG_APPROX_FIT
      * @see IGpuSurface#FLAG_MIPMAPPED
+     * @see IGpuSurface#FLAG_TEXTURABLE
      * @see IGpuSurface#FLAG_RENDERABLE
+     * @see IGpuSurface#FLAG_MEMORYLESS
      * @see IGpuSurface#FLAG_PROTECTED
      */
     @Nullable
@@ -106,20 +114,46 @@ public class ResourceProvider {
             return null;
         }
 
-        // Currently, we don't recycle compressed textures as scratch. Additionally, all compressed
-        // textures should be created through the createCompressedTexture function.
-        assert !format.isCompressed();
+        if (format.isCompressed()) {
+            // Currently, we don't recycle compressed textures as scratch. Additionally, all compressed
+            // textures should be created through the createCompressedTexture function.
+            return null;
+        }
+
+        // hide invalid flags
+        surfaceFlags &= ISurface.FLAG_BUDGETED | ISurface.FLAG_APPROX_FIT |
+                ISurface.FLAG_MIPMAPPED | ISurface.FLAG_TEXTURABLE |
+                ISurface.FLAG_RENDERABLE | ISurface.FLAG_MEMORYLESS |
+                ISurface.FLAG_PROTECTED;
+
+        if ((surfaceFlags & ISurface.FLAG_TEXTURABLE) != 0) {
+            // texturable cannot be memoryless
+            surfaceFlags &= ~ISurface.FLAG_MEMORYLESS;
+        }
+
+        if ((surfaceFlags & ISurface.FLAG_MEMORYLESS) != 0) {
+            // memoryless cannot be approx fit and must be renderable
+            surfaceFlags &= ~ISurface.FLAG_APPROX_FIT;
+            surfaceFlags |= ISurface.FLAG_RENDERABLE;
+        }
+
+        // approx fit is create-time or surface proxy flag
+        if ((surfaceFlags & ISurface.FLAG_APPROX_FIT) != 0) {
+            width = ISurface.getApproxSize(width);
+            height = ISurface.getApproxSize(height);
+            // approx fit cannot be mipmapped and must be budgeted
+            surfaceFlags &= ISurface.FLAG_TEXTURABLE | ISurface.FLAG_RENDERABLE | ISurface.FLAG_PROTECTED;
+            surfaceFlags |= ISurface.FLAG_BUDGETED;
+        }
+
+        if ((surfaceFlags & (ISurface.FLAG_TEXTURABLE | ISurface.FLAG_RENDERABLE)) == 0) {
+            // default is texturable
+            surfaceFlags |= ISurface.FLAG_TEXTURABLE;
+        }
 
         if (!mDevice.getCaps().validateSurfaceParams(width, height, format,
                 sampleCount, surfaceFlags)) {
             return null;
-        }
-
-        if ((surfaceFlags & ISurface.FLAG_APPROX_FIT) != 0) {
-            width = ISurface.getApproxSize(width);
-            height = ISurface.getApproxSize(height);
-            surfaceFlags &= ISurface.FLAG_RENDERABLE | ISurface.FLAG_PROTECTED;
-            surfaceFlags |= ISurface.FLAG_BUDGETED;
         }
 
         final GpuTexture texture = findAndRefScratchTexture(width, height, format,
@@ -282,9 +316,9 @@ public class ResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public final GpuTexture wrapRenderableBackendTexture(BackendTexture texture,
-                                                         int sampleCount,
-                                                         boolean ownership) {
+    public final GpuRenderTarget wrapRenderableBackendTexture(BackendTexture texture,
+                                                              int sampleCount,
+                                                              boolean ownership) {
         if (mDevice.getContext().isDiscarded()) {
             return null;
         }

@@ -183,6 +183,26 @@ public final class DirectContext extends RecordingContext {
     }
 
     @Override
+    public boolean isDiscarded() {
+        if (super.isDiscarded()) {
+            return true;
+        }
+        if (mDevice != null && mDevice.isDeviceLost()) {
+            discard();
+            return true;
+        }
+        return false;
+    }
+
+    public boolean isDeviceLost() {
+        if (mDevice != null && mDevice.isDeviceLost()) {
+            discard();
+            return true;
+        }
+        return false;
+    }
+
+    @Override
     protected boolean init() {
         assert isOwnerThread();
         if (mDevice == null) {
@@ -201,6 +221,20 @@ public final class DirectContext extends RecordingContext {
         mResourceCache.setThreadSafeCache(getThreadSafeCache());
         mResourceProvider = mDevice.getResourceProvider();
         return true;
+    }
+
+    @Override
+    public void discard() {
+        if (super.isDiscarded()) {
+            return;
+        }
+        super.discard();
+        if (mResourceCache != null) {
+            mResourceCache.discardAll();
+        }
+        if (mDevice != null) {
+            mDevice.disconnect(false);
+        }
     }
 
     @Override

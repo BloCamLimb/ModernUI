@@ -19,7 +19,10 @@
 
 package icyllis.arc3d.vulkan;
 
-import icyllis.arc3d.engine.*;
+import icyllis.arc3d.engine.BackendFormat;
+import icyllis.arc3d.engine.BackendTexture;
+import icyllis.arc3d.engine.Engine.BackendApi;
+import icyllis.arc3d.engine.Engine.TextureType;
 
 import javax.annotation.Nonnull;
 
@@ -59,7 +62,12 @@ public final class VkBackendTexture extends BackendTexture {
 
     @Override
     public int getBackend() {
-        return Engine.BackendApi.kVulkan;
+        return BackendApi.kVulkan;
+    }
+
+    @Override
+    public int getTextureType() {
+        return TextureType.k2D;
     }
 
     @Override

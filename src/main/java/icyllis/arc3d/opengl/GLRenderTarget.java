@@ -43,7 +43,7 @@ public final class GLRenderTarget extends GpuRenderTarget {
     // the renderbuffer used as MSAA color buffer
     // null for wrapped render targets
     @SharedPtr
-    private GLAttachment mMultisampleColorBuffer;
+    private GLTexture mMultisampleColorBuffer;
 
     private int mSampleFramebuffer;
     private int mResolveFramebuffer;
@@ -65,7 +65,7 @@ public final class GLRenderTarget extends GpuRenderTarget {
                    int framebuffer,
                    int msaaFramebuffer,
                    GLTexture colorBuffer,
-                   GLAttachment msaaColorBuffer) {
+                   GLTexture msaaColorBuffer) {
         super(device, width, height, sampleCount);
         assert (sampleCount > 0);
         mFormat = format;
@@ -262,15 +262,20 @@ public final class GLRenderTarget extends GpuRenderTarget {
         super.deallocate();
         if (mOwnership) {
             if (mSampleFramebuffer != 0) {
-                glDeleteFramebuffers(mSampleFramebuffer);
+                getDevice().getGL().glDeleteFramebuffers(mSampleFramebuffer);
             }
             if (mSampleFramebuffer != mResolveFramebuffer) {
                 assert (mResolveFramebuffer != 0);
-                glDeleteFramebuffers(mResolveFramebuffer);
+                getDevice().getGL().glDeleteFramebuffers(mResolveFramebuffer);
             }
         }
         mSampleFramebuffer = 0;
         mResolveFramebuffer = 0;
+    }
+
+    @Override
+    protected GLDevice getDevice() {
+        return (GLDevice) super.getDevice();
     }
 
     @Override

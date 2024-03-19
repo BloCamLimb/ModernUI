@@ -19,8 +19,7 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.Rect2fc;
-import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.ops.Op;
 
 import static icyllis.arc3d.engine.Engine.SurfaceOrigin;
@@ -104,7 +103,7 @@ public abstract class OpsRenderPass {
      *
      * @param geomTexture the raw ptr to textures at binding 0
      */
-    public final void bindTexture(TextureProxy geomTexture) {
+    public final void bindTexture(@RawPtr TextureProxy geomTexture) {
         mGeomTextures[0] = geomTexture;
         bindTextures(mGeomTextures);
         mGeomTextures[0] = null;
@@ -122,7 +121,7 @@ public abstract class OpsRenderPass {
      *
      * @param geomTextures the raw ptr to textures starting from binding 0
      */
-    public final void bindTextures(TextureProxy[] geomTextures) {
+    public final void bindTextures(@RawPtr TextureProxy[] geomTextures) {
         //TODO
     }
 
@@ -136,9 +135,9 @@ public abstract class OpsRenderPass {
      * @param instanceBuffer       raw ptr to the instance buffer if using instanced rendering, or nullptr
      * @param instanceStreamOffset byte offset to first instance of instance stream
      */
-    public final void bindBuffers(GpuBuffer indexBuffer, int indexType,
-                                  GpuBuffer vertexBuffer, int vertexStreamOffset,
-                                  GpuBuffer instanceBuffer, int instanceStreamOffset) {
+    public final void bindBuffers(@RawPtr GpuBuffer indexBuffer, int indexType,
+                                  @RawPtr GpuBuffer vertexBuffer, int vertexStreamOffset,
+                                  @RawPtr GpuBuffer instanceBuffer, int instanceStreamOffset) {
         if (vertexBuffer == null && instanceBuffer == null) {
             mDrawPipelineStatus = kFailedToBind_DrawPipelineStatus;
             return;

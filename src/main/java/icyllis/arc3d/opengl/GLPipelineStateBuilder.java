@@ -20,19 +20,18 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.SharedPtr;
-import icyllis.arc3d.engine.*;
+import icyllis.arc3d.engine.PipelineDesc;
+import icyllis.arc3d.engine.PipelineInfo;
 import icyllis.arc3d.engine.shading.*;
-import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
 import java.io.PrintWriter;
 import java.lang.ref.Reference;
 import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
 import java.util.concurrent.CompletableFuture;
 
-import static icyllis.arc3d.opengl.GLCore.*;
+import static org.lwjgl.opengl.GL20C.*;
 
 public class GLPipelineStateBuilder extends PipelineBuilder {
 
@@ -81,37 +80,38 @@ public class GLPipelineStateBuilder extends PipelineBuilder {
                 mFinalizedFragSource == null) {
             return false;
         }
-        int program = glCreateProgram();
+        GLInterface gl = mDevice.getGL();
+        int program = gl.glCreateProgram();
         if (program == 0) {
             return false;
         }
 
         PrintWriter errorWriter = mDevice.getContext().getErrorWriter();
 
-        int frag = glCompileShader(GL_FRAGMENT_SHADER, mFinalizedFragSource,
+        int frag = GLUtil.glCompileShader(gl, GL_FRAGMENT_SHADER, mFinalizedFragSource,
                 mDevice.getPipelineStateCache().getStats(), errorWriter);
         if (frag == 0) {
-            glDeleteProgram(program);
+            gl.glDeleteProgram(program);
             return false;
         }
 
-        int vert = glCompileShader(GL_VERTEX_SHADER, mFinalizedVertSource,
+        int vert = GLUtil.glCompileShader(gl, GL_VERTEX_SHADER, mFinalizedVertSource,
                 mDevice.getPipelineStateCache().getStats(), errorWriter);
         if (vert == 0) {
-            glDeleteProgram(program);
-            glDeleteShader(frag);
+            gl.glDeleteProgram(program);
+            gl.glDeleteShader(frag);
             return false;
         }
 
-        glAttachShader(program, vert);
-        glAttachShader(program, frag);
+        gl.glAttachShader(program, vert);
+        gl.glAttachShader(program, frag);
 
-        glLinkProgram(program);
+        gl.glLinkProgram(program);
 
-        if (glGetProgrami(program, GL_LINK_STATUS) == GL_FALSE) {
+        if (gl.glGetProgrami(program, GL_LINK_STATUS) == GL_FALSE) {
             try {
-                String log = glGetProgramInfoLog(program);
-                handleLinkError(errorWriter,
+                String log = gl.glGetProgramInfoLog(program);
+                GLUtil.handleLinkError(errorWriter,
                         new String[]{
                                 "Vertex GLSL",
                                 "Fragment GLSL"},
@@ -123,20 +123,20 @@ public class GLPipelineStateBuilder extends PipelineBuilder {
             } finally {
                 Reference.reachabilityFence(mFinalizedVertSource);
                 Reference.reachabilityFence(mFinalizedFragSource);
-                glDeleteProgram(program);
-                glDeleteShader(frag);
-                glDeleteShader(vert);
+                gl.glDeleteProgram(program);
+                gl.glDeleteShader(frag);
+                gl.glDeleteShader(vert);
             }
         }
 
         // the shaders can be detached after the linking
-        glDetachShader(program, vert);
-        glDetachShader(program, frag);
+        gl.glDetachShader(program, vert);
+        gl.glDetachShader(program, frag);
 
-        glDeleteShader(frag);
-        glDeleteShader(vert);
+        gl.glDeleteShader(frag);
+        gl.glDeleteShader(vert);
 
-        try (MemoryStack stack = MemoryStack.stackPush()) {
+        /*try (MemoryStack stack = MemoryStack.stackPush()) {
             IntBuffer pLength = stack.mallocInt(1);
             IntBuffer pBinaryFormat = stack.mallocInt(1);
             glGetProgramiv(program, GL_PROGRAM_BINARY_LENGTH, pLength);
@@ -147,21 +147,21 @@ public class GLPipelineStateBuilder extends PipelineBuilder {
                 glGetProgramBinary(program, pLength, pBinaryFormat, pBinary);
                 System.out.println(pBinaryFormat.get(0));
                 //System.out.println(MemoryUtil.memUTF8(pBinary));
-                /*for (int i = 0; i < len; ) {
+                *//*for (int i = 0; i < len; ) {
                     System.out.print(pBinary.get(i++) & 0xFF);
                     System.out.print(", ");
                     if ((i & 31) == 0) {
                         System.out.println();
                     }
-                }*/
+                }*//*
             }
-        }
+        }*/
 
         //TODO share vertex arrays
         @SharedPtr
         GLVertexArray vertexArray = GLVertexArray.make(mDevice, mPipelineInfo.geomProc());
         if (vertexArray == null) {
-            glDeleteProgram(program);
+            gl.glDeleteProgram(program);
             return false;
         }
 

@@ -19,8 +19,13 @@
 
 package icyllis.arc3d.engine;
 
+import icyllis.arc3d.core.RawPtr;
+
 /**
- * Interface representing primary surface data.
+ * Interface representing GPU surface.
+ * <p>
+ * There are two implementations: one is {@link GpuTexture}, which contains surface data with
+ * memory allocation; and the other is {@link GpuRenderTarget}, which is a container object.
  */
 public interface IGpuSurface extends ISurface {
 
@@ -59,25 +64,26 @@ public interface IGpuSurface extends ISurface {
     /**
      * If this object is texture, returns this.
      * <p>
-     * If this object is framebuffer, returns the associated color buffer 0 if available,
-     * or null (only OpenGL can return null).
+     * If this object is RT, returns the associated color buffer 0 if available,
+     * or null.
      *
      * @return raw ptr to the texture
      */
+    @RawPtr
     default GpuTexture asTexture() {
         return null;
     }
 
-    ///// Common interface between RenderTexture and RenderSurface
     ///// The following methods are only valid when FLAG_RENDERABLE is set
 
     /**
-     * If this object is framebuffer, returns this.
+     * If this object is RT, returns this.
      * <p>
-     * If this object is texture, returns the associated framebuffer if renderable, otherwise null.
+     * If this object is texture, returns null.
      *
-     * @return raw ptr to the framebuffer set associated with the RT, or null if non-renderable
+     * @return raw ptr to the RT
      */
+    @RawPtr
     default GpuRenderTarget asRenderTarget() {
         return null;
     }

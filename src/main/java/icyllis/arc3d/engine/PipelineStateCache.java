@@ -22,6 +22,9 @@ package icyllis.arc3d.engine;
 import javax.annotation.concurrent.ThreadSafe;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * Thread-safe class to get or create pipeline state objects (PSO) asynchronously.
+ */
 @ThreadSafe
 public abstract class PipelineStateCache {
 

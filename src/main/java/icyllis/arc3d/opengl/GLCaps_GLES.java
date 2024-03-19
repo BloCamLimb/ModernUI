@@ -27,6 +27,7 @@ import org.jetbrains.annotations.VisibleForTesting;
 import org.lwjgl.opengles.*;
 import org.lwjgl.system.MemoryStack;
 
+import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
 import static org.lwjgl.opengles.GLES20.*;
@@ -70,6 +71,7 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
         // OpenGL ES 3.0
         mProgramBinarySupport = true;
         mProgramParameterSupport = true;
+        mVertexAttribBindingSupport = caps.GLES31;
         mBufferStorageSupport = caps.GL_EXT_buffer_storage;
 
         String versionString = GLES20.glGetString(GL_VERSION);
@@ -266,6 +268,16 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
     }
 
     @Override
+    public int glGenTextures() {
+        return GLES20.glGenTextures();
+    }
+
+    @Override
+    public void glDeleteTextures(int texture) {
+        GLES20.glDeleteTextures(texture);
+    }
+
+    @Override
     public void glBindTexture(int target, int texture) {
         GLES20.glBindTexture(target, texture);
     }
@@ -347,8 +359,98 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
     }
 
     @Override
+    public int glCreateProgram() {
+        return GLES20.glCreateProgram();
+    }
+
+    @Override
+    public void glDeleteProgram(int program) {
+        GLES20.glDeleteProgram(program);
+    }
+
+    @Override
+    public int glCreateShader(int type) {
+        return GLES20.glCreateShader(type);
+    }
+
+    @Override
+    public void glDeleteShader(int shader) {
+        GLES20.glDeleteShader(shader);
+    }
+
+    @Override
+    public void glAttachShader(int program, int shader) {
+        GLES20.glAttachShader(program, shader);
+    }
+
+    @Override
+    public void glDetachShader(int program, int shader) {
+        GLES20.glDetachShader(program, shader);
+    }
+
+    @Override
+    public void glShaderSource(int shader, int count, long strings, long length) {
+        GLES20.nglShaderSource(shader, count, strings, length);
+    }
+
+    @Override
+    public void glCompileShader(int shader) {
+        GLES20.glCompileShader(shader);
+    }
+
+    @Override
+    public void glLinkProgram(int program) {
+        GLES20.glLinkProgram(program);
+    }
+
+    @Override
     public void glUseProgram(int program) {
         GLES20.glUseProgram(program);
+    }
+
+    @Override
+    public int glGetShaderi(int shader, int pname) {
+        return GLES20.glGetShaderi(shader, pname);
+    }
+
+    @Override
+    public int glGetProgrami(int program, int pname) {
+        return GLES20.glGetProgrami(program, pname);
+    }
+
+    @Override
+    public String glGetShaderInfoLog(int shader) {
+        return GLES20.glGetShaderInfoLog(shader);
+    }
+
+    @Override
+    public String glGetProgramInfoLog(int program) {
+        return GLES20.glGetProgramInfoLog(program);
+    }
+
+    @Override
+    public void glEnableVertexAttribArray(int index) {
+        GLES20.glEnableVertexAttribArray(index);
+    }
+
+    @Override
+    public void glVertexAttribPointer(int index, int size, int type, boolean normalized, int stride, long pointer) {
+        GLES20.glVertexAttribPointer(index, size, type, normalized, stride, pointer);
+    }
+
+    @Override
+    public void glVertexAttribIPointer(int index, int size, int type, int stride, long pointer) {
+        GLES30.glVertexAttribIPointer(index, size, type, stride, pointer);
+    }
+
+    @Override
+    public int glGenVertexArrays() {
+        return GLES30.glGenVertexArrays();
+    }
+
+    @Override
+    public void glDeleteVertexArrays(int array) {
+        GLES30.glDeleteVertexArrays(array);
     }
 
     @Override
@@ -457,6 +559,11 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
     }
 
     @Override
+    public void glVertexAttribDivisor(int index, int divisor) {
+        GLES30.glVertexAttribDivisor(index, divisor);
+    }
+
+    @Override
     public void glDrawElementsBaseVertex(int mode, int count, int type, long indices, int basevertex) {
         assert mDrawElementsBaseVertexSupport;
         if (mDrawElementsBaseVertexEXT) {
@@ -477,6 +584,11 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
             GLES32.nglDrawElementsInstancedBaseVertex(mode, count, type, indices,
                     instancecount, basevertex);
         }
+    }
+
+    @Override
+    public void glShaderBinary(IntBuffer shaders, int binaryformat, ByteBuffer binary) {
+        GLES20.glShaderBinary(shaders, binaryformat, binary);
     }
 
     @Override
@@ -511,6 +623,32 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
     }
 
     @Override
+    public void glBindVertexBuffer(int bindingindex, int buffer, long offset, int stride) {
+        assert mVertexAttribBindingSupport;
+        GLES31.glBindVertexBuffer(bindingindex, buffer, offset, stride);
+    }
+
+    @Override
+    public void glVertexAttribFormat(int attribindex, int size, int type, boolean normalized, int relativeoffset) {
+        GLES31.glVertexAttribFormat(attribindex, size, type, normalized, relativeoffset);
+    }
+
+    @Override
+    public void glVertexAttribIFormat(int attribindex, int size, int type, int relativeoffset) {
+        GLES31.glVertexAttribIFormat(attribindex, size, type, relativeoffset);
+    }
+
+    @Override
+    public void glVertexAttribBinding(int attribindex, int bindingindex) {
+        GLES31.glVertexAttribBinding(attribindex, bindingindex);
+    }
+
+    @Override
+    public void glVertexBindingDivisor(int bindingindex, int divisor) {
+        GLES31.glVertexBindingDivisor(bindingindex, divisor);
+    }
+
+    @Override
     public void glTextureBarrier() {
         assert mTextureBarrierSupport;
         NVTextureBarrier.glTextureBarrierNV();
@@ -542,5 +680,42 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
     public boolean glUnmapNamedBuffer(int buffer) {
         assert false;
         return false;
+    }
+
+    @Override
+    public int glCreateVertexArrays() {
+        assert false;
+        return 0;
+    }
+
+    @Override
+    public void glEnableVertexArrayAttrib(int vaobj, int index) {
+        assert false;
+    }
+
+    @Override
+    public void glVertexArrayAttribFormat(int vaobj, int attribindex, int size, int type, boolean normalized, int relativeoffset) {
+        assert false;
+    }
+
+    @Override
+    public void glVertexArrayAttribIFormat(int vaobj, int attribindex, int size, int type, int relativeoffset) {
+        assert false;
+    }
+
+    @Override
+    public void glVertexArrayAttribBinding(int vaobj, int attribindex, int bindingindex) {
+        assert false;
+    }
+
+    @Override
+    public void glVertexArrayBindingDivisor(int vaobj, int bindingindex, int divisor) {
+        assert false;
+    }
+
+    @Override
+    public void glSpecializeShader(int shader, CharSequence pEntryPoint, IntBuffer pConstantIndex,
+                                   IntBuffer pConstantValue) {
+        assert false;
     }
 }

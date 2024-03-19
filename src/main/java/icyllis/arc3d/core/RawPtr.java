@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,16 +17,21 @@
  * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine;
+package icyllis.arc3d.core;
 
-import icyllis.arc3d.core.RawPtr;
+import java.lang.annotation.*;
 
-@FunctionalInterface
-public interface TextureVisitor {
-
-    /**
-     * @param texture      raw ptr to texture proxy
-     * @param samplerState see {@link SamplerState}
-     */
-    void visit(@RawPtr TextureProxy texture, int samplerState);
+/**
+ * Denotes a usage of a reference-counted object doesn't change the reference
+ * count.
+ *
+ * @see SharedPtr
+ */
+@Documented
+@Retention(RetentionPolicy.CLASS)
+@Target({ElementType.METHOD,
+        ElementType.PARAMETER,
+        ElementType.FIELD,
+        ElementType.LOCAL_VARIABLE})
+public @interface RawPtr {
 }

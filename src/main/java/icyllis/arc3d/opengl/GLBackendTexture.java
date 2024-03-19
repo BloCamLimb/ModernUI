@@ -21,10 +21,11 @@ package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.engine.BackendFormat;
 import icyllis.arc3d.engine.BackendTexture;
+import org.lwjgl.opengl.GL11C;
 
 import javax.annotation.Nonnull;
 
-import static icyllis.arc3d.engine.Engine.BackendApi;
+import static icyllis.arc3d.engine.Engine.*;
 
 public final class GLBackendTexture extends BackendTexture {
 
@@ -54,6 +55,14 @@ public final class GLBackendTexture extends BackendTexture {
     @Override
     public int getBackend() {
         return BackendApi.kOpenGL;
+    }
+
+    @Override
+    public int getTextureType() {
+        if (mInfo.target == GL11C.GL_TEXTURE_2D) {
+            return TextureType.k2D;
+        }
+        return TextureType.kNone;
     }
 
     @Override

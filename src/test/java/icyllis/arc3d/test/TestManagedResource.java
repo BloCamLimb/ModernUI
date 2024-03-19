@@ -32,7 +32,6 @@ import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.EXTTextureCompressionS3TC;
 import org.lwjgl.opengl.GL;
-import org.lwjgl.opengles.GLES;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.*;
 
@@ -45,9 +44,11 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.regex.Pattern;
 
-import static icyllis.arc3d.opengl.GLCore.*;
+import static org.lwjgl.opengl.GL11C.*;
+import static org.lwjgl.opengl.GL20C.GL_MAX_VERTEX_ATTRIBS;
+import static org.lwjgl.opengl.GL43C.*;
+import static org.lwjgl.opengl.GL44C.GL_MAX_VERTEX_ATTRIB_STRIDE;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.util.shaderc.Shaderc.*;
 
@@ -61,9 +62,9 @@ public class TestManagedResource {
         // load first
         Objects.requireNonNull(GL.getFunctionProvider());
         GLFW.glfwDefaultWindowHints();
-        GLFW.glfwWindowHint(GLFW.GLFW_CLIENT_API, GLFW.GLFW_OPENGL_ES_API);
-        GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 3);
-        GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 0);
+        //GLFW.glfwWindowHint(GLFW.GLFW_CLIENT_API, GLFW.GLFW_OPENGL_ES_API);
+        //GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 3);
+        //GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 0);
         GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GLFW.GLFW_FALSE);
         long window = GLFW.glfwCreateWindow(800, 600, "Test Window", 0, 0);
         if (window == 0) {
@@ -74,7 +75,7 @@ public class TestManagedResource {
         ContextOptions contextOptions = new ContextOptions();
         contextOptions.mInfoWriter = pw;
         DirectContext dContext = DirectContext.makeOpenGL(
-                GLES.createCapabilities(),
+                GL.createCapabilities(),
                 contextOptions
         );
         if (dContext == null) {
@@ -82,25 +83,25 @@ public class TestManagedResource {
         }
         GLInterface gl = ((GLDevice) dContext.getDevice()).getGL();
         GLCaps caps = (GLCaps) dContext.getCaps();
-        String glVersion = gl.glGetString(GLCore.GL_VERSION);
+        String glVersion = gl.glGetString(GL_VERSION);
         pw.println("OpenGL version: " + glVersion);
-        pw.println("OpenGL vendor: " + gl.glGetString(GLCore.GL_VENDOR));
-        pw.println("OpenGL renderer: " + gl.glGetString(GLCore.GL_RENDERER));
-        pw.println("Max vertex attribs: " + gl.glGetInteger(GLCore.GL_MAX_VERTEX_ATTRIBS));
-        pw.println("Max vertex bindings: " + gl.glGetInteger(GLCore.GL_MAX_VERTEX_ATTRIB_BINDINGS));
-        pw.println("Max vertex stride: " + gl.glGetInteger(GLCore.GL_MAX_VERTEX_ATTRIB_STRIDE));
-        pw.println("Max label length: " + gl.glGetInteger(GLCore.GL_MAX_LABEL_LENGTH));
+        pw.println("OpenGL vendor: " + gl.glGetString(GL_VENDOR));
+        pw.println("OpenGL renderer: " + gl.glGetString(GL_RENDERER));
+        pw.println("Max vertex attribs: " + gl.glGetInteger(GL_MAX_VERTEX_ATTRIBS));
+        pw.println("Max vertex bindings: " + gl.glGetInteger(GL_MAX_VERTEX_ATTRIB_BINDINGS));
+        pw.println("Max vertex stride: " + gl.glGetInteger(GL_MAX_VERTEX_ATTRIB_STRIDE));
+        pw.println("Max label length: " + gl.glGetInteger(GL_MAX_LABEL_LENGTH));
 
-        if (glVersion != null) {
+        /*if (glVersion != null) {
             var pattern = Pattern.compile("(\\d+)\\.(\\d+)");
             var matcher = pattern.matcher(glVersion);
             if (matcher.find()) {
                 pw.println("Version major " + matcher.group(1) + " minor " + matcher.group(2));
             }
-        }
+        }*/
 
         {
-            int numGLSLVersions = glGetInteger(GL_NUM_SHADING_LANGUAGE_VERSIONS);
+            int numGLSLVersions = gl.glGetInteger(GL_NUM_SHADING_LANGUAGE_VERSIONS);
             for (int i = 0; i < numGLSLVersions; i++) {
                 pw.println("GLSL version: " + glGetStringi(GL_SHADING_LANGUAGE_VERSION, i));
             }
@@ -127,122 +128,6 @@ public class TestManagedResource {
                     moduleLoader.getBuiltinTypes().mFloat4, types);
             pw.println("Operator types: " + success + ", " + Arrays.toString(types));
             compiler.endContext();
-        }
-
-        {
-            long compiler = shaderc_compiler_initialize();
-            if (compiler == 0) {
-                throw new RuntimeException("No compiler");
-            }
-            long options = shaderc_compile_options_initialize();
-            shaderc_compile_options_set_target_env(options, shaderc_target_env_opengl, shaderc_env_version_opengl_4_5);
-            shaderc_compile_options_set_target_spirv(options, shaderc_spirv_version_1_0);
-            // SPIRV-Tools optimization LOWER the performance on NVIDIA GPU
-            shaderc_compile_options_set_optimization_level(options, shaderc_optimization_level_zero);
-            long vertResult = compileSpv(compiler, options,
-                    """
-                            #version 450 core
-                            layout(location = 0) smooth out vec2 f_Position;
-                            void main(void) {
-                                f_Position = vec2(0);
-                                gl_Position = vec4(1,1,1,0);
-                            }
-                            """,
-                    shaderc_vertex_shader);
-            long fragResult = compileSpv(compiler, options,
-                    """
-                            #version 450 core
-                            layout(std430, binding = 0) buffer UniformBlock {
-                                layout(offset=0) vec3 u_Projection;
-                                layout(offset=16) vec4 u_Color;
-                            };
-                            layout(location = 0) smooth in vec2 f_Position;
-                            layout(location = 1) smooth in vec4 f_Color;
-                            layout(location = 0, index = 0) out vec4 FragColor0;
-                            void main(void) {
-                                FragColor0.x = mix(u_Color.x, 0.0, step(0.0,f_Position.x));
-                            }
-                            """,
-                    shaderc_fragment_shader);
-            if (vertResult == 0 || fragResult == 0) {
-                throw new RuntimeException("Failed to compile");
-            }
-            int program = GLCore.glCreateProgram();
-            /*int vert = GLCore.glSpecializeAndAttachShader(
-                    program, GLCore.GL_VERTEX_SHADER,
-                    shaderc_result_get_bytes(vertResult),
-                    dContext.getPipelineStateCache().getStats(),
-                    dContext.getErrorWriter()
-            );
-            int frag = GLCore.glSpecializeAndAttachShader(
-                    program, GLCore.GL_FRAGMENT_SHADER,
-                    shaderc_result_get_bytes(fragResult),
-                    dContext.getPipelineStateCache().getStats(),
-                    dContext.getErrorWriter()
-            );*/
-            int vert = GLCore.glCompileAndAttachShader(
-                    program, GLCore.GL_VERTEX_SHADER,
-                    """
-                            #version 450 core
-                            layout(location = 0) smooth out vec2 f_Position;
-                            void main(void) {
-                                f_Position = vec2(0);
-                                gl_Position = vec4(1,1,1,0);
-                            }
-                            """,
-                    dContext.getPipelineStateCache().getStats(),
-                    dContext.getErrorWriter()
-            );
-            int frag = GLCore.glCompileAndAttachShader(
-                    program, GLCore.GL_FRAGMENT_SHADER,
-                    new String[]{
-                            """
-                            #version 450 core
-                            """,
-                            """
-                            layout(std430, binding = 0) buffer UniformBlock {
-                                layout(offset=0) vec3 u_Projection;
-                                layout(offset=16) vec4 u_Color;
-                            };
-                            layout(location = 0) smooth in vec2 f_Position;
-                            layout(location = 1) smooth in vec4 f_Color;
-                            layout(location = 0, index = 0) out vec4 FragColor0;
-                            void main(void) {
-                                FragColor0.x = mix(u_Color.x, 0.0, step(0.0,f_Position.x));
-                            }
-                            """
-                    },
-                    dContext.getPipelineStateCache().getStats(),
-                    dContext.getErrorWriter()
-            );
-            shaderc_result_release(vertResult);
-            shaderc_result_release(fragResult);
-            shaderc_compile_options_release(options);
-            shaderc_compiler_release(compiler);
-            GLCore.glLinkProgram(program);
-
-            if (GLCore.glGetProgrami(program, GLCore.GL_LINK_STATUS) == GLCore.GL_FALSE) {
-                String log = GLCore.glGetProgramInfoLog(program, 8192).trim();
-                System.out.println(log);
-            } else if (((GLCaps)dContext.getCaps()).hasProgramBinarySupport()) {
-                System.out.println("SUCCESS!");
-                try (MemoryStack stack = MemoryStack.stackPush()) {
-                    IntBuffer pLength = stack.mallocInt(1);
-                    IntBuffer pBinaryFormat = stack.mallocInt(1);
-                    glGetProgramiv(program, GL_PROGRAM_BINARY_LENGTH, pLength);
-                    int len = pLength.get(0);
-                    System.out.println(len);
-                    if (len > 0) {
-                        ByteBuffer pBinary = stack.malloc(len);
-                        glGetProgramBinary(program, pLength, pBinaryFormat, pBinary);
-                        System.out.println(pBinaryFormat.get(0));
-                        System.out.println(MemoryUtil.memUTF8(pBinary));
-                    }
-                }
-            }
-            GLCore.glDeleteProgram(program);
-            GLCore.glDeleteShader(vert);
-            GLCore.glDeleteShader(frag);
         }
 
         {
@@ -473,7 +358,7 @@ public class TestManagedResource {
     public static void testShaderBuilder(PrintWriter pw, DirectContext dContext) {
         @SharedPtr
         TextureProxy target = dContext.getSurfaceProvider().createRenderTexture(
-                GLBackendFormat.make(GLCore.GL_RGBA8),
+                GLBackendFormat.make(GL_RGBA8),
                 800, 800, 4,
                 ISurface.FLAG_BUDGETED | ISurface.FLAG_RENDERABLE
         );
@@ -507,7 +392,7 @@ public class TestManagedResource {
 
             GpuTexture texture = dContext.getDevice().createTexture(
                     x[0], y[0],
-                    GLBackendFormat.make(GLCore.GL_RGBA8),
+                    GLBackendFormat.make(GL_RGBA8),
                     1, ISurface.FLAG_MIPMAPPED |
                             ISurface.FLAG_BUDGETED |
                             ISurface.FLAG_RENDERABLE,
@@ -519,7 +404,7 @@ public class TestManagedResource {
             }
             texture = dContext.getResourceProvider().createTexture(
                     x[0], y[0],
-                    GLBackendFormat.make(GLCore.GL_RGBA8),
+                    GLBackendFormat.make(GL_RGBA8),
                     1, ISurface.FLAG_MIPMAPPED |
                             ISurface.FLAG_BUDGETED |
                             ISurface.FLAG_RENDERABLE,
@@ -668,4 +553,117 @@ public class TestManagedResource {
             memFree(buffer);
         }
     }
+
+    /*public static void testShadercCompiler(DirectContext dContext, GLInterface gl) {
+        long compiler = shaderc_compiler_initialize();
+        if (compiler == 0) {
+            throw new RuntimeException("No compiler");
+        }
+        long options = shaderc_compile_options_initialize();
+        shaderc_compile_options_set_target_env(options, shaderc_target_env_opengl, shaderc_env_version_opengl_4_5);
+        shaderc_compile_options_set_target_spirv(options, shaderc_spirv_version_1_0);
+        // SPIRV-Tools optimization LOWER the performance on NVIDIA GPU
+        shaderc_compile_options_set_optimization_level(options, shaderc_optimization_level_zero);
+        long vertResult = compileSpv(compiler, options,
+                """
+                        #version 450 core
+                        layout(location = 0) smooth out vec2 f_Position;
+                        void main(void) {
+                            f_Position = vec2(0);
+                            gl_Position = vec4(1,1,1,0);
+                        }
+                        """,
+                shaderc_vertex_shader);
+        long fragResult = compileSpv(compiler, options,
+                """
+                        #version 450 core
+                        layout(std430, binding = 0) buffer UniformBlock {
+                            layout(offset=0) vec3 u_Projection;
+                            layout(offset=16) vec4 u_Color;
+                        };
+                        layout(location = 0) smooth in vec2 f_Position;
+                        layout(location = 1) smooth in vec4 f_Color;
+                        layout(location = 0, index = 0) out vec4 FragColor0;
+                        void main(void) {
+                            FragColor0.x = mix(u_Color.x, 0.0, step(0.0,f_Position.x));
+                        }
+                        """,
+                shaderc_fragment_shader);
+        if (vertResult == 0 || fragResult == 0) {
+            throw new RuntimeException("Failed to compile");
+        }
+        int program = GLCore.glCreateProgram();
+            *//*int vert = GLCore.glSpecializeAndAttachShader(
+                    program, GLCore.GL_VERTEX_SHADER,
+                    shaderc_result_get_bytes(vertResult),
+                    dContext.getPipelineStateCache().getStats(),
+                    dContext.getErrorWriter()
+            );
+            int frag = GLCore.glSpecializeAndAttachShader(
+                    program, GLCore.GL_FRAGMENT_SHADER,
+                    shaderc_result_get_bytes(fragResult),
+                    dContext.getPipelineStateCache().getStats(),
+                    dContext.getErrorWriter()
+            );*//*
+        int vert = GLUtil.glCompileShader(
+                gl,
+                GLCore.GL_VERTEX_SHADER,
+                """
+                        #version 450 core
+                        layout(location = 0) smooth out vec2 f_Position;
+                        void main(void) {
+                            f_Position = vec2(0);
+                            gl_Position = vec4(1,1,1,0);
+                        }
+                        """,
+                dContext.getPipelineStateCache().getStats(),
+                dContext.getErrorWriter()
+        );
+        int frag = GLCore.glCompileShader(
+                program, GLCore.GL_FRAGMENT_SHADER,
+                """
+                #version 450 core
+                layout(std430, binding = 0) buffer UniformBlock {
+                    layout(offset=0) vec3 u_Projection;
+                    layout(offset=16) vec4 u_Color;
+                };
+                layout(location = 0) smooth in vec2 f_Position;
+                layout(location = 1) smooth in vec4 f_Color;
+                layout(location = 0, index = 0) out vec4 FragColor0;
+                void main(void) {
+                    FragColor0.x = mix(u_Color.x, 0.0, step(0.0,f_Position.x));
+                }
+                """,
+                dContext.getPipelineStateCache().getStats(),
+                dContext.getErrorWriter()
+        );
+        shaderc_result_release(vertResult);
+        shaderc_result_release(fragResult);
+        shaderc_compile_options_release(options);
+        shaderc_compiler_release(compiler);
+        GLCore.glLinkProgram(program);
+
+        if (GLCore.glGetProgrami(program, GLCore.GL_LINK_STATUS) == GLCore.GL_FALSE) {
+            String log = GLCore.glGetProgramInfoLog(program, 8192).trim();
+            System.out.println(log);
+        } else if (((GLCaps)dContext.getCaps()).hasProgramBinarySupport()) {
+            System.out.println("SUCCESS!");
+            try (MemoryStack stack = MemoryStack.stackPush()) {
+                IntBuffer pLength = stack.mallocInt(1);
+                IntBuffer pBinaryFormat = stack.mallocInt(1);
+                glGetProgramiv(program, GL_PROGRAM_BINARY_LENGTH, pLength);
+                int len = pLength.get(0);
+                System.out.println(len);
+                if (len > 0) {
+                    ByteBuffer pBinary = stack.malloc(len);
+                    glGetProgramBinary(program, pLength, pBinaryFormat, pBinary);
+                    System.out.println(pBinaryFormat.get(0));
+                    System.out.println(MemoryUtil.memUTF8(pBinary));
+                }
+            }
+        }
+        GLCore.glDeleteProgram(program);
+        GLCore.glDeleteShader(vert);
+        GLCore.glDeleteShader(frag);
+    }*/
 }

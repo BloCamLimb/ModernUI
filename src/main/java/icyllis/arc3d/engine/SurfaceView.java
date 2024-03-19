@@ -19,6 +19,7 @@
 
 package icyllis.arc3d.engine;
 
+import icyllis.arc3d.core.RawPtr;
 import icyllis.arc3d.core.SharedPtr;
 
 import static icyllis.arc3d.engine.Engine.SurfaceOrigin;
@@ -62,6 +63,7 @@ public class SurfaceView implements AutoCloseable {
     /**
      * Returns smart pointer value (raw ptr).
      */
+    @RawPtr
     public SurfaceProxy getSurface() {
         return mProxy;
     }

@@ -26,8 +26,8 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
 
-import static org.lwjgl.opengl.GL43C.*;
 import static org.lwjgl.opengl.EXTTextureCompressionS3TC.*;
+import static org.lwjgl.opengl.GL43C.*;
 
 /**
  * Stores some capabilities of an OpenGL device.
@@ -57,6 +57,7 @@ public class GLCaps extends Caps {
 
     boolean mDrawElementsBaseVertexSupport;
     boolean mBaseInstanceSupport;
+    boolean mVertexAttribBindingSupport;
     boolean mProgramBinarySupport;
     boolean mProgramParameterSupport;
     boolean mCopyImageSupport;
@@ -71,8 +72,6 @@ public class GLCaps extends Caps {
             INVALIDATE_BUFFER_TYPE_INVALIDATE = 2;
     int mInvalidateBufferType;
     int mGLSLVersion;
-
-    boolean mDSAElementBufferBroken;
 
     /**
      * OpenGL texture format table.
@@ -961,20 +960,6 @@ public class GLCaps extends Caps {
 
     void applyDriverWorkaround() {
         var workarounds = mDriverBugWorkarounds;
-        // Sometimes glVertexArrayElementBuffer will cause segfault on glDrawElementsBaseVertex.
-        // This won't affect performance.
-        if (mDSASupport) {
-            if (DriverBugWorkarounds.isEnabled(workarounds.dsa_element_buffer_broken)) {
-                mDSAElementBufferBroken = true;
-            } else if (DriverBugWorkarounds.isDisabled(workarounds.dsa_element_buffer_broken)) {
-                mDSAElementBufferBroken = false;
-            } else {
-                // for NVIDIA, disable for all platforms
-                mDSAElementBufferBroken = (mDriver == GLUtil.GLDriver.NVIDIA);
-            }
-        } else {
-            mDSAElementBufferBroken = false;
-        }
     }
 
     FormatInfo getFormatInfo(int format) {
@@ -1034,6 +1019,10 @@ public class GLCaps extends Caps {
 
     public boolean hasBaseInstanceSupport() {
         return mBaseInstanceSupport;
+    }
+
+    public boolean hasVertexAttribBindingSupport() {
+        return mVertexAttribBindingSupport;
     }
 
     public boolean hasCopyImageSupport() {
@@ -1396,11 +1385,6 @@ public class GLCaps extends Caps {
         return mMaxTextureMaxAnisotropy;
     }
 
-    public boolean dsaElementBufferBroken() {
-        assert hasDSASupport();
-        return mDSAElementBufferBroken;
-    }
-
     @Override
     public String toString() {
         return toString(true);
@@ -1419,7 +1403,6 @@ public class GLCaps extends Caps {
                 ", mDrawElementsBaseVertexSupport=" + mDrawElementsBaseVertexSupport +
                 ", mBaseInstanceSupport=" + mBaseInstanceSupport +
                 ", mDSASupport=" + mDSASupport +
-                ", mDSAElementBufferBroken=" + mDSAElementBufferBroken +
                 ", mInvalidateBufferType=" + mInvalidateBufferType +
                 (includeFormatTable ? ", mFormatTable=" + Arrays.toString(mFormatTable) : "") +
                 ", mColorTypeToBackendFormat=" + Arrays.toString(mColorTypeToBackendFormat) +

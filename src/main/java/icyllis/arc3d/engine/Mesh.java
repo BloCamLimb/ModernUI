@@ -19,6 +19,8 @@
 
 package icyllis.arc3d.engine;
 
+import icyllis.arc3d.core.RawPtr;
+
 /**
  * The interface used to receive geometry buffers from {@link MeshDrawTarget}
  * for mesh-drawing operations.
@@ -49,7 +51,7 @@ public interface Mesh {
      *                          in units of the size of a vertex from layout param
      * @param actualVertexCount the actual number of vertices allocated
      */
-    default void setVertexBuffer(GpuBuffer buffer, int baseVertex, int actualVertexCount) {
+    default void setVertexBuffer(@RawPtr GpuBuffer buffer, int baseVertex, int actualVertexCount) {
         throw new IllegalStateException();
     }
 
@@ -77,7 +79,7 @@ public interface Mesh {
      *                            in units of the size of an instance from layout param
      * @param actualInstanceCount the actual number of instances allocated
      */
-    default void setInstanceBuffer(GpuBuffer buffer, int baseInstance, int actualInstanceCount) {
+    default void setInstanceBuffer(@RawPtr GpuBuffer buffer, int baseInstance, int actualInstanceCount) {
         throw new IllegalStateException();
     }
 
@@ -98,7 +100,7 @@ public interface Mesh {
      *                         in units of the size of an index from layout param
      * @param actualIndexCount the actual number of indices allocated
      */
-    default void setIndexBuffer(GpuBuffer buffer, int baseIndex, int actualIndexCount) {
+    default void setIndexBuffer(@RawPtr GpuBuffer buffer, int baseIndex, int actualIndexCount) {
         throw new IllegalStateException();
     }
 }
