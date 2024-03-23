@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2024 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -92,12 +92,12 @@ public class FrameLayout extends ViewGroup {
         }
     }
 
-    private int getPaddingLeftWithForeground() {
+    int getPaddingLeftWithForeground() {
         return isForegroundInsidePadding() ? Math.max(mPaddingLeft, mForegroundPaddingLeft) :
                 mPaddingLeft + mForegroundPaddingLeft;
     }
 
-    private int getPaddingRightWithForeground() {
+    int getPaddingRightWithForeground() {
         return isForegroundInsidePadding() ? Math.max(mPaddingRight, mForegroundPaddingRight) :
                 mPaddingRight + mForegroundPaddingRight;
     }
@@ -204,6 +204,10 @@ public class FrameLayout extends ViewGroup {
 
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+        layoutChildren(left, top, right, bottom, false /* no force left gravity */);
+    }
+
+    void layoutChildren(int left, int top, int right, int bottom, boolean forceLeftGravity) {
         final int count = getChildCount();
 
         final int parentLeft = getPaddingLeftWithForeground();
@@ -232,12 +236,20 @@ public class FrameLayout extends ViewGroup {
                 final int absoluteGravity = Gravity.getAbsoluteGravity(gravity, layoutDirection);
                 final int verticalGravity = gravity & Gravity.VERTICAL_GRAVITY_MASK;
 
-                childLeft = switch (absoluteGravity & Gravity.HORIZONTAL_GRAVITY_MASK) {
-                    case Gravity.CENTER_HORIZONTAL -> parentLeft + (parentRight - parentLeft - width) / 2 +
-                            lp.leftMargin - lp.rightMargin;
-                    case Gravity.RIGHT -> parentRight - width - lp.rightMargin;
-                    default -> parentLeft + lp.leftMargin;
-                };
+                switch (absoluteGravity & Gravity.HORIZONTAL_GRAVITY_MASK) {
+                    case Gravity.CENTER_HORIZONTAL:
+                        childLeft = parentLeft + (parentRight - parentLeft - width) / 2 +
+                                lp.leftMargin - lp.rightMargin;
+                        break;
+                    case Gravity.RIGHT:
+                        if (!forceLeftGravity) {
+                            childLeft = parentRight - width - lp.rightMargin;
+                            break;
+                        }
+                    case Gravity.LEFT:
+                    default:
+                        childLeft = parentLeft + lp.leftMargin;
+                }
 
                 childTop = switch (verticalGravity) {
                     case Gravity.CENTER_VERTICAL -> parentTop + (parentBottom - parentTop - height) / 2 +

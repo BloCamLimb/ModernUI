@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2024 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -298,11 +298,20 @@ public final class ActivityWindow extends Window {
             cursorX = x.get(0);
             cursorY = y.get(0);
         }
+        int mods = 0;
+        if (glfwGetKey(w, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
+                glfwGetKey(w, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS) {
+            mods |= KeyEvent.META_CTRL_ON;
+        }
+        if (glfwGetKey(w, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
+                glfwGetKey(w, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) {
+            mods |= KeyEvent.META_SHIFT_ON;
+        }
         final long now = Core.timeNanos();
         float x = (float) (cursorX * mWidth / mScreenWidth);
         float y = (float) (cursorY * mHeight / mScreenHeight);
         MotionEvent event = MotionEvent.obtain(now, MotionEvent.ACTION_SCROLL,
-                x, y, 0);
+                x, y, mods);
         event.setAxisValue(MotionEvent.AXIS_HSCROLL, (float) deltaX);
         event.setAxisValue(MotionEvent.AXIS_VSCROLL, (float) deltaY);
         mRoot.enqueueInputEvent(event);
