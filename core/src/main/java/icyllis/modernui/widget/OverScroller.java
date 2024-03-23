@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2024 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -433,6 +433,10 @@ public class OverScroller {
         final int dy = mScrollerY.mFinal - mScrollerY.mStart;
         return !isFinished() && Math.signum(xvel) == Math.signum(dx) &&
                 Math.signum(yvel) == Math.signum(dy);
+    }
+
+    double getSplineFlingDistance(int velocity) {
+        return mScrollerY.getSplineFlingDistance(velocity);
     }
 
     private static class SplineScroller {

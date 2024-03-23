@@ -3,6 +3,8 @@
 This extension provides a flexible API for parsing Markdown and converting it to MUI
 spanned text, natively and fast.
 
+TODO: HTML, Table, RecyclerView, LaTeX, Image
+
 This extension uses [flexmark-java](https://github.com/vsch/flexmark-java) as an API.
 
 ### License
