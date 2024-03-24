@@ -115,23 +115,17 @@ public final class FontFamily {
     }
 
     @NonNull
-    public static FontFamily createFamily(@NonNull File file, boolean register) {
-        try {
-            var fonts = java.awt.Font.createFont(java.awt.Font.TRUETYPE_FONT, file);
-            return createFamily(fonts, register);
-        } catch (java.awt.FontFormatException | IOException e) {
-            throw new RuntimeException(e);
-        }
+    public static FontFamily createFamily(@NonNull File file, boolean register)
+            throws java.awt.FontFormatException, IOException {
+        var font = java.awt.Font.createFont(java.awt.Font.TRUETYPE_FONT, file);
+        return createFamily(font, register);
     }
 
     @NonNull
-    public static FontFamily createFamily(@NonNull InputStream stream, boolean register) {
-        try {
-            var fonts = java.awt.Font.createFont(java.awt.Font.TRUETYPE_FONT, stream);
-            return createFamily(fonts, register);
-        } catch (java.awt.FontFormatException | IOException e) {
-            throw new RuntimeException(e);
-        }
+    public static FontFamily createFamily(@NonNull InputStream stream, boolean register)
+            throws java.awt.FontFormatException, IOException {
+        var font = java.awt.Font.createFont(java.awt.Font.TRUETYPE_FONT, stream);
+        return createFamily(font, register);
     }
 
     @NonNull
