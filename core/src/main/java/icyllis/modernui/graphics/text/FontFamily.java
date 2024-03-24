@@ -117,7 +117,7 @@ public final class FontFamily {
     @NonNull
     public static FontFamily createFamily(@NonNull File file, boolean register) {
         try {
-            var fonts = java.awt.Font.createFonts(file);
+            var fonts = java.awt.Font.createFont(java.awt.Font.TRUETYPE_FONT, file);
             return createFamily(fonts, register);
         } catch (java.awt.FontFormatException | IOException e) {
             throw new RuntimeException(e);
@@ -127,7 +127,7 @@ public final class FontFamily {
     @NonNull
     public static FontFamily createFamily(@NonNull InputStream stream, boolean register) {
         try {
-            var fonts = java.awt.Font.createFonts(stream);
+            var fonts = java.awt.Font.createFont(java.awt.Font.TRUETYPE_FONT, stream);
             return createFamily(fonts, register);
         } catch (java.awt.FontFormatException | IOException e) {
             throw new RuntimeException(e);
@@ -135,21 +135,57 @@ public final class FontFamily {
     }
 
     @NonNull
-    private static FontFamily createFamily(@NonNull java.awt.Font[] fonts, boolean register) {
-        FontFamily family = new FontFamily(fonts[0]);
+    private static FontFamily createFamily(@NonNull java.awt.Font font, boolean register) {
+        FontFamily family = new FontFamily(font);
         if (register) {
             String name = family.getFamilyName();
             sSystemFontMap.putIfAbsent(name, family);
             String alias = family.getFamilyName(Locale.getDefault());
-            if (!name.equals(alias)) {
+            if (!Objects.equals(name, alias)) {
                 sSystemFontAliases.putIfAbsent(alias, name);
             }
-            for (var font : fonts) {
-                java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment()
-                        .registerFont(font);
-            }
+            java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment()
+                    .registerFont(font);
         }
         return family;
+    }
+
+    @NonNull
+    public static FontFamily[] createFamilies(@NonNull File file, boolean register)
+            throws java.awt.FontFormatException, IOException {
+        var fonts = java.awt.Font.createFonts(file);
+        return createFamilies(fonts, register);
+    }
+
+    @NonNull
+    public static FontFamily[] createFamilies(@NonNull InputStream stream, boolean register)
+            throws java.awt.FontFormatException, IOException {
+        var fonts = java.awt.Font.createFonts(stream);
+        return createFamilies(fonts, register);
+    }
+
+    @NonNull
+    private static FontFamily[] createFamilies(@NonNull java.awt.Font[] fonts, boolean register) {
+        FontFamily[] families = new FontFamily[fonts.length];
+        for (int i = 0; i < fonts.length; i++) {
+            families[i] = new FontFamily(fonts[i]);
+        }
+        if (register) {
+            Locale defaultLocale = Locale.getDefault();
+            for (var family : families) {
+                String name = family.getFamilyName();
+                sSystemFontMap.putIfAbsent(name, family);
+                String alias = family.getFamilyName(defaultLocale);
+                if (!Objects.equals(name, alias)) {
+                    sSystemFontAliases.putIfAbsent(alias, name);
+                }
+            }
+            var ge = java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment();
+            for (var font : fonts) {
+                ge.registerFont(font);
+            }
+        }
+        return families;
     }
 
     private final Font mFont;

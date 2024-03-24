@@ -20,10 +20,12 @@ package icyllis.modernui.text;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.Paint;
-import icyllis.modernui.graphics.text.*;
+import icyllis.modernui.graphics.text.FontCollection;
+import icyllis.modernui.graphics.text.FontFamily;
 
 import javax.annotation.concurrent.Immutable;
-import java.util.*;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The Typeface specifies a set of font families that can be used
@@ -36,10 +38,10 @@ public class Typeface extends FontCollection {
     public static final Typeface SERIF;
     public static final Typeface MONOSPACED;
 
-    private static final Map<String, Typeface> sSystemFontMap;
+    private static final ConcurrentHashMap<String, Typeface> sSystemFontMap;
 
     static {
-        Map<String, Typeface> map = new HashMap<>();
+        ConcurrentHashMap<String, Typeface> map = new ConcurrentHashMap<>();
         for (var entry : FontFamily.getSystemFontMap().entrySet()) {
             map.putIfAbsent(entry.getKey(), createTypeface(entry.getValue()));
         }
@@ -77,7 +79,20 @@ public class Typeface extends FontCollection {
     @NonNull
     public static Typeface getSystemFont(@NonNull String familyName) {
         Typeface typeface = sSystemFontMap.get(familyName);
-        return typeface == null ? SANS_SERIF : typeface;
+        if (typeface != null) {
+            return typeface;
+        }
+        // no alias key
+        String name = FontFamily.getSystemFontAliases().getOrDefault(familyName, familyName);
+        FontFamily family = FontFamily.getSystemFontMap().get(name);
+        if (family != null) {
+            Typeface newTypeface = createTypeface(family);
+            // there may be a race
+            return Objects.requireNonNullElse(
+                    sSystemFontMap.putIfAbsent(name, newTypeface),
+                    newTypeface);
+        }
+        return SANS_SERIF;
     }
 
     private Typeface(@NonNull FontFamily... families) {
