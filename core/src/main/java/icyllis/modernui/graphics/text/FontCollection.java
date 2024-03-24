@@ -101,12 +101,15 @@ public class FontCollection {
      * <var>exclusiveEastAsianBits</var> determines which families in the <var>families</var>
      * array will be used as exclusive East Asian families. This means for non East Asian text,
      * such families will be skipped.
+     *
+     * @hidden
      */
+    @ApiStatus.Internal
     public FontCollection(@NonNull FontFamily[] families, @Nullable BitSet exclusiveEastAsianBits) {
         if (families.length == 0) {
             throw new IllegalArgumentException("families cannot be empty");
         }
-        mFamilies = List.of(families);
+        mFamilies = List.of(families); // array copy and null-check
         mExclusiveEastAsianBits = exclusiveEastAsianBits;
     }
 
