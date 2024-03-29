@@ -32,7 +32,7 @@ public class UndoManager {
     private final ArrayList<UndoState> mUndos = new ArrayList<>();
     private final ArrayList<UndoState> mRedos = new ArrayList<>();
     private int mUpdateCount;
-    private int mHistorySize = 20;
+    private int mHistorySize = 25;
     private UndoState mWorking;
     private int mCommitId = 1;
     private boolean mInUndo;
@@ -503,7 +503,7 @@ public class UndoManager {
         }
         if (mergeMode != MERGE_MODE_NONE && !mMerged && !mWorking.hasData()) {
             UndoState state = getTopUndo(null);
-            UndoOperation<?> last;
+            T last;
             if (state != null && (mergeMode == MERGE_MODE_ANY || !state.hasMultipleOwners())
                     && state.canMerge() && (last = state.getLastOperation(clazz, owner)) != null) {
                 if (last.allowMerge()) {
@@ -511,7 +511,7 @@ public class UndoManager {
                     mWorking = state;
                     mUndos.remove(state);
                     mMerged = true;
-                    return (T) last;
+                    return last;
                 }
             }
         }
@@ -844,6 +844,7 @@ public class UndoManager {
             op.mOwner.mOpCount++;
         }
 
+        @SuppressWarnings("unchecked")
         <T extends UndoOperation<?>> T getLastOperation(Class<T> clazz, UndoOwner owner) {
             final int N = mOperations.size();
             if (clazz == null && owner == null) {
