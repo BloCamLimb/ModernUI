@@ -23,16 +23,17 @@ import it.unimi.dsi.fastutil.ints.IntArrays;
 import it.unimi.dsi.fastutil.objects.ObjectArrays;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
-import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.reflect.Array;
 import java.util.*;
+import java.util.function.BiConsumer;
 
 /**
- * ArrayMap is a generic key->value mapping data structure that is
- * designed to be more memory efficient than a traditional {@link HashMap}.
+ * <code>ArrayMap</code> is a generic key->value mapping data structure that is
+ * designed to be more memory efficient than a {@link HashMap}.
  * It keeps its mappings in an array data structure -- an integer array of hash
  * codes for each item, and an Object array of the key/value pairs.  This allows it to
  * avoid having to create an extra object for every entry put in to the map, and it
@@ -115,7 +116,7 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
         this(initialCapacity, false);
     }
 
-    @Internal
+    @ApiStatus.Internal
     public ArrayMap(int initialCapacity, boolean identityHashCode) {
         mIdentityHashCode = identityHashCode;
         if (initialCapacity == 0) {
@@ -158,7 +159,7 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
     /**
      * Like {@link #clear}, but doesn't reduce the capacity of the ArrayMap.
      */
-    @Internal
+    @ApiStatus.Internal
     public void erase() {
         if (mSize > 0) {
             final int N = mSize << 1;
@@ -400,7 +401,7 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
      * Special fast path for appending items to the end of the array without validation.
      * The array must already be large enough to contain the item.
      */
-    @Internal
+    @ApiStatus.Internal
     public void append(K key, V value) {
         int index = mSize;
         final int hash = key == null ? 0
@@ -430,7 +431,7 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
      * main use for this method is validating an array map after unpacking from an IPC, to
      * protect against malicious callers.
      */
-    @Internal
+    @ApiStatus.Internal
     public void validate() {
         final int size = mSize;
         if (size <= 1) {
@@ -462,13 +463,32 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
     }
 
     /**
+     * Performs the given action for all elements in the stored order. This implementation overrides
+     * the default implementation to avoid iterating using the {@link #entrySet()} and iterates in
+     * the key-value order consistent with {@link #keyAt(int)} and {@link #valueAt(int)}.
+     *
+     * @param action The action to be performed for each element
+     */
+    @Override
+    public void forEach(BiConsumer<? super K, ? super V> action) {
+        Objects.requireNonNull(action);
+        final int size = mSize;
+        for (int i = 0; i < size; ++i) {
+            if (size != mSize) {
+                throw new ConcurrentModificationException();
+            }
+            action.accept(keyAt(i), valueAt(i));
+        }
+    }
+
+    /**
      * Perform a {@link #put(Object, Object)} of all key/value pairs in <var>map</var>
      *
      * @param map The map whose contents are to be retrieved.
      */
     @Override
     public void putAll(@Nonnull Map<? extends K, ? extends V> map) {
-        if (map instanceof ArrayMap array) {
+        if (map instanceof ArrayMap<? extends K, ? extends V> array) {
             final int size = array.mSize;
             ensureCapacity(mSize + size);
             if (mSize == 0) {
@@ -479,7 +499,7 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
                 }
             } else {
                 for (int i = 0; i < size; i++) {
-                    put((K) array.keyAt(i), (V) array.valueAt(i));
+                    put(array.keyAt(i), array.valueAt(i));
                 }
             }
         } else {
