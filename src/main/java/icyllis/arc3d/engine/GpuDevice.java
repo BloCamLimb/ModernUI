@@ -56,7 +56,8 @@ public abstract class GpuDevice implements Engine {
 
     protected final Stats mStats = new Stats();
 
-    protected boolean mOutOfMemoryEncountered;
+    protected boolean mOutOfMemoryEncountered = false;
+    protected boolean mDeviceIsLost = false;
 
     private final ArrayList<FlushInfo.SubmittedCallback> mSubmittedCallbacks = new ArrayList<>();
     private int mResetBits = ~0;
@@ -105,7 +106,7 @@ public abstract class GpuDevice implements Engine {
      * Returns true if GPU is gone.
      */
     public boolean isDeviceLost() {
-        return false;
+        return mDeviceIsLost;
     }
 
     public final Stats getStats() {
