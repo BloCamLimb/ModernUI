@@ -351,16 +351,24 @@ public final class GLDevice extends GpuDevice {
         handleDirtyContext(state);
     }
 
+    /**
+     * Call {@link #getError()} until there are no errors.
+     */
     public void clearErrors() {
         //noinspection StatementWithEmptyBody
         while (getError() != GL_NO_ERROR)
             ;
     }
 
+    /**
+     * Polls an error code and sets the OOM and context lost state.
+     */
     public int getError() {
         int error = getGL().glGetError();
         if (error == GL_OUT_OF_MEMORY) {
             mOutOfMemoryEncountered = true;
+        } else if (error == GL_CONTEXT_LOST) {
+            mDeviceIsLost = true;
         }
         return error;
     }
