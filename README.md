@@ -35,9 +35,9 @@ If you have any questions, feel free to join our [Discord](https://discord.gg/km
 Specification (WIP)
 
 #### Environment requirements
-- Windows 10 or above, Linux or macOS
+- Windows 10 or above, Linux, macOS 10.10 or above
 - JDK 17.0.1 or above
-- OpenGL 3.3 or above
+- OpenGL 3.3 or above (OpenGL 4.3 is recommended)
 - Vulkan 1.1 or above (WIP)
 
 #### Gradle configuration
@@ -56,14 +56,11 @@ dependencies {
 ```
 
 #### Building Modern UI
-The `master` branch holds the latest release version of Modern UI, while `dev` branch holds
-the latest snapshot version of Modern UI. Others are archived branches for historical versions.
-When building or contributing to Modern UI, you should always check out the `dev` branch.
-
+JDK 21 is preferred.
 The build command: `gradlew build`
 
 Modern UI requires [Arc 3D](https://github.com/BloCamLimb/Arc3D) codebase to build.
-Arc 3D is a low-level graphics engine. It is frequently updated and won't be published
+Arc 3D is a low-level graphics engine and frequently updated. It won't be published
 on Maven repository. A snapshot is merged into this repository in `/external` subdirectory, and
 all `Arc3D` classes and sources will be included in `ModernUI-Core`. You may follow these steps
 when you want to update it.
@@ -74,10 +71,10 @@ git remote add -f --no-tags arc3d git@github.com:BloCamLimb/Arc3D.git
 git fetch --no-tags arc3d
 // delete the old code if any
 git rm -rf external/Arc3D
-// merge arc3d/dev branch
-git merge -s ours --no-commit arc3d/dev --allow-unrelated-histories
-// read the root directory of arc3d/dev into 'external/Arc3D'
-git read-tree --prefix=external/Arc3D -u arc3d/dev:
+// merge arc3d/master branch
+git merge -s ours --no-commit arc3d/master --allow-unrelated-histories
+// read the root directory of arc3d/master into 'external/Arc3D'
+git read-tree --prefix=external/Arc3D -u arc3d/master:
 git commit
 ```
 Note: You must not make any local changes to `/external`.
