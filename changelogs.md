@@ -1,5 +1,32 @@
 Changelogs
 ===
+### Modern UI 3.10.1 (2024-03-30)
+#### Core Framework 3.10.1
+* Update typecast checks, add ArrayMap.forEach
+* Make FontFamily.createFamily throw Exception
+* Add FontFamily.createFamilies for TrueType Collection
+* Add HorizontalScrollView, update ScrollView
+* Add debug layout to show layout bounds
+* Optimize Color.parseColor
+* Add Animatable and Animatable2
+* Add some missing javadoc
+* Use UTF-16 for TextUtils read/write
+* Add TextPaint.baselineShift and Subscript/SuperscriptSpan
+* Disable pooling of Message objects
+* Build against a copy of Arc3D, instead of composite build
+* Add Canvas.shear / skew, deprecate Canvas.getMatrix
+* Add TextUtils.concat and TextUtils.join methods
+* Make use of Java 20 float/half convert instruction
+* Add CharBuffer support for TextUtils.getChars()
+#### Core Framework - Kotlin Extension 3.10.1
+* No changes
+#### Markdown 3.10.1
+* No changes
+#### Arc 3D Graphics Engine 3.10.1
+* Add 3D shearing transform methods
+* Improve GL_TEXTURE_SWIZZLE_RGBA compatibility
+* Tons of updates on DSL shader compiler, including new grammar parsing and SPIR-V generation, no detailed information provided
+
 ### Modern UI 3.10.0 (2024-01-17)
 #### Core Framework 3.10.0
 * Move kotlin extension to a separate module (Core-KTX)

@@ -1,8 +1,8 @@
 icyllis.arc3d.compiler
 icyllis.arc3d.compiler.analysis
-icyllis.arc3d.compiler.codegen
-icyllis.arc3d.compiler.dsl
+icyllis.arc3d.compiler.glsl
 icyllis.arc3d.compiler.parser
+icyllis.arc3d.compiler.spirv
 icyllis.arc3d.compiler.tree
 icyllis.arc3d.core
 icyllis.arc3d.core.effects
@@ -24,6 +24,7 @@ icyllis.modernui.annotation
 icyllis.modernui.app
 icyllis.modernui.audio
 icyllis.modernui.core
+icyllis.modernui.core.awt
 icyllis.modernui.fragment
 icyllis.modernui.graphics
 icyllis.modernui.graphics.drawable
