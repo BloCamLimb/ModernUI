@@ -1157,7 +1157,7 @@ public class GLCaps extends Caps {
     @Nonnull
     @Override
     public PipelineDesc makeDesc(PipelineDesc desc,
-                                 GpuRenderTarget renderTarget,
+                                 GpuFramebuffer framebuffer,
                                  final PipelineInfo pipelineInfo) {
         return PipelineDesc.build(desc, pipelineInfo, this);
     }

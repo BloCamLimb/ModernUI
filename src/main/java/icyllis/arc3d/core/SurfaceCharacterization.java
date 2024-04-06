@@ -255,7 +255,7 @@ public final class SurfaceCharacterization {
                 return false;
             }
             VulkanImageInfo vkInfo = new VulkanImageInfo();
-            if (!texture.getVkImageInfo(vkInfo)) {
+            if (!texture.getVulkanImageInfo(vkInfo)) {
                 return false;
             }
             return (vkInfo.mImageUsageFlags & VKCore.VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) != 0;

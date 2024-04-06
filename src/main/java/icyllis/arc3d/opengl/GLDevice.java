@@ -28,7 +28,6 @@ import org.lwjgl.system.MemoryUtil;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
-import java.util.function.Function;
 
 import static icyllis.arc3d.opengl.GLCore.*;
 import static org.lwjgl.system.MemoryUtil.memPutInt;
@@ -142,7 +141,7 @@ public final class GLDevice extends GpuDevice {
     private int mHWActiveTextureUnit;
 
     // target is Texture2D
-    private final GLTexture.UniqueID[] mHWTextureStates;
+    private final GLImage.UniqueID[] mHWTextureStates;
 
     static final class HWSamplerState {
         // default to invalid, we use 0 because it's not a valid sampler state
@@ -175,7 +174,7 @@ public final class GLDevice extends GpuDevice {
         mIndexPool = GpuBufferPool.makeIndexPool(mResourceProvider);
 
         int maxTextureUnits = caps.shaderCaps().mMaxFragmentSamplers;
-        mHWTextureStates = new GLTexture.UniqueID[maxTextureUnits];
+        mHWTextureStates = new GLImage.UniqueID[maxTextureUnits];
         mHWSamplerStates = new HWSamplerState[maxTextureUnits];
         for (int i = 0; i < maxTextureUnits; i++) {
             mHWSamplerStates[i] = new HWSamplerState();
@@ -197,22 +196,23 @@ public final class GLDevice extends GpuDevice {
             final GLInterface glInterface;
             switch (capabilities.getClass().getName()) {
                 case "org.lwjgl.opengl.GLCapabilities" -> {
-                    var impl = new GLCaps_GL(options, capabilities);
+                    var impl = new GLCaps_GL(context, options, capabilities);
                     caps = impl;
                     glInterface = impl;
                 }
                 case "org.lwjgl.opengles.GLESCapabilities" -> {
-                    var impl = new GLCaps_GLES(options, capabilities);
+                    var impl = new GLCaps_GLES(context, options, capabilities);
                     caps = impl;
                     glInterface = impl;
                 }
                 default -> {
+                    context.getLogger().error("Failed to create GLDevice: invalid capabilities");
                     return null;
                 }
             }
             return new GLDevice(context, caps, glInterface);
         } catch (Exception e) {
-            e.printStackTrace(context.getErrorWriter());
+            context.getLogger().error("Failed to create GLDevice", e);
             return null;
         }
     }
@@ -422,7 +422,7 @@ public final class GLDevice extends GpuDevice {
                 return null;
             }
         }*/
-        final GLTextureInfo info = new GLTextureInfo();
+        final GLImageInfo info = new GLImageInfo();
         info.target = target;
         info.handle = handle;
         info.format = glFormat;
@@ -433,7 +433,7 @@ public final class GLDevice extends GpuDevice {
                 width, height,
                 info,
                 format,
-                (surfaceFlags & ISurface.FLAG_BUDGETED) != 0);
+                surfaceFlags);
         /*} else {
             return new GLRenderTexture(this,
                     width, height,
@@ -446,15 +446,29 @@ public final class GLDevice extends GpuDevice {
 
     @Nullable
     @Override
-    protected GLRenderTarget onWrapRenderableBackendTexture(BackendTexture texture,
-                                                            int sampleCount,
-                                                            boolean ownership) {
+    protected GpuFramebuffer onCreateRenderTarget(int width, int height,
+                                                  BackendFormat colorFormat,
+                                                  int numColorTargets,
+                                                  BackendFormat depthStencilFormat,
+                                                  boolean hasDepthStencil,
+                                                  int mipLevelCount,
+                                                  int sampleCount,
+                                                  int surfaceFlags,
+                                                  String label) {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    protected GLFramebuffer onWrapRenderableBackendTexture(BackendTexture texture,
+                                                           int sampleCount,
+                                                           boolean ownership) {
         if (texture.isProtected()) {
             // Not supported in GL backend at this time.
             return null;
         }
-        final GLTextureInfo info = new GLTextureInfo();
-        if (!texture.getGLTextureInfo(info) || info.handle == 0 || info.format == 0) {
+        final GLImageInfo info = new GLImageInfo();
+        if (!texture.getGLImageInfo(info) || info.handle == 0 || info.format == 0) {
             return null;
         }
         if (info.target != GL_TEXTURE_2D) {
@@ -471,24 +485,34 @@ public final class GLDevice extends GpuDevice {
         sampleCount = mCaps.getRenderTargetSampleCount(sampleCount, format);
         assert sampleCount > 0;
 
-        var objects = createRTObjects(info.handle,
+        /*var objects = createRTObjects(info.handle,
                 texture.getWidth(), texture.getHeight(),
                 texture.getBackendFormat(),
-                sampleCount);
-        if (objects != null) {
+                sampleCount);*/
 
-            //TODO create wrapped texture
-            /*return new GLRenderTarget(this, texture.getWidth(), texture.getHeight(),
+        var colorTarget = createTexture(
+                texture.getWidth(), texture.getHeight(),
+                texture.getBackendFormat(),
+                sampleCount,
+                ISurface.FLAG_BUDGETED | ISurface.FLAG_RENDERABLE,
+                ""
+        );
+
+        //TODO create wrapped texture
+        /*if (objects != null) {
+
+
+            return new GLRenderTarget(this, texture.getWidth(), texture.getHeight(),
                 format, sampleCount, framebuffer, msaaFramebuffer,
-                texture, msaaColorBuffer, ownership);*/
-        }
+                texture, msaaColorBuffer, ownership);
+        }*/
 
         return null;
     }
 
     @Nullable
     @Override
-    public GLRenderTarget onWrapBackendRenderTarget(BackendRenderTarget backendRenderTarget) {
+    public GLFramebuffer onWrapBackendRenderTarget(BackendRenderTarget backendRenderTarget) {
         GLFramebufferInfo info = new GLFramebufferInfo();
         if (!backendRenderTarget.getGLFramebufferInfo(info)) {
             return null;
@@ -500,12 +524,13 @@ public final class GLDevice extends GpuDevice {
             return null;
         }
         int actualSamplerCount = mCaps.getRenderTargetSampleCount(backendRenderTarget.getSampleCount(), info.mFormat);
-        return GLRenderTarget.makeWrapped(this,
+        return GLFramebuffer.makeWrapped(this,
                 backendRenderTarget.getWidth(),
                 backendRenderTarget.getHeight(),
                 info.mFormat,
                 actualSamplerCount,
                 info.mFramebuffer,
+                0,
                 backendRenderTarget.getStencilBits(),
                 false);
     }
@@ -626,9 +651,9 @@ public final class GLDevice extends GpuDevice {
     }
 
     @Override
-    protected boolean onCopySurface(IGpuSurface src,
+    protected boolean onCopySurface(GpuSurface src,
                                     int srcL, int srcT, int srcR, int srcB,
-                                    IGpuSurface dst,
+                                    GpuSurface dst,
                                     int dstL, int dstT, int dstR, int dstB,
                                     int filter) {
         int srcWidth = srcR - srcL;
@@ -642,8 +667,8 @@ public final class GLDevice extends GpuDevice {
         if (srcWidth == dstWidth && srcHeight == dstHeight) {
             // no scaling
             if (mCaps.hasCopyImageSupport() &&
-                    src.asTexture() instanceof GLTexture srcTex &&
-                    dst.asTexture() instanceof GLTexture dstTex &&
+                    src.asTexture() instanceof GLImage srcTex &&
+                    dst.asTexture() instanceof GLImage dstTex &&
                     mCaps.canCopyImage(
                             srcTex.getGLFormat(), 1,
                             dstTex.getGLFormat(), 1
@@ -662,8 +687,8 @@ public final class GLDevice extends GpuDevice {
                 return true;
             }
 
-            if (src.asTexture() instanceof GLTexture srcTex &&
-                    dst.asTexture() instanceof GLTexture dstTex &&
+            if (src.asTexture() instanceof GLImage srcTex &&
+                    dst.asTexture() instanceof GLImage dstTex &&
                     mCaps.canCopyTexSubImage(
                             srcTex.getGLFormat(),
                             dstTex.getGLFormat()
@@ -728,7 +753,7 @@ public final class GLDevice extends GpuDevice {
         if (mCachedOpsRenderPass == null) {
             mCachedOpsRenderPass = new GLOpsRenderPass(this);
         }
-        return mCachedOpsRenderPass.set(writeView.getSurface().getGpuRenderTarget(),
+        return mCachedOpsRenderPass.set(writeView.getSurface().getFramebuffer(),
                 contentBounds,
                 writeView.getOrigin(),
                 colorOps,
@@ -736,7 +761,7 @@ public final class GLDevice extends GpuDevice {
                 clearColor);
     }
 
-    public GLCommandBuffer beginRenderPass(GLRenderTarget fs,
+    public GLCommandBuffer beginRenderPass(GLFramebuffer fs,
                                            byte colorOps,
                                            byte stencilOps,
                                            float[] clearColor) {
@@ -747,7 +772,7 @@ public final class GLDevice extends GpuDevice {
         boolean colorLoadClear = LoadStoreOps.loadOp(colorOps) == LoadOp.Clear;
         boolean stencilLoadClear = LoadStoreOps.loadOp(stencilOps) == LoadOp.Clear;
         if (colorLoadClear || stencilLoadClear) {
-            int framebuffer = fs.getSampleFramebuffer();
+            int framebuffer = fs.getRenderFramebuffer();
             cmdBuffer.flushScissorTest(false);
             if (colorLoadClear) {
                 cmdBuffer.flushColorWrite(true);
@@ -769,7 +794,7 @@ public final class GLDevice extends GpuDevice {
         return cmdBuffer;
     }
 
-    public void endRenderPass(GLRenderTarget fs,
+    public void endRenderPass(GLFramebuffer fs,
                               byte colorOps,
                               byte stencilOps) {
         handleDirtyContext(GLBackendState.kRenderTarget);
@@ -777,19 +802,19 @@ public final class GLDevice extends GpuDevice {
         boolean colorStoreDiscard = LoadStoreOps.storeOp(colorOps) == StoreOp.DontCare;
         boolean stencilStoreDiscard = LoadStoreOps.storeOp(stencilOps) == StoreOp.DontCare;
         if (colorStoreDiscard || stencilStoreDiscard) {
-            int framebuffer = fs.getSampleFramebuffer();
+            int framebuffer = fs.getRenderFramebuffer();
             try (MemoryStack stack = MemoryStack.stackPush()) {
                 final long pAttachments = stack.nmalloc(4, 8);
                 int numAttachments = 0;
                 if (colorStoreDiscard) {
-                    int attachment = fs.getSampleFramebuffer() == 0
+                    int attachment = fs.getRenderFramebuffer() == 0
                             ? GL_COLOR
                             : GL_COLOR_ATTACHMENT0;
                     memPutInt(pAttachments, attachment);
                     numAttachments++;
                 }
                 if (stencilStoreDiscard) {
-                    int attachment = fs.getSampleFramebuffer() == 0
+                    int attachment = fs.getRenderFramebuffer() == 0
                             ? GL_STENCIL
                             : GL_STENCIL_ATTACHMENT;
                     memPutInt(pAttachments + (numAttachments << 2), attachment);
@@ -802,28 +827,28 @@ public final class GLDevice extends GpuDevice {
 
     @Nullable
     @Override
-    protected GpuBuffer onCreateBuffer(int size, int flags) {
+    protected GLBuffer onCreateBuffer(int size, int flags) {
         handleDirtyContext(GLBackendState.kPipeline);
         return GLBuffer.make(this, size, flags);
     }
 
     @Override
-    protected void onResolveRenderTarget(GpuRenderTarget renderTarget,
-                                         int resolveLeft, int resolveTop,
-                                         int resolveRight, int resolveBottom) {
-        GLRenderTarget glRenderTarget = (GLRenderTarget) renderTarget;
+    protected void onResolveFramebuffer(GpuFramebuffer framebuffer,
+                                        int resolveLeft, int resolveTop,
+                                        int resolveRight, int resolveBottom) {
+        GLFramebuffer glFramebuffer = (GLFramebuffer) framebuffer;
         //TODO handle non-DSA case
         //handleDirtyContext();
 
-        int framebuffer = glRenderTarget.getSampleFramebuffer();
-        int resolveFramebuffer = glRenderTarget.getResolveFramebuffer();
+        int renderFramebuffer = glFramebuffer.getRenderFramebuffer();
+        int resolveFramebuffer = glFramebuffer.getResolveFramebuffer();
 
         // We should always have something to resolve
-        assert (framebuffer != 0 && framebuffer != resolveFramebuffer);
+        assert (renderFramebuffer != 0 && renderFramebuffer != resolveFramebuffer);
 
         // BlitFramebuffer respects the scissor, so disable it.
         currentCommandBuffer().flushScissorTest(false);
-        glBlitNamedFramebuffer(framebuffer, resolveFramebuffer, // MSAA to single
+        glBlitNamedFramebuffer(renderFramebuffer, resolveFramebuffer, // MSAA to single
                 resolveLeft, resolveTop, resolveRight, resolveBottom, // src rect
                 resolveLeft, resolveTop, resolveRight, resolveBottom, // dst rect
                 GL_COLOR_BUFFER_BIT, GL_NEAREST);
@@ -1145,90 +1170,174 @@ public final class GLDevice extends GpuDevice {
     }
 
     @Nullable
-    private Function<GLTexture, GLRenderTarget> createRTObjects(int texture,
-                                                                int width, int height,
-                                                                BackendFormat format,
-                                                                int samples) {
-        assert texture != 0;
+    @SharedPtr
+    private GLFramebuffer createRTObjects(int numColorTargets,
+                                          @Nonnull GLImage[] colorTargets,
+                                          @Nullable GLImage[] resolveTargets,
+                                          @Nullable int[] mipLevels,
+                                          @Nullable GLImage depthStencilTarget,
+                                          int surfaceFlags) {
+        if (numColorTargets <= 0) {
+            return null;
+        }
+
+        // find logical dimension
+        int finalSampleCount = 0;
+        int finalWidth = Integer.MAX_VALUE;
+        int finalHeight = Integer.MAX_VALUE;
+        BackendFormat effectiveFormat = null;
+        for (int i = 0; i < numColorTargets; i++) {
+            GpuImageBase colorTarget = colorTargets[i];
+            if (colorTarget == null) continue;
+            int sampleCount = colorTarget.getSampleCount();
+            if (finalSampleCount == 0) {
+                finalSampleCount = sampleCount;
+            } else if (finalSampleCount != sampleCount) {
+                return null;
+            }
+            BackendFormat format = colorTarget.getBackendFormat();
+            if (effectiveFormat == null) {
+                effectiveFormat = format;
+            } else if (!effectiveFormat.equals(format)) {
+                return null;
+            }
+            finalWidth = Math.min(finalWidth, colorTarget.getWidth());
+            finalHeight = Math.min(finalHeight, colorTarget.getHeight());
+        }
+        if (finalSampleCount == 0) {
+            return null;
+        }
+        if (resolveTargets != null) {
+            for (int i = 0; i < numColorTargets; i++) {
+                GpuImageBase resolveTarget = resolveTargets[i];
+                if (resolveTarget == null) continue;
+                if (finalSampleCount == 1) {
+                    return null;
+                }
+                if (resolveTarget.getSampleCount() != 1) {
+                    return null;
+                }
+                if (!effectiveFormat.equals(resolveTarget.getBackendFormat())) {
+                    return null;
+                }
+                finalWidth = Math.min(finalWidth, resolveTarget.getWidth());
+                finalHeight = Math.min(finalHeight, resolveTarget.getHeight());
+            }
+        }
+        if (depthStencilTarget != null) {
+            if (finalSampleCount != depthStencilTarget.getSampleCount()) {
+                return null;
+            }
+            finalWidth = Math.min(finalWidth, depthStencilTarget.getWidth());
+            finalHeight = Math.min(finalHeight, depthStencilTarget.getHeight());
+        }
+        if (finalWidth == Integer.MAX_VALUE || finalHeight == Integer.MAX_VALUE) {
+            return null;
+        }
 
         var gl = getGL();
-
         // There's an NVIDIA driver bug that creating framebuffer via DSA with attachments of
         // different dimensions will report GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT.
         // The workaround is to use traditional glGen* and glBind* (validate).
         // see https://forums.developer.nvidia.com/t/framebuffer-incomplete-when-attaching-color-buffers-of-different-sizes-with-dsa/211550
-        final int framebuffer = gl.glGenFramebuffers();
-        if (framebuffer == 0) {
+        final int renderFramebuffer = gl.glGenFramebuffers();
+        if (renderFramebuffer == 0) {
             return null;
         }
 
         // If we are using multisampling we will create two FBOs. We render to one and then resolve to
         // the texture bound to the other.
-        final int msaaFramebuffer;
-        final GLTexture msaaColorBuffer;
-        if (samples <= 1) {
-            msaaFramebuffer = 0;
-            msaaColorBuffer = null;
+        final int resolveFramebuffer;
+        if (finalSampleCount > 1) {
+            resolveFramebuffer = gl.glGenFramebuffers();
+            if (resolveFramebuffer == 0) {
+                gl.glDeleteFramebuffers(renderFramebuffer);
+                return null;
+            }
         } else {
-            msaaFramebuffer = gl.glGenFramebuffers();
-            if (msaaFramebuffer == 0) {
-                gl.glDeleteFramebuffers(framebuffer);
-                return null;
-            }
+            resolveFramebuffer = renderFramebuffer;
+        }
 
-            msaaColorBuffer = onCreateTexture(
-                    width, height,
-                    format,
-                    0,
-                    samples,
-                    ISurface.FLAG_BUDGETED | ISurface.FLAG_RENDERABLE);
-            if (msaaColorBuffer == null) {
-                gl.glDeleteFramebuffers(framebuffer);
-                gl.glDeleteFramebuffers(msaaFramebuffer);
-                return null;
+        currentCommandBuffer().bindFramebuffer(renderFramebuffer);
+        for (int i = 0; i < numColorTargets; i++) {
+            GLImage colorTarget = colorTargets[i];
+            if (colorTarget == null) {
+                continue;
             }
-
-            currentCommandBuffer().bindFramebuffer(msaaFramebuffer);
+            attachColorAttachment(i,
+                    colorTarget,
+                    mipLevels == null ? 0 : mipLevels[i]);
+        }
+        if (depthStencilTarget != null) {
+            //TODO renderbuffer?
             glFramebufferRenderbuffer(GL_FRAMEBUFFER,
-                    GL_COLOR_ATTACHMENT0,
+                    GL_STENCIL_ATTACHMENT,
                     GL_RENDERBUFFER,
-                    msaaColorBuffer.getHandle());
+                    depthStencilTarget.getHandle());
+            if (GLUtil.glFormatIsPackedDepthStencil(depthStencilTarget.getGLFormat())) {
+                glFramebufferRenderbuffer(GL_FRAMEBUFFER,
+                        GL_DEPTH_ATTACHMENT,
+                        GL_RENDERBUFFER,
+                        depthStencilTarget.getHandle());
+            }
+        }
+        if (!mCaps.skipErrorChecks()) {
+            int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+            if (status != GL_FRAMEBUFFER_COMPLETE) {
+                gl.glDeleteFramebuffers(renderFramebuffer);
+                gl.glDeleteFramebuffers(resolveFramebuffer);
+                return null;
+            }
+        }
+
+        if (resolveTargets != null) {
+            currentCommandBuffer().bindFramebuffer(resolveFramebuffer);
+            for (int i = 0; i < numColorTargets; i++) {
+                GLImage resolveTarget = resolveTargets[i];
+                if (resolveTarget == null) continue;
+                attachColorAttachment(i,
+                        resolveTarget,
+                        mipLevels == null ? 0 : mipLevels[i]);
+            }
             if (!mCaps.skipErrorChecks()) {
                 int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
                 if (status != GL_FRAMEBUFFER_COMPLETE) {
-                    gl.glDeleteFramebuffers(framebuffer);
-                    gl.glDeleteFramebuffers(msaaFramebuffer);
-                    msaaColorBuffer.unref();
+                    gl.glDeleteFramebuffers(renderFramebuffer);
+                    gl.glDeleteFramebuffers(resolveFramebuffer);
                     return null;
                 }
             }
         }
 
-        currentCommandBuffer().bindFramebuffer(framebuffer);
-        glFramebufferTexture(GL_FRAMEBUFFER,
-                GL_COLOR_ATTACHMENT0,
-                texture,
-                0);
-        if (!mCaps.skipErrorChecks()) {
-            int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-            if (status != GL_FRAMEBUFFER_COMPLETE) {
-                getGL().glDeleteFramebuffers(framebuffer);
-                getGL().glDeleteFramebuffers(msaaFramebuffer);
-                if (msaaColorBuffer != null) {
-                    msaaColorBuffer.unref();
-                }
-                return null;
-            }
-        }
+        return new GLFramebuffer(this,
+                finalWidth,
+                finalHeight,
+                effectiveFormat.getGLFormat(),
+                finalSampleCount,
+                renderFramebuffer,
+                resolveFramebuffer,
+                numColorTargets,
+                colorTargets,
+                resolveTargets,
+                depthStencilTarget,
+                surfaceFlags);
+    }
 
-        return colorBuffer -> new GLRenderTarget(this,
-                colorBuffer.getWidth(),
-                colorBuffer.getHeight(),
-                colorBuffer.getGLFormat(),
-                samples,
-                framebuffer,
-                msaaFramebuffer,
-                colorBuffer,
-                msaaColorBuffer);
+    private void attachColorAttachment(int index, GLImage texture, int mipLevel) {
+        switch (texture.getTarget()) {
+            case GL_TEXTURE_2D, GL_TEXTURE_2D_MULTISAMPLE -> {
+                glFramebufferTexture(GL_FRAMEBUFFER,
+                        GL_COLOR_ATTACHMENT0 + index,
+                        texture.getHandle(),
+                        mipLevel);
+            }
+            case GL_RENDERBUFFER -> {
+                glFramebufferRenderbuffer(GL_FRAMEBUFFER,
+                        GL_COLOR_ATTACHMENT0 + index,
+                        GL_RENDERBUFFER,
+                        texture.getHandle());
+            }
+            default -> throw new UnsupportedOperationException();
+        }
     }
 }

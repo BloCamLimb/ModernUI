@@ -38,7 +38,7 @@ public class ResourceProvider {
     private final DirectContext mContext;
 
     // lookup key
-    private final GpuTexture.ScratchKey mTextureScratchKey = new GpuTexture.ScratchKey();
+    private final GpuImageBase.ScratchKey mTextureScratchKey = new GpuImageBase.ScratchKey();
 
     protected ResourceProvider(GpuDevice device, DirectContext context) {
         mDevice = device;
@@ -68,23 +68,23 @@ public class ResourceProvider {
      * Finds or creates a texture that matches the descriptor. The texture's format will always
      * match the request. The contents of the texture are undefined.
      * <p>
-     * When {@link IGpuSurface#FLAG_BUDGETED} is set, the texture will count against the resource
-     * cache budget. If {@link IGpuSurface#FLAG_APPROX_FIT} is also set, it's always budgeted.
+     * When {@link ISurface#FLAG_BUDGETED} is set, the texture will count against the resource
+     * cache budget. If {@link ISurface#FLAG_APPROX_FIT} is also set, it's always budgeted.
      * <p>
-     * When {@link IGpuSurface#FLAG_APPROX_FIT} is set, the method returns a potentially approx fit
+     * When {@link ISurface#FLAG_APPROX_FIT} is set, the method returns a potentially approx fit
      * texture that approximately matches the descriptor. Will be at least as large in width and
-     * height as desc specifies. In this case, {@link IGpuSurface#FLAG_MIPMAPPED} and
-     * {@link IGpuSurface#FLAG_BUDGETED} are ignored. Otherwise, the method returns an exact fit
+     * height as desc specifies. In this case, {@link ISurface#FLAG_MIPMAPPED} and
+     * {@link ISurface#FLAG_BUDGETED} are ignored. Otherwise, the method returns an exact fit
      * texture.
      * <p>
-     * When {@link IGpuSurface#FLAG_MIPMAPPED} is set, the texture will be allocated with mipmaps.
-     * If {@link IGpuSurface#FLAG_APPROX_FIT} is also set, it always has no mipmaps.
+     * When {@link ISurface#FLAG_MIPMAPPED} is set, the texture will be allocated with mipmaps.
+     * If {@link ISurface#FLAG_APPROX_FIT} is also set, it always has no mipmaps.
      * <p>
-     * When {@link IGpuSurface#FLAG_RENDERABLE} is set, the texture can be rendered to and
-     * {@link IGpuSurface#asRenderTarget()} will return nonnull. The <code>sampleCount</code>
+     * When {@link ISurface#FLAG_RENDERABLE} is set, the texture can be rendered to and
+     * can be used as attachments of a framebuffer. The <code>sampleCount</code>
      * specifies the number of samples to use for rendering.
      * <p>
-     * When {@link IGpuSurface#FLAG_PROTECTED} is set, the texture will be created as protected.
+     * When {@link ISurface#FLAG_PROTECTED} is set, the texture will be created as protected.
      *
      * @param width        the desired width of the texture to be created
      * @param height       the desired height of the texture to be created
@@ -94,13 +94,13 @@ public class ResourceProvider {
      * @param surfaceFlags the combination of the above flags
      * @param label        the label for debugging purposes, can be empty to clear the label,
      *                     or null to leave the label unchanged
-     * @see IGpuSurface#FLAG_BUDGETED
-     * @see IGpuSurface#FLAG_APPROX_FIT
-     * @see IGpuSurface#FLAG_MIPMAPPED
-     * @see IGpuSurface#FLAG_TEXTURABLE
-     * @see IGpuSurface#FLAG_RENDERABLE
-     * @see IGpuSurface#FLAG_MEMORYLESS
-     * @see IGpuSurface#FLAG_PROTECTED
+     * @see ISurface#FLAG_BUDGETED
+     * @see ISurface#FLAG_APPROX_FIT
+     * @see ISurface#FLAG_MIPMAPPED
+     * @see ISurface#FLAG_TEXTURABLE
+     * @see ISurface#FLAG_RENDERABLE
+     * @see ISurface#FLAG_MEMORYLESS
+     * @see ISurface#FLAG_PROTECTED
      */
     @Nullable
     @SharedPtr
@@ -187,11 +187,11 @@ public class ResourceProvider {
      * @param pixels       the pointer to the texel data for base level image
      * @param label        the label for debugging purposes, can be empty to clear the label,
      *                     or null to leave the label unchanged
-     * @see IGpuSurface#FLAG_BUDGETED
-     * @see IGpuSurface#FLAG_APPROX_FIT
-     * @see IGpuSurface#FLAG_MIPMAPPED
-     * @see IGpuSurface#FLAG_RENDERABLE
-     * @see IGpuSurface#FLAG_PROTECTED
+     * @see GpuSurface#FLAG_BUDGETED
+     * @see GpuSurface#FLAG_APPROX_FIT
+     * @see GpuSurface#FLAG_MIPMAPPED
+     * @see GpuSurface#FLAG_RENDERABLE
+     * @see GpuSurface#FLAG_PROTECTED
      */
     @Nullable
     @SharedPtr
@@ -273,9 +273,9 @@ public class ResourceProvider {
      *
      * @param label the label for debugging purposes, can be empty to clear the label,
      *              or null to leave the label unchanged
-     * @see IGpuSurface#FLAG_MIPMAPPED
-     * @see IGpuSurface#FLAG_RENDERABLE
-     * @see IGpuSurface#FLAG_PROTECTED
+     * @see GpuSurface#FLAG_MIPMAPPED
+     * @see GpuSurface#FLAG_RENDERABLE
+     * @see GpuSurface#FLAG_PROTECTED
      */
     @Nullable
     @SharedPtr
@@ -316,9 +316,9 @@ public class ResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public final GpuRenderTarget wrapRenderableBackendTexture(BackendTexture texture,
-                                                              int sampleCount,
-                                                              boolean ownership) {
+    public final GpuFramebuffer wrapRenderableBackendTexture(BackendTexture texture,
+                                                             int sampleCount,
+                                                             boolean ownership) {
         if (mDevice.getContext().isDiscarded()) {
             return null;
         }
@@ -337,7 +337,7 @@ public class ResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public final GpuRenderTarget wrapBackendRenderTarget(BackendRenderTarget backendRenderTarget) {
+    public final GpuFramebuffer wrapBackendRenderTarget(BackendRenderTarget backendRenderTarget) {
         if (mDevice.getContext().isDiscarded()) {
             return null;
         }

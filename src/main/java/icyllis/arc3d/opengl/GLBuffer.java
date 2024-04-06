@@ -70,9 +70,9 @@ public final class GLBuffer extends GpuBuffer {
         assert typeFlags != 0;
 
         if (Integer.bitCount(typeFlags) != 1) {
-            new Throwable("RHICreateBuffer, only one type bit is allowed, given 0x" +
-                    Integer.toHexString(typeFlags))
-                    .printStackTrace(device.getContext().getErrorWriter());
+            device.getContext().getLogger().error(
+                    "Failed to create GLBuffer: only one type bit is allowed, given 0x{}",
+                    Integer.toHexString(typeFlags));
             return null;
         }
 
@@ -122,8 +122,9 @@ public final class GLBuffer extends GpuBuffer {
                 device.getGL().glNamedBufferData(buffer, size, NULL, allocUsage);
                 if (device.getError() != GL_NO_ERROR) {
                     device.getGL().glDeleteBuffers(buffer);
-                    new Throwable("GLBuffer.make, failed to allocate " + size + " bytes from device")
-                            .printStackTrace(device.getContext().getErrorWriter());
+                    device.getContext().getLogger().error(
+                            "Failed to create GLBuffer: failed to allocate {} bytes from device",
+                            size);
                     return null;
                 }
             }
@@ -177,8 +178,9 @@ public final class GLBuffer extends GpuBuffer {
                 device.getGL().glBufferData(target, size, NULL, allocUsage);
                 if (device.getError() != GL_NO_ERROR) {
                     device.getGL().glDeleteBuffers(buffer);
-                    new Throwable("GLBuffer.make, failed to allocate " + size + " bytes from device")
-                            .printStackTrace(device.getContext().getErrorWriter());
+                    device.getContext().getLogger().error(
+                            "Failed to create GLBuffer: failed to allocate {} bytes from device",
+                            size);
                     return null;
                 }
             }
@@ -280,8 +282,7 @@ public final class GLBuffer extends GpuBuffer {
                 mMappedBuffer = device.getGL().glMapBufferRange(target, offset, size, GL_MAP_READ_BIT);
             }
             if (mMappedBuffer == NULL) {
-                new Throwable("Failed to map buffer " + this)
-                        .printStackTrace(device.getContext().getErrorWriter());
+                getDevice().getContext().getLogger().error("Failed to map buffer {}", mBuffer);
             }
             return mMappedBuffer;
         } else {

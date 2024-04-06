@@ -19,8 +19,7 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.RawPtr;
-import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.core.*;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 
@@ -29,7 +28,7 @@ import javax.annotation.Nonnull;
 import static icyllis.arc3d.engine.Engine.BudgetType;
 
 /**
- * The {@link SurfaceAllocator} explicitly distributes {@link IGpuSurface} at flush time.
+ * The {@link SurfaceAllocator} explicitly distributes {@link GpuSurface} at flush time.
  * It operates by being given the usage intervals of the various {@link SurfaceProxy}. It keeps these
  * intervals in a singly linked list sorted by increasing start index. (It also maintains a hash
  * table from ID to interval to find surface reuse). The ResourceAllocator uses Registers (in the
@@ -337,7 +336,7 @@ public final class SurfaceAllocator {
          */
         private TextureProxy mProxy;
         @SharedPtr
-        private GpuTexture mTextureResource;
+        private GpuTexture mTexture;
 
         private boolean mInit;
 
@@ -356,10 +355,10 @@ public final class SurfaceAllocator {
             assert (!proxy.isLazy());
             mProxy = proxy;
             if (scratch) {
-                mTextureResource = provider.findAndRefScratchTexture(proxy, null);
+                mTexture = provider.findAndRefScratchTexture(proxy, null);
             } else {
                 assert (proxy.getUniqueKey() != null);
-                mTextureResource = provider.findByUniqueKey(proxy.getUniqueKey());
+                mTexture = provider.findByUniqueKey(proxy.getUniqueKey());
             }
             mInit = true;
             return this;
@@ -397,20 +396,20 @@ public final class SurfaceAllocator {
                                           ResourceProvider resourceProvider) {
             assert (proxy.getGpuTexture() == null);
             final GpuTexture gpuTexture;
-            if (mTextureResource == null) {
+            if (mTexture == null) {
                 if (mProxy == proxy) {
                     gpuTexture = proxy.createGpuTexture(resourceProvider);
                 } else {
-                    gpuTexture = GpuResource.create(mProxy.getGpuTexture());
+                    gpuTexture = RefCnt.create(mProxy.getGpuTexture());
                 }
                 if (gpuTexture == null) {
                     return false;
                 }
             } else {
-                gpuTexture = GpuResource.create(mTextureResource);
+                gpuTexture = RefCnt.create(mTexture);
             }
             assert (gpuTexture != null);
-            assert (proxy.mSurfaceFlags & ISurface.FLAG_RENDERABLE) == 0 || gpuTexture.asRenderTarget() != null;
+            assert (proxy.mSurfaceFlags & ISurface.FLAG_RENDERABLE) == 0 || gpuTexture.asFramebuffer() != null;
 
             // Make texture budgeted if this proxy is budgeted.
             if (proxy.isBudgeted() && gpuTexture.getBudgetType() != BudgetType.Budgeted) {
@@ -437,12 +436,12 @@ public final class SurfaceAllocator {
         public boolean reset() {
             if (mInit) {
                 mProxy = null;
-                mTextureResource = GpuResource.move(mTextureResource);
+                mTexture = RefCnt.move(mTexture);
                 mInit = false;
                 return true;
             }
             assert (mProxy == null);
-            assert (mTextureResource == null);
+            assert (mTexture == null);
             return false;
         }
     }

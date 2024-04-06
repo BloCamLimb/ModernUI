@@ -19,33 +19,38 @@
 
 package icyllis.arc3d.opengl;
 
+import icyllis.arc3d.core.RawPtr;
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.*;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import static icyllis.arc3d.opengl.GLCore.*;
 
 /**
- * Represents OpenGL render targets.
+ * Represents OpenGL framebuffers.
  */
-public final class GLRenderTarget extends GpuRenderTarget {
+public final class GLFramebuffer extends GpuFramebuffer {
 
     /**
      * The GL format for all color attachments.
      */
     private final int mFormat;
 
-    // the main color buffer, raw ptr
-    // if this texture is deleted, then this framebuffer set is deleted as well
-    // null for wrapped render targets
-    private GLTexture mColorBuffer;
-    // the renderbuffer used as MSAA color buffer
+    // the color buffers, raw ptr
     // null for wrapped render targets
     @SharedPtr
-    private GLTexture mMultisampleColorBuffer;
+    private GLImage[] mColorAttachments;
+    // the resolve buffers, raw ptr
+    // null for wrapped/single-sampled/non-resolvable render targets
+    @SharedPtr
+    private GLImage[] mResolveAttachments;
 
-    private int mSampleFramebuffer;
+    @SharedPtr
+    private GLImage mDepthStencilAttachment;
+
+    private int mRenderFramebuffer;
     private int mResolveFramebuffer;
 
     // if we need bind stencil buffers on next framebuffer bind call
@@ -58,48 +63,51 @@ public final class GLRenderTarget extends GpuRenderTarget {
     private BackendRenderTarget mBackendRenderTarget;
 
     // Constructor for instances created by our engine. (has texture access)
-    GLRenderTarget(GLDevice device,
-                   int width, int height,
-                   int format,
-                   int sampleCount,
-                   int framebuffer,
-                   int msaaFramebuffer,
-                   GLTexture colorBuffer,
-                   GLTexture msaaColorBuffer) {
-        super(device, width, height, sampleCount);
+    GLFramebuffer(GLDevice device,
+                  int width, int height,
+                  int format,
+                  int sampleCount,
+                  int renderFramebuffer,
+                  int resolveFramebuffer,
+                  int numRenderTargets,
+                  GLImage[] colorAttachments,
+                  GLImage[] resolveAttachments,
+                  GLImage depthStencilAttachment,
+                  int surfaceFlags) {
+        super(device, width, height, sampleCount, numRenderTargets);
         assert (sampleCount > 0);
         mFormat = format;
-        mSampleFramebuffer = sampleCount > 1 ? msaaFramebuffer : framebuffer;
-        mResolveFramebuffer = framebuffer;
+        mRenderFramebuffer = renderFramebuffer;
+        mResolveFramebuffer = resolveFramebuffer;
         mOwnership = true;
-        mColorBuffer = colorBuffer;
-        mMultisampleColorBuffer = msaaColorBuffer;
-        mSurfaceFlags |= colorBuffer.getSurfaceFlags();
+        mColorAttachments = colorAttachments;
+        mResolveAttachments = resolveAttachments;
+        mDepthStencilAttachment = depthStencilAttachment;
+        mSurfaceFlags |= surfaceFlags;
     }
 
     // Constructor for instances wrapping backend objects. (no texture access)
-    private GLRenderTarget(GLDevice device,
-                           int width, int height,
-                           int format,
-                           int sampleCount,
-                           int framebuffer,
-                           boolean ownership,
-                           @SharedPtr GLAttachment stencilBuffer) {
-        super(device, width, height, sampleCount);
+    private GLFramebuffer(GLDevice device,
+                          int width, int height,
+                          int format,
+                          int sampleCount,
+                          int framebuffer,
+                          boolean ownership,
+                          @SharedPtr GLAttachment stencilBuffer) {
+        super(device, width, height, sampleCount, 1);
         assert (sampleCount > 0);
         assert (framebuffer != 0 || !ownership);
         mFormat = format;
-        mSampleFramebuffer = framebuffer;
+        mRenderFramebuffer = framebuffer;
         mResolveFramebuffer = 0;
         mOwnership = ownership;
-        mStencilBuffer = stencilBuffer; // std::move
         if (framebuffer == 0) {
             mSurfaceFlags |= ISurface.FLAG_GL_WRAP_DEFAULT_FB;
         }
     }
 
     /**
-     * Make a {@link GLRenderTarget} that wraps existing framebuffers without
+     * Make a {@link GLFramebuffer} that wraps existing framebuffers without
      * accessing their backing buffers (texture and stencil).
      *
      * @param width  the effective width of framebuffer
@@ -107,13 +115,14 @@ public final class GLRenderTarget extends GpuRenderTarget {
      */
     @Nonnull
     @SharedPtr
-    public static GLRenderTarget makeWrapped(GLDevice device,
-                                             int width, int height,
-                                             int format,
-                                             int sampleCount,
-                                             int framebuffer,
-                                             int stencilBits,
-                                             boolean ownership) {
+    public static GLFramebuffer makeWrapped(GLDevice device,
+                                            int width, int height,
+                                            int format,
+                                            int sampleCount,
+                                            int framebuffer,
+                                            int depthBits,
+                                            int stencilBits,
+                                            boolean ownership) {
         assert (sampleCount > 0);
         assert (framebuffer != 0 || !ownership);
         GLAttachment stencilBuffer = null;
@@ -141,7 +150,7 @@ public final class GLRenderTarget extends GpuRenderTarget {
                     stencilFormat,
                     0);
         }
-        return new GLRenderTarget(device,
+        return new GLFramebuffer(device,
                 width, height,
                 format,
                 sampleCount,
@@ -157,8 +166,8 @@ public final class GLRenderTarget extends GpuRenderTarget {
         return mFormat;
     }
 
-    public int getSampleFramebuffer() {
-        return mSampleFramebuffer;
+    public int getRenderFramebuffer() {
+        return mRenderFramebuffer;
     }
 
     public int getResolveFramebuffer() {
@@ -175,7 +184,7 @@ public final class GLRenderTarget extends GpuRenderTarget {
         if (!mRebindStencilBuffer) {
             return;
         }
-        int framebuffer = mSampleFramebuffer;
+        /*int framebuffer = mSampleFramebuffer;
         GLAttachment stencilBuffer = (GLAttachment) mStencilBuffer;
         if (stencilBuffer != null) {
             glNamedFramebufferRenderbuffer(framebuffer,
@@ -202,7 +211,7 @@ public final class GLRenderTarget extends GpuRenderTarget {
                     GL_DEPTH_ATTACHMENT,
                     GL_RENDERBUFFER,
                     0);
-        }
+        }*/
         mRebindStencilBuffer = false;
     }
 
@@ -216,8 +225,62 @@ public final class GLRenderTarget extends GpuRenderTarget {
     }
 
     @Override
+    public boolean isProtected() {
+        return false;
+    }
+
+    @Override
     public GLTexture asTexture() {
-        return mColorBuffer;
+        if (mResolveAttachments != null &&
+                mResolveAttachments[0] instanceof GLTexture texture) {
+            return texture;
+        }
+        return null;
+    }
+
+    @RawPtr
+    @Nullable
+    @Override
+    public GLImage getColorAttachment() {
+        return mColorAttachments != null ? mColorAttachments[0] : null;
+    }
+
+    @RawPtr
+    @Nullable
+    @Override
+    public GLImage getColorAttachment(int index) {
+        return mColorAttachments != null ? mColorAttachments[index] : null;
+    }
+
+    @RawPtr
+    @Nullable
+    @Override
+    public GLImage getResolveAttachment() {
+        return mResolveAttachments != null ? mResolveAttachments[0] : null;
+    }
+
+    @RawPtr
+    @Nullable
+    @Override
+    public GLImage getResolveAttachment(int index) {
+        return mResolveAttachments != null ? mResolveAttachments[index] : null;
+    }
+
+    @RawPtr
+    @Nullable
+    @Override
+    public GLImage getDepthStencilAttachment() {
+        return mDepthStencilAttachment;
+    }
+
+    @Override
+    public int getDepthBits() {
+        return mDepthStencilAttachment != null ? mDepthStencilAttachment.getBackendFormat().getDepthBits() : 0;
+    }
+
+    @Override
+    public int getStencilBits() {
+        return mDepthStencilAttachment != null ? mDepthStencilAttachment.getBackendFormat().getStencilBits() : 0;
     }
 
     @Nonnull
@@ -225,10 +288,10 @@ public final class GLRenderTarget extends GpuRenderTarget {
     public BackendRenderTarget getBackendRenderTarget() {
         if (mBackendRenderTarget == null) {
             final GLFramebufferInfo info = new GLFramebufferInfo();
-            info.mFramebuffer = mSampleFramebuffer;
+            info.mFramebuffer = mRenderFramebuffer;
             info.mFormat = mFormat;
             mBackendRenderTarget = new GLBackendRenderTarget(
-                    getWidth(), getHeight(), getSampleCount(), getStencilBits(), info);
+                    getWidth(), getHeight(), getSampleCount(), getDepthBits(), getStencilBits(), info);
         }
         return mBackendRenderTarget;
     }
@@ -241,7 +304,7 @@ public final class GLRenderTarget extends GpuRenderTarget {
         return mOwnership;
     }
 
-    @Override
+    /*@Override
     protected void attachStencilBuffer(@SharedPtr Attachment stencilBuffer) {
         if (stencilBuffer == null && mStencilBuffer == null) {
             // No need to do any work since we currently don't have a stencil attachment,
@@ -254,22 +317,27 @@ public final class GLRenderTarget extends GpuRenderTarget {
             mRebindStencilBuffer = true;
         }
 
-        mStencilBuffer = GpuResource.move(mStencilBuffer, stencilBuffer);
-    }
+        mStencilBuffer = GpuResourceBase.move(mStencilBuffer, stencilBuffer);
+    }*/
 
     @Override
-    protected void deallocate() {
-        super.deallocate();
+    protected void onRelease() {
         if (mOwnership) {
-            if (mSampleFramebuffer != 0) {
-                getDevice().getGL().glDeleteFramebuffers(mSampleFramebuffer);
+            if (mRenderFramebuffer != 0) {
+                getDevice().getGL().glDeleteFramebuffers(mRenderFramebuffer);
             }
-            if (mSampleFramebuffer != mResolveFramebuffer) {
+            if (mRenderFramebuffer != mResolveFramebuffer) {
                 assert (mResolveFramebuffer != 0);
                 getDevice().getGL().glDeleteFramebuffers(mResolveFramebuffer);
             }
         }
-        mSampleFramebuffer = 0;
+        mRenderFramebuffer = 0;
+        mResolveFramebuffer = 0;
+    }
+
+    @Override
+    protected void onDiscard() {
+        mRenderFramebuffer = 0;
         mResolveFramebuffer = 0;
     }
 
@@ -281,11 +349,10 @@ public final class GLRenderTarget extends GpuRenderTarget {
     @Override
     public String toString() {
         return "GLRenderTarget{" +
-                "mRenderFramebuffer=" + mSampleFramebuffer +
+                "mRenderFramebuffer=" + mRenderFramebuffer +
                 ", mResolveFramebuffer=" + mResolveFramebuffer +
                 ", mFormat=" + GLUtil.glFormatName(mFormat) +
                 ", mSampleCount=" + getSampleCount() +
-                ", mMultisampleColorBuffer=" + mMultisampleColorBuffer +
                 ", mOwnership=" + mOwnership +
                 ", mBackendFormat=" + mBackendFormat +
                 '}';

@@ -36,29 +36,21 @@ public final class GLBackendFormat extends BackendFormat {
             new Int2ObjectOpenHashMap<>(GLUtil.LAST_FORMAT_INDEX + 1, Hash.FAST_LOAD_FACTOR);
 
     private final int mFormat;
-    private final boolean mIsExternal;
 
     /**
-     * @see #make(int, boolean)
+     * @see #make(int)
      */
-    GLBackendFormat(@NativeType("GLenum") int format, boolean isExternal) {
+    GLBackendFormat(@NativeType("GLenum") int format) {
         mFormat = format;
-        mIsExternal = isExternal;
     }
 
     @Nonnull
     public static GLBackendFormat make(@NativeType("GLenum") int format) {
-        return make(format, false);
-    }
-
-    @Nonnull
-    public static GLBackendFormat make(@NativeType("GLenum") int format, boolean isExternal) {
         if (GLUtil.glFormatIsSupported(format)) {
             assert (format > 0);
-            return FORMATS.computeIfAbsent((format) | (isExternal ? Integer.MIN_VALUE : 0),
-                    k -> new GLBackendFormat(k & Integer.MAX_VALUE, k < 0));
+            return FORMATS.computeIfAbsent(format, GLBackendFormat::new);
         }
-        return new GLBackendFormat(format, isExternal);
+        return new GLBackendFormat(format);
     }
 
     @Override
@@ -72,22 +64,8 @@ public final class GLBackendFormat extends BackendFormat {
     }
 
     @Override
-    public boolean isExternal() {
-        return mIsExternal;
-    }
-
-    @Override
     public int getChannelFlags() {
         return GLUtil.glFormatChannels(mFormat);
-    }
-
-    @Nonnull
-    @Override
-    public BackendFormat makeInternal() {
-        if (mIsExternal) {
-            return make(mFormat, false);
-        }
-        return this;
     }
 
     @Override
@@ -103,6 +81,11 @@ public final class GLBackendFormat extends BackendFormat {
     @Override
     public int getBytesPerBlock() {
         return GLUtil.glFormatBytesPerBlock(mFormat);
+    }
+
+    @Override
+    public int getDepthBits() {
+        return GLUtil.glFormatDepthBits(mFormat);
     }
 
     @Override
@@ -131,7 +114,6 @@ public final class GLBackendFormat extends BackendFormat {
     public String toString() {
         return "{mBackend=OpenGL" +
                 ", mFormat=" + GLUtil.glFormatName(mFormat) +
-                ", mIsExternal=" + mIsExternal +
                 '}';
     }
 }

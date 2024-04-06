@@ -80,7 +80,7 @@ public final class SurfaceProvider {
      * Sets the unique key of the provided texture to the unique key of the GPU texture.
      * The GPU texture must have a valid unique key.
      */
-    public void adoptUniqueKeyFromSurface(TextureProxy proxy, GpuTexture texture) {
+    public void adoptUniqueKeyFromSurface(TextureProxy proxy, GpuSurface texture) {
         //TODO
     }
 

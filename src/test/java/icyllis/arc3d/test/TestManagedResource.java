@@ -34,12 +34,13 @@ import org.lwjgl.opengl.EXTTextureCompressionS3TC;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
@@ -54,8 +55,9 @@ import static org.lwjgl.util.shaderc.Shaderc.*;
 
 public class TestManagedResource {
 
+    public static final Logger LOGGER = LoggerFactory.getLogger("Arc3D");
+
     public static void main(String[] args) {
-        PrintWriter pw = new PrintWriter(System.out, true, StandardCharsets.UTF_8);
         long time = System.nanoTime();
 
         GLFW.glfwInit();
@@ -73,7 +75,7 @@ public class TestManagedResource {
         GLFW.glfwMakeContextCurrent(window);
 
         ContextOptions contextOptions = new ContextOptions();
-        contextOptions.mInfoWriter = pw;
+        contextOptions.mLogger = LOGGER;
         DirectContext dContext = DirectContext.makeOpenGL(
                 GL.createCapabilities(),
                 contextOptions
@@ -84,13 +86,13 @@ public class TestManagedResource {
         GLInterface gl = ((GLDevice) dContext.getDevice()).getGL();
         GLCaps caps = (GLCaps) dContext.getCaps();
         String glVersion = gl.glGetString(GL_VERSION);
-        pw.println("OpenGL version: " + glVersion);
-        pw.println("OpenGL vendor: " + gl.glGetString(GL_VENDOR));
-        pw.println("OpenGL renderer: " + gl.glGetString(GL_RENDERER));
-        pw.println("Max vertex attribs: " + gl.glGetInteger(GL_MAX_VERTEX_ATTRIBS));
-        pw.println("Max vertex bindings: " + gl.glGetInteger(GL_MAX_VERTEX_ATTRIB_BINDINGS));
-        pw.println("Max vertex stride: " + gl.glGetInteger(GL_MAX_VERTEX_ATTRIB_STRIDE));
-        pw.println("Max label length: " + gl.glGetInteger(GL_MAX_LABEL_LENGTH));
+        LOGGER.info("OpenGL version: " + glVersion);
+        LOGGER.info("OpenGL vendor: " + gl.glGetString(GL_VENDOR));
+        LOGGER.info("OpenGL renderer: " + gl.glGetString(GL_RENDERER));
+        LOGGER.info("Max vertex attribs: " + gl.glGetInteger(GL_MAX_VERTEX_ATTRIBS));
+        LOGGER.info("Max vertex bindings: " + gl.glGetInteger(GL_MAX_VERTEX_ATTRIB_BINDINGS));
+        LOGGER.info("Max vertex stride: " + gl.glGetInteger(GL_MAX_VERTEX_ATTRIB_STRIDE));
+        LOGGER.info("Max label length: " + gl.glGetInteger(GL_MAX_LABEL_LENGTH));
 
         /*if (glVersion != null) {
             var pattern = Pattern.compile("(\\d+)\\.(\\d+)");
@@ -103,14 +105,14 @@ public class TestManagedResource {
         {
             int numGLSLVersions = gl.glGetInteger(GL_NUM_SHADING_LANGUAGE_VERSIONS);
             for (int i = 0; i < numGLSLVersions; i++) {
-                pw.println("GLSL version: " + glGetStringi(GL_SHADING_LANGUAGE_VERSION, i));
+                LOGGER.info("GLSL version: " + glGetStringi(GL_SHADING_LANGUAGE_VERSION, i));
             }
-            pw.println("Default GLSL version: " + gl.glGetString(GL_SHADING_LANGUAGE_VERSION));
+            LOGGER.info("Default GLSL version: " + gl.glGetString(GL_SHADING_LANGUAGE_VERSION));
         }
 
         {
-            pw.println("Program binary formats: " + Arrays.toString(caps.getProgramBinaryFormats()));
-            pw.println("SPIR-V support: " + caps.hasSPIRVSupport());
+            LOGGER.info("Program binary formats: " + Arrays.toString(caps.getProgramBinaryFormats()));
+            LOGGER.info("SPIR-V support: " + caps.hasSPIRVSupport());
         }
 
         {
@@ -122,16 +124,16 @@ public class TestManagedResource {
             boolean success = Operator.MUL.determineBinaryType(compiler.getContext(),
                     moduleLoader.getBuiltinTypes().mHalf3x4,
                     moduleLoader.getBuiltinTypes().mFloat3, types);
-            pw.println("Operator types: " + success + ", " + Arrays.toString(types));
+            LOGGER.info("Operator types: " + success + ", " + Arrays.toString(types));
             success = Operator.ADD.determineBinaryType(compiler.getContext(),
                     moduleLoader.getBuiltinTypes().mFloat4x4,
                     moduleLoader.getBuiltinTypes().mFloat4, types);
-            pw.println("Operator types: " + success + ", " + Arrays.toString(types));
+            LOGGER.info("Operator types: " + success + ", " + Arrays.toString(types));
             compiler.endContext();
         }
 
         {
-            pw.println("Decode int: " + Long.decode("4294967295"));
+            LOGGER.info("Decode int: " + Long.decode("4294967295"));
         }
 
         var str = """
@@ -139,24 +141,24 @@ public class TestManagedResource {
                     where T : Object & Comparable<in T>;
                         """;
 
-        testShaderBuilder(pw, dContext);
+        testShaderBuilder(dContext);
 
         if (dContext.getCaps().isFormatTexturable(
                 GLBackendFormat.make(EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT1_EXT))) {
-            pw.println("Compressed format: OK");
+            LOGGER.info("Compressed format: OK");
         }
 
         Swizzle.make("rgb1");
         //noinspection unused
         int sampler = SamplerState.make(SamplerState.FILTER_NEAREST, SamplerState.MIPMAP_MODE_NONE);
 
-        testTexture(pw, dContext);
+        testTexture(dContext);
 
         //tokenize(pw);
 
         if (Platform.get() == Platform.WINDOWS) {
             if (!Kernel32.CloseHandle(959595595959595959L)) {
-                pw.println("Failed to close handle");
+                LOGGER.info("Failed to close handle");
             }
         }
 
@@ -175,7 +177,7 @@ public class TestManagedResource {
         try {
             assert false;
         } catch (AssertionError e) {
-            pw.println("Assert: " + (System.nanoTime() - time) / 1000000 + "ms");
+            LOGGER.info("Assert: " + (System.nanoTime() - time) / 1000000 + "ms");
         }
     }
 
@@ -355,7 +357,7 @@ public class TestManagedResource {
         }
     }
 
-    public static void testShaderBuilder(PrintWriter pw, DirectContext dContext) {
+    public static void testShaderBuilder(DirectContext dContext) {
         @SharedPtr
         TextureProxy target = dContext.getSurfaceProvider().createRenderTexture(
                 GLBackendFormat.make(GL_RGBA8),
@@ -368,53 +370,50 @@ public class TestManagedResource {
                         null, null, null, null,
                         PipelineInfo.kNone_Flag));
         {
-            pw.println(target);
+            LOGGER.info(target.toString());
             target.unref();
         }
         pso.bindPipeline(((GLDevice) dContext.getDevice()).currentCommandBuffer());
 
-        pw.println(dContext.getPipelineStateCache().getStats());
+        LOGGER.info(dContext.getPipelineStateCache().getStats().toString());
     }
 
-    public static void testTexture(PrintWriter pw, DirectContext dContext) {
+    public static void testTexture(DirectContext dContext) {
         ByteBuffer pixels = null;
-        try (FileChannel channel = FileChannel.open(Path.of("F:/", "6e6862e6e414225fa933d101d68efd0c.jpeg"),
+        try (FileChannel channel = FileChannel.open(Path.of("F:/", "GHRKwhAa0AAmG7q.jpg"),
                 StandardOpenOption.READ)) {
             ByteBuffer byteBuffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size());
             int[] x = {0};
             int[] y = {0};
             int[] channels = {0};
             pixels = STBImage.stbi_load_from_memory(byteBuffer, x, y, channels, 4);
-            pw.println("Channels: " + channels[0]);
-            pw.println("WxH: " + x[0] + "x" + y[0]);
+            LOGGER.info("Channels: " + channels[0]);
+            LOGGER.info("WxH: " + x[0] + "x" + y[0]);
             assert pixels != null;
-            pw.println("Image Bytes: " + pixels.remaining());
+            LOGGER.info("Image Bytes: " + pixels.remaining());
 
             GpuTexture texture = dContext.getDevice().createTexture(
                     x[0], y[0],
                     GLBackendFormat.make(GL_RGBA8),
                     1, ISurface.FLAG_MIPMAPPED |
-                            ISurface.FLAG_BUDGETED |
-                            ISurface.FLAG_RENDERABLE,
+                            ISurface.FLAG_BUDGETED | ISurface.FLAG_TEXTURABLE,
                     "MyTexture");
             if (texture != null) {
-                pw.println(texture);
-                pw.println(texture.asRenderTarget());
+                LOGGER.info(texture.toString());
                 texture.unref();
             }
             texture = dContext.getResourceProvider().createTexture(
                     x[0], y[0],
                     GLBackendFormat.make(GL_RGBA8),
                     1, ISurface.FLAG_MIPMAPPED |
-                            ISurface.FLAG_BUDGETED |
-                            ISurface.FLAG_RENDERABLE,
+                            ISurface.FLAG_BUDGETED | ISurface.FLAG_TEXTURABLE,
                     ImageInfo.CT_RGBA_8888,
                     ImageInfo.CT_RGBA_8888,
                     0,
                     memAddress(pixels),
                     null);
             if (texture != null) {
-                pw.println(texture); // same texture
+                LOGGER.info(texture.toString()); // same texture
                 texture.unref();
             }
         } catch (IOException e) {

@@ -23,7 +23,6 @@ import icyllis.arc3d.core.Color;
 import icyllis.arc3d.core.ImageInfo;
 import org.lwjgl.system.NativeType;
 
-import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
 
 import static icyllis.arc3d.engine.Engine.BackendApi;
@@ -69,8 +68,12 @@ public abstract class BackendFormat {
     /**
      * Hints that a texture comes from external resources, and our engine cannot create such a texture
      * with this format. It will be read-only (can be read/sampled from but cannot be written/rendered to).
+     * <p>
+     * This is reserved for future use and currently always returns false.
      */
-    public abstract boolean isExternal();
+    public final boolean isExternal() {
+        return false;
+    }
 
     /**
      * @see ImageInfo#COMPRESSION_NONE
@@ -83,15 +86,11 @@ public abstract class BackendFormat {
     }
 
     /**
-     * If possible, copies the BackendFormat and forces the isExternal to false.
-     */
-    @Nonnull
-    public abstract BackendFormat makeInternal();
-
-    /**
      * @return if compressed, bytes per block, otherwise bytes per pixel
      */
     public abstract int getBytesPerBlock();
+
+    public abstract int getDepthBits();
 
     public abstract int getStencilBits();
 

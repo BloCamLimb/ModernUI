@@ -19,16 +19,15 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.RefCnt;
-import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.core.*;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * The {@link SurfaceProxy} implements the proxy pattern for {@link ISurface},
- * it targets a {@link IGpuSurface} with three instantiation methods: deferred,
+ * The {@link SurfaceProxy} implements the proxy pattern for {@link GpuSurface},
+ * it targets a {@link GpuSurface} with three instantiation methods: deferred,
  * lazy-callback and wrapped.
  * <p>
  * Target: The backing GPU texture or framebuffer that referenced by this proxy.
@@ -38,7 +37,7 @@ import javax.annotation.Nullable;
  * <p>
  * BackingFit: Indicates whether a backing store needs to be an exact match or
  * can be larger than is strictly necessary. True: Exact; False: Approx. See
- * {@link #FLAG_APPROX_FIT}, the default is exact.
+ * {@link ISurface#FLAG_APPROX_FIT}, the default is exact.
  * <p>
  * UseAllocator:
  * <ul>
@@ -58,7 +57,7 @@ import javax.annotation.Nullable;
  * @see TextureProxy
  * @see SurfaceView
  */
-public abstract class SurfaceProxy extends RefCnt implements ISurface {
+public abstract class SurfaceProxy extends RefCnt {
 
     /**
      * For wrapped resources, 'mFormat' and 'mDimensions' will always be filled in from the
@@ -96,9 +95,9 @@ public abstract class SurfaceProxy extends RefCnt implements ISurface {
      * force the call sites to provide the required information ahead of time. At
      * instantiation time we verify that the assumed properties match the actual properties.
      *
-     * @see IGpuSurface#FLAG_BUDGETED
-     * @see IGpuSurface#FLAG_APPROX_FIT
-     * @see IGpuSurface#FLAG_SKIP_ALLOCATOR
+     * @see GpuSurface#FLAG_BUDGETED
+     * @see GpuSurface#FLAG_APPROX_FIT
+     * @see GpuSurface#FLAG_SKIP_ALLOCATOR
      */
     int mSurfaceFlags;
 
@@ -128,7 +127,7 @@ public abstract class SurfaceProxy extends RefCnt implements ISurface {
     }
 
     // Wrapped version
-    SurfaceProxy(@SharedPtr IGpuSurface surface,
+    SurfaceProxy(@SharedPtr GpuSurface surface,
                  int surfaceFlags) {
         assert (surface != null);
         mFormat = surface.getBackendFormat();
@@ -142,7 +141,7 @@ public abstract class SurfaceProxy extends RefCnt implements ISurface {
     public static class LazyCallbackResult {
 
         @SharedPtr
-        public IGpuSurface mSurface;
+        public GpuSurface mSurface;
         /**
          * Some lazy callbacks want to set their own (or no key) on the {@link GpuTexture}
          * they return. Others want the {@link GpuTexture}'s key to be kept in sync with the surface's
@@ -168,11 +167,11 @@ public abstract class SurfaceProxy extends RefCnt implements ISurface {
         public LazyCallbackResult() {
         }
 
-        public LazyCallbackResult(@SharedPtr IGpuSurface surface) {
+        public LazyCallbackResult(@SharedPtr GpuSurface surface) {
             mSurface = surface;
         }
 
-        public LazyCallbackResult(@SharedPtr IGpuSurface surface,
+        public LazyCallbackResult(@SharedPtr GpuSurface surface,
                                   boolean syncTargetKey,
                                   boolean releaseCallback) {
             mSurface = surface;
@@ -188,7 +187,7 @@ public abstract class SurfaceProxy extends RefCnt implements ISurface {
     public interface LazyInstantiateCallback extends AutoCloseable {
 
         /**
-         * Specifies the expected properties of the {@link IGpuSurface} returned by a lazy instantiation
+         * Specifies the expected properties of the {@link GpuSurface} returned by a lazy instantiation
          * callback. The dimensions will be negative in the case of a lazy-most surface.
          */
         LazyCallbackResult onLazyInstantiate(ResourceProvider provider,
@@ -361,23 +360,26 @@ public abstract class SurfaceProxy extends RefCnt implements ISurface {
     }
 
     @Nullable
-    public abstract IGpuSurface getGpuSurface();
+    @RawPtr
+    public abstract GpuSurface getGpuSurface();
 
     /**
      * If this is a texturable surface and the surface is already instantiated, return its
      * backing {@link GpuTexture}; if not, return null.
      */
     @Nullable
+    @RawPtr
     public GpuTexture getGpuTexture() {
         return null;
     }
 
     /**
      * If this is a renderable surface and the surface is already instantiated, return its
-     * backing {@link GpuRenderTarget}; if not, return null.
+     * backing {@link GpuFramebuffer}; if not, return null.
      */
     @Nullable
-    public GpuRenderTarget getGpuRenderTarget() {
+    @RawPtr
+    public GpuFramebuffer getFramebuffer() {
         return null;
     }
 

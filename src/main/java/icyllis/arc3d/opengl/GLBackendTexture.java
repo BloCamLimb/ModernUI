@@ -29,22 +29,21 @@ import static icyllis.arc3d.engine.Engine.*;
 
 public final class GLBackendTexture extends BackendTexture {
 
-    private final GLTextureInfo mInfo;
+    private final GLImageInfo mInfo;
     final GLTextureParameters mParams;
 
     private final BackendFormat mBackendFormat;
 
     // The GLTextureInfo must have a valid mFormat, can NOT be modified anymore.
-    public GLBackendTexture(int width, int height, GLTextureInfo info) {
-        this(width, height, info, new GLTextureParameters(), GLBackendFormat.make(info.format,
-                info.memoryHandle != -1));
+    public GLBackendTexture(int width, int height, GLImageInfo info) {
+        this(width, height, info, new GLTextureParameters(), GLBackendFormat.make(info.format));
         assert info.format != 0;
         // Make no assumptions about client's texture's parameters.
         glTextureParametersModified();
     }
 
     // Internally used by GLContext and GLTexture
-    GLBackendTexture(int width, int height, GLTextureInfo info,
+    GLBackendTexture(int width, int height, GLImageInfo info,
                      GLTextureParameters params, BackendFormat backendFormat) {
         super(width, height);
         mInfo = info;
@@ -76,7 +75,7 @@ public final class GLBackendTexture extends BackendTexture {
     }
 
     @Override
-    public boolean getGLTextureInfo(GLTextureInfo info) {
+    public boolean getGLImageInfo(GLImageInfo info) {
         info.set(mInfo);
         return true;
     }

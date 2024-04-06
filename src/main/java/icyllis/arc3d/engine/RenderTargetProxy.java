@@ -32,7 +32,7 @@ import javax.annotation.Nullable;
 public final class RenderTargetProxy extends SurfaceProxy {
 
     @SharedPtr
-    private GpuRenderTarget mRenderTarget;
+    private GpuFramebuffer mRenderTarget;
     private int mSampleCount;
 
     RenderTargetProxy(BackendFormat format, int width, int height, int surfaceFlags) {
@@ -40,7 +40,7 @@ public final class RenderTargetProxy extends SurfaceProxy {
         assert hashCode() == System.identityHashCode(this);
     }
 
-    RenderTargetProxy(GpuRenderTarget renderTarget, int surfaceFlags) {
+    RenderTargetProxy(GpuFramebuffer renderTarget, int surfaceFlags) {
         super(renderTarget, surfaceFlags);
         mRenderTarget = renderTarget;
         mSampleCount = renderTarget.getSampleCount();
@@ -129,14 +129,14 @@ public final class RenderTargetProxy extends SurfaceProxy {
 
     @Nullable
     @Override
-    public IGpuSurface getGpuSurface() {
+    public GpuSurface getGpuSurface() {
         return mRenderTarget;
     }
 
     @Nullable
     @Override
-    public GpuRenderTarget getGpuRenderTarget() {
-        return mRenderTarget != null ? mRenderTarget.asRenderTarget() : null;
+    public GpuFramebuffer getFramebuffer() {
+        return mRenderTarget != null ? mRenderTarget.asFramebuffer() : null;
     }
 
     @Override
@@ -144,7 +144,7 @@ public final class RenderTargetProxy extends SurfaceProxy {
         assert isLazy();
 
         @SharedPtr
-        GpuRenderTarget surface = null;
+        GpuFramebuffer surface = null;
 
         boolean releaseCallback = false;
         int width = isLazyMost() ? -1 : getWidth();
@@ -156,7 +156,7 @@ public final class RenderTargetProxy extends SurfaceProxy {
                 mSurfaceFlags,
                 "");
         if (result != null) {
-            surface = (GpuRenderTarget) result.mSurface;
+            surface = (GpuFramebuffer) result.mSurface;
             releaseCallback = result.mReleaseCallback;
         }
         if (surface == null) {

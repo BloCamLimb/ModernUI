@@ -58,12 +58,12 @@ public final class GLOpsRenderPass extends OpsRenderPass {
         return mDevice;
     }
 
-    public GLOpsRenderPass set(GpuRenderTarget rt,
+    public GLOpsRenderPass set(GpuFramebuffer framebuffer,
                                Rect2i bounds, int origin,
                                byte colorOps,
                                byte stencilOps,
                                float[] clearColor) {
-        set(rt, origin);
+        set(framebuffer, origin);
         mColorOps = colorOps;
         mStencilOps = stencilOps;
         mClearColor = clearColor;
@@ -73,8 +73,8 @@ public final class GLOpsRenderPass extends OpsRenderPass {
     @Override
     public void begin() {
         super.begin();
-        GLRenderTarget glRenderTarget = (GLRenderTarget) mRenderTarget;
-        mCmdBuffer = mDevice.beginRenderPass(glRenderTarget,
+        GLFramebuffer glFramebuffer = (GLFramebuffer) mFramebuffer;
+        mCmdBuffer = mDevice.beginRenderPass(glFramebuffer,
                 mColorOps,
                 mStencilOps,
                 mClearColor);
@@ -82,11 +82,11 @@ public final class GLOpsRenderPass extends OpsRenderPass {
 
     @Override
     public void end() {
-        mActiveIndexBuffer = GpuResource.move(mActiveIndexBuffer);
-        mActiveVertexBuffer = GpuResource.move(mActiveVertexBuffer);
-        mActiveInstanceBuffer = GpuResource.move(mActiveInstanceBuffer);
-        GLRenderTarget glRenderTarget = (GLRenderTarget) mRenderTarget;
-        mDevice.endRenderPass(glRenderTarget,
+        mActiveIndexBuffer = RefCnt.move(mActiveIndexBuffer);
+        mActiveVertexBuffer = RefCnt.move(mActiveVertexBuffer);
+        mActiveInstanceBuffer = RefCnt.move(mActiveInstanceBuffer);
+        GLFramebuffer glFramebuffer = (GLFramebuffer) mFramebuffer;
+        mDevice.endRenderPass(glFramebuffer,
                 mColorOps,
                 mStencilOps);
         super.end();
@@ -96,9 +96,9 @@ public final class GLOpsRenderPass extends OpsRenderPass {
     protected boolean onBindPipeline(PipelineInfo pipelineInfo,
                                      GraphicsPipelineState pipelineState,
                                      Rect2fc drawBounds) {
-        mActiveIndexBuffer = GpuResource.move(mActiveIndexBuffer);
-        mActiveVertexBuffer = GpuResource.move(mActiveVertexBuffer);
-        mActiveInstanceBuffer = GpuResource.move(mActiveInstanceBuffer);
+        mActiveIndexBuffer = RefCnt.move(mActiveIndexBuffer);
+        mActiveVertexBuffer = RefCnt.move(mActiveVertexBuffer);
+        mActiveInstanceBuffer = RefCnt.move(mActiveInstanceBuffer);
 
         mPipelineState = (GLGraphicsPipelineState) pipelineState;
         if (mPipelineState == null) {
@@ -119,7 +119,7 @@ public final class GLOpsRenderPass extends OpsRenderPass {
         }
 
         return mPipelineState.bindUniforms(mCmdBuffer, pipelineInfo,
-                mRenderTarget.getWidth(), mRenderTarget.getHeight());
+                mFramebuffer.getWidth(), mFramebuffer.getHeight());
     }
 
     @Override
@@ -153,9 +153,9 @@ public final class GLOpsRenderPass extends OpsRenderPass {
             mVertexStreamOffset = vertexStreamOffset;
             mInstanceStreamOffset = instanceStreamOffset;
         }
-        mActiveIndexBuffer = GpuResource.create(mActiveIndexBuffer, indexBuffer);
-        mActiveVertexBuffer = GpuResource.create(mActiveVertexBuffer, vertexBuffer);
-        mActiveInstanceBuffer = GpuResource.create(mActiveInstanceBuffer, instanceBuffer);
+        mActiveIndexBuffer = RefCnt.create(mActiveIndexBuffer, indexBuffer);
+        mActiveVertexBuffer = RefCnt.create(mActiveVertexBuffer, vertexBuffer);
+        mActiveInstanceBuffer = RefCnt.create(mActiveInstanceBuffer, instanceBuffer);
         mIndexType = switch (indexType) {
             case Engine.IndexType.kUByte -> GL_UNSIGNED_BYTE;
             case Engine.IndexType.kUShort -> GL_UNSIGNED_SHORT;

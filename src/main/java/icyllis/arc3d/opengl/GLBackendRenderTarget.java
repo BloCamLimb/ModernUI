@@ -28,6 +28,7 @@ import static icyllis.arc3d.engine.Engine.BackendApi;
 public final class GLBackendRenderTarget extends BackendRenderTarget {
 
     private final int mSampleCount;
+    private final int mDepthBits;
     private final int mStencilBits;
 
     private final GLFramebufferInfo mInfo;
@@ -35,10 +36,12 @@ public final class GLBackendRenderTarget extends BackendRenderTarget {
     private GLBackendFormat mBackendFormat;
 
     // The GLFramebufferInfo can NOT be modified anymore.
-    public GLBackendRenderTarget(int width, int height, int sampleCount, int stencilBits,
+    public GLBackendRenderTarget(int width, int height, int sampleCount,
+                                 int depthBits, int stencilBits,
                                  GLFramebufferInfo info) {
         super(width, height);
         mSampleCount = sampleCount;
+        mDepthBits = depthBits;
         mStencilBits = stencilBits;
         mInfo = info;
         assert sampleCount > 0;
@@ -52,6 +55,11 @@ public final class GLBackendRenderTarget extends BackendRenderTarget {
     @Override
     public int getSampleCount() {
         return mSampleCount;
+    }
+
+    @Override
+    public int getDepthBits() {
+        return mDepthBits;
     }
 
     @Override

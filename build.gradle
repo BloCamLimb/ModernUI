@@ -1,6 +1,7 @@
 import org.gradle.internal.os.OperatingSystem
 
 apply plugin: 'java'
+apply plugin: 'java-library'
 
 version = 'b' + new Date().format('yyyyMMdd')
 group = 'icyllis.arc3d'
@@ -16,6 +17,7 @@ dependencies {
     compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
     compileOnly 'org.jetbrains:annotations:23.1.0'
 
+    api "org.slf4j:slf4j-api:2.0.9"
     implementation "it.unimi.dsi:fastutil:${fastutil_version}"
 
     def lwjglNatives
@@ -64,6 +66,8 @@ dependencies {
     testRuntimeOnly "org.lwjgl:lwjgl-stb::$lwjglNatives"
     testRuntimeOnly "org.lwjgl:lwjgl-shaderc::$lwjglNatives"
     testRuntimeOnly "org.lwjgl:lwjgl-ktx::$lwjglNatives"
+
+    testImplementation "org.slf4j:slf4j-simple:2.0.9"
 
     testImplementation 'org.openjdk.jmh:jmh-core:1.35'
     testAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.35'

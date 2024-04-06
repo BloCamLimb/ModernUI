@@ -33,7 +33,7 @@ import static org.lwjgl.opengl.GL30C.GL_RENDERBUFFER;
  * Renderbuffer can neither be accessed by shaders nor have mipmaps, but can be
  * multisampled.
  */
-public final class GLAttachment extends Attachment {
+public final class GLAttachment {
 
     // may be zero for external stencil buffers associated with external render targets
     // (we don't require the client to give us the id, just tell us how many bits of stencil there are)
@@ -47,15 +47,12 @@ public final class GLAttachment extends Attachment {
 
     private GLAttachment(GLDevice device, int width, int height,
                          int sampleCount, int format, int renderbuffer) {
-        super(device, width, height, sampleCount);
         mRenderbuffer = renderbuffer;
         mFormat = format;
 
         // color buffers may be compressed
         mMemorySize = DataUtils.numBlocks(GLUtil.glFormatCompressionType(format), width, height) *
                 GLUtil.glFormatBytesPerBlock(format) * sampleCount;
-
-        registerWithCache(true);
     }
 
     @Nullable
@@ -138,7 +135,6 @@ public final class GLAttachment extends Attachment {
     }
 
     @Nonnull
-    @Override
     public BackendFormat getBackendFormat() {
         if (mBackendFormat == null) {
             mBackendFormat = GLBackendFormat.make(mFormat);
@@ -154,22 +150,8 @@ public final class GLAttachment extends Attachment {
         return mFormat;
     }
 
-    @Override
     public long getMemorySize() {
         return mMemorySize;
-    }
-
-    @Override
-    protected void onRelease() {
-        if (mRenderbuffer != 0) {
-            ((GLDevice) getDevice()).getGL().glDeleteRenderbuffers(mRenderbuffer);
-        }
-        mRenderbuffer = 0;
-    }
-
-    @Override
-    protected void onDiscard() {
-        mRenderbuffer = 0;
     }
 
     @Override
@@ -178,9 +160,6 @@ public final class GLAttachment extends Attachment {
                 "mRenderbuffer=" + mRenderbuffer +
                 ", mFormat=" + GLUtil.glFormatName(mFormat) +
                 ", mMemorySize=" + mMemorySize +
-                ", mWidth=" + mWidth +
-                ", mHeight=" + mHeight +
-                ", mSampleCount=" + mSampleCount +
                 '}';
     }
 }

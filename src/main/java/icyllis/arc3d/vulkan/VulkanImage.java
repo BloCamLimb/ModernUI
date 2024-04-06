@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,24 +19,48 @@
 
 package icyllis.arc3d.vulkan;
 
-import icyllis.arc3d.engine.BackendTexture;
-import icyllis.arc3d.engine.GpuTexture;
-import org.jetbrains.annotations.NotNull;
+import icyllis.arc3d.engine.BackendFormat;
+import icyllis.arc3d.engine.GpuImageBase;
 
-public final class VulkanTexture extends VulkanImage implements GpuTexture {
+import javax.annotation.Nonnull;
 
-    public VulkanTexture(VulkanDevice device, int width, int height) {
+/**
+ * Represents Vulkan images, can be used as textures or attachments.
+ */
+public sealed class VulkanImage extends GpuImageBase permits VulkanTexture {
+
+    public VulkanImage(VulkanDevice device, int width, int height) {
         super(device, width, height);
     }
 
-    @NotNull
     @Override
-    public BackendTexture getBackendTexture() {
+    public long getMemorySize() {
+        return 0;
+    }
+
+    @Override
+    protected void onRelease() {
+
+    }
+
+    @Override
+    protected void onDiscard() {
+
+    }
+
+    @Override
+    public int getSampleCount() {
+        return 0;
+    }
+
+    @Nonnull
+    @Override
+    public BackendFormat getBackendFormat() {
         return null;
     }
 
     @Override
-    public boolean isExternal() {
-        return false;
+    public int getMaxMipmapLevel() {
+        return 0;
     }
 }

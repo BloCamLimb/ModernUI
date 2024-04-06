@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,22 +17,19 @@
  * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.core;
+package icyllis.arc3d.vulkan;
 
-/**
- * Marks an object as reference-counted, behavior is implementation-dependent.
- *
- * @see RefCnt
- */
-public interface RefCounted {
+import icyllis.arc3d.engine.GpuDevice;
+import icyllis.arc3d.engine.ManagedResource;
 
-    /**
-     * Increases the reference count by 1.
-     */
-    void ref();
+public class VulkanRenderPassFramebuffer extends ManagedResource {
 
-    /**
-     * Decreases the reference count by 1.
-     */
-    void unref();
+    public VulkanRenderPassFramebuffer(GpuDevice device) {
+        super(device);
+    }
+
+    @Override
+    protected void deallocate() {
+
+    }
 }

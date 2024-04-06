@@ -86,17 +86,15 @@ public class GLPipelineStateBuilder extends PipelineBuilder {
             return false;
         }
 
-        PrintWriter errorWriter = mDevice.getContext().getErrorWriter();
-
-        int frag = GLUtil.glCompileShader(gl, GL_FRAGMENT_SHADER, mFinalizedFragSource,
-                mDevice.getPipelineStateCache().getStats(), errorWriter);
+        int frag = GLUtil.glCompileShader(mDevice, GL_FRAGMENT_SHADER, mFinalizedFragSource,
+                mDevice.getPipelineStateCache().getStats());
         if (frag == 0) {
             gl.glDeleteProgram(program);
             return false;
         }
 
-        int vert = GLUtil.glCompileShader(gl, GL_VERTEX_SHADER, mFinalizedVertSource,
-                mDevice.getPipelineStateCache().getStats(), errorWriter);
+        int vert = GLUtil.glCompileShader(mDevice, GL_VERTEX_SHADER, mFinalizedVertSource,
+                mDevice.getPipelineStateCache().getStats());
         if (vert == 0) {
             gl.glDeleteProgram(program);
             gl.glDeleteShader(frag);
@@ -111,7 +109,7 @@ public class GLPipelineStateBuilder extends PipelineBuilder {
         if (gl.glGetProgrami(program, GL_LINK_STATUS) == GL_FALSE) {
             try {
                 String log = gl.glGetProgramInfoLog(program);
-                GLUtil.handleLinkError(errorWriter,
+                GLUtil.handleLinkError(mDevice.getContext().getLogger(),
                         new String[]{
                                 "Vertex GLSL",
                                 "Fragment GLSL"},

@@ -20,15 +20,12 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.MathUtil;
-import icyllis.arc3d.core.RefCounted;
 import org.jetbrains.annotations.ApiStatus;
-
-import javax.annotation.Nonnull;
 
 /**
  * Defines Surface-hierarchy constants. Do NOT directly this class as type.
  */
-public interface ISurface extends RefCounted {
+public interface ISurface {
 
     /**
      * Surface flags shared between the Surface & SurfaceProxy class hierarchies.
@@ -79,7 +76,7 @@ public interface ISurface extends RefCounted {
      */
     int FLAG_PROTECTED = 1 << 6;
     /**
-     * Means the pixels in the texture are read-only. {@link GpuTexture} and {@link TextureProxy}
+     * Means the pixels in the texture are read-only. {@link GpuImageBase} and {@link TextureProxy}
      * only.
      */
     @ApiStatus.Internal
@@ -93,9 +90,9 @@ public interface ISurface extends RefCounted {
     int FLAG_SKIP_ALLOCATOR = FLAG_PROTECTED << 2;
     /**
      * For TextureProxies created in a deferred list recording thread it is possible for the
-     * unique key to be cleared on the backing {@link GpuTexture} while the unique key remains on
+     * unique key to be cleared on the backing {@link GpuImageBase} while the unique key remains on
      * the proxy. When set, it loosens up asserts that the key of an instantiated uniquely-keyed
-     * texture proxy is also always set on the backing {@link GpuTexture}. {@link TextureProxy} only.
+     * texture proxy is also always set on the backing {@link GpuImageBase}. {@link TextureProxy} only.
      */
     @ApiStatus.Internal
     int FLAG_DEFERRED_PROVIDER = FLAG_PROTECTED << 3;
@@ -153,40 +150,5 @@ public interface ISurface extends RefCounted {
         }
 
         return MathUtil.alignTo(size, 4096);
-    }
-
-    /**
-     * Increases the reference count by 1 on the client pipeline.
-     */
-    void ref();
-
-    /**
-     * Decreases the reference count by 1 on the client pipeline.
-     */
-    void unref();
-
-    /**
-     * @return the width of the surface in pixels, greater than zero
-     */
-    int getWidth();
-
-    /**
-     * @return the height of the surface in pixels, greater than zero
-     */
-    int getHeight();
-
-    /**
-     * @return the backend format of the surface
-     */
-    @Nonnull
-    BackendFormat getBackendFormat();
-
-    /**
-     * Returns the number of samples per pixel in color buffers (one if non-MSAA).
-     *
-     * @return the number of samples, greater than (multi-sampled) or equal to one
-     */
-    default int getSampleCount() {
-        return 1;
     }
 }

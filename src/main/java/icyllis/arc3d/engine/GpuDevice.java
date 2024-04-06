@@ -19,9 +19,9 @@
 
 package icyllis.arc3d.engine;
 
+import icyllis.arc3d.compiler.ShaderCompiler;
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.ops.OpsTask;
-import icyllis.arc3d.compiler.ShaderCompiler;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -155,10 +155,10 @@ public abstract class GpuDevice implements Engine {
      * @param height the height of the texture to be created
      * @param format the backend format for the texture
      * @return the texture object if successful, otherwise nullptr
-     * @see IGpuSurface#FLAG_BUDGETED
-     * @see IGpuSurface#FLAG_MIPMAPPED
-     * @see IGpuSurface#FLAG_RENDERABLE
-     * @see IGpuSurface#FLAG_PROTECTED
+     * @see ISurface#FLAG_BUDGETED
+     * @see ISurface#FLAG_MIPMAPPED
+     * @see ISurface#FLAG_RENDERABLE
+     * @see ISurface#FLAG_PROTECTED
      */
     @Nullable
     @SharedPtr
@@ -175,14 +175,17 @@ public abstract class GpuDevice implements Engine {
                 sampleCount, surfaceFlags)) {
             return null;
         }
-        int maxMipLevel = (surfaceFlags & ISurface.FLAG_MIPMAPPED) != 0
-                ? MathUtil.floorLog2(Math.max(width, height))
-                : 0;
-        int mipLevelCount = maxMipLevel + 1; // +1 base level 0
+        int mipLevelCount = (surfaceFlags & ISurface.FLAG_MIPMAPPED) != 0
+                ? MathUtil.floorLog2(Math.max(width, height)) + 1 // +1 base level 0
+                : 1; // only base level
         if ((surfaceFlags & ISurface.FLAG_RENDERABLE) != 0) {
             sampleCount = mCaps.getRenderTargetSampleCount(sampleCount, format);
         }
         if (sampleCount > 1 && mipLevelCount > 1) {
+            getContext().getLogger().error(
+                    "Failed to GpuDevice::createTexture: mipmapped textures cannot be multisampled, " +
+                            "width {} height {} format {} sampleCount {} mipLevelCount {}",
+                    width, height, format, sampleCount, mipLevelCount);
             return null;
         }
         assert (sampleCount > 0 && sampleCount <= 64);
@@ -213,6 +216,31 @@ public abstract class GpuDevice implements Engine {
                                                   int sampleCount,
                                                   int surfaceFlags);
 
+    @Nullable
+    @SharedPtr
+    public final GpuFramebuffer createRenderTarget(int width, int height,
+                                                   BackendFormat colorFormat,
+                                                   int numColorTargets,
+                                                   BackendFormat depthStencilFormat,
+                                                   boolean hasDepthStencil,
+                                                   int sampleCount,
+                                                   int surfaceFlags,
+                                                   String label) {
+        return null;
+    }
+
+    @Nullable
+    @SharedPtr
+    protected abstract GpuFramebuffer onCreateRenderTarget(int width, int height,
+                                                           BackendFormat colorFormat,
+                                                           int numColorTargets,
+                                                           BackendFormat depthStencilFormat,
+                                                           boolean hasDepthStencil,
+                                                           int mipLevelCount,
+                                                           int sampleCount,
+                                                           int surfaceFlags,
+                                                           String label);
+
     /**
      * This makes the backend texture be renderable. If <code>sampleCount</code> is > 1 and
      * the underlying API uses separate MSAA render buffers then a MSAA render buffer is created
@@ -227,9 +255,9 @@ public abstract class GpuDevice implements Engine {
      */
     @Nullable
     @SharedPtr
-    public GpuRenderTarget wrapRenderableBackendTexture(BackendTexture texture,
-                                                        int sampleCount,
-                                                        boolean ownership) {
+    public GpuFramebuffer wrapRenderableBackendTexture(BackendTexture texture,
+                                                       int sampleCount,
+                                                       boolean ownership) {
         if (sampleCount < 1) {
             return null;
         }
@@ -250,13 +278,13 @@ public abstract class GpuDevice implements Engine {
 
     @Nullable
     @SharedPtr
-    protected abstract GpuRenderTarget onWrapRenderableBackendTexture(BackendTexture texture,
-                                                                      int sampleCount,
-                                                                      boolean ownership);
+    protected abstract GpuFramebuffer onWrapRenderableBackendTexture(BackendTexture texture,
+                                                                     int sampleCount,
+                                                                     boolean ownership);
 
     @Nullable
     @SharedPtr
-    public GpuRenderTarget wrapBackendRenderTarget(BackendRenderTarget backendRenderTarget) {
+    public GpuFramebuffer wrapBackendRenderTarget(BackendRenderTarget backendRenderTarget) {
         if (!getCaps().isFormatRenderable(backendRenderTarget.getBackendFormat(),
                 backendRenderTarget.getSampleCount())) {
             return null;
@@ -266,7 +294,7 @@ public abstract class GpuDevice implements Engine {
 
     @Nullable
     @SharedPtr
-    public abstract GpuRenderTarget onWrapBackendRenderTarget(BackendRenderTarget backendRenderTarget);
+    public abstract GpuFramebuffer onWrapBackendRenderTarget(BackendRenderTarget backendRenderTarget);
 
     /**
      * Updates the pixels in a rectangle of a texture. No sRGB/linear conversions are performed.
@@ -361,8 +389,8 @@ public abstract class GpuDevice implements Engine {
     /**
      * Special case of {@link #copySurface} that has same dimensions.
      */
-    public final boolean copySurface(IGpuSurface src, int srcX, int srcY,
-                                     IGpuSurface dst, int dstX, int dstY,
+    public final boolean copySurface(GpuSurface src, int srcX, int srcY,
+                                     GpuSurface dst, int dstX, int dstY,
                                      int width, int height) {
         return copySurface(
                 src,
@@ -386,9 +414,9 @@ public abstract class GpuDevice implements Engine {
      *
      * @return success or not
      */
-    public final boolean copySurface(IGpuSurface src,
+    public final boolean copySurface(GpuSurface src,
                                      int srcL, int srcT, int srcR, int srcB,
-                                     IGpuSurface dst,
+                                     GpuSurface dst,
                                      int dstL, int dstT, int dstR, int dstB,
                                      int filter) {
         if ((dst.getSurfaceFlags() & ISurface.FLAG_READ_ONLY) != 0) {
@@ -403,9 +431,9 @@ public abstract class GpuDevice implements Engine {
         );
     }
 
-    protected abstract boolean onCopySurface(IGpuSurface src,
+    protected abstract boolean onCopySurface(GpuSurface src,
                                              int srcL, int srcT, int srcR, int srcB,
-                                             IGpuSurface dst,
+                                             GpuSurface dst,
                                              int dstL, int dstT, int dstR, int dstB,
                                              int filter);
 
@@ -446,24 +474,25 @@ public abstract class GpuDevice implements Engine {
     /**
      * Resolves MSAA. The resolve rectangle must already be in the native destination space.
      */
-    public void resolveRenderTarget(GpuRenderTarget renderTarget,
-                                    int resolveLeft, int resolveTop,
-                                    int resolveRight, int resolveBottom) {
-        assert (renderTarget != null);
-        onResolveRenderTarget(renderTarget, resolveLeft, resolveTop, resolveRight, resolveBottom);
+    public void resolveFramebuffer(GpuFramebuffer framebuffer,
+                                   int resolveLeft, int resolveTop,
+                                   int resolveRight, int resolveBottom) {
+        assert (framebuffer != null);
+        onResolveFramebuffer(framebuffer, resolveLeft, resolveTop, resolveRight, resolveBottom);
     }
 
     // overridden by backend-specific derived class to perform the resolve
-    protected abstract void onResolveRenderTarget(GpuRenderTarget renderTarget,
-                                                  int resolveLeft, int resolveTop,
-                                                  int resolveRight, int resolveBottom);
+    protected abstract void onResolveFramebuffer(GpuFramebuffer framebuffer,
+                                                 int resolveLeft, int resolveTop,
+                                                 int resolveRight, int resolveBottom);
 
     @Nullable
     @SharedPtr
     public final GpuBuffer createBuffer(int size, int flags) {
         if (size <= 0) {
-            new Throwable("RHICreateBuffer, invalid size: " + size)
-                    .printStackTrace(getContext().getErrorWriter());
+            getContext().getLogger().error(
+                    "Failed to create buffer: invalid size {}",
+                    size);
             return null;
         }
         if ((flags & (BufferUsageFlags.kTransferSrc | BufferUsageFlags.kTransferDst)) != 0 &&

@@ -341,7 +341,7 @@ public interface Engine {
     /**
      * Budget types. Used with resources that have a large memory allocation.
      *
-     * @see GpuResource
+     * @see GpuResourceBase
      */
     // @formatter:off
     interface BudgetType {
