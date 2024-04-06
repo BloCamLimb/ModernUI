@@ -58,6 +58,8 @@ public abstract class BackendRenderTarget {
 
     public abstract int getSampleCount();
 
+    public abstract int getDepthBits();
+
     public abstract int getStencilBits();
 
     /**

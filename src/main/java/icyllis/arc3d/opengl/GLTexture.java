@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,102 +19,46 @@
 
 package icyllis.arc3d.opengl;
 
-import icyllis.arc3d.core.Kernel32;
 import icyllis.arc3d.engine.*;
-import org.lwjgl.opengl.EXTMemoryObject;
-import org.lwjgl.system.MemoryUtil;
-import org.lwjgl.system.Platform;
 
 import javax.annotation.Nonnull;
 
-import static icyllis.arc3d.engine.Engine.IOType;
-import static org.lwjgl.opengl.GL11C.GL_TEXTURE;
-
 /**
- * Represents OpenGL textures and renderbuffers.
+ * Represents OpenGL textures.
  */
-public final class GLTexture extends GpuTexture {
+public final class GLTexture extends GLImage implements GpuTexture {
 
-    private GLTextureInfo mInfo;
     private final GLBackendTexture mBackendTexture;
-    private final boolean mOwnership;
 
-    private final long mMemorySize;
-
-    // Constructor for instances created by ourselves.
     GLTexture(GLDevice device,
               int width, int height,
-              GLTextureInfo info,
+              GLImageInfo info,
               BackendFormat format,
-              boolean budgeted) {
-        super(device, width, height);
+              int flags) {
+        super(device, width, height, info, format, flags);
         assert info.handle != 0;
-        assert GLUtil.glFormatIsSupported(format.getGLFormat());
-        mInfo = info;
         mBackendTexture = new GLBackendTexture(width, height, info, new GLTextureParameters(), format);
-        mOwnership = true;
-
-        if (GLUtil.glFormatIsCompressed(format.getGLFormat()) || format.isExternal()) {
-            mFlags |= ISurface.FLAG_READ_ONLY;
-        }
         if (mBackendTexture.isMipmapped()) {
             mFlags |= ISurface.FLAG_MIPMAPPED;
         }
-
-        mMemorySize = computeSize(format, width, height, info.samples, info.levels);
-        registerWithCache(budgeted);
     }
 
-    // Constructor for instances wrapping backend objects.
     public GLTexture(GLDevice device,
                      int width, int height,
-                     GLTextureInfo info,
+                     GLImageInfo info,
                      GLTextureParameters params,
                      BackendFormat format,
                      int ioType,
                      boolean cacheable,
                      boolean ownership) {
-        super(device, width, height);
-        assert info.handle != 0;
-        assert GLUtil.glFormatIsSupported(format.getGLFormat());
-        mInfo = info;
+        super(device, width, height, info, format, ioType, cacheable, ownership);
         mBackendTexture = new GLBackendTexture(width, height, info, params, format);
-        mOwnership = ownership;
-
-        // compressed formats always set 'ioType' to READ
-        assert (ioType == IOType.kRead || format.isCompressed());
-        if (ioType == IOType.kRead || format.isExternal()) {
-            mFlags |= FLAG_READ_ONLY;
-        }
-        if (mBackendTexture.isMipmapped()) {
-            mFlags |= FLAG_MIPMAPPED;
-        }
-
-        mMemorySize = computeSize(format, width, height, 1, info.levels);
-        registerWithCacheWrapped(cacheable);
     }
 
     @Nonnull
     @Override
-    public BackendFormat getBackendFormat() {
-        return mBackendTexture.getBackendFormat();
-    }
-
-    @Override
-    public int getSampleCount() {
-        return mInfo.samples;
-    }
-
-    public int getTarget() {
-        return mInfo.target;
-    }
-
-    public int getHandle() {
-        return mInfo.handle;
-    }
-
-    public int getGLFormat() {
-        return getBackendFormat().getGLFormat();
+    public BackendTexture getBackendTexture() {
+        return mBackendTexture;
     }
 
     @Nonnull
@@ -125,79 +69,5 @@ public final class GLTexture extends GpuTexture {
     @Override
     public boolean isExternal() {
         return mBackendTexture.isExternal();
-    }
-
-    @Nonnull
-    @Override
-    public BackendTexture getBackendTexture() {
-        return mBackendTexture;
-    }
-
-    @Override
-    public int getMaxMipmapLevel() {
-        return mInfo.levels - 1; // minus base level
-    }
-
-    @Override
-    public long getMemorySize() {
-        return mMemorySize;
-    }
-
-    @Override
-    protected void onSetLabel(@Nonnull String label) {
-        if (getDevice().getCaps().hasDebugSupport()) {
-            assert mInfo != null;
-            if (label.isEmpty()) {
-                getDevice().getGL().glObjectLabel(GL_TEXTURE, mInfo.handle, 0, MemoryUtil.NULL);
-            } else {
-                label = label.substring(0, Math.min(label.length(),
-                        getDevice().getCaps().maxLabelLength()));
-                getDevice().getGL().glObjectLabel(GL_TEXTURE, mInfo.handle, label);
-            }
-        }
-    }
-
-    @Override
-    protected void onRelease() {
-        final GLTextureInfo info = mInfo;
-        if (mOwnership) {
-            if (info.handle != 0) {
-                getDevice().getGL().glDeleteTextures(info.handle);
-            }
-            if (info.memoryObject != 0) {
-                EXTMemoryObject.glDeleteMemoryObjectsEXT(info.memoryObject);
-            }
-            if (info.memoryHandle != -1) {
-                if (Platform.get() == Platform.WINDOWS) {
-                    Kernel32.CloseHandle(info.memoryHandle);
-                } // Linux transfers the fd
-            }
-        }
-        mInfo = null;
-        super.onRelease();
-    }
-
-    @Override
-    protected void onDiscard() {
-        mInfo = null;
-        super.onDiscard();
-    }
-
-    @Override
-    protected GLDevice getDevice() {
-        return (GLDevice) super.getDevice();
-    }
-
-    @Override
-    public String toString() {
-        return "GLTexture{" +
-                "mWidth=" + mWidth +
-                ", mHeight=" + mHeight +
-                ", mBackendTexture=" + mBackendTexture +
-                ", mDestroyed=" + isDestroyed() +
-                ", mOwnership=" + mOwnership +
-                ", mLabel=" + getLabel() +
-                ", mMemorySize=" + mMemorySize +
-                '}';
     }
 }

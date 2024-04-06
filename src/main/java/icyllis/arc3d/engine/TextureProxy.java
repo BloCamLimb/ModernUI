@@ -26,9 +26,9 @@ import javax.annotation.Nullable;
 import java.util.Objects;
 
 /**
- * The {@link TextureProxy} targets an actual {@link GpuTexture} with three instantiation
+ * The {@link TextureProxy} targets an actual {@link GpuImageBase} with three instantiation
  * methods: deferred, lazy-callback and wrapped. Multiple {@link TextureProxy} objects
- * may target the same {@link GpuTexture} based on dependencies and actual usage.
+ * may target the same {@link GpuImageBase} based on dependencies and actual usage.
  * See {@link SurfaceProxy} for more info.
  * <p>
  * Use {@link SurfaceProvider} to obtain {@link TextureProxy} objects.
@@ -127,7 +127,7 @@ public class TextureProxy extends SurfaceProxy implements IScratchKey {
     protected void deallocate() {
         // Due to the order of cleanup the Texture this proxy may have wrapped may have gone away
         // at this point. Zero out the pointer so the cache invalidation code doesn't try to use it.
-        mGpuTexture = GpuResource.move(mGpuTexture);
+        mGpuTexture = RefCnt.move(mGpuTexture);
 
         if (mLazyInstantiateCallback != null) {
             mLazyInstantiateCallback.close();
@@ -198,7 +198,7 @@ public class TextureProxy extends SurfaceProxy implements IScratchKey {
         }
         if (mGpuTexture != null) {
             assert mUniqueKey == null ||
-                    mGpuTexture.mUniqueKey != null && mGpuTexture.mUniqueKey.equals(mUniqueKey);
+                    mGpuTexture.getUniqueKey() != null && mGpuTexture.getUniqueKey().equals(mUniqueKey);
             return true;
         }
 
@@ -272,7 +272,7 @@ public class TextureProxy extends SurfaceProxy implements IScratchKey {
 
     @Nullable
     @Override
-    public IGpuSurface getGpuSurface() {
+    public GpuSurface getGpuSurface() {
         return mGpuTexture;
     }
 
@@ -285,7 +285,7 @@ public class TextureProxy extends SurfaceProxy implements IScratchKey {
     @Override
     public long getMemorySize() {
         // use user params
-        return GpuTexture.computeSize(mFormat, mWidth, mHeight, getSampleCount(),
+        return GpuImageBase.computeSize(mFormat, mWidth, mHeight, getSampleCount(),
                 (mSurfaceFlags & ISurface.FLAG_MIPMAPPED) != 0,
                 (mSurfaceFlags & ISurface.FLAG_APPROX_FIT) != 0);
     }
@@ -333,7 +333,7 @@ public class TextureProxy extends SurfaceProxy implements IScratchKey {
     }
 
     /**
-     * Same as {@link GpuTexture.ScratchKey} for {@link SurfaceAllocator}.
+     * Same as {@link GpuImageBase.ScratchKey} for {@link SurfaceAllocator}.
      */
     @Override
     public int hashCode() {
@@ -346,12 +346,12 @@ public class TextureProxy extends SurfaceProxy implements IScratchKey {
     }
 
     /**
-     * Same as {@link GpuTexture.ScratchKey} for {@link SurfaceAllocator}.
+     * Same as {@link GpuImageBase.ScratchKey} for {@link SurfaceAllocator}.
      */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o instanceof GpuTexture.ScratchKey key) {
+        if (o instanceof GpuImageBase.ScratchKey key) {
             // ResourceProvider
             return key.mWidth == getBackingWidth() &&
                     key.mHeight == getBackingHeight() &&

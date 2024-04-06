@@ -66,7 +66,6 @@ public final class DirectContext extends RecordingContext {
             try {
                 capabilities = GL.createCapabilities();
             } catch (Exception e) {
-                e.printStackTrace(context.getErrorWriter());
                 return null;
             }
         }

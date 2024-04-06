@@ -45,8 +45,8 @@ public final class VkBackendTexture extends BackendTexture {
 
     // The VkImageInfo can NOT be modified anymore.
     public VkBackendTexture(int width, int height, VulkanImageInfo info) {
-        this(width, height, info, new VulkanSharedImageInfo(info), VkBackendFormat.make(info.mFormat,
-                info.mMemoryHandle != -1 || info.mImageTiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT));
+        //TODO disallow VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT
+        this(width, height, info, new VulkanSharedImageInfo(info), VkBackendFormat.make(info.mFormat));
     }
 
     VkBackendTexture(int width, int height, VulkanImageInfo info,
@@ -81,7 +81,7 @@ public final class VkBackendTexture extends BackendTexture {
     }
 
     @Override
-    public boolean getVkImageInfo(VulkanImageInfo info) {
+    public boolean getVulkanImageInfo(VulkanImageInfo info) {
         info.set(mInfo);
         info.mImageLayout = mState.getImageLayout();
         info.mCurrentQueueFamily = mState.getQueueFamilyIndex();

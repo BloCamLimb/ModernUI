@@ -20,7 +20,7 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.opengl.GLDevice;
-import icyllis.arc3d.opengl.GLTextureInfo;
+import icyllis.arc3d.opengl.GLImageInfo;
 import icyllis.arc3d.vulkan.VulkanImageInfo;
 
 import javax.annotation.Nonnull;
@@ -78,7 +78,7 @@ public abstract class BackendTexture {
      * If the backend API is OpenGL, copies a snapshot of the GLTextureInfo struct into the passed
      * in pointer and returns true. Otherwise, returns false if the backend API is not OpenGL.
      */
-    public boolean getGLTextureInfo(GLTextureInfo info) {
+    public boolean getGLImageInfo(GLImageInfo info) {
         return false;
     }
 
@@ -98,7 +98,7 @@ public abstract class BackendTexture {
      * in pointer and returns true. This snapshot will set the mImageLayout to the current layout
      * state. Otherwise, returns false if the backend API is not Vulkan.
      */
-    public boolean getVkImageInfo(VulkanImageInfo info) {
+    public boolean getVulkanImageInfo(VulkanImageInfo info) {
         return false;
     }
 

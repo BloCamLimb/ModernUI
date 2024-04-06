@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.engine;
 
-import java.io.PrintWriter;
+import org.slf4j.Logger;
 
 /**
  * Holds the options for creating a {@link DirectContext}, all fields should remain unchanged
@@ -92,16 +92,10 @@ public final class ContextOptions {
     public float mGlyphsAsPathsFontSize = 384;
 
     /**
-     * If present, use this object to print debugging/warning info that generated
+     * If present, use this logger to send info/warning/error message that generated
      * by Arc 3D engine.
      */
-    public PrintWriter mInfoWriter = null;
-
-    /**
-     * If present, use this object to print errors. If not, print errors
-     * via {@link System#err}.
-     */
-    public PrintWriter mErrorWriter = null;
+    public Logger mLogger;
 
     /**
      * Specifies the number of samples Engine should use when performing internal draws with MSAA

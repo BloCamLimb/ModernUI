@@ -19,41 +19,31 @@
 
 package icyllis.arc3d.engine;
 
-import javax.annotation.Nonnull;
-
 /**
- * Interface representing GPU textures and storage images, which may be 2D or 3D.
+ * Interface representing GPU images, which may be 2D or 3D.
+ * <p>
+ * A {@link GpuImage} may or may not be sampled by shaders, may be used as
+ * color/depth/stencil attachments of a framebuffer. See {@link ISurface#FLAG_TEXTURABLE}
+ * and {@link ISurface#FLAG_RENDERABLE}.
  */
-public non-sealed interface GpuTexture extends GpuImage {
+public sealed interface GpuImage extends GpuSurface permits GpuImageBase, GpuTexture {
 
     /**
-     * Return <code>true</code> if mipmaps are dirty and need to regenerate before sampling.
-     * The value is valid only when {@link #isMipmapped()} returns <code>true</code>.
+     * @return true if this surface has mipmaps and have been allocated
+     */
+    boolean isMipmapped();
+
+    /**
+     * The pixel values of this surface cannot be modified (e.g. doesn't support write pixels or
+     * mipmap regeneration). To be exact, only wrapped textures, external textures, stencil
+     * attachments and MSAA color attachments can be read only.
      *
-     * @return whether mipmaps are dirty
+     * @return true if pixels in this surface are read-only
      */
-    boolean isMipmapsDirty();
-
-    /**
-     * Set whether mipmaps are dirty or not. Call only when {@link #isMipmapped()} returns <code>true</code>.
-     *
-     * @param mipmapsDirty whether mipmaps are dirty
-     */
-    void setMipmapsDirty(boolean mipmapsDirty);
-
-    /**
-     * @return the backend texture of this texture
-     */
-    @Nonnull
-    BackendTexture getBackendTexture();
-
-    /**
-     * @return external texture
-     */
-    boolean isExternal();
+    boolean isReadOnly();
 
     @Override
-    default GpuTexture asTexture() {
+    default GpuImage asImage() {
         return this;
     }
 }

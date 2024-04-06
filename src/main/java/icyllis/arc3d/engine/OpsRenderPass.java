@@ -41,7 +41,7 @@ public abstract class OpsRenderPass {
 
     private int mDrawPipelineStatus = kNotConfigured_DrawPipelineStatus;
 
-    protected GpuRenderTarget mRenderTarget;
+    protected GpuFramebuffer mFramebuffer;
     protected int mSurfaceOrigin;
 
     private TextureProxy[] mGeomTextures = new TextureProxy[1];
@@ -50,8 +50,8 @@ public abstract class OpsRenderPass {
         this(null, SurfaceOrigin.kUpperLeft);
     }
 
-    public OpsRenderPass(GpuRenderTarget fs, int origin) {
-        mRenderTarget = fs;
+    public OpsRenderPass(GpuFramebuffer fs, int origin) {
+        mFramebuffer = fs;
         mSurfaceOrigin = origin;
     }
 
@@ -68,7 +68,7 @@ public abstract class OpsRenderPass {
      */
     public void clearColor(int left, int top, int right, int bottom,
                            float red, float green, float blue, float alpha) {
-        assert (mRenderTarget != null);
+        assert (mFramebuffer != null);
         mDrawPipelineStatus = kNotConfigured_DrawPipelineStatus;
     }
 
@@ -76,7 +76,7 @@ public abstract class OpsRenderPass {
      * Same as {@link #clearColor} but modifies the stencil.
      */
     public void clearStencil(int left, int top, int right, int bottom, boolean insideMask) {
-        assert (mRenderTarget != null);
+        assert (mFramebuffer != null);
         mDrawPipelineStatus = kNotConfigured_DrawPipelineStatus;
     }
 
@@ -224,9 +224,9 @@ public abstract class OpsRenderPass {
         }
     }
 
-    protected void set(GpuRenderTarget rt, int origin) {
-        assert (mRenderTarget == null);
-        mRenderTarget = rt;
+    protected void set(GpuFramebuffer framebuffer, int origin) {
+        assert (mFramebuffer == null);
+        mFramebuffer = framebuffer;
         mSurfaceOrigin = origin;
     }
 

@@ -32,7 +32,7 @@ import org.lwjgl.opengl.GL30C;
  * OpenGL memory object. If it is an NT handle, it must be released manually by the memory exporter
  * (e.g. Vulkan).
  */
-public final class GLTextureInfo {
+public final class GLImageInfo {
 
     /**
      * <code>GLenum</code> - image namespace
@@ -68,7 +68,7 @@ public final class GLTextureInfo {
      */
     public long memoryHandle = -1;
 
-    public void set(GLTextureInfo info) {
+    public void set(GLImageInfo info) {
         target = info.target;
         handle = info.handle;
         format = info.format;
@@ -93,7 +93,7 @@ public final class GLTextureInfo {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o instanceof GLTextureInfo info)
+        if (o instanceof GLImageInfo info)
             return target == info.target &&
                     handle == info.handle &&
                     format == info.format &&

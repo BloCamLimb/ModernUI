@@ -21,9 +21,10 @@ package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.*;
 import org.jetbrains.annotations.ApiStatus;
+import org.slf4j.Logger;
+import org.slf4j.helpers.NOPLogger;
 
 import javax.annotation.Nullable;
-import java.io.PrintWriter;
 import java.util.Objects;
 
 /**
@@ -117,28 +118,11 @@ public abstract class Context extends RefCnt {
         return mContextInfo.getCaps();
     }
 
-    @ApiStatus.Internal
-    @Nullable
-    public final PrintWriter getInfoWriter() {
-        return getOptions().mInfoWriter;
-    }
-
-    @ApiStatus.Internal
-    public final PrintWriter getErrorWriter() {
-        return Objects.requireNonNullElseGet(getOptions().mErrorWriter, Context::getDefaultErrorWriter);
+    public final Logger getLogger() {
+        return Objects.requireNonNullElse(getOptions().mLogger, NOPLogger.NOP_LOGGER);
     }
 
     protected boolean init() {
         return mContextInfo.isValid();
-    }
-
-    private static PrintWriter sDefaultErrorWriter;
-
-    private static PrintWriter getDefaultErrorWriter() {
-        PrintWriter err = sDefaultErrorWriter;
-        if (err == null) {
-            sDefaultErrorWriter = err = new PrintWriter(System.err, true);
-        }
-        return err;
     }
 }

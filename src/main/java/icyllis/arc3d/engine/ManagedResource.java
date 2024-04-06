@@ -24,7 +24,7 @@ import icyllis.arc3d.core.RefCnt;
 /**
  * Base class for operating GPU resources that may be shared by multiple
  * objects, in particular objects that are tracked by a command buffer.
- * Unlike {@link GpuResource}, these resources will not have a large memory
+ * Unlike {@link GpuResourceBase}, these resources will not have a large memory
  * allocation, but a set of constant states instead. When an existing owner
  * wants to share a reference, it calls {@link #ref()}. When an owner wants
  * to release its reference, it calls {@link #unref()}. When the shared

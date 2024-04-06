@@ -56,7 +56,7 @@ public final class GLCommandBuffer extends CommandBuffer {
 
     private int mHWFramebuffer;
     @SharedPtr
-    private GLRenderTarget mHWRenderTarget;
+    private GLFramebuffer mHWRenderTarget;
 
     @SharedPtr
     private GLProgram mHWProgram;
@@ -229,11 +229,11 @@ public final class GLCommandBuffer extends CommandBuffer {
      *
      * @param target raw ptr to render target
      */
-    public void flushRenderTarget(@Nullable @RawPtr GLRenderTarget target) {
+    public void flushRenderTarget(@Nullable @RawPtr GLFramebuffer target) {
         if (target == null) {
             mHWRenderTarget = RefCnt.move(mHWRenderTarget);
         } else {
-            int framebuffer = target.getSampleFramebuffer();
+            int framebuffer = target.getRenderFramebuffer();
             if (mHWFramebuffer != framebuffer ||
                     mHWRenderTarget != target) {
                 mDevice.getGL().glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);

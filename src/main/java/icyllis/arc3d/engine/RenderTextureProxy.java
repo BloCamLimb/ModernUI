@@ -61,8 +61,8 @@ public final class RenderTextureProxy extends TextureProxy {
 
     @Nullable
     @Override
-    public GpuRenderTarget getGpuRenderTarget() {
-        return mGpuTexture != null ? mGpuTexture.asRenderTarget() : null;
+    public GpuFramebuffer getFramebuffer() {
+        return mGpuTexture != null ? mGpuTexture.asFramebuffer() : null;
     }
 
     @Override

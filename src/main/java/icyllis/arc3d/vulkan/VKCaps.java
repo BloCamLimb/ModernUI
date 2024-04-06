@@ -42,6 +42,7 @@ public abstract class VKCaps extends Caps {
         try (var stack = MemoryStack.stackPush()) {
             VkPhysicalDeviceProperties properties = VkPhysicalDeviceProperties.malloc(stack);
             VKCore.vkGetPhysicalDeviceProperties(physDev, properties);
+            VkPhysicalDeviceLimits limits = properties.limits();
 
             if (Integer.compareUnsigned(physicalDeviceVersion,
                     VKCore.VK_MAKE_VERSION(1, 3, 0)) >= 0) {

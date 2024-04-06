@@ -19,46 +19,49 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.core.RawPtr;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * The {@link GpuRenderTarget} manages all objects used by a renderable primary surface,
+ * The {@link GpuFramebuffer} manages all objects used by a renderable primary surface,
  * which are framebuffers, render passes and a set of attachments. This is the target
  * of {@link OpsRenderPass}, and may be associated with {@link icyllis.arc3d.core.Surface}.
  * <p>
- * A {@link GpuRenderTarget} is always associated with a renderable primary surface, which
- * can be either a renderable {@link GpuTexture} or a wrapped {@link BackendRenderTarget}.
+ * A {@link GpuFramebuffer} is always associated with a renderable primary surface, which
+ * can be either a renderable {@link GpuImage} or a wrapped {@link BackendRenderTarget}.
  * This class is used by the pipeline internally. Use {@link RenderTextureProxy}
  * and {@link RenderTargetProxy} for high-level operations.
  */
-public abstract class GpuRenderTarget extends ManagedResource implements IGpuSurface {
+public abstract non-sealed class GpuFramebuffer extends GpuResourceBase implements GpuSurface {
 
     private final int mWidth;
     private final int mHeight;
 
     private final int mSampleCount;
+    private final int mNumRenderTargets;
 
-    /**
+    /*
      * The stencil buffer is set at first only with wrapped <code>GLRenderTarget</code>,
      * the stencil attachment is fake and made beforehand (renderbuffer id 0). For example,
      * wrapping OpenGL default framebuffer (framebuffer id 0).
      */
-    @SharedPtr
-    protected Attachment mStencilBuffer;
+    /*@SharedPtr
+    protected Attachment mStencilBuffer;*/
 
     // determined by subclass constructors
-    protected int mSurfaceFlags = FLAG_RENDERABLE;
+    protected int mSurfaceFlags = ISurface.FLAG_RENDERABLE;
 
-    protected GpuRenderTarget(GpuDevice device,
-                              int width, int height,
-                              int sampleCount) {
+    protected GpuFramebuffer(GpuDevice device,
+                             int width, int height,
+                             int sampleCount,
+                             int numRenderTargets) {
         super(device);
         mWidth = width;
         mHeight = height;
         mSampleCount = sampleCount;
+        mNumRenderTargets = numRenderTargets;
     }
 
     /**
@@ -100,12 +103,8 @@ public abstract class GpuRenderTarget extends ManagedResource implements IGpuSur
     @Nonnull
     public abstract BackendRenderTarget getBackendRenderTarget();
 
-    @Nullable
     @Override
-    public abstract GpuTexture asTexture();
-
-    @Override
-    public final GpuRenderTarget asRenderTarget() {
+    public final GpuFramebuffer asFramebuffer() {
         return this;
     }
 
@@ -114,26 +113,46 @@ public abstract class GpuRenderTarget extends ManagedResource implements IGpuSur
         return mSurfaceFlags;
     }
 
+    public final int numRenderTargets() {
+        return mNumRenderTargets;
+    }
+
+    @RawPtr
+    @Nullable
+    public abstract GpuImage getColorAttachment();
+
+    @RawPtr
+    @Nullable
+    public abstract GpuImage getColorAttachment(int index);
+
+    @RawPtr
+    @Nullable
+    public abstract GpuImage getResolveAttachment();
+
+    @RawPtr
+    @Nullable
+    public abstract GpuImage getResolveAttachment(int index);
+
     /**
      * Get the dynamic or implicit stencil buffer, or null if no stencil.
      */
-    public final Attachment getStencilBuffer() {
-        return mStencilBuffer;
-    }
+    @RawPtr
+    @Nullable
+    public abstract GpuImage getDepthStencilAttachment();
 
     /**
-     * Get the number of dynamic or implicit stencil bits, or 0 if no stencil.
+     * Get the number of implicit depth bits, or 0 if no depth.
      */
-    public final int getStencilBits() {
-        return mStencilBuffer != null ? mStencilBuffer.getBackendFormat().getStencilBits() : 0;
-    }
+    public abstract int getDepthBits();
+
+    /**
+     * Get the number of implicit stencil bits, or 0 if no stencil.
+     */
+    public abstract int getStencilBits();
 
     @Override
-    protected void deallocate() {
-        if (mStencilBuffer != null) {
-            mStencilBuffer.unref();
-        }
-        mStencilBuffer = null;
+    public long getMemorySize() {
+        return 0;
     }
 
     /**
@@ -141,12 +160,12 @@ public abstract class GpuRenderTarget extends ManagedResource implements IGpuSur
      */
     protected abstract boolean canAttachStencil();
 
-    /**
+    /*
      * Allows the backends to perform any additional work that is required for attaching an
      * Attachment. When this is called, the Attachment has already been put onto the RenderTarget.
      * This method must return false if any failures occur when completing the stencil attachment.
      *
      * @see ResourceProvider
      */
-    protected abstract void attachStencilBuffer(@SharedPtr Attachment stencilBuffer);
+    //protected abstract void attachStencilBuffer(@SharedPtr Attachment stencilBuffer);
 }

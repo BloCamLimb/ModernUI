@@ -47,7 +47,7 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
     private boolean mSpecializeShaderARB;
 
     @VisibleForTesting
-    public GLCaps_GL(ContextOptions options, Object capabilities) {
+    public GLCaps_GL(DirectContext context, ContextOptions options, Object capabilities) {
         super(options);
         GLCapabilities caps = (GLCapabilities) capabilities;
         // OpenGL 3.3 is the minimum requirement
@@ -74,9 +74,10 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
             mTextureBarrierSupport = true;
             mTextureBarrierNV = false;
         } else if (caps.GL_NV_texture_barrier) {
+            // macOS supports this
             mTextureBarrierSupport = true;
             mTextureBarrierNV = true;
-            GLUtil.info(options, "Use NV_texture_barrier");
+            context.getLogger().info("Use NV_texture_barrier");
         } else {
             mTextureBarrierSupport = false;
         }
@@ -97,8 +98,8 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
         String vendorString = glGetString(GL_VENDOR);
         mVendor = GLUtil.findVendor(vendorString);
         mDriver = GLUtil.findDriver(mVendor, vendorString, versionString);
-        GLUtil.info(options, "Identified vendor: " + mVendor);
-        GLUtil.info(options, "Identified driver: " + mDriver);
+        context.getLogger().info("Identified OpenGL vendor: {}", mVendor);
+        context.getLogger().info("Identified OpenGL driver: {}", mDriver);
 
         // macOS supports this
         if (caps.OpenGL41 || caps.GL_ARB_ES2_compatibility) {

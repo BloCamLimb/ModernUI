@@ -19,8 +19,7 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.MathUtil;
-import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.core.*;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
@@ -143,7 +142,7 @@ public abstract class GpuBufferPool {
             @SharedPtr
             GpuBuffer buffer = mBuffers[mIndex];
             assert (!buffer.isLocked());
-            mBuffers[mIndex--] = GpuResource.move(buffer);
+            mBuffers[mIndex--] = RefCnt.move(buffer);
         }
         assert (mIndex == -1);
         assert (mBufferPtr == NULL);
@@ -194,7 +193,7 @@ public abstract class GpuBufferPool {
                 assert (buffer.getLockedBuffer() == mBufferPtr);
                 buffer.unlock(/*offset=*/0, usedBytes);
                 assert (!buffer.isLocked());
-                mBuffers[mIndex--] = GpuResource.move(buffer);
+                mBuffers[mIndex--] = RefCnt.move(buffer);
                 mBufferPtr = NULL;
             } else {
                 mFreeBytes[mIndex] += bytes;

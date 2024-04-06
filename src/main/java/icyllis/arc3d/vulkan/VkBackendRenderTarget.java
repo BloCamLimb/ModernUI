@@ -64,6 +64,11 @@ public final class VkBackendRenderTarget extends BackendRenderTarget {
     }
 
     @Override
+    public int getDepthBits() {
+        return 0;
+    }
+
+    @Override
     public int getStencilBits() {
         // We always create stencil buffers internally for vulkan
         return 0;
@@ -91,7 +96,7 @@ public final class VkBackendRenderTarget extends BackendRenderTarget {
     @Override
     public BackendFormat getBackendFormat() {
         if (mBackendFormat == null) {
-            mBackendFormat = VkBackendFormat.make(mInfo.mFormat, false);
+            mBackendFormat = VkBackendFormat.make(mInfo.mFormat);
         }
         return mBackendFormat;
     }

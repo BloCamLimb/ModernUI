@@ -20,6 +20,7 @@
 package icyllis.arc3d.mock;
 
 import icyllis.arc3d.core.ImageInfo;
+import icyllis.arc3d.core.MathUtil;
 import icyllis.arc3d.engine.BackendFormat;
 
 import javax.annotation.Nonnull;
@@ -30,25 +31,27 @@ public class MockBackendFormat extends BackendFormat {
 
     private final int mColorType;
     private final int mCompressionType;
+    private final short mDepthBits;
     private final boolean mIsStencilFormat;
 
     /**
-     * @see #make(int, int, boolean)
+     * @see #make(int, int, int, boolean)
      */
-    public MockBackendFormat(int colorType, int compressionType, boolean isStencilFormat) {
+    public MockBackendFormat(int colorType, int compressionType, short depthBits, boolean isStencilFormat) {
         mColorType = colorType;
         mCompressionType = compressionType;
+        mDepthBits = depthBits;
         mIsStencilFormat = isStencilFormat;
     }
 
     @Nonnull
     public static MockBackendFormat make(int colorType, int compressionType) {
-        return make(colorType, compressionType, false);
+        return make(colorType, compressionType, 0, false);
     }
 
     @Nonnull
-    public static MockBackendFormat make(int colorType, int compressionType, boolean isStencilFormat) {
-        return new MockBackendFormat(colorType, compressionType, isStencilFormat);
+    public static MockBackendFormat make(int colorType, int compressionType, int depthBits, boolean isStencilFormat) {
+        return new MockBackendFormat(colorType, compressionType, (short) depthBits, isStencilFormat);
     }
 
     @Override
@@ -57,19 +60,8 @@ public class MockBackendFormat extends BackendFormat {
     }
 
     @Override
-    public boolean isExternal() {
-        return false;
-    }
-
-    @Override
     public int getChannelFlags() {
         return ImageInfo.colorTypeChannelFlags(mColorType);
-    }
-
-    @Nonnull
-    @Override
-    public BackendFormat makeInternal() {
-        return this;
     }
 
     @Override
@@ -86,11 +78,16 @@ public class MockBackendFormat extends BackendFormat {
     public int getBytesPerBlock() {
         if (mCompressionType != ImageInfo.COMPRESSION_NONE) {
             return 8; // 1 * ETC1Block or BC1Block
-        } else if (mIsStencilFormat) {
-            return 4;
+        } else if (mDepthBits > 0 || mIsStencilFormat) {
+            return MathUtil.ceilPow2((mDepthBits >>> 3) + 1);
         } else {
             return ImageInfo.bytesPerPixel(mColorType);
         }
+    }
+
+    @Override
+    public int getDepthBits() {
+        return mDepthBits;
     }
 
     @Override
