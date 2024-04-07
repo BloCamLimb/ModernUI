@@ -29,8 +29,15 @@ import javax.annotation.Nonnull;
  */
 public sealed class VulkanImage extends GpuImageBase permits VulkanTexture {
 
-    public VulkanImage(VulkanDevice device, int width, int height) {
+    private VulkanImageInfo mInfo;
+
+    public VulkanImage(VulkanDevice device,
+                       int width, int height,
+                       VulkanImageInfo info,
+                       BackendFormat format,
+                       int flags) {
         super(device, width, height);
+        mInfo = info;
     }
 
     @Override
@@ -40,7 +47,6 @@ public sealed class VulkanImage extends GpuImageBase permits VulkanTexture {
 
     @Override
     protected void onRelease() {
-
     }
 
     @Override
@@ -50,17 +56,17 @@ public sealed class VulkanImage extends GpuImageBase permits VulkanTexture {
 
     @Override
     public int getSampleCount() {
-        return 0;
+        return mInfo.mSampleCount;
+    }
+
+    @Override
+    public int getMipLevelCount() {
+        return mInfo.mLevelCount;
     }
 
     @Nonnull
     @Override
     public BackendFormat getBackendFormat() {
         return null;
-    }
-
-    @Override
-    public int getMaxMipmapLevel() {
-        return 0;
     }
 }

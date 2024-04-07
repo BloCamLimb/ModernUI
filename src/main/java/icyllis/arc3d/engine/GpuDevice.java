@@ -145,16 +145,16 @@ public abstract class GpuDevice implements Engine {
     public abstract GpuBufferPool getIndexPool();
 
     /**
-     * Creates a texture object and allocates its GPU memory. In other words, the
+     * Creates a new GPU image object and allocates its GPU memory. In other words, the
      * image data is dirty and needs to be uploaded later. If mipmapped, also allocates
      * <code>(31 - CLZ(max(width,height)))</code> mipmaps in addition to the base level.
      * NPoT (non-power-of-two) dimensions are always supported. Compressed format are
      * supported.
      *
-     * @param width  the width of the texture to be created
-     * @param height the height of the texture to be created
-     * @param format the backend format for the texture
-     * @return the texture object if successful, otherwise nullptr
+     * @param width  the width of the image to be created
+     * @param height the height of the image to be created
+     * @param format the backend format for the image
+     * @return the image object if successful, otherwise nullptr
      * @see ISurface#FLAG_BUDGETED
      * @see ISurface#FLAG_MIPMAPPED
      * @see ISurface#FLAG_RENDERABLE
@@ -162,13 +162,12 @@ public abstract class GpuDevice implements Engine {
      */
     @Nullable
     @SharedPtr
-    public final GpuTexture createTexture(int width, int height,
-                                          BackendFormat format,
-                                          int sampleCount,
-                                          int surfaceFlags,
-                                          String label) {
+    public final GpuImage createImage(int width, int height,
+                                      BackendFormat format,
+                                      int sampleCount,
+                                      int surfaceFlags,
+                                      String label) {
         if (format.isCompressed()) {
-            // use createCompressedTexture
             return null;
         }
         if (!mCaps.validateSurfaceParams(width, height, format,
@@ -183,63 +182,133 @@ public abstract class GpuDevice implements Engine {
         }
         if (sampleCount > 1 && mipLevelCount > 1) {
             getContext().getLogger().error(
-                    "Failed to GpuDevice::createTexture: mipmapped textures cannot be multisampled, " +
+                    "Failed to GpuDevice::createImage: mipmapped images cannot be multisampled, " +
                             "width {} height {} format {} sampleCount {} mipLevelCount {}",
                     width, height, format, sampleCount, mipLevelCount);
             return null;
         }
         assert (sampleCount > 0 && sampleCount <= 64);
-        final GpuTexture texture = onCreateTexture(width, height, format,
+        final GpuImage image = onCreateImage(width, height, format,
                 mipLevelCount, sampleCount, surfaceFlags);
-        if (texture != null) {
+        if (image != null) {
             // we don't copy the backend format object, use identity rather than equals()
-            assert texture.getBackendFormat() == format;
+            assert image.getBackendFormat() == format;
             if (label != null) {
-                texture.setLabel(label);
+                image.setLabel(label);
             }
-            mStats.incTextureCreates();
+            mStats.incImageCreates();
+            if (image instanceof GpuTexture) {
+                mStats.incTextureCreates();
+            }
         }
-        return texture;
+        return image;
     }
 
     /**
      * Overridden by backend-specific derived class to create objects.
      * <p>
-     * Texture size and format support will have already been validated in base class
-     * before onCreateTexture is called.
+     * Image size and format support will have already been validated in base class
+     * before onCreateImage is called.
      */
     @Nullable
     @SharedPtr
-    protected abstract GpuTexture onCreateTexture(int width, int height,
-                                                  BackendFormat format,
-                                                  int mipLevelCount,
-                                                  int sampleCount,
-                                                  int surfaceFlags);
+    protected abstract GpuImage onCreateImage(int width, int height,
+                                              BackendFormat format,
+                                              int mipLevelCount,
+                                              int sampleCount,
+                                              int surfaceFlags);
 
     @Nullable
     @SharedPtr
-    public final GpuFramebuffer createRenderTarget(int width, int height,
-                                                   BackendFormat colorFormat,
-                                                   int numColorTargets,
-                                                   BackendFormat depthStencilFormat,
-                                                   boolean hasDepthStencil,
-                                                   int sampleCount,
-                                                   int surfaceFlags,
-                                                   String label) {
-        return null;
+    public final GpuFramebuffer createFramebuffer(int numColorTargets,
+                                                  @Nullable GpuImage[] colorTargets,
+                                                  @Nullable GpuImage[] resolveTargets,
+                                                  @Nullable int[] mipLevels,
+                                                  @Nullable GpuImage depthStencilTarget,
+                                                  int surfaceFlags) {
+        if (numColorTargets < 0 || numColorTargets > mCaps.maxColorAttachments()) {
+            return null;
+        }
+        int usedColorTargets = 0;
+        if (colorTargets != null) {
+            for (int i = 0; i < numColorTargets; i++) {
+                usedColorTargets += colorTargets[i] != null ? 1 : 0;
+            }
+        }
+        if (usedColorTargets == 0 && depthStencilTarget == null) {
+            return null;
+        }
+
+        // find logical dimension
+        int sampleCount = -1;
+        int width = Integer.MAX_VALUE;
+        int height = Integer.MAX_VALUE;
+        if (colorTargets != null) {
+            for (int i = 0; i < numColorTargets; i++) {
+                GpuImage colorTarget = colorTargets[i];
+                if (colorTarget == null) continue;
+                int samples = colorTarget.getSampleCount();
+                if (sampleCount == -1) {
+                    sampleCount = samples;
+                } else if (sampleCount != samples) {
+                    return null;
+                }
+                width = Math.min(width, colorTarget.getWidth());
+                height = Math.min(height, colorTarget.getHeight());
+            }
+        }
+        if (depthStencilTarget != null) {
+            int samples = depthStencilTarget.getSampleCount();
+            if (sampleCount == -1) {
+                sampleCount = samples;
+            } else if (sampleCount != samples) {
+                return null;
+            }
+            width = Math.min(width, depthStencilTarget.getWidth());
+            height = Math.min(height, depthStencilTarget.getHeight());
+        }
+        if (sampleCount == -1) {
+            return null;
+        }
+        assert width < Integer.MAX_VALUE;
+        assert height < Integer.MAX_VALUE;
+        if (resolveTargets != null) {
+            for (int i = 0; i < numColorTargets; i++) {
+                GpuImage resolveTarget = resolveTargets[i];
+                if (resolveTarget == null) continue;
+                if (sampleCount == 1) {
+                    return null;
+                }
+                if (resolveTarget.getSampleCount() != 1) {
+                    return null;
+                }
+                if (resolveTarget.getWidth() < width ||
+                        resolveTarget.getHeight() < height) {
+                    return null;
+                }
+            }
+        }
+
+        return onCreateFramebuffer(width, height,
+                sampleCount,
+                numColorTargets,
+                colorTargets,
+                resolveTargets,
+                mipLevels,
+                depthStencilTarget,
+                surfaceFlags);
     }
 
     @Nullable
     @SharedPtr
-    protected abstract GpuFramebuffer onCreateRenderTarget(int width, int height,
-                                                           BackendFormat colorFormat,
-                                                           int numColorTargets,
-                                                           BackendFormat depthStencilFormat,
-                                                           boolean hasDepthStencil,
-                                                           int mipLevelCount,
-                                                           int sampleCount,
-                                                           int surfaceFlags,
-                                                           String label);
+    protected abstract GpuFramebuffer onCreateFramebuffer(int width, int height,
+                                                          int sampleCount,
+                                                          int numColorTargets,
+                                                          @Nullable GpuImage[] colorTargets,
+                                                          @Nullable GpuImage[] resolveTargets,
+                                                          @Nullable int[] mipLevels,
+                                                          @Nullable GpuImage depthStencilTarget,
+                                                          int surfaceFlags);
 
     /**
      * This makes the backend texture be renderable. If <code>sampleCount</code> is > 1 and
@@ -552,16 +621,16 @@ public abstract class GpuDevice implements Engine {
 
     public static final class Stats {
 
+        private long mImageCreates = 0;
         private long mTextureCreates = 0;
         private long mTextureUploads = 0;
         private long mTransfersToTexture = 0;
         private long mTransfersFromSurface = 0;
-        private long mStencilAttachmentCreates = 0;
-        private long mMSAAAttachmentCreates = 0;
         private long mNumDraws = 0;
         private long mNumFailedDraws = 0;
         private long mNumSubmitToGpus = 0;
         private long mNumScratchTexturesReused = 0;
+        private long mNumScratchFramebuffersReused = 0;
         private long mNumScratchMSAAAttachmentsReused = 0;
         private long mRenderPasses = 0;
 
@@ -569,18 +638,26 @@ public abstract class GpuDevice implements Engine {
         }
 
         public void reset() {
+            mImageCreates = 0;
             mTextureCreates = 0;
             mTextureUploads = 0;
             mTransfersToTexture = 0;
             mTransfersFromSurface = 0;
-            mStencilAttachmentCreates = 0;
-            mMSAAAttachmentCreates = 0;
             mNumDraws = 0;
             mNumFailedDraws = 0;
             mNumSubmitToGpus = 0;
             mNumScratchTexturesReused = 0;
+            mNumScratchFramebuffersReused = 0;
             mNumScratchMSAAAttachmentsReused = 0;
             mRenderPasses = 0;
+        }
+
+        public long numImageCreates() {
+            return mImageCreates;
+        }
+
+        public void incImageCreates() {
+            mImageCreates++;
         }
 
         public long numTextureCreates() {
@@ -613,22 +690,6 @@ public abstract class GpuDevice implements Engine {
 
         public void incTransfersFromSurface() {
             mTransfersFromSurface++;
-        }
-
-        public long numStencilAttachmentCreates() {
-            return mStencilAttachmentCreates;
-        }
-
-        public void incStencilAttachmentCreates() {
-            mStencilAttachmentCreates++;
-        }
-
-        public long msaaAttachmentCreates() {
-            return mMSAAAttachmentCreates;
-        }
-
-        public void incMSAAAttachmentCreates() {
-            mMSAAAttachmentCreates++;
         }
 
         public long numDraws() {
@@ -667,6 +728,14 @@ public abstract class GpuDevice implements Engine {
             mNumScratchTexturesReused++;
         }
 
+        public long numScratchFramebuffersReused() {
+            return mNumScratchFramebuffersReused;
+        }
+
+        public void incNumScratchFramebuffersReused() {
+            mNumScratchFramebuffersReused++;
+        }
+
         public long numScratchMSAAAttachmentsReused() {
             return mNumScratchMSAAAttachmentsReused;
         }
@@ -685,17 +754,16 @@ public abstract class GpuDevice implements Engine {
 
         @Override
         public String toString() {
-            return "Device.Stats{" +
+            return "GpuDevice.Stats{" +
                     "mTextureCreates=" + mTextureCreates +
                     ", mTextureUploads=" + mTextureUploads +
                     ", mTransfersToTexture=" + mTransfersToTexture +
                     ", mTransfersFromSurface=" + mTransfersFromSurface +
-                    ", mStencilAttachmentCreates=" + mStencilAttachmentCreates +
-                    ", mMSAAAttachmentCreates=" + mMSAAAttachmentCreates +
                     ", mNumDraws=" + mNumDraws +
                     ", mNumFailedDraws=" + mNumFailedDraws +
                     ", mNumSubmitToGpus=" + mNumSubmitToGpus +
                     ", mNumScratchTexturesReused=" + mNumScratchTexturesReused +
+                    ", mNumScratchFramebuffersReused=" + mNumScratchFramebuffersReused +
                     ", mNumScratchMSAAAttachmentsReused=" + mNumScratchMSAAAttachmentsReused +
                     ", mRenderPasses=" + mRenderPasses +
                     '}';

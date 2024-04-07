@@ -22,7 +22,6 @@ package icyllis.arc3d.engine;
 import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SharedPtr;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import static icyllis.arc3d.engine.Engine.BudgetType;
@@ -168,8 +167,6 @@ public abstract non-sealed class GpuImageBase extends GpuResourceBase implements
         mMipmapsDirty = mipmapsDirty;
     }
 
-    public abstract int getMaxMipmapLevel();
-
     /**
      * Unmanaged backends (e.g. Vulkan) may want to specially handle the release proc in order to
      * ensure it isn't called until GPU work related to the resource is completed.
@@ -273,64 +270,5 @@ public abstract non-sealed class GpuImageBase extends GpuResourceBase implements
         }
         assert size > 0;
         return size;
-    }
-
-    /**
-     * Storage key of {@link GpuImageBase}, may be compared with {@link TextureProxy}.
-     */
-    public static final class ScratchKey implements IScratchKey {
-
-        public int mWidth;
-        public int mHeight;
-        public int mFormat;
-        public int mFlags;
-
-        /**
-         * Compute a {@link GpuImageBase} key, format can not be compressed.
-         *
-         * @return the scratch key
-         */
-        @Nonnull
-        public ScratchKey compute(BackendFormat format,
-                                  int width, int height,
-                                  int sampleCount,
-                                  int surfaceFlags) {
-            assert (width > 0 && height > 0);
-            assert (!format.isCompressed());
-            mWidth = width;
-            mHeight = height;
-            mFormat = format.getFormatKey();
-            mFlags = (surfaceFlags & (ISurface.FLAG_MIPMAPPED |
-                    ISurface.FLAG_TEXTURABLE |
-                    ISurface.FLAG_RENDERABLE |
-                    ISurface.FLAG_MEMORYLESS |
-                    ISurface.FLAG_PROTECTED)) | (sampleCount << 16);
-            return this;
-        }
-
-        /**
-         * Keep {@link TextureProxy#hashCode()} sync with this.
-         */
-        @Override
-        public int hashCode() {
-            int result = mWidth;
-            result = 31 * result + mHeight;
-            result = 31 * result + mFormat;
-            result = 31 * result + mFlags;
-            return result;
-        }
-
-        /**
-         * Keep {@link TextureProxy#equals(Object)}} sync with this.
-         */
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            return o instanceof ScratchKey key &&
-                    mWidth == key.mWidth &&
-                    mHeight == key.mHeight &&
-                    mFormat == key.mFormat &&
-                    mFlags == key.mFlags;
-        }
     }
 }

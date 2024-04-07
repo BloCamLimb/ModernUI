@@ -36,6 +36,8 @@ import javax.annotation.Nullable;
 @SuppressWarnings("unused")
 public abstract class Caps {
 
+    public static final int MAX_COLOR_TARGETS = 8;
+
     /**
      * Indicates the capabilities of the fixed function blend unit.
      */
@@ -76,6 +78,7 @@ public abstract class Caps {
     protected int mMaxTextureSize = 1;
     protected int mInternalMultisampleCount = 0;
     protected int mMaxPushConstantsSize = 0;
+    protected int mMaxColorAttachments = 4;
 
     protected final DriverBugWorkarounds mDriverBugWorkarounds = new DriverBugWorkarounds();
 
@@ -301,6 +304,14 @@ public abstract class Caps {
 
     public final int maxPushConstantsSize() {
         return mMaxPushConstantsSize;
+    }
+
+    /**
+     * Max number of color attachments in a render pass.
+     * This is ranged from 4 (typically on mobile) to 8 (typically on desktop).
+     */
+    public final int maxColorAttachments() {
+        return mMaxColorAttachments;
     }
 
     public final int transferBufferAlignment() {

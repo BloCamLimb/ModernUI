@@ -38,9 +38,6 @@ public final class GLTexture extends GLImage implements GpuTexture {
         super(device, width, height, info, format, flags);
         assert info.handle != 0;
         mBackendTexture = new GLBackendTexture(width, height, info, new GLTextureParameters(), format);
-        if (mBackendTexture.isMipmapped()) {
-            mFlags |= ISurface.FLAG_MIPMAPPED;
-        }
     }
 
     public GLTexture(GLDevice device,
@@ -57,7 +54,7 @@ public final class GLTexture extends GLImage implements GpuTexture {
 
     @Nonnull
     @Override
-    public BackendTexture getBackendTexture() {
+    public GLBackendTexture getBackendTexture() {
         return mBackendTexture;
     }
 

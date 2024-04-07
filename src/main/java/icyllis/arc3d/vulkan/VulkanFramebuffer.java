@@ -73,6 +73,12 @@ public final class VulkanFramebuffer extends GpuFramebuffer {
 
     @Nullable
     @Override
+    protected GpuImage[] getColorAttachments() {
+        return new GpuImage[0];
+    }
+
+    @Nullable
+    @Override
     public GpuImage getResolveAttachment() {
         return null;
     }
@@ -81,6 +87,12 @@ public final class VulkanFramebuffer extends GpuFramebuffer {
     @Override
     public GpuImage getResolveAttachment(int index) {
         return null;
+    }
+
+    @Nullable
+    @Override
+    protected GpuImage[] getResolveAttachments() {
+        return new GpuImage[0];
     }
 
     @Nullable

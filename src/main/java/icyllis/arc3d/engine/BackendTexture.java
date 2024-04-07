@@ -60,7 +60,7 @@ public abstract class BackendTexture {
     }
 
     /**
-     * @return see {@link Engine.TextureType}
+     * @return see {@link Engine.ImageType}
      */
     public abstract int getTextureType();
 
@@ -73,6 +73,8 @@ public abstract class BackendTexture {
      * @return whether the texture has mip levels allocated or not
      */
     public abstract boolean isMipmapped();
+
+    public abstract int getMipLevelCount();
 
     /**
      * If the backend API is OpenGL, copies a snapshot of the GLTextureInfo struct into the passed

@@ -22,12 +22,11 @@ package icyllis.arc3d.vulkan;
 import icyllis.arc3d.engine.BackendFormat;
 import icyllis.arc3d.engine.BackendTexture;
 import icyllis.arc3d.engine.Engine.BackendApi;
-import icyllis.arc3d.engine.Engine.TextureType;
+import icyllis.arc3d.engine.Engine.ImageType;
 
 import javax.annotation.Nonnull;
 
 import static icyllis.arc3d.vulkan.VKCore.*;
-import static org.lwjgl.vulkan.EXTImageDrmFormatModifier.VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
 
 public final class VkBackendTexture extends BackendTexture {
 
@@ -67,7 +66,7 @@ public final class VkBackendTexture extends BackendTexture {
 
     @Override
     public int getTextureType() {
-        return TextureType.k2D;
+        return ImageType.k2D;
     }
 
     @Override
@@ -78,6 +77,11 @@ public final class VkBackendTexture extends BackendTexture {
     @Override
     public boolean isMipmapped() {
         return mInfo.mLevelCount > 1;
+    }
+
+    @Override
+    public int getMipLevelCount() {
+        return mInfo.mLevelCount;
     }
 
     @Override

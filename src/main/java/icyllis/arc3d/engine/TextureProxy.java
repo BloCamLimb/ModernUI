@@ -333,7 +333,7 @@ public class TextureProxy extends SurfaceProxy implements IScratchKey {
     }
 
     /**
-     * Same as {@link GpuImageBase.ScratchKey} for {@link SurfaceAllocator}.
+     * Same as {@link GpuImage.ScratchKey} for {@link SurfaceAllocator}.
      */
     @Override
     public int hashCode() {
@@ -346,12 +346,12 @@ public class TextureProxy extends SurfaceProxy implements IScratchKey {
     }
 
     /**
-     * Same as {@link GpuImageBase.ScratchKey} for {@link SurfaceAllocator}.
+     * Same as {@link GpuImage.ScratchKey} for {@link SurfaceAllocator}.
      */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o instanceof GpuImageBase.ScratchKey key) {
+        if (o instanceof GpuImage.ScratchKey key) {
             // ResourceProvider
             return key.mWidth == getBackingWidth() &&
                     key.mHeight == getBackingHeight() &&

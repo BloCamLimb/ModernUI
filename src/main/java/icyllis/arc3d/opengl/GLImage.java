@@ -116,8 +116,8 @@ public sealed class GLImage extends GpuImageBase permits GLTexture {
     }
 
     @Override
-    public int getMaxMipmapLevel() {
-        return mInfo.levels - 1; // minus base level
+    public int getMipLevelCount() {
+        return mInfo.levels;
     }
 
     @Override
@@ -175,6 +175,7 @@ public sealed class GLImage extends GpuImageBase permits GLTexture {
         return "GLImage{" +
                 "mWidth=" + mWidth +
                 ", mHeight=" + mHeight +
+                ", mInfo=" + mInfo +
                 ", mDestroyed=" + isDestroyed() +
                 ", mOwnership=" + mOwnership +
                 ", mLabel=" + getLabel() +

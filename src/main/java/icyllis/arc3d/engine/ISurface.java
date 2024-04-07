@@ -40,27 +40,28 @@ public interface ISurface {
     int FLAG_BUDGETED = 1;
     /**
      * Indicates whether a backing store needs to be an exact match or can be larger than
-     * is strictly necessary. Approx fit when set, otherwise exact fit.
+     * is strictly necessary. Approx fit when set, otherwise exact fit. This is a
+     * {@link SurfaceProxy} and GPU surface creation-time flag.
      */
     int FLAG_APPROX_FIT = 1 << 1;
     /**
-     * Used to say whether a texture has mip levels allocated or not. Mipmaps are allocated
+     * Used to say whether an image has mip levels allocated or not. Mipmaps are allocated
      * when set, otherwise mipmaps are not allocated.
      */
     int FLAG_MIPMAPPED = 1 << 2;
     /**
-     * Used to say whether a texture can be sampled by shader. This is not compatible with
-     * {@link #FLAG_MEMORYLESS}. A valid SurfaceFlags must have at least one of Texturable
-     * and {@link #FLAG_RENDERABLE} set. Default is Texturable.
+     * Used to say whether an image can be sampled by shader. This is not compatible with
+     * {@link #FLAG_MEMORYLESS}. A valid SurfaceFlags must have at least one of FLAG_TEXTURABLE
+     * and {@link #FLAG_RENDERABLE} set. Default is FLAG_TEXTURABLE.
      */
     int FLAG_TEXTURABLE = 1 << 3;
     /**
-     * Used to say whether a surface can be rendered to, whether a texture can be used as
+     * Used to say whether a surface can be rendered to, whether an image can be used as
      * color/depth/stencil attachments. Renderable when set, otherwise not renderable.
      */
     int FLAG_RENDERABLE = 1 << 4;
     /**
-     * Used to create memoryless textures, especially for multisample transient attachments.
+     * Used to create memoryless images, especially for multisample transient attachments.
      * If so, {@link Engine.LoadOp#Load} and {@link Engine.StoreOp#Store} may not work,
      * but rendering will be efficient on TBDR GPU.
      * <p>
@@ -68,7 +69,7 @@ public interface ISurface {
      */
     int FLAG_MEMORYLESS = 1 << 5;
     /**
-     * Used to say whether texture is backed by protected memory. Protected when set, otherwise
+     * Used to say whether image is backed by protected memory. Protected when set, otherwise
      * not protected.
      *
      * @see <a href="https://github.com/KhronosGroup/Vulkan-Guide/blob/master/chapters/protected.adoc">
@@ -76,7 +77,7 @@ public interface ISurface {
      */
     int FLAG_PROTECTED = 1 << 6;
     /**
-     * Means the pixels in the texture are read-only. {@link GpuImageBase} and {@link TextureProxy}
+     * Means the pixels in the image are read-only. {@link GpuImage} and {@link TextureProxy}
      * only.
      */
     @ApiStatus.Internal
@@ -90,9 +91,9 @@ public interface ISurface {
     int FLAG_SKIP_ALLOCATOR = FLAG_PROTECTED << 2;
     /**
      * For TextureProxies created in a deferred list recording thread it is possible for the
-     * unique key to be cleared on the backing {@link GpuImageBase} while the unique key remains on
+     * unique key to be cleared on the backing {@link GpuImage} while the unique key remains on
      * the proxy. When set, it loosens up asserts that the key of an instantiated uniquely-keyed
-     * texture proxy is also always set on the backing {@link GpuImageBase}. {@link TextureProxy} only.
+     * texture proxy is also always set on the backing {@link GpuImage}. {@link TextureProxy} only.
      */
     @ApiStatus.Internal
     int FLAG_DEFERRED_PROVIDER = FLAG_PROTECTED << 3;
@@ -127,8 +128,8 @@ public interface ISurface {
      * @see #FLAG_APPROX_FIT
      */
     static int getApproxSize(int size) {
-        final int MIN_SCRATCH_TEXTURE_SIZE = 16;
-        size = Math.max(MIN_SCRATCH_TEXTURE_SIZE, size);
+        final int MIN_SCRATCH_IMAGE_SIZE = 16;
+        size = Math.max(MIN_SCRATCH_IMAGE_SIZE, size);
 
         if (MathUtil.isPow2(size)) {
             return size;

@@ -93,6 +93,11 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
         mProgramParameterSupport = mProgramBinarySupport;
         mVertexAttribBindingSupport = caps.OpenGL43 || caps.GL_ARB_vertex_attrib_binding;
         mBufferStorageSupport = caps.OpenGL44 || caps.GL_ARB_buffer_storage;
+        // our attachment points are consistent with draw buffers
+        mMaxColorAttachments = Math.min(Math.min(
+                        glGetInteger(GL_MAX_DRAW_BUFFERS),
+                        glGetInteger(GL_MAX_COLOR_ATTACHMENTS)),
+                MAX_COLOR_TARGETS);
 
         String versionString = glGetString(GL_VERSION);
         String vendorString = glGetString(GL_VENDOR);
