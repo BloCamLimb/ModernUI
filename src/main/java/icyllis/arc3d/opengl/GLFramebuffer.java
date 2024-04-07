@@ -19,12 +19,13 @@
 
 package icyllis.arc3d.opengl;
 
-import icyllis.arc3d.core.RawPtr;
-import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+
+import java.util.Arrays;
 
 import static icyllis.arc3d.opengl.GLCore.*;
 
@@ -36,7 +37,9 @@ public final class GLFramebuffer extends GpuFramebuffer {
     /**
      * The GL format for all color attachments.
      */
-    private final int mFormat;
+    //TODO remove this
+    @Deprecated
+    private final int mFormat = 0;
 
     // the color buffers, raw ptr
     // null for wrapped render targets
@@ -65,7 +68,6 @@ public final class GLFramebuffer extends GpuFramebuffer {
     // Constructor for instances created by our engine. (has texture access)
     GLFramebuffer(GLDevice device,
                   int width, int height,
-                  int format,
                   int sampleCount,
                   int renderFramebuffer,
                   int resolveFramebuffer,
@@ -76,7 +78,6 @@ public final class GLFramebuffer extends GpuFramebuffer {
                   int surfaceFlags) {
         super(device, width, height, sampleCount, numRenderTargets);
         assert (sampleCount > 0);
-        mFormat = format;
         mRenderFramebuffer = renderFramebuffer;
         mResolveFramebuffer = resolveFramebuffer;
         mOwnership = true;
@@ -84,12 +85,12 @@ public final class GLFramebuffer extends GpuFramebuffer {
         mResolveAttachments = resolveAttachments;
         mDepthStencilAttachment = depthStencilAttachment;
         mSurfaceFlags |= surfaceFlags;
+        registerWithCache((surfaceFlags & ISurface.FLAG_BUDGETED) != 0);
     }
 
     // Constructor for instances wrapping backend objects. (no texture access)
     private GLFramebuffer(GLDevice device,
                           int width, int height,
-                          int format,
                           int sampleCount,
                           int framebuffer,
                           boolean ownership,
@@ -97,13 +98,13 @@ public final class GLFramebuffer extends GpuFramebuffer {
         super(device, width, height, sampleCount, 1);
         assert (sampleCount > 0);
         assert (framebuffer != 0 || !ownership);
-        mFormat = format;
         mRenderFramebuffer = framebuffer;
         mResolveFramebuffer = 0;
         mOwnership = ownership;
         if (framebuffer == 0) {
             mSurfaceFlags |= ISurface.FLAG_GL_WRAP_DEFAULT_FB;
         }
+        registerWithCacheWrapped(false);
     }
 
     /**
@@ -152,7 +153,6 @@ public final class GLFramebuffer extends GpuFramebuffer {
         }
         return new GLFramebuffer(device,
                 width, height,
-                format,
                 sampleCount,
                 framebuffer,
                 ownership,
@@ -229,15 +229,6 @@ public final class GLFramebuffer extends GpuFramebuffer {
         return false;
     }
 
-    @Override
-    public GLTexture asTexture() {
-        if (mResolveAttachments != null &&
-                mResolveAttachments[0] instanceof GLTexture texture) {
-            return texture;
-        }
-        return null;
-    }
-
     @RawPtr
     @Nullable
     @Override
@@ -255,6 +246,13 @@ public final class GLFramebuffer extends GpuFramebuffer {
     @RawPtr
     @Nullable
     @Override
+    public GLImage[] getColorAttachments() {
+        return mColorAttachments;
+    }
+
+    @RawPtr
+    @Nullable
+    @Override
     public GLImage getResolveAttachment() {
         return mResolveAttachments != null ? mResolveAttachments[0] : null;
     }
@@ -264,6 +262,13 @@ public final class GLFramebuffer extends GpuFramebuffer {
     @Override
     public GLImage getResolveAttachment(int index) {
         return mResolveAttachments != null ? mResolveAttachments[index] : null;
+    }
+
+    @RawPtr
+    @Nullable
+    @Override
+    public GLImage[] getResolveAttachments() {
+        return mResolveAttachments;
     }
 
     @RawPtr
@@ -331,14 +336,30 @@ public final class GLFramebuffer extends GpuFramebuffer {
                 getDevice().getGL().glDeleteFramebuffers(mResolveFramebuffer);
             }
         }
+        clearAttachments();
         mRenderFramebuffer = 0;
         mResolveFramebuffer = 0;
     }
 
     @Override
     protected void onDiscard() {
+        clearAttachments();
         mRenderFramebuffer = 0;
         mResolveFramebuffer = 0;
+    }
+
+    private void clearAttachments() {
+        if (mColorAttachments != null) {
+            for (int i = 0; i < mColorAttachments.length; i++) {
+                mColorAttachments[i] = RefCnt.move(mColorAttachments[i]);
+            }
+        }
+        if (mResolveAttachments != null) {
+            for (int i = 0; i < mResolveAttachments.length; i++) {
+                mResolveAttachments[i] = RefCnt.move(mResolveAttachments[i]);
+            }
+        }
+        mDepthStencilAttachment = RefCnt.move(mDepthStencilAttachment);
     }
 
     @Override
@@ -348,9 +369,12 @@ public final class GLFramebuffer extends GpuFramebuffer {
 
     @Override
     public String toString() {
-        return "GLRenderTarget{" +
+        return "GLFramebuffer{" +
                 "mRenderFramebuffer=" + mRenderFramebuffer +
                 ", mResolveFramebuffer=" + mResolveFramebuffer +
+                ", mColorAttachments=" + Arrays.toString(mColorAttachments) +
+                ", mResolveAttachments=" + Arrays.toString(mResolveAttachments) +
+                ", mDepthStencilAttachment=" + mDepthStencilAttachment +
                 ", mFormat=" + GLUtil.glFormatName(mFormat) +
                 ", mSampleCount=" + getSampleCount() +
                 ", mOwnership=" + mOwnership +

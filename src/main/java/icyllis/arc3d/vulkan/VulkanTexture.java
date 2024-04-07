@@ -19,14 +19,17 @@
 
 package icyllis.arc3d.vulkan;
 
-import icyllis.arc3d.engine.BackendTexture;
-import icyllis.arc3d.engine.GpuTexture;
+import icyllis.arc3d.engine.*;
 import org.jetbrains.annotations.NotNull;
 
 public final class VulkanTexture extends VulkanImage implements GpuTexture {
 
-    public VulkanTexture(VulkanDevice device, int width, int height) {
-        super(device, width, height);
+    public VulkanTexture(VulkanDevice device,
+                         int width, int height,
+                         VulkanImageInfo info,
+                         BackendFormat format,
+                         int flags) {
+        super(device, width, height, info, format, flags);
     }
 
     @NotNull

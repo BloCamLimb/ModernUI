@@ -38,7 +38,8 @@ public class ResourceProvider {
     private final DirectContext mContext;
 
     // lookup key
-    private final GpuImageBase.ScratchKey mTextureScratchKey = new GpuImageBase.ScratchKey();
+    private final GpuImage.ScratchKey mImageScratchKey = new GpuImage.ScratchKey();
+    private final GpuFramebuffer.ScratchKey mFramebufferScratchKey = new GpuFramebuffer.ScratchKey();
 
     protected ResourceProvider(GpuDevice device, DirectContext context) {
         mDevice = device;
@@ -59,6 +60,167 @@ public class ResourceProvider {
         assert mDevice.getContext().isOwnerThread();
         return mDevice.getContext().isDiscarded() ? null :
                 (T) mContext.getResourceCache().findAndRefUniqueResource(key);
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Images
+
+    /**
+     * Finds or creates a texture that matches the descriptor. The texture's format will always
+     * match the request. The contents of the texture are undefined.
+     * <p>
+     * When {@link ISurface#FLAG_BUDGETED} is set, the texture will count against the resource
+     * cache budget. If {@link ISurface#FLAG_APPROX_FIT} is also set, it's always budgeted.
+     * <p>
+     * When {@link ISurface#FLAG_APPROX_FIT} is set, the method returns a potentially approx fit
+     * texture that approximately matches the descriptor. Will be at least as large in width and
+     * height as desc specifies. In this case, {@link ISurface#FLAG_MIPMAPPED} and
+     * {@link ISurface#FLAG_BUDGETED} are ignored. Otherwise, the method returns an exact fit
+     * texture.
+     * <p>
+     * When {@link ISurface#FLAG_MIPMAPPED} is set, the texture will be allocated with mipmaps.
+     * If {@link ISurface#FLAG_APPROX_FIT} is also set, it always has no mipmaps.
+     * <p>
+     * When {@link ISurface#FLAG_RENDERABLE} is set, the texture can be rendered to and
+     * can be used as attachments of a framebuffer. The <code>sampleCount</code>
+     * specifies the number of samples to use for rendering.
+     * <p>
+     * When {@link ISurface#FLAG_PROTECTED} is set, the texture will be created as protected.
+     *
+     * @param width        the desired width of the texture to be created
+     * @param height       the desired height of the texture to be created
+     * @param format       the backend format for the texture
+     * @param sampleCount  the number of samples to use for rendering if renderable is set,
+     *                     otherwise this must be 1
+     * @param surfaceFlags the combination of the above flags
+     * @param label        the label for debugging purposes, can be empty to clear the label,
+     *                     or null to leave the label unchanged
+     * @see ISurface#FLAG_BUDGETED
+     * @see ISurface#FLAG_APPROX_FIT
+     * @see ISurface#FLAG_MIPMAPPED
+     * @see ISurface#FLAG_TEXTURABLE
+     * @see ISurface#FLAG_RENDERABLE
+     * @see ISurface#FLAG_MEMORYLESS
+     * @see ISurface#FLAG_PROTECTED
+     */
+    @Nullable
+    @SharedPtr
+    public final GpuImage createImage(int width, int height,
+                                      BackendFormat format,
+                                      int sampleCount,
+                                      int surfaceFlags,
+                                      String label) {
+        assert mDevice.getContext().isOwnerThread();
+        if (mDevice.getContext().isDiscarded()) {
+            return null;
+        }
+
+        if (format.isCompressed()) {
+            return null;
+        }
+
+        // hide invalid flags
+        surfaceFlags &= ISurface.FLAG_BUDGETED | ISurface.FLAG_APPROX_FIT |
+                ISurface.FLAG_MIPMAPPED | ISurface.FLAG_TEXTURABLE |
+                ISurface.FLAG_RENDERABLE | ISurface.FLAG_MEMORYLESS |
+                ISurface.FLAG_PROTECTED;
+
+        if ((surfaceFlags & ISurface.FLAG_TEXTURABLE) != 0) {
+            // texturable cannot be memoryless
+            surfaceFlags &= ~ISurface.FLAG_MEMORYLESS;
+        }
+
+        if ((surfaceFlags & ISurface.FLAG_MEMORYLESS) != 0) {
+            // memoryless cannot be approx fit and must be renderable
+            surfaceFlags &= ~ISurface.FLAG_APPROX_FIT;
+            surfaceFlags |= ISurface.FLAG_RENDERABLE;
+        }
+
+        // approx fit is create-time or surface proxy flag
+        if ((surfaceFlags & ISurface.FLAG_APPROX_FIT) != 0) {
+            width = ISurface.getApproxSize(width);
+            height = ISurface.getApproxSize(height);
+            // approx fit cannot be mipmapped and must be budgeted
+            surfaceFlags &= ISurface.FLAG_TEXTURABLE | ISurface.FLAG_RENDERABLE | ISurface.FLAG_PROTECTED;
+            surfaceFlags |= ISurface.FLAG_BUDGETED;
+        }
+
+        if ((surfaceFlags & (ISurface.FLAG_TEXTURABLE | ISurface.FLAG_RENDERABLE)) == 0) {
+            // default is texturable
+            surfaceFlags |= ISurface.FLAG_TEXTURABLE;
+        }
+
+        if (!mDevice.getCaps().validateSurfaceParams(width, height, format,
+                sampleCount, surfaceFlags)) {
+            return null;
+        }
+
+        final GpuImage image = findAndRefScratchImage(width, height, format,
+                sampleCount, surfaceFlags, label);
+        if (image != null) {
+            if ((surfaceFlags & ISurface.FLAG_BUDGETED) == 0) {
+                image.makeBudgeted(false);
+            }
+            return image;
+        }
+
+        return mDevice.createImage(width, height, format,
+                sampleCount, surfaceFlags, label);
+    }
+
+    /**
+     * Search the cache for a scratch texture matching the provided arguments. Failing that
+     * it returns null. If non-null, the resulting texture is always budgeted.
+     *
+     * @param label the label for debugging purposes, can be empty to clear the label,
+     *              or null to leave the label unchanged
+     */
+    @Nullable
+    @SharedPtr
+    public final GpuImage findAndRefScratchImage(IScratchKey key, String label) {
+        assert mDevice.getContext().isOwnerThread();
+        assert !mDevice.getContext().isDiscarded();
+        assert key instanceof GpuImage.ScratchKey;
+
+        GpuResource resource = mContext.getResourceCache().findAndRefScratchResource(key);
+        if (resource != null) {
+            mDevice.getStats().incNumScratchTexturesReused();
+            if (label != null) {
+                resource.setLabel(label);
+            }
+            return (GpuImage) resource;
+        }
+        return null;
+    }
+
+    /**
+     * Search the cache for a scratch texture matching the provided arguments. Failing that
+     * it returns null. If non-null, the resulting texture is always budgeted.
+     *
+     * @param label the label for debugging purposes, can be empty to clear the label,
+     *              or null to leave the label unchanged
+     * @see ISurface#FLAG_MIPMAPPED
+     * @see ISurface#FLAG_RENDERABLE
+     * @see ISurface#FLAG_PROTECTED
+     */
+    @Nullable
+    @SharedPtr
+    public final GpuImage findAndRefScratchImage(int width, int height,
+                                                 BackendFormat format,
+                                                 int sampleCount,
+                                                 int surfaceFlags,
+                                                 String label) {
+        assert mDevice.getContext().isOwnerThread();
+        assert !mDevice.getContext().isDiscarded();
+        assert !format.isCompressed();
+        assert mDevice.getCaps().validateSurfaceParams(width, height, format,
+                sampleCount, surfaceFlags);
+
+        return findAndRefScratchImage(mImageScratchKey.compute(
+                format,
+                width, height,
+                sampleCount,
+                surfaceFlags), label);
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -120,53 +282,12 @@ public class ResourceProvider {
             return null;
         }
 
-        // hide invalid flags
-        surfaceFlags &= ISurface.FLAG_BUDGETED | ISurface.FLAG_APPROX_FIT |
-                ISurface.FLAG_MIPMAPPED | ISurface.FLAG_TEXTURABLE |
-                ISurface.FLAG_RENDERABLE | ISurface.FLAG_MEMORYLESS |
-                ISurface.FLAG_PROTECTED;
-
-        if ((surfaceFlags & ISurface.FLAG_TEXTURABLE) != 0) {
-            // texturable cannot be memoryless
-            surfaceFlags &= ~ISurface.FLAG_MEMORYLESS;
-        }
-
-        if ((surfaceFlags & ISurface.FLAG_MEMORYLESS) != 0) {
-            // memoryless cannot be approx fit and must be renderable
-            surfaceFlags &= ~ISurface.FLAG_APPROX_FIT;
-            surfaceFlags |= ISurface.FLAG_RENDERABLE;
-        }
-
-        // approx fit is create-time or surface proxy flag
-        if ((surfaceFlags & ISurface.FLAG_APPROX_FIT) != 0) {
-            width = ISurface.getApproxSize(width);
-            height = ISurface.getApproxSize(height);
-            // approx fit cannot be mipmapped and must be budgeted
-            surfaceFlags &= ISurface.FLAG_TEXTURABLE | ISurface.FLAG_RENDERABLE | ISurface.FLAG_PROTECTED;
-            surfaceFlags |= ISurface.FLAG_BUDGETED;
-        }
-
-        if ((surfaceFlags & (ISurface.FLAG_TEXTURABLE | ISurface.FLAG_RENDERABLE)) == 0) {
-            // default is texturable
-            surfaceFlags |= ISurface.FLAG_TEXTURABLE;
-        }
-
-        if (!mDevice.getCaps().validateSurfaceParams(width, height, format,
-                sampleCount, surfaceFlags)) {
-            return null;
-        }
-
-        final GpuTexture texture = findAndRefScratchTexture(width, height, format,
-                sampleCount, surfaceFlags, label);
-        if (texture != null) {
-            if ((surfaceFlags & ISurface.FLAG_BUDGETED) == 0) {
-                texture.makeBudgeted(false);
-            }
-            return texture;
-        }
-
-        return mDevice.createTexture(width, height, format,
-                sampleCount, surfaceFlags, label);
+        surfaceFlags |= ISurface.FLAG_TEXTURABLE;
+        return (GpuTexture) createImage(width, height,
+                format,
+                sampleCount,
+                surfaceFlags,
+                label);
     }
 
     /**
@@ -187,11 +308,11 @@ public class ResourceProvider {
      * @param pixels       the pointer to the texel data for base level image
      * @param label        the label for debugging purposes, can be empty to clear the label,
      *                     or null to leave the label unchanged
-     * @see GpuSurface#FLAG_BUDGETED
-     * @see GpuSurface#FLAG_APPROX_FIT
-     * @see GpuSurface#FLAG_MIPMAPPED
-     * @see GpuSurface#FLAG_RENDERABLE
-     * @see GpuSurface#FLAG_PROTECTED
+     * @see ISurface#FLAG_BUDGETED
+     * @see ISurface#FLAG_APPROX_FIT
+     * @see ISurface#FLAG_MIPMAPPED
+     * @see ISurface#FLAG_RENDERABLE
+     * @see ISurface#FLAG_PROTECTED
      */
     @Nullable
     @SharedPtr
@@ -242,59 +363,213 @@ public class ResourceProvider {
         return texture;
     }
 
+    ///////////////////////////////////////////////////////////////////////////
+    // Framebuffers
+
     /**
-     * Search the cache for a scratch texture matching the provided arguments. Failing that
-     * it returns null. If non-null, the resulting texture is always budgeted.
+     * Search the cache for a combination of attachments and its {@link GpuFramebuffer}
+     * matching the provided arguments. If none, find or create one or more (up to 8) color targets
+     * and optional depth/stencil target. Then creates a new {@link GpuFramebuffer} object
+     * for the combination of attachments.
+     * <p>
+     * This method is responsible for canonicalization of surface flags.
      *
-     * @param label the label for debugging purposes, can be empty to clear the label,
-     *              or null to leave the label unchanged
+     * @param width
+     * @param height
+     * @param colorFormat
+     * @param numColorTargets
+     * @param depthStencilFormat
+     * @param framebufferFlags
+     * @param label
+     * @return
      */
     @Nullable
     @SharedPtr
-    public final GpuTexture findAndRefScratchTexture(IScratchKey key, String label) {
+    public final GpuFramebuffer createRenderTarget(int width, int height,
+                                                   BackendFormat colorFormat,
+                                                   int colorFlags,
+                                                   BackendFormat resolveFormat,
+                                                   int resolveFlags,
+                                                   BackendFormat depthStencilFormat,
+                                                   int depthStencilFlags,
+                                                   int sampleCount,
+                                                   int framebufferFlags,
+                                                   String label) {
         assert mDevice.getContext().isOwnerThread();
         assert !mDevice.getContext().isDiscarded();
-        assert key != null;
+        Caps caps = mDevice.getCaps();
+
+        if (colorFormat != null) {
+            colorFlags |= ISurface.FLAG_RENDERABLE;
+        } else {
+            colorFlags = 0;
+        }
+        if (depthStencilFormat != null) {
+            depthStencilFlags |= ISurface.FLAG_RENDERABLE;
+        } else {
+            depthStencilFlags = 0;
+        }
+
+        framebufferFlags |= ISurface.FLAG_RENDERABLE;
+
+        // approx fit is create-time or surface proxy flag
+        if ((framebufferFlags & ISurface.FLAG_APPROX_FIT) != 0) {
+            width = ISurface.getApproxSize(width);
+            height = ISurface.getApproxSize(height);
+            // approx fit cannot be mipmapped and must be budgeted
+            /*surfaceFlags &= ISurface.FLAG_TEXTURABLE | ISurface.FLAG_RENDERABLE | ISurface.FLAG_PROTECTED;
+            surfaceFlags |= ISurface.FLAG_BUDGETED;*/
+        }
+
+        if (colorFormat != null && !caps.validateSurfaceParams(
+                width, height, colorFormat, sampleCount, colorFlags)) {
+            return null;
+        }
+
+        if (sampleCount <= 1) {
+            resolveFormat = null;
+        }
+        if (resolveFormat == null) {
+            resolveFlags = 0;
+        }
+
+        if (resolveFormat != null && !caps.validateSurfaceParams(
+                width, height, resolveFormat, 1, resolveFlags)) {
+            return null;
+        }
+
+        if (depthStencilFormat != null && !caps.validateSurfaceParams(
+                width, height, depthStencilFormat, sampleCount, depthStencilFlags)) {
+            return null;
+        }
+
+        GpuFramebuffer framebuffer = findAndRefScratchFramebuffer(width, height,
+                colorFormat, colorFlags,
+                resolveFormat, resolveFlags,
+                depthStencilFormat, depthStencilFlags,
+                sampleCount, framebufferFlags, label);
+        if (framebuffer != null) {
+            if ((framebufferFlags & ISurface.FLAG_BUDGETED) == 0) {
+                framebuffer.makeBudgeted(false);
+            }
+            return framebuffer;
+        }
+
+        GpuImage colorAttr = null;
+        if (colorFormat != null) {
+            colorAttr = createImage(width, height,
+                    colorFormat,
+                    sampleCount,
+                    colorFlags,
+                    label == null ? null : label.isEmpty() ? "" : label + "_C0");
+            if (colorAttr == null) {
+                return null;
+            }
+        }
+
+        GpuImage resolveAttr = null;
+        if (resolveFormat != null) {
+            resolveAttr = createImage(width, height,
+                    resolveFormat,
+                    1,
+                    resolveFlags,
+                    label == null ? null : label.isEmpty() ? "" : label + "_R0");
+            if (resolveAttr == null) {
+                if (colorAttr != null) {
+                    colorAttr.unref();
+                }
+                return null;
+            }
+        }
+
+        GpuImage depthStencilAttr = null;
+        if (depthStencilFormat != null) {
+            depthStencilAttr = createImage(width, height,
+                    depthStencilFormat,
+                    sampleCount,
+                    depthStencilFlags,
+                    label == null ? null : label.isEmpty() ? "" : label + "_DS");
+            if (depthStencilAttr == null) {
+                if (colorAttr != null) {
+                    colorAttr.unref();
+                }
+                if (resolveAttr != null) {
+                    resolveAttr.unref();
+                }
+                return null;
+            }
+        }
+
+        framebuffer = mDevice.createFramebuffer(1,
+                colorFormat != null ? new GpuImage[]{colorAttr} : null,
+                resolveFormat != null ? new GpuImage[]{resolveAttr} : null,
+                null,
+                depthStencilAttr,
+                framebufferFlags);
+        if (framebuffer != null) {
+            return framebuffer;
+        }
+
+        if (colorAttr != null) {
+            colorAttr.unref();
+        }
+        if (resolveAttr != null) {
+            resolveAttr.unref();
+        }
+        if (depthStencilAttr != null) {
+            depthStencilAttr.unref();
+        }
+
+        return null;
+    }
+
+    @Nullable
+    @SharedPtr
+    public final GpuFramebuffer createFramebuffer(int width, int height,
+                                                  int sampleCount) {
+        //TODO framebuffer with no attachments, ARB_framebuffer_no_attachments
+        return null;
+    }
+
+    @Nullable
+    @SharedPtr
+    public final GpuFramebuffer findAndRefScratchFramebuffer(IScratchKey key, String label) {
+        assert mDevice.getContext().isOwnerThread();
+        assert !mDevice.getContext().isDiscarded();
+        assert key instanceof GpuFramebuffer.ScratchKey;
 
         GpuResource resource = mContext.getResourceCache().findAndRefScratchResource(key);
         if (resource != null) {
-            mDevice.getStats().incNumScratchTexturesReused();
+            mDevice.getStats().incNumScratchFramebuffersReused();
             if (label != null) {
                 resource.setLabel(label);
             }
-            return (GpuTexture) resource;
+            return (GpuFramebuffer) resource;
         }
         return null;
     }
 
-    /**
-     * Search the cache for a scratch texture matching the provided arguments. Failing that
-     * it returns null. If non-null, the resulting texture is always budgeted.
-     *
-     * @param label the label for debugging purposes, can be empty to clear the label,
-     *              or null to leave the label unchanged
-     * @see GpuSurface#FLAG_MIPMAPPED
-     * @see GpuSurface#FLAG_RENDERABLE
-     * @see GpuSurface#FLAG_PROTECTED
-     */
     @Nullable
     @SharedPtr
-    public final GpuTexture findAndRefScratchTexture(int width, int height,
-                                                     BackendFormat format,
-                                                     int sampleCount,
-                                                     int surfaceFlags,
-                                                     String label) {
-        assert mDevice.getContext().isOwnerThread();
-        assert !mDevice.getContext().isDiscarded();
-        assert !format.isCompressed();
-        assert mDevice.getCaps().validateSurfaceParams(width, height, format,
-                sampleCount, surfaceFlags);
+    public final GpuFramebuffer findAndRefScratchFramebuffer(int width, int height,
+                                                             BackendFormat colorFormat,
+                                                             int colorFlags,
+                                                             BackendFormat resolveFormat,
+                                                             int resolveFlags,
+                                                             BackendFormat depthStencilFormat,
+                                                             int depthStencilFlags,
+                                                             int sampleCount,
+                                                             int framebufferFlags,
+                                                             String label) {
 
-        return findAndRefScratchTexture(mTextureScratchKey.compute(
-                format,
+        return findAndRefScratchFramebuffer(mFramebufferScratchKey.compute(
                 width, height,
+                colorFormat, colorFlags,
+                resolveFormat, resolveFlags,
+                depthStencilFormat, depthStencilFlags,
                 sampleCount,
-                surfaceFlags), label);
+                framebufferFlags
+        ), label);
     }
 
     ///////////////////////////////////////////////////////////////////////////

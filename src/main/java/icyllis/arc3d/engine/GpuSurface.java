@@ -54,7 +54,9 @@ public sealed interface GpuSurface extends GpuResource permits GpuImage, GpuFram
     int getHeight();
 
     /**
-     * @return the backend format of the surface
+     * Returns the backend format of the surface.
+     * <p>
+     * If this is framebuffer, returns the backend format of color attachment 0.
      */
     @Nonnull
     BackendFormat getBackendFormat();
@@ -64,9 +66,7 @@ public sealed interface GpuSurface extends GpuResource permits GpuImage, GpuFram
      *
      * @return the number of samples, greater than (multi-sampled) or equal to one
      */
-    default int getSampleCount() {
-        return 1;
-    }
+    int getSampleCount();
 
     /**
      * Surface flags.
@@ -74,26 +74,26 @@ public sealed interface GpuSurface extends GpuResource permits GpuImage, GpuFram
      * <ul>
      * <li>{@link ISurface#FLAG_BUDGETED} -
      *  Indicates whether an allocation should count against a cache budget. Budgeted when
-     *  set, otherwise not budgeted. {@link GpuImage} or RenderTexture only.
+     *  set, otherwise not budgeted. {@link GpuImage} or {@link GpuTexture} only.
      * </li>
      *
      * <li>{@link ISurface#FLAG_MIPMAPPED} -
-     *  Used to say whether a texture has mip levels allocated or not. Mipmaps are allocated
-     *  when set, otherwise mipmaps are not allocated. {@link GpuImage} or RenderTexture only.
+     *  Used to say whether an image has mip levels allocated or not. Mipmaps are allocated
+     *  when set, otherwise mipmaps are not allocated. {@link GpuImage} or {@link GpuTexture} only.
      * </li>
      *
      * <li>{@link ISurface#FLAG_RENDERABLE} -
-     *  Used to say whether a surface can be rendered to, whether a texture can be used as
+     *  Used to say whether a surface can be rendered to, whether an image can be used as
      *  color attachments. Renderable when set, otherwise not renderable.
      * </li>
      *
      * <li>{@link ISurface#FLAG_PROTECTED} -
-     *  Used to say whether texture is backed by protected memory. Protected when set, otherwise
+     *  Used to say whether image is backed by protected memory. Protected when set, otherwise
      *  not protected.
      * </li>
      *
      * <li>{@link ISurface#FLAG_READ_ONLY} -
-     *  Means the pixels in the texture are read-only. Non-renderable {@link GpuImage} only.
+     *  Means the pixels in the image are read-only. Non-renderable {@link GpuImage} only.
      * </li>
      *
      * @return combination of the above flags
@@ -109,7 +109,7 @@ public sealed interface GpuSurface extends GpuResource permits GpuImage, GpuFram
      * If this object is image, returns this.
      * <p>
      * If this object is framebuffer, returns the resolve attachment 0 if available,
-     * or null.
+     * or returns the color attachment 0 if available, or null.
      *
      * @return raw ptr to the image
      */
@@ -122,7 +122,7 @@ public sealed interface GpuSurface extends GpuResource permits GpuImage, GpuFram
      * If this object is texture, returns this.
      * <p>
      * If this object is framebuffer, returns the resolve attachment 0 if available,
-     * or null.
+     * or returns the color attachment 0 if available, or null.
      *
      * @return raw ptr to the texture
      */

@@ -133,7 +133,7 @@ public interface Engine {
         int kMisc = 1 << 8;
     }
 
-    interface TextureType {
+    interface ImageType {
         /**
          * None represents OpenGL renderbuffers.
          */

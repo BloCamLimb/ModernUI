@@ -30,6 +30,7 @@ import static icyllis.arc3d.engine.Engine.BackendApi;
 /**
  * Describes the backend texture format, immutable.
  */
+//Valhalla: primitive class
 @Immutable
 public abstract class BackendFormat {
 

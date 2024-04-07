@@ -59,9 +59,9 @@ public final class GLBackendTexture extends BackendTexture {
     @Override
     public int getTextureType() {
         if (mInfo.target == GL11C.GL_TEXTURE_2D) {
-            return TextureType.k2D;
+            return ImageType.k2D;
         }
-        return TextureType.kNone;
+        return ImageType.kNone;
     }
 
     @Override
@@ -72,6 +72,11 @@ public final class GLBackendTexture extends BackendTexture {
     @Override
     public boolean isMipmapped() {
         return mInfo.levels > 1;
+    }
+
+    @Override
+    public int getMipLevelCount() {
+        return mInfo.levels;
     }
 
     @Override

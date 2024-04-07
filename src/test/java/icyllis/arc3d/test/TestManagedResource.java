@@ -153,6 +153,7 @@ public class TestManagedResource {
         int sampler = SamplerState.make(SamplerState.FILTER_NEAREST, SamplerState.MIPMAP_MODE_NONE);
 
         testTexture(dContext);
+        testRenderTarget(dContext);
 
         //tokenize(pw);
 
@@ -392,7 +393,7 @@ public class TestManagedResource {
             assert pixels != null;
             LOGGER.info("Image Bytes: " + pixels.remaining());
 
-            GpuTexture texture = dContext.getDevice().createTexture(
+            GpuTexture texture = (GpuTexture) dContext.getDevice().createImage(
                     x[0], y[0],
                     GLBackendFormat.make(GL_RGBA8),
                     1, ISurface.FLAG_MIPMAPPED |
@@ -422,6 +423,39 @@ public class TestManagedResource {
             if (pixels != null) {
                 STBImage.stbi_image_free(pixels);
             }
+        }
+    }
+
+    public static void testRenderTarget(DirectContext dContext) {
+        GpuFramebuffer framebuffer = dContext.getResourceProvider().createRenderTarget(
+                1920, 1080,
+                GLBackendFormat.make(GL_RG8),
+                ISurface.FLAG_MIPMAPPED |
+                        ISurface.FLAG_BUDGETED | ISurface.FLAG_TEXTURABLE | ISurface.FLAG_RENDERABLE,
+                null, 0,
+                null, 0,
+                1,
+                ISurface.FLAG_BUDGETED,
+                "MyLayer"
+        );
+        if (framebuffer != null) {
+            LOGGER.info(framebuffer.toString());
+            framebuffer.unref();
+        }
+        framebuffer = dContext.getResourceProvider().createRenderTarget(
+                1920, 1080,
+                GLBackendFormat.make(GL_RG8),
+                ISurface.FLAG_MIPMAPPED |
+                        ISurface.FLAG_BUDGETED | ISurface.FLAG_TEXTURABLE | ISurface.FLAG_RENDERABLE,
+                null, 0,
+                null, 0,
+                1,
+                ISurface.FLAG_BUDGETED,
+                "MyLayer"
+        );
+        if (framebuffer != null) {
+            LOGGER.info(framebuffer.toString()); // same RT
+            framebuffer.unref();
         }
     }
 

@@ -73,6 +73,11 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
         mProgramParameterSupport = true;
         mVertexAttribBindingSupport = caps.GLES31;
         mBufferStorageSupport = caps.GL_EXT_buffer_storage;
+        // our attachment points are consistent with draw buffers
+        mMaxColorAttachments = Math.min(Math.min(
+                        glGetInteger(GL_MAX_DRAW_BUFFERS),
+                        glGetInteger(GL_MAX_COLOR_ATTACHMENTS)),
+                MAX_COLOR_TARGETS);
 
         String versionString = GLES20.glGetString(GL_VERSION);
         String vendorString = GLES20.glGetString(GL_VENDOR);

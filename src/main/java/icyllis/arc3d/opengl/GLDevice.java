@@ -375,11 +375,11 @@ public final class GLDevice extends GpuDevice {
 
     @Nullable
     @Override
-    protected GLTexture onCreateTexture(int width, int height,
-                                        BackendFormat format,
-                                        int mipLevelCount,
-                                        int sampleCount,
-                                        int surfaceFlags) {
+    protected GLImage onCreateImage(int width, int height,
+                                      BackendFormat format,
+                                      int mipLevelCount,
+                                      int sampleCount,
+                                      int surfaceFlags) {
         assert (mipLevelCount > 0 && sampleCount > 0);
         // We don't support protected textures in OpenGL.
         if ((surfaceFlags & ISurface.FLAG_PROTECTED) != 0) {
@@ -395,7 +395,7 @@ public final class GLDevice extends GpuDevice {
         int glFormat = format.getGLFormat();
         final int handle;
         final int target;
-        if (sampleCount > 1 || (surfaceFlags & ISurface.FLAG_TEXTURABLE) == 0) {
+        if (sampleCount > 1 && (surfaceFlags & ISurface.FLAG_TEXTURABLE) == 0) {
             int internalFormat = glFormat;
             if (GLUtil.glFormatStencilBits(glFormat) == 0) {
                 internalFormat = getCaps().getRenderbufferInternalFormat(glFormat);
@@ -428,6 +428,13 @@ public final class GLDevice extends GpuDevice {
         info.format = glFormat;
         info.levels = mipLevelCount;
         info.samples = sampleCount;
+        if (target == GL_RENDERBUFFER) {
+            return new GLImage(this,
+                    width, height,
+                    info,
+                    format,
+                    surfaceFlags);
+        }
         //if (target == null) {
         return new GLTexture(this,
                 width, height,
@@ -446,16 +453,134 @@ public final class GLDevice extends GpuDevice {
 
     @Nullable
     @Override
-    protected GpuFramebuffer onCreateRenderTarget(int width, int height,
-                                                  BackendFormat colorFormat,
-                                                  int numColorTargets,
-                                                  BackendFormat depthStencilFormat,
-                                                  boolean hasDepthStencil,
-                                                  int mipLevelCount,
-                                                  int sampleCount,
-                                                  int surfaceFlags,
-                                                  String label) {
-        return null;
+    protected GpuFramebuffer onCreateFramebuffer(int width, int height,
+                                                 int sampleCount,
+                                                 int numColorTargets,
+                                                 @Nullable GpuImage[] colorTargets,
+                                                 @Nullable GpuImage[] resolveTargets,
+                                                 @Nullable int[] mipLevels,
+                                                 @Nullable GpuImage depthStencilTarget,
+                                                 int surfaceFlags) {
+        var gl = getGL();
+        // There's an NVIDIA driver bug that creating framebuffer via DSA with attachments of
+        // different dimensions will report GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT.
+        // The workaround is to use traditional glGen* and glBind* (validate).
+        // see https://forums.developer.nvidia.com/t/framebuffer-incomplete-when-attaching-color-buffers-of-different-sizes-with-dsa/211550
+        final int renderFramebuffer = gl.glGenFramebuffers();
+        if (renderFramebuffer == 0) {
+            return null;
+        }
+
+        int usedColorTargets = 0;
+        if (colorTargets != null) {
+            for (int i = 0; i < numColorTargets; i++) {
+                usedColorTargets += colorTargets[i] != null ? 1 : 0;
+            }
+        }
+        int usedResolveTargets = 0;
+        if (resolveTargets != null) {
+            for (int i = 0; i < numColorTargets; i++) {
+                usedResolveTargets += resolveTargets[i] != null ? 1 : 0;
+            }
+        }
+
+        // If we are using multisampling we will create two FBOs. We render to one and then resolve to
+        // the texture bound to the other.
+        final int resolveFramebuffer;
+        if (usedResolveTargets > 0) {
+            resolveFramebuffer = gl.glGenFramebuffers();
+            if (resolveFramebuffer == 0) {
+                gl.glDeleteFramebuffers(renderFramebuffer);
+                return null;
+            }
+        } else {
+            resolveFramebuffer = renderFramebuffer;
+        }
+
+        GLImage[] glColorTargets = usedColorTargets > 0
+                ? new GLImage[numColorTargets] : null;
+        GLImage[] glResolveTargets = usedResolveTargets > 0
+                ? new GLImage[numColorTargets] : null;
+        GLImage glDepthStencilTarget = (GLImage) depthStencilTarget;
+
+        currentCommandBuffer().bindFramebuffer(renderFramebuffer);
+        if (usedColorTargets > 0) {
+            int[] drawBuffers = new int[numColorTargets];
+            for (int index = 0; index < numColorTargets; index++) {
+                GLImage colorTarget = (GLImage) colorTargets[index];
+                if (colorTarget == null) {
+                    // unused slot
+                    drawBuffers[index] = GL_NONE;
+                    continue;
+                }
+                glColorTargets[index] = colorTarget;
+                attachColorAttachment(index,
+                        colorTarget,
+                        mipLevels == null ? 0 : mipLevels[index]);
+                drawBuffers[index] = GL_COLOR_ATTACHMENT0 + index;
+            }
+            glDrawBuffers(drawBuffers);
+        }
+        if (glDepthStencilTarget != null) {
+            //TODO renderbuffer?
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER,
+                    GL_STENCIL_ATTACHMENT,
+                    GL_RENDERBUFFER,
+                    glDepthStencilTarget.getHandle());
+            if (GLUtil.glFormatIsPackedDepthStencil(glDepthStencilTarget.getGLFormat())) {
+                glFramebufferRenderbuffer(GL_FRAMEBUFFER,
+                        GL_DEPTH_STENCIL_ATTACHMENT,
+                        GL_RENDERBUFFER,
+                        glDepthStencilTarget.getHandle());
+            }
+        }
+        if (!mCaps.skipErrorChecks()) {
+            int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+            if (status != GL_FRAMEBUFFER_COMPLETE) {
+                gl.glDeleteFramebuffers(renderFramebuffer);
+                gl.glDeleteFramebuffers(resolveFramebuffer);
+                return null;
+            }
+        }
+
+        if (usedResolveTargets > 0) {
+            currentCommandBuffer().bindFramebuffer(resolveFramebuffer);
+            int[] drawBuffers = new int[numColorTargets];
+            for (int index = 0; index < numColorTargets; index++) {
+                GLImage resolveTarget = (GLImage) resolveTargets[index];
+                if (resolveTarget == null) {
+                    // unused slot
+                    drawBuffers[index] = GL_NONE;
+                    continue;
+                }
+                glResolveTargets[index] = resolveTarget;
+                attachColorAttachment(index,
+                        resolveTarget,
+                        mipLevels == null ? 0 : mipLevels[index]);
+                drawBuffers[index] = GL_COLOR_ATTACHMENT0 + index;
+            }
+            glDrawBuffers(drawBuffers);
+            if (!mCaps.skipErrorChecks()) {
+                int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+                if (status != GL_FRAMEBUFFER_COMPLETE) {
+                    gl.glDeleteFramebuffers(renderFramebuffer);
+                    gl.glDeleteFramebuffers(resolveFramebuffer);
+                    return null;
+                }
+            }
+        }
+
+        return new GLFramebuffer(this,
+                width,
+                height,
+                sampleCount,
+                renderFramebuffer,
+                resolveFramebuffer,
+                numColorTargets,
+                glColorTargets,
+                glResolveTargets,
+                glDepthStencilTarget,
+                surfaceFlags);
     }
 
     @Nullable
@@ -490,7 +615,7 @@ public final class GLDevice extends GpuDevice {
                 texture.getBackendFormat(),
                 sampleCount);*/
 
-        var colorTarget = createTexture(
+        var colorTarget = createImage(
                 texture.getWidth(), texture.getHeight(),
                 texture.getBackendFormat(),
                 sampleCount,
@@ -587,7 +712,7 @@ public final class GLDevice extends GpuDevice {
             }
             parameters.baseMipmapLevel = 0;
         }
-        int maxLevel = glTexture.getMaxMipmapLevel();
+        int maxLevel = glTexture.getMipLevelCount() - 1; // minus base level
         if (parameters.maxMipmapLevel != maxLevel) {
             if (dsa) {
                 glTextureParameteri(texName, GL_TEXTURE_MAX_LEVEL, maxLevel);
@@ -1016,7 +1141,7 @@ public final class GLDevice extends GpuDevice {
             }
             parameters.baseMipmapLevel = 0;
         }
-        int maxLevel = texture.getMaxMipmapLevel();
+        int maxLevel = texture.getMipLevelCount() - 1; // minus base level
         if (parameters.maxMipmapLevel != maxLevel) {
             if (dsa) {
                 glTextureParameteri(texture.getHandle(), GL_TEXTURE_MAX_LEVEL, maxLevel);
@@ -1167,160 +1292,6 @@ public final class GLDevice extends GpuDevice {
         }
 
         return renderbuffer;
-    }
-
-    @Nullable
-    @SharedPtr
-    private GLFramebuffer createRTObjects(int numColorTargets,
-                                          @Nonnull GLImage[] colorTargets,
-                                          @Nullable GLImage[] resolveTargets,
-                                          @Nullable int[] mipLevels,
-                                          @Nullable GLImage depthStencilTarget,
-                                          int surfaceFlags) {
-        if (numColorTargets <= 0) {
-            return null;
-        }
-
-        // find logical dimension
-        int finalSampleCount = 0;
-        int finalWidth = Integer.MAX_VALUE;
-        int finalHeight = Integer.MAX_VALUE;
-        BackendFormat effectiveFormat = null;
-        for (int i = 0; i < numColorTargets; i++) {
-            GpuImageBase colorTarget = colorTargets[i];
-            if (colorTarget == null) continue;
-            int sampleCount = colorTarget.getSampleCount();
-            if (finalSampleCount == 0) {
-                finalSampleCount = sampleCount;
-            } else if (finalSampleCount != sampleCount) {
-                return null;
-            }
-            BackendFormat format = colorTarget.getBackendFormat();
-            if (effectiveFormat == null) {
-                effectiveFormat = format;
-            } else if (!effectiveFormat.equals(format)) {
-                return null;
-            }
-            finalWidth = Math.min(finalWidth, colorTarget.getWidth());
-            finalHeight = Math.min(finalHeight, colorTarget.getHeight());
-        }
-        if (finalSampleCount == 0) {
-            return null;
-        }
-        if (resolveTargets != null) {
-            for (int i = 0; i < numColorTargets; i++) {
-                GpuImageBase resolveTarget = resolveTargets[i];
-                if (resolveTarget == null) continue;
-                if (finalSampleCount == 1) {
-                    return null;
-                }
-                if (resolveTarget.getSampleCount() != 1) {
-                    return null;
-                }
-                if (!effectiveFormat.equals(resolveTarget.getBackendFormat())) {
-                    return null;
-                }
-                finalWidth = Math.min(finalWidth, resolveTarget.getWidth());
-                finalHeight = Math.min(finalHeight, resolveTarget.getHeight());
-            }
-        }
-        if (depthStencilTarget != null) {
-            if (finalSampleCount != depthStencilTarget.getSampleCount()) {
-                return null;
-            }
-            finalWidth = Math.min(finalWidth, depthStencilTarget.getWidth());
-            finalHeight = Math.min(finalHeight, depthStencilTarget.getHeight());
-        }
-        if (finalWidth == Integer.MAX_VALUE || finalHeight == Integer.MAX_VALUE) {
-            return null;
-        }
-
-        var gl = getGL();
-        // There's an NVIDIA driver bug that creating framebuffer via DSA with attachments of
-        // different dimensions will report GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT.
-        // The workaround is to use traditional glGen* and glBind* (validate).
-        // see https://forums.developer.nvidia.com/t/framebuffer-incomplete-when-attaching-color-buffers-of-different-sizes-with-dsa/211550
-        final int renderFramebuffer = gl.glGenFramebuffers();
-        if (renderFramebuffer == 0) {
-            return null;
-        }
-
-        // If we are using multisampling we will create two FBOs. We render to one and then resolve to
-        // the texture bound to the other.
-        final int resolveFramebuffer;
-        if (finalSampleCount > 1) {
-            resolveFramebuffer = gl.glGenFramebuffers();
-            if (resolveFramebuffer == 0) {
-                gl.glDeleteFramebuffers(renderFramebuffer);
-                return null;
-            }
-        } else {
-            resolveFramebuffer = renderFramebuffer;
-        }
-
-        currentCommandBuffer().bindFramebuffer(renderFramebuffer);
-        for (int i = 0; i < numColorTargets; i++) {
-            GLImage colorTarget = colorTargets[i];
-            if (colorTarget == null) {
-                continue;
-            }
-            attachColorAttachment(i,
-                    colorTarget,
-                    mipLevels == null ? 0 : mipLevels[i]);
-        }
-        if (depthStencilTarget != null) {
-            //TODO renderbuffer?
-            glFramebufferRenderbuffer(GL_FRAMEBUFFER,
-                    GL_STENCIL_ATTACHMENT,
-                    GL_RENDERBUFFER,
-                    depthStencilTarget.getHandle());
-            if (GLUtil.glFormatIsPackedDepthStencil(depthStencilTarget.getGLFormat())) {
-                glFramebufferRenderbuffer(GL_FRAMEBUFFER,
-                        GL_DEPTH_ATTACHMENT,
-                        GL_RENDERBUFFER,
-                        depthStencilTarget.getHandle());
-            }
-        }
-        if (!mCaps.skipErrorChecks()) {
-            int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-            if (status != GL_FRAMEBUFFER_COMPLETE) {
-                gl.glDeleteFramebuffers(renderFramebuffer);
-                gl.glDeleteFramebuffers(resolveFramebuffer);
-                return null;
-            }
-        }
-
-        if (resolveTargets != null) {
-            currentCommandBuffer().bindFramebuffer(resolveFramebuffer);
-            for (int i = 0; i < numColorTargets; i++) {
-                GLImage resolveTarget = resolveTargets[i];
-                if (resolveTarget == null) continue;
-                attachColorAttachment(i,
-                        resolveTarget,
-                        mipLevels == null ? 0 : mipLevels[i]);
-            }
-            if (!mCaps.skipErrorChecks()) {
-                int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-                if (status != GL_FRAMEBUFFER_COMPLETE) {
-                    gl.glDeleteFramebuffers(renderFramebuffer);
-                    gl.glDeleteFramebuffers(resolveFramebuffer);
-                    return null;
-                }
-            }
-        }
-
-        return new GLFramebuffer(this,
-                finalWidth,
-                finalHeight,
-                effectiveFormat.getGLFormat(),
-                finalSampleCount,
-                renderFramebuffer,
-                resolveFramebuffer,
-                numColorTargets,
-                colorTargets,
-                resolveTargets,
-                depthStencilTarget,
-                surfaceFlags);
     }
 
     private void attachColorAttachment(int index, GLImage texture, int mipLevel) {

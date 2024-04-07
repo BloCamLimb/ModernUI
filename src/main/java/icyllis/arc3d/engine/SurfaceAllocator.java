@@ -355,7 +355,7 @@ public final class SurfaceAllocator {
             assert (!proxy.isLazy());
             mProxy = proxy;
             if (scratch) {
-                mTexture = provider.findAndRefScratchTexture(proxy, null);
+                mTexture = (GpuTexture) provider.findAndRefScratchImage(proxy, null);
             } else {
                 assert (proxy.getUniqueKey() != null);
                 mTexture = provider.findByUniqueKey(proxy.getUniqueKey());
