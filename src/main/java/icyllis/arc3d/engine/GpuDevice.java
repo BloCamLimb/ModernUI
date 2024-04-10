@@ -22,6 +22,7 @@ package icyllis.arc3d.engine;
 import icyllis.arc3d.compiler.ShaderCompiler;
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.ops.OpsTask;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -166,7 +167,7 @@ public abstract class GpuDevice implements Engine {
                                       BackendFormat format,
                                       int sampleCount,
                                       int surfaceFlags,
-                                      String label) {
+                                      @Nullable String label) {
         if (format.isCompressed()) {
             return null;
         }
@@ -197,7 +198,7 @@ public abstract class GpuDevice implements Engine {
                 image.setLabel(label);
             }
             mStats.incImageCreates();
-            if (image instanceof GpuTexture) {
+            if (image.isTexturable()) {
                 mStats.incTextureCreates();
             }
         }
@@ -210,6 +211,7 @@ public abstract class GpuDevice implements Engine {
      * Image size and format support will have already been validated in base class
      * before onCreateImage is called.
      */
+    @ApiStatus.OverrideOnly
     @Nullable
     @SharedPtr
     protected abstract GpuImage onCreateImage(int width, int height,
@@ -220,12 +222,12 @@ public abstract class GpuDevice implements Engine {
 
     @Nullable
     @SharedPtr
-    public final GpuFramebuffer createFramebuffer(int numColorTargets,
-                                                  @Nullable GpuImage[] colorTargets,
-                                                  @Nullable GpuImage[] resolveTargets,
-                                                  @Nullable int[] mipLevels,
-                                                  @Nullable GpuImage depthStencilTarget,
-                                                  int surfaceFlags) {
+    public final GpuRenderTarget createRenderTarget(int numColorTargets,
+                                                    @Nullable GpuImage[] colorTargets,
+                                                    @Nullable GpuImage[] resolveTargets,
+                                                    @Nullable int[] mipLevels,
+                                                    @Nullable GpuImage depthStencilTarget,
+                                                    int surfaceFlags) {
         if (numColorTargets < 0 || numColorTargets > mCaps.maxColorAttachments()) {
             return null;
         }
@@ -247,6 +249,9 @@ public abstract class GpuDevice implements Engine {
             for (int i = 0; i < numColorTargets; i++) {
                 GpuImage colorTarget = colorTargets[i];
                 if (colorTarget == null) continue;
+                if (!colorTarget.isRenderable()) {
+                    return null;
+                }
                 int samples = colorTarget.getSampleCount();
                 if (sampleCount == -1) {
                     sampleCount = samples;
@@ -258,6 +263,9 @@ public abstract class GpuDevice implements Engine {
             }
         }
         if (depthStencilTarget != null) {
+            if (!depthStencilTarget.isRenderable()) {
+                return null;
+            }
             int samples = depthStencilTarget.getSampleCount();
             if (sampleCount == -1) {
                 sampleCount = samples;
@@ -276,6 +284,9 @@ public abstract class GpuDevice implements Engine {
             for (int i = 0; i < numColorTargets; i++) {
                 GpuImage resolveTarget = resolveTargets[i];
                 if (resolveTarget == null) continue;
+                if (colorTargets == null || colorTargets[i] == null) {
+                    return null;
+                }
                 if (sampleCount == 1) {
                     return null;
                 }
@@ -289,7 +300,7 @@ public abstract class GpuDevice implements Engine {
             }
         }
 
-        return onCreateFramebuffer(width, height,
+        return onCreateRenderTarget(width, height,
                 sampleCount,
                 numColorTargets,
                 colorTargets,
@@ -299,16 +310,17 @@ public abstract class GpuDevice implements Engine {
                 surfaceFlags);
     }
 
+    @ApiStatus.OverrideOnly
     @Nullable
     @SharedPtr
-    protected abstract GpuFramebuffer onCreateFramebuffer(int width, int height,
-                                                          int sampleCount,
-                                                          int numColorTargets,
-                                                          @Nullable GpuImage[] colorTargets,
-                                                          @Nullable GpuImage[] resolveTargets,
-                                                          @Nullable int[] mipLevels,
-                                                          @Nullable GpuImage depthStencilTarget,
-                                                          int surfaceFlags);
+    protected abstract GpuRenderTarget onCreateRenderTarget(int width, int height,
+                                                            int sampleCount,
+                                                            int numColorTargets,
+                                                            @Nullable GpuImage[] colorTargets,
+                                                            @Nullable GpuImage[] resolveTargets,
+                                                            @Nullable int[] mipLevels,
+                                                            @Nullable GpuImage depthStencilTarget,
+                                                            int surfaceFlags);
 
     /**
      * This makes the backend texture be renderable. If <code>sampleCount</code> is > 1 and
@@ -324,9 +336,9 @@ public abstract class GpuDevice implements Engine {
      */
     @Nullable
     @SharedPtr
-    public GpuFramebuffer wrapRenderableBackendTexture(BackendTexture texture,
-                                                       int sampleCount,
-                                                       boolean ownership) {
+    public GpuRenderTarget wrapRenderableBackendTexture(BackendTexture texture,
+                                                        int sampleCount,
+                                                        boolean ownership) {
         if (sampleCount < 1) {
             return null;
         }
@@ -347,13 +359,38 @@ public abstract class GpuDevice implements Engine {
 
     @Nullable
     @SharedPtr
-    protected abstract GpuFramebuffer onWrapRenderableBackendTexture(BackendTexture texture,
-                                                                     int sampleCount,
-                                                                     boolean ownership);
+    protected abstract GpuRenderTarget onWrapRenderableBackendTexture(BackendTexture texture,
+                                                                      int sampleCount,
+                                                                      boolean ownership);
 
     @Nullable
     @SharedPtr
-    public GpuFramebuffer wrapBackendRenderTarget(BackendRenderTarget backendRenderTarget) {
+    public final GpuRenderTarget wrapGLDefaultFramebuffer(int width, int height,
+                                                          int sampleCount,
+                                                          int depthBits,
+                                                          int stencilBits,
+                                                          BackendFormat format) {
+        if (!getCaps().isFormatRenderable(format,
+                sampleCount)) {
+            return null;
+        }
+        return onWrapGLDefaultFramebuffer(width, height, sampleCount, depthBits, stencilBits, format);
+    }
+
+    @ApiStatus.OverrideOnly
+    @Nullable
+    @SharedPtr
+    protected GpuRenderTarget onWrapGLDefaultFramebuffer(int width, int height,
+                                                         int sampleCount,
+                                                         int depthBits,
+                                                         int stencilBits,
+                                                         BackendFormat format) {
+        return null;
+    }
+
+    @Nullable
+    @SharedPtr
+    public GpuRenderTarget wrapBackendRenderTarget(BackendRenderTarget backendRenderTarget) {
         if (!getCaps().isFormatRenderable(backendRenderTarget.getBackendFormat(),
                 backendRenderTarget.getSampleCount())) {
             return null;
@@ -363,22 +400,22 @@ public abstract class GpuDevice implements Engine {
 
     @Nullable
     @SharedPtr
-    public abstract GpuFramebuffer onWrapBackendRenderTarget(BackendRenderTarget backendRenderTarget);
+    public abstract GpuRenderTarget onWrapBackendRenderTarget(BackendRenderTarget backendRenderTarget);
 
     /**
-     * Updates the pixels in a rectangle of a texture. No sRGB/linear conversions are performed.
+     * Updates the pixels in a rectangle of an image. No sRGB/linear conversions are performed.
      * The write operation can fail because of the surface doesn't support writing (e.g. read only),
      * the color type is not allowed for the format of the texture or if the rectangle written
      * is not contained in the texture.
      *
-     * @param texture      the texture to write to
-     * @param dstColorType the color type for this use of the texture
-     * @param srcColorType the color type of the source buffer
+     * @param texture      the image to write to
+     * @param dstColorType the color type for this use of the surface
+     * @param srcColorType the color type of the source data
      * @param rowBytes     the row bytes, must be a multiple of srcColorType's bytes-per-pixel.
      * @param pixels       the pointer to the texel data for base level image
      * @return true if succeeded, false if not
      */
-    public boolean writePixels(GpuTexture texture,
+    public boolean writePixels(GpuImage texture,
                                int x, int y,
                                int width, int height,
                                int dstColorType,
@@ -424,7 +461,7 @@ public abstract class GpuDevice implements Engine {
     }
 
     // overridden by backend-specific derived class to perform the surface write
-    protected abstract boolean onWritePixels(GpuTexture texture,
+    protected abstract boolean onWritePixels(GpuImage texture,
                                              int x, int y,
                                              int width, int height,
                                              int dstColorType,
@@ -433,27 +470,27 @@ public abstract class GpuDevice implements Engine {
                                              long pixels);
 
     /**
-     * Uses the base level of the texture to compute the contents of the other mipmap levels.
+     * Uses the base level of the image to compute the contents of the other mipmap levels.
      *
      * @return success or not
      */
-    public final boolean generateMipmaps(GpuTexture texture) {
-        assert texture != null;
-        assert texture.isMipmapped();
-        if (!texture.isMipmapsDirty()) {
+    public final boolean generateMipmaps(GpuImage image) {
+        assert image != null;
+        assert image.isMipmapped();
+        if (!image.isMipmapsDirty()) {
             return true;
         }
-        if (texture.isReadOnly()) {
+        if (image.isReadOnly()) {
             return false;
         }
-        if (onGenerateMipmaps(texture)) {
-            texture.setMipmapsDirty(false);
+        if (onGenerateMipmaps(image)) {
+            image.setMipmapsDirty(false);
             return true;
         }
         return false;
     }
 
-    protected abstract boolean onGenerateMipmaps(GpuTexture texture);
+    protected abstract boolean onGenerateMipmaps(GpuImage image);
 
     /**
      * Special case of {@link #copySurface} that has same dimensions.
@@ -524,7 +561,7 @@ public abstract class GpuDevice implements Engine {
                                                 byte colorOps,
                                                 byte stencilOps,
                                                 float[] clearColor,
-                                                Set<TextureProxy> sampledTextures,
+                                                Set<SurfaceProxy> sampledTextures,
                                                 int pipelineFlags) {
         mStats.incRenderPasses();
         return onGetOpsRenderPass(writeView, contentBounds,
@@ -537,23 +574,23 @@ public abstract class GpuDevice implements Engine {
                                                         byte colorOps,
                                                         byte stencilOps,
                                                         float[] clearColor,
-                                                        Set<TextureProxy> sampledTextures,
+                                                        Set<SurfaceProxy> sampledTextures,
                                                         int pipelineFlags);
 
     /**
      * Resolves MSAA. The resolve rectangle must already be in the native destination space.
      */
-    public void resolveFramebuffer(GpuFramebuffer framebuffer,
-                                   int resolveLeft, int resolveTop,
-                                   int resolveRight, int resolveBottom) {
-        assert (framebuffer != null);
-        onResolveFramebuffer(framebuffer, resolveLeft, resolveTop, resolveRight, resolveBottom);
+    public void resolveRenderTarget(GpuRenderTarget renderTarget,
+                                    int resolveLeft, int resolveTop,
+                                    int resolveRight, int resolveBottom) {
+        assert (renderTarget != null);
+        onResolveRenderTarget(renderTarget, resolveLeft, resolveTop, resolveRight, resolveBottom);
     }
 
     // overridden by backend-specific derived class to perform the resolve
-    protected abstract void onResolveFramebuffer(GpuFramebuffer framebuffer,
-                                                 int resolveLeft, int resolveTop,
-                                                 int resolveRight, int resolveBottom);
+    protected abstract void onResolveRenderTarget(GpuRenderTarget renderTarget,
+                                                  int resolveLeft, int resolveTop,
+                                                  int resolveRight, int resolveBottom);
 
     @Nullable
     @SharedPtr
@@ -630,7 +667,7 @@ public abstract class GpuDevice implements Engine {
         private long mNumFailedDraws = 0;
         private long mNumSubmitToGpus = 0;
         private long mNumScratchTexturesReused = 0;
-        private long mNumScratchFramebuffersReused = 0;
+        private long mNumScratchRenderTargetsReused = 0;
         private long mNumScratchMSAAAttachmentsReused = 0;
         private long mRenderPasses = 0;
 
@@ -647,7 +684,7 @@ public abstract class GpuDevice implements Engine {
             mNumFailedDraws = 0;
             mNumSubmitToGpus = 0;
             mNumScratchTexturesReused = 0;
-            mNumScratchFramebuffersReused = 0;
+            mNumScratchRenderTargetsReused = 0;
             mNumScratchMSAAAttachmentsReused = 0;
             mRenderPasses = 0;
         }
@@ -728,12 +765,12 @@ public abstract class GpuDevice implements Engine {
             mNumScratchTexturesReused++;
         }
 
-        public long numScratchFramebuffersReused() {
-            return mNumScratchFramebuffersReused;
+        public long numScratchRenderTargetsReused() {
+            return mNumScratchRenderTargetsReused;
         }
 
-        public void incNumScratchFramebuffersReused() {
-            mNumScratchFramebuffersReused++;
+        public void incNumScratchRenderTargetsReused() {
+            mNumScratchRenderTargetsReused++;
         }
 
         public long numScratchMSAAAttachmentsReused() {
@@ -755,7 +792,8 @@ public abstract class GpuDevice implements Engine {
         @Override
         public String toString() {
             return "GpuDevice.Stats{" +
-                    "mTextureCreates=" + mTextureCreates +
+                    "mImageCreates=" + mImageCreates +
+                    ", mTextureCreates=" + mTextureCreates +
                     ", mTextureUploads=" + mTextureUploads +
                     ", mTransfersToTexture=" + mTransfersToTexture +
                     ", mTransfersFromSurface=" + mTransfersFromSurface +
@@ -763,7 +801,7 @@ public abstract class GpuDevice implements Engine {
                     ", mNumFailedDraws=" + mNumFailedDraws +
                     ", mNumSubmitToGpus=" + mNumSubmitToGpus +
                     ", mNumScratchTexturesReused=" + mNumScratchTexturesReused +
-                    ", mNumScratchFramebuffersReused=" + mNumScratchFramebuffersReused +
+                    ", mNumScratchRenderTargetsReused=" + mNumScratchRenderTargetsReused +
                     ", mNumScratchMSAAAttachmentsReused=" + mNumScratchMSAAAttachmentsReused +
                     ", mRenderPasses=" + mRenderPasses +
                     '}';

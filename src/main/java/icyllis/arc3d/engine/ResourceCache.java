@@ -26,7 +26,7 @@ import java.util.*;
 import static icyllis.arc3d.engine.Engine.BudgetType;
 
 /**
- * Manages the lifetime of all {@link GpuResourceBase} instances.
+ * Manages the lifetime of all {@link GpuResource} instances.
  * <p>
  * Resources may optionally have two types of keys:
  * <ol>
@@ -50,7 +50,7 @@ import static icyllis.arc3d.engine.Engine.BudgetType;
 @NotThreadSafe
 public final class ResourceCache implements AutoCloseable {
 
-    private static final Comparator<GpuResourceBase> TIMESTAMP_COMPARATOR =
+    private static final Comparator<GpuResource> TIMESTAMP_COMPARATOR =
             (lhs, rhs) -> Integer.compareUnsigned(lhs.mTimestamp, rhs.mTimestamp);
 
     private SurfaceProvider mSurfaceProvider = null;
@@ -61,14 +61,14 @@ public final class ResourceCache implements AutoCloseable {
     // free resources by this value, and thus is used to clean up resources in LRU order.
     private int mTimestamp = 0;
 
-    private final PriorityQueue<GpuResourceBase> mFreeQueue;
-    private GpuResourceBase[] mNonFreeList;
+    private final PriorityQueue<GpuResource> mFreeQueue;
+    private GpuResource[] mNonFreeList;
     private int mNonFreeSize;
 
     // This map holds all resources that can be used as scratch resources.
-    private final LinkedListMultimap<IScratchKey, GpuResourceBase> mScratchMap;
+    private final LinkedListMultimap<IScratchKey, GpuResource> mScratchMap;
     // This map holds all resources that have unique keys.
-    private final HashMap<IUniqueKey, GpuResourceBase> mUniqueMap;
+    private final HashMap<IUniqueKey, GpuResource> mUniqueMap;
 
     // our budget, used in clean()
     private long mMaxBytes = 1 << 28;
@@ -92,8 +92,8 @@ public final class ResourceCache implements AutoCloseable {
     ResourceCache(int contextID) {
         mContextID = contextID;
 
-        mFreeQueue = new PriorityQueue<>(TIMESTAMP_COMPARATOR, GpuResourceBase.QUEUE_ACCESS);
-        mNonFreeList = new GpuResourceBase[10]; // initial size must > 2
+        mFreeQueue = new PriorityQueue<>(TIMESTAMP_COMPARATOR, GpuResource.QUEUE_ACCESS);
+        mNonFreeList = new GpuResource[10]; // initial size must > 2
 
         mScratchMap = new LinkedListMultimap<>();
         mUniqueMap = new HashMap<>();
@@ -180,13 +180,13 @@ public final class ResourceCache implements AutoCloseable {
         //fProxyProvider->removeAllUniqueKeys();
 
         while (mNonFreeSize > 0) {
-            GpuResourceBase back = mNonFreeList[mNonFreeSize - 1];
+            GpuResource back = mNonFreeList[mNonFreeSize - 1];
             assert !back.isDestroyed();
             back.release();
         }
 
         while (!mFreeQueue.isEmpty()) {
-            GpuResourceBase top = mFreeQueue.peek();
+            GpuResource top = mFreeQueue.peek();
             assert !top.isDestroyed();
             top.release();
         }
@@ -207,13 +207,13 @@ public final class ResourceCache implements AutoCloseable {
      */
     public void discardAll() {
         while (mNonFreeSize > 0) {
-            GpuResourceBase back = mNonFreeList[mNonFreeSize - 1];
+            GpuResource back = mNonFreeList[mNonFreeSize - 1];
             assert !back.isDestroyed();
             back.discard();
         }
 
         while (!mFreeQueue.isEmpty()) {
-            GpuResourceBase top = mFreeQueue.peek();
+            GpuResource top = mFreeQueue.peek();
             assert !top.isDestroyed();
             top.discard();
         }
@@ -236,7 +236,7 @@ public final class ResourceCache implements AutoCloseable {
     @Nullable
     public GpuResource findAndRefScratchResource(IScratchKey key) {
         assert key != null;
-        GpuResourceBase resource = mScratchMap.pollFirstEntry(key);
+        GpuResource resource = mScratchMap.pollFirstEntry(key);
         if (resource != null) {
             refAndMakeResourceMRU(resource);
             return resource;
@@ -250,7 +250,7 @@ public final class ResourceCache implements AutoCloseable {
     @Nullable
     public GpuResource findAndRefUniqueResource(IUniqueKey key) {
         assert key != null;
-        GpuResourceBase resource = mUniqueMap.get(key);
+        GpuResource resource = mUniqueMap.get(key);
         if (resource != null) {
             refAndMakeResourceMRU(resource);
         }
@@ -284,7 +284,7 @@ public final class ResourceCache implements AutoCloseable {
 
         boolean stillOverBudget = isOverBudget();
         while (stillOverBudget && !mFreeQueue.isEmpty()) {
-            GpuResourceBase resource = mFreeQueue.peek();
+            GpuResource resource = mFreeQueue.peek();
             assert (resource.isFree());
             resource.release();
             stillOverBudget = isOverBudget();
@@ -295,7 +295,7 @@ public final class ResourceCache implements AutoCloseable {
 
             stillOverBudget = isOverBudget();
             while (stillOverBudget && !mFreeQueue.isEmpty()) {
-                GpuResourceBase resource = mFreeQueue.peek();
+                GpuResource resource = mFreeQueue.peek();
                 assert (resource.isFree());
                 resource.release();
                 stillOverBudget = isOverBudget();
@@ -338,9 +338,9 @@ public final class ResourceCache implements AutoCloseable {
             mFreeQueue.sort();
 
             // Make a list of the scratch resources to delete
-            List<GpuResourceBase> scratchResources = new ArrayList<>();
+            List<GpuResource> scratchResources = new ArrayList<>();
             for (int i = 0; i < mFreeQueue.size(); i++) {
-                GpuResourceBase resource = mFreeQueue.elementAt(i);
+                GpuResource resource = mFreeQueue.elementAt(i);
 
                 if (timeMillis >= 0 && resource.getLastUsedTime() >= timeMillis) {
                     // scratch or not, all later iterations will be too recently used to clean up.
@@ -354,7 +354,7 @@ public final class ResourceCache implements AutoCloseable {
 
             // Delete the scratch resources. This must be done as a separate pass
             // to avoid messing up the sorted order of the queue
-            scratchResources.forEach(GpuResourceBase::release);
+            scratchResources.forEach(GpuResource::release);
         } else {
             if (timeMillis >= 0) {
                 mThreadSafeCache.dropUniqueRefsOlderThan(timeMillis);
@@ -365,7 +365,7 @@ public final class ResourceCache implements AutoCloseable {
             // We could disable maintaining the heap property here, but it would add a lot of
             // complexity. Moreover, this is rarely called.
             while (!mFreeQueue.isEmpty()) {
-                GpuResourceBase resource = mFreeQueue.peek();
+                GpuResource resource = mFreeQueue.peek();
 
                 if (timeMillis >= 0 && resource.getLastUsedTime() >= timeMillis) {
                     // Resources were given both LRU timestamps and tagged with a frame number when
@@ -421,7 +421,7 @@ public final class ResourceCache implements AutoCloseable {
         return isOverBudget() && mFreeQueue.isEmpty() && mDirtyCount > 0;
     }
 
-    void notifyACntReachedZero(GpuResourceBase resource, boolean commandBufferUsage) {
+    void notifyACntReachedZero(GpuResource resource, boolean commandBufferUsage) {
         assert !resource.isDestroyed();
         assert isInCache(resource);
         // This resource should always be in the non-cleanable array when this function is called. It
@@ -487,7 +487,7 @@ public final class ResourceCache implements AutoCloseable {
         assert getResourceCount() < beforeCount;
     }
 
-    void insertResource(GpuResourceBase resource) {
+    void insertResource(GpuResource resource) {
         assert !isInCache(resource);
         assert !resource.isDestroyed();
         assert !resource.isFree();
@@ -510,7 +510,7 @@ public final class ResourceCache implements AutoCloseable {
         cleanup();
     }
 
-    void removeResource(GpuResourceBase resource) {
+    void removeResource(GpuResource resource) {
         assert isInCache(resource);
 
         long size = resource.getMemorySize();
@@ -536,12 +536,12 @@ public final class ResourceCache implements AutoCloseable {
         }
     }
 
-    void changeUniqueKey(GpuResourceBase resource, IUniqueKey newKey) {
+    void changeUniqueKey(GpuResource resource, IUniqueKey newKey) {
         assert isInCache(resource);
 
         // If another resource has the new key, remove its key then install the key on this resource.
         if (newKey != null) {
-            GpuResourceBase old;
+            GpuResource old;
             if ((old = mUniqueMap.get(newKey)) != null) {
                 // If the old resource using the key is cleanable and is unreachable, then remove it.
                 if (old.mScratchKey == null && old.isFree()) {
@@ -576,7 +576,7 @@ public final class ResourceCache implements AutoCloseable {
         }
     }
 
-    void removeUniqueKey(GpuResourceBase resource) {
+    void removeUniqueKey(GpuResource resource) {
         // Someone has a ref to this resource in order to have removed the key. When the ref count
         // reaches zero we will get a ref cnt notification and figure out what to do with it.
         if (resource.mUniqueKey != null) {
@@ -596,7 +596,7 @@ public final class ResourceCache implements AutoCloseable {
         assert !resource.isFree();
     }
 
-    void didChangeBudgetStatus(GpuResourceBase resource) {
+    void didChangeBudgetStatus(GpuResource resource) {
         assert isInCache(resource);
 
         long size = resource.getMemorySize();
@@ -632,14 +632,14 @@ public final class ResourceCache implements AutoCloseable {
         assert wasCleanable == resource.isFree();
     }
 
-    void willRemoveScratchKey(GpuResourceBase resource) {
+    void willRemoveScratchKey(GpuResource resource) {
         assert resource.mScratchKey != null;
         if (resource.isUsableAsScratch()) {
             mScratchMap.removeFirstEntry(resource.mScratchKey, resource);
         }
     }
 
-    private void refAndMakeResourceMRU(GpuResourceBase resource) {
+    private void refAndMakeResourceMRU(GpuResource resource) {
         assert isInCache(resource);
 
         if (resource.isFree()) {
@@ -657,8 +657,8 @@ public final class ResourceCache implements AutoCloseable {
         resource.mTimestamp = getNextTimestamp();
     }
 
-    private void addToNonFreeArray(GpuResourceBase resource) {
-        GpuResourceBase[] es = mNonFreeList;
+    private void addToNonFreeArray(GpuResource resource) {
+        GpuResource[] es = mNonFreeList;
         final int s = mNonFreeSize;
         if (s == es.length) {
             // Grow the array, we assume (s >> 1) > 0;
@@ -669,14 +669,14 @@ public final class ResourceCache implements AutoCloseable {
         mNonFreeSize = s + 1;
     }
 
-    private void removeFromNonFreeArray(GpuResourceBase resource) {
-        final GpuResourceBase[] es = mNonFreeList;
+    private void removeFromNonFreeArray(GpuResource resource) {
+        final GpuResource[] es = mNonFreeList;
         // Fill the hole we will create in the array with the tail object, adjust its index, and
         // then pop the array
         final int pos = resource.mCacheIndex;
         assert es[pos] == resource;
         final int s = --mNonFreeSize;
-        final GpuResourceBase tail = es[s];
+        final GpuResource tail = es[s];
         es[s] = null;
         es[pos] = tail;
         tail.mCacheIndex = pos;
@@ -693,7 +693,7 @@ public final class ResourceCache implements AutoCloseable {
                 // sequential timestamps beginning with 0. This is O(n*lg(n)) but it should be extremely
                 // rare.
                 int freeSize = mFreeQueue.size();
-                GpuResourceBase[] sortedFree = new GpuResourceBase[freeSize];
+                GpuResource[] sortedFree = new GpuResource[freeSize];
 
                 for (int i = 0; i < freeSize; i++) {
                     sortedFree[i] = mFreeQueue.remove();
@@ -740,7 +740,7 @@ public final class ResourceCache implements AutoCloseable {
         return mTimestamp++;
     }
 
-    private boolean isInCache(GpuResourceBase resource) {
+    private boolean isInCache(GpuResource resource) {
         int index = resource.mCacheIndex;
         if (index < 0) {
             return false;

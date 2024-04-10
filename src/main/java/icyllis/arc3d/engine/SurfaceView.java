@@ -56,7 +56,7 @@ public class SurfaceView implements AutoCloseable {
     }
 
     public boolean isMipmapped() {
-        TextureProxy proxy = mProxy.asTexture();
+        ImageProxy proxy = mProxy.asImageProxy();
         return proxy != null && proxy.isMipmapped();
     }
 
@@ -131,5 +131,24 @@ public class SurfaceView implements AutoCloseable {
             mProxy.unref();
         }
         mProxy = null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = mProxy != null ? mProxy.getUniqueID().hashCode() : 0;
+        result = 31 * result + mOrigin;
+        result = 31 * result + (int) mSwizzle;
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SurfaceView that = (SurfaceView) o;
+        if (mOrigin != that.mOrigin) return false;
+        if (mSwizzle != that.mSwizzle) return false;
+        return (mProxy == null && that.mProxy == null) ||
+                (mProxy != null && that.mProxy != null && mProxy.getUniqueID() == that.mProxy.getUniqueID());
     }
 }

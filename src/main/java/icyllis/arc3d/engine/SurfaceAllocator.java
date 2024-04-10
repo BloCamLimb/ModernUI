@@ -78,7 +78,7 @@ public final class SurfaceAllocator {
     private final DirectContext mContext;
 
     // All the intervals, hashed by surface ID
-    private final Reference2ObjectOpenHashMap<Object, Interval> mIntervalHash =
+    private final Reference2ObjectOpenHashMap<UniqueID, Interval> mIntervalHash =
             new Reference2ObjectOpenHashMap<>();
 
     // All the intervals sorted by increasing start
@@ -91,7 +91,7 @@ public final class SurfaceAllocator {
     private final IntervalList mFinishedIntervals = new IntervalList();
 
     // Recently created/used textures
-    private final LinkedListMultimap<TextureProxy, Register> mFreePool = new LinkedListMultimap<>();
+    private final LinkedListMultimap<IScratchKey, Register> mFreePool = new LinkedListMultimap<>();
 
     private final Object2ObjectOpenHashMap<Object, Register> mUniqueKeyRegisters =
             new Object2ObjectOpenHashMap<>();
@@ -151,7 +151,7 @@ public final class SurfaceAllocator {
             }
             return;
         }
-        Object proxyID = proxy.getUniqueID();
+        UniqueID proxyID = proxy.getUniqueID();
         Interval interval = mIntervalHash.get(proxyID);
         if (interval != null) {
             // Revise the interval for an existing use
@@ -210,12 +210,8 @@ public final class SurfaceAllocator {
                 continue;
             }
 
-            // It must be a texture proxy in this case.
-            // We don't know how to instantiate a pure render target without a texture.
-            TextureProxy textureProxy = cur.mSurfaceProxy.asTexture();
-            assert (textureProxy != null);
-            Register r = findOrCreateRegister(textureProxy, resourceProvider);
-            assert (textureProxy.getGpuTexture() == null);
+            Register r = findOrCreateRegister(cur.mSurfaceProxy, resourceProvider);
+            assert (cur.mSurfaceProxy.getGpuSurface() == null);
             cur.mRegister = r;
         }
 
@@ -248,11 +244,7 @@ public final class SurfaceAllocator {
             }
             Register r = cur.mRegister;
             assert (r != null);
-            // It must be a texture proxy in this case.
-            // We don't know how to instantiate a pure render target without a texture.
-            TextureProxy textureRef = cur.mSurfaceProxy.asTexture();
-            assert (textureRef != null);
-            mInstantiationFailed = !r.instantiateTexture(textureRef, resourceProvider);
+            mInstantiationFailed = !r.instantiateSurface(cur.mSurfaceProxy, resourceProvider);
         }
         return !mInstantiationFailed;
     }
@@ -294,13 +286,13 @@ public final class SurfaceAllocator {
 
             Register r = interval.mRegister;
             if (r != null && r.isRecyclable(interval.mSurfaceProxy, interval.mUses)) {
-                mFreePool.addLastEntry(r.mProxy, r);
+                mFreePool.addLastEntry(r.mScratchKey, r);
             }
             mFinishedIntervals.insertByIncreasingStart(interval);
         }
     }
 
-    private Register findOrCreateRegister(@Nonnull TextureProxy proxy,
+    private Register findOrCreateRegister(@Nonnull SurfaceProxy proxy,
                                           ResourceProvider provider) {
         Register r;
         // Handle uniquely keyed proxies
@@ -311,18 +303,20 @@ public final class SurfaceAllocator {
                 return r;
             }
             // No need for a scratch key. These don't go in the free pool.
-            r = makeRegister(proxy, provider, false);
+            r = makeRegister(proxy, provider, null);
             mUniqueKeyRegisters.put(uniqueKey, r);
             return r;
         }
 
         // Then look in the free pool
-        r = mFreePool.pollFirstEntry(proxy);
+        IScratchKey scratchKey = proxy.computeScratchKey();
+
+        r = mFreePool.pollFirstEntry(scratchKey);
         if (r != null) {
             return r;
         }
 
-        return makeRegister(proxy, provider, true);
+        return makeRegister(proxy, provider, scratchKey);
     }
 
     private static class Register {
@@ -334,42 +328,44 @@ public final class SurfaceAllocator {
          * When the proxy's unique key is null, we assume its scratch key is valid and
          * the key is the proxy itself.
          */
-        private TextureProxy mProxy;
+        private SurfaceProxy mOriginatingProxy;
         @SharedPtr
-        private GpuTexture mTexture;
+        private GpuSurface mExistingSurface;
+        private IScratchKey mScratchKey;
 
         private boolean mInit;
 
-        public Register(TextureProxy proxy,
+        public Register(SurfaceProxy originatingProxy,
                         ResourceProvider provider,
-                        boolean scratch) {
-            init(proxy, provider, scratch);
+                        IScratchKey scratchKey) {
+            init(originatingProxy, provider, scratchKey);
         }
 
-        public Register init(TextureProxy proxy,
+        public Register init(SurfaceProxy originatingProxy,
                              ResourceProvider provider,
-                             boolean scratch) {
+                             IScratchKey scratchKey) {
             assert (!mInit);
-            assert (proxy != null);
-            assert (!proxy.isInstantiated());
-            assert (!proxy.isLazy());
-            mProxy = proxy;
-            if (scratch) {
-                mTexture = (GpuTexture) provider.findAndRefScratchImage(proxy, null);
+            assert (originatingProxy != null);
+            assert (!originatingProxy.isInstantiated());
+            assert (!originatingProxy.isLazy());
+            mOriginatingProxy = originatingProxy;
+            mScratchKey = scratchKey;
+            if (scratchKey != null) {
+                mExistingSurface = provider.findAndRefScratchSurface(scratchKey, null);
             } else {
-                assert (proxy.getUniqueKey() != null);
-                mTexture = provider.findByUniqueKey(proxy.getUniqueKey());
+                assert (originatingProxy.getUniqueKey() != null);
+                mExistingSurface = provider.findByUniqueKey(originatingProxy.getUniqueKey());
             }
             mInit = true;
             return this;
         }
 
         public boolean isRecyclable(SurfaceProxy proxy, int knownUseCount) {
-            if (mProxy.getUniqueKey() != null) {
+            if (mOriginatingProxy.getUniqueKey() != null) {
                 // rely on the resource cache to hold onto uniquely-keyed textures.
                 return false;
             }
-            assert (proxy.asTexture() != null);
+            assert (proxy.asImageProxy() != null);
             // If all the refs on the proxy are known to the resource allocator then no one
             // should be holding onto it outside of engine.
             return !refCntGreaterThan(proxy, knownUseCount);
@@ -392,39 +388,39 @@ public final class SurfaceAllocator {
 
         // Resolve the register allocation to an actual Texture. 'mProxy' is used
         // to cache the allocation when a given register is used by multiple proxies.
-        public boolean instantiateTexture(TextureProxy proxy,
+        public boolean instantiateSurface(SurfaceProxy proxy,
                                           ResourceProvider resourceProvider) {
-            assert (proxy.getGpuTexture() == null);
-            final GpuTexture gpuTexture;
-            if (mTexture == null) {
-                if (mProxy == proxy) {
-                    gpuTexture = proxy.createGpuTexture(resourceProvider);
+            assert (proxy.getGpuSurface() == null);
+            final GpuSurface surface;
+            if (mExistingSurface == null) {
+                if (mOriginatingProxy == proxy) {
+                    surface = proxy.createSurface(resourceProvider);
                 } else {
-                    gpuTexture = RefCnt.create(mProxy.getGpuTexture());
+                    surface = RefCnt.create(mOriginatingProxy.getGpuSurface());
                 }
-                if (gpuTexture == null) {
+                if (surface == null) {
                     return false;
                 }
             } else {
-                gpuTexture = RefCnt.create(mTexture);
+                surface = RefCnt.create(mExistingSurface);
             }
-            assert (gpuTexture != null);
-            assert (proxy.mSurfaceFlags & ISurface.FLAG_RENDERABLE) == 0 || gpuTexture.asFramebuffer() != null;
+            assert (surface != null);
+            assert proxy.asRenderTargetProxy() == null || surface.asRenderTarget() != null;
 
             // Make texture budgeted if this proxy is budgeted.
-            if (proxy.isBudgeted() && gpuTexture.getBudgetType() != BudgetType.Budgeted) {
-                gpuTexture.makeBudgeted(true);
+            if (proxy.isBudgeted() && surface.getBudgetType() != BudgetType.Budgeted) {
+                surface.makeBudgeted(true);
             }
 
             // Propagate the proxy unique key to the texture if we have one.
             if (proxy.getUniqueKey() != null) {
-                if (gpuTexture.getUniqueKey() == null) {
-                    resourceProvider.assignUniqueKeyToResource(proxy.getUniqueKey(), gpuTexture);
+                if (surface.getUniqueKey() == null) {
+                    resourceProvider.assignUniqueKeyToResource(proxy.getUniqueKey(), surface);
                 }
-                assert proxy.getUniqueKey().equals(gpuTexture.getUniqueKey());
+                assert proxy.getUniqueKey().equals(surface.getUniqueKey());
             }
-            assert proxy.mGpuTexture == null;
-            proxy.mGpuTexture = gpuTexture;
+            assert proxy.getGpuSurface() == null;
+            proxy.mGpuSurface = surface;
             return true;
         }
 
@@ -435,13 +431,13 @@ public final class SurfaceAllocator {
          */
         public boolean reset() {
             if (mInit) {
-                mProxy = null;
-                mTexture = RefCnt.move(mTexture);
+                mOriginatingProxy = null;
+                mExistingSurface = RefCnt.move(mExistingSurface);
                 mInit = false;
                 return true;
             }
-            assert (mProxy == null);
-            assert (mTexture == null);
+            assert (mOriginatingProxy == null);
+            assert (mExistingSurface == null);
             return false;
         }
     }
@@ -592,12 +588,12 @@ public final class SurfaceAllocator {
     private final Interval[] mIntervalPool = new Interval[128];
     private int mIntervalPoolSize;
 
-    private Register makeRegister(@Nonnull TextureProxy proxy,
+    private Register makeRegister(@Nonnull SurfaceProxy proxy,
                                   ResourceProvider provider,
-                                  boolean scratch) {
+                                  IScratchKey scratchKey) {
         if (mRegisterPoolSize == 0)
-            return new Register(proxy, provider, scratch);
-        return mRegisterPool[--mRegisterPoolSize].init(proxy, provider, scratch);
+            return new Register(proxy, provider, scratchKey);
+        return mRegisterPool[--mRegisterPoolSize].init(proxy, provider, scratchKey);
     }
 
     private void freeRegister(@Nonnull Register register) {

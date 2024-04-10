@@ -70,7 +70,7 @@ public abstract class Op extends Rect2f {
     public Op() {
     }
 
-    public void visitProxies(TextureVisitor func) {
+    public void visitProxies(SurfaceVisitor func) {
         // This default implementation assumes the op has no proxies
     }
 

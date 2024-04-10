@@ -58,12 +58,12 @@ public final class GLOpsRenderPass extends OpsRenderPass {
         return mDevice;
     }
 
-    public GLOpsRenderPass set(GpuFramebuffer framebuffer,
+    public GLOpsRenderPass set(GpuRenderTarget renderTarget,
                                Rect2i bounds, int origin,
                                byte colorOps,
                                byte stencilOps,
                                float[] clearColor) {
-        set(framebuffer, origin);
+        set(renderTarget, origin);
         mColorOps = colorOps;
         mStencilOps = stencilOps;
         mClearColor = clearColor;
@@ -73,8 +73,8 @@ public final class GLOpsRenderPass extends OpsRenderPass {
     @Override
     public void begin() {
         super.begin();
-        GLFramebuffer glFramebuffer = (GLFramebuffer) mFramebuffer;
-        mCmdBuffer = mDevice.beginRenderPass(glFramebuffer,
+        GLRenderTarget glRenderTarget = (GLRenderTarget) mRenderTarget;
+        mCmdBuffer = mDevice.beginRenderPass(glRenderTarget,
                 mColorOps,
                 mStencilOps,
                 mClearColor);
@@ -85,8 +85,8 @@ public final class GLOpsRenderPass extends OpsRenderPass {
         mActiveIndexBuffer = RefCnt.move(mActiveIndexBuffer);
         mActiveVertexBuffer = RefCnt.move(mActiveVertexBuffer);
         mActiveInstanceBuffer = RefCnt.move(mActiveInstanceBuffer);
-        GLFramebuffer glFramebuffer = (GLFramebuffer) mFramebuffer;
-        mDevice.endRenderPass(glFramebuffer,
+        GLRenderTarget glRenderTarget = (GLRenderTarget) mRenderTarget;
+        mDevice.endRenderPass(glRenderTarget,
                 mColorOps,
                 mStencilOps);
         super.end();
@@ -119,7 +119,7 @@ public final class GLOpsRenderPass extends OpsRenderPass {
         }
 
         return mPipelineState.bindUniforms(mCmdBuffer, pipelineInfo,
-                mFramebuffer.getWidth(), mFramebuffer.getHeight());
+                mRenderTarget.getWidth(), mRenderTarget.getHeight());
     }
 
     @Override

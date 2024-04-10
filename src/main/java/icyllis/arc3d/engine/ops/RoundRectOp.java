@@ -22,7 +22,6 @@ package icyllis.arc3d.engine.ops;
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.geom.SDFRoundRectGeoProc;
-import org.jetbrains.annotations.NotNull;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
@@ -78,7 +77,7 @@ public class RoundRectOp extends MeshDrawOp {
 
     @Nonnull
     @Override
-    protected @NotNull PipelineInfo onCreatePipelineInfo(SurfaceView writeView, int pipelineFlags) {
+    protected PipelineInfo onCreatePipelineInfo(SurfaceView writeView, int pipelineFlags) {
         return new PipelineInfo(writeView,
                 new SDFRoundRectGeoProc(mStroke), null, null, null,
                 null, pipelineFlags);

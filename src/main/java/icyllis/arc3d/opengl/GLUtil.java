@@ -114,7 +114,7 @@ public final class GLUtil {
     //@formatter:off
     public static final int
             LAST_COLOR_FORMAT_INDEX = 16,
-            LAST_FORMAT_INDEX       = 19;
+            LAST_FORMAT_INDEX       = 23;
 
     /**
      * Lists all supported OpenGL texture formats and converts to table index.
@@ -142,7 +142,11 @@ public final class GLUtil {
             case GL_RG16F                         -> 16; // LAST_COLOR_FORMAT_INDEX
             case GL_STENCIL_INDEX8                -> 17;
             case GL_STENCIL_INDEX16               -> 18;
-            case GL_DEPTH24_STENCIL8              -> 19; // LAST_FORMAT_INDEX
+            case GL_DEPTH_COMPONENT16             -> 19;
+            case GL_DEPTH_COMPONENT24             -> 20;
+            case GL_DEPTH_COMPONENT32F            -> 21;
+            case GL_DEPTH24_STENCIL8              -> 22;
+            case GL_DEPTH32F_STENCIL8             -> 23; // LAST_FORMAT_INDEX
             default -> 0;
         };
     }
@@ -154,7 +158,7 @@ public final class GLUtil {
     @NativeType("GLenum")
     public static int glIndexToFormat(int index) {
         return switch (index) {
-            case 0 -> 0;
+            case 0 -> GL_NONE;
             case 1 -> GL_RGBA8;
             case 2 -> GL_R8;
             case 3 -> GL_RGB565;
@@ -173,10 +177,14 @@ public final class GLUtil {
             case 16 -> GL_RG16F;
             case 17 -> GL_STENCIL_INDEX8;
             case 18 -> GL_STENCIL_INDEX16;
-            case 19 -> GL_DEPTH24_STENCIL8;
+            case 19 -> GL_DEPTH_COMPONENT16;
+            case 20 -> GL_DEPTH_COMPONENT24;
+            case 21 -> GL_DEPTH_COMPONENT32F;
+            case 22 -> GL_DEPTH24_STENCIL8;
+            case 23 -> GL_DEPTH32F_STENCIL8;
             default -> {
                 assert false : index;
-                yield 0;
+                yield GL_NONE;
             }
         };
     }
@@ -229,7 +237,11 @@ public final class GLUtil {
                     GL_RG16F,
                     GL_STENCIL_INDEX8,
                     GL_STENCIL_INDEX16,
-                    GL_DEPTH24_STENCIL8 -> true;
+                    GL_DEPTH_COMPONENT16,
+                    GL_DEPTH_COMPONENT24,
+                    GL_DEPTH_COMPONENT32F,
+                    GL_DEPTH24_STENCIL8,
+                    GL_DEPTH32F_STENCIL8 -> true;
             default -> false;
         };
     }
@@ -251,21 +263,26 @@ public final class GLUtil {
         return switch (format) {
             case GL_RGBA8,
                     GL_DEPTH24_STENCIL8,
+                    GL_DEPTH_COMPONENT32F,
                     GL_RG16F,
                     GL_RG16,
                     GL_SRGB8_ALPHA8,
                     GL_RGB10_A2,
                     // We assume the GPU stores this format 4 byte aligned
-                    GL_RGB8 -> 4;
+                    GL_RGB8,
+                    GL_DEPTH_COMPONENT24 -> 4;
             case GL_R8,
                     GL_STENCIL_INDEX8 -> 1;
-            case GL_STENCIL_INDEX16,
+            case GL_DEPTH_COMPONENT16,
+                    GL_STENCIL_INDEX16,
                     GL_R16,
                     GL_RG8,
                     GL_R16F,
                     GL_RGB565 -> 2;
             case GL_RGBA16F,
                     GL_RGBA16,
+                    // We assume the GPU stores this format 8 byte aligned
+                    GL_DEPTH32F_STENCIL8,
                     GL_COMPRESSED_RGBA_S3TC_DXT1_EXT,
                     GL_COMPRESSED_RGB_S3TC_DXT1_EXT,
                     GL_COMPRESSED_RGB8_ETC2 -> 8;
@@ -287,14 +304,15 @@ public final class GLUtil {
     public static int glFormatStencilBits(@NativeType("GLenum") int format) {
         return switch (format) {
             case GL_STENCIL_INDEX8,
-                    GL_DEPTH24_STENCIL8 -> 8;
+                    GL_DEPTH24_STENCIL8,
+                    GL_DEPTH32F_STENCIL8 -> 8;
             case GL_STENCIL_INDEX16 -> 16;
             default -> 0;
         };
     }
 
     public static boolean glFormatIsPackedDepthStencil(@NativeType("GLenum") int format) {
-        return format == GL_DEPTH24_STENCIL8;
+        return format == GL_DEPTH24_STENCIL8 || format == GL_DEPTH32F_STENCIL8;
     }
 
     public static boolean glFormatIsSRGB(@NativeType("GLenum") int format) {

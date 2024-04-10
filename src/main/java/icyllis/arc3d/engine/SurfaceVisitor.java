@@ -17,23 +17,16 @@
  * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine.ops;
+package icyllis.arc3d.engine;
 
-import icyllis.arc3d.engine.*;
+import icyllis.arc3d.core.RawPtr;
 
-/**
- * Base class for {@link Op Ops} that draw. These ops can draw into an {@link OpsRenderPass}'s
- * {@link GpuRenderTarget}.
- */
-public abstract class DrawOp extends Op {
-
-    public DrawOp() {
-    }
+@FunctionalInterface
+public interface SurfaceVisitor {
 
     /**
-     * Returns whether the op will draw stencil.
+     * @param texture      raw ptr to surface proxy
+     * @param samplerState see {@link SamplerState}
      */
-    public boolean usesStencil() {
-        return false;
-    }
+    void visit(@RawPtr SurfaceProxy texture, int samplerState);
 }

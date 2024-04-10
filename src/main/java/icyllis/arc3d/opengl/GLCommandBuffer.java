@@ -56,7 +56,7 @@ public final class GLCommandBuffer extends CommandBuffer {
 
     private int mHWFramebuffer;
     @SharedPtr
-    private GLFramebuffer mHWRenderTarget;
+    private GLRenderTarget mHWRenderTarget;
 
     @SharedPtr
     private GLProgram mHWProgram;
@@ -229,7 +229,7 @@ public final class GLCommandBuffer extends CommandBuffer {
      *
      * @param target raw ptr to render target
      */
-    public void flushRenderTarget(@Nullable @RawPtr GLFramebuffer target) {
+    public void flushRenderTarget(@Nullable @RawPtr GLRenderTarget target) {
         if (target == null) {
             mHWRenderTarget = RefCnt.move(mHWRenderTarget);
         } else {
@@ -287,7 +287,7 @@ public final class GLCommandBuffer extends CommandBuffer {
      * @param samplerState the state of texture sampler or 0, see {@link SamplerState}
      * @param readSwizzle  the read swizzle of texture sampler, see {@link Swizzle}
      */
-    public void bindTexture(int binding, GLTexture texture,
+    public void bindTexture(int binding, GLImage texture,
                             int samplerState, short readSwizzle) {
         assert (texture != null);
         if (SamplerState.isMipmapped(samplerState)) {

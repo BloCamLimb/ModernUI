@@ -25,7 +25,7 @@ import icyllis.arc3d.engine.RecordingContext;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public class RasterImage extends Image {
+public class Image_Raster extends Image {
 
     final PixelMap mPixelMap;
     PixelRef mPixelRef;
@@ -34,8 +34,8 @@ public class RasterImage extends Image {
      * @param pixelMap pixel map
      * @param pixelRef raw ptr to pixel ref
      */
-    public RasterImage(@Nonnull PixelMap pixelMap,
-                       @Nonnull @RawPtr PixelRef pixelRef) {
+    public Image_Raster(@Nonnull PixelMap pixelMap,
+                        @Nonnull @RawPtr PixelRef pixelRef) {
         super(pixelMap.getInfo());
         mPixelMap = pixelMap;
         mPixelRef = RefCnt.create(pixelRef);

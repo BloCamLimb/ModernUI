@@ -77,7 +77,7 @@ public interface ISurface {
      */
     int FLAG_PROTECTED = 1 << 6;
     /**
-     * Means the pixels in the image are read-only. {@link GpuImage} and {@link TextureProxy}
+     * Means the pixels in the image are read-only. {@link GpuImage} and {@link ImageProxy}
      * only.
      */
     @ApiStatus.Internal
@@ -93,7 +93,7 @@ public interface ISurface {
      * For TextureProxies created in a deferred list recording thread it is possible for the
      * unique key to be cleared on the backing {@link GpuImage} while the unique key remains on
      * the proxy. When set, it loosens up asserts that the key of an instantiated uniquely-keyed
-     * texture proxy is also always set on the backing {@link GpuImage}. {@link TextureProxy} only.
+     * texture proxy is also always set on the backing {@link GpuImage}. {@link ImageProxy} only.
      */
     @ApiStatus.Internal
     int FLAG_DEFERRED_PROVIDER = FLAG_PROTECTED << 3;

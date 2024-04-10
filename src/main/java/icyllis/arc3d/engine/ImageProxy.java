@@ -19,36 +19,28 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.RefCnt;
+import icyllis.arc3d.core.SharedPtr;
 import org.jetbrains.annotations.ApiStatus;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Objects;
 
 /**
- * The {@link TextureProxy} targets an actual {@link GpuImageBase} with three instantiation
- * methods: deferred, lazy-callback and wrapped. Multiple {@link TextureProxy} objects
- * may target the same {@link GpuImageBase} based on dependencies and actual usage.
+ * The {@link ImageProxy} targets an actual {@link GpuImage} with three instantiation
+ * methods: deferred, lazy-callback and wrapped. Multiple {@link ImageProxy} objects
+ * may target the same {@link GpuImage} based on dependencies and actual usage.
  * See {@link SurfaceProxy} for more info.
  * <p>
- * Use {@link SurfaceProvider} to obtain {@link TextureProxy} objects.
+ * Use {@link SurfaceProvider} to obtain {@link ImageProxy} objects.
  * <p>
  * This class can only be used on the creating thread of/on a single {@link RecordingContext},
  * and later used by {@link DirectContext} (render thread).
- * <p>
- * Note: the object itself is also used as the scratch key, see {@link #hashCode()}
- * and {@link #equals(Object)}
  */
-public class TextureProxy extends SurfaceProxy implements IScratchKey {
+public final class ImageProxy extends SurfaceProxy {
 
     boolean mIsPromiseProxy = false;
-
-    /**
-     * For deferred textures it will be null until the backing store is instantiated.
-     * For wrapped textures it will point to the wrapped resource.
-     */
-    @SharedPtr
-    GpuTexture mGpuTexture;
 
     /**
      * This tracks the mipmap status at the proxy level and is thus somewhat distinct from the
@@ -73,9 +65,9 @@ public class TextureProxy extends SurfaceProxy implements IScratchKey {
     /**
      * Deferred version - no data
      */
-    public TextureProxy(BackendFormat format,
-                        int width, int height,
-                        int surfaceFlags) {
+    public ImageProxy(BackendFormat format,
+                      int width, int height,
+                      int surfaceFlags) {
         super(format, width, height, surfaceFlags);
         assert (width > 0 && height > 0); // non-lazy
     }
@@ -83,10 +75,10 @@ public class TextureProxy extends SurfaceProxy implements IScratchKey {
     /**
      * Lazy-callback version - takes a new UniqueID from the shared resource/proxy pool.
      */
-    public TextureProxy(BackendFormat format,
-                        int width, int height,
-                        int surfaceFlags,
-                        LazyInstantiateCallback callback) {
+    public ImageProxy(BackendFormat format,
+                      int width, int height,
+                      int surfaceFlags,
+                      LazyInstantiateCallback callback) {
         super(format, width, height, surfaceFlags);
         mLazyInstantiateCallback = Objects.requireNonNull(callback);
         // A "fully" lazy proxy's width and height are not known until instantiation time.
@@ -98,28 +90,28 @@ public class TextureProxy extends SurfaceProxy implements IScratchKey {
     }
 
     /**
-     * Wrapped version - shares the UniqueID of the passed texture.
+     * Wrapped version - shares the UniqueID of the passed image.
      * <p>
      * Takes UseAllocator because even though this is already instantiated it still can participate
      * in allocation by having its backing resource recycled to other uninstantiated proxies or
      * not depending on UseAllocator.
      */
-    public TextureProxy(@SharedPtr GpuTexture texture,
-                        int surfaceFlags) {
-        super(texture, surfaceFlags);
-        mMipmapsDirty = texture.isMipmapped() && texture.isMipmapsDirty();
+    public ImageProxy(@SharedPtr GpuImage image,
+                      int surfaceFlags) {
+        super(image, surfaceFlags);
+        mMipmapsDirty = image.isMipmapped() && image.isMipmapsDirty();
         assert (mSurfaceFlags & ISurface.FLAG_APPROX_FIT) == 0;
-        assert (mFormat.isExternal() == texture.isExternal());
-        assert (texture.isMipmapped()) == ((mSurfaceFlags & ISurface.FLAG_MIPMAPPED) != 0);
-        assert (texture.getBudgetType() == Engine.BudgetType.Budgeted) == ((mSurfaceFlags & ISurface.FLAG_BUDGETED) != 0);
-        assert (!texture.isExternal()) || ((mSurfaceFlags & ISurface.FLAG_READ_ONLY) != 0);
-        assert (texture.getBudgetType() == Engine.BudgetType.Budgeted) == isBudgeted();
-        assert (!texture.isExternal() || isReadOnly());
-        mGpuTexture = texture; // std::move
-        if (texture.getUniqueKey() != null) {
-            assert (texture.getContext() != null);
-            mSurfaceProvider = texture.getContext().getSurfaceProvider();
-            mSurfaceProvider.adoptUniqueKeyFromSurface(this, texture);
+        assert (mFormat.isExternal() == image.isExternal());
+        assert (image.isMipmapped()) == ((mSurfaceFlags & ISurface.FLAG_MIPMAPPED) != 0);
+        assert (image.getBudgetType() == Engine.BudgetType.Budgeted) == ((mSurfaceFlags & ISurface.FLAG_BUDGETED) != 0);
+        assert (!image.isExternal()) || ((mSurfaceFlags & ISurface.FLAG_READ_ONLY) != 0);
+        assert (image.getBudgetType() == Engine.BudgetType.Budgeted) == isBudgeted();
+        assert (!image.isExternal() || isReadOnly());
+        mGpuSurface = image; // std::move
+        if (image.getUniqueKey() != null) {
+            assert (image.getContext() != null);
+            mSurfaceProvider = image.getContext().getSurfaceProvider();
+            mSurfaceProvider.adoptUniqueKeyFromSurface(this, image);
         }
     }
 
@@ -127,7 +119,7 @@ public class TextureProxy extends SurfaceProxy implements IScratchKey {
     protected void deallocate() {
         // Due to the order of cleanup the Texture this proxy may have wrapped may have gone away
         // at this point. Zero out the pointer so the cache invalidation code doesn't try to use it.
-        mGpuTexture = RefCnt.move(mGpuTexture);
+        mGpuSurface = RefCnt.move(mGpuSurface);
 
         if (mLazyInstantiateCallback != null) {
             mLazyInstantiateCallback.close();
@@ -146,14 +138,14 @@ public class TextureProxy extends SurfaceProxy implements IScratchKey {
 
     @Override
     public boolean isLazy() {
-        return mGpuTexture == null && mLazyInstantiateCallback != null;
+        return mGpuSurface == null && mLazyInstantiateCallback != null;
     }
 
     @Override
     public int getBackingWidth() {
         assert (!isLazyMost());
-        if (mGpuTexture != null) {
-            return mGpuTexture.getWidth();
+        if (mGpuSurface != null) {
+            return mGpuSurface.getWidth();
         }
         if ((mSurfaceFlags & ISurface.FLAG_APPROX_FIT) != 0) {
             return ISurface.getApproxSize(mWidth);
@@ -164,8 +156,8 @@ public class TextureProxy extends SurfaceProxy implements IScratchKey {
     @Override
     public int getBackingHeight() {
         assert (!isLazyMost());
-        if (mGpuTexture != null) {
-            return mGpuTexture.getHeight();
+        if (mGpuSurface != null) {
+            return mGpuSurface.getHeight();
         }
         if ((mSurfaceFlags & ISurface.FLAG_APPROX_FIT) != 0) {
             return ISurface.getApproxSize(mHeight);
@@ -179,16 +171,16 @@ public class TextureProxy extends SurfaceProxy implements IScratchKey {
     }
 
     @Override
-    public Object getBackingUniqueID() {
-        if (mGpuTexture != null) {
-            return mGpuTexture;
+    public UniqueID getBackingUniqueID() {
+        if (mGpuSurface != null) {
+            return mGpuSurface.getUniqueID();
         }
         return mUniqueID;
     }
 
     @Override
     public boolean isInstantiated() {
-        return mGpuTexture != null;
+        return mGpuSurface != null;
     }
 
     @Override
@@ -196,39 +188,39 @@ public class TextureProxy extends SurfaceProxy implements IScratchKey {
         if (isLazy()) {
             return false;
         }
-        if (mGpuTexture != null) {
+        if (mGpuSurface != null) {
             assert mUniqueKey == null ||
-                    mGpuTexture.getUniqueKey() != null && mGpuTexture.getUniqueKey().equals(mUniqueKey);
+                    mGpuSurface.getUniqueKey() != null && mGpuSurface.getUniqueKey().equals(mUniqueKey);
             return true;
         }
 
         assert ((mSurfaceFlags & ISurface.FLAG_MIPMAPPED) == 0) ||
                 ((mSurfaceFlags & ISurface.FLAG_APPROX_FIT) == 0);
 
-        final GpuTexture texture = resourceProvider.createTexture(mWidth, mHeight, mFormat,
+        final GpuImage image = resourceProvider.createTexture(mWidth, mHeight, mFormat,
                 getSampleCount(), mSurfaceFlags, "");
-        if (texture == null) {
+        if (image == null) {
             return false;
         }
 
         // If there was an invalidation message pending for this key, we might have just processed it,
         // causing the key (stored on this proxy) to become invalid.
         if (mUniqueKey != null) {
-            resourceProvider.assignUniqueKeyToResource(mUniqueKey, texture);
+            resourceProvider.assignUniqueKeyToResource(mUniqueKey, image);
         }
 
-        assert mGpuTexture == null;
-        assert texture.getBackendFormat().equals(mFormat);
-        mGpuTexture = texture;
+        assert mGpuSurface == null;
+        assert image.getBackendFormat().equals(mFormat);
+        mGpuSurface = image;
 
         return true;
     }
 
     @Override
     public void clear() {
-        assert mGpuTexture != null;
-        mGpuTexture.unref();
-        mGpuTexture = null;
+        assert mGpuSurface != null;
+        mGpuSurface.unref();
+        mGpuSurface = null;
     }
 
     @Override
@@ -237,12 +229,12 @@ public class TextureProxy extends SurfaceProxy implements IScratchKey {
             // Usually an atlas or onFlush proxy
             return true;
         }
-        if (mGpuTexture == null) {
+        if (mGpuSurface == null) {
             return false;
         }
         // If this resource is already allocated and not recyclable then the resource allocator does
         // not need to do anything with it.
-        return mGpuTexture.getScratchKey() == null;
+        return mGpuSurface.getScratchKey() == null;
     }
 
     /**
@@ -253,39 +245,27 @@ public class TextureProxy extends SurfaceProxy implements IScratchKey {
         return mUniqueKey;
     }
 
-    public void setResolveRect(int left, int top, int right, int bottom) {
-        throw new UnsupportedOperationException();
-    }
-
-    public boolean needsResolve() {
-        throw new UnsupportedOperationException();
-    }
-
-    public Rect2ic getResolveRect() {
-        throw new UnsupportedOperationException();
-    }
-
     @Override
     public boolean isBackingWrapped() {
-        return mGpuTexture != null && mGpuTexture.isWrapped();
+        return mGpuSurface != null && mGpuSurface.isWrapped();
     }
 
     @Nullable
     @Override
     public GpuSurface getGpuSurface() {
-        return mGpuTexture;
+        return mGpuSurface;
     }
 
     @Nullable
     @Override
-    public GpuTexture getGpuTexture() {
-        return mGpuTexture;
+    public GpuImage getGpuImage() {
+        return (GpuImage) mGpuSurface;
     }
 
     @Override
     public long getMemorySize() {
         // use user params
-        return GpuImageBase.computeSize(mFormat, mWidth, mHeight, getSampleCount(),
+        return GpuImage.computeSize(mFormat, mWidth, mHeight, getSampleCount(),
                 (mSurfaceFlags & ISurface.FLAG_MIPMAPPED) != 0,
                 (mSurfaceFlags & ISurface.FLAG_APPROX_FIT) != 0);
     }
@@ -302,8 +282,8 @@ public class TextureProxy extends SurfaceProxy implements IScratchKey {
      * generation later.
      */
     public boolean isMipmapped() {
-        if (mGpuTexture != null) {
-            return mGpuTexture.isMipmapped();
+        if (mGpuSurface != null) {
+            return mGpuSurface.asImage().isMipmapped();
         }
         return (mSurfaceFlags & ISurface.FLAG_MIPMAPPED) != 0;
     }
@@ -332,46 +312,22 @@ public class TextureProxy extends SurfaceProxy implements IScratchKey {
         return mFormat.isExternal();
     }
 
-    /**
-     * Same as {@link GpuImage.ScratchKey} for {@link SurfaceAllocator}.
-     */
+    @Nonnull
     @Override
-    public int hashCode() {
-        int result = getBackingWidth();
-        result = 31 * result + getBackingHeight();
-        result = 31 * result + mFormat.getFormatKey();
-        result = 31 * result + ((mSurfaceFlags & (ISurface.FLAG_RENDERABLE | ISurface.FLAG_PROTECTED)) |
+    IScratchKey computeScratchKey() {
+        int computeFlags = ((mSurfaceFlags & (ISurface.FLAG_RENDERABLE | ISurface.FLAG_PROTECTED)) |
                 (isMipmapped() ? ISurface.FLAG_MIPMAPPED : 0));
-        return result;
-    }
-
-    /**
-     * Same as {@link GpuImage.ScratchKey} for {@link SurfaceAllocator}.
-     */
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o instanceof GpuImage.ScratchKey key) {
-            // ResourceProvider
-            return key.mWidth == getBackingWidth() &&
-                    key.mHeight == getBackingHeight() &&
-                    key.mFormat == mFormat.getFormatKey() &&
-                    key.mFlags == ((mSurfaceFlags & (ISurface.FLAG_RENDERABLE | ISurface.FLAG_PROTECTED)) |
-                            (isMipmapped() ? ISurface.FLAG_MIPMAPPED : 0));
-        } else if (o instanceof TextureProxy proxy) {
-            // ResourceAllocator
-            return proxy.getBackingWidth() == getBackingWidth() &&
-                    proxy.getBackingHeight() == getBackingHeight() &&
-                    proxy.mFormat.getFormatKey() == mFormat.getFormatKey() &&
-                    proxy.isMipmapped() == isMipmapped() &&
-                    (proxy.mSurfaceFlags & (ISurface.FLAG_RENDERABLE | ISurface.FLAG_PROTECTED)) ==
-                            (mSurfaceFlags & (ISurface.FLAG_RENDERABLE | ISurface.FLAG_PROTECTED));
-        }
-        return false;
+        return new GpuImage.ScratchKey().compute(
+                mFormat,
+                getBackingWidth(),
+                getBackingHeight(),
+                1,
+                computeFlags
+        );
     }
 
     @Override
-    public TextureProxy asTexture() {
+    public ImageProxy asImageProxy() {
         return this;
     }
 
@@ -382,7 +338,7 @@ public class TextureProxy extends SurfaceProxy implements IScratchKey {
             return;
         }
 
-        final GpuTexture texture = getGpuTexture();
+        final GpuImage texture = getGpuImage();
         if (texture != null) {
             // The Approx but already instantiated case. Setting the proxy's width & height to
             // the instantiated width & height could have side-effects going forward, since we're
@@ -424,12 +380,14 @@ public class TextureProxy extends SurfaceProxy implements IScratchKey {
         mHeight = height;
     }
 
+    @Nullable
     @SharedPtr
-    GpuTexture createGpuTexture(ResourceProvider resourceProvider) {
+    @Override
+    GpuImage createSurface(ResourceProvider resourceProvider) {
         assert ((mSurfaceFlags & ISurface.FLAG_MIPMAPPED) == 0 ||
                 (mSurfaceFlags & ISurface.FLAG_APPROX_FIT) == 0);
         assert !isLazy();
-        assert mGpuTexture == null;
+        assert mGpuSurface == null;
 
         return resourceProvider.createTexture(mWidth, mHeight,
                 mFormat,
@@ -443,14 +401,14 @@ public class TextureProxy extends SurfaceProxy implements IScratchKey {
         assert isLazy();
 
         @SharedPtr
-        GpuTexture textureResource = null;
+        GpuImage gpuImage = null;
         if (mUniqueKey != null) {
-            textureResource = resourceProvider.findByUniqueKey(mUniqueKey);
+            gpuImage = resourceProvider.findByUniqueKey(mUniqueKey);
         }
 
         boolean syncTargetKey = true;
         boolean releaseCallback = false;
-        if (textureResource == null) {
+        if (gpuImage == null) {
             int width = isLazyMost() ? -1 : getWidth();
             int height = isLazyMost() ? -1 : getHeight();
             LazyCallbackResult result = mLazyInstantiateCallback.onLazyInstantiate(resourceProvider,
@@ -460,12 +418,12 @@ public class TextureProxy extends SurfaceProxy implements IScratchKey {
                     mSurfaceFlags,
                     "");
             if (result != null) {
-                textureResource = (GpuTexture) result.mSurface;
+                gpuImage = (GpuImage) result.mSurface;
                 syncTargetKey = result.mSyncTargetKey;
                 releaseCallback = result.mReleaseCallback;
             }
         }
-        if (textureResource == null) {
+        if (gpuImage == null) {
             mWidth = mHeight = 0;
             return false;
         }
@@ -474,30 +432,30 @@ public class TextureProxy extends SurfaceProxy implements IScratchKey {
             // This was a lazy-most proxy. We need to fill in the width & height. For normal
             // lazy proxies we must preserve the original width & height since that indicates
             // the content area.
-            mWidth = textureResource.getWidth();
-            mHeight = textureResource.getHeight();
+            mWidth = gpuImage.getWidth();
+            mHeight = gpuImage.getHeight();
         }
 
-        assert getWidth() <= textureResource.getWidth();
-        assert getHeight() <= textureResource.getHeight();
+        assert getWidth() <= gpuImage.getWidth();
+        assert getHeight() <= gpuImage.getHeight();
 
         mSyncTargetKey = syncTargetKey;
         if (syncTargetKey) {
             if (mUniqueKey != null) {
-                if (textureResource.getUniqueKey() == null) {
+                if (gpuImage.getUniqueKey() == null) {
                     // If 'texture' is newly created, attach the unique key
-                    resourceProvider.assignUniqueKeyToResource(mUniqueKey, textureResource);
+                    resourceProvider.assignUniqueKeyToResource(mUniqueKey, gpuImage);
                 } else {
                     // otherwise we had better have reattached to a cached version
-                    assert textureResource.getUniqueKey().equals(mUniqueKey);
+                    assert gpuImage.getUniqueKey().equals(mUniqueKey);
                 }
             } else {
-                assert textureResource.getUniqueKey() == null;
+                assert gpuImage.getUniqueKey() == null;
             }
         }
 
-        assert mGpuTexture == null;
-        mGpuTexture = textureResource;
+        assert mGpuSurface == null;
+        mGpuSurface = gpuImage;
         if (releaseCallback) {
             mLazyInstantiateCallback.close();
             mLazyInstantiateCallback = null;

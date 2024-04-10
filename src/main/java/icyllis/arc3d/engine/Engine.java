@@ -138,10 +138,30 @@ public interface Engine {
          * None represents OpenGL renderbuffers.
          */
         int kNone = 0;
+        /**
+         * GL_TEXTURE_2D, GL_TEXTURE_2D_MULTISAMPLE;
+         * VK_IMAGE_TYPE_2D, layers=1;
+         */
         int k2D = 1;
+        /**
+         * GL_TEXTURE_2D_ARRAY, GL_TEXTURE_2D_MULTISAMPLE_ARRAY;
+         * VK_IMAGE_TYPE_2D, layers=N;
+         */
         int k2DArray = 2;
+        /**
+         * GL_TEXTURE_3D;
+         * VK_IMAGE_TYPE_3D, layers=1;
+         */
         int k3D = 3;
+        /**
+         * GL_TEXTURE_CUBE_MAP;
+         * VK_IMAGE_TYPE_2D, layers=6;
+         */
         int kCube = 4;
+        /**
+         * GL_TEXTURE_CUBE_MAP_ARRAY;
+         * VK_IMAGE_TYPE_2D, layers=6N;
+         */
         int kCubeArray = 5;
     }
 
@@ -341,7 +361,7 @@ public interface Engine {
     /**
      * Budget types. Used with resources that have a large memory allocation.
      *
-     * @see GpuResourceBase
+     * @see GpuResource
      */
     // @formatter:off
     interface BudgetType {

@@ -25,22 +25,22 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * The {@link GpuFramebuffer} manages all objects used by a rendering pipeline,
+ * The {@link GpuRenderTarget} manages all objects used by a rendering pipeline,
  * which are framebuffers, render passes and a set of attachments. This is the target
  * of {@link OpsRenderPass}, and may be associated with {@link icyllis.arc3d.core.Surface}.
  * <p>
- * A {@link GpuFramebuffer} is always associated with a renderable primary surface, which
- * can be either a renderable {@link GpuImage} or a wrapped {@link BackendRenderTarget}.
+ * A {@link GpuRenderTarget} may be associated with one or more renderable {@link GpuImage}s
+ * or a wrapped presentable object.
  * This class is used by the pipeline internally. Use {@link RenderTextureProxy}
  * and {@link RenderTargetProxy} for high-level operations.
  */
-public abstract non-sealed class GpuFramebuffer extends GpuResourceBase implements GpuSurface {
+public abstract non-sealed class GpuRenderTarget extends GpuSurface {
 
     private final int mWidth;
     private final int mHeight;
 
     private final int mSampleCount;
-    private final int mNumRenderTargets;
+    private final int mNumColorTargets;
 
     /*
      * The stencil buffer is set at first only with wrapped <code>GLRenderTarget</code>,
@@ -53,15 +53,15 @@ public abstract non-sealed class GpuFramebuffer extends GpuResourceBase implemen
     // determined by subclass constructors
     protected int mSurfaceFlags = ISurface.FLAG_RENDERABLE;
 
-    protected GpuFramebuffer(GpuDevice device,
-                             int width, int height,
-                             int sampleCount,
-                             int numRenderTargets) {
+    protected GpuRenderTarget(GpuDevice device,
+                              int width, int height,
+                              int sampleCount,
+                              int numColorTargets) {
         super(device);
         mWidth = width;
         mHeight = height;
         mSampleCount = sampleCount;
-        mNumRenderTargets = numRenderTargets;
+        mNumColorTargets = numColorTargets;
     }
 
     /**
@@ -105,20 +105,15 @@ public abstract non-sealed class GpuFramebuffer extends GpuResourceBase implemen
 
     @Override
     public GpuImage asImage() {
-        GpuImage attr = getResolveAttachment();
-        if (attr != null) {
-            return attr;
+        GpuImage att = getResolveAttachment();
+        if (att != null) {
+            return att;
         }
         return getColorAttachment();
     }
 
     @Override
-    public GpuTexture asTexture() {
-        return asImage().asTexture();
-    }
-
-    @Override
-    public final GpuFramebuffer asFramebuffer() {
+    public final GpuRenderTarget asRenderTarget() {
         return this;
     }
 
@@ -127,8 +122,8 @@ public abstract non-sealed class GpuFramebuffer extends GpuResourceBase implemen
         return mSurfaceFlags;
     }
 
-    public final int numRenderTargets() {
-        return mNumRenderTargets;
+    public final int numColorTargets() {
+        return mNumColorTargets;
     }
 
     @RawPtr
@@ -181,21 +176,21 @@ public abstract non-sealed class GpuFramebuffer extends GpuResourceBase implemen
     @Nullable
     @Override
     protected IScratchKey computeScratchKey() {
-        if (mNumRenderTargets > 1) {
+        if (mNumColorTargets > 1) {
             // MRT is only used in specific scenarios, cannot be scratch
             return null;
         }
-        GpuImage colorAttr = getColorAttachment();
-        GpuImage resolveAttr = getResolveAttachment();
-        GpuImage depthStencilAttr = getDepthStencilAttachment();
+        GpuImage colorAtt = getColorAttachment();
+        GpuImage resolveAtt = getResolveAttachment();
+        GpuImage depthStencilAtt = getDepthStencilAttachment();
         return new ScratchKey().compute(
                 mWidth, mHeight,
-                colorAttr != null ? colorAttr.getBackendFormat() : null,
-                colorAttr != null ? colorAttr.getSurfaceFlags() : 0,
-                resolveAttr != null ? resolveAttr.getBackendFormat() : null,
-                resolveAttr != null ? resolveAttr.getSurfaceFlags() : 0,
-                depthStencilAttr != null ? depthStencilAttr.getBackendFormat() : null,
-                depthStencilAttr != null ? depthStencilAttr.getSurfaceFlags() : 0,
+                colorAtt != null ? colorAtt.getBackendFormat() : null,
+                colorAtt != null ? colorAtt.getSurfaceFlags() : 0,
+                resolveAtt != null ? resolveAtt.getBackendFormat() : null,
+                resolveAtt != null ? resolveAtt.getSurfaceFlags() : 0,
+                depthStencilAtt != null ? depthStencilAtt.getBackendFormat() : null,
+                depthStencilAtt != null ? depthStencilAtt.getSurfaceFlags() : 0,
                 mSampleCount,
                 mSurfaceFlags
         );
@@ -216,7 +211,7 @@ public abstract non-sealed class GpuFramebuffer extends GpuResourceBase implemen
     //protected abstract void attachStencilBuffer(@SharedPtr Attachment stencilBuffer);
 
     /**
-     * Scratch key of {@link GpuFramebuffer}.
+     * Scratch key of {@link GpuRenderTarget}.
      */
     public static final class ScratchKey implements IScratchKey {
 
@@ -228,7 +223,7 @@ public abstract non-sealed class GpuFramebuffer extends GpuResourceBase implemen
         public int mColorFlags;
         public int mResolveFlags;
         public int mDepthStencilFlags;
-        public int mFramebufferFlags;
+        public int mSurfaceFlags;
 
         /**
          * Update this key with the given arguments.
@@ -244,7 +239,7 @@ public abstract non-sealed class GpuFramebuffer extends GpuResourceBase implemen
                                   BackendFormat depthStencilFormat,
                                   int depthStencilSurfaceFlags,
                                   int sampleCount,
-                                  int framebufferFlags) {
+                                  int surfaceFlags) {
             assert (width > 0 && height > 0);
             mWidth = width;
             mHeight = height;
@@ -254,7 +249,7 @@ public abstract non-sealed class GpuFramebuffer extends GpuResourceBase implemen
             mColorFlags = colorSurfaceFlags;
             mResolveFlags = resolveSurfaceFlags;
             mDepthStencilFlags = depthStencilSurfaceFlags;
-            mFramebufferFlags = (framebufferFlags & 0) | (sampleCount << 16);
+            mSurfaceFlags = (surfaceFlags & 0) | (sampleCount << 16);
             return this;
         }
 
@@ -268,7 +263,7 @@ public abstract non-sealed class GpuFramebuffer extends GpuResourceBase implemen
             result = 31 * result + mColorFlags;
             result = 31 * result + mResolveFlags;
             result = 31 * result + mDepthStencilFlags;
-            result = 31 * result + mFramebufferFlags;
+            result = 31 * result + mSurfaceFlags;
             return result;
         }
 
@@ -284,7 +279,7 @@ public abstract non-sealed class GpuFramebuffer extends GpuResourceBase implemen
                     mColorFlags == key.mColorFlags &&
                     mResolveFlags == key.mResolveFlags &&
                     mDepthStencilFlags == key.mDepthStencilFlags &&
-                    mFramebufferFlags == key.mFramebufferFlags;
+                    mSurfaceFlags == key.mSurfaceFlags;
         }
     }
 }

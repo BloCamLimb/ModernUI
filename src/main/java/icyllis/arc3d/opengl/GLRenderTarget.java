@@ -32,14 +32,7 @@ import static icyllis.arc3d.opengl.GLCore.*;
 /**
  * Represents OpenGL framebuffers.
  */
-public final class GLFramebuffer extends GpuFramebuffer {
-
-    /**
-     * The GL format for all color attachments.
-     */
-    //TODO remove this
-    @Deprecated
-    private final int mFormat = 0;
+public final class GLRenderTarget extends GpuRenderTarget {
 
     // the color buffers, raw ptr
     // null for wrapped render targets
@@ -62,21 +55,21 @@ public final class GLFramebuffer extends GpuFramebuffer {
     // should we delete framebuffers ourselves?
     private final boolean mOwnership;
 
-    private BackendFormat mBackendFormat;
+    private final BackendFormat mBackendFormat;
     private BackendRenderTarget mBackendRenderTarget;
 
     // Constructor for instances created by our engine. (has texture access)
-    GLFramebuffer(GLDevice device,
-                  int width, int height,
-                  int sampleCount,
-                  int renderFramebuffer,
-                  int resolveFramebuffer,
-                  int numRenderTargets,
-                  GLImage[] colorAttachments,
-                  GLImage[] resolveAttachments,
-                  GLImage depthStencilAttachment,
-                  int surfaceFlags) {
-        super(device, width, height, sampleCount, numRenderTargets);
+    GLRenderTarget(GLDevice device,
+                   int width, int height,
+                   int sampleCount,
+                   int renderFramebuffer,
+                   int resolveFramebuffer,
+                   int numColorTargets,
+                   GLImage[] colorAttachments,
+                   GLImage[] resolveAttachments,
+                   GLImage depthStencilAttachment,
+                   int surfaceFlags) {
+        super(device, width, height, sampleCount, numColorTargets);
         assert (sampleCount > 0);
         mRenderFramebuffer = renderFramebuffer;
         mResolveFramebuffer = resolveFramebuffer;
@@ -84,23 +77,32 @@ public final class GLFramebuffer extends GpuFramebuffer {
         mColorAttachments = colorAttachments;
         mResolveAttachments = resolveAttachments;
         mDepthStencilAttachment = depthStencilAttachment;
+        // color/resolve attachments may have different formats,
+        // but we don't care about that
+        GLImage primaryAtt = (GLImage) asImage();
+        mBackendFormat = primaryAtt != null
+                ? primaryAtt.getBackendFormat()
+                : GLBackendFormat.make(GL_NONE);
         mSurfaceFlags |= surfaceFlags;
         registerWithCache((surfaceFlags & ISurface.FLAG_BUDGETED) != 0);
     }
 
     // Constructor for instances wrapping backend objects. (no texture access)
-    private GLFramebuffer(GLDevice device,
-                          int width, int height,
-                          int sampleCount,
-                          int framebuffer,
-                          boolean ownership,
-                          @SharedPtr GLAttachment stencilBuffer) {
+    private GLRenderTarget(GLDevice device,
+                           int width, int height,
+                           BackendFormat format,
+                           int sampleCount,
+                           int framebuffer,
+                           boolean ownership,
+                           @SharedPtr GLImage depthStencilAttachment) {
         super(device, width, height, sampleCount, 1);
         assert (sampleCount > 0);
         assert (framebuffer != 0 || !ownership);
         mRenderFramebuffer = framebuffer;
         mResolveFramebuffer = 0;
+        mBackendFormat = format;
         mOwnership = ownership;
+        mDepthStencilAttachment = depthStencilAttachment;
         if (framebuffer == 0) {
             mSurfaceFlags |= ISurface.FLAG_GL_WRAP_DEFAULT_FB;
         }
@@ -108,7 +110,7 @@ public final class GLFramebuffer extends GpuFramebuffer {
     }
 
     /**
-     * Make a {@link GLFramebuffer} that wraps existing framebuffers without
+     * Make a {@link GLRenderTarget} that wraps existing framebuffers without
      * accessing their backing buffers (texture and stencil).
      *
      * @param width  the effective width of framebuffer
@@ -116,54 +118,55 @@ public final class GLFramebuffer extends GpuFramebuffer {
      */
     @Nonnull
     @SharedPtr
-    public static GLFramebuffer makeWrapped(GLDevice device,
-                                            int width, int height,
-                                            int format,
-                                            int sampleCount,
-                                            int framebuffer,
-                                            int depthBits,
-                                            int stencilBits,
-                                            boolean ownership) {
+    public static GLRenderTarget makeWrapped(GLDevice device,
+                                             int width, int height,
+                                             BackendFormat format,
+                                             int sampleCount,
+                                             int framebuffer,
+                                             int depthBits,
+                                             int stencilBits,
+                                             boolean ownership) {
         assert (sampleCount > 0);
         assert (framebuffer != 0 || !ownership);
-        GLAttachment stencilBuffer = null;
-        if (stencilBits > 0) {
+        GLImage depthStencilAtt = null;
+        if (depthBits > 0 || stencilBits > 0) {
             // We pick a "fake" actual format that matches the number of stencil bits. When wrapping
             // an FBO with some number of stencil bits all we care about in the future is that we have
             // a format with the same number of stencil bits. We don't even directly use the format or
             // any other properties. Thus, it is fine for us to just assign an arbitrary format that
             // matches the stencil bit count.
-            int stencilFormat = switch (stencilBits) {
-                // We pick the packed format here so when we query total size we are at least not
-                // underestimating the total size of the stencil buffer. However, in reality this
-                // rarely matters since we usually don't care about the size of wrapped objects.
-                case 8 -> GL_DEPTH24_STENCIL8;
-                case 16 -> GL_STENCIL_INDEX16;
-                default -> 0;
-            };
+            int depthStencilFormat = 0;
+            if (stencilBits == 16) {
+                depthStencilFormat = GL_STENCIL_INDEX16;
+            } else if (stencilBits == 8) {
+                switch (depthBits) {
+                    case 24 -> depthStencilFormat = GL_DEPTH24_STENCIL8;
+                    case 32 -> depthStencilFormat = GL_DEPTH32F_STENCIL8;
+                }
+            } else if (stencilBits == 0) {
+                switch (depthBits) {
+                    case 16 -> depthStencilFormat = GL_DEPTH_COMPONENT16;
+                    case 24 -> depthStencilFormat = GL_DEPTH_COMPONENT24;
+                    case 32 -> depthStencilFormat = GL_DEPTH_COMPONENT32F;
+                }
+            }
 
             // We don't have the actual renderbufferID, but we need to make an attachment for the stencil,
             // so we just set it to an invalid value of 0 to make sure we don't explicitly use it or try
             // and delete it.
-            stencilBuffer = GLAttachment.makeWrapped(device,
+            depthStencilAtt = GLImage.makeWrappedRenderbuffer(device,
                     width, height,
                     sampleCount,
-                    stencilFormat,
+                    depthStencilFormat,
                     0);
         }
-        return new GLFramebuffer(device,
+        return new GLRenderTarget(device,
                 width, height,
+                format,
                 sampleCount,
                 framebuffer,
                 ownership,
-                stencilBuffer);
-    }
-
-    /**
-     * The render target format for all color attachments.
-     */
-    public int getFormat() {
-        return mFormat;
+                depthStencilAtt);
     }
 
     public int getRenderFramebuffer() {
@@ -218,9 +221,6 @@ public final class GLFramebuffer extends GpuFramebuffer {
     @Nonnull
     @Override
     public BackendFormat getBackendFormat() {
-        if (mBackendFormat == null) {
-            mBackendFormat = GLBackendFormat.make(mFormat);
-        }
         return mBackendFormat;
     }
 
@@ -294,7 +294,6 @@ public final class GLFramebuffer extends GpuFramebuffer {
         if (mBackendRenderTarget == null) {
             final GLFramebufferInfo info = new GLFramebufferInfo();
             info.mFramebuffer = mRenderFramebuffer;
-            info.mFormat = mFormat;
             mBackendRenderTarget = new GLBackendRenderTarget(
                     getWidth(), getHeight(), getSampleCount(), getDepthBits(), getStencilBits(), info);
         }
@@ -375,7 +374,6 @@ public final class GLFramebuffer extends GpuFramebuffer {
                 ", mColorAttachments=" + Arrays.toString(mColorAttachments) +
                 ", mResolveAttachments=" + Arrays.toString(mResolveAttachments) +
                 ", mDepthStencilAttachment=" + mDepthStencilAttachment +
-                ", mFormat=" + GLUtil.glFormatName(mFormat) +
                 ", mSampleCount=" + getSampleCount() +
                 ", mOwnership=" + mOwnership +
                 ", mBackendFormat=" + mBackendFormat +

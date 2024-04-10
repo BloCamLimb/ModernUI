@@ -41,17 +41,17 @@ public abstract class OpsRenderPass {
 
     private int mDrawPipelineStatus = kNotConfigured_DrawPipelineStatus;
 
-    protected GpuFramebuffer mFramebuffer;
+    protected GpuRenderTarget mRenderTarget;
     protected int mSurfaceOrigin;
 
-    private TextureProxy[] mGeomTextures = new TextureProxy[1];
+    private ImageProxy[] mGeomTextures = new ImageProxy[1];
 
     public OpsRenderPass() {
         this(null, SurfaceOrigin.kUpperLeft);
     }
 
-    public OpsRenderPass(GpuFramebuffer fs, int origin) {
-        mFramebuffer = fs;
+    public OpsRenderPass(GpuRenderTarget fs, int origin) {
+        mRenderTarget = fs;
         mSurfaceOrigin = origin;
     }
 
@@ -68,7 +68,7 @@ public abstract class OpsRenderPass {
      */
     public void clearColor(int left, int top, int right, int bottom,
                            float red, float green, float blue, float alpha) {
-        assert (mFramebuffer != null);
+        assert (mRenderTarget != null);
         mDrawPipelineStatus = kNotConfigured_DrawPipelineStatus;
     }
 
@@ -76,7 +76,7 @@ public abstract class OpsRenderPass {
      * Same as {@link #clearColor} but modifies the stencil.
      */
     public void clearStencil(int left, int top, int right, int bottom, boolean insideMask) {
-        assert (mFramebuffer != null);
+        assert (mRenderTarget != null);
         mDrawPipelineStatus = kNotConfigured_DrawPipelineStatus;
     }
 
@@ -99,11 +99,11 @@ public abstract class OpsRenderPass {
     }
 
     /**
-     * Single texture version of {@link #bindTextures(TextureProxy[])}.
+     * Single texture version of {@link #bindTextures(ImageProxy[])}.
      *
      * @param geomTexture the raw ptr to textures at binding 0
      */
-    public final void bindTexture(@RawPtr TextureProxy geomTexture) {
+    public final void bindTexture(@RawPtr ImageProxy geomTexture) {
         mGeomTextures[0] = geomTexture;
         bindTextures(mGeomTextures);
         mGeomTextures[0] = null;
@@ -121,7 +121,7 @@ public abstract class OpsRenderPass {
      *
      * @param geomTextures the raw ptr to textures starting from binding 0
      */
-    public final void bindTextures(@RawPtr TextureProxy[] geomTextures) {
+    public final void bindTextures(@RawPtr ImageProxy[] geomTextures) {
         //TODO
     }
 
@@ -224,9 +224,9 @@ public abstract class OpsRenderPass {
         }
     }
 
-    protected void set(GpuFramebuffer framebuffer, int origin) {
-        assert (mFramebuffer == null);
-        mFramebuffer = framebuffer;
+    protected void set(GpuRenderTarget renderTarget, int origin) {
+        assert (mRenderTarget == null);
+        mRenderTarget = renderTarget;
         mSurfaceOrigin = origin;
     }
 

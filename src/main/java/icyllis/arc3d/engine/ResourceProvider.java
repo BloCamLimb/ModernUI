@@ -19,8 +19,7 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.ImageInfo;
-import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.core.*;
 
 import javax.annotation.Nullable;
 
@@ -39,7 +38,7 @@ public class ResourceProvider {
 
     // lookup key
     private final GpuImage.ScratchKey mImageScratchKey = new GpuImage.ScratchKey();
-    private final GpuFramebuffer.ScratchKey mFramebufferScratchKey = new GpuFramebuffer.ScratchKey();
+    private final GpuRenderTarget.ScratchKey mRenderTargetScratchKey = new GpuRenderTarget.ScratchKey();
 
     protected ResourceProvider(GpuDevice device, DirectContext context) {
         mDevice = device;
@@ -60,6 +59,36 @@ public class ResourceProvider {
         assert mDevice.getContext().isOwnerThread();
         return mDevice.getContext().isDiscarded() ? null :
                 (T) mContext.getResourceCache().findAndRefUniqueResource(key);
+    }
+
+    /**
+     * Search the cache for a scratch texture matching the provided arguments. Failing that
+     * it returns null. If non-null, the resulting texture is always budgeted.
+     *
+     * @param label the label for debugging purposes, can be empty to clear the label,
+     *              or null to leave the label unchanged
+     */
+    @Nullable
+    @SharedPtr
+    public final GpuSurface findAndRefScratchSurface(IScratchKey key, @Nullable String label) {
+        assert mDevice.getContext().isOwnerThread();
+        assert !mDevice.getContext().isDiscarded();
+        assert key instanceof GpuImage.ScratchKey || key instanceof GpuRenderTarget.ScratchKey;
+
+        GpuResource resource = mContext.getResourceCache().findAndRefScratchResource(key);
+        if (resource != null) {
+            GpuSurface surface = (GpuSurface) resource;
+            if (surface.asRenderTarget() != null) {
+                mDevice.getStats().incNumScratchRenderTargetsReused();
+            } else {
+                mDevice.getStats().incNumScratchTexturesReused();
+            }
+            if (label != null) {
+                resource.setLabel(label);
+            }
+            return surface;
+        }
+        return null;
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -109,7 +138,7 @@ public class ResourceProvider {
                                       BackendFormat format,
                                       int sampleCount,
                                       int surfaceFlags,
-                                      String label) {
+                                      @Nullable String label) {
         assert mDevice.getContext().isOwnerThread();
         if (mDevice.getContext().isDiscarded()) {
             return null;
@@ -145,11 +174,6 @@ public class ResourceProvider {
             surfaceFlags |= ISurface.FLAG_BUDGETED;
         }
 
-        if ((surfaceFlags & (ISurface.FLAG_TEXTURABLE | ISurface.FLAG_RENDERABLE)) == 0) {
-            // default is texturable
-            surfaceFlags |= ISurface.FLAG_TEXTURABLE;
-        }
-
         if (!mDevice.getCaps().validateSurfaceParams(width, height, format,
                 sampleCount, surfaceFlags)) {
             return null;
@@ -168,6 +192,37 @@ public class ResourceProvider {
                 sampleCount, surfaceFlags, label);
     }
 
+    @Nullable
+    @SharedPtr
+    public final GpuImage createImage(int width, int height,
+                                      int depthBits,
+                                      int stencilBits,
+                                      int sampleCount,
+                                      int surfaceFlags,
+                                      @Nullable String label) {
+        return null;
+    }
+
+    public final GpuImage createImage(int width, int height,
+                                      int arraySize,
+                                      BackendFormat format,
+                                      int mipLevelCount,
+                                      int sampleCount,
+                                      int surfaceFlags,
+                                      @Nullable String label) {
+        return null;
+    }
+
+    public final GpuImage createImage(int width, int height, int depth,
+                                      int arraySize, int imageType,
+                                      BackendFormat format,
+                                      int mipLevelCount,
+                                      int sampleCount,
+                                      int surfaceFlags,
+                                      @Nullable String label) {
+        return null;
+    }
+
     /**
      * Search the cache for a scratch texture matching the provided arguments. Failing that
      * it returns null. If non-null, the resulting texture is always budgeted.
@@ -177,7 +232,7 @@ public class ResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public final GpuImage findAndRefScratchImage(IScratchKey key, String label) {
+    public final GpuImage findAndRefScratchImage(IScratchKey key, @Nullable String label) {
         assert mDevice.getContext().isOwnerThread();
         assert !mDevice.getContext().isDiscarded();
         assert key instanceof GpuImage.ScratchKey;
@@ -209,7 +264,7 @@ public class ResourceProvider {
                                                  BackendFormat format,
                                                  int sampleCount,
                                                  int surfaceFlags,
-                                                 String label) {
+                                                 @Nullable String label) {
         assert mDevice.getContext().isOwnerThread();
         assert !mDevice.getContext().isDiscarded();
         assert !format.isCompressed();
@@ -266,7 +321,7 @@ public class ResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public final GpuTexture createTexture(int width, int height,
+    public final GpuImage createTexture(int width, int height,
                                           BackendFormat format,
                                           int sampleCount,
                                           int surfaceFlags,
@@ -283,7 +338,7 @@ public class ResourceProvider {
         }
 
         surfaceFlags |= ISurface.FLAG_TEXTURABLE;
-        return (GpuTexture) createImage(width, height,
+        return createImage(width, height,
                 format,
                 sampleCount,
                 surfaceFlags,
@@ -316,7 +371,7 @@ public class ResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public final GpuTexture createTexture(int width, int height,
+    public final GpuImage createTexture(int width, int height,
                                           BackendFormat format,
                                           int sampleCount,
                                           int surfaceFlags,
@@ -348,7 +403,7 @@ public class ResourceProvider {
             return null;
         }
 
-        final GpuTexture texture = createTexture(width, height, format,
+        final GpuImage texture = createTexture(width, height, format,
                 sampleCount, surfaceFlags, label);
         if (texture == null) {
             return null;
@@ -367,9 +422,12 @@ public class ResourceProvider {
     // Framebuffers
 
     /**
-     * Search the cache for a combination of attachments and its {@link GpuFramebuffer}
-     * matching the provided arguments. If none, find or create one or more (up to 8) color targets
-     * and optional depth/stencil target. Then creates a new {@link GpuFramebuffer} object
+     * Create a single color target, resolve target and optional depth/stencil target,
+     * then create the framebuffer for these targets.
+     * <p>
+     * Search the cache for a combination of attachments and its {@link GpuRenderTarget}
+     * matching the provided arguments. If none, find or create one color target, resolve target,
+     * and optional depth/stencil target. Then creates a new {@link GpuRenderTarget} object
      * for the combination of attachments.
      * <p>
      * This method is responsible for canonicalization of surface flags.
@@ -377,32 +435,41 @@ public class ResourceProvider {
      * @param width
      * @param height
      * @param colorFormat
-     * @param numColorTargets
      * @param depthStencilFormat
-     * @param framebufferFlags
+     * @param surfaceFlags
      * @param label
      * @return
      */
     @Nullable
     @SharedPtr
-    public final GpuFramebuffer createRenderTarget(int width, int height,
-                                                   BackendFormat colorFormat,
-                                                   int colorFlags,
-                                                   BackendFormat resolveFormat,
-                                                   int resolveFlags,
-                                                   BackendFormat depthStencilFormat,
-                                                   int depthStencilFlags,
-                                                   int sampleCount,
-                                                   int framebufferFlags,
-                                                   String label) {
+    public final GpuRenderTarget createRenderTarget(int width, int height,
+                                                    @Nullable BackendFormat colorFormat,
+                                                    int colorFlags,
+                                                    @Nullable BackendFormat resolveFormat,
+                                                    int resolveFlags,
+                                                    @Nullable BackendFormat depthStencilFormat,
+                                                    int depthStencilFlags,
+                                                    int sampleCount,
+                                                    int surfaceFlags,
+                                                    @Nullable String label) {
         assert mDevice.getContext().isOwnerThread();
         assert !mDevice.getContext().isDiscarded();
         Caps caps = mDevice.getCaps();
 
+        if (sampleCount <= 1) {
+            resolveFormat = null;
+        }
+
+        // all targets must be color/resolve/depth/stencil attachable
         if (colorFormat != null) {
             colorFlags |= ISurface.FLAG_RENDERABLE;
         } else {
             colorFlags = 0;
+        }
+        if (resolveFormat != null) {
+            resolveFlags |= ISurface.FLAG_RENDERABLE;
+        } else {
+            resolveFlags = 0;
         }
         if (depthStencilFormat != null) {
             depthStencilFlags |= ISurface.FLAG_RENDERABLE;
@@ -410,10 +477,10 @@ public class ResourceProvider {
             depthStencilFlags = 0;
         }
 
-        framebufferFlags |= ISurface.FLAG_RENDERABLE;
+        surfaceFlags |= ISurface.FLAG_RENDERABLE;
 
         // approx fit is create-time or surface proxy flag
-        if ((framebufferFlags & ISurface.FLAG_APPROX_FIT) != 0) {
+        if ((surfaceFlags & ISurface.FLAG_APPROX_FIT) != 0) {
             width = ISurface.getApproxSize(width);
             height = ISurface.getApproxSize(height);
             // approx fit cannot be mipmapped and must be budgeted
@@ -426,13 +493,6 @@ public class ResourceProvider {
             return null;
         }
 
-        if (sampleCount <= 1) {
-            resolveFormat = null;
-        }
-        if (resolveFormat == null) {
-            resolveFlags = 0;
-        }
-
         if (resolveFormat != null && !caps.validateSurfaceParams(
                 width, height, resolveFormat, 1, resolveFlags)) {
             return null;
@@ -443,132 +503,147 @@ public class ResourceProvider {
             return null;
         }
 
-        GpuFramebuffer framebuffer = findAndRefScratchFramebuffer(width, height,
+        GpuRenderTarget renderTarget = findAndRefScratchRenderTarget(width, height,
                 colorFormat, colorFlags,
                 resolveFormat, resolveFlags,
                 depthStencilFormat, depthStencilFlags,
-                sampleCount, framebufferFlags, label);
-        if (framebuffer != null) {
-            if ((framebufferFlags & ISurface.FLAG_BUDGETED) == 0) {
-                framebuffer.makeBudgeted(false);
+                sampleCount, surfaceFlags, label);
+        if (renderTarget != null) {
+            if ((surfaceFlags & ISurface.FLAG_BUDGETED) == 0) {
+                renderTarget.makeBudgeted(false);
             }
-            return framebuffer;
+            return renderTarget;
         }
 
-        GpuImage colorAttr = null;
+        GpuImage colorAtt = null;
         if (colorFormat != null) {
-            colorAttr = createImage(width, height,
+            colorAtt = createImage(width, height,
                     colorFormat,
                     sampleCount,
                     colorFlags,
                     label == null ? null : label.isEmpty() ? "" : label + "_C0");
-            if (colorAttr == null) {
+            if (colorAtt == null) {
                 return null;
             }
         }
 
-        GpuImage resolveAttr = null;
+        GpuImage resolveAtt = null;
         if (resolveFormat != null) {
-            resolveAttr = createImage(width, height,
+            resolveAtt = createImage(width, height,
                     resolveFormat,
                     1,
                     resolveFlags,
                     label == null ? null : label.isEmpty() ? "" : label + "_R0");
-            if (resolveAttr == null) {
-                if (colorAttr != null) {
-                    colorAttr.unref();
-                }
+            if (resolveAtt == null) {
+                RefCnt.move(colorAtt);
                 return null;
             }
         }
 
-        GpuImage depthStencilAttr = null;
+        GpuImage depthStencilAtt = null;
         if (depthStencilFormat != null) {
-            depthStencilAttr = createImage(width, height,
+            depthStencilAtt = createImage(width, height,
                     depthStencilFormat,
                     sampleCount,
                     depthStencilFlags,
                     label == null ? null : label.isEmpty() ? "" : label + "_DS");
-            if (depthStencilAttr == null) {
-                if (colorAttr != null) {
-                    colorAttr.unref();
-                }
-                if (resolveAttr != null) {
-                    resolveAttr.unref();
-                }
+            if (depthStencilAtt == null) {
+                RefCnt.move(colorAtt);
+                RefCnt.move(resolveAtt);
                 return null;
             }
         }
 
-        framebuffer = mDevice.createFramebuffer(1,
-                colorFormat != null ? new GpuImage[]{colorAttr} : null,
-                resolveFormat != null ? new GpuImage[]{resolveAttr} : null,
+        renderTarget = createRenderTarget(1,
+                colorFormat != null ? new GpuImage[]{colorAtt} : null,
+                resolveFormat != null ? new GpuImage[]{resolveAtt} : null,
                 null,
-                depthStencilAttr,
-                framebufferFlags);
-        if (framebuffer != null) {
-            return framebuffer;
+                depthStencilAtt,
+                surfaceFlags);
+        if (renderTarget != null) {
+            return renderTarget;
         }
 
-        if (colorAttr != null) {
-            colorAttr.unref();
-        }
-        if (resolveAttr != null) {
-            resolveAttr.unref();
-        }
-        if (depthStencilAttr != null) {
-            depthStencilAttr.unref();
-        }
+        RefCnt.move(colorAtt);
+        RefCnt.move(resolveAtt);
+        RefCnt.move(depthStencilAtt);
 
         return null;
     }
 
+    /**
+     * Create a new {@link GpuRenderTarget} object for the given attachments (RTs and resolve targets).
+     * If and only if successful, this method transfers the ownership of all the given attachments.
+     * <p>
+     * The <var>colorTargets</var> array may contain nullptr elements, meaning that draw buffer index
+     * is unused.
+     *
+     * @param numColorTargets    the number of color targets
+     * @param colorTargets       array of color attachments
+     * @param resolveTargets     array of color resolve attachments
+     * @param mipLevels          array of which mip level will be used for color & resolve attachments
+     * @param depthStencilTarget optional depth/stencil attachment
+     * @param surfaceFlags       framebuffer flags
+     * @return a new RenderTarget
+     */
     @Nullable
     @SharedPtr
-    public final GpuFramebuffer createFramebuffer(int width, int height,
-                                                  int sampleCount) {
+    public final GpuRenderTarget createRenderTarget(int numColorTargets,
+                                                    @Nullable GpuImage[] colorTargets,
+                                                    @Nullable GpuImage[] resolveTargets,
+                                                    @Nullable int[] mipLevels,
+                                                    @Nullable GpuImage depthStencilTarget,
+                                                    int surfaceFlags) {
+        return mDevice.createRenderTarget(numColorTargets,
+                colorTargets, resolveTargets, mipLevels, depthStencilTarget, surfaceFlags);
+    }
+
+    @Nullable
+    @SharedPtr
+    public final GpuRenderTarget createRenderTarget(int width, int height,
+                                                    int sampleCount) {
         //TODO framebuffer with no attachments, ARB_framebuffer_no_attachments
         return null;
     }
 
     @Nullable
     @SharedPtr
-    public final GpuFramebuffer findAndRefScratchFramebuffer(IScratchKey key, String label) {
+    public final GpuRenderTarget findAndRefScratchRenderTarget(IScratchKey key, String label) {
         assert mDevice.getContext().isOwnerThread();
         assert !mDevice.getContext().isDiscarded();
-        assert key instanceof GpuFramebuffer.ScratchKey;
+        assert key instanceof GpuRenderTarget.ScratchKey;
 
         GpuResource resource = mContext.getResourceCache().findAndRefScratchResource(key);
         if (resource != null) {
-            mDevice.getStats().incNumScratchFramebuffersReused();
+            mDevice.getStats().incNumScratchRenderTargetsReused();
             if (label != null) {
                 resource.setLabel(label);
             }
-            return (GpuFramebuffer) resource;
+            return (GpuRenderTarget) resource;
         }
         return null;
     }
 
     @Nullable
     @SharedPtr
-    public final GpuFramebuffer findAndRefScratchFramebuffer(int width, int height,
-                                                             BackendFormat colorFormat,
-                                                             int colorFlags,
-                                                             BackendFormat resolveFormat,
-                                                             int resolveFlags,
-                                                             BackendFormat depthStencilFormat,
-                                                             int depthStencilFlags,
-                                                             int sampleCount,
-                                                             int framebufferFlags,
-                                                             String label) {
+    public final GpuRenderTarget findAndRefScratchRenderTarget(int width, int height,
+                                                               BackendFormat colorFormat,
+                                                               int colorFlags,
+                                                               BackendFormat resolveFormat,
+                                                               int resolveFlags,
+                                                               BackendFormat depthStencilFormat,
+                                                               int depthStencilFlags,
+                                                               int sampleCount,
+                                                               int surfaceFlags,
+                                                               String label) {
 
-        return findAndRefScratchFramebuffer(mFramebufferScratchKey.compute(
+        return findAndRefScratchRenderTarget(mRenderTargetScratchKey.compute(
                 width, height,
                 colorFormat, colorFlags,
                 resolveFormat, resolveFlags,
                 depthStencilFormat, depthStencilFlags,
                 sampleCount,
-                framebufferFlags
+                surfaceFlags
         ), label);
     }
 
@@ -591,13 +666,30 @@ public class ResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public final GpuFramebuffer wrapRenderableBackendTexture(BackendTexture texture,
-                                                             int sampleCount,
-                                                             boolean ownership) {
+    public final GpuRenderTarget wrapRenderableBackendTexture(BackendTexture texture,
+                                                              int sampleCount,
+                                                              boolean ownership) {
         if (mDevice.getContext().isDiscarded()) {
             return null;
         }
         return mDevice.wrapRenderableBackendTexture(texture, sampleCount, ownership);
+    }
+
+    /**
+     * Wraps OpenGL default framebuffer (FBO 0). Currently wrapped render targets
+     * always are not cacheable and not owned by returned object (you must free it
+     * manually, releasing RenderSurface doesn't release the backend framebuffer).
+     *
+     * @return RenderSurface object or null on failure.
+     */
+    @Nullable
+    @SharedPtr
+    public final GpuRenderTarget wrapGLDefaultFramebuffer(int width, int height,
+                                                          int sampleCount,
+                                                          int depthBits,
+                                                          int stencilBits,
+                                                          BackendFormat format) {
+        return mDevice.wrapGLDefaultFramebuffer(width, height, sampleCount, depthBits, stencilBits, format);
     }
 
     /**
@@ -612,7 +704,7 @@ public class ResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public final GpuFramebuffer wrapBackendRenderTarget(BackendRenderTarget backendRenderTarget) {
+    public final GpuRenderTarget wrapBackendRenderTarget(BackendRenderTarget backendRenderTarget) {
         if (mDevice.getContext().isDiscarded()) {
             return null;
         }

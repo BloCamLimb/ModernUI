@@ -24,6 +24,8 @@ import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.ops.OpsTask;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 
 public class RenderTaskManager {
@@ -34,7 +36,7 @@ public class RenderTaskManager {
     @SharedPtr
     private final ArrayList<RenderTask> mDAG = new ArrayList<>();
 
-    private final Reference2ObjectOpenHashMap<Object, RenderTask> mLastRenderTasks =
+    private final Reference2ObjectOpenHashMap<UniqueID, RenderTask> mLastRenderTasks =
             new Reference2ObjectOpenHashMap<>();
     private OpsTask mActiveOpsTask = null;
 
@@ -149,15 +151,18 @@ public class RenderTaskManager {
         return task;
     }
 
-    public void setLastRenderTask(SurfaceProxy surfaceProxy, RenderTask task) {
+    public void setLastRenderTask(@Nonnull SurfaceProxy surfaceProxy,
+                                  @Nullable RenderTask task) {
+        var key = surfaceProxy.getUniqueID();
         if (task != null) {
-            mLastRenderTasks.put(surfaceProxy.getUniqueID(), task);
+            mLastRenderTasks.put(key, task);
         } else {
-            mLastRenderTasks.remove(surfaceProxy);
+            mLastRenderTasks.remove(key);
         }
     }
 
-    public RenderTask getLastRenderTask(SurfaceProxy proxy) {
+    // nullable
+    public RenderTask getLastRenderTask(@Nonnull SurfaceProxy proxy) {
         return mLastRenderTasks.get(proxy.getUniqueID());
     }
 
