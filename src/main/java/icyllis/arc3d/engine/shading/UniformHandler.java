@@ -152,7 +152,7 @@ public abstract class UniformHandler {
      * @param visibility combination of ShaderFlags, can be zero as placeholder
      * @param type       see {@link SLDataType}
      * @param name       the raw name (pre-mangling), cannot be null or empty
-     * @param arrayCount the number of elements, cannot be zero
+     * @param arraySize  the number of elements, cannot be zero
      * @return UniformHandle either from Render Block or Effect Block
      */
     @UniformHandle
@@ -160,13 +160,13 @@ public abstract class UniformHandler {
                                      int visibility,
                                      byte type,
                                      String name,
-                                     int arrayCount) {
+                                     int arraySize) {
         assert (name != null && !name.isEmpty());
         assert ((visibility & ~(ShaderFlags.kVertex | ShaderFlags.kFragment)) == 0);
         assert (SLDataType.checkSLType(type));
         assert (!SLDataType.isCombinedSamplerType(type));
-        assert (arrayCount >= 1);
-        return internalAddUniformArray(owner, visibility, type, name, arrayCount);
+        assert (arraySize >= 1);
+        return internalAddUniformArray(owner, visibility, type, name, arraySize);
     }
 
     /**
@@ -222,7 +222,7 @@ public abstract class UniformHandler {
                                                    int visibility,
                                                    byte type,
                                                    String name,
-                                                   int arrayCount);
+                                                   int arraySize);
 
     @SamplerHandle
     protected abstract int addSampler(int samplerState,
@@ -357,19 +357,19 @@ public abstract class UniformHandler {
      * add taking into consideration all alignment requirements. Use aligned offset plus
      * {@link #getAlignedStride(byte, int, boolean)} to get the offset to the end of the new uniform.
      *
-     * @param offset     the current offset
-     * @param type       see {@link SLDataType}
-     * @param arrayCount see {@link ShaderVar}
-     * @param layout     true for std430 layout, false for std140 layout
+     * @param offset    the current offset
+     * @param type      see {@link SLDataType}
+     * @param arraySize see {@link ShaderVar}
+     * @param layout    true for std430 layout, false for std140 layout
      * @return the aligned offset for the new uniform
      */
     public static int getAlignedOffset(int offset,
                                        byte type,
-                                       int arrayCount,
+                                       int arraySize,
                                        boolean layout) {
         assert (SLDataType.checkSLType(type));
-        assert (arrayCount == ShaderVar.kNonArray) || (arrayCount >= 1);
-        int alignmentMask = getAlignmentMask(type, arrayCount == ShaderVar.kNonArray, layout);
+        assert (arraySize == ShaderVar.kNonArray) || (arraySize >= 1);
+        int alignmentMask = getAlignmentMask(type, arraySize == ShaderVar.kNonArray, layout);
         return (offset + alignmentMask) & ~alignmentMask;
     }
 
@@ -377,11 +377,11 @@ public abstract class UniformHandler {
      * @see UniformDataManager
      */
     public static int getAlignedStride(byte type,
-                                       int arrayCount,
+                                       int arraySize,
                                        boolean layout) {
         assert (SLDataType.checkSLType(type));
-        assert (arrayCount == ShaderVar.kNonArray) || (arrayCount >= 1);
-        if (arrayCount == ShaderVar.kNonArray) {
+        assert (arraySize == ShaderVar.kNonArray) || (arraySize >= 1);
+        if (arraySize == ShaderVar.kNonArray) {
             return getSize(type, layout);
         } else {
             final int elementSize;
@@ -393,7 +393,7 @@ public abstract class UniformHandler {
                 elementSize = Math.max(getSize(type, Std140Layout), 16);
             }
             assert ((elementSize & (0xF)) == 0);
-            return elementSize * arrayCount;
+            return elementSize * arraySize;
         }
     }
 }

@@ -93,6 +93,7 @@ public class TestManagedResource {
         LOGGER.info("Max vertex bindings: " + gl.glGetInteger(GL_MAX_VERTEX_ATTRIB_BINDINGS));
         LOGGER.info("Max vertex stride: " + gl.glGetInteger(GL_MAX_VERTEX_ATTRIB_STRIDE));
         LOGGER.info("Max label length: " + gl.glGetInteger(GL_MAX_LABEL_LENGTH));
+        LOGGER.info("Max samples: " + gl.glGetInteger(GL_MAX_SAMPLES));
 
         /*if (glVersion != null) {
             var pattern = Pattern.compile("(\\d+)\\.(\\d+)");
@@ -360,7 +361,7 @@ public class TestManagedResource {
 
     public static void testShaderBuilder(DirectContext dContext) {
         @SharedPtr
-        TextureProxy target = dContext.getSurfaceProvider().createRenderTexture(
+        RenderTargetProxy target = dContext.getSurfaceProvider().createRenderTexture(
                 GLBackendFormat.make(GL_RGBA8),
                 800, 800, 4,
                 ISurface.FLAG_BUDGETED | ISurface.FLAG_RENDERABLE
@@ -393,7 +394,7 @@ public class TestManagedResource {
             assert pixels != null;
             LOGGER.info("Image Bytes: " + pixels.remaining());
 
-            GpuTexture texture = (GpuTexture) dContext.getDevice().createImage(
+            GpuImage texture = dContext.getDevice().createImage(
                     x[0], y[0],
                     GLBackendFormat.make(GL_RGBA8),
                     1, ISurface.FLAG_MIPMAPPED |
@@ -427,35 +428,37 @@ public class TestManagedResource {
     }
 
     public static void testRenderTarget(DirectContext dContext) {
-        GpuFramebuffer framebuffer = dContext.getResourceProvider().createRenderTarget(
+        GpuRenderTarget renderTarget = dContext.getResourceProvider().createRenderTarget(
                 1920, 1080,
                 GLBackendFormat.make(GL_RG8),
                 ISurface.FLAG_MIPMAPPED |
                         ISurface.FLAG_BUDGETED | ISurface.FLAG_TEXTURABLE | ISurface.FLAG_RENDERABLE,
                 null, 0,
-                null, 0,
+               null,0,/* GLBackendFormat.make(GL_DEPTH24_STENCIL8),
+                ISurface.FLAG_BUDGETED | ISurface.FLAG_RENDERABLE,*/
                 1,
                 ISurface.FLAG_BUDGETED,
                 "MyLayer"
         );
-        if (framebuffer != null) {
-            LOGGER.info(framebuffer.toString());
-            framebuffer.unref();
+        if (renderTarget != null) {
+            LOGGER.info(renderTarget.toString());
+            renderTarget.unref();
         }
-        framebuffer = dContext.getResourceProvider().createRenderTarget(
+        renderTarget = dContext.getResourceProvider().createRenderTarget(
                 1920, 1080,
                 GLBackendFormat.make(GL_RG8),
                 ISurface.FLAG_MIPMAPPED |
                         ISurface.FLAG_BUDGETED | ISurface.FLAG_TEXTURABLE | ISurface.FLAG_RENDERABLE,
                 null, 0,
-                null, 0,
+                null,0,/* GLBackendFormat.make(GL_DEPTH24_STENCIL8),
+                ISurface.FLAG_BUDGETED | ISurface.FLAG_RENDERABLE,*/
                 1,
                 ISurface.FLAG_BUDGETED,
                 "MyLayer"
         );
-        if (framebuffer != null) {
-            LOGGER.info(framebuffer.toString()); // same RT
-            framebuffer.unref();
+        if (renderTarget != null) {
+            LOGGER.info(renderTarget.toString()); // same RT
+            renderTarget.unref();
         }
     }
 

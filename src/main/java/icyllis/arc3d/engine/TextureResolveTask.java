@@ -35,7 +35,7 @@ public final class TextureResolveTask extends RenderTask {
         super(taskManager);
     }
 
-    public void addTexture(@SharedPtr TextureProxy proxy, int resolveFlags) {
+    public void addResolveTarget(@SharedPtr SurfaceProxy proxy, int resolveFlags) {
         // Ensure the last render task that operated on the proxy is closed. That's where msaa and
         // mipmaps should have been marked dirty.
         assert (mTaskManager.getLastRenderTask(proxy) == null ||
@@ -44,16 +44,20 @@ public final class TextureResolveTask extends RenderTask {
 
         Rect2ic msaaRect;
         if ((resolveFlags & RESOLVE_FLAG_MSAA) != 0) {
-            assert (proxy.needsResolve());
-            msaaRect = proxy.getResolveRect();
-            proxy.setResolveRect(0, 0, 0, 0);
+            RenderTargetProxy renderTargetProxy = proxy.asRenderTargetProxy();
+            assert renderTargetProxy != null;
+            assert (renderTargetProxy.needsResolve());
+            msaaRect = renderTargetProxy.getResolveRect();
+            renderTargetProxy.setResolveRect(0, 0, 0, 0);
         } else {
             msaaRect = Rect2i.empty();
         }
 
         if ((resolveFlags & RESOLVE_FLAG_MIPMAPS) != 0) {
-            assert (proxy.isMipmapped() && proxy.isMipmapsDirty());
-            proxy.setMipmapsDirty(false);
+            ImageProxy imageProxy = proxy.asImageProxy();
+            assert imageProxy != null;
+            assert (imageProxy.isMipmapped() && imageProxy.isMipmapsDirty());
+            imageProxy.setMipmapsDirty(false);
         }
 
         mResolves.add(new Resolve(resolveFlags,

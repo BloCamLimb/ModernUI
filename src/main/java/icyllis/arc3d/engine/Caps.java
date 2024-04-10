@@ -617,7 +617,7 @@ public abstract class Caps {
 
     @Nonnull
     public abstract PipelineDesc makeDesc(PipelineDesc desc,
-                                          GpuFramebuffer framebuffer,
+                                          GpuRenderTarget renderTarget,
                                           final PipelineInfo pipelineInfo);
 
     public final short getReadSwizzle(BackendFormat format, int colorType) {

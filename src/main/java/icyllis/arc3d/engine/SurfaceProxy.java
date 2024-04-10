@@ -54,7 +54,7 @@ import javax.annotation.Nullable;
  * <p>
  * Use {@link SurfaceProvider} to obtain {@link SurfaceProxy} objects.
  *
- * @see TextureProxy
+ * @see ImageProxy
  * @see SurfaceView
  */
 public abstract class SurfaceProxy extends RefCnt {
@@ -66,6 +66,13 @@ public abstract class SurfaceProxy extends RefCnt {
     final BackendFormat mFormat;
     int mWidth;
     int mHeight;
+
+    /**
+     * For deferred textures it will be null until the backing store is instantiated.
+     * For wrapped textures it will point to the wrapped resource.
+     */
+    @SharedPtr
+    GpuSurface mGpuSurface;
 
     /**
      * BackingFit: Indicates whether a backing store needs to be an exact match or can be
@@ -86,18 +93,18 @@ public abstract class SurfaceProxy extends RefCnt {
      * DeferredProvider: For TextureProxies created in a deferred list recording thread it is
      * possible for the uniqueKey to be cleared on the backing Texture while the uniqueKey
      * remains on the surface. A 'mDeferredProvider' of 'true' loosens up asserts that the key of an
-     * instantiated uniquely-keyed texture is also always set on the backing {@link GpuTexture}.
+     * instantiated uniquely-keyed texture is also always set on the backing {@link GpuImage}.
      * <p>
      * In many cases these flags aren't actually known until the surface has been instantiated.
      * However, Engine frequently needs to change its behavior based on these settings. For
      * internally create proxies we will know these properties ahead of time. For wrapped
-     * proxies we will copy the properties off of the {@link GpuTexture}. For lazy proxies we
+     * proxies we will copy the properties off of the {@link GpuImage}. For lazy proxies we
      * force the call sites to provide the required information ahead of time. At
      * instantiation time we verify that the assumed properties match the actual properties.
      *
-     * @see GpuSurface#FLAG_BUDGETED
-     * @see GpuSurface#FLAG_APPROX_FIT
-     * @see GpuSurface#FLAG_SKIP_ALLOCATOR
+     * @see ISurface#FLAG_BUDGETED
+     * @see ISurface#FLAG_APPROX_FIT
+     * @see ISurface#FLAG_SKIP_ALLOCATOR
      */
     int mSurfaceFlags;
 
@@ -106,7 +113,7 @@ public abstract class SurfaceProxy extends RefCnt {
     /**
      * Set from the backing resource for wrapped resources.
      */
-    final Object mUniqueID;
+    final UniqueID mUniqueID;
 
     int mTaskTargetCount = 0;
     boolean mIsDeferredListTarget = false;
@@ -123,7 +130,7 @@ public abstract class SurfaceProxy extends RefCnt {
         if (format.isExternal()) {
             mSurfaceFlags |= ISurface.FLAG_READ_ONLY;
         }
-        mUniqueID = this;
+        mUniqueID = new UniqueID();
     }
 
     // Wrapped version
@@ -135,7 +142,7 @@ public abstract class SurfaceProxy extends RefCnt {
         mHeight = surface.getHeight();
         mSurfaceFlags = surface.getSurfaceFlags() | surfaceFlags;
         assert (mSurfaceFlags & ISurface.FLAG_APPROX_FIT) == 0;
-        mUniqueID = surface; // converting from unique resource ID to a surface ID
+        mUniqueID = surface.getUniqueID(); // converting from unique resource ID to a surface ID
     }
 
     public static class LazyCallbackResult {
@@ -143,18 +150,18 @@ public abstract class SurfaceProxy extends RefCnt {
         @SharedPtr
         public GpuSurface mSurface;
         /**
-         * Some lazy callbacks want to set their own (or no key) on the {@link GpuTexture}
-         * they return. Others want the {@link GpuTexture}'s key to be kept in sync with the surface's
+         * Some lazy callbacks want to set their own (or no key) on the {@link GpuImage}
+         * they return. Others want the {@link GpuImage}'s key to be kept in sync with the surface's
          * key. This flag controls the key relationship between proxies and their targets.
          * <ul>
-         *     <li>False: Don't key the {@link GpuTexture} with the surface's key. The lazy
-         *     instantiation callback is free to return a {@link GpuTexture} that already
+         *     <li>False: Don't key the {@link GpuImage} with the surface's key. The lazy
+         *     instantiation callback is free to return a {@link GpuImage} that already
          *     has a unique key unrelated to the surface's key.</li>
-         *     <li>True: Keep the {@link GpuTexture}'s unique key in sync with the surface's
-         *     unique key. The {@link GpuTexture} returned from the lazy instantiation callback
+         *     <li>True: Keep the {@link GpuImage}'s unique key in sync with the surface's
+         *     unique key. The {@link GpuImage} returned from the lazy instantiation callback
          *     must not have a unique key or have the same same unique key as the surface.
          *     If the surface is later assigned a key it is in turn assigned to the
-         *     {@link GpuTexture}.</li>
+         *     {@link GpuImage}.</li>
          * </ul>
          */
         public boolean mSyncTargetKey = true;
@@ -309,11 +316,11 @@ public abstract class SurfaceProxy extends RefCnt {
      *
      * @return a reference for identity hash map
      */
-    public final Object getUniqueID() {
+    public final UniqueID getUniqueID() {
         return mUniqueID;
     }
 
-    public abstract Object getBackingUniqueID();
+    public abstract UniqueID getBackingUniqueID();
 
     /**
      * Returns true if the backing store is instantiated.
@@ -365,21 +372,21 @@ public abstract class SurfaceProxy extends RefCnt {
 
     /**
      * If this is a texturable surface and the surface is already instantiated, return its
-     * backing {@link GpuTexture}; if not, return null.
+     * backing {@link GpuImage}; if not, return null.
      */
     @Nullable
     @RawPtr
-    public GpuTexture getGpuTexture() {
+    public GpuImage getGpuImage() {
         return null;
     }
 
     /**
      * If this is a renderable surface and the surface is already instantiated, return its
-     * backing {@link GpuFramebuffer}; if not, return null.
+     * backing {@link GpuRenderTarget}; if not, return null.
      */
     @Nullable
     @RawPtr
-    public GpuFramebuffer getFramebuffer() {
+    public GpuRenderTarget getGpuRenderTarget() {
         return null;
     }
 
@@ -433,7 +440,24 @@ public abstract class SurfaceProxy extends RefCnt {
         return (mSurfaceFlags & ISurface.FLAG_APPROX_FIT) == 0;
     }
 
-    public TextureProxy asTexture() {
+    /**
+     * @return the texture proxy associated with the surface proxy, may be NULL.
+     */
+    public ImageProxy asImageProxy() {
+        return null;
+    }
+
+    /**
+     * @return the render target proxy associated with the surface proxy, may be NULL.
+     */
+    public RenderTargetProxy asRenderTargetProxy() {
+        return null;
+    }
+
+    /**
+     * @return the unique key for this proxy, may be NULL
+     */
+    public IUniqueKey getUniqueKey() {
         return null;
     }
 
@@ -461,4 +485,11 @@ public abstract class SurfaceProxy extends RefCnt {
     @ApiStatus.Internal
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public abstract boolean doLazyInstantiation(ResourceProvider resourceProvider);
+
+    @Nonnull
+    abstract IScratchKey computeScratchKey();
+
+    @Nullable
+    @SharedPtr
+    abstract GpuSurface createSurface(ResourceProvider resourceProvider);
 }

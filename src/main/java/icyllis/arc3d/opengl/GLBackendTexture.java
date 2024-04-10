@@ -30,6 +30,7 @@ import static icyllis.arc3d.engine.Engine.*;
 public final class GLBackendTexture extends BackendTexture {
 
     private final GLImageInfo mInfo;
+    // Null for renderbuffers.
     final GLTextureParameters mParams;
 
     private final BackendFormat mBackendFormat;
@@ -87,7 +88,9 @@ public final class GLBackendTexture extends BackendTexture {
 
     @Override
     public void glTextureParametersModified() {
-        mParams.invalidate();
+        if (mParams != null) {
+            mParams.invalidate();
+        }
     }
 
     @Nonnull

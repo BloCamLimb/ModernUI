@@ -27,7 +27,7 @@ import javax.annotation.Nonnull;
 
 import static icyllis.arc3d.engine.Engine.BackendApi;
 
-public class MockBackendFormat extends BackendFormat {
+public final class MockBackendFormat extends BackendFormat {
 
     private final int mColorType;
     private final int mCompressionType;
@@ -79,7 +79,7 @@ public class MockBackendFormat extends BackendFormat {
         if (mCompressionType != ImageInfo.COMPRESSION_NONE) {
             return 8; // 1 * ETC1Block or BC1Block
         } else if (mDepthBits > 0 || mIsStencilFormat) {
-            return MathUtil.ceilPow2((mDepthBits >>> 3) + 1);
+            return MathUtil.ceilPow2((mDepthBits >>> 3) + (mIsStencilFormat ? 1 : 0));
         } else {
             return ImageInfo.bytesPerPixel(mColorType);
         }

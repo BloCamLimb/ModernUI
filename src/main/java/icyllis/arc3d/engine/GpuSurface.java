@@ -27,46 +27,47 @@ import javax.annotation.Nonnull;
  * Interface representing GPU surfaces.
  * <p>
  * There are two implementations: one is {@link GpuImage}, which contains image data and
- * allocates memory; and the other is {@link GpuFramebuffer}, which is a container object.
+ * allocates memory; and the other is {@link GpuRenderTarget}, which is a container object
+ * that represents a combination of {@link GpuImage}s as attachments, and managed all objects
+ * used by the rendering pipeline for the fixed combination of attachments (compatible render passes
+ * and framebuffers).
  *
  * @see SurfaceProxy
  */
-public sealed interface GpuSurface extends GpuResource permits GpuImage, GpuFramebuffer {
+public abstract sealed class GpuSurface extends GpuResource permits GpuImage, GpuRenderTarget {
 
-    /**
-     * Increases the reference count by 1 on the client pipeline.
-     */
-    void ref();
-
-    /**
-     * Decreases the reference count by 1 on the client pipeline.
-     */
-    void unref();
+    protected GpuSurface(GpuDevice device) {
+        super(device);
+    }
 
     /**
      * @return the width of the surface in pixels, greater than zero
      */
-    int getWidth();
+    public abstract int getWidth();
 
     /**
      * @return the height of the surface in pixels, greater than zero
      */
-    int getHeight();
+    public abstract int getHeight();
 
     /**
      * Returns the backend format of the surface.
      * <p>
-     * If this is framebuffer, returns the backend format of color attachment 0.
+     * If this is RT, returns the backend format of color attachment 0.
      */
     @Nonnull
-    BackendFormat getBackendFormat();
+    public abstract BackendFormat getBackendFormat();
+
+    public abstract int getDepthBits();
+
+    public abstract int getStencilBits();
 
     /**
      * Returns the number of samples per pixel in color buffers (one if non-MSAA).
      *
      * @return the number of samples, greater than (multi-sampled) or equal to one
      */
-    int getSampleCount();
+    public abstract int getSampleCount();
 
     /**
      * Surface flags.
@@ -74,12 +75,12 @@ public sealed interface GpuSurface extends GpuResource permits GpuImage, GpuFram
      * <ul>
      * <li>{@link ISurface#FLAG_BUDGETED} -
      *  Indicates whether an allocation should count against a cache budget. Budgeted when
-     *  set, otherwise not budgeted. {@link GpuImage} or {@link GpuTexture} only.
+     *  set, otherwise not budgeted.
      * </li>
      *
      * <li>{@link ISurface#FLAG_MIPMAPPED} -
      *  Used to say whether an image has mip levels allocated or not. Mipmaps are allocated
-     *  when set, otherwise mipmaps are not allocated. {@link GpuImage} or {@link GpuTexture} only.
+     *  when set, otherwise mipmaps are not allocated. {@link GpuImage} only.
      * </li>
      *
      * <li>{@link ISurface#FLAG_RENDERABLE} -
@@ -98,48 +99,35 @@ public sealed interface GpuSurface extends GpuResource permits GpuImage, GpuFram
      *
      * @return combination of the above flags
      */
-    int getSurfaceFlags();
+    public abstract int getSurfaceFlags();
 
     /**
      * @return true if we are working with protected content
      */
-    boolean isProtected();
+    public abstract boolean isProtected();
 
     /**
      * If this object is image, returns this.
      * <p>
-     * If this object is framebuffer, returns the resolve attachment 0 if available,
+     * If this object is RT, returns the resolve attachment 0 if available,
      * or returns the color attachment 0 if available, or null.
      *
      * @return raw ptr to the image
      */
     @RawPtr
-    default GpuImage asImage() {
+    public GpuImage asImage() {
         return null;
     }
 
     /**
-     * If this object is texture, returns this.
-     * <p>
-     * If this object is framebuffer, returns the resolve attachment 0 if available,
-     * or returns the color attachment 0 if available, or null.
-     *
-     * @return raw ptr to the texture
-     */
-    @RawPtr
-    default GpuTexture asTexture() {
-        return null;
-    }
-
-    /**
-     * If this object is framebuffer, returns this.
+     * If this object is RT, returns this.
      * <p>
      * If this object is image, returns null.
      *
      * @return raw ptr to this
      */
     @RawPtr
-    default GpuFramebuffer asFramebuffer() {
+    public GpuRenderTarget asRenderTarget() {
         return null;
     }
 }

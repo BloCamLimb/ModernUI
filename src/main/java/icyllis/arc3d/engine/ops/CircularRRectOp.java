@@ -23,7 +23,6 @@ import icyllis.arc3d.core.Rect2f;
 import icyllis.arc3d.core.SLDataType;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.shading.*;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -36,9 +35,10 @@ public final class CircularRRectOp extends MeshDrawOp {
         super();
     }
 
+    @Nonnull
     @Override
-    protected @NotNull PipelineInfo onCreatePipelineInfo(SurfaceView writeView,
-                                                         int pipelineFlags) {
+    protected PipelineInfo onCreatePipelineInfo(SurfaceView writeView,
+                                                int pipelineFlags) {
         return null;
     }
 

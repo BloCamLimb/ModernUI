@@ -63,9 +63,9 @@ public final class GLVertexArray extends ManagedResource {
 
     // this is the binding state stored in VAO, not context
     // (we don't care about context's binding state)
-    private GLBuffer.UniqueID mIndexBuffer;
-    private GLBuffer.UniqueID mVertexBuffer;
-    private GLBuffer.UniqueID mInstanceBuffer;
+    private UniqueID mIndexBuffer;
+    private UniqueID mVertexBuffer;
+    private UniqueID mInstanceBuffer;
 
     private long mVertexOffset;
     private long mInstanceOffset;

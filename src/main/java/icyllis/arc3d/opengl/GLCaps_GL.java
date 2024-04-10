@@ -22,11 +22,11 @@ package icyllis.arc3d.opengl;
 import icyllis.arc3d.compiler.*;
 import icyllis.arc3d.engine.ShaderCaps;
 import icyllis.arc3d.engine.*;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.lwjgl.opengl.*;
 import org.lwjgl.system.MemoryStack;
 
+import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
@@ -350,7 +350,7 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
                     }
                 } else {
                     int maxSampleCnt = Math.max(1, GL11C.glGetInteger(GL30C.GL_MAX_SAMPLES));
-                    int count = 4; // [1, 2, 4, 8]
+                    int count = 5; // [1, 2, 4, 8, 16]
                     for (; count > 0; --count) {
                         if ((1 << (count - 1)) <= maxSampleCnt) {
                             break;

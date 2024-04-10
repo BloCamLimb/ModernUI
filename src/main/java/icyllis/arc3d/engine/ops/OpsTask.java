@@ -41,7 +41,7 @@ public class OpsTask extends RenderTask {
 
     private final ArrayList<OpChain> mOpChains = new ArrayList<>(25);
 
-    private final ObjectOpenHashSet<TextureProxy> mSampledTextures = new ObjectOpenHashSet<>();
+    private final ObjectOpenHashSet<SurfaceProxy> mSampledTextures = new ObjectOpenHashSet<>();
 
     private final SurfaceView mWriteView;
     private int mPipelineFlags;
@@ -87,7 +87,7 @@ public class OpsTask extends RenderTask {
             int cur = alloc.curOp();
             alloc.addInterval(getTarget(), cur, cur + mOpChains.size() - 1, true);
 
-            TextureVisitor gather = (p, __) -> alloc.addInterval(p,
+            SurfaceVisitor gather = (p, __) -> alloc.addInterval(p,
                     alloc.curOp(),
                     alloc.curOp(),
                     /*actualUse*/true);
@@ -155,24 +155,24 @@ public class OpsTask extends RenderTask {
         boolean result = clippedContentBounds.intersect(mTotalBounds);
         assert result;
         clippedContentBounds.roundOut(mContentBounds);
-        TextureProxy proxy = target.asTexture();
-        if (proxy != null) {
-            if (proxy.isManualMSAAResolve()) {
-                int msaaTop;
-                int msaaBottom;
-                if (mWriteView.getOrigin() == SurfaceOrigin.kLowerLeft) {
-                    msaaTop = rtHeight - mContentBounds.mBottom;
-                    msaaBottom = rtHeight - mContentBounds.mTop;
-                } else {
-                    msaaTop = mContentBounds.mTop;
-                    msaaBottom = mContentBounds.mBottom;
-                }
-                proxy.setResolveRect(mContentBounds.mLeft, msaaTop,
-                        mContentBounds.mRight, msaaBottom);
+        if (target.isManualMSAAResolve()) {
+            RenderTargetProxy renderTargetProxy = target.asRenderTargetProxy();
+            assert renderTargetProxy != null;
+            int msaaTop;
+            int msaaBottom;
+            if (mWriteView.getOrigin() == SurfaceOrigin.kLowerLeft) {
+                msaaTop = rtHeight - mContentBounds.mBottom;
+                msaaBottom = rtHeight - mContentBounds.mTop;
+            } else {
+                msaaTop = mContentBounds.mTop;
+                msaaBottom = mContentBounds.mBottom;
             }
-            if (proxy.isMipmapped()) {
-                proxy.setMipmapsDirty(true);
-            }
+            renderTargetProxy.setResolveRect(mContentBounds.mLeft, msaaTop,
+                    mContentBounds.mRight, msaaBottom);
+        }
+        ImageProxy imageProxy = target.asImageProxy();
+        if (imageProxy != null && imageProxy.isMipmapped()) {
+            imageProxy.setMipmapsDirty(true);
         }
     }
 
@@ -181,7 +181,7 @@ public class OpsTask extends RenderTask {
     }
 
     public void addDrawOp(@Nonnull DrawOp op, @Nullable ClipResult clip, int processorAnalysis) {
-        TextureVisitor addDependency = (p, ss) -> {
+        SurfaceVisitor addDependency = (p, ss) -> {
             mSampledTextures.add(p);
             addDependency(p, ss);
         };
@@ -252,7 +252,7 @@ public class OpsTask extends RenderTask {
             assert (validate());
         }
 
-        public void visitProxies(TextureVisitor func) {
+        public void visitProxies(SurfaceVisitor func) {
             for (Op op = mHead; op != null; op = op.nextInChain()) {
                 op.visitProxies(func);
             }

@@ -20,6 +20,7 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.Kernel32;
+import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.*;
 import org.lwjgl.opengl.EXTMemoryObject;
 import org.lwjgl.system.MemoryUtil;
@@ -28,15 +29,16 @@ import org.lwjgl.system.Platform;
 import javax.annotation.Nonnull;
 
 import static icyllis.arc3d.engine.Engine.IOType;
-import static org.lwjgl.opengl.GL11C.GL_TEXTURE;
+import static org.lwjgl.opengl.GL30C.*;
 
 /**
  * Represents OpenGL textures and renderbuffers.
  */
-public sealed class GLImage extends GpuImageBase permits GLTexture {
+public final class GLImage extends GpuImage {
 
     private GLImageInfo mInfo;
     private BackendFormat mFormat;
+    private final GLBackendTexture mBackendTexture;
     private final boolean mOwnership;
 
     private final long mMemorySize;
@@ -53,13 +55,20 @@ public sealed class GLImage extends GpuImageBase permits GLTexture {
         mFormat = format;
         mOwnership = true;
 
+        assert info.handle != 0;
+        mBackendTexture = new GLBackendTexture(width, height, info,
+                info.target != GL_RENDERBUFFER ? new GLTextureParameters() : null, format);
+
         if (GLUtil.glFormatIsCompressed(format.getGLFormat()) || format.isExternal()) {
             mFlags |= ISurface.FLAG_READ_ONLY;
         }
         if (info.levels > 1) {
             mFlags |= ISurface.FLAG_MIPMAPPED;
         }
-        mFlags |= flags;
+        mFlags |= flags & (ISurface.FLAG_MEMORYLESS |
+                ISurface.FLAG_TEXTURABLE |
+                ISurface.FLAG_RENDERABLE |
+                ISurface.FLAG_PROTECTED);
 
         mMemorySize = computeSize(format, width, height, info.samples, info.levels);
         registerWithCache((flags & ISurface.FLAG_BUDGETED) != 0);
@@ -69,6 +78,7 @@ public sealed class GLImage extends GpuImageBase permits GLTexture {
     public GLImage(GLDevice device,
                    int width, int height,
                    GLImageInfo info,
+                   GLTextureParameters params,
                    BackendFormat format,
                    int ioType,
                    boolean cacheable,
@@ -79,6 +89,8 @@ public sealed class GLImage extends GpuImageBase permits GLTexture {
         mInfo = info;
         mOwnership = ownership;
 
+        mBackendTexture = new GLBackendTexture(width, height, info, params, format);
+
         // compressed formats always set 'ioType' to READ
         assert (ioType == IOType.kRead || format.isCompressed());
         if (ioType == IOType.kRead || format.isExternal()) {
@@ -87,15 +99,61 @@ public sealed class GLImage extends GpuImageBase permits GLTexture {
         if (info.levels > 1) {
             mFlags |= ISurface.FLAG_MIPMAPPED;
         }
+        //TODO?
+        if (info.target != GL_RENDERBUFFER) {
+            mFlags |= ISurface.FLAG_TEXTURABLE;
+        } else {
+            mFlags |= ISurface.FLAG_RENDERABLE;
+        }
 
-        mMemorySize = computeSize(format, width, height, 1, info.levels);
+        mMemorySize = computeSize(format, width, height, info.samples, info.levels);
         registerWithCacheWrapped(cacheable);
+    }
+
+    @Nonnull
+    @SharedPtr
+    public static GLImage makeWrappedRenderbuffer(GLDevice device,
+                                                  int width, int height,
+                                                  int sampleCount,
+                                                  int format,
+                                                  int renderbuffer) {
+        GLImageInfo info = new GLImageInfo();
+        info.target = GL_RENDERBUFFER;
+        info.handle = renderbuffer;
+        info.format = format;
+        info.samples = sampleCount;
+        return new GLImage(device,
+                width, height,
+                info,
+                null,
+                GLBackendFormat.make(format),
+                IOType.kWrite,
+                false,
+                false);
     }
 
     @Nonnull
     @Override
     public BackendFormat getBackendFormat() {
         return mFormat;
+    }
+
+    @Nonnull
+    @Override
+    public GLBackendTexture getBackendTexture() {
+        return mBackendTexture;
+    }
+
+    /**
+     * Note: Null for renderbuffers.
+     */
+    public GLTextureParameters getParameters() {
+        return mBackendTexture.mParams;
+    }
+
+    @Override
+    public boolean isExternal() {
+        return mBackendTexture.isExternal();
     }
 
     @Override

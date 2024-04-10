@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,14 +19,22 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.RawPtr;
+import javax.annotation.Nonnull;
 
-@FunctionalInterface
-public interface TextureVisitor {
+/**
+ * An object with identity. This can be used to track state changes through '=='.
+ * Used by {@link GpuResource} and {@link SurfaceProxy}.
+ *
+ * @see System#identityHashCode(Object)
+ */
+public final class UniqueID {
 
-    /**
-     * @param texture      raw ptr to texture proxy
-     * @param samplerState see {@link SamplerState}
-     */
-    void visit(@RawPtr TextureProxy texture, int samplerState);
+    public UniqueID() {
+    }
+
+    @Nonnull
+    @Override
+    public String toString() {
+        return "UniqueID@" + Integer.toHexString(hashCode());
+    }
 }

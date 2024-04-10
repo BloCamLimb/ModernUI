@@ -21,26 +21,26 @@ package icyllis.arc3d.engine.image;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.RecordingContext;
-import icyllis.arc3d.engine.TextureProxy;
+import icyllis.arc3d.engine.ImageProxy;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public class TextureImage extends Image {
+public class Image_Texture extends Image {
 
     RecordingContext mContext;
     @SharedPtr
-    TextureProxy mProxy;
+    ImageProxy mProxy;
     short mSwizzle;
     int mOrigin;
 
-    public TextureImage(@Nonnull RecordingContext rContext,
-                        @Nonnull TextureProxy proxy,
-                        short swizzle,
-                        int origin,
-                        int colorType,
-                        int alphaType,
-                        @Nullable ColorSpace colorSpace) {
+    public Image_Texture(@Nonnull RecordingContext rContext,
+                         @Nonnull ImageProxy proxy,
+                         short swizzle,
+                         int origin,
+                         int colorType,
+                         int alphaType,
+                         @Nullable ColorSpace colorSpace) {
         super(ImageInfo.make(proxy.getBackingWidth(), proxy.getBackingHeight(),
                 colorType, alphaType, colorSpace));
         mContext = rContext;

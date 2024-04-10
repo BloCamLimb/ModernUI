@@ -22,11 +22,11 @@ package icyllis.arc3d.opengl;
 import icyllis.arc3d.compiler.GLSLVersion;
 import icyllis.arc3d.compiler.TargetApi;
 import icyllis.arc3d.engine.*;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.lwjgl.opengles.*;
 import org.lwjgl.system.MemoryStack;
 
+import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 

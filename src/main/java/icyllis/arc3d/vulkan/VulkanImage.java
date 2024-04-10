@@ -19,15 +19,14 @@
 
 package icyllis.arc3d.vulkan;
 
-import icyllis.arc3d.engine.BackendFormat;
-import icyllis.arc3d.engine.GpuImageBase;
+import icyllis.arc3d.engine.*;
 
 import javax.annotation.Nonnull;
 
 /**
  * Represents Vulkan images, can be used as textures or attachments.
  */
-public sealed class VulkanImage extends GpuImageBase permits VulkanTexture {
+public final class VulkanImage extends GpuImage {
 
     private VulkanImageInfo mInfo;
 
@@ -62,6 +61,17 @@ public sealed class VulkanImage extends GpuImageBase permits VulkanTexture {
     @Override
     public int getMipLevelCount() {
         return mInfo.mLevelCount;
+    }
+
+    @Nonnull
+    @Override
+    public BackendTexture getBackendTexture() {
+        return null;
+    }
+
+    @Override
+    public boolean isExternal() {
+        return false;
     }
 
     @Nonnull

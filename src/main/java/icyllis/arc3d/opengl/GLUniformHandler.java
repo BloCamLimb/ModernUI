@@ -66,7 +66,7 @@ public class GLUniformHandler extends UniformHandler {
                                           int visibility,
                                           byte type,
                                           String name,
-                                          int arrayCount) {
+                                          int arraySize) {
         assert (SLDataType.canBeUniformValue(type));
         assert (visibility != 0);
 
@@ -85,7 +85,7 @@ public class GLUniformHandler extends UniformHandler {
         tempInfo.mVariable = new ShaderVar(resolvedName,
                 type,
                 ShaderVar.kNone_TypeModifier,
-                arrayCount);
+                arraySize);
         tempInfo.mVisibility = visibility;
         tempInfo.mOwner = owner;
         tempInfo.mRawName = name;
@@ -158,10 +158,10 @@ public class GLUniformHandler extends UniformHandler {
         for (UniformInfo u : mReorderedUniforms) {
             int offset = getAlignedOffset(mCurrentOffset,
                     u.mVariable.getType(),
-                    u.mVariable.getArrayCount(),
+                    u.mVariable.getArraySize(),
                     Std140Layout);
             mCurrentOffset += getAlignedStride(u.mVariable.getType(),
-                    u.mVariable.getArrayCount(),
+                    u.mVariable.getArraySize(),
                     Std140Layout);
 
             if (mPipelineBuilder.shaderCaps().mUseBlockMemberOffset) {

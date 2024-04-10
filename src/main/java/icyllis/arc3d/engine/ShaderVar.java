@@ -43,7 +43,7 @@ public class ShaderVar {
 
     private byte mType;
     private byte mTypeModifier;
-    private final int mCount;
+    private final int mArraySize;
 
     private String mName;
     private String mLayoutQualifier;
@@ -60,28 +60,28 @@ public class ShaderVar {
         this(name, type, kNone_TypeModifier, kNonArray, "", "");
     }
 
-    public ShaderVar(String name, byte type, int arrayCount) {
-        this(name, type, kNone_TypeModifier, arrayCount, "", "");
+    public ShaderVar(String name, byte type, int arraySize) {
+        this(name, type, kNone_TypeModifier, arraySize, "", "");
     }
 
     public ShaderVar(String name, byte type, byte typeModifier) {
         this(name, type, typeModifier, kNonArray, "", "");
     }
 
-    public ShaderVar(String name, byte type, byte typeModifier, int arrayCount) {
-        this(name, type, typeModifier, arrayCount, "", "");
+    public ShaderVar(String name, byte type, byte typeModifier, int arraySize) {
+        this(name, type, typeModifier, arraySize, "", "");
     }
 
-    public ShaderVar(String name, byte type, byte typeModifier, int arrayCount,
+    public ShaderVar(String name, byte type, byte typeModifier, int arraySize,
                      String layoutQualifier, String extraModifier) {
         assert (name != null);
         assert (SLDataType.checkSLType(type));
         assert (typeModifier >= kNone_TypeModifier && typeModifier <= kUniform_TypeModifier);
-        assert (arrayCount == kNonArray || arrayCount > 0);
+        assert (arraySize == kNonArray || arraySize > 0);
         assert (layoutQualifier != null && extraModifier != null);
         mType = type;
         mTypeModifier = typeModifier;
-        mCount = arrayCount;
+        mArraySize = arraySize;
         mName = name;
         mLayoutQualifier = layoutQualifier;
         mExtraModifiers = extraModifier;
@@ -100,14 +100,14 @@ public class ShaderVar {
      * Is the var an array.
      */
     public boolean isArray() {
-        return mCount != kNonArray;
+        return mArraySize != kNonArray;
     }
 
     /**
      * Get the array length. May be {@link #kNonArray}.
      */
-    public int getArrayCount() {
-        return mCount;
+    public int getArraySize() {
+        return mArraySize;
     }
 
     /**
@@ -190,12 +190,12 @@ public class ShaderVar {
         }
         byte type = getType();
         if (isArray()) {
-            assert (getArrayCount() > 0);
+            assert (getArraySize() > 0);
             out.append(SLDataType.typeString(type));
             out.append(" ");
             out.append(getName());
             out.append("[");
-            out.append(getArrayCount());
+            out.append(getArraySize());
             out.append("]");
         } else {
             out.append(SLDataType.typeString(type));

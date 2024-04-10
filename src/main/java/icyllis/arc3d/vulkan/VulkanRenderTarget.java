@@ -21,10 +21,11 @@ package icyllis.arc3d.vulkan;
 
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.*;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-public final class VulkanFramebuffer extends GpuFramebuffer {
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+public final class VulkanRenderTarget extends GpuRenderTarget {
 
     // the color buffers, raw ptr
     // null for wrapped render targets
@@ -38,11 +39,11 @@ public final class VulkanFramebuffer extends GpuFramebuffer {
     @SharedPtr
     private VulkanImage mDepthStencilAttachment;
 
-    protected VulkanFramebuffer(GpuDevice device, int width, int height, int sampleCount, int numColorAttachments) {
+    protected VulkanRenderTarget(GpuDevice device, int width, int height, int sampleCount, int numColorAttachments) {
         super(device, width, height, sampleCount, numColorAttachments);
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public BackendFormat getBackendFormat() {
         return null;
@@ -53,7 +54,7 @@ public final class VulkanFramebuffer extends GpuFramebuffer {
         return false;
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public BackendRenderTarget getBackendRenderTarget() {
         return null;

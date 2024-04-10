@@ -265,7 +265,7 @@ public abstract class RenderTask extends RefCnt {
         return (mFlags & SKIPPABLE_FLAG) != 0;
     }
 
-    public final void addDependency(TextureProxy dependency, int samplerState) {
+    public final void addDependency(SurfaceProxy dependency, int samplerState) {
         assert (mTaskManager.getContext().isOwnerThread());
         assert (!isClosed());
 
@@ -292,20 +292,27 @@ public abstract class RenderTask extends RefCnt {
 
         int resolveFlags = 0;
 
-        if (dependency.isManualMSAAResolve() && dependency.needsResolve()) {
-            resolveFlags |= RESOLVE_FLAG_MSAA;
+        RenderTargetProxy renderTargetProxy = dependency.asRenderTargetProxy();
+        if (dependency.isManualMSAAResolve()) {
+            assert renderTargetProxy != null;
+            if (renderTargetProxy.needsResolve()) {
+                resolveFlags |= RESOLVE_FLAG_MSAA;
+            }
         }
 
-        if (SamplerState.isMipmapped(samplerState) &&
-                dependency.isMipmapped() && dependency.isMipmapsDirty()) {
-            resolveFlags |= RESOLVE_FLAG_MIPMAPS;
+        ImageProxy imageProxy = dependency.asImageProxy();
+        if (SamplerState.isMipmapped(samplerState)) {
+            assert imageProxy != null;
+            if (imageProxy.isMipmapped() && imageProxy.isMipmapsDirty()) {
+                resolveFlags |= RESOLVE_FLAG_MIPMAPS;
+            }
         }
 
         if (resolveFlags != 0) {
             if (mTextureResolveTask == null) {
                 mTextureResolveTask = new TextureResolveTask(mTaskManager);
             }
-            mTextureResolveTask.addTexture(RefCnt.create(dependency), resolveFlags);
+            mTextureResolveTask.addResolveTarget(RefCnt.create(dependency), resolveFlags);
 
             // addProxy() should have closed the texture proxy's previous task.
             assert (dependencyTask == null ||
@@ -315,10 +322,10 @@ public abstract class RenderTask extends RefCnt {
             assert (dependencyTask == null ||
                     mTextureResolveTask.dependsOn(dependencyTask));
 
-            assert (!dependency.isManualMSAAResolve() ||
-                    !dependency.needsResolve());
-            assert (!dependency.isMipmapped() ||
-                    !dependency.isMipmapsDirty());
+            assert (renderTargetProxy == null || !renderTargetProxy.isManualMSAAResolve() ||
+                    !renderTargetProxy.needsResolve());
+            assert (imageProxy == null || !imageProxy.isMipmapped() ||
+                    !imageProxy.isMipmapsDirty());
             return;
         }
 
@@ -341,8 +348,8 @@ public abstract class RenderTask extends RefCnt {
             if (!target.isInstantiated()) {
                 return false;
             }
-            GpuTexture texture = target.getGpuTexture();
-            if (texture != null && texture.isDestroyed()) {
+            GpuSurface surface = target.getGpuSurface();
+            if (surface != null && surface.isDestroyed()) {
                 return false;
             }
         }
