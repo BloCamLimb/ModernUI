@@ -31,8 +31,8 @@ import javax.annotation.Nullable;
  * <p>
  * A {@link GpuRenderTarget} may be associated with one or more renderable {@link GpuImage}s
  * or a wrapped presentable object.
- * This class is used by the pipeline internally. Use {@link RenderTextureProxy}
- * and {@link RenderTargetProxy} for high-level operations.
+ * This class is used by the pipeline internally. Use {@link RenderTargetProxy} for
+ * high-level operations.
  */
 public abstract non-sealed class GpuRenderTarget extends GpuSurface {
 

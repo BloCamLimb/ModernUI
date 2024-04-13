@@ -31,7 +31,8 @@ import org.jetbrains.annotations.Contract;
  * <li>8-12 bits: mipmap mode</li>
  * <li>12-16 bits: address mode (x direction)</li>
  * <li>16-20 bits: address mode (y direction)</li>
- * <li>20-32 bits: max anisotropy (integer value)</li>
+ * <li>20-24 bits: address mode (z direction)</li>
+ * <li>24-32 bits: max anisotropy (integer value)</li>
  * </ul>
  * <b>Do NOT change the packing format and the default value</b>.
  */
@@ -64,19 +65,22 @@ public final class SamplerState {
             ADDRESS_MODE_CLAMP_TO_BORDER = 3;
     //@formatter:on
 
-    // default value
-    public static final int DEFAULT = 0x122211;
+    /**
+     * Default value. mag linear, min linear, mipmap_none, address_clamp_to_edge, anisotropy=1.
+     */
+    public static final int DEFAULT = 0x1222011;
 
     static {
         // make them inline at compile-time
         assert make(FILTER_LINEAR) == DEFAULT;
-        assert make(FILTER_LINEAR, MIPMAP_MODE_LINEAR) == DEFAULT;
-        assert make(FILTER_LINEAR, MIPMAP_MODE_LINEAR, ADDRESS_MODE_CLAMP_TO_EDGE) == DEFAULT;
+        assert make(FILTER_LINEAR, MIPMAP_MODE_NONE) == DEFAULT;
+        assert make(FILTER_LINEAR, MIPMAP_MODE_NONE, ADDRESS_MODE_CLAMP_TO_EDGE) == DEFAULT;
         assert getMagFilter(DEFAULT) == FILTER_LINEAR;
         assert getMinFilter(DEFAULT) == FILTER_LINEAR;
-        assert getMipmapMode(DEFAULT) == MIPMAP_MODE_LINEAR;
+        assert getMipmapMode(DEFAULT) == MIPMAP_MODE_NONE;
         assert getAddressModeX(DEFAULT) == ADDRESS_MODE_CLAMP_TO_EDGE;
         assert getAddressModeY(DEFAULT) == ADDRESS_MODE_CLAMP_TO_EDGE;
+        assert getAddressModeZ(DEFAULT) == ADDRESS_MODE_CLAMP_TO_EDGE;
         assert getMaxAnisotropy(DEFAULT) == 1;
     }
 
@@ -88,7 +92,7 @@ public final class SamplerState {
     @Contract(pure = true)
     public static int make(int filter) {
         assert (filter == FILTER_NEAREST || filter == FILTER_LINEAR);
-        return 0x122200 | filter | (filter << 4);
+        return 0x1222000 | filter | (filter << 4);
     }
 
     /**
@@ -104,7 +108,7 @@ public final class SamplerState {
         assert (mipmap == MIPMAP_MODE_NONE ||
                 mipmap == MIPMAP_MODE_NEAREST ||
                 mipmap == MIPMAP_MODE_LINEAR);
-        return 0x122000 | filter | (filter << 4) | (mipmap << 8);
+        return 0x1222000 | filter | (filter << 4) | (mipmap << 8);
     }
 
     /**
@@ -116,7 +120,7 @@ public final class SamplerState {
      */
     @Contract(pure = true)
     public static int make(int filter, int mipmap, int address) {
-        return make(filter, filter, mipmap, address, address);
+        return make(filter, filter, mipmap, address, address, address);
     }
 
     /**
@@ -129,9 +133,8 @@ public final class SamplerState {
      * @param addressModeY the address mode Y
      */
     @Contract(pure = true)
-    public static int make(int magFilter, int minFilter,
-                           int mipmapMode,
-                           int addressModeX, int addressModeY) {
+    public static int make(int magFilter, int minFilter, int mipmapMode,
+                           int addressModeX, int addressModeY, int addressModeZ) {
         assert (magFilter == FILTER_NEAREST ||
                 magFilter == FILTER_LINEAR);
         assert (minFilter == FILTER_NEAREST ||
@@ -141,9 +144,14 @@ public final class SamplerState {
                 mipmapMode == MIPMAP_MODE_LINEAR);
         assert (addressModeX >= 0 && addressModeX <= ADDRESS_MODE_CLAMP_TO_BORDER);
         assert (addressModeY >= 0 && addressModeY <= ADDRESS_MODE_CLAMP_TO_BORDER);
-        return 0x100000 | magFilter | (minFilter << 4) |
+        assert (addressModeZ >= 0 && addressModeZ <= ADDRESS_MODE_CLAMP_TO_BORDER);
+        return magFilter |
+                (minFilter << 4) |
                 (mipmapMode << 8) |
-                (addressModeX << 12) | (addressModeY << 16);
+                (addressModeX << 12) |
+                (addressModeY << 16) |
+                (addressModeZ << 20) |
+                0x1000000;
     }
 
     /**
@@ -156,14 +164,15 @@ public final class SamplerState {
      * @param maxAnisotropy the max anisotropy filtering level
      */
     @Contract(pure = true)
-    public static int makeAnisotropy(int addressModeX, int addressModeY,
+    public static int makeAnisotropy(int addressModeX, int addressModeY, int addressModeZ,
                                      int maxAnisotropy, boolean isMipmapped) {
         assert (addressModeX >= 0 && addressModeX <= ADDRESS_MODE_CLAMP_TO_BORDER);
         assert (addressModeY >= 0 && addressModeY <= ADDRESS_MODE_CLAMP_TO_BORDER);
+        assert (addressModeZ >= 0 && addressModeZ <= ADDRESS_MODE_CLAMP_TO_BORDER);
         // filter mode is always linear
-        return 0x11 | (addressModeX << 12) | (addressModeY << 16) |
-                ((isMipmapped ? MIPMAP_MODE_LINEAR : MIPMAP_MODE_NONE) << 8) |
-                (MathUtil.clamp(maxAnisotropy, 1, 1024) << 20);
+        return 0x11 | (addressModeX << 12) | (addressModeY << 16) | (addressModeZ << 20) |
+                (isMipmapped ? MIPMAP_MODE_LINEAR << 8 : MIPMAP_MODE_NONE << 8) |
+                (MathUtil.clamp(maxAnisotropy, 1, 64) << 24);
     }
 
     //////// Unpack Methods \\\\\\\\
@@ -194,6 +203,11 @@ public final class SamplerState {
     }
 
     @Contract(pure = true)
+    public static int getAddressModeZ(int samplerState) {
+        return (samplerState >> 20) & 0xF;
+    }
+
+    @Contract(pure = true)
     public static boolean isMipmapped(int samplerState) {
         return getMipmapMode(samplerState) != MIPMAP_MODE_NONE;
     }
@@ -211,13 +225,19 @@ public final class SamplerState {
     }
 
     @Contract(pure = true)
+    public static boolean isRepeatedZ(int samplerState) {
+        int addressZ = getAddressModeZ(samplerState);
+        return addressZ == ADDRESS_MODE_REPEAT || addressZ == ADDRESS_MODE_MIRRORED_REPEAT;
+    }
+
+    @Contract(pure = true)
     public static boolean isRepeated(int samplerState) {
-        return isRepeatedX(samplerState) || isRepeatedY(samplerState);
+        return isRepeatedX(samplerState) || isRepeatedY(samplerState) || isRepeatedZ(samplerState);
     }
 
     @Contract(pure = true)
     public static int getMaxAnisotropy(int samplerState) {
-        return samplerState >>> 20;
+        return samplerState >>> 24;
     }
 
     @Contract(pure = true)

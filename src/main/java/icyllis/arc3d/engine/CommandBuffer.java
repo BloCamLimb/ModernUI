@@ -31,4 +31,25 @@ public abstract class CommandBuffer {
     public void moveAndTrackGpuBuffer(@SharedPtr GpuBuffer buffer) {
         mTrackingGpuBuffers.add(buffer);
     }
+
+    public boolean addRenderPass(RenderPassInfo renderPassInfo,
+                                 DrawPass drawPass) {
+        return false;
+    }
+
+    public boolean beginRenderPass(RenderPassInfo renderPassInfo,
+                                   GpuRenderTarget renderTarget) {
+        return false;
+    }
+
+    public boolean beginRenderPass(RenderPassInfo renderPassInfo,
+                                   GpuImage[] colorAttachments,
+                                   GpuImage[] resolveAttachments,
+                                   GpuImage depthStencilAttachment) {
+        return false;
+    }
+
+    public void endRenderPass() {
+
+    }
 }

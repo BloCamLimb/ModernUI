@@ -20,7 +20,7 @@
 package icyllis.arc3d.vulkan;
 
 import icyllis.arc3d.engine.BackendFormat;
-import icyllis.arc3d.engine.BackendTexture;
+import icyllis.arc3d.engine.BackendImage;
 import icyllis.arc3d.engine.Engine.BackendApi;
 import icyllis.arc3d.engine.Engine.ImageType;
 
@@ -28,7 +28,7 @@ import javax.annotation.Nonnull;
 
 import static icyllis.arc3d.vulkan.VKCore.*;
 
-public final class VkBackendTexture extends BackendTexture {
+public final class VkBackendImage extends BackendImage {
 
     // We don't know if the backend texture is made renderable or not, so we default the usage flags
     // to include color attachment as well.
@@ -43,13 +43,13 @@ public final class VkBackendTexture extends BackendTexture {
     private final BackendFormat mBackendFormat;
 
     // The VkImageInfo can NOT be modified anymore.
-    public VkBackendTexture(int width, int height, VulkanImageInfo info) {
+    public VkBackendImage(int width, int height, VulkanImageInfo info) {
         //TODO disallow VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT
         this(width, height, info, new VulkanSharedImageInfo(info), VkBackendFormat.make(info.mFormat));
     }
 
-    VkBackendTexture(int width, int height, VulkanImageInfo info,
-                     VulkanSharedImageInfo state, BackendFormat backendFormat) {
+    VkBackendImage(int width, int height, VulkanImageInfo info,
+                   VulkanSharedImageInfo state, BackendFormat backendFormat) {
         super(width, height);
         if (info.mImageUsageFlags == 0) {
             info.mImageUsageFlags = DEFAULT_USAGE_FLAGS;
@@ -65,7 +65,7 @@ public final class VkBackendTexture extends BackendTexture {
     }
 
     @Override
-    public int getTextureType() {
+    public int getImageType() {
         return ImageType.k2D;
     }
 
@@ -84,12 +84,15 @@ public final class VkBackendTexture extends BackendTexture {
         return mInfo.mLevelCount;
     }
 
-    @Override
-    public boolean getVulkanImageInfo(VulkanImageInfo info) {
+    /**
+     * Copies a snapshot of the {@link VulkanImageInfo} struct into the passed in pointer.
+     * This snapshot will set the {@link VulkanImageInfo#mImageLayout} to the current layout
+     * state.
+     */
+    public void getVulkanImageInfo(VulkanImageInfo info) {
         info.set(mInfo);
         info.mImageLayout = mState.getImageLayout();
         info.mCurrentQueueFamily = mState.getQueueFamilyIndex();
-        return true;
     }
 
     @Override
@@ -114,8 +117,8 @@ public final class VkBackendTexture extends BackendTexture {
     }
 
     @Override
-    public boolean isSameTexture(BackendTexture texture) {
-        if (texture instanceof VkBackendTexture t) {
+    public boolean isSameImage(BackendImage image) {
+        if (image instanceof VkBackendImage t) {
             return mInfo.mImage == t.mInfo.mImage;
         }
         return false;

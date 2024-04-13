@@ -19,23 +19,5 @@
 
 package icyllis.arc3d.engine;
 
-import javax.annotation.Nonnull;
-
-/**
- * An object with identity. This can be used to track state changes through
- * reference equality '==', and as keys of {@link java.util.IdentityHashMap}.
- * Used by {@link GpuResource} and {@link SurfaceProxy}.
- *
- * @see System#identityHashCode(Object)
- */
-public final class UniqueID {
-
-    public UniqueID() {
-    }
-
-    @Nonnull
-    @Override
-    public String toString() {
-        return "UniqueID@" + Integer.toHexString(hashCode());
-    }
+public abstract class GeometryStep {
 }

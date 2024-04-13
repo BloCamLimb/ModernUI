@@ -20,14 +20,14 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.engine.BackendFormat;
-import icyllis.arc3d.engine.BackendTexture;
+import icyllis.arc3d.engine.BackendImage;
 import org.lwjgl.opengl.GL11C;
 
 import javax.annotation.Nonnull;
 
 import static icyllis.arc3d.engine.Engine.*;
 
-public final class GLBackendTexture extends BackendTexture {
+public final class GLBackendImage extends BackendImage {
 
     private final GLImageInfo mInfo;
     // Null for renderbuffers.
@@ -36,7 +36,7 @@ public final class GLBackendTexture extends BackendTexture {
     private final BackendFormat mBackendFormat;
 
     // The GLTextureInfo must have a valid mFormat, can NOT be modified anymore.
-    public GLBackendTexture(int width, int height, GLImageInfo info) {
+    public GLBackendImage(int width, int height, GLImageInfo info) {
         this(width, height, info, new GLTextureParameters(), GLBackendFormat.make(info.format));
         assert info.format != 0;
         // Make no assumptions about client's texture's parameters.
@@ -44,8 +44,8 @@ public final class GLBackendTexture extends BackendTexture {
     }
 
     // Internally used by GLContext and GLTexture
-    GLBackendTexture(int width, int height, GLImageInfo info,
-                     GLTextureParameters params, BackendFormat backendFormat) {
+    GLBackendImage(int width, int height, GLImageInfo info,
+                   GLTextureParameters params, BackendFormat backendFormat) {
         super(width, height);
         mInfo = info;
         mParams = params;
@@ -58,7 +58,7 @@ public final class GLBackendTexture extends BackendTexture {
     }
 
     @Override
-    public int getTextureType() {
+    public int getImageType() {
         if (mInfo.target == GL11C.GL_TEXTURE_2D) {
             return ImageType.k2D;
         }
@@ -80,10 +80,11 @@ public final class GLBackendTexture extends BackendTexture {
         return mInfo.levels;
     }
 
-    @Override
-    public boolean getGLImageInfo(GLImageInfo info) {
+    /**
+     * Copies a snapshot of the {@link GLImageInfo} struct into the passed in pointer.
+     */
+    public void getGLImageInfo(GLImageInfo info) {
         info.set(mInfo);
-        return true;
     }
 
     @Override
@@ -105,8 +106,8 @@ public final class GLBackendTexture extends BackendTexture {
     }
 
     @Override
-    public boolean isSameTexture(BackendTexture texture) {
-        if (texture instanceof GLBackendTexture t) {
+    public boolean isSameImage(BackendImage image) {
+        if (image instanceof GLBackendImage t) {
             return mInfo.handle == t.mInfo.handle;
         }
         return false;

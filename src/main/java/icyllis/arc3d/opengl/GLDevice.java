@@ -578,15 +578,19 @@ public final class GLDevice extends GpuDevice {
 
     @Nullable
     @Override
-    protected GLRenderTarget onWrapRenderableBackendTexture(BackendTexture texture,
+    protected GLRenderTarget onWrapRenderableBackendTexture(BackendImage texture,
                                                             int sampleCount,
                                                             boolean ownership) {
         if (texture.isProtected()) {
             // Not supported in GL backend at this time.
             return null;
         }
+        if (!(texture instanceof GLBackendImage)) {
+            return null;
+        }
         final GLImageInfo info = new GLImageInfo();
-        if (!texture.getGLImageInfo(info) || info.handle == 0 || info.format == 0) {
+        ((GLBackendImage) texture).getGLImageInfo(info);
+        if (info.handle == 0 || info.format == 0) {
             return null;
         }
         if (info.target != GL_TEXTURE_2D) {
@@ -1125,8 +1129,8 @@ public final class GLDevice extends GpuDevice {
         return bufferState.mTarget;
     }
 
-    public void bindTexture(int bindingUnit, GLImage texture,
-                            int samplerState, short readSwizzle) {
+    public void bindTextureSampler(int bindingUnit, GLImage texture,
+                                   int samplerState, short readSwizzle) {
         boolean dsa = mCaps.hasDSASupport();
         if (mHWTextureStates[bindingUnit] != texture.getUniqueID()) {
             if (dsa) {

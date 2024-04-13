@@ -19,10 +19,12 @@
 
 package icyllis.arc3d.vulkan;
 
-import org.lwjgl.vulkan.VkCommandBuffer;
-import org.lwjgl.vulkan.VkDevice;
+import icyllis.arc3d.engine.*;
+import org.lwjgl.system.MemoryStack;
+import org.lwjgl.vulkan.*;
 
-import static icyllis.arc3d.vulkan.VKCore.vkCmdDraw;
+import static icyllis.arc3d.vulkan.VKCore.*;
+import static org.lwjgl.system.MemoryUtil.NULL;
 
 public abstract class VulkanCommandBuffer extends VkCommandBuffer {
 
@@ -30,6 +32,21 @@ public abstract class VulkanCommandBuffer extends VkCommandBuffer {
 
     public VulkanCommandBuffer(VkDevice device, long handle) {
         super(handle, device);
+    }
+
+    public void begin() {
+        try (var stack = MemoryStack.stackPush()) {
+            var beginInfo = VkCommandBufferBeginInfo.malloc(stack)
+                    .sType$Default()
+                    .pNext(NULL)
+                    .flags(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)
+                    .pInheritanceInfo(null);
+            _CHECK_ERROR_(vkBeginCommandBuffer(this, beginInfo));
+        }
+    }
+
+    public void end() {
+        vkEndCommandBuffer(this);
     }
 
     public void draw(int vertexCount,
@@ -41,6 +58,62 @@ public abstract class VulkanCommandBuffer extends VkCommandBuffer {
                 instanceCount,
                 firstVertex,
                 firstInstance);
+    }
+
+    public void drawIndexed(int indexCount,
+                            int instanceCount,
+                            int firstIndex,
+                            int vertexOffset,
+                            int firstInstance) {
+        vkCmdDrawIndexed(this,
+                indexCount,
+                instanceCount,
+                firstIndex,
+                vertexOffset,
+                firstInstance);
+    }
+
+    public void bindVertexBuffers() {
+        //vkCmdBindVertexBuffers();
+    }
+
+    public void bindGraphicsPipeline(GraphicsPipelineState graphicsPipelineState) {
+        //TODO
+    }
+
+    public void addDrawPass(DrawPass drawPass) {
+        int[] data = drawPass.getCommandData();
+        for (int i = 0, e = drawPass.getCommandSize(); i < e; i++) {
+            switch (data[i]) {
+                case DrawCommandList.CMD_BIND_GRAPHICS_PIPELINE -> {
+                    int pipelineIndex = data[i + 1];
+                    bindGraphicsPipeline(drawPass.getPipeline(pipelineIndex));
+                    i += 2;
+                }
+                case DrawCommandList.CMD_DRAW -> {
+                    int vertexCount = data[i + 1];
+                    int baseVertex = data[i + 2];
+                    draw(vertexCount, 1, baseVertex, 0);
+                    i += 3;
+                }
+                case DrawCommandList.CMD_DRAW_INDEXED -> {
+                    int indexCount = data[i + 1];
+                    int baseIndex = data[i + 2];
+                    int baseVertex = data[i + 3];
+                    drawIndexed(indexCount, 1, baseIndex, baseVertex, 0);
+                    i += 4;
+                }
+                case DrawCommandList.CMD_DRAW_INSTANCED -> {
+                    int instanceCount = data[i + 1];
+                    int baseInstance = data[i + 2];
+                    int vertexCount = data[i + 3];
+                    int baseVertex = data[i + 4];
+                    draw(vertexCount, instanceCount, baseVertex, baseInstance);
+                    i += 5;
+                }
+            }
+        }
+        //TODO track resources
     }
 
     public boolean isRecording() {

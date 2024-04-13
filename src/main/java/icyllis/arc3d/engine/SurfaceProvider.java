@@ -262,7 +262,7 @@ public final class SurfaceProvider {
      */
     @Nullable
     @SharedPtr
-    public RenderTargetProxy wrapRenderableBackendTexture(BackendTexture texture,
+    public RenderTargetProxy wrapRenderableBackendTexture(BackendImage texture,
                                                           int sampleCount,
                                                           boolean ownership,
                                                           boolean cacheable,

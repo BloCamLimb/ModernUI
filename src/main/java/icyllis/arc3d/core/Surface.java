@@ -62,14 +62,14 @@ public class Surface extends RefCnt {
      * returns.
      *
      * @param context         GPU context
-     * @param backendTexture  texture residing on GPU
+     * @param backendImage  texture residing on GPU
      * @param sampleCount     samples per pixel, or 1 to disable full scene anti-aliasing
      * @param releaseCallback function called when texture can be released, may be null
      * @return Surface if all parameters are valid; otherwise, null
      */
     @Nullable
     public static Surface makeFromBackendTexture(RecordingContext context,
-                                                 BackendTexture backendTexture,
+                                                 BackendImage backendImage,
                                                  int origin, int sampleCount,
                                                  int colorType,
                                                  Runnable releaseCallback) {
@@ -80,7 +80,7 @@ public class Surface extends RefCnt {
             return null;
         }
 
-        if (!validateBackendTexture(context.getCaps(), backendTexture, sampleCount, colorType, true)) {
+        if (!validateBackendTexture(context.getCaps(), backendImage, sampleCount, colorType, true)) {
             if (releaseCallback != null) {
                 releaseCallback.run();
             }
@@ -152,15 +152,15 @@ public class Surface extends RefCnt {
     }
 
     private static boolean validateBackendTexture(Caps caps,
-                                                  BackendTexture backendTexture,
+                                                  BackendImage backendImage,
                                                   int sampleCount,
                                                   int colorType,
                                                   boolean texturable) {
-        if (backendTexture == null) {
+        if (backendImage == null) {
             return false;
         }
 
-        BackendFormat backendFormat = backendTexture.getBackendFormat();
+        BackendFormat backendFormat = backendImage.getBackendFormat();
 
         if (!caps.isFormatCompatible(colorType, backendFormat)) {
             return false;

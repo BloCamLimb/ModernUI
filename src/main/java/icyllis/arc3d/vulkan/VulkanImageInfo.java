@@ -20,13 +20,13 @@
 package icyllis.arc3d.vulkan;
 
 import icyllis.arc3d.engine.BackendRenderTarget;
-import icyllis.arc3d.engine.BackendTexture;
+import icyllis.arc3d.engine.BackendImage;
 import org.lwjgl.vulkan.EXTQueueFamilyForeign;
 
 import static icyllis.arc3d.vulkan.VKCore.*;
 
 /**
- * When wrapping a {@link BackendTexture} or {@link BackendRenderTarget}, the {@link #mCurrentQueueFamily}
+ * When wrapping a {@link BackendImage} or {@link BackendRenderTarget}, the {@link #mCurrentQueueFamily}
  * should either be {@link VKCore#VK_QUEUE_FAMILY_IGNORED}, {@link VKCore#VK_QUEUE_FAMILY_EXTERNAL},
  * or {@link EXTQueueFamilyForeign#VK_QUEUE_FAMILY_FOREIGN_EXT}. If {@link #mSharingMode} is
  * {@link VKCore#VK_SHARING_MODE_EXCLUSIVE}, then {@link #mCurrentQueueFamily} can also be the graphics

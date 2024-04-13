@@ -666,7 +666,7 @@ public class ResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public final GpuRenderTarget wrapRenderableBackendTexture(BackendTexture texture,
+    public final GpuRenderTarget wrapRenderableBackendTexture(BackendImage texture,
                                                               int sampleCount,
                                                               boolean ownership) {
         if (mDevice.getContext().isDiscarded()) {

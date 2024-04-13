@@ -20,8 +20,7 @@
 package icyllis.arc3d.core;
 
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.vulkan.VKCore;
-import icyllis.arc3d.vulkan.VulkanImageInfo;
+import icyllis.arc3d.vulkan.*;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nullable;
@@ -222,7 +221,7 @@ public final class SurfaceCharacterization {
     /**
      * Is the provided backend texture compatible with this surface characterization?
      */
-    public boolean isCompatible(BackendTexture texture) {
+    public boolean isCompatible(BackendImage texture) {
         if (mGLWrapDefaultFramebuffer) {
             // It is a backend texture so can't be wrapping default framebuffer
             return false;
@@ -251,13 +250,11 @@ public final class SurfaceCharacterization {
         }
 
         if (mVkSupportInputAttachment) {
-            if (texture.getBackend() != BackendApi.kVulkan) {
+            if (!(texture instanceof VkBackendImage)) {
                 return false;
             }
             VulkanImageInfo vkInfo = new VulkanImageInfo();
-            if (!texture.getVulkanImageInfo(vkInfo)) {
-                return false;
-            }
+            ((VkBackendImage) texture).getVulkanImageInfo(vkInfo);
             return (vkInfo.mImageUsageFlags & VKCore.VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) != 0;
         } else {
             return true;

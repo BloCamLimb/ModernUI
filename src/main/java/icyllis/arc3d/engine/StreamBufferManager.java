@@ -19,23 +19,12 @@
 
 package icyllis.arc3d.engine;
 
-import javax.annotation.Nonnull;
-
 /**
- * An object with identity. This can be used to track state changes through
- * reference equality '==', and as keys of {@link java.util.IdentityHashMap}.
- * Used by {@link GpuResource} and {@link SurfaceProxy}.
- *
- * @see System#identityHashCode(Object)
+ * Manage streaming vertex buffers, for vertex/instance data are updated per draw call.
+ * <p>
+ * This prefers to create a large ring buffer that is host visible and device visible.
+ * If not available, creates a large staging buffer and a device local buffer.
  */
-public final class UniqueID {
-
-    public UniqueID() {
-    }
-
-    @Nonnull
-    @Override
-    public String toString() {
-        return "UniqueID@" + Integer.toHexString(hashCode());
-    }
+//TODO
+public class StreamBufferManager {
 }

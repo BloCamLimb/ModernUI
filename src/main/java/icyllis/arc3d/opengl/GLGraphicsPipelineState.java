@@ -137,7 +137,7 @@ public class GLGraphicsPipelineState extends GraphicsPipelineState {
         int unit = 0;
         for (int i = 0, n = pipelineInfo.geomProc().numTextureSamplers(); i < n; i++) {
             GLImage texture = (GLImage) geomTextures[i].getGpuImage();
-            commandBuffer.bindTexture(unit++, texture,
+            commandBuffer.bindTextureSampler(unit++, texture,
                     pipelineInfo.geomProc().textureSamplerState(i),
                     pipelineInfo.geomProc().textureSamplerSwizzle(i));
         }

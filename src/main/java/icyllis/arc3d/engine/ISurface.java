@@ -35,29 +35,32 @@ public interface ISurface {
     int FLAG_NONE = 0;
     /**
      * Indicates whether an allocation should count against a cache budget. Budgeted when
-     * set, otherwise not budgeted.
+     * set, otherwise not budgeted. This can be used for {@link SurfaceProxy} and
+     * {@link GpuSurface} at creation-time. Since a single budgeted GPU surface can be used by
+     * multiple {@link SurfaceProxy} at different times, its budgeted state may alter
+     * (SurfaceProxy can make a budgeted GPU surface become un-budgeted).
      */
     int FLAG_BUDGETED = 1;
     /**
      * Indicates whether a backing store needs to be an exact match or can be larger than
      * is strictly necessary. Approx fit when set, otherwise exact fit. This is a
-     * {@link SurfaceProxy} and GPU surface creation-time flag.
+     * {@link SurfaceProxy} flag and a {@link GpuSurface} at creation-time flag.
      */
     int FLAG_APPROX_FIT = 1 << 1;
     /**
-     * Used to say whether an image has mip levels allocated or not. Mipmaps are allocated
-     * when set, otherwise mipmaps are not allocated.
+     * Used to say whether an image has or should have mip levels allocated or not.
+     * Mipmaps are allocated when set, otherwise mipmaps are not allocated.
      */
     int FLAG_MIPMAPPED = 1 << 2;
     /**
-     * Used to say whether an image can be sampled by shader. This is not compatible with
-     * {@link #FLAG_MEMORYLESS}. A valid SurfaceFlags must have at least one of FLAG_TEXTURABLE
-     * and {@link #FLAG_RENDERABLE} set. Default is FLAG_TEXTURABLE.
+     * Used to say whether an image can be sampled by shader (i.e. a texture). This is not
+     * compatible with {@link #FLAG_MEMORYLESS}. A valid SurfaceFlags should have at least
+     * one of FLAG_TEXTURABLE and {@link #FLAG_RENDERABLE} set.
      */
     int FLAG_TEXTURABLE = 1 << 3;
     /**
      * Used to say whether a surface can be rendered to, whether an image can be used as
-     * color/depth/stencil attachments. Renderable when set, otherwise not renderable.
+     * color or depth/stencil attachments. Renderable when set, otherwise not renderable.
      */
     int FLAG_RENDERABLE = 1 << 4;
     /**
@@ -65,20 +68,22 @@ public interface ISurface {
      * If so, {@link Engine.LoadOp#Load} and {@link Engine.StoreOp#Store} may not work,
      * but rendering will be efficient on TBDR GPU.
      * <p>
-     * Note: Memoryless must be {@link #FLAG_RENDERABLE} and NOT {@link #FLAG_TEXTURABLE}.
+     * Note: Memoryless must be {@link #FLAG_RENDERABLE} and NOT be {@link #FLAG_TEXTURABLE}.
      */
     int FLAG_MEMORYLESS = 1 << 5;
+    int FLAG_STORAGE_IMAGE = 1 << 20; //TODO add UAV?
     /**
      * Used to say whether image is backed by protected memory. Protected when set, otherwise
-     * not protected.
+     * not protected. Vulkan only.
      *
      * @see <a href="https://github.com/KhronosGroup/Vulkan-Guide/blob/master/chapters/protected.adoc">
      * Protected Memory</a>
      */
     int FLAG_PROTECTED = 1 << 6;
+    // the following flags are internal only
     /**
      * Means the pixels in the image are read-only. {@link GpuImage} and {@link ImageProxy}
-     * only.
+     * only, typically for wrapped images. Read-only images cannot be renderable.
      */
     @ApiStatus.Internal
     int FLAG_READ_ONLY = FLAG_PROTECTED << 1;
@@ -90,7 +95,7 @@ public interface ISurface {
     @ApiStatus.Internal
     int FLAG_SKIP_ALLOCATOR = FLAG_PROTECTED << 2;
     /**
-     * For TextureProxies created in a deferred list recording thread it is possible for the
+     * For {@link ImageProxy} created in a deferred list recording thread it is possible for the
      * unique key to be cleared on the backing {@link GpuImage} while the unique key remains on
      * the proxy. When set, it loosens up asserts that the key of an instantiated uniquely-keyed
      * texture proxy is also always set on the backing {@link GpuImage}. {@link ImageProxy} only.
@@ -104,10 +109,10 @@ public interface ISurface {
     @ApiStatus.Internal
     int FLAG_GL_WRAP_DEFAULT_FB = FLAG_PROTECTED << 4;
     /**
-     * This means the render target is multi-sampled, and internally holds a non-msaa texture
+     * This means the render target is multi-sampled, and internally holds a non-msaa image
      * for resolving into. The render target resolves itself by blit-ting into this internal
-     * texture. (It might or might not have the internal texture access, but if it does, we
-     * always resolve the render target before accessing this texture's data.) RT only.
+     * image. (It might or might not have the internal image access, but if it does, we
+     * always resolve the render target before accessing this image's data.) RT only.
      */
     @ApiStatus.Internal
     int FLAG_MANUAL_MSAA_RESOLVE = FLAG_PROTECTED << 5;
