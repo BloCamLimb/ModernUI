@@ -19,23 +19,16 @@
 
 package icyllis.arc3d.engine;
 
-import javax.annotation.Nonnull;
+public class RenderPassInfo {
 
-/**
- * An object with identity. This can be used to track state changes through
- * reference equality '==', and as keys of {@link java.util.IdentityHashMap}.
- * Used by {@link GpuResource} and {@link SurfaceProxy}.
- *
- * @see System#identityHashCode(Object)
- */
-public final class UniqueID {
+    public GpuRenderTarget mRenderTarget;
 
-    public UniqueID() {
-    }
+    public byte mColorOps;
+    public byte mDepthStencilOps;
+    public float[] mClearColor;
+    public float mClearDepth;
+    public int mClearStencil;
 
-    @Nonnull
-    @Override
-    public String toString() {
-        return "UniqueID@" + Integer.toHexString(hashCode());
-    }
+    public short mWriteSwizzle;
+    public int mSampleCount;
 }

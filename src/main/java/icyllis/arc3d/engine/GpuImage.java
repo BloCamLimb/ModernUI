@@ -28,11 +28,13 @@ import javax.annotation.Nullable;
 import static icyllis.arc3d.engine.Engine.BudgetType;
 
 /**
- * Represents GPU images, which may be 2D or 3D.
+ * Represents GPU images, which may be 2D or 3D. This class also represents the image view
+ * type, see {@link Engine.ImageType}.
  * <p>
- * A {@link GpuImage} may be used as textures (sampled by shaders), may be used as storage
- * images, may be used as color and depth/stencil attachments of a framebuffer. See
- * {@link ISurface#FLAG_TEXTURABLE} and {@link ISurface#FLAG_RENDERABLE}.
+ * A {@link GpuImage} may be used as textures (sampled in fragment shaders), may be used as
+ * storage images (load and store in compute shaders), may be used as color and depth/stencil
+ * attachments of a framebuffer. See {@link ISurface#FLAG_TEXTURABLE} and {@link ISurface#FLAG_RENDERABLE}.
+ * Texture (sampled image) is a specialization of GPU images.
  */
 public abstract non-sealed class GpuImage extends GpuSurface {
 
@@ -195,7 +197,7 @@ public abstract non-sealed class GpuImage extends GpuSurface {
      * @return the backend texture of this texture
      */
     @Nonnull
-    public abstract BackendTexture getBackendTexture();
+    public abstract BackendImage getBackendTexture();
 
     /**
      * @return external texture

@@ -19,23 +19,40 @@
 
 package icyllis.arc3d.engine;
 
-import javax.annotation.Nonnull;
+import icyllis.arc3d.core.RawPtr;
+import icyllis.arc3d.core.SharedPtr;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * An object with identity. This can be used to track state changes through
- * reference equality '==', and as keys of {@link java.util.IdentityHashMap}.
- * Used by {@link GpuResource} and {@link SurfaceProxy}.
- *
- * @see System#identityHashCode(Object)
+ * A draw pass is subpass of a render pass.
+ * <p>
+ * Created immutable.
  */
-public final class UniqueID {
+public class DrawPass {
 
-    public UniqueID() {
+    @SharedPtr
+    private ArrayList<GraphicsPipelineState> mPipelineStates = new ArrayList<>();
+
+    private final DrawCommandList mCommandList = new DrawCommandList();
+
+    private ImageProxy[] mSampledImages;
+
+    @RawPtr
+    public GraphicsPipelineState getPipeline(int index) {
+        return mPipelineStates.get(index);
     }
 
-    @Nonnull
-    @Override
-    public String toString() {
-        return "UniqueID@" + Integer.toHexString(hashCode());
+    public int[] getCommandData() {
+        return mCommandList.elements();
+    }
+
+    public int getCommandSize() {
+        return mCommandList.size();
+    }
+
+    public ImageProxy[] getSampledImages() {
+        return mSampledImages;
     }
 }

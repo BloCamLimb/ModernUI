@@ -280,16 +280,16 @@ public final class GLCommandBuffer extends CommandBuffer {
     }
 
     /**
-     * Bind texture for rendering.
+     * Bind texture view and sampler to the same binding point.
      *
-     * @param binding      the binding index (texture unit)
-     * @param texture      the texture object
-     * @param samplerState the state of texture sampler or 0, see {@link SamplerState}
-     * @param readSwizzle  the read swizzle of texture sampler, see {@link Swizzle}
+     * @param bindingUnit  the binding index (texture unit)
+     * @param texture      the texture image
+     * @param samplerState the sampler state for creating sampler, see {@link SamplerState}
+     * @param readSwizzle  the swizzle of the texture view for shader read, see {@link Swizzle}
      */
-    public void bindTexture(int binding, GLImage texture,
-                            int samplerState, short readSwizzle) {
-        assert (texture != null);
+    public void bindTextureSampler(int bindingUnit, GLImage texture,
+                                   int samplerState, short readSwizzle) {
+        assert (texture != null && texture.isTexturable());
         if (SamplerState.isMipmapped(samplerState)) {
             if (!texture.isMipmapped()) {
                 assert (!SamplerState.isAnisotropy(samplerState));
@@ -298,6 +298,6 @@ public final class GLCommandBuffer extends CommandBuffer {
                 assert (!texture.isMipmapsDirty());
             }
         }
-        mDevice.bindTexture(binding, texture, samplerState, readSwizzle);
+        mDevice.bindTextureSampler(bindingUnit, texture, samplerState, readSwizzle);
     }
 }

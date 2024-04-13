@@ -17,25 +17,13 @@
  * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine;
+package icyllis.arc3d.engine.task;
 
-import javax.annotation.Nonnull;
+import icyllis.arc3d.engine.*;
 
-/**
- * An object with identity. This can be used to track state changes through
- * reference equality '==', and as keys of {@link java.util.IdentityHashMap}.
- * Used by {@link GpuResource} and {@link SurfaceProxy}.
- *
- * @see System#identityHashCode(Object)
- */
-public final class UniqueID {
+public abstract class Task {
 
-    public UniqueID() {
-    }
+    public abstract boolean prepare(ResourceProvider resourceProvider);
 
-    @Nonnull
-    @Override
-    public String toString() {
-        return "UniqueID@" + Integer.toHexString(hashCode());
-    }
+    public abstract boolean execute(DirectContext context, CommandBuffer cmdBuffer);
 }

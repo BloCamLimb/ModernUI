@@ -149,6 +149,7 @@ public class TestManagedResource {
             LOGGER.info("Compressed format: OK");
         }
 
+        //noinspection unused
         Swizzle.make("rgb1");
         //noinspection unused
         int sampler = SamplerState.make(SamplerState.FILTER_NEAREST, SamplerState.MIPMAP_MODE_NONE);

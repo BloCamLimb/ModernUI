@@ -240,7 +240,9 @@ public interface Engine {
     interface ShaderFlags {
 
         int kVertex = 1;
-        int kFragment = 1 << 1;
+        int kGeometry = 1 << 1;
+        int kFragment = 1 << 2;
+        int kCompute = 1 << 3;
     }
 
     /**

@@ -38,7 +38,7 @@ public final class GLImage extends GpuImage {
 
     private GLImageInfo mInfo;
     private BackendFormat mFormat;
-    private final GLBackendTexture mBackendTexture;
+    private final GLBackendImage mBackendTexture;
     private final boolean mOwnership;
 
     private final long mMemorySize;
@@ -56,7 +56,7 @@ public final class GLImage extends GpuImage {
         mOwnership = true;
 
         assert info.handle != 0;
-        mBackendTexture = new GLBackendTexture(width, height, info,
+        mBackendTexture = new GLBackendImage(width, height, info,
                 info.target != GL_RENDERBUFFER ? new GLTextureParameters() : null, format);
 
         if (GLUtil.glFormatIsCompressed(format.getGLFormat()) || format.isExternal()) {
@@ -89,7 +89,7 @@ public final class GLImage extends GpuImage {
         mInfo = info;
         mOwnership = ownership;
 
-        mBackendTexture = new GLBackendTexture(width, height, info, params, format);
+        mBackendTexture = new GLBackendImage(width, height, info, params, format);
 
         // compressed formats always set 'ioType' to READ
         assert (ioType == IOType.kRead || format.isCompressed());
@@ -140,7 +140,7 @@ public final class GLImage extends GpuImage {
 
     @Nonnull
     @Override
-    public GLBackendTexture getBackendTexture() {
+    public GLBackendImage getBackendTexture() {
         return mBackendTexture;
     }
 

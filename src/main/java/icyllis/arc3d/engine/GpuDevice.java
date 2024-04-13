@@ -336,7 +336,7 @@ public abstract class GpuDevice implements Engine {
      */
     @Nullable
     @SharedPtr
-    public GpuRenderTarget wrapRenderableBackendTexture(BackendTexture texture,
+    public GpuRenderTarget wrapRenderableBackendTexture(BackendImage texture,
                                                         int sampleCount,
                                                         boolean ownership) {
         if (sampleCount < 1) {
@@ -359,7 +359,7 @@ public abstract class GpuDevice implements Engine {
 
     @Nullable
     @SharedPtr
-    protected abstract GpuRenderTarget onWrapRenderableBackendTexture(BackendTexture texture,
+    protected abstract GpuRenderTarget onWrapRenderableBackendTexture(BackendImage texture,
                                                                       int sampleCount,
                                                                       boolean ownership);
 

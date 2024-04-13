@@ -65,7 +65,7 @@ public final class VulkanImage extends GpuImage {
 
     @Nonnull
     @Override
-    public BackendTexture getBackendTexture() {
+    public BackendImage getBackendTexture() {
         return null;
     }
 
