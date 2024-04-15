@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -84,6 +84,72 @@ public class MathUtil {
     // tan
     public static float tan(float a) {
         return (float) Math.tan(a);
+    }
+
+    /**
+     * Decomposes <var>x</var> into a floating-point significand in the
+     * range <code>(-1,-0.5], [0.5,1.0)</code>, and an integral exponent of two,
+     * such that
+     * <pre>x = significand * 2<sup>exponent</sup></pre>
+     * If <var>x</var> is +- zero, +- Inf, or NaN, returns the input value
+     * as-is, and sets <var>exp</var> to 0.
+     *
+     * @param x   the input value
+     * @param exp the resulting exponent
+     * @return the resulting significand
+     */
+    public static float frexp(float x, int[] exp) { // fraction exponent
+        int bits = Float.floatToRawIntBits(x);
+        int high = bits & 0x7fffffff;
+        exp[0] = 0;
+        if (high == 0 | high >= 0x7f800000) {
+            // 0, Inf, or NaN
+            return x;
+        }
+        if (high < 0x00800000) {
+            // denorm
+            bits = Float.floatToRawIntBits(0x1p25f * x);
+            high = bits & 0x7fffffff;
+            exp[0] = -25;
+        }
+        exp[0] += (high >> 23) - 126;
+        return Float.intBitsToFloat((bits & 0x807fffff) | 0x3f000000);
+    }
+
+    /**
+     * Composes a floating-point number from <var>x</var> and the
+     * corresponding integral exponent of two in <var>exp</var>, resulting
+     * <pre>significand * 2<sup>exponent</sup></pre>
+     * If <var>x</var> is +- zero, +- Inf, or NaN, returns the input value
+     * as-is. If overflow or underflow occurs, returns a rounded value.
+     *
+     * @param x   the input significand
+     * @param exp the input exponent
+     * @return the resulting value
+     */
+    public static float ldexp(float x, int exp) { // load exponent
+        if (exp > 127) {
+            // large scaling
+            x *= 0x1p127f;
+            exp -= 127;
+            if (exp > 127) {
+                x *= 0x1p127f;
+                exp -= 127;
+                if (exp > 127)
+                    exp = 127; // huge scaling
+            }
+        } else if (exp < -126) {
+            // large scaling
+            x *= 0x1p-126f;
+            exp += 126;
+            if (exp < -126) {
+                x *= 0x1p-126f;
+                exp += 126;
+                if (exp < -126)
+                    exp = -126; // huge scaling
+            }
+        }
+        return x * Float.intBitsToFloat((exp + 127) << 23);
     }
 
     /**
