@@ -89,6 +89,7 @@ public class GLCaps extends Caps {
 
     GLCaps(ContextOptions options) {
         super(options);
+        MISSING_EXTENSIONS.clear();
     }
 
     void initFormatTable(boolean textureStorageSupported,

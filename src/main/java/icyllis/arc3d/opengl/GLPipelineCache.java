@@ -27,32 +27,32 @@ import javax.annotation.Nullable;
 import java.util.concurrent.ConcurrentHashMap;
 
 //TODO cache trim
-public class GLPipelineStateCache extends PipelineStateCache {
+public class GLPipelineCache extends PipelineCache {
 
     private final GLDevice mDevice;
 
     private final int mCacheSize;
-    private final ConcurrentHashMap<Key, GLGraphicsPipelineState> mCache;
+    private final ConcurrentHashMap<Key, GLGraphicsPipeline> mCache;
 
     @VisibleForTesting
-    public GLPipelineStateCache(GLDevice device, int cacheSize) {
+    public GLPipelineCache(GLDevice device, int cacheSize) {
         mDevice = device;
         mCacheSize = cacheSize;
         mCache = new ConcurrentHashMap<>(cacheSize, 0.5f);
     }
 
     public void discard() {
-        mCache.values().forEach(GLGraphicsPipelineState::discard);
+        mCache.values().forEach(GLGraphicsPipeline::discard);
         release();
     }
 
     public void release() {
-        mCache.values().forEach(GLGraphicsPipelineState::release);
+        mCache.values().forEach(GLGraphicsPipeline::unref);
         mCache.clear();
     }
 
     @Nullable
-    public GLGraphicsPipelineState findOrCreateGraphicsPipelineState(
+    public GLGraphicsPipeline findOrCreateGraphicsPipeline(
             final PipelineDesc desc,
             final PipelineInfo pipelineInfo) {
         if (desc.isEmpty()) {
@@ -60,32 +60,32 @@ public class GLPipelineStateCache extends PipelineStateCache {
             caps.makeDesc(desc, /*renderTarget*/null, pipelineInfo);
         }
         assert (!desc.isEmpty());
-        return findOrCreateGraphicsPipelineStateImpl(desc, pipelineInfo);
+        return findOrCreateGraphicsPipelineImpl(desc, pipelineInfo);
     }
 
     @Nonnull
-    private GLGraphicsPipelineState findOrCreateGraphicsPipelineStateImpl(
+    private GLGraphicsPipeline findOrCreateGraphicsPipelineImpl(
             PipelineDesc desc,
             final PipelineInfo pipelineInfo) {
-        GLGraphicsPipelineState existing = mCache.get(desc);
+        GLGraphicsPipeline existing = mCache.get(desc);
         if (existing != null) {
             return existing;
         }
         // We have a cache miss
         desc = new PipelineDesc(desc);
-        GLGraphicsPipelineState newPipelineState = GLPipelineStateBuilder.createGraphicsPipelineState(mDevice, desc,
+        GLGraphicsPipeline newPipeline = GLGraphicsPipelineBuilder.createGraphicsPipeline(mDevice, desc,
                 pipelineInfo);
-        existing = mCache.putIfAbsent(desc.toStorageKey(), newPipelineState);
+        existing = mCache.putIfAbsent(desc.toStorageKey(), newPipeline);
         if (existing != null) {
             // there's a race, reuse existing
-            newPipelineState.discard();
+            newPipeline.discard();
             return existing;
         }
         /*if (mCache.size() >= mCacheSize) {
             mCache.removeFirst().release();
             assert (mCache.size() < mCacheSize);
         }*/
-        return newPipelineState;
+        return newPipeline;
     }
 
     @Override

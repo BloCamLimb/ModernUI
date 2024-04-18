@@ -64,13 +64,13 @@ public final class ClearOp extends Op {
 
     @Override
     public void onPrePrepare(RecordingContext context,
-                             SurfaceView writeView,
+                             SurfaceProxyView writeView,
                              int pipelineFlags) {
     }
 
     @Override
     public void onPrepare(OpFlushState state,
-                          SurfaceView writeView,
+                          SurfaceProxyView writeView,
                           int pipelineFlags) {
     }
 

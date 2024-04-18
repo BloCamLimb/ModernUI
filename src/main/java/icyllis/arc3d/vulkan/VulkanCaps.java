@@ -25,14 +25,14 @@ import icyllis.arc3d.engine.ContextOptions;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 
-public abstract class VKCaps extends Caps {
+public abstract class VulkanCaps extends Caps {
 
-    public VKCaps(ContextOptions options,
-                  VkPhysicalDevice physDev,
-                  int physicalDeviceVersion,
-                  VkPhysicalDeviceFeatures2 deviceFeatures2,
-                  VKCapabilitiesInstance capabilitiesInstance,
-                  VKCapabilitiesDevice capabilitiesDevice) {
+    public VulkanCaps(ContextOptions options,
+                      VkPhysicalDevice physDev,
+                      int physicalDeviceVersion,
+                      VkPhysicalDeviceFeatures2 deviceFeatures2,
+                      VKCapabilitiesInstance capabilitiesInstance,
+                      VKCapabilitiesDevice capabilitiesDevice) {
         super(options);
 
         ShaderCaps shaderCaps = mShaderCaps;

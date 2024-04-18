@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,16 +17,21 @@
  * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine;
+package icyllis.arc3d.opengl;
 
-@Deprecated
-public class DstProxyView  {
+import icyllis.arc3d.engine.ManagedResource;
 
-    public static final int REQUIRES_TEXTURE_BARRIER_FLAG = 0x2;
-    public static final int AS_INPUT_ATTACHMENT_FLAG = 0x4;
+/**
+ * Represents OpenGL textures views.
+ */
+public final class GLImageView extends ManagedResource {
 
-    SurfaceProxyView mProxyView;
-    int mOffsetX;
-    int mOffsetY;
-    int mFlags;
+    public GLImageView(GLDevice device) {
+        super(device);
+    }
+
+    @Override
+    protected void deallocate() {
+
+    }
 }

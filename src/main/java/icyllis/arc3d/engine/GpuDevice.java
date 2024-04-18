@@ -32,7 +32,7 @@ import java.util.Set;
  * Abstract base class that represents the logical device and graphics queue of the
  * backend 3D API, holds a reference to {@link DirectContext}. It is responsible for
  * creating/deleting 3D API objects, transferring data, submitting 3D API commands, etc.
- * Most methods are only permitted on render thread (a.k.a. direct/RHI thread).
+ * Most methods are only permitted on render thread.
  */
 public abstract class GpuDevice implements Engine {
 
@@ -90,7 +90,7 @@ public abstract class GpuDevice implements Engine {
 
     public abstract ResourceProvider getResourceProvider();
 
-    public abstract PipelineStateCache getPipelineStateCache();
+    public abstract PipelineCache getPipelineCache();
 
     /**
      * Called by context when the underlying backend context is already or will be destroyed
@@ -556,7 +556,7 @@ public abstract class GpuDevice implements Engine {
      * @return a render pass used to record draw commands, or null if failed
      */
     @Nullable
-    public final OpsRenderPass getOpsRenderPass(SurfaceView writeView,
+    public final OpsRenderPass getOpsRenderPass(SurfaceProxyView writeView,
                                                 Rect2i contentBounds,
                                                 byte colorOps,
                                                 byte stencilOps,
@@ -569,7 +569,7 @@ public abstract class GpuDevice implements Engine {
                 sampledTextures, pipelineFlags);
     }
 
-    protected abstract OpsRenderPass onGetOpsRenderPass(SurfaceView writeView,
+    protected abstract OpsRenderPass onGetOpsRenderPass(SurfaceProxyView writeView,
                                                         Rect2i contentBounds,
                                                         byte colorOps,
                                                         byte stencilOps,

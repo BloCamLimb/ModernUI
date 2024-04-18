@@ -31,7 +31,7 @@ import static icyllis.arc3d.engine.Engine.*;
 import static icyllis.arc3d.engine.shading.UniformHandler.UniformHandle;
 import static icyllis.arc3d.engine.shading.UniformHandler.SamplerHandle;
 
-public abstract class PipelineBuilder {
+public abstract class GraphicsPipelineBuilder {
 
     /**
      * Each root processor has an stage index. The GP is stage 0. The first root FP is stage 1,
@@ -53,6 +53,7 @@ public abstract class PipelineBuilder {
 
     public final PipelineDesc mDesc;
     public final PipelineInfo mPipelineInfo;
+    private final Caps mCaps;
 
     /**
      * Built-in uniform handles.
@@ -65,17 +66,20 @@ public abstract class PipelineBuilder {
     // This is used to check that we don't exceed the allowable number of resources in a shader.
     private int mNumFragmentSamplers;
 
-    public PipelineBuilder(PipelineDesc desc, PipelineInfo pipelineInfo) {
+    public GraphicsPipelineBuilder(PipelineDesc desc, PipelineInfo pipelineInfo, Caps caps) {
         mDesc = desc;
         mPipelineInfo = pipelineInfo;
+        mCaps = caps;
         mVS = new VertexShaderBuilder(this);
         mFS = new FragmentShaderBuilder(this);
     }
 
-    public abstract Caps caps();
+    public final Caps getCaps() {
+        return mCaps;
+    }
 
     public final ShaderCaps shaderCaps() {
-        return caps().shaderCaps();
+        return getCaps().shaderCaps();
     }
 
     public final String nameVariable(char prefix, String name) {

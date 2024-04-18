@@ -28,20 +28,20 @@ import static icyllis.arc3d.engine.Engine.SurfaceOrigin;
  * Surface views contain additional metadata for pipeline operations on surfaces.
  * This class is a tuple of {@link SurfaceProxy}, SurfaceOrigin and Swizzle.
  */
-public class SurfaceView implements AutoCloseable {
+public class SurfaceProxyView implements AutoCloseable {
 
     @SharedPtr
     SurfaceProxy mProxy;
     int mOrigin;
     short mSwizzle;
 
-    public SurfaceView(@SharedPtr SurfaceProxy proxy) {
+    public SurfaceProxyView(@SharedPtr SurfaceProxy proxy) {
         mProxy = proxy; // std::move()
         mOrigin = SurfaceOrigin.kUpperLeft;
         mSwizzle = Swizzle.RGBA;
     }
 
-    public SurfaceView(@SharedPtr SurfaceProxy proxy, int origin, short swizzle) {
+    public SurfaceProxyView(@SharedPtr SurfaceProxy proxy, int origin, short swizzle) {
         mProxy = proxy; // std::move()
         mOrigin = origin;
         mSwizzle = swizzle;
@@ -64,7 +64,7 @@ public class SurfaceView implements AutoCloseable {
      * Returns smart pointer value (raw ptr).
      */
     @RawPtr
-    public SurfaceProxy getSurface() {
+    public SurfaceProxy getProxy() {
         return mProxy;
     }
 
@@ -72,7 +72,7 @@ public class SurfaceView implements AutoCloseable {
      * Returns a smart pointer (as if on the stack).
      */
     @SharedPtr
-    public SurfaceProxy refSurface() {
+    public SurfaceProxy refProxy() {
         mProxy.ref();
         return mProxy;
     }
@@ -82,7 +82,7 @@ public class SurfaceView implements AutoCloseable {
      * properties associated with the detached proxy.
      */
     @SharedPtr
-    public SurfaceProxy detachSurface() {
+    public SurfaceProxy detachProxy() {
         // just like std::move(), R-value reference
         SurfaceProxy surfaceProxy = mProxy;
         mProxy = null;
@@ -145,7 +145,7 @@ public class SurfaceView implements AutoCloseable {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        SurfaceView that = (SurfaceView) o;
+        SurfaceProxyView that = (SurfaceProxyView) o;
         if (mOrigin != that.mOrigin) return false;
         if (mSwizzle != that.mSwizzle) return false;
         return (mProxy == null && that.mProxy == null) ||

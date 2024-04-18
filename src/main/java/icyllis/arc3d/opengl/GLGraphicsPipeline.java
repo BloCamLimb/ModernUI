@@ -40,7 +40,7 @@ import java.util.concurrent.CompletableFuture;
  * Supports OpenGL 3.3 and OpenGL 4.5.
  */
 //TODO set and bind textures
-public class GLGraphicsPipelineState extends GraphicsPipelineState {
+public class GLGraphicsPipeline extends GraphicsPipeline {
 
     @SharedPtr
     private GLProgram mProgram;
@@ -54,11 +54,12 @@ public class GLGraphicsPipelineState extends GraphicsPipelineState {
 
     private int mNumTextureSamplers;
 
-    private CompletableFuture<GLPipelineStateBuilder> mAsyncWork;
+    private CompletableFuture<GLGraphicsPipelineBuilder> mAsyncWork;
 
-    GLGraphicsPipelineState(GLDevice device,
-                            CompletableFuture<GLPipelineStateBuilder> asyncWork) {
-        super(device);
+    GLGraphicsPipeline(GLDevice device,
+                       byte primitiveType,
+                       CompletableFuture<GLGraphicsPipelineBuilder> asyncWork) {
+        super(device, primitiveType);
         mAsyncWork = asyncWork;
     }
 
@@ -88,7 +89,8 @@ public class GLGraphicsPipelineState extends GraphicsPipelineState {
         }
     }
 
-    public void release() {
+    @Override
+    protected void deallocate() {
         mProgram = RefCnt.move(mProgram);
         mVertexArray = RefCnt.move(mVertexArray);
         mDataManager = RefCnt.move(mDataManager);
@@ -96,7 +98,7 @@ public class GLGraphicsPipelineState extends GraphicsPipelineState {
 
     private void checkAsyncWork() {
         boolean success = mAsyncWork.join().finish(this);
-        var stats = getDevice().getPipelineStateCache().getStats();
+        var stats = getDevice().getPipelineCache().getStats();
         if (success) {
             stats.incNumCompilationSuccesses();
         } else {

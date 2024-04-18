@@ -26,12 +26,13 @@ import org.lwjgl.vulkan.*;
 import static icyllis.arc3d.vulkan.VKCore.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
-public abstract class VulkanCommandBuffer extends VkCommandBuffer {
+public abstract class VulkanCommandBuffer extends CommandBuffer {
 
+    protected final VkCommandBuffer mCommandBuffer;
     protected boolean mIsRecording = false;
 
     public VulkanCommandBuffer(VkDevice device, long handle) {
-        super(handle, device);
+        mCommandBuffer = new VkCommandBuffer(handle, device);
     }
 
     public void begin() {
@@ -41,44 +42,53 @@ public abstract class VulkanCommandBuffer extends VkCommandBuffer {
                     .pNext(NULL)
                     .flags(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)
                     .pInheritanceInfo(null);
-            _CHECK_ERROR_(vkBeginCommandBuffer(this, beginInfo));
+            _CHECK_ERROR_(vkBeginCommandBuffer(mCommandBuffer, beginInfo));
         }
     }
 
     public void end() {
-        vkEndCommandBuffer(this);
+        vkEndCommandBuffer(mCommandBuffer);
     }
 
-    public void draw(int vertexCount,
-                     int instanceCount,
-                     int firstVertex,
-                     int firstInstance) {
-        vkCmdDraw(this,
+    @Override
+    public void draw(int vertexCount, int baseVertex) {
+        drawInstanced(1, 0, vertexCount, baseVertex);
+    }
+
+    @Override
+    public void drawIndexed(int indexCount, int baseIndex, int baseVertex) {
+        drawIndexedInstanced(indexCount, baseIndex, 1, 0, baseVertex);
+    }
+
+    @Override
+    public void drawInstanced(int instanceCount, int baseInstance,
+                              int vertexCount, int baseVertex) {
+        vkCmdDraw(mCommandBuffer,
                 vertexCount,
                 instanceCount,
-                firstVertex,
-                firstInstance);
+                baseVertex,
+                baseInstance);
     }
 
-    public void drawIndexed(int indexCount,
-                            int instanceCount,
-                            int firstIndex,
-                            int vertexOffset,
-                            int firstInstance) {
-        vkCmdDrawIndexed(this,
+    @Override
+    public void drawIndexedInstanced(int indexCount, int baseIndex,
+                                     int instanceCount, int baseInstance,
+                                     int baseVertex) {
+        vkCmdDrawIndexed(mCommandBuffer,
                 indexCount,
                 instanceCount,
-                firstIndex,
-                vertexOffset,
-                firstInstance);
+                baseIndex,
+                baseVertex,
+                baseInstance);
     }
 
     public void bindVertexBuffers() {
         //vkCmdBindVertexBuffers();
     }
 
-    public void bindGraphicsPipeline(GraphicsPipelineState graphicsPipelineState) {
+    public boolean bindGraphicsPipeline(GraphicsPipeline graphicsPipeline) {
         //TODO
+        return false;
     }
 
     public void addDrawPass(DrawPass drawPass) {
@@ -87,20 +97,22 @@ public abstract class VulkanCommandBuffer extends VkCommandBuffer {
             switch (data[i]) {
                 case DrawCommandList.CMD_BIND_GRAPHICS_PIPELINE -> {
                     int pipelineIndex = data[i + 1];
-                    bindGraphicsPipeline(drawPass.getPipeline(pipelineIndex));
+                    if (!bindGraphicsPipeline(drawPass.getPipeline(pipelineIndex))) {
+                        return;
+                    }
                     i += 2;
                 }
                 case DrawCommandList.CMD_DRAW -> {
                     int vertexCount = data[i + 1];
                     int baseVertex = data[i + 2];
-                    draw(vertexCount, 1, baseVertex, 0);
+                    draw(vertexCount, baseVertex);
                     i += 3;
                 }
                 case DrawCommandList.CMD_DRAW_INDEXED -> {
                     int indexCount = data[i + 1];
                     int baseIndex = data[i + 2];
                     int baseVertex = data[i + 3];
-                    drawIndexed(indexCount, 1, baseIndex, baseVertex, 0);
+                    drawIndexed(indexCount, baseIndex, baseVertex);
                     i += 4;
                 }
                 case DrawCommandList.CMD_DRAW_INSTANCED -> {
@@ -108,8 +120,17 @@ public abstract class VulkanCommandBuffer extends VkCommandBuffer {
                     int baseInstance = data[i + 2];
                     int vertexCount = data[i + 3];
                     int baseVertex = data[i + 4];
-                    draw(vertexCount, instanceCount, baseVertex, baseInstance);
+                    drawInstanced(instanceCount, baseInstance, vertexCount, baseVertex);
                     i += 5;
+                }
+                case DrawCommandList.CMD_DRAW_INDEXED_INSTANCED -> {
+                    int indexCount = data[i + 1];
+                    int baseIndex = data[i + 2];
+                    int instanceCount = data[i + 3];
+                    int baseInstance = data[i + 4];
+                    int baseVertex = data[i + 5];
+                    drawIndexedInstanced(indexCount, baseIndex, instanceCount, baseInstance, baseVertex);
+                    i += 6;
                 }
             }
         }

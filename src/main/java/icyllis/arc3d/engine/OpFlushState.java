@@ -43,9 +43,9 @@ public class OpFlushState implements MeshDrawTarget {
         return mDevice;
     }
 
-    public final GraphicsPipelineState findOrCreateGraphicsPipelineState(
+    public final GraphicsPipeline findOrCreateGraphicsPipeline(
             final PipelineInfo pipelineInfo) {
-        return mDevice.getContext().findOrCreateGraphicsPipelineState(pipelineInfo);
+        return mDevice.getContext().findOrCreateGraphicsPipeline(pipelineInfo);
     }
 
     @Override
@@ -85,7 +85,7 @@ public class OpFlushState implements MeshDrawTarget {
         return mOpsRenderPass;
     }
 
-    public OpsRenderPass beginOpsRenderPass(SurfaceView writeView,
+    public OpsRenderPass beginOpsRenderPass(SurfaceProxyView writeView,
                                             Rect2i contentBounds,
                                             byte colorOps,
                                             byte stencilOps,

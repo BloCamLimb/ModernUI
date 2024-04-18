@@ -40,7 +40,7 @@ public class GLUniformDataManager extends UniformDataManager {
     private GLUniformBuffer mUniformBuffer;
 
     /**
-     * Created by {@link GLGraphicsPipelineState}.
+     * Created by {@link GLGraphicsPipeline}.
      *
      * @param uniforms    the uniforms
      * @param uniformSize the uniform block size in bytes

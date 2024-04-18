@@ -46,7 +46,7 @@ public abstract class ShaderBuilderBase implements ShaderBuilder {
     // Reasonable upper bound on number of processor stages
     protected static final int PREALLOC = CODE + 6;
 
-    protected final PipelineBuilder mPipelineBuilder;
+    protected final GraphicsPipelineBuilder mPipelineBuilder;
     protected final StringBuilder[] mShaderStrings = new StringBuilder[PREALLOC];
 
     private final HashMap<String, String> mExtensions = new HashMap<>();
@@ -58,12 +58,12 @@ public abstract class ShaderBuilderBase implements ShaderBuilder {
 
     private boolean mFinished;
 
-    public ShaderBuilderBase(PipelineBuilder pipelineBuilder) {
+    public ShaderBuilderBase(GraphicsPipelineBuilder pipelineBuilder) {
         mPipelineBuilder = pipelineBuilder;
         for (int i = 0; i <= CODE; i++) {
             mShaderStrings[i] = new StringBuilder();
         }
-        definitions().append("#version 450\n");
+        definitions().append(pipelineBuilder.shaderCaps().mGLSLVersion.mVersionDecl);
         mCodeIndex = CODE;
         codeAppend("void main() {\n");
     }

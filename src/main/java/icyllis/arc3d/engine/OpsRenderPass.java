@@ -85,12 +85,12 @@ public abstract class OpsRenderPass {
      * the pipeline could not be set.
      *
      * @param pipelineInfo  the pipeline info used to update uniforms
-     * @param pipelineState the pipeline state object
+     * @param pipeline the pipeline state object
      * @param drawBounds    the sub-area of render target for subsequent draw calls
      */
-    public void bindPipeline(PipelineInfo pipelineInfo, GraphicsPipelineState pipelineState, Rect2fc drawBounds) {
+    public void bindPipeline(PipelineInfo pipelineInfo, GraphicsPipeline pipeline, Rect2fc drawBounds) {
         assert (pipelineInfo.origin() == mSurfaceOrigin);
-        if (!onBindPipeline(pipelineInfo, pipelineState, drawBounds)) {
+        if (!onBindPipeline(pipelineInfo, pipeline, drawBounds)) {
             mDrawPipelineStatus = kFailedToBind_DrawPipelineStatus;
             return;
         }
@@ -233,7 +233,7 @@ public abstract class OpsRenderPass {
     protected abstract GpuDevice getDevice();
 
     protected abstract boolean onBindPipeline(PipelineInfo pipelineInfo,
-                                              GraphicsPipelineState pipelineState,
+                                              GraphicsPipeline pipeline,
                                               Rect2fc drawBounds);
 
     protected abstract void onBindBuffers(@SharedPtr GpuBuffer indexBuffer, int indexType,

@@ -42,7 +42,7 @@ public class FragmentShaderBuilder extends ShaderBuilderBase implements FPFragme
     private final ShaderVar mPrimaryOutput;
     private ShaderVar mSecondaryOutput;
 
-    public FragmentShaderBuilder(PipelineBuilder pipelineBuilder) {
+    public FragmentShaderBuilder(GraphicsPipelineBuilder pipelineBuilder) {
         super(pipelineBuilder);
         String layoutQualifier = "location = " + MAIN_DRAW_BUFFER_INDEX;
         mPrimaryOutput = new ShaderVar(PRIMARY_COLOR_OUTPUT_NAME, SLDataType.kFloat4,

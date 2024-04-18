@@ -368,8 +368,8 @@ public class TestManagedResource {
                 ISurface.FLAG_BUDGETED | ISurface.FLAG_RENDERABLE
         );
         Objects.requireNonNull(target);
-        GLGraphicsPipelineState pso = (GLGraphicsPipelineState) dContext.findOrCreateGraphicsPipelineState(
-                new PipelineInfo(new SurfaceView(target), new SDFRoundRectGeoProc(true),
+        GLGraphicsPipeline pso = (GLGraphicsPipeline) dContext.findOrCreateGraphicsPipeline(
+                new PipelineInfo(new SurfaceProxyView(target), new SDFRoundRectGeoProc(true),
                         null, null, null, null,
                         PipelineInfo.kNone_Flag));
         {
@@ -378,7 +378,7 @@ public class TestManagedResource {
         }
         pso.bindPipeline(((GLDevice) dContext.getDevice()).currentCommandBuffer());
 
-        LOGGER.info(dContext.getPipelineStateCache().getStats().toString());
+        LOGGER.info(dContext.getPipelineCache().getStats().toString());
     }
 
     public static void testTexture(DirectContext dContext) {

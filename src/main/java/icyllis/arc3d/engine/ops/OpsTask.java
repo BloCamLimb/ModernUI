@@ -43,7 +43,7 @@ public class OpsTask extends RenderTask {
 
     private final ObjectOpenHashSet<SurfaceProxy> mSampledTextures = new ObjectOpenHashSet<>();
 
-    private final SurfaceView mWriteView;
+    private final SurfaceProxyView mWriteView;
     private int mPipelineFlags;
 
     private final Rect2f mTotalBounds = new Rect2f();
@@ -57,10 +57,10 @@ public class OpsTask extends RenderTask {
      * @param writeView the reference to the owner's write view
      */
     public OpsTask(@Nonnull RenderTaskManager drawingMgr,
-                   @Nonnull SurfaceView writeView) {
+                   @Nonnull SurfaceProxyView writeView) {
         super(drawingMgr);
         mWriteView = writeView;             // move
-        addTarget(writeView.refSurface());    // inc
+        addTarget(writeView.refProxy());    // inc
     }
 
     public void setColorLoadOp(byte loadOp, float red, float green, float blue, float alpha) {
@@ -123,7 +123,7 @@ public class OpsTask extends RenderTask {
     public boolean execute(OpFlushState flushState) {
         assert (numTargets() == 1);
         SurfaceProxy target = getTarget();
-        assert (target != null && target == mWriteView.getSurface());
+        assert (target != null && target == mWriteView.getProxy());
 
         OpsRenderPass opsRenderPass = flushState.beginOpsRenderPass(mWriteView,
                 mContentBounds,

@@ -19,39 +19,12 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.RawPtr;
-import icyllis.arc3d.core.SharedPtr;
-
-import java.util.ArrayList;
-
 /**
- * A draw pass is subpass of a render pass.
- * <p>
- * Created immutable.
+ * Pipeline state object used for compute.
  */
-public class DrawPass {
+public abstract class ComputePipeline extends ManagedResource {
 
-    @SharedPtr
-    private ArrayList<GraphicsPipeline> mGraphicsPipelines = new ArrayList<>();
-
-    private final DrawCommandList mCommandList = new DrawCommandList();
-
-    private ImageProxy[] mSampledImages;
-
-    @RawPtr
-    public GraphicsPipeline getPipeline(int index) {
-        return mGraphicsPipelines.get(index);
-    }
-
-    public int[] getCommandData() {
-        return mCommandList.elements();
-    }
-
-    public int getCommandSize() {
-        return mCommandList.size();
-    }
-
-    public ImageProxy[] getSampledImages() {
-        return mSampledImages;
+    public ComputePipeline(GpuDevice device) {
+        super(device);
     }
 }
