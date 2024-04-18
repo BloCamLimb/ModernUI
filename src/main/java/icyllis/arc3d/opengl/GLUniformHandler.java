@@ -21,7 +21,7 @@ package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.SLDataType;
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.engine.shading.PipelineBuilder;
+import icyllis.arc3d.engine.shading.GraphicsPipelineBuilder;
 import icyllis.arc3d.engine.shading.UniformHandler;
 import it.unimi.dsi.fastutil.shorts.ShortArrayList;
 
@@ -42,7 +42,7 @@ public class GLUniformHandler extends UniformHandler {
     int mCurrentOffset;
     boolean mFinished;
 
-    GLUniformHandler(PipelineBuilder pipelineBuilder) {
+    GLUniformHandler(GraphicsPipelineBuilder pipelineBuilder) {
         super(pipelineBuilder);
     }
 

@@ -55,7 +55,7 @@ public final class SharedContextInfo {
 
     private volatile Caps mCaps;
     private volatile ThreadSafeCache mThreadSafeCache;
-    private volatile PipelineStateCache mPipelineStateCache;
+    private volatile PipelineCache mPipelineCache;
 
     private final AtomicBoolean mDiscarded = new AtomicBoolean(false);
 
@@ -278,15 +278,15 @@ public final class SharedContextInfo {
     }
 
     @ApiStatus.Internal
-    public PipelineStateCache getPipelineStateCache() {
-        return mPipelineStateCache;
+    public PipelineCache getPipelineCache() {
+        return mPipelineCache;
     }
 
-    void init(Caps caps, PipelineStateCache psc) {
+    void init(Caps caps, PipelineCache psc) {
         assert (caps != null);
         mCaps = caps;
         mThreadSafeCache = new ThreadSafeCache();
-        mPipelineStateCache = psc;
+        mPipelineCache = psc;
     }
 
     boolean discard() {

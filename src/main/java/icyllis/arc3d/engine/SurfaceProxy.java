@@ -55,7 +55,7 @@ import javax.annotation.Nullable;
  * Use {@link SurfaceProvider} to obtain {@link SurfaceProxy} objects.
  *
  * @see ImageProxy
- * @see SurfaceView
+ * @see SurfaceProxyView
  */
 public abstract class SurfaceProxy extends RefCnt {
 

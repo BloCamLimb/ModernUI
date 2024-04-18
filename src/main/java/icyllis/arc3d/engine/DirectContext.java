@@ -208,7 +208,7 @@ public final class DirectContext extends RecordingContext {
             return false;
         }
 
-        mContextInfo.init(mDevice.getCaps(), mDevice.getPipelineStateCache());
+        mContextInfo.init(mDevice.getCaps(), mDevice.getPipelineCache());
         if (!super.init()) {
             return false;
         }

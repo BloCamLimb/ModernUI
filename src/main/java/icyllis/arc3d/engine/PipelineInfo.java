@@ -79,7 +79,7 @@ public final class PipelineInfo {
      * @param writeView           the main color render target to write, can NOT be null
      * @param userStencilSettings the stencil settings for stencil clipping, can be null
      */
-    public PipelineInfo(SurfaceView writeView,
+    public PipelineInfo(SurfaceProxyView writeView,
                         GeometryProcessor geomProc,
                         TransferProcessor xferProc,
                         FragmentProcessor colorFragProc,
@@ -87,8 +87,8 @@ public final class PipelineInfo {
                         UserStencilSettings userStencilSettings,
                         int pipelineFlags) {
         assert (writeView != null);
-        mBackendFormat = writeView.getSurface().getBackendFormat();
-        mSampleCount = writeView.getSurface().getSampleCount();
+        mBackendFormat = writeView.getProxy().getBackendFormat();
+        mSampleCount = writeView.getProxy().getSampleCount();
         mOrigin = writeView.getOrigin();
         mWriteSwizzle = writeView.getSwizzle();
         mGeomProc = geomProc;

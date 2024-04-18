@@ -49,12 +49,12 @@ public class VaryingHandler {
     protected final ArrayList<ShaderVar> mVertexOutputs = new ArrayList<>();
     protected final ArrayList<ShaderVar> mFragInputs = new ArrayList<>();
 
-    protected final PipelineBuilder mPipelineBuilder;
+    protected final GraphicsPipelineBuilder mPipelineBuilder;
 
     // the default interpolation qualifier is smooth (with perspective)
     private String mDefaultInterpolationModifier = "";
 
-    public VaryingHandler(PipelineBuilder pipelineBuilder) {
+    public VaryingHandler(GraphicsPipelineBuilder pipelineBuilder) {
         mPipelineBuilder = pipelineBuilder;
     }
 

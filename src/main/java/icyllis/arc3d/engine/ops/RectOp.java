@@ -96,7 +96,7 @@ public class RectOp extends MeshDrawOp {
 
     @Nonnull
     @Override
-    protected PipelineInfo onCreatePipelineInfo(SurfaceView writeView, int pipelineFlags) {
+    protected PipelineInfo onCreatePipelineInfo(SurfaceProxyView writeView, int pipelineFlags) {
         return new PipelineInfo(writeView,
                 new SDFRectGeoProc(mGPFlags), null, null, null,
                 null, pipelineFlags);

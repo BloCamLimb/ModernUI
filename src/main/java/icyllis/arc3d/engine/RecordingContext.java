@@ -123,15 +123,15 @@ public sealed class RecordingContext extends Context
     }
 
     @ApiStatus.Internal
-    public final PipelineStateCache getPipelineStateCache() {
-        return mContextInfo.getPipelineStateCache();
+    public final PipelineCache getPipelineCache() {
+        return mContextInfo.getPipelineCache();
     }
 
     @ApiStatus.Internal
-    public final GraphicsPipelineState findOrCreateGraphicsPipelineState(
+    public final GraphicsPipeline findOrCreateGraphicsPipeline(
             final PipelineInfo pipelineInfo) {
         mLookupDesc.clear();
-        return getPipelineStateCache().findOrCreateGraphicsPipelineState(
+        return getPipelineCache().findOrCreateGraphicsPipeline(
                 mLookupDesc,
                 pipelineInfo
         );

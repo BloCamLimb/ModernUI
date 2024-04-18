@@ -20,7 +20,7 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.SharedPtr;
-import icyllis.arc3d.engine.ManagedResource;
+import icyllis.arc3d.engine.Sampler;
 import icyllis.arc3d.engine.SamplerState;
 
 import javax.annotation.Nullable;
@@ -34,7 +34,7 @@ import static org.lwjgl.opengl.GL46C.GL_TEXTURE_MAX_ANISOTROPY;
 /**
  * Represents OpenGL sampler objects.
  */
-public final class GLSampler extends ManagedResource {
+public final class GLSampler extends Sampler {
 
     private int mSampler;
 

@@ -19,14 +19,19 @@
 
 package icyllis.arc3d.engine;
 
-@Deprecated
-public class DstProxyView  {
+/**
+ * Pipeline state object used for graphics.
+ */
+public abstract class GraphicsPipeline extends ManagedResource {
 
-    public static final int REQUIRES_TEXTURE_BARRIER_FLAG = 0x2;
-    public static final int AS_INPUT_ATTACHMENT_FLAG = 0x4;
+    private final byte mPrimitiveType;
 
-    SurfaceProxyView mProxyView;
-    int mOffsetX;
-    int mOffsetY;
-    int mFlags;
+    public GraphicsPipeline(GpuDevice device, byte primitiveType) {
+        super(device);
+        mPrimitiveType = primitiveType;
+    }
+
+    public final byte getPrimitiveType() {
+        return mPrimitiveType;
+    }
 }

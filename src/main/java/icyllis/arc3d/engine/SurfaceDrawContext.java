@@ -28,8 +28,8 @@ import javax.annotation.Nullable;
 public class SurfaceDrawContext extends SurfaceFillContext {
 
     public SurfaceDrawContext(RecordingContext context,
-                              SurfaceView readView,
-                              SurfaceView writeView,
+                              SurfaceProxyView readView,
+                              SurfaceProxyView writeView,
                               int colorType,
                               ColorSpace colorSpace) {
         super(context, readView, writeView, colorType, ImageInfo.AT_PREMUL, colorSpace);
@@ -69,8 +69,8 @@ public class SurfaceDrawContext extends SurfaceFillContext {
 
         // two views, inc one more ref
         renderTarget.ref();
-        SurfaceView readView = new SurfaceView(renderTarget, origin, readSwizzle);
-        SurfaceView writeView = new SurfaceView(renderTarget, origin, writeSwizzle);
+        SurfaceProxyView readView = new SurfaceProxyView(renderTarget, origin, readSwizzle);
+        SurfaceProxyView writeView = new SurfaceProxyView(renderTarget, origin, writeSwizzle);
 
         return new SurfaceDrawContext(rContext, readView, writeView, colorType, colorSpace);
     }
@@ -87,8 +87,8 @@ public class SurfaceDrawContext extends SurfaceFillContext {
 
         // two views, inc one more ref
         surfaceProxy.ref();
-        SurfaceView readView = new SurfaceView(surfaceProxy, origin, readSwizzle);
-        SurfaceView writeView = new SurfaceView(surfaceProxy, origin, writeSwizzle);
+        SurfaceProxyView readView = new SurfaceProxyView(surfaceProxy, origin, readSwizzle);
+        SurfaceProxyView writeView = new SurfaceProxyView(surfaceProxy, origin, writeSwizzle);
 
         return new SurfaceDrawContext(rContext, readView, writeView, colorType, colorSpace);
     }
@@ -115,7 +115,7 @@ public class SurfaceDrawContext extends SurfaceFillContext {
                           DrawOp op) {
 
 
-        var surface = getReadView().getSurface();
+        var surface = getReadView().getProxy();
 
         var bounds = mTmpBounds;
         bounds.set(op);

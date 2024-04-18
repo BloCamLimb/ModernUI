@@ -43,7 +43,7 @@ public final class GLDevice extends GpuDevice {
     private final GLCommandBuffer mMainCmdBuffer;
 
     private final GLResourceProvider mResourceProvider;
-    private final GLPipelineStateCache mPipelineStateCache;
+    private final GLPipelineCache mPipelineCache;
 
     private final CpuBufferPool mCpuBufferPool;
 
@@ -167,7 +167,7 @@ public final class GLDevice extends GpuDevice {
         mGLInterface = glInterface;
         mMainCmdBuffer = new GLCommandBuffer(this);
         mResourceProvider = new GLResourceProvider(this, context);
-        mPipelineStateCache = new GLPipelineStateCache(this, 256);
+        mPipelineCache = new GLPipelineCache(this, 256);
         mCpuBufferPool = new CpuBufferPool(6);
         mVertexPool = GpuBufferPool.makeVertexPool(mResourceProvider);
         mInstancePool = GpuBufferPool.makeInstancePool(mResourceProvider);
@@ -237,10 +237,10 @@ public final class GLDevice extends GpuDevice {
         mMainCmdBuffer.resetStates(~0);
 
         if (cleanup) {
-            mPipelineStateCache.release();
+            mPipelineCache.release();
             mResourceProvider.release();
         } else {
-            mPipelineStateCache.discard();
+            mPipelineCache.discard();
             mResourceProvider.discard();
         }
 
@@ -262,8 +262,8 @@ public final class GLDevice extends GpuDevice {
     }
 
     @Override
-    public GLPipelineStateCache getPipelineStateCache() {
-        return mPipelineStateCache;
+    public GLPipelineCache getPipelineCache() {
+        return mPipelineCache;
     }
 
     /**
@@ -886,7 +886,7 @@ public final class GLDevice extends GpuDevice {
     }
 
     @Override
-    protected OpsRenderPass onGetOpsRenderPass(SurfaceView writeView,
+    protected OpsRenderPass onGetOpsRenderPass(SurfaceProxyView writeView,
                                                Rect2i contentBounds,
                                                byte colorOps,
                                                byte stencilOps,
@@ -897,7 +897,7 @@ public final class GLDevice extends GpuDevice {
         if (mCachedOpsRenderPass == null) {
             mCachedOpsRenderPass = new GLOpsRenderPass(this);
         }
-        return mCachedOpsRenderPass.set(writeView.getSurface().getGpuRenderTarget(),
+        return mCachedOpsRenderPass.set(writeView.getProxy().getGpuRenderTarget(),
                 contentBounds,
                 writeView.getOrigin(),
                 colorOps,
@@ -1237,7 +1237,7 @@ public final class GLDevice extends GpuDevice {
                 }
             }
         } else {
-            texture = glGenTextures();
+            texture = mGLInterface.glGenTextures();
             if (texture == 0) {
                 return 0;
             }

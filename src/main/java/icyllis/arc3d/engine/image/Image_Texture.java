@@ -20,8 +20,7 @@
 package icyllis.arc3d.engine.image;
 
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.engine.RecordingContext;
-import icyllis.arc3d.engine.ImageProxy;
+import icyllis.arc3d.engine.*;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -30,9 +29,7 @@ public class Image_Texture extends Image {
 
     RecordingContext mContext;
     @SharedPtr
-    ImageProxy mProxy;
-    short mSwizzle;
-    int mOrigin;
+    SurfaceProxyView mSurfaceProxyView;
 
     public Image_Texture(@Nonnull RecordingContext rContext,
                          @Nonnull ImageProxy proxy,
@@ -44,19 +41,22 @@ public class Image_Texture extends Image {
         super(ImageInfo.make(proxy.getBackingWidth(), proxy.getBackingHeight(),
                 colorType, alphaType, colorSpace));
         mContext = rContext;
-        mProxy = RefCnt.create(proxy);
-        mSwizzle = swizzle;
-        mOrigin = origin;
+        mSurfaceProxyView = new SurfaceProxyView(RefCnt.create(proxy), origin, swizzle);
     }
 
     @Override
     protected void deallocate() {
-        mProxy = RefCnt.move(mProxy);
+        mSurfaceProxyView.close();
+        mSurfaceProxyView = null;
     }
 
     @Override
     public RecordingContext getContext() {
         return mContext;
+    }
+
+    public SurfaceProxyView getSurfaceProxyView() {
+        return mSurfaceProxyView;
     }
 
     @Override
@@ -77,6 +77,6 @@ public class Image_Texture extends Image {
 
     @Override
     public long getTextureMemorySize() {
-        return mProxy.getMemorySize();
+        return mSurfaceProxyView.getProxy().getMemorySize();
     }
 }

@@ -26,14 +26,13 @@ import icyllis.arc3d.engine.shading.*;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
-import java.io.PrintWriter;
 import java.lang.ref.Reference;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 
 import static org.lwjgl.opengl.GL20C.*;
 
-public class GLPipelineStateBuilder extends PipelineBuilder {
+public class GLGraphicsPipelineBuilder extends GraphicsPipelineBuilder {
 
     private final GLDevice mDevice;
 
@@ -43,22 +42,22 @@ public class GLPipelineStateBuilder extends PipelineBuilder {
     private ByteBuffer mFinalizedVertSource;
     private ByteBuffer mFinalizedFragSource;
 
-    private GLPipelineStateBuilder(GLDevice device,
-                                   PipelineDesc desc,
-                                   PipelineInfo pipelineInfo) {
-        super(desc, pipelineInfo);
+    private GLGraphicsPipelineBuilder(GLDevice device,
+                                      PipelineDesc desc,
+                                      PipelineInfo pipelineInfo) {
+        super(desc, pipelineInfo, device.getCaps());
         mDevice = device;
         mVaryingHandler = new VaryingHandler(this);
         mUniformHandler = new GLUniformHandler(this);
     }
 
     @Nonnull
-    public static GLGraphicsPipelineState createGraphicsPipelineState(
+    public static GLGraphicsPipeline createGraphicsPipeline(
             final GLDevice device,
             final PipelineDesc desc,
             final PipelineInfo pipelineInfo) {
-        return new GLGraphicsPipelineState(device, CompletableFuture.supplyAsync(() -> {
-            GLPipelineStateBuilder builder = new GLPipelineStateBuilder(device, desc, pipelineInfo);
+        return new GLGraphicsPipeline(device, pipelineInfo.primitiveType(), CompletableFuture.supplyAsync(() -> {
+            GLGraphicsPipelineBuilder builder = new GLGraphicsPipelineBuilder(device, desc, pipelineInfo);
             builder.build();
             return builder;
         }));
@@ -75,7 +74,7 @@ public class GLPipelineStateBuilder extends PipelineBuilder {
         mFS = null;
     }
 
-    boolean finish(GLGraphicsPipelineState dest) {
+    boolean finish(GLGraphicsPipeline dest) {
         if (mFinalizedVertSource == null ||
                 mFinalizedFragSource == null) {
             return false;
@@ -87,14 +86,14 @@ public class GLPipelineStateBuilder extends PipelineBuilder {
         }
 
         int frag = GLUtil.glCompileShader(mDevice, GL_FRAGMENT_SHADER, mFinalizedFragSource,
-                mDevice.getPipelineStateCache().getStats());
+                mDevice.getPipelineCache().getStats());
         if (frag == 0) {
             gl.glDeleteProgram(program);
             return false;
         }
 
         int vert = GLUtil.glCompileShader(mDevice, GL_VERTEX_SHADER, mFinalizedVertSource,
-                mDevice.getPipelineStateCache().getStats());
+                mDevice.getPipelineCache().getStats());
         if (vert == 0) {
             gl.glDeleteProgram(program);
             gl.glDeleteShader(frag);
@@ -170,11 +169,6 @@ public class GLPipelineStateBuilder extends PipelineBuilder {
                 mUniformHandler.mSamplers,
                 mGPImpl);
         return true;
-    }
-
-    @Override
-    public GLCaps caps() {
-        return mDevice.getCaps();
     }
 
     @Override

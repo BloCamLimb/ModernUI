@@ -30,7 +30,7 @@ public final class GLOpsRenderPass extends OpsRenderPass {
     private final GLDevice mDevice;
 
     private GLCommandBuffer mCmdBuffer;
-    private GLGraphicsPipelineState mPipelineState;
+    private GLGraphicsPipeline mPipelineState;
 
     private byte mColorOps;
     private byte mStencilOps;
@@ -94,13 +94,13 @@ public final class GLOpsRenderPass extends OpsRenderPass {
 
     @Override
     protected boolean onBindPipeline(PipelineInfo pipelineInfo,
-                                     GraphicsPipelineState pipelineState,
+                                     GraphicsPipeline pipeline,
                                      Rect2fc drawBounds) {
         mActiveIndexBuffer = RefCnt.move(mActiveIndexBuffer);
         mActiveVertexBuffer = RefCnt.move(mActiveVertexBuffer);
         mActiveInstanceBuffer = RefCnt.move(mActiveInstanceBuffer);
 
-        mPipelineState = (GLGraphicsPipelineState) pipelineState;
+        mPipelineState = (GLGraphicsPipeline) pipeline;
         if (mPipelineState == null) {
             return false;
         }

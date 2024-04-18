@@ -29,7 +29,7 @@ import javax.annotation.Nullable;
  * <p>
  * This can only be used on render thread. To create Surface-like resources
  * in other threads, use {@link SurfaceProxy}. To obtain Pipeline resources,
- * use {@link PipelineStateCache}.
+ * use {@link PipelineCache}.
  */
 public class ResourceProvider {
 

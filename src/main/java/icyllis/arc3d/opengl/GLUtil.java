@@ -21,7 +21,7 @@ package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.Color;
 import icyllis.arc3d.core.ImageInfo;
-import icyllis.arc3d.engine.PipelineStateCache;
+import icyllis.arc3d.engine.PipelineCache;
 import org.lwjgl.system.*;
 import org.slf4j.Logger;
 
@@ -457,7 +457,7 @@ public final class GLUtil {
     public static int glCompileShader(GLDevice device,
                                       @NativeType("GLenum") int shaderType,
                                       @NativeType("GLchar const *") ByteBuffer glsl,
-                                      PipelineStateCache.Stats stats) {
+                                      PipelineCache.Stats stats) {
         var gl = device.getGL();
         int shader = gl.glCreateShader(shaderType);
         if (shader == 0) {
@@ -489,7 +489,7 @@ public final class GLUtil {
                                          @NativeType("GLenum") int shaderType,
                                          @NativeType("uint32_t *") ByteBuffer spirv,
                                          String entryPoint,
-                                         PipelineStateCache.Stats stats) {
+                                         PipelineCache.Stats stats) {
         var gl = device.getGL();
         int shader = gl.glCreateShader(shaderType);
         if (shader == 0) {

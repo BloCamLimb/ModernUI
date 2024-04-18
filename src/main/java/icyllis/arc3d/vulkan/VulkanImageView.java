@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,20 +17,18 @@
  * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine;
+package icyllis.arc3d.vulkan;
 
-/**
- * Graphics pipeline state object (PSO of graphics pipeline).
- */
-public abstract class GraphicsPipelineState {
+import icyllis.arc3d.engine.ManagedResource;
 
-    private final GpuDevice mDevice;
+public final class VulkanImageView extends ManagedResource {
 
-    public GraphicsPipelineState(GpuDevice device) {
-        mDevice = device;
+    public VulkanImageView(VulkanDevice device) {
+        super(device);
     }
 
-    protected GpuDevice getDevice() {
-        return mDevice;
+    @Override
+    protected void deallocate() {
+
     }
 }

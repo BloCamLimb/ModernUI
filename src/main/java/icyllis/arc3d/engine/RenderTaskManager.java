@@ -167,7 +167,7 @@ public class RenderTaskManager {
     }
 
     @SharedPtr
-    public OpsTask newOpsTask(SurfaceView writeView) {
+    public OpsTask newOpsTask(SurfaceProxyView writeView) {
 
         OpsTask opsTask = new OpsTask(this, writeView);
 

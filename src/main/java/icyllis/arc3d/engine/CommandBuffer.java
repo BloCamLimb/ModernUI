@@ -23,6 +23,9 @@ import icyllis.arc3d.core.SharedPtr;
 
 import java.util.ArrayList;
 
+/**
+ * Backend-specific command buffer, render thread only.
+ */
 public abstract class CommandBuffer {
 
     @SharedPtr
@@ -52,4 +55,48 @@ public abstract class CommandBuffer {
     public void endRenderPass() {
 
     }
+
+    public abstract boolean bindGraphicsPipeline(GraphicsPipeline graphicsPipeline);
+
+    /**
+     * Records a non-indexed draw to current command buffer.
+     *
+     * @param vertexCount the number of vertices to draw
+     * @param baseVertex  the index of the first vertex to draw
+     */
+    public abstract void draw(int vertexCount, int baseVertex);
+
+    /**
+     * Records an indexed draw to current command buffer.
+     *
+     * @param indexCount the number of vertices to draw
+     * @param baseIndex  the base index within the index buffer
+     * @param baseVertex the value added to the vertex index before indexing into the vertex buffer
+     */
+    public abstract void drawIndexed(int indexCount, int baseIndex,
+                                     int baseVertex);
+
+    /**
+     * Records a non-indexed draw to current command buffer.
+     *
+     * @param instanceCount the number of instances to draw
+     * @param baseInstance  the instance ID of the first instance to draw
+     * @param vertexCount   the number of vertices to draw
+     * @param baseVertex    the index of the first vertex to draw
+     */
+    public abstract void drawInstanced(int instanceCount, int baseInstance,
+                                       int vertexCount, int baseVertex);
+
+    /**
+     * Records an indexed draw to current command buffer.
+     *
+     * @param indexCount    the number of vertices to draw
+     * @param baseIndex     the base index within the index buffer
+     * @param instanceCount the number of instances to draw
+     * @param baseInstance  the instance ID of the first instance to draw
+     * @param baseVertex    the value added to the vertex index before indexing into the vertex buffer
+     */
+    public abstract void drawIndexedInstanced(int indexCount, int baseIndex,
+                                              int instanceCount, int baseInstance,
+                                              int baseVertex);
 }

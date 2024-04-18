@@ -35,7 +35,7 @@ public class VertexShaderBuilder extends ShaderBuilderBase implements VertexGeom
     // vertex shader inputs are vertex attributes
     private final ArrayList<ShaderVar> mInputs = new ArrayList<>();
 
-    public VertexShaderBuilder(PipelineBuilder pipelineBuilder) {
+    public VertexShaderBuilder(GraphicsPipelineBuilder pipelineBuilder) {
         super(pipelineBuilder);
     }
 

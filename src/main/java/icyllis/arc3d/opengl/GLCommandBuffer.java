@@ -67,6 +67,24 @@ public final class GLCommandBuffer extends CommandBuffer {
     @SharedPtr
     private final GLUniformBuffer[] mBoundUniformBuffers;
 
+    private GLGraphicsPipeline mGraphicsPipeline;
+
+    private int mPrimitiveType;
+
+    @SharedPtr
+    private GpuBuffer mActiveIndexBuffer;
+    @SharedPtr
+    private GpuBuffer mActiveVertexBuffer;
+    @SharedPtr
+    private GpuBuffer mActiveInstanceBuffer;
+
+    private int mIndexType;
+    private int mVertexStreamOffset;
+    private int mInstanceStreamOffset;
+
+    private byte mColorOps;
+    private byte mStencilOps;
+
     private long mSubmitFence;
 
     GLCommandBuffer(GLDevice device) {
@@ -299,5 +317,113 @@ public final class GLCommandBuffer extends CommandBuffer {
             }
         }
         mDevice.bindTextureSampler(bindingUnit, texture, samplerState, readSwizzle);
+    }
+
+    @Override
+    public boolean beginRenderPass(RenderPassInfo renderPassInfo,
+                                   GpuRenderTarget renderTarget) {
+        GLRenderTarget glRenderTarget = (GLRenderTarget) renderTarget;
+        mColorOps = renderPassInfo.mColorOps;
+        mStencilOps = renderPassInfo.mDepthStencilOps;
+        mDevice.beginRenderPass(glRenderTarget,
+                mColorOps,
+                mStencilOps,
+                renderPassInfo.mClearColor);
+        return true;
+    }
+
+    @Override
+    public void endRenderPass() {
+        mActiveIndexBuffer = RefCnt.move(mActiveIndexBuffer);
+        mActiveVertexBuffer = RefCnt.move(mActiveVertexBuffer);
+        mActiveInstanceBuffer = RefCnt.move(mActiveInstanceBuffer);
+        GLRenderTarget glRenderTarget = mHWRenderTarget;
+        mDevice.endRenderPass(glRenderTarget,
+                mColorOps,
+                mStencilOps);
+    }
+
+    @Override
+    public boolean bindGraphicsPipeline(GraphicsPipeline graphicsPipeline) {
+        mActiveIndexBuffer = RefCnt.move(mActiveIndexBuffer);
+        mActiveVertexBuffer = RefCnt.move(mActiveVertexBuffer);
+        mActiveInstanceBuffer = RefCnt.move(mActiveInstanceBuffer);
+
+        mGraphicsPipeline = (GLGraphicsPipeline) graphicsPipeline;
+        if (mGraphicsPipeline == null) {
+            return false;
+        }
+        mPrimitiveType = switch (graphicsPipeline.getPrimitiveType()) {
+            case Engine.PrimitiveType.PointList -> GL_POINTS;
+            case Engine.PrimitiveType.LineList -> GL_LINES;
+            case Engine.PrimitiveType.LineStrip -> GL_LINE_STRIP;
+            case Engine.PrimitiveType.TriangleList -> GL_TRIANGLES;
+            case Engine.PrimitiveType.TriangleStrip -> GL_TRIANGLE_STRIP;
+            default -> throw new AssertionError();
+        };
+
+        //TODO flush RT again?
+        if (!mGraphicsPipeline.bindPipeline(this)) {
+            return false;
+        }
+
+        /*return mPipelineState.bindUniforms(mCmdBuffer, pipelineInfo,
+                mRenderTarget.getWidth(), mRenderTarget.getHeight());*/
+        return true;
+    }
+
+    @Override
+    public void draw(int vertexCount, int baseVertex) {
+        mDevice.getGL().glDrawArrays(mPrimitiveType, baseVertex, vertexCount);
+    }
+
+    @Override
+    public void drawIndexed(int indexCount, int baseIndex,
+                            int baseVertex) {
+        if (mDevice.getCaps().hasDrawElementsBaseVertexSupport()) {
+            mDevice.getGL().glDrawElementsBaseVertex(mPrimitiveType, indexCount,
+                    mIndexType, baseIndex, baseVertex);
+        } else {
+            long vertexOffset = (long) baseVertex * mGraphicsPipeline.getVertexStride() + mVertexStreamOffset;
+            mGraphicsPipeline.bindVertexBuffer((GLBuffer) mActiveVertexBuffer, vertexOffset);
+            mDevice.getGL().glDrawElements(mPrimitiveType, indexCount,
+                    mIndexType, baseIndex);
+        }
+    }
+
+    @Override
+    public void drawInstanced(int instanceCount, int baseInstance,
+                              int vertexCount, int baseVertex) {
+        if (mDevice.getCaps().hasBaseInstanceSupport()) {
+            mDevice.getGL().glDrawArraysInstancedBaseInstance(mPrimitiveType, baseVertex, vertexCount,
+                    instanceCount, baseInstance);
+        } else {
+            long instanceOffset = (long) baseInstance * mGraphicsPipeline.getInstanceStride() + mInstanceStreamOffset;
+            mGraphicsPipeline.bindInstanceBuffer((GLBuffer) mActiveInstanceBuffer, instanceOffset);
+            mDevice.getGL().glDrawArraysInstanced(mPrimitiveType, baseVertex, vertexCount,
+                    instanceCount);
+        }
+    }
+
+    @Override
+    public void drawIndexedInstanced(int indexCount, int baseIndex,
+                                     int instanceCount, int baseInstance,
+                                     int baseVertex) {
+        if (mDevice.getCaps().hasBaseInstanceSupport()) {
+            mDevice.getGL().glDrawElementsInstancedBaseVertexBaseInstance(mPrimitiveType, indexCount,
+                    mIndexType, baseIndex, instanceCount, baseVertex, baseInstance);
+        } else {
+            long instanceOffset = (long) baseInstance * mGraphicsPipeline.getInstanceStride() + mInstanceStreamOffset;
+            mGraphicsPipeline.bindInstanceBuffer((GLBuffer) mActiveInstanceBuffer, instanceOffset);
+            if (mDevice.getCaps().hasDrawElementsBaseVertexSupport()) {
+                mDevice.getGL().glDrawElementsInstancedBaseVertex(mPrimitiveType, indexCount,
+                        mIndexType, baseIndex, instanceCount, baseVertex);
+            } else {
+                long vertexOffset = (long) baseVertex * mGraphicsPipeline.getVertexStride() + mVertexStreamOffset;
+                mGraphicsPipeline.bindVertexBuffer((GLBuffer) mActiveVertexBuffer, vertexOffset);
+                mDevice.getGL().glDrawElementsInstanced(mPrimitiveType, indexCount,
+                        mIndexType, baseIndex, instanceCount);
+            }
+        }
     }
 }

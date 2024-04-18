@@ -37,7 +37,7 @@ public final class CircularRRectOp extends MeshDrawOp {
 
     @Nonnull
     @Override
-    protected PipelineInfo onCreatePipelineInfo(SurfaceView writeView,
+    protected PipelineInfo onCreatePipelineInfo(SurfaceProxyView writeView,
                                                 int pipelineFlags) {
         return null;
     }

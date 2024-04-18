@@ -77,7 +77,7 @@ public class RoundRectOp extends MeshDrawOp {
 
     @Nonnull
     @Override
-    protected PipelineInfo onCreatePipelineInfo(SurfaceView writeView, int pipelineFlags) {
+    protected PipelineInfo onCreatePipelineInfo(SurfaceProxyView writeView, int pipelineFlags) {
         return new PipelineInfo(writeView,
                 new SDFRoundRectGeoProc(mStroke), null, null, null,
                 null, pipelineFlags);
