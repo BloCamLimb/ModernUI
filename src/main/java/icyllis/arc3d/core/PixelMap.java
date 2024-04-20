@@ -117,7 +117,7 @@ public class PixelMap {
 
     public boolean clear(float red, float green, float blue, float alpha,
                          @Nullable Rect2ic subset) {
-        if (getColorType() == ImageInfo.CT_UNKNOWN) {
+        if (getColorType() == ColorInfo.CT_UNKNOWN) {
             return false;
         }
 
@@ -126,7 +126,7 @@ public class PixelMap {
             return true;
         }
 
-        if (getColorType() == ImageInfo.CT_RGBA_8888) {
+        if (getColorType() == ColorInfo.CT_RGBA_8888) {
             int c = ((int) (alpha * 255.0f + 0.5f) << 24) |
                     ((int) (blue * 255.0f + 0.5f) << 16) |
                     ((int) (green * 255.0f + 0.5f) << 8) |

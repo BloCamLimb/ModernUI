@@ -19,8 +19,7 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.ImageInfo;
-import icyllis.arc3d.core.Surface;
+import icyllis.arc3d.core.*;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nullable;
@@ -38,14 +37,14 @@ public sealed class RecordingContext extends Context
 
     private final PipelineDesc mLookupDesc = new PipelineDesc();
 
-    protected RecordingContext(SharedContextInfo context) {
+    protected RecordingContext(SharedContext context) {
         super(context);
         mOwnerThread = Thread.currentThread();
         mSurfaceProvider = new SurfaceProvider(this);
     }
 
     @Nullable
-    public static RecordingContext makeRecording(SharedContextInfo context) {
+    public static RecordingContext makeRecording(SharedContext context) {
         RecordingContext rContext = new RecordingContext(context);
         if (rContext.init()) {
             return rContext;
@@ -81,12 +80,12 @@ public sealed class RecordingContext extends Context
      */
     public final boolean isSurfaceCompatible(int colorType) {
         colorType = Engine.colorTypeToPublic(colorType);
-        if (ImageInfo.CT_RG_1616 == colorType ||
-                ImageInfo.CT_A16_UNORM == colorType ||
-                ImageInfo.CT_A16_FLOAT == colorType ||
-                ImageInfo.CT_RG_F16 == colorType ||
-                ImageInfo.CT_R16G16B16A16_UNORM == colorType ||
-                ImageInfo.CT_GRAY_8 == colorType) {
+        if (ColorInfo.CT_RG_1616 == colorType ||
+                ColorInfo.CT_A16_UNORM == colorType ||
+                ColorInfo.CT_A16_FLOAT == colorType ||
+                ColorInfo.CT_RG_F16 == colorType ||
+                ColorInfo.CT_R16G16B16A16_UNORM == colorType ||
+                ColorInfo.CT_GRAY_8 == colorType) {
             return false;
         }
 

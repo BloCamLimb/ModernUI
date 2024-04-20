@@ -617,7 +617,7 @@ public final class ResourceCache implements AutoCloseable {
             }
             cleanup();
         } else {
-            assert resource.getBudgetType() == BudgetType.WrapCacheable;
+            assert resource.getBudgetType() != BudgetType.WrapCacheable;
             mBudgetedCount--;
             mBudgetedBytes -= size;
             if (!resource.isFree() &&

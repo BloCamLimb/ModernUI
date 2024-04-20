@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.Color;
+import icyllis.arc3d.core.*;
 import icyllis.arc3d.core.ImageInfo;
 import org.lwjgl.system.NativeType;
 
@@ -30,8 +30,8 @@ import static icyllis.arc3d.engine.Engine.BackendApi;
 /**
  * Describes the backend texture format, immutable.
  */
-//Valhalla: primitive class
 @Immutable
+@Deprecated(forRemoval = true)
 public abstract class BackendFormat {
 
     /**
@@ -77,13 +77,13 @@ public abstract class BackendFormat {
     }
 
     /**
-     * @see ImageInfo#COMPRESSION_NONE
+     * @see ColorInfo#COMPRESSION_NONE
      */
-    @ImageInfo.CompressionType
+    @ColorInfo.CompressionType
     public abstract int getCompressionType();
 
     public final boolean isCompressed() {
-        return getCompressionType() != ImageInfo.COMPRESSION_NONE;
+        return getCompressionType() != ColorInfo.COMPRESSION_NONE;
     }
 
     /**

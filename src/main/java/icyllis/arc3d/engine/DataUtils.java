@@ -19,16 +19,17 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.ImageInfo;
+import icyllis.arc3d.core.ColorInfo;
+import icyllis.arc3d.core.MathUtil;
 
 public final class DataUtils {
 
-    public static boolean compressionTypeIsOpaque(@ImageInfo.CompressionType int compression) {
+    public static boolean compressionTypeIsOpaque(@ColorInfo.CompressionType int compression) {
         return switch (compression) {
-            case ImageInfo.COMPRESSION_NONE,
-                    ImageInfo.COMPRESSION_BC1_RGB8_UNORM,
-                    ImageInfo.COMPRESSION_ETC2_RGB8_UNORM -> true;
-            case ImageInfo.COMPRESSION_BC1_RGBA8_UNORM -> false;
+            case ColorInfo.COMPRESSION_NONE,
+                    ColorInfo.COMPRESSION_BC1_RGB8_UNORM,
+                    ColorInfo.COMPRESSION_ETC2_RGB8_UNORM -> true;
+            case ColorInfo.COMPRESSION_BC1_RGBA8_UNORM -> false;
             default -> throw new AssertionError(compression);
         };
     }
@@ -37,18 +38,36 @@ public final class DataUtils {
         return (size + 3) >> 2;
     }
 
-    public static long numBlocks(@ImageInfo.CompressionType int compression, int width, int height) {
+    public static long numBlocks(@ColorInfo.CompressionType int compression, int width, int height) {
         return switch (compression) {
-            case ImageInfo.COMPRESSION_NONE -> (long) width * height;
-            case ImageInfo.COMPRESSION_ETC2_RGB8_UNORM,
-                    ImageInfo.COMPRESSION_BC1_RGB8_UNORM,
-                    ImageInfo.COMPRESSION_BC1_RGBA8_UNORM -> {
+            case ColorInfo.COMPRESSION_NONE -> (long) width * height;
+            case ColorInfo.COMPRESSION_ETC2_RGB8_UNORM,
+                    ColorInfo.COMPRESSION_BC1_RGB8_UNORM,
+                    ColorInfo.COMPRESSION_BC1_RGBA8_UNORM -> {
                 long numBlocksWidth = num4x4Blocks(width);
                 long numBlocksHeight = num4x4Blocks(height);
                 yield numBlocksWidth * numBlocksHeight;
             }
             default -> throw new AssertionError(compression);
         };
+    }
+
+    public static long computeSize(ImageInfo info) {
+        long size = numBlocks(info.getCompressionType(), info.mWidth, info.mHeight) *
+                info.getBytesPerBlock();
+        assert size > 0;
+        if (info.mMipLevelCount > 1) {
+            // geometric sequence, S=a1(1-q^n)/(1-q), q=2^(-2)
+            size = ((size - (size >> (info.mMipLevelCount << 1))) << 2) / 3;
+        } else {
+            size *= info.mSampleCount;
+        }
+        assert size > 0;
+        return size;
+    }
+
+    public static int computeMipLevelCount(int width, int height, int depth) {
+        return MathUtil.floorLog2(Math.max(Math.max(width, height), depth)) + 1; // +1 base level 0
     }
 
     private DataUtils() {

@@ -20,7 +20,7 @@
 package icyllis.arc3d.core;
 
 import icyllis.arc3d.engine.RecordingContext;
-import icyllis.arc3d.engine.SurfaceDrawContext;
+import icyllis.arc3d.engine.graphene.SurfaceDrawContext;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

@@ -53,6 +53,16 @@ public final class GLResourceProvider extends ResourceProvider {
         mSamplerCache.clear();
     }
 
+    @Nullable
+    @Override
+    protected GLImage onCreateNewImage(ImageInfo info,
+                                       boolean budgeted) {
+        if (!(info instanceof GLImageInfo glInfo)) {
+            return null;
+        }
+        return GLImage.make(mDevice, glInfo, budgeted);
+    }
+
     /**
      * Finds or creates a compatible {@link GLSampler} based on the SamplerState.
      *

@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,9 +17,10 @@
  * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine;
+package icyllis.arc3d.engine.graphene;
 
 import icyllis.arc3d.core.*;
+import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.ops.DrawOp;
 import icyllis.arc3d.engine.ops.RectOp;
 
@@ -32,7 +33,7 @@ public class SurfaceDrawContext extends SurfaceFillContext {
                               SurfaceProxyView writeView,
                               int colorType,
                               ColorSpace colorSpace) {
-        super(context, readView, writeView, colorType, ImageInfo.AT_PREMUL, colorSpace);
+        super(context, readView, writeView, colorType, ColorInfo.AT_PREMUL, colorSpace);
     }
 
     public static SurfaceDrawContext make(

@@ -19,6 +19,7 @@
 
 package icyllis.arc3d.engine;
 
+import icyllis.arc3d.core.ColorInfo;
 import icyllis.arc3d.core.ImageInfo;
 
 /**
@@ -29,37 +30,37 @@ public interface Engine {
     /**
      * Block engine-private values.
      */
-    @ImageInfo.ColorType
+    @ColorInfo.ColorType
     static int colorTypeToPublic(int ct) {
         return switch (ct) {
-            case ImageInfo.CT_UNKNOWN,
-                    ImageInfo.CT_ALPHA_8,
-                    ImageInfo.CT_RGB_565,
-                    ImageInfo.CT_RGBA_8888,
-                    ImageInfo.CT_RGBA_8888_SRGB,
-                    ImageInfo.CT_RGB_888x,
-                    ImageInfo.CT_RG_88,
-                    ImageInfo.CT_BGRA_8888,
-                    ImageInfo.CT_RGBA_1010102,
-                    ImageInfo.CT_BGRA_1010102,
-                    ImageInfo.CT_GRAY_8,
-                    ImageInfo.CT_ALPHA_F16,
-                    ImageInfo.CT_RGBA_F16,
-                    ImageInfo.CT_RGBA_F16_CLAMPED,
-                    ImageInfo.CT_RGBA_F32,
-                    ImageInfo.CT_ALPHA_16,
-                    ImageInfo.CT_RG_1616,
-                    ImageInfo.CT_RG_F16,
-                    ImageInfo.CT_RGBA_16161616,
-                    ImageInfo.CT_R_8 -> ct;
-            case ImageInfo.CT_ALPHA_8xxx,
-                    ImageInfo.CT_ALPHA_F32xxx,
-                    ImageInfo.CT_GRAY_8xxx,
-                    ImageInfo.CT_R_8xxx,
-                    ImageInfo.CT_RGB_888,
-                    ImageInfo.CT_R_16,
-                    ImageInfo.CT_R_F16,
-                    ImageInfo.CT_GRAY_ALPHA_88 -> ImageInfo.CT_UNKNOWN;
+            case ColorInfo.CT_UNKNOWN,
+                    ColorInfo.CT_ALPHA_8,
+                    ColorInfo.CT_RGB_565,
+                    ColorInfo.CT_RGBA_8888,
+                    ColorInfo.CT_RGBA_8888_SRGB,
+                    ColorInfo.CT_RGB_888x,
+                    ColorInfo.CT_RG_88,
+                    ColorInfo.CT_BGRA_8888,
+                    ColorInfo.CT_RGBA_1010102,
+                    ColorInfo.CT_BGRA_1010102,
+                    ColorInfo.CT_GRAY_8,
+                    ColorInfo.CT_ALPHA_F16,
+                    ColorInfo.CT_RGBA_F16,
+                    ColorInfo.CT_RGBA_F16_CLAMPED,
+                    ColorInfo.CT_RGBA_F32,
+                    ColorInfo.CT_ALPHA_16,
+                    ColorInfo.CT_RG_1616,
+                    ColorInfo.CT_RG_F16,
+                    ColorInfo.CT_RGBA_16161616,
+                    ColorInfo.CT_R_8 -> ct;
+            case ColorInfo.CT_ALPHA_8xxx,
+                    ColorInfo.CT_ALPHA_F32xxx,
+                    ColorInfo.CT_GRAY_8xxx,
+                    ColorInfo.CT_R_8xxx,
+                    ColorInfo.CT_RGB_888,
+                    ColorInfo.CT_R_16,
+                    ColorInfo.CT_R_F16,
+                    ColorInfo.CT_GRAY_ALPHA_88 -> ColorInfo.CT_UNKNOWN;
             default -> throw new AssertionError(ct);
         };
     }
@@ -133,36 +134,39 @@ public interface Engine {
         int kMisc = 1 << 8;
     }
 
+    /**
+     * Describes image type and image view type.
+     */
     interface ImageType {
         /**
-         * None represents OpenGL renderbuffers.
+         * None may represent OpenGL renderbuffers.
          */
-        int kNone = 0;
+        byte kNone = 0;
         /**
          * GL_TEXTURE_2D, GL_TEXTURE_2D_MULTISAMPLE;
          * VK_IMAGE_TYPE_2D, layers=1;
          */
-        int k2D = 1;
+        byte k2D = 1;
         /**
          * GL_TEXTURE_2D_ARRAY, GL_TEXTURE_2D_MULTISAMPLE_ARRAY;
          * VK_IMAGE_TYPE_2D, layers=N;
          */
-        int k2DArray = 2;
-        /**
-         * GL_TEXTURE_3D;
-         * VK_IMAGE_TYPE_3D, layers=1;
-         */
-        int k3D = 3;
+        byte k2DArray = 2;
         /**
          * GL_TEXTURE_CUBE_MAP;
          * VK_IMAGE_TYPE_2D, layers=6;
          */
-        int kCube = 4;
+        byte kCube = 3;
         /**
          * GL_TEXTURE_CUBE_MAP_ARRAY;
          * VK_IMAGE_TYPE_2D, layers=6N;
          */
-        int kCubeArray = 5;
+        byte kCubeArray = 4;
+        /**
+         * GL_TEXTURE_3D;
+         * VK_IMAGE_TYPE_3D, layers=1;
+         */
+        byte k3D = 5;
     }
 
     /**
@@ -259,34 +263,34 @@ public interface Engine {
 
     static int colorTypeEncoding(int ct) {
         return switch (ct) {
-            case ImageInfo.CT_UNKNOWN,
-                    ImageInfo.CT_ALPHA_8,
-                    ImageInfo.CT_RGBA_8888,
-                    ImageInfo.CT_RGB_888x,
-                    ImageInfo.CT_RG_88,
-                    ImageInfo.CT_BGRA_8888,
-                    ImageInfo.CT_GRAY_8,
-                    ImageInfo.CT_ALPHA_8xxx,
-                    ImageInfo.CT_GRAY_8xxx,
-                    ImageInfo.CT_R_8xxx,
-                    ImageInfo.CT_ALPHA_16,
-                    ImageInfo.CT_RG_1616,
-                    ImageInfo.CT_RGBA_16161616,
-                    ImageInfo.CT_RGB_888,
-                    ImageInfo.CT_R_8,
-                    ImageInfo.CT_R_16,
-                    ImageInfo.CT_GRAY_ALPHA_88 -> COLOR_ENCODING_UNORM;
-            case ImageInfo.CT_RGB_565 -> COLOR_ENCODING_UNORM_PACK16;
-            case ImageInfo.CT_RGBA_1010102,
-                    ImageInfo.CT_BGRA_1010102 -> COLOR_ENCODING_UNORM_PACK32;
-            case ImageInfo.CT_RGBA_8888_SRGB -> COLOR_ENCODING_UNORM_SRGB;
-            case ImageInfo.CT_ALPHA_F16,
-                    ImageInfo.CT_RGBA_F16,
-                    ImageInfo.CT_RGBA_F16_CLAMPED,
-                    ImageInfo.CT_RGBA_F32,
-                    ImageInfo.CT_ALPHA_F32xxx,
-                    ImageInfo.CT_RG_F16,
-                    ImageInfo.CT_R_F16 -> COLOR_ENCODING_FLOAT;
+            case ColorInfo.CT_UNKNOWN,
+                    ColorInfo.CT_ALPHA_8,
+                    ColorInfo.CT_RGBA_8888,
+                    ColorInfo.CT_RGB_888x,
+                    ColorInfo.CT_RG_88,
+                    ColorInfo.CT_BGRA_8888,
+                    ColorInfo.CT_GRAY_8,
+                    ColorInfo.CT_ALPHA_8xxx,
+                    ColorInfo.CT_GRAY_8xxx,
+                    ColorInfo.CT_R_8xxx,
+                    ColorInfo.CT_ALPHA_16,
+                    ColorInfo.CT_RG_1616,
+                    ColorInfo.CT_RGBA_16161616,
+                    ColorInfo.CT_RGB_888,
+                    ColorInfo.CT_R_8,
+                    ColorInfo.CT_R_16,
+                    ColorInfo.CT_GRAY_ALPHA_88 -> COLOR_ENCODING_UNORM;
+            case ColorInfo.CT_RGB_565 -> COLOR_ENCODING_UNORM_PACK16;
+            case ColorInfo.CT_RGBA_1010102,
+                    ColorInfo.CT_BGRA_1010102 -> COLOR_ENCODING_UNORM_PACK32;
+            case ColorInfo.CT_RGBA_8888_SRGB -> COLOR_ENCODING_UNORM_SRGB;
+            case ColorInfo.CT_ALPHA_F16,
+                    ColorInfo.CT_RGBA_F16,
+                    ColorInfo.CT_RGBA_F16_CLAMPED,
+                    ColorInfo.CT_RGBA_F32,
+                    ColorInfo.CT_ALPHA_F32xxx,
+                    ColorInfo.CT_RG_F16,
+                    ColorInfo.CT_R_F16 -> COLOR_ENCODING_FLOAT;
             default -> throw new AssertionError(ct);
         };
     }
@@ -304,34 +308,34 @@ public interface Engine {
 
     static int colorTypeClampType(int ct) {
         return switch (ct) {
-            case ImageInfo.CT_UNKNOWN,
-                    ImageInfo.CT_ALPHA_8,
-                    ImageInfo.CT_RGB_565,
-                    ImageInfo.CT_RGBA_8888,
-                    ImageInfo.CT_RGBA_8888_SRGB,
-                    ImageInfo.CT_RGB_888x,
-                    ImageInfo.CT_RG_88,
-                    ImageInfo.CT_BGRA_8888,
-                    ImageInfo.CT_RGBA_1010102,
-                    ImageInfo.CT_BGRA_1010102,
-                    ImageInfo.CT_GRAY_8,
-                    ImageInfo.CT_ALPHA_8xxx,
-                    ImageInfo.CT_GRAY_8xxx,
-                    ImageInfo.CT_R_8xxx,
-                    ImageInfo.CT_ALPHA_16,
-                    ImageInfo.CT_RG_1616,
-                    ImageInfo.CT_RGBA_16161616,
-                    ImageInfo.CT_RGB_888,
-                    ImageInfo.CT_R_8,
-                    ImageInfo.CT_R_16,
-                    ImageInfo.CT_GRAY_ALPHA_88 -> CLAMP_TYPE_AUTO;
-            case ImageInfo.CT_RGBA_F16_CLAMPED -> CLAMP_TYPE_MANUAL;
-            case ImageInfo.CT_ALPHA_F16,
-                    ImageInfo.CT_RGBA_F16,
-                    ImageInfo.CT_RGBA_F32,
-                    ImageInfo.CT_ALPHA_F32xxx,
-                    ImageInfo.CT_RG_F16,
-                    ImageInfo.CT_R_F16 -> CLAMP_TYPE_NONE;
+            case ColorInfo.CT_UNKNOWN,
+                    ColorInfo.CT_ALPHA_8,
+                    ColorInfo.CT_RGB_565,
+                    ColorInfo.CT_RGBA_8888,
+                    ColorInfo.CT_RGBA_8888_SRGB,
+                    ColorInfo.CT_RGB_888x,
+                    ColorInfo.CT_RG_88,
+                    ColorInfo.CT_BGRA_8888,
+                    ColorInfo.CT_RGBA_1010102,
+                    ColorInfo.CT_BGRA_1010102,
+                    ColorInfo.CT_GRAY_8,
+                    ColorInfo.CT_ALPHA_8xxx,
+                    ColorInfo.CT_GRAY_8xxx,
+                    ColorInfo.CT_R_8xxx,
+                    ColorInfo.CT_ALPHA_16,
+                    ColorInfo.CT_RG_1616,
+                    ColorInfo.CT_RGBA_16161616,
+                    ColorInfo.CT_RGB_888,
+                    ColorInfo.CT_R_8,
+                    ColorInfo.CT_R_16,
+                    ColorInfo.CT_GRAY_ALPHA_88 -> CLAMP_TYPE_AUTO;
+            case ColorInfo.CT_RGBA_F16_CLAMPED -> CLAMP_TYPE_MANUAL;
+            case ColorInfo.CT_ALPHA_F16,
+                    ColorInfo.CT_RGBA_F16,
+                    ColorInfo.CT_RGBA_F32,
+                    ColorInfo.CT_ALPHA_F32xxx,
+                    ColorInfo.CT_RG_F16,
+                    ColorInfo.CT_R_F16 -> CLAMP_TYPE_NONE;
             default -> throw new AssertionError(ct);
         };
     }

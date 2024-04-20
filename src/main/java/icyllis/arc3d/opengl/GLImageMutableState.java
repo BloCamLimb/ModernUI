@@ -19,9 +19,14 @@
 
 package icyllis.arc3d.opengl;
 
+import icyllis.arc3d.engine.ImageMutableState;
+
 import static org.lwjgl.opengl.GL11C.*;
 
-public final class GLTextureParameters {
+/**
+ * Only used when OpenGL 4.3 texture view is unavailable.
+ */
+public final class GLImageMutableState extends ImageMutableState {
 
     // Texture parameter state that is not overridden by a bound sampler object.
     public int baseMipmapLevel;
@@ -32,7 +37,7 @@ public final class GLTextureParameters {
     public int swizzleB = GL_BLUE;
     public int swizzleA = GL_ALPHA;
 
-    public GLTextureParameters() {
+    public GLImageMutableState() {
         // These are the OpenGL defaults.
         baseMipmapLevel = 0;
         maxMipmapLevel = 1000;

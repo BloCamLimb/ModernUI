@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,9 +17,11 @@
  * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine;
+package icyllis.arc3d.engine.graphene;
 
 import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.ImageInfo;
+import icyllis.arc3d.engine.*;
 
 /**
  * The drawing device is backed by GPU.
@@ -39,7 +41,7 @@ public final class SurfaceDevice extends Device {
         if (sdc == null) {
             return null;
         }
-        if (alphaType != ImageInfo.AT_PREMUL && alphaType != ImageInfo.AT_OPAQUE) {
+        if (alphaType != ColorInfo.AT_PREMUL && alphaType != ColorInfo.AT_OPAQUE) {
             return null;
         }
         RecordingContext rContext = sdc.getContext();
@@ -84,7 +86,7 @@ public final class SurfaceDevice extends Device {
         }
         SurfaceDrawContext sdc = SurfaceDrawContext.make(rContext,
                 colorType, colorSpace, proxy, origin);
-        return make(sdc, ImageInfo.AT_PREMUL, clear);
+        return make(sdc, ColorInfo.AT_PREMUL, clear);
     }
 
     @Override

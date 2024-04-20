@@ -27,6 +27,7 @@ import javax.annotation.Nonnull;
 /**
  * A BackendRenderTarget instance is initialized once, and may be shared.
  */
+@Deprecated(forRemoval = true)
 public abstract class BackendRenderTarget {
 
     private final int mWidth;

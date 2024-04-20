@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,9 +17,11 @@
  * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine;
+package icyllis.arc3d.engine.graphene;
 
 import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.ImageInfo;
+import icyllis.arc3d.engine.*;
 
 import static icyllis.arc3d.engine.Engine.SurfaceOrigin;
 
@@ -75,14 +77,14 @@ public class SurfaceContext implements AutoCloseable {
     }
 
     /**
-     * @see ImageInfo.ColorType
+     * @see ColorInfo.ColorType
      */
     public final int getColorType() {
         return mImageInfo.colorType();
     }
 
     /**
-     * @see ImageInfo.AlphaType
+     * @see ColorInfo.AlphaType
      */
     public final int getAlphaType() {
         return mImageInfo.alphaType();
@@ -106,14 +108,14 @@ public class SurfaceContext implements AutoCloseable {
      * @see SurfaceOrigin
      */
     public final int getOrigin() {
-        return mReadView.mOrigin;
+        return mReadView.getOrigin();
     }
 
     /**
      * @see Swizzle
      */
     public final short getReadSwizzle() {
-        return mReadView.mSwizzle;
+        return mReadView.getSwizzle();
     }
 
     public final Caps getCaps() {

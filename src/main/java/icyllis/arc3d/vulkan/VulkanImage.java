@@ -35,7 +35,7 @@ public final class VulkanImage extends GpuImage {
                        VulkanImageInfo info,
                        BackendFormat format,
                        int flags) {
-        super(device, width, height);
+        super(device, info, null);
         mInfo = info;
     }
 
@@ -51,27 +51,6 @@ public final class VulkanImage extends GpuImage {
     @Override
     protected void onDiscard() {
 
-    }
-
-    @Override
-    public int getSampleCount() {
-        return mInfo.mSampleCount;
-    }
-
-    @Override
-    public int getMipLevelCount() {
-        return mInfo.mLevelCount;
-    }
-
-    @Nonnull
-    @Override
-    public BackendImage getBackendTexture() {
-        return null;
-    }
-
-    @Override
-    public boolean isExternal() {
-        return false;
     }
 
     @Nonnull

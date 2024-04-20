@@ -20,6 +20,7 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.*;
+import icyllis.arc3d.engine.graphene.SurfaceDrawContext;
 import org.jetbrains.annotations.UnmodifiableView;
 
 import javax.annotation.Nonnull;

@@ -19,8 +19,7 @@
 
 package icyllis.arc3d.opengl;
 
-import icyllis.arc3d.core.Color;
-import icyllis.arc3d.core.ImageInfo;
+import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.PipelineCache;
 import org.lwjgl.system.*;
 import org.slf4j.Logger;
@@ -247,15 +246,15 @@ public final class GLUtil {
     }
 
     /**
-     * @see ImageInfo#COMPRESSION_NONE
+     * @see ColorInfo#COMPRESSION_NONE
      */
-    @ImageInfo.CompressionType
+    @ColorInfo.CompressionType
     public static int glFormatCompressionType(@NativeType("GLenum") int format) {
         return switch (format) {
-            case GL_COMPRESSED_RGB8_ETC2 -> ImageInfo.COMPRESSION_ETC2_RGB8_UNORM;
-            case GL_COMPRESSED_RGB_S3TC_DXT1_EXT -> ImageInfo.COMPRESSION_BC1_RGB8_UNORM;
-            case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT -> ImageInfo.COMPRESSION_BC1_RGBA8_UNORM;
-            default -> ImageInfo.COMPRESSION_NONE;
+            case GL_COMPRESSED_RGB8_ETC2 -> ColorInfo.COMPRESSION_ETC2_RGB8_UNORM;
+            case GL_COMPRESSED_RGB_S3TC_DXT1_EXT -> ColorInfo.COMPRESSION_BC1_RGB8_UNORM;
+            case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT -> ColorInfo.COMPRESSION_BC1_RGBA8_UNORM;
+            default -> ColorInfo.COMPRESSION_NONE;
         };
     }
 

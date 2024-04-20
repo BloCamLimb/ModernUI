@@ -28,7 +28,13 @@ import javax.annotation.Nonnull;
 
 import static icyllis.arc3d.vulkan.VKCore.*;
 
-public final class VkBackendImage extends BackendImage {
+/**
+ * When importing external memory,
+ * {@link #mMemoryHandle} is POSIX file descriptor or Win32 NT handle (though <code>HANDLE</code> is defined
+ * as <code>void*</code>, we can safely truncate it because Win32 handles are 32-bit significant).
+ * If it is an NT handle, it must be released manually by the memory exporter (e.g. Vulkan).
+ */
+public final class VulkanBackendImage extends BackendImage {
 
     // We don't know if the backend texture is made renderable or not, so we default the usage flags
     // to include color attachment as well.
@@ -37,20 +43,24 @@ public final class VkBackendImage extends BackendImage {
             VK_IMAGE_USAGE_SAMPLED_BIT |
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
+    private long mImage;
+    public int mLevelCount = 0;
+    public long mMemoryHandle = -1;
+    private VulkanAllocation mAlloc;
     private final VulkanImageInfo mInfo;
-    final VulkanSharedImageInfo mState;
+    final VulkanImageMutableState mState;
 
     private final BackendFormat mBackendFormat;
 
     // The VkImageInfo can NOT be modified anymore.
-    public VkBackendImage(int width, int height, VulkanImageInfo info) {
+    public VulkanBackendImage(int width, int height, VulkanImageInfo info) {
         //TODO disallow VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT
-        this(width, height, info, new VulkanSharedImageInfo(info), VkBackendFormat.make(info.mFormat));
+        this(width, height, info, new VulkanImageMutableState(info), VkBackendFormat.make(info.mFormat));
     }
 
-    VkBackendImage(int width, int height, VulkanImageInfo info,
-                   VulkanSharedImageInfo state, BackendFormat backendFormat) {
-        super(width, height);
+    VulkanBackendImage(int width, int height, VulkanImageInfo info,
+                       VulkanImageMutableState state, BackendFormat backendFormat) {
+        super(info, state);
         if (info.mImageUsageFlags == 0) {
             info.mImageUsageFlags = DEFAULT_USAGE_FLAGS;
         }
@@ -65,23 +75,8 @@ public final class VkBackendImage extends BackendImage {
     }
 
     @Override
-    public int getImageType() {
-        return ImageType.k2D;
-    }
-
-    @Override
     public boolean isExternal() {
         return mBackendFormat.isExternal();
-    }
-
-    @Override
-    public boolean isMipmapped() {
-        return mInfo.mLevelCount > 1;
-    }
-
-    @Override
-    public int getMipLevelCount() {
-        return mInfo.mLevelCount;
     }
 
     /**
@@ -118,7 +113,7 @@ public final class VkBackendImage extends BackendImage {
 
     @Override
     public boolean isSameImage(BackendImage image) {
-        if (image instanceof VkBackendImage t) {
+        if (image instanceof VulkanBackendImage t) {
             return mInfo.mImage == t.mInfo.mImage;
         }
         return false;

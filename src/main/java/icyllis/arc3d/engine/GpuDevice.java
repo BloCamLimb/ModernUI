@@ -27,10 +27,14 @@ import org.jetbrains.annotations.ApiStatus;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.Consumer;
 
 /**
- * Abstract base class that represents the logical device and graphics queue of the
- * backend 3D API, holds a reference to {@link DirectContext}. It is responsible for
+ * A {@link GpuDevice} represents a logical GPU device and provides shared context info
+ * of the backend 3D API.
+ * <p>
+ * It is responsible for
  * creating/deleting 3D API objects, transferring data, submitting 3D API commands, etc.
  * Most methods are only permitted on render thread.
  */
@@ -145,7 +149,7 @@ public abstract class GpuDevice implements Engine {
 
     public abstract GpuBufferPool getIndexPool();
 
-    /**
+   /* *//**
      * Creates a new GPU image object and allocates its GPU memory. In other words, the
      * image data is dirty and needs to be uploaded later. If mipmapped, also allocates
      * <code>(31 - CLZ(max(width,height)))</code> mipmaps in addition to the base level.
@@ -160,14 +164,14 @@ public abstract class GpuDevice implements Engine {
      * @see ISurface#FLAG_MIPMAPPED
      * @see ISurface#FLAG_RENDERABLE
      * @see ISurface#FLAG_PROTECTED
-     */
+     *//*
     @Nullable
     @SharedPtr
-    public final GpuImage createImage(int width, int height,
-                                      BackendFormat format,
-                                      int sampleCount,
-                                      int surfaceFlags,
-                                      @Nullable String label) {
+    public GpuImage createImage(int width, int height,
+                                int depth, int arraySize,
+                                ImageInfo info,
+                                boolean budgeted,
+                                @Nullable String label) {
         if (format.isCompressed()) {
             return null;
         }
@@ -198,19 +202,19 @@ public abstract class GpuDevice implements Engine {
                 image.setLabel(label);
             }
             mStats.incImageCreates();
-            if (image.isTexturable()) {
+            if (image.isSampledImage()) {
                 mStats.incTextureCreates();
             }
         }
         return image;
     }
 
-    /**
+    *//**
      * Overridden by backend-specific derived class to create objects.
      * <p>
      * Image size and format support will have already been validated in base class
      * before onCreateImage is called.
-     */
+     *//*
     @ApiStatus.OverrideOnly
     @Nullable
     @SharedPtr
@@ -218,7 +222,7 @@ public abstract class GpuDevice implements Engine {
                                               BackendFormat format,
                                               int mipLevelCount,
                                               int sampleCount,
-                                              int surfaceFlags);
+                                              int surfaceFlags);*/
 
     @Nullable
     @SharedPtr
@@ -428,14 +432,14 @@ public abstract class GpuDevice implements Engine {
         if (texture.isReadOnly() || texture.getSampleCount() > 1) {
             return false;
         }
-        if ((texture.getSurfaceFlags() & ISurface.FLAG_TEXTURABLE) == 0) {
+        if ((texture.getSurfaceFlags() & ISurface.FLAG_SAMPLED_IMAGE) == 0) {
             return false;
         }
         assert (texture.getWidth() > 0 && texture.getHeight() > 0);
         if (x + width > texture.getWidth() || y + height > texture.getHeight()) {
             return false;
         }
-        int bpp = ImageInfo.bytesPerPixel(srcColorType);
+        int bpp = ColorInfo.bytesPerPixel(srcColorType);
         int minRowBytes = width * bpp;
         if (rowBytes < minRowBytes) {
             return false;

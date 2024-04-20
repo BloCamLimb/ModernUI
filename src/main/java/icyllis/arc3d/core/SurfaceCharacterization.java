@@ -32,11 +32,11 @@ import static icyllis.arc3d.engine.Engine.BackendApi;
  * rendering decisions. When passed into a {@link DisplayListRecorder} it will copy the
  * data and pass it on to the {@link DisplayList} if/when it is created. Note that both of
  * those objects (the Recorder and the DisplayList) will take a ref on the
- * {@link SharedContextInfo} object.
+ * {@link SharedContext} object.
  */
 public final class SurfaceCharacterization {
 
-    private final SharedContextInfo mContextInfo;
+    private final SharedContext mContextInfo;
     private final long mCacheMaxResourceBytes;
 
     private final ImageInfo mImageInfo;
@@ -51,10 +51,10 @@ public final class SurfaceCharacterization {
     private final boolean mIsProtected;
 
     /**
-     * Create via {@link SharedContextInfo#createCharacterization}.
+     * Create via {@link SharedContext#createCharacterization}.
      */
     @ApiStatus.Internal
-    public SurfaceCharacterization(SharedContextInfo contextInfo,
+    public SurfaceCharacterization(SharedContext contextInfo,
                                    long cacheMaxResourceBytes,
                                    ImageInfo imageInfo,
                                    BackendFormat backendFormat,
@@ -158,7 +158,7 @@ public final class SurfaceCharacterization {
     }
 
     @ApiStatus.Internal
-    public SharedContextInfo getContextInfo() {
+    public SharedContext getContextInfo() {
         return mContextInfo;
     }
 
@@ -249,16 +249,18 @@ public final class SurfaceCharacterization {
             return false;
         }
 
-        if (mVkSupportInputAttachment) {
-            if (!(texture instanceof VkBackendImage)) {
+        //TODO
+        /*if (mVkSupportInputAttachment) {
+            if (!(texture instanceof VulkanBackendImage)) {
                 return false;
             }
             VulkanImageInfo vkInfo = new VulkanImageInfo();
-            ((VkBackendImage) texture).getVulkanImageInfo(vkInfo);
+            ((VulkanBackendImage) texture).getVulkanImageInfo(vkInfo);
             return (vkInfo.mImageUsageFlags & VKCore.VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) != 0;
         } else {
             return true;
-        }
+        }*/
+        return true;
     }
 
     @Override

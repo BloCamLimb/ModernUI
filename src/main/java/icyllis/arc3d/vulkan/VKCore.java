@@ -141,13 +141,13 @@ public final class VKCore extends VK11 {
         };
     }
 
-    @ImageInfo.CompressionType
+    @ColorInfo.CompressionType
     public static int vkFormatCompressionType(@NativeType("VkFormat") int vkFormat) {
         return switch (vkFormat) {
-            case VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK -> ImageInfo.COMPRESSION_ETC2_RGB8_UNORM;
-            case VK_FORMAT_BC1_RGB_UNORM_BLOCK -> ImageInfo.COMPRESSION_BC1_RGB8_UNORM;
-            case VK_FORMAT_BC1_RGBA_UNORM_BLOCK -> ImageInfo.COMPRESSION_BC1_RGBA8_UNORM;
-            default -> ImageInfo.COMPRESSION_NONE;
+            case VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK -> ColorInfo.COMPRESSION_ETC2_RGB8_UNORM;
+            case VK_FORMAT_BC1_RGB_UNORM_BLOCK -> ColorInfo.COMPRESSION_BC1_RGB8_UNORM;
+            case VK_FORMAT_BC1_RGBA_UNORM_BLOCK -> ColorInfo.COMPRESSION_BC1_RGBA8_UNORM;
+            default -> ColorInfo.COMPRESSION_NONE;
         };
     }
 

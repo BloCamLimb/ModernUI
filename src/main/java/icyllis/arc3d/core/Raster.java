@@ -109,28 +109,28 @@ public class Raster {
         final int ct, at, rowStride;
         final int imageType = switch (format) {
             case FORMAT_GRAY_8 -> {
-                ct = ImageInfo.CT_GRAY_8;
-                at = ImageInfo.AT_OPAQUE;
+                ct = ColorInfo.CT_GRAY_8;
+                at = ColorInfo.AT_OPAQUE;
                 rowStride = width;
                 yield BufferedImage.TYPE_BYTE_GRAY;
             }
             case FORMAT_GRAY_16 -> {
                 //TODO add GRAY_16 color type
-                ct = ImageInfo.CT_UNKNOWN;
-                at = ImageInfo.AT_OPAQUE;
+                ct = ColorInfo.CT_UNKNOWN;
+                at = ColorInfo.AT_OPAQUE;
                 rowStride = width << 1;
                 yield BufferedImage.TYPE_USHORT_GRAY;
             }
             case FORMAT_RGB_565 -> {
-                ct = ImageInfo.CT_RGB_565;
-                at = ImageInfo.AT_OPAQUE;
+                ct = ColorInfo.CT_RGB_565;
+                at = ColorInfo.AT_OPAQUE;
                 rowStride = width << 1;
                 yield BufferedImage.TYPE_USHORT_565_RGB;
             }
             case FORMAT_RGB_888 -> {
                 //TODO add BGR_888 color type
-                ct = ImageInfo.CT_UNKNOWN;
-                at = ImageInfo.AT_OPAQUE;
+                ct = ColorInfo.CT_UNKNOWN;
+                at = ColorInfo.AT_OPAQUE;
                 rowStride = width * 3;
                 if (rowStride * height < 0) {
                     throw new IllegalArgumentException("Image is too large");
@@ -138,8 +138,8 @@ public class Raster {
                 yield BufferedImage.TYPE_3BYTE_BGR;
             }
             case FORMAT_UNKNOWN -> {
-                ct = ImageInfo.CT_UNKNOWN;
-                at = ImageInfo.AT_UNKNOWN;
+                ct = ColorInfo.CT_UNKNOWN;
+                at = ColorInfo.AT_UNKNOWN;
                 rowStride = 0;
                 yield BufferedImage.TYPE_CUSTOM;
             }

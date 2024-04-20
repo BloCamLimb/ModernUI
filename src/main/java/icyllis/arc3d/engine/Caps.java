@@ -20,7 +20,7 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.Color;
-import icyllis.arc3d.core.ImageInfo;
+import icyllis.arc3d.core.ColorInfo;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -389,15 +389,15 @@ public abstract class Caps {
 
         // There are known problems with 24 vs 32 bit BPP with this color type. Just fail for now if
         // using a transfer buffer.
-        if (colorType == ImageInfo.CT_RGB_888x) {
+        if (colorType == ColorInfo.CT_RGB_888x) {
             transferOffsetAlignment = 0;
         }
         // It's very convenient to access 1 byte-per-channel 32-bit color types as uint32_t on the CPU.
         // Make those aligned reads out of the buffer even if the underlying API doesn't require it.
-        int channelFlags = ImageInfo.colorTypeChannelFlags(colorType);
+        int channelFlags = ColorInfo.colorTypeChannelFlags(colorType);
         if ((channelFlags == Color.COLOR_CHANNEL_FLAGS_RGBA || channelFlags == Color.COLOR_CHANNEL_FLAGS_RGB ||
                 channelFlags == Color.COLOR_CHANNEL_FLAG_ALPHA || channelFlags == Color.COLOR_CHANNEL_FLAG_GRAY) &&
-                ImageInfo.bytesPerPixel(colorType) == 4) {
+                ColorInfo.bytesPerPixel(colorType) == 4) {
             switch ((int) (transferOffsetAlignment & 0b11)) {
                 // offset alignment already a multiple of 4
                 case 0:
@@ -530,7 +530,7 @@ public abstract class Caps {
         if (width < 1 || height < 1) {
             return false;
         }
-        if ((surfaceFlags & ISurface.FLAG_TEXTURABLE) != 0 &&
+        if ((surfaceFlags & ISurface.FLAG_SAMPLED_IMAGE) != 0 &&
                 !isFormatTexturable(format)) {
             return false;
         }
@@ -566,19 +566,55 @@ public abstract class Caps {
     }
 
     public final boolean isFormatCompatible(int colorType, BackendFormat format) {
-        if (colorType == ImageInfo.CT_UNKNOWN) {
+        if (colorType == ColorInfo.CT_UNKNOWN) {
             return false;
         }
         int compression = format.getCompressionType();
-        if (compression != ImageInfo.COMPRESSION_NONE) {
+        if (compression != ColorInfo.COMPRESSION_NONE) {
             return colorType == (DataUtils.compressionTypeIsOpaque(compression) ?
-                    ImageInfo.CT_RGB_888x :
-                    ImageInfo.CT_RGBA_8888);
+                    ColorInfo.CT_RGB_888x :
+                    ColorInfo.CT_RGBA_8888);
         }
         return onFormatCompatible(colorType, format);
     }
 
     protected abstract boolean onFormatCompatible(int colorType, BackendFormat format);
+
+    /**
+     * @param imageType
+     * @param colorType
+     * @param width
+     * @param height
+     * @param depth
+     * @param arraySize
+     * @param mipLevelCount
+     * @param sampleCount
+     * @param surfaceFlags
+     * @return
+     * @see ISurface#FLAG_MIPMAPPED
+     * @see ISurface#FLAG_SAMPLED_IMAGE
+     * @see ISurface#FLAG_STORAGE_IMAGE
+     * @see ISurface#FLAG_RENDERABLE
+     * @see ISurface#FLAG_MEMORYLESS
+     * @see ISurface#FLAG_PROTECTED
+     */
+    public ImageInfo getDefaultColorImageInfo(byte imageType,
+                                              int colorType,
+                                              int width, int height,
+                                              int depth, int arraySize,
+                                              int mipLevelCount,
+                                              int sampleCount,
+                                              int surfaceFlags) {
+        return ImageInfo.EMPTY;
+    }
+
+    public ImageInfo getDefaultDepthStencilImageInfo(int depthBits,
+                                                     int stencilBits,
+                                                     int width, int height,
+                                                     int sampleCount,
+                                                     int imageFlags) {
+        return ImageInfo.EMPTY;
+    }
 
     /**
      * These are used when creating a new texture internally.
@@ -587,7 +623,7 @@ public abstract class Caps {
     public final BackendFormat getDefaultBackendFormat(int colorType,
                                                        boolean renderable) {
         // Unknown color types are always an invalid format.
-        if (colorType == ImageInfo.CT_UNKNOWN) {
+        if (colorType == ColorInfo.CT_UNKNOWN) {
             return null;
         }
         BackendFormat format = onGetDefaultBackendFormat(colorType);
@@ -600,7 +636,7 @@ public abstract class Caps {
         // Currently, we require that it be possible to write pixels into the "default" format. Perhaps,
         // that could be a separate requirement from the caller. It seems less necessary if
         // renderability was requested.
-        if ((getSupportedWriteColorType(colorType, format, colorType) & 0xFFFFFFFFL) == ImageInfo.CT_UNKNOWN) {
+        if ((getSupportedWriteColorType(colorType, format, colorType) & 0xFFFFFFFFL) == ColorInfo.CT_UNKNOWN) {
             return null;
         }
         if (renderable && !isFormatRenderable(colorType, format, 1)) {
@@ -622,8 +658,8 @@ public abstract class Caps {
 
     public final short getReadSwizzle(BackendFormat format, int colorType) {
         int compression = format.getCompressionType();
-        if (compression != ImageInfo.COMPRESSION_NONE) {
-            if (colorType == ImageInfo.CT_RGB_888x || colorType == ImageInfo.CT_RGBA_8888) {
+        if (compression != ColorInfo.COMPRESSION_NONE) {
+            if (colorType == ColorInfo.CT_RGB_888x || colorType == ColorInfo.CT_RGBA_8888) {
                 return Swizzle.RGBA;
             }
             assert false;

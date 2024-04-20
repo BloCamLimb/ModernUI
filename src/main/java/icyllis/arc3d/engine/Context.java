@@ -32,9 +32,9 @@ import java.util.Objects;
  */
 public abstract class Context extends RefCnt {
 
-    protected final SharedContextInfo mContextInfo;
+    protected final SharedContext mContextInfo;
 
-    protected Context(SharedContextInfo contextInfo) {
+    protected Context(SharedContext contextInfo) {
         mContextInfo = contextInfo;
     }
 
@@ -87,7 +87,7 @@ public abstract class Context extends RefCnt {
         return mContextInfo.getMaxSurfaceSampleCount(colorType);
     }
 
-    public final SharedContextInfo getContextInfo() {
+    public final SharedContext getContextInfo() {
         return mContextInfo;
     }
 

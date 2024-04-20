@@ -28,6 +28,8 @@ import org.lwjgl.system.MemoryUtil;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.Consumer;
 
 import static icyllis.arc3d.opengl.GLCore.*;
 import static org.lwjgl.system.MemoryUtil.memPutInt;
@@ -161,6 +163,9 @@ public final class GLDevice extends GpuDevice {
 
     private boolean mNeedsFlush;
 
+    private final ConcurrentLinkedQueue<Consumer<GLDevice>> mRenderCalls =
+            new ConcurrentLinkedQueue<>();
+
     private GLDevice(DirectContext context, GLCaps caps, GLInterface glInterface) {
         super(context, caps);
         mCaps = caps;
@@ -215,6 +220,32 @@ public final class GLDevice extends GpuDevice {
             context.getLogger().error("Failed to create GLDevice", e);
             return null;
         }
+    }
+
+    public boolean isOnExecutingThread() {
+        return mContext.isOwnerThread();
+    }
+
+    /**
+     * OpenGL only method.
+     */
+    public void executeRenderCall(Consumer<GLDevice> renderCall) {
+        if (isOnExecutingThread()) {
+            renderCall.accept(this);
+        } else {
+            recordRenderCall(renderCall);
+        }
+    }
+
+    public void recordRenderCall(Consumer<GLDevice> renderCall) {
+        mRenderCalls.add(renderCall);
+    }
+
+    void flushRenderCalls(GLDevice device) {
+        //noinspection UnnecessaryLocalVariable
+        final var queue = mRenderCalls;
+        Consumer<GLDevice> r;
+        while ((r = queue.poll()) != null) r.accept(device);
     }
 
     @Override
@@ -373,7 +404,29 @@ public final class GLDevice extends GpuDevice {
         return error;
     }
 
-    @Nullable
+    public int createImage(GLImageInfo info) {
+        int width = info.getWidth(), height = info.getHeight();
+        int handle;
+        if (info.mTarget == GL_RENDERBUFFER) {
+            /*int internalFormat = glFormat;
+            if (GLUtil.glFormatStencilBits(glFormat) == 0) {
+                internalFormat = getCaps().getRenderbufferInternalFormat(glFormat);
+            }*/
+            handle = createRenderbuffer(width, height, info.getSampleCount(), info.mFormat);
+        } else {
+            handleDirtyContext(Engine.GLBackendState.kTexture);
+            handle = createTexture(width, height, info.mFormat, info.getMipLevelCount());
+        }
+        if (handle != 0) {
+            mStats.incImageCreates();
+            if (info.isSampledImage()) {
+                mStats.incTextureCreates();
+            }
+        }
+        return handle;
+    }
+
+    /*@Nullable
     @Override
     protected GLImage onCreateImage(int width, int height,
                                     BackendFormat format,
@@ -395,7 +448,7 @@ public final class GLDevice extends GpuDevice {
         int glFormat = format.getGLFormat();
         final int handle;
         final int target;
-        if (sampleCount > 1 && (surfaceFlags & ISurface.FLAG_TEXTURABLE) == 0) {
+        if (sampleCount > 1 && (surfaceFlags & ISurface.FLAG_SAMPLED_IMAGE) == 0) {
             int internalFormat = glFormat;
             if (GLUtil.glFormatStencilBits(glFormat) == 0) {
                 internalFormat = getCaps().getRenderbufferInternalFormat(glFormat);
@@ -410,7 +463,7 @@ public final class GLDevice extends GpuDevice {
         if (handle == 0) {
             return null;
         }
-        /*Function<GLTexture, GLRenderTarget> target = null;
+        *//*Function<GLTexture, GLRenderTarget> target = null;
         if ((surfaceFlags & ISurface.FLAG_RENDERABLE) != 0) {
             target = createRTObjects(
                     texture,
@@ -421,11 +474,11 @@ public final class GLDevice extends GpuDevice {
                 glDeleteTextures(texture);
                 return null;
             }
-        }*/
+        }*//*
         final GLImageInfo info = new GLImageInfo();
-        info.target = target;
+        info.mTarget = target;
         info.handle = handle;
-        info.format = glFormat;
+        info.mFormat = glFormat;
         info.levels = mipLevelCount;
         info.samples = sampleCount;
         //if (target == null) {
@@ -434,15 +487,15 @@ public final class GLDevice extends GpuDevice {
                 info,
                 format,
                 surfaceFlags);
-        /*} else {
+        *//*} else {
             return new GLRenderTexture(this,
                     width, height,
                     info,
                     format,
                     (surfaceFlags & ISurface.FLAG_BUDGETED) != 0,
                     target);
-        }*/
-    }
+        }*//*
+    }*/
 
     @Nullable
     @Override
@@ -585,18 +638,18 @@ public final class GLDevice extends GpuDevice {
             // Not supported in GL backend at this time.
             return null;
         }
-        if (!(texture instanceof GLBackendImage)) {
+        /*if (!(texture instanceof GLBackendImage)) {
             return null;
         }
         final GLImageInfo info = new GLImageInfo();
         ((GLBackendImage) texture).getGLImageInfo(info);
-        if (info.handle == 0 || info.format == 0) {
+        if (info.handle == 0 || info.mFormat == 0) {
             return null;
         }
-        if (info.target != GL_TEXTURE_2D) {
+        if (info.mTarget != GL_TEXTURE_2D) {
             return null;
         }
-        int format = info.format;
+        int format = info.mFormat;
         if (!GLUtil.glFormatIsSupported(format)) {
             return null;
         }
@@ -607,10 +660,10 @@ public final class GLDevice extends GpuDevice {
         sampleCount = mCaps.getRenderTargetSampleCount(sampleCount, format);
         assert sampleCount > 0;
 
-        /*var objects = createRTObjects(info.handle,
+        *//*var objects = createRTObjects(info.handle,
                 texture.getWidth(), texture.getHeight(),
                 texture.getBackendFormat(),
-                sampleCount);*/
+                sampleCount);*//*
 
         var colorTarget = createImage(
                 texture.getWidth(), texture.getHeight(),
@@ -618,7 +671,7 @@ public final class GLDevice extends GpuDevice {
                 sampleCount,
                 ISurface.FLAG_BUDGETED | ISurface.FLAG_RENDERABLE,
                 ""
-        );
+        );*/
 
         //TODO create wrapped texture
         /*if (objects != null) {
@@ -682,12 +735,11 @@ public final class GLDevice extends GpuDevice {
                                     int dstColorType,
                                     int srcColorType,
                                     int rowBytes, long pixels) {
-        assert (!image.isExternal());
         assert (!image.getBackendFormat().isCompressed());
-        GLImage glImage = (GLImage) image;
-        if (!image.isTexturable()) {
+        if (!image.isSampledImage() && !image.isStorageImage()) {
             return false;
         }
+        GLImage glImage = (GLImage) image;
         int glFormat = glImage.getGLFormat();
         assert (mCaps.isFormatTexturable(glFormat));
 
@@ -721,29 +773,29 @@ public final class GLDevice extends GpuDevice {
             }
         }
 
-        GLTextureParameters parameters = glImage.getParameters();
-        if (parameters.baseMipmapLevel != 0) {
+        GLImageMutableState mutableState = glImage.getMutableState();
+        if (mutableState.baseMipmapLevel != 0) {
             if (dsa) {
                 glTextureParameteri(texName, GL_TEXTURE_BASE_LEVEL, 0);
             } else {
                 glTexParameteri(target, GL_TEXTURE_BASE_LEVEL, 0);
             }
-            parameters.baseMipmapLevel = 0;
+            mutableState.baseMipmapLevel = 0;
         }
         int maxLevel = glImage.getMipLevelCount() - 1; // minus base level
-        if (parameters.maxMipmapLevel != maxLevel) {
+        if (mutableState.maxMipmapLevel != maxLevel) {
             if (dsa) {
                 glTextureParameteri(texName, GL_TEXTURE_MAX_LEVEL, maxLevel);
             } else {
                 glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, maxLevel);
             }
             // Bug fixed by Arc 3D
-            parameters.maxMipmapLevel = maxLevel;
+            mutableState.maxMipmapLevel = maxLevel;
         }
 
         assert (x >= 0 && y >= 0 && width > 0 && height > 0);
         assert (pixels != 0);
-        int bpp = ImageInfo.bytesPerPixel(srcColorType);
+        int bpp = ColorInfo.bytesPerPixel(srcColorType);
 
         int trimRowBytes = width * bpp;
         if (rowBytes != trimRowBytes) {
@@ -1141,34 +1193,35 @@ public final class GLDevice extends GpuDevice {
             }
             mHWTextureStates[bindingUnit] = texture.getUniqueID();
         }
-        var state = mHWSamplerStates[bindingUnit];
-        if (state.mSamplerState != samplerState) {
+        var hwSamplerState = mHWSamplerStates[bindingUnit];
+        if (hwSamplerState.mSamplerState != samplerState) {
             GLSampler sampler = samplerState != 0
                     ? mResourceProvider.findOrCreateCompatibleSampler(samplerState)
                     : null;
             getGL().glBindSampler(bindingUnit, sampler != null
                     ? sampler.getHandle()
                     : 0);
-            state.mBoundSampler = RefCnt.move(state.mBoundSampler, sampler);
+            hwSamplerState.mBoundSampler = RefCnt.move(hwSamplerState.mBoundSampler, sampler);
         }
-        GLTextureParameters parameters = texture.getParameters();
-        if (parameters.baseMipmapLevel != 0) {
+        GLImageMutableState imageMutableState = texture.getMutableState();
+        if (imageMutableState.baseMipmapLevel != 0) {
             if (dsa) {
                 glTextureParameteri(texture.getHandle(), GL_TEXTURE_BASE_LEVEL, 0);
             } else {
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
             }
-            parameters.baseMipmapLevel = 0;
+            imageMutableState.baseMipmapLevel = 0;
         }
         int maxLevel = texture.getMipLevelCount() - 1; // minus base level
-        if (parameters.maxMipmapLevel != maxLevel) {
+        if (imageMutableState.maxMipmapLevel != maxLevel) {
             if (dsa) {
                 glTextureParameteri(texture.getHandle(), GL_TEXTURE_MAX_LEVEL, maxLevel);
             } else {
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, maxLevel);
             }
-            parameters.maxMipmapLevel = maxLevel;
+            imageMutableState.maxMipmapLevel = maxLevel;
         }
+        //TODO texture view
         // texture view is available since 4.3, but less used in OpenGL
         // in case of some driver bugs, we don't use GL_TEXTURE_SWIZZLE_RGBA
         // and OpenGL ES does not support GL_TEXTURE_SWIZZLE_RGBA at all
@@ -1182,8 +1235,8 @@ public final class GLDevice extends GpuDevice {
                 case 5 -> GL_ONE;
                 default -> throw new AssertionError(readSwizzle);
             };
-            if (parameters.getSwizzle(i) != swiz) {
-                parameters.setSwizzle(i, swiz);
+            if (imageMutableState.getSwizzle(i) != swiz) {
+                imageMutableState.setSwizzle(i, swiz);
                 // swizzle enums are sequential
                 int channel = GL_TEXTURE_SWIZZLE_R + i;
                 if (dsa) {

@@ -53,25 +53,33 @@ public interface ISurface {
      */
     int FLAG_MIPMAPPED = 1 << 2;
     /**
-     * Used to say whether an image can be sampled by shader (i.e. a texture). This is not
-     * compatible with {@link #FLAG_MEMORYLESS}. A valid SurfaceFlags should have at least
-     * one of FLAG_TEXTURABLE and {@link #FLAG_RENDERABLE} set.
+     * Used to say whether an image can be a sampled image (i.e. a texture). This is not
+     * compatible with {@link #FLAG_MEMORYLESS}.
+     * <p>
+     * A valid SurfaceFlags should have at least one of {@link #FLAG_SAMPLED_IMAGE},
+     * {@link #FLAG_STORAGE_IMAGE} and {@link #FLAG_RENDERABLE} set.
      */
-    int FLAG_TEXTURABLE = 1 << 3;
+    int FLAG_SAMPLED_IMAGE = 1 << 3;
+    /**
+     * Used to say whether an image can be a storage image. This is not compatible with
+     * {@link #FLAG_MEMORYLESS}.
+     */
+    int FLAG_STORAGE_IMAGE = 1 << 4;
     /**
      * Used to say whether a surface can be rendered to, whether an image can be used as
      * color or depth/stencil attachments. Renderable when set, otherwise not renderable.
      */
-    int FLAG_RENDERABLE = 1 << 4;
+    int FLAG_RENDERABLE = 1 << 5;
     /**
-     * Used to create memoryless images, especially for multisample transient attachments.
-     * If so, {@link Engine.LoadOp#Load} and {@link Engine.StoreOp#Store} may not work,
-     * but rendering will be efficient on TBDR GPU.
+     * Used to create memoryless images, especially for MSAA attachments. If so,
+     * load op must NOT be {@link Engine.LoadOp#Load} and store op must NOT be
+     * {@link Engine.StoreOp#Store}, and rendering may be efficient on TBDR GPU.
+     * This is also known as discardable and transient attachments.
      * <p>
-     * Note: Memoryless must be {@link #FLAG_RENDERABLE} and NOT be {@link #FLAG_TEXTURABLE}.
+     * Note: Memoryless must be {@link #FLAG_RENDERABLE} and must NOT be either
+     * {@link #FLAG_SAMPLED_IMAGE} or {@link #FLAG_STORAGE_IMAGE}.
      */
-    int FLAG_MEMORYLESS = 1 << 5;
-    int FLAG_STORAGE_IMAGE = 1 << 20; //TODO add UAV?
+    int FLAG_MEMORYLESS = 1 << 6;
     /**
      * Used to say whether image is backed by protected memory. Protected when set, otherwise
      * not protected. Vulkan only.
@@ -79,7 +87,7 @@ public interface ISurface {
      * @see <a href="https://github.com/KhronosGroup/Vulkan-Guide/blob/master/chapters/protected.adoc">
      * Protected Memory</a>
      */
-    int FLAG_PROTECTED = 1 << 6;
+    int FLAG_PROTECTED = 1 << 7;
     // the following flags are internal only
     /**
      * Means the pixels in the image are read-only. {@link GpuImage} and {@link ImageProxy}

@@ -19,8 +19,7 @@
 
 package icyllis.arc3d.vulkan;
 
-import icyllis.arc3d.engine.BackendRenderTarget;
-import icyllis.arc3d.engine.BackendImage;
+import icyllis.arc3d.engine.*;
 import org.lwjgl.vulkan.EXTQueueFamilyForeign;
 
 import static icyllis.arc3d.vulkan.VKCore.*;
@@ -37,7 +36,7 @@ import static icyllis.arc3d.vulkan.VKCore.*;
  * as <code>void*</code>, we can safely truncate it because Win32 handles are 32-bit significant).
  * If it is an NT handle, it must be released manually by the memory exporter (e.g. Vulkan).
  */
-public final class VulkanImageInfo extends VulkanAllocation {
+public final class VulkanImageInfo extends ImageInfo {
 
     public long mImage = VK_NULL_HANDLE;
     public int mImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -46,13 +45,15 @@ public final class VulkanImageInfo extends VulkanAllocation {
     public int mSharingMode = VK_SHARING_MODE_EXCLUSIVE;
     public int mImageUsageFlags = 0;
     public int mSampleCount = 1;
-    public int mLevelCount = 0;
     public int mCurrentQueueFamily = VK_QUEUE_FAMILY_IGNORED;
-    public int mMemoryHandle = -1;
     public boolean mProtected = false;
 
+    public VulkanImageInfo(int width, int height, int depth, int arraySize, int mipLevelCount, int sampleCount, int flags) {
+        super(width, height, depth, arraySize, mipLevelCount, sampleCount, flags);
+    }
+
     public void set(VulkanImageInfo info) {
-        super.set(info);
+        //super.set(info);
         mImage = info.mImage;
         mImageLayout = info.mImageLayout;
         mImageTiling = info.mImageTiling;
@@ -60,9 +61,9 @@ public final class VulkanImageInfo extends VulkanAllocation {
         mSharingMode = info.mSharingMode;
         mImageUsageFlags = info.mImageUsageFlags;
         mSampleCount = info.mSampleCount;
-        mLevelCount = info.mLevelCount;
+        //mLevelCount = info.mLevelCount;
         mCurrentQueueFamily = info.mCurrentQueueFamily;
-        mMemoryHandle = info.mMemoryHandle;
+       // mMemoryHandle = info.mMemoryHandle;
         mProtected = info.mProtected;
     }
 
@@ -79,9 +80,9 @@ public final class VulkanImageInfo extends VulkanAllocation {
         if (mSharingMode != that.mSharingMode) return false;
         if (mImageUsageFlags != that.mImageUsageFlags) return false;
         if (mSampleCount != that.mSampleCount) return false;
-        if (mLevelCount != that.mLevelCount) return false;
+        //if (mLevelCount != that.mLevelCount) return false;
         if (mCurrentQueueFamily != that.mCurrentQueueFamily) return false;
-        if (mMemoryHandle != that.mMemoryHandle) return false;
+        //if (mMemoryHandle != that.mMemoryHandle) return false;
         return mProtected == that.mProtected;
     }
 
@@ -95,9 +96,9 @@ public final class VulkanImageInfo extends VulkanAllocation {
         result = 31 * result + mSharingMode;
         result = 31 * result + mImageUsageFlags;
         result = 31 * result + mSampleCount;
-        result = 31 * result + mLevelCount;
+       // result = 31 * result + mLevelCount;
         result = 31 * result + mCurrentQueueFamily;
-        result = 31 * result + mMemoryHandle;
+        //result = 31 * result + mMemoryHandle;
         result = 31 * result + (mProtected ? 1 : 0);
         return result;
     }

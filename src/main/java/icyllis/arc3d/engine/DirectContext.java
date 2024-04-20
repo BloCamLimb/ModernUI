@@ -39,7 +39,7 @@ public final class DirectContext extends RecordingContext {
     private ResourceProvider mResourceProvider;
 
     private DirectContext(int backend, ContextOptions options) {
-        super(new SharedContextInfo(backend, options));
+        super(new SharedContext(backend, options));
     }
 
     /**
@@ -208,7 +208,7 @@ public final class DirectContext extends RecordingContext {
             return false;
         }
 
-        mContextInfo.init(mDevice.getCaps(), mDevice.getPipelineCache());
+        mContextInfo.init(mDevice);
         if (!super.init()) {
             return false;
         }
