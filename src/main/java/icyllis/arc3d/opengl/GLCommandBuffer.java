@@ -307,7 +307,7 @@ public final class GLCommandBuffer extends CommandBuffer {
      */
     public void bindTextureSampler(int bindingUnit, GLImage texture,
                                    int samplerState, short readSwizzle) {
-        assert (texture != null && texture.isTexturable());
+        assert (texture != null && texture.isSampledImage());
         if (SamplerState.isMipmapped(samplerState)) {
             if (!texture.isMipmapped()) {
                 assert (!SamplerState.isAnisotropy(samplerState));

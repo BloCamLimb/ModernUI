@@ -382,7 +382,7 @@ public class TestManagedResource {
     }
 
     public static void testTexture(DirectContext dContext) {
-        ByteBuffer pixels = null;
+        /*ByteBuffer pixels = null;
         try (FileChannel channel = FileChannel.open(Path.of("F:/", "GHRKwhAa0AAmG7q.jpg"),
                 StandardOpenOption.READ)) {
             ByteBuffer byteBuffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size());
@@ -399,7 +399,7 @@ public class TestManagedResource {
                     x[0], y[0],
                     GLBackendFormat.make(GL_RGBA8),
                     1, ISurface.FLAG_MIPMAPPED |
-                            ISurface.FLAG_BUDGETED | ISurface.FLAG_TEXTURABLE,
+                            ISurface.FLAG_BUDGETED | ISurface.FLAG_SAMPLED_IMAGE,
                     "MyTexture");
             if (texture != null) {
                 LOGGER.info(texture.toString());
@@ -409,9 +409,9 @@ public class TestManagedResource {
                     x[0], y[0],
                     GLBackendFormat.make(GL_RGBA8),
                     1, ISurface.FLAG_MIPMAPPED |
-                            ISurface.FLAG_BUDGETED | ISurface.FLAG_TEXTURABLE,
-                    ImageInfo.CT_RGBA_8888,
-                    ImageInfo.CT_RGBA_8888,
+                            ISurface.FLAG_BUDGETED | ISurface.FLAG_SAMPLED_IMAGE,
+                    ColorInfo.CT_RGBA_8888,
+                    ColorInfo.CT_RGBA_8888,
                     0,
                     memAddress(pixels),
                     null);
@@ -425,7 +425,7 @@ public class TestManagedResource {
             if (pixels != null) {
                 STBImage.stbi_image_free(pixels);
             }
-        }
+        }*/
     }
 
     public static void testRenderTarget(DirectContext dContext) {
@@ -433,9 +433,9 @@ public class TestManagedResource {
                 1920, 1080,
                 GLBackendFormat.make(GL_RG8),
                 ISurface.FLAG_MIPMAPPED |
-                        ISurface.FLAG_BUDGETED | ISurface.FLAG_TEXTURABLE | ISurface.FLAG_RENDERABLE,
+                        ISurface.FLAG_BUDGETED | ISurface.FLAG_SAMPLED_IMAGE | ISurface.FLAG_RENDERABLE,
                 null, 0,
-               null,0,/* GLBackendFormat.make(GL_DEPTH24_STENCIL8),
+                null, 0,/* GLBackendFormat.make(GL_DEPTH24_STENCIL8),
                 ISurface.FLAG_BUDGETED | ISurface.FLAG_RENDERABLE,*/
                 1,
                 ISurface.FLAG_BUDGETED,
@@ -449,9 +449,9 @@ public class TestManagedResource {
                 1920, 1080,
                 GLBackendFormat.make(GL_RG8),
                 ISurface.FLAG_MIPMAPPED |
-                        ISurface.FLAG_BUDGETED | ISurface.FLAG_TEXTURABLE | ISurface.FLAG_RENDERABLE,
+                        ISurface.FLAG_BUDGETED | ISurface.FLAG_SAMPLED_IMAGE | ISurface.FLAG_RENDERABLE,
                 null, 0,
-                null,0,/* GLBackendFormat.make(GL_DEPTH24_STENCIL8),
+                null, 0,/* GLBackendFormat.make(GL_DEPTH24_STENCIL8),
                 ISurface.FLAG_BUDGETED | ISurface.FLAG_RENDERABLE,*/
                 1,
                 ISurface.FLAG_BUDGETED,

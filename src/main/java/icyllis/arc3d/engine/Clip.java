@@ -20,6 +20,7 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.*;
+import icyllis.arc3d.engine.graphene.SurfaceDrawContext;
 
 /**
  * {@link Clip} is an abstract base class for producing a clip. It constructs a

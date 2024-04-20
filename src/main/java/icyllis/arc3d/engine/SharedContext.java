@@ -19,13 +19,14 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.ImageInfo;
-import icyllis.arc3d.core.SurfaceCharacterization;
+import icyllis.arc3d.core.*;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nullable;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 import static icyllis.arc3d.engine.Engine.*;
 
@@ -35,7 +36,7 @@ import static icyllis.arc3d.engine.Engine.*;
  * <p>
  * This class is a public API, except where noted.
  */
-public final class SharedContextInfo {
+public final class SharedContext {
 
     private static final AtomicInteger sNextID = new AtomicInteger(1);
 
@@ -59,7 +60,7 @@ public final class SharedContextInfo {
 
     private final AtomicBoolean mDiscarded = new AtomicBoolean(false);
 
-    SharedContextInfo(int backend, ContextOptions options) {
+    SharedContext(int backend, ContextOptions options) {
         mBackend = backend;
         mOptions = options;
         mContextID = createUniqueID();
@@ -109,7 +110,7 @@ public final class SharedContextInfo {
     @Nullable
     public SurfaceCharacterization createCharacterization(
             long cacheMaxResourceBytes,
-            ImageInfo imageInfo,
+            icyllis.arc3d.core.ImageInfo imageInfo,
             BackendFormat backendFormat,
             int origin,
             int sampleCount,
@@ -282,11 +283,11 @@ public final class SharedContextInfo {
         return mPipelineCache;
     }
 
-    void init(Caps caps, PipelineCache psc) {
-        assert (caps != null);
-        mCaps = caps;
+    void init(GpuDevice device) {
+        assert (device != null);
+        mCaps = device.getCaps();
         mThreadSafeCache = new ThreadSafeCache();
-        mPipelineCache = psc;
+        mPipelineCache = device.getPipelineCache();
     }
 
     boolean discard() {

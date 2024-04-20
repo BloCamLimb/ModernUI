@@ -22,18 +22,21 @@ package icyllis.arc3d.engine;
 import javax.annotation.Nonnull;
 
 /**
- * Descriptor of 3D API image/texture.
+ * Descriptor of 3D API image/texture that can be shared between
+ * recording contexts, OpenGL shared contexts and cross-API usage,
+ * including its dimension, image view type, and memory allocation.
  * <p>
  * A BackendImage instance is initialized once, and may be shared.
  */
 public abstract class BackendImage {
 
-    protected final int mWidth;
-    protected final int mHeight;
+    protected final ImageInfo mInfo;
+    protected final ImageMutableState mMutableState;
 
-    protected BackendImage(int width, int height) {
-        mWidth = width;
-        mHeight = height;
+    protected BackendImage(ImageInfo info,
+                           ImageMutableState mutableState) {
+        mInfo = info;
+        mMutableState = mutableState;
     }
 
     /**
@@ -45,20 +48,30 @@ public abstract class BackendImage {
      * @return width in pixels
      */
     public final int getWidth() {
-        return mWidth;
+        return mInfo.mWidth;
     }
 
     /**
      * @return height in pixels
      */
     public final int getHeight() {
-        return mHeight;
+        return mInfo.mHeight;
+    }
+
+    public final int getDepth() {
+        return mInfo.mDepth;
+    }
+
+    public final int getArraySize() {
+        return mInfo.mArraySize;
     }
 
     /**
      * @return see {@link Engine.ImageType}
      */
-    public abstract int getImageType();
+    public final byte getImageType() {
+        return mInfo.getImageType();
+    }
 
     /**
      * @return external texture
@@ -68,9 +81,29 @@ public abstract class BackendImage {
     /**
      * @return whether the image has mip levels allocated or not
      */
-    public abstract boolean isMipmapped();
+    public final boolean isMipmapped() {
+        return mInfo.isMipmapped();
+    }
 
-    public abstract int getMipLevelCount();
+    public final int getMipLevelCount() {
+        return mInfo.mMipLevelCount;
+    }
+
+    /**
+     * Get the backend info for this image/texture.
+     */
+    @Nonnull
+    public final ImageInfo getInfo() {
+        return mInfo;
+    }
+
+    /**
+     * Get the backend mutable state for this image/texture.
+     */
+    @Nonnull
+    public final ImageMutableState getMutableState() {
+        return mMutableState;
+    }
 
     /**
      * Call this to indicate that the texture parameters have been modified in the GL context

@@ -27,6 +27,7 @@ import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.system.Platform;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import static icyllis.arc3d.engine.Engine.IOType;
 import static org.lwjgl.opengl.GL30C.*;
@@ -36,78 +37,84 @@ import static org.lwjgl.opengl.GL30C.*;
  */
 public final class GLImage extends GpuImage {
 
-    private GLImageInfo mInfo;
-    private BackendFormat mFormat;
-    private final GLBackendImage mBackendTexture;
+    private int mHandle;
     private final boolean mOwnership;
 
     private final long mMemorySize;
 
     // Constructor for instances created by ourselves.
     GLImage(GLDevice device,
-            int width, int height,
             GLImageInfo info,
-            BackendFormat format,
-            int flags) {
-        super(device, width, height);
-        assert GLUtil.glFormatIsSupported(format.getGLFormat());
-        mInfo = info;
-        mFormat = format;
+            GLImageMutableState mutableState,
+            int handle,
+            boolean budgeted) {
+        super(device, info, mutableState);
+        assert GLUtil.glFormatIsSupported(info.mFormat);
         mOwnership = true;
 
-        assert info.handle != 0;
-        mBackendTexture = new GLBackendImage(width, height, info,
-                info.target != GL_RENDERBUFFER ? new GLTextureParameters() : null, format);
+        mHandle = handle;
 
-        if (GLUtil.glFormatIsCompressed(format.getGLFormat()) || format.isExternal()) {
+        if (GLUtil.glFormatIsCompressed(info.mFormat)) {
             mFlags |= ISurface.FLAG_READ_ONLY;
         }
-        if (info.levels > 1) {
-            mFlags |= ISurface.FLAG_MIPMAPPED;
-        }
-        mFlags |= flags & (ISurface.FLAG_MEMORYLESS |
-                ISurface.FLAG_TEXTURABLE |
-                ISurface.FLAG_RENDERABLE |
-                ISurface.FLAG_PROTECTED);
 
-        mMemorySize = computeSize(format, width, height, info.samples, info.levels);
-        registerWithCache((flags & ISurface.FLAG_BUDGETED) != 0);
+        mMemorySize = DataUtils.computeSize(info);
+        registerWithCache(budgeted);
+
+        if (mHandle == 0) {
+            device.recordRenderCall(dev -> {
+                if (isDestroyed()) {
+                    return;
+                }
+                mHandle = dev.createImage(getInfo());
+                if (mHandle == 0) {
+                    makeBudgeted(false);
+                }
+            });
+        }
     }
 
     // Constructor for instances wrapping backend objects.
     public GLImage(GLDevice device,
-                   int width, int height,
                    GLImageInfo info,
-                   GLTextureParameters params,
-                   BackendFormat format,
+                   GLImageMutableState mutableState,
+                   int handle,
                    int ioType,
                    boolean cacheable,
                    boolean ownership) {
-        super(device, width, height);
-        assert info.handle != 0;
-        assert GLUtil.glFormatIsSupported(format.getGLFormat());
-        mInfo = info;
+        super(device, info, mutableState);
+        assert handle != 0;
+        assert GLUtil.glFormatIsSupported(info.mFormat);
         mOwnership = ownership;
 
-        mBackendTexture = new GLBackendImage(width, height, info, params, format);
-
         // compressed formats always set 'ioType' to READ
-        assert (ioType == IOType.kRead || format.isCompressed());
-        if (ioType == IOType.kRead || format.isExternal()) {
+        assert (ioType == IOType.kRead || info.isCompressed());
+        if (ioType == IOType.kRead) {
             mFlags |= ISurface.FLAG_READ_ONLY;
         }
-        if (info.levels > 1) {
-            mFlags |= ISurface.FLAG_MIPMAPPED;
-        }
-        //TODO?
-        if (info.target != GL_RENDERBUFFER) {
-            mFlags |= ISurface.FLAG_TEXTURABLE;
-        } else {
-            mFlags |= ISurface.FLAG_RENDERABLE;
-        }
 
-        mMemorySize = computeSize(format, width, height, info.samples, info.levels);
+        mMemorySize = DataUtils.computeSize(info);
         registerWithCacheWrapped(cacheable);
+    }
+
+    @Nullable
+    @SharedPtr
+    public static GLImage make(GLDevice device,
+                               GLImageInfo info,
+                               boolean budgeted) {
+        final int handle;
+        if (device.isOnExecutingThread()) {
+            handle = device.createImage(info);
+            if (handle == 0) {
+                return null;
+            }
+        } else {
+            handle = 0;
+        }
+        return new GLImage(device, info,
+                info.mTarget != GL_RENDERBUFFER ? new GLImageMutableState() : null,
+                handle,
+                budgeted);
     }
 
     @Nonnull
@@ -117,16 +124,12 @@ public final class GLImage extends GpuImage {
                                                   int sampleCount,
                                                   int format,
                                                   int renderbuffer) {
-        GLImageInfo info = new GLImageInfo();
-        info.target = GL_RENDERBUFFER;
-        info.handle = renderbuffer;
-        info.format = format;
-        info.samples = sampleCount;
+        GLImageInfo info = new GLImageInfo(GL_RENDERBUFFER, format,
+                width, height, 1, 1, 1, sampleCount, ISurface.FLAG_RENDERABLE);
         return new GLImage(device,
-                width, height,
                 info,
                 null,
-                GLBackendFormat.make(format),
+                renderbuffer,
                 IOType.kWrite,
                 false,
                 false);
@@ -134,48 +137,28 @@ public final class GLImage extends GpuImage {
 
     @Nonnull
     @Override
-    public BackendFormat getBackendFormat() {
-        return mFormat;
-    }
-
-    @Nonnull
-    @Override
-    public GLBackendImage getBackendTexture() {
-        return mBackendTexture;
+    public GLImageInfo getInfo() {
+        return (GLImageInfo) mInfo;
     }
 
     /**
      * Note: Null for renderbuffers.
      */
-    public GLTextureParameters getParameters() {
-        return mBackendTexture.mParams;
-    }
-
     @Override
-    public boolean isExternal() {
-        return mBackendTexture.isExternal();
-    }
-
-    @Override
-    public int getSampleCount() {
-        return mInfo.samples;
-    }
-
-    public int getTarget() {
-        return mInfo.target;
+    public GLImageMutableState getMutableState() {
+        return (GLImageMutableState) mMutableState;
     }
 
     public int getHandle() {
-        return mInfo.handle;
+        return mHandle;
+    }
+
+    public int getTarget() {
+        return getInfo().mTarget;
     }
 
     public int getGLFormat() {
-        return getBackendFormat().getGLFormat();
-    }
-
-    @Override
-    public int getMipLevelCount() {
-        return mInfo.levels;
+        return getInfo().mFormat;
     }
 
     @Override
@@ -188,38 +171,38 @@ public final class GLImage extends GpuImage {
         if (getDevice().getCaps().hasDebugSupport()) {
             assert mInfo != null;
             if (label.isEmpty()) {
-                getDevice().getGL().glObjectLabel(GL_TEXTURE, mInfo.handle, 0, MemoryUtil.NULL);
+                getDevice().getGL().glObjectLabel(GL_TEXTURE, mHandle, 0, MemoryUtil.NULL);
             } else {
                 label = label.substring(0, Math.min(label.length(),
                         getDevice().getCaps().maxLabelLength()));
-                getDevice().getGL().glObjectLabel(GL_TEXTURE, mInfo.handle, label);
+                getDevice().getGL().glObjectLabel(GL_TEXTURE, mHandle, label);
             }
         }
     }
 
     @Override
     protected void onRelease() {
-        final GLImageInfo info = mInfo;
         if (mOwnership) {
-            if (info.handle != 0) {
-                getDevice().getGL().glDeleteTextures(info.handle);
+            if (mHandle != 0) {
+                getDevice().getGL().glDeleteTextures(mHandle);
             }
-            if (info.memoryObject != 0) {
+            //TODO?
+            /*if (info.memoryObject != 0) {
                 EXTMemoryObject.glDeleteMemoryObjectsEXT(info.memoryObject);
             }
             if (info.memoryHandle != -1) {
                 if (Platform.get() == Platform.WINDOWS) {
                     Kernel32.CloseHandle(info.memoryHandle);
                 } // Linux transfers the fd
-            }
+            }*/
         }
-        mInfo = null;
+        mHandle = 0;
         super.onRelease();
     }
 
     @Override
     protected void onDiscard() {
-        mInfo = null;
+        mHandle = 0;
         super.onDiscard();
     }
 
@@ -231,9 +214,8 @@ public final class GLImage extends GpuImage {
     @Override
     public String toString() {
         return "GLImage{" +
-                "mWidth=" + mWidth +
-                ", mHeight=" + mHeight +
                 ", mInfo=" + mInfo +
+                ", mHandle=" + mHandle +
                 ", mDestroyed=" + isDestroyed() +
                 ", mOwnership=" + mOwnership +
                 ", mLabel=" + getLabel() +

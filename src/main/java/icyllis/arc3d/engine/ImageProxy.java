@@ -101,12 +101,9 @@ public final class ImageProxy extends SurfaceProxy {
         super(image, surfaceFlags);
         mMipmapsDirty = image.isMipmapped() && image.isMipmapsDirty();
         assert (mSurfaceFlags & ISurface.FLAG_APPROX_FIT) == 0;
-        assert (mFormat.isExternal() == image.isExternal());
         assert (image.isMipmapped()) == ((mSurfaceFlags & ISurface.FLAG_MIPMAPPED) != 0);
         assert (image.getBudgetType() == Engine.BudgetType.Budgeted) == ((mSurfaceFlags & ISurface.FLAG_BUDGETED) != 0);
-        assert (!image.isExternal()) || ((mSurfaceFlags & ISurface.FLAG_READ_ONLY) != 0);
         assert (image.getBudgetType() == Engine.BudgetType.Budgeted) == isBudgeted();
-        assert (!image.isExternal() || isReadOnly());
         mGpuSurface = image; // std::move
         if (image.getUniqueKey() != null) {
             assert (image.getContext() != null);
@@ -265,9 +262,11 @@ public final class ImageProxy extends SurfaceProxy {
     @Override
     public long getMemorySize() {
         // use user params
-        return GpuImage.computeSize(mFormat, mWidth, mHeight, getSampleCount(),
+        //TODO
+        /*return DataUtils.computeSize(mFormat, mWidth, mHeight, getSampleCount(),
                 (mSurfaceFlags & ISurface.FLAG_MIPMAPPED) != 0,
-                (mSurfaceFlags & ISurface.FLAG_APPROX_FIT) != 0);
+                (mSurfaceFlags & ISurface.FLAG_APPROX_FIT) != 0);*/
+        return 0;
     }
 
     public final boolean isPromiseProxy() {

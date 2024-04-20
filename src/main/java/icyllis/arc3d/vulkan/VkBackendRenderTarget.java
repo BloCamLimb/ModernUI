@@ -34,16 +34,16 @@ public final class VkBackendRenderTarget extends BackendRenderTarget {
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
     private final VulkanImageInfo mInfo;
-    final VulkanSharedImageInfo mState;
+    final VulkanImageMutableState mState;
 
     private VkBackendFormat mBackendFormat;
 
     // The VkImageInfo can NOT be modified anymore.
     public VkBackendRenderTarget(int width, int height, VulkanImageInfo info) {
-        this(width, height, info, new VulkanSharedImageInfo(info.mImageLayout, info.mCurrentQueueFamily));
+        this(width, height, info, new VulkanImageMutableState(info.mImageLayout, info.mCurrentQueueFamily));
     }
 
-    VkBackendRenderTarget(int width, int height, VulkanImageInfo info, VulkanSharedImageInfo state) {
+    VkBackendRenderTarget(int width, int height, VulkanImageInfo info, VulkanImageMutableState state) {
         super(width, height);
         if (info.mImageUsageFlags == 0) {
             info.mImageUsageFlags = DEFAULT_USAGE_FLAGS;

@@ -20,6 +20,7 @@
 package icyllis.arc3d.core;
 
 import icyllis.arc3d.engine.*;
+import icyllis.arc3d.engine.graphene.SurfaceDevice;
 
 import javax.annotation.Nullable;
 
@@ -73,7 +74,7 @@ public class Surface extends RefCnt {
                                                  int origin, int sampleCount,
                                                  int colorType,
                                                  Runnable releaseCallback) {
-        if (context == null || sampleCount < 1 || colorType == ImageInfo.CT_UNKNOWN) {
+        if (context == null || sampleCount < 1 || colorType == ColorInfo.CT_UNKNOWN) {
             if (releaseCallback != null) {
                 releaseCallback.run();
             }
@@ -92,7 +93,7 @@ public class Surface extends RefCnt {
 
     /**
      * Returns Surface on GPU indicated by context. Allocates memory for pixels,
-     * based on the width, height, and ColorType in ImageInfo. <code>budgeted</code>
+     * based on the width, height, and ColorType in ColorInfo. <code>budgeted</code>
      * selects whether allocation for pixels is tracked by context. <code>imageInfo</code>
      * describes the pixel format in ColorType, and transparency in AlphaType.
      * <p>
@@ -131,7 +132,7 @@ public class Surface extends RefCnt {
                                                   int origin,
                                                   int colorType,
                                                   ColorSpace colorSpace) {
-        if (colorType == ImageInfo.CT_UNKNOWN) {
+        if (colorType == ColorInfo.CT_UNKNOWN) {
             return null;
         }
         var provider = rContext.getSurfaceProvider();

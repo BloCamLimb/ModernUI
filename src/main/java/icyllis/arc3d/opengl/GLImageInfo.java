@@ -19,101 +19,135 @@
 
 package icyllis.arc3d.opengl;
 
-import org.lwjgl.opengl.GL11C;
-import org.lwjgl.opengl.GL30C;
+import icyllis.arc3d.engine.ImageInfo;
+import icyllis.arc3d.engine.Engine;
+import org.lwjgl.opengl.*;
 
 /**
  * Types for interacting with GL resources created externally to pipeline. BackendObjects for GL
- * textures are really const GLTexture*. The {@link #format} here should be a sized, internal format
+ * textures are really const GLTexture*. The {@link #mFormat} here should be a sized, internal format
  * for the texture. We use the sized format since the base internal formats are deprecated.
  * <p>
- * Note the target can be {@link GL30C#GL_RENDERBUFFER}. When importing external memory,
- * {@link #memoryHandle} is POSIX file descriptor or Win32 NT handle. {@link #memoryObject} is
- * OpenGL memory object. If it is an NT handle, it must be released manually by the memory exporter
- * (e.g. Vulkan).
+ * Note the target can be {@link GL30C#GL_RENDERBUFFER}.
  */
-public final class GLImageInfo {
+public final class GLImageInfo extends ImageInfo {
 
     /**
      * <code>GLenum</code> - image namespace
      */
-    public int target = GL11C.GL_TEXTURE_2D;
-    /**
-     * <code>GLuint</code> - image name
-     */
-    public int handle;
+    public final int mTarget;
     /**
      * <code>GLenum</code> - sized internal format
      */
-    public int format;
-    /**
-     * <code>GLsizei</code> - number of mip levels
-     */
-    public int levels = 0;
-    /**
-     * <code>GLsizei</code> - number of samples
-     */
-    public int samples = 0;
-    /**
-     * <code>GLuint</code> - memory
-     */
-    public int memoryObject;
-    /**
-     * <pre>{@code
-     * union {
-     *     int fd; // file descriptor
-     *     HANDLE handle; // win32 handle
-     * };
-     * }</pre>
-     */
-    public long memoryHandle = -1;
+    public final int mFormat;
 
-    public void set(GLImageInfo info) {
-        target = info.target;
-        handle = info.handle;
-        format = info.format;
-        levels = info.levels;
-        samples = info.samples;
-        memoryObject = info.memoryObject;
-        memoryHandle = info.memoryHandle;
+    public GLImageInfo(int target, int format,
+                       int width, int height,
+                       int depth, int arraySize,
+                       int mipLevelCount, int sampleCount,
+                       int flags) {
+        super(width, height, depth, arraySize, mipLevelCount, sampleCount, flags);
+        mTarget = target;
+        mFormat = format;
+    }
+
+    @Override
+    public int getBackend() {
+        return Engine.BackendApi.kOpenGL;
+    }
+
+    @Override
+    public byte getImageType() {
+        return switch (mTarget) {
+            case GL30C.GL_TEXTURE_2D -> Engine.ImageType.k2D;
+            case GL30C.GL_TEXTURE_2D_ARRAY -> Engine.ImageType.k2DArray;
+            case GL30C.GL_TEXTURE_3D -> Engine.ImageType.k3D;
+            case GL30C.GL_TEXTURE_CUBE_MAP -> Engine.ImageType.kCube;
+            case GL40C.GL_TEXTURE_CUBE_MAP_ARRAY -> Engine.ImageType.kCubeArray;
+            default -> Engine.ImageType.kNone;
+        };
+    }
+
+    @Override
+    public boolean isProtected() {
+        return false;
+    }
+
+    @Override
+    public int getGLFormat() {
+        return mFormat;
+    }
+
+    @Override
+    public int getChannelFlags() {
+        return GLUtil.glFormatChannels(mFormat);
+    }
+
+    @Override
+    public boolean isSRGB() {
+        return GLUtil.glFormatIsSRGB(mFormat);
+    }
+
+    @Override
+    public int getCompressionType() {
+        return GLUtil.glFormatCompressionType(mFormat);
+    }
+
+    @Override
+    public int getBytesPerBlock() {
+        return GLUtil.glFormatBytesPerBlock(mFormat);
+    }
+
+    @Override
+    public int getDepthBits() {
+        return GLUtil.glFormatDepthBits(mFormat);
+    }
+
+    @Override
+    public int getStencilBits() {
+        return GLUtil.glFormatStencilBits(mFormat);
     }
 
     @Override
     public int hashCode() {
-        int result = target;
-        result = 31 * result + handle;
-        result = 31 * result + format;
-        result = 31 * result + levels;
-        result = 31 * result + samples;
-        result = 31 * result + memoryObject;
-        result = 31 * result + (int) (memoryHandle ^ (memoryHandle >>> 32));
+        int result = mTarget;
+        result = 31 * result + mFormat;
+        result = 31 * result + mWidth;
+        result = 31 * result + mHeight;
+        result = 31 * result + mDepth;
+        result = 31 * result + mArraySize;
+        result = 31 * result + mMipLevelCount;
+        result = 31 * result + mSampleCount;
         return result;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o instanceof GLImageInfo info)
-            return target == info.target &&
-                    handle == info.handle &&
-                    format == info.format &&
-                    levels == info.levels &&
-                    samples == info.samples &&
-                    memoryObject == info.memoryObject &&
-                    memoryHandle == info.memoryHandle;
+        if (o instanceof GLImageInfo info) {
+            return mTarget == info.mTarget &&
+                    mFormat == info.mFormat &&
+                    mWidth == info.mWidth &&
+                    mHeight == info.mHeight &&
+                    mDepth == info.mDepth &&
+                    mArraySize == info.mArraySize &&
+                    mMipLevelCount != info.mMipLevelCount &&
+                    mSampleCount != info.mSampleCount;
+        }
         return false;
     }
 
     @Override
     public String toString() {
         return '{' +
-                "target=" + target +
-                ", handle=" + handle +
-                ", format=" + GLUtil.glFormatName(format) +
-                ", levels=" + levels +
-                ", samples=" + samples +
-                ", memoryObject=" + memoryObject +
-                ", memoryHandle=" + memoryHandle +
+                "target=" + mTarget +
+                ", format=" + GLUtil.glFormatName(mFormat) +
+                ", width=" + mWidth +
+                ", height=" + mHeight +
+                ", depth=" + mDepth +
+                ", arraySize=" + mArraySize +
+                ", mipLevelCount=" + mMipLevelCount +
+                ", sampleCount=" + mSampleCount +
                 '}';
     }
 }

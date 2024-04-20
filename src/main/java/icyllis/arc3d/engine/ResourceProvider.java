@@ -20,6 +20,7 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.*;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nullable;
 
@@ -31,7 +32,7 @@ import javax.annotation.Nullable;
  * in other threads, use {@link SurfaceProxy}. To obtain Pipeline resources,
  * use {@link PipelineCache}.
  */
-public class ResourceProvider {
+public abstract class ResourceProvider {
 
     private final GpuDevice mDevice;
     private final DirectContext mContext;
@@ -127,7 +128,7 @@ public class ResourceProvider {
      * @see ISurface#FLAG_BUDGETED
      * @see ISurface#FLAG_APPROX_FIT
      * @see ISurface#FLAG_MIPMAPPED
-     * @see ISurface#FLAG_TEXTURABLE
+     * @see ISurface#FLAG_SAMPLED_IMAGE
      * @see ISurface#FLAG_RENDERABLE
      * @see ISurface#FLAG_MEMORYLESS
      * @see ISurface#FLAG_PROTECTED
@@ -150,11 +151,11 @@ public class ResourceProvider {
 
         // hide invalid flags
         surfaceFlags &= ISurface.FLAG_BUDGETED | ISurface.FLAG_APPROX_FIT |
-                ISurface.FLAG_MIPMAPPED | ISurface.FLAG_TEXTURABLE |
+                ISurface.FLAG_MIPMAPPED | ISurface.FLAG_SAMPLED_IMAGE |
                 ISurface.FLAG_RENDERABLE | ISurface.FLAG_MEMORYLESS |
                 ISurface.FLAG_PROTECTED;
 
-        if ((surfaceFlags & ISurface.FLAG_TEXTURABLE) != 0) {
+        if ((surfaceFlags & ISurface.FLAG_SAMPLED_IMAGE) != 0) {
             // texturable cannot be memoryless
             surfaceFlags &= ~ISurface.FLAG_MEMORYLESS;
         }
@@ -170,7 +171,7 @@ public class ResourceProvider {
             width = ISurface.getApproxSize(width);
             height = ISurface.getApproxSize(height);
             // approx fit cannot be mipmapped and must be budgeted
-            surfaceFlags &= ISurface.FLAG_TEXTURABLE | ISurface.FLAG_RENDERABLE | ISurface.FLAG_PROTECTED;
+            surfaceFlags &= ISurface.FLAG_SAMPLED_IMAGE | ISurface.FLAG_RENDERABLE | ISurface.FLAG_PROTECTED;
             surfaceFlags |= ISurface.FLAG_BUDGETED;
         }
 
@@ -188,40 +189,60 @@ public class ResourceProvider {
             return image;
         }
 
-        return mDevice.createImage(width, height, format,
-                sampleCount, surfaceFlags, label);
+        /*return mDevice.createImage(width, height, format,
+                sampleCount, surfaceFlags, label);*/
+        return null;
     }
 
+    /**
+     * Creates a new GPU image object and allocates its GPU memory. In other words, the
+     * image data is dirty and needs to be uploaded later. If mipmapped, also allocates
+     * <code>(31 - CLZ(max(width,height)))</code> mipmaps in addition to the base level.
+     * NPoT (non-power-of-two) dimensions are always supported. Compressed format are
+     * supported.
+     *
+     * @param width  the width of the image to be created
+     * @param height the height of the image to be created
+     * @param format the backend format for the image
+     * @return the image object if successful, otherwise nullptr
+     * @see ISurface#FLAG_BUDGETED
+     * @see ISurface#FLAG_MIPMAPPED
+     * @see ISurface#FLAG_RENDERABLE
+     * @see ISurface#FLAG_PROTECTED
+     */
     @Nullable
     @SharedPtr
-    public final GpuImage createImage(int width, int height,
-                                      int depthBits,
-                                      int stencilBits,
-                                      int sampleCount,
-                                      int surfaceFlags,
-                                      @Nullable String label) {
-        return null;
+    public final GpuImage createNewImage(ImageInfo info,
+                                         boolean budgeted,
+                                         @Nullable String label) {
+        if (info.isCompressed()) {
+            return null;
+        }
+        final GpuImage image = onCreateNewImage(info, budgeted);
+        if (image != null) {
+            assert image.getInfo() == info;
+            if (label != null) {
+                image.setLabel(label);
+            }
+           /* mStats.incImageCreates();
+            if (image.isSampledImage()) {
+                mStats.incTextureCreates();
+            }*/
+        }
+        return image;
     }
 
-    public final GpuImage createImage(int width, int height,
-                                      int arraySize,
-                                      BackendFormat format,
-                                      int mipLevelCount,
-                                      int sampleCount,
-                                      int surfaceFlags,
-                                      @Nullable String label) {
-        return null;
-    }
-
-    public final GpuImage createImage(int width, int height, int depth,
-                                      int arraySize, int imageType,
-                                      BackendFormat format,
-                                      int mipLevelCount,
-                                      int sampleCount,
-                                      int surfaceFlags,
-                                      @Nullable String label) {
-        return null;
-    }
+    /**
+     * Overridden by backend-specific derived class to create objects.
+     * <p>
+     * Image size and format support will have already been validated in base class
+     * before onCreateImage is called.
+     */
+    @ApiStatus.OverrideOnly
+    @Nullable
+    @SharedPtr
+    protected abstract GpuImage onCreateNewImage(ImageInfo info,
+                                                 boolean budgeted);
 
     /**
      * Search the cache for a scratch texture matching the provided arguments. Failing that
@@ -314,7 +335,7 @@ public class ResourceProvider {
      * @see ISurface#FLAG_BUDGETED
      * @see ISurface#FLAG_APPROX_FIT
      * @see ISurface#FLAG_MIPMAPPED
-     * @see ISurface#FLAG_TEXTURABLE
+     * @see ISurface#FLAG_SAMPLED_IMAGE
      * @see ISurface#FLAG_RENDERABLE
      * @see ISurface#FLAG_MEMORYLESS
      * @see ISurface#FLAG_PROTECTED
@@ -337,7 +358,7 @@ public class ResourceProvider {
             return null;
         }
 
-        surfaceFlags |= ISurface.FLAG_TEXTURABLE;
+        surfaceFlags |= ISurface.FLAG_SAMPLED_IMAGE;
         return createImage(width, height,
                 format,
                 sampleCount,
@@ -385,12 +406,12 @@ public class ResourceProvider {
             return null;
         }
 
-        if (srcColorType == ImageInfo.CT_UNKNOWN ||
-                dstColorType == ImageInfo.CT_UNKNOWN) {
+        if (srcColorType == ColorInfo.CT_UNKNOWN ||
+                dstColorType == ColorInfo.CT_UNKNOWN) {
             return null;
         }
 
-        int minRowBytes = width * ImageInfo.bytesPerPixel(srcColorType);
+        int minRowBytes = width * ColorInfo.bytesPerPixel(srcColorType);
         int actualRowBytes = rowBytes > 0 ? rowBytes : minRowBytes;
         if (actualRowBytes < minRowBytes) {
             return null;

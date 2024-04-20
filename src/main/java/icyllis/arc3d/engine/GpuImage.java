@@ -33,13 +33,14 @@ import static icyllis.arc3d.engine.Engine.BudgetType;
  * <p>
  * A {@link GpuImage} may be used as textures (sampled in fragment shaders), may be used as
  * storage images (load and store in compute shaders), may be used as color and depth/stencil
- * attachments of a framebuffer. See {@link ISurface#FLAG_TEXTURABLE} and {@link ISurface#FLAG_RENDERABLE}.
+ * attachments of a framebuffer. See {@link ISurface#FLAG_SAMPLED_IMAGE},
+ * {@link ISurface#FLAG_STORAGE_IMAGE} and {@link ISurface#FLAG_RENDERABLE}.
  * Texture (sampled image) is a specialization of GPU images.
  */
 public abstract non-sealed class GpuImage extends GpuSurface {
 
-    protected final int mWidth;
-    protected final int mHeight;
+    protected final ImageInfo mInfo;
+    protected final ImageMutableState mMutableState;
 
     /**
      * Note: budgeted is a dynamic state, it can be returned by {@link #getSurfaceFlags()}.
@@ -56,11 +57,25 @@ public abstract non-sealed class GpuImage extends GpuSurface {
     @SharedPtr
     private ReleaseCallback mReleaseCallback;
 
-    protected GpuImage(GpuDevice device, int width, int height) {
+    protected GpuImage(GpuDevice device,
+                       ImageInfo info,
+                       ImageMutableState mutableState) {
         super(device);
-        assert width > 0 && height > 0;
-        mWidth = width;
-        mHeight = height;
+        mInfo = info;
+        mMutableState = mutableState;
+    }
+
+    @Nonnull
+    public ImageInfo getInfo() {
+        return mInfo;
+    }
+
+    public ImageMutableState getMutableState() {
+        return mMutableState;
+    }
+
+    public final byte getImageType() {
+        return mInfo.getImageType();
     }
 
     /**
@@ -68,7 +83,7 @@ public abstract non-sealed class GpuImage extends GpuSurface {
      */
     @Override
     public final int getWidth() {
-        return mWidth;
+        return mInfo.mWidth;
     }
 
     /**
@@ -76,7 +91,15 @@ public abstract non-sealed class GpuImage extends GpuSurface {
      */
     @Override
     public final int getHeight() {
-        return mHeight;
+        return mInfo.mHeight;
+    }
+
+    public final int getDepth() {
+        return mInfo.mDepth;
+    }
+
+    public final int getArraySize() {
+        return mInfo.mArraySize;
     }
 
     @Override
@@ -93,14 +116,21 @@ public abstract non-sealed class GpuImage extends GpuSurface {
      * @return true if this surface has mipmaps and have been allocated
      */
     public final boolean isMipmapped() {
-        return (mFlags & ISurface.FLAG_MIPMAPPED) != 0;
+        return mInfo.isMipmapped();
     }
 
     /**
-     * @return true if this image can be used as textures and storage images
+     * @return true if this image can be used as textures
      */
-    public final boolean isTexturable() {
-        return (mFlags & ISurface.FLAG_TEXTURABLE) != 0;
+    public final boolean isSampledImage() {
+        return mInfo.isSampledImage();
+    }
+
+    /**
+     * @return true if this image can be used as storage images.
+     */
+    public final boolean isStorageImage() {
+        return (mFlags & ISurface.FLAG_STORAGE_IMAGE) != 0;
     }
 
     /**
@@ -113,7 +143,14 @@ public abstract non-sealed class GpuImage extends GpuSurface {
     /**
      * @return number of mipmap levels, greater than 1 if mipmapped
      */
-    public abstract int getMipLevelCount();
+    public final int getMipLevelCount() {
+        return mInfo.mMipLevelCount;
+    }
+
+    @Override
+    public final int getSampleCount() {
+        return mInfo.mSampleCount;
+    }
 
     /**
      * The pixel values of this surface cannot be modified (e.g. doesn't support write pixels or
@@ -194,17 +231,6 @@ public abstract non-sealed class GpuImage extends GpuSurface {
     }
 
     /**
-     * @return the backend texture of this texture
-     */
-    @Nonnull
-    public abstract BackendImage getBackendTexture();
-
-    /**
-     * @return external texture
-     */
-    public abstract boolean isExternal();
-
-    /**
      * Unmanaged backends (e.g. Vulkan) may want to specially handle the release proc in order to
      * ensure it isn't called until GPU work related to the resource is completed.
      */
@@ -243,75 +269,9 @@ public abstract non-sealed class GpuImage extends GpuSurface {
         assert (getBudgetType() != BudgetType.WrapCacheable);
         return new ScratchKey().compute(
                 format,
-                mWidth, mHeight,
+                getWidth(), getHeight(),
                 getSampleCount(),
                 mFlags); // budgeted flag is not included, this method is called only when budgeted
-    }
-
-    public static long computeSize(BackendFormat format,
-                                   int width, int height,
-                                   int sampleCount,
-                                   boolean mipmapped,
-                                   boolean approx) {
-        assert width > 0 && height > 0;
-        assert sampleCount > 0;
-        assert sampleCount == 1 || !mipmapped;
-        // For external formats we do not actually know the real size of the resource, so we just return
-        // 0 here to indicate this.
-        if (format.isExternal()) {
-            return 0;
-        }
-        if (approx) {
-            width = ISurface.getApproxSize(width);
-            height = ISurface.getApproxSize(height);
-        }
-        long size = DataUtils.numBlocks(format.getCompressionType(), width, height) *
-                format.getBytesPerBlock();
-        assert size > 0;
-        if (mipmapped) {
-            size = (size << 2) / 3;
-        } else {
-            size *= sampleCount;
-        }
-        assert size > 0;
-        return size;
-    }
-
-    public static long computeSize(BackendFormat format,
-                                   int width, int height,
-                                   int sampleCount,
-                                   int levelCount) {
-        return computeSize(format, width, height, sampleCount, levelCount, false);
-    }
-
-    public static long computeSize(BackendFormat format,
-                                   int width, int height,
-                                   int sampleCount,
-                                   int levelCount,
-                                   boolean approx) {
-        assert width > 0 && height > 0;
-        assert sampleCount > 0 && levelCount > 0;
-        assert sampleCount == 1 || levelCount == 1;
-        // For external formats we do not actually know the real size of the resource, so we just return
-        // 0 here to indicate this.
-        if (format.isExternal()) {
-            return 0;
-        }
-        if (approx) {
-            width = ISurface.getApproxSize(width);
-            height = ISurface.getApproxSize(height);
-        }
-        long size = DataUtils.numBlocks(format.getCompressionType(), width, height) *
-                format.getBytesPerBlock();
-        assert size > 0;
-        if (levelCount > 1) {
-            // geometric sequence, S=a1(1-q^n)/(1-q), q=2^(-2)
-            size = ((size - (size >> (levelCount << 1))) << 2) / 3;
-        } else {
-            size *= sampleCount;
-        }
-        assert size > 0;
-        return size;
     }
 
     /**
@@ -340,7 +300,7 @@ public abstract non-sealed class GpuImage extends GpuSurface {
             mHeight = height;
             mFormat = format.getFormatKey();
             mFlags = (surfaceFlags & (ISurface.FLAG_MIPMAPPED |
-                    ISurface.FLAG_TEXTURABLE |
+                    ISurface.FLAG_SAMPLED_IMAGE |
                     ISurface.FLAG_RENDERABLE |
                     ISurface.FLAG_MEMORYLESS |
                     ISurface.FLAG_PROTECTED)) | (sampleCount << 16);

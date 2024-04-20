@@ -87,11 +87,11 @@ public abstract class Image extends RefCnt {
     }
 
     @ApiStatus.Internal
-    public boolean isTextureBacked() {
+    public boolean isGpuBacked() {
         return false;
     }
 
-    public long getTextureMemorySize() {
+    public long getGpuMemorySize() {
         return 0;
     }
 }

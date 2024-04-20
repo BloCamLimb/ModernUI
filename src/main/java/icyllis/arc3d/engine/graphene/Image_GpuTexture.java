@@ -17,27 +17,28 @@
  * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine.image;
+package icyllis.arc3d.engine.graphene;
 
 import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.ImageInfo;
 import icyllis.arc3d.engine.*;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public class Image_Texture extends Image {
+public class Image_GpuTexture extends icyllis.arc3d.core.Image {
 
     RecordingContext mContext;
     @SharedPtr
     SurfaceProxyView mSurfaceProxyView;
 
-    public Image_Texture(@Nonnull RecordingContext rContext,
-                         @Nonnull ImageProxy proxy,
-                         short swizzle,
-                         int origin,
-                         int colorType,
-                         int alphaType,
-                         @Nullable ColorSpace colorSpace) {
+    public Image_GpuTexture(@Nonnull RecordingContext rContext,
+                            @Nonnull ImageProxy proxy,
+                            short swizzle,
+                            int origin,
+                            int colorType,
+                            int alphaType,
+                            @Nullable ColorSpace colorSpace) {
         super(ImageInfo.make(proxy.getBackingWidth(), proxy.getBackingHeight(),
                 colorType, alphaType, colorSpace));
         mContext = rContext;
@@ -71,12 +72,12 @@ public class Image_Texture extends Image {
     }
 
     @Override
-    public boolean isTextureBacked() {
+    public boolean isGpuBacked() {
         return true;
     }
 
     @Override
-    public long getTextureMemorySize() {
+    public long getGpuMemorySize() {
         return mSurfaceProxyView.getProxy().getMemorySize();
     }
 }

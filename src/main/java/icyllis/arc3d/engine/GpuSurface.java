@@ -56,7 +56,9 @@ public abstract sealed class GpuSurface extends GpuResource permits GpuImage, Gp
      * If this is RT, returns the backend format of color attachment 0.
      */
     @Nonnull
-    public abstract BackendFormat getBackendFormat();
+    public BackendFormat getBackendFormat() {
+        return null;
+    }
 
     public abstract int getDepthBits();
 

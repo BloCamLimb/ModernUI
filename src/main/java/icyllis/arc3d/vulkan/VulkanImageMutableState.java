@@ -19,7 +19,9 @@
 
 package icyllis.arc3d.vulkan;
 
-public final class VulkanSharedImageInfo {
+import icyllis.arc3d.engine.ImageMutableState;
+
+public final class VulkanImageMutableState extends ImageMutableState {
 
     // Java's volatile is compatible with C++ atomic load/store with memory_order_seq_cst
     // std::atomic<VkImageLayout> mLayout;
@@ -27,11 +29,11 @@ public final class VulkanSharedImageInfo {
     private volatile int mLayout;
     private volatile int mQueueFamilyIndex;
 
-    public VulkanSharedImageInfo(VulkanImageInfo info) {
+    public VulkanImageMutableState(VulkanImageInfo info) {
         this(info.mImageLayout, info.mCurrentQueueFamily);
     }
 
-    public VulkanSharedImageInfo(int layout, int queueFamilyIndex) {
+    public VulkanImageMutableState(int layout, int queueFamilyIndex) {
         mLayout = layout;
         mQueueFamilyIndex = queueFamilyIndex;
     }
