@@ -25,11 +25,12 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.Bitmap;
+import icyllis.modernui.text.TextUtils;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-import org.lwjgl.system.MemoryStack;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -188,8 +189,10 @@ public class GLFontAtlas implements AutoCloseable {
 
     private boolean resize() {
         if (mTexture == null) {
-            // initialize 4 chunks
-            mWidth = mHeight = CHUNK_SIZE * 2;
+            // initialize 4 or 16 chunks
+            mWidth = mHeight = mMaskFormat == Engine.MASK_FORMAT_A8
+                    ? CHUNK_SIZE * 4
+                    : CHUNK_SIZE * 2;
             mTexture = createTexture();
             for (int x = 0; x < mWidth; x += CHUNK_SIZE) {
                 for (int y = 0; y < mHeight; y += CHUNK_SIZE) {
@@ -281,7 +284,6 @@ public class GLFontAtlas implements AutoCloseable {
 
         if (mMaskFormat == Engine.MASK_FORMAT_A8) {
             //XXX: un-premultiplied, so 111r rather than rrrr
-            // in case of some driver bugs, we don't use GL_TEXTURE_SWIZZLE_RGBA
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_ONE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_ONE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_ONE);
@@ -432,6 +434,32 @@ public class GLFontAtlas implements AutoCloseable {
 
     public long getMemorySize() {
         return mTexture != null ? mTexture.getMemorySize() : 0;
+    }
+
+    public void dumpInfo(PrintWriter pw, String name) {
+        int validGlyphs = 0;
+        int emptyGlyphs = 0;
+        int evictedGlyphs = 0;
+        for (var glyph : mGlyphs.values()) {
+            if (glyph == null) {
+                emptyGlyphs++;
+            } else if (glyph.x == Short.MIN_VALUE) {
+                evictedGlyphs++;
+            } else {
+                validGlyphs++;
+            }
+        }
+        pw.print(name);
+        pw.printf(": NumGlyphs=%d (in-use: %d, empty: %d, evicted: %d)",
+                getGlyphCount(), validGlyphs, emptyGlyphs, evictedGlyphs);
+        pw.print(", Coverage=");
+        pw.printf("%.4f", getCoverage());
+        pw.print(", GPUMemorySize=");
+        long memorySize = getMemorySize();
+        TextUtils.binaryCompact(pw, memorySize);
+        pw.print(" (");
+        pw.print(memorySize);
+        pw.println(" bytes)");
     }
 
     /**

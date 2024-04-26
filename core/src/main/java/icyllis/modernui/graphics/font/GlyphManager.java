@@ -29,7 +29,6 @@ import icyllis.modernui.graphics.Bitmap;
 import icyllis.modernui.graphics.BitmapFactory;
 import icyllis.modernui.graphics.text.Font;
 import icyllis.modernui.graphics.text.*;
-import icyllis.modernui.text.TextUtils;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
@@ -354,23 +353,11 @@ public class GlyphManager {
     }
 
     public void dumpInfo(PrintWriter pw) {
-        dumpInfo(pw, mFontAtlas, "FontAtlas");
-        dumpInfo(pw, mEmojiAtlas, "EmojiAtlas");
-    }
-
-    private static void dumpInfo(PrintWriter pw, GLFontAtlas atlas, String name) {
-        if (atlas != null) {
-            pw.print(name);
-            pw.print(": Glyphs=");
-            pw.print(atlas.getGlyphCount());
-            pw.print(", Coverage=");
-            pw.printf("%.4f", atlas.getCoverage());
-            pw.print(", GPUMemorySize=");
-            long memorySize = atlas.getMemorySize();
-            TextUtils.binaryCompact(pw, memorySize);
-            pw.print(" (");
-            pw.print(memorySize);
-            pw.println(" bytes)");
+        if (mFontAtlas != null) {
+            mFontAtlas.dumpInfo(pw, "FontAtlas");
+        }
+        if (mEmojiAtlas != null) {
+            mEmojiAtlas.dumpInfo(pw, "EmojiAtlas");
         }
     }
 
