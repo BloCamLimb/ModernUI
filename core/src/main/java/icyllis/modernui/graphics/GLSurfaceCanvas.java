@@ -302,7 +302,8 @@ public final class GLSurfaceCanvas extends Canvas {
         mRoundRectUBO.allocate(ROUND_RECT_UNIFORM_SIZE);
 
         mLinearSampler = Objects.requireNonNull(
-                device.getResourceProvider().findOrCreateCompatibleSampler(SamplerState.DEFAULT),
+                device.getResourceProvider().findOrCreateCompatibleSampler(
+                        SamplerState.make(SamplerState.FILTER_LINEAR, SamplerState.MIPMAP_MODE_LINEAR)),
                 "Failed to create font sampler");
 
         {

@@ -155,6 +155,8 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(GLFW_DEPTH_BITS, 0);
+        glfwWindowHint(GLFW_STENCIL_BITS, 0);
         glfwWindowHintString(GLFW_X11_CLASS_NAME, NAME_CPT);
         glfwWindowHintString(GLFW_X11_INSTANCE_NAME, NAME_CPT);
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
