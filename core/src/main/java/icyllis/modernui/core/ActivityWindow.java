@@ -165,7 +165,12 @@ public final class ActivityWindow extends Window {
         mWidth = width;
         mHeight = height;
         if (mRoot != null) {
-            mRoot.mHandler.post(() -> mRoot.setFrame(mWidth, mHeight));
+            mRoot.mHandler.post(() -> {
+                // on minimized, window size is 0
+                if (mWidth != 0 && mHeight != 0) {
+                    mRoot.setFrame(mWidth, mHeight);
+                }
+            });
         }
     }
 
