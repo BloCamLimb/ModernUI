@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,19 +19,14 @@
 
 package icyllis.arc3d.engine;
 
-/**
- * Pipeline state object used for graphics.
- */
-public abstract class GraphicsPipeline extends ManagedResource {
+public abstract class Framebuffer extends Resource {
 
-    private final byte mPrimitiveType;
-
-    public GraphicsPipeline(Device device, byte primitiveType) {
+    protected Framebuffer(Device device) {
         super(device);
-        mPrimitiveType = primitiveType;
     }
 
-    public final byte getPrimitiveType() {
-        return mPrimitiveType;
+    @Override
+    public long getMemorySize() {
+        return 0;
     }
 }

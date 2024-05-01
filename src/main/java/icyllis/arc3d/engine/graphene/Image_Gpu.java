@@ -26,29 +26,32 @@ import icyllis.arc3d.engine.*;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public class Image_GpuTexture extends icyllis.arc3d.core.Image {
+/**
+ * The image that is backed by GPU.
+ */
+public final class Image_Gpu extends icyllis.arc3d.core.Image {
 
     RecordingContext mContext;
     @SharedPtr
-    SurfaceProxyView mSurfaceProxyView;
+    ImageProxyView mImageProxyView;
 
-    public Image_GpuTexture(@Nonnull RecordingContext rContext,
-                            @Nonnull ImageProxy proxy,
-                            short swizzle,
-                            int origin,
-                            int colorType,
-                            int alphaType,
-                            @Nullable ColorSpace colorSpace) {
+    public Image_Gpu(@Nonnull RecordingContext rContext,
+                     @Nonnull ImageProxy proxy,
+                     short swizzle,
+                     int origin,
+                     int colorType,
+                     int alphaType,
+                     @Nullable ColorSpace colorSpace) {
         super(ImageInfo.make(proxy.getBackingWidth(), proxy.getBackingHeight(),
                 colorType, alphaType, colorSpace));
         mContext = rContext;
-        mSurfaceProxyView = new SurfaceProxyView(RefCnt.create(proxy), origin, swizzle);
+        mImageProxyView = new ImageProxyView(RefCnt.create(proxy), origin, swizzle);
     }
 
     @Override
     protected void deallocate() {
-        mSurfaceProxyView.close();
-        mSurfaceProxyView = null;
+        mImageProxyView.close();
+        mImageProxyView = null;
     }
 
     @Override
@@ -56,8 +59,8 @@ public class Image_GpuTexture extends icyllis.arc3d.core.Image {
         return mContext;
     }
 
-    public SurfaceProxyView getSurfaceProxyView() {
-        return mSurfaceProxyView;
+    public ImageProxyView getSurfaceProxyView() {
+        return mImageProxyView;
     }
 
     @Override
@@ -78,6 +81,6 @@ public class Image_GpuTexture extends icyllis.arc3d.core.Image {
 
     @Override
     public long getGpuMemorySize() {
-        return mSurfaceProxyView.getProxy().getMemorySize();
+        return mImageProxyView.getProxy().getMemorySize();
     }
 }

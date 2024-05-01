@@ -37,14 +37,14 @@ public final class GLRenderTarget extends GpuRenderTarget {
     // the color buffers, raw ptr
     // null for wrapped render targets
     @SharedPtr
-    private GLImage[] mColorAttachments;
+    private GLTexture[] mColorAttachments;
     // the resolve buffers, raw ptr
     // null for wrapped/single-sampled/non-resolvable render targets
     @SharedPtr
-    private GLImage[] mResolveAttachments;
+    private GLTexture[] mResolveAttachments;
 
     @SharedPtr
-    private GLImage mDepthStencilAttachment;
+    private GLTexture mDepthStencilAttachment;
 
     private int mRenderFramebuffer;
     private int mResolveFramebuffer;
@@ -65,9 +65,9 @@ public final class GLRenderTarget extends GpuRenderTarget {
                    int renderFramebuffer,
                    int resolveFramebuffer,
                    int numColorTargets,
-                   GLImage[] colorAttachments,
-                   GLImage[] resolveAttachments,
-                   GLImage depthStencilAttachment,
+                   GLTexture[] colorAttachments,
+                   GLTexture[] resolveAttachments,
+                   GLTexture depthStencilAttachment,
                    int surfaceFlags) {
         super(device, width, height, sampleCount, numColorTargets);
         assert (sampleCount > 0);
@@ -79,7 +79,7 @@ public final class GLRenderTarget extends GpuRenderTarget {
         mDepthStencilAttachment = depthStencilAttachment;
         // color/resolve attachments may have different formats,
         // but we don't care about that
-        GLImage primaryAtt = (GLImage) asImage();
+        GLTexture primaryAtt = (GLTexture) asImage();
         mBackendFormat = primaryAtt != null
                 ? primaryAtt.getBackendFormat()
                 : GLBackendFormat.make(GL_NONE);
@@ -94,7 +94,7 @@ public final class GLRenderTarget extends GpuRenderTarget {
                            int sampleCount,
                            int framebuffer,
                            boolean ownership,
-                           @SharedPtr GLImage depthStencilAttachment) {
+                           @SharedPtr GLTexture depthStencilAttachment) {
         super(device, width, height, sampleCount, 1);
         assert (sampleCount > 0);
         assert (framebuffer != 0 || !ownership);
@@ -128,7 +128,7 @@ public final class GLRenderTarget extends GpuRenderTarget {
                                              boolean ownership) {
         assert (sampleCount > 0);
         assert (framebuffer != 0 || !ownership);
-        GLImage depthStencilAtt = null;
+        GLTexture depthStencilAtt = null;
         if (depthBits > 0 || stencilBits > 0) {
             // We pick a "fake" actual format that matches the number of stencil bits. When wrapping
             // an FBO with some number of stencil bits all we care about in the future is that we have
@@ -154,11 +154,11 @@ public final class GLRenderTarget extends GpuRenderTarget {
             // We don't have the actual renderbufferID, but we need to make an attachment for the stencil,
             // so we just set it to an invalid value of 0 to make sure we don't explicitly use it or try
             // and delete it.
-            depthStencilAtt = GLImage.makeWrappedRenderbuffer(device,
+            /*depthStencilAtt = GLTexture.makeWrappedRenderbuffer(device,
                     width, height,
                     sampleCount,
                     depthStencilFormat,
-                    0);
+                    0);*/
         }
         return new GLRenderTarget(device,
                 width, height,
@@ -232,49 +232,49 @@ public final class GLRenderTarget extends GpuRenderTarget {
     @RawPtr
     @Nullable
     @Override
-    public GLImage getColorAttachment() {
+    public GLTexture getColorAttachment() {
         return mColorAttachments != null ? mColorAttachments[0] : null;
     }
 
     @RawPtr
     @Nullable
     @Override
-    public GLImage getColorAttachment(int index) {
+    public GLTexture getColorAttachment(int index) {
         return mColorAttachments != null ? mColorAttachments[index] : null;
     }
 
     @RawPtr
     @Nullable
     @Override
-    public GLImage[] getColorAttachments() {
+    public GLTexture[] getColorAttachments() {
         return mColorAttachments;
     }
 
     @RawPtr
     @Nullable
     @Override
-    public GLImage getResolveAttachment() {
+    public GLTexture getResolveAttachment() {
         return mResolveAttachments != null ? mResolveAttachments[0] : null;
     }
 
     @RawPtr
     @Nullable
     @Override
-    public GLImage getResolveAttachment(int index) {
+    public GLTexture getResolveAttachment(int index) {
         return mResolveAttachments != null ? mResolveAttachments[index] : null;
     }
 
     @RawPtr
     @Nullable
     @Override
-    public GLImage[] getResolveAttachments() {
+    public GLTexture[] getResolveAttachments() {
         return mResolveAttachments;
     }
 
     @RawPtr
     @Nullable
     @Override
-    public GLImage getDepthStencilAttachment() {
+    public GLTexture getDepthStencilAttachment() {
         return mDepthStencilAttachment;
     }
 

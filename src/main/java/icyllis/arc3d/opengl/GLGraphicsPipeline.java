@@ -120,11 +120,11 @@ public class GLGraphicsPipeline extends GraphicsPipeline {
     }
 
     public boolean bindUniforms(GLCommandBuffer commandBuffer,
-                                PipelineInfo pipelineInfo,
+                                GraphicsPipelineDesc graphicsPipelineDesc,
                                 int width, int height) {
         mDataManager.setProjection(0, width, height,
-                pipelineInfo.origin() == Engine.SurfaceOrigin.kLowerLeft);
-        mGPImpl.setData(mDataManager, pipelineInfo.geomProc());
+                graphicsPipelineDesc.origin() == Engine.SurfaceOrigin.kLowerLeft);
+        mGPImpl.setData(mDataManager, graphicsPipelineDesc.geomProc());
         //TODO FP and upload
 
         return mDataManager.bindAndUploadUniforms(getDevice(), commandBuffer);
@@ -134,14 +134,14 @@ public class GLGraphicsPipeline extends GraphicsPipeline {
      * Binds all geometry processor and fragment processor textures.
      */
     public boolean bindTextures(GLCommandBuffer commandBuffer,
-                                PipelineInfo pipelineInfo,
+                                GraphicsPipelineDesc graphicsPipelineDesc,
                                 ImageProxy[] geomTextures) {
         int unit = 0;
-        for (int i = 0, n = pipelineInfo.geomProc().numTextureSamplers(); i < n; i++) {
-            GLImage texture = (GLImage) geomTextures[i].getGpuImage();
+        for (int i = 0, n = graphicsPipelineDesc.geomProc().numTextureSamplers(); i < n; i++) {
+            GLTexture texture = (GLTexture) geomTextures[i].getGpuImage();
             commandBuffer.bindTextureSampler(unit++, texture,
-                    pipelineInfo.geomProc().textureSamplerState(i),
-                    pipelineInfo.geomProc().textureSamplerSwizzle(i));
+                    graphicsPipelineDesc.geomProc().textureSamplerState(i),
+                    graphicsPipelineDesc.geomProc().textureSamplerSwizzle(i));
         }
         //TODO bind FP textures
 
@@ -152,10 +152,10 @@ public class GLGraphicsPipeline extends GraphicsPipeline {
     /**
      * Binds all geometric buffers.
      */
-    public void bindBuffers(@Nullable @RawPtr GpuBuffer indexBuffer,
-                            @Nullable @RawPtr GpuBuffer vertexBuffer,
+    public void bindBuffers(@Nullable @RawPtr Buffer indexBuffer,
+                            @Nullable @RawPtr Buffer vertexBuffer,
                             long vertexOffset,
-                            @Nullable @RawPtr GpuBuffer instanceBuffer,
+                            @Nullable @RawPtr Buffer instanceBuffer,
                             long instanceOffset) {
         if (indexBuffer != null) {
             bindIndexBuffer((GLBuffer) indexBuffer);

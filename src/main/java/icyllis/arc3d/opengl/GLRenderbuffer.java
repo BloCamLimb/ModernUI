@@ -29,38 +29,37 @@ import static org.lwjgl.opengl.GL11C.GL_NO_ERROR;
 import static org.lwjgl.opengl.GL30C.GL_RENDERBUFFER;
 
 /**
+ * Represents OpenGL renderbuffers.
+ * <p>
  * Renderbuffer can be only used as attachments of framebuffers as an optimization.
  * Renderbuffer can neither be accessed by shaders nor have mipmaps, but can be
  * multisampled.
  */
-public final class GLAttachment {
+public final class GLRenderbuffer extends GLImage {
 
     // may be zero for external stencil buffers associated with external render targets
     // (we don't require the client to give us the id, just tell us how many bits of stencil there are)
     private int mRenderbuffer;
 
-    private final int mFormat;
-
     private BackendFormat mBackendFormat;
 
     private final long mMemorySize;
 
-    private GLAttachment(GLDevice device, int width, int height,
-                         int sampleCount, int format, int renderbuffer) {
+    private GLRenderbuffer(GLDevice device, GLImageDesc desc, int renderbuffer, boolean budgeted) {
+        super(device, desc, null);
         mRenderbuffer = renderbuffer;
-        mFormat = format;
 
         // color buffers may be compressed
-        mMemorySize = DataUtils.numBlocks(GLUtil.glFormatCompressionType(format), width, height) *
-                GLUtil.glFormatBytesPerBlock(format) * sampleCount;
+        mMemorySize = DataUtils.computeSize(desc);
+        registerWithCache(budgeted);
     }
 
     @Nullable
     @SharedPtr
-    public static GLAttachment makeStencil(GLDevice device,
-                                           int width, int height,
-                                           int sampleCount,
-                                           int format) {
+    public static GLRenderbuffer makeStencil(GLDevice device,
+                                             int width, int height,
+                                             int sampleCount,
+                                             int format) {
         assert sampleCount > 0 && GLUtil.glFormatStencilBits(format) > 0;
 
         int renderbuffer = device.getGL().glGenRenderbuffers();
@@ -90,15 +89,16 @@ public final class GLAttachment {
             }
         }
 
-        return new GLAttachment(device, width, height, sampleCount, format, renderbuffer);
+        //return new GLRenderbuffer(device, width, height, sampleCount, format, renderbuffer);
+        return null;
     }
 
     @Nullable
     @SharedPtr
-    public static GLAttachment makeColor(GLDevice device,
-                                         int width, int height,
-                                         int sampleCount,
-                                         int format) {
+    public static GLRenderbuffer makeColor(GLDevice device,
+                                           int width, int height,
+                                           int sampleCount,
+                                           int format) {
         assert sampleCount > 1;
 
         int renderbuffer = device.getGL().glGenRenderbuffers();
@@ -120,34 +120,61 @@ public final class GLAttachment {
             }
         }
 
-        return new GLAttachment(device, width, height, sampleCount, format, renderbuffer);
+        //return new GLRenderbuffer(device, width, height, sampleCount, format, renderbuffer);
+        return null;
     }
 
     @Nonnull
     @SharedPtr
-    public static GLAttachment makeWrapped(GLDevice device,
-                                           int width, int height,
-                                           int sampleCount,
-                                           int format,
-                                           int renderbuffer) {
+    public static GLRenderbuffer makeWrapped(GLDevice device,
+                                             int width, int height,
+                                             int sampleCount,
+                                             int format,
+                                             int renderbuffer) {
         assert sampleCount > 0;
-        return new GLAttachment(device, width, height, sampleCount, format, renderbuffer);
+        //return new GLRenderbuffer(device, width, height, sampleCount, format, renderbuffer);
+        return null;
+    }
+
+    @Nonnull
+    @SharedPtr
+    public static GLRenderbuffer makeWrappedRenderbuffer(GLDevice device,
+                                                         int width, int height,
+                                                         int sampleCount,
+                                                         int format,
+                                                         int renderbuffer) {
+        GLImageDesc desc = new GLImageDesc(GL_RENDERBUFFER, format,
+                width, height, 1, 1, 1, sampleCount, ISurface.FLAG_RENDERABLE);
+        return new GLRenderbuffer(device,
+                desc,
+                renderbuffer,
+                false); //TODO should be cacheable
+    }
+
+    public static GLRenderbuffer make(GLDevice device,
+                                      GLImageDesc desc,
+                                      boolean budgeted) {
+        final int handle;
+        if (device.isOnExecutingThread()) {
+            handle = device.createRenderbuffer(desc);
+            if (handle == 0) {
+                return null;
+            }
+        } else {
+            handle = 0;
+        }
+        return new GLRenderbuffer(device, desc,
+                handle,
+                budgeted);
     }
 
     @Nonnull
     public BackendFormat getBackendFormat() {
-        if (mBackendFormat == null) {
-            mBackendFormat = GLBackendFormat.make(mFormat);
-        }
         return mBackendFormat;
     }
 
     public int getRenderbufferID() {
         return mRenderbuffer;
-    }
-
-    public int getFormat() {
-        return mFormat;
     }
 
     public long getMemorySize() {
@@ -158,7 +185,6 @@ public final class GLAttachment {
     public String toString() {
         return "GLAttachment{" +
                 "mRenderbuffer=" + mRenderbuffer +
-                ", mFormat=" + GLUtil.glFormatName(mFormat) +
                 ", mMemorySize=" + mMemorySize +
                 '}';
     }

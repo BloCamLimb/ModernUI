@@ -31,7 +31,7 @@ import java.util.ArrayList;
 public class RenderTaskManager {
 
     private final RecordingContext mContext;
-    private final DirectContext mDirect;
+    private final ImmediateContext mDirect;
 
     @SharedPtr
     private final ArrayList<RenderTask> mDAG = new ArrayList<>();
@@ -47,7 +47,7 @@ public class RenderTaskManager {
 
     public RenderTaskManager(RecordingContext context) {
         mContext = context;
-        if (context instanceof DirectContext direct) {
+        if (context instanceof ImmediateContext direct) {
             mDirect = direct;
             mFlushState = new OpFlushState(direct.getDevice(), direct.getResourceProvider());
             mSurfaceAllocator = new SurfaceAllocator(direct);
@@ -87,9 +87,9 @@ public class RenderTaskManager {
         }
         mFlushing = true;
 
-        final DirectContext context = mDirect;
+        final ImmediateContext context = mDirect;
         assert (context != null);
-        final GpuDevice device = context.getDevice();
+        final Device device = context.getDevice();
         assert (device != null);
 
         closeTasks();
@@ -167,7 +167,7 @@ public class RenderTaskManager {
     }
 
     @SharedPtr
-    public OpsTask newOpsTask(SurfaceProxyView writeView) {
+    public OpsTask newOpsTask(ImageProxyView writeView) {
 
         OpsTask opsTask = new OpsTask(this, writeView);
 

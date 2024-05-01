@@ -30,7 +30,7 @@ import java.util.Arrays;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 /**
- * A pool of geometry buffers tied to a {@link GpuDevice}.
+ * A pool of geometry buffers tied to a {@link Device}.
  * <p>
  * The pool allows a client to make space for geometry and then put back excess
  * space if it over allocated. When a client is ready to draw from the pool
@@ -54,7 +54,7 @@ public abstract class GpuBufferPool {
 
     // blocks
     @SharedPtr
-    protected GpuBuffer[] mBuffers = new GpuBuffer[8];
+    protected Buffer[] mBuffers = new Buffer[8];
     protected int[] mFreeBytes = new int[8];
     protected int mIndex = -1;
 
@@ -114,7 +114,7 @@ public abstract class GpuBufferPool {
     public void flush() {
         if (mBufferPtr != NULL) {
             assert (mIndex >= 0);
-            GpuBuffer buffer = mBuffers[mIndex];
+            Buffer buffer = mBuffers[mIndex];
             int usedBytes = buffer.getSize() - mFreeBytes[mIndex];
             assert (buffer.isLocked());
             assert (buffer.getLockedBuffer() == mBufferPtr);
@@ -130,7 +130,7 @@ public abstract class GpuBufferPool {
     public void reset() {
         mBytesInUse = 0;
         if (mIndex >= 0) {
-            GpuBuffer buffer = mBuffers[mIndex];
+            Buffer buffer = mBuffers[mIndex];
             if (buffer.isLocked()) {
                 assert (mBufferPtr != NULL);
                 assert (buffer.getLockedBuffer() == mBufferPtr);
@@ -140,7 +140,7 @@ public abstract class GpuBufferPool {
         }
         while (mIndex >= 0) {
             @SharedPtr
-            GpuBuffer buffer = mBuffers[mIndex];
+            Buffer buffer = mBuffers[mIndex];
             assert (!buffer.isLocked());
             mBuffers[mIndex--] = RefCnt.move(buffer);
         }
@@ -158,7 +158,7 @@ public abstract class GpuBufferPool {
     public void submit(CommandBuffer cmdBuffer) {
         mBytesInUse = 0;
         if (mIndex >= 0) {
-            GpuBuffer buffer = mBuffers[mIndex];
+            Buffer buffer = mBuffers[mIndex];
             if (buffer.isLocked()) {
                 assert (mBufferPtr != NULL);
                 assert (buffer.getLockedBuffer() == mBufferPtr);
@@ -168,7 +168,7 @@ public abstract class GpuBufferPool {
         }
         while (mIndex >= 0) {
             @SharedPtr
-            GpuBuffer buffer = mBuffers[mIndex];
+            Buffer buffer = mBuffers[mIndex];
             assert (!buffer.isLocked());
             cmdBuffer.moveAndTrackGpuBuffer(buffer);
             mBuffers[mIndex--] = null;
@@ -184,7 +184,7 @@ public abstract class GpuBufferPool {
         while (bytes > 0) {
             // caller shouldn't try to put back more than they've taken
             assert (mIndex >= 0);
-            GpuBuffer buffer = mBuffers[mIndex];
+            Buffer buffer = mBuffers[mIndex];
             int usedBytes = buffer.getSize() - mFreeBytes[mIndex];
             if (bytes >= usedBytes) {
                 bytes -= usedBytes;
@@ -255,7 +255,7 @@ public abstract class GpuBufferPool {
 
         if (mBufferPtr != NULL) {
             assert (mIndex >= 0);
-            GpuBuffer buffer = mBuffers[mIndex];
+            Buffer buffer = mBuffers[mIndex];
             int pos = buffer.getSize() - mFreeBytes[mIndex];
             int pad = MathUtil.alignUpPad(pos, alignment);
             int alignedSize = size + pad;
@@ -272,7 +272,7 @@ public abstract class GpuBufferPool {
         int blockSize = Math.max(size, DEFAULT_BUFFER_SIZE);
 
         @SharedPtr
-        GpuBuffer buffer = mResourceProvider
+        Buffer buffer = mResourceProvider
                 .createBuffer(blockSize, mBufferType | Engine.BufferUsageFlags.kStreaming);
         if (buffer == null) {
             return NULL;
@@ -342,7 +342,7 @@ public abstract class GpuBufferPool {
                 return NULL;
             }
 
-            GpuBuffer buffer = mBuffers[mIndex];
+            Buffer buffer = mBuffers[mIndex];
             int offset = (int) (ptr - mBufferPtr);
             assert (offset % vertexSize == 0);
             mesh.setVertexBuffer(buffer, offset / vertexSize, vertexCount);
@@ -368,7 +368,7 @@ public abstract class GpuBufferPool {
                 return null;
             }
 
-            GpuBuffer buffer = mBuffers[mIndex];
+            Buffer buffer = mBuffers[mIndex];
             int offset = (int) (ptr - mBufferPtr);
             assert (offset % vertexSize == 0);
             mesh.setVertexBuffer(buffer, offset / vertexSize, vertexCount);
@@ -417,7 +417,7 @@ public abstract class GpuBufferPool {
                 return NULL;
             }
 
-            GpuBuffer buffer = mBuffers[mIndex];
+            Buffer buffer = mBuffers[mIndex];
             int offset = (int) (ptr - mBufferPtr);
             assert (offset % instanceSize == 0);
             mesh.setInstanceBuffer(buffer, offset / instanceSize, instanceCount);
@@ -443,7 +443,7 @@ public abstract class GpuBufferPool {
                 return null;
             }
 
-            GpuBuffer buffer = mBuffers[mIndex];
+            Buffer buffer = mBuffers[mIndex];
             int offset = (int) (ptr - mBufferPtr);
             assert (offset % instanceSize == 0);
             mesh.setInstanceBuffer(buffer, offset / instanceSize, instanceCount);
@@ -491,7 +491,7 @@ public abstract class GpuBufferPool {
                 return NULL;
             }
 
-            GpuBuffer buffer = mBuffers[mIndex];
+            Buffer buffer = mBuffers[mIndex];
             int offset = (int) (ptr - mBufferPtr);
             assert (offset % indexSize == 0);
             mesh.setIndexBuffer(buffer, offset / indexSize, indexCount);
@@ -517,7 +517,7 @@ public abstract class GpuBufferPool {
                 return null;
             }
 
-            GpuBuffer buffer = mBuffers[mIndex];
+            Buffer buffer = mBuffers[mIndex];
             int offset = (int) (ptr - mBufferPtr);
             assert (offset % indexSize == 0);
             mesh.setIndexBuffer(buffer, offset / indexSize, indexCount);

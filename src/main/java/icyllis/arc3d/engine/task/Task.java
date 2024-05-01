@@ -25,5 +25,5 @@ public abstract class Task {
 
     public abstract boolean prepare(ResourceProvider resourceProvider);
 
-    public abstract boolean execute(DirectContext context, CommandBuffer cmdBuffer);
+    public abstract boolean execute(ImmediateContext context, CommandBuffer cmdBuffer);
 }

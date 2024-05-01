@@ -19,6 +19,8 @@
 
 package icyllis.arc3d.engine;
 
+import java.nio.ByteBuffer;
+
 /**
  * Manage streaming vertex buffers, for vertex/instance data are updated per draw call.
  * <p>
@@ -27,4 +29,12 @@ package icyllis.arc3d.engine;
  */
 //TODO
 public class StreamBufferManager {
+
+    public ByteBuffer getVertexWriter(int requiredBytes, BufferViewInfo info) {
+        return null;
+    }
+
+    public void putBackVertexBytes(int unusedBytes) {
+
+    }
 }

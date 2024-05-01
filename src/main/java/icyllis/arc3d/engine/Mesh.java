@@ -51,7 +51,7 @@ public interface Mesh {
      *                          in units of the size of a vertex from layout param
      * @param actualVertexCount the actual number of vertices allocated
      */
-    default void setVertexBuffer(@RawPtr GpuBuffer buffer, int baseVertex, int actualVertexCount) {
+    default void setVertexBuffer(@RawPtr Buffer buffer, int baseVertex, int actualVertexCount) {
         throw new IllegalStateException();
     }
 
@@ -79,7 +79,7 @@ public interface Mesh {
      *                            in units of the size of an instance from layout param
      * @param actualInstanceCount the actual number of instances allocated
      */
-    default void setInstanceBuffer(@RawPtr GpuBuffer buffer, int baseInstance, int actualInstanceCount) {
+    default void setInstanceBuffer(@RawPtr Buffer buffer, int baseInstance, int actualInstanceCount) {
         throw new IllegalStateException();
     }
 
@@ -100,7 +100,7 @@ public interface Mesh {
      *                         in units of the size of an index from layout param
      * @param actualIndexCount the actual number of indices allocated
      */
-    default void setIndexBuffer(@RawPtr GpuBuffer buffer, int baseIndex, int actualIndexCount) {
+    default void setIndexBuffer(@RawPtr Buffer buffer, int baseIndex, int actualIndexCount) {
         throw new IllegalStateException();
     }
 }

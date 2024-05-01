@@ -39,11 +39,11 @@ public final class GLOpsRenderPass extends OpsRenderPass {
     private int mPrimitiveType;
 
     @SharedPtr
-    private GpuBuffer mActiveIndexBuffer;
+    private Buffer mActiveIndexBuffer;
     @SharedPtr
-    private GpuBuffer mActiveVertexBuffer;
+    private Buffer mActiveVertexBuffer;
     @SharedPtr
-    private GpuBuffer mActiveInstanceBuffer;
+    private Buffer mActiveInstanceBuffer;
 
     private int mIndexType;
     private int mVertexStreamOffset;
@@ -93,7 +93,7 @@ public final class GLOpsRenderPass extends OpsRenderPass {
     }
 
     @Override
-    protected boolean onBindPipeline(PipelineInfo pipelineInfo,
+    protected boolean onBindPipeline(GraphicsPipelineDesc graphicsPipelineDesc,
                                      GraphicsPipeline pipeline,
                                      Rect2fc drawBounds) {
         mActiveIndexBuffer = RefCnt.move(mActiveIndexBuffer);
@@ -104,7 +104,7 @@ public final class GLOpsRenderPass extends OpsRenderPass {
         if (mPipelineState == null) {
             return false;
         }
-        mPrimitiveType = switch (pipelineInfo.primitiveType()) {
+        mPrimitiveType = switch (graphicsPipelineDesc.primitiveType()) {
             case PrimitiveType.PointList -> GL_POINTS;
             case PrimitiveType.LineList -> GL_LINES;
             case PrimitiveType.LineStrip -> GL_LINE_STRIP;
@@ -118,7 +118,7 @@ public final class GLOpsRenderPass extends OpsRenderPass {
             return false;
         }
 
-        return mPipelineState.bindUniforms(mCmdBuffer, pipelineInfo,
+        return mPipelineState.bindUniforms(mCmdBuffer, graphicsPipelineDesc,
                 mRenderTarget.getWidth(), mRenderTarget.getHeight());
     }
 
@@ -135,9 +135,9 @@ public final class GLOpsRenderPass extends OpsRenderPass {
     }
 
     @Override
-    protected void onBindBuffers(@RawPtr GpuBuffer indexBuffer, int indexType,
-                                 @RawPtr GpuBuffer vertexBuffer, int vertexStreamOffset,
-                                 @RawPtr GpuBuffer instanceBuffer, int instanceStreamOffset) {
+    protected void onBindBuffers(@RawPtr Buffer indexBuffer, int indexType,
+                                 @RawPtr Buffer vertexBuffer, int vertexStreamOffset,
+                                 @RawPtr Buffer instanceBuffer, int instanceStreamOffset) {
         assert (mPipelineState != null);
         if (mDevice.getCaps().hasBaseInstanceSupport()) {
             mPipelineState.bindBuffers(indexBuffer, vertexBuffer, vertexStreamOffset,

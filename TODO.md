@@ -24,6 +24,7 @@ Plan:
   and mipmap level range
 - [ ] New 2D Pipeline Cache
 - [ ] Use compute shader for path tessellation, based on [Vello](https://github.com/linebender/vello)
+- [ ] If the paint has a solid color, try to put color into instance data instead of uniform data
 
 Shader Compiler:
 - [ ] Disallow struct types that used in SSBO/UBO also used for local variables, because their memory

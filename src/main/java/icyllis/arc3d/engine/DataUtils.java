@@ -22,6 +22,7 @@ package icyllis.arc3d.engine;
 import icyllis.arc3d.core.ColorInfo;
 import icyllis.arc3d.core.MathUtil;
 
+//TODO rename to ImageUtils?
 public final class DataUtils {
 
     public static boolean compressionTypeIsOpaque(@ColorInfo.CompressionType int compression) {
@@ -52,15 +53,15 @@ public final class DataUtils {
         };
     }
 
-    public static long computeSize(ImageInfo info) {
-        long size = numBlocks(info.getCompressionType(), info.mWidth, info.mHeight) *
-                info.getBytesPerBlock();
+    public static long computeSize(ImageDesc desc) {
+        long size = numBlocks(desc.getCompressionType(), desc.mWidth, desc.mHeight) *
+                desc.getBytesPerBlock();
         assert size > 0;
-        if (info.mMipLevelCount > 1) {
+        if (desc.mMipLevelCount > 1) {
             // geometric sequence, S=a1(1-q^n)/(1-q), q=2^(-2)
-            size = ((size - (size >> (info.mMipLevelCount << 1))) << 2) / 3;
-        } else {
-            size *= info.mSampleCount;
+            size = ((size - (size >> (desc.mMipLevelCount << 1))) << 2) / 3;
+        } else if (desc.mSampleCount > 1) {
+            size *= desc.mSampleCount;
         }
         assert size > 0;
         return size;

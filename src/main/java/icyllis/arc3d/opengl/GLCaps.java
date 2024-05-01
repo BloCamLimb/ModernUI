@@ -20,7 +20,6 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.ColorInfo;
-import icyllis.arc3d.core.MathUtil;
 import icyllis.arc3d.engine.*;
 
 import javax.annotation.Nonnull;
@@ -1134,73 +1133,88 @@ public class GLCaps extends Caps {
     }
 
     @Override
-    public ImageInfo getDefaultColorImageInfo(byte imageType,
+    public ImageDesc getDefaultColorImageDesc(byte imageType,
                                               int colorType,
                                               int width, int height,
-                                              int depth, int arraySize,
+                                              int depthOrArraySize,
                                               int mipLevelCount, int sampleCount,
-                                              int surfaceFlags) {
+                                              int imageFlags) {
         //TODO depth and array size
         //TODO log errors
-        if (width < 1 || height < 1 || depth < 1 || arraySize < 1 ||
+        if (width < 1 || height < 1 || depthOrArraySize < 1 ||
                 mipLevelCount < 0 || sampleCount < 0) {
-            return ImageInfo.EMPTY;
+            return ImageDesc.EMPTY;
         }
         //TODO make texture sample counts and renderbuffer sample counts
         int format = mColorTypeToBackendFormat[colorType];
         FormatInfo formatInfo = getFormatInfo(format);
-        if ((surfaceFlags & ISurface.FLAG_PROTECTED) != 0) {
-            return ImageInfo.EMPTY;
+        if ((imageFlags & ISurface.FLAG_PROTECTED) != 0) {
+            return ImageDesc.EMPTY;
         }
-        int target;
-        if ((surfaceFlags & (ISurface.FLAG_SAMPLED_IMAGE | ISurface.FLAG_STORAGE_IMAGE)) != 0) {
+        final int depth;
+        final int arraySize;
+        switch (imageType) {
+            case Engine.ImageType.k3D:
+                depth = depthOrArraySize;
+                arraySize = 1;
+                break;
+            case Engine.ImageType.k2DArray, Engine.ImageType.kCubeArray:
+                depth = 1;
+                arraySize = depthOrArraySize;
+                break;
+            default:
+                depth = arraySize = 1;
+                break;
+        }
+        final int target;
+        if ((imageFlags & (ISurface.FLAG_SAMPLED_IMAGE | ISurface.FLAG_STORAGE_IMAGE)) != 0) {
             final int maxSize = maxTextureSize();
             if (width > maxSize || height > maxSize || !formatInfo.isTexturable()) {
-                return ImageInfo.EMPTY;
+                return ImageDesc.EMPTY;
             }
             target = GL_TEXTURE_2D;
-        } else if ((surfaceFlags & ISurface.FLAG_RENDERABLE) != 0) {
+        } else if ((imageFlags & ISurface.FLAG_RENDERABLE) != 0) {
             final int maxSize = maxRenderTargetSize();
             if (width > maxSize || height > maxSize) {
-                return ImageInfo.EMPTY;
+                return ImageDesc.EMPTY;
             }
             //TODO if cannot make renderbuffer, create texture instead
             target = GL_RENDERBUFFER;
         } else {
-            return ImageInfo.EMPTY;
+            return ImageDesc.EMPTY;
         }
         int maxMipLevels = DataUtils.computeMipLevelCount(width, height, depth);
         if (mipLevelCount == 0) {
-            mipLevelCount = (surfaceFlags & ISurface.FLAG_MIPMAPPED) != 0
+            mipLevelCount = (imageFlags & ISurface.FLAG_MIPMAPPED) != 0
                     ? maxMipLevels
                     : 1; // only base level
         } else {
             mipLevelCount = Math.min(mipLevelCount, maxMipLevels);
         }
-        if ((surfaceFlags & ISurface.FLAG_RENDERABLE) != 0) {
+        if ((imageFlags & ISurface.FLAG_RENDERABLE) != 0) {
             if ((formatInfo.colorTypeFlags(colorType) & ColorTypeInfo.RENDERABLE_FLAG) == 0) {
-                return ImageInfo.EMPTY;
+                return ImageDesc.EMPTY;
             }
             sampleCount = getRenderTargetSampleCount(sampleCount, format);
             if (sampleCount == 0) {
-                return ImageInfo.EMPTY;
+                return ImageDesc.EMPTY;
             }
         } else {
             sampleCount = 1;
         }
         if (sampleCount > 1 && mipLevelCount > 1) {
-            return ImageInfo.EMPTY;
+            return ImageDesc.EMPTY;
         }
         // ignore MEMORYLESS flag
-        return new GLImageInfo(target,
+        return new GLImageDesc(target,
                 format, width, height,
                 depth, arraySize,
                 mipLevelCount, sampleCount,
-                surfaceFlags);
+                imageFlags);
     }
 
     @Override
-    public ImageInfo getDefaultDepthStencilImageInfo(int depthBits, int stencilBits,
+    public ImageDesc getDefaultDepthStencilImageDesc(int depthBits, int stencilBits,
                                                      int width, int height,
                                                      int sampleCount, int imageFlags) {
 
@@ -1220,7 +1234,7 @@ public class GLCaps extends Caps {
             }
         }
 
-        return new GLImageInfo(GL_RENDERBUFFER,
+        return new GLImageDesc(GL_RENDERBUFFER,
                 depthStencilFormat, width, height, 1, 1, 1, sampleCount, imageFlags);
     }
 
@@ -1249,10 +1263,10 @@ public class GLCaps extends Caps {
 
     @Nonnull
     @Override
-    public PipelineDesc makeDesc(PipelineDesc desc,
-                                 GpuRenderTarget renderTarget,
-                                 final PipelineInfo pipelineInfo) {
-        return PipelineDesc.build(desc, pipelineInfo, this);
+    public PipelineKey makeDesc(PipelineKey desc,
+                                GpuRenderTarget renderTarget,
+                                final GraphicsPipelineDesc graphicsPipelineDesc) {
+        return PipelineKey.build(desc, graphicsPipelineDesc, this);
     }
 
     @Override
@@ -1277,6 +1291,15 @@ public class GLCaps extends Caps {
         }
         assert false;
         return Swizzle.RGBA;
+    }
+
+    @Override
+    public IScratchKey computeImageKey(ImageDesc desc,
+                                       IScratchKey recycle) {
+        if (desc instanceof GLImageDesc glDesc) {
+            return new GLImage.ScratchKey(glDesc);
+        }
+        return null;
     }
 
     @Override

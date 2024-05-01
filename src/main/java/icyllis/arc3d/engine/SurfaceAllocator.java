@@ -75,7 +75,7 @@ import static icyllis.arc3d.engine.Engine.BudgetType;
  */
 public final class SurfaceAllocator {
 
-    private final DirectContext mContext;
+    private final ImmediateContext mContext;
 
     // All the intervals, hashed by surface ID
     private final Reference2ObjectOpenHashMap<UniqueID, Interval> mIntervalHash =
@@ -102,7 +102,7 @@ public final class SurfaceAllocator {
 
     private boolean mInstantiationFailed;
 
-    public SurfaceAllocator(DirectContext context) {
+    public SurfaceAllocator(ImmediateContext context) {
         mContext = context;
     }
 

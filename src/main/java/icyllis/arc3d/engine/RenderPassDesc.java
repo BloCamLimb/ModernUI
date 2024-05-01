@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,19 +19,16 @@
 
 package icyllis.arc3d.engine;
 
-/**
- * Pipeline state object used for graphics.
- */
-public abstract class GraphicsPipeline extends ManagedResource {
+public class RenderPassDesc {
 
-    private final byte mPrimitiveType;
+    public GpuRenderTarget mRenderTarget;
 
-    public GraphicsPipeline(Device device, byte primitiveType) {
-        super(device);
-        mPrimitiveType = primitiveType;
-    }
+    public byte mColorOps;
+    public byte mDepthStencilOps;
+    public float[] mClearColor;
+    public float mClearDepth;
+    public int mClearStencil;
 
-    public final byte getPrimitiveType() {
-        return mPrimitiveType;
-    }
+    public short mWriteSwizzle;
+    public int mSampleCount;
 }

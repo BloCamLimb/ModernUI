@@ -132,7 +132,7 @@ public abstract class Op extends Rect2f {
      */
     //TODO more params
     public abstract void onPrePrepare(RecordingContext context,
-                                      SurfaceProxyView writeView,
+                                      ImageProxyView writeView,
                                       int pipelineFlags);
 
     /**
@@ -140,7 +140,7 @@ public abstract class Op extends Rect2f {
      * necessary before execute() is called.
      */
     public abstract void onPrepare(OpFlushState state,
-                                   SurfaceProxyView writeView,
+                                   ImageProxyView writeView,
                                    int pipelineFlags);
 
     /**

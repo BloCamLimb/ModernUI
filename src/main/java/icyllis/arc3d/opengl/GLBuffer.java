@@ -21,8 +21,7 @@ package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SharedPtr;
-import icyllis.arc3d.engine.CpuBuffer;
-import icyllis.arc3d.engine.GpuBuffer;
+import icyllis.arc3d.engine.Buffer;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -34,7 +33,7 @@ import static org.lwjgl.opengl.GL43C.GL_BUFFER;
 import static org.lwjgl.opengl.GL44C.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
-public final class GLBuffer extends GpuBuffer {
+public final class GLBuffer extends Buffer {
 
     private int mBuffer;
 

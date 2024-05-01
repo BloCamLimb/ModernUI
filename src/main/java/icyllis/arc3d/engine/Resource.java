@@ -32,15 +32,23 @@ import java.lang.invoke.VarHandle;
 import static icyllis.arc3d.engine.Engine.BudgetType;
 
 /**
- * Base class for operating GPU resources that can be kept in the
- * {@link ResourceCache}. Such resources will have a device memory allocation.
- * Possible implementations:
+ * Base class for operating GPU resources that can be kept in the {@link ResourceCache}.
+ * <p>
+ * Resources that have memory allocation:
  * <ul>
  *   <li>GLBuffer</li>
  *   <li>GLTexture</li>
  *   <li>GLRenderbuffer</li>
- *   <li>VkBuffer</li>
- *   <li>VkImage</li>
+ *   <li>VulkanBuffer</li>
+ *   <li>VulkanImage</li>
+ * </ul>
+ * Resources that can be considered memoryless:
+ * <ul>
+ *     <li>GLSampler</li>
+ *     <li>GLFramebuffer</li>
+ *     <li>VulkanSampler</li>
+ *     <li>VulkanRenderPass</li>
+ *     <li>VulkanFramebuffer</li>
  * </ul>
  * Specially, cacheable framebuffer objects are also implementations of this class,
  * they can be used as ping-pong buffers.
@@ -52,13 +60,13 @@ import static icyllis.arc3d.engine.Engine.BudgetType;
  * otherwise they tend to be used as raw pointers (no ref/unref calls should be
  * made). A paired {@link UniqueID} object can be used as unique identifiers.
  * <p>
- * Each {@link GpuResource} should be created with immutable GPU memory allocation,
+ * Each {@link Resource} should be created with immutable GPU memory allocation,
  * one exception is streaming buffers, which allocates a ring buffer and its offset
- * will alter. {@link GpuResource} can be only created/recycled on the render thread.
- * Use {@link ResourceProvider} to obtain {@link GpuResource} objects.
+ * will alter. {@link Resource} can be only created/recycled on the render thread.
+ * Use {@link ResourceProvider} to obtain {@link Resource} objects.
  */
 @NotThreadSafe
-public abstract sealed class GpuResource implements RefCounted permits GpuSurface, GpuBuffer {
+public abstract class Resource implements RefCounted {
 
     private static final VarHandle REF_CNT;
     private static final VarHandle COMMAND_BUFFER_USAGE_CNT;
@@ -66,8 +74,8 @@ public abstract sealed class GpuResource implements RefCounted permits GpuSurfac
     static {
         MethodHandles.Lookup lookup = MethodHandles.lookup();
         try {
-            REF_CNT = lookup.findVarHandle(GpuResource.class, "mRefCnt", int.class);
-            COMMAND_BUFFER_USAGE_CNT = lookup.findVarHandle(GpuResource.class, "mCommandBufferUsageCnt", int.class);
+            REF_CNT = lookup.findVarHandle(Resource.class, "mRefCnt", int.class);
+            COMMAND_BUFFER_USAGE_CNT = lookup.findVarHandle(Resource.class, "mCommandBufferUsageCnt", int.class);
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
@@ -78,14 +86,14 @@ public abstract sealed class GpuResource implements RefCounted permits GpuSurfac
     @SuppressWarnings("FieldMayBeFinal")
     private volatile int mCommandBufferUsageCnt = 0;
 
-    static final PriorityQueue.Access<GpuResource> QUEUE_ACCESS = new PriorityQueue.Access<>() {
+    static final PriorityQueue.Access<Resource> QUEUE_ACCESS = new PriorityQueue.Access<>() {
         @Override
-        public void setIndex(GpuResource resource, int index) {
+        public void setIndex(Resource resource, int index) {
             resource.mCacheIndex = index;
         }
 
         @Override
-        public int getIndex(GpuResource resource) {
+        public int getIndex(Resource resource) {
             return resource.mCacheIndex;
         }
     };
@@ -103,7 +111,7 @@ public abstract sealed class GpuResource implements RefCounted permits GpuSurfac
     IUniqueKey mUniqueKey;
 
     // set once in constructor, clear to null after being destroyed
-    GpuDevice mDevice;
+    Device mDevice;
 
     private byte mBudgetType = BudgetType.NotBudgeted;
     private boolean mWrapped = false;
@@ -112,7 +120,7 @@ public abstract sealed class GpuResource implements RefCounted permits GpuSurfac
     private String mLabel = "";
     private final UniqueID mUniqueID = new UniqueID();
 
-    protected GpuResource(GpuDevice device) {
+    protected Resource(Device device) {
         assert (device != null);
         mDevice = device;
     }
@@ -228,7 +236,7 @@ public abstract sealed class GpuResource implements RefCounted permits GpuSurfac
      * automatically releases all its resources.
      */
     @Nullable
-    public final DirectContext getContext() {
+    public final ImmediateContext getContext() {
         return mDevice != null ? mDevice.getContext() : null;
     }
 
@@ -435,7 +443,7 @@ public abstract sealed class GpuResource implements RefCounted permits GpuSurfac
     /**
      * @return the device or null if destroyed
      */
-    protected GpuDevice getDevice() {
+    protected Device getDevice() {
         return mDevice;
     }
 

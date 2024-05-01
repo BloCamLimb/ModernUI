@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.opengl;
 
-import icyllis.arc3d.engine.ImageInfo;
+import icyllis.arc3d.engine.ImageDesc;
 import icyllis.arc3d.engine.Engine;
 import org.lwjgl.opengl.*;
 
@@ -30,7 +30,7 @@ import org.lwjgl.opengl.*;
  * <p>
  * Note the target can be {@link GL30C#GL_RENDERBUFFER}.
  */
-public final class GLImageInfo extends ImageInfo {
+public final class GLImageDesc extends ImageDesc {
 
     /**
      * <code>GLenum</code> - image namespace
@@ -41,7 +41,7 @@ public final class GLImageInfo extends ImageInfo {
      */
     public final int mFormat;
 
-    public GLImageInfo(int target, int format,
+    public GLImageDesc(int target, int format,
                        int width, int height,
                        int depth, int arraySize,
                        int mipLevelCount, int sampleCount,
@@ -124,15 +124,15 @@ public final class GLImageInfo extends ImageInfo {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o instanceof GLImageInfo info) {
-            return mTarget == info.mTarget &&
-                    mFormat == info.mFormat &&
-                    mWidth == info.mWidth &&
-                    mHeight == info.mHeight &&
-                    mDepth == info.mDepth &&
-                    mArraySize == info.mArraySize &&
-                    mMipLevelCount != info.mMipLevelCount &&
-                    mSampleCount != info.mSampleCount;
+        if (o instanceof GLImageDesc desc) {
+            return mTarget == desc.mTarget &&
+                    mFormat == desc.mFormat &&
+                    mWidth == desc.mWidth &&
+                    mHeight == desc.mHeight &&
+                    mDepth == desc.mDepth &&
+                    mArraySize == desc.mArraySize &&
+                    mMipLevelCount != desc.mMipLevelCount &&
+                    mSampleCount != desc.mSampleCount;
         }
         return false;
     }

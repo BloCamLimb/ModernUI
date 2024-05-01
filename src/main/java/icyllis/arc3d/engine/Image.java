@@ -23,24 +23,25 @@ import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SharedPtr;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import static icyllis.arc3d.engine.Engine.BudgetType;
 
 /**
- * Represents GPU images, which may be 2D or 3D. This class also represents the image view
- * type, see {@link Engine.ImageType}.
+ * Represents GPU textures/images, which may be 2D or 3D. This class also represents a
+ * default texture/image view type, see {@link Engine.ImageType}.
  * <p>
- * A {@link GpuImage} may be used as textures (sampled in fragment shaders), may be used as
+ * An {@link Image} may be used as textures (sampled in fragment shaders), may be used as
  * storage images (load and store in compute shaders), may be used as color and depth/stencil
- * attachments of a framebuffer. See {@link ISurface#FLAG_SAMPLED_IMAGE},
+ * attachments of framebuffers. See {@link ISurface#FLAG_SAMPLED_IMAGE},
  * {@link ISurface#FLAG_STORAGE_IMAGE} and {@link ISurface#FLAG_RENDERABLE}.
- * Texture (sampled image) is a specialization of GPU images.
+ * In D3D12 and Metal terminology, {@link Image} is "Texture". We don't want to say
+ * "texturable" texture or sampled texture, so we use sampled image instead.
+ * Image is the only name in Vulkan and SPIR-V terminology.
  */
-public abstract non-sealed class GpuImage extends GpuSurface {
+public abstract class Image extends GpuSurface {
 
-    protected final ImageInfo mInfo;
-    protected final ImageMutableState mMutableState;
+    private final ImageDesc mDesc;
+    private final ImageMutableState mMutableState;
 
     /**
      * Note: budgeted is a dynamic state, it can be returned by {@link #getSurfaceFlags()}.
@@ -57,25 +58,25 @@ public abstract non-sealed class GpuImage extends GpuSurface {
     @SharedPtr
     private ReleaseCallback mReleaseCallback;
 
-    protected GpuImage(GpuDevice device,
-                       ImageInfo info,
-                       ImageMutableState mutableState) {
+    protected Image(Device device,
+                    ImageDesc desc,
+                    ImageMutableState mutableState) {
         super(device);
-        mInfo = info;
+        mDesc = desc;
         mMutableState = mutableState;
     }
 
     @Nonnull
-    public ImageInfo getInfo() {
-        return mInfo;
+    public final ImageDesc getDesc() {
+        return mDesc;
     }
 
-    public ImageMutableState getMutableState() {
+    public final ImageMutableState getMutableState() {
         return mMutableState;
     }
 
     public final byte getImageType() {
-        return mInfo.getImageType();
+        return mDesc.getImageType();
     }
 
     /**
@@ -83,7 +84,7 @@ public abstract non-sealed class GpuImage extends GpuSurface {
      */
     @Override
     public final int getWidth() {
-        return mInfo.mWidth;
+        return mDesc.mWidth;
     }
 
     /**
@@ -91,15 +92,15 @@ public abstract non-sealed class GpuImage extends GpuSurface {
      */
     @Override
     public final int getHeight() {
-        return mInfo.mHeight;
+        return mDesc.mHeight;
     }
 
     public final int getDepth() {
-        return mInfo.mDepth;
+        return mDesc.mDepth;
     }
 
     public final int getArraySize() {
-        return mInfo.mArraySize;
+        return mDesc.mArraySize;
     }
 
     @Override
@@ -113,17 +114,17 @@ public abstract non-sealed class GpuImage extends GpuSurface {
     }
 
     /**
-     * @return true if this surface has mipmaps and have been allocated
+     * @return true if this image has mipmaps and have been allocated
      */
     public final boolean isMipmapped() {
-        return mInfo.isMipmapped();
+        return mDesc.isMipmapped();
     }
 
     /**
      * @return true if this image can be used as textures
      */
     public final boolean isSampledImage() {
-        return mInfo.isSampledImage();
+        return mDesc.isSampledImage();
     }
 
     /**
@@ -144,12 +145,12 @@ public abstract non-sealed class GpuImage extends GpuSurface {
      * @return number of mipmap levels, greater than 1 if mipmapped
      */
     public final int getMipLevelCount() {
-        return mInfo.mMipLevelCount;
+        return mDesc.mMipLevelCount;
     }
 
     @Override
     public final int getSampleCount() {
-        return mInfo.mSampleCount;
+        return mDesc.mSampleCount;
     }
 
     /**
@@ -176,12 +177,12 @@ public abstract non-sealed class GpuImage extends GpuSurface {
      * <ul>
      * <li>{@link ISurface#FLAG_BUDGETED} -
      *  Indicates whether an allocation should count against a cache budget. Budgeted when
-     *  set, otherwise not budgeted. {@link GpuImage} only.
+     *  set, otherwise not budgeted. {@link Image} only.
      * </li>
      *
      * <li>{@link ISurface#FLAG_MIPMAPPED} -
      *  Used to say whether a texture has mip levels allocated or not. Mipmaps are allocated
-     *  when set, otherwise mipmaps are not allocated. {@link GpuImage} only.
+     *  when set, otherwise mipmaps are not allocated. {@link Image} only.
      * </li>
      *
      * <li>{@link ISurface#FLAG_RENDERABLE} -
@@ -195,7 +196,7 @@ public abstract non-sealed class GpuImage extends GpuSurface {
      * </li>
      *
      * <li>{@link ISurface#FLAG_READ_ONLY} -
-     *  Means the pixels in the texture are read-only. {@link GpuImage} only.
+     *  Means the pixels in the texture are read-only. {@link Image} only.
      * </li>
      *
      * @return combination of the above flags
@@ -239,7 +240,7 @@ public abstract non-sealed class GpuImage extends GpuSurface {
     }
 
     @Override
-    public final GpuImage asImage() {
+    public final Image asImage() {
         return this;
     }
 
@@ -259,7 +260,7 @@ public abstract non-sealed class GpuImage extends GpuSurface {
         mReleaseCallback = null;
     }
 
-    @Nullable
+    /*@Nullable
     @Override
     protected ScratchKey computeScratchKey() {
         BackendFormat format = getBackendFormat();
@@ -272,10 +273,10 @@ public abstract non-sealed class GpuImage extends GpuSurface {
                 getWidth(), getHeight(),
                 getSampleCount(),
                 mFlags); // budgeted flag is not included, this method is called only when budgeted
-    }
+    }*/
 
     /**
-     * Storage key of {@link GpuImage}, may be compared with {@link ImageProxy}.
+     * Storage key of {@link Image}, may be compared with {@link ImageProxy}.
      */
     public static final class ScratchKey implements IScratchKey {
 

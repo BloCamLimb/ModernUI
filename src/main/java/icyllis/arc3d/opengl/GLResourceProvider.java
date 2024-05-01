@@ -25,6 +25,8 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
 
 import javax.annotation.Nullable;
 
+import static org.lwjgl.opengl.GL33C.GL_RENDERBUFFER;
+
 /**
  * Provides OpenGL objects with cache.
  */
@@ -38,7 +40,7 @@ public final class GLResourceProvider extends ResourceProvider {
     private final Int2ObjectLinkedOpenHashMap<GLSampler> mSamplerCache =
             new Int2ObjectLinkedOpenHashMap<>(SAMPLER_CACHE_SIZE);
 
-    GLResourceProvider(GLDevice device, DirectContext context) {
+    GLResourceProvider(GLDevice device, ImmediateContext context) {
         super(device, context);
         mDevice = device;
     }
@@ -55,12 +57,16 @@ public final class GLResourceProvider extends ResourceProvider {
 
     @Nullable
     @Override
-    protected GLImage onCreateNewImage(ImageInfo info,
+    protected GLImage onCreateNewImage(ImageDesc desc,
                                        boolean budgeted) {
-        if (!(info instanceof GLImageInfo glInfo)) {
+        if (!(desc instanceof GLImageDesc glImageDesc)) {
             return null;
         }
-        return GLImage.make(mDevice, glInfo, budgeted);
+        if (glImageDesc.mTarget == GL_RENDERBUFFER) {
+            return GLRenderbuffer.make(mDevice, glImageDesc, budgeted);
+        } else {
+            return GLTexture.make(mDevice, glImageDesc, budgeted);
+        }
     }
 
     /**

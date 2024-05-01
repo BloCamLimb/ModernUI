@@ -28,9 +28,11 @@ import javax.annotation.Nullable;
 
 public class SurfaceDrawContext extends SurfaceFillContext {
 
+    private ImageProxy mDepthStencilTarget;
+
     public SurfaceDrawContext(RecordingContext context,
-                              SurfaceProxyView readView,
-                              SurfaceProxyView writeView,
+                              ImageProxyView readView,
+                              ImageProxyView writeView,
                               int colorType,
                               ColorSpace colorSpace) {
         super(context, readView, writeView, colorType, ColorInfo.AT_PREMUL, colorSpace);
@@ -70,8 +72,8 @@ public class SurfaceDrawContext extends SurfaceFillContext {
 
         // two views, inc one more ref
         renderTarget.ref();
-        SurfaceProxyView readView = new SurfaceProxyView(renderTarget, origin, readSwizzle);
-        SurfaceProxyView writeView = new SurfaceProxyView(renderTarget, origin, writeSwizzle);
+        ImageProxyView readView = new ImageProxyView(renderTarget, origin, readSwizzle);
+        ImageProxyView writeView = new ImageProxyView(renderTarget, origin, writeSwizzle);
 
         return new SurfaceDrawContext(rContext, readView, writeView, colorType, colorSpace);
     }
@@ -88,8 +90,8 @@ public class SurfaceDrawContext extends SurfaceFillContext {
 
         // two views, inc one more ref
         surfaceProxy.ref();
-        SurfaceProxyView readView = new SurfaceProxyView(surfaceProxy, origin, readSwizzle);
-        SurfaceProxyView writeView = new SurfaceProxyView(surfaceProxy, origin, writeSwizzle);
+        ImageProxyView readView = new ImageProxyView(surfaceProxy, origin, readSwizzle);
+        ImageProxyView writeView = new ImageProxyView(surfaceProxy, origin, writeSwizzle);
 
         return new SurfaceDrawContext(rContext, readView, writeView, colorType, colorSpace);
     }

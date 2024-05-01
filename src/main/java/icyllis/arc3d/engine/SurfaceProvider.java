@@ -33,7 +33,7 @@ import java.util.Objects;
 public final class SurfaceProvider {
 
     private final RecordingContext mContext;
-    private final DirectContext mDirect;
+    private final ImmediateContext mDirect;
 
     // This holds the texture proxies that have unique keys. The resourceCache does not get a ref
     // on these proxies, but they must send a message to the resourceCache when they are deleted.
@@ -41,8 +41,8 @@ public final class SurfaceProvider {
 
     SurfaceProvider(RecordingContext context) {
         mContext = context;
-        if (context instanceof DirectContext) {
-            mDirect = (DirectContext) context;
+        if (context instanceof ImmediateContext) {
+            mDirect = (ImmediateContext) context;
         } else {
             mDirect = null; // deferred
         }
@@ -130,7 +130,7 @@ public final class SurfaceProvider {
      *
      * @param pixelMap     pixel map
      * @param pixelRef     raw ptr to pixel ref, must be immutable
-     * @param dstColorType a color type for surface usage, see {@link ImageInfo}
+     * @param dstColorType a color type for surface usage, see {@link ImageDesc}
      * @param surfaceFlags flags described as follows
      * @see ISurface#FLAG_BUDGETED
      * @see ISurface#FLAG_APPROX_FIT
@@ -197,7 +197,7 @@ public final class SurfaceProvider {
             //TODO implement fast pixel transfer from heap array
             assert mPixelRef.getBase() == null;
             @SharedPtr
-            GpuImage texture = provider.createTexture(
+            Image texture = provider.createTexture(
                     width, height,
                     format,
                     sampleCount,

@@ -24,7 +24,7 @@ package icyllis.arc3d.engine;
  */
 public abstract class Sampler extends ManagedResource {
 
-    protected Sampler(GpuDevice device) {
+    protected Sampler(Device device) {
         super(device);
     }
 }

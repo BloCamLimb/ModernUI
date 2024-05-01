@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,19 +17,40 @@
  * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.vulkan;
+package icyllis.arc3d.opengl;
 
-import icyllis.arc3d.engine.Device;
-import icyllis.arc3d.engine.ManagedResource;
+import icyllis.arc3d.core.RefCnt;
+import org.lwjgl.system.MemoryUtil;
 
-public class VulkanRenderPassFramebuffer extends ManagedResource {
+/**
+ * Represents an immutable block of native CPU memory.
+ * <p>
+ * The instances are atomic reference counted, and may be used as shared pointers.
+ */
+public final class CpuBuffer extends RefCnt {
 
-    public VulkanRenderPassFramebuffer(Device device) {
-        super(device);
+    private final int mSize;
+    private final long mData;
+
+    public CpuBuffer(int size) {
+        assert (size > 0);
+        mSize = size;
+        mData = MemoryUtil.nmemAllocChecked(size);
+    }
+
+    /**
+     * Size of the buffer in bytes.
+     */
+    public int size() {
+        return mSize;
+    }
+
+    public long data() {
+        return mData;
     }
 
     @Override
     protected void deallocate() {
-
+        MemoryUtil.nmemFree(mData);
     }
 }

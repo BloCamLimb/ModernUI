@@ -43,7 +43,7 @@ public class OpsTask extends RenderTask {
 
     private final ObjectOpenHashSet<SurfaceProxy> mSampledTextures = new ObjectOpenHashSet<>();
 
-    private final SurfaceProxyView mWriteView;
+    private final ImageProxyView mWriteView;
     private int mPipelineFlags;
 
     private final Rect2f mTotalBounds = new Rect2f();
@@ -57,7 +57,7 @@ public class OpsTask extends RenderTask {
      * @param writeView the reference to the owner's write view
      */
     public OpsTask(@Nonnull RenderTaskManager drawingMgr,
-                   @Nonnull SurfaceProxyView writeView) {
+                   @Nonnull ImageProxyView writeView) {
         super(drawingMgr);
         mWriteView = writeView;             // move
         addTarget(writeView.refProxy());    // inc
@@ -108,10 +108,10 @@ public class OpsTask extends RenderTask {
                 int pipelineFlags = mPipelineFlags;
                 if (chain.getClipState() != null) {
                     if (chain.getClipState().hasScissorClip()) {
-                        pipelineFlags |= PipelineInfo.kHasScissorClip_Flag;
+                        pipelineFlags |= GraphicsPipelineDesc.kHasScissorClip_Flag;
                     }
                     if (chain.getClipState().hasStencilClip()) {
-                        pipelineFlags |= PipelineInfo.kHasStencilClip_Flag;
+                        pipelineFlags |= GraphicsPipelineDesc.kHasStencilClip_Flag;
                     }
                 }
                 chain.mHead.onPrepare(flushState, mWriteView, pipelineFlags);
@@ -189,7 +189,7 @@ public class OpsTask extends RenderTask {
         op.visitProxies(addDependency);
 
         if ((processorAnalysis & ProcessorAnalyzer.NON_COHERENT_BLENDING) != 0) {
-            mPipelineFlags |= PipelineInfo.kRenderPassBlendBarrier_Flag;
+            mPipelineFlags |= GraphicsPipelineDesc.kRenderPassBlendBarrier_Flag;
         }
 
         recordOp(op, clip != null && clip.hasClip() ? clip : null, processorAnalysis);

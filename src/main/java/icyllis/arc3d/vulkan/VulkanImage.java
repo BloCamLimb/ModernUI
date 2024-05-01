@@ -26,17 +26,17 @@ import javax.annotation.Nonnull;
 /**
  * Represents Vulkan images, can be used as textures or attachments.
  */
-public final class VulkanImage extends GpuImage {
+public final class VulkanImage extends Image {
 
-    private VulkanImageInfo mInfo;
+    private VulkanImageDesc mInfo;
 
     public VulkanImage(VulkanDevice device,
                        int width, int height,
-                       VulkanImageInfo info,
+                       VulkanImageDesc desc,
                        BackendFormat format,
                        int flags) {
-        super(device, info, null);
-        mInfo = info;
+        super(device, desc, null);
+        mInfo = desc;
     }
 
     @Override
