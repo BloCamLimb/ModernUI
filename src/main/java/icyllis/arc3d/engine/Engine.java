@@ -20,7 +20,6 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.ColorInfo;
-import icyllis.arc3d.core.ImageInfo;
 
 /**
  * Shared constants, enums and utilities for Arc 3D Engine.
@@ -107,7 +106,7 @@ public interface Engine {
      * A Context's cache of backend context state can be partially invalidated.
      * These enums are specific to the GL backend.
      *
-     * @see DirectContext#resetContext(int)
+     * @see ImmediateContext#resetContext(int)
      */
     interface GLBackendState {
 
@@ -135,7 +134,7 @@ public interface Engine {
     }
 
     /**
-     * Describes image type and image view type.
+     * Describes image view type.
      */
     interface ImageType {
         /**
@@ -367,7 +366,7 @@ public interface Engine {
     /**
      * Budget types. Used with resources that have a large memory allocation.
      *
-     * @see GpuResource
+     * @see Resource
      */
     // @formatter:off
     interface BudgetType {

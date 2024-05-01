@@ -20,6 +20,7 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.*;
+import icyllis.arc3d.engine.graphene.*;
 import icyllis.arc3d.engine.shading.*;
 
 import javax.annotation.Nonnull;
@@ -657,6 +658,9 @@ public abstract class GeometryProcessor extends Processor {
         AttributeSet attrs = allInstanceAttributes();
         assert attrs != null;
         mInstanceAttributesMask |= mask & attrs.mAllMask; // sanitize
+    }
+
+    public void writeVertices(MeshDrawWriter writer, DrawOp drawOp, float[] solidColor) {
     }
 
     /**

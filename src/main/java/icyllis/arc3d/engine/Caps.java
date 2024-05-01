@@ -585,11 +585,8 @@ public abstract class Caps {
      * @param colorType
      * @param width
      * @param height
-     * @param depth
-     * @param arraySize
-     * @param mipLevelCount
-     * @param sampleCount
-     * @param surfaceFlags
+     * @param depthOrArraySize
+     * @param imageFlags
      * @return
      * @see ISurface#FLAG_MIPMAPPED
      * @see ISurface#FLAG_SAMPLED_IMAGE
@@ -598,22 +595,48 @@ public abstract class Caps {
      * @see ISurface#FLAG_MEMORYLESS
      * @see ISurface#FLAG_PROTECTED
      */
-    public ImageInfo getDefaultColorImageInfo(byte imageType,
+    public ImageDesc getDefaultColorImageDesc(byte imageType,
                                               int colorType,
                                               int width, int height,
-                                              int depth, int arraySize,
-                                              int mipLevelCount,
-                                              int sampleCount,
-                                              int surfaceFlags) {
-        return ImageInfo.EMPTY;
+                                              int depthOrArraySize,
+                                              int imageFlags) {
+        return getDefaultColorImageDesc(imageType, colorType, width, height, depthOrArraySize,
+                0, 0, imageFlags);
     }
 
-    public ImageInfo getDefaultDepthStencilImageInfo(int depthBits,
+    /**
+     * @param imageType
+     * @param colorType
+     * @param width
+     * @param height
+     * @param depthOrArraySize
+     * @param mipLevelCount
+     * @param sampleCount
+     * @param imageFlags
+     * @return
+     * @see ISurface#FLAG_MIPMAPPED
+     * @see ISurface#FLAG_SAMPLED_IMAGE
+     * @see ISurface#FLAG_STORAGE_IMAGE
+     * @see ISurface#FLAG_RENDERABLE
+     * @see ISurface#FLAG_MEMORYLESS
+     * @see ISurface#FLAG_PROTECTED
+     */
+    public ImageDesc getDefaultColorImageDesc(byte imageType,
+                                              int colorType,
+                                              int width, int height,
+                                              int depthOrArraySize,
+                                              int mipLevelCount,
+                                              int sampleCount,
+                                              int imageFlags) {
+        return ImageDesc.EMPTY;
+    }
+
+    public ImageDesc getDefaultDepthStencilImageDesc(int depthBits,
                                                      int stencilBits,
                                                      int width, int height,
                                                      int sampleCount,
                                                      int imageFlags) {
-        return ImageInfo.EMPTY;
+        return ImageDesc.EMPTY;
     }
 
     /**
@@ -652,9 +675,9 @@ public abstract class Caps {
     public abstract BackendFormat getCompressedBackendFormat(int compressionType);
 
     @Nonnull
-    public abstract PipelineDesc makeDesc(PipelineDesc desc,
-                                          GpuRenderTarget renderTarget,
-                                          final PipelineInfo pipelineInfo);
+    public abstract PipelineKey makeDesc(PipelineKey desc,
+                                         GpuRenderTarget renderTarget,
+                                         final GraphicsPipelineDesc graphicsPipelineDesc);
 
     public final short getReadSwizzle(BackendFormat format, int colorType) {
         int compression = format.getCompressionType();
@@ -672,6 +695,9 @@ public abstract class Caps {
     protected abstract short onGetReadSwizzle(BackendFormat format, int colorType);
 
     public abstract short getWriteSwizzle(BackendFormat format, int colorType);
+
+    public abstract IScratchKey computeImageKey(ImageDesc desc,
+                                                IScratchKey recycle);
 
     // unmodifiable
     public final DriverBugWorkarounds workarounds() {

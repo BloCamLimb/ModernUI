@@ -190,7 +190,7 @@ public final class RenderTargetProxy extends SurfaceProxy {
 
     @Nullable
     @Override
-    public GpuImage getGpuImage() {
+    public Image getGpuImage() {
         return mGpuSurface.asImage();
     }
 

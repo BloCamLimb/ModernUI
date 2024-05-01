@@ -26,6 +26,7 @@ import icyllis.arc3d.compiler.tree.Type;
 import icyllis.arc3d.core.MathUtil;
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
+import icyllis.arc3d.engine.Image;
 import icyllis.arc3d.engine.geom.SDFRoundRectGeoProc;
 import icyllis.arc3d.opengl.*;
 import org.lwjgl.PointerBuffer;
@@ -76,7 +77,7 @@ public class TestManagedResource {
 
         ContextOptions contextOptions = new ContextOptions();
         contextOptions.mLogger = LOGGER;
-        DirectContext dContext = DirectContext.makeOpenGL(
+        ImmediateContext dContext = ImmediateContext.makeOpenGL(
                 GL.createCapabilities(),
                 contextOptions
         );
@@ -114,6 +115,12 @@ public class TestManagedResource {
         {
             LOGGER.info("Program binary formats: " + Arrays.toString(caps.getProgramBinaryFormats()));
             LOGGER.info("SPIR-V support: " + caps.hasSPIRVSupport());
+            LOGGER.info("Preferred pixel format for TEXTURE_2D, RB8: " +
+                    glGetInternalformati(GL_TEXTURE_2D, GL_RGBA8, GL_TEXTURE_IMAGE_FORMAT));
+            LOGGER.info("Preferred pixel type for TEXTURE_2D, RB8: " +
+                    glGetInternalformati(GL_TEXTURE_2D, GL_RGBA8, GL_TEXTURE_IMAGE_TYPE));
+            LOGGER.info("Preferred internal format for RGB8: " +
+                    glGetInternalformati(GL_TEXTURE_2D, GL_RGB8, GL_INTERNALFORMAT_PREFERRED));
         }
 
         {
@@ -360,7 +367,7 @@ public class TestManagedResource {
         }
     }
 
-    public static void testShaderBuilder(DirectContext dContext) {
+    public static void testShaderBuilder(ImmediateContext dContext) {
         @SharedPtr
         RenderTargetProxy target = dContext.getSurfaceProvider().createRenderTexture(
                 GLBackendFormat.make(GL_RGBA8),
@@ -369,9 +376,9 @@ public class TestManagedResource {
         );
         Objects.requireNonNull(target);
         GLGraphicsPipeline pso = (GLGraphicsPipeline) dContext.findOrCreateGraphicsPipeline(
-                new PipelineInfo(new SurfaceProxyView(target), new SDFRoundRectGeoProc(true),
+                new GraphicsPipelineDesc(new ImageProxyView(target), new SDFRoundRectGeoProc(true),
                         null, null, null, null,
-                        PipelineInfo.kNone_Flag));
+                        GraphicsPipelineDesc.kNone_Flag));
         {
             LOGGER.info(target.toString());
             target.unref();
@@ -381,8 +388,8 @@ public class TestManagedResource {
         LOGGER.info(dContext.getPipelineCache().getStats().toString());
     }
 
-    public static void testTexture(DirectContext dContext) {
-        /*ByteBuffer pixels = null;
+    public static void testTexture(ImmediateContext context) {
+        ByteBuffer pixels = null;
         try (FileChannel channel = FileChannel.open(Path.of("F:/", "GHRKwhAa0AAmG7q.jpg"),
                 StandardOpenOption.READ)) {
             ByteBuffer byteBuffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size());
@@ -395,17 +402,23 @@ public class TestManagedResource {
             assert pixels != null;
             LOGGER.info("Image Bytes: " + pixels.remaining());
 
-            GpuImage texture = dContext.getDevice().createImage(
+            var desc = context.getCaps().getDefaultColorImageDesc(
+                    Engine.ImageType.k2D,
+                    ColorInfo.CT_RGBA_8888,
                     x[0], y[0],
-                    GLBackendFormat.make(GL_RGBA8),
-                    1, ISurface.FLAG_MIPMAPPED |
-                            ISurface.FLAG_BUDGETED | ISurface.FLAG_SAMPLED_IMAGE,
+                    1,
+                    ISurface.FLAG_MIPMAPPED | ISurface.FLAG_SAMPLED_IMAGE
+            );
+
+            Image texture = context.getResourceProvider().createNewImage(
+                    desc,
+                    true,
                     "MyTexture");
             if (texture != null) {
                 LOGGER.info(texture.toString());
                 texture.unref();
             }
-            texture = dContext.getResourceProvider().createTexture(
+            /*texture = context.getResourceProvider().createTexture(
                     x[0], y[0],
                     GLBackendFormat.make(GL_RGBA8),
                     1, ISurface.FLAG_MIPMAPPED |
@@ -414,7 +427,12 @@ public class TestManagedResource {
                     ColorInfo.CT_RGBA_8888,
                     0,
                     memAddress(pixels),
-                    null);
+                    null);*/
+            texture = context.getResourceProvider().createImage(
+                    desc,
+                    true,
+                    null
+            );
             if (texture != null) {
                 LOGGER.info(texture.toString()); // same texture
                 texture.unref();
@@ -425,10 +443,10 @@ public class TestManagedResource {
             if (pixels != null) {
                 STBImage.stbi_image_free(pixels);
             }
-        }*/
+        }
     }
 
-    public static void testRenderTarget(DirectContext dContext) {
+    public static void testRenderTarget(ImmediateContext dContext) {
         GpuRenderTarget renderTarget = dContext.getResourceProvider().createRenderTarget(
                 1920, 1080,
                 GLBackendFormat.make(GL_RG8),

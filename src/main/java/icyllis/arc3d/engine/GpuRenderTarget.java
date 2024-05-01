@@ -29,12 +29,12 @@ import javax.annotation.Nullable;
  * which are framebuffers, render passes and a set of attachments. This is the target
  * of {@link OpsRenderPass}, and may be associated with {@link icyllis.arc3d.core.Surface}.
  * <p>
- * A {@link GpuRenderTarget} may be associated with one or more renderable {@link GpuImage}s
+ * A {@link GpuRenderTarget} may be associated with one or more renderable {@link Image}s
  * or a wrapped presentable object.
  * This class is used by the pipeline internally. Use {@link RenderTargetProxy} for
  * high-level operations.
  */
-public abstract non-sealed class GpuRenderTarget extends GpuSurface {
+public abstract class GpuRenderTarget extends GpuSurface {
 
     private final int mWidth;
     private final int mHeight;
@@ -53,7 +53,7 @@ public abstract non-sealed class GpuRenderTarget extends GpuSurface {
     // determined by subclass constructors
     protected int mSurfaceFlags = ISurface.FLAG_RENDERABLE;
 
-    protected GpuRenderTarget(GpuDevice device,
+    protected GpuRenderTarget(Device device,
                               int width, int height,
                               int sampleCount,
                               int numColorTargets) {
@@ -104,8 +104,8 @@ public abstract non-sealed class GpuRenderTarget extends GpuSurface {
     public abstract BackendRenderTarget getBackendRenderTarget();
 
     @Override
-    public GpuImage asImage() {
-        GpuImage att = getResolveAttachment();
+    public Image asImage() {
+        Image att = getResolveAttachment();
         if (att != null) {
             return att;
         }
@@ -128,34 +128,34 @@ public abstract non-sealed class GpuRenderTarget extends GpuSurface {
 
     @RawPtr
     @Nullable
-    public abstract GpuImage getColorAttachment();
+    public abstract Image getColorAttachment();
 
     @RawPtr
     @Nullable
-    public abstract GpuImage getColorAttachment(int index);
+    public abstract Image getColorAttachment(int index);
 
     @RawPtr
     @Nullable
-    protected abstract GpuImage[] getColorAttachments();
+    protected abstract Image[] getColorAttachments();
 
     @RawPtr
     @Nullable
-    public abstract GpuImage getResolveAttachment();
+    public abstract Image getResolveAttachment();
 
     @RawPtr
     @Nullable
-    public abstract GpuImage getResolveAttachment(int index);
+    public abstract Image getResolveAttachment(int index);
 
     @RawPtr
     @Nullable
-    protected abstract GpuImage[] getResolveAttachments();
+    protected abstract Image[] getResolveAttachments();
 
     /**
      * Get the dynamic or implicit stencil buffer, or null if no stencil.
      */
     @RawPtr
     @Nullable
-    public abstract GpuImage getDepthStencilAttachment();
+    public abstract Image getDepthStencilAttachment();
 
     /**
      * Get the number of implicit depth bits, or 0 if no depth.
@@ -180,9 +180,9 @@ public abstract non-sealed class GpuRenderTarget extends GpuSurface {
             // MRT is only used in specific scenarios, cannot be scratch
             return null;
         }
-        GpuImage colorAtt = getColorAttachment();
-        GpuImage resolveAtt = getResolveAttachment();
-        GpuImage depthStencilAtt = getDepthStencilAttachment();
+        Image colorAtt = getColorAttachment();
+        Image resolveAtt = getResolveAttachment();
+        Image depthStencilAtt = getDepthStencilAttachment();
         return new ScratchKey().compute(
                 mWidth, mHeight,
                 colorAtt != null ? colorAtt.getBackendFormat() : null,

@@ -20,15 +20,16 @@
 package icyllis.arc3d.engine.task;
 
 import icyllis.arc3d.engine.*;
+import icyllis.arc3d.engine.graphene.DrawPass;
 
 public final class RenderPassTask extends Task {
 
     DrawPass mDrawPass;
-    RenderPassInfo mRenderPassInfo;
+    RenderPassDesc mRenderPassDesc;
     RenderTargetProxy mTarget;
 
     public static RenderPassTask make(DrawPass pass,
-                                      RenderPassInfo renderPassInfo,
+                                      RenderPassDesc renderPassDesc,
                                       RenderTargetProxy target) {
         return null;
     }
@@ -39,7 +40,7 @@ public final class RenderPassTask extends Task {
     }
 
     @Override
-    public boolean execute(DirectContext context, CommandBuffer cmdBuffer) {
+    public boolean execute(ImmediateContext context, CommandBuffer cmdBuffer) {
         return false;
     }
 }

@@ -20,7 +20,7 @@
 package icyllis.arc3d.core;
 
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.engine.graphene.SurfaceDevice;
+import icyllis.arc3d.engine.graphene.Device_Gpu;
 
 import javax.annotation.Nullable;
 
@@ -140,7 +140,7 @@ public class Surface extends RefCnt {
         if (rtProxy == null) {
             return null;
         }
-        var dev = SurfaceDevice.make(rContext,
+        var dev = Device_Gpu.make(rContext,
                 colorType,
                 colorSpace,
                 rtProxy,

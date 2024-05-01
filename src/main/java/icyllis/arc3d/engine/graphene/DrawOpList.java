@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,21 +17,7 @@
  * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine;
+package icyllis.arc3d.engine.graphene;
 
-/**
- * Pipeline state object used for graphics.
- */
-public abstract class GraphicsPipeline extends ManagedResource {
-
-    private final byte mPrimitiveType;
-
-    public GraphicsPipeline(Device device, byte primitiveType) {
-        super(device);
-        mPrimitiveType = primitiveType;
-    }
-
-    public final byte getPrimitiveType() {
-        return mPrimitiveType;
-    }
+public class DrawOpList {
 }

@@ -39,7 +39,7 @@ public final class VulkanRenderTarget extends GpuRenderTarget {
     @SharedPtr
     private VulkanImage mDepthStencilAttachment;
 
-    protected VulkanRenderTarget(GpuDevice device, int width, int height, int sampleCount, int numColorAttachments) {
+    protected VulkanRenderTarget(Device device, int width, int height, int sampleCount, int numColorAttachments) {
         super(device, width, height, sampleCount, numColorAttachments);
     }
 
@@ -62,43 +62,43 @@ public final class VulkanRenderTarget extends GpuRenderTarget {
 
     @Nullable
     @Override
-    public GpuImage getColorAttachment() {
+    public Image getColorAttachment() {
         return null;
     }
 
     @Nullable
     @Override
-    public GpuImage getColorAttachment(int index) {
+    public Image getColorAttachment(int index) {
         return null;
     }
 
     @Nullable
     @Override
-    protected GpuImage[] getColorAttachments() {
-        return new GpuImage[0];
+    protected Image[] getColorAttachments() {
+        return new Image[0];
     }
 
     @Nullable
     @Override
-    public GpuImage getResolveAttachment() {
+    public Image getResolveAttachment() {
         return null;
     }
 
     @Nullable
     @Override
-    public GpuImage getResolveAttachment(int index) {
+    public Image getResolveAttachment(int index) {
         return null;
     }
 
     @Nullable
     @Override
-    protected GpuImage[] getResolveAttachments() {
-        return new GpuImage[0];
+    protected Image[] getResolveAttachments() {
+        return new Image[0];
     }
 
     @Nullable
     @Override
-    public GpuImage getDepthStencilAttachment() {
+    public Image getDepthStencilAttachment() {
         return null;
     }
 

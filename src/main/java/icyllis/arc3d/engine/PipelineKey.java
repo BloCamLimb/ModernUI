@@ -25,14 +25,14 @@ import javax.annotation.Nonnull;
  * This class is used to generate a generic pipeline cache key.
  * Also used to lookup pipeline state objects in cache.
  */
-public final class PipelineDesc extends KeyBuilder {
+public final class PipelineKey extends KeyBuilder {
 
     private int mShaderKeyLength;
 
-    public PipelineDesc() {
+    public PipelineKey() {
     }
 
-    public PipelineDesc(PipelineDesc other) {
+    public PipelineKey(PipelineKey other) {
         super(other);
         mShaderKeyLength = other.mShaderKeyLength;
     }
@@ -57,21 +57,21 @@ public final class PipelineDesc extends KeyBuilder {
      * @param caps the context capabilities
      */
     @Nonnull
-    public static PipelineDesc build(PipelineDesc desc, PipelineInfo info, Caps caps) {
+    public static PipelineKey build(PipelineKey desc, GraphicsPipelineDesc info, Caps caps) {
         desc.clear();
         genKey(desc, info, caps);
         desc.mShaderKeyLength = desc.size();
         return desc;
     }
 
-    public static String describe(PipelineInfo info, Caps caps) {
+    public static String describe(GraphicsPipelineDesc info, Caps caps) {
         StringKeyBuilder b = new StringKeyBuilder();
         genKey(b, info, caps);
         return b.toString();
     }
 
     static void genKey(KeyBuilder b,
-                       PipelineInfo info,
+                       GraphicsPipelineDesc info,
                        Caps caps) {
         genGPKey(info.geomProc(), b);
 

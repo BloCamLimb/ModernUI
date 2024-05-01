@@ -17,21 +17,18 @@
  * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.opengl;
+package icyllis.arc3d.test;
 
-import icyllis.arc3d.engine.ManagedResource;
+import icyllis.arc3d.core.*;
 
-/**
- * Represents OpenGL textures views.
- */
-public final class GLImageView extends ManagedResource {
+public class TestMatrixAAOutset {
 
-    public GLImageView(GLDevice device) {
-        super(device);
-    }
-
-    @Override
-    protected void deallocate() {
-
+    public static void main(String[] args) {
+        Matrix4 matrix = Matrix4.identity();
+        matrix.m34 = 1 / 576f;
+        matrix.preRotateX(Math.PI / 6);
+        Rect2f rect = new Rect2f(-10, -50, 10, 50);
+        float aaRadius = matrix.localAARadius(rect);
+        System.out.printf("aaRad: %f%n", aaRadius);
     }
 }

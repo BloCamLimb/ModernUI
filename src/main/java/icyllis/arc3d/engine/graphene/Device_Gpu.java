@@ -20,24 +20,23 @@
 package icyllis.arc3d.engine.graphene;
 
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.core.ImageInfo;
 import icyllis.arc3d.engine.*;
 
 /**
- * The drawing device is backed by GPU.
+ * The device that is backed by GPU.
  */
-public final class SurfaceDevice extends Device {
+public final class Device_Gpu extends icyllis.arc3d.core.Device {
 
     private ClipStack mClipStack;
 
-    private SurfaceDevice(SurfaceDrawContext context, ImageInfo info, boolean clear) {
+    private Device_Gpu(SurfaceDrawContext context, ImageInfo info, boolean clear) {
         super(info);
     }
 
     @SharedPtr
-    private static SurfaceDevice make(SurfaceDrawContext sdc,
-                                      int alphaType,
-                                      boolean clear) {
+    private static Device_Gpu make(SurfaceDrawContext sdc,
+                                   int alphaType,
+                                   boolean clear) {
         if (sdc == null) {
             return null;
         }
@@ -51,21 +50,21 @@ public final class SurfaceDevice extends Device {
         int colorType = Engine.colorTypeToPublic(sdc.getColorType());
         if (rContext.isSurfaceCompatible(colorType)) {
             ImageInfo info = new ImageInfo(sdc.getWidth(), sdc.getHeight(), colorType, alphaType, null);
-            return new SurfaceDevice(sdc, info, clear);
+            return new Device_Gpu(sdc, info, clear);
         }
         return null;
     }
 
     @SharedPtr
-    public static SurfaceDevice make(RecordingContext rContext,
-                                     int colorType,
-                                     int alphaType,
-                                     ColorSpace colorSpace,
-                                     int width, int height,
-                                     int sampleCount,
-                                     int surfaceFlags,
-                                     int origin,
-                                     boolean clear) {
+    public static Device_Gpu make(RecordingContext rContext,
+                                  int colorType,
+                                  int alphaType,
+                                  ColorSpace colorSpace,
+                                  int width, int height,
+                                  int sampleCount,
+                                  int surfaceFlags,
+                                  int origin,
+                                  boolean clear) {
         if (rContext == null) {
             return null;
         }
@@ -75,12 +74,12 @@ public final class SurfaceDevice extends Device {
     }
 
     @SharedPtr
-    public static SurfaceDevice make(RecordingContext rContext,
-                                     int colorType,
-                                     ColorSpace colorSpace,
-                                     SurfaceProxy proxy,
-                                     int origin,
-                                     boolean clear) {
+    public static Device_Gpu make(RecordingContext rContext,
+                                  int colorType,
+                                  ColorSpace colorSpace,
+                                  SurfaceProxy proxy,
+                                  int origin,
+                                  boolean clear) {
         if (rContext == null) {
             return null;
         }

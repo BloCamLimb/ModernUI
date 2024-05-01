@@ -28,14 +28,14 @@ import javax.annotation.Nonnull;
  */
 public abstract class MeshDrawOp extends DrawOp implements Mesh {
 
-    private PipelineInfo mPipelineInfo;
+    private GraphicsPipelineDesc mGraphicsPipelineDesc;
     private GraphicsPipeline mPipelineState;
 
     public MeshDrawOp() {
     }
 
-    public PipelineInfo getPipelineInfo() {
-        return mPipelineInfo;
+    public GraphicsPipelineDesc getPipelineInfo() {
+        return mGraphicsPipelineDesc;
     }
 
     public GraphicsPipeline getPipelineState() {
@@ -44,39 +44,39 @@ public abstract class MeshDrawOp extends DrawOp implements Mesh {
 
     @Override
     public int getVertexSize() {
-        return mPipelineInfo.geomProc().vertexStride();
+        return mGraphicsPipelineDesc.geomProc().vertexStride();
     }
 
     @Override
     public int getInstanceSize() {
-        return mPipelineInfo.geomProc().instanceStride();
+        return mGraphicsPipelineDesc.geomProc().instanceStride();
     }
 
     @Override
     public void onPrePrepare(RecordingContext context,
-                             SurfaceProxyView writeView,
+                             ImageProxyView writeView,
                              int pipelineFlags) {
-        assert (mPipelineInfo == null);
-        mPipelineInfo = onCreatePipelineInfo(writeView, pipelineFlags);
-        mPipelineState = context.findOrCreateGraphicsPipeline(mPipelineInfo);
+        assert (mGraphicsPipelineDesc == null);
+        mGraphicsPipelineDesc = onCreatePipelineInfo(writeView, pipelineFlags);
+        mPipelineState = context.findOrCreateGraphicsPipeline(mGraphicsPipelineDesc);
     }
 
     @Override
     public final void onPrepare(OpFlushState state,
-                                SurfaceProxyView writeView,
+                                ImageProxyView writeView,
                                 int pipelineFlags) {
-        if (mPipelineInfo == null) {
-            mPipelineInfo = onCreatePipelineInfo(writeView, pipelineFlags);
+        if (mGraphicsPipelineDesc == null) {
+            mGraphicsPipelineDesc = onCreatePipelineInfo(writeView, pipelineFlags);
         }
         if (mPipelineState == null) {
-            mPipelineState = state.findOrCreateGraphicsPipeline(mPipelineInfo);
+            mPipelineState = state.findOrCreateGraphicsPipeline(mGraphicsPipelineDesc);
         }
         onPrepareDraws(state);
     }
 
     @Nonnull
-    protected abstract PipelineInfo onCreatePipelineInfo(SurfaceProxyView writeView,
-                                                         int pipelineFlags);
+    protected abstract GraphicsPipelineDesc onCreatePipelineInfo(ImageProxyView writeView,
+                                                                 int pipelineFlags);
 
     protected abstract void onPrepareDraws(MeshDrawTarget target);
 }

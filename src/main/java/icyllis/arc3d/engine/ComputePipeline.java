@@ -24,7 +24,7 @@ package icyllis.arc3d.engine;
  */
 public abstract class ComputePipeline extends ManagedResource {
 
-    public ComputePipeline(GpuDevice device) {
+    public ComputePipeline(Device device) {
         super(device);
     }
 }

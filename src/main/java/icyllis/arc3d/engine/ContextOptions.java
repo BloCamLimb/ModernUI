@@ -22,7 +22,7 @@ package icyllis.arc3d.engine;
 import org.slf4j.Logger;
 
 /**
- * Holds the options for creating a {@link DirectContext}, all fields should remain unchanged
+ * Holds the options for creating a {@link ImmediateContext}, all fields should remain unchanged
  * after creating the context.
  * <p>
  * Boolean value represents a tristate:

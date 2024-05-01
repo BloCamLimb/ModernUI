@@ -24,7 +24,7 @@ import javax.annotation.Nonnull;
 /**
  * An object with identity. This can be used to track state changes through
  * reference equality '==', and as keys of {@link java.util.IdentityHashMap}.
- * Used by {@link GpuResource} and {@link SurfaceProxy}.
+ * Used by {@link Resource} and {@link SurfaceProxy}.
  *
  * @see System#identityHashCode(Object)
  */

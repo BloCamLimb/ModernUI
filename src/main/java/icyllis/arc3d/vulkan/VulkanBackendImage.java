@@ -22,7 +22,6 @@ package icyllis.arc3d.vulkan;
 import icyllis.arc3d.engine.BackendFormat;
 import icyllis.arc3d.engine.BackendImage;
 import icyllis.arc3d.engine.Engine.BackendApi;
-import icyllis.arc3d.engine.Engine.ImageType;
 
 import javax.annotation.Nonnull;
 
@@ -47,24 +46,24 @@ public final class VulkanBackendImage extends BackendImage {
     public int mLevelCount = 0;
     public long mMemoryHandle = -1;
     private VulkanAllocation mAlloc;
-    private final VulkanImageInfo mInfo;
+    private final VulkanImageDesc mInfo;
     final VulkanImageMutableState mState;
 
     private final BackendFormat mBackendFormat;
 
     // The VkImageInfo can NOT be modified anymore.
-    public VulkanBackendImage(int width, int height, VulkanImageInfo info) {
+    public VulkanBackendImage(int width, int height, VulkanImageDesc desc) {
         //TODO disallow VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT
-        this(width, height, info, new VulkanImageMutableState(info), VkBackendFormat.make(info.mFormat));
+        this(width, height, desc, new VulkanImageMutableState(desc), VkBackendFormat.make(desc.mFormat));
     }
 
-    VulkanBackendImage(int width, int height, VulkanImageInfo info,
+    VulkanBackendImage(int width, int height, VulkanImageDesc desc,
                        VulkanImageMutableState state, BackendFormat backendFormat) {
-        super(info, state);
-        if (info.mImageUsageFlags == 0) {
-            info.mImageUsageFlags = DEFAULT_USAGE_FLAGS;
+        super(desc, state);
+        if (desc.mImageUsageFlags == 0) {
+            desc.mImageUsageFlags = DEFAULT_USAGE_FLAGS;
         }
-        mInfo = info;
+        mInfo = desc;
         mState = state;
         mBackendFormat = backendFormat;
     }
@@ -80,14 +79,14 @@ public final class VulkanBackendImage extends BackendImage {
     }
 
     /**
-     * Copies a snapshot of the {@link VulkanImageInfo} struct into the passed in pointer.
-     * This snapshot will set the {@link VulkanImageInfo#mImageLayout} to the current layout
+     * Copies a snapshot of the {@link VulkanImageDesc} struct into the passed in pointer.
+     * This snapshot will set the {@link VulkanImageDesc#mImageLayout} to the current layout
      * state.
      */
-    public void getVulkanImageInfo(VulkanImageInfo info) {
-        info.set(mInfo);
-        info.mImageLayout = mState.getImageLayout();
-        info.mCurrentQueueFamily = mState.getQueueFamilyIndex();
+    public void getVulkanImageInfo(VulkanImageDesc desc) {
+        desc.set(mInfo);
+        desc.mImageLayout = mState.getImageLayout();
+        desc.mCurrentQueueFamily = mState.getQueueFamilyIndex();
     }
 
     @Override

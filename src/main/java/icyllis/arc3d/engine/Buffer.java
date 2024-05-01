@@ -28,7 +28,7 @@ import static org.lwjgl.system.MemoryUtil.NULL;
  * staging buffers. A buffer cannot be accessed by both CPU and GPU simultaneously, it's
  * either locked by engine or executing in command list.
  */
-public abstract non-sealed class GpuBuffer extends GpuResource {
+public abstract class Buffer extends Resource {
 
     /**
      * Locks for reading. The effect of writes is undefined.
@@ -47,9 +47,9 @@ public abstract non-sealed class GpuBuffer extends GpuResource {
     private int mLockOffset;
     private int mLockSize;
 
-    protected GpuBuffer(GpuDevice device,
-                        int size,
-                        int usage) {
+    protected Buffer(Device device,
+                     int size,
+                     int usage) {
         super(device);
         mSize = size;
         mUsage = usage;

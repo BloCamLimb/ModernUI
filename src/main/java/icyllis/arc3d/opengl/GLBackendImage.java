@@ -34,9 +34,9 @@ import static icyllis.arc3d.engine.Engine.*;
  */
 public final class GLBackendImage extends BackendImage {
 
-    private final GLImageInfo mInfo;
+    private final GLImageDesc mInfo;
     // Null for renderbuffers.
-    final GLImageMutableState mParams;
+    final GLTextureMutableState mParams;
 
     /**
      * <code>GLuint</code> - image name
@@ -65,18 +65,18 @@ public final class GLBackendImage extends BackendImage {
     private final BackendFormat mBackendFormat;
 
     // The GLTextureInfo must have a valid mFormat, can NOT be modified anymore.
-    public GLBackendImage(int width, int height, GLImageInfo info) {
-        this(width, height, info, new GLImageMutableState(), GLBackendFormat.make(info.mFormat));
-        assert info.mFormat != 0;
+    public GLBackendImage(int width, int height, GLImageDesc desc) {
+        this(width, height, desc, new GLTextureMutableState(), GLBackendFormat.make(desc.mFormat));
+        assert desc.mFormat != 0;
         // Make no assumptions about client's texture's parameters.
         glTextureParametersModified();
     }
 
     // Internally used by GLContext and GLTexture
-    GLBackendImage(int width, int height, GLImageInfo info,
-                   GLImageMutableState params, BackendFormat backendFormat) {
-        super(info, params);
-        mInfo = info;
+    GLBackendImage(int width, int height, GLImageDesc desc,
+                   GLTextureMutableState params, BackendFormat backendFormat) {
+        super(desc, params);
+        mInfo = desc;
         mParams = params;
         mBackendFormat = backendFormat;
     }
@@ -98,7 +98,7 @@ public final class GLBackendImage extends BackendImage {
         info.set(mInfo);
     }*/
 
-    public GLImageInfo getGLImageInfo() {
+    public GLImageDesc getGLImageInfo() {
         return mInfo;
     }
 

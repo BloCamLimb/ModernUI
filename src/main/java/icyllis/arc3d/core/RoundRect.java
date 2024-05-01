@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,21 +17,22 @@
  * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine;
+package icyllis.arc3d.core;
 
-/**
- * Pipeline state object used for graphics.
- */
-public abstract class GraphicsPipeline extends ManagedResource {
+//TODO
+public class RoundRect {
 
-    private final byte mPrimitiveType;
+    public float mLeft;
+    public float mTop;
+    public float mRight;
+    public float mBottom;
 
-    public GraphicsPipeline(Device device, byte primitiveType) {
-        super(device);
-        mPrimitiveType = primitiveType;
-    }
-
-    public final byte getPrimitiveType() {
-        return mPrimitiveType;
-    }
+    public float mRadiusULX;
+    public float mRadiusULY;
+    public float mRadiusURX;
+    public float mRadiusURY;
+    public float mRadiusLRX;
+    public float mRadiusLRY;
+    public float mRadiusLLX;
+    public float mRadiusLLY;
 }

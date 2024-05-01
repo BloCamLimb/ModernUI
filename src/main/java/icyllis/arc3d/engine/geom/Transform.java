@@ -17,18 +17,7 @@
  * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine;
+package icyllis.arc3d.engine.geom;
 
-public class RenderPassInfo {
-
-    public GpuRenderTarget mRenderTarget;
-
-    public byte mColorOps;
-    public byte mDepthStencilOps;
-    public float[] mClearColor;
-    public float mClearDepth;
-    public int mClearStencil;
-
-    public short mWriteSwizzle;
-    public int mSampleCount;
+public class Transform {
 }

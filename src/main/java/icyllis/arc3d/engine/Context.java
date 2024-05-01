@@ -41,7 +41,7 @@ public abstract class Context extends RefCnt {
     /**
      * The 3D API backing this context.
      *
-     * @return see {@link GpuDevice.BackendApi}
+     * @return see {@link Device.BackendApi}
      */
     public final int getBackend() {
         return mContextInfo.getBackend();
@@ -54,7 +54,7 @@ public abstract class Context extends RefCnt {
      * <p>
      * The caller should check that the returned format is valid (nullability).
      *
-     * @param colorType  see {@link ImageInfo}
+     * @param colorType  see {@link ImageDesc}
      * @param renderable true if the format will be used as color attachments
      */
     @Nullable
@@ -69,7 +69,7 @@ public abstract class Context extends RefCnt {
      * <p>
      * The caller should check that the returned format is valid (nullability).
      *
-     * @param compressionType see {@link ImageInfo}
+     * @param compressionType see {@link ImageDesc}
      */
     @Nullable
     public final BackendFormat getCompressedBackendFormat(int compressionType) {
@@ -81,7 +81,7 @@ public abstract class Context extends RefCnt {
      * rendering is supported for the color type. 0 is returned if rendering to this color type
      * is not supported at all.
      *
-     * @param colorType see {@link ImageInfo}
+     * @param colorType see {@link ImageDesc}
      */
     public final int getMaxSurfaceSampleCount(int colorType) {
         return mContextInfo.getMaxSurfaceSampleCount(colorType);

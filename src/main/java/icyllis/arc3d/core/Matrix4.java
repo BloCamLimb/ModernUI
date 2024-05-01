@@ -3153,6 +3153,70 @@ public class Matrix4 implements Cloneable {
                 MathUtil.isApproxEqual(m11, m22, m33, m44, 1.0f);
     }
 
+    // compute SVD of 2x2 matrix
+    private static float computeMinScale(double m11, double m21, double m12, double m22) {
+        double s1 = m11 * m11 + m21 * m21 + m12 * m12 + m22 * m22;
+
+        double e = m11 * m11 + m21 * m21 - m12 * m12 - m22 * m22;
+        double f = m11 * m12 + m21 * m22;
+        double s2 = Math.sqrt(e * e + 4 * f * f);
+
+        // s2 >= 0, so (s1 - s2) <= (s1 + s2) so this always returns min.
+        return (float) Math.sqrt(0.5 * (s1 - s2));
+    }
+
+    private float computeMinScale(double px, double py) {
+        final double x = m11 * px + m21 * py + m41;
+        final double y = m12 * px + m22 * py + m42;
+        final double z = m13 * px + m23 * py + m43;
+        final double w = m14 * px + m24 * py + m44;
+
+        final float dxdu = m11;
+        final float dxdv = m21;
+        final float dydu = m12;
+        final float dydv = m22;
+        final float dwdu = m14;
+        final float dwdv = m24;
+
+        double invW2 = 1.0 / (w * w);
+        // non-persp has invW2 = 1, devP.w = 1, dwdu = 0, dwdv = 0
+        double dfdu = (w * dxdu - x * dwdu) * invW2; // non-persp -> dxdu -> m00
+        double dfdv = (w * dxdv - x * dwdv) * invW2; // non-persp -> dxdv -> m01
+        double dgdu = (w * dydu - y * dwdu) * invW2; // non-persp -> dydu -> m10
+        double dgdv = (w * dydv - y * dwdv) * invW2; // non-persp -> dydv -> m11
+
+        return computeMinScale(dfdu, dfdv, dgdu, dgdv);
+    }
+
+    public float localAARadius(Rect2fc bounds) {
+        return localAARadius(bounds.left(), bounds.top(), bounds.right(), bounds.bottom());
+    }
+
+    public float localAARadius(float left, float top, float right, float bottom) {
+        float min;
+        if (isAffine()) {
+            min = computeMinScale(m11, m21, m12, m22);
+        } else {
+            // Calculate the minimum scale factor over the 4 corners of the bounding box
+            float tl = computeMinScale(left, top);
+            float tr = computeMinScale(right, top);
+            float br = computeMinScale(right, bottom);
+            float bl = computeMinScale(left, bottom);
+            min = MathUtil.min(tl, tr, br, bl);
+        }
+
+        // Moving 1 from 'p' before transforming will move at least 'min' and at most 'max' from
+        // the transformed point. Thus moving between [1/max, 1/min] pre-transformation means post
+        // transformation moves between [1,max/min] so using 1/min as the local AA radius ensures that
+        // the post-transformed point is at least 1px away from the original.
+        float aaRadius = 1.0f / min;
+        if (Float.isFinite(aaRadius)) { // check Inf and NaN
+            return aaRadius;
+        } else {
+            return Float.POSITIVE_INFINITY;
+        }
+    }
+
     /**
      * Converts this 4x4 matrix to 3x3 matrix, the third row and column are discarded.
      * <pre>{@code

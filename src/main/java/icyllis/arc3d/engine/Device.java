@@ -27,18 +27,16 @@ import org.jetbrains.annotations.ApiStatus;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Set;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.function.Consumer;
 
 /**
- * A {@link GpuDevice} represents a logical GPU device and provides shared context info
+ * A {@link Device} represents a logical GPU device and provides shared context info
  * of the backend 3D API.
  * <p>
  * It is responsible for
  * creating/deleting 3D API objects, transferring data, submitting 3D API commands, etc.
  * Most methods are only permitted on render thread.
  */
-public abstract class GpuDevice implements Engine {
+public abstract class Device implements Engine {
 
     // @formatter:off
     static {
@@ -55,7 +53,7 @@ public abstract class GpuDevice implements Engine {
     // @formatter:on
 
     // this device is managed by this context
-    protected final DirectContext mContext;
+    protected final ImmediateContext mContext;
     protected final Caps mCaps;
     protected final ShaderCompiler mCompiler;
 
@@ -67,14 +65,14 @@ public abstract class GpuDevice implements Engine {
     private final ArrayList<FlushInfo.SubmittedCallback> mSubmittedCallbacks = new ArrayList<>();
     private int mResetBits = ~0;
 
-    protected GpuDevice(DirectContext context, Caps caps) {
+    protected Device(ImmediateContext context, Caps caps) {
         assert context != null && caps != null;
         mContext = context;
         mCaps = caps;
         mCompiler = new ShaderCompiler();
     }
 
-    public final DirectContext getContext() {
+    public final ImmediateContext getContext() {
         return mContext;
     }
 
@@ -98,7 +96,7 @@ public abstract class GpuDevice implements Engine {
 
     /**
      * Called by context when the underlying backend context is already or will be destroyed
-     * before {@link DirectContext}.
+     * before {@link ImmediateContext}.
      * <p>
      * If cleanup is true, free allocated resources (other than {@link ResourceCache}) before
      * returning and ensure no backend 3D API calls will be made after this method returns.
@@ -227,10 +225,10 @@ public abstract class GpuDevice implements Engine {
     @Nullable
     @SharedPtr
     public final GpuRenderTarget createRenderTarget(int numColorTargets,
-                                                    @Nullable GpuImage[] colorTargets,
-                                                    @Nullable GpuImage[] resolveTargets,
+                                                    @Nullable Image[] colorTargets,
+                                                    @Nullable Image[] resolveTargets,
                                                     @Nullable int[] mipLevels,
-                                                    @Nullable GpuImage depthStencilTarget,
+                                                    @Nullable Image depthStencilTarget,
                                                     int surfaceFlags) {
         if (numColorTargets < 0 || numColorTargets > mCaps.maxColorAttachments()) {
             return null;
@@ -251,7 +249,7 @@ public abstract class GpuDevice implements Engine {
         int height = Integer.MAX_VALUE;
         if (colorTargets != null) {
             for (int i = 0; i < numColorTargets; i++) {
-                GpuImage colorTarget = colorTargets[i];
+                Image colorTarget = colorTargets[i];
                 if (colorTarget == null) continue;
                 if (!colorTarget.isRenderable()) {
                     return null;
@@ -286,7 +284,7 @@ public abstract class GpuDevice implements Engine {
         assert height < Integer.MAX_VALUE;
         if (resolveTargets != null) {
             for (int i = 0; i < numColorTargets; i++) {
-                GpuImage resolveTarget = resolveTargets[i];
+                Image resolveTarget = resolveTargets[i];
                 if (resolveTarget == null) continue;
                 if (colorTargets == null || colorTargets[i] == null) {
                     return null;
@@ -320,10 +318,10 @@ public abstract class GpuDevice implements Engine {
     protected abstract GpuRenderTarget onCreateRenderTarget(int width, int height,
                                                             int sampleCount,
                                                             int numColorTargets,
-                                                            @Nullable GpuImage[] colorTargets,
-                                                            @Nullable GpuImage[] resolveTargets,
+                                                            @Nullable Image[] colorTargets,
+                                                            @Nullable Image[] resolveTargets,
                                                             @Nullable int[] mipLevels,
-                                                            @Nullable GpuImage depthStencilTarget,
+                                                            @Nullable Image depthStencilTarget,
                                                             int surfaceFlags);
 
     /**
@@ -419,7 +417,7 @@ public abstract class GpuDevice implements Engine {
      * @param pixels       the pointer to the texel data for base level image
      * @return true if succeeded, false if not
      */
-    public boolean writePixels(GpuImage texture,
+    public boolean writePixels(Image texture,
                                int x, int y,
                                int width, int height,
                                int dstColorType,
@@ -465,7 +463,7 @@ public abstract class GpuDevice implements Engine {
     }
 
     // overridden by backend-specific derived class to perform the surface write
-    protected abstract boolean onWritePixels(GpuImage texture,
+    protected abstract boolean onWritePixels(Image texture,
                                              int x, int y,
                                              int width, int height,
                                              int dstColorType,
@@ -478,7 +476,7 @@ public abstract class GpuDevice implements Engine {
      *
      * @return success or not
      */
-    public final boolean generateMipmaps(GpuImage image) {
+    public final boolean generateMipmaps(Image image) {
         assert image != null;
         assert image.isMipmapped();
         if (!image.isMipmapsDirty()) {
@@ -494,7 +492,7 @@ public abstract class GpuDevice implements Engine {
         return false;
     }
 
-    protected abstract boolean onGenerateMipmaps(GpuImage image);
+    protected abstract boolean onGenerateMipmaps(Image image);
 
     /**
      * Special case of {@link #copySurface} that has same dimensions.
@@ -560,7 +558,7 @@ public abstract class GpuDevice implements Engine {
      * @return a render pass used to record draw commands, or null if failed
      */
     @Nullable
-    public final OpsRenderPass getOpsRenderPass(SurfaceProxyView writeView,
+    public final OpsRenderPass getOpsRenderPass(ImageProxyView writeView,
                                                 Rect2i contentBounds,
                                                 byte colorOps,
                                                 byte stencilOps,
@@ -573,7 +571,7 @@ public abstract class GpuDevice implements Engine {
                 sampledTextures, pipelineFlags);
     }
 
-    protected abstract OpsRenderPass onGetOpsRenderPass(SurfaceProxyView writeView,
+    protected abstract OpsRenderPass onGetOpsRenderPass(ImageProxyView writeView,
                                                         Rect2i contentBounds,
                                                         byte colorOps,
                                                         byte stencilOps,
@@ -598,7 +596,7 @@ public abstract class GpuDevice implements Engine {
 
     @Nullable
     @SharedPtr
-    public final GpuBuffer createBuffer(int size, int flags) {
+    public final Buffer createBuffer(int size, int flags) {
         if (size <= 0) {
             getContext().getLogger().error(
                     "Failed to create buffer: invalid size {}",
@@ -614,7 +612,7 @@ public abstract class GpuDevice implements Engine {
 
     @Nullable
     @SharedPtr
-    protected abstract GpuBuffer onCreateBuffer(int size, int flags);
+    protected abstract Buffer onCreateBuffer(int size, int flags);
 
     /**
      * Creates a new fence and inserts it into the graphics queue.

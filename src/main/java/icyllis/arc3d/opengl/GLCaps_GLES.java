@@ -39,7 +39,7 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
     private boolean mDrawElementsBaseVertexEXT;
 
     @VisibleForTesting
-    public GLCaps_GLES(DirectContext context, ContextOptions options, Object capabilities) {
+    public GLCaps_GLES(ImmediateContext context, ContextOptions options, Object capabilities) {
         super(options);
         GLESCapabilities caps = (GLESCapabilities) capabilities;
         // OpenGL ES 3.0 is the minimum requirement

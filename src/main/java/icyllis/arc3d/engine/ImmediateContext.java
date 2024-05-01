@@ -30,15 +30,15 @@ import javax.annotation.Nullable;
 import java.util.Objects;
 
 /**
- * Represents a backend context of 3D graphics API (OpenGL or Vulkan) on the render thread.
+ * Immediate context is used for command list execution and queue submission.
  */
-public final class DirectContext extends RecordingContext {
+public final class ImmediateContext extends RecordingContext {
 
-    private GpuDevice mDevice;
+    private Device mDevice;
     private ResourceCache mResourceCache;
     private ResourceProvider mResourceProvider;
 
-    private DirectContext(int backend, ContextOptions options) {
+    private ImmediateContext(int backend, ContextOptions options) {
         super(new SharedContext(backend, options));
     }
 
@@ -49,13 +49,13 @@ public final class DirectContext extends RecordingContext {
      * @see #makeOpenGL(ContextOptions)
      */
     @Nullable
-    public static DirectContext makeOpenGL() {
+    public static ImmediateContext makeOpenGL() {
         return makeOpenGL(new ContextOptions());
     }
 
     @Nullable
-    public static DirectContext makeOpenGL(@Nonnull ContextOptions options) {
-        DirectContext context = new DirectContext(Engine.BackendApi.kOpenGL, options);
+    public static ImmediateContext makeOpenGL(@Nonnull ContextOptions options) {
+        ImmediateContext context = new ImmediateContext(Engine.BackendApi.kOpenGL, options);
         GLCapabilities capabilities;
         try {
             capabilities = Objects.requireNonNullElseGet(
@@ -114,8 +114,8 @@ public final class DirectContext extends RecordingContext {
      * @return context or null if failed to create
      */
     @Nullable
-    public static DirectContext makeOpenGL(@Nonnull Object capabilities, @Nonnull ContextOptions options) {
-        DirectContext context = new DirectContext(Engine.BackendApi.kOpenGL, options);
+    public static ImmediateContext makeOpenGL(@Nonnull Object capabilities, @Nonnull ContextOptions options) {
+        ImmediateContext context = new ImmediateContext(Engine.BackendApi.kOpenGL, options);
         context.mDevice = GLDevice.make(context, options, capabilities);
         if (context.init()) {
             return context;
@@ -131,7 +131,7 @@ public final class DirectContext extends RecordingContext {
      * @see #makeVulkan(VkBackendContext, ContextOptions)
      */
     @Nullable
-    public static DirectContext makeVulkan(VkBackendContext backendContext) {
+    public static ImmediateContext makeVulkan(VkBackendContext backendContext) {
         return makeVulkan(backendContext, new ContextOptions());
     }
 
@@ -147,7 +147,7 @@ public final class DirectContext extends RecordingContext {
      * @return context or null if failed to create
      */
     @Nullable
-    public static DirectContext makeVulkan(VkBackendContext backendContext, ContextOptions options) {
+    public static ImmediateContext makeVulkan(VkBackendContext backendContext, ContextOptions options) {
         return null;
     }
 
@@ -167,7 +167,7 @@ public final class DirectContext extends RecordingContext {
     }
 
     @ApiStatus.Internal
-    public GpuDevice getDevice() {
+    public Device getDevice() {
         return mDevice;
     }
 

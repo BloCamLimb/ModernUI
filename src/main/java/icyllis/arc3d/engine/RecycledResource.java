@@ -24,7 +24,7 @@ package icyllis.arc3d.engine;
  */
 public abstract class RecycledResource extends ManagedResource {
 
-    public RecycledResource(GpuDevice device) {
+    public RecycledResource(Device device) {
         super(device);
     }
 

@@ -51,8 +51,8 @@ public abstract class GraphicsPipelineBuilder {
     public VertexShaderBuilder mVS;
     public FragmentShaderBuilder mFS;
 
-    public final PipelineDesc mDesc;
-    public final PipelineInfo mPipelineInfo;
+    public final PipelineKey mDesc;
+    public final GraphicsPipelineDesc mGraphicsPipelineDesc;
     private final Caps mCaps;
 
     /**
@@ -66,9 +66,9 @@ public abstract class GraphicsPipelineBuilder {
     // This is used to check that we don't exceed the allowable number of resources in a shader.
     private int mNumFragmentSamplers;
 
-    public GraphicsPipelineBuilder(PipelineDesc desc, PipelineInfo pipelineInfo, Caps caps) {
+    public GraphicsPipelineBuilder(PipelineKey desc, GraphicsPipelineDesc graphicsPipelineDesc, Caps caps) {
         mDesc = desc;
-        mPipelineInfo = pipelineInfo;
+        mGraphicsPipelineDesc = graphicsPipelineDesc;
         mCaps = caps;
         mVS = new VertexShaderBuilder(this);
         mFS = new FragmentShaderBuilder(this);
@@ -167,7 +167,7 @@ public abstract class GraphicsPipelineBuilder {
     }
 
     private boolean emitAndInstallGeomProc(String[] output) {
-        final GeometryProcessor geomProc = mPipelineInfo.geomProc();
+        final GeometryProcessor geomProc = mGraphicsPipelineDesc.geomProc();
 
         // Program builders have a bit of state we need to clear with each effect
         advanceStage();

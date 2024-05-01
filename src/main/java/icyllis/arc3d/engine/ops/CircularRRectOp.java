@@ -37,8 +37,8 @@ public final class CircularRRectOp extends MeshDrawOp {
 
     @Nonnull
     @Override
-    protected PipelineInfo onCreatePipelineInfo(SurfaceProxyView writeView,
-                                                int pipelineFlags) {
+    protected GraphicsPipelineDesc onCreatePipelineInfo(ImageProxyView writeView,
+                                                        int pipelineFlags) {
         return null;
     }
 

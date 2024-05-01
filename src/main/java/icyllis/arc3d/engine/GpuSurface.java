@@ -26,17 +26,17 @@ import javax.annotation.Nonnull;
 /**
  * Interface representing GPU surfaces.
  * <p>
- * There are two implementations: one is {@link GpuImage}, which contains image data and
+ * There are two implementations: one is {@link Image}, which contains image data and
  * allocates memory; and the other is {@link GpuRenderTarget}, which is a container object
- * that represents a combination of {@link GpuImage}s as attachments, and managed all objects
+ * that represents a combination of {@link Image}s as attachments, and managed all objects
  * used by the rendering pipeline for the fixed combination of attachments (compatible render passes
  * and framebuffers).
  *
  * @see SurfaceProxy
  */
-public abstract sealed class GpuSurface extends GpuResource permits GpuImage, GpuRenderTarget {
+public abstract class GpuSurface extends Resource {
 
-    protected GpuSurface(GpuDevice device) {
+    protected GpuSurface(Device device) {
         super(device);
     }
 
@@ -82,7 +82,7 @@ public abstract sealed class GpuSurface extends GpuResource permits GpuImage, Gp
      *
      * <li>{@link ISurface#FLAG_MIPMAPPED} -
      *  Used to say whether an image has mip levels allocated or not. Mipmaps are allocated
-     *  when set, otherwise mipmaps are not allocated. {@link GpuImage} only.
+     *  when set, otherwise mipmaps are not allocated. {@link Image} only.
      * </li>
      *
      * <li>{@link ISurface#FLAG_RENDERABLE} -
@@ -96,7 +96,7 @@ public abstract sealed class GpuSurface extends GpuResource permits GpuImage, Gp
      * </li>
      *
      * <li>{@link ISurface#FLAG_READ_ONLY} -
-     *  Means the pixels in the image are read-only. Non-renderable {@link GpuImage} only.
+     *  Means the pixels in the image are read-only. Non-renderable {@link Image} only.
      * </li>
      *
      * @return combination of the above flags
@@ -117,7 +117,7 @@ public abstract sealed class GpuSurface extends GpuResource permits GpuImage, Gp
      * @return raw ptr to the image
      */
     @RawPtr
-    public GpuImage asImage() {
+    public Image asImage() {
         return null;
     }
 

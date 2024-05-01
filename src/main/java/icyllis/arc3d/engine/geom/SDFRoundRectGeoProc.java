@@ -19,13 +19,16 @@
 
 package icyllis.arc3d.engine.geom;
 
-import icyllis.arc3d.core.SLDataType;
+import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.Engine.PrimitiveType;
 import icyllis.arc3d.engine.Engine.VertexAttribType;
 import icyllis.arc3d.engine.*;
+import icyllis.arc3d.engine.graphene.DrawOp;
+import icyllis.arc3d.engine.graphene.MeshDrawWriter;
 import icyllis.arc3d.engine.shading.*;
 
 import javax.annotation.Nonnull;
+import java.nio.ByteBuffer;
 
 /**
  * Unlike {@link CircleProcessor}, this processor uses SDF and supports over-stroking.
@@ -99,6 +102,30 @@ public class SDFRoundRectGeoProc extends GeometryProcessor {
     @Override
     protected AttributeSet allInstanceAttributes() {
         return INSTANCE_ATTRIBS;
+    }
+
+    @Override
+    public void writeVertices(MeshDrawWriter writer, DrawOp op, float[] solidColor) {
+        writer.beginInstances(null, null, 4);
+        ByteBuffer instanceData = writer.append(1);
+        instanceData.putFloat(solidColor[0]);
+        instanceData.putFloat(solidColor[1]);
+        instanceData.putFloat(solidColor[2]);
+        instanceData.putFloat(solidColor[3]);
+        // local rect
+        RoundRect localRect = (RoundRect) op.mGeometry;
+        instanceData.putFloat((localRect.mRight - localRect.mLeft) * 0.5f);
+        instanceData.putFloat((localRect.mLeft + localRect.mRight) * 0.5f);
+        instanceData.putFloat((localRect.mBottom - localRect.mTop) * 0.5f);
+        instanceData.putFloat((localRect.mTop + localRect.mBottom) * 0.5f);
+        // radii
+        instanceData.putFloat(localRect.mRadiusULX).putFloat(op.mStrokeRadius);
+        var mat = op.mTransform;
+        instanceData
+                .putFloat(mat.m11).putFloat(mat.m12).putFloat(mat.m14)
+                .putFloat(mat.m21).putFloat(mat.m22).putFloat(mat.m24)
+                .putFloat(mat.m41).putFloat(mat.m42).putFloat(mat.m44);
+        writer.endAppender();
     }
 
     private static class Impl extends ProgramImpl {

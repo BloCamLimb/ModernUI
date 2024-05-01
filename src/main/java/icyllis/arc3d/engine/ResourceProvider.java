@@ -34,14 +34,14 @@ import javax.annotation.Nullable;
  */
 public abstract class ResourceProvider {
 
-    private final GpuDevice mDevice;
-    private final DirectContext mContext;
+    private final Device mDevice;
+    private final ImmediateContext mContext;
 
     // lookup key
-    private final GpuImage.ScratchKey mImageScratchKey = new GpuImage.ScratchKey();
+    private IScratchKey mImageScratchKey;
     private final GpuRenderTarget.ScratchKey mRenderTargetScratchKey = new GpuRenderTarget.ScratchKey();
 
-    protected ResourceProvider(GpuDevice device, DirectContext context) {
+    protected ResourceProvider(Device device, ImmediateContext context) {
         mDevice = device;
         mContext = context;
     }
@@ -49,14 +49,14 @@ public abstract class ResourceProvider {
     /**
      * Finds a resource in the cache, based on the specified key. Prior to calling this, the caller
      * must be sure that if a resource of exists in the cache with the given unique key then it is
-     * of type T. If the resource is no longer used, then {@link GpuResource#unref()} must be called.
+     * of type T. If the resource is no longer used, then {@link Resource#unref()} must be called.
      *
      * @param key the resource unique key
      */
     @Nullable
     @SharedPtr
     @SuppressWarnings("unchecked")
-    public final <T extends GpuResource> T findByUniqueKey(IUniqueKey key) {
+    public final <T extends Resource> T findByUniqueKey(IUniqueKey key) {
         assert mDevice.getContext().isOwnerThread();
         return mDevice.getContext().isDiscarded() ? null :
                 (T) mContext.getResourceCache().findAndRefUniqueResource(key);
@@ -74,9 +74,9 @@ public abstract class ResourceProvider {
     public final GpuSurface findAndRefScratchSurface(IScratchKey key, @Nullable String label) {
         assert mDevice.getContext().isOwnerThread();
         assert !mDevice.getContext().isDiscarded();
-        assert key instanceof GpuImage.ScratchKey || key instanceof GpuRenderTarget.ScratchKey;
+        assert key instanceof Image.ScratchKey || key instanceof GpuRenderTarget.ScratchKey;
 
-        GpuResource resource = mContext.getResourceCache().findAndRefScratchResource(key);
+        Resource resource = mContext.getResourceCache().findAndRefScratchResource(key);
         if (resource != null) {
             GpuSurface surface = (GpuSurface) resource;
             if (surface.asRenderTarget() != null) {
@@ -135,11 +135,11 @@ public abstract class ResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public final GpuImage createImage(int width, int height,
-                                      BackendFormat format,
-                                      int sampleCount,
-                                      int surfaceFlags,
-                                      @Nullable String label) {
+    public final Image createImage(int width, int height,
+                                   BackendFormat format,
+                                   int sampleCount,
+                                   int surfaceFlags,
+                                   @Nullable String label) {
         assert mDevice.getContext().isOwnerThread();
         if (mDevice.getContext().isDiscarded()) {
             return null;
@@ -180,7 +180,7 @@ public abstract class ResourceProvider {
             return null;
         }
 
-        final GpuImage image = findAndRefScratchImage(width, height, format,
+        final Image image = findAndRefScratchImage(width, height, format,
                 sampleCount, surfaceFlags, label);
         if (image != null) {
             if ((surfaceFlags & ISurface.FLAG_BUDGETED) == 0) {
@@ -194,6 +194,21 @@ public abstract class ResourceProvider {
         return null;
     }
 
+    @Nullable
+    @SharedPtr
+    public final Image createImage(ImageDesc desc,
+                                   boolean budgeted,
+                                   @Nullable String label) {
+        final Image image = findAndRefScratchImage(desc, label);
+        if (image != null) {
+            if (!budgeted) {
+                image.makeBudgeted(false);
+            }
+            return image;
+        }
+        return createNewImage(desc, budgeted, label);
+    }
+
     /**
      * Creates a new GPU image object and allocates its GPU memory. In other words, the
      * image data is dirty and needs to be uploaded later. If mipmapped, also allocates
@@ -201,9 +216,6 @@ public abstract class ResourceProvider {
      * NPoT (non-power-of-two) dimensions are always supported. Compressed format are
      * supported.
      *
-     * @param width  the width of the image to be created
-     * @param height the height of the image to be created
-     * @param format the backend format for the image
      * @return the image object if successful, otherwise nullptr
      * @see ISurface#FLAG_BUDGETED
      * @see ISurface#FLAG_MIPMAPPED
@@ -212,15 +224,15 @@ public abstract class ResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public final GpuImage createNewImage(ImageInfo info,
-                                         boolean budgeted,
-                                         @Nullable String label) {
-        if (info.isCompressed()) {
+    public final Image createNewImage(ImageDesc desc,
+                                      boolean budgeted,
+                                      @Nullable String label) {
+        if (desc.isCompressed()) {
             return null;
         }
-        final GpuImage image = onCreateNewImage(info, budgeted);
+        final Image image = onCreateNewImage(desc, budgeted);
         if (image != null) {
-            assert image.getInfo() == info;
+            assert image.getDesc() == desc;
             if (label != null) {
                 image.setLabel(label);
             }
@@ -241,8 +253,8 @@ public abstract class ResourceProvider {
     @ApiStatus.OverrideOnly
     @Nullable
     @SharedPtr
-    protected abstract GpuImage onCreateNewImage(ImageInfo info,
-                                                 boolean budgeted);
+    protected abstract Image onCreateNewImage(ImageDesc desc,
+                                              boolean budgeted);
 
     /**
      * Search the cache for a scratch texture matching the provided arguments. Failing that
@@ -253,18 +265,18 @@ public abstract class ResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public final GpuImage findAndRefScratchImage(IScratchKey key, @Nullable String label) {
+    public final Image findAndRefScratchImage(IScratchKey key, @Nullable String label) {
         assert mDevice.getContext().isOwnerThread();
         assert !mDevice.getContext().isDiscarded();
-        assert key instanceof GpuImage.ScratchKey;
+        assert key instanceof Image.ScratchKey;
 
-        GpuResource resource = mContext.getResourceCache().findAndRefScratchResource(key);
+        Resource resource = mContext.getResourceCache().findAndRefScratchResource(key);
         if (resource != null) {
             mDevice.getStats().incNumScratchTexturesReused();
             if (label != null) {
                 resource.setLabel(label);
             }
-            return (GpuImage) resource;
+            return (Image) resource;
         }
         return null;
     }
@@ -281,22 +293,50 @@ public abstract class ResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public final GpuImage findAndRefScratchImage(int width, int height,
-                                                 BackendFormat format,
-                                                 int sampleCount,
-                                                 int surfaceFlags,
-                                                 @Nullable String label) {
+    public final Image findAndRefScratchImage(ImageDesc desc,
+                                              @Nullable String label) {
+        assert mDevice.getContext().isOwnerThread();
+        assert !mDevice.getContext().isDiscarded();
+
+        var key = mDevice.getCaps().computeImageKey(desc,
+                mImageScratchKey);
+        if (key == null) {
+            return null;
+        }
+        mImageScratchKey = key;
+
+        return findAndRefScratchImage(key, label);
+    }
+
+    /**
+     * Search the cache for a scratch texture matching the provided arguments. Failing that
+     * it returns null. If non-null, the resulting texture is always budgeted.
+     *
+     * @param label the label for debugging purposes, can be empty to clear the label,
+     *              or null to leave the label unchanged
+     * @see ISurface#FLAG_MIPMAPPED
+     * @see ISurface#FLAG_RENDERABLE
+     * @see ISurface#FLAG_PROTECTED
+     */
+    @Nullable
+    @SharedPtr
+    public final Image findAndRefScratchImage(int width, int height,
+                                              BackendFormat format,
+                                              int sampleCount,
+                                              int surfaceFlags,
+                                              @Nullable String label) {
         assert mDevice.getContext().isOwnerThread();
         assert !mDevice.getContext().isDiscarded();
         assert !format.isCompressed();
         assert mDevice.getCaps().validateSurfaceParams(width, height, format,
                 sampleCount, surfaceFlags);
 
-        return findAndRefScratchImage(mImageScratchKey.compute(
+        /*return findAndRefScratchImage(mImageScratchKey.compute(
                 format,
                 width, height,
                 sampleCount,
-                surfaceFlags), label);
+                surfaceFlags), label);*/
+        return null;
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -342,11 +382,11 @@ public abstract class ResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public final GpuImage createTexture(int width, int height,
-                                          BackendFormat format,
-                                          int sampleCount,
-                                          int surfaceFlags,
-                                          String label) {
+    public final Image createTexture(int width, int height,
+                                     BackendFormat format,
+                                     int sampleCount,
+                                     int surfaceFlags,
+                                     String label) {
         assert mDevice.getContext().isOwnerThread();
         if (mDevice.getContext().isDiscarded()) {
             return null;
@@ -392,15 +432,15 @@ public abstract class ResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public final GpuImage createTexture(int width, int height,
-                                          BackendFormat format,
-                                          int sampleCount,
-                                          int surfaceFlags,
-                                          int dstColorType,
-                                          int srcColorType,
-                                          int rowBytes,
-                                          long pixels,
-                                          String label) {
+    public final Image createTexture(int width, int height,
+                                     BackendFormat format,
+                                     int sampleCount,
+                                     int surfaceFlags,
+                                     int dstColorType,
+                                     int srcColorType,
+                                     int rowBytes,
+                                     long pixels,
+                                     String label) {
         assert mDevice.getContext().isOwnerThread();
         if (mDevice.getContext().isDiscarded()) {
             return null;
@@ -424,7 +464,7 @@ public abstract class ResourceProvider {
             return null;
         }
 
-        final GpuImage texture = createTexture(width, height, format,
+        final Image texture = createTexture(width, height, format,
                 sampleCount, surfaceFlags, label);
         if (texture == null) {
             return null;
@@ -536,7 +576,7 @@ public abstract class ResourceProvider {
             return renderTarget;
         }
 
-        GpuImage colorAtt = null;
+        Image colorAtt = null;
         if (colorFormat != null) {
             colorAtt = createImage(width, height,
                     colorFormat,
@@ -548,7 +588,7 @@ public abstract class ResourceProvider {
             }
         }
 
-        GpuImage resolveAtt = null;
+        Image resolveAtt = null;
         if (resolveFormat != null) {
             resolveAtt = createImage(width, height,
                     resolveFormat,
@@ -561,7 +601,7 @@ public abstract class ResourceProvider {
             }
         }
 
-        GpuImage depthStencilAtt = null;
+        Image depthStencilAtt = null;
         if (depthStencilFormat != null) {
             depthStencilAtt = createImage(width, height,
                     depthStencilFormat,
@@ -576,8 +616,8 @@ public abstract class ResourceProvider {
         }
 
         renderTarget = createRenderTarget(1,
-                colorFormat != null ? new GpuImage[]{colorAtt} : null,
-                resolveFormat != null ? new GpuImage[]{resolveAtt} : null,
+                colorFormat != null ? new Image[]{colorAtt} : null,
+                resolveFormat != null ? new Image[]{resolveAtt} : null,
                 null,
                 depthStencilAtt,
                 surfaceFlags);
@@ -610,10 +650,10 @@ public abstract class ResourceProvider {
     @Nullable
     @SharedPtr
     public final GpuRenderTarget createRenderTarget(int numColorTargets,
-                                                    @Nullable GpuImage[] colorTargets,
-                                                    @Nullable GpuImage[] resolveTargets,
+                                                    @Nullable Image[] colorTargets,
+                                                    @Nullable Image[] resolveTargets,
                                                     @Nullable int[] mipLevels,
-                                                    @Nullable GpuImage depthStencilTarget,
+                                                    @Nullable Image depthStencilTarget,
                                                     int surfaceFlags) {
         return mDevice.createRenderTarget(numColorTargets,
                 colorTargets, resolveTargets, mipLevels, depthStencilTarget, surfaceFlags);
@@ -634,7 +674,7 @@ public abstract class ResourceProvider {
         assert !mDevice.getContext().isDiscarded();
         assert key instanceof GpuRenderTarget.ScratchKey;
 
-        GpuResource resource = mContext.getResourceCache().findAndRefScratchResource(key);
+        Resource resource = mContext.getResourceCache().findAndRefScratchResource(key);
         if (resource != null) {
             mDevice.getStats().incNumScratchRenderTargetsReused();
             if (label != null) {
@@ -738,11 +778,11 @@ public abstract class ResourceProvider {
      * @param size  minimum size of buffer to return.
      * @param usage hint to the graphics subsystem about what the buffer will be used for.
      * @return the buffer if successful, otherwise nullptr.
-     * @see GpuDevice.BufferUsageFlags
+     * @see Device.BufferUsageFlags
      */
     @Nullable
     @SharedPtr
-    public final GpuBuffer createBuffer(int size, int usage) {
+    public final Buffer createBuffer(int size, int usage) {
         if (mDevice.getContext().isDiscarded()) {
             return null;
         }
@@ -750,7 +790,7 @@ public abstract class ResourceProvider {
         return mDevice.createBuffer(size, usage);
     }
 
-    public final void assignUniqueKeyToResource(IUniqueKey key, GpuResource resource) {
+    public final void assignUniqueKeyToResource(IUniqueKey key, Resource resource) {
         assert mDevice.getContext().isOwnerThread();
         if (mDevice.getContext().isDiscarded() || resource == null) {
             return;

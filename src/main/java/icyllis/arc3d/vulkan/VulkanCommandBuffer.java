@@ -19,7 +19,10 @@
 
 package icyllis.arc3d.vulkan;
 
-import icyllis.arc3d.engine.*;
+import icyllis.arc3d.engine.CommandBuffer;
+import icyllis.arc3d.engine.GraphicsPipeline;
+import icyllis.arc3d.engine.graphene.DrawCommandList;
+import icyllis.arc3d.engine.graphene.DrawPass;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 
@@ -92,45 +95,41 @@ public abstract class VulkanCommandBuffer extends CommandBuffer {
     }
 
     public void addDrawPass(DrawPass drawPass) {
-        int[] data = drawPass.getCommandData();
-        for (int i = 0, e = drawPass.getCommandSize(); i < e; i++) {
-            switch (data[i]) {
+        var cmdList = drawPass.getCommandList();
+        var buf = cmdList.mPrimitives;
+        while (buf.hasRemaining()) {
+            switch (buf.getInt()) {
                 case DrawCommandList.CMD_BIND_GRAPHICS_PIPELINE -> {
-                    int pipelineIndex = data[i + 1];
+                    int pipelineIndex = buf.getInt();
                     if (!bindGraphicsPipeline(drawPass.getPipeline(pipelineIndex))) {
                         return;
                     }
-                    i += 2;
                 }
                 case DrawCommandList.CMD_DRAW -> {
-                    int vertexCount = data[i + 1];
-                    int baseVertex = data[i + 2];
+                    int vertexCount = buf.getInt();
+                    int baseVertex = buf.getInt();
                     draw(vertexCount, baseVertex);
-                    i += 3;
                 }
                 case DrawCommandList.CMD_DRAW_INDEXED -> {
-                    int indexCount = data[i + 1];
-                    int baseIndex = data[i + 2];
-                    int baseVertex = data[i + 3];
+                    int indexCount = buf.getInt();
+                    int baseIndex = buf.getInt();
+                    int baseVertex = buf.getInt();
                     drawIndexed(indexCount, baseIndex, baseVertex);
-                    i += 4;
                 }
                 case DrawCommandList.CMD_DRAW_INSTANCED -> {
-                    int instanceCount = data[i + 1];
-                    int baseInstance = data[i + 2];
-                    int vertexCount = data[i + 3];
-                    int baseVertex = data[i + 4];
+                    int instanceCount = buf.getInt();
+                    int baseInstance = buf.getInt();
+                    int vertexCount = buf.getInt();
+                    int baseVertex = buf.getInt();
                     drawInstanced(instanceCount, baseInstance, vertexCount, baseVertex);
-                    i += 5;
                 }
                 case DrawCommandList.CMD_DRAW_INDEXED_INSTANCED -> {
-                    int indexCount = data[i + 1];
-                    int baseIndex = data[i + 2];
-                    int instanceCount = data[i + 3];
-                    int baseInstance = data[i + 4];
-                    int baseVertex = data[i + 5];
+                    int indexCount = buf.getInt();
+                    int baseIndex = buf.getInt();
+                    int instanceCount = buf.getInt();
+                    int baseInstance = buf.getInt();
+                    int baseVertex = buf.getInt();
                     drawIndexedInstanced(indexCount, baseIndex, instanceCount, baseInstance, baseVertex);
-                    i += 6;
                 }
             }
         }

@@ -20,8 +20,8 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.SharedPtr;
-import icyllis.arc3d.engine.PipelineDesc;
-import icyllis.arc3d.engine.PipelineInfo;
+import icyllis.arc3d.engine.PipelineKey;
+import icyllis.arc3d.engine.GraphicsPipelineDesc;
 import icyllis.arc3d.engine.shading.*;
 import org.lwjgl.system.MemoryUtil;
 
@@ -43,9 +43,9 @@ public class GLGraphicsPipelineBuilder extends GraphicsPipelineBuilder {
     private ByteBuffer mFinalizedFragSource;
 
     private GLGraphicsPipelineBuilder(GLDevice device,
-                                      PipelineDesc desc,
-                                      PipelineInfo pipelineInfo) {
-        super(desc, pipelineInfo, device.getCaps());
+                                      PipelineKey desc,
+                                      GraphicsPipelineDesc graphicsPipelineDesc) {
+        super(desc, graphicsPipelineDesc, device.getCaps());
         mDevice = device;
         mVaryingHandler = new VaryingHandler(this);
         mUniformHandler = new GLUniformHandler(this);
@@ -54,10 +54,10 @@ public class GLGraphicsPipelineBuilder extends GraphicsPipelineBuilder {
     @Nonnull
     public static GLGraphicsPipeline createGraphicsPipeline(
             final GLDevice device,
-            final PipelineDesc desc,
-            final PipelineInfo pipelineInfo) {
-        return new GLGraphicsPipeline(device, pipelineInfo.primitiveType(), CompletableFuture.supplyAsync(() -> {
-            GLGraphicsPipelineBuilder builder = new GLGraphicsPipelineBuilder(device, desc, pipelineInfo);
+            final PipelineKey desc,
+            final GraphicsPipelineDesc graphicsPipelineDesc) {
+        return new GLGraphicsPipeline(device, graphicsPipelineDesc.primitiveType(), CompletableFuture.supplyAsync(() -> {
+            GLGraphicsPipelineBuilder builder = new GLGraphicsPipelineBuilder(device, desc, graphicsPipelineDesc);
             builder.build();
             return builder;
         }));
@@ -156,7 +156,7 @@ public class GLGraphicsPipelineBuilder extends GraphicsPipelineBuilder {
 
         //TODO share vertex arrays
         @SharedPtr
-        GLVertexArray vertexArray = GLVertexArray.make(mDevice, mPipelineInfo.geomProc());
+        GLVertexArray vertexArray = GLVertexArray.make(mDevice, mGraphicsPipelineDesc.geomProc());
         if (vertexArray == null) {
             gl.glDeleteProgram(program);
             return false;

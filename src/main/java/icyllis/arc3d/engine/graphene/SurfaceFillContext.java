@@ -21,7 +21,7 @@ package icyllis.arc3d.engine.graphene;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.RecordingContext;
-import icyllis.arc3d.engine.SurfaceProxyView;
+import icyllis.arc3d.engine.ImageProxyView;
 import icyllis.arc3d.engine.ops.OpsTask;
 
 public class SurfaceFillContext extends SurfaceContext {
@@ -29,11 +29,11 @@ public class SurfaceFillContext extends SurfaceContext {
     @SharedPtr
     private OpsTask mOpsTask;
 
-    private final SurfaceProxyView mWriteView;
+    private final ImageProxyView mWriteView;
 
     public SurfaceFillContext(RecordingContext context,
-                              SurfaceProxyView readView,
-                              SurfaceProxyView writeView,
+                              ImageProxyView readView,
+                              ImageProxyView writeView,
                               int colorType,
                               int alphaType,
                               ColorSpace colorSpace) {

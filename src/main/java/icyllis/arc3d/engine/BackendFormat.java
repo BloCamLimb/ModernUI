@@ -31,7 +31,7 @@ import static icyllis.arc3d.engine.Engine.BackendApi;
  * Describes the backend texture format, immutable.
  */
 @Immutable
-@Deprecated(forRemoval = true)
+@Deprecated()
 public abstract class BackendFormat {
 
     /**

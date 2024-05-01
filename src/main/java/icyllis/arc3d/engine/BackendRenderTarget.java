@@ -20,14 +20,14 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.opengl.GLFramebufferInfo;
-import icyllis.arc3d.vulkan.VulkanImageInfo;
+import icyllis.arc3d.vulkan.VulkanImageDesc;
 
 import javax.annotation.Nonnull;
 
 /**
  * A BackendRenderTarget instance is initialized once, and may be shared.
  */
-@Deprecated(forRemoval = true)
+@Deprecated()
 public abstract class BackendRenderTarget {
 
     private final int mWidth;
@@ -76,7 +76,7 @@ public abstract class BackendRenderTarget {
      * in pointer and returns true. This snapshot will set the mImageLayout to the current layout
      * state. Otherwise, returns false if the backend API is not Vulkan.
      */
-    public boolean getVkImageInfo(VulkanImageInfo info) {
+    public boolean getVkImageInfo(VulkanImageDesc info) {
         return false;
     }
 

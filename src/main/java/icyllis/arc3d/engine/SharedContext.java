@@ -23,10 +23,8 @@ import icyllis.arc3d.core.*;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nullable;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 
 import static icyllis.arc3d.engine.Engine.*;
 
@@ -110,7 +108,7 @@ public final class SharedContext {
     @Nullable
     public SurfaceCharacterization createCharacterization(
             long cacheMaxResourceBytes,
-            icyllis.arc3d.core.ImageInfo imageInfo,
+            ImageInfo imageInfo,
             BackendFormat backendFormat,
             int origin,
             int sampleCount,
@@ -187,7 +185,7 @@ public final class SharedContext {
      * <p>
      * The caller should check that the returned format is valid (nullability).
      *
-     * @param colorType  see {@link ImageInfo}
+     * @param colorType  see {@link ImageDesc}
      * @param renderable true if the format will be used as color attachments
      */
     @Nullable
@@ -211,7 +209,7 @@ public final class SharedContext {
      * <p>
      * The caller should check that the returned format is valid (nullability).
      *
-     * @param compressionType see {@link ImageInfo}
+     * @param compressionType see {@link ImageDesc}
      */
     @Nullable
     public BackendFormat getCompressedBackendFormat(int compressionType) {
@@ -228,7 +226,7 @@ public final class SharedContext {
      * rendering is supported for the color type. 0 is returned if rendering to this color type
      * is not supported at all.
      *
-     * @param colorType see {@link ImageInfo}
+     * @param colorType see {@link ImageDesc}
      */
     public int getMaxSurfaceSampleCount(int colorType) {
         assert (mCaps != null);
@@ -242,7 +240,7 @@ public final class SharedContext {
     }
 
     /**
-     * @return initialized or not, if {@link DirectContext} is created, it must be true
+     * @return initialized or not, if {@link ImmediateContext} is created, it must be true
      */
     public boolean isValid() {
         return mCaps != null;
@@ -283,7 +281,7 @@ public final class SharedContext {
         return mPipelineCache;
     }
 
-    void init(GpuDevice device) {
+    void init(Device device) {
         assert (device != null);
         mCaps = device.getCaps();
         mThreadSafeCache = new ThreadSafeCache();

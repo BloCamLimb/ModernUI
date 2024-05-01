@@ -36,7 +36,7 @@ import static icyllis.arc3d.vulkan.VKCore.*;
  * as <code>void*</code>, we can safely truncate it because Win32 handles are 32-bit significant).
  * If it is an NT handle, it must be released manually by the memory exporter (e.g. Vulkan).
  */
-public final class VulkanImageInfo extends ImageInfo {
+public final class VulkanImageDesc extends ImageDesc {
 
     public long mImage = VK_NULL_HANDLE;
     public int mImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -48,11 +48,11 @@ public final class VulkanImageInfo extends ImageInfo {
     public int mCurrentQueueFamily = VK_QUEUE_FAMILY_IGNORED;
     public boolean mProtected = false;
 
-    public VulkanImageInfo(int width, int height, int depth, int arraySize, int mipLevelCount, int sampleCount, int flags) {
+    public VulkanImageDesc(int width, int height, int depth, int arraySize, int mipLevelCount, int sampleCount, int flags) {
         super(width, height, depth, arraySize, mipLevelCount, sampleCount, flags);
     }
 
-    public void set(VulkanImageInfo info) {
+    public void set(VulkanImageDesc info) {
         //super.set(info);
         mImage = info.mImage;
         mImageLayout = info.mImageLayout;
@@ -72,7 +72,7 @@ public final class VulkanImageInfo extends ImageInfo {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
-        VulkanImageInfo that = (VulkanImageInfo) o;
+        VulkanImageDesc that = (VulkanImageDesc) o;
         if (mImage != that.mImage) return false;
         if (mImageLayout != that.mImageLayout) return false;
         if (mImageTiling != that.mImageTiling) return false;

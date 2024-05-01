@@ -55,7 +55,7 @@ import javax.annotation.Nullable;
  * Use {@link SurfaceProvider} to obtain {@link SurfaceProxy} objects.
  *
  * @see ImageProxy
- * @see SurfaceProxyView
+ * @see ImageProxyView
  */
 public abstract class SurfaceProxy extends RefCnt {
 
@@ -93,12 +93,12 @@ public abstract class SurfaceProxy extends RefCnt {
      * DeferredProvider: For {@link ImageProxy}s created in a deferred list recording thread it is
      * possible for the uniqueKey to be cleared on the backing Texture while the uniqueKey
      * remains on the surface. A 'mDeferredProvider' of 'true' loosens up asserts that the key of an
-     * instantiated uniquely-keyed texture is also always set on the backing {@link GpuImage}.
+     * instantiated uniquely-keyed texture is also always set on the backing {@link Image}.
      * <p>
      * In many cases these flags aren't actually known until the surface has been instantiated.
      * However, Engine frequently needs to change its behavior based on these settings. For
      * internally create proxies we will know these properties ahead of time. For wrapped
-     * proxies we will copy the properties off of the {@link GpuImage}. For lazy proxies we
+     * proxies we will copy the properties off of the {@link Image}. For lazy proxies we
      * force the call sites to provide the required information ahead of time. At
      * instantiation time we verify that the assumed properties match the actual properties.
      *
@@ -150,18 +150,18 @@ public abstract class SurfaceProxy extends RefCnt {
         @SharedPtr
         public GpuSurface mSurface;
         /**
-         * Some lazy callbacks want to set their own (or no key) on the {@link GpuImage}
-         * they return. Others want the {@link GpuImage}'s key to be kept in sync with the surface's
+         * Some lazy callbacks want to set their own (or no key) on the {@link Image}
+         * they return. Others want the {@link Image}'s key to be kept in sync with the surface's
          * key. This flag controls the key relationship between proxies and their targets.
          * <ul>
-         *     <li>False: Don't key the {@link GpuImage} with the surface's key. The lazy
-         *     instantiation callback is free to return a {@link GpuImage} that already
+         *     <li>False: Don't key the {@link Image} with the surface's key. The lazy
+         *     instantiation callback is free to return a {@link Image} that already
          *     has a unique key unrelated to the surface's key.</li>
-         *     <li>True: Keep the {@link GpuImage}'s unique key in sync with the surface's
-         *     unique key. The {@link GpuImage} returned from the lazy instantiation callback
+         *     <li>True: Keep the {@link Image}'s unique key in sync with the surface's
+         *     unique key. The {@link Image} returned from the lazy instantiation callback
          *     must not have a unique key or have the same same unique key as the surface.
          *     If the surface is later assigned a key it is in turn assigned to the
-         *     {@link GpuImage}.</li>
+         *     {@link Image}.</li>
          * </ul>
          */
         public boolean mSyncTargetKey = true;
@@ -372,11 +372,11 @@ public abstract class SurfaceProxy extends RefCnt {
 
     /**
      * If this is a texturable surface and the surface is already instantiated, return its
-     * backing {@link GpuImage}; if not, return null.
+     * backing {@link Image}; if not, return null.
      */
     @Nullable
     @RawPtr
-    public GpuImage getGpuImage() {
+    public Image getGpuImage() {
         return null;
     }
 

@@ -28,15 +28,15 @@ import javax.annotation.Nullable;
 import java.util.Objects;
 
 /**
- * The {@link ImageProxy} targets an actual {@link GpuImage} with three instantiation
+ * The {@link ImageProxy} targets an actual {@link Image} with three instantiation
  * methods: deferred, lazy-callback and wrapped. Multiple {@link ImageProxy} objects
- * may target the same {@link GpuImage} based on dependencies and actual usage.
+ * may target the same {@link Image} based on dependencies and actual usage.
  * See {@link SurfaceProxy} for more info.
  * <p>
  * Use {@link SurfaceProvider} to obtain {@link ImageProxy} objects.
  * <p>
  * This class can only be used on the creating thread of/on a single {@link RecordingContext},
- * and later used by {@link DirectContext} (render thread).
+ * and later used by {@link ImmediateContext} (render thread).
  */
 public final class ImageProxy extends SurfaceProxy {
 
@@ -96,7 +96,7 @@ public final class ImageProxy extends SurfaceProxy {
      * in allocation by having its backing resource recycled to other uninstantiated proxies or
      * not depending on UseAllocator.
      */
-    public ImageProxy(@SharedPtr GpuImage image,
+    public ImageProxy(@SharedPtr Image image,
                       int surfaceFlags) {
         super(image, surfaceFlags);
         mMipmapsDirty = image.isMipmapped() && image.isMipmapsDirty();
@@ -194,7 +194,7 @@ public final class ImageProxy extends SurfaceProxy {
         assert ((mSurfaceFlags & ISurface.FLAG_MIPMAPPED) == 0) ||
                 ((mSurfaceFlags & ISurface.FLAG_APPROX_FIT) == 0);
 
-        final GpuImage image = resourceProvider.createTexture(mWidth, mHeight, mFormat,
+        final Image image = resourceProvider.createTexture(mWidth, mHeight, mFormat,
                 getSampleCount(), mSurfaceFlags, "");
         if (image == null) {
             return false;
@@ -255,8 +255,8 @@ public final class ImageProxy extends SurfaceProxy {
 
     @Nullable
     @Override
-    public GpuImage getGpuImage() {
-        return (GpuImage) mGpuSurface;
+    public Image getGpuImage() {
+        return (Image) mGpuSurface;
     }
 
     @Override
@@ -316,7 +316,7 @@ public final class ImageProxy extends SurfaceProxy {
     IScratchKey computeScratchKey() {
         int computeFlags = ((mSurfaceFlags & (ISurface.FLAG_RENDERABLE | ISurface.FLAG_PROTECTED)) |
                 (isMipmapped() ? ISurface.FLAG_MIPMAPPED : 0));
-        return new GpuImage.ScratchKey().compute(
+        return new Image.ScratchKey().compute(
                 mFormat,
                 getBackingWidth(),
                 getBackingHeight(),
@@ -337,7 +337,7 @@ public final class ImageProxy extends SurfaceProxy {
             return;
         }
 
-        final GpuImage texture = getGpuImage();
+        final Image texture = getGpuImage();
         if (texture != null) {
             // The Approx but already instantiated case. Setting the proxy's width & height to
             // the instantiated width & height could have side-effects going forward, since we're
@@ -382,7 +382,7 @@ public final class ImageProxy extends SurfaceProxy {
     @Nullable
     @SharedPtr
     @Override
-    GpuImage createSurface(ResourceProvider resourceProvider) {
+    Image createSurface(ResourceProvider resourceProvider) {
         assert ((mSurfaceFlags & ISurface.FLAG_MIPMAPPED) == 0 ||
                 (mSurfaceFlags & ISurface.FLAG_APPROX_FIT) == 0);
         assert !isLazy();
@@ -400,14 +400,14 @@ public final class ImageProxy extends SurfaceProxy {
         assert isLazy();
 
         @SharedPtr
-        GpuImage gpuImage = null;
+        Image image = null;
         if (mUniqueKey != null) {
-            gpuImage = resourceProvider.findByUniqueKey(mUniqueKey);
+            image = resourceProvider.findByUniqueKey(mUniqueKey);
         }
 
         boolean syncTargetKey = true;
         boolean releaseCallback = false;
-        if (gpuImage == null) {
+        if (image == null) {
             int width = isLazyMost() ? -1 : getWidth();
             int height = isLazyMost() ? -1 : getHeight();
             LazyCallbackResult result = mLazyInstantiateCallback.onLazyInstantiate(resourceProvider,
@@ -417,12 +417,12 @@ public final class ImageProxy extends SurfaceProxy {
                     mSurfaceFlags,
                     "");
             if (result != null) {
-                gpuImage = (GpuImage) result.mSurface;
+                image = (Image) result.mSurface;
                 syncTargetKey = result.mSyncTargetKey;
                 releaseCallback = result.mReleaseCallback;
             }
         }
-        if (gpuImage == null) {
+        if (image == null) {
             mWidth = mHeight = 0;
             return false;
         }
@@ -431,30 +431,30 @@ public final class ImageProxy extends SurfaceProxy {
             // This was a lazy-most proxy. We need to fill in the width & height. For normal
             // lazy proxies we must preserve the original width & height since that indicates
             // the content area.
-            mWidth = gpuImage.getWidth();
-            mHeight = gpuImage.getHeight();
+            mWidth = image.getWidth();
+            mHeight = image.getHeight();
         }
 
-        assert getWidth() <= gpuImage.getWidth();
-        assert getHeight() <= gpuImage.getHeight();
+        assert getWidth() <= image.getWidth();
+        assert getHeight() <= image.getHeight();
 
         mSyncTargetKey = syncTargetKey;
         if (syncTargetKey) {
             if (mUniqueKey != null) {
-                if (gpuImage.getUniqueKey() == null) {
+                if (image.getUniqueKey() == null) {
                     // If 'texture' is newly created, attach the unique key
-                    resourceProvider.assignUniqueKeyToResource(mUniqueKey, gpuImage);
+                    resourceProvider.assignUniqueKeyToResource(mUniqueKey, image);
                 } else {
                     // otherwise we had better have reattached to a cached version
-                    assert gpuImage.getUniqueKey().equals(mUniqueKey);
+                    assert image.getUniqueKey().equals(mUniqueKey);
                 }
             } else {
-                assert gpuImage.getUniqueKey() == null;
+                assert image.getUniqueKey() == null;
             }
         }
 
         assert mGpuSurface == null;
-        mGpuSurface = gpuImage;
+        mGpuSurface = image;
         if (releaseCallback) {
             mLazyInstantiateCallback.close();
             mLazyInstantiateCallback = null;

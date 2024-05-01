@@ -20,6 +20,7 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.engine.graphene.DrawPass;
 
 import java.util.ArrayList;
 
@@ -29,26 +30,26 @@ import java.util.ArrayList;
 public abstract class CommandBuffer {
 
     @SharedPtr
-    private final ArrayList<GpuBuffer> mTrackingGpuBuffers = new ArrayList<>();
+    private final ArrayList<Buffer> mTrackingBuffers = new ArrayList<>();
 
-    public void moveAndTrackGpuBuffer(@SharedPtr GpuBuffer buffer) {
-        mTrackingGpuBuffers.add(buffer);
+    public void moveAndTrackGpuBuffer(@SharedPtr Buffer buffer) {
+        mTrackingBuffers.add(buffer);
     }
 
-    public boolean addRenderPass(RenderPassInfo renderPassInfo,
+    public boolean addRenderPass(RenderPassDesc renderPassDesc,
                                  DrawPass drawPass) {
         return false;
     }
 
-    public boolean beginRenderPass(RenderPassInfo renderPassInfo,
+    public boolean beginRenderPass(RenderPassDesc renderPassDesc,
                                    GpuRenderTarget renderTarget) {
         return false;
     }
 
-    public boolean beginRenderPass(RenderPassInfo renderPassInfo,
-                                   GpuImage[] colorAttachments,
-                                   GpuImage[] resolveAttachments,
-                                   GpuImage depthStencilAttachment) {
+    public boolean beginRenderPass(RenderPassDesc renderPassDesc,
+                                   Image[] colorAttachments,
+                                   Image[] resolveAttachments,
+                                   Image depthStencilAttachment) {
         return false;
     }
 

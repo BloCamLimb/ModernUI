@@ -29,7 +29,7 @@ import static icyllis.arc3d.engine.Engine.SurfaceOrigin;
  * data to draw.
  */
 @Immutable
-public final class PipelineInfo {
+public final class GraphicsPipelineDesc {
 
     /**
      * Pipeline flags.
@@ -79,13 +79,13 @@ public final class PipelineInfo {
      * @param writeView           the main color render target to write, can NOT be null
      * @param userStencilSettings the stencil settings for stencil clipping, can be null
      */
-    public PipelineInfo(SurfaceProxyView writeView,
-                        GeometryProcessor geomProc,
-                        TransferProcessor xferProc,
-                        FragmentProcessor colorFragProc,
-                        FragmentProcessor coverageFragProc,
-                        UserStencilSettings userStencilSettings,
-                        int pipelineFlags) {
+    public GraphicsPipelineDesc(ImageProxyView writeView,
+                                GeometryProcessor geomProc,
+                                TransferProcessor xferProc,
+                                FragmentProcessor colorFragProc,
+                                FragmentProcessor coverageFragProc,
+                                UserStencilSettings userStencilSettings,
+                                int pipelineFlags) {
         assert (writeView != null);
         mBackendFormat = writeView.getProxy().getBackendFormat();
         mSampleCount = writeView.getProxy().getSampleCount();

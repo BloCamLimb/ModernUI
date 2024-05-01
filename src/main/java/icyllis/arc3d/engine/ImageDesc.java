@@ -34,15 +34,15 @@ import javax.annotation.concurrent.Immutable;
  * All parameters are validated by {@link Caps}.
  */
 @Immutable
-public class ImageInfo {
+public class ImageDesc {
 
     /**
-     * ImageInfo is always non-null, an empty instance may be used
+     * {@link ImageDesc} is always non-null, an empty instance may be used
      * to represent invalid image info.
      *
      * @see #isValid()
      */
-    public static final ImageInfo EMPTY = new ImageInfo();
+    public static final ImageDesc EMPTY = new ImageDesc();
 
     protected final int mWidth;
     protected final int mHeight;
@@ -52,13 +52,13 @@ public class ImageInfo {
     protected final byte mSampleCount;
     protected final int mFlags;
 
-    private ImageInfo() {
+    private ImageDesc() {
         mWidth = mHeight = mDepth = 0;
         mArraySize = mMipLevelCount = mSampleCount = 1;
         mFlags = 0;
     }
 
-    protected ImageInfo(int width, int height,
+    protected ImageDesc(int width, int height,
                         int depth, int arraySize,
                         int mipLevelCount, int sampleCount,
                         int flags) {
@@ -87,6 +87,8 @@ public class ImageInfo {
     }
 
     /**
+     * Returns the default image view type.
+     *
      * @return see {@link Engine.ImageType}
      */
     public byte getImageType() {
@@ -120,6 +122,10 @@ public class ImageInfo {
 
     public final boolean isMipmapped() {
         return mMipLevelCount > 1;
+    }
+
+    public final boolean isMultisampled() {
+        return mSampleCount > 1;
     }
 
     /**

@@ -53,28 +53,28 @@ public class GLPipelineCache extends PipelineCache {
 
     @Nullable
     public GLGraphicsPipeline findOrCreateGraphicsPipeline(
-            final PipelineDesc desc,
-            final PipelineInfo pipelineInfo) {
+            final PipelineKey desc,
+            final GraphicsPipelineDesc graphicsPipelineDesc) {
         if (desc.isEmpty()) {
             final Caps caps = mDevice.getCaps();
-            caps.makeDesc(desc, /*renderTarget*/null, pipelineInfo);
+            caps.makeDesc(desc, /*renderTarget*/null, graphicsPipelineDesc);
         }
         assert (!desc.isEmpty());
-        return findOrCreateGraphicsPipelineImpl(desc, pipelineInfo);
+        return findOrCreateGraphicsPipelineImpl(desc, graphicsPipelineDesc);
     }
 
     @Nonnull
     private GLGraphicsPipeline findOrCreateGraphicsPipelineImpl(
-            PipelineDesc desc,
-            final PipelineInfo pipelineInfo) {
+            PipelineKey desc,
+            final GraphicsPipelineDesc graphicsPipelineDesc) {
         GLGraphicsPipeline existing = mCache.get(desc);
         if (existing != null) {
             return existing;
         }
         // We have a cache miss
-        desc = new PipelineDesc(desc);
+        desc = new PipelineKey(desc);
         GLGraphicsPipeline newPipeline = GLGraphicsPipelineBuilder.createGraphicsPipeline(mDevice, desc,
-                pipelineInfo);
+                graphicsPipelineDesc);
         existing = mCache.putIfAbsent(desc.toStorageKey(), newPipeline);
         if (existing != null) {
             // there's a race, reuse existing

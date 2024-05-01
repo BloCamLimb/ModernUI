@@ -30,22 +30,22 @@ import java.util.Set;
  */
 public class OpFlushState implements MeshDrawTarget {
 
-    private final GpuDevice mDevice;
+    private final Device mDevice;
 
     private OpsRenderPass mOpsRenderPass;
 
-    public OpFlushState(GpuDevice device,
+    public OpFlushState(Device device,
                         ResourceProvider resourceProvider) {
         mDevice = device;
     }
 
-    public GpuDevice getDevice() {
+    public Device getDevice() {
         return mDevice;
     }
 
     public final GraphicsPipeline findOrCreateGraphicsPipeline(
-            final PipelineInfo pipelineInfo) {
-        return mDevice.getContext().findOrCreateGraphicsPipeline(pipelineInfo);
+            final GraphicsPipelineDesc graphicsPipelineDesc) {
+        return mDevice.getContext().findOrCreateGraphicsPipeline(graphicsPipelineDesc);
     }
 
     @Override
@@ -85,7 +85,7 @@ public class OpFlushState implements MeshDrawTarget {
         return mOpsRenderPass;
     }
 
-    public OpsRenderPass beginOpsRenderPass(SurfaceProxyView writeView,
+    public OpsRenderPass beginOpsRenderPass(ImageProxyView writeView,
                                             Rect2i contentBounds,
                                             byte colorOps,
                                             byte stencilOps,

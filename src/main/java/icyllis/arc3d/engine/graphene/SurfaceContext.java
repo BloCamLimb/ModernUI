@@ -34,7 +34,7 @@ import static icyllis.arc3d.engine.Engine.SurfaceOrigin;
 public class SurfaceContext implements AutoCloseable {
 
     protected final RecordingContext mContext;
-    protected final SurfaceProxyView mReadView;
+    protected final ImageProxyView mReadView;
 
     private final ImageInfo mImageInfo;
 
@@ -43,7 +43,7 @@ public class SurfaceContext implements AutoCloseable {
      * @param readView raw ptr to the read view
      */
     public SurfaceContext(@RawPtr RecordingContext context,
-                          @RawPtr SurfaceProxyView readView,
+                          @RawPtr ImageProxyView readView,
                           int colorType,
                           int alphaType,
                           ColorSpace colorSpace) {
@@ -68,7 +68,7 @@ public class SurfaceContext implements AutoCloseable {
      * @return raw ptr to the read view
      */
     @RawPtr
-    public final SurfaceProxyView getReadView() {
+    public final ImageProxyView getReadView() {
         return mReadView;
     }
 

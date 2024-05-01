@@ -84,13 +84,13 @@ public abstract class OpsRenderPass {
      * Updates the internal pipeline state for drawing. Enters an internal "bad" state if
      * the pipeline could not be set.
      *
-     * @param pipelineInfo  the pipeline info used to update uniforms
+     * @param graphicsPipelineDesc  the pipeline info used to update uniforms
      * @param pipeline the pipeline state object
      * @param drawBounds    the sub-area of render target for subsequent draw calls
      */
-    public void bindPipeline(PipelineInfo pipelineInfo, GraphicsPipeline pipeline, Rect2fc drawBounds) {
-        assert (pipelineInfo.origin() == mSurfaceOrigin);
-        if (!onBindPipeline(pipelineInfo, pipeline, drawBounds)) {
+    public void bindPipeline(GraphicsPipelineDesc graphicsPipelineDesc, GraphicsPipeline pipeline, Rect2fc drawBounds) {
+        assert (graphicsPipelineDesc.origin() == mSurfaceOrigin);
+        if (!onBindPipeline(graphicsPipelineDesc, pipeline, drawBounds)) {
             mDrawPipelineStatus = kFailedToBind_DrawPipelineStatus;
             return;
         }
@@ -135,9 +135,9 @@ public abstract class OpsRenderPass {
      * @param instanceBuffer       raw ptr to the instance buffer if using instanced rendering, or nullptr
      * @param instanceStreamOffset byte offset to first instance of instance stream
      */
-    public final void bindBuffers(@RawPtr GpuBuffer indexBuffer, int indexType,
-                                  @RawPtr GpuBuffer vertexBuffer, int vertexStreamOffset,
-                                  @RawPtr GpuBuffer instanceBuffer, int instanceStreamOffset) {
+    public final void bindBuffers(@RawPtr Buffer indexBuffer, int indexType,
+                                  @RawPtr Buffer vertexBuffer, int vertexStreamOffset,
+                                  @RawPtr Buffer instanceBuffer, int instanceStreamOffset) {
         if (vertexBuffer == null && instanceBuffer == null) {
             mDrawPipelineStatus = kFailedToBind_DrawPipelineStatus;
             return;
@@ -230,15 +230,15 @@ public abstract class OpsRenderPass {
         mSurfaceOrigin = origin;
     }
 
-    protected abstract GpuDevice getDevice();
+    protected abstract Device getDevice();
 
-    protected abstract boolean onBindPipeline(PipelineInfo pipelineInfo,
+    protected abstract boolean onBindPipeline(GraphicsPipelineDesc graphicsPipelineDesc,
                                               GraphicsPipeline pipeline,
                                               Rect2fc drawBounds);
 
-    protected abstract void onBindBuffers(@SharedPtr GpuBuffer indexBuffer, int indexType,
-                                          @SharedPtr GpuBuffer vertexBuffer, int vertexStreamOffset,
-                                          @SharedPtr GpuBuffer instanceBuffer, int instanceStreamOffset);
+    protected abstract void onBindBuffers(@SharedPtr Buffer indexBuffer, int indexType,
+                                          @SharedPtr Buffer vertexBuffer, int vertexStreamOffset,
+                                          @SharedPtr Buffer instanceBuffer, int instanceStreamOffset);
 
     protected abstract void onDraw(int vertexCount, int baseVertex);
 

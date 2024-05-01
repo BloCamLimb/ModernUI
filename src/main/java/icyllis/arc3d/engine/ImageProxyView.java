@@ -28,20 +28,20 @@ import static icyllis.arc3d.engine.Engine.SurfaceOrigin;
  * Surface views contain additional metadata for pipeline operations on surfaces.
  * This class is a tuple of {@link SurfaceProxy}, SurfaceOrigin and Swizzle.
  */
-public class SurfaceProxyView implements AutoCloseable {
+public class ImageProxyView implements AutoCloseable {
 
     @SharedPtr
     SurfaceProxy mProxy;
     int mOrigin;
     short mSwizzle;
 
-    public SurfaceProxyView(@SharedPtr SurfaceProxy proxy) {
+    public ImageProxyView(@SharedPtr SurfaceProxy proxy) {
         mProxy = proxy; // std::move()
         mOrigin = SurfaceOrigin.kUpperLeft;
         mSwizzle = Swizzle.RGBA;
     }
 
-    public SurfaceProxyView(@SharedPtr SurfaceProxy proxy, int origin, short swizzle) {
+    public ImageProxyView(@SharedPtr SurfaceProxy proxy, int origin, short swizzle) {
         mProxy = proxy; // std::move()
         mOrigin = origin;
         mSwizzle = swizzle;
@@ -145,7 +145,7 @@ public class SurfaceProxyView implements AutoCloseable {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        SurfaceProxyView that = (SurfaceProxyView) o;
+        ImageProxyView that = (ImageProxyView) o;
         if (mOrigin != that.mOrigin) return false;
         if (mSwizzle != that.mSwizzle) return false;
         return (mProxy == null && that.mProxy == null) ||

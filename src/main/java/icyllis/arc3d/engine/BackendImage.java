@@ -30,12 +30,12 @@ import javax.annotation.Nonnull;
  */
 public abstract class BackendImage {
 
-    protected final ImageInfo mInfo;
+    protected final ImageDesc mDesc;
     protected final ImageMutableState mMutableState;
 
-    protected BackendImage(ImageInfo info,
+    protected BackendImage(ImageDesc desc,
                            ImageMutableState mutableState) {
-        mInfo = info;
+        mDesc = desc;
         mMutableState = mutableState;
     }
 
@@ -48,29 +48,29 @@ public abstract class BackendImage {
      * @return width in pixels
      */
     public final int getWidth() {
-        return mInfo.mWidth;
+        return mDesc.mWidth;
     }
 
     /**
      * @return height in pixels
      */
     public final int getHeight() {
-        return mInfo.mHeight;
+        return mDesc.mHeight;
     }
 
     public final int getDepth() {
-        return mInfo.mDepth;
+        return mDesc.mDepth;
     }
 
     public final int getArraySize() {
-        return mInfo.mArraySize;
+        return mDesc.mArraySize;
     }
 
     /**
      * @return see {@link Engine.ImageType}
      */
     public final byte getImageType() {
-        return mInfo.getImageType();
+        return mDesc.getImageType();
     }
 
     /**
@@ -82,19 +82,19 @@ public abstract class BackendImage {
      * @return whether the image has mip levels allocated or not
      */
     public final boolean isMipmapped() {
-        return mInfo.isMipmapped();
+        return mDesc.isMipmapped();
     }
 
     public final int getMipLevelCount() {
-        return mInfo.mMipLevelCount;
+        return mDesc.mMipLevelCount;
     }
 
     /**
      * Get the backend info for this image/texture.
      */
     @Nonnull
-    public final ImageInfo getInfo() {
-        return mInfo;
+    public final ImageDesc getDesc() {
+        return mDesc;
     }
 
     /**

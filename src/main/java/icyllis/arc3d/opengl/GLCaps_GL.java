@@ -47,7 +47,7 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
     private boolean mSpecializeShaderARB;
 
     @VisibleForTesting
-    public GLCaps_GL(DirectContext context, ContextOptions options, Object capabilities) {
+    public GLCaps_GL(ImmediateContext context, ContextOptions options, Object capabilities) {
         super(options);
         GLCapabilities caps = (GLCapabilities) capabilities;
         // OpenGL 3.3 is the minimum requirement

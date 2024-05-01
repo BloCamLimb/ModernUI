@@ -33,17 +33,17 @@ public final class VkBackendRenderTarget extends BackendRenderTarget {
             VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    private final VulkanImageInfo mInfo;
+    private final VulkanImageDesc mInfo;
     final VulkanImageMutableState mState;
 
     private VkBackendFormat mBackendFormat;
 
     // The VkImageInfo can NOT be modified anymore.
-    public VkBackendRenderTarget(int width, int height, VulkanImageInfo info) {
+    public VkBackendRenderTarget(int width, int height, VulkanImageDesc info) {
         this(width, height, info, new VulkanImageMutableState(info.mImageLayout, info.mCurrentQueueFamily));
     }
 
-    VkBackendRenderTarget(int width, int height, VulkanImageInfo info, VulkanImageMutableState state) {
+    VkBackendRenderTarget(int width, int height, VulkanImageDesc info, VulkanImageMutableState state) {
         super(width, height);
         if (info.mImageUsageFlags == 0) {
             info.mImageUsageFlags = DEFAULT_USAGE_FLAGS;
@@ -75,7 +75,7 @@ public final class VkBackendRenderTarget extends BackendRenderTarget {
     }
 
     @Override
-    public boolean getVkImageInfo(VulkanImageInfo info) {
+    public boolean getVkImageInfo(VulkanImageDesc info) {
         info.set(mInfo);
         info.mImageLayout = mState.getImageLayout();
         info.mCurrentQueueFamily = mState.getQueueFamilyIndex();
