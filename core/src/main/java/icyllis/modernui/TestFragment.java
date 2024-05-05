@@ -161,8 +161,7 @@ public class TestFragment extends Fragment {
 
             content.setOnKeyListener((v, keyCode, event) -> {
                 if (keyCode == KeyEvent.KEY_E && event.getAction() == KeyEvent.ACTION_UP) {
-                    Core.postOnRenderThread(() ->
-                            GlyphManager.getInstance().debug());
+                    GlyphManager.getInstance().debug();
                     /*getParentFragmentManager().beginTransaction()
                             .replace(getId(), new FragmentB())
                             .addToBackStack(null)
