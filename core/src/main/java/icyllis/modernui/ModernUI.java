@@ -182,7 +182,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
                 Bitmap i32 = BitmapFactory.decodeStream(getResourceStream(ID, "AppLogo32x.png"));
                 Bitmap i48 = BitmapFactory.decodeStream(getResourceStream(ID, "AppLogo48x.png"));
                 return new Bitmap[]{i16, i32, i48};
-            } catch (IOException e) {
+            } catch (Throwable e) {
                 LOGGER.info(MARKER, "Failed to load window icons", e);
             }
             return null;
@@ -241,7 +241,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
             Path p = Path.of("assets/modernui/raw/eromanga.png").toAbsolutePath();
             try (FileChannel channel = FileChannel.open(p, StandardOpenOption.READ)) {
                 return BitmapFactory.decodeChannel(channel);
-            } catch (IOException e) {
+            } catch (Throwable e) {
                 LOGGER.info(MARKER, "Failed to load background image", e);
             }
             return null;

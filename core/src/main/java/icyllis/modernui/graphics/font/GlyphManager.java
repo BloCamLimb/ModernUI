@@ -339,7 +339,6 @@ public class GlyphManager {
         }
     }
 
-    @RenderThread
     public void debug() {
         debug(mFontAtlas, "FontAtlas");
         debug(mEmojiAtlas, "EmojiAtlas");
@@ -348,7 +347,7 @@ public class GlyphManager {
     private static void debug(GLFontAtlas atlas, String name) {
         if (atlas != null) {
             String path = Bitmap.saveDialogGet(Bitmap.SaveFormat.PNG, null, name);
-            atlas.debug(path);
+            Core.executeOnRenderThread(() -> atlas.debug(path));
         }
     }
 
@@ -396,9 +395,17 @@ public class GlyphManager {
         mImage.getRGB(0, 0, borderedWidth, borderedHeight, mImageData, 0, borderedWidth);
 
         final int size = borderedWidth * borderedHeight;
-        for (int i = 0; i < size; i++) {
-            // alpha channel for grayscale texture
-            mImageBuffer.put((byte) (mImageData[i] >>> 24));
+        if (atlas.getMaskFormat() == Engine.MASK_FORMAT_A8) {
+            for (int i = 0; i < size; i++) {
+                // alpha channel for grayscale texture
+                mImageBuffer.put((byte) (mImageData[i] >>> 24));
+            }
+        } else {
+            // used only when texture swizzle is broken
+            for (int i = 0; i < size; i++) {
+                mImageBuffer.put((byte) 255).put((byte) 255).put((byte) 255)
+                        .put((byte) (mImageData[i] >>> 24));
+            }
         }
         long src = MemoryUtil.memAddress(mImageBuffer.flip());
 
@@ -457,7 +464,7 @@ public class GlyphManager {
         mGraphics = mImage.createGraphics();
 
         mImageData = new int[width * height];
-        mImageBuffer = BufferUtils.createByteBuffer(mImageData.length); // auto GC
+        mImageBuffer = BufferUtils.createByteBuffer(mImageData.length * 4); // auto GC
 
         // set background color for use with clearRect()
         mGraphics.setBackground(BG_COLOR);

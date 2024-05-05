@@ -282,6 +282,15 @@ public class GLFontAtlas implements AutoCloseable {
                         : GL_NEAREST
         );
 
+        //TODO this is a temp workaround. on old generation of AMD GPUs (before GCN 1, e.g.
+        // Radeon HD 8550G TeraScale 3),
+        // GL_TEXTURE_MAX_LEVEL must be set even TexStorage is used, and must be set after
+        // glBindTexture() (DSA glTextureParameter won't work), and before glTexSubImage2D.
+        // Otherwise, texture upload will fail and texture remain mipmap incomplete.
+        // This should be done in Arc3D and will be removed once Arc3D is updated
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, mTexture.getMaxMipmapLevel());
+
         if (mMaskFormat == Engine.MASK_FORMAT_A8) {
             //XXX: un-premultiplied, so 111r rather than rrrr
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_ONE);
@@ -313,6 +322,10 @@ public class GLFontAtlas implements AutoCloseable {
 
     public GLTexture getTexture() {
         return mTexture;
+    }
+
+    public int getMaskFormat() {
+        return mMaskFormat;
     }
 
     public boolean compact() {
