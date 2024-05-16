@@ -68,7 +68,7 @@ public class TestBlendMode {
         int dst = Color.argb(255, 233, 30, 99);
         int i = 0;
         for (; i < BlendMode.COUNT; i++) {
-            blend(BlendMode.mode(i), src, dst);
+            blend(BlendMode.modeAt(i), src, dst);
         }
         System.out.println(i);
         checkBlend();
@@ -78,7 +78,7 @@ public class TestBlendMode {
         int src = Color.argb(0, 210, 200, 150);
         int dst = Color.argb(233, 233, 30, 99);
         for (int i = 0; i < BlendMode.COUNT; i++) {
-            var modeA = BlendMode.mode(i);
+            var modeA = BlendMode.modeAt(i);
             int resultA = Color.blend(modeA, src, dst);
             if (resultA == dst) {
                 System.out.println(modeA);
