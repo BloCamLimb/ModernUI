@@ -1,20 +1,20 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
  * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.compiler.spirv;
@@ -42,7 +42,7 @@ import static org.lwjgl.util.spvc.Spv.*;
  */
 public final class SPIRVCodeGenerator extends CodeGenerator {
 
-    // Arc 3D is not registered, so higher 16 bits are zero
+    // Arc3D is not registered, so higher 16 bits are zero
     // We use 0x32D2 and 0x6D5C for the lower 16 bits (in the future)
     public static final int GENERATOR_MAGIC_NUMBER = 0x00000000;
     // We reserve the max SpvId as a sentinel (meaning not available)
