@@ -36,7 +36,18 @@ import javax.annotation.Nullable;
 @SuppressWarnings("unused")
 public abstract class Caps {
 
+    /**
+     * Most implementations support 4 or 8 simultaneous color targets.
+     */
     public static final int MAX_COLOR_TARGETS = 8;
+    /**
+     * Max allowed number of vertex attribute locations.
+     * Most implementations support 16 or 32 attributes, and our engine uses
+     * 'int' as enable mask type, then this is 32, see {@link VertexInputLayout}.
+     */
+    public static final int MAX_VERTEX_ATTRIBUTES = 32;
+    public static final int MAX_VERTEX_BINDINGS = 32;
+    // the constants above are used to create fixed length arrays, however, there is no such thing in Java
 
     /**
      * Indicates the capabilities of the fixed function blend unit.
@@ -75,7 +86,8 @@ public abstract class Caps {
 
     protected int mMaxRenderTargetSize = 1;
     protected int mMaxPreferredRenderTargetSize = 1;
-    protected int mMaxVertexAttributes = 0;
+    protected int mMaxVertexAttributes = 16;
+    protected int mMaxVertexBindings = 16;
     protected int mMaxTextureSize = 1;
     protected int mInternalMultisampleCount = 0;
     protected int mMaxPushConstantsSize = 0;
@@ -303,10 +315,14 @@ public abstract class Caps {
     }
 
     /**
-     * Maximum number of attribute values per vertex
+     * Maximum number of attribute values per vertex input
      */
     public final int maxVertexAttributes() {
         return mMaxVertexAttributes;
+    }
+
+    public final int maxVertexBindings() {
+        return mMaxVertexBindings;
     }
 
     public final int maxRenderTargetSize() {

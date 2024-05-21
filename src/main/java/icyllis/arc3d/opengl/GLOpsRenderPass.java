@@ -140,13 +140,13 @@ public final class GLOpsRenderPass extends OpsRenderPass {
                                  @RawPtr Buffer instanceBuffer, int instanceStreamOffset) {
         assert (mPipelineState != null);
         if (mDevice.getCaps().hasBaseInstanceSupport()) {
-            mPipelineState.bindBuffers(indexBuffer, vertexBuffer, vertexStreamOffset,
-                    instanceBuffer, instanceStreamOffset);
+            /*mPipelineState.bindBuffers(indexBuffer, vertexBuffer, vertexStreamOffset,
+                    instanceBuffer, instanceStreamOffset);*/
         } else if (indexBuffer == null || mDevice.getCaps().hasDrawElementsBaseVertexSupport()) {
             // bind instance buffer on drawInstanced()
-            mPipelineState.bindBuffers(indexBuffer, vertexBuffer, vertexStreamOffset,
+            /*mPipelineState.bindBuffers(indexBuffer, vertexBuffer, vertexStreamOffset,
                     null, 0);
-            mInstanceStreamOffset = instanceStreamOffset;
+            mInstanceStreamOffset = instanceStreamOffset;*/
         } else {
             // bind vertex buffer on drawIndexed()
             mPipelineState.bindIndexBuffer((GLBuffer) indexBuffer);
@@ -176,10 +176,10 @@ public final class GLOpsRenderPass extends OpsRenderPass {
             mDevice.getGL().glDrawElementsBaseVertex(mPrimitiveType, indexCount,
                     mIndexType, baseIndex, baseVertex);
         } else {
-            long vertexOffset = (long) baseVertex * mPipelineState.getVertexStride() + mVertexStreamOffset;
+            /*long vertexOffset = (long) baseVertex * mPipelineState.getVertexStride() + mVertexStreamOffset;
             mPipelineState.bindVertexBuffer((GLBuffer) mActiveVertexBuffer, vertexOffset);
             mDevice.getGL().glDrawElements(mPrimitiveType, indexCount,
-                    mIndexType, baseIndex);
+                    mIndexType, baseIndex);*/
         }
     }
 
@@ -190,10 +190,10 @@ public final class GLOpsRenderPass extends OpsRenderPass {
             mDevice.getGL().glDrawArraysInstancedBaseInstance(mPrimitiveType, baseVertex, vertexCount,
                     instanceCount, baseInstance);
         } else {
-            long instanceOffset = (long) baseInstance * mPipelineState.getInstanceStride() + mInstanceStreamOffset;
+            /*long instanceOffset = (long) baseInstance * mPipelineState.getInstanceStride() + mInstanceStreamOffset;
             mPipelineState.bindInstanceBuffer((GLBuffer) mActiveInstanceBuffer, instanceOffset);
             mDevice.getGL().glDrawArraysInstanced(mPrimitiveType, baseVertex, vertexCount,
-                    instanceCount);
+                    instanceCount);*/
         }
     }
 
@@ -205,7 +205,7 @@ public final class GLOpsRenderPass extends OpsRenderPass {
             mDevice.getGL().glDrawElementsInstancedBaseVertexBaseInstance(mPrimitiveType, indexCount,
                     mIndexType, baseIndex, instanceCount, baseVertex, baseInstance);
         } else {
-            long instanceOffset = (long) baseInstance * mPipelineState.getInstanceStride() + mInstanceStreamOffset;
+            /*long instanceOffset = (long) baseInstance * mPipelineState.getInstanceStride() + mInstanceStreamOffset;
             mPipelineState.bindInstanceBuffer((GLBuffer) mActiveInstanceBuffer, instanceOffset);
             if (mDevice.getCaps().hasDrawElementsBaseVertexSupport()) {
                 mDevice.getGL().glDrawElementsInstancedBaseVertex(mPrimitiveType, indexCount,
@@ -215,7 +215,7 @@ public final class GLOpsRenderPass extends OpsRenderPass {
                 mPipelineState.bindVertexBuffer((GLBuffer) mActiveVertexBuffer, vertexOffset);
                 mDevice.getGL().glDrawElementsInstanced(mPrimitiveType, indexCount,
                         mIndexType, baseIndex, instanceCount);
-            }
+            }*/
         }
     }
 }

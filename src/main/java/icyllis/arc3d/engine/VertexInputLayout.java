@@ -23,14 +23,20 @@ import icyllis.arc3d.core.MathUtil;
 import icyllis.arc3d.core.SLDataType;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 /**
  * Describes the vertex input state of a graphics pipeline.
  */
 public final class VertexInputLayout {
+
+    /**
+     * Input rates other than 0 and 1 are not supported.
+     */
+    public static final int INPUT_RATE_VERTEX = 0;      // per-vertex data
+    public static final int INPUT_RATE_INSTANCE = 1;    // per-instance data
 
     /**
      * Describes a vertex or instance attribute.
@@ -353,9 +359,113 @@ public final class VertexInputLayout {
     private final AttributeSet[] mAttributeSets;
     private final int[] mMasks;
 
-    public VertexInputLayout(AttributeSet[] attributeSets, int[] masks) {
+    /**
+     * Enable all attributes for each AttributeSet.
+     *
+     * @see #VertexInputLayout(AttributeSet[], int[])
+     */
+    public VertexInputLayout(@Nonnull AttributeSet... attributeSets) {
+        this(attributeSets, null);
+    }
+
+    /**
+     * The constructor wraps the two given arrays, the caller should ensure the immutability.
+     * <p>
+     * Each AttributeSet contains all attributes for the corresponding binding point.
+     * It may be shared across {@link VertexInputLayout} instances, then the <var>masks</var>
+     * array is used to control which attributes of the corresponding AttributeSet
+     * need to be used. A binding point can be empty but that is discouraged.
+     */
+    public VertexInputLayout(@Nonnull AttributeSet[] attributeSets,
+                             @Nullable int[] masks) {
+        assert attributeSets.length > 0 && attributeSets.length <= Caps.MAX_VERTEX_BINDINGS;
         assert masks == null || attributeSets.length == masks.length;
         mAttributeSets = attributeSets;
+        if (masks != null) {
+            for (int i = 0; i < masks.length; i++) {
+                if (masks[i] != 0) {
+                    masks[i] |= attributeSets[i].mAllMask; // sanitize
+                }
+            }
+        }
         mMasks = masks;
+    }
+
+    /**
+     * Returns the number of binding points.
+     */
+    public int getBindingCount() {
+        return mAttributeSets.length;
+    }
+
+    /**
+     * Returns the number of used attributes (input variables).
+     * Note: attribute of a matrix type counts as just one.
+     *
+     * @see #getLocationCount(int)
+     */
+    public int getAttributeCount(int binding) {
+        if (mMasks != null) {
+            return Integer.bitCount(mMasks[binding]);
+        }
+        var set = mAttributeSets[binding];
+        return set != null ? set.mAttributes.length : 0;
+    }
+
+    /**
+     * Returns the number of used per-vertex attribute locations (slots).
+     * An attribute (variable) may take up multiple consecutive locations.
+     *
+     * @see SLDataType#locations(byte)
+     * @see #getAttributeCount(int)
+     */
+    public int getLocationCount(int binding) {
+        var set = mAttributeSets[binding];
+        if (mMasks != null) {
+            int mask = mMasks[binding];
+            return mask != 0 ? set.numLocations(mask) : 0;
+        }
+        return set != null ? set.numLocations(set.mAllMask) : 0;
+    }
+
+    /**
+     * Returns the number of bytes from one vertex to the next vertex, including paddings.
+     * A common practice is to populate the vertex's memory using an implicit array of
+     * structs. In this case, it is best to assert that: stride == sizeof(struct).
+     */
+    public int getStride(int binding) {
+        var set = mAttributeSets[binding];
+        if (mMasks != null) {
+            int mask = mMasks[binding];
+            return mask != 0 ? set.stride(mask) : 0;
+        }
+        return set != null ? set.stride(set.mAllMask) : 0;
+    }
+
+    /**
+     * Returns the input rate for the given binding point. 0 means per-vertex data,
+     * 1 means per-instance data.
+     */
+    public int getInputRate(int binding) {
+        var set = mAttributeSets[binding];
+        return set != null ? set.mInputRate : 0;
+    }
+
+    /**
+     * Returns an iterator of used attributes. It's safe to call even if there's no attribute.
+     * The iterator handles hides two pieces of complexity:
+     * <ol>
+     * <li>It skips unused attributes (see mask in constructor).</li>
+     * <li>It always returns an attribute with a known offset.</li>
+     * </ol>
+     */
+    @Nonnull
+    public Iterator<Attribute> getAttributes(int binding) {
+        var set = mAttributeSets[binding];
+        if (mMasks != null) {
+            int mask = mMasks[binding];
+            return mask != 0 ? set.new Iter(mask) : Collections.emptyIterator();
+        }
+        return set != null ? set.iterator() : Collections.emptyIterator();
     }
 }

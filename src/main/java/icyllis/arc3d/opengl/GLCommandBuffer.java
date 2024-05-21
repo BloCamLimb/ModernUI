@@ -73,18 +73,13 @@ public final class GLCommandBuffer extends CommandBuffer {
 
     private int mPrimitiveType;
 
-    @SharedPtr
-    private Buffer mActiveIndexBuffer;
-    @SharedPtr
-    private Buffer mActiveVertexBuffer;
-    @SharedPtr
-    private Buffer mActiveInstanceBuffer;
-
     private int mIndexType;
-    private int mVertexStreamOffset;
-    private int mInstanceStreamOffset;
-    private int mIndexBufferOffset;
-    private int mIndexSize;
+    private long mIndexBufferOffset;
+
+    //TODO shall we track refcnt here?
+    @RawPtr
+    private final GLBuffer[] mActiveVertexBuffers = new GLBuffer[Caps.MAX_VERTEX_BINDINGS];
+    private final long[] mActiveVertexOffsets = new long[Caps.MAX_VERTEX_BINDINGS];
 
     private byte mColorOps;
     private byte mStencilOps;
@@ -338,9 +333,9 @@ public final class GLCommandBuffer extends CommandBuffer {
 
     @Override
     public void endRenderPass() {
-        mActiveIndexBuffer = RefCnt.move(mActiveIndexBuffer);
+        /*mActiveIndexBuffer = RefCnt.move(mActiveIndexBuffer);
         mActiveVertexBuffer = RefCnt.move(mActiveVertexBuffer);
-        mActiveInstanceBuffer = RefCnt.move(mActiveInstanceBuffer);
+        mActiveInstanceBuffer = RefCnt.move(mActiveInstanceBuffer);*/
         GLRenderTarget glRenderTarget = mHWRenderTarget;
         mDevice.endRenderPass(glRenderTarget,
                 mColorOps,
@@ -349,9 +344,9 @@ public final class GLCommandBuffer extends CommandBuffer {
 
     @Override
     public boolean bindGraphicsPipeline(GraphicsPipeline graphicsPipeline) {
-        mActiveIndexBuffer = RefCnt.move(mActiveIndexBuffer);
+        /*mActiveIndexBuffer = RefCnt.move(mActiveIndexBuffer);
         mActiveVertexBuffer = RefCnt.move(mActiveVertexBuffer);
-        mActiveInstanceBuffer = RefCnt.move(mActiveInstanceBuffer);
+        mActiveInstanceBuffer = RefCnt.move(mActiveInstanceBuffer);*/
 
         mGraphicsPipeline = (GLGraphicsPipeline) graphicsPipeline;
         if (mGraphicsPipeline == null) {
@@ -376,40 +371,36 @@ public final class GLCommandBuffer extends CommandBuffer {
         return true;
     }
 
-    public void bindBuffers(@RawPtr Buffer vertexBuffer, int vertexStreamOffset,
-                            @RawPtr Buffer instanceBuffer, int instanceStreamOffset,
-                            @RawPtr Buffer indexBuffer, int indexBufferOffset,
-                            int indexType) {
+    public void bindIndexBuffer(int indexType, @RawPtr GLBuffer buffer, long offset) {
         assert (mGraphicsPipeline != null);
-        if (mDevice.getCaps().hasBaseInstanceSupport()) {
-            mGraphicsPipeline.bindBuffers(indexBuffer, vertexBuffer, vertexStreamOffset,
-                    instanceBuffer, instanceStreamOffset);
-        } else if (indexBuffer == null || mDevice.getCaps().hasDrawElementsBaseVertexSupport()) {
-            // bind instance buffer on drawInstanced()
-            mGraphicsPipeline.bindBuffers(indexBuffer, vertexBuffer, vertexStreamOffset,
-                    null, 0);
-            mInstanceStreamOffset = instanceStreamOffset;
-        } else {
-            // bind vertex buffer on drawIndexed()
-            mGraphicsPipeline.bindIndexBuffer((GLBuffer) indexBuffer);
-            mVertexStreamOffset = vertexStreamOffset;
-            mInstanceStreamOffset = instanceStreamOffset;
-        }
-        mActiveIndexBuffer = RefCnt.create(mActiveIndexBuffer, indexBuffer);
-        mActiveVertexBuffer = RefCnt.create(mActiveVertexBuffer, vertexBuffer);
-        mActiveInstanceBuffer = RefCnt.create(mActiveInstanceBuffer, instanceBuffer);
-        mIndexBufferOffset = indexBufferOffset;
         mIndexType = switch (indexType) {
             case Engine.IndexType.kUByte -> GL_UNSIGNED_BYTE;
             case Engine.IndexType.kUShort -> GL_UNSIGNED_SHORT;
             case Engine.IndexType.kUInt -> GL_UNSIGNED_INT;
             default -> throw new AssertionError();
         };
-        mIndexSize = Engine.IndexType.size(indexType);
+        mGraphicsPipeline.bindIndexBuffer(buffer);
+        mIndexBufferOffset = offset;
+    }
+
+    public void bindVertexBuffer(int binding, @RawPtr GLBuffer buffer, long offset) {
+        assert (mGraphicsPipeline != null);
+        if (mDevice.getCaps().hasBaseInstanceSupport()) {
+            // base instance support covers all cases
+            mGraphicsPipeline.bindVertexBuffer(binding, buffer, offset);
+        } else {
+            // bind instance buffer on drawInstanced(), we may rebind vertex buffer on drawIndexed()
+            if (mGraphicsPipeline.getVertexInputRate(binding) == VertexInputLayout.INPUT_RATE_VERTEX) {
+                mGraphicsPipeline.bindVertexBuffer(binding, buffer, offset);
+            }
+            mActiveVertexBuffers[binding] = buffer;
+            mActiveVertexOffsets[binding] = offset;
+        }
     }
 
     private long getIndexOffset(int baseIndex) {
-        return (long) baseIndex * mIndexSize + mIndexBufferOffset;
+        int indexSize = Engine.IndexType.size(mIndexType);
+        return (long) baseIndex * indexSize + mIndexBufferOffset;
     }
 
     @Override
@@ -421,12 +412,20 @@ public final class GLCommandBuffer extends CommandBuffer {
     public void drawIndexed(int indexCount, int baseIndex,
                             int baseVertex) {
         long indicesOffset = getIndexOffset(baseIndex);
-        if (mDevice.getCaps().hasDrawElementsBaseVertexSupport()) {
+        if (mDevice.getCaps().hasBaseInstanceSupport()) {
+            mDevice.getGL().glDrawElementsInstancedBaseVertexBaseInstance(mPrimitiveType, indexCount,
+                    mIndexType, indicesOffset, 1, baseVertex, 0);
+        } else if (mDevice.getCaps().hasDrawElementsBaseVertexSupport()) {
             mDevice.getGL().glDrawElementsBaseVertex(mPrimitiveType, indexCount,
                     mIndexType, indicesOffset, baseVertex);
         } else {
-            long vertexOffset = (long) baseVertex * mGraphicsPipeline.getVertexStride() + mVertexStreamOffset;
-            mGraphicsPipeline.bindVertexBuffer((GLBuffer) mActiveVertexBuffer, vertexOffset);
+            int bindings = mGraphicsPipeline.getVertexBindingCount();
+            for (int i = 0; i < bindings; i++) {
+                assert (mGraphicsPipeline.getVertexInputRate(i) == VertexInputLayout.INPUT_RATE_VERTEX);
+                long vertexOffset = (long) baseVertex * mGraphicsPipeline.getVertexStride(i) +
+                        mActiveVertexOffsets[i];
+                mGraphicsPipeline.bindVertexBuffer(i, mActiveVertexBuffers[i], vertexOffset);
+            }
             mDevice.getGL().glDrawElements(mPrimitiveType, indexCount,
                     mIndexType, indicesOffset);
         }
@@ -439,8 +438,14 @@ public final class GLCommandBuffer extends CommandBuffer {
             mDevice.getGL().glDrawArraysInstancedBaseInstance(mPrimitiveType, baseVertex, vertexCount,
                     instanceCount, baseInstance);
         } else {
-            long instanceOffset = (long) baseInstance * mGraphicsPipeline.getInstanceStride() + mInstanceStreamOffset;
-            mGraphicsPipeline.bindInstanceBuffer((GLBuffer) mActiveInstanceBuffer, instanceOffset);
+            int bindings = mGraphicsPipeline.getVertexBindingCount();
+            for (int i = 0; i < bindings; i++) {
+                if (mGraphicsPipeline.getVertexInputRate(i) > VertexInputLayout.INPUT_RATE_VERTEX) {
+                    long instanceOffset = (long) baseInstance * mGraphicsPipeline.getVertexStride(i) +
+                            mActiveVertexOffsets[i];
+                    mGraphicsPipeline.bindVertexBuffer(i, mActiveVertexBuffers[i], instanceOffset);
+                }
+            }
             mDevice.getGL().glDrawArraysInstanced(mPrimitiveType, baseVertex, vertexCount,
                     instanceCount);
         }
@@ -455,14 +460,23 @@ public final class GLCommandBuffer extends CommandBuffer {
             mDevice.getGL().glDrawElementsInstancedBaseVertexBaseInstance(mPrimitiveType, indexCount,
                     mIndexType, indicesOffset, instanceCount, baseVertex, baseInstance);
         } else {
-            long instanceOffset = (long) baseInstance * mGraphicsPipeline.getInstanceStride() + mInstanceStreamOffset;
-            mGraphicsPipeline.bindInstanceBuffer((GLBuffer) mActiveInstanceBuffer, instanceOffset);
-            if (mDevice.getCaps().hasDrawElementsBaseVertexSupport()) {
+            boolean hasBaseVertexSupport = mDevice.getCaps().hasDrawElementsBaseVertexSupport();
+            int bindings = mGraphicsPipeline.getVertexBindingCount();
+            for (int i = 0; i < bindings; i++) {
+                if (mGraphicsPipeline.getVertexInputRate(i) > VertexInputLayout.INPUT_RATE_VERTEX) {
+                    long instanceOffset = (long) baseInstance * mGraphicsPipeline.getVertexStride(i) +
+                            mActiveVertexOffsets[i];
+                    mGraphicsPipeline.bindVertexBuffer(i, mActiveVertexBuffers[i], instanceOffset);
+                } else if (!hasBaseVertexSupport) {
+                    long vertexOffset = (long) baseVertex * mGraphicsPipeline.getVertexStride(i) +
+                            mActiveVertexOffsets[i];
+                    mGraphicsPipeline.bindVertexBuffer(i, mActiveVertexBuffers[i], vertexOffset);
+                }
+            }
+            if (hasBaseVertexSupport) {
                 mDevice.getGL().glDrawElementsInstancedBaseVertex(mPrimitiveType, indexCount,
                         mIndexType, indicesOffset, instanceCount, baseVertex);
             } else {
-                long vertexOffset = (long) baseVertex * mGraphicsPipeline.getVertexStride() + mVertexStreamOffset;
-                mGraphicsPipeline.bindVertexBuffer((GLBuffer) mActiveVertexBuffer, vertexOffset);
                 mDevice.getGL().glDrawElementsInstanced(mPrimitiveType, indexCount,
                         mIndexType, indicesOffset, instanceCount);
             }
@@ -471,40 +485,52 @@ public final class GLCommandBuffer extends CommandBuffer {
 
     public void addDrawPass(DrawPass drawPass) {
         var cmdList = drawPass.getCommandList();
-        var buf = cmdList.mPrimitives;
-        while (buf.hasRemaining()) {
-            switch (buf.getInt()) {
+        var p = cmdList.mPrimitives;
+        var oa = cmdList.mPointers.elements();
+        int oi = 0;
+        while (p.hasRemaining()) {
+            switch (p.getInt()) {
                 case DrawCommandList.CMD_BIND_GRAPHICS_PIPELINE -> {
-                    int pipelineIndex = buf.getInt();
+                    int pipelineIndex = p.getInt();
                     if (!bindGraphicsPipeline(drawPass.getPipeline(pipelineIndex))) {
                         return;
                     }
                 }
                 case DrawCommandList.CMD_DRAW -> {
-                    int vertexCount = buf.getInt();
-                    int baseVertex = buf.getInt();
+                    int vertexCount = p.getInt();
+                    int baseVertex = p.getInt();
                     draw(vertexCount, baseVertex);
                 }
                 case DrawCommandList.CMD_DRAW_INDEXED -> {
-                    int indexCount = buf.getInt();
-                    int baseIndex = buf.getInt();
-                    int baseVertex = buf.getInt();
+                    int indexCount = p.getInt();
+                    int baseIndex = p.getInt();
+                    int baseVertex = p.getInt();
                     drawIndexed(indexCount, baseIndex, baseVertex);
                 }
                 case DrawCommandList.CMD_DRAW_INSTANCED -> {
-                    int instanceCount = buf.getInt();
-                    int baseInstance = buf.getInt();
-                    int vertexCount = buf.getInt();
-                    int baseVertex = buf.getInt();
+                    int instanceCount = p.getInt();
+                    int baseInstance = p.getInt();
+                    int vertexCount = p.getInt();
+                    int baseVertex = p.getInt();
                     drawInstanced(instanceCount, baseInstance, vertexCount, baseVertex);
                 }
                 case DrawCommandList.CMD_DRAW_INDEXED_INSTANCED -> {
-                    int indexCount = buf.getInt();
-                    int baseIndex = buf.getInt();
-                    int instanceCount = buf.getInt();
-                    int baseInstance = buf.getInt();
-                    int baseVertex = buf.getInt();
+                    int indexCount = p.getInt();
+                    int baseIndex = p.getInt();
+                    int instanceCount = p.getInt();
+                    int baseInstance = p.getInt();
+                    int baseVertex = p.getInt();
                     drawIndexedInstanced(indexCount, baseIndex, instanceCount, baseInstance, baseVertex);
+                }
+                case DrawCommandList.CMD_BIND_INDEX_BUFFER -> {
+                    int indexType = p.getInt();
+                    long offset = p.getLong();
+                    bindIndexBuffer(indexType, (GLBuffer) oa[oi++], offset);
+                }
+                case DrawCommandList.CMD_BIND_VERTEX_BUFFER -> {
+                    int binding = p.getInt();
+                    long offset = p.getLong();
+                    bindVertexBuffer(binding, (GLBuffer) oa[oi++], offset);
                 }
             }
         }

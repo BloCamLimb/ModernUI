@@ -57,7 +57,7 @@ public final class CircularRRectOp extends MeshDrawOp {
         private static final VertexInputLayout.Attribute POS = new VertexInputLayout.Attribute("Pos", VertexAttribType.kFloat2, SLDataType.kFloat2);
 
         public Processor() {
-            super(CircularRRect_Geom_ClassID);
+            super(CircularRRect_Geom_ClassID, null, null);
         }
 
         @Nonnull
@@ -80,18 +80,6 @@ public final class CircularRRectOp extends MeshDrawOp {
         @Override
         public ProgramImpl makeProgramImpl(ShaderCaps caps) {
             return new Impl();
-        }
-
-        @Nullable
-        @Override
-        protected VertexInputLayout.AttributeSet allVertexAttributes() {
-            return null;
-        }
-
-        @Nullable
-        @Override
-        protected VertexInputLayout.AttributeSet allInstanceAttributes() {
-            return null;
         }
 
         private static class Impl extends ProgramImpl {

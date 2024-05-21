@@ -59,10 +59,10 @@ public class DrawPass {
 
         var pipelineToIndexMap
                 = new Object2IntOpenHashMap<GraphicsPipelineDesc>();
-        var pipelineDescs = new ArrayList<GraphicsPipelineDesc>();
+        var pipelineDescriptors = new ArrayList<GraphicsPipelineDesc>();
         ToIntFunction<GraphicsPipelineDesc> insertPipelineDesc = desc -> {
-            pipelineDescs.add(desc);
-            return pipelineDescs.size() - 1;
+            pipelineDescriptors.add(desc);
+            return pipelineDescriptors.size() - 1;
         };
 
         SortKey[] keys = new SortKey[drawOpList.numSteps()];
@@ -104,6 +104,8 @@ public class DrawPass {
 
             if (pipelineChange) {
                 drawWriter.newPipelineState(
+                        step.vertexBinding(),
+                        step.instanceBinding(),
                         step.vertexStride(),
                         step.instanceStride()
                 );
@@ -117,7 +119,7 @@ public class DrawPass {
 
 
         DrawPass pass = new DrawPass();
-        pass.mPipelineDescriptors = pipelineDescs;
+        pass.mPipelineDescriptors = pipelineDescriptors;
 
         return pass;
     }

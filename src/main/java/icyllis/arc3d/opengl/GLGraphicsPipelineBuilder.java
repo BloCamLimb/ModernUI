@@ -156,7 +156,9 @@ public class GLGraphicsPipelineBuilder extends GraphicsPipelineBuilder {
 
         //TODO share vertex arrays
         @SharedPtr
-        GLVertexArray vertexArray = GLVertexArray.make(mDevice, mGraphicsPipelineDesc.geomProc());
+        GLVertexArray vertexArray = GLVertexArray.make(mDevice,
+                mGraphicsPipelineDesc.geomProc().getInputLayout(),
+                mGraphicsPipelineDesc.geomProc().name());
         if (vertexArray == null) {
             gl.glDeleteProgram(program);
             return false;

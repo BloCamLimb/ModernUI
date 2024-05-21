@@ -88,10 +88,10 @@ public class SDFRectGeoProc extends GeometryStep {
     private final int mFlags;
 
     public SDFRectGeoProc(int flags) {
-        super(SDFRect_GeoProc_ClassID);
+        super(SDFRect_GeoProc_ClassID, VERTEX_ATTRIBS, INSTANCE_ATTRIBS);
         mFlags = flags;
-        setVertexAttributes(0x1);
-        setInstanceAttributes(0x3 | ((flags & 0x6) << 1));
+        /*setVertexAttributes(0x1);
+        setInstanceAttributes(0x3 | ((flags & 0x6) << 1));*/
     }
 
     @Nonnull
@@ -114,16 +114,6 @@ public class SDFRectGeoProc extends GeometryStep {
     @Override
     public ProgramImpl makeProgramImpl(ShaderCaps caps) {
         return new Impl();
-    }
-
-    @Override
-    protected VertexInputLayout.AttributeSet allVertexAttributes() {
-        return VERTEX_ATTRIBS;
-    }
-
-    @Override
-    protected VertexInputLayout.AttributeSet allInstanceAttributes() {
-        return INSTANCE_ATTRIBS;
     }
 
     private static class Impl extends ProgramImpl {

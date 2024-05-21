@@ -41,7 +41,8 @@ public class DrawCommandList {
     public static final int CMD_DRAW_INDEXED = 2;
     public static final int CMD_DRAW_INSTANCED = 3;
     public static final int CMD_DRAW_INDEXED_INSTANCED = 4;
-    public static final int CMD_BIND_BUFFERS = 5;
+    public static final int CMD_BIND_INDEX_BUFFER = 5;
+    public static final int CMD_BIND_VERTEX_BUFFER = 6;
 
     /**
      * The heap buffer that holds all primitive data.
@@ -102,18 +103,21 @@ public class DrawCommandList {
                 .putInt(baseVertex);
     }
 
-    public final void bindBuffers(BufferViewInfo vertexBufferInfo,
-                                  BufferViewInfo instanceBufferInfo,
-                                  BufferViewInfo indexBufferInfo,
-                                  int indexType) {
-        grow(mPrimitives.position() + 32);
-        mPrimitives.putInt(CMD_BIND_BUFFERS)
-                .putLong(vertexBufferInfo.mOffset)
-                .putLong(instanceBufferInfo.mOffset)
-                .putLong(indexBufferInfo.mOffset)
-                .putInt(indexType);
-        mPointers.add(vertexBufferInfo.mBuffer);
-        mPointers.add(instanceBufferInfo.mBuffer);
+    public final void bindIndexBuffer(int indexType,
+                                      BufferViewInfo indexBufferInfo) {
+        grow(mPrimitives.position() + 16);
+        mPrimitives.putInt(CMD_BIND_INDEX_BUFFER)
+                .putInt(indexType)
+                .putLong(indexBufferInfo.mOffset);
         mPointers.add(indexBufferInfo.mBuffer);
+    }
+
+    public final void bindVertexBuffer(int binding,
+                                       BufferViewInfo vertexBufferInfo) {
+        grow(mPrimitives.position() + 16);
+        mPrimitives.putInt(CMD_BIND_VERTEX_BUFFER)
+                .putInt(binding)
+                .putLong(vertexBufferInfo.mOffset);
+        mPointers.add(vertexBufferInfo.mBuffer);
     }
 }

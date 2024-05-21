@@ -82,15 +82,15 @@ public class CircleProcessor extends GeometryStep {
 
     public CircleProcessor(boolean stroke, boolean clipPlane, boolean isectPlane,
                            boolean unionPlane, boolean roundCaps) {
-        super(Circle_Geom_ClassID);
+        super(Circle_Geom_ClassID, VERTEX_FORMAT, INSTANCE_FORMAT);
         assert (!roundCaps || (stroke && clipPlane));
         int instanceMask = (clipPlane ? 1 << 1 : 0) |
                 (isectPlane ? 1 << 2 : 0) |
                 (unionPlane ? 1 << 3 : 0) |
                 (roundCaps ? 1 << 4 : 0);
         mFlags = (stroke ? 1 : 0) | instanceMask;
-        setVertexAttributes(0x3);
-        setInstanceAttributes(0x1 | instanceMask | 0x20);
+        /*setVertexAttributes(0x3);
+        setInstanceAttributes(0x1 | instanceMask | 0x20);*/
     }
 
     @Nonnull
@@ -113,16 +113,6 @@ public class CircleProcessor extends GeometryStep {
     @Override
     public ProgramImpl makeProgramImpl(ShaderCaps caps) {
         return new Impl();
-    }
-
-    @Override
-    protected VertexInputLayout.AttributeSet allVertexAttributes() {
-        return VERTEX_FORMAT;
-    }
-
-    @Override
-    protected VertexInputLayout.AttributeSet allInstanceAttributes() {
-        return INSTANCE_FORMAT;
     }
 
     private static class Impl extends ProgramImpl {
