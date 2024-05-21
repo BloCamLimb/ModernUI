@@ -114,7 +114,10 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
         } else {
             mMaxFragmentUniformVectors = glGetInteger(GL_MAX_FRAGMENT_UNIFORM_COMPONENTS) / 4;
         }
-        mMaxVertexAttributes = Math.min(32, glGetInteger(GL_MAX_VERTEX_ATTRIBS));
+        mMaxVertexAttributes = Math.min(MAX_VERTEX_ATTRIBUTES, glGetInteger(GL_MAX_VERTEX_ATTRIBS));
+        if (mVertexAttribBindingSupport) {
+            mMaxVertexBindings = Math.min(MAX_VERTEX_BINDINGS, glGetInteger(GL_MAX_VERTEX_ATTRIB_BINDINGS));
+        }
 
         if (caps.OpenGL43 || caps.GL_ARB_invalidate_subdata) {
             mInvalidateBufferType = INVALIDATE_BUFFER_TYPE_INVALIDATE;

@@ -25,9 +25,8 @@ import icyllis.arc3d.engine.*;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Iterator;
 
-import static org.lwjgl.opengl.GL11C.*;
-import static org.lwjgl.opengl.GL15C.GL_ARRAY_BUFFER;
 import static org.lwjgl.opengl.GL30C.*;
 
 /**
@@ -40,66 +39,61 @@ import static org.lwjgl.opengl.GL30C.*;
  */
 public final class GLVertexArray extends ManagedResource {
 
-    private static final int INVALID_BINDING = -1;
-
     private int mVertexArray;
 
-    // OpenGL 4 only
-    private final int mVertexBinding;
-    private final int mInstanceBinding;
+    // per-binding vertex stride
+    private final int[] mStrides;
 
-    private final int mVertexStride;
-    private final int mInstanceStride;
+    // OpenGL 3 or OpenGL ES only, simulate ARB_base_instance
+    private final int[] mInputRates;
 
-    // OpenGL 3 only
-    private final int mNumVertexLocations;
-    private final int mNumInstanceLocations;
-
-    // OpenGL 3 only
+    // OpenGL 3 only, simulate ARB_vertex_attrib_binding
     // lower 24 bits: offset
     // high 8 bits: VertexAttribType
     // index: location (attrib index)
-    private final int[] mAttributes;
+    private final int[][] mAttributes;
 
     // this is the binding state stored in VAO, not context
     // (we don't care about context's binding state)
-    private UniqueID mIndexBuffer;
-    private UniqueID mVertexBuffer;
-    private UniqueID mInstanceBuffer;
+    private UniqueID mBoundIndexBuffer;
 
-    private long mVertexOffset;
-    private long mInstanceOffset;
+    // per-binding binding state
+    private final UniqueID[] mBoundBuffers;
+    private final long[] mBoundOffsets;
 
     private GLVertexArray(GLDevice device,
                           int vertexArray,
-                          int vertexBinding,
-                          int instanceBinding,
-                          int vertexStride,
-                          int instanceStride,
-                          int numVertexLocations,
-                          int numInstanceLocations,
-                          int[] attributes) {
+                          int[] strides,
+                          int[] inputRates,
+                          int[][] attributes) {
         super(device);
         assert (vertexArray != 0);
-        assert (vertexBinding == INVALID_BINDING || vertexStride > 0);
-        assert (instanceBinding == INVALID_BINDING || instanceStride > 0);
+        assert (inputRates == null || inputRates.length == strides.length);
+        assert (attributes == null || attributes.length == strides.length);
         mVertexArray = vertexArray;
-        mVertexBinding = vertexBinding;
-        mInstanceBinding = instanceBinding;
-        mVertexStride = vertexStride;
-        mInstanceStride = instanceStride;
-        mNumVertexLocations = numVertexLocations;
-        mNumInstanceLocations = numInstanceLocations;
+        mStrides = strides;
+        mInputRates = inputRates;
         mAttributes = attributes;
+        mBoundBuffers = new UniqueID[strides.length];
+        mBoundOffsets = new long[strides.length];
     }
 
     @Nullable
     @SharedPtr
     public static GLVertexArray make(@Nonnull GLDevice device,
-                                     @Nonnull GeometryStep geomProc) {
+                                     @Nonnull VertexInputLayout inputLayout,
+                                     String label) {
         var gl = device.getGL();
         final boolean dsa = device.getCaps().hasDSASupport();
         final boolean vertexAttribBindingSupport = device.getCaps().hasVertexAttribBindingSupport();
+
+        int bindings = inputLayout.getBindingCount();
+        if (dsa || vertexAttribBindingSupport) {
+            if (bindings > device.getCaps().maxVertexBindings()) {
+                return null;
+            }
+        }
+
         final int vertexArray;
 
         if (dsa) {
@@ -119,102 +113,66 @@ public final class GLVertexArray extends ManagedResource {
 
         // index is location, they are the same
         int index = 0;
-        int bindingIndex = 0;
 
-        int vertexBinding = INVALID_BINDING;
-        int instanceBinding = INVALID_BINDING;
+        int[] strides = new int[bindings];
 
-        int numVertexLocations = 0;
-        int numInstanceLocations = 0;
-
-        if (geomProc.hasVertexAttributes()) {
-            if (dsa || vertexAttribBindingSupport) {
-                int prevIndex = index;
-                if (dsa) {
-                    index = set_vertex_format_binding_group_dsa(gl,
-                            geomProc.vertexAttributes(),
-                            vertexArray,
-                            index,
-                            bindingIndex,
-                            0); // per-vertex
-                } else {
-                    index = set_vertex_format_binding_group(gl,
-                            geomProc.vertexAttributes(),
-                            index,
-                            bindingIndex,
-                            0); // per-vertex
-                }
-                numVertexLocations = index - prevIndex;
-                vertexBinding = bindingIndex++;
-            } else {
-                numVertexLocations = geomProc.numVertexLocations();
-                index += numVertexLocations;
-            }
+        int[] inputRates;
+        if (device.getCaps().hasBaseInstanceSupport()) {
+            inputRates = null;
+        } else {
+            inputRates = new int[bindings];
         }
 
-        if (geomProc.hasInstanceAttributes()) {
-            if (dsa || vertexAttribBindingSupport) {
-                int prevIndex = index;
-                if (dsa) {
-                    index = set_vertex_format_binding_group_dsa(gl,
-                            geomProc.instanceAttributes(),
-                            vertexArray,
-                            index,
-                            bindingIndex,
-                            1); // per-instance
-                } else {
-                    index = set_vertex_format_binding_group(gl,
-                            geomProc.instanceAttributes(),
-                            index,
-                            bindingIndex,
-                            1); // per-instance
-                }
-                numInstanceLocations = index - prevIndex;
-                instanceBinding = bindingIndex;
-            } else {
-                numInstanceLocations = geomProc.numInstanceLocations();
-                index += numInstanceLocations;
-            }
+        int[][] attributes;
+        if (dsa || vertexAttribBindingSupport) {
+            attributes = null;
+        } else {
+            attributes = new int[bindings][];
         }
 
-        assert index == numVertexLocations + numInstanceLocations;
-
-        if (index > device.getCaps().maxVertexAttributes()) {
-            gl.glDeleteVertexArrays(vertexArray);
-            if (!dsa) {
-                gl.glBindVertexArray(oldVertexArray);
-            }
-            return null;
-        }
-
-        int[] attributes = null;
-
-        if (!dsa && !vertexAttribBindingSupport) {
-            attributes = new int[index];
-            index = 0;
-            if (numVertexLocations > 0) {
-                index = set_vertex_format_legacy(gl,
-                        geomProc.vertexAttributes(),
+        for (int binding = 0; binding < bindings; binding++) {
+            int inputRate = inputLayout.getInputRate(binding);
+            if (dsa) {
+                index = set_vertex_format_binding_group_dsa(gl,
+                        inputLayout.getAttributes(binding),
+                        vertexArray,
                         index,
-                        0,  // per-vertex
-                        attributes);
-            }
-            if (numInstanceLocations > 0) {
-                index = set_vertex_format_legacy(gl,
-                        geomProc.instanceAttributes(),
+                        binding,
+                        inputRate);
+            } else if (vertexAttribBindingSupport) {
+                index = set_vertex_format_binding_group(gl,
+                        inputLayout.getAttributes(binding),
                         index,
-                        1,  // per-instance
-                        attributes);
+                        binding,
+                        inputRate);
+            } else {
+                int prevIndex = index;
+                int[] attrs = new int[inputLayout.getLocationCount(binding)];
+                index = set_vertex_format_legacy(gl,
+                        inputLayout.getAttributes(binding),
+                        index,
+                        inputRate,
+                        attrs);
+                attributes[binding] = attrs;
+                assert prevIndex + attrs.length == index;
             }
-            assert index == numVertexLocations + numInstanceLocations;
+            strides[binding] = inputLayout.getStride(binding);
+            if (inputRates != null) {
+                inputRates[binding] = inputRate;
+            }
         }
+
         if (!dsa) {
             gl.glBindVertexArray(oldVertexArray);
         }
 
+        if (index > device.getCaps().maxVertexAttributes()) {
+            gl.glDeleteVertexArrays(vertexArray);
+            return null;
+        }
+
         if (device.getCaps().hasDebugSupport()) {
-            String label = geomProc.name();
-            if (!label.isEmpty()) {
+            if (label != null && !label.isEmpty()) {
                 label = label.substring(0, Math.min(label.length(),
                         device.getCaps().maxLabelLength()));
                 gl.glObjectLabel(GL_VERTEX_ARRAY, vertexArray, label);
@@ -223,19 +181,16 @@ public final class GLVertexArray extends ManagedResource {
 
         return new GLVertexArray(device,
                 vertexArray,
-                vertexBinding,
-                instanceBinding,
-                geomProc.vertexStride(),
-                geomProc.instanceStride(),
-                numVertexLocations,
-                numInstanceLocations,
+                strides,
+                inputRates,
                 attributes);
     }
 
     private static int set_vertex_format_legacy(GLInterface gl,
-                                                @Nonnull Iterable<VertexInputLayout.Attribute> attribs,
+                                                @Nonnull Iterator<VertexInputLayout.Attribute> attribs,
                                                 int index, int divisor, int[] attributes) {
-        for (var attrib : attribs) {
+        while (attribs.hasNext()) {
+            var attrib = attribs.next();
             int locations = attrib.locations();
             int offset = attrib.offset();
             while (locations-- != 0) {
@@ -314,11 +269,12 @@ public final class GLVertexArray extends ManagedResource {
      * See {@link icyllis.arc3d.engine.shading.VertexShaderBuilder}.
      */
     private static int set_vertex_format_binding_group(GLInterface gl,
-                                                       @Nonnull Iterable<VertexInputLayout.Attribute> attribs,
+                                                       @Nonnull Iterator<VertexInputLayout.Attribute> attribs,
                                                        int index,
                                                        int binding,
                                                        int divisor) {
-        for (var attrib : attribs) {
+        while (attribs.hasNext()) {
+            var attrib = attribs.next();
             // a matrix can take up multiple locations
             int locations = attrib.locations();
             int offset = attrib.offset();
@@ -399,12 +355,13 @@ public final class GLVertexArray extends ManagedResource {
      * See {@link icyllis.arc3d.engine.shading.VertexShaderBuilder}.
      */
     private static int set_vertex_format_binding_group_dsa(GLInterface gl,
-                                                           @Nonnull Iterable<VertexInputLayout.Attribute> attribs,
+                                                           @Nonnull Iterator<VertexInputLayout.Attribute> attribs,
                                                            int array,
                                                            int index,
                                                            int binding,
                                                            int divisor) {
-        for (var attrib : attribs) {
+        while (attribs.hasNext()) {
+            var attrib = attribs.next();
             // a matrix can take up multiple locations
             int locations = attrib.locations();
             int offset = attrib.offset();
@@ -498,12 +455,16 @@ public final class GLVertexArray extends ManagedResource {
         return mVertexArray;
     }
 
-    public int getVertexStride() {
-        return mVertexStride;
+    public int getBindingCount() {
+        return mStrides.length;
     }
 
-    public int getInstanceStride() {
-        return mInstanceStride;
+    public int getStride(int binding) {
+        return mStrides[binding];
+    }
+
+    public int getInputRate(int binding) {
+        return mInputRates[binding];
     }
 
     /**
@@ -515,12 +476,12 @@ public final class GLVertexArray extends ManagedResource {
         if (mVertexArray == 0) {
             return;
         }
-        if (mIndexBuffer != buffer.getUniqueID()) {
+        if (mBoundIndexBuffer != buffer.getUniqueID()) {
             // Sometimes glVertexArrayElementBuffer will cause segfault on glDrawElementsBaseVertex.
             // So we just use normal glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer)
             // NOTE: this binding state is associated with current VAO
             getDevice().bindIndexBufferInPipe(buffer);
-            mIndexBuffer = buffer.getUniqueID();
+            mBoundIndexBuffer = buffer.getUniqueID();
         }
     }
 
@@ -532,79 +493,40 @@ public final class GLVertexArray extends ManagedResource {
      * @param buffer the vertex buffer object, raw ptr
      * @param offset first vertex data to the base of the buffer, in bytes
      */
-    public void bindVertexBuffer(@Nonnull @RawPtr GLBuffer buffer, long offset) {
+    public void bindVertexBuffer(int binding, @Nonnull @RawPtr GLBuffer buffer, long offset) {
         if (mVertexArray == 0) {
             return;
         }
-        assert mVertexStride > 0;
-        if (mVertexBuffer != buffer.getUniqueID() ||
-                mVertexOffset != offset) {
-            if (mVertexBinding != INVALID_BINDING) {
-                // OpenGL 4.5
+        if (mBoundBuffers[binding] != buffer.getUniqueID() ||
+                mBoundOffsets[binding] != offset) {
+            int stride = mStrides[binding];
+            assert stride > 0;
+            if (mAttributes == null) {
+                // OpenGL 4.3
                 getDevice().getGL().glBindVertexBuffer(
-                        mVertexBinding,
+                        binding,
                         buffer.getHandle(),
                         offset,
-                        mVertexStride);
-            } else if (mAttributes != null) {
+                        stride);
+            } else {
                 // 'offset' may translate into 'baseVertex'
                 int target = getDevice().bindBuffer(buffer);
                 assert target == GL_ARRAY_BUFFER;
-                for (int index = 0;
-                     index < mNumVertexLocations;
-                     index++) {
-                    int info = mAttributes[index];
+                int index = 0;
+                for (int i = 0; i < binding; i++) {
+                    index += mAttributes[i].length;
+                }
+                for (int info : mAttributes[binding]) {
                     set_attrib_format_legacy(getDevice().getGL(),
                             /*type*/info >> 24,
                             index,
-                            mVertexStride,
+                            stride,
                             /*base_offset*/offset + /*relative_offset*/(info & 0xFFFFFF));
+                    index++;
                 }
-            } else assert false;
-            mVertexBuffer = buffer.getUniqueID();
-            mVertexOffset = offset;
-        }
-    }
-
-    /**
-     * Set the buffer that stores the attribute data, bind pipeline first.
-     * <p>
-     * The stride, the distance to the next instance data, in bytes, is determined in constructor.
-     *
-     * @param buffer the vertex buffer object, raw ptr
-     * @param offset first instance data to the base of the buffer, in bytes
-     */
-    public void bindInstanceBuffer(@Nonnull @RawPtr GLBuffer buffer, long offset) {
-        if (mVertexArray == 0) {
-            return;
-        }
-        assert mInstanceStride > 0;
-        if (mInstanceBuffer != buffer.getUniqueID() ||
-                mInstanceOffset != offset) {
-            if (mInstanceBinding != INVALID_BINDING) {
-                // OpenGL 4.3
-                getDevice().getGL().glBindVertexBuffer(
-                        mInstanceBinding,
-                        buffer.getHandle(),
-                        offset,
-                        mInstanceStride);
-            } else if (mAttributes != null) {
-                // 'offset' may translate into 'baseInstance'
-                int target = getDevice().bindBuffer(buffer);
-                assert target == GL_ARRAY_BUFFER;
-                for (int index = mNumVertexLocations;
-                     index < mNumVertexLocations + mNumInstanceLocations;
-                     index++) {
-                    int info = mAttributes[index];
-                    set_attrib_format_legacy(getDevice().getGL(),
-                            /*type*/info >> 24,
-                            index,
-                            mInstanceStride,
-                            /*base_offset*/offset + /*relative_offset*/(info & 0xFFFFFF));
-                }
-            } else assert false;
-            mInstanceBuffer = buffer.getUniqueID();
-            mInstanceOffset = offset;
+            }
+            mBoundBuffers[binding] = buffer.getUniqueID();
+            mBoundOffsets[binding] = offset;
         }
     }
 

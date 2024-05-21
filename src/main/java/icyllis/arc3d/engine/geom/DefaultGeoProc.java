@@ -42,7 +42,7 @@ public final class DefaultGeoProc extends GeometryStep {
     private final int mFlags;
 
     public DefaultGeoProc(int flags) {
-        super(DefaultGeoProc_ClassID);
+        super(DefaultGeoProc_ClassID, VERTEX_ATTRIBS, null);
         mFlags = flags;
         int mask = 0x1;
         if ((flags & FLAG_COLOR_ATTRIBUTE) != 0) {
@@ -51,7 +51,7 @@ public final class DefaultGeoProc extends GeometryStep {
         if ((flags & FLAG_TEX_COORD_ATTRIBUTE) != 0) {
             mask |= 0x4;
         }
-        setVertexAttributes(mask);
+        //setVertexAttributes(mask);
     }
 
     @Nonnull
@@ -74,17 +74,6 @@ public final class DefaultGeoProc extends GeometryStep {
     @Override
     public ProgramImpl makeProgramImpl(ShaderCaps caps) {
         //TODO
-        return null;
-    }
-
-    @Override
-    protected VertexInputLayout.AttributeSet allVertexAttributes() {
-        return VERTEX_ATTRIBS;
-    }
-
-    @Nullable
-    @Override
-    protected VertexInputLayout.AttributeSet allInstanceAttributes() {
         return null;
     }
 }

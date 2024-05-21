@@ -35,7 +35,7 @@ import java.nio.ByteBuffer;
  * The stroke direction is CENTER. This processor uses instance rendering and static
  * vertex data.
  */
-public class SDFRoundRectGeoProc extends GeometryStep {
+public class SDFRoundRectStep extends GeometryStep {
 
     /**
      * Per-vertex attributes.
@@ -58,18 +58,18 @@ public class SDFRoundRectGeoProc extends GeometryStep {
     public static final VertexInputLayout.Attribute
             MODEL_VIEW = new VertexInputLayout.Attribute("ModelView", VertexAttribType.kFloat3, SLDataType.kFloat3x3);
 
-    public static final VertexInputLayout.AttributeSet VERTEX_ATTRIBS = VertexInputLayout.AttributeSet.makeImplicit(
-            0, POSITION);
-    public static final VertexInputLayout.AttributeSet INSTANCE_ATTRIBS = VertexInputLayout.AttributeSet.makeImplicit(
-            1, COLOR, LOCAL_RECT, RADII, MODEL_VIEW);
+    public static final VertexInputLayout.AttributeSet VERTEX_ATTRIBS =
+            VertexInputLayout.AttributeSet.makeImplicit(VertexInputLayout.INPUT_RATE_VERTEX,
+                    POSITION);
+    public static final VertexInputLayout.AttributeSet INSTANCE_ATTRIBS =
+            VertexInputLayout.AttributeSet.makeImplicit(VertexInputLayout.INPUT_RATE_INSTANCE,
+                    COLOR, LOCAL_RECT, RADII, MODEL_VIEW);
 
     private final boolean mStroke;
 
-    public SDFRoundRectGeoProc(boolean stroke) {
-        super(RoundRect_GeoProc_ClassID);
+    public SDFRoundRectStep(boolean stroke) {
+        super(RoundRect_GeoProc_ClassID, VERTEX_ATTRIBS, INSTANCE_ATTRIBS);
         mStroke = stroke;
-        setVertexAttributes(0x1);
-        setInstanceAttributes(0xF);
     }
 
     @Nonnull
@@ -92,16 +92,6 @@ public class SDFRoundRectGeoProc extends GeometryStep {
     @Override
     public ProgramImpl makeProgramImpl(ShaderCaps caps) {
         return new Impl();
-    }
-
-    @Override
-    protected VertexInputLayout.AttributeSet allVertexAttributes() {
-        return VERTEX_ATTRIBS;
-    }
-
-    @Override
-    protected VertexInputLayout.AttributeSet allInstanceAttributes() {
-        return INSTANCE_ATTRIBS;
     }
 
     @Override
@@ -147,7 +137,7 @@ public class SDFRoundRectGeoProc extends GeometryStep {
                                   int[] texSamplers,
                                   ShaderVar localPos,
                                   ShaderVar worldPos) {
-            final boolean stroke = ((SDFRoundRectGeoProc) geomProc).mStroke;
+            final boolean stroke = ((SDFRoundRectStep) geomProc).mStroke;
 
             // emit attributes
             vertBuilder.emitAttributes(geomProc);

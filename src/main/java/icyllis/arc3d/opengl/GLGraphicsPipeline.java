@@ -24,7 +24,6 @@ import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.shading.UniformHandler;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -149,37 +148,22 @@ public class GLGraphicsPipeline extends GraphicsPipeline {
         return true;
     }
 
-    /**
-     * Binds all geometric buffers.
-     */
-    public void bindBuffers(@Nullable @RawPtr Buffer indexBuffer,
-                            @Nullable @RawPtr Buffer vertexBuffer,
-                            long vertexOffset,
-                            @Nullable @RawPtr Buffer instanceBuffer,
-                            long instanceOffset) {
-        if (indexBuffer != null) {
-            bindIndexBuffer((GLBuffer) indexBuffer);
-        }
-        if (vertexBuffer != null) {
-            bindVertexBuffer((GLBuffer) vertexBuffer, vertexOffset);
-        }
-        if (instanceBuffer != null) {
-            bindInstanceBuffer((GLBuffer) instanceBuffer, instanceOffset);
-        }
+    public int getVertexBindingCount() {
+        return mVertexArray.getBindingCount();
     }
 
-    public int getVertexStride() {
-        return mVertexArray.getVertexStride();
+    public int getVertexStride(int binding) {
+        return mVertexArray.getStride(binding);
     }
 
-    public int getInstanceStride() {
-        return mVertexArray.getInstanceStride();
+    public int getVertexInputRate(int binding) {
+        return mVertexArray.getInputRate(binding);
     }
 
     /**
      * Set element buffer (index buffer).
      * <p>
-     * In OpenGL 3.3, bind pipeline first.
+     * Bind pipeline first.
      *
      * @param buffer the element buffer object, raw ptr
      */
@@ -194,30 +178,15 @@ public class GLGraphicsPipeline extends GraphicsPipeline {
      * <p>
      * The stride, the distance to the next vertex data, in bytes, is determined in constructor.
      * <p>
-     * In OpenGL 3.3, bind pipeline first.
+     * Bind pipeline first.
      *
-     * @param buffer the vertex buffer object, raw ptr
-     * @param offset first vertex data to the head of the buffer, in bytes
+     * @param binding the binding index
+     * @param buffer  the vertex buffer object, raw ptr
+     * @param offset  first vertex data to the head of the buffer, in bytes
      */
-    public void bindVertexBuffer(@Nonnull @RawPtr GLBuffer buffer, long offset) {
+    public void bindVertexBuffer(int binding, @Nonnull @RawPtr GLBuffer buffer, long offset) {
         if (mVertexArray != null) {
-            mVertexArray.bindVertexBuffer(buffer, offset);
-        }
-    }
-
-    /**
-     * Set the buffer that stores the attribute data.
-     * <p>
-     * The stride, the distance to the next instance data, in bytes, is determined in constructor.
-     * <p>
-     * In OpenGL 3.3, bind pipeline first.
-     *
-     * @param buffer the vertex buffer object, raw ptr
-     * @param offset first instance data to the head of the buffer, in bytes
-     */
-    public void bindInstanceBuffer(@Nonnull @RawPtr GLBuffer buffer, long offset) {
-        if (mVertexArray != null) {
-            mVertexArray.bindInstanceBuffer(buffer, offset);
+            mVertexArray.bindVertexBuffer(binding, buffer, offset);
         }
     }
 

@@ -73,11 +73,49 @@ public abstract class GeometryStep extends Processor {
         );
     }
 
-    private int mVertexAttributesMask;      // binding = 0, divisor = 0
-    private int mInstanceAttributesMask;    // binding = 1, divisor = 1
+    private final VertexInputLayout mInputLayout;
 
-    protected GeometryStep(int classID) {
+    private final int mVertexBinding;
+    private final int mInstanceBinding;
+
+    private final int mVertexStride;
+    private final int mInstanceStride;
+
+    protected GeometryStep(int classID,
+                           @Nullable VertexInputLayout.AttributeSet vertexAttributes,
+                           @Nullable VertexInputLayout.AttributeSet instanceAttributes) {
         super(classID);
+        int binding = 0;
+        if (vertexAttributes != null) {
+            mVertexBinding = binding++;
+        } else {
+            mVertexBinding = -1;
+        }
+        if (instanceAttributes != null) {
+            mInstanceBinding = binding++;
+        } else {
+            mInstanceBinding = -1;
+        }
+        var attributeSets = new VertexInputLayout.AttributeSet[binding];
+        binding = 0;
+        if (vertexAttributes != null) {
+            attributeSets[binding++] = vertexAttributes;
+        }
+        if (instanceAttributes != null) {
+            attributeSets[binding++] = instanceAttributes;
+        }
+        mInputLayout = new VertexInputLayout(attributeSets);
+        if (mVertexBinding != -1) {
+            mVertexStride = mInputLayout.getStride(mVertexBinding);
+        } else {
+            mVertexStride = 0;
+        }
+        if (mInstanceBinding != -1) {
+            mInstanceStride = mInputLayout.getStride(mInstanceBinding);
+        } else {
+            mInstanceStride = 0;
+        }
+        assert binding == mInputLayout.getBindingCount();
     }
 
     /**
@@ -115,14 +153,21 @@ public abstract class GeometryStep extends Processor {
         throw new IndexOutOfBoundsException(i);
     }
 
+    public VertexInputLayout getInputLayout() {
+        return mInputLayout;
+    }
+
     /**
      * Returns true if {@link #numVertexAttributes()} will return non-zero.
      *
      * @return true if there are per-vertex attributes
      */
     public final boolean hasVertexAttributes() {
-        assert (mVertexAttributesMask == 0 || allVertexAttributes() != null);
-        return mVertexAttributesMask != 0;
+        return mVertexBinding != -1;
+    }
+
+    public final int vertexBinding() {
+        return mVertexBinding;
     }
 
     /**
@@ -132,7 +177,7 @@ public abstract class GeometryStep extends Processor {
      * @see #numVertexLocations()
      */
     public final int numVertexAttributes() {
-        return Integer.bitCount(mVertexAttributesMask);
+        return mInputLayout.getAttributeCount(mVertexBinding);
     }
 
     /**
@@ -143,10 +188,7 @@ public abstract class GeometryStep extends Processor {
      * @see #numVertexAttributes()
      */
     public final int numVertexLocations() {
-        assert (mVertexAttributesMask == 0 || allVertexAttributes() != null);
-        return mVertexAttributesMask == 0
-                ? 0
-                : allVertexAttributes().numLocations(mVertexAttributesMask);
+        return mInputLayout.getLocationCount(mVertexBinding);
     }
 
     /**
@@ -158,22 +200,8 @@ public abstract class GeometryStep extends Processor {
      * </ol>
      */
     @Nonnull
-    public final Iterable<VertexInputLayout.Attribute> vertexAttributes() {
-        assert (mVertexAttributesMask == 0 || allVertexAttributes() != null);
-        if (mVertexAttributesMask == 0) {
-            return Collections.emptySet();
-        }
-        VertexInputLayout.AttributeSet attrs = allVertexAttributes();
-        if (mVertexAttributesMask == attrs.mAllMask) {
-            return attrs;
-        }
-        return new Iterable<>() {
-            @Nonnull
-            @Override
-            public Iterator<VertexInputLayout.Attribute> iterator() {
-                return allVertexAttributes().new Iter(mVertexAttributesMask);
-            }
-        };
+    public final Iterator<VertexInputLayout.Attribute> vertexAttributes() {
+        return mInputLayout.getAttributes(mVertexBinding);
     }
 
     /**
@@ -182,10 +210,7 @@ public abstract class GeometryStep extends Processor {
      * structs. In this case, it is best to assert that: stride == sizeof(struct).
      */
     public final int vertexStride() {
-        assert (mVertexAttributesMask == 0 || allVertexAttributes() != null);
-        return mVertexAttributesMask == 0
-                ? 0
-                : allVertexAttributes().stride(mVertexAttributesMask);
+        return mVertexStride;
     }
 
     /**
@@ -194,8 +219,11 @@ public abstract class GeometryStep extends Processor {
      * @return true if there are per-instance attributes
      */
     public final boolean hasInstanceAttributes() {
-        assert (mInstanceAttributesMask == 0 || allInstanceAttributes() != null);
-        return mInstanceAttributesMask != 0;
+        return mInstanceBinding != -1;
+    }
+
+    public final int instanceBinding() {
+        return mInstanceBinding;
     }
 
     /**
@@ -205,7 +233,7 @@ public abstract class GeometryStep extends Processor {
      * @see #numInstanceLocations()
      */
     public final int numInstanceAttributes() {
-        return Integer.bitCount(mInstanceAttributesMask);
+        return mInputLayout.getAttributeCount(mInstanceBinding);
     }
 
     /**
@@ -216,10 +244,7 @@ public abstract class GeometryStep extends Processor {
      * @see #numInstanceAttributes()
      */
     public final int numInstanceLocations() {
-        assert (mInstanceAttributesMask == 0 || allInstanceAttributes() != null);
-        return mInstanceAttributesMask == 0
-                ? 0
-                : allInstanceAttributes().numLocations(mInstanceAttributesMask);
+        return mInputLayout.getLocationCount(mInstanceBinding);
     }
 
     /**
@@ -231,22 +256,8 @@ public abstract class GeometryStep extends Processor {
      * </ol>
      */
     @Nonnull
-    public final Iterable<VertexInputLayout.Attribute> instanceAttributes() {
-        assert (mInstanceAttributesMask == 0 || allInstanceAttributes() != null);
-        if (mInstanceAttributesMask == 0) {
-            return Collections.emptySet();
-        }
-        VertexInputLayout.AttributeSet attrs = allInstanceAttributes();
-        if (mInstanceAttributesMask == attrs.mAllMask) {
-            return attrs;
-        }
-        return new Iterable<>() {
-            @Nonnull
-            @Override
-            public Iterator<VertexInputLayout.Attribute> iterator() {
-                return allInstanceAttributes().new Iter(mInstanceAttributesMask);
-            }
-        };
+    public final Iterator<VertexInputLayout.Attribute> instanceAttributes() {
+        return mInputLayout.getAttributes(mInstanceBinding);
     }
 
     /**
@@ -255,10 +266,7 @@ public abstract class GeometryStep extends Processor {
      * structs. In this case, it is best to assert that: stride == sizeof(struct).
      */
     public final int instanceStride() {
-        assert (mInstanceAttributesMask == 0 || allInstanceAttributes() != null);
-        return mInstanceAttributesMask == 0
-                ? 0
-                : allInstanceAttributes().stride(mInstanceAttributesMask);
+        return mInstanceStride;
     }
 
     /**
@@ -270,14 +278,14 @@ public abstract class GeometryStep extends Processor {
     public abstract void appendToKey(@Nonnull KeyBuilder b);
 
     public final void appendAttributesToKey(@Nonnull KeyBuilder b) {
-        VertexInputLayout.AttributeSet vertexAttributes = allVertexAttributes();
+        /*VertexInputLayout.AttributeSet vertexAttributes = allVertexAttributes();
         if (vertexAttributes != null) {
             vertexAttributes.appendToKey(b, mVertexAttributesMask);
         }
         VertexInputLayout.AttributeSet instanceAttributes = allInstanceAttributes();
         if (instanceAttributes != null) {
             instanceAttributes.appendToKey(b, mInstanceAttributesMask);
-        }
+        }*/
     }
 
     /**
@@ -289,60 +297,6 @@ public abstract class GeometryStep extends Processor {
      */
     @Nonnull
     public abstract ProgramImpl makeProgramImpl(ShaderCaps caps);
-
-    /**
-     * Returns a shared {@link VertexInputLayout.AttributeSet} containing all per-vertex attributes for
-     * the GeometryProcess class. Returns null if there is no per-vertex attributes.
-     * <p>
-     * For the same GeometryProcess instance, the implementation must ensure that the
-     * return value always remains the same. If the return value is not null, then
-     * {@link #setVertexAttributes(int)} must be called within the constructor.
-     * In addition, for the same GeometryProcess class, the implementation should ensure
-     * that the nullability of the return value always remains the same.
-     *
-     * @see #setVertexAttributes(int)
-     */
-    @Nullable
-    protected abstract VertexInputLayout.AttributeSet allVertexAttributes();
-
-    /**
-     * Sets per-vertex attributes mask, which is used to control which of them are used
-     * by this GeometryProcessor instance. Note: Call this in subclasses constructor.
-     *
-     * @param mask a bit mask determining which attributes to use, can be zero
-     */
-    protected final void setVertexAttributes(int mask) {
-        VertexInputLayout.AttributeSet attrs = allVertexAttributes();
-        assert attrs != null;
-        mVertexAttributesMask |= mask & attrs.mAllMask; // sanitize
-    }
-
-    /**
-     * Returns a shared {@link VertexInputLayout.AttributeSet} containing all per-instance attributes for
-     * the GeometryProcess class. Returns null if there is no per-instance attributes.
-     * <p>
-     * For the same GeometryProcess instance, the implementation must ensure that the
-     * return value always remains the same. If the return value is not null, then
-     * {@link #setInstanceAttributes(int)} must be called within the constructor.
-     * In addition, for the same GeometryProcess class, the implementation should ensure
-     * that the nullability of the return value always remains the same.
-     *
-     * @see #setInstanceAttributes(int)
-     */
-    @Nullable
-    protected abstract VertexInputLayout.AttributeSet allInstanceAttributes();
-
-    /**
-     * Sets per-instance attributes mask, which is used to control which of them are used
-     * by this GeometryProcessor instance. Note: Call this in subclasses constructor.
-     *
-     * @param mask a bit mask determining which attributes to use, can be zero
-     */
-    protected final void setInstanceAttributes(int mask) {
-        VertexInputLayout.AttributeSet attrs = allInstanceAttributes();
-        assert attrs != null;
-        mInstanceAttributesMask |= mask & attrs.mAllMask; // sanitize
-    }
 
     public void writeVertices(MeshDrawWriter writer, DrawOp drawOp, float[] solidColor) {
     }

@@ -30,6 +30,8 @@ public class MeshDrawWriter {
     private final DrawCommandList mCommandList;
 
     // Pipeline state matching currently bound pipeline
+    private int mVertexBinding;
+    private int mInstanceBinding;
     private int mVertexStride;
     private int mInstanceStride;
 
@@ -47,9 +49,13 @@ public class MeshDrawWriter {
         mCommandList = commandList;
     }
 
-    public void newPipelineState(int vertexStride,
+    public void newPipelineState(int vertexBinding,
+                                 int instanceBinding,
+                                 int vertexStride,
                                  int instanceStride) {
         flush();
+        mVertexBinding = vertexBinding;
+        mInstanceBinding = instanceBinding;
         mVertexStride = vertexStride;
         mInstanceStride = instanceStride;
 
@@ -115,10 +121,17 @@ public class MeshDrawWriter {
             return;
         }
         if (mPendingBufferBinds) {
-            mCommandList.bindBuffers(mVertexBufferInfo,
-                    mInstanceBufferInfo,
-                    mIndexBufferInfo,
-                    Engine.IndexType.kUShort);
+            if (mIndexBufferInfo.isValid()) {
+                mCommandList.bindIndexBuffer(Engine.IndexType.kUShort, mIndexBufferInfo);
+            }
+            if (mVertexBufferInfo.isValid()) {
+                assert mVertexBinding != -1 && mVertexStride > 0;
+                mCommandList.bindVertexBuffer(mVertexBinding, mVertexBufferInfo);
+            }
+            if (mInstanceBufferInfo.isValid()) {
+                assert mInstanceBinding != -1 && mInstanceStride > 0;
+                mCommandList.bindVertexBuffer(mInstanceBinding, mInstanceBufferInfo);
+            }
             mPendingBufferBinds = false;
         }
 
