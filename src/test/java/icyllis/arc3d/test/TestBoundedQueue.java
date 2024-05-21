@@ -28,6 +28,7 @@ public class TestBoundedQueue<T> {
 
     private final T[] mPool;
 
+    @SuppressWarnings("unchecked")
     public TestBoundedQueue(int size) {
         mPool = (T[]) new Object[size];
     }

@@ -29,7 +29,7 @@ import static icyllis.arc3d.engine.Engine.SurfaceOrigin;
  * data to draw.
  */
 @Immutable
-public final class GraphicsPipelineDesc {
+public final class GraphicsPipelineDesc_Old {
 
     /**
      * Pipeline flags.
@@ -67,7 +67,7 @@ public final class GraphicsPipelineDesc {
     private final int mSampleCount;
     private final int mOrigin;
     private final short mWriteSwizzle;
-    private final GeometryProcessor mGeomProc;
+    private final GeometryStep mGeomProc;
     private final UserStencilSettings mUserStencilSettings;
     private final int mFlags;
     private boolean mNeedsStencil;
@@ -79,15 +79,16 @@ public final class GraphicsPipelineDesc {
      * @param writeView           the main color render target to write, can NOT be null
      * @param userStencilSettings the stencil settings for stencil clipping, can be null
      */
-    public GraphicsPipelineDesc(ImageProxyView writeView,
-                                GeometryProcessor geomProc,
-                                TransferProcessor xferProc,
-                                FragmentProcessor colorFragProc,
-                                FragmentProcessor coverageFragProc,
-                                UserStencilSettings userStencilSettings,
-                                int pipelineFlags) {
+    public GraphicsPipelineDesc_Old(ImageProxyView writeView,
+                                    GeometryStep geomProc,
+                                    TransferProcessor xferProc,
+                                    FragmentStage colorFragProc,
+                                    FragmentStage coverageFragProc,
+                                    UserStencilSettings userStencilSettings,
+                                    int pipelineFlags) {
         assert (writeView != null);
-        mBackendFormat = writeView.getProxy().getBackendFormat();
+        //FIXME
+        mBackendFormat = null;//writeView.getProxy().getBackendFormat();
         mSampleCount = writeView.getProxy().getSampleCount();
         mOrigin = writeView.getOrigin();
         mWriteSwizzle = writeView.getSwizzle();
@@ -122,7 +123,7 @@ public final class GraphicsPipelineDesc {
         return mSampleCount;
     }
 
-    public GeometryProcessor geomProc() {
+    public GeometryStep geomProc() {
         return mGeomProc;
     }
 

@@ -19,8 +19,9 @@
 
 package icyllis.arc3d.engine;
 
-import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntArrays;
 
+import javax.annotation.Nonnull;
 import java.util.Arrays;
 
 /**
@@ -28,44 +29,63 @@ import java.util.Arrays;
  * <p>
  * Note: A {@link #flush()} is expected at the end of key building.
  */
-public non-sealed class KeyBuilder extends IntArrayList implements Key {
+public non-sealed class KeyBuilder extends Key {
 
+    private int mSize;
     private transient int mCurValue = 0;
     private transient int mBitsUsed = 0;  // ... in current value
 
     public KeyBuilder() {
     }
 
-    public KeyBuilder(KeyBuilder other) {
-        super(other);
+    @SuppressWarnings("IncompleteCopyConstructor")
+    public KeyBuilder(@Nonnull KeyBuilder other) {
         assert (other.mCurValue == 0 && other.mBitsUsed == 0);
+        int size = other.mSize;
+        mData = size == 0 ? IntArrays.EMPTY_ARRAY : Arrays.copyOf(other.mData, size);
+        mSize = size;
     }
 
     /**
      * Resets this key builder to initial state.
      */
-    @Override
     public final void clear() {
         assert (mCurValue == 0 && mBitsUsed == 0);
-        super.clear();
+        mSize = 0;
     }
 
     /**
      * @return the number of ints
      */
-    @Override
     public final int size() {
         assert (mCurValue == 0 && mBitsUsed == 0);
-        return super.size();
+        return mSize;
     }
 
     /**
      * @return true if this key builder contains no bits
      */
-    @Override
     public final boolean isEmpty() {
         assert (mCurValue == 0 && mBitsUsed == 0);
-        return super.isEmpty();
+        return mSize == 0;
+    }
+
+    private void grow(int capacity) {
+        if (capacity > mData.length) {
+            if (mData != IntArrays.DEFAULT_EMPTY_ARRAY) {
+                capacity = (int)Math.max(Math.min((long) mData.length + (long)(mData.length >> 1), Integer.MAX_VALUE - 8), capacity);
+            } else if (capacity < 10) {
+                capacity = 10;
+            }
+
+            mData = IntArrays.forceCapacity(mData, capacity, mSize);
+
+        }
+    }
+
+    private void add(int k) {
+        grow(mSize + 1);
+        mData[mSize++] = k;
     }
 
     public void addBits(int numBits, int value, String label) {
@@ -94,7 +114,22 @@ public non-sealed class KeyBuilder extends IntArrayList implements Key {
         addBits(Integer.SIZE, v, label);
     }
 
-    public void appendComment(String comment) {
+    /**
+     * Makes a word-boundary and adds a full word.
+     */
+    public final void addInt(int v) {
+        flush();
+        add(v);
+    }
+
+    /**
+     * Makes a word-boundary and adds an array of words.
+     */
+    public final void addInts(int[] v, int off, int len) {
+        flush();
+        grow(mSize + len);
+        System.arraycopy(v, off, mData, mSize, len);
+        mSize += len;
     }
 
     /**
@@ -112,18 +147,28 @@ public non-sealed class KeyBuilder extends IntArrayList implements Key {
     /**
      * Trims the backing store so that the capacity is equal to the size.
      */
-    @Override
     public final void trim() {
         assert (mCurValue == 0 && mBitsUsed == 0);
-        super.trim();
+        if (0 < mData.length && mSize != mData.length) {
+            int[] t = new int[mSize];
+            System.arraycopy(mData, 0, t, 0, mSize);
+            mData = t;
+        }
     }
 
     /**
      * @return a copy of packed int array as storage key
      */
-    public final StorageKey toStorageKey() {
+    public final Key toStorageKey() {
         assert (mCurValue == 0 && mBitsUsed == 0);
-        return new StorageKey(this);
+        int[] t;
+        if (mSize == 0) {
+            t = IntArrays.EMPTY_ARRAY;
+        } else {
+            t = new int[mSize];
+            System.arraycopy(mData, 0, t, 0, mSize);
+        }
+        return new Key(t);
     }
 
     /**
@@ -132,7 +177,7 @@ public non-sealed class KeyBuilder extends IntArrayList implements Key {
     @Override
     public final int hashCode() {
         assert (mCurValue == 0 && mBitsUsed == 0); // ensure flushed
-        int[] e = elements();
+        int[] e = mData;
         int h = 1, s = size();
         for (int i = 0; i < s; i++)
             h = 31 * h + e[i];
@@ -145,35 +190,7 @@ public non-sealed class KeyBuilder extends IntArrayList implements Key {
     @Override
     public final boolean equals(Object o) {
         assert (mCurValue == 0 && mBitsUsed == 0); // ensure flushed
-        return o instanceof StorageKey key && // check for null
-                Arrays.equals(elements(), 0, size(), key.data, 0, key.data.length);
-    }
-
-    public static class StringKeyBuilder extends KeyBuilder {
-
-        public final StringBuilder mStringBuilder = new StringBuilder();
-
-        public StringKeyBuilder() {
-        }
-
-        @Override
-        public void addBits(int numBits, int value, String label) {
-            super.addBits(numBits, value, label);
-            mStringBuilder.append(label)
-                    .append(": ")
-                    .append(value & 0xFFFFFFFFL) // to unsigned int
-                    .append('\n');
-        }
-
-        @Override
-        public void appendComment(String comment) {
-            mStringBuilder.append(comment)
-                    .append('\n');
-        }
-
-        @Override
-        public String toString() {
-            return mStringBuilder.toString();
-        }
+        return o instanceof Key key && // check for null
+                Arrays.equals(mData, 0, mSize, key.mData, 0, key.mData.length);
     }
 }

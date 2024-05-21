@@ -46,6 +46,7 @@ import java.lang.annotation.*;
 @Target({ElementType.METHOD,
         ElementType.PARAMETER,
         ElementType.FIELD,
-        ElementType.LOCAL_VARIABLE})
+        ElementType.LOCAL_VARIABLE,
+        ElementType.TYPE_USE})
 public @interface SharedPtr {
 }

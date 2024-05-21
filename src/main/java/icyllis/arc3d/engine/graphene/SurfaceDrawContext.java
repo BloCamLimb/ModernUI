@@ -30,6 +30,8 @@ public class SurfaceDrawContext extends SurfaceFillContext {
 
     private ImageProxy mDepthStencilTarget;
 
+    private DrawOpList mPendingDrawOps;
+
     public SurfaceDrawContext(RecordingContext context,
                               ImageProxyView readView,
                               ImageProxyView writeView,
@@ -50,7 +52,7 @@ public class SurfaceDrawContext extends SurfaceFillContext {
             return null;
         }
 
-        BackendFormat format = rContext.getCaps().getDefaultBackendFormat(colorType, true);
+        /*BackendFormat format = rContext.getCaps().getDefaultBackendFormat(colorType, true);
         if (format == null) {
             return null;
         }
@@ -65,15 +67,30 @@ public class SurfaceDrawContext extends SurfaceFillContext {
         );
         if (renderTarget == null) {
             return null;
+        }*/
+        ImageDesc desc = rContext.getCaps().getDefaultColorImageDesc(Engine.ImageType.k2D,
+                colorType,
+                width,
+                height,
+                1,
+                0,
+                sampleCount,
+                surfaceFlags);
+        if (!desc.isValid()) {
+            return null;
+        }
+        ImageProxy proxy = ImageProxy.make(desc, true);
+        if (proxy == null) {
+            return null;
         }
 
-        short readSwizzle = rContext.getCaps().getReadSwizzle(format, colorType);
-        short writeSwizzle = rContext.getCaps().getWriteSwizzle(format, colorType);
+        short readSwizzle = rContext.getCaps().getReadSwizzle(desc, colorType);
+        short writeSwizzle = rContext.getCaps().getWriteSwizzle(desc, colorType);
 
         // two views, inc one more ref
-        renderTarget.ref();
-        ImageProxyView readView = new ImageProxyView(renderTarget, origin, readSwizzle);
-        ImageProxyView writeView = new ImageProxyView(renderTarget, origin, writeSwizzle);
+        proxy.ref();
+        ImageProxyView readView = new ImageProxyView(proxy, origin, readSwizzle);
+        ImageProxyView writeView = new ImageProxyView(proxy, origin, writeSwizzle);
 
         return new SurfaceDrawContext(rContext, readView, writeView, colorType, colorSpace);
     }
@@ -81,17 +98,17 @@ public class SurfaceDrawContext extends SurfaceFillContext {
     public static SurfaceDrawContext make(RecordingContext rContext,
                                           int colorType,
                                           ColorSpace colorSpace,
-                                          SurfaceProxy surfaceProxy,
+                                          ImageProxy imageProxy,
                                           int origin) {
-        BackendFormat format = surfaceProxy.getBackendFormat();
+        ImageDesc desc = imageProxy.getDesc();
 
-        short readSwizzle = rContext.getCaps().getReadSwizzle(format, colorType);
-        short writeSwizzle = rContext.getCaps().getWriteSwizzle(format, colorType);
+        short readSwizzle = rContext.getCaps().getReadSwizzle(desc, colorType);
+        short writeSwizzle = rContext.getCaps().getWriteSwizzle(desc, colorType);
 
         // two views, inc one more ref
-        surfaceProxy.ref();
-        ImageProxyView readView = new ImageProxyView(surfaceProxy, origin, readSwizzle);
-        ImageProxyView writeView = new ImageProxyView(surfaceProxy, origin, writeSwizzle);
+        imageProxy.ref();
+        ImageProxyView readView = new ImageProxyView(imageProxy, origin, readSwizzle);
+        ImageProxyView writeView = new ImageProxyView(imageProxy, origin, writeSwizzle);
 
         return new SurfaceDrawContext(rContext, readView, writeView, colorType, colorSpace);
     }

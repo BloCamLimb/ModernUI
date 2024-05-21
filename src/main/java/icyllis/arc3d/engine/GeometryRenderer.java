@@ -19,5 +19,34 @@
 
 package icyllis.arc3d.engine;
 
-public class GeometryRenderer {
+public final class GeometryRenderer {
+
+    /**
+     * The maximum number of render steps that any Renderer is allowed to have.
+     * For example, Stencil-then-Cover method has multiple steps.
+     */
+    public static final int MAX_RENDER_STEPS = 4;
+
+    // we have limited number of geometry steps, enumerate here
+    private GeometryStep mStep0;
+    private GeometryStep mStep1;
+    private GeometryStep mStep2;
+    private GeometryStep mStep3;
+    private int mNumSteps;
+
+    private String mName;
+
+    public GeometryStep step(int i) {
+        assert i >= 0 && i < mNumSteps;
+        return switch (i) {
+            case 0 -> mStep0;
+            case 1 -> mStep1;
+            case 2 -> mStep2;
+            default -> mStep3;
+        };
+    }
+
+    public int numSteps() {
+        return mNumSteps;
+    }
 }

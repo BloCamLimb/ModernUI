@@ -44,7 +44,7 @@ public class OpFlushState implements MeshDrawTarget {
     }
 
     public final GraphicsPipeline findOrCreateGraphicsPipeline(
-            final GraphicsPipelineDesc graphicsPipelineDesc) {
+            final GraphicsPipelineDesc_Old graphicsPipelineDesc) {
         return mDevice.getContext().findOrCreateGraphicsPipeline(graphicsPipelineDesc);
     }
 

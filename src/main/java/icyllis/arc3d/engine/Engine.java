@@ -143,29 +143,33 @@ public interface Engine {
         byte kNone = 0;
         /**
          * GL_TEXTURE_2D, GL_TEXTURE_2D_MULTISAMPLE;
-         * VK_IMAGE_TYPE_2D, layers=1;
+         * VK_IMAGE_TYPE_2D, layers=1; VK_IMAGE_VIEW_TYPE_2D;
          */
         byte k2D = 1;
         /**
          * GL_TEXTURE_2D_ARRAY, GL_TEXTURE_2D_MULTISAMPLE_ARRAY;
-         * VK_IMAGE_TYPE_2D, layers=N;
+         * VK_IMAGE_TYPE_2D, layers=N; VK_IMAGE_VIEW_TYPE_2D_ARRAY;
          */
         byte k2DArray = 2;
         /**
          * GL_TEXTURE_CUBE_MAP;
-         * VK_IMAGE_TYPE_2D, layers=6;
+         * VK_IMAGE_TYPE_2D, layers=6; VK_IMAGE_VIEW_TYPE_CUBE;
          */
         byte kCube = 3;
         /**
          * GL_TEXTURE_CUBE_MAP_ARRAY;
-         * VK_IMAGE_TYPE_2D, layers=6N;
+         * VK_IMAGE_TYPE_2D, layers=6N; VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
          */
         byte kCubeArray = 4;
         /**
          * GL_TEXTURE_3D;
-         * VK_IMAGE_TYPE_3D, layers=1;
+         * VK_IMAGE_TYPE_3D, layers=1; VK_IMAGE_VIEW_TYPE_3D;
          */
         byte k3D = 5;
+    }
+
+    interface ImageCreateFlags {
+
     }
 
     /**
@@ -201,7 +205,7 @@ public interface Engine {
         int kTransferSrc = 1 << 2; // transfer src and host coherent
         int kTransferDst = 1 << 3; // transfer dst and host cached
 
-        // Note: transfer buffers must be created with Dynamic_Flag.
+        // Note: transfer buffers must be created with HostVisible flag.
 
         /**
          * Uniform buffer, also known as constant buffer.
@@ -214,27 +218,23 @@ public interface Engine {
          */
         int kDrawIndirect = 1 << 5;
 
-        // Note: uniform buffers must be created with Streaming_Flag,
-        // draw indirect buffers are currently not supported.
+        // Note: draw indirect buffers are currently not supported.
 
         /**
          * Data store will be written to once by CPU.
+         * Use device-local only memory.
          * A staging buffer is required to update it contents.
+         * For static or dynamic VBO, static UBO.
          */
-        int kStatic = 1 << 6;
+        int kDeviceLocal = 1 << 6;
         /**
          * Data store will be written to occasionally, CPU writes, GPU reads.
-         * A staging buffer is required to update it contents.
+         * Use host-visible host-coherent memory and persistent mapping, and possibly device-local.
+         * If write-combined memory is used, then write directly and requires sync.
+         * For streaming VBO, dynamic or streaming UBO.
          */
-        int kDynamic = 1 << 7;
-        /**
-         * Data store will be written to once by CPU and used at most one frame.
-         * Will be host visible and persistently mapped, typically pinned memory.
-         */
-        int kStreaming = 1 << 8;
+        int kHostVisible = 1 << 7;
 
-        // Note: Arc 3D itself doesn't use dynamic mesh buffers,
-        // they are meant to render a large number of objects in 3D scene.
     }
 
     /**

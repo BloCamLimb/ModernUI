@@ -50,9 +50,10 @@ public final class RenderTargetProxy extends SurfaceProxy {
         super(format, width, height, surfaceFlags);
         assert (width > 0 && height > 0); // non-lazy
         mSampleCount = sampleCount;
-        mColorImageProxy = new ImageProxy(format,
+        /*mColorImageProxy = new ImageProxy(format,
                 width, height,
-                surfaceFlags);
+                surfaceFlags);*/
+        //FIXME
     }
 
     // Lazy-callback version - takes a new UniqueID from the shared resource/proxy pool.

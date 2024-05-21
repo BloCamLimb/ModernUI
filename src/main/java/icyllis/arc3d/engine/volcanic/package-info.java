@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc 3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc 3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,15 +17,7 @@
  * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine;
-
-import javax.annotation.concurrent.Immutable;
-
-//TODO
-@Immutable
-public abstract class FragmentProcessor extends Processor {
-
-    protected FragmentProcessor(int classID) {
-        super(classID);
-    }
-}
+/**
+ * The Volcanic is our 3D graphics pipeline.
+ */
+package icyllis.arc3d.engine.volcanic;

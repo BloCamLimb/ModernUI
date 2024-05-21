@@ -19,37 +19,13 @@
 
 package icyllis.arc3d.engine;
 
-import it.unimi.dsi.fastutil.ints.IntArrays;
+import javax.annotation.concurrent.Immutable;
 
-import java.util.Arrays;
+//TODO
+@Immutable
+public abstract class FragmentStage extends Processor {
 
-/**
- * A key loaded with custom data (int array).
- * <p>
- * Accepts <code>Key</code> as storage key or <code>KeyBuilder</code> as lookup key.
- */
-public sealed class Key permits KeyBuilder {
-
-    transient int[] mData;
-    private transient int mHash;
-
-    // Used by subclass
-    Key() {
-        mData = IntArrays.DEFAULT_EMPTY_ARRAY;
-    }
-
-    Key(int[] storage) {
-        mData = storage;
-        mHash = Arrays.hashCode(mData);
-    }
-
-    @Override
-    public int hashCode() {
-        return mHash;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        return o instanceof Key key && Arrays.equals(mData, key.mData);
+    protected FragmentStage(int classID) {
+        super(classID);
     }
 }

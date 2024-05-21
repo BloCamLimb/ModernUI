@@ -115,7 +115,7 @@ public abstract class GpuBufferPool {
         if (mBufferPtr != NULL) {
             assert (mIndex >= 0);
             Buffer buffer = mBuffers[mIndex];
-            int usedBytes = buffer.getSize() - mFreeBytes[mIndex];
+            int usedBytes = (int) buffer.getSize() - mFreeBytes[mIndex];
             assert (buffer.isLocked());
             assert (buffer.getLockedBuffer() == mBufferPtr);
             buffer.unlock(/*offset=*/0, usedBytes);
@@ -185,7 +185,7 @@ public abstract class GpuBufferPool {
             // caller shouldn't try to put back more than they've taken
             assert (mIndex >= 0);
             Buffer buffer = mBuffers[mIndex];
-            int usedBytes = buffer.getSize() - mFreeBytes[mIndex];
+            int usedBytes = (int) buffer.getSize() - mFreeBytes[mIndex];
             if (bytes >= usedBytes) {
                 bytes -= usedBytes;
                 mBytesInUse -= usedBytes;
@@ -256,7 +256,7 @@ public abstract class GpuBufferPool {
         if (mBufferPtr != NULL) {
             assert (mIndex >= 0);
             Buffer buffer = mBuffers[mIndex];
-            int pos = buffer.getSize() - mFreeBytes[mIndex];
+            int pos = (int) buffer.getSize() - mFreeBytes[mIndex];
             int pad = MathUtil.alignUpPad(pos, alignment);
             int alignedSize = size + pad;
             if (alignedSize <= 0) {
@@ -273,7 +273,7 @@ public abstract class GpuBufferPool {
 
         @SharedPtr
         Buffer buffer = mResourceProvider
-                .createBuffer(blockSize, mBufferType | Engine.BufferUsageFlags.kStreaming);
+                .createBuffer(blockSize, mBufferType | Engine.BufferUsageFlags.kHostVisible);
         if (buffer == null) {
             return NULL;
         }
@@ -288,7 +288,7 @@ public abstract class GpuBufferPool {
             mFreeBytes = Arrays.copyOf(mFreeBytes, cap);
         }
         mBuffers[mIndex] = buffer;
-        mFreeBytes[mIndex] = buffer.getSize() - size;
+        mFreeBytes[mIndex] = (int) buffer.getSize() - size;
         mBytesInUse += size;
 
         assert (mBufferPtr == NULL);
@@ -373,7 +373,7 @@ public abstract class GpuBufferPool {
             assert (offset % vertexSize == 0);
             mesh.setVertexBuffer(buffer, offset / vertexSize, vertexCount);
 
-            ByteBuffer writer = getMappedBuffer(mCachedWriter, mBufferPtr, buffer.getSize());
+            ByteBuffer writer = getMappedBuffer(mCachedWriter, mBufferPtr, (int) buffer.getSize());
             writer.limit(offset + totalSize);
             writer.position(offset);
             mCachedWriter = writer;
@@ -448,7 +448,7 @@ public abstract class GpuBufferPool {
             assert (offset % instanceSize == 0);
             mesh.setInstanceBuffer(buffer, offset / instanceSize, instanceCount);
 
-            ByteBuffer writer = getMappedBuffer(mCachedWriter, mBufferPtr, buffer.getSize());
+            ByteBuffer writer = getMappedBuffer(mCachedWriter, mBufferPtr, (int) buffer.getSize());
             writer.limit(offset + totalSize);
             writer.position(offset);
             mCachedWriter = writer;
@@ -522,7 +522,7 @@ public abstract class GpuBufferPool {
             assert (offset % indexSize == 0);
             mesh.setIndexBuffer(buffer, offset / indexSize, indexCount);
 
-            ByteBuffer writer = getMappedBuffer(mCachedWriter, mBufferPtr, buffer.getSize());
+            ByteBuffer writer = getMappedBuffer(mCachedWriter, mBufferPtr, (int) buffer.getSize());
             writer.limit(offset + totalSize);
             writer.position(offset);
             mCachedWriter = writer;

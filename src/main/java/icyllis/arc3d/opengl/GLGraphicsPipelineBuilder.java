@@ -21,7 +21,7 @@ package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.PipelineKey;
-import icyllis.arc3d.engine.GraphicsPipelineDesc;
+import icyllis.arc3d.engine.GraphicsPipelineDesc_Old;
 import icyllis.arc3d.engine.shading.*;
 import org.lwjgl.system.MemoryUtil;
 
@@ -44,7 +44,7 @@ public class GLGraphicsPipelineBuilder extends GraphicsPipelineBuilder {
 
     private GLGraphicsPipelineBuilder(GLDevice device,
                                       PipelineKey desc,
-                                      GraphicsPipelineDesc graphicsPipelineDesc) {
+                                      GraphicsPipelineDesc_Old graphicsPipelineDesc) {
         super(desc, graphicsPipelineDesc, device.getCaps());
         mDevice = device;
         mVaryingHandler = new VaryingHandler(this);
@@ -55,7 +55,7 @@ public class GLGraphicsPipelineBuilder extends GraphicsPipelineBuilder {
     public static GLGraphicsPipeline createGraphicsPipeline(
             final GLDevice device,
             final PipelineKey desc,
-            final GraphicsPipelineDesc graphicsPipelineDesc) {
+            final GraphicsPipelineDesc_Old graphicsPipelineDesc) {
         return new GLGraphicsPipeline(device, graphicsPipelineDesc.primitiveType(), CompletableFuture.supplyAsync(() -> {
             GLGraphicsPipelineBuilder builder = new GLGraphicsPipelineBuilder(device, desc, graphicsPipelineDesc);
             builder.build();

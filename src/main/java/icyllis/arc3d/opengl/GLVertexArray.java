@@ -96,7 +96,7 @@ public final class GLVertexArray extends ManagedResource {
     @Nullable
     @SharedPtr
     public static GLVertexArray make(@Nonnull GLDevice device,
-                                     @Nonnull GeometryProcessor geomProc) {
+                                     @Nonnull GeometryStep geomProc) {
         var gl = device.getGL();
         final boolean dsa = device.getCaps().hasDSASupport();
         final boolean vertexAttribBindingSupport = device.getCaps().hasVertexAttribBindingSupport();
@@ -233,7 +233,7 @@ public final class GLVertexArray extends ManagedResource {
     }
 
     private static int set_vertex_format_legacy(GLInterface gl,
-                                                @Nonnull Iterable<GeometryProcessor.Attribute> attribs,
+                                                @Nonnull Iterable<VertexInputLayout.Attribute> attribs,
                                                 int index, int divisor, int[] attributes) {
         for (var attrib : attribs) {
             int locations = attrib.locations();
@@ -314,7 +314,7 @@ public final class GLVertexArray extends ManagedResource {
      * See {@link icyllis.arc3d.engine.shading.VertexShaderBuilder}.
      */
     private static int set_vertex_format_binding_group(GLInterface gl,
-                                                       @Nonnull Iterable<GeometryProcessor.Attribute> attribs,
+                                                       @Nonnull Iterable<VertexInputLayout.Attribute> attribs,
                                                        int index,
                                                        int binding,
                                                        int divisor) {
@@ -399,7 +399,7 @@ public final class GLVertexArray extends ManagedResource {
      * See {@link icyllis.arc3d.engine.shading.VertexShaderBuilder}.
      */
     private static int set_vertex_format_binding_group_dsa(GLInterface gl,
-                                                           @Nonnull Iterable<GeometryProcessor.Attribute> attribs,
+                                                           @Nonnull Iterable<VertexInputLayout.Attribute> attribs,
                                                            int array,
                                                            int index,
                                                            int binding,

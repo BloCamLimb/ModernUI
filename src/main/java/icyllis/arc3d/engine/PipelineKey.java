@@ -57,21 +57,15 @@ public final class PipelineKey extends KeyBuilder {
      * @param caps the context capabilities
      */
     @Nonnull
-    public static PipelineKey build(PipelineKey desc, GraphicsPipelineDesc info, Caps caps) {
+    public static PipelineKey build(PipelineKey desc, GraphicsPipelineDesc_Old info, Caps caps) {
         desc.clear();
         genKey(desc, info, caps);
         desc.mShaderKeyLength = desc.size();
         return desc;
     }
 
-    public static String describe(GraphicsPipelineDesc info, Caps caps) {
-        StringKeyBuilder b = new StringKeyBuilder();
-        genKey(b, info, caps);
-        return b.toString();
-    }
-
     static void genKey(KeyBuilder b,
-                       GraphicsPipelineDesc info,
+                       GraphicsPipelineDesc_Old info,
                        Caps caps) {
         genGPKey(info.geomProc(), b);
 
@@ -91,8 +85,7 @@ public final class PipelineKey extends KeyBuilder {
      * Shader code may be dependent on properties of the effect not placed in the key by the effect
      * (e.g. pixel format of textures used).
      */
-    static void genGPKey(GeometryProcessor geomProc, KeyBuilder b) {
-        b.appendComment(geomProc.name());
+    static void genGPKey(GeometryStep geomProc, KeyBuilder b) {
         // We allow 32 bits for the class id
         b.addInt32(geomProc.classID(), "gpClassID");
 

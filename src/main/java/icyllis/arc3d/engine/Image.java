@@ -27,16 +27,17 @@ import javax.annotation.Nonnull;
 import static icyllis.arc3d.engine.Engine.BudgetType;
 
 /**
- * Represents GPU textures/images, which may be 2D or 3D. This class also represents a
- * default texture/image view type, see {@link Engine.ImageType}.
+ * Represents GPU image resources, which may be 2D or 3D. This class also represents a
+ * default image view, see {@link Engine.ImageType}.
  * <p>
- * An {@link Image} may be used as textures (sampled in fragment shaders), may be used as
- * storage images (load and store in compute shaders), may be used as color and depth/stencil
- * attachments of framebuffers. See {@link ISurface#FLAG_SAMPLED_IMAGE},
- * {@link ISurface#FLAG_STORAGE_IMAGE} and {@link ISurface#FLAG_RENDERABLE}.
- * In D3D12 and Metal terminology, {@link Image} is "Texture". We don't want to say
- * "texturable" texture or sampled texture, so we use sampled image instead.
- * Image is the only name in Vulkan and SPIR-V terminology.
+ * {@link Image} can be used for various purposes. It may be used as textures (sampled in
+ * fragment shaders), may be used as storage images (load and store in compute shaders),
+ * may be used as color and depth/stencil attachments of framebuffers (render targets).
+ * See {@link ISurface#FLAG_SAMPLED_IMAGE}, {@link ISurface#FLAG_STORAGE_IMAGE} and
+ * {@link ISurface#FLAG_RENDERABLE}.
+ * <p>
+ * An {@link Image} is created with device-local memory, its contents may be updated via
+ * a staging buffer.
  */
 public abstract class Image extends GpuSurface {
 

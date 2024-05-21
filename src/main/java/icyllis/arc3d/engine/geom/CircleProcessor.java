@@ -47,36 +47,36 @@ import static icyllis.arc3d.engine.Engine.*;
  * Round caps for stroking are allowed as well. The caps are specified as two circle center points
  * in the same space as p.xy.
  */
-public class CircleProcessor extends GeometryProcessor {
+public class CircleProcessor extends GeometryStep {
 
     /**
      * Per-vertex attributes.
      */
-    public static final Attribute
-            POSITION = new Attribute("Position", VertexAttribType.kFloat2, SLDataType.kFloat2);
+    public static final VertexInputLayout.Attribute
+            POSITION = new VertexInputLayout.Attribute("Position", VertexAttribType.kFloat2, SLDataType.kFloat2);
     // edge x, edge y, outer radius, inner radius (stroke)
-    public static final Attribute
-            CIRCLE_EDGE = new Attribute("CircleEdge", VertexAttribType.kFloat4, SLDataType.kFloat4);
+    public static final VertexInputLayout.Attribute
+            CIRCLE_EDGE = new VertexInputLayout.Attribute("CircleEdge", VertexAttribType.kFloat4, SLDataType.kFloat4);
     /**
      * Per-instance attributes.
      */
-    public static final Attribute
-            COLOR = new Attribute("Color", VertexAttribType.kFloat4, SLDataType.kFloat4);
+    public static final VertexInputLayout.Attribute
+            COLOR = new VertexInputLayout.Attribute("Color", VertexAttribType.kFloat4, SLDataType.kFloat4);
     /**
      * Per-instance attributes (optional).
      */
-    public static final Attribute
-            CLIP_PLANE = new Attribute("ClipPlane", VertexAttribType.kFloat3, SLDataType.kFloat3),
-            ISECT_PLANE = new Attribute("IsectPlane", VertexAttribType.kFloat3, SLDataType.kFloat3),
-            UNION_PLANE = new Attribute("UnionPlane", VertexAttribType.kFloat3, SLDataType.kFloat3),
-            ROUND_CAP_CENTERS = new Attribute("RoundCapCenters", VertexAttribType.kFloat4, SLDataType.kFloat4);
-    public static final Attribute
-            MODEL_VIEW = new Attribute("ModelView", VertexAttribType.kFloat3, SLDataType.kFloat3x3);
+    public static final VertexInputLayout.Attribute
+            CLIP_PLANE = new VertexInputLayout.Attribute("ClipPlane", VertexAttribType.kFloat3, SLDataType.kFloat3),
+            ISECT_PLANE = new VertexInputLayout.Attribute("IsectPlane", VertexAttribType.kFloat3, SLDataType.kFloat3),
+            UNION_PLANE = new VertexInputLayout.Attribute("UnionPlane", VertexAttribType.kFloat3, SLDataType.kFloat3),
+            ROUND_CAP_CENTERS = new VertexInputLayout.Attribute("RoundCapCenters", VertexAttribType.kFloat4, SLDataType.kFloat4);
+    public static final VertexInputLayout.Attribute
+            MODEL_VIEW = new VertexInputLayout.Attribute("ModelView", VertexAttribType.kFloat3, SLDataType.kFloat3x3);
 
-    public static final AttributeSet VERTEX_FORMAT = AttributeSet.makeImplicit(
-            POSITION, CIRCLE_EDGE);
-    public static final AttributeSet INSTANCE_FORMAT = AttributeSet.makeImplicit(
-            COLOR, CLIP_PLANE, ISECT_PLANE, UNION_PLANE, ROUND_CAP_CENTERS, MODEL_VIEW);
+    public static final VertexInputLayout.AttributeSet VERTEX_FORMAT = VertexInputLayout.AttributeSet.makeImplicit(
+            0, POSITION, CIRCLE_EDGE);
+    public static final VertexInputLayout.AttributeSet INSTANCE_FORMAT = VertexInputLayout.AttributeSet.makeImplicit(
+            1, COLOR, CLIP_PLANE, ISECT_PLANE, UNION_PLANE, ROUND_CAP_CENTERS, MODEL_VIEW);
 
     private final int mFlags;
 
@@ -116,12 +116,12 @@ public class CircleProcessor extends GeometryProcessor {
     }
 
     @Override
-    protected AttributeSet allVertexAttributes() {
+    protected VertexInputLayout.AttributeSet allVertexAttributes() {
         return VERTEX_FORMAT;
     }
 
     @Override
-    protected AttributeSet allInstanceAttributes() {
+    protected VertexInputLayout.AttributeSet allInstanceAttributes() {
         return INSTANCE_FORMAT;
     }
 
@@ -129,7 +129,7 @@ public class CircleProcessor extends GeometryProcessor {
 
         @Override
         public void setData(UniformDataManager manager,
-                            GeometryProcessor geomProc) {
+                            GeometryStep geomProc) {
         }
 
         @Override
@@ -138,7 +138,7 @@ public class CircleProcessor extends GeometryProcessor {
                                   VaryingHandler varyingHandler,
                                   UniformHandler uniformHandler,
                                   ShaderCaps shaderCaps,
-                                  GeometryProcessor geomProc,
+                                  GeometryStep geomProc,
                                   String outputColor,
                                   String outputCoverage,
                                   int[] texSamplers,

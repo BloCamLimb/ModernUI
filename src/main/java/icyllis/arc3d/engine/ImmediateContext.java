@@ -31,6 +31,7 @@ import java.util.Objects;
 
 /**
  * Immediate context is used for command list execution and queue submission.
+ * That thread is also known as command execution thread and submission thread.
  */
 public final class ImmediateContext extends RecordingContext {
 

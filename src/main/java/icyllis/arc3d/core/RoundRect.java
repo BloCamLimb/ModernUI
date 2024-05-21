@@ -19,20 +19,29 @@
 
 package icyllis.arc3d.core;
 
+/**
+ * Represents a rounded rectangle with a bounds and a radius for each corner.
+ * Based on bounds and radii, this class may represent: a degenerate line,
+ * a rectangle with sharp corners, a rectangle with one or more rounded corners,
+ * or a circle. Other geometries (like a rectangle with elliptical corners) can
+ * only be represented by {@link Path}.
+ */
 //TODO
 public class RoundRect {
 
+    /**
+     * The rectangular bounds, see {@link Rect2f}.
+     */
     public float mLeft;
     public float mTop;
     public float mRight;
     public float mBottom;
 
-    public float mRadiusULX;
-    public float mRadiusULY;
-    public float mRadiusURX;
-    public float mRadiusURY;
-    public float mRadiusLRX;
-    public float mRadiusLRY;
-    public float mRadiusLLX;
-    public float mRadiusLLY;
+    /**
+     * The corner radii, upper-left, upper-right, lower-right, lower-left, in that order.
+     */
+    public float mRadiusUL;
+    public float mRadiusUR;
+    public float mRadiusLR;
+    public float mRadiusLL;
 }

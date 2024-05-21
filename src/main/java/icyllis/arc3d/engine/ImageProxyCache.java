@@ -30,7 +30,7 @@ import java.util.Objects;
  * A factory for creating {@link SurfaceProxy}-derived objects. This class may be used on
  * the creating thread of {@link RecordingContext}.
  */
-public final class SurfaceProvider {
+public final class ImageProxyCache {
 
     private final RecordingContext mContext;
     private final ImmediateContext mDirect;
@@ -39,7 +39,7 @@ public final class SurfaceProvider {
     // on these proxies, but they must send a message to the resourceCache when they are deleted.
     private final Object2ObjectOpenHashMap<IUniqueKey, ImageProxy> mUniquelyKeyedProxies;
 
-    SurfaceProvider(RecordingContext context) {
+    ImageProxyCache(RecordingContext context) {
         mContext = context;
         if (context instanceof ImmediateContext) {
             mDirect = (ImmediateContext) context;
@@ -122,7 +122,9 @@ public final class SurfaceProvider {
             assert (surfaceFlags & ISurface.FLAG_DEFERRED_PROVIDER) == 0;
         }
 
-        return new ImageProxy(format, width, height, surfaceFlags);
+        //FIXME
+        //return new ImageProxy(format, width, height, surfaceFlags);
+        return null;
     }
 
     /**
@@ -343,7 +345,9 @@ public final class SurfaceProvider {
         } else {
             assert (surfaceFlags & ISurface.FLAG_DEFERRED_PROVIDER) == 0;
         }
-        return new ImageProxy(format, width, height, surfaceFlags, callback);
+        //FIXME
+        //return new ImageProxy(format, width, height, surfaceFlags, callback);
+        return null;
     }
 
     public boolean isDeferredProvider() {

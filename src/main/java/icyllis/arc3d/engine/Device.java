@@ -223,8 +223,7 @@ public abstract class Device implements Engine {
                                               int surfaceFlags);*/
 
     @Nullable
-    @SharedPtr
-    public final GpuRenderTarget createRenderTarget(int numColorTargets,
+    public final @SharedPtr GpuRenderTarget createRenderTarget(int numColorTargets,
                                                     @Nullable Image[] colorTargets,
                                                     @Nullable Image[] resolveTargets,
                                                     @Nullable int[] mipLevels,
@@ -596,7 +595,7 @@ public abstract class Device implements Engine {
 
     @Nullable
     @SharedPtr
-    public final Buffer createBuffer(int size, int flags) {
+    public final Buffer createBuffer(long size, int flags) {
         if (size <= 0) {
             getContext().getLogger().error(
                     "Failed to create buffer: invalid size {}",
@@ -604,7 +603,7 @@ public abstract class Device implements Engine {
             return null;
         }
         if ((flags & (BufferUsageFlags.kTransferSrc | BufferUsageFlags.kTransferDst)) != 0 &&
-                (flags & BufferUsageFlags.kStatic) != 0) {
+                (flags & BufferUsageFlags.kDeviceLocal) != 0) {
             return null;
         }
         return onCreateBuffer(size, flags);
@@ -612,7 +611,7 @@ public abstract class Device implements Engine {
 
     @Nullable
     @SharedPtr
-    protected abstract Buffer onCreateBuffer(int size, int flags);
+    protected abstract Buffer onCreateBuffer(long size, int flags);
 
     /**
      * Creates a new fence and inserts it into the graphics queue.

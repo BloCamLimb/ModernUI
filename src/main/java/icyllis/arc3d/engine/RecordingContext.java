@@ -33,7 +33,7 @@ public sealed class RecordingContext extends Context
 
     private final Thread mOwnerThread;
 
-    private final SurfaceProvider mSurfaceProvider;
+    private final ImageProxyCache mImageProxyCache;
     private RenderTaskManager mRenderTaskManager;
 
     private final PipelineKey mLookupDesc = new PipelineKey();
@@ -41,7 +41,7 @@ public sealed class RecordingContext extends Context
     protected RecordingContext(SharedContext context) {
         super(context);
         mOwnerThread = Thread.currentThread();
-        mSurfaceProvider = new SurfaceProvider(this);
+        mImageProxyCache = new ImageProxyCache(this);
     }
 
     @Nullable
@@ -108,8 +108,8 @@ public sealed class RecordingContext extends Context
     }
 
     @ApiStatus.Internal
-    public final SurfaceProvider getSurfaceProvider() {
-        return mSurfaceProvider;
+    public final ImageProxyCache getSurfaceProvider() {
+        return mImageProxyCache;
     }
 
     @ApiStatus.Internal
@@ -129,12 +129,17 @@ public sealed class RecordingContext extends Context
 
     @ApiStatus.Internal
     public final GraphicsPipeline findOrCreateGraphicsPipeline(
-            final GraphicsPipelineDesc graphicsPipelineDesc) {
+            final GraphicsPipelineDesc_Old graphicsPipelineDesc) {
         mLookupDesc.clear();
         return getPipelineCache().findOrCreateGraphicsPipeline(
                 mLookupDesc,
                 graphicsPipelineDesc
         );
+    }
+
+    @ApiStatus.Internal
+    public final DynamicBufferManager getDynamicBufferManager() {
+        return null;
     }
 
     @Override

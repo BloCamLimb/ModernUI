@@ -19,5 +19,41 @@
 
 package icyllis.arc3d.engine.graphene;
 
+import icyllis.arc3d.core.Matrix4;
+import icyllis.arc3d.engine.ClipResult;
+import icyllis.arc3d.engine.GeometryRenderer;
+
+import java.util.ArrayList;
+
 public class DrawOpList {
+
+    private final ArrayList<Matrix4> mTransforms = new ArrayList<>();
+    final ArrayList<DrawOp> mDrawOps = new ArrayList<>();
+    private int mNumSteps;
+
+    private Matrix4 getStableTransform(Matrix4 modelView) {
+        Matrix4 last;
+        if (mTransforms.isEmpty() || !(last = mTransforms.get(mTransforms.size()-1)).equals(modelView)) {
+            var copy = modelView.clone();
+            mTransforms.add(copy);
+            return copy;
+        }
+        return last;
+    }
+
+    public void recordDrawOp(GeometryRenderer renderer,
+                             Matrix4 modelView,
+                             Object geometry,
+                             ClipResult clip,
+                             long drawOrder) {
+        modelView = getStableTransform(modelView);
+
+        mDrawOps.add(new DrawOp());//TODO
+
+        mNumSteps += renderer.numSteps();
+    }
+
+    public int numSteps() {
+        return mNumSteps;
+    }
 }

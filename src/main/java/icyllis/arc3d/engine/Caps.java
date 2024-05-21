@@ -64,6 +64,7 @@ public abstract class Caps {
     protected boolean mTransferPixelsToRowBytesSupport = false;
     protected boolean mMustSyncGpuDuringDiscard = true;
     protected boolean mTextureBarrierSupport = false;
+    protected boolean mUseCpuStagingBuffers = false;
 
     // Not (yet) implemented in VK backend.
     protected boolean mDynamicStateArrayGeometryProcessorTextureSupport = false;
@@ -79,6 +80,8 @@ public abstract class Caps {
     protected int mInternalMultisampleCount = 0;
     protected int mMaxPushConstantsSize = 0;
     protected int mMaxColorAttachments = 4;
+    protected int mMinUniformBufferOffsetAlignment = 256;
+    protected int mMinStorageBufferOffsetAlignment = 256;
 
     protected final DriverBugWorkarounds mDriverBugWorkarounds = new DriverBugWorkarounds();
 
@@ -277,6 +280,26 @@ public abstract class Caps {
 
     public final boolean reuseScratchBuffers() {
         return true;
+    }
+
+    public final boolean useCpuStagingBuffers() {
+        return mUseCpuStagingBuffers;
+    }
+
+    /**
+     * @return minimum required alignment, in bytes, for the offset
+     * member of the {@link BufferViewInfo} structure for uniform buffers
+     */
+    public final int minUniformBufferOffsetAlignment() {
+        return mMinUniformBufferOffsetAlignment;
+    }
+
+    /**
+     * @return minimum required alignment, in bytes, for the offset
+     * member of the {@link BufferViewInfo} structure for shader storage buffers
+     */
+    public final int minStorageBufferOffsetAlignment() {
+        return mMinStorageBufferOffsetAlignment;
     }
 
     /**
@@ -677,10 +700,10 @@ public abstract class Caps {
     @Nonnull
     public abstract PipelineKey makeDesc(PipelineKey desc,
                                          GpuRenderTarget renderTarget,
-                                         final GraphicsPipelineDesc graphicsPipelineDesc);
+                                         final GraphicsPipelineDesc_Old graphicsPipelineDesc);
 
-    public final short getReadSwizzle(BackendFormat format, int colorType) {
-        int compression = format.getCompressionType();
+    public final short getReadSwizzle(ImageDesc desc, int colorType) {
+        int compression = desc.getCompressionType();
         if (compression != ColorInfo.COMPRESSION_NONE) {
             if (colorType == ColorInfo.CT_RGB_888x || colorType == ColorInfo.CT_RGBA_8888) {
                 return Swizzle.RGBA;
@@ -689,12 +712,12 @@ public abstract class Caps {
             return Swizzle.RGBA;
         }
 
-        return onGetReadSwizzle(format, colorType);
+        return onGetReadSwizzle(desc, colorType);
     }
 
-    protected abstract short onGetReadSwizzle(BackendFormat format, int colorType);
+    protected abstract short onGetReadSwizzle(ImageDesc desc, int colorType);
 
-    public abstract short getWriteSwizzle(BackendFormat format, int colorType);
+    public abstract short getWriteSwizzle(ImageDesc desc, int colorType);
 
     public abstract IScratchKey computeImageKey(ImageDesc desc,
                                                 IScratchKey recycle);

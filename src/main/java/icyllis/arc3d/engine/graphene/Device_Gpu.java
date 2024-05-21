@@ -83,9 +83,11 @@ public final class Device_Gpu extends icyllis.arc3d.core.Device {
         if (rContext == null) {
             return null;
         }
-        SurfaceDrawContext sdc = SurfaceDrawContext.make(rContext,
-                colorType, colorSpace, proxy, origin);
-        return make(sdc, ColorInfo.AT_PREMUL, clear);
+        /*SurfaceDrawContext sdc = SurfaceDrawContext.make(rContext,
+                colorType, colorSpace, proxy, origin);*/
+        //FIXME
+        //return make(sdc, ColorInfo.AT_PREMUL, clear);
+        return null;
     }
 
     @Override

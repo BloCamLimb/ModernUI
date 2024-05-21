@@ -558,6 +558,14 @@ public class MathUtil {
         return (a + alignment - 1) & -alignment;
     }
 
+    /**
+     * Aligns {@code a} up to a power of two.
+     */
+    public static long alignTo(long a, long alignment) {
+        assert alignment > 0 && (alignment & (alignment - 1)) == 0;
+        return (a + alignment - 1) & -alignment;
+    }
+
     public static int alignUp(int a, int alignment) {
         assert alignment > 0;
         int r = a % alignment;

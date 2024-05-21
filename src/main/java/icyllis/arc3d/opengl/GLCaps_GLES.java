@@ -32,6 +32,7 @@ import java.nio.IntBuffer;
 
 import static org.lwjgl.opengles.GLES20.*;
 import static org.lwjgl.opengles.GLES30.*;
+import static org.lwjgl.opengles.GLES31.GL_SHADER_STORAGE_BUFFER_OFFSET_ALIGNMENT;
 import static org.lwjgl.opengles.GLES32.GL_MAX_LABEL_LENGTH;
 
 public final class GLCaps_GLES extends GLCaps implements GLInterface {
@@ -78,6 +79,8 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
                         glGetInteger(GL_MAX_DRAW_BUFFERS),
                         glGetInteger(GL_MAX_COLOR_ATTACHMENTS)),
                 MAX_COLOR_TARGETS);
+        mMinUniformBufferOffsetAlignment = glGetInteger(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT);
+        mMinStorageBufferOffsetAlignment = glGetInteger(GL_SHADER_STORAGE_BUFFER_OFFSET_ALIGNMENT);
 
         String versionString = GLES20.glGetString(GL_VERSION);
         String vendorString = GLES20.glGetString(GL_VENDOR);

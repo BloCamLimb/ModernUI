@@ -96,8 +96,8 @@ public class RectOp extends MeshDrawOp {
 
     @Nonnull
     @Override
-    protected GraphicsPipelineDesc onCreatePipelineInfo(ImageProxyView writeView, int pipelineFlags) {
-        return new GraphicsPipelineDesc(writeView,
+    protected GraphicsPipelineDesc_Old onCreatePipelineInfo(ImageProxyView writeView, int pipelineFlags) {
+        return new GraphicsPipelineDesc_Old(writeView,
                 new SDFRectGeoProc(mGPFlags), null, null, null,
                 null, pipelineFlags);
     }
