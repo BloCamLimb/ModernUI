@@ -39,12 +39,12 @@ public final class VulkanBuffer extends Buffer {
     }
 
     @Override
-    protected long onLock(int mode, int offset, int size) {
+    protected long onLock(int mode, long offset, long size) {
         return 0;
     }
 
     @Override
-    protected void onUnlock(int mode, int offset, int size) {
+    protected void onUnlock(int mode, long offset, long size) {
 
     }
 

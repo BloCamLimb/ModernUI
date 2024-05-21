@@ -35,7 +35,7 @@ public abstract class PipelineCache {
 
     public abstract GraphicsPipeline findOrCreateGraphicsPipeline(
             final PipelineKey desc,
-            final GraphicsPipelineDesc graphicsPipelineDesc);
+            final GraphicsPipelineDesc_Old graphicsPipelineDesc);
 
     protected abstract void close();
 

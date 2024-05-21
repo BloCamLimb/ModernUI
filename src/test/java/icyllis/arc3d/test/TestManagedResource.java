@@ -25,9 +25,8 @@ import icyllis.arc3d.compiler.lex.Token;
 import icyllis.arc3d.compiler.tree.Type;
 import icyllis.arc3d.core.MathUtil;
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.Image;
-import icyllis.arc3d.engine.geom.SDFRoundRectGeoProc;
+import icyllis.arc3d.engine.*;
 import icyllis.arc3d.opengl.*;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFW;
@@ -115,12 +114,12 @@ public class TestManagedResource {
         {
             LOGGER.info("Program binary formats: " + Arrays.toString(caps.getProgramBinaryFormats()));
             LOGGER.info("SPIR-V support: " + caps.hasSPIRVSupport());
-            LOGGER.info("Preferred pixel format for TEXTURE_2D, RB8: " +
-                    glGetInternalformati(GL_TEXTURE_2D, GL_RGBA8, GL_TEXTURE_IMAGE_FORMAT));
-            LOGGER.info("Preferred pixel type for TEXTURE_2D, RB8: " +
-                    glGetInternalformati(GL_TEXTURE_2D, GL_RGBA8, GL_TEXTURE_IMAGE_TYPE));
             LOGGER.info("Preferred internal format for RGB8: " +
                     glGetInternalformati(GL_TEXTURE_2D, GL_RGB8, GL_INTERNALFORMAT_PREFERRED));
+            LOGGER.info("Preferred pixel format for RGB8: " +
+                    glGetInternalformati(GL_TEXTURE_2D, GL_RGB8, GL_TEXTURE_IMAGE_FORMAT));
+            LOGGER.info("Preferred pixel type for RGB8: " +
+                    glGetInternalformati(GL_TEXTURE_2D, GL_RGB8, GL_TEXTURE_IMAGE_TYPE));
         }
 
         {
@@ -368,7 +367,9 @@ public class TestManagedResource {
     }
 
     public static void testShaderBuilder(ImmediateContext dContext) {
-        @SharedPtr
+
+        //FIXME
+        /*@SharedPtr
         RenderTargetProxy target = dContext.getSurfaceProvider().createRenderTexture(
                 GLBackendFormat.make(GL_RGBA8),
                 800, 800, 4,
@@ -385,7 +386,7 @@ public class TestManagedResource {
         }
         pso.bindPipeline(((GLDevice) dContext.getDevice()).currentCommandBuffer());
 
-        LOGGER.info(dContext.getPipelineCache().getStats().toString());
+        LOGGER.info(dContext.getPipelineCache().getStats().toString());*/
     }
 
     public static void testTexture(ImmediateContext context) {
@@ -428,7 +429,7 @@ public class TestManagedResource {
                     0,
                     memAddress(pixels),
                     null);*/
-            texture = context.getResourceProvider().createImage(
+            texture = context.getResourceProvider().findOrCreateImage(
                     desc,
                     true,
                     null
@@ -497,9 +498,9 @@ public class TestManagedResource {
     }
 
     public static void testKeyBuilder(PrintWriter pw) {
-        KeyBuilder keyBuilder = new KeyBuilder.StringKeyBuilder();
+        KeyBuilder keyBuilder = new KeyBuilder();
         keyBuilder.addBits(6, 0x2F, "A");
-        keyBuilder.addInt32(0xF111_1111, "B");
+        keyBuilder.addBits(32, 0xF111_1111, "B");
         keyBuilder.flush();
         pw.println(keyBuilder);
     }

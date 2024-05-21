@@ -25,8 +25,8 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import java.nio.ByteBuffer;
 
 /**
- * The list that holds commands of a render pass.
- * The command types and arguments are flattened into an int array.
+ * The list that holds commands of a draw pass, and can be played on
+ * {@link icyllis.arc3d.engine.CommandBuffer}.
  */
 public class DrawCommandList {
 

@@ -53,7 +53,7 @@ public final class ResourceCache implements AutoCloseable {
     private static final Comparator<Resource> TIMESTAMP_COMPARATOR =
             (lhs, rhs) -> Integer.compareUnsigned(lhs.mTimestamp, rhs.mTimestamp);
 
-    private SurfaceProvider mSurfaceProvider = null;
+    private ImageProxyCache mImageProxyCache = null;
     private ThreadSafeCache mThreadSafeCache = null;
 
     // Whenever a resource is added to the cache or the result of a cache lookup, mTimestamp is
@@ -264,8 +264,8 @@ public final class ResourceCache implements AutoCloseable {
         return mUniqueMap.containsKey(key);
     }
 
-    public void setSurfaceProvider(SurfaceProvider surfaceProvider) {
-        mSurfaceProvider = surfaceProvider;
+    public void setSurfaceProvider(ImageProxyCache imageProxyCache) {
+        mImageProxyCache = imageProxyCache;
     }
 
     public void setThreadSafeCache(ThreadSafeCache threadSafeCache) {

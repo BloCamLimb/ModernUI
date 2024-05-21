@@ -17,24 +17,18 @@
  * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine;
+package icyllis.arc3d.engine.task;
 
-import java.nio.ByteBuffer;
+import icyllis.arc3d.engine.*;
 
-/**
- * Manage streaming vertex buffers, for vertex/instance data are updated per draw call.
- * <p>
- * This prefers to create a large ring buffer that is host visible and device visible.
- * If not available, creates a large staging buffer and a device local buffer.
- */
-//TODO
-public class StreamBufferManager {
-
-    public ByteBuffer getVertexWriter(int requiredBytes, BufferViewInfo info) {
-        return null;
+public class ImageUploadTask extends Task {
+    @Override
+    public boolean prepare(ResourceProvider resourceProvider) {
+        return false;
     }
 
-    public void putBackVertexBytes(int unusedBytes) {
-
+    @Override
+    public boolean execute(ImmediateContext context, CommandBuffer cmdBuffer) {
+        return false;
     }
 }

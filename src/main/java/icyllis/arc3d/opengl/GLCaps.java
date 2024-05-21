@@ -1265,13 +1265,13 @@ public class GLCaps extends Caps {
     @Override
     public PipelineKey makeDesc(PipelineKey desc,
                                 GpuRenderTarget renderTarget,
-                                final GraphicsPipelineDesc graphicsPipelineDesc) {
+                                final GraphicsPipelineDesc_Old graphicsPipelineDesc) {
         return PipelineKey.build(desc, graphicsPipelineDesc, this);
     }
 
     @Override
-    protected short onGetReadSwizzle(BackendFormat format, int colorType) {
-        final FormatInfo formatInfo = getFormatInfo(format.getGLFormat());
+    protected short onGetReadSwizzle(ImageDesc desc, int colorType) {
+        final FormatInfo formatInfo = getFormatInfo(desc.getGLFormat());
         for (final ColorTypeInfo ctInfo : formatInfo.mColorTypeInfos) {
             if (ctInfo.mColorType == colorType) {
                 return ctInfo.mReadSwizzle;
@@ -1282,8 +1282,8 @@ public class GLCaps extends Caps {
     }
 
     @Override
-    public short getWriteSwizzle(BackendFormat format, int colorType) {
-        final FormatInfo formatInfo = getFormatInfo(format.getGLFormat());
+    public short getWriteSwizzle(ImageDesc desc, int colorType) {
+        final FormatInfo formatInfo = getFormatInfo(desc.getGLFormat());
         for (final ColorTypeInfo ctInfo : formatInfo.mColorTypeInfos) {
             if (ctInfo.mColorType == colorType) {
                 return ctInfo.mWriteSwizzle;

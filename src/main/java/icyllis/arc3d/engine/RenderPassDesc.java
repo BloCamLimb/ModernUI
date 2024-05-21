@@ -19,16 +19,33 @@
 
 package icyllis.arc3d.engine;
 
+/**
+ * Specifies info to create a render pass and begin a render pass.
+ */
 public class RenderPassDesc {
 
-    public GpuRenderTarget mRenderTarget;
+    public static class ColorAttachmentDesc {
+        public ImageDesc mDesc;
+        public ImageDesc mResolveDesc;
+        public int mMipLevel;
+        public int mArraySlice;
+        public byte mLoadOp;
+        public byte mStoreOp;
+        public float[] mClearColor;
+    }
 
-    public byte mColorOps;
-    public byte mDepthStencilOps;
-    public float[] mClearColor;
-    public float mClearDepth;
-    public int mClearStencil;
+    public ColorAttachmentDesc[] mColorAttachments;
 
-    public short mWriteSwizzle;
+    public static class DepthStencilAttachmentDesc {
+        public ImageDesc mDesc;
+        // no resolve
+        public byte mLoadOp;
+        public byte mStoreOp;
+        public float mClearDepth;
+        public int mClearStencil;
+    }
+
+    public DepthStencilAttachmentDesc mDepthStencilAttachment;
+
     public int mSampleCount;
 }

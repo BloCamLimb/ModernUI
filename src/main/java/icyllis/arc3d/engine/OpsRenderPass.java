@@ -88,7 +88,7 @@ public abstract class OpsRenderPass {
      * @param pipeline the pipeline state object
      * @param drawBounds    the sub-area of render target for subsequent draw calls
      */
-    public void bindPipeline(GraphicsPipelineDesc graphicsPipelineDesc, GraphicsPipeline pipeline, Rect2fc drawBounds) {
+    public void bindPipeline(GraphicsPipelineDesc_Old graphicsPipelineDesc, GraphicsPipeline pipeline, Rect2fc drawBounds) {
         assert (graphicsPipelineDesc.origin() == mSurfaceOrigin);
         if (!onBindPipeline(graphicsPipelineDesc, pipeline, drawBounds)) {
             mDrawPipelineStatus = kFailedToBind_DrawPipelineStatus;
@@ -232,7 +232,7 @@ public abstract class OpsRenderPass {
 
     protected abstract Device getDevice();
 
-    protected abstract boolean onBindPipeline(GraphicsPipelineDesc graphicsPipelineDesc,
+    protected abstract boolean onBindPipeline(GraphicsPipelineDesc_Old graphicsPipelineDesc,
                                               GraphicsPipeline pipeline,
                                               Rect2fc drawBounds);
 

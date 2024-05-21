@@ -25,18 +25,18 @@ import icyllis.arc3d.engine.*;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public final class DefaultGeoProc extends GeometryProcessor {
+public final class DefaultGeoProc extends GeometryStep {
 
     public static final int FLAG_COLOR_ATTRIBUTE = 0x1;
     public static final int FLAG_TEX_COORD_ATTRIBUTE = 0x2;
 
-    public static final Attribute
-            POSITION = new Attribute("Pos", Engine.VertexAttribType.kFloat2, SLDataType.kFloat2),
-            COLOR = new Attribute("Color", Engine.VertexAttribType.kUByte4_norm, SLDataType.kFloat4),
-            TEX_COORD = new Attribute("UV", Engine.VertexAttribType.kFloat2, SLDataType.kFloat2);
+    public static final VertexInputLayout.Attribute
+            POSITION = new VertexInputLayout.Attribute("Pos", Engine.VertexAttribType.kFloat2, SLDataType.kFloat2),
+            COLOR = new VertexInputLayout.Attribute("Color", Engine.VertexAttribType.kUByte4_norm, SLDataType.kFloat4),
+            TEX_COORD = new VertexInputLayout.Attribute("UV", Engine.VertexAttribType.kFloat2, SLDataType.kFloat2);
 
-    public static final AttributeSet VERTEX_ATTRIBS = AttributeSet.makeImplicit(
-            POSITION, COLOR, TEX_COORD
+    public static final VertexInputLayout.AttributeSet VERTEX_ATTRIBS = VertexInputLayout.AttributeSet.makeImplicit(
+            0, POSITION, COLOR, TEX_COORD
     );
 
     private final int mFlags;
@@ -78,13 +78,13 @@ public final class DefaultGeoProc extends GeometryProcessor {
     }
 
     @Override
-    protected AttributeSet allVertexAttributes() {
+    protected VertexInputLayout.AttributeSet allVertexAttributes() {
         return VERTEX_ATTRIBS;
     }
 
     @Nullable
     @Override
-    protected AttributeSet allInstanceAttributes() {
+    protected VertexInputLayout.AttributeSet allInstanceAttributes() {
         return null;
     }
 }

@@ -20,7 +20,7 @@
 package icyllis.arc3d.engine.shading;
 
 import icyllis.arc3d.core.SLDataType;
-import icyllis.arc3d.engine.GeometryProcessor;
+import icyllis.arc3d.engine.GeometryStep;
 import icyllis.arc3d.engine.ShaderVar;
 
 import java.util.ArrayList;
@@ -61,7 +61,7 @@ public class VertexShaderBuilder extends ShaderBuilderBase implements VertexGeom
     }
 
     @Override
-    public void emitAttributes(GeometryProcessor geomProc) {
+    public void emitAttributes(GeometryStep geomProc) {
         for (var attr : geomProc.vertexAttributes()) {
             ShaderVar var = attr.asShaderVar();
             assert (var.getTypeModifier() == ShaderVar.kIn_TypeModifier);

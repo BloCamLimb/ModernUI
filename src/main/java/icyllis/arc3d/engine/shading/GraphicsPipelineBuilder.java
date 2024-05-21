@@ -52,7 +52,7 @@ public abstract class GraphicsPipelineBuilder {
     public FragmentShaderBuilder mFS;
 
     public final PipelineKey mDesc;
-    public final GraphicsPipelineDesc mGraphicsPipelineDesc;
+    public final GraphicsPipelineDesc_Old mGraphicsPipelineDesc;
     private final Caps mCaps;
 
     /**
@@ -61,12 +61,12 @@ public abstract class GraphicsPipelineBuilder {
     @UniformHandle
     public int mProjectionUniform = INVALID_RESOURCE_HANDLE;
 
-    public GeometryProcessor.ProgramImpl mGPImpl;
+    public GeometryStep.ProgramImpl mGPImpl;
 
     // This is used to check that we don't exceed the allowable number of resources in a shader.
     private int mNumFragmentSamplers;
 
-    public GraphicsPipelineBuilder(PipelineKey desc, GraphicsPipelineDesc graphicsPipelineDesc, Caps caps) {
+    public GraphicsPipelineBuilder(PipelineKey desc, GraphicsPipelineDesc_Old graphicsPipelineDesc, Caps caps) {
         mDesc = desc;
         mGraphicsPipelineDesc = graphicsPipelineDesc;
         mCaps = caps;
@@ -167,7 +167,7 @@ public abstract class GraphicsPipelineBuilder {
     }
 
     private boolean emitAndInstallGeomProc(String[] output) {
-        final GeometryProcessor geomProc = mGraphicsPipelineDesc.geomProc();
+        final GeometryStep geomProc = mGraphicsPipelineDesc.geomProc();
 
         // Program builders have a bit of state we need to clear with each effect
         advanceStage();

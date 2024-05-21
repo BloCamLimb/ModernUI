@@ -26,36 +26,38 @@ import java.nio.ByteBuffer;
 
 public class MeshDrawWriter {
 
-    private StreamBufferManager mStreamBufferManager;
-    private DrawCommandList mCommandList;
+    private final DynamicBufferManager mDynamicBufferManager;
+    private final DrawCommandList mCommandList;
 
     // Pipeline state matching currently bound pipeline
-    private int fVertexStride;
-    private int fInstanceStride;
+    private int mVertexStride;
+    private int mInstanceStride;
 
     private final BufferViewInfo mVertexBufferInfo = new BufferViewInfo();
     private final BufferViewInfo mIndexBufferInfo =new BufferViewInfo();
     private final BufferViewInfo mInstanceBufferInfo =new BufferViewInfo();
     private int mTemplateCount;
 
-    private int fPendingCount; // # of vertices or instances (depending on mode) to be drawn
-    private int fPendingBase; // vertex/instance offset (depending on mode) applied to buffer
-    private boolean fPendingBufferBinds; // true if {fVertices,fIndices,fInstances} has changed since last draw
+    private int mPendingCount; // # of vertices or instances (depending on mode) to be drawn
+    private int mPendingBase; // vertex/instance offset (depending on mode) applied to buffer
+    private boolean mPendingBufferBinds; // true if {fVertices,fIndices,fInstances} has changed since last draw
 
-    public MeshDrawWriter() {
+    public MeshDrawWriter(DynamicBufferManager dynamicBufferManager, DrawCommandList commandList) {
+        mDynamicBufferManager = dynamicBufferManager;
+        mCommandList = commandList;
     }
 
     public void newPipelineState(int vertexStride,
                                  int instanceStride) {
         flush();
-        fVertexStride = vertexStride;
-        fInstanceStride = instanceStride;
+        mVertexStride = vertexStride;
+        mInstanceStride = instanceStride;
 
         // NOTE: resetting pending base is sufficient to redo bindings for vertex/instance data that
         // is later appended but doesn't invalidate bindings for fixed buffers that might not need
         // to change between pipelines.
-        fPendingBase = 0;
-        assert (fPendingCount == 0);
+        mPendingBase = 0;
+        assert (mPendingCount == 0);
     }
 
     // A == B && (A == null || C == D)
@@ -70,7 +72,7 @@ public class MeshDrawWriter {
         boolean instanceChange = !mInstanceBufferInfo.equals(instanceBufferInfo);
         if (vertexChange || instanceChange ||
                 !mIndexBufferInfo.equals(indexBufferInfo)) {
-            if (fPendingCount > 0) {
+            if (mPendingCount > 0) {
                 flush();
             }
 
@@ -80,7 +82,7 @@ public class MeshDrawWriter {
                     (isAppendingVertices && vertexChange) ||
                     (!isAppendingVertices && instanceChange)) {
                 // The buffer binding target for appended data is changing, so reset the base offset
-                fPendingBase = 0;
+                mPendingBase = 0;
             }
 
             mVertexBufferInfo.set(vertexBufferInfo);
@@ -89,16 +91,16 @@ public class MeshDrawWriter {
 
             mTemplateCount = templateCount;
 
-            fPendingBufferBinds = true;
+            mPendingBufferBinds = true;
         } else if ((templateCount >= 0 && templateCount != mTemplateCount) || // vtx or reg. instances
                 (templateCount < 0 && mTemplateCount >= 0)) {              // dynamic index instances
-            if (fPendingCount > 0) {
+            if (mPendingCount > 0) {
                 flush();
             }
             if ((templateCount == 0) != (mTemplateCount == 0)) {
                 // Switching from appending vertices to instances, or vice versa, so the pending
                 // base vertex for appended data is invalid
-                fPendingBase = 0;
+                mPendingBase = 0;
             }
             mTemplateCount = templateCount;
         }
@@ -109,15 +111,15 @@ public class MeshDrawWriter {
     public void flush() {
         // If nothing was appended, or the only appended data was through dynamic instances and the
         // final vertex count per instance is 0 (-1 in the sign encoded field), nothing should be drawn.
-        if (fPendingCount == 0 || mTemplateCount == -1) {
+        if (mPendingCount == 0 || mTemplateCount == -1) {
             return;
         }
-        if (fPendingBufferBinds) {
+        if (mPendingBufferBinds) {
             mCommandList.bindBuffers(mVertexBufferInfo,
                     mInstanceBufferInfo,
                     mIndexBufferInfo,
                     Engine.IndexType.kUShort);
-            fPendingBufferBinds = false;
+            mPendingBufferBinds = false;
         }
 
         if (mTemplateCount != 0) {
@@ -132,22 +134,22 @@ public class MeshDrawWriter {
 
             if (mIndexBufferInfo.isValid()) {
                 mCommandList.drawIndexedInstanced(realVertexCount, 0,
-                        fPendingCount, fPendingBase, 0);
+                        mPendingCount, mPendingBase, 0);
             } else {
-                mCommandList.drawInstanced(fPendingCount, fPendingBase,
+                mCommandList.drawInstanced(mPendingCount, mPendingBase,
                         realVertexCount, 0);
             }
         } else {
             assert !mInstanceBufferInfo.isValid();
             if (mIndexBufferInfo.isValid()) {
-                mCommandList.drawIndexed(fPendingCount, 0, fPendingBase);
+                mCommandList.drawIndexed(mPendingCount, 0, mPendingBase);
             } else {
-                mCommandList.draw(fPendingCount, fPendingBase);
+                mCommandList.draw(mPendingCount, mPendingBase);
             }
         }
 
-        fPendingBase += fPendingCount;
-        fPendingCount = 0;
+        mPendingBase += mPendingCount;
+        mPendingCount = 0;
     }
 
     private BufferViewInfo mCurrentTarget = null;
@@ -160,10 +162,10 @@ public class MeshDrawWriter {
 
     public void beginVertices() {
         assert mCurrentTarget == null;
-        assert fVertexStride > 0;
+        assert mVertexStride > 0;
         setTemplate(mVertexBufferInfo, null, null, 0);
         mCurrentTarget = mVertexBufferInfo;
-        mCurrentStride = fVertexStride;
+        mCurrentStride = mVertexStride;
     }
 
     /**
@@ -177,11 +179,11 @@ public class MeshDrawWriter {
                                int vertexCount) {
         assert vertexCount > 0;
         assert mCurrentTarget == null;
-        assert fInstanceStride > 0;
+        assert mInstanceStride > 0;
         setTemplate(vertexBufferInfo, indexBufferInfo,
                 mInstanceBufferInfo, vertexCount);
         mCurrentTarget = mInstanceBufferInfo;
-        mCurrentStride = fInstanceStride;
+        mCurrentStride = mInstanceStride;
     }
 
     public void reserve(int count) {
@@ -192,22 +194,20 @@ public class MeshDrawWriter {
         if (mReservedCount > 0) {
             // Have contiguous bytes that can't satisfy request, so return them in the event the
             // DBM has additional contiguous bytes after the prior reserved range.
-            mStreamBufferManager.putBackVertexBytes(mReservedCount * mCurrentStride);
+            mDynamicBufferManager.putBackVertexBytes(mReservedCount * mCurrentStride);
         }
 
         mReservedCount = count;
-        // NOTE: Cannot bind tuple directly to fNextWriter, compilers don't produce the right
-        // move assignment.
-        var writer = mStreamBufferManager.getVertexWriter(count * mCurrentStride,
+        var writer = mDynamicBufferManager.getVertexWriter(count * mCurrentStride,
                 mTempAllocInfo);
         if (mTempAllocInfo.mBuffer != mCurrentTarget.mBuffer ||
                 mTempAllocInfo.mOffset !=
-                        (mCurrentTarget.mOffset + (long) (fPendingBase + fPendingCount) * mCurrentStride)) {
+                        (mCurrentTarget.mOffset + (long) (mPendingBase + mPendingCount) * mCurrentStride)) {
             // Not contiguous, so flush and update binding to 'reservedChunk'
             flush();
             mCurrentTarget.set(mTempAllocInfo);
-            fPendingBase = 0;
-            fPendingBufferBinds = true;
+            mPendingBase = 0;
+            mPendingBufferBinds = true;
         }
         mCurrentWriter = writer;
     }
@@ -223,14 +223,14 @@ public class MeshDrawWriter {
 
         assert (mReservedCount >= count);
         mReservedCount -= count;
-        fPendingCount += count;
+        mPendingCount += count;
         return mCurrentWriter;
     }
 
     public void endAppender() {
         assert mCurrentTarget != null;
         if (mReservedCount > 0) {
-            mStreamBufferManager.putBackVertexBytes(mReservedCount * mCurrentStride);
+            mDynamicBufferManager.putBackVertexBytes(mReservedCount * mCurrentStride);
         }
         mCurrentTarget = null;
         mCurrentWriter = null;

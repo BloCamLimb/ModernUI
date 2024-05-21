@@ -32,8 +32,9 @@ public final class BufferViewInfo {
 
     @RawPtr
     public Buffer mBuffer;
-    // offset is valid if and only if buffer is non-null
+    // offset and size are valid only if buffer is non-null
     public long mOffset;
+    public long mSize;
 
     public boolean isValid() {
         return mBuffer != null;
@@ -43,6 +44,7 @@ public final class BufferViewInfo {
         if (o != null) {
             mBuffer = o.mBuffer;
             mOffset = o.mOffset;
+            mSize = o.mSize;
         } else {
             mBuffer = null;
         }
@@ -51,6 +53,6 @@ public final class BufferViewInfo {
     public boolean equals(@Nullable BufferViewInfo o) {
         return o == null
                 ? mBuffer == null
-                : mBuffer == o.mBuffer && (mBuffer == null || mOffset == o.mOffset);
+                : mBuffer == o.mBuffer && (mBuffer == null || (mOffset == o.mOffset && mSize == o.mSize));
     }
 }

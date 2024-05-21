@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.engine.shading;
 
-import icyllis.arc3d.engine.GeometryProcessor;
+import icyllis.arc3d.engine.GeometryStep;
 import icyllis.arc3d.engine.ShaderVar;
 
 /**
@@ -33,7 +33,7 @@ public interface VertexGeomBuilder extends ShaderBuilder {
      *
      * @param geomProc the geometry processor
      */
-    void emitAttributes(GeometryProcessor geomProc);
+    void emitAttributes(GeometryStep geomProc);
 
     /**
      * Emits world position and transforms it into the clip space.

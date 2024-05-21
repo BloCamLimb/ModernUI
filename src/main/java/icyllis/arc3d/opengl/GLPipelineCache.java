@@ -54,7 +54,7 @@ public class GLPipelineCache extends PipelineCache {
     @Nullable
     public GLGraphicsPipeline findOrCreateGraphicsPipeline(
             final PipelineKey desc,
-            final GraphicsPipelineDesc graphicsPipelineDesc) {
+            final GraphicsPipelineDesc_Old graphicsPipelineDesc) {
         if (desc.isEmpty()) {
             final Caps caps = mDevice.getCaps();
             caps.makeDesc(desc, /*renderTarget*/null, graphicsPipelineDesc);
@@ -66,7 +66,7 @@ public class GLPipelineCache extends PipelineCache {
     @Nonnull
     private GLGraphicsPipeline findOrCreateGraphicsPipelineImpl(
             PipelineKey desc,
-            final GraphicsPipelineDesc graphicsPipelineDesc) {
+            final GraphicsPipelineDesc_Old graphicsPipelineDesc) {
         GLGraphicsPipeline existing = mCache.get(desc);
         if (existing != null) {
             return existing;

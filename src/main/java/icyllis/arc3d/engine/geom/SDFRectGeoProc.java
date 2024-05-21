@@ -53,33 +53,33 @@ import javax.annotation.Nonnull;
  * }
  * }</pre>
  */
-public class SDFRectGeoProc extends GeometryProcessor {
+public class SDFRectGeoProc extends GeometryStep {
 
     /**
      * Per-vertex attributes.
      */
     // {(-1,-1), (-1, 1), (1, -1), (1, 1)}
-    public static final Attribute
-            POSITION = new Attribute("Position", VertexAttribType.kFloat2, SLDataType.kFloat2);
+    public static final VertexInputLayout.Attribute
+            POSITION = new VertexInputLayout.Attribute("Position", VertexAttribType.kFloat2, SLDataType.kFloat2);
     /**
      * Per-instance attributes.
      */
     // per-multiplied color
-    public static final Attribute
-            COLOR = new Attribute("Color", VertexAttribType.kUByte4_norm, SLDataType.kFloat4);
+    public static final VertexInputLayout.Attribute
+            COLOR = new VertexInputLayout.Attribute("Color", VertexAttribType.kUByte4_norm, SLDataType.kFloat4);
     // scale x, translate x, scale y, translate y
-    public static final Attribute
-            BOX = new Attribute("Box", VertexAttribType.kFloat4, SLDataType.kFloat4);
+    public static final VertexInputLayout.Attribute
+            BOX = new VertexInputLayout.Attribute("Box", VertexAttribType.kFloat4, SLDataType.kFloat4);
     // stroke radius, stroke position (if stroke, or 0, 0)
-    public static final Attribute
-            STROKE = new Attribute("Stroke", VertexAttribType.kFloat2, SLDataType.kFloat2);
-    public static final Attribute
-            VIEW_MATRIX = new Attribute("ViewMatrix", VertexAttribType.kFloat3, SLDataType.kFloat3x3);
+    public static final VertexInputLayout.Attribute
+            STROKE = new VertexInputLayout.Attribute("Stroke", VertexAttribType.kFloat2, SLDataType.kFloat2);
+    public static final VertexInputLayout.Attribute
+            VIEW_MATRIX = new VertexInputLayout.Attribute("ViewMatrix", VertexAttribType.kFloat3, SLDataType.kFloat3x3);
 
-    public static final AttributeSet VERTEX_ATTRIBS = AttributeSet.makeImplicit(
-            POSITION);
-    public static final AttributeSet INSTANCE_ATTRIBS = AttributeSet.makeImplicit(
-            COLOR, BOX, STROKE, VIEW_MATRIX);
+    public static final VertexInputLayout.AttributeSet VERTEX_ATTRIBS = VertexInputLayout.AttributeSet.makeImplicit(
+            0, POSITION);
+    public static final VertexInputLayout.AttributeSet INSTANCE_ATTRIBS = VertexInputLayout.AttributeSet.makeImplicit(
+            1, COLOR, BOX, STROKE, VIEW_MATRIX);
 
     public static final int FLAG_ANTIALIASING = 0x1;
     public static final int FLAG_STROKE = 0x2;
@@ -117,12 +117,12 @@ public class SDFRectGeoProc extends GeometryProcessor {
     }
 
     @Override
-    protected AttributeSet allVertexAttributes() {
+    protected VertexInputLayout.AttributeSet allVertexAttributes() {
         return VERTEX_ATTRIBS;
     }
 
     @Override
-    protected AttributeSet allInstanceAttributes() {
+    protected VertexInputLayout.AttributeSet allInstanceAttributes() {
         return INSTANCE_ATTRIBS;
     }
 
@@ -130,7 +130,7 @@ public class SDFRectGeoProc extends GeometryProcessor {
 
         @Override
         public void setData(UniformDataManager manager,
-                            GeometryProcessor geomProc) {
+                            GeometryStep geomProc) {
         }
 
         @Override
@@ -139,7 +139,7 @@ public class SDFRectGeoProc extends GeometryProcessor {
                                   VaryingHandler varyingHandler,
                                   UniformHandler uniformHandler,
                                   ShaderCaps shaderCaps,
-                                  GeometryProcessor geomProc,
+                                  GeometryStep geomProc,
                                   String outputColor,
                                   String outputCoverage,
                                   int[] texSamplers,

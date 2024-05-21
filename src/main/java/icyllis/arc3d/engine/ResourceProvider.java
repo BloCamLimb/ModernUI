@@ -196,9 +196,9 @@ public abstract class ResourceProvider {
 
     @Nullable
     @SharedPtr
-    public final Image createImage(ImageDesc desc,
-                                   boolean budgeted,
-                                   @Nullable String label) {
+    public final Image findOrCreateImage(ImageDesc desc,
+                                         boolean budgeted,
+                                         @Nullable String label) {
         final Image image = findAndRefScratchImage(desc, label);
         if (image != null) {
             if (!budgeted) {
@@ -782,7 +782,7 @@ public abstract class ResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public final Buffer createBuffer(int size, int usage) {
+    public final Buffer createBuffer(long size, int usage) {
         if (mDevice.getContext().isDiscarded()) {
             return null;
         }

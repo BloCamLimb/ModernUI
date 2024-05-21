@@ -29,10 +29,10 @@ import org.lwjgl.system.MemoryUtil;
  */
 public final class CpuBuffer extends RefCnt {
 
-    private final int mSize;
+    private final long mSize;
     private final long mData;
 
-    public CpuBuffer(int size) {
+    public CpuBuffer(long size) {
         assert (size > 0);
         mSize = size;
         mData = MemoryUtil.nmemAllocChecked(size);
@@ -41,7 +41,7 @@ public final class CpuBuffer extends RefCnt {
     /**
      * Size of the buffer in bytes.
      */
-    public int size() {
+    public long size() {
         return mSize;
     }
 

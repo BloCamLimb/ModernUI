@@ -44,7 +44,7 @@ public final class GLBuffer extends Buffer {
     private CpuBuffer mStagingBuffer;
 
     private GLBuffer(GLDevice device,
-                     int size,
+                     long size,
                      int usage,
                      int buffer) {
         super(device, size, usage);
@@ -56,7 +56,7 @@ public final class GLBuffer extends Buffer {
     @Nullable
     @SharedPtr
     public static GLBuffer make(GLDevice device,
-                                int size,
+                                long size,
                                 int usage) {
         assert (size > 0);
 
@@ -193,11 +193,13 @@ public final class GLBuffer extends Buffer {
         int allocUsage;
         if ((usage & BufferUsageFlags.kTransferDst) != 0) {
             allocUsage = GL_DYNAMIC_READ;
-        } else if ((usage & BufferUsageFlags.kStreaming) != 0) {
-            allocUsage = GL_STREAM_DRAW;
-        } else if ((usage & BufferUsageFlags.kDynamic) != 0) {
-            allocUsage = GL_DYNAMIC_DRAW;
-        } else if ((usage & BufferUsageFlags.kStatic) != 0) {
+        } else if ((usage & BufferUsageFlags.kHostVisible) != 0) {
+            if ((usage & BufferUsageFlags.kUniform) != 0) {
+                allocUsage = GL_DYNAMIC_DRAW;
+            } else {
+                allocUsage = GL_STREAM_DRAW;
+            }
+        } else if ((usage & BufferUsageFlags.kDeviceLocal) != 0) {
             allocUsage = GL_STATIC_DRAW;
         } else {
             allocUsage = GL_DYNAMIC_DRAW;
@@ -205,6 +207,7 @@ public final class GLBuffer extends Buffer {
         return allocUsage;
     }
 
+    //TODO figure this out and make use of OpenGL 4.4 buffer storage
     public static int getBufferStorageFlags(int usage) {
         int allocFlags = 0;
         if ((usage & BufferUsageFlags.kTransferSrc) != 0) {
@@ -213,7 +216,7 @@ public final class GLBuffer extends Buffer {
         if ((usage & BufferUsageFlags.kTransferDst) != 0) {
             allocFlags |= GL_MAP_READ_BIT;
         }
-        if ((usage & BufferUsageFlags.kStreaming) != 0) {
+        /*if ((usage & BufferUsageFlags.kStreaming) != 0) {
             // no staging buffer, use pinned memory
             allocFlags |= GL_MAP_WRITE_BIT |
                     GL_MAP_PERSISTENT_BIT |
@@ -221,7 +224,7 @@ public final class GLBuffer extends Buffer {
         } else if ((usage & (BufferUsageFlags.kVertex |
                 BufferUsageFlags.kIndex)) != 0) {
             allocFlags |= GL_DYNAMIC_STORAGE_BIT;
-        }
+        }*/
         return allocFlags;
     }
 
@@ -264,7 +267,7 @@ public final class GLBuffer extends Buffer {
     }
 
     @Override
-    protected long onLock(int mode, int offset, int size) {
+    protected long onLock(int mode, long offset, long size) {
         var device = getDevice();
         assert (device.getContext().isOwnerThread());
         assert (!mLocked);
@@ -294,7 +297,7 @@ public final class GLBuffer extends Buffer {
     }
 
     @Override
-    protected void onUnlock(int mode, int offset, int size) {
+    protected void onUnlock(int mode, long offset, long size) {
         var device = getDevice();
         assert (device.getContext().isOwnerThread());
         assert (mLocked);
@@ -313,7 +316,7 @@ public final class GLBuffer extends Buffer {
             mMappedBuffer = NULL;
         } else {
             assert (mode == kWriteDiscard_LockMode);
-            if ((mUsage & BufferUsageFlags.kStatic) == 0) {
+            if ((mUsage & BufferUsageFlags.kDeviceLocal) == 0) {
                 // non-static needs triple buffering, though most GPU drivers did it internally
                 doInvalidateBuffer(target, offset, size);
             }
@@ -344,7 +347,7 @@ public final class GLBuffer extends Buffer {
         int target = getDevice().getCaps().hasDSASupport()
                 ? 0
                 : getDevice().bindBuffer(this);
-        if ((mUsage & BufferUsageFlags.kStatic) == 0) {
+        if ((mUsage & BufferUsageFlags.kDeviceLocal) == 0) {
             // non-static needs triple buffering, though most GPU drivers did it internally
             if (!doInvalidateBuffer(target, offset, size)) {
                 return false;
@@ -355,13 +358,13 @@ public final class GLBuffer extends Buffer {
     }
 
     // restricted to 256KB per update
-    private static final int MAX_BYTES_PER_UPDATE = 1 << 18;
+    private static final long MAX_BYTES_PER_UPDATE = 1 << 18;
 
-    private void doUploadData(int target, long data, int offset, int totalSize) {
+    private void doUploadData(int target, long data, long offset, long totalSize) {
         var gl = getDevice().getGL();
         if (target == 0) {
             while (totalSize > 0) {
-                int size = Math.min(MAX_BYTES_PER_UPDATE, totalSize);
+                long size = Math.min(MAX_BYTES_PER_UPDATE, totalSize);
                 gl.glNamedBufferSubData(mBuffer, offset, size, data);
                 data += size;
                 offset += size;
@@ -369,7 +372,7 @@ public final class GLBuffer extends Buffer {
             }
         } else {
             while (totalSize > 0) {
-                int size = Math.min(MAX_BYTES_PER_UPDATE, totalSize);
+                long size = Math.min(MAX_BYTES_PER_UPDATE, totalSize);
                 gl.glBufferSubData(target, offset, size, data);
                 data += size;
                 offset += size;
@@ -378,7 +381,7 @@ public final class GLBuffer extends Buffer {
         }
     }
 
-    private boolean doInvalidateBuffer(int target, int offset, int size) {
+    private boolean doInvalidateBuffer(int target, long offset, long size) {
         // to be honest, invalidation doesn't help performance in most cases
         // because GPU drivers did optimizations
         var device = getDevice();

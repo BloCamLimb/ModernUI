@@ -58,4 +58,8 @@ public abstract class VulkanCaps extends Caps {
             }
         }
     }
+
+    public boolean hasUnifiedMemory() {
+        return false;
+    }
 }

@@ -323,7 +323,7 @@ public final class GLCommandBuffer extends CommandBuffer {
         mDevice.bindTextureSampler(bindingUnit, texture, samplerState, readSwizzle);
     }
 
-    @Override
+    /*@Override
     public boolean beginRenderPass(RenderPassDesc renderPassDesc,
                                    GpuRenderTarget renderTarget) {
         GLRenderTarget glRenderTarget = (GLRenderTarget) renderTarget;
@@ -334,7 +334,7 @@ public final class GLCommandBuffer extends CommandBuffer {
                 mStencilOps,
                 renderPassDesc.mClearColor);
         return true;
-    }
+    }*/
 
     @Override
     public void endRenderPass() {

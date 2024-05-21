@@ -22,15 +22,21 @@ package icyllis.arc3d.engine.graphene;
 import icyllis.arc3d.core.RawPtr;
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.*;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.function.ToIntFunction;
 
 /**
- * A draw pass is subpass of a render pass.
+ * A draw pass represents a render pass, with limited and sorted draw commands.
  * <p>
  * Created immutable.
  */
 public class DrawPass {
+
+    private ArrayList<GraphicsPipelineDesc> mPipelineDescriptors;
 
     @SharedPtr
     private ArrayList<GraphicsPipeline> mGraphicsPipelines = new ArrayList<>();
@@ -44,12 +50,76 @@ public class DrawPass {
                                 ImageProxy colorTarget,
                                 byte loadStoreOps,
                                 float[] clearColor) {
+
+        var dynamicBufferManager = rContext.getDynamicBufferManager();
+
+
         var commandList = new DrawCommandList();
 
 
+        var pipelineToIndexMap
+                = new Object2IntOpenHashMap<GraphicsPipelineDesc>();
+        var pipelineDescs = new ArrayList<GraphicsPipelineDesc>();
+        ToIntFunction<GraphicsPipelineDesc> insertPipelineDesc = desc -> {
+            pipelineDescs.add(desc);
+            return pipelineDescs.size() - 1;
+        };
+
+        SortKey[] keys = new SortKey[drawOpList.numSteps()];
+        int sortKeyIndex = 0;
+
+        for (var op : drawOpList.mDrawOps) {
 
 
-        return null;
+            for (int stepIndex = 0; stepIndex < op.mRenderer.numSteps(); stepIndex++) {
+                var step = op.mRenderer.step(stepIndex);
+
+                int pipelineIndex = pipelineToIndexMap.computeIfAbsent(new GraphicsPipelineDesc(step),
+                        insertPipelineDesc);
+
+                keys[sortKeyIndex++] = new SortKey(
+                        op,
+                        stepIndex,
+                        pipelineIndex
+                );
+            }
+        }
+
+
+        assert sortKeyIndex == keys.length;
+        // TimSort - stable
+        Arrays.sort(keys);
+
+        MeshDrawWriter drawWriter = new MeshDrawWriter(dynamicBufferManager,
+                commandList);
+
+        int lastPipeline = -1;
+
+        for (var key : keys) {
+            var op = key.drawOpRef;
+            var step = key.step();
+
+            boolean pipelineChange = key.pipelineIndex() != lastPipeline;
+
+
+            if (pipelineChange) {
+                drawWriter.newPipelineState(
+                        step.vertexStride(),
+                        step.instanceStride()
+                );
+            } else {
+                //??
+            }
+
+
+            step.writeVertices(drawWriter, op, null);
+        }
+
+
+        DrawPass pass = new DrawPass();
+        pass.mPipelineDescriptors = pipelineDescs;
+
+        return pass;
     }
 
     @RawPtr
@@ -63,5 +133,46 @@ public class DrawPass {
 
     public ImageProxy[] getSampledImages() {
         return mSampledImages;
+    }
+
+    public static final class SortKey implements Comparable<SortKey> {
+
+        public static final long PAINTERS_ORDER_OFFSET = 48;
+        public static final long PAINTERS_ORDER_MASK = (1 << 16) - 1;
+
+        public static final long STENCIL_INDEX_OFFSET = 32;
+        public static final long STENCIL_INDEX_MASK = (1 << 16) - 1;
+
+        public static final long STEP_INDEX_OFFSET = 30;
+        public static final long STEP_INDEX_MASK = (1 << 2) - 1;
+
+        public static final long PIPELINE_INDEX_OFFSET = 0;
+        public static final long PIPELINE_INDEX_MASK = (1 << 30) - 1;
+
+        private long highOrderFlags;
+        private long lowOrderFlags;
+        private DrawOp drawOpRef;
+
+        public SortKey(DrawOp drawOp,
+                       int stepIndex,
+                       int pipelineIndex) {
+
+            highOrderFlags = ((long) stepIndex << STEP_INDEX_OFFSET) | ((long) pipelineIndex << PIPELINE_INDEX_OFFSET);
+        }
+
+        public GeometryStep step() {
+            return drawOpRef.mRenderer.step(
+                    (int) ((highOrderFlags >>> STEP_INDEX_OFFSET) & STEP_INDEX_MASK));
+        }
+
+        public int pipelineIndex() {
+            return (int) ((highOrderFlags >>> PIPELINE_INDEX_OFFSET) & PIPELINE_INDEX_MASK);
+        }
+
+        @Override
+        public int compareTo(@Nonnull SortKey o) {
+            int res = Long.compareUnsigned(highOrderFlags, o.highOrderFlags);
+            return res != 0 ? res : Long.compareUnsigned(lowOrderFlags, o.lowOrderFlags);
+        }
     }
 }

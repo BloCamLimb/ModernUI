@@ -34,7 +34,7 @@ import static org.lwjgl.opengl.GL11C.*;
 import static org.lwjgl.opengl.GL20C.*;
 import static org.lwjgl.opengl.GL30C.GL_MAX_RENDERBUFFER_SIZE;
 import static org.lwjgl.opengl.GL41C.*;
-import static org.lwjgl.opengl.GL43C.GL_MAX_LABEL_LENGTH;
+import static org.lwjgl.opengl.GL43C.*;
 import static org.lwjgl.opengl.GL46C.GL_MAX_TEXTURE_MAX_ANISOTROPY;
 
 /**
@@ -98,6 +98,8 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
                         glGetInteger(GL_MAX_DRAW_BUFFERS),
                         glGetInteger(GL_MAX_COLOR_ATTACHMENTS)),
                 MAX_COLOR_TARGETS);
+        mMinUniformBufferOffsetAlignment = glGetInteger(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT);
+        mMinStorageBufferOffsetAlignment = glGetInteger(GL_SHADER_STORAGE_BUFFER_OFFSET_ALIGNMENT);
 
         String versionString = glGetString(GL_VERSION);
         String vendorString = glGetString(GL_VENDOR);

@@ -38,7 +38,7 @@ public class CpuBufferPool {
     }
 
     @SharedPtr
-    public CpuBuffer makeBuffer(int size) {
+    public CpuBuffer makeBuffer(long size) {
         assert (size > 0);
         CpuBuffer result = null;
         if (size <= GpuBufferPool.DEFAULT_BUFFER_SIZE) {

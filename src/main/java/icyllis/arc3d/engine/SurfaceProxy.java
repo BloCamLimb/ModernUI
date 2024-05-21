@@ -52,7 +52,7 @@ import javax.annotation.Nullable;
  * case where render thread will have ownership). This is because the backing GPU
  * texture can only be operated on render thread.
  * <p>
- * Use {@link SurfaceProvider} to obtain {@link SurfaceProxy} objects.
+ * Use {@link ImageProxyCache} to obtain {@link SurfaceProxy} objects.
  *
  * @see ImageProxy
  * @see ImageProxyView

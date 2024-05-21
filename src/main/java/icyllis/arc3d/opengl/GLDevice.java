@@ -958,12 +958,14 @@ public final class GLDevice extends Device {
         if (mCachedOpsRenderPass == null) {
             mCachedOpsRenderPass = new GLOpsRenderPass(this);
         }
-        return mCachedOpsRenderPass.set(writeView.getProxy().getGpuRenderTarget(),
+        //TODO
+        /*return mCachedOpsRenderPass.set(writeView.getProxy().getGpuRenderTarget(),
                 contentBounds,
                 writeView.getOrigin(),
                 colorOps,
                 stencilOps,
-                clearColor);
+                clearColor);*/
+        return null;
     }
 
     public GLCommandBuffer beginRenderPass(GLRenderTarget fs,
@@ -1032,7 +1034,7 @@ public final class GLDevice extends Device {
 
     @Nullable
     @Override
-    protected GLBuffer onCreateBuffer(int size, int flags) {
+    protected GLBuffer onCreateBuffer(long size, int flags) {
         handleDirtyContext(GLBackendState.kPipeline);
         return GLBuffer.make(this, size, flags);
     }

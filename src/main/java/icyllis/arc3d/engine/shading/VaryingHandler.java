@@ -110,10 +110,10 @@ public class VaryingHandler {
     }
 
     /**
-     * Convenience for {@link #addPassThroughAttribute(GeometryProcessor.Attribute, String, int)}
+     * Convenience for {@link #addPassThroughAttribute(VertexInputLayout.Attribute, String, int)}
      * that uses smooth or noperspective interpolation.
      */
-    public final void addPassThroughAttribute(GeometryProcessor.Attribute attr,
+    public final void addPassThroughAttribute(VertexInputLayout.Attribute attr,
                                               String output) {
         addPassThroughAttribute(attr, output, kSmooth_Interpolation);
     }
@@ -123,7 +123,7 @@ public class VaryingHandler {
      * fragment shader. Though this adds code to vertex and fragment stages, 'output' is expected to
      * be defined in the fragment shader before the call is made.
      */
-    public final void addPassThroughAttribute(GeometryProcessor.Attribute attr,
+    public final void addPassThroughAttribute(VertexInputLayout.Attribute attr,
                                               String output,
                                               int interpolation) {
         assert (attr.dstType() != SLDataType.kVoid);

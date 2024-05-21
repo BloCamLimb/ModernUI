@@ -41,14 +41,14 @@ public abstract class Buffer extends Resource {
      */
     public static final int kWriteDiscard_LockMode = 1;
 
-    protected final int mSize;
+    protected final long mSize;
     protected final int mUsage;
 
-    private int mLockOffset;
-    private int mLockSize;
+    private long mLockOffset;
+    private long mLockSize;
 
     protected Buffer(Device device,
-                     int size,
+                     long size,
                      int usage) {
         super(device);
         mSize = size;
@@ -58,7 +58,7 @@ public abstract class Buffer extends Resource {
     /**
      * @return allocation size of the buffer in bytes
      */
-    public final int getSize() {
+    public final long getSize() {
         return mSize;
     }
 
@@ -118,7 +118,7 @@ public abstract class Buffer extends Resource {
      *
      * @return a valid pointer to the locked data, or nullptr if lock failed
      */
-    public final long lock(int offset, int size) {
+    public final long lock(long offset, long size) {
         if (isDestroyed()) {
             return NULL;
         }
@@ -134,7 +134,7 @@ public abstract class Buffer extends Resource {
     /**
      * Unlocks the buffer if it is locked.
      * <p>
-     * The pointer returned by the previous {@link #lock(int, int)} will no longer be valid.
+     * The pointer returned by the previous {@link #lock(long, long)} will no longer be valid.
      */
     public final void unlock() {
         if (isDestroyed()) {
@@ -149,9 +149,9 @@ public abstract class Buffer extends Resource {
     /**
      * Unlocks the buffer if it is locked.
      * <p>
-     * The pointer returned by the previous {@link #lock(int, int)} will no longer be valid.
+     * The pointer returned by the previous {@link #lock(long, long)} will no longer be valid.
      */
-    public final void unlock(int offset, int size) {
+    public final void unlock(long offset, long size) {
         if (isDestroyed()) {
             return;
         }
@@ -164,12 +164,12 @@ public abstract class Buffer extends Resource {
         assert (!isLocked());
     }
 
-    protected abstract long onLock(int mode, int offset, int size);
+    protected abstract long onLock(int mode, long offset, long size);
 
-    protected abstract void onUnlock(int mode, int offset, int size);
+    protected abstract void onUnlock(int mode, long offset, long size);
 
     /**
-     * Queries whether the buffer has been locked by {@link #lock(int, int)},
+     * Queries whether the buffer has been locked by {@link #lock(long, long)},
      * this is mostly used for validation.
      *
      * @return true if the buffer is locked, false otherwise.
@@ -177,7 +177,7 @@ public abstract class Buffer extends Resource {
     public abstract boolean isLocked();
 
     /**
-     * Queries the pointer returned by the previous {@link #lock(int, int)} if
+     * Queries the pointer returned by the previous {@link #lock(long, long)} if
      * {@link #isLocked()} returns true, otherwise the pointer is invalid,
      * this is mostly used for validation.
      *

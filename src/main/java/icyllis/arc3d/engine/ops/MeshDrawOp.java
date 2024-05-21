@@ -28,13 +28,13 @@ import javax.annotation.Nonnull;
  */
 public abstract class MeshDrawOp extends DrawOp implements Mesh {
 
-    private GraphicsPipelineDesc mGraphicsPipelineDesc;
+    private GraphicsPipelineDesc_Old mGraphicsPipelineDesc;
     private GraphicsPipeline mPipelineState;
 
     public MeshDrawOp() {
     }
 
-    public GraphicsPipelineDesc getPipelineInfo() {
+    public GraphicsPipelineDesc_Old getPipelineInfo() {
         return mGraphicsPipelineDesc;
     }
 
@@ -75,8 +75,8 @@ public abstract class MeshDrawOp extends DrawOp implements Mesh {
     }
 
     @Nonnull
-    protected abstract GraphicsPipelineDesc onCreatePipelineInfo(ImageProxyView writeView,
-                                                                 int pipelineFlags);
+    protected abstract GraphicsPipelineDesc_Old onCreatePipelineInfo(ImageProxyView writeView,
+                                                                     int pipelineFlags);
 
     protected abstract void onPrepareDraws(MeshDrawTarget target);
 }

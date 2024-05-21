@@ -93,7 +93,7 @@ public final class GLOpsRenderPass extends OpsRenderPass {
     }
 
     @Override
-    protected boolean onBindPipeline(GraphicsPipelineDesc graphicsPipelineDesc,
+    protected boolean onBindPipeline(GraphicsPipelineDesc_Old graphicsPipelineDesc,
                                      GraphicsPipeline pipeline,
                                      Rect2fc drawBounds) {
         mActiveIndexBuffer = RefCnt.move(mActiveIndexBuffer);

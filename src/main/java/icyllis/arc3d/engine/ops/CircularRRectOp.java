@@ -37,8 +37,8 @@ public final class CircularRRectOp extends MeshDrawOp {
 
     @Nonnull
     @Override
-    protected GraphicsPipelineDesc onCreatePipelineInfo(ImageProxyView writeView,
-                                                        int pipelineFlags) {
+    protected GraphicsPipelineDesc_Old onCreatePipelineInfo(ImageProxyView writeView,
+                                                            int pipelineFlags) {
         return null;
     }
 
@@ -52,9 +52,9 @@ public final class CircularRRectOp extends MeshDrawOp {
 
     }
 
-    private static class Processor extends GeometryProcessor {
+    private static class Processor extends GeometryStep {
 
-        private static final Attribute POS = new Attribute("Pos", VertexAttribType.kFloat2, SLDataType.kFloat2);
+        private static final VertexInputLayout.Attribute POS = new VertexInputLayout.Attribute("Pos", VertexAttribType.kFloat2, SLDataType.kFloat2);
 
         public Processor() {
             super(CircularRRect_Geom_ClassID);
@@ -84,13 +84,13 @@ public final class CircularRRectOp extends MeshDrawOp {
 
         @Nullable
         @Override
-        protected AttributeSet allVertexAttributes() {
+        protected VertexInputLayout.AttributeSet allVertexAttributes() {
             return null;
         }
 
         @Nullable
         @Override
-        protected AttributeSet allInstanceAttributes() {
+        protected VertexInputLayout.AttributeSet allInstanceAttributes() {
             return null;
         }
 
@@ -101,7 +101,7 @@ public final class CircularRRectOp extends MeshDrawOp {
 
             @Override
             public void setData(UniformDataManager manager,
-                                GeometryProcessor geomProc) {
+                                GeometryStep geomProc) {
             }
 
             @Override
@@ -110,7 +110,7 @@ public final class CircularRRectOp extends MeshDrawOp {
                                       VaryingHandler varyingHandler,
                                       UniformHandler uniformHandler,
                                       ShaderCaps shaderCaps,
-                                      GeometryProcessor geomProc,
+                                      GeometryStep geomProc,
                                       String outputColor,
                                       String outputCoverage,
                                       int[] texSamplers,

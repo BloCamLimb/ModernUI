@@ -35,33 +35,33 @@ import java.nio.ByteBuffer;
  * The stroke direction is CENTER. This processor uses instance rendering and static
  * vertex data.
  */
-public class SDFRoundRectGeoProc extends GeometryProcessor {
+public class SDFRoundRectGeoProc extends GeometryStep {
 
     /**
      * Per-vertex attributes.
      */
     // {(-1,-1), (-1, 1), (1, -1), (1, 1)}
-    public static final Attribute
-            POSITION = new Attribute("Position", VertexAttribType.kFloat2, SLDataType.kFloat2);
+    public static final VertexInputLayout.Attribute
+            POSITION = new VertexInputLayout.Attribute("Position", VertexAttribType.kFloat2, SLDataType.kFloat2);
     /**
      * Per-instance attributes.
      */
     // per-multiplied color
-    public static final Attribute
-            COLOR = new Attribute("Color", VertexAttribType.kFloat4, SLDataType.kFloat4);
+    public static final VertexInputLayout.Attribute
+            COLOR = new VertexInputLayout.Attribute("Color", VertexAttribType.kFloat4, SLDataType.kFloat4);
     // scale x, translate x, scale y, translate y
-    public static final Attribute
-            LOCAL_RECT = new Attribute("LocalRect", VertexAttribType.kFloat4, SLDataType.kFloat4);
+    public static final VertexInputLayout.Attribute
+            LOCAL_RECT = new VertexInputLayout.Attribute("LocalRect", VertexAttribType.kFloat4, SLDataType.kFloat4);
     // radius, stroke radius (if stroke, or 0)
-    public static final Attribute
-            RADII = new Attribute("Radii", VertexAttribType.kFloat2, SLDataType.kFloat2);
-    public static final Attribute
-            MODEL_VIEW = new Attribute("ModelView", VertexAttribType.kFloat3, SLDataType.kFloat3x3);
+    public static final VertexInputLayout.Attribute
+            RADII = new VertexInputLayout.Attribute("Radii", VertexAttribType.kFloat2, SLDataType.kFloat2);
+    public static final VertexInputLayout.Attribute
+            MODEL_VIEW = new VertexInputLayout.Attribute("ModelView", VertexAttribType.kFloat3, SLDataType.kFloat3x3);
 
-    public static final AttributeSet VERTEX_ATTRIBS = AttributeSet.makeImplicit(
-            POSITION);
-    public static final AttributeSet INSTANCE_ATTRIBS = AttributeSet.makeImplicit(
-            COLOR, LOCAL_RECT, RADII, MODEL_VIEW);
+    public static final VertexInputLayout.AttributeSet VERTEX_ATTRIBS = VertexInputLayout.AttributeSet.makeImplicit(
+            0, POSITION);
+    public static final VertexInputLayout.AttributeSet INSTANCE_ATTRIBS = VertexInputLayout.AttributeSet.makeImplicit(
+            1, COLOR, LOCAL_RECT, RADII, MODEL_VIEW);
 
     private final boolean mStroke;
 
@@ -95,12 +95,12 @@ public class SDFRoundRectGeoProc extends GeometryProcessor {
     }
 
     @Override
-    protected AttributeSet allVertexAttributes() {
+    protected VertexInputLayout.AttributeSet allVertexAttributes() {
         return VERTEX_ATTRIBS;
     }
 
     @Override
-    protected AttributeSet allInstanceAttributes() {
+    protected VertexInputLayout.AttributeSet allInstanceAttributes() {
         return INSTANCE_ATTRIBS;
     }
 
@@ -119,7 +119,7 @@ public class SDFRoundRectGeoProc extends GeometryProcessor {
         instanceData.putFloat((localRect.mBottom - localRect.mTop) * 0.5f);
         instanceData.putFloat((localRect.mTop + localRect.mBottom) * 0.5f);
         // radii
-        instanceData.putFloat(localRect.mRadiusULX).putFloat(op.mStrokeRadius);
+        instanceData.putFloat(localRect.mRadiusUL).putFloat(op.mStrokeRadius);
         var mat = op.mTransform;
         instanceData
                 .putFloat(mat.m11).putFloat(mat.m12).putFloat(mat.m14)
@@ -132,7 +132,7 @@ public class SDFRoundRectGeoProc extends GeometryProcessor {
 
         @Override
         public void setData(UniformDataManager manager,
-                            GeometryProcessor geomProc) {
+                            GeometryStep geomProc) {
         }
 
         @Override
@@ -141,7 +141,7 @@ public class SDFRoundRectGeoProc extends GeometryProcessor {
                                   VaryingHandler varyingHandler,
                                   UniformHandler uniformHandler,
                                   ShaderCaps shaderCaps,
-                                  GeometryProcessor geomProc,
+                                  GeometryStep geomProc,
                                   String outputColor,
                                   String outputCoverage,
                                   int[] texSamplers,

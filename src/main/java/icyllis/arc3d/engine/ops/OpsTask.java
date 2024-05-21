@@ -60,7 +60,8 @@ public class OpsTask extends RenderTask {
                    @Nonnull ImageProxyView writeView) {
         super(drawingMgr);
         mWriteView = writeView;             // move
-        addTarget(writeView.refProxy());    // inc
+        //addTarget(writeView.refProxy());    // inc
+        //FIXME
     }
 
     public void setColorLoadOp(byte loadOp, float red, float green, float blue, float alpha) {
@@ -108,10 +109,10 @@ public class OpsTask extends RenderTask {
                 int pipelineFlags = mPipelineFlags;
                 if (chain.getClipState() != null) {
                     if (chain.getClipState().hasScissorClip()) {
-                        pipelineFlags |= GraphicsPipelineDesc.kHasScissorClip_Flag;
+                        pipelineFlags |= GraphicsPipelineDesc_Old.kHasScissorClip_Flag;
                     }
                     if (chain.getClipState().hasStencilClip()) {
-                        pipelineFlags |= GraphicsPipelineDesc.kHasStencilClip_Flag;
+                        pipelineFlags |= GraphicsPipelineDesc_Old.kHasStencilClip_Flag;
                     }
                 }
                 chain.mHead.onPrepare(flushState, mWriteView, pipelineFlags);
@@ -123,7 +124,7 @@ public class OpsTask extends RenderTask {
     public boolean execute(OpFlushState flushState) {
         assert (numTargets() == 1);
         SurfaceProxy target = getTarget();
-        assert (target != null && target == mWriteView.getProxy());
+        //assert (target != null && target == mWriteView.getProxy());
 
         OpsRenderPass opsRenderPass = flushState.beginOpsRenderPass(mWriteView,
                 mContentBounds,
@@ -189,7 +190,7 @@ public class OpsTask extends RenderTask {
         op.visitProxies(addDependency);
 
         if ((processorAnalysis & ProcessorAnalyzer.NON_COHERENT_BLENDING) != 0) {
-            mPipelineFlags |= GraphicsPipelineDesc.kRenderPassBlendBarrier_Flag;
+            mPipelineFlags |= GraphicsPipelineDesc_Old.kRenderPassBlendBarrier_Flag;
         }
 
         recordOp(op, clip != null && clip.hasClip() ? clip : null, processorAnalysis);

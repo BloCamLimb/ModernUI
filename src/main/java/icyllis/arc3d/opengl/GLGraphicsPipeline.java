@@ -50,7 +50,7 @@ public class GLGraphicsPipeline extends GraphicsPipeline {
     private GLUniformDataManager mDataManager;
 
     // the installed effects, unique ptr
-    private GeometryProcessor.ProgramImpl mGPImpl;
+    private GeometryStep.ProgramImpl mGPImpl;
 
     private int mNumTextureSamplers;
 
@@ -68,7 +68,7 @@ public class GLGraphicsPipeline extends GraphicsPipeline {
               List<UniformHandler.UniformInfo> uniforms,
               int uniformSize,
               List<UniformHandler.UniformInfo> samplers,
-              GeometryProcessor.ProgramImpl gpImpl) {
+              GeometryStep.ProgramImpl gpImpl) {
         mProgram = program;
         mVertexArray = vertexArray;
         mGPImpl = gpImpl;
@@ -120,7 +120,7 @@ public class GLGraphicsPipeline extends GraphicsPipeline {
     }
 
     public boolean bindUniforms(GLCommandBuffer commandBuffer,
-                                GraphicsPipelineDesc graphicsPipelineDesc,
+                                GraphicsPipelineDesc_Old graphicsPipelineDesc,
                                 int width, int height) {
         mDataManager.setProjection(0, width, height,
                 graphicsPipelineDesc.origin() == Engine.SurfaceOrigin.kLowerLeft);
@@ -134,11 +134,11 @@ public class GLGraphicsPipeline extends GraphicsPipeline {
      * Binds all geometry processor and fragment processor textures.
      */
     public boolean bindTextures(GLCommandBuffer commandBuffer,
-                                GraphicsPipelineDesc graphicsPipelineDesc,
+                                GraphicsPipelineDesc_Old graphicsPipelineDesc,
                                 ImageProxy[] geomTextures) {
         int unit = 0;
         for (int i = 0, n = graphicsPipelineDesc.geomProc().numTextureSamplers(); i < n; i++) {
-            GLTexture texture = (GLTexture) geomTextures[i].getGpuImage();
+            GLTexture texture = (GLTexture) geomTextures[i].getImage();
             commandBuffer.bindTextureSampler(unit++, texture,
                     graphicsPipelineDesc.geomProc().textureSamplerState(i),
                     graphicsPipelineDesc.geomProc().textureSamplerSwizzle(i));
