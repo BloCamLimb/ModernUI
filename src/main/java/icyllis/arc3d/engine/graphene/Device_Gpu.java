@@ -135,4 +135,8 @@ public final class Device_Gpu extends icyllis.arc3d.core.Device {
                 null,
                 0);
     }
+
+    public void drawClipShape(DrawOp draw, boolean inverseFill) {
+
+    }
 }

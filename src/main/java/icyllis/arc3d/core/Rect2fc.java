@@ -129,6 +129,21 @@ public sealed interface Rect2fc permits Rect2f {
 
     /**
      * Returns true if this rectangle intersects the specified rectangle.
+     * In no event is this rectangle modified. To record the intersection,
+     * use intersect().
+     *
+     * @param left   the left side of the rectangle being tested for intersection
+     * @param top    the top of the rectangle being tested for intersection
+     * @param right  the right side of the rectangle being tested for
+     *               intersection
+     * @param bottom the bottom of the rectangle being tested for intersection
+     * @return true if the specified rectangle intersects this rectangle. In
+     * no event is this rectangle modified.
+     */
+    boolean intersects(float left, float top, float right, float bottom);
+
+    /**
+     * Returns true if this rectangle intersects the specified rectangle.
      * In no event is this rectangle modified.
      *
      * @param r the rectangle being tested for intersection
