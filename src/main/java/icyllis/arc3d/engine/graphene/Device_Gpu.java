@@ -21,16 +21,23 @@ package icyllis.arc3d.engine.graphene;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
+import icyllis.arc3d.engine.geom.SDFRoundRectStep;
 
 /**
  * The device that is backed by GPU.
  */
 public final class Device_Gpu extends icyllis.arc3d.core.Device {
 
+    private SurfaceDrawContext mSDC;
     private ClipStack mClipStack;
+
+    private GeometryRenderer mSimpleRoundRectRenderer = new GeometryRenderer(
+            "SimpleRRectStep", new SDFRoundRectStep(false)
+    );
 
     private Device_Gpu(SurfaceDrawContext context, ImageInfo info, boolean clear) {
         super(info);
+        mSDC = context;
     }
 
     @SharedPtr
@@ -48,7 +55,8 @@ public final class Device_Gpu extends icyllis.arc3d.core.Device {
             return null;
         }
         int colorType = Engine.colorTypeToPublic(sdc.getColorType());
-        if (rContext.isSurfaceCompatible(colorType)) {
+        //TODO F
+        if (true/*rContext.isSurfaceCompatible(colorType)*/) {
             ImageInfo info = new ImageInfo(sdc.getWidth(), sdc.getHeight(), colorType, alphaType, null);
             return new Device_Gpu(sdc, info, clear);
         }
@@ -118,5 +126,13 @@ public final class Device_Gpu extends icyllis.arc3d.core.Device {
     @Override
     public void drawRect(Rect2f r, Paint paint) {
 
+    }
+
+    public void drawRoundRect(RoundRect r, Paint paint) {
+        mSDC.recordDraw(mSimpleRoundRectRenderer,
+                getLocalToDevice(),
+                r,
+                null,
+                0);
     }
 }

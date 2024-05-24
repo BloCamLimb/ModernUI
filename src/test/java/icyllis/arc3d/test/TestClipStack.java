@@ -20,48 +20,102 @@
 package icyllis.arc3d.test;
 
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.engine.ClipResult;
-import icyllis.arc3d.engine.ClipStack;
+import icyllis.arc3d.engine.*;
+import icyllis.arc3d.engine.graphene.*;
+import org.lwjgl.glfw.GLFW;
+import org.lwjgl.opengl.GL;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.Objects;
 
 public class TestClipStack {
 
+    public static final Logger LOGGER = LoggerFactory.getLogger("Arc3D");
+
+    // -Dorg.slf4j.simpleLogger.logFile=System.out -ea
     public static void main(String[] args) {
-        var clipStack = new ClipStack(
-                new Rect2i(0, 0, 800, 800),
+
+        GLFW.glfwInit();
+        Objects.requireNonNull(GL.getFunctionProvider());
+        GLFW.glfwDefaultWindowHints();
+        GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GLFW.GLFW_FALSE);
+        long window = GLFW.glfwCreateWindow(800, 600, "Test Window", 0, 0);
+        if (window == 0) {
+            throw new RuntimeException();
+        }
+        GLFW.glfwMakeContextCurrent(window);
+
+        ContextOptions contextOptions = new ContextOptions();
+        contextOptions.mLogger = LOGGER;
+        ImmediateContext immediateContext = ImmediateContext.makeOpenGL(
+                GL.createCapabilities(),
+                contextOptions
+        );
+        if (immediateContext == null) {
+            throw new RuntimeException();
+        }
+
+        Device_Gpu deviceGpu = Device_Gpu.make(
+                immediateContext,
+                ColorInfo.CT_RGBA_8888,
+                ColorInfo.AT_PREMUL,
+                ColorSpace.get(ColorSpace.Named.SRGB),
+                800, 600,
+                1,
+                ISurface.FLAG_SAMPLED_IMAGE | ISurface.FLAG_RENDERABLE | ISurface.FLAG_BUDGETED,
+                Engine.SurfaceOrigin.kLowerLeft,
                 false
         );
-        var viewMatrix = new Matrix();
+
+        var clipStack = new ClipStack(
+                deviceGpu,
+                false
+        );
+        var viewMatrix = Matrix4.identity();
 
         clipStack.clipRect(viewMatrix,
-                20, 20, 60, 60,
+                new Rect2f(0, 0, 60, 60),
                 ClipOp.CLIP_OP_INTERSECT);
 
         clipStack.save();
-        viewMatrix.preScale(0.5f, 0.5f);
+        //viewMatrix.preRotateZ(MathUtil.DEG_TO_RAD * 5);
         clipStack.clipRect(viewMatrix,
-                40, 20, 70, 60,
+                new Rect2f(20, 20, 70, 60),
                 ClipOp.CLIP_OP_INTERSECT);
-        System.out.println(stateToString(clipStack.currentClipState()));
-        clipStack.elements().forEach(System.out::println);
-        System.out.println();
+        LOGGER.info(stateToString(clipStack.currentClipState()));
+        clipStack.elements().forEach(e -> LOGGER.info(e.toString()));
 
-        var clipResult = new ClipResult();
-        clipResult.init(
-                800, 800, 800, 800
+        var elementsForMask = new ArrayList<ClipStack.Element>();
+        var draw = new DrawOp();
+        draw.mStrokeRadius = -1;
+        draw.mTransform = Matrix4.identity();
+        draw.mTransform.preTranslate(25, 25);
+        draw.mTransform.preScale(0.5f, 0.5f);
+        //draw.mTransform.preRotateZ(MathUtil.DEG_TO_RAD * 20);
+        draw.mTransform.preTranslate(-25, -25);
+        boolean clippedOut = clipStack.prepareForDraw(
+                draw,
+                new Rect2f(15, 20, 35, 40),
+                true,
+                elementsForMask
         );
-        int effect = clipStack.apply(null, false, clipResult,
-                new Rect2f(20, 20, 30, 40));
-        System.out.println(effect);
-        System.out.println(clipResult.hasScissorClip() ? "HasScissorClip" : "NoScissorClip");
-        System.out.println(clipResult.hasStencilClip() ? "HasStencilClip" : "NoStencilClip");
-        System.out.printf("ScissorRect %d %d %d %d\n",
-                clipResult.getScissorX0(), clipResult.getScissorY0(),
-                clipResult.getScissorX1(), clipResult.getScissorY1()); // only scissor test
-        System.out.println();
+        LOGGER.info("ClippedOut: " + clippedOut);
+        LOGGER.info("DrawBounds: " + draw.mDrawBounds);
+        LOGGER.info("TransformedShapeBounds: " + draw.mTransformedShapeBounds);
+        LOGGER.info("ScissorRect: "  + draw.mScissorRect);
+        LOGGER.info("ElementsForMask: " + elementsForMask);
 
         clipStack.restore();
-        System.out.println(stateToString(clipStack.currentClipState()));
-        clipStack.elements().forEach(System.out::println);
+        LOGGER.info(stateToString(clipStack.currentClipState()));
+        clipStack.elements().forEach(e -> LOGGER.info(e.toString()));
+
+        deviceGpu.unref();
+
+        immediateContext.unref();
+        GLFW.glfwDestroyWindow(window);
+        GLFW.glfwTerminate();
     }
 
     public static String stateToString(int state) {

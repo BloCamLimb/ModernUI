@@ -231,6 +231,14 @@ public non-sealed class Rect2f implements Rect2fc {
         dst.mBottom = mBottom;
     }
 
+    @Override
+    public void store(@Nonnull Rect2i dst) {
+        dst.mLeft = (int) mLeft;
+        dst.mTop = (int) mTop;
+        dst.mRight = (int) mRight;
+        dst.mBottom = (int) mBottom;
+    }
+
     /**
      * Set the rectangle's coordinates to the specified values. Note: no range
      * checking is performed, so it is up to the caller to ensure that

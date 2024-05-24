@@ -17,16 +17,16 @@
  * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine;
+package icyllis.arc3d.engine.graphene;
 
 import icyllis.arc3d.core.Rect2f;
 import icyllis.arc3d.core.Rect2ic;
 
 /**
- * Produced by {@link Clip}. It provides a set of modifications to the drawing state that
+ * Produced by {@link Clip_old}. It provides a set of modifications to the drawing state that
  * implements the clip.
  */
-public final class ClipResult implements Cloneable {
+public final class ClipResult_old implements Cloneable {
 
     private int mStencilSeq;
 
@@ -44,8 +44,8 @@ public final class ClipResult implements Cloneable {
      * There are two kinds of sizes. Sometimes we create a larger texture but only
      * use a subset of the area, thus it must be scissored.
      */
-    public ClipResult init(int logicalWidth, int logicalHeight,
-                           int physicalWidth, int physicalHeight) {
+    public ClipResult_old init(int logicalWidth, int logicalHeight,
+                               int physicalWidth, int physicalHeight) {
         assert (logicalWidth > 0 && logicalHeight > 0);
         assert (physicalWidth > 0 && physicalHeight > 0);
         assert (logicalWidth <= physicalWidth &&
@@ -163,7 +163,7 @@ public final class ClipResult implements Cloneable {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        ClipResult other = (ClipResult) o;
+        ClipResult_old other = (ClipResult_old) o;
         return mStencilSeq == other.mStencilSeq &&
                 mScissorX0 == other.mScissorX0 &&
                 mScissorY0 == other.mScissorY0 &&
@@ -174,9 +174,9 @@ public final class ClipResult implements Cloneable {
     }
 
     @Override
-    public ClipResult clone() {
+    public ClipResult_old clone() {
         try {
-            return (ClipResult) super.clone();
+            return (ClipResult_old) super.clone();
         } catch (CloneNotSupportedException e) {
             throw new InternalError(e);
         }

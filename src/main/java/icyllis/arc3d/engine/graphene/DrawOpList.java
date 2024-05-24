@@ -20,7 +20,6 @@
 package icyllis.arc3d.engine.graphene;
 
 import icyllis.arc3d.core.Matrix4;
-import icyllis.arc3d.engine.ClipResult;
 import icyllis.arc3d.engine.GeometryRenderer;
 
 import java.util.ArrayList;
@@ -44,7 +43,7 @@ public class DrawOpList {
     public void recordDrawOp(GeometryRenderer renderer,
                              Matrix4 modelView,
                              Object geometry,
-                             ClipResult clip,
+                             ClipResult_old clip,
                              long drawOrder) {
         modelView = getStableTransform(modelView);
 

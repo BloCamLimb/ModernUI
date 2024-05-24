@@ -20,4 +20,47 @@
 package icyllis.arc3d.engine.graphene;
 
 public class DrawOrder {
+
+    public static final int MIN_VALUE = 0;
+    public static final int MAX_VALUE = 0xFFFF;
+
+    public static final int PAINTERS_ORDER_SHIFT = 48;
+    public static final int STENCIL_INDEX_SHIFT = 32;
+    public static final int DEPTH_SHIFT = 16;
+    public static final int BIT_MASK = 0xFFFF;
+
+    public static long makeFromDepth(int depth) {
+        return (long) depth << DEPTH_SHIFT;
+    }
+
+    public static long makeFromDepthAndPaintersOrder(int depth, int paintersOrder) {
+        return ((long) paintersOrder << PAINTERS_ORDER_SHIFT) | ((long) depth << DEPTH_SHIFT);
+    }
+
+    public static int getPaintersOrder(long packedDrawOrder) {
+        return (int) (packedDrawOrder >>> PAINTERS_ORDER_SHIFT) & BIT_MASK;
+    }
+
+    public static int getStencilIndex(long packedDrawOrder) {
+        return (int) (packedDrawOrder >>> STENCIL_INDEX_SHIFT) & BIT_MASK;
+    }
+
+    public static int getDepth(long packedDrawOrder) {
+        return (int) (packedDrawOrder >>> DEPTH_SHIFT) & BIT_MASK;
+    }
+
+    public static float getDepthAsFloat(long packedDrawOrder) {
+        return (float) getDepth(packedDrawOrder) / MAX_VALUE;
+    }
+
+    public static long updateWithPaintersOrder(long packedDrawOrder, int prevPaintersOrder) {
+        int nextOrder = prevPaintersOrder + 1;
+        int order = Math.max(nextOrder, getPaintersOrder(packedDrawOrder));
+        return (packedDrawOrder & 0x0000FFFF_FFFF0000L) | ((long) order << PAINTERS_ORDER_SHIFT);
+    }
+
+    public static long updateWithStencilIndex(long packedDrawOrder, int disjointSet) {
+        assert getStencilIndex(packedDrawOrder) == MIN_VALUE;
+        return packedDrawOrder | ((long) disjointSet << STENCIL_INDEX_SHIFT);
+    }
 }

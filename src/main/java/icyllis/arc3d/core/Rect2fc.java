@@ -121,6 +121,13 @@ public sealed interface Rect2fc permits Rect2f {
     void store(@Nonnull Rect2f dst);
 
     /**
+     * Stores the coordinates from this into dst.
+     *
+     * @param dst the rectangle to store
+     */
+    void store(@Nonnull Rect2i dst);
+
+    /**
      * Returns true if this rectangle intersects the specified rectangle.
      * In no event is this rectangle modified.
      *
