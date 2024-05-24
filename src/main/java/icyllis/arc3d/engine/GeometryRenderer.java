@@ -36,6 +36,12 @@ public final class GeometryRenderer {
 
     private String mName;
 
+    public GeometryRenderer(String name, GeometryStep step) {
+        mName = name;
+        mStep0 = step;
+        mNumSteps = 1;
+    }
+
     public GeometryStep step(int i) {
         assert i >= 0 && i < mNumSteps;
         return switch (i) {

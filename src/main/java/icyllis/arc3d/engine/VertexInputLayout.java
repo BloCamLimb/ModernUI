@@ -30,6 +30,7 @@ import java.util.*;
 /**
  * Describes the vertex input state of a graphics pipeline.
  */
+@Immutable
 public final class VertexInputLayout {
 
     /**
@@ -369,12 +370,14 @@ public final class VertexInputLayout {
     }
 
     /**
-     * The constructor wraps the two given arrays, the caller should ensure the immutability.
+     * The constructor wraps the two given arrays (no copy), the caller should ensure the immutability.
      * <p>
      * Each AttributeSet contains all attributes for the corresponding binding point.
      * It may be shared across {@link VertexInputLayout} instances, then the <var>masks</var>
      * array is used to control which attributes of the corresponding AttributeSet
      * need to be used. A binding point can be empty but that is discouraged.
+     * <p>
+     * E.g. if you want the 0, 2, 3 attributes are enabled, then mask is 0b1101.
      */
     public VertexInputLayout(@Nonnull AttributeSet[] attributeSets,
                              @Nullable int[] masks) {
@@ -384,6 +387,7 @@ public final class VertexInputLayout {
         if (masks != null) {
             for (int i = 0; i < masks.length; i++) {
                 if (masks[i] != 0) {
+                    // mask is non-zero then AttributeSet is non-null
                     masks[i] |= attributeSets[i].mAllMask; // sanitize
                 }
             }
@@ -408,24 +412,26 @@ public final class VertexInputLayout {
         if (mMasks != null) {
             return Integer.bitCount(mMasks[binding]);
         }
-        var set = mAttributeSets[binding];
-        return set != null ? set.mAttributes.length : 0;
+        var attributes = mAttributeSets[binding];
+        return attributes != null ? attributes.mAttributes.length : 0;
     }
 
     /**
      * Returns the number of used per-vertex attribute locations (slots).
      * An attribute (variable) may take up multiple consecutive locations.
+     * The max number of locations matches the max number of attributes in {@link Caps}.
      *
      * @see SLDataType#locations(byte)
      * @see #getAttributeCount(int)
+     * @see Caps#MAX_VERTEX_ATTRIBUTES
      */
     public int getLocationCount(int binding) {
-        var set = mAttributeSets[binding];
+        var attributes = mAttributeSets[binding];
         if (mMasks != null) {
             int mask = mMasks[binding];
-            return mask != 0 ? set.numLocations(mask) : 0;
+            return mask != 0 ? attributes.numLocations(mask) : 0;
         }
-        return set != null ? set.numLocations(set.mAllMask) : 0;
+        return attributes != null ? attributes.numLocations(attributes.mAllMask) : 0;
     }
 
     /**
@@ -434,12 +440,12 @@ public final class VertexInputLayout {
      * structs. In this case, it is best to assert that: stride == sizeof(struct).
      */
     public int getStride(int binding) {
-        var set = mAttributeSets[binding];
+        var attributes = mAttributeSets[binding];
         if (mMasks != null) {
             int mask = mMasks[binding];
-            return mask != 0 ? set.stride(mask) : 0;
+            return mask != 0 ? attributes.stride(mask) : 0;
         }
-        return set != null ? set.stride(set.mAllMask) : 0;
+        return attributes != null ? attributes.stride(attributes.mAllMask) : 0;
     }
 
     /**
@@ -447,8 +453,8 @@ public final class VertexInputLayout {
      * 1 means per-instance data.
      */
     public int getInputRate(int binding) {
-        var set = mAttributeSets[binding];
-        return set != null ? set.mInputRate : 0;
+        var attributes = mAttributeSets[binding];
+        return attributes != null ? attributes.mInputRate : 0;
     }
 
     /**
@@ -461,11 +467,11 @@ public final class VertexInputLayout {
      */
     @Nonnull
     public Iterator<Attribute> getAttributes(int binding) {
-        var set = mAttributeSets[binding];
+        var attributes = mAttributeSets[binding];
         if (mMasks != null) {
             int mask = mMasks[binding];
-            return mask != 0 ? set.new Iter(mask) : Collections.emptyIterator();
+            return mask != 0 ? attributes.new Iter(mask) : Collections.emptyIterator();
         }
-        return set != null ? set.iterator() : Collections.emptyIterator();
+        return attributes != null ? attributes.iterator() : Collections.emptyIterator();
     }
 }

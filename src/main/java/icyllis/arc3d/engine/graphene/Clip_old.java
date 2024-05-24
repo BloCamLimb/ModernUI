@@ -17,24 +17,23 @@
  * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine;
+package icyllis.arc3d.engine.graphene;
 
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.engine.graphene.SurfaceDrawContext;
 
 /**
- * {@link Clip} is an abstract base class for producing a clip. It constructs a
- * clip mask if necessary, and fills out a {@link ClipResult} instructing the
+ * {@link Clip_old} is an abstract base class for producing a clip. It constructs a
+ * clip mask if necessary, and fills out a {@link ClipResult_old} instructing the
  * caller on how to set up the draw state.
  */
-public abstract class Clip {
+public abstract class Clip_old {
 
     public static final int CLIPPED = 0;
     public static final int NOT_CLIPPED = 1;
     public static final int CLIPPED_OUT = 2;
 
     public abstract int apply(SurfaceDrawContext sdc,
-                              boolean aa, ClipResult out,
+                              boolean aa, ClipResult_old out,
                               Rect2f bounds);
 
     /**

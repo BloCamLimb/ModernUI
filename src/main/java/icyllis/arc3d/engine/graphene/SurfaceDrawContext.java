@@ -114,9 +114,9 @@ public class SurfaceDrawContext extends SurfaceFillContext {
     }
 
     private final Rect2f mTmpBounds = new Rect2f();
-    private final ClipResult mTmpClipResult = new ClipResult();
+    private final ClipResult_old mTmpClipResult = new ClipResult_old();
 
-    public void fillRect(@Nullable Clip clip,
+    public void fillRect(@Nullable Clip_old clip,
                          int color,
                          Rect2f rect,
                          Matrixc viewMatrix,
@@ -127,11 +127,21 @@ public class SurfaceDrawContext extends SurfaceFillContext {
         addDrawOp(clip, op);
     }
 
+    public void recordDraw(GeometryRenderer renderer,
+                           Matrix4 transform,
+                           Object geometry,
+                           ClipResult_old clipResult,
+                           long drawOrder) {
+        mPendingDrawOps.recordDrawOp(
+                renderer, transform, geometry, clipResult, drawOrder
+        );
+    }
+
     /**
      * @param clip the clip function, or null
      * @param op   a newly-created Op instance
      */
-    public void addDrawOp(@Nullable Clip clip,
+    public void addDrawOp(@Nullable Clip_old clip,
                           DrawOp op) {
 
 
@@ -142,7 +152,7 @@ public class SurfaceDrawContext extends SurfaceFillContext {
         if (op.hasZeroArea()) {
             bounds.outset(1, 1);
         }
-        ClipResult clipResult;
+        ClipResult_old clipResult;
 
         boolean rejected;
         if (clip != null) {
@@ -153,7 +163,7 @@ public class SurfaceDrawContext extends SurfaceFillContext {
             );
             rejected = clip.apply(
                     this, op.hasAABloat(), clipResult, bounds
-            ) == Clip.CLIPPED_OUT;
+            ) == Clip_old.CLIPPED_OUT;
         } else {
             clipResult = null;
             // No clip function, so just clip the bounds against the logical render target dimensions

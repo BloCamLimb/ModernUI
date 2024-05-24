@@ -19,18 +19,46 @@
 
 package icyllis.arc3d.engine.graphene;
 
-import icyllis.arc3d.core.Matrix4;
-import icyllis.arc3d.engine.ClipResult;
+import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.GeometryRenderer;
 
-public class DrawOp {
+import javax.annotation.Nullable;
 
+/**
+ * Represents a recorded draw operation.
+ */
+public final class DrawOp {
+    // reference to our renderer instance
     public GeometryRenderer mRenderer;
+    // the copied view matrix
     public Matrix4 mTransform;
     public Object mGeometry;
-    public ClipResult mClip;
+    // clip params
+    public Rect2fc mDrawBounds;
+    public Rect2fc mTransformedShapeBounds;
+    public Rect2ic mScissorRect;
+    // the packed draw order
     public long mDrawOrder;
-    public boolean mIsStroke;
-    public float mStrokeRadius;
-    public float mJoinLimit;
+    public float mStrokeRadius; // >0: relative to transform; ==0: hairline, 1px in device space; <0: fill
+    public float mJoinLimit;    // >0: miter join; ==0: bevel join; <0: round join
+    public int mStrokeCap;
+    @Nullable
+    public PaintParams mPaintParams;
+
+    public float getInflationRadius() {
+        if (mStrokeRadius < 0) {
+            return 0;
+        } else if (mStrokeRadius == 0) {
+            return 1;
+        }
+
+        float multiplier = 1;
+        if (mJoinLimit > 0) {
+            multiplier = Math.max(multiplier, mJoinLimit);
+        }
+        if (mStrokeCap == Paint.CAP_SQUARE) {
+            multiplier = Math.max(multiplier, MathUtil.SQRT2);
+        }
+        return mStrokeRadius * multiplier;
+    }
 }

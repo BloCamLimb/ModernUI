@@ -22,35 +22,35 @@ package icyllis.arc3d.engine.graphene;
 import icyllis.arc3d.engine.GeometryStep;
 import icyllis.arc3d.engine.Key;
 
+import javax.annotation.Nullable;
 import java.util.Objects;
 
 public final class GraphicsPipelineDesc {
 
     private final GeometryStep mGeometryStep;
-    private final Key mFragmentChainKey;
+    private final Key mPaintParamsKey;
 
-    public GraphicsPipelineDesc(GeometryStep geo) {
-        mGeometryStep = geo;
-        mFragmentChainKey = null;
+    public GraphicsPipelineDesc(GeometryStep geometryStep) {
+        this(geometryStep, null);
     }
 
-    public GraphicsPipelineDesc(GeometryStep geo, Key fragmentChainKey) {
-        mGeometryStep = geo;
-        mFragmentChainKey = fragmentChainKey;
+    public GraphicsPipelineDesc(GeometryStep geometryStep, @Nullable Key paintParamsKey) {
+        mGeometryStep = geometryStep;
+        mPaintParamsKey = paintParamsKey;
     }
 
     public GeometryStep geomStep() {
         return mGeometryStep;
     }
 
-    public Key getFragmentChainKey() {
-        return mFragmentChainKey;
+    public Key getPaintParamsKey() {
+        return mPaintParamsKey;
     }
 
     @Override
     public int hashCode() {
         int result = mGeometryStep.classID();
-        result = 31 * result + (mFragmentChainKey != null ? mFragmentChainKey.hashCode() : 0);
+        result = 31 * result + (mPaintParamsKey != null ? mPaintParamsKey.hashCode() : 0);
         return result;
     }
 
@@ -59,7 +59,7 @@ public final class GraphicsPipelineDesc {
         if (this == o) return true;
         if (o instanceof GraphicsPipelineDesc desc) {
             return mGeometryStep.classID() == desc.mGeometryStep.classID() &&
-                    Objects.equals(mFragmentChainKey, desc.mFragmentChainKey);
+                    Objects.equals(mPaintParamsKey, desc.mPaintParamsKey);
         }
         return false;
     }

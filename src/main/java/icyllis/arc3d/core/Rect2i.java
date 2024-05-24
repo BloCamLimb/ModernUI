@@ -81,6 +81,17 @@ public non-sealed class Rect2i implements Rect2ic {
     }
 
     /**
+     * Create a new rectangle, initialized with the values in the specified
+     * rectangle (which is left unmodified).
+     *
+     * @param r the rectangle whose coordinates are copied into the new
+     *          rectangle
+     */
+    public Rect2i(@Nonnull Rect2fc r) {
+        r.store(this);
+    }
+
+    /**
      * Returns a read-only empty rect.
      *
      * @return an empty rect

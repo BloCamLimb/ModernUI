@@ -17,10 +17,10 @@
  * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine;
+package icyllis.arc3d.engine.graphene;
 
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.engine.graphene.SurfaceDrawContext;
+import icyllis.arc3d.engine.geom.BoundsManager;
 import org.jetbrains.annotations.UnmodifiableView;
 
 import javax.annotation.Nonnull;
@@ -30,11 +30,11 @@ import java.util.*;
 /**
  * GPU hierarchical clipping.
  * <p>
- * We use scissor test and stencil test to apply clip, antialiasing only works on
+ * We use scissor test and depth test to apply clip, antialiasing only works on
  * multisampled targets.
  */
 //TODO aa check? review
-public final class ClipStack extends Clip {
+public final class ClipStack {
 
     /**
      * Clip ops.
@@ -56,13 +56,17 @@ public final class ClipStack extends Clip {
     private final ArrayDeque<ClipElement> mElements = new ArrayDeque<>();
     private final Collection<Element> mElementsView = Collections.unmodifiableCollection(mElements);
 
+    private final Device_Gpu mDevice;
     private final Rect2i mDeviceBounds;
+    private final Rect2f mDeviceBoundsF;
     private final boolean mMSAA;
 
-    public ClipStack(Rect2ic deviceBounds, boolean msaa) {
-        mDeviceBounds = new Rect2i(deviceBounds);
+    public ClipStack(Device_Gpu device, boolean msaa) {
+        mDevice = device;
+        mDeviceBounds = new Rect2i(device.bounds());
+        mDeviceBoundsF = new Rect2f(device.bounds());
         mMSAA = msaa;
-        mSaves.add(new SaveRecord(deviceBounds));
+        mSaves.add(new SaveRecord(device.bounds()));
     }
 
     public int currentClipState() {
@@ -82,7 +86,7 @@ public final class ClipStack extends Clip {
 
         // When we remove a save record, we delete all elements >= its starting index and any masks
         // that were rasterized for it.
-        current.removeElements(mElements);
+        current.removeElements(mElements, mDevice);
         mSaves.pop();
         // Restore any remaining elements that were only invalidated by the now-removed save record.
         mSaves.element().restoreElements(mElements);
@@ -94,23 +98,16 @@ public final class ClipStack extends Clip {
     }
 
     private final ClipElement mTmpElement = new ClipElement();
-    private final Rect2f mTmpOuter = new Rect2f();
 
-    public void clipRect(@Nullable Matrixc viewMatrix,
+    public void clipRect(@Nullable Matrix4c viewMatrix,
                          @Nonnull Rect2fc localRect,
                          int clipOp) {
         clip(mTmpElement.init(
-                localRect.left(), localRect.top(), localRect.right(), localRect.bottom(),
-                viewMatrix, clipOp, false
-        ));
-    }
-
-    public void clipRect(@Nullable Matrixc viewMatrix,
-                         float left, float top, float right, float bottom,
-                         int clipOp) {
-        clip(mTmpElement.init(
-                left, top, right, bottom,
-                viewMatrix, clipOp, false
+                mDeviceBounds,
+                localRect,
+                false,
+                viewMatrix,
+                clipOp
         ));
     }
 
@@ -121,12 +118,6 @@ public final class ClipStack extends Clip {
         if (mSaves.element().mState == STATE_EMPTY) {
             return;
         }
-
-        // Reduce the path to anything simpler, will apply the transform if it's a scale+translate
-        // and ensures the element's bounds are clipped to the device (NOT the conservative clip bounds,
-        // since those are based on the net effect of all elements while device bounds clipping happens
-        // implicitly. During addElement, we may still be able to invalidate some older elements).
-        element.simplify(mDeviceBounds, mMSAA, mTmpOuter);
 
         // An empty op means do nothing (for difference), or close the save record, so we try and detect
         // that early before doing additional unnecessary save record allocation.
@@ -154,7 +145,7 @@ public final class ClipStack extends Clip {
         }
 
         int elementCount = mElements.size();
-        if (!current.addElement(element, mElements)) {
+        if (!current.addElement(element, mElements, mDevice)) {
             if (wasDeferred) {
                 // We made a new save record, but ended up not adding an element to the stack.
                 // So instead of keeping an empty save record around, pop it off and restore the counter
@@ -165,8 +156,7 @@ public final class ClipStack extends Clip {
         }
     }
 
-    @Override
-    public void getConservativeBounds(Rect2i out) {
+    public void getConservativeBounds(Rect2f out) {
         SaveRecord current = mSaves.element();
         if (current.mState == STATE_EMPTY) {
             out.setEmpty();
@@ -174,7 +164,7 @@ public final class ClipStack extends Clip {
             out.set(mDeviceBounds);
         } else {
             if (current.op() == OP_DIFFERENCE) {
-                subtract(mDeviceBounds, current.mInnerBounds, out, true);
+                subtract(mDeviceBoundsF, current.mInnerBounds, out, true);
             } else {
                 assert (mDeviceBounds.contains(current.outerBounds()));
                 out.set(current.mOuterBounds);
@@ -182,151 +172,250 @@ public final class ClipStack extends Clip {
         }
     }
 
-    private final Draw mTmpDraw = new Draw();
+    private final ClipDraw mTmpDraw = new ClipDraw();
     private final ArrayList<Element> mElementsForMask = new ArrayList<>();
 
-    @Override
-    public int apply(SurfaceDrawContext sdc, boolean aa, ClipResult out, Rect2f bounds) {
-
-        Draw draw = mTmpDraw.init(bounds, aa);
-        if (!draw.mBounds.intersect(mDeviceBounds)) {
-            return CLIPPED_OUT;
-        }
+    // Compute the bounds and the effective elements of the clip stack when applied to the draw
+    // described by the provided transform, shape, and stroke.
+    //
+    // Applying clips to a draw is a mostly lazy operation except for what is returned:
+    //  - The Clip's scissor is set to 'conservativeBounds()'.
+    //  - The Clip stores the draw's clipped bounds, taking into account its transform, styling, and
+    //    the above scissor.
+    //  - The Clip also stores the draw's fill-style invariant clipped bounds which is used in atlas
+    //    draws and may differ from the draw bounds.
+    //
+    // All clip elements that affect the draw will be returned in `outEffectiveElements` alongside
+    // the bounds. This method does not have any side-effects and the per-clip element state has to
+    // be explicitly updated by calling `updateClipStateForDraw()` which prepares the clip stack for
+    // later rendering.
+    //
+    // The returned clip element list will be empty if the shape is clipped out or if the draw is
+    // unaffected by any of the clip elements.
+    public boolean prepareForDraw(DrawOp draw,
+                                  Rect2f shapeBounds,
+                                  boolean hasAABloat,
+                                  List<Element> elementsForMask) {
 
         SaveRecord save = mSaves.element();
-        // Early out if we know a priori that the clip is full 0s or full 1s.
         if (save.mState == STATE_EMPTY) {
-            return CLIPPED_OUT;
-        } else if (save.mState == STATE_WIDE_OPEN) {
-            return NOT_CLIPPED;
+            // We know the draw is clipped out so don't bother computing the base draw bounds.
+            return true;
         }
 
-        // A refers to the entire clip stack, B refers to the draw
-        switch (getClipGeometry(save, draw)) {
-            case CLIP_GEOMETRY_EMPTY -> {
-                return CLIPPED_OUT;
-            }
-            case CLIP_GEOMETRY_A_ONLY -> {
-                // Shouldn't happen since draws don't report inner bounds
-                assert false;
-            }
-            case CLIP_GEOMETRY_B_ONLY -> {
-                return NOT_CLIPPED;
-            }
-            case CLIP_GEOMETRY_BOTH -> {
-                // The draw is combined with the saved clip elements; the below logic tries to skip
-                // as many elements as possible.
-                assert (save.mState == STATE_DEVICE_RECT ||
-                        save.mState == STATE_COMPLEX);
-            }
+        if (!shapeBounds.isFinite()) {
+            return true;
         }
 
-        // We can determine a scissor based on the draw and the overall stack bounds.
-        final Rect2i scissorBounds;
-        if (save.op() == OP_INTERSECT) {
-            // Initially we keep this as large as possible; if the clip is applied solely with coverage
-            // FPs then using a loose scissor increases the chance we can batch the draws.
-            // We tighten it later if any form of mask or atlas element is needed.
-            scissorBounds = new Rect2i(save.outerBounds());
+        boolean infiniteBounds = false;
+
+        // Some renderers make the drawn area larger than the geometry for anti-aliasing
+        float rendererOutset = hasAABloat
+                ? draw.mTransform.localAARadius(shapeBounds)
+                : 0;
+
+        Rect2f transformedShapeBounds = new Rect2f();
+        boolean shapeInDeviceSpace = false;
+
+        Rect2fc deviceBounds = mDeviceBoundsF;
+
+        if (!Float.isFinite(rendererOutset)) {
+            transformedShapeBounds.set(deviceBounds);
+            infiniteBounds = true;
         } else {
-            assert save.op() == OP_DIFFERENCE;
-            var diff = new Rect2i();
-            if (Rect2i.subtract(draw.outerBounds(), save.innerBounds(), diff)) {
-                scissorBounds = diff;
-            } else {
-                scissorBounds = new Rect2i(draw.outerBounds());
-            }
-        }
+            // Will be in device space once style/AA outsets and the localToDevice transform are
+            // applied.
+            transformedShapeBounds.set(shapeBounds);
 
-        // We mark this true once we have an element that wouldn't affect the scissored draw bounds,
-        // but does affect the regular draw bounds.
-        // In that case, the scissor is sufficient for clipping and we can skip the
-        // element but definitely cannot then drop the scissor.
-        boolean scissorIsNeeded = false;
+            // Not hairline
+            if (draw.mStrokeRadius != 0.0f || rendererOutset != 0.0f) {
+                float localStyleOutset = draw.getInflationRadius() + rendererOutset;
+                transformedShapeBounds.outset(localStyleOutset, localStyleOutset);
 
-        // Elements not skipped will be collected here and later applied by using the stencil buffer.
-        List<Element> elementsForMask = mElementsForMask;
-
-        int i = mElements.size();
-        for (ClipElement e : mElements) {
-            --i;
-            if (i < save.oldestElementIndex()) {
-                // All earlier elements have been invalidated by elements already processed
-                break;
-            } else if (e.isInvalid()) {
-                continue;
-            }
-
-            switch (getClipGeometry(e, draw)) {
-                case CLIP_GEOMETRY_EMPTY:
-                    // This can happen for difference op elements that have a larger fInnerBounds than
-                    // can be preserved at the next level.
-                    elementsForMask.clear();
-                    return CLIPPED_OUT;
-                case CLIP_GEOMETRY_B_ONLY:
-                    // We don't need to produce a mask for the element
-                    break;
-                case CLIP_GEOMETRY_A_ONLY:
-                    // Shouldn't happen for draws, fall through to regular element processing
-                    assert false;
-                case CLIP_GEOMETRY_BOTH: {
-                    // The element must apply coverage to the draw, enable the scissor to limit overdraw
-                    scissorIsNeeded = true;
-
-                    // First apply using HW methods (scissor and window rects). When the inner and outer
-                    // bounds match, nothing else needs to be done.
-                    boolean fullyApplied = false;
-
-                    if (e.op() == OP_INTERSECT) {
-                        // The second test allows clipped draws that are scissored by multiple
-                        // elements to remain scissor-only.
-                        fullyApplied = e.innerBounds() == e.outerBounds() ||
-                                e.innerBounds().contains(scissorBounds);
-                    }
-
-                    if (!fullyApplied) {
-                        elementsForMask.add(e);
-                    }
-
-                    break;
+                // Not fill
+                if (draw.mStrokeRadius > 0.0f || rendererOutset != 0.0f) {
+                    // While this loses any shape type, the bounds remain local so hopefully tests are
+                    // fairly accurate.
+                    shapeBounds.set(transformedShapeBounds);
                 }
             }
+
+            draw.mTransform.mapRect(transformedShapeBounds);
+
+            // Hairlines get an extra pixel *after* transforming to device space, unless the renderer
+            // has already defined an outset
+            if (draw.mStrokeRadius == 0.0 && rendererOutset == 0.0f) {
+                transformedShapeBounds.outset(0.5f, 0.5f);
+                // and the associated transform must be kIdentity since the bounds have been mapped by
+                // localToDevice already.
+                shapeBounds.set(transformedShapeBounds);
+                shapeInDeviceSpace = true;
+            }
+
+            // Restrict bounds to the device limits.
+            transformedShapeBounds.intersect(deviceBounds);
         }
 
-        if (!scissorIsNeeded) {
-            // More detailed analysis of the element shapes determined no clip is needed
+        Rect2f drawBounds = new Rect2f();  // defined in device space
+        if (infiniteBounds) {
+            drawBounds.set(deviceBounds);
+            shapeBounds.set(drawBounds);
+            shapeInDeviceSpace = true;
+        } else {
+            drawBounds.set(transformedShapeBounds);
+        }
+
+        if (drawBounds.isEmpty()) {
+            // clipped out
+            return true;
+        }
+        if (save.mState == STATE_WIDE_OPEN) {
+            draw.mDrawBounds = drawBounds;
+            draw.mTransformedShapeBounds = transformedShapeBounds;
+            draw.mScissorRect = mDeviceBounds;
+            return false;
+        }
+
+        // We don't evaluate Simplify() on the SaveRecord and the draw because a reduced version of
+        // Simplify is effectively performed in computing the scissor rect.
+        // Given that, we can skip iterating over the clip elements when:
+        //  - the draw's *scissored* bounds are empty, which happens when the draw was clipped out.
+        //  - the scissored bounds are contained in our inner bounds, which happens if all we need to
+        //    apply to the draw is the computed scissor rect.
+        // TODO: The Clip's scissor is defined in terms of integer pixel coords, but if we move to
+        // clip plane distances in the vertex shader, it can be defined in terms of the original float
+        // coordinates.
+        Rect2ic scissor = save.scissor(mDeviceBounds, drawBounds);
+        drawBounds.intersect(scissor);
+        if (drawBounds.isEmpty()) {
+            // clipped out
+            return true;
+        }
+        transformedShapeBounds.intersect(scissor);
+        if (!save.innerBounds().contains(drawBounds)) {
+
+            // If we made it here, the clip stack affects the draw in a complex way so iterate each element.
+            // A draw is a transformed shape that "intersects" the clip. We use empty inner bounds because
+            // there's currently no way to re-write the draw as the clip's geometry, so there's no need to
+            // check if the draw contains the clip (vice versa is still checked and represents an unclipped
+            // draw so is very useful to identify).
             assert elementsForMask.isEmpty();
-            return NOT_CLIPPED;
+
+            mTmpDraw.init(
+                    shapeInDeviceSpace ? Matrix4.identity() : draw.mTransform,
+                    shapeBounds,
+                    drawBounds
+            );
+
+            int i = mElements.size();
+            for (ClipElement e : mElements) {
+                --i;
+                if (i < save.oldestElementIndex()) {
+                    // All earlier elements have been invalidated by elements already processed
+                    break;
+                } else if (e.isInvalid()) {
+                    continue;
+                }
+
+                switch (getClipGeometry(e, mTmpDraw)) {
+                    case CLIP_GEOMETRY_EMPTY:
+                        // This can happen for difference op elements that have a larger fInnerBounds than
+                        // can be preserved at the next level.
+                        elementsForMask.clear();
+                        return true;
+                    case CLIP_GEOMETRY_B_ONLY:
+                        // We don't need to produce a mask for the element
+                        break;
+                    case CLIP_GEOMETRY_A_ONLY:
+                        // Shouldn't happen for draws, fall through to regular element processing
+                        assert false;
+                    case CLIP_GEOMETRY_BOTH: {
+                        // First apply using HW methods (scissor and window rects). When the inner and outer
+                        // bounds match, nothing else needs to be done.
+                        boolean fullyApplied = false;
+
+                        /*if (e.op() == OP_INTERSECT) {
+                            // The second test allows clipped draws that are scissored by multiple
+                            // elements to remain scissor-only.
+                            fullyApplied = e.innerBounds() == e.outerBounds() ||
+                                    e.innerBounds().contains(scissor);
+                        }*/
+
+                        if (!fullyApplied) {
+                            elementsForMask.add(e);
+                        }
+
+                        break;
+                    }
+                }
+            }
+
         }
 
-        if (save.op() == OP_INTERSECT && !elementsForMask.isEmpty()) {
-            boolean res = scissorBounds.intersect(draw.outerBounds());
-            assert res;
-        }
-
-        if (!scissorBounds.contains(draw.outerBounds())) {
-            out.addScissor(scissorBounds, bounds);
-        }
-
-        // render stencil mask
-        if (!elementsForMask.isEmpty()) {
-
-            //TODO do render stencil
-
-            elementsForMask.clear();
-        }
-
-        assert out.hasClip();
-        return CLIPPED;
+        draw.mDrawBounds = drawBounds;
+        draw.mTransformedShapeBounds = transformedShapeBounds;
+        draw.mScissorRect = scissor;
+        return false;
     }
 
-    public interface Geometry {
+    public int updateForDraw(DrawOp draw,
+                             List<Element> elementsForMask,
+                             BoundsManager boundsManager,
+                             int depth) {
+        //TODO
+        return 0;
+    }
+
+    public void recordDeferredClipDraws() {
+        for (var e : mElements) {
+            // When a Device requires all clip elements to be recorded, we have to iterate all elements,
+            // and will draw clip shapes for elements that are still marked as invalid from the clip
+            // stack, including those that are older than the current save record's oldest valid index,
+            // because they could have accumulated draw usage prior to being invalidated, but weren't
+            // flushed when they were invalidated because of an intervening save.
+            e.drawClip(mDevice);
+        }
+    }
+
+    public interface ClipGeometry {
 
         int op();
 
-        Rect2ic outerBounds();
+        Rect2fc shape();
 
-        boolean contains(Geometry other);
+        Matrix4c viewMatrix();
+
+        Rect2fc outerBounds();
+
+        boolean contains(ClipGeometry other);
+    }
+
+    public static boolean intersects(
+            ClipGeometry A,
+            ClipGeometry B) {
+        if (!Rect2f.intersects(
+                A.outerBounds(),
+                B.outerBounds())) {
+            return false;
+        }
+
+        if (A.viewMatrix().isAxisAligned() &&
+                B.viewMatrix().isAxisAligned()) {
+            // The two shape's coordinate spaces are different but both rect-stays-rect or simpler.
+            // This means, though, that their outer bounds approximations are tight to their transormed
+            // shape bounds. There's no point to do further tests given that and that we already found
+            // that these outer bounds *do* intersect.
+            return true;
+        } else if (A.viewMatrix().equals(B.viewMatrix())) {
+            // Since the two shape's local coordinate spaces are the same, we can compare shape
+            // bounds directly for a more accurate intersection test. We intentionally do not go
+            // further and do shape-specific intersection tests since these could have unknown
+            // complexity (for paths) and limited utility (e.g. two round rects that are disjoint
+            // solely from their corner curves).
+            return A.shape().intersects(B.shape());
+        }
+        //TODO handle oriented box if non-perspective
+        return true;
     }
 
     // This captures which of the two elements in (A op B) would be required when they are combined,
@@ -337,18 +426,19 @@ public final class ClipStack extends Clip {
             CLIP_GEOMETRY_B_ONLY = 2,
             CLIP_GEOMETRY_BOTH = 3;
 
+    // ClipElement <-> ClipElement
+    // ClipElement <-> ClipDraw
+    // SaveRecord <-> ClipElement
     public static int getClipGeometry(
-            Geometry A,
-            Geometry B) {
+            ClipGeometry A,
+            ClipGeometry B) {
 
         if (A.op() == OP_INTERSECT) {
 
             if (B.op() == OP_INTERSECT) {
 
                 // Intersect (A) + Intersect (B)
-                if (!Rect2i.intersects(
-                        A.outerBounds(),
-                        B.outerBounds())) {
+                if (!intersects(A, B)) {
                     // Regions with non-zero coverage are disjoint, so intersection = empty
                     return CLIP_GEOMETRY_EMPTY;
                 }
@@ -372,9 +462,7 @@ public final class ClipStack extends Clip {
             if (B.op() == OP_DIFFERENCE) {
 
                 // Intersect (A) + Difference (B)
-                if (!Rect2i.intersects(
-                        A.outerBounds(),
-                        B.outerBounds())) {
+                if (!intersects(A, B)) {
                     // A only intersects B's full coverage region, so intersection = A
                     return CLIP_GEOMETRY_A_ONLY;
                 }
@@ -398,9 +486,7 @@ public final class ClipStack extends Clip {
 
                 // Difference (A) + Intersect (B) - the mirror of Intersect(A) + Difference(B),
                 // but combining is commutative so this is equivalent barring naming.
-                if (!Rect2i.intersects(
-                        B.outerBounds(),
-                        A.outerBounds())) {
+                if (!intersects(A, B)) {
                     // B only intersects A's full coverage region, so intersection = B
                     return CLIP_GEOMETRY_B_ONLY;
                 }
@@ -444,32 +530,31 @@ public final class ClipStack extends Clip {
     // All data describing a geometric modification to the clip
     public static class Element {
 
-        final Rect2f mRect;
-        final Matrix mViewMatrix;
+        // owned memory
+        final Rect2f mShape;
+        final Matrix4 mViewMatrix;
         int mClipOp;
-        boolean mAA;
 
         Element() {
-            mRect = new Rect2f();
-            mViewMatrix = new Matrix();
+            mShape = new Rect2f();
+            mViewMatrix = new Matrix4();
         }
 
-        Element(Rect2fc rect, Matrixc viewMatrix, int clipOp, boolean aa) {
-            mRect = new Rect2f(rect);
-            mViewMatrix = new Matrix(viewMatrix);
+        Element(Rect2fc shape, Matrix4c viewMatrix, int clipOp) {
+            mShape = new Rect2f(shape);
+            mViewMatrix = new Matrix4(viewMatrix);
             mClipOp = clipOp;
-            mAA = aa;
         }
 
         // local rect
         // do not modify
         public Rect2fc shape() {
-            return mRect;
+            return mShape;
         }
 
         // local to device
         // do not modify
-        public Matrixc viewMatrix() {
+        public Matrix4c viewMatrix() {
             return mViewMatrix;
         }
 
@@ -477,31 +562,36 @@ public final class ClipStack extends Clip {
             return mClipOp;
         }
 
-        public boolean aa() {
-            return mAA;
-        }
-
         @Override
         public String toString() {
             return "Element{" +
-                    "mRect=" + mRect +
+                    "mShape=" + mShape +
                     ", mViewMatrix=" + mViewMatrix +
                     ", mClipOp=" + (mClipOp == OP_INTERSECT ? "Intersect" : "Difference") +
-                    ", mAA=" + mAA +
                     '}';
         }
     }
 
     // Implements the geometric Element data with logic for containment and bounds testing.
-    static class ClipElement extends Element implements Geometry {
+    static final class ClipElement extends Element implements ClipGeometry {
+
+        boolean mInverseFill;
 
         // cached inverse of fLocalToDevice for contains() optimization
-        final Matrix mInverseViewMatrix = new Matrix();
+        final Matrix4 mInverseViewMatrix = new Matrix4();
 
-        // Device space bounds, rounded in or out to pixel boundaries and accounting for any
-        // uncertainty around anti-aliasing and rasterization snapping.
-        final Rect2i mInnerBounds = new Rect2i();
-        final Rect2i mOuterBounds = new Rect2i();
+        // Device space bounds. These bounds are not snapped to pixels with the assumption that if
+        // a relation (intersects, contains, etc.) is true for the bounds it will be true for the
+        // rasterization of the coordinates that produced those bounds.
+        final Rect2f mInnerBounds = new Rect2f();
+        final Rect2f mOuterBounds = new Rect2f();
+
+        // State tracking how this clip element needs to be recorded into the draw context. As the
+        // clip stack is applied to additional draws, the clip's Z and usage bounds grow to account
+        // for it; its compressed painter's order is selected the first time a draw is affected.
+        final Rect2f mUsageBounds = new Rect2f();
+        int mPaintersOrder = DrawOrder.MIN_VALUE;
+        int mMaxDepth = DrawOrder.MIN_VALUE;
 
         // Elements are invalidated by SaveRecords as the record is updated with new elements that
         // override old geometry. An invalidated element stores the index of the first element of
@@ -512,58 +602,92 @@ public final class ClipStack extends Clip {
         public ClipElement() {
         }
 
-        public ClipElement(Rect2fc rect, Matrixc viewMatrix, int clipOp, boolean aa) {
-            super(rect, viewMatrix, clipOp, aa);
-            if (!viewMatrix.invert(mInverseViewMatrix)) {
-                // If the transform can't be inverted, it means that two dimensions are collapsed to 0 or
-                // 1 dimension, making the device-space geometry effectively empty.
-                mRect.setEmpty();
-            }
-        }
-
         public ClipElement(ClipElement e) {
-            super(e.shape(), e.viewMatrix(), e.clipOp(), e.aa());
+            super(e.shape(), e.viewMatrix(), e.clipOp());
+            mInverseFill = e.mInverseFill;
             mInverseViewMatrix.set(e.mInverseViewMatrix);
             mInnerBounds.set(e.mInnerBounds);
             mOuterBounds.set(e.mOuterBounds);
+            mUsageBounds.set(e.mUsageBounds);
+            mPaintersOrder = e.mPaintersOrder;
+            mMaxDepth = e.mMaxDepth;
             mInvalidatedByIndex = e.mInvalidatedByIndex;
-        }
-
-        public ClipElement init(float left, float top, float right, float bottom,
-                                Matrixc viewMatrix, int clipOp, boolean aa) {
-            mRect.set(left, top, right, bottom);
-            if (viewMatrix != null) {
-                mViewMatrix.set(viewMatrix);
-            } else {
-                mViewMatrix.setIdentity();
-            }
-            mClipOp = clipOp;
-            mAA = aa;
-            if (viewMatrix != null) {
-                if (!viewMatrix.invert(mInverseViewMatrix)) {
-                    // If the transform can't be inverted, it means that two dimensions are collapsed to 0 or
-                    // 1 dimension, making the device-space geometry effectively empty.
-                    mRect.setEmpty();
-                    mInverseViewMatrix.setIdentity();
-                }
-            } else {
-                mInverseViewMatrix.setIdentity();
-            }
-            mInnerBounds.setEmpty();
-            mOuterBounds.setEmpty();
-            mInvalidatedByIndex = -1;
-            return this;
         }
 
         public void set(ClipElement e) {
-            mRect.set(e.shape());
+            mShape.set(e.shape());
             mViewMatrix.set(e.viewMatrix());
             mClipOp = e.clipOp();
-            mAA = e.aa();
+            mInverseFill = e.mInverseFill;
             mInverseViewMatrix.set(e.mInverseViewMatrix);
             mInnerBounds.set(e.mInnerBounds);
             mOuterBounds.set(e.mOuterBounds);
+            mUsageBounds.set(e.mUsageBounds);
+            mPaintersOrder = e.mPaintersOrder;
+            mMaxDepth = e.mMaxDepth;
             mInvalidatedByIndex = e.mInvalidatedByIndex;
+        }
+
+        // init and simplify
+        public ClipElement init(Rect2ic deviceBounds,
+                                Rect2fc shape,
+                                boolean inverseFill,
+                                Matrix4c viewMatrix,
+                                int clipOp) {
+            mShape.set(shape);
+            mViewMatrix.set(viewMatrix);
+            mClipOp = clipOp;
+            mUsageBounds.setEmpty();
+            mPaintersOrder = DrawOrder.MIN_VALUE;
+            mMaxDepth = DrawOrder.MIN_VALUE;
+            mInvalidatedByIndex = -1;
+
+            if (!viewMatrix.invert(mInverseViewMatrix)) {
+                // If the transform can't be inverted, it means that two dimensions are collapsed to 0 or
+                // 1 dimension, making the device-space geometry effectively empty.
+                mShape.setEmpty();
+                mInverseViewMatrix.setIdentity();
+            }
+
+            // Make sure the shape is not inverted. An inverted shape is equivalent to a non-inverted shape
+            // with the clip op toggled.
+            if (inverseFill) {
+                mClipOp = (mClipOp == ClipOp.CLIP_OP_INTERSECT) ? ClipOp.CLIP_OP_DIFFERENCE : ClipOp.CLIP_OP_INTERSECT;
+            }
+
+            mInnerBounds.setEmpty();
+            mViewMatrix.mapRect(mShape, mOuterBounds);
+            mOuterBounds.intersect(deviceBounds);
+
+            if (!mOuterBounds.isEmpty() &&
+                    mViewMatrix.isAxisAligned()) {
+                // The actual geometry can be updated to the device-intersected bounds and we can
+                // know the inner bounds
+                mShape.set(mOuterBounds);
+                mViewMatrix.setIdentity();
+                mInverseViewMatrix.setIdentity();
+                mInnerBounds.set(mOuterBounds);
+            }
+
+            if (mOuterBounds.isEmpty()) {
+                // This can happen if we have non-AA shapes smaller than a pixel that do not cover a pixel
+                // center. We could round out, but rasterization would still result in an empty clip.
+                mShape.setEmpty();
+                mInnerBounds.setEmpty();
+            }
+
+            // Now that mClipOp and mShape are canonical, set the shape's fill type to match how it needs to be
+            // drawn as a depth-only shape everywhere that is clipped out (intersect is thus inverse-filled)
+            mInverseFill = (mClipOp == ClipOp.CLIP_OP_INTERSECT);
+
+            assert (mShape.isEmpty() || deviceBounds.contains(mOuterBounds));
+            assert validate();
+
+            return this;
+        }
+
+        public boolean hasPendingDraw() {
+            return mPaintersOrder != DrawOrder.MIN_VALUE;
         }
 
         // As new elements are pushed on to the stack, they may make older elements redundant.
@@ -576,6 +700,11 @@ public final class ClipStack extends Clip {
         public void markInvalid(SaveRecord current) {
             assert (!isInvalid());
             mInvalidatedByIndex = current.firstActiveElementIndex();
+            // NOTE: We don't draw the accumulated clip usage when the element is marked invalid. Some
+            // invalidated elements are part of earlier save records so can become re-active after a restore
+            // in which case they should continue to accumulate. Invalidated elements that are part of the
+            // active save record are removed at the end of the stack modification, which is when they are
+            // explicitly drawn.
         }
 
         public void restoreValid(SaveRecord current) {
@@ -585,6 +714,10 @@ public final class ClipStack extends Clip {
         }
 
         public boolean combine(ClipElement other, SaveRecord current) {
+            // Don't combine elements that have collected draw usage, since that changes their geometry.
+            if (hasPendingDraw() || other.hasPendingDraw()) {
+                return false;
+            }
             // To reduce the number of possibilities, only consider intersect+intersect. Difference and
             // mixed op cases could be analyzed to simplify one of the shapes, but that is a rare
             // occurrence and the math is much more complicated.
@@ -595,11 +728,11 @@ public final class ClipStack extends Clip {
             // At the moment, only rect+rect or rrect+rrect are supported (although rect+rrect is
             // treated as a degenerate case of rrect+rrect).
             boolean shapeUpdated = false;
-
-            if (Matrix.equals(mViewMatrix, other.mInverseViewMatrix)) {
-                if (!mRect.intersect(other.mRect)) {
+            //TODO support roundrect
+            if (mViewMatrix.equals(other.mViewMatrix)) {
+                if (!mShape.intersect(other.mShape)) {
                     // By floating point, it turns out the combination should be empty
-                    mRect.setEmpty();
+                    mShape.setEmpty();
                     markInvalid(current);
                     return true;
                 }
@@ -610,17 +743,31 @@ public final class ClipStack extends Clip {
                 // This logic works under the assumption that both combined elements were intersect, so we
                 // don't do the full bounds computations like in simplify().
                 assert (mClipOp == OP_INTERSECT && other.mClipOp == OP_INTERSECT);
-                boolean res = mOuterBounds.intersect(other.mOuterBounds);
-                assert res;
+                boolean __ = mOuterBounds.intersect(other.mOuterBounds);
+                assert __; // Inner bounds can become empty, but outer bounds should not be able to.
                 if (!mInnerBounds.intersect(other.mInnerBounds)) {
                     mInnerBounds.setEmpty();
                 }
+                mInverseFill = true;
+                assert validate();
                 return true;
             } else {
                 return false;
             }
         }
 
+        // 'added' represents a new op added to the element stack. Its combination with this element
+        // can result in a number of possibilities:
+        //  1. The entire clip is empty (signaled by both this and 'added' being invalidated).
+        //  2. The 'added' op supercedes this element (this element is invalidated).
+        //  3. This op supercedes the 'added' element (the added element is marked invalidated).
+        //  4. Their combination can be represented by a single new op (in which case this
+        //     element should be invalidated, and the combined shape stored in 'added').
+        //  5. Or both elements remain needed to describe the clip (both are valid and unchanged).
+        //
+        // The calling element will only modify its invalidation index since it could belong
+        // to part of the inactive stack (that might be restored later). All merged state/geometry
+        // is handled by modifying 'added'.
         public void updateForElement(ClipElement added, SaveRecord current) {
             if (isInvalid()) {
                 // Already doesn't do anything, so skip this element
@@ -656,61 +803,68 @@ public final class ClipStack extends Clip {
             }
         }
 
+        // Updates usage tracking to incorporate the bounds and Z value for the new draw call.
+        // If this element hasn't affected any prior draws, it will use the bounds manager to
+        // assign itself a compressed painters order for later rendering.
+        //
+        // This method assumes that this element affects the draw in a complex way, such that
+        // calling `testForDraw()` on the same draw would return `DrawInfluence::kIntersect`. It is
+        // assumed that `testForDraw()` was called beforehand to ensure that this is the case.
+        //
+        // Assuming that this element does not clip out the draw, returns the painters order the
+        // draw must sort after.
+        public void updateForDraw(BoundsManager boundsManager,
+                                  Rect2fc drawBounds,
+                                  int drawDepth) {
+            //TODO
+        }
+
+        // Record a depth-only draw to the given device, restricted to the portion of the clip that
+        // is actually required based on prior recorded draws. Resets usage tracking for subsequent
+        // passes.
+        public void drawClip(Device_Gpu device) {
+            //TODO
+            assert validate();
+        }
+
         public int op() {
             return mClipOp;
         }
 
-        public Rect2ic innerBounds() {
+        public Rect2fc innerBounds() {
             return mInnerBounds;
         }
 
         // reference to unmodifiable rect
-        public Rect2ic outerBounds() {
+        public Rect2fc outerBounds() {
             return mOuterBounds;
         }
 
-        public boolean contains(Geometry g) {
-            if (g instanceof Draw d) {
-                return contains(d);
-            } else if (g instanceof SaveRecord s) {
-                return contains(s);
-            } else {
-                return contains((ClipElement) g);
-            }
-        }
-
-        public boolean contains(Draw d) {
-            if (mInnerBounds.contains(d.outerBounds())) {
-                return true;
-            } else {
-                // If the draw is non-AA, use the already computed outer bounds so we don't need to use
-                // device-space outsetting inside shape_contains_rect.
-                Rect2fc queryBounds = d.mAA ? d.bounds() : d.mTmpBounds;
-                return rect_contains_rect(mRect, mViewMatrix, mInverseViewMatrix,
-                        queryBounds, Matrix.identity(), /* mixed-aa */ false);
-            }
-        }
-
-        public boolean contains(SaveRecord s) {
-            if (mInnerBounds.contains(s.mOuterBounds)) {
+        public boolean contains(ClipGeometry g) {
+            if (mInnerBounds.contains(g.outerBounds())) {
                 return true;
             }
-
-            return rect_contains_rect(mRect, mViewMatrix, mInverseViewMatrix,
-                    new Rect2f(s.mOuterBounds), Matrix.identity(), false);
-        }
-
-        public boolean contains(ClipElement e) {
-            // This is similar to how ClipElement checks containment for a Draw, except that both the tester
-            // and testee have a transform that needs to be considered.
-            if (mInnerBounds.contains(e.mOuterBounds)) {
-                return true;
+            if (!mOuterBounds.contains(g.outerBounds())) {
+                return false;
             }
 
-            boolean mixedAA = mAA != e.mAA;
+            if (mViewMatrix.equals(g.viewMatrix())) {
+                // A and B are in the same coordinate space, so don't bother mapping
+                return mShape.contains(g.shape());
+            }
 
-            return rect_contains_rect(mRect, mViewMatrix, mInverseViewMatrix,
-                    e.mRect, e.mViewMatrix, mixedAA);
+            if (mViewMatrix.isAxisAligned() && g.viewMatrix().isAxisAligned()) {
+                // Optimize the common case of draws (B, with identity matrix) and axis-aligned shapes,
+                // instead of checking the four corners separately.
+                Rect2f localBounds = new Rect2f(g.shape());
+                g.viewMatrix().mapRect(localBounds);
+                mInverseViewMatrix.mapRect(localBounds);
+                return mShape.contains(localBounds);
+            }
+
+            //TODO port from rect_contains_rect for convex
+
+            return false;
         }
 
         // a.contains(b) where a's local space is defined by 'aToDevice', and b's possibly separate local
@@ -759,66 +913,28 @@ public final class ClipStack extends Clip {
             return true;
         }
 
-        public void simplify(Rect2ic deviceBounds, boolean msaa, Rect2f outer) {
-            // Then simplify the base shape, if it becomes empty, no need to update the bounds
-            mRect.sort();
-            if (mRect.isEmpty()) {
-                return;
-            }
-
-            boolean axisAligned = mViewMatrix.mapRect(mRect, outer);
-            if (!outer.intersect(deviceBounds)) {
-                // A non-empty shape is offscreen, so treat it as empty
-                mRect.setEmpty();
-                return;
-            }
-
-            // Except for axis-aligned clip rects, upgrade to AA when forced. We skip axis-aligned clip
-            // rects because a non-AA axis aligned rect can always be set as just a scissor test or window
-            // rect, avoiding an expensive stencil mask generation.
-            if (msaa && !axisAligned) {
-                mAA = true;
-            }
-
-            // Except for non-AA axis-aligned rects, the outer bounds is the rounded-out device-space
-            // mapped bounds of the shape.
-            getPixelBounds(outer, mAA, true, mOuterBounds);
-
-            if (axisAligned) {
-                // The actual geometry can be updated to the device-intersected bounds and we can
-                // know the inner bounds
-                mRect.set(outer);
-                mViewMatrix.setIdentity();
-                mInverseViewMatrix.setIdentity();
-
-                if (!mAA && outer.width() >= 1.f && outer.height() >= 1.f) {
-                    outer.round(mOuterBounds);
-                    mInnerBounds.set(mOuterBounds);
-                } else {
-                    getPixelBounds(outer, mAA, false, mInnerBounds);
-                }
-            }
-
-            if (mOuterBounds.isEmpty()) {
-                // This can happen if we have non-AA shapes smaller than a pixel that do not cover a pixel
-                // center. We could round out, but rasterization would still result in an empty clip.
-                mRect.setEmpty();
-            }
-        }
-
         private int clipType() {
-            if (mRect.isEmpty()) {
+            if (mShape.isEmpty()) {
                 return STATE_EMPTY;
             } else {
                 return mClipOp == OP_INTERSECT && mViewMatrix.isIdentity()
                         ? STATE_DEVICE_RECT : STATE_COMPLEX;
             }
         }
+
+        private boolean validate() {
+            assert ((mShape.isEmpty() || !mOuterBounds.isEmpty()) &&
+                    (mInnerBounds.isEmpty() || mOuterBounds.contains(mInnerBounds)));
+            assert ((mClipOp == ClipOp.CLIP_OP_DIFFERENCE && !mInverseFill) ||
+                    (mClipOp == ClipOp.CLIP_OP_INTERSECT && mInverseFill));
+            assert (!hasPendingDraw() || !mUsageBounds.isEmpty());
+            return true;
+        }
     }
 
-    static void subtract(Rect2ic a, Rect2ic b, Rect2i out, boolean exact) {
-        Rect2i diff = new Rect2i();
-        if (Rect2i.subtract(a, b, diff) || !exact) {
+    static void subtract(Rect2fc a, Rect2fc b, Rect2f out, boolean exact) {
+        Rect2f diff = new Rect2f();
+        if (Rect2f.subtract(a, b, diff) || !exact) {
             // Either A-B is exactly the rectangle stored in diff, or we don't need an exact answer
             // and can settle for the subrect of A excluded from B (which is also 'diff')
             out.set(diff);
@@ -828,12 +944,12 @@ public final class ClipStack extends Clip {
         }
     }
 
-    static final class SaveRecord implements Geometry {
+    static final class SaveRecord implements ClipGeometry {
 
         // Inner bounds is always contained in outer bounds, or it is empty. All bounds will be
         // contained in the device bounds.
-        private final Rect2i mInnerBounds; // Inside is full coverage (stack op == intersect) or 0 cov (diff)
-        private final Rect2i mOuterBounds; // Outside is 0 coverage (op == intersect) or full cov (diff)
+        private final Rect2f mInnerBounds; // Inside is full coverage (stack op == intersect) or 0 cov (diff)
+        private final Rect2f mOuterBounds; // Outside is 0 coverage (op == intersect) or full cov (diff)
 
         final int mStartingElementIndex;  // First element owned by this save record
         int mOldestValidIndex; // Index of oldest element that remains valid for this record
@@ -845,8 +961,8 @@ public final class ClipStack extends Clip {
         private int mOp;
 
         SaveRecord(Rect2ic deviceBounds) {
-            mInnerBounds = new Rect2i(deviceBounds);
-            mOuterBounds = new Rect2i(deviceBounds);
+            mInnerBounds = new Rect2f(deviceBounds);
+            mOuterBounds = new Rect2f(deviceBounds);
             mStartingElementIndex = 0;
             mOldestValidIndex = 0;
             mState = STATE_WIDE_OPEN;
@@ -855,8 +971,8 @@ public final class ClipStack extends Clip {
 
         SaveRecord(SaveRecord prior,
                    int startingElementIndex) {
-            mInnerBounds = new Rect2i(prior.mInnerBounds);
-            mOuterBounds = new Rect2i(prior.mOuterBounds);
+            mInnerBounds = new Rect2f(prior.mInnerBounds);
+            mOuterBounds = new Rect2f(prior.mOuterBounds);
             mStartingElementIndex = startingElementIndex;
             mOldestValidIndex = prior.mOldestValidIndex;
             mState = prior.mState;
@@ -870,28 +986,27 @@ public final class ClipStack extends Clip {
             return mOp;
         }
 
-        public Rect2ic outerBounds() {
+        @Override
+        public Rect2fc shape() {
             return mOuterBounds;
         }
 
-        public Rect2ic innerBounds() {
+        @Override
+        public Matrix4c viewMatrix() {
+            return Matrix4.identity();
+        }
+
+        public Rect2fc outerBounds() {
+            return mOuterBounds;
+        }
+
+        public Rect2fc innerBounds() {
             return mInnerBounds;
         }
 
-        public boolean contains(Geometry g) {
-            if (g instanceof Draw draw) {
-                return contains(draw);
-            } else {
-                return contains((ClipElement) g);
-            }
-        }
-
-        public boolean contains(Draw draw) {
-            return mInnerBounds.contains(draw.outerBounds());
-        }
-
-        public boolean contains(ClipElement element) {
-            return mInnerBounds.contains(element.outerBounds());
+        public boolean contains(ClipGeometry g) {
+            assert g instanceof ClipElement || g instanceof ClipDraw;
+            return mInnerBounds.contains(g.outerBounds());
         }
 
         public int firstActiveElementIndex() {
@@ -921,11 +1036,10 @@ public final class ClipStack extends Clip {
 
         // Return true if the element was added to 'elements', or otherwise affected the save record
         // (e.g. turned it empty).
-        public boolean addElement(ClipElement toAdd, ArrayDeque<ClipElement> elements) {
+        public boolean addElement(ClipElement toAdd, ArrayDeque<ClipElement> elements, Device_Gpu device) {
             // Validity check the element's state first; if the shape class isn't empty, the outer bounds
             // shouldn't be empty; if the inner bounds are not empty, they must be contained in outer.
-            assert ((toAdd.shape().isEmpty() || !toAdd.mOuterBounds.isEmpty()) &&
-                    (toAdd.mInnerBounds.isEmpty() || toAdd.mOuterBounds.contains(toAdd.mInnerBounds)));
+            assert (toAdd.validate());
             // And we shouldn't be adding an element if we have a deferred save
             assert (canBeUpdated());
 
@@ -936,6 +1050,7 @@ public final class ClipStack extends Clip {
                 // An empty difference op should have been detected earlier, since it's a no-op
                 assert (toAdd.clipOp() == OP_INTERSECT);
                 mState = STATE_EMPTY;
+                removeElements(elements, device);
                 return true;
             }
 
@@ -945,6 +1060,7 @@ public final class ClipStack extends Clip {
                 case CLIP_GEOMETRY_EMPTY:
                     // The combination results in an empty clip
                     mState = STATE_EMPTY;
+                    removeElements(elements, device);
                     return true;
 
                 case CLIP_GEOMETRY_A_ONLY:
@@ -954,7 +1070,7 @@ public final class ClipStack extends Clip {
                 case CLIP_GEOMETRY_B_ONLY:
                     // The combination would invalidate the entire existing stack and can be replaced with
                     // just the new element.
-                    replaceWithElement(toAdd, elements);
+                    replaceWithElement(toAdd, elements, device);
                     return true;
 
                 case CLIP_GEOMETRY_BOTH:
@@ -967,7 +1083,7 @@ public final class ClipStack extends Clip {
                 // When the stack was wide open and the clip effect was kBoth, the "complex" manner is
                 // simply to keep the element and update the stack bounds to be the element's intersected
                 // with the device.
-                replaceWithElement(toAdd, elements);
+                replaceWithElement(toAdd, elements, device);
                 return true;
             }
 
@@ -995,7 +1111,7 @@ public final class ClipStack extends Clip {
                 if (toAdd.op() == OP_INTERSECT) {
                     // Difference (stack) + Intersect (toAdd)
                     //  - Bounds updates are just the mirror of Intersect(stack) + Difference(toAdd)
-                    Rect2i oldOuter = new Rect2i(mOuterBounds);
+                    Rect2f oldOuter = new Rect2f(mOuterBounds);
                     subtract(toAdd.outerBounds(), mInnerBounds, mOuterBounds, /* exact */ true);
                     subtract(toAdd.innerBounds(), oldOuter, mInnerBounds,     /* exact */ false);
                 } else {
@@ -1016,10 +1132,10 @@ public final class ClipStack extends Clip {
             assert (!mOuterBounds.isEmpty() &&
                     (mInnerBounds.isEmpty() || mOuterBounds.contains(mInnerBounds)));
 
-            return appendElement(toAdd, elements);
+            return appendElement(toAdd, elements, device);
         }
 
-        private boolean appendElement(ClipElement toAdd, ArrayDeque<ClipElement> elements) {
+        private boolean appendElement(ClipElement toAdd, ArrayDeque<ClipElement> elements, Device_Gpu device) {
             // Update past elements to account for the new element
             int i = elements.size() - 1;
 
@@ -1097,20 +1213,22 @@ public final class ClipStack extends Clip {
             }
             while (elements.size() > targetCount) {
                 assert (oldestActiveInvalid != elements.peek()); // shouldn't delete what we'll reuse
-                elements.pop();
+                elements.pop().drawClip(device);
             }
             if (oldestActiveInvalid != null) {
+                oldestActiveInvalid.drawClip(device);
                 oldestActiveInvalid.set(toAdd);
             } else if (elements.size() < targetCount) {
                 elements.push(new ClipElement(toAdd));
             } else {
+                elements.element().drawClip(device);
                 elements.element().set(toAdd);
             }
 
             return true;
         }
 
-        private void replaceWithElement(ClipElement toAdd, ArrayDeque<ClipElement> elements) {
+        private void replaceWithElement(ClipElement toAdd, ArrayDeque<ClipElement> elements, Device_Gpu device) {
             // The aggregate state of the save record mirrors the element
             mInnerBounds.set(toAdd.mInnerBounds);
             mOuterBounds.set(toAdd.mOuterBounds);
@@ -1121,18 +1239,27 @@ public final class ClipStack extends Clip {
             // All prior active element can be removed from the stack: [startingIndex, count - 1]
             int targetCount = mStartingElementIndex + 1;
             while (elements.size() > targetCount) {
-                elements.pop();
+                elements.pop().drawClip(device);
             }
             if (elements.size() < targetCount) {
                 elements.push(new ClipElement(toAdd));
             } else {
+                elements.element().drawClip(device);
                 elements.element().set(toAdd);
             }
+
+            assert (elements.size() == mStartingElementIndex + 1);
+
+            // This invalidates all older elements that are owned by save records lower in the clip stack.
+            mOldestValidIndex = mStartingElementIndex;
         }
 
-        public void removeElements(ArrayDeque<ClipElement> elements) {
+        public void removeElements(ArrayDeque<ClipElement> elements,
+                                   Device_Gpu device) {
             while (elements.size() > mStartingElementIndex) {
-                elements.pop();
+                // Since the element is being deleted now, it won't be in the ClipStack when the Device
+                // calls recordDeferredClipDraws(). Record the clip's draw now (if it needs it).
+                elements.pop().drawClip(device);
             }
         }
 
@@ -1150,26 +1277,61 @@ public final class ClipStack extends Clip {
                 --i;
             }
         }
+
+        // return value must be immutable, deviceBounds is immutable
+        public Rect2ic scissor(Rect2ic deviceBounds, Rect2fc drawBounds) {
+            // This should only be called when the clip stack actually has something non-trivial to evaluate
+            // It is effectively a reduced version of Simplify() dealing only with device-space bounds and
+            // returning the intersection results.
+            assert (mState != STATE_EMPTY && mState != STATE_WIDE_OPEN);
+            assert (deviceBounds.contains(drawBounds)); // This should have already been handled.
+            if (mOp == OP_INTERSECT) {
+                // kIntersect nominally uses the save record's outer bounds as the scissor. However, if the
+                // draw is contained entirely within those bounds, it doesn't have any visual effect so
+                // switch to using the device bounds as the canonical scissor to minimize state changes.
+                if (mOuterBounds.contains(drawBounds)) {
+                    // device bounds never change
+                    return deviceBounds;
+                } else {
+                    // This automatically detects the case where the draw does not intersect the clip.
+                    var res = new Rect2i();
+                    mOuterBounds.roundOut(res);
+                    return res;
+                }
+            } else {
+                // kDifference nominally uses the draw's bounds minus the save record's inner bounds as the
+                // scissor. However, if the draw doesn't intersect the clip at all then it doesn't have any
+                // visual effect and we can switch to the device bounds as the canonical scissor.
+                if (!mOuterBounds.intersects(drawBounds)) {
+                    return deviceBounds;
+                } else {
+                    // This automatically detects the case where the draw is contained in inner bounds and
+                    // would be entirely clipped out.
+                    var diff = new Rect2f();
+                    var res = new Rect2i();
+                    if (Rect2f.subtract(drawBounds, mInnerBounds, diff)) {
+                        diff.roundOut(res);
+                    } else {
+                        drawBounds.roundOut(res);
+                    }
+                    return res;
+                }
+            }
+        }
     }
 
-    static class Draw implements Geometry {
+    static final class ClipDraw implements ClipGeometry {
 
-        final Rect2f mOriginalBounds = new Rect2f();
-        final Rect2i mBounds = new Rect2i();
-        final Rect2f mTmpBounds = new Rect2f();
+        final Matrix4 mViewMatrix = new Matrix4();
+        final Rect2f mShape = new Rect2f();
+        final Rect2f mDrawBounds = new Rect2f();
 
-        boolean mAA;
-
-        public Draw init(Rect2fc drawBounds, boolean aa) {
-            getPixelBounds(drawBounds, aa, true, mBounds);
-            mAA = aa;
-            // Be slightly more forgiving on whether or not a draw is inside a clip element.
-            mOriginalBounds.set(drawBounds);
-            mOriginalBounds.inset(kBoundsTolerance, kBoundsTolerance);
-            if (mOriginalBounds.isEmpty()) {
-                mOriginalBounds.set(drawBounds);
-            }
-            mTmpBounds.set(mBounds);
+        public ClipDraw init(Matrix4 viewMatrix,
+                             Rect2fc shape,
+                             Rect2fc drawBounds) {
+            mViewMatrix.set(viewMatrix);
+            mShape.set(shape);
+            mDrawBounds.set(drawBounds);
             return this;
         }
 
@@ -1179,19 +1341,25 @@ public final class ClipStack extends Clip {
         }
 
         @Override
-        public Rect2ic outerBounds() {
-            return mBounds;
+        public Rect2fc shape() {
+            return mShape;
         }
 
         @Override
-        public boolean contains(Geometry other) {
+        public Matrix4 viewMatrix() {
+            return mViewMatrix;
+        }
+
+        @Override
+        public Rect2fc outerBounds() {
+            return mDrawBounds;
+        }
+
+        @Override
+        public boolean contains(ClipGeometry other) {
             // Draw does not have inner bounds so cannot contain anything.
             assert other instanceof SaveRecord || other instanceof ClipElement;
             return false;
-        }
-
-        public Rect2fc bounds() {
-            return mOriginalBounds;
         }
     }
 }

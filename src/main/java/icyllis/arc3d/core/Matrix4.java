@@ -46,7 +46,7 @@ import java.nio.FloatBuffer;
  */
 //TODO replace with Vector API and Primitive Classes
 @SuppressWarnings("unused")
-public class Matrix4 implements Cloneable {
+public non-sealed class Matrix4 implements Matrix4c, Cloneable {
 
     // sequential matrix elements, m(ij) (row, column)
     // directly using primitives will be faster than array in Java
@@ -84,23 +84,8 @@ public class Matrix4 implements Cloneable {
      *
      * @param m the matrix to create from
      */
-    public Matrix4(@Nonnull Matrix4 m) {
-        m11 = m.m11;
-        m12 = m.m12;
-        m13 = m.m13;
-        m14 = m.m14;
-        m21 = m.m21;
-        m22 = m.m22;
-        m23 = m.m23;
-        m24 = m.m24;
-        m31 = m.m31;
-        m32 = m.m32;
-        m33 = m.m33;
-        m34 = m.m34;
-        m41 = m.m41;
-        m42 = m.m42;
-        m43 = m.m43;
-        m44 = m.m44;
+    public Matrix4(@Nonnull Matrix4c m) {
+        m.store(this);
     }
 
     /**
@@ -276,6 +261,70 @@ public class Matrix4 implements Cloneable {
         mat.m34 = -1.0f;
         mat.m43 = 2.0f * far * near * invNF;
         return mat;
+    }
+
+    public float m11() {
+        return m11;
+    }
+
+    public float m12() {
+        return m12;
+    }
+
+    public float m13() {
+        return m13;
+    }
+
+    public float m14() {
+        return m14;
+    }
+
+    public float m21() {
+        return m21;
+    }
+
+    public float m22() {
+        return m22;
+    }
+
+    public float m23() {
+        return m23;
+    }
+
+    public float m24() {
+        return m24;
+    }
+
+    public float m31() {
+        return m31;
+    }
+
+    public float m32() {
+        return m32;
+    }
+
+    public float m33() {
+        return m33;
+    }
+
+    public float m34() {
+        return m34;
+    }
+
+    public float m41() {
+        return m41;
+    }
+
+    public float m42() {
+        return m42;
+    }
+
+    public float m43() {
+        return m43;
+    }
+
+    public float m44() {
+        return m44;
     }
 
     /**
@@ -771,23 +820,8 @@ public class Matrix4 implements Cloneable {
      *
      * @param m the matrix to copy from
      */
-    public void set(@Nonnull Matrix4 m) {
-        m11 = m.m11;
-        m12 = m.m12;
-        m13 = m.m13;
-        m14 = m.m14;
-        m21 = m.m21;
-        m22 = m.m22;
-        m23 = m.m23;
-        m24 = m.m24;
-        m31 = m.m31;
-        m32 = m.m32;
-        m33 = m.m33;
-        m34 = m.m34;
-        m41 = m.m41;
-        m42 = m.m42;
-        m43 = m.m43;
-        m44 = m.m44;
+    public void set(@Nonnull Matrix4c m) {
+        m.store(this);
     }
 
     /**
@@ -1180,7 +1214,7 @@ public class Matrix4 implements Cloneable {
      * @return {@code true} if this matrix is invertible.
      */
     @CheckReturnValue
-    public boolean invert(@Nonnull Matrix4 dest) {
+    public boolean invert(@Nullable Matrix4 dest) {
         float b00 = m11 * m22 - m12 * m21;
         float b01 = m11 * m23 - m13 * m21;
         float b02 = m11 * m24 - m14 * m21;
@@ -1198,40 +1232,42 @@ public class Matrix4 implements Cloneable {
         if (MathUtil.isApproxZero(det)) {
             return false;
         }
-        // calc algebraic cofactor and transpose
-        det = 1.0f / det;
-        final float f11 = (m22 * b11 - m23 * b10 + m24 * b09) * det;
-        final float f12 = (m23 * b08 - m21 * b11 - m24 * b07) * det;
-        final float f13 = (m21 * b10 - m22 * b08 + m24 * b06) * det;
-        final float f14 = (m22 * b07 - m21 * b09 - m23 * b06) * det;
-        final float f21 = (m13 * b10 - m12 * b11 - m14 * b09) * det;
-        final float f22 = (m11 * b11 - m13 * b08 + m14 * b07) * det;
-        final float f23 = (m12 * b08 - m11 * b10 - m14 * b06) * det;
-        final float f24 = (m11 * b09 - m12 * b07 + m13 * b06) * det;
-        final float f31 = (m42 * b05 - m43 * b04 + m44 * b03) * det;
-        final float f32 = (m43 * b02 - m41 * b05 - m44 * b01) * det;
-        final float f33 = (m41 * b04 - m42 * b02 + m44 * b00) * det;
-        final float f34 = (m42 * b01 - m41 * b03 - m43 * b00) * det;
-        final float f41 = (m33 * b04 - m32 * b05 - m34 * b03) * det;
-        final float f42 = (m31 * b05 - m33 * b02 + m34 * b01) * det;
-        final float f43 = (m32 * b02 - m31 * b04 - m34 * b00) * det;
-        final float f44 = (m31 * b03 - m32 * b01 + m33 * b00) * det;
-        dest.m11 = f11;
-        dest.m21 = f12;
-        dest.m31 = f13;
-        dest.m41 = f14;
-        dest.m12 = f21;
-        dest.m22 = f22;
-        dest.m32 = f23;
-        dest.m42 = f24;
-        dest.m13 = f31;
-        dest.m23 = f32;
-        dest.m33 = f33;
-        dest.m43 = f34;
-        dest.m14 = f41;
-        dest.m24 = f42;
-        dest.m34 = f43;
-        dest.m44 = f44;
+        if (dest != null) {
+            // calc algebraic cofactor and transpose
+            det = 1.0f / det;
+            final float f11 = (m22 * b11 - m23 * b10 + m24 * b09) * det;
+            final float f12 = (m23 * b08 - m21 * b11 - m24 * b07) * det;
+            final float f13 = (m21 * b10 - m22 * b08 + m24 * b06) * det;
+            final float f14 = (m22 * b07 - m21 * b09 - m23 * b06) * det;
+            final float f21 = (m13 * b10 - m12 * b11 - m14 * b09) * det;
+            final float f22 = (m11 * b11 - m13 * b08 + m14 * b07) * det;
+            final float f23 = (m12 * b08 - m11 * b10 - m14 * b06) * det;
+            final float f24 = (m11 * b09 - m12 * b07 + m13 * b06) * det;
+            final float f31 = (m42 * b05 - m43 * b04 + m44 * b03) * det;
+            final float f32 = (m43 * b02 - m41 * b05 - m44 * b01) * det;
+            final float f33 = (m41 * b04 - m42 * b02 + m44 * b00) * det;
+            final float f34 = (m42 * b01 - m41 * b03 - m43 * b00) * det;
+            final float f41 = (m33 * b04 - m32 * b05 - m34 * b03) * det;
+            final float f42 = (m31 * b05 - m33 * b02 + m34 * b01) * det;
+            final float f43 = (m32 * b02 - m31 * b04 - m34 * b00) * det;
+            final float f44 = (m31 * b03 - m32 * b01 + m33 * b00) * det;
+            dest.m11 = f11;
+            dest.m21 = f12;
+            dest.m31 = f13;
+            dest.m41 = f14;
+            dest.m12 = f21;
+            dest.m22 = f22;
+            dest.m32 = f23;
+            dest.m42 = f24;
+            dest.m13 = f31;
+            dest.m23 = f32;
+            dest.m33 = f33;
+            dest.m43 = f34;
+            dest.m14 = f41;
+            dest.m24 = f42;
+            dest.m34 = f43;
+            dest.m44 = f44;
+        }
         return true;
     }
 
