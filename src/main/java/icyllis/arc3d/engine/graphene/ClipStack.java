@@ -33,7 +33,6 @@ import java.util.*;
  * We use scissor test and depth test to apply clip, antialiasing only works on
  * multisampled targets.
  */
-//TODO aa check? review
 public final class ClipStack {
 
     /**
@@ -59,13 +58,11 @@ public final class ClipStack {
     private final Device_Gpu mDevice;
     private final Rect2i mDeviceBounds;
     private final Rect2f mDeviceBoundsF;
-    private final boolean mMSAA;
 
-    public ClipStack(Device_Gpu device, boolean msaa) {
+    public ClipStack(Device_Gpu device) {
         mDevice = device;
         mDeviceBounds = new Rect2i(device.bounds());
         mDeviceBoundsF = new Rect2f(device.bounds());
-        mMSAA = msaa;
         mSaves.add(new SaveRecord(device.bounds()));
     }
 
@@ -253,7 +250,9 @@ public final class ClipStack {
             }
 
             // Restrict bounds to the device limits.
-            transformedShapeBounds.intersect(deviceBounds);
+            if (!transformedShapeBounds.intersect(deviceBounds)) {
+                transformedShapeBounds.setEmpty();
+            }
         }
 
         Rect2f drawBounds = new Rect2f();  // defined in device space
@@ -286,12 +285,13 @@ public final class ClipStack {
         // clip plane distances in the vertex shader, it can be defined in terms of the original float
         // coordinates.
         Rect2ic scissor = save.scissor(mDeviceBounds, drawBounds);
-        drawBounds.intersect(scissor);
-        if (drawBounds.isEmpty()) {
+        if (!drawBounds.intersect(scissor)) {
             // clipped out
             return true;
         }
-        transformedShapeBounds.intersect(scissor);
+        if (!transformedShapeBounds.intersect(scissor)) {
+            transformedShapeBounds.setEmpty(); // do we really need this?
+        }
         if (!save.innerBounds().contains(drawBounds)) {
 
             // If we made it here, the clip stack affects the draw in a complex way so iterate each element.
@@ -362,8 +362,20 @@ public final class ClipStack {
                              List<Element> elementsForMask,
                              BoundsManager boundsManager,
                              int depth) {
-        //TODO
-        return 0;
+        if (draw.isClippedOut()) {
+            return DrawOrder.MIN_VALUE;
+        }
+
+        assert mSaves.element().mState != STATE_EMPTY;
+
+        int maxClipOrder = DrawOrder.MIN_VALUE;
+        for (Element element : elementsForMask) {
+            ClipElement e = (ClipElement) element;
+            int order = e.updateForDraw(boundsManager, draw.mDrawBounds, depth);
+            maxClipOrder = Math.max(maxClipOrder, order);
+        }
+
+        return maxClipOrder;
     }
 
     public void recordDeferredClipDraws() {
@@ -657,7 +669,9 @@ public final class ClipStack {
 
             mInnerBounds.setEmpty();
             mViewMatrix.mapRect(mShape, mOuterBounds);
-            mOuterBounds.intersect(deviceBounds);
+            if (!mOuterBounds.intersect(deviceBounds)) {
+                mOuterBounds.setEmpty();
+            }
 
             if (!mOuterBounds.isEmpty() &&
                     mViewMatrix.isAxisAligned()) {
@@ -743,8 +757,8 @@ public final class ClipStack {
                 // This logic works under the assumption that both combined elements were intersect, so we
                 // don't do the full bounds computations like in simplify().
                 assert (mClipOp == OP_INTERSECT && other.mClipOp == OP_INTERSECT);
-                boolean __ = mOuterBounds.intersect(other.mOuterBounds);
-                assert __; // Inner bounds can become empty, but outer bounds should not be able to.
+                boolean res = mOuterBounds.intersect(other.mOuterBounds);
+                assert res; // Inner bounds can become empty, but outer bounds should not be able to.
                 if (!mInnerBounds.intersect(other.mInnerBounds)) {
                     mInnerBounds.setEmpty();
                 }
@@ -813,18 +827,96 @@ public final class ClipStack {
         //
         // Assuming that this element does not clip out the draw, returns the painters order the
         // draw must sort after.
-        public void updateForDraw(BoundsManager boundsManager,
-                                  Rect2fc drawBounds,
-                                  int drawDepth) {
-            //TODO
+        public int updateForDraw(BoundsManager boundsManager,
+                                 Rect2fc drawBounds,
+                                 int drawDepth) {
+            assert (!isInvalid());
+            assert (!drawBounds.isEmpty());
+
+            if (!hasPendingDraw()) {
+                // No usage yet so we need an order that we will use when drawing to just the depth
+                // attachment. It is sufficient to use the next CompressedPaintersOrder after the
+                // most recent draw under this clip's outer bounds. It is necessary to use the
+                // entire clip's outer bounds because the order has to be determined before the
+                // final usage bounds are known and a subsequent draw could require a completely
+                // different portion of the clip than this triggering draw.
+                //
+                // Lazily determining the order has several benefits to computing it when the clip
+                // element was first created:
+                //  - Elements that are invalidated by nested clips before draws are made do not
+                //    waste time in the BoundsManager.
+                //  - Elements that never actually modify a draw (e.g. a defensive clip) do not
+                //    waste time in the BoundsManager.
+                //  - A draw that triggers clip usage on multiple elements will more likely assign
+                //    the same order to those elements, meaning their depth-only draws are more
+                //    likely to batch in the final DrawPass.
+                //
+                // However, it does mean that clip elements can have the same order as each other,
+                // or as later draws (e.g. after the clip has been popped off the stack). Any
+                // overlap between clips or draws is addressed when the clip is drawn by selecting
+                // an appropriate DisjointStencilIndex value. Stencil-aside, this order assignment
+                // logic, max Z tracking, and the depth test during rasterization are able to
+                // resolve everything correctly even if clips have the same order value.
+                // See go/clip-stack-order for a detailed analysis of why this works.
+                mPaintersOrder = boundsManager.getMostRecentDraw(mOuterBounds) + 1;
+                mUsageBounds.set(drawBounds);
+                mMaxDepth = drawDepth;
+            } else {
+                // Earlier draws have already used this element so we cannot change where the
+                // depth-only draw will be sorted to, but we need to ensure we cover the new draw's
+                // bounds and use a Z value that will clip out its pixels as appropriate.
+                mUsageBounds.join(drawBounds);
+                mMaxDepth = Math.max(mMaxDepth, drawDepth);
+            }
+
+            return mPaintersOrder;
         }
 
         // Record a depth-only draw to the given device, restricted to the portion of the clip that
         // is actually required based on prior recorded draws. Resets usage tracking for subsequent
         // passes.
         public void drawClip(Device_Gpu device) {
-            //TODO
             assert validate();
+
+            // Skip elements that have not affected any draws
+            if (!hasPendingDraw()) {
+                assert (mUsageBounds.isEmpty());
+                return;
+            }
+
+            assert (!mUsageBounds.isEmpty());
+            // For clip draws, the usage bounds is the scissor.
+            var scissor = new Rect2i();
+            mUsageBounds.roundOut(scissor);
+            var drawBounds = new Rect2f(mOuterBounds);
+            if (drawBounds.intersect(scissor)) {
+                long order = DrawOrder.makeFromDepthAndPaintersOrder(
+                        mMaxDepth + 1, mPaintersOrder
+                );
+                DrawOp draw = new DrawOp();
+                draw.mTransform = mViewMatrix.clone();
+                draw.mGeometry = new Rect2f(mShape);
+                draw.mDrawBounds = drawBounds;
+                draw.mTransformedShapeBounds = drawBounds;
+                draw.mScissorRect = scissor;
+                draw.mDrawOrder = order;
+                // An element's clip op is encoded in the shape's fill type. Inverse fills are intersect ops
+                // and regular fills are difference ops. This means fShape is already in the right state to
+                // draw directly.
+                assert ((mClipOp == ClipOp.CLIP_OP_DIFFERENCE && !mInverseFill) ||
+                        (mClipOp == ClipOp.CLIP_OP_INTERSECT && mInverseFill));
+                device.drawClipShape(draw, mInverseFill);
+            }
+
+            // After the clip shape is drawn, reset its state. If the clip element is being popped off the
+            // stack or overwritten because a new clip invalidated it, this won't matter. But if the clips
+            // were drawn because the Device had to flush pending work while the clip stack was not empty,
+            // subsequent draws will still need to be clipped to the elements. In this case, the usage
+            // accumulation process will begin again and automatically use the Device's post-flush Z values
+            // and BoundsManager state.
+            mUsageBounds.setEmpty();
+            mPaintersOrder = DrawOrder.MIN_VALUE;
+            mMaxDepth = DrawOrder.MIN_VALUE;
         }
 
         public int op() {

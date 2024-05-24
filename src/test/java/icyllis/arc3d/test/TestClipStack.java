@@ -21,6 +21,7 @@ package icyllis.arc3d.test;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
+import icyllis.arc3d.engine.geom.BoundsManager;
 import icyllis.arc3d.engine.graphene.*;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL;
@@ -70,8 +71,7 @@ public class TestClipStack {
         );
 
         var clipStack = new ClipStack(
-                deviceGpu,
-                false
+                deviceGpu
         );
         var viewMatrix = Matrix4.identity();
 
@@ -87,9 +87,10 @@ public class TestClipStack {
         LOGGER.info(stateToString(clipStack.currentClipState()));
         clipStack.elements().forEach(e -> LOGGER.info(e.toString()));
 
+        BoundsManager boundsManager = new BoundsManager();
+
         var elementsForMask = new ArrayList<ClipStack.Element>();
         var draw = new DrawOp();
-        draw.mStrokeRadius = -1;
         draw.mTransform = Matrix4.identity();
         draw.mTransform.preTranslate(25, 25);
         draw.mTransform.preScale(0.5f, 0.5f);
@@ -106,6 +107,7 @@ public class TestClipStack {
         LOGGER.info("TransformedShapeBounds: " + draw.mTransformedShapeBounds);
         LOGGER.info("ScissorRect: "  + draw.mScissorRect);
         LOGGER.info("ElementsForMask: " + elementsForMask);
+        clipStack.updateForDraw(draw, elementsForMask, boundsManager, 0);
 
         clipStack.restore();
         LOGGER.info(stateToString(clipStack.currentClipState()));

@@ -39,11 +39,15 @@ public final class DrawOp {
     public Rect2ic mScissorRect;
     // the packed draw order
     public long mDrawOrder;
-    public float mStrokeRadius; // >0: relative to transform; ==0: hairline, 1px in device space; <0: fill
+    public float mStrokeRadius = -1; // >0: relative to transform; ==0: hairline, 1px in device space; <0: fill
     public float mJoinLimit;    // >0: miter join; ==0: bevel join; <0: round join
     public int mStrokeCap;
     @Nullable
     public PaintParams mPaintParams;
+
+    public boolean isClippedOut() {
+        return mDrawBounds.isEmpty();
+    }
 
     public float getInflationRadius() {
         if (mStrokeRadius < 0) {

@@ -19,6 +19,9 @@
 
 package icyllis.arc3d.engine.graphene;
 
+/**
+ * Orders are unsigned shorts.
+ */
 public class DrawOrder {
 
     public static final int MIN_VALUE = 0;
