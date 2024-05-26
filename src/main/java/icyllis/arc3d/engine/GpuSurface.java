@@ -36,8 +36,11 @@ import javax.annotation.Nonnull;
  */
 public abstract class GpuSurface extends Resource {
 
-    protected GpuSurface(Device device) {
-        super(device);
+    protected GpuSurface(Context context,
+                         boolean budgeted,
+                         boolean wrapped,
+                         long memorySize) {
+        super(context, budgeted, wrapped, memorySize);
     }
 
     /**

@@ -41,17 +41,15 @@ public abstract class Buffer extends Resource {
      */
     public static final int kWriteDiscard_LockMode = 1;
 
-    protected final long mSize;
     protected final int mUsage;
 
     private long mLockOffset;
     private long mLockSize;
 
-    protected Buffer(Device device,
+    protected Buffer(Context context,
                      long size,
                      int usage) {
-        super(device);
-        mSize = size;
+        super(context, true, false, size);
         mUsage = usage;
     }
 
@@ -59,7 +57,7 @@ public abstract class Buffer extends Resource {
      * @return allocation size of the buffer in bytes
      */
     public final long getSize() {
-        return mSize;
+        return mMemorySize;
     }
 
     /**
@@ -67,11 +65,6 @@ public abstract class Buffer extends Resource {
      */
     public final int getUsage() {
         return mUsage;
-    }
-
-    @Override
-    public final long getMemorySize() {
-        return mSize;
     }
 
     private static int getLockMode(int usage) {
@@ -101,8 +94,8 @@ public abstract class Buffer extends Resource {
             throw new IllegalStateException("Already locked");
         }
         mLockOffset = 0;
-        mLockSize = mSize;
-        return onLock(getLockMode(mUsage), 0, mSize);
+        mLockSize = getSize();
+        return onLock(getLockMode(mUsage), 0, mLockSize);
     }
 
     /**
@@ -125,7 +118,7 @@ public abstract class Buffer extends Resource {
         if (isLocked()) {
             throw new IllegalStateException("Already locked");
         }
-        Objects.checkFromIndexSize(offset, size, mSize);
+        Objects.checkFromIndexSize(offset, size, getSize());
         mLockOffset = offset;
         mLockSize = size;
         return onLock(getLockMode(mUsage), offset, size);
@@ -206,7 +199,7 @@ public abstract class Buffer extends Resource {
         if (isDestroyed() || isLocked()) {
             return false;
         }
-        assert (size > 0 && offset + size <= mSize);
+        assert (size > 0 && offset + size <= getSize());
 
         if ((mUsage & Engine.BufferUsageFlags.kTransferDst) != 0) {
             return false;

@@ -30,7 +30,7 @@ public class SurfaceDrawContext extends SurfaceFillContext {
 
     private ImageProxy mDepthStencilTarget;
 
-    private DrawOpList mPendingDrawOps;
+    private DrawOpList mPendingDrawOps = new DrawOpList();
 
     public SurfaceDrawContext(RecordingContext context,
                               ImageProxyView readView,
@@ -79,7 +79,7 @@ public class SurfaceDrawContext extends SurfaceFillContext {
         if (!desc.isValid()) {
             return null;
         }
-        ImageProxy proxy = ImageProxy.make(desc, true);
+        ImageProxy proxy = ImageProxy.make(rContext, desc, true, "SurfaceDrawContext");
         if (proxy == null) {
             return null;
         }
@@ -127,14 +127,8 @@ public class SurfaceDrawContext extends SurfaceFillContext {
         addDrawOp(clip, op);
     }
 
-    public void recordDraw(GeometryRenderer renderer,
-                           Matrix4 transform,
-                           Object geometry,
-                           ClipResult_old clipResult,
-                           long drawOrder) {
-        mPendingDrawOps.recordDrawOp(
-                renderer, transform, geometry, clipResult, drawOrder
-        );
+    public void recordDraw(icyllis.arc3d.engine.graphene.DrawOp draw) {
+        mPendingDrawOps.recordDrawOp(draw);
     }
 
     /**
@@ -159,7 +153,7 @@ public class SurfaceDrawContext extends SurfaceFillContext {
             clipResult = mTmpClipResult;
             clipResult.init(
                     surface.getWidth(), surface.getHeight(),
-                    surface.getBackingWidth(), surface.getBackingHeight()
+                    surface.getWidth(), surface.getHeight()
             );
             rejected = clip.apply(
                     this, op.hasAABloat(), clipResult, bounds
@@ -182,5 +176,9 @@ public class SurfaceDrawContext extends SurfaceFillContext {
         var ops = getOpsTask();
 
         ops.addDrawOp(op, clipResult, 0);
+    }
+
+    public void flush(RecordingContext context) {
+
     }
 }

@@ -20,7 +20,7 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.engine.PipelineCache;
+import icyllis.arc3d.engine.GlobalResourceCache;
 import org.lwjgl.system.*;
 import org.slf4j.Logger;
 
@@ -456,7 +456,7 @@ public final class GLUtil {
     public static int glCompileShader(GLDevice device,
                                       @NativeType("GLenum") int shaderType,
                                       @NativeType("GLchar const *") ByteBuffer glsl,
-                                      PipelineCache.Stats stats) {
+                                      GlobalResourceCache.Stats stats) {
         var gl = device.getGL();
         int shader = gl.glCreateShader(shaderType);
         if (shader == 0) {
@@ -476,7 +476,7 @@ public final class GLUtil {
         if (gl.glGetShaderi(shader, GL_COMPILE_STATUS) == GL_FALSE) {
             String log = gl.glGetShaderInfoLog(shader);
             gl.glDeleteShader(shader);
-            handleCompileError(device.getContext().getLogger(), MemoryUtil.memUTF8(glsl), log);
+            handleCompileError(device.getLogger(), MemoryUtil.memUTF8(glsl), log);
             return 0;
         }
 
@@ -488,7 +488,7 @@ public final class GLUtil {
                                          @NativeType("GLenum") int shaderType,
                                          @NativeType("uint32_t *") ByteBuffer spirv,
                                          String entryPoint,
-                                         PipelineCache.Stats stats) {
+                                         GlobalResourceCache.Stats stats) {
         var gl = device.getGL();
         int shader = gl.glCreateShader(shaderType);
         if (shader == 0) {
@@ -509,7 +509,7 @@ public final class GLUtil {
         if (gl.glGetShaderi(shader, GL_COMPILE_STATUS) == GL_FALSE) {
             String log = gl.glGetShaderInfoLog(shader);
             gl.glDeleteShader(shader);
-            device.getContext().getLogger().error("Shader specialization error: {}", log);
+            device.getLogger().error("Shader specialization error: {}", log);
             return 0;
         }
 

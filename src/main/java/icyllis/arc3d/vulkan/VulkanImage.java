@@ -30,18 +30,12 @@ public final class VulkanImage extends Image {
 
     private VulkanImageDesc mInfo;
 
-    public VulkanImage(VulkanDevice device,
-                       int width, int height,
+    public VulkanImage(Context context,
                        VulkanImageDesc desc,
-                       BackendFormat format,
-                       int flags) {
-        super(device, desc, null);
+                       VulkanImageMutableState mutableState,
+                       boolean budgeted) {
+        super(context, budgeted, false, desc, mutableState);
         mInfo = desc;
-    }
-
-    @Override
-    public long getMemorySize() {
-        return 0;
     }
 
     @Override
@@ -51,11 +45,5 @@ public final class VulkanImage extends Image {
     @Override
     protected void onDiscard() {
 
-    }
-
-    @Nonnull
-    @Override
-    public BackendFormat getBackendFormat() {
-        return null;
     }
 }

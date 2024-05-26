@@ -47,16 +47,16 @@ public class RenderTaskManager {
 
     public RenderTaskManager(RecordingContext context) {
         mContext = context;
-        if (context instanceof ImmediateContext direct) {
+        /*if (context instanceof ImmediateContext direct) {
             mDirect = direct;
             mFlushState = new OpFlushState(direct.getDevice(), direct.getResourceProvider());
             mSurfaceAllocator = new SurfaceAllocator(direct);
-        } else {
+        } else {*/
             // deferred
             mDirect = null;
             mFlushState = null;
             mSurfaceAllocator = null;
-        }
+        //}
     }
 
     void destroy() {
@@ -113,7 +113,7 @@ public class RenderTaskManager {
         clearTasks();
 
         if (cleanup) {
-            context.getResourceCache().cleanup();
+            //context.getResourceCache().cleanup();
         }
         mFlushing = false;
 

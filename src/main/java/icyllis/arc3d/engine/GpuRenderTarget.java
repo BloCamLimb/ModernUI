@@ -53,11 +53,11 @@ public abstract class GpuRenderTarget extends GpuSurface {
     // determined by subclass constructors
     protected int mSurfaceFlags = ISurface.FLAG_RENDERABLE;
 
-    protected GpuRenderTarget(Device device,
+    protected GpuRenderTarget(Context context,
                               int width, int height,
                               int sampleCount,
                               int numColorTargets) {
-        super(device);
+        super(context, true, false, 0);
         mWidth = width;
         mHeight = height;
         mSampleCount = sampleCount;
@@ -167,15 +167,9 @@ public abstract class GpuRenderTarget extends GpuSurface {
      */
     public abstract int getStencilBits();
 
+    /*@Nullable
     @Override
-    public final long getMemorySize() {
-        // framebuffer is a container object
-        return 0;
-    }
-
-    @Nullable
-    @Override
-    protected IScratchKey computeScratchKey() {
+    protected IResourceKey computeScratchKey() {
         if (mNumColorTargets > 1) {
             // MRT is only used in specific scenarios, cannot be scratch
             return null;
@@ -183,7 +177,7 @@ public abstract class GpuRenderTarget extends GpuSurface {
         Image colorAtt = getColorAttachment();
         Image resolveAtt = getResolveAttachment();
         Image depthStencilAtt = getDepthStencilAttachment();
-        return new ScratchKey().compute(
+        return new ResourceKey().compute(
                 mWidth, mHeight,
                 colorAtt != null ? colorAtt.getBackendFormat() : null,
                 colorAtt != null ? colorAtt.getSurfaceFlags() : 0,
@@ -194,7 +188,7 @@ public abstract class GpuRenderTarget extends GpuSurface {
                 mSampleCount,
                 mSurfaceFlags
         );
-    }
+    }*/
 
     /**
      * @return whether a stencil buffer can be attached to this render target.
@@ -213,7 +207,7 @@ public abstract class GpuRenderTarget extends GpuSurface {
     /**
      * Scratch key of {@link GpuRenderTarget}.
      */
-    public static final class ScratchKey implements IScratchKey {
+    public static final class ResourceKey implements IResourceKey {
 
         public int mWidth;
         public int mHeight;
@@ -231,15 +225,15 @@ public abstract class GpuRenderTarget extends GpuSurface {
          * @return this
          */
         @Nonnull
-        public ScratchKey compute(int width, int height,
-                                  BackendFormat colorFormat,
-                                  int colorSurfaceFlags,
-                                  BackendFormat resolveFormat,
-                                  int resolveSurfaceFlags,
-                                  BackendFormat depthStencilFormat,
-                                  int depthStencilSurfaceFlags,
-                                  int sampleCount,
-                                  int surfaceFlags) {
+        public ResourceKey compute(int width, int height,
+                                   BackendFormat colorFormat,
+                                   int colorSurfaceFlags,
+                                   BackendFormat resolveFormat,
+                                   int resolveSurfaceFlags,
+                                   BackendFormat depthStencilFormat,
+                                   int depthStencilSurfaceFlags,
+                                   int sampleCount,
+                                   int surfaceFlags) {
             assert (width > 0 && height > 0);
             mWidth = width;
             mHeight = height;
@@ -251,6 +245,11 @@ public abstract class GpuRenderTarget extends GpuSurface {
             mDepthStencilFlags = depthStencilSurfaceFlags;
             mSurfaceFlags = (surfaceFlags & 0) | (sampleCount << 16);
             return this;
+        }
+
+        @Override
+        public IResourceKey copy() {
+            return null;
         }
 
         @Override
@@ -270,7 +269,7 @@ public abstract class GpuRenderTarget extends GpuSurface {
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            return o instanceof ScratchKey key &&
+            return o instanceof ResourceKey key &&
                     mWidth == key.mWidth &&
                     mHeight == key.mHeight &&
                     mColorFormat == key.mColorFormat &&

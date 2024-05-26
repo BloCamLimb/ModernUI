@@ -108,7 +108,7 @@ public class GLGraphicsPipelineBuilder extends GraphicsPipelineBuilder {
         if (gl.glGetProgrami(program, GL_LINK_STATUS) == GL_FALSE) {
             try {
                 String log = gl.glGetProgramInfoLog(program);
-                GLUtil.handleLinkError(mDevice.getContext().getLogger(),
+                GLUtil.handleLinkError(mDevice.getLogger(),
                         new String[]{
                                 "Vertex GLSL",
                                 "Fragment GLSL"},

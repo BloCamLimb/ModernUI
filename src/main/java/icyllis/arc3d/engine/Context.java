@@ -19,23 +19,26 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.RefCnt;
+import icyllis.arc3d.core.SurfaceCharacterization;
 import org.jetbrains.annotations.ApiStatus;
 import org.slf4j.Logger;
-import org.slf4j.helpers.NOPLogger;
 
 import javax.annotation.Nullable;
-import java.util.Objects;
 
 /**
  * This class is a public API, except where noted.
  */
-public abstract class Context extends RefCnt {
+public abstract sealed class Context extends RefCnt
+        permits ImmediateContext, RecordingContext {
 
-    protected final SharedContext mContextInfo;
+    protected final Device mDevice;
+    protected final Thread mOwnerThread;
+    protected ResourceProvider mResourceProvider;
 
-    protected Context(SharedContext contextInfo) {
-        mContextInfo = contextInfo;
+    protected Context(Device device) {
+        mDevice = device;
+        mOwnerThread = Thread.currentThread();
     }
 
     /**
@@ -44,7 +47,7 @@ public abstract class Context extends RefCnt {
      * @return see {@link Device.BackendApi}
      */
     public final int getBackend() {
-        return mContextInfo.getBackend();
+        return mDevice.getBackend();
     }
 
     /**
@@ -59,7 +62,7 @@ public abstract class Context extends RefCnt {
      */
     @Nullable
     public final BackendFormat getDefaultBackendFormat(int colorType, boolean renderable) {
-        return mContextInfo.getDefaultBackendFormat(colorType, renderable);
+        return mDevice.getDefaultBackendFormat(colorType, renderable);
     }
 
     /**
@@ -73,7 +76,7 @@ public abstract class Context extends RefCnt {
      */
     @Nullable
     public final BackendFormat getCompressedBackendFormat(int compressionType) {
-        return mContextInfo.getCompressedBackendFormat(compressionType);
+        return mDevice.getCompressedBackendFormat(compressionType);
     }
 
     /**
@@ -84,21 +87,22 @@ public abstract class Context extends RefCnt {
      * @param colorType see {@link ImageDesc}
      */
     public final int getMaxSurfaceSampleCount(int colorType) {
-        return mContextInfo.getMaxSurfaceSampleCount(colorType);
+        return mDevice.getMaxSurfaceSampleCount(colorType);
     }
 
-    public final SharedContext getContextInfo() {
-        return mContextInfo;
+    @ApiStatus.Internal
+    public final Device getDevice() {
+        return mDevice;
     }
 
     @ApiStatus.Internal
     public final boolean matches(Context c) {
-        return mContextInfo.matches(c);
+        return c != null && mDevice == c.mDevice;
     }
 
     @ApiStatus.Internal
     public final ContextOptions getOptions() {
-        return mContextInfo.getOptions();
+        return mDevice.getOptions();
     }
 
     /**
@@ -110,19 +114,84 @@ public abstract class Context extends RefCnt {
      */
     @ApiStatus.Internal
     public final int getContextID() {
-        return mContextInfo.getContextID();
+        return mDevice.getContextID();
+    }
+
+    //TODO
+    public boolean isDeviceLost() {
+        if (mDevice != null && mDevice.isDeviceLost()) {
+            //discard();
+            return true;
+        }
+        return false;
     }
 
     @ApiStatus.Internal
     public final Caps getCaps() {
-        return mContextInfo.getCaps();
+        return mDevice.getCaps();
+    }
+
+    @ApiStatus.Internal
+    public final ResourceProvider getResourceProvider() {
+        return mResourceProvider;
+    }
+
+    /**
+     * Gets the maximum supported texture size.
+     */
+    public final int getMaxTextureSize() {
+        return getCaps().mMaxTextureSize;
+    }
+
+    /**
+     * Gets the maximum supported render target size.
+     */
+    public final int getMaxRenderTargetSize() {
+        return getCaps().mMaxRenderTargetSize;
+    }
+
+    @ApiStatus.Internal
+    public final GlobalResourceCache getPipelineCache() {
+        return mDevice.getPipelineCache();
     }
 
     public final Logger getLogger() {
-        return Objects.requireNonNullElse(getOptions().mLogger, NOPLogger.NOP_LOGGER);
+        return mDevice.getLogger();
     }
 
     protected boolean init() {
-        return mContextInfo.isValid();
+        mResourceProvider = mDevice.makeResourceProvider(this);
+        return mDevice.isValid();
+    }
+
+    @Override
+    protected void deallocate() {
+        if (mResourceProvider != null) {
+            mResourceProvider.destroy();
+            mResourceProvider = null;
+        }
+    }
+
+    /**
+     * @return the context-creating thread
+     */
+    public final Thread getOwnerThread() {
+        return mOwnerThread;
+    }
+
+    /**
+     * @return true if calling from the context-creating thread
+     */
+    public final boolean isOwnerThread() {
+        return Thread.currentThread() == mOwnerThread;
+    }
+
+    /**
+     * Checks if calling from the context-creating thread, or throws a runtime exception.
+     */
+    public final void checkOwnerThread() {
+        if (Thread.currentThread() != mOwnerThread)
+            throw new IllegalStateException("Method expected to call from " + mOwnerThread +
+                    ", current " + Thread.currentThread() + ", deferred " + !(this instanceof ImmediateContext));
     }
 }

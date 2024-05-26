@@ -36,4 +36,10 @@ package icyllis.arc3d.engine;
  * scratch key. It can become scratch again if the unique key is removed.
  */
 public interface IUniqueKey {
+
+    @Override
+    int hashCode();
+
+    @Override
+    boolean equals(Object o);
 }

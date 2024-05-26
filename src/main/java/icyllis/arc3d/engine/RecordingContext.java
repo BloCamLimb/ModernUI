@@ -23,35 +23,20 @@ import icyllis.arc3d.core.ColorInfo;
 import icyllis.arc3d.core.Surface;
 import org.jetbrains.annotations.ApiStatus;
 
-import javax.annotation.Nullable;
-
 /**
  * This class is a public API, except where noted.
  */
-public sealed class RecordingContext extends Context
-        permits ImmediateContext {
-
-    private final Thread mOwnerThread;
+public final class RecordingContext extends Context {
 
     private final ImageProxyCache mImageProxyCache;
     private RenderTaskManager mRenderTaskManager;
+    private DynamicBufferManager mDynamicBufferManager;
 
     private final PipelineKey mLookupDesc = new PipelineKey();
 
-    protected RecordingContext(SharedContext context) {
-        super(context);
-        mOwnerThread = Thread.currentThread();
+    protected RecordingContext(Device device) {
+        super(device);
         mImageProxyCache = new ImageProxyCache(this);
-    }
-
-    @Nullable
-    public static RecordingContext makeRecording(SharedContext context) {
-        RecordingContext rContext = new RecordingContext(context);
-        if (rContext.init()) {
-            return rContext;
-        }
-        rContext.unref();
-        return null;
     }
 
     /**
@@ -61,7 +46,7 @@ public sealed class RecordingContext extends Context
      * calling this method will transition the {@link ImmediateContext} to the discarded state.
      */
     public boolean isDiscarded() {
-        return mContextInfo.isDiscarded();
+        return mDevice.isDiscarded();
     }
 
     /**
@@ -93,20 +78,6 @@ public sealed class RecordingContext extends Context
         return getMaxSurfaceSampleCount(colorType) > 0;
     }
 
-    /**
-     * Gets the maximum supported texture size.
-     */
-    public final int getMaxTextureSize() {
-        return getCaps().mMaxTextureSize;
-    }
-
-    /**
-     * Gets the maximum supported render target size.
-     */
-    public final int getMaxRenderTargetSize() {
-        return getCaps().mMaxRenderTargetSize;
-    }
-
     @ApiStatus.Internal
     public final ImageProxyCache getSurfaceProvider() {
         return mImageProxyCache;
@@ -117,15 +88,10 @@ public sealed class RecordingContext extends Context
         return mRenderTaskManager;
     }
 
-    @ApiStatus.Internal
+    /*@ApiStatus.Internal
     public final ThreadSafeCache getThreadSafeCache() {
-        return mContextInfo.getThreadSafeCache();
-    }
-
-    @ApiStatus.Internal
-    public final PipelineCache getPipelineCache() {
-        return mContextInfo.getPipelineCache();
-    }
+        return mDevice.getThreadSafeCache();
+    }*/
 
     @ApiStatus.Internal
     public final GraphicsPipeline findOrCreateGraphicsPipeline(
@@ -139,7 +105,7 @@ public sealed class RecordingContext extends Context
 
     @ApiStatus.Internal
     public final DynamicBufferManager getDynamicBufferManager() {
-        return null;
+        return mDynamicBufferManager;
     }
 
     @Override
@@ -155,7 +121,7 @@ public sealed class RecordingContext extends Context
     }
 
     protected void discard() {
-        if (mContextInfo.discard() && mRenderTaskManager != null) {
+        if (mDevice.discard() && mRenderTaskManager != null) {
             throw new AssertionError();
         }
         if (mRenderTaskManager != null) {
@@ -170,28 +136,5 @@ public sealed class RecordingContext extends Context
             mRenderTaskManager.destroy();
         }
         mRenderTaskManager = null;
-    }
-
-    /**
-     * @return the context-creating thread
-     */
-    public final Thread getOwnerThread() {
-        return mOwnerThread;
-    }
-
-    /**
-     * @return true if calling from the context-creating thread
-     */
-    public final boolean isOwnerThread() {
-        return Thread.currentThread() == mOwnerThread;
-    }
-
-    /**
-     * Checks if calling from the context-creating thread, or throws a runtime exception.
-     */
-    public final void checkOwnerThread() {
-        if (Thread.currentThread() != mOwnerThread)
-            throw new IllegalStateException("Method expected to call from " + mOwnerThread +
-                    ", current " + Thread.currentThread() + ", deferred " + !(this instanceof ImmediateContext));
     }
 }

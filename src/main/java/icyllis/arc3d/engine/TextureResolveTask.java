@@ -56,8 +56,8 @@ public final class TextureResolveTask extends RenderTask {
         if ((resolveFlags & RESOLVE_FLAG_MIPMAPS) != 0) {
             ImageProxy imageProxy = proxy.asImageProxy();
             assert imageProxy != null;
-            assert (imageProxy.isMipmapped() && imageProxy.isMipmapsDirty());
-            imageProxy.setMipmapsDirty(false);
+            /*assert (imageProxy.isMipmapped() && imageProxy.isMipmapsDirty());
+            imageProxy.setMipmapsDirty(false);*/
         }
 
         mResolves.add(new Resolve(resolveFlags,

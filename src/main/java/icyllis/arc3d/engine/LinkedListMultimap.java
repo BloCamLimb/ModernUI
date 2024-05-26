@@ -89,6 +89,20 @@ public class LinkedListMultimap<K, V> extends HashMap<K, LinkedList<V>> {
         return v;
     }
 
+    @Nullable
+    public V peekFirstEntry(@Nonnull K k) {
+        var list = get(k);
+        // we always remove empty linked lists, so getFirst() not peekFirst()
+        return list != null ? list.getFirst() : null;
+    }
+
+    @Nullable
+    public V peekLastEntry(@Nonnull K k) {
+        var list = get(k);
+        // we always remove empty linked lists, so getFirst() not peekFirst()
+        return list != null ? list.getLast() : null;
+    }
+
     public void removeFirstEntry(@Nonnull K k, @Nonnull V v) {
         assert (mTmpValue == null);
         mTmpValue = v;

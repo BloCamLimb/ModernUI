@@ -174,7 +174,7 @@ public class OpsTask extends RenderTask {
         }
         ImageProxy imageProxy = target.asImageProxy();
         if (imageProxy != null && imageProxy.isMipmapped()) {
-            imageProxy.setMipmapsDirty(true);
+            //imageProxy.setMipmapsDirty(true);
         }
     }
 

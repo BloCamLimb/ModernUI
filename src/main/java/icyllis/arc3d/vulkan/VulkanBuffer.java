@@ -20,12 +20,13 @@
 package icyllis.arc3d.vulkan;
 
 import icyllis.arc3d.engine.Buffer;
+import icyllis.arc3d.engine.Context;
 
 //TODO
 public final class VulkanBuffer extends Buffer {
 
-    public VulkanBuffer(VulkanDevice device) {
-        super(device, 0, 0);
+    public VulkanBuffer(Context context) {
+        super(context, 0, 0);
     }
 
     @Override

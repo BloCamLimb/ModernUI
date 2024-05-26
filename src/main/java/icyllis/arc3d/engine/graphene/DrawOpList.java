@@ -40,16 +40,12 @@ public class DrawOpList {
         return last;
     }
 
-    public void recordDrawOp(GeometryRenderer renderer,
-                             Matrix4 modelView,
-                             Object geometry,
-                             ClipResult_old clip,
-                             long drawOrder) {
-        modelView = getStableTransform(modelView);
+    public void recordDrawOp(DrawOp draw) {
+        draw.mTransform = getStableTransform(draw.mTransform);
 
-        mDrawOps.add(new DrawOp());//TODO
+        mDrawOps.add(draw);
 
-        mNumSteps += renderer.numSteps();
+        mNumSteps += draw.mRenderer.numSteps();
     }
 
     public int numSteps() {

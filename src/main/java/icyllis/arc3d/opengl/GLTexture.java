@@ -34,18 +34,16 @@ import static org.lwjgl.opengl.GL30C.*;
  */
 public final class GLTexture extends GLImage {
 
-    private int mHandle;
+    private volatile int mHandle;
     private final boolean mOwnership;
 
-    private final long mMemorySize;
-
     // Constructor for instances created by ourselves.
-    GLTexture(GLDevice device,
+    GLTexture(Context context,
               GLImageDesc desc,
               GLTextureMutableState mutableState,
               int handle,
               boolean budgeted) {
-        super(device, desc, mutableState);
+        super(context, budgeted, false, desc, mutableState);
         assert GLUtil.glFormatIsSupported(desc.mFormat);
         mOwnership = true;
 
@@ -55,24 +53,22 @@ public final class GLTexture extends GLImage {
             mFlags |= ISurface.FLAG_READ_ONLY;
         }
 
-        mMemorySize = DataUtils.computeSize(desc);
-        registerWithCache(budgeted);
-
         if (mHandle == 0) {
-            device.recordRenderCall(dev -> {
+            getDevice().recordRenderCall(device -> {
                 if (isDestroyed()) {
                     return;
                 }
-                mHandle = dev.createTexture(mDesc);
+                mHandle = device.createTexture(mDesc);
                 if (mHandle == 0) {
-                    makeBudgeted(false);
+                    setNonCacheable();
                 }
             });
         }
     }
 
     // Constructor for instances wrapping backend objects.
-    public GLTexture(GLDevice device,
+    //TODO wrapping
+    /*public GLTexture(GLDevice device,
                      GLImageDesc desc,
                      GLTextureMutableState mutableState,
                      int handle,
@@ -92,13 +88,14 @@ public final class GLTexture extends GLImage {
 
         mMemorySize = DataUtils.computeSize(desc);
         registerWithCacheWrapped(cacheable);
-    }
+    }*/
 
     @Nullable
     @SharedPtr
-    public static GLTexture make(GLDevice device,
+    public static GLTexture make(Context context,
                                  GLImageDesc desc,
                                  boolean budgeted) {
+        final GLDevice device = (GLDevice) context.getDevice();
         final int handle;
         if (device.isOnExecutingThread()) {
             handle = device.createTexture(desc);
@@ -108,7 +105,7 @@ public final class GLTexture extends GLImage {
         } else {
             handle = 0;
         }
-        return new GLTexture(device, desc,
+        return new GLTexture(context, desc,
                 new GLTextureMutableState(),
                 handle,
                 budgeted);
@@ -131,15 +128,10 @@ public final class GLTexture extends GLImage {
     }
 
     @Override
-    public long getMemorySize() {
-        return mMemorySize;
-    }
-
-    @Override
-    protected void onSetLabel(@Nonnull String label) {
+    protected void onSetLabel(@Nullable String label) {
         if (getDevice().getCaps().hasDebugSupport()) {
             assert mDesc != null;
-            if (label.isEmpty()) {
+            if (label == null) {
                 getDevice().getGL().glObjectLabel(GL_TEXTURE, mHandle, 0, MemoryUtil.NULL);
             } else {
                 label = label.substring(0, Math.min(label.length(),
@@ -176,11 +168,6 @@ public final class GLTexture extends GLImage {
     }
 
     @Override
-    protected GLDevice getDevice() {
-        return (GLDevice) super.getDevice();
-    }
-
-    @Override
     public String toString() {
         return "GLTexture{" +
                 "mDesc=" + mDesc +
@@ -188,7 +175,7 @@ public final class GLTexture extends GLImage {
                 ", mDestroyed=" + isDestroyed() +
                 ", mOwnership=" + mOwnership +
                 ", mLabel=" + getLabel() +
-                ", mMemorySize=" + mMemorySize +
+                ", mMemorySize=" + getMemorySize() +
                 '}';
     }
 }

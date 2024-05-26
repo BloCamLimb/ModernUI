@@ -132,7 +132,7 @@ public class ImageProxyView implements AutoCloseable {
         mProxy = null;
     }
 
-    @Override
+    /*@Override
     public int hashCode() {
         int result = mProxy != null ? mProxy.getUniqueID().hashCode() : 0;
         result = 31 * result + mOrigin;
@@ -149,5 +149,5 @@ public class ImageProxyView implements AutoCloseable {
         if (mSwizzle != that.mSwizzle) return false;
         return (mProxy == null && that.mProxy == null) ||
                 (mProxy != null && that.mProxy != null && mProxy.getUniqueID() == that.mProxy.getUniqueID());
-    }
+    }*/
 }

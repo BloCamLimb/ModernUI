@@ -55,11 +55,11 @@ public final class GLRenderTarget extends GpuRenderTarget {
     // should we delete framebuffers ourselves?
     private final boolean mOwnership;
 
-    private final BackendFormat mBackendFormat;
+    private BackendFormat mBackendFormat;
     private BackendRenderTarget mBackendRenderTarget;
 
     // Constructor for instances created by our engine. (has texture access)
-    GLRenderTarget(GLDevice device,
+    GLRenderTarget(Context context,
                    int width, int height,
                    int sampleCount,
                    int renderFramebuffer,
@@ -69,7 +69,7 @@ public final class GLRenderTarget extends GpuRenderTarget {
                    GLTexture[] resolveAttachments,
                    GLTexture depthStencilAttachment,
                    int surfaceFlags) {
-        super(device, width, height, sampleCount, numColorTargets);
+        super(context, width, height, sampleCount, numColorTargets);
         assert (sampleCount > 0);
         mRenderFramebuffer = renderFramebuffer;
         mResolveFramebuffer = resolveFramebuffer;
@@ -80,22 +80,22 @@ public final class GLRenderTarget extends GpuRenderTarget {
         // color/resolve attachments may have different formats,
         // but we don't care about that
         GLTexture primaryAtt = (GLTexture) asImage();
-        mBackendFormat = primaryAtt != null
+        /*mBackendFormat = primaryAtt != null
                 ? primaryAtt.getBackendFormat()
-                : GLBackendFormat.make(GL_NONE);
+                : GLBackendFormat.make(GL_NONE);*/
         mSurfaceFlags |= surfaceFlags;
-        registerWithCache((surfaceFlags & ISurface.FLAG_BUDGETED) != 0);
+        //registerWithCache((surfaceFlags & ISurface.FLAG_BUDGETED) != 0);
     }
 
     // Constructor for instances wrapping backend objects. (no texture access)
-    private GLRenderTarget(GLDevice device,
+    private GLRenderTarget(Context context,
                            int width, int height,
                            BackendFormat format,
                            int sampleCount,
                            int framebuffer,
                            boolean ownership,
                            @SharedPtr GLTexture depthStencilAttachment) {
-        super(device, width, height, sampleCount, 1);
+        super(context, width, height, sampleCount, 1);
         assert (sampleCount > 0);
         assert (framebuffer != 0 || !ownership);
         mRenderFramebuffer = framebuffer;
@@ -106,7 +106,7 @@ public final class GLRenderTarget extends GpuRenderTarget {
         if (framebuffer == 0) {
             mSurfaceFlags |= ISurface.FLAG_GL_WRAP_DEFAULT_FB;
         }
-        registerWithCacheWrapped(false);
+        //registerWithCacheWrapped(false);
     }
 
     /**
@@ -118,7 +118,7 @@ public final class GLRenderTarget extends GpuRenderTarget {
      */
     @Nonnull
     @SharedPtr
-    public static GLRenderTarget makeWrapped(GLDevice device,
+    public static GLRenderTarget makeWrapped(Context context,
                                              int width, int height,
                                              BackendFormat format,
                                              int sampleCount,
@@ -160,7 +160,7 @@ public final class GLRenderTarget extends GpuRenderTarget {
                     depthStencilFormat,
                     0);*/
         }
-        return new GLRenderTarget(device,
+        return new GLRenderTarget(context,
                 width, height,
                 format,
                 sampleCount,
@@ -280,12 +280,12 @@ public final class GLRenderTarget extends GpuRenderTarget {
 
     @Override
     public int getDepthBits() {
-        return mDepthStencilAttachment != null ? mDepthStencilAttachment.getBackendFormat().getDepthBits() : 0;
+        return mDepthStencilAttachment != null ? mDepthStencilAttachment.getDepthBits() : 0;
     }
 
     @Override
     public int getStencilBits() {
-        return mDepthStencilAttachment != null ? mDepthStencilAttachment.getBackendFormat().getStencilBits() : 0;
+        return mDepthStencilAttachment != null ? mDepthStencilAttachment.getStencilBits() : 0;
     }
 
     @Nonnull

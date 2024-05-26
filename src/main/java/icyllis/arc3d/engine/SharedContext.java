@@ -34,6 +34,7 @@ import static icyllis.arc3d.engine.Engine.*;
  * <p>
  * This class is a public API, except where noted.
  */
+@Deprecated
 public final class SharedContext {
 
     private static final AtomicInteger sNextID = new AtomicInteger(1);
@@ -54,7 +55,7 @@ public final class SharedContext {
 
     private volatile Caps mCaps;
     private volatile ThreadSafeCache mThreadSafeCache;
-    private volatile PipelineCache mPipelineCache;
+    private volatile GlobalResourceCache mGlobalResourceCache;
 
     private final AtomicBoolean mDiscarded = new AtomicBoolean(false);
 
@@ -248,7 +249,8 @@ public final class SharedContext {
 
     @ApiStatus.Internal
     public boolean matches(Context c) {
-        return c != null && this == c.mContextInfo;
+        //return c != null && this == c.mContextInfo;
+        return false;
     }
 
     @ApiStatus.Internal
@@ -277,15 +279,15 @@ public final class SharedContext {
     }
 
     @ApiStatus.Internal
-    public PipelineCache getPipelineCache() {
-        return mPipelineCache;
+    public GlobalResourceCache getPipelineCache() {
+        return mGlobalResourceCache;
     }
 
     void init(Device device) {
         assert (device != null);
         mCaps = device.getCaps();
         mThreadSafeCache = new ThreadSafeCache();
-        mPipelineCache = device.getPipelineCache();
+        mGlobalResourceCache = device.getPipelineCache();
     }
 
     boolean discard() {

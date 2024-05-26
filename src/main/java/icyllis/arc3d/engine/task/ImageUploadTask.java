@@ -19,9 +19,67 @@
 
 package icyllis.arc3d.engine.task;
 
+import icyllis.arc3d.core.ColorSpace;
+import icyllis.arc3d.core.Rect2ic;
 import icyllis.arc3d.engine.*;
 
+import javax.annotation.Nullable;
+
 public class ImageUploadTask extends Task {
+
+    public interface UploadCondition {
+
+        boolean PRESERVE = true;
+        boolean DISCARD = false;
+
+        boolean shouldUpload(ImmediateContext context);
+
+        default boolean onUploadSubmitted() {
+            return PRESERVE;
+        }
+    }
+
+    public static class OneTimeUploadCondition implements UploadCondition {
+
+        public static final UploadCondition INSTANCE = new OneTimeUploadCondition();
+
+        @Override
+        public boolean shouldUpload(ImmediateContext context) {
+            return true;
+        }
+
+        @Override
+        public boolean onUploadSubmitted() {
+            return DISCARD;
+        }
+    }
+
+    @Nullable
+    public static ImageUploadTask make(RecordingContext context,
+                                       ImageProxy imageProxy,
+                                       int srcColorType,
+                                       int srcAlphaType,
+                                       ColorSpace srcColorSpace,
+                                       int dstColorType,
+                                       int dstAlphaType,
+                                       ColorSpace dstColorSpace,
+                                       Rect2ic dstRect,
+                                       UploadCondition condition) {
+
+        if (dstRect.isEmpty()) {
+            return null;
+        }
+
+
+
+
+
+
+
+
+        return null;
+    }
+
     @Override
     public boolean prepare(ResourceProvider resourceProvider) {
         return false;

@@ -21,12 +21,7 @@ package icyllis.arc3d.engine;
 
 public abstract class Framebuffer extends Resource {
 
-    protected Framebuffer(Device device) {
-        super(device);
-    }
-
-    @Override
-    public long getMemorySize() {
-        return 0;
+    protected Framebuffer(Context context) {
+        super(context, true, false, 0);
     }
 }

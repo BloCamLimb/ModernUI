@@ -66,6 +66,10 @@ public class MeshDrawWriter {
         assert (mPendingCount == 0);
     }
 
+    public void newDynamicState() {
+        flush();
+    }
+
     // A == B && (A == null || C == D)
     // A != B || (A != null && C != D)
 

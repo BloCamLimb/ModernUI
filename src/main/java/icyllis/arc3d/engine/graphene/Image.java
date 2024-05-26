@@ -29,20 +29,20 @@ import javax.annotation.Nullable;
 /**
  * The image that is backed by GPU.
  */
-public final class Image_Gpu extends icyllis.arc3d.core.Image {
+public final class Image extends icyllis.arc3d.core.Image {
 
     RecordingContext mContext;
     @SharedPtr
     ImageProxyView mImageProxyView;
 
-    public Image_Gpu(@Nonnull RecordingContext rContext,
-                     @Nonnull ImageProxy proxy,
-                     short swizzle,
-                     int origin,
-                     int colorType,
-                     int alphaType,
-                     @Nullable ColorSpace colorSpace) {
-        super(ImageInfo.make(proxy.getBackingWidth(), proxy.getBackingHeight(),
+    public Image(@Nonnull RecordingContext rContext,
+                 @Nonnull ImageProxy proxy,
+                 short swizzle,
+                 int origin,
+                 int colorType,
+                 int alphaType,
+                 @Nullable ColorSpace colorSpace) {
+        super(ImageInfo.make(proxy.getWidth(), proxy.getHeight(),
                 colorType, alphaType, colorSpace));
         mContext = rContext;
         mImageProxyView = new ImageProxyView(RefCnt.create(proxy), origin, swizzle);

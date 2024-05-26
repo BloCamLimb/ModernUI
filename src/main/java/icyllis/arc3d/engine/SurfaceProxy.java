@@ -487,7 +487,7 @@ public abstract class SurfaceProxy extends RefCnt {
     public abstract boolean doLazyInstantiation(ResourceProvider resourceProvider);
 
     @Nonnull
-    abstract IScratchKey computeScratchKey();
+    abstract IResourceKey computeScratchKey();
 
     @Nullable
     @SharedPtr

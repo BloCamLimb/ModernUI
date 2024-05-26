@@ -21,7 +21,6 @@ package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SharedPtr;
-import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -77,6 +76,8 @@ public final class ImageProxy extends RefCnt {
     @SharedPtr
     Image mImage;
 
+    String mLabel;
+
     /**
      * BackingFit: Indicates whether a backing store needs to be an exact match or can be
      * larger than is strictly necessary. Always approx for lazy-callback resources;
@@ -109,59 +110,40 @@ public final class ImageProxy extends RefCnt {
      * @see ISurface#FLAG_APPROX_FIT
      * @see ISurface#FLAG_SKIP_ALLOCATOR
      */
-    int mSurfaceFlags;
+    boolean mBudgeted;
+    boolean mVolatile;
+    boolean mLazyDimensions;
 
     LazyInstantiateCallback mLazyInstantiateCallback;
 
     /**
-     * Set from the backing resource for wrapped resources.
-     */
-    final UniqueID mUniqueID;
-
-    boolean mIsPromiseProxy = false;
-
-    /**
-     * This tracks the mipmap status at the proxy level and is thus somewhat distinct from the
-     * backing Texture's mipmap status. In particular, this status is used to determine when
-     * mipmap levels need to be explicitly regenerated during the execution of a DAG of opsTasks.
-     * <p>
-     * Only meaningful if {@link #isUserMipmapped} returns true.
-     */
-    boolean mMipmapsDirty = true;
-
-    /**
-     * Should the target's unique key be synced with ours.
-     */
-    boolean mSyncTargetKey = true;
-
-    IUniqueKey mUniqueKey;
-    /**
-     * Only set when 'mUniqueKey' is non-null.
-     */
-    ImageProxyCache mImageProxyCache;
-
-    /**
      * Deferred version - no data
      */
-    public ImageProxy(ImageDesc desc,
-                      int surfaceFlags) {
+    ImageProxy(ImageDesc desc,
+                      boolean budgeted,
+                      String label) {
         assert (desc.isValid());
         mDesc = desc;
-        mSurfaceFlags = surfaceFlags;
-        mUniqueID = new UniqueID();
-        //assert (width > 0 && height > 0); // non-lazy
+        mLabel = label;
+        mBudgeted = budgeted;
+        mVolatile = false;
+        mLazyDimensions = false;
     }
 
     /**
      * Lazy-callback version - takes a new UniqueID from the shared resource/proxy pool.
      */
-    public ImageProxy(ImageDesc desc,
-                      int surfaceFlags,
+    ImageProxy(ImageDesc desc,
+                      boolean budgeted,
+                      boolean isVolatile,
+                      boolean lazyDimensions,
                       LazyInstantiateCallback callback) {
         assert (desc.isValid());
         mDesc = desc;
-        mSurfaceFlags = surfaceFlags;
-        mUniqueID = new UniqueID();
+        mLabel = "";
+        mBudgeted = budgeted;
+        mVolatile = isVolatile;
+        mLazyDimensions = lazyDimensions;
         mLazyInstantiateCallback = Objects.requireNonNull(callback);
         // A "fully" lazy proxy's width and height are not known until instantiation time.
         // So fully lazy proxies are created with width and height < 0. Regular lazy proxies must be
@@ -172,52 +154,22 @@ public final class ImageProxy extends RefCnt {
     }
 
     /**
-     * Wrapped version - shares the UniqueID of the passed image.
-     * <p>
-     * Takes UseAllocator because even though this is already instantiated it still can participate
-     * in allocation by having its backing resource recycled to other uninstantiated proxies or
-     * not depending on UseAllocator.
+     * Wrapped version.
      */
-    public ImageProxy(@SharedPtr Image image,
-                      int surfaceFlags) {
+    ImageProxy(@SharedPtr Image image) {
         assert (image != null);
         mDesc = image.getDesc();
-        mSurfaceFlags = image.getSurfaceFlags() | surfaceFlags;
-        assert (mSurfaceFlags & ISurface.FLAG_APPROX_FIT) == 0;
-        mUniqueID = image.getUniqueID(); // converting from unique resource ID to a surface ID
-        mMipmapsDirty = image.isMipmapped() && image.isMipmapsDirty();
-        assert (mSurfaceFlags & ISurface.FLAG_APPROX_FIT) == 0;
-        assert (image.isMipmapped()) == ((mSurfaceFlags & ISurface.FLAG_MIPMAPPED) != 0);
-        assert (image.getBudgetType() == Engine.BudgetType.Budgeted) == ((mSurfaceFlags & ISurface.FLAG_BUDGETED) != 0);
-        assert (image.getBudgetType() == Engine.BudgetType.Budgeted) == isBudgeted();
+        mLabel = image.getLabel();
+        mBudgeted = image.isBudgeted();
+        mVolatile = false;
+        mLazyDimensions = false;
         mImage = image; // std::move
-        if (image.getUniqueKey() != null) {
-            assert (image.getContext() != null);
-            mImageProxyCache = image.getContext().getSurfaceProvider();
-            mImageProxyCache.adoptUniqueKeyFromSurface(this, image);
-        }
     }
 
     public static class LazyCallbackResult {
 
         @SharedPtr
         public Image mImage;
-        /**
-         * Some lazy callbacks want to set their own (or no key) on the {@link Image}
-         * they return. Others want the {@link Image}'s key to be kept in sync with the surface's
-         * key. This flag controls the key relationship between proxies and their targets.
-         * <ul>
-         *     <li>False: Don't key the {@link Image} with the surface's key. The lazy
-         *     instantiation callback is free to return a {@link Image} that already
-         *     has a unique key unrelated to the surface's key.</li>
-         *     <li>True: Keep the {@link Image}'s unique key in sync with the surface's
-         *     unique key. The {@link Image} returned from the lazy instantiation callback
-         *     must not have a unique key or have the same same unique key as the surface.
-         *     If the surface is later assigned a key it is in turn assigned to the
-         *     {@link Image}.</li>
-         * </ul>
-         */
-        public boolean mSyncTargetKey = true;
         /**
          * Should the callback be disposed of after it has returned or preserved until the surface
          * is freed. Only honored if 'mSurface' is not-null. If it is null the callback is preserved.
@@ -232,10 +184,8 @@ public final class ImageProxy extends RefCnt {
         }
 
         public LazyCallbackResult(@SharedPtr Image image,
-                                  boolean syncTargetKey,
                                   boolean releaseCallback) {
             mImage = image;
-            mSyncTargetKey = syncTargetKey;
             mReleaseCallback = releaseCallback;
         }
     }
@@ -262,16 +212,28 @@ public final class ImageProxy extends RefCnt {
 
     @Nullable
     @SharedPtr
-    public static ImageProxy make(ImageDesc desc, boolean budgeted) {
+    public static ImageProxy make(@Nonnull Context context,
+                                  @Nonnull ImageDesc desc,
+                                  boolean budgeted,
+                                  @Nullable String label) {
         if (!desc.isValid()) {
             return null;
         }
-        return new ImageProxy(desc, budgeted ? ISurface.FLAG_BUDGETED : 0);
+        var proxy = new ImageProxy(desc, budgeted, label);
+        if (!budgeted) {
+            // Instantiate immediately to avoid races later on if the client starts to use the wrapping
+            // object on multiple threads.
+            if (!proxy.instantiate(context.getResourceProvider())) {
+                proxy.unref();
+                return null;
+            }
+        }
+        return proxy;
     }
 
     @Nullable
     @SharedPtr
-    public static ImageProxy make(Context context,
+    public static ImageProxy make(@Nonnull Context context,
                                   byte imageType,
                                   int colorType,
                                   int width, int height,
@@ -279,7 +241,21 @@ public final class ImageProxy extends RefCnt {
                                   int imageFlags) {
         var desc = context.getCaps().getDefaultColorImageDesc(imageType, colorType, width, height, depthOrArraySize,
                 imageFlags);
-        return make(desc, true);
+        return make(context, desc, true, "");
+    }
+
+    @SharedPtr
+    public static ImageProxy makeLazy(@Nonnull ImageDesc desc,
+                                      boolean budgeted,
+                                      boolean isVolatile,
+                                      boolean lazyDimensions,
+                                      @Nonnull LazyInstantiateCallback callback) {
+        return new ImageProxy(desc, budgeted, isVolatile, lazyDimensions, callback);
+    }
+
+    @SharedPtr
+    public static ImageProxy wrap(@SharedPtr Image image) {
+        return new ImageProxy(image);
     }
 
     @Override
@@ -292,35 +268,22 @@ public final class ImageProxy extends RefCnt {
             mLazyInstantiateCallback.close();
             mLazyInstantiateCallback = null;
         }
-
-        // In DDL-mode, uniquely keyed proxies keep their key even after their originating
-        // proxy provider has gone away. In that case there is no-one to send the invalid key
-        // message to (Note: in this case we don't want to remove its cached resource).
-        if (mUniqueKey != null && mImageProxyCache != null) {
-            mImageProxyCache.processInvalidUniqueKey(mUniqueKey, this, false);
-        } else {
-            assert (mImageProxyCache == null);
-        }
     }
 
     /**
-     * Returns true if the surface has a lazy callback and not instantiated.
+     * Returns true if the image proxy has a lazy callback.
      */
     public boolean isLazy() {
-        return mImage == null && mLazyInstantiateCallback != null;
+        return mLazyInstantiateCallback != null;
     }
 
     /**
-     * Returns true if the surface has a lazy callback, not instantiated,
-     * loose fit and dimension is not known.
+     * Returns true if the image proxy has a lazy callback, loose fit and dimension is not known.
      */
-    public final boolean isLazyMost() {
-        /*boolean result = mWidth < 0;
-        assert (result == (mHeight < 0));
+    public boolean isLazyMost() {
+        boolean result = mLazyDimensions;
         assert (!result || isLazy());
-        return result;*/
-        //TODO
-        return false;
+        return result;
     }
 
     /**
@@ -329,9 +292,9 @@ public final class ImageProxy extends RefCnt {
      *
      * @return the desired width of the surface
      */
-    public final int getWidth() {
-        assert (!isLazyMost());
-        return mDesc.getWidth();
+    public int getWidth() {
+        assert (!isLazyMost() || isInstantiated());
+        return isInstantiated() ? mImage.getWidth() : mDesc.getWidth();
     }
 
     /**
@@ -340,65 +303,18 @@ public final class ImageProxy extends RefCnt {
      *
      * @return the desired height of the surface
      */
-    public final int getHeight() {
-        assert (!isLazyMost());
-        return mDesc.getHeight();
+    public int getHeight() {
+        assert (!isLazyMost() || isInstantiated());
+        return isInstantiated() ? mImage.getHeight() : mDesc.getHeight();
     }
 
     /**
-     * Returns the physical width of the backing surface.
-     * The result is undefined if {@link #isLazyMost()} returns true.
-     *
-     * @return the width of the backing store
+     * For Promise Images - should the Promise Image be fulfilled every time a Recording that references
+     * it is inserted into the Context. True: fulfilled on every insertion call, otherwise only fulfilled once.
      */
-    public int getBackingWidth() {
-        assert (!isLazyMost());
-        if (mImage != null) {
-            return mImage.getWidth();
-        }
-        /*if ((mSurfaceFlags & ISurface.FLAG_APPROX_FIT) != 0) {
-            return ISurface.getApproxSize(mWidth);
-        }*/
-        //TODO
-        return getWidth();
-    }
-
-    /**
-     * Returns the physical height of the backing surface.
-     * The result is undefined if {@link #isLazyMost()} returns true.
-     *
-     * @return the height of the backing store
-     */
-    public int getBackingHeight() {
-        assert (!isLazyMost());
-        if (mImage != null) {
-            return mImage.getHeight();
-        }
-        /*if ((mSurfaceFlags & ISurface.FLAG_APPROX_FIT) != 0) {
-            return ISurface.getApproxSize(mHeight);
-        }*/
-        //TODO
-        return getHeight();
-    }
-
-    /**
-     * If set to exact or approx size is equal to exact size. Must call when not lazy-most.
-     * Equivalent to getWidth() == getBackingWidth() && getHeight() == getBackingHeight();
-     *
-     * @return true if backing fit is (as if) exact
-     * @see #isUserExact()
-     */
-    public final boolean isExact() {
-        assert (!isLazyMost());
-        if ((mSurfaceFlags & ISurface.FLAG_APPROX_FIT) == 0) {
-            // user-set Exact
-            return true;
-        }
-        // equivalent to Exact
-        //TODO
-        /*return mWidth == ISurface.getApproxSize(mWidth) &&
-                mHeight == ISurface.getApproxSize(mHeight);*/
-        return true;
+    public boolean isVolatile() {
+        assert !mVolatile || mLazyInstantiateCallback != null;
+        return mVolatile;
     }
 
     /**
@@ -414,36 +330,6 @@ public final class ImageProxy extends RefCnt {
     @Nonnull
     public ImageDesc getDesc() {
         return mDesc;
-    }
-
-    /**
-     * The contract for the unique ID is:
-     * <ul>
-     * <li>For wrapped resources:
-     * the unique ID will match that of the wrapped resource</li>
-     * <li>For deferred resources:
-     *  <ul>
-     *  <li>The unique ID will be different from the real resource, when it is allocated</li>
-     *  <li>The surface's unique ID will not change across the instantiates call</li>
-     *  </ul>
-     * </li>
-     * <li> The unique IDs of the proxies and the resources draw from the same pool</li>
-     * </ul>
-     * What this boils down to is that the unique ID of a surface can be used to consistently
-     * track/identify a surface but should never be used to distinguish between
-     * resources and proxies - <b>beware!</b>
-     *
-     * @return a reference for identity hash map
-     */
-    public final UniqueID getUniqueID() {
-        return mUniqueID;
-    }
-
-    public UniqueID getBackingUniqueID() {
-        if (mImage != null) {
-            return mImage.getUniqueID();
-        }
-        return mUniqueID;
     }
 
     /**
@@ -464,24 +350,13 @@ public final class ImageProxy extends RefCnt {
             return false;
         }
         if (mImage != null) {
-            assert mUniqueKey == null ||
-                    mImage.getUniqueKey() != null && mImage.getUniqueKey().equals(mUniqueKey);
             return true;
         }
 
-        assert ((mSurfaceFlags & ISurface.FLAG_MIPMAPPED) == 0) ||
-                ((mSurfaceFlags & ISurface.FLAG_APPROX_FIT) == 0);
-
-        final Image image = resourceProvider.findOrCreateImage(mDesc,
-                (mSurfaceFlags & ISurface.FLAG_BUDGETED) != 0, "");
+        @SharedPtr final Image image = resourceProvider.findOrCreateImage(mDesc,
+                mBudgeted, mLabel);
         if (image == null) {
             return false;
-        }
-
-        // If there was an invalidation message pending for this key, we might have just processed it,
-        // causing the key (stored on this proxy) to become invalid.
-        if (mUniqueKey != null) {
-            resourceProvider.assignUniqueKeyToResource(mUniqueKey, image);
         }
 
         assert mImage == null;
@@ -490,10 +365,49 @@ public final class ImageProxy extends RefCnt {
         return true;
     }
 
+    public boolean instantiateIfNonLazy(ResourceProvider resourceProvider) {
+        if (isLazy()) {
+            return true;
+        }
+        return instantiate(resourceProvider);
+    }
+
+    public boolean doLazyInstantiation(ResourceProvider resourceProvider) {
+        assert isLazy();
+        if (mImage != null) {
+            return true;
+        }
+
+        @SharedPtr
+        Image image = null;
+        boolean releaseCallback = false;
+        LazyCallbackResult result = mLazyInstantiateCallback.onLazyInstantiate(resourceProvider,
+                mDesc,
+                mBudgeted,
+                mLabel);
+        if (result != null) {
+            image = result.mImage;
+            releaseCallback = result.mReleaseCallback;
+        }
+        if (image == null) {
+            return false;
+        }
+
+        assert mImage == null;
+        mImage = image;
+        if (releaseCallback) {
+            mLazyInstantiateCallback.close();
+            mLazyInstantiateCallback = null;
+        }
+
+        return true;
+    }
+
     /**
      * De-instantiate. Called after instantiated.
      */
     public void clear() {
+        assert mVolatile && mLazyInstantiateCallback != null;
         assert mImage != null;
         mImage.unref();
         mImage = null;
@@ -506,26 +420,12 @@ public final class ImageProxy extends RefCnt {
      * set from the backing resource for wrapped resources;
      * only meaningful if 'mLazyInstantiateCallback' is non-null.
      */
-    public final boolean isBudgeted() {
-        return (mSurfaceFlags & ISurface.FLAG_BUDGETED) != 0;
+    public boolean isBudgeted() {
+        return mBudgeted;
     }
 
-    /**
-     * The pixel values of this surface's texture cannot be modified (e.g. doesn't support write
-     * pixels or MIP map level regen). Read-only proxies also bypass interval tracking and
-     * assignment in ResourceAllocator.
-     */
-    public final boolean isReadOnly() {
-        return (mSurfaceFlags & ISurface.FLAG_READ_ONLY) != 0;
-    }
-
-    public final boolean isProtected() {
-        return (mSurfaceFlags & ISurface.FLAG_PROTECTED) != 0;
-    }
-
-    @ApiStatus.Internal
-    public final boolean isUserExact() {
-        return (mSurfaceFlags & ISurface.FLAG_APPROX_FIT) == 0;
+    public boolean isProtected() {
+        return mDesc.isProtected();
     }
 
     /**
@@ -536,33 +436,7 @@ public final class ImageProxy extends RefCnt {
      * @return the amount of GPU memory used in bytes
      */
     public long getMemorySize() {
-        //TODO
-        return 0;
-    }
-
-    /**
-     * Proxies that are already instantiated and whose backing texture cannot be recycled to
-     * instantiate other proxies do not need to be considered by {@link SurfaceAllocator}.
-     */
-    public final boolean shouldSkipAllocator() {
-        if ((mSurfaceFlags & ISurface.FLAG_SKIP_ALLOCATOR) != 0) {
-            // Usually an atlas or onFlush proxy
-            return true;
-        }
-        if (mImage == null) {
-            return false;
-        }
-        // If this resource is already allocated and not recyclable then the resource allocator does
-        // not need to do anything with it.
-        return mImage.getScratchKey() == null;
-    }
-
-    /**
-     * Return the texture proxy's unique key. It will be null if the proxy doesn't have one.
-     */
-    @Nullable
-    public final IUniqueKey getUniqueKey() {
-        return mUniqueKey;
+        return DataUtils.computeSize(mDesc);
     }
 
     /**
@@ -578,10 +452,6 @@ public final class ImageProxy extends RefCnt {
         return mImage;
     }
 
-    public final boolean isPromiseProxy() {
-        return mIsPromiseProxy;
-    }
-
     /**
      * If we are instantiated and have a target, return the mip state of that target. Otherwise,
      * returns the proxy's mip state from creation time. This is useful for lazy proxies which may
@@ -591,174 +461,8 @@ public final class ImageProxy extends RefCnt {
      */
     public boolean isMipmapped() {
         if (mImage != null) {
-            return mImage.asImage().isMipmapped();
+            return mImage.isMipmapped();
         }
-        return (mSurfaceFlags & ISurface.FLAG_MIPMAPPED) != 0;
-    }
-
-    public final boolean isMipmapsDirty() {
-        return mMipmapsDirty && isUserMipmapped();
-    }
-
-    public final void setMipmapsDirty(boolean dirty) {
-        assert isUserMipmapped();
-        mMipmapsDirty = dirty;
-    }
-
-    /**
-     * Returns the Mipmapped value of the proxy from creation time regardless of whether it has
-     * been instantiated or not.
-     */
-    public final boolean isUserMipmapped() {
-        return (mSurfaceFlags & ISurface.FLAG_MIPMAPPED) != 0;
-    }
-
-    /*@Nonnull
-    @Override
-    IScratchKey computeScratchKey() {
-        int computeFlags = ((mSurfaceFlags & (ISurface.FLAG_RENDERABLE | ISurface.FLAG_PROTECTED)) |
-                (isMipmapped() ? ISurface.FLAG_MIPMAPPED : 0));
-        return new Image.ScratchKey().compute(
-                mFormat,
-                getBackingWidth(),
-                getBackingHeight(),
-                1,
-                computeFlags
-        );
-    }*/
-
-    /*@ApiStatus.Internal
-    public final void makeUserExact(boolean allocatedCaseOnly) {
-        assert !isLazyMost();
-        if ((mSurfaceFlags & ISurface.FLAG_APPROX_FIT) == 0) {
-            return;
-        }
-
-        final Image texture = getGpuImage();
-        if (texture != null) {
-            // The Approx but already instantiated case. Setting the proxy's width & height to
-            // the instantiated width & height could have side-effects going forward, since we're
-            // obliterating the area of interest information. This call only used
-            // when converting an SpecialImage to an Image so the proxy shouldn't be
-            // used for additional draws.
-            mWidth = texture.getWidth();
-            mHeight = texture.getHeight();
-            return;
-        }
-
-        // In the post-implicit-allocation world we can't convert this proxy to be exact fit
-        // at this point. With explicit allocation switching this to exact will result in a
-        // different allocation at flush time. With implicit allocation, allocation would occur
-        // at draw time (rather than flush time) so this pathway was encountered less often (if
-        // at all).
-        if (allocatedCaseOnly) {
-            return;
-        }
-
-        // The Approx uninstantiated case. Making this proxy be exact should be okay.
-        // It could mess things up if prior decisions were based on the approximate size.
-        mSurfaceFlags &= ~ISurface.FLAG_APPROX_FIT;
-        // If GpuMemorySize is used when caching specialImages for the image filter DAG. If it has
-        // already been computed we want to leave it alone so that amount will be removed when
-        // the special image goes away. If it hasn't been computed yet it might as well compute the
-        // exact amount.
-    }
-
-    // Once the dimensions of a fully-lazy proxy are decided, and before it gets instantiated, the
-    // client can use this optional method to specify the proxy's dimensions. (A proxy's dimensions
-    // can be less than the GPU surface that backs it. e.g., BackingFit_Approx.) Otherwise,
-    // the proxy's dimensions will be set to match the underlying GPU surface upon instantiation.
-    @ApiStatus.Internal
-    public final void setLazyDimension(int width, int height) {
-        assert isLazyMost();
-        assert width > 0 && height > 0;
-        mWidth = width;
-        mHeight = height;
-    }*/
-
-    /*@Nullable
-    @SharedPtr
-    @Override
-    Image createSurface(ResourceProvider resourceProvider) {
-        assert ((mSurfaceFlags & ISurface.FLAG_MIPMAPPED) == 0 ||
-                (mSurfaceFlags & ISurface.FLAG_APPROX_FIT) == 0);
-        assert !isLazy();
-        assert mImage == null;
-
-        return resourceProvider.createTexture(mWidth, mHeight,
-                mFormat,
-                getSampleCount(),
-                mSurfaceFlags,
-                "");
-    }*/
-
-    public final boolean doLazyInstantiation(ResourceProvider resourceProvider) {
-        assert isLazy();
-
-        @SharedPtr
-        Image image = null;
-        if (mUniqueKey != null) {
-            image = resourceProvider.findByUniqueKey(mUniqueKey);
-        }
-
-        boolean syncTargetKey = true;
-        boolean releaseCallback = false;
-        if (image == null) {
-            int width = isLazyMost() ? -1 : getWidth();
-            int height = isLazyMost() ? -1 : getHeight();
-            LazyCallbackResult result = mLazyInstantiateCallback.onLazyInstantiate(resourceProvider,
-                    mDesc,
-                    (mSurfaceFlags & ISurface.FLAG_BUDGETED) != 0,
-                    "");
-            if (result != null) {
-                image = (Image) result.mImage;
-                syncTargetKey = result.mSyncTargetKey;
-                releaseCallback = result.mReleaseCallback;
-            }
-        }
-        if (image == null) {
-            //mWidth = mHeight = 0;
-            return false;
-        }
-
-        if (isLazyMost()) {
-            // This was a lazy-most proxy. We need to fill in the width & height. For normal
-            // lazy proxies we must preserve the original width & height since that indicates
-            // the content area.
-            /*mWidth = image.getWidth();
-            mHeight = image.getHeight();*/
-        }
-
-        assert getWidth() <= image.getWidth();
-        assert getHeight() <= image.getHeight();
-
-        mSyncTargetKey = syncTargetKey;
-        if (syncTargetKey) {
-            if (mUniqueKey != null) {
-                if (image.getUniqueKey() == null) {
-                    // If 'texture' is newly created, attach the unique key
-                    resourceProvider.assignUniqueKeyToResource(mUniqueKey, image);
-                } else {
-                    // otherwise we had better have reattached to a cached version
-                    assert image.getUniqueKey().equals(mUniqueKey);
-                }
-            } else {
-                assert image.getUniqueKey() == null;
-            }
-        }
-
-        assert mImage == null;
-        mImage = image;
-        if (releaseCallback) {
-            mLazyInstantiateCallback.close();
-            mLazyInstantiateCallback = null;
-        }
-
-        return true;
-    }
-
-    @ApiStatus.Internal
-    public void setIsPromiseProxy() {
-        mIsPromiseProxy = true;
+        return mDesc.isMipmapped();
     }
 }

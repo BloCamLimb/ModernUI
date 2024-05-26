@@ -29,8 +29,6 @@ import javax.annotation.concurrent.NotThreadSafe;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 
-import static icyllis.arc3d.engine.Engine.BudgetType;
-
 /**
  * Base class for operating GPU resources that can be kept in the {@link ResourceCache}.
  * <p>
@@ -68,23 +66,35 @@ import static icyllis.arc3d.engine.Engine.BudgetType;
 @NotThreadSafe
 public abstract class Resource implements RefCounted {
 
-    private static final VarHandle REF_CNT;
-    private static final VarHandle COMMAND_BUFFER_USAGE_CNT;
+    private static final VarHandle USAGE_REF_CNT;
+    private static final VarHandle COMMAND_BUFFER_REF_CNT;
+    private static final VarHandle CACHE_REF_CNT;
 
     static {
         MethodHandles.Lookup lookup = MethodHandles.lookup();
         try {
-            REF_CNT = lookup.findVarHandle(Resource.class, "mRefCnt", int.class);
-            COMMAND_BUFFER_USAGE_CNT = lookup.findVarHandle(Resource.class, "mCommandBufferUsageCnt", int.class);
+            USAGE_REF_CNT = lookup.findVarHandle(Resource.class, "mUsageRefCnt", int.class);
+            COMMAND_BUFFER_REF_CNT = lookup.findVarHandle(Resource.class, "mCommandBufferRefCnt", int.class);
+            CACHE_REF_CNT = lookup.findVarHandle(Resource.class, "mCacheRefCnt", int.class);
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
     }
 
+    /*
+     * This enum is used to notify the ResourceCache which type of ref just dropped to zero on a
+     * Resource.
+     */
+    static final int REF_TYPE_USAGE = 0;
+    static final int REF_TYPE_COMMAND_BUFFER = 1;
+    static final int REF_TYPE_CACHE = 2;
+
     @SuppressWarnings("FieldMayBeFinal")
-    private volatile int mRefCnt = 1;
+    private volatile int mUsageRefCnt = 1;
     @SuppressWarnings("FieldMayBeFinal")
-    private volatile int mCommandBufferUsageCnt = 0;
+    private volatile int mCommandBufferRefCnt = 0;
+    @SuppressWarnings("FieldMayBeFinal")
+    private volatile int mCacheRefCnt = 0;
 
     static final PriorityQueue.Access<Resource> QUEUE_ACCESS = new PriorityQueue.Access<>() {
         @Override
@@ -98,6 +108,17 @@ public abstract class Resource implements RefCounted {
         }
     };
 
+    // set once in constructor, clear to null after being destroyed
+    Context mContext;
+
+    // null meaning invalid, lazy initialized
+    IResourceKey mKey;
+
+    ResourceCache mReturnCache;
+    // An index into the return cache so we know whether the resource is already waiting to
+    // be returned or not.
+    int mReturnIndex = -1;
+
     // the index into a heap when this resource is cleanable or an array when not,
     // this is maintained by the cache
     int mCacheIndex = -1;
@@ -106,31 +127,29 @@ public abstract class Resource implements RefCounted {
     int mTimestamp;
     private long mLastUsedTime;
 
-    // null meaning invalid, lazy initialized
-    IScratchKey mScratchKey;
-    IUniqueKey mUniqueKey;
+    private boolean mBudgeted;
+    private boolean mWrapped; // non-wrapped means we have ownership
+    private boolean mCacheable = true;
+    boolean mNonShareableInCache = false;
 
-    // set once in constructor, clear to null after being destroyed
-    Device mDevice;
-
-    private byte mBudgetType = BudgetType.NotBudgeted;
-    private boolean mWrapped = false;
+    protected final long mMemorySize;
 
     @Nonnull
     private String mLabel = "";
     private final UniqueID mUniqueID = new UniqueID();
 
-    protected Resource(Device device) {
-        assert (device != null);
-        mDevice = device;
-    }
-
-    /**
-     * @return true if this resource is uniquely referenced by the client pipeline
-     */
-    public final boolean unique() {
-        // std::memory_order_acquire, maybe volatile?
-        return (int) REF_CNT.getAcquire(this) == 1;
+    protected Resource(Context context,
+                       boolean budgeted,
+                       boolean wrapped,
+                       long memorySize) {
+        assert (context != null);
+        // If we don't own the resource that must mean its wrapped in a client object. Thus we should
+        // not be budgeted
+        assert (!budgeted || !wrapped);
+        mContext = context;
+        mBudgeted = budgeted;
+        mWrapped = wrapped;
+        mMemorySize = memorySize;
     }
 
     /**
@@ -140,9 +159,9 @@ public abstract class Resource implements RefCounted {
     @Override
     public final void ref() {
         // only the cache should be able to add the first ref to a resource.
-        assert hasRef();
+        assert hasUsageRef();
         // stronger than std::memory_order_relaxed
-        REF_CNT.getAndAddRelease(this, 1);
+        USAGE_REF_CNT.getAndAddRelease(this, 1);
     }
 
     /**
@@ -151,10 +170,16 @@ public abstract class Resource implements RefCounted {
      */
     @Override
     public final void unref() {
-        assert hasRef();
-        // stronger than std::memory_order_acq_rel
-        if ((int) REF_CNT.getAndAdd(this, -1) == 1) {
-            notifyACntReachedZero(false);
+        boolean shouldRelease = false;
+        synchronized (this) {
+            assert hasUsageRef();
+            // stronger than std::memory_order_acq_rel
+            if ((int) USAGE_REF_CNT.getAndAdd(this, -1) == 1) {
+                shouldRelease = notifyACntReachedZero(REF_TYPE_USAGE);
+            }
+        }
+        if (shouldRelease) {
+            release();
         }
     }
 
@@ -166,54 +191,92 @@ public abstract class Resource implements RefCounted {
      * usages in client. This allows for a scratch Resource to be reused for new draw calls even
      * if it is in use on the backend.
      */
-    public final void addCommandBufferUsage() {
+    public final void refCommandBuffer() {
         // stronger than std::memory_order_relaxed
-        COMMAND_BUFFER_USAGE_CNT.getAndAddRelease(this, 1);
+        COMMAND_BUFFER_REF_CNT.getAndAddRelease(this, 1);
     }
 
     /**
      * Decreases the usage count by 1 on the tracked backend pipeline.
      * It's an error to call this method if the usage count has already reached zero.
      */
-    public final void removeCommandBufferUsage() {
-        assert hasCommandBufferUsage();
-        // stronger than std::memory_order_acq_rel
-        if ((int) COMMAND_BUFFER_USAGE_CNT.getAndAdd(this, -1) == 1) {
-            notifyACntReachedZero(true);
+    public final void unrefCommandBuffer() {
+        boolean shouldRelease = false;
+        synchronized (this) {
+            assert hasCommandBufferRef();
+            // stronger than std::memory_order_acq_rel
+            if ((int) COMMAND_BUFFER_REF_CNT.getAndAdd(this, -1) == 1) {
+                shouldRelease = notifyACntReachedZero(REF_TYPE_COMMAND_BUFFER);
+            }
+        }
+        if (shouldRelease) {
+            release();
         }
     }
 
-    protected final boolean hasRef() {
-        // std::memory_order_relaxed, maybe acquire?
-        return (int) REF_CNT.getOpaque(this) > 0;
+    // Adds a cache ref to the resource. This is only called by ResourceCache. A Resource will only
+    // ever add a ref when the Resource is part of the cache (i.e. when insertResource is called)
+    // and while the Resource is in the ResourceCache::ReturnQueue.
+    final void refCache() {
+        // stronger than std::memory_order_relaxed
+        CACHE_REF_CNT.getAndAddRelease(this, 1);
     }
 
-    protected final boolean hasCommandBufferUsage() {
-        // std::memory_order_acquire barrier is only really needed if we return false
-        // it prevents code conditioned on the result of hasCommandBufferUsage() from running
-        // until previous owners are all totally done calling removeCommandBufferUsage()
-        return (int) COMMAND_BUFFER_USAGE_CNT.getAcquire(this) > 0;
+    // Removes a cache ref from the resource. The unref here should only ever be called from the
+    // ResourceCache and only in the Recorder thread the ResourceCache is part of.
+    final void unrefCache() {
+        boolean shouldRelease = false;
+        synchronized (this) {
+            assert hasCacheRef();
+            // stronger than std::memory_order_acq_rel
+            if ((int) CACHE_REF_CNT.getAndAdd(this, -1) == 1) {
+                shouldRelease = notifyACntReachedZero(REF_TYPE_CACHE);
+            }
+        }
+        if (shouldRelease) {
+            release();
+        }
+    }
+
+    protected final boolean hasUsageRef() {
+        // The acquire barrier is only really needed if we return true.  It
+        // prevents code conditioned on the result of hasUsageRef() from running until previous
+        // owners are all totally done calling unref().
+        return (int) USAGE_REF_CNT.getAcquire(this) > 0;
+    }
+
+    protected final boolean hasCommandBufferRef() {
+        // The acquire barrier is only really needed if we return true.  It
+        // prevents code conditioned on the result of hasCommandBufferRef() from running
+        // until previous owners are all totally done calling unrefCommandBuffer().
+        return (int) COMMAND_BUFFER_REF_CNT.getAcquire(this) > 0;
+    }
+
+    protected final boolean hasCacheRef() {
+        // The acquire barrier is only really needed if we return true. It
+        // prevents code conditioned on the result of hasUsageRef() from running until previous
+        // owners are all totally done calling unref().
+        return (int) CACHE_REF_CNT.getAcquire(this) > 0;
     }
 
     // Privileged method that allows going from ref count = 0 to ref count = 1
-    final void addInitialRef() {
+    final void addInitialUsageRef() {
         // assert (int) REF_CNT.getAcquire(this) >= 0;
         // stronger than std::memory_order_relaxed
-        REF_CNT.getAndAddRelease(this, 1);
+        USAGE_REF_CNT.getAndAddRelease(this, 1);
     }
 
-    // Either ref cnt or command buffer usage cnt reached zero
-    private void notifyACntReachedZero(boolean commandBufferUsage) {
-        if (mDevice == null) {
-            // If we have no ref and no command buffer usage, then we've already been removed from the cache,
-            // and then this Java object should be phantom reachable soon after (GC-ed).
-            // Otherwise, either ref and command buffer usage is not 0, then this Java object will still be
-            // strongly referenced, but we don't check the consistency here.
-            // We assume this Java object will eventually be garbage-collected, no matter what XX cnt is.
-            return;
+    // One of usage, command buffer, or cache ref count reached zero
+    private boolean notifyACntReachedZero(int refCntType) {
+        // No resource should have been destroyed if there was still any sort of ref on it.
+        assert (!isDestroyed());
+
+        if (refCntType != REF_TYPE_CACHE &&
+                mReturnCache.returnResource(this, refCntType)) {
+            return false;
         }
 
-        mDevice.getContext().getResourceCache().notifyACntReachedZero(this, commandBufferUsage);
+        return !hasAnyRefs();
     }
 
     /**
@@ -226,38 +289,37 @@ public abstract class Resource implements RefCounted {
      * @return true if the object has been released or discarded, false otherwise.
      */
     public final boolean isDestroyed() {
-        return mDevice == null;
+        return mContext == null;
     }
 
     /**
      * Retrieves the context that owns the object. Note that it is possible for
      * this to return null. When objects have been release()ed or discard()ed
-     * they no longer have an owning context. Destroying a DirectContext
+     * they no longer have an owning context. Destroying a {@link Context}
      * automatically releases all its resources.
      */
     @Nullable
-    public final ImmediateContext getContext() {
-        return mDevice != null ? mDevice.getContext() : null;
+    public final Context getContext() {
+        return mContext;
     }
 
     /**
      * Retrieves the amount of GPU memory used by this resource in bytes. It is
      * approximate since we aren't aware of additional padding or copies made
      * by the driver.
-     * <p>
-     * <b>NOTE: The return value must be constant in this object.</b>
      *
      * @return the amount of GPU memory used in bytes
      */
-    public abstract long getMemorySize();
+    public final long getMemorySize() {
+        return mMemorySize;
+    }
 
     /**
-     * Returns the current unique key for the resource. It will be invalid if the resource has no
-     * associated unique key.
+     * Get the resource's budget type which indicates whether it counts against the resource cache
+     * budget.
      */
-    @Nullable
-    public final IUniqueKey getUniqueKey() {
-        return mUniqueKey;
+    public final boolean isBudgeted() {
+        return mBudgeted;
     }
 
     /**
@@ -284,50 +346,12 @@ public abstract class Resource implements RefCounted {
      *
      * @param label the new label to set, or empty to clear
      */
-    public final void setLabel(String label) {
+    public final void setLabel(@Nullable String label) {
         label = label != null ? label.trim() : "";
         if (!mLabel.equals(label)) {
             mLabel = label;
-            onSetLabel(label);
+            onSetLabel(!label.isEmpty() ? "Arc3D_" + label : null);
         }
-    }
-
-    /**
-     * Sets a unique key for the resource. If the resource was previously cached as scratch it will
-     * be converted to a uniquely-keyed resource. If the key is invalid then this is equivalent to
-     * removeUniqueKey(). If another resource is using the key then its unique key is removed and
-     * this resource takes over the key.
-     */
-    @ApiStatus.Internal
-    public final void setUniqueKey(IUniqueKey key) {
-        assert hasRef();
-
-        // Uncached resources can never have a unique key, unless they're wrapped resources. Wrapped
-        // resources are a special case: the unique keys give us a weak ref so that we can reuse the
-        // same resource (rather than re-wrapping). When a wrapped resource is no longer referenced,
-        // it will always be released - it is never converted to a scratch resource.
-        if (mBudgetType != BudgetType.Budgeted && !mWrapped) {
-            return;
-        }
-
-        if (mDevice == null) {
-            return;
-        }
-
-        mDevice.getContext().getResourceCache().changeUniqueKey(this, key);
-    }
-
-    /**
-     * Removes the unique key from a resource. If the resource has a scratch key, it may be
-     * preserved for recycling as scratch.
-     */
-    @ApiStatus.Internal
-    public final void removeUniqueKey() {
-        if (mDevice == null) {
-            return;
-        }
-
-        mDevice.getContext().getResourceCache().removeUniqueKey(this);
     }
 
     /**
@@ -339,33 +363,8 @@ public abstract class Resource implements RefCounted {
      * not budgeted.
      */
     @ApiStatus.Internal
-    public final void makeBudgeted(boolean budgeted) {
-        if (budgeted) {
-            // We should never make a wrapped resource budgeted.
-            assert !mWrapped;
-            // Only wrapped resources can be in the cacheable budgeted state.
-            assert mBudgetType != BudgetType.WrapCacheable;
-            if (mDevice != null && mBudgetType == BudgetType.NotBudgeted) {
-                // Currently, resources referencing wrapped objects are not budgeted.
-                mBudgetType = BudgetType.Budgeted;
-                mDevice.getContext().getResourceCache().didChangeBudgetStatus(this);
-            }
-        } else {
-            if (mDevice != null && mBudgetType == BudgetType.Budgeted && mUniqueKey == null) {
-                mBudgetType = BudgetType.NotBudgeted;
-                mDevice.getContext().getResourceCache().didChangeBudgetStatus(this);
-            }
-        }
-    }
-
-    /**
-     * Get the resource's budget type which indicates whether it counts against the resource cache
-     * budget and if not whether it is allowed to be cached.
-     */
-    @ApiStatus.Internal
-    public final int getBudgetType() {
-        assert mBudgetType == BudgetType.Budgeted || mWrapped || mUniqueKey == null;
-        return mBudgetType;
+    final void makeBudgeted(boolean budgeted) {
+        mBudgeted = budgeted;
     }
 
     /**
@@ -382,69 +381,55 @@ public abstract class Resource implements RefCounted {
      * used as a uniquely keyed resource rather than scratch. Check isScratch().
      */
     @ApiStatus.Internal
-    @Nullable
-    public final IScratchKey getScratchKey() {
-        return mScratchKey;
+    public final IResourceKey getKey() {
+        return mKey;
     }
 
     /**
-     * If the resource has a scratch key, the key will be removed. Since scratch keys are installed
-     * at resource creation time, this means the resource will never again be used as scratch.
+     * Called before registerWithCache if the resource is available to be used as scratch.
+     * Resource subclasses should override this if the instances should be recycled as scratch
+     * resources and populate the scratchKey with the key.
+     * By default, resources are not recycled as scratch.
      */
     @ApiStatus.Internal
-    public final void removeScratchKey() {
-        if (mDevice != null && mScratchKey != null) {
-            mDevice.getContext().getResourceCache().willRemoveScratchKey(this);
-            mScratchKey = null;
-        }
+    public final void setKey(@Nonnull IResourceKey key) {
+        assert !key.isShareable() || mBudgeted;
+        mKey = key;
     }
 
     @ApiStatus.Internal
     public final boolean isFree() {
-        // Resources in the cacheable budgeted state are never free when they have a unique
-        // key. The key must be removed/invalidated to make them free.
-        return !hasRef() && !hasCommandBufferUsage() &&
-                !(mBudgetType == BudgetType.WrapCacheable && mUniqueKey != null);
+        // For being free we don't care if there are CacheRefs on the object since the CacheRef
+        // will always be greater than 1 since we add one on insert and don't remove that ref until
+        // the Resource is removed from the cache.
+        return !hasUsageRef() && !hasCommandBufferRef();
     }
 
     @ApiStatus.Internal
-    public final boolean hasRefOrCommandBufferUsage() {
-        return hasRef() || hasCommandBufferUsage();
+    public final boolean hasAnyRefs() {
+        return hasUsageRef() || hasCommandBufferRef() || hasCacheRef();
     }
 
-    /**
-     * This must be called by every non-wrapped subclass. It should be called once the object is
-     * fully initialized (i.e. only from the constructors of the final class).
-     *
-     * @param budgeted budgeted or not
-     */
-    protected final void registerWithCache(boolean budgeted) {
-        assert mBudgetType == BudgetType.NotBudgeted;
-        mBudgetType = budgeted ? BudgetType.Budgeted : BudgetType.NotBudgeted;
-        mScratchKey = computeScratchKey();
-        mDevice.getContext().getResourceCache().insertResource(this);
+    protected final void setNonCacheable() {
+        mCacheable = false;
     }
 
-    /**
-     * This must be called by every subclass that references any wrapped backend objects. It
-     * should be called once the object is fully initialized (i.e. only from the constructors of the
-     * final class).
-     *
-     * @param cacheable cacheable or not
-     */
-    protected final void registerWithCacheWrapped(boolean cacheable) {
-        assert mBudgetType == BudgetType.NotBudgeted;
-        // Resources referencing wrapped objects are never budgeted. They may be cached or uncached.
-        mBudgetType = cacheable ? BudgetType.WrapCacheable : BudgetType.NotBudgeted;
-        mWrapped = true;
-        mDevice.getContext().getResourceCache().insertResource(this);
+    final boolean isCacheable() {
+        return mCacheable;
+    }
+
+    final void registerWithCache(ResourceCache returnCache) {
+        assert mReturnCache == null;
+        assert returnCache != null;
+
+        mReturnCache = returnCache;
     }
 
     /**
      * @return the device or null if destroyed
      */
     protected Device getDevice() {
-        return mDevice;
+        return mContext.getDevice();
     }
 
     /**
@@ -459,52 +444,20 @@ public abstract class Resource implements RefCounted {
      */
     protected abstract void onDiscard();
 
-    protected void onSetLabel(@Nonnull String label) {
-    }
-
-    /**
-     * Called by the registerWithCache if the resource is available to be used as scratch.
-     * Resource subclasses should override this if the instances should be recycled as scratch
-     * resources and populate the scratchKey with the key.
-     * By default, resources are not recycled as scratch.
-     */
-    @Nullable
-    protected IScratchKey computeScratchKey() {
-        return null;
-    }
-
-    /**
-     * Is the resource currently cached as scratch? This means it is cached, has a valid scratch
-     * key, and does not have a unique key.
-     */
-    final boolean isScratch() {
-        return mBudgetType == BudgetType.Budgeted && mScratchKey != null && mUniqueKey == null;
+    protected void onSetLabel(@Nullable String label) {
     }
 
     final boolean isUsableAsScratch() {
-        return isScratch() && !hasRef();
+        return !mKey.isShareable() && !hasUsageRef() && mNonShareableInCache;
     }
 
     /**
      * Called by the cache to delete the resource under normal circumstances.
      */
-    final void release() {
-        assert mDevice != null;
+    private void release() {
+        assert mContext != null;
         onRelease();
-        mDevice.getContext().getResourceCache().removeResource(this);
-        mDevice = null;
-    }
-
-    /**
-     * Called by the cache to delete the resource when the backend 3D context is no longer valid.
-     */
-    final void discard() {
-        if (mDevice == null) {
-            return;
-        }
-        onDiscard();
-        mDevice.getContext().getResourceCache().removeResource(this);
-        mDevice = null;
+        mContext = null;
     }
 
     final void setLastUsedTime() {
