@@ -19,6 +19,7 @@
 
 package icyllis.arc3d.engine.graphene;
 
+import icyllis.arc3d.core.Rect2ic;
 import icyllis.arc3d.engine.BufferViewInfo;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
@@ -43,6 +44,7 @@ public class DrawCommandList {
     public static final int CMD_DRAW_INDEXED_INSTANCED = 4;
     public static final int CMD_BIND_INDEX_BUFFER = 5;
     public static final int CMD_BIND_VERTEX_BUFFER = 6;
+    public static final int CMD_SET_SCISSOR = 7;
 
     /**
      * The heap buffer that holds all primitive data.
@@ -119,5 +121,14 @@ public class DrawCommandList {
                 .putInt(binding)
                 .putLong(vertexBufferInfo.mOffset);
         mPointers.add(vertexBufferInfo.mBuffer);
+    }
+
+    public final void setScissor(Rect2ic scissor) {
+        grow(mPrimitives.position() + 20);
+        mPrimitives.putInt(CMD_SET_SCISSOR)
+                .putInt(scissor.left())
+                .putInt(scissor.top())
+                .putInt(scissor.right())
+                .putInt(scissor.bottom());
     }
 }

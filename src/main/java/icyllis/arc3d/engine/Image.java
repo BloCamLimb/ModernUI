@@ -39,7 +39,7 @@ import static icyllis.arc3d.engine.Engine.BudgetType;
  * An {@link Image} is created with device-local memory, its contents may be updated via
  * a staging buffer.
  */
-public abstract class Image extends GpuSurface {
+public abstract class Image extends Resource {
 
     private final ImageDesc mDesc;
     private final ImageMutableState mMutableState;
@@ -59,10 +59,12 @@ public abstract class Image extends GpuSurface {
     @SharedPtr
     private ReleaseCallback mReleaseCallback;
 
-    protected Image(Device device,
+    protected Image(Context context,
+                    boolean budgeted,
+                    boolean wrapped,
                     ImageDesc desc,
                     ImageMutableState mutableState) {
-        super(device);
+        super(context, budgeted, wrapped, DataUtils.computeSize(desc));
         mDesc = desc;
         mMutableState = mutableState;
     }
@@ -81,21 +83,22 @@ public abstract class Image extends GpuSurface {
     }
 
     /**
-     * @return the width of the texture
+     * @return the width of the image in texels, greater than zero
      */
-    @Override
     public final int getWidth() {
         return mDesc.mWidth;
     }
 
     /**
-     * @return the height of the texture
+     * @return the height of the image in texels, greater than zero
      */
-    @Override
     public final int getHeight() {
         return mDesc.mHeight;
     }
 
+    /**
+     * @return the depth of the image in texels, greater than zero
+     */
     public final int getDepth() {
         return mDesc.mDepth;
     }
@@ -104,14 +107,12 @@ public abstract class Image extends GpuSurface {
         return mDesc.mArraySize;
     }
 
-    @Override
     public int getDepthBits() {
-        return getBackendFormat().getDepthBits();
+        return mDesc.getDepthBits();
     }
 
-    @Override
     public int getStencilBits() {
-        return getBackendFormat().getStencilBits();
+        return mDesc.getStencilBits();
     }
 
     /**
@@ -149,7 +150,11 @@ public abstract class Image extends GpuSurface {
         return mDesc.mMipLevelCount;
     }
 
-    @Override
+    /**
+     * Returns the number of samples per pixel.
+     *
+     * @return the number of samples, greater than (multi-sampled) or equal to one
+     */
     public final int getSampleCount() {
         return mDesc.mSampleCount;
     }
@@ -202,10 +207,9 @@ public abstract class Image extends GpuSurface {
      *
      * @return combination of the above flags
      */
-    @Override
     public final int getSurfaceFlags() {
         int flags = mFlags;
-        if (getBudgetType() == BudgetType.Budgeted) {
+        if (isBudgeted()) {
             flags |= ISurface.FLAG_BUDGETED;
         }
         return flags;
@@ -238,11 +242,6 @@ public abstract class Image extends GpuSurface {
      */
     public void setReleaseCallback(@SharedPtr ReleaseCallback callback) {
         mReleaseCallback = RefCnt.move(mReleaseCallback, callback);
-    }
-
-    @Override
-    public final Image asImage() {
-        return this;
     }
 
     @Override
@@ -279,7 +278,7 @@ public abstract class Image extends GpuSurface {
     /**
      * Storage key of {@link Image}, may be compared with {@link ImageProxy}.
      */
-    public static final class ScratchKey implements IScratchKey {
+    public static final class ResourceKey implements IResourceKey {
 
         public int mWidth;
         public int mHeight;
@@ -292,10 +291,10 @@ public abstract class Image extends GpuSurface {
          * @return this
          */
         @Nonnull
-        public ScratchKey compute(BackendFormat format,
-                                  int width, int height,
-                                  int sampleCount,
-                                  int surfaceFlags) {
+        public ResourceKey compute(BackendFormat format,
+                                   int width, int height,
+                                   int sampleCount,
+                                   int surfaceFlags) {
             assert (width > 0 && height > 0);
             assert (!format.isCompressed());
             mWidth = width;
@@ -307,6 +306,11 @@ public abstract class Image extends GpuSurface {
                     ISurface.FLAG_MEMORYLESS |
                     ISurface.FLAG_PROTECTED)) | (sampleCount << 16);
             return this;
+        }
+
+        @Override
+        public IResourceKey copy() {
+            return null;
         }
 
         /**
@@ -327,7 +331,7 @@ public abstract class Image extends GpuSurface {
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            return o instanceof ScratchKey key &&
+            return o instanceof ResourceKey key &&
                     mWidth == key.mWidth &&
                     mHeight == key.mHeight &&
                     mFormat == key.mFormat &&

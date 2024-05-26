@@ -30,66 +30,30 @@ import javax.annotation.Nullable;
  * <p>
  * This can only be used on render thread. To create Surface-like resources
  * in other threads, use {@link SurfaceProxy}. To obtain Pipeline resources,
- * use {@link PipelineCache}.
+ * use {@link GlobalResourceCache}.
  */
 public abstract class ResourceProvider {
 
-    private final Device mDevice;
-    private final ImmediateContext mContext;
+    protected final Device mDevice;
+    protected final Context mContext;
+
+    // Each ResourceProvider owns one local cache; for some resources it also refers out to the
+    // global cache of the Device, which is assumed to outlive the ResourceProvider.
+    protected final ResourceCache mResourceCache;
 
     // lookup key
-    private IScratchKey mImageScratchKey;
-    private final GpuRenderTarget.ScratchKey mRenderTargetScratchKey = new GpuRenderTarget.ScratchKey();
+    private IResourceKey mImageScratchKey;
+    private final GpuRenderTarget.ResourceKey mRenderTargetScratchKey = new GpuRenderTarget.ResourceKey();
 
-    protected ResourceProvider(Device device, ImmediateContext context) {
+    protected ResourceProvider(Device device, Context context) {
         mDevice = device;
         mContext = context;
+        //TODO not contextID, but...
+        mResourceCache = new ResourceCache(context.getContextID());
     }
 
-    /**
-     * Finds a resource in the cache, based on the specified key. Prior to calling this, the caller
-     * must be sure that if a resource of exists in the cache with the given unique key then it is
-     * of type T. If the resource is no longer used, then {@link Resource#unref()} must be called.
-     *
-     * @param key the resource unique key
-     */
-    @Nullable
-    @SharedPtr
-    @SuppressWarnings("unchecked")
-    public final <T extends Resource> T findByUniqueKey(IUniqueKey key) {
-        assert mDevice.getContext().isOwnerThread();
-        return mDevice.getContext().isDiscarded() ? null :
-                (T) mContext.getResourceCache().findAndRefUniqueResource(key);
-    }
-
-    /**
-     * Search the cache for a scratch texture matching the provided arguments. Failing that
-     * it returns null. If non-null, the resulting texture is always budgeted.
-     *
-     * @param label the label for debugging purposes, can be empty to clear the label,
-     *              or null to leave the label unchanged
-     */
-    @Nullable
-    @SharedPtr
-    public final GpuSurface findAndRefScratchSurface(IScratchKey key, @Nullable String label) {
-        assert mDevice.getContext().isOwnerThread();
-        assert !mDevice.getContext().isDiscarded();
-        assert key instanceof Image.ScratchKey || key instanceof GpuRenderTarget.ScratchKey;
-
-        Resource resource = mContext.getResourceCache().findAndRefScratchResource(key);
-        if (resource != null) {
-            GpuSurface surface = (GpuSurface) resource;
-            if (surface.asRenderTarget() != null) {
-                mDevice.getStats().incNumScratchRenderTargetsReused();
-            } else {
-                mDevice.getStats().incNumScratchTexturesReused();
-            }
-            if (label != null) {
-                resource.setLabel(label);
-            }
-            return surface;
-        }
-        return null;
+    protected void destroy() {
+        mResourceCache.shutdown();
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -140,8 +104,8 @@ public abstract class ResourceProvider {
                                    int sampleCount,
                                    int surfaceFlags,
                                    @Nullable String label) {
-        assert mDevice.getContext().isOwnerThread();
-        if (mDevice.getContext().isDiscarded()) {
+        assert mContext.isOwnerThread();
+        if (mContext.isDeviceLost()) {
             return null;
         }
 
@@ -180,14 +144,14 @@ public abstract class ResourceProvider {
             return null;
         }
 
-        final Image image = findAndRefScratchImage(width, height, format,
+        /*final Image image = findAndRefScratchImage(width, height, format,
                 sampleCount, surfaceFlags, label);
         if (image != null) {
             if ((surfaceFlags & ISurface.FLAG_BUDGETED) == 0) {
                 image.makeBudgeted(false);
             }
             return image;
-        }
+        }*/
 
         /*return mDevice.createImage(width, height, format,
                 sampleCount, surfaceFlags, label);*/
@@ -199,14 +163,27 @@ public abstract class ResourceProvider {
     public final Image findOrCreateImage(ImageDesc desc,
                                          boolean budgeted,
                                          @Nullable String label) {
-        final Image image = findAndRefScratchImage(desc, label);
+        var key = mDevice.getCaps().computeImageKey(desc,
+                mImageScratchKey);
+        if (key == null) {
+            return null;
+        }
+        mImageScratchKey = key;
+
+        Image image = findAndRefScratchImage(key, budgeted, label);
         if (image != null) {
-            if (!budgeted) {
-                image.makeBudgeted(false);
-            }
             return image;
         }
-        return createNewImage(desc, budgeted, label);
+
+        image = createNewImage(desc, budgeted, label);
+        if (image == null) {
+            return null;
+        }
+
+        image.setKey(key.copy());
+        mResourceCache.insertResource(image);
+
+        return image;
     }
 
     /**
@@ -265,12 +242,13 @@ public abstract class ResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public final Image findAndRefScratchImage(IScratchKey key, @Nullable String label) {
-        assert mDevice.getContext().isOwnerThread();
-        assert !mDevice.getContext().isDiscarded();
-        assert key instanceof Image.ScratchKey;
+    public final Image findAndRefScratchImage(IResourceKey key,
+                                              boolean budgeted,
+                                              @Nullable String label) {
+        assert mContext.isOwnerThread();
+        assert !mDevice.isDeviceLost();
 
-        Resource resource = mContext.getResourceCache().findAndRefScratchResource(key);
+        Resource resource = mResourceCache.findAndRefResource(key, budgeted);
         if (resource != null) {
             mDevice.getStats().incNumScratchTexturesReused();
             if (label != null) {
@@ -294,9 +272,10 @@ public abstract class ResourceProvider {
     @Nullable
     @SharedPtr
     public final Image findAndRefScratchImage(ImageDesc desc,
+                                              boolean budgeted,
                                               @Nullable String label) {
-        assert mDevice.getContext().isOwnerThread();
-        assert !mDevice.getContext().isDiscarded();
+        assert mContext.isOwnerThread();
+        assert !mDevice.isDeviceLost();
 
         var key = mDevice.getCaps().computeImageKey(desc,
                 mImageScratchKey);
@@ -305,38 +284,7 @@ public abstract class ResourceProvider {
         }
         mImageScratchKey = key;
 
-        return findAndRefScratchImage(key, label);
-    }
-
-    /**
-     * Search the cache for a scratch texture matching the provided arguments. Failing that
-     * it returns null. If non-null, the resulting texture is always budgeted.
-     *
-     * @param label the label for debugging purposes, can be empty to clear the label,
-     *              or null to leave the label unchanged
-     * @see ISurface#FLAG_MIPMAPPED
-     * @see ISurface#FLAG_RENDERABLE
-     * @see ISurface#FLAG_PROTECTED
-     */
-    @Nullable
-    @SharedPtr
-    public final Image findAndRefScratchImage(int width, int height,
-                                              BackendFormat format,
-                                              int sampleCount,
-                                              int surfaceFlags,
-                                              @Nullable String label) {
-        assert mDevice.getContext().isOwnerThread();
-        assert !mDevice.getContext().isDiscarded();
-        assert !format.isCompressed();
-        assert mDevice.getCaps().validateSurfaceParams(width, height, format,
-                sampleCount, surfaceFlags);
-
-        /*return findAndRefScratchImage(mImageScratchKey.compute(
-                format,
-                width, height,
-                sampleCount,
-                surfaceFlags), label);*/
-        return null;
+        return findAndRefScratchImage(key, budgeted, label);
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -387,8 +335,8 @@ public abstract class ResourceProvider {
                                      int sampleCount,
                                      int surfaceFlags,
                                      String label) {
-        assert mDevice.getContext().isOwnerThread();
-        if (mDevice.getContext().isDiscarded()) {
+        assert mContext.isOwnerThread();
+        if (mDevice.isDeviceLost()) {
             return null;
         }
 
@@ -441,8 +389,8 @@ public abstract class ResourceProvider {
                                      int rowBytes,
                                      long pixels,
                                      String label) {
-        assert mDevice.getContext().isOwnerThread();
-        if (mDevice.getContext().isDiscarded()) {
+        assert mContext.isOwnerThread();
+        if (mDevice.isDeviceLost()) {
             return null;
         }
 
@@ -513,8 +461,8 @@ public abstract class ResourceProvider {
                                                     int sampleCount,
                                                     int surfaceFlags,
                                                     @Nullable String label) {
-        assert mDevice.getContext().isOwnerThread();
-        assert !mDevice.getContext().isDiscarded();
+        assert mContext.isOwnerThread();
+        assert !mDevice.isDeviceLost();
         Caps caps = mDevice.getCaps();
 
         if (sampleCount <= 1) {
@@ -669,12 +617,12 @@ public abstract class ResourceProvider {
 
     @Nullable
     @SharedPtr
-    public final GpuRenderTarget findAndRefScratchRenderTarget(IScratchKey key, String label) {
-        assert mDevice.getContext().isOwnerThread();
-        assert !mDevice.getContext().isDiscarded();
-        assert key instanceof GpuRenderTarget.ScratchKey;
+    public final GpuRenderTarget findAndRefScratchRenderTarget(IResourceKey key, String label) {
+        assert mContext.isOwnerThread();
+        assert !mDevice.isDeviceLost();
+        assert key instanceof GpuRenderTarget.ResourceKey;
 
-        Resource resource = mContext.getResourceCache().findAndRefScratchResource(key);
+        Resource resource = mResourceCache.findAndRefResource(key, true);
         if (resource != null) {
             mDevice.getStats().incNumScratchRenderTargetsReused();
             if (label != null) {
@@ -730,7 +678,7 @@ public abstract class ResourceProvider {
     public final GpuRenderTarget wrapRenderableBackendTexture(BackendImage texture,
                                                               int sampleCount,
                                                               boolean ownership) {
-        if (mDevice.getContext().isDiscarded()) {
+        if (mDevice.isDeviceLost()) {
             return null;
         }
         return mDevice.wrapRenderableBackendTexture(texture, sampleCount, ownership);
@@ -766,7 +714,7 @@ public abstract class ResourceProvider {
     @Nullable
     @SharedPtr
     public final GpuRenderTarget wrapBackendRenderTarget(BackendRenderTarget backendRenderTarget) {
-        if (mDevice.getContext().isDiscarded()) {
+        if (mDevice.isDeviceLost()) {
             return null;
         }
         return mDevice.wrapBackendRenderTarget(backendRenderTarget);
@@ -783,7 +731,7 @@ public abstract class ResourceProvider {
     @Nullable
     @SharedPtr
     public final Buffer createBuffer(long size, int usage) {
-        if (mDevice.getContext().isDiscarded()) {
+        if (mDevice.isDeviceLost()) {
             return null;
         }
         //TODO scratch
@@ -791,10 +739,10 @@ public abstract class ResourceProvider {
     }
 
     public final void assignUniqueKeyToResource(IUniqueKey key, Resource resource) {
-        assert mDevice.getContext().isOwnerThread();
-        if (mDevice.getContext().isDiscarded() || resource == null) {
+        //assert mDevice.getContext().isOwnerThread();
+        if (mDevice.isDeviceLost() || resource == null) {
             return;
         }
-        resource.setUniqueKey(key);
+        //resource.setUniqueKey(key);
     }
 }

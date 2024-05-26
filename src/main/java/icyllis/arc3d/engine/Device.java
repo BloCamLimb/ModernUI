@@ -23,10 +23,13 @@ import icyllis.arc3d.compiler.ShaderCompiler;
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.ops.OpsTask;
 import org.jetbrains.annotations.ApiStatus;
+import org.slf4j.Logger;
+import org.slf4j.helpers.NOPLogger;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A {@link Device} represents a logical GPU device and provides shared context info
@@ -34,7 +37,6 @@ import java.util.Set;
  * <p>
  * It is responsible for
  * creating/deleting 3D API objects, transferring data, submitting 3D API commands, etc.
- * Most methods are only permitted on render thread.
  */
 public abstract class Device implements Engine {
 
@@ -52,8 +54,29 @@ public abstract class Device implements Engine {
     }
     // @formatter:on
 
+    private static final AtomicInteger sNextID = new AtomicInteger(1);
+
+    private static int createUniqueID() {
+        for (;;) {
+            final int value = sNextID.get();
+            final int newValue = value == -1 ? 1 : value + 1; // 0 is reserved
+            if (sNextID.weakCompareAndSetVolatile(value, newValue)) {
+                return value;
+            }
+        }
+    }
+
+    private final int mBackend;
+    private final ContextOptions mOptions;
+    private final int mContextID;
+
+    private volatile ThreadSafeCache mThreadSafeCache;
+    private volatile GlobalResourceCache mGlobalResourceCache;
+
+    private final AtomicBoolean mDiscarded = new AtomicBoolean(false);
+
     // this device is managed by this context
-    protected final ImmediateContext mContext;
+    //protected final ImmediateContext mContext;
     protected final Caps mCaps;
     protected final ShaderCompiler mCompiler;
 
@@ -65,16 +88,117 @@ public abstract class Device implements Engine {
     private final ArrayList<FlushInfo.SubmittedCallback> mSubmittedCallbacks = new ArrayList<>();
     private int mResetBits = ~0;
 
-    protected Device(ImmediateContext context, Caps caps) {
-        assert context != null && caps != null;
-        mContext = context;
+    protected Device(int backend, ContextOptions options, Caps caps) {
+        assert caps != null;
+        mBackend = backend;
+        mOptions = options;
+        mContextID = createUniqueID();
+        //mContext = context;
         mCaps = caps;
         mCompiler = new ShaderCompiler();
     }
 
-    public final ImmediateContext getContext() {
-        return mContext;
+    public final Logger getLogger() {
+        return Objects.requireNonNullElse(getOptions().mLogger, NOPLogger.NOP_LOGGER);
     }
+
+    /**
+     * Retrieve the default {@link BackendFormat} for a given {@code ColorType} and renderability.
+     * It is guaranteed that this backend format will be the one used by the following
+     * {@code ColorType} and {@link SurfaceCharacterization#createBackendFormat(int, BackendFormat)}.
+     * <p>
+     * The caller should check that the returned format is valid (nullability).
+     *
+     * @param colorType  see {@link ImageDesc}
+     * @param renderable true if the format will be used as color attachments
+     */
+    @Nullable
+    public BackendFormat getDefaultBackendFormat(int colorType, boolean renderable) {
+        assert (mCaps != null);
+
+        colorType = Engine.colorTypeToPublic(colorType);
+        BackendFormat format = mCaps.getDefaultBackendFormat(colorType, renderable);
+        if (format == null) {
+            return null;
+        }
+        assert (!renderable ||
+                mCaps.isFormatRenderable(colorType, format, 1));
+        return format;
+    }
+
+    /**
+     * Retrieve the {@link BackendFormat} for a given {@code CompressionType}. This is
+     * guaranteed to match the backend format used by the following
+     * createCompressedBackendTexture methods that take a {@code CompressionType}.
+     * <p>
+     * The caller should check that the returned format is valid (nullability).
+     *
+     * @param compressionType see {@link ImageDesc}
+     */
+    @Nullable
+    public BackendFormat getCompressedBackendFormat(int compressionType) {
+        assert (mCaps != null);
+
+        BackendFormat format = mCaps.getCompressedBackendFormat(compressionType);
+        assert (format == null) ||
+                (!format.isExternal() && mCaps.isFormatTexturable(format));
+        return format;
+    }
+
+    /**
+     * Gets the maximum supported sample count for a color type. 1 is returned if only non-MSAA
+     * rendering is supported for the color type. 0 is returned if rendering to this color type
+     * is not supported at all.
+     *
+     * @param colorType see {@link ImageDesc}
+     */
+    public int getMaxSurfaceSampleCount(int colorType) {
+        assert (mCaps != null);
+
+        colorType = Engine.colorTypeToPublic(colorType);
+        BackendFormat format = mCaps.getDefaultBackendFormat(colorType, true);
+        if (format == null) {
+            return 0;
+        }
+        return mCaps.getMaxRenderTargetSampleCount(format);
+    }
+
+    /**
+     * @return initialized or not, if {@link ImmediateContext} is created, it must be true
+     */
+    public boolean isValid() {
+        return mCaps != null;
+    }
+
+    @ApiStatus.Internal
+    public int getBackend() {
+        return mBackend;
+    }
+
+    @ApiStatus.Internal
+    public ContextOptions getOptions() {
+        return mOptions;
+    }
+
+    @ApiStatus.Internal
+    public int getContextID() {
+        return mContextID;
+    }
+
+    boolean discard() {
+        return !mDiscarded.compareAndExchange(false, true);
+    }
+
+    boolean isDiscarded() {
+        return mDiscarded.get();
+    }
+
+    @Override
+    public int hashCode() {
+        return mContextID;
+    }
+
+    // use reference equality
 
     /**
      * Gets the capabilities of the context.
@@ -90,9 +214,9 @@ public abstract class Device implements Engine {
         return mCompiler;
     }
 
-    public abstract ResourceProvider getResourceProvider();
+    public abstract ResourceProvider makeResourceProvider(Context context);
 
-    public abstract PipelineCache getPipelineCache();
+    public abstract GlobalResourceCache getPipelineCache();
 
     /**
      * Called by context when the underlying backend context is already or will be destroyed
@@ -597,7 +721,7 @@ public abstract class Device implements Engine {
     @SharedPtr
     public final Buffer createBuffer(long size, int flags) {
         if (size <= 0) {
-            getContext().getLogger().error(
+            getLogger().error(
                     "Failed to create buffer: invalid size {}",
                     size);
             return null;

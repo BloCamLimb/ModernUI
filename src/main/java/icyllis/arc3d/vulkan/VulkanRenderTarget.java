@@ -39,8 +39,8 @@ public final class VulkanRenderTarget extends GpuRenderTarget {
     @SharedPtr
     private VulkanImage mDepthStencilAttachment;
 
-    protected VulkanRenderTarget(Device device, int width, int height, int sampleCount, int numColorAttachments) {
-        super(device, width, height, sampleCount, numColorAttachments);
+    protected VulkanRenderTarget(Context context, int width, int height, int sampleCount, int numColorAttachments) {
+        super(context, width, height, sampleCount, numColorAttachments);
     }
 
     @Nonnull

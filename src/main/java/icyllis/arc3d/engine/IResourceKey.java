@@ -29,28 +29,18 @@ package icyllis.arc3d.engine;
  * <li> When a scratch resource is referenced it will not be returned from the
  * cache for a subsequent cache request until all refs are released. This facilitates using
  * a scratch key for multiple render-to-texture scenarios. An example is a separable blur:</li>
- * </ul>
- * <pre>{@code
- *  public void makeBlurredImage() {
- *      var texture0 = get_scratch_texture(scratchKey);
- *      // texture 0 is already owned so we will get a different one for texture1
- *      var texture1 = get_scratch_texture(scratchKey);
- *      // draws path mask to texture 0
- *      draw_mask(texture0, path);
- *      // blurs texture 0 in y and stores result in texture 1
- *      blur_x(texture0, texture1);
- *      // blurs texture 1 in y and stores result in texture 0
- *      blur_y(texture1, texture0);
- *      // texture 1 can now be recycled for the next request with scratchKey
- *      texture1.unref();
- *      // consume the blurred texture, such as download to CPU
- *      consume_blur(texture0);
- *      // texture 0 can now be recycled for the next request with scratchKey
- *      texture0.unref();
- *  }
- * }</pre>
  */
-public interface IScratchKey {
+public interface IResourceKey {
+
+    /**
+     * Can the resource be held by multiple users at the same time?
+     * For example, pipelines, samplers, etc.
+     */
+    default boolean isShareable() {
+        return false;
+    }
+
+    IResourceKey copy();
 
     @Override
     int hashCode();

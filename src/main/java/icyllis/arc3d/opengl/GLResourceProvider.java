@@ -40,7 +40,7 @@ public final class GLResourceProvider extends ResourceProvider {
     private final Int2ObjectLinkedOpenHashMap<GLSampler> mSamplerCache =
             new Int2ObjectLinkedOpenHashMap<>(SAMPLER_CACHE_SIZE);
 
-    GLResourceProvider(GLDevice device, ImmediateContext context) {
+    GLResourceProvider(GLDevice device, Context context) {
         super(device, context);
         mDevice = device;
     }
@@ -63,9 +63,9 @@ public final class GLResourceProvider extends ResourceProvider {
             return null;
         }
         if (glImageDesc.mTarget == GL_RENDERBUFFER) {
-            return GLRenderbuffer.make(mDevice, glImageDesc, budgeted);
+            return GLRenderbuffer.make(mContext, glImageDesc, budgeted);
         } else {
-            return GLTexture.make(mDevice, glImageDesc, budgeted);
+            return GLTexture.make(mContext, glImageDesc, budgeted);
         }
     }
 

@@ -303,9 +303,9 @@ public abstract class RenderTask extends RefCnt {
         ImageProxy imageProxy = dependency.asImageProxy();
         if (SamplerState.isMipmapped(samplerState)) {
             assert imageProxy != null;
-            if (imageProxy.isMipmapped() && imageProxy.isMipmapsDirty()) {
+            /*if (imageProxy.isMipmapped() && imageProxy.isMipmapsDirty()) {
                 resolveFlags |= RESOLVE_FLAG_MIPMAPS;
-            }
+            }*/
         }
 
         if (resolveFlags != 0) {
@@ -324,8 +324,8 @@ public abstract class RenderTask extends RefCnt {
 
             assert (renderTargetProxy == null || !renderTargetProxy.isManualMSAAResolve() ||
                     !renderTargetProxy.needsResolve());
-            assert (imageProxy == null || !imageProxy.isMipmapped() ||
-                    !imageProxy.isMipmapsDirty());
+            /*assert (imageProxy == null || !imageProxy.isMipmapped() ||
+                    !imageProxy.isMipmapsDirty());*/
             return;
         }
 

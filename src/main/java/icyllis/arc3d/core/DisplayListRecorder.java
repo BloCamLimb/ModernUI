@@ -44,7 +44,7 @@ public final class DisplayListRecorder implements AutoCloseable {
     public DisplayListRecorder(SurfaceCharacterization c) {
         mCharacterization = c;
         if (c != null) {
-            mContext = RecordingContext.makeRecording(c.getContextInfo());
+            //mContext = RecordingContext.makeRecording(c.getContextInfo());
         }
     }
 

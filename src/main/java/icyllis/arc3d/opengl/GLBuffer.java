@@ -22,6 +22,7 @@ package icyllis.arc3d.opengl;
 import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.Buffer;
+import icyllis.arc3d.engine.Context;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -43,19 +44,17 @@ public final class GLBuffer extends Buffer {
     @SharedPtr
     private CpuBuffer mStagingBuffer;
 
-    private GLBuffer(GLDevice device,
+    private GLBuffer(Context context,
                      long size,
                      int usage,
                      int buffer) {
-        super(device, size, usage);
+        super(context, size, usage);
         mBuffer = buffer;
-
-        registerWithCache(true);
     }
 
     @Nullable
     @SharedPtr
-    public static GLBuffer make(GLDevice device,
+    public static GLBuffer make(Context context,
                                 long size,
                                 int usage) {
         assert (size > 0);
@@ -68,8 +67,10 @@ public final class GLBuffer extends Buffer {
                 BufferUsageFlags.kDrawIndirect);
         assert typeFlags != 0;
 
+        GLDevice device = (GLDevice) context.getDevice();
+
         if (Integer.bitCount(typeFlags) != 1) {
-            device.getContext().getLogger().error(
+            device.getLogger().error(
                     "Failed to create GLBuffer: only one type bit is allowed, given 0x{}",
                     Integer.toHexString(typeFlags));
             return null;
@@ -121,7 +122,7 @@ public final class GLBuffer extends Buffer {
                 device.getGL().glNamedBufferData(buffer, size, NULL, allocUsage);
                 if (device.getError() != GL_NO_ERROR) {
                     device.getGL().glDeleteBuffers(buffer);
-                    device.getContext().getLogger().error(
+                    device.getLogger().error(
                             "Failed to create GLBuffer: failed to allocate {} bytes from device",
                             size);
                     return null;
@@ -129,7 +130,7 @@ public final class GLBuffer extends Buffer {
             }
             //}
 
-            return new GLBuffer(device, size, usage, buffer);
+            return new GLBuffer(context, size, usage, buffer);
         } else {
             int buffer = device.getGL().glGenBuffers();
             if (buffer == 0) {
@@ -177,7 +178,7 @@ public final class GLBuffer extends Buffer {
                 device.getGL().glBufferData(target, size, NULL, allocUsage);
                 if (device.getError() != GL_NO_ERROR) {
                     device.getGL().glDeleteBuffers(buffer);
-                    device.getContext().getLogger().error(
+                    device.getLogger().error(
                             "Failed to create GLBuffer: failed to allocate {} bytes from device",
                             size);
                     return null;
@@ -185,7 +186,7 @@ public final class GLBuffer extends Buffer {
             }
             //}
 
-            return new GLBuffer(device, size, usage, buffer);
+            return new GLBuffer(context, size, usage, buffer);
         }
     }
 
@@ -233,9 +234,9 @@ public final class GLBuffer extends Buffer {
     }
 
     @Override
-    protected void onSetLabel(@Nonnull String label) {
+    protected void onSetLabel(@Nullable String label) {
         if (getDevice().getCaps().hasDebugSupport()) {
-            if (label.isEmpty()) {
+            if (label == null) {
                 getDevice().getGL().glObjectLabel(GL_BUFFER, mBuffer, 0, NULL);
             } else {
                 label = label.substring(0, Math.min(label.length(),
@@ -269,7 +270,7 @@ public final class GLBuffer extends Buffer {
     @Override
     protected long onLock(int mode, long offset, long size) {
         var device = getDevice();
-        assert (device.getContext().isOwnerThread());
+        //assert (device.getContext().isOwnerThread());
         assert (!mLocked);
         assert (mBuffer != 0);
 
@@ -284,7 +285,7 @@ public final class GLBuffer extends Buffer {
                 mMappedBuffer = device.getGL().glMapBufferRange(target, offset, size, GL_MAP_READ_BIT);
             }
             if (mMappedBuffer == NULL) {
-                getDevice().getContext().getLogger().error("Failed to map buffer {}", mBuffer);
+                getDevice().getLogger().error("Failed to map buffer {}", mBuffer);
             }
             return mMappedBuffer;
         } else {
@@ -299,7 +300,7 @@ public final class GLBuffer extends Buffer {
     @Override
     protected void onUnlock(int mode, long offset, long size) {
         var device = getDevice();
-        assert (device.getContext().isOwnerThread());
+        //assert (device.getContext().isOwnerThread());
         assert (mLocked);
         assert (mBuffer != 0);
 
@@ -342,7 +343,7 @@ public final class GLBuffer extends Buffer {
 
     @Override
     protected boolean onUpdateData(int offset, int size, long data) {
-        assert (getDevice().getContext().isOwnerThread());
+        //assert (getDevice().getContext().isOwnerThread());
         assert (mBuffer != 0);
         int target = getDevice().getCaps().hasDSASupport()
                 ? 0
@@ -392,10 +393,10 @@ public final class GLBuffer extends Buffer {
                 // orphan full size
                 // null data will allocate new space, so check errors
                 if (device.getCaps().skipErrorChecks()) {
-                    device.getGL().glBufferData(target, mSize, NULL, allocUsage);
+                    device.getGL().glBufferData(target, getSize(), NULL, allocUsage);
                 } else {
                     device.clearErrors();
-                    device.getGL().glBufferData(target, mSize, NULL, allocUsage);
+                    device.getGL().glBufferData(target, getSize(), NULL, allocUsage);
                     if (device.getError() != GL_NO_ERROR) {
                         return false;
                     }

@@ -19,8 +19,7 @@
 
 package icyllis.arc3d.vulkan;
 
-import icyllis.arc3d.engine.ImmediateContext;
-import icyllis.arc3d.engine.Device;
+import icyllis.arc3d.engine.*;
 import org.lwjgl.vulkan.VkDevice;
 
 public abstract class VulkanDevice extends Device {
@@ -29,8 +28,8 @@ public abstract class VulkanDevice extends Device {
     private boolean mProtectedContext;
     private int mQueueIndex;
 
-    public VulkanDevice(ImmediateContext context) {
-        super(context, null);
+    public VulkanDevice(ContextOptions options, VulkanCaps caps) {
+        super(Engine.BackendApi.kVulkan, options, caps);
     }
 
     public VkDevice device() {

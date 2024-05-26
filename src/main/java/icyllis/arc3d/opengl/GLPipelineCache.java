@@ -27,7 +27,7 @@ import javax.annotation.Nullable;
 import java.util.concurrent.ConcurrentHashMap;
 
 //TODO cache trim
-public class GLPipelineCache extends PipelineCache {
+public class GLPipelineCache extends GlobalResourceCache {
 
     private final GLDevice mDevice;
 

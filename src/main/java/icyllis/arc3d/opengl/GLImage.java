@@ -32,9 +32,12 @@ public abstract sealed class GLImage extends Image
 
     protected final GLImageDesc mDesc;
 
-    protected GLImage(GLDevice device, GLImageDesc desc,
+    protected GLImage(Context context,
+                      boolean budgeted,
+                      boolean wrapped,
+                      GLImageDesc desc,
                       ImageMutableState mutableState) {
-        super(device, desc, mutableState);
+        super(context, budgeted, wrapped, desc, mutableState);
         mDesc = desc;
     }
 
@@ -43,18 +46,27 @@ public abstract sealed class GLImage extends Image
         return mDesc;
     }
 
-    @Nullable
     @Override
-    protected ScratchKey computeScratchKey() {
-        return new ScratchKey(mDesc);
+    protected GLDevice getDevice() {
+        return (GLDevice) super.getDevice();
     }
 
-    public static final class ScratchKey implements IScratchKey {
+    public static final class ResourceKey implements IResourceKey {
 
         private final GLImageDesc mDesc;
 
-        public ScratchKey(GLImageDesc desc) {
+        public ResourceKey(GLImageDesc desc) {
             mDesc = desc;
+        }
+
+        @Override
+        public IResourceKey copy() {
+            return new ResourceKey(mDesc);
+        }
+
+        @Override
+        public int hashCode() {
+            return mDesc.hashCode();
         }
 
         @Override
@@ -62,14 +74,9 @@ public abstract sealed class GLImage extends Image
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
 
-            ScratchKey that = (ScratchKey) o;
+            ResourceKey that = (ResourceKey) o;
 
             return mDesc.equals(that.mDesc);
-        }
-
-        @Override
-        public int hashCode() {
-            return mDesc.hashCode();
         }
     }
 }

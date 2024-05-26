@@ -21,14 +21,12 @@ package icyllis.arc3d.test;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.engine.geom.BoundsManager;
 import icyllis.arc3d.engine.graphene.*;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.Objects;
 
 public class TestClipStack {
@@ -57,9 +55,10 @@ public class TestClipStack {
         if (immediateContext == null) {
             throw new RuntimeException();
         }
+        RecordingContext recordingContext = immediateContext.makeRecordingContext();
 
-        Device_Gpu deviceGpu = Device_Gpu.make(
-                immediateContext,
+        var drawDevice = icyllis.arc3d.engine.graphene.Device.make(
+                recordingContext,
                 ColorInfo.CT_RGBA_8888,
                 ColorInfo.AT_PREMUL,
                 ColorSpace.get(ColorSpace.Named.SRGB),
@@ -69,27 +68,28 @@ public class TestClipStack {
                 Engine.SurfaceOrigin.kLowerLeft,
                 false
         );
+        assert drawDevice != null;
 
-        var clipStack = new ClipStack(
-                deviceGpu
-        );
-        var viewMatrix = Matrix4.identity();
-
-        clipStack.clipRect(viewMatrix,
+        drawDevice.clipRect(
                 new Rect2f(0, 0, 60, 60),
-                ClipOp.CLIP_OP_INTERSECT);
+                ClipOp.CLIP_OP_INTERSECT, false);
 
-        clipStack.save();
+        drawDevice.save();
         //viewMatrix.preRotateZ(MathUtil.DEG_TO_RAD * 5);
-        clipStack.clipRect(viewMatrix,
+        drawDevice.clipRect(
                 new Rect2f(20, 20, 70, 60),
-                ClipOp.CLIP_OP_INTERSECT);
-        LOGGER.info(stateToString(clipStack.currentClipState()));
-        clipStack.elements().forEach(e -> LOGGER.info(e.toString()));
+                ClipOp.CLIP_OP_INTERSECT, false);
+        LOGGER.info(stateToString(drawDevice.getClipStack().currentClipState()));
+        drawDevice.getClipStack().elements().forEach(e -> LOGGER.info(e.toString()));
 
-        BoundsManager boundsManager = new BoundsManager();
+        RoundRect rrect = new RoundRect();
+        rrect.mLeft = 15;
+        rrect.mTop = 20;
+        rrect.mRight = 35;
+        rrect.mBottom = 40;
+        drawDevice.drawRoundRect(rrect, new Paint());
 
-        var elementsForMask = new ArrayList<ClipStack.Element>();
+        /*var elementsForMask = new ArrayList<ClipStack.Element>();
         var draw = new DrawOp();
         draw.mTransform = Matrix4.identity();
         draw.mTransform.preTranslate(25, 25);
@@ -109,12 +109,11 @@ public class TestClipStack {
         LOGGER.info("ElementsForMask: " + elementsForMask);
         clipStack.updateForDraw(draw, elementsForMask, boundsManager, 0);
 
-        clipStack.restore();
         LOGGER.info(stateToString(clipStack.currentClipState()));
-        clipStack.elements().forEach(e -> LOGGER.info(e.toString()));
+        clipStack.elements().forEach(e -> LOGGER.info(e.toString()));*/
 
-        deviceGpu.unref();
-
+        drawDevice.unref();
+        recordingContext.unref();
         immediateContext.unref();
         GLFW.glfwDestroyWindow(window);
         GLFW.glfwTerminate();

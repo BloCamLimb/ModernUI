@@ -735,8 +735,8 @@ public abstract class Caps {
 
     public abstract short getWriteSwizzle(ImageDesc desc, int colorType);
 
-    public abstract IScratchKey computeImageKey(ImageDesc desc,
-                                                IScratchKey recycle);
+    public abstract IResourceKey computeImageKey(ImageDesc desc,
+                                                 IResourceKey recycle);
 
     // unmodifiable
     public final DriverBugWorkarounds workarounds() {

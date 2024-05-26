@@ -19,8 +19,7 @@
 
 package icyllis.arc3d.engine.graphene;
 
-import icyllis.arc3d.core.RawPtr;
-import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
@@ -36,14 +35,20 @@ import java.util.function.ToIntFunction;
  */
 public class DrawPass {
 
-    private ArrayList<GraphicsPipelineDesc> mPipelineDescriptors;
+    private final ArrayList<GraphicsPipelineDesc> mPipelineDescs;
 
     @SharedPtr
     private ArrayList<GraphicsPipeline> mGraphicsPipelines = new ArrayList<>();
 
-    private final DrawCommandList mCommandList = new DrawCommandList();
+    private final DrawCommandList mCommandList;
 
     private ImageProxy[] mSampledImages;
+
+    private DrawPass(DrawCommandList commandList,
+                     ArrayList<GraphicsPipelineDesc> pipelineDescs) {
+        mCommandList = commandList;
+        mPipelineDescs = pipelineDescs;
+    }
 
     public static DrawPass make(RecordingContext rContext,
                                 DrawOpList drawOpList,
@@ -59,10 +64,10 @@ public class DrawPass {
 
         var pipelineToIndexMap
                 = new Object2IntOpenHashMap<GraphicsPipelineDesc>();
-        var pipelineDescriptors = new ArrayList<GraphicsPipelineDesc>();
+        var pipelineDescs = new ArrayList<GraphicsPipelineDesc>();
         ToIntFunction<GraphicsPipelineDesc> insertPipelineDesc = desc -> {
-            pipelineDescriptors.add(desc);
-            return pipelineDescriptors.size() - 1;
+            pipelineDescs.add(desc);
+            return pipelineDescs.size() - 1;
         };
 
         SortKey[] keys = new SortKey[drawOpList.numSteps()];
@@ -92,7 +97,7 @@ public class DrawPass {
 
         MeshDrawWriter drawWriter = new MeshDrawWriter(dynamicBufferManager,
                 commandList);
-
+        Rect2ic lastScissor = new Rect2i(0, 0, colorTarget.getWidth(), colorTarget.getHeight());
         int lastPipeline = -1;
 
         for (var key : keys) {
@@ -101,6 +106,10 @@ public class DrawPass {
 
             boolean pipelineChange = key.pipelineIndex() != lastPipeline;
 
+            Rect2ic newScissor = !op.mScissorRect.equals(lastScissor)
+                    ? op.mScissorRect : null;
+
+            boolean dynamicStateChange = newScissor != null;
 
             if (pipelineChange) {
                 drawWriter.newPipelineState(
@@ -109,17 +118,32 @@ public class DrawPass {
                         step.vertexStride(),
                         step.instanceStride()
                 );
-            } else {
-                //??
+            } else if (dynamicStateChange) {
+                drawWriter.newDynamicState();
             }
 
+            // Make state changes before accumulating new draw data
+            if (pipelineChange) {
+                commandList.bindGraphicsPipeline(key.pipelineIndex());
+                lastPipeline = key.pipelineIndex();
+            }
+            if (dynamicStateChange) {
+                if (newScissor != null) {
+                    commandList.setScissor(newScissor);
+                    lastScissor = newScissor;
+                }
+            }
 
-            step.writeVertices(drawWriter, op, null);
+            step.writeVertices(drawWriter, op, new float[]{1, 1, 1, 1});
+
+            if (dynamicBufferManager.hasMappingFailed()) {
+                return null;
+            }
         }
+        drawWriter.flush();
 
 
-        DrawPass pass = new DrawPass();
-        pass.mPipelineDescriptors = pipelineDescriptors;
+        DrawPass pass = new DrawPass(commandList, pipelineDescs);
 
         return pass;
     }
@@ -145,11 +169,17 @@ public class DrawPass {
         public static final long STENCIL_INDEX_OFFSET = 32;
         public static final long STENCIL_INDEX_MASK = (1 << 16) - 1;
 
-        public static final long STEP_INDEX_OFFSET = 30;
-        public static final long STEP_INDEX_MASK = (1 << 2) - 1;
+        static {
+            //noinspection ConstantValue
+            assert DrawOrder.PAINTERS_ORDER_SHIFT == PAINTERS_ORDER_OFFSET &&
+                    DrawOrder.STENCIL_INDEX_SHIFT == STENCIL_INDEX_OFFSET;
+        }
 
-        public static final long PIPELINE_INDEX_OFFSET = 0;
-        public static final long PIPELINE_INDEX_MASK = (1 << 30) - 1;
+        public static final int STEP_INDEX_OFFSET = 30;
+        public static final int STEP_INDEX_MASK = (1 << 2) - 1;
+
+        public static final int PIPELINE_INDEX_OFFSET = 0;
+        public static final int PIPELINE_INDEX_MASK = (1 << 30) - 1;
 
         private long highOrderFlags;
         private long lowOrderFlags;
@@ -158,8 +188,11 @@ public class DrawPass {
         public SortKey(DrawOp drawOp,
                        int stepIndex,
                        int pipelineIndex) {
-
-            highOrderFlags = ((long) stepIndex << STEP_INDEX_OFFSET) | ((long) pipelineIndex << PIPELINE_INDEX_OFFSET);
+            // the higher 32 bits are just we want
+            highOrderFlags = drawOp.mDrawOrder & 0xFFFFFFFF_00000000L;
+            assert (stepIndex & STEP_INDEX_MASK) == stepIndex;
+            highOrderFlags |= ((long) stepIndex << STEP_INDEX_OFFSET) | ((long) pipelineIndex << PIPELINE_INDEX_OFFSET);
+            drawOpRef = drawOp;
         }
 
         public GeometryStep step() {

@@ -33,14 +33,10 @@ import java.util.Objects;
  * Immediate context is used for command list execution and queue submission.
  * That thread is also known as command execution thread and submission thread.
  */
-public final class ImmediateContext extends RecordingContext {
+public final class ImmediateContext extends Context {
 
-    private Device mDevice;
-    private ResourceCache mResourceCache;
-    private ResourceProvider mResourceProvider;
-
-    private ImmediateContext(int backend, ContextOptions options) {
-        super(new SharedContext(backend, options));
+    private ImmediateContext(Device device) {
+        super(device);
     }
 
     /**
@@ -56,7 +52,6 @@ public final class ImmediateContext extends RecordingContext {
 
     @Nullable
     public static ImmediateContext makeOpenGL(@Nonnull ContextOptions options) {
-        ImmediateContext context = new ImmediateContext(Engine.BackendApi.kOpenGL, options);
         GLCapabilities capabilities;
         try {
             capabilities = Objects.requireNonNullElseGet(
@@ -70,12 +65,7 @@ public final class ImmediateContext extends RecordingContext {
                 return null;
             }
         }
-        context.mDevice = GLDevice.make(context, options, capabilities);
-        if (context.init()) {
-            return context;
-        }
-        context.unref();
-        return null;
+        return makeOpenGL(capabilities, options);
     }
 
     /**
@@ -116,8 +106,11 @@ public final class ImmediateContext extends RecordingContext {
      */
     @Nullable
     public static ImmediateContext makeOpenGL(@Nonnull Object capabilities, @Nonnull ContextOptions options) {
-        ImmediateContext context = new ImmediateContext(Engine.BackendApi.kOpenGL, options);
-        context.mDevice = GLDevice.make(context, options, capabilities);
+        var device = GLDevice.make(options, capabilities);
+        if (device == null) {
+            return null;
+        }
+        ImmediateContext context = new ImmediateContext(device);
         if (context.init()) {
             return context;
         }
@@ -152,6 +145,16 @@ public final class ImmediateContext extends RecordingContext {
         return null;
     }
 
+    @Nullable
+    public RecordingContext makeRecordingContext() {
+        RecordingContext rContext = new RecordingContext(mDevice);
+        if (rContext.init()) {
+            return rContext;
+        }
+        rContext.unref();
+        return null;
+    }
+
     /**
      * The context normally assumes that no outsider is setting state
      * within the underlying 3D API's context/device. This call informs
@@ -167,28 +170,12 @@ public final class ImmediateContext extends RecordingContext {
         mDevice.markContextDirty(state);
     }
 
-    @ApiStatus.Internal
-    public Device getDevice() {
-        return mDevice;
-    }
-
-    @ApiStatus.Internal
-    public ResourceCache getResourceCache() {
-        return mResourceCache;
-    }
-
-    @ApiStatus.Internal
-    public ResourceProvider getResourceProvider() {
-        return mResourceProvider;
-    }
-
-    @Override
     public boolean isDiscarded() {
-        if (super.isDiscarded()) {
+        /*if (super.isDiscarded()) {
             return true;
-        }
+        }*/
         if (mDevice != null && mDevice.isDeviceLost()) {
-            discard();
+            //discard();
             return true;
         }
         return false;
@@ -196,7 +183,7 @@ public final class ImmediateContext extends RecordingContext {
 
     public boolean isDeviceLost() {
         if (mDevice != null && mDevice.isDeviceLost()) {
-            discard();
+            //discard();
             return true;
         }
         return false;
@@ -209,40 +196,37 @@ public final class ImmediateContext extends RecordingContext {
             return false;
         }
 
-        mContextInfo.init(mDevice);
+        //mContextInfo.init(mDevice);
         if (!super.init()) {
             return false;
         }
 
-        assert getThreadSafeCache() != null;
+        //assert getThreadSafeCache() != null;
 
-        mResourceCache = new ResourceCache(getContextID());
-        mResourceCache.setSurfaceProvider(getSurfaceProvider());
-        mResourceCache.setThreadSafeCache(getThreadSafeCache());
-        mResourceProvider = mDevice.getResourceProvider();
+        //mResourceProvider = mDevice.createResourceProvider(this);
         return true;
     }
 
-    @Override
+    /*@Override
     public void discard() {
         if (super.isDiscarded()) {
             return;
         }
         super.discard();
-        if (mResourceCache != null) {
-            mResourceCache.discardAll();
+        if (mResourceProvider != null) {
+            mResourceProvider.destroy(false);
         }
         if (mDevice != null) {
             mDevice.disconnect(false);
         }
-    }
+    }*/
 
     @Override
     protected void deallocate() {
         super.deallocate();
-        if (mResourceCache != null) {
-            mResourceCache.releaseAll();
-        }
+        /*if (mResourceProvider != null) {
+            mResourceProvider.destroy(true);
+        }*/
         if (mDevice != null) {
             mDevice.disconnect(true);
         }

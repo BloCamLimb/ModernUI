@@ -1294,10 +1294,10 @@ public class GLCaps extends Caps {
     }
 
     @Override
-    public IScratchKey computeImageKey(ImageDesc desc,
-                                       IScratchKey recycle) {
+    public IResourceKey computeImageKey(ImageDesc desc,
+                                        IResourceKey recycle) {
         if (desc instanceof GLImageDesc glDesc) {
-            return new GLImage.ScratchKey(glDesc);
+            return new GLImage.ResourceKey(glDesc);
         }
         return null;
     }

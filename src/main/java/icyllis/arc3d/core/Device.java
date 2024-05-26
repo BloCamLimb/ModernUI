@@ -198,7 +198,7 @@ public abstract class Device extends RefCnt implements MatrixProvider {
         mLocalToDevice.postConcat(mGlobalToDevice);
     }
 
-    public final void setLocalToDevice(@Nullable Matrix4 localToDevice) {
+    public final void setLocalToDevice(@Nullable Matrix4c localToDevice) {
         if (localToDevice == null) {
             mLocalToDevice.setIdentity();
         } else {

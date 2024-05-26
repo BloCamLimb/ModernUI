@@ -26,11 +26,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Thread-safe class to get or create pipeline state objects (PSO) asynchronously.
  */
 @ThreadSafe
-public abstract class PipelineCache {
+public abstract class GlobalResourceCache {
 
     protected final Stats mStats = new Stats();
 
-    public PipelineCache() {
+    public GlobalResourceCache() {
     }
 
     public abstract GraphicsPipeline findOrCreateGraphicsPipeline(

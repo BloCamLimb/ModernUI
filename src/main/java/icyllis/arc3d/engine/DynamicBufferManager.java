@@ -206,4 +206,8 @@ public class DynamicBufferManager {
             target.mOffset = 0;
         }
     }
+
+    public boolean hasMappingFailed() {
+        return mMappingFailed;
+    }
 }

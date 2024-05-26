@@ -20,7 +20,7 @@
 package icyllis.arc3d.core;
 
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.engine.graphene.Device_Gpu;
+import icyllis.arc3d.engine.graphene.Device;
 
 import javax.annotation.Nullable;
 
@@ -35,12 +35,12 @@ import javax.annotation.Nullable;
 public class Surface extends RefCnt {
 
     @SharedPtr
-    private Device mDevice;
+    private icyllis.arc3d.core.Device mDevice;
 
     // unique ptr
     private Canvas mCachedCanvas;
 
-    public Surface(@SharedPtr Device device) {
+    public Surface(@SharedPtr icyllis.arc3d.core.Device device) {
         mDevice = device;
     }
 
@@ -140,7 +140,7 @@ public class Surface extends RefCnt {
         if (rtProxy == null) {
             return null;
         }
-        var dev = Device_Gpu.make(rContext,
+        var dev = Device.make(rContext,
                 colorType,
                 colorSpace,
                 rtProxy,

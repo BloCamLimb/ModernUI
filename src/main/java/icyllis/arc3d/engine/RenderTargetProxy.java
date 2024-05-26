@@ -257,10 +257,10 @@ public final class RenderTargetProxy extends SurfaceProxy {
 
     @Nonnull
     @Override
-    IScratchKey computeScratchKey() {
+    IResourceKey computeScratchKey() {
         assert mColorImageProxy != null;
         //TODO check flags
-        return new GpuRenderTarget.ScratchKey().compute(
+        /*return new GpuRenderTarget.ResourceKey().compute(
                 getBackingWidth(), getBackingHeight(),
                 mFormat,
                 mColorImageProxy.mSurfaceFlags,
@@ -269,7 +269,8 @@ public final class RenderTargetProxy extends SurfaceProxy {
                 null, 0,
                 mSampleCount,
                 mSurfaceFlags
-        );
+        );*/
+        return null;
     }
 
     @Nullable
@@ -278,7 +279,7 @@ public final class RenderTargetProxy extends SurfaceProxy {
     GpuSurface createSurface(ResourceProvider resourceProvider) {
         assert mColorImageProxy != null;
         //TODO check flags
-        return resourceProvider.createRenderTarget(
+        /*return resourceProvider.createRenderTarget(
                 mWidth, mHeight,
                 mFormat,
                 mColorImageProxy.mSurfaceFlags,
@@ -288,6 +289,7 @@ public final class RenderTargetProxy extends SurfaceProxy {
                 mSampleCount,
                 mSurfaceFlags,
                 ""
-        );
+        );*/
+        return null;
     }
 }

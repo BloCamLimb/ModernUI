@@ -46,14 +46,13 @@ public final class GLDevice extends Device {
 
     private final GLCommandBuffer mMainCmdBuffer;
 
-    private final GLResourceProvider mResourceProvider;
     private final GLPipelineCache mPipelineCache;
 
     private final CpuBufferPool mCpuBufferPool;
 
-    private final GpuBufferPool mVertexPool;
+    /*private final GpuBufferPool mVertexPool;
     private final GpuBufferPool mInstancePool;
-    private final GpuBufferPool mIndexPool;
+    private final GpuBufferPool mIndexPool;*/
 
     // unique ptr
     private GLOpsRenderPass mCachedOpsRenderPass;
@@ -168,17 +167,16 @@ public final class GLDevice extends Device {
     private final ConcurrentLinkedQueue<Consumer<GLDevice>> mRenderCalls =
             new ConcurrentLinkedQueue<>();
 
-    private GLDevice(ImmediateContext context, GLCaps caps, GLInterface glInterface) {
-        super(context, caps);
+    private final Thread mExecutingThread;
+
+    private GLDevice(ContextOptions options, GLCaps caps, GLInterface glInterface) {
+        super(BackendApi.kOpenGL, options, caps);
         mCaps = caps;
         mGLInterface = glInterface;
         mMainCmdBuffer = new GLCommandBuffer(this);
-        mResourceProvider = new GLResourceProvider(this, context);
         mPipelineCache = new GLPipelineCache(this, 256);
         mCpuBufferPool = new CpuBufferPool(6);
-        mVertexPool = GpuBufferPool.makeVertexPool(mResourceProvider);
-        mInstancePool = GpuBufferPool.makeInstancePool(mResourceProvider);
-        mIndexPool = GpuBufferPool.makeIndexPool(mResourceProvider);
+        mExecutingThread = Thread.currentThread();
 
         int maxTextureUnits = caps.shaderCaps().mMaxFragmentSamplers;
         mHWTextureStates = new UniqueID[maxTextureUnits];
@@ -191,41 +189,39 @@ public final class GLDevice extends Device {
     /**
      * Create a {@link GLDevice} with OpenGL context current in the current thread.
      *
-     * @param context the owner context
      * @param options the context options
      * @return the engine or null if failed to create
      */
     @Nullable
-    public static GLDevice make(ImmediateContext context, ContextOptions options,
-                                Object capabilities) {
+    public static GLDevice make(ContextOptions options, Object capabilities) {
         try {
             final GLCaps caps;
             final GLInterface glInterface;
             switch (capabilities.getClass().getName()) {
                 case "org.lwjgl.opengl.GLCapabilities" -> {
-                    var impl = new GLCaps_GL(context, options, capabilities);
+                    var impl = new GLCaps_GL(options, capabilities);
                     caps = impl;
                     glInterface = impl;
                 }
                 case "org.lwjgl.opengles.GLESCapabilities" -> {
-                    var impl = new GLCaps_GLES(context, options, capabilities);
+                    var impl = new GLCaps_GLES(options, capabilities);
                     caps = impl;
                     glInterface = impl;
                 }
                 default -> {
-                    context.getLogger().error("Failed to create GLDevice: invalid capabilities");
+                    options.mLogger.error("Failed to create GLDevice: invalid capabilities");
                     return null;
                 }
             }
-            return new GLDevice(context, caps, glInterface);
+            return new GLDevice(options, caps, glInterface);
         } catch (Exception e) {
-            context.getLogger().error("Failed to create GLDevice", e);
+            options.mLogger.error("Failed to create GLDevice", e);
             return null;
         }
     }
 
     public boolean isOnExecutingThread() {
-        return mContext.isOwnerThread();
+        return mExecutingThread == Thread.currentThread();
     }
 
     /**
@@ -262,19 +258,19 @@ public final class GLDevice extends Device {
     @Override
     public void disconnect(boolean cleanup) {
         super.disconnect(cleanup);
-        mVertexPool.reset();
+        /*mVertexPool.reset();
         mInstancePool.reset();
-        mIndexPool.reset();
+        mIndexPool.reset();*/
         mCpuBufferPool.releaseAll();
 
         mMainCmdBuffer.resetStates(~0);
 
         if (cleanup) {
             mPipelineCache.release();
-            mResourceProvider.release();
+            //mResourceProvider.release();
         } else {
             mPipelineCache.discard();
-            mResourceProvider.discard();
+            //mResourceProvider.discard();
         }
 
         callAllFinishedCallbacks(cleanup);
@@ -290,8 +286,8 @@ public final class GLDevice extends Device {
     }
 
     @Override
-    public GLResourceProvider getResourceProvider() {
-        return mResourceProvider;
+    public GLResourceProvider makeResourceProvider(Context context) {
+        return new GLResourceProvider(this, context);
     }
 
     @Override
@@ -308,17 +304,17 @@ public final class GLDevice extends Device {
 
     @Override
     public GpuBufferPool getVertexPool() {
-        return mVertexPool;
+        return null;
     }
 
     @Override
     public GpuBufferPool getInstancePool() {
-        return mInstancePool;
+        return null;
     }
 
     @Override
     public GpuBufferPool getIndexPool() {
-        return mIndexPool;
+        return null;
     }
 
     @Override
@@ -625,7 +621,7 @@ public final class GLDevice extends Device {
             }
         }
 
-        return new GLRenderTarget(this,
+        return new GLRenderTarget(null,
                 width,
                 height,
                 sampleCount,
@@ -701,7 +697,7 @@ public final class GLDevice extends Device {
                                                          int stencilBits,
                                                          BackendFormat format) {
         int actualSamplerCount = mCaps.getRenderTargetSampleCount(sampleCount, format.getGLFormat());
-        return GLRenderTarget.makeWrapped(this,
+        return GLRenderTarget.makeWrapped(null,
                 width,
                 height,
                 format,
@@ -726,7 +722,7 @@ public final class GLDevice extends Device {
             return null;
         }
         int actualSamplerCount = mCaps.getRenderTargetSampleCount(backendRenderTarget.getSampleCount(), info.mFormat);
-        return GLRenderTarget.makeWrapped(this,
+        return GLRenderTarget.makeWrapped(null,
                 backendRenderTarget.getWidth(),
                 backendRenderTarget.getHeight(),
                 backendRenderTarget.getBackendFormat(),
@@ -744,7 +740,7 @@ public final class GLDevice extends Device {
                                     int dstColorType,
                                     int srcColorType,
                                     int rowBytes, long pixels) {
-        assert (!image.getBackendFormat().isCompressed());
+        //assert (!image.getBackendFormat().isCompressed());
         if (!image.isSampledImage() && !image.isStorageImage()) {
             return false;
         }
@@ -1036,7 +1032,7 @@ public final class GLDevice extends Device {
     @Override
     protected GLBuffer onCreateBuffer(long size, int flags) {
         handleDirtyContext(GLBackendState.kPipeline);
-        return GLBuffer.make(this, size, flags);
+        return GLBuffer.make(null,  size, flags);
     }
 
     @Override
@@ -1206,9 +1202,10 @@ public final class GLDevice extends Device {
         }
         var hwSamplerState = mHWSamplerStates[bindingUnit];
         if (hwSamplerState.mSamplerState != samplerState) {
-            GLSampler sampler = samplerState != 0
+            GLSampler sampler = null;/*= samplerState != 0
                     ? mResourceProvider.findOrCreateCompatibleSampler(samplerState)
-                    : null;
+                    : null;*/
+            //TODO
             getGL().glBindSampler(bindingUnit, sampler != null
                     ? sampler.getHandle()
                     : 0);

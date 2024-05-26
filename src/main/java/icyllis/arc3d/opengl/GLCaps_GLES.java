@@ -40,7 +40,7 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
     private boolean mDrawElementsBaseVertexEXT;
 
     @VisibleForTesting
-    public GLCaps_GLES(ImmediateContext context, ContextOptions options, Object capabilities) {
+    public GLCaps_GLES(ContextOptions options, Object capabilities) {
         super(options);
         GLESCapabilities caps = (GLESCapabilities) capabilities;
         // OpenGL ES 3.0 is the minimum requirement
@@ -50,7 +50,7 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
 
         if (caps.GL_NV_texture_barrier) {
             mTextureBarrierSupport = true;
-            context.getLogger().info("Use NV_texture_barrier");
+            options.mLogger.info("Use NV_texture_barrier");
         } else {
             mTextureBarrierSupport = false;
         }
@@ -86,8 +86,8 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
         String vendorString = GLES20.glGetString(GL_VENDOR);
         mVendor = GLUtil.findVendor(vendorString);
         mDriver = GLUtil.findDriver(mVendor, vendorString, versionString);
-        context.getLogger().info("Identified OpenGL vendor: {}", mVendor);
-        context.getLogger().info("Identified OpenGL driver: {}", mDriver);
+        options.mLogger.info("Identified OpenGL vendor: {}", mVendor);
+        options.mLogger.info("Identified OpenGL driver: {}", mDriver);
 
         mMaxFragmentUniformVectors = GLES20.glGetInteger(GL_MAX_FRAGMENT_UNIFORM_VECTORS);
         mMaxVertexAttributes = Math.min(32, GLES20.glGetInteger(GL_MAX_VERTEX_ATTRIBS));

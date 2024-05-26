@@ -21,11 +21,12 @@ package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.*;
+import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import static org.lwjgl.opengl.GL11C.GL_NO_ERROR;
+import static org.lwjgl.opengl.GL11C.*;
 import static org.lwjgl.opengl.GL30C.GL_RENDERBUFFER;
 
 /**
@@ -43,15 +44,9 @@ public final class GLRenderbuffer extends GLImage {
 
     private BackendFormat mBackendFormat;
 
-    private final long mMemorySize;
-
-    private GLRenderbuffer(GLDevice device, GLImageDesc desc, int renderbuffer, boolean budgeted) {
-        super(device, desc, null);
+    private GLRenderbuffer(Context context, GLImageDesc desc, int renderbuffer, boolean budgeted) {
+        super(context, budgeted, false, desc, null);
         mRenderbuffer = renderbuffer;
-
-        // color buffers may be compressed
-        mMemorySize = DataUtils.computeSize(desc);
-        registerWithCache(budgeted);
     }
 
     @Nullable
@@ -138,22 +133,23 @@ public final class GLRenderbuffer extends GLImage {
 
     @Nonnull
     @SharedPtr
-    public static GLRenderbuffer makeWrappedRenderbuffer(GLDevice device,
+    public static GLRenderbuffer makeWrappedRenderbuffer(Context context,
                                                          int width, int height,
                                                          int sampleCount,
                                                          int format,
                                                          int renderbuffer) {
         GLImageDesc desc = new GLImageDesc(GL_RENDERBUFFER, format,
                 width, height, 1, 1, 1, sampleCount, ISurface.FLAG_RENDERABLE);
-        return new GLRenderbuffer(device,
+        return new GLRenderbuffer(context,
                 desc,
                 renderbuffer,
                 false); //TODO should be cacheable
     }
 
-    public static GLRenderbuffer make(GLDevice device,
+    public static GLRenderbuffer make(Context context,
                                       GLImageDesc desc,
                                       boolean budgeted) {
+        final GLDevice device = (GLDevice) context.getDevice();
         final int handle;
         if (device.isOnExecutingThread()) {
             handle = device.createRenderbuffer(desc);
@@ -163,7 +159,7 @@ public final class GLRenderbuffer extends GLImage {
         } else {
             handle = 0;
         }
-        return new GLRenderbuffer(device, desc,
+        return new GLRenderbuffer(context, desc,
                 handle,
                 budgeted);
     }
@@ -173,19 +169,29 @@ public final class GLRenderbuffer extends GLImage {
         return mBackendFormat;
     }
 
-    public int getRenderbufferID() {
-        return mRenderbuffer;
+    @Override
+    protected void onSetLabel(@Nullable String label) {
+        if (getDevice().getCaps().hasDebugSupport()) {
+            assert mDesc != null;
+            if (label == null) {
+                getDevice().getGL().glObjectLabel(GL_RENDERBUFFER, mRenderbuffer, 0, MemoryUtil.NULL);
+            } else {
+                label = label.substring(0, Math.min(label.length(),
+                        getDevice().getCaps().maxLabelLength()));
+                getDevice().getGL().glObjectLabel(GL_RENDERBUFFER, mRenderbuffer, label);
+            }
+        }
     }
 
-    public long getMemorySize() {
-        return mMemorySize;
+    public int getRenderbufferID() {
+        return mRenderbuffer;
     }
 
     @Override
     public String toString() {
         return "GLAttachment{" +
                 "mRenderbuffer=" + mRenderbuffer +
-                ", mMemorySize=" + mMemorySize +
+                ", mMemorySize=" + getMemorySize() +
                 '}';
     }
 }

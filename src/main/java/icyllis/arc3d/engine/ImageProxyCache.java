@@ -32,8 +32,7 @@ import java.util.Objects;
  */
 public final class ImageProxyCache {
 
-    private final RecordingContext mContext;
-    private final ImmediateContext mDirect;
+    private final Context mContext;
 
     // This holds the texture proxies that have unique keys. The resourceCache does not get a ref
     // on these proxies, but they must send a message to the resourceCache when they are deleted.
@@ -41,11 +40,11 @@ public final class ImageProxyCache {
 
     ImageProxyCache(RecordingContext context) {
         mContext = context;
-        if (context instanceof ImmediateContext) {
+        /*if (context instanceof ImmediateContext) {
             mDirect = (ImmediateContext) context;
         } else {
             mDirect = null; // deferred
-        }
+        }*/
 
         mUniquelyKeyedProxies = new Object2ObjectOpenHashMap<>();
     }
@@ -56,17 +55,17 @@ public final class ImageProxyCache {
      */
     public boolean assignUniqueKeyToProxy(IUniqueKey key, ImageProxy proxy) {
         assert key != null;
-        if (mContext.isDiscarded() || proxy == null) {
+        if (mContext.isDeviceLost() || proxy == null) {
             return false;
         }
 
         // Only the provider that created a texture should be assigning unique keys to it.
-        assert isDeferredProvider() == ((proxy.mSurfaceFlags & ISurface.FLAG_DEFERRED_PROVIDER) != 0);
+        //assert isDeferredProvider() == ((proxy.mSurfaceFlags & ISurface.FLAG_DEFERRED_PROVIDER) != 0);
 
         // If there is already a Resource with this key then the caller has violated the
         // normal usage pattern of uniquely keyed resources (e.g., they have created one w/o
         // first seeing if it already existed in the cache).
-        assert mDirect == null || mDirect.getResourceCache().findAndRefUniqueResource(key) == null;
+        //assert mDirect == null || mDirect.getResourceCache().findAndRefUniqueResource(key) == null;
 
         // multiple proxies can't get the same key
         assert !mUniquelyKeyedProxies.containsKey(key);
@@ -74,6 +73,13 @@ public final class ImageProxyCache {
 
         mUniquelyKeyedProxies.put(key, proxy);
         return true;
+    }
+
+    public void dropUniqueRefs() {
+    }
+
+    public void dropUniqueRefsOlderThan(long nanoTime) {
+
     }
 
     /**
@@ -103,7 +109,7 @@ public final class ImageProxyCache {
                                     int width, int height,
                                     int surfaceFlags) {
         assert mContext.isOwnerThread();
-        if (mContext.isDiscarded()) {
+        if (mContext.isDeviceLost()) {
             return null;
         }
 
@@ -147,7 +153,7 @@ public final class ImageProxyCache {
         mContext.checkOwnerThread();
         assert ((surfaceFlags & ISurface.FLAG_APPROX_FIT) == 0) ||
                 ((surfaceFlags & ISurface.FLAG_MIPMAPPED) == 0);
-        if (mContext.isDiscarded()) {
+        if (mContext.isDeviceLost()) {
             return null;
         }
         if (!pixelMap.getInfo().isValid()) {
@@ -171,7 +177,7 @@ public final class ImageProxyCache {
             return null;
         }
         if (!isDeferredProvider()) {
-            texture.doLazyInstantiation(mDirect.getResourceProvider());
+            //texture.doLazyInstantiation(mDirect.getResourceProvider());
         }
         return texture;
     }
@@ -210,7 +216,8 @@ public final class ImageProxyCache {
                     mPixelRef.getAddress(),
                     label);
             close();
-            return new SurfaceProxy.LazyCallbackResult(texture);
+            //return new SurfaceProxy.LazyCallbackResult(texture);
+            return null;
         }
 
         @Override
@@ -233,7 +240,7 @@ public final class ImageProxyCache {
                                                  int sampleCount,
                                                  int surfaceFlags) {
         assert mContext.isOwnerThread();
-        if (mContext.isDiscarded()) {
+        if (mContext.isDeviceLost()) {
             return null;
         }
 
@@ -269,14 +276,14 @@ public final class ImageProxyCache {
                                                           boolean ownership,
                                                           boolean cacheable,
                                                           Runnable releaseCallback) {
-        if (mContext.isDiscarded()) {
+        if (mContext.isDeviceLost()) {
             return null;
         }
 
-        // This is only supported on a direct Context.
+        /*// This is only supported on a direct Context.
         if (mDirect == null) {
             return null;
-        }
+        }*/
 
         sampleCount = mContext.getCaps().getRenderTargetSampleCount(sampleCount, texture.getBackendFormat());
         assert sampleCount > 0;
@@ -288,11 +295,11 @@ public final class ImageProxyCache {
     @SharedPtr
     public RenderTargetProxy wrapBackendRenderTarget(BackendRenderTarget backendRenderTarget,
                                                      Runnable rcReleaseCB) {
-        if (mContext.isDiscarded()) {
+        if (mContext.isDeviceLost()) {
             return null;
         }
 
-        // This is only supported on a direct Context.
+        /*// This is only supported on a direct Context.
         if (mDirect == null) {
             return null;
         }
@@ -304,7 +311,8 @@ public final class ImageProxyCache {
             return null;
         }
 
-        return new RenderTargetProxy(fsr, 0);
+        return new RenderTargetProxy(fsr, 0);*/
+        return null;
     }
 
     /**
@@ -327,7 +335,7 @@ public final class ImageProxyCache {
                                         int surfaceFlags,
                                         SurfaceProxy.LazyInstantiateCallback callback) {
         mContext.checkOwnerThread();
-        if (mContext.isDiscarded()) {
+        if (mContext.isDeviceLost()) {
             return null;
         }
         assert (width <= 0 && height <= 0)
@@ -351,6 +359,6 @@ public final class ImageProxyCache {
     }
 
     public boolean isDeferredProvider() {
-        return mDirect == null;
+        return false;
     }
 }
