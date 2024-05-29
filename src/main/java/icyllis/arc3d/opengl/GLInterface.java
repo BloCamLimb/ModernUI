@@ -80,6 +80,9 @@ public interface GLInterface extends GLInterfaceCommon {
 
     void glVertexBindingDivisor(@NativeType("GLuint") int bindingindex, @NativeType("GLuint") int divisor);
 
+    void glBufferStorage(@NativeType("GLenum") int target, @NativeType("GLsizeiptr") long size,
+                         @NativeType("void const *") long data, @NativeType("GLbitfield") int flags);
+
     void glTextureBarrier();
 
     @NativeType("void")
@@ -97,6 +100,9 @@ public interface GLInterface extends GLInterfaceCommon {
 
     @NativeType("GLboolean")
     boolean glUnmapNamedBuffer(@NativeType("GLuint") int buffer);
+
+    void glNamedBufferStorage(@NativeType("GLuint") int buffer, @NativeType("GLsizeiptr") long size,
+                              @NativeType("void const *") long data, @NativeType("GLbitfield") int flags);
 
     @NativeType("void")
     int glCreateVertexArrays();

@@ -19,37 +19,41 @@
 
 package icyllis.arc3d.engine;
 
-import java.util.Objects;
-
+import icyllis.arc3d.engine.Engine.BufferUsageFlags;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 /**
  * Represents a single device-visible memory region that may be used as mesh buffers and
  * staging buffers. A buffer cannot be accessed by both CPU and GPU simultaneously, it's
- * either locked by engine or executing in command list.
+ * either mapped by engine or executing in command list.
  */
 public abstract class Buffer extends Resource {
 
     /**
-     * Locks for reading. The effect of writes is undefined.
+     * Maps for reading. The effect of writes is undefined.
      */
-    public static final int kRead_LockMode = 0;
+    public static final int kRead_MapMode = 0;
     /**
-     * Locks for writing. The existing contents are discarded and the initial contents of the
+     * Maps for writing. The existing contents are discarded and the initial contents of the
      * buffer. Reads (even after overwriting initial contents) should be avoided for performance
      * reasons as the memory may not be cached.
      */
-    public static final int kWriteDiscard_LockMode = 1;
+    public static final int kWriteDiscard_MapMode = 1;
 
+    protected final long mSize;
     protected final int mUsage;
 
-    private long mLockOffset;
-    private long mLockSize;
+    private boolean mMapped;
+    private long mMappedBuffer;
+    private long mMapOffset;
+    private long mMapSize;
 
     protected Buffer(Context context,
                      long size,
                      int usage) {
-        super(context, true, false, size);
+        super(context, /*budgeted*/true, /*wrapped*/false, size);
+        assert (size > 0);
+        mSize = size;
         mUsage = usage;
     }
 
@@ -57,126 +61,124 @@ public abstract class Buffer extends Resource {
      * @return allocation size of the buffer in bytes
      */
     public final long getSize() {
-        return mMemorySize;
+        return mSize;
     }
 
     /**
-     * @return {@link Engine.BufferUsageFlags}
+     * @return {@link BufferUsageFlags}
      */
     public final int getUsage() {
         return mUsage;
     }
 
-    private static int getLockMode(int usage) {
-        return (usage & Engine.BufferUsageFlags.kTransferDst) != 0
-                ? kRead_LockMode
-                : kWriteDiscard_LockMode;
+    private static int getMapMode(int usage) {
+        return (usage & BufferUsageFlags.kReadback) != 0
+                ? kRead_MapMode
+                : kWriteDiscard_MapMode;
     }
 
     /**
-     * Locks the buffer to be read or written by the CPU.
+     * Maps the buffer to be read or written by the CPU.
      * <p>
-     * It is an error to draw from the buffer while it is locked or transfer to/from the buffer.
-     * Once a buffer is locked, subsequent calls to this method will throw an exception.
+     * Mapping works only for {@link BufferUsageFlags#kHostVisible} buffers. Writing to or
+     * reading from a buffer that is currently executing in command buffer results in undefined
+     * behavior. It is an error to draw from the buffer while it is mapped or transfer to/from
+     * the buffer, no matter whether it's persistently mapped or not.
      * <p>
-     * If the buffer is of type {@link Engine.BufferUsageFlags#kTransferDst} then it is locked for
-     * reading only. Otherwise it is locked writing only. Writing to a buffer that is locked for
-     * reading or vice versa produces undefined results. If the buffer is locked for writing
+     * If the buffer is of type {@link BufferUsageFlags#kReadback} then it is mapped for
+     * reading only. Otherwise it is mapped writing only. Writing to a buffer that is mapped for
+     * reading or vice versa produces undefined results. If the buffer is mapped for writing
      * then the buffer's previous contents are invalidated.
      *
-     * @return a valid pointer to the locked data
+     * @return a valid pointer to the mapped data, or nullptr if lock failed
      */
-    public final long lock() {
-        if (isDestroyed()) {
-            return NULL;
-        }
-        if (isLocked()) {
-            throw new IllegalStateException("Already locked");
-        }
-        mLockOffset = 0;
-        mLockSize = getSize();
-        return onLock(getLockMode(mUsage), 0, mLockSize);
+    public final long map() {
+        return map(0, mSize);
     }
 
     /**
-     * Locks the buffer to be read or written by the CPU.
+     * Maps the buffer to be read or written by the CPU.
      * <p>
-     * It is an error to draw from the buffer while it is locked or transfer to/from the buffer.
-     * Once a buffer is locked, subsequent calls to this method will throw an exception.
+     * Mapping works only for {@link BufferUsageFlags#kHostVisible} buffers. Writing to or
+     * reading from a buffer that is currently executing in command buffer results in undefined
+     * behavior. It is an error to draw from the buffer while it is mapped or transfer to/from
+     * the buffer, no matter whether it's persistently mapped or not.
      * <p>
-     * If the buffer is of type {@link Engine.BufferUsageFlags#kTransferDst} then it is locked for
-     * reading only. Otherwise it is locked writing only. Writing to a buffer that is locked for
-     * reading or vice versa produces undefined results. If the buffer is locked for writing
+     * If the buffer is of type {@link BufferUsageFlags#kReadback} then it is mapped for
+     * reading only. Otherwise it is mapped writing only. Writing to a buffer that is mapped for
+     * reading or vice versa produces undefined results. If the buffer is mapped for writing
      * then the buffer's previous contents are invalidated.
      *
-     * @return a valid pointer to the locked data, or nullptr if lock failed
+     * @return a valid pointer to the mapped data, or nullptr if lock failed
      */
-    public final long lock(long offset, long size) {
-        if (isDestroyed()) {
+    public final long map(long offset, long size) {
+        if ((mUsage & BufferUsageFlags.kHostVisible) == 0) {
+            // never succeed
             return NULL;
         }
-        if (isLocked()) {
-            throw new IllegalStateException("Already locked");
+        if (mMapped) {
+            assert offset == mMapOffset && size == mMapSize;
+            // this may be nullptr if the last map() failed
+            return mMappedBuffer;
         }
-        Objects.checkFromIndexSize(offset, size, getSize());
-        mLockOffset = offset;
-        mLockSize = size;
-        return onLock(getLockMode(mUsage), offset, size);
+        assert offset >= 0 && offset + size <= mSize;
+        mMapped = true;
+        mMapOffset = offset;
+        mMapSize = size;
+        mMappedBuffer = onMap(getMapMode(mUsage), offset, size);
+        return mMappedBuffer;
     }
 
     /**
-     * Unlocks the buffer if it is locked.
+     * Unmaps the buffer if it is mapped.
      * <p>
-     * The pointer returned by the previous {@link #lock(long, long)} will no longer be valid.
+     * The pointer returned by the previous {@link #map(long, long)} will no longer be valid.
      */
-    public final void unlock() {
+    public final void unmap() {
+        unmap(mMapOffset, mMapSize);
+    }
+
+    /**
+     * Unmaps the buffer if it is mapped.
+     * <p>
+     * The pointer returned by the previous {@link #map(long, long)} will no longer be valid.
+     */
+    public final void unmap(long offset, long size) {
         if (isDestroyed()) {
             return;
         }
-        if (isLocked()) {
-            onUnlock(getLockMode(mUsage), mLockOffset, mLockSize);
+        if (mMapped) {
+            assert offset >= mMapOffset && offset + size <= mMapOffset + mMapSize;
+            onUnmap(getMapMode(mUsage), offset, size);
+            mMapped = false;
+            mMappedBuffer = NULL;
         }
-        assert (!isLocked());
+    }
+
+    protected abstract long onMap(int mode, long offset, long size);
+
+    protected abstract void onUnmap(int mode, long offset, long size);
+
+    /**
+     * Queries whether the buffer has been mapped by {@link #map(long, long)},
+     * this is mostly used for validation.
+     *
+     * @return true if the buffer is mapped, false otherwise.
+     */
+    public final boolean isMapped() {
+        return mMapped;
     }
 
     /**
-     * Unlocks the buffer if it is locked.
-     * <p>
-     * The pointer returned by the previous {@link #lock(long, long)} will no longer be valid.
+     * Queries the pointer returned by the previous {@link #map(long, long)} if
+     * {@link #isMapped()} returns true, otherwise the pointer is invalid,
+     * this is mostly used for validation.
+     *
+     * @return the pointer to the mapped buffer if mapped.
      */
-    public final void unlock(long offset, long size) {
-        if (isDestroyed()) {
-            return;
-        }
-        if (isLocked()) {
-            if (offset < mLockOffset || size > mLockSize) {
-                throw new IllegalStateException();
-            }
-            onUnlock(getLockMode(mUsage), offset, size);
-        }
-        assert (!isLocked());
+    public final long getMappedBuffer() {
+        return mMappedBuffer;
     }
-
-    protected abstract long onLock(int mode, long offset, long size);
-
-    protected abstract void onUnlock(int mode, long offset, long size);
-
-    /**
-     * Queries whether the buffer has been locked by {@link #lock(long, long)},
-     * this is mostly used for validation.
-     *
-     * @return true if the buffer is locked, false otherwise.
-     */
-    public abstract boolean isLocked();
-
-    /**
-     * Queries the pointer returned by the previous {@link #lock(long, long)} if
-     * {@link #isLocked()} returns true, otherwise the pointer is invalid,
-     * this is mostly used for validation.
-     *
-     * @return the pointer to the locked buffer if locked.
-     */
-    public abstract long getLockedBuffer();
 
     /**
      * Updates the buffer data.
@@ -185,9 +187,9 @@ public abstract class Buffer extends Resource {
      * placed at offset. If preserve is false then any remaining content
      * before/after the range [offset, offset+size) becomes undefined.
      * <p>
-     * The buffer must not be locked.
+     * The buffer must not be mapped.
      * <p>
-     * Fails for {@link Engine.BufferUsageFlags#kTransferDst}.
+     * Fails for {@link BufferUsageFlags#kReadback}.
      * <p>
      * Note that buffer updates do not go through Context and therefore are
      * not serialized with other operations.
@@ -196,17 +198,11 @@ public abstract class Buffer extends Resource {
      */
     public boolean updateData(int offset, int size, long data) {
         assert (data != NULL);
-        if (isDestroyed() || isLocked()) {
+        if (isDestroyed() || isMapped()) {
             return false;
         }
         assert (size > 0 && offset + size <= getSize());
 
-        if ((mUsage & Engine.BufferUsageFlags.kTransferDst) != 0) {
-            return false;
-        }
-
-        return onUpdateData(offset, size, data);
+        return false;
     }
-
-    protected abstract boolean onUpdateData(int offset, int size, long data);
 }

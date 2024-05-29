@@ -162,12 +162,6 @@ public final class GLTexture extends GLImage {
     }
 
     @Override
-    protected void onDiscard() {
-        mHandle = 0;
-        super.onDiscard();
-    }
-
-    @Override
     public String toString() {
         return "GLTexture{" +
                 "mDesc=" + mDesc +

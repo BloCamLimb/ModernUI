@@ -735,8 +735,28 @@ public abstract class ResourceProvider {
             return null;
         }
         //TODO scratch
-        return mDevice.createBuffer(size, usage);
+        return createNewBuffer(size, usage);
     }
+
+    @Nullable
+    @SharedPtr
+    public final Buffer createNewBuffer(long size, int usage) {
+        if (size <= 0) {
+            mContext.getLogger().error(
+                    "Failed to create buffer: invalid size {}",
+                    size);
+            return null;
+        }
+        if ((usage & (Engine.BufferUsageFlags.kUpload | Engine.BufferUsageFlags.kReadback)) != 0 &&
+                (usage & Engine.BufferUsageFlags.kDeviceLocal) != 0) {
+            return null;
+        }
+        return onCreateNewBuffer(size, usage);
+    }
+
+    @Nullable
+    @SharedPtr
+    protected abstract Buffer onCreateNewBuffer(long size, int usage);
 
     public final void assignUniqueKeyToResource(IUniqueKey key, Resource resource) {
         //assert mDevice.getContext().isOwnerThread();

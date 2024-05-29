@@ -116,9 +116,9 @@ public abstract class GpuBufferPool {
             assert (mIndex >= 0);
             Buffer buffer = mBuffers[mIndex];
             int usedBytes = (int) buffer.getSize() - mFreeBytes[mIndex];
-            assert (buffer.isLocked());
-            assert (buffer.getLockedBuffer() == mBufferPtr);
-            buffer.unlock(/*offset=*/0, usedBytes);
+            assert (buffer.isMapped());
+            assert (buffer.getMappedBuffer() == mBufferPtr);
+            buffer.unmap(/*offset=*/0, usedBytes);
             mBufferPtr = NULL;
         }
     }
@@ -131,17 +131,17 @@ public abstract class GpuBufferPool {
         mBytesInUse = 0;
         if (mIndex >= 0) {
             Buffer buffer = mBuffers[mIndex];
-            if (buffer.isLocked()) {
+            if (buffer.isMapped()) {
                 assert (mBufferPtr != NULL);
-                assert (buffer.getLockedBuffer() == mBufferPtr);
-                buffer.unlock();
+                assert (buffer.getMappedBuffer() == mBufferPtr);
+                buffer.unmap();
                 mBufferPtr = NULL;
             }
         }
         while (mIndex >= 0) {
             @SharedPtr
             Buffer buffer = mBuffers[mIndex];
-            assert (!buffer.isLocked());
+            assert (!buffer.isMapped());
             mBuffers[mIndex--] = RefCnt.move(buffer);
         }
         assert (mIndex == -1);
@@ -159,17 +159,17 @@ public abstract class GpuBufferPool {
         mBytesInUse = 0;
         if (mIndex >= 0) {
             Buffer buffer = mBuffers[mIndex];
-            if (buffer.isLocked()) {
+            if (buffer.isMapped()) {
                 assert (mBufferPtr != NULL);
-                assert (buffer.getLockedBuffer() == mBufferPtr);
-                buffer.unlock();
+                assert (buffer.getMappedBuffer() == mBufferPtr);
+                buffer.unmap();
                 mBufferPtr = NULL;
             }
         }
         while (mIndex >= 0) {
             @SharedPtr
             Buffer buffer = mBuffers[mIndex];
-            assert (!buffer.isLocked());
+            assert (!buffer.isMapped());
             cmdBuffer.moveAndTrackGpuBuffer(buffer);
             mBuffers[mIndex--] = null;
         }
@@ -189,10 +189,10 @@ public abstract class GpuBufferPool {
             if (bytes >= usedBytes) {
                 bytes -= usedBytes;
                 mBytesInUse -= usedBytes;
-                assert (buffer.isLocked());
-                assert (buffer.getLockedBuffer() == mBufferPtr);
-                buffer.unlock(/*offset=*/0, usedBytes);
-                assert (!buffer.isLocked());
+                assert (buffer.isMapped());
+                assert (buffer.getMappedBuffer() == mBufferPtr);
+                buffer.unmap(/*offset=*/0, usedBytes);
+                assert (!buffer.isMapped());
                 mBuffers[mIndex--] = RefCnt.move(buffer);
                 mBufferPtr = NULL;
             } else {
@@ -292,10 +292,10 @@ public abstract class GpuBufferPool {
         mBytesInUse += size;
 
         assert (mBufferPtr == NULL);
-        mBufferPtr = buffer.lock();
+        mBufferPtr = buffer.map();
         assert (mBufferPtr != NULL);
-        assert (buffer.isLocked());
-        assert (buffer.getLockedBuffer() == mBufferPtr);
+        assert (buffer.isMapped());
+        assert (buffer.getMappedBuffer() == mBufferPtr);
         return mBufferPtr;
     }
 

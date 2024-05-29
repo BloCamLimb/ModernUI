@@ -64,6 +64,7 @@ public class GLCaps extends Caps {
     boolean mDSASupport;
     boolean mSPIRVSupport = false;
     boolean mViewCompatibilityClassSupport = false;
+    final boolean mVolatileContext;
 
     int[] mProgramBinaryFormats;
 
@@ -90,6 +91,7 @@ public class GLCaps extends Caps {
     GLCaps(ContextOptions options) {
         super(options);
         MISSING_EXTENSIONS.clear();
+        mVolatileContext = options.mVolatileContext;
     }
 
     void initFormatTable(boolean textureStorageSupported,
@@ -1040,6 +1042,10 @@ public class GLCaps extends Caps {
 
     public boolean hasProgramBinarySupport() {
         return mProgramBinarySupport;
+    }
+
+    public boolean hasVolatileContext() {
+        return mVolatileContext;
     }
 
     @Nullable

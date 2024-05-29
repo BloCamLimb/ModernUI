@@ -69,6 +69,12 @@ public final class GLResourceProvider extends ResourceProvider {
         }
     }
 
+    @Nullable
+    @Override
+    protected Buffer onCreateNewBuffer(long size, int usage) {
+        return GLBuffer.make(mContext, size, usage);
+    }
+
     /**
      * Finds or creates a compatible {@link GLSampler} based on the SamplerState.
      *

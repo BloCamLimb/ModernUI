@@ -124,10 +124,10 @@ public class DynamicBufferManager {
             return null;
         }
         assert (outInfo.mBuffer == target.mBuffer);
-        assert (outInfo.mBuffer.isLocked());
+        assert (outInfo.mBuffer.isMapped());
 
         ByteBuffer writer = getMappedBuffer(target.mCachedWriter,
-                outInfo.mBuffer.getLockedBuffer(), (int) outInfo.mBuffer.getSize())
+                outInfo.mBuffer.getMappedBuffer(), (int) outInfo.mBuffer.getSize())
                 .position((int) outInfo.mOffset)
                 .limit((int) (outInfo.mOffset + outInfo.mSize));
         target.mCachedWriter = writer;
@@ -171,8 +171,8 @@ public class DynamicBufferManager {
                 return;
             }
             if ((target.mUsage & Engine.BufferUsageFlags.kHostVisible) != 0) {
-                long lockedPtr = target.mBuffer.lock();
-                assert lockedPtr != NULL;
+                long mappedPtr = target.mBuffer.map();
+                assert mappedPtr != NULL;
             }
         }
 
@@ -189,18 +189,18 @@ public class DynamicBufferManager {
         mMappingFailed = true;
 
         for (var buffer : mUsedBuffers) {
-            if (buffer.isLocked()) {
+            if (buffer.isMapped()) {
                 // no need to flush any data
-                buffer.unlock(0, 0);
+                buffer.unmap(0, 0);
             }
             buffer.unref();
         }
         mUsedBuffers.clear();
 
         for (var target : mCurrentBuffers) {
-            if (target.mBuffer != null && target.mBuffer.isLocked()) {
+            if (target.mBuffer != null && target.mBuffer.isMapped()) {
                 // no need to flush any data
-                target.mBuffer.unlock(0, 0);
+                target.mBuffer.unmap(0, 0);
             }
             target.mBuffer = RefCnt.move(target.mBuffer);
             target.mOffset = 0;

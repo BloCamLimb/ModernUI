@@ -252,14 +252,6 @@ public abstract class Image extends Resource {
         mReleaseCallback = null;
     }
 
-    @Override
-    protected void onDiscard() {
-        if (mReleaseCallback != null) {
-            mReleaseCallback.unref();
-        }
-        mReleaseCallback = null;
-    }
-
     /*@Nullable
     @Override
     protected ScratchKey computeScratchKey() {

@@ -35,32 +35,12 @@ public final class VulkanBuffer extends Buffer {
     }
 
     @Override
-    protected void onDiscard() {
-
-    }
-
-    @Override
-    protected long onLock(int mode, long offset, long size) {
+    protected long onMap(int mode, long offset, long size) {
         return 0;
     }
 
     @Override
-    protected void onUnlock(int mode, long offset, long size) {
+    protected void onUnmap(int mode, long offset, long size) {
 
-    }
-
-    @Override
-    public boolean isLocked() {
-        return false;
-    }
-
-    @Override
-    public long getLockedBuffer() {
-        return 0;
-    }
-
-    @Override
-    protected boolean onUpdateData(int offset, int size, long data) {
-        return false;
     }
 }
