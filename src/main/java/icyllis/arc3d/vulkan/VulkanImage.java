@@ -41,9 +41,4 @@ public final class VulkanImage extends Image {
     @Override
     protected void onRelease() {
     }
-
-    @Override
-    protected void onDiscard() {
-
-    }
 }

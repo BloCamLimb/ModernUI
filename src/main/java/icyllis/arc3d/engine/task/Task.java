@@ -19,11 +19,20 @@
 
 package icyllis.arc3d.engine.task;
 
+import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.engine.*;
 
-public abstract class Task {
+public abstract class Task extends RefCnt {
 
-    public abstract boolean prepare(ResourceProvider resourceProvider);
+    public static final int RESULT_SUCCESS = 0;
+    public static final int RESULT_FAILURE = 1;
+    public static final int RESULT_DISCARD = 2;
 
-    public abstract boolean execute(ImmediateContext context, CommandBuffer cmdBuffer);
+    public abstract int prepare(ResourceProvider resourceProvider);
+
+    public abstract int execute(ImmediateContext context, CommandBuffer cmdBuffer);
+
+    @Override
+    protected void deallocate() {
+    }
 }

@@ -271,7 +271,7 @@ public abstract class Device implements Engine {
 
     public abstract GpuBufferPool getIndexPool();
 
-   /* *//**
+    /* *//**
      * Creates a new GPU image object and allocates its GPU memory. In other words, the
      * image data is dirty and needs to be uploaded later. If mipmapped, also allocates
      * <code>(31 - CLZ(max(width,height)))</code> mipmaps in addition to the base level.
@@ -331,7 +331,9 @@ public abstract class Device implements Engine {
         return image;
     }
 
-    *//**
+    */
+
+    /**
      * Overridden by backend-specific derived class to create objects.
      * <p>
      * Image size and format support will have already been validated in base class
@@ -345,14 +347,13 @@ public abstract class Device implements Engine {
                                               int mipLevelCount,
                                               int sampleCount,
                                               int surfaceFlags);*/
-
     @Nullable
     public final @SharedPtr GpuRenderTarget createRenderTarget(int numColorTargets,
-                                                    @Nullable Image[] colorTargets,
-                                                    @Nullable Image[] resolveTargets,
-                                                    @Nullable int[] mipLevels,
-                                                    @Nullable Image depthStencilTarget,
-                                                    int surfaceFlags) {
+                                                               @Nullable Image[] colorTargets,
+                                                               @Nullable Image[] resolveTargets,
+                                                               @Nullable int[] mipLevels,
+                                                               @Nullable Image depthStencilTarget,
+                                                               int surfaceFlags) {
         if (numColorTargets < 0 || numColorTargets > mCaps.maxColorAttachments()) {
             return null;
         }
@@ -716,26 +717,6 @@ public abstract class Device implements Engine {
     protected abstract void onResolveRenderTarget(GpuRenderTarget renderTarget,
                                                   int resolveLeft, int resolveTop,
                                                   int resolveRight, int resolveBottom);
-
-    @Nullable
-    @SharedPtr
-    public final Buffer createBuffer(long size, int flags) {
-        if (size <= 0) {
-            getLogger().error(
-                    "Failed to create buffer: invalid size {}",
-                    size);
-            return null;
-        }
-        if ((flags & (BufferUsageFlags.kTransferSrc | BufferUsageFlags.kTransferDst)) != 0 &&
-                (flags & BufferUsageFlags.kDeviceLocal) != 0) {
-            return null;
-        }
-        return onCreateBuffer(size, flags);
-    }
-
-    @Nullable
-    @SharedPtr
-    protected abstract Buffer onCreateBuffer(long size, int flags);
 
     /**
      * Creates a new fence and inserts it into the graphics queue.

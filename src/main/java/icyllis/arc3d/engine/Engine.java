@@ -68,13 +68,13 @@ public interface Engine {
      * Possible 3D APIs that may be used by Arc3D Engine.
      */
     interface BackendApi {
-
         /**
-         * OpenGL 3.3 to 4.5 core profile (desktop)
+         * OpenGL 3.3 to 4.6 core profile (desktop);
+         * OpenGL ES 3.0 to 3.2 (mobile)
          */
         int kOpenGL = 0;
         /**
-         * Vulkan 1.1 (desktop and mobile)
+         * Vulkan 1.1 to 1.3 (desktop and mobile)
          */
         int kVulkan = 1;
         /**
@@ -87,7 +87,7 @@ public interface Engine {
                 case kOpenGL -> "OpenGL";
                 case kVulkan -> "Vulkan";
                 case kMock -> "Mock";
-                default -> throw new AssertionError(value);
+                default -> String.valueOf(value);
             };
         }
     }
@@ -184,6 +184,9 @@ public interface Engine {
     /**
      * Describes the intended usage (type + access) a GPU buffer.
      * This will affect memory allocation and pipeline commands.
+     * <p>
+     * Note that the special type flag {@link #kUpload} and {@link #kReadback}
+     * cannot be combined with other type flags, and must be {@link #kHostVisible}.
      */
     interface BufferUsageFlags {
         // DO NOT CHANGE THE ORDER OR THE BIT VALUE
@@ -195,30 +198,37 @@ public interface Engine {
          * Index buffer, also known as element buffer.
          */
         int kIndex = 1 << 1;
+        /**
+         * Indirect buffer, also known as argument buffer.
+         * Not always available, check caps first.
+         */
+        int kDrawIndirect = 1 << 2;
 
-        // Note: vertex buffers and index buffers are mesh buffers.
+        // Note: the above buffers are mesh buffers.
+        // Note: draw indirect buffers may not be supported by the backend API.
 
         /**
-         * Staging buffer. Src meaning CPU to device, Dst meaning device to CPU.
-         * In OpenGL, this means only pixel transfer buffer.
+         * Staging buffers for CPU to device transfer.
          */
-        int kTransferSrc = 1 << 2; // transfer src and host coherent
-        int kTransferDst = 1 << 3; // transfer dst and host cached
+        int kUpload = 1 << 3; // transfer src and host coherent
+        /**
+         * Read-back buffers for device to CPU transfer.
+         */
+        int kReadback = 1 << 4; // transfer dst and host cached
 
         // Note: transfer buffers must be created with HostVisible flag.
 
         /**
          * Uniform buffer, also known as constant buffer.
-         * This will be created as ring buffers.
+         * It's better <em>not</em> to combine this with other type flags.
          */
-        int kUniform = 1 << 4;
+        int kUniform = 1 << 5;
         /**
-         * Indirect buffer, also known as argument buffer.
-         * Not always available, check caps first.
+         * Shader storage buffer, may be combined with other type flags.
          */
-        int kDrawIndirect = 1 << 5;
+        int kStorage = 1 << 6;
 
-        // Note: draw indirect buffers are currently not supported.
+        // Note: shader storage buffers may not be supported by the backend API.
 
         /**
          * Data store will be written to once by CPU.
@@ -226,19 +236,23 @@ public interface Engine {
          * A staging buffer is required to update it contents.
          * For static or dynamic VBO, static UBO.
          */
-        int kDeviceLocal = 1 << 6;
+        int kDeviceLocal = 1 << 16;
         /**
          * Data store will be written to occasionally, CPU writes, GPU reads.
          * Use host-visible host-coherent memory and persistent mapping, and possibly device-local.
          * If write-combined memory is used, then write directly and requires sync.
          * For streaming VBO, dynamic or streaming UBO.
          */
-        int kHostVisible = 1 << 7;
+        int kHostVisible = 1 << 17;
 
+        // 0-16 bits are usage
+        int kTypeMask = 0x0000FFFF;
+        // 16-24 bits are heap
+        int kAccessMask = 0x00FF0000;
     }
 
     /**
-     * Shader flags.
+     * Shader stage flags.
      */
     interface ShaderFlags {
 

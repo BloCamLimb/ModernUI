@@ -90,6 +90,10 @@ public abstract sealed class Context extends RefCnt
         return mDevice.getMaxSurfaceSampleCount(colorType);
     }
 
+    public final boolean isImmediate() {
+        return this instanceof ImmediateContext;
+    }
+
     @ApiStatus.Internal
     public final Device getDevice() {
         return mDevice;

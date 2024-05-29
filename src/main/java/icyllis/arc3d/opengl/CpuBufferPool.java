@@ -21,7 +21,10 @@ package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.engine.CpuBuffer;
 import icyllis.arc3d.engine.GpuBufferPool;
+
+import javax.annotation.Nullable;
 
 /**
  * A cache object that can be shared by multiple {@link GpuBufferPool} instances. It caches
@@ -37,6 +40,7 @@ public class CpuBufferPool {
         mBuffers = new CpuBuffer[maxCount];
     }
 
+    @Nullable
     @SharedPtr
     public CpuBuffer makeBuffer(long size) {
         assert (size > 0);
@@ -50,11 +54,11 @@ public class CpuBufferPool {
                 }
             }
             if (result == null && i < mBuffers.length) {
-                mBuffers[i] = result = new CpuBuffer(GpuBufferPool.DEFAULT_BUFFER_SIZE);
+                mBuffers[i] = result = CpuBuffer.make(GpuBufferPool.DEFAULT_BUFFER_SIZE);
             }
         }
         if (result == null) {
-            return new CpuBuffer(size);
+            return CpuBuffer.make(size);
         }
         return RefCnt.create(result);
     }

@@ -81,12 +81,12 @@ public class ImageUploadTask extends Task {
     }
 
     @Override
-    public boolean prepare(ResourceProvider resourceProvider) {
-        return false;
+    public int prepare(ResourceProvider resourceProvider) {
+        return RESULT_FAILURE;
     }
 
     @Override
-    public boolean execute(ImmediateContext context, CommandBuffer cmdBuffer) {
-        return false;
+    public int execute(ImmediateContext context, CommandBuffer cmdBuffer) {
+        return RESULT_FAILURE;
     }
 }

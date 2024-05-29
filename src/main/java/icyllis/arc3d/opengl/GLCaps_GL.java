@@ -761,6 +761,12 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
     }
 
     @Override
+    public void glBufferStorage(int target, long size, long data, int flags) {
+        assert mBufferStorageSupport;
+        GL44C.nglBufferStorage(target, size, data, flags);
+    }
+
+    @Override
     public void glTextureBarrier() {
         assert mTextureBarrierSupport;
         if (mTextureBarrierNV) {
@@ -798,6 +804,12 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
     public boolean glUnmapNamedBuffer(int buffer) {
         assert mDSASupport;
         return GL45C.glUnmapNamedBuffer(buffer);
+    }
+
+    @Override
+    public void glNamedBufferStorage(int buffer, long size, long data, int flags) {
+        assert mDSASupport;
+        GL45C.nglNamedBufferStorage(buffer, size, data, flags);
     }
 
     @Override

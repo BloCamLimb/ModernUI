@@ -340,13 +340,6 @@ public final class GLRenderTarget extends GpuRenderTarget {
         mResolveFramebuffer = 0;
     }
 
-    @Override
-    protected void onDiscard() {
-        clearAttachments();
-        mRenderFramebuffer = 0;
-        mResolveFramebuffer = 0;
-    }
-
     private void clearAttachments() {
         if (mColorAttachments != null) {
             for (int i = 0; i < mColorAttachments.length; i++) {

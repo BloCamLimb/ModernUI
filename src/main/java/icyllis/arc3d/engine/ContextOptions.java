@@ -122,6 +122,17 @@ public final class ContextOptions {
      */
     public int mMaxVkSecondaryCommandBufferCacheSize = -1;
 
+    /**
+     * OpenGL backend only. If context is volatile, then Arc3D is considered embedded in
+     * another program and shared with its OpenGL context. When making GL function calls that may
+     * alter the context's state (especially binding states) outside the command buffer execution,
+     * Arc3D will query the binding state and restore the state of the context after that.
+     * This is only used for non-DSA methods and may reduce performance. But this can prevent
+     * other programs from out-of-order due to assumptions about context's state, especially
+     * for mixed API usage between Arc3D and other programs.
+     */
+    public boolean mVolatileContext = false;
+
     public DriverBugWorkarounds mDriverBugWorkarounds;
 
     public ContextOptions() {

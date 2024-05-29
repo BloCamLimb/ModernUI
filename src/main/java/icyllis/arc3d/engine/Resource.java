@@ -40,7 +40,7 @@ import java.lang.invoke.VarHandle;
  *   <li>VulkanBuffer</li>
  *   <li>VulkanImage</li>
  * </ul>
- * Resources that can be considered memoryless:
+ * Resources that are zero-sized:
  * <ul>
  *     <li>GLSampler</li>
  *     <li>GLFramebuffer</li>
@@ -48,8 +48,6 @@ import java.lang.invoke.VarHandle;
  *     <li>VulkanRenderPass</li>
  *     <li>VulkanFramebuffer</li>
  * </ul>
- * Specially, cacheable framebuffer objects are also implementations of this class,
- * they can be used as ping-pong buffers.
  * <p>
  * Register resources into the cache to track their GPU memory usage. Since all
  * Java objects will always be strong referenced, an explicit {@link #ref()} and
@@ -58,10 +56,10 @@ import java.lang.invoke.VarHandle;
  * otherwise they tend to be used as raw pointers (no ref/unref calls should be
  * made). A paired {@link UniqueID} object can be used as unique identifiers.
  * <p>
- * Each {@link Resource} should be created with immutable GPU memory allocation,
- * one exception is streaming buffers, which allocates a ring buffer and its offset
- * will alter. {@link Resource} can be only created/recycled on the render thread.
- * Use {@link ResourceProvider} to obtain {@link Resource} objects.
+ * Each {@link Resource} should be created with immutable GPU memory allocation.
+ * {@link Resource} can be only created/operated on the creating thread of
+ * {@link #getContext()}, but may be recycled from other threads. Use
+ * {@link ResourceProvider} to obtain {@link Resource} objects.
  */
 @NotThreadSafe
 public abstract class Resource implements RefCounted {
@@ -109,15 +107,15 @@ public abstract class Resource implements RefCounted {
     };
 
     // set once in constructor, clear to null after being destroyed
-    Context mContext;
+    volatile Context mContext;
 
     // null meaning invalid, lazy initialized
-    IResourceKey mKey;
+    volatile IResourceKey mKey;
 
-    ResourceCache mReturnCache;
+    volatile ResourceCache mReturnCache;
     // An index into the return cache so we know whether the resource is already waiting to
     // be returned or not.
-    int mReturnIndex = -1;
+    volatile int mReturnIndex = -1;
 
     // the index into a heap when this resource is cleanable or an array when not,
     // this is maintained by the cache
@@ -127,15 +125,15 @@ public abstract class Resource implements RefCounted {
     int mTimestamp;
     private long mLastUsedTime;
 
-    private boolean mBudgeted;
-    private boolean mWrapped; // non-wrapped means we have ownership
-    private boolean mCacheable = true;
+    private volatile boolean mBudgeted;
+    private final boolean mWrapped; // non-wrapped means we have ownership
+    private volatile boolean mCacheable = true;
     boolean mNonShareableInCache = false;
 
-    protected final long mMemorySize;
+    private final long mMemorySize;
 
     @Nonnull
-    private String mLabel = "";
+    private volatile String mLabel = "";
     private final UniqueID mUniqueID = new UniqueID();
 
     protected Resource(Context context,
@@ -272,6 +270,7 @@ public abstract class Resource implements RefCounted {
         assert (!isDestroyed());
 
         if (refCntType != REF_TYPE_CACHE &&
+                mReturnCache != null &&
                 mReturnCache.returnResource(this, refCntType)) {
             return false;
         }
@@ -438,12 +437,8 @@ public abstract class Resource implements RefCounted {
     protected abstract void onRelease();
 
     /**
-     * Subclass should override this method to invalidate any internal handles, etc.
-     * to backend API resources. This may be called when the underlying 3D context
-     * is no longer valid and so no backend API calls should be made.
+     * Subclass should override this method to set object label in the backend API.
      */
-    protected abstract void onDiscard();
-
     protected void onSetLabel(@Nullable String label) {
     }
 

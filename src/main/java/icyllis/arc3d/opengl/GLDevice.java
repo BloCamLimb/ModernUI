@@ -20,9 +20,9 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.Device;
 import icyllis.arc3d.engine.Image;
+import icyllis.arc3d.engine.*;
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
@@ -85,9 +85,9 @@ public final class GLDevice extends Device {
         assert BUFFER_TYPE_INDEX            ==
                 bufferUsageToType(BufferUsageFlags.kIndex);
         assert BUFFER_TYPE_XFER_SRC         ==
-                bufferUsageToType(BufferUsageFlags.kTransferSrc);
+                bufferUsageToType(BufferUsageFlags.kUpload);
         assert BUFFER_TYPE_XFER_DST         ==
-                bufferUsageToType(BufferUsageFlags.kTransferDst);
+                bufferUsageToType(BufferUsageFlags.kReadback);
         assert BUFFER_TYPE_UNIFORM          ==
                 bufferUsageToType(BufferUsageFlags.kUniform);
         assert BUFFER_TYPE_DRAW_INDIRECT    ==
@@ -225,7 +225,7 @@ public final class GLDevice extends Device {
     }
 
     /**
-     * OpenGL only method.
+     * OpenGL only method. Execute the GL command as soon as possible.
      */
     public void executeRenderCall(Consumer<GLDevice> renderCall) {
         if (isOnExecutingThread()) {
@@ -239,11 +239,11 @@ public final class GLDevice extends Device {
         mRenderCalls.add(renderCall);
     }
 
-    void flushRenderCalls(GLDevice device) {
+    public void flushRenderCalls() {
         //noinspection UnnecessaryLocalVariable
         final var queue = mRenderCalls;
         Consumer<GLDevice> r;
-        while ((r = queue.poll()) != null) r.accept(device);
+        while ((r = queue.poll()) != null) r.accept(this);
     }
 
     @Override
@@ -274,6 +274,8 @@ public final class GLDevice extends Device {
         }
 
         callAllFinishedCallbacks(cleanup);
+
+        flushRenderCalls();
     }
 
     @Override
@@ -1026,13 +1028,6 @@ public final class GLDevice extends Device {
                 nglInvalidateNamedFramebufferData(framebuffer, numAttachments, pAttachments);
             }
         }
-    }
-
-    @Nullable
-    @Override
-    protected GLBuffer onCreateBuffer(long size, int flags) {
-        handleDirtyContext(GLBackendState.kPipeline);
-        return GLBuffer.make(null,  size, flags);
     }
 
     @Override

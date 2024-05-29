@@ -657,6 +657,12 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
     }
 
     @Override
+    public void glBufferStorage(int target, long size, long data, int flags) {
+        assert mBufferStorageSupport;
+        EXTBufferStorage.nglBufferStorageEXT(target, size, data, flags);
+    }
+
+    @Override
     public void glTextureBarrier() {
         assert mTextureBarrierSupport;
         NVTextureBarrier.glTextureBarrierNV();
@@ -688,6 +694,11 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
     public boolean glUnmapNamedBuffer(int buffer) {
         assert false;
         return false;
+    }
+
+    @Override
+    public void glNamedBufferStorage(int buffer, long size, long data, int flags) {
+        assert false;
     }
 
     @Override

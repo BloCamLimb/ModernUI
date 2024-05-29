@@ -121,9 +121,4 @@ public final class VulkanRenderTarget extends GpuRenderTarget {
     protected void onRelease() {
 
     }
-
-    @Override
-    protected void onDiscard() {
-
-    }
 }

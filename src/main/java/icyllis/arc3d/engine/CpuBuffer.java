@@ -17,25 +17,40 @@
  * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.opengl;
+package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.RefCnt;
+import icyllis.arc3d.core.*;
 import org.lwjgl.system.MemoryUtil;
 
+import javax.annotation.Nullable;
+
 /**
- * Represents an immutable block of native CPU memory.
+ * A client-side buffer represents an immutable block of native CPU memory.
  * <p>
- * The instances are atomic reference counted, and may be used as shared pointers.
+ * This is only used as "staging buffers" in OpenGL and may not be used for other purposes.
  */
 public final class CpuBuffer extends RefCnt {
 
     private final long mSize;
     private final long mData;
 
-    public CpuBuffer(long size) {
-        assert (size > 0);
+    private CpuBuffer(long size, long data) {
         mSize = size;
-        mData = MemoryUtil.nmemAllocChecked(size);
+        mData = data;
+    }
+
+    @Nullable
+    @SharedPtr
+    public static CpuBuffer make(long size) {
+        assert (size > 0);
+        long data = MemoryUtil.nmemAlloc(size);
+        if (data == MemoryUtil.NULL) {
+            return null;
+        }
+        // je_malloc is 16-byte aligned on 64-bit system,
+        // it's safe to use Unsafe to transfer primitive data
+        assert MathUtil.isAlign8(data);
+        return new CpuBuffer(size, data);
     }
 
     /**
