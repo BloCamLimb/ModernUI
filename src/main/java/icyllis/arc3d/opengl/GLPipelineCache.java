@@ -20,6 +20,8 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.engine.*;
+import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
+import icyllis.arc3d.engine.trash.PipelineKey_old;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import javax.annotation.Nonnull;
@@ -27,7 +29,7 @@ import javax.annotation.Nullable;
 import java.util.concurrent.ConcurrentHashMap;
 
 //TODO cache trim
-public class GLPipelineCache extends GlobalResourceCache {
+public class GLPipelineCache extends SharedResourceCache {
 
     private final GLDevice mDevice;
 
@@ -53,7 +55,7 @@ public class GLPipelineCache extends GlobalResourceCache {
 
     @Nullable
     public GLGraphicsPipeline findOrCreateGraphicsPipeline(
-            final PipelineKey desc,
+            final PipelineKey_old desc,
             final GraphicsPipelineDesc_Old graphicsPipelineDesc) {
         if (desc.isEmpty()) {
             final Caps caps = mDevice.getCaps();
@@ -65,16 +67,16 @@ public class GLPipelineCache extends GlobalResourceCache {
 
     @Nonnull
     private GLGraphicsPipeline findOrCreateGraphicsPipelineImpl(
-            PipelineKey desc,
+            PipelineKey_old desc,
             final GraphicsPipelineDesc_Old graphicsPipelineDesc) {
         GLGraphicsPipeline existing = mCache.get(desc);
         if (existing != null) {
             return existing;
         }
         // We have a cache miss
-        desc = new PipelineKey(desc);
-        GLGraphicsPipeline newPipeline = GLGraphicsPipelineBuilder.createGraphicsPipeline(mDevice, desc,
-                graphicsPipelineDesc);
+        desc = new PipelineKey_old(desc);
+        GLGraphicsPipeline newPipeline = null;/*GLGraphicsPipelineBuilder.createGraphicsPipeline(mDevice, desc,
+                graphicsPipelineDesc);*/
         existing = mCache.putIfAbsent(desc.toStorageKey(), newPipeline);
         if (existing != null) {
             // there's a race, reuse existing
@@ -88,7 +90,6 @@ public class GLPipelineCache extends GlobalResourceCache {
         return newPipeline;
     }
 
-    @Override
     public void close() {
         assert (mCache.isEmpty());
     }

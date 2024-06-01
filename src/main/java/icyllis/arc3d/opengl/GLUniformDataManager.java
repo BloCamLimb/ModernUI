@@ -21,7 +21,7 @@ package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.UniformDataManager;
-import icyllis.arc3d.engine.shading.UniformHandler;
+import icyllis.arc3d.granite.shading.UniformHandler;
 
 import java.util.List;
 
@@ -84,7 +84,7 @@ public class GLUniformDataManager extends UniformDataManager {
             return true;
         }
         if (mUniformBuffer == null) {
-            mUniformBuffer = GLUniformBuffer.make(device, mUniformSize, GLUniformHandler.UNIFORM_BINDING);
+            mUniformBuffer = GLUniformBuffer.make(device, mUniformSize, UniformHandler.UNIFORM_BINDING);
         }
         if (mUniformBuffer == null) {
             return false;

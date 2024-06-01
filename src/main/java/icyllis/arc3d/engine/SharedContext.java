@@ -55,7 +55,7 @@ public final class SharedContext {
 
     private volatile Caps mCaps;
     private volatile ThreadSafeCache mThreadSafeCache;
-    private volatile GlobalResourceCache mGlobalResourceCache;
+    private volatile SharedResourceCache mSharedResourceCache;
 
     private final AtomicBoolean mDiscarded = new AtomicBoolean(false);
 
@@ -279,15 +279,15 @@ public final class SharedContext {
     }
 
     @ApiStatus.Internal
-    public GlobalResourceCache getPipelineCache() {
-        return mGlobalResourceCache;
+    public SharedResourceCache getPipelineCache() {
+        return mSharedResourceCache;
     }
 
     void init(Device device) {
         assert (device != null);
         mCaps = device.getCaps();
         mThreadSafeCache = new ThreadSafeCache();
-        mGlobalResourceCache = device.getPipelineCache();
+        mSharedResourceCache = device.getSharedResourceCache();
     }
 
     boolean discard() {

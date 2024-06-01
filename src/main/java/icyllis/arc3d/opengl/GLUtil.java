@@ -20,7 +20,7 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.engine.GlobalResourceCache;
+import icyllis.arc3d.engine.SharedResourceCache;
 import org.lwjgl.system.*;
 import org.slf4j.Logger;
 
@@ -456,7 +456,7 @@ public final class GLUtil {
     public static int glCompileShader(GLDevice device,
                                       @NativeType("GLenum") int shaderType,
                                       @NativeType("GLchar const *") ByteBuffer glsl,
-                                      GlobalResourceCache.Stats stats) {
+                                      SharedResourceCache.Stats stats) {
         var gl = device.getGL();
         int shader = gl.glCreateShader(shaderType);
         if (shader == 0) {
@@ -488,7 +488,7 @@ public final class GLUtil {
                                          @NativeType("GLenum") int shaderType,
                                          @NativeType("uint32_t *") ByteBuffer spirv,
                                          String entryPoint,
-                                         GlobalResourceCache.Stats stats) {
+                                         SharedResourceCache.Stats stats) {
         var gl = device.getGL();
         int shader = gl.glCreateShader(shaderType);
         if (shader == 0) {

@@ -46,8 +46,6 @@ public final class GLDevice extends Device {
 
     private final GLCommandBuffer mMainCmdBuffer;
 
-    private final GLPipelineCache mPipelineCache;
-
     private final CpuBufferPool mCpuBufferPool;
 
     /*private final GpuBufferPool mVertexPool;
@@ -79,7 +77,7 @@ public final class GLDevice extends Device {
         return Integer.numberOfTrailingZeros(usage);
     }
 
-    static {
+    /*static {
         assert BUFFER_TYPE_VERTEX           ==
                 bufferUsageToType(BufferUsageFlags.kVertex);
         assert BUFFER_TYPE_INDEX            ==
@@ -92,7 +90,7 @@ public final class GLDevice extends Device {
                 bufferUsageToType(BufferUsageFlags.kUniform);
         assert BUFFER_TYPE_DRAW_INDIRECT    ==
                 bufferUsageToType(BufferUsageFlags.kDrawIndirect);
-    }
+    }*/
     //@formatter:on
 
     static final class HWBufferState {
@@ -174,7 +172,6 @@ public final class GLDevice extends Device {
         mCaps = caps;
         mGLInterface = glInterface;
         mMainCmdBuffer = new GLCommandBuffer(this);
-        mPipelineCache = new GLPipelineCache(this, 256);
         mCpuBufferPool = new CpuBufferPool(6);
         mExecutingThread = Thread.currentThread();
 
@@ -266,10 +263,10 @@ public final class GLDevice extends Device {
         mMainCmdBuffer.resetStates(~0);
 
         if (cleanup) {
-            mPipelineCache.release();
+            //mPipelineCache.release();
             //mResourceProvider.release();
         } else {
-            mPipelineCache.discard();
+            //mPipelineCache.discard();
             //mResourceProvider.discard();
         }
 
@@ -290,11 +287,6 @@ public final class GLDevice extends Device {
     @Override
     public GLResourceProvider makeResourceProvider(Context context) {
         return new GLResourceProvider(this, context);
-    }
-
-    @Override
-    public GLPipelineCache getPipelineCache() {
-        return mPipelineCache;
     }
 
     /**

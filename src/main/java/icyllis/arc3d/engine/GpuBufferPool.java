@@ -273,7 +273,7 @@ public abstract class GpuBufferPool {
 
         @SharedPtr
         Buffer buffer = mResourceProvider
-                .createBuffer(blockSize, mBufferType | Engine.BufferUsageFlags.kHostVisible);
+                .createBuffer(blockSize, mBufferType | Engine.BufferUsageFlags.kHostVisible, "");
         if (buffer == null) {
             return NULL;
         }

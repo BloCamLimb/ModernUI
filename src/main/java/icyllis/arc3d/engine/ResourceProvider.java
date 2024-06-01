@@ -30,7 +30,7 @@ import javax.annotation.Nullable;
  * <p>
  * This can only be used on render thread. To create Surface-like resources
  * in other threads, use {@link SurfaceProxy}. To obtain Pipeline resources,
- * use {@link GlobalResourceCache}.
+ * use {@link SharedResourceCache}.
  */
 public abstract class ResourceProvider {
 
@@ -40,6 +40,8 @@ public abstract class ResourceProvider {
     // Each ResourceProvider owns one local cache; for some resources it also refers out to the
     // global cache of the Device, which is assumed to outlive the ResourceProvider.
     protected final ResourceCache mResourceCache;
+
+    private PipelineKey mGraphicsPipelineKey;
 
     // lookup key
     private IResourceKey mImageScratchKey;
@@ -54,6 +56,38 @@ public abstract class ResourceProvider {
 
     protected void destroy() {
         mResourceCache.shutdown();
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Pipelines
+
+    @Nullable
+    @SharedPtr
+    public GraphicsPipeline findOrCreateGraphicsPipeline(
+            PipelineDesc pipelineDesc,
+            RenderPassDesc renderPassDesc) {
+        var cache = mDevice.getSharedResourceCache();
+        mGraphicsPipelineKey = mDevice.getCaps().makeGraphicsPipelineKey(
+                mGraphicsPipelineKey,
+                pipelineDesc,
+                renderPassDesc);
+        @SharedPtr
+        GraphicsPipeline pipeline = cache.findGraphicsPipeline(mGraphicsPipelineKey);
+        if (pipeline == null) {
+            // We have a cache miss
+            var key = mGraphicsPipelineKey.copy();
+            pipeline = createGraphicsPipeline(key.mPipelineDesc, renderPassDesc);
+            if (pipeline != null) {
+                pipeline = cache.insertGraphicsPipeline(key, pipeline);
+            }
+        }
+        return pipeline;
+    }
+
+    @SharedPtr
+    protected GraphicsPipeline createGraphicsPipeline(PipelineDesc pipelineDesc,
+                                                      RenderPassDesc renderPassDesc) {
+        return null;
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -730,12 +764,19 @@ public abstract class ResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public final Buffer createBuffer(long size, int usage) {
+    public final Buffer createBuffer(long size, int usage, String label) {
         if (mDevice.isDeviceLost()) {
             return null;
         }
         //TODO scratch
-        return createNewBuffer(size, usage);
+        @SharedPtr
+        Buffer buffer = createNewBuffer(size, usage);
+        if (buffer == null) {
+            return null;
+        }
+
+        buffer.setLabel(label);
+        return buffer;
     }
 
     @Nullable

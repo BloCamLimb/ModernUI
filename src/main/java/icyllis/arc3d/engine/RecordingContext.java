@@ -32,8 +32,6 @@ public final class RecordingContext extends Context {
     private RenderTaskManager mRenderTaskManager;
     private DynamicBufferManager mDynamicBufferManager;
 
-    private final PipelineKey mLookupDesc = new PipelineKey();
-
     protected RecordingContext(Device device) {
         super(device);
         mImageProxyCache = new ImageProxyCache(this);
@@ -94,16 +92,6 @@ public final class RecordingContext extends Context {
     }*/
 
     @ApiStatus.Internal
-    public final GraphicsPipeline findOrCreateGraphicsPipeline(
-            final GraphicsPipelineDesc_Old graphicsPipelineDesc) {
-        mLookupDesc.clear();
-        return getPipelineCache().findOrCreateGraphicsPipeline(
-                mLookupDesc,
-                graphicsPipelineDesc
-        );
-    }
-
-    @ApiStatus.Internal
     public final DynamicBufferManager getDynamicBufferManager() {
         return mDynamicBufferManager;
     }
@@ -117,6 +105,7 @@ public final class RecordingContext extends Context {
             mRenderTaskManager.destroy();
         }
         mRenderTaskManager = new RenderTaskManager(this);
+        mDynamicBufferManager = new DynamicBufferManager(getCaps(), getResourceProvider());
         return true;
     }
 

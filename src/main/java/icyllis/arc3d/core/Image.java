@@ -19,6 +19,7 @@
 
 package icyllis.arc3d.core;
 
+import icyllis.arc3d.engine.Context;
 import icyllis.arc3d.engine.RecordingContext;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -75,11 +76,11 @@ public abstract class Image extends RefCnt {
 
     @ApiStatus.Internal
     @Nullable
-    public RecordingContext getContext() {
+    public Context getContext() {
         return null;
     }
 
-    public abstract boolean isValid(@Nullable RecordingContext context);
+    public abstract boolean isValid(@Nullable Context context);
 
     @ApiStatus.Internal
     public boolean isRasterBacked() {

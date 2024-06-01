@@ -20,7 +20,7 @@
 package icyllis.arc3d.core;
 
 import icyllis.arc3d.engine.RecordingContext;
-import icyllis.arc3d.engine.graphene.SurfaceDrawContext;
+import icyllis.arc3d.granite.SurfaceDrawContext;
 import org.intellij.lang.annotations.MagicConstant;
 
 import javax.annotation.Nonnull;

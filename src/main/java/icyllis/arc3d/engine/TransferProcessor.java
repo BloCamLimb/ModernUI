@@ -19,8 +19,8 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.engine.shading.UniformHandler;
-import icyllis.arc3d.engine.shading.XPFragmentBuilder;
+import icyllis.arc3d.granite.shading.UniformHandler;
+import icyllis.arc3d.granite.shading.XPFragmentBuilder;
 
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;

@@ -22,7 +22,8 @@ package icyllis.arc3d.engine.ops;
 import icyllis.arc3d.core.Rect2f;
 import icyllis.arc3d.core.Rect2i;
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.engine.graphene.ClipResult_old;
+import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
+import icyllis.arc3d.granite.ClipResult_old;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 import javax.annotation.Nonnull;

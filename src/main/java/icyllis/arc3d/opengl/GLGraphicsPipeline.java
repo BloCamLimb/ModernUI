@@ -21,7 +21,9 @@ package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.engine.shading.UniformHandler;
+import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
+import icyllis.arc3d.granite.GeometryStep;
+import icyllis.arc3d.granite.shading.UniformHandler;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -63,16 +65,16 @@ public class GLGraphicsPipeline extends GraphicsPipeline {
     }
 
     void init(@SharedPtr GLProgram program,
-              @SharedPtr GLVertexArray vertexArray,
+              @SharedPtr GLVertexArray vertexArray/*,
               List<UniformHandler.UniformInfo> uniforms,
               int uniformSize,
               List<UniformHandler.UniformInfo> samplers,
-              GeometryStep.ProgramImpl gpImpl) {
+              GeometryStep.ProgramImpl gpImpl*/) {
         mProgram = program;
         mVertexArray = vertexArray;
-        mGPImpl = gpImpl;
+        /*mGPImpl = gpImpl;
         mDataManager = new GLUniformDataManager(uniforms, uniformSize);
-        mNumTextureSamplers = samplers.size();
+        mNumTextureSamplers = samplers.size();*/
     }
 
     public void discard() {
@@ -90,6 +92,10 @@ public class GLGraphicsPipeline extends GraphicsPipeline {
 
     @Override
     protected void deallocate() {
+        if (mAsyncWork != null) {
+            mAsyncWork.cancel(true);
+            mAsyncWork = null;
+        }
         mProgram = RefCnt.move(mProgram);
         mVertexArray = RefCnt.move(mVertexArray);
         mDataManager = RefCnt.move(mDataManager);
@@ -97,7 +103,7 @@ public class GLGraphicsPipeline extends GraphicsPipeline {
 
     private void checkAsyncWork() {
         boolean success = mAsyncWork.join().finish(this);
-        var stats = getDevice().getPipelineCache().getStats();
+        var stats = getDevice().getSharedResourceCache().getStats();
         if (success) {
             stats.incNumCompilationSuccesses();
         } else {
@@ -123,7 +129,7 @@ public class GLGraphicsPipeline extends GraphicsPipeline {
                                 int width, int height) {
         mDataManager.setProjection(0, width, height,
                 graphicsPipelineDesc.origin() == Engine.SurfaceOrigin.kLowerLeft);
-        mGPImpl.setData(mDataManager, graphicsPipelineDesc.geomProc());
+        //mGPImpl.setData(mDataManager, graphicsPipelineDesc.geomProc());
         //TODO FP and upload
 
         return mDataManager.bindAndUploadUniforms(getDevice(), commandBuffer);
