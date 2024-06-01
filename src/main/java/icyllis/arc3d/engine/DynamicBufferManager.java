@@ -20,12 +20,14 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.*;
+import icyllis.arc3d.engine.task.TaskList;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.List;
 
 import static org.lwjgl.system.MemoryUtil.NULL;
 
@@ -71,7 +73,7 @@ public class DynamicBufferManager {
     static final int kVertexBufferIndex     = 0;
     static final int kIndexBufferIndex      = 1;
     static final int kUniformBufferIndex    = 2;
-    final BlockBuffer[] mCurrentBuffers = new BlockBuffer[3];
+    final BlockBuffer[] mCurrentBuffers = new BlockBuffer[1];
     // @formatter:on
 
     final ArrayList<@SharedPtr Buffer> mUsedBuffers = new ArrayList<>();
@@ -123,6 +125,7 @@ public class DynamicBufferManager {
             assert mMappingFailed;
             return null;
         }
+        assert !mMappingFailed;
         assert (outInfo.mBuffer == target.mBuffer);
         assert (outInfo.mBuffer.isMapped());
 
@@ -163,16 +166,21 @@ public class DynamicBufferManager {
                     Integer.MAX_VALUE
             );
             target.mBuffer = mResourceProvider.createBuffer(bufferSize,
-                    target.mUsage);
+                    target.mUsage, label);
             target.mOffset = 0;
             if (target.mBuffer == null) {
-                onAllocationFailed();
+                setMappingFailed();
                 outInfo.set(null);
                 return;
             }
             if ((target.mUsage & Engine.BufferUsageFlags.kHostVisible) != 0) {
                 long mappedPtr = target.mBuffer.map();
-                assert mappedPtr != NULL;
+                if (mappedPtr == NULL) {
+                    // Mapping a direct draw buffer failed
+                    setMappingFailed();
+                    outInfo.set(null);
+                    return;
+                }
             }
         }
 
@@ -185,7 +193,7 @@ public class DynamicBufferManager {
         target.mOffset = startOffset + requiredBytes;
     }
 
-    private void onAllocationFailed() {
+    private void setMappingFailed() {
         mMappingFailed = true;
 
         for (var buffer : mUsedBuffers) {
@@ -198,16 +206,50 @@ public class DynamicBufferManager {
         mUsedBuffers.clear();
 
         for (var target : mCurrentBuffers) {
-            if (target.mBuffer != null && target.mBuffer.isMapped()) {
-                // no need to flush any data
-                target.mBuffer.unmap(0, 0);
-            }
-            target.mBuffer = RefCnt.move(target.mBuffer);
             target.mOffset = 0;
+            if (target.mBuffer != null) {
+                if (target.mBuffer.isMapped()) {
+                    // no need to flush any data
+                    target.mBuffer.unmap(0, 0);
+                }
+                target.mBuffer = RefCnt.move(target.mBuffer);
+            }
         }
     }
 
     public boolean hasMappingFailed() {
         return mMappingFailed;
+    }
+
+    /**
+     * Finalizes all buffers and transfers ownership of them to given list.
+     * Should not call if hasMappingFailed() returns true.
+     *
+     * @param outTasks        receive tasks
+     * @param outResourceRefs receive ownership of resources
+     */
+    public void flush(TaskList outTasks,
+                      List<@SharedPtr Resource> outResourceRefs) {
+        assert !mMappingFailed;
+
+        for (var buffer : mUsedBuffers) {
+            if (buffer.isMapped()) {
+                buffer.unmap();
+            }
+        }
+        // move all
+        outResourceRefs.addAll(mUsedBuffers);
+        mUsedBuffers.clear();
+
+        for (var target : mCurrentBuffers) {
+            target.mOffset = 0;
+            if (target.mBuffer != null) {
+                if (target.mBuffer.isMapped()) {
+                    target.mBuffer.unmap();
+                }
+                outResourceRefs.add(target.mBuffer);
+                target.mBuffer = null;
+            }
+        }
     }
 }

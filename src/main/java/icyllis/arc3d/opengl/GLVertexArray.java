@@ -22,6 +22,7 @@ package icyllis.arc3d.opengl;
 import icyllis.arc3d.core.RawPtr;
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.*;
+import icyllis.arc3d.granite.shading.VertexShaderBuilder;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -266,7 +267,7 @@ public final class GLVertexArray extends ManagedResource {
     // @formatter:on
 
     /**
-     * See {@link icyllis.arc3d.engine.shading.VertexShaderBuilder}.
+     * See {@link VertexShaderBuilder}.
      */
     private static int set_vertex_format_binding_group(GLInterface gl,
                                                        @Nonnull Iterator<VertexInputLayout.Attribute> attribs,
@@ -352,7 +353,7 @@ public final class GLVertexArray extends ManagedResource {
     // @formatter:on
 
     /**
-     * See {@link icyllis.arc3d.engine.shading.VertexShaderBuilder}.
+     * See {@link VertexShaderBuilder}.
      */
     private static int set_vertex_format_binding_group_dsa(GLInterface gl,
                                                            @Nonnull Iterator<VertexInputLayout.Attribute> attribs,

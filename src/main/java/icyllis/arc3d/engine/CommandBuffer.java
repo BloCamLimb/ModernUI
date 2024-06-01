@@ -19,8 +19,9 @@
 
 package icyllis.arc3d.engine;
 
+import icyllis.arc3d.core.RawPtr;
 import icyllis.arc3d.core.SharedPtr;
-import icyllis.arc3d.engine.graphene.DrawPass;
+import icyllis.arc3d.granite.DrawPass;
 
 import java.util.ArrayList;
 
@@ -58,6 +59,14 @@ public abstract class CommandBuffer {
     }
 
     public abstract boolean bindGraphicsPipeline(GraphicsPipeline graphicsPipeline);
+
+    public abstract void bindIndexBuffer(int indexType,
+                                         @RawPtr Buffer buffer,
+                                         long offset);
+
+    public abstract void bindVertexBuffer(int binding,
+                                          @RawPtr Buffer buffer,
+                                          long offset);
 
     /**
      * Records a non-indexed draw to current command buffer.

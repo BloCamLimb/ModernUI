@@ -37,6 +37,8 @@ package icyllis.arc3d.engine;
  */
 public interface IUniqueKey {
 
+    IUniqueKey copy();
+
     @Override
     int hashCode();
 

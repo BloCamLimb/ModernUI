@@ -55,7 +55,15 @@ public final class GLResourceProvider extends ResourceProvider {
         mSamplerCache.clear();
     }
 
+    @SharedPtr
+    @Override
+    protected GLGraphicsPipeline createGraphicsPipeline(PipelineDesc pipelineDesc,
+                                                      RenderPassDesc renderPassDesc) {
+        return GLGraphicsPipelineBuilder.createGraphicsPipeline(mDevice, pipelineDesc);
+    }
+
     @Nullable
+    @SharedPtr
     @Override
     protected GLImage onCreateNewImage(ImageDesc desc,
                                        boolean budgeted) {
@@ -70,8 +78,9 @@ public final class GLResourceProvider extends ResourceProvider {
     }
 
     @Nullable
+    @SharedPtr
     @Override
-    protected Buffer onCreateNewBuffer(long size, int usage) {
+    protected GLBuffer onCreateNewBuffer(long size, int usage) {
         return GLBuffer.make(mContext, size, usage);
     }
 

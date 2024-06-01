@@ -20,9 +20,12 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.SharedPtr;
-import icyllis.arc3d.engine.PipelineKey;
-import icyllis.arc3d.engine.GraphicsPipelineDesc_Old;
-import icyllis.arc3d.engine.shading.*;
+import icyllis.arc3d.engine.PipelineDesc;
+import icyllis.arc3d.engine.VertexInputLayout;
+import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
+import icyllis.arc3d.engine.trash.PipelineKey_old;
+import icyllis.arc3d.granite.shading.*;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
@@ -32,46 +35,53 @@ import java.util.concurrent.CompletableFuture;
 
 import static org.lwjgl.opengl.GL20C.*;
 
-public class GLGraphicsPipelineBuilder extends GraphicsPipelineBuilder {
+public class GLGraphicsPipelineBuilder {
 
     private final GLDevice mDevice;
-
-    private final VaryingHandler mVaryingHandler;
-    private final GLUniformHandler mUniformHandler;
+    private final PipelineDesc mPipelineDesc;
 
     private ByteBuffer mFinalizedVertSource;
     private ByteBuffer mFinalizedFragSource;
 
+    private VertexInputLayout mInputLayout;
+    private String mPipelineLabel;
+
     private GLGraphicsPipelineBuilder(GLDevice device,
-                                      PipelineKey desc,
-                                      GraphicsPipelineDesc_Old graphicsPipelineDesc) {
-        super(desc, graphicsPipelineDesc, device.getCaps());
+                                      PipelineDesc pipelineDesc) {
         mDevice = device;
-        mVaryingHandler = new VaryingHandler(this);
-        mUniformHandler = new GLUniformHandler(this);
+        mPipelineDesc = pipelineDesc;
     }
 
     @Nonnull
+    @SharedPtr
     public static GLGraphicsPipeline createGraphicsPipeline(
             final GLDevice device,
-            final PipelineKey desc,
-            final GraphicsPipelineDesc_Old graphicsPipelineDesc) {
-        return new GLGraphicsPipeline(device, graphicsPipelineDesc.primitiveType(), CompletableFuture.supplyAsync(() -> {
-            GLGraphicsPipelineBuilder builder = new GLGraphicsPipelineBuilder(device, desc, graphicsPipelineDesc);
+            final PipelineDesc desc) {
+        return new GLGraphicsPipeline(device, desc.getPrimitiveType(),
+                CompletableFuture.supplyAsync(() -> {
+            GLGraphicsPipelineBuilder builder = new GLGraphicsPipelineBuilder(device, desc);
             builder.build();
             return builder;
         }));
     }
 
     private void build() {
-        if (!emitAndInstallProcs()) {
-            return;
-        }
-        mVaryingHandler.finish();
-        mFinalizedVertSource = mVS.toUTF8();
-        mFinalizedFragSource = mFS.toUTF8();
-        mVS = null;
-        mFS = null;
+        var info = mPipelineDesc.createGraphicsPipelineInfo(mDevice.getCaps());
+        mPipelineLabel = info.mPipelineLabel;
+        mInputLayout = info.mInputLayout;
+        mFinalizedVertSource = toUTF8(info.mVertSource);
+        mFinalizedFragSource = toUTF8(info.mFragSource);
+    }
+
+    @Nonnull
+    public static ByteBuffer toUTF8(StringBuilder shaderString) {
+        // we assume ASCII only, so 1 byte per char
+        int len = shaderString.length();
+        ByteBuffer buffer = BufferUtils.createByteBuffer(len);
+        len = 0;
+            len += MemoryUtil.memUTF8(shaderString, false, buffer, len);
+        assert len == buffer.capacity() && len == buffer.remaining();
+        return buffer;
     }
 
     boolean finish(GLGraphicsPipeline dest) {
@@ -86,14 +96,14 @@ public class GLGraphicsPipelineBuilder extends GraphicsPipelineBuilder {
         }
 
         int frag = GLUtil.glCompileShader(mDevice, GL_FRAGMENT_SHADER, mFinalizedFragSource,
-                mDevice.getPipelineCache().getStats());
+                mDevice.getSharedResourceCache().getStats());
         if (frag == 0) {
             gl.glDeleteProgram(program);
             return false;
         }
 
         int vert = GLUtil.glCompileShader(mDevice, GL_VERTEX_SHADER, mFinalizedVertSource,
-                mDevice.getPipelineCache().getStats());
+                mDevice.getSharedResourceCache().getStats());
         if (vert == 0) {
             gl.glDeleteProgram(program);
             gl.glDeleteShader(frag);
@@ -157,29 +167,19 @@ public class GLGraphicsPipelineBuilder extends GraphicsPipelineBuilder {
         //TODO share vertex arrays
         @SharedPtr
         GLVertexArray vertexArray = GLVertexArray.make(mDevice,
-                mGraphicsPipelineDesc.geomProc().getInputLayout(),
-                mGraphicsPipelineDesc.geomProc().name());
+                mInputLayout,
+                mPipelineLabel);
         if (vertexArray == null) {
             gl.glDeleteProgram(program);
             return false;
         }
 
         dest.init(new GLProgram(mDevice, program),
-                vertexArray,
+                vertexArray/*,
                 mUniformHandler.mUniforms,
                 mUniformHandler.mCurrentOffset,
                 mUniformHandler.mSamplers,
-                mGPImpl);
+                mGPImpl*/);
         return true;
-    }
-
-    @Override
-    public UniformHandler uniformHandler() {
-        return mUniformHandler;
-    }
-
-    @Override
-    public VaryingHandler varyingHandler() {
-        return mVaryingHandler;
     }
 }

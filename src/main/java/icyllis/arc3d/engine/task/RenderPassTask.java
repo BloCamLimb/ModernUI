@@ -20,7 +20,7 @@
 package icyllis.arc3d.engine.task;
 
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.engine.graphene.DrawPass;
+import icyllis.arc3d.granite.DrawPass;
 
 public final class RenderPassTask extends Task {
 

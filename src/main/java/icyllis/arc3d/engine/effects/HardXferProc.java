@@ -20,7 +20,7 @@
 package icyllis.arc3d.engine.effects;
 
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.engine.shading.XPFragmentBuilder;
+import icyllis.arc3d.granite.shading.XPFragmentBuilder;
 
 import javax.annotation.Nonnull;
 

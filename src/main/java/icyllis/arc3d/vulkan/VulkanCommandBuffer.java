@@ -19,10 +19,9 @@
 
 package icyllis.arc3d.vulkan;
 
-import icyllis.arc3d.engine.CommandBuffer;
-import icyllis.arc3d.engine.GraphicsPipeline;
-import icyllis.arc3d.engine.graphene.DrawCommandList;
-import icyllis.arc3d.engine.graphene.DrawPass;
+import icyllis.arc3d.engine.*;
+import icyllis.arc3d.granite.DrawCommandList;
+import icyllis.arc3d.granite.DrawPass;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 
@@ -94,46 +93,14 @@ public abstract class VulkanCommandBuffer extends CommandBuffer {
         return false;
     }
 
-    public void addDrawPass(DrawPass drawPass) {
-        var cmdList = drawPass.getCommandList();
-        var buf = cmdList.mPrimitives;
-        while (buf.hasRemaining()) {
-            switch (buf.getInt()) {
-                case DrawCommandList.CMD_BIND_GRAPHICS_PIPELINE -> {
-                    int pipelineIndex = buf.getInt();
-                    if (!bindGraphicsPipeline(drawPass.getPipeline(pipelineIndex))) {
-                        return;
-                    }
-                }
-                case DrawCommandList.CMD_DRAW -> {
-                    int vertexCount = buf.getInt();
-                    int baseVertex = buf.getInt();
-                    draw(vertexCount, baseVertex);
-                }
-                case DrawCommandList.CMD_DRAW_INDEXED -> {
-                    int indexCount = buf.getInt();
-                    int baseIndex = buf.getInt();
-                    int baseVertex = buf.getInt();
-                    drawIndexed(indexCount, baseIndex, baseVertex);
-                }
-                case DrawCommandList.CMD_DRAW_INSTANCED -> {
-                    int instanceCount = buf.getInt();
-                    int baseInstance = buf.getInt();
-                    int vertexCount = buf.getInt();
-                    int baseVertex = buf.getInt();
-                    drawInstanced(instanceCount, baseInstance, vertexCount, baseVertex);
-                }
-                case DrawCommandList.CMD_DRAW_INDEXED_INSTANCED -> {
-                    int indexCount = buf.getInt();
-                    int baseIndex = buf.getInt();
-                    int instanceCount = buf.getInt();
-                    int baseInstance = buf.getInt();
-                    int baseVertex = buf.getInt();
-                    drawIndexedInstanced(indexCount, baseIndex, instanceCount, baseInstance, baseVertex);
-                }
-            }
-        }
-        //TODO track resources
+    @Override
+    public void bindIndexBuffer(int indexType, Buffer buffer, long offset) {
+        //vkCmdBindIndexBuffer();
+    }
+
+    @Override
+    public void bindVertexBuffer(int binding, Buffer buffer, long offset) {
+        // record each binding here, and bindVertexBuffers() together
     }
 
     public boolean isRecording() {

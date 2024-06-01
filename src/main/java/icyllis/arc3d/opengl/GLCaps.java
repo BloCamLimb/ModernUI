@@ -21,6 +21,8 @@ package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.ColorInfo;
 import icyllis.arc3d.engine.*;
+import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
+import icyllis.arc3d.engine.trash.PipelineKey_old;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -1269,10 +1271,25 @@ public class GLCaps extends Caps {
 
     @Nonnull
     @Override
-    public PipelineKey makeDesc(PipelineKey desc,
-                                GpuRenderTarget renderTarget,
-                                final GraphicsPipelineDesc_Old graphicsPipelineDesc) {
-        return PipelineKey.build(desc, graphicsPipelineDesc, this);
+    public PipelineKey_old makeDesc(PipelineKey_old desc,
+                                    GpuRenderTarget renderTarget,
+                                    final GraphicsPipelineDesc_Old graphicsPipelineDesc) {
+        return PipelineKey_old.build(desc, graphicsPipelineDesc, this);
+    }
+
+    @Nonnull
+    @Override
+    public PipelineKey makeGraphicsPipelineKey(PipelineKey key,
+                                               PipelineDesc pipelineDesc,
+                                               RenderPassDesc renderPassDesc) {
+        if (key instanceof GLGraphicsPipelineKey pipelineKey) {
+            pipelineKey.mPipelineDesc = pipelineDesc;
+            return pipelineKey;
+        } else {
+            GLGraphicsPipelineKey pipelineKey = new GLGraphicsPipelineKey();
+            pipelineKey.mPipelineDesc = pipelineDesc;
+            return pipelineKey;
+        }
     }
 
     @Override

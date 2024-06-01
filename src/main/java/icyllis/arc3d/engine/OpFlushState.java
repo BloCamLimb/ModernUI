@@ -20,6 +20,7 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.Rect2i;
+import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
 
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;

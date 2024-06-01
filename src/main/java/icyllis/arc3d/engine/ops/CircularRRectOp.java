@@ -22,10 +22,11 @@ package icyllis.arc3d.engine.ops;
 import icyllis.arc3d.core.Rect2f;
 import icyllis.arc3d.core.SLDataType;
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.engine.shading.*;
+import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
+import icyllis.arc3d.granite.GeometryStep;
+import icyllis.arc3d.granite.shading.*;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import static icyllis.arc3d.engine.Engine.VertexAttribType;
 
@@ -57,7 +58,7 @@ public final class CircularRRectOp extends MeshDrawOp {
         private static final VertexInputLayout.Attribute POS = new VertexInputLayout.Attribute("Pos", VertexAttribType.kFloat2, SLDataType.kFloat2);
 
         public Processor() {
-            super(CircularRRect_Geom_ClassID, null, null);
+            super(CircularRRect_Geom_ClassID, null, null, 0);
         }
 
         @Nonnull
@@ -107,7 +108,7 @@ public final class CircularRRectOp extends MeshDrawOp {
 
                 // emit attributes
                 vertBuilder.emitAttributes(geomProc);
-                varyingHandler.addPassThroughAttribute(POS, "p");
+                //varyingHandler.addPassThroughAttribute(POS, "p");
 
                 String sizeUniformName = uniformHandler.getUniformName(
                         mSizeUniform = uniformHandler.addUniform(geomProc,

@@ -71,7 +71,7 @@ public abstract class Device implements Engine {
     private final int mContextID;
 
     private volatile ThreadSafeCache mThreadSafeCache;
-    private volatile GlobalResourceCache mGlobalResourceCache;
+    private volatile SharedResourceCache mSharedResourceCache;
 
     private final AtomicBoolean mDiscarded = new AtomicBoolean(false);
 
@@ -96,6 +96,7 @@ public abstract class Device implements Engine {
         //mContext = context;
         mCaps = caps;
         mCompiler = new ShaderCompiler();
+        mSharedResourceCache = new SharedResourceCache();
     }
 
     public final Logger getLogger() {
@@ -216,7 +217,9 @@ public abstract class Device implements Engine {
 
     public abstract ResourceProvider makeResourceProvider(Context context);
 
-    public abstract GlobalResourceCache getPipelineCache();
+    public final SharedResourceCache getSharedResourceCache() {
+        return mSharedResourceCache;
+    }
 
     /**
      * Called by context when the underlying backend context is already or will be destroyed
@@ -227,6 +230,7 @@ public abstract class Device implements Engine {
      * Otherwise, no cleanup should be attempted, immediately cease making backend API calls.
      */
     public void disconnect(boolean cleanup) {
+        mSharedResourceCache.release();
     }
 
     /**

@@ -21,6 +21,7 @@ package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.ops.Op;
+import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
 
 import static icyllis.arc3d.engine.Engine.SurfaceOrigin;
 

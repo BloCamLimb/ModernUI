@@ -21,7 +21,8 @@ package icyllis.arc3d.engine.ops;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.engine.geom.SDFRectGeoProc;
+import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
+import icyllis.arc3d.granite.geom.SDFRectGeoProc;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;

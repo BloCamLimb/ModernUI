@@ -155,8 +155,8 @@ public abstract sealed class Context extends RefCnt
     }
 
     @ApiStatus.Internal
-    public final GlobalResourceCache getPipelineCache() {
-        return mDevice.getPipelineCache();
+    public final SharedResourceCache getSharedResourceCache() {
+        return mDevice.getSharedResourceCache();
     }
 
     public final Logger getLogger() {

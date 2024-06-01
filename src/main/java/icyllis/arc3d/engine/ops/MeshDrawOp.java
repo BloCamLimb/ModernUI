@@ -20,6 +20,7 @@
 package icyllis.arc3d.engine.ops;
 
 import icyllis.arc3d.engine.*;
+import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
 
 import javax.annotation.Nonnull;
 
@@ -58,7 +59,7 @@ public abstract class MeshDrawOp extends DrawOp implements Mesh {
                              int pipelineFlags) {
         assert (mGraphicsPipelineDesc == null);
         mGraphicsPipelineDesc = onCreatePipelineInfo(writeView, pipelineFlags);
-        mPipelineState = context.findOrCreateGraphicsPipeline(mGraphicsPipelineDesc);
+        //mPipelineState = context.findOrCreateGraphicsPipeline(mGraphicsPipelineDesc);
     }
 
     @Override

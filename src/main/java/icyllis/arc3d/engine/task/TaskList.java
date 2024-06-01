@@ -28,7 +28,7 @@ import java.util.function.Consumer;
 
 public class TaskList implements Consumer<@SharedPtr Task>, AutoCloseable {
 
-    private ObjectArrayList<@SharedPtr Task> mTasks = new ObjectArrayList<>();
+    private final ObjectArrayList<@SharedPtr Task> mTasks = new ObjectArrayList<>();
 
     public void appendTask(@SharedPtr Task task) {
         mTasks.add(task);
@@ -52,7 +52,7 @@ public class TaskList implements Consumer<@SharedPtr Task>, AutoCloseable {
     public void appendTasks(@Nonnull TaskList tasks) {
         assert tasks != this;
         mTasks.addAll(tasks.mTasks);
-        tasks.mTasks = null;
+        tasks.mTasks.clear();
     }
 
     public int size() {
@@ -110,13 +110,11 @@ public class TaskList implements Consumer<@SharedPtr Task>, AutoCloseable {
 
     @Override
     public void close() {
-        if (mTasks != null) {
-            for (var task : mTasks) {
-                if (task != null) {
-                    task.unref();
-                }
+        for (var task : mTasks) {
+            if (task != null) {
+                task.unref();
             }
-            mTasks = null;
         }
+        mTasks.clear();
     }
 }

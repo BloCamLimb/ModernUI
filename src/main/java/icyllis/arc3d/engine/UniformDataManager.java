@@ -20,8 +20,8 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.engine.shading.UniformHandler;
-import icyllis.arc3d.engine.shading.UniformHandler.UniformHandle;
+import icyllis.arc3d.granite.shading.UniformHandler;
+import icyllis.arc3d.granite.shading.UniformHandler.UniformHandle;
 
 import static org.lwjgl.system.MemoryUtil.*;
 

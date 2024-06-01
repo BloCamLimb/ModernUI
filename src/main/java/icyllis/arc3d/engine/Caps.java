@@ -21,6 +21,8 @@ package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.Color;
 import icyllis.arc3d.core.ColorInfo;
+import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
+import icyllis.arc3d.engine.trash.PipelineKey_old;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -714,9 +716,15 @@ public abstract class Caps {
     public abstract BackendFormat getCompressedBackendFormat(int compressionType);
 
     @Nonnull
-    public abstract PipelineKey makeDesc(PipelineKey desc,
-                                         GpuRenderTarget renderTarget,
-                                         final GraphicsPipelineDesc_Old graphicsPipelineDesc);
+    public abstract PipelineKey_old makeDesc(PipelineKey_old desc,
+                                             GpuRenderTarget renderTarget,
+                                             final GraphicsPipelineDesc_Old graphicsPipelineDesc);
+
+    @Nonnull
+    public abstract PipelineKey makeGraphicsPipelineKey(
+            PipelineKey key,
+            PipelineDesc pipelineDesc,
+            RenderPassDesc renderPassDesc);
 
     public final short getReadSwizzle(ImageDesc desc, int colorType) {
         int compression = desc.getCompressionType();

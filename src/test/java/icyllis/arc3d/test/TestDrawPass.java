@@ -19,14 +19,19 @@
 
 package icyllis.arc3d.test;
 
-import icyllis.arc3d.engine.ContextOptions;
-import icyllis.arc3d.engine.ImmediateContext;
-import icyllis.arc3d.engine.graphene.DrawPass;
+import icyllis.arc3d.engine.*;
+import icyllis.arc3d.granite.*;
+import icyllis.arc3d.granite.geom.SDFRoundRectStep;
+import icyllis.arc3d.opengl.GLDevice;
+import icyllis.arc3d.opengl.GLGraphicsPipeline;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.PrintWriter;
+import java.nio.ByteBuffer;
 import java.util.Objects;
 
 public class TestDrawPass {
@@ -54,11 +59,59 @@ public class TestDrawPass {
         if (immediateContext == null) {
             throw new RuntimeException();
         }
+        RecordingContext recordingContext = immediateContext.makeRecordingContext();
+        if (recordingContext == null)  {
+            throw new RuntimeException();
+        }
+
+        DrawCommandList commandList = new DrawCommandList();
+        MeshDrawWriter drawWriter = new MeshDrawWriter(recordingContext.getDynamicBufferManager(),
+                commandList);
+        
+        drawWriter.newPipelineState(
+                0,
+                1,
+                20,
+                56
+        );
+        commandList.bindGraphicsPipeline(0);
+        drawWriter.beginInstances(null, null, 6);
+        ByteBuffer writer = drawWriter.append(1);
+        for (int i = 0; i < 14; i++) {
+            writer.putFloat(i);
+        }
+        writer = drawWriter.append(1);
+        for (int i = 0; i < 14; i++) {
+            writer.putFloat(i);
+        }
+        drawWriter.endAppender();
+
+        drawWriter.flush();
+        commandList.finish();
+        LOGGER.info("CommandList primitive size: {}", commandList.mPrimitives.limit());
+        ObjectArrayList<Resource> resourceRefs = new ObjectArrayList<>();
+        recordingContext.getDynamicBufferManager().flush(null, resourceRefs);
+
+        LOGGER.info(resourceRefs.toString());
+
+        PrintWriter pw = new PrintWriter(System.out, true);
+        commandList.debug(pw);
+
+        GraphicsPipelineDesc graphicsPipelineDesc = new GraphicsPipelineDesc(new SDFRoundRectStep());
+
+        var pipeline = recordingContext.getResourceProvider().findOrCreateGraphicsPipeline(
+                graphicsPipelineDesc, new RenderPassDesc());
+        LOGGER.info(String.valueOf(pipeline));
+        if (pipeline != null) {
+            ((GLGraphicsPipeline) pipeline).bindPipeline(((GLDevice) immediateContext.getDevice()).currentCommandBuffer());
+            pipeline.unref();
+        }
 
         //DrawPass.make()
 
         //deviceGpu.unref();
 
+        recordingContext.unref();
         immediateContext.unref();
         GLFW.glfwDestroyWindow(window);
         GLFW.glfwTerminate();
