@@ -722,7 +722,7 @@ public abstract class Caps {
 
     @Nonnull
     public abstract PipelineKey makeGraphicsPipelineKey(
-            PipelineKey key,
+            PipelineKey old,
             PipelineDesc pipelineDesc,
             RenderPassDesc renderPassDesc);
 

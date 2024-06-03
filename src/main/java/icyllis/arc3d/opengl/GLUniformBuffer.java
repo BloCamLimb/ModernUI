@@ -66,7 +66,7 @@ public class GLUniformBuffer extends ManagedResource {
         // OpenGL 3.3 uses mutable allocation
         if (!device.getCaps().hasDSASupport()) {
 
-            device.currentCommandBuffer().bindUniformBuffer(this);
+            //device.currentCommandBuffer().bindUniformBuffer(this);
 
             if (device.getCaps().skipErrorChecks()) {
                 glBufferData(GL_UNIFORM_BUFFER, size, GL_DYNAMIC_DRAW);

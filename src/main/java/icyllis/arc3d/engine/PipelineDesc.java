@@ -40,6 +40,9 @@ public abstract class PipelineDesc {
         return 0;
     }
 
+    /**
+     * Generates all info used to create graphics pipeline.
+     */
     public GraphicsPipelineInfo createGraphicsPipelineInfo(Caps caps) {
         return null;
     }

@@ -21,7 +21,6 @@ package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.opengl.GLBuffer;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 import javax.annotation.Nonnull;
@@ -51,7 +50,7 @@ public class DrawPass {
     }
 
     public static DrawPass make(RecordingContext rContext,
-                                DrawOpList drawOpList,
+                                DrawList drawList,
                                 ImageProxy colorTarget,
                                 byte loadStoreOps,
                                 float[] clearColor) {
@@ -70,10 +69,10 @@ public class DrawPass {
             return pipelineDescs.size() - 1;
         };
 
-        SortKey[] keys = new SortKey[drawOpList.numSteps()];
+        SortKey[] keys = new SortKey[drawList.numSteps()];
         int sortKeyIndex = 0;
 
-        for (var op : drawOpList.mDrawOps) {
+        for (var op : drawList.mDraws) {
 
 
             for (int stepIndex = 0; stepIndex < op.mRenderer.numSteps(); stepIndex++) {
@@ -101,7 +100,7 @@ public class DrawPass {
         int lastPipeline = -1;
 
         for (var key : keys) {
-            var op = key.drawOpRef;
+            var op = key.mDrawRef;
             var step = key.step();
 
             boolean pipelineChange = key.pipelineIndex() != lastPipeline;
@@ -264,20 +263,20 @@ public class DrawPass {
 
         private long highOrderFlags;
         private long lowOrderFlags;
-        private DrawOp drawOpRef;
+        private Draw mDrawRef;
 
-        public SortKey(DrawOp drawOp,
+        public SortKey(Draw draw,
                        int stepIndex,
                        int pipelineIndex) {
             // the higher 32 bits are just we want
-            highOrderFlags = drawOp.mDrawOrder & 0xFFFFFFFF_00000000L;
+            highOrderFlags = draw.mDrawOrder & 0xFFFFFFFF_00000000L;
             assert (stepIndex & STEP_INDEX_MASK) == stepIndex;
             highOrderFlags |= ((long) stepIndex << STEP_INDEX_OFFSET) | ((long) pipelineIndex << PIPELINE_INDEX_OFFSET);
-            drawOpRef = drawOp;
+            mDrawRef = draw;
         }
 
         public GeometryStep step() {
-            return drawOpRef.mRenderer.step(
+            return mDrawRef.mRenderer.step(
                     (int) ((highOrderFlags >>> STEP_INDEX_OFFSET) & STEP_INDEX_MASK));
         }
 

@@ -19,38 +19,34 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.RawPtr;
-import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.core.*;
 import icyllis.arc3d.granite.DrawPass;
 
 import java.util.ArrayList;
 
 /**
- * Backend-specific command buffer, render thread only.
+ * Backend-specific command buffer, executing thread only.
  */
 public abstract class CommandBuffer {
 
-    @SharedPtr
-    private final ArrayList<Buffer> mTrackingBuffers = new ArrayList<>();
+    private final ArrayList<@SharedPtr Buffer> mTrackingBuffers = new ArrayList<>();
 
     public void moveAndTrackGpuBuffer(@SharedPtr Buffer buffer) {
         mTrackingBuffers.add(buffer);
     }
 
-    public boolean addRenderPass(RenderPassDesc renderPassDesc,
-                                 DrawPass drawPass) {
-        return false;
+    public void begin() {
+    }
+
+    public void end() {
     }
 
     public boolean beginRenderPass(RenderPassDesc renderPassDesc,
-                                   GpuRenderTarget renderTarget) {
-        return false;
-    }
-
-    public boolean beginRenderPass(RenderPassDesc renderPassDesc,
-                                   Image[] colorAttachments,
-                                   Image[] resolveAttachments,
-                                   Image depthStencilAttachment) {
+                                   FramebufferDesc framebufferDesc,
+                                   Rect2ic renderPassBounds,
+                                   float[] clearColors,
+                                   float clearDepth,
+                                   int clearStencil) {
         return false;
     }
 
@@ -109,4 +105,12 @@ public abstract class CommandBuffer {
     public abstract void drawIndexedInstanced(int indexCount, int baseIndex,
                                               int instanceCount, int baseInstance,
                                               int baseVertex);
+
+    public boolean checkFinished() {
+        return false;
+    }
+
+    public void waitUntilFinished() {
+
+    }
 }

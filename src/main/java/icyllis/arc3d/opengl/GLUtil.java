@@ -20,11 +20,15 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.engine.SharedResourceCache;
+import icyllis.arc3d.engine.*;
+import org.jetbrains.annotations.ApiStatus;
+import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.system.*;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.lang.ref.Reference;
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -40,6 +44,88 @@ import static org.lwjgl.opengl.GL46C.GL_SHADER_BINARY_FORMAT_SPIR_V;
  * Provides OpenGL utilities.
  */
 public final class GLUtil {
+
+    /**
+     * Creates a DirectContext for a backend context, using default context options.
+     *
+     * @return context or null if failed to create
+     * @see #makeOpenGL(ContextOptions)
+     */
+    @ApiStatus.Internal
+    @Nullable
+    public static ImmediateContext makeOpenGL() {
+        return makeOpenGL(new ContextOptions());
+    }
+
+    @ApiStatus.Internal
+    @Nullable
+    public static ImmediateContext makeOpenGL(@Nonnull ContextOptions options) {
+        GLCapabilities capabilities;
+        try {
+            capabilities = Objects.requireNonNullElseGet(
+                    GL.getCapabilities(),
+                    GL::createCapabilities
+            );
+        } catch (Exception x) {
+            try {
+                capabilities = GL.createCapabilities();
+            } catch (Exception e) {
+                return null;
+            }
+        }
+        return makeOpenGL(capabilities, options);
+    }
+
+    /**
+     * Creates a DirectContext for a backend context, using specified context options.
+     * <p>
+     * Example with GLFW:
+     * <pre>{@code
+     *  public static void main(String[] args) {
+     *      System.setProperty("java.awt.headless", Boolean.TRUE.toString());
+     *      if (!glfwInit()) {
+     *          throw new IllegalStateException();
+     *      }
+     *      // default hints use highest OpenGL version and native API
+     *      glfwDefaultWindowHints();
+     *      long window = glfwCreateWindow(1280, 720, "Example Window", NULL, NULL);
+     *      if (window == NULL) {
+     *          throw new IllegalStateException();
+     *      }
+     *      // you can make a thread a render thread
+     *      glfwMakeContextCurrent(window);
+     *      DirectContext direct = DirectContext.makeOpenGL(
+     *          GL.createCapabilities()
+     *      );
+     *      if (direct == null) {
+     *          throw new IllegalStateException();
+     *      }
+     *      ...
+     *      // destroy and close
+     *      direct.discard();
+     *      direct.unref();
+     *      GL.setCapabilities(null);
+     *      glfwDestroyWindow(window);
+     *      glfwTerminate();
+     *  }
+     * }</pre>
+     *
+     * @return context or null if failed to create
+     */
+    @Nullable
+    public static ImmediateContext makeOpenGL(@Nonnull Object capabilities, @Nonnull ContextOptions options) {
+        var device = GLDevice.make(options, capabilities);
+        if (device == null) {
+            return null;
+        }
+        var queueManager = new GLQueueManager(device);
+        ImmediateContext context = new ImmediateContext(device, queueManager);
+        if (context.init()) {
+            return context;
+        }
+        context.unref();
+        return null;
+    }
 
     /**
      * Known vendors. Internal use only.

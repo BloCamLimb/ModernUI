@@ -21,6 +21,7 @@ import icyllis.arc3d.core.ColorInfo;
 import icyllis.arc3d.core.ColorSpace;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.granite.SurfaceDevice;
+import icyllis.arc3d.opengl.GLUtil;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL;
 import org.slf4j.Logger;
@@ -45,7 +46,7 @@ public class TestGraniteRenderer {
 
         ContextOptions contextOptions = new ContextOptions();
         contextOptions.mLogger = LOGGER;
-        ImmediateContext immediateContext = ImmediateContext.makeOpenGL(
+        ImmediateContext immediateContext = GLUtil.makeOpenGL(
                 GL.createCapabilities(),
                 contextOptions
         );

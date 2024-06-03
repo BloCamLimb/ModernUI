@@ -40,6 +40,8 @@ public final class GLResourceProvider extends ResourceProvider {
     private final Int2ObjectLinkedOpenHashMap<GLSampler> mSamplerCache =
             new Int2ObjectLinkedOpenHashMap<>(SAMPLER_CACHE_SIZE);
 
+    private final GLFramebuffer.ResourceKey mFramebufferKey = new GLFramebuffer.ResourceKey();
+
     GLResourceProvider(GLDevice device, Context context) {
         super(device, context);
         mDevice = device;
@@ -75,6 +77,26 @@ public final class GLResourceProvider extends ResourceProvider {
         } else {
             return GLTexture.make(mContext, glImageDesc, budgeted);
         }
+    }
+
+    @Nullable
+    @SharedPtr
+    public GLFramebuffer findOrCreateFramebuffer(FramebufferDesc framebufferDesc) {
+        @SharedPtr
+        GLFramebuffer framebuffer = (GLFramebuffer) mResourceCache.findAndRefResource(
+                mFramebufferKey.compute(framebufferDesc),
+                /*budgeted*/true);
+        if (framebuffer != null) {
+            return framebuffer;
+        }
+        framebuffer = GLFramebuffer.make(mContext, framebufferDesc);
+        if (framebuffer == null) {
+            return null;
+        }
+        var key = mFramebufferKey.copy();
+        framebuffer.setKey(key);
+        mResourceCache.insertResource(framebuffer);
+        return framebuffer;
     }
 
     @Nullable

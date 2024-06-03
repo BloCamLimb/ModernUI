@@ -30,7 +30,7 @@ public class SurfaceDrawContext extends SurfaceFillContext {
 
     private ImageProxy mDepthStencilTarget;
 
-    private DrawOpList mPendingDrawOps = new DrawOpList();
+    private DrawList mPendingDrawOps = new DrawList();
 
     public SurfaceDrawContext(RecordingContext context,
                               ImageProxyView readView,
@@ -127,7 +127,7 @@ public class SurfaceDrawContext extends SurfaceFillContext {
         addDrawOp(clip, op);
     }
 
-    public void recordDraw(icyllis.arc3d.granite.DrawOp draw) {
+    public void recordDraw(Draw draw) {
         mPendingDrawOps.recordDrawOp(draw);
     }
 

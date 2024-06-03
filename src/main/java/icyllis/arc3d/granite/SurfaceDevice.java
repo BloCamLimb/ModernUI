@@ -162,7 +162,7 @@ public final class SurfaceDevice extends icyllis.arc3d.core.Device {
     private final Rect2f mTmpOpBounds = new Rect2f();
 
     public void drawRoundRect(RoundRect r, Paint paint) {
-        DrawOp draw = new DrawOp();
+        Draw draw = new Draw();
         draw.mTransform = getLocalToDevice().clone();
         draw.mGeometry = r;
 
@@ -170,7 +170,7 @@ public final class SurfaceDevice extends icyllis.arc3d.core.Device {
         drawGeometry(draw, mTmpOpBounds, paint, mSimpleRoundRectRenderer);
     }
 
-    public void drawGeometry(DrawOp draw,
+    public void drawGeometry(Draw draw,
                              Rect2f opBounds,
                              Paint paint,
                              GeometryRenderer renderer) {
@@ -212,7 +212,7 @@ public final class SurfaceDevice extends icyllis.arc3d.core.Device {
         mCurrentDepth = drawDepth;
     }
 
-    public void drawClipShape(DrawOp draw, boolean inverseFill) {
+    public void drawClipShape(Draw draw, boolean inverseFill) {
         //TODO
     }
 }

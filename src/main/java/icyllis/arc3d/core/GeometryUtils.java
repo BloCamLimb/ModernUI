@@ -26,7 +26,7 @@ import java.util.Arrays;
  *
  * @author BloCamLimb
  */
-public class Geometry {
+public class GeometryUtils {
 
     public static int findQuadRoots(final float A, final float B, final float C,
                                     final float[] roots, final int off) {
@@ -1019,7 +1019,7 @@ public class Geometry {
         return ret - off;
     }
 
-    protected Geometry() {
+    protected GeometryUtils() {
         throw new UnsupportedOperationException();
     }
 }

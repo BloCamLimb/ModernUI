@@ -39,12 +39,6 @@ import java.util.Formatter;
 public class SDFRoundRectStep extends GeometryStep {
 
     /**
-     * Per-vertex attributes.
-     */
-    // {(-1,-1), (-1, 1), (1, -1), (1, 1)}
-    public static final VertexInputLayout.Attribute
-            POSITION = new VertexInputLayout.Attribute("Position", VertexAttribType.kFloat2, SLDataType.kFloat2);
-    /**
      * Per-instance attributes.
      */
     // per-multiplied color
@@ -59,15 +53,12 @@ public class SDFRoundRectStep extends GeometryStep {
     public static final VertexInputLayout.Attribute
             MODEL_VIEW = new VertexInputLayout.Attribute("ModelView", VertexAttribType.kFloat3, SLDataType.kFloat3x3);
 
-    public static final VertexInputLayout.AttributeSet VERTEX_ATTRIBS =
-            VertexInputLayout.AttributeSet.makeImplicit(VertexInputLayout.INPUT_RATE_VERTEX,
-                    POSITION);
     public static final VertexInputLayout.AttributeSet INSTANCE_ATTRIBS =
             VertexInputLayout.AttributeSet.makeImplicit(VertexInputLayout.INPUT_RATE_INSTANCE,
                     COLOR, LOCAL_RECT, RADII, MODEL_VIEW);
 
     public SDFRoundRectStep() {
-        super(RoundRect_GeoProc_ClassID, VERTEX_ATTRIBS, INSTANCE_ATTRIBS,
+        super(RoundRect_GeoProc_ClassID, null, INSTANCE_ATTRIBS,
                 FLAG_PERFORM_SHADING | FLAG_EMIT_COVERAGE | FLAG_OUTSET_BOUNDS_FOR_AA);
     }
 
@@ -94,20 +85,25 @@ public class SDFRoundRectStep extends GeometryStep {
 
     @Override
     public void emitVaryings(VaryingHandler varyingHandler) {
+        // the local coords, center point is (0,0)
         varyingHandler.addVarying("f_RectEdge", SLDataType.kFloat2);
+        // half width, half height, corner radius and stroke radius
         varyingHandler.addVarying("f_SizeAndRadii", SLDataType.kFloat4,
                 VaryingHandler.kCanBeFlat_Interpolation);
+        // solid color
         varyingHandler.addVarying("f_Color", SLDataType.kFloat4,
                 VaryingHandler.kCanBeFlat_Interpolation);
     }
 
     @Override
     public void emitVertexGeomCode(Formatter vs, boolean needsLocalCoords) {
+        // {(-1,-1), (-1, 1), (1, -1), (1, 1)}
+        vs.format("vec2 position = vec2(gl_VertexID >> 1, gl_VertexID & 1) * 2.0 - 1.0;");
         // add stroke radius and a full pixel bloat
         vs.format("""
-                vec2 rectEdge = (%s.xz + %s.y + 1.0) * %s;
+                vec2 rectEdge = (%s.xz + %s.y + 2.0) * position;
                 %s = rectEdge;
-                """, LOCAL_RECT.name(), RADII.name(), POSITION.name(), "f_RectEdge");
+                """, LOCAL_RECT.name(), RADII.name(), "f_RectEdge");
 
         // setup pass through color
         vs.format("%s = %s;\n", "f_Color", COLOR.name());
@@ -164,7 +160,7 @@ public class SDFRoundRectStep extends GeometryStep {
     }
 
     @Override
-    public void writeVertices(MeshDrawWriter writer, DrawOp op, float[] solidColor) {
+    public void writeVertices(MeshDrawWriter writer, Draw op, float[] solidColor) {
         writer.beginInstances(null, null, 4);
         ByteBuffer instanceData = writer.append(1);
         instanceData.putFloat(solidColor[0]);
