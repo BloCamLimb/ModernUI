@@ -97,7 +97,7 @@ public final class RecordingContext extends Context {
     }
 
     @Override
-    protected boolean init() {
+    public boolean init() {
         if (!super.init()) {
             return false;
         }

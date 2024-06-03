@@ -19,8 +19,7 @@
 
 package icyllis.arc3d.test;
 
-import icyllis.arc3d.core.MathUtil;
-import icyllis.arc3d.core.Matrix;
+import icyllis.arc3d.core.*;
 
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
@@ -67,6 +66,15 @@ public class TestMatrix {
         log(pw, m -> m.set(m1));
 
         print5x4Mul(pw, "lhs", "rhs");
+
+        Matrix4 m4 = new Matrix4();
+        m4.setPerspective(MathUtil.PI_O_2, 1, 0.01f, 2000f);
+        Vector3 v4 = new Vector3();
+        v4.x = 2;
+        v4.y = 2;
+        v4.z = 10000;
+        m4.preTransform(v4);
+        pw.println(v4);
     }
 
     public static void log(PrintWriter pw, Consumer<Matrix> c) {

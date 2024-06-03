@@ -44,10 +44,6 @@ public final class GLDevice extends Device {
     private final GLCaps mCaps;
     private final GLInterface mGLInterface;
 
-    private final GLCommandBuffer mMainCmdBuffer;
-
-    private final CpuBufferPool mCpuBufferPool;
-
     /*private final GpuBufferPool mVertexPool;
     private final GpuBufferPool mInstancePool;
     private final GpuBufferPool mIndexPool;*/
@@ -171,8 +167,6 @@ public final class GLDevice extends Device {
         super(BackendApi.kOpenGL, options, caps);
         mCaps = caps;
         mGLInterface = glInterface;
-        mMainCmdBuffer = new GLCommandBuffer(this);
-        mCpuBufferPool = new CpuBufferPool(6);
         mExecutingThread = Thread.currentThread();
 
         int maxTextureUnits = caps.shaderCaps().mMaxFragmentSamplers;
@@ -258,9 +252,7 @@ public final class GLDevice extends Device {
         /*mVertexPool.reset();
         mInstancePool.reset();
         mIndexPool.reset();*/
-        mCpuBufferPool.releaseAll();
 
-        mMainCmdBuffer.resetStates(~0);
 
         if (cleanup) {
             //mPipelineCache.release();
@@ -280,20 +272,9 @@ public final class GLDevice extends Device {
         super.handleDirtyContext(state);
     }
 
-    public GLCommandBuffer currentCommandBuffer() {
-        return mMainCmdBuffer;
-    }
-
     @Override
     public GLResourceProvider makeResourceProvider(Context context) {
         return new GLResourceProvider(this, context);
-    }
-
-    /**
-     * As staging buffers.
-     */
-    public CpuBufferPool getCpuBufferPool() {
-        return mCpuBufferPool;
     }
 
     @Override
@@ -313,7 +294,7 @@ public final class GLDevice extends Device {
 
     @Override
     protected void onResetContext(int resetBits) {
-        currentCommandBuffer().resetStates(resetBits);
+        //currentCommandBuffer().resetStates(resetBits);
 
         // we assume these values
         if ((resetBits & GLBackendState.kPixelStore) != 0) {
@@ -506,126 +487,7 @@ public final class GLDevice extends Device {
                                                    @Nullable int[] mipLevels,
                                                    @Nullable Image depthStencilTarget,
                                                    int surfaceFlags) {
-        var gl = getGL();
-        // There's an NVIDIA driver bug that creating framebuffer via DSA with attachments of
-        // different dimensions will report GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT.
-        // The workaround is to use traditional glGen* and glBind* (validate).
-        // see https://forums.developer.nvidia.com/t/framebuffer-incomplete-when-attaching-color-buffers-of-different-sizes-with-dsa/211550
-        final int renderFramebuffer = gl.glGenFramebuffers();
-        if (renderFramebuffer == 0) {
-            return null;
-        }
-
-        int usedColorTargets = 0;
-        if (colorTargets != null) {
-            for (int i = 0; i < numColorTargets; i++) {
-                usedColorTargets += colorTargets[i] != null ? 1 : 0;
-            }
-        }
-        int usedResolveTargets = 0;
-        if (resolveTargets != null) {
-            for (int i = 0; i < numColorTargets; i++) {
-                usedResolveTargets += resolveTargets[i] != null ? 1 : 0;
-            }
-        }
-
-        // If we are using multisampling we will create two FBOs. We render to one and then resolve to
-        // the texture bound to the other.
-        final int resolveFramebuffer;
-        if (usedResolveTargets > 0) {
-            resolveFramebuffer = gl.glGenFramebuffers();
-            if (resolveFramebuffer == 0) {
-                gl.glDeleteFramebuffers(renderFramebuffer);
-                return null;
-            }
-        } else {
-            resolveFramebuffer = renderFramebuffer;
-        }
-
-        GLTexture[] glColorTargets = usedColorTargets > 0
-                ? new GLTexture[numColorTargets] : null;
-        GLTexture[] glResolveTargets = usedResolveTargets > 0
-                ? new GLTexture[numColorTargets] : null;
-        GLTexture glDepthStencilTarget = (GLTexture) depthStencilTarget;
-
-        currentCommandBuffer().bindFramebuffer(renderFramebuffer);
-        if (usedColorTargets > 0) {
-            int[] drawBuffers = new int[numColorTargets];
-            for (int index = 0; index < numColorTargets; index++) {
-                GLTexture colorTarget = (GLTexture) colorTargets[index];
-                if (colorTarget == null) {
-                    // unused slot
-                    drawBuffers[index] = GL_NONE;
-                    continue;
-                }
-                glColorTargets[index] = colorTarget;
-                attachColorAttachment(index,
-                        colorTarget,
-                        mipLevels == null ? 0 : mipLevels[index]);
-                drawBuffers[index] = GL_COLOR_ATTACHMENT0 + index;
-            }
-            glDrawBuffers(drawBuffers);
-        }
-        if (glDepthStencilTarget != null) {
-            //TODO renderbuffer?
-            glFramebufferRenderbuffer(GL_FRAMEBUFFER,
-                    GL_STENCIL_ATTACHMENT,
-                    GL_RENDERBUFFER,
-                    glDepthStencilTarget.getHandle());
-            if (GLUtil.glFormatIsPackedDepthStencil(glDepthStencilTarget.getGLFormat())) {
-                glFramebufferRenderbuffer(GL_FRAMEBUFFER,
-                        GL_DEPTH_STENCIL_ATTACHMENT,
-                        GL_RENDERBUFFER,
-                        glDepthStencilTarget.getHandle());
-            }
-        }
-        if (!mCaps.skipErrorChecks()) {
-            int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-            if (status != GL_FRAMEBUFFER_COMPLETE) {
-                gl.glDeleteFramebuffers(renderFramebuffer);
-                gl.glDeleteFramebuffers(resolveFramebuffer);
-                return null;
-            }
-        }
-
-        if (usedResolveTargets > 0) {
-            currentCommandBuffer().bindFramebuffer(resolveFramebuffer);
-            int[] drawBuffers = new int[numColorTargets];
-            for (int index = 0; index < numColorTargets; index++) {
-                GLTexture resolveTarget = (GLTexture) resolveTargets[index];
-                if (resolveTarget == null) {
-                    // unused slot
-                    drawBuffers[index] = GL_NONE;
-                    continue;
-                }
-                glResolveTargets[index] = resolveTarget;
-                attachColorAttachment(index,
-                        resolveTarget,
-                        mipLevels == null ? 0 : mipLevels[index]);
-                drawBuffers[index] = GL_COLOR_ATTACHMENT0 + index;
-            }
-            glDrawBuffers(drawBuffers);
-            if (!mCaps.skipErrorChecks()) {
-                int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-                if (status != GL_FRAMEBUFFER_COMPLETE) {
-                    gl.glDeleteFramebuffers(renderFramebuffer);
-                    gl.glDeleteFramebuffers(resolveFramebuffer);
-                    return null;
-                }
-            }
-        }
-
-        return new GLRenderTarget(null,
-                width,
-                height,
-                sampleCount,
-                renderFramebuffer,
-                resolveFramebuffer,
-                numColorTargets,
-                glColorTargets,
-                glResolveTargets,
-                glDepthStencilTarget,
-                surfaceFlags);
+        return null;
     }
 
     @Nullable
@@ -739,7 +601,7 @@ public final class GLDevice extends Device {
             return false;
         }
         GLTexture glTexture = (GLTexture) image;
-        int glFormat = glTexture.getGLFormat();
+        int glFormat = glTexture.getFormat();
         assert (mCaps.isFormatTexturable(glFormat));
 
         int target = glTexture.getTarget();
@@ -864,8 +726,8 @@ public final class GLDevice extends Device {
                     src.asImage() instanceof GLTexture srcImage &&
                     dst.asImage() instanceof GLTexture dstImage &&
                     mCaps.canCopyImage(
-                            srcImage.getGLFormat(), 1,
-                            dstImage.getGLFormat(), 1
+                            srcImage.getFormat(), 1,
+                            dstImage.getFormat(), 1
                     )) {
                 //TODO checks
                 glCopyImageSubData(
@@ -885,8 +747,8 @@ public final class GLDevice extends Device {
             if (src.asImage() instanceof GLTexture srcTex &&
                     dst.asImage() instanceof GLTexture dstTex &&
                     mCaps.canCopyTexSubImage(
-                            srcTex.getGLFormat(),
-                            dstTex.getGLFormat()
+                            srcTex.getFormat(),
+                            dstTex.getFormat()
                     )) {
 
                 int dstTexName = dstTex.getHandle();
@@ -958,75 +820,11 @@ public final class GLDevice extends Device {
         return null;
     }
 
-    public GLCommandBuffer beginRenderPass(GLRenderTarget fs,
-                                           byte colorOps,
-                                           byte stencilOps,
-                                           float[] clearColor) {
-        handleDirtyContext(GLBackendState.kRenderTarget);
-
-        GLCommandBuffer cmdBuffer = currentCommandBuffer();
-
-        boolean colorLoadClear = LoadStoreOps.loadOp(colorOps) == LoadOp.Clear;
-        boolean stencilLoadClear = LoadStoreOps.loadOp(stencilOps) == LoadOp.Clear;
-        if (colorLoadClear || stencilLoadClear) {
-            int framebuffer = fs.getRenderFramebuffer();
-            cmdBuffer.flushScissorTest(false);
-            if (colorLoadClear) {
-                cmdBuffer.flushColorWrite(true);
-                glClearNamedFramebufferfv(framebuffer,
-                        GL_COLOR,
-                        0,
-                        clearColor);
-            }
-            if (stencilLoadClear) {
-                glStencilMask(0xFFFFFFFF); // stencil will be flushed later
-                glClearNamedFramebufferfi(framebuffer,
-                        GL_DEPTH_STENCIL,
-                        0,
-                        1.0f, 0);
-            }
-        }
-        cmdBuffer.flushRenderTarget(fs);
-
-        return cmdBuffer;
-    }
-
-    public void endRenderPass(GLRenderTarget fs,
-                              byte colorOps,
-                              byte stencilOps) {
-        handleDirtyContext(GLBackendState.kRenderTarget);
-
-        boolean colorStoreDiscard = LoadStoreOps.storeOp(colorOps) == StoreOp.DontCare;
-        boolean stencilStoreDiscard = LoadStoreOps.storeOp(stencilOps) == StoreOp.DontCare;
-        if (colorStoreDiscard || stencilStoreDiscard) {
-            int framebuffer = fs.getRenderFramebuffer();
-            try (MemoryStack stack = MemoryStack.stackPush()) {
-                final long pAttachments = stack.nmalloc(4, 8);
-                int numAttachments = 0;
-                if (colorStoreDiscard) {
-                    int attachment = fs.getRenderFramebuffer() == 0
-                            ? GL_COLOR
-                            : GL_COLOR_ATTACHMENT0;
-                    memPutInt(pAttachments, attachment);
-                    numAttachments++;
-                }
-                if (stencilStoreDiscard) {
-                    int attachment = fs.getRenderFramebuffer() == 0
-                            ? GL_STENCIL
-                            : GL_STENCIL_ATTACHMENT;
-                    memPutInt(pAttachments + (numAttachments << 2), attachment);
-                    numAttachments++;
-                }
-                nglInvalidateNamedFramebufferData(framebuffer, numAttachments, pAttachments);
-            }
-        }
-    }
-
     @Override
     protected void onResolveRenderTarget(GpuRenderTarget renderTarget,
                                          int resolveLeft, int resolveTop,
                                          int resolveRight, int resolveBottom) {
-        GLRenderTarget glRenderTarget = (GLRenderTarget) renderTarget;
+        /*GLRenderTarget glRenderTarget = (GLRenderTarget) renderTarget;
         //TODO handle non-DSA case
         //handleDirtyContext();
 
@@ -1041,7 +839,7 @@ public final class GLDevice extends Device {
         glBlitNamedFramebuffer(renderFramebuffer, resolveFramebuffer, // MSAA to single
                 resolveLeft, resolveTop, resolveRight, resolveBottom, // src rect
                 resolveLeft, resolveTop, resolveRight, resolveBottom, // dst rect
-                GL_COLOR_BUFFER_BIT, GL_NEAREST);
+                GL_COLOR_BUFFER_BIT, GL_NEAREST);*/
     }
 
     private void flush(boolean forceFlush) {
@@ -1125,7 +923,7 @@ public final class GLDevice extends Device {
         int type = bufferUsageToType(buffer.getUsage());
         if (type == BUFFER_TYPE_INDEX) {
             // Index buffer state is tied to the vertex array.
-            currentCommandBuffer().bindVertexArray(null);
+            //currentCommandBuffer().bindVertexArray(null);
         }
 
         var bufferState = mHWBufferStates[type];
@@ -1165,7 +963,7 @@ public final class GLDevice extends Device {
         int type = bufferUsageToType(usage);
         if (type == BUFFER_TYPE_INDEX) {
             // Index buffer state is tied to the vertex array.
-            currentCommandBuffer().bindVertexArray(null);
+            //currentCommandBuffer().bindVertexArray(null);
         }
 
         var bufferState = mHWBufferStates[type];

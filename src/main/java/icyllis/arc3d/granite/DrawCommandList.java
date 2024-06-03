@@ -20,7 +20,7 @@
 package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.Rect2ic;
-import icyllis.arc3d.engine.BufferViewInfo;
+import icyllis.arc3d.engine.*;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 import java.io.PrintWriter;
@@ -144,6 +144,58 @@ public class DrawCommandList {
         mPrimitives.flip();
     }
 
+    public boolean execute(CommandBuffer commandBuffer) {
+        var p = mPrimitives;
+        var oa = mPointers.elements();
+        int oi = 0;
+        while (p.hasRemaining()) {
+            switch (p.getInt()) {
+                case DrawCommandList.CMD_BIND_GRAPHICS_PIPELINE -> {
+                    p.getInt();
+                }
+                case DrawCommandList.CMD_DRAW -> {
+                    int vertexCount = p.getInt();
+                    int baseVertex = p.getInt();
+                    commandBuffer.draw(vertexCount, baseVertex);
+                }
+                case DrawCommandList.CMD_DRAW_INDEXED -> {
+                    int indexCount = p.getInt();
+                    int baseIndex = p.getInt();
+                    int baseVertex = p.getInt();
+                    commandBuffer.drawIndexed(indexCount, baseIndex, baseVertex);
+                }
+                case DrawCommandList.CMD_DRAW_INSTANCED -> {
+                    int instanceCount = p.getInt();
+                    int baseInstance = p.getInt();
+                    int vertexCount = p.getInt();
+                    int baseVertex = p.getInt();
+                    commandBuffer.drawInstanced(instanceCount, baseInstance, vertexCount, baseVertex);
+                }
+                case DrawCommandList.CMD_DRAW_INDEXED_INSTANCED -> {
+                    int indexCount = p.getInt();
+                    int baseIndex = p.getInt();
+                    int instanceCount = p.getInt();
+                    int baseInstance = p.getInt();
+                    int baseVertex = p.getInt();
+                    commandBuffer.drawIndexedInstanced(indexCount, baseIndex, instanceCount, baseInstance, baseVertex);
+                }
+                case DrawCommandList.CMD_BIND_INDEX_BUFFER -> {
+                    int indexType = p.getInt();
+                    long offset = p.getLong();
+                    commandBuffer.bindIndexBuffer(indexType, (Buffer) oa[oi++], offset);
+                }
+                case DrawCommandList.CMD_BIND_VERTEX_BUFFER -> {
+                    int binding = p.getInt();
+                    long offset = p.getLong();
+                    commandBuffer.bindVertexBuffer(binding, (Buffer) oa[oi++], offset);
+                }
+            }
+        }
+        p.rewind();
+        //TODO track resources
+        return true;
+    }
+
     public void debug(PrintWriter pw) {
         var p = mPrimitives;
         var oa = mPointers.elements();
@@ -199,5 +251,6 @@ public class DrawCommandList {
                 }
             }
         }
+        p.rewind();
     }
 }

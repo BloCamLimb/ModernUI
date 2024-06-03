@@ -75,10 +75,10 @@ public final class GLOpsRenderPass extends OpsRenderPass {
     public void begin() {
         super.begin();
         GLRenderTarget glRenderTarget = (GLRenderTarget) mRenderTarget;
-        mCmdBuffer = mDevice.beginRenderPass(glRenderTarget,
+        /*mCmdBuffer = mDevice.beginRenderPass(glRenderTarget,
                 mColorOps,
                 mStencilOps,
-                mClearColor);
+                mClearColor);*/
     }
 
     @Override
@@ -87,9 +87,9 @@ public final class GLOpsRenderPass extends OpsRenderPass {
         mActiveVertexBuffer = RefCnt.move(mActiveVertexBuffer);
         mActiveInstanceBuffer = RefCnt.move(mActiveInstanceBuffer);
         GLRenderTarget glRenderTarget = (GLRenderTarget) mRenderTarget;
-        mDevice.endRenderPass(glRenderTarget,
+        /*mDevice.endRenderPass(glRenderTarget,
                 mColorOps,
-                mStencilOps);
+                mStencilOps);*/
         super.end();
     }
 

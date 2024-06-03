@@ -588,7 +588,7 @@ public class PathStroker implements PathConsumer {
     // 12,13 RAY POINT
     // 14,15 RAY TANGENT
     private void quad_perpendicular_ray(float[] quad, float t) {
-        Geometry.evalQuadAt(
+        GeometryUtils.evalQuadAt(
                 quad, 0,
                 t, quad, /*pos*/ 8, quad, /*tangent*/ 8+2
         );
@@ -606,7 +606,7 @@ public class PathStroker implements PathConsumer {
     // 12,13 RAY POINT
     // 14,15 RAY TANGENT
     private void cubic_perpendicular_ray(float[] cubic, float t) {
-        Geometry.evalCubicAt(
+        GeometryUtils.evalCubicAt(
                 cubic, 0,
                 t, cubic, /*pos*/ 8, cubic, /*tangent*/ 8+2
         );
@@ -623,7 +623,7 @@ public class PathStroker implements PathConsumer {
             } else {
                 // If the cubic inflection falls on the cusp, subdivide the cubic
                 // to find the tangent at that point.
-                Geometry.chopCubicAt(
+                GeometryUtils.chopCubicAt(
                         cubic, 0,
                         cubic, 8+4,
                         t
@@ -779,7 +779,7 @@ public class PathStroker implements PathConsumer {
             float[] v
     ) {
         // measure the distance from the curve to the quad-stroke midpoint, compare to radius
-        Geometry.evalQuadAt(
+        GeometryUtils.evalQuadAt(
                 pp.q0x, pp.q0y, pp.q1x, pp.q1y, pp.q2x, pp.q2y,
                 0.5f, v, 8
         );
@@ -828,7 +828,7 @@ public class PathStroker implements PathConsumer {
             float C = (pp.q0y - ray0y) * dx - (pp.q0x - ray0x) * dy;
             A += C - 2 * B; // A = a - 2*b + c
             B -= C;         // B = -(b - c)
-            nRoots = Geometry.findUnitQuadRoots(A, 2 * B, C, v, 8);
+            nRoots = GeometryUtils.findUnitQuadRoots(A, 2 * B, C, v, 8);
         }
         if (nRoots != 1) {
             if (DEBUG) {
@@ -837,7 +837,7 @@ public class PathStroker implements PathConsumer {
             return INTERSECT_SUBDIVIDE;
         }
         float t = v[8];
-        Geometry.evalQuadAt(
+        GeometryUtils.evalQuadAt(
                 pp.q0x, pp.q0y, pp.q1x, pp.q1y, pp.q2x, pp.q2y,
                 t, v, 8
         );
@@ -929,7 +929,7 @@ public class PathStroker implements PathConsumer {
 
         float[] quad = getQuad(x1, y1, x2, y2);
         if (quad_in_line(quad)) {
-            float t = Geometry.findQuadMaxCurvature(
+            float t = GeometryUtils.findQuadMaxCurvature(
                     quad, 0
             );
             if (t <= 0 || t >= 1) {
@@ -937,7 +937,7 @@ public class PathStroker implements PathConsumer {
                 lineTo(x2, y2);
                 return;
             }
-            Geometry.evalQuadAt(
+            GeometryUtils.evalQuadAt(
                     quad, 0,
                     quad, 8,
                     t
@@ -1075,7 +1075,7 @@ public class PathStroker implements PathConsumer {
             // degenerate into 1 to 4 lines, round join if > 1
             // 8,9,10 for t-values
             // (12,13) for evalCubicAt
-            int count = Geometry.findCubicMaxCurvature(
+            int count = GeometryUtils.findCubicMaxCurvature(
                     cubic, 0,
                     cubic, 8
             );
@@ -1087,7 +1087,7 @@ public class PathStroker implements PathConsumer {
                 if (t <= 0 || t >= 1) {
                     continue;
                 }
-                Geometry.evalCubicAt(
+                GeometryUtils.evalCubicAt(
                         cubic, 0,
                         cubic, 12,
                         t
@@ -1120,7 +1120,7 @@ public class PathStroker implements PathConsumer {
             tangentY = y1;
         }
         if (preJoinTo(tangentX, tangentY, false)) {
-            int infCount = Geometry.findCubicInflectionPoints(
+            int infCount = GeometryUtils.findCubicInflectionPoints(
                     cubic, 0,
                     cubic, 8
             );
@@ -1149,7 +1149,7 @@ public class PathStroker implements PathConsumer {
                 assert mRecursionDepth == 0;
                 lastT = nextT;
             }
-            float cusp = Geometry.findCubicCusp(
+            float cusp = GeometryUtils.findCubicCusp(
                     cubic, 0
             );
             if (cusp > 0) {

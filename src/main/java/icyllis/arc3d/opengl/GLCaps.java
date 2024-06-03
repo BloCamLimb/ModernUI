@@ -1279,10 +1279,10 @@ public class GLCaps extends Caps {
 
     @Nonnull
     @Override
-    public PipelineKey makeGraphicsPipelineKey(PipelineKey key,
+    public PipelineKey makeGraphicsPipelineKey(PipelineKey old,
                                                PipelineDesc pipelineDesc,
                                                RenderPassDesc renderPassDesc) {
-        if (key instanceof GLGraphicsPipelineKey pipelineKey) {
+        if (old instanceof GLGraphicsPipelineKey pipelineKey) {
             pipelineKey.mPipelineDesc = pipelineDesc;
             return pipelineKey;
         } else {

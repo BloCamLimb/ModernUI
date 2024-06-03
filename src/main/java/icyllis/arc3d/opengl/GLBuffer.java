@@ -43,6 +43,8 @@ public final class GLBuffer extends Buffer {
     private long mCachedBuffer;
     private long mCachedBufferSize;
 
+    // No persistent mapping support. Most write operations are done on non OpenGL threads
+    // then we just use client array as staging buffer.
     private final boolean mClientUploadBuffer;
 
     private GLBuffer(Context context,
@@ -99,6 +101,7 @@ public final class GLBuffer extends Buffer {
     }
 
     // OpenGL thread
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     private boolean initialize() {
         if (mClientUploadBuffer) {
             return true;
@@ -263,6 +266,7 @@ public final class GLBuffer extends Buffer {
             return GL_PIXEL_PACK_BUFFER;
         } else {
             // use ARRAY_BUFFER for kVertex, kIndex, kUpload
+            // this is because GL_ELEMENT_ARRAY_BUFFER will be associated with the current VAO
             return GL_ARRAY_BUFFER;
         }
     }
@@ -405,7 +409,7 @@ public final class GLBuffer extends Buffer {
                     int target = dev.getCaps().hasDSASupport()
                             ? 0
                             : getTarget();
-                    // we already do synchronization
+                    // we already do synchronization, so no buffer orphaning or invalidation
                     doUploadData(dev, mBuffer, target, mCachedBuffer, offset, size);
                 }
                 // else some allocation failed

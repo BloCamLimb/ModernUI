@@ -37,6 +37,7 @@ public abstract class VulkanCommandBuffer extends CommandBuffer {
         mCommandBuffer = new VkCommandBuffer(handle, device);
     }
 
+    @Override
     public void begin() {
         try (var stack = MemoryStack.stackPush()) {
             var beginInfo = VkCommandBufferBeginInfo.malloc(stack)
@@ -48,6 +49,7 @@ public abstract class VulkanCommandBuffer extends CommandBuffer {
         }
     }
 
+    @Override
     public void end() {
         vkEndCommandBuffer(mCommandBuffer);
     }

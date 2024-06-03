@@ -20,6 +20,7 @@
 package icyllis.arc3d.core.image;
 
 import icyllis.arc3d.core.*;
+import icyllis.arc3d.engine.Context;
 import icyllis.arc3d.engine.RecordingContext;
 
 import javax.annotation.Nonnull;
@@ -47,7 +48,7 @@ public class RasterImage extends Image {
     }
 
     @Override
-    public boolean isValid(@Nullable RecordingContext context) {
+    public boolean isValid(@Nullable Context context) {
         return true;
     }
 

@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.test;
 
-import icyllis.arc3d.core.Geometry;
+import icyllis.arc3d.core.GeometryUtils;
 import icyllis.arc3d.core.MathUtil;
 
 import java.util.Arrays;
@@ -34,12 +34,12 @@ public class TestConicToQuads {
         float y1 = 0;
         float x2 = radius;
         float y2 = radius;
-        int level = Geometry.computeConicToQuadsLevel(
+        int level = GeometryUtils.computeConicToQuadsLevel(
                 x0, y0, x1, y1, x2, y2, MathUtil.INV_SQRT2, 0.25f
         );
         System.out.println("Level: " + level);
         float[] dst = new float[4 * (1 << level) + 2];
-        int quads = Geometry.computeConicToQuads(
+        int quads = GeometryUtils.computeConicToQuads(
                 x0, y0, x1, y1, x2, y2, MathUtil.INV_SQRT2, dst, 0, level
         );
         System.out.println("Quads: " + quads);
@@ -52,10 +52,10 @@ public class TestConicToQuads {
         float low = 1, high = 6000;
         while (low <= high) {
             float mid = (low + high) * 0.5f;
-            int level = Geometry.computeConicToQuadsLevel(
+            int level = GeometryUtils.computeConicToQuadsLevel(
                     0, 0, mid, 0, mid, mid, MathUtil.INV_SQRT2, 1
             );
-            if (level < Geometry.MAX_CONIC_TO_QUADS_LEVEL)
+            if (level < GeometryUtils.MAX_CONIC_TO_QUADS_LEVEL)
                 low = mid + Math.ulp(mid);
             else
                 high = mid - Math.ulp(mid);

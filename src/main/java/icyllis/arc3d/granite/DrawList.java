@@ -23,10 +23,10 @@ import icyllis.arc3d.core.Matrix4;
 
 import java.util.ArrayList;
 
-public class DrawOpList {
+public class DrawList {
 
     private final ArrayList<Matrix4> mTransforms = new ArrayList<>();
-    final ArrayList<DrawOp> mDrawOps = new ArrayList<>();
+    final ArrayList<Draw> mDraws = new ArrayList<>();
     private int mNumSteps;
 
     private Matrix4 getStableTransform(Matrix4 modelView) {
@@ -39,10 +39,10 @@ public class DrawOpList {
         return last;
     }
 
-    public void recordDrawOp(DrawOp draw) {
+    public void recordDrawOp(Draw draw) {
         draw.mTransform = getStableTransform(draw.mTransform);
 
-        mDrawOps.add(draw);
+        mDraws.add(draw);
 
         mNumSteps += draw.mRenderer.numSteps();
     }

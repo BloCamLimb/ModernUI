@@ -19,15 +19,10 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.opengl.GLDevice;
 import icyllis.arc3d.vulkan.VkBackendContext;
 import org.jetbrains.annotations.ApiStatus;
-import org.lwjgl.opengl.GL;
-import org.lwjgl.opengl.GLCapabilities;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Objects;
 
 /**
  * Immediate context is used for command list execution and queue submission.
@@ -35,87 +30,15 @@ import java.util.Objects;
  */
 public final class ImmediateContext extends Context {
 
-    private ImmediateContext(Device device) {
+    private QueueManager mQueueManager;
+
+    /**
+     * Use backend utility class to create context.
+     */
+    @ApiStatus.Internal
+    public ImmediateContext(Device device, QueueManager queueManager) {
         super(device);
-    }
-
-    /**
-     * Creates a DirectContext for a backend context, using default context options.
-     *
-     * @return context or null if failed to create
-     * @see #makeOpenGL(ContextOptions)
-     */
-    @Nullable
-    public static ImmediateContext makeOpenGL() {
-        return makeOpenGL(new ContextOptions());
-    }
-
-    @Nullable
-    public static ImmediateContext makeOpenGL(@Nonnull ContextOptions options) {
-        GLCapabilities capabilities;
-        try {
-            capabilities = Objects.requireNonNullElseGet(
-                    GL.getCapabilities(),
-                    GL::createCapabilities
-            );
-        } catch (Exception x) {
-            try {
-                capabilities = GL.createCapabilities();
-            } catch (Exception e) {
-                return null;
-            }
-        }
-        return makeOpenGL(capabilities, options);
-    }
-
-    /**
-     * Creates a DirectContext for a backend context, using specified context options.
-     * <p>
-     * Example with GLFW:
-     * <pre>{@code
-     *  public static void main(String[] args) {
-     *      System.setProperty("java.awt.headless", Boolean.TRUE.toString());
-     *      if (!glfwInit()) {
-     *          throw new IllegalStateException();
-     *      }
-     *      // default hints use highest OpenGL version and native API
-     *      glfwDefaultWindowHints();
-     *      long window = glfwCreateWindow(1280, 720, "Example Window", NULL, NULL);
-     *      if (window == NULL) {
-     *          throw new IllegalStateException();
-     *      }
-     *      // you can make a thread a render thread
-     *      glfwMakeContextCurrent(window);
-     *      DirectContext direct = DirectContext.makeOpenGL(
-     *          GL.createCapabilities()
-     *      );
-     *      if (direct == null) {
-     *          throw new IllegalStateException();
-     *      }
-     *      ...
-     *      // destroy and close
-     *      direct.discard();
-     *      direct.unref();
-     *      GL.setCapabilities(null);
-     *      glfwDestroyWindow(window);
-     *      glfwTerminate();
-     *  }
-     * }</pre>
-     *
-     * @return context or null if failed to create
-     */
-    @Nullable
-    public static ImmediateContext makeOpenGL(@Nonnull Object capabilities, @Nonnull ContextOptions options) {
-        var device = GLDevice.make(options, capabilities);
-        if (device == null) {
-            return null;
-        }
-        ImmediateContext context = new ImmediateContext(device);
-        if (context.init()) {
-            return context;
-        }
-        context.unref();
-        return null;
+        mQueueManager = queueManager;
     }
 
     /**
@@ -181,6 +104,19 @@ public final class ImmediateContext extends Context {
         return false;
     }
 
+    @ApiStatus.Internal
+    public QueueManager getQueueManager() {
+        return mQueueManager;
+    }
+
+    @ApiStatus.Internal
+    public CommandBuffer currentCommandBuffer() {
+        if (mQueueManager.prepareCommandBuffer(mResourceProvider)) {
+            return mQueueManager.mCurrentCommandBuffer;
+        }
+        return null;
+    }
+
     public boolean isDeviceLost() {
         if (mDevice != null && mDevice.isDeviceLost()) {
             //discard();
@@ -190,7 +126,7 @@ public final class ImmediateContext extends Context {
     }
 
     @Override
-    protected boolean init() {
+    public boolean init() {
         assert isOwnerThread();
         if (mDevice == null) {
             return false;
@@ -200,6 +136,7 @@ public final class ImmediateContext extends Context {
         if (!super.init()) {
             return false;
         }
+        mQueueManager.mContext = this;
 
         //assert getThreadSafeCache() != null;
 

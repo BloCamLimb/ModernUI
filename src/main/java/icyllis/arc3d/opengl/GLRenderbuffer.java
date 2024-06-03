@@ -183,7 +183,11 @@ public final class GLRenderbuffer extends GLImage {
         }
     }
 
-    public int getRenderbufferID() {
+    public int getFormat() {
+        return 0;
+    }
+
+    public int getHandle() {
         return mRenderbuffer;
     }
 

@@ -76,7 +76,7 @@ public class TestManagedResource {
 
         ContextOptions contextOptions = new ContextOptions();
         contextOptions.mLogger = LOGGER;
-        ImmediateContext dContext = ImmediateContext.makeOpenGL(
+        ImmediateContext dContext = GLUtil.makeOpenGL(
                 GL.createCapabilities(),
                 contextOptions
         );

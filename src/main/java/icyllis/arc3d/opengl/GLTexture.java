@@ -23,10 +23,8 @@ import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.*;
 import org.lwjgl.system.MemoryUtil;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import static icyllis.arc3d.engine.Engine.IOType;
 import static org.lwjgl.opengl.GL30C.*;
 
 /**
@@ -123,7 +121,7 @@ public final class GLTexture extends GLImage {
         return mDesc.mTarget;
     }
 
-    public int getGLFormat() {
+    public int getFormat() {
         return mDesc.mFormat;
     }
 

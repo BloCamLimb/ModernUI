@@ -26,7 +26,7 @@ import javax.annotation.Nullable;
 /**
  * Represents a recorded draw operation.
  */
-public final class DrawOp {
+public final class Draw {
     // reference to our renderer instance
     public GeometryRenderer mRenderer;
     // the copied view matrix

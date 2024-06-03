@@ -188,7 +188,7 @@ public final class ClipStack {
     //
     // The returned clip element list will be empty if the shape is clipped out or if the draw is
     // unaffected by any of the clip elements.
-    public boolean prepareForDraw(DrawOp draw,
+    public boolean prepareForDraw(Draw draw,
                                   Rect2f shapeBounds,
                                   boolean hasAABloat,
                                   List<Element> elementsForMask) {
@@ -357,7 +357,7 @@ public final class ClipStack {
         return false;
     }
 
-    public int updateForDraw(DrawOp draw,
+    public int updateForDraw(Draw draw,
                              List<Element> elementsForMask,
                              BoundsManager boundsManager,
                              int depth) {
@@ -892,7 +892,7 @@ public final class ClipStack {
                 long order = DrawOrder.makeFromDepthAndPaintersOrder(
                         mMaxDepth + 1, mPaintersOrder
                 );
-                DrawOp draw = new DrawOp();
+                Draw draw = new Draw();
                 draw.mTransform = mViewMatrix.clone();
                 draw.mGeometry = new Rect2f(mShape);
                 draw.mDrawBounds = drawBounds;
