@@ -32,7 +32,7 @@ import static org.lwjgl.opengl.GL20C.glDrawBuffers;
 import static org.lwjgl.opengl.GL30C.*;
 import static org.lwjgl.opengl.GL32C.*;
 
-public final class GLFramebuffer extends Framebuffer {
+public final class GLFramebuffer extends Resource {
 
     private int mRenderFramebuffer;
     private int mResolveFramebuffer;
@@ -40,7 +40,7 @@ public final class GLFramebuffer extends Framebuffer {
     private GLFramebuffer(Context context,
                           int renderFramebuffer,
                           int resolveFramebuffer) {
-        super(context);
+        super(context, true, false, 0);
         mRenderFramebuffer = renderFramebuffer;
         mResolveFramebuffer = resolveFramebuffer;
     }

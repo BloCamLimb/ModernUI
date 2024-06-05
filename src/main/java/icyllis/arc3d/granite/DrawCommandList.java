@@ -53,6 +53,7 @@ public class DrawCommandList {
     public static final int CMD_BIND_INDEX_BUFFER = 5;
     public static final int CMD_BIND_VERTEX_BUFFER = 6;
     public static final int CMD_SET_SCISSOR = 7;
+    public static final int CMD_BIND_UNIFORM_BUFFER = 8;
 
     /**
      * The heap buffer that holds all primitive data.
@@ -138,6 +139,16 @@ public class DrawCommandList {
                 .putInt(scissor.top())
                 .putInt(scissor.right())
                 .putInt(scissor.bottom());
+    }
+
+    public final void bindUniformBuffer(int binding,
+                                        BufferViewInfo uniformBufferInfo) {
+        grow(mPrimitives.position() + 24);
+        mPrimitives.putInt(CMD_BIND_UNIFORM_BUFFER)
+                .putInt(binding)
+                .putLong(uniformBufferInfo.mOffset)
+                .putLong(uniformBufferInfo.mSize);
+        mPointers.add(uniformBufferInfo.mBuffer);
     }
 
     public final void finish() {

@@ -57,6 +57,10 @@ public class DrawPass {
 
         var dynamicBufferManager = rContext.getDynamicBufferManager();
 
+        if (dynamicBufferManager.hasMappingFailed()) {
+            return null;
+        }
+
 
         var commandList = new DrawCommandList();
 
@@ -226,6 +230,19 @@ public class DrawPass {
                     int binding = p.getInt();
                     long offset = p.getLong();
                     commandBuffer.bindVertexBuffer(binding, (Buffer) oa[oi++], offset);
+                }
+                case DrawCommandList.CMD_SET_SCISSOR -> {
+                    int left = p.getInt();
+                    int top = p.getInt();
+                    int right = p.getInt();
+                    int bottom = p.getInt();
+                    commandBuffer.setScissor(left,top,right,bottom);
+                }
+                case DrawCommandList.CMD_BIND_UNIFORM_BUFFER -> {
+                    int binding = p.getInt();
+                    long offset = p.getLong();
+                    long size = p.getLong();
+                    commandBuffer.bindUniformBuffer(binding, (Buffer) oa[oi++], offset, size);
                 }
             }
         }

@@ -146,6 +146,10 @@ public interface GLInterfaceCommon {
     void glBindBufferBase(@NativeType("GLenum") int target, @NativeType("GLuint") int index,
                           @NativeType("GLuint") int buffer);
 
+    void glBindBufferRange(@NativeType("GLenum") int target, @NativeType("GLuint") int index,
+                           @NativeType("GLuint") int buffer, @NativeType("GLintptr") long offset,
+                           @NativeType("GLsizeiptr") long size);
+
     @NativeType("void")
     int glGenRenderbuffers();
 

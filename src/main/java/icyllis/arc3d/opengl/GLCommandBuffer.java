@@ -425,6 +425,11 @@ public final class GLCommandBuffer extends CommandBuffer {
     }
 
     @Override
+    public void setScissor(int left, int top, int right, int bottom) {
+        //TODO
+    }
+
+    @Override
     public void bindIndexBuffer(int indexType, @RawPtr Buffer buffer, long offset) {
         assert (mGraphicsPipeline != null);
         mIndexType = switch (indexType) {
@@ -452,6 +457,14 @@ public final class GLCommandBuffer extends CommandBuffer {
             mActiveVertexBuffers[binding] = glBuffer;
             mActiveVertexOffsets[binding] = offset;
         }
+    }
+
+    @Override
+    public void bindUniformBuffer(int binding, @RawPtr Buffer buffer, long offset, long size) {
+        assert (mGraphicsPipeline != null);
+        GLBuffer glBuffer = (GLBuffer) buffer;
+        mDevice.getGL().glBindBufferRange(GL_UNIFORM_BUFFER, binding, glBuffer.getHandle(),
+                offset, size);
     }
 
     private long getIndexOffset(int baseIndex) {

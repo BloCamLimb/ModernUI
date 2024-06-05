@@ -487,6 +487,11 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
     }
 
     @Override
+    public void glBindBufferRange(int target, int index, int buffer, long offset, long size) {
+        GLES30.glBindBufferRange(target, index, buffer, offset, size);
+    }
+
+    @Override
     public int glGenRenderbuffers() {
         return GLES20.glGenRenderbuffers();
     }

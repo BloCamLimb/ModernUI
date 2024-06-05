@@ -1125,21 +1125,21 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      */
     public void store(long p) {
         MemoryUtil.memPutFloat(p, m11);
-        MemoryUtil.memPutFloat(p + 1, m12);
-        MemoryUtil.memPutFloat(p + 2, m13);
-        MemoryUtil.memPutFloat(p + 3, m14);
-        MemoryUtil.memPutFloat(p + 4, m21);
-        MemoryUtil.memPutFloat(p + 5, m22);
-        MemoryUtil.memPutFloat(p + 6, m23);
-        MemoryUtil.memPutFloat(p + 7, m24);
-        MemoryUtil.memPutFloat(p + 8, m31);
-        MemoryUtil.memPutFloat(p + 9, m32);
-        MemoryUtil.memPutFloat(p + 10, m33);
-        MemoryUtil.memPutFloat(p + 11, m34);
-        MemoryUtil.memPutFloat(p + 12, m41);
-        MemoryUtil.memPutFloat(p + 13, m42);
-        MemoryUtil.memPutFloat(p + 14, m43);
-        MemoryUtil.memPutFloat(p + 15, m44);
+        MemoryUtil.memPutFloat(p + 4, m12);
+        MemoryUtil.memPutFloat(p + 8, m13);
+        MemoryUtil.memPutFloat(p + 12, m14);
+        MemoryUtil.memPutFloat(p + 16, m21);
+        MemoryUtil.memPutFloat(p + 20, m22);
+        MemoryUtil.memPutFloat(p + 24, m23);
+        MemoryUtil.memPutFloat(p + 28, m24);
+        MemoryUtil.memPutFloat(p + 32, m31);
+        MemoryUtil.memPutFloat(p + 36, m32);
+        MemoryUtil.memPutFloat(p + 40, m33);
+        MemoryUtil.memPutFloat(p + 44, m34);
+        MemoryUtil.memPutFloat(p + 48, m41);
+        MemoryUtil.memPutFloat(p + 52, m42);
+        MemoryUtil.memPutFloat(p + 56, m43);
+        MemoryUtil.memPutFloat(p + 60, m44);
     }
 
     /**
