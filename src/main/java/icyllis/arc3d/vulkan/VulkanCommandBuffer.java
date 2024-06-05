@@ -96,6 +96,11 @@ public abstract class VulkanCommandBuffer extends CommandBuffer {
     }
 
     @Override
+    public void setScissor(int left, int top, int right, int bottom) {
+
+    }
+
+    @Override
     public void bindIndexBuffer(int indexType, Buffer buffer, long offset) {
         //vkCmdBindIndexBuffer();
     }
@@ -103,6 +108,11 @@ public abstract class VulkanCommandBuffer extends CommandBuffer {
     @Override
     public void bindVertexBuffer(int binding, Buffer buffer, long offset) {
         // record each binding here, and bindVertexBuffers() together
+    }
+
+    @Override
+    public void bindUniformBuffer(int binding, Buffer buffer, long offset, long size) {
+
     }
 
     public boolean isRecording() {

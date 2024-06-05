@@ -90,7 +90,7 @@ public class TestDrawPass {
         );
         commandList.bindGraphicsPipeline(0);
 
-        int nRects = 80;
+        int nRects = 1000;
         for (int i = 0; i < nRects; i++) {
             Draw draw = new Draw();
             RoundRect rrect = new RoundRect();
@@ -118,6 +118,8 @@ public class TestDrawPass {
         LOGGER.info("CommandList primitive size: {}", commandList.mPrimitives.limit());
         ObjectArrayList<Resource> resourceRefs = new ObjectArrayList<>();
         recordingContext.getDynamicBufferManager().flush(null, resourceRefs);
+
+        LOGGER.info(Swizzle.toString(Swizzle.concat(Swizzle.make("000r"), Swizzle.make("aaaa"))));
 
         LOGGER.info(resourceRefs.toString());
 
