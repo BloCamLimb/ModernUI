@@ -21,11 +21,12 @@ package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.*;
 import java.util.function.ToIntFunction;
 
 /**
@@ -35,29 +36,46 @@ import java.util.function.ToIntFunction;
  */
 public class DrawPass {
 
-    private final ArrayList<GraphicsPipelineDesc> mPipelineDescs;
+    //TODO move to somewhere else
+    public static final int GEOMETRY_UNIFORM_BINDING = 0;
+    public static final int FRAGMENT_UNIFORM_BINDING = 1;
 
-    private @SharedPtr GraphicsPipeline[] mGraphicsPipelines;
+    /**
+     * An invalid index for {@link UniformTracker}.
+     *
+     * @see DrawList#MAX_RENDER_STEPS
+     */
+    public static final int INVALID_INDEX = 1 << 16;
 
     private final DrawCommandList mCommandList;
 
-    private ImageProxy[] mSampledImages;
+    private final ArrayList<GraphicsPipelineDesc> mPipelineDescs;
+    private final IntArrayList mSamplerDescs;
+
+    private final ObjectArrayList<@SharedPtr ImageViewProxy> mSampledImages;
+
+    private @SharedPtr GraphicsPipeline[] mPipelines;
+    private @SharedPtr Sampler[] mSamplers;
 
     private DrawPass(DrawCommandList commandList,
-                     ArrayList<GraphicsPipelineDesc> pipelineDescs) {
+                     ArrayList<GraphicsPipelineDesc> pipelineDescs,
+                     ObjectArrayList<@SharedPtr ImageViewProxy> sampledImages,
+                     IntArrayList samplerDescs) {
         mCommandList = commandList;
         mPipelineDescs = pipelineDescs;
+        mSampledImages = sampledImages;
+        mSamplerDescs = samplerDescs;
     }
 
     public static DrawPass make(RecordingContext rContext,
                                 DrawList drawList,
-                                ImageProxy colorTarget,
+                                ImageViewProxy colorTarget,
                                 byte loadStoreOps,
                                 float[] clearColor) {
 
-        var dynamicBufferManager = rContext.getDynamicBufferManager();
+        var bufferManager = rContext.getDynamicBufferManager();
 
-        if (dynamicBufferManager.hasMappingFailed()) {
+        if (bufferManager.hasMappingFailed()) {
             return null;
         }
 
@@ -73,48 +91,92 @@ public class DrawPass {
             return pipelineDescs.size() - 1;
         };
 
+        var passBounds = new Rect2f();
+
+        var geometryUniformTracker = new UniformTracker();
+        var fragmentUniformTracker = new UniformTracker();
+
+        var textureDataGatherer = new TextureDataGatherer();
+        var textureTracker = new TextureTracker();
+
         SortKey[] keys = new SortKey[drawList.numSteps()];
-        int sortKeyIndex = 0;
+        int keyIndex = 0;
 
-        for (var op : drawList.mDraws) {
+        try (var uniformDataGatherer = new UniformDataGatherer(
+                UniformDataGatherer.Std140Layout);
+             var uniformDataCache = new UniformDataCache()) {
 
+            for (var draw : drawList.mDraws) {
 
-            for (int stepIndex = 0; stepIndex < op.mRenderer.numSteps(); stepIndex++) {
-                var step = op.mRenderer.step(stepIndex);
+                for (int stepIndex = 0; stepIndex < draw.mRenderer.numSteps(); stepIndex++) {
+                    var step = draw.mRenderer.step(stepIndex);
 
-                int pipelineIndex = pipelineToIndexMap.computeIfAbsent(new GraphicsPipelineDesc(step),
-                        insertPipelineDesc);
+                    int pipelineIndex = pipelineToIndexMap.computeIfAbsent(new GraphicsPipelineDesc(step),
+                            insertPipelineDesc);
 
-                keys[sortKeyIndex++] = new SortKey(
-                        op,
-                        stepIndex,
-                        pipelineIndex
-                );
+                    uniformDataGatherer.reset();
+                    textureDataGatherer.reset();
+                    step.writeUniformsAndTextures(draw, uniformDataGatherer, textureDataGatherer);
+
+                    var geometryUniforms = uniformDataCache.insert(uniformDataGatherer.finish());
+                    var geometryTextures = textureDataGatherer.finish();
+
+                    var geometryUniformIndex = geometryUniformTracker.trackUniforms(
+                            pipelineIndex,
+                            geometryUniforms
+                    );
+
+                    keys[keyIndex++] = new SortKey(
+                            draw,
+                            stepIndex,
+                            pipelineIndex,
+                            geometryUniformIndex,
+                            INVALID_INDEX,
+                            geometryTextures
+                    );
+                }
+
+                passBounds.joinNoCheck(draw.mDrawBounds);
+            }
+
+            if (!geometryUniformTracker.writeUniforms(bufferManager) ||
+                    !fragmentUniformTracker.writeUniforms(bufferManager)) {
+                return null;
             }
         }
 
-
-        assert sortKeyIndex == keys.length;
+        assert keyIndex == keys.length;
         // TimSort - stable
         Arrays.sort(keys);
 
-        MeshDrawWriter drawWriter = new MeshDrawWriter(dynamicBufferManager,
+        MeshDrawWriter drawWriter = new MeshDrawWriter(bufferManager,
                 commandList);
         Rect2ic lastScissor = new Rect2i(0, 0, colorTarget.getWidth(), colorTarget.getHeight());
-        int lastPipeline = -1;
+        int lastPipelineIndex = INVALID_INDEX;
 
         for (var key : keys) {
-            var op = key.mDrawRef;
+            var draw = key.mDraw;
             var step = key.step();
+            int pipelineIndex = key.pipelineIndex();
 
-            boolean pipelineChange = key.pipelineIndex() != lastPipeline;
+            boolean pipelineStateChange = pipelineIndex != lastPipelineIndex;
 
-            Rect2ic newScissor = !op.mScissorRect.equals(lastScissor)
-                    ? op.mScissorRect : null;
+            Rect2ic newScissor = !draw.mScissorRect.equals(lastScissor)
+                    ? draw.mScissorRect : null;
+            boolean geometryBindingChange = geometryUniformTracker.setCurrentUniforms(
+                    pipelineIndex, key.geometryUniformIndex()
+            );
+            boolean fragmentBindingChange = fragmentUniformTracker.setCurrentUniforms(
+                    pipelineIndex, key.fragmentUniformIndex()
+            );
+            boolean textureBindingChange = textureTracker.setCurrentTextures(key.mTextures);
 
-            boolean dynamicStateChange = newScissor != null;
+            boolean dynamicStateChange = newScissor != null ||
+                    geometryBindingChange ||
+                    fragmentBindingChange ||
+                    textureBindingChange;
 
-            if (pipelineChange) {
+            if (pipelineStateChange) {
                 drawWriter.newPipelineState(
                         step.vertexBinding(),
                         step.instanceBinding(),
@@ -126,47 +188,67 @@ public class DrawPass {
             }
 
             // Make state changes before accumulating new draw data
-            if (pipelineChange) {
-                commandList.bindGraphicsPipeline(key.pipelineIndex());
-                lastPipeline = key.pipelineIndex();
+            if (pipelineStateChange) {
+                commandList.bindGraphicsPipeline(pipelineIndex);
+                lastPipelineIndex = pipelineIndex;
             }
             if (dynamicStateChange) {
                 if (newScissor != null) {
                     commandList.setScissor(newScissor);
                     lastScissor = newScissor;
                 }
+                if (geometryBindingChange) {
+                    geometryUniformTracker.bindUniforms(
+                            GEOMETRY_UNIFORM_BINDING,
+                            commandList
+                    );
+                }
+                if (fragmentBindingChange) {
+                    fragmentUniformTracker.bindUniforms(
+                            FRAGMENT_UNIFORM_BINDING,
+                            commandList
+                    );
+                }
+                if (textureBindingChange) {
+                    textureTracker.bindTextures(commandList);
+                }
             }
 
-            step.writeVertices(drawWriter, op, new float[]{1, 1, 1, 1});
+            step.writeMesh(drawWriter, draw, new float[]{1, 1, 1, 1});
 
-            if (dynamicBufferManager.hasMappingFailed()) {
+            if (bufferManager.hasMappingFailed()) {
                 return null;
             }
         }
+        // Finish recording draw calls for any collected data at the end of the loop
         drawWriter.flush();
+        commandList.finish();
 
 
-        DrawPass pass = new DrawPass(commandList, pipelineDescs);
+        DrawPass pass = new DrawPass(commandList,
+                pipelineDescs,
+                textureDataGatherer.mIndexToTexture,
+                textureDataGatherer.mIndexToSampler);
 
         return pass;
     }
 
     @RawPtr
     public GraphicsPipeline getPipeline(int index) {
-        return mGraphicsPipelines[index];
+        return mPipelines[index];
     }
 
     public DrawCommandList getCommandList() {
         return mCommandList;
     }
 
-    public ImageProxy[] getSampledImages() {
+    public List<@SharedPtr ImageViewProxy> getSampledImages() {
         return mSampledImages;
     }
 
     public boolean prepare(ResourceProvider resourceProvider,
                            RenderPassDesc renderPassDesc) {
-        mGraphicsPipelines = new GraphicsPipeline[mPipelineDescs.size()];
+        mPipelines = new GraphicsPipeline[mPipelineDescs.size()];
         for (int i = 0; i < mPipelineDescs.size(); i++) {
             var pipeline = resourceProvider.findOrCreateGraphicsPipeline(
                     mPipelineDescs.get(i),
@@ -175,7 +257,7 @@ public class DrawPass {
             if (pipeline == null) {
                 return false;
             }
-            mGraphicsPipelines[i] = pipeline;
+            mPipelines[i] = pipeline;
         }
         mPipelineDescs.clear();
 
@@ -236,13 +318,25 @@ public class DrawPass {
                     int top = p.getInt();
                     int right = p.getInt();
                     int bottom = p.getInt();
-                    commandBuffer.setScissor(left,top,right,bottom);
+                    commandBuffer.setScissor(left, top, right, bottom);
                 }
                 case DrawCommandList.CMD_BIND_UNIFORM_BUFFER -> {
                     int binding = p.getInt();
                     long offset = p.getLong();
                     long size = p.getLong();
                     commandBuffer.bindUniformBuffer(binding, (Buffer) oa[oi++], offset, size);
+                }
+                case DrawCommandList.CMD_BIND_TEXTURES -> {
+                    int[] textures = (int[]) oa[oi++];
+                    for (int i = 0; i < textures.length; i += 2) {
+                        int binding = i >> 1;
+                        var textureView = mSampledImages.get(textures[i]);
+                        var sampler = mSamplers[textures[i|1]];
+                        commandBuffer.bindTextureSampler(binding,
+                                textureView.getImage(),
+                                sampler,
+                                textureView.getSwizzle());
+                    }
                 }
             }
         }
@@ -251,20 +345,20 @@ public class DrawPass {
     }
 
     public void close() {
-        if (mGraphicsPipelines != null) {
-            for (int i = 0; i < mGraphicsPipelines.length; i++) {
-                mGraphicsPipelines[i] = RefCnt.move(mGraphicsPipelines[i]);
+        if (mPipelines != null) {
+            for (int i = 0; i < mPipelines.length; i++) {
+                mPipelines[i] = RefCnt.move(mPipelines[i]);
             }
         }
     }
 
     public static final class SortKey implements Comparable<SortKey> {
 
-        public static final long PAINTERS_ORDER_OFFSET = 48;
-        public static final long PAINTERS_ORDER_MASK = (1 << 16) - 1;
+        public static final int PAINTERS_ORDER_OFFSET = 32;
+        public static final int PAINTERS_ORDER_MASK = (1 << 16) - 1;
 
-        public static final long STENCIL_INDEX_OFFSET = 32;
-        public static final long STENCIL_INDEX_MASK = (1 << 16) - 1;
+        public static final int STENCIL_INDEX_OFFSET = 16;
+        public static final int STENCIL_INDEX_MASK = (1 << 16) - 1;
 
         static {
             //noinspection ConstantValue
@@ -272,39 +366,65 @@ public class DrawPass {
                     DrawOrder.STENCIL_INDEX_SHIFT == STENCIL_INDEX_OFFSET;
         }
 
-        public static final int STEP_INDEX_OFFSET = 30;
+        // 64-62 step, 62-34 pipeline, 34-17 geometry, 17-0 fragment
+        public static final int STEP_INDEX_OFFSET = 62;
         public static final int STEP_INDEX_MASK = (1 << 2) - 1;
 
-        public static final int PIPELINE_INDEX_OFFSET = 0;
-        public static final int PIPELINE_INDEX_MASK = (1 << 30) - 1;
+        public static final int PIPELINE_INDEX_OFFSET = 34;
+        public static final int PIPELINE_INDEX_MASK = (1 << 28) - 1;
 
-        private long highOrderFlags;
-        private long lowOrderFlags;
-        private Draw mDrawRef;
+        // requires one extra bit
+        public static final int GEOMETRY_UNIFORM_INDEX_OFFSET = 17;
+        public static final int GEOMETRY_UNIFORM_INDEX_MASK = (1 << 17) - 1;
+        public static final int FRAGMENT_UNIFORM_INDEX_OFFSET = 0;
+        public static final int FRAGMENT_UNIFORM_INDEX_MASK = (1 << 17) - 1;
+
+        private final Draw mDraw;
+        private final int mOrderKey;
+        private final long mPipelineKey;
+        private final int[] mTextures;
 
         public SortKey(Draw draw,
                        int stepIndex,
-                       int pipelineIndex) {
-            // the higher 32 bits are just we want
-            highOrderFlags = draw.mDrawOrder & 0xFFFFFFFF_00000000L;
+                       int pipelineIndex,
+                       int geometryUniformIndex,
+                       int fragmentUniformIndex,
+                       int[] textures) {
+            mDraw = draw;
+            // the 16-48 bits are just we want
+            mOrderKey = (int) (draw.mDrawOrder >>> DrawOrder.STENCIL_INDEX_SHIFT);
             assert (stepIndex & STEP_INDEX_MASK) == stepIndex;
-            highOrderFlags |= ((long) stepIndex << STEP_INDEX_OFFSET) | ((long) pipelineIndex << PIPELINE_INDEX_OFFSET);
-            mDrawRef = draw;
+            mPipelineKey = ((long) stepIndex << STEP_INDEX_OFFSET) |
+                    ((long) pipelineIndex << PIPELINE_INDEX_OFFSET) |
+                    ((long) geometryUniformIndex << GEOMETRY_UNIFORM_INDEX_OFFSET) |
+                    ((long) fragmentUniformIndex << FRAGMENT_UNIFORM_INDEX_OFFSET);
+            mTextures = textures;
         }
 
         public GeometryStep step() {
-            return mDrawRef.mRenderer.step(
-                    (int) ((highOrderFlags >>> STEP_INDEX_OFFSET) & STEP_INDEX_MASK));
+            return mDraw.mRenderer.step(
+                    (int) ((mPipelineKey >>> STEP_INDEX_OFFSET) & STEP_INDEX_MASK));
         }
 
         public int pipelineIndex() {
-            return (int) ((highOrderFlags >>> PIPELINE_INDEX_OFFSET) & PIPELINE_INDEX_MASK);
+            return (int) ((mPipelineKey >>> PIPELINE_INDEX_OFFSET) & PIPELINE_INDEX_MASK);
+        }
+
+        public int geometryUniformIndex() {
+            return (int) ((mPipelineKey >>> GEOMETRY_UNIFORM_INDEX_OFFSET) & GEOMETRY_UNIFORM_INDEX_MASK);
+        }
+
+        public int fragmentUniformIndex() {
+            return (int) ((mPipelineKey >>> FRAGMENT_UNIFORM_INDEX_OFFSET) & FRAGMENT_UNIFORM_INDEX_MASK);
         }
 
         @Override
         public int compareTo(@Nonnull SortKey o) {
-            int res = Long.compareUnsigned(highOrderFlags, o.highOrderFlags);
-            return res != 0 ? res : Long.compareUnsigned(lowOrderFlags, o.lowOrderFlags);
+            int res = Integer.compareUnsigned(mOrderKey, o.mOrderKey);
+            if (res != 0) return res;
+            res = Long.compareUnsigned(mPipelineKey, o.mPipelineKey);
+            if (res != 0) return res;
+            return Arrays.compare(mTextures, o.mTextures);
         }
     }
 }

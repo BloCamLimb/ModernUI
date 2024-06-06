@@ -160,7 +160,7 @@ public class SDFRoundRectStep extends GeometryStep {
     }
 
     @Override
-    public void writeVertices(MeshDrawWriter writer, Draw op, float[] solidColor) {
+    public void writeMesh(MeshDrawWriter writer, Draw op, float[] solidColor) {
         writer.beginInstances(null, null, 4);
         ByteBuffer instanceData = writer.append(1);
         instanceData.putFloat(solidColor[0]);

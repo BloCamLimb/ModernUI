@@ -90,7 +90,7 @@ public interface ISurface {
     int FLAG_PROTECTED = 1 << 7;
     // the following flags are internal only
     /**
-     * Means the pixels in the image are read-only. {@link Image} and {@link ImageProxy}
+     * Means the pixels in the image are read-only. {@link Image} and {@link ImageViewProxy}
      * only, typically for wrapped images. Read-only images cannot be renderable.
      */
     @ApiStatus.Internal
@@ -103,10 +103,10 @@ public interface ISurface {
     @ApiStatus.Internal
     int FLAG_SKIP_ALLOCATOR = FLAG_PROTECTED << 2;
     /**
-     * For {@link ImageProxy} created in a deferred list recording thread it is possible for the
+     * For {@link ImageViewProxy} created in a deferred list recording thread it is possible for the
      * unique key to be cleared on the backing {@link Image} while the unique key remains on
      * the proxy. When set, it loosens up asserts that the key of an instantiated uniquely-keyed
-     * texture proxy is also always set on the backing {@link Image}. {@link ImageProxy} only.
+     * texture proxy is also always set on the backing {@link Image}. {@link ImageViewProxy} only.
      */
     @ApiStatus.Internal
     int FLAG_DEFERRED_PROVIDER = FLAG_PROTECTED << 3;

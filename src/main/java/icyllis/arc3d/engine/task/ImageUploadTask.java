@@ -56,7 +56,7 @@ public class ImageUploadTask extends Task {
 
     @Nullable
     public static ImageUploadTask make(RecordingContext context,
-                                       ImageProxy imageProxy,
+                                       ImageViewProxy imageViewProxy,
                                        int srcColorType,
                                        int srcAlphaType,
                                        ColorSpace srcColorSpace,

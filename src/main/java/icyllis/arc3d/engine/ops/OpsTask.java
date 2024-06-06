@@ -173,8 +173,8 @@ public class OpsTask extends RenderTask {
             renderTargetProxy.setResolveRect(mContentBounds.mLeft, msaaTop,
                     mContentBounds.mRight, msaaBottom);
         }
-        ImageProxy imageProxy = target.asImageProxy();
-        if (imageProxy != null && imageProxy.isMipmapped()) {
+        ImageViewProxy imageViewProxy = target.asImageProxy();
+        if (imageViewProxy != null && imageViewProxy.isMipmapped()) {
             //imageProxy.setMipmapsDirty(true);
         }
     }

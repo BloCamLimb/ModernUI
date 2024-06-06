@@ -57,6 +57,9 @@ public abstract class CommandBuffer {
 
     public abstract void setScissor(int left, int top, int right, int bottom);
 
+    /**
+     * @param indexType see {@link Engine.IndexType}
+     */
     public abstract void bindIndexBuffer(int indexType,
                                          @RawPtr Buffer buffer,
                                          long offset);
@@ -69,6 +72,14 @@ public abstract class CommandBuffer {
                                            @RawPtr Buffer buffer,
                                            long offset,
                                            long size);
+
+    /**
+     * Bind combined texture sampler.
+     *
+     * @param readSwizzle see {@link Swizzle}
+     */
+    public abstract void bindTextureSampler(int binding, @RawPtr Image texture,
+                                            @RawPtr Sampler sampler, short readSwizzle);
 
     /**
      * Records a non-indexed draw to current command buffer.
