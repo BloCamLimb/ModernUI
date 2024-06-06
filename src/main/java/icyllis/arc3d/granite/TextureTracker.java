@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,16 +17,27 @@
  * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine;
+package icyllis.arc3d.granite;
 
-@Deprecated
-public class DstProxyView  {
+import it.unimi.dsi.fastutil.ints.IntArrays;
 
-    public static final int REQUIRES_TEXTURE_BARRIER_FLAG = 0x2;
-    public static final int AS_INPUT_ATTACHMENT_FLAG = 0x4;
+import java.util.Arrays;
 
-    ImageProxyView mProxyView;
-    int mOffsetX;
-    int mOffsetY;
-    int mFlags;
+public class TextureTracker {
+
+    private int[] mLastBinding = IntArrays.EMPTY_ARRAY;
+
+    public boolean setCurrentTextures(int[] textures) {
+        if (textures.length != 0 && Arrays.equals(mLastBinding, textures)) {
+            mLastBinding = textures;
+            return true;
+        }
+        // No binding change
+        return false;
+    }
+
+    public void bindTextures(DrawCommandList commandList) {
+        assert mLastBinding.length != 0;
+        commandList.bindTextures(mLastBinding);
+    }
 }

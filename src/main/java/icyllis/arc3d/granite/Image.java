@@ -33,25 +33,23 @@ public final class Image extends icyllis.arc3d.core.Image {
 
     Context mContext;
     @SharedPtr
-    ImageProxyView mImageProxyView;
+    ImageViewProxy mImageViewProxy;
 
     public Image(@Nonnull Context rContext,
-                 @Nonnull ImageProxy proxy,
-                 short swizzle,
-                 int origin,
+                 @Nonnull ImageViewProxy proxy,
                  int colorType,
                  int alphaType,
                  @Nullable ColorSpace colorSpace) {
         super(ImageInfo.make(proxy.getWidth(), proxy.getHeight(),
                 colorType, alphaType, colorSpace));
         mContext = rContext;
-        mImageProxyView = new ImageProxyView(RefCnt.create(proxy), origin, swizzle);
+        mImageViewProxy = RefCnt.create(proxy);
     }
 
     @Override
     protected void deallocate() {
-        mImageProxyView.close();
-        mImageProxyView = null;
+        mImageViewProxy.unref();
+        mImageViewProxy = null;
     }
 
     @Override
@@ -59,8 +57,8 @@ public final class Image extends icyllis.arc3d.core.Image {
         return mContext;
     }
 
-    public ImageProxyView getSurfaceProxyView() {
-        return mImageProxyView;
+    public ImageViewProxy getImageViewProxy() {
+        return mImageViewProxy;
     }
 
     @Override
@@ -82,6 +80,6 @@ public final class Image extends icyllis.arc3d.core.Image {
 
     @Override
     public long getGpuMemorySize() {
-        return mImageProxyView.getProxy().getMemorySize();
+        return mImageViewProxy.getMemorySize();
     }
 }

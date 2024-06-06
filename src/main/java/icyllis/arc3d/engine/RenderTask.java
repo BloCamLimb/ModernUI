@@ -300,9 +300,9 @@ public abstract class RenderTask extends RefCnt {
             }
         }
 
-        ImageProxy imageProxy = dependency.asImageProxy();
+        ImageViewProxy imageViewProxy = dependency.asImageProxy();
         if (SamplerState.isMipmapped(samplerState)) {
-            assert imageProxy != null;
+            assert imageViewProxy != null;
             /*if (imageProxy.isMipmapped() && imageProxy.isMipmapsDirty()) {
                 resolveFlags |= RESOLVE_FLAG_MIPMAPS;
             }*/

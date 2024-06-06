@@ -25,13 +25,18 @@ import java.util.ArrayList;
 
 public class DrawList {
 
+    /**
+     * Depth buffer is 16-bit, ensure no overflow.
+     */
+    public static final int MAX_RENDER_STEPS = (1 << 16) - 1;
+
     private final ArrayList<Matrix4> mTransforms = new ArrayList<>();
     final ArrayList<Draw> mDraws = new ArrayList<>();
     private int mNumSteps;
 
     private Matrix4 getStableTransform(Matrix4 modelView) {
         Matrix4 last;
-        if (mTransforms.isEmpty() || !(last = mTransforms.get(mTransforms.size()-1)).equals(modelView)) {
+        if (mTransforms.isEmpty() || !(last = mTransforms.get(mTransforms.size() - 1)).equals(modelView)) {
             var copy = modelView.clone();
             mTransforms.add(copy);
             return copy;

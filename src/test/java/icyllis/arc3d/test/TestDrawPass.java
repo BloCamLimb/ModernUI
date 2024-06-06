@@ -110,7 +110,7 @@ public class TestDrawPass {
             draw.mTransform.preTranslate( -cx, -cy);
             int stroke = (int) (Math.random() * 50);
             draw.mStrokeRadius = stroke < 25 ? -1 : stroke - 20;
-            step.writeVertices(drawWriter, draw, new float[]{(float) (Math.random()*0.2f),(float) (Math.random()*0.2f),(float) (Math.random()*0.2f),0.2f}); // premultiplied color
+            step.writeMesh(drawWriter, draw, new float[]{(float) (Math.random()*0.2f),(float) (Math.random()*0.2f),(float) (Math.random()*0.2f),0.2f}); // premultiplied color
         }
 
         drawWriter.flush();

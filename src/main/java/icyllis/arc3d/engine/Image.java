@@ -24,8 +24,6 @@ import icyllis.arc3d.core.SharedPtr;
 
 import javax.annotation.Nonnull;
 
-import static icyllis.arc3d.engine.Engine.BudgetType;
-
 /**
  * Represents GPU image resources, which may be 2D or 3D. This class also represents a
  * default image view, see {@link Engine.ImageType}.
@@ -268,7 +266,7 @@ public abstract class Image extends Resource {
     }*/
 
     /**
-     * Storage key of {@link Image}, may be compared with {@link ImageProxy}.
+     * Storage key of {@link Image}, may be compared with {@link ImageViewProxy}.
      */
     public static final class ResourceKey implements IResourceKey {
 
@@ -306,7 +304,7 @@ public abstract class Image extends Resource {
         }
 
         /**
-         * Keep {@link ImageProxy#hashCode()} sync with this.
+         * Keep {@link ImageViewProxy#hashCode()} sync with this.
          */
         @Override
         public int hashCode() {
@@ -318,7 +316,7 @@ public abstract class Image extends Resource {
         }
 
         /**
-         * Keep {@link ImageProxy#equals(Object)}} sync with this.
+         * Keep {@link ImageViewProxy#equals(Object)}} sync with this.
          */
         @Override
         public boolean equals(Object o) {

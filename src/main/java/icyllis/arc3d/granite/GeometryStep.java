@@ -340,7 +340,12 @@ public abstract class GeometryStep extends Processor {
     public void emitFragmentCoverageCode(Formatter fs, String outputCoverage) {
     }
 
-    public void writeVertices(MeshDrawWriter writer, Draw draw, float[] solidColor) {
+    public void writeMesh(MeshDrawWriter writer, Draw draw, float[] solidColor) {
+    }
+
+    public void writeUniformsAndTextures(Draw draw,
+                                         UniformDataGatherer uniformDataGatherer,
+                                         TextureDataGatherer textureDataGatherer) {
     }
 
     /**

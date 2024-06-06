@@ -19,6 +19,7 @@
 
 package icyllis.arc3d.granite;
 
+import icyllis.arc3d.core.RawPtr;
 import icyllis.arc3d.core.Rect2ic;
 import icyllis.arc3d.engine.*;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -54,6 +55,7 @@ public class DrawCommandList {
     public static final int CMD_BIND_VERTEX_BUFFER = 6;
     public static final int CMD_SET_SCISSOR = 7;
     public static final int CMD_BIND_UNIFORM_BUFFER = 8;
+    public static final int CMD_BIND_TEXTURES = 9;
 
     /**
      * The heap buffer that holds all primitive data.
@@ -142,13 +144,24 @@ public class DrawCommandList {
     }
 
     public final void bindUniformBuffer(int binding,
-                                        BufferViewInfo uniformBufferInfo) {
+                                        @RawPtr Buffer buffer,
+                                        long offset,
+                                        long size) {
         grow(mPrimitives.position() + 24);
         mPrimitives.putInt(CMD_BIND_UNIFORM_BUFFER)
                 .putInt(binding)
-                .putLong(uniformBufferInfo.mOffset)
-                .putLong(uniformBufferInfo.mSize);
-        mPointers.add(uniformBufferInfo.mBuffer);
+                .putLong(offset)
+                .putLong(size);
+        mPointers.add(buffer);
+    }
+
+    /**
+     * @param textures pairs of texture view index and sampler index
+     */
+    public final void bindTextures(int[] textures) {
+        grow(mPrimitives.position() + 4);
+        mPrimitives.putInt(CMD_BIND_TEXTURES);
+        mPointers.add(textures);
     }
 
     public final void finish() {
@@ -245,7 +258,8 @@ public class DrawCommandList {
                     int instanceCount = p.getInt();
                     int baseInstance = p.getInt();
                     int baseVertex = p.getInt();
-                    pw.printf("[DrawIndexedInstanced indexCount:%d baseIndex:%d instanceCount:%d baseInstance:%d baseVertex:%d]%n",
+                    pw.printf("[DrawIndexedInstanced indexCount:%d baseIndex:%d instanceCount:%d baseInstance:%d " +
+                                    "baseVertex:%d]%n",
                             indexCount, baseIndex, instanceCount, baseInstance, baseVertex);
                 }
                 case DrawCommandList.CMD_BIND_INDEX_BUFFER -> {

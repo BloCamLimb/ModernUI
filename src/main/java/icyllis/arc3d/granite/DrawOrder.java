@@ -27,9 +27,9 @@ public class DrawOrder {
     public static final int MIN_VALUE = 0;
     public static final int MAX_VALUE = 0xFFFF;
 
-    public static final int PAINTERS_ORDER_SHIFT = 48;
-    public static final int STENCIL_INDEX_SHIFT = 32;
-    public static final int DEPTH_SHIFT = 16;
+    public static final int PAINTERS_ORDER_SHIFT = 32;
+    public static final int STENCIL_INDEX_SHIFT = 16;
+    public static final int DEPTH_SHIFT = 0;
     public static final int BIT_MASK = 0xFFFF;
 
     public static long makeFromDepth(int depth) {
@@ -59,7 +59,7 @@ public class DrawOrder {
     public static long updateWithPaintersOrder(long packedDrawOrder, int prevPaintersOrder) {
         int nextOrder = prevPaintersOrder + 1;
         int order = Math.max(nextOrder, getPaintersOrder(packedDrawOrder));
-        return (packedDrawOrder & 0x0000FFFF_FFFF0000L) | ((long) order << PAINTERS_ORDER_SHIFT);
+        return (packedDrawOrder & 0x00000000_FFFFFFFFL) | ((long) order << PAINTERS_ORDER_SHIFT);
     }
 
     public static long updateWithStencilIndex(long packedDrawOrder, int disjointSet) {

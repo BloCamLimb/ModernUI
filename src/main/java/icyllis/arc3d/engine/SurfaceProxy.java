@@ -54,7 +54,7 @@ import javax.annotation.Nullable;
  * <p>
  * Use {@link ImageProxyCache} to obtain {@link SurfaceProxy} objects.
  *
- * @see ImageProxy
+ * @see ImageViewProxy
  * @see ImageProxyView
  */
 public abstract class SurfaceProxy extends RefCnt {
@@ -90,7 +90,7 @@ public abstract class SurfaceProxy extends RefCnt {
      *     <li>True: {@link SurfaceAllocator} should instantiate this surface.</li>
      * </ul>
      * <p>
-     * DeferredProvider: For {@link ImageProxy}s created in a deferred list recording thread it is
+     * DeferredProvider: For {@link ImageViewProxy}s created in a deferred list recording thread it is
      * possible for the uniqueKey to be cleared on the backing Texture while the uniqueKey
      * remains on the surface. A 'mDeferredProvider' of 'true' loosens up asserts that the key of an
      * instantiated uniquely-keyed texture is also always set on the backing {@link Image}.
@@ -443,7 +443,7 @@ public abstract class SurfaceProxy extends RefCnt {
     /**
      * @return the texture proxy associated with the surface proxy, may be NULL.
      */
-    public ImageProxy asImageProxy() {
+    public ImageViewProxy asImageProxy() {
         return null;
     }
 

@@ -31,17 +31,17 @@ import static icyllis.arc3d.engine.Engine.SurfaceOrigin;
 public class ImageProxyView implements AutoCloseable {
 
     @SharedPtr
-    ImageProxy mProxy;
+    ImageViewProxy mProxy;
     int mOrigin;
     short mSwizzle;
 
-    public ImageProxyView(@SharedPtr ImageProxy proxy) {
+    public ImageProxyView(@SharedPtr ImageViewProxy proxy) {
         mProxy = proxy; // std::move()
         mOrigin = SurfaceOrigin.kUpperLeft;
         mSwizzle = Swizzle.RGBA;
     }
 
-    public ImageProxyView(@SharedPtr ImageProxy proxy, int origin, short swizzle) {
+    public ImageProxyView(@SharedPtr ImageViewProxy proxy, int origin, short swizzle) {
         mProxy = proxy; // std::move()
         mOrigin = origin;
         mSwizzle = swizzle;
@@ -63,7 +63,7 @@ public class ImageProxyView implements AutoCloseable {
      * Returns smart pointer value (raw ptr).
      */
     @RawPtr
-    public ImageProxy getProxy() {
+    public ImageViewProxy getProxy() {
         return mProxy;
     }
 
@@ -71,7 +71,7 @@ public class ImageProxyView implements AutoCloseable {
      * Returns a smart pointer (as if on the stack).
      */
     @SharedPtr
-    public ImageProxy refProxy() {
+    public ImageViewProxy refProxy() {
         mProxy.ref();
         return mProxy;
     }
@@ -81,9 +81,9 @@ public class ImageProxyView implements AutoCloseable {
      * properties associated with the detached proxy.
      */
     @SharedPtr
-    public ImageProxy detachProxy() {
+    public ImageViewProxy detachProxy() {
         // just like std::move(), R-value reference
-        ImageProxy surfaceProxy = mProxy;
+        ImageViewProxy surfaceProxy = mProxy;
         mProxy = null;
         return surfaceProxy;
     }

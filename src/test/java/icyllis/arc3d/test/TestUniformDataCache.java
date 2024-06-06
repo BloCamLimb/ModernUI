@@ -20,10 +20,11 @@
 package icyllis.arc3d.test;
 
 import icyllis.arc3d.core.Matrix;
-import icyllis.arc3d.granite.UniformDataCache;
-import icyllis.arc3d.granite.UniformDataGatherer;
+import icyllis.arc3d.granite.*;
+import org.openjdk.jol.info.ClassLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.misc.Unsafe;
 
 import java.nio.ByteBuffer;
 
@@ -33,6 +34,7 @@ public class TestUniformDataCache {
 
     // -Dorg.slf4j.simpleLogger.logFile=System.out -Dorg.lwjgl.util.DebugAllocator=true -ea
     public static void main(String[] args) {
+
         var gatherer = new UniformDataGatherer(UniformDataGatherer.Std140Layout);
         var cache = new UniformDataCache();
         try (gatherer; cache) {
@@ -58,6 +60,8 @@ public class TestUniformDataCache {
             var cached3 = cache.insert(finish3);
             log(3, finish3, cached3);
         }
+
+        LOGGER.info(ClassLayout.parseClass(DrawPass.SortKey.class).toPrintable());
     }
 
     static void log(int index, ByteBuffer finish, ByteBuffer cached) {

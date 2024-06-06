@@ -23,10 +23,8 @@ import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
 import icyllis.arc3d.granite.GeometryStep;
-import icyllis.arc3d.granite.shading.UniformHandler;
 
 import javax.annotation.Nonnull;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -140,7 +138,7 @@ public class GLGraphicsPipeline extends GraphicsPipeline {
      */
     public boolean bindTextures(GLCommandBuffer commandBuffer,
                                 GraphicsPipelineDesc_Old graphicsPipelineDesc,
-                                ImageProxy[] geomTextures) {
+                                ImageViewProxy[] geomTextures) {
         int unit = 0;
         for (int i = 0, n = graphicsPipelineDesc.geomProc().numTextureSamplers(); i < n; i++) {
             GLTexture texture = (GLTexture) geomTextures[i].getImage();

@@ -20,6 +20,7 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.*;
+import icyllis.arc3d.engine.Image;
 import icyllis.arc3d.engine.*;
 import org.lwjgl.system.MemoryStack;
 
@@ -27,7 +28,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import static org.lwjgl.opengl.GL32C.*;
-import static org.lwjgl.opengl.GL45C.*;
+import static org.lwjgl.opengl.GL45C.glInvalidateFramebuffer;
 
 /**
  * The main command buffer of OpenGL context. The commands executed on {@link GLCommandBuffer} are
@@ -232,8 +233,10 @@ public final class GLCommandBuffer extends CommandBuffer {
                 // MSAA to single
                 glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer.getResolveFramebuffer());
                 glBlitFramebuffer(
-                        mContentBounds.mLeft, mContentBounds.mTop, mContentBounds.mRight, mContentBounds.mBottom, // src rect
-                        mContentBounds.mLeft, mContentBounds.mTop, mContentBounds.mRight, mContentBounds.mBottom, // dst rect
+                        mContentBounds.mLeft, mContentBounds.mTop, mContentBounds.mRight, mContentBounds.mBottom, //
+                        // src rect
+                        mContentBounds.mLeft, mContentBounds.mTop, mContentBounds.mRight, mContentBounds.mBottom, //
+                        // dst rect
                         GL_COLOR_BUFFER_BIT, GL_NEAREST);
             }
         }
@@ -376,12 +379,12 @@ public final class GLCommandBuffer extends CommandBuffer {
     /**
      * Bind texture view and sampler to the same binding point.
      *
-     * @param bindingUnit  the binding index (texture unit)
+     * @param binding      the binding index (texture unit)
      * @param texture      the texture image
      * @param samplerState the sampler state for creating sampler, see {@link SamplerState}
      * @param readSwizzle  the swizzle of the texture view for shader read, see {@link Swizzle}
      */
-    public void bindTextureSampler(int bindingUnit, GLTexture texture,
+    public void bindTextureSampler(int binding, @RawPtr Image texture,
                                    int samplerState, short readSwizzle) {
         assert (texture != null && texture.isSampledImage());
         if (SamplerState.isMipmapped(samplerState)) {
@@ -392,7 +395,7 @@ public final class GLCommandBuffer extends CommandBuffer {
                 assert (!texture.isMipmapsDirty());
             }
         }
-        mDevice.bindTextureSampler(bindingUnit, texture, samplerState, readSwizzle);
+        mDevice.bindTextureSampler(binding, (GLTexture) texture, samplerState, readSwizzle);
     }
 
     @Override
@@ -465,6 +468,11 @@ public final class GLCommandBuffer extends CommandBuffer {
         GLBuffer glBuffer = (GLBuffer) buffer;
         mDevice.getGL().glBindBufferRange(GL_UNIFORM_BUFFER, binding, glBuffer.getHandle(),
                 offset, size);
+    }
+
+    @Override
+    public void bindTextureSampler(int binding, Image texture, Sampler sampler, short readSwizzle) {
+
     }
 
     private long getIndexOffset(int baseIndex) {

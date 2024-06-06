@@ -47,6 +47,8 @@ public class DynamicBufferManager {
      * We expect buffers for meshes to be at least 128KB.
      */
     public static final int VERTEX_BUFFER_SIZE = 1 << 17;
+    public static final int INDEX_BUFFER_SIZE = 1 << 13;
+    public static final int UNIFORM_BUFFER_SIZE = 1 << 13;
 
     private static class BlockBuffer {
 
@@ -73,7 +75,7 @@ public class DynamicBufferManager {
     static final int kVertexBufferIndex     = 0;
     static final int kIndexBufferIndex      = 1;
     static final int kUniformBufferIndex    = 2;
-    final BlockBuffer[] mCurrentBuffers = new BlockBuffer[1];
+    final BlockBuffer[] mCurrentBuffers = new BlockBuffer[3];
     // @formatter:on
 
     final ArrayList<@SharedPtr Buffer> mUsedBuffers = new ArrayList<>();
@@ -91,6 +93,16 @@ public class DynamicBufferManager {
                 Engine.BufferUsageFlags.kVertex | Engine.BufferUsageFlags.kHostVisible,
                 VERTEX_BUFFER_SIZE
         );
+        mCurrentBuffers[kIndexBufferIndex] = new BlockBuffer(
+                caps,
+                Engine.BufferUsageFlags.kIndex | Engine.BufferUsageFlags.kHostVisible,
+                INDEX_BUFFER_SIZE
+        );
+        mCurrentBuffers[kUniformBufferIndex] = new BlockBuffer(
+                caps,
+                Engine.BufferUsageFlags.kUniform | Engine.BufferUsageFlags.kHostVisible,
+                UNIFORM_BUFFER_SIZE
+        );
     }
 
     @Nullable
@@ -103,8 +115,22 @@ public class DynamicBufferManager {
         );
     }
 
+    @Nullable
+    public ByteBuffer getUniformWriter(int requiredBytes, BufferViewInfo outInfo) {
+        return prepareMappedWriter(
+                mCurrentBuffers[kUniformBufferIndex],
+                requiredBytes,
+                outInfo,
+                "DirectUniformBuffer"
+        );
+    }
+
     public void putBackVertexBytes(int unusedBytes) {
 
+    }
+
+    public int alignUniformBlockSize(int dataSize) {
+        return MathUtil.alignTo(dataSize, mCurrentBuffers[kUniformBufferIndex].mOffsetAlignment);
     }
 
     @Nonnull

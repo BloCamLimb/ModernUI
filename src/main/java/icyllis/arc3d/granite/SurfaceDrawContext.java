@@ -21,23 +21,30 @@ package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.engine.ops.DrawOp;
-import icyllis.arc3d.engine.ops.RectOp;
 
-import javax.annotation.Nullable;
+public class SurfaceDrawContext implements AutoCloseable {
 
-public class SurfaceDrawContext extends SurfaceFillContext {
+    private final RecordingContext mContext;
+    private final ImageInfo mImageInfo;
 
-    private ImageProxy mDepthStencilTarget;
+    private final ImageViewProxy mReadView;
+
+    private ImageViewProxy mDepthStencilTarget;
 
     private DrawList mPendingDrawOps = new DrawList();
 
     public SurfaceDrawContext(RecordingContext context,
-                              ImageProxyView readView,
-                              ImageProxyView writeView,
+                              ImageViewProxy readView,
                               int colorType,
+                              int alphaType,
                               ColorSpace colorSpace) {
-        super(context, readView, writeView, colorType, ColorInfo.AT_PREMUL, colorSpace);
+        assert !context.isDiscarded();
+        mContext = context;
+        mReadView = readView;
+        mImageInfo = new ImageInfo(
+                getWidth(), getHeight(),
+                colorType, alphaType, colorSpace
+        );
     }
 
     public static SurfaceDrawContext make(
@@ -79,23 +86,16 @@ public class SurfaceDrawContext extends SurfaceFillContext {
         if (!desc.isValid()) {
             return null;
         }
-        ImageProxy proxy = ImageProxy.make(rContext, desc, true, "SurfaceDrawContext");
+        short readSwizzle = rContext.getCaps().getReadSwizzle(desc, colorType);
+        ImageViewProxy proxy = ImageViewProxy.make(rContext, desc, origin, readSwizzle, true, "SurfaceDrawContext");
         if (proxy == null) {
             return null;
         }
 
-        short readSwizzle = rContext.getCaps().getReadSwizzle(desc, colorType);
-        short writeSwizzle = rContext.getCaps().getWriteSwizzle(desc, colorType);
-
-        // two views, inc one more ref
-        proxy.ref();
-        ImageProxyView readView = new ImageProxyView(proxy, origin, readSwizzle);
-        ImageProxyView writeView = new ImageProxyView(proxy, origin, writeSwizzle);
-
-        return new SurfaceDrawContext(rContext, readView, writeView, colorType, colorSpace);
+        return new SurfaceDrawContext(rContext, proxy, colorType, ColorInfo.AT_PREMUL, colorSpace);
     }
 
-    public static SurfaceDrawContext make(RecordingContext rContext,
+    /*public static SurfaceDrawContext make(RecordingContext rContext,
                                           int colorType,
                                           ColorSpace colorSpace,
                                           ImageProxy imageProxy,
@@ -111,71 +111,88 @@ public class SurfaceDrawContext extends SurfaceFillContext {
         ImageProxyView writeView = new ImageProxyView(imageProxy, origin, writeSwizzle);
 
         return new SurfaceDrawContext(rContext, readView, writeView, colorType, colorSpace);
+    }*/
+
+    /**
+     * @return raw ptr to the context
+     */
+    @RawPtr
+    public final RecordingContext getContext() {
+        return mContext;
     }
 
-    private final Rect2f mTmpBounds = new Rect2f();
-    private final ClipResult_old mTmpClipResult = new ClipResult_old();
+    /**
+     * @return raw ptr to the read view
+     */
+    @RawPtr
+    public final ImageViewProxy getReadView() {
+        return mReadView;
+    }
 
-    public void fillRect(@Nullable Clip_old clip,
-                         int color,
-                         Rect2f rect,
-                         Matrixc viewMatrix,
-                         boolean aa) {
+    public final ImageInfo getImageInfo() {
+        return mImageInfo;
+    }
 
-        var op = new RectOp(color, rect, 0, 0, viewMatrix, false, aa);
+    /**
+     * @see ColorInfo.ColorType
+     */
+    public final int getColorType() {
+        return mImageInfo.colorType();
+    }
 
-        addDrawOp(clip, op);
+    /**
+     * @see ColorInfo.AlphaType
+     */
+    public final int getAlphaType() {
+        return mImageInfo.alphaType();
+    }
+
+    public final int getWidth() {
+        return mReadView.getWidth();
+    }
+
+    public final int getHeight() {
+        return mReadView.getHeight();
+    }
+
+    public final boolean isMipmapped() {
+        return mReadView.isMipmapped();
+    }
+
+    /**
+     * Read view and write view have the same origin.
+     *
+     * @see Engine.SurfaceOrigin
+     */
+    public final int getOrigin() {
+        return mReadView.getOrigin();
+    }
+
+    /**
+     * @see Swizzle
+     */
+    public final short getReadSwizzle() {
+        return mReadView.getSwizzle();
+    }
+
+    public final Caps getCaps() {
+        return mContext.getCaps();
+    }
+
+    protected final RenderTaskManager getDrawingManager() {
+        return mContext.getRenderTaskManager();
+    }
+
+    /**
+     * Destructs this context.
+     */
+    @Override
+    public void close() {
+        mReadView.unref();
     }
 
     public void recordDraw(Draw draw) {
         mPendingDrawOps.recordDrawOp(draw);
-    }
-
-    /**
-     * @param clip the clip function, or null
-     * @param op   a newly-created Op instance
-     */
-    public void addDrawOp(@Nullable Clip_old clip,
-                          DrawOp op) {
-
-
-        var surface = getReadView().getProxy();
-
-        var bounds = mTmpBounds;
-        bounds.set(op);
-        if (op.hasZeroArea()) {
-            bounds.outset(1, 1);
-        }
-        ClipResult_old clipResult;
-
-        boolean rejected;
-        if (clip != null) {
-            clipResult = mTmpClipResult;
-            clipResult.init(
-                    surface.getWidth(), surface.getHeight(),
-                    surface.getWidth(), surface.getHeight()
-            );
-            rejected = clip.apply(
-                    this, op.hasAABloat(), clipResult, bounds
-            ) == Clip_old.CLIPPED_OUT;
-        } else {
-            clipResult = null;
-            // No clip function, so just clip the bounds against the logical render target dimensions
-            rejected = !bounds.intersects(
-                    0, 0,
-                    surface.getWidth(), surface.getHeight()
-            );
-        }
-
-        if (rejected) {
-            return;
-        }
-
-        op.setClippedBounds(bounds);
-
-        var ops = getOpsTask();
-
-        ops.addDrawOp(op, clipResult, 0);
     }
 
     public void flush(RecordingContext context) {
