@@ -20,8 +20,7 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.SharedPtr;
-import icyllis.arc3d.engine.Sampler;
-import icyllis.arc3d.engine.SamplerState;
+import icyllis.arc3d.engine.*;
 
 import javax.annotation.Nullable;
 
@@ -38,65 +37,66 @@ public final class GLSampler extends Sampler {
 
     private int mSampler;
 
-    private GLSampler(GLDevice device, int sampler) {
-        super(device);
+    private GLSampler(Context context, int sampler) {
+        super(context);
         mSampler = sampler;
     }
 
     @Nullable
     @SharedPtr
-    public static GLSampler create(GLDevice device,
-                                   int samplerState) {
+    public static GLSampler create(Context context,
+                                   SamplerDesc desc) {
+        GLDevice device = (GLDevice) context.getDevice();
         int sampler = device.getGL().glGenSamplers();
         if (sampler == 0) {
             return null;
         }
         int magFilter = filter_to_mag_filter(
-                SamplerState.getMagFilter(samplerState)
+                desc.getMagFilter()
         );
         int minFilter = filter_to_min_filter(
-                SamplerState.getMinFilter(samplerState),
-                SamplerState.getMipmapMode(samplerState)
+                desc.getMinFilter(),
+                desc.getMipmapMode()
         );
         int wrapX = address_mode_to_wrap(
-                SamplerState.getAddressModeX(samplerState)
+                desc.getAddressModeX()
         );
         int wrapY = address_mode_to_wrap(
-                SamplerState.getAddressModeY(samplerState)
+                desc.getAddressModeY()
         );
         device.getGL().glSamplerParameteri(sampler, GL_TEXTURE_MAG_FILTER, magFilter);
         device.getGL().glSamplerParameteri(sampler, GL_TEXTURE_MIN_FILTER, minFilter);
         device.getGL().glSamplerParameteri(sampler, GL_TEXTURE_WRAP_S, wrapX);
         device.getGL().glSamplerParameteri(sampler, GL_TEXTURE_WRAP_T, wrapY);
         if (device.getCaps().hasAnisotropySupport()) {
-            float maxAnisotropy = Math.min(SamplerState.getMaxAnisotropy(samplerState),
+            float maxAnisotropy = Math.min(desc.getMaxAnisotropy(),
                     device.getCaps().maxTextureMaxAnisotropy());
             assert (maxAnisotropy >= 1.0f);
             device.getGL().glSamplerParameterf(sampler, GL_TEXTURE_MAX_ANISOTROPY, maxAnisotropy);
         }
-        return new GLSampler(device, sampler);
+        return new GLSampler(context, sampler);
     }
 
     //@formatter:off
     private static int filter_to_mag_filter(int filter) {
         return switch (filter) {
-            case SamplerState.FILTER_NEAREST -> GL_NEAREST;
-            case SamplerState.FILTER_LINEAR  -> GL_LINEAR;
+            case SamplerDesc.FILTER_NEAREST -> GL_NEAREST;
+            case SamplerDesc.FILTER_LINEAR  -> GL_LINEAR;
             default -> throw new AssertionError(filter);
         };
     }
 
     private static int filter_to_min_filter(int filter, int mipmapMode) {
         return switch (mipmapMode) {
-            case SamplerState.MIPMAP_MODE_NONE    -> filter_to_mag_filter(filter);
-            case SamplerState.MIPMAP_MODE_NEAREST -> switch (filter) {
-                case SamplerState.FILTER_NEAREST  -> GL_NEAREST_MIPMAP_NEAREST;
-                case SamplerState.FILTER_LINEAR   -> GL_LINEAR_MIPMAP_NEAREST;
+            case SamplerDesc.MIPMAP_MODE_NONE    -> filter_to_mag_filter(filter);
+            case SamplerDesc.MIPMAP_MODE_NEAREST -> switch (filter) {
+                case SamplerDesc.FILTER_NEAREST  -> GL_NEAREST_MIPMAP_NEAREST;
+                case SamplerDesc.FILTER_LINEAR   -> GL_LINEAR_MIPMAP_NEAREST;
                 default -> throw new AssertionError(filter);
             };
-            case SamplerState.MIPMAP_MODE_LINEAR  -> switch (filter) {
-                case SamplerState.FILTER_NEAREST  -> GL_NEAREST_MIPMAP_LINEAR;
-                case SamplerState.FILTER_LINEAR   -> GL_LINEAR_MIPMAP_LINEAR;
+            case SamplerDesc.MIPMAP_MODE_LINEAR  -> switch (filter) {
+                case SamplerDesc.FILTER_NEAREST  -> GL_NEAREST_MIPMAP_LINEAR;
+                case SamplerDesc.FILTER_LINEAR   -> GL_LINEAR_MIPMAP_LINEAR;
                 default -> throw new AssertionError(filter);
             };
             default -> throw new AssertionError(mipmapMode);
@@ -105,17 +105,17 @@ public final class GLSampler extends Sampler {
 
     private static int address_mode_to_wrap(int addressMode) {
         return switch (addressMode) {
-            case SamplerState.ADDRESS_MODE_REPEAT          -> GL_REPEAT;
-            case SamplerState.ADDRESS_MODE_MIRRORED_REPEAT -> GL_MIRRORED_REPEAT;
-            case SamplerState.ADDRESS_MODE_CLAMP_TO_EDGE   -> GL_CLAMP_TO_EDGE;
-            case SamplerState.ADDRESS_MODE_CLAMP_TO_BORDER -> GL_CLAMP_TO_BORDER;
+            case SamplerDesc.ADDRESS_MODE_REPEAT          -> GL_REPEAT;
+            case SamplerDesc.ADDRESS_MODE_MIRRORED_REPEAT -> GL_MIRRORED_REPEAT;
+            case SamplerDesc.ADDRESS_MODE_CLAMP_TO_EDGE   -> GL_CLAMP_TO_EDGE;
+            case SamplerDesc.ADDRESS_MODE_CLAMP_TO_BORDER -> GL_CLAMP_TO_BORDER;
             default -> throw new AssertionError(addressMode);
         };
     }
     //@formatter:on
 
     @Override
-    protected void deallocate() {
+    protected void onRelease() {
         if (mSampler != 0) {
             ((GLDevice) getDevice()).getGL().glDeleteSamplers(mSampler);
         }

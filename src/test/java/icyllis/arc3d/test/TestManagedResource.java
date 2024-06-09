@@ -158,7 +158,7 @@ public class TestManagedResource {
         //noinspection unused
         Swizzle.make("rgb1");
         //noinspection unused
-        int sampler = SamplerState.make(SamplerState.FILTER_NEAREST, SamplerState.MIPMAP_MODE_NONE);
+        //int sampler = SamplerDesc.make(SamplerDesc.FILTER_NEAREST, SamplerDesc.MIPMAP_MODE_NONE);
 
         testTexture(dContext);
         testRenderTarget(dContext);

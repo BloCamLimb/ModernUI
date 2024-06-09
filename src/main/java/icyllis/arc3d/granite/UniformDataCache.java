@@ -22,6 +22,7 @@ package icyllis.arc3d.granite;
 import icyllis.arc3d.core.MathUtil;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 
@@ -52,9 +53,11 @@ public class UniformDataCache implements AutoCloseable {
      * @param block an immutable view of uniform data
      * @return a stable pointer to existing or copied uniform data
      */
-    @Nonnull
+    @Nullable
     public ByteBuffer insert(@Nonnull ByteBuffer block) {
-        assert block.remaining() > 0;
+        if (!block.hasRemaining()) {
+            return null;
+        }
         // the key of HashMap and the given ByteBuffer will never be the same object
         // so we are hashing and comparing their contents via vectorizedMismatch()
         ByteBuffer existing = mPointers.get(block);

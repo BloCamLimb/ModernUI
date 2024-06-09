@@ -115,6 +115,11 @@ public abstract class VulkanCommandBuffer extends CommandBuffer {
 
     }
 
+    @Override
+    public void bindTextureSampler(int binding, Image texture, Sampler sampler, short readSwizzle) {
+
+    }
+
     public boolean isRecording() {
         return mIsRecording;
     }

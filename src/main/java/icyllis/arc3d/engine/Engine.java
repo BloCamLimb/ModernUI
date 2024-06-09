@@ -140,32 +140,33 @@ public interface Engine {
         /**
          * None may represent OpenGL renderbuffers.
          */
-        byte kNone = 0;
+        int kNone = 0;
         /**
          * GL_TEXTURE_2D, GL_TEXTURE_2D_MULTISAMPLE;
          * VK_IMAGE_TYPE_2D, layers=1; VK_IMAGE_VIEW_TYPE_2D;
          */
-        byte k2D = 1;
+        int k2D = 1;
         /**
          * GL_TEXTURE_2D_ARRAY, GL_TEXTURE_2D_MULTISAMPLE_ARRAY;
          * VK_IMAGE_TYPE_2D, layers=N; VK_IMAGE_VIEW_TYPE_2D_ARRAY;
          */
-        byte k2DArray = 2;
+        int k2DArray = 2;
         /**
          * GL_TEXTURE_CUBE_MAP;
          * VK_IMAGE_TYPE_2D, layers=6; VK_IMAGE_VIEW_TYPE_CUBE;
          */
-        byte kCube = 3;
+        int kCube = 3;
         /**
          * GL_TEXTURE_CUBE_MAP_ARRAY;
          * VK_IMAGE_TYPE_2D, layers=6N; VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
          */
-        byte kCubeArray = 4;
+        int kCubeArray = 4;
         /**
          * GL_TEXTURE_3D;
          * VK_IMAGE_TYPE_3D, layers=1; VK_IMAGE_VIEW_TYPE_3D;
          */
-        byte k3D = 5;
+        int k3D = 5;
+        int kCount = 6;
     }
 
     interface ImageCreateFlags {

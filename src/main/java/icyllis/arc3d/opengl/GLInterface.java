@@ -124,6 +124,8 @@ public interface GLInterface extends GLInterfaceCommon {
     void glVertexArrayBindingDivisor(@NativeType("GLuint") int vaobj, @NativeType("GLuint") int bindingindex,
                                      @NativeType("GLuint") int divisor);
 
+    void glBindTextureUnit(@NativeType("GLuint") int unit, @NativeType("GLuint") int texture);
+
     void glSpecializeShader(@NativeType("GLuint") int shader, @NativeType("GLchar const *") CharSequence pEntryPoint,
                             @NativeType("GLuint const *") IntBuffer pConstantIndex,
                             @NativeType("GLuint const *") IntBuffer pConstantValue);

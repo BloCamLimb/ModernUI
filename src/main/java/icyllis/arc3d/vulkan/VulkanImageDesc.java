@@ -52,6 +52,16 @@ public final class VulkanImageDesc extends ImageDesc {
         super(width, height, depth, arraySize, mipLevelCount, sampleCount, flags);
     }
 
+    @Override
+    public int getBackend() {
+        return Engine.BackendApi.kVulkan;
+    }
+
+    @Override
+    public int getImageType() {
+        return 0;
+    }
+
     public void set(VulkanImageDesc info) {
         //super.set(info);
         mImage = info.mImage;

@@ -636,7 +636,7 @@ public abstract class Caps {
      * @see ISurface#FLAG_MEMORYLESS
      * @see ISurface#FLAG_PROTECTED
      */
-    public ImageDesc getDefaultColorImageDesc(byte imageType,
+    public ImageDesc getDefaultColorImageDesc(int imageType,
                                               int colorType,
                                               int width, int height,
                                               int depthOrArraySize,
@@ -662,22 +662,24 @@ public abstract class Caps {
      * @see ISurface#FLAG_MEMORYLESS
      * @see ISurface#FLAG_PROTECTED
      */
-    public ImageDesc getDefaultColorImageDesc(byte imageType,
+    @Nullable
+    public ImageDesc getDefaultColorImageDesc(int imageType,
                                               int colorType,
                                               int width, int height,
                                               int depthOrArraySize,
                                               int mipLevelCount,
                                               int sampleCount,
                                               int imageFlags) {
-        return ImageDesc.EMPTY;
+        return null;
     }
 
+    @Nullable
     public ImageDesc getDefaultDepthStencilImageDesc(int depthBits,
                                                      int stencilBits,
                                                      int width, int height,
                                                      int sampleCount,
                                                      int imageFlags) {
-        return ImageDesc.EMPTY;
+        return null;
     }
 
     /**

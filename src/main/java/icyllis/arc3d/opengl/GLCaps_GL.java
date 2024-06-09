@@ -391,6 +391,11 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
     }
 
     @Override
+    public void glTexParameteri(int target, int pname, int param) {
+        GL11C.glTexParameteri(target, pname, param);
+    }
+
+    @Override
     public void glDeleteTextures(int texture) {
         GL11C.glDeleteTextures(texture);
     }
@@ -444,6 +449,11 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
     @Override
     public void glViewport(int x, int y, int width, int height) {
         GL11C.glViewport(x, y, width, height);
+    }
+
+    @Override
+    public void glActiveTexture(int texture) {
+        GL13C.glActiveTexture(texture);
     }
 
     @Override
@@ -852,6 +862,12 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
     public void glVertexArrayBindingDivisor(int vaobj, int bindingindex, int divisor) {
         assert mDSASupport;
         GL45C.glVertexArrayBindingDivisor(vaobj, bindingindex, divisor);
+    }
+
+    @Override
+    public void glBindTextureUnit(int unit, int texture) {
+        assert mDSASupport;
+        GL45C.glBindTextureUnit(unit, texture);
     }
 
     @Override

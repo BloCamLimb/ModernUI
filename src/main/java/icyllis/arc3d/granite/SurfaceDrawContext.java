@@ -22,12 +22,16 @@ package icyllis.arc3d.granite;
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
 
+/**
+ * Used by {@link SurfaceDevice}
+ */
 public class SurfaceDrawContext implements AutoCloseable {
 
     private final RecordingContext mContext;
     private final ImageInfo mImageInfo;
 
     private final ImageViewProxy mReadView;
+    private final short mWriteSwizzle;
 
     private ImageViewProxy mDepthStencilTarget;
 
@@ -35,12 +39,14 @@ public class SurfaceDrawContext implements AutoCloseable {
 
     public SurfaceDrawContext(RecordingContext context,
                               ImageViewProxy readView,
+                              short writeSwizzle,
                               int colorType,
                               int alphaType,
                               ColorSpace colorSpace) {
         assert !context.isDiscarded();
         mContext = context;
         mReadView = readView;
+        mWriteSwizzle = writeSwizzle;
         mImageInfo = new ImageInfo(
                 getWidth(), getHeight(),
                 colorType, alphaType, colorSpace
@@ -83,16 +89,20 @@ public class SurfaceDrawContext implements AutoCloseable {
                 0,
                 sampleCount,
                 surfaceFlags);
-        if (!desc.isValid()) {
+        if (desc == null) {
             return null;
         }
         short readSwizzle = rContext.getCaps().getReadSwizzle(desc, colorType);
-        ImageViewProxy proxy = ImageViewProxy.make(rContext, desc, origin, readSwizzle, true, "SurfaceDrawContext");
-        if (proxy == null) {
+        ImageViewProxy targetView = ImageViewProxy.make(rContext, desc,
+                origin, readSwizzle,
+                /*budgeted*/true, "SurfaceDrawContext");
+        if (targetView == null) {
             return null;
         }
+        short writeSwizzle = rContext.getCaps().getWriteSwizzle(desc, colorType);
 
-        return new SurfaceDrawContext(rContext, proxy, colorType, ColorInfo.AT_PREMUL, colorSpace);
+        return new SurfaceDrawContext(rContext, targetView, writeSwizzle,
+                colorType, ColorInfo.AT_PREMUL, colorSpace);
     }
 
     /*public static SurfaceDrawContext make(RecordingContext rContext,

@@ -281,6 +281,11 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
     }
 
     @Override
+    public void glTexParameteri(int target, int pname, int param) {
+        GLES20.glTexParameteri(target, pname, param);
+    }
+
+    @Override
     public void glDeleteTextures(int texture) {
         GLES20.glDeleteTextures(texture);
     }
@@ -334,6 +339,11 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
     @Override
     public void glViewport(int x, int y, int width, int height) {
         GLES20.glViewport(x, y, width, height);
+    }
+
+    @Override
+    public void glActiveTexture(int texture) {
+        GLES20.glActiveTexture(texture);
     }
 
     @Override
@@ -735,6 +745,11 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
 
     @Override
     public void glVertexArrayBindingDivisor(int vaobj, int bindingindex, int divisor) {
+        assert false;
+    }
+
+    @Override
+    public void glBindTextureUnit(int unit, int texture) {
         assert false;
     }
 

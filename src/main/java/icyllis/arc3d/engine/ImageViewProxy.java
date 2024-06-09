@@ -124,8 +124,7 @@ public final class ImageViewProxy extends RefCnt {
                    int origin, short swizzle,
                    boolean budgeted,
                    String label) {
-        assert (desc.isValid());
-        mDesc = desc;
+        mDesc = Objects.requireNonNull(desc);
         mOrigin = origin;
         mSwizzle = swizzle;
         mLabel = label;
@@ -143,8 +142,7 @@ public final class ImageViewProxy extends RefCnt {
                    boolean isVolatile,
                    boolean lazyDimensions,
                    LazyInstantiateCallback callback) {
-        assert (desc.isValid());
-        mDesc = desc;
+        mDesc = Objects.requireNonNull(desc);
         mOrigin = origin;
         mSwizzle = swizzle;
         mLabel = "";
@@ -222,11 +220,11 @@ public final class ImageViewProxy extends RefCnt {
     @Nullable
     @SharedPtr
     public static ImageViewProxy make(@Nonnull Context context,
-                                      @Nonnull ImageDesc desc,
+                                      @Nullable ImageDesc desc,
                                       int origin, short swizzle,
                                       boolean budgeted,
                                       @Nullable String label) {
-        if (!desc.isValid()) {
+        if (desc == null) {
             return null;
         }
         var proxy = new ImageViewProxy(desc, origin, swizzle, budgeted, label);
@@ -244,7 +242,7 @@ public final class ImageViewProxy extends RefCnt {
     @Nullable
     @SharedPtr
     public static ImageViewProxy make(@Nonnull Context context,
-                                      byte imageType,
+                                      int imageType,
                                       int colorType,
                                       int width, int height,
                                       int depthOrArraySize,
@@ -252,6 +250,9 @@ public final class ImageViewProxy extends RefCnt {
                                       int origin, short swizzle) {
         var desc = context.getCaps().getDefaultColorImageDesc(imageType, colorType, width, height, depthOrArraySize,
                 imageFlags);
+        if (desc == null) {
+            return null;
+        }
         return make(context, desc, origin, swizzle, true, "");
     }
 
@@ -485,9 +486,13 @@ public final class ImageViewProxy extends RefCnt {
         return mImage != null && mImage.isWrapped();
     }
 
-    @Nullable
     public Image getImage() {
         return mImage;
+    }
+
+    @SharedPtr
+    public Image refImage() {
+        return RefCnt.create(mImage);
     }
 
     /**

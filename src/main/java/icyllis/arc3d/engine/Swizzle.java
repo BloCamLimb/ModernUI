@@ -37,6 +37,8 @@ public final class Swizzle {
     public static final short BGR1 = 0x5012;
     public static final short AAAA = 0x3333;
 
+    public static final short INVALID = (short) 0xFFFF;
+
     static {
         // make them inline at compile-time
         assert make('r', 'g', 'b', 'a') == RGBA;

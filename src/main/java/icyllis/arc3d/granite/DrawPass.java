@@ -21,20 +21,19 @@ package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
-import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.*;
-import java.util.function.ToIntFunction;
+import java.util.function.Function;
 
 /**
  * A draw pass represents a render pass, with limited and sorted draw commands.
  * <p>
  * Created immutable.
  */
-public class DrawPass {
+public class DrawPass implements AutoCloseable {
 
     //TODO move to somewhere else
     public static final int GEOMETRY_UNIFORM_BINDING = 0;
@@ -49,29 +48,32 @@ public class DrawPass {
 
     private final DrawCommandList mCommandList;
 
-    private final ArrayList<GraphicsPipelineDesc> mPipelineDescs;
-    private final IntArrayList mSamplerDescs;
+    private final Rect2i mBounds;
 
-    private final ObjectArrayList<@SharedPtr ImageViewProxy> mSampledImages;
+    private final ObjectArrayList<GraphicsPipelineDesc> mPipelineDescs;
+    private final ObjectArrayList<SamplerDesc> mSamplerDescs;
 
-    private @SharedPtr GraphicsPipeline[] mPipelines;
-    private @SharedPtr Sampler[] mSamplers;
+    private final ObjectArrayList<@SharedPtr ImageViewProxy> mTextures;
 
-    private DrawPass(DrawCommandList commandList,
-                     ArrayList<GraphicsPipelineDesc> pipelineDescs,
-                     ObjectArrayList<@SharedPtr ImageViewProxy> sampledImages,
-                     IntArrayList samplerDescs) {
+    private volatile @SharedPtr GraphicsPipeline[] mPipelines;
+    private volatile @SharedPtr Sampler[] mSamplers;
+
+    private DrawPass(DrawCommandList commandList, Rect2i bounds,
+                     ObjectArrayList<GraphicsPipelineDesc> pipelineDescs,
+                     ObjectArrayList<SamplerDesc> samplerDescs,
+                     ObjectArrayList<@SharedPtr ImageViewProxy> textures) {
         mCommandList = commandList;
+        mBounds = bounds;
         mPipelineDescs = pipelineDescs;
-        mSampledImages = sampledImages;
         mSamplerDescs = samplerDescs;
+        mTextures = textures;
     }
 
+    @Nullable
     public static DrawPass make(RecordingContext rContext,
                                 DrawList drawList,
                                 ImageViewProxy colorTarget,
-                                byte loadStoreOps,
-                                float[] clearColor) {
+                                ImageInfo deviceInfo) {
 
         var bufferManager = rContext.getDynamicBufferManager();
 
@@ -83,12 +85,12 @@ public class DrawPass {
         var commandList = new DrawCommandList();
 
 
-        var pipelineToIndexMap
-                = new Object2IntOpenHashMap<GraphicsPipelineDesc>();
-        var pipelineDescs = new ArrayList<GraphicsPipelineDesc>();
-        ToIntFunction<GraphicsPipelineDesc> insertPipelineDesc = desc -> {
-            pipelineDescs.add(desc);
-            return pipelineDescs.size() - 1;
+        var pipelineToIndex = new HashMap<GraphicsPipelineDesc, Integer>();
+        var indexToPipeline = new ObjectArrayList<GraphicsPipelineDesc>();
+        Function<GraphicsPipelineDesc, Integer> pipelineAccumulator = desc -> {
+            int index = indexToPipeline.size();
+            indexToPipeline.add(desc);
+            return index;
         };
 
         var passBounds = new Rect2f();
@@ -96,170 +98,194 @@ public class DrawPass {
         var geometryUniformTracker = new UniformTracker();
         var fragmentUniformTracker = new UniformTracker();
 
-        var textureDataGatherer = new TextureDataGatherer();
-        var textureTracker = new TextureTracker();
-
         SortKey[] keys = new SortKey[drawList.numSteps()];
         int keyIndex = 0;
 
-        try (var uniformDataGatherer = new UniformDataGatherer(
-                UniformDataGatherer.Std140Layout);
-             var uniformDataCache = new UniformDataCache()) {
+        try (var textureDataGatherer = new TextureDataGatherer()) {
+            var textureTracker = new TextureTracker();
 
-            for (var draw : drawList.mDraws) {
+            try (var uniformDataCache = new UniformDataCache();
+                 var uniformDataGatherer = new UniformDataGatherer(
+                         UniformDataGatherer.Std140Layout)) {
 
-                for (int stepIndex = 0; stepIndex < draw.mRenderer.numSteps(); stepIndex++) {
-                    var step = draw.mRenderer.step(stepIndex);
+                for (var draw : drawList.mDraws) {
 
-                    int pipelineIndex = pipelineToIndexMap.computeIfAbsent(new GraphicsPipelineDesc(step),
-                            insertPipelineDesc);
+                    for (int stepIndex = 0; stepIndex < draw.mRenderer.numSteps(); stepIndex++) {
+                        var step = draw.mRenderer.step(stepIndex);
 
-                    uniformDataGatherer.reset();
-                    textureDataGatherer.reset();
-                    step.writeUniformsAndTextures(draw, uniformDataGatherer, textureDataGatherer);
+                        int pipelineIndex = pipelineToIndex.computeIfAbsent(new GraphicsPipelineDesc(step),
+                                pipelineAccumulator);
 
-                    var geometryUniforms = uniformDataCache.insert(uniformDataGatherer.finish());
-                    var geometryTextures = textureDataGatherer.finish();
+                        uniformDataGatherer.reset();
+                        textureDataGatherer.reset();
+                        step.writeUniformsAndTextures(draw, uniformDataGatherer, textureDataGatherer);
 
-                    var geometryUniformIndex = geometryUniformTracker.trackUniforms(
-                            pipelineIndex,
-                            geometryUniforms
-                    );
+                        var geometryUniforms = uniformDataCache.insert(uniformDataGatherer.finish());
+                        var geometryTextures = textureDataGatherer.finish();
 
-                    keys[keyIndex++] = new SortKey(
-                            draw,
-                            stepIndex,
-                            pipelineIndex,
-                            geometryUniformIndex,
-                            INVALID_INDEX,
-                            geometryTextures
-                    );
+                        var geometryUniformIndex = geometryUniformTracker.trackUniforms(
+                                pipelineIndex,
+                                geometryUniforms
+                        );
+
+                        keys[keyIndex++] = new SortKey(
+                                draw,
+                                stepIndex,
+                                pipelineIndex,
+                                geometryUniformIndex,
+                                INVALID_INDEX,
+                                geometryTextures
+                        );
+                    }
+
+                    passBounds.joinNoCheck(draw.mDrawBounds);
                 }
 
-                passBounds.joinNoCheck(draw.mDrawBounds);
+                if (!geometryUniformTracker.writeUniforms(bufferManager) ||
+                        !fragmentUniformTracker.writeUniforms(bufferManager)) {
+                    return null;
+                }
             }
 
-            if (!geometryUniformTracker.writeUniforms(bufferManager) ||
-                    !fragmentUniformTracker.writeUniforms(bufferManager)) {
-                return null;
-            }
-        }
+            assert keyIndex == keys.length;
+            // TimSort - stable
+            Arrays.sort(keys);
 
-        assert keyIndex == keys.length;
-        // TimSort - stable
-        Arrays.sort(keys);
+            MeshDrawWriter drawWriter = new MeshDrawWriter(bufferManager,
+                    commandList);
+            Rect2ic lastScissor = new Rect2i(0, 0, colorTarget.getWidth(), colorTarget.getHeight());
+            int lastPipelineIndex = INVALID_INDEX;
 
-        MeshDrawWriter drawWriter = new MeshDrawWriter(bufferManager,
-                commandList);
-        Rect2ic lastScissor = new Rect2i(0, 0, colorTarget.getWidth(), colorTarget.getHeight());
-        int lastPipelineIndex = INVALID_INDEX;
+            for (var key : keys) {
+                var draw = key.mDraw;
+                var step = key.step();
+                int pipelineIndex = key.pipelineIndex();
 
-        for (var key : keys) {
-            var draw = key.mDraw;
-            var step = key.step();
-            int pipelineIndex = key.pipelineIndex();
+                boolean pipelineStateChange = pipelineIndex != lastPipelineIndex;
 
-            boolean pipelineStateChange = pipelineIndex != lastPipelineIndex;
-
-            Rect2ic newScissor = !draw.mScissorRect.equals(lastScissor)
-                    ? draw.mScissorRect : null;
-            boolean geometryBindingChange = geometryUniformTracker.setCurrentUniforms(
-                    pipelineIndex, key.geometryUniformIndex()
-            );
-            boolean fragmentBindingChange = fragmentUniformTracker.setCurrentUniforms(
-                    pipelineIndex, key.fragmentUniformIndex()
-            );
-            boolean textureBindingChange = textureTracker.setCurrentTextures(key.mTextures);
-
-            boolean dynamicStateChange = newScissor != null ||
-                    geometryBindingChange ||
-                    fragmentBindingChange ||
-                    textureBindingChange;
-
-            if (pipelineStateChange) {
-                drawWriter.newPipelineState(
-                        step.vertexBinding(),
-                        step.instanceBinding(),
-                        step.vertexStride(),
-                        step.instanceStride()
+                Rect2ic newScissor = !draw.mScissorRect.equals(lastScissor)
+                        ? draw.mScissorRect : null;
+                boolean geometryBindingChange = geometryUniformTracker.setCurrentUniforms(
+                        pipelineIndex, key.geometryUniformIndex()
                 );
-            } else if (dynamicStateChange) {
-                drawWriter.newDynamicState();
-            }
+                boolean fragmentBindingChange = fragmentUniformTracker.setCurrentUniforms(
+                        pipelineIndex, key.fragmentUniformIndex()
+                );
+                boolean textureBindingChange = textureTracker.setCurrentTextures(key.mTextures);
 
-            // Make state changes before accumulating new draw data
-            if (pipelineStateChange) {
-                commandList.bindGraphicsPipeline(pipelineIndex);
-                lastPipelineIndex = pipelineIndex;
-            }
-            if (dynamicStateChange) {
-                if (newScissor != null) {
-                    commandList.setScissor(newScissor);
-                    lastScissor = newScissor;
-                }
-                if (geometryBindingChange) {
-                    geometryUniformTracker.bindUniforms(
-                            GEOMETRY_UNIFORM_BINDING,
-                            commandList
+                boolean dynamicStateChange = newScissor != null ||
+                        geometryBindingChange ||
+                        fragmentBindingChange ||
+                        textureBindingChange;
+
+                if (pipelineStateChange) {
+                    drawWriter.newPipelineState(
+                            step.vertexBinding(),
+                            step.instanceBinding(),
+                            step.vertexStride(),
+                            step.instanceStride()
                     );
+                } else if (dynamicStateChange) {
+                    drawWriter.newDynamicState();
                 }
-                if (fragmentBindingChange) {
-                    fragmentUniformTracker.bindUniforms(
-                            FRAGMENT_UNIFORM_BINDING,
-                            commandList
-                    );
+
+                // Make state changes before accumulating new draw data
+                if (pipelineStateChange) {
+                    commandList.bindGraphicsPipeline(pipelineIndex);
+                    lastPipelineIndex = pipelineIndex;
                 }
-                if (textureBindingChange) {
-                    textureTracker.bindTextures(commandList);
+                if (dynamicStateChange) {
+                    if (newScissor != null) {
+                        commandList.setScissor(newScissor);
+                        lastScissor = newScissor;
+                    }
+                    if (geometryBindingChange) {
+                        geometryUniformTracker.bindUniforms(
+                                GEOMETRY_UNIFORM_BINDING,
+                                commandList
+                        );
+                    }
+                    if (fragmentBindingChange) {
+                        fragmentUniformTracker.bindUniforms(
+                                FRAGMENT_UNIFORM_BINDING,
+                                commandList
+                        );
+                    }
+                    if (textureBindingChange) {
+                        textureTracker.bindTextures(commandList);
+                    }
+                }
+
+                step.writeMesh(drawWriter, draw, new float[]{1, 1, 1, 1});
+
+                if (bufferManager.hasMappingFailed()) {
+                    return null;
                 }
             }
+            // Finish recording draw calls for any collected data at the end of the loop
+            drawWriter.flush();
+            commandList.finish();
 
-            step.writeMesh(drawWriter, draw, new float[]{1, 1, 1, 1});
+            var bounds = new Rect2i();
+            passBounds.roundOut(bounds);
 
-            if (bufferManager.hasMappingFailed()) {
-                return null;
-            }
+            return new DrawPass(commandList, bounds,
+                    indexToPipeline,
+                    textureDataGatherer.detachSamplers(),
+                    textureDataGatherer.detachTextures());
         }
-        // Finish recording draw calls for any collected data at the end of the loop
-        drawWriter.flush();
-        commandList.finish();
-
-
-        DrawPass pass = new DrawPass(commandList,
-                pipelineDescs,
-                textureDataGatherer.mIndexToTexture,
-                textureDataGatherer.mIndexToSampler);
-
-        return pass;
     }
 
-    @RawPtr
-    public GraphicsPipeline getPipeline(int index) {
-        return mPipelines[index];
+    public Rect2ic getBounds() {
+        return mBounds;
     }
 
     public DrawCommandList getCommandList() {
         return mCommandList;
     }
 
-    public List<@SharedPtr ImageViewProxy> getSampledImages() {
-        return mSampledImages;
-    }
-
     public boolean prepare(ResourceProvider resourceProvider,
                            RenderPassDesc renderPassDesc) {
-        mPipelines = new GraphicsPipeline[mPipelineDescs.size()];
-        for (int i = 0; i < mPipelineDescs.size(); i++) {
-            var pipeline = resourceProvider.findOrCreateGraphicsPipeline(
-                    mPipelineDescs.get(i),
-                    renderPassDesc
-            );
-            if (pipeline == null) {
-                return false;
+        @SharedPtr GraphicsPipeline[] pipelines = new GraphicsPipeline[mPipelineDescs.size()];
+        try {
+            for (int i = 0; i < mPipelineDescs.size(); i++) {
+                @SharedPtr
+                var pipeline = resourceProvider.findOrCreateGraphicsPipeline(
+                        mPipelineDescs.get(i),
+                        renderPassDesc
+                );
+                if (pipeline == null) {
+                    return false;
+                }
+                pipelines[i] = pipeline;
             }
-            mPipelines[i] = pipeline;
+        } finally {
+            // We must release the objects that have already been created.
+            mPipelines = pipelines;
+            // The DrawPass may be long-lived on a Recording and we no longer need the GraphicPipelineDescs
+            // once we've created pipelines, so we drop the storage for them here.
+            mPipelineDescs.clear();
         }
-        mPipelineDescs.clear();
+
+        @SharedPtr Sampler[] samplers = new Sampler[mSamplerDescs.size()];
+        try {
+            for (int i = 0; i < mSamplerDescs.size(); i++) {
+                @SharedPtr
+                var sampler = resourceProvider.findOrCreateCompatibleSampler(
+                        mSamplerDescs.get(i)
+                );
+                if (sampler == null) {
+                    return false;
+                }
+                samplers[i] = sampler;
+            }
+        } finally {
+            // We must release the objects that have already been created.
+            mSamplers = samplers;
+            // The DrawPass may be long-lived on a Recording and we no longer need the SamplerDescs
+            // once we've created Samplers, so we drop the storage for them here.
+            mSamplerDescs.clear();
+        }
 
         return true;
     }
@@ -273,7 +299,7 @@ public class DrawPass {
             switch (p.getInt()) {
                 case DrawCommandList.CMD_BIND_GRAPHICS_PIPELINE -> {
                     int pipelineIndex = p.getInt();
-                    if (!commandBuffer.bindGraphicsPipeline(getPipeline(pipelineIndex))) {
+                    if (!commandBuffer.bindGraphicsPipeline(mPipelines[pipelineIndex])) {
                         return false;
                     }
                 }
@@ -330,12 +356,12 @@ public class DrawPass {
                     int[] textures = (int[]) oa[oi++];
                     for (int i = 0; i < textures.length; i += 2) {
                         int binding = i >> 1;
-                        var textureView = mSampledImages.get(textures[i]);
-                        var sampler = mSamplers[textures[i|1]];
+                        var texture = mTextures.get(textures[i]);
+                        var sampler = mSamplers[textures[i | 1]];
                         commandBuffer.bindTextureSampler(binding,
-                                textureView.getImage(),
+                                texture.getImage(),
                                 sampler,
-                                textureView.getSwizzle());
+                                texture.getSwizzle());
                     }
                 }
             }
@@ -344,12 +370,20 @@ public class DrawPass {
         return true;
     }
 
+    @Override
     public void close() {
         if (mPipelines != null) {
             for (int i = 0; i < mPipelines.length; i++) {
                 mPipelines[i] = RefCnt.move(mPipelines[i]);
             }
         }
+        if (mSamplers != null) {
+            for (int i = 0; i < mSamplers.length; i++) {
+                mSamplers[i] = RefCnt.move(mSamplers[i]);
+            }
+        }
+        mTextures.forEach(RefCnt::unref);
+        mTextures.clear();
     }
 
     public static final class SortKey implements Comparable<SortKey> {

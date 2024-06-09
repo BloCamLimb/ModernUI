@@ -1140,8 +1140,9 @@ public class GLCaps extends Caps {
         return 0;
     }
 
+    @Nullable
     @Override
-    public ImageDesc getDefaultColorImageDesc(byte imageType,
+    public ImageDesc getDefaultColorImageDesc(int imageType,
                                               int colorType,
                                               int width, int height,
                                               int depthOrArraySize,
@@ -1151,13 +1152,13 @@ public class GLCaps extends Caps {
         //TODO log errors
         if (width < 1 || height < 1 || depthOrArraySize < 1 ||
                 mipLevelCount < 0 || sampleCount < 0) {
-            return ImageDesc.EMPTY;
+            return null;
         }
         //TODO make texture sample counts and renderbuffer sample counts
         int format = mColorTypeToBackendFormat[colorType];
         FormatInfo formatInfo = getFormatInfo(format);
         if ((imageFlags & ISurface.FLAG_PROTECTED) != 0) {
-            return ImageDesc.EMPTY;
+            return null;
         }
         final int depth;
         final int arraySize;
@@ -1178,18 +1179,18 @@ public class GLCaps extends Caps {
         if ((imageFlags & (ISurface.FLAG_SAMPLED_IMAGE | ISurface.FLAG_STORAGE_IMAGE)) != 0) {
             final int maxSize = maxTextureSize();
             if (width > maxSize || height > maxSize || !formatInfo.isTexturable()) {
-                return ImageDesc.EMPTY;
+                return null;
             }
             target = GL_TEXTURE_2D;
         } else if ((imageFlags & ISurface.FLAG_RENDERABLE) != 0) {
             final int maxSize = maxRenderTargetSize();
             if (width > maxSize || height > maxSize) {
-                return ImageDesc.EMPTY;
+                return null;
             }
             //TODO if cannot make renderbuffer, create texture instead
             target = GL_RENDERBUFFER;
         } else {
-            return ImageDesc.EMPTY;
+            return null;
         }
         int maxMipLevels = DataUtils.computeMipLevelCount(width, height, depth);
         if (mipLevelCount == 0) {
@@ -1201,17 +1202,17 @@ public class GLCaps extends Caps {
         }
         if ((imageFlags & ISurface.FLAG_RENDERABLE) != 0) {
             if ((formatInfo.colorTypeFlags(colorType) & ColorTypeInfo.RENDERABLE_FLAG) == 0) {
-                return ImageDesc.EMPTY;
+                return null;
             }
             sampleCount = getRenderTargetSampleCount(sampleCount, format);
             if (sampleCount == 0) {
-                return ImageDesc.EMPTY;
+                return null;
             }
         } else {
             sampleCount = 1;
         }
         if (sampleCount > 1 && mipLevelCount > 1) {
-            return ImageDesc.EMPTY;
+            return null;
         }
         // ignore MEMORYLESS flag
         return new GLImageDesc(target,

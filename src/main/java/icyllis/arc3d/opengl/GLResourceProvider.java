@@ -21,7 +21,6 @@ package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.*;
-import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
 
 import javax.annotation.Nullable;
 
@@ -32,13 +31,7 @@ import static org.lwjgl.opengl.GL33C.GL_RENDERBUFFER;
  */
 public final class GLResourceProvider extends ResourceProvider {
 
-    private static final int SAMPLER_CACHE_SIZE = 32;
-
     private final GLDevice mDevice;
-
-    // LRU cache, samplers are shared by mHWTextureSamplers and mSamplerCache
-    private final Int2ObjectLinkedOpenHashMap<GLSampler> mSamplerCache =
-            new Int2ObjectLinkedOpenHashMap<>(SAMPLER_CACHE_SIZE);
 
     private final GLFramebuffer.ResourceKey mFramebufferKey = new GLFramebuffer.ResourceKey();
 
@@ -47,20 +40,10 @@ public final class GLResourceProvider extends ResourceProvider {
         mDevice = device;
     }
 
-    void discard() {
-        mSamplerCache.values().forEach(GLSampler::discard);
-        release();
-    }
-
-    void release() {
-        mSamplerCache.values().forEach(GLSampler::unref);
-        mSamplerCache.clear();
-    }
-
     @SharedPtr
     @Override
     protected GLGraphicsPipeline createGraphicsPipeline(PipelineDesc pipelineDesc,
-                                                      RenderPassDesc renderPassDesc) {
+                                                        RenderPassDesc renderPassDesc) {
         return GLGraphicsPipelineBuilder.createGraphicsPipeline(mDevice, pipelineDesc);
     }
 
@@ -81,6 +64,20 @@ public final class GLResourceProvider extends ResourceProvider {
 
     @Nullable
     @SharedPtr
+    @Override
+    protected GLBuffer onCreateNewBuffer(long size, int usage) {
+        return GLBuffer.make(mContext, size, usage);
+    }
+
+    @Nullable
+    @SharedPtr
+    @Override
+    protected Sampler createSampler(SamplerDesc desc) {
+        return GLSampler.create(mContext, desc);
+    }
+
+    @Nullable
+    @SharedPtr
     public GLFramebuffer findOrCreateFramebuffer(FramebufferDesc framebufferDesc) {
         @SharedPtr
         GLFramebuffer framebuffer = (GLFramebuffer) mResourceCache.findAndRefResource(
@@ -97,36 +94,5 @@ public final class GLResourceProvider extends ResourceProvider {
         framebuffer.setKey(key);
         mResourceCache.insertResource(framebuffer);
         return framebuffer;
-    }
-
-    @Nullable
-    @SharedPtr
-    @Override
-    protected GLBuffer onCreateNewBuffer(long size, int usage) {
-        return GLBuffer.make(mContext, size, usage);
-    }
-
-    /**
-     * Finds or creates a compatible {@link GLSampler} based on the SamplerState.
-     *
-     * @param samplerState see {@link SamplerState}
-     * @return the sampler object, or null if failed
-     */
-    @Nullable
-    @SharedPtr
-    public GLSampler findOrCreateCompatibleSampler(int samplerState) {
-        GLSampler sampler = mSamplerCache.getAndMoveToFirst(samplerState);
-        if (sampler == null) {
-            sampler = GLSampler.create(mDevice, samplerState);
-            if (sampler == null) {
-                return null;
-            }
-            while (mSamplerCache.size() >= SAMPLER_CACHE_SIZE) {
-                mSamplerCache.removeLast().unref();
-            }
-            mSamplerCache.putAndMoveToFirst(samplerState, sampler);
-        }
-        sampler.ref();
-        return sampler;
     }
 }

@@ -22,25 +22,27 @@ package icyllis.arc3d.granite;
 import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.ImageViewProxy;
-import it.unimi.dsi.fastutil.ints.*;
+import icyllis.arc3d.engine.SamplerDesc;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.function.Function;
 
-public class TextureDataGatherer {
+public class TextureDataGatherer implements AutoCloseable {
 
-    final IdentityHashMap<ImageViewProxy, Integer> mTextureToIndex = new IdentityHashMap<>();
-    final ObjectArrayList<@SharedPtr ImageViewProxy> mIndexToTexture = new ObjectArrayList<>();
-    final Function<ImageViewProxy, Integer> mTextureAccumulator = image -> {
+    private final IdentityHashMap<ImageViewProxy, Integer> mTextureToIndex = new IdentityHashMap<>();
+    private ObjectArrayList<@SharedPtr ImageViewProxy> mIndexToTexture = new ObjectArrayList<>();
+    private final Function<ImageViewProxy, Integer> mTextureAccumulator = texture -> {
         int index = mIndexToTexture.size();
-        mIndexToTexture.add(RefCnt.create(image));
+        mIndexToTexture.add(RefCnt.create(texture));
         return index;
     };
 
-    final Int2IntOpenHashMap mSamplerToIndex = new Int2IntOpenHashMap();
-    final IntArrayList mIndexToSampler = new IntArrayList();
-    final Int2IntFunction mSamplerAccumulator = sampler -> {
+    private final HashMap<SamplerDesc, Integer> mSamplerToIndex = new HashMap<>();
+    private ObjectArrayList<SamplerDesc> mIndexToSampler = new ObjectArrayList<>();
+    private final Function<SamplerDesc, Integer> mSamplerAccumulator = sampler -> {
         int index = mIndexToSampler.size();
         mIndexToSampler.add(sampler);
         return index;
@@ -48,7 +50,8 @@ public class TextureDataGatherer {
 
     final IntArrayList mTextureData = new IntArrayList();
 
-    public void add(@SharedPtr ImageViewProxy textureView, int samplerDesc) {
+    public void add(@SharedPtr ImageViewProxy textureView, SamplerDesc samplerDesc) {
+        assert textureView != null && samplerDesc != null;
         int textureIndex = mTextureToIndex.computeIfAbsent(textureView, mTextureAccumulator);
         textureView.unref();
         int samplerIndex = mSamplerToIndex.computeIfAbsent(samplerDesc, mSamplerAccumulator);
@@ -66,5 +69,25 @@ public class TextureDataGatherer {
      */
     public int[] finish() {
         return mTextureData.toIntArray();
+    }
+
+    ObjectArrayList<@SharedPtr ImageViewProxy> detachTextures() {
+        var res = mIndexToTexture;
+        mIndexToTexture = null;
+        return res;
+    }
+
+    ObjectArrayList<SamplerDesc> detachSamplers() {
+        var res = mIndexToSampler;
+        mIndexToSampler = null;
+        return res;
+    }
+
+    @Override
+    public void close() {
+        if (mIndexToTexture != null) {
+            mIndexToTexture.forEach(RefCnt::unref);
+        }
+        mIndexToTexture = null;
     }
 }

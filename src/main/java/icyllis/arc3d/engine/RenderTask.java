@@ -301,12 +301,12 @@ public abstract class RenderTask extends RefCnt {
         }
 
         ImageViewProxy imageViewProxy = dependency.asImageProxy();
-        if (SamplerState.isMipmapped(samplerState)) {
+        /*if (SamplerDesc.isMipmapped(samplerState)) {
             assert imageViewProxy != null;
-            /*if (imageProxy.isMipmapped() && imageProxy.isMipmapsDirty()) {
+            if (imageProxy.isMipmapped() && imageProxy.isMipmapsDirty()) {
                 resolveFlags |= RESOLVE_FLAG_MIPMAPS;
-            }*/
-        }
+            }
+        }*/
 
         if (resolveFlags != 0) {
             if (mTextureResolveTask == null) {

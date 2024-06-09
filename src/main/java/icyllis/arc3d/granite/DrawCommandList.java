@@ -61,6 +61,9 @@ public class DrawCommandList {
      * The heap buffer that holds all primitive data.
      */
     public ByteBuffer mPrimitives = ByteBuffer.allocate(512);
+    /**
+     * Holds all reference data, raw pointers.
+     */
     public final ObjectArrayList<Object> mPointers = new ObjectArrayList<>();
 
     private void grow(int minCapacity) {

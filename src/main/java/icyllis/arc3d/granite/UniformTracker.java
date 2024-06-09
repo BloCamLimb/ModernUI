@@ -23,6 +23,7 @@ import icyllis.arc3d.engine.BufferViewInfo;
 import icyllis.arc3d.engine.DynamicBufferManager;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
+import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.util.IdentityHashMap;
 import java.util.function.Function;
@@ -65,7 +66,7 @@ public class UniformTracker {
      * @return uniform index
      */
     public int trackUniforms(int pipelineIndex,
-                             ByteBuffer data) {
+                             @Nullable ByteBuffer data) {
         if (data == null) {
             return DrawPass.INVALID_INDEX;
         }

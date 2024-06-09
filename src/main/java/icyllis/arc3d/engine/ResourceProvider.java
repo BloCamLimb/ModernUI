@@ -22,6 +22,7 @@ package icyllis.arc3d.engine;
 import icyllis.arc3d.core.*;
 import org.jetbrains.annotations.ApiStatus;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
@@ -460,6 +461,38 @@ public abstract class ResourceProvider {
 
         return texture;
     }
+
+    /**
+     * Finds or creates a compatible {@link Sampler} based on the SamplerState.
+     *
+     * @param desc see {@link SamplerDesc}
+     * @return the sampler object, or null if failed
+     */
+    @Nullable
+    @SharedPtr
+    public final Sampler findOrCreateCompatibleSampler(@Nonnull SamplerDesc desc) {
+        @SharedPtr
+        Sampler sampler = (Sampler) mResourceCache.findAndRefResource(
+                desc, /*budgeted*/true
+        );
+        if (sampler != null) {
+            return sampler;
+        }
+
+        sampler = createSampler(desc);
+        if (sampler == null) {
+            return null;
+        }
+
+        sampler.setKey(desc);
+        mResourceCache.insertResource(sampler);
+
+        return sampler;
+    }
+
+    @Nullable
+    @SharedPtr
+    protected abstract Sampler createSampler(SamplerDesc desc);
 
     ///////////////////////////////////////////////////////////////////////////
     // Framebuffers
