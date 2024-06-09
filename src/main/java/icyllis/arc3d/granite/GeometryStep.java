@@ -150,7 +150,7 @@ public abstract class GeometryStep extends Processor {
      * fixed or dynamic state arrays. TextureSamplers don't perform any coord manipulation to account
      * for texture origin.
      *
-     * @see SamplerState
+     * @see SamplerDesc
      */
     public int textureSamplerState(int i) {
         throw new IndexOutOfBoundsException(i);

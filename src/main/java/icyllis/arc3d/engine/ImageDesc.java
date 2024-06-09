@@ -34,15 +34,7 @@ import javax.annotation.concurrent.Immutable;
  * All parameters are validated by {@link Caps}.
  */
 @Immutable
-public class ImageDesc {
-
-    /**
-     * {@link ImageDesc} is always non-null, an empty instance may be used
-     * to represent invalid image info.
-     *
-     * @see #isValid()
-     */
-    public static final ImageDesc EMPTY = new ImageDesc();
+public abstract class ImageDesc {
 
     protected final int mWidth;
     protected final int mHeight;
@@ -51,12 +43,6 @@ public class ImageDesc {
     protected final byte mMipLevelCount;
     protected final byte mSampleCount;
     protected final int mFlags;
-
-    private ImageDesc() {
-        mWidth = mHeight = mDepth = 0;
-        mArraySize = mMipLevelCount = mSampleCount = 1;
-        mFlags = 0;
-    }
 
     protected ImageDesc(int width, int height,
                         int depth, int arraySize,
@@ -75,25 +61,17 @@ public class ImageDesc {
         mFlags = flags;
     }
 
-    public final boolean isValid() {
-        return this != EMPTY;
-    }
-
     /**
      * @return see {@link Engine.BackendApi}
      */
-    public int getBackend() {
-        throw new UnsupportedOperationException();
-    }
+    public abstract int getBackend();
 
     /**
      * Returns the default image view type.
      *
      * @return see {@link Engine.ImageType}
      */
-    public byte getImageType() {
-        throw new UnsupportedOperationException();
-    }
+    public abstract int getImageType();
 
     /**
      * @return the width in texels

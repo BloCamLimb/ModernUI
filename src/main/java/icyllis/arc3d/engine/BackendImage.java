@@ -69,7 +69,7 @@ public abstract class BackendImage {
     /**
      * @return see {@link Engine.ImageType}
      */
-    public final byte getImageType() {
+    public final int getImageType() {
         return mDesc.getImageType();
     }
 

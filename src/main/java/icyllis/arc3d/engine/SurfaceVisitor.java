@@ -26,7 +26,7 @@ public interface SurfaceVisitor {
 
     /**
      * @param texture      raw ptr to surface proxy
-     * @param samplerState see {@link SamplerState}
+     * @param samplerState see {@link SamplerDesc}
      */
     void visit(@RawPtr SurfaceProxy texture, int samplerState);
 }

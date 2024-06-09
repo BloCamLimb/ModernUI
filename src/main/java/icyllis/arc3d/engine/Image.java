@@ -76,7 +76,12 @@ public abstract class Image extends Resource {
         return mMutableState;
     }
 
-    public final byte getImageType() {
+    /**
+     * Returns the default image view type.
+     *
+     * @return see {@link Engine.ImageType}
+     */
+    public final int getImageType() {
         return mDesc.getImageType();
     }
 

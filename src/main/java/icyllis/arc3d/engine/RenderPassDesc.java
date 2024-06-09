@@ -24,7 +24,7 @@ import javax.annotation.Nullable;
 /**
  * Descriptor to create a render pass.
  */
-public class RenderPassDesc {
+public final class RenderPassDesc {
 
     public static class ColorAttachmentDesc {
         @Nullable

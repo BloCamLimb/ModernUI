@@ -142,9 +142,9 @@ public class GLGraphicsPipeline extends GraphicsPipeline {
         int unit = 0;
         for (int i = 0, n = graphicsPipelineDesc.geomProc().numTextureSamplers(); i < n; i++) {
             GLTexture texture = (GLTexture) geomTextures[i].getImage();
-            commandBuffer.bindTextureSampler(unit++, texture,
+            /*commandBuffer.bindTextureSampler(unit++, texture,
                     graphicsPipelineDesc.geomProc().textureSamplerState(i),
-                    graphicsPipelineDesc.geomProc().textureSamplerSwizzle(i));
+                    graphicsPipelineDesc.geomProc().textureSamplerSwizzle(i));*/
         }
         //TODO bind FP textures
 

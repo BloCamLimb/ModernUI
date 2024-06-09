@@ -22,6 +22,8 @@ package icyllis.arc3d.engine;
 import icyllis.arc3d.core.MathUtil;
 import org.jetbrains.annotations.Contract;
 
+import javax.annotation.concurrent.Immutable;
+
 /**
  * Represents the filtering and tile modes used to access a texture. It's packed as an
  * <code>int</code> value.
@@ -36,7 +38,8 @@ import org.jetbrains.annotations.Contract;
  * </ul>
  * <b>Do NOT change the packing format and the default value</b>.
  */
-public final class SamplerState {
+@Immutable
+public final class SamplerDesc implements IResourceKey {
 
     //@formatter:off
     /**
@@ -68,20 +71,22 @@ public final class SamplerState {
     /**
      * Default value. mag linear, min linear, mipmap_none, address_clamp_to_edge, anisotropy=1.
      */
-    public static final int DEFAULT = 0x1222011;
+    public static final SamplerDesc DEFAULT = new SamplerDesc(0x1222011);
 
     static {
-        // make them inline at compile-time
-        assert make(FILTER_LINEAR) == DEFAULT;
-        assert make(FILTER_LINEAR, MIPMAP_MODE_NONE) == DEFAULT;
-        assert make(FILTER_LINEAR, MIPMAP_MODE_NONE, ADDRESS_MODE_CLAMP_TO_EDGE) == DEFAULT;
-        assert getMagFilter(DEFAULT) == FILTER_LINEAR;
-        assert getMinFilter(DEFAULT) == FILTER_LINEAR;
-        assert getMipmapMode(DEFAULT) == MIPMAP_MODE_NONE;
-        assert getAddressModeX(DEFAULT) == ADDRESS_MODE_CLAMP_TO_EDGE;
-        assert getAddressModeY(DEFAULT) == ADDRESS_MODE_CLAMP_TO_EDGE;
-        assert getAddressModeZ(DEFAULT) == ADDRESS_MODE_CLAMP_TO_EDGE;
-        assert getMaxAnisotropy(DEFAULT) == 1;
+        assert DEFAULT.getMagFilter() == FILTER_LINEAR;
+        assert DEFAULT.getMinFilter() == FILTER_LINEAR;
+        assert DEFAULT.getMipmapMode() == MIPMAP_MODE_NONE;
+        assert DEFAULT.getAddressModeX() == ADDRESS_MODE_CLAMP_TO_EDGE;
+        assert DEFAULT.getAddressModeY() == ADDRESS_MODE_CLAMP_TO_EDGE;
+        assert DEFAULT.getAddressModeZ() == ADDRESS_MODE_CLAMP_TO_EDGE;
+        assert DEFAULT.getMaxAnisotropy() == 1;
+    }
+
+    private final int mState;
+
+    SamplerDesc(int state) {
+        mState = state;
     }
 
     /**
@@ -90,9 +95,9 @@ public final class SamplerState {
      * @param filter the filter
      */
     @Contract(pure = true)
-    public static int make(int filter) {
+    public static SamplerDesc make(int filter) {
         assert (filter == FILTER_NEAREST || filter == FILTER_LINEAR);
-        return 0x1222000 | filter | (filter << 4);
+        return new SamplerDesc(0x1222000 | filter | (filter << 4));
     }
 
     /**
@@ -102,13 +107,13 @@ public final class SamplerState {
      * @param mipmap the mipmap mode
      */
     @Contract(pure = true)
-    public static int make(int filter, int mipmap) {
+    public static SamplerDesc make(int filter, int mipmap) {
         assert (filter == FILTER_NEAREST ||
                 filter == FILTER_LINEAR);
         assert (mipmap == MIPMAP_MODE_NONE ||
                 mipmap == MIPMAP_MODE_NEAREST ||
                 mipmap == MIPMAP_MODE_LINEAR);
-        return 0x1222000 | filter | (filter << 4) | (mipmap << 8);
+        return new SamplerDesc(0x1222000 | filter | (filter << 4) | (mipmap << 8));
     }
 
     /**
@@ -119,7 +124,7 @@ public final class SamplerState {
      * @param address the address mode
      */
     @Contract(pure = true)
-    public static int make(int filter, int mipmap, int address) {
+    public static SamplerDesc make(int filter, int mipmap, int address) {
         return make(filter, filter, mipmap, address, address, address);
     }
 
@@ -133,8 +138,8 @@ public final class SamplerState {
      * @param addressModeY the address mode Y
      */
     @Contract(pure = true)
-    public static int make(int magFilter, int minFilter, int mipmapMode,
-                           int addressModeX, int addressModeY, int addressModeZ) {
+    public static SamplerDesc make(int magFilter, int minFilter, int mipmapMode,
+                                   int addressModeX, int addressModeY, int addressModeZ) {
         assert (magFilter == FILTER_NEAREST ||
                 magFilter == FILTER_LINEAR);
         assert (minFilter == FILTER_NEAREST ||
@@ -145,13 +150,13 @@ public final class SamplerState {
         assert (addressModeX >= 0 && addressModeX <= ADDRESS_MODE_CLAMP_TO_BORDER);
         assert (addressModeY >= 0 && addressModeY <= ADDRESS_MODE_CLAMP_TO_BORDER);
         assert (addressModeZ >= 0 && addressModeZ <= ADDRESS_MODE_CLAMP_TO_BORDER);
-        return magFilter |
+        return new SamplerDesc(magFilter |
                 (minFilter << 4) |
                 (mipmapMode << 8) |
                 (addressModeX << 12) |
                 (addressModeY << 16) |
                 (addressModeZ << 20) |
-                0x1000000;
+                0x1000000);
     }
 
     /**
@@ -164,85 +169,85 @@ public final class SamplerState {
      * @param maxAnisotropy the max anisotropy filtering level
      */
     @Contract(pure = true)
-    public static int makeAnisotropy(int addressModeX, int addressModeY, int addressModeZ,
-                                     int maxAnisotropy, boolean isMipmapped) {
+    public static SamplerDesc makeAnisotropy(int addressModeX, int addressModeY, int addressModeZ,
+                                             int maxAnisotropy, boolean isMipmapped) {
         assert (addressModeX >= 0 && addressModeX <= ADDRESS_MODE_CLAMP_TO_BORDER);
         assert (addressModeY >= 0 && addressModeY <= ADDRESS_MODE_CLAMP_TO_BORDER);
         assert (addressModeZ >= 0 && addressModeZ <= ADDRESS_MODE_CLAMP_TO_BORDER);
         // filter mode is always linear
-        return 0x11 | (addressModeX << 12) | (addressModeY << 16) | (addressModeZ << 20) |
+        return new SamplerDesc(0x11 | (addressModeX << 12) | (addressModeY << 16) | (addressModeZ << 20) |
                 (isMipmapped ? MIPMAP_MODE_LINEAR << 8 : MIPMAP_MODE_NONE << 8) |
-                (MathUtil.clamp(maxAnisotropy, 1, 64) << 24);
+                (MathUtil.clamp(maxAnisotropy, 1, 64) << 24));
     }
 
     //////// Unpack Methods \\\\\\\\
 
     @Contract(pure = true)
-    public static int getMagFilter(int samplerState) {
-        return samplerState & 0xF;
+    public int getMagFilter() {
+        return mState & 0xF;
     }
 
     @Contract(pure = true)
-    public static int getMinFilter(int samplerState) {
-        return (samplerState >> 4) & 0xF;
+    public int getMinFilter() {
+        return (mState >> 4) & 0xF;
     }
 
     @Contract(pure = true)
-    public static int getMipmapMode(int samplerState) {
-        return (samplerState >> 8) & 0xF;
+    public int getMipmapMode() {
+        return (mState >> 8) & 0xF;
     }
 
     @Contract(pure = true)
-    public static int getAddressModeX(int samplerState) {
-        return (samplerState >> 12) & 0xF;
+    public int getAddressModeX() {
+        return (mState >> 12) & 0xF;
     }
 
     @Contract(pure = true)
-    public static int getAddressModeY(int samplerState) {
-        return (samplerState >> 16) & 0xF;
+    public int getAddressModeY() {
+        return (mState >> 16) & 0xF;
     }
 
     @Contract(pure = true)
-    public static int getAddressModeZ(int samplerState) {
-        return (samplerState >> 20) & 0xF;
+    public int getAddressModeZ() {
+        return (mState >> 20) & 0xF;
     }
 
     @Contract(pure = true)
-    public static boolean isMipmapped(int samplerState) {
-        return getMipmapMode(samplerState) != MIPMAP_MODE_NONE;
+    public boolean isMipmapped() {
+        return getMipmapMode() != MIPMAP_MODE_NONE;
     }
 
     @Contract(pure = true)
-    public static boolean isRepeatedX(int samplerState) {
-        int addressX = getAddressModeX(samplerState);
+    public boolean isRepeatedX() {
+        int addressX = getAddressModeX();
         return addressX == ADDRESS_MODE_REPEAT || addressX == ADDRESS_MODE_MIRRORED_REPEAT;
     }
 
     @Contract(pure = true)
-    public static boolean isRepeatedY(int samplerState) {
-        int addressY = getAddressModeY(samplerState);
+    public boolean isRepeatedY() {
+        int addressY = getAddressModeY();
         return addressY == ADDRESS_MODE_REPEAT || addressY == ADDRESS_MODE_MIRRORED_REPEAT;
     }
 
     @Contract(pure = true)
-    public static boolean isRepeatedZ(int samplerState) {
-        int addressZ = getAddressModeZ(samplerState);
+    public boolean isRepeatedZ() {
+        int addressZ = getAddressModeZ();
         return addressZ == ADDRESS_MODE_REPEAT || addressZ == ADDRESS_MODE_MIRRORED_REPEAT;
     }
 
     @Contract(pure = true)
-    public static boolean isRepeated(int samplerState) {
-        return isRepeatedX(samplerState) || isRepeatedY(samplerState) || isRepeatedZ(samplerState);
+    public boolean isRepeated() {
+        return isRepeatedX() || isRepeatedY() || isRepeatedZ();
     }
 
     @Contract(pure = true)
-    public static int getMaxAnisotropy(int samplerState) {
-        return samplerState >>> 24;
+    public int getMaxAnisotropy() {
+        return mState >>> 24;
     }
 
     @Contract(pure = true)
-    public static boolean isAnisotropy(int samplerState) {
-        return getMaxAnisotropy(samplerState) > 1;
+    public boolean isAnisotropy() {
+        return getMaxAnisotropy() > 1;
     }
 
     //////// Helper Methods \\\\\\\\
@@ -252,7 +257,31 @@ public final class SamplerState {
      * Return value is a valid sampler state.
      */
     @Contract(pure = true)
-    public static int resetMipmapMode(int samplerState) {
-        return samplerState & ~0xF00;
+    public SamplerDesc resetMipmapMode() {
+        return new SamplerDesc(mState & ~0xF00);
+    }
+
+    @Override
+    public boolean isShareable() {
+        return true;
+    }
+
+    @Override
+    public SamplerDesc copy() {
+        return this;
+    }
+
+    @Override
+    public int hashCode() {
+        return mState;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o instanceof SamplerDesc that) {
+            return mState == that.mState;
+        }
+        return false;
     }
 }

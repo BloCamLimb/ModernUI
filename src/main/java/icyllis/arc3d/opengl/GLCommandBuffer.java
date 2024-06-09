@@ -28,7 +28,8 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import static org.lwjgl.opengl.GL32C.*;
-import static org.lwjgl.opengl.GL45C.glInvalidateFramebuffer;
+import static org.lwjgl.opengl.GL33C.GL_TEXTURE_SWIZZLE_R;
+import static org.lwjgl.opengl.GL45C.*;
 
 /**
  * The main command buffer of OpenGL context. The commands executed on {@link GLCommandBuffer} are
@@ -43,6 +44,10 @@ public final class GLCommandBuffer extends CommandBuffer {
             TriState_Unknown = 2;
 
     private final GLDevice mDevice;
+    private final GLResourceProvider mResourceProvider;
+
+    // ThreadLocal has additional overhead, cache the instance here
+    private final MemoryStack mStack = MemoryStack.stackGet();
 
     private int mHWViewportWidth;
     private int mHWViewportHeight;
@@ -67,6 +72,13 @@ public final class GLCommandBuffer extends CommandBuffer {
     @SharedPtr
     private final GLUniformBuffer[] mBoundUniformBuffers;
 
+    // Below OpenGL 4.5.
+    private int mHWActiveTextureUnit;
+
+    // [Unit][ImageType]
+    private final UniqueID[][] mHWTextureStates;
+    private final UniqueID[]   mHWSamplerStates;
+
     private GLGraphicsPipeline mGraphicsPipeline;
 
     private int mPrimitiveType;
@@ -84,13 +96,15 @@ public final class GLCommandBuffer extends CommandBuffer {
 
     private long mSubmitFence;
 
-    private GLResourceProvider mResourceProvider;
-
     GLCommandBuffer(GLDevice device, GLResourceProvider resourceProvider) {
         mDevice = device;
         mResourceProvider = resourceProvider;
 
         mBoundUniformBuffers = new GLUniformBuffer[4];
+
+        int maxTextureUnits = device.getCaps().shaderCaps().mMaxFragmentSamplers;
+        mHWTextureStates = new UniqueID[maxTextureUnits][Engine.ImageType.kCount];
+        mHWSamplerStates = new UniqueID[maxTextureUnits];
     }
 
     void submit() {
@@ -164,7 +178,7 @@ public final class GLCommandBuffer extends CommandBuffer {
         }
         flushViewport(framebufferDesc.mWidth, framebufferDesc.mHeight);
 
-        try (MemoryStack stack = MemoryStack.stackPush()) {
+        try (MemoryStack stack = mStack.push()) {
             var color = stack.mallocFloat(4);
             for (int i = 0; i < renderPassDesc.mNumColorAttachments; i++) {
                 var attachmentDesc = renderPassDesc.mColorAttachments[i];
@@ -202,7 +216,7 @@ public final class GLCommandBuffer extends CommandBuffer {
         GLFramebuffer framebuffer = mHWFramebuffer;
 
         RenderPassDesc renderPassDesc = mRenderPassDesc;
-        try (MemoryStack stack = MemoryStack.stackPush()) {
+        try (MemoryStack stack = mStack.push()) {
             var attachmentsToDiscard = stack.mallocInt(renderPassDesc.mNumColorAttachments + 1);
             for (int i = 0; i < renderPassDesc.mNumColorAttachments; i++) {
                 var attachmentDesc = renderPassDesc.mColorAttachments[i];
@@ -376,28 +390,6 @@ public final class GLCommandBuffer extends CommandBuffer {
         }
     }
 
-    /**
-     * Bind texture view and sampler to the same binding point.
-     *
-     * @param binding      the binding index (texture unit)
-     * @param texture      the texture image
-     * @param samplerState the sampler state for creating sampler, see {@link SamplerState}
-     * @param readSwizzle  the swizzle of the texture view for shader read, see {@link Swizzle}
-     */
-    public void bindTextureSampler(int binding, @RawPtr Image texture,
-                                   int samplerState, short readSwizzle) {
-        assert (texture != null && texture.isSampledImage());
-        if (SamplerState.isMipmapped(samplerState)) {
-            if (!texture.isMipmapped()) {
-                assert (!SamplerState.isAnisotropy(samplerState));
-                samplerState = SamplerState.resetMipmapMode(samplerState);
-            } else {
-                assert (!texture.isMipmapsDirty());
-            }
-        }
-        mDevice.bindTextureSampler(binding, (GLTexture) texture, samplerState, readSwizzle);
-    }
-
     @Override
     public boolean bindGraphicsPipeline(GraphicsPipeline graphicsPipeline) {
         /*mActiveIndexBuffer = RefCnt.move(mActiveIndexBuffer);
@@ -471,8 +463,84 @@ public final class GLCommandBuffer extends CommandBuffer {
     }
 
     @Override
-    public void bindTextureSampler(int binding, Image texture, Sampler sampler, short readSwizzle) {
+    public void bindTextureSampler(int binding, @RawPtr Image texture,
+                                   @RawPtr Sampler sampler, short readSwizzle) {
+        assert (texture != null && texture.isSampledImage());
+        GLTexture glTexture = (GLTexture) texture;
+        GLSampler glSampler = (GLSampler) sampler;
+        boolean dsa = mDevice.getCaps().hasDSASupport();
+        int target = glTexture.getTarget();
+        int imageType = glTexture.getImageType();
+        if (mHWTextureStates[binding][imageType] != glTexture.getUniqueID()) {
+            if (dsa) {
+                mDevice.getGL().glBindTextureUnit(binding, glTexture.getHandle());
+            } else {
+                setTextureUnit(binding);
+                mDevice.getGL().glBindTexture(target, glTexture.getHandle());
+            }
+            mHWTextureStates[binding][imageType] = glTexture.getUniqueID();
+        }
+        if (mHWSamplerStates[binding] != glSampler.getUniqueID()) {
+            mDevice.getGL().glBindSampler(binding, glSampler.getHandle());
+            mHWSamplerStates[binding] = glSampler.getUniqueID();
+        }
+        GLTextureMutableState mutableState = glTexture.getGLMutableState();
+        if (mutableState.baseMipmapLevel != 0) {
+            if (dsa) {
+                glTextureParameteri(glTexture.getHandle(), GL_TEXTURE_BASE_LEVEL, 0);
+            } else {
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+            }
+            mutableState.baseMipmapLevel = 0;
+        }
+        int maxLevel = texture.getMipLevelCount() - 1; // minus base level
+        if (mutableState.maxMipmapLevel != maxLevel) {
+            if (dsa) {
+                glTextureParameteri(glTexture.getHandle(), GL_TEXTURE_MAX_LEVEL, maxLevel);
+            } else {
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, maxLevel);
+            }
+            mutableState.maxMipmapLevel = maxLevel;
+        }
+        //TODO texture view
+        // texture view is available since 4.3, but less used in OpenGL
+        // in case of some driver bugs, we don't use GL_TEXTURE_SWIZZLE_RGBA
+        // and OpenGL ES does not support GL_TEXTURE_SWIZZLE_RGBA at all
+        for (int i = 0; i < 4; ++i) {
+            int swiz = switch (readSwizzle & 0xF) {
+                case 0 -> GL_RED;
+                case 1 -> GL_GREEN;
+                case 2 -> GL_BLUE;
+                case 3 -> GL_ALPHA;
+                case 4 -> GL_ZERO;
+                case 5 -> GL_ONE;
+                default -> throw new AssertionError(readSwizzle);
+            };
+            if (mutableState.getSwizzle(i) != swiz) {
+                mutableState.setSwizzle(i, swiz);
+                // swizzle enums are sequential
+                int channel = GL_TEXTURE_SWIZZLE_R + i;
+                if (dsa) {
+                    glTextureParameteri(glTexture.getHandle(), channel, swiz);
+                } else {
+                    glTexParameteri(GL_TEXTURE_2D, channel, swiz);
+                }
+            }
+            readSwizzle >>= 4;
+        }
+    }
 
+    /**
+     * Binds texture unit in context. OpenGL 3 only.
+     *
+     * @param unit 0-based texture unit index
+     */
+    private void setTextureUnit(int unit) {
+        assert (unit >= 0 && unit < mHWTextureStates.length);
+        if (unit != mHWActiveTextureUnit) {
+            mDevice.getGL().glActiveTexture(GL_TEXTURE0 + unit);
+            mHWActiveTextureUnit = unit;
+        }
     }
 
     private long getIndexOffset(int baseIndex) {

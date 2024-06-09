@@ -170,7 +170,7 @@ public abstract class GpuBufferPool {
             @SharedPtr
             Buffer buffer = mBuffers[mIndex];
             assert (!buffer.isMapped());
-            cmdBuffer.moveAndTrackGpuBuffer(buffer);
+            cmdBuffer.trackResource(buffer);
             mBuffers[mIndex--] = null;
         }
         assert (mIndex == -1);

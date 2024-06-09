@@ -633,7 +633,7 @@ public abstract class Device implements Engine {
                 srcX, srcY, srcX + width, srcY + height,
                 dst,
                 dstX, dstY, dstX + width, dstY + height,
-                SamplerState.FILTER_NEAREST
+                SamplerDesc.FILTER_NEAREST
         );
     }
 
@@ -643,7 +643,7 @@ public abstract class Device implements Engine {
      * If their dimensions are same and formats are compatible, then this method will
      * attempt to perform copy. Otherwise, this method will attempt to perform blit,
      * which may include resampling and format conversion. <var>filter</var> can be one
-     * of {@link SamplerState#FILTER_NEAREST} and {@link SamplerState#FILTER_LINEAR}.
+     * of {@link SamplerDesc#FILTER_NEAREST} and {@link SamplerDesc#FILTER_LINEAR}.
      * <p>
      * Only mipmap level 0 of 2D images will be copied, without any multisampled buffer
      * and depth/stencil buffer.

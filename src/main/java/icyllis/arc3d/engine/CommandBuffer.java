@@ -20,18 +20,48 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.*;
-
-import java.util.ArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 /**
  * Backend-specific command buffer, executing thread only.
  */
 public abstract class CommandBuffer {
 
-    private final ArrayList<@SharedPtr Buffer> mTrackingBuffers = new ArrayList<>();
+    private final ObjectArrayList<@SharedPtr Resource> mTrackingUsageResources = new ObjectArrayList<>();
+    private final ObjectArrayList<@SharedPtr Resource> mTrackingCommandBufferResources = new ObjectArrayList<>();
 
-    public void moveAndTrackGpuBuffer(@SharedPtr Buffer buffer) {
-        mTrackingBuffers.add(buffer);
+    /**
+     * Takes a Usage ref on the Resource that will be released when the command buffer
+     * has finished execution.
+     * <p>
+     * This is mostly commonly used for host-visible Buffers.
+     *
+     * @param resource the resource to move
+     */
+    public void trackResource(@SharedPtr Resource resource) {
+        if (resource == null) {
+            return;
+        }
+        mTrackingUsageResources.add(resource);
+    }
+
+    /**
+     * Takes a CommandBuffer ref on the Resource that will be released when the command buffer
+     * has finished execution.
+     * <p>
+     * CommandBuffer ref allows a Resource to be returned to ResourceCache for reuse while
+     * the CommandBuffer is still executing on the GPU. This is most commonly used for
+     * GPU-only Resources.
+     *
+     * @param resource the resource to move
+     */
+    public void trackCommandBufferResource(@SharedPtr Resource resource) {
+        if (resource == null) {
+            return;
+        }
+        resource.refCommandBuffer();
+        mTrackingCommandBufferResources.add(resource);
+        resource.unref();
     }
 
     public void begin() {
@@ -74,9 +104,12 @@ public abstract class CommandBuffer {
                                            long size);
 
     /**
-     * Bind combined texture sampler.
+     * Bind texture view and sampler to the same binding point (combined image sampler).
      *
-     * @param readSwizzle see {@link Swizzle}
+     * @param binding     the binding index
+     * @param texture     the texture image
+     * @param sampler     the sampler state
+     * @param readSwizzle the swizzle of the texture view for shader read, see {@link Swizzle}
      */
     public abstract void bindTextureSampler(int binding, @RawPtr Image texture,
                                             @RawPtr Sampler sampler, short readSwizzle);
@@ -129,5 +162,12 @@ public abstract class CommandBuffer {
 
     public void waitUntilFinished() {
 
+    }
+
+    void releaseResources() {
+        mTrackingUsageResources.forEach(Resource::unref);
+        mTrackingUsageResources.clear();
+        mTrackingCommandBufferResources.forEach(Resource::unrefCommandBuffer);
+        mTrackingCommandBufferResources.clear();
     }
 }

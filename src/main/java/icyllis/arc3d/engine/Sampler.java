@@ -22,9 +22,9 @@ package icyllis.arc3d.engine;
 /**
  * Represents GPU sampler objects.
  */
-public abstract class Sampler extends ManagedResource {
+public abstract class Sampler extends Resource {
 
-    protected Sampler(Device device) {
-        super(device);
+    protected Sampler(Context context) {
+        super(context, true, false, 0);
     }
 }

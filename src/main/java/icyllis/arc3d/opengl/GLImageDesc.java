@@ -19,9 +19,10 @@
 
 package icyllis.arc3d.opengl;
 
-import icyllis.arc3d.engine.ImageDesc;
 import icyllis.arc3d.engine.Engine;
-import org.lwjgl.opengl.*;
+import icyllis.arc3d.engine.ImageDesc;
+import org.lwjgl.opengl.GL30C;
+import org.lwjgl.opengl.GL40C;
 
 /**
  * Types for interacting with GL resources created externally to pipeline. BackendObjects for GL
@@ -57,7 +58,7 @@ public final class GLImageDesc extends ImageDesc {
     }
 
     @Override
-    public byte getImageType() {
+    public int getImageType() {
         return switch (mTarget) {
             case GL30C.GL_TEXTURE_2D -> Engine.ImageType.k2D;
             case GL30C.GL_TEXTURE_2D_ARRAY -> Engine.ImageType.k2DArray;

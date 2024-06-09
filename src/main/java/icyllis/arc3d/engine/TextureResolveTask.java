@@ -69,7 +69,7 @@ public final class TextureResolveTask extends RenderTask {
 
         // Add the proxy as a dependency: We will read the existing contents of this texture while
         // generating mipmap levels and/or resolving MSAA.
-        addDependency(proxy, SamplerState.DEFAULT);
+        //addDependency(proxy, SamplerDesc.DEFAULT);
         addTarget(proxy);
     }
 

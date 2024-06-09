@@ -37,6 +37,8 @@ public interface GLInterfaceCommon {
     @NativeType("void")
     int glGenTextures();
 
+    void glTexParameteri(@NativeType("GLenum") int target, @NativeType("GLenum") int pname, @NativeType("GLint") int param);
+
     void glDeleteTextures(@NativeType("GLuint const *") int texture);
 
     void glBindTexture(@NativeType("GLenum") int target, @NativeType("GLuint") int texture);
@@ -66,6 +68,8 @@ public interface GLInterfaceCommon {
 
     void glViewport(@NativeType("GLint") int x, @NativeType("GLint") int y, @NativeType("GLsizei") int width,
                     @NativeType("GLsizei") int height);
+
+    void glActiveTexture(@NativeType("GLenum") int texture);
 
     @NativeType("void")
     int glGenBuffers();
