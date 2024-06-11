@@ -88,7 +88,7 @@ public final class RenderPassTask extends Task {
     }
 
     @Override
-    public int execute(ImmediateContext context, CommandBuffer cmdBuffer) {
+    public int execute(ImmediateContext context, CommandBuffer commandBuffer) {
         assert mColorTarget.isInstantiated();
         assert mResolveTarget == null || mResolveTarget.isInstantiated();
 
@@ -128,17 +128,23 @@ public final class RenderPassTask extends Task {
         framebufferDesc.mWidth = colorAttachment.getWidth();
         framebufferDesc.mHeight = colorAttachment.getHeight();
 
-        if (cmdBuffer.beginRenderPass(
+        if (commandBuffer.beginRenderPass(
                 mRenderPassDesc,
                 framebufferDesc,
                 mDrawPass.getBounds(),
                 mClearColor,
                 0.0f, 0
         )) {
-            cmdBuffer.trackCommandBufferResource(colorAttachment);
-            cmdBuffer.trackCommandBufferResource(resolveAttachment);
-            cmdBuffer.trackCommandBufferResource(depthStencilAttachment);
-            return RESULT_SUCCESS;
+            // matches 2D projection vector
+            commandBuffer.setViewport(0, 0, framebufferDesc.mWidth, framebufferDesc.mHeight);
+            boolean success = mDrawPass.execute(commandBuffer);
+            commandBuffer.endRenderPass();
+            if (success) {
+                commandBuffer.trackCommandBufferResource(colorAttachment);
+                commandBuffer.trackCommandBufferResource(resolveAttachment);
+                commandBuffer.trackCommandBufferResource(depthStencilAttachment);
+                return RESULT_SUCCESS;
+            }
         }
         RefCnt.move(colorAttachment);
         RefCnt.move(resolveAttachment);

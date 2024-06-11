@@ -54,8 +54,8 @@ public class UniformDataCache implements AutoCloseable {
      * @return a stable pointer to existing or copied uniform data
      */
     @Nullable
-    public ByteBuffer insert(@Nonnull ByteBuffer block) {
-        if (!block.hasRemaining()) {
+    public ByteBuffer insert(@Nullable ByteBuffer block) {
+        if (block == null || !block.hasRemaining()) {
             return null;
         }
         // the key of HashMap and the given ByteBuffer will never be the same object

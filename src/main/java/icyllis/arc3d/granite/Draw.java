@@ -32,14 +32,21 @@ public final class Draw {
     // the copied view matrix
     public Matrix4 mTransform;
     public Object mGeometry;
-    // clip params
+    /**
+     * Clip params (immutable), set by {@link ClipStack}.
+     */
     public Rect2fc mDrawBounds;
     public Rect2fc mTransformedShapeBounds;
     public Rect2ic mScissorRect;
-    // the packed draw order
+    /**
+     * Packed draw order.
+     */
     public long mDrawOrder;
+    /**
+     * Stroke params.
+     */
     public float mStrokeRadius = -1; // >0: relative to transform; ==0: hairline, 1px in device space; <0: fill
-    public float mJoinLimit;    // >0: miter join; ==0: bevel join; <0: round join
+    public float mJoinLimit;        // >0: miter join; ==0: bevel join; <0: round join
     public int mStrokeCap;
     @Nullable
     public PaintParams mPaintParams; // null implies depth-only draw (clipping)

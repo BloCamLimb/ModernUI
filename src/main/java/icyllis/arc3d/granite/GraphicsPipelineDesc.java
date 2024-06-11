@@ -19,6 +19,7 @@
 
 package icyllis.arc3d.granite;
 
+import icyllis.arc3d.core.BlendMode;
 import icyllis.arc3d.engine.*;
 
 import javax.annotation.Nullable;
@@ -26,16 +27,29 @@ import java.util.Objects;
 
 public final class GraphicsPipelineDesc extends PipelineDesc {
 
-    private final GeometryStep mGeometryStep;
-    private final Key mPaintParamsKey;
+    private GeometryStep mGeometryStep;
+    private Key mPaintParamsKey;
+    @Nullable
+    private BlendMode mFinalBlendMode;
 
-    public GraphicsPipelineDesc(GeometryStep geometryStep) {
-        this(geometryStep, null);
+    public GraphicsPipelineDesc() {
     }
 
-    public GraphicsPipelineDesc(GeometryStep geometryStep, @Nullable Key paintParamsKey) {
+    public GraphicsPipelineDesc(GeometryStep geometryStep,
+                                Key paintParamsKey,
+                                @Nullable BlendMode finalBlendMode) {
         mGeometryStep = geometryStep;
         mPaintParamsKey = paintParamsKey;
+        mFinalBlendMode = finalBlendMode;
+    }
+
+    public GraphicsPipelineDesc set(GeometryStep geometryStep,
+                                    KeyBuilder paintParamsKey,
+                                    @Nullable BlendMode finalBlendMode) {
+        mGeometryStep = geometryStep;
+        mPaintParamsKey = paintParamsKey;
+        mFinalBlendMode = finalBlendMode;
+        return this;
     }
 
     public GeometryStep geomStep() {
@@ -65,14 +79,19 @@ public final class GraphicsPipelineDesc extends PipelineDesc {
     }
 
     @Override
-    public PipelineDesc copy() {
-        return new GraphicsPipelineDesc(mGeometryStep, mPaintParamsKey);
+    public GraphicsPipelineDesc copy() {
+        if (mPaintParamsKey instanceof KeyBuilder keyBuilder) {
+            // at most one, no recursive copy
+            return new GraphicsPipelineDesc(mGeometryStep, keyBuilder.toStorageKey(), mFinalBlendMode);
+        }
+        return this;
     }
 
     @Override
     public int hashCode() {
         int result = mGeometryStep.classID();
-        result = 31 * result + (mPaintParamsKey != null ? mPaintParamsKey.hashCode() : 0);
+        result = 31 * result + mPaintParamsKey.hashCode();
+        result = 31 * result + Objects.hashCode(mFinalBlendMode);
         return result;
     }
 
@@ -81,7 +100,8 @@ public final class GraphicsPipelineDesc extends PipelineDesc {
         if (this == o) return true;
         if (o instanceof GraphicsPipelineDesc desc) {
             return mGeometryStep.classID() == desc.mGeometryStep.classID() &&
-                    Objects.equals(mPaintParamsKey, desc.mPaintParamsKey);
+                    Objects.equals(mPaintParamsKey, desc.mPaintParamsKey) &&
+                    Objects.equals(mFinalBlendMode, desc.mFinalBlendMode);
         }
         return false;
     }

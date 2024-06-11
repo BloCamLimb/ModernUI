@@ -74,10 +74,46 @@ public abstract class GeometryStep extends Processor {
         );
     }
 
+    /**
+     * Set if there's fragment shader code and color output, otherwise this is
+     * a depth-stencil only step.
+     */
     public static final int FLAG_PERFORM_SHADING = 1 << 1;
     public static final int FLAG_HAS_TEXTURES = 1 << 2;
+    /**
+     * Set if there's {@link #emitFragmentCoverageCode(Formatter, String)}.
+     */
     public static final int FLAG_EMIT_COVERAGE = 1 << 3;
-    public static final int FLAG_OUTSET_BOUNDS_FOR_AA = 1 << 4;
+    /**
+     * Set for hard-edge coverage, discard the fragment if coverage is 0.
+     * Otherwise coverage will involve in blending operations.
+     * <p>
+     * Not compatible with {@link #FLAG_OUTSET_BOUNDS_FOR_AA}.
+     */
+    public static final int FLAG_EMIT_01_COVERAGE = 1 << 4;
+    /**
+     * Set for analytic antialiasing (AAA) or distance-to-edge antialiasing (DEAA).
+     * <p>
+     * Not compatible with {@link #FLAG_EMIT_01_COVERAGE}.
+     */
+    public static final int FLAG_OUTSET_BOUNDS_FOR_AA = 1 << 5;
+    /**
+     * Set if this emits per-vertex color, only used for drawing primitives.
+     * <p>
+     * Not compatible with {@link #FLAG_HANDLE_SOLID_COLOR},
+     * {@link #FLAG_EMIT_COVERAGE}, {@link #FLAG_OUTSET_BOUNDS_FOR_AA}.
+     */
+    public static final int FLAG_EMIT_PRIMITIVE_COLOR = 1 << 6;
+    /**
+     * Set if this can handle solid color from paint params, and draw op does not require
+     * any uniform values.
+     * <p>
+     * See {@link #emitFragmentColorCode(Formatter, String)} and
+     * {@link #writeMesh(MeshDrawWriter, Draw, float[])}.
+     * <p>
+     * Not compatible with {@link #FLAG_EMIT_PRIMITIVE_COLOR}.
+     */
+    public static final int FLAG_HANDLE_SOLID_COLOR = 1 << 7;
 
     private final VertexInputLayout mInputLayout;
 
@@ -287,6 +323,14 @@ public abstract class GeometryStep extends Processor {
         return (mFlags & FLAG_EMIT_COVERAGE) != 0;
     }
 
+    public boolean emits01Coverage() {
+        return (mFlags & FLAG_EMIT_01_COVERAGE) != 0;
+    }
+
+    public boolean handlesSolidColor() {
+        return (mFlags & FLAG_HANDLE_SOLID_COLOR) != 0;
+    }
+
     /**
      * Appends a key on the KeyBuilder that reflects any variety in the code that the
      * geometry processor subclass can emit.
@@ -340,7 +384,7 @@ public abstract class GeometryStep extends Processor {
     public void emitFragmentCoverageCode(Formatter fs, String outputCoverage) {
     }
 
-    public void writeMesh(MeshDrawWriter writer, Draw draw, float[] solidColor) {
+    public void writeMesh(MeshDrawWriter writer, Draw draw, @Nullable float[] solidColor) {
     }
 
     public void writeUniformsAndTextures(Draw draw,

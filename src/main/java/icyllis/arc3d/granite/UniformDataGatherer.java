@@ -87,6 +87,9 @@ public class UniformDataGatherer implements AutoCloseable {
      * The memory is managed by this object, it is valid until next reset.
      */
     public ByteBuffer finish() {
+        if (mPosition == 0) {
+            return null;
+        }
         // add tail padding
         // the max required alignment is 16, and 'mCapacity' is 16 byte aligned
         // so there will be no reallocation

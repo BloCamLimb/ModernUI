@@ -137,13 +137,18 @@ public class DrawCommandList {
         mPointers.add(vertexBufferInfo.mBuffer);
     }
 
-    public final void setScissor(Rect2ic scissor) {
+    public final void setScissor(Rect2ic scissor, int surfaceHeight, int origin) {
         grow(mPrimitives.position() + 20);
+        int y = scissor.y();
+        int height = scissor.height();
+        if (origin == Engine.SurfaceOrigin.kLowerLeft) {
+            y = surfaceHeight - y - height;
+        }
         mPrimitives.putInt(CMD_SET_SCISSOR)
-                .putInt(scissor.left())
-                .putInt(scissor.top())
-                .putInt(scissor.right())
-                .putInt(scissor.bottom());
+                .putInt(scissor.x())
+                .putInt(y)
+                .putInt(scissor.width())
+                .putInt(height);
     }
 
     public final void bindUniformBuffer(int binding,
@@ -162,9 +167,18 @@ public class DrawCommandList {
      * @param textures pairs of texture view index and sampler index
      */
     public final void bindTextures(int[] textures) {
-        grow(mPrimitives.position() + 4);
-        mPrimitives.putInt(CMD_BIND_TEXTURES);
-        mPointers.add(textures);
+        int n = textures.length >> 1;
+        assert n > 0;
+        grow(mPrimitives.position() + 8 + (n << 3));
+        mPrimitives.putInt(CMD_BIND_TEXTURES)
+                .putInt(n);
+        if (n == 1) {
+            mPrimitives.putInt(textures[0])
+                    .putInt(textures[1]);
+        } else {
+            mPrimitives.asIntBuffer().put(textures);
+            mPrimitives.position(mPrimitives.position() + (n << 3));
+        }
     }
 
     public final void finish() {

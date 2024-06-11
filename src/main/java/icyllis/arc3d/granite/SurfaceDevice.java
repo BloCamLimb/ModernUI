@@ -41,7 +41,7 @@ public final class SurfaceDevice extends icyllis.arc3d.core.Device {
     private final BoundsManager mBoundsManager = new BoundsManager();
 
     private GeometryRenderer mSimpleRoundRectRenderer = new GeometryRenderer(
-            "SimpleRRectStep", new SDFRoundRectStep()
+            "SimpleRRectStep", new SDFRoundRectStep(true)
     );
 
     private SurfaceDevice(SurfaceDrawContext context, ImageInfo info, boolean clear) {

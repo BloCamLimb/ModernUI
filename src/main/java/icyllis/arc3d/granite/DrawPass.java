@@ -25,7 +25,8 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.function.Function;
 
 /**
@@ -40,11 +41,16 @@ public class DrawPass implements AutoCloseable {
     public static final int FRAGMENT_UNIFORM_BINDING = 1;
 
     /**
-     * An invalid index for {@link UniformTracker}.
-     *
-     * @see DrawList#MAX_RENDER_STEPS
+     * Depth buffer is 16-bit, ensure no overflow.
+     * DrawList is almost sorted, TimSort will be fast.
      */
-    public static final int INVALID_INDEX = 1 << 16;
+    public static final int MAX_RENDER_STEPS = (1 << 16) - 1;
+    /**
+     * An invalid index for {@link UniformTracker}, also for pipeline index.
+     *
+     * @see #MAX_RENDER_STEPS
+     */
+    public static final int INVALID_INDEX = MAX_RENDER_STEPS + 1;
 
     private final DrawCommandList mCommandList;
 
@@ -69,6 +75,8 @@ public class DrawPass implements AutoCloseable {
         mTextures = textures;
     }
 
+    // backing store's width/height may not equal to device's width/height
+    // currently we use the backing dimensions for scissor and viewport
     @Nullable
     public static DrawPass make(RecordingContext rContext,
                                 DrawList drawList,
@@ -89,7 +97,7 @@ public class DrawPass implements AutoCloseable {
         var indexToPipeline = new ObjectArrayList<GraphicsPipelineDesc>();
         Function<GraphicsPipelineDesc, Integer> pipelineAccumulator = desc -> {
             int index = indexToPipeline.size();
-            indexToPipeline.add(desc);
+            indexToPipeline.add(desc.copy()); // store immutable descriptors
             return index;
         };
 
@@ -104,28 +112,73 @@ public class DrawPass implements AutoCloseable {
         try (var textureDataGatherer = new TextureDataGatherer()) {
             var textureTracker = new TextureTracker();
 
+            int surfaceHeight = colorTarget.getHeight();
+            int surfaceOrigin = colorTarget.getOrigin();
+
             try (var uniformDataCache = new UniformDataCache();
                  var uniformDataGatherer = new UniformDataGatherer(
                          UniformDataGatherer.Std140Layout)) {
+
+                var paintParamsKeyBuilder = new KeyBuilder();
+                var lookupDesc = new GraphicsPipelineDesc();
+
+                float projX = 2.0f / colorTarget.getWidth();
+                float projY = -1.0f;
+                float projZ = 2.0f / surfaceHeight;
+                float projW = -1.0f;
+                if (surfaceOrigin == Engine.SurfaceOrigin.kLowerLeft) {
+                    projZ = -projZ;
+                    projW = -projW;
+                }
 
                 for (var draw : drawList.mDraws) {
 
                     for (int stepIndex = 0; stepIndex < draw.mRenderer.numSteps(); stepIndex++) {
                         var step = draw.mRenderer.step(stepIndex);
 
-                        int pipelineIndex = pipelineToIndex.computeIfAbsent(new GraphicsPipelineDesc(step),
-                                pipelineAccumulator);
+                        paintParamsKeyBuilder.clear();
+                        BlendMode finalBlendMode = null;
 
-                        uniformDataGatherer.reset();
                         textureDataGatherer.reset();
-                        step.writeUniformsAndTextures(draw, uniformDataGatherer, textureDataGatherer);
 
+                        // collect geometry data
+                        uniformDataGatherer.reset();
+                        // first add the 2D orthographic projection
+                        uniformDataGatherer.write4f(projX, projY, projZ, projW);
+                        step.writeUniformsAndTextures(draw, uniformDataGatherer, textureDataGatherer);
                         var geometryUniforms = uniformDataCache.insert(uniformDataGatherer.finish());
-                        var geometryTextures = textureDataGatherer.finish();
+
+                        // collect fragment data and pipeline key
+                        uniformDataGatherer.reset();
+                        if (step.performsShading() && draw.mPaintParams != null) {
+                            if (!(step.handlesSolidColor() && draw.mPaintParams.isSolidColor())) {
+                                // Add fragment stages if this is the step that performs shading,
+                                // and not a depth-only draw, and cannot simplify for solid color draw
+                                draw.mPaintParams.toKey(null,
+                                        paintParamsKeyBuilder,
+                                        uniformDataGatherer,
+                                        textureDataGatherer);
+                                assert !paintParamsKeyBuilder.isEmpty();
+                            }
+                            finalBlendMode = draw.mPaintParams.getFinalBlendMode();
+                        }
+                        var fragmentUniforms = uniformDataCache.insert(uniformDataGatherer.finish());
+
+                        // geometry texture samplers and then fragment texture samplers
+                        // we build shader code and set binding points in this order as well
+                        var textures = textureDataGatherer.finish();
+
+                        int pipelineIndex = pipelineToIndex.computeIfAbsent(
+                                lookupDesc.set(step, paintParamsKeyBuilder, finalBlendMode),
+                                pipelineAccumulator);
 
                         var geometryUniformIndex = geometryUniformTracker.trackUniforms(
                                 pipelineIndex,
                                 geometryUniforms
+                        );
+                        var fragmentUniformIndex = fragmentUniformTracker.trackUniforms(
+                                pipelineIndex,
+                                fragmentUniforms
                         );
 
                         keys[keyIndex++] = new SortKey(
@@ -133,8 +186,8 @@ public class DrawPass implements AutoCloseable {
                                 stepIndex,
                                 pipelineIndex,
                                 geometryUniformIndex,
-                                INVALID_INDEX,
-                                geometryTextures
+                                fragmentUniformIndex,
+                                textures
                         );
                     }
 
@@ -153,8 +206,11 @@ public class DrawPass implements AutoCloseable {
 
             MeshDrawWriter drawWriter = new MeshDrawWriter(bufferManager,
                     commandList);
-            Rect2ic lastScissor = new Rect2i(0, 0, colorTarget.getWidth(), colorTarget.getHeight());
+            Rect2ic lastScissor = new Rect2i(0, 0, deviceInfo.width(), deviceInfo.height());
             int lastPipelineIndex = INVALID_INDEX;
+            float[] cachedSolidColor = new float[4];
+
+            commandList.setScissor(lastScissor, surfaceHeight, surfaceOrigin);
 
             for (var key : keys) {
                 var draw = key.mDraw;
@@ -196,7 +252,7 @@ public class DrawPass implements AutoCloseable {
                 }
                 if (dynamicStateChange) {
                     if (newScissor != null) {
-                        commandList.setScissor(newScissor);
+                        commandList.setScissor(newScissor, surfaceHeight, surfaceOrigin);
                         lastScissor = newScissor;
                     }
                     if (geometryBindingChange) {
@@ -216,7 +272,15 @@ public class DrawPass implements AutoCloseable {
                     }
                 }
 
-                step.writeMesh(drawWriter, draw, new float[]{1, 1, 1, 1});
+                float[] solidColor = null;
+                if (step.performsShading() && draw.mPaintParams != null) {
+                    if (step.handlesSolidColor() &&
+                            draw.mPaintParams.getSolidColor(deviceInfo, cachedSolidColor)) {
+                        solidColor = cachedSolidColor;
+                    }
+                }
+
+                step.writeMesh(drawWriter, draw, solidColor);
 
                 if (bufferManager.hasMappingFailed()) {
                     return null;
@@ -340,11 +404,11 @@ public class DrawPass implements AutoCloseable {
                     commandBuffer.bindVertexBuffer(binding, (Buffer) oa[oi++], offset);
                 }
                 case DrawCommandList.CMD_SET_SCISSOR -> {
-                    int left = p.getInt();
-                    int top = p.getInt();
-                    int right = p.getInt();
-                    int bottom = p.getInt();
-                    commandBuffer.setScissor(left, top, right, bottom);
+                    int x = p.getInt();
+                    int y = p.getInt();
+                    int width = p.getInt();
+                    int height = p.getInt();
+                    commandBuffer.setScissor(x, y, width, height);
                 }
                 case DrawCommandList.CMD_BIND_UNIFORM_BUFFER -> {
                     int binding = p.getInt();
@@ -353,11 +417,12 @@ public class DrawPass implements AutoCloseable {
                     commandBuffer.bindUniformBuffer(binding, (Buffer) oa[oi++], offset, size);
                 }
                 case DrawCommandList.CMD_BIND_TEXTURES -> {
-                    int[] textures = (int[]) oa[oi++];
-                    for (int i = 0; i < textures.length; i += 2) {
-                        int binding = i >> 1;
-                        var texture = mTextures.get(textures[i]);
-                        var sampler = mSamplers[textures[i | 1]];
+                    int numBindings = p.getInt();
+                    for (int binding = 0; binding < numBindings; binding++) {
+                        @RawPtr
+                        var texture = mTextures.get(p.getInt());
+                        @RawPtr
+                        var sampler = mSamplers[p.getInt()];
                         commandBuffer.bindTextureSampler(binding,
                                 texture.getImage(),
                                 sampler,
@@ -386,6 +451,14 @@ public class DrawPass implements AutoCloseable {
         mTextures.clear();
     }
 
+    /**
+     * The sorting is used to minimize state change.
+     * <p>
+     * Sorting order:
+     * painter's order, stencil disjoint set index,
+     * render step index, pipeline index, geometry uniform index,
+     * fragment uniform index, texture and sampler binding
+     */
     public static final class SortKey implements Comparable<SortKey> {
 
         public static final int PAINTERS_ORDER_OFFSET = 32;
@@ -400,20 +473,21 @@ public class DrawPass implements AutoCloseable {
                     DrawOrder.STENCIL_INDEX_SHIFT == STENCIL_INDEX_OFFSET;
         }
 
-        // 64-62 step, 62-34 pipeline, 34-17 geometry, 17-0 fragment
-        public static final int STEP_INDEX_OFFSET = 62;
+        // 52-50 step, 50-34 pipeline, 34-17 geometry uniform, 17-0 fragment uniform
+        public static final int STEP_INDEX_OFFSET = 50;
         public static final int STEP_INDEX_MASK = (1 << 2) - 1;
 
         public static final int PIPELINE_INDEX_OFFSET = 34;
-        public static final int PIPELINE_INDEX_MASK = (1 << 28) - 1;
+        public static final int PIPELINE_INDEX_MASK = (1 << 16) - 1;
 
-        // requires one extra bit
+        // requires one extra bit to represent invalid index
         public static final int GEOMETRY_UNIFORM_INDEX_OFFSET = 17;
         public static final int GEOMETRY_UNIFORM_INDEX_MASK = (1 << 17) - 1;
         public static final int FRAGMENT_UNIFORM_INDEX_OFFSET = 0;
         public static final int FRAGMENT_UNIFORM_INDEX_MASK = (1 << 17) - 1;
 
         private final Draw mDraw;
+        // 32-16 painter's order, 16-0 stencil disjoint set index
         private final int mOrderKey;
         private final long mPipelineKey;
         private final int[] mTextures;

@@ -49,8 +49,8 @@ public class TestBenchmark {
     }
     private final long mData = MemoryUtil.nmemAlignedAllocChecked(8, 64);
 
-    @Benchmark
+    /*@Benchmark
     public void uploadMethod1() {
         mMatrix.store(mData);
-    }
+    }*/
 }

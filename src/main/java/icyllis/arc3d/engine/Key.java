@@ -30,6 +30,8 @@ import java.util.Arrays;
  */
 public sealed class Key permits KeyBuilder {
 
+    public static final Key EMPTY = new Key(IntArrays.EMPTY_ARRAY);
+
     transient int[] mData;
     private transient int mHash;
 

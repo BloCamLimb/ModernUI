@@ -20,10 +20,15 @@
 package icyllis.arc3d.engine;
 
 /**
- * Two usages.
+ * Abstract class that provides key and full information about a graphics pipeline
+ * or a compute pipeline, except for render pass information.
+ * <p>
+ * Subclass must implement {@link #hashCode()} and {@link #equals(Object)}.
  */
 //TODO
 public abstract class PipelineDesc {
+
+    public static final int DYNAMIC_COLOR_BLEND_STATE = 1;
 
     public static class GraphicsPipelineInfo {
 
@@ -47,6 +52,23 @@ public abstract class PipelineDesc {
         return null;
     }
 
-    // deep copy
+    /**
+     * Returns a bitfield that represents dynamic states of this pipeline.
+     * These dynamic states must be supported by the backend.
+     * <p>
+     * Viewport and scissor are always dynamic states.
+     */
+    public int getDynamicStates() {
+        return 0;
+    }
+
+    /**
+     * Makes a deep copy of this desc, it must be immutable before return.
+     * No need to other methods to make its fields visible to all threads.
+     * If this desc is already immutable then implementation may return this.
+     * <p>
+     * The {@link #hashCode()} and {@link #equals(Object)} of this and return
+     * value must be consistent.
+     */
     public abstract PipelineDesc copy();
 }

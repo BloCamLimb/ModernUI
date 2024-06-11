@@ -28,6 +28,7 @@ import icyllis.arc3d.granite.*;
 import icyllis.arc3d.granite.shading.VaryingHandler;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.util.Formatter;
 
@@ -57,9 +58,17 @@ public class SDFRoundRectStep extends GeometryStep {
             VertexInputLayout.AttributeSet.makeImplicit(VertexInputLayout.INPUT_RATE_INSTANCE,
                     COLOR, LOCAL_RECT, RADII, MODEL_VIEW);
 
-    public SDFRoundRectStep() {
+    private final boolean mAA;
+
+    public SDFRoundRectStep(boolean aa) {
         super(RoundRect_GeoProc_ClassID, null, INSTANCE_ATTRIBS,
-                FLAG_PERFORM_SHADING | FLAG_EMIT_COVERAGE | FLAG_OUTSET_BOUNDS_FOR_AA);
+                aa
+                        ? (FLAG_PERFORM_SHADING | FLAG_EMIT_COVERAGE | FLAG_OUTSET_BOUNDS_FOR_AA |
+                        FLAG_HANDLE_SOLID_COLOR)
+                        : (FLAG_PERFORM_SHADING | FLAG_EMIT_COVERAGE | FLAG_EMIT_01_COVERAGE |
+                        FLAG_HANDLE_SOLID_COLOR)
+        );
+        mAA = aa;
     }
 
     @Nonnull
@@ -149,30 +158,42 @@ public class SDFRoundRectStep extends GeometryStep {
                 }
                 """);
 
-        // use L2-norm of grad SDF
-        fs.format("""
-                float afwidth = length(vec2(dFdx(d),dFdy(d)))*0.7;
-                float edgeAlpha = 1.0 - smoothstep(-afwidth,afwidth,d);
-                """);
+        if (mAA) {
+            // use L2-norm of grad SDF
+            fs.format("""
+                    float afwidth = length(vec2(dFdx(d),dFdy(d)))*0.7;
+                    float edgeAlpha = 1.0 - smoothstep(-afwidth,afwidth,d);
+                    """);
+        } else {
+            // hard edge
+            fs.format("""
+                    float edgeAlpha = 1.0 - step(0.0,d);
+                    if (edgeAlpha <= 0.0) discard;
+                    """);
+        }
         fs.format("""
                 %s = vec4(edgeAlpha);
                 """, outputCoverage);
     }
 
     @Override
-    public void writeMesh(MeshDrawWriter writer, Draw op, float[] solidColor) {
+    public void writeMesh(MeshDrawWriter writer, Draw op, @Nullable float[] solidColor) {
         writer.beginInstances(null, null, 4);
         ByteBuffer instanceData = writer.append(1);
-        instanceData.putFloat(solidColor[0]);
-        instanceData.putFloat(solidColor[1]);
-        instanceData.putFloat(solidColor[2]);
-        instanceData.putFloat(solidColor[3]);
+        if (solidColor != null) {
+            instanceData.putFloat(solidColor[0])
+                    .putFloat(solidColor[1])
+                    .putFloat(solidColor[2])
+                    .putFloat(solidColor[3]);
+        } else {
+            instanceData.putFloat(0).putFloat(0).putFloat(0).putFloat(0);
+        }
         // local rect
         RoundRect localRect = (RoundRect) op.mGeometry;
-        instanceData.putFloat((localRect.mRight - localRect.mLeft) * 0.5f);
-        instanceData.putFloat((localRect.mLeft + localRect.mRight) * 0.5f);
-        instanceData.putFloat((localRect.mBottom - localRect.mTop) * 0.5f);
-        instanceData.putFloat((localRect.mTop + localRect.mBottom) * 0.5f);
+        instanceData.putFloat((localRect.mRight - localRect.mLeft) * 0.5f)
+                .putFloat((localRect.mLeft + localRect.mRight) * 0.5f)
+                .putFloat((localRect.mBottom - localRect.mTop) * 0.5f)
+                .putFloat((localRect.mTop + localRect.mBottom) * 0.5f);
         // radii
         instanceData.putFloat(localRect.mRadiusUL).putFloat(op.mStrokeRadius);
         var mat = op.mTransform;

@@ -420,7 +420,12 @@ public final class GLCommandBuffer extends CommandBuffer {
     }
 
     @Override
-    public void setScissor(int left, int top, int right, int bottom) {
+    public void setViewport(int x, int y, int width, int height) {
+
+    }
+
+    @Override
+    public void setScissor(int x, int y, int width, int height) {
         //TODO
     }
 
