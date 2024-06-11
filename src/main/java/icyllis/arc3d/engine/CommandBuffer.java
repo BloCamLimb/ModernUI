@@ -83,9 +83,11 @@ public abstract class CommandBuffer {
 
     }
 
-    public abstract boolean bindGraphicsPipeline(GraphicsPipeline graphicsPipeline);
+    public abstract void setViewport(int x, int y, int width, int height);
 
-    public abstract void setScissor(int left, int top, int right, int bottom);
+    public abstract void setScissor(int x, int y, int width, int height);
+
+    public abstract boolean bindGraphicsPipeline(GraphicsPipeline graphicsPipeline);
 
     /**
      * @param indexType see {@link Engine.IndexType}

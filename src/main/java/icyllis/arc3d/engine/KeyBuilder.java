@@ -161,14 +161,13 @@ public non-sealed class KeyBuilder extends Key {
      */
     public final Key toStorageKey() {
         assert (mCurValue == 0 && mBitsUsed == 0);
-        int[] t;
         if (mSize == 0) {
-            t = IntArrays.EMPTY_ARRAY;
+            return Key.EMPTY;
         } else {
-            t = new int[mSize];
+            int[] t = new int[mSize];
             System.arraycopy(mData, 0, t, 0, mSize);
+            return new Key(t);
         }
-        return new Key(t);
     }
 
     /**

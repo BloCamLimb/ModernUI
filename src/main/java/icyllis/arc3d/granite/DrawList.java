@@ -25,11 +25,6 @@ import java.util.ArrayList;
 
 public class DrawList {
 
-    /**
-     * Depth buffer is 16-bit, ensure no overflow.
-     */
-    public static final int MAX_RENDER_STEPS = (1 << 16) - 1;
-
     private final ArrayList<Matrix4> mTransforms = new ArrayList<>();
     final ArrayList<Draw> mDraws = new ArrayList<>();
     private int mNumSteps;

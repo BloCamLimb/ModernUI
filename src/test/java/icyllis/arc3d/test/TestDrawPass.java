@@ -104,7 +104,7 @@ public class TestDrawPass {
         MeshDrawWriter drawWriter = new MeshDrawWriter(recordingContext.getDynamicBufferManager(),
                 commandList);
 
-        var step = new SDFRoundRectStep();
+        var step = new SDFRoundRectStep(true);
 
         drawWriter.newPipelineState(
                 step.vertexBinding(),
@@ -151,7 +151,7 @@ public class TestDrawPass {
         PrintWriter pw = new PrintWriter(System.out, true);
         commandList.debug(pw);
 
-        GraphicsPipelineDesc graphicsPipelineDesc = new GraphicsPipelineDesc(step);
+        GraphicsPipelineDesc graphicsPipelineDesc = new GraphicsPipelineDesc(step, Key.EMPTY, null);
 
         int ubo = GL33C.glGenBuffers();
         GL33C.glBindBufferBase(GL33C.GL_UNIFORM_BUFFER, 0, ubo);
@@ -169,20 +169,20 @@ public class TestDrawPass {
             var device = (GLDevice) immediateContext.getDevice();
             device.flushRenderCalls();
             device.getGL().glViewport(0, 0, 1280, 720);
-            var cmdBuffer = (GLCommandBuffer) immediateContext.currentCommandBuffer();
-            assert cmdBuffer != null;
-            cmdBuffer.bindGraphicsPipeline(pipeline);
+            var commandBuffer = (GLCommandBuffer) immediateContext.currentCommandBuffer();
+            assert commandBuffer != null;
+            commandBuffer.bindGraphicsPipeline(pipeline);
 
-            commandList.execute(cmdBuffer);
+            commandList.execute(commandBuffer);
             GLFW.glfwSwapBuffers(window);
 
             while (!GLFW.glfwWindowShouldClose(window)) {
                 GLFW.glfwWaitEvents();
-                cmdBuffer.resetStates(~0);
+                commandBuffer.resetStates(~0);
                 GL33C.glClearBufferfv(GL33C.GL_COLOR, 0,
                         new float[]{(float) (GLFW.glfwGetTime() % 1.0), 0.5f, 0.5f, 1.0f});
-                cmdBuffer.bindGraphicsPipeline(pipeline);
-                commandList.execute(cmdBuffer);
+                commandBuffer.bindGraphicsPipeline(pipeline);
+                commandList.execute(commandBuffer);
                 GLFW.glfwSwapBuffers(window);
             }
 

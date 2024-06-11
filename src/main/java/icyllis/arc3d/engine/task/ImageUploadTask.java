@@ -86,7 +86,7 @@ public class ImageUploadTask extends Task {
     }
 
     @Override
-    public int execute(ImmediateContext context, CommandBuffer cmdBuffer) {
+    public int execute(ImmediateContext context, CommandBuffer commandBuffer) {
         return RESULT_FAILURE;
     }
 }

@@ -20,8 +20,6 @@
 package icyllis.arc3d.vulkan;
 
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.granite.DrawCommandList;
-import icyllis.arc3d.granite.DrawPass;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 
@@ -96,7 +94,12 @@ public abstract class VulkanCommandBuffer extends CommandBuffer {
     }
 
     @Override
-    public void setScissor(int left, int top, int right, int bottom) {
+    public void setViewport(int x, int y, int width, int height) {
+
+    }
+
+    @Override
+    public void setScissor(int x, int y, int width, int height) {
 
     }
 
