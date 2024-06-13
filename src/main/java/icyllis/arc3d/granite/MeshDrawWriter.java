@@ -20,11 +20,13 @@
 package icyllis.arc3d.granite;
 
 import icyllis.arc3d.engine.*;
+import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nullable;
-import java.nio.ByteBuffer;
 
-public class MeshDrawWriter {
+import static org.lwjgl.system.MemoryUtil.NULL;
+
+public class MeshDrawWriter implements AutoCloseable {
 
     private final DynamicBufferManager mDynamicBufferManager;
     private final DrawCommandList mCommandList;
@@ -36,17 +38,29 @@ public class MeshDrawWriter {
     private int mInstanceStride;
 
     private final BufferViewInfo mVertexBufferInfo = new BufferViewInfo();
-    private final BufferViewInfo mIndexBufferInfo =new BufferViewInfo();
-    private final BufferViewInfo mInstanceBufferInfo =new BufferViewInfo();
+    private final BufferViewInfo mIndexBufferInfo = new BufferViewInfo();
+    private final BufferViewInfo mInstanceBufferInfo = new BufferViewInfo();
     private int mTemplateCount;
 
     private int mPendingCount; // # of vertices or instances (depending on mode) to be drawn
     private int mPendingBase; // vertex/instance offset (depending on mode) applied to buffer
     private boolean mPendingBufferBinds; // true if {fVertices,fIndices,fInstances} has changed since last draw
 
+    // storage address for VertexWriter when GPU buffer mapping fails
+    private long mFailureStorage = NULL;
+    private int mFailureCapacity = 0;
+
     public MeshDrawWriter(DynamicBufferManager dynamicBufferManager, DrawCommandList commandList) {
         mDynamicBufferManager = dynamicBufferManager;
         mCommandList = commandList;
+    }
+
+    @Override
+    public void close() {
+        if (mFailureStorage != NULL) {
+            MemoryUtil.nmemFree(mFailureStorage);
+        }
+        mFailureStorage = NULL;
     }
 
     public void newPipelineState(int vertexBinding,
@@ -174,8 +188,21 @@ public class MeshDrawWriter {
 
     private int mReservedCount;
 
-    private ByteBuffer mCurrentWriter;
+    private long mCurrentWriter;
     private final BufferViewInfo mTempAllocInfo = new BufferViewInfo();
+
+    private long getFailureStorage(int size) {
+        if (size > mFailureCapacity) {
+            long newStorage = MemoryUtil.nmemRealloc(mFailureStorage, size);
+            if (newStorage == NULL) {
+                throw new OutOfMemoryError();
+            }
+            mFailureStorage = newStorage;
+            mFailureCapacity = size;
+            return newStorage;
+        }
+        return mFailureStorage;
+    }
 
     public void beginVertices() {
         assert mCurrentTarget == null;
@@ -187,6 +214,7 @@ public class MeshDrawWriter {
 
     /**
      * Start writing instance data and bind static vertex buffer and index buffer.
+     *
      * @param vertexBufferInfo
      * @param indexBufferInfo
      * @param vertexCount
@@ -215,12 +243,12 @@ public class MeshDrawWriter {
         }
 
         mReservedCount = count;
-        var writer = mDynamicBufferManager.getVertexWriter(count * mCurrentStride,
+        var writer = mDynamicBufferManager.getVertexPointer(count * mCurrentStride,
                 mTempAllocInfo);
         if (mTempAllocInfo.mBuffer != mCurrentTarget.mBuffer ||
                 mTempAllocInfo.mOffset !=
                         (mCurrentTarget.mOffset + (long) (mPendingBase + mPendingCount) * mCurrentStride)) {
-            // Not contiguous, so flush and update binding to 'reservedChunk'
+            // Not contiguous, so flush and update binding to 'mTempAllocInfo'
             flush();
             mCurrentTarget.set(mTempAllocInfo);
             mPendingBase = 0;
@@ -234,14 +262,24 @@ public class MeshDrawWriter {
      *
      * @param count vertex count or instance count
      */
-    public ByteBuffer append(int count) {
+    public long append(int count) {
         assert count > 0;
         reserve(count);
+
+        int size = count * mCurrentStride;
+        if (mCurrentWriter == NULL) {
+            // If the GPU mapped buffer failed, ensure we have a sufficiently large CPU address to
+            // write to so that GeometrySteps don't have to worry about error handling. The Recording
+            // will fail since the map failure is tracked by BufferManager.
+            return getFailureStorage(size);
+        }
 
         assert (mReservedCount >= count);
         mReservedCount -= count;
         mPendingCount += count;
-        return mCurrentWriter;
+        var writer = mCurrentWriter;
+        mCurrentWriter += size;
+        return writer;
     }
 
     public void endAppender() {
@@ -250,6 +288,6 @@ public class MeshDrawWriter {
             mDynamicBufferManager.putBackVertexBytes(mReservedCount * mCurrentStride);
         }
         mCurrentTarget = null;
-        mCurrentWriter = null;
+        mCurrentWriter = NULL;
     }
 }

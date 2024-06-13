@@ -24,9 +24,8 @@ import icyllis.arc3d.granite.*;
 import org.openjdk.jol.info.ClassLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.misc.Unsafe;
 
-import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 
 public class TestUniformDataCache {
 
@@ -64,7 +63,7 @@ public class TestUniformDataCache {
         LOGGER.info(ClassLayout.parseClass(DrawPass.SortKey.class).toPrintable());
     }
 
-    static void log(int index, ByteBuffer finish, ByteBuffer cached) {
+    static void log(int index, IntBuffer finish, IntBuffer cached) {
         LOGGER.info("Finish {}: {}@{}", index, finish, Integer.toHexString(System.identityHashCode(finish)));
         LOGGER.info("Cached {}: {}@{}", index, cached, Integer.toHexString(System.identityHashCode(cached)));
     }

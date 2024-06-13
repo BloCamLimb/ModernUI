@@ -22,30 +22,35 @@ package icyllis.arc3d.granite;
 import icyllis.arc3d.engine.BufferViewInfo;
 import icyllis.arc3d.engine.DynamicBufferManager;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nullable;
-import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 import java.util.IdentityHashMap;
 import java.util.function.Function;
 
+/**
+ * @see UniformDataCache
+ */
 public class UniformTracker {
 
-    // ideally this is per-size cache rather than per-pipeline cache
-    // but we will use push constants for small UBOs
+    //TODO ideally this is per-size cache rather than per-pipeline cache
+    // (as long as their pipeline layout is the same)
+    // we will use push constants for small UBOs
 
     static class UniformCache {
         // uniform data is already de-duplicated, use reference identity, raw pointer
-        final IdentityHashMap<ByteBuffer, Integer> mDataToIndex = new IdentityHashMap<>();
+        final IdentityHashMap<IntBuffer, Integer> mDataToIndex = new IdentityHashMap<>();
         // raw pointers
-        final ObjectArrayList<ByteBuffer> mIndexToData = new ObjectArrayList<>();
-        final Function<ByteBuffer, Integer> mAccumulator = data -> {
+        final ObjectArrayList<IntBuffer> mIndexToData = new ObjectArrayList<>();
+        final Function<IntBuffer, Integer> mAccumulator = data -> {
             int index = mIndexToData.size();
             mIndexToData.add(data);
             return index;
         };
         final BufferViewInfo mBufferInfo = new BufferViewInfo();
 
-        int insert(ByteBuffer data) {
+        int insert(IntBuffer data) {
             return mDataToIndex.computeIfAbsent(data, mAccumulator);
         }
     }
@@ -66,7 +71,7 @@ public class UniformTracker {
      * @return uniform index
      */
     public int trackUniforms(int pipelineIndex,
-                             @Nullable ByteBuffer data) {
+                             @Nullable IntBuffer data) {
         if (data == null) {
             return DrawPass.INVALID_INDEX;
         }
@@ -88,22 +93,25 @@ public class UniformTracker {
             var blocks = cache.mIndexToData;
             // All data blocks for the same pipeline have the same size, so peek the first
             // to determine the total buffer size
-            int dataSize = blocks.get(0).remaining();
+            int dataSize = blocks.get(0).remaining() << 2;
             int blockSize = bufferManager.alignUniformBlockSize(dataSize);
 
-            var writer = bufferManager.getUniformWriter(
+            var writer = bufferManager.getUniformPointer(
                     blockSize * numBlocks, cache.mBufferInfo);
-            if (writer == null) {
+            if (writer == MemoryUtil.NULL) {
                 return false;
             }
-            int padding = blockSize - dataSize;
             cache.mBufferInfo.mSize = blockSize;
 
             for (int i = 0; i < numBlocks; i++) {
-                ByteBuffer src = blocks.get(i);
-                assert src.remaining() == dataSize;
-                writer.put(src)
-                        .position(writer.position() + padding);
+                IntBuffer src = blocks.get(i);
+                assert src.remaining() << 2 == dataSize;
+                MemoryUtil.memCopy(
+                        /*src*/ MemoryUtil.memAddress(src),
+                        /*dst*/ writer,
+                        dataSize
+                );
+                writer += blockSize;
             }
         }
 

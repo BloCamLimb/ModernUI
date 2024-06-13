@@ -26,10 +26,10 @@ import icyllis.arc3d.engine.Engine.VertexAttribType;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.granite.*;
 import icyllis.arc3d.granite.shading.VaryingHandler;
+import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.nio.ByteBuffer;
 import java.util.Formatter;
 
 /**
@@ -180,29 +180,28 @@ public class SDFRoundRectStep extends GeometryStep {
     @Override
     public void writeMesh(MeshDrawWriter writer, Draw draw, @Nullable float[] solidColor) {
         writer.beginInstances(null, null, 4);
-        ByteBuffer instanceData = writer.append(1);
+        long instanceData = writer.append(1);
         if (solidColor != null) {
-            instanceData.putFloat(solidColor[0])
-                    .putFloat(solidColor[1])
-                    .putFloat(solidColor[2])
-                    .putFloat(solidColor[3]);
+            MemoryUtil.memPutFloat(instanceData, solidColor[0]);
+            MemoryUtil.memPutFloat(instanceData + 4, solidColor[1]);
+            MemoryUtil.memPutFloat(instanceData + 8, solidColor[2]);
+            MemoryUtil.memPutFloat(instanceData + 12, solidColor[3]);
         } else {
-            instanceData.putFloat(0).putFloat(0).putFloat(0).putFloat(0);
+            // 0.0F is 0s
+            MemoryUtil.memPutLong(instanceData, 0);
+            MemoryUtil.memPutLong(instanceData + 8, 0);
         }
         // local rect
         RoundRect localRect = (RoundRect) draw.mGeometry;
-        instanceData
-                .putFloat((localRect.mRight - localRect.mLeft) * 0.5f)
-                .putFloat((localRect.mLeft + localRect.mRight) * 0.5f)
-                .putFloat((localRect.mBottom - localRect.mTop) * 0.5f)
-                .putFloat((localRect.mTop + localRect.mBottom) * 0.5f);
+        MemoryUtil.memPutFloat(instanceData + 16, (localRect.mRight - localRect.mLeft) * 0.5f);
+        MemoryUtil.memPutFloat(instanceData + 20, (localRect.mLeft + localRect.mRight) * 0.5f);
+        MemoryUtil.memPutFloat(instanceData + 24, (localRect.mBottom - localRect.mTop) * 0.5f);
+        MemoryUtil.memPutFloat(instanceData + 28, (localRect.mTop + localRect.mBottom) * 0.5f);
         // radii
-        instanceData.putFloat(localRect.mRadiusUL).putFloat(draw.mStrokeRadius);
+        MemoryUtil.memPutFloat(instanceData + 32, localRect.mRadiusUL);
+        MemoryUtil.memPutFloat(instanceData + 36, draw.mStrokeRadius);
         var mat = draw.mTransform;
-        instanceData
-                .putFloat(mat.m11).putFloat(mat.m12).putFloat(mat.m14)
-                .putFloat(mat.m21).putFloat(mat.m22).putFloat(mat.m24)
-                .putFloat(mat.m41).putFloat(mat.m42).putFloat(mat.m44);
+        mat.storeAs2D(instanceData + 40);
         writer.endAppender();
     }
 }
