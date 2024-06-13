@@ -52,6 +52,10 @@ public abstract class PipelineDesc {
         return null;
     }
 
+    public BlendInfo getBlendInfo() {
+        return null;
+    }
+
     /**
      * Returns a bitfield that represents dynamic states of this pipeline.
      * These dynamic states must be supported by the backend.

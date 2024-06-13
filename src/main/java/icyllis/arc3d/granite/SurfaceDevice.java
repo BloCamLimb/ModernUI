@@ -31,6 +31,7 @@ import java.util.ArrayList;
  */
 public final class SurfaceDevice extends icyllis.arc3d.core.Device {
 
+    private final RecordingContext mContext;
     private SurfaceDrawContext mSDC;
     private ClipStack mClipStack;
 
@@ -44,68 +45,86 @@ public final class SurfaceDevice extends icyllis.arc3d.core.Device {
             "SimpleRRectStep", new SDFRoundRectStep(true)
     );
 
-    private SurfaceDevice(SurfaceDrawContext context, ImageInfo info, boolean clear) {
-        super(info);
-        mSDC = context;
+    private SurfaceDevice(RecordingContext context, SurfaceDrawContext sdc) {
+        super(sdc.getImageInfo());
+        mContext = context;
+        mSDC = sdc;
         mClipStack = new ClipStack(this);
     }
 
     @SharedPtr
-    private static SurfaceDevice make(SurfaceDrawContext sdc,
-                                      int alphaType,
-                                      boolean clear) {
+    public static SurfaceDevice make(RecordingContext rContext,
+                                     ImageInfo deviceInfo,
+                                     int surfaceFlags,
+                                     int origin,
+                                     byte initialLoadOp,
+                                     String label) {
+        if (rContext == null) {
+            return null;
+        }
+
+        if ((surfaceFlags & ISurface.FLAG_MIPMAPPED) != 0 &&
+                (surfaceFlags & ISurface.FLAG_APPROX_FIT) != 0) {
+            // mipmapping requires full size
+            return null;
+        }
+
+        int backingWidth = deviceInfo.width();
+        int backingHeight = deviceInfo.height();
+        if ((surfaceFlags & ISurface.FLAG_APPROX_FIT) != 0) {
+            backingWidth = ISurface.getApproxSize(backingWidth);
+            backingHeight = ISurface.getApproxSize(backingHeight);
+        }
+
+        ImageDesc desc = rContext.getCaps().getDefaultColorImageDesc(
+                Engine.ImageType.k2D,
+                deviceInfo.colorType(),
+                backingWidth,
+                backingHeight,
+                1,
+                surfaceFlags | ISurface.FLAG_RENDERABLE);
+        if (desc == null) {
+            return null;
+        }
+        short readSwizzle = rContext.getCaps().getReadSwizzle(
+                desc, deviceInfo.colorType());
+        @SharedPtr
+        ImageViewProxy targetView = ImageViewProxy.make(rContext, desc,
+                origin, readSwizzle,
+                (surfaceFlags & ISurface.FLAG_BUDGETED) != 0, label);
+        if (targetView == null) {
+            return null;
+        }
+
+        return make(rContext, targetView, deviceInfo, initialLoadOp);
+    }
+
+    @SharedPtr
+    public static SurfaceDevice make(RecordingContext context,
+                                     @SharedPtr ImageViewProxy targetView,
+                                     ImageInfo deviceInfo,
+                                     byte initialLoadOp) {
+        if (context == null) {
+            return null;
+        }
+        SurfaceDrawContext sdc = SurfaceDrawContext.make(context,
+                targetView, deviceInfo);
         if (sdc == null) {
             return null;
         }
-        if (alphaType != ColorInfo.AT_PREMUL && alphaType != ColorInfo.AT_OPAQUE) {
-            return null;
+        if (initialLoadOp == Engine.LoadOp.kClear) {
+            sdc.clear(null);
+        } else if (initialLoadOp == Engine.LoadOp.kDiscard) {
+            sdc.discard();
         }
-        RecordingContext rContext = sdc.getContext();
-        if (rContext.isDiscarded()) {
-            return null;
-        }
-        int colorType = Engine.colorTypeToPublic(sdc.getColorType());
-        //TODO F
-        if (true/*rContext.isSurfaceCompatible(colorType)*/) {
-            ImageInfo info = new ImageInfo(sdc.getWidth(), sdc.getHeight(), colorType, alphaType, null);
-            return new SurfaceDevice(sdc, info, clear);
-        }
-        return null;
+
+        return new SurfaceDevice(context, sdc);
     }
 
-    @SharedPtr
-    public static SurfaceDevice make(RecordingContext rContext,
-                                     int colorType,
-                                     int alphaType,
-                                     ColorSpace colorSpace,
-                                     int width, int height,
-                                     int sampleCount,
-                                     int surfaceFlags,
-                                     int origin,
-                                     boolean clear) {
-        if (rContext == null) {
-            return null;
-        }
-        SurfaceDrawContext sdc = SurfaceDrawContext.make(rContext,
-                colorType, colorSpace, width, height, sampleCount, surfaceFlags, origin);
-        return make(sdc, alphaType, clear);
-    }
-
-    @SharedPtr
-    public static SurfaceDevice make(RecordingContext rContext,
-                                     int colorType,
-                                     ColorSpace colorSpace,
-                                     SurfaceProxy proxy,
-                                     int origin,
-                                     boolean clear) {
-        if (rContext == null) {
-            return null;
-        }
-        /*SurfaceDrawContext sdc = SurfaceDrawContext.make(rContext,
-                colorType, colorSpace, proxy, origin);*/
-        //FIXME
-        //return make(sdc, ColorInfo.AT_PREMUL, clear);
-        return null;
+    @Override
+    protected void deallocate() {
+        super.deallocate();
+        mSDC.close();
     }
 
     @Override
@@ -151,7 +170,10 @@ public final class SurfaceDevice extends icyllis.arc3d.core.Device {
 
     @Override
     public void drawPaint(Paint paint) {
-
+        float[] color = new float[4];
+        if (PaintParams.getSolidColor(paint, mInfo, color)) {
+            mSDC.clear(color);
+        }
     }
 
     @Override
@@ -163,7 +185,7 @@ public final class SurfaceDevice extends icyllis.arc3d.core.Device {
 
     public void drawRoundRect(RoundRect r, Paint paint) {
         Draw draw = new Draw();
-        draw.mTransform = getLocalToDevice().clone();
+        draw.mTransform = getLocalToDevice();
         draw.mGeometry = r;
 
         mTmpOpBounds.set(r.mLeft, r.mTop, r.mRight, r.mBottom);
@@ -191,6 +213,8 @@ public final class SurfaceDevice extends icyllis.arc3d.core.Device {
             draw.mStrokeCap = paint.getStrokeCap();
         }
 
+        draw.mPaintParams = new PaintParams(paint, null);
+
         final boolean outsetBoundsForAA = true;
 
         boolean clippedOut = mClipStack.prepareForDraw(draw, opBounds, outsetBoundsForAA, mElementsForMask);
@@ -214,5 +238,23 @@ public final class SurfaceDevice extends icyllis.arc3d.core.Device {
 
     public void drawClipShape(Draw draw, boolean inverseFill) {
         //TODO
+    }
+
+    public void flush() {
+        // Clip shapes are depth-only draws, but aren't recorded in the DrawContext until a flush in
+        // order to determine the Z values for each element.
+        mClipStack.recordDeferredClipDraws();
+
+        // Flush all pending items to the internal task list and reset Device tracking state
+        mSDC.flush(mContext);
+
+        mBoundsManager.clear();
+        mCurrentDepth = DrawOrder.MIN_VALUE;
+
+        DrawTask drawTask = mSDC.snap(mContext);
+
+        if (drawTask != null) {
+            mContext.addTask(drawTask);
+        }
     }
 }

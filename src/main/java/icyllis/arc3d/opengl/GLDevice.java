@@ -883,7 +883,7 @@ public final class GLDevice extends Device {
             // flushAndSubmit(/*sync=*/true)) that has us process the finished callbacks. We also must
             // process deleting the fence before a client may abandon the context.
             deleteFence(mFinishedFences.dequeueLong());
-            mFinishedCallbacks.removeFirst().onFinished();
+            mFinishedCallbacks.removeFirst().onFinished(true);
         }
         assert (mFinishedCallbacks.size() == mFinishedFences.size());
     }
@@ -897,7 +897,7 @@ public final class GLDevice extends Device {
             if (cleanup) {
                 deleteFence(mFinishedFences.dequeueLong());
             }
-            mFinishedCallbacks.removeFirst().onFinished();
+            mFinishedCallbacks.removeFirst().onFinished(true);
         }
         if (!cleanup) {
             mFinishedFences.clear();

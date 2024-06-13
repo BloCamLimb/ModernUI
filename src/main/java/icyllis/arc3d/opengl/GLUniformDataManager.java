@@ -89,7 +89,7 @@ public class GLUniformDataManager extends UniformDataManager {
         if (mUniformBuffer == null) {
             return false;
         }
-        commandBuffer.bindUniformBuffer(mUniformBuffer);
+        //commandBuffer.bindUniformBuffer(mUniformBuffer);
         nglBufferSubData(GL_UNIFORM_BUFFER, 0, mUniformSize, mUniformData);
         mUniformsDirty = false;
         return true;

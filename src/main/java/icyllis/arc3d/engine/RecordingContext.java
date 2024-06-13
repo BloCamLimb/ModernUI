@@ -19,8 +19,11 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.ColorInfo;
-import icyllis.arc3d.core.Surface;
+import icyllis.arc3d.core.*;
+import icyllis.arc3d.engine.task.Task;
+import icyllis.arc3d.engine.task.TaskList;
+import icyllis.arc3d.granite.RootTask;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
@@ -32,9 +35,13 @@ public final class RecordingContext extends Context {
     private RenderTaskManager mRenderTaskManager;
     private DynamicBufferManager mDynamicBufferManager;
 
+    private final TaskList mRootTaskList;
+
     protected RecordingContext(Device device) {
         super(device);
         mImageProxyCache = new ImageProxyCache(this);
+
+        mRootTaskList = new TaskList();
     }
 
     /**
@@ -96,6 +103,26 @@ public final class RecordingContext extends Context {
         return mDynamicBufferManager;
     }
 
+    public void addTask(@SharedPtr Task task) {
+        mRootTaskList.appendTask(task);
+    }
+
+    public RootTask snap() {
+        if (mDynamicBufferManager.hasMappingFailed() ||
+                mRootTaskList.prepare(this) == Task.RESULT_FAILURE) {
+            mRootTaskList.clear();
+            return null;
+        }
+
+        var extraResourceRefs = new ObjectArrayList<@SharedPtr Resource>();
+        var finalTaskList = new TaskList();
+        mDynamicBufferManager.flush(finalTaskList, extraResourceRefs);
+        finalTaskList.appendTasks(mRootTaskList);
+        var recording = new RootTask(finalTaskList, extraResourceRefs);
+        mRootTaskList.clear();
+        return recording;
+    }
+
     @Override
     public boolean init() {
         if (!super.init()) {
@@ -121,9 +148,12 @@ public final class RecordingContext extends Context {
 
     @Override
     protected void deallocate() {
+        super.deallocate();
         if (mRenderTaskManager != null) {
             mRenderTaskManager.destroy();
         }
         mRenderTaskManager = null;
+
+        mRootTaskList.close();
     }
 }

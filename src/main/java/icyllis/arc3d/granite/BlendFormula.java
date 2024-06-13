@@ -17,18 +17,38 @@
  * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine.effects;
+package icyllis.arc3d.granite;
 
 /**
  * Wraps the shader outputs and HW blend state that comprise a Porter Duff blend mode with coverage.
  */
 public class BlendFormula {
 
-    public static final int
+    public static final byte
             OUTPUT_TYPE_ZERO = 0, //<! 0
             OUTPUT_TYPE_COVERAGE = 1,    //<! inputCoverage
             OUTPUT_TYPE_MODULATE = 2,    //<! inputColor * inputCoverage
             OUTPUT_TYPE_SRC_ALPHA_MODULATE = 3,  //<! inputColor.a * inputCoverage
             OUTPUT_TYPE_ONE_MINUS_SRC_ALPHA_MODULATE = 4, //<! (1 - inputColor.a) * inputCoverage
             OUTPUT_TYPE_ONE_MINUS_SRC_COLOR_MODULATE = 5; //<! (1 - inputColor) * inputCoverage
+
+    public final byte mPrimaryOutput;
+    public final byte mSecondaryOutput;
+    public final byte mEquation;
+    public final byte mSrcFactor;
+    public final byte mDstFactor;
+    private final byte mProperties;
+
+    public BlendFormula(byte primaryOutput,
+                        byte secondaryOutput,
+                        byte equation,
+                        byte srcFactor,
+                        byte dstFactor) {
+        mPrimaryOutput = primaryOutput;
+        mSecondaryOutput = secondaryOutput;
+        mEquation = equation;
+        mSrcFactor = srcFactor;
+        mDstFactor = dstFactor;
+        mProperties = 0;
+    }
 }

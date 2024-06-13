@@ -406,10 +406,10 @@ public interface Engine {
      * begins execution.
      */
     interface LoadOp {
-        byte Load       = 0;
-        byte Clear      = 1;
-        byte DontCare   = 2;
-        byte Count      = 3;
+        byte kLoad      = 0;
+        byte kClear     = 1;
+        byte kDiscard   = 2;
+        byte kCount     = 3;
     }
 
     /**
@@ -417,9 +417,9 @@ public interface Engine {
      * ends execution.
      */
     interface StoreOp {
-        byte Store      = 0;
-        byte DontCare   = 1;
-        byte Count      = 2;
+        byte kStore     = 0;
+        byte kDiscard   = 1;
+        byte kCount     = 2;
     }
 
     /**
@@ -435,12 +435,12 @@ public interface Engine {
          * 4-8 bits: StoreOp
          */
         byte
-                Load_Store          = LoadOp.Load     | (StoreOp.Store    << StoreOpShift),
-                Clear_Store         = LoadOp.Clear    | (StoreOp.Store    << StoreOpShift),
-                DontLoad_Store      = LoadOp.DontCare | (StoreOp.Store    << StoreOpShift),
-                Load_DontStore      = LoadOp.Load     | (StoreOp.DontCare << StoreOpShift),
-                Clear_DontStore     = LoadOp.Clear    | (StoreOp.DontCare << StoreOpShift),
-                DontLoad_DontStore  = LoadOp.DontCare | (StoreOp.DontCare << StoreOpShift);
+                Load_Store          = LoadOp.kLoad     | (StoreOp.kStore    << StoreOpShift),
+                Clear_Store         = LoadOp.kClear    | (StoreOp.kStore    << StoreOpShift),
+                DontLoad_Store      = LoadOp.kDiscard | (StoreOp.kStore    << StoreOpShift),
+                Load_DontStore      = LoadOp.kLoad     | (StoreOp.kDiscard << StoreOpShift),
+                Clear_DontStore     = LoadOp.kClear    | (StoreOp.kDiscard << StoreOpShift),
+                DontLoad_DontStore  = LoadOp.kDiscard | (StoreOp.kDiscard << StoreOpShift);
 
         static byte make(byte load, byte store) {
             assert (load  < (1 << StoreOpShift));

@@ -24,6 +24,7 @@ import javax.annotation.Nullable;
 /**
  * Descriptor to create a render pass.
  */
+//TODO experimental, to be reviewed
 public final class RenderPassDesc {
 
     public static class ColorAttachmentDesc {
@@ -32,6 +33,7 @@ public final class RenderPassDesc {
         @Nullable
         public ImageDesc mResolveDesc;
         public byte mLoadOp;
+        //TODO MSAA resolve?
         public byte mStoreOp;
     }
 

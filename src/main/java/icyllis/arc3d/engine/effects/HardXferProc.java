@@ -20,6 +20,7 @@
 package icyllis.arc3d.engine.effects;
 
 import icyllis.arc3d.engine.*;
+import icyllis.arc3d.granite.BlendFormula;
 import icyllis.arc3d.granite.shading.XPFragmentBuilder;
 
 import javax.annotation.Nonnull;
@@ -34,10 +35,9 @@ public class HardXferProc extends TransferProcessor {
             BlendFormula.OUTPUT_TYPE_ZERO,
             false,
             new BlendInfo(
-                    Blend.EQUATION_ADD,
-                    Blend.FACTOR_ONE,
-                    Blend.FACTOR_ONE_MINUS_SRC_ALPHA,
-                    0, 0, 0, 0,
+                    BlendInfo.EQUATION_ADD,
+                    BlendInfo.FACTOR_ONE,
+                    BlendInfo.FACTOR_ONE_MINUS_SRC_ALPHA,
                     true
             )
     );

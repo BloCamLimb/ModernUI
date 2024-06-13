@@ -205,4 +205,46 @@ public abstract class Buffer extends Resource {
 
         return false;
     }
+
+    public static class ResourceKey implements IResourceKey {
+
+        private int mUsage;
+        private long mSize;
+
+        public ResourceKey() {
+        }
+
+        public ResourceKey(int usage, long size) {
+            mUsage = usage;
+            mSize = size;
+        }
+
+        public ResourceKey set(int usage, long size) {
+            mUsage = usage;
+            mSize = size;
+            return this;
+        }
+
+        @Override
+        public IResourceKey copy() {
+            return new ResourceKey(mUsage, mSize);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = mUsage;
+            result = 31 * result + (int) (mSize ^ (mSize >>> 32));
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o instanceof ResourceKey key) {
+                return mUsage == key.mUsage &&
+                        mSize == key.mSize;
+            }
+            return false;
+        }
+    }
 }

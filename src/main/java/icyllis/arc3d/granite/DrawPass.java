@@ -25,8 +25,7 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Arrays;
-import java.util.HashMap;
+import java.util.*;
 import java.util.function.Function;
 
 /**
@@ -78,12 +77,13 @@ public class DrawPass implements AutoCloseable {
     // backing store's width/height may not equal to device's width/height
     // currently we use the backing dimensions for scissor and viewport
     @Nullable
-    public static DrawPass make(RecordingContext rContext,
-                                DrawList drawList,
-                                ImageViewProxy colorTarget,
+    public static DrawPass make(RecordingContext context,
+                                List<Draw> drawList,
+                                int numSteps,
+                                ImageViewProxy targetView,
                                 ImageInfo deviceInfo) {
 
-        var bufferManager = rContext.getDynamicBufferManager();
+        var bufferManager = context.getDynamicBufferManager();
 
         if (bufferManager.hasMappingFailed()) {
             return null;
@@ -101,19 +101,20 @@ public class DrawPass implements AutoCloseable {
             return index;
         };
 
-        var passBounds = new Rect2f();
+        var passBounds = new Rect2f(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY,
+                Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY);
 
         var geometryUniformTracker = new UniformTracker();
         var fragmentUniformTracker = new UniformTracker();
 
-        SortKey[] keys = new SortKey[drawList.numSteps()];
+        SortKey[] keys = new SortKey[numSteps];
         int keyIndex = 0;
 
         try (var textureDataGatherer = new TextureDataGatherer()) {
             var textureTracker = new TextureTracker();
 
-            int surfaceHeight = colorTarget.getHeight();
-            int surfaceOrigin = colorTarget.getOrigin();
+            int surfaceHeight = targetView.getHeight();
+            int surfaceOrigin = targetView.getOrigin();
 
             try (var uniformDataCache = new UniformDataCache();
                  var uniformDataGatherer = new UniformDataGatherer(
@@ -122,7 +123,7 @@ public class DrawPass implements AutoCloseable {
                 var paintParamsKeyBuilder = new KeyBuilder();
                 var lookupDesc = new GraphicsPipelineDesc();
 
-                float projX = 2.0f / colorTarget.getWidth();
+                float projX = 2.0f / targetView.getWidth();
                 float projY = -1.0f;
                 float projZ = 2.0f / surfaceHeight;
                 float projW = -1.0f;
@@ -131,7 +132,7 @@ public class DrawPass implements AutoCloseable {
                     projW = -projW;
                 }
 
-                for (var draw : drawList.mDraws) {
+                for (var draw : drawList) {
 
                     for (int stepIndex = 0; stepIndex < draw.mRenderer.numSteps(); stepIndex++) {
                         var step = draw.mRenderer.step(stepIndex);
@@ -355,6 +356,17 @@ public class DrawPass implements AutoCloseable {
     }
 
     public boolean execute(CommandBuffer commandBuffer) {
+        for (var pipeline : mPipelines) {
+            commandBuffer.trackResource(RefCnt.create(pipeline));
+        }
+        if (mSamplers != null) {
+            for (var sampler : mSamplers) {
+                commandBuffer.trackResource(RefCnt.create(sampler));
+            }
+        }
+        for (var texture : mTextures) {
+            commandBuffer.trackCommandBufferResource(texture.refImage());
+        }
         var cmdList = getCommandList();
         var p = cmdList.mPrimitives;
         var oa = cmdList.mPointers.elements();
@@ -431,7 +443,6 @@ public class DrawPass implements AutoCloseable {
                 }
             }
         }
-        //TODO track resources
         return true;
     }
 

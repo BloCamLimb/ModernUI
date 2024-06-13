@@ -19,9 +19,13 @@
 
 package icyllis.arc3d.opengl;
 
-import icyllis.arc3d.engine.*;
+import icyllis.arc3d.engine.QueueManager;
+import icyllis.arc3d.engine.ResourceProvider;
 import org.jetbrains.annotations.ApiStatus;
 
+/**
+ * Represents the OpenGL queue.
+ */
 public final class GLQueueManager extends QueueManager {
 
     private final GLDevice mDevice;
@@ -39,12 +43,5 @@ public final class GLQueueManager extends QueueManager {
     protected GLCommandBuffer createNewCommandBuffer(ResourceProvider resourceProvider) {
         var glResourceProvider = (GLResourceProvider) resourceProvider;
         return new GLCommandBuffer(mDevice, glResourceProvider);
-    }
-
-    @Override
-    protected boolean onSubmit(CommandBuffer commandBuffer) {
-        var glCommandBuffer = (GLCommandBuffer) commandBuffer;
-        glCommandBuffer.submit();
-        return true;
     }
 }

@@ -61,14 +61,12 @@ public class TestClipStack {
 
         var drawDevice = SurfaceDevice.make(
                 recordingContext,
-                ColorInfo.CT_RGBA_8888,
-                ColorInfo.AT_PREMUL,
-                ColorSpace.get(ColorSpace.Named.SRGB),
-                800, 600,
-                1,
+                ImageInfo.make(800, 600, ColorInfo.CT_RGBA_8888,
+                        ColorInfo.AT_PREMUL, ColorSpace.get(ColorSpace.Named.SRGB)),
                 ISurface.FLAG_SAMPLED_IMAGE | ISurface.FLAG_RENDERABLE | ISurface.FLAG_BUDGETED,
                 Engine.SurfaceOrigin.kLowerLeft,
-                false
+                Engine.LoadOp.kLoad,
+                "TestDevice"
         );
         assert drawDevice != null;
 

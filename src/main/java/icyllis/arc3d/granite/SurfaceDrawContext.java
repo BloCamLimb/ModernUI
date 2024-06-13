@@ -21,151 +21,119 @@ package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
+import icyllis.arc3d.engine.task.Task;
+import icyllis.arc3d.engine.task.TaskList;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+
+import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * Used by {@link SurfaceDevice}
  */
-public class SurfaceDrawContext implements AutoCloseable {
+public final class SurfaceDrawContext implements AutoCloseable {
 
-    private final RecordingContext mContext;
     private final ImageInfo mImageInfo;
 
+    @SharedPtr
     private final ImageViewProxy mReadView;
     private final short mWriteSwizzle;
 
-    private ImageViewProxy mDepthStencilTarget;
+    private TaskList mDrawTaskList;
 
-    private DrawList mPendingDrawOps = new DrawList();
+    private Matrix4 mLastTransform; // for deduplication
+    private final ObjectArrayList<Draw> mPendingDraws = new ObjectArrayList<>();
+    private int mNumSteps;
 
-    public SurfaceDrawContext(RecordingContext context,
-                              ImageViewProxy readView,
-                              short writeSwizzle,
-                              int colorType,
-                              int alphaType,
-                              ColorSpace colorSpace) {
-        assert !context.isDiscarded();
-        mContext = context;
+    // Load and store information for the current pending draws.
+    private byte mPendingLoadOp = Engine.LoadOp.kLoad;
+    private byte mPendingStoreOp = Engine.StoreOp.kStore;
+    private final float[] mPendingClearColor = new float[4];
+
+    private SurfaceDrawContext(@SharedPtr ImageViewProxy readView,
+                               short writeSwizzle,
+                               ImageInfo imageInfo) {
         mReadView = readView;
         mWriteSwizzle = writeSwizzle;
-        mImageInfo = new ImageInfo(
-                getWidth(), getHeight(),
-                colorType, alphaType, colorSpace
-        );
+        mImageInfo = imageInfo;
+        mDrawTaskList = new TaskList();
     }
 
+    //TODO currently we don't handle MSAA
+    @Nullable
     public static SurfaceDrawContext make(
-            RecordingContext rContext,
-            int colorType,
-            ColorSpace colorSpace,
-            int width, int height,
-            int sampleCount,
-            int surfaceFlags,
-            int origin) {
-        if (rContext == null || rContext.isDiscarded()) {
-            return null;
-        }
-
-        /*BackendFormat format = rContext.getCaps().getDefaultBackendFormat(colorType, true);
-        if (format == null) {
-            return null;
-        }
-
-        @SharedPtr
-        RenderTargetProxy renderTarget = rContext.getSurfaceProvider().createRenderTexture(
-                format,
-                width,
-                height,
-                sampleCount,
-                surfaceFlags
-        );
-        if (renderTarget == null) {
-            return null;
-        }*/
-        ImageDesc desc = rContext.getCaps().getDefaultColorImageDesc(Engine.ImageType.k2D,
-                colorType,
-                width,
-                height,
-                1,
-                0,
-                sampleCount,
-                surfaceFlags);
-        if (desc == null) {
-            return null;
-        }
-        short readSwizzle = rContext.getCaps().getReadSwizzle(desc, colorType);
-        ImageViewProxy targetView = ImageViewProxy.make(rContext, desc,
-                origin, readSwizzle,
-                /*budgeted*/true, "SurfaceDrawContext");
+            RecordingContext context,
+            @SharedPtr ImageViewProxy targetView,
+            ImageInfo deviceInfo) {
         if (targetView == null) {
             return null;
         }
-        short writeSwizzle = rContext.getCaps().getWriteSwizzle(desc, colorType);
+        if (context == null || context.isDiscarded()) {
+            targetView.unref();
+            return null;
+        }
+        if (deviceInfo.alphaType() != ColorInfo.AT_OPAQUE &&
+                deviceInfo.alphaType() != ColorInfo.AT_PREMUL) {
+            // we only render to premultiplied alpha type
+            targetView.unref();
+            return null;
+        }
+        if (!targetView.getDesc().isRenderable()) {
+            targetView.unref();
+            return null;
+        }
 
-        return new SurfaceDrawContext(rContext, targetView, writeSwizzle,
-                colorType, ColorInfo.AT_PREMUL, colorSpace);
-    }
+        // Accept an approximate-fit surface, but make sure it's at least as large as the device's
+        // logical size.
+        // TODO: validate that the color type and alpha type are compatible with the target's info
+        assert targetView.getWidth() >= deviceInfo.width() &&
+                targetView.getHeight() >= deviceInfo.height();
 
-    /*public static SurfaceDrawContext make(RecordingContext rContext,
-                                          int colorType,
-                                          ColorSpace colorSpace,
-                                          ImageProxy imageProxy,
-                                          int origin) {
-        ImageDesc desc = imageProxy.getDesc();
+        short writeSwizzle = context.getCaps().getWriteSwizzle(
+                targetView.getDesc(), deviceInfo.colorType());
 
-        short readSwizzle = rContext.getCaps().getReadSwizzle(desc, colorType);
-        short writeSwizzle = rContext.getCaps().getWriteSwizzle(desc, colorType);
-
-        // two views, inc one more ref
-        imageProxy.ref();
-        ImageProxyView readView = new ImageProxyView(imageProxy, origin, readSwizzle);
-        ImageProxyView writeView = new ImageProxyView(imageProxy, origin, writeSwizzle);
-
-        return new SurfaceDrawContext(rContext, readView, writeView, colorType, colorSpace);
-    }*/
-
-    /**
-     * @return raw ptr to the context
-     */
-    @RawPtr
-    public final RecordingContext getContext() {
-        return mContext;
+        return new SurfaceDrawContext(
+                targetView,
+                writeSwizzle,
+                deviceInfo);
     }
 
     /**
      * @return raw ptr to the read view
      */
     @RawPtr
-    public final ImageViewProxy getReadView() {
+    public ImageViewProxy getReadView() {
         return mReadView;
     }
 
-    public final ImageInfo getImageInfo() {
+    public ImageInfo getImageInfo() {
         return mImageInfo;
     }
 
     /**
      * @see ColorInfo.ColorType
      */
-    public final int getColorType() {
+    public int getColorType() {
         return mImageInfo.colorType();
     }
 
     /**
      * @see ColorInfo.AlphaType
      */
-    public final int getAlphaType() {
+    public int getAlphaType() {
         return mImageInfo.alphaType();
     }
 
-    public final int getWidth() {
+    public int getWidth() {
         return mReadView.getWidth();
     }
 
-    public final int getHeight() {
+    public int getHeight() {
         return mReadView.getHeight();
     }
 
-    public final boolean isMipmapped() {
+    public boolean isMipmapped() {
         return mReadView.isMipmapped();
     }
 
@@ -174,23 +142,112 @@ public class SurfaceDrawContext implements AutoCloseable {
      *
      * @see Engine.SurfaceOrigin
      */
-    public final int getOrigin() {
+    public int getOrigin() {
         return mReadView.getOrigin();
     }
 
     /**
      * @see Swizzle
      */
-    public final short getReadSwizzle() {
+    public short getReadSwizzle() {
         return mReadView.getSwizzle();
     }
 
-    public final Caps getCaps() {
-        return mContext.getCaps();
+    /**
+     * @param clearColor premultiplied color, null means (0,0,0,0)
+     */
+    public void clear(float[] clearColor) {
+        discard();
+
+        mPendingLoadOp = Engine.LoadOp.kClear;
+        if (clearColor != null) {
+            System.arraycopy(clearColor, 0, mPendingClearColor, 0, 4);
+        } else {
+            Arrays.fill(mPendingClearColor, 0.0f);
+        }
     }
 
-    protected final RenderTaskManager getDrawingManager() {
-        return mContext.getRenderTaskManager();
+    public void discard() {
+
+        mPendingDraws.clear();
+        mNumSteps = 0;
+
+        mPendingLoadOp = Engine.LoadOp.kDiscard;
+    }
+
+    public void recordDraw(Draw draw) {
+        assert !draw.mDrawBounds.isEmpty();
+        assert !draw.mScissorRect.isEmpty() &&
+                draw.mScissorRect.left() >= 0 &&
+                draw.mScissorRect.top() >= 0 &&
+                draw.mScissorRect.right() <= mImageInfo.width() &&
+                draw.mScissorRect.bottom() <= mImageInfo.height();
+        //TODO add stencil validation?
+
+        draw.mTransform = getStableTransform(draw.mTransform);
+
+        mPendingDraws.add(draw);
+        mNumSteps += draw.mRenderer.numSteps();
+    }
+
+    public void recordDependency(@SharedPtr Task task) {
+        mDrawTaskList.appendTask(task);
+    }
+
+    public void flush(RecordingContext context) {
+
+        assert mPendingDraws.isEmpty() == (mNumSteps == 0);
+        if (mPendingDraws.isEmpty() && mPendingLoadOp != Engine.LoadOp.kClear) {
+            return;
+        }
+
+        DrawPass pass = DrawPass.make(
+                context,
+                mPendingDraws,
+                mNumSteps,
+                mReadView,
+                mImageInfo);
+        mPendingDraws.clear();
+        mNumSteps = 0;
+
+        if (pass != null) {
+
+            var renderPassDesc = new RenderPassDesc();
+            renderPassDesc.mNumColorAttachments = 1;
+            var colorDesc = renderPassDesc.mColorAttachments[0] = new RenderPassDesc.ColorAttachmentDesc();
+            colorDesc.mDesc = mReadView.getDesc();
+            colorDesc.mLoadOp = mPendingLoadOp;
+            colorDesc.mStoreOp = mPendingStoreOp;
+            //TODO MSAA and depth stencil attachment
+
+            RenderPassTask renderPassTask = RenderPassTask.make(
+                    pass,
+                    renderPassDesc,
+                    RefCnt.create(mReadView),
+                    null,
+                    mPendingClearColor
+            );
+            mDrawTaskList.appendTask(renderPassTask);
+        }
+
+        // Now that there is content drawn to the target, that content must be loaded on any subsequent
+        // render pass.
+        mPendingLoadOp = Engine.LoadOp.kLoad;
+        mPendingStoreOp = Engine.StoreOp.kStore;
+    }
+
+    @Nullable
+    @SharedPtr
+    public DrawTask snap(RecordingContext context) {
+        flush(context);
+
+        if (mDrawTaskList.isEmpty()) {
+            return null;
+        }
+
+        DrawTask task = new DrawTask(RefCnt.create(mReadView), mDrawTaskList);
+        mDrawTaskList = new TaskList();
+        return task;
     }
 
     /**
@@ -199,13 +256,16 @@ public class SurfaceDrawContext implements AutoCloseable {
     @Override
     public void close() {
         mReadView.unref();
+        mDrawTaskList.close();
     }
 
-    public void recordDraw(Draw draw) {
-        mPendingDrawOps.recordDrawOp(draw);
-    }
-
-    public void flush(RecordingContext context) {
-
+    private Matrix4 getStableTransform(Matrix4 transform) {
+        Matrix4 last = mLastTransform;
+        if (!transform.equals(last)) {
+            var copy = transform.clone();
+            mLastTransform = copy;
+            return copy;
+        }
+        return last;
     }
 }

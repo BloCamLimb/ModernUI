@@ -30,6 +30,9 @@ public class TaskList implements Consumer<@SharedPtr Task>, AutoCloseable {
 
     private final ObjectArrayList<@SharedPtr Task> mTasks = new ObjectArrayList<>();
 
+    public TaskList() {
+    }
+
     public void appendTask(@SharedPtr Task task) {
         mTasks.add(task);
     }
@@ -63,7 +66,16 @@ public class TaskList implements Consumer<@SharedPtr Task>, AutoCloseable {
         return mTasks.isEmpty();
     }
 
-    public int prepare(ResourceProvider resourceProvider) {
+    public void clear() {
+        for (var task : mTasks) {
+            if (task != null) {
+                task.unref();
+            }
+        }
+        mTasks.clear();
+    }
+
+    public int prepare(RecordingContext context) {
         int discardCount = 0;
         for (var it = mTasks.listIterator(); it.hasNext(); ) {
             var task = it.next();
@@ -72,7 +84,7 @@ public class TaskList implements Consumer<@SharedPtr Task>, AutoCloseable {
                 continue;
             }
 
-            int result = task.prepare(resourceProvider);
+            int result = task.prepare(context);
             if (result == Task.RESULT_FAILURE) {
                 return Task.RESULT_FAILURE;
             } else if (result == Task.RESULT_DISCARD) {
@@ -110,11 +122,6 @@ public class TaskList implements Consumer<@SharedPtr Task>, AutoCloseable {
 
     @Override
     public void close() {
-        for (var task : mTasks) {
-            if (task != null) {
-                task.unref();
-            }
-        }
-        mTasks.clear();
+        clear();
     }
 }

@@ -79,6 +79,11 @@ public final class GraphicsPipelineDesc extends PipelineDesc {
     }
 
     @Override
+    public BlendInfo getBlendInfo() {
+        return BlendInfo.SRC_OVER;
+    }
+
+    @Override
     public GraphicsPipelineDesc copy() {
         if (mPaintParamsKey instanceof KeyBuilder keyBuilder) {
             // at most one, no recursive copy

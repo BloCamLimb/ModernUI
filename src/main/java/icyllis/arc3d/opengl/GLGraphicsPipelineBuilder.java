@@ -57,7 +57,7 @@ public class GLGraphicsPipelineBuilder {
     public static GLGraphicsPipeline createGraphicsPipeline(
             final GLDevice device,
             final PipelineDesc desc) {
-        return new GLGraphicsPipeline(device, desc.getPrimitiveType(),
+        return new GLGraphicsPipeline(device, desc.getPrimitiveType(), desc.getBlendInfo(),
                 CompletableFuture.supplyAsync(() -> {
             GLGraphicsPipelineBuilder builder = new GLGraphicsPipelineBuilder(device, desc);
             builder.build();

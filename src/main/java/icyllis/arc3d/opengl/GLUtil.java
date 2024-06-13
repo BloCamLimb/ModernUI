@@ -635,4 +635,28 @@ public final class GLUtil {
         f.format(errors);
         logger.error(f.toString());
     }
+
+    public static int getGLBlendFactor(int factor) {
+        return switch (factor) {
+            case BlendInfo.FACTOR_ONE -> GL_ONE;
+            case BlendInfo.FACTOR_SRC_COLOR -> GL_SRC_COLOR;
+            case BlendInfo.FACTOR_ONE_MINUS_SRC_COLOR -> GL_ONE_MINUS_SRC_COLOR;
+            case BlendInfo.FACTOR_DST_COLOR -> GL_DST_COLOR;
+            case BlendInfo.FACTOR_ONE_MINUS_DST_COLOR -> GL_ONE_MINUS_DST_COLOR;
+            case BlendInfo.FACTOR_SRC_ALPHA -> GL_SRC_ALPHA;
+            case BlendInfo.FACTOR_ONE_MINUS_SRC_ALPHA -> GL_ONE_MINUS_SRC_ALPHA;
+            case BlendInfo.FACTOR_DST_ALPHA -> GL_DST_ALPHA;
+            case BlendInfo.FACTOR_ONE_MINUS_DST_ALPHA -> GL_ONE_MINUS_DST_ALPHA;
+            case BlendInfo.FACTOR_CONSTANT_COLOR -> GL_CONSTANT_COLOR;
+            case BlendInfo.FACTOR_ONE_MINUS_CONSTANT_COLOR -> GL_ONE_MINUS_CONSTANT_COLOR;
+            case BlendInfo.FACTOR_CONSTANT_ALPHA -> GL_CONSTANT_ALPHA;
+            case BlendInfo.FACTOR_ONE_MINUS_CONSTANT_ALPHA -> GL_ONE_MINUS_CONSTANT_ALPHA;
+            case BlendInfo.FACTOR_SRC_ALPHA_SATURATE -> GL_SRC_ALPHA_SATURATE;
+            case BlendInfo.FACTOR_SRC1_COLOR -> GL_SRC1_COLOR;
+            case BlendInfo.FACTOR_ONE_MINUS_SRC1_COLOR -> GL_ONE_MINUS_SRC1_COLOR;
+            case BlendInfo.FACTOR_SRC1_ALPHA -> GL_SRC1_ALPHA;
+            case BlendInfo.FACTOR_ONE_MINUS_SRC1_ALPHA -> GL_ONE_MINUS_SRC1_ALPHA;
+            default -> GL_ZERO;
+        };
+    }
 }

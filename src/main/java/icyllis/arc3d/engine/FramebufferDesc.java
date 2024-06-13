@@ -20,13 +20,39 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.RawPtr;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nullable;
 
 /**
  * Descriptor to create a framebuffer.
  */
+//TODO experimental, to be reviewed
 public final class FramebufferDesc {
+
+    /**
+     * This is a OpenGL only flag. It tells us that the internal render target wraps the OpenGL
+     * default framebuffer (id=0) that preserved by window. RT only.
+     */
+    @ApiStatus.Internal
+    public static final
+    int FLAG_GL_WRAP_DEFAULT_FB = ISurface.FLAG_PROTECTED << 4;
+    /**
+     * This means the render target is multi-sampled, and internally holds a non-msaa image
+     * for resolving into. The render target resolves itself by blit-ting into this internal
+     * image. (It might or might not have the internal image access, but if it does, we
+     * always resolve the render target before accessing this image's data.) RT only.
+     */
+    @ApiStatus.Internal
+    public static final
+    int FLAG_MANUAL_MSAA_RESOLVE = ISurface.FLAG_PROTECTED << 5;
+    /**
+     * This is a Vulkan only flag. It tells us that the internal render target is wrapping a raw
+     * Vulkan secondary command buffer. RT only.
+     */
+    @ApiStatus.Internal
+    public static final
+    int FLAG_VK_WRAP_SECONDARY_CB = ISurface.FLAG_PROTECTED << 6;
 
     public static class ColorAttachmentDesc {
         @Nullable

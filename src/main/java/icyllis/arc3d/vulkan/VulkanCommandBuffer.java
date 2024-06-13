@@ -19,6 +19,7 @@
 
 package icyllis.arc3d.vulkan;
 
+import icyllis.arc3d.core.Rect2ic;
 import icyllis.arc3d.engine.*;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
@@ -36,56 +37,13 @@ public abstract class VulkanCommandBuffer extends CommandBuffer {
     }
 
     @Override
-    public void begin() {
-        try (var stack = MemoryStack.stackPush()) {
-            var beginInfo = VkCommandBufferBeginInfo.malloc(stack)
-                    .sType$Default()
-                    .pNext(NULL)
-                    .flags(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)
-                    .pInheritanceInfo(null);
-            _CHECK_ERROR_(vkBeginCommandBuffer(mCommandBuffer, beginInfo));
-        }
-    }
-
-    @Override
-    public void end() {
-        vkEndCommandBuffer(mCommandBuffer);
-    }
-
-    @Override
-    public void draw(int vertexCount, int baseVertex) {
-        drawInstanced(1, 0, vertexCount, baseVertex);
-    }
-
-    @Override
-    public void drawIndexed(int indexCount, int baseIndex, int baseVertex) {
-        drawIndexedInstanced(indexCount, baseIndex, 1, 0, baseVertex);
-    }
-
-    @Override
-    public void drawInstanced(int instanceCount, int baseInstance,
-                              int vertexCount, int baseVertex) {
-        vkCmdDraw(mCommandBuffer,
-                vertexCount,
-                instanceCount,
-                baseVertex,
-                baseInstance);
-    }
-
-    @Override
-    public void drawIndexedInstanced(int indexCount, int baseIndex,
-                                     int instanceCount, int baseInstance,
-                                     int baseVertex) {
-        vkCmdDrawIndexed(mCommandBuffer,
-                indexCount,
-                instanceCount,
-                baseIndex,
-                baseVertex,
-                baseInstance);
-    }
-
-    public void bindVertexBuffers() {
-        //vkCmdBindVertexBuffers();
+    public boolean beginRenderPass(RenderPassDesc renderPassDesc,
+                                   FramebufferDesc framebufferDesc,
+                                   Rect2ic renderPassBounds,
+                                   float[] clearColors,
+                                   float clearDepth,
+                                   int clearStencil) {
+        return false;
     }
 
     public boolean bindGraphicsPipeline(GraphicsPipeline graphicsPipeline) {
@@ -121,6 +79,74 @@ public abstract class VulkanCommandBuffer extends CommandBuffer {
     @Override
     public void bindTextureSampler(int binding, Image texture, Sampler sampler, short readSwizzle) {
 
+    }
+
+    @Override
+    public void draw(int vertexCount, int baseVertex) {
+        drawInstanced(1, 0, vertexCount, baseVertex);
+    }
+
+    @Override
+    public void drawIndexed(int indexCount, int baseIndex, int baseVertex) {
+        drawIndexedInstanced(indexCount, baseIndex, 1, 0, baseVertex);
+    }
+
+    @Override
+    public void drawInstanced(int instanceCount, int baseInstance,
+                              int vertexCount, int baseVertex) {
+        vkCmdDraw(mCommandBuffer,
+                vertexCount,
+                instanceCount,
+                baseVertex,
+                baseInstance);
+    }
+
+    @Override
+    public void drawIndexedInstanced(int indexCount, int baseIndex,
+                                     int instanceCount, int baseInstance,
+                                     int baseVertex) {
+        vkCmdDrawIndexed(mCommandBuffer,
+                indexCount,
+                instanceCount,
+                baseIndex,
+                baseVertex,
+                baseInstance);
+    }
+
+    @Override
+    public void endRenderPass() {
+
+    }
+
+    @Override
+    protected void begin() {
+        try (var stack = MemoryStack.stackPush()) {
+            var beginInfo = VkCommandBufferBeginInfo.malloc(stack)
+                    .sType$Default()
+                    .pNext(NULL)
+                    .flags(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)
+                    .pInheritanceInfo(null);
+            _CHECK_ERROR_(vkBeginCommandBuffer(mCommandBuffer, beginInfo));
+        }
+    }
+
+    @Override
+    protected boolean submit(QueueManager queueManager) {
+        vkEndCommandBuffer(mCommandBuffer);
+        return false;
+    }
+
+    @Override
+    protected boolean checkFinishedAndReset() {
+        return false;
+    }
+
+    @Override
+    protected void waitUntilFinished() {
+    }
+
+    public void bindVertexBuffers() {
+        //vkCmdBindVertexBuffers();
     }
 
     public boolean isRecording() {

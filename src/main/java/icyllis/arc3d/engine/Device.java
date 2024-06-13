@@ -42,15 +42,15 @@ public abstract class Device implements Engine {
 
     // @formatter:off
     static {
-        assert (LoadStoreOps.Load_Store         == LoadStoreOps.make(LoadOp.Load,       StoreOp.Store));
-        assert (LoadStoreOps.Clear_Store        == LoadStoreOps.make(LoadOp.Clear,      StoreOp.Store));
-        assert (LoadStoreOps.DontLoad_Store     == LoadStoreOps.make(LoadOp.DontCare,   StoreOp.Store));
-        assert (LoadStoreOps.Load_DontStore     == LoadStoreOps.make(LoadOp.Load,       StoreOp.DontCare));
-        assert (LoadStoreOps.Clear_DontStore    == LoadStoreOps.make(LoadOp.Clear,      StoreOp.DontCare));
-        assert (LoadStoreOps.DontLoad_DontStore == LoadStoreOps.make(LoadOp.DontCare,   StoreOp.DontCare));
+        assert (LoadStoreOps.Load_Store         == LoadStoreOps.make(LoadOp.kLoad,       StoreOp.kStore));
+        assert (LoadStoreOps.Clear_Store        == LoadStoreOps.make(LoadOp.kClear,      StoreOp.kStore));
+        assert (LoadStoreOps.DontLoad_Store     == LoadStoreOps.make(LoadOp.kDiscard,   StoreOp.kStore));
+        assert (LoadStoreOps.Load_DontStore     == LoadStoreOps.make(LoadOp.kLoad,       StoreOp.kDiscard));
+        assert (LoadStoreOps.Clear_DontStore    == LoadStoreOps.make(LoadOp.kClear,      StoreOp.kDiscard));
+        assert (LoadStoreOps.DontLoad_DontStore == LoadStoreOps.make(LoadOp.kDiscard,   StoreOp.kDiscard));
         //noinspection ConstantValue
-        assert ( LoadOp.Count  <= (1 << LoadStoreOps.StoreOpShift)) &&
-                (StoreOp.Count <= (1 << LoadStoreOps.StoreOpShift));
+        assert ( LoadOp.kCount  <= (1 << LoadStoreOps.StoreOpShift)) &&
+                (StoreOp.kCount <= (1 << LoadStoreOps.StoreOpShift));
     }
     // @formatter:on
 

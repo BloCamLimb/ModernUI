@@ -193,13 +193,14 @@ public final class ResourceCache implements AutoCloseable {
             top.unrefCache();
         }
 
-        assert mResourceMap.isEmpty();
+        //TODO do we need to track these data and validate?
+        /*assert mResourceMap.isEmpty() : mResourceMap;
         assert mCount == 0 : mCount;
         assert getResourceCount() == 0;
         assert mBytes == 0;
         assert mBudgetedCount == 0;
         assert mBudgetedBytes == 0;
-        assert mFreeBytes == 0;
+        assert mFreeBytes == 0;*/
     }
 
     boolean processReturnedResources() {
@@ -457,6 +458,7 @@ public final class ResourceCache implements AutoCloseable {
         removeFromNonFreeArray(resource);
 
         if (resource.isCacheable()) {
+            assert resource.isFree();
             resource.setLastUsedTime();
             mFreeQueue.add(resource);
             mFreeBytes += resource.getMemorySize();

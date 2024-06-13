@@ -126,7 +126,7 @@ public class Surface extends RefCnt {
         return null;
     }
 
-    @Nullable
+    /*@Nullable
     public static Surface wrapBackendRenderTarget(RecordingContext rContext,
                                                   BackendRenderTarget backendRenderTarget,
                                                   int origin,
@@ -150,7 +150,7 @@ public class Surface extends RefCnt {
             return null;
         }
         return new Surface(dev);
-    }
+    }*/
 
     private static boolean validateBackendTexture(Caps caps,
                                                   BackendImage backendImage,

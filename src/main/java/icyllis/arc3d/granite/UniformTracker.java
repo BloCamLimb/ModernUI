@@ -85,10 +85,10 @@ public class UniformTracker {
             if (numBlocks == 0) {
                 continue;
             }
-            var blocks = cache.mIndexToData.elements();
+            var blocks = cache.mIndexToData;
             // All data blocks for the same pipeline have the same size, so peek the first
             // to determine the total buffer size
-            int dataSize = blocks[0].remaining();
+            int dataSize = blocks.get(0).remaining();
             int blockSize = bufferManager.alignUniformBlockSize(dataSize);
 
             var writer = bufferManager.getUniformWriter(
@@ -100,7 +100,7 @@ public class UniformTracker {
             cache.mBufferInfo.mSize = blockSize;
 
             for (int i = 0; i < numBlocks; i++) {
-                ByteBuffer src = blocks[i];
+                ByteBuffer src = blocks.get(i);
                 assert src.remaining() == dataSize;
                 writer.put(src)
                         .position(writer.position() + padding);

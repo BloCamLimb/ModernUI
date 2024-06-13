@@ -104,7 +104,7 @@ public final class GLRenderTarget extends GpuRenderTarget {
         mOwnership = ownership;
         mDepthStencilAttachment = depthStencilAttachment;
         if (framebuffer == 0) {
-            mSurfaceFlags |= ISurface.FLAG_GL_WRAP_DEFAULT_FB;
+            mSurfaceFlags |= FramebufferDesc.FLAG_GL_WRAP_DEFAULT_FB;
         }
         //registerWithCacheWrapped(false);
     }

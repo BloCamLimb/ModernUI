@@ -25,6 +25,7 @@ import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
 import icyllis.arc3d.granite.GeometryStep;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -46,6 +47,8 @@ public class GLGraphicsPipeline extends GraphicsPipeline {
     @SharedPtr
     private GLVertexArray mVertexArray;
 
+    private final BlendInfo mBlendInfo;
+
     private GLUniformDataManager mDataManager;
 
     // the installed effects, unique ptr
@@ -57,8 +60,10 @@ public class GLGraphicsPipeline extends GraphicsPipeline {
 
     GLGraphicsPipeline(GLDevice device,
                        byte primitiveType,
+                       BlendInfo blendInfo,
                        CompletableFuture<GLGraphicsPipelineBuilder> asyncWork) {
         super(device, primitiveType);
+        mBlendInfo = blendInfo;
         mAsyncWork = asyncWork;
     }
 
@@ -110,16 +115,20 @@ public class GLGraphicsPipeline extends GraphicsPipeline {
         mAsyncWork = null;
     }
 
-    public boolean bindPipeline(GLCommandBuffer commandBuffer) {
+    @Nullable // raw ptr
+    public GLProgram getProgram() {
         if (mAsyncWork != null) {
             checkAsyncWork();
         }
-        if (mProgram != null) {
-            assert (mVertexArray != null);
-            commandBuffer.bindPipeline(mProgram, mVertexArray);
-            return true;
+        return mProgram;
+    }
+
+    @Nullable // raw ptr
+    public GLVertexArray getVertexArray() {
+        if (mAsyncWork != null) {
+            checkAsyncWork();
         }
-        return false;
+        return mVertexArray;
     }
 
     public boolean bindUniforms(GLCommandBuffer commandBuffer,
@@ -150,6 +159,10 @@ public class GLGraphicsPipeline extends GraphicsPipeline {
 
         assert unit == mNumTextureSamplers;
         return true;
+    }
+
+    public BlendInfo getBlendInfo() {
+        return mBlendInfo;
     }
 
     public int getVertexBindingCount() {

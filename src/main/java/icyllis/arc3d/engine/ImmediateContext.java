@@ -19,6 +19,8 @@
 
 package icyllis.arc3d.engine;
 
+import icyllis.arc3d.core.RawPtr;
+import icyllis.arc3d.engine.task.Task;
 import icyllis.arc3d.vulkan.VkBackendContext;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -109,6 +111,20 @@ public final class ImmediateContext extends Context {
         return mQueueManager;
     }
 
+    public boolean addTask(@RawPtr Task task) {
+        return mQueueManager.addTask(task);
+    }
+
+    public boolean submit() {
+        boolean success = mQueueManager.submit();
+        mQueueManager.checkForFinishedWork();
+        return success;
+    }
+
+    public void checkForFinishedWork() {
+        mQueueManager.checkForFinishedWork();
+    }
+
     @ApiStatus.Internal
     public CommandBuffer currentCommandBuffer() {
         if (mQueueManager.prepareCommandBuffer(mResourceProvider)) {
@@ -167,5 +183,6 @@ public final class ImmediateContext extends Context {
         if (mDevice != null) {
             mDevice.disconnect(true);
         }
+        mQueueManager.finishOutstandingWork();
     }
 }

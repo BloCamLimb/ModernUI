@@ -63,7 +63,7 @@ public final class FlushInfo {
     @FunctionalInterface
     public interface FinishedCallback {
 
-        void onFinished();
+        void onFinished(boolean success);
     }
 
     @FunctionalInterface
