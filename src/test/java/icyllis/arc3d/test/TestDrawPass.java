@@ -134,8 +134,11 @@ public class TestDrawPass {
             draw.mTransform.preTranslate(-cx, -cy);
             int stroke = (int) (Math.random() * 50);
             draw.mStrokeRadius = stroke < 25 ? -1 : stroke - 20;
-            step.writeMesh(drawWriter, draw, new float[]{(float) (Math.random() * 0.2f),
-                    (float) (Math.random() * 0.2f), (float) (Math.random() * 0.2f), 0.2f}); // premultiplied color
+            float[] col = {(float) Math.random(), (float) Math.random(), (float) Math.random(), 1.0f};
+            for (int j = 0; j < 4; j++) {
+                col[j] *= 0.5f; // premultiplied color
+            }
+            step.writeMesh(drawWriter, draw, col);
         }
 
         drawWriter.flush();
@@ -178,7 +181,7 @@ public class TestDrawPass {
 
             while (!GLFW.glfwWindowShouldClose(window)) {
                 GLFW.glfwWaitEvents();
-                commandBuffer.resetStates(~0);
+                commandBuffer.resetStates();
                 GL33C.glClearBufferfv(GL33C.GL_COLOR, 0,
                         new float[]{(float) (GLFW.glfwGetTime() % 1.0), 0.5f, 0.5f, 1.0f});
                 commandBuffer.bindGraphicsPipeline(pipeline);

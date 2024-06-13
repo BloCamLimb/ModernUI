@@ -22,27 +22,173 @@ package icyllis.arc3d.engine;
 import icyllis.arc3d.core.*;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
+import java.util.ArrayDeque;
+
 /**
  * Backend-specific command buffer, executing thread only.
  */
 public abstract class CommandBuffer {
 
     private final ObjectArrayList<@SharedPtr Resource> mTrackingUsageResources = new ObjectArrayList<>();
+    private final ObjectArrayList<@SharedPtr ManagedResource> mTrackingManagedResources = new ObjectArrayList<>();
     private final ObjectArrayList<@SharedPtr Resource> mTrackingCommandBufferResources = new ObjectArrayList<>();
+
+    private final ArrayDeque<FlushInfo.FinishedCallback> mFinishedCallbacks = new ArrayDeque<>();
+
+    /**
+     * Begin render pass. If successful, {@link #endRenderPass()} must be called.
+     *
+     * @param renderPassDesc   descriptor to create a render pass
+     * @param framebufferDesc  descriptor to create a framebuffer
+     * @param renderPassBounds content bounds of this render pass
+     * @param clearColors      clear color for each color attachment
+     * @param clearDepth       clear depth
+     * @param clearStencil     clear stencil (unsigned)
+     * @return success or not
+     */
+    public abstract boolean beginRenderPass(RenderPassDesc renderPassDesc,
+                                            FramebufferDesc framebufferDesc,
+                                            Rect2ic renderPassBounds,
+                                            float[] clearColors,
+                                            float clearDepth,
+                                            int clearStencil);
+
+    /**
+     * Set viewport, must be called after {@link #beginRenderPass}.
+     */
+    public abstract void setViewport(int x, int y, int width, int height);
+
+    /**
+     * Set scissor, must be called after {@link #beginRenderPass}.
+     */
+    public abstract void setScissor(int x, int y, int width, int height);
+
+    /**
+     * Bind graphics pipeline. Due to async compiling, it may fail.
+     * Render pass scope, caller must track the pipeline.
+     *
+     * @param graphicsPipeline the pipeline object
+     * @return success or not
+     */
+    public abstract boolean bindGraphicsPipeline(@RawPtr GraphicsPipeline graphicsPipeline);
+
+    /**
+     * Render pass scope, caller must track the buffer.
+     *
+     * @param indexType see {@link Engine.IndexType}
+     */
+    public abstract void bindIndexBuffer(int indexType,
+                                         @RawPtr Buffer buffer,
+                                         long offset);
+
+    /**
+     * Render pass scope, caller must track the buffer.
+     */
+    public abstract void bindVertexBuffer(int binding,
+                                          @RawPtr Buffer buffer,
+                                          long offset);
+
+    /**
+     * Render pass scope, caller must track the buffer.
+     */
+    public abstract void bindUniformBuffer(int binding,
+                                           @RawPtr Buffer buffer,
+                                           long offset,
+                                           long size);
+
+    /**
+     * Bind texture view and sampler to the same binding point (combined image sampler).
+     * Render pass scope, caller must track the image and sampler.
+     *
+     * @param binding     the binding index
+     * @param texture     the texture image
+     * @param sampler     the sampler state
+     * @param readSwizzle the swizzle of the texture view for shader read, see {@link Swizzle}
+     */
+    public abstract void bindTextureSampler(int binding, @RawPtr Image texture,
+                                            @RawPtr Sampler sampler, short readSwizzle);
+
+    /**
+     * Records a non-indexed draw to current command buffer.
+     * Render pass scope.
+     *
+     * @param vertexCount the number of vertices to draw
+     * @param baseVertex  the index of the first vertex to draw
+     */
+    public abstract void draw(int vertexCount, int baseVertex);
+
+    /**
+     * Records an indexed draw to current command buffer.
+     * For OpenGL ES, if base vertex is unavailable, gl_VertexID always begins at 0.
+     * Render pass scope.
+     *
+     * @param indexCount the number of vertices to draw
+     * @param baseIndex  the base index within the index buffer
+     * @param baseVertex the value added to the vertex index before indexing into the vertex buffer
+     */
+    public abstract void drawIndexed(int indexCount, int baseIndex,
+                                     int baseVertex);
+
+    /**
+     * Records a non-indexed draw to current command buffer.
+     * For OpenGL, regardless of the baseInstance value, gl_InstanceID always begins at 0.
+     * Render pass scope.
+     *
+     * @param instanceCount the number of instances to draw
+     * @param baseInstance  the instance ID of the first instance to draw
+     * @param vertexCount   the number of vertices to draw
+     * @param baseVertex    the index of the first vertex to draw
+     */
+    public abstract void drawInstanced(int instanceCount, int baseInstance,
+                                       int vertexCount, int baseVertex);
+
+    /**
+     * Records an indexed draw to current command buffer.
+     * For OpenGL ES, if base vertex is unavailable, gl_VertexID always begins at 0.
+     * For OpenGL, regardless of the baseInstance value, gl_InstanceID always begins at 0.
+     * Render pass scope.
+     *
+     * @param indexCount    the number of vertices to draw
+     * @param baseIndex     the base index within the index buffer
+     * @param instanceCount the number of instances to draw
+     * @param baseInstance  the instance ID of the first instance to draw
+     * @param baseVertex    the value added to the vertex index before indexing into the vertex buffer
+     */
+    public abstract void drawIndexedInstanced(int indexCount, int baseIndex,
+                                              int instanceCount, int baseInstance,
+                                              int baseVertex);
+
+    /**
+     * End the current render pass.
+     */
+    public abstract void endRenderPass();
 
     /**
      * Takes a Usage ref on the Resource that will be released when the command buffer
      * has finished execution.
      * <p>
-     * This is mostly commonly used for host-visible Buffers.
+     * This is mostly commonly used for host-visible Buffers and shared Resources.
      *
      * @param resource the resource to move
      */
-    public void trackResource(@SharedPtr Resource resource) {
+    public final void trackResource(@SharedPtr Resource resource) {
         if (resource == null) {
             return;
         }
         mTrackingUsageResources.add(resource);
+    }
+
+    /**
+     * Takes a ref on the ManagedResource that will be released when the command buffer
+     * has finished execution.
+     *
+     * @param resource the resource to move
+     */
+    public final void trackResource(@SharedPtr ManagedResource resource) {
+        if (resource == null) {
+            return;
+        }
+        mTrackingManagedResources.add(resource);
     }
 
     /**
@@ -55,7 +201,7 @@ public abstract class CommandBuffer {
      *
      * @param resource the resource to move
      */
-    public void trackCommandBufferResource(@SharedPtr Resource resource) {
+    public final void trackCommandBufferResource(@SharedPtr Resource resource) {
         if (resource == null) {
             return;
         }
@@ -64,111 +210,32 @@ public abstract class CommandBuffer {
         resource.unref();
     }
 
-    public void begin() {
+    // called by Queue, begin command buffer
+    protected abstract void begin();
+
+    // called by Queue, end command buffer and submit to queue
+    protected abstract boolean submit(QueueManager queueManager);
+
+    // called by Queue
+    protected abstract boolean checkFinishedAndReset();
+
+    // called by Queue
+    protected abstract void waitUntilFinished();
+
+    // called by subclass
+    protected final void callFinishedCallbacks(boolean success) {
+        for (var callback : mFinishedCallbacks) {
+            callback.onFinished(success);
+        }
+        mFinishedCallbacks.clear();
     }
 
-    public void end() {
-    }
-
-    public boolean beginRenderPass(RenderPassDesc renderPassDesc,
-                                   FramebufferDesc framebufferDesc,
-                                   Rect2ic renderPassBounds,
-                                   float[] clearColors,
-                                   float clearDepth,
-                                   int clearStencil) {
-        return false;
-    }
-
-    public void endRenderPass() {
-
-    }
-
-    public abstract void setViewport(int x, int y, int width, int height);
-
-    public abstract void setScissor(int x, int y, int width, int height);
-
-    public abstract boolean bindGraphicsPipeline(GraphicsPipeline graphicsPipeline);
-
-    /**
-     * @param indexType see {@link Engine.IndexType}
-     */
-    public abstract void bindIndexBuffer(int indexType,
-                                         @RawPtr Buffer buffer,
-                                         long offset);
-
-    public abstract void bindVertexBuffer(int binding,
-                                          @RawPtr Buffer buffer,
-                                          long offset);
-
-    public abstract void bindUniformBuffer(int binding,
-                                           @RawPtr Buffer buffer,
-                                           long offset,
-                                           long size);
-
-    /**
-     * Bind texture view and sampler to the same binding point (combined image sampler).
-     *
-     * @param binding     the binding index
-     * @param texture     the texture image
-     * @param sampler     the sampler state
-     * @param readSwizzle the swizzle of the texture view for shader read, see {@link Swizzle}
-     */
-    public abstract void bindTextureSampler(int binding, @RawPtr Image texture,
-                                            @RawPtr Sampler sampler, short readSwizzle);
-
-    /**
-     * Records a non-indexed draw to current command buffer.
-     *
-     * @param vertexCount the number of vertices to draw
-     * @param baseVertex  the index of the first vertex to draw
-     */
-    public abstract void draw(int vertexCount, int baseVertex);
-
-    /**
-     * Records an indexed draw to current command buffer.
-     *
-     * @param indexCount the number of vertices to draw
-     * @param baseIndex  the base index within the index buffer
-     * @param baseVertex the value added to the vertex index before indexing into the vertex buffer
-     */
-    public abstract void drawIndexed(int indexCount, int baseIndex,
-                                     int baseVertex);
-
-    /**
-     * Records a non-indexed draw to current command buffer.
-     *
-     * @param instanceCount the number of instances to draw
-     * @param baseInstance  the instance ID of the first instance to draw
-     * @param vertexCount   the number of vertices to draw
-     * @param baseVertex    the index of the first vertex to draw
-     */
-    public abstract void drawInstanced(int instanceCount, int baseInstance,
-                                       int vertexCount, int baseVertex);
-
-    /**
-     * Records an indexed draw to current command buffer.
-     *
-     * @param indexCount    the number of vertices to draw
-     * @param baseIndex     the base index within the index buffer
-     * @param instanceCount the number of instances to draw
-     * @param baseInstance  the instance ID of the first instance to draw
-     * @param baseVertex    the value added to the vertex index before indexing into the vertex buffer
-     */
-    public abstract void drawIndexedInstanced(int indexCount, int baseIndex,
-                                              int instanceCount, int baseInstance,
-                                              int baseVertex);
-
-    public boolean checkFinished() {
-        return false;
-    }
-
-    public void waitUntilFinished() {
-
-    }
-
-    void releaseResources() {
+    // called by subclass
+    protected final void releaseResources() {
         mTrackingUsageResources.forEach(Resource::unref);
         mTrackingUsageResources.clear();
+        mTrackingManagedResources.forEach(RefCnt::unref);
+        mTrackingManagedResources.clear();
         mTrackingCommandBufferResources.forEach(Resource::unrefCommandBuffer);
         mTrackingCommandBufferResources.clear();
     }

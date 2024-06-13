@@ -81,7 +81,7 @@ public class ImageUploadTask extends Task {
     }
 
     @Override
-    public int prepare(ResourceProvider resourceProvider) {
+    public int prepare(RecordingContext context) {
         return RESULT_FAILURE;
     }
 

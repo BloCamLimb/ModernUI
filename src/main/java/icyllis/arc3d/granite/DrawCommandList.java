@@ -137,13 +137,24 @@ public class DrawCommandList {
         mPointers.add(vertexBufferInfo.mBuffer);
     }
 
+    /**
+     * Flush scissor.
+     *
+     * @param surfaceHeight the effective height of color attachment
+     * @param origin        the surface origin
+     * @see Engine.SurfaceOrigin
+     */
     public final void setScissor(Rect2ic scissor, int surfaceHeight, int origin) {
         grow(mPrimitives.position() + 20);
-        int y = scissor.y();
+        int y;
         int height = scissor.height();
         if (origin == Engine.SurfaceOrigin.kLowerLeft) {
-            y = surfaceHeight - y - height;
+            y = surfaceHeight - scissor.bottom();
+        } else {
+            assert (origin == Engine.SurfaceOrigin.kUpperLeft);
+            y = scissor.y();
         }
+        assert (y >= 0);
         mPrimitives.putInt(CMD_SET_SCISSOR)
                 .putInt(scissor.x())
                 .putInt(y)

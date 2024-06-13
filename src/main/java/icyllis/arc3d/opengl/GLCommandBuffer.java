@@ -24,15 +24,14 @@ import icyllis.arc3d.engine.Image;
 import icyllis.arc3d.engine.*;
 import org.lwjgl.system.MemoryStack;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import java.util.Arrays;
 
 import static org.lwjgl.opengl.GL32C.*;
 import static org.lwjgl.opengl.GL33C.GL_TEXTURE_SWIZZLE_R;
 import static org.lwjgl.opengl.GL45C.*;
 
 /**
- * The main command buffer of OpenGL context. The commands executed on {@link GLCommandBuffer} are
+ * The OpenGL command buffer. The commands executed on {@link GLCommandBuffer} are
  * mostly the same as that on {@link GLDevice}, but {@link GLCommandBuffer} assumes some values
  * and will not handle dirty context.
  */
@@ -49,36 +48,38 @@ public final class GLCommandBuffer extends CommandBuffer {
     // ThreadLocal has additional overhead, cache the instance here
     private final MemoryStack mStack = MemoryStack.stackGet();
 
+    private int mHWViewportX;
+    private int mHWViewportY;
     private int mHWViewportWidth;
     private int mHWViewportHeight;
-
-    private int mHWScissorTest;
-    private int mHWColorWrite;
 
     private int mHWScissorX;
     private int mHWScissorY;
     private int mHWScissorWidth;
     private int mHWScissorHeight;
 
+    private int mHWScissorTest;
+    private int mHWColorWrite;
+    private int mHWBlendState;
+    private int mHWBlendSrcFactor;
+    private int mHWBlendDstFactor;
+
     @SharedPtr
     private GLFramebuffer mHWFramebuffer;
 
-    @SharedPtr
+    @RawPtr
     private GLProgram mHWProgram;
-    @SharedPtr
+    @RawPtr
     private GLVertexArray mHWVertexArray;
-    private boolean mHWVertexArrayInvalid;
-
-    @SharedPtr
-    private final GLUniformBuffer[] mBoundUniformBuffers;
 
     // Below OpenGL 4.5.
     private int mHWActiveTextureUnit;
 
     // [Unit][ImageType]
     private final UniqueID[][] mHWTextureStates;
-    private final UniqueID[]   mHWSamplerStates;
+    private final UniqueID[] mHWSamplerStates;
 
+    @RawPtr
     private GLGraphicsPipeline mGraphicsPipeline;
 
     private int mPrimitiveType;
@@ -86,7 +87,6 @@ public final class GLCommandBuffer extends CommandBuffer {
     private int mIndexType;
     private long mIndexBufferOffset;
 
-    //TODO shall we track refcnt here?
     @RawPtr
     private final GLBuffer[] mActiveVertexBuffers = new GLBuffer[Caps.MAX_VERTEX_BINDINGS];
     private final long[] mActiveVertexOffsets = new long[Caps.MAX_VERTEX_BINDINGS];
@@ -100,57 +100,40 @@ public final class GLCommandBuffer extends CommandBuffer {
         mDevice = device;
         mResourceProvider = resourceProvider;
 
-        mBoundUniformBuffers = new GLUniformBuffer[4];
-
         int maxTextureUnits = device.getCaps().shaderCaps().mMaxFragmentSamplers;
         mHWTextureStates = new UniqueID[maxTextureUnits][Engine.ImageType.kCount];
         mHWSamplerStates = new UniqueID[maxTextureUnits];
+
+        resetStates();
     }
 
-    void submit() {
+    public void resetStates() {
+        mHWFramebuffer = RefCnt.move(mHWFramebuffer);
 
-        mSubmitFence = mDevice.getGL().glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-    }
+        mHWProgram = null;
+        mHWVertexArray = null;
 
-    void checkFinishedAndReset() {
-        if (mSubmitFence == 0) {
-            return;
+        mHWScissorTest = TriState_Unknown;
+        mHWScissorX = -1;
+        mHWScissorY = -1;
+        mHWScissorWidth = -1;
+        mHWScissorHeight = -1;
+        mHWViewportX = -1;
+        mHWViewportY = -1;
+        mHWViewportWidth = -1;
+        mHWViewportHeight = -1;
+
+        mHWColorWrite = TriState_Unknown;
+        mHWBlendState = TriState_Unknown;
+        mHWBlendSrcFactor = BlendInfo.FACTOR_UNKNOWN;
+        mHWBlendDstFactor = BlendInfo.FACTOR_UNKNOWN;
+
+        for (UniqueID[] textures : mHWTextureStates) {
+            Arrays.fill(textures, null);
         }
-        int status = mDevice.getGL().glClientWaitSync(mSubmitFence, 0, 0);
-        if (status == GL_CONDITION_SATISFIED ||
-                status == GL_ALREADY_SIGNALED) {
+        Arrays.fill(mHWSamplerStates, null);
 
-            mDevice.getGL().glDeleteSync(mSubmitFence);
-        }
-    }
-
-    public void resetStates(int states) {
-        if ((states & Engine.GLBackendState.kRenderTarget) != 0) {
-            mHWFramebuffer = RefCnt.move(mHWFramebuffer);
-        }
-
-        if ((states & Engine.GLBackendState.kPipeline) != 0) {
-            mHWProgram = RefCnt.move(mHWProgram);
-            mHWVertexArray = RefCnt.move(mHWVertexArray);
-            mHWVertexArrayInvalid = true;
-            for (int i = 0; i < mBoundUniformBuffers.length; i++) {
-                mBoundUniformBuffers[i] = RefCnt.move(mBoundUniformBuffers[i]);
-            }
-        }
-
-        if ((states & Engine.GLBackendState.kView) != 0) {
-            mHWScissorTest = TriState_Unknown;
-            mHWScissorX = -1;
-            mHWScissorY = -1;
-            mHWScissorWidth = -1;
-            mHWScissorHeight = -1;
-            mHWViewportWidth = -1;
-            mHWViewportHeight = -1;
-        }
-
-        if ((states & Engine.GLBackendState.kMisc) != 0) {
-            mHWColorWrite = TriState_Unknown;
-        }
+        Arrays.fill(mActiveVertexBuffers, null);
     }
 
     @Override
@@ -160,31 +143,34 @@ public final class GLCommandBuffer extends CommandBuffer {
                                    float[] clearColors,
                                    float clearDepth,
                                    int clearStencil) {
-        if ((framebufferDesc.mFramebufferFlags & ISurface.FLAG_GL_WRAP_DEFAULT_FB) != 0) {
+        mDevice.flushRenderCalls();
+        if ((framebufferDesc.mFramebufferFlags & FramebufferDesc.FLAG_GL_WRAP_DEFAULT_FB) != 0) {
             mDevice.getGL().glBindFramebuffer(GL_FRAMEBUFFER, 0);
             mHWFramebuffer = RefCnt.move(mHWFramebuffer);
         } else {
-            GLFramebuffer framebuffer;
-            framebuffer = mResourceProvider.findOrCreateFramebuffer(framebufferDesc);
+            @SharedPtr
+            GLFramebuffer framebuffer = mResourceProvider.findOrCreateFramebuffer(framebufferDesc);
             if (framebuffer == null) {
                 return false;
             }
             if (mHWFramebuffer != framebuffer) {
                 mDevice.getGL().glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.getRenderFramebuffer());
-                mHWFramebuffer = framebuffer;
+                mHWFramebuffer = RefCnt.move(mHWFramebuffer, framebuffer);
             } else {
                 framebuffer.unref();
             }
         }
-        flushViewport(framebufferDesc.mWidth, framebufferDesc.mHeight);
+
+        // disable scissor test at the beginning of RenderPass
+        // ClearBuffer also respects it
+        flushScissorTest(false);
 
         try (MemoryStack stack = mStack.push()) {
             var color = stack.mallocFloat(4);
             for (int i = 0; i < renderPassDesc.mNumColorAttachments; i++) {
                 var attachmentDesc = renderPassDesc.mColorAttachments[i];
-                boolean colorLoadClear = attachmentDesc.mLoadOp == Engine.LoadOp.Clear;
+                boolean colorLoadClear = attachmentDesc.mLoadOp == Engine.LoadOp.kClear;
                 if (colorLoadClear) {
-                    flushScissorTest(false);
                     flushColorWrite(true);
                     color.put(0, clearColors, i << 2, 4);
                     glClearBufferfv(GL_COLOR,
@@ -193,9 +179,8 @@ public final class GLCommandBuffer extends CommandBuffer {
                 }
             }
             boolean stencilLoadClear = renderPassDesc.mDepthStencilAttachment.mDesc != null &&
-                    renderPassDesc.mDepthStencilAttachment.mLoadOp == Engine.LoadOp.Clear;
+                    renderPassDesc.mDepthStencilAttachment.mLoadOp == Engine.LoadOp.kClear;
             if (stencilLoadClear) {
-                flushScissorTest(false);
                 glStencilMask(0xFFFFFFFF); // stencil will be flushed later
                 glClearBufferfi(GL_DEPTH_STENCIL,
                         0,
@@ -210,17 +195,30 @@ public final class GLCommandBuffer extends CommandBuffer {
 
     @Override
     public void endRenderPass() {
-        /*mActiveIndexBuffer = RefCnt.move(mActiveIndexBuffer);
-        mActiveVertexBuffer = RefCnt.move(mActiveVertexBuffer);
-        mActiveInstanceBuffer = RefCnt.move(mActiveInstanceBuffer);*/
+        Arrays.fill(mActiveVertexBuffers, null);
+
+        // BlitFramebuffer respects the scissor, so disable it.
+        flushScissorTest(false);
+
         GLFramebuffer framebuffer = mHWFramebuffer;
+        if (framebuffer != null) {
+            if (framebuffer.getRenderFramebuffer() != framebuffer.getResolveFramebuffer()) {
+                // MSAA to single
+                glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer.getResolveFramebuffer());
+                var b = mContentBounds;
+                glBlitFramebuffer(
+                        b.mLeft, b.mTop, b.mRight, b.mBottom, // src rect
+                        b.mLeft, b.mTop, b.mRight, b.mBottom, // dst rect
+                        GL_COLOR_BUFFER_BIT, GL_NEAREST);
+            }
+        }
 
         RenderPassDesc renderPassDesc = mRenderPassDesc;
         try (MemoryStack stack = mStack.push()) {
             var attachmentsToDiscard = stack.mallocInt(renderPassDesc.mNumColorAttachments + 1);
             for (int i = 0; i < renderPassDesc.mNumColorAttachments; i++) {
                 var attachmentDesc = renderPassDesc.mColorAttachments[i];
-                boolean colorLoadClear = attachmentDesc.mStoreOp == Engine.StoreOp.DontCare;
+                boolean colorLoadClear = attachmentDesc.mStoreOp == Engine.StoreOp.kDiscard;
                 if (colorLoadClear) {
                     attachmentsToDiscard.put(framebuffer == null
                             ? GL_COLOR
@@ -228,7 +226,7 @@ public final class GLCommandBuffer extends CommandBuffer {
                 }
             }
             boolean stencilStoreDiscard = renderPassDesc.mDepthStencilAttachment.mDesc != null &&
-                    renderPassDesc.mDepthStencilAttachment.mStoreOp == Engine.StoreOp.DontCare;
+                    renderPassDesc.mDepthStencilAttachment.mStoreOp == Engine.StoreOp.kDiscard;
             if (stencilStoreDiscard) {
                 attachmentsToDiscard.put(framebuffer == null
                         ? GL_STENCIL
@@ -240,75 +238,9 @@ public final class GLCommandBuffer extends CommandBuffer {
             }
         }
 
-        if (framebuffer != null) {
-            if (framebuffer.getRenderFramebuffer() != framebuffer.getResolveFramebuffer()) {
-                // BlitFramebuffer respects the scissor, so disable it.
-                flushScissorTest(false);
-                // MSAA to single
-                glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer.getResolveFramebuffer());
-                glBlitFramebuffer(
-                        mContentBounds.mLeft, mContentBounds.mTop, mContentBounds.mRight, mContentBounds.mBottom, //
-                        // src rect
-                        mContentBounds.mLeft, mContentBounds.mTop, mContentBounds.mRight, mContentBounds.mBottom, //
-                        // dst rect
-                        GL_COLOR_BUFFER_BIT, GL_NEAREST);
-            }
-        }
-    }
-
-    /**
-     * Flush viewport.
-     *
-     * @param width  the effective width of color attachment
-     * @param height the effective height of color attachment
-     */
-    public void flushViewport(int width, int height) {
-        assert (width >= 0 && height >= 0);
-        if (width != mHWViewportWidth || height != mHWViewportHeight) {
-            /*glViewportIndexedf(0, 0.0f, 0.0f, width, height);
-            glDepthRangeIndexed(0, 0.0f, 1.0f);*/
-            mDevice.getGL().glViewport(0, 0, width, height);
-            mHWViewportWidth = width;
-            mHWViewportHeight = height;
-        }
-    }
-
-    /**
-     * Flush scissor.
-     *
-     * @param width  the effective width of color attachment
-     * @param height the effective height of color attachment
-     * @param origin the surface origin
-     * @see Engine.SurfaceOrigin
-     */
-    public void flushScissorRect(int width, int height, int origin,
-                                 int scissorLeft, int scissorTop,
-                                 int scissorRight, int scissorBottom) {
-        assert (width >= 0 && height >= 0);
-        final int scissorWidth = scissorRight - scissorLeft;
-        final int scissorHeight = scissorBottom - scissorTop;
-        assert (scissorLeft >= 0 && scissorTop >= 0 &&
-                scissorWidth >= 0 && scissorWidth <= width &&
-                scissorHeight >= 0 && scissorHeight <= height);
-        final int scissorY;
-        if (origin == Engine.SurfaceOrigin.kUpperLeft) {
-            scissorY = scissorTop;
-        } else {
-            assert (origin == Engine.SurfaceOrigin.kLowerLeft);
-            scissorY = height - scissorBottom;
-        }
-        assert (scissorY >= 0);
-        if (scissorLeft != mHWScissorX ||
-                scissorY != mHWScissorY ||
-                scissorWidth != mHWScissorWidth ||
-                scissorHeight != mHWScissorHeight) {
-            mDevice.getGL().glScissor(scissorLeft, scissorY,
-                    scissorWidth, scissorHeight);
-            mHWScissorX = scissorLeft;
-            mHWScissorY = scissorY;
-            mHWScissorWidth = scissorWidth;
-            mHWScissorHeight = scissorHeight;
-        }
+        // We only track the Framebuffer within RenderPass, no need to track CommandBuffer usage
+        mHWFramebuffer = RefCnt.move(framebuffer);
+        mRenderPassDesc = null;
     }
 
     /**
@@ -349,58 +281,12 @@ public final class GLCommandBuffer extends CommandBuffer {
         }
     }
 
-    /**
-     * Bind raw framebuffer and flush render target to be invalid.
-     */
-    public void bindFramebuffer(int framebuffer) {
-        mDevice.getGL().glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-    }
-
-    public void bindPipeline(@Nonnull @RawPtr GLProgram program,
-                             @Nonnull @RawPtr GLVertexArray vertexArray) {
-        if (mHWProgram != program) {
-            // active program will not be deleted, so no collision
-            mDevice.getGL().glUseProgram(program.getProgram());
-            bindVertexArray(vertexArray);
-            mHWProgram = RefCnt.create(mHWProgram, program);
-        }
-    }
-
-    public void bindVertexArray(int vertexArray) {
-        mDevice.getGL().glBindVertexArray(vertexArray);
-        mHWVertexArray = RefCnt.move(mHWVertexArray);
-        mHWVertexArrayInvalid = true;
-    }
-
-    public void bindVertexArray(@Nullable @RawPtr GLVertexArray vertexArray) {
-        if (mHWVertexArrayInvalid ||
-                mHWVertexArray != vertexArray) {
-            // active vertex array will not be deleted, so no collision
-            mDevice.getGL().glBindVertexArray(vertexArray == null ? 0 : vertexArray.getHandle());
-            mHWVertexArray = RefCnt.create(mHWVertexArray, vertexArray);
-            mHWVertexArrayInvalid = false;
-        }
-    }
-
-    public void bindUniformBuffer(@Nonnull @RawPtr GLUniformBuffer uniformBuffer) {
-        int index = uniformBuffer.getBinding();
-        if (mBoundUniformBuffers[index] != uniformBuffer) {
-            mDevice.getGL().glBindBufferBase(GL_UNIFORM_BUFFER, index, uniformBuffer.getHandle());
-            mBoundUniformBuffers[index] = RefCnt.create(mBoundUniformBuffers[index], uniformBuffer);
-        }
-    }
-
     @Override
-    public boolean bindGraphicsPipeline(GraphicsPipeline graphicsPipeline) {
-        /*mActiveIndexBuffer = RefCnt.move(mActiveIndexBuffer);
-        mActiveVertexBuffer = RefCnt.move(mActiveVertexBuffer);
-        mActiveInstanceBuffer = RefCnt.move(mActiveInstanceBuffer);*/
+    public boolean bindGraphicsPipeline(@RawPtr GraphicsPipeline graphicsPipeline) {
+        Arrays.fill(mActiveVertexBuffers, null);
 
         mGraphicsPipeline = (GLGraphicsPipeline) graphicsPipeline;
-        if (mGraphicsPipeline == null) {
-            return false;
-        }
-        mPrimitiveType = switch (graphicsPipeline.getPrimitiveType()) {
+        mPrimitiveType = switch (mGraphicsPipeline.getPrimitiveType()) {
             case Engine.PrimitiveType.PointList -> GL_POINTS;
             case Engine.PrimitiveType.LineList -> GL_LINES;
             case Engine.PrimitiveType.LineStrip -> GL_LINE_STRIP;
@@ -409,10 +295,46 @@ public final class GLCommandBuffer extends CommandBuffer {
             default -> throw new AssertionError();
         };
 
-        //TODO flush RT again?
-        if (!mGraphicsPipeline.bindPipeline(this)) {
+        GLProgram program = mGraphicsPipeline.getProgram();
+        if (program == null) {
             return false;
         }
+        if (mHWProgram != program) {
+            // active program will not be deleted, so no collision
+            mDevice.getGL().glUseProgram(program.getProgram());
+            mHWProgram = program;
+        }
+        GLVertexArray vertexArray = mGraphicsPipeline.getVertexArray();
+        assert vertexArray != null;
+        if (mHWVertexArray != vertexArray) {
+            // active vertex array will not be deleted, so no collision
+            mDevice.getGL().glBindVertexArray(vertexArray.getHandle());
+            mHWVertexArray = vertexArray;
+        }
+
+        BlendInfo blendInfo = mGraphicsPipeline.getBlendInfo();
+        boolean blendOff = blendInfo.shouldDisableBlend() || !blendInfo.mColorWrite;
+        if (blendOff) {
+            if (mHWBlendState != TriState_Disabled) {
+                mDevice.getGL().glDisable(GL_BLEND);
+                mHWBlendState = TriState_Disabled;
+            }
+        } else {
+            if (mHWBlendState != TriState_Enabled) {
+                mDevice.getGL().glEnable(GL_BLEND);
+                mHWBlendState = TriState_Enabled;
+            }
+        }
+        if (mHWBlendSrcFactor != blendInfo.mSrcFactor ||
+                mHWBlendDstFactor != blendInfo.mDstFactor) {
+            mDevice.getGL().glBlendFunc(
+                    GLUtil.getGLBlendFactor(blendInfo.mSrcFactor),
+                    GLUtil.getGLBlendFactor(blendInfo.mDstFactor)
+            );
+            mHWBlendSrcFactor = blendInfo.mSrcFactor;
+            mHWBlendDstFactor = blendInfo.mDstFactor;
+        }
+        flushColorWrite(blendInfo.mColorWrite);
 
         /*return mPipelineState.bindUniforms(mCmdBuffer, pipelineInfo,
                 mRenderTarget.getWidth(), mRenderTarget.getHeight());*/
@@ -421,12 +343,30 @@ public final class GLCommandBuffer extends CommandBuffer {
 
     @Override
     public void setViewport(int x, int y, int width, int height) {
-
+        assert (width >= 0 && height >= 0);
+        if (x != mHWViewportX || y != mHWViewportY ||
+                width != mHWViewportWidth || height != mHWViewportHeight) {
+            /*glViewportIndexedf(0, 0.0f, 0.0f, width, height);
+            glDepthRangeIndexed(0, 0.0f, 1.0f);*/
+            mDevice.getGL().glViewport(x, y, width, height);
+            mHWViewportX = x;
+            mHWViewportY = y;
+            mHWViewportWidth = width;
+            mHWViewportHeight = height;
+        }
     }
 
     @Override
     public void setScissor(int x, int y, int width, int height) {
-        //TODO
+        flushScissorTest(true);
+        if (x != mHWScissorX || y != mHWScissorY ||
+                width != mHWScissorWidth || height != mHWScissorHeight) {
+            mDevice.getGL().glScissor(x, y, width, height);
+            mHWScissorX = x;
+            mHWScissorY = y;
+            mHWScissorWidth = width;
+            mHWScissorHeight = height;
+        }
     }
 
     @Override
@@ -631,5 +571,46 @@ public final class GLCommandBuffer extends CommandBuffer {
                         mIndexType, indicesOffset, instanceCount);
             }
         }
+    }
+
+    @Override
+    protected void begin() {
+        mDevice.flushRenderCalls();
+    }
+
+    @Override
+    protected boolean submit(QueueManager queueManager) {
+        resetStates();
+        mSubmitFence = mDevice.getGL().glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+        // glFlush is required after fence creation
+        glFlush();
+        if (!mDevice.getCaps().skipErrorChecks()) {
+            mDevice.clearErrors();
+        }
+        return true;
+    }
+
+    @Override
+    protected boolean checkFinishedAndReset() {
+        if (mSubmitFence == 0) {
+            return true;
+        }
+        // faster than glGetSynciv
+        int status = mDevice.getGL().glClientWaitSync(mSubmitFence, 0, 0);
+        if (status == GL_CONDITION_SATISFIED ||
+                status == GL_ALREADY_SIGNALED) {
+            mDevice.getGL().glDeleteSync(mSubmitFence);
+
+            callFinishedCallbacks(true);
+            releaseResources();
+
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    protected void waitUntilFinished() {
+        glFinish();
     }
 }

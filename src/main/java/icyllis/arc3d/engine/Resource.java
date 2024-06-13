@@ -19,15 +19,18 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.RefCounted;
-import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.core.*;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
+import java.util.Comparator;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
  * Base class for operating GPU resources that can be kept in the {@link ResourceCache}.
@@ -67,6 +70,7 @@ public abstract class Resource implements RefCounted {
     private static final VarHandle USAGE_REF_CNT;
     private static final VarHandle COMMAND_BUFFER_REF_CNT;
     private static final VarHandle CACHE_REF_CNT;
+    private static final ConcurrentMap<Resource, Boolean> TRACKER;
 
     static {
         MethodHandles.Lookup lookup = MethodHandles.lookup();
@@ -76,6 +80,19 @@ public abstract class Resource implements RefCounted {
             CACHE_REF_CNT = lookup.findVarHandle(Resource.class, "mCacheRefCnt", int.class);
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new RuntimeException(e);
+        }
+        // tree structure will not create large arrays and we don't care about the CPU overhead
+        TRACKER = new ConcurrentSkipListMap<>(Comparator.comparingInt(System::identityHashCode));
+        try {
+            assert false;
+        } catch (AssertionError e) {
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                // subclasses should override toString() for debug purposes
+                TRACKER.forEach((o, __) -> System.err.printf(
+                        "UsageRefCnt %d, CommandBufferRefCnt %d, CacheRefCnt %d: %s%n",
+                        o.mUsageRefCnt, o.mCommandBufferRefCnt, o.mCacheRefCnt, o));
+                assert TRACKER.isEmpty() : "Memory leaks in GPU resources";
+            }, "Resource-Tracker"));
         }
     }
 
@@ -136,6 +153,7 @@ public abstract class Resource implements RefCounted {
     private volatile String mLabel = "";
     private final UniqueID mUniqueID = new UniqueID();
 
+    @SuppressWarnings("AssertWithSideEffects")
     protected Resource(Context context,
                        boolean budgeted,
                        boolean wrapped,
@@ -148,6 +166,7 @@ public abstract class Resource implements RefCounted {
         mBudgeted = budgeted;
         mWrapped = wrapped;
         mMemorySize = memorySize;
+        assert TRACKER.put(this, Boolean.TRUE) == null;
     }
 
     /**
@@ -265,6 +284,7 @@ public abstract class Resource implements RefCounted {
     }
 
     // One of usage, command buffer, or cache ref count reached zero
+    @GuardedBy("this")
     private boolean notifyACntReachedZero(int refCntType) {
         // No resource should have been destroyed if there was still any sort of ref on it.
         assert (!isDestroyed());
@@ -447,16 +467,17 @@ public abstract class Resource implements RefCounted {
     }
 
     /**
-     * Called by the cache to delete the resource under normal circumstances.
+     * Called by the last owner to delete the resource, inherently guarded by "this".
      */
+    @SuppressWarnings("AssertWithSideEffects")
     private void release() {
         assert mContext != null;
         onRelease();
         mContext = null;
+        assert TRACKER.remove(this) == Boolean.TRUE;
     }
 
     final void setLastUsedTime() {
-        assert isFree();
         mLastUsedTime = System.currentTimeMillis();
     }
 

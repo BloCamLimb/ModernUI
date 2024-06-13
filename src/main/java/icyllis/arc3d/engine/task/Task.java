@@ -28,10 +28,22 @@ public abstract class Task extends RefCnt {
     public static final int RESULT_FAILURE = 1;
     public static final int RESULT_DISCARD = 2;
 
-    public abstract int prepare(ResourceProvider resourceProvider);
+    /**
+     * Prepare resources on {@link RecordingContext} using its {@link ResourceProvider}.
+     * <p>
+     * If the task is directly added to the {@link ImmediateContext}, then this method will not be called.
+     */
+    public abstract int prepare(RecordingContext context);
 
+    /**
+     * Add commands to command buffer on {@link ImmediateContext}.
+     * The {@link ResourceProvider} of {@link ImmediateContext} can also be used to create resources.
+     */
     public abstract int execute(ImmediateContext context, CommandBuffer commandBuffer);
 
+    /**
+     * Cleanup resources.
+     */
     @Override
     protected void deallocate() {
     }

@@ -48,6 +48,8 @@ public abstract class ResourceProvider {
     private IResourceKey mImageScratchKey;
     private final GpuRenderTarget.ResourceKey mRenderTargetScratchKey = new GpuRenderTarget.ResourceKey();
 
+    private final Buffer.ResourceKey mBufferKey = new Buffer.ResourceKey();
+
     protected ResourceProvider(Device device, Context context) {
         mDevice = device;
         mContext = context;
@@ -801,14 +803,23 @@ public abstract class ResourceProvider {
         if (mDevice.isDeviceLost()) {
             return null;
         }
-        //TODO scratch
+
         @SharedPtr
-        Buffer buffer = createNewBuffer(size, usage);
+        Buffer buffer = (Buffer) mResourceCache.findAndRefResource(
+                mBufferKey.set(usage, size),
+                true
+        );
+        if (buffer != null) {
+            buffer.setLabel(label);
+            return buffer;
+        }
+        buffer = createNewBuffer(size, usage);
         if (buffer == null) {
             return null;
         }
-
+        buffer.setKey(mBufferKey.copy());
         buffer.setLabel(label);
+        mResourceCache.insertResource(buffer);
         return buffer;
     }
 

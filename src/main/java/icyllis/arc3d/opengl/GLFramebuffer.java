@@ -283,7 +283,7 @@ public final class GLFramebuffer extends Resource {
             mNumColorAttachments = desc.mNumColorAttachments;
             for (int i = 0; i < mNumColorAttachments; i++) {
                 var src = desc.mColorAttachments[i];
-                var dst = mColorAttachments[i];
+                var dst = mColorAttachments[i] = new ColorAttachmentDesc();
                 dst.mAttachment = src.mAttachment != null
                         ? src.mAttachment.getUniqueID()
                         : null;
@@ -310,11 +310,9 @@ public final class GLFramebuffer extends Resource {
             result = 31 * result + mHeight;
             result = 31 * result + mSampleCount;
             result = 31 * result + mNumColorAttachments;
-            if (mNumColorAttachments > 0) {
+            for (int i = 0; i < mNumColorAttachments; i++) {
                 assert mColorAttachments != null;
-                for (var attachmentDesc : mColorAttachments) {
-                    result = 31 * result + attachmentDesc.hashCode();
-                }
+                result = 31 * result + mColorAttachments[i].hashCode();
             }
             result = 31 * result + Objects.hashCode(mDepthStencilAttachment);
             return result;

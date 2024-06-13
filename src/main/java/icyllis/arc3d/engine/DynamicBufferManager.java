@@ -20,6 +20,7 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.*;
+import icyllis.arc3d.engine.task.Task;
 import icyllis.arc3d.engine.task.TaskList;
 import org.lwjgl.system.MemoryUtil;
 
@@ -28,6 +29,7 @@ import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static org.lwjgl.system.MemoryUtil.NULL;
 
@@ -254,7 +256,7 @@ public class DynamicBufferManager {
      * @param outTasks        receive tasks
      * @param outResourceRefs receive ownership of resources
      */
-    public void flush(TaskList outTasks,
+    public void flush(Consumer<@SharedPtr Task> outTasks,
                       List<@SharedPtr Resource> outResourceRefs) {
         assert !mMappingFailed;
 

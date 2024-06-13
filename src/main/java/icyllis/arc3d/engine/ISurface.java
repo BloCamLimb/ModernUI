@@ -72,8 +72,8 @@ public interface ISurface {
     int FLAG_RENDERABLE = 1 << 5;
     /**
      * Used to create memoryless images, especially for MSAA attachments. If so,
-     * load op must NOT be {@link Engine.LoadOp#Load} and store op must NOT be
-     * {@link Engine.StoreOp#Store}, and rendering may be efficient on TBDR GPU.
+     * load op must NOT be {@link Engine.LoadOp#kLoad} and store op must NOT be
+     * {@link Engine.StoreOp#kStore}, and rendering may be efficient on TBDR GPU.
      * This is also known as discardable and transient attachments.
      * <p>
      * Note: Memoryless must be {@link #FLAG_RENDERABLE} and must NOT be either
@@ -110,26 +110,6 @@ public interface ISurface {
      */
     @ApiStatus.Internal
     int FLAG_DEFERRED_PROVIDER = FLAG_PROTECTED << 3;
-    /**
-     * This is a OpenGL only flag. It tells us that the internal render target wraps the OpenGL
-     * default framebuffer (id=0) that preserved by window. RT only.
-     */
-    @ApiStatus.Internal
-    int FLAG_GL_WRAP_DEFAULT_FB = FLAG_PROTECTED << 4;
-    /**
-     * This means the render target is multi-sampled, and internally holds a non-msaa image
-     * for resolving into. The render target resolves itself by blit-ting into this internal
-     * image. (It might or might not have the internal image access, but if it does, we
-     * always resolve the render target before accessing this image's data.) RT only.
-     */
-    @ApiStatus.Internal
-    int FLAG_MANUAL_MSAA_RESOLVE = FLAG_PROTECTED << 5;
-    /**
-     * This is a Vulkan only flag. It tells us that the internal render target is wrapping a raw
-     * Vulkan secondary command buffer. RT only.
-     */
-    @ApiStatus.Internal
-    int FLAG_VK_WRAP_SECONDARY_CB = FLAG_PROTECTED << 6;
 
     /**
      * Map <code>size</code> to a larger multiple of 2. Values <= 1024 will pop up to

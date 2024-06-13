@@ -51,7 +51,7 @@ public class OpsTask extends RenderTask {
     private final Rect2f mTotalBounds = new Rect2f();
     private final Rect2i mContentBounds = new Rect2i();
 
-    private byte mColorLoadOp = LoadOp.Load;
+    private byte mColorLoadOp = LoadOp.kLoad;
     private int mInitialStencilContent = STENCIL_CONTENT_DONT_CARE;
     private final float[] mLoadClearColor = new float[4];
 
@@ -73,7 +73,7 @@ public class OpsTask extends RenderTask {
         mLoadClearColor[2] = blue;
         mLoadClearColor[3] = alpha;
         Swizzle.apply(mWriteView.getSwizzle(), mLoadClearColor);
-        if (loadOp == LoadOp.Clear) {
+        if (loadOp == LoadOp.kClear) {
             SurfaceProxy target = getTarget();
             mTotalBounds.set(0, 0,
                     target.getBackingWidth(), target.getBackingHeight());
@@ -130,7 +130,7 @@ public class OpsTask extends RenderTask {
 
         OpsRenderPass opsRenderPass = flushState.beginOpsRenderPass(mWriteView,
                 mContentBounds,
-                LoadStoreOps.make(mColorLoadOp, StoreOp.Store),
+                LoadStoreOps.make(mColorLoadOp, StoreOp.kStore),
                 LoadStoreOps.DontLoad_Store,
                 mLoadClearColor,
                 mSampledTextures,
@@ -149,7 +149,7 @@ public class OpsTask extends RenderTask {
 
     @Override
     protected void onMakeClosed(RecordingContext context) {
-        if (mOpChains.isEmpty() && mColorLoadOp == LoadOp.Load) {
+        if (mOpChains.isEmpty() && mColorLoadOp == LoadOp.kLoad) {
             return;
         }
         SurfaceProxy target = getTarget();

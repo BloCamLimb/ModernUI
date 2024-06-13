@@ -109,6 +109,7 @@ public class SDFRoundRectStep extends GeometryStep {
         // {(-1,-1), (-1, 1), (1, -1), (1, 1)}
         vs.format("vec2 position = vec2(gl_VertexID >> 1, gl_VertexID & 1) * 2.0 - 1.0;");
         // add stroke radius and a full pixel bloat
+        //TODO pass local AA radius instead of 2.0
         vs.format("""
                 vec2 rectEdge = (%s.xz + %s.y + 2.0) * position;
                 %s = rectEdge;
@@ -177,7 +178,7 @@ public class SDFRoundRectStep extends GeometryStep {
     }
 
     @Override
-    public void writeMesh(MeshDrawWriter writer, Draw op, @Nullable float[] solidColor) {
+    public void writeMesh(MeshDrawWriter writer, Draw draw, @Nullable float[] solidColor) {
         writer.beginInstances(null, null, 4);
         ByteBuffer instanceData = writer.append(1);
         if (solidColor != null) {
@@ -189,14 +190,15 @@ public class SDFRoundRectStep extends GeometryStep {
             instanceData.putFloat(0).putFloat(0).putFloat(0).putFloat(0);
         }
         // local rect
-        RoundRect localRect = (RoundRect) op.mGeometry;
-        instanceData.putFloat((localRect.mRight - localRect.mLeft) * 0.5f)
+        RoundRect localRect = (RoundRect) draw.mGeometry;
+        instanceData
+                .putFloat((localRect.mRight - localRect.mLeft) * 0.5f)
                 .putFloat((localRect.mLeft + localRect.mRight) * 0.5f)
                 .putFloat((localRect.mBottom - localRect.mTop) * 0.5f)
                 .putFloat((localRect.mTop + localRect.mBottom) * 0.5f);
         // radii
-        instanceData.putFloat(localRect.mRadiusUL).putFloat(op.mStrokeRadius);
-        var mat = op.mTransform;
+        instanceData.putFloat(localRect.mRadiusUL).putFloat(draw.mStrokeRadius);
+        var mat = draw.mTransform;
         instanceData
                 .putFloat(mat.m11).putFloat(mat.m12).putFloat(mat.m14)
                 .putFloat(mat.m21).putFloat(mat.m22).putFloat(mat.m24)

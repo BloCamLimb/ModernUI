@@ -21,7 +21,8 @@ package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.RawPtr;
 import icyllis.arc3d.engine.task.Task;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+
+import java.util.ArrayDeque;
 
 /**
  * A {@link QueueManager} represents a GPU queue and manages a pool of command buffers
@@ -33,8 +34,10 @@ public abstract class QueueManager {
     protected ImmediateContext mContext;
     protected CommandBuffer mCurrentCommandBuffer;
 
-    private final ObjectArrayList<CommandBuffer> mAvailableCommandBuffers = new ObjectArrayList<>();
-    private final ObjectArrayList<CommandBuffer> mOutstandingCommandBuffers = new ObjectArrayList<>();
+    private final ArrayDeque<CommandBuffer> mAvailableCommandBuffers = new ArrayDeque<>();
+    private final ArrayDeque<CommandBuffer> mOutstandingCommandBuffers = new ArrayDeque<>();
+
+    private int mMaxCommandBuffers;
 
     protected QueueManager(Device device) {
         mDevice = device;
@@ -57,13 +60,18 @@ public abstract class QueueManager {
             return true;
         }
 
-        if (onSubmit(mCurrentCommandBuffer)) {
+        if (mCurrentCommandBuffer.submit(this)) {
             mOutstandingCommandBuffers.add(mCurrentCommandBuffer);
+            mMaxCommandBuffers = Math.max(mMaxCommandBuffers, mOutstandingCommandBuffers.size());
             mCurrentCommandBuffer = null;
             return true;
         }
 
         return false;
+    }
+
+    public int getMaxCommandBuffers() {
+        return mMaxCommandBuffers;
     }
 
     /**
@@ -73,13 +81,30 @@ public abstract class QueueManager {
         return !mOutstandingCommandBuffers.isEmpty();
     }
 
-    public boolean checkOutstandingWork(boolean waitForCompletion,
-                                        long timeoutNanos) {
-        return false;
+    /**
+     * Blocks the current thread and waits for queue to finish outstanding works.
+     */
+    public void finishOutstandingWork() {
+        // wait for the last submission to finish
+        var last = mOutstandingCommandBuffers.peekLast();
+        if (last != null) {
+            last.waitUntilFinished();
+        }
+        checkForFinishedWork();
+        assert mOutstandingCommandBuffers.isEmpty();
     }
 
-    protected boolean onSubmit(CommandBuffer commandBuffer) {
-        return false;
+    public void checkForFinishedWork() {
+        // Iterate over all the outstanding submissions to see if any have finished. The work
+        // submissions are in order from oldest to newest, so we start at the front to check if they
+        // have finished. If so we pop it off and move onto the next.
+        // Repeat till we find a submission that has not finished yet (and all others afterwards are
+        // also guaranteed to not have finished).
+        var front = mOutstandingCommandBuffers.peekFirst();
+        while (front != null && front.checkFinishedAndReset()) {
+            mAvailableCommandBuffers.push(mOutstandingCommandBuffers.removeFirst());
+            front = mOutstandingCommandBuffers.peekFirst();
+        }
     }
 
     protected boolean prepareCommandBuffer(ResourceProvider resourceProvider) {

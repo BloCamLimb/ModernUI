@@ -80,7 +80,7 @@ public class RenderTaskManager {
                     info.mSubmittedCallback.onSubmitted(false);
                 }
                 if (info.mFinishedCallback != null) {
-                    info.mFinishedCallback.onFinished();
+                    info.mFinishedCallback.onFinished(false);
                 }
             }
             return false;

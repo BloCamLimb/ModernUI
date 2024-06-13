@@ -415,15 +415,15 @@ public abstract class SurfaceProxy extends RefCnt {
     }
 
     public final boolean isManualMSAAResolve() {
-        return (mSurfaceFlags & ISurface.FLAG_MANUAL_MSAA_RESOLVE) != 0;
+        return (mSurfaceFlags & FramebufferDesc.FLAG_MANUAL_MSAA_RESOLVE) != 0;
     }
 
     public final boolean wrapsGLDefaultFB() {
-        return (mSurfaceFlags & ISurface.FLAG_GL_WRAP_DEFAULT_FB) != 0;
+        return (mSurfaceFlags & FramebufferDesc.FLAG_GL_WRAP_DEFAULT_FB) != 0;
     }
 
     public final boolean wrapsVkSecondaryCB() {
-        return (mSurfaceFlags & ISurface.FLAG_VK_WRAP_SECONDARY_CB) != 0;
+        return (mSurfaceFlags & FramebufferDesc.FLAG_VK_WRAP_SECONDARY_CB) != 0;
     }
 
     public final boolean isDeferredListTarget() {

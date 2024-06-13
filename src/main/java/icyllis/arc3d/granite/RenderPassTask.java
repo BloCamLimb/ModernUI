@@ -25,20 +25,23 @@ import icyllis.arc3d.engine.Image;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.task.Task;
 
+import java.util.Arrays;
 import java.util.Objects;
 
 public final class RenderPassTask extends Task {
 
     DrawPass mDrawPass;
     RenderPassDesc mRenderPassDesc;
+    @SharedPtr
     ImageViewProxy mColorTarget;
+    @SharedPtr
     ImageViewProxy mResolveTarget;
     float[] mClearColor;
 
     private RenderPassTask(DrawPass drawPass,
                            RenderPassDesc renderPassDesc,
-                           ImageViewProxy colorTarget,
-                           ImageViewProxy resolveTarget,
+                           @SharedPtr ImageViewProxy colorTarget,
+                           @SharedPtr ImageViewProxy resolveTarget,
                            float[] clearColor) {
         mDrawPass = drawPass;
         mRenderPassDesc = renderPassDesc;
@@ -48,7 +51,8 @@ public final class RenderPassTask extends Task {
     }
 
     /**
-     * All arguments must be immutable.
+     * All arguments must be immutable, except for clearColor.
+     * DrawPass is owned by this object.
      */
     @SharedPtr
     public static RenderPassTask make(DrawPass drawPass,
@@ -60,7 +64,11 @@ public final class RenderPassTask extends Task {
         Objects.requireNonNull(renderPassDesc);
         Objects.requireNonNull(colorTarget);
         assert clearColor.length >= 4;
-        return new RenderPassTask(drawPass, renderPassDesc, colorTarget, resolveTarget, clearColor);
+        return new RenderPassTask(drawPass,
+                renderPassDesc,
+                colorTarget,
+                resolveTarget,
+                Arrays.copyOf(clearColor, 4));
     }
 
     @Override
@@ -73,7 +81,8 @@ public final class RenderPassTask extends Task {
     }
 
     @Override
-    public int prepare(ResourceProvider resourceProvider) {
+    public int prepare(RecordingContext context) {
+        ResourceProvider resourceProvider = context.getResourceProvider();
         if (!mColorTarget.instantiateIfNonLazy(resourceProvider)) {
             return RESULT_FAILURE;
         }
@@ -117,7 +126,7 @@ public final class RenderPassTask extends Task {
         var framebufferDesc = new FramebufferDesc();
 
         framebufferDesc.mNumColorAttachments = 1;
-        var colorDesc = framebufferDesc.mColorAttachments[0];
+        var colorDesc = framebufferDesc.mColorAttachments[0] = new FramebufferDesc.ColorAttachmentDesc();
         colorDesc.mAttachment = colorAttachment;
         colorDesc.mResolveAttachment = resolveAttachment;
         colorDesc.mMipLevel = 0;

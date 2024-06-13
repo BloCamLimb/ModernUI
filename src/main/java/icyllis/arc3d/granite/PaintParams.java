@@ -115,6 +115,24 @@ public final class PaintParams {
         return false;
     }
 
+    public static boolean getSolidColor(Paint paint, ImageInfo targetInfo, float[] outColor) {
+        if (paint.getShader() == null) {
+            if (outColor != null) {
+                float a = paint.a();
+                outColor[0] = paint.r() * a;
+                outColor[1] = paint.g() * a;
+                outColor[2] = paint.b() * a;
+                outColor[3] = a;
+                var colorFilter = paint.getColorFilter();
+                if (colorFilter != null) {
+                    colorFilter.filterColor4f(outColor, outColor);
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
     public void toKey(KeyContext keyContext,
                       KeyBuilder keyBuilder,
                       UniformDataGatherer uniformDataGatherer,
