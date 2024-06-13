@@ -23,7 +23,7 @@ import icyllis.arc3d.core.MathUtil;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 import java.util.HashMap;
 
 import static org.lwjgl.system.MemoryUtil.*;
@@ -34,17 +34,19 @@ import static org.lwjgl.system.MemoryUtil.*;
  * <p>
  * If an identical block of data is already in the cache, that existing pointer is returned, making
  * pointer comparison suitable when comparing data blocks retrieved from the cache.
+ *
+ * @see UniformDataGatherer
  */
 public class UniformDataCache implements AutoCloseable {
 
     // key and value are same object
-    private final HashMap<ByteBuffer, ByteBuffer> mPointers = new HashMap<>();
+    private final HashMap<IntBuffer, IntBuffer> mPointers = new HashMap<>();
 
     /**
      * Find an existing data block with the contents of the given <var>block</var>.
      * The given <var>block</var> is just a memory view, and it can be reused by
-     * changing its {@link ByteBuffer#position()} and {@link ByteBuffer#limit()}.
-     * The {@link ByteBuffer#hashCode()} and {@link ByteBuffer#equals(Object)} of
+     * changing its {@link IntBuffer#position()} and {@link IntBuffer#limit()}.
+     * The {@link IntBuffer#hashCode()} and {@link IntBuffer#equals(Object)} of
      * the given <var>block</var> will be used. If absent, a copy of the given data
      * will be made and its memory is managed by this object, return value is a
      * stable pointer to that memory, you can simply check the reference equality
@@ -54,17 +56,17 @@ public class UniformDataCache implements AutoCloseable {
      * @return a stable pointer to existing or copied uniform data
      */
     @Nullable
-    public ByteBuffer insert(@Nullable ByteBuffer block) {
+    public IntBuffer insert(@Nullable IntBuffer block) {
         if (block == null || !block.hasRemaining()) {
             return null;
         }
         // the key of HashMap and the given ByteBuffer will never be the same object
         // so we are hashing and comparing their contents via vectorizedMismatch()
-        ByteBuffer existing = mPointers.get(block);
+        IntBuffer existing = mPointers.get(block);
         if (existing != null) {
             return existing;
         } else {
-            ByteBuffer copy = allocate(block);
+            IntBuffer copy = allocate(block);
             mPointers.put(copy, copy);
             return copy;
         }
@@ -120,8 +122,8 @@ public class UniformDataCache implements AutoCloseable {
 
     Block mTail;
 
-    ByteBuffer allocate(@Nonnull ByteBuffer block) {
-        int size = block.remaining();
+    IntBuffer allocate(@Nonnull IntBuffer block) {
+        int size = block.remaining() << 2;
         if (mTail == null) {
             int initialCapacity = MathUtil.alignTo(
                     Math.max(size, 1024),
@@ -152,9 +154,9 @@ public class UniformDataCache implements AutoCloseable {
         mTail.mPosition = end;
 
         // must return a new object
-        return memByteBuffer(mTail.mStorage, mTail.mCapacity)
-                .position(offset)
-                .limit(end);
+        return memIntBuffer(mTail.mStorage, mTail.mCapacity >> 2)
+                .position(offset >> 2)
+                .limit(end >> 2);
     }
 
     void freeBlocks() {

@@ -110,7 +110,8 @@ public class DrawPass implements AutoCloseable {
         SortKey[] keys = new SortKey[numSteps];
         int keyIndex = 0;
 
-        try (var textureDataGatherer = new TextureDataGatherer()) {
+        try (var textureDataGatherer = new TextureDataGatherer();
+             var drawWriter = new MeshDrawWriter(bufferManager, commandList)) {
             var textureTracker = new TextureTracker();
 
             int surfaceHeight = targetView.getHeight();
@@ -205,8 +206,6 @@ public class DrawPass implements AutoCloseable {
             // TimSort - stable
             Arrays.sort(keys);
 
-            MeshDrawWriter drawWriter = new MeshDrawWriter(bufferManager,
-                    commandList);
             Rect2ic lastScissor = new Rect2i(0, 0, deviceInfo.width(), deviceInfo.height());
             int lastPipelineIndex = INVALID_INDEX;
             float[] cachedSolidColor = new float[4];
@@ -332,24 +331,26 @@ public class DrawPass implements AutoCloseable {
             mPipelineDescs.clear();
         }
 
-        @SharedPtr Sampler[] samplers = new Sampler[mSamplerDescs.size()];
-        try {
-            for (int i = 0; i < mSamplerDescs.size(); i++) {
-                @SharedPtr
-                var sampler = resourceProvider.findOrCreateCompatibleSampler(
-                        mSamplerDescs.get(i)
-                );
-                if (sampler == null) {
-                    return false;
+        if (!mSamplerDescs.isEmpty()) {
+            @SharedPtr Sampler[] samplers = new Sampler[mSamplerDescs.size()];
+            try {
+                for (int i = 0; i < mSamplerDescs.size(); i++) {
+                    @SharedPtr
+                    var sampler = resourceProvider.findOrCreateCompatibleSampler(
+                            mSamplerDescs.get(i)
+                    );
+                    if (sampler == null) {
+                        return false;
+                    }
+                    samplers[i] = sampler;
                 }
-                samplers[i] = sampler;
+            } finally {
+                // We must release the objects that have already been created.
+                mSamplers = samplers;
+                // The DrawPass may be long-lived on a Recording and we no longer need the SamplerDescs
+                // once we've created Samplers, so we drop the storage for them here.
+                mSamplerDescs.clear();
             }
-        } finally {
-            // We must release the objects that have already been created.
-            mSamplers = samplers;
-            // The DrawPass may be long-lived on a Recording and we no longer need the SamplerDescs
-            // once we've created Samplers, so we drop the storage for them here.
-            mSamplerDescs.clear();
         }
 
         return true;
@@ -368,77 +369,89 @@ public class DrawPass implements AutoCloseable {
             commandBuffer.trackCommandBufferResource(texture.refImage());
         }
         var cmdList = getCommandList();
-        var p = cmdList.mPrimitives;
+        var p = cmdList.mPrimitives.elements();
+        int i = 0;
         var oa = cmdList.mPointers.elements();
         int oi = 0;
-        while (p.hasRemaining()) {
-            switch (p.getInt()) {
+        int lim = cmdList.mPrimitives.size();
+        while (i < lim) {
+            switch (p[i++]) {
                 case DrawCommandList.CMD_BIND_GRAPHICS_PIPELINE -> {
-                    int pipelineIndex = p.getInt();
+                    int pipelineIndex = p[i];
                     if (!commandBuffer.bindGraphicsPipeline(mPipelines[pipelineIndex])) {
                         return false;
                     }
+                    i += 1;
                 }
                 case DrawCommandList.CMD_DRAW -> {
-                    int vertexCount = p.getInt();
-                    int baseVertex = p.getInt();
+                    int vertexCount = p[i];
+                    int baseVertex = p[i + 1];
                     commandBuffer.draw(vertexCount, baseVertex);
+                    i += 2;
                 }
                 case DrawCommandList.CMD_DRAW_INDEXED -> {
-                    int indexCount = p.getInt();
-                    int baseIndex = p.getInt();
-                    int baseVertex = p.getInt();
+                    int indexCount = p[i];
+                    int baseIndex = p[i + 1];
+                    int baseVertex = p[i + 2];
                     commandBuffer.drawIndexed(indexCount, baseIndex, baseVertex);
+                    i += 3;
                 }
                 case DrawCommandList.CMD_DRAW_INSTANCED -> {
-                    int instanceCount = p.getInt();
-                    int baseInstance = p.getInt();
-                    int vertexCount = p.getInt();
-                    int baseVertex = p.getInt();
+                    int instanceCount = p[i];
+                    int baseInstance = p[i + 1];
+                    int vertexCount = p[i + 2];
+                    int baseVertex = p[i + 3];
                     commandBuffer.drawInstanced(instanceCount, baseInstance, vertexCount, baseVertex);
+                    i += 4;
                 }
                 case DrawCommandList.CMD_DRAW_INDEXED_INSTANCED -> {
-                    int indexCount = p.getInt();
-                    int baseIndex = p.getInt();
-                    int instanceCount = p.getInt();
-                    int baseInstance = p.getInt();
-                    int baseVertex = p.getInt();
+                    int indexCount = p[i];
+                    int baseIndex = p[i + 1];
+                    int instanceCount = p[i + 2];
+                    int baseInstance = p[i + 3];
+                    int baseVertex = p[i + 4];
                     commandBuffer.drawIndexedInstanced(indexCount, baseIndex, instanceCount, baseInstance, baseVertex);
+                    i += 5;
                 }
                 case DrawCommandList.CMD_BIND_INDEX_BUFFER -> {
-                    int indexType = p.getInt();
-                    long offset = p.getLong();
+                    int indexType = p[i];
+                    long offset = p[i + 1];
                     commandBuffer.bindIndexBuffer(indexType, (Buffer) oa[oi++], offset);
+                    i += 2;
                 }
                 case DrawCommandList.CMD_BIND_VERTEX_BUFFER -> {
-                    int binding = p.getInt();
-                    long offset = p.getLong();
+                    int binding = p[i];
+                    long offset = p[i + 1];
                     commandBuffer.bindVertexBuffer(binding, (Buffer) oa[oi++], offset);
+                    i += 2;
                 }
                 case DrawCommandList.CMD_SET_SCISSOR -> {
-                    int x = p.getInt();
-                    int y = p.getInt();
-                    int width = p.getInt();
-                    int height = p.getInt();
+                    int x = p[i];
+                    int y = p[i + 1];
+                    int width = p[i + 2];
+                    int height = p[i + 3];
                     commandBuffer.setScissor(x, y, width, height);
+                    i += 4;
                 }
                 case DrawCommandList.CMD_BIND_UNIFORM_BUFFER -> {
-                    int binding = p.getInt();
-                    long offset = p.getLong();
-                    long size = p.getLong();
+                    int binding = p[i];
+                    long offset = p[i + 1];
+                    long size = p[i + 2];
                     commandBuffer.bindUniformBuffer(binding, (Buffer) oa[oi++], offset, size);
+                    i += 3;
                 }
                 case DrawCommandList.CMD_BIND_TEXTURES -> {
-                    int numBindings = p.getInt();
+                    int numBindings = p[i++];
                     for (int binding = 0; binding < numBindings; binding++) {
                         @RawPtr
-                        var texture = mTextures.get(p.getInt());
+                        var texture = mTextures.get(p[i]);
                         @RawPtr
-                        var sampler = mSamplers[p.getInt()];
+                        var sampler = mSamplers[p[i + 1]];
                         commandBuffer.bindTextureSampler(binding,
                                 texture.getImage(),
                                 sampler,
                                 texture.getSwizzle());
+                        i += 2;
                     }
                 }
             }

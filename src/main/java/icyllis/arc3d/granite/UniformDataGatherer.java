@@ -21,7 +21,7 @@ package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
 
-import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 
 import static org.lwjgl.system.MemoryUtil.*;
 
@@ -44,7 +44,7 @@ public class UniformDataGatherer implements AutoCloseable {
     private int mCapacity;
     private int mPosition = 0;
 
-    private ByteBuffer mCachedView = null;
+    private IntBuffer mCachedView = null;
 
     public UniformDataGatherer(int layout) {
         mLayout = layout;
@@ -83,10 +83,14 @@ public class UniformDataGatherer implements AutoCloseable {
 
     /**
      * Finishes the builder and returns a memory view which implements
-     * {@link ByteBuffer#hashCode()} and {@link ByteBuffer#equals(Object)}.
+     * {@link IntBuffer#hashCode()} and {@link IntBuffer#equals(Object)}.
      * The memory is managed by this object, it is valid until next reset.
+     * <p>
+     * The reason we chose {@link IntBuffer} is that uniform data is always
+     * 4-byte aligned at least, and using IntBuffer can accelerate the calculation
+     * of hashCode and equals.
      */
-    public ByteBuffer finish() {
+    public IntBuffer finish() {
         if (mPosition == 0) {
             return null;
         }
@@ -95,10 +99,10 @@ public class UniformDataGatherer implements AutoCloseable {
         // so there will be no reallocation
         append(mRequiredAlignment, 0);
         if (mCachedView == null) {
-            mCachedView = memByteBuffer(mStorage, mCapacity);
+            mCachedView = memIntBuffer(mStorage, mCapacity >> 2);
         }
-        // 'mSize' is aligned here
-        return mCachedView.limit(mPosition).rewind();
+        // 'mPosition' is aligned here
+        return mCachedView.limit(mPosition >> 2).rewind();
     }
 
     public void write1i(int v0) {
@@ -148,7 +152,7 @@ public class UniformDataGatherer implements AutoCloseable {
 
     /**
      * @param offset the start index in the array
-     * @param count the number of float4
+     * @param count  the number of float4
      */
     public void write4fv(int offset, int count, float[] value) {
         assert (count > 0);

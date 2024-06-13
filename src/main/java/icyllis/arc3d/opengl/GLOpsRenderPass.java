@@ -115,9 +115,9 @@ public final class GLOpsRenderPass extends OpsRenderPass {
         };
 
         //TODO flush RT again?
-        if (!mPipelineState.bindPipeline(mCmdBuffer)) {
+        /*if (!mPipelineState.bindPipeline(mCmdBuffer)) {
             return false;
-        }
+        }*/
 
         return mPipelineState.bindUniforms(mCmdBuffer, graphicsPipelineDesc,
                 mRenderTarget.getWidth(), mRenderTarget.getHeight());

@@ -143,7 +143,7 @@ public class TestDrawPass {
 
         drawWriter.flush();
         commandList.finish();
-        LOGGER.info("CommandList primitive size: {}", commandList.mPrimitives.limit());
+        //LOGGER.info("CommandList primitive size: {}", commandList.mPrimitives.limit());
         ObjectArrayList<Resource> resourceRefs = new ObjectArrayList<>();
         recordingContext.getDynamicBufferManager().flush(null, resourceRefs);
 
@@ -176,7 +176,7 @@ public class TestDrawPass {
             assert commandBuffer != null;
             commandBuffer.bindGraphicsPipeline(pipeline);
 
-            commandList.execute(commandBuffer);
+            //commandList.execute(commandBuffer);
             GLFW.glfwSwapBuffers(window);
 
             while (!GLFW.glfwWindowShouldClose(window)) {
@@ -185,7 +185,7 @@ public class TestDrawPass {
                 GL33C.glClearBufferfv(GL33C.GL_COLOR, 0,
                         new float[]{(float) (GLFW.glfwGetTime() % 1.0), 0.5f, 0.5f, 1.0f});
                 commandBuffer.bindGraphicsPipeline(pipeline);
-                commandList.execute(commandBuffer);
+                //commandList.execute(commandBuffer);
                 GLFW.glfwSwapBuffers(window);
             }
 

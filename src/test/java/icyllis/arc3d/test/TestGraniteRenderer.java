@@ -52,6 +52,10 @@ public class TestGraniteRenderer {
     public static final int WINDOW_WIDTH = 1280;
     public static final int WINDOW_HEIGHT = 720;
 
+    //-Dorg.slf4j.simpleLogger.logFile=System.out
+    //-Dorg.slf4j.simpleLogger.defaultLogLevel=debug
+    //-XX:+UseZGC
+    //-XX:+ZGenerational
     public static void main(String[] args) {
         GLFW.glfwInit();
         TinyFileDialogs.tinyfd_messageBox(
@@ -69,9 +73,11 @@ public class TestGraniteRenderer {
             throw new RuntimeException();
         }
         GLFW.glfwMakeContextCurrent(window);
+        GLFW.glfwSwapInterval(1);
 
         ContextOptions contextOptions = new ContextOptions();
         contextOptions.mLogger = LOGGER;
+        contextOptions.mSkipGLErrorChecks = Boolean.TRUE;
         ImmediateContext immediateContext = GLUtil.makeOpenGL(
                 GL.createCapabilities(),
                 contextOptions
@@ -173,6 +179,7 @@ public class TestGraniteRenderer {
         STBImageWrite.stbi_write_png_compression_level.put(0, 15);
         STBImageWrite.stbi_write_png("E:/test_granite.png", CANVAS_WIDTH, CANVAS_HEIGHT, 4,
                 MemoryUtil.memByteBuffer(pixels, CANVAS_WIDTH * CANVAS_HEIGHT * 4), CANVAS_WIDTH * 4);
+        MemoryUtil.nmemFree(pixels);
         drawDevice.unref();
         recordingContext.unref();
         immediateContext.unref();

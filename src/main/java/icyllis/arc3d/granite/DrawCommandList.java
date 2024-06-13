@@ -22,10 +22,10 @@ package icyllis.arc3d.granite;
 import icyllis.arc3d.core.RawPtr;
 import icyllis.arc3d.core.Rect2ic;
 import icyllis.arc3d.engine.*;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 import java.io.PrintWriter;
-import java.nio.ByteBuffer;
 
 /**
  * The list that holds commands of a draw pass, and can be replayed on
@@ -55,86 +55,74 @@ public class DrawCommandList {
     public static final int CMD_BIND_VERTEX_BUFFER = 6;
     public static final int CMD_SET_SCISSOR = 7;
     public static final int CMD_BIND_UNIFORM_BUFFER = 8;
+    // length-prefixed command
     public static final int CMD_BIND_TEXTURES = 9;
 
+    // the bind buffer 'offset' and 'size' always fit in 32 bits
+    // we cheat here and in DrawPass
+
     /**
-     * The heap buffer that holds all primitive data.
+     * Holds all primitive data.
      */
-    public ByteBuffer mPrimitives = ByteBuffer.allocate(512);
+    public final IntArrayList mPrimitives = new IntArrayList(128);
     /**
      * Holds all reference data, raw pointers.
      */
     public final ObjectArrayList<Object> mPointers = new ObjectArrayList<>();
 
-    private void grow(int minCapacity) {
-        if (minCapacity > mPrimitives.capacity()) {
-            int oldCapacity = mPrimitives.capacity();
-            int newCapacity = Math.max(minCapacity, oldCapacity + (oldCapacity >> 1));
-            mPrimitives = ByteBuffer.allocate(newCapacity)
-                    .put(mPrimitives.flip());
-        }
-    }
-
     public void bindGraphicsPipeline(int pipelineIndex) {
-        grow(mPrimitives.position() + 8);
-        mPrimitives.putInt(CMD_BIND_GRAPHICS_PIPELINE)
-                .putInt(pipelineIndex);
+        mPrimitives.add(CMD_BIND_GRAPHICS_PIPELINE);
+        mPrimitives.add(pipelineIndex);
     }
 
     public void draw(int vertexCount, int baseVertex) {
-        grow(mPrimitives.position() + 12);
-        mPrimitives.putInt(CMD_DRAW)
-                .putInt(vertexCount)
-                .putInt(baseVertex);
+        mPrimitives.add(CMD_DRAW);
+        mPrimitives.add(vertexCount);
+        mPrimitives.add(baseVertex);
     }
 
     public final void drawIndexed(int indexCount, int baseIndex,
                                   int baseVertex) {
-        grow(mPrimitives.position() + 16);
-        mPrimitives.putInt(CMD_DRAW_INDEXED)
-                .putInt(indexCount)
-                .putInt(baseIndex)
-                .putInt(baseVertex);
+        mPrimitives.add(CMD_DRAW_INDEXED);
+        mPrimitives.add(indexCount);
+        mPrimitives.add(baseIndex);
+        mPrimitives.add(baseVertex);
     }
 
     public final void drawInstanced(int instanceCount, int baseInstance,
                                     int vertexCount, int baseVertex) {
-        grow(mPrimitives.position() + 20);
-        mPrimitives.putInt(CMD_DRAW_INSTANCED)
-                .putInt(instanceCount)
-                .putInt(baseInstance)
-                .putInt(vertexCount)
-                .putInt(baseVertex);
+        mPrimitives.add(CMD_DRAW_INSTANCED);
+        mPrimitives.add(instanceCount);
+        mPrimitives.add(baseInstance);
+        mPrimitives.add(vertexCount);
+        mPrimitives.add(baseVertex);
     }
 
     public final void drawIndexedInstanced(int indexCount, int baseIndex,
                                            int instanceCount, int baseInstance,
                                            int baseVertex) {
-        grow(mPrimitives.position() + 24);
-        mPrimitives.putInt(CMD_DRAW_INDEXED_INSTANCED)
-                .putInt(indexCount)
-                .putInt(baseIndex)
-                .putInt(instanceCount)
-                .putInt(baseInstance)
-                .putInt(baseVertex);
+        mPrimitives.add(CMD_DRAW_INDEXED_INSTANCED);
+        mPrimitives.add(indexCount);
+        mPrimitives.add(baseIndex);
+        mPrimitives.add(instanceCount);
+        mPrimitives.add(baseInstance);
+        mPrimitives.add(baseVertex);
     }
 
     public final void bindIndexBuffer(int indexType,
-                                      BufferViewInfo indexBufferInfo) {
-        grow(mPrimitives.position() + 16);
-        mPrimitives.putInt(CMD_BIND_INDEX_BUFFER)
-                .putInt(indexType)
-                .putLong(indexBufferInfo.mOffset);
-        mPointers.add(indexBufferInfo.mBuffer);
+                                      BufferViewInfo bufferInfo) {
+        mPrimitives.add(CMD_BIND_INDEX_BUFFER);
+        mPrimitives.add(indexType);
+        mPrimitives.add((int) bufferInfo.mOffset);
+        mPointers.add(bufferInfo.mBuffer);
     }
 
     public final void bindVertexBuffer(int binding,
-                                       BufferViewInfo vertexBufferInfo) {
-        grow(mPrimitives.position() + 16);
-        mPrimitives.putInt(CMD_BIND_VERTEX_BUFFER)
-                .putInt(binding)
-                .putLong(vertexBufferInfo.mOffset);
-        mPointers.add(vertexBufferInfo.mBuffer);
+                                       BufferViewInfo bufferInfo) {
+        mPrimitives.add(CMD_BIND_VERTEX_BUFFER);
+        mPrimitives.add(binding);
+        mPrimitives.add((int) bufferInfo.mOffset);
+        mPointers.add(bufferInfo.mBuffer);
     }
 
     /**
@@ -145,7 +133,6 @@ public class DrawCommandList {
      * @see Engine.SurfaceOrigin
      */
     public final void setScissor(Rect2ic scissor, int surfaceHeight, int origin) {
-        grow(mPrimitives.position() + 20);
         int y;
         int height = scissor.height();
         if (origin == Engine.SurfaceOrigin.kLowerLeft) {
@@ -155,22 +142,21 @@ public class DrawCommandList {
             y = scissor.y();
         }
         assert (y >= 0);
-        mPrimitives.putInt(CMD_SET_SCISSOR)
-                .putInt(scissor.x())
-                .putInt(y)
-                .putInt(scissor.width())
-                .putInt(height);
+        mPrimitives.add(CMD_SET_SCISSOR);
+        mPrimitives.add(scissor.x());
+        mPrimitives.add(y);
+        mPrimitives.add(scissor.width());
+        mPrimitives.add(height);
     }
 
     public final void bindUniformBuffer(int binding,
                                         @RawPtr Buffer buffer,
                                         long offset,
                                         long size) {
-        grow(mPrimitives.position() + 24);
-        mPrimitives.putInt(CMD_BIND_UNIFORM_BUFFER)
-                .putInt(binding)
-                .putLong(offset)
-                .putLong(size);
+        mPrimitives.add(CMD_BIND_UNIFORM_BUFFER);
+        mPrimitives.add(binding);
+        mPrimitives.add((int) offset);
+        mPrimitives.add((int) size);
         mPointers.add(buffer);
     }
 
@@ -180,130 +166,71 @@ public class DrawCommandList {
     public final void bindTextures(int[] textures) {
         int n = textures.length >> 1;
         assert n > 0;
-        grow(mPrimitives.position() + 8 + (n << 3));
-        mPrimitives.putInt(CMD_BIND_TEXTURES)
-                .putInt(n);
-        if (n == 1) {
-            mPrimitives.putInt(textures[0])
-                    .putInt(textures[1]);
-        } else {
-            mPrimitives.asIntBuffer().put(textures);
-            mPrimitives.position(mPrimitives.position() + (n << 3));
-        }
+        mPrimitives.add(CMD_BIND_TEXTURES);
+        mPrimitives.add(n);
+        mPrimitives.addElements(mPrimitives.size(), textures);
     }
 
     public final void finish() {
-        mPrimitives.flip();
-    }
-
-    public boolean execute(CommandBuffer commandBuffer) {
-        var p = mPrimitives;
-        var oa = mPointers.elements();
-        int oi = 0;
-        while (p.hasRemaining()) {
-            switch (p.getInt()) {
-                case DrawCommandList.CMD_BIND_GRAPHICS_PIPELINE -> {
-                    p.getInt();
-                }
-                case DrawCommandList.CMD_DRAW -> {
-                    int vertexCount = p.getInt();
-                    int baseVertex = p.getInt();
-                    commandBuffer.draw(vertexCount, baseVertex);
-                }
-                case DrawCommandList.CMD_DRAW_INDEXED -> {
-                    int indexCount = p.getInt();
-                    int baseIndex = p.getInt();
-                    int baseVertex = p.getInt();
-                    commandBuffer.drawIndexed(indexCount, baseIndex, baseVertex);
-                }
-                case DrawCommandList.CMD_DRAW_INSTANCED -> {
-                    int instanceCount = p.getInt();
-                    int baseInstance = p.getInt();
-                    int vertexCount = p.getInt();
-                    int baseVertex = p.getInt();
-                    commandBuffer.drawInstanced(instanceCount, baseInstance, vertexCount, baseVertex);
-                }
-                case DrawCommandList.CMD_DRAW_INDEXED_INSTANCED -> {
-                    int indexCount = p.getInt();
-                    int baseIndex = p.getInt();
-                    int instanceCount = p.getInt();
-                    int baseInstance = p.getInt();
-                    int baseVertex = p.getInt();
-                    commandBuffer.drawIndexedInstanced(indexCount, baseIndex, instanceCount, baseInstance, baseVertex);
-                }
-                case DrawCommandList.CMD_BIND_INDEX_BUFFER -> {
-                    int indexType = p.getInt();
-                    long offset = p.getLong();
-                    commandBuffer.bindIndexBuffer(indexType, (Buffer) oa[oi++], offset);
-                }
-                case DrawCommandList.CMD_BIND_VERTEX_BUFFER -> {
-                    int binding = p.getInt();
-                    long offset = p.getLong();
-                    commandBuffer.bindVertexBuffer(binding, (Buffer) oa[oi++], offset);
-                }
-            }
-        }
-        p.rewind();
-        //TODO track resources
-        return true;
     }
 
     public void debug(PrintWriter pw) {
-        var p = mPrimitives;
+        var p = mPrimitives.elements();
+        int i = 0;
         var oa = mPointers.elements();
         int oi = 0;
-        while (p.hasRemaining()) {
-            switch (p.getInt()) {
+        int lim = mPrimitives.size();
+        while (i < lim) {
+            switch (p[i++]) {
                 case DrawCommandList.CMD_BIND_GRAPHICS_PIPELINE -> {
-                    int pipelineIndex = p.getInt();
+                    int pipelineIndex = p[i++];
                     pw.printf("[BindGraphicsPipeline pipelineIndex:%d]%n",
                             pipelineIndex);
                 }
                 case DrawCommandList.CMD_DRAW -> {
-                    int vertexCount = p.getInt();
-                    int baseVertex = p.getInt();
+                    int vertexCount = p[i++];
+                    int baseVertex = p[i++];
                     pw.printf("[Draw vertexCount:%d baseVertex:%d]%n",
                             vertexCount, baseVertex);
                 }
                 case DrawCommandList.CMD_DRAW_INDEXED -> {
-                    int indexCount = p.getInt();
-                    int baseIndex = p.getInt();
-                    int baseVertex = p.getInt();
+                    int indexCount = p[i++];
+                    int baseIndex = p[i++];
+                    int baseVertex = p[i++];
                     pw.printf("[DrawIndexed indexCount:%d baseIndex:%d baseVertex:%d]%n",
                             indexCount, baseIndex, baseVertex);
                 }
                 case DrawCommandList.CMD_DRAW_INSTANCED -> {
-                    int instanceCount = p.getInt();
-                    int baseInstance = p.getInt();
-                    int vertexCount = p.getInt();
-                    int baseVertex = p.getInt();
+                    int instanceCount = p[i++];
+                    int baseInstance = p[i++];
+                    int vertexCount = p[i++];
+                    int baseVertex = p[i++];
                     pw.printf("[DrawInstanced instanceCount:%d baseInstance:%d vertexCount:%d baseVertex:%d]%n",
                             instanceCount, baseInstance, vertexCount, baseVertex);
                 }
                 case DrawCommandList.CMD_DRAW_INDEXED_INSTANCED -> {
-                    int indexCount = p.getInt();
-                    int baseIndex = p.getInt();
-                    int instanceCount = p.getInt();
-                    int baseInstance = p.getInt();
-                    int baseVertex = p.getInt();
+                    int indexCount = p[i++];
+                    int baseIndex = p[i++];
+                    int instanceCount = p[i++];
+                    int baseInstance = p[i++];
+                    int baseVertex = p[i++];
                     pw.printf("[DrawIndexedInstanced indexCount:%d baseIndex:%d instanceCount:%d baseInstance:%d " +
                                     "baseVertex:%d]%n",
                             indexCount, baseIndex, instanceCount, baseInstance, baseVertex);
                 }
                 case DrawCommandList.CMD_BIND_INDEX_BUFFER -> {
-                    int indexType = p.getInt();
-                    long offset = p.getLong();
+                    int indexType = p[i++];
+                    long offset = p[i++];
                     pw.printf("[BindIndexBuffer indexType:%d buffer:%s offset:%d]%n",
                             indexType, oa[oi++], offset);
                 }
                 case DrawCommandList.CMD_BIND_VERTEX_BUFFER -> {
-                    int binding = p.getInt();
-                    long offset = p.getLong();
+                    int binding = p[i++];
+                    long offset = p[i++];
                     pw.printf("[BindVertexBuffer binding:%d buffer:%s offset:%d]%n",
                             binding, oa[oi++], offset);
                 }
             }
         }
-        p.rewind();
     }
 }

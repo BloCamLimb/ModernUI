@@ -21,12 +21,7 @@ package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.task.Task;
-import icyllis.arc3d.engine.task.TaskList;
-import org.lwjgl.system.MemoryUtil;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -60,12 +55,12 @@ public class DynamicBufferManager {
         @SharedPtr Buffer mBuffer;
         int mOffset;
 
-        ByteBuffer mCachedWriter;
-
         BlockBuffer(Caps caps, int usage, int blockSize) {
             mUsage = usage;
             mBlockSize = blockSize;
             if ((usage & Engine.BufferUsageFlags.kUniform) != 0) {
+                // alignment is 256 at most, this is 256 on NVIDIA GPU
+                // and smaller on integrated GPUs
                 mOffsetAlignment = caps.minUniformBufferOffsetAlignment();
             } else {
                 mOffsetAlignment = VertexInputLayout.Attribute.OFFSET_ALIGNMENT;
@@ -107,9 +102,16 @@ public class DynamicBufferManager {
         );
     }
 
-    @Nullable
-    public ByteBuffer getVertexWriter(int requiredBytes, BufferViewInfo outInfo) {
-        return prepareMappedWriter(
+    /**
+     * Allocate write-combining buffer and return a host coherent memory address.
+     * Return pointer is 4-byte aligned, if NULL then allocation is failed.
+     *
+     * @param requiredBytes vertex stride (4-byte aligned) * count
+     * @param outInfo       buffer bind info
+     * @return write-only address, or NULL
+     */
+    public long getVertexPointer(int requiredBytes, BufferViewInfo outInfo) {
+        return prepareMappedPointer(
                 mCurrentBuffers[kVertexBufferIndex],
                 requiredBytes,
                 outInfo,
@@ -117,9 +119,18 @@ public class DynamicBufferManager {
         );
     }
 
-    @Nullable
-    public ByteBuffer getUniformWriter(int requiredBytes, BufferViewInfo outInfo) {
-        return prepareMappedWriter(
+    /**
+     * Allocate write-combining buffer and return a host coherent memory address.
+     * The buffer can be used only for uniform buffer. Return pointer is 4-byte aligned
+     * according to GPU requirements, if NULL then allocation is failed.
+     *
+     * @param requiredBytes uniform buffer size (aligned) * count
+     * @param outInfo       buffer bind info
+     * @return write-only address, or NULL
+     * @see #alignUniformBlockSize(int)
+     */
+    public long getUniformPointer(int requiredBytes, BufferViewInfo outInfo) {
+        return prepareMappedPointer(
                 mCurrentBuffers[kUniformBufferIndex],
                 requiredBytes,
                 outInfo,
@@ -135,34 +146,24 @@ public class DynamicBufferManager {
         return MathUtil.alignTo(dataSize, mCurrentBuffers[kUniformBufferIndex].mOffsetAlignment);
     }
 
-    @Nonnull
-    private static ByteBuffer getMappedBuffer(@Nullable ByteBuffer buffer, long address, int capacity) {
-        if (buffer != null && MemoryUtil.memAddress0(buffer) == address && buffer.capacity() == capacity) {
-            return buffer;
-        }
-        return MemoryUtil.memByteBuffer(address, capacity);
-    }
-
-    private ByteBuffer prepareMappedWriter(BlockBuffer target,
-                                           int requiredBytes,
-                                           BufferViewInfo outInfo,
-                                           String label) {
+    private long prepareMappedPointer(BlockBuffer target,
+                                      int requiredBytes,
+                                      BufferViewInfo outInfo,
+                                      String label) {
+        // write-combining buffer is automatically mapped
         assert (target.mUsage & Engine.BufferUsageFlags.kHostVisible) != 0;
         prepareBuffer(target, requiredBytes, outInfo, label);
         if (outInfo.mBuffer == null) {
             assert mMappingFailed;
-            return null;
+            return NULL;
         }
         assert !mMappingFailed;
         assert (outInfo.mBuffer == target.mBuffer);
         assert (outInfo.mBuffer.isMapped());
+        long mappedPointer = outInfo.mBuffer.getMappedBuffer();
+        assert mappedPointer != NULL;
 
-        ByteBuffer writer = getMappedBuffer(target.mCachedWriter,
-                outInfo.mBuffer.getMappedBuffer(), (int) outInfo.mBuffer.getSize())
-                .position((int) outInfo.mOffset)
-                .limit((int) (outInfo.mOffset + outInfo.mSize));
-        target.mCachedWriter = writer;
-        return writer;
+        return mappedPointer + outInfo.mOffset;
     }
 
     private void prepareBuffer(BlockBuffer target,
