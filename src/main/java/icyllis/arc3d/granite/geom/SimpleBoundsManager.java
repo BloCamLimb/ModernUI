@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2024-2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,15 +20,32 @@
 package icyllis.arc3d.granite.geom;
 
 import icyllis.arc3d.core.Rect2fc;
+import icyllis.arc3d.granite.DrawOrder;
 
-public abstract class BoundsManager {
+/**
+ * A BoundsManager that produces exact painter's order and assumes nothing is occluded.
+ */
+public final class SimpleBoundsManager extends BoundsManager {
 
-    /**
-     * Returns CompressedPaintersOrder.
-     */
-    public abstract int getMostRecentDraw(Rect2fc bounds);
+    private int mLatestDraw = DrawOrder.MIN_VALUE;
 
-    public abstract void recordDraw(Rect2fc bounds, int order);
+    public SimpleBoundsManager() {
+    }
 
-    public abstract void clear();
+    @Override
+    public int getMostRecentDraw(Rect2fc bounds) {
+        return mLatestDraw;
+    }
+
+    @Override
+    public void recordDraw(Rect2fc bounds, int order) {
+        if (mLatestDraw < order) {
+            mLatestDraw = order;
+        }
+    }
+
+    @Override
+    public void clear() {
+        mLatestDraw = DrawOrder.MIN_VALUE;
+    }
 }

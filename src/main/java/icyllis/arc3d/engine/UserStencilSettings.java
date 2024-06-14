@@ -44,6 +44,7 @@ package icyllis.arc3d.engine;
  * draw's stencil settings, and is later translated into concrete settings when the pipeline is
  * finalized.
  */
+@Deprecated
 public final class UserStencilSettings {
 
     /**

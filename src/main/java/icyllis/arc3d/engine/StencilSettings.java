@@ -24,7 +24,7 @@ package icyllis.arc3d.engine;
  * is deduced from user stencil settings, stencil clip status, and the number of bits in the
  * target stencil buffer.
  */
-//TODO
+@Deprecated
 public final class StencilSettings {
 
     // Internal flag for backends to optionally mark their tracked stencil state as invalid.

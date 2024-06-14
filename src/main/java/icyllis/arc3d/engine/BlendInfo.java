@@ -20,8 +20,7 @@
 package icyllis.arc3d.engine;
 
 /**
- * BlendInfo is an immutable object holding info for setting-up
- * GPU blend states.
+ * BlendInfo is an immutable object holding info for setting-up GPU blend states.
  */
 public final class BlendInfo {
     // this class can be packed into an int, waiting for Value Types
