@@ -110,7 +110,7 @@ public class TestGraniteRenderer {
 
             long time1 = System.nanoTime();
 
-            int nRects = 6553;
+            int nRects = 4000;
             paint.setColor(0x00000000);
             drawDevice.drawPaint(paint);
             for (int i = 0; i < nRects; i++) {

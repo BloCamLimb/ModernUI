@@ -22,6 +22,7 @@ package icyllis.arc3d.engine;
 /**
  * StencilFaceSettings
  */
+@Deprecated
 public final class StencilFaceSettings {
 
     public short mRef;        // Reference value for stencil test and ops.

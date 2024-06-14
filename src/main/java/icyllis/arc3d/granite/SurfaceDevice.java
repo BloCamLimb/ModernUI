@@ -21,10 +21,8 @@ package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.granite.geom.BoundsManager;
-import icyllis.arc3d.granite.geom.SDFRoundRectStep;
-
-import java.util.ArrayList;
+import icyllis.arc3d.granite.geom.*;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 /**
  * The device that is backed by GPU.
@@ -35,11 +33,11 @@ public final class SurfaceDevice extends icyllis.arc3d.core.Device {
     private SurfaceDrawContext mSDC;
     private ClipStack mClipStack;
 
-    private final ArrayList<ClipStack.Element> mElementsForMask = new ArrayList<>();
+    private final ObjectArrayList<ClipStack.Element> mElementsForMask = new ObjectArrayList<>();
 
     private int mCurrentDepth;
 
-    private final BoundsManager mBoundsManager = new BoundsManager();
+    private final BoundsManager mBoundsManager;
 
     private GeometryRenderer mSimpleRoundRectRenderer = new GeometryRenderer(
             "SimpleRRectStep", new SDFRoundRectStep(true)
@@ -50,6 +48,11 @@ public final class SurfaceDevice extends icyllis.arc3d.core.Device {
         mContext = context;
         mSDC = sdc;
         mClipStack = new ClipStack(this);
+        mBoundsManager = GridBoundsManager.makeRes(
+                width(), height(),
+                16, 32
+        );
+        //mBoundsManager = new SimpleBoundsManager();
     }
 
     @SharedPtr
@@ -192,6 +195,24 @@ public final class SurfaceDevice extends icyllis.arc3d.core.Device {
         drawGeometry(draw, mTmpOpBounds, paint, mSimpleRoundRectRenderer);
     }
 
+    private static boolean blender_depends_on_dst(Blender blender,
+                                                  boolean srcIsTransparent) {
+        BlendMode bm = blender != null ? blender.asBlendMode() : BlendMode.SRC_OVER;
+        if (bm == null) {
+            // custom blender
+            return true;
+        }
+        if (bm == BlendMode.SRC || bm == BlendMode.CLEAR) {
+            // src and clear blending never depends on dst
+            return false;
+        }
+        if (bm == BlendMode.SRC_OVER) {
+            // src-over depends on dst if src is transparent (a != 1)
+            return srcIsTransparent;
+        }
+        return true;
+    }
+
     public void drawGeometry(Draw draw,
                              Rect2f opBounds,
                              Paint paint,
@@ -213,22 +234,33 @@ public final class SurfaceDevice extends icyllis.arc3d.core.Device {
             draw.mStrokeCap = paint.getStrokeCap();
         }
 
-        draw.mPaintParams = new PaintParams(paint, null);
-
         final boolean outsetBoundsForAA = true;
-
+        mElementsForMask.clear();
         boolean clippedOut = mClipStack.prepareForDraw(draw, opBounds, outsetBoundsForAA, mElementsForMask);
         if (clippedOut) {
             return;
         }
 
+        boolean needsFlush = needsFlushBeforeDraw(1);
+        if (needsFlush) {
+            flush();
+        }
+
+        // Update the clip stack after issuing a flush (if it was needed). A draw will be recorded after
+        // this point.
         int drawDepth = mCurrentDepth + 1;
         int clipOrder = mClipStack.updateForDraw(draw, mElementsForMask, mBoundsManager, drawDepth);
 
-        long drawOrder = DrawOrder.makeFromDepthAndPaintersOrder(
+        draw.mPaintParams = new PaintParams(paint, null);
+        { //TODO simplify this branch
+            int prevDraw = mBoundsManager.getMostRecentDraw(draw.mDrawBounds);
+            int nextOrder = prevDraw + 1;
+            clipOrder = Math.max(clipOrder, nextOrder);
+        }
+
+        draw.mDrawOrder = DrawOrder.makeFromDepthAndPaintersOrder(
                 drawDepth, clipOrder
         );
-        draw.mDrawOrder = drawOrder;
 
         mSDC.recordDraw(draw);
 
@@ -238,6 +270,10 @@ public final class SurfaceDevice extends icyllis.arc3d.core.Device {
 
     public void drawClipShape(Draw draw, boolean inverseFill) {
         //TODO
+    }
+
+    private boolean needsFlushBeforeDraw(int numNewRenderSteps) {
+        return (DrawPass.MAX_RENDER_STEPS - mSDC.pendingNumSteps()) < numNewRenderSteps;
     }
 
     public void flush() {

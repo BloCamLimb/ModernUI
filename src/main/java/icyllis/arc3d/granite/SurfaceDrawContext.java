@@ -175,6 +175,10 @@ public final class SurfaceDrawContext implements AutoCloseable {
         mPendingLoadOp = Engine.LoadOp.kDiscard;
     }
 
+    public int pendingNumSteps() {
+        return mNumSteps;
+    }
+
     public void recordDraw(Draw draw) {
         assert !draw.mDrawBounds.isEmpty();
         assert !draw.mScissorRect.isEmpty() &&

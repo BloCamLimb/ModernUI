@@ -41,9 +41,10 @@ public class DrawPass implements AutoCloseable {
 
     /**
      * Depth buffer is 16-bit, ensure no overflow.
-     * DrawList is almost sorted, TimSort will be fast.
+     * The theoretic max for this value is 65535, but we see markedly better
+     * performance with smaller values
      */
-    public static final int MAX_RENDER_STEPS = (1 << 16) - 1;
+    public static final int MAX_RENDER_STEPS = (1 << 12);
     /**
      * An invalid index for {@link UniformTracker}, also for pipeline index.
      *
