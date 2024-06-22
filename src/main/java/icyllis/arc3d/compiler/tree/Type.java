@@ -488,6 +488,10 @@ public class Type extends Symbol {
      * @see CoercionCost
      */
     public final long getCoercionCost(Type other) {
+        return getCoercionCost(other, false);
+    }
+
+    private long getCoercionCost(Type other, boolean inArray) {
         if (matches(other)) {
             return CoercionCost.free();
         }
@@ -497,23 +501,23 @@ public class Type extends Symbol {
                 if (getRows() != other.getRows()) {
                     return CoercionCost.saturate();
                 }
-                return getComponentType().getCoercionCost(other.getComponentType());
+                return getComponentType().getCoercionCost(other.getComponentType(), inArray);
             }
             if (isMatrix()) {
                 if (getRows() != other.getRows() || getCols() != other.getCols()) {
                     return CoercionCost.saturate();
                 }
-                return getComponentType().getCoercionCost(other.getComponentType());
+                return getComponentType().getCoercionCost(other.getComponentType(), inArray);
             }
             if (isArray()) {
                 if (getArraySize() != other.getArraySize()) {
                     return CoercionCost.saturate();
                 }
-                return getElementType().getCoercionCost(other.getElementType());
+                return getElementType().getCoercionCost(other.getElementType(), true);
             }
         }
         if (isNumeric() && other.isNumeric()) {
-            if (getScalarKind() != other.getScalarKind()) {
+            if (inArray && getScalarKind() != other.getScalarKind()) {
                 return CoercionCost.saturate();
             } else if (other.getRank() >= getRank()) {
                 return CoercionCost.widening(other.getRank() - getRank());
