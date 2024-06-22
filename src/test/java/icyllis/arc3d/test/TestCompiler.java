@@ -61,19 +61,6 @@ public class TestCompiler {
 
         System.out.println("Source length: " + SOURCE.length());
 
-        for (int i = 19968; i < 20224; i++) {
-            System.out.printf("\\u%04X", i);
-        }
-        System.out.println();
-        for (int i = 20224; i < 20480; i++) {
-            System.out.printf("\\u%04X", i);
-        }
-        System.out.println();
-        for (int i = 20480; i < 20736; i++) {
-            System.out.printf("\\u%04X", i);
-        }
-        System.out.println();
-
         {
             long bytes = 0;
             bytes += 16 + MathUtil.align8(Lexer.MAPPINGS.length);
