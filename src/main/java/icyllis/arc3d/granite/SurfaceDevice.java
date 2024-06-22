@@ -39,8 +39,8 @@ public final class SurfaceDevice extends icyllis.arc3d.core.Device {
 
     private final BoundsManager mBoundsManager;
 
-    private GeometryRenderer mSimpleRoundRectRenderer = new GeometryRenderer(
-            "SimpleRRectStep", new SDFRoundRectStep(true)
+    private GeometryRenderer mSimpleBoxRenderer = new GeometryRenderer(
+            "SimpleBoxStep", new AnalyticSimpleBoxStep(true)
     );
 
     private SurfaceDevice(RecordingContext context, SurfaceDrawContext sdc) {
@@ -171,6 +171,8 @@ public final class SurfaceDevice extends icyllis.arc3d.core.Device {
         return null;
     }
 
+    private final Rect2f mTmpOpBounds = new Rect2f();
+
     @Override
     public void drawPaint(Paint paint) {
         float[] color = new float[4];
@@ -180,19 +182,39 @@ public final class SurfaceDevice extends icyllis.arc3d.core.Device {
     }
 
     @Override
-    public void drawRect(Rect2f r, Paint paint) {
+    public void drawPoints(float[] pts, int offset, int count, Paint paint) {
 
     }
 
-    private final Rect2f mTmpOpBounds = new Rect2f();
+    @Override
+    public void drawLine(float x0, float y0, float x1, float y1,
+                         @Paint.Cap int cap, float width, Paint paint) {
+        Draw draw = new Draw();
+        draw.mTransform = getLocalToDevice();
+        var shape = new SimpleShape();
+        shape.setLine(x0, y0, x1, y1, cap, width);
+        draw.mGeometry = shape;
+        mTmpOpBounds.set(x0, y0, x1, y1);
+        mTmpOpBounds.sort();
+        drawGeometry(draw, mTmpOpBounds, paint, mSimpleBoxRenderer);
+    }
+
+    @Override
+    public void drawRect(Rect2fc r, Paint paint) {
+        Draw draw = new Draw();
+        draw.mTransform = getLocalToDevice();
+        draw.mGeometry = new SimpleShape(r);
+        mTmpOpBounds.set(r);
+        drawGeometry(draw, mTmpOpBounds, paint, mSimpleBoxRenderer);
+    }
 
     public void drawRoundRect(RoundRect r, Paint paint) {
         Draw draw = new Draw();
         draw.mTransform = getLocalToDevice();
-        draw.mGeometry = r;
+        draw.mGeometry = new SimpleShape(r);
 
         mTmpOpBounds.set(r.mLeft, r.mTop, r.mRight, r.mBottom);
-        drawGeometry(draw, mTmpOpBounds, paint, mSimpleRoundRectRenderer);
+        drawGeometry(draw, mTmpOpBounds, paint, mSimpleBoxRenderer);
     }
 
     private static boolean blender_depends_on_dst(Blender blender,
@@ -231,7 +253,8 @@ public final class SurfaceDevice extends icyllis.arc3d.core.Device {
                 case Paint.JOIN_BEVEL -> draw.mJoinLimit = 0;
                 case Paint.JOIN_MITER -> draw.mJoinLimit = paint.getStrokeMiter();
             }
-            draw.mStrokeCap = paint.getStrokeCap();
+            draw.mStrokeCap = (short) paint.getStrokeCap();
+            draw.mStrokeAlign = (short) paint.getStrokeAlign();
         }
 
         final boolean outsetBoundsForAA = true;

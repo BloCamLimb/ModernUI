@@ -22,7 +22,7 @@ package icyllis.arc3d.engine.ops;
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
-import icyllis.arc3d.granite.geom.SDFRoundRectStep;
+import icyllis.arc3d.granite.geom.AnalyticSimpleBoxStep;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
@@ -80,7 +80,7 @@ public class RoundRectOp extends MeshDrawOp {
     @Override
     protected GraphicsPipelineDesc_Old onCreatePipelineInfo(ImageProxyView writeView, int pipelineFlags) {
         return new GraphicsPipelineDesc_Old(writeView,
-                new SDFRoundRectStep(true), null, null, null,
+                new AnalyticSimpleBoxStep(true), null, null, null,
                 null, pipelineFlags);
     }
 

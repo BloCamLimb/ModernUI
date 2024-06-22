@@ -38,6 +38,7 @@ public final class Draw {
     public Rect2fc mDrawBounds;
     public Rect2fc mTransformedShapeBounds;
     public Rect2ic mScissorRect;
+    public float mAARadius;
     /**
      * Packed draw order.
      */
@@ -45,11 +46,13 @@ public final class Draw {
     /**
      * Stroke params.
      */
+    // half width of stroke
     public float mStrokeRadius = -1; // >0: relative to transform; ==0: hairline, 1px in device space; <0: fill
     public float mJoinLimit;        // >0: miter join; ==0: bevel join; <0: round join
-    public int mStrokeCap;
+    public short mStrokeCap;
+    public short mStrokeAlign;
     @Nullable
-    public PaintParams mPaintParams; // null implies depth-only draw (clipping)
+    public PaintParams mPaintParams; // null implies depth-only draw (clipping mask)
 
     public boolean isClippedOut() {
         return mDrawBounds.isEmpty();
@@ -70,5 +73,9 @@ public final class Draw {
             multiplier = Math.max(multiplier, MathUtil.SQRT2);
         }
         return mStrokeRadius * multiplier;
+    }
+
+    public float getDepthAsFloat() {
+        return DrawOrder.getDepthAsFloat(mDrawOrder);
     }
 }

@@ -190,7 +190,7 @@ public final class ClipStack {
     // unaffected by any of the clip elements.
     public boolean prepareForDraw(Draw draw,
                                   Rect2f shapeBounds,
-                                  boolean hasAABloat,
+                                  boolean outsetForAA,
                                   List<Element> elementsForMask) {
 
         SaveRecord save = mSaves.element();
@@ -206,9 +206,10 @@ public final class ClipStack {
         boolean infiniteBounds = false;
 
         // Some renderers make the drawn area larger than the geometry for anti-aliasing
-        float rendererOutset = hasAABloat
+        float rendererOutset = outsetForAA
                 ? draw.mTransform.localAARadius(shapeBounds)
                 : 0;
+        draw.mAARadius = rendererOutset;
 
         Rect2f transformedShapeBounds = new Rect2f();
         boolean shapeInDeviceSpace = false;

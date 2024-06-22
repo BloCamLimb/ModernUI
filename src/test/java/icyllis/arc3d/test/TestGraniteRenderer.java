@@ -40,8 +40,8 @@ public class TestGraniteRenderer {
 
     public static final Logger LOGGER = LoggerFactory.getLogger("Arc3D");
 
-    public static final int CANVAS_WIDTH = 3840;
-    public static final int CANVAS_HEIGHT = 2160;
+    public static int CANVAS_WIDTH = 1280;
+    public static int CANVAS_HEIGHT = 720;
 
     public static final int MAX_RECT_WIDTH = 370;
     public static final int MIN_RECT_WIDTH = 20;
@@ -113,24 +113,82 @@ public class TestGraniteRenderer {
             int nRects = 4000;
             paint.setColor(0x00000000);
             drawDevice.drawPaint(paint);
-            for (int i = 0; i < nRects; i++) {
+            if (false) {
                 RoundRect rrect = new RoundRect();
-                int cx = random.nextInt(MAX_RECT_WIDTH / 2, CANVAS_WIDTH - MAX_RECT_WIDTH / 2);
-                int cy = random.nextInt(MAX_RECT_HEIGHT / 2, CANVAS_HEIGHT - MAX_RECT_HEIGHT / 2);
-                int w = (int) (random.nextDouble() * random.nextDouble() * random.nextDouble() * random.nextDouble() *
-                        (MAX_RECT_WIDTH - MIN_RECT_WIDTH)) + MIN_RECT_WIDTH;
-                int h = (int) (random.nextDouble() * random.nextDouble() * random.nextDouble() * random.nextDouble() *
-                        (MAX_RECT_HEIGHT - MIN_RECT_HEIGHT)) + MIN_RECT_HEIGHT;
-                rrect.mLeft = cx - (int) Math.ceil(w / 2d);
-                rrect.mTop = cy - (int) Math.ceil(h / 2d);
-                rrect.mRight = cx + (int) Math.floor(w / 2d);
-                rrect.mBottom = cy + (int) Math.floor(h / 2d);
-                rrect.mRadiusUL = Math.min(random.nextInt(MAX_CORNER_RADIUS), Math.min(w, h) / 2);
-                int stroke = random.nextInt(50);
-                paint.setStyle(stroke < 25 ? Paint.FILL : Paint.STROKE);
-                paint.setStrokeWidth((stroke - 20) * 2);
-                paint.setRGBA(random.nextInt(256), random.nextInt(256), random.nextInt(256), random.nextInt(128));
-                drawDevice.drawRoundRect(rrect, paint);
+                for (int i = 0; i < nRects; i++) {
+                    int cx = random.nextInt(MAX_RECT_WIDTH / 2, CANVAS_WIDTH - MAX_RECT_WIDTH / 2);
+                    int cy = random.nextInt(MAX_RECT_HEIGHT / 2, CANVAS_HEIGHT - MAX_RECT_HEIGHT / 2);
+                    int w = (int) (random.nextDouble() * random.nextDouble() * random.nextDouble() * random.nextDouble() *
+                            (MAX_RECT_WIDTH - MIN_RECT_WIDTH)) + MIN_RECT_WIDTH;
+                    int h = (int) (random.nextDouble() * random.nextDouble() * random.nextDouble() * random.nextDouble() *
+                            (MAX_RECT_HEIGHT - MIN_RECT_HEIGHT)) + MIN_RECT_HEIGHT;
+                    rrect.mLeft = cx - (int) Math.ceil(w / 2d);
+                    rrect.mTop = cy - (int) Math.ceil(h / 2d);
+                    rrect.mRight = cx + (int) Math.floor(w / 2d);
+                    rrect.mBottom = cy + (int) Math.floor(h / 2d);
+                    rrect.mRadiusUlx = Math.min(random.nextInt(MAX_CORNER_RADIUS), Math.min(w, h) / 2);
+                    int stroke = random.nextInt(50);
+                    paint.setStyle(stroke < 25 ? Paint.FILL : Paint.STROKE);
+                    paint.setStrokeWidth((stroke - 20) * 2);
+                    paint.setRGBA(random.nextInt(256), random.nextInt(256), random.nextInt(256), random.nextInt(128));
+                    drawDevice.drawRoundRect(rrect, paint);
+                }
+            } else {
+                RoundRect rrect = new RoundRect();
+                rrect.mLeft = 30;
+                rrect.mTop = 60;
+                rrect.mRight = 340;
+                rrect.mBottom = 160;
+                rrect.mRadiusUlx = 10;
+                paint.setStyle(Paint.STROKE);
+                int[] aligns = {Paint.ALIGN_INSIDE, Paint.ALIGN_CENTER, Paint.ALIGN_OUTSIDE};
+                paint.setStrokeWidth(10);
+                paint.setRGBA(random.nextInt(256), random.nextInt(256), random.nextInt(256), 255);
+                Matrix4 mat = Matrix4.identity();
+                for (int i = 0; i < 3; i++) {
+                    paint.setStrokeAlign(aligns[i]);
+                    drawDevice.setLocalToDevice(mat);
+                    drawDevice.drawRoundRect(rrect, paint);
+                    mat.preTranslateX(350);
+                }
+                Rect2f rect = new Rect2f();
+                rrect.getRect(rect);
+                //paint.setStrokeAlign(Paint.ALIGN_CENTER);
+                paint.setStrokeJoin(Paint.JOIN_MITER);
+                drawDevice.setLocalToDevice(mat);
+                drawDevice.drawRect(rect, paint);
+                Runnable lines = () -> {
+                    drawDevice.drawLine(300, 220-30, 20, 220, Paint.CAP_BUTT,   10f, paint);
+                    drawDevice.drawLine(300, 240-20, 20, 240, Paint.CAP_ROUND,  10f, paint);
+                    drawDevice.drawLine(300, 260-10, 20, 260, Paint.CAP_SQUARE, 10f, paint);
+                };
+                mat.setIdentity();
+                drawDevice.setLocalToDevice(mat);
+                paint.setStyle(Paint.FILL);
+                lines.run();
+
+                mat.preTranslateY(100);
+                drawDevice.setLocalToDevice(mat);
+                paint.setStyle(Paint.STROKE);
+                paint.setStrokeWidth(4);
+                paint.setStrokeJoin(Paint.JOIN_MITER);
+                paint.setStrokeAlign(Paint.ALIGN_CENTER);
+                lines.run();
+
+                mat.preTranslateY(100);
+                drawDevice.setLocalToDevice(mat);
+                paint.setStrokeJoin(Paint.JOIN_ROUND);
+                lines.run();
+
+                mat.preTranslateY(100);
+                drawDevice.setLocalToDevice(mat);
+                paint.setStrokeAlign(Paint.ALIGN_INSIDE);
+                lines.run();
+
+                mat.preTranslateY(100);
+                drawDevice.setLocalToDevice(mat);
+                paint.setStrokeAlign(Paint.ALIGN_OUTSIDE);
+                lines.run();
             }
 
             long time2 = System.nanoTime();
@@ -152,8 +210,10 @@ public class TestGraniteRenderer {
             long time5 = System.nanoTime();
 
             GL33C.glBindFramebuffer(GL33C.GL_DRAW_FRAMEBUFFER, 0);
+            boolean filter = CANVAS_WIDTH == WINDOW_WIDTH && CANVAS_HEIGHT == WINDOW_HEIGHT;
             GL33C.glBlitFramebuffer(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT,
-                    0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, GL33C.GL_COLOR_BUFFER_BIT, GL33C.GL_LINEAR);
+                    0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, GL33C.GL_COLOR_BUFFER_BIT,
+                    filter ? GL33C.GL_LINEAR : GL33C.GL_NEAREST);
             if (!immediateContext.submit()) {
                 LOGGER.info("Failed to submit queue");
             }
@@ -164,14 +224,14 @@ public class TestGraniteRenderer {
             GLFW.glfwWaitEvents();
 
             long time7 = System.nanoTime();
-            LOGGER.info("Painting: {}, CreateRenderPass: {}, CreateFrameTask: {}, AddCommands: {}, " +
+            /*LOGGER.info("Painting: {}, CreateRenderPass: {}, CreateFrameTask: {}, AddCommands: {}, " +
                             "Blit/Submit/CheckFence: {}, Swap/Event: {}",
                     formatMicroseconds(time2, time1),
                     formatMicroseconds(time3, time2),
                     formatMicroseconds(time4, time3),
                     formatMicroseconds(time5, time4),
                     formatMicroseconds(time6, time5),
-                    formatMicroseconds(time7, time6));
+                    formatMicroseconds(time7, time6));*/
         }
         long pixels = MemoryUtil.nmemAlloc(CANVAS_WIDTH * CANVAS_HEIGHT * 4);
         GL33C.glReadPixels(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE, pixels);
