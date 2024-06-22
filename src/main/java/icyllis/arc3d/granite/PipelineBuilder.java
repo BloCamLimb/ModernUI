@@ -134,7 +134,7 @@ public class PipelineBuilder {
 
         // map into clip space
         vs.format("""
-                gl_Position = vec4(%1$s.xy * %2$s.xz + %1$s.zz * %2$s.yw, 0.0, %1$s.z);
+                gl_Position = vec4(%1$s.xy * %2$s.xz + %1$s.ww * %2$s.yw, %1$s.zw);
                 """, WORLD_POS_VAR_NAME, UniformHandler.PROJECTION_NAME);
 
         out.append("}");

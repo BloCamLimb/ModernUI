@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,41 +17,18 @@
  * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.core;
+package icyllis.arc3d.test;
 
-public class RasterDevice extends Device {
+import icyllis.arc3d.core.Paint;
+import icyllis.arc3d.granite.SimpleShape;
 
-    public RasterDevice(ImageInfo info) {
-        super(info);
-    }
+public class TestSimpleShape {
 
-    @Override
-    public boolean clipIsAA() {
-        return false;
-    }
+    public static void main(String[] args) {
+        SimpleShape simpleShape = new SimpleShape();
 
-    @Override
-    public boolean clipIsWideOpen() {
-        return false;
-    }
+        simpleShape.setLine(20, 60, 20, 20, Paint.CAP_ROUND, 10f);
 
-    @Override
-    protected int getClipType() {
-        return 0;
-    }
-
-    @Override
-    protected Rect2ic getClipBounds() {
-        return null;
-    }
-
-    @Override
-    public void drawPaint(Paint paint) {
-
-    }
-
-    @Override
-    public void drawRect(Rect2f r, Paint paint) {
-
+        System.out.println(simpleShape);
     }
 }

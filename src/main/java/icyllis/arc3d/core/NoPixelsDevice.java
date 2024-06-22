@@ -163,7 +163,16 @@ public class NoPixelsDevice extends Device {
     }
 
     @Override
-    public void drawRect(Rect2f r, Paint paint) {
+    public void drawPoints(float[] pts, int offset, int count, Paint paint) {
+    }
+
+    @Override
+    public void drawLine(float x0, float y0, float x1, float y1, @Paint.Cap int cap, float width, Paint paint) {
+
+    }
+
+    @Override
+    public void drawRect(Rect2fc r, Paint paint) {
     }
 
     /**

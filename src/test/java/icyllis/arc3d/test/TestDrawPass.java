@@ -23,7 +23,7 @@ import icyllis.arc3d.core.Matrix4;
 import icyllis.arc3d.core.RoundRect;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.granite.*;
-import icyllis.arc3d.granite.geom.SDFRoundRectStep;
+import icyllis.arc3d.granite.geom.AnalyticSimpleBoxStep;
 import icyllis.arc3d.opengl.GLUtil;
 import icyllis.arc3d.opengl.*;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -104,7 +104,7 @@ public class TestDrawPass {
         MeshDrawWriter drawWriter = new MeshDrawWriter(recordingContext.getDynamicBufferManager(),
                 commandList);
 
-        var step = new SDFRoundRectStep(true);
+        var step = new AnalyticSimpleBoxStep(true);
 
         drawWriter.newPipelineState(
                 step.vertexBinding(),
@@ -124,7 +124,7 @@ public class TestDrawPass {
             int h = (int) (Math.random() * Math.random() * Math.random() * Math.random() * 250) + 20;
             rrect.mRight = rrect.mLeft + w;
             rrect.mBottom = rrect.mTop + h;
-            rrect.mRadiusUL = Math.min((int) (Math.random() * 50), Math.min(w, h) / 2);
+            rrect.mRadiusUlx = Math.min((int) (Math.random() * 50), Math.min(w, h) / 2);
             draw.mGeometry = rrect;
             draw.mTransform = Matrix4.identity();
             float cx = (rrect.mLeft + rrect.mRight) * 0.5f;

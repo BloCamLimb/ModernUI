@@ -3125,7 +3125,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      * @return {@code true} if this matrix is affine.
      */
     public boolean isAffine() {
-        return MathUtil.isApproxZero(m14, m24, m34) && MathUtil.isApproxEqual(m44, 1.0f);
+        return m14 == 0 && m24 == 0 && m34 == 0 && m44 == 1;
     }
 
     /**
@@ -3193,7 +3193,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
     }
 
     public boolean hasTranslation() {
-        return !(MathUtil.isApproxZero(m41, m42, m43) && MathUtil.isApproxEqual(m44, 1.0f));
+        return !(m41 == 0 && m42 == 0 && m43 == 0 && m44 == 1);
     }
 
     /**
