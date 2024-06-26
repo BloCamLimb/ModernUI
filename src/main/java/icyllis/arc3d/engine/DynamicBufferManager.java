@@ -21,8 +21,8 @@ package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.task.Task;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -75,7 +75,7 @@ public class DynamicBufferManager {
     final BlockBuffer[] mCurrentBuffers = new BlockBuffer[3];
     // @formatter:on
 
-    final ArrayList<@SharedPtr Buffer> mUsedBuffers = new ArrayList<>();
+    final ObjectArrayList<@SharedPtr Buffer> mUsedBuffers = new ObjectArrayList<>();
 
     private final ResourceProvider mResourceProvider;
 
@@ -228,7 +228,7 @@ public class DynamicBufferManager {
         for (var buffer : mUsedBuffers) {
             if (buffer.isMapped()) {
                 // no need to flush any data
-                buffer.unmap(0, 0);
+                buffer.unmap(0);
             }
             buffer.unref();
         }
@@ -239,7 +239,7 @@ public class DynamicBufferManager {
             if (target.mBuffer != null) {
                 if (target.mBuffer.isMapped()) {
                     // no need to flush any data
-                    target.mBuffer.unmap(0, 0);
+                    target.mBuffer.unmap(0);
                 }
                 target.mBuffer = RefCnt.move(target.mBuffer);
             }
