@@ -20,12 +20,13 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.engine.Engine.BufferUsageFlags;
+
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 /**
  * Represents a single device-visible memory region that may be used as mesh buffers and
  * staging buffers. A buffer cannot be accessed by both CPU and GPU simultaneously, it's
- * either mapped by engine or executing in command list.
+ * either mapped by client pipeline or executing in command buffer.
  */
 public abstract class Buffer extends Resource {
 
@@ -90,7 +91,7 @@ public abstract class Buffer extends Resource {
      * reading or vice versa produces undefined results. If the buffer is mapped for writing
      * then the buffer's previous contents are invalidated.
      *
-     * @return a valid pointer to the mapped data, or nullptr if lock failed
+     * @return a valid pointer to the mapped data, or nullptr if map failed
      */
     public final long map() {
         return map(0, mSize);
@@ -109,7 +110,9 @@ public abstract class Buffer extends Resource {
      * reading or vice versa produces undefined results. If the buffer is mapped for writing
      * then the buffer's previous contents are invalidated.
      *
-     * @return a valid pointer to the mapped data, or nullptr if lock failed
+     * @param offset the map offset
+     * @param size   the map size
+     * @return a valid pointer to the mapped data, or nullptr if map failed
      */
     public final long map(long offset, long size) {
         if ((mUsage & BufferUsageFlags.kHostVisible) == 0) {
@@ -132,24 +135,28 @@ public abstract class Buffer extends Resource {
     /**
      * Unmaps the buffer if it is mapped.
      * <p>
-     * The pointer returned by the previous {@link #map(long, long)} will no longer be valid.
+     * The pointer returned by the previous {@link #map()} will no longer be valid.
      */
     public final void unmap() {
-        unmap(mMapOffset, mMapSize);
+        unmap(mMapSize);
     }
 
     /**
      * Unmaps the buffer if it is mapped.
      * <p>
      * The pointer returned by the previous {@link #map(long, long)} will no longer be valid.
+     * The <var>size</var> can be smaller than that of the previous {@link #map(long, long)}
+     * call. If it is 0, then any modification to the mapped buffer may not flush into the
+     * buffer at all.
      */
-    public final void unmap(long offset, long size) {
+    public final void unmap(long size) {
         if (isDestroyed()) {
             return;
         }
         if (mMapped) {
-            assert offset >= mMapOffset && offset + size <= mMapOffset + mMapSize;
-            onUnmap(getMapMode(mUsage), offset, size);
+            // the 'offset' may not change, but 'size' may be smaller
+            assert size <= mMapSize;
+            onUnmap(getMapMode(mUsage), mMapOffset, size);
             mMapped = false;
             mMappedBuffer = NULL;
         }

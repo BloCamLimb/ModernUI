@@ -118,7 +118,7 @@ public abstract class GpuBufferPool {
             int usedBytes = (int) buffer.getSize() - mFreeBytes[mIndex];
             assert (buffer.isMapped());
             assert (buffer.getMappedBuffer() == mBufferPtr);
-            buffer.unmap(/*offset=*/0, usedBytes);
+            buffer.unmap(usedBytes);
             mBufferPtr = NULL;
         }
     }
@@ -191,7 +191,7 @@ public abstract class GpuBufferPool {
                 mBytesInUse -= usedBytes;
                 assert (buffer.isMapped());
                 assert (buffer.getMappedBuffer() == mBufferPtr);
-                buffer.unmap(/*offset=*/0, usedBytes);
+                buffer.unmap(usedBytes);
                 assert (!buffer.isMapped());
                 mBuffers[mIndex--] = RefCnt.move(buffer);
                 mBufferPtr = NULL;
