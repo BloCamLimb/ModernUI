@@ -405,7 +405,7 @@ public abstract class Caps {
      * the minimum alignment of the offset into the transfer buffer.
      */
     public abstract long getSupportedWriteColorType(int dstColorType,
-                                                    BackendFormat dstFormat,
+                                                    ImageDesc dstDesc,
                                                     int srcColorType);
 
     /**
@@ -636,6 +636,7 @@ public abstract class Caps {
      * @see ISurface#FLAG_MEMORYLESS
      * @see ISurface#FLAG_PROTECTED
      */
+    @Nullable
     public ImageDesc getDefaultColorImageDesc(int imageType,
                                               int colorType,
                                               int width, int height,
@@ -702,9 +703,10 @@ public abstract class Caps {
         // Currently, we require that it be possible to write pixels into the "default" format. Perhaps,
         // that could be a separate requirement from the caller. It seems less necessary if
         // renderability was requested.
-        if ((getSupportedWriteColorType(colorType, format, colorType) & 0xFFFFFFFFL) == ColorInfo.CT_UNKNOWN) {
+        //TODO
+        /*if ((getSupportedWriteColorType(colorType, format, colorType) & 0xFFFFFFFFL) == ColorInfo.CT_UNKNOWN) {
             return null;
-        }
+        }*/
         if (renderable && !isFormatRenderable(colorType, format, 1)) {
             return null;
         }

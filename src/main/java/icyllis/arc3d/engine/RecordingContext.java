@@ -34,6 +34,7 @@ public final class RecordingContext extends Context {
     private final ImageProxyCache mImageProxyCache;
     private RenderTaskManager mRenderTaskManager;
     private DynamicBufferManager mDynamicBufferManager;
+    private UploadBufferManager mUploadBufferManager;
 
     private final TaskList mRootTaskList;
 
@@ -103,6 +104,11 @@ public final class RecordingContext extends Context {
         return mDynamicBufferManager;
     }
 
+    @ApiStatus.Internal
+    public UploadBufferManager getUploadBufferManager() {
+        return mUploadBufferManager;
+    }
+
     public void addTask(@SharedPtr Task task) {
         mRootTaskList.appendTask(task);
     }
@@ -117,6 +123,7 @@ public final class RecordingContext extends Context {
         var extraResourceRefs = new ObjectArrayList<@SharedPtr Resource>();
         var finalTaskList = new TaskList();
         mDynamicBufferManager.flush(finalTaskList, extraResourceRefs);
+        mUploadBufferManager.flush(extraResourceRefs);
         finalTaskList.appendTasks(mRootTaskList);
         var recording = new RootTask(finalTaskList, extraResourceRefs);
         mRootTaskList.clear();
@@ -133,6 +140,7 @@ public final class RecordingContext extends Context {
         }
         mRenderTaskManager = new RenderTaskManager(this);
         mDynamicBufferManager = new DynamicBufferManager(getCaps(), getResourceProvider());
+        mUploadBufferManager = new UploadBufferManager(getResourceProvider());
         return true;
     }
 

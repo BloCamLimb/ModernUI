@@ -130,6 +130,9 @@ public final class GLBuffer extends Buffer {
             success = allocateMutable(device, buffer, target, dsa);
         }
         if (success) {
+            if (!dsa) {
+                device.getGL().glBindBuffer(target, 0);
+            }
             mBuffer = buffer;
         } else {
             device.getGL().glDeleteBuffers(buffer);
@@ -250,6 +253,12 @@ public final class GLBuffer extends Buffer {
 
     public int getHandle() {
         return mBuffer;
+    }
+
+    // No persistent mapping support. Most write operations are done on non OpenGL threads
+    // then we just use client array as staging buffer.
+    public long getClientUploadBuffer() {
+        return mClientUploadBuffer ? mCachedBuffer : NULL;
     }
 
     /**

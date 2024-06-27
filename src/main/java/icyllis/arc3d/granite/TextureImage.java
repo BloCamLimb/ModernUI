@@ -20,8 +20,8 @@
 package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.core.ImageInfo;
-import icyllis.arc3d.engine.*;
+import icyllis.arc3d.engine.Context;
+import icyllis.arc3d.engine.ImageViewProxy;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -29,27 +29,26 @@ import javax.annotation.Nullable;
 /**
  * The image that is backed by GPU.
  */
-public final class Image extends icyllis.arc3d.core.Image {
+public final class TextureImage extends icyllis.arc3d.core.Image {
 
     Context mContext;
     @SharedPtr
     ImageViewProxy mImageViewProxy;
 
-    public Image(@Nonnull Context rContext,
-                 @Nonnull ImageViewProxy proxy,
-                 int colorType,
-                 int alphaType,
-                 @Nullable ColorSpace colorSpace) {
-        super(ImageInfo.make(proxy.getWidth(), proxy.getHeight(),
+    public TextureImage(@Nonnull Context context,
+                        @Nonnull @SharedPtr ImageViewProxy view,
+                        int colorType,
+                        int alphaType,
+                        @Nullable ColorSpace colorSpace) {
+        super(ImageInfo.make(view.getWidth(), view.getHeight(),
                 colorType, alphaType, colorSpace));
-        mContext = rContext;
-        mImageViewProxy = RefCnt.create(proxy);
+        mContext = context;
+        mImageViewProxy = view;
     }
 
     @Override
     protected void deallocate() {
-        mImageViewProxy.unref();
-        mImageViewProxy = null;
+        mImageViewProxy = RefCnt.move(mImageViewProxy);
     }
 
     @Override
@@ -57,6 +56,7 @@ public final class Image extends icyllis.arc3d.core.Image {
         return mContext;
     }
 
+    @RawPtr
     public ImageViewProxy getImageViewProxy() {
         return mImageViewProxy;
     }
@@ -81,5 +81,13 @@ public final class Image extends icyllis.arc3d.core.Image {
     @Override
     public long getGpuMemorySize() {
         return mImageViewProxy.getMemorySize();
+    }
+
+    @Override
+    public String toString() {
+        return "TextureImage{" +
+                "mContext=" + mContext +
+                ", mImageViewProxy=" + mImageViewProxy +
+                '}';
     }
 }
