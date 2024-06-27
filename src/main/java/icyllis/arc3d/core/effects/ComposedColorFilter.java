@@ -19,8 +19,6 @@
 
 package icyllis.arc3d.core.effects;
 
-import icyllis.arc3d.core.ColorFilter;
-
 import java.util.Objects;
 
 /**

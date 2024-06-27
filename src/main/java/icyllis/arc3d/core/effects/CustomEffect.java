@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,11 +17,13 @@
  * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.core;
+package icyllis.arc3d.core.effects;
 
-public abstract class Shader {
+import icyllis.arc3d.core.shaders.Shader;
 
-    public boolean isOpaque() {
-        return false;
-    }
+/**
+ * CustomEffect supports creating custom {@link Shader} and {@link ColorFilter} objects using
+ * Arc3D shading language.
+ */
+public class CustomEffect {
 }

@@ -19,6 +19,8 @@
 
 package icyllis.arc3d.core;
 
+import icyllis.arc3d.core.effects.ColorFilter;
+import icyllis.arc3d.core.shaders.Shader;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
 
