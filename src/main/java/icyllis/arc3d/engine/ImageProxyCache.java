@@ -136,8 +136,8 @@ public final class ImageProxyCache {
     /**
      * Creates a lazy {@link ImageViewProxy} for the pixel map.
      *
-     * @param pixelMap     pixel map
-     * @param pixelRef     raw ptr to pixel ref, must be immutable
+     * @param pixmap     pixel map
+     * @param pixels     raw ptr to pixel ref, must be immutable
      * @param dstColorType a color type for surface usage, see {@link ImageDesc}
      * @param surfaceFlags flags described as follows
      * @see ISurface#FLAG_BUDGETED
@@ -146,8 +146,8 @@ public final class ImageProxyCache {
      */
     @Nullable
     @SharedPtr
-    public ImageViewProxy createTextureFromPixels(@Nonnull PixelMap pixelMap,
-                                                  @Nonnull @RawPtr PixelRef pixelRef,
+    public ImageViewProxy createTextureFromPixels(@Nonnull Pixmap pixmap,
+                                                  @Nonnull @RawPtr Pixels pixels,
                                                   int dstColorType,
                                                   int surfaceFlags) {
         mContext.checkOwnerThread();
@@ -156,10 +156,10 @@ public final class ImageProxyCache {
         if (mContext.isDeviceLost()) {
             return null;
         }
-        if (!pixelMap.getInfo().isValid()) {
+        if (!pixmap.getInfo().isValid()) {
             return null;
         }
-        if (!pixelRef.isImmutable()) {
+        if (!pixels.isImmutable()) {
             return null;
         }
         var format = mContext.getCaps()
@@ -167,12 +167,12 @@ public final class ImageProxyCache {
         if (format == null) {
             return null;
         }
-        var srcColorType = pixelMap.getColorType();
-        var width = pixelMap.getWidth();
-        var height = pixelMap.getHeight();
+        var srcColorType = pixmap.getColorType();
+        var width = pixmap.getWidth();
+        var height = pixmap.getHeight();
         @SharedPtr
         var texture = createLazyTexture(format, width, height, surfaceFlags,
-                new PixelsCallback(pixelRef, srcColorType, dstColorType));
+                new PixelsCallback(pixels, srcColorType, dstColorType));
         if (texture == null) {
             return null;
         }
@@ -184,12 +184,12 @@ public final class ImageProxyCache {
 
     private static final class PixelsCallback implements SurfaceProxy.LazyInstantiateCallback {
 
-        private PixelRef mPixelRef;
+        private Pixels mPixels;
         private final int mSrcColorType;
         private final int mDstColorType;
 
-        public PixelsCallback(PixelRef pixelRef, int srcColorType, int dstColorType) {
-            mPixelRef = RefCnt.create(pixelRef);
+        public PixelsCallback(Pixels pixels, int srcColorType, int dstColorType) {
+            mPixels = RefCnt.create(pixels);
             mSrcColorType = srcColorType;
             mDstColorType = dstColorType;
         }
@@ -203,7 +203,7 @@ public final class ImageProxyCache {
                 int surfaceFlags,
                 String label) {
             //TODO implement fast pixel transfer from heap array
-            assert mPixelRef.getBase() == null;
+            assert mPixels.getBase() == null;
             @SharedPtr
             Image texture = provider.createTexture(
                     width, height,
@@ -212,8 +212,8 @@ public final class ImageProxyCache {
                     surfaceFlags,
                     mDstColorType,
                     mSrcColorType,
-                    mPixelRef.getRowStride(),
-                    mPixelRef.getAddress(),
+                    mPixels.getRowStride(),
+                    mPixels.getAddress(),
                     label);
             close();
             //return new SurfaceProxy.LazyCallbackResult(texture);
@@ -222,7 +222,7 @@ public final class ImageProxyCache {
 
         @Override
         public void close() {
-            mPixelRef = RefCnt.move(mPixelRef);
+            mPixels = RefCnt.move(mPixels);
         }
     }
 

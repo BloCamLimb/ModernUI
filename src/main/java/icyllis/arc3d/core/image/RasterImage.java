@@ -21,30 +21,29 @@ package icyllis.arc3d.core.image;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.Context;
-import icyllis.arc3d.engine.RecordingContext;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public class RasterImage extends Image {
 
-    final PixelMap mPixelMap;
-    PixelRef mPixelRef;
+    final Pixmap mPixmap;
+    Pixels mPixels;
 
     /**
-     * @param pixelMap pixel map
-     * @param pixelRef raw ptr to pixel ref
+     * @param pixmap pixel map
+     * @param pixels raw ptr to pixel ref
      */
-    public RasterImage(@Nonnull PixelMap pixelMap,
-                       @Nonnull @RawPtr PixelRef pixelRef) {
-        super(pixelMap.getInfo());
-        mPixelMap = pixelMap;
-        mPixelRef = RefCnt.create(pixelRef);
+    public RasterImage(@Nonnull Pixmap pixmap,
+                       @Nonnull @RawPtr Pixels pixels) {
+        super(pixmap.getInfo());
+        mPixmap = pixmap;
+        mPixels = RefCnt.create(pixels);
     }
 
     @Override
     protected void deallocate() {
-        mPixelRef = RefCnt.move(mPixelRef);
+        mPixels = RefCnt.move(mPixels);
     }
 
     @Override
