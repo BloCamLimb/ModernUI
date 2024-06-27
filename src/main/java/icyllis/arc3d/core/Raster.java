@@ -28,7 +28,6 @@ import javax.annotation.Nullable;
 import java.awt.image.*;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.nio.ByteOrder;
 
 /**
  * {@link Raster} is similar to Bitmap, they are all "raster" (pixel map), but this class
@@ -84,14 +83,14 @@ public class Raster {
 
     @Nullable
     protected final BufferedImage mBufImg;
-    protected volatile PixelMap mPixelMap;
-    protected final PixelRef mPixelRef;
+    protected volatile Pixmap mPixmap;
+    protected final Pixels mPixels;
 
     public Raster(@Nullable BufferedImage bufImg, @Nonnull ImageInfo info,
                   @Nullable Object data, int baseOffset, int rowStride) {
         mBufImg = bufImg;
-        mPixelMap = new PixelMap(info, data, baseOffset, rowStride);
-        mPixelRef = new PixelRef(info.width(), info.height(), data, baseOffset, rowStride, null);
+        mPixmap = new Pixmap(info, data, baseOffset, rowStride);
+        mPixels = new Pixels(info.width(), info.height(), data, baseOffset, rowStride, /*freeFn*/ null);
     }
 
     @Nonnull
@@ -199,37 +198,42 @@ public class Raster {
 
     @Nonnull
     public ImageInfo getInfo() {
-        return mPixelMap.getInfo();
+        return mPixmap.getInfo();
     }
 
     public int getWidth() {
-        return mPixelMap.getWidth();
+        return mPixmap.getWidth();
     }
 
     public int getHeight() {
-        return mPixelMap.getHeight();
+        return mPixmap.getHeight();
     }
 
+    @ColorInfo.ColorType
     public int getColorType() {
-        return mPixelMap.getColorType();
+        return mPixmap.getColorType();
     }
 
+    @ColorInfo.AlphaType
     public int getAlphaType() {
-        return mPixelMap.getAlphaType();
+        return mPixmap.getAlphaType();
     }
 
     @Nullable
     public ColorSpace getColorSpace() {
-        return mPixelMap.getColorSpace();
+        return mPixmap.getColorSpace();
     }
 
-    // peek the current pixel map
-    public PixelMap getPixelMap() {
-        return mPixelMap;
+    /**
+     * Peek the current pixmap.
+     */
+    public Pixmap getPixmap() {
+        return mPixmap;
     }
 
     // won't affect ref cnt
-    public PixelRef getPixelRef() {
-        return mPixelRef;
+    @RawPtr
+    public Pixels getPixels() {
+        return mPixels;
     }
 }

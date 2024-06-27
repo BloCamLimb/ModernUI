@@ -29,9 +29,9 @@ import java.util.Objects;
 /**
  * Immutable structure that pairs ImageInfo with pixels and row stride.
  * <p>
- * This class does not try to manage the lifetime of pixels, see {@link PixelRef}.
+ * This class does not try to manage the lifetime of pixels, see {@link Pixels}.
  */
-public class PixelMap {
+public class Pixmap {
 
     @Nonnull
     protected final ImageInfo mInfo;
@@ -41,7 +41,7 @@ public class PixelMap {
     protected final int mRowStride;
 
     /**
-     * Creates PixelMap from info width, height, AlphaType, ColorType and ColorSpace.
+     * Creates {@link Pixmap} from info width, height, AlphaType, ColorType and ColorSpace.
      * <var>rowStride</var> should be info.width() times info.bytesPerPixel(), or larger.
      * <p>
      * No parameter checking is performed; it is up to the caller to ensure that
@@ -54,22 +54,25 @@ public class PixelMap {
      * @param address   address if native buffer, or array base offset; may be NULL
      * @param rowStride size of one row of buffer; width times bpp, or larger
      */
-    public PixelMap(@Nonnull ImageInfo info,
-                    @Nullable Object base,
-                    @NativeType("const void *") long address,
-                    int rowStride) {
+    public Pixmap(@Nonnull ImageInfo info,
+                  @Nullable Object base,
+                  @NativeType("const void *") long address,
+                  int rowStride) {
         this(info, base != null ? new WeakReference<>(base) : null, address, rowStride);
     }
 
-    public PixelMap(@Nonnull ImageInfo newInfo,
-                    @Nonnull PixelMap oldPixelMap) {
-        this(newInfo, oldPixelMap.mBase, oldPixelMap.mAddress, oldPixelMap.mRowStride);
+    /**
+     * Reinterprets an existing {@link Pixmap} with <var>newInfo</var>.
+     */
+    public Pixmap(@Nonnull ImageInfo newInfo,
+                  @Nonnull Pixmap oldPixmap) {
+        this(newInfo, oldPixmap.mBase, oldPixmap.mAddress, oldPixmap.mRowStride);
     }
 
-    PixelMap(@Nonnull ImageInfo info,
-             @Nullable WeakReference<Object> base,
-             @NativeType("const void *") long address,
-             int rowStride) {
+    Pixmap(@Nonnull ImageInfo info,
+           @Nullable WeakReference<Object> base,
+           @NativeType("const void *") long address,
+           int rowStride) {
         mInfo = Objects.requireNonNull(info);
         mBase = base;
         mAddress = address;
@@ -89,10 +92,12 @@ public class PixelMap {
         return mInfo.height();
     }
 
+    @ColorInfo.ColorType
     public int getColorType() {
         return mInfo.colorType();
     }
 
+    @ColorInfo.AlphaType
     public int getAlphaType() {
         return mInfo.alphaType();
     }
@@ -102,15 +107,26 @@ public class PixelMap {
         return mInfo.colorSpace();
     }
 
+    /**
+     * The array if heap buffer; may be null.
+     */
     @Nullable
     public Object getBase() {
         return mBase != null ? mBase.get() : null;
     }
 
+    /**
+     * The address if native buffer, or array base offset; may be NULL.
+     */
     public long getAddress() {
         return mAddress;
     }
 
+    /**
+     * The size, in bytes, between the start of one pixel row/scanline and the next in buffer,
+     * including any unused padding between them. This value must be at least the width multiplied
+     * by the bytes-per-pixel, where the bytes-per-pixel depends on the color type.
+     */
     public int getRowStride() {
         return mRowStride;
     }
@@ -146,7 +162,7 @@ public class PixelMap {
 
     @Override
     public String toString() {
-        return "PixelMap{" +
+        return "Pixmap{" +
                 "mInfo=" + mInfo +
                 ", mBase=" + getBase() +
                 ", mAddress=0x" + Long.toHexString(mAddress) +

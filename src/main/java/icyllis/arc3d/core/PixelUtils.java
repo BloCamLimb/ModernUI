@@ -46,24 +46,50 @@ public class PixelUtils {
     }
 
     /**
-     * Mem copy row by row.
+     * Copy memory row by row.
      */
     public static void copyImage(long src, long srcRowBytes,
                                  long dst, long dstRowBytes,
-                                 long minRowBytes, int rows) {
-        if (srcRowBytes < minRowBytes || dstRowBytes < minRowBytes) {
+                                 long trimRowBytes, int rowCount) {
+        if (srcRowBytes < trimRowBytes || dstRowBytes < trimRowBytes) {
             throw new IllegalArgumentException();
         }
-        if (srcRowBytes == minRowBytes && dstRowBytes == minRowBytes) {
-            LibCString.nmemcpy(dst, src, minRowBytes * rows);
+        if (srcRowBytes == trimRowBytes && dstRowBytes == trimRowBytes) {
+            MemoryUtil.memCopy(src, dst, trimRowBytes * rowCount);
         } else {
-            while (rows-- != 0) {
-                LibCString.nmemcpy(dst, src, minRowBytes);
+            for (int i = 0; i < rowCount; i++) {
+                MemoryUtil.memCopy(src, dst, trimRowBytes);
                 src += srcRowBytes;
                 dst += dstRowBytes;
             }
         }
     }
+
+    /**
+     * Copy memory row by row, allowing copying of heap array to off-heap.
+     */
+    //@formatter:off
+    public static void copyImage(Object srcBase, long srcAddr, long srcRowBytes,
+                                                 long dstAddr, long dstRowBytes,
+                                 long trimRowBytes, int rowCount) {
+        if (srcBase == null) {
+            copyImage(srcAddr, srcRowBytes, dstAddr, dstRowBytes, trimRowBytes, rowCount);
+        } else {
+            if (srcRowBytes < trimRowBytes || dstRowBytes < trimRowBytes) {
+                throw new IllegalArgumentException();
+            }
+            if (srcRowBytes == trimRowBytes && dstRowBytes == trimRowBytes) {
+                UNSAFE.copyMemory(srcBase, srcAddr, null, dstAddr, trimRowBytes * rowCount);
+            } else {
+                for (int i = 0; i < rowCount; i++) {
+                    UNSAFE.copyMemory(srcBase, srcAddr, null, dstAddr, trimRowBytes);
+                    srcAddr += srcRowBytes;
+                    dstAddr += dstRowBytes;
+                }
+            }
+        }
+    }
+    //@formatter:on
 
     public static void setPixel8(Object base, long addr,
                                  byte value, int count) {
