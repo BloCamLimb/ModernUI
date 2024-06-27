@@ -19,5 +19,62 @@
 
 package icyllis.arc3d.granite;
 
+import icyllis.arc3d.engine.RecordingContext;
+
+import javax.annotation.Nullable;
+
 public class KeyContext {
+
+    private final RecordingContext mContext;
+    // color components using non-premultiplied alpha
+    private final float mR; // 0..1
+    private final float mG; // 0..1
+    private final float mB; // 0..1
+    private final float mA; // 0..1
+
+    public KeyContext(RecordingContext context,
+                      PaintParams paintParams) {
+        mContext = context;
+        //TODO color space transformation
+        mR = paintParams.r();
+        mG = paintParams.g();
+        mB = paintParams.b();
+        mA = paintParams.a();
+    }
+
+    /**
+     * Raw ptr to context, null when pre-compiling shaders.
+     */
+    @Nullable
+    public RecordingContext getContext() {
+        return mContext;
+    }
+
+    /**
+     * Returns the value of the red component, in destination space.
+     */
+    public float r() {
+        return mR;
+    }
+
+    /**
+     * Returns the value of the green component, in destination space.
+     */
+    public float g() {
+        return mG;
+    }
+
+    /**
+     * Returns the value of the blue component, in destination space.
+     */
+    public float b() {
+        return mB;
+    }
+
+    /**
+     * Returns the value of the alpha component, in destination space.
+     */
+    public float a() {
+        return mA;
+    }
 }

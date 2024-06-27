@@ -111,15 +111,15 @@ public final class CircularRRectOp extends MeshDrawOp {
                 //varyingHandler.addPassThroughAttribute(POS, "p");
 
                 String sizeUniformName = uniformHandler.getUniformName(
-                        mSizeUniform = uniformHandler.addUniform(geomProc,
+                        mSizeUniform = uniformHandler.addUniform(
                                 Engine.ShaderFlags.kFragment,
                                 SLDataType.kFloat2,
-                                "Size"));
+                                "Size", -1));
                 String radiusUniformName = uniformHandler.getUniformName(
-                        mRadiusUniform = uniformHandler.addUniform(geomProc,
+                        mRadiusUniform = uniformHandler.addUniform(
                                 Engine.ShaderFlags.kFragment,
                                 SLDataType.kFloat,
-                                "Radius"));
+                                "Radius", -1));
                 fragBuilder.codeAppendf("""
                                 vec2 q = abs(p) - %1$s + %2$s;
                                 float d = min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - %2$s;

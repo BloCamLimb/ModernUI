@@ -84,7 +84,7 @@ public class GLUniformDataManager extends UniformDataManager {
             return true;
         }
         if (mUniformBuffer == null) {
-            mUniformBuffer = GLUniformBuffer.make(device, mUniformSize, UniformHandler.UNIFORM_BINDING);
+            mUniformBuffer = GLUniformBuffer.make(device, mUniformSize, 0/*UniformHandler.UNIFORM_BINDING*/);
         }
         if (mUniformBuffer == null) {
             return false;

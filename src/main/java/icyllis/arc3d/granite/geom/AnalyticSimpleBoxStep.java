@@ -24,6 +24,7 @@ import icyllis.arc3d.engine.Engine.PrimitiveType;
 import icyllis.arc3d.engine.Engine.VertexAttribType;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.granite.*;
+import icyllis.arc3d.granite.shading.UniformHandler;
 import icyllis.arc3d.granite.shading.VaryingHandler;
 import org.lwjgl.system.MemoryUtil;
 
@@ -140,6 +141,10 @@ public class AnalyticSimpleBoxStep extends GeometryStep {
     }
 
     @Override
+    public void emitUniforms(UniformHandler uniformHandler) {
+    }
+
+    @Override
     public void emitVertexGeomCode(Formatter vs, boolean needsLocalCoords) {
         // {(-1,-1), (-1, 1), (1, -1), (1, 1)}
         // corner selector, CCW
@@ -212,28 +217,32 @@ public class AnalyticSimpleBoxStep extends GeometryStep {
 
     @Override
     public void emitFragmentCoverageCode(Formatter fs, String outputCoverage) {
+        // corner radius, stroke radius, stroke offset
         fs.format("""
                 vec3 radii = %s;
                 vec2 q = abs(%s) - %s + radii.x;
                 """, "f_Radii", "f_RectEdge", "f_Size");
 
         fs.format("""
-                float d = min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - radii.x;
+                float dis = min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - radii.x;
                 if (radii.y >= 0) {
-                    d = abs(d - radii.z) - radii.y;
+                    dis = abs(dis - radii.z) - radii.y;
                 }
                 """);
 
         if (mAA) {
-            // use L2-norm of grad SDF
+            // use L2-norm of grad(SDF)
+            // 0.7021 < 0.7071 (slightly smaller than half of the diagonal)
             fs.format("""
-                    float afwidth = length(vec2(dFdx(d),dFdy(d)))*0.7;
-                    float edgeAlpha = 1.0 - smoothstep(-afwidth,afwidth,d);
+                    float afwidth = length(vec2(dFdx(dis),dFdy(dis))) * 0.7021;
+                    float edgeAlpha = 1.0 - smoothstep(-afwidth, afwidth, dis);
                     """);
         } else {
             // hard edge
+            // discard may reduce performance on certain GPUs, however, in non-AA case,
+            // we would like to get a mask for z-culling
             fs.format("""
-                    float edgeAlpha = 1.0 - step(0.0,d);
+                    float edgeAlpha = 1.0 - step(0.0, dis);
                     if (edgeAlpha <= 0.0) discard;
                     """);
         }

@@ -157,7 +157,7 @@ public class DrawPass implements AutoCloseable {
                             if (!(step.handlesSolidColor() && draw.mPaintParams.isSolidColor())) {
                                 // Add fragment stages if this is the step that performs shading,
                                 // and not a depth-only draw, and cannot simplify for solid color draw
-                                draw.mPaintParams.toKey(null,
+                                draw.mPaintParams.appendToKey(null,
                                         paintParamsKeyBuilder,
                                         uniformDataGatherer,
                                         textureDataGatherer);

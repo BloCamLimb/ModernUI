@@ -52,7 +52,7 @@ public class FragmentShaderBuilder extends ShaderBuilderBase implements FPFragme
 
     @Override
     protected void onFinish() {
-        mPipelineBuilder.uniformHandler().appendUniformDecls(Engine.ShaderFlags.kFragment, uniforms());
+        mPipelineBuilder.uniformHandler().appendUniformDecls(Engine.ShaderFlags.kFragment, 0, "UniformBlock", uniforms());
         mPipelineBuilder.varyingHandler().getFragDecls(inputs());
 
         mPrimaryOutput.appendDecl(outputs());

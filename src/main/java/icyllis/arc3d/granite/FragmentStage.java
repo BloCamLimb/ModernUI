@@ -19,15 +19,137 @@
 
 package icyllis.arc3d.granite;
 
-import icyllis.arc3d.engine.Processor;
+import icyllis.arc3d.engine.*;
+import icyllis.arc3d.granite.shading.UniformHandler;
 
+import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
+import java.util.Formatter;
 
+/**
+ * Represents a substage of a fragment shader.
+ */
 //TODO
 @Immutable
-public abstract class FragmentStage extends Processor {
+public class FragmentStage extends Processor {
 
-    protected FragmentStage(int classID) {
-        super(classID);
+    /**
+     * Builtin Code Snippet ID
+     */
+    public static final int
+            kError_BuiltinStageID = 0,
+            kPassthrough_BuiltinStageID = 1,
+            kSolidColorShader_BuiltinStageID = 2,
+            kRGBOpaquePaintColor_BuiltinStageID = 3,
+            kAlphaOnlyPaintColor_BuiltinStageID = 4,
+            kLocalMatrixShader_BuiltinStageID = 5,
+            kHWImageShader_BuiltinStageID = 6;
+
+    public static final int
+            kLast_BuiltinStageID = kHWImageShader_BuiltinStageID;
+    public static final int
+            kBuiltinStageIDCount = kLast_BuiltinStageID + 1;
+
+    /**
+     * Requirement flags.
+     */
+    public static final int
+            kNone_ReqFlag = 0x0,
+            kLocalCoords_ReqFlag = 0x1,     // Geometry local coordinates
+            kPriorStageOutput_ReqFlag = 0x2, // AKA the "input" color, or the "src" argument for a blender
+            kBlenderDstColor_ReqFlag = 0x4; // The "dst" argument for a blender
+
+    public record Uniform(byte type, String name, short arraySize) {
+
+        public Uniform(byte type, String name) {
+            this(type, name, (short) ShaderVar.kNonArray);
+        }
+
+        public Uniform(byte type, String name, int arraySize) {
+            this(type, name, (short) arraySize);
+        }
+    }
+
+    public record Sampler(byte type, String name) {
+    }
+
+    public static final Uniform[] NO_UNIFORMS = new Uniform[0];
+    public static final Sampler[] NO_SAMPLERS = new Sampler[0];
+
+    /**
+     * Emit assignment expression statement.
+     */
+    @FunctionalInterface
+    public interface GenerateExpression {
+
+        void generate(FragmentNode node,
+                      String localCoords,
+                      String priorStageOutput,
+                      String blenderDstColor,
+                      String output,
+                      Formatter code);
+    }
+
+    public final String mName;
+    public final int mRequirementFlags;
+    public final String mStaticFunctionName;
+    public final String mStaticFunctionBody;
+    public final Uniform[] mUniforms;
+    public final Sampler[] mSamplers;
+    public final GenerateExpression mExpressionGenerator;
+    public final int mNumChildren;
+
+    public FragmentStage(String name, int requirementFlags,
+                         String staticFunctionName,
+                         String staticFunctionBody,
+                         Uniform[] uniforms, Sampler[] samplers,
+                         GenerateExpression expressionGenerator,
+                         int numChildren) {
+        super(99);
+        mName = name;
+        mRequirementFlags = requirementFlags;
+        mStaticFunctionName = staticFunctionName;
+        mStaticFunctionBody = staticFunctionBody;
+        mUniforms = uniforms;
+        mSamplers = samplers;
+        mExpressionGenerator = expressionGenerator;
+        mNumChildren = numChildren;
+    }
+
+    @Nonnull
+    @Override
+    public String name() {
+        return mName;
+    }
+
+    public boolean needsLocalCoords() {
+        return (mRequirementFlags & kLocalCoords_ReqFlag) != 0;
+    }
+
+    public boolean needsPriorStageOutput() {
+        return (mRequirementFlags & kPriorStageOutput_ReqFlag) != 0;
+    }
+
+    public boolean needsBlenderDstColor() {
+        return (mRequirementFlags & kBlenderDstColor_ReqFlag) != 0;
+    }
+
+    public void generateUniforms(UniformHandler uniformHandler, int stageIndex) {
+        for (var uniform : mUniforms) {
+            uniformHandler.addUniformArray(
+                    Engine.ShaderFlags.kFragment,
+                    uniform.type,
+                    uniform.name,
+                    uniform.arraySize,
+                    stageIndex
+            );
+        }
+        for (var sampler : mSamplers) {
+            uniformHandler.addSampler(
+                    sampler.type,
+                    sampler.name,
+                    stageIndex
+            );
+        }
     }
 }

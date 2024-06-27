@@ -20,6 +20,8 @@
 package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.effects.ColorFilter;
+import icyllis.arc3d.core.shaders.Shader;
 import icyllis.arc3d.engine.KeyBuilder;
 
 //TODO currently we don't handle advanced blending
@@ -51,28 +53,28 @@ public final class PaintParams {
     }
 
     /**
-     * Returns the value of the red component.
+     * Returns the value of the red component, in sRGB space.
      */
     public float r() {
         return mR;
     }
 
     /**
-     * Returns the value of the green component.
+     * Returns the value of the green component, in sRGB space.
      */
     public float g() {
         return mG;
     }
 
     /**
-     * Returns the value of the blue component.
+     * Returns the value of the blue component, in sRGB space.
      */
     public float b() {
         return mB;
     }
 
     /**
-     * Returns the value of the alpha component.
+     * Returns the value of the alpha component, in sRGB space.
      */
     public float a() {
         return mA;
@@ -133,10 +135,53 @@ public final class PaintParams {
         return false;
     }
 
-    public void toKey(KeyContext keyContext,
-                      KeyBuilder keyBuilder,
-                      UniformDataGatherer uniformDataGatherer,
-                      TextureDataGatherer textureDataGatherer) {
+    private void appendPaintColorToKey(KeyContext keyContext,
+                                       KeyBuilder keyBuilder,
+                                       UniformDataGatherer uniformDataGatherer,
+                                       TextureDataGatherer textureDataGatherer) {
+        if (mShader != null) {
+            FragmentUtils.appendToKey(
+                    keyContext,
+                    keyBuilder,
+                    uniformDataGatherer,
+                    textureDataGatherer,
+                    mShader
+            );
+        } else {
+            FragmentUtils.appendRGBOpaquePaintColorBlock(
+                    keyContext,
+                    keyBuilder,
+                    uniformDataGatherer,
+                    textureDataGatherer
+            );
+        }
+    }
+
+    private void handlePaintAlpha(KeyContext keyContext,
+                                  KeyBuilder keyBuilder,
+                                  UniformDataGatherer uniformDataGatherer,
+                                  TextureDataGatherer textureDataGatherer) {
+        if (mShader == null && mPrimitiveBlender == null) {
+            // If there is no shader and no primitive blending the input to the colorFilter stage
+            // is just the premultiplied paint color.
+            FragmentUtils.appendSolidColorShaderBlock(
+                    keyContext,
+                    keyBuilder,
+                    uniformDataGatherer,
+                    textureDataGatherer,
+                    mR * mA, mG * mA, mB * mA, mA
+            );
+            return;
+        }
+
+        appendPaintColorToKey(keyContext, keyBuilder, uniformDataGatherer, textureDataGatherer);
+    }
+
+    public void appendToKey(KeyContext keyContext,
+                            KeyBuilder keyBuilder,
+                            UniformDataGatherer uniformDataGatherer,
+                            TextureDataGatherer textureDataGatherer) {
         //TODO
+        handlePaintAlpha(keyContext, keyBuilder, uniformDataGatherer, textureDataGatherer);
     }
 }

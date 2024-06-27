@@ -181,10 +181,10 @@ public abstract class GraphicsPipelineBuilder {
 
         assert (mProjectionUniform == INVALID_RESOURCE_HANDLE);
         mProjectionUniform = uniformHandler().addUniform(
-                null,
                 ShaderFlags.kVertex,
                 SLDataType.kFloat4,
-                UniformHandler.PROJECTION_NAME);
+                UniformHandler.PROJECTION_NAME,
+                -1);
 
         mFS.codeAppendf("// Stage %d, %s\n", mStageIndex, geomProc.name());
         mVS.codeAppendf("// Geometry Processor %s\n", geomProc.name());
@@ -228,7 +228,8 @@ public abstract class GraphicsPipelineBuilder {
     @UniformHandler.SamplerHandle
     private int emitSampler(int samplerState, short swizzle, String name) {
         ++mNumFragmentSamplers;
-        return uniformHandler().addSampler(samplerState, swizzle, name);
+        //return uniformHandler().addSampler(samplerState, swizzle, name);
+        return INVALID_RESOURCE_HANDLE;
     }
 
     void appendDecls(ArrayList<ShaderVar> vars, StringBuilder out) {
