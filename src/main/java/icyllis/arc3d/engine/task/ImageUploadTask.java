@@ -19,32 +19,33 @@
 
 package icyllis.arc3d.engine.task;
 
-import icyllis.arc3d.core.ColorSpace;
-import icyllis.arc3d.core.Rect2ic;
+import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
+import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nullable;
 
 public class ImageUploadTask extends Task {
 
     public interface UploadCondition {
+        //TODO consider close UploadCondition
 
         boolean PRESERVE = true;
         boolean DISCARD = false;
 
-        boolean shouldUpload(ImmediateContext context);
+        boolean needsUpload(ImmediateContext context);
 
         default boolean onUploadSubmitted() {
             return PRESERVE;
         }
     }
 
-    public static class OneTimeUploadCondition implements UploadCondition {
+    static class OnceUploadCondition implements UploadCondition {
 
-        public static final UploadCondition INSTANCE = new OneTimeUploadCondition();
+        public static final UploadCondition INSTANCE = new OnceUploadCondition();
 
         @Override
-        public boolean shouldUpload(ImmediateContext context) {
+        public boolean needsUpload(ImmediateContext context) {
             return true;
         }
 
@@ -54,39 +55,221 @@ public class ImageUploadTask extends Task {
         }
     }
 
+    public static UploadCondition uploadOnce() {
+        return OnceUploadCondition.INSTANCE;
+    }
+
+    public static class MipLevel {
+
+        public Object mBase;
+        public long mAddress;
+        public int mRowBytes;
+
+        public MipLevel() {
+        }
+
+        public MipLevel(Object base, long address, int rowBytes) {
+            mBase = base;
+            mAddress = address;
+            mRowBytes = rowBytes;
+        }
+
+        public MipLevel(Pixmap pixmap) {
+            mBase = pixmap.getBase();
+            mAddress = pixmap.getAddress();
+            mRowBytes = pixmap.getRowStride();
+        }
+
+        public MipLevel(Pixels pixels) {
+            mBase = pixels.getBase();
+            mAddress = pixels.getAddress();
+            mRowBytes = pixels.getRowStride();
+        }
+    }
+
+    @RawPtr
+    private Buffer mBuffer;
+    @SharedPtr
+    private ImageViewProxy mImageViewProxy;
+    private int mSrcColorType;
+    private int mDstColorType;
+    private BufferImageCopyData[] mCopyData;
     @Nullable
+    private UploadCondition mUploadCondition;
+
+    ImageUploadTask(@RawPtr Buffer buffer,
+                    @SharedPtr ImageViewProxy imageViewProxy,
+                    int srcColorType,
+                    int dstColorType,
+                    BufferImageCopyData[] copyData,
+                    @Nullable UploadCondition uploadCondition) {
+        mBuffer = buffer;
+        mImageViewProxy = imageViewProxy;
+        mSrcColorType = srcColorType;
+        mDstColorType = dstColorType;
+        mCopyData = copyData;
+        mUploadCondition = uploadCondition;
+    }
+
+    @Nullable
+    @SharedPtr
     public static ImageUploadTask make(RecordingContext context,
-                                       ImageViewProxy imageViewProxy,
+                                       @SharedPtr ImageViewProxy imageViewProxy,
                                        int srcColorType,
                                        int srcAlphaType,
                                        ColorSpace srcColorSpace,
                                        int dstColorType,
                                        int dstAlphaType,
                                        ColorSpace dstColorSpace,
+                                       MipLevel[] levels,
                                        Rect2ic dstRect,
                                        UploadCondition condition) {
+        assert imageViewProxy != null;
+        //TODO take account of Vulkan's optimalBufferCopyOffsetAlignment and
+        // optimalBufferCopyRowPitchAlignment
+
+        int mipLevelCount = levels.length;
+        // The assumption is either that we have no mipmaps, or that our rect is the entire texture
+        assert mipLevelCount == 1 ||
+                (dstRect.width() == imageViewProxy.getWidth() &&
+                        dstRect.height() == imageViewProxy.getHeight());
 
         if (dstRect.isEmpty()) {
+            imageViewProxy.unref();
+            return null;
+        }
+        for (int i = 0; i < mipLevelCount; i++) {
+            // We do not allow any gaps in the mip data
+            if (levels[i].mAddress == MemoryUtil.NULL) {
+                imageViewProxy.unref();
+                return null;
+            }
+        }
+
+        if (srcColorType == ColorInfo.CT_UNKNOWN ||
+                dstColorType == ColorInfo.CT_UNKNOWN) {
+            imageViewProxy.unref();
             return null;
         }
 
+        int actualColorType = (int) context.getCaps().getSupportedWriteColorType(
+                dstColorType,
+                imageViewProxy.getDesc(),
+                srcColorType
+        );
+        if (actualColorType != srcColorType) {
+            //TODO pixel conversion
+            imageViewProxy.unref();
+            return null;
+        }
 
+        int bpp = ColorInfo.bytesPerPixel(actualColorType);
 
+        long[] mipOffsetsAndRowBytes = new long[mipLevelCount * 2 + 2];
+        long combinedBufferSize = DataUtils.computeCombinedBufferSize(mipLevelCount,
+                bpp,
+                dstRect.width(),
+                dstRect.height(),
+                ColorInfo.COMPRESSION_NONE,
+                mipOffsetsAndRowBytes);
 
+        BufferViewInfo bufferInfo = new BufferViewInfo();
+        long writer = context.getUploadBufferManager().getUploadPointer(
+                combinedBufferSize,
+                /*alignment*/ mipOffsetsAndRowBytes[mipLevelCount * 2 + 1],
+                bufferInfo
+        );
+        if (writer == MemoryUtil.NULL) {
+            context.getLogger().warn("Failed to get write-mapped buffer for pixel upload of size {}",
+                    combinedBufferSize);
+            imageViewProxy.unref();
+            return null;
+        }
 
+        BufferImageCopyData[] copyData = new BufferImageCopyData[mipLevelCount];
 
+        int width = dstRect.width();
+        int height = dstRect.height();
+        for (int mipLevel = 0; mipLevel < mipLevelCount; mipLevel++) {
+            var level = levels[mipLevel];
 
+            int trimRowBytes = width * bpp;
+            int srcRowBytes = level.mRowBytes;
 
-        return null;
+            long mipOffset = mipOffsetsAndRowBytes[mipLevel * 2];
+            long dstRowBytes = mipOffsetsAndRowBytes[mipLevel * 2 + 1];
+
+            Object srcBase = level.mBase;
+            long srcAddr = level.mAddress;
+
+            PixelUtils.copyImage(
+                    srcBase,
+                    srcAddr,
+                    srcRowBytes,
+                    writer + mipOffset,
+                    dstRowBytes,
+                    trimRowBytes,
+                    height
+            );
+
+            copyData[mipLevel] = new BufferImageCopyData(
+                    bufferInfo.mOffset + mipOffset,
+                    dstRowBytes,
+                    mipLevel,
+                    0, 1,
+                    dstRect.x(), dstRect.y(), 0,
+                    width, height, 1
+            );
+
+            width = Math.max(1, width >> 1);
+            height = Math.max(1, height >> 1);
+        }
+
+        return new ImageUploadTask(
+                bufferInfo.mBuffer,
+                imageViewProxy, // move
+                srcColorType,
+                dstColorType,
+                copyData,
+                condition
+        );
+    }
+
+    @Override
+    protected void deallocate() {
+        mImageViewProxy = RefCnt.move(mImageViewProxy);
     }
 
     @Override
     public int prepare(RecordingContext context) {
-        return RESULT_FAILURE;
+        if (!mImageViewProxy.instantiateIfNonLazy(context.getResourceProvider())) {
+            return RESULT_FAILURE;
+        }
+        return RESULT_SUCCESS;
     }
 
     @Override
     public int execute(ImmediateContext context, CommandBuffer commandBuffer) {
-        return RESULT_FAILURE;
+        assert mImageViewProxy != null && mImageViewProxy.isInstantiated();
+
+        if (mUploadCondition != null && !mUploadCondition.needsUpload(context)) {
+            return RESULT_SUCCESS;
+        }
+
+        if (commandBuffer.copyBufferToImage(mBuffer,
+                mImageViewProxy.getImage(),
+                mSrcColorType,
+                mDstColorType,
+                mCopyData)) {
+            return RESULT_FAILURE;
+        }
+
+        commandBuffer.trackCommandBufferResource(mImageViewProxy.refImage());
+
+        if (mUploadCondition != null && mUploadCondition.onUploadSubmitted() == UploadCondition.DISCARD) {
+            return RESULT_DISCARD;
+        } else {
+            return RESULT_SUCCESS;
+        }
     }
 }

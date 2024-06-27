@@ -194,7 +194,7 @@ public class DynamicBufferManager {
                     MathUtil.alignTo(requiredBytes, target.mBlockSize),
                     Integer.MAX_VALUE
             );
-            target.mBuffer = mResourceProvider.createBuffer(bufferSize,
+            target.mBuffer = mResourceProvider.findOrCreateBuffer(bufferSize,
                     target.mUsage, label);
             target.mOffset = 0;
             if (target.mBuffer == null) {

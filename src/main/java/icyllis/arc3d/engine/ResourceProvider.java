@@ -441,10 +441,10 @@ public abstract class ResourceProvider {
         if (actualRowBytes < minRowBytes) {
             return null;
         }
-        int actualColorType = (int) mDevice.getCaps().getSupportedWriteColorType(
+        int actualColorType = /*(int) mDevice.getCaps().getSupportedWriteColorType(
                 dstColorType,
                 format,
-                srcColorType);
+                srcColorType)*/srcColorType;
         if (actualColorType != srcColorType) {
             return null;
         }
@@ -799,7 +799,7 @@ public abstract class ResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public final Buffer createBuffer(long size, int usage, String label) {
+    public final Buffer findOrCreateBuffer(long size, int usage, String label) {
         if (mDevice.isDeviceLost()) {
             return null;
         }

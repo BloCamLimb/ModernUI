@@ -23,6 +23,7 @@ import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.Image;
 import icyllis.arc3d.engine.*;
 import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.MemoryUtil;
 
 import java.util.Arrays;
 
@@ -241,6 +242,107 @@ public final class GLCommandBuffer extends CommandBuffer {
         // We only track the Framebuffer within RenderPass, no need to track CommandBuffer usage
         mHWFramebuffer = RefCnt.move(framebuffer);
         mRenderPassDesc = null;
+    }
+
+    @Override
+    protected boolean onCopyBufferToImage(@RawPtr Buffer srcBuffer,
+                                          @RawPtr Image dstImage,
+                                          int srcColorType,
+                                          int dstColorType,
+                                          BufferImageCopyData[] copyData) {
+        GLBuffer glBuffer = (GLBuffer) srcBuffer;
+        GLTexture glTexture = (GLTexture) dstImage;
+
+        long clientBufferPtr = glBuffer.getClientUploadBuffer();
+        if (glBuffer.getHandle() == 0 &&
+                clientBufferPtr == MemoryUtil.NULL) {
+            // lazy initialization failed
+            return false;
+        }
+        // there's either PBO or client array
+        assert glBuffer.getHandle() == 0 || clientBufferPtr == MemoryUtil.NULL;
+
+        int glFormat = glTexture.getFormat();
+        int srcFormat = mDevice.getCaps().getPixelsExternalFormat(
+                glFormat, dstColorType, srcColorType, /*write*/true
+        );
+        if (srcFormat == 0) {
+            return false;
+        }
+        int srcType = mDevice.getCaps().getPixelsExternalType(
+                glFormat, dstColorType, srcColorType
+        );
+        if (srcType == 0) {
+            return false;
+        }
+
+        int target = glTexture.getTarget();
+        boolean dsa = mDevice.getCaps().hasDSASupport();
+        int texName = glTexture.getHandle();
+        int boundTexture = 0;
+        //TODO not only 2D
+        if (!dsa) {
+            boundTexture = glGetInteger(GL_TEXTURE_BINDING_2D);
+            if (texName != boundTexture) {
+                glBindTexture(target, texName);
+            }
+        }
+
+        GLTextureMutableState mutableState = glTexture.getGLMutableState();
+        if (mutableState.baseMipmapLevel != 0) {
+            if (dsa) {
+                glTextureParameteri(texName, GL_TEXTURE_BASE_LEVEL, 0);
+            } else {
+                glTexParameteri(target, GL_TEXTURE_BASE_LEVEL, 0);
+            }
+            mutableState.baseMipmapLevel = 0;
+        }
+        int maxLevel = glTexture.getMipLevelCount() - 1; // minus base level
+        if (mutableState.maxMipmapLevel != maxLevel) {
+            if (dsa) {
+                glTextureParameteri(texName, GL_TEXTURE_MAX_LEVEL, maxLevel);
+            } else {
+                glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, maxLevel);
+            }
+            // Bug fixed by Arc3D
+            mutableState.maxMipmapLevel = maxLevel;
+        }
+
+        glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
+        glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+
+        int bpp = ColorInfo.bytesPerPixel(srcColorType);
+        assert (glBuffer.getUsage() & Engine.BufferUsageFlags.kUpload) != 0;
+        mDevice.getGL().glBindBuffer(GL_PIXEL_UNPACK_BUFFER, glBuffer.getHandle());
+
+        for (var data : copyData) {
+
+            int rowLength = (int) (data.mBufferRowBytes / bpp);
+            glPixelStorei(GL_UNPACK_ROW_LENGTH, rowLength);
+
+            if (dsa) {
+                glTextureSubImage2D(texName, data.mMipLevel,
+                        data.mX, data.mY, data.mWidth, data.mHeight,
+                        srcFormat, srcType,
+                        clientBufferPtr + data.mBufferOffset);
+            } else {
+                glTexSubImage2D(target, data.mMipLevel,
+                        data.mX, data.mY, data.mWidth, data.mHeight,
+                        srcFormat, srcType,
+                        clientBufferPtr + data.mBufferOffset);
+            }
+        }
+
+        mDevice.getGL().glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+
+        if (!dsa) {
+            if (texName != boundTexture) {
+                glBindTexture(target, boundTexture);
+            }
+        }
+
+        return false;
     }
 
     /**

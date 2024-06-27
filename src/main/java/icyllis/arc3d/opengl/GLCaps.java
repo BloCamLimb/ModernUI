@@ -1327,11 +1327,11 @@ public class GLCaps extends Caps {
     }
 
     @Override
-    public long getSupportedWriteColorType(int dstColorType, BackendFormat dstFormat, int srcColorType) {
+    public long getSupportedWriteColorType(int dstColorType, ImageDesc dstDesc, int srcColorType) {
         // We first try to find a supported write pixels ColorType that matches the data's
         // srcColorType. If that doesn't exist we will use any supported ColorType.
         int fallbackCT = ColorInfo.CT_UNKNOWN;
-        final FormatInfo formatInfo = getFormatInfo(dstFormat.getGLFormat());
+        final FormatInfo formatInfo = getFormatInfo(dstDesc.getGLFormat());
         boolean foundSurfaceCT = false;
         long transferOffsetAlignment = 0;
         if ((formatInfo.mFlags & FormatInfo.TRANSFERS_FLAG) != 0) {

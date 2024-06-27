@@ -119,6 +119,11 @@ public abstract class VulkanCommandBuffer extends CommandBuffer {
     }
 
     @Override
+    protected boolean onCopyBufferToImage(Buffer srcBuffer, Image dstImage, int srcColorType, int dstColorType, BufferImageCopyData[] copyData) {
+        return false;
+    }
+
+    @Override
     protected void begin() {
         try (var stack = MemoryStack.stackPush()) {
             var beginInfo = VkCommandBufferBeginInfo.malloc(stack)

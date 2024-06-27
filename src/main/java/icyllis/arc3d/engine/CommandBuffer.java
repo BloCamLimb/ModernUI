@@ -163,6 +163,25 @@ public abstract class CommandBuffer {
      */
     public abstract void endRenderPass();
 
+    public final boolean copyBufferToImage(@RawPtr Buffer srcBuffer,
+                                           @RawPtr Image dstImage,
+                                           int srcColorType,
+                                           int dstColorType,
+                                           BufferImageCopyData[] copyData) {
+        assert srcBuffer != null && dstImage != null && copyData.length > 0;
+        if (!dstImage.isSampledImage() && !dstImage.isStorageImage()) {
+            //TODO support copy to render buffer
+            return false;
+        }
+        return onCopyBufferToImage(srcBuffer, dstImage, srcColorType, dstColorType, copyData);
+    }
+
+    protected abstract boolean onCopyBufferToImage(@RawPtr Buffer srcBuffer,
+                                                   @RawPtr Image dstImage,
+                                                   int srcColorType,
+                                                   int dstColorType,
+                                                   BufferImageCopyData[] copyData);
+
     /**
      * Takes a Usage ref on the Resource that will be released when the command buffer
      * has finished execution.
