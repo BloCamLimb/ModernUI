@@ -19,7 +19,20 @@
 
 package icyllis.arc3d.core.shaders;
 
-import icyllis.arc3d.core.Shader;
-
 public class ColorShader extends Shader {
+
+    private final int mColor;
+
+    public ColorShader(int color) {
+        mColor = color;
+    }
+
+    @Override
+    public boolean isOpaque() {
+        return (mColor >>> 24) == 255;
+    }
+
+    public int getColor() {
+        return mColor;
+    }
 }

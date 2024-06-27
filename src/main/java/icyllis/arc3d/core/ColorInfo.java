@@ -365,6 +365,10 @@ public final class ColorInfo {
         };
     }
 
+    public static boolean colorTypeIsAlphaOnly(@ColorType int ct) {
+        return colorTypeChannelFlags(ct) == Color.COLOR_CHANNEL_FLAG_ALPHA;
+    }
+
     //@formatter:off
     public static String colorTypeToString(@ColorType int ct) {
         return switch (ct) {

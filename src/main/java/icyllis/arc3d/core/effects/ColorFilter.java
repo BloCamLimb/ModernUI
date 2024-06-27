@@ -17,9 +17,9 @@
  * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.core;
+package icyllis.arc3d.core.effects;
 
-import icyllis.arc3d.core.effects.ComposedColorFilter;
+import icyllis.arc3d.core.*;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

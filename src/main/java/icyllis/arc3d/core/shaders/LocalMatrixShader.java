@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,5 +19,35 @@
 
 package icyllis.arc3d.core.shaders;
 
-public abstract class GradientShader extends Shader {
+import icyllis.arc3d.core.*;
+
+public class LocalMatrixShader extends Shader {
+
+    @SharedPtr
+    private final Shader mBase;
+    private final Matrix mLocalMatrix;
+
+    LocalMatrixShader(@SharedPtr Shader base, Matrix localMatrix) {
+        mBase = base;
+        mLocalMatrix = localMatrix;
+    }
+
+    @Override
+    protected void deallocate() {
+        RefCnt.move(mBase);
+    }
+
+    @Override
+    public boolean isOpaque() {
+        return mBase.isOpaque();
+    }
+
+    @RawPtr
+    public Shader getBase() {
+        return mBase;
+    }
+
+    public Matrixc getLocalMatrix() {
+        return mLocalMatrix;
+    }
 }
