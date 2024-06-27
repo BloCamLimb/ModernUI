@@ -70,10 +70,6 @@ public class RoundRect {
     public RoundRect() {
     }
 
-    public RoundRect(Rect2fc other) {
-        setRect(other.left(), other.top(), other.right(), other.bottom());
-    }
-
     public RoundRect(RoundRect other) {
         mLeft = other.mLeft;
         mTop = other.mTop;
@@ -204,6 +200,10 @@ public class RoundRect {
         mRadiusUlx = mRadiusUly = mRadiusUrx = mRadiusUry =
                 mRadiusLrx = mRadiusLry = mRadiusLlx = mRadiusLly = 0;
         mType = kEmpty_Type;
+    }
+
+    public void setRect(Rect2fc other) {
+        setRect(other.left(), other.top(), other.right(), other.bottom());
     }
 
     public void setRect(float left, float top, float right, float bottom) {

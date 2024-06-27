@@ -45,6 +45,15 @@ public sealed class Key permits KeyBuilder {
         mHash = Arrays.hashCode(mData);
     }
 
+    public int size() {
+        return mData.length;
+    }
+
+    public final int get(int i) {
+        assert i < size();
+        return mData[i];
+    }
+
     @Override
     public int hashCode() {
         return mHash;

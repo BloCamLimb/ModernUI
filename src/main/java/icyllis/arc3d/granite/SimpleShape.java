@@ -36,10 +36,6 @@ public class SimpleShape extends RoundRect implements Geometry {
     public SimpleShape() {
     }
 
-    public SimpleShape(Rect2fc other) {
-        super(other);
-    }
-
     public SimpleShape(RoundRect other) {
         super(other);
     }
@@ -74,5 +70,20 @@ public class SimpleShape extends RoundRect implements Geometry {
             y0 -= newY * radius;
         }
         setLine(x0, y0, x1, y1, radius, cap == Paint.CAP_ROUND);
+    }
+
+    @Override
+    public void getBounds(Rect2f dest) {
+        super.getBounds(dest);
+        if (mType > kLast_Type) {
+            dest.sort();
+            float outset;
+            if (mType == kLine_Type) {
+                outset = MathUtil.SQRT2 * getSimpleRadiusX();
+            } else {
+                outset = getSimpleRadiusX();
+            }
+            dest.outset(outset, outset);
+        }
     }
 }

@@ -20,7 +20,6 @@
 package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.SLDataType;
-import icyllis.arc3d.engine.Device;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.granite.shading.UniformHandler;
 import icyllis.arc3d.granite.shading.VaryingHandler;
@@ -45,8 +44,9 @@ public class PipelineBuilder {
     public static final String SECONDARY_COLOR_OUTPUT_NAME = "FragColor1";
 
     private Caps mCaps;
+    private GraphicsPipelineDesc mDesc;
 
-    private GeometryStep mGeometryStep;
+    private FragmentNode[] mRootNodes;
 
     private VaryingHandler mVaryings;
     private UniformHandler mGeometryUniforms;
@@ -55,24 +55,40 @@ public class PipelineBuilder {
     private StringBuilder mVertCode;
     private StringBuilder mFragCode;
 
-    private boolean mSnippetRequirementFlags;
+    private int mSnippetRequirementFlags;
 
-    public PipelineBuilder(Caps caps, GeometryStep geometryStep) {
-        mCaps = caps;
-        mGeometryStep = geometryStep;
+    public PipelineBuilder(Device device, GraphicsPipelineDesc desc) {
+        mCaps = device.getCaps();
+        mDesc = desc;
 
-        mVaryings = new VaryingHandler(caps.shaderCaps());
-        mGeometryUniforms = new UniformHandler(caps.shaderCaps());
-        mFragmentUniforms = new UniformHandler(caps.shaderCaps());
+        mRootNodes = desc.getRootNodes(device.getShaderCodeSource());
+
+        for (FragmentNode root : mRootNodes) {
+            mSnippetRequirementFlags |= root.requirementFlags();
+        }
+
+        mVaryings = new VaryingHandler(mCaps.shaderCaps());
+        mGeometryUniforms = new UniformHandler(mCaps.shaderCaps());
+        mFragmentUniforms = new UniformHandler(mCaps.shaderCaps());
     }
 
     private boolean needsLocalCoords() {
-        return false;
+        return (mSnippetRequirementFlags & FragmentStage.kLocalCoords_ReqFlag) != 0;
+    }
+
+    private void getNodeUniforms(FragmentNode node) {
+        node.stage().generateUniforms(
+                mFragmentUniforms,
+                node.stageIndex()
+        );
+        for (var child : node.children()) {
+            getNodeUniforms(child);
+        }
     }
 
     public void build() {
 
-        mGeometryStep.emitVaryings(mVaryings);
+        mDesc.geomStep().emitVaryings(mVaryings);
         if (needsLocalCoords()) {
             mVaryings.addVarying(LOCAL_COORDS_VARYING_NAME, SLDataType.kFloat2);
         }
@@ -80,11 +96,15 @@ public class PipelineBuilder {
 
         // first add the 2D orthographic projection
         mGeometryUniforms.addUniform(
-                null,
                 Engine.ShaderFlags.kVertex,
                 SLDataType.kFloat4,
-                UniformHandler.PROJECTION_NAME);
-        mGeometryStep.emitUniforms(mGeometryUniforms);
+                UniformHandler.PROJECTION_NAME,
+                -1);
+        mDesc.geomStep().emitUniforms(mGeometryUniforms);
+
+        for (var root : mRootNodes) {
+            getNodeUniforms(root);
+        }
 
         buildFragmentShader();
         buildVertexShader();
@@ -96,10 +116,11 @@ public class PipelineBuilder {
         Formatter vs = new Formatter(out, Locale.ROOT);
 
         //// Uniforms
-        mGeometryUniforms.appendUniformDecls(Engine.ShaderFlags.kVertex, out);
+        mGeometryUniforms.appendUniformDecls(Engine.ShaderFlags.kVertex,
+                DrawPass.GEOMETRY_UNIFORM_BINDING, "GeometryUniforms", out);
 
         //// Attributes
-        var inputLayout = mGeometryStep.getInputLayout();
+        var inputLayout = mDesc.geomStep().getInputLayout();
         // assign sequential locations, this setup *MUST* be consistent with
         // creating VertexArrayObject or PipelineVertexInputState later
         int locationIndex = 0;
@@ -130,7 +151,7 @@ public class PipelineBuilder {
         //// Entry Point
         out.append("void main() {\n");
 
-        mGeometryStep.emitVertexGeomCode(vs, needsLocalCoords());
+        mDesc.geomStep().emitVertexGeomCode(vs, needsLocalCoords());
 
         // map into clip space
         vs.format("""
@@ -146,12 +167,15 @@ public class PipelineBuilder {
         out.append(mCaps.shaderCaps().mGLSLVersion.mVersionDecl);
         Formatter fs = new Formatter(out, Locale.ROOT);
         // If we're doing analytic coverage, we must also be doing shading.
-        assert !mGeometryStep.emitsCoverage() || mGeometryStep.performsShading();
+        assert !mDesc.geomStep().emitsCoverage() || mDesc.geomStep().performsShading();
 
         //// Uniforms
-        if (mGeometryStep.emitsCoverage()) {
-            mGeometryUniforms.appendUniformDecls(Engine.ShaderFlags.kFragment, out);
+        if (mDesc.geomStep().emitsCoverage()) {
+            mGeometryUniforms.appendUniformDecls(Engine.ShaderFlags.kFragment,
+                    DrawPass.GEOMETRY_UNIFORM_BINDING, "GeometryUniforms", out);
         }
+        mFragmentUniforms.appendUniformDecls(Engine.ShaderFlags.kFragment,
+                DrawPass.FRAGMENT_UNIFORM_BINDING, "FragmentUniforms", out);
         //TODO fragment uniforms
 
         //// Varyings
@@ -165,18 +189,27 @@ public class PipelineBuilder {
         primaryOutput.appendDecl(out);
         out.append(";\n");
 
+        ShaderCodeSource.emitDefinitions(mRootNodes, fs);
+
         //// Entry Point
         out.append("void main() {\n");
 
         out.append("vec4 initialColor;\n");
-        mGeometryStep.emitFragmentColorCode(fs, "initialColor");
+        mDesc.geomStep().emitFragmentColorCode(fs, "initialColor");
 
-        if (mGeometryStep.emitsCoverage()) {
+        String outputColor = "initialColor";
+        String localCoords = needsLocalCoords() ? LOCAL_COORDS_VARYING_NAME : "vec2(0)";
+        for (FragmentNode root : mRootNodes) {
+            outputColor = ShaderCodeSource.emitGlueCode(root,
+                    localCoords, outputColor, "vec4(1)", fs);
+        }
+
+        if (mDesc.geomStep().emitsCoverage()) {
             out.append("vec4 outputCoverage;\n");
-            mGeometryStep.emitFragmentCoverageCode(fs, "outputCoverage");
-            fs.format("%s = %s * %s;\n", PRIMARY_COLOR_OUTPUT_NAME, "initialColor", "outputCoverage");
+            mDesc.geomStep().emitFragmentCoverageCode(fs, "outputCoverage");
+            fs.format("%s = %s * %s;\n", PRIMARY_COLOR_OUTPUT_NAME, outputColor, "outputCoverage");
         } else {
-            fs.format("%s = %s;\n", PRIMARY_COLOR_OUTPUT_NAME, "initialColor");
+            fs.format("%s = %s;\n", PRIMARY_COLOR_OUTPUT_NAME, outputColor);
         }
 
         out.append("}");

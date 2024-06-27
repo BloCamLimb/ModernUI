@@ -312,6 +312,10 @@ public abstract class Device extends RefCnt implements MatrixProvider {
     public abstract void drawRect(Rect2fc r,
                                   Paint paint);
 
+    public abstract void drawCircle(float cx, float cy, float radius, Paint paint);
+
+    public abstract void drawRoundRect(RoundRect r, Paint paint);
+
     @Nullable
     protected Surface makeSurface(ImageInfo info) {
         return null;

@@ -66,7 +66,7 @@ public class GLGraphicsPipelineBuilder {
     }
 
     private void build() {
-        var info = mPipelineDesc.createGraphicsPipelineInfo(mDevice.getCaps());
+        var info = mPipelineDesc.createGraphicsPipelineInfo(mDevice);
         mPipelineLabel = info.mPipelineLabel;
         mInputLayout = info.mInputLayout;
         mFinalizedVertSource = toUTF8(info.mVertSource);

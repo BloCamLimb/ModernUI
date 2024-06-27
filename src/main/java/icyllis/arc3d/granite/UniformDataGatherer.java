@@ -44,6 +44,8 @@ public class UniformDataGatherer implements AutoCloseable {
     private int mCapacity;
     private int mPosition = 0;
 
+    private boolean mWrotePaintColor = false;
+
     private IntBuffer mCachedView = null;
 
     public UniformDataGatherer(int layout) {
@@ -79,6 +81,7 @@ public class UniformDataGatherer implements AutoCloseable {
         mLayout = layout;
         mRequiredAlignment = 0;
         mPosition = 0;
+        mWrotePaintColor = false;
     }
 
     /**
@@ -176,6 +179,18 @@ public class UniformDataGatherer implements AutoCloseable {
     public void writeMatrix4f(Matrix4 matrix) {
         long dst = append(16, 64);
         matrix.store(dst);
+    }
+
+    /**
+     * This is a specialized uniform writing entry point intended to deduplicate the paint
+     * color. If a more general system is required, the deduplication logic can be added to the
+     * other write methods (and this specialized method would be removed).
+     */
+    public void writePaintColor(float r, float g, float b, float a) {
+        if (!mWrotePaintColor) {
+            write4f(r, g, b, a);
+            mWrotePaintColor = true;
+        }
     }
 
     private long append(int alignment, int size) {

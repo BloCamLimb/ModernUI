@@ -21,9 +21,9 @@ package icyllis.arc3d.granite.shading;
 
 import icyllis.arc3d.core.SLDataType;
 import icyllis.arc3d.engine.*;
+import icyllis.arc3d.granite.ShaderCodeSource;
 import it.unimi.dsi.fastutil.shorts.ShortArrayList;
 
-import javax.annotation.Nullable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
@@ -50,15 +50,21 @@ public class UniformHandler {
 
     /**
      * The 2D orthographic projection matrix has only 4 values (others are identity),
-     * so this is a vec4. Projection maps device space into normalized device space.
+     * so this is a vec4. Projection maps world space into normalized device space.
      */
     public static final String PROJECTION_NAME = "SV_Projection";
+    /**
+     * The non-premultiplied paint color, when it cannot be simplified.
+     *
+     * @see icyllis.arc3d.granite.UniformDataGatherer#writePaintColor
+     */
+    public static final String PAINT_COLOR_NAME = "SV_PaintColor";
 
     public static class UniformInfo {
 
         public ShaderVar mVariable;
         public int mVisibility;
-        public Processor mOwner;
+        //public Processor mOwner;
         public String mRawName;
 
         /**
@@ -98,12 +104,12 @@ public class UniformHandler {
     public static final int SAMPLER_DESC_SET = 1;
     public static final int INPUT_DESC_SET = 2;
 
-    /**
+    /*
      * The bindings for the main descriptor set.
      */
-    public static final int UNIFORM_BINDING = 0; // will use Push Constants if possible
+    //public static final int UNIFORM_BINDING = 0; // will use Push Constants if possible
 
-    public static final String UNIFORM_BLOCK_NAME = "UniformBlock";
+    //public static final String UNIFORM_BLOCK_NAME = "UniformBlock";
 
     /**
      * The bindings for the input descriptor set.
@@ -131,7 +137,7 @@ public class UniformHandler {
      * should be accessible. At least one bit must be set. Geometry shader uniforms are not
      * supported at this time. The actual uniform name will be mangled. The final uniform name
      * can be retrieved by {@link #getUniformName(int)} with the UniformHandle. Use the
-     * {@link #addUniformArray(Processor, int, byte, String, int)} variant to add an array of
+     * {@link #addUniformArray(int, byte, String, int, int)} variant to add an array of
      * uniforms.
      * <p>
      * If the name starts with {@link #NO_MANGLE_PREFIX}, the uniform will be assigned to Render
@@ -139,28 +145,26 @@ public class UniformHandler {
      * the UniformHandle and its data manager may be only visible and internally handled by
      * implementations.
      *
-     * @param owner      the raw ptr to owner, may be null
      * @param visibility combination of ShaderFlags can be zero as placeholder
      * @param type       see {@link SLDataType}
      * @param name       the raw name (pre-mangling), cannot be null or empty
      * @return UniformHandle either from Render Block or Effect Block
      */
     @UniformHandle
-    public final int addUniform(Processor owner,
-                                int visibility,
+    public final int addUniform(int visibility,
                                 byte type,
-                                String name) {
+                                String name,
+                                int manglingSuffix) {
         assert (name != null && !name.isEmpty());
         assert ((visibility & ~(ShaderFlags.kVertex | ShaderFlags.kFragment)) == 0);
         assert (SLDataType.checkSLType(type));
         assert (!SLDataType.isCombinedSamplerType(type));
-        return internalAddUniformArray(owner, visibility, type, name, ShaderVar.kNonArray);
+        return internalAddUniformArray(visibility, type, name, ShaderVar.kNonArray, manglingSuffix);
     }
 
     /**
-     * Array version of {@link #addUniform(Processor, int, byte, String)}.
+     * Array version of {@link #addUniform(int, byte, String, int)}.
      *
-     * @param owner      the raw ptr to owner, may be null
      * @param visibility combination of ShaderFlags, can be zero as placeholder
      * @param type       see {@link SLDataType}
      * @param name       the raw name (pre-mangling), cannot be null or empty
@@ -168,17 +172,16 @@ public class UniformHandler {
      * @return UniformHandle either from Render Block or Effect Block
      */
     @UniformHandle
-    public final int addUniformArray(Processor owner,
-                                     int visibility,
+    public final int addUniformArray(int visibility,
                                      byte type,
                                      String name,
-                                     int arraySize) {
+                                     int arraySize,
+                                     int manglingSuffix) {
         assert (name != null && !name.isEmpty());
         assert ((visibility & ~(ShaderFlags.kVertex | ShaderFlags.kFragment)) == 0);
         assert (SLDataType.checkSLType(type));
         assert (!SLDataType.isCombinedSamplerType(type));
-        assert (arraySize >= 1);
-        return internalAddUniformArray(owner, visibility, type, name, arraySize);
+        return internalAddUniformArray(visibility, type, name, arraySize, manglingSuffix);
     }
 
     /**
@@ -207,7 +210,7 @@ public class UniformHandler {
 
     // Looks up a uniform that was added by 'owner' with the given 'rawName' (pre-mangling).
     // If there is no such uniform, null is returned.
-    @Nullable
+    /*@Nullable
     public final ShaderVar getUniformMapping(Processor owner, String rawName) {
         for (int i = numUniforms() - 1; i >= 0; i--) {
             final UniformInfo u = uniform(i);
@@ -216,11 +219,11 @@ public class UniformHandler {
             }
         }
         return null;
-    }
+    }*/
 
     // Like getUniformMapping(), but if the uniform is found it also marks it as accessible in
     // the vertex shader.
-    @Nullable
+    /*@Nullable
     public final ShaderVar liftUniformToVertexShader(Processor owner, String rawName) {
         for (int i = numUniforms() - 1; i >= 0; i--) {
             final UniformInfo u = uniform(i);
@@ -233,19 +236,30 @@ public class UniformHandler {
         // matrices that are uniform are treated the same for most of the code. When the sample
         // matrix expression can't be found as a uniform, we can infer it's a constant.
         return null;
-    }
+    }*/
 
     @UniformHandle
-    protected int internalAddUniformArray(Processor owner,
-                                                   int visibility,
-                                                   byte type,
-                                                   String name,
-                                                   int arraySize) {
+    protected int internalAddUniformArray(int visibility,
+                                          byte type,
+                                          String name,
+                                          int arraySize,
+                                          int manglingSuffix) {
         assert (SLDataType.canBeUniformValue(type));
         assert (visibility != 0);
 
         assert (!name.contains("__"));
-        String resolvedName = name;
+        String resolvedName;
+        if (name.startsWith(NO_MANGLE_PREFIX)) {
+            // deduplicate system variables
+            for (int i = 0; i < mUniforms.size(); i++) {
+                if (mUniforms.get(i).mRawName.equals(name)) {
+                    return i;
+                }
+            }
+            resolvedName = name;
+        } else {
+            resolvedName = ShaderCodeSource.getMangledName(name, manglingSuffix);
+        }
         assert (!resolvedName.contains("__"));
 
         int handle = mUniforms.size();
@@ -256,7 +270,6 @@ public class UniformHandler {
                 ShaderVar.kNone_TypeModifier,
                 arraySize);
         tempInfo.mVisibility = visibility;
-        tempInfo.mOwner = owner;
         tempInfo.mRawName = name;
 
         mUniforms.add(tempInfo);
@@ -264,10 +277,12 @@ public class UniformHandler {
     }
 
     @SamplerHandle
-    protected int addSampler(int samplerState, short swizzle, String name) {
+    public int addSampler(byte type,
+                          String name,
+                          int manglingSuffix) {
         assert (name != null && !name.isEmpty());
 
-        String resolvedName = name;
+        String resolvedName = ShaderCodeSource.getMangledName(name, manglingSuffix);
 
         int handle = mSamplers.size();
 
@@ -282,19 +297,15 @@ public class UniformHandler {
 
         var tempInfo = new UniformInfo();
         tempInfo.mVariable = new ShaderVar(resolvedName,
-                SLDataType.kSampler2D,
+                type,
                 ShaderVar.kUniform_TypeModifier,
                 ShaderVar.kNonArray,
                 layoutQualifier,
                 "");
         tempInfo.mVisibility = Engine.ShaderFlags.kFragment;
-        tempInfo.mOwner = null;
         tempInfo.mRawName = name;
 
         mSamplers.add(tempInfo);
-        mSamplerSwizzles.add(swizzle);
-        assert (mSamplers.size() == mSamplerSwizzles.size());
-
         return handle;
     }
 
@@ -329,14 +340,14 @@ public class UniformHandler {
 
         mReorderedUniforms = new ArrayList<>(mUniforms);
         // we can only use std140 layout in OpenGL
-        var cmp = Comparator.comparingInt(
+        /*var cmp = Comparator.comparingInt(
                 (UniformInfo u) -> getAlignmentMask(
                         u.mVariable.getType(),
                         !u.mVariable.isArray(),
                         Std140Layout)
-        );
+        );*/
         // larger alignment first, stable sort
-        mReorderedUniforms.sort(cmp.reversed());
+        //mReorderedUniforms.sort(cmp.reversed());
 
         for (UniformInfo u : mReorderedUniforms) {
             int offset = getAlignedOffset(mCurrentOffset,
@@ -360,7 +371,7 @@ public class UniformHandler {
     /**
      * @param visibility one of ShaderFlags
      */
-    public void appendUniformDecls(int visibility, StringBuilder out) {
+    public void appendUniformDecls(int visibility, int binding, String blockName, StringBuilder out) {
         assert (visibility != 0);
         finishAndReorderUniforms();
 
@@ -384,10 +395,10 @@ public class UniformHandler {
             if (mShaderCaps.mUseUniformBinding) {
                 // ARB_shading_language_420pack
                 out.append(", binding = ");
-                out.append(UNIFORM_BINDING);
+                out.append(binding);
             }
             out.append(") uniform ");
-            out.append(UNIFORM_BLOCK_NAME);
+            out.append(blockName);
             out.append(" {\n");
             for (var uniform : mReorderedUniforms) {
                 uniform.mVariable.appendDecl(out);

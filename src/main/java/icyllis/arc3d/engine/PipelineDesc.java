@@ -48,7 +48,7 @@ public abstract class PipelineDesc {
     /**
      * Generates all info used to create graphics pipeline.
      */
-    public GraphicsPipelineInfo createGraphicsPipelineInfo(Caps caps) {
+    public GraphicsPipelineInfo createGraphicsPipelineInfo(Device device) {
         return null;
     }
 

@@ -175,6 +175,16 @@ public class NoPixelsDevice extends Device {
     public void drawRect(Rect2fc r, Paint paint) {
     }
 
+    @Override
+    public void drawCircle(float cx, float cy, float radius, Paint paint) {
+
+    }
+
+    @Override
+    public void drawRoundRect(RoundRect r, Paint paint) {
+
+    }
+
     /**
      * The ConservativeClip computes the maximum rectangular bounds of the actual clipping region
      * for quick rejection. This can skip operations that have no rendering results.

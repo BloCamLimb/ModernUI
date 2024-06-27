@@ -177,6 +177,20 @@ public sealed interface Rect2fc permits Rect2f {
     boolean contains(float x, float y);
 
     /**
+     * Returns true if the 4 specified sides of a rectangle are inside or equal
+     * to this rectangle. i.e. is this rectangle a superset of the specified
+     * rectangle. An empty rectangle never contains another rectangle.
+     *
+     * @param left   the left side of the rectangle being tested for containment
+     * @param top    the top of the rectangle being tested for containment
+     * @param right  the right side of the rectangle being tested for containment
+     * @param bottom the bottom of the rectangle being tested for containment
+     * @return true if the 4 specified sides of a rectangle are inside or
+     * equal to this rectangle
+     */
+    boolean contains(float left, float top, float right, float bottom);
+
+    /**
      * Returns true if the specified rectangle r is inside or equal to this
      * rectangle. An empty rectangle never contains another rectangle.
      *

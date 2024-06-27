@@ -508,4 +508,19 @@ public final class ImageViewProxy extends RefCnt {
         }
         return mDesc.isMipmapped();
     }
+
+    @Override
+    public String toString() {
+        return "ImageViewProxy{" +
+                "mDesc=" + mDesc +
+                ", mImage=" + mImage +
+                ", mOrigin=" + mOrigin +
+                ", mSwizzle=" + Swizzle.toString(mSwizzle) +
+                ", mLabel='" + mLabel + '\'' +
+                ", mBudgeted=" + mBudgeted +
+                ", mVolatile=" + mVolatile +
+                ", mLazyDimensions=" + mLazyDimensions +
+                ", mLazyInstantiateCallback=" + mLazyInstantiateCallback +
+                '}';
+    }
 }

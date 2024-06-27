@@ -48,11 +48,12 @@ public final class SurfaceDevice extends icyllis.arc3d.core.Device {
         mContext = context;
         mSDC = sdc;
         mClipStack = new ClipStack(this);
-        mBoundsManager = GridBoundsManager.makeRes(
+        /*mBoundsManager = GridBoundsManager.makeRes(
                 width(), height(),
                 16, 32
-        );
+        );*/
         //mBoundsManager = new SimpleBoundsManager();
+        mBoundsManager = new FullBoundsManager();
     }
 
     @SharedPtr
@@ -194,8 +195,7 @@ public final class SurfaceDevice extends icyllis.arc3d.core.Device {
         var shape = new SimpleShape();
         shape.setLine(x0, y0, x1, y1, cap, width);
         draw.mGeometry = shape;
-        mTmpOpBounds.set(x0, y0, x1, y1);
-        mTmpOpBounds.sort();
+        shape.getBounds(mTmpOpBounds);
         drawGeometry(draw, mTmpOpBounds, paint, mSimpleBoxRenderer);
     }
 
@@ -203,17 +203,30 @@ public final class SurfaceDevice extends icyllis.arc3d.core.Device {
     public void drawRect(Rect2fc r, Paint paint) {
         Draw draw = new Draw();
         draw.mTransform = getLocalToDevice();
-        draw.mGeometry = new SimpleShape(r);
+        var shape = new SimpleShape();
+        shape.setRect(r);
+        draw.mGeometry = shape;
         mTmpOpBounds.set(r);
         drawGeometry(draw, mTmpOpBounds, paint, mSimpleBoxRenderer);
     }
 
+    @Override
+    public void drawCircle(float cx, float cy, float radius, Paint paint) {
+        Draw draw = new Draw();
+        draw.mTransform = getLocalToDevice();
+        var shape = new SimpleShape();
+        shape.setEllipse(cx - radius, cy - radius, cx + radius, cy + radius);
+        draw.mGeometry = shape;
+        shape.getBounds(mTmpOpBounds);
+        drawGeometry(draw, mTmpOpBounds, paint, mSimpleBoxRenderer);
+    }
+
+    @Override
     public void drawRoundRect(RoundRect r, Paint paint) {
         Draw draw = new Draw();
         draw.mTransform = getLocalToDevice();
         draw.mGeometry = new SimpleShape(r);
-
-        mTmpOpBounds.set(r.mLeft, r.mTop, r.mRight, r.mBottom);
+        r.getRect(mTmpOpBounds);
         drawGeometry(draw, mTmpOpBounds, paint, mSimpleBoxRenderer);
     }
 

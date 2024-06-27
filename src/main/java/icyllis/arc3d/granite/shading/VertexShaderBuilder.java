@@ -55,7 +55,7 @@ public class VertexShaderBuilder extends ShaderBuilderBase implements VertexGeom
             locationIndex += locations;
         }
 
-        mPipelineBuilder.uniformHandler().appendUniformDecls(ShaderFlags.kVertex, uniforms());
+        mPipelineBuilder.uniformHandler().appendUniformDecls(ShaderFlags.kVertex, 0, "UniformBlock", uniforms());
         mPipelineBuilder.appendDecls(mInputs, inputs());
         mPipelineBuilder.varyingHandler().getVertDecls(outputs());
     }
