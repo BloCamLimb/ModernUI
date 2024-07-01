@@ -169,11 +169,33 @@ public class UniformDataGatherer implements AutoCloseable {
     public void writeMatrix3f(Matrixc matrix) {
         long dst = append(16, 48);
         matrix.storeAligned(dst);
+        memPutInt(dst + 12, 0);
+        memPutInt(dst + 28, 0);
+        memPutInt(dst + 44, 0);
     }
 
     public void writeMatrix3f(Matrix3 matrix) {
         long dst = append(16, 48);
         matrix.storeAligned(dst);
+        memPutInt(dst + 12, 0);
+        memPutInt(dst + 28, 0);
+        memPutInt(dst + 44, 0);
+    }
+
+    public void writeMatrix3f(int offset, float[] value) {
+        long dst = append(16, 48);
+        memPutFloat(dst, value[offset]);
+        memPutFloat(dst + 4, value[offset + 1]);
+        memPutFloat(dst + 8, value[offset + 2]);
+        memPutInt(dst + 12, 0);
+        memPutFloat(dst + 16, value[offset + 3]);
+        memPutFloat(dst + 20, value[offset + 4]);
+        memPutFloat(dst + 24, value[offset + 5]);
+        memPutInt(dst + 28, 0);
+        memPutFloat(dst + 32, value[offset + 6]);
+        memPutFloat(dst + 36, value[offset + 7]);
+        memPutFloat(dst + 40, value[offset + 8]);
+        memPutInt(dst + 44, 0);
     }
 
     public void writeMatrix4f(Matrix4 matrix) {

@@ -19,5 +19,5 @@
 
 package icyllis.arc3d.core.shaders;
 
-public class RadialGradient extends UnivariateGradientShader {
+public class RadialGradient extends GradientShader1D {
 }

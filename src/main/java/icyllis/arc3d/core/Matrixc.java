@@ -305,6 +305,29 @@ public sealed interface Matrixc permits Matrix {
     void storeAligned(@NativeType("void *") long p);
 
     /**
+     * Converts this 3x3 matrix to 4x4 matrix, the third row and column are identity.
+     * <pre>{@code
+     * [ a b c ]      [ a b 0 c ]
+     * [ d e f ]  ->  [ d e 0 f ]
+     * [ g h i ]      [ 0 0 1 0 ]
+     *                [ g h 0 i ]
+     * }</pre>
+     */
+    void toMatrix4(@Nonnull Matrix4 dest);
+
+    /**
+     * Converts this 3x3 matrix to 4x4 matrix, the third row and column are identity.
+     * <pre>{@code
+     * [ a b c ]      [ a b 0 c ]
+     * [ d e f ]  ->  [ d e 0 f ]
+     * [ g h i ]      [ 0 0 1 0 ]
+     *                [ g h 0 i ]
+     * }</pre>
+     */
+    @Nonnull
+    Matrix4 toMatrix4();
+
+    /**
      * Compute the inverse of this matrix. The <var>dest</var> matrix will be
      * the inverse of this matrix if this matrix is invertible, otherwise its
      * values will be preserved.
@@ -312,7 +335,6 @@ public sealed interface Matrixc permits Matrix {
      * @param dest the destination matrix, may be null
      * @return {@code true} if this matrix is invertible.
      */
-    @CheckReturnValue
     boolean invert(@Nullable Matrix dest);
 
     /**
