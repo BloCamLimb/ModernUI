@@ -24,8 +24,7 @@ import icyllis.arc3d.engine.*;
 import icyllis.arc3d.granite.shading.UniformHandler;
 import icyllis.arc3d.granite.shading.VaryingHandler;
 
-import java.util.Formatter;
-import java.util.Locale;
+import java.util.*;
 
 /**
  * Build AST for graphics pipeline.
@@ -189,7 +188,7 @@ public class PipelineBuilder {
         primaryOutput.appendDecl(out);
         out.append(";\n");
 
-        ShaderCodeSource.emitDefinitions(mRootNodes, fs);
+        ShaderCodeSource.emitDefinitions(mRootNodes, new IdentityHashMap<>(), fs);
 
         //// Entry Point
         out.append("void main() {\n");

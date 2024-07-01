@@ -42,8 +42,14 @@ public class FragmentStage extends Processor {
             kSolidColorShader_BuiltinStageID = 2,
             kRGBOpaquePaintColor_BuiltinStageID = 3,
             kAlphaOnlyPaintColor_BuiltinStageID = 4,
-            kLocalMatrixShader_BuiltinStageID = 5,
-            kHWImageShader_BuiltinStageID = 6;
+            kLinearGradientShader4_BuiltinStageID = 5,
+            kLinearGradientShader8_BuiltinStageID = 6,
+            kRadialGradientShader4_BuiltinStageID = 7,
+            kRadialGradientShader8_BuiltinStageID = 8,
+            kAngularGradientShader4_BuiltinStageID = 9,
+            kAngularGradientShader8_BuiltinStageID = 10,
+            kLocalMatrixShader_BuiltinStageID = 16,
+            kHWImageShader_BuiltinStageID = 17;
 
     public static final int
             kLast_BuiltinStageID = kHWImageShader_BuiltinStageID;
@@ -73,6 +79,7 @@ public class FragmentStage extends Processor {
     public record Sampler(byte type, String name) {
     }
 
+    public static final String[] NO_FUNCTIONS = new String[0];
     public static final Uniform[] NO_UNIFORMS = new Uniform[0];
     public static final Sampler[] NO_SAMPLERS = new Sampler[0];
 
@@ -93,7 +100,8 @@ public class FragmentStage extends Processor {
     public final String mName;
     public final int mRequirementFlags;
     public final String mStaticFunctionName;
-    public final String mStaticFunctionBody;
+    // will use String's reference identity
+    public final String[] mRequiredFunctions;
     public final Uniform[] mUniforms;
     public final Sampler[] mSamplers;
     public final GenerateExpression mExpressionGenerator;
@@ -101,7 +109,7 @@ public class FragmentStage extends Processor {
 
     public FragmentStage(String name, int requirementFlags,
                          String staticFunctionName,
-                         String staticFunctionBody,
+                         String[] requiredFunctions, // will use String's reference identity
                          Uniform[] uniforms, Sampler[] samplers,
                          GenerateExpression expressionGenerator,
                          int numChildren) {
@@ -109,7 +117,7 @@ public class FragmentStage extends Processor {
         mName = name;
         mRequirementFlags = requirementFlags;
         mStaticFunctionName = staticFunctionName;
-        mStaticFunctionBody = staticFunctionBody;
+        mRequiredFunctions = requiredFunctions;
         mUniforms = uniforms;
         mSamplers = samplers;
         mExpressionGenerator = expressionGenerator;
