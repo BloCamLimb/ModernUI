@@ -34,7 +34,7 @@ public class LocalMatrixShader extends Shader {
 
     @Override
     protected void deallocate() {
-        RefCnt.move(mBase);
+        mBase.unref();
     }
 
     @Override

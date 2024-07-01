@@ -77,9 +77,10 @@ public class DrawPass implements AutoCloseable {
 
     // backing store's width/height may not equal to device's width/height
     // currently we use the backing dimensions for scissor and viewport
+    // all the parameters are raw pointers and read-only
     @Nullable
     public static DrawPass make(RecordingContext context,
-                                List<Draw> drawList,
+                                ObjectArrayList<Draw> drawList,
                                 int numSteps,
                                 ImageViewProxy targetView,
                                 ImageInfo deviceInfo) {
@@ -134,6 +135,8 @@ public class DrawPass implements AutoCloseable {
                     projW = -projW;
                 }
 
+                var keyContext = new KeyContext(context, deviceInfo);
+
                 for (var draw : drawList) {
 
                     for (int stepIndex = 0; stepIndex < draw.mRenderer.numSteps(); stepIndex++) {
@@ -157,7 +160,8 @@ public class DrawPass implements AutoCloseable {
                             if (!(step.handlesSolidColor() && draw.mPaintParams.isSolidColor())) {
                                 // Add fragment stages if this is the step that performs shading,
                                 // and not a depth-only draw, and cannot simplify for solid color draw
-                                draw.mPaintParams.appendToKey(null,
+                                keyContext.reset(draw.mPaintParams);
+                                draw.mPaintParams.appendToKey(keyContext,
                                         paintParamsKeyBuilder,
                                         uniformDataGatherer,
                                         textureDataGatherer);

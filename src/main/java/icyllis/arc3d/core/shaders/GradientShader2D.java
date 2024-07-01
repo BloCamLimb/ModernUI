@@ -19,5 +19,11 @@
 
 package icyllis.arc3d.core.shaders;
 
-public abstract class UnivariateGradientShader extends GradientShader {
+/**
+ * Base class for gradient colors that can be represented by a 2D function,
+ * it generates two parameters for interpolation:
+ * <pre>grad_layout(x,y) -> vec2</pre>
+ * Such as bilinear gradient (rectangular), polar gradient.
+ */
+public abstract class GradientShader2D extends GradientShader {
 }

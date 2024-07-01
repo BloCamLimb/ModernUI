@@ -19,5 +19,8 @@
 
 package icyllis.arc3d.core.shaders;
 
-public class AngularGradient extends UnivariateGradientShader {
+/**
+ * The angular gradient, also known as sweep gradient, conic gradient.
+ */
+public class AngularGradient extends GradientShader1D {
 }

@@ -27,8 +27,9 @@ public class TextureTracker {
 
     private int[] mLastBinding = IntArrays.EMPTY_ARRAY;
 
+    // the array is not de-duplicated, so compare their contents
     public boolean setCurrentTextures(int[] textures) {
-        if (textures.length != 0 && Arrays.equals(mLastBinding, textures)) {
+        if (textures.length != 0 && !Arrays.equals(mLastBinding, textures)) {
             mLastBinding = textures;
             return true;
         }

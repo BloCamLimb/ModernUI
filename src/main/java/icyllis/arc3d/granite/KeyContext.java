@@ -19,6 +19,7 @@
 
 package icyllis.arc3d.granite;
 
+import icyllis.arc3d.core.ImageInfo;
 import icyllis.arc3d.engine.RecordingContext;
 
 import javax.annotation.Nullable;
@@ -26,15 +27,20 @@ import javax.annotation.Nullable;
 public class KeyContext {
 
     private final RecordingContext mContext;
+    private final ImageInfo mTargetInfo;
     // color components using non-premultiplied alpha
-    private final float mR; // 0..1
-    private final float mG; // 0..1
-    private final float mB; // 0..1
-    private final float mA; // 0..1
+    private float mR; // 0..1
+    private float mG; // 0..1
+    private float mB; // 0..1
+    private float mA; // 0..1
 
     public KeyContext(RecordingContext context,
-                      PaintParams paintParams) {
+                      ImageInfo targetInfo) {
         mContext = context;
+        mTargetInfo = targetInfo;
+    }
+
+    public void reset(PaintParams paintParams) {
         //TODO color space transformation
         mR = paintParams.r();
         mG = paintParams.g();
@@ -76,5 +82,9 @@ public class KeyContext {
      */
     public float a() {
         return mA;
+    }
+
+    public ImageInfo targetInfo() {
+        return mTargetInfo;
     }
 }
