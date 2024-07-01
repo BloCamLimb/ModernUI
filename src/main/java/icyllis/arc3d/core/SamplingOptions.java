@@ -22,20 +22,23 @@ package icyllis.arc3d.core;
 public class SamplingOptions {
 
     // FilterModes and MipmapModes sync with SamplerDesc::Filter and SamplerDesc::MipmapMode
+
+    //@formatter:off
     /**
      * Filter modes.
      */
     public static final int
             FILTER_MODE_NEAREST = 0, // single sample point (nearest neighbor)
-            FILTER_MODE_LINEAR = 1; // interpolate between 2x2 sample points (bilinear interpolation)
+            FILTER_MODE_LINEAR  = 1; // interpolate between 2x2 sample points (bilinear interpolation)
 
     /**
      * Mipmap modes.
      */
     public static final int
-            MIPMAP_MODE_NONE = 0, // ignore mipmap levels, sample from the "base"
+            MIPMAP_MODE_NONE    = 0, // ignore mipmap levels, sample from the "base"
             MIPMAP_MODE_NEAREST = 1, // sample from the nearest level
-            MIPMAP_MODE_LINEAR = 2; // interpolate between the two nearest levels
+            MIPMAP_MODE_LINEAR  = 2; // interpolate between the two nearest levels
+    //@formatter:on
 
     public final int mMinFilter;
     public final int mMagFilter;

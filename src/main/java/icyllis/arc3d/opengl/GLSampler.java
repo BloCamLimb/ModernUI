@@ -25,7 +25,7 @@ import icyllis.arc3d.engine.*;
 import javax.annotation.Nullable;
 
 import static org.lwjgl.opengl.GL11C.*;
-import static org.lwjgl.opengl.GL12C.GL_CLAMP_TO_EDGE;
+import static org.lwjgl.opengl.GL12C.*;
 import static org.lwjgl.opengl.GL13C.GL_CLAMP_TO_BORDER;
 import static org.lwjgl.opengl.GL14C.GL_MIRRORED_REPEAT;
 import static org.lwjgl.opengl.GL46C.GL_TEXTURE_MAX_ANISOTROPY;
@@ -64,16 +64,21 @@ public final class GLSampler extends Sampler {
         int wrapY = address_mode_to_wrap(
                 desc.getAddressModeY()
         );
+        int wrapZ = address_mode_to_wrap(
+                desc.getAddressModeZ()
+        );
         device.getGL().glSamplerParameteri(sampler, GL_TEXTURE_MAG_FILTER, magFilter);
         device.getGL().glSamplerParameteri(sampler, GL_TEXTURE_MIN_FILTER, minFilter);
         device.getGL().glSamplerParameteri(sampler, GL_TEXTURE_WRAP_S, wrapX);
         device.getGL().glSamplerParameteri(sampler, GL_TEXTURE_WRAP_T, wrapY);
+        device.getGL().glSamplerParameteri(sampler, GL_TEXTURE_WRAP_R, wrapZ);
         if (device.getCaps().hasAnisotropySupport()) {
             float maxAnisotropy = Math.min(desc.getMaxAnisotropy(),
                     device.getCaps().maxTextureMaxAnisotropy());
             assert (maxAnisotropy >= 1.0f);
             device.getGL().glSamplerParameterf(sampler, GL_TEXTURE_MAX_ANISOTROPY, maxAnisotropy);
         }
+        // border color is (0,0,0,0) by default
         return new GLSampler(context, sampler);
     }
 

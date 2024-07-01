@@ -20,6 +20,8 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.MathUtil;
+import icyllis.arc3d.core.SamplingOptions;
+import icyllis.arc3d.core.shaders.ImageShader;
 import org.jetbrains.annotations.Contract;
 
 import javax.annotation.concurrent.Immutable;
@@ -66,13 +68,17 @@ public final class SamplerDesc implements IResourceKey {
             ADDRESS_MODE_MIRRORED_REPEAT = 1,
             ADDRESS_MODE_CLAMP_TO_EDGE   = 2,
             ADDRESS_MODE_CLAMP_TO_BORDER = 3;
+    static final int
+            ADDRESS_MODE_LAST = ADDRESS_MODE_CLAMP_TO_BORDER;
     //@formatter:on
 
     /**
-     * Default value. mag linear, min linear, mipmap_none, address_clamp_to_edge, anisotropy=1.
+     * Default value. mag filter linear, min filter linear, mipmap mode none,
+     * address mode clamp to edge, max anisotropy 1.
      */
     public static final SamplerDesc DEFAULT = new SamplerDesc(0x1222011);
 
+    //@formatter:off
     static {
         assert DEFAULT.getMagFilter() == FILTER_LINEAR;
         assert DEFAULT.getMinFilter() == FILTER_LINEAR;
@@ -81,7 +87,28 @@ public final class SamplerDesc implements IResourceKey {
         assert DEFAULT.getAddressModeY() == ADDRESS_MODE_CLAMP_TO_EDGE;
         assert DEFAULT.getAddressModeZ() == ADDRESS_MODE_CLAMP_TO_EDGE;
         assert DEFAULT.getMaxAnisotropy() == 1;
+
+        // We assume these enum constants everywhere
+
+        //noinspection ConstantValue
+        assert
+                FILTER_NEAREST == SamplingOptions.FILTER_MODE_NEAREST &&
+                FILTER_LINEAR  == SamplingOptions.FILTER_MODE_LINEAR  ;
+
+        //noinspection ConstantValue
+        assert
+                MIPMAP_MODE_NONE    == SamplingOptions.MIPMAP_MODE_NONE    &&
+                MIPMAP_MODE_NEAREST == SamplingOptions.MIPMAP_MODE_NEAREST &&
+                MIPMAP_MODE_LINEAR  == SamplingOptions.MIPMAP_MODE_LINEAR  ;
+
+        //noinspection ConstantValue
+        assert
+                ADDRESS_MODE_REPEAT          == ImageShader.TILE_MODE_REPEAT &&
+                ADDRESS_MODE_MIRRORED_REPEAT == ImageShader.TILE_MODE_MIRROR &&
+                ADDRESS_MODE_CLAMP_TO_EDGE   == ImageShader.TILE_MODE_CLAMP  &&
+                ADDRESS_MODE_CLAMP_TO_BORDER == ImageShader.TILE_MODE_DECAL  ;
     }
+    //@formatter:on
 
     private final int mState;
 
@@ -92,7 +119,7 @@ public final class SamplerDesc implements IResourceKey {
     /**
      * Turn the sampler state into an integer for use as a key.
      *
-     * @param filter the filter
+     * @param filter the filter for mag and min
      */
     @Contract(pure = true)
     public static SamplerDesc make(int filter) {
@@ -103,7 +130,7 @@ public final class SamplerDesc implements IResourceKey {
     /**
      * Turn the sampler state into an integer for use as a key.
      *
-     * @param filter the filter
+     * @param filter the filter for mag and min
      * @param mipmap the mipmap mode
      */
     @Contract(pure = true)
@@ -119,9 +146,9 @@ public final class SamplerDesc implements IResourceKey {
     /**
      * Turn the sampler state into an integer for use as a key.
      *
-     * @param filter  the filter
+     * @param filter  the filter for mag and min
      * @param mipmap  the mipmap mode
-     * @param address the address mode
+     * @param address the address mode for x, y and z
      */
     @Contract(pure = true)
     public static SamplerDesc make(int filter, int mipmap, int address) {
@@ -136,6 +163,7 @@ public final class SamplerDesc implements IResourceKey {
      * @param mipmapMode   the mipmap mode
      * @param addressModeX the address mode X
      * @param addressModeY the address mode Y
+     * @param addressModeZ the address mode Z
      */
     @Contract(pure = true)
     public static SamplerDesc make(int magFilter, int minFilter, int mipmapMode,
@@ -147,9 +175,9 @@ public final class SamplerDesc implements IResourceKey {
         assert (mipmapMode == MIPMAP_MODE_NONE ||
                 mipmapMode == MIPMAP_MODE_NEAREST ||
                 mipmapMode == MIPMAP_MODE_LINEAR);
-        assert (addressModeX >= 0 && addressModeX <= ADDRESS_MODE_CLAMP_TO_BORDER);
-        assert (addressModeY >= 0 && addressModeY <= ADDRESS_MODE_CLAMP_TO_BORDER);
-        assert (addressModeZ >= 0 && addressModeZ <= ADDRESS_MODE_CLAMP_TO_BORDER);
+        assert (addressModeX >= 0 && addressModeX <= ADDRESS_MODE_LAST);
+        assert (addressModeY >= 0 && addressModeY <= ADDRESS_MODE_LAST);
+        assert (addressModeZ >= 0 && addressModeZ <= ADDRESS_MODE_LAST);
         return new SamplerDesc(magFilter |
                 (minFilter << 4) |
                 (mipmapMode << 8) |
@@ -166,14 +194,15 @@ public final class SamplerDesc implements IResourceKey {
      *
      * @param addressModeX  the address mode X
      * @param addressModeY  the address mode Y
+     * @param addressModeZ  the address mode Z
      * @param maxAnisotropy the max anisotropy filtering level
      */
     @Contract(pure = true)
     public static SamplerDesc makeAnisotropy(int addressModeX, int addressModeY, int addressModeZ,
                                              int maxAnisotropy, boolean isMipmapped) {
-        assert (addressModeX >= 0 && addressModeX <= ADDRESS_MODE_CLAMP_TO_BORDER);
-        assert (addressModeY >= 0 && addressModeY <= ADDRESS_MODE_CLAMP_TO_BORDER);
-        assert (addressModeZ >= 0 && addressModeZ <= ADDRESS_MODE_CLAMP_TO_BORDER);
+        assert (addressModeX >= 0 && addressModeX <= ADDRESS_MODE_LAST);
+        assert (addressModeY >= 0 && addressModeY <= ADDRESS_MODE_LAST);
+        assert (addressModeZ >= 0 && addressModeZ <= ADDRESS_MODE_LAST);
         // filter mode is always linear
         return new SamplerDesc(0x11 | (addressModeX << 12) | (addressModeY << 16) | (addressModeZ << 20) |
                 (isMipmapped ? MIPMAP_MODE_LINEAR << 8 : MIPMAP_MODE_NONE << 8) |
@@ -279,8 +308,8 @@ public final class SamplerDesc implements IResourceKey {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o instanceof SamplerDesc that) {
-            return mState == that.mState;
+        if (o instanceof SamplerDesc desc) {
+            return mState == desc.mState;
         }
         return false;
     }
