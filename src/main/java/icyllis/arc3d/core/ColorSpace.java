@@ -19,6 +19,7 @@
 
 package icyllis.arc3d.core;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Range;
 
 import javax.annotation.Nonnull;
@@ -3676,7 +3677,8 @@ public abstract class ColorSpace {
         /**
          * Optimized connector for RGB->RGB conversions.
          */
-        private static class Rgb extends Connector {
+        @ApiStatus.Internal
+        public static class Rgb extends Connector {
             @Nonnull
             private final ColorSpace.Rgb mSource;
             @Nonnull
@@ -3721,9 +3723,10 @@ public abstract class ColorSpace {
              * @param intent      The render intent to use when compressing gamuts
              * @return An array of 9 floats containing the 3x3 matrix transform
              */
+            @ApiStatus.Internal
             @Nonnull
             @Size(9)
-            private static float[] computeTransform(
+            public static float[] computeTransform(
                     @Nonnull ColorSpace.Rgb source,
                     @Nonnull ColorSpace.Rgb destination,
                     @Nonnull RenderIntent intent) {

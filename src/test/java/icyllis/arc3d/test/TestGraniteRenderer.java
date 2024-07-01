@@ -20,8 +20,7 @@
 package icyllis.arc3d.test;
 
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.core.shaders.ColorShader;
-import icyllis.arc3d.core.shaders.Shader;
+import icyllis.arc3d.core.shaders.*;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.granite.*;
 import icyllis.arc3d.opengl.GLUtil;
@@ -105,21 +104,21 @@ public class TestGraniteRenderer {
         {
             int[] x = {0}, y = {0}, channels = {0};
             var imgData = STBImage.stbi_load(
-                    "F:/__sakurada_shiro_original_drawn_by_komachi_pochi__5b7bdef828edeac280117e92061f0d9e.png",
-                    x, y, channels, 2
+                    "F:/119937433_p0.jpg",
+                    x, y, channels, 4
             );
             if (imgData != null) {
                 Pixmap testPixmap = new Pixmap(
-                        ImageInfo.make(x[0], y[0], ColorInfo.CT_GRAY_ALPHA_88, ColorInfo.AT_UNPREMUL, null),
+                        ImageInfo.make(x[0], y[0], ColorInfo.CT_RGBA_8888, ColorInfo.AT_UNPREMUL, null),
                         null,
                         MemoryUtil.memAddress(imgData),
-                        2 * x[0]
+                        4 * x[0]
                 );
                 testImage = ImageUtils.makeFromPixmap(recordingContext,
                         testPixmap,
                         false,
                         true,
-                        "TestImage");
+                        "TestLocalImage");
                 LOGGER.info("Loaded texture image {}", testImage);
                 STBImage.stbi_image_free(imgData);
             }
@@ -127,8 +126,22 @@ public class TestGraniteRenderer {
 
         /*GL11C.glClear(GL11C.GL_COLOR_BUFFER_BIT);
         GLFW.glfwSwapBuffers(window);*/
+        TestDrawPass.glSetupDebugCallback();
 
-        Shader solidShader = new ColorShader(0xFF8888FF);
+        Shader testShader = testImage != null
+                ? ImageShader.make(
+                RefCnt.create(testImage),
+                ImageShader.TILE_MODE_CLAMP,
+                ImageShader.TILE_MODE_CLAMP,
+                new SamplingOptions(
+                        SamplingOptions.FILTER_MODE_LINEAR,
+                        SamplingOptions.FILTER_MODE_LINEAR,
+                        SamplingOptions.MIPMAP_MODE_NONE,
+                        1,
+                        false,
+                        0, 0),
+                null)
+                : new ColorShader(0xFF8888FF);
 
         while (!GLFW.glfwWindowShouldClose(window)) {
             Paint paint = new Paint();
@@ -163,8 +176,8 @@ public class TestGraniteRenderer {
                 RoundRect rrect = new RoundRect();
                 rrect.mLeft = 30;
                 rrect.mTop = 60;
-                rrect.mRight = 340;
-                rrect.mBottom = 160;
+                rrect.mRight = 260;
+                rrect.mBottom = 120;
                 rrect.mRadiusUlx = 10;
                 paint.setStyle(Paint.STROKE);
                 int[] aligns = {Paint.ALIGN_INSIDE, Paint.ALIGN_CENTER, Paint.ALIGN_OUTSIDE};
@@ -175,7 +188,7 @@ public class TestGraniteRenderer {
                     drawDevice.setLocalToDevice(mat);
                     paint.setRGBA(random.nextInt(256), random.nextInt(256), random.nextInt(256), 255);
                     drawDevice.drawRoundRect(rrect, paint);
-                    mat.preTranslateX(350);
+                    mat.preTranslateX(270);
                     mat.preRotateZ(MathUtil.PI / 20);
                 }
                 Rect2f rect = new Rect2f();
@@ -236,13 +249,13 @@ public class TestGraniteRenderer {
                 paint.setStrokeAlign(Paint.ALIGN_CENTER);
                 paint.setRGBA(random.nextInt(256), random.nextInt(256), random.nextInt(256), 255);
 
-                paint.setShader(solidShader);
+                paint.setShader(RefCnt.create(testShader));
 
                 drawDevice.drawCircle(700, 300, 20, paint);
 
 
                 paint.setStyle(Paint.FILL);
-                rect.set(0, 0, 8, 8);
+                rect.set(0, 0, 16, 16);
                 for (int i = 0; i < 16; i++) {
                     for (int j = 0; j < 16; j++) {
                         if (((i ^ j) & 1) != 0) {
@@ -250,11 +263,13 @@ public class TestGraniteRenderer {
                         } else {
                             paint.setColor(0xFFFFFFFF);
                         }
-                        rect.offsetTo(500 + i * 8, 500 + j * 8);
+                        rect.offsetTo(400 + i * 24 + random.nextInt(6),
+                                350 + j * 24 + random.nextInt(6));
                         drawDevice.drawRect(rect, paint);
                     }
                 }
             }
+            paint.close();
 
             long time2 = System.nanoTime();
 
@@ -298,7 +313,7 @@ public class TestGraniteRenderer {
                     formatMicroseconds(time6, time5),
                     formatMicroseconds(time7, time6));*/
         }
-        solidShader.unref();
+        testShader.unref();
         testImage = RefCnt.move(testImage);
 
         long pixels = MemoryUtil.nmemAlloc((long) CANVAS_WIDTH * CANVAS_HEIGHT * 4);
