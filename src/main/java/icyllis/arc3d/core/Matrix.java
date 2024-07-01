@@ -913,6 +913,50 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
     }
 
     /**
+     * Converts this 3x3 matrix to 4x4 matrix, the third row and column are identity.
+     * <pre>{@code
+     * [ a b c ]      [ a b 0 c ]
+     * [ d e f ]  ->  [ d e 0 f ]
+     * [ g h i ]      [ 0 0 1 0 ]
+     *                [ g h 0 i ]
+     * }</pre>
+     */
+    public void toMatrix4(@Nonnull Matrix4 dest) {
+        dest.m11 = m11;
+        dest.m12 = m12;
+        dest.m13 = 0;
+        dest.m14 = m14;
+        dest.m21 = m21;
+        dest.m22 = m22;
+        dest.m23 = 0;
+        dest.m24 = m24;
+        dest.m31 = 0;
+        dest.m32 = 0;
+        dest.m33 = 1;
+        dest.m34 = 0;
+        dest.m41 = m41;
+        dest.m42 = m42;
+        dest.m43 = 0;
+        dest.m44 = m44;
+    }
+
+    /**
+     * Converts this 3x3 matrix to 4x4 matrix, the third row and column are identity.
+     * <pre>{@code
+     * [ a b c ]      [ a b 0 c ]
+     * [ d e f ]  ->  [ d e 0 f ]
+     * [ g h i ]      [ 0 0 1 0 ]
+     *                [ g h 0 i ]
+     * }</pre>
+     */
+    @Nonnull
+    public Matrix4 toMatrix4() {
+        Matrix4 m = new Matrix4();
+        toMatrix4(m);
+        return m;
+    }
+
+    /**
      * Return the determinant of this matrix.
      *
      * @return the determinant
@@ -955,7 +999,6 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
      * @param dest the destination matrix, may be null
      * @return {@code true} if this matrix is invertible.
      */
-    @CheckReturnValue
     public boolean invert(@Nullable Matrix dest) {
         int mask = getType();
         if (mask == kIdentity_Mask) {
@@ -1986,6 +2029,46 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
         return (float) Math.sqrt(
                 Math.abs(result)
         );
+    }
+
+    /**
+     * Sets matrix to scale and translate src rect to dst rect. Returns false if
+     * src is empty, and sets matrix to identity. Returns true if dst is empty,
+     * and sets matrix to:
+     * <pre>
+     * | 0 0 0 |
+     * | 0 0 0 |
+     * | 0 0 1 |
+     * </pre>
+     *
+     * @param src rect to map from
+     * @param dst rect to map to
+     */
+    public boolean setRectToRect(Rect2fc src, Rect2fc dst) {
+        if (src.isEmpty()) {
+            setIdentity();
+            return false;
+        }
+
+        if (dst.isEmpty()) {
+            m11 = 0.0f;
+            m12 = 0.0f;
+            m14 = 0.0f;
+            m21 = 0.0f;
+            m22 = 0.0f;
+            m24 = 0.0f;
+            m41 = 0.0f;
+            m42 = 0.0f;
+            m44 = 1.0f;
+            mTypeMask = kScale_Mask;
+        } else {
+            float sx = dst.width() / src.width();
+            float sy = dst.height() / src.height();
+            float tx = dst.left() - src.left() * sx;
+            float ty = dst.top() - src.top() * sy;
+            setScaleTranslate(sx, sy, tx, ty);
+        }
+        return true;
     }
 
     /**

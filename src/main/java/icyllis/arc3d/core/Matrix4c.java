@@ -80,7 +80,6 @@ public sealed interface Matrix4c permits Matrix4 {
      * @param dest the destination matrix
      * @return {@code true} if this matrix is invertible.
      */
-    @CheckReturnValue
     boolean invert(@Nullable Matrix4 dest);
 
     /**

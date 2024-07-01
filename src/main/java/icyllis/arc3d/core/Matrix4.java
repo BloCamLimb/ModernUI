@@ -1233,7 +1233,6 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      * @param dest the destination matrix
      * @return {@code true} if this matrix is invertible.
      */
-    @CheckReturnValue
     public boolean invert(@Nullable Matrix4 dest) {
         float b00 = m11 * m22 - m12 * m21;
         float b01 = m11 * m23 - m13 * m21;
@@ -1249,7 +1248,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
         float b11 = m33 * m44 - m34 * m43;
         // calc the determinant
         float det = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
-        if (MathUtil.isApproxZero(det)) {
+        if (det == 0) {
             return false;
         }
         if (dest != null) {
