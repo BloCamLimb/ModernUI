@@ -225,14 +225,14 @@ public class AnalyticSimpleBoxStep extends GeometryStep {
 
         fs.format("""
                 float dis = min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - radii.x;
-                if (radii.y >= 0) {
-                    dis = abs(dis - radii.z) - radii.y;
-                }
+                dis = mix(dis, abs(dis - radii.z) - radii.y, radii.y >= 0);
                 """);
 
         if (mAA) {
             // use L2-norm of grad(SDF)
             // 0.7021 < 0.7071 (slightly smaller than half of the diagonal)
+            //TODO make this configurable to use L1 norm: (fwidth(dis) * 0.5),
+            // L1 is better when rect is axis-aligned but worse when rotated, L1 may be faster than L2
             fs.format("""
                     float afwidth = length(vec2(dFdx(dis),dFdy(dis))) * 0.7021;
                     float edgeAlpha = 1.0 - smoothstep(-afwidth, afwidth, dis);
