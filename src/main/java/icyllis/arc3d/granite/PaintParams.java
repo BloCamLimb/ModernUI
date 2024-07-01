@@ -25,7 +25,7 @@ import icyllis.arc3d.core.shaders.Shader;
 import icyllis.arc3d.engine.KeyBuilder;
 
 //TODO currently we don't handle advanced blending
-public final class PaintParams {
+public final class PaintParams implements AutoCloseable {
 
     // color components using non-premultiplied alpha
     private final float mR; // 0..1
@@ -33,6 +33,7 @@ public final class PaintParams {
     private final float mB; // 0..1
     private final float mA; // 0..1
     private final Blender mPrimitiveBlender;
+    @SharedPtr
     private final Shader mShader;
     private final ColorFilter mColorFilter;
     private final Blender mBlender;
@@ -45,11 +46,16 @@ public final class PaintParams {
         mB = paint.b();
         mA = paint.a();
         mPrimitiveBlender = primitiveBlender;
-        mShader = paint.getShader();
+        mShader = paint.refShader();
         mColorFilter = paint.getColorFilter();
         mBlender = paint.getBlender();
         mDither = paint.isDither();
         // antialias flag is already handled
+    }
+
+    @Override
+    public void close() {
+        RefCnt.move(mShader);
     }
 
     /**

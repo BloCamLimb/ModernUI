@@ -26,7 +26,7 @@ import javax.annotation.Nullable;
 /**
  * Represents a recorded draw operation.
  */
-public final class Draw {
+public final class Draw implements AutoCloseable {
     // reference to our renderer instance
     public GeometryRenderer mRenderer;
     // the copied view matrix
@@ -53,6 +53,14 @@ public final class Draw {
     public short mStrokeAlign;
     @Nullable
     public PaintParams mPaintParams; // null implies depth-only draw (clipping mask)
+
+    @Override
+    public void close() {
+        if (mPaintParams != null) {
+            mPaintParams.close();
+        }
+        mPaintParams = null;
+    }
 
     public boolean isClippedOut() {
         return mDrawBounds.isEmpty();

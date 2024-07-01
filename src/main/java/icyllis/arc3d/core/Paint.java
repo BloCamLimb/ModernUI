@@ -40,7 +40,7 @@ import java.util.Objects;
  * dashing or blur, but contains the objects that do so.
  */
 @SuppressWarnings({"MagicConstant", "unused"})
-public class Paint {
+public class Paint implements AutoCloseable {
 
     /**
      * Set {@code Style} to fill, stroke, or both fill and stroke geometry.
@@ -302,7 +302,7 @@ public class Paint {
         mWidth = 2;
         mMiterLimit = 4;
         mSmoothWidth = 0;
-        mShader = null;
+        mShader = RefCnt.move(mShader);
         mBlender = null;
         mMaskFilter = null;
         mColorFilter = null;
@@ -326,13 +326,18 @@ public class Paint {
             mWidth = paint.mWidth;
             mMiterLimit = paint.mMiterLimit;
             mSmoothWidth = paint.mSmoothWidth;
-            mShader = paint.mShader;
+            mShader = RefCnt.create(mShader, paint.mShader);
             mBlender = paint.mBlender;
             mMaskFilter = paint.mMaskFilter;
             mColorFilter = paint.mColorFilter;
             mImageFilter = paint.mImageFilter;
             mFlags = paint.mFlags;
         }
+    }
+
+    @Override
+    public void close() {
+        mShader = RefCnt.move(mShader);
     }
 
     ///// Solid Color
@@ -875,8 +880,20 @@ public class Paint {
      * @return Shader if previously set, null otherwise
      */
     @Nullable
+    @RawPtr
     public Shader getShader() {
         return mShader;
+    }
+
+    /**
+     * Returns optional colors used when filling a path, such as a gradient.
+     *
+     * @return Shader if previously set, null otherwise
+     */
+    @Nullable
+    @SharedPtr
+    public Shader refShader() {
+        return RefCnt.create(mShader);
     }
 
     /**
@@ -884,8 +901,8 @@ public class Paint {
      *
      * @param shader how geometry is filled with color; if null, solid color is used instead
      */
-    public void setShader(@Nullable Shader shader) {
-        mShader = shader;
+    public void setShader(@Nullable @SharedPtr Shader shader) {
+        mShader = RefCnt.move(mShader, shader);
     }
 
     /**

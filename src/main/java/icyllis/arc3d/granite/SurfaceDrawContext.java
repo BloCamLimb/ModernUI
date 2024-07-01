@@ -169,6 +169,7 @@ public final class SurfaceDrawContext implements AutoCloseable {
 
     public void discard() {
 
+        mPendingDraws.forEach(Draw::close);
         mPendingDraws.clear();
         mNumSteps = 0;
 
@@ -211,6 +212,7 @@ public final class SurfaceDrawContext implements AutoCloseable {
                 mNumSteps,
                 mReadView,
                 mImageInfo);
+        mPendingDraws.forEach(Draw::close);
         mPendingDraws.clear();
         mNumSteps = 0;
 
@@ -261,6 +263,8 @@ public final class SurfaceDrawContext implements AutoCloseable {
     public void close() {
         mReadView.unref();
         mDrawTaskList.close();
+        mPendingDraws.forEach(Draw::close);
+        mPendingDraws.clear();
     }
 
     private Matrix4 getStableTransform(Matrix4 transform) {

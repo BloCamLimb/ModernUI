@@ -61,10 +61,12 @@ public abstract class Image extends RefCnt {
         return mInfo.height();
     }
 
+    @ColorInfo.ColorType
     public int getColorType() {
         return mInfo.colorType();
     }
 
+    @ColorInfo.AlphaType
     public int getAlphaType() {
         return mInfo.alphaType();
     }
