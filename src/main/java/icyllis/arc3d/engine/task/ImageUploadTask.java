@@ -206,6 +206,7 @@ public class ImageUploadTask extends Task {
                     srcBase,
                     srcAddr,
                     srcRowBytes,
+                    null,
                     writer + mipOffset,
                     dstRowBytes,
                     trimRowBytes,
