@@ -23,6 +23,8 @@ import icyllis.arc3d.core.*;
 import icyllis.arc3d.core.shaders.*;
 import icyllis.arc3d.engine.*;
 
+import javax.annotation.Nullable;
+
 /**
  * Build {@link icyllis.arc3d.engine.Key PaintParamsKey} and collect
  * uniform data and texture sampler desc.
@@ -31,12 +33,6 @@ public class FragmentUtils {
 
     public static final ColorSpace.Rgb.TransferParameters LINEAR_TRANSFER_PARAMETERS =
             new ColorSpace.Rgb.TransferParameters(1.0, 0.0, 0.0, 0.0, 1.0);
-
-    public static final int kColorSpaceXformFlagUnpremul = 0x1;
-    public static final int kColorSpaceXformFlagLinearize = 0x2;
-    public static final int kColorSpaceXformFlagGamutTransform = 0x4;
-    public static final int kColorSpaceXformFlagEncode = 0x8;
-    public static final int kColorSpaceXformFlagPremul = 0x10;
 
     private static void append_transfer_function_uniform(
             ColorSpace.Rgb.TransferParameters tf,
@@ -48,11 +44,12 @@ public class FragmentUtils {
     }
 
     /**
-     * Compute color space transform parameters and add uniforms.
+     * Compute color space transform parameters and add uniforms,
+     * see {@link PixelUtils}.
      */
     public static void appendColorSpaceUniforms(
-            ColorSpace srcCS, @ColorInfo.AlphaType int srcAT,
-            ColorSpace dstCS, @ColorInfo.AlphaType int dstAT,
+            @Nullable ColorSpace srcCS, @ColorInfo.AlphaType int srcAT,
+            @Nullable ColorSpace dstCS, @ColorInfo.AlphaType int dstAT,
             UniformDataGatherer uniformDataGatherer
     ) {
         if (dstAT == ColorInfo.AT_OPAQUE) {
@@ -66,46 +63,49 @@ public class FragmentUtils {
             dstCS = srcCS;
         }
 
-        var src = srcCS instanceof ColorSpace.Rgb
+        boolean srcXYZ = srcCS.getModel() == ColorSpace.Model.XYZ;
+        boolean dstXYZ = dstCS.getModel() == ColorSpace.Model.XYZ;
+        var srcRGB = srcCS.getModel() == ColorSpace.Model.RGB
                 ? (ColorSpace.Rgb) srcCS : null;
-        var dst = dstCS instanceof ColorSpace.Rgb
+        var dstRGB = dstCS.getModel() == ColorSpace.Model.RGB
                 ? (ColorSpace.Rgb) dstCS : null;
 
-        // we don't handle non-RGB space and non-sRGB-like transfer parameters
-        boolean csXform = src != null && dst != null &&
-                src.getTransferParameters() != null &&
-                dst.getTransferParameters() != null &&
-                !src.equals(dst);
+        // we handle RGB space with known transfer parameters and XYZ space
+        boolean csXform = (srcXYZ || (srcRGB != null && srcRGB.getTransferParameters() != null)) &&
+                (dstXYZ || (dstRGB != null && dstRGB.getTransferParameters() != null)) &&
+                !srcCS.equals(dstCS);
 
         int flags = 0;
 
         if (csXform || srcAT != dstAT) {
             if (srcAT == ColorInfo.AT_PREMUL) {
-                flags |= kColorSpaceXformFlagUnpremul;
+                flags |= PixelUtils.kColorSpaceXformFlagUnpremul;
             }
             if (srcAT != ColorInfo.AT_OPAQUE && dstAT == ColorInfo.AT_PREMUL) {
-                flags |= kColorSpaceXformFlagPremul;
+                flags |= PixelUtils.kColorSpaceXformFlagPremul;
             }
         }
 
         if (csXform) {
-            flags |= kColorSpaceXformFlagGamutTransform;
+            flags |= PixelUtils.kColorSpaceXformFlagGamutTransform;
 
-            if (!LINEAR_TRANSFER_PARAMETERS.equals(src.getTransferParameters())) {
-                flags |= kColorSpaceXformFlagLinearize;
+            if (srcRGB != null && !LINEAR_TRANSFER_PARAMETERS.equals(srcRGB.getTransferParameters())) {
+                flags |= PixelUtils.kColorSpaceXformFlagLinearize;
             }
-            if (!LINEAR_TRANSFER_PARAMETERS.equals(dst.getTransferParameters())) {
-                flags |= kColorSpaceXformFlagEncode;
+            if (dstRGB != null && !LINEAR_TRANSFER_PARAMETERS.equals(dstRGB.getTransferParameters())) {
+                flags |= PixelUtils.kColorSpaceXformFlagEncode;
             }
 
             float[] transform = ColorSpace.Connector.Rgb.computeTransform(
-                    src, dst, ColorSpace.RenderIntent.RELATIVE
+                    srcXYZ, srcRGB, dstXYZ, dstRGB
             );
 
             uniformDataGatherer.write1i(flags);
-            append_transfer_function_uniform(src.getTransferParameters(), uniformDataGatherer);
+            append_transfer_function_uniform(
+                    srcRGB == null ? LINEAR_TRANSFER_PARAMETERS : srcRGB.getTransferParameters(), uniformDataGatherer);
             uniformDataGatherer.writeMatrix3f(0, transform);
-            append_transfer_function_uniform(dst.getTransferParameters(), uniformDataGatherer);
+            append_transfer_function_uniform(
+                    dstRGB == null ? LINEAR_TRANSFER_PARAMETERS : dstRGB.getTransferParameters(), uniformDataGatherer);
         } else {
             uniformDataGatherer.write1i(flags);
             append_transfer_function_uniform(LINEAR_TRANSFER_PARAMETERS, uniformDataGatherer);
@@ -194,7 +194,7 @@ public class FragmentUtils {
                 sampling.mMipmap,
                 useHwTiling ? tileModeX : SamplerDesc.ADDRESS_MODE_CLAMP_TO_EDGE,
                 useHwTiling ? tileModeY : SamplerDesc.ADDRESS_MODE_CLAMP_TO_EDGE,
-                SamplerDesc.ADDRESS_MODE_REPEAT
+                SamplerDesc.ADDRESS_MODE_CLAMP_TO_EDGE
         );
 
         textureDataGatherer.add(view, samplerDesc); // move
