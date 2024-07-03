@@ -49,10 +49,12 @@ public class FragmentStage extends Processor {
             kAngularGradientShader4_BuiltinStageID = 9,
             kAngularGradientShader8_BuiltinStageID = 10,
             kLocalMatrixShader_BuiltinStageID = 16,
-            kHWImageShader_BuiltinStageID = 17;
+            kHWImageShader_BuiltinStageID = 17,
+            kColorSpaceXformColorFilter_BuiltinStageID = 18,
+            kCompose_BuiltinStageID = 19;
 
     public static final int
-            kLast_BuiltinStageID = kHWImageShader_BuiltinStageID;
+            kLast_BuiltinStageID = kCompose_BuiltinStageID;
     public static final int
             kBuiltinStageIDCount = kLast_BuiltinStageID + 1;
 

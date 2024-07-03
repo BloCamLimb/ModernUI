@@ -55,11 +55,11 @@ public abstract class ColorFilter {
         float[] dst4 = Color.load_and_premul(col);
         filterColor4f(dst4, dst4);
         float a = MathUtil.clamp(dst4[3], 0, 1);
-        if (a == 0) {
+        int result = (int) (a * 255.0f + 0.5f) << 24;
+        if (result == 0) {
             return Color.TRANSPARENT;
         }
         // unpremul and store
-        int result = (int) (a * 255.0f + 0.5f) << 24;
         a = 255.0f / a;
         for (int i = 0; i < 3; i++) {
             result |= (int) MathUtil.clamp(dst4[2 - i] * a + 0.5f, 0, 255) << (i << 3);

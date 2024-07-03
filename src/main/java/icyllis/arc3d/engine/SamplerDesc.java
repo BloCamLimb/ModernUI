@@ -21,7 +21,7 @@ package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.MathUtil;
 import icyllis.arc3d.core.SamplingOptions;
-import icyllis.arc3d.core.shaders.ImageShader;
+import icyllis.arc3d.core.shaders.Shader;
 import org.jetbrains.annotations.Contract;
 
 import javax.annotation.concurrent.Immutable;
@@ -103,10 +103,10 @@ public final class SamplerDesc implements IResourceKey {
 
         //noinspection ConstantValue
         assert
-                ADDRESS_MODE_REPEAT          == ImageShader.TILE_MODE_REPEAT &&
-                ADDRESS_MODE_MIRRORED_REPEAT == ImageShader.TILE_MODE_MIRROR &&
-                ADDRESS_MODE_CLAMP_TO_EDGE   == ImageShader.TILE_MODE_CLAMP  &&
-                ADDRESS_MODE_CLAMP_TO_BORDER == ImageShader.TILE_MODE_DECAL  ;
+                ADDRESS_MODE_REPEAT          == Shader.TILE_MODE_REPEAT &&
+                ADDRESS_MODE_MIRRORED_REPEAT == Shader.TILE_MODE_MIRROR &&
+                ADDRESS_MODE_CLAMP_TO_EDGE   == Shader.TILE_MODE_CLAMP  &&
+                ADDRESS_MODE_CLAMP_TO_BORDER == Shader.TILE_MODE_DECAL  ;
     }
     //@formatter:on
 

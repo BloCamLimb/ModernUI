@@ -24,6 +24,10 @@ package icyllis.arc3d.core.shaders;
  */
 public abstract class GradientShader extends Shader {
 
+    //TODO currently only 1D gradients are implemented
+
+    public static final float kDegenerateTolerance = 1F / (1 << 16);
+
     /**
      * Color interpolation method, is packed into an int.
      */
@@ -44,7 +48,7 @@ public abstract class GradientShader extends Shader {
                 kHWB_ColorSpace = 7,
                 kLCH_ColorSpace = 8,
                 kOKLCH_ColorSpace = 9,
-                kOKLCHGamutMap_ColorSpace = 10;
+                kOKLCHGamutMap_ColorSpace = 10; // same as Skia
         public static final byte
                 kLast_ColorSpace = kOKLCHGamutMap_ColorSpace;
         public static final int kColorSpaceCount = kLast_ColorSpace + 1;
@@ -77,6 +81,8 @@ public abstract class GradientShader extends Shader {
         public static int make(boolean inPremul,
                                byte colorSpace,
                                byte hueMethod) {
+            assert colorSpace >= 0 && colorSpace <= kLast_ColorSpace;
+            assert hueMethod >= 0 && hueMethod <= kLast_HueMethod;
             return (inPremul ? 1 : 0) | (colorSpace << 8) | (hueMethod << 16);
         }
 

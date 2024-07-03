@@ -20,6 +20,9 @@
 package icyllis.arc3d.core.shaders;
 
 import icyllis.arc3d.core.*;
+import org.jetbrains.annotations.ApiStatus;
+
+import javax.annotation.Nonnull;
 
 /**
  * Shaders specify the source color(s) for what is being drawn. If a paint
@@ -32,12 +35,43 @@ import icyllis.arc3d.core.*;
  */
 public abstract class Shader extends RefCnt {
 
+    // TileModes sync with SamplerDesc::AddressMode
+    /**
+     * Repeat the shader's image horizontally and vertically.
+     */
+    public static final int TILE_MODE_REPEAT = 0;
+    /**
+     * Repeat the shader's image horizontally and vertically, alternating
+     * mirror images so that adjacent images always seam.
+     */
+    public static final int TILE_MODE_MIRROR = 1;
+    /**
+     * Replicate the edge color if the shader draws outside of its
+     * original bounds.
+     */
+    public static final int TILE_MODE_CLAMP = 2;
+    /**
+     * Only draw within the original domain, return transparent-black everywhere else.
+     */
+    public static final int TILE_MODE_DECAL = 3;
+    @ApiStatus.Internal
+    public static final int LAST_TILE_MODE = TILE_MODE_DECAL;
+
+    public static final int GRADIENT_TYPE_NONE = 0;
+    public static final int GRADIENT_TYPE_LINEAR = 1;
+    public static final int GRADIENT_TYPE_RADIAL = 2;
+    public static final int GRADIENT_TYPE_ANGULAR = 3;
+
     @Override
     protected void deallocate() {
     }
 
     public boolean isOpaque() {
         return false;
+    }
+
+    public int asGradient() {
+        return GRADIENT_TYPE_NONE;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -47,9 +81,10 @@ public abstract class Shader extends RefCnt {
      * Return a shader that will apply the specified localMatrix to this shader.
      * The specified matrix will be applied AFTER any matrix associated with this shader.
      */
-    public Shader makeWithLocalMatrix(Matrixc localMatrix) {
-        Matrix lm = new Matrix(localMatrix);
-        Shader base;
+    @SharedPtr
+    public Shader makeWithLocalMatrix(@Nonnull Matrixc localMatrix) {
+        var lm = new Matrix(localMatrix);
+        Shader base; // raw ptr
         if (this instanceof LocalMatrixShader lms) {
             lm.preConcat(lms.getLocalMatrix());
             base = lms.getBase();
