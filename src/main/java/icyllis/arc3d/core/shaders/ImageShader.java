@@ -25,26 +25,6 @@ import javax.annotation.Nullable;
 
 public class ImageShader extends Shader {
 
-    // TileModes sync with SamplerDesc::AddressMode
-    /**
-     * Repeat the shader's image horizontally and vertically.
-     */
-    public static final int TILE_MODE_REPEAT = 0;
-    /**
-     * Repeat the shader's image horizontally and vertically, alternating
-     * mirror images so that adjacent images always seam.
-     */
-    public static final int TILE_MODE_MIRROR = 1;
-    /**
-     * Replicate the edge color if the shader draws outside of its
-     * original bounds.
-     */
-    public static final int TILE_MODE_CLAMP = 2;
-    /**
-     * Only draw within the original domain, return transparent-black everywhere else.
-     */
-    public static final int TILE_MODE_DECAL = 3;
-
     @SharedPtr
     public final Image mImage;
     public final SamplingOptions mSampling;
@@ -81,26 +61,30 @@ public class ImageShader extends Shader {
         if (sampling.mUseCubic) {
             if (!(sampling.mCubicB >= 0 && sampling.mCubicB <= 1) || // also capture NaN
                     !(sampling.mCubicC >= 0 && sampling.mCubicC <= 1)) {
+                RefCnt.move(image);
                 return null;
             }
         }
         if (image == null || subset.isEmpty()) {
+            RefCnt.move(image);
             return new EmptyShader();
         }
 
         if (!(0 <= subset.left() && 0 <= subset.top() && // also capture NaN
                 image.getWidth() >= subset.right() &&
                 image.getHeight() >= subset.bottom())) {
+            image.unref();
             return null;
         }
 
         @SharedPtr
-        Shader s = new ImageShader(image,
+        Shader s = new ImageShader(image, // move
                 subset,
                 tileModeX, tileModeY,
                 sampling);
         Matrix lm = localMatrix != null ? new Matrix(localMatrix) : new Matrix();
-        return new LocalMatrixShader(s, lm);
+        return new LocalMatrixShader(s, // move
+                lm);
     }
 
     @Override

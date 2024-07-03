@@ -122,6 +122,30 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
     }
 
     /**
+     * Creates a new translate-only matrix.
+     *
+     * @return a translation matrix
+     */
+    @Nonnull
+    public static Matrix makeTranslate(float dx, float dy) {
+        var matrix = new Matrix();
+        matrix.setTranslate(dx, dy);
+        return matrix;
+    }
+
+    /**
+     * Creates a new scale-only matrix.
+     *
+     * @return a scaling matrix
+     */
+    @Nonnull
+    public static Matrix makeScale(float sx, float sy) {
+        var matrix = new Matrix();
+        matrix.setScale(sx, sy);
+        return matrix;
+    }
+
+    /**
      * Same as {@link #getScaleX()}.
      */
     public float m11() {

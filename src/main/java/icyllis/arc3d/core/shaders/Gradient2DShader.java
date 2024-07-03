@@ -20,10 +20,10 @@
 package icyllis.arc3d.core.shaders;
 
 /**
- * Base class for gradient colors that can be represented by a 1D function,
- * it generates one parameter for interpolation:
- * <pre>grad_layout(x,y) -> float</pre>
- * Such as linear gradient, radial gradient, angular gradient.
+ * Base class for gradient colors that can be represented by a 2D function,
+ * it generates two parameters for interpolation:
+ * <pre>grad_layout(x,y) -> vec2</pre>
+ * Such as bilinear gradient (rectangular), polar gradient.
  */
-public abstract class GradientShader1D extends GradientShader {
+public abstract class Gradient2DShader extends GradientShader {
 }

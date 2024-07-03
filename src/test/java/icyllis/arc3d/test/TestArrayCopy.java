@@ -19,11 +19,13 @@
 
 package icyllis.arc3d.test;
 
+import org.lwjgl.system.MemoryUtil;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
+import sun.misc.Unsafe;
 
 import java.util.Random;
 
@@ -33,6 +35,18 @@ import java.util.Random;
 @Measurement(iterations = 5, time = 1)
 @State(Scope.Thread)
 public class TestArrayCopy {
+
+    private static final Unsafe UNSAFE = getUnsafe();
+
+    private static sun.misc.Unsafe getUnsafe() {
+        try {
+            var field = MemoryUtil.class.getDeclaredField("UNSAFE");
+            field.setAccessible(true);
+            return (sun.misc.Unsafe) field.get(null);
+        } catch (Exception e) {
+            throw new AssertionError("No MemoryUtil.UNSAFE", e);
+        }
+    }
 
     public static void main(String[] args) throws RunnerException {
         new Runner(new OptionsBuilder()
@@ -70,6 +84,14 @@ public class TestArrayCopy {
         dst[1] = src[1];
         dst[2] = src[2];
         dst[3] = src[3];
+        blackhole.consume(dst);
+    }
+
+    @Benchmark
+    public static void unsafeCopy(Blackhole blackhole) {
+        float[] src = {RANDOM.nextFloat(), RANDOM.nextFloat(), RANDOM.nextFloat(), RANDOM.nextFloat()};
+        float[] dst = new float[4];
+        UNSAFE.copyMemory(src, Unsafe.ARRAY_FLOAT_BASE_OFFSET, dst, Unsafe.ARRAY_FLOAT_BASE_OFFSET, 16);
         blackhole.consume(dst);
     }
 }

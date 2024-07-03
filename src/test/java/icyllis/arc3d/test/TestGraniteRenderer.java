@@ -53,6 +53,20 @@ public class TestGraniteRenderer {
     public static final int WINDOW_WIDTH = 1280;
     public static final int WINDOW_HEIGHT = 720;
 
+    public static float Bayer2(float x, float y) {
+        x = (float) Math.floor(x);
+        y = (float) Math.floor(y);
+        return (x * .5f + y * y * .75f) % 1.0f;
+    }
+
+    public static float Bayer4(float x, float y) {
+        return Bayer2(.5f * (x), 0.5f * y) * .25f + Bayer2(x, y);
+    }
+
+    public static float Bayer8(float x, float y) {
+        return Bayer4(.5f * (x), 0.5f * y) * .25f + Bayer2(x, y);
+    }
+
     //-Dorg.slf4j.simpleLogger.logFile=System.out
     //-Dorg.slf4j.simpleLogger.defaultLogLevel=debug
     //-XX:+UseZGC
@@ -123,16 +137,24 @@ public class TestGraniteRenderer {
                 STBImage.stbi_image_free(imgData);
             }
         }
+        for (int y = 0; y < 8; ++y) {
+            for (int x = 0; x < 8; ++x) {
+                int m = (int) (Bayer8(x, y) * 64);
+                System.out.printf("%02d ", m);
+            }
+            System.out.println();
+        }
 
         /*GL11C.glClear(GL11C.GL_COLOR_BUFFER_BIT);
         GLFW.glfwSwapBuffers(window);*/
         TestDrawPass.glSetupDebugCallback();
 
+        @SharedPtr
         Shader testShader = testImage != null
                 ? ImageShader.make(
                 RefCnt.create(testImage),
-                ImageShader.TILE_MODE_CLAMP,
-                ImageShader.TILE_MODE_CLAMP,
+                Shader.TILE_MODE_CLAMP,
+                Shader.TILE_MODE_CLAMP,
                 new SamplingOptions(
                         SamplingOptions.FILTER_MODE_LINEAR,
                         SamplingOptions.FILTER_MODE_LINEAR,
@@ -142,14 +164,33 @@ public class TestGraniteRenderer {
                         0, 0),
                 null)
                 : new ColorShader(0xFF8888FF);
+        @SharedPtr
+        Shader gradShader = AngularGradient.makeAngular(
+                584, 534, 0, 270,
+                new float[]{
+                        0.2f, 0.85f, 0.95f, 1,
+                        0.85f, 0.5f, 0.75f, 1,
+                        0.95f, 0.5f, 0.05f, 1,
+                        0.75f, 0.95f, 0.7f, 1,
+                        0.6f, 0.25f, 0.65f, 1},
+                ColorSpace.get(ColorSpace.Named.SRGB),
+                null,//new float[]{0.0f, 0.2f, 0.7f, 1.0f},
+                5,
+                Shader.TILE_MODE_MIRROR,
+                GradientShader.Interpolation.make(false,
+                        GradientShader.Interpolation.kSRGBLinear_ColorSpace,
+                        GradientShader.Interpolation.kShorter_HueMethod),
+                null
+        );
 
+        Paint paint = new Paint();
         while (!GLFW.glfwWindowShouldClose(window)) {
-            Paint paint = new Paint();
             Random random = new Random();
 
             long time1 = System.nanoTime();
 
             int nRects = 4000;
+            paint.reset();
             paint.setColor(0x00000000);
             drawDevice.drawPaint(paint);
             if (false) {
@@ -236,6 +277,8 @@ public class TestGraniteRenderer {
 
                 mat.setIdentity();
                 drawDevice.setLocalToDevice(mat);
+
+                paint.setShader(RefCnt.create(testShader));
                 paint.setStyle(Paint.FILL);
                 paint.setRGBA(random.nextInt(256), random.nextInt(256), random.nextInt(256), 255);
                 drawDevice.drawCircle(500, 300, 20, paint);
@@ -249,12 +292,11 @@ public class TestGraniteRenderer {
                 paint.setStrokeAlign(Paint.ALIGN_CENTER);
                 paint.setRGBA(random.nextInt(256), random.nextInt(256), random.nextInt(256), 255);
 
-                paint.setShader(RefCnt.create(testShader));
-
                 drawDevice.drawCircle(700, 300, 20, paint);
 
 
                 paint.setStyle(Paint.FILL);
+                paint.setShader(RefCnt.create(gradShader));
                 rect.set(0, 0, 16, 16);
                 for (int i = 0; i < 16; i++) {
                     for (int j = 0; j < 16; j++) {
@@ -269,7 +311,6 @@ public class TestGraniteRenderer {
                     }
                 }
             }
-            paint.close();
 
             long time2 = System.nanoTime();
 
@@ -313,15 +354,17 @@ public class TestGraniteRenderer {
                     formatMicroseconds(time6, time5),
                     formatMicroseconds(time7, time6));*/
         }
-        testShader.unref();
+        paint.close();
+        testShader = RefCnt.move(testShader);
+        gradShader = RefCnt.move(gradShader);
         testImage = RefCnt.move(testImage);
 
         long pixels = MemoryUtil.nmemAlloc((long) CANVAS_WIDTH * CANVAS_HEIGHT * 4);
         GL33C.glReadPixels(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE, pixels);
         STBImageWrite.stbi_flip_vertically_on_write(true);
         STBImageWrite.stbi_write_png_compression_level.put(0, 15);
-        STBImageWrite.stbi_write_png("E:/test_granite.png", CANVAS_WIDTH, CANVAS_HEIGHT, 4,
-                MemoryUtil.memByteBuffer(pixels, CANVAS_WIDTH * CANVAS_HEIGHT * 4), CANVAS_WIDTH * 4);
+        STBImageWrite.stbi_write_jpg("E:/test_granite.jpg", CANVAS_WIDTH, CANVAS_HEIGHT, 4,
+                MemoryUtil.memByteBuffer(pixels, CANVAS_WIDTH * CANVAS_HEIGHT * 4), 100);
         MemoryUtil.nmemFree(pixels);
         drawDevice.unref();
         recordingContext.unref();

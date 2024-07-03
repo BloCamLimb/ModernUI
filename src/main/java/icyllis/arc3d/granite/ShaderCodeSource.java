@@ -19,8 +19,9 @@
 
 package icyllis.arc3d.granite;
 
+import icyllis.arc3d.core.PixelUtils;
 import icyllis.arc3d.core.SLDataType;
-import icyllis.arc3d.core.shaders.ImageShader;
+import icyllis.arc3d.core.shaders.Shader;
 import icyllis.arc3d.granite.shading.UniformHandler;
 
 import java.util.*;
@@ -32,6 +33,7 @@ import static icyllis.arc3d.granite.FragmentStage.*;
  */
 public class ShaderCodeSource {
 
+    // common uniform definitions
     private static final Uniform[] PAINT_COLOR_UNIFORMS = {
             new Uniform(SLDataType.kFloat4, UniformHandler.PAINT_COLOR_NAME)
     };
@@ -43,6 +45,25 @@ public class ShaderCodeSource {
             new Uniform(SLDataType.kFloat3x3, "u_XformGamutTransform");
     private static final Uniform XFORM_DST_TF =
             new Uniform(SLDataType.kFloat4, "u_XformDstTf", 2);
+
+    private static final Uniform GRAD_TILE_MODE =
+            new Uniform(SLDataType.kInt, "u_TileMode");
+    private static final Uniform GRAD_COLOR_SPACE =
+            new Uniform(SLDataType.kInt, "u_ColorSpace");
+    private static final Uniform GRAD_DO_UNPREMUL =
+            new Uniform(SLDataType.kInt, "u_DoUnpremul");
+    private static final Uniform GRAD_BIAS =
+            new Uniform(SLDataType.kFloat, "u_Bias");
+    private static final Uniform GRAD_SCALE =
+            new Uniform(SLDataType.kFloat, "u_Scale");
+    private static final Uniform GRAD_4_COLORS =
+            new Uniform(SLDataType.kFloat4, "u_Colors", 4);
+    private static final Uniform GRAD_4_OFFSETS =
+            new Uniform(SLDataType.kFloat4, "u_Offsets");
+    private static final Uniform GRAD_8_COLORS =
+            new Uniform(SLDataType.kFloat4, "u_Colors", 8);
+    private static final Uniform GRAD_8_OFFSETS =
+            new Uniform(SLDataType.kFloat4, "u_Offsets", 2);
 
     // 8x8 lime and white checkerboard
     public static final String ARC_ERROR = """
@@ -71,7 +92,7 @@ public class ShaderCodeSource {
                 return vec4(0.0, 0.0, 0.0, paintColor.a);
             }
             """;
-    // sRGB-like transfer function
+    // transfer function
     private static final String PRIV_TRANSFER_FUNCTION = """
             float TransferFunction(float x, vec4 tf[2]) {
                 float G = tf[0][0], A = tf[0][1], B = tf[0][2], C = tf[0][3],
@@ -94,6 +115,20 @@ public class ShaderCodeSource {
                 return s * x;
             }
             """;
+
+    static {
+        //noinspection ConstantValue
+        assert PixelUtils.kColorSpaceXformFlagUnpremul == 0x1;
+        //noinspection ConstantValue
+        assert PixelUtils.kColorSpaceXformFlagLinearize == 0x2;
+        //noinspection ConstantValue
+        assert PixelUtils.kColorSpaceXformFlagGamutTransform == 0x4;
+        //noinspection ConstantValue
+        assert PixelUtils.kColorSpaceXformFlagEncode == 0x8;
+        //noinspection ConstantValue
+        assert PixelUtils.kColorSpaceXformFlagPremul == 0x10;
+    }
+
     // We have 7 source coefficients and 7 destination coefficients. We pass them via two vec4 arrays;
     // In std140, this arrangement is much more efficient than a simple array of scalars, which
     // vec4 array and mat3 are always vec4 aligned
@@ -111,7 +146,7 @@ public class ShaderCodeSource {
                 const int kColorSpaceXformFlagPremul = 0x10;
                 
                 if (bool(flags & kColorSpaceXformFlagUnpremul)) {
-                    color.rgb /= max(color.a, 0.00001);
+                    color.rgb /= max(color.a, 1e-7);
                 }
                         
                 if (bool(flags & kColorSpaceXformFlagLinearize)) {
@@ -137,13 +172,13 @@ public class ShaderCodeSource {
 
     static {
         //noinspection ConstantValue
-        assert ImageShader.TILE_MODE_REPEAT == 0;
+        assert Shader.TILE_MODE_REPEAT == 0;
         //noinspection ConstantValue
-        assert ImageShader.TILE_MODE_MIRROR == 1;
+        assert Shader.TILE_MODE_MIRROR == 1;
         //noinspection ConstantValue
-        assert ImageShader.TILE_MODE_CLAMP == 2;
+        assert Shader.TILE_MODE_CLAMP == 2;
         //noinspection ConstantValue
-        assert ImageShader.TILE_MODE_DECAL == 3;
+        assert Shader.TILE_MODE_DECAL == 3;
     }
 
     // t.y < 0 means out of bounds, then color will be (0,0,0,0)
@@ -189,13 +224,13 @@ public class ShaderCodeSource {
                 } else if (t.x <= offsets[0]) {
                     result = colors[0];
                 } else if (t.x < offsets[1]) {
-                    result = mix(colors[0], colors[1], (t.x        - offsets[0])
+                    result = mix(colors[0], colors[1], (t.x        - offsets[0]) /
                                                        (offsets[1] - offsets[0]));
                 } else if (t.x < offsets[2]) {
-                    result = mix(colors[1], colors[2], (t.x        - offsets[1])
+                    result = mix(colors[1], colors[2], (t.x        - offsets[1]) /
                                                        (offsets[2] - offsets[1]));
                 } else if (t.x < offsets[3]) {
-                    result = mix(colors[2], colors[3], (t.x        - offsets[2])
+                    result = mix(colors[2], colors[3], (t.x        - offsets[2]) /
                                                        (offsets[3] - offsets[2]));
                 } else {
                     result = colors[3];
@@ -216,21 +251,21 @@ public class ShaderCodeSource {
                             result = colors[0];
                         } else if (t.x < offsets[0][1]) {
                             result = mix(colors[0], colors[1],
-                                         (t.x           - offsets[0][0])
+                                         (t.x           - offsets[0][0]) /
                                          (offsets[0][1] - offsets[0][0]));
                         } else {
                             result = mix(colors[1], colors[2],
-                                         (t.x           - offsets[0][1])
+                                         (t.x           - offsets[0][1]) /
                                          (offsets[0][2] - offsets[0][1]));
                         }
                     } else {
                         if (t.x < offsets[0][3]) {
                             result = mix(colors[2], colors[3],
-                                         (t.x           - offsets[0][2])
+                                         (t.x           - offsets[0][2]) /
                                          (offsets[0][3] - offsets[0][2]));
                         } else {
                             result = mix(colors[3], colors[4],
-                                         (t.x           - offsets[0][3])
+                                         (t.x           - offsets[0][3]) /
                                          (offsets[1][0] - offsets[0][3]));
                         }
                     }
@@ -238,17 +273,17 @@ public class ShaderCodeSource {
                     if (t.x < offsets[1][2]) {
                         if (t.x < offsets[1][1]) {
                             result = mix(colors[4], colors[5],
-                                         (t.x           - offsets[1][0])
+                                         (t.x           - offsets[1][0]) /
                                          (offsets[1][1] - offsets[1][0]));
                         } else {
                             result = mix(colors[5], colors[6],
-                                         (t.x           - offsets[1][1])
+                                         (t.x           - offsets[1][1]) /
                                          (offsets[1][2] - offsets[1][1]));
                         }
                     } else {
                         if (t.x < offsets[1][3]) {
                             result = mix(colors[6], colors[7],
-                                         (t.x           - offsets[1][2])
+                                         (t.x           - offsets[1][2]) /
                                          (offsets[1][3] - offsets[1][2]));
                         } else {
                             result = colors[7];
@@ -437,6 +472,112 @@ public class ShaderCodeSource {
                 ShaderCodeSource::generateDefaultExpression,
                 0
         );
+        mBuiltinCodeSnippets[kLinearGradientShader4_BuiltinStageID] = new FragmentStage(
+                "LinearGradient4",
+                kLocalCoords_ReqFlag,
+                "arc_linear_grad_4_shader",
+                new String[]{PRIV_TILE_GRAD, PRIV_LINEAR_GRAD_LAYOUT, PRIV_COLORIZE_GRAD_4,
+                        ARC_LINEAR_GRAD_4_SHADER},
+                new Uniform[]{
+                        GRAD_4_COLORS,
+                        GRAD_4_OFFSETS,
+                        GRAD_TILE_MODE,
+                        GRAD_COLOR_SPACE,
+                        GRAD_DO_UNPREMUL
+                },
+                NO_SAMPLERS,
+                ShaderCodeSource::generateDefaultExpression,
+                0
+        );
+        mBuiltinCodeSnippets[kLinearGradientShader8_BuiltinStageID] = new FragmentStage(
+                "LinearGradient8",
+                kLocalCoords_ReqFlag,
+                "arc_linear_grad_8_shader",
+                new String[]{PRIV_TILE_GRAD, PRIV_LINEAR_GRAD_LAYOUT, PRIV_COLORIZE_GRAD_8,
+                        ARC_LINEAR_GRAD_8_SHADER},
+                new Uniform[]{
+                        GRAD_8_COLORS,
+                        GRAD_8_OFFSETS,
+                        GRAD_TILE_MODE,
+                        GRAD_COLOR_SPACE,
+                        GRAD_DO_UNPREMUL
+                },
+                NO_SAMPLERS,
+                ShaderCodeSource::generateDefaultExpression,
+                0
+        );
+        mBuiltinCodeSnippets[kRadialGradientShader4_BuiltinStageID] = new FragmentStage(
+                "RadialGradient4",
+                kLocalCoords_ReqFlag,
+                "arc_radial_grad_4_shader",
+                new String[]{PRIV_TILE_GRAD, PRIV_RADIAL_GRAD_LAYOUT, PRIV_COLORIZE_GRAD_4,
+                        ARC_RADIAL_GRAD_4_SHADER},
+                new Uniform[]{
+                        GRAD_4_COLORS,
+                        GRAD_4_OFFSETS,
+                        GRAD_TILE_MODE,
+                        GRAD_COLOR_SPACE,
+                        GRAD_DO_UNPREMUL
+                },
+                NO_SAMPLERS,
+                ShaderCodeSource::generateDefaultExpression,
+                0
+        );
+        mBuiltinCodeSnippets[kRadialGradientShader8_BuiltinStageID] = new FragmentStage(
+                "RadialGradient8",
+                kLocalCoords_ReqFlag,
+                "arc_radial_grad_8_shader",
+                new String[]{PRIV_TILE_GRAD, PRIV_RADIAL_GRAD_LAYOUT, PRIV_COLORIZE_GRAD_8,
+                        ARC_RADIAL_GRAD_8_SHADER},
+                new Uniform[]{
+                        GRAD_8_COLORS,
+                        GRAD_8_OFFSETS,
+                        GRAD_TILE_MODE,
+                        GRAD_COLOR_SPACE,
+                        GRAD_DO_UNPREMUL
+                },
+                NO_SAMPLERS,
+                ShaderCodeSource::generateDefaultExpression,
+                0
+        );
+        mBuiltinCodeSnippets[kAngularGradientShader4_BuiltinStageID] = new FragmentStage(
+                "AngularGradient4",
+                kLocalCoords_ReqFlag,
+                "arc_angular_grad_4_shader",
+                new String[]{PRIV_TILE_GRAD, PRIV_ANGULAR_GRAD_LAYOUT, PRIV_COLORIZE_GRAD_4,
+                        ARC_ANGULAR_GRAD_4_SHADER},
+                new Uniform[]{
+                        GRAD_4_COLORS,
+                        GRAD_4_OFFSETS,
+                        GRAD_BIAS,
+                        GRAD_SCALE,
+                        GRAD_TILE_MODE,
+                        GRAD_COLOR_SPACE,
+                        GRAD_DO_UNPREMUL
+                },
+                NO_SAMPLERS,
+                ShaderCodeSource::generateDefaultExpression,
+                0
+        );
+        mBuiltinCodeSnippets[kAngularGradientShader8_BuiltinStageID] = new FragmentStage(
+                "AngularGradient8",
+                kLocalCoords_ReqFlag,
+                "arc_angular_grad_8_shader",
+                new String[]{PRIV_TILE_GRAD, PRIV_ANGULAR_GRAD_LAYOUT, PRIV_COLORIZE_GRAD_8,
+                        ARC_ANGULAR_GRAD_8_SHADER},
+                new Uniform[]{
+                        GRAD_8_COLORS,
+                        GRAD_8_OFFSETS,
+                        GRAD_BIAS,
+                        GRAD_SCALE,
+                        GRAD_TILE_MODE,
+                        GRAD_COLOR_SPACE,
+                        GRAD_DO_UNPREMUL
+                },
+                NO_SAMPLERS,
+                ShaderCodeSource::generateDefaultExpression,
+                0
+        );
         mBuiltinCodeSnippets[kLocalMatrixShader_BuiltinStageID] = new FragmentStage(
                 "LocalMatrixShader",
                 kLocalCoords_ReqFlag | kPriorStageOutput_ReqFlag,
@@ -491,6 +632,29 @@ public class ShaderCodeSource {
                 },
                 ShaderCodeSource::generateDefaultExpression,
                 0
+        );
+        mBuiltinCodeSnippets[kColorSpaceXformColorFilter_BuiltinStageID] = new FragmentStage(
+                "ColorSpaceTransform",
+                kPriorStageOutput_ReqFlag,
+                "arc_color_space_transform",
+                new String[]{PRIV_TRANSFER_FUNCTION, PRIV_INV_TRANSFER_FUNCTION,
+                        ARC_COLOR_SPACE_TRANSFORM},
+                new Uniform[]{
+                        XFORM_FLAGS, XFORM_SRC_TF, XFORM_GAMUT_TRANSFORM, XFORM_DST_TF
+                },
+                NO_SAMPLERS,
+                ShaderCodeSource::generateDefaultExpression,
+                0
+        );
+        mBuiltinCodeSnippets[kCompose_BuiltinStageID] = new FragmentStage(
+                "Compose",
+                kNone_ReqFlag,
+                "Compose",
+                NO_FUNCTIONS,
+                NO_UNIFORMS,
+                NO_SAMPLERS,
+                ShaderCodeSource::generateComposeExpression,
+                2
         );
     }
 
@@ -599,6 +763,88 @@ public class ShaderCodeSource {
         code.format("""
                 %s = %s(%s);
                 """, output, node.stage().mStaticFunctionName, arguments);
+    }
+
+    private static void generateComposeExpression(FragmentNode node,
+                                                  String localCoords,
+                                                  String priorStageOutput,
+                                                  String blenderDstColor,
+                                                  String output,
+                                                  Formatter code) {
+        assert node.numChildren() >= 2;
+
+        FragmentNode outer = node.childAt(node.numChildren() - 1);
+
+        String outerLocalCoords = localCoords;
+        String outerPriorStageOutput = priorStageOutput;
+        String outerBlenderDstColor = blenderDstColor;
+
+        code.format("{\n");
+
+        int childIndex = 0;
+        if ((outer.requirementFlags() & kLocalCoords_ReqFlag) != 0) {
+            outerLocalCoords = getMangledName("outerLocalCoords", node.stageIndex());
+            code.format("""
+                    vec2 %s;
+                    """, outerLocalCoords);
+            code.format("{\n");
+            var child = node.childAt(childIndex++);
+            child.stage().mExpressionGenerator.generate(
+                    child,
+                    localCoords,
+                    priorStageOutput,
+                    blenderDstColor,
+                    outerLocalCoords,
+                    code
+            );
+            code.format("}\n");
+        }
+        if ((outer.requirementFlags() & kPriorStageOutput_ReqFlag) != 0) {
+            outerPriorStageOutput = getMangledName("outerPriorStageOutput", node.stageIndex());
+            code.format("""
+                    vec4 %s;
+                    """, outerPriorStageOutput);
+            code.format("{\n");
+            var child = node.childAt(childIndex++);
+            child.stage().mExpressionGenerator.generate(
+                    child,
+                    localCoords,
+                    priorStageOutput,
+                    blenderDstColor,
+                    outerPriorStageOutput,
+                    code
+            );
+            code.format("}\n");
+        }
+        if ((outer.requirementFlags() & kBlenderDstColor_ReqFlag) != 0) {
+            outerBlenderDstColor = getMangledName("outerBlenderDstColor", node.stageIndex());
+            code.format("""
+                    vec4 %s;
+                    """, outerBlenderDstColor);
+            code.format("{\n");
+            var child = node.childAt(childIndex++);
+            child.stage().mExpressionGenerator.generate(
+                    child,
+                    localCoords,
+                    priorStageOutput,
+                    blenderDstColor,
+                    outerBlenderDstColor,
+                    code
+            );
+            code.format("}\n");
+        }
+        assert childIndex + 1 == node.numChildren();
+
+        outer.stage().mExpressionGenerator.generate(
+                outer,
+                outerLocalCoords,
+                outerPriorStageOutput,
+                outerBlenderDstColor,
+                output,
+                code
+        );
+
+        code.format("}\n");
     }
 
     public static void emitDefinitions(FragmentNode[] nodes,

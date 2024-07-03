@@ -59,10 +59,8 @@ public class ColorMatrixColorFilter extends ColorFilter {
 
     @Override
     public void filterColor4f(float[] col, float[] out) {
-        float a;
-        if (col[3] != 0) {
-            a = 1 / col[3];
-        } else {
+        float a = 1.0f / col[3];
+        if (!Float.isFinite(a)) { // NaN or Inf
             a = 0;
         }
         // unpremul, multiply and clamp 01
@@ -75,11 +73,9 @@ public class ColorMatrixColorFilter extends ColorFilter {
                 m[2] * col[0] * a + m[6] * col[1] * a + m[10] * col[2] * a + m[14] * col[3] + m[18], 0, 1);
         final float w = MathUtil.clamp(
                 m[3] * col[0] * a + m[7] * col[1] * a + m[11] * col[2] * a + m[15] * col[3] + m[19], 0, 1);
-        // premul and store
-        a = col[3];
-        out[0] = x * a;
-        out[1] = y * a;
-        out[2] = z * a;
+        out[0] = x * w;
+        out[1] = y * w;
+        out[2] = z * w;
         out[3] = w;
     }
 }

@@ -19,5 +19,44 @@
 
 package icyllis.arc3d.core.shaders;
 
+import icyllis.arc3d.core.ColorSpace;
+import icyllis.arc3d.core.MathUtil;
+
 public class Color4fShader extends Shader {
+
+    // color components using non-premultiplied alpha
+    private final float mR;
+    private final float mG;
+    private final float mB;
+    private final float mA;
+    private final ColorSpace mColorSpace;
+
+    public Color4fShader(float r, float g, float b, float a,
+                         ColorSpace colorSpace) {
+        mR = r;
+        mG = g;
+        mB = b;
+        mA = MathUtil.pin(a, 0.0f, 1.0f);
+        mColorSpace = colorSpace;
+    }
+
+    public final float r() {
+        return mR;
+    }
+
+    public final float g() {
+        return mG;
+    }
+
+    public final float b() {
+        return mB;
+    }
+
+    public final float a() {
+        return mA;
+    }
+
+    public ColorSpace getColorSpace() {
+        return mColorSpace;
+    }
 }
