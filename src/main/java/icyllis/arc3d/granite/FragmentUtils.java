@@ -52,6 +52,7 @@ public class FragmentUtils {
             @Nullable ColorSpace dstCS, @ColorInfo.AlphaType int dstAT,
             UniformDataGatherer uniformDataGatherer
     ) {
+        // Opaque outputs are treated as the same alpha type as the source input.
         if (dstAT == ColorInfo.AT_OPAQUE) {
             dstAT = srcAT;
         }
@@ -101,11 +102,11 @@ public class FragmentUtils {
             );
 
             uniformDataGatherer.write1i(flags);
-            append_transfer_function_uniform(
-                    srcRGB == null ? LINEAR_TRANSFER_PARAMETERS : srcRGB.getTransferParameters(), uniformDataGatherer);
+            append_transfer_function_uniform(srcRGB == null ? LINEAR_TRANSFER_PARAMETERS
+                    : srcRGB.getTransferParameters(), uniformDataGatherer);
             uniformDataGatherer.writeMatrix3f(0, transform);
-            append_transfer_function_uniform(
-                    dstRGB == null ? LINEAR_TRANSFER_PARAMETERS : dstRGB.getTransferParameters(), uniformDataGatherer);
+            append_transfer_function_uniform(dstRGB == null ? LINEAR_TRANSFER_PARAMETERS
+                    : dstRGB.getTransferParameters(), uniformDataGatherer);
         } else {
             uniformDataGatherer.write1i(flags);
             append_transfer_function_uniform(LINEAR_TRANSFER_PARAMETERS, uniformDataGatherer);
