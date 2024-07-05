@@ -47,19 +47,34 @@ public class PixelUtils {
     /**
      * Copy memory row by row.
      */
-    public static void copyImage(long src, long srcRowBytes,
-                                 long dst, long dstRowBytes,
+    public static void copyImage(long srcAddr, long srcRowBytes,
+                                 long dstAddr, long dstRowBytes,
                                  long trimRowBytes, int rowCount) {
-        if (srcRowBytes < trimRowBytes || dstRowBytes < trimRowBytes) {
+        copyImage(srcAddr, srcRowBytes,
+                dstAddr, dstRowBytes,
+                trimRowBytes, rowCount, false);
+    }
+
+    /**
+     * Copy memory row by row, allowing vertical flip.
+     */
+    public static void copyImage(long srcAddr, long srcRowBytes,
+                                 long dstAddr, long dstRowBytes,
+                                 long trimRowBytes, int rowCount, boolean flipY) {
+        if (srcRowBytes < trimRowBytes || dstRowBytes < trimRowBytes || trimRowBytes < 0) {
             throw new IllegalArgumentException();
         }
-        if (srcRowBytes == trimRowBytes && dstRowBytes == trimRowBytes) {
-            MemoryUtil.memCopy(src, dst, trimRowBytes * rowCount);
+        if (srcRowBytes == trimRowBytes && dstRowBytes == trimRowBytes && !flipY) {
+            MemoryUtil.memCopy(srcAddr, dstAddr, trimRowBytes * rowCount);
         } else {
+            if (flipY) {
+                dstAddr += dstRowBytes * (rowCount - 1);
+                dstRowBytes = -dstRowBytes;
+            }
             while (rowCount-- != 0) {
-                MemoryUtil.memCopy(src, dst, trimRowBytes);
-                src += srcRowBytes;
-                dst += dstRowBytes;
+                MemoryUtil.memCopy(srcAddr, dstAddr, trimRowBytes);
+                srcAddr += srcRowBytes;
+                dstAddr += dstRowBytes;
             }
         }
     }
@@ -70,15 +85,30 @@ public class PixelUtils {
     public static void copyImage(Object srcBase, long srcAddr, long srcRowBytes,
                                  Object dstBase, long dstAddr, long dstRowBytes,
                                  long trimRowBytes, int rowCount) {
+        copyImage(srcBase, srcAddr, srcRowBytes,
+                dstBase, dstAddr, dstRowBytes,
+                trimRowBytes, rowCount, false);
+    }
+
+    /**
+     * Copy memory row by row, allowing heap to off-heap copy and vertical flip.
+     */
+    public static void copyImage(Object srcBase, long srcAddr, long srcRowBytes,
+                                 Object dstBase, long dstAddr, long dstRowBytes,
+                                 long trimRowBytes, int rowCount, boolean flipY) {
         if (srcBase == null && dstBase == null) {
-            copyImage(srcAddr, srcRowBytes, dstAddr, dstRowBytes, trimRowBytes, rowCount);
+            copyImage(srcAddr, srcRowBytes, dstAddr, dstRowBytes, trimRowBytes, rowCount, flipY);
         } else {
-            if (srcRowBytes < trimRowBytes || dstRowBytes < trimRowBytes) {
+            if (srcRowBytes < trimRowBytes || dstRowBytes < trimRowBytes || trimRowBytes < 0) {
                 throw new IllegalArgumentException();
             }
-            if (srcRowBytes == trimRowBytes && dstRowBytes == trimRowBytes) {
+            if (srcRowBytes == trimRowBytes && dstRowBytes == trimRowBytes && !flipY) {
                 UNSAFE.copyMemory(srcBase, srcAddr, dstBase, dstAddr, trimRowBytes * rowCount);
             } else {
+                if (flipY) {
+                    dstAddr += dstRowBytes * (rowCount - 1);
+                    dstRowBytes = -dstRowBytes;
+                }
                 while (rowCount-- != 0) {
                     UNSAFE.copyMemory(srcBase, srcAddr, dstBase, dstAddr, trimRowBytes);
                     srcAddr += srcRowBytes;
@@ -202,39 +232,42 @@ public class PixelUtils {
     public static void store(@ColorInfo.ColorType int ct, Object base, long addr, float[] src) {
         switch (ct) {
             case ColorInfo.CT_RGB_565 -> {
-                short val = (short) ((int) (src[0] * 31 + .5f) << 11 |
-                                     (int) (src[1] * 63 + .5f) << 5  |
-                                     (int) (src[2] * 31 + .5f)       );
+                short val = (short) ((int) (MathUtil.clamp(src[0], 0.0f, 1.0f) * 31 + .5f) << 11 |
+                                     (int) (MathUtil.clamp(src[1], 0.0f, 1.0f) * 63 + .5f) << 5  |
+                                     (int) (MathUtil.clamp(src[2], 0.0f, 1.0f) * 31 + .5f)       );
                 UNSAFE.putShort(base, addr, val);
             }
             case ColorInfo.CT_RGB_888 -> {
-                UNSAFE.putByte(base, addr+0, (byte) (src[0] * 255 + .5f));
-                UNSAFE.putByte(base, addr+1, (byte) (src[1] * 255 + .5f));
-                UNSAFE.putByte(base, addr+2, (byte) (src[2] * 255 + .5f));
+                for (int i = 0; i < 3; i++) {
+                    UNSAFE.putByte(base, addr+i, (byte) (MathUtil.clamp(src[i], 0.0f, 1.0f) * 255 + .5f));
+                }
             }
             case ColorInfo.CT_RGB_888x -> {
-                UNSAFE.putByte(base, addr+0, (byte) (src[0] * 255 + .5f));
-                UNSAFE.putByte(base, addr+1, (byte) (src[1] * 255 + .5f));
-                UNSAFE.putByte(base, addr+2, (byte) (src[2] * 255 + .5f));
-                UNSAFE.putByte(base, addr+3, (byte) (         255      ));
+                for (int i = 0; i < 3; i++) {
+                    UNSAFE.putByte(base, addr+i, (byte) (MathUtil.clamp(src[i], 0.0f, 1.0f) * 255 + .5f));
+                }
+                UNSAFE.putByte(base, addr+3, (byte) 255);
             }
             case ColorInfo.CT_RGBA_8888 -> {
-                UNSAFE.putByte(base, addr+0, (byte) (src[0] * 255 + .5f));
-                UNSAFE.putByte(base, addr+1, (byte) (src[1] * 255 + .5f));
-                UNSAFE.putByte(base, addr+2, (byte) (src[2] * 255 + .5f));
-                UNSAFE.putByte(base, addr+3, (byte) (src[3] * 255 + .5f));
+                for (int i = 0; i < 4; i++) {
+                    UNSAFE.putByte(base, addr+i, (byte) (MathUtil.clamp(src[i], 0.0f, 1.0f) * 255 + .5f));
+                }
             }
             case ColorInfo.CT_GRAY_8 -> {
-                float y = src[0]*0.2126f + src[1]*0.7152f + src[2]*0.0722f;
+                float y = MathUtil.clamp(src[0], 0.0f, 1.0f) * 0.2126f +
+                          MathUtil.clamp(src[1], 0.0f, 1.0f) * 0.7152f +
+                          MathUtil.clamp(src[2], 0.0f, 1.0f) * 0.0722f;
                 UNSAFE.putByte(base, addr, (byte) (y * 255 + .5f));
             }
             case ColorInfo.CT_GRAY_ALPHA_88 -> {
-                float y = src[0]*0.2126f + src[1]*0.7152f + src[2]*0.0722f;
-                UNSAFE.putByte(base, addr+0, (byte) (y      * 255 + .5f));
-                UNSAFE.putByte(base, addr+1, (byte) (src[3] * 255 + .5f));
+                float y = MathUtil.clamp(src[0], 0.0f, 1.0f) * 0.2126f +
+                          MathUtil.clamp(src[1], 0.0f, 1.0f) * 0.7152f +
+                          MathUtil.clamp(src[2], 0.0f, 1.0f) * 0.0722f;
+                UNSAFE.putByte(base, addr+0, (byte) (y * 255 + .5f));
+                UNSAFE.putByte(base, addr+1, (byte) (MathUtil.clamp(src[3], 0.0f, 1.0f) * 255 + .5f));
             }
             case ColorInfo.CT_ALPHA_8 -> {
-                UNSAFE.putByte(base, addr, (byte) (src[3] * 255 + .5f));
+                UNSAFE.putByte(base, addr, (byte) (MathUtil.clamp(src[3], 0.0f, 1.0f) * 255 + .5f));
             }
             case ColorInfo.CT_RGBA_F32 -> {
                 UNSAFE.putFloat(base, addr+0 , src[0]);
@@ -255,24 +288,45 @@ public class PixelUtils {
             kColorSpaceXformFlagPremul = 0x10;
 
     /**
-     * Performs color type, alpha type, and color space conversion,
-     * addresses must be aligned.
+     * Performs color type, alpha type, and color space conversion.
+     * Addresses (offsets) must be aligned, scaling is not allowed.
      */
     public static boolean convertPixels(ImageInfo srcInfo, Object srcBase,
                                         long srcAddr, long srcRowBytes,
                                         ImageInfo dstInfo, Object dstBase,
                                         long dstAddr, long dstRowBytes) {
-        if (!srcInfo.isValid() || !dstInfo.isValid() ||
-                srcInfo.width() != dstInfo.width() ||
+        return convertPixels(srcInfo, srcBase, srcAddr, srcRowBytes,
+                dstInfo, dstBase, dstAddr, dstRowBytes, false);
+    }
+
+    /**
+     * Performs color type, alpha type, color space, and origin conversion.
+     * Addresses (offsets) must be aligned, scaling is not allowed.
+     */
+    public static boolean convertPixels(ImageInfo srcInfo, Object srcBase,
+                                        long srcAddr, long srcRowBytes,
+                                        ImageInfo dstInfo, Object dstBase,
+                                        long dstAddr, long dstRowBytes,
+                                        boolean flipY) {
+        if (!srcInfo.isValid() || !dstInfo.isValid()) {
+            return false;
+        }
+        if (srcInfo.width() != dstInfo.width() ||
                 srcInfo.height() != dstInfo.height()) {
+            return false;
+        }
+        if ((srcBase == null && srcAddr == 0) ||
+                (dstBase == null && dstAddr == 0)) {
             return false;
         }
         if (srcRowBytes < srcInfo.minRowBytes() ||
                 dstRowBytes < dstInfo.minRowBytes()) {
             return false;
         }
-        if (srcRowBytes % srcInfo.bytesPerPixel() != 0 ||
-                dstRowBytes % dstInfo.bytesPerPixel() != 0) {
+        int srcBpp = srcInfo.bytesPerPixel();
+        int dstBpp = dstInfo.bytesPerPixel();
+        if (srcRowBytes % srcBpp != 0 ||
+                dstRowBytes % dstBpp != 0) {
             return false;
         }
 
@@ -283,6 +337,7 @@ public class PixelUtils {
         @ColorInfo.ColorType var dstCT = dstInfo.colorType();
         @ColorInfo.AlphaType var dstAT = dstInfo.alphaType();
 
+        // Opaque outputs are treated as the same alpha type as the source input.
         if (dstAT == ColorInfo.AT_OPAQUE) {
             dstAT = srcAT;
         }
@@ -320,21 +375,22 @@ public class PixelUtils {
         if (srcCT == dstCT && !csXform && flags == 0) {
             copyImage(srcBase, srcAddr, srcRowBytes,
                     dstBase, dstAddr, dstRowBytes,
-                    srcInfo.minRowBytes(), height);
+                    srcInfo.minRowBytes(), height, flipY);
             return true;
         }
-
-        int srcBpp = srcInfo.bytesPerPixel();
-        int dstBpp = dstInfo.bytesPerPixel();
 
         float[] col = new float[4];
 
         var connector = csXform ? ColorSpace.connect(srcCS, dstCS) : null;
 
-        for (int j = 0; j < height; j++) {
+        if (flipY) {
+            dstAddr += dstRowBytes * (height - 1);
+            dstRowBytes = -dstRowBytes;
+        }
+        for (int i = 0; i < height; i++) {
             long nextSrcAddr = srcAddr + srcRowBytes;
             long nextDstAddr = dstAddr + dstRowBytes;
-            for (int i = 0; i < width; i++) {
+            for (int j = 0; j < width; j++) {
                 load(srcCT, srcBase, srcAddr, col);
                 if ((flags & kColorSpaceXformFlagUnpremul) != 0) {
                     float scale = 1.0f / col[3];

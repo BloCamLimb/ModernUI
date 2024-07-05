@@ -359,13 +359,27 @@ public class TestGraniteRenderer {
         gradShader = RefCnt.move(gradShader);
         testImage = RefCnt.move(testImage);
 
-        long pixels = MemoryUtil.nmemAlloc((long) CANVAS_WIDTH * CANVAS_HEIGHT * 4);
-        GL33C.glReadPixels(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE, pixels);
-        STBImageWrite.stbi_flip_vertically_on_write(true);
-        STBImageWrite.stbi_write_png_compression_level.put(0, 15);
-        STBImageWrite.stbi_write_jpg("E:/test_granite.jpg", CANVAS_WIDTH, CANVAS_HEIGHT, 4,
-                MemoryUtil.memByteBuffer(pixels, CANVAS_WIDTH * CANVAS_HEIGHT * 4), 100);
-        MemoryUtil.nmemFree(pixels);
+        {
+            long rowStride = (long) CANVAS_WIDTH * 4;
+            long srcPixels = MemoryUtil.nmemAlloc(rowStride * CANVAS_HEIGHT);
+            long dstPixels = MemoryUtil.nmemAlloc(rowStride * CANVAS_HEIGHT);
+            GL33C.glReadPixels(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE, srcPixels);
+            // premul to unpremul, and flip Y
+            ImageInfo srcInfo = ImageInfo.make(CANVAS_WIDTH, CANVAS_HEIGHT,
+                    ColorInfo.CT_RGBA_8888, ColorInfo.AT_PREMUL, null);
+            ImageInfo dstInfo = srcInfo.makeAlphaType(ColorInfo.AT_UNPREMUL);
+            boolean res = PixelUtils.convertPixels(
+                    srcInfo, null, srcPixels, rowStride,
+                    dstInfo, null, dstPixels, rowStride,
+                    true
+            );
+            assert res;
+            MemoryUtil.nmemFree(srcPixels);
+            STBImageWrite.stbi_write_png_compression_level.put(0, 15);
+            STBImageWrite.stbi_write_png("test_granite.png", CANVAS_WIDTH, CANVAS_HEIGHT, 4,
+                    MemoryUtil.memByteBuffer(dstPixels, CANVAS_WIDTH * CANVAS_HEIGHT * 4), (int) rowStride);
+            MemoryUtil.nmemFree(dstPixels);
+        }
         drawDevice.unref();
         recordingContext.unref();
         immediateContext.unref();

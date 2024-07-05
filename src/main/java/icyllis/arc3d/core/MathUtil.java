@@ -235,7 +235,7 @@ public class MathUtil {
      * @return x clamped between min and max, inclusively.
      */
     public static int clamp(int x, int min, int max) {
-        return Math.max(min, Math.min(x, max));
+        return Math.min(max, Math.max(x, min));
     }
 
     /**
@@ -245,7 +245,7 @@ public class MathUtil {
      * @return x clamped between min and max, inclusively.
      */
     public static long clamp(long x, long min, long max) {
-        return Math.max(min, Math.min(x, max));
+        return Math.min(max, Math.max(x, min));
     }
 
     /**
@@ -254,7 +254,7 @@ public class MathUtil {
      * @return x clamped between min and max
      */
     public static float clamp(float x, float min, float max) {
-        return Math.max(min, Math.min(x, max));
+        return Math.min(max, Math.max(x, min));
     }
 
     /**
@@ -263,7 +263,7 @@ public class MathUtil {
      * @return x clamped between min and max
      */
     public static double clamp(double x, double min, double max) {
-        return Math.max(min, Math.min(x, max));
+        return Math.min(max, Math.max(x, min));
     }
 
     /**
