@@ -26,7 +26,6 @@ import icyllis.arc3d.engine.task.TaskList;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
@@ -187,7 +186,8 @@ public final class SurfaceDrawContext implements AutoCloseable {
                 draw.mScissorRect.top() >= 0 &&
                 draw.mScissorRect.right() <= mImageInfo.width() &&
                 draw.mScissorRect.bottom() <= mImageInfo.height();
-        //TODO add stencil validation?
+        assert ((draw.mRenderer.depthStencilFlags() & Engine.DepthStencilFlags.kStencil) == 0 ||
+                DrawOrder.getStencilIndex(draw.mDrawOrder) != DrawOrder.MIN_VALUE);
 
         draw.mTransform = getStableTransform(draw.mTransform);
 
@@ -217,20 +217,13 @@ public final class SurfaceDrawContext implements AutoCloseable {
         mNumSteps = 0;
 
         if (pass != null) {
-
-            var renderPassDesc = new RenderPassDesc();
-            renderPassDesc.mNumColorAttachments = 1;
-            var colorDesc = renderPassDesc.mColorAttachments[0] = new RenderPassDesc.ColorAttachmentDesc();
-            colorDesc.mDesc = mReadView.getDesc();
-            colorDesc.mLoadOp = mPendingLoadOp;
-            colorDesc.mStoreOp = mPendingStoreOp;
-            //TODO MSAA and depth stencil attachment
-
             RenderPassTask renderPassTask = RenderPassTask.make(
+                    context,
                     pass,
-                    renderPassDesc,
                     RefCnt.create(mReadView),
                     null,
+                    mPendingLoadOp,
+                    mPendingStoreOp,
                     mPendingClearColor
             );
             mDrawTaskList.appendTask(renderPassTask);

@@ -56,7 +56,7 @@ public final class GLTexture extends GLImage {
                 if (isDestroyed()) {
                     return;
                 }
-                mHandle = device.createTexture(mDesc);
+                mHandle = device.createTexture(getGLDesc());
                 if (mHandle == 0) {
                     setNonCacheable();
                 }
@@ -118,17 +118,17 @@ public final class GLTexture extends GLImage {
     }
 
     public int getTarget() {
-        return mDesc.mTarget;
+        return getGLDesc().mTarget;
     }
 
     public int getFormat() {
-        return mDesc.mFormat;
+        return getGLDesc().mFormat;
     }
 
     @Override
     protected void onSetLabel(@Nullable String label) {
         if (getDevice().getCaps().hasDebugSupport()) {
-            assert mDesc != null;
+            assert mHandle != 0;
             if (label == null) {
                 getDevice().getGL().glObjectLabel(GL_TEXTURE, mHandle, 0, MemoryUtil.NULL);
             } else {
@@ -162,7 +162,7 @@ public final class GLTexture extends GLImage {
     @Override
     public String toString() {
         return "GLTexture{" +
-                "mDesc=" + mDesc +
+                "mDesc=" + getDesc() +
                 ", mHandle=" + mHandle +
                 ", mDestroyed=" + isDestroyed() +
                 ", mOwnership=" + mOwnership +

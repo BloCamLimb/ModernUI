@@ -28,18 +28,45 @@ public final class GeometryRenderer {
     public static final int MAX_RENDER_STEPS = 4;
 
     // we have limited number of geometry steps, enumerate here
-    private GeometryStep mStep0;
-    private GeometryStep mStep1;
-    private GeometryStep mStep2;
-    private GeometryStep mStep3;
-    private int mNumSteps;
+    private final GeometryStep mStep0;
+    private final GeometryStep mStep1;
+    private final GeometryStep mStep2;
+    private final int mNumSteps;
 
-    private String mName;
+    private final String mName;
+    private final int mStepFlags;
+    private final int mDepthStencilFlags;
 
-    public GeometryRenderer(String name, GeometryStep step) {
+    public GeometryRenderer(String name, GeometryStep step0) {
         mName = name;
-        mStep0 = step;
+        mStep0 = step0;
+        mStep1 = mStep2 = null;
         mNumSteps = 1;
+        mStepFlags = step0.mFlags;
+        mDepthStencilFlags = step0.depthStencilFlags();
+        assert (mStepFlags & GeometryStep.FLAG_PERFORM_SHADING) != 0;
+    }
+
+    public GeometryRenderer(String name, GeometryStep step0, GeometryStep step1) {
+        mName = name;
+        mStep0 = step0;
+        mStep1 = step1;
+        mStep2 = null;
+        mNumSteps = 2;
+        mStepFlags = step0.mFlags | step1.mFlags;
+        mDepthStencilFlags = step0.depthStencilFlags() | step1.depthStencilFlags();
+        assert (mStepFlags & GeometryStep.FLAG_PERFORM_SHADING) != 0;
+    }
+
+    public GeometryRenderer(String name, GeometryStep step0, GeometryStep step1, GeometryStep step2) {
+        mName = name;
+        mStep0 = step0;
+        mStep1 = step1;
+        mStep2 = step2;
+        mNumSteps = 3;
+        mStepFlags = step0.mFlags | step1.mFlags | step2.mFlags;
+        mDepthStencilFlags = step0.depthStencilFlags() | step1.depthStencilFlags() | step2.depthStencilFlags();
+        assert (mStepFlags & GeometryStep.FLAG_PERFORM_SHADING) != 0;
     }
 
     public GeometryStep step(int i) {
@@ -48,11 +75,27 @@ public final class GeometryRenderer {
             case 0 -> mStep0;
             case 1 -> mStep1;
             case 2 -> mStep2;
-            default -> mStep3;
+            default -> null;
         };
     }
 
     public int numSteps() {
         return mNumSteps;
+    }
+
+    public String name() {
+        return mName;
+    }
+
+    public int depthStencilFlags() {
+        return mDepthStencilFlags;
+    }
+
+    public boolean outsetBoundsForAA() {
+        return (mStepFlags & GeometryStep.FLAG_OUTSET_BOUNDS_FOR_AA) != 0;
+    }
+
+    public boolean emitsCoverage() {
+        return (mStepFlags & GeometryStep.FLAG_EMIT_COVERAGE) != 0;
     }
 }

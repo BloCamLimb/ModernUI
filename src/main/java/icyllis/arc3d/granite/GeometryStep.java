@@ -123,12 +123,16 @@ public abstract class GeometryStep extends Processor {
     private final int mVertexStride;
     private final int mInstanceStride;
 
-    private final int mFlags;
+    final int mFlags;
+    private final byte mPrimitiveType;
+    private final DepthStencilSettings mDepthStencilSettings;
 
     protected GeometryStep(int classID,
                            @Nullable VertexInputLayout.AttributeSet vertexAttributes,
                            @Nullable VertexInputLayout.AttributeSet instanceAttributes,
-                           int flags) {
+                           int flags,
+                           byte primitiveType,
+                           DepthStencilSettings depthStencilSettings) {
         super(classID);
         int binding = 0;
         if (vertexAttributes != null) {
@@ -162,6 +166,8 @@ public abstract class GeometryStep extends Processor {
         }
         assert binding == mInputLayout.getBindingCount();
         mFlags = flags;
+        mPrimitiveType = primitiveType;
+        mDepthStencilSettings = depthStencilSettings;
     }
 
     /**
@@ -171,7 +177,9 @@ public abstract class GeometryStep extends Processor {
      *
      * @see PrimitiveType
      */
-    public abstract byte primitiveType();
+    public final byte primitiveType() {
+        return mPrimitiveType;
+    }
 
     /**
      * Currently, GP is limited to one texture sampler at most.
@@ -329,6 +337,19 @@ public abstract class GeometryStep extends Processor {
 
     public boolean handlesSolidColor() {
         return (mFlags & FLAG_HANDLE_SOLID_COLOR) != 0;
+    }
+
+    public DepthStencilSettings depthStencilSettings() {
+        return mDepthStencilSettings;
+    }
+
+    public int depthStencilFlags() {
+        return (mDepthStencilSettings.mDepthTest || mDepthStencilSettings.mDepthWrite
+                ? DepthStencilFlags.kDepth
+                : DepthStencilFlags.kNone) |
+                (mDepthStencilSettings.mStencilTest
+                        ? DepthStencilFlags.kStencil
+                        : DepthStencilFlags.kNone);
     }
 
     /**

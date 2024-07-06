@@ -127,7 +127,13 @@ public final class GraphicsPipelineDesc extends PipelineDesc {
 
     @Override
     public BlendInfo getBlendInfo() {
+        //TODO
         return BlendInfo.SRC_OVER;
+    }
+
+    @Override
+    public DepthStencilSettings getDepthStencilSettings() {
+        return mGeometryStep.depthStencilSettings();
     }
 
     @Override

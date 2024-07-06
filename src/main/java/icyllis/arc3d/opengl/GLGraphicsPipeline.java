@@ -48,6 +48,7 @@ public class GLGraphicsPipeline extends GraphicsPipeline {
     private GLVertexArray mVertexArray;
 
     private final BlendInfo mBlendInfo;
+    private final DepthStencilSettings mDepthStencilSettings;
 
     private GLUniformDataManager mDataManager;
 
@@ -61,9 +62,11 @@ public class GLGraphicsPipeline extends GraphicsPipeline {
     GLGraphicsPipeline(GLDevice device,
                        byte primitiveType,
                        BlendInfo blendInfo,
+                       DepthStencilSettings depthStencilSettings,
                        CompletableFuture<GLGraphicsPipelineBuilder> asyncWork) {
         super(device, primitiveType);
         mBlendInfo = blendInfo;
+        mDepthStencilSettings = depthStencilSettings;
         mAsyncWork = asyncWork;
     }
 
@@ -163,6 +166,10 @@ public class GLGraphicsPipeline extends GraphicsPipeline {
 
     public BlendInfo getBlendInfo() {
         return mBlendInfo;
+    }
+
+    public DepthStencilSettings getDepthStencilSettings() {
+        return mDepthStencilSettings;
     }
 
     public int getVertexBindingCount() {

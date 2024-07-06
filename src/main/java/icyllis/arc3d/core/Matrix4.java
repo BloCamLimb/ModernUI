@@ -1361,18 +1361,18 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      * Set this matrix to be an orthographic projection transformation for a
      * right-handed coordinate system using the given NDC z range.
      *
-     * @param left   the distance from the center to the left frustum edge
-     * @param right  the distance from the center to the right frustum edge
-     * @param bottom the distance from the center to the bottom frustum edge
-     * @param top    the distance from the center to the top frustum edge
-     * @param near   near clipping plane distance
-     * @param far    far clipping plane distance
-     * @param signed whether to use Vulkan's and Direct3D's NDC z range of <code>[0..+1]</code> when
-     *               <code>false</code> or whether to use OpenGL's NDC z range of <code>[-1..+1]</code> when
-     *               <code>true</code>
+     * @param left             the distance from the center to the left frustum edge
+     * @param right            the distance from the center to the right frustum edge
+     * @param bottom           the distance from the center to the bottom frustum edge
+     * @param top              the distance from the center to the top frustum edge
+     * @param near             near clipping plane distance
+     * @param far              far clipping plane distance
+     * @param negativeOneToOne whether to use Vulkan's and Direct3D's NDC z range of <code>[0..+1]</code> when
+     *                         <code>false</code> or whether to use OpenGL's NDC z range of <code>[-1..+1]</code> when
+     *                         <code>true</code>
      */
     public void setOrthographic(float left, float right, float bottom, float top,
-                                float near, float far, boolean signed) {
+                                float near, float far, boolean negativeOneToOne) {
         m11 = 2.0f / (right - left);
         m12 = 0.0f;
         m13 = 0.0f;
@@ -1383,11 +1383,11 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
         m24 = 0.0f;
         m31 = 0.0f;
         m32 = 0.0f;
-        m33 = (signed ? 2.0f : 1.0f) / (near - far);
+        m33 = (negativeOneToOne ? 2.0f : 1.0f) / (near - far);
         m34 = 0.0f;
         m41 = (right + left) / (left - right);
         m42 = (top + bottom) / (bottom - top);
-        m43 = (signed ? (far + near) : near) / (near - far);
+        m43 = (negativeOneToOne ? (far + near) : near) / (near - far);
         m44 = 1.0f;
     }
 
@@ -1395,18 +1395,18 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      * Set this matrix to be an orthographic projection transformation for a
      * left-handed coordinate system using the given NDC z range.
      *
-     * @param left   the distance from the center to the left frustum edge
-     * @param right  the distance from the center to the right frustum edge
-     * @param bottom the distance from the center to the bottom frustum edge
-     * @param top    the distance from the center to the top frustum edge
-     * @param near   near clipping plane distance
-     * @param far    far clipping plane distance
-     * @param signed whether to use Vulkan's and Direct3D's NDC z range of <code>[0..+1]</code> when
-     *               <code>false</code> or whether to use OpenGL's NDC z range of <code>[-1..+1]</code> when
-     *               <code>true</code>
+     * @param left             the distance from the center to the left frustum edge
+     * @param right            the distance from the center to the right frustum edge
+     * @param bottom           the distance from the center to the bottom frustum edge
+     * @param top              the distance from the center to the top frustum edge
+     * @param near             near clipping plane distance
+     * @param far              far clipping plane distance
+     * @param negativeOneToOne whether to use Vulkan's and Direct3D's NDC z range of <code>[0..+1]</code> when
+     *                         <code>false</code> or whether to use OpenGL's NDC z range of <code>[-1..+1]</code> when
+     *                         <code>true</code>
      */
     public void setOrthographicLH(float left, float right, float bottom, float top,
-                                  float near, float far, boolean signed) {
+                                  float near, float far, boolean negativeOneToOne) {
         m11 = 2.0f / (right - left);
         m12 = 0.0f;
         m13 = 0.0f;
@@ -1417,11 +1417,11 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
         m24 = 0.0f;
         m31 = 0.0f;
         m32 = 0.0f;
-        m33 = (signed ? 2.0f : 1.0f) / (far - near);
+        m33 = (negativeOneToOne ? 2.0f : 1.0f) / (far - near);
         m34 = 0.0f;
         m41 = (right + left) / (left - right);
         m42 = (top + bottom) / (bottom - top);
-        m43 = (signed ? (far + near) : near) / (near - far);
+        m43 = (negativeOneToOne ? (far + near) : near) / (near - far);
         m44 = 1.0f;
     }
 
@@ -1497,15 +1497,15 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      * Set this matrix to be a symmetric perspective projection frustum transformation
      * for a right-handed coordinate system using the given NDC z range.
      *
-     * @param fov    the field of view in radians (must be greater than zero and less than PI)
-     * @param aspect the aspect ratio of the view (i.e. width / height)
-     * @param near   the near clipping plane, must be positive
-     * @param far    the far clipping plane, must be positive
-     * @param signed whether to use Vulkan's and Direct3D's NDC z range of <code>[0..+1]</code> when
-     *               <code>false</code> or whether to use OpenGL's NDC z range of <code>[-1..+1]</code> when
-     *               <code>true</code>
+     * @param fov              the field of view in radians (must be greater than zero and less than PI)
+     * @param aspect           the aspect ratio of the view (i.e. width / height)
+     * @param near             the near clipping plane, must be positive
+     * @param far              the far clipping plane, must be positive
+     * @param negativeOneToOne whether to use Vulkan's and Direct3D's NDC z range of <code>[0..+1]</code> when
+     *                         <code>false</code> or whether to use OpenGL's NDC z range of <code>[-1..+1]</code> when
+     *                         <code>true</code>
      */
-    public void setPerspective(double fov, double aspect, float near, float far, boolean signed) {
+    public void setPerspective(double fov, double aspect, float near, float far, boolean negativeOneToOne) {
         double h = Math.tan(fov * 0.5);
         m11 = (float) (1.0 / (h * aspect));
         m12 = 0.0f;
@@ -1519,13 +1519,13 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
         m32 = 0.0f;
         if (far == Float.POSITIVE_INFINITY) {
             m33 = MathUtil.EPS - 1.0f;
-            m43 = (MathUtil.EPS - (signed ? 2.0f : 1.0f)) * near;
+            m43 = (MathUtil.EPS - (negativeOneToOne ? 2.0f : 1.0f)) * near;
         } else if (near == Float.POSITIVE_INFINITY) {
-            m33 = (signed ? 1.0f : 0.0f) - MathUtil.EPS;
-            m43 = ((signed ? 2.0f : 1.0f) - MathUtil.EPS) * far;
+            m33 = (negativeOneToOne ? 1.0f : 0.0f) - MathUtil.EPS;
+            m43 = ((negativeOneToOne ? 2.0f : 1.0f) - MathUtil.EPS) * far;
         } else {
-            m33 = (signed ? (far + near) : far) / (near - far);
-            m43 = (signed ? (far + far) : far) * near / (near - far);
+            m33 = (negativeOneToOne ? (far + near) : far) / (near - far);
+            m43 = (negativeOneToOne ? (far + far) : far) * near / (near - far);
         }
         m34 = -1.0f;
         m41 = 0.0f;
@@ -1537,15 +1537,15 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      * Set this matrix to be a symmetric perspective projection frustum transformation
      * for a left-handed coordinate system using the given NDC z range.
      *
-     * @param fov    the field of view in radians (must be greater than zero and less than PI)
-     * @param aspect the aspect ratio of the view (i.e. width / height)
-     * @param near   the near clipping plane, must be positive
-     * @param far    the far clipping plane, must be positive
-     * @param signed whether to use Vulkan's and Direct3D's NDC z range of <code>[0..+1]</code> when
-     *               <code>false</code> or whether to use OpenGL's NDC z range of <code>[-1..+1]</code> when
-     *               <code>true</code>
+     * @param fov              the field of view in radians (must be greater than zero and less than PI)
+     * @param aspect           the aspect ratio of the view (i.e. width / height)
+     * @param near             the near clipping plane, must be positive
+     * @param far              the far clipping plane, must be positive
+     * @param negativeOneToOne whether to use Vulkan's and Direct3D's NDC z range of <code>[0..+1]</code> when
+     *                         <code>false</code> or whether to use OpenGL's NDC z range of <code>[-1..+1]</code> when
+     *                         <code>true</code>
      */
-    public void setPerspectiveLH(double fov, double aspect, float near, float far, boolean signed) {
+    public void setPerspectiveLH(double fov, double aspect, float near, float far, boolean negativeOneToOne) {
         double h = Math.tan(fov * 0.5);
         m11 = (float) (1.0 / (h * aspect));
         m12 = 0.0f;
@@ -1559,13 +1559,13 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
         m32 = 0.0f;
         if (far == Float.POSITIVE_INFINITY) {
             m33 = MathUtil.EPS - 1.0f;
-            m43 = (MathUtil.EPS - (signed ? 2.0f : 1.0f)) * near;
+            m43 = (MathUtil.EPS - (negativeOneToOne ? 2.0f : 1.0f)) * near;
         } else if (near == Float.POSITIVE_INFINITY) {
-            m33 = (signed ? 1.0f : 0.0f) - MathUtil.EPS;
-            m43 = ((signed ? 2.0f : 1.0f) - MathUtil.EPS) * far;
+            m33 = (negativeOneToOne ? 1.0f : 0.0f) - MathUtil.EPS;
+            m43 = ((negativeOneToOne ? 2.0f : 1.0f) - MathUtil.EPS) * far;
         } else {
-            m33 = (signed ? (far + near) : far) / (far - near);
-            m43 = (signed ? (far + far) : far) * near / (near - far);
+            m33 = (negativeOneToOne ? (far + near) : far) / (far - near);
+            m43 = (negativeOneToOne ? (far + far) : far) * near / (near - far);
         }
         m34 = 1.0f;
         m41 = 0.0f;

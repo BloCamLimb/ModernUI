@@ -42,7 +42,7 @@ public final class DefaultGeoProc extends GeometryStep {
     private final int mFlags;
 
     public DefaultGeoProc(int flags) {
-        super(DefaultGeoProc_ClassID, VERTEX_ATTRIBS, null, 0);
+        super(DefaultGeoProc_ClassID, VERTEX_ATTRIBS, null, 0, (byte) 0, null);
         mFlags = flags;
         int mask = 0x1;
         if ((flags & FLAG_COLOR_ATTRIBUTE) != 0) {
@@ -58,11 +58,6 @@ public final class DefaultGeoProc extends GeometryStep {
     @Override
     public String name() {
         return "Default_GeomProc";
-    }
-
-    @Override
-    public byte primitiveType() {
-        return 0;
     }
 
     @Override

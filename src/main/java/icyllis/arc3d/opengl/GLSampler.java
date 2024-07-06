@@ -25,9 +25,7 @@ import icyllis.arc3d.engine.*;
 import javax.annotation.Nullable;
 
 import static org.lwjgl.opengl.GL11C.*;
-import static org.lwjgl.opengl.GL12C.*;
-import static org.lwjgl.opengl.GL13C.GL_CLAMP_TO_BORDER;
-import static org.lwjgl.opengl.GL14C.GL_MIRRORED_REPEAT;
+import static org.lwjgl.opengl.GL12C.GL_TEXTURE_WRAP_R;
 import static org.lwjgl.opengl.GL46C.GL_TEXTURE_MAX_ANISOTROPY;
 
 /**
@@ -51,20 +49,20 @@ public final class GLSampler extends Sampler {
         if (sampler == 0) {
             return null;
         }
-        int magFilter = filter_to_mag_filter(
+        int magFilter = GLUtil.toGLMagFilter(
                 desc.getMagFilter()
         );
-        int minFilter = filter_to_min_filter(
+        int minFilter = GLUtil.toGLMinFilter(
                 desc.getMinFilter(),
                 desc.getMipmapMode()
         );
-        int wrapX = address_mode_to_wrap(
+        int wrapX = GLUtil.toGLWrapMode(
                 desc.getAddressModeX()
         );
-        int wrapY = address_mode_to_wrap(
+        int wrapY = GLUtil.toGLWrapMode(
                 desc.getAddressModeY()
         );
-        int wrapZ = address_mode_to_wrap(
+        int wrapZ = GLUtil.toGLWrapMode(
                 desc.getAddressModeZ()
         );
         device.getGL().glSamplerParameteri(sampler, GL_TEXTURE_MAG_FILTER, magFilter);
@@ -81,43 +79,6 @@ public final class GLSampler extends Sampler {
         // border color is (0,0,0,0) by default
         return new GLSampler(context, sampler);
     }
-
-    //@formatter:off
-    private static int filter_to_mag_filter(int filter) {
-        return switch (filter) {
-            case SamplerDesc.FILTER_NEAREST -> GL_NEAREST;
-            case SamplerDesc.FILTER_LINEAR  -> GL_LINEAR;
-            default -> throw new AssertionError(filter);
-        };
-    }
-
-    private static int filter_to_min_filter(int filter, int mipmapMode) {
-        return switch (mipmapMode) {
-            case SamplerDesc.MIPMAP_MODE_NONE    -> filter_to_mag_filter(filter);
-            case SamplerDesc.MIPMAP_MODE_NEAREST -> switch (filter) {
-                case SamplerDesc.FILTER_NEAREST  -> GL_NEAREST_MIPMAP_NEAREST;
-                case SamplerDesc.FILTER_LINEAR   -> GL_LINEAR_MIPMAP_NEAREST;
-                default -> throw new AssertionError(filter);
-            };
-            case SamplerDesc.MIPMAP_MODE_LINEAR  -> switch (filter) {
-                case SamplerDesc.FILTER_NEAREST  -> GL_NEAREST_MIPMAP_LINEAR;
-                case SamplerDesc.FILTER_LINEAR   -> GL_LINEAR_MIPMAP_LINEAR;
-                default -> throw new AssertionError(filter);
-            };
-            default -> throw new AssertionError(mipmapMode);
-        };
-    }
-
-    private static int address_mode_to_wrap(int addressMode) {
-        return switch (addressMode) {
-            case SamplerDesc.ADDRESS_MODE_REPEAT          -> GL_REPEAT;
-            case SamplerDesc.ADDRESS_MODE_MIRRORED_REPEAT -> GL_MIRRORED_REPEAT;
-            case SamplerDesc.ADDRESS_MODE_CLAMP_TO_EDGE   -> GL_CLAMP_TO_EDGE;
-            case SamplerDesc.ADDRESS_MODE_CLAMP_TO_BORDER -> GL_CLAMP_TO_BORDER;
-            default -> throw new AssertionError(addressMode);
-        };
-    }
-    //@formatter:on
 
     @Override
     protected void onRelease() {
