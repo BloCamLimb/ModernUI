@@ -26,6 +26,7 @@ import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 import static org.lwjgl.opengl.GL32C.*;
 import static org.lwjgl.opengl.GL33C.GL_TEXTURE_SWIZZLE_R;
@@ -39,9 +40,9 @@ import static org.lwjgl.opengl.GL45C.*;
 public final class GLCommandBuffer extends CommandBuffer {
 
     private static final int
-            TriState_Disabled = 0,
-            TriState_Enabled = 1,
-            TriState_Unknown = 2;
+            kDisabled_TriState = 0,
+            kEnabled_TriState = 1,
+            kUnknown_TriState = 2;
 
     private final GLDevice mDevice;
     private final GLResourceProvider mResourceProvider;
@@ -59,11 +60,25 @@ public final class GLCommandBuffer extends CommandBuffer {
     private int mHWScissorWidth;
     private int mHWScissorHeight;
 
-    private int mHWScissorTest;
-    private int mHWColorWrite;
-    private int mHWBlendState;
-    private int mHWBlendSrcFactor;
-    private int mHWBlendDstFactor;
+    private /*TriState*/ int mHWScissorTest;
+    private /*TriState*/ int mHWColorWrite;
+    private /*TriState*/ int mHWBlendState;
+    /**
+     * @see BlendInfo#FACTOR_ZERO
+     */
+    private byte mHWBlendSrcFactor;
+    private byte mHWBlendDstFactor;
+
+    private /*TriState*/ int mHWDepthTest;
+    private /*TriState*/ int mHWDepthWrite;
+    /**
+     * @see DepthStencilSettings#COMPARE_OP_NEVER
+     */
+    private byte mHWDepthCompareOp;
+
+    private /*TriState*/ int mHWStencilTest;
+    private DepthStencilSettings.Face mHWFrontStencil;
+    private DepthStencilSettings.Face mHWBackStencil;
 
     @SharedPtr
     private GLFramebuffer mHWFramebuffer;
@@ -80,6 +95,7 @@ public final class GLCommandBuffer extends CommandBuffer {
     private final UniqueID[][] mHWTextureStates;
     private final UniqueID[] mHWSamplerStates;
 
+    // current pipeline state
     @RawPtr
     private GLGraphicsPipeline mGraphicsPipeline;
 
@@ -92,6 +108,7 @@ public final class GLCommandBuffer extends CommandBuffer {
     private final GLBuffer[] mActiveVertexBuffers = new GLBuffer[Caps.MAX_VERTEX_BINDINGS];
     private final long[] mActiveVertexOffsets = new long[Caps.MAX_VERTEX_BINDINGS];
 
+    // current render pass state
     private RenderPassDesc mRenderPassDesc;
     private final Rect2i mContentBounds = new Rect2i();
 
@@ -114,7 +131,7 @@ public final class GLCommandBuffer extends CommandBuffer {
         mHWProgram = null;
         mHWVertexArray = null;
 
-        mHWScissorTest = TriState_Unknown;
+        mHWScissorTest = kUnknown_TriState;
         mHWScissorX = -1;
         mHWScissorY = -1;
         mHWScissorWidth = -1;
@@ -124,10 +141,16 @@ public final class GLCommandBuffer extends CommandBuffer {
         mHWViewportWidth = -1;
         mHWViewportHeight = -1;
 
-        mHWColorWrite = TriState_Unknown;
-        mHWBlendState = TriState_Unknown;
+        mHWColorWrite = kUnknown_TriState;
+        mHWBlendState = kUnknown_TriState;
         mHWBlendSrcFactor = BlendInfo.FACTOR_UNKNOWN;
         mHWBlendDstFactor = BlendInfo.FACTOR_UNKNOWN;
+        mHWDepthTest = kUnknown_TriState;
+        mHWDepthWrite = kUnknown_TriState;
+        mHWDepthCompareOp = -1;
+        mHWStencilTest = kUnknown_TriState;
+        mHWFrontStencil = null;
+        mHWBackStencil = null;
 
         for (UniqueID[] textures : mHWTextureStates) {
             Arrays.fill(textures, null);
@@ -179,9 +202,9 @@ public final class GLCommandBuffer extends CommandBuffer {
                             color);
                 }
             }
-            boolean stencilLoadClear = renderPassDesc.mDepthStencilAttachment.mDesc != null &&
+            boolean depthStencilLoadClear = renderPassDesc.mDepthStencilAttachment.mDesc != null &&
                     renderPassDesc.mDepthStencilAttachment.mLoadOp == Engine.LoadOp.kClear;
-            if (stencilLoadClear) {
+            if (depthStencilLoadClear) {
                 glStencilMask(0xFFFFFFFF); // stencil will be flushed later
                 glClearBufferfi(GL_DEPTH_STENCIL,
                         0,
@@ -352,14 +375,14 @@ public final class GLCommandBuffer extends CommandBuffer {
      */
     public void flushScissorTest(boolean enable) {
         if (enable) {
-            if (mHWScissorTest != TriState_Enabled) {
+            if (mHWScissorTest != kEnabled_TriState) {
                 mDevice.getGL().glEnable(GL_SCISSOR_TEST);
-                mHWScissorTest = TriState_Enabled;
+                mHWScissorTest = kEnabled_TriState;
             }
         } else {
-            if (mHWScissorTest != TriState_Disabled) {
+            if (mHWScissorTest != kDisabled_TriState) {
                 mDevice.getGL().glDisable(GL_SCISSOR_TEST);
-                mHWScissorTest = TriState_Disabled;
+                mHWScissorTest = kDisabled_TriState;
             }
         }
     }
@@ -371,14 +394,14 @@ public final class GLCommandBuffer extends CommandBuffer {
      */
     public void flushColorWrite(boolean enable) {
         if (enable) {
-            if (mHWColorWrite != TriState_Enabled) {
+            if (mHWColorWrite != kEnabled_TriState) {
                 mDevice.getGL().glColorMask(true, true, true, true);
-                mHWColorWrite = TriState_Enabled;
+                mHWColorWrite = kEnabled_TriState;
             }
         } else {
-            if (mHWColorWrite != TriState_Disabled) {
+            if (mHWColorWrite != kDisabled_TriState) {
                 mDevice.getGL().glColorMask(false, false, false, false);
-                mHWColorWrite = TriState_Disabled;
+                mHWColorWrite = kDisabled_TriState;
             }
         }
     }
@@ -388,14 +411,7 @@ public final class GLCommandBuffer extends CommandBuffer {
         Arrays.fill(mActiveVertexBuffers, null);
 
         mGraphicsPipeline = (GLGraphicsPipeline) graphicsPipeline;
-        mPrimitiveType = switch (mGraphicsPipeline.getPrimitiveType()) {
-            case Engine.PrimitiveType.PointList -> GL_POINTS;
-            case Engine.PrimitiveType.LineList -> GL_LINES;
-            case Engine.PrimitiveType.LineStrip -> GL_LINE_STRIP;
-            case Engine.PrimitiveType.TriangleList -> GL_TRIANGLES;
-            case Engine.PrimitiveType.TriangleStrip -> GL_TRIANGLE_STRIP;
-            default -> throw new AssertionError();
-        };
+        mPrimitiveType = GLUtil.toGLPrimitiveType(mGraphicsPipeline.getPrimitiveType());
 
         GLProgram program = mGraphicsPipeline.getProgram();
         if (program == null) {
@@ -417,30 +433,97 @@ public final class GLCommandBuffer extends CommandBuffer {
         BlendInfo blendInfo = mGraphicsPipeline.getBlendInfo();
         boolean blendOff = blendInfo.shouldDisableBlend() || !blendInfo.mColorWrite;
         if (blendOff) {
-            if (mHWBlendState != TriState_Disabled) {
+            if (mHWBlendState != kDisabled_TriState) {
                 mDevice.getGL().glDisable(GL_BLEND);
-                mHWBlendState = TriState_Disabled;
+                mHWBlendState = kDisabled_TriState;
             }
         } else {
-            if (mHWBlendState != TriState_Enabled) {
+            if (mHWBlendState != kEnabled_TriState) {
                 mDevice.getGL().glEnable(GL_BLEND);
-                mHWBlendState = TriState_Enabled;
+                mHWBlendState = kEnabled_TriState;
             }
         }
         if (mHWBlendSrcFactor != blendInfo.mSrcFactor ||
                 mHWBlendDstFactor != blendInfo.mDstFactor) {
             mDevice.getGL().glBlendFunc(
-                    GLUtil.getGLBlendFactor(blendInfo.mSrcFactor),
-                    GLUtil.getGLBlendFactor(blendInfo.mDstFactor)
+                    GLUtil.toGLBlendFactor(blendInfo.mSrcFactor),
+                    GLUtil.toGLBlendFactor(blendInfo.mDstFactor)
             );
             mHWBlendSrcFactor = blendInfo.mSrcFactor;
             mHWBlendDstFactor = blendInfo.mDstFactor;
         }
         flushColorWrite(blendInfo.mColorWrite);
 
+        DepthStencilSettings ds = mGraphicsPipeline.getDepthStencilSettings();
+        if (ds.mDepthTest) {
+            if (mHWDepthTest != kEnabled_TriState) {
+                mDevice.getGL().glEnable(GL_DEPTH_TEST);
+                mHWDepthTest = kEnabled_TriState;
+            }
+        } else {
+            if (mHWDepthTest != kDisabled_TriState) {
+                mDevice.getGL().glDisable(GL_DEPTH_TEST);
+                mHWDepthTest = kDisabled_TriState;
+            }
+        }
+        if (ds.mDepthWrite) {
+            if (mHWDepthWrite != kEnabled_TriState) {
+                glDepthMask(true);
+                mHWDepthWrite = kEnabled_TriState;
+            }
+        } else {
+            if (mHWDepthWrite != kDisabled_TriState) {
+                glDepthMask(false);
+                mHWDepthWrite = kDisabled_TriState;
+            }
+        }
+        if (ds.mDepthCompareOp != mHWDepthCompareOp) {
+            glDepthFunc(GLUtil.toGLCompareFunc(ds.mDepthCompareOp));
+            mHWDepthCompareOp = ds.mDepthCompareOp;
+        }
+        if (ds.mStencilTest) {
+            if (mHWStencilTest != kEnabled_TriState) {
+                mDevice.getGL().glEnable(GL_STENCIL_TEST);
+                mHWStencilTest = kEnabled_TriState;
+            }
+            if (!Objects.equals(mHWFrontStencil, ds.mFrontFace) ||
+                    !Objects.equals(mHWBackStencil, ds.mBackFace)) {
+                //TODO note that we assume LowerLeft origin here
+                if (ds.isTwoSided()) {
+                    setup_gl_stencil_state(mDevice.getGL(),
+                            ds.mFrontFace, GL_FRONT);
+                    setup_gl_stencil_state(mDevice.getGL(),
+                            ds.mBackFace, GL_BACK);
+                } else {
+                    setup_gl_stencil_state(mDevice.getGL(),
+                            ds.mFrontFace, GL_FRONT_AND_BACK);
+                }
+                mHWFrontStencil = ds.mFrontFace;
+                mHWBackStencil = ds.mBackFace;
+            }
+        } else {
+            if (mHWStencilTest != kDisabled_TriState) {
+                mDevice.getGL().glDisable(GL_STENCIL_TEST);
+                mHWStencilTest = kDisabled_TriState;
+            }
+        }
+
         /*return mPipelineState.bindUniforms(mCmdBuffer, pipelineInfo,
                 mRenderTarget.getWidth(), mRenderTarget.getHeight());*/
         return true;
+    }
+
+    private static void setup_gl_stencil_state(GLInterface gl,
+                                               DepthStencilSettings.Face face,
+                                               int glFace) {
+        int glFailOp = GLUtil.toGLStencilOp(face.mFailOp);
+        int glPassOp = GLUtil.toGLStencilOp(face.mPassOp);
+        int glDepthFailOp = GLUtil.toGLStencilOp(face.mDepthFailOp);
+        int glFunc = GLUtil.toGLCompareFunc(face.mCompareOp);
+
+        glStencilOpSeparate(glFace, glFailOp, glDepthFailOp, glPassOp);
+        glStencilFuncSeparate(glFace, glFunc, face.mReference, face.mCompareMask);
+        glStencilMaskSeparate(glFace, face.mWriteMask);
     }
 
     @Override
@@ -678,6 +761,30 @@ public final class GLCommandBuffer extends CommandBuffer {
     @Override
     protected void begin() {
         mDevice.flushRenderCalls();
+
+        var gl = mDevice.getGL();
+        // common raster state
+        gl.glDisable(GL_LINE_SMOOTH);
+        gl.glDisable(GL_POLYGON_SMOOTH);
+
+        gl.glDisable(GL_DITHER);
+        gl.glEnable(GL_MULTISAMPLE);
+
+        // common blend state
+        gl.glDisable(GL_COLOR_LOGIC_OP);
+
+        gl.glDisable(GL_POLYGON_OFFSET_FILL);
+
+        // We don't use face culling.
+        gl.glDisable(GL_CULL_FACE);
+        // We do use separate stencil. Our algorithms don't care which face is front vs. back so
+        // just set this to the default for self-consistency.
+        glFrontFace(GL_CCW);
+
+        // we only ever use lines in hairline mode
+        glLineWidth(1);
+        glPointSize(1);
+        gl.glDisable(GL_PROGRAM_POINT_SIZE);
     }
 
     @Override
@@ -702,6 +809,7 @@ public final class GLCommandBuffer extends CommandBuffer {
         if (status == GL_CONDITION_SATISFIED ||
                 status == GL_ALREADY_SIGNALED) {
             mDevice.getGL().glDeleteSync(mSubmitFence);
+            mSubmitFence = 0;
 
             callFinishedCallbacks(true);
             releaseResources();

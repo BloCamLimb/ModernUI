@@ -20,6 +20,7 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.ColorInfo;
+import icyllis.arc3d.core.MathUtil;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
 import icyllis.arc3d.engine.trash.PipelineKey_old;
@@ -94,6 +95,10 @@ public class GLCaps extends Caps {
         super(options);
         MISSING_EXTENSIONS.clear();
         mVolatileContext = options.mVolatileContext;
+        // we currently don't use ARB_clip_control
+        //TODO we need to make this a context option,
+        // zero to one and reversed-Z is helpful in 3D rendering
+        mDepthClipNegativeOneToOne = true;
     }
 
     void initFormatTable(boolean textureStorageSupported,
@@ -1222,27 +1227,41 @@ public class GLCaps extends Caps {
                 imageFlags);
     }
 
+    @Nullable
     @Override
     public ImageDesc getDefaultDepthStencilImageDesc(int depthBits, int stencilBits,
                                                      int width, int height,
                                                      int sampleCount, int imageFlags) {
-
+        if (depthBits < 0 || depthBits > 32) {
+            return null;
+        }
+        if (stencilBits < 0 || stencilBits > 8) {
+            return null;
+        }
+        depthBits = MathUtil.align8(depthBits);
+        stencilBits = MathUtil.align8(stencilBits);
         int depthStencilFormat = 0;
-        if (stencilBits == 16) {
-            depthStencilFormat = GL_STENCIL_INDEX16;
-        } else if (stencilBits == 8) {
+        if (stencilBits == 8) {
             switch (depthBits) {
-                case 24 -> depthStencilFormat = GL_DEPTH24_STENCIL8;
+                case 0 -> depthStencilFormat = GL_STENCIL_INDEX8;
+                case 8, 16, 24 -> depthStencilFormat = GL_DEPTH24_STENCIL8;
                 case 32 -> depthStencilFormat = GL_DEPTH32F_STENCIL8;
             }
-        } else if (stencilBits == 0) {
+        } else {
+            assert stencilBits == 0;
             switch (depthBits) {
-                case 16 -> depthStencilFormat = GL_DEPTH_COMPONENT16;
+                case 8, 16 -> depthStencilFormat = GL_DEPTH_COMPONENT16;
                 case 24 -> depthStencilFormat = GL_DEPTH_COMPONENT24;
                 case 32 -> depthStencilFormat = GL_DEPTH_COMPONENT32F;
             }
         }
+        if (depthStencilFormat == 0) {
+            assert depthBits == 0;
+            return null;
+        }
+        // these 6 formats are "Req. format" is OpenGL spec
 
+        //TODO 2D texture version, 2D array texture version
         return new GLImageDesc(GL_RENDERBUFFER,
                 depthStencilFormat, width, height, 1, 1, 1, sampleCount, imageFlags);
     }
@@ -1436,6 +1455,9 @@ public class GLCaps extends Caps {
             mSkipErrorChecks = false;
         } else if (options.mSkipGLErrorChecks == Boolean.TRUE) {
             mSkipErrorChecks = true;
+        } else {
+            // NVIDIA uses threaded driver then error checks can be very slow
+            mSkipErrorChecks = (mDriver == GLUtil.GLDriver.NVIDIA);
         }
     }
 

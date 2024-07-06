@@ -19,12 +19,14 @@
 
 package icyllis.arc3d.engine;
 
+import javax.annotation.concurrent.Immutable;
 import java.util.Objects;
 
 /**
  * This class defines concrete depth and stencil settings that map directly to the
  * underlying 3D API.
  */
+@Immutable
 public final class DepthStencilSettings {
 
     /**
@@ -58,20 +60,21 @@ public final class DepthStencilSettings {
     /**
      * Per-face stencil settings.
      */
+    @Immutable
     public static final class Face {
 
-        public final byte mFailOp;        // Op to perform when the stencil test fails.
-        public final byte mPassOp;        // Op to perform when the stencil and depth test passes.
-        public final byte mDepthFailOp;   // Op to perform when the stencil test passes but depth test fails.
-        public final byte mCompareOp;     // Stencil test function, where mReference is on the left side.
-        public final short mReference;    // Reference value for stencil test and ops.
-        public final short mCompareMask;  // Bitwise "and" to perform on mReference and stencil values before testing.
+        public final byte mFailOp;      // Op to perform when the stencil test fails.
+        public final byte mPassOp;      // Op to perform when the stencil and depth test passes.
+        public final byte mDepthFailOp; // Op to perform when the stencil test passes but depth test fails.
+        public final byte mCompareOp;   // Stencil test function, where mReference is on the left side.
+        public final int mReference;    // Reference value for stencil test and ops.
+        public final int mCompareMask;  // Bitwise "and" to perform on mReference and stencil values before testing.
         // (e.g. (mReference & mCompareMask) < (stencil & mCompareMask))
-        public final short mWriteMask;    // Indicates which bits in the stencil buffer should be updated.
+        public final int mWriteMask;    // Indicates which bits in the stencil buffer should be updated.
         // (e.g. stencil = (newValue & mWriteMask) | (stencil & ~mWriteMask))
 
         public Face(byte failOp, byte passOp, byte depthFailOp, byte compareOp,
-                    short reference, short compareMask, short writeMask) {
+                    int reference, int compareMask, int writeMask) {
             mFailOp = failOp;
             mPassOp = passOp;
             mDepthFailOp = depthFailOp;
@@ -87,9 +90,9 @@ public final class DepthStencilSettings {
             result = 31 * result + (int) mPassOp;
             result = 31 * result + (int) mDepthFailOp;
             result = 31 * result + (int) mCompareOp;
-            result = 31 * result + (int) mReference;
-            result = 31 * result + (int) mCompareMask;
-            result = 31 * result + (int) mWriteMask;
+            result = 31 * result + mReference;
+            result = 31 * result + mCompareMask;
+            result = 31 * result + mWriteMask;
             return result;
         }
 
@@ -109,8 +112,8 @@ public final class DepthStencilSettings {
         }
     }
 
-    public final Face mFrontFace;   // CCW
-    public final Face mBackFace;    // CW
+    public final Face mFrontFace;
+    public final Face mBackFace;
     public final byte mDepthCompareOp;
     public final boolean mDepthWrite;
     public final boolean mStencilTest;
@@ -123,8 +126,8 @@ public final class DepthStencilSettings {
     public DepthStencilSettings(Face frontFace, Face backFace,
                                 byte depthCompareOp, boolean depthWrite,
                                 boolean stencilTest, boolean depthTest) {
-        mFrontFace = frontFace;
-        mBackFace = backFace;
+        mFrontFace = frontFace != null ? frontFace : backFace;
+        mBackFace = backFace != null ? backFace : frontFace;
         mDepthCompareOp = depthCompareOp;
         mDepthWrite = depthWrite;
         mStencilTest = stencilTest;
@@ -132,13 +135,13 @@ public final class DepthStencilSettings {
     }
 
     public boolean isTwoSided() {
-        return !mFrontFace.equals(mBackFace);
+        return !Objects.equals(mFrontFace, mBackFace);
     }
 
     @Override
     public int hashCode() {
-        int result = mFrontFace != null ? mFrontFace.hashCode() : 0;
-        result = 31 * result + (mBackFace != null ? mBackFace.hashCode() : 0);
+        int result = Objects.hashCode(mFrontFace);
+        result = 31 * result + Objects.hashCode(mBackFace);
         result = 31 * result + (int) mDepthCompareOp;
         result = 31 * result + (mDepthWrite ? 1 : 0);
         result = 31 * result + (mStencilTest ? 1 : 0);

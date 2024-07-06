@@ -78,6 +78,7 @@ public abstract class Caps {
     protected boolean mMustSyncGpuDuringDiscard = true;
     protected boolean mTextureBarrierSupport = false;
     protected boolean mUseCpuStagingBuffers = false;
+    protected boolean mDepthClipNegativeOneToOne = false;
 
     // Not (yet) implemented in VK backend.
     protected boolean mDynamicStateArrayGeometryProcessorTextureSupport = false;
@@ -559,6 +560,14 @@ public abstract class Caps {
      */
     public final boolean clampToBorderSupport() {
         return true;
+    }
+
+    /**
+     * Whether clip space's depth is ranged from negative one to one (true) or
+     * zero to one (false).
+     */
+    public final boolean depthClipNegativeOneToOne() {
+        return mDepthClipNegativeOneToOne;
     }
 
     /**

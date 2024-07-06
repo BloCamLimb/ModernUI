@@ -60,9 +60,9 @@ public final class CommonDepthStencilSettings {
             /*passOp*/      STENCIL_OP_INC_WRAP,
             /*depthFailOp*/ STENCIL_OP_KEEP,
             /*compareOp*/   COMPARE_OP_ALWAYS,
-            /*reference*/   (short) 0,
-            /*compareMask*/ (short) 0xffff,
-            /*writeMask*/   (short) 0xffff
+            /*reference*/   0,
+            /*compareMask*/ 0xffffffff,
+            /*writeMask*/   0xffffffff
     );
 
     // Decrements stencil value on counterclockwise triangles. Used for "winding" fill.
@@ -71,9 +71,9 @@ public final class CommonDepthStencilSettings {
             /*passOp*/      STENCIL_OP_DEC_WRAP,
             /*depthFailOp*/ STENCIL_OP_KEEP,
             /*compareOp*/   COMPARE_OP_ALWAYS,
-            /*reference*/   (short) 0,
-            /*compareMask*/ (short) 0xffff,
-            /*writeMask*/   (short) 0xffff
+            /*reference*/   0,
+            /*compareMask*/ 0xffffffff,
+            /*writeMask*/   0xffffffff
     );
 
     // Toggles the bottom stencil bit. Used for "even-odd" fill.
@@ -82,9 +82,9 @@ public final class CommonDepthStencilSettings {
             /*passOp*/      STENCIL_OP_INVERT,
             /*depthFailOp*/ STENCIL_OP_KEEP,
             /*compareOp*/   COMPARE_OP_ALWAYS,
-            /*reference*/   (short) 0,
-            /*compareMask*/ (short) 0xffff,
-            /*writeMask*/   (short) 0x0001
+            /*reference*/   0,
+            /*compareMask*/ 0xffffffff,
+            /*writeMask*/   0x00000001
     );
 
     // Stencil settings to use for a standard Redbook "stencil" pass corresponding to a "winding"
@@ -124,9 +124,9 @@ public final class CommonDepthStencilSettings {
             /*passOp*/      STENCIL_OP_ZERO,
             /*depthFailOp*/ STENCIL_OP_ZERO,
             /*compareOp*/   COMPARE_OP_NOTEQUAL,
-            /*reference*/   (short) 0,
-            /*compareMask*/ (short) 0xffff,
-            /*writeMask*/   (short) 0xffff
+            /*reference*/   0,
+            /*compareMask*/ 0xffffffff,
+            /*writeMask*/   0xffffffff
     );
 
     // Resets non-zero bits to 0, passes when zero.
@@ -135,9 +135,9 @@ public final class CommonDepthStencilSettings {
             /*passOp*/      STENCIL_OP_KEEP,
             /*depthFailOp*/ STENCIL_OP_KEEP,
             /*compareOp*/   COMPARE_OP_EQUAL,
-            /*reference*/   (short) 0,
-            /*compareMask*/ (short) 0xffff,
-            /*writeMask*/   (short) 0xffff
+            /*reference*/   0,
+            /*compareMask*/ 0xffffffff,
+            /*writeMask*/   0xffffffff
     );
 
     // Stencil settings to use for a standard Redbook "cover" pass for a regular fill, assuming that the

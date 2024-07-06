@@ -22,9 +22,6 @@ package icyllis.arc3d.opengl;
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.PipelineDesc;
 import icyllis.arc3d.engine.VertexInputLayout;
-import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
-import icyllis.arc3d.engine.trash.PipelineKey_old;
-import icyllis.arc3d.granite.shading.*;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.system.MemoryUtil;
 
@@ -57,12 +54,15 @@ public class GLGraphicsPipelineBuilder {
     public static GLGraphicsPipeline createGraphicsPipeline(
             final GLDevice device,
             final PipelineDesc desc) {
-        return new GLGraphicsPipeline(device, desc.getPrimitiveType(), desc.getBlendInfo(),
+        return new GLGraphicsPipeline(device,
+                desc.getPrimitiveType(),
+                desc.getBlendInfo(),
+                desc.getDepthStencilSettings(),
                 CompletableFuture.supplyAsync(() -> {
-            GLGraphicsPipelineBuilder builder = new GLGraphicsPipelineBuilder(device, desc);
-            builder.build();
-            return builder;
-        }));
+                    GLGraphicsPipelineBuilder builder = new GLGraphicsPipelineBuilder(device, desc);
+                    builder.build();
+                    return builder;
+                }));
     }
 
     private void build() {

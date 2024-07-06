@@ -22,7 +22,6 @@ package icyllis.arc3d.opengl;
 import icyllis.arc3d.engine.*;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * Represents OpenGL textures and renderbuffers.
@@ -30,20 +29,17 @@ import javax.annotation.Nullable;
 public abstract sealed class GLImage extends Image
         permits GLTexture, GLRenderbuffer {
 
-    protected final GLImageDesc mDesc;
-
     protected GLImage(Context context,
                       boolean budgeted,
                       boolean wrapped,
                       GLImageDesc desc,
                       ImageMutableState mutableState) {
         super(context, budgeted, wrapped, desc, mutableState);
-        mDesc = desc;
     }
 
     @Nonnull
-    public GLImageDesc getGLDesc() {
-        return mDesc;
+    public final GLImageDesc getGLDesc() {
+        return (GLImageDesc) getDesc();
     }
 
     @Override

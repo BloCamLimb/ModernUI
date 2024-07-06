@@ -19,7 +19,8 @@
 
 package icyllis.arc3d.opengl;
 
-import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.Color;
+import icyllis.arc3d.core.ColorInfo;
 import icyllis.arc3d.engine.*;
 import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.opengl.GL;
@@ -636,27 +637,119 @@ public final class GLUtil {
         logger.error(f.toString());
     }
 
-    public static int getGLBlendFactor(int factor) {
+    //@formatter:off
+    public static int toGLMagFilter(int filter) {
+        return switch (filter) {
+            case SamplerDesc.FILTER_NEAREST -> GL_NEAREST;
+            case SamplerDesc.FILTER_LINEAR  -> GL_LINEAR;
+            default -> throw new AssertionError(filter);
+        };
+    }
+
+    public static int toGLMinFilter(int filter, int mipmapMode) {
+        return switch (mipmapMode) {
+            case SamplerDesc.MIPMAP_MODE_NONE    -> toGLMagFilter(filter);
+            case SamplerDesc.MIPMAP_MODE_NEAREST -> switch (filter) {
+                case SamplerDesc.FILTER_NEAREST  -> GL_NEAREST_MIPMAP_NEAREST;
+                case SamplerDesc.FILTER_LINEAR   -> GL_LINEAR_MIPMAP_NEAREST;
+                default -> throw new AssertionError(filter);
+            };
+            case SamplerDesc.MIPMAP_MODE_LINEAR  -> switch (filter) {
+                case SamplerDesc.FILTER_NEAREST  -> GL_NEAREST_MIPMAP_LINEAR;
+                case SamplerDesc.FILTER_LINEAR   -> GL_LINEAR_MIPMAP_LINEAR;
+                default -> throw new AssertionError(filter);
+            };
+            default -> throw new AssertionError(mipmapMode);
+        };
+    }
+
+    public static int toGLWrapMode(int addressMode) {
+        return switch (addressMode) {
+            case SamplerDesc.ADDRESS_MODE_REPEAT          -> GL_REPEAT;
+            case SamplerDesc.ADDRESS_MODE_MIRRORED_REPEAT -> GL_MIRRORED_REPEAT;
+            case SamplerDesc.ADDRESS_MODE_CLAMP_TO_EDGE   -> GL_CLAMP_TO_EDGE;
+            case SamplerDesc.ADDRESS_MODE_CLAMP_TO_BORDER -> GL_CLAMP_TO_BORDER;
+            default -> throw new AssertionError(addressMode);
+        };
+    }
+    //@formatter:on
+
+    //@formatter:off
+    public static int toGLBlendFactor(byte factor) {
         return switch (factor) {
-            case BlendInfo.FACTOR_ONE -> GL_ONE;
-            case BlendInfo.FACTOR_SRC_COLOR -> GL_SRC_COLOR;
-            case BlendInfo.FACTOR_ONE_MINUS_SRC_COLOR -> GL_ONE_MINUS_SRC_COLOR;
-            case BlendInfo.FACTOR_DST_COLOR -> GL_DST_COLOR;
-            case BlendInfo.FACTOR_ONE_MINUS_DST_COLOR -> GL_ONE_MINUS_DST_COLOR;
-            case BlendInfo.FACTOR_SRC_ALPHA -> GL_SRC_ALPHA;
-            case BlendInfo.FACTOR_ONE_MINUS_SRC_ALPHA -> GL_ONE_MINUS_SRC_ALPHA;
-            case BlendInfo.FACTOR_DST_ALPHA -> GL_DST_ALPHA;
-            case BlendInfo.FACTOR_ONE_MINUS_DST_ALPHA -> GL_ONE_MINUS_DST_ALPHA;
-            case BlendInfo.FACTOR_CONSTANT_COLOR -> GL_CONSTANT_COLOR;
-            case BlendInfo.FACTOR_ONE_MINUS_CONSTANT_COLOR -> GL_ONE_MINUS_CONSTANT_COLOR;
-            case BlendInfo.FACTOR_CONSTANT_ALPHA -> GL_CONSTANT_ALPHA;
-            case BlendInfo.FACTOR_ONE_MINUS_CONSTANT_ALPHA -> GL_ONE_MINUS_CONSTANT_ALPHA;
-            case BlendInfo.FACTOR_SRC_ALPHA_SATURATE -> GL_SRC_ALPHA_SATURATE;
-            case BlendInfo.FACTOR_SRC1_COLOR -> GL_SRC1_COLOR;
-            case BlendInfo.FACTOR_ONE_MINUS_SRC1_COLOR -> GL_ONE_MINUS_SRC1_COLOR;
-            case BlendInfo.FACTOR_SRC1_ALPHA -> GL_SRC1_ALPHA;
-            case BlendInfo.FACTOR_ONE_MINUS_SRC1_ALPHA -> GL_ONE_MINUS_SRC1_ALPHA;
+            case BlendInfo.FACTOR_ONE                       -> GL_ONE;
+            case BlendInfo.FACTOR_SRC_COLOR                 -> GL_SRC_COLOR;
+            case BlendInfo.FACTOR_ONE_MINUS_SRC_COLOR       -> GL_ONE_MINUS_SRC_COLOR;
+            case BlendInfo.FACTOR_DST_COLOR                 -> GL_DST_COLOR;
+            case BlendInfo.FACTOR_ONE_MINUS_DST_COLOR       -> GL_ONE_MINUS_DST_COLOR;
+            case BlendInfo.FACTOR_SRC_ALPHA                 -> GL_SRC_ALPHA;
+            case BlendInfo.FACTOR_ONE_MINUS_SRC_ALPHA       -> GL_ONE_MINUS_SRC_ALPHA;
+            case BlendInfo.FACTOR_DST_ALPHA                 -> GL_DST_ALPHA;
+            case BlendInfo.FACTOR_ONE_MINUS_DST_ALPHA       -> GL_ONE_MINUS_DST_ALPHA;
+            case BlendInfo.FACTOR_CONSTANT_COLOR            -> GL_CONSTANT_COLOR;
+            case BlendInfo.FACTOR_ONE_MINUS_CONSTANT_COLOR  -> GL_ONE_MINUS_CONSTANT_COLOR;
+            case BlendInfo.FACTOR_CONSTANT_ALPHA            -> GL_CONSTANT_ALPHA;
+            case BlendInfo.FACTOR_ONE_MINUS_CONSTANT_ALPHA  -> GL_ONE_MINUS_CONSTANT_ALPHA;
+            case BlendInfo.FACTOR_SRC_ALPHA_SATURATE        -> GL_SRC_ALPHA_SATURATE;
+            case BlendInfo.FACTOR_SRC1_COLOR                -> GL_SRC1_COLOR;
+            case BlendInfo.FACTOR_ONE_MINUS_SRC1_COLOR      -> GL_ONE_MINUS_SRC1_COLOR;
+            case BlendInfo.FACTOR_SRC1_ALPHA                -> GL_SRC1_ALPHA;
+            case BlendInfo.FACTOR_ONE_MINUS_SRC1_ALPHA      -> GL_ONE_MINUS_SRC1_ALPHA;
             default -> GL_ZERO;
+        };
+    }
+    //@formatter:on
+
+    //@formatter:off
+    static {
+        //noinspection ConstantValue
+        assert (0x200 | DepthStencilSettings.COMPARE_OP_NEVER   ) == GL_NEVER;
+        //noinspection ConstantValue
+        assert (0x200 | DepthStencilSettings.COMPARE_OP_LESS    ) == GL_LESS;
+        //noinspection ConstantValue
+        assert (0x200 | DepthStencilSettings.COMPARE_OP_EQUAL   ) == GL_EQUAL;
+        //noinspection ConstantValue
+        assert (0x200 | DepthStencilSettings.COMPARE_OP_LEQUAL  ) == GL_LEQUAL;
+        //noinspection ConstantValue
+        assert (0x200 | DepthStencilSettings.COMPARE_OP_GREATER ) == GL_GREATER;
+        //noinspection ConstantValue
+        assert (0x200 | DepthStencilSettings.COMPARE_OP_NOTEQUAL) == GL_NOTEQUAL;
+        //noinspection ConstantValue
+        assert (0x200 | DepthStencilSettings.COMPARE_OP_GEQUAL  ) == GL_GEQUAL;
+        //noinspection ConstantValue
+        assert (0x200 | DepthStencilSettings.COMPARE_OP_ALWAYS  ) == GL_ALWAYS;
+    }
+    //@formatter:on
+
+    public static int toGLCompareFunc(byte compareOp) {
+        // the above assertions ensure the conversion
+        return 0x200 | compareOp;
+    }
+
+    //@formatter:off
+    public static int toGLStencilOp(byte stencilOp) {
+        return switch (stencilOp) {
+            case DepthStencilSettings.STENCIL_OP_KEEP       -> GL_KEEP;
+            case DepthStencilSettings.STENCIL_OP_ZERO       -> GL_ZERO;
+            case DepthStencilSettings.STENCIL_OP_REPLACE    -> GL_REPLACE;
+            case DepthStencilSettings.STENCIL_OP_INC_CLAMP  -> GL_INCR;
+            case DepthStencilSettings.STENCIL_OP_DEC_CLAMP  -> GL_DECR;
+            case DepthStencilSettings.STENCIL_OP_INVERT     -> GL_INVERT;
+            case DepthStencilSettings.STENCIL_OP_INC_WRAP   -> GL_INCR_WRAP;
+            case DepthStencilSettings.STENCIL_OP_DEC_WRAP   -> GL_DECR_WRAP;
+            default -> throw new AssertionError();
+        };
+    }
+    //@formatter:on
+
+    public static int toGLPrimitiveType(byte primitiveType) {
+        return switch (primitiveType) {
+            case Engine.PrimitiveType.PointList -> GL_POINTS;
+            case Engine.PrimitiveType.LineList -> GL_LINES;
+            case Engine.PrimitiveType.LineStrip -> GL_LINE_STRIP;
+            case Engine.PrimitiveType.TriangleList -> GL_TRIANGLES;
+            case Engine.PrimitiveType.TriangleStrip -> GL_TRIANGLE_STRIP;
+            default -> throw new AssertionError();
         };
     }
 }

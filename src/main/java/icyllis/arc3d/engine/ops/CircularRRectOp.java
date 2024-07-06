@@ -58,18 +58,13 @@ public final class CircularRRectOp extends MeshDrawOp {
         private static final VertexInputLayout.Attribute POS = new VertexInputLayout.Attribute("Pos", VertexAttribType.kFloat2, SLDataType.kFloat2);
 
         public Processor() {
-            super(CircularRRect_Geom_ClassID, null, null, 0);
+            super(CircularRRect_Geom_ClassID, null, null, 0, (byte) 0, null);
         }
 
         @Nonnull
         @Override
         public String name() {
             return "CircularRRect_GeometryProcessor";
-        }
-
-        @Override
-        public byte primitiveType() {
-            return 0;
         }
 
         @Override

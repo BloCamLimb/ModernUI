@@ -35,6 +35,8 @@ public abstract class VulkanCaps extends Caps {
                       VKCapabilitiesDevice capabilitiesDevice) {
         super(options);
 
+        mDepthClipNegativeOneToOne = false;
+
         ShaderCaps shaderCaps = mShaderCaps;
         shaderCaps.mTargetApi = TargetApi.VULKAN_1_0;
         shaderCaps.mGLSLVersion = GLSLVersion.GLSL_450;

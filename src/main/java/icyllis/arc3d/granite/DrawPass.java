@@ -55,6 +55,7 @@ public class DrawPass implements AutoCloseable {
     private final DrawCommandList mCommandList;
 
     private final Rect2i mBounds;
+    private final int mDepthStencilFlags;
 
     private final ObjectArrayList<GraphicsPipelineDesc> mPipelineDescs;
     private final ObjectArrayList<SamplerDesc> mSamplerDescs;
@@ -64,12 +65,13 @@ public class DrawPass implements AutoCloseable {
     private volatile @SharedPtr GraphicsPipeline[] mPipelines;
     private volatile @SharedPtr Sampler[] mSamplers;
 
-    private DrawPass(DrawCommandList commandList, Rect2i bounds,
+    private DrawPass(DrawCommandList commandList, Rect2i bounds, int depthStencilFlags,
                      ObjectArrayList<GraphicsPipelineDesc> pipelineDescs,
                      ObjectArrayList<SamplerDesc> samplerDescs,
                      ObjectArrayList<@SharedPtr ImageViewProxy> textures) {
         mCommandList = commandList;
         mBounds = bounds;
+        mDepthStencilFlags = depthStencilFlags;
         mPipelineDescs = pipelineDescs;
         mSamplerDescs = samplerDescs;
         mTextures = textures;
@@ -82,7 +84,7 @@ public class DrawPass implements AutoCloseable {
     public static DrawPass make(RecordingContext context,
                                 ObjectArrayList<Draw> drawList,
                                 int numSteps,
-                                ImageViewProxy targetView,
+                                @RawPtr ImageViewProxy targetView,
                                 ImageInfo deviceInfo) {
 
         var bufferManager = context.getDynamicBufferManager();
@@ -105,6 +107,7 @@ public class DrawPass implements AutoCloseable {
 
         var passBounds = new Rect2f(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY,
                 Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY);
+        int depthStencilFlags = Engine.DepthStencilFlags.kNone;
 
         var geometryUniformTracker = new UniformTracker();
         var fragmentUniformTracker = new UniformTracker();
@@ -199,6 +202,7 @@ public class DrawPass implements AutoCloseable {
                     }
 
                     passBounds.joinNoCheck(draw.mDrawBounds);
+                    depthStencilFlags |= draw.mRenderer.depthStencilFlags();
                 }
 
                 if (!geometryUniformTracker.writeUniforms(bufferManager) ||
@@ -299,6 +303,7 @@ public class DrawPass implements AutoCloseable {
             passBounds.roundOut(bounds);
 
             return new DrawPass(commandList, bounds,
+                    depthStencilFlags,
                     indexToPipeline,
                     textureDataGatherer.detachSamplers(),
                     textureDataGatherer.detachTextures());
@@ -307,6 +312,10 @@ public class DrawPass implements AutoCloseable {
 
     public Rect2ic getBounds() {
         return mBounds;
+    }
+
+    public int getDepthStencilFlags() {
+        return mDepthStencilFlags;
     }
 
     public DrawCommandList getCommandList() {

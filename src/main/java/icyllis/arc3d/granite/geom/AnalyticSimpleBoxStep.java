@@ -99,7 +99,9 @@ public class AnalyticSimpleBoxStep extends GeometryStep {
                         ? (FLAG_PERFORM_SHADING | FLAG_EMIT_COVERAGE | FLAG_OUTSET_BOUNDS_FOR_AA |
                         FLAG_HANDLE_SOLID_COLOR)
                         : (FLAG_PERFORM_SHADING | FLAG_EMIT_COVERAGE | FLAG_EMIT_01_COVERAGE |
-                        FLAG_HANDLE_SOLID_COLOR)
+                        FLAG_HANDLE_SOLID_COLOR),
+                PrimitiveType.TriangleStrip,
+                CommonDepthStencilSettings.kDirectDepthGreaterPass
         );
         mAA = aa;
     }
@@ -108,11 +110,6 @@ public class AnalyticSimpleBoxStep extends GeometryStep {
     @Override
     public String name() {
         return "AnalyticSimpleBox_GeomStep";
-    }
-
-    @Override
-    public byte primitiveType() {
-        return PrimitiveType.TriangleStrip;
     }
 
     @Override

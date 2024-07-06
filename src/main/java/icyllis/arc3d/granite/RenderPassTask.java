@@ -21,7 +21,6 @@ package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SharedPtr;
-import icyllis.arc3d.engine.Image;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.task.Task;
 
@@ -55,15 +54,42 @@ public final class RenderPassTask extends Task {
      * DrawPass is owned by this object.
      */
     @SharedPtr
-    public static RenderPassTask make(DrawPass drawPass,
-                                      RenderPassDesc renderPassDesc,
+    public static RenderPassTask make(RecordingContext context,
+                                      DrawPass drawPass,
                                       @SharedPtr ImageViewProxy colorTarget,
                                       @SharedPtr ImageViewProxy resolveTarget,
+                                      byte loadOp, byte storeOp,
                                       float[] clearColor) {
         Objects.requireNonNull(drawPass);
-        Objects.requireNonNull(renderPassDesc);
         Objects.requireNonNull(colorTarget);
         assert clearColor.length >= 4;
+        var renderPassDesc = new RenderPassDesc();
+        renderPassDesc.mNumColorAttachments = 1;
+        var colorDesc = renderPassDesc.mColorAttachments[0] = new RenderPassDesc.ColorAttachmentDesc();
+        colorDesc.mDesc = colorTarget.getDesc();
+        colorDesc.mLoadOp = loadOp;
+        colorDesc.mStoreOp = storeOp;
+        int depthStencilFlags = drawPass.getDepthStencilFlags();
+        if (depthStencilFlags != Engine.DepthStencilFlags.kNone) {
+            int depthBits = (depthStencilFlags & Engine.DepthStencilFlags.kDepth) != 0
+                    ? 16 : 0;
+            int stencilBits = (depthStencilFlags & Engine.DepthStencilFlags.kStencil) != 0
+                    ? 8 : 0;
+            var depthStencilAttachment = renderPassDesc.mDepthStencilAttachment;
+            depthStencilAttachment.mDesc =
+                    context.getCaps().getDefaultDepthStencilImageDesc(
+                            depthBits, stencilBits,
+                            colorTarget.getWidth(), colorTarget.getHeight(),
+                            colorTarget.getSampleCount(),
+                            ISurface.FLAG_RENDERABLE | ISurface.FLAG_MEMORYLESS
+                    );
+            assert depthStencilAttachment.mDesc != null;
+            // Always clear the depth and stencil to 0 at the start of a DrawPass, but discard at the
+            // end since their contents do not affect the next frame.
+            depthStencilAttachment.mLoadOp = Engine.LoadOp.kClear;
+            depthStencilAttachment.mStoreOp = Engine.StoreOp.kDiscard;
+        }
+        //TODO MSAA attachment
         return new RenderPassTask(drawPass,
                 renderPassDesc,
                 colorTarget,
@@ -109,9 +135,7 @@ public final class RenderPassTask extends Task {
             depthStencilAttachment = context.getResourceProvider().findOrCreateImage(
                     mRenderPassDesc.mDepthStencilAttachment.mDesc,
                     true,
-                    colorAttachment.getLabel().isEmpty()
-                            ? "DSAttachment"
-                            : colorAttachment.getLabel() + "_DS"
+                     "SharedDSAttachment"
             );
             if (depthStencilAttachment == null) {
                 return RESULT_FAILURE;

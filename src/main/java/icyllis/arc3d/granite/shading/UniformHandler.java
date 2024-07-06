@@ -50,11 +50,12 @@ public class UniformHandler {
 
     /**
      * The 2D orthographic projection matrix has only 4 values (others are identity),
-     * so this is a vec4. Projection maps world space into normalized device space.
+     * so this is a vec4. Projection maps world space into clip space.
      */
     public static final String PROJECTION_NAME = "SV_Projection";
     /**
      * The non-premultiplied paint color, when it cannot be simplified.
+     * This value is shared between stages and deduplicated when building uniforms.
      *
      * @see icyllis.arc3d.granite.UniformDataGatherer#writePaintColor
      */

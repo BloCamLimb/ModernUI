@@ -126,17 +126,20 @@ public final class GLFramebuffer extends Resource {
         }
         GLRenderbuffer glDepthStencilTarget = (GLRenderbuffer) desc.mDepthStencilAttachment.mAttachment;
         if (glDepthStencilTarget != null) {
-            //TODO renderbuffer?
+            //TODO attach depth texture besides renderbuffer
+            int attachmentPoint;
+            if (GLUtil.glFormatIsPackedDepthStencil(glDepthStencilTarget.getFormat())) {
+                attachmentPoint = GL_DEPTH_STENCIL_ATTACHMENT;
+            } else if (GLUtil.glFormatDepthBits(glDepthStencilTarget.getFormat()) > 0) {
+                attachmentPoint = GL_DEPTH_ATTACHMENT;
+            } else {
+                assert GLUtil.glFormatStencilBits(glDepthStencilTarget.getFormat()) > 0;
+                attachmentPoint = GL_STENCIL_ATTACHMENT;
+            }
             glFramebufferRenderbuffer(GL_FRAMEBUFFER,
-                    GL_STENCIL_ATTACHMENT,
+                    attachmentPoint,
                     GL_RENDERBUFFER,
                     glDepthStencilTarget.getHandle());
-            if (GLUtil.glFormatIsPackedDepthStencil(glDepthStencilTarget.getFormat())) {
-                glFramebufferRenderbuffer(GL_FRAMEBUFFER,
-                        GL_DEPTH_STENCIL_ATTACHMENT,
-                        GL_RENDERBUFFER,
-                        glDepthStencilTarget.getHandle());
-            }
         }
         if (!device.getCaps().skipErrorChecks()) {
             int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);

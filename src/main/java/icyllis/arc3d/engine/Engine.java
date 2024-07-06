@@ -183,6 +183,16 @@ public interface Engine {
     }
 
     /**
+     * Indicates whether depth buffer or stencil buffer or both will be used.
+     */
+    interface DepthStencilFlags {
+        int kNone = 0x0;
+        int kDepth = 0x1;
+        int kStencil = 0x2;
+        int kDepthStencil = kDepth | kStencil;
+    }
+
+    /**
      * Describes the intended usage (type + access) a GPU buffer.
      * This will affect memory allocation and pipeline commands.
      * <p>

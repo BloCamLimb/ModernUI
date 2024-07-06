@@ -172,7 +172,7 @@ public final class GLRenderbuffer extends GLImage {
     @Override
     protected void onSetLabel(@Nullable String label) {
         if (getDevice().getCaps().hasDebugSupport()) {
-            assert mDesc != null;
+            assert mRenderbuffer != 0;
             if (label == null) {
                 getDevice().getGL().glObjectLabel(GL_RENDERBUFFER, mRenderbuffer, 0, MemoryUtil.NULL);
             } else {
@@ -184,7 +184,7 @@ public final class GLRenderbuffer extends GLImage {
     }
 
     public int getFormat() {
-        return 0;
+        return getGLDesc().mFormat;
     }
 
     public int getHandle() {
