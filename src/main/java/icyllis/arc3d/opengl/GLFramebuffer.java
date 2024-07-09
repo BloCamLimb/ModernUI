@@ -20,6 +20,7 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.core.UniqueID;
 import icyllis.arc3d.engine.*;
 
 import javax.annotation.Nonnull;

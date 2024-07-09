@@ -387,6 +387,8 @@ public interface Engine {
             MASK_FORMAT_A8 = 0,     // 1-byte per pixel
             MASK_FORMAT_A565 = 1,   // 2-bytes per pixel, RGB represent 3-channel LCD coverage
             MASK_FORMAT_ARGB = 2;   // 4-bytes per pixel, color format
+    int LAST_MASK_FORMAT = MASK_FORMAT_ARGB;
+    int MASK_FORMAT_COUNT = LAST_MASK_FORMAT + 1;
 
     /**
      * Budget types. Used with resources that have a large memory allocation.

@@ -58,13 +58,13 @@ public class Paint implements AutoCloseable {
      * Geometry drawn with this style will be filled, ignoring all
      * stroke-related settings in the paint.
      */
-    public static final int FILL = 0x00;
+    public static final int FILL = 0;
 
     /**
      * Geometry drawn with this style will be stroked, respecting
      * the stroke-related fields on the paint.
      */
-    public static final int STROKE = 0x01;
+    public static final int STROKE = 1;
 
     /**
      * Geometry (path) drawn with this style will be both filled and
@@ -73,9 +73,10 @@ public class Paint implements AutoCloseable {
      * are drawn with the same color. Use this to avoid hitting the same
      * pixels twice with a stroke draw and a fill draw.
      */
-    public static final int STROKE_AND_FILL = 0x02;
-    public static final int FILL_AND_STROKE = 0x02; // alias
+    public static final int STROKE_AND_FILL = 2;
+    public static final int FILL_AND_STROKE = 2; // alias
 
+    private static final int STYLE_SHIFT = 0;
     private static final int STYLE_MASK = 0x03;
 
     /**
@@ -90,20 +91,21 @@ public class Paint implements AutoCloseable {
     /**
      * The stroke ends with the path, and does not project beyond it.
      */
-    public static final int CAP_BUTT = 0x00;
+    public static final int CAP_BUTT = 0;
 
     /**
      * The stroke projects out as a semicircle, with the center at the
      * end of the path.
      */
-    public static final int CAP_ROUND = 0x04;
+    public static final int CAP_ROUND = 1;
 
     /**
      * The stroke projects out as a square, with the center at the end
      * of the path.
      */
-    public static final int CAP_SQUARE = 0x08;
+    public static final int CAP_SQUARE = 2;
 
+    private static final int CAP_SHIFT = 2;
     private static final int CAP_MASK = 0x0C;
 
     /**
@@ -129,18 +131,19 @@ public class Paint implements AutoCloseable {
     /**
      * The outer edges of a join meet at a sharp angle
      */
-    public static final int JOIN_MITER = 0x00;
+    public static final int JOIN_MITER = 0;
 
     /**
      * The outer edges of a join meet in a circular arc.
      */
-    public static final int JOIN_ROUND = 0x10;
+    public static final int JOIN_ROUND = 1;
 
     /**
      * The outer edges of a join meet with a straight line
      */
-    public static final int JOIN_BEVEL = 0x20;
+    public static final int JOIN_BEVEL = 2;
 
+    private static final int JOIN_SHIFT = 4;
     private static final int JOIN_MASK = 0x30;
 
     /**
@@ -155,76 +158,27 @@ public class Paint implements AutoCloseable {
     /**
      * The stroke is aligned to center.
      */
-    public static final int ALIGN_CENTER = 0x00;
+    public static final int ALIGN_CENTER = 0;
 
     /**
      * The stroke is aligned to inside.
      */
-    public static final int ALIGN_INSIDE = 0x40;
+    public static final int ALIGN_INSIDE = 1;
 
     /**
      * The stroke is aligned to outside.
      */
-    public static final int ALIGN_OUTSIDE = 0x80;
+    public static final int ALIGN_OUTSIDE = 2;
 
+    private static final int ALIGN_SHIFT = 6;
     private static final int ALIGN_MASK = 0xC0;
-
-    /**
-     * The {@code FilterMode} specifies the sampling method on transformed texture images.
-     * The default is {@link #FILTER_MODE_LINEAR}.
-     */
-    @MagicConstant(intValues = {FILTER_MODE_NEAREST, FILTER_MODE_LINEAR})
-    @Retention(RetentionPolicy.SOURCE)
-    public @interface FilterMode {
-    }
-
-    /**
-     * Single sample point (nearest neighbor).
-     */
-    public static final int FILTER_MODE_NEAREST = 0x000;
-
-    /**
-     * Interpolate between 2x2 sample points (bilinear interpolation).
-     */
-    public static final int FILTER_MODE_LINEAR = 0x100;
-
-    private static final int FILTER_MODE_MASK = 0x100;
-
-    /**
-     * The {@code MipmapMode} specifies the interpolation method for MIP image levels when
-     * down-sampling texture images. The default is {@link #MIPMAP_MODE_LINEAR}.
-     */
-    @MagicConstant(intValues = {MIPMAP_MODE_NONE, MIPMAP_MODE_NEAREST, MIPMAP_MODE_LINEAR})
-    @Retention(RetentionPolicy.SOURCE)
-    public @interface MipmapMode {
-    }
-
-    /**
-     * Ignore mipmap levels, sample from the "base".
-     */
-    public static final int MIPMAP_MODE_NONE = 0x000;
-
-    /**
-     * Sample from the nearest level.
-     */
-    public static final int MIPMAP_MODE_NEAREST = 0x200;
-
-    /**
-     * Interpolate between the two nearest levels.
-     */
-    public static final int MIPMAP_MODE_LINEAR = 0x400;
-
-    private static final int MIPMAP_MODE_MASK = 0x600;
-
-    private static final int MAX_ANISOTROPY_SHIFT = 11;
-    private static final int MAX_ANISOTROPY_MASK = 0x1F << MAX_ANISOTROPY_SHIFT;
 
     private static final int ANTI_ALIAS_MASK = 0x10000;
     private static final int DITHER_MASK = 0x20000;
 
-    private static final int DEFAULT_FLAGS = FILL |
-            CAP_ROUND | JOIN_ROUND | ALIGN_CENTER |
-            FILTER_MODE_LINEAR | MIPMAP_MODE_LINEAR | ANTI_ALIAS_MASK;
+    private static final int DEFAULT_FLAGS = (FILL << STYLE_SHIFT) |
+            (CAP_ROUND << CAP_SHIFT) | (JOIN_ROUND << JOIN_SHIFT) |
+            (ALIGN_CENTER << ALIGN_SHIFT) | ANTI_ALIAS_MASK;
 
     // color components using non-premultiplied alpha
     private float mR; // 0..1
@@ -547,8 +501,7 @@ public class Paint implements AutoCloseable {
     ///// Basic Flags
 
     /**
-     * Returns true if distance-to-edge anti-aliasing should be used.
-     * If true, the AA step is calculated in screen space.
+     * Returns true if antialiasing should be used.
      * The default value is true.
      *
      * @return anti-aliasing state
@@ -559,9 +512,10 @@ public class Paint implements AutoCloseable {
     }
 
     /**
-     * Sets a hint that indicates if distance-to-edge anti-aliasing should be used.
-     * If true, the AA step is calculated in screen space.
-     * The default value is true.
+     * Sets a hint that indicates if antialiasing should be used. An implementation
+     * may use analytic method by computing geometry's coverage, distance-to-edge
+     * method by computing signed distance field, or multisampling to do antialiasing.
+     * If true, the AA step is calculated in screen space. The default value is true.
      *
      * @param aa setting for anti-aliasing
      * @see #setSmoothWidth(float)
@@ -576,7 +530,8 @@ public class Paint implements AutoCloseable {
 
     /**
      * Returns true if color error may be distributed to smooth color transition.
-     * An implementation may use a look-up table to do dithering. The default value is false.
+     * An implementation may use a bayer matrix or blue noise texture to do dithering.
+     * The default value is false.
      *
      * @return dithering state
      * @see #setDither(boolean)
@@ -587,7 +542,8 @@ public class Paint implements AutoCloseable {
 
     /**
      * Sets a hint that indicates if color error may be distributed to smooth color transition.
-     * An implementation may use a look-up table to do dithering. The default value is false.
+     * An implementation may use a bayer matrix or blue noise texture to do dithering.
+     * The default value is false.
      *
      * @param dither setting for dithering
      */
@@ -608,7 +564,7 @@ public class Paint implements AutoCloseable {
      */
     @Style
     public int getStyle() {
-        return mFlags & STYLE_MASK;
+        return (mFlags & STYLE_MASK) >>> STYLE_SHIFT;
     }
 
     /**
@@ -618,7 +574,7 @@ public class Paint implements AutoCloseable {
      * @param style the new style to set in the paint
      */
     public void setStyle(@Style int style) {
-        mFlags = (mFlags & ~STYLE_MASK) | (style & STYLE_MASK);
+        mFlags = (mFlags & ~STYLE_MASK) | ((style << STYLE_SHIFT) & STYLE_MASK);
     }
 
     ///// Stroke Parameters
@@ -629,7 +585,7 @@ public class Paint implements AutoCloseable {
      * @param stroke true to stroke shapes, false to fill shapes
      */
     public final void setStroke(boolean stroke) {
-        mFlags = (mFlags & ~STYLE_MASK) | (stroke ? STROKE : FILL);
+        mFlags = (mFlags & ~STYLE_MASK) | (stroke ? (STROKE << STYLE_SHIFT) : (FILL << STYLE_SHIFT));
     }
 
     /**
@@ -642,7 +598,7 @@ public class Paint implements AutoCloseable {
      */
     @Cap
     public int getStrokeCap() {
-        return mFlags & CAP_MASK;
+        return (mFlags & CAP_MASK) >>> CAP_SHIFT;
     }
 
     /**
@@ -653,7 +609,7 @@ public class Paint implements AutoCloseable {
      * @param cap set the paint's line cap style
      */
     public void setStrokeCap(@Cap int cap) {
-        mFlags = (mFlags & ~CAP_MASK) | (cap & CAP_MASK);
+        mFlags = (mFlags & ~CAP_MASK) | ((cap << CAP_SHIFT) & CAP_MASK);
     }
 
     /**
@@ -664,7 +620,7 @@ public class Paint implements AutoCloseable {
      */
     @Join
     public int getStrokeJoin() {
-        return mFlags & JOIN_MASK;
+        return (mFlags & JOIN_MASK) >>> JOIN_SHIFT;
     }
 
     /**
@@ -673,27 +629,29 @@ public class Paint implements AutoCloseable {
      * @param join set the paint's Join
      */
     public void setStrokeJoin(@Join int join) {
-        mFlags = (mFlags & ~JOIN_MASK) | (join & JOIN_MASK);
+        mFlags = (mFlags & ~JOIN_MASK) | ((join << JOIN_SHIFT) & JOIN_MASK);
     }
 
     /**
      * Returns the paint's stroke align type. The default is {@link #ALIGN_CENTER}.
+     * Note that the implementation may not respect this value.
      *
      * @return the paint's Align
      * @see #setStrokeAlign(int)
      */
     @Align
     public final int getStrokeAlign() {
-        return mFlags & ALIGN_MASK;
+        return (mFlags & ALIGN_MASK) >>> ALIGN_SHIFT;
     }
 
     /**
      * Sets the paint's stroke align type. The default is {@link #ALIGN_CENTER}.
+     * Note that the implementation may not respect this value.
      *
      * @param align set the paint's Align
      */
     public final void setStrokeAlign(@Align int align) {
-        mFlags = (mFlags & ~ALIGN_MASK) | (align & ALIGN_MASK);
+        mFlags = (mFlags & ~ALIGN_MASK) | ((align << ALIGN_SHIFT) & ALIGN_MASK);
     }
 
     /**
@@ -752,124 +710,12 @@ public class Paint implements AutoCloseable {
      * Sets the smooth width in pixels for this paint. The default value is 0.0 px.
      * <p>
      * A non-zero smooth width applies to Hermite interpolation of geometries' edges
-     * in local space. Otherwise, if anti-aliasing is requested, the width will be
-     * resulted from the L2-norm of derivatives in screen space. Thus, the
-     * anti-aliasing will be ignored when smooth width is greater than zero.
+     * in local space. Note that the implementation may not respect this value.
      *
      * @param smooth the paint's smooth width, zero or greater
-     * @see #setAntiAlias(boolean)
      */
     public final void setSmoothWidth(float smooth) {
         mSmoothWidth = Math.max(smooth, 0);
-    }
-
-    ///// Sampler Parameters
-
-    /**
-     * Returns the bilinear interpolation for sampling texture images. True means
-     * {@link #FILTER_MODE_LINEAR}, while false means {@link #FILTER_MODE_NEAREST}.
-     * The value is ignored when anisotropic filtering is used. The default value
-     * is true.
-     *
-     * @return whether to use bilinear filter on images, or nearest neighbor
-     * @see #setFilter(boolean)
-     */
-    public final boolean isFilter() {
-        return (mFlags & FILTER_MODE_MASK) != 0;
-    }
-
-    /**
-     * Set the bilinear interpolation for sampling texture images. True means
-     * {@link #FILTER_MODE_LINEAR}, while false means {@link #FILTER_MODE_NEAREST}.
-     * Calling this method disables anisotropic filtering. The default value
-     * is true.
-     *
-     * @param filter whether to use bilinear filter on images, or nearest neighbor
-     * @see #isFilter()
-     */
-    public final void setFilter(boolean filter) {
-        if (filter) {
-            mFlags = (mFlags | FILTER_MODE_LINEAR) & ~MAX_ANISOTROPY_MASK;
-        } else {
-            mFlags &= ~(FILTER_MODE_MASK | MAX_ANISOTROPY_MASK);
-        }
-    }
-
-    /**
-     * Returns the current filter. The default is {@link #FILTER_MODE_LINEAR}.
-     * The value is ignored when anisotropic filtering is used.
-     *
-     * @return the current filter
-     * @see #setFilterMode(int)
-     */
-    @FilterMode
-    public final int getFilterMode() {
-        return mFlags & FILTER_MODE_MASK;
-    }
-
-    /**
-     * Set the interpolation method for sampling texture images.
-     * The default is {@link #FILTER_MODE_LINEAR}.
-     * Calling this method does NOT affect anisotropic filtering.
-     *
-     * @param filter the paint's filter
-     * @see #getFilterMode()
-     */
-    public final void setFilterMode(@FilterMode int filter) {
-        mFlags = (mFlags & ~FILTER_MODE_MASK) | (filter & FILTER_MODE_MASK);
-    }
-
-    /**
-     * Returns the mipmap mode. The value is ignored when anisotropic filtering is used.
-     * The default is {@link #MIPMAP_MODE_LINEAR}.
-     *
-     * @return the mipmap mode
-     */
-    @MipmapMode
-    public final int getMipmapMode() {
-        return mFlags & MIPMAP_MODE_MASK;
-    }
-
-    /**
-     * Set the mipmap mode for sampling texture images. The value is ignored when
-     * anisotropic filtering is used. The default is {@link #MIPMAP_MODE_LINEAR}.
-     *
-     * @param mipmap the mipmap mode
-     */
-    public final void setMipmapMode(@MipmapMode int mipmap) {
-        mFlags = (mFlags & ~MIPMAP_MODE_MASK) | (mipmap & MIPMAP_MODE_MASK);
-    }
-
-    /**
-     * Returns whether the anisotropic filtering is enabled.
-     * If enabled, {@link #getFilterMode()} and {@link #getMipmapMode()} are ignored.
-     *
-     * @return true if anisotropic filtering will be used for sampling images.
-     */
-    public final boolean isAnisotropy() {
-        return (mFlags & MAX_ANISOTROPY_MASK) != 0;
-    }
-
-    /**
-     * Returns the maximum level of anisotropic filtering. The default value is 0 (OFF).
-     *
-     * @return the max anisotropy
-     */
-    public final int getMaxAnisotropy() {
-        return (mFlags & MAX_ANISOTROPY_MASK) >> MAX_ANISOTROPY_SHIFT;
-    }
-
-    /**
-     * Set the maximum level of anisotropic filtering. A value greater than 0 means
-     * anisotropic filtering is used, and {@link #getFilterMode()} and {@link #getMipmapMode()}
-     * are ignored. If the device does not support anisotropic filtering, this method will
-     * be downgraded to bilinear filtering. The default value is 0 (OFF).
-     *
-     * @param maxAnisotropy the max anisotropy level ranged from 0 to 16
-     */
-    public final void setMaxAnisotropy(int maxAnisotropy) {
-        mFlags = (mFlags & ~MAX_ANISOTROPY_MASK) |
-                (MathUtil.clamp(maxAnisotropy, 0, 16) << MAX_ANISOTROPY_SHIFT);
     }
 
     ///// Effects
