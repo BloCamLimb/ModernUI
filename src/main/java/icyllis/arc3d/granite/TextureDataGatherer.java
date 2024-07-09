@@ -51,9 +51,9 @@ public class TextureDataGatherer implements AutoCloseable {
     final IntArrayList mTextureData = new IntArrayList();
 
     public void add(@SharedPtr ImageViewProxy textureView, SamplerDesc samplerDesc) {
-        assert textureView != null && samplerDesc != null;
+        assert samplerDesc != null;
         int textureIndex = mTextureToIndex.computeIfAbsent(textureView, mTextureAccumulator);
-        textureView.unref();
+        RefCnt.move(textureView);
         int samplerIndex = mSamplerToIndex.computeIfAbsent(samplerDesc, mSamplerAccumulator);
         mTextureData.add(textureIndex);
         mTextureData.add(samplerIndex);

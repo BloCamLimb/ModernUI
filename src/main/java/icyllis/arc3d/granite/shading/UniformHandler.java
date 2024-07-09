@@ -91,8 +91,8 @@ public class UniformHandler {
     /**
      * Layouts.
      */
-    public static final boolean Std140Layout = false;
-    public static final boolean Std430Layout = true;
+    public static final int Std140Layout = 0;
+    public static final int Std430Layout = 1;
 
     /**
      * Binding a descriptor set invalidates all higher index descriptor sets. We must bind
@@ -118,6 +118,7 @@ public class UniformHandler {
     public static final int INPUT_BINDING = 0;
 
     protected final ShaderCaps mShaderCaps;
+    private final int mLayout;
 
     public final ArrayList<UniformInfo> mUniforms = new ArrayList<>();
     public final ArrayList<UniformInfo> mSamplers = new ArrayList<>();
@@ -128,8 +129,9 @@ public class UniformHandler {
     public int mCurrentOffset;
     boolean mFinished;
 
-    public UniformHandler(ShaderCaps shaderCaps) {
+    public UniformHandler(ShaderCaps shaderCaps, int layout) {
         mShaderCaps = shaderCaps;
+        mLayout = layout;
     }
 
     /**
@@ -335,29 +337,31 @@ public class UniformHandler {
     }
 
     // reorder to minimize block size
-    private void finishAndReorderUniforms() {
+    public void finish(boolean reorderUniforms) {
         if (mFinished) return;
         mFinished = true;
 
         mReorderedUniforms = new ArrayList<>(mUniforms);
         // we can only use std140 layout in OpenGL
-        /*var cmp = Comparator.comparingInt(
-                (UniformInfo u) -> getAlignmentMask(
-                        u.mVariable.getType(),
-                        !u.mVariable.isArray(),
-                        Std140Layout)
-        );*/
-        // larger alignment first, stable sort
-        //mReorderedUniforms.sort(cmp.reversed());
+        if (reorderUniforms) {
+            var cmp = Comparator.comparingInt(
+                    (UniformInfo u) -> getAlignmentMask(
+                            u.mVariable.getType(),
+                            !u.mVariable.isArray(),
+                            mLayout)
+            );
+            // larger alignment first, stable sort
+            mReorderedUniforms.sort(cmp.reversed());
+        }
 
         for (UniformInfo u : mReorderedUniforms) {
             int offset = getAlignedOffset(mCurrentOffset,
                     u.mVariable.getType(),
                     u.mVariable.getArraySize(),
-                    Std140Layout);
-            mCurrentOffset += getAlignedStride(u.mVariable.getType(),
+                    mLayout);
+            mCurrentOffset = offset + getAlignedStride(u.mVariable.getType(),
                     u.mVariable.getArraySize(),
-                    Std140Layout);
+                    mLayout);
 
             if (mShaderCaps.mUseBlockMemberOffset) {
                 // ARB_enhanced_layouts or GLSL 440
@@ -374,7 +378,7 @@ public class UniformHandler {
      */
     public void appendUniformDecls(int visibility, int binding, String blockName, StringBuilder out) {
         assert (visibility != 0);
-        finishAndReorderUniforms();
+        finish(false);
 
         boolean firstMember = false;
         boolean firstVisible = false;
@@ -392,7 +396,8 @@ public class UniformHandler {
         }
         // The uniform block definition for all shader stages must be exactly the same
         if (firstVisible) {
-            out.append("layout(std140");
+            out.append("layout(");
+            out.append(mLayout == Std430Layout ? "std430" : "std140");
             if (mShaderCaps.mUseUniformBinding) {
                 // ARB_shading_language_420pack
                 out.append(", binding = ");
@@ -423,10 +428,10 @@ public class UniformHandler {
      *
      * @param type     see {@link SLDataType}
      * @param nonArray true for a single scalar or vector, false for an array of scalars or vectors
-     * @param layout   true for std430 layout, false for std140 layout
+     * @param layout   1 for std430 layout, 0 for std140 layout
      * @return base alignment mask
      */
-    public static int getAlignmentMask(byte type, boolean nonArray, boolean layout) {
+    public static int getAlignmentMask(byte type, boolean nonArray, int layout) {
         switch (type) {
             case SLDataType.kBool:   // fall through
             case SLDataType.kInt:    // fall through
@@ -468,11 +473,11 @@ public class UniformHandler {
      * This includes paddings between components, but does not include paddings at the end of the element.
      *
      * @param type   see {@link SLDataType}
-     * @param layout true for std430 layout, false for std140 layout
+     * @param layout 1 for std430 layout, 0 for std140 layout
      * @return size in bytes
      * @see UniformDataManager
      */
-    public static int getSize(byte type, boolean layout) {
+    public static int getSize(byte type, int layout) {
         switch (type) {
             case SLDataType.kFloat:
                 return Float.BYTES;
@@ -519,18 +524,18 @@ public class UniformHandler {
     /**
      * Given the current offset into the UBO data, calculate the offset for the uniform we're trying to
      * add taking into consideration all alignment requirements. Use aligned offset plus
-     * {@link #getAlignedStride(byte, int, boolean)} to get the offset to the end of the new uniform.
+     * {@link #getAlignedStride(byte, int, int)} to get the offset to the end of the new uniform.
      *
      * @param offset    the current offset
      * @param type      see {@link SLDataType}
      * @param arraySize see {@link ShaderVar}
-     * @param layout    true for std430 layout, false for std140 layout
+     * @param layout 1 for std430 layout, 0 for std140 layout
      * @return the aligned offset for the new uniform
      */
     public static int getAlignedOffset(int offset,
                                        byte type,
                                        int arraySize,
-                                       boolean layout) {
+                                       int layout) {
         assert (SLDataType.checkSLType(type));
         assert (arraySize == ShaderVar.kNonArray) || (arraySize >= 1);
         int alignmentMask = getAlignmentMask(type, arraySize == ShaderVar.kNonArray, layout);
@@ -542,7 +547,7 @@ public class UniformHandler {
      */
     public static int getAlignedStride(byte type,
                                        int arraySize,
-                                       boolean layout) {
+                                       int layout) {
         assert (SLDataType.checkSLType(type));
         assert (arraySize == ShaderVar.kNonArray) || (arraySize >= 1);
         if (arraySize == ShaderVar.kNonArray) {

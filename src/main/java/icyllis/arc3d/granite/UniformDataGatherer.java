@@ -31,8 +31,8 @@ import static org.lwjgl.system.MemoryUtil.*;
  */
 public class UniformDataGatherer implements AutoCloseable {
 
-    public static final int Std140Layout = 1;
-    public static final int Std430Layout = 2;
+    public static final int Std140Layout = 0;
+    public static final int Std430Layout = 1;
 
     // std140 and std430 only differ in non vec4 arrays and mat2
     // we avoid using them, then 'mLayout' is ignored at the moment
@@ -201,6 +201,14 @@ public class UniformDataGatherer implements AutoCloseable {
     public void writeMatrix4f(Matrix4 matrix) {
         long dst = append(16, 64);
         matrix.store(dst);
+    }
+
+    public void writeMatrix4f(int offset, float[] value) {
+        long dst = append(16, 64);
+        for (int i = 0; i < 16; i++) {
+            memPutFloat(dst, value[offset++]);
+            dst += 4;
+        }
     }
 
     /**
