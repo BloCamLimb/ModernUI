@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2024-2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,25 +17,12 @@
  * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine;
+package icyllis.arc3d.granite;
 
-import javax.annotation.Nonnull;
+import icyllis.arc3d.engine.BakedGlyph;
 
-/**
- * An object with identity. This can be used to track state changes through
- * reference equality '==', and as keys of {@link java.util.IdentityHashMap}.
- * Used by {@link Resource} and {@link SurfaceProxy}.
- *
- * @see System#identityHashCode(Object)
- */
-public final class UniqueID {
+public class GlyphVector {
 
-    public UniqueID() {
-    }
-
-    @Nonnull
-    @Override
-    public String toString() {
-        return "UniqueID@" + Integer.toHexString(hashCode());
-    }
+    private int[] mGlyphs;
+    private BakedGlyph[] mBakedGlyphs;
 }

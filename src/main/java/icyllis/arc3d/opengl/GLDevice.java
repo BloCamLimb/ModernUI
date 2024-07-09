@@ -24,7 +24,6 @@ import icyllis.arc3d.engine.Device;
 import icyllis.arc3d.engine.Image;
 import icyllis.arc3d.engine.*;
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
-import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
@@ -34,7 +33,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Consumer;
 
 import static icyllis.arc3d.opengl.GLCore.*;
-import static org.lwjgl.system.MemoryUtil.memPutInt;
 
 /**
  * The OpenGL device.

@@ -155,13 +155,7 @@ public class TestGraniteRenderer {
                 RefCnt.create(testImage),
                 Shader.TILE_MODE_CLAMP,
                 Shader.TILE_MODE_CLAMP,
-                new SamplingOptions(
-                        SamplingOptions.FILTER_MODE_LINEAR,
-                        SamplingOptions.FILTER_MODE_LINEAR,
-                        SamplingOptions.MIPMAP_MODE_NONE,
-                        1,
-                        false,
-                        0, 0),
+                SamplingOptions.LINEAR,
                 null)
                 : new ColorShader(0xFF8888FF);
         @SharedPtr

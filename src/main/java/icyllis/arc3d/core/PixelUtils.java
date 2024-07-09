@@ -289,7 +289,7 @@ public class PixelUtils {
 
     /**
      * Performs color type, alpha type, and color space conversion.
-     * Addresses (offsets) must be aligned, scaling is not allowed.
+     * Addresses (offsets) must be aligned to bytes-per-pixel, scaling is not allowed.
      */
     public static boolean convertPixels(ImageInfo srcInfo, Object srcBase,
                                         long srcAddr, long srcRowBytes,
@@ -301,7 +301,8 @@ public class PixelUtils {
 
     /**
      * Performs color type, alpha type, color space, and origin conversion.
-     * Addresses (offsets) must be aligned, scaling is not allowed.
+     * Addresses (offsets) must be aligned to bytes-per-pixel (except for non-power-of-two),
+     * scaling is not allowed.
      */
     public static boolean convertPixels(ImageInfo srcInfo, Object srcBase,
                                         long srcAddr, long srcRowBytes,

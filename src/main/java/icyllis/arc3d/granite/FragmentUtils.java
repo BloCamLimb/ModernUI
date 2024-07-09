@@ -192,7 +192,7 @@ public class FragmentUtils {
         SamplerDesc samplerDesc = SamplerDesc.make(
                 sampling.mMagFilter,
                 sampling.mMinFilter,
-                sampling.mMipmap,
+                sampling.mMipmapMode,
                 useHwTiling ? tileModeX : SamplerDesc.ADDRESS_MODE_CLAMP_TO_EDGE,
                 useHwTiling ? tileModeY : SamplerDesc.ADDRESS_MODE_CLAMP_TO_EDGE,
                 SamplerDesc.ADDRESS_MODE_CLAMP_TO_EDGE

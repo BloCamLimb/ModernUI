@@ -25,8 +25,6 @@ import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 
 import javax.annotation.Nonnull;
 
-import static icyllis.arc3d.engine.Engine.BudgetType;
-
 /**
  * The {@link SurfaceAllocator} explicitly distributes {@link GpuSurface} at flush time.
  * It operates by being given the usage intervals of the various {@link SurfaceProxy}. It keeps these

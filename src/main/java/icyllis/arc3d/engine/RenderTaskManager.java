@@ -19,8 +19,7 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.RefCnt;
-import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.ops.OpsTask;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 

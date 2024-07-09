@@ -19,8 +19,7 @@
 
 package icyllis.arc3d.opengl;
 
-import icyllis.arc3d.core.RawPtr;
-import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.granite.shading.VertexShaderBuilder;
 

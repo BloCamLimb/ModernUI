@@ -34,7 +34,7 @@ import java.lang.annotation.RetentionPolicy;
  * wraps Java2D's {@link java.awt.image.Raster}. Pixels are allocated on the Java heap,
  * and can be used with Java2D's software renderer.
  */
-public class Raster {
+public class Raster implements AutoCloseable {
 
     /**
      * Describes the usage of Raster.
@@ -83,8 +83,8 @@ public class Raster {
 
     @Nullable
     protected final BufferedImage mBufImg;
-    protected volatile Pixmap mPixmap;
-    protected final Pixels mPixels;
+    protected Pixmap mPixmap;
+    protected Pixels mPixels;
 
     public Raster(@Nullable BufferedImage bufImg, @Nonnull ImageInfo info,
                   @Nullable Object data, int baseOffset, int rowStride) {
@@ -94,8 +94,8 @@ public class Raster {
     }
 
     @Nonnull
-    public static Raster createRaster(@Size(min = 1, max = 32768) int width,
-                                      @Size(min = 1, max = 32768) int height,
+    public static Raster createRaster(@Size(min = 1) int width,
+                                      @Size(min = 1) int height,
                                       @Format int format) {
         if (width < 1 || height < 1) {
             throw new IllegalArgumentException("Image dimensions " + width + "x" + height
@@ -235,5 +235,10 @@ public class Raster {
     @RawPtr
     public Pixels getPixels() {
         return mPixels;
+    }
+
+    @Override
+    public void close() {
+        mPixels = RefCnt.move(mPixels);
     }
 }
