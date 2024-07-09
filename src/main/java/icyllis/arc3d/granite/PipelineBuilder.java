@@ -67,8 +67,8 @@ public class PipelineBuilder {
         }
 
         mVaryings = new VaryingHandler(mCaps.shaderCaps());
-        mGeometryUniforms = new UniformHandler(mCaps.shaderCaps());
-        mFragmentUniforms = new UniformHandler(mCaps.shaderCaps());
+        mGeometryUniforms = new UniformHandler(mCaps.shaderCaps(), UniformHandler.Std140Layout);
+        mFragmentUniforms = new UniformHandler(mCaps.shaderCaps(), UniformHandler.Std140Layout);
     }
 
     private boolean needsLocalCoords() {
