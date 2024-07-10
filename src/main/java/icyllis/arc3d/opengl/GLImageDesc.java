@@ -132,8 +132,8 @@ public final class GLImageDesc extends ImageDesc {
                     mHeight == desc.mHeight &&
                     mDepth == desc.mDepth &&
                     mArraySize == desc.mArraySize &&
-                    mMipLevelCount != desc.mMipLevelCount &&
-                    mSampleCount != desc.mSampleCount;
+                    mMipLevelCount == desc.mMipLevelCount &&
+                    mSampleCount == desc.mSampleCount;
         }
         return false;
     }
