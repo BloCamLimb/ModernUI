@@ -226,13 +226,15 @@ public class AnalyticSimpleBoxStep extends GeometryStep {
                 """);
 
         if (mAA) {
-            // use L2-norm of grad(SDF)
+            // we previously used L2-norm of grad(SDF) as:
+            // float afwidth = length(vec2(dFdx(dis),dFdy(dis))) * 0.7021;
+            // float edgeAlpha = 1.0 - smoothstep(-afwidth, afwidth, dis);
             // 0.7021 < 0.7071 (slightly smaller than half of the diagonal)
-            //TODO make this configurable to use L1 norm: (fwidth(dis) * 0.5),
-            // L1 is better when rect is axis-aligned but worse when rotated, L1 may be faster than L2
+            // however we found that L1 norm (fwidth(dis) * 0.5) and linear interpolation
+            // are better when geometry is axis-aligned, L1 may be faster than L2
             fs.format("""
-                    float afwidth = length(vec2(dFdx(dis),dFdy(dis))) * 0.7021;
-                    float edgeAlpha = 1.0 - smoothstep(-afwidth, afwidth, dis);
+                    float afwidth = fwidth(dis);
+                    float edgeAlpha = 1.0 - clamp(dis/afwidth+0.5, 0.0, 1.0);
                     """);
         } else {
             // hard edge
