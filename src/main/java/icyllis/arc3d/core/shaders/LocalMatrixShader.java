@@ -28,6 +28,7 @@ public class LocalMatrixShader extends Shader {
     private final Matrix mLocalMatrix;
 
     LocalMatrixShader(@SharedPtr Shader base, Matrix localMatrix) {
+        localMatrix.getType(); // Precache so reads are threadsafe.
         mBase = base;
         mLocalMatrix = localMatrix;
     }

@@ -163,6 +163,9 @@ public class FragmentUtils {
         keyBuilder.addInt(FragmentStage.kLocalMatrixShader_BuiltinStageID);
     }
 
+    public static final int kCubicClampUnpremul = 0;
+    public static final int kCubicClampPremul = 1;
+
     public static void appendImageShaderBlock(
             KeyContext keyContext,
             KeyBuilder keyBuilder,
@@ -175,13 +178,41 @@ public class FragmentUtils {
             ColorSpace srcCS, @ColorInfo.AlphaType int srcAT,
             @SharedPtr ImageViewProxy view
     ) {
+        boolean useHwTiling = !sampling.mUseCubic &&
+                subset.contains(0, 0, imageWidth, imageHeight);
+        int filterMode = SamplingOptions.FILTER_MODE_NEAREST;
 
-        boolean useHwTiling = !sampling.mUseCubic && subset.contains(0, 0, imageWidth, imageHeight);
-
+        uniformDataGatherer.write2f(1.f / imageWidth, 1.f / imageHeight);
         if (useHwTiling) {
-            uniformDataGatherer.write2f(1.f / imageWidth, 1.f / imageHeight);
+            // hardware (fast)
             keyBuilder.addInt(FragmentStage.kHWImageShader_BuiltinStageID);
+        } else {
+            // strict subset
+            uniformDataGatherer.write4f(subset.left(), subset.top(),
+                    subset.right(), subset.bottom());
+            if (sampling.mUseCubic) {
+                // Cubic sampling is handled in a shader, with the actual texture sampled by with
+                // nearest-neighbor
+                assert sampling.mMinFilter == SamplingOptions.FILTER_MODE_NEAREST &&
+                        sampling.mMagFilter == SamplingOptions.FILTER_MODE_NEAREST &&
+                        sampling.mMipmapMode == SamplingOptions.MIPMAP_MODE_NONE;
+                uniformDataGatherer.writeMatrix4f(0,
+                        ImageShader.makeCubicMatrix(sampling.mCubicB, sampling.mCubicC));
+                uniformDataGatherer.write1i(srcAT == ColorInfo.AT_PREMUL
+                        ? kCubicClampPremul
+                        : kCubicClampUnpremul);
+                keyBuilder.addInt(FragmentStage.kCubicImageShader_BuiltinStageID);
+            } else {
+                // Use linear filter if either is linear
+                filterMode = sampling.mMinFilter | sampling.mMagFilter;
+                uniformDataGatherer.write1i(filterMode);
+                keyBuilder.addInt(FragmentStage.kImageShader_BuiltinStageID);
+            }
+            uniformDataGatherer.write1i(tileModeX);
+            uniformDataGatherer.write1i(tileModeY);
         }
+        // Remember: blending always uses premultiplied alpha, then it must be
+        // transformed into premultiplied, though render target may be opaque
         appendColorSpaceUniforms(
                 srcCS,
                 srcAT,
@@ -189,9 +220,9 @@ public class FragmentUtils {
                 ColorInfo.AT_PREMUL,
                 uniformDataGatherer);
 
-        SamplerDesc samplerDesc = SamplerDesc.make(
-                sampling.mMagFilter,
-                sampling.mMinFilter,
+        var samplerDesc = SamplerDesc.make(
+                useHwTiling ? sampling.mMagFilter : filterMode,
+                useHwTiling ? sampling.mMinFilter : filterMode,
                 sampling.mMipmapMode,
                 useHwTiling ? tileModeX : SamplerDesc.ADDRESS_MODE_CLAMP_TO_EDGE,
                 useHwTiling ? tileModeY : SamplerDesc.ADDRESS_MODE_CLAMP_TO_EDGE,
@@ -495,6 +526,10 @@ public class FragmentUtils {
 
         @SharedPtr
         ImageViewProxy view = RefCnt.create(imageToDraw.getImageViewProxy());
+        if (view == null) {
+            keyBuilder.addInt(FragmentStage.kError_BuiltinStageID);
+            return;
+        }
 
         appendImageShaderBlock(keyContext,
                 keyBuilder,

@@ -48,7 +48,7 @@ public abstract class Gradient1DShader extends GradientShader {
     protected Gradient1DShader(@Nonnull float[] inColors, @Nullable ColorSpace colorSpace,
                                @Nullable float[] inPositions, int inColorCount,
                                int tileMode, int interpolation,
-                               @Nonnull Matrix ptsToUnit /*internalStorage*/) {
+                               @Nonnull Matrix ptsToUnit) {
         ptsToUnit.getType(); // Precache so reads are threadsafe.
         mPtsToUnit = ptsToUnit;
 
