@@ -41,8 +41,8 @@ public class TestGraniteRenderer {
 
     public static final Logger LOGGER = LoggerFactory.getLogger("Arc3D");
 
-    public static int CANVAS_WIDTH = 1280;
-    public static int CANVAS_HEIGHT = 720;
+    public static int CANVAS_WIDTH = 1760;
+    public static int CANVAS_HEIGHT = 990;
 
     public static final int MAX_RECT_WIDTH = 370;
     public static final int MIN_RECT_WIDTH = 20;
@@ -50,8 +50,10 @@ public class TestGraniteRenderer {
     public static final int MIN_RECT_HEIGHT = 20;
     public static final int MAX_CORNER_RADIUS = 50;
 
-    public static final int WINDOW_WIDTH = 1280;
-    public static final int WINDOW_HEIGHT = 720;
+    public static final int WINDOW_WIDTH = 1760;
+    public static final int WINDOW_HEIGHT = 990;
+
+    public static final int TEST_SCENE = 1;
 
     public static float Bayer2(float x, float y) {
         x = (float) Math.floor(x);
@@ -150,14 +152,37 @@ public class TestGraniteRenderer {
         TestDrawPass.glSetupDebugCallback();
 
         @SharedPtr
-        Shader testShader = testImage != null
-                ? ImageShader.make(
-                RefCnt.create(testImage),
-                Shader.TILE_MODE_CLAMP,
-                Shader.TILE_MODE_CLAMP,
-                SamplingOptions.LINEAR,
-                null)
-                : new ColorShader(0xFF8888FF);
+        Shader testShader1;
+        @SharedPtr
+        Shader testShader2;
+        @SharedPtr
+        Shader testShader3;
+        if (testImage != null) {
+            var scalingMatrix = new Matrix();
+            //scalingMatrix.setScaleTranslate(13, 13, 0, 0);
+            testShader1 = ImageShader.make(
+                    RefCnt.create(testImage),
+                    Shader.TILE_MODE_CLAMP,
+                    Shader.TILE_MODE_CLAMP,
+                    SamplingOptions.LINEAR,
+                    scalingMatrix);
+            testShader2 = ImageShader.make(
+                    RefCnt.create(testImage),
+                    Shader.TILE_MODE_CLAMP,
+                    Shader.TILE_MODE_CLAMP,
+                    SamplingOptions.MITCHELL,
+                    scalingMatrix);
+            testShader3 = ImageShader.make(
+                    RefCnt.create(testImage),
+                    Shader.TILE_MODE_CLAMP,
+                    Shader.TILE_MODE_CLAMP,
+                    SamplingOptions.CUBIC_BSPLINE,
+                    scalingMatrix);
+        } else {
+            testShader1 = new ColorShader(0xFF8888FF);
+            testShader2 = RefCnt.create(testShader1);
+            testShader3 = RefCnt.create(testShader1);
+        }
         @SharedPtr
         Shader gradShader = AngularGradient.makeAngular(
                 584, 534, 0, 270,
@@ -187,7 +212,7 @@ public class TestGraniteRenderer {
             paint.reset();
             paint.setColor(0x00000000);
             drawDevice.drawPaint(paint);
-            if (false) {
+            if (TEST_SCENE == 0) {
                 RoundRect rrect = new RoundRect();
                 for (int i = 0; i < nRects; i++) {
                     int cx = random.nextInt(MAX_RECT_WIDTH / 2, CANVAS_WIDTH - MAX_RECT_WIDTH / 2);
@@ -207,7 +232,7 @@ public class TestGraniteRenderer {
                     paint.setRGBA(random.nextInt(256), random.nextInt(256), random.nextInt(256), random.nextInt(128));
                     drawDevice.drawRoundRect(rrect, paint);
                 }
-            } else {
+            } else if (TEST_SCENE == 1) {
                 RoundRect rrect = new RoundRect();
                 rrect.mLeft = 30;
                 rrect.mTop = 60;
@@ -272,7 +297,7 @@ public class TestGraniteRenderer {
                 mat.setIdentity();
                 drawDevice.setLocalToDevice(mat);
 
-                paint.setShader(RefCnt.create(testShader));
+                paint.setShader(RefCnt.create(testShader1));
                 paint.setStyle(Paint.FILL);
                 paint.setRGBA(random.nextInt(256), random.nextInt(256), random.nextInt(256), 255);
                 drawDevice.drawCircle(500, 300, 20, paint);
@@ -304,6 +329,38 @@ public class TestGraniteRenderer {
                         drawDevice.drawRect(rect, paint);
                     }
                 }
+
+                paint.setShader(RefCnt.create(testShader1));
+                mat.setTranslate(600, 100, 0);
+                drawDevice.setLocalToDevice(mat);
+                rrect.setRect(200, 100, 600, 500);
+                rrect.mRadiusUlx = 20;
+                drawDevice.drawRoundRect(rrect, paint);
+
+            } else if (TEST_SCENE == 2) {
+                Rect2f rect = new Rect2f();
+                rect.set(drawDevice.bounds());
+                int wid = (int) (rect.mRight / 3);
+                rect.mLeft = 2;
+                rect.mRight = wid - 2;
+                paint.setStyle(Paint.FILL);
+
+                paint.setShader(RefCnt.create(testShader1));
+                Matrix4 mat = Matrix4.identity();
+                float scale = (float) (1+0.1*Math.sin(System.currentTimeMillis()/1000.0*2.0));
+                mat.preScale(scale, scale);
+                drawDevice.setLocalToDevice(mat);
+                drawDevice.drawRect(rect, paint);
+
+                paint.setShader(RefCnt.create(testShader2));
+                mat.preTranslateX(wid);
+                drawDevice.setLocalToDevice(mat);
+                drawDevice.drawRect(rect, paint);
+
+                paint.setShader(RefCnt.create(testShader3));
+                mat.preTranslateX(wid);
+                drawDevice.setLocalToDevice(mat);
+                drawDevice.drawRect(rect, paint);
             }
 
             long time2 = System.nanoTime();
@@ -349,7 +406,9 @@ public class TestGraniteRenderer {
                     formatMicroseconds(time7, time6));*/
         }
         paint.close();
-        testShader = RefCnt.move(testShader);
+        testShader1 = RefCnt.move(testShader1);
+        testShader2 = RefCnt.move(testShader2);
+        testShader3 = RefCnt.move(testShader3);
         gradShader = RefCnt.move(gradShader);
         testImage = RefCnt.move(testImage);
 

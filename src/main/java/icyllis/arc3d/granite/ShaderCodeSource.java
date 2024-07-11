@@ -22,6 +22,7 @@ package icyllis.arc3d.granite;
 import icyllis.arc3d.core.PixelUtils;
 import icyllis.arc3d.core.SLDataType;
 import icyllis.arc3d.core.shaders.Shader;
+import icyllis.arc3d.engine.SamplerDesc;
 import icyllis.arc3d.granite.shading.UniformHandler;
 
 import java.util.*;
@@ -37,6 +38,14 @@ public class ShaderCodeSource {
     private static final Uniform[] PAINT_COLOR_UNIFORMS = {
             new Uniform(SLDataType.kFloat4, UniformHandler.PAINT_COLOR_NAME)
     };
+    private static final Uniform INV_IMAGE_SIZE =
+            new Uniform(SLDataType.kFloat2, "u_InvImageSize");
+    private static final Uniform SUBSET =
+            new Uniform(SLDataType.kFloat4, "u_Subset");
+    private static final Uniform TILE_MODE_X =
+            new Uniform(SLDataType.kInt, "u_TileModeX");
+    private static final Uniform TILE_MODE_Y =
+            new Uniform(SLDataType.kInt, "u_TileModeY");
     private static final Uniform XFORM_FLAGS =
             new Uniform(SLDataType.kInt, "u_XformFlags");
     private static final Uniform XFORM_SRC_TF =
@@ -46,8 +55,6 @@ public class ShaderCodeSource {
     private static final Uniform XFORM_DST_TF =
             new Uniform(SLDataType.kFloat4, "u_XformDstTf", 2);
 
-    private static final Uniform GRAD_TILE_MODE =
-            new Uniform(SLDataType.kInt, "u_TileMode");
     private static final Uniform GRAD_COLOR_SPACE =
             new Uniform(SLDataType.kInt, "u_ColorSpace");
     private static final Uniform GRAD_DO_UNPREMUL =
@@ -132,7 +139,6 @@ public class ShaderCodeSource {
     // We have 7 source coefficients and 7 destination coefficients. We pass them via two vec4 arrays;
     // In std140, this arrangement is much more efficient than a simple array of scalars, which
     // vec4 array and mat3 are always vec4 aligned
-    //TODO TBD: can we move 'flags' to the last value of 'srcTf'?
     public static final String ARC_COLOR_SPACE_TRANSFORM = """
             vec4 arc_color_space_transform(vec4 color,
                                            int flags,
@@ -371,13 +377,13 @@ public class ShaderCodeSource {
             """;
     public static final String ARC_ANGULAR_GRAD_4_SHADER = """
             vec4 arc_angular_grad_4_shader(vec2 coords,
-                                          vec4 colors[4],
-                                          vec4 offsets,
-                                          float bias,
-                                          float scale,
-                                          int tileMode,
-                                          int colorSpace,
-                                          int doUnpremul) {
+                                           vec4 colors[4],
+                                           vec4 offsets,
+                                           float bias,
+                                           float scale,
+                                           int tileMode,
+                                           int colorSpace,
+                                           int doUnpremul) {
                 vec2 t = AngularGradLayout(coords, bias, scale);
                 t = TileGrad(tileMode, t);
                 vec4 color = ColorizeGrad4(colors, offsets, t);
@@ -386,17 +392,265 @@ public class ShaderCodeSource {
             """;
     public static final String ARC_ANGULAR_GRAD_8_SHADER = """
             vec4 arc_angular_grad_8_shader(vec2 coords,
-                                          vec4 colors[8],
-                                          vec4 offsets[2],
-                                          float bias,
-                                          float scale,
-                                          int tileMode,
-                                          int colorSpace,
-                                          int doUnpremul) {
+                                           vec4 colors[8],
+                                           vec4 offsets[2],
+                                           float bias,
+                                           float scale,
+                                           int tileMode,
+                                           int colorSpace,
+                                           int doUnpremul) {
                 vec2 t = AngularGradLayout(coords, bias, scale);
                 t = TileGrad(tileMode, t);
                 vec4 color = ColorizeGrad8(colors, offsets, t);
                 return color;
+            }
+            """;
+    private static final String PRIV_TILE = """
+            float Tile(int tileMode, float f, float low, float high) {
+                const int kTileModeRepeat = 0;
+                const int kTileModeMirror = 1;
+                const int kTileModeClamp  = 2;
+                const int kTileModeDecal  = 3;
+                
+                switch (tileMode) {
+                    case kTileModeRepeat: {
+                        float length = high - low;
+                        f = mod(f - low, length) + low;
+                        break;
+                    }
+                        
+                    case kTileModeMirror: {
+                        float length = high - low;
+                        float t = mod(f - low, length * 2.0);
+                        f = mix(t, length * 2.0 - t, step(length, t)) + low;
+                        break;
+                    }
+                    
+                    case kTileModeClamp:
+                        f = clamp(f, low, high);
+                        break;
+                        
+                    default: // kTileModeDecal
+                        break;
+                }
+                return f;
+            }
+            """;
+    static {
+        //noinspection ConstantValue
+        assert SamplerDesc.FILTER_NEAREST == 0;
+        //noinspection ConstantValue
+        assert SamplerDesc.FILTER_LINEAR  == 1;
+    }
+    // kLinearInset make sure we don't touch an outer row or column with a weight of 0 when linear filtering.
+    private static final String PRIV_SAMPLE_IMAGE_SUBSET = """
+            vec4 SampleImageSubset(vec2 pos,
+                                   vec2 invImageSize,
+                                   vec4 subset,
+                                   int tileModeX,
+                                   int tileModeY,
+                                   int filterMode,
+                                   vec2 linearFilterInset,
+                                   sampler2D s) {
+                const int kTileModeRepeat = 0;
+                const int kTileModeMirror = 1;
+                const int kTileModeClamp  = 2;
+                const int kTileModeDecal  = 3;
+                const int kFilterModeNearest = 0;
+                const int kFilterModeLinear  = 1;
+                const float kLinearInset = 0.5 + 0.00001;
+                
+                // Do hard-edge shader transitions to the border color for nearest-neighbor decal tiling at the
+                // subset boundaries. Snap the input coordinates to nearest neighbor before comparing to the
+                // subset rect, to avoid GPU interpolation errors.
+                vec4 test = vec4(1.0);
+                if (tileModeX == kTileModeDecal && filterMode == kFilterModeNearest) {
+                    float snappedX = floor(pos.x) + 0.5;
+                    test.xz = vec2(step(subset.x, snappedX), step(snappedX, subset.z));
+                }
+                if (tileModeY == kTileModeDecal && filterMode == kFilterModeNearest) {
+                    float snappedY = floor(pos.y) + 0.5;
+                    test.yw = vec2(step(subset.y, snappedY), step(snappedY, subset.w));
+                }
+                if (!all(bvec4(test))) {
+                    return vec4(0);
+                }
+                
+                pos.x = Tile(tileModeX, pos.x, subset.x, subset.z);
+                pos.y = Tile(tileModeY, pos.y, subset.y, subset.w);
+                
+                // Clamp to an inset subset to prevent sampling neighboring texels when coords fall exactly at
+                // texel boundaries.
+                vec4 insetClamp;
+                if (filterMode == kFilterModeNearest) {
+                    insetClamp = vec4(floor(subset.xy) + kLinearInset, ceil(subset.zw) - kLinearInset);
+                } else {
+                    insetClamp = vec4(subset.xy + linearFilterInset.x, subset.zw - linearFilterInset.y);
+                }
+                vec2 clampedPos = clamp(pos, insetClamp.xy, insetClamp.zw);
+                vec4 color = texture(s, clampedPos * invImageSize);
+                
+                if (filterMode == kFilterModeLinear) {
+                    // Remember the amount the coord moved for clamping. This is used to implement shader-based
+                    // filtering for repeat and decal tiling.
+                    vec2 error = pos - clampedPos;
+                    vec2 absError = abs(error);
+            
+                    // Do 1 or 3 more texture reads depending on whether both x and y tiling modes are repeat
+                    // and whether we're near a single subset edge or a corner. Then blend the multiple reads
+                    // using the error values calculated above.
+                    bvec2 sampleExtra = bvec2(tileModeX == kTileModeRepeat,
+                                              tileModeY == kTileModeRepeat);
+                    if (any(sampleExtra)) {
+                        float extraCoordX;
+                        float extraCoordY;
+                        vec4 extraColorX;
+                        vec4 extraColorY;
+                        if (sampleExtra.x) {
+                            extraCoordX = mix(insetClamp.z, insetClamp.x, error.x > 0.0);
+                            extraColorX = texture(s, vec2(extraCoordX, clampedPos.y) * invImageSize);
+                        }
+                        if (sampleExtra.y) {
+                            extraCoordY = mix(insetClamp.w, insetClamp.y, error.y > 0.0);
+                            extraColorY = texture(s, vec2(clampedPos.x, extraCoordY) * invImageSize);
+                        }
+                        if (all(sampleExtra)) {
+                            vec4 extraColorXY = texture(s, vec2(extraCoordX, extraCoordY) * invImageSize);
+                            color = mix(mix(color, extraColorX, absError.x),
+                                        mix(extraColorY, extraColorXY, absError.x),
+                                        absError.y);
+                        } else if (sampleExtra.x) {
+                            color = mix(color, extraColorX, absError.x);
+                        } else if (sampleExtra.y) {
+                            color = mix(color, extraColorY, absError.y);
+                        }
+                    }
+            
+                    // Do soft edge shader filtering for decal tiling and linear filtering using the error
+                    // values calculated above.
+                    color *= mix(1.0, max(1 - absError.x, 0), tileModeX == kTileModeDecal);
+                    color *= mix(1.0, max(1 - absError.y, 0), tileModeY == kTileModeDecal);
+                }
+            
+                return color;
+            }
+            """;
+    // simplified version from above, assuming filter is nearest and pos is clamped
+    private static final String PRIV_SAMPLE_CUBIC_IMAGE_SUBSET = """
+            vec4 SampleCubicImageSubset(vec2 pos,
+                                        vec2 invImageSize,
+                                        vec4 subset,
+                                        int tileModeX,
+                                        int tileModeY,
+                                        sampler2D s) {
+                const int kTileModeRepeat = 0;
+                const int kTileModeMirror = 1;
+                const int kTileModeClamp  = 2;
+                const int kTileModeDecal  = 3;
+                const float kLinearInset = 0.5 + 0.00001;
+                
+                vec4 test = vec4(1.0);
+                if (tileModeX == kTileModeDecal) {
+                    test.xz = vec2(step(subset.x, pos.x), step(pos.x, subset.z));
+                }
+                if (tileModeY == kTileModeDecal) {
+                    test.yw = vec2(step(subset.y, pos.y), step(pos.y, subset.w));
+                }
+                if (!all(bvec4(test))) {
+                    return vec4(0);
+                }
+                
+                pos.x = Tile(tileModeX, pos.x, subset.x, subset.z);
+                pos.y = Tile(tileModeY, pos.y, subset.y, subset.w);
+                
+                // Clamp to an inset subset to prevent sampling neighboring texels when coords fall exactly at
+                // texel boundaries.
+                vec4 insetClamp = vec4(floor(subset.xy) + kLinearInset, ceil(subset.zw) - kLinearInset);
+                vec2 clampedPos = clamp(pos, insetClamp.xy, insetClamp.zw);
+                vec4 color = texture(s, clampedPos * invImageSize);
+            
+                return color;
+            }
+            """;
+    private static final String PRIV_CUBIC_FILTER_IMAGE = """
+            vec4 CubicFilterImage(vec2 pos,
+                                  vec2 invImageSize,
+                                  vec4 subset,
+                                  int tileModeX,
+                                  int tileModeY,
+                                  mat4 coeffs,
+                                  int cubicClamp,
+                                  sampler2D s) {
+                const int kFilterModeNearest = 0;
+                const int kFilterModeLinear  = 1;
+                const int kCubicClampUnpremul = 0;
+                const int kCubicClampPremul   = 1;
+                const float kLinearInset = 0.5 + 0.00001;
+                
+                // Determine pos's fractional offset f between texel centers.
+                vec2 f = fract(pos - 0.5);
+                // Sample 16 points at 1-pixel intervals from [p - 1.5 ... p + 1.5].
+                pos -= 1.5;
+                // Snap to texel centers to prevent sampling neighboring texels.
+                pos = floor(pos) + 0.5;
+                        
+                vec4 wx = coeffs * vec4(1.0, f.x, f.x * f.x, f.x * f.x * f.x);
+                vec4 wy = coeffs * vec4(1.0, f.y, f.y * f.y, f.y * f.y * f.y);
+                vec4 color = vec4(0);
+                for (int y = 0; y < 4; ++y) {
+                    vec4 rowColor = vec4(0);
+                    for (int x = 0; x < 4; ++x) {
+                        rowColor += wx[x] * SampleCubicImageSubset(pos + vec2(x, y), invImageSize, subset,
+                                                                   tileModeX, tileModeY, s);
+                    }
+                    color += wy[y] * rowColor;
+                }
+                // Bicubic can send colors out of range, so clamp to get them back in gamut.
+                if (cubicClamp == kCubicClampUnpremul) {
+                    color = clamp(color, 0.0, 1.0);
+                } else {
+                    color.a = clamp(color.a, 0.0, 1.0);
+                    color.rgb = clamp(color.rgb, vec3(0.0), color.aaa);
+                }
+                return color;
+            }
+            """;
+    public static final String ARC_IMAGE_SHADER = """
+            vec4 arc_image_shader(vec2 coords,
+                                  vec2 invImageSize,
+                                  vec4 subset,
+                                  int filterMode,
+                                  int tileModeX,
+                                  int tileModeY,
+                                  int xformFlags,
+                                  vec4 xformSrcTf[2],
+                                  mat3 xformGamutTransform,
+                                  vec4 xformDstTf[2],
+                                  sampler2D s) {
+                const float kLinearInset = 0.5 + 0.00001;
+                vec4 samp = SampleImageSubset(coords, invImageSize, subset, tileModeX, tileModeY,
+                                              filterMode, vec2(kLinearInset), s);
+                return arc_color_space_transform(samp, xformFlags, xformSrcTf,
+                                                 xformGamutTransform, xformDstTf);
+            }
+            """;
+    public static final String ARC_CUBIC_IMAGE_SHADER = """
+            vec4 arc_cubic_image_shader(vec2 coords,
+                                        vec2 invImageSize,
+                                        vec4 subset,
+                                        mat4 cubicCoeffs,
+                                        int cubicClamp,
+                                        int tileModeX,
+                                        int tileModeY,
+                                        int xformFlags,
+                                        vec4 xformSrcTf[2],
+                                        mat3 xformGamutTransform,
+                                        vec4 xformDstTf[2],
+                                        sampler2D s) {
+                vec4 samp = CubicFilterImage(coords, invImageSize, subset, tileModeX, tileModeY,
+                                             cubicCoeffs, cubicClamp, s);
+                return arc_color_space_transform(samp, xformFlags, xformSrcTf,
+                                                 xformGamutTransform, xformDstTf);
             }
             """;
     public static final String ARC_HW_IMAGE_SHADER = """
@@ -481,7 +735,7 @@ public class ShaderCodeSource {
                 new Uniform[]{
                         GRAD_4_COLORS,
                         GRAD_4_OFFSETS,
-                        GRAD_TILE_MODE,
+                        TILE_MODE_X,
                         GRAD_COLOR_SPACE,
                         GRAD_DO_UNPREMUL
                 },
@@ -498,7 +752,7 @@ public class ShaderCodeSource {
                 new Uniform[]{
                         GRAD_8_COLORS,
                         GRAD_8_OFFSETS,
-                        GRAD_TILE_MODE,
+                        TILE_MODE_X,
                         GRAD_COLOR_SPACE,
                         GRAD_DO_UNPREMUL
                 },
@@ -515,7 +769,7 @@ public class ShaderCodeSource {
                 new Uniform[]{
                         GRAD_4_COLORS,
                         GRAD_4_OFFSETS,
-                        GRAD_TILE_MODE,
+                        TILE_MODE_X,
                         GRAD_COLOR_SPACE,
                         GRAD_DO_UNPREMUL
                 },
@@ -532,7 +786,7 @@ public class ShaderCodeSource {
                 new Uniform[]{
                         GRAD_8_COLORS,
                         GRAD_8_OFFSETS,
-                        GRAD_TILE_MODE,
+                        TILE_MODE_X,
                         GRAD_COLOR_SPACE,
                         GRAD_DO_UNPREMUL
                 },
@@ -551,7 +805,7 @@ public class ShaderCodeSource {
                         GRAD_4_OFFSETS,
                         GRAD_BIAS,
                         GRAD_SCALE,
-                        GRAD_TILE_MODE,
+                        TILE_MODE_X,
                         GRAD_COLOR_SPACE,
                         GRAD_DO_UNPREMUL
                 },
@@ -570,7 +824,7 @@ public class ShaderCodeSource {
                         GRAD_8_OFFSETS,
                         GRAD_BIAS,
                         GRAD_SCALE,
-                        GRAD_TILE_MODE,
+                        TILE_MODE_X,
                         GRAD_COLOR_SPACE,
                         GRAD_DO_UNPREMUL
                 },
@@ -616,7 +870,47 @@ public class ShaderCodeSource {
                 },
                 1
         );
-        //TODO TBD can we store InvImageSize in local matrix?
+        mBuiltinCodeSnippets[kImageShader_BuiltinStageID] = new FragmentStage(
+                "ImageShader",
+                kLocalCoords_ReqFlag,
+                "arc_image_shader",
+                new String[]{PRIV_TILE, PRIV_SAMPLE_IMAGE_SUBSET,
+                        PRIV_TRANSFER_FUNCTION, PRIV_INV_TRANSFER_FUNCTION,
+                        ARC_COLOR_SPACE_TRANSFORM, ARC_IMAGE_SHADER},
+                new Uniform[]{
+                        INV_IMAGE_SIZE, SUBSET,
+                        new Uniform(SLDataType.kInt, "u_FilterMode"),
+                        TILE_MODE_X, TILE_MODE_Y,
+                        XFORM_FLAGS, XFORM_SRC_TF, XFORM_GAMUT_TRANSFORM, XFORM_DST_TF
+                },
+                new Sampler[]{
+                        new Sampler(SLDataType.kSampler2D, "u_Sampler")
+                },
+                ShaderCodeSource::generateDefaultExpression,
+                0
+        );
+        mBuiltinCodeSnippets[kCubicImageShader_BuiltinStageID] = new FragmentStage(
+                "CubicImageShader",
+                kLocalCoords_ReqFlag,
+                "arc_cubic_image_shader",
+                new String[]{PRIV_TILE, PRIV_SAMPLE_CUBIC_IMAGE_SUBSET,
+                        PRIV_TRANSFER_FUNCTION, PRIV_INV_TRANSFER_FUNCTION,
+                        PRIV_CUBIC_FILTER_IMAGE,
+                        ARC_COLOR_SPACE_TRANSFORM, ARC_CUBIC_IMAGE_SHADER
+                },
+                new Uniform[]{
+                        INV_IMAGE_SIZE, SUBSET,
+                        new Uniform(SLDataType.kFloat4x4, "u_CubicCoeffs"),
+                        new Uniform(SLDataType.kInt, "u_CubicClamp"),
+                        TILE_MODE_X, TILE_MODE_Y,
+                        XFORM_FLAGS, XFORM_SRC_TF, XFORM_GAMUT_TRANSFORM, XFORM_DST_TF
+                },
+                new Sampler[]{
+                        new Sampler(SLDataType.kSampler2D, "u_Sampler")
+                },
+                ShaderCodeSource::generateDefaultExpression,
+                0
+        );
         mBuiltinCodeSnippets[kHWImageShader_BuiltinStageID] = new FragmentStage(
                 "HardwareImageShader",
                 kLocalCoords_ReqFlag,
@@ -624,7 +918,7 @@ public class ShaderCodeSource {
                 new String[]{PRIV_TRANSFER_FUNCTION, PRIV_INV_TRANSFER_FUNCTION,
                         ARC_COLOR_SPACE_TRANSFORM, ARC_HW_IMAGE_SHADER},
                 new Uniform[]{
-                        new Uniform(SLDataType.kFloat2, "u_InvImageSize"),
+                        INV_IMAGE_SIZE,
                         XFORM_FLAGS, XFORM_SRC_TF, XFORM_GAMUT_TRANSFORM, XFORM_DST_TF
                 },
                 new Sampler[]{

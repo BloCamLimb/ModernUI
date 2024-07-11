@@ -31,6 +31,7 @@ public class ImageShader extends Shader {
     public final int mTileModeX;
     public final int mTileModeY;
 
+    // If subset == (0,0,w,h) of the image, then no subset is applied. Subset will not be empty.
     public final Rect2f mSubset;
 
     ImageShader(Image image, Rect2fc subset, int tileModeX, int tileModeY, SamplingOptions sampling) {
@@ -47,7 +48,9 @@ public class ImageShader extends Shader {
                               int tileModeX, int tileModeY,
                               SamplingOptions sampling,
                               @Nullable Matrixc localMatrix) {
-        Rect2fc subset = image != null ? new Rect2f(0, 0, image.getWidth(), image.getHeight()) : Rect2f.empty();
+        Rect2fc subset = image != null
+                ? new Rect2f(0, 0, image.getWidth(), image.getHeight())
+                : Rect2f.empty();
         return makeSubset(image, subset, tileModeX, tileModeY, sampling, localMatrix);
     }
 
@@ -112,4 +115,18 @@ public class ImageShader extends Shader {
     public Rect2fc getSubset() {
         return mSubset;
     }
+
+    /**
+     * Create a 4x4 row major matrix for Mitchell–Netravali filters.
+     */
+    //@formatter:off
+    public static float[] makeCubicMatrix(float B, float C) {
+        return new float[]{
+                  (1.f/6)*B      ,  1 - ( 2.f/6)*B    ,      ( 1.f/6)*B      ,      0       ,
+                - (3.f/6)*B - C  ,         0          ,      ( 3.f/6)*B + C  ,      0       ,
+                  (3.f/6)*B + 2*C, -3 + (12.f/6)*B + C,  3 - (15.f/6)*B - 2*C,     -C       ,
+                - (1.f/6)*B - C  ,  2 - ( 9.f/6)*B - C, -2 + ( 9.f/6)*B + C  , (1.f/6)*B + C
+        };
+    }
+    //@formatter:on
 }

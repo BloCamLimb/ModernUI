@@ -34,7 +34,7 @@ import java.util.Formatter;
 public class FragmentStage extends Processor {
 
     /**
-     * Builtin Code Snippet ID
+     * Builtin Code Snippet ID, most are from Skia Graphite
      */
     public static final int
             kError_BuiltinStageID = 0,
@@ -49,9 +49,11 @@ public class FragmentStage extends Processor {
             kAngularGradientShader4_BuiltinStageID = 9,
             kAngularGradientShader8_BuiltinStageID = 10,
             kLocalMatrixShader_BuiltinStageID = 16,
-            kHWImageShader_BuiltinStageID = 17,
-            kColorSpaceXformColorFilter_BuiltinStageID = 18,
-            kCompose_BuiltinStageID = 19;
+            kImageShader_BuiltinStageID = 17,
+            kCubicImageShader_BuiltinStageID = 18,
+            kHWImageShader_BuiltinStageID = 19,
+            kColorSpaceXformColorFilter_BuiltinStageID = 20,
+            kCompose_BuiltinStageID = 21;
 
     public static final int
             kLast_BuiltinStageID = kCompose_BuiltinStageID;
