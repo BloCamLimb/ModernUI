@@ -207,7 +207,7 @@ public class PipelineBuilder {
         String outputColor = "initialColor";
         String localCoords = needsLocalCoords() ? LOCAL_COORDS_VARYING_NAME : "vec2(0)";
         for (FragmentNode root : mRootNodes) {
-            outputColor = ShaderCodeSource.emitGlueCode(root,
+            outputColor = ShaderCodeSource.invoke_node(root,
                     localCoords, outputColor, "vec4(1)", fs);
         }
 

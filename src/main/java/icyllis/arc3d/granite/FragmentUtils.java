@@ -175,27 +175,30 @@ public class FragmentUtils {
             int tileModeX, int tileModeY,
             SamplingOptions sampling,
             int imageWidth, int imageHeight,
-            ColorSpace srcCS, @ColorInfo.AlphaType int srcAT,
+            @ColorInfo.AlphaType int srcAT,
             @SharedPtr ImageViewProxy view
     ) {
         boolean useHwTiling = !sampling.mUseCubic &&
                 subset.contains(0, 0, imageWidth, imageHeight);
-        int filterMode = SamplingOptions.FILTER_MODE_NEAREST;
+        int filterMode = SamplingOptions.FILTER_MODE_NEAREST; // for subset
 
-        uniformDataGatherer.write2f(1.f / imageWidth, 1.f / imageHeight);
+        if (useHwTiling || !sampling.mUseCubic) {
+            // cubic does not require this
+            uniformDataGatherer.write2f(1.f / imageWidth, 1.f / imageHeight);
+        }
         if (useHwTiling) {
             // hardware (fast)
             keyBuilder.addInt(FragmentStage.kHWImageShader_BuiltinStageID);
         } else {
             // strict subset
+            assert sampling.mMipmapMode == SamplingOptions.MIPMAP_MODE_NONE;
             uniformDataGatherer.write4f(subset.left(), subset.top(),
                     subset.right(), subset.bottom());
             if (sampling.mUseCubic) {
                 // Cubic sampling is handled in a shader, with the actual texture sampled by with
                 // nearest-neighbor
                 assert sampling.mMinFilter == SamplingOptions.FILTER_MODE_NEAREST &&
-                        sampling.mMagFilter == SamplingOptions.FILTER_MODE_NEAREST &&
-                        sampling.mMipmapMode == SamplingOptions.MIPMAP_MODE_NONE;
+                        sampling.mMagFilter == SamplingOptions.FILTER_MODE_NEAREST;
                 uniformDataGatherer.writeMatrix4f(0,
                         ImageShader.makeCubicMatrix(sampling.mCubicB, sampling.mCubicC));
                 uniformDataGatherer.write1i(srcAT == ColorInfo.AT_PREMUL
@@ -211,19 +214,11 @@ public class FragmentUtils {
             uniformDataGatherer.write1i(tileModeX);
             uniformDataGatherer.write1i(tileModeY);
         }
-        // Remember: blending always uses premultiplied alpha, then it must be
-        // transformed into premultiplied, though render target may be opaque
-        appendColorSpaceUniforms(
-                srcCS,
-                srcAT,
-                keyContext.targetInfo().colorSpace(),
-                ColorInfo.AT_PREMUL,
-                uniformDataGatherer);
 
         var samplerDesc = SamplerDesc.make(
                 useHwTiling ? sampling.mMagFilter : filterMode,
                 useHwTiling ? sampling.mMinFilter : filterMode,
-                sampling.mMipmapMode,
+                useHwTiling ? sampling.mMipmapMode : SamplerDesc.MIPMAP_MODE_NONE,
                 useHwTiling ? tileModeX : SamplerDesc.ADDRESS_MODE_CLAMP_TO_EDGE,
                 useHwTiling ? tileModeY : SamplerDesc.ADDRESS_MODE_CLAMP_TO_EDGE,
                 SamplerDesc.ADDRESS_MODE_CLAMP_TO_EDGE
@@ -531,6 +526,11 @@ public class FragmentUtils {
             return;
         }
 
+        int srcAlphaType = imageToDraw.getAlphaType();
+        int dstAlphaType = ColorInfo.AT_PREMUL;
+
+        keyBuilder.addInt(FragmentStage.kCompose_BuiltinStageID);
+
         appendImageShaderBlock(keyContext,
                 keyBuilder,
                 uniformDataGatherer,
@@ -541,9 +541,16 @@ public class FragmentUtils {
                 shader.getSampling(),
                 view.getWidth(),
                 view.getHeight(),
-                imageToDraw.getColorSpace(),
-                imageToDraw.getAlphaType(),
+                srcAlphaType,
                 view);
+
+        appendColorSpaceUniforms(
+                imageToDraw.getColorSpace(),
+                srcAlphaType,
+                keyContext.targetInfo().colorSpace(),
+                dstAlphaType,
+                uniformDataGatherer);
+        keyBuilder.addInt(FragmentStage.kColorSpaceXformColorFilter_BuiltinStageID);
     }
 
     private static void append_to_key(KeyContext keyContext,
