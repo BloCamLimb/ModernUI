@@ -106,8 +106,7 @@ public class ShaderCodeSource {
                       D = tf[1][0], E = tf[1][1], F = tf[1][2];
                 float s = sign(x);
                 x = abs(x);
-                x = (x < D) ? (C * x) + F
-                            : pow(A * x + B, G) + E;
+                x = mix(pow(A * x + B, G) + E, (C * x) + F, x < D);
                 return s * x;
             }
             """;
@@ -117,12 +116,10 @@ public class ShaderCodeSource {
                       D = tf[1][0], E = tf[1][1], F = tf[1][2];
                 float s = sign(x);
                 x = abs(x);
-                x = (x < D * C) ? (x - F) / C
-                                : (pow(x - E, 1.0 / G) - B) / A;
+                x = mix((pow(x - E, 1.0 / G) - B) / A, (x - F) / C, x < D * C);
                 return s * x;
             }
             """;
-
     static {
         //noinspection ConstantValue
         assert PixelUtils.kColorSpaceXformFlagUnpremul == 0x1;
@@ -135,7 +132,6 @@ public class ShaderCodeSource {
         //noinspection ConstantValue
         assert PixelUtils.kColorSpaceXformFlagPremul == 0x10;
     }
-
     // We have 7 source coefficients and 7 destination coefficients. We pass them via two vec4 arrays;
     // In std140, this arrangement is much more efficient than a simple array of scalars, which
     // vec4 array and mat3 are always vec4 aligned
@@ -175,7 +171,6 @@ public class ShaderCodeSource {
                 return color;
             }
             """;
-
     static {
         //noinspection ConstantValue
         assert Shader.TILE_MODE_REPEAT == 0;
@@ -186,7 +181,6 @@ public class ShaderCodeSource {
         //noinspection ConstantValue
         assert Shader.TILE_MODE_DECAL == 3;
     }
-
     // t.y < 0 means out of bounds, then color will be (0,0,0,0)
     // if any component is out of bounds, then that component is 0,
     // and (s.x * s.y) is 0, this eliminates branch
@@ -495,7 +489,7 @@ public class ShaderCodeSource {
                     // filtering for repeat and decal tiling.
                     vec2 error = pos - clampedPos;
                     vec2 absError = abs(error);
-            
+                        
                     // Do 1 or 3 more texture reads depending on whether both x and y tiling modes are repeat
                     // and whether we're near a single subset edge or a corner. Then blend the multiple reads
                     // using the error values calculated above.
@@ -525,20 +519,19 @@ public class ShaderCodeSource {
                             color = mix(color, extraColorY, absError.y);
                         }
                     }
-            
+                        
                     // Do soft edge shader filtering for decal tiling and linear filtering using the error
                     // values calculated above.
                     color *= mix(1.0, max(1 - absError.x, 0), tileModeX == kTileModeDecal);
                     color *= mix(1.0, max(1 - absError.y, 0), tileModeY == kTileModeDecal);
                 }
-            
+                        
                 return color;
             }
             """;
     // simplified version from above, assuming filter is nearest and pos is clamped
     private static final String PRIV_SAMPLE_CUBIC_IMAGE_SUBSET = """
             vec4 SampleCubicImageSubset(vec2 pos,
-                                        vec2 invImageSize,
                                         vec4 subset,
                                         int tileModeX,
                                         int tileModeY,
@@ -567,14 +560,13 @@ public class ShaderCodeSource {
                 // texel boundaries.
                 vec4 insetClamp = vec4(floor(subset.xy) + kLinearInset, ceil(subset.zw) - kLinearInset);
                 vec2 clampedPos = clamp(pos, insetClamp.xy, insetClamp.zw);
-                vec4 color = texture(s, clampedPos * invImageSize);
-            
+                vec4 color = texelFetch(s, ivec2(clampedPos), 0);
+                        
                 return color;
             }
             """;
     private static final String PRIV_CUBIC_FILTER_IMAGE = """
             vec4 CubicFilterImage(vec2 pos,
-                                  vec2 invImageSize,
                                   vec4 subset,
                                   int tileModeX,
                                   int tileModeY,
@@ -600,7 +592,7 @@ public class ShaderCodeSource {
                 for (int y = 0; y < 4; ++y) {
                     vec4 rowColor = vec4(0);
                     for (int x = 0; x < 4; ++x) {
-                        rowColor += wx[x] * SampleCubicImageSubset(pos + vec2(x, y), invImageSize, subset,
+                        rowColor += wx[x] * SampleCubicImageSubset(pos + vec2(x, y), subset,
                                                                    tileModeX, tileModeY, s);
                     }
                     color += wy[y] * rowColor;
@@ -622,48 +614,29 @@ public class ShaderCodeSource {
                                   int filterMode,
                                   int tileModeX,
                                   int tileModeY,
-                                  int xformFlags,
-                                  vec4 xformSrcTf[2],
-                                  mat3 xformGamutTransform,
-                                  vec4 xformDstTf[2],
                                   sampler2D s) {
                 const float kLinearInset = 0.5 + 0.00001;
-                vec4 samp = SampleImageSubset(coords, invImageSize, subset, tileModeX, tileModeY,
-                                              filterMode, vec2(kLinearInset), s);
-                return arc_color_space_transform(samp, xformFlags, xformSrcTf,
-                                                 xformGamutTransform, xformDstTf);
+                return SampleImageSubset(coords, invImageSize, subset, tileModeX, tileModeY,
+                                         filterMode, vec2(kLinearInset), s);
             }
             """;
     public static final String ARC_CUBIC_IMAGE_SHADER = """
             vec4 arc_cubic_image_shader(vec2 coords,
-                                        vec2 invImageSize,
                                         vec4 subset,
                                         mat4 cubicCoeffs,
                                         int cubicClamp,
                                         int tileModeX,
                                         int tileModeY,
-                                        int xformFlags,
-                                        vec4 xformSrcTf[2],
-                                        mat3 xformGamutTransform,
-                                        vec4 xformDstTf[2],
                                         sampler2D s) {
-                vec4 samp = CubicFilterImage(coords, invImageSize, subset, tileModeX, tileModeY,
-                                             cubicCoeffs, cubicClamp, s);
-                return arc_color_space_transform(samp, xformFlags, xformSrcTf,
-                                                 xformGamutTransform, xformDstTf);
+                return CubicFilterImage(coords, subset, tileModeX, tileModeY,
+                                        cubicCoeffs, cubicClamp, s);
             }
             """;
     public static final String ARC_HW_IMAGE_SHADER = """
             vec4 arc_hw_image_shader(vec2 coords,
                                      vec2 invImageSize,
-                                     int xformFlags,
-                                     vec4 xformSrcTf[2],
-                                     mat3 xformGamutTransform,
-                                     vec4 xformDstTf[2],
                                      sampler2D s) {
-                vec4 samp = texture(s, coords * invImageSize);
-                return arc_color_space_transform(samp, xformFlags, xformSrcTf,
-                                                 xformGamutTransform, xformDstTf);
+                return texture(s, coords * invImageSize);
             }
             """;
 
@@ -848,12 +821,15 @@ public class ShaderCodeSource {
                     assert node.codeID() == kLocalMatrixShader_BuiltinStageID;
                     assert node.numChildren() == 1;
 
+                    String newPerspCoordsName = getMangledName("newPerspCoords", node.stageIndex());
                     String newLocalCoordsName = getMangledName("newLocalCoords", node.stageIndex());
                     String localMatrixName = getMangledName(node.stage().mUniforms[0].name(), node.stageIndex());
                     code.format("""
                                     {
-                                    vec2 %s = (%s * vec3(%s, 1)).xy;
+                                    vec3 %1$s = %3$s * vec3(%4$s, 1);
+                                    vec2 %2$s = %1$s.xy / %1$s.z;
                                     """,
+                            newPerspCoordsName,
                             newLocalCoordsName,
                             localMatrixName,
                             localCoords);
@@ -874,14 +850,14 @@ public class ShaderCodeSource {
                 "ImageShader",
                 kLocalCoords_ReqFlag,
                 "arc_image_shader",
-                new String[]{PRIV_TILE, PRIV_SAMPLE_IMAGE_SUBSET,
-                        PRIV_TRANSFER_FUNCTION, PRIV_INV_TRANSFER_FUNCTION,
-                        ARC_COLOR_SPACE_TRANSFORM, ARC_IMAGE_SHADER},
+                new String[]{
+                        PRIV_TILE, PRIV_SAMPLE_IMAGE_SUBSET,
+                        ARC_IMAGE_SHADER
+                },
                 new Uniform[]{
                         INV_IMAGE_SIZE, SUBSET,
                         new Uniform(SLDataType.kInt, "u_FilterMode"),
-                        TILE_MODE_X, TILE_MODE_Y,
-                        XFORM_FLAGS, XFORM_SRC_TF, XFORM_GAMUT_TRANSFORM, XFORM_DST_TF
+                        TILE_MODE_X, TILE_MODE_Y
                 },
                 new Sampler[]{
                         new Sampler(SLDataType.kSampler2D, "u_Sampler")
@@ -893,17 +869,15 @@ public class ShaderCodeSource {
                 "CubicImageShader",
                 kLocalCoords_ReqFlag,
                 "arc_cubic_image_shader",
-                new String[]{PRIV_TILE, PRIV_SAMPLE_CUBIC_IMAGE_SUBSET,
-                        PRIV_TRANSFER_FUNCTION, PRIV_INV_TRANSFER_FUNCTION,
-                        PRIV_CUBIC_FILTER_IMAGE,
-                        ARC_COLOR_SPACE_TRANSFORM, ARC_CUBIC_IMAGE_SHADER
+                new String[]{
+                        PRIV_TILE, PRIV_SAMPLE_CUBIC_IMAGE_SUBSET,
+                        PRIV_CUBIC_FILTER_IMAGE, ARC_CUBIC_IMAGE_SHADER
                 },
                 new Uniform[]{
-                        INV_IMAGE_SIZE, SUBSET,
+                        SUBSET,
                         new Uniform(SLDataType.kFloat4x4, "u_CubicCoeffs"),
                         new Uniform(SLDataType.kInt, "u_CubicClamp"),
-                        TILE_MODE_X, TILE_MODE_Y,
-                        XFORM_FLAGS, XFORM_SRC_TF, XFORM_GAMUT_TRANSFORM, XFORM_DST_TF
+                        TILE_MODE_X, TILE_MODE_Y
                 },
                 new Sampler[]{
                         new Sampler(SLDataType.kSampler2D, "u_Sampler")
@@ -915,11 +889,11 @@ public class ShaderCodeSource {
                 "HardwareImageShader",
                 kLocalCoords_ReqFlag,
                 "arc_hw_image_shader",
-                new String[]{PRIV_TRANSFER_FUNCTION, PRIV_INV_TRANSFER_FUNCTION,
-                        ARC_COLOR_SPACE_TRANSFORM, ARC_HW_IMAGE_SHADER},
+                new String[]{
+                        ARC_HW_IMAGE_SHADER
+                },
                 new Uniform[]{
-                        INV_IMAGE_SIZE,
-                        XFORM_FLAGS, XFORM_SRC_TF, XFORM_GAMUT_TRANSFORM, XFORM_DST_TF
+                        INV_IMAGE_SIZE
                 },
                 new Sampler[]{
                         new Sampler(SLDataType.kSampler2D, "u_Sampler")
@@ -931,8 +905,10 @@ public class ShaderCodeSource {
                 "ColorSpaceTransform",
                 kPriorStageOutput_ReqFlag,
                 "arc_color_space_transform",
-                new String[]{PRIV_TRANSFER_FUNCTION, PRIV_INV_TRANSFER_FUNCTION,
-                        ARC_COLOR_SPACE_TRANSFORM},
+                new String[]{
+                        PRIV_TRANSFER_FUNCTION, PRIV_INV_TRANSFER_FUNCTION,
+                        ARC_COLOR_SPACE_TRANSFORM
+                },
                 new Uniform[]{
                         XFORM_FLAGS, XFORM_SRC_TF, XFORM_GAMUT_TRANSFORM, XFORM_DST_TF
                 },
@@ -972,11 +948,11 @@ public class ShaderCodeSource {
         }
     }
 
-    public static String emitGlueCode(FragmentNode node,
-                                      String localCoords,
-                                      String priorStageOutput,
-                                      String blenderDstColor,
-                                      Formatter code) {
+    public static String invoke_node(FragmentNode node,
+                                     String localCoords,
+                                     String priorStageOutput,
+                                     String blenderDstColor,
+                                     Formatter code) {
         String output = getMangledName("outColor", node.stageIndex());
         code.format("""
                 // [%d] %s
@@ -990,6 +966,34 @@ public class ShaderCodeSource {
                 output,
                 code
         );
+        return output;
+    }
+
+    public static String invoke_child(FragmentNode child,
+                                      String localCoords,
+                                      String priorStageOutput,
+                                      String blenderDstColor,
+                                      FragmentNode outputNode,
+                                      String outputBaseName,
+                                      byte outputType,
+                                      Formatter code) {
+        String output = getMangledName(outputBaseName, outputNode.stageIndex());
+        code.format("""
+                        // [%d] %s
+                        %s %s;
+                        """,
+                child.stageIndex(), child.stage().mName,
+                SLDataType.typeString(outputType), output);
+        code.format("{\n");
+        child.stage().mExpressionGenerator.generate(
+                child,
+                localCoords,
+                priorStageOutput,
+                blenderDstColor,
+                output,
+                code
+        );
+        code.format("}\n");
         return output;
     }
 
@@ -1043,15 +1047,12 @@ public class ShaderCodeSource {
         appendStageArguments(node, localCoords, priorStageOutput, blenderDstColor, arguments);
         if (node.numChildren() > 0) {
             for (var child : node.children()) {
-                code.format("{\n");
                 arguments.add(
-                        emitGlueCode(child,
-                                localCoords,
-                                priorStageOutput,
-                                blenderDstColor,
+                        invoke_child(child, localCoords, priorStageOutput, blenderDstColor, child,
+                                "outColor",
+                                SLDataType.kFloat4,
                                 code)
                 );
-                code.format("}\n");
             }
         }
         code.format("""
@@ -1073,62 +1074,36 @@ public class ShaderCodeSource {
         String outerPriorStageOutput = priorStageOutput;
         String outerBlenderDstColor = blenderDstColor;
 
-        code.format("{\n");
+        code.format("""
+                // [%d] %s
+                {
+                """, node.stageIndex(), node.stage().mName);
 
         int childIndex = 0;
         if ((outer.requirementFlags() & kLocalCoords_ReqFlag) != 0) {
-            outerLocalCoords = getMangledName("outerLocalCoords", node.stageIndex());
-            code.format("""
-                    vec2 %s;
-                    """, outerLocalCoords);
-            code.format("{\n");
             var child = node.childAt(childIndex++);
-            child.stage().mExpressionGenerator.generate(
-                    child,
-                    localCoords,
-                    priorStageOutput,
-                    blenderDstColor,
-                    outerLocalCoords,
-                    code
-            );
-            code.format("}\n");
+            outerLocalCoords = invoke_child(child, localCoords, priorStageOutput, blenderDstColor, node,
+                    "outerLocalCoords",
+                    SLDataType.kFloat2,
+                    code);
         }
         if ((outer.requirementFlags() & kPriorStageOutput_ReqFlag) != 0) {
-            outerPriorStageOutput = getMangledName("outerPriorStageOutput", node.stageIndex());
-            code.format("""
-                    vec4 %s;
-                    """, outerPriorStageOutput);
-            code.format("{\n");
             var child = node.childAt(childIndex++);
-            child.stage().mExpressionGenerator.generate(
-                    child,
-                    localCoords,
-                    priorStageOutput,
-                    blenderDstColor,
-                    outerPriorStageOutput,
-                    code
-            );
-            code.format("}\n");
+            outerPriorStageOutput = invoke_child(child, localCoords, priorStageOutput, blenderDstColor, node,
+                    "outerPriorStageOutput",
+                    SLDataType.kFloat4,
+                    code);
         }
         if ((outer.requirementFlags() & kBlenderDstColor_ReqFlag) != 0) {
-            outerBlenderDstColor = getMangledName("outerBlenderDstColor", node.stageIndex());
-            code.format("""
-                    vec4 %s;
-                    """, outerBlenderDstColor);
-            code.format("{\n");
             var child = node.childAt(childIndex++);
-            child.stage().mExpressionGenerator.generate(
-                    child,
-                    localCoords,
-                    priorStageOutput,
-                    blenderDstColor,
-                    outerBlenderDstColor,
-                    code
-            );
-            code.format("}\n");
+            outerBlenderDstColor = invoke_child(child, localCoords, priorStageOutput, blenderDstColor, node,
+                    "outerBlenderDstColor",
+                    SLDataType.kFloat4,
+                    code);
         }
         assert childIndex + 1 == node.numChildren();
 
+        code.format("// [%d] %s\n", outer.stageIndex(), outer.stage().mName);
         outer.stage().mExpressionGenerator.generate(
                 outer,
                 outerLocalCoords,
