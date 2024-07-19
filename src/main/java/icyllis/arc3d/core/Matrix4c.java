@@ -19,7 +19,10 @@
 
 package icyllis.arc3d.core;
 
-import javax.annotation.*;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 
 /**
  * Interface to a read-only view of a 4x4 matrix for 3D transformation.
@@ -31,7 +34,7 @@ import javax.annotation.*;
  * @author BloCamLimb
  * @see Matrix4
  */
-public sealed interface Matrix4c permits Matrix4 {
+public sealed interface Matrix4c extends Cloneable permits Matrix4 {
     // one implementation is fast
 
     float m11();
@@ -74,6 +77,60 @@ public sealed interface Matrix4c permits Matrix4 {
     void store(@Nonnull Matrix4 m);
 
     /**
+     * Store this matrix into the give float array in row-major order.
+     *
+     * @param a the array to store into
+     */
+    void store(@Nonnull float[] a);
+
+    /**
+     * Store this matrix into the give float array in row-major order.
+     *
+     * @param a      the array to store into
+     * @param offset the element offset
+     */
+    void store(@Nonnull float[] a, int offset);
+
+    /**
+     * Store this matrix into the give float array in row-major order.
+     *
+     * @param a the pointer of the array to store
+     */
+    void store(@Nonnull ByteBuffer a);
+
+    /**
+     * Store this matrix into the give float array in row-major order.
+     *
+     * @param a the pointer of the array to store
+     */
+    void store(@Nonnull FloatBuffer a);
+
+    /**
+     * Store this matrix into the given address in GLSL column-major or
+     * HLSL row-major order.
+     *
+     * @param p the pointer of the array to store
+     */
+    void store(long p);
+
+    /**
+     * Store this matrix as 2D matrix into the given address in GLSL column-major or
+     * HLSL row-major order, NOT vec4 aligned.
+     * <p>
+     * Equivalent to call {@link #toMatrix()} and {@link Matrix#store(long)}.
+     *
+     * @param p the pointer of the array to store
+     */
+    void storeAs2D(long p);
+
+    /**
+     * Return the determinant of this matrix.
+     *
+     * @return the determinant
+     */
+    float determinant();
+
+    /**
      * Compute the inverse of this matrix. The matrix will be inverted
      * if this matrix is invertible, otherwise it keeps the same as before.
      *
@@ -102,6 +159,13 @@ public sealed interface Matrix4c permits Matrix4 {
     boolean isAxisAligned();
 
     /**
+     * Returns whether this matrix at most scales and translates.
+     *
+     * @return {@code true} if this matrix is scale, translate, or both.
+     */
+    boolean isScaleTranslate();
+
+    /**
      * Map the four corners of 'r' and return the bounding box of those points. The four corners of
      * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
      * rectangle will be the bounding box of the projected points after being clipped to w > 0.
@@ -114,4 +178,111 @@ public sealed interface Matrix4c permits Matrix4 {
      * rectangle will be the bounding box of the projected points after being clipped to w > 0.
      */
     void mapRect(@Nonnull Rect2fc r, @Nonnull Rect2f dest);
+
+    /**
+     * Map the four corners of 'r' and return the bounding box of those points. The four corners of
+     * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
+     * rectangle will be the bounding box of the projected points after being clipped to w > 0.
+     */
+    void mapRect(@Nonnull Rect2fc r, @Nonnull Rect2i dest);
+
+    /**
+     * Map the four corners of 'r' and return the bounding box of those points. The four corners of
+     * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
+     * rectangle will be the bounding box of the projected points after being clipped to w > 0.
+     */
+    void mapRect(@Nonnull Rect2ic r, @Nonnull Rect2i dest);
+
+    /**
+     * Map the four corners of 'r' and return the bounding box of those points. The four corners of
+     * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
+     * rectangle will be the bounding box of the projected points after being clipped to w > 0.
+     */
+    void mapRectOut(@Nonnull Rect2ic r, @Nonnull Rect2i dest);
+
+    /**
+     * Map the four corners of 'r' and return the bounding box of those points. The four corners of
+     * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
+     * rectangle will be the bounding box of the projected points after being clipped to w > 0.
+     */
+    void mapRectOut(@Nonnull Rect2fc r, @Nonnull Rect2i dest);
+
+    /**
+     * Return the minimum distance needed to move in local (pre-transform) space to ensure that the
+     * transformed coordinates are at least 1px away from the original mapped point. This minimum
+     * distance is specific to the given local 'bounds' since the scale factors change with
+     * perspective.
+     * <p>
+     * If the bounds will be clipped by the w=0 plane or otherwise is ill-conditioned, this will
+     * return positive infinity.
+     */
+    float localAARadius(Rect2fc bounds);
+
+    /**
+     * Return the minimum distance needed to move in local (pre-transform) space to ensure that the
+     * transformed coordinates are at least 1px away from the original mapped point. This minimum
+     * distance is specific to the given local 'bounds' since the scale factors change with
+     * perspective.
+     * <p>
+     * If the bounds will be clipped by the w=0 plane or otherwise is ill-conditioned, this will
+     * return positive infinity.
+     */
+    float localAARadius(float left, float top, float right, float bottom);
+
+    /**
+     * Converts this 4x4 matrix to 3x3 matrix, the third row and column are discarded.
+     * <pre>{@code
+     * [ a b x c ]      [ a b c ]
+     * [ d e x f ]  ->  [ d e f ]
+     * [ x x x x ]      [ g h i ]
+     * [ g h x i ]
+     * }</pre>
+     */
+    void toMatrix(@Nonnull Matrix dest);
+
+    /**
+     * Converts this 4x4 matrix to 3x3 matrix, the third row and column are discarded.
+     * <pre>{@code
+     * [ a b x c ]      [ a b c ]
+     * [ d e x f ]  ->  [ d e f ]
+     * [ x x x x ]      [ g h i ]
+     * [ g h x i ]
+     * }</pre>
+     */
+    @Nonnull
+    Matrix toMatrix();
+
+    /**
+     * Converts this 4x4 matrix to 3x3 matrix, the fourth row and column are discarded.
+     * <pre>{@code
+     * [ a b c x ]      [ a b c ]
+     * [ d e f x ]  ->  [ d e f ]
+     * [ g h i x ]      [ g h i ]
+     * [ x x x x ]
+     * }</pre>
+     */
+    void toMatrix3(@Nonnull Matrix3 dest);
+
+    /**
+     * Converts this 4x4 matrix to 3x3 matrix, the fourth row and column are discarded.
+     * <pre>{@code
+     * [ a b c x ]      [ a b c ]
+     * [ d e f x ]  ->  [ d e f ]
+     * [ g h i x ]      [ g h i ]
+     * [ x x x x ]
+     * }</pre>
+     */
+    @Nonnull
+    Matrix3 toMatrix3();
+
+    /**
+     * Returns whether this matrix is approximately equal to given matrix.
+     *
+     * @param m the matrix to compare.
+     * @return {@code true} if this matrix is equivalent to other matrix.
+     */
+    boolean isApproxEqual(@Nonnull Matrix4 m);
+
+    @Nonnull
+    Matrix4 clone();
 }

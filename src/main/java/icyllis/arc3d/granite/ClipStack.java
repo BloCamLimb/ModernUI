@@ -55,11 +55,11 @@ public final class ClipStack {
     private final ArrayDeque<ClipElement> mElements = new ArrayDeque<>();
     private final Collection<Element> mElementsView = Collections.unmodifiableCollection(mElements);
 
-    private final SurfaceDevice mDevice;
+    private final Device_Granite mDevice;
     private final Rect2i mDeviceBounds;
     private final Rect2f mDeviceBoundsF;
 
-    public ClipStack(SurfaceDevice device) {
+    public ClipStack(Device_Granite device) {
         mDevice = device;
         mDeviceBounds = new Rect2i(device.bounds());
         mDeviceBoundsF = new Rect2f(device.bounds());
@@ -875,7 +875,7 @@ public final class ClipStack {
         // Record a depth-only draw to the given device, restricted to the portion of the clip that
         // is actually required based on prior recorded draws. Resets usage tracking for subsequent
         // passes.
-        public void drawClip(SurfaceDevice device) {
+        public void drawClip(Device_Granite device) {
             assert validate();
 
             // Skip elements that have not affected any draws
@@ -974,7 +974,7 @@ public final class ClipStack {
                 // instead of checking the four corners separately.
                 Rect2f bInA = new Rect2f(b);
                 if (mixedAAMode) {
-                    bInA.inset(-0.5f, -0.5f);
+                    bInA.outset(0.5f, 0.5f);
                 }
                 boolean res = deviceToA.mapRect(bInA);
                 assert res;
@@ -1128,7 +1128,7 @@ public final class ClipStack {
 
         // Return true if the element was added to 'elements', or otherwise affected the save record
         // (e.g. turned it empty).
-        public boolean addElement(ClipElement toAdd, ArrayDeque<ClipElement> elements, SurfaceDevice device) {
+        public boolean addElement(ClipElement toAdd, ArrayDeque<ClipElement> elements, Device_Granite device) {
             // Validity check the element's state first; if the shape class isn't empty, the outer bounds
             // shouldn't be empty; if the inner bounds are not empty, they must be contained in outer.
             assert (toAdd.validate());
@@ -1227,7 +1227,7 @@ public final class ClipStack {
             return appendElement(toAdd, elements, device);
         }
 
-        private boolean appendElement(ClipElement toAdd, ArrayDeque<ClipElement> elements, SurfaceDevice device) {
+        private boolean appendElement(ClipElement toAdd, ArrayDeque<ClipElement> elements, Device_Granite device) {
             // Update past elements to account for the new element
             int i = elements.size() - 1;
 
@@ -1320,7 +1320,7 @@ public final class ClipStack {
             return true;
         }
 
-        private void replaceWithElement(ClipElement toAdd, ArrayDeque<ClipElement> elements, SurfaceDevice device) {
+        private void replaceWithElement(ClipElement toAdd, ArrayDeque<ClipElement> elements, Device_Granite device) {
             // The aggregate state of the save record mirrors the element
             mInnerBounds.set(toAdd.mInnerBounds);
             mOuterBounds.set(toAdd.mOuterBounds);
@@ -1347,7 +1347,7 @@ public final class ClipStack {
         }
 
         public void removeElements(ArrayDeque<ClipElement> elements,
-                                   SurfaceDevice device) {
+                                   Device_Granite device) {
             while (elements.size() > mStartingElementIndex) {
                 // Since the element is being deleted now, it won't be in the ClipStack when the Device
                 // calls recordDeferredClipDraws(). Record the clip's draw now (if it needs it).
@@ -1418,7 +1418,7 @@ public final class ClipStack {
         final Rect2f mShape = new Rect2f();
         final Rect2f mDrawBounds = new Rect2f();
 
-        public ClipDraw init(Matrix4 viewMatrix,
+        public ClipDraw init(Matrix4c viewMatrix,
                              Rect2fc shape,
                              Rect2fc drawBounds) {
             mViewMatrix.set(viewMatrix);

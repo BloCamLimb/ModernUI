@@ -28,7 +28,7 @@ import javax.annotation.Nullable;
 /**
  * Base class for drawing devices.
  */
-public abstract class Device extends RefCnt implements MatrixProvider {
+public abstract class Device extends RefCnt {
 
     protected static final int
             CLIP_TYPE_EMPTY = 0,
@@ -111,9 +111,13 @@ public abstract class Device extends RefCnt implements MatrixProvider {
         bounds.set(getClipBounds());
     }
 
+    /**
+     * Returns the backing local-to-device matrix (no copy).
+     *
+     * @return the backing local-to-device matrix
+     */
     @Nonnull
-    @Override
-    public final Matrix4 getLocalToDevice() {
+    public final Matrix4c getLocalToDevice() {
         return mLocalToDevice;
     }
 
@@ -183,9 +187,10 @@ public abstract class Device extends RefCnt implements MatrixProvider {
     protected void onReplaceClip(Rect2i rect) {
     }
 
-    public abstract boolean clipIsAA();
-
-    public abstract boolean clipIsWideOpen();
+    public abstract boolean isClipAA();
+    public abstract boolean isClipEmpty();
+    public abstract boolean isClipRect();
+    public abstract boolean isClipWideOpen();
 
     public final void setGlobalTransform(@Nullable Matrix4 globalTransform) {
         if (globalTransform == null) {
@@ -268,8 +273,6 @@ public abstract class Device extends RefCnt implements MatrixProvider {
     protected void onRestore() {
     }
 
-    protected abstract int getClipType();
-
     protected abstract Rect2ic getClipBounds();
 
     public abstract void drawPaint(Paint paint);
@@ -314,7 +317,7 @@ public abstract class Device extends RefCnt implements MatrixProvider {
 
     public abstract void drawCircle(float cx, float cy, float radius, Paint paint);
 
-    public abstract void drawRoundRect(RoundRect r, Paint paint);
+    public abstract void drawRoundRect(RoundRect rr, Paint paint);
 
     @Nullable
     protected Surface makeSurface(ImageInfo info) {

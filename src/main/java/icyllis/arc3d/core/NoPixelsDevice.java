@@ -132,25 +132,23 @@ public class NoPixelsDevice extends Device {
     }
 
     @Override
-    public boolean clipIsAA() {
+    public boolean isClipAA() {
         return clip().mIsAA;
     }
 
     @Override
-    public boolean clipIsWideOpen() {
-        return clip().mIsRect && getClipBounds().equals(mBounds);
+    public boolean isClipEmpty() {
+        return clip().mClipBounds.isEmpty();
     }
 
     @Override
-    protected int getClipType() {
-        final ClipState clip = clip();
-        if (clip.mClipBounds.isEmpty()) {
-            return CLIP_TYPE_EMPTY;
-        } else if (clip.mIsRect) {
-            return CLIP_TYPE_RECT;
-        } else {
-            return CLIP_TYPE_COMPLEX;
-        }
+    public boolean isClipRect() {
+        return clip().mIsRect;
+    }
+
+    @Override
+    public boolean isClipWideOpen() {
+        return clip().mIsRect && getClipBounds().equals(mBounds);
     }
 
     @Override
@@ -181,7 +179,7 @@ public class NoPixelsDevice extends Device {
     }
 
     @Override
-    public void drawRoundRect(RoundRect r, Paint paint) {
+    public void drawRoundRect(RoundRect rr, Paint paint) {
 
     }
 
@@ -231,7 +229,7 @@ public class NoPixelsDevice extends Device {
             setRect(r.mLeft, r.mTop, r.mRight, r.mBottom);
         }
 
-        public void opRect(final Rect2f localRect, final Matrix4 localToDevice, int clipOp, boolean doAA) {
+        public void opRect(final Rect2f localRect, final Matrix4c localToDevice, int clipOp, boolean doAA) {
             applyOpParams(clipOp, doAA, localToDevice.isScaleTranslate());
             switch (clipOp) {
                 case ClipOp.CLIP_OP_INTERSECT:

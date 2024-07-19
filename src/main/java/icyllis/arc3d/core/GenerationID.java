@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,13 +21,21 @@ package icyllis.arc3d.core;
 
 import javax.annotation.Nonnull;
 
-public interface MatrixProvider {
+/**
+ * An object with identity. This can be used to track content changes through
+ * reference equality '==', and as keys of {@link java.util.IdentityHashMap}.
+ * Compared to using int or long, this will never conflict on runtime.
+ *
+ * @see System#identityHashCode(Object)
+ */
+public final class GenerationID {
 
-    /**
-     * Returns the backing local-to-device matrix (no copy).
-     *
-     * @return the backing local-to-device matrix
-     */
+    public GenerationID() {
+    }
+
     @Nonnull
-    Matrix4 getLocalToDevice();
+    @Override
+    public String toString() {
+        return "GenerationID@" + Integer.toHexString(hashCode());
+    }
 }

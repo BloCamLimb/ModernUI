@@ -30,7 +30,7 @@ public final class Draw implements AutoCloseable {
     // reference to our renderer instance
     public GeometryRenderer mRenderer;
     // the copied view matrix
-    public Matrix4 mTransform;
+    public Matrix4c mTransform;
     public Object mGeometry;
     /**
      * Clip params (immutable), set by {@link ClipStack}.
@@ -38,9 +38,12 @@ public final class Draw implements AutoCloseable {
     public Rect2fc mDrawBounds;
     public Rect2fc mTransformedShapeBounds;
     public Rect2ic mScissorRect;
+    /**
+     * Precomputed AA radius, set by {@link ClipStack}.
+     */
     public float mAARadius;
     /**
-     * Packed draw order.
+     * Packed draw order, see {@link DrawOrder}.
      */
     public long mDrawOrder;
     /**
@@ -49,8 +52,8 @@ public final class Draw implements AutoCloseable {
     // half width of stroke
     public float mStrokeRadius = -1; // >0: relative to transform; ==0: hairline, 1px in device space; <0: fill
     public float mJoinLimit;        // >0: miter join; ==0: bevel join; <0: round join
-    public short mStrokeCap;
-    public short mStrokeAlign;
+    public byte mStrokeCap;
+    public byte mStrokeAlign;
     @Nullable
     public PaintParams mPaintParams; // null implies depth-only draw (clipping mask)
 
@@ -66,15 +69,18 @@ public final class Draw implements AutoCloseable {
         return mDrawBounds.isEmpty();
     }
 
+    /**
+     * @see Stroke#getInflationRadius(float, int, int, float)
+     */
     public float getInflationRadius() {
-        if (mStrokeRadius < 0) {
+        if (mStrokeRadius < 0) { // fill
             return 0;
-        } else if (mStrokeRadius == 0) {
+        } else if (mStrokeRadius == 0) { // hairline
             return 1;
         }
 
         float multiplier = 1;
-        if (mJoinLimit > 0) {
+        if (mJoinLimit > 0) { // miter join
             multiplier = Math.max(multiplier, mJoinLimit);
         }
         if (mStrokeCap == Paint.CAP_SQUARE) {

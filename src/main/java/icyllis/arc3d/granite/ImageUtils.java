@@ -118,7 +118,7 @@ public class ImageUtils {
 
     @Nullable
     @SharedPtr
-    public static TextureImage makeFromPixmap(
+    public static Image_Engine makeFromPixmap(
             RecordingContext context,
             Pixmap pixmap,
             boolean mipmapped,
@@ -130,7 +130,7 @@ public class ImageUtils {
             return null;
         }
 
-        return new TextureImage(
+        return new Image_Engine(
                 context,
                 result.first(),     // move
                 result.rightInt(),  // new color type

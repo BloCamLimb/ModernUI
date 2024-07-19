@@ -19,7 +19,8 @@
 
 package icyllis.arc3d.core.effects;
 
-import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.MathUtil;
+import icyllis.arc3d.core.Size;
 
 import javax.annotation.Nullable;
 
@@ -29,9 +30,11 @@ public class ColorMatrixColorFilter extends ColorFilter {
     private final boolean mAlphaUnchanged;
 
     public ColorMatrixColorFilter(@Size(20) float[] matrix) {
-        mAlphaUnchanged = MathUtil.isApproxZero(
-                matrix[3], matrix[7], matrix[11], matrix[19]
-        ) && MathUtil.isApproxEqual(matrix[15], 1);
+        mAlphaUnchanged = MathUtil.isApproxZero(matrix[3]) &&
+                MathUtil.isApproxZero(matrix[7]) &&
+                MathUtil.isApproxZero(matrix[11]) &&
+                MathUtil.isApproxZero(matrix[19]) &&
+                MathUtil.isApproxEqual(matrix[15], 1);
         System.arraycopy(matrix, 0, mMatrix, 0, 20);
     }
 

@@ -514,7 +514,7 @@ public class FragmentUtils {
                                       UniformDataGatherer uniformDataGatherer,
                                       TextureDataGatherer textureDataGatherer,
                                       @RawPtr ImageShader shader) {
-        if (!(shader.getImage() instanceof TextureImage imageToDraw)) {
+        if (!(shader.getImage() instanceof Image_Engine imageToDraw)) {
             keyBuilder.addInt(FragmentStage.kError_BuiltinStageID);
             return;
         }
@@ -563,7 +563,7 @@ public class FragmentUtils {
 
         var matrix = new Matrix();
         if (baseShader instanceof ImageShader imageShader) {
-            if (imageShader.getImage() instanceof TextureImage textureImage) {
+            if (imageShader.getImage() instanceof Image_Engine textureImage) {
                 var view = textureImage.getImageViewProxy();
                 if (view.getOrigin() == Engine.SurfaceOrigin.kLowerLeft) {
                     matrix.setScaleTranslate(1, -1, 0, view.getHeight());
