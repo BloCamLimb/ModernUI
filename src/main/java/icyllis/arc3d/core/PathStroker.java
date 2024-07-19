@@ -1153,7 +1153,7 @@ public class PathStroker implements PathConsumer {
                     cubic, 0
             );
             if (cusp > 0) {
-
+                //TODO
             }
 
             // compute normal CD
@@ -1193,12 +1193,12 @@ public class PathStroker implements PathConsumer {
     }
 
     @Override
-    public void closePath() {
+    public void close() {
         finish(true, mPrevIsLine);
     }
 
     @Override
-    public void pathDone() {
+    public void done() {
         finish(false, mPrevIsLine);
         mOuter = null;
         assert mInner.isEmpty();
@@ -1208,20 +1208,33 @@ public class PathStroker implements PathConsumer {
     private void finish(boolean close, boolean isLine) {
         if (mSegmentCount > 0) {
             if (close) {
+                mJoiner.join(
+                        mOuter, mInner,
+                        mPrevUnitNormalX, mPrevUnitNormalY,
+                        mPrevX, mPrevY,
+                        mFirstUnitNormalX, mFirstUnitNormalY,
+                        mRadius,
+                        mInvMiterLimit,
+                        mPrevIsLine,
+                        isLine
+                );
+                mOuter.close();
 
+                mInner.reversePop(mOuter, true);
+                mOuter.close();
             } else {
                 mCapper.cap(
                         mOuter,
                         mPrevX, mPrevY,
                         mPrevNormalX, mPrevNormalY
                 );
-                mInner.reversePop(mOuter);
+                mInner.reversePop(mOuter, false);
                 mCapper.cap(
                         mOuter,
                         mFirstX, mFirstY,
                         -mFirstNormalX, -mFirstNormalY
                 );
-                mOuter.closePath();
+                mOuter.close();
             }
         }
         mSegmentCount = -1;

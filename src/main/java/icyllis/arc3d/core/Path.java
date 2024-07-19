@@ -48,7 +48,7 @@ import java.util.Arrays;
  * Note: Path lazily computes metrics likes bounds and convexity. Call
  * {@link #updateBoundsCache()} to make path thread safe.
  */
-public class Path implements PathConsumer {
+public class Path implements PathIterable, PathConsumer {
 
     @MagicConstant(intValues = {FILL_NON_ZERO, FILL_EVEN_ODD})
     @Retention(RetentionPolicy.SOURCE)
@@ -474,7 +474,7 @@ public class Path implements PathConsumer {
      * closed then this method has no effect.
      */
     @Override
-    public void closePath() {
+    public void close() {
         int count = countVerbs();
         if (count != 0) {
             switch (mRef.mVerbs[count - 1]) {
@@ -495,7 +495,7 @@ public class Path implements PathConsumer {
     }
 
     @Override
-    public void pathDone() {
+    public void done() {
     }
 
     /**
@@ -563,7 +563,9 @@ public class Path implements PathConsumer {
         return mRef.mSegmentMask;
     }
 
-    public PathIterator iterator() {
+    @Nonnull
+    @Override
+    public PathIterator getPathIterator() {
         return this.new Iterator();
     }
 
@@ -623,6 +625,7 @@ public class Path implements PathConsumer {
     /**
      * Iterates the Path and feeds the given consumer.
      */
+    @Override
     public void forEach(@Nonnull PathConsumer action) {
         int n = countVerbs();
         if (n != 0) {
@@ -652,11 +655,11 @@ public class Path implements PathConsumer {
                         action.cubicTo(cs, ci);
                         ci += 6;
                     }
-                    case PathIterator.VERB_CLOSE -> action.closePath();
+                    case PathIterator.VERB_CLOSE -> action.close();
                 }
             } while (vi < n);
         }
-        action.pathDone();
+        action.done();
     }
 
     /**
@@ -756,12 +759,19 @@ public class Path implements PathConsumer {
 
     // ignore the last point of the contour
     // there must be moveTo() for the contour
-    void reversePop(@Nonnull PathConsumer out) {
+    void reversePop(@Nonnull PathConsumer out, boolean addMoveTo) {
         assert mRef != null;
         byte[] vs = mRef.mVerbs;
         float[] cs = mRef.mCoords;
         int vi = mRef.mVerbSize;
         int ci = mRef.mCoordSize - 2;
+        if (addMoveTo) {
+            if (ci >= 0) {
+                out.moveTo(cs[ci], cs[ci + 1]);
+            } else {
+                out.moveTo(0, 0);
+            }
+        }
         ITR:
         while (vi != 0) {
             switch (vs[--vi]) {
