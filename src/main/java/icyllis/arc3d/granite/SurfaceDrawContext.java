@@ -29,7 +29,7 @@ import javax.annotation.Nullable;
 import java.util.Arrays;
 
 /**
- * Used by {@link SurfaceDevice}
+ * Used by {@link Device_Granite}
  */
 public final class SurfaceDrawContext implements AutoCloseable {
 
@@ -237,7 +237,7 @@ public final class SurfaceDrawContext implements AutoCloseable {
 
     @Nullable
     @SharedPtr
-    public DrawTask snap(RecordingContext context) {
+    public DrawTask snapDrawTask(RecordingContext context) {
         flush(context);
 
         if (mDrawTaskList.isEmpty()) {
@@ -260,7 +260,7 @@ public final class SurfaceDrawContext implements AutoCloseable {
         mPendingDraws.clear();
     }
 
-    private Matrix4 getStableTransform(Matrix4 transform) {
+    private Matrix4 getStableTransform(Matrix4c transform) {
         Matrix4 last = mLastTransform;
         if (!transform.equals(last)) {
             var copy = transform.clone();

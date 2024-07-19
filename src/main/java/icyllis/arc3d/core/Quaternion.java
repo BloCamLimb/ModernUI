@@ -291,7 +291,7 @@ public class Quaternion {
      * @return {@code true} if this quaternion is identity.
      */
     public boolean isIdentity() {
-        return MathUtil.isApproxZero(x, y, z) && MathUtil.isApproxEqual(w, 1.0f);
+        return x == 0 && y == 0 && z == 0 && w == 1;
     }
 
     /**
@@ -525,7 +525,7 @@ public class Quaternion {
      * @param angle rotation angle in radians
      */
     public void setFromAxisAngle(float axisX, float axisY, float axisZ, float angle) {
-        if (MathUtil.isApproxZero(axisX, axisY, axisZ))
+        if (axisX == 0 && axisY == 0 && axisZ == 0)
             setIdentity();
         else {
             angle *= 0.5f;
@@ -545,7 +545,7 @@ public class Quaternion {
      * @param rotationZ the Euler roll angle in radians. (rotation about the Z axis)
      */
     public void setFromEulerAngles(float rotationX, float rotationY, float rotationZ) {
-        if (MathUtil.isApproxZero(rotationX, rotationY, rotationZ))
+        if (rotationX == 0 && rotationY == 0 && rotationZ == 0)
             setIdentity();
         else {
             rotationX *= 0.5f;

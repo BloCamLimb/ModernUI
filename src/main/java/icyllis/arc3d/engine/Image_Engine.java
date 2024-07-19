@@ -17,7 +17,7 @@
  * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.granite;
+package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.Context;
@@ -29,16 +29,15 @@ import javax.annotation.Nullable;
 /**
  * The image that is backed by GPU.
  */
-public final class TextureImage extends icyllis.arc3d.core.Image {
+public final class Image_Engine extends icyllis.arc3d.core.Image {
 
     Context mContext;
     @SharedPtr
     ImageViewProxy mImageViewProxy;
 
-    public TextureImage(@Nonnull Context context,
+    public Image_Engine(@Nonnull Context context,
                         @Nonnull @SharedPtr ImageViewProxy view,
-                        int colorType,
-                        int alphaType,
+                        int colorType, int alphaType,
                         @Nullable ColorSpace colorSpace) {
         super(ImageInfo.make(view.getWidth(), view.getHeight(),
                 colorType, alphaType, colorSpace));
@@ -85,7 +84,7 @@ public final class TextureImage extends icyllis.arc3d.core.Image {
 
     @Override
     public String toString() {
-        return "TextureImage{" +
+        return "Image_Engine{" +
                 "mContext=" + mContext +
                 ", mImageViewProxy=" + mImageViewProxy +
                 '}';

@@ -390,7 +390,10 @@ public non-sealed class Rect2f implements Rect2fc {
      * @param dy the amount to subtract(add) from the rectangle's top(bottom)
      */
     public final void outset(float dx, float dy) {
-        inset(-dx, -dy);
+        mLeft -= dx;
+        mTop -= dy;
+        mRight += dx;
+        mBottom += dy;
     }
 
     /**

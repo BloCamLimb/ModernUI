@@ -20,6 +20,7 @@
 package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.Matrix4;
+import icyllis.arc3d.core.Matrix4c;
 
 import java.util.ArrayList;
 
@@ -29,7 +30,7 @@ public class DrawList {
     final ArrayList<Draw> mDraws = new ArrayList<>();
     private int mNumSteps;
 
-    private Matrix4 getStableTransform(Matrix4 modelView) {
+    private Matrix4 getStableTransform(Matrix4c modelView) {
         Matrix4 last;
         if (mTransforms.isEmpty() || !(last = mTransforms.get(mTransforms.size() - 1)).equals(modelView)) {
             var copy = modelView.clone();

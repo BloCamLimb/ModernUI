@@ -126,12 +126,13 @@ public class TestDrawPass {
             rrect.mBottom = rrect.mTop + h;
             rrect.mRadiusUlx = Math.min((int) (Math.random() * 50), Math.min(w, h) / 2);
             draw.mGeometry = rrect;
-            draw.mTransform = Matrix4.identity();
+            var transform = Matrix4.identity();
             float cx = (rrect.mLeft + rrect.mRight) * 0.5f;
             float cy = (rrect.mTop + rrect.mBottom) * 0.5f;
-            draw.mTransform.preTranslate(cx, cy);
-            draw.mTransform.preRotateZ(i);
-            draw.mTransform.preTranslate(-cx, -cy);
+            transform.preTranslate(cx, cy);
+            transform.preRotateZ(i);
+            transform.preTranslate(-cx, -cy);
+            draw.mTransform = transform;
             int stroke = (int) (Math.random() * 50);
             draw.mStrokeRadius = stroke < 25 ? -1 : stroke - 20;
             float[] col = {(float) Math.random(), (float) Math.random(), (float) Math.random(), 1.0f};

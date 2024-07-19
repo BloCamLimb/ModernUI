@@ -24,10 +24,12 @@ import icyllis.arc3d.engine.*;
 import icyllis.arc3d.granite.geom.*;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
+import javax.annotation.Nullable;
+
 /**
  * The device that is backed by GPU.
  */
-public final class SurfaceDevice extends icyllis.arc3d.core.Device {
+public final class Device_Granite extends icyllis.arc3d.core.Device {
 
     private final RecordingContext mContext;
     private SurfaceDrawContext mSDC;
@@ -43,7 +45,7 @@ public final class SurfaceDevice extends icyllis.arc3d.core.Device {
             "SimpleBoxStep", new AnalyticSimpleBoxStep(true)
     );
 
-    private SurfaceDevice(RecordingContext context, SurfaceDrawContext sdc) {
+    private Device_Granite(RecordingContext context, SurfaceDrawContext sdc) {
         super(sdc.getImageInfo());
         mContext = context;
         mSDC = sdc;
@@ -56,13 +58,14 @@ public final class SurfaceDevice extends icyllis.arc3d.core.Device {
         mBoundsManager = new FullBoundsManager();
     }
 
+    @Nullable
     @SharedPtr
-    public static SurfaceDevice make(RecordingContext rContext,
-                                     ImageInfo deviceInfo,
-                                     int surfaceFlags,
-                                     int origin,
-                                     byte initialLoadOp,
-                                     String label) {
+    public static Device_Granite make(RecordingContext rContext,
+                                      ImageInfo deviceInfo,
+                                      int surfaceFlags,
+                                      int origin,
+                                      byte initialLoadOp,
+                                      String label) {
         if (rContext == null) {
             return null;
         }
@@ -104,10 +107,10 @@ public final class SurfaceDevice extends icyllis.arc3d.core.Device {
     }
 
     @SharedPtr
-    public static SurfaceDevice make(RecordingContext context,
-                                     @SharedPtr ImageViewProxy targetView,
-                                     ImageInfo deviceInfo,
-                                     byte initialLoadOp) {
+    public static Device_Granite make(RecordingContext context,
+                                      @SharedPtr ImageViewProxy targetView,
+                                      ImageInfo deviceInfo,
+                                      byte initialLoadOp) {
         if (context == null) {
             return null;
         }
@@ -122,7 +125,7 @@ public final class SurfaceDevice extends icyllis.arc3d.core.Device {
             sdc.discard();
         }
 
-        return new SurfaceDevice(context, sdc);
+        return new Device_Granite(context, sdc);
     }
 
     @Override
@@ -153,23 +156,34 @@ public final class SurfaceDevice extends icyllis.arc3d.core.Device {
     }
 
     @Override
-    public boolean clipIsAA() {
+    public boolean isClipAA() {
         return false;
     }
 
     @Override
-    public boolean clipIsWideOpen() {
-        return false;
+    public boolean isClipEmpty() {
+        return mClipStack.currentClipState() == ClipStack.STATE_EMPTY;
     }
 
     @Override
-    protected int getClipType() {
-        return 0;
+    public boolean isClipRect() {
+        var state = mClipStack.currentClipState();
+        return state == ClipStack.STATE_DEVICE_RECT || state == ClipStack.STATE_WIDE_OPEN;
     }
+
+    @Override
+    public boolean isClipWideOpen() {
+        return mClipStack.currentClipState() == ClipStack.STATE_WIDE_OPEN;
+    }
+
+    private final Rect2f mTmpClipBounds = new Rect2f();
+    private final Rect2i mTmpClipBoundsI = new Rect2i();
 
     @Override
     protected Rect2ic getClipBounds() {
-        return null;
+        mClipStack.getConservativeBounds(mTmpClipBounds);
+        mTmpClipBounds.roundOut(mTmpClipBoundsI);
+        return mTmpClipBoundsI;
     }
 
     private final Rect2f mTmpOpBounds = new Rect2f();
@@ -222,11 +236,11 @@ public final class SurfaceDevice extends icyllis.arc3d.core.Device {
     }
 
     @Override
-    public void drawRoundRect(RoundRect r, Paint paint) {
+    public void drawRoundRect(RoundRect rr, Paint paint) {
         Draw draw = new Draw();
         draw.mTransform = getLocalToDevice();
-        draw.mGeometry = new SimpleShape(r);
-        r.getRect(mTmpOpBounds);
+        draw.mGeometry = new SimpleShape(rr);
+        rr.getRect(mTmpOpBounds);
         drawGeometry(draw, mTmpOpBounds, paint, mSimpleBoxRenderer);
     }
 
@@ -266,8 +280,8 @@ public final class SurfaceDevice extends icyllis.arc3d.core.Device {
                 case Paint.JOIN_BEVEL -> draw.mJoinLimit = 0;
                 case Paint.JOIN_MITER -> draw.mJoinLimit = paint.getStrokeMiter();
             }
-            draw.mStrokeCap = (short) paint.getStrokeCap();
-            draw.mStrokeAlign = (short) paint.getStrokeAlign();
+            draw.mStrokeCap = (byte) paint.getStrokeCap();
+            draw.mStrokeAlign = (byte) paint.getStrokeAlign();
         }
 
         final boolean outsetBoundsForAA = true;
@@ -279,7 +293,7 @@ public final class SurfaceDevice extends icyllis.arc3d.core.Device {
 
         boolean needsFlush = needsFlushBeforeDraw(1);
         if (needsFlush) {
-            flush();
+            flushPendingWork();
         }
 
         // Update the clip stack after issuing a flush (if it was needed). A draw will be recorded after
@@ -312,7 +326,12 @@ public final class SurfaceDevice extends icyllis.arc3d.core.Device {
         return (DrawPass.MAX_RENDER_STEPS - mSDC.pendingNumSteps()) < numNewRenderSteps;
     }
 
-    public void flush() {
+    /**
+     * Ensures clip elements are drawn that will clip previous draw calls, snaps all pending work
+     * from the {@link SurfaceDrawContext} as a {@link RenderPassTask} and records it in the
+     * {@link Device_Granite}'s {@link RecordingContext}.
+     */
+    public void flushPendingWork() {
         // Clip shapes are depth-only draws, but aren't recorded in the DrawContext until a flush in
         // order to determine the Z values for each element.
         mClipStack.recordDeferredClipDraws();
@@ -323,7 +342,7 @@ public final class SurfaceDevice extends icyllis.arc3d.core.Device {
         mBoundsManager.clear();
         mCurrentDepth = DrawOrder.MIN_VALUE;
 
-        DrawTask drawTask = mSDC.snap(mContext);
+        DrawTask drawTask = mSDC.snapDrawTask(mContext);
 
         if (drawTask != null) {
             mContext.addTask(drawTask);

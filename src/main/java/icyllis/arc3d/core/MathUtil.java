@@ -50,6 +50,12 @@ public class MathUtil {
     public static final float SQRT2 = 1.4142135623730951f;
     public static final float INV_SQRT2 = 0.7071067811865476f;
 
+    /**
+     * The tolerance (error) for 2D renderer.
+     */
+    // PATH_TOLERANCE == Math.ulp(2500.0f) == 1f / 4096
+    public static final float PATH_TOLERANCE = 1f / (1 << 12);
+
     static {
         if (USE_SIN_TABLE) {
             float[] v = new float[0x10000];
@@ -160,52 +166,28 @@ public class MathUtil {
     }
 
     /**
-     * @return true if <code>a</code> is approximately equal to zero
+     * @return true if <code>a</code> is approximately equal to zero within a given tolerance
      */
-    public static boolean isApproxZero(float a, float b) {
-        return Math.abs(a) <= EPS && Math.abs(b) <= EPS;
-    }
-
-    /**
-     * @return true if <code>a</code> is approximately equal to zero
-     */
-    public static boolean isApproxZero(float a, float b, float c) {
-        return Math.abs(a) <= EPS && Math.abs(b) <= EPS && Math.abs(c) <= EPS;
-    }
-
-    /**
-     * @return true if <code>a</code> is approximately equal to zero
-     */
-    public static boolean isApproxZero(float a, float b, float c, float d) {
-        return Math.abs(a) <= EPS && Math.abs(b) <= EPS && Math.abs(c) <= EPS && Math.abs(d) <= EPS;
+    public static boolean isApproxZero(float a,
+                                       float tolerance) {
+        assert tolerance >= 0;
+        return Math.abs(a) <= tolerance;
     }
 
     /**
      * @return true if <code>a</code> is approximately equal to <code>b</code>
      */
     public static boolean isApproxEqual(float a, float b) {
-        return Math.abs(b - a) <= EPS;
+        return Math.abs(a - b) <= EPS;
     }
 
     /**
-     * @return true if <code>a</code> is approximately equal to <code>b</code>
+     * @return true if <code>a</code> is approximately equal to <code>b</code> within a given tolerance
      */
-    public static boolean isApproxEqual(float a, float b, float c) {
-        return Math.abs(b - a) <= EPS && Math.abs(c - a) <= EPS;
-    }
-
-    /**
-     * @return true if <code>a</code> is approximately equal to <code>b</code>
-     */
-    public static boolean isApproxEqual(float a, float b, float c, float d) {
-        return Math.abs(b - a) <= EPS && Math.abs(c - a) <= EPS && Math.abs(d - a) <= EPS;
-    }
-
-    /**
-     * @return true if <code>a</code> is approximately equal to <code>b</code>
-     */
-    public static boolean isApproxEqual(float a, float b, float c, float d, float e) {
-        return Math.abs(b - a) <= EPS && Math.abs(c - a) <= EPS && Math.abs(d - a) <= EPS && Math.abs(e - a) <= EPS;
+    public static boolean isApproxEqual(float a, float b,
+                                        float tolerance) {
+        assert tolerance >= 0;
+        return Math.abs(a - b) <= tolerance;
     }
 
     // square root

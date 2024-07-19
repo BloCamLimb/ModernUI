@@ -865,8 +865,8 @@ public class Paint implements AutoCloseable {
         if (mode != null) {
             switch (mode) {
                 case SRC_OVER, SRC_ATOP, DST_OUT, DST_OVER, PLUS -> {
-                    if (getAlpha() == 0) {
-                        return !isBlendedImageFilter(mImageFilter);
+                    if (getAlphaF() == 0.0f) {
+                        return !isBlendedColorFilter(mColorFilter);
                     }
                 }
                 case DST -> {
@@ -914,22 +914,10 @@ public class Paint implements AutoCloseable {
 
         storage.set(orig);
 
-        int align = getStrokeAlign();
-        if (style != FILL && align != ALIGN_INSIDE && mWidth > 0) {
-            // since we're stroked, outset the rect by the radius (and join type, caps)
-            float multiplier = 1;
-            if (getStrokeJoin() == JOIN_MITER) {
-                multiplier = Math.max(multiplier, mMiterLimit);
-            }
-            if (getStrokeCap() == CAP_SQUARE) {
-                multiplier = Math.max(multiplier, MathUtil.SQRT2);
-            }
-            // width or radius
-            float stroke = mWidth * multiplier;
-            if (align == ALIGN_CENTER) {
-                stroke *= 0.5f;
-            } // ALIGN_OUTSIDE
-            storage.inset(-stroke, -stroke);
+        if (style != FILL) {
+            float stroke = Stroke.getInflationRadius(mWidth,
+                    getStrokeCap(), getStrokeJoin(), mMiterLimit);
+            storage.outset(stroke, stroke);
         }
 
         if (mMaskFilter != null) {

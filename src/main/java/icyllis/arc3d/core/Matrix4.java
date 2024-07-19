@@ -3134,8 +3134,8 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      */
     public boolean isScaleTranslate() {
         return isAffine() &&
-                MathUtil.isApproxZero(m12, m13, m21) &&
-                MathUtil.isApproxZero(m23, m31, m32);
+                m12 == 0 && m13 == 0 && m21 == 0 &&
+                m23 == 0 && m31 == 0 && m32 == 0;
     }
 
     /**
@@ -3201,11 +3201,10 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      * @return {@code true} if this matrix is identity.
      */
     public boolean isIdentity() {
-        return MathUtil.isApproxZero(m12, m13, m14) &&
-                MathUtil.isApproxZero(m21, m23, m24) &&
-                MathUtil.isApproxZero(m31, m32, m34) &&
-                MathUtil.isApproxZero(m41, m42, m43) &&
-                MathUtil.isApproxEqual(m11, m22, m33, m44, 1.0f);
+        return m11 == 1 && m12 == 0 && m13 == 0 && m14 == 0 &&
+                m21 == 0 && m22 == 1 && m23 == 0 && m24 == 0 &&
+                m31 == 0 && m32 == 0 && m33 == 1 && m34 == 0 &&
+                m41 == 0 && m42 == 0 && m43 == 0 && m44 == 1;
     }
 
     // compute SVD of 2x2 matrix
@@ -3243,10 +3242,28 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
         return computeMinScale(dfdu, dfdv, dgdu, dgdv);
     }
 
+    /**
+     * Return the minimum distance needed to move in local (pre-transform) space to ensure that the
+     * transformed coordinates are at least 1px away from the original mapped point. This minimum
+     * distance is specific to the given local 'bounds' since the scale factors change with
+     * perspective.
+     * <p>
+     * If the bounds will be clipped by the w=0 plane or otherwise is ill-conditioned, this will
+     * return positive infinity.
+     */
     public float localAARadius(Rect2fc bounds) {
         return localAARadius(bounds.left(), bounds.top(), bounds.right(), bounds.bottom());
     }
 
+    /**
+     * Return the minimum distance needed to move in local (pre-transform) space to ensure that the
+     * transformed coordinates are at least 1px away from the original mapped point. This minimum
+     * distance is specific to the given local 'bounds' since the scale factors change with
+     * perspective.
+     * <p>
+     * If the bounds will be clipped by the w=0 plane or otherwise is ill-conditioned, this will
+     * return positive infinity.
+     */
     public float localAARadius(float left, float top, float right, float bottom) {
         float min;
         if (isAffine()) {

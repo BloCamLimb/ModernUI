@@ -22,6 +22,7 @@ package icyllis.arc3d.core;
 import icyllis.arc3d.engine.RecordingContext;
 import icyllis.arc3d.granite.SurfaceDrawContext;
 import org.intellij.lang.annotations.MagicConstant;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -96,7 +97,8 @@ public class Canvas implements AutoCloseable {
 
     // the bottom-most device in the stack, only changed by init(). Image properties and the final
     // canvas pixels are determined by this device
-    private final Device mBaseDevice;
+    @SharedPtr
+    private Device mBaseDevice;
 
     // keep track of the device clip bounds in the canvas' global space to reject draws before
     // invoking the top-level device.
@@ -117,6 +119,9 @@ public class Canvas implements AutoCloseable {
 
     // a temp rect that used with arguments
     private final Rect2f mTmpRect = new Rect2f();
+    private final RoundRect mTmpRoundRect = new RoundRect();
+    private final Rect2f mTmpQuickBounds1 = new Rect2f();
+    private final Rect2f mTmpQuickBounds2 = new Rect2f();
     private final Matrix4 mTmpMatrix = new Matrix4();
     private final Paint mTmpPaint = new Paint();
 
@@ -139,7 +144,8 @@ public class Canvas implements AutoCloseable {
         this(new NoPixelsDevice(0, 0, Math.max(width, 0), Math.max(height, 0)));
     }
 
-    Canvas(Device device) {
+    @ApiStatus.Internal
+    public Canvas(@SharedPtr Device device) {
         mSaveCount = 1;
         mMCStack[0] = new MCRec(device);
         mBaseDevice = device;
@@ -148,7 +154,7 @@ public class Canvas implements AutoCloseable {
 
     /**
      * Returns ImageInfo for Canvas. If Canvas is not associated with raster surface or
-     * GPU surface, returned ColorType is set to {@link ImageInfo#CT_UNKNOWN}.
+     * GPU surface, returned ColorType is set to {@link ColorInfo#CT_UNKNOWN}.
      *
      * @return dimensions and ColorType of Canvas
      */
@@ -719,8 +725,10 @@ public class Canvas implements AutoCloseable {
      * @return true if the given rect (transformed by the canvas' matrix)
      * intersecting with the maximum rect representing the canvas' clip is empty
      */
-    public final boolean quickReject(Rect2f rect) {
-        return quickReject(rect.mLeft, rect.mTop, rect.mRight, rect.mBottom);
+    public final boolean quickReject(Rect2fc rect) {
+        var devRect = mTmpQuickBounds2;
+        top().mMatrix.mapRect(rect, devRect);
+        return !devRect.isFinite() || !devRect.intersects(mQuickRejectBounds);
     }
 
     /**
@@ -745,9 +753,9 @@ public class Canvas implements AutoCloseable {
      * intersecting with the maximum rect representing the canvas' clip is empty
      */
     public final boolean quickReject(float left, float top, float right, float bottom) {
-        mTmpRect.set(left, top, right, bottom);
-        top().mMatrix.mapRect(mTmpRect);
-        return !mTmpRect.isFinite() || !mTmpRect.intersects(mQuickRejectBounds);
+        var devRect = mTmpQuickBounds2;
+        top().mMatrix.mapRect(left, top, right, bottom, devRect);
+        return !devRect.isFinite() || !devRect.intersects(mQuickRejectBounds);
     }
 
     /**
@@ -763,7 +771,7 @@ public class Canvas implements AutoCloseable {
      */
     public final boolean getLocalClipBounds(Rect2f bounds) {
         Device device = getTopDevice();
-        if (device.getClipType() == Device.CLIP_TYPE_EMPTY) {
+        if (device.isClipEmpty()) {
             bounds.setEmpty();
             return false;
         } else {
@@ -776,7 +784,7 @@ public class Canvas implements AutoCloseable {
             device.getDeviceToGlobal().mapRect(bounds);
             bounds.roundOut(bounds);
             // adjust it outwards in case we are antialiasing
-            bounds.inset(-1.0f, -1.0f);
+            bounds.outset(1.0f, 1.0f);
             mTmpMatrix.mapRect(bounds);
             return !bounds.isEmpty();
         }
@@ -794,7 +802,7 @@ public class Canvas implements AutoCloseable {
      */
     public final boolean getDeviceClipBounds(Rect2i bounds) {
         Device device = getTopDevice();
-        if (device.getClipType() == Device.CLIP_TYPE_EMPTY) {
+        if (device.isClipEmpty()) {
             bounds.setEmpty();
             return false;
         } else {
@@ -959,8 +967,10 @@ public class Canvas implements AutoCloseable {
      * @param r     the rectangle to be drawn.
      * @param paint the paint used to draw the rectangle
      */
-    public final void drawRect(Rect2f r, Paint paint) {
-        drawRect(r.mLeft, r.mTop, r.mRight, r.mBottom, paint);
+    public final void drawRect(Rect2fc r, Paint paint) {
+        mTmpRect.set(r);
+        mTmpRect.sort();
+        onDrawRect(mTmpRect, paint);
     }
 
     /**
@@ -972,8 +982,10 @@ public class Canvas implements AutoCloseable {
      * @param r     the rectangle to be drawn.
      * @param paint the paint used to draw the rectangle
      */
-    public final void drawRect(Rect2i r, Paint paint) {
-        drawRect(r.mLeft, r.mTop, r.mRight, r.mBottom, paint);
+    public final void drawRect(Rect2ic r, Paint paint) {
+        mTmpRect.set(r);
+        mTmpRect.sort();
+        onDrawRect(mTmpRect, paint);
     }
 
     /**
@@ -989,7 +1001,9 @@ public class Canvas implements AutoCloseable {
      * @param paint  the paint used to draw the rect
      */
     public void drawRect(float left, float top, float right, float bottom, Paint paint) {
-
+        mTmpRect.set(left, top, right, bottom);
+        mTmpRect.sort();
+        onDrawRect(mTmpRect, paint);
     }
 
     /**
@@ -1053,6 +1067,10 @@ public class Canvas implements AutoCloseable {
                               float rUL, float rUR, float rLR, float rLL, Paint paint) {
     }
 
+    public void drawRoundRect(RoundRect roundRect, Paint paint) {
+        onDrawRoundRect(roundRect, paint);
+    }
+
     /**
      * Draw the specified circle at (cx, cy) with radius using the specified paint.
      * If radius is zero or less, nothing is drawn.
@@ -1065,7 +1083,7 @@ public class Canvas implements AutoCloseable {
      * @param paint  the paint used to draw the circle
      */
     public void drawCircle(float cx, float cy, float radius, Paint paint) {
-
+        onDrawCircle(cx, cy, Math.min(radius, 0.0f), paint);
     }
 
     /**
@@ -1225,7 +1243,7 @@ public class Canvas implements AutoCloseable {
      * @return true if clip is empty
      */
     public final boolean isClipEmpty() {
-        return getTopDevice().getClipType() == Device.CLIP_TYPE_EMPTY;
+        return getTopDevice().isClipEmpty();
     }
 
     /**
@@ -1235,7 +1253,7 @@ public class Canvas implements AutoCloseable {
      * @return true if clip is a Rect and not empty
      */
     public final boolean isClipRect() {
-        return getTopDevice().getClipType() == Device.CLIP_TYPE_RECT;
+        return getTopDevice().isClipRect();
     }
 
     /**
@@ -1254,6 +1272,7 @@ public class Canvas implements AutoCloseable {
      */
     @Override
     public void close() {
+        mBaseDevice = RefCnt.move(mBaseDevice);
         if (mSurface != null) {
             throw new IllegalStateException("Surface-created canvas is owned by Surface, use Surface#close instead");
         }
@@ -1424,14 +1443,95 @@ public class Canvas implements AutoCloseable {
      */
     private void computeQuickRejectBounds() {
         Device device = getTopDevice();
-        if (device.getClipType() == Device.CLIP_TYPE_EMPTY) {
+        if (device.isClipEmpty()) {
             mQuickRejectBounds.setEmpty();
         } else {
             mQuickRejectBounds.set(device.getClipBounds());
             device.getDeviceToGlobal().mapRect(mQuickRejectBounds);
             // Expand bounds out by 1 in case we are anti-aliasing.  We store the
             // bounds as floats to enable a faster quick reject implementation.
-            mQuickRejectBounds.inset(-1.0f, -1.0f);
+            mQuickRejectBounds.outset(1.0f, 1.0f);
+        }
+    }
+
+    private boolean aboutToDraw(Paint paint) {
+        return predrawNotify(false);
+    }
+
+    // notify our surface (if we have one) that we are about to draw, so it
+    // can perform copy-on-write or invalidate any cached images
+    // returns false if the copy failed
+    private boolean predrawNotify(boolean willOverwritesEntireSurface) {
+        if (mSurface != null) {
+            return mSurface.aboutToDraw(willOverwritesEntireSurface
+                    ? Surface.kDiscard_ContentChangeMode
+                    : Surface.kPreserve_ContentChangeMode);
+        }
+        return true;
+    }
+
+    private boolean internalQuickReject(Rect2fc bounds, Paint paint) {
+        return internalQuickReject(bounds, paint, null);
+    }
+
+    private boolean internalQuickReject(Rect2fc bounds, Paint paint,
+                                        Matrixc matrix) {
+        if (!bounds.isFinite() || paint.nothingToDraw()) {
+            return true;
+        }
+
+        if (paint.canComputeFastBounds()) {
+            var tmp = mTmpQuickBounds1;
+            if (matrix != null) {
+                matrix.mapRect(bounds, tmp);
+            } else {
+                tmp.set(bounds);
+            }
+            paint.computeFastBounds(tmp, tmp);
+            return quickReject(tmp);
+        }
+
+        return false;
+    }
+
+    protected void onDrawRect(Rect2fc r, Paint paint) {
+        if (internalQuickReject(r, paint)) {
+            return;
+        }
+
+        if (aboutToDraw(paint)) {
+            getTopDevice().drawRect(r, paint);
+        }
+    }
+
+    protected void onDrawRoundRect(RoundRect roundRect, Paint paint) {
+        var bounds = mTmpRect;
+        roundRect.getBounds(bounds);
+        if (roundRect.isRect()) {
+            bounds.sort();
+            onDrawRect(bounds, paint);
+            return;
+        }
+
+        if (internalQuickReject(bounds, paint)) {
+            return;
+        }
+
+        if (aboutToDraw(paint)) {
+            getTopDevice().drawRoundRect(roundRect, paint);
+        }
+    }
+
+    protected void onDrawCircle(float cx, float cy, float radius, Paint paint) {
+        var bounds = mTmpRect;
+        bounds.set(cx - radius, cy - radius, cx + radius, cy + radius);
+
+        if (internalQuickReject(bounds, paint)) {
+            return;
+        }
+
+        if (aboutToDraw(paint)) {
+            getTopDevice().drawCircle(cx, cy, radius, paint);
         }
     }
 
