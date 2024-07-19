@@ -45,12 +45,12 @@ public class TestPathMeasure {
         }
 
         @Override
-        public void closePath() {
+        public void close() {
             System.out.println("path.close();");
         }
 
         @Override
-        public void pathDone() {
+        public void done() {
             System.out.println("===== PATH DONE =====");
         }
     };

@@ -20,6 +20,7 @@
 package icyllis.arc3d.test;
 
 import icyllis.arc3d.core.Paint;
+import icyllis.arc3d.core.Stroke;
 import icyllis.arc3d.core.*;
 
 import javax.imageio.ImageIO;
@@ -54,13 +55,12 @@ public class TestPath {
         }
 
         @Override
-        public void closePath() {
+        public void close() {
             System.out.println("path.close();");
         }
 
         @Override
-        public void pathDone() {
-            System.out.println("===== PATH DONE =====");
+        public void done() {
         }
     };
 
@@ -97,37 +97,38 @@ public class TestPath {
         }
 
         @Override
-        public void closePath() {
+        public void close() {
             mDst.closePath();
         }
 
         @Override
-        public void pathDone() {
+        public void done() {
 
         }
     }
 
-    private static final J2DPathConverter J2D_PATH_CONVERTER = new J2DPathConverter();
-
     public static void main(String[] args) {
         Path result;
-        PathStroker stroker = new PathStroker();
-        result = testMiterJoin(stroker);
-        result = testRoundJoin(stroker);
-        //writePath(result, false, "test_path_stroke_round_join.png");
+        result = testMiterJoin();
+        result = testRoundJoin();
+        writePath(result, false, "test_path_stroke_round_join.png");
         System.out.println("Empty path bytes: " + new Path().estimatedByteSize());
     }
 
-    public static Path testMiterJoin(PathStroker stroker) {
+    public static Path testMiterJoin() {
         Path src = new Path();
         src.moveTo(100, 120);
         src.lineTo(130, 160);
         src.lineTo(50, 120);
+        System.out.println("Src path:");
         src.forEach(PRINTER);
 
         Path dst = new Path();
-        stroker.init(dst, 5, Paint.CAP_ROUND, Paint.JOIN_MITER, 4, 1);
-        src.forEach(stroker);
+        Stroke stroke = new Stroke();
+        stroke.setWidth(10);
+        stroke.setStrokeParams(Paint.CAP_ROUND, Paint.JOIN_MITER, 4);
+        stroke.applyToPath(src, dst);
+        System.out.println("Dst path:");
         dst.forEach(PRINTER);
 
         System.out.println("Src bounds: " + src.getBounds() + ", bytes: " + src.estimatedByteSize());
@@ -139,7 +140,7 @@ public class TestPath {
         return dst;
     }
 
-    public static Path testRoundJoin(PathStroker stroker) {
+    public static Path testRoundJoin() {
         Path src = new Path();
         src.moveTo(100, 120);
         src.lineTo(130, 160);
@@ -148,11 +149,15 @@ public class TestPath {
         //src.lineTo(170, 130);
         //src.lineTo(170, 120);
         src.cubicTo(160, 130, 120, 100, 190, 60);
+        System.out.println("Src path:");
         src.forEach(PRINTER);
 
         Path dst = new Path();
-        stroker.init(dst, 5, Paint.CAP_ROUND, Paint.JOIN_ROUND, 4, 1);
-        src.forEach(stroker);
+        Stroke stroke = new Stroke();
+        stroke.setWidth(10);
+        stroke.setStrokeParams(Paint.CAP_ROUND, Paint.JOIN_ROUND, 4);
+        stroke.applyToPath(src, dst);
+        System.out.println("Dst path:");
         dst.forEach(PRINTER);
 
         System.out.println("Src bounds: " + src.getBounds() + ", bytes: " + src.estimatedByteSize());
@@ -165,7 +170,7 @@ public class TestPath {
     }
 
     public static void writePath(Path src, boolean stroke, String outName) {
-        var path = J2D_PATH_CONVERTER.convert(src);
+        var path = new J2DPathConverter().convert(src);
         var image = new BufferedImage(256, 256, BufferedImage.TYPE_BYTE_GRAY);
         var graphics = image.createGraphics();
         graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);

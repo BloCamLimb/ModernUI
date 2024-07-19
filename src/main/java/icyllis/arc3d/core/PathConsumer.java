@@ -88,11 +88,11 @@ public interface PathConsumer {
      * the point of the last {@link #moveTo}.  If the path is already
      * closed then this method has no effect.
      */
-    void closePath();
+    void close();
 
     /**
      * Called after the last segment of the last sub-path when the
      * iteration of the path segments is completely done.
      */
-    void pathDone();
+    void done();
 }
