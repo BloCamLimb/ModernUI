@@ -602,7 +602,7 @@ public class ShaderCodeSource {
                     color = clamp(color, 0.0, 1.0);
                 } else {
                     color.a = clamp(color.a, 0.0, 1.0);
-                    color.rgb = clamp(color.rgb, vec3(0.0), color.aaa);
+                    color.rgb = clamp(color.rgb, 0.0, color.a);
                 }
                 return color;
             }
@@ -637,6 +637,25 @@ public class ShaderCodeSource {
                                      vec2 invImageSize,
                                      sampler2D s) {
                 return texture(s, coords * invImageSize);
+            }
+            """;
+    public static final String ARC_DITHER_SHADER = """
+            vec4 arc_dither_shader(vec4 color,
+                                   float range) {
+                // Unrolled 8x8 Bayer matrix
+                vec2 A = gl_FragCoord.xy;
+                vec2 B = floor(A);
+                float U = fract(B.x * 0.5 + B.y * B.y * 0.75);
+                vec2 C = A * 0.5;
+                vec2 D = floor(C);
+                float V = fract(D.x * 0.5 + D.y * D.y * 0.75);
+                vec2 E = C * 0.5;
+                vec2 F = floor(E);
+                float W = fract(F.x * 0.5 + F.y * F.y * 0.75);
+                float dithering = ((W * 0.25 + V) * 0.25 + U) - (63.0 / 128.0);
+                // For each color channel, add the random offset to the channel value and then clamp
+                // between 0 and alpha to keep the color premultiplied.
+                return vec4(clamp(color.rgb + dithering * range, 0.0, color.a), color.a);
             }
             """;
 
@@ -898,6 +917,20 @@ public class ShaderCodeSource {
                 new Sampler[]{
                         new Sampler(SLDataType.kSampler2D, "u_Sampler")
                 },
+                ShaderCodeSource::generateDefaultExpression,
+                0
+        );
+        mBuiltinCodeSnippets[kDitherShader_BuiltinStageID] = new FragmentStage(
+                "DitherShader",
+                kPriorStageOutput_ReqFlag,
+                "arc_dither_shader",
+                new String[]{
+                        ARC_DITHER_SHADER
+                },
+                new Uniform[]{
+                        new Uniform(SLDataType.kFloat, "u_Range")
+                },
+                NO_SAMPLERS,
                 ShaderCodeSource::generateDefaultExpression,
                 0
         );
