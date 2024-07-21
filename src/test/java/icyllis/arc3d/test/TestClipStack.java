@@ -83,10 +83,7 @@ public class TestClipStack {
         drawDevice.getClipStack().elements().forEach(e -> LOGGER.info(e.toString()));
 
         RoundRect rrect = new RoundRect();
-        rrect.mLeft = 15;
-        rrect.mTop = 20;
-        rrect.mRight = 35;
-        rrect.mBottom = 40;
+        rrect.setRect(15, 20, 35, 40);
         drawDevice.drawRoundRect(rrect, new Paint());
 
         /*var elementsForMask = new ArrayList<ClipStack.Element>();

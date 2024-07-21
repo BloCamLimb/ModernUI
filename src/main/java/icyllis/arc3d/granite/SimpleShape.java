@@ -46,7 +46,8 @@ public class SimpleShape extends RoundRect implements Geometry {
         mTop = y0;
         mRight = x1;
         mBottom = y1;
-        mRadiusUlx = radius;
+        mRadii[0] = radius;
+        mRadii[1] = radius;
         mType = round ? kLineRound_Type : kLine_Type;
     }
 

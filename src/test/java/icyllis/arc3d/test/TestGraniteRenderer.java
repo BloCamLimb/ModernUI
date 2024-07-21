@@ -54,7 +54,7 @@ public class TestGraniteRenderer {
     public static final int WINDOW_WIDTH = 1760;
     public static final int WINDOW_HEIGHT = 990;
 
-    public static final int TEST_SCENE = 2;
+    public static final int TEST_SCENE = 1;
 
     public static float Bayer2(float x, float y) {
         x = (float) Math.floor(x);
@@ -154,6 +154,23 @@ public class TestGraniteRenderer {
             System.out.println();
         }
 
+        Random random = new Random();
+        double maxRadError = 0;
+        boolean valid = true;
+        for (int i = 0; i < 10000; i++) {
+            float cx = random.nextFloat(1000);
+            float cy = random.nextFloat(1000);
+            float rad = random.nextFloat(1000);
+            RoundRect rrect = new RoundRect();
+            rrect.setRectXY(cx - rad, cy - rad, cx + rad, cy + rad,
+                    rad, rad);
+            if (rrect.getType() > RoundRect.kEllipse_Type) {
+                valid = false;
+                LOGGER.info("{}", rrect.getType());
+            }
+        }
+        LOGGER.info("max rad error {}, valid {}",  maxRadError, valid);
+
         /*GL11C.glClear(GL11C.GL_COLOR_BUFFER_BIT);
         GLFW.glfwSwapBuffers(window);*/
         TestDrawPass.glSetupDebugCallback();
@@ -192,7 +209,7 @@ public class TestGraniteRenderer {
         }
         @SharedPtr
         Shader gradShader = AngularGradient.makeAngular(
-                584, 534, 0, 270,
+                584, 534, 0, 360,
                 new float[]{
                         0.2f, 0.85f, 0.95f, 1,
                         0.85f, 0.5f, 0.75f, 1,
@@ -202,24 +219,37 @@ public class TestGraniteRenderer {
                 ColorSpace.get(ColorSpace.Named.SRGB),
                 null,//new float[]{0.0f, 0.2f, 0.7f, 1.0f},
                 5,
-                Shader.TILE_MODE_MIRROR,
+                Shader.TILE_MODE_CLAMP,
                 GradientShader.Interpolation.make(false,
                         GradientShader.Interpolation.kSRGBLinear_ColorSpace,
                         GradientShader.Interpolation.kShorter_HueMethod),
                 null
         );
+        /*LinearGradient.makeLinear(
+                400, 350, 800, 350,
+                new float[]{
+                        0.4f, 0.4f, 0.4f, 1,
+                        0.6f, 0.6f, 0.6f, 1},
+                ColorSpace.get(ColorSpace.Named.SRGB),
+                null,
+                2,
+                Shader.TILE_MODE_MIRROR,
+                GradientShader.Interpolation.make(false,
+                        GradientShader.Interpolation.kSRGBLinear_ColorSpace,
+                        GradientShader.Interpolation.kShorter_HueMethod),
+                null
+        );*/
 
         Paint paint = new Paint();
         Canvas canvas = surface.getCanvas();
         while (!GLFW.glfwWindowShouldClose(window)) {
-            Random random = new Random();
 
             long time1 = System.nanoTime();
 
             int nRects = 4000;
             paint.reset();
             paint.setColor(0x00000000);
-            paint.setBlender(BlendMode.SRC);
+            paint.setBlendMode(BlendMode.SRC);
             canvas.drawPaint(paint);
             paint.reset();
             if (TEST_SCENE == 0) {
@@ -231,11 +261,14 @@ public class TestGraniteRenderer {
                             (MAX_RECT_WIDTH - MIN_RECT_WIDTH)) + MIN_RECT_WIDTH;
                     int h = (int) (random.nextDouble() * random.nextDouble() * random.nextDouble() * random.nextDouble() *
                             (MAX_RECT_HEIGHT - MIN_RECT_HEIGHT)) + MIN_RECT_HEIGHT;
-                    rrect.mLeft = cx - (int) Math.ceil(w / 2d);
-                    rrect.mTop = cy - (int) Math.ceil(h / 2d);
-                    rrect.mRight = cx + (int) Math.floor(w / 2d);
-                    rrect.mBottom = cy + (int) Math.floor(h / 2d);
-                    rrect.mRadiusUlx = Math.min(random.nextInt(MAX_CORNER_RADIUS), Math.min(w, h) / 2);
+                    int rad = Math.min(random.nextInt(MAX_CORNER_RADIUS), Math.min(w, h) / 2);
+                    rrect.setRectXY(
+                            cx - (int) Math.ceil(w / 2d),
+                            cy - (int) Math.ceil(h / 2d),
+                            cx + (int) Math.floor(w / 2d),
+                            cy + (int) Math.floor(h / 2d),
+                            rad, rad
+                    );
                     int stroke = random.nextInt(50);
                     paint.setStyle(stroke < 25 ? Paint.FILL : Paint.STROKE);
                     paint.setStrokeWidth((stroke - 20) * 2);
@@ -244,11 +277,7 @@ public class TestGraniteRenderer {
                 }
             } else if (TEST_SCENE == 1) {
                 RoundRect rrect = new RoundRect();
-                rrect.mLeft = 30;
-                rrect.mTop = 60;
-                rrect.mRight = 260;
-                rrect.mBottom = 120;
-                rrect.mRadiusUlx = 10;
+                rrect.setRectXY(30, 60, 260, 120, 10, 10);
                 paint.setStyle(Paint.STROKE);
                 int[] aligns = {Paint.ALIGN_INSIDE, Paint.ALIGN_CENTER, Paint.ALIGN_OUTSIDE};
                 paint.setStrokeWidth(10);
@@ -326,7 +355,9 @@ public class TestGraniteRenderer {
 
                 paint.setStyle(Paint.FILL);
                 paint.setShader(RefCnt.create(gradShader));
-                rect.set(0, 0, 16, 16);
+                paint.setDither(true);
+                rect.set(400, 350, 800, 750);
+                /*rect.set(0, 0, 16, 16);
                 for (int i = 0; i < 16; i++) {
                     for (int j = 0; j < 16; j++) {
                         if (((i ^ j) & 1) != 0) {
@@ -338,13 +369,14 @@ public class TestGraniteRenderer {
                                 350 + j * 24 + random.nextInt(6));
                         canvas.drawRect(rect, paint);
                     }
-                }
+                }*/
+                canvas.drawRect(rect, paint);
+                paint.setDither(false);
 
                 paint.setShader(RefCnt.create(testShader1));
                 mat.setTranslate(600, 100, 0);
                 canvas.setMatrix(mat);
-                rrect.setRect(200, 100, 600, 500);
-                rrect.mRadiusUlx = 20;
+                rrect.setRectXY(200, 100, 600, 500, 20, 20);
                 canvas.drawRoundRect(rrect, paint);
 
             } else if (TEST_SCENE == 2) {
@@ -380,14 +412,13 @@ public class TestGraniteRenderer {
             long time3 = System.nanoTime();
 
             RootTask rootTask = recordingContext.snap();
-            assert rootTask != null;
 
             long time4 = System.nanoTime();
 
             if (!immediateContext.addTask(rootTask)) {
                 LOGGER.error("Failed to add recording");
             }
-            rootTask.unref();
+            RefCnt.move(rootTask);
 
             long time5 = System.nanoTime();
 

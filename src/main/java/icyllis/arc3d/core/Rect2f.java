@@ -212,6 +212,20 @@ public non-sealed class Rect2f implements Rect2fc {
     }
 
     /**
+     * @return width()/2 without intermediate overflow or underflow.
+     */
+    public final float halfWidth() {
+        return (float) (((double) -mLeft + mRight) * 0.5);
+    }
+
+    /**
+     * @return height()/2 without intermediate overflow or underflow.
+     */
+    public final float halfHeight() {
+        return (float) (((double) -mTop + mBottom) * 0.5);
+    }
+
+    /**
      * Set the rectangle to (0,0,0,0)
      */
     public final void setEmpty() {
@@ -1021,20 +1035,32 @@ public non-sealed class Rect2f implements Rect2fc {
     }
 
     @Override
+    public int hashCode() {
+        int result = (mLeft != 0.0f ? Float.floatToIntBits(mLeft) : 0);
+        result = 31 * result + (mTop != 0.0f ? Float.floatToIntBits(mTop) : 0);
+        result = 31 * result + (mRight != 0.0f ? Float.floatToIntBits(mRight) : 0);
+        result = 31 * result + (mBottom != 0.0f ? Float.floatToIntBits(mBottom) : 0);
+        return result;
+    }
+
+    /**
+     * Returns true if all members in a: Left, Top, Right, and Bottom; are
+     * equal to the corresponding members in b.
+     * <p>
+     * a and b are not equal if either contain NaN. a and b are equal if members
+     * contain zeroes with different signs.
+     *
+     * @param o rect to compare
+     * @return true if members are equal
+     */
+    @Override
     public boolean equals(Object o) {
+        if (this == o) return true;
         if (!(o instanceof Rect2fc r)) {
             return false;
         }
-        return mLeft == r.left() && mTop == r.top() && mRight == r.right() && mBottom == r.bottom();
-    }
-
-    @Override
-    public int hashCode() {
-        int result = Float.floatToIntBits(mLeft);
-        result = 31 * result + Float.floatToIntBits(mTop);
-        result = 31 * result + Float.floatToIntBits(mRight);
-        result = 31 * result + Float.floatToIntBits(mBottom);
-        return result;
+        return mLeft == r.left() && mTop == r.top() &&
+                mRight == r.right() && mBottom == r.bottom();
     }
 
     @Override
