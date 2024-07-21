@@ -19,6 +19,9 @@
 
 package icyllis.arc3d.core.effects;
 
+import icyllis.arc3d.core.RawPtr;
+import icyllis.arc3d.core.SharedPtr;
+
 import java.util.Objects;
 
 /**
@@ -26,18 +29,29 @@ import java.util.Objects;
  */
 public class ComposedColorFilter extends ColorFilter {
 
+    @SharedPtr
     private final ColorFilter mAfter;
+    @SharedPtr
     private final ColorFilter mBefore;
 
-    public ComposedColorFilter(ColorFilter before, ColorFilter after) {
+    public ComposedColorFilter(@SharedPtr ColorFilter before,
+                               @SharedPtr ColorFilter after) {
         mBefore = Objects.requireNonNull(before);
         mAfter = Objects.requireNonNull(after);
     }
 
+    @Override
+    protected void deallocate() {
+        mAfter.unref();
+        mBefore.unref();
+    }
+
+    @RawPtr
     public ColorFilter getBefore() {
         return mBefore;
     }
 
+    @RawPtr
     public ColorFilter getAfter() {
         return mAfter;
     }

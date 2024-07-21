@@ -40,6 +40,16 @@ public class Color4fShader extends Shader {
         mColorSpace = colorSpace;
     }
 
+    @Override
+    public boolean isOpaque() {
+        return mA == 1.0f;
+    }
+
+    @Override
+    public boolean isConstant() {
+        return true;
+    }
+
     public final float r() {
         return mR;
     }

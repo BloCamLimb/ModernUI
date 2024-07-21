@@ -682,6 +682,16 @@ public enum BlendMode implements Blender {
     }
 
     @Override
+    public void ref() {
+        // BlendMode is not ref counted
+    }
+
+    @Override
+    public void unref() {
+        // BlendMode is not ref counted
+    }
+
+    @Override
     public BlendMode asBlendMode() {
         return this;
     }
@@ -692,7 +702,36 @@ public enum BlendMode implements Blender {
      * Advanced blend modes are not directly supported by 3D API, they will be implemented
      * with custom fragment shader code and DST read (via texture barrier, input attachment,
      * or image copy). Advanced blend modes should be avoided for operations other than
-     * layer compositing.
+     * layer compositing. All advanced blend modes are SrcOver-like, then they are alpha
+     * conservative.
+     *
+     * <ol>
+     * <li>MULTIPLY</li>
+     * <li>SCREEN</li>
+     * <li>OVERLAY</li>
+     * <li>DARKEN</li>
+     * <li>LIGHTEN</li>
+     * <li>COLOR_DODGE</li>
+     * <li>COLOR_BURN</li>
+     * <li>HARD_LIGHT</li>
+     * <li>SOFT_LIGHT</li>
+     * <li>DIFFERENCE</li>
+     * <li>EXCLUSION</li>
+     * <li>SUBTRACT</li>
+     * <li>DIVIDE</li>
+     * <li>LINEAR_DODGE</li>
+     * <li>LINEAR_BURN</li>
+     * <li>VIVID_LIGHT</li>
+     * <li>LINEAR_LIGHT</li>
+     * <li>PIN_LIGHT</li>
+     * <li>HARD_MIX</li>
+     * <li>DARKER_COLOR</li>
+     * <li>LIGHTER_COLOR</li>
+     * <li>HUE</li>
+     * <li>SATURATION</li>
+     * <li>COLOR</li>
+     * <li>LUMINOSITY</li>
+     * </ol>
      */
     public boolean isAdvanced() {
         return ordinal() >= MULTIPLY.ordinal();

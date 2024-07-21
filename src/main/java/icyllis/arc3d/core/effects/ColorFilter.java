@@ -32,9 +32,13 @@ import javax.annotation.Nullable;
  * All subclasses are required to be reentrant-safe : it must be legal to share
  * the same instance between several threads.
  */
-public abstract class ColorFilter {
+public abstract class ColorFilter extends RefCnt {
 
     protected ColorFilter() {
+    }
+
+    @Override
+    protected void deallocate() {
     }
 
     /**
@@ -85,7 +89,9 @@ public abstract class ColorFilter {
      * @return a composed color filter
      */
     @Nonnull
-    public ColorFilter compose(@Nullable ColorFilter before) {
+    @SharedPtr
+    public ColorFilter compose(@Nullable @SharedPtr ColorFilter before) {
+        ref();
         if (before == null) {
             return this;
         }
@@ -100,7 +106,9 @@ public abstract class ColorFilter {
      * @return a composed color filter
      */
     @Nonnull
-    public ColorFilter andThen(@Nullable ColorFilter after) {
+    @SharedPtr
+    public ColorFilter andThen(@Nullable @SharedPtr ColorFilter after) {
+        ref();
         if (after == null) {
             return this;
         }

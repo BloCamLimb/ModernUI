@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,23 +19,6 @@
 
 package icyllis.arc3d.core;
 
-import javax.annotation.Nullable;
-
-/**
- * {@code Blender} represents a custom blend function in the pipeline. A blender
- * combines a source color (from the paint) and destination color (from the
- * canvas) into a new color.
- *
- * @see BlendMode
- */
-public interface Blender extends RefCounted {
-
-    /**
-     * Returns the blender's BlendMode in 'mode' if this Blender represents any BlendMode.
-     * Returns null for other types of blends.
-     */
-    @Nullable
-    default BlendMode asBlendMode() {
-        return null;
-    }
+//TODO
+public class PathEffect {
 }

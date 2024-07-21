@@ -24,6 +24,9 @@ import icyllis.arc3d.core.effects.ColorFilter;
 import icyllis.arc3d.core.shaders.Shader;
 import icyllis.arc3d.engine.KeyBuilder;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 //TODO currently we don't handle advanced blending
 public final class PaintParams implements AutoCloseable {
 
@@ -32,23 +35,30 @@ public final class PaintParams implements AutoCloseable {
     private final float mG; // 0..1
     private final float mB; // 0..1
     private final float mA; // 0..1
+    // A nullptr mPrimitiveBlender means there's no primitive color blending and it is skipped.
+    // In the case where there is primitive blending, the primitive color is the source color and
+    // the dest is the paint's color (or the paint's shader's computed color).
+    @SharedPtr
     private final Blender mPrimitiveBlender;
     @SharedPtr
     private final Shader mShader;
+    @SharedPtr
     private final ColorFilter mColorFilter;
-    private final Blender mBlender;
+    // A nullptr here means SrcOver blending
+    @SharedPtr
+    private final Blender mFinalBlender;
     private final boolean mDither;
 
-    public PaintParams(Paint paint,
-                       Blender primitiveBlender) {
+    public PaintParams(@Nonnull Paint paint,
+                       @Nullable @SharedPtr Blender primitiveBlender) {
         mR = paint.r();
         mG = paint.g();
         mB = paint.b();
         mA = paint.a();
         mPrimitiveBlender = primitiveBlender;
         mShader = paint.refShader();
-        mColorFilter = paint.getColorFilter();
-        mBlender = paint.getBlender();
+        mColorFilter = paint.refColorFilter();
+        mFinalBlender = paint.refBlender();
         mDither = paint.isDither();
         // antialias flag is already handled
     }
@@ -56,6 +66,9 @@ public final class PaintParams implements AutoCloseable {
     @Override
     public void close() {
         RefCnt.move(mShader);
+        RefCnt.move(mColorFilter);
+        RefCnt.move(mFinalBlender);
+        RefCnt.move(mPrimitiveBlender);
     }
 
     /**
@@ -87,8 +100,8 @@ public final class PaintParams implements AutoCloseable {
     }
 
     public BlendMode getFinalBlendMode() {
-        BlendMode blendMode = mBlender != null
-                ? mBlender.asBlendMode()
+        BlendMode blendMode = mFinalBlender != null
+                ? mFinalBlender.asBlendMode()
                 : BlendMode.SRC_OVER;
         return blendMode != null ? blendMode : BlendMode.SRC;
     }
@@ -123,6 +136,9 @@ public final class PaintParams implements AutoCloseable {
         return false;
     }
 
+    /**
+     * Similar to {@link #getSolidColor(ImageInfo, float[])}, without a PaintParams instance.
+     */
     public static boolean getSolidColor(Paint paint, ImageInfo targetInfo, float[] outColor) {
         if (paint.getShader() == null) {
             if (outColor != null) {
@@ -139,6 +155,55 @@ public final class PaintParams implements AutoCloseable {
             return true;
         }
         return false;
+    }
+
+    private boolean shouldDither(int dstCT) {
+        if (!mDither) {
+            return false;
+        }
+
+        if (dstCT == ColorInfo.CT_UNKNOWN) {
+            return false;
+        }
+
+        if (dstCT == ColorInfo.CT_RGB_565) {
+            // always dither bits per channel < 8
+            return true;
+        }
+
+        return mShader != null && !mShader.isConstant();
+    }
+
+    // Only dither UNorm targets
+    private static float getDitherRange(int dstCT) {
+        // We use 1 / (2^bitdepth-1) as the range since each channel can hold 2^bitdepth values
+        return switch (dstCT) {
+            case ColorInfo.CT_RGB_565 -> 1 / 31.f; // 5-bit
+            case ColorInfo.CT_ALPHA_8,
+                    ColorInfo.CT_GRAY_8,
+                    ColorInfo.CT_GRAY_ALPHA_88,
+                    ColorInfo.CT_R_8,
+                    ColorInfo.CT_RG_88,
+                    ColorInfo.CT_RGB_888,
+                    ColorInfo.CT_RGB_888x,
+                    ColorInfo.CT_RGBA_8888,
+                    ColorInfo.CT_RGBA_8888_SRGB,
+                    ColorInfo.CT_BGRA_8888 -> 1 / 255.f; // 8-bit
+            case ColorInfo.CT_RGBA_1010102,
+                    ColorInfo.CT_BGRA_1010102 -> 1 / 1023.f; // 10-bit
+            case ColorInfo.CT_ALPHA_16,
+                    ColorInfo.CT_R_16,
+                    ColorInfo.CT_RG_1616,
+                    ColorInfo.CT_RGBA_16161616 -> 1 / 32767.f; // 16-bit
+            case ColorInfo.CT_UNKNOWN,
+                    ColorInfo.CT_ALPHA_F16,
+                    ColorInfo.CT_R_F16,
+                    ColorInfo.CT_RG_F16,
+                    ColorInfo.CT_RGBA_F16,
+                    ColorInfo.CT_RGBA_F16_CLAMPED,
+                    ColorInfo.CT_RGBA_F32 -> 0.f; // no dithering
+            default -> throw new AssertionError(dstCT);
+        };
     }
 
     private void appendPaintColorToKey(KeyContext keyContext,
@@ -180,7 +245,61 @@ public final class PaintParams implements AutoCloseable {
             return;
         }
 
-        appendPaintColorToKey(keyContext, keyBuilder, uniformDataGatherer, textureDataGatherer);
+        appendPaintColorToKey(
+                keyContext,
+                keyBuilder,
+                uniformDataGatherer,
+                textureDataGatherer
+        );
+    }
+
+    private void handleColorFilter(KeyContext keyContext,
+                                   KeyBuilder keyBuilder,
+                                   UniformDataGatherer uniformDataGatherer,
+                                   TextureDataGatherer textureDataGatherer) {
+        //TODO
+        handlePaintAlpha(
+                keyContext,
+                keyBuilder,
+                uniformDataGatherer,
+                textureDataGatherer
+        );
+    }
+
+    private void handleDithering(KeyContext keyContext,
+                                 KeyBuilder keyBuilder,
+                                 UniformDataGatherer uniformDataGatherer,
+                                 TextureDataGatherer textureDataGatherer) {
+        int dstCT = keyContext.targetInfo().colorType();
+        if (shouldDither(dstCT)) {
+            float ditherRange = getDitherRange(dstCT);
+            if (ditherRange != 0) {
+                keyBuilder.addInt(FragmentStage.kCompose_BuiltinStageID);
+
+                handleColorFilter(
+                        keyContext,
+                        keyBuilder,
+                        uniformDataGatherer,
+                        textureDataGatherer
+                );
+
+                FragmentUtils.appendDitherShaderBlock(
+                        keyContext,
+                        keyBuilder,
+                        uniformDataGatherer,
+                        textureDataGatherer,
+                        ditherRange
+                );
+                return;
+            }
+        }
+
+        handleColorFilter(
+                keyContext,
+                keyBuilder,
+                uniformDataGatherer,
+                textureDataGatherer
+        );
     }
 
     public void appendToKey(KeyContext keyContext,
@@ -188,6 +307,11 @@ public final class PaintParams implements AutoCloseable {
                             UniformDataGatherer uniformDataGatherer,
                             TextureDataGatherer textureDataGatherer) {
         //TODO
-        handlePaintAlpha(keyContext, keyBuilder, uniformDataGatherer, textureDataGatherer);
+        handleDithering(
+                keyContext,
+                keyBuilder,
+                uniformDataGatherer,
+                textureDataGatherer
+        );
     }
 }

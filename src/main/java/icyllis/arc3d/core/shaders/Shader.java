@@ -62,11 +62,22 @@ public abstract class Shader extends RefCnt {
     public static final int GRADIENT_TYPE_RADIAL = 2;
     public static final int GRADIENT_TYPE_ANGULAR = 3;
 
+    protected Shader() {
+    }
+
     @Override
     protected void deallocate() {
     }
 
     public boolean isOpaque() {
+        return false;
+    }
+
+    /**
+     * Returns true if the shader is guaranteed to produce only a single color.
+     * Subclasses can override this to allow loop-hoisting optimization.
+     */
+    public boolean isConstant() {
         return false;
     }
 
@@ -81,6 +92,7 @@ public abstract class Shader extends RefCnt {
      * Return a shader that will apply the specified localMatrix to this shader.
      * The specified matrix will be applied AFTER any matrix associated with this shader.
      */
+    @Nonnull
     @SharedPtr
     public Shader makeWithLocalMatrix(@Nonnull Matrixc localMatrix) {
         var lm = new Matrix(localMatrix);

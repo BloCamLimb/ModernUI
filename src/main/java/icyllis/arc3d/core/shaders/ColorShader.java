@@ -32,6 +32,11 @@ public class ColorShader extends Shader {
         return (mColor >>> 24) == 255;
     }
 
+    @Override
+    public boolean isConstant() {
+        return true;
+    }
+
     public int getColor() {
         return mColor;
     }
