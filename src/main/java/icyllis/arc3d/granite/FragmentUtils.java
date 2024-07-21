@@ -149,6 +149,18 @@ public class FragmentUtils {
         keyBuilder.addInt(FragmentStage.kAlphaOnlyPaintColor_BuiltinStageID);
     }
 
+    public static void appendDitherShaderBlock(
+            KeyContext keyContext,
+            KeyBuilder keyBuilder,
+            UniformDataGatherer uniformDataGatherer,
+            TextureDataGatherer textureDataGatherer,
+            float range
+    ) {
+        uniformDataGatherer.write1f(range);
+
+        keyBuilder.addInt(FragmentStage.kDitherShader_BuiltinStageID);
+    }
+
     public static void appendLocalMatrixShaderBlock(
             KeyContext keyContext,
             KeyBuilder keyBuilder,

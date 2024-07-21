@@ -216,7 +216,7 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
         // Format: RGB565
         {
             FormatInfo info = getFormatInfo(GL_RGB565);
-            info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
+            info.mFlags |= FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
         }
 
@@ -229,7 +229,7 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
         // Format: COMPRESSED_RGB8_ETC2
         {
             FormatInfo info = getFormatInfo(GL_COMPRESSED_RGB8_ETC2);
-            info.mFlags = FormatInfo.TEXTURABLE_FLAG;
+            info.mFlags |= FormatInfo.TEXTURABLE_FLAG;
         }
 
         // Init samples

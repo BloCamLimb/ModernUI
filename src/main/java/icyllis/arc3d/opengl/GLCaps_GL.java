@@ -296,7 +296,7 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
         if (caps.OpenGL42 || caps.GL_ARB_ES2_compatibility) {
             // macOS supports this
             FormatInfo info = getFormatInfo(GL41C.GL_RGB565);
-            info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
+            info.mFlags |= FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
         }
 
@@ -318,7 +318,7 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
         // Format: COMPRESSED_RGB8_ETC2
         if (caps.OpenGL43 || caps.GL_ARB_ES3_compatibility) {
             FormatInfo info = getFormatInfo(GL43C.GL_COMPRESSED_RGB8_ETC2);
-            info.mFlags = FormatInfo.TEXTURABLE_FLAG;
+            info.mFlags |= FormatInfo.TEXTURABLE_FLAG;
         }
 
         // Init samples

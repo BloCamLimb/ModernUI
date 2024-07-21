@@ -260,7 +260,7 @@ public final class SurfaceDrawContext implements AutoCloseable {
         mPendingDraws.clear();
     }
 
-    private Matrix4 getStableTransform(Matrix4c transform) {
+    private Matrix4c getStableTransform(Matrix4c transform) {
         Matrix4 last = mLastTransform;
         if (!transform.equals(last)) {
             var copy = transform.clone();
