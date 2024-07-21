@@ -118,17 +118,19 @@ public class TestDrawPass {
         for (int i = 0; i < nRects; i++) {
             Draw draw = new Draw();
             RoundRect rrect = new RoundRect();
-            rrect.mLeft = (int) (Math.random() * 910);
-            rrect.mTop = (int) (Math.random() * 450);
+            int l = (int) (Math.random() * 910);
+            int t = (int) (Math.random() * 450);
             int w = (int) (Math.random() * Math.random() * Math.random() * Math.random() * 350) + 20;
             int h = (int) (Math.random() * Math.random() * Math.random() * Math.random() * 250) + 20;
-            rrect.mRight = rrect.mLeft + w;
-            rrect.mBottom = rrect.mTop + h;
-            rrect.mRadiusUlx = Math.min((int) (Math.random() * 50), Math.min(w, h) / 2);
+            int rad = Math.min((int) (Math.random() * 50), Math.min(w, h) / 2);
+            rrect.setRectXY(
+                    l, t, l + w, t + h,
+                    rad, rad
+            );
             draw.mGeometry = rrect;
             var transform = Matrix4.identity();
-            float cx = (rrect.mLeft + rrect.mRight) * 0.5f;
-            float cy = (rrect.mTop + rrect.mBottom) * 0.5f;
+            float cx = rrect.centerX();
+            float cy = rrect.centerY();
             transform.preTranslate(cx, cy);
             transform.preRotateZ(i);
             transform.preTranslate(-cx, -cy);
