@@ -148,7 +148,8 @@ public class Paint implements AutoCloseable {
 
     /**
      * The {@code Align} specifies the treatment where the stroke is placed in relation
-     * to the object edge. The default is {@link #ALIGN_CENTER}.
+     * to the object edge, this only applies to closed contours. The default is
+     * {@link #ALIGN_CENTER}.
      */
     @MagicConstant(intValues = {ALIGN_CENTER, ALIGN_INSIDE, ALIGN_OUTSIDE})
     @Retention(RetentionPolicy.SOURCE)
@@ -188,14 +189,15 @@ public class Paint implements AutoCloseable {
 
     private float mWidth;       // stroke-width
     private float mMiterLimit;  // stroke-miterlimit
-    private float mSmoothWidth;
 
     // optional objects
+    private PathEffect mPathEffect;
+    @SharedPtr
     private Shader mShader;
-    private Blender mBlender;
-    private MaskFilter mMaskFilter;
+    @SharedPtr
     private ColorFilter mColorFilter;
-    private ImageFilter mImageFilter;
+    @SharedPtr
+    private Blender mBlender;
 
     /*
      * bitfield
@@ -213,13 +215,6 @@ public class Paint implements AutoCloseable {
      *                    00        ALIGN_CENTER     (def)
      *                    01        ALIGN_INSIDE
      *                    10        ALIGN_OUTSIDE
-     * |--------|--------|--------|
-     *                  0           FILTER_NEAREST
-     *                  1           FILTER_LINEAR       (def)
-     *                00            MIPMAP_MODE_NONE
-     *                01            MIPMAP_MODE_NEAREST
-     *                11            MIPMAP_MODE_LINEAR  (def)
-     *           11111              MAX_ANISOTROPY_MASK (range: 0-16, def: 0)
      * |--------|--------|--------|
      *         1                    ANTI_ALIAS       (def)
      *        1                     DITHER
@@ -249,18 +244,16 @@ public class Paint implements AutoCloseable {
      * Set all contents of this paint to their initial values.
      */
     public void reset() {
-        mR = 1;
-        mG = 1;
-        mB = 1;
-        mA = 1; // opaque white
-        mWidth = 2;
-        mMiterLimit = 4;
-        mSmoothWidth = 0;
+        mR = 1.0f;
+        mG = 1.0f;
+        mB = 1.0f;
+        mA = 1.0f; // opaque white
+        mWidth = 1.0f;
+        mMiterLimit = 4.0f;
+        mPathEffect = null;
         mShader = RefCnt.move(mShader);
-        mBlender = null;
-        mMaskFilter = null;
-        mColorFilter = null;
-        mImageFilter = null;
+        mColorFilter = RefCnt.move(mColorFilter);
+        mBlender = RefCnt.move(mBlender);
         mFlags = DEFAULT_FLAGS;
     }
 
@@ -279,12 +272,10 @@ public class Paint implements AutoCloseable {
             mA = paint.mA;
             mWidth = paint.mWidth;
             mMiterLimit = paint.mMiterLimit;
-            mSmoothWidth = paint.mSmoothWidth;
+            mPathEffect = paint.mPathEffect;
             mShader = RefCnt.create(mShader, paint.mShader);
-            mBlender = paint.mBlender;
-            mMaskFilter = paint.mMaskFilter;
-            mColorFilter = paint.mColorFilter;
-            mImageFilter = paint.mImageFilter;
+            mColorFilter = RefCnt.create(mColorFilter, paint.mColorFilter);
+            mBlender = RefCnt.create(mBlender, paint.mBlender);
             mFlags = paint.mFlags;
         }
     }
@@ -292,6 +283,8 @@ public class Paint implements AutoCloseable {
     @Override
     public void close() {
         mShader = RefCnt.move(mShader);
+        mColorFilter = RefCnt.move(mColorFilter);
+        mBlender = RefCnt.move(mBlender);
     }
 
     ///// Solid Color
@@ -318,52 +311,10 @@ public class Paint implements AutoCloseable {
      * @param color the new color (including alpha) to set in the paint.
      */
     public void setColor(int color) {
-        mR = ((color >> 16) & 0xff) / 255.0f;
-        mG = ((color >> 8) & 0xff) / 255.0f;
-        mB = (color & 0xff) / 255.0f;
-        mA = (color >>> 24) / 255.0f;
-    }
-
-    /**
-     * Retrieves alpha/opacity from the color used when stroking and filling.
-     *
-     * @return alpha ranging from zero, fully transparent, to one, fully opaque
-     */
-    public float getAlphaF() {
-        return mA;
-    }
-
-    /**
-     * Helper to getColor() that just returns the color's alpha value. This is
-     * the same as calling getColor() >>> 24. It always returns a value between
-     * 0 (completely transparent) and 255 (completely opaque).
-     *
-     * @return the alpha component of the paint's color.
-     */
-    public int getAlpha() {
-        return (int) (mA * 255.0f + 0.5f);
-    }
-
-    /**
-     * Replaces alpha, leaving RGB unchanged.
-     * <code>a</code> is a value from 0.0 to 1.0.
-     * <code>a</code> set to 0.0 makes color fully transparent;
-     * <code>a</code> set to 1.0 makes color fully opaque.
-     *
-     * @param a the alpha component [0..1] of the paint's color
-     */
-    public void setAlphaF(float a) {
-        mA = MathUtil.pin(a, 0.0f, 1.0f);
-    }
-
-    /**
-     * Helper to setColor(), that only assigns the color's alpha value,
-     * leaving its r,g,b values unchanged.
-     *
-     * @param a the alpha component [0..255] of the paint's color
-     */
-    public void setAlpha(int a) {
-        mA = MathUtil.pin(a / 255.0f, 0.0f, 1.0f);
+        mA = (color >>> 24) * (1 / 255.0f);
+        mR = ((color >> 16) & 0xff) * (1 / 255.0f);
+        mG = ((color >> 8) & 0xff) * (1 / 255.0f);
+        mB = (color & 0xff) * (1 / 255.0f);
     }
 
     /**
@@ -411,6 +362,89 @@ public class Paint implements AutoCloseable {
     }
 
     /**
+     * Sets alpha and RGB used when stroking and filling. The color is four floating
+     * point values, un-premultiplied. The color values are interpreted as being in
+     * the sRGB color space.
+     *
+     * @param r the new red component (0..1) of the paint's color.
+     * @param g the new green component (0..1) of the paint's color.
+     * @param b the new blue component (0..1) of the paint's color.
+     * @param a the new alpha component (0..1) of the paint's color.
+     */
+    public final void setColor4f(float r, float g, float b, float a) {
+        mR = MathUtil.pin(r, 0.0f, 1.0f);
+        mG = MathUtil.pin(g, 0.0f, 1.0f);
+        mB = MathUtil.pin(b, 0.0f, 1.0f);
+        mA = MathUtil.pin(a, 0.0f, 1.0f);
+    }
+
+    /**
+     * Sets alpha and RGB used when stroking and filling. The color is four floating
+     * point values, un-premultiplied. The color values are interpreted as being in
+     * the colorSpace. If colorSpace is null, then color is assumed to be in the
+     * sRGB color space.
+     *
+     * @param r          the new red component of the paint's color.
+     * @param g          the new green component of the paint's color.
+     * @param b          the new blue component of the paint's color.
+     * @param a          the new alpha component (0..1) of the paint's color.
+     * @param colorSpace ColorSpace describing the encoding of color
+     */
+    public final void setColor4f(float r, float g, float b, float a,
+                                 @Nullable ColorSpace colorSpace) {
+        if (colorSpace != null && !colorSpace.isSrgb()) {
+            var c = ColorSpace.connect(colorSpace).transform(
+                    r, g, b
+            );
+            setColor4f(c[0], c[1], c[2], a);
+        } else {
+            setColor4f(r, g, b, a);
+        }
+    }
+
+    /**
+     * Retrieves alpha/opacity from the color used when stroking and filling.
+     *
+     * @return alpha ranging from zero, fully transparent, to one, fully opaque
+     */
+    public float getAlphaF() {
+        return mA;
+    }
+
+    /**
+     * Helper to getColor() that just returns the color's alpha value. This is
+     * the same as calling getColor() >>> 24. It always returns a value between
+     * 0 (completely transparent) and 255 (completely opaque).
+     *
+     * @return the alpha component of the paint's color.
+     */
+    public int getAlpha() {
+        return (int) (mA * 255.0f + 0.5f);
+    }
+
+    /**
+     * Replaces alpha, leaving RGB unchanged.
+     * <code>a</code> is a value from 0.0 to 1.0.
+     * <code>a</code> set to 0.0 makes color fully transparent;
+     * <code>a</code> set to 1.0 makes color fully opaque.
+     *
+     * @param a the alpha component [0..1] of the paint's color
+     */
+    public void setAlphaF(float a) {
+        mA = MathUtil.pin(a, 0.0f, 1.0f);
+    }
+
+    /**
+     * Helper to setColor(), that only assigns the color's alpha value,
+     * leaving its r,g,b values unchanged.
+     *
+     * @param a the alpha component [0..255] of the paint's color
+     */
+    public void setAlpha(int a) {
+        mA = MathUtil.pin(a * (1 / 255.0f), 0.0f, 1.0f);
+    }
+
+    /**
      * Helper to setColor(), that only assigns the color's <code>r,g,b</code> values,
      * leaving its alpha value unchanged.
      *
@@ -419,83 +453,41 @@ public class Paint implements AutoCloseable {
      * @param b the new blue component (0..255) of the paint's color.
      */
     public final void setRGB(int r, int g, int b) {
-        mR = MathUtil.pin(r / 255.0f, 0.0f, 1.0f);
-        mG = MathUtil.pin(g / 255.0f, 0.0f, 1.0f);
-        mB = MathUtil.pin(b / 255.0f, 0.0f, 1.0f);
+        mR = MathUtil.pin(r * (1 / 255.0f), 0.0f, 1.0f);
+        mG = MathUtil.pin(g * (1 / 255.0f), 0.0f, 1.0f);
+        mB = MathUtil.pin(b * (1 / 255.0f), 0.0f, 1.0f);
     }
 
     /**
-     * Helper to setColor(), that only assigns the color's <code>r,g,b</code> values,
-     * leaving its alpha value unchanged.
+     * Sets color used when drawing solid fills. The color components range from 0 to 255.
+     * The color is un-premultiplied; alpha sets the transparency independent of RGB.
      *
-     * @param r the new red component (0..1) of the paint's color.
-     * @param g the new green component (0..1) of the paint's color.
-     * @param b the new blue component (0..1) of the paint's color.
-     */
-    public final void setRGB(float r, float g, float b) {
-        mR = MathUtil.pin(r, 0.0f, 1.0f);
-        mG = MathUtil.pin(g, 0.0f, 1.0f);
-        mB = MathUtil.pin(b, 0.0f, 1.0f);
-    }
-
-    /**
-     * Helper to setColor(), that takes <code>r,g,b,a</code> and constructs the color int.
-     *
-     * @param r the new red component (0..255) of the paint's color.
-     * @param g the new green component (0..255) of the paint's color.
-     * @param b the new blue component (0..255) of the paint's color.
-     * @param a the new alpha component (0..255) of the paint's color.
+     * @param r amount of red, from no red (0) to full red (255)
+     * @param g amount of green, from no green (0) to full green (255)
+     * @param b amount of blue, from no blue (0) to full blue (255)
+     * @param a amount of alpha, from fully transparent (0) to fully opaque (255)
      */
     public final void setRGBA(int r, int g, int b, int a) {
-        mR = MathUtil.pin(r / 255.0f, 0.0f, 1.0f);
-        mG = MathUtil.pin(g / 255.0f, 0.0f, 1.0f);
-        mB = MathUtil.pin(b / 255.0f, 0.0f, 1.0f);
-        mA = MathUtil.pin(a / 255.0f, 0.0f, 1.0f);
+        mR = MathUtil.pin(r * (1 / 255.0f), 0.0f, 1.0f);
+        mG = MathUtil.pin(g * (1 / 255.0f), 0.0f, 1.0f);
+        mB = MathUtil.pin(b * (1 / 255.0f), 0.0f, 1.0f);
+        mA = MathUtil.pin(a * (1 / 255.0f), 0.0f, 1.0f);
     }
 
     /**
-     * Helper to setColor(), that takes floating point <code>r,g,b,a</code> values.
+     * Sets color used when drawing solid fills. The color components range from 0 to 255.
+     * The color is un-premultiplied; alpha sets the transparency independent of RGB.
      *
-     * @param r the new red component (0..1) of the paint's color.
-     * @param g the new green component (0..1) of the paint's color.
-     * @param b the new blue component (0..1) of the paint's color.
-     * @param a the new alpha component (0..1) of the paint's color.
-     */
-    public final void setRGBA(float r, float g, float b, float a) {
-        mR = MathUtil.pin(r, 0.0f, 1.0f);
-        mG = MathUtil.pin(g, 0.0f, 1.0f);
-        mB = MathUtil.pin(b, 0.0f, 1.0f);
-        mA = MathUtil.pin(a, 0.0f, 1.0f);
-    }
-
-    /**
-     * Helper to setColor(), that takes <code>a,r,g,b</code> and constructs the color int.
-     *
-     * @param a the new alpha component (0..255) of the paint's color.
-     * @param r the new red component (0..255) of the paint's color.
-     * @param g the new green component (0..255) of the paint's color.
-     * @param b the new blue component (0..255) of the paint's color.
+     * @param a amount of alpha, from fully transparent (0) to fully opaque (255)
+     * @param r amount of red, from no red (0) to full red (255)
+     * @param g amount of green, from no green (0) to full green (255)
+     * @param b amount of blue, from no blue (0) to full blue (255)
      */
     public void setARGB(int a, int r, int g, int b) {
-        mR = MathUtil.pin(r / 255.0f, 0.0f, 1.0f);
-        mG = MathUtil.pin(g / 255.0f, 0.0f, 1.0f);
-        mB = MathUtil.pin(b / 255.0f, 0.0f, 1.0f);
-        mA = MathUtil.pin(a / 255.0f, 0.0f, 1.0f);
-    }
-
-    /**
-     * Helper to setColor(), that takes floating point <code>a,r,g,b</code> values.
-     *
-     * @param r the new red component (0..1) of the paint's color.
-     * @param g the new green component (0..1) of the paint's color.
-     * @param b the new blue component (0..1) of the paint's color.
-     * @param a the new alpha component (0..1) of the paint's color.
-     */
-    public void setARGB(float a, float r, float g, float b) {
-        mR = MathUtil.pin(r, 0.0f, 1.0f);
-        mG = MathUtil.pin(g, 0.0f, 1.0f);
-        mB = MathUtil.pin(b, 0.0f, 1.0f);
-        mA = MathUtil.pin(a, 0.0f, 1.0f);
+        mA = MathUtil.pin(a * (1 / 255.0f), 0.0f, 1.0f);
+        mR = MathUtil.pin(r * (1 / 255.0f), 0.0f, 1.0f);
+        mG = MathUtil.pin(g * (1 / 255.0f), 0.0f, 1.0f);
+        mB = MathUtil.pin(b * (1 / 255.0f), 0.0f, 1.0f);
     }
 
     ///// Basic Flags
@@ -518,7 +510,6 @@ public class Paint implements AutoCloseable {
      * If true, the AA step is calculated in screen space. The default value is true.
      *
      * @param aa setting for anti-aliasing
-     * @see #setSmoothWidth(float)
      */
     public final void setAntiAlias(boolean aa) {
         if (aa) {
@@ -634,7 +625,8 @@ public class Paint implements AutoCloseable {
 
     /**
      * Returns the paint's stroke align type. The default is {@link #ALIGN_CENTER}.
-     * Note that the implementation may not respect this value.
+     * Note that this only applies to closed contours, otherwise stroking behaves
+     * as {@link #ALIGN_CENTER}.
      *
      * @return the paint's Align
      * @see #setStrokeAlign(int)
@@ -646,7 +638,8 @@ public class Paint implements AutoCloseable {
 
     /**
      * Sets the paint's stroke align type. The default is {@link #ALIGN_CENTER}.
-     * Note that the implementation may not respect this value.
+     * Note that this only applies to closed contours, otherwise stroking behaves
+     * as {@link #ALIGN_CENTER}.
      *
      * @param align set the paint's Align
      */
@@ -655,7 +648,7 @@ public class Paint implements AutoCloseable {
     }
 
     /**
-     * Returns the thickness of the pen for stroking shapes. The default value is 2.0 px.
+     * Returns the thickness of the pen for stroking shapes. The default value is 1.0 px.
      *
      * @return the paint's stroke width; zero for hairline, greater than zero for pen thickness
      * @see #setStrokeWidth(float)
@@ -665,14 +658,17 @@ public class Paint implements AutoCloseable {
     }
 
     /**
-     * Sets the thickness of the pen for stroking shapes. The default value is 2.0 px.
+     * Sets the thickness of the pen for stroking shapes. The default value is 1.0 px.
      * A stroke width of zero is treated as "hairline" width. Hairlines are always exactly one
      * pixel wide in screen space (their thickness does not change as the canvas is scaled).
      *
      * @param width set the paint's stroke width; zero for hairline, greater than zero for pen thickness
      */
     public void setStrokeWidth(float width) {
-        mWidth = Math.max(width, 0);
+        if (width >= 0) {
+            // do not use Math.max(), also capture NaN
+            mWidth = width;
+        }
     }
 
     /**
@@ -693,29 +689,10 @@ public class Paint implements AutoCloseable {
      * @param miter zero and greater miter limit
      */
     public void setStrokeMiter(float miter) {
-        mMiterLimit = Math.max(miter, 0);
-    }
-
-    /**
-     * Returns the current smooth width. The default value is 0.0 px.
-     *
-     * @return the paint's smooth width, zero or greater
-     * @see #setSmoothWidth(float)
-     */
-    public final float getSmoothWidth() {
-        return mSmoothWidth;
-    }
-
-    /**
-     * Sets the smooth width in pixels for this paint. The default value is 0.0 px.
-     * <p>
-     * A non-zero smooth width applies to Hermite interpolation of geometries' edges
-     * in local space. Note that the implementation may not respect this value.
-     *
-     * @param smooth the paint's smooth width, zero or greater
-     */
-    public final void setSmoothWidth(float smooth) {
-        mSmoothWidth = Math.max(smooth, 0);
+        if (miter >= 0) {
+            // do not use Math.max(), also capture NaN
+            mMiterLimit = miter;
+        }
     }
 
     ///// Effects
@@ -757,8 +734,20 @@ public class Paint implements AutoCloseable {
      * @return ColorFilter if previously set, null otherwise
      */
     @Nullable
+    @RawPtr
     public ColorFilter getColorFilter() {
         return mColorFilter;
+    }
+
+    /**
+     * Returns ColorFilter if set, or null.
+     *
+     * @return ColorFilter if previously set, null otherwise
+     */
+    @Nullable
+    @SharedPtr
+    public ColorFilter refColorFilter() {
+        return RefCnt.create(mColorFilter);
     }
 
     /**
@@ -766,17 +755,33 @@ public class Paint implements AutoCloseable {
      *
      * @param colorFilter ColorFilter to apply to subsequent draw
      */
-    public void setColorFilter(@Nullable ColorFilter colorFilter) {
-        mColorFilter = colorFilter;
+    public void setColorFilter(@Nullable @SharedPtr ColorFilter colorFilter) {
+        mColorFilter = RefCnt.move(mColorFilter, colorFilter);
     }
 
     /**
-     * Returns true if BlendMode is {@link BlendMode#SRC_OVER}, the default.
+     * If the current blender can be represented as a BlendMode enum, this returns that
+     * enum object. If it cannot, then this returns null.
+     */
+    @Nullable
+    public BlendMode getBlendMode() {
+        return mBlender != null ? mBlender.asBlendMode() : BlendMode.SRC_OVER;
+    }
+
+    /**
+     * Returns true if BlendMode claims to be equivalent to {@link BlendMode#SRC_OVER}, the default.
      *
      * @return true if BlendMode is {@link BlendMode#SRC_OVER}
      */
     public final boolean isSrcOver() {
         return mBlender == null || mBlender.asBlendMode() == BlendMode.SRC_OVER;
+    }
+
+    /**
+     * Helper method for calling setBlender().
+     */
+    public void setBlendMode(@Nullable BlendMode mode) {
+        setBlender(mode == BlendMode.SRC_OVER ? null : mode);
     }
 
     /**
@@ -788,8 +793,23 @@ public class Paint implements AutoCloseable {
      * @see #setBlender(Blender)
      */
     @Nullable
+    @RawPtr
     public final Blender getBlender() {
         return mBlender;
+    }
+
+    /**
+     * Returns the user-supplied blend function, if one has been set.
+     * <p>
+     * A null blender signifies the default {@link BlendMode#SRC_OVER} behavior.
+     *
+     * @return the blender assigned to this paint, otherwise null
+     * @see #setBlender(Blender)
+     */
+    @Nullable
+    @SharedPtr
+    public Blender refBlender() {
+        return RefCnt.create(mBlender);
     }
 
     /**
@@ -805,48 +825,8 @@ public class Paint implements AutoCloseable {
      * @param blender the blender to be installed in the paint, may be null
      * @see #getBlender()
      */
-    public final void setBlender(@Nullable Blender blender) {
-        mBlender = blender;
-    }
-
-    /**
-     * Returns MaskFilter if set, or null.
-     *
-     * @return MaskFilter if previously set, null otherwise
-     */
-    @Nullable
-    public MaskFilter getMaskFilter() {
-        return mMaskFilter;
-    }
-
-    /**
-     * Sets MaskFilter, pass null to clear MaskFilter and leave MaskFilter effect on
-     * mask alpha unaltered.
-     *
-     * @param maskFilter modifies clipping mask generated from drawn geometry
-     */
-    public void setMaskFilter(@Nullable MaskFilter maskFilter) {
-        mMaskFilter = maskFilter;
-    }
-
-    /**
-     * Returns ImageFilter if set, or null.
-     *
-     * @return ImageFilter if previously set, null otherwise
-     */
-    @Nullable
-    public ImageFilter getImageFilter() {
-        return mImageFilter;
-    }
-
-    /**
-     * Sets ImageFilter, pass null to clear ImageFilter, and remove ImageFilter effect
-     * on drawing.
-     *
-     * @param imageFilter how Image is sampled when transformed
-     */
-    public void setImageFilter(@Nullable ImageFilter imageFilter) {
-        mImageFilter = imageFilter;
+    public final void setBlender(@Nullable @SharedPtr Blender blender) {
+        mBlender = RefCnt.move(mBlender, blender);
     }
 
     ///// Utility
@@ -861,17 +841,27 @@ public class Paint implements AutoCloseable {
      * @return true if the paint prevents all drawing
      */
     public boolean nothingToDraw() {
-        var mode = getBlendModeDirect(this);
+        var mode = getBlendMode();
         if (mode != null) {
+            final boolean checkAlpha;
             switch (mode) {
-                case SRC_OVER, SRC_ATOP, DST_OUT, DST_OVER, PLUS -> {
-                    if (getAlphaF() == 0.0f) {
-                        return !isBlendedColorFilter(mColorFilter);
-                    }
-                }
+                case SRC_OVER,
+                        DST_OVER,
+                        DST_OUT,
+                        SRC_ATOP,
+                        XOR,
+                        PLUS,
+                        PLUS_CLAMPED,
+                        MINUS,
+                        MINUS_CLAMPED -> checkAlpha = true;
                 case DST -> {
                     return true;
                 }
+                // All advanced blend modes are SrcOver-like
+                default -> checkAlpha = mode.isAdvanced();
+            }
+            if (checkAlpha && getAlphaF() == 0.0f) {
+                return !isBlendedColorFilter(mColorFilter);
             }
         }
         return false;
@@ -884,8 +874,9 @@ public class Paint implements AutoCloseable {
      * @return true if Paint allows for fast computation of bounds
      */
     @ApiStatus.Internal
-    public final boolean canComputeFastBounds() {
-        return mImageFilter == null || mImageFilter.canComputeFastBounds();
+    public final boolean canComputeFastBounds(@RawPtr @Nullable ImageFilter imageFilter) {
+        //TODO PathEffect
+        return imageFilter == null || imageFilter.canComputeFastBounds();
     }
 
     /**
@@ -893,7 +884,7 @@ public class Paint implements AutoCloseable {
      * raw rectangle (the raw bounds of a shape), and adjusts it for stylistic
      * effects in the paint (e.g. stroking). If needed, it uses the storage
      * parameter. It returns the adjusted bounds that can then be used
-     * for {@link Canvas#quickReject(Rect2f)} tests.
+     * for {@link Canvas#quickReject(Rect2fc)} tests.
      * <p>
      * This method ensures that orig will not be modified, and the result
      * will always be stored into the storage rect.
@@ -902,11 +893,12 @@ public class Paint implements AutoCloseable {
      * @param storage fast computed bounds of geometry
      */
     @ApiStatus.Internal
-    public final void computeFastBounds(Rect2fc orig, Rect2f storage) {
+    public final void computeFastBounds(@RawPtr @Nullable ImageFilter imageFilter,
+                                        Rect2fc orig, Rect2f storage) {
         int style = getStyle();
         // ultra fast-case: filling with no effects that affect geometry
         if (style == FILL) {
-            if (mMaskFilter == null && mImageFilter == null) {
+            if (imageFilter == null) {
                 storage.set(orig);
                 return;
             }
@@ -920,30 +912,25 @@ public class Paint implements AutoCloseable {
             storage.outset(stroke, stroke);
         }
 
-        if (mMaskFilter != null) {
-            mMaskFilter.computeFastBounds(storage, storage);
-        }
-
-        if (mImageFilter != null) {
-            mImageFilter.computeFastBounds(storage, storage);
+        if (imageFilter != null) {
+            imageFilter.computeFastBounds(storage, storage);
         }
     }
 
     @Override
     public int hashCode() {
         int result = mFlags;
-        result = 31 * result + Float.hashCode(mR);
-        result = 31 * result + Float.hashCode(mG);
-        result = 31 * result + Float.hashCode(mB);
-        result = 31 * result + Float.hashCode(mA);
-        result = 31 * result + Float.hashCode(mWidth);
-        result = 31 * result + Float.hashCode(mMiterLimit);
-        result = 31 * result + Float.hashCode(mSmoothWidth);
+        // there is no negative zero
+        result = 31 * result + Float.floatToIntBits(mR);
+        result = 31 * result + Float.floatToIntBits(mG);
+        result = 31 * result + Float.floatToIntBits(mB);
+        result = 31 * result + Float.floatToIntBits(mA);
+        result = 31 * result + Float.floatToIntBits(mWidth);
+        result = 31 * result + Float.floatToIntBits(mMiterLimit);
+        result = 31 * result + Objects.hashCode(mPathEffect);
         result = 31 * result + Objects.hashCode(mShader);
-        result = 31 * result + Objects.hashCode(mBlender);
-        result = 31 * result + Objects.hashCode(mMaskFilter);
         result = 31 * result + Objects.hashCode(mColorFilter);
-        result = 31 * result + Objects.hashCode(mImageFilter);
+        result = 31 * result + Objects.hashCode(mBlender);
         return result;
     }
 
@@ -956,18 +943,17 @@ public class Paint implements AutoCloseable {
 
     protected final boolean equals(Paint paint) {
         return mFlags == paint.mFlags &&
+                // there is no negative zero
                 mR == paint.mR &&
                 mG == paint.mG &&
                 mB == paint.mB &&
                 mA == paint.mA &&
                 mWidth == paint.mWidth &&
                 mMiterLimit == paint.mMiterLimit &&
-                mSmoothWidth == paint.mSmoothWidth &&
+                Objects.equals(mPathEffect, paint.mPathEffect) &&
                 Objects.equals(mShader, paint.mShader) &&
-                Objects.equals(mBlender, paint.mBlender) &&
-                Objects.equals(mMaskFilter, paint.mMaskFilter) &&
                 Objects.equals(mColorFilter, paint.mColorFilter) &&
-                Objects.equals(mImageFilter, paint.mImageFilter);
+                Objects.equals(mBlender, paint.mBlender);
     }
 
     @Override
@@ -988,7 +974,7 @@ public class Paint implements AutoCloseable {
         } else if (style == STROKE) {
             s.append("STROKE");
         } else {
-            s.append("FILL|STROKE");
+            s.append("STROKE_AND_FILL");
         }
         int cap = getStrokeCap();
         s.append(", mCap=");
@@ -1021,59 +1007,58 @@ public class Paint implements AutoCloseable {
         s.append(isAntiAlias());
         s.append(", mDither=");
         s.append(isDither());
-        s.append(", mStrokeWidth=");
+        s.append(", mWidth=");
         s.append(mWidth);
-        s.append(", mStrokeMiter=");
+        s.append(", mMiterLimit=");
         s.append(mMiterLimit);
-        s.append(", mSmoothWidth=");
-        s.append(mSmoothWidth);
+        s.append(", mPathEffect=");
+        s.append(mPathEffect);
         s.append(", mShader=");
         s.append(mShader);
-        s.append(", mBlender=");
-        s.append(mBlender);
-        s.append(", mMaskFilter=");
-        s.append(mMaskFilter);
         s.append(", mColorFilter=");
         s.append(mColorFilter);
-        s.append(", mImageFilter=");
-        s.append(mImageFilter);
+        s.append(", mBlender=");
+        s.append(mBlender);
         s.append('}');
         return s.toString();
     }
 
+    @ApiStatus.Internal
     public static int getAlphaDirect(@Nullable Paint paint) {
         return paint != null ? paint.getAlpha() : 0xFF;
     }
 
+    @ApiStatus.Internal
     public static BlendMode getBlendModeDirect(@Nullable Paint paint) {
         if (paint != null) {
-            var blender = paint.getBlender();
-            if (blender != null) {
-                return blender.asBlendMode();
-            }
+            return paint.getBlendMode();
         }
         return BlendMode.SRC_OVER;
     }
 
+    @ApiStatus.Internal
     public static boolean isBlendedShader(@Nullable Shader shader) {
         return shader != null && !shader.isOpaque();
     }
 
+    @ApiStatus.Internal
     public static boolean isBlendedColorFilter(@Nullable ColorFilter filter) {
         return filter != null && !filter.isAlphaUnchanged();
     }
 
+    @ApiStatus.Internal
     public static boolean isBlendedImageFilter(@Nullable ImageFilter filter) {
         //TODO: check if we should allow image filters to broadcast that they don't affect alpha
         // just like color filters
         return filter != null;
     }
 
+    @ApiStatus.Internal
     public static boolean isOpaquePaint(@Nullable Paint paint) {
         if (paint == null) {
             return true;
         }
-        if (paint.getAlpha() != 0xFF ||
+        if (paint.getAlphaF() != 1.0f ||
                 isBlendedShader(paint.mShader) ||
                 isBlendedColorFilter(paint.mColorFilter)) {
             return false;

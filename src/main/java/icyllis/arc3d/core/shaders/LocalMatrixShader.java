@@ -43,6 +43,11 @@ public class LocalMatrixShader extends Shader {
         return mBase.isOpaque();
     }
 
+    @Override
+    public boolean isConstant() {
+        return mBase.isConstant();
+    }
+
     @RawPtr
     public Shader getBase() {
         return mBase;

@@ -885,7 +885,7 @@ public class Canvas implements AutoCloseable {
     public final void drawColor(@ColorInt int color, BlendMode mode) {
         Paint paint = mTmpPaint;
         paint.setColor(color);
-        paint.setBlender(mode);
+        paint.setBlendMode(mode);
         drawPaint(paint);
         paint.reset();
     }
@@ -899,8 +899,8 @@ public class Canvas implements AutoCloseable {
      */
     public final void drawColor(Color color, BlendMode mode) {
         Paint paint = mTmpPaint;
-        paint.setRGBA(color.mR, color.mG, color.mB, color.mA);
-        paint.setBlender(mode);
+        paint.setColor4f(color.mR, color.mG, color.mB, color.mA);
+        paint.setBlendMode(mode);
         drawPaint(paint);
         paint.reset();
     }
@@ -917,8 +917,8 @@ public class Canvas implements AutoCloseable {
      */
     public final void drawColor(float r, float g, float b, float a, BlendMode mode) {
         Paint paint = mTmpPaint;
-        paint.setRGBA(r, g, b, a);
-        paint.setBlender(mode);
+        paint.setColor4f(r, g, b, a);
+        paint.setBlendMode(mode);
         drawPaint(paint);
         paint.reset();
     }
@@ -1083,7 +1083,7 @@ public class Canvas implements AutoCloseable {
      * @param paint  the paint used to draw the circle
      */
     public void drawCircle(float cx, float cy, float radius, Paint paint) {
-        onDrawCircle(cx, cy, Math.min(radius, 0.0f), paint);
+        onDrawCircle(cx, cy, Math.max(radius, 0.0f), paint);
     }
 
     /**
@@ -1409,7 +1409,7 @@ public class Canvas implements AutoCloseable {
             bounds = null;
         }
 
-        ImageFilter imageFilter = paint != null ? paint.getImageFilter() : null;
+        ImageFilter imageFilter = /*paint != null ? paint.getImageFilter() : */null;
         Matrix4 stashedMatrix = top().mMatrix;
 
         if (imageFilter != null) {
@@ -1480,14 +1480,14 @@ public class Canvas implements AutoCloseable {
             return true;
         }
 
-        if (paint.canComputeFastBounds()) {
+        if (paint.canComputeFastBounds(null)) {
             var tmp = mTmpQuickBounds1;
             if (matrix != null) {
                 matrix.mapRect(bounds, tmp);
             } else {
                 tmp.set(bounds);
             }
-            paint.computeFastBounds(tmp, tmp);
+            paint.computeFastBounds(null, tmp, tmp);
             return quickReject(tmp);
         }
 
