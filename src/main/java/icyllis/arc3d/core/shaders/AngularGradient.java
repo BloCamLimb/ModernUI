@@ -22,8 +22,7 @@ package icyllis.arc3d.core.shaders;
 import icyllis.arc3d.core.*;
 import org.jetbrains.annotations.VisibleForTesting;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import javax.annotation.*;
 
 /**
  * The angular gradient, also known as sweep gradient, conic gradient.
@@ -103,6 +102,7 @@ public final class AngularGradient extends Gradient1DShader {
      * @param localMatrix   local matrix
      * @return a gradient shader, or degenerate shader, or null
      */
+    @CheckReturnValue
     @Nullable
     @SharedPtr
     public static Shader makeAngular(float centerX, float centerY,

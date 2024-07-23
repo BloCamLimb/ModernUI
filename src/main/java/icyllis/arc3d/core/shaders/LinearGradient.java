@@ -22,8 +22,7 @@ package icyllis.arc3d.core.shaders;
 import icyllis.arc3d.core.*;
 import org.jetbrains.annotations.VisibleForTesting;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import javax.annotation.*;
 
 /**
  * LinearGradient generates gradient colors linearly interpolated between two points.
@@ -109,6 +108,7 @@ public final class LinearGradient extends Gradient1DShader {
      * @param localMatrix   local matrix
      * @return a gradient shader, or degenerate shader, or null
      */
+    @CheckReturnValue
     @Nullable
     @SharedPtr
     public static Shader makeLinear(float startX, float startY,

@@ -19,6 +19,9 @@
 
 package icyllis.arc3d.core;
 
+/**
+ * Font controls options applied when drawing text.
+ */
 public class Font {
 
     /**
@@ -28,6 +31,7 @@ public class Font {
             kAlias_Edging = 0,
             kAntiAlias_Edging = 1;
 
+    // private flags
     static final int
             kLinearMetrics_Flag = 0x4;
 
@@ -36,28 +40,60 @@ public class Font {
     private byte mFlags;
     private byte mEdging;
 
+    /**
+     * Sets SkTypeface to typeface, decreasing SkRefCnt of the previous SkTypeface.
+     * Pass nullptr to clear SkTypeface and use an empty typeface (which draws nothing).
+     * Increments tf SkRefCnt by one.
+     *
+     * @param typeface font and style used to draw text
+     */
     public void setTypeface(Typeface typeface) {
         mTypeface = typeface;
     }
 
+    /**
+     * Returns a raw pointer to Typeface.
+     *
+     * @return non-null typeface
+     */
     public Typeface getTypeface() {
         return mTypeface;
     }
 
-    public void setSize(float size) {
-        mSize = Math.max(0, size);
-    }
-
+    /**
+     * Returns text size in points.
+     *
+     * @return typographic height of text
+     */
     public float getSize() {
         return mSize;
     }
 
-    public void setEdging(byte edging) {
-        mEdging = edging;
+    /**
+     * Sets text size in points.
+     * Has no effect if size is not greater than or equal to zero.
+     *
+     * @param size typographic height of text
+     */
+    public void setSize(float size) {
+        if (size >= 0) {
+            mSize = size;
+        }
     }
 
-    public byte getEdging() {
+    /**
+     * Whether edge pixels draw opaque or with partial transparency.
+     */
+    public int getEdging() {
         return mEdging;
+    }
+
+    /**
+     * Requests, but does not require, that edge pixels draw opaque or with
+     * partial transparency.
+     */
+    public void setEdging(int edging) {
+        mEdging = (byte) edging;
     }
 
     /**
@@ -67,5 +103,21 @@ public class Font {
      */
     public boolean isLinearMetrics() {
         return (mFlags & kLinearMetrics_Flag) != 0;
+    }
+
+    /**
+     * Requests, but does not require, linearly scalable font and glyph metrics.
+     * <p>
+     * For outline fonts 'true' means font and glyph metrics should ignore hinting and rounding.
+     * Note that some bitmap formats may not be able to scale linearly and will ignore this flag.
+     *
+     * @param linearMetrics setting for linearly scalable font and glyph metrics.
+     */
+    public void setLinearMetrics(boolean linearMetrics) {
+        if (linearMetrics) {
+            mFlags |= kLinearMetrics_Flag;
+        } else {
+            mFlags &= ~kLinearMetrics_Flag;
+        }
     }
 }
