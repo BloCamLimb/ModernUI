@@ -19,6 +19,17 @@
 
 package icyllis.arc3d.core;
 
+import javax.annotation.Nonnull;
+import java.util.Objects;
+
+/**
+ * Typeface class specifies the typeface (font face) and intrinsic style of a font.
+ * This is used in the paint, along with optionally algorithmic settings like
+ * textSize, textScaleX, textShearX, kFakeBoldText_Mask, to specify
+ * how text appears when drawn (and measured).
+ * <p>
+ * Typeface objects are immutable, and so they can be shared between threads.
+ */
 public abstract class Typeface {
 
     private final UniqueID mUniqueID;
@@ -27,7 +38,30 @@ public abstract class Typeface {
         mUniqueID = new UniqueID();
     }
 
-    public UniqueID getUniqueID() {
+    public final UniqueID getUniqueID() {
         return mUniqueID;
+    }
+
+    @Nonnull
+    public final ScalerContext createScalerContext(StrikeDesc desc) {
+        return Objects.requireNonNull(onCreateScalerContext(desc));
+    }
+
+    @Nonnull
+    protected abstract ScalerContext onCreateScalerContext(StrikeDesc desc);
+
+    protected abstract void onFilterStrikeDesc(StrikeDesc desc);
+
+    @Override
+    public final int hashCode() {
+        return mUniqueID.hashCode();
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (o instanceof Typeface t) {
+            return mUniqueID.equals(t.mUniqueID);
+        }
+        return false;
     }
 }

@@ -19,39 +19,44 @@
 
 package icyllis.arc3d.core;
 
+import javax.annotation.Nonnull;
+import java.util.Objects;
+
 /**
  * Descriptor of font strike.
- * <p>
- * Our engine does not implement a FontScalerContext
  */
-public class StrikeDesc {
+public final class StrikeDesc {
 
     public static final int
             kFrameAndFill_Flag = 0x01,
             kLinearMetrics_Flag = 0x02;
 
     private Typeface mTypeface;
+
     private float mTextSize;
+
     private float mPostScaleX;
     private float mPostScaleY;
     private float mPostShearX;
     private float mPostShearY;
+
     private float mFrameWidth;
     private float mMiterLimit;
-    private byte mEdging;
+
+    private byte mMaskFormat;
     private byte mStroke;
     private short mFlags;
-    private transient int mHash;
 
-    private static float round_tx_elem(float x) {
-        return Math.round(x * 1024) / 1024.0f;
-    }
+    private PathEffect mPathEffect;
+
+    private transient int mHash;
 
     public StrikeDesc() {
     }
 
     public StrikeDesc(StrikeDesc other) {
         mTypeface = other.mTypeface;
+        mPathEffect = other.mPathEffect;
         mTextSize = other.mTextSize;
         mPostScaleX = other.mPostScaleX;
         mPostScaleY = other.mPostScaleY;
@@ -59,34 +64,36 @@ public class StrikeDesc {
         mPostShearY = other.mPostShearY;
         mFrameWidth = other.mFrameWidth;
         mMiterLimit = other.mMiterLimit;
-        mEdging = other.mEdging;
+        mMaskFormat = other.mMaskFormat;
         mStroke = other.mStroke;
         mFlags = other.mFlags;
         mHash = other.mHash;
     }
 
-    public StrikeDesc(Font font, Paint paint,
-                      Matrixc deviceMatrix) {
-        update(font, paint, deviceMatrix);
+    private static float round_mat_elem(float x) {
+        return Math.round(x * 1024) / 1024.0f;
     }
 
-    public StrikeDesc update(Font font, Paint paint,
-                             Matrixc deviceMatrix) {
-        assert !deviceMatrix.hasPerspective();
+    @Nonnull
+    public StrikeDesc update(@Nonnull Font font, @Nonnull Paint paint,
+                             @Nonnull Matrixc deviceMatrix) {
+        if (deviceMatrix.hasPerspective()) {
+            throw new IllegalArgumentException();
+        }
 
         mTypeface = font.getTypeface();
         mTextSize = font.getSize();
 
         int typeMask = deviceMatrix.getType();
         if ((typeMask & Matrixc.kScale_Mask) != 0) {
-            mPostScaleX = round_tx_elem(deviceMatrix.getScaleX());
-            mPostScaleY = round_tx_elem(deviceMatrix.getScaleY());
+            mPostScaleX = round_mat_elem(deviceMatrix.getScaleX());
+            mPostScaleY = round_mat_elem(deviceMatrix.getScaleY());
         } else {
             mPostScaleX = mPostScaleY = 1;
         }
         if ((typeMask & Matrixc.kAffine_Mask) != 0) {
-            mPostShearX = round_tx_elem(deviceMatrix.getShearX());
-            mPostShearY = round_tx_elem(deviceMatrix.getShearY());
+            mPostShearX = round_mat_elem(deviceMatrix.getShearX());
+            mPostShearY = round_mat_elem(deviceMatrix.getShearY());
         } else {
             mPostShearX = mPostShearY = 0;
         }
@@ -96,8 +103,7 @@ public class StrikeDesc {
 
         int flags = 0;
 
-        // no hairline support
-        if (style != Paint.FILL && strokeWidth > 0) {
+        if (style != Paint.FILL && strokeWidth >= 0) {
             mFrameWidth = strokeWidth;
             mMiterLimit = paint.getStrokeMiter();
             mStroke = (byte) ((paint.getStrokeJoin() << 4) | paint.getStrokeCap());
@@ -111,13 +117,22 @@ public class StrikeDesc {
             mStroke = 0;
         }
 
-        mEdging = font.getEdging();
+        mMaskFormat = switch (font.getEdging()) {
+            case Font.kAlias_Edging -> Mask.kBW_Format;
+            case Font.kAntiAlias_Edging -> Mask.kA8_Format;
+            default -> {
+                assert false;
+                yield Mask.kA8_Format;
+            }
+        };
 
         if (font.isLinearMetrics()) {
             flags |= kLinearMetrics_Flag;
         }
 
         mFlags = (short) flags;
+
+        mPathEffect = paint.getPathEffect();
 
         int h = mTypeface.hashCode();
         h = 31 * h + Float.floatToIntBits(mTextSize);
@@ -127,9 +142,10 @@ public class StrikeDesc {
         h = 31 * h + Float.floatToIntBits(mPostShearY);
         h = 31 * h + Float.floatToIntBits(mFrameWidth);
         h = 31 * h + Float.floatToIntBits(mMiterLimit);
-        h = 31 * h + (int) mEdging;
+        h = 31 * h + (int) mMaskFormat;
         h = 31 * h + (int) mStroke;
         h = 31 * h + (int) mFlags;
+        h = 31 * h + Objects.hashCode(mPathEffect);
         mHash = h;
 
         return this;
@@ -145,21 +161,72 @@ public class StrikeDesc {
                 0, 0, 1);
     }
 
-    public void getGlyphMatrix(Matrix dst) {
+    public void getTotalMatrix(Matrix dst) {
         getDeviceMatrix(dst);
         dst.preScale(mTextSize, mTextSize);
     }
 
+    public float getTextSize() {
+        return mTextSize;
+    }
+
+    public float getPostScaleX() {
+        return mPostScaleX;
+    }
+
+    public float getPostScaleY() {
+        return mPostScaleY;
+    }
+
+    public float getPostShearX() {
+        return mPostShearX;
+    }
+
+    public float getPostShearY() {
+        return mPostShearY;
+    }
+
+    public float getFrameWidth() {
+        return mFrameWidth;
+    }
+
+    public float getMiterLimit() {
+        return mMiterLimit;
+    }
+
+    // Mask::Format
+    public byte getMaskFormat() {
+        return mMaskFormat;
+    }
+
+    @Paint.Cap
+    @SuppressWarnings("MagicConstant")
     public int getStrokeCap() {
         return mStroke & 0xF;
     }
 
+    @Paint.Join
+    @SuppressWarnings("MagicConstant")
     public int getStrokeJoin() {
         return mStroke >>> 4;
     }
 
-    public StrikeDesc copy() {
-        return new StrikeDesc(this);
+    public int getFlags() {
+        return mFlags & 0xFFFF;
+    }
+
+    public PathEffect getPathEffect() {
+        return mPathEffect;
+    }
+
+    @Nonnull
+    public Strike findOrCreateStrike() {
+        return StrikeCache.getGlobalStrikeCache().findOrCreateStrike(this);
+    }
+
+    @Nonnull
+    public ScalerContext createScalerContext() {
+        return mTypeface.createScalerContext(this);
     }
 
     @Override
@@ -178,11 +245,17 @@ public class StrikeDesc {
                     mPostShearY == that.mPostShearY &&
                     mFrameWidth == that.mFrameWidth &&
                     mMiterLimit == that.mMiterLimit &&
-                    mEdging == that.mEdging &&
+                    mMaskFormat == that.mMaskFormat &&
                     mStroke == that.mStroke &&
                     mFlags == that.mFlags &&
-                    mTypeface.equals(that.mTypeface);
+                    mTypeface.equals(that.mTypeface) &&
+                    Objects.equals(mPathEffect, that.mPathEffect);
         }
         return false;
+    }
+
+    @Nonnull
+    public StrikeDesc copy() {
+        return new StrikeDesc(this);
     }
 }
