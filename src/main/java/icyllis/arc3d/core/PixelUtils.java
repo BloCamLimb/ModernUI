@@ -118,6 +118,71 @@ public class PixelUtils {
         }
     }
 
+    /**
+     * Pack Alpha8 format to B/W format.
+     */
+    public static void packA8ToBW(Object srcBase, long srcAddr, int srcRowBytes,
+                                  Object dstBase, long dstAddr, int dstRowBytes,
+                                  int width, int height) {
+        int octets = width >> 3;
+        int leftover = width & 7;
+
+        assert (srcRowBytes >= width);
+        assert (dstRowBytes >= ((width + 7) >> 3));
+
+        for (int y = 0; y < height; ++y) {
+            long nextSrcAddr = srcAddr + srcRowBytes;
+            long nextDstAddr = dstAddr + dstRowBytes;
+            for (int i = 0; i < octets; ++i) {
+                int bits = 0;
+                for (int j = 0; j < 8; ++j) {
+                    bits <<= 1;
+                    int v = (UNSAFE.getByte(srcBase, srcAddr + j) & 0xFF) >> 7;
+                    bits |= v;
+                }
+                UNSAFE.putByte(dstBase, dstAddr, (byte) bits);
+                srcAddr += 8;
+                dstAddr += 1;
+            }
+            if (leftover > 0) {
+                int bits = 0;
+                int shift = 7;
+                for (int j = 0; j < leftover; ++j, --shift) {
+                    bits |= (UNSAFE.getByte(srcBase, srcAddr + j) & 0xFF) >> 7 << shift;
+                }
+                UNSAFE.putByte(dstBase, dstAddr, (byte) bits);
+            }
+            srcAddr = nextSrcAddr;
+            dstAddr = nextDstAddr;
+        }
+    }
+
+    /**
+     * Unpack B/W format to Alpha8 format.
+     */
+    public static void unpackBWToA8(Object srcBase, long srcAddr, int srcRowBytes,
+                                    Object dstBase, long dstAddr, int dstRowBytes,
+                                    int width, int height) {
+        assert (srcRowBytes >= ((width + 7) >> 3));
+        assert (dstRowBytes >= width);
+
+        for (int y = 0; y < height; ++y) {
+            long nextSrcAddr = srcAddr + srcRowBytes;
+            long nextDstAddr = dstAddr + dstRowBytes;
+            int x = width;
+            while (x > 0) {
+                int mask = UNSAFE.getByte(srcBase, srcAddr) & 0xFF;
+                for (int shift = 7; shift >= 0 && x != 0; --shift, --x) {
+                    UNSAFE.putByte(dstBase, dstAddr, (mask & (1 << shift)) != 0 ? (byte) ~0 : 0);
+                    dstAddr += 1;
+                }
+                srcAddr += 1;
+            }
+            srcAddr = nextSrcAddr;
+            dstAddr = nextDstAddr;
+        }
+    }
+
     public static void setPixel8(Object base, long addr,
                                  byte value, int count) {
         long wideValue = (long) value << 8 | value;
