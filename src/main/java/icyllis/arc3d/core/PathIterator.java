@@ -55,6 +55,16 @@ public interface PathIterator {
             VERB_DONE = 6;
 
     /**
+     * Returns the filling rule for determining the interior of the
+     * path.
+     *
+     * @return the winding rule.
+     * @see #FILL_EVEN_ODD
+     * @see #FILL_NON_ZERO
+     */
+    int getFillRule();
+
+    /**
      * Returns next verb, and advances iterator.
      * If there are no more elements, returns {@link #VERB_DONE}.
      * <p>
