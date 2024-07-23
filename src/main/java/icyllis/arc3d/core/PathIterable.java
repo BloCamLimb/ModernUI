@@ -23,6 +23,16 @@ import javax.annotation.Nonnull;
 
 public interface PathIterable {
 
+    /**
+     * Returns the filling rule for determining the interior of the
+     * path.
+     *
+     * @return the winding rule.
+     * @see PathIterator#FILL_EVEN_ODD
+     * @see PathIterator#FILL_NON_ZERO
+     */
+    int getFillRule();
+
     @Nonnull
     PathIterator getPathIterator();
 

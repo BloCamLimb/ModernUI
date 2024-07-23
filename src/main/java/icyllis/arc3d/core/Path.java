@@ -23,6 +23,7 @@ import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.invoke.MethodHandles;
@@ -121,7 +122,7 @@ public class Path implements PathIterable, PathConsumer {
     public static final int APPROXIMATE_CONIC_WITH_QUADS = 1;
 
     @SharedPtr
-    private Ref mRef;
+    private PathRef mPathRef;
 
     private int mLastMoveToIndex;
 
@@ -134,7 +135,7 @@ public class Path implements PathIterable, PathConsumer {
      * Creates an empty Path with a default fill rule of {@link #FILL_NON_ZERO}.
      */
     public Path() {
-        mRef = RefCnt.create(Ref.EMPTY);
+        mPathRef = RefCnt.create(PathRef.EMPTY);
         resetFields();
     }
 
@@ -146,12 +147,12 @@ public class Path implements PathIterable, PathConsumer {
      */
     @SuppressWarnings("IncompleteCopyConstructor")
     public Path(@Nonnull Path other) {
-        mRef = RefCnt.create(other.mRef);
+        mPathRef = RefCnt.create(other.mPathRef);
         copyFields(other);
     }
 
     /**
-     * Resets all fields other than {@link #mRef} to their initial 'empty' values.
+     * Resets all fields other than {@link #mPathRef} to their initial 'empty' values.
      */
     private void resetFields() {
         mLastMoveToIndex = ~0;
@@ -197,7 +198,7 @@ public class Path implements PathIterable, PathConsumer {
      */
     public void set(@Nonnull Path other) {
         if (other != this) {
-            mRef = RefCnt.create(mRef, other.mRef);
+            mPathRef = RefCnt.create(mPathRef, other.mPathRef);
             copyFields(other);
         }
     }
@@ -208,8 +209,8 @@ public class Path implements PathIterable, PathConsumer {
      */
     public void move(@Nonnull Path other) {
         if (other != this) {
-            mRef = RefCnt.move(mRef, other.mRef);
-            other.mRef = RefCnt.create(Ref.EMPTY);
+            mPathRef = RefCnt.move(mPathRef, other.mPathRef);
+            other.mPathRef = RefCnt.create(PathRef.EMPTY);
             copyFields(other);
             other.resetFields();
         }
@@ -222,10 +223,10 @@ public class Path implements PathIterable, PathConsumer {
      * Preserves internal storage if it's unique, otherwise discards.
      */
     public void reset() {
-        if (mRef.unique()) {
-            mRef.reset();
+        if (mPathRef.unique()) {
+            mPathRef.reset();
         } else {
-            mRef = RefCnt.create(mRef, Ref.EMPTY);
+            mPathRef = RefCnt.create(mPathRef, PathRef.EMPTY);
         }
         resetFields();
     }
@@ -238,12 +239,12 @@ public class Path implements PathIterable, PathConsumer {
      * storage with the same size.
      */
     public void clear() {
-        if (mRef.unique()) {
-            mRef.reset();
+        if (mPathRef.unique()) {
+            mPathRef.reset();
         } else {
-            int verbSize = mRef.mVerbSize;
-            int coordSize = mRef.mCoordSize;
-            mRef = RefCnt.move(mRef, new Ref(verbSize, coordSize));
+            int verbSize = mPathRef.mVerbSize;
+            int coordSize = mPathRef.mCoordSize;
+            mPathRef = RefCnt.move(mPathRef, new PathRef(verbSize, coordSize));
         }
         resetFields();
     }
@@ -256,7 +257,7 @@ public class Path implements PathIterable, PathConsumer {
      * call when the path object will be no longer used.
      */
     public void recycle() {
-        mRef = RefCnt.create(mRef, Ref.EMPTY);
+        mPathRef = RefCnt.create(mPathRef, PathRef.EMPTY);
         resetFields();
     }
 
@@ -265,10 +266,10 @@ public class Path implements PathIterable, PathConsumer {
      * minimize memory usage, see {@link #estimatedByteSize()}.
      */
     public void trimToSize() {
-        if (mRef.unique()) {
-            mRef.trimToSize();
+        if (mPathRef.unique()) {
+            mPathRef.trimToSize();
         } else {
-            mRef = RefCnt.move(mRef, new Ref(mRef));
+            mPathRef = RefCnt.move(mPathRef, new PathRef(mPathRef));
         }
     }
 
@@ -279,8 +280,8 @@ public class Path implements PathIterable, PathConsumer {
      * @return true if the path contains no verb
      */
     public boolean isEmpty() {
-        assert (mRef.mVerbSize == 0) == (mRef.mCoordSize == 0);
-        return mRef.mVerbSize == 0;
+        assert (mPathRef.mVerbSize == 0) == (mPathRef.mCoordSize == 0);
+        return mPathRef.mVerbSize == 0;
     }
 
     /**
@@ -289,7 +290,7 @@ public class Path implements PathIterable, PathConsumer {
      * @return true if all point coordinates are finite
      */
     public boolean isFinite() {
-        return mRef.isFinite();
+        return mPathRef.isFinite();
     }
 
     private void dirtyAfterEdit() {
@@ -306,7 +307,7 @@ public class Path implements PathIterable, PathConsumer {
      */
     @Override
     public void moveTo(float x, float y) {
-        mLastMoveToIndex = mRef.mCoordSize;
+        mLastMoveToIndex = mPathRef.mCoordSize;
         editor().addVerb(VERB_MOVE)
                 .addPoint(x, y);
         dirtyAfterEdit();
@@ -320,10 +321,10 @@ public class Path implements PathIterable, PathConsumer {
      * @throws IllegalStateException Path is empty
      */
     public void moveToRel(float dx, float dy) {
-        int n = mRef.mCoordSize;
+        int n = mPathRef.mCoordSize;
         if (n != 0) {
-            float px = mRef.mCoords[n - 2];
-            float py = mRef.mCoords[n - 1];
+            float px = mPathRef.mCoords[n - 2];
+            float py = mPathRef.mCoords[n - 1];
             moveTo(px + dx, py + dy);
         } else {
             throw new IllegalStateException("No first point");
@@ -358,10 +359,10 @@ public class Path implements PathIterable, PathConsumer {
      * @param dy the offset from last point to line end on y-axis
      */
     public void lineToRel(float dx, float dy) {
-        int n = mRef.mCoordSize;
+        int n = mPathRef.mCoordSize;
         if (n != 0) {
-            float px = mRef.mCoords[n - 2];
-            float py = mRef.mCoords[n - 1];
+            float px = mPathRef.mCoords[n - 2];
+            float py = mPathRef.mCoords[n - 1];
             lineTo(px + dx, py + dy);
         } else {
             throw new IllegalStateException("No first point");
@@ -404,10 +405,10 @@ public class Path implements PathIterable, PathConsumer {
      */
     public void quadToRel(float dx1, float dy1,
                           float dx2, float dy2) {
-        int n = mRef.mCoordSize;
+        int n = mPathRef.mCoordSize;
         if (n != 0) {
-            float px = mRef.mCoords[n - 2];
-            float py = mRef.mCoords[n - 1];
+            float px = mPathRef.mCoords[n - 2];
+            float py = mPathRef.mCoords[n - 1];
             quadTo(px + dx1, py + dy1, px + dx2, py + dy2);
         } else {
             throw new IllegalStateException("No first point");
@@ -458,10 +459,10 @@ public class Path implements PathIterable, PathConsumer {
     public void cubicToRel(float dx1, float dy1,
                            float dx2, float dy2,
                            float dx3, float dy3) {
-        int n = mRef.mCoordSize;
+        int n = mPathRef.mCoordSize;
         if (n != 0) {
-            float px = mRef.mCoords[n - 2];
-            float py = mRef.mCoords[n - 1];
+            float px = mPathRef.mCoords[n - 2];
+            float py = mPathRef.mCoords[n - 1];
             cubicTo(px + dx1, py + dy1, px + dx2, py + dy2, px + dx3, py + dy3);
         } else {
             throw new IllegalStateException("No first point");
@@ -477,7 +478,7 @@ public class Path implements PathIterable, PathConsumer {
     public void close() {
         int count = countVerbs();
         if (count != 0) {
-            switch (mRef.mVerbs[count - 1]) {
+            switch (mPathRef.mVerbs[count - 1]) {
                 case VERB_MOVE:
                 case VERB_LINE:
                 case VERB_QUAD:
@@ -499,12 +500,56 @@ public class Path implements PathIterable, PathConsumer {
     }
 
     /**
+     * Transforms verb array, Point array, and weight by matrix.
+     * transform may change verbs and increase their number.
+     * Path is replaced by transformed data.
+     *
+     * @param matrix Matrix to apply to Path
+     */
+    public void transform(@Nonnull Matrixc matrix) {
+        transform(matrix, this);
+    }
+
+    /**
+     * Transforms verb array, point array, and weight by matrix.
+     * transform may change verbs and increase their number.
+     * Transformed Path replaces dst; if dst is null, original data
+     * is replaced.
+     *
+     * @param matrix Matrix to apply to Path
+     * @param dst    overwritten, transformed copy of Path; may be null
+     */
+    public void transform(@Nonnull Matrixc matrix, @Nullable Path dst) {
+        if (matrix.isIdentity()) {
+            if (dst != null && dst != this) {
+                dst.set(this);
+            }
+            return;
+        }
+
+        if (dst == null) {
+            dst = this;
+        }
+
+        if (matrix.hasPerspective()) {
+            //TODO
+        } else {
+            mPathRef.createTransformedCopy(matrix, dst);
+
+            if (this != dst) {
+                dst.mLastMoveToIndex = mLastMoveToIndex;
+                dst.mFillRule = mFillRule;
+            }
+        }
+    }
+
+    /**
      * Returns the number of verbs added to path.
      *
      * @return size of verb list
      */
     public int countVerbs() {
-        return mRef.mVerbSize;
+        return mPathRef.mVerbSize;
     }
 
     /**
@@ -513,8 +558,8 @@ public class Path implements PathIterable, PathConsumer {
      * @return size of point list
      */
     public int countPoints() {
-        assert mRef.mCoordSize % 2 == 0;
-        return mRef.mCoordSize >> 1;
+        assert mPathRef.mCoordSize % 2 == 0;
+        return mPathRef.mCoordSize >> 1;
     }
 
     /**
@@ -532,7 +577,14 @@ public class Path implements PathIterable, PathConsumer {
      */
     @Nonnull
     public Rect2fc getBounds() {
-        return mRef.getBounds();
+        return mPathRef.getBounds();
+    }
+
+    /**
+     * Helper method to {@link #getBounds()}, stores the result to dst.
+     */
+    public void getBounds(@Nonnull Rect2f dst) {
+        getBounds().store(dst);
     }
 
     /**
@@ -547,7 +599,7 @@ public class Path implements PathIterable, PathConsumer {
      * a race condition where each draw separately computes the bounds.
      */
     public void updateBoundsCache() {
-        mRef.updateBounds();
+        mPathRef.updateBounds();
     }
 
     /**
@@ -560,7 +612,7 @@ public class Path implements PathIterable, PathConsumer {
      */
     @SegmentMask
     public int getSegmentMask() {
-        return mRef.mSegmentMask;
+        return mPathRef.mSegmentMask;
     }
 
     @Nonnull
@@ -576,33 +628,38 @@ public class Path implements PathIterable, PathConsumer {
         private int coordPos;
 
         @Override
+        public int getFillRule() {
+            return mFillRule;
+        }
+
+        @Override
         public int next(float[] coords, int offset) {
             if (verbPos == count) {
                 return VERB_DONE;
             }
-            byte verb = mRef.mVerbs[verbPos++];
+            byte verb = mPathRef.mVerbs[verbPos++];
             switch (verb) {
                 case VERB_MOVE -> {
                     if (verbPos == count) {
                         return VERB_DONE;
                     }
                     if (coords != null) {
-                        coords[offset] = mRef.mCoords[coordPos];
-                        coords[offset + 1] = mRef.mCoords[coordPos + 1];
+                        coords[offset] = mPathRef.mCoords[coordPos];
+                        coords[offset + 1] = mPathRef.mCoords[coordPos + 1];
                     }
                     coordPos += 2;
                 }
                 case VERB_LINE -> {
                     if (coords != null) {
-                        coords[offset] = mRef.mCoords[coordPos];
-                        coords[offset + 1] = mRef.mCoords[coordPos + 1];
+                        coords[offset] = mPathRef.mCoords[coordPos];
+                        coords[offset + 1] = mPathRef.mCoords[coordPos + 1];
                     }
                     coordPos += 2;
                 }
                 case VERB_QUAD -> {
                     if (coords != null) {
                         System.arraycopy(
-                                mRef.mCoords, coordPos,
+                                mPathRef.mCoords, coordPos,
                                 coords, offset, 4
                         );
                     }
@@ -611,7 +668,7 @@ public class Path implements PathIterable, PathConsumer {
                 case VERB_CUBIC -> {
                     if (coords != null) {
                         System.arraycopy(
-                                mRef.mCoords, coordPos,
+                                mPathRef.mCoords, coordPos,
                                 coords, offset, 6
                         );
                     }
@@ -629,8 +686,8 @@ public class Path implements PathIterable, PathConsumer {
     public void forEach(@Nonnull PathConsumer action) {
         int n = countVerbs();
         if (n != 0) {
-            byte[] vs = mRef.mVerbs;
-            float[] cs = mRef.mCoords;
+            byte[] vs = mPathRef.mVerbs;
+            float[] cs = mPathRef.mCoords;
             int vi = 0;
             int ci = 0;
             ITR:
@@ -682,7 +739,7 @@ public class Path implements PathIterable, PathConsumer {
             if (verbPos == count) {
                 return PathIterator.VERB_DONE;
             }
-            byte verb = mRef.mVerbs[verbPos++];
+            byte verb = mPathRef.mVerbs[verbPos++];
             coordPos += coordInc;
             switch (verb) {
                 case VERB_MOVE, VERB_LINE -> coordInc = 2;
@@ -697,35 +754,35 @@ public class Path implements PathIterable, PathConsumer {
 
         //TODO use arraycopy
         public float x0() {
-            return mRef.mCoords[coordPos + coordOff];
+            return mPathRef.mCoords[coordPos + coordOff];
         }
 
         public float y0() {
-            return mRef.mCoords[coordPos + coordOff + 1];
+            return mPathRef.mCoords[coordPos + coordOff + 1];
         }
 
         public float x1() {
-            return mRef.mCoords[coordPos + coordOff + 2];
+            return mPathRef.mCoords[coordPos + coordOff + 2];
         }
 
         public float y1() {
-            return mRef.mCoords[coordPos + coordOff + 3];
+            return mPathRef.mCoords[coordPos + coordOff + 3];
         }
 
         public float x2() {
-            return mRef.mCoords[coordPos + coordOff + 4];
+            return mPathRef.mCoords[coordPos + coordOff + 4];
         }
 
         public float y2() {
-            return mRef.mCoords[coordPos + coordOff + 5];
+            return mPathRef.mCoords[coordPos + coordOff + 5];
         }
 
         public float x3() {
-            return mRef.mCoords[coordPos + coordOff + 6];
+            return mPathRef.mCoords[coordPos + coordOff + 6];
         }
 
         public float y3() {
-            return mRef.mCoords[coordPos + coordOff + 7];
+            return mPathRef.mCoords[coordPos + coordOff + 7];
         }
     }
 
@@ -734,14 +791,14 @@ public class Path implements PathIterable, PathConsumer {
      * This method does not take into account whether internal storage is shared or not.
      */
     public long estimatedByteSize() {
-        long size = 24;
-        size += mRef.estimatedByteSize();
+        long size = 32;
+        size += mPathRef.estimatedByteSize();
         return size;
     }
 
     @Override
     public int hashCode() {
-        int hash = mRef.hashCode();
+        int hash = mPathRef.hashCode();
         hash = 31 * hash + mFillRule;
         return hash;
     }
@@ -752,7 +809,7 @@ public class Path implements PathIterable, PathConsumer {
             return true;
         }
         if (obj instanceof Path other) {
-            return mFillRule == other.mFillRule && mRef.equals(other.mRef);
+            return mFillRule == other.mFillRule && mPathRef.equals(other.mPathRef);
         }
         return false;
     }
@@ -760,11 +817,11 @@ public class Path implements PathIterable, PathConsumer {
     // ignore the last point of the contour
     // there must be moveTo() for the contour
     void reversePop(@Nonnull PathConsumer out, boolean addMoveTo) {
-        assert mRef != null;
-        byte[] vs = mRef.mVerbs;
-        float[] cs = mRef.mCoords;
-        int vi = mRef.mVerbSize;
-        int ci = mRef.mCoordSize - 2;
+        assert mPathRef != null;
+        byte[] vs = mPathRef.mVerbs;
+        float[] cs = mPathRef.mCoords;
+        int vi = mPathRef.mVerbSize;
+        int ci = mPathRef.mCoordSize - 2;
         if (addMoveTo) {
             if (ci >= 0) {
                 out.moveTo(cs[ci], cs[ci + 1]);
@@ -808,12 +865,12 @@ public class Path implements PathIterable, PathConsumer {
         clear();
     }
 
-    private Ref editor() {
-        if (!mRef.unique()) {
-            mRef = RefCnt.move(mRef, new Ref(mRef));
+    private PathRef editor() {
+        if (!mPathRef.unique()) {
+            mPathRef = RefCnt.move(mPathRef, new PathRef(mPathRef));
         }
-        mRef.mBounds.set(0, 0, -1, -1);
-        return mRef;
+        mPathRef.dirtyBounds();
+        return mPathRef;
     }
 
     // the state of the convex computation
@@ -884,14 +941,14 @@ public class Path implements PathIterable, PathConsumer {
      *
      * @see #unique()
      */
-    static final class Ref implements RefCounted {
+    static final class PathRef implements RefCounted {
 
         private static final VarHandle USAGE_CNT;
 
         static {
             MethodHandles.Lookup lookup = MethodHandles.lookup();
             try {
-                USAGE_CNT = lookup.findVarHandle(Ref.class, "mUsageCnt", int.class);
+                USAGE_CNT = lookup.findVarHandle(PathRef.class, "mUsageCnt", int.class);
             } catch (NoSuchFieldException | IllegalAccessException e) {
                 throw new RuntimeException(e);
             }
@@ -900,10 +957,10 @@ public class Path implements PathIterable, PathConsumer {
         static final byte[] EMPTY_VERBS = {};
         static final float[] EMPTY_COORDS = {};
 
-        static final Ref EMPTY;
+        static final PathRef EMPTY;
 
         static {
-            EMPTY = new Ref();
+            EMPTY = new PathRef();
             EMPTY.updateBounds();
         }
 
@@ -921,11 +978,11 @@ public class Path implements PathIterable, PathConsumer {
         @SegmentMask
         byte mSegmentMask;
 
-        Ref() {
+        PathRef() {
             this(EMPTY_VERBS, EMPTY_COORDS);
         }
 
-        Ref(int verbSize, int coordSize) {
+        PathRef(int verbSize, int coordSize) {
             assert coordSize % 2 == 0;
             if (verbSize > 0) {
                 assert coordSize > 0;
@@ -937,14 +994,14 @@ public class Path implements PathIterable, PathConsumer {
             }
         }
 
-        Ref(byte[] verbs, float[] coords) {
+        PathRef(byte[] verbs, float[] coords) {
             assert coords.length % 2 == 0;
             mVerbs = verbs;
             mCoords = coords;
         }
 
         @SuppressWarnings("IncompleteCopyConstructor")
-        Ref(@Nonnull Ref other) {
+        PathRef(@Nonnull PathRef other) {
             mBounds.set(other.mBounds);
             // trim
             if (other.mVerbSize > 0) {
@@ -960,7 +1017,7 @@ public class Path implements PathIterable, PathConsumer {
             mSegmentMask = other.mSegmentMask;
         }
 
-        Ref(@Nonnull Ref other, int incVerbs, int incCoords) {
+        PathRef(@Nonnull PathRef other, int incVerbs, int incCoords) {
             assert incVerbs >= 0 && incCoords >= 0;
             assert incCoords % 2 == 0;
             mVerbs = new byte[other.mVerbSize + incVerbs];
@@ -989,8 +1046,64 @@ public class Path implements PathIterable, PathConsumer {
             USAGE_CNT.getAndAdd(this, -1);
         }
 
-        void reset() {
+        void createTransformedCopy(Matrixc matrix, Path dstPath) {
+            if (matrix.isIdentity()) {
+                if (this != dstPath.mPathRef) {
+                    dstPath.mPathRef = RefCnt.create(dstPath.mPathRef, this);
+                }
+                return;
+            }
+
+            boolean keepThisAlive = false;
+            if (!dstPath.mPathRef.unique()) {
+                // If dst and src are the same then we are about to drop our only ref on the common path
+                // ref. Some other thread may have owned src when we checked unique() above but it may not
+                // continue to do so. Add another ref so we continue to be an owner until we're done.
+                if (dstPath.mPathRef == this) {
+                    ref();
+                    keepThisAlive = true;
+                }
+                dstPath.mPathRef = RefCnt.move(dstPath.mPathRef, new PathRef());
+            }
+
+            PathRef dst = dstPath.mPathRef;
+
+            if (this != dst) {
+                dst.mVerbs = Arrays.copyOf(mVerbs, mVerbSize);
+                dst.mVerbSize = mVerbSize;
+                // don't copy, just allocate the points
+                if (dst.mCoords.length < mCoordSize) {
+                    if (dst.mCoords.length == 0) {
+                        dst.mCoords = new float[mCoordSize];
+                    } else {
+                        dst.mCoords = growCoords(dst.mCoords, mCoordSize - dst.mCoords.length);
+                    }
+                }
+                dst.mCoordSize = mCoordSize;
+            }
+            matrix.mapPoints(mCoords, dst.mCoords, mCoordSize >> 1);
+
+            dst.dirtyBounds();
+
+            dst.mSegmentMask = mSegmentMask;
+
+            //TODO GenID, specialized PathType, validation...
+
+            if (keepThisAlive) {
+                unref();
+            }
+        }
+
+        void dirtyBounds() {
             mBounds.set(0, 0, -1, -1);
+        }
+
+        boolean boundsIsDirty() {
+            return !mBounds.isSorted() && mBounds.isFinite();
+        }
+
+        void reset() {
+            dirtyBounds();
             mSegmentMask = 0;
             mVerbSize = 0;
             mCoordSize = 0;
@@ -1000,10 +1113,10 @@ public class Path implements PathIterable, PathConsumer {
             assert incVerbs >= 0 && incCoords >= 0;
             assert incCoords % 2 == 0;
             if (mVerbSize > mVerbs.length - incVerbs) { // prevent overflow
-                mVerbs = growVerbs(mVerbs, incVerbs);
+                mVerbs = growVerbs(mVerbs, incVerbs - mVerbs.length + mVerbSize);
             }
             if (mCoordSize > mCoords.length - incCoords) { // prevent overflow
-                mCoords = growCoords(mCoords, incCoords);
+                mCoords = growCoords(mCoords, incCoords - mCoords.length + mCoordSize);
             }
         }
 
@@ -1022,7 +1135,7 @@ public class Path implements PathIterable, PathConsumer {
             }
         }
 
-        Ref addVerb(byte verb) {
+        PathRef addVerb(byte verb) {
             int coords = switch (verb) {
                 case VERB_MOVE -> 2;
                 case VERB_LINE -> {
@@ -1044,14 +1157,14 @@ public class Path implements PathIterable, PathConsumer {
             return this;
         }
 
-        Ref addPoint(float x, float y) {
+        PathRef addPoint(float x, float y) {
             mCoords[mCoordSize++] = x;
             mCoords[mCoordSize++] = y;
             return this;
         }
 
         void updateBounds() {
-            if (!mBounds.isSorted() && mBounds.isFinite()) {
+            if (boundsIsDirty()) {
                 assert mCoordSize % 2 == 0;
                 mBounds.setBoundsNoCheck(mCoords, 0, mCoordSize >> 1);
             }
@@ -1073,7 +1186,7 @@ public class Path implements PathIterable, PathConsumer {
             if (this == EMPTY) {
                 return 0;
             }
-            long size = 16 + 24 + 16 + 16;
+            long size = 16 + 32 + 16 + 16;
             if (mVerbs != EMPTY_VERBS) {
                 size += 16 + MathUtil.align8(mVerbs.length);
             }
@@ -1101,7 +1214,7 @@ public class Path implements PathIterable, PathConsumer {
             if (this == obj) {
                 return true;
             }
-            if (!(obj instanceof Ref other)) {
+            if (!(obj instanceof PathRef other)) {
                 return false;
             }
             // quick reject
