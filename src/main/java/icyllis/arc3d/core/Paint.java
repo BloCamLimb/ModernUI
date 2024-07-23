@@ -38,6 +38,9 @@ import java.util.Objects;
  * multiple-pass algorithms that alter the drawing geometry, color, and
  * transparency. For instance, {@code Paint} does not directly implement
  * dashing or blur, but contains the objects that do so.
+ * <p>
+ * A {@code Paint} object must be closed or reset if it has {@link Shader},
+ * {@link ColorFilter}, or {@link Blender} installed.
  */
 @SuppressWarnings({"MagicConstant", "unused"})
 public class Paint implements AutoCloseable {
@@ -827,6 +830,24 @@ public class Paint implements AutoCloseable {
      */
     public final void setBlender(@Nullable @SharedPtr Blender blender) {
         mBlender = RefCnt.move(mBlender, blender);
+    }
+
+    /**
+     * Returns PathEffect if set, or null.
+     *
+     * @return PathEffect if previously set, null otherwise
+     */
+    public final PathEffect getPathEffect() {
+        return mPathEffect;
+    }
+
+    /**
+     * Sets PathEffect to pathEffect. Pass null to leave the path geometry unaltered.
+     *
+     * @param pathEffect replace Path with a modification when drawn
+     */
+    public final void setPathEffect(@Nullable PathEffect pathEffect) {
+        mPathEffect = pathEffect;
     }
 
     ///// Utility

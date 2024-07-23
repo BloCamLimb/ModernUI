@@ -22,8 +22,7 @@ package icyllis.arc3d.core.shaders;
 import icyllis.arc3d.core.*;
 import org.jetbrains.annotations.VisibleForTesting;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import javax.annotation.*;
 
 public final class RadialGradient extends Gradient1DShader {
 
@@ -97,6 +96,7 @@ public final class RadialGradient extends Gradient1DShader {
      * @param localMatrix   local matrix
      * @return a gradient shader, or degenerate shader, or null
      */
+    @CheckReturnValue
     @Nullable
     @SharedPtr
     public static Shader makeRadial(float centerX, float centerY,
