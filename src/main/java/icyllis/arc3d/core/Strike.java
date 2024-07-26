@@ -29,6 +29,8 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * The font strike holds the results from {@link ScalerContext}.
  */
+@ApiStatus.Experimental
+//TODO this class may be ref-cnted in the future
 public final class Strike {
 
     // The following are const and need no lock protection.
@@ -94,7 +96,7 @@ public final class Strike {
      * @param glyphID typeface-specified glyph ID
      */
     @Nonnull
-    Glyph getGlyph(int glyphID) {
+    public Glyph getGlyph(int glyphID) {
         return digestFor(Glyph.kDirectMask, glyphID);
     }
 
@@ -121,6 +123,9 @@ public final class Strike {
             glyph.initActions();
             mGlyphs.put(glyphID, glyph);
             mMemoryIncrease += Glyph.kSizeOf;
+            if (glyph.getPath() != null) {
+                mMemoryIncrease += glyph.getPath().estimatedByteSize();
+            }
         }
 
         glyph.setActionFor(actionType, this);
