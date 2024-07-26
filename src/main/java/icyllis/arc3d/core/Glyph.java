@@ -64,9 +64,9 @@ public final class Glyph {
 
     static final int kSizeOf = 48;
 
-    // An atlas consists of chunks, and chunks hold glyphs. The minimum a chunk can be is 512x512.
-    // This means that the maximum size a glyph can be is 512x512.
-    public static final int ATLAS_CHUNK_SIZE = 512;
+    // An atlas consists of plots, and plots hold glyphs. A plot is 512x512.
+    // this means that the maximum size a glyph for mask rendering can be is 512x512.
+    public static final int ATLAS_PLOT_SIZE = 512;
     // The padding needed for bilinear interpolating the glyph when drawing.
     public static final int BILERP_GLYPH_BORDER = 1;
 
@@ -126,6 +126,9 @@ public final class Glyph {
         return mHeight & 0xFFFF;
     }
 
+    /**
+     * Returns the largest dimension ( max(width, height) ).
+     */
     public int getMaxDimension() {
         return Math.max(getWidth(), getHeight());
     }
@@ -300,13 +303,13 @@ public final class Glyph {
             switch (actionType) {
                 case kDirectMask -> {
                     // fits in atlas
-                    if (getMaxDimension() <= ATLAS_CHUNK_SIZE) {
+                    if (getMaxDimension() <= ATLAS_PLOT_SIZE) {
                         action = kAccept_Action;
                     }
                 }
                 case kTransformedMask -> {
                     // fits in atlas
-                    if (getMaxDimension() <= (ATLAS_CHUNK_SIZE - BILERP_GLYPH_BORDER * 2)) {
+                    if (getMaxDimension() <= (ATLAS_PLOT_SIZE - 2 * BILERP_GLYPH_BORDER)) {
                         action = kAccept_Action;
                     }
                 }
