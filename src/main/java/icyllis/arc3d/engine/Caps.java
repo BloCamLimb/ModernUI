@@ -340,6 +340,14 @@ public abstract class Caps {
         return mMaxPreferredRenderTargetSize;
     }
 
+    /**
+     * Maximum 2D/1D texture image dimension.
+     */
+    // OpenGL 3.3 spec      requires a minimum maxTextureSize of 1024
+    // OpenGL ES 3.0 spec   requires a minimum maxTextureSize of 2048
+    // Vulkan 1.0 spec      requires a minimum maxTextureSize of 4096
+    // Vulkan Roadmap 2022  requires a minimum maxTextureSize of 8192
+    // OpenGL 4.0 spec      requires a minimum maxTextureSize of 16384
     public final int maxTextureSize() {
         return mMaxTextureSize;
     }

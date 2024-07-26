@@ -381,7 +381,8 @@ public interface Engine {
     /**
      * Mask formats. Used by the font atlas. Important that these are 0-based.
      * <p>
-     * Using L-shift to get the number of bytes-per-pixel for the specified mask format.
+     * Using {@link #maskFormatBytesPerPixel(int)} to get the number of bytes-per-pixel
+     * for the specified mask format.
      */
     int
             MASK_FORMAT_A8 = 0,     // 1-byte per pixel
@@ -389,6 +390,33 @@ public interface Engine {
             MASK_FORMAT_ARGB = 2;   // 4-bytes per pixel, color format
     int LAST_MASK_FORMAT = MASK_FORMAT_ARGB;
     int MASK_FORMAT_COUNT = LAST_MASK_FORMAT + 1;
+
+    /**
+     * Return the number of bytes-per-pixel for the specified mask format.
+     */
+    static int maskFormatBytesPerPixel(int maskFormat) {
+        assert maskFormat < MASK_FORMAT_COUNT;
+        // A8 returns 1,
+        // A565 returns 2,
+        // ARGB returns 4.
+        return 1 << maskFormat;
+    }
+
+    /**
+     * Return an appropriate color type for the specified mask format.
+     */
+    @ColorInfo.ColorType
+    static int maskFormatToColorType(int maskFormat) {
+        int ct = switch (maskFormat) {
+            case MASK_FORMAT_A8 -> ColorInfo.CT_ALPHA_8;
+            case MASK_FORMAT_A565 -> ColorInfo.CT_RGB_565;
+            case MASK_FORMAT_ARGB -> ColorInfo.CT_RGBA_8888;
+            default -> throw new AssertionError();
+        };
+        // consistency
+        assert maskFormatBytesPerPixel(maskFormat) == ColorInfo.bytesPerPixel(ct);
+        return ct;
+    }
 
     /**
      * Budget types. Used with resources that have a large memory allocation.

@@ -24,6 +24,7 @@ import icyllis.arc3d.engine.*;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 import javax.annotation.Nonnull;
+import java.util.List;
 import java.util.function.Consumer;
 
 public class TaskList implements Consumer<@SharedPtr Task>, AutoCloseable {
@@ -56,6 +57,14 @@ public class TaskList implements Consumer<@SharedPtr Task>, AutoCloseable {
         assert tasks != this;
         mTasks.addAll(tasks.mTasks);
         tasks.mTasks.clear();
+    }
+
+    /**
+     * This method moves the given task list.
+     */
+    public void appendTasks(@Nonnull List<@SharedPtr ? extends Task> tasks) {
+        mTasks.addAll(tasks);
+        tasks.clear();
     }
 
     public int size() {

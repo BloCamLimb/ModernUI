@@ -22,7 +22,7 @@ package icyllis.arc3d.engine;
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.task.Task;
 import icyllis.arc3d.engine.task.TaskList;
-import icyllis.arc3d.granite.RootTask;
+import icyllis.arc3d.granite.*;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -38,11 +38,21 @@ public final class RecordingContext extends Context {
 
     private final TaskList mRootTaskList;
 
+    private final AtlasProvider mAtlasProvider;
+
+    private final DrawAtlas.AtlasTokenTracker mAtlasTokenTracker;
+    private final GlyphStrikeCache mGlyphStrikeCache;
+
     protected RecordingContext(Device device) {
         super(device);
         mImageProxyCache = new ImageProxyCache(this);
 
         mRootTaskList = new TaskList();
+
+        mAtlasProvider = new AtlasProvider(this);
+
+        mAtlasTokenTracker = new DrawAtlas.AtlasTokenTracker();
+        mGlyphStrikeCache = new GlyphStrikeCache();
     }
 
     /**
@@ -109,6 +119,21 @@ public final class RecordingContext extends Context {
         return mUploadBufferManager;
     }
 
+    @ApiStatus.Internal
+    public AtlasProvider getAtlasProvider() {
+        return mAtlasProvider;
+    }
+
+    @ApiStatus.Internal
+    public DrawAtlas.AtlasTokenTracker getAtlasTokenTracker() {
+        return mAtlasTokenTracker;
+    }
+
+    @ApiStatus.Internal
+    public GlyphStrikeCache getGlyphStrikeCache() {
+        return mGlyphStrikeCache;
+    }
+
     public void addTask(@SharedPtr Task task) {
         mRootTaskList.appendTask(task);
     }
@@ -161,6 +186,8 @@ public final class RecordingContext extends Context {
             mRenderTaskManager.destroy();
         }
         mRenderTaskManager = null;
+
+        mAtlasProvider.close();
 
         mRootTaskList.close();
     }

@@ -19,6 +19,9 @@
 
 package icyllis.arc3d.granite;
 
+import icyllis.arc3d.engine.Engine;
+import icyllis.arc3d.engine.RecordingContext;
+
 /**
  * A SubRun represents a method to draw a subregion of a GlyphRun, where
  * GlyphRun represents the shaped text (positioned glyphs) and a strike.
@@ -29,6 +32,24 @@ public class SubRunContainer {
 
     public interface AtlasSubRun {
 
+        /**
+         * Returns the number of visible glyphs.
+         */
+        int getGlyphCount();
+
+        /**
+         * Returns the GPU mask format.
+         */
+        int getMaskFormat();
+
+        /**
+         * Update atlas for glyphs in the given range if needed, returns the number
+         * of glyphs that are updated (may less than end-start if atlas is full).
+         * If an error occurred, returns the bitwise NOT (a negative value).
+         */
+        // This call is not thread safe. It should only be called from a known single-threaded env.
+        int prepareGlyphs(int start, int end,
+                          RecordingContext context);
     }
 
     /**
@@ -37,5 +58,23 @@ public class SubRunContainer {
      */
     public static abstract class SubRun {
         SubRun mNext;
+    }
+
+    public static class DirectMaskSubRun extends SubRun implements AtlasSubRun {
+
+        @Override
+        public int getGlyphCount() {
+            return 0;
+        }
+
+        @Override
+        public int getMaskFormat() {
+            return Engine.MASK_FORMAT_A8;
+        }
+
+        @Override
+        public int prepareGlyphs(int start, int end, RecordingContext context) {
+            return 0;
+        }
     }
 }

@@ -17,24 +17,37 @@
  * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine;
+package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.StrikeDesc;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
+import javax.annotation.Nonnull;
+
+/**
+ * The GPU GlyphStrike holds GPU {@link BakedGlyph Glyphs} for a Strike.
+ */
 public class GlyphStrike {
 
     private final StrikeDesc mStrikeDesc;
     private final Int2ObjectOpenHashMap<BakedGlyph> mGlyphs = new Int2ObjectOpenHashMap<>();
 
-    public GlyphStrike(StrikeDesc strikeDesc) {
-        mStrikeDesc = strikeDesc;
+    /**
+     * <var>desc</var> must be immutable, no copy will be made.
+     */
+    public GlyphStrike(StrikeDesc desc) {
+        mStrikeDesc = desc;
     }
 
+    /**
+     * Find or create Glyph and returns a pointer to it.
+     */
+    @Nonnull
     public BakedGlyph getGlyph(int glyphID) {
         return mGlyphs.computeIfAbsent(glyphID, __ -> new BakedGlyph());
     }
 
+    // read only!!
     public StrikeDesc getStrikeDesc() {
         return mStrikeDesc;
     }

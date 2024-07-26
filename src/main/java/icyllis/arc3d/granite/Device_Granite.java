@@ -244,6 +244,43 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
         drawGeometry(draw, mTmpOpBounds, paint, mSimpleBoxRenderer);
     }
 
+    public void drawAtlasSubRun(SubRunContainer.AtlasSubRun subRun,
+                                float x, float y,
+                                Paint paint) {
+        if (!mContext.getAtlasProvider().getGlyphAtlasManager().initAtlas(
+                subRun.getMaskFormat()
+        )) {
+            return;
+        }
+
+        int subRunEnd = subRun.getGlyphCount();
+        boolean flushed = false;
+        for (int subRunCursor = 0; subRunCursor < subRunEnd;) {
+            int glyphsPrepared = subRun.prepareGlyphs(subRunCursor, subRunEnd,
+                    mContext);
+            if (glyphsPrepared < 0) {
+                // There was a problem allocating the glyph in the atlas.
+                return;
+            }
+            if (glyphsPrepared > 0) {
+                //TODO
+            } else if (flushed) {
+                // Treat as an error.
+                return;
+            }
+            subRunCursor += glyphsPrepared;
+
+            if (subRunCursor < subRunEnd) {
+                // Flush if not all the glyphs are handled because the atlas is out of space.
+                // We flush every Device because the glyphs that are being flushed/referenced are not
+                // necessarily specific to this Device. This addresses both multiple SkSurfaces within
+                // a Recorder, and nested layers.
+                //TODO
+                flushed = true;
+            }
+        }
+    }
+
     private static boolean blender_depends_on_dst(Blender blender,
                                                   boolean srcIsTransparent) {
         BlendMode bm = blender != null ? blender.asBlendMode() : BlendMode.SRC_OVER;
@@ -332,6 +369,8 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
      * {@link Device_Granite}'s {@link RecordingContext}.
      */
     public void flushPendingWork() {
+        mContext.getAtlasProvider().recordUploads(mSDC);
+
         // Clip shapes are depth-only draws, but aren't recorded in the DrawContext until a flush in
         // order to determine the Z values for each element.
         mClipStack.recordDeferredClipDraws();
