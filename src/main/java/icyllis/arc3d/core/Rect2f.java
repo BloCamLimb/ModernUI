@@ -125,16 +125,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * @return true if no member is infinite or NaN
      */
     public final boolean isFinite() {
-        return (0 * mLeft * mTop * mRight * mBottom) == 0;
-    }
-
-    /**
-     * Returns true if all values in the rectangle are finite.
-     *
-     * @return true if no member is infinite or NaN
-     */
-    public static boolean isFinite(float left, float top, float right, float bottom) {
-        return (0 * left * top * right * bottom) == 0;
+        return MathUtil.isFinite(mLeft, mTop, mRight, mBottom);
     }
 
     /**
@@ -828,7 +819,7 @@ public non-sealed class Rect2f implements Rect2fc {
      */
     public static boolean rectsOverlap(Rect2fc a, Rect2fc b) {
         assert (!a.isFinite() || (a.left() <= a.right() && a.top() <= a.bottom()));
-        assert (!isFinite(b.left(), b.top(), b.right(), b.bottom()) || (b.left() <= b.right() && b.top() <= b.bottom()));
+        assert (!MathUtil.isFinite(b.left(), b.top(), b.right(), b.bottom()) || (b.left() <= b.right() && b.top() <= b.bottom()));
         return a.right() > b.left() && a.bottom() > b.top() && b.right() > a.left() && b.bottom() > a.top();
     }
 
@@ -838,7 +829,7 @@ public non-sealed class Rect2f implements Rect2fc {
      */
     public static boolean rectsTouchOrOverlap(Rect2fc a, Rect2fc b) {
         assert (!a.isFinite() || (a.left() <= a.right() && a.top() <= a.bottom()));
-        assert (!isFinite(b.left(), b.top(), b.right(), b.bottom()) || (b.left() <= b.right() && b.top() <= b.bottom()));
+        assert (!MathUtil.isFinite(b.left(), b.top(), b.right(), b.bottom()) || (b.left() <= b.right() && b.top() <= b.bottom()));
         return a.right() >= b.left() && a.bottom() >= b.top() && b.right() >= a.left() && b.bottom() >= a.top();
     }
 

@@ -480,7 +480,7 @@ public class RoundRect {
             return;
         }
 
-        if (!Rect2f.isFinite(leftRad, topRad, rightRad, bottomRad)) {
+        if (!MathUtil.isFinite(leftRad, topRad, rightRad, bottomRad)) {
             // degenerate into a simple rect
             Arrays.fill(mRadii, 0);
             mType = kRect_Type;
@@ -552,7 +552,7 @@ public class RoundRect {
      * initialized and false is returned. Otherwise, just Rect is initialized and true is returned.
      */
     private boolean initRect(float left, float top, float right, float bottom) {
-        if (Rect2f.isFinite(left, top, right, bottom)) {
+        if (MathUtil.isFinite(left, top, right, bottom)) {
             // set to sorted
             mLeft = Math.min(left, right);
             mTop = Math.min(top, bottom);
@@ -780,7 +780,7 @@ public class RoundRect {
     private static boolean are_rect_and_radii_valid(
             float l, float t, float r, float b, float[] radii
     ) {
-        if (!Rect2f.isFinite(l, t, r, b)) {
+        if (!MathUtil.isFinite(l, t, r, b)) {
             return false;
         }
         if (!(l <= r && t <= b)) {
