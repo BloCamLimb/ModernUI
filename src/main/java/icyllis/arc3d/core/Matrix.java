@@ -1084,7 +1084,7 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
         double c = m12 * m24 - m14 * m22;
         // calc the determinant
         double det = a * m44 + b * m42 + c * m41;
-        if (det == 0) {
+        if (MathUtil.isApproxZero((float) det, 1.0e-15f)) {
             return false;
         }
         // calc algebraic cofactor and transpose
@@ -1098,9 +1098,11 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
         float f14 = (float) (c * det);
         float f24 = (float) (b * det);
         float f44 = (float) (a * det);
-        if (0f * f11 * f12 * f14 *
-                f21 * f22 * f24 *
-                f41 * f42 * f44 != 0) {
+        if (!MathUtil.isFinite(
+                f11, f12, f14,
+                f21, f22, f24,
+                f41, f42, f44
+        )) {
             // not finite, NaN or infinity
             return false;
         }
@@ -1122,7 +1124,7 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
     private boolean invertAffine(Matrix dest) {
         // not perspective
         double det = m11 * m22 - m12 * m21;
-        if (det == 0) {
+        if (MathUtil.isApproxZero((float) det, 1.0e-15f)) {
             return false;
         }
         det = 1.0f / det;
@@ -1132,9 +1134,11 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
         float f22 = (float) (m11 * det);
         float f41 = (float) ((m21 * m42 - m41 * m22) * det); // 13
         float f42 = (float) ((m41 * m12 - m11 * m42) * det); // -23
-        if (0f * f11 * f12 *
-                f21 * f22 *
-                f41 * f42 != 0) {
+        if (!MathUtil.isFinite(
+                f11, f12,
+                f21, f22,
+                f41, f42
+        )) {
             // not finite, NaN or infinity
             return false;
         }
@@ -2124,10 +2128,10 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
      * @return true if matrix has only finite elements
      */
     public boolean isFinite() {
-        // product will either be NaN or 0, if product is NaN, this check will return false
-        return 0f * m11 * m12 * m14 *
-                m21 * m22 * m24 *
-                m41 * m42 * m44 == 0;
+        return MathUtil.isFinite(
+                m11, m12, m14,
+                m21, m22, m24,
+                m41, m42, m44);
     }
 
     private static int floatTo2sCompliment(float x) {

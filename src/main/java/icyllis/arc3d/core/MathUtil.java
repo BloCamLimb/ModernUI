@@ -437,6 +437,68 @@ public class MathUtil {
     }
 
     /**
+     * Returns true if all values are finite.
+     *
+     * @return true if no member is infinite or NaN
+     */
+    @SuppressWarnings("PointlessArithmeticExpression")
+    public static boolean isFinite(float v0, float v1, float v2, float v3) {
+        float prod = v0 - v0;
+        prod = prod * v1 * v2 * v3;
+        // At this point, `prod` will either be NaN or 0.
+        return prod == prod;
+    }
+
+    /**
+     * Returns true if all values are finite.
+     *
+     * @return true if no member is infinite or NaN
+     */
+    @SuppressWarnings("PointlessArithmeticExpression")
+    public static boolean isFinite(float v0, float v1, float v2,
+                                   float v3, float v4, float v5) {
+        float prod = v0 - v0;
+        prod = prod * v1 * v2 * v3 * v4 * v5;
+        // At this point, `prod` will either be NaN or 0.
+        return prod == prod;
+    }
+
+    /**
+     * Returns true if all values are finite.
+     *
+     * @return true if no member is infinite or NaN
+     */
+    @SuppressWarnings("PointlessArithmeticExpression")
+    public static boolean isFinite(float v0, float v1, float v2,
+                                   float v3, float v4, float v5,
+                                   float v6, float v7, float v8) {
+        float prod = v0 - v0;
+        prod = prod * v1 * v2 * v3 * v4 * v5 * v6 * v7 * v8;
+        // At this point, `prod` will either be NaN or 0.
+        return prod == prod;
+    }
+
+    /**
+     * Returns true if all values are finite.
+     *
+     * @return true if no member is infinite or NaN
+     */
+    @SuppressWarnings("PointlessArithmeticExpression")
+    public static boolean isFinite(float[] values, int offset, int count) {
+        assert count > 0;
+        // Subtracting a value from itself will result in zero, except for NAN or ±Inf, which make NAN.
+        // Multiplying a group of values against zero will result in zero for each product, except for
+        // NAN or ±Inf, which will result in NAN and continue resulting in NAN for the rest of the elements.
+        float v0 = values[offset];
+        float prod = v0 - v0;
+        while (--count != 0) {
+            prod *= values[++offset];
+        }
+        // At this point, `prod` will either be NaN or 0.
+        return prod == prod;
+    }
+
+    /**
      * Aligns {@code a} up to 2 (half-word).
      */
     public static int align2(int a) {
