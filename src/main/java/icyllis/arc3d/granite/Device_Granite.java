@@ -41,10 +41,6 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
 
     private final BoundsManager mBoundsManager;
 
-    private GeometryRenderer mSimpleBoxRenderer = new GeometryRenderer(
-            "SimpleBoxStep", new AnalyticSimpleBoxStep(true)
-    );
-
     private Device_Granite(RecordingContext context, SurfaceDrawContext sdc) {
         super(sdc.getImageInfo());
         mContext = context;
@@ -210,7 +206,8 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
         shape.setLine(x0, y0, x1, y1, cap, width);
         draw.mGeometry = shape;
         shape.getBounds(mTmpOpBounds);
-        drawGeometry(draw, mTmpOpBounds, paint, mSimpleBoxRenderer);
+        drawGeometry(draw, mTmpOpBounds, paint,
+                mContext.getRendererProvider().getSimpleBox(paint.isAntiAlias()));
     }
 
     @Override
@@ -221,7 +218,8 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
         shape.setRect(r);
         draw.mGeometry = shape;
         mTmpOpBounds.set(r);
-        drawGeometry(draw, mTmpOpBounds, paint, mSimpleBoxRenderer);
+        drawGeometry(draw, mTmpOpBounds, paint,
+                mContext.getRendererProvider().getSimpleBox(paint.isAntiAlias()));
     }
 
     @Override
@@ -232,7 +230,8 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
         shape.setEllipse(cx - radius, cy - radius, cx + radius, cy + radius);
         draw.mGeometry = shape;
         shape.getBounds(mTmpOpBounds);
-        drawGeometry(draw, mTmpOpBounds, paint, mSimpleBoxRenderer);
+        drawGeometry(draw, mTmpOpBounds, paint,
+                mContext.getRendererProvider().getSimpleBox(paint.isAntiAlias()));
     }
 
     @Override
@@ -241,7 +240,8 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
         draw.mTransform = getLocalToDevice();
         draw.mGeometry = new SimpleShape(rr);
         rr.getRect(mTmpOpBounds);
-        drawGeometry(draw, mTmpOpBounds, paint, mSimpleBoxRenderer);
+        drawGeometry(draw, mTmpOpBounds, paint,
+                mContext.getRendererProvider().getSimpleBox(paint.isAntiAlias()));
     }
 
     public void drawAtlasSubRun(SubRunContainer.AtlasSubRun subRun,

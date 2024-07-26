@@ -90,7 +90,7 @@ public final class PipelineKey_old extends KeyBuilder {
      */
     static void genGPKey(GeometryStep geomProc, KeyBuilder b) {
         // We allow 32 bits for the class id
-        b.addInt32(geomProc.classID(), "gpClassID");
+        b.addInt32(geomProc.uniqueID(), "gpClassID");
 
         geomProc.appendToKey(b);
         geomProc.appendAttributesToKey(b);

@@ -56,7 +56,6 @@ public class HardXferProc extends TransferProcessor {
     }
 
     @Nonnull
-    @Override
     public String name() {
         return "Hardware Transfer Processor";
     }

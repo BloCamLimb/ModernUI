@@ -17,9 +17,20 @@
  * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine;
+package icyllis.arc3d.granite.geom;
 
-public class AtlasLocator {
-
-    private long mChunkLocator;
+/**
+ * This technology draws ellipse (fill, stroke, stroke and fill), round rectangles
+ * with elliptical corners (fill, stroke, stroke and fill; four corners have the
+ * same radius), supports stroke direction (inside, center, outside) using analytic
+ * method.
+ * <p>
+ * Always use instanced rendering, without per-vertex data, without index buffer,
+ * without uniforms, emits coverage. Supports solid color, supports over-stroking,
+ * supports device-independent antialiasing, supports 32 bit-per-channel color input,
+ * support ellipses in local coordinates, supports hard-edge coverage (no AA), supports
+ * any local-to-device transforms.
+ */
+//TODO
+public class AnalyticEllipseStep {
 }

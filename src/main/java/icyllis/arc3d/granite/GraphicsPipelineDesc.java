@@ -147,7 +147,7 @@ public final class GraphicsPipelineDesc extends PipelineDesc {
 
     @Override
     public int hashCode() {
-        int result = mGeometryStep.classID();
+        int result = mGeometryStep.uniqueID();
         result = 31 * result + mPaintParamsKey.hashCode();
         result = 31 * result + Objects.hashCode(mFinalBlendMode);
         return result;
@@ -157,7 +157,7 @@ public final class GraphicsPipelineDesc extends PipelineDesc {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o instanceof GraphicsPipelineDesc desc) {
-            return mGeometryStep.classID() == desc.mGeometryStep.classID() &&
+            return mGeometryStep.uniqueID() == desc.mGeometryStep.uniqueID() &&
                     Objects.equals(mPaintParamsKey, desc.mPaintParamsKey) &&
                     Objects.equals(mFinalBlendMode, desc.mFinalBlendMode);
         }

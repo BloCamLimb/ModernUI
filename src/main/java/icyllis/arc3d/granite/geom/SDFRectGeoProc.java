@@ -88,16 +88,10 @@ public class SDFRectGeoProc extends GeometryStep {
     private final int mFlags;
 
     public SDFRectGeoProc(int flags) {
-        super(SDFRect_GeoProc_ClassID, VERTEX_ATTRIBS, INSTANCE_ATTRIBS, 0, PrimitiveType.TriangleStrip, null);
+        super("SDFRectGeoProc", "", VERTEX_ATTRIBS, INSTANCE_ATTRIBS, 0, PrimitiveType.TriangleStrip, null);
         mFlags = flags;
         /*setVertexAttributes(0x1);
         setInstanceAttributes(0x3 | ((flags & 0x6) << 1));*/
-    }
-
-    @Nonnull
-    @Override
-    public String name() {
-        return "SDFRect_GeomProc";
     }
 
     @Override

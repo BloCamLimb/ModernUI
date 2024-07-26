@@ -94,7 +94,9 @@ public class AnalyticSimpleBoxStep extends GeometryStep {
     private final boolean mAA;
 
     public AnalyticSimpleBoxStep(boolean aa) {
-        super(RoundRect_GeoProc_ClassID, null, INSTANCE_ATTRIBS,
+        super("AnalyticSimpleBoxStep",
+                aa ? "AA" : "NoAA",
+                null, INSTANCE_ATTRIBS,
                 aa
                         ? (FLAG_PERFORM_SHADING | FLAG_EMIT_COVERAGE | FLAG_OUTSET_BOUNDS_FOR_AA |
                         FLAG_HANDLE_SOLID_COLOR)
@@ -104,12 +106,6 @@ public class AnalyticSimpleBoxStep extends GeometryStep {
                 CommonDepthStencilSettings.kDirectDepthGreaterPass
         );
         mAA = aa;
-    }
-
-    @Nonnull
-    @Override
-    public String name() {
-        return "AnalyticSimpleBox_GeomStep";
     }
 
     @Override
