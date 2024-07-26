@@ -19,7 +19,6 @@
 
 package icyllis.arc3d.engine;
 
-import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
 
 /**
@@ -45,19 +44,5 @@ public abstract class Processor {
 
     protected Processor(int classID) {
         mClassID = classID;
-    }
-
-    /**
-     * Human-meaningful string to identify this processor; may be embedded in generated shader
-     * code and must be a legal AkSL identifier prefix.
-     */
-    @Nonnull
-    public abstract String name();
-
-    /**
-     * @return unique ID that identifies this processor class.
-     */
-    public final int classID() {
-        return mClassID;
     }
 }

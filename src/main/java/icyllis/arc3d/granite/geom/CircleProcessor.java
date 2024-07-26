@@ -83,7 +83,7 @@ public class CircleProcessor extends GeometryStep {
 
     public CircleProcessor(boolean stroke, boolean clipPlane, boolean isectPlane,
                            boolean unionPlane, boolean roundCaps) {
-        super(Circle_Geom_ClassID, VERTEX_FORMAT, INSTANCE_FORMAT, 0, PrimitiveType.TriangleList, null);
+        super("Circle_GeometryProcessor", "", VERTEX_FORMAT, INSTANCE_FORMAT, 0, PrimitiveType.TriangleList, null);
         assert (!roundCaps || (stroke && clipPlane));
         int instanceMask = (clipPlane ? 1 << 1 : 0) |
                 (isectPlane ? 1 << 2 : 0) |
@@ -92,12 +92,6 @@ public class CircleProcessor extends GeometryStep {
         mFlags = (stroke ? 1 : 0) | instanceMask;
         /*setVertexAttributes(0x3);
         setInstanceAttributes(0x1 | instanceMask | 0x20);*/
-    }
-
-    @Nonnull
-    @Override
-    public String name() {
-        return "Circle_GeometryProcessor";
     }
 
     @Override

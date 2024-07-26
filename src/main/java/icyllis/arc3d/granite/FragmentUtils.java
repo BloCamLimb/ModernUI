@@ -28,6 +28,9 @@ import javax.annotation.Nullable;
 /**
  * Build {@link icyllis.arc3d.engine.Key PaintParamsKey} and collect
  * uniform data and texture sampler desc.
+ *
+ * @see ShaderCodeSource
+ * @see FragmentStage
  */
 public class FragmentUtils {
 

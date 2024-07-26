@@ -21,6 +21,7 @@ package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SurfaceCharacterization;
+import icyllis.arc3d.granite.RendererProvider;
 import org.jetbrains.annotations.ApiStatus;
 import org.slf4j.Logger;
 
@@ -157,6 +158,11 @@ public abstract sealed class Context extends RefCnt
     @ApiStatus.Internal
     public final SharedResourceCache getSharedResourceCache() {
         return mDevice.getSharedResourceCache();
+    }
+
+    @ApiStatus.Internal
+    public final RendererProvider getRendererProvider() {
+        return mDevice.getRendererProvider();
     }
 
     public final Logger getLogger() {

@@ -22,6 +22,7 @@ package icyllis.arc3d.engine;
 import icyllis.arc3d.compiler.ShaderCompiler;
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.ops.OpsTask;
+import icyllis.arc3d.granite.RendererProvider;
 import icyllis.arc3d.granite.ShaderCodeSource;
 import org.jetbrains.annotations.ApiStatus;
 import org.slf4j.Logger;
@@ -74,6 +75,7 @@ public abstract class Device implements Engine {
     private ThreadSafeCache mThreadSafeCache;
     private SharedResourceCache mSharedResourceCache;
     private ShaderCodeSource mShaderCodeSource;
+    RendererProvider mRendererProvider;
 
     private final AtomicBoolean mDiscarded = new AtomicBoolean(false);
 
@@ -226,6 +228,10 @@ public abstract class Device implements Engine {
 
     public final ShaderCodeSource getShaderCodeSource() {
         return mShaderCodeSource;
+    }
+
+    public final RendererProvider getRendererProvider() {
+        return mRendererProvider;
     }
 
     /**

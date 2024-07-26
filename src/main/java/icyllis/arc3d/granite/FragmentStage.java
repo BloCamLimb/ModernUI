@@ -19,7 +19,8 @@
 
 package icyllis.arc3d.granite;
 
-import icyllis.arc3d.engine.*;
+import icyllis.arc3d.engine.Engine;
+import icyllis.arc3d.engine.ShaderVar;
 import icyllis.arc3d.granite.shading.UniformHandler;
 
 import javax.annotation.Nonnull;
@@ -27,11 +28,12 @@ import javax.annotation.concurrent.Immutable;
 import java.util.Formatter;
 
 /**
- * Represents a substage of a fragment shader.
+ * Represents a substage of a fragment shader, providing custom shader code to the
+ * Arc3D shading pipeline. Managed by {@link ShaderCodeSource}.
  */
 //TODO
 @Immutable
-public class FragmentStage extends Processor {
+public class FragmentStage {
 
     /**
      * Builtin Code Snippet ID, most are from Skia Graphite
@@ -118,7 +120,6 @@ public class FragmentStage extends Processor {
                          Uniform[] uniforms, Sampler[] samplers,
                          GenerateExpression expressionGenerator,
                          int numChildren) {
-        super(99);
         mName = name;
         mRequirementFlags = requirementFlags;
         mStaticFunctionName = staticFunctionName;
@@ -130,7 +131,6 @@ public class FragmentStage extends Processor {
     }
 
     @Nonnull
-    @Override
     public String name() {
         return mName;
     }

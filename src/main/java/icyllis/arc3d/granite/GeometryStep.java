@@ -29,6 +29,7 @@ import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
 import java.util.Formatter;
 import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static icyllis.arc3d.engine.Engine.*;
 import static icyllis.arc3d.granite.shading.UniformHandler.SamplerHandle;
@@ -57,7 +58,7 @@ import static icyllis.arc3d.granite.shading.UniformHandler.SamplerHandle;
  * the second case).
  */
 @Immutable
-public abstract class GeometryStep extends Processor {
+public abstract class GeometryStep {
 
     /**
      * GPs that need to use either float or ubyte colors can just call this to get a correctly
@@ -115,6 +116,26 @@ public abstract class GeometryStep extends Processor {
      */
     public static final int FLAG_HANDLE_SOLID_COLOR = 1 << 7;
 
+    private static final AtomicInteger sNextID = new AtomicInteger(0);
+
+    //@formatter:off
+    private static int nextID() {
+        // same as AtomicInteger.updateAndGet
+        for (;;) {
+            final int value = sNextID.get();
+            // Not worried about overflow since each Context won't have that many RenderSteps, so even if
+            // it wraps back to 0, that RenderStep will not be in the same Context as the original 0.
+            final int newValue = value + 1;
+            if (sNextID.weakCompareAndSetVolatile(value, newValue)) {
+                return value;
+            }
+        }
+    }
+    //@formatter:on
+
+    private final int mUniqueID;
+    private final String mName;
+
     private final VertexInputLayout mInputLayout;
 
     private final int mVertexBinding;
@@ -127,13 +148,18 @@ public abstract class GeometryStep extends Processor {
     private final byte mPrimitiveType;
     private final DepthStencilSettings mDepthStencilSettings;
 
-    protected GeometryStep(int classID,
+    protected GeometryStep(@Nonnull String className, @Nonnull String variantName,
                            @Nullable VertexInputLayout.AttributeSet vertexAttributes,
                            @Nullable VertexInputLayout.AttributeSet instanceAttributes,
                            int flags,
                            byte primitiveType,
                            DepthStencilSettings depthStencilSettings) {
-        super(classID);
+        mUniqueID = nextID();
+        if (variantName.isEmpty()) {
+            mName = className;
+        } else {
+            mName = className + "[" + variantName + "]";
+        }
         int binding = 0;
         if (vertexAttributes != null) {
             mVertexBinding = binding++;
@@ -168,6 +194,22 @@ public abstract class GeometryStep extends Processor {
         mFlags = flags;
         mPrimitiveType = primitiveType;
         mDepthStencilSettings = depthStencilSettings;
+    }
+
+    /**
+     * Human-meaningful string to identify this processor; may be embedded in generated shader
+     * code and must be a legal AkSL identifier prefix.
+     */
+    @Nonnull
+    public final String name() {
+        return mName;
+    }
+
+    /**
+     * @return unique ID that identifies this processor class.
+     */
+    public final int uniqueID() {
+        return mUniqueID;
     }
 
     /**

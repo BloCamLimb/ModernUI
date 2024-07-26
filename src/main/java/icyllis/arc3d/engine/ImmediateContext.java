@@ -21,6 +21,7 @@ package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.RawPtr;
 import icyllis.arc3d.engine.task.Task;
+import icyllis.arc3d.granite.RendererProvider;
 import icyllis.arc3d.vulkan.VkBackendContext;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -153,6 +154,7 @@ public final class ImmediateContext extends Context {
             return false;
         }
         mQueueManager.mContext = this;
+        mDevice.mRendererProvider = new RendererProvider(getCaps());
 
         //assert getThreadSafeCache() != null;
 
