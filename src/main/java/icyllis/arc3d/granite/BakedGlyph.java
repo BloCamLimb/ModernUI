@@ -17,34 +17,27 @@
  * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine;
+package icyllis.arc3d.granite;
 
-import icyllis.arc3d.core.RawPtr;
-
-import javax.annotation.Nullable;
+import icyllis.arc3d.core.Glyph;
+import icyllis.arc3d.core.Mask;
+import icyllis.arc3d.engine.Engine;
 
 /**
- * Manages all baked glyphs and their texture atlases.
+ * This class holds information for a glyph about its pre-rendered image in a
+ * GPU texture.
  */
-public class GlyphAtlasManager {
+public class BakedGlyph extends DrawAtlas.AtlasLocator {
 
-    private final DrawAtlas[] mAtlases = new DrawAtlas[Engine.MASK_FORMAT_COUNT];
-
-    @Nullable
-    @RawPtr
-    public ImageViewProxy getCurrentTexture(int maskFormat) {
-        var atlas = getAtlas(maskFormat);
-        if (atlas != null) {
-            return atlas.getTexture();
-        }
-        return null;
+    public BakedGlyph() {
     }
 
-    public boolean hasGlyph(int maskFormat, AtlasLocator glyph) {
-        return false;
-    }
-
-    private DrawAtlas getAtlas(int maskFormat) {
-        return mAtlases[maskFormat];
+    public static int chooseMaskFormat(Glyph glyph) {
+        // promote B/W to Alpha8
+        return switch (glyph.getMaskFormat()) {
+            case Mask.kBW_Format, Mask.kA8_Format -> Engine.MASK_FORMAT_A8;
+            case Mask.kARGB32_Format -> Engine.MASK_FORMAT_ARGB;
+            default -> throw new AssertionError();
+        };
     }
 }

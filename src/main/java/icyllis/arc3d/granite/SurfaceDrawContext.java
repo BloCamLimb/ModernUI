@@ -21,8 +21,7 @@ package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.engine.task.Task;
-import icyllis.arc3d.engine.task.TaskList;
+import icyllis.arc3d.engine.task.*;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 import javax.annotation.Nullable;
@@ -42,8 +41,12 @@ public final class SurfaceDrawContext implements AutoCloseable {
     private TaskList mDrawTaskList;
 
     private Matrix4 mLastTransform; // for deduplication
-    private final ObjectArrayList<Draw> mPendingDraws = new ObjectArrayList<>();
+    private final ObjectArrayList<Draw> mPendingDraws =
+            new ObjectArrayList<>();
     private int mNumSteps;
+
+    private final ObjectArrayList<@SharedPtr ImageUploadTask> mPendingUploads =
+            new ObjectArrayList<>();
 
     // Load and store information for the current pending draws.
     private byte mPendingLoadOp = Engine.LoadOp.kLoad;
@@ -96,6 +99,19 @@ public final class SurfaceDrawContext implements AutoCloseable {
                 targetView,
                 writeSwizzle,
                 deviceInfo);
+    }
+
+    /**
+     * Destructs this context.
+     */
+    @Override
+    public void close() {
+        mReadView.unref();
+        mDrawTaskList.close();
+        mPendingDraws.forEach(Draw::close);
+        mPendingDraws.clear();
+        mPendingUploads.forEach(RefCnt::unref);
+        mPendingUploads.clear();
     }
 
     /**
@@ -181,11 +197,7 @@ public final class SurfaceDrawContext implements AutoCloseable {
 
     public void recordDraw(Draw draw) {
         assert !draw.mDrawBounds.isEmpty();
-        assert !draw.mScissorRect.isEmpty() &&
-                draw.mScissorRect.left() >= 0 &&
-                draw.mScissorRect.top() >= 0 &&
-                draw.mScissorRect.right() <= mImageInfo.width() &&
-                draw.mScissorRect.bottom() <= mImageInfo.height();
+        assert new Rect2i(0, 0, mImageInfo.width(), mImageInfo.height()).contains(draw.mScissorRect);
         assert ((draw.mRenderer.depthStencilFlags() & Engine.DepthStencilFlags.kStencil) == 0 ||
                 DrawOrder.getStencilIndex(draw.mDrawOrder) != DrawOrder.MIN_VALUE);
 
@@ -195,14 +207,50 @@ public final class SurfaceDrawContext implements AutoCloseable {
         mNumSteps += draw.mRenderer.numSteps();
     }
 
+    public boolean recordUpload(RecordingContext context,
+                                @SharedPtr ImageViewProxy imageViewProxy,
+                                int srcColorType, int srcAlphaType, ColorSpace srcColorSpace,
+                                int dstColorType, int dstAlphaType, ColorSpace dstColorSpace,
+                                ImageUploadTask.MipLevel[] levels, Rect2ic dstRect,
+                                ImageUploadTask.UploadCondition condition) {
+        assert new Rect2i(0, 0, imageViewProxy.getWidth(), imageViewProxy.getHeight()).contains(dstRect);
+        @SharedPtr
+        ImageUploadTask uploadTask = ImageUploadTask.make(
+                context,
+                imageViewProxy, // move
+                srcColorType, srcAlphaType, srcColorSpace,
+                dstColorType, dstAlphaType, dstColorSpace,
+                levels,
+                dstRect,
+                condition
+        );
+        if (uploadTask == null) {
+            return false;
+        }
+        mPendingUploads.add(uploadTask); // move
+        return true;
+    }
+
     public void recordDependency(@SharedPtr Task task) {
+        assert task != null;
+        // Adding `task` to the current DrawTask directly means that it will execute after any previous
+        // dependent tasks and after any previous calls to flush(), but everything else that's being
+        // collected on the DrawContext will execute after `task` once the next flush() is performed.
         mDrawTaskList.appendTask(task);
     }
 
     public void flush(RecordingContext context) {
+        if (!mPendingUploads.isEmpty()) {
+            mDrawTaskList.appendTasks(mPendingUploads);
+            // The appendTasks() steals the collected upload instances, automatically resetting this list
+            assert mPendingUploads.isEmpty();
+        }
 
         assert mPendingDraws.isEmpty() == (mNumSteps == 0);
         if (mPendingDraws.isEmpty() && mPendingLoadOp != Engine.LoadOp.kClear) {
+            // Nothing will be rasterized to the target that warrants a RenderPassTask, but we preserve
+            // any added uploads or compute tasks since those could also affect the target w/o
+            // rasterizing anything directly.
             return;
         }
 
@@ -247,17 +295,6 @@ public final class SurfaceDrawContext implements AutoCloseable {
         DrawTask task = new DrawTask(RefCnt.create(mReadView), mDrawTaskList);
         mDrawTaskList = new TaskList();
         return task;
-    }
-
-    /**
-     * Destructs this context.
-     */
-    @Override
-    public void close() {
-        mReadView.unref();
-        mDrawTaskList.close();
-        mPendingDraws.forEach(Draw::close);
-        mPendingDraws.clear();
     }
 
     private Matrix4c getStableTransform(Matrix4c transform) {

@@ -17,7 +17,26 @@
  * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine;
+package icyllis.arc3d.granite;
 
-public class BakedGlyph {
+import icyllis.arc3d.core.StrikeDesc;
+
+import javax.annotation.Nonnull;
+import java.util.HashMap;
+
+/**
+ * GlyphStrikeCache manages strikes which are indexed by a Strike. These strikes can then be
+ * used to generate individual Glyph Masks.
+ */
+public class GlyphStrikeCache {
+
+    private final HashMap<StrikeDesc, GlyphStrike> mCache = new HashMap<>();
+
+    /**
+     * <var>desc</var> must be immutable, no copy will be made.
+     */
+    @Nonnull
+    public GlyphStrike findOrCreateStrike(StrikeDesc desc) {
+        return mCache.computeIfAbsent(desc, GlyphStrike::new);
+    }
 }
