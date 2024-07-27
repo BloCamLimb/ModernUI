@@ -51,8 +51,8 @@ public final class Glyph {
             kTransformedMask = 2,   // bilinear sampling
             kPath = 4,              // draw path
             kDrawable = 6,          // custom draw TODO not implement yet
-            kSDF = 8,               //TODO not implement yet
-            kMSDF = 10;             //TODO not implement yet
+            kSDF = 8,               // single-channel SDF TODO not implement yet
+            kMSDF = 10;             // multi-channel SDF TODO not implement yet
 
     private static final int kMaxGlyphWidth = 1 << 13;
 

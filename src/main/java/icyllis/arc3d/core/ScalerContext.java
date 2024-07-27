@@ -49,7 +49,7 @@ public abstract class ScalerContext {
         typeface.onFilterStrikeDesc(mDesc);
 
         mTypeface = typeface;
-        mGenerateImageFromPath = mDesc.getFrameWidth() > 0;
+        mGenerateImageFromPath = mDesc.getFrameWidth() >= 0;
     }
 
     public final Typeface getTypeface() {
@@ -228,7 +228,7 @@ public abstract class ScalerContext {
                         (mDesc.getFlags() & StrikeDesc.kFrameAndFill_Flag) != 0);
                 // glyphs are always closed contours, so cap type is ignored,
                 // so we just pass something.
-                stroke.setStrokeParams(mDesc.getStrokeCap(),
+                stroke.setStrokeParams(Paint.CAP_BUTT,
                         mDesc.getStrokeJoin(),
                         mDesc.getMiterLimit());
             }
