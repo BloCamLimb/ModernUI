@@ -155,7 +155,7 @@ public class GlyphAtlasManager extends DrawAtlas.AtlasGenerationCounter
                 MemoryUtil.memSet(dst + ((long) y * dstRB), 0, srcRB);
             }
             // Advance in one row and one column.
-            dst = dst + (srcRB + bytesPerPixel) * Glyph.BILERP_GLYPH_BORDER;
+            dst = dst + (dstRB + bytesPerPixel) * Glyph.BILERP_GLYPH_BORDER;
             get_packed_glyph_image(glyph, maskFormat, dst, dstRB);
             bakedGlyph.insetRect(Glyph.BILERP_GLYPH_BORDER);
         }

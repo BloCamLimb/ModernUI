@@ -192,7 +192,7 @@ public class DrawAtlas implements AutoCloseable {
 
         public void setLocation(int pageIndex, int plotIndex, long generation) {
             assert pageIndex < MAX_PAGES;
-            assert plotIndex < MAX_PAGES;
+            assert plotIndex < MAX_PLOTS;
             assert generation < (1L << 48);
             loc = ((long) pageIndex << 56) | ((long) plotIndex << 48) | generation;
         }
@@ -1096,12 +1096,13 @@ public class DrawAtlas implements AutoCloseable {
         if (desc == null) {
             return false;
         }
-        short swizzle = caps.getReadSwizzle(desc, mColorType);
+        // Remember that for DrawAtlas, we do not use texture swizzle, then the
+        // corresponding geometry step must handle the swizzle in shader code
         mPages[mNumActivePages].mTexture = ImageViewProxy.make(
                 context,
                 desc,
                 Engine.SurfaceOrigin.kUpperLeft,
-                swizzle,
+                Swizzle.RGBA,
                 true,
                 mLabel
         );
