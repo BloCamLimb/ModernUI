@@ -32,24 +32,29 @@ public final class GraphicsPipelineDesc extends PipelineDesc {
     private Key mPaintParamsKey;
     @Nullable
     private BlendMode mFinalBlendMode;
+    private boolean mUseFastSolidColor;
 
     public GraphicsPipelineDesc() {
     }
 
     public GraphicsPipelineDesc(GeometryStep geometryStep,
                                 Key paintParamsKey,
-                                @Nullable BlendMode finalBlendMode) {
+                                @Nullable BlendMode finalBlendMode,
+                                boolean useFastSolidColor) {
         mGeometryStep = geometryStep;
         mPaintParamsKey = paintParamsKey;
         mFinalBlendMode = finalBlendMode;
+        mUseFastSolidColor = useFastSolidColor;
     }
 
     public GraphicsPipelineDesc set(GeometryStep geometryStep,
                                     KeyBuilder paintParamsKey,
-                                    @Nullable BlendMode finalBlendMode) {
+                                    @Nullable BlendMode finalBlendMode,
+                                    boolean useFastSolidColor) {
         mGeometryStep = geometryStep;
         mPaintParamsKey = paintParamsKey;
         mFinalBlendMode = finalBlendMode;
+        mUseFastSolidColor = useFastSolidColor;
         return this;
     }
 
@@ -59,6 +64,10 @@ public final class GraphicsPipelineDesc extends PipelineDesc {
 
     public Key getPaintParamsKey() {
         return mPaintParamsKey;
+    }
+
+    public boolean usesFastSolidColor() {
+        return mUseFastSolidColor;
     }
 
     private FragmentNode createNode(ShaderCodeSource codeSource,
@@ -140,7 +149,8 @@ public final class GraphicsPipelineDesc extends PipelineDesc {
     public GraphicsPipelineDesc copy() {
         if (mPaintParamsKey instanceof KeyBuilder keyBuilder) {
             // at most one, no recursive copy
-            return new GraphicsPipelineDesc(mGeometryStep, keyBuilder.toStorageKey(), mFinalBlendMode);
+            return new GraphicsPipelineDesc(mGeometryStep, keyBuilder.toStorageKey(),
+                    mFinalBlendMode, mUseFastSolidColor);
         }
         return this;
     }
@@ -150,6 +160,7 @@ public final class GraphicsPipelineDesc extends PipelineDesc {
         int result = mGeometryStep.uniqueID();
         result = 31 * result + mPaintParamsKey.hashCode();
         result = 31 * result + Objects.hashCode(mFinalBlendMode);
+        result = 31 * result + Boolean.hashCode(mUseFastSolidColor);
         return result;
     }
 
@@ -158,6 +169,7 @@ public final class GraphicsPipelineDesc extends PipelineDesc {
         if (this == o) return true;
         if (o instanceof GraphicsPipelineDesc desc) {
             return mGeometryStep.uniqueID() == desc.mGeometryStep.uniqueID() &&
+                    mUseFastSolidColor == desc.mUseFastSolidColor &&
                     Objects.equals(mPaintParamsKey, desc.mPaintParamsKey) &&
                     Objects.equals(mFinalBlendMode, desc.mFinalBlendMode);
         }

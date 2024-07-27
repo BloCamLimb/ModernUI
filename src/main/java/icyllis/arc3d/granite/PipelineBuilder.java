@@ -31,8 +31,11 @@ import java.util.*;
  */
 public class PipelineBuilder {
 
+    // devicePos + painter's depth is our worldPos
     public static final String WORLD_POS_VAR_NAME = "worldPos";
     public static final String LOCAL_COORDS_VARYING_NAME = "f_LocalCoords";
+
+    public static final String PRIMITIVE_COLOR_VAR_NAME = "primitiveColor";
 
     public static final int MAIN_DRAW_BUFFER_INDEX = 0;
 
@@ -100,6 +103,7 @@ public class PipelineBuilder {
                 UniformHandler.PROJECTION_NAME,
                 -1);
         mDesc.geomStep().emitUniforms(mGeometryUniforms);
+        mDesc.geomStep().emitSamplers(mFragmentUniforms);
 
         for (var root : mRootNodes) {
             getNodeUniforms(root);
@@ -150,7 +154,9 @@ public class PipelineBuilder {
         //// Entry Point
         out.append("void main() {\n");
 
-        mDesc.geomStep().emitVertexGeomCode(vs, needsLocalCoords());
+        mDesc.geomStep().emitVertexGeomCode(vs,
+                WORLD_POS_VAR_NAME,
+                needsLocalCoords() ? LOCAL_COORDS_VARYING_NAME : null);
 
         // map into clip space
         if (mCaps.depthClipNegativeOneToOne()) {
@@ -171,6 +177,11 @@ public class PipelineBuilder {
 
     public void buildFragmentShader() {
         StringBuilder out = new StringBuilder();
+        if (mDesc.getPaintParamsKey().size() == 0 && !mDesc.usesFastSolidColor()) {
+            // Depth-only draw so no fragment shader to compile
+            mFragCode = out;
+            return;
+        }
         out.append(mCaps.shaderCaps().mGLSLVersion.mVersionDecl);
         Formatter fs = new Formatter(out, Locale.ROOT);
         // If we're doing analytic coverage, we must also be doing shading.
@@ -201,10 +212,18 @@ public class PipelineBuilder {
         //// Entry Point
         out.append("void main() {\n");
 
-        out.append("vec4 initialColor;\n");
-        mDesc.geomStep().emitFragmentColorCode(fs, "initialColor");
-
-        String outputColor = "initialColor";
+        String outputColor;
+        if (mDesc.usesFastSolidColor()) {
+            out.append("vec4 initialColor;\n");
+            mDesc.geomStep().emitFragmentColorCode(fs, "initialColor");
+            outputColor = "initialColor";
+        } else {
+            if (mDesc.geomStep().emitsPrimitiveColor()) {
+                fs.format("vec4 %s;\n", PRIMITIVE_COLOR_VAR_NAME);
+                mDesc.geomStep().emitFragmentColorCode(fs, PRIMITIVE_COLOR_VAR_NAME);
+            }
+            outputColor = "vec4(0)";
+        }
         String localCoords = needsLocalCoords() ? LOCAL_COORDS_VARYING_NAME : "vec2(0)";
         for (FragmentNode root : mRootNodes) {
             outputColor = ShaderCodeSource.invoke_node(root,

@@ -73,6 +73,11 @@ public final class SamplerDesc implements IResourceKey {
     //@formatter:on
 
     /**
+     * Nearest value. mag filter nearest, min filter nearest, mipmap mode none,
+     * address mode clamp to edge, max anisotropy 1.
+     */
+    public static final SamplerDesc NEAREST = new SamplerDesc(0x1222000);
+    /**
      * Default value. mag filter linear, min filter linear, mipmap mode none,
      * address mode clamp to edge, max anisotropy 1.
      */
@@ -124,7 +129,7 @@ public final class SamplerDesc implements IResourceKey {
     @Contract(pure = true)
     public static SamplerDesc make(int filter) {
         assert (filter == FILTER_NEAREST || filter == FILTER_LINEAR);
-        return new SamplerDesc(0x1222000 | filter | (filter << 4));
+        return filter == FILTER_NEAREST ? NEAREST : DEFAULT;
     }
 
     /**

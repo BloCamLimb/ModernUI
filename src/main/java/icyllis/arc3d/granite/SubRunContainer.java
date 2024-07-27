@@ -19,8 +19,12 @@
 
 package icyllis.arc3d.granite;
 
-import icyllis.arc3d.engine.Engine;
+import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.RecordingContext;
+import icyllis.arc3d.engine.SamplerDesc;
+import it.unimi.dsi.fastutil.floats.FloatArrayList;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import org.lwjgl.system.MemoryUtil;
 
 /**
  * A SubRun represents a method to draw a subregion of a GlyphRun, where
@@ -30,28 +34,6 @@ import icyllis.arc3d.engine.RecordingContext;
  */
 public class SubRunContainer {
 
-    public interface AtlasSubRun {
-
-        /**
-         * Returns the number of visible glyphs.
-         */
-        int getGlyphCount();
-
-        /**
-         * Returns the GPU mask format.
-         */
-        int getMaskFormat();
-
-        /**
-         * Update atlas for glyphs in the given range if needed, returns the number
-         * of glyphs that are updated (may less than end-start if atlas is full).
-         * If an error occurred, returns the bitwise NOT (a negative value).
-         */
-        // This call is not thread safe. It should only be called from a known single-threaded env.
-        int prepareGlyphs(int start, int end,
-                          RecordingContext context);
-    }
-
     /**
      * SubRun defines the most basic functionality of a SubRun; the ability to draw, and the
      * ability to be in a list.
@@ -60,21 +42,157 @@ public class SubRunContainer {
         SubRun mNext;
     }
 
-    public static class DirectMaskSubRun extends SubRun implements AtlasSubRun {
+    public static abstract class AtlasSubRun extends SubRun {
 
-        @Override
+        final GlyphVector mGlyphs;
+        final int mMaskFormat;
+        final boolean mCanDrawDirect;
+        final Matrix mCreationMatrix;
+        final Rect2f mCreationBounds;
+        final float[] mPositions;
+        // bounds and positions are in sub run's space
+
+        AtlasSubRun(StrikeDesc strikeDesc,
+                    Matrixc creationMatrix,
+                    Rect2fc creationBounds,
+                    int maskFormat,
+                    IntArrayList acceptedGlyphs,
+                    FloatArrayList acceptedPositions,
+                    boolean canDrawDirect) {
+            assert !creationMatrix.hasPerspective();
+            mGlyphs = new GlyphVector(strikeDesc, acceptedGlyphs.toIntArray());
+            mMaskFormat = maskFormat;
+            mCanDrawDirect = canDrawDirect;
+            mCreationMatrix = new Matrix(creationMatrix);
+            mCreationBounds = new Rect2f(creationBounds);
+            mPositions = acceptedPositions.toFloatArray();
+        }
+
+        /**
+         * Returns the number of visible glyphs.
+         */
         public int getGlyphCount() {
-            return 0;
+            return mGlyphs.getGlyphCount();
         }
 
-        @Override
+        /**
+         * Returns the GPU mask format.
+         */
         public int getMaskFormat() {
-            return Engine.MASK_FORMAT_A8;
+            return mMaskFormat;
         }
 
-        @Override
-        public int prepareGlyphs(int start, int end, RecordingContext context) {
-            return 0;
+        /**
+         * Update atlas for glyphs in the given range if needed, returns the number
+         * of glyphs that are updated (may less than end-start if atlas is full).
+         * If an error occurred, returns the bitwise NOT (a negative value).
+         */
+        // This call is not thread safe. It should only be called from a known single-threaded env.
+        public int prepareGlyphs(int start, int end,
+                                 RecordingContext context) {
+            return mGlyphs.prepareGlyphs(start, end,
+                    mMaskFormat, context);
+        }
+
+        /**
+         * @see icyllis.arc3d.granite.geom.RasterTextStep
+         */
+        public void fillInstanceData(MeshDrawWriter writer,
+                                     int offset, int count,
+                                     float depth) {
+            writer.beginInstances(null, null, 4);
+            long instanceData = writer.append(count);
+
+            var glyphs = mGlyphs.getGlyphs();
+            var positions = mPositions;
+            for (int i = offset, j = offset << 1, e = offset + count; i < e; i += 1, j += 2) {
+                var glyph = glyphs[i];
+                // xy pos
+                MemoryUtil.memPutFloat(instanceData, positions[j]);
+                MemoryUtil.memPutFloat(instanceData + 4, positions[j | 1]);
+                // uv pos
+                MemoryUtil.memPutShort(instanceData + 8, glyph.u1);
+                MemoryUtil.memPutShort(instanceData + 10, glyph.v1);
+                // size
+                MemoryUtil.memPutShort(instanceData + 12, glyph.width());
+                MemoryUtil.memPutShort(instanceData + 14, glyph.height());
+                // painter's depth
+                MemoryUtil.memPutFloat(instanceData + 16, depth);
+                instanceData += 20;
+            }
+
+            writer.endAppender();
+        }
+
+        public Rect2fc getBounds() {
+            return mCreationBounds;
+        }
+
+        /**
+         * Compute sub-run-to-local matrix with the given origin and store
+         * in <var>outSubRunToLocal</var>. Compute filter based on
+         * local-to-device matrix and origin, and return it.
+         */
+        @SuppressWarnings("AssertWithSideEffects")
+        public int getSubRunToLocalAndFilter(Matrix4c localToDevice,
+                                             float originX, float originY,
+                                             Matrix outSubRunToLocal) {
+            // the creation matrix has no perspective
+            if (mCreationMatrix.invert(outSubRunToLocal)) {
+                outSubRunToLocal.postTranslate(originX, originY);
+                assert !outSubRunToLocal.hasPerspective();
+            } else {
+                outSubRunToLocal.setIdentity();
+            }
+            if (mCanDrawDirect) {
+                boolean compatible = !localToDevice.hasPerspective() &&
+                        localToDevice.m11() == mCreationMatrix.m11() &&
+                        localToDevice.m12() == mCreationMatrix.m12() &&
+                        localToDevice.m21() == mCreationMatrix.m21() &&
+                        localToDevice.m22() == mCreationMatrix.m22();
+                if (compatible) {
+                    // compatible means only the difference is translation
+                    float mappedOriginX = localToDevice.m11() * originX +
+                            localToDevice.m21() * originY + localToDevice.m41();
+                    float mappedOriginY = localToDevice.m12() * originX +
+                            localToDevice.m22() * originY + localToDevice.m42();
+                    float offsetX = mappedOriginX - mCreationMatrix.getTranslateX();
+                    float offsetY = mappedOriginY - mCreationMatrix.getTranslateY();
+                    if (offsetX == (int) offsetX && offsetY == (int) offsetY) {
+                        // integer translate
+                        return SamplerDesc.FILTER_NEAREST;
+                    }
+                }
+            }
+            return SamplerDesc.FILTER_LINEAR;
+        }
+    }
+
+    public static final class DirectMaskSubRun extends AtlasSubRun {
+
+        public DirectMaskSubRun(StrikeDesc strikeDesc,
+                                Matrixc creationMatrix,
+                                Rect2fc creationBounds,
+                                int maskFormat,
+                                IntArrayList acceptedGlyphs,
+                                FloatArrayList acceptedPositions) {
+            super(strikeDesc, creationMatrix, creationBounds,
+                    maskFormat, acceptedGlyphs, acceptedPositions,
+                    true);
+        }
+    }
+
+    public static final class TransformedMaskSubRun extends AtlasSubRun {
+
+        public TransformedMaskSubRun(StrikeDesc strikeDesc,
+                                     Matrixc creationMatrix,
+                                     Rect2fc creationBounds,
+                                     int maskFormat,
+                                     IntArrayList acceptedGlyphs,
+                                     FloatArrayList acceptedPositions) {
+            super(strikeDesc, creationMatrix, creationBounds,
+                    maskFormat, acceptedGlyphs, acceptedPositions,
+                    false);
         }
     }
 }

@@ -76,6 +76,17 @@ public abstract class GeometryStep {
     }
 
     /**
+     * Painter's depth.
+     */
+    public static final VertexInputLayout.Attribute DEPTH =
+            new VertexInputLayout.Attribute("Depth", VertexAttribType.kFloat, SLDataType.kFloat);
+    /**
+     * Pre-multiplied solid color in destination color space.
+     */
+    public static final VertexInputLayout.Attribute SOLID_COLOR =
+            new VertexInputLayout.Attribute("SolidColor", VertexAttribType.kFloat4, SLDataType.kFloat4);
+
+    /**
      * Set if there's fragment shader code and color output, otherwise this is
      * a depth-stencil only step.
      */
@@ -381,6 +392,10 @@ public abstract class GeometryStep {
         return (mFlags & FLAG_HANDLE_SOLID_COLOR) != 0;
     }
 
+    public boolean emitsPrimitiveColor() {
+        return (mFlags & FLAG_EMIT_PRIMITIVE_COLOR) != 0;
+    }
+
     public DepthStencilSettings depthStencilSettings() {
         return mDepthStencilSettings;
     }
@@ -429,14 +444,23 @@ public abstract class GeometryStep {
     public void emitUniforms(UniformHandler uniformHandler) {
     }
 
+    public void emitSamplers(UniformHandler uniformHandler) {
+    }
+
     /**
      * Emits the geometry code into the vertex shader.
+     * Implementation must define "vec4 worldPosVar" with the given name
+     * and setup it. If <var>localPosVar</var> is not null, then it must
+     * write geometry's local pos to it.
      */
-    public void emitVertexGeomCode(Formatter vs, boolean needsLocalCoords) {
+    public void emitVertexGeomCode(Formatter vs,
+                                   @Nonnull String worldPosVar,
+                                   @Nullable String localPosVar) {
     }
 
     /**
      * Emits the fragment color code into the fragment shader.
+     * This is either paint's solid color or per-vertex primitive color.
      */
     public void emitFragmentColorCode(Formatter fs, String outputColor) {
     }
@@ -450,7 +474,7 @@ public abstract class GeometryStep {
     public void writeMesh(MeshDrawWriter writer, Draw draw, @Nullable float[] solidColor) {
     }
 
-    public void writeUniformsAndTextures(Draw draw,
+    public void writeUniformsAndTextures(RecordingContext context, Draw draw,
                                          UniformDataGatherer uniformDataGatherer,
                                          TextureDataGatherer textureDataGatherer) {
     }

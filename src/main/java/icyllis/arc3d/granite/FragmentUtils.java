@@ -230,14 +230,15 @@ public class FragmentUtils {
             uniformDataGatherer.write1i(tileModeY);
         }
 
-        var samplerDesc = SamplerDesc.make(
-                useHwTiling ? sampling.mMagFilter : filterMode,
-                useHwTiling ? sampling.mMinFilter : filterMode,
-                useHwTiling ? sampling.mMipmapMode : SamplerDesc.MIPMAP_MODE_NONE,
-                useHwTiling ? tileModeX : SamplerDesc.ADDRESS_MODE_CLAMP_TO_EDGE,
-                useHwTiling ? tileModeY : SamplerDesc.ADDRESS_MODE_CLAMP_TO_EDGE,
-                SamplerDesc.ADDRESS_MODE_CLAMP_TO_EDGE
-        );
+        var samplerDesc = useHwTiling
+                ? SamplerDesc.make(
+                sampling.mMagFilter,
+                sampling.mMinFilter,
+                sampling.mMipmapMode,
+                tileModeX,
+                tileModeY,
+                SamplerDesc.ADDRESS_MODE_CLAMP_TO_EDGE)
+                : SamplerDesc.make(filterMode);
 
         textureDataGatherer.add(view, samplerDesc); // move
     }

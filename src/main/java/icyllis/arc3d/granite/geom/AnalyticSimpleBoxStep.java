@@ -53,11 +53,6 @@ public class AnalyticSimpleBoxStep extends GeometryStep {
      */
 
     /**
-     * Pre-multiplied solid color in destination color space.
-     */
-    public static final VertexInputLayout.Attribute COLOR =
-            new VertexInputLayout.Attribute("Color", VertexAttribType.kFloat4, SLDataType.kFloat4);
-    /**
      * (left, top, right, bottom) or ((startX, startY), (stopX, stopY))
      */
     public static final VertexInputLayout.Attribute LOCAL_RECT =
@@ -77,11 +72,6 @@ public class AnalyticSimpleBoxStep extends GeometryStep {
     public static final VertexInputLayout.Attribute RADII =
             new VertexInputLayout.Attribute("Radii", VertexAttribType.kFloat4, SLDataType.kFloat4);
     /**
-     * Painter's depth.
-     */
-    public static final VertexInputLayout.Attribute DEPTH =
-            new VertexInputLayout.Attribute("Depth", VertexAttribType.kFloat, SLDataType.kFloat);
-    /**
      * Local-to-device transform.
      */
     public static final VertexInputLayout.Attribute MODEL_VIEW =
@@ -89,13 +79,13 @@ public class AnalyticSimpleBoxStep extends GeometryStep {
 
     public static final VertexInputLayout.AttributeSet INSTANCE_ATTRIBS =
             VertexInputLayout.AttributeSet.makeImplicit(VertexInputLayout.INPUT_RATE_INSTANCE,
-                    COLOR, LOCAL_RECT, RADII, DEPTH, MODEL_VIEW);
+                    SOLID_COLOR, LOCAL_RECT, RADII, DEPTH, MODEL_VIEW);
 
     private final boolean mAA;
 
     public AnalyticSimpleBoxStep(boolean aa) {
         super("AnalyticSimpleBoxStep",
-                aa ? "AA" : "NoAA",
+                aa ? "aa" : "non-aa",
                 null, INSTANCE_ATTRIBS,
                 aa
                         ? (FLAG_PERFORM_SHADING | FLAG_EMIT_COVERAGE | FLAG_OUTSET_BOUNDS_FOR_AA |
@@ -138,7 +128,9 @@ public class AnalyticSimpleBoxStep extends GeometryStep {
     }
 
     @Override
-    public void emitVertexGeomCode(Formatter vs, boolean needsLocalCoords) {
+    public void emitVertexGeomCode(Formatter vs,
+                                   @Nonnull String worldPosVar,
+                                   @Nullable String localPosVar) {
         // {(-1,-1), (-1, 1), (1, -1), (1, 1)}
         // corner selector, CCW
         vs.format("vec2 position = vec2(gl_VertexID >> 1, gl_VertexID & 1) * 2.0 - 1.0;\n");
@@ -184,21 +176,20 @@ public class AnalyticSimpleBoxStep extends GeometryStep {
                 """, RADII.name(), "f_RectEdge", "f_Size", "f_Radii");
 
         // setup pass through color
-        vs.format("%s = %s;\n", "f_Color", COLOR.name());
+        vs.format("%s = %s;\n", "f_Color", SOLID_COLOR.name());
 
         // setup position
         vs.format("""
                 vec2 localPos = localEdge + translate;
                 """);
         // A float2 is promoted to a float3 if we add perspective via the matrix
-        vs.format("vec3 devicePos = %s * vec3(%s, 1.0);\n",
-                MODEL_VIEW.name(),
-                "localPos");
+        vs.format("vec3 devicePos = %s * vec3(localPos, 1.0);\n",
+                MODEL_VIEW.name());
         vs.format("vec4 %s = vec4(devicePos.xy, %s, devicePos.z);\n",
-                PipelineBuilder.WORLD_POS_VAR_NAME,
+                worldPosVar,
                 DEPTH.name());
-        if (needsLocalCoords) {
-            vs.format("%s = %s;\n", PipelineBuilder.LOCAL_COORDS_VARYING_NAME, "localPos");
+        if (localPosVar != null) {
+            vs.format("%s = localPos;\n", localPosVar);
         }
     }
 
