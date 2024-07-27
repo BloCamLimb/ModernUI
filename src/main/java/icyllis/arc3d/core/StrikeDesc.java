@@ -44,7 +44,7 @@ public final class StrikeDesc {
     private float mMiterLimit;
 
     private byte mMaskFormat;
-    private byte mStroke;
+    private byte mStrokeJoin;
     private short mFlags;
 
     private PathEffect mPathEffect;
@@ -65,7 +65,7 @@ public final class StrikeDesc {
         mFrameWidth = other.mFrameWidth;
         mMiterLimit = other.mMiterLimit;
         mMaskFormat = other.mMaskFormat;
-        mStroke = other.mStroke;
+        mStrokeJoin = other.mStrokeJoin;
         mFlags = other.mFlags;
         mHash = other.mHash;
     }
@@ -106,7 +106,7 @@ public final class StrikeDesc {
         if (style != Paint.FILL && strokeWidth >= 0) {
             mFrameWidth = strokeWidth;
             mMiterLimit = paint.getStrokeMiter();
-            mStroke = (byte) ((paint.getStrokeJoin() << 4) | paint.getStrokeCap());
+            mStrokeJoin = (byte) paint.getStrokeJoin();
 
             if (style == Paint.STROKE_AND_FILL) {
                 flags |= kFrameAndFill_Flag;
@@ -114,7 +114,7 @@ public final class StrikeDesc {
         } else {
             mFrameWidth = -1;
             mMiterLimit = 0;
-            mStroke = 0;
+            mStrokeJoin = 0;
         }
 
         mMaskFormat = switch (font.getEdging()) {
@@ -143,7 +143,7 @@ public final class StrikeDesc {
         h = 31 * h + Float.floatToIntBits(mFrameWidth);
         h = 31 * h + Float.floatToIntBits(mMiterLimit);
         h = 31 * h + (int) mMaskFormat;
-        h = 31 * h + (int) mStroke;
+        h = 31 * h + (int) mStrokeJoin;
         h = 31 * h + (int) mFlags;
         h = 31 * h + Objects.hashCode(mPathEffect);
         mHash = h;
@@ -199,16 +199,9 @@ public final class StrikeDesc {
         return mMaskFormat;
     }
 
-    @Paint.Cap
-    @SuppressWarnings("MagicConstant")
-    public int getStrokeCap() {
-        return mStroke & 0xF;
-    }
-
     @Paint.Join
-    @SuppressWarnings("MagicConstant")
     public int getStrokeJoin() {
-        return mStroke >>> 4;
+        return mStrokeJoin;
     }
 
     public int getFlags() {
@@ -246,7 +239,7 @@ public final class StrikeDesc {
                     mFrameWidth == that.mFrameWidth &&
                     mMiterLimit == that.mMiterLimit &&
                     mMaskFormat == that.mMaskFormat &&
-                    mStroke == that.mStroke &&
+                    mStrokeJoin == that.mStrokeJoin &&
                     mFlags == that.mFlags &&
                     mTypeface.equals(that.mTypeface) &&
                     Objects.equals(mPathEffect, that.mPathEffect);

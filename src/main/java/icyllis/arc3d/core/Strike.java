@@ -123,8 +123,11 @@ public final class Strike {
             glyph.initActions();
             mGlyphs.put(glyphID, glyph);
             mMemoryIncrease += Glyph.kSizeOf;
-            if (glyph.getPath() != null) {
-                mMemoryIncrease += glyph.getPath().estimatedByteSize();
+            if (glyph.setPathHasBeenCalled()) {
+                Path path = glyph.getPath();
+                if (path != null) {
+                    mMemoryIncrease += path.estimatedByteSize();
+                }
             }
         }
 
