@@ -1163,6 +1163,26 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
     }
 
     /**
+     * Store this matrix as 2D matrix into the given address in GLSL column-major or
+     * HLSL row-major order, NOT vec4 aligned.
+     * <p>
+     * Equivalent to call {@link #toMatrix()} and {@link Matrix#storeAligned(long)}.
+     *
+     * @param p the pointer of the array to store
+     */
+    public void storeAs2DAligned(long p) {
+        MemoryUtil.memPutFloat(p, m11);
+        MemoryUtil.memPutFloat(p + 4, m12);
+        MemoryUtil.memPutFloat(p + 8, m14);
+        MemoryUtil.memPutFloat(p + 16, m21);
+        MemoryUtil.memPutFloat(p + 20, m22);
+        MemoryUtil.memPutFloat(p + 24, m24);
+        MemoryUtil.memPutFloat(p + 32, m41);
+        MemoryUtil.memPutFloat(p + 36, m42);
+        MemoryUtil.memPutFloat(p + 40, m44);
+    }
+
+    /**
      * Return the determinant of this matrix.
      *
      * @return the determinant

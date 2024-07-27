@@ -124,6 +124,16 @@ public sealed interface Matrix4c extends Cloneable permits Matrix4 {
     void storeAs2D(long p);
 
     /**
+     * Store this matrix as 2D matrix into the given address in GLSL column-major or
+     * HLSL row-major order, NOT vec4 aligned.
+     * <p>
+     * Equivalent to call {@link #toMatrix()} and {@link Matrix#storeAligned(long)}.
+     *
+     * @param p the pointer of the array to store
+     */
+    void storeAs2DAligned(long p);
+
+    /**
      * Return the determinant of this matrix.
      *
      * @return the determinant
@@ -206,6 +216,8 @@ public sealed interface Matrix4c extends Cloneable permits Matrix4 {
      * rectangle will be the bounding box of the projected points after being clipped to w > 0.
      */
     void mapRectOut(@Nonnull Rect2fc r, @Nonnull Rect2i dest);
+
+    boolean hasPerspective();
 
     /**
      * Return the minimum distance needed to move in local (pre-transform) space to ensure that the

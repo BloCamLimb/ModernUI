@@ -20,7 +20,7 @@
 package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.engine.*;
+import icyllis.arc3d.engine.RecordingContext;
 
 /**
  * GlyphVector provides a way to delay the lookup of {@link BakedGlyph Glyphs} until the code is running on the GPU
@@ -36,7 +36,10 @@ public class GlyphVector extends DrawAtlas.PlotBulkUseUpdater {
 
     private long mAtlasGeneration = DrawAtlas.AtlasGenerationCounter.INVALID_GENERATION;
 
-    //TODO TBD ctor args
+    /**
+     * The <var>strikeDesc</var> and <var>glyphs</var> must be immutable,
+     * no copy will be made.
+     */
     public GlyphVector(StrikeDesc strikeDesc, int[] glyphs) {
         mStrikeDesc = strikeDesc;
         mGlyphs = glyphs;
@@ -45,6 +48,10 @@ public class GlyphVector extends DrawAtlas.PlotBulkUseUpdater {
     // This call is not thread safe. It should only be called from a known single-threaded env.
     public BakedGlyph[] getGlyphs() {
         return mBakedGlyphs;
+    }
+
+    public int getGlyphCount() {
+        return mGlyphs.length;
     }
 
     /**

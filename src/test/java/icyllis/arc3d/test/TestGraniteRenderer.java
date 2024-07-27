@@ -19,12 +19,15 @@
 
 package icyllis.arc3d.test;
 
-import icyllis.arc3d.core.*;
 import icyllis.arc3d.core.Image;
+import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.j2d.Typeface_JDK;
 import icyllis.arc3d.core.shaders.*;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.granite.*;
 import icyllis.arc3d.opengl.GLUtil;
+import it.unimi.dsi.fastutil.floats.FloatArrayList;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL33C;
@@ -35,8 +38,8 @@ import org.lwjgl.util.tinyfd.TinyFileDialogs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Objects;
-import java.util.Random;
+import java.awt.font.FontRenderContext;
+import java.util.*;
 
 public class TestGraniteRenderer {
 
@@ -107,20 +110,18 @@ public class TestGraniteRenderer {
 
         @SharedPtr
         Surface_Granite surface;
-        {
-            @SharedPtr
-            var device = Device_Granite.make(
-                    recordingContext,
-                    ImageInfo.make(CANVAS_WIDTH, CANVAS_HEIGHT, ColorInfo.CT_RGBA_8888,
-                            ColorInfo.AT_PREMUL, ColorSpace.get(ColorSpace.Named.SRGB)),
-                    ISurface.FLAG_SAMPLED_IMAGE | ISurface.FLAG_RENDERABLE | ISurface.FLAG_BUDGETED,
-                    Engine.SurfaceOrigin.kLowerLeft,
-                    Engine.LoadOp.kLoad,
-                    "TestDevice"
-            );
-            Objects.requireNonNull(device);
-            surface = new Surface_Granite(device); // move
-        }
+        @SharedPtr
+        var device = Device_Granite.make(
+                recordingContext,
+                ImageInfo.make(CANVAS_WIDTH, CANVAS_HEIGHT, ColorInfo.CT_RGBA_8888,
+                        ColorInfo.AT_PREMUL, ColorSpace.get(ColorSpace.Named.SRGB)),
+                ISurface.FLAG_SAMPLED_IMAGE | ISurface.FLAG_RENDERABLE | ISurface.FLAG_BUDGETED,
+                Engine.SurfaceOrigin.kLowerLeft,
+                Engine.LoadOp.kLoad,
+                "TestDevice"
+        );
+        Objects.requireNonNull(device);
+        surface = new Surface_Granite(device); // move
 
         @SharedPtr
         Image testImage = null;
@@ -146,16 +147,16 @@ public class TestGraniteRenderer {
                 STBImage.stbi_image_free(imgData);
             }
         }
-        for (int y = 0; y < 8; ++y) {
+        /*for (int y = 0; y < 8; ++y) {
             for (int x = 0; x < 8; ++x) {
                 int m = (int) (Bayer8(x, y) * 64);
                 System.out.printf("%02d ", m);
             }
             System.out.println();
-        }
+        }*/
 
         Random random = new Random();
-        double maxRadError = 0;
+        /*double maxRadError = 0;
         boolean valid = true;
         for (int i = 0; i < 10000; i++) {
             float cx = random.nextFloat(1000);
@@ -169,7 +170,7 @@ public class TestGraniteRenderer {
                 LOGGER.info("{}", rrect.getType());
             }
         }
-        LOGGER.info("max rad error {}, valid {}",  maxRadError, valid);
+        LOGGER.info("max rad error {}, valid {}",  maxRadError, valid);*/
 
         /*GL11C.glClear(GL11C.GL_COLOR_BUFFER_BIT);
         GLFW.glfwSwapBuffers(window);*/
@@ -208,7 +209,7 @@ public class TestGraniteRenderer {
             testShader3 = RefCnt.create(testShader1);
         }
         @SharedPtr
-        Shader gradShader = AngularGradient.makeAngular(
+        Shader gradShader;/* = AngularGradient.makeAngular(
                 584, 534, 0, 360,
                 new float[]{
                         0.2f, 0.85f, 0.95f, 1,
@@ -224,12 +225,12 @@ public class TestGraniteRenderer {
                         GradientShader.Interpolation.kSRGBLinear_ColorSpace,
                         GradientShader.Interpolation.kShorter_HueMethod),
                 null
-        );
-        /*LinearGradient.makeLinear(
+        );*/
+        gradShader = LinearGradient.makeLinear(
                 400, 350, 800, 350,
                 new float[]{
-                        0.4f, 0.4f, 0.4f, 1,
-                        0.6f, 0.6f, 0.6f, 1},
+                        45 / 255f, 212 / 255f, 191 / 255f, 1,
+                        14 / 255f, 165 / 255f, 233 / 255f, 1},
                 ColorSpace.get(ColorSpace.Named.SRGB),
                 null,
                 2,
@@ -238,7 +239,63 @@ public class TestGraniteRenderer {
                         GradientShader.Interpolation.kSRGBLinear_ColorSpace,
                         GradientShader.Interpolation.kShorter_HueMethod),
                 null
-        );*/
+        );
+
+        Typeface_JDK typeface = new Typeface_JDK(
+                new java.awt.Font("STXingKai", java.awt.Font.PLAIN, 1));
+        SubRunContainer.AtlasSubRun subRun;
+        {
+            char[] text = "TeaCon甲辰".toCharArray();
+            var vector = typeface.getFont().deriveFont(80F).layoutGlyphVector(
+                    new FontRenderContext(null, true, false),
+                    text, 0, text.length, java.awt.Font.LAYOUT_LEFT_TO_RIGHT);
+            int nGlyphs = vector.getNumGlyphs();
+            IntArrayList glyphs = new IntArrayList(nGlyphs);
+            glyphs.size(nGlyphs);
+            FloatArrayList positions = new FloatArrayList(nGlyphs * 2);
+            positions.size(nGlyphs * 2);
+            vector.getGlyphCodes(0, nGlyphs, glyphs.elements());
+            vector.getGlyphPositions(0, nGlyphs, positions.elements());
+            var visual = vector.getVisualBounds();
+            Rect2f bounds = new Rect2f((float) visual.getMinX(),
+                    (float) visual.getMinY(),
+                    (float) visual.getMaxX(),
+                    (float) visual.getMaxY());
+
+            LOGGER.info("Glyphs: {}", Arrays.toString(glyphs.elements()));
+
+            Font font = new Font();
+            font.setTypeface(typeface);
+            font.setSize(80);
+            font.setEdging(Font.kAntiAlias_Edging);
+
+            Paint paint = new Paint();
+            paint.setStyle(Paint.STROKE);
+            paint.setStrokeJoin(Paint.JOIN_MITER);
+            paint.setStrokeWidth(2);
+
+            Matrix devMatrix = new Matrix();
+
+            StrikeDesc strikeDesc = new StrikeDesc();
+            strikeDesc.update(font, paint, devMatrix);
+
+            Strike strike = strikeDesc.findOrCreateStrike();
+            strike.lock();
+            try {
+                for (int i = 0; i < nGlyphs; i++) {
+                    var glyph = strike.getGlyph(glyphs.getInt(i));
+                    positions.elements()[i*2] += glyph.getLeft();
+                    positions.elements()[i*2+1] += glyph.getTop();
+                    //LOGGER.info("Glyph W {} H {}", glyph.getWidth(), glyph.getHeight());
+                }
+            } finally {
+                strike.unlock();
+            }
+
+            subRun = new SubRunContainer.DirectMaskSubRun(
+                    strikeDesc, devMatrix, bounds, Engine.MASK_FORMAT_A8, glyphs, positions
+            );
+        }
 
         Paint paint = new Paint();
         Canvas canvas = surface.getCanvas();
@@ -356,7 +413,7 @@ public class TestGraniteRenderer {
                 paint.setStyle(Paint.FILL);
                 paint.setShader(RefCnt.create(gradShader));
                 paint.setDither(true);
-                rect.set(400, 350, 800, 750);
+                rrect.setRectXY(100, 450, 1500, 950, 30, 30);
                 /*rect.set(0, 0, 16, 16);
                 for (int i = 0; i < 16; i++) {
                     for (int j = 0; j < 16; j++) {
@@ -370,14 +427,15 @@ public class TestGraniteRenderer {
                         canvas.drawRect(rect, paint);
                     }
                 }*/
-                canvas.drawRect(rect, paint);
+                canvas.drawRoundRect(rrect, paint);
+                device.drawAtlasSubRun(subRun, 400, 400, paint);
                 paint.setDither(false);
 
                 paint.setShader(RefCnt.create(testShader1));
                 mat.setTranslate(600, 100, 0);
                 canvas.setMatrix(mat);
                 rrect.setRectXY(200, 100, 600, 500, 20, 20);
-                canvas.drawRoundRect(rrect, paint);
+                //canvas.drawRoundRect(rrect, paint);
 
             } else if (TEST_SCENE == 2) {
                 Rect2f rect = new Rect2f();
@@ -389,7 +447,7 @@ public class TestGraniteRenderer {
 
                 paint.setShader(RefCnt.create(testShader1));
                 Matrix4 mat = Matrix4.identity();
-                float scale = (float) (1+0.1*Math.sin(System.currentTimeMillis()/1000.0*2.0));
+                float scale = (float) (1 + 0.1 * Math.sin(System.currentTimeMillis() / 1000.0 * 2.0));
                 mat.preScale(scale, scale);
                 canvas.setMatrix(mat);
                 canvas.drawRect(rect, paint);

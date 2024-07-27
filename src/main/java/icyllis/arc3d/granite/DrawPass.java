@@ -147,6 +147,7 @@ public class DrawPass implements AutoCloseable {
 
                         paintParamsKeyBuilder.clear();
                         BlendMode finalBlendMode = null;
+                        boolean useFastSolidColor = false;
 
                         textureDataGatherer.reset();
 
@@ -154,7 +155,7 @@ public class DrawPass implements AutoCloseable {
                         uniformDataGatherer.reset();
                         // first add the 2D orthographic projection
                         uniformDataGatherer.write4f(projX, projY, projZ, projW);
-                        step.writeUniformsAndTextures(draw, uniformDataGatherer, textureDataGatherer);
+                        step.writeUniformsAndTextures(context, draw, uniformDataGatherer, textureDataGatherer);
                         var geometryUniforms = uniformDataCache.insert(uniformDataGatherer.finish());
 
                         // collect fragment data and pipeline key
@@ -169,6 +170,8 @@ public class DrawPass implements AutoCloseable {
                                         uniformDataGatherer,
                                         textureDataGatherer);
                                 assert !paintParamsKeyBuilder.isEmpty();
+                            } else {
+                                useFastSolidColor = true;
                             }
                             finalBlendMode = draw.mPaintParams.getFinalBlendMode();
                         }
@@ -179,7 +182,7 @@ public class DrawPass implements AutoCloseable {
                         var textures = textureDataGatherer.finish();
 
                         int pipelineIndex = pipelineToIndex.computeIfAbsent(
-                                lookupDesc.set(step, paintParamsKeyBuilder, finalBlendMode),
+                                lookupDesc.set(step, paintParamsKeyBuilder, finalBlendMode, useFastSolidColor),
                                 pipelineAccumulator);
 
                         var geometryUniformIndex = geometryUniformTracker.trackUniforms(

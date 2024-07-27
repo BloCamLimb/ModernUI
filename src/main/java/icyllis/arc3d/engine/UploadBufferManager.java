@@ -66,7 +66,7 @@ public class UploadBufferManager {
     private final ResourceProvider mResourceProvider;
 
     private @SharedPtr Buffer mSmallBuffer;
-    private long mSmallOffset;
+    private long mSmallBufferOffset;
 
     private final ObjectArrayList<@SharedPtr Buffer> mUsedBuffers = new ObjectArrayList<>();
 
@@ -117,8 +117,8 @@ public class UploadBufferManager {
         }
 
         // Try to reuse an already-allocated buffer.
-        mSmallOffset = MathUtil.alignTo(mSmallOffset, requiredAlignment);
-        if (mSmallBuffer != null && requiredBytes > mSmallBuffer.getSize() - mSmallOffset) {
+        mSmallBufferOffset = MathUtil.alignTo(mSmallBufferOffset, requiredAlignment);
+        if (mSmallBuffer != null && requiredBytes > mSmallBuffer.getSize() - mSmallBufferOffset) {
             mUsedBuffers.add(mSmallBuffer);
             mSmallBuffer = null;
         }
@@ -127,7 +127,7 @@ public class UploadBufferManager {
             mSmallBuffer = mResourceProvider.findOrCreateBuffer(SMALL_BUFFER_SIZE,
                     Engine.BufferUsageFlags.kUpload | Engine.BufferUsageFlags.kHostVisible,
                     "SmallUploadBuffer");
-            mSmallOffset = 0;
+            mSmallBufferOffset = 0;
 
             if (mSmallBuffer == null || mSmallBuffer.map() == NULL) {
                 mSmallBuffer = RefCnt.move(mSmallBuffer);
@@ -138,13 +138,13 @@ public class UploadBufferManager {
 
         long mappedPtr = mSmallBuffer.getMappedBuffer();
         assert mappedPtr != NULL;
-        mappedPtr += mSmallOffset;
+        mappedPtr += mSmallBufferOffset;
 
         outInfo.mBuffer = mSmallBuffer;
-        outInfo.mOffset = mSmallOffset;
+        outInfo.mOffset = mSmallBufferOffset;
         outInfo.mSize = requiredBytes;
 
-        mSmallOffset += requiredBytes;
+        mSmallBufferOffset += requiredBytes;
 
         return mappedPtr;
     }
@@ -163,7 +163,7 @@ public class UploadBufferManager {
         outResourceRefs.addAll(mUsedBuffers);
         mUsedBuffers.clear();
 
-        mSmallOffset = 0;
+        mSmallBufferOffset = 0;
         if (mSmallBuffer != null) {
             assert mSmallBuffer.isMapped();
             mSmallBuffer.unmap();

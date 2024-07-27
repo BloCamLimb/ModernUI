@@ -245,10 +245,11 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
     }
 
     public void drawAtlasSubRun(SubRunContainer.AtlasSubRun subRun,
-                                float x, float y,
+                                float originX, float originY,
                                 Paint paint) {
+        int maskFormat = subRun.getMaskFormat();
         if (!mContext.getAtlasProvider().getGlyphAtlasManager().initAtlas(
-                subRun.getMaskFormat()
+                maskFormat
         )) {
             return;
         }
@@ -263,7 +264,22 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
                 return;
             }
             if (glyphsPrepared > 0) {
+                SubRunData subRunData = new SubRunData(subRun,
+                        getLocalToDevice(), originX, originY,
+                        subRunCursor, glyphsPrepared);
+                // subRunToDevice is our "localToDevice",
+                // as sub run's coordinates are returned in sub run's space
+                Matrix4 subRunToDevice = new Matrix4(getLocalToDevice());
+                subRunToDevice.preConcat2D(subRunData.getSubRunToLocal());
+
+                Draw draw = new Draw();
+                draw.mTransform = subRunToDevice;
+                draw.mGeometry = subRunData;
+                var bounds = new Rect2f(subRunData.getBounds());
+                drawGeometry(draw, bounds, paint,
+                        mContext.getRendererProvider().getRasterText(maskFormat));
                 //TODO
+
             } else if (flushed) {
                 // Treat as an error.
                 return;

@@ -949,6 +949,21 @@ public class ShaderCodeSource {
                 ShaderCodeSource::generateDefaultExpression,
                 0
         );
+        mBuiltinCodeSnippets[kPrimitiveColor_BuiltinStageID] = new FragmentStage(
+                "PrimitiveColor",
+                kPrimitiveColor_ReqFlag,
+                "arc_color_space_transform",
+                new String[]{
+                        PRIV_TRANSFER_FUNCTION, PRIV_INV_TRANSFER_FUNCTION,
+                        ARC_COLOR_SPACE_TRANSFORM
+                },
+                new Uniform[]{
+                        XFORM_FLAGS, XFORM_SRC_TF, XFORM_GAMUT_TRANSFORM, XFORM_DST_TF
+                },
+                NO_SAMPLERS,
+                ShaderCodeSource::generateDefaultExpression,
+                0
+        );
         mBuiltinCodeSnippets[kCompose_BuiltinStageID] = new FragmentStage(
                 "Compose",
                 kNone_ReqFlag,
@@ -1041,18 +1056,24 @@ public class ShaderCodeSource {
         FragmentStage stage = node.stage();
 
         // Append local coordinates.
-        if (stage.needsLocalCoords()) {
+        if ((stage.mRequirementFlags & kLocalCoords_ReqFlag) != 0) {
             args.add(localCoords);
         }
 
         // Append prior-stage output color.
-        if (stage.needsPriorStageOutput()) {
+        if ((stage.mRequirementFlags & kPriorStageOutput_ReqFlag) != 0) {
             args.add(priorStageOutput);
         }
 
         // Append blender destination color.
-        if (stage.needsBlenderDstColor()) {
+        if ((stage.mRequirementFlags & kBlenderDstColor_ReqFlag) != 0) {
             args.add(blenderDstColor);
+        }
+
+        // Special variables and/or "global" scope variables that have to propagate
+        // through the node tree.
+        if ((stage.mRequirementFlags & kPrimitiveColor_ReqFlag) != 0) {
+            args.add(PipelineBuilder.PRIMITIVE_COLOR_VAR_NAME);
         }
 
         // Append uniform names.

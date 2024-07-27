@@ -56,7 +56,8 @@ public class FragmentStage {
             kHWImageShader_BuiltinStageID = 19,
             kDitherShader_BuiltinStageID = 20,
             kColorSpaceXformColorFilter_BuiltinStageID = 21,
-            kCompose_BuiltinStageID = 22;
+            kPrimitiveColor_BuiltinStageID = 22,
+            kCompose_BuiltinStageID = 23;
 
     public static final int
             kLast_BuiltinStageID = kCompose_BuiltinStageID;
@@ -71,6 +72,8 @@ public class FragmentStage {
             kLocalCoords_ReqFlag = 0x1,     // Geometry local coordinates
             kPriorStageOutput_ReqFlag = 0x2, // AKA the "input" color, or the "src" argument for a blender
             kBlenderDstColor_ReqFlag = 0x4; // The "dst" argument for a blender
+    public static final int
+            kPrimitiveColor_ReqFlag = 0x10;
 
     public record Uniform(byte type, String name, short arraySize) {
 
@@ -133,18 +136,6 @@ public class FragmentStage {
     @Nonnull
     public String name() {
         return mName;
-    }
-
-    public boolean needsLocalCoords() {
-        return (mRequirementFlags & kLocalCoords_ReqFlag) != 0;
-    }
-
-    public boolean needsPriorStageOutput() {
-        return (mRequirementFlags & kPriorStageOutput_ReqFlag) != 0;
-    }
-
-    public boolean needsBlenderDstColor() {
-        return (mRequirementFlags & kBlenderDstColor_ReqFlag) != 0;
     }
 
     public void generateUniforms(UniformHandler uniformHandler, int stageIndex) {

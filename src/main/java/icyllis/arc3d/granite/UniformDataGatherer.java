@@ -198,7 +198,12 @@ public class UniformDataGatherer implements AutoCloseable {
         memPutInt(dst + 44, 0);
     }
 
-    public void writeMatrix4f(Matrix4 matrix) {
+    public void writeMatrix4fAs2D(Matrix4c matrix) {
+        long dst = append(16, 48);
+        matrix.storeAs2DAligned(dst);
+    }
+
+    public void writeMatrix4f(Matrix4c matrix) {
         long dst = append(16, 64);
         matrix.store(dst);
     }

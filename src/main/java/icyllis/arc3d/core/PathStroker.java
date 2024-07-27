@@ -32,9 +32,10 @@ import javax.annotation.Nonnull;
  *
  * @author BloCamLimb
  */
+//TODO review tangent, implement inside and outside stroke for closed paths
 public class PathStroker implements PathConsumer {
 
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
 
     private PathConsumer mOuter;
     private final Path mInner = new Path();
