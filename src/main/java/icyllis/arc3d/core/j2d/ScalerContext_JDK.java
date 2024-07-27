@@ -64,13 +64,21 @@ public class ScalerContext_JDK extends ScalerContext {
     protected GlyphMetrics generateMetrics(Glyph glyph) {
         GlyphMetrics metrics = new GlyphMetrics(glyph.getMaskFormat());
         GlyphVector gv = mFont.createGlyphVector(mFRC, new int[]{glyph.getGlyphID()});
-        // do not use getPixelBounds since JDK has a rasterization limit of 1024x1024,
+        // JDK has a rasterization limit of 1024x1024 for getPixelBounds,
         // gv.getVisualBounds() is equivalent to FT_Outline_Get_BBox
-        var bounds = gv.getVisualBounds();
-        metrics.mLeft = (float) bounds.getMinX();
-        metrics.mTop = (float) bounds.getMinY();
-        metrics.mRight = (float) bounds.getMaxX();
-        metrics.mBottom = (float) bounds.getMaxY();
+        var pixelBounds = gv.getPixelBounds(null, 0, 0);
+        if (pixelBounds.isEmpty()) {
+            var bounds = gv.getVisualBounds();
+            metrics.mLeft = (float) bounds.getMinX();
+            metrics.mTop = (float) bounds.getMinY();
+            metrics.mRight = (float) bounds.getMaxX();
+            metrics.mBottom = (float) bounds.getMaxY();
+        } else {
+            metrics.mLeft = (float) pixelBounds.getMinX();
+            metrics.mTop = (float) pixelBounds.getMinY();
+            metrics.mRight = (float) pixelBounds.getMaxX();
+            metrics.mBottom = (float) pixelBounds.getMaxY();
+        }
         return metrics;
     }
 
