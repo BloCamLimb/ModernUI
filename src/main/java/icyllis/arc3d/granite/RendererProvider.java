@@ -19,7 +19,6 @@
 
 package icyllis.arc3d.granite;
 
-import icyllis.arc3d.core.Paint;
 import icyllis.arc3d.engine.Caps;
 import icyllis.arc3d.engine.Engine;
 import icyllis.arc3d.granite.geom.*;
@@ -45,8 +44,8 @@ public class RendererProvider {
     private final GeometryRenderer[] mSimpleBox = new GeometryRenderer[2];
     // mask format variant
     private final GeometryRenderer[] mRasterText = new GeometryRenderer[Engine.MASK_FORMAT_COUNT];
-    // cap variant
-    private final GeometryRenderer[] mArc = new GeometryRenderer[Paint.CAP_COUNT];
+    // arc type variant
+    private final GeometryRenderer[] mArc = new GeometryRenderer[ArcShape.kTypeCount];
 
     public RendererProvider(Caps caps) {
         mSimpleBox[0] = makeSingleStep(
@@ -61,7 +60,7 @@ public class RendererProvider {
                     new RasterTextStep(i)
             );
         }
-        for (int i = 0; i < Paint.CAP_COUNT; i++) {
+        for (int i = 0; i < ArcShape.kTypeCount; i++) {
             mArc[i] = makeSingleStep(
                     new AnalyticArcStep(i)
             );
@@ -76,7 +75,7 @@ public class RendererProvider {
         return mRasterText[maskFormat];
     }
 
-    public GeometryRenderer getArc(int cap) {
-        return mArc[cap];
+    public GeometryRenderer getArc(int type) {
+        return mArc[type];
     }
 }

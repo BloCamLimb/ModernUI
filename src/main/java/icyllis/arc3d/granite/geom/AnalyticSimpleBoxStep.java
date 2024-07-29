@@ -62,23 +62,26 @@ public class AnalyticSimpleBoxStep extends GeometryStep {
     /**
      * X is corner radius for rect or half width for line.<br>
      * Y is stroke radius if stroked, or -1.0 if filled.<br>
-     * <p>
-     * Z is a bitfield: <br>
+     * Z is local AA radius.
+     */
+    public static final Attribute RADII =
+            new Attribute("Radii", VertexAttribType.kFloat3, SLDataType.kFloat3);
+    /**
+     * Bitfield: <br>
+     * 16-32 bits: painter's depth; <br>
      * 4-5 bits: join; <br>
      * 2-4 bits: dir; <br>
      * 0-2 bits: type; <br>
      * join=0: round, join=1: miter; <br>
      * dir=0: inside, dir=1: center, dir=2: outside; <br>
      * type=0: rect, type=1: round line, type=2 butt line; <br>
-     * <p>
-     * W is local AA radius.
      */
-    public static final Attribute RADII =
-            new Attribute("Radii", VertexAttribType.kFloat4, SLDataType.kFloat4);
+    public static final Attribute FLAGS_AND_DEPTH =
+            new Attribute("FlagsAndDepth", VertexAttribType.kUInt, SLDataType.kUInt);
 
     public static final AttributeSet INSTANCE_ATTRIBS =
             AttributeSet.makeImplicit(VertexInputLayout.INPUT_RATE_INSTANCE,
-                    SOLID_COLOR, LOCAL_RECT, RADII, DEPTH, MODEL_VIEW);
+                    SOLID_COLOR, LOCAL_RECT, RADII, FLAGS_AND_DEPTH, MODEL_VIEW);
 
     private final boolean mAA;
 
@@ -91,10 +94,11 @@ public class AnalyticSimpleBoxStep extends GeometryStep {
                         FLAG_HANDLE_SOLID_COLOR)
                         : (FLAG_PERFORM_SHADING | FLAG_EMIT_COVERAGE | FLAG_EMIT_01_COVERAGE |
                         FLAG_HANDLE_SOLID_COLOR),
-                PrimitiveType.TriangleStrip,
+                PrimitiveType.kTriangleStrip,
                 CommonDepthStencilSettings.kDirectDepthGreaterPass
         );
         mAA = aa;
+        assert instanceStride() == 84;
     }
 
     @Override
@@ -150,29 +154,29 @@ public class AnalyticSimpleBoxStep extends GeometryStep {
         // cos(atan(x)) = inversesqrt(1+x^2)
         // sin(atan(x)) = cos(atan(x)) * x
         vs.format("""
-                int flags = int(%1$s.z);
+                uint flags = %2$s;
                 float join = float((flags >> 4) & 1);
                 float dir = float((flags >> 2) & 3);
-                int type = flags & 3;
+                uint type = flags & 3;
                 vec2 localEdge;
                 float strokeRad = max(%1$s.y, 0.0);
                 float strokeOffset = (step(join, 0.0) * dir - 1.0) * strokeRad;
                 if (type >= 1) {
                     float len = length(scale);
                     vec2 size = vec2(len, %1$s.x);
-                    localEdge = (size + strokeRad * dir + %1$s.w) * position;
-                    %2$s = localEdge;
-                    %3$s = size + join * dir * strokeRad;
-                    %4$s = vec3(mix(%1$s.x, 0.0, type >= 2), %1$s.y, strokeOffset);
+                    localEdge = (size + strokeRad * dir + %1$s.z) * position;
+                    %3$s = localEdge;
+                    %4$s = size + join * dir * strokeRad;
+                    %5$s = vec3(mix(%1$s.x, 0.0, type >= 2), %1$s.y, strokeOffset);
                     vec2 cs = scale / len;
                     localEdge = mat2(cs.x,cs.y,-cs.y,cs.x) * localEdge;
                 } else {
-                    localEdge = (scale + strokeRad * dir + %1$s.w) * position;
-                    %2$s = localEdge;
-                    %3$s = scale + join * dir * strokeRad;
-                    %4$s = vec3(%1$s.xy, strokeOffset);
+                    localEdge = (scale + strokeRad * dir + %1$s.z) * position;
+                    %3$s = localEdge;
+                    %4$s = scale + join * dir * strokeRad;
+                    %5$s = vec3(%1$s.xy, strokeOffset);
                 }
-                """, RADII.name(), "f_RectEdge", "f_Size", "f_Radii");
+                """, RADII.name(), FLAGS_AND_DEPTH.name(), "f_RectEdge", "f_Size", "f_Radii");
 
         // setup pass through color
         vs.format("%s = %s;\n", "f_Color", SOLID_COLOR.name());
@@ -184,9 +188,9 @@ public class AnalyticSimpleBoxStep extends GeometryStep {
         // A float2 is promoted to a float3 if we add perspective via the matrix
         vs.format("vec3 devicePos = %s * vec3(localPos, 1.0);\n",
                 MODEL_VIEW.name());
-        vs.format("vec4 %s = vec4(devicePos.xy, %s, devicePos.z);\n",
+        vs.format("vec4 %s = vec4(devicePos.xy, float(%s >> 16) / 65535.0, devicePos.z);\n",
                 worldPosVar,
-                DEPTH.name());
+                FLAGS_AND_DEPTH.name());
         if (localPosVar != null) {
             vs.format("%s = localPos;\n", localPosVar);
         }
@@ -259,6 +263,7 @@ public class AnalyticSimpleBoxStep extends GeometryStep {
         // radii
         MemoryUtil.memPutFloat(instanceData + 32, shape.getSimpleRadiusX());
         MemoryUtil.memPutFloat(instanceData + 36, draw.mStrokeRadius);
+        MemoryUtil.memPutFloat(instanceData + 40, draw.mAARadius);
         int dir = switch (draw.mStrokeAlign) {
             default -> 4;
             case Paint.ALIGN_INSIDE -> 0;
@@ -271,10 +276,8 @@ public class AnalyticSimpleBoxStep extends GeometryStep {
         };
         // only butt line and rect can have miter join
         int join = (type == 2 || shape.isRect()) && draw.mJoinLimit >= MathUtil.SQRT2 ? 16 : 0;
-        MemoryUtil.memPutFloat(instanceData + 40, (float) (join | dir | type));
-        MemoryUtil.memPutFloat(instanceData + 44, draw.mAARadius);
-        MemoryUtil.memPutFloat(instanceData + 48, draw.getDepthAsFloat());
-        draw.mTransform.storeAs2D(instanceData + 52);
+        MemoryUtil.memPutFloat(instanceData + 44, (draw.getDepth() << 16) | (join | dir | type));
+        draw.mTransform.storeAs2D(instanceData + 48);
         writer.endAppender();
     }
 }

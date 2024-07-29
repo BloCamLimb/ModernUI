@@ -35,7 +35,9 @@ import java.util.Formatter;
 
 /**
  * Analytic (SDF + HW derivatives) method to fill/stroke a butt/round/square stroked
- * arc curve. The join type may be square or round. The arc must be circular, not elliptical.
+ * arc curve, a circular sector, or a circular segment. The join type may be square or round,
+ * for open arcs, and must be round for circular sector and circular segment.
+ * The arc must be circular, not elliptical.
  */
 public class AnalyticArcStep extends GeometryStep {
 
@@ -49,49 +51,54 @@ public class AnalyticArcStep extends GeometryStep {
     public static final Attribute LOCAL_ARC =
             new Attribute("LocalArc", VertexAttribType.kFloat4, SLDataType.kFloat4);
     /**
-     * X is half width.<br>
-     * Y is circle radius.<br>
-     * Z is stroke radius if stroked, or -1.0 if filled.<br>
-     * <p>
-     * W is local AA radius.
+     * X is circle radius.<br>
+     * Y is stroke radius if stroked, or -1.0 if filled.<br>
+     * Z is local AA radius.
      */
     public static final Attribute RADII =
+            new Attribute("Radii", VertexAttribType.kFloat3, SLDataType.kFloat3);
+    /**
+     * W is half width for open arcs.
+     */
+    public static final Attribute RADII_ARC =
             new Attribute("Radii", VertexAttribType.kFloat4, SLDataType.kFloat4);
     /**
-     * X is a bitfield: <br>
+     * Bitfield: <br>
+     * 16-32 bits: painter's depth; <br>
      * 4-5 bits: join; <br>
      * 2-4 bits: dir; <br>
      * join=0: round, join=1: miter; <br>
      * dir=0: inside, dir=1: center, dir=2: outside; <br>
      */
     public static final Attribute FLAGS_AND_DEPTH =
-            new Attribute("FlagsAndDepth", VertexAttribType.kFloat2, SLDataType.kFloat2);
+            new Attribute("FlagsAndDepth", VertexAttribType.kUInt, SLDataType.kUInt);
 
     public static final AttributeSet INSTANCE_ATTRIBS =
             AttributeSet.makeImplicit(VertexInputLayout.INPUT_RATE_INSTANCE,
                     SOLID_COLOR, LOCAL_ARC, RADII, FLAGS_AND_DEPTH, MODEL_VIEW);
+    public static final AttributeSet INSTANCE_ATTRIBS_FOR_ARC =
+            AttributeSet.makeImplicit(VertexInputLayout.INPUT_RATE_INSTANCE,
+                    SOLID_COLOR, LOCAL_ARC, RADII_ARC, FLAGS_AND_DEPTH, MODEL_VIEW);
 
-    private final int mCapType;
+    private final int mType;
 
-    /**
-     * The arc is a closed shape, paint's cap is ignored, this cap determines the shape
-     * of the arc itself. Butt -> Ring, Round -> Arc, Square -> Horseshoe.
-     */
-    public AnalyticArcStep(int capType) {
+    public AnalyticArcStep(int type) {
         super("AnalyticArcStep",
-                switch (capType) {
-                    case Paint.CAP_BUTT -> "butt";
-                    case Paint.CAP_ROUND -> "round";
-                    case Paint.CAP_SQUARE -> "square";
+                switch (type) {
+                    case ArcShape.kArc_Type -> "butt";
+                    case ArcShape.kArcRound_Type -> "round";
+                    case ArcShape.kArcSquare_Type -> "square";
+                    case ArcShape.kPie_Type -> "pie";
+                    case ArcShape.kChord_Type -> "chord";
                     default -> throw new AssertionError();
                 },
-                null, INSTANCE_ATTRIBS,
+                null, ArcShape.isOpenArc(type) ? INSTANCE_ATTRIBS_FOR_ARC : INSTANCE_ATTRIBS,
                 FLAG_PERFORM_SHADING | FLAG_EMIT_COVERAGE | FLAG_OUTSET_BOUNDS_FOR_AA |
                         FLAG_HANDLE_SOLID_COLOR,
-                PrimitiveType.TriangleStrip,
+                PrimitiveType.kTriangleStrip,
                 CommonDepthStencilSettings.kDirectDepthGreaterPass
         );
-        mCapType = capType;
+        mType = type;
     }
 
     @Override
@@ -112,9 +119,15 @@ public class AnalyticArcStep extends GeometryStep {
         // cos(sweepAngle), sin(sweepAngle)
         varyingHandler.addVarying("f_Span", SLDataType.kFloat2,
                 VaryingHandler.kCanBeFlat_Interpolation);
-        // half width, circle radius, stroke radius, stroke offset
-        varyingHandler.addVarying("f_Radii", SLDataType.kFloat4,
-                VaryingHandler.kCanBeFlat_Interpolation);
+        if (ArcShape.isOpenArc(mType)) {
+            // circle radius, stroke radius, stroke offset, half width
+            varyingHandler.addVarying("f_Radii", SLDataType.kFloat4,
+                    VaryingHandler.kCanBeFlat_Interpolation);
+        } else {
+            // circle radius, stroke radius, stroke offset
+            varyingHandler.addVarying("f_Radii", SLDataType.kFloat3,
+                    VaryingHandler.kCanBeFlat_Interpolation);
+        }
         // solid color
         varyingHandler.addVarying("f_Color", SLDataType.kFloat4,
                 VaryingHandler.kCanBeFlat_Interpolation);
@@ -136,18 +149,33 @@ public class AnalyticArcStep extends GeometryStep {
 
         // the rotation is inverted for fragment's local arc
         // we always have a rect in local space
-        vs.format("""
-                int flags = int(%2$s.x);
-                float join = float((flags >> 4) & 1);
-                float dir = float((flags >> 2) & 3);
-                float strokeRad = max(%1$s.z, 0.0);
-                float strokeOffset = (step(join, 0.0) * dir - 1.0) * strokeRad;
-                vec2 localEdge = (%1$s.x + %1$s.y + strokeRad * dir + %1$s.w) * position;
-                vec2 cs = vec2(cos(angle.x), sin(angle.x));
-                %3$s = mat2(cs.x,-cs.y,cs.y,cs.x) * localEdge;
-                %4$s = vec2(cos(angle.y), sin(angle.y));
-                %5$s = vec4(%1$s.xyz, strokeOffset);
-                """, RADII.name(), FLAGS_AND_DEPTH.name(), "f_ArcEdge", "f_Span", "f_Radii");
+        if (ArcShape.isOpenArc(mType)) {
+            vs.format("""
+                    uint flags = %2$s;
+                    float join = float((flags >> 4) & 1);
+                    float dir = float((flags >> 2) & 3);
+                    float strokeRad = max(%1$s.y, 0.0);
+                    float strokeOffset = (step(join, 0.0) * dir - 1.0) * strokeRad;
+                    vec2 localEdge = (%1$s.x + %1$s.w + strokeRad * dir + %1$s.z) * position;
+                    vec2 cs = vec2(cos(angle.x), sin(angle.x));
+                    %3$s = mat2(cs.x,-cs.y,cs.y,cs.x) * localEdge;
+                    %4$s = vec2(cos(angle.y), sin(angle.y));
+                    %5$s = vec4(%1$s.xy, strokeOffset, %1$s.w);
+                    """, RADII_ARC.name(), FLAGS_AND_DEPTH.name(), "f_ArcEdge", "f_Span", "f_Radii");
+        } else {
+            vs.format("""
+                    uint flags = %2$s;
+                    float join = float((flags >> 4) & 1);
+                    float dir = float((flags >> 2) & 3);
+                    float strokeRad = max(%1$s.y, 0.0);
+                    float strokeOffset = (step(join, 0.0) * dir - 1.0) * strokeRad;
+                    vec2 localEdge = (%1$s.x + strokeRad * dir + %1$s.z) * position;
+                    vec2 cs = vec2(cos(angle.x), sin(angle.x));
+                    %3$s = mat2(cs.x,-cs.y,cs.y,cs.x) * localEdge;
+                    %4$s = vec2(cos(angle.y), sin(angle.y));
+                    %5$s = vec3(%1$s.xy, strokeOffset);
+                    """, RADII.name(), FLAGS_AND_DEPTH.name(), "f_ArcEdge", "f_Span", "f_Radii");
+        }
 
         // setup pass through color
         vs.format("%s = %s;\n", "f_Color", SOLID_COLOR.name());
@@ -159,7 +187,7 @@ public class AnalyticArcStep extends GeometryStep {
         // A float2 is promoted to a float3 if we add perspective via the matrix
         vs.format("vec3 devicePos = %s * vec3(localPos, 1.0);\n",
                 MODEL_VIEW.name());
-        vs.format("vec4 %s = vec4(devicePos.xy, %s.y, devicePos.z);\n",
+        vs.format("vec4 %s = vec4(devicePos.xy, float(%s >> 16) / 65535.0, devicePos.z);\n",
                 worldPosVar,
                 FLAGS_AND_DEPTH.name());
         if (localPosVar != null) {
@@ -176,33 +204,37 @@ public class AnalyticArcStep extends GeometryStep {
     @Override
     public void emitFragmentCoverageCode(Formatter fs, String outputCoverage) {
         fs.format("""
-                float thick = %1$s.x;
-                vec3 radii = %1$s.yzw;
+                vec3 radii = %1$s.xyz;
                 vec2 q = %2$s;
                 vec2 cs = %3$s;
                 """, "f_Radii", "f_ArcEdge", "f_Span");
+        if (ArcShape.isOpenArc(mType)) {
+            fs.format("""
+                    float thick = %1$s.w;
+                    """, "f_Radii");
+        }
 
         // the shader code is based on IQ's article
         // see https://iquilezles.org/articles/distfunctions2d/
-        // Ring - exact, Arc - exact, Horseshoe - exact, respectively
+        // Ring - exact, Arc - exact, Horseshoe - exact, Pie - exact,
+        // Cut Disk - exact, respectively
         fs.format("""
                 q.x = abs(q.x);
                 """);
-        if (mCapType == Paint.CAP_BUTT) {
+        if (mType == ArcShape.kArc_Type) {
             fs.format("""
                     q = mat2(cs.x,cs.y,-cs.y,cs.x) * q;
                     float dis = max( abs(length(q) - radii.x) - thick,
                                      length(vec2(q.x, max(0.0, abs(radii.x - q.y) - thick))) * sign(q.x) );
                     """);
-        } else if (mCapType == Paint.CAP_ROUND) {
+        } else if (mType == ArcShape.kArcRound_Type) {
             // ndot
             fs.format("""
                     float dis = mix( abs(length(q) - radii.x),
                                      length(q - cs.yx * radii.x),
                                      cs.x*q.x > cs.y*q.y) - thick;
                     """);
-        } else {
-            assert mCapType == Paint.CAP_SQUARE;
+        } else if (mType == ArcShape.kArcSquare_Type) {
             fs.format("""
                     float l = length(q);
                     q = mat2(-cs.x,cs.y,cs.y,cs.x) * q;
@@ -211,8 +243,21 @@ public class AnalyticArcStep extends GeometryStep {
                     q = vec2( q.x - thick, abs(q.y - radii.x) - thick );
                     float dis = min(max(q.x, q.y), 0.0) + length(max(q, 0.0));
                     """);
+        } else if (mType == ArcShape.kPie_Type) {
+            fs.format("""
+                    float l = length(q) - radii.x;
+                    float m = length(q - cs.yx * clamp(dot(q,cs.yx), 0.0, radii.x));
+                    float dis = max(l, m * sign(cs.x*q.x - cs.y*q.y));
+                    """);
+        } else {
+            assert mType == ArcShape.kChord_Type;
+            fs.format("""
+                    float h = cs.x * radii.x;
+                    float w = sqrt(radii.x*radii.x - h*h);
+                    float s = max( q.x*q.x*(h-radii.x) + w*w*(h+radii.x-2.0*q.y), h*q.x-w*q.y );
+                    float dis = mix( mix( length(q-vec2(w,h)), h - q.y, q.x<w ), length(q) - radii.x, s<0.0 );
+                    """);
         }
-
         fs.format("""
                 dis = mix(dis, abs(dis - radii.z) - radii.y, radii.y >= 0);
                 """);
@@ -245,23 +290,26 @@ public class AnalyticArcStep extends GeometryStep {
         MemoryUtil.memPutFloat(instanceData + 16, shape.mCenterX);
         MemoryUtil.memPutFloat(instanceData + 20, shape.mCenterY);
         MemoryUtil.memPutFloat(instanceData + 24,
-                (shape.mSweepAngle * 0.5F + shape.mStartAngle + (mCapType == Paint.CAP_SQUARE ? 90 : -90)) * MathUtil.DEG_TO_RAD);
+                (shape.mSweepAngle * 0.5F + shape.mStartAngle + (mType == ArcShape.kArcSquare_Type ? 90 : -90)) * MathUtil.DEG_TO_RAD);
         MemoryUtil.memPutFloat(instanceData + 28,
                 (shape.mSweepAngle * 0.5F) * MathUtil.DEG_TO_RAD);
-        MemoryUtil.memPutFloat(instanceData + 32, shape.mHalfWidth);
-        MemoryUtil.memPutFloat(instanceData + 36, shape.mRadius);
-        MemoryUtil.memPutFloat(instanceData + 40, draw.mStrokeRadius);
-        MemoryUtil.memPutFloat(instanceData + 44, draw.mAARadius);
+        MemoryUtil.memPutFloat(instanceData + 32, shape.mRadius);
+        MemoryUtil.memPutFloat(instanceData + 36, draw.mStrokeRadius);
+        MemoryUtil.memPutFloat(instanceData + 40, draw.mAARadius);
+        if (ArcShape.isOpenArc(mType)) {
+            MemoryUtil.memPutFloat(instanceData + 44, shape.mHalfWidth);
+            instanceData += 4;
+        }
         int dir = switch (draw.mStrokeAlign) {
             default -> 4;
             case Paint.ALIGN_INSIDE -> 0;
             case Paint.ALIGN_OUTSIDE -> 8;
         };
         // only butt and square arc can have miter join
-        int join = (mCapType != Paint.CAP_ROUND) && draw.mJoinLimit >= MathUtil.SQRT2 ? 16 : 0;
-        MemoryUtil.memPutFloat(instanceData + 48, (float) (join | dir));
-        MemoryUtil.memPutFloat(instanceData + 52, draw.getDepthAsFloat());
-        draw.mTransform.storeAs2D(instanceData + 56);
+        int join = (mType == ArcShape.kArc_Type || mType == ArcShape.kArcSquare_Type)
+                && draw.mJoinLimit >= MathUtil.SQRT2 ? 16 : 0;
+        MemoryUtil.memPutInt(instanceData + 44, (draw.getDepth() << 16) | (join | dir));
+        draw.mTransform.storeAs2D(instanceData + 48);
         writer.endAppender();
     }
 }

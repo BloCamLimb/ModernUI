@@ -305,7 +305,7 @@ public class TestGraniteRenderer {
 
             int nRects = 4000;
             paint.reset();
-            paint.setColor(0x00000000);
+            paint.setColor(0xFF000000);
             paint.setBlendMode(BlendMode.SRC);
             canvas.drawPaint(paint);
             paint.reset();
@@ -430,13 +430,20 @@ public class TestGraniteRenderer {
                 canvas.drawRoundRect(rrect, paint);
                 device.drawAtlasSubRun(subRun, 400, 400, paint);
 
+                paint.setStyle(Paint.FILL);
+                device.drawArc(new ArcShape(1100, 300, 150, 90, 180, 10),
+                        ArcShape.kArc_Type, paint);
                 paint.setStyle(Paint.STROKE);
                 paint.setStrokeJoin(Paint.JOIN_ROUND);
-                paint.setStrokeAlign(Paint.ALIGN_OUTSIDE);
+                paint.setStrokeAlign(Paint.ALIGN_CENTER);
                 device.drawArc(new ArcShape(1100, 300, 200, 45, 210, 20),
-                        Paint.CAP_BUTT, paint);
-                device.drawArc(new ArcShape(1100, 300, 100, 45, 210, 10),
-                        Paint.CAP_ROUND, paint);
+                        ArcShape.kArc_Type, paint);
+                device.drawArc(new ArcShape(1100, 300, 100, 90, 210, 10),
+                        ArcShape.kArcRound_Type, paint);
+                device.drawArc(new ArcShape(1100, 300, 50, 90, 120, 10),
+                        ArcShape.kPie_Type, paint);
+                device.drawArc(new ArcShape(1100, 300, 50, 270, 120, 10),
+                        ArcShape.kChord_Type, paint);
 
                 paint.setDither(false);
 

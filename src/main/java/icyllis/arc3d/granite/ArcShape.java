@@ -21,11 +21,27 @@ package icyllis.arc3d.granite;
 
 public class ArcShape implements Geometry {
 
+    /**
+     * The arc is a closed shape, paint's cap is ignored, this cap determines the shape
+     * of the arc itself. Butt -> Ring, Round -> Arc, Square -> Horseshoe.
+     */
+    public static final int
+            kArc_Type = 0,          // butt cap
+            kArcRound_Type = 1,
+            kArcSquare_Type = 2,
+            kPie_Type = 3,          // circular sector
+            kChord_Type = 4;        // circular segment
+    public static final int
+            kTypeCount = 5;
+
     public float mCenterX;
     public float mCenterY;
     public float mRadius;
     public float mStartAngle;
     public float mSweepAngle;
+    /**
+     * Valid only for open arc.
+     */
     public float mHalfWidth;
 
     public ArcShape() {
@@ -38,5 +54,12 @@ public class ArcShape implements Geometry {
         mStartAngle = startAngle;
         mSweepAngle = sweepAngle;
         mHalfWidth = halfWidth;
+    }
+
+    public static boolean isOpenArc(int type) {
+        return switch (type) {
+            case kArc_Type, kArcRound_Type, kArcSquare_Type -> true;
+            default -> false;
+        };
     }
 }

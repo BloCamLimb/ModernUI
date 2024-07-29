@@ -245,14 +245,14 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
     }
 
     //TODO
-    public void drawArc(ArcShape arc, int cap, Paint paint) {
+    public void drawArc(ArcShape arc, int type, Paint paint) {
         Draw draw = new Draw();
         draw.mTransform = getLocalToDevice();
         draw.mGeometry = arc;
         mTmpOpBounds.set(arc.mCenterX - arc.mRadius, arc.mCenterY - arc.mRadius,
                 arc.mCenterX + arc.mRadius, arc.mCenterY + arc.mRadius);
         drawGeometry(draw, mTmpOpBounds, paint,
-                mContext.getRendererProvider().getArc(cap));
+                mContext.getRendererProvider().getArc(type));
     }
 
     public void drawAtlasSubRun(SubRunContainer.AtlasSubRun subRun,
