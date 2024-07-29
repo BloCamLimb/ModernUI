@@ -85,6 +85,13 @@ public class RoundRect {
     }
 
     /**
+     * Initializes to copy of other bounds.
+     */
+    public RoundRect(Rect2fc other) {
+        setRect(other);
+    }
+
+    /**
      * Returns the rectangle's left.
      */
     public final float x() {

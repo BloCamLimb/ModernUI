@@ -108,6 +108,12 @@ public class Paint implements AutoCloseable {
      */
     public static final int CAP_SQUARE = 2;
 
+    /**
+     * The number of cap types.
+     */
+    @ApiStatus.Internal
+    public static final int CAP_COUNT = 3;
+
     private static final int CAP_SHIFT = 2;
     private static final int CAP_MASK = 0x0C;
 
@@ -146,6 +152,12 @@ public class Paint implements AutoCloseable {
      */
     public static final int JOIN_BEVEL = 2;
 
+    /**
+     * The number of join types.
+     */
+    @ApiStatus.Internal
+    public static final int JOIN_COUNT = 3;
+
     private static final int JOIN_SHIFT = 4;
     private static final int JOIN_MASK = 0x30;
 
@@ -173,6 +185,12 @@ public class Paint implements AutoCloseable {
      * The stroke is aligned to outside.
      */
     public static final int ALIGN_OUTSIDE = 2;
+
+    /**
+     * The number of align types.
+     */
+    @ApiStatus.Internal
+    public static final int ALIGN_COUNT = 3;
 
     private static final int ALIGN_SHIFT = 6;
     private static final int ALIGN_MASK = 0xC0;

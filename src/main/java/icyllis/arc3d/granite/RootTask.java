@@ -57,4 +57,12 @@ public class RootTask extends Task {
         mExtraResourceRefs.forEach(Resource::unref);
         mExtraResourceRefs.clear();
     }
+
+    @Override
+    public String toString() {
+        return "RootTask{" +
+                "mRootTaskList=" + mRootTaskList +
+                ", mExtraResourceRefs=" + mExtraResourceRefs +
+                '}';
+    }
 }

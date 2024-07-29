@@ -895,7 +895,7 @@ public final class ClipStack {
                 );
                 Draw draw = new Draw();
                 draw.mTransform = mViewMatrix.clone();
-                draw.mGeometry = new Rect2f(mShape);
+                draw.mGeometry = new SimpleShape(mShape);
                 draw.mDrawBounds = drawBounds;
                 draw.mTransformedShapeBounds = drawBounds;
                 draw.mScissorRect = scissor;

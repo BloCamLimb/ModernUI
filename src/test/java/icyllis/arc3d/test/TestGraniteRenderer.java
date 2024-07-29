@@ -284,8 +284,8 @@ public class TestGraniteRenderer {
             try {
                 for (int i = 0; i < nGlyphs; i++) {
                     var glyph = strike.getGlyph(glyphs.getInt(i));
-                    positions.elements()[i*2] += glyph.getLeft();
-                    positions.elements()[i*2+1] += glyph.getTop();
+                    positions.elements()[i * 2] += glyph.getLeft();
+                    positions.elements()[i * 2 + 1] += glyph.getTop();
                     //LOGGER.info("Glyph W {} H {}", glyph.getWidth(), glyph.getHeight());
                 }
             } finally {
@@ -334,7 +334,7 @@ public class TestGraniteRenderer {
                 }
             } else if (TEST_SCENE == 1) {
                 RoundRect rrect = new RoundRect();
-                rrect.setRectXY(30, 60, 260, 120, 10, 10);
+                rrect.setRectXY(30, 60, 220, 120, 10, 10);
                 paint.setStyle(Paint.STROKE);
                 int[] aligns = {Paint.ALIGN_INSIDE, Paint.ALIGN_CENTER, Paint.ALIGN_OUTSIDE};
                 paint.setStrokeWidth(10);
@@ -344,7 +344,7 @@ public class TestGraniteRenderer {
                     canvas.setMatrix(mat);
                     paint.setRGBA(random.nextInt(256), random.nextInt(256), random.nextInt(256), 255);
                     canvas.drawRoundRect(rrect, paint);
-                    mat.preTranslateX(270);
+                    mat.preTranslateX(230);
                     mat.preRotateZ(MathUtil.PI / 20);
                 }
                 Rect2f rect = new Rect2f();
@@ -396,18 +396,18 @@ public class TestGraniteRenderer {
                 paint.setShader(RefCnt.create(testShader1));
                 paint.setStyle(Paint.FILL);
                 paint.setRGBA(random.nextInt(256), random.nextInt(256), random.nextInt(256), 255);
-                canvas.drawCircle(500, 300, 20, paint);
+                canvas.drawCircle(300, 300, 20, paint);
 
                 paint.setStyle(Paint.STROKE);
                 paint.setStrokeJoin(Paint.JOIN_BEVEL);
                 paint.setStrokeCap(Paint.CAP_SQUARE);
                 paint.setRGBA(random.nextInt(256), random.nextInt(256), random.nextInt(256), 255);
-                canvas.drawCircle(600, 300, 20, paint);
+                canvas.drawCircle(400, 300, 20, paint);
 
                 paint.setStrokeAlign(Paint.ALIGN_CENTER);
                 paint.setRGBA(random.nextInt(256), random.nextInt(256), random.nextInt(256), 255);
 
-                canvas.drawCircle(700, 300, 20, paint);
+                canvas.drawCircle(500, 300, 20, paint);
 
 
                 paint.setStyle(Paint.FILL);
@@ -429,13 +429,23 @@ public class TestGraniteRenderer {
                 }*/
                 canvas.drawRoundRect(rrect, paint);
                 device.drawAtlasSubRun(subRun, 400, 400, paint);
+
+                paint.setStyle(Paint.STROKE);
+                paint.setStrokeJoin(Paint.JOIN_ROUND);
+                paint.setStrokeAlign(Paint.ALIGN_OUTSIDE);
+                device.drawArc(new ArcShape(1100, 300, 200, 45, 210, 20),
+                        Paint.CAP_BUTT, paint);
+                device.drawArc(new ArcShape(1100, 300, 100, 45, 210, 10),
+                        Paint.CAP_ROUND, paint);
+
                 paint.setDither(false);
 
                 paint.setShader(RefCnt.create(testShader1));
-                mat.setTranslate(600, 100, 0);
+                paint.setStyle(Paint.FILL);
+                mat.setTranslate(1000, 100, 0);
                 canvas.setMatrix(mat);
                 rrect.setRectXY(200, 100, 600, 500, 20, 20);
-                //canvas.drawRoundRect(rrect, paint);
+                canvas.drawRoundRect(rrect, paint);
 
             } else if (TEST_SCENE == 2) {
                 Rect2f rect = new Rect2f();
@@ -474,7 +484,7 @@ public class TestGraniteRenderer {
             long time4 = System.nanoTime();
 
             if (!immediateContext.addTask(rootTask)) {
-                LOGGER.error("Failed to add recording");
+                LOGGER.error("Failed to add recording: {}", rootTask);
             }
             RefCnt.move(rootTask);
 

@@ -31,7 +31,7 @@ public final class Draw implements AutoCloseable {
     public GeometryRenderer mRenderer;
     // the copied view matrix
     public Matrix4c mTransform;
-    public Object mGeometry;
+    public Geometry mGeometry;
     /**
      * Clip params (immutable), set by {@link ClipStack}.
      */
