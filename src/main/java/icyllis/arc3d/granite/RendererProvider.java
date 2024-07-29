@@ -19,10 +19,10 @@
 
 package icyllis.arc3d.granite;
 
+import icyllis.arc3d.core.Paint;
 import icyllis.arc3d.engine.Caps;
 import icyllis.arc3d.engine.Engine;
-import icyllis.arc3d.granite.geom.AnalyticSimpleBoxStep;
-import icyllis.arc3d.granite.geom.RasterTextStep;
+import icyllis.arc3d.granite.geom.*;
 
 /**
  * Granite defines a limited set of renderers in order to increase the likelihood of batching
@@ -45,6 +45,8 @@ public class RendererProvider {
     private final GeometryRenderer[] mSimpleBox = new GeometryRenderer[2];
     // mask format variant
     private final GeometryRenderer[] mRasterText = new GeometryRenderer[Engine.MASK_FORMAT_COUNT];
+    // cap variant
+    private final GeometryRenderer[] mArc = new GeometryRenderer[Paint.CAP_COUNT];
 
     public RendererProvider(Caps caps) {
         mSimpleBox[0] = makeSingleStep(
@@ -59,6 +61,11 @@ public class RendererProvider {
                     new RasterTextStep(i)
             );
         }
+        for (int i = 0; i < Paint.CAP_COUNT; i++) {
+            mArc[i] = makeSingleStep(
+                    new AnalyticArcStep(i)
+            );
+        }
     }
 
     public GeometryRenderer getSimpleBox(boolean aa) {
@@ -67,5 +74,9 @@ public class RendererProvider {
 
     public GeometryRenderer getRasterText(int maskFormat) {
         return mRasterText[maskFormat];
+    }
+
+    public GeometryRenderer getArc(int cap) {
+        return mArc[cap];
     }
 }

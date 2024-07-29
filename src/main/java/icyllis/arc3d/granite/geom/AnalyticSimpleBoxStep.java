@@ -23,6 +23,8 @@ import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.Engine.PrimitiveType;
 import icyllis.arc3d.engine.Engine.VertexAttribType;
 import icyllis.arc3d.engine.*;
+import icyllis.arc3d.engine.VertexInputLayout.Attribute;
+import icyllis.arc3d.engine.VertexInputLayout.AttributeSet;
 import icyllis.arc3d.granite.*;
 import icyllis.arc3d.granite.shading.UniformHandler;
 import icyllis.arc3d.granite.shading.VaryingHandler;
@@ -55,30 +57,27 @@ public class AnalyticSimpleBoxStep extends GeometryStep {
     /**
      * (left, top, right, bottom) or ((startX, startY), (stopX, stopY))
      */
-    public static final VertexInputLayout.Attribute LOCAL_RECT =
-            new VertexInputLayout.Attribute("LocalRect", VertexAttribType.kFloat4, SLDataType.kFloat4);
+    public static final Attribute LOCAL_RECT =
+            new Attribute("LocalRect", VertexAttribType.kFloat4, SLDataType.kFloat4);
     /**
      * X is corner radius for rect or half width for line.<br>
      * Y is stroke radius if stroked, or -1.0 if filled.<br>
      * <p>
      * Z is a bitfield: <br>
-     * let join = floor(Z * 0.0625); rem = Z - 16.0 * join; dir = floor(rem * 0.25); type = rem - 4.0 * dir; <br>
+     * 4-5 bits: join; <br>
+     * 2-4 bits: dir; <br>
+     * 0-2 bits: type; <br>
      * join=0: round, join=1: miter; <br>
      * dir=0: inside, dir=1: center, dir=2: outside; <br>
      * type=0: rect, type=1: round line, type=2 butt line; <br>
      * <p>
      * W is local AA radius.
      */
-    public static final VertexInputLayout.Attribute RADII =
-            new VertexInputLayout.Attribute("Radii", VertexAttribType.kFloat4, SLDataType.kFloat4);
-    /**
-     * Local-to-device transform.
-     */
-    public static final VertexInputLayout.Attribute MODEL_VIEW =
-            new VertexInputLayout.Attribute("ModelView", VertexAttribType.kFloat3, SLDataType.kFloat3x3);
+    public static final Attribute RADII =
+            new Attribute("Radii", VertexAttribType.kFloat4, SLDataType.kFloat4);
 
-    public static final VertexInputLayout.AttributeSet INSTANCE_ATTRIBS =
-            VertexInputLayout.AttributeSet.makeImplicit(VertexInputLayout.INPUT_RATE_INSTANCE,
+    public static final AttributeSet INSTANCE_ATTRIBS =
+            AttributeSet.makeImplicit(VertexInputLayout.INPUT_RATE_INSTANCE,
                     SOLID_COLOR, LOCAL_RECT, RADII, DEPTH, MODEL_VIEW);
 
     private final boolean mAA;
@@ -131,7 +130,7 @@ public class AnalyticSimpleBoxStep extends GeometryStep {
     public void emitVertexGeomCode(Formatter vs,
                                    @Nonnull String worldPosVar,
                                    @Nullable String localPosVar) {
-        // {(-1,-1), (-1, 1), (1, -1), (1, 1)}
+        // {(-1,-1), (-1,1), (1,-1), (1,1)}
         // corner selector, CCW
         vs.format("vec2 position = vec2(gl_VertexID >> 1, gl_VertexID & 1) * 2.0 - 1.0;\n");
 
@@ -147,26 +146,26 @@ public class AnalyticSimpleBoxStep extends GeometryStep {
 
         // for miter join, always inner stroke and increase size
 
-        // type >= 1.0, handle line
-        // cos(atan(x)) = inverseSqrt(1+x^2)
+        // type >= 1, handle line
+        // cos(atan(x)) = inversesqrt(1+x^2)
         // sin(atan(x)) = cos(atan(x)) * x
         vs.format("""
-                float join = floor(%1$s.z * 0.0625);
-                float rem = %1$s.z - 16.0 * join;
-                float dir = floor(rem * 0.25);
-                float type = rem - 4.0 * dir;
+                int flags = int(%1$s.z);
+                float join = float((flags >> 4) & 1);
+                float dir = float((flags >> 2) & 3);
+                int type = flags & 3;
                 vec2 localEdge;
                 float strokeRad = max(%1$s.y, 0.0);
                 float strokeOffset = (step(join, 0.0) * dir - 1.0) * strokeRad;
-                if (type > 0.0) {
+                if (type >= 1) {
                     float len = length(scale);
                     vec2 size = vec2(len, %1$s.x);
                     localEdge = (size + strokeRad * dir + %1$s.w) * position;
                     %2$s = localEdge;
                     %3$s = size + join * dir * strokeRad;
-                    %4$s = vec3(mix(%1$s.x, 0.0, type >= 2.0), %1$s.y, strokeOffset);
+                    %4$s = vec3(mix(%1$s.x, 0.0, type >= 2), %1$s.y, strokeOffset);
                     vec2 cs = scale / len;
-                    localEdge = mat2(cs.x,cs.y,-cs.y,cs.x)*localEdge;
+                    localEdge = mat2(cs.x,cs.y,-cs.y,cs.x) * localEdge;
                 } else {
                     localEdge = (scale + strokeRad * dir + %1$s.w) * position;
                     %2$s = localEdge;

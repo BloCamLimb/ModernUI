@@ -20,7 +20,6 @@
 package icyllis.arc3d.test;
 
 import icyllis.arc3d.core.Matrix4;
-import icyllis.arc3d.core.RoundRect;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.granite.*;
 import icyllis.arc3d.granite.geom.AnalyticSimpleBoxStep;
@@ -117,7 +116,7 @@ public class TestDrawPass {
         int nRects = 1000;
         for (int i = 0; i < nRects; i++) {
             Draw draw = new Draw();
-            RoundRect rrect = new RoundRect();
+            SimpleShape rrect = new SimpleShape();
             int l = (int) (Math.random() * 910);
             int t = (int) (Math.random() * 450);
             int w = (int) (Math.random() * Math.random() * Math.random() * Math.random() * 350) + 20;

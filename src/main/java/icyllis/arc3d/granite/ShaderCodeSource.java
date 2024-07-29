@@ -1128,10 +1128,7 @@ public class ShaderCodeSource {
         String outerPriorStageOutput = priorStageOutput;
         String outerBlenderDstColor = blenderDstColor;
 
-        code.format("""
-                // [%d] %s
-                {
-                """, node.stageIndex(), node.stage().mName);
+        code.format("{\n");
 
         int childIndex = 0;
         if ((outer.requirementFlags() & kLocalCoords_ReqFlag) != 0) {

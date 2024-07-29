@@ -40,6 +40,10 @@ public class SimpleShape extends RoundRect implements Geometry {
         super(other);
     }
 
+    public SimpleShape(Rect2fc other) {
+        setRect(other);
+    }
+
     public void setLine(float x0, float y0, float x1, float y1,
                         float radius, boolean round) {
         mLeft = x0;

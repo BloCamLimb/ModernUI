@@ -23,6 +23,8 @@ import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.Engine.PrimitiveType;
 import icyllis.arc3d.engine.Engine.VertexAttribType;
+import icyllis.arc3d.engine.VertexInputLayout.Attribute;
+import icyllis.arc3d.engine.VertexInputLayout.AttributeSet;
 import icyllis.arc3d.granite.*;
 import icyllis.arc3d.granite.shading.UniformHandler;
 import icyllis.arc3d.granite.shading.VaryingHandler;
@@ -40,15 +42,15 @@ public class RasterTextStep extends GeometryStep {
      * The position in sub run's space, with creation matrix (no perspective),
      * bearing and initial origin applied.
      */
-    public static final VertexInputLayout.Attribute XY =
-            new VertexInputLayout.Attribute("XY", VertexAttribType.kFloat2, SLDataType.kFloat2);
-    public static final VertexInputLayout.Attribute UV =
-            new VertexInputLayout.Attribute("UV", VertexAttribType.kUShort2, SLDataType.kUInt2);
-    public static final VertexInputLayout.Attribute SIZE =
-            new VertexInputLayout.Attribute("Size", VertexAttribType.kUShort2, SLDataType.kUInt2);
+    public static final Attribute XY =
+            new Attribute("XY", VertexAttribType.kFloat2, SLDataType.kFloat2);
+    public static final Attribute UV =
+            new Attribute("UV", VertexAttribType.kUShort2, SLDataType.kUInt2);
+    public static final Attribute SIZE =
+            new Attribute("Size", VertexAttribType.kUShort2, SLDataType.kUInt2);
 
-    public static final VertexInputLayout.AttributeSet INSTANCE_ATTRIBS =
-            VertexInputLayout.AttributeSet.makeImplicit(VertexInputLayout.INPUT_RATE_INSTANCE,
+    public static final AttributeSet INSTANCE_ATTRIBS =
+            AttributeSet.makeImplicit(VertexInputLayout.INPUT_RATE_INSTANCE,
                     XY, UV, SIZE, DEPTH);
 
     private final int mMaskFormat;
@@ -108,7 +110,7 @@ public class RasterTextStep extends GeometryStep {
     @Override
     public void emitSamplers(UniformHandler uniformHandler) {
         uniformHandler.addSampler(
-                SLDataType.kSampler2D, "u_Sampler", -1);
+                SLDataType.kSampler2D, "u_GlyphAtlas", -1);
     }
 
     @Override
@@ -136,15 +138,15 @@ public class RasterTextStep extends GeometryStep {
         if (localPosVar != null) {
             // no perspective
             vs.format("""
-                %s = (%s * pos).xy;
-                """, localPosVar, "u_SubRunToLocal");
+                    %s = (%s * pos).xy;
+                    """, localPosVar, "u_SubRunToLocal");
         }
     }
 
     @Override
     public void emitFragmentColorCode(Formatter fs, String outputColor) {
         // ARGB only
-        fs.format("%s = texture(%s, %s);\n", outputColor, "u_Sampler", "f_TexCoords");
+        fs.format("%s = texture(%s, %s);\n", outputColor, "u_GlyphAtlas", "f_TexCoords");
     }
 
     /**
@@ -158,9 +160,9 @@ public class RasterTextStep extends GeometryStep {
         // A8 and LCD only
         if (mMaskFormat == Engine.MASK_FORMAT_A8) {
             // A8 is always backed by R8 texture
-            fs.format("%s = texture(%s, %s).rrrr;\n", outputCoverage, "u_Sampler", "f_TexCoords");
+            fs.format("%s = texture(%s, %s).rrrr;\n", outputCoverage, "u_GlyphAtlas", "f_TexCoords");
         } else {
-            fs.format("%s = texture(%s, %s);\n", outputCoverage, "u_Sampler", "f_TexCoords");
+            fs.format("%s = texture(%s, %s);\n", outputCoverage, "u_GlyphAtlas", "f_TexCoords");
         }
     }
 

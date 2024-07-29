@@ -85,6 +85,11 @@ public abstract class GeometryStep {
      */
     public static final VertexInputLayout.Attribute SOLID_COLOR =
             new VertexInputLayout.Attribute("SolidColor", VertexAttribType.kFloat4, SLDataType.kFloat4);
+    /**
+     * Local-to-device transform.
+     */
+    public static final VertexInputLayout.Attribute MODEL_VIEW =
+            new VertexInputLayout.Attribute("ModelView", VertexAttribType.kFloat3, SLDataType.kFloat3x3);
 
     /**
      * Set if there's fragment shader code and color output, otherwise this is
