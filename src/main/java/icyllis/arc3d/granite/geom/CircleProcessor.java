@@ -83,7 +83,7 @@ public class CircleProcessor extends GeometryStep {
 
     public CircleProcessor(boolean stroke, boolean clipPlane, boolean isectPlane,
                            boolean unionPlane, boolean roundCaps) {
-        super("Circle_GeometryProcessor", "", VERTEX_FORMAT, INSTANCE_FORMAT, 0, PrimitiveType.TriangleList, null);
+        super("Circle_GeometryProcessor", "", VERTEX_FORMAT, INSTANCE_FORMAT, 0, PrimitiveType.kTriangleList, null);
         assert (!roundCaps || (stroke && clipPlane));
         int instanceMask = (clipPlane ? 1 << 1 : 0) |
                 (isectPlane ? 1 << 2 : 0) |

@@ -89,6 +89,10 @@ public final class Draw implements AutoCloseable {
         return mStrokeRadius * multiplier;
     }
 
+    public int getDepth() {
+        return DrawOrder.getDepth(mDrawOrder);
+    }
+
     public float getDepthAsFloat() {
         return DrawOrder.getDepthAsFloat(mDrawOrder);
     }

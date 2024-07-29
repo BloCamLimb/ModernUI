@@ -371,11 +371,11 @@ public interface Engine {
      * the rasterization of one pixel in screen coordinates, may or may not anti-aliased.
      */
     interface PrimitiveType {
-        byte PointList = 0; // 1 px only
-        byte LineList = 1; // 1 px wide only
-        byte LineStrip = 2; // 1 px wide only
-        byte TriangleList = 3; // separate triangle
-        byte TriangleStrip = 4; // connected triangle
+        byte kPointList = 0; // 1 px only
+        byte kLineList = 1; // 1 px wide only
+        byte kLineStrip = 2; // 1 px wide only
+        byte kTriangleList = 3; // separate triangle
+        byte kTriangleStrip = 4; // connected triangle
     }
 
     /**

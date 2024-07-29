@@ -106,11 +106,11 @@ public final class GLOpsRenderPass extends OpsRenderPass {
             return false;
         }
         mPrimitiveType = switch (graphicsPipelineDesc.primitiveType()) {
-            case PrimitiveType.PointList -> GL_POINTS;
-            case PrimitiveType.LineList -> GL_LINES;
-            case PrimitiveType.LineStrip -> GL_LINE_STRIP;
-            case PrimitiveType.TriangleList -> GL_TRIANGLES;
-            case PrimitiveType.TriangleStrip -> GL_TRIANGLE_STRIP;
+            case PrimitiveType.kPointList -> GL_POINTS;
+            case PrimitiveType.kLineList -> GL_LINES;
+            case PrimitiveType.kLineStrip -> GL_LINE_STRIP;
+            case PrimitiveType.kTriangleList -> GL_TRIANGLES;
+            case PrimitiveType.kTriangleStrip -> GL_TRIANGLE_STRIP;
             default -> throw new AssertionError();
         };
 

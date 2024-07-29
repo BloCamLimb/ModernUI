@@ -71,7 +71,7 @@ public class RasterTextStep extends GeometryStep {
                             FLAG_PERFORM_SHADING | FLAG_HAS_TEXTURES | FLAG_EMIT_PRIMITIVE_COLOR;
                     default -> throw new AssertionError();
                 },
-                PrimitiveType.TriangleStrip,
+                PrimitiveType.kTriangleStrip,
                 CommonDepthStencilSettings.kDirectDepthGEqualPass);
         mMaskFormat = maskFormat;
         // there's no LCD support atm, changes are needed to support

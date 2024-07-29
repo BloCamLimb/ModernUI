@@ -744,11 +744,11 @@ public final class GLUtil {
 
     public static int toGLPrimitiveType(byte primitiveType) {
         return switch (primitiveType) {
-            case Engine.PrimitiveType.PointList -> GL_POINTS;
-            case Engine.PrimitiveType.LineList -> GL_LINES;
-            case Engine.PrimitiveType.LineStrip -> GL_LINE_STRIP;
-            case Engine.PrimitiveType.TriangleList -> GL_TRIANGLES;
-            case Engine.PrimitiveType.TriangleStrip -> GL_TRIANGLE_STRIP;
+            case Engine.PrimitiveType.kPointList -> GL_POINTS;
+            case Engine.PrimitiveType.kLineList -> GL_LINES;
+            case Engine.PrimitiveType.kLineStrip -> GL_LINE_STRIP;
+            case Engine.PrimitiveType.kTriangleList -> GL_TRIANGLES;
+            case Engine.PrimitiveType.kTriangleStrip -> GL_TRIANGLE_STRIP;
             default -> throw new AssertionError();
         };
     }
