@@ -274,9 +274,9 @@ public class AnalyticSimpleBoxStep extends GeometryStep {
             case SimpleShape.kLine_Type -> 2;
             case SimpleShape.kLineRound_Type -> 1;
         };
-        // only butt line and rect can have miter join
+        // only butt/square line and rect can have miter join
         int join = (type == 2 || shape.isRect()) && draw.mJoinLimit >= MathUtil.SQRT2 ? 16 : 0;
-        MemoryUtil.memPutFloat(instanceData + 44, (draw.getDepth() << 16) | (join | dir | type));
+        MemoryUtil.memPutInt(instanceData + 44, (draw.getDepth() << 16) | (join | dir | type));
         draw.mTransform.storeAs2D(instanceData + 48);
         writer.endAppender();
     }
