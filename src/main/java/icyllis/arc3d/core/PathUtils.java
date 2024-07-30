@@ -54,9 +54,21 @@ public class PathUtils {
             return false;
         }
 
-        //TODO solve scale using center point of path bounds if perspective,
-        // for now it's 1
-        float resScale = Math.abs(ctm.getMaxScale());
+        float resScale;
+        if (ctm.hasPerspective()) {
+            var transformedBounds = new Rect2f();
+            ctm.mapRect(src.getBounds(), transformedBounds);
+            resScale = ctm.getMaxScale(
+                    transformedBounds.centerX(),
+                    transformedBounds.centerY()
+            );
+        } else {
+            resScale = ctm.getMaxScale();
+        }
+        if (resScale <= MathUtil.EPS || !Float.isFinite(resScale)) {
+            // capture negative, approx zero, infinity, NaN
+            resScale = 1;
+        }
         Stroke stroke = new Stroke(paint, resScale);
 
         //TODO path effect

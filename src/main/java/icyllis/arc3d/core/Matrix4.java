@@ -49,7 +49,7 @@ import java.nio.FloatBuffer;
 public non-sealed class Matrix4 implements Matrix4c, Cloneable {
 
     // sequential matrix elements, m(ij) (row, column)
-    // directly using primitives will be faster than array in Java
+    // directly using primitives will be faster than array in Java (before Vector API)
     // [m11 m12 m13 m14]
     // [m21 m22 m23 m24]
     // [m31 m32 m33 m34]
@@ -3242,7 +3242,6 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
     private float computeMinScale(double px, double py) {
         final double x = m11 * px + m21 * py + m41;
         final double y = m12 * px + m22 * py + m42;
-        final double z = m13 * px + m23 * py + m43;
         final double w = m14 * px + m24 * py + m44;
 
         final float dxdu = m11;
@@ -3253,11 +3252,11 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
         final float dwdv = m24;
 
         double invW2 = 1.0 / (w * w);
-        // non-persp has invW2 = 1, devP.w = 1, dwdu = 0, dwdv = 0
-        double dfdu = (w * dxdu - x * dwdu) * invW2; // non-persp -> dxdu -> m00
-        double dfdv = (w * dxdv - x * dwdv) * invW2; // non-persp -> dxdv -> m01
-        double dgdu = (w * dydu - y * dwdu) * invW2; // non-persp -> dydu -> m10
-        double dgdv = (w * dydv - y * dwdv) * invW2; // non-persp -> dydv -> m11
+        // non-persp has invW2 = 1, w = 1, dwdu = 0, dwdv = 0
+        double dfdu = (w * dxdu - x * dwdu) * invW2; // non-persp -> dxdu -> m11
+        double dfdv = (w * dxdv - x * dwdv) * invW2; // non-persp -> dxdv -> m21
+        double dgdu = (w * dydu - y * dwdu) * invW2; // non-persp -> dydu -> m12
+        double dgdv = (w * dydv - y * dwdv) * invW2; // non-persp -> dydv -> m22
 
         return computeMinScale(dfdu, dfdv, dgdu, dgdv);
     }
