@@ -21,7 +21,8 @@ package icyllis.arc3d.core;
 
 import org.lwjgl.system.NativeType;
 
-import javax.annotation.*;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 
@@ -497,6 +498,47 @@ public sealed interface Matrixc permits Matrix {
      * @return maximum scale factor
      */
     float getMaxScale();
+
+    /**
+     * Returns the minimum scaling factor of this matrix by decomposing the scaling and
+     * shearing elements. When this matrix has perspective, the scaling factor is specific
+     * to the given point <var>p</var>.<br>
+     * Returns -1 if scale factor overflows.
+     *
+     * @param px the x-coord of point
+     * @param py the y-coord of point
+     * @return minimum scale factor
+     */
+    float getMinScale(float px, float py);
+
+    /**
+     * Returns the maximum scaling factor of this matrix by decomposing the scaling and
+     * shearing elements. When this matrix has perspective, the scaling factor is specific
+     * to the given point <var>p</var>.<br>
+     * Returns -1 if scale factor overflows.
+     *
+     * @param px the x-coord of point
+     * @param py the y-coord of point
+     * @return maximum scale factor
+     */
+    float getMaxScale(float px, float py);
+
+    /**
+     * Returns the differential area scale factor for a local point 'p' that will be transformed
+     * by 'm' (which may have perspective). If 'm' does not have perspective, this scale factor is
+     * constant regardless of 'p'; when it does have perspective, it is specific to that point.
+     * <p>
+     * This can be crudely thought of as "device pixel area" / "local pixel area" at 'p'.
+     * <p>
+     * Returns positive infinity if the transformed homogeneous point has w <= 0.
+     * <p>
+     * The return value is equivalent to {@link #getMinScale(float, float)} times
+     * {@link #getMaxScale(float, float)}.
+     *
+     * @param px the x-coord of point
+     * @param py the y-coord of point
+     */
+    float differentialAreaScale(float px, float py);
 
     /**
      * Returns true if all elements of the matrix are finite. Returns false if any
