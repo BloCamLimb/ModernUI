@@ -69,11 +69,11 @@ public class PathUtils {
             // capture negative, approx zero, infinity, NaN
             resScale = 1;
         }
-        Stroke stroke = new Stroke(paint, resScale);
+        StrokeRec strokeRec = new StrokeRec(paint, resScale);
 
         //TODO path effect
 
-        if (!stroke.applyToPath(src, dst)) {
+        if (!strokeRec.applyToPath(src, dst)) {
             dst.set(src);
         }
 
@@ -81,6 +81,6 @@ public class PathUtils {
             dst.reset();
             return false;
         }
-        return !stroke.isHairlineStyle();
+        return !strokeRec.isHairlineStyle();
     }
 }

@@ -183,6 +183,11 @@ public class NoPixelsDevice extends Device {
 
     }
 
+    @Override
+    protected void onDrawGlyphRunList(Canvas canvas, GlyphRunList glyphRunList, Paint paint) {
+
+    }
+
     /**
      * The ConservativeClip computes the maximum rectangular bounds of the actual clipping region
      * for quick rejection. This can skip operations that have no rendering results.

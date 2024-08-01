@@ -3407,22 +3407,22 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
 
     @Override
     public int hashCode() {
-        int result = Float.hashCode(m11);
-        result = 31 * result + Float.hashCode(m12);
-        result = 31 * result + Float.hashCode(m13);
-        result = 31 * result + Float.hashCode(m14);
-        result = 31 * result + Float.hashCode(m21);
-        result = 31 * result + Float.hashCode(m22);
-        result = 31 * result + Float.hashCode(m23);
-        result = 31 * result + Float.hashCode(m24);
-        result = 31 * result + Float.hashCode(m31);
-        result = 31 * result + Float.hashCode(m32);
-        result = 31 * result + Float.hashCode(m33);
-        result = 31 * result + Float.hashCode(m34);
-        result = 31 * result + Float.hashCode(m41);
-        result = 31 * result + Float.hashCode(m42);
-        result = 31 * result + Float.hashCode(m43);
-        result = 31 * result + Float.hashCode(m44);
+        int result = (m11 != 0.0f ? Float.floatToIntBits(m11) : 0);
+        result = 31 * result + (m12 != 0.0f ? Float.floatToIntBits(m12) : 0);
+        result = 31 * result + (m13 != 0.0f ? Float.floatToIntBits(m13) : 0);
+        result = 31 * result + (m14 != 0.0f ? Float.floatToIntBits(m14) : 0);
+        result = 31 * result + (m21 != 0.0f ? Float.floatToIntBits(m21) : 0);
+        result = 31 * result + (m22 != 0.0f ? Float.floatToIntBits(m22) : 0);
+        result = 31 * result + (m23 != 0.0f ? Float.floatToIntBits(m23) : 0);
+        result = 31 * result + (m24 != 0.0f ? Float.floatToIntBits(m24) : 0);
+        result = 31 * result + (m31 != 0.0f ? Float.floatToIntBits(m31) : 0);
+        result = 31 * result + (m32 != 0.0f ? Float.floatToIntBits(m32) : 0);
+        result = 31 * result + (m33 != 0.0f ? Float.floatToIntBits(m33) : 0);
+        result = 31 * result + (m34 != 0.0f ? Float.floatToIntBits(m34) : 0);
+        result = 31 * result + (m41 != 0.0f ? Float.floatToIntBits(m41) : 0);
+        result = 31 * result + (m42 != 0.0f ? Float.floatToIntBits(m42) : 0);
+        result = 31 * result + (m43 != 0.0f ? Float.floatToIntBits(m43) : 0);
+        result = 31 * result + (m44 != 0.0f ? Float.floatToIntBits(m44) : 0);
         return result;
     }
 

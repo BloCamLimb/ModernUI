@@ -19,5 +19,9 @@
 
 package icyllis.arc3d.granite;
 
+import icyllis.arc3d.core.Rect2f;
+
 public interface Geometry {
+
+    void getBounds(Rect2f dest);
 }

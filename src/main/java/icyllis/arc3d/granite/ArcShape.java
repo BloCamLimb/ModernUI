@@ -19,6 +19,8 @@
 
 package icyllis.arc3d.granite;
 
+import icyllis.arc3d.core.Rect2f;
+
 public class ArcShape implements Geometry {
 
     /**
@@ -43,6 +45,7 @@ public class ArcShape implements Geometry {
      * Valid only for open arc.
      */
     public float mHalfWidth;
+    public int mType;
 
     public ArcShape() {
     }
@@ -61,5 +64,16 @@ public class ArcShape implements Geometry {
             case kArc_Type, kArcRound_Type, kArcSquare_Type -> true;
             default -> false;
         };
+    }
+
+    @Override
+    public void getBounds(Rect2f dest) {
+        dest.set(
+                mCenterX - mRadius, mCenterY - mRadius,
+                mCenterX + mRadius, mCenterY + mRadius
+        );
+        if (isOpenArc(mType)) {
+            dest.outset(mHalfWidth, mHalfWidth);
+        }
     }
 }

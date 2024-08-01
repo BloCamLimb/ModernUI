@@ -262,7 +262,7 @@ public class AnalyticSimpleBoxStep extends GeometryStep {
         MemoryUtil.memPutFloat(instanceData + 28, shape.bottom());
         // radii
         MemoryUtil.memPutFloat(instanceData + 32, shape.getSimpleRadiusX());
-        MemoryUtil.memPutFloat(instanceData + 36, draw.mStrokeRadius);
+        MemoryUtil.memPutFloat(instanceData + 36, draw.mHalfWidth);
         MemoryUtil.memPutFloat(instanceData + 40, draw.mAARadius);
         int dir = switch (draw.mStrokeAlign) {
             default -> 4;

@@ -112,9 +112,7 @@ public abstract class Device extends RefCnt {
     }
 
     /**
-     * Returns the backing local-to-device matrix (no copy).
-     *
-     * @return the backing local-to-device matrix
+     * Returns the transformation that maps from the local space to the device's coordinate space.
      */
     @Nonnull
     public final Matrix4c getLocalToDevice() {
@@ -122,11 +120,20 @@ public abstract class Device extends RefCnt {
     }
 
     /**
+     * Returns the transformation that maps from the local space to the device's coordinate space.
+     */
+    @Nonnull
+    public final Matrixc getLocalToDevice33() {
+        return mLocalToDevice33;
+    }
+
+    /**
      * Return the device's coordinate space transform: this maps from the device's coordinate space
      * into the global canvas' space (or root device space). This includes the translation
      * necessary to account for the device's origin.
      */
-    public final Matrix4 getDeviceToGlobal() {
+    @Nonnull
+    public final Matrix4c getDeviceToGlobal() {
         return mDeviceToGlobal;
     }
 
@@ -134,7 +141,8 @@ public abstract class Device extends RefCnt {
      * Return the inverse of getDeviceToGlobal(), mapping from the global canvas' space (or root
      * device space) into this device's coordinate space.
      */
-    public final Matrix4 getGlobalToDevice() {
+    @Nonnull
+    public final Matrix4c getGlobalToDevice() {
         return mGlobalToDevice;
     }
 
@@ -169,7 +177,7 @@ public abstract class Device extends RefCnt {
 
     public final void restore(Matrix4 globalTransform) {
         onRestore();
-        setGlobalTransform(globalTransform);
+        setGlobalCTM(globalTransform);
     }
 
     public final void restoreLocal(Matrix4 localToDevice) {
@@ -188,27 +196,24 @@ public abstract class Device extends RefCnt {
     }
 
     public abstract boolean isClipAA();
+
     public abstract boolean isClipEmpty();
+
     public abstract boolean isClipRect();
+
     public abstract boolean isClipWideOpen();
 
-    public final void setGlobalTransform(@Nullable Matrix4 globalTransform) {
-        if (globalTransform == null) {
-            mLocalToDevice.setIdentity();
-        } else {
-            mLocalToDevice.set(globalTransform);
-            mLocalToDevice.normalizePerspective();
-        }
-        // Map from the global transform state to this device's coordinate system.
+    public final void setGlobalCTM(@Nonnull Matrix4c ctm) {
+        mLocalToDevice.set(ctm);
+        mLocalToDevice.normalizePerspective();
+        // Map from the global CTM state to this device's coordinate system.
         mLocalToDevice.postConcat(mGlobalToDevice);
+        mLocalToDevice.toMatrix(mLocalToDevice33);
     }
 
-    public final void setLocalToDevice(@Nullable Matrix4c localToDevice) {
-        if (localToDevice == null) {
-            mLocalToDevice.setIdentity();
-        } else {
-            mLocalToDevice.set(localToDevice);
-        }
+    public final void setLocalToDevice(@Nonnull Matrix4c localToDevice) {
+        mLocalToDevice.set(localToDevice);
+        mLocalToDevice.toMatrix(mLocalToDevice33);
     }
 
     @Nullable
@@ -231,11 +236,11 @@ public abstract class Device extends RefCnt {
      * will include a pre-translation by T(deviceOriginX, deviceOriginY), and the final
      * local-to-device matrix will have a post-translation of T(-deviceOriginX, -deviceOriginY).
      */
-    final void setCoordinateSystem(@Nullable Matrix4 deviceToGlobal,
-                                   @Nullable Matrix4 globalToDevice,
-                                   @Nullable Matrix4 localToDevice,
-                                   int bufferOriginX,
-                                   int bufferOriginY) {
+    protected final void setDeviceCoordinateSystem(@Nullable Matrix4c deviceToGlobal,
+                                                   @Nullable Matrix4c globalToDevice,
+                                                   @Nullable Matrix4c localToDevice,
+                                                   int bufferOriginX,
+                                                   int bufferOriginY) {
         if (deviceToGlobal == null) {
             mDeviceToGlobal.setIdentity();
             mGlobalToDevice.setIdentity();
@@ -257,6 +262,7 @@ public abstract class Device extends RefCnt {
             mGlobalToDevice.postTranslate(-bufferOriginX, -bufferOriginY);
             mLocalToDevice.postTranslate(-bufferOriginX, -bufferOriginY);
         }
+        mLocalToDevice.toMatrix(mLocalToDevice33);
     }
 
     /**
@@ -264,7 +270,7 @@ public abstract class Device extends RefCnt {
      * unique origin.
      */
     final void setOrigin(@Nullable Matrix4 globalTransform, int x, int y) {
-        setCoordinateSystem(null, null, globalTransform, x, y);
+        setDeviceCoordinateSystem(null, null, globalTransform, x, y);
     }
 
     protected void onSave() {
@@ -318,6 +324,20 @@ public abstract class Device extends RefCnt {
     public abstract void drawCircle(float cx, float cy, float radius, Paint paint);
 
     public abstract void drawRoundRect(RoundRect rr, Paint paint);
+
+    public final void drawGlyphRunList(Canvas canvas,
+                                       GlyphRunList glyphRunList,
+                                       Paint paint) {
+        if (!getLocalToDevice33().isFinite()) {
+            return;
+        }
+
+        onDrawGlyphRunList(canvas, glyphRunList, paint);
+    }
+
+    protected abstract void onDrawGlyphRunList(Canvas canvas,
+                                               GlyphRunList glyphRunList,
+                                               Paint paint);
 
     @Nullable
     protected Surface makeSurface(ImageInfo info) {

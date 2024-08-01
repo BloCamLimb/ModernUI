@@ -19,6 +19,7 @@
 
 package icyllis.arc3d.core.j2d;
 
+import icyllis.arc3d.core.Canvas;
 import icyllis.arc3d.core.Paint;
 import icyllis.arc3d.core.*;
 
@@ -95,5 +96,10 @@ public class RasterDevice extends Device {
         mG2D.fill(new RoundRectangle2D.Float(
 
         ));
+    }
+
+    @Override
+    protected void onDrawGlyphRunList(Canvas canvas, GlyphRunList glyphRunList, Paint paint) {
+
     }
 }

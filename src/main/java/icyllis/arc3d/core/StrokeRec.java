@@ -23,7 +23,7 @@ package icyllis.arc3d.core;
  * This class collects stroke params from paint and constructs new paths
  * by stroking geometries.
  */
-public class Stroke {
+public class StrokeRec {
 
     public static final int
             kHairline_Style = 0,
@@ -34,46 +34,47 @@ public class Stroke {
     private float mWidth;
     private float mMiterLimit;
     private float mResScale;
-    private byte mCap, mJoin;
+    private byte mCap, mJoin, mAlign;
     private boolean mStrokeAndFill;
 
     /**
      * A fill style.
      */
-    public Stroke() {
+    public StrokeRec() {
         mWidth = -1;
         mMiterLimit = 4;
         mResScale = 1;
         mCap = Paint.CAP_BUTT;
-        mJoin = Paint.JOIN_MITER;
+        mJoin = Paint.JOIN_ROUND;
+        mAlign = Paint.ALIGN_CENTER;
         mStrokeAndFill = false;
     }
 
     /**
      * Create from paint, assuming resScale = 1.
      */
-    public Stroke(Paint paint) {
+    public StrokeRec(Paint paint) {
         this(paint, 1);
     }
 
     /**
      * Create from paint.
      */
-    public Stroke(Paint paint, float resScale) {
+    public StrokeRec(Paint paint, float resScale) {
         init(paint, paint.getStyle(), paint.getStrokeWidth(), resScale);
     }
 
     /**
      * Create from paint with overrides, assuming resScale = 1.
      */
-    public Stroke(Paint paint, @Paint.Style int style, float width) {
+    public StrokeRec(Paint paint, @Paint.Style int style, float width) {
         init(paint, style, width, 1);
     }
 
     /**
      * Create from paint with overrides.
      */
-    public Stroke(Paint paint, @Paint.Style int style, float width, float resScale) {
+    public StrokeRec(Paint paint, @Paint.Style int style, float width, float resScale) {
         init(paint, style, width, resScale);
     }
 
@@ -104,6 +105,7 @@ public class Stroke {
         mMiterLimit = paint.getStrokeMiter();
         mCap = (byte) paint.getStrokeCap();
         mJoin = (byte) paint.getStrokeJoin();
+        mAlign = (byte) paint.getStrokeAlign();
     }
 
     public int getStyle() {
@@ -175,6 +177,10 @@ public class Stroke {
         return mJoin;
     }
 
+    public int getAlign() {
+        return mAlign;
+    }
+
     public float getMiterLimit() {
         return mMiterLimit;
     }
@@ -187,16 +193,22 @@ public class Stroke {
         mJoin = (byte) join;
     }
 
+    public void setAlign(@Paint.Align int align) {
+        mAlign = (byte) align;
+    }
+
     public void setMiterLimit(float miterLimit) {
         assert miterLimit >= 0;
         mMiterLimit = miterLimit;
     }
 
-    public void setStrokeParams(@Paint.Cap int cap, @Paint.Join int join, float miterLimit) {
+    public void setStrokeParams(@Paint.Cap int cap, @Paint.Join int join,
+                                @Paint.Align int align, float miterLimit) {
         assert miterLimit >= 0;
         mMiterLimit = miterLimit;
         mCap = (byte) cap;
         mJoin = (byte) join;
+        mAlign = (byte) align;
     }
 
     /**
@@ -247,7 +259,7 @@ public class Stroke {
      * Apply these stroke parameters to a paint.
      */
     public void applyToPaint(Paint paint) {
-        if (mWidth < 0) {
+        if (mWidth < 0) { // fill
             paint.setStyle(Paint.FILL);
             return;
         }
@@ -257,6 +269,7 @@ public class Stroke {
         paint.setStrokeMiter(mMiterLimit);
         paint.setStrokeCap(mCap);
         paint.setStrokeJoin(mJoin);
+        paint.setStrokeAlign(mAlign);
     }
 
     /**
@@ -265,7 +278,7 @@ public class Stroke {
      * stroke to the geometry.
      */
     public float getInflationRadius() {
-        return getInflationRadius(mWidth, mCap, mJoin, mMiterLimit);
+        return getInflationRadius(mWidth, mCap, mJoin, mAlign, mMiterLimit);
     }
 
     /**
@@ -273,7 +286,7 @@ public class Stroke {
      * Equal Strokes produce equal paths. Equality of produced
      * paths does not take the ResScale parameter into account.
      */
-    public boolean hasSameEffect(Stroke other) {
+    public boolean hasSameEffect(StrokeRec other) {
         if (mWidth <= 0) { // hairline or fill
             return getStyle() == other.getStyle();
         }
@@ -281,11 +294,12 @@ public class Stroke {
                 (mJoin != Paint.JOIN_MITER || mMiterLimit == other.mMiterLimit) &&
                 mCap == other.mCap &&
                 mJoin == other.mJoin &&
+                mAlign == other.mAlign &&
                 mStrokeAndFill == other.mStrokeAndFill;
     }
 
     public static float getInflationRadius(float strokeWidth,
-                                           int cap, int join,
+                                           int cap, int join, int align,
                                            float miterLimit) {
         if (strokeWidth < 0) { // fill
             return 0;
@@ -294,14 +308,16 @@ public class Stroke {
             return 1;
         }
 
-        // since we're stroked, outset the rect by the radius (and join type, caps)
         float multiplier = 1;
         if (join == Paint.JOIN_MITER) {
             multiplier = Math.max(multiplier, miterLimit);
         }
-        if (cap == Paint.CAP_SQUARE) {
-            multiplier = Math.max(multiplier, MathUtil.SQRT2);
+        if (align == Paint.ALIGN_CENTER) {
+            if (cap == Paint.CAP_SQUARE) {
+                multiplier = Math.max(multiplier, MathUtil.SQRT2);
+            }
+            multiplier *= 0.5f;
         }
-        return (strokeWidth * 0.5f) * multiplier;
+        return strokeWidth * multiplier;
     }
 }

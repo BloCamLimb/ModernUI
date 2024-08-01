@@ -25,21 +25,41 @@ import javax.annotation.Nullable;
 
 /**
  * Represents a recorded draw operation.
+ * <p>
+ * Draw contains multiple groups of data, each of which will be initialized step by step.
  */
 public final class Draw implements AutoCloseable {
-    // reference to our renderer instance
+
+    /**
+     * Pointer to the renderer instance, managed by {@link RendererProvider}.
+     */
     public GeometryRenderer mRenderer;
-    // the copied view matrix
+
+    /**
+     * This matrix transforms geometry's local space to device space.
+     */
     public Matrix4c mTransform;
     public Geometry mGeometry;
     /**
      * Clip params (immutable), set by {@link ClipStack}.
+     * <p>
+     * DrawBounds: Tight bounds of the draw in device space, including any padding/outset for stroking and expansion
+     * due to inverse fill and intersected with the scissor.
+     * <p>
+     * TransformedShapeBounds: Clipped bounds of the shape in device space, including any padding/outset for stroking,
+     * intersected with the scissor and ignoring the fill rule. For a regular fill this is identical
+     * to DrawBounds. For an inverse fill, this is a subset of DrawBounds.
+     * <p>
+     * ScissorRect: The scissor rectangle obtained by restricting the bounds of the clip stack that affects the
+     * draw to the device bounds. The scissor must contain DrawBounds and must already be
+     * intersected with the device bounds.
      */
     public Rect2fc mDrawBounds;
     public Rect2fc mTransformedShapeBounds;
     public Rect2ic mScissorRect;
     /**
-     * Precomputed AA radius, set by {@link ClipStack}.
+     * Precomputed local AA radius if {@link GeometryRenderer#outsetBoundsForAA()} is true,
+     * set by {@link ClipStack}.
      */
     public float mAARadius;
     /**
@@ -49,13 +69,18 @@ public final class Draw implements AutoCloseable {
     /**
      * Stroke params.
      */
-    // half width of stroke
-    public float mStrokeRadius = -1; // >0: relative to transform; ==0: hairline, 1px in device space; <0: fill
-    public float mJoinLimit;        // >0: miter join; ==0: bevel join; <0: round join
+    public float mHalfWidth = -1;   // >0: relative to transform; ==0: hairline, 1px in device space; <0: fill
+    public float mJoinLimit = -1;   // >0: miter join; ==0: bevel join; <0: round join
+    // Paint::Cap
     public byte mStrokeCap;
+    // Paint::Align
     public byte mStrokeAlign;
+
+    /**
+     * Paint params, null implies depth-only draw (i.e. clipping mask).
+     */
     @Nullable
-    public PaintParams mPaintParams; // null implies depth-only draw (clipping mask)
+    public PaintParams mPaintParams;
 
     @Override
     public void close() {
@@ -70,12 +95,35 @@ public final class Draw implements AutoCloseable {
     }
 
     /**
-     * @see Stroke#getInflationRadius(float, int, int, float)
+     * Returns true if the geometry is stroked instead of filled.
+     */
+    public boolean isStroke() {
+        return mHalfWidth >= 0.f;
+    }
+
+    public boolean isMiterJoin() {
+        return mJoinLimit > 0.f;
+    }
+
+    public boolean isBevelJoin() {
+        return mJoinLimit == 0.f;
+    }
+
+    public boolean isRoundJoin() {
+        return mJoinLimit < 0.f;
+    }
+
+    public float getMiterLimit() {
+        return Math.max(0.f, mJoinLimit);
+    }
+
+    /**
+     * @see StrokeRec#getInflationRadius()
      */
     public float getInflationRadius() {
-        if (mStrokeRadius < 0) { // fill
+        if (mHalfWidth < 0) { // fill
             return 0;
-        } else if (mStrokeRadius == 0) { // hairline
+        } else if (mHalfWidth == 0) { // hairline
             return 1;
         }
 
@@ -83,12 +131,19 @@ public final class Draw implements AutoCloseable {
         if (mJoinLimit > 0) { // miter join
             multiplier = Math.max(multiplier, mJoinLimit);
         }
-        if (mStrokeCap == Paint.CAP_SQUARE) {
-            multiplier = Math.max(multiplier, MathUtil.SQRT2);
+        if (mStrokeAlign == Paint.ALIGN_CENTER) {
+            if (mStrokeCap == Paint.CAP_SQUARE) {
+                multiplier = Math.max(multiplier, MathUtil.SQRT2);
+            }
+        } else {
+            multiplier *= 2.0f;
         }
-        return mStrokeRadius * multiplier;
+        return mHalfWidth * multiplier;
     }
 
+    /**
+     * Returns the painter's depth as unsigned integer.
+     */
     public int getDepth() {
         return DrawOrder.getDepth(mDrawOrder);
     }

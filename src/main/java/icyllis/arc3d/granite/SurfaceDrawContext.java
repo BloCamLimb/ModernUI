@@ -191,7 +191,7 @@ public final class SurfaceDrawContext implements AutoCloseable {
         mPendingLoadOp = Engine.LoadOp.kDiscard;
     }
 
-    public int pendingNumSteps() {
+    public int numPendingSteps() {
         return mNumSteps;
     }
 

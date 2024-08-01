@@ -41,7 +41,7 @@ public class SimpleShape extends RoundRect implements Geometry {
     }
 
     public SimpleShape(Rect2fc other) {
-        setRect(other);
+        super(other);
     }
 
     public void setLine(float x0, float y0, float x1, float y1,

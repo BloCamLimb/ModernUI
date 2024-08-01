@@ -26,8 +26,6 @@ import icyllis.arc3d.core.shaders.*;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.granite.*;
 import icyllis.arc3d.opengl.GLUtil;
-import it.unimi.dsi.fastutil.floats.FloatArrayList;
-import it.unimi.dsi.fastutil.ints.IntArrayList;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL33C;
@@ -243,26 +241,17 @@ public class TestGraniteRenderer {
 
         Typeface_JDK typeface = new Typeface_JDK(
                 new java.awt.Font("STXingKai", java.awt.Font.PLAIN, 1));
-        SubRunContainer.AtlasSubRun subRun;
+        SubRunContainer subRunContainer;
         {
             char[] text = "TeaCon甲辰".toCharArray();
             var vector = typeface.getFont().deriveFont(80F).layoutGlyphVector(
                     new FontRenderContext(null, true, false),
                     text, 0, text.length, java.awt.Font.LAYOUT_LEFT_TO_RIGHT);
             int nGlyphs = vector.getNumGlyphs();
-            IntArrayList glyphs = new IntArrayList(nGlyphs);
-            glyphs.size(nGlyphs);
-            FloatArrayList positions = new FloatArrayList(nGlyphs * 2);
-            positions.size(nGlyphs * 2);
-            vector.getGlyphCodes(0, nGlyphs, glyphs.elements());
-            vector.getGlyphPositions(0, nGlyphs, positions.elements());
-            var visual = vector.getVisualBounds();
-            Rect2f bounds = new Rect2f((float) visual.getMinX(),
-                    (float) visual.getMinY(),
-                    (float) visual.getMaxX(),
-                    (float) visual.getMaxY());
+            int[] glyphs = vector.getGlyphCodes(0, nGlyphs, null);
+            float[] positions = vector.getGlyphPositions(0, nGlyphs, null);
 
-            LOGGER.info("Glyphs: {}", Arrays.toString(glyphs.elements()));
+            LOGGER.info("Glyphs: {}", Arrays.toString(glyphs));
 
             Font font = new Font();
             font.setTypeface(typeface);
@@ -274,27 +263,20 @@ public class TestGraniteRenderer {
             paint.setStrokeJoin(Paint.JOIN_MITER);
             paint.setStrokeWidth(2);
 
-            Matrix devMatrix = new Matrix();
-
-            StrikeDesc strikeDesc = new StrikeDesc();
-            strikeDesc.update(font, paint, devMatrix);
-
-            Strike strike = strikeDesc.findOrCreateStrike();
-            strike.lock();
-            try {
-                for (int i = 0; i < nGlyphs; i++) {
-                    var glyph = strike.getGlyph(glyphs.getInt(i));
-                    positions.elements()[i * 2] += glyph.getLeft();
-                    positions.elements()[i * 2 + 1] += glyph.getTop();
-                    //LOGGER.info("Glyph W {} H {}", glyph.getWidth(), glyph.getHeight());
-                }
-            } finally {
-                strike.unlock();
-            }
-
-            subRun = new SubRunContainer.DirectMaskSubRun(
-                    strikeDesc, devMatrix, bounds, Engine.MASK_FORMAT_A8, glyphs, positions
+            GlyphRunBuilder builder = new GlyphRunBuilder();
+            subRunContainer = SubRunContainer.make(
+                    builder.setGlyphRunList(
+                            glyphs, 0,
+                            positions, 0,
+                            nGlyphs, font,
+                            400, 400,
+                            paint
+                    ),
+                    Matrix.identity(),
+                    paint,
+                    StrikeCache.getGlobalStrikeCache()
             );
+            LOGGER.info("SubRunContainer size: {}", subRunContainer.getMemorySize());
         }
 
         Paint paint = new Paint();
@@ -428,7 +410,7 @@ public class TestGraniteRenderer {
                     }
                 }*/
                 canvas.drawRoundRect(rrect, paint);
-                device.drawAtlasSubRun(subRun, 400, 400, paint);
+                subRunContainer.draw(canvas, 400, 400, paint, device);
 
                 paint.setStyle(Paint.FILL);
                 device.drawArc(new ArcShape(1100, 300, 150, 90, 180, 10),
