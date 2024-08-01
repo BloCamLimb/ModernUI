@@ -162,6 +162,29 @@ public final class Strike {
         return glyph.getPath() != null;
     }
 
+    /**
+     * Compute metrics for a list of glyphs in bulk. The glyph metrics within
+     * the given range will be computed, and the glyph pointers will be stored
+     * in the results array and returned.
+     * <p>
+     * Excludes lock.
+     */
+    @Nonnull
+    public Glyph[] getMetrics(@Nonnull int[] glyphs, int glyphOffset, int glyphCount,
+                              @Nonnull Glyph[] results) {
+        assert results.length >= glyphCount;
+        lock();
+        try {
+            for (int i = glyphOffset, e = glyphOffset + glyphCount, j = 0; i < e; i++, j++) {
+                Glyph glyph = getGlyph(glyphs[i]);
+                results[j] = glyph;
+            }
+            return results;
+        } finally {
+            unlock();
+        }
+    }
+
     // read only!!
     public StrikeDesc getStrikeDesc() {
         return mStrikeDesc;

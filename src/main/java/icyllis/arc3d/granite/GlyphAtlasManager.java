@@ -34,8 +34,11 @@ public class GlyphAtlasManager extends DrawAtlas.AtlasGenerationCounter
     // font atlas is 4096x4096 at most, governed by plot size and max plots
     private static final int MAX_ATLAS_SIZE = 4096;
 
+    private static final int SMALL_PLOT_SIZE = Glyph.MAX_ATLAS_DIMENSION;
+    private static final int LARGE_PLOT_SIZE = SMALL_PLOT_SIZE * 2;
+
     static {
-        int plots = MAX_ATLAS_SIZE / Glyph.ATLAS_PLOT_SIZE;
+        int plots = MAX_ATLAS_SIZE / LARGE_PLOT_SIZE;
         //noinspection ConstantValue
         assert plots * plots <= DrawAtlas.Plot.MAX_PLOTS;
     }
@@ -76,11 +79,16 @@ public class GlyphAtlasManager extends DrawAtlas.AtlasGenerationCounter
                 // color atlas is 2048x2048 at most
                 atlasSize = Math.min(MAX_ATLAS_SIZE / 2, mMaxTextureSize);
             }
-            // plot size is 512x512, no multi pages
+            // plot size is 512x512 for 4096x4096 atlas
+            // 256x256 for 2048x2048 atlas
+            int plotSize = atlasSize == MAX_ATLAS_SIZE
+                    ? LARGE_PLOT_SIZE
+                    : SMALL_PLOT_SIZE;
+            // no multi pages
             mAtlases[maskFormat] = DrawAtlas.make(
                     ct,
                     atlasSize, atlasSize,
-                    Glyph.ATLAS_PLOT_SIZE, Glyph.ATLAS_PLOT_SIZE,
+                    plotSize, plotSize,
                     /*generationCounter*/ this,
                     /*useMultiPages*/ false,
                     /*useStorageTextures*/ false,

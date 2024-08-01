@@ -64,11 +64,12 @@ public final class Glyph {
 
     static final int kSizeOf = 48;
 
-    // An atlas consists of plots, and plots hold glyphs. A plot is 512x512.
-    // this means that the maximum size a glyph for mask rendering can be is 512x512.
-    public static final int ATLAS_PLOT_SIZE = 512;
     // The padding needed for bilinear interpolating the glyph when drawing.
     public static final int BILERP_GLYPH_BORDER = 1;
+    // An atlas consists of plots, and plots hold glyphs. The minimum a plot can be is 256x256.
+    // This means that the maximum size a glyph can be is 256x256.
+    public static final int MAX_ATLAS_DIMENSION = 256;
+    public static final int MAX_BILERP_ATLAS_DIMENSION = MAX_ATLAS_DIMENSION - (2 * BILERP_GLYPH_BORDER);
 
     // The glyph ID
     private final int mID;
@@ -303,13 +304,13 @@ public final class Glyph {
             switch (actionType) {
                 case kDirectMask -> {
                     // fits in atlas
-                    if (getMaxDimension() <= ATLAS_PLOT_SIZE) {
+                    if (getMaxDimension() <= MAX_ATLAS_DIMENSION) {
                         action = kAccept_Action;
                     }
                 }
                 case kTransformedMask -> {
                     // fits in atlas
-                    if (getMaxDimension() <= (ATLAS_PLOT_SIZE - 2 * BILERP_GLYPH_BORDER)) {
+                    if (getMaxDimension() <= MAX_BILERP_ATLAS_DIMENSION) {
                         action = kAccept_Action;
                     }
                 }

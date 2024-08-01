@@ -19,6 +19,8 @@
 
 package icyllis.arc3d.core;
 
+import org.jetbrains.annotations.ApiStatus;
+
 /**
  * Font controls options applied when drawing text.
  */
@@ -39,6 +41,16 @@ public class Font {
     private float mSize;
     private byte mFlags;
     private byte mEdging;
+
+    public Font() {
+    }
+
+    public void set(Font other) {
+        mTypeface = other.mTypeface;
+        mSize = other.mSize;
+        mFlags = other.mFlags;
+        mEdging = other.mEdging;
+    }
 
     /**
      * Sets SkTypeface to typeface, decreasing SkRefCnt of the previous SkTypeface.
@@ -118,6 +130,29 @@ public class Font {
             mFlags |= kLinearMetrics_Flag;
         } else {
             mFlags &= ~kLinearMetrics_Flag;
+        }
+    }
+
+    /**
+     * Return the approximate largest dimension of typical text when transformed by the matrix.
+     *
+     * @param matrix  used to transform size
+     * @param centerX location of the text prior to matrix transformation. Used if the
+     *                matrix has perspective.
+     * @return typical largest dimension
+     */
+    @ApiStatus.Internal
+    public float approximateTransformedFontSize(Matrixc matrix,
+                                                float centerX, float centerY) {
+        if (matrix.hasPerspective()) {
+            float scaleSq = matrix.differentialAreaScale(centerX, centerY);
+            if (scaleSq <= MathUtil.EPS || !Float.isFinite(scaleSq)) {
+                return -mSize;
+            } else {
+                return (float) (mSize * Math.sqrt(scaleSq));
+            }
+        } else {
+            return mSize * matrix.getMaxScale();
         }
     }
 }
