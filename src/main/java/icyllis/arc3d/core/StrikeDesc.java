@@ -105,7 +105,11 @@ public final class StrikeDesc {
 
         if (style != Paint.FILL && strokeWidth >= 0) {
             mFrameWidth = strokeWidth;
-            mMiterLimit = paint.getStrokeMiter();
+            if (paint.getStrokeJoin() == Paint.JOIN_MITER) {
+                mMiterLimit = paint.getStrokeMiter();
+            } else {
+                mMiterLimit = 0;
+            }
             mStrokeJoin = (byte) paint.getStrokeJoin();
 
             if (style == Paint.STROKE_AND_FILL) {
@@ -149,6 +153,13 @@ public final class StrikeDesc {
         mHash = h;
 
         return this;
+    }
+
+    // Create a strike spec for mask style cache entries.
+    @Nonnull
+    public StrikeDesc updateForMask(@Nonnull Font font, @Nonnull Paint paint,
+                                    @Nonnull Matrixc deviceMatrix) {
+        return update(font, paint, deviceMatrix);
     }
 
     public void getLocalMatrix(Matrix dst) {
@@ -218,6 +229,11 @@ public final class StrikeDesc {
     }
 
     @Nonnull
+    public Strike findOrCreateStrike(@Nonnull StrikeCache cache) {
+        return cache.findOrCreateStrike(this);
+    }
+
+    @Nonnull
     public ScalerContext createScalerContext() {
         return mTypeface.createScalerContext(this);
     }
@@ -250,5 +266,9 @@ public final class StrikeDesc {
     @Nonnull
     public StrikeDesc copy() {
         return new StrikeDesc(this);
+    }
+
+    public long getMemorySize() {
+        return 64;
     }
 }

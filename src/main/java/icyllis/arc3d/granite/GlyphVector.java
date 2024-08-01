@@ -142,4 +142,13 @@ public class GlyphVector extends DrawAtlas.PlotBulkUseUpdater {
             return end - start;
         }
     }
+
+    @Override
+    public long getMemorySize() {
+        long size = super.getMemorySize();
+        size += 8 + mStrikeDesc.getMemorySize();
+        size += 32 + MathUtil.align8((long) mGlyphs.length * 12) + 16;
+        size += 8;
+        return size;
+    }
 }

@@ -201,6 +201,15 @@ public class DrawAtlas implements AutoCloseable {
             assert generation < (1L << 48);
             loc = (loc & 0xFFFF_0000_0000_0000L) | generation;
         }
+
+        @Override
+        public String toString() {
+            return "PlotLocator{" +
+                    "generation=" + getGeneration() +
+                    ", plotIndex=" + getPlotIndex() +
+                    ", pageIndex=" + getPageIndex() +
+                    '}';
+        }
     }
 
     /**
@@ -246,6 +255,19 @@ public class DrawAtlas implements AutoCloseable {
             v1 += (short) padding;
             u2 -= (short) padding;
             v2 -= (short) padding;
+        }
+
+        @Override
+        public String toString() {
+            return "AtlasLocator{" +
+                    "generation=" + getGeneration() +
+                    ", plotIndex=" + getPlotIndex() +
+                    ", pageIndex=" + getPageIndex() +
+                    ", u1=" + Short.toUnsignedInt(u1) +
+                    ", v1=" + Short.toUnsignedInt(v1) +
+                    ", u2=" + Short.toUnsignedInt(u2) +
+                    ", v2=" + Short.toUnsignedInt(v2) +
+                    '}';
         }
     }
 
@@ -307,6 +329,13 @@ public class DrawAtlas implements AutoCloseable {
         // 16-32: page index
         public int dataAt(int index) {
             return mData[index];
+        }
+
+        public long getMemorySize() {
+            long size = 16;
+            size += 16 + (long) mBitSet.length * 8 + 8;
+            size += 16 + (long) mData.length * 4 + 8;
+            return size;
         }
     }
 

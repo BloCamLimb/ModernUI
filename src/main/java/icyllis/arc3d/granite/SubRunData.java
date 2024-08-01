@@ -67,4 +67,8 @@ public class SubRunData implements Geometry {
     public Rect2fc getBounds() {
         return mSubRun.getBounds();
     }
+
+    public void getBounds(Rect2f dest) {
+        mSubRun.getBounds().store(dest);
+    }
 }
