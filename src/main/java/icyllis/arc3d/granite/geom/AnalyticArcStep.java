@@ -294,7 +294,7 @@ public class AnalyticArcStep extends GeometryStep {
         MemoryUtil.memPutFloat(instanceData + 28,
                 (shape.mSweepAngle * 0.5F) * MathUtil.DEG_TO_RAD);
         MemoryUtil.memPutFloat(instanceData + 32, shape.mRadius);
-        MemoryUtil.memPutFloat(instanceData + 36, draw.mStrokeRadius);
+        MemoryUtil.memPutFloat(instanceData + 36, draw.mHalfWidth);
         MemoryUtil.memPutFloat(instanceData + 40, draw.mAARadius);
         if (ArcShape.isOpenArc(mType)) {
             MemoryUtil.memPutFloat(instanceData + 44, shape.mHalfWidth);

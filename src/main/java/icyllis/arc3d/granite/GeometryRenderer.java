@@ -95,6 +95,10 @@ public final class GeometryRenderer {
         return (mStepFlags & GeometryStep.FLAG_OUTSET_BOUNDS_FOR_AA) != 0;
     }
 
+    public boolean emitsPrimitiveColor() {
+        return (mStepFlags & GeometryStep.FLAG_EMIT_PRIMITIVE_COLOR) != 0;
+    }
+
     public boolean emitsCoverage() {
         return (mStepFlags & GeometryStep.FLAG_EMIT_COVERAGE) != 0;
     }

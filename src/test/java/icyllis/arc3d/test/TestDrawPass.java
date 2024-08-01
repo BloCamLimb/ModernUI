@@ -135,7 +135,7 @@ public class TestDrawPass {
             transform.preTranslate(-cx, -cy);
             draw.mTransform = transform;
             int stroke = (int) (Math.random() * 50);
-            draw.mStrokeRadius = stroke < 25 ? -1 : stroke - 20;
+            draw.mHalfWidth = stroke < 25 ? -1 : stroke - 20;
             float[] col = {(float) Math.random(), (float) Math.random(), (float) Math.random(), 1.0f};
             for (int j = 0; j < 4; j++) {
                 col[j] *= 0.5f; // premultiplied color

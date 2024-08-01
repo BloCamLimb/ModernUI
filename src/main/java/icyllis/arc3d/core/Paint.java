@@ -946,8 +946,8 @@ public class Paint implements AutoCloseable {
         storage.set(orig);
 
         if (style != FILL) {
-            float stroke = Stroke.getInflationRadius(mWidth,
-                    getStrokeCap(), getStrokeJoin(), mMiterLimit);
+            float stroke = StrokeRec.getInflationRadius(mWidth,
+                    getStrokeCap(), getStrokeJoin(), getStrokeAlign(), mMiterLimit);
             storage.outset(stroke, stroke);
         }
 

@@ -221,15 +221,16 @@ public abstract class ScalerContext {
             path.transform(inverse, localPath);
             // now localPath is only affected by the paint settings, and not the canvas matrix
 
-            Stroke stroke = new Stroke();
+            StrokeRec strokeRec = new StrokeRec();
 
             if (mDesc.getFrameWidth() >= 0) {
-                stroke.setStrokeStyle(mDesc.getFrameWidth(),
+                strokeRec.setStrokeStyle(mDesc.getFrameWidth(),
                         (mDesc.getFlags() & StrikeDesc.kFrameAndFill_Flag) != 0);
                 // glyphs are always closed contours, so cap type is ignored,
                 // so we just pass something.
-                stroke.setStrokeParams(Paint.CAP_BUTT,
+                strokeRec.setStrokeParams(Paint.CAP_BUTT,
                         mDesc.getStrokeJoin(),
+                        Paint.ALIGN_CENTER,
                         mDesc.getMiterLimit());
             }
 
@@ -238,7 +239,7 @@ public abstract class ScalerContext {
             }
 
             path.reset();
-            if (stroke.applyToPath(localPath, path)) {
+            if (strokeRec.applyToPath(localPath, path)) {
                 // set to stroke path
                 localPath.set(path);
             }

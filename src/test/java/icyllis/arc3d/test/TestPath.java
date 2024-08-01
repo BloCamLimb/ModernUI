@@ -40,10 +40,10 @@ public class TestPath {
         src.forEach(TestPathUtils.PRINTER);
 
         Path dst = new Path();
-        Stroke stroke = new Stroke();
-        stroke.setWidth(10);
-        stroke.setStrokeParams(Paint.CAP_ROUND, Paint.JOIN_MITER, 4);
-        stroke.applyToPath(src, dst);
+        StrokeRec strokeRec = new StrokeRec();
+        strokeRec.setWidth(10);
+        strokeRec.setStrokeParams(Paint.CAP_ROUND, Paint.JOIN_MITER, Paint.ALIGN_CENTER, 4);
+        strokeRec.applyToPath(src, dst);
         System.out.println("Dst path:");
         dst.forEach(TestPathUtils.PRINTER);
 
@@ -69,10 +69,10 @@ public class TestPath {
         src.forEach(TestPathUtils.PRINTER);
 
         Path dst = new Path();
-        Stroke stroke = new Stroke();
-        stroke.setWidth(10);
-        stroke.setStrokeParams(Paint.CAP_ROUND, Paint.JOIN_ROUND, 4);
-        stroke.applyToPath(src, dst);
+        StrokeRec strokeRec = new StrokeRec();
+        strokeRec.setWidth(10);
+        strokeRec.setStrokeParams(Paint.CAP_ROUND, Paint.JOIN_ROUND, Paint.ALIGN_CENTER, 4);
+        strokeRec.applyToPath(src, dst);
         System.out.println("Dst path:");
         dst.forEach(TestPathUtils.PRINTER);
 

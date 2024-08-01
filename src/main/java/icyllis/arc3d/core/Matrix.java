@@ -638,6 +638,142 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
     }
 
     /**
+     * Set the scaleX value.
+     */
+    public void m11(float scaleX) {
+        m11 = scaleX;
+        mTypeMask = kUnknown_Mask;
+    }
+
+    /**
+     * Set the shearY value.
+     */
+    public void m12(float shearY) {
+        m12 = shearY;
+        mTypeMask = kUnknown_Mask;
+    }
+
+    /**
+     * Set the persp0 value.
+     */
+    public void m14(float persp0) {
+        m14 = persp0;
+        mTypeMask = kUnknown_Mask;
+    }
+
+    /**
+     * Set the shearX value.
+     */
+    public void m21(float shearX) {
+        m21 = shearX;
+        mTypeMask = kUnknown_Mask;
+    }
+
+    /**
+     * Set the scaleY value.
+     */
+    public void m22(float scaleY) {
+        m22 = scaleY;
+        mTypeMask = kUnknown_Mask;
+    }
+
+    /**
+     * Set the persp1 value.
+     */
+    public void m24(float persp1) {
+        m24 = persp1;
+        mTypeMask = kUnknown_Mask;
+    }
+
+    /**
+     * Set the transX value.
+     */
+    public void m41(float transX) {
+        m41 = transX;
+        mTypeMask = kUnknown_Mask;
+    }
+
+    /**
+     * Set the transY value.
+     */
+    public void m42(float transY) {
+        m42 = transY;
+        mTypeMask = kUnknown_Mask;
+    }
+
+    /**
+     * Set the persp2 value.
+     */
+    public void m44(float persp2) {
+        m44 = persp2;
+        mTypeMask = kUnknown_Mask;
+    }
+
+    /**
+     * Set the scaleX value.
+     */
+    public void setScaleX(float scaleX) {
+        m11 = scaleX;
+        mTypeMask = kUnknown_Mask;
+    }
+
+    /**
+     * Set the scaleY value.
+     */
+    public void setScaleY(float scaleY) {
+        m22 = scaleY;
+        mTypeMask = kUnknown_Mask;
+    }
+
+    /**
+     * Set the shearY value.
+     */
+    public void setShearY(float shearY) {
+        m12 = shearY;
+        mTypeMask = kUnknown_Mask;
+    }
+
+    /**
+     * Set the shearX value.
+     */
+    public void setShearX(float shearX) {
+        m21 = shearX;
+        mTypeMask = kUnknown_Mask;
+    }
+
+    /**
+     * Set the transX value.
+     */
+    public void setTranslateX(float transX) {
+        m41 = transX;
+        mTypeMask = kUnknown_Mask;
+    }
+
+    /**
+     * Set the transY value.
+     */
+    public void setTranslateY(float transY) {
+        m42 = transY;
+        mTypeMask = kUnknown_Mask;
+    }
+
+    /**
+     * Set the perspY value.
+     */
+    public void setPerspY(float perspY) {
+        m24 = perspY;
+        mTypeMask = kUnknown_Mask;
+    }
+
+    /**
+     * Set the perspX value.
+     */
+    public void setPerspX(float perspX) {
+        m14 = perspX;
+        mTypeMask = kUnknown_Mask;
+    }
+
+    /**
      * Store the values of the given matrix into this matrix.
      *
      * @param m the matrix to copy from
@@ -2411,15 +2547,15 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
 
     @Override
     public int hashCode() {
-        int result = Float.floatToIntBits(m11);
-        result = 31 * result + Float.floatToIntBits(m12);
-        result = 31 * result + Float.floatToIntBits(m14);
-        result = 31 * result + Float.floatToIntBits(m21);
-        result = 31 * result + Float.floatToIntBits(m22);
-        result = 31 * result + Float.floatToIntBits(m24);
-        result = 31 * result + Float.floatToIntBits(m41);
-        result = 31 * result + Float.floatToIntBits(m42);
-        result = 31 * result + Float.floatToIntBits(m44);
+        int result = (m11 != 0.0f ? Float.floatToIntBits(m11) : 0);
+        result = 31 * result + (m12 != 0.0f ? Float.floatToIntBits(m12) : 0);
+        result = 31 * result + (m14 != 0.0f ? Float.floatToIntBits(m14) : 0);
+        result = 31 * result + (m21 != 0.0f ? Float.floatToIntBits(m21) : 0);
+        result = 31 * result + (m22 != 0.0f ? Float.floatToIntBits(m22) : 0);
+        result = 31 * result + (m24 != 0.0f ? Float.floatToIntBits(m24) : 0);
+        result = 31 * result + (m41 != 0.0f ? Float.floatToIntBits(m41) : 0);
+        result = 31 * result + (m42 != 0.0f ? Float.floatToIntBits(m42) : 0);
+        result = 31 * result + (m44 != 0.0f ? Float.floatToIntBits(m44) : 0);
         return result;
     }
 

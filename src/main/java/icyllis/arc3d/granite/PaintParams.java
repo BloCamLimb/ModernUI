@@ -27,6 +27,9 @@ import icyllis.arc3d.engine.KeyBuilder;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+/**
+ * Parameters used for shading.
+ */
 //TODO currently we don't handle advanced blending
 public final class PaintParams implements AutoCloseable {
 
@@ -97,6 +100,26 @@ public final class PaintParams implements AutoCloseable {
      */
     public float a() {
         return mA;
+    }
+
+    @RawPtr
+    public Shader getShader() {
+        return mShader;
+    }
+
+    @RawPtr
+    public ColorFilter getColorFilter() {
+        return mColorFilter;
+    }
+
+    @RawPtr
+    public Blender getFinalBlender() {
+        return mFinalBlender;
+    }
+
+    @RawPtr
+    public Blender getPrimitiveBlender() {
+        return mPrimitiveBlender;
     }
 
     public BlendMode getFinalBlendMode() {

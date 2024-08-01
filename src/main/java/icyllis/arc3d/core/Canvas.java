@@ -125,6 +125,8 @@ public class Canvas implements AutoCloseable {
     private final Matrix4 mTmpMatrix = new Matrix4();
     private final Paint mTmpPaint = new Paint();
 
+    private final GlyphRunBuilder mScratchGlyphRunBuilder = new GlyphRunBuilder();
+
     /**
      * Creates an empty Canvas with no backing device or pixels, with
      * a width and height of zero.
@@ -455,7 +457,7 @@ public class Canvas implements AutoCloseable {
             checkForDeferredSave();
             Matrix4 transform = top().mMatrix;
             transform.preTranslate(dx, dy);
-            getTopDevice().setGlobalTransform(transform);
+            getTopDevice().setGlobalCTM(transform);
             didTranslate(dx, dy);
         }
     }
@@ -475,7 +477,7 @@ public class Canvas implements AutoCloseable {
             checkForDeferredSave();
             Matrix4 transform = top().mMatrix;
             transform.preScale(sx, sy);
-            getTopDevice().setGlobalTransform(transform);
+            getTopDevice().setGlobalCTM(transform);
             didScale(sx, sy);
         }
     }
@@ -501,7 +503,7 @@ public class Canvas implements AutoCloseable {
             transform.preTranslate(px, py);
             transform.preScale(sx, sy);
             transform.preTranslate(-px, -py);
-            getTopDevice().setGlobalTransform(transform);
+            getTopDevice().setGlobalCTM(transform);
             didScale(sx, sy, px, py);
         }
     }
@@ -520,7 +522,7 @@ public class Canvas implements AutoCloseable {
             checkForDeferredSave();
             Matrix4 transform = top().mMatrix;
             transform.preRotateZ(degrees * MathUtil.DEG_TO_RAD);
-            getTopDevice().setGlobalTransform(transform);
+            getTopDevice().setGlobalCTM(transform);
             didRotate(degrees);
         }
     }
@@ -545,7 +547,7 @@ public class Canvas implements AutoCloseable {
             transform.preTranslate(px, py);
             transform.preRotateZ(degrees * MathUtil.DEG_TO_RAD);
             transform.preTranslate(-px, -py);
-            getTopDevice().setGlobalTransform(transform);
+            getTopDevice().setGlobalCTM(transform);
             didRotate(degrees, px, py);
         }
     }
@@ -563,7 +565,7 @@ public class Canvas implements AutoCloseable {
             checkForDeferredSave();
             Matrix4 transform = top().mMatrix;
             transform.preConcat(matrix);
-            getTopDevice().setGlobalTransform(matrix);
+            getTopDevice().setGlobalCTM(matrix);
             didConcat(matrix);
         }
     }
@@ -1234,6 +1236,18 @@ public class Canvas implements AutoCloseable {
 
     }
 
+    public void drawGlyphs(int[] glyphs, int glyphOffset,
+                           float[] positions, int positionOffset,
+                           int glyphCount,
+                           float originX, float originY,
+                           Font font, Paint paint) {
+        if (glyphCount <= 0) { return; }
+
+        GlyphRunList glyphRunList = mScratchGlyphRunBuilder.setGlyphRunList(
+                glyphs, glyphOffset, positions, positionOffset, glyphCount, font, originX, originY, paint);
+        onDrawGlyphRunList(glyphRunList, paint);
+    }
+
     /**
      * Returns true if clip is empty; that is, nothing will draw.
      * <p>
@@ -1424,7 +1438,7 @@ public class Canvas implements AutoCloseable {
     private void internalSetMatrix(Matrix4 matrix) {
         Matrix4 transform = top().mMatrix;
         transform.set(matrix);
-        getTopDevice().setGlobalTransform(transform);
+        getTopDevice().setGlobalCTM(transform);
     }
 
     private void internalDrawPaint(Paint paint) {
@@ -1532,6 +1546,18 @@ public class Canvas implements AutoCloseable {
 
         if (aboutToDraw(paint)) {
             getTopDevice().drawCircle(cx, cy, radius, paint);
+        }
+    }
+
+    protected void onDrawGlyphRunList(GlyphRunList glyphRunList, Paint paint) {
+        Rect2f bounds = new Rect2f(glyphRunList.mSourceBounds);
+        bounds.offset(glyphRunList.mOriginX, glyphRunList.mOriginY);
+        if (internalQuickReject(bounds, paint)) {
+            return;
+        }
+
+        if (aboutToDraw(paint)) {
+            getTopDevice().drawGlyphRunList(this, glyphRunList, paint);
         }
     }
 

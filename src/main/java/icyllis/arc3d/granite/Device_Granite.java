@@ -20,8 +20,11 @@
 package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.effects.ColorFilter;
+import icyllis.arc3d.core.shaders.Shader;
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.granite.geom.*;
+import icyllis.arc3d.granite.geom.BoundsManager;
+import icyllis.arc3d.granite.geom.FullBoundsManager;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 import javax.annotation.Nullable;
@@ -182,8 +185,6 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
         return mTmpClipBoundsI;
     }
 
-    private final Rect2f mTmpOpBounds = new Rect2f();
-
     @Override
     public void drawPaint(Paint paint) {
         float[] color = new float[4];
@@ -205,21 +206,17 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
         var shape = new SimpleShape();
         shape.setLine(x0, y0, x1, y1, cap, width);
         draw.mGeometry = shape;
-        shape.getBounds(mTmpOpBounds);
-        drawGeometry(draw, mTmpOpBounds, paint,
-                mContext.getRendererProvider().getSimpleBox(paint.isAntiAlias()));
+        drawGeometry(draw, paint,
+                mContext.getRendererProvider().getSimpleBox(paint.isAntiAlias()), null);
     }
 
     @Override
     public void drawRect(Rect2fc r, Paint paint) {
         Draw draw = new Draw();
         draw.mTransform = getLocalToDevice();
-        var shape = new SimpleShape();
-        shape.setRect(r);
-        draw.mGeometry = shape;
-        mTmpOpBounds.set(r);
-        drawGeometry(draw, mTmpOpBounds, paint,
-                mContext.getRendererProvider().getSimpleBox(paint.isAntiAlias()));
+        draw.mGeometry = new SimpleShape(r);
+        drawGeometry(draw, paint,
+                mContext.getRendererProvider().getSimpleBox(paint.isAntiAlias()), null);
     }
 
     @Override
@@ -227,11 +224,10 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
         Draw draw = new Draw();
         draw.mTransform = getLocalToDevice();
         var shape = new SimpleShape();
-        shape.setEllipse(cx - radius, cy - radius, cx + radius, cy + radius);
+        shape.setEllipseXY(cx, cy, radius, radius);
         draw.mGeometry = shape;
-        shape.getBounds(mTmpOpBounds);
-        drawGeometry(draw, mTmpOpBounds, paint,
-                mContext.getRendererProvider().getSimpleBox(paint.isAntiAlias()));
+        drawGeometry(draw, paint,
+                mContext.getRendererProvider().getSimpleBox(paint.isAntiAlias()), null);
     }
 
     @Override
@@ -239,20 +235,33 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
         Draw draw = new Draw();
         draw.mTransform = getLocalToDevice();
         draw.mGeometry = new SimpleShape(rr);
-        rr.getRect(mTmpOpBounds);
-        drawGeometry(draw, mTmpOpBounds, paint,
-                mContext.getRendererProvider().getSimpleBox(paint.isAntiAlias()));
+        drawGeometry(draw, paint,
+                mContext.getRendererProvider().getSimpleBox(paint.isAntiAlias()), null);
     }
 
     //TODO
     public void drawArc(ArcShape arc, int type, Paint paint) {
         Draw draw = new Draw();
         draw.mTransform = getLocalToDevice();
+        arc.mType = type;
         draw.mGeometry = arc;
-        mTmpOpBounds.set(arc.mCenterX - arc.mRadius, arc.mCenterY - arc.mRadius,
-                arc.mCenterX + arc.mRadius, arc.mCenterY + arc.mRadius);
-        drawGeometry(draw, mTmpOpBounds, paint,
-                mContext.getRendererProvider().getArc(type));
+        drawGeometry(draw, paint,
+                mContext.getRendererProvider().getArc(type), null);
+    }
+
+    @Override
+    protected void onDrawGlyphRunList(Canvas canvas,
+                                      GlyphRunList glyphRunList,
+                                      Paint paint) {
+        Matrix positionMatrix = new Matrix(getLocalToDevice33());
+        positionMatrix.preTranslate(glyphRunList.mOriginX, glyphRunList.mOriginY);
+        SubRunContainer container = SubRunContainer.make(
+                glyphRunList,
+                positionMatrix,
+                paint,
+                StrikeCache.getGlobalStrikeCache()
+        );
+        container.draw(canvas, glyphRunList.mOriginX, glyphRunList.mOriginY, paint, this);
     }
 
     public void drawAtlasSubRun(SubRunContainer.AtlasSubRun subRun,
@@ -266,13 +275,14 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
         }
 
         int subRunEnd = subRun.getGlyphCount();
+        Paint subRunPaint = new Paint();
         boolean flushed = false;
-        for (int subRunCursor = 0; subRunCursor < subRunEnd;) {
+        for (int subRunCursor = 0; subRunCursor < subRunEnd; ) {
             int glyphsPrepared = subRun.prepareGlyphs(subRunCursor, subRunEnd,
                     mContext);
             if (glyphsPrepared < 0) {
                 // There was a problem allocating the glyph in the atlas.
-                return;
+                break;
             }
             if (glyphsPrepared > 0) {
                 SubRunData subRunData = new SubRunData(subRun,
@@ -283,17 +293,21 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
                 Matrix4 subRunToDevice = new Matrix4(getLocalToDevice());
                 subRunToDevice.preConcat2D(subRunData.getSubRunToLocal());
 
+                subRunPaint.set(paint);
+                if (subRun.getMaskFormat() == Engine.MASK_FORMAT_ARGB) {
+                    subRunPaint.setShader(null);
+                }
+                subRunPaint.setStyle(Paint.FILL);
+
                 Draw draw = new Draw();
                 draw.mTransform = subRunToDevice;
                 draw.mGeometry = subRunData;
-                var bounds = new Rect2f(subRunData.getBounds());
-                drawGeometry(draw, bounds, paint,
-                        mContext.getRendererProvider().getRasterText(maskFormat));
-                //TODO
-
+                drawGeometry(draw, paint,
+                        mContext.getRendererProvider().getRasterText(maskFormat),
+                        BlendMode.DST_IN);
             } else if (flushed) {
                 // Treat as an error.
-                return;
+                break;
             }
             subRunCursor += glyphsPrepared;
 
@@ -306,6 +320,7 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
                 flushed = true;
             }
         }
+        subRunPaint.close();
     }
 
     private static boolean blender_depends_on_dst(Blender blender,
@@ -326,19 +341,39 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
         return true;
     }
 
-    public void drawGeometry(Draw draw,
-                             Rect2f opBounds,
-                             Paint paint,
-                             GeometryRenderer renderer) {
-        if (renderer == null) {
-            return;
+    private static boolean paint_depends_on_dst(float a,
+                                                Shader shader,
+                                                ColorFilter colorFilter,
+                                                Blender finalBlender,
+                                                Blender primitiveBlender) {
+        boolean srcIsTransparent = a != 1.0f || (shader != null && !shader.isOpaque()) ||
+                (colorFilter != null && !colorFilter.isAlphaUnchanged());
+
+        if (primitiveBlender != null && blender_depends_on_dst(primitiveBlender, srcIsTransparent)) {
+            return true;
         }
+
+        return blender_depends_on_dst(finalBlender, srcIsTransparent);
+    }
+
+    private static boolean paint_depends_on_dst(PaintParams paintParams) {
+        return paint_depends_on_dst(paintParams.a(),
+                paintParams.getShader(),
+                paintParams.getColorFilter(),
+                paintParams.getFinalBlender(),
+                paintParams.getPrimitiveBlender());
+    }
+
+    public void drawGeometry(Draw draw,
+                             Paint paint,
+                             GeometryRenderer renderer,
+                             @SharedPtr Blender primitiveBlender) {
         draw.mRenderer = renderer;
 
         if (paint.getStyle() == Paint.FILL) {
-            draw.mStrokeRadius = -1;
+            draw.mHalfWidth = -1;
         } else {
-            draw.mStrokeRadius = paint.getStrokeWidth() * 0.5f;
+            draw.mHalfWidth = paint.getStrokeWidth() * 0.5f;
             switch (paint.getStrokeJoin()) {
                 case Paint.JOIN_ROUND -> draw.mJoinLimit = -1;
                 case Paint.JOIN_BEVEL -> draw.mJoinLimit = 0;
@@ -348,14 +383,33 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
             draw.mStrokeAlign = (byte) paint.getStrokeAlign();
         }
 
-        final boolean outsetBoundsForAA = true;
+        // Calculate the clipped bounds of the draw and determine the clip elements that affect the
+        // draw without updating the clip stack.
+        final boolean outsetBoundsForAA = renderer.outsetBoundsForAA();
         mElementsForMask.clear();
-        boolean clippedOut = mClipStack.prepareForDraw(draw, opBounds, outsetBoundsForAA, mElementsForMask);
+        boolean clippedOut = mClipStack.prepareForDraw(draw, outsetBoundsForAA, mElementsForMask);
         if (clippedOut) {
+            RefCnt.move(primitiveBlender);
             return;
         }
 
-        boolean needsFlush = needsFlushBeforeDraw(1);
+        // A primitive blender should be ignored if there is no primitive color to blend against.
+        // Additionally, if a renderer emits a primitive color, then a null primitive blender should
+        // be interpreted as SrcOver blending mode.
+        if (!renderer.emitsPrimitiveColor()) {
+            primitiveBlender = RefCnt.move(primitiveBlender);
+        } else if (primitiveBlender == null) {
+            primitiveBlender = BlendMode.SRC_OVER;
+        }
+
+        draw.mPaintParams = new PaintParams(paint, primitiveBlender); // move
+
+        final int numNewRenderSteps = renderer.numSteps();
+
+        // Decide if we have any reason to flush pending work. We want to flush before updating the clip
+        // state or making any permanent changes to a path atlas, since otherwise clip operations and/or
+        // atlas entries for the current draw will be flushed.
+        final boolean needsFlush = needsFlushBeforeDraw(numNewRenderSteps);
         if (needsFlush) {
             flushPendingWork();
         }
@@ -363,22 +417,28 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
         // Update the clip stack after issuing a flush (if it was needed). A draw will be recorded after
         // this point.
         int drawDepth = mCurrentDepth + 1;
-        int clipOrder = mClipStack.updateForDraw(draw, mElementsForMask, mBoundsManager, drawDepth);
+        int clipOrder = mClipStack.updateForDraw(
+                draw, mElementsForMask, mBoundsManager, drawDepth);
 
-        draw.mPaintParams = new PaintParams(paint, null);
-        { //TODO simplify this branch
+        // A draw's order always depends on the clips that must be drawn before it
+        int paintOrder = clipOrder + 1;
+        // If a draw is not opaque, it must be drawn after the most recent draw it intersects with in
+        // order to blend correctly.
+        if (renderer.emitsCoverage() || paint_depends_on_dst(draw.mPaintParams)) {
             int prevDraw = mBoundsManager.getMostRecentDraw(draw.mDrawBounds);
-            int nextOrder = prevDraw + 1;
-            clipOrder = Math.max(clipOrder, nextOrder);
+            paintOrder = Math.max(paintOrder, prevDraw + 1);
         }
 
+        //TODO stencil set
+
         draw.mDrawOrder = DrawOrder.makeFromDepthAndPaintersOrder(
-                drawDepth, clipOrder
+                drawDepth, paintOrder
         );
 
         mSDC.recordDraw(draw);
 
-        mBoundsManager.recordDraw(draw.mDrawBounds, clipOrder);
+        // Post-draw book keeping (bounds manager, depth tracking, etc.)
+        mBoundsManager.recordDraw(draw.mDrawBounds, paintOrder);
         mCurrentDepth = drawDepth;
     }
 
@@ -387,7 +447,10 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
     }
 
     private boolean needsFlushBeforeDraw(int numNewRenderSteps) {
-        return (DrawPass.MAX_RENDER_STEPS - mSDC.pendingNumSteps()) < numNewRenderSteps;
+        // Must also account for the elements in the clip stack that might need to be recorded.
+        numNewRenderSteps += mClipStack.maxDeferredClipDraws() * GeometryRenderer.MAX_RENDER_STEPS;
+        // Need flush if we don't have room to record into the current list.
+        return (DrawPass.MAX_RENDER_STEPS - mSDC.numPendingSteps()) < numNewRenderSteps;
     }
 
     /**

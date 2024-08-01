@@ -153,6 +153,10 @@ public final class ClipStack {
         }
     }
 
+    public int maxDeferredClipDraws() {
+        return mElements.size();
+    }
+
     public void getConservativeBounds(Rect2f out) {
         SaveRecord current = mSaves.element();
         if (current.mState == STATE_EMPTY) {
@@ -170,6 +174,7 @@ public final class ClipStack {
     }
 
     private final ClipDraw mTmpDraw = new ClipDraw();
+    private final Rect2f mTmpShapeBounds = new Rect2f();
 
     // Compute the bounds and the effective elements of the clip stack when applied to the draw
     // described by the provided transform, shape, and stroke.
@@ -189,24 +194,33 @@ public final class ClipStack {
     // The returned clip element list will be empty if the shape is clipped out or if the draw is
     // unaffected by any of the clip elements.
     public boolean prepareForDraw(Draw draw,
-                                  Rect2f shapeBounds,
-                                  boolean outsetForAA,
+                                  boolean outsetBoundsForAA,
                                   List<Element> elementsForMask) {
-
         SaveRecord save = mSaves.element();
         if (save.mState == STATE_EMPTY) {
             // We know the draw is clipped out so don't bother computing the base draw bounds.
             return true;
         }
 
+        Rect2f shapeBounds = mTmpShapeBounds;
+        draw.mGeometry.getBounds(shapeBounds);
+
         if (!shapeBounds.isFinite()) {
+            // Discard all non-finite geometry as if it were clipped out
             return true;
         }
 
+        //TODO initial value for this is inverse-fill
         boolean infiniteBounds = false;
 
+        if (!infiniteBounds && shapeBounds.isEmpty()) {
+            if (!draw.isStroke()) {
+                return true;
+            }
+        }
+
         // Some renderers make the drawn area larger than the geometry for anti-aliasing
-        float rendererOutset = outsetForAA
+        float rendererOutset = outsetBoundsForAA
                 ? draw.mTransform.localAARadius(shapeBounds)
                 : 0;
         draw.mAARadius = rendererOutset;
@@ -225,12 +239,12 @@ public final class ClipStack {
             transformedShapeBounds.set(shapeBounds);
 
             // Not hairline
-            if (draw.mStrokeRadius != 0.0f || rendererOutset != 0.0f) {
+            if (draw.mHalfWidth != 0.0f || rendererOutset != 0.0f) {
                 float localStyleOutset = draw.getInflationRadius() + rendererOutset;
                 transformedShapeBounds.outset(localStyleOutset, localStyleOutset);
 
                 // Not fill
-                if (draw.mStrokeRadius > 0.0f || rendererOutset != 0.0f) {
+                if (draw.mHalfWidth >= 0.0f || rendererOutset != 0.0f) {
                     // While this loses any shape type, the bounds remain local so hopefully tests are
                     // fairly accurate.
                     shapeBounds.set(transformedShapeBounds);
@@ -241,7 +255,7 @@ public final class ClipStack {
 
             // Hairlines get an extra pixel *after* transforming to device space, unless the renderer
             // has already defined an outset
-            if (draw.mStrokeRadius == 0.0 && rendererOutset == 0.0f) {
+            if (draw.mHalfWidth == 0.0 && rendererOutset == 0.0f) {
                 transformedShapeBounds.outset(0.5f, 0.5f);
                 // and the associated transform must be kIdentity since the bounds have been mapped by
                 // localToDevice already.
@@ -250,9 +264,7 @@ public final class ClipStack {
             }
 
             // Restrict bounds to the device limits.
-            if (!transformedShapeBounds.intersect(deviceBounds)) {
-                transformedShapeBounds.setEmpty();
-            }
+            transformedShapeBounds.intersectNoCheck(deviceBounds);
         }
 
         Rect2f drawBounds = new Rect2f();  // defined in device space
@@ -264,8 +276,10 @@ public final class ClipStack {
             drawBounds.set(transformedShapeBounds);
         }
 
+        // Either the draw is off screen, so it's clipped out regardless of the state of the
+        // SaveRecord, or there are no elements to apply to the draw. In both cases, 'drawBounds'
+        // has the correct value, the scissor is the device bounds (ignored if clipped-out).
         if (drawBounds.isEmpty()) {
-            // clipped out
             return true;
         }
         if (save.mState == STATE_WIDE_OPEN) {
@@ -289,11 +303,9 @@ public final class ClipStack {
             // clipped out
             return true;
         }
-        if (!transformedShapeBounds.intersect(scissor)) {
-            transformedShapeBounds.setEmpty(); // do we really need this?
-        }
-        if (!save.innerBounds().contains(drawBounds)) {
+        transformedShapeBounds.intersectNoCheck(scissor);
 
+        if (!save.innerBounds().contains(drawBounds)) {
             // If we made it here, the clip stack affects the draw in a complex way so iterate each element.
             // A draw is a transformed shape that "intersects" the clip. We use empty inner bounds because
             // there's currently no way to re-write the draw as the clip's geometry, so there's no need to
