@@ -150,13 +150,17 @@ public class AnalyticArcStep extends GeometryStep {
         // the rotation is inverted for fragment's local arc
         // we always have a rect in local space
         if (ArcShape.isOpenArc(mType)) {
+            // for square end, outset is the maximum of sin(x)+cos(x) = sqrt(2)
+            vs.format("""
+                    const float kOutset = %f;
+                    """, mType == ArcShape.kArcSquare_Type ? MathUtil.SQRT2 : 1.0f);
             vs.format("""
                     uint flags = %2$s;
                     float join = float((flags >> 4) & 1);
                     float dir = float((flags >> 2) & 3);
                     float strokeRad = max(%1$s.y, 0.0);
                     float strokeOffset = (step(join, 0.0) * dir - 1.0) * strokeRad;
-                    vec2 localEdge = (%1$s.x + %1$s.w + strokeRad * dir + %1$s.z) * position;
+                    vec2 localEdge = (%1$s.x + %1$s.w * kOutset + strokeRad * dir + %1$s.z) * position;
                     vec2 cs = vec2(cos(angle.x), sin(angle.x));
                     %3$s = mat2(cs.x,-cs.y,cs.y,cs.x) * localEdge;
                     %4$s = vec2(cos(angle.y), sin(angle.y));
@@ -289,10 +293,17 @@ public class AnalyticArcStep extends GeometryStep {
         ArcShape shape = (ArcShape) draw.mGeometry;
         MemoryUtil.memPutFloat(instanceData + 16, shape.mCenterX);
         MemoryUtil.memPutFloat(instanceData + 20, shape.mCenterY);
-        MemoryUtil.memPutFloat(instanceData + 24,
-                (shape.mSweepAngle * 0.5F + shape.mStartAngle + (mType == ArcShape.kArcSquare_Type ? 90 : -90)) * MathUtil.DEG_TO_RAD);
-        MemoryUtil.memPutFloat(instanceData + 28,
-                (shape.mSweepAngle * 0.5F) * MathUtil.DEG_TO_RAD);
+        if (mType == ArcShape.kArcSquare_Type) {
+            MemoryUtil.memPutFloat(instanceData + 24,
+                    (shape.mSweepAngle * 0.5F + shape.mStartAngle + 90) * MathUtil.DEG_TO_RAD);
+            MemoryUtil.memPutFloat(instanceData + 28,
+                    (180 - shape.mSweepAngle * 0.5F) * MathUtil.DEG_TO_RAD);
+        } else {
+            MemoryUtil.memPutFloat(instanceData + 24,
+                    (shape.mSweepAngle * 0.5F + shape.mStartAngle - 90) * MathUtil.DEG_TO_RAD);
+            MemoryUtil.memPutFloat(instanceData + 28,
+                    (shape.mSweepAngle * 0.5F) * MathUtil.DEG_TO_RAD);
+        }
         MemoryUtil.memPutFloat(instanceData + 32, shape.mRadius);
         MemoryUtil.memPutFloat(instanceData + 36, draw.mHalfWidth);
         MemoryUtil.memPutFloat(instanceData + 40, draw.mAARadius);
