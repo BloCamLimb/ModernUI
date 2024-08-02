@@ -161,12 +161,11 @@ public class NoPixelsDevice extends Device {
     }
 
     @Override
-    public void drawPoints(float[] pts, int offset, int count, Paint paint) {
+    public void drawPoints(int mode, float[] pts, int offset, int count, Paint paint) {
     }
 
     @Override
     public void drawLine(float x0, float y0, float x1, float y1, @Paint.Cap int cap, float width, Paint paint) {
-
     }
 
     @Override
@@ -174,18 +173,35 @@ public class NoPixelsDevice extends Device {
     }
 
     @Override
-    public void drawCircle(float cx, float cy, float radius, Paint paint) {
-
+    public void drawRoundRect(RoundRect rr, Paint paint) {
     }
 
     @Override
-    public void drawRoundRect(RoundRect rr, Paint paint) {
+    public void drawCircle(float cx, float cy, float radius, Paint paint) {
+    }
 
+    @Override
+    public void drawArc(float cx, float cy, float radius, float startAngle,
+                        float sweepAngle, int cap, float width, Paint paint) {
+    }
+
+    @Override
+    public void drawPie(float cx, float cy, float radius, float startAngle,
+                        float sweepAngle, Paint paint) {
+    }
+
+    @Override
+    public void drawChord(float cx, float cy, float radius, float startAngle,
+                          float sweepAngle, Paint paint) {
+    }
+
+    @Override
+    public void drawImageRect(Image image, Rect2fc src, Rect2fc dst,
+                              SamplingOptions sampling, Paint paint, int constraint) {
     }
 
     @Override
     protected void onDrawGlyphRunList(Canvas canvas, GlyphRunList glyphRunList, Paint paint) {
-
     }
 
     /**

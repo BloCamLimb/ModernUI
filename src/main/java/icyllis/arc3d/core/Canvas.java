@@ -828,16 +828,6 @@ public class Canvas implements AutoCloseable {
      * Fills the current clip with the specified color, using SRC blend mode.
      * This has the effect of replacing all pixels contained by clip with color.
      *
-     * @param color the un-premultiplied (straight) color to draw onto the canvas
-     */
-    public final void clear(Color color) {
-        drawColor(color, BlendMode.SRC);
-    }
-
-    /**
-     * Fills the current clip with the specified color, using SRC blend mode.
-     * This has the effect of replacing all pixels contained by clip with color.
-     *
      * @param r the red component of the straight color to draw onto the canvas
      * @param g the red component of the straight color to draw onto the canvas
      * @param b the red component of the straight color to draw onto the canvas
@@ -848,12 +838,20 @@ public class Canvas implements AutoCloseable {
     }
 
     /**
-     * Fill the current clip with the specified color, using SRC_OVER blend mode.
-     *
-     * @param color the straight color to draw onto the canvas
+     * Makes SkCanvas contents undefined. Subsequent calls that read SkCanvas pixels,
+     * such as drawing with SkBlendMode, return undefined results. discard() does
+     * not change clip or SkMatrix.
+     * <p>
+     * discard() may do nothing, depending on the implementation of SkSurface or SkDevice
+     * that created SkCanvas.
+     * <p>
+     * discard() allows optimized performance on subsequent draws by removing
+     * cached data associated with SkSurface or SkDevice.
+     * It is not necessary to call discard() once done with SkCanvas;
+     * any cached data is deleted when owning SkSurface or SkDevice is deleted.
      */
-    public final void drawColor(@ColorInt int color) {
-        drawColor(color, BlendMode.SRC_OVER);
+    public final void discard() {
+        onDiscard();
     }
 
     /**
@@ -861,7 +859,7 @@ public class Canvas implements AutoCloseable {
      *
      * @param color the straight color to draw onto the canvas
      */
-    public final void drawColor(Color color) {
+    public final void drawColor(@ColorInt int color) {
         drawColor(color, BlendMode.SRC_OVER);
     }
 
@@ -896,21 +894,6 @@ public class Canvas implements AutoCloseable {
      * Fill the current clip with the specified color, the blend mode determines
      * how color is combined with destination.
      *
-     * @param color the straight color to draw onto the canvas
-     * @param mode  the blend mode used to combine source color and destination
-     */
-    public final void drawColor(Color color, BlendMode mode) {
-        Paint paint = mTmpPaint;
-        paint.setColor4f(color.mR, color.mG, color.mB, color.mA);
-        paint.setBlendMode(mode);
-        drawPaint(paint);
-        paint.reset();
-    }
-
-    /**
-     * Fill the current clip with the specified color, the blend mode determines
-     * how color is combined with destination.
-     *
      * @param r    the red component of the straight color to draw onto the canvas
      * @param g    the red component of the straight color to draw onto the canvas
      * @param b    the red component of the straight color to draw onto the canvas
@@ -934,30 +917,184 @@ public class Canvas implements AutoCloseable {
      *
      * @param paint the paint used to draw onto the canvas
      */
-    public void drawPaint(Paint paint) {
-        internalDrawPaint(paint);
+    public final void drawPaint(Paint paint) {
+        onDrawPaint(paint);
+    }
+
+    /**
+     * The {@code PointMode} selects if an array of points is drawn as discrete points,
+     * as lines, or as an open polygon.
+     */
+    @MagicConstant(intValues = {POINT_MODE_POINTS, POINT_MODE_LINES, POINT_MODE_POLYGON})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface PointMode {
+    }
+
+    /**
+     * Draw each point separately.
+     */
+    public static final int POINT_MODE_POINTS = 0;
+    /**
+     * Draw each pair of points as a line segment.
+     */
+    public static final int POINT_MODE_LINES = 1;
+    /**
+     * Draw the array of points as an open polygon.
+     */
+    public static final int POINT_MODE_POLYGON = 2;
+
+    /**
+     * Draws pts using the current matrix, clip and specified paint.
+     * <var>count</var> is the number of points; if count is less than one, has no effect.
+     * mode may be one of: {@link #POINT_MODE_POINTS}, {@link #POINT_MODE_LINES}, or
+     * {@link #POINT_MODE_POLYGON}.
+     * <p>
+     * If mode is {@link #POINT_MODE_POINTS}, the shape of point drawn depends on paint
+     * Cap. If paint is set to {@link Paint#CAP_ROUND}, each point draws a
+     * circle of diameter paint stroke width. If paint is set to {@link Paint#CAP_SQUARE}
+     * or {@link Paint#CAP_BUTT}, each point draws a square of width and height
+     * paint stroke width.
+     * <p>
+     * If mode is {@link #POINT_MODE_LINES}, each pair of points draws a line segment.
+     * One line is drawn for every two points; each point is used once. If count is odd,
+     * the last point is ignored.
+     * <p>
+     * If mode is {@link #POINT_MODE_POLYGON}, each adjacent pair of points draws a line segment.
+     * count minus one lines are drawn; the first and last point are used once.
+     * <p>
+     * Each line segment respects paint Cap and paint stroke width.
+     * Paint style is ignored, as if were set to {@link Paint#STROKE}.
+     * <p>
+     * Always draws each element one at a time; is not affected by paint join,
+     * and unlike drawPath(), does not create a mask from all points
+     * and lines before drawing.
+     *
+     * @param mode   whether pts draws points or lines
+     * @param pts    array of points to draw
+     * @param offset offset in pts array, i.e., number of floats to skip
+     * @param count  number of points in pts array
+     * @param paint  stroke, blend, color, and so on, used to draw
+     */
+    public final void drawPoints(@PointMode int mode,
+                                 float[] pts, int offset, int count,
+                                 Paint paint) {
+        if (count <= 0) {
+            return;
+        }
+        assert pts.length >= offset + count * 2;
+        var oldStyle = paint.getStyle();
+        var oldCap = paint.getStrokeCap();
+        paint.setStyle(Paint.STROKE);
+        if (mode == POINT_MODE_POINTS && oldCap == Paint.CAP_BUTT) {
+            paint.setStrokeCap(Paint.CAP_SQUARE);
+        }
+        onDrawPoints(mode, pts, offset, count, paint);
+        paint.setStyle(oldStyle);
+        paint.setStrokeCap(oldCap);
+    }
+
+    /**
+     * Draws point at (x, y) using the current matrix, clip and specified paint.
+     * <p>
+     * The shape of point drawn depends on paint cap.
+     * If paint is set to {@link Paint#CAP_ROUND}, draw a circle of diameter
+     * paint stroke width. If paint is set to {@link Paint#CAP_SQUARE} or {@link Paint#CAP_BUTT},
+     * draw a square of width and height paint stroke width.
+     * Paint style is ignored, as if were set to {@link Paint#STROKE}.
+     *
+     * @param x     center X of circle or square
+     * @param y     center Y of circle or square
+     * @param paint stroke, blend, color, and so on, used to draw
+     */
+    public final void drawPoint(float x, float y,
+                                Paint paint) {
+        // draw a point by filling the stroke
+        var oldStyle = paint.getStyle();
+        paint.setStyle(Paint.FILL);
+        drawPoint(x, y,
+                paint.getStrokeCap(),
+                paint.getStrokeWidth(),
+                paint);
+        paint.setStyle(oldStyle);
+    }
+
+    /**
+     * Draws point at (x, y) using the current matrix, clip and specified paint.
+     * <p>
+     * The shape of point drawn depends on <var>cap</var>.
+     * If <var>cap</var> is {@link Paint#CAP_ROUND}, draw a circle of diameter
+     * <var>size</var>. If <var>cap</var> is {@link Paint#CAP_SQUARE} or {@link Paint#CAP_BUTT},
+     * draw a square of width and height <var>size</var>. In paint: Style determines if point
+     * is stroked or filled; If stroked (i.e. double stroke), stroke width describes the
+     * shape outline thickness, Cap describes line ends, Join draws the corners rounded
+     * or square, and Align determines the position or direction to stroke.
+     *
+     * @param x     center X of circle or square
+     * @param y     center Y of circle or square
+     * @param cap   the line end used to determine the shape of point
+     * @param size  the diameter of circle or width and height of square
+     * @param paint stroke, blend, color, and so on, used to draw
+     */
+    public final void drawPoint(float x, float y,
+                                @Paint.Cap int cap, float size, Paint paint) {
+        if (size >= 0) {
+            float radius = size * 0.5f;
+            if (cap == Paint.CAP_ROUND) {
+                drawCircle(x, y, radius, paint);
+            } else {
+                drawRect(x - radius, y - radius, x + radius, y + radius, paint);
+            }
+        }
+    }
+
+    /**
+     * Draws line segment from (x0, y0) to (x1, y1) using the current matrix,
+     * clip and specified paint. In paint: stroke width describes the line thickness;
+     * Cap draws the end rounded or square; Style is ignored, as if were set to
+     * {@link Paint#STROKE}.
+     *
+     * @param x0    start of line segment on x-axis
+     * @param y0    start of line segment on y-axis
+     * @param x1    end of line segment on x-axis
+     * @param y1    end of line segment on y-axis
+     * @param paint the paint used to draw the line
+     */
+    public final void drawLine(float x0, float y0, float x1, float y1,
+                               Paint paint) {
+        // draw a line by filling the stroke
+        var oldStyle = paint.getStyle();
+        paint.setStyle(Paint.FILL);
+        drawLine(x0, y0, x1, y1,
+                paint.getStrokeCap(),
+                paint.getStrokeWidth(),
+                paint);
+        paint.setStyle(oldStyle);
     }
 
     /**
      * Draw a line segment from (x0, y0) to (x1, y1) using the current matrix,
-     * clip and specified paint. Note that line shape is not line path, this will
-     * use shape renderer based on analytic geometry rather than path renderer.
+     * clip and specified paint. Note that line shape is a stroked line rather
+     * than a line path, you can fill or stroke the stroked line.
      * <p>
-     * The size describes the line shape thickness. In paint: Style determines
-     * if line shape is stroked or filled; Cap draws the shape end rounded or
-     * square; If stroked (that is, a hollow shape), stroke width describes the
-     * shape outline thickness, Join draws the corners rounded or square,
-     * if Cap is other than {@link Paint#CAP_ROUND}, and Align determines
-     * the position or direction to stroke.
+     * The <var>cap</var> describes the end of the line shape, the <var>width</var>
+     * describes the line shape thickness. In paint: Style determines if line shape
+     * is stroked or filled; If stroked (i.e. double stroke), stroke width describes the
+     * shape outline thickness, Cap describes line ends, Join draws the corners rounded
+     * or square, and Align determines the position or direction to stroke.
      *
      * @param x0    the start of line segment on x-axis
      * @param y0    the start of line segment on y-axis
      * @param x1    the end of line segment on x-axis
      * @param y1    the end of line segment on y-axis
-     * @param size  the thickness of line segment
+     * @param cap   the line end used to determine the shape of the line
+     * @param width the thickness of line segment
      * @param paint the paint used to draw the line
      */
-    public void drawLine(float x0, float y0, float x1, float y1, float size, Paint paint) {
+    public final void drawLine(float x0, float y0, float x1, float y1,
+                               @Paint.Cap int cap, float width, Paint paint) {
+        if (width >= 0) {
+            onDrawLine(x0, y0, x1, y1, cap, width, paint);
+        }
     }
 
     /**
@@ -1016,8 +1153,9 @@ public class Canvas implements AutoCloseable {
      * @param radius the radius used to round the corners
      * @param paint  the paint used to draw the round rectangle
      */
-    public final void drawRoundRect(Rect2f rect, float radius, Paint paint) {
-        drawRoundRect(rect.mLeft, rect.mTop, rect.mRight, rect.mBottom, radius, radius, radius, radius, paint);
+    public final void drawRoundRect(Rect2fc rect, float radius, Paint paint) {
+        mTmpRoundRect.setRectXY(rect, radius, radius);
+        onDrawRoundRect(mTmpRoundRect, paint);
     }
 
     /**
@@ -1033,7 +1171,8 @@ public class Canvas implements AutoCloseable {
      */
     public final void drawRoundRect(float left, float top, float right, float bottom,
                                     float radius, Paint paint) {
-        drawRoundRect(left, top, right, bottom, radius, radius, radius, radius, paint);
+        mTmpRoundRect.setRectXY(left, top, right, bottom, radius, radius);
+        onDrawRoundRect(mTmpRoundRect, paint);
     }
 
     /**
@@ -1084,12 +1223,15 @@ public class Canvas implements AutoCloseable {
      * @param radius the radius of the circle to be drawn
      * @param paint  the paint used to draw the circle
      */
-    public void drawCircle(float cx, float cy, float radius, Paint paint) {
+    public final void drawCircle(float cx, float cy, float radius, Paint paint) {
         onDrawCircle(cx, cy, Math.max(radius, 0.0f), paint);
     }
 
+    //TODO draw ellipse and oval
+
     /**
-     * Draw a circular arc at (cx, cy) with radius using the specified paint.
+     * Draw a circular arc at (cx, cy) with radius using the current matrix,
+     * clip and specified paint.
      * <p>
      * If the start angle is negative or >= 360, the start angle is treated as
      * start angle modulo 360. If the sweep angle is >= 360, then the circle is
@@ -1107,33 +1249,102 @@ public class Canvas implements AutoCloseable {
      * @param sweepAngle sweep angle or angular extent (in degrees); positive is clockwise
      * @param paint      the paint used to draw the arc
      */
-    public void drawArc(float cx, float cy, float radius, float startAngle,
-                        float sweepAngle, Paint paint) {
-
+    public final void drawArc(float cx, float cy, float radius, float startAngle,
+                              float sweepAngle, Paint paint) {
+        if (radius > 0 && sweepAngle != 0) {
+            // draw an arc by filling the stroke
+            var oldStyle = paint.getStyle();
+            paint.setStyle(Paint.FILL);
+            drawArc(cx, cy, radius,
+                    startAngle, sweepAngle,
+                    paint.getStrokeCap(),
+                    paint.getStrokeWidth(),
+                    paint);
+            paint.setStyle(oldStyle);
+        }
     }
 
     /**
-     * Draw a quadratic Bézier curve using the specified paint. The three points represent
-     * the starting point, the first control point and the end control point respectively.
+     * Draw a circular arc at (cx, cy) with radius using the current matrix,
+     * clip and specified paint. Note that arc shape is a stroked arc rather
+     * than an arc path, you can fill or stroke the stroked arc.
      * <p>
-     * The style is ignored in the paint, Bézier curves are always stroked. The stroke width
-     * in the paint represents the width of the curve.
+     * If the start angle is negative or >= 360, the start angle is treated as
+     * start angle modulo 360. If the sweep angle is >= 360, then the circle is
+     * drawn completely. If the sweep angle is negative, the sweep angle is
+     * treated as sweep angle modulo 360.
      * <p>
-     * Note that the distance from a point to the quadratic curve requires the GPU to solve
-     * cubic equations. Therefore, this method has higher overhead to the GPU.
+     * The arc is drawn clockwise. An angle of 0 degrees correspond to the
+     * geometric angle of 0 degrees (3 o'clock on a watch). If radius is
+     * non-positive or sweep angle is zero, nothing is drawn.
+     * <p>
+     * The <var>cap</var> describes the end of the arc shape, the <var>width</var>
+     * describes the arc shape thickness. In paint: Style determines if arc shape
+     * is stroked or filled; If stroked (i.e. double stroke), stroke width describes the
+     * shape outline thickness, Cap describes line ends, Join draws the corners rounded
+     * or square, and Align determines the position or direction to stroke.
      *
-     * @param x0    the x-coordinate of the starting point of the Bézier curve
-     * @param y0    the y-coordinate of the starting point of the Bézier curve
-     * @param x1    the x-coordinate of the first control point of the Bézier curve
-     * @param y1    the y-coordinate of the first control point of the Bézier curve
-     * @param x2    the x-coordinate of the end control point of the Bézier curve
-     * @param y2    the y-coordinate of the end control point of the Bézier curve
-     * @param paint the paint used to draw the Bézier curve
+     * @param cx         the x-coordinate of the center of the arc to be drawn
+     * @param cy         the y-coordinate of the center of the arc to be drawn
+     * @param radius     the radius of the circular arc to be drawn
+     * @param startAngle starting angle (in degrees) where the arc begins
+     * @param sweepAngle sweep angle or angular extent (in degrees); positive is clockwise
+     * @param cap        the line end used to determine the shape of the arc
+     * @param width      the thickness of arc segment
+     * @param paint      the paint used to draw the arc
      */
-    public void drawBezier(float x0, float y0, float x1, float y1, float x2, float y2,
-                           Paint paint) {
-
+    public final void drawArc(float cx, float cy, float radius, float startAngle,
+                              float sweepAngle, @Paint.Cap int cap, float width, Paint paint) {
+        onDrawArc(cx, cy, radius, startAngle, sweepAngle, cap, width, paint);
     }
+
+    /**
+     * Draw a circular sector (i.e., a pie) at (cx, cy) with radius using the
+     * current matrix, clip and specified paint.
+     * <p>
+     * Similar to {@link #drawArc(float, float, float, float, float, Paint)}, but
+     * when the shape is not a full circle, the geometry is closed by the arc and
+     * two line segments from the end of the arc to the center of the circle.
+     * <p>
+     *
+     * @param cx         the x-coordinate of the center of the arc to be drawn
+     * @param cy         the y-coordinate of the center of the arc to be drawn
+     * @param radius     the radius of the circular arc to be drawn
+     * @param startAngle starting angle (in degrees) where the arc begins
+     * @param sweepAngle sweep angle or angular extent (in degrees); positive is clockwise
+     * @param paint      the paint used to draw the arc
+     */
+    public final void drawPie(float cx, float cy, float radius, float startAngle,
+                              float sweepAngle, Paint paint) {
+        if (radius > 0 && sweepAngle != 0) {
+            onDrawPie(cx, cy, radius, startAngle, sweepAngle, paint);
+        }
+    }
+
+    /**
+     * Draw a circular segment (i.e., a cut disk) at (cx, cy) with radius using the
+     * current matrix, clip and specified paint.
+     * <p>
+     * Similar to {@link #drawArc(float, float, float, float, float, Paint)}, but
+     * when the shape is not a full circle, the geometry is closed by the arc and
+     * a line segment from the start of the arc segment to the end of the arc segment.
+     * <p>
+     *
+     * @param cx         the x-coordinate of the center of the arc to be drawn
+     * @param cy         the y-coordinate of the center of the arc to be drawn
+     * @param radius     the radius of the circular arc to be drawn
+     * @param startAngle starting angle (in degrees) where the arc begins
+     * @param sweepAngle sweep angle or angular extent (in degrees); positive is clockwise
+     * @param paint      the paint used to draw the arc
+     */
+    public final void drawChord(float cx, float cy, float radius, float startAngle,
+                                float sweepAngle, Paint paint) {
+        if (radius > 0 && sweepAngle != 0) {
+            onDrawChord(cx, cy, radius, startAngle, sweepAngle, paint);
+        }
+    }
+
+    //TODO draw path
 
     /**
      * Draw a triangle using the specified paint. The three vertices are in counter-clockwise order.
@@ -1151,7 +1362,28 @@ public class Canvas implements AutoCloseable {
      */
     public void drawTriangle(float x0, float y0, float x1, float y1, float x2, float y2,
                              Paint paint) {
+        //TODO
     }
+
+    /**
+     * The {@code SrcRectConstraint} controls the behavior at the edge of source rect,
+     * provided to drawImageRect() when there is any filtering. If STRICT is set,
+     * then extra code is used to ensure it never samples outside the src-rect.
+     * {@link #SRC_RECT_CONSTRAINT_STRICT} disables the use of mipmaps and anisotropic filtering.
+     */
+    @MagicConstant(intValues = {SRC_RECT_CONSTRAINT_FAST, SRC_RECT_CONSTRAINT_STRICT})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface SrcRectConstraint {
+    }
+
+    /**
+     * Sample outside bounds; faster
+     */
+    public static final int SRC_RECT_CONSTRAINT_FAST = 0;
+    /**
+     * Sample only inside bounds; slower.
+     */
+    public static final int SRC_RECT_CONSTRAINT_STRICT = 1;
 
     /**
      * Draw the specified image with its top/left corner at (x,y), using the
@@ -1159,12 +1391,54 @@ public class Canvas implements AutoCloseable {
      * radius is ignored in the paint, images are always filled.
      *
      * @param image the image to be drawn
-     * @param left  the position of the left side of the image being drawn
-     * @param top   the position of the top side of the image being drawn
+     * @param x     the position of the left side of the image being drawn
+     * @param y     the position of the top side of the image being drawn
      * @param paint the paint used to draw the image, null meaning a default paint
      */
-    public void drawImage(Image image, float left, float top, @Nullable Paint paint) {
+    public final void drawImage(@RawPtr Image image, float x, float y, SamplingOptions sampling,
+                                @Nullable Paint paint) {
+        if (image == null) {
+            return;
+        }
+        var src = new Rect2f(0, 0, image.getWidth(), image.getHeight());
+        var dst = new Rect2f(src);
+        dst.offset(x, y);
+        drawImageRect(image, src, dst, sampling, paint, SRC_RECT_CONSTRAINT_FAST);
+    }
 
+    public final void drawImageRect(@RawPtr Image image, Rect2fc dst, SamplingOptions sampling,
+                                    @Nullable Paint paint) {
+        if (image == null) {
+            return;
+        }
+        var src = new Rect2f(0, 0, image.getWidth(), image.getHeight());
+        drawImageRect(image, src, dst, sampling, paint, SRC_RECT_CONSTRAINT_FAST);
+    }
+
+    public final void drawImageRect(@RawPtr Image image, Rect2fc src, Rect2fc dst, SamplingOptions sampling,
+                                    @Nullable Paint paint, @SrcRectConstraint int constraint) {
+        if (image == null) {
+            return;
+        }
+        if (!src.isFinite() || src.isEmpty() || !dst.isFinite() || dst.isEmpty()) {
+            return;
+        }
+        var cleanedPaint = mTmpPaint;
+        if (paint != null) {
+            cleanedPaint.set(paint);
+            cleanedPaint.setStyle(Paint.FILL);
+            cleanedPaint.setPathEffect(null);
+        }
+        if (constraint == SRC_RECT_CONSTRAINT_STRICT) {
+            if (sampling.mMipmapMode != SamplingOptions.MIPMAP_MODE_NONE) {
+                // Use linear filter if either is linear
+                sampling = SamplingOptions.make(sampling.mMinFilter | sampling.mMagFilter);
+            } else if (sampling.isAnisotropy()) {
+                sampling = SamplingOptions.LINEAR;
+            }
+        }
+        onDrawImageRect(image, src, dst, sampling, cleanedPaint, constraint);
+        cleanedPaint.reset();
     }
 
     /**
@@ -1241,7 +1515,9 @@ public class Canvas implements AutoCloseable {
                            int glyphCount,
                            float originX, float originY,
                            Font font, Paint paint) {
-        if (glyphCount <= 0) { return; }
+        if (glyphCount <= 0) {
+            return;
+        }
 
         GlyphRunList glyphRunList = mScratchGlyphRunBuilder.setGlyphRunList(
                 glyphs, glyphOffset, positions, positionOffset, glyphCount, font, originX, originY, paint);
@@ -1448,7 +1724,9 @@ public class Canvas implements AutoCloseable {
             return;
         }
 
-        getTopDevice().drawPaint(paint);
+        if (aboutToDraw(paint)) {
+            getTopDevice().drawPaint(paint);
+        }
     }
 
     /**
@@ -1508,6 +1786,54 @@ public class Canvas implements AutoCloseable {
         return false;
     }
 
+    protected void onDiscard() {
+        if (mSurface != null) {
+            mSurface.aboutToDraw(Surface.kDiscard_ContentChangeMode);
+        }
+    }
+
+    protected void onDrawPaint(Paint paint) {
+        internalDrawPaint(paint);
+    }
+
+    protected void onDrawPoints(int mode, float[] pts, int offset,
+                                int count, Paint paint) {
+        if (count <= 0 || paint.nothingToDraw()) {
+            return;
+        }
+        Rect2f bounds = new Rect2f();
+        bounds.setBounds(pts, offset, count);
+        if (internalQuickReject(bounds, paint)) {
+            return;
+        }
+
+        if (aboutToDraw(paint)) {
+            getTopDevice().drawPoints(mode, pts, offset, count, paint);
+        }
+    }
+
+    protected void onDrawLine(float x0, float y0, float x1, float y1,
+                              @Paint.Cap int cap, float width, Paint paint) {
+        Rect2f bounds = new Rect2f();
+        bounds.set(x0, y0, x1, y1);
+        bounds.sort();
+        float outset;
+        if (cap == Paint.CAP_SQUARE) {
+            outset = MathUtil.SQRT2 * width * 0.5f;
+        } else {
+            outset = width * 0.5f;
+        }
+        bounds.outset(outset, outset);
+
+        if (internalQuickReject(bounds, paint)) {
+            return;
+        }
+
+        if (aboutToDraw(paint)) {
+            getTopDevice().drawLine(x0, y0, x1, y1, cap, width, paint);
+        }
+    }
+
     protected void onDrawRect(Rect2fc r, Paint paint) {
         if (internalQuickReject(r, paint)) {
             return;
@@ -1546,6 +1872,62 @@ public class Canvas implements AutoCloseable {
 
         if (aboutToDraw(paint)) {
             getTopDevice().drawCircle(cx, cy, radius, paint);
+        }
+    }
+
+    protected void onDrawArc(float cx, float cy, float radius, float startAngle,
+                             float sweepAngle, @Paint.Cap int cap, float width, Paint paint) {
+        Rect2f bounds = new Rect2f();
+        bounds.set(cx - radius, cy - radius, cx + radius, cy + radius);
+        float outset = cap == Paint.CAP_SQUARE ? MathUtil.SQRT2 * width * 0.5f : width * 0.5f;
+        bounds.outset(outset, outset);
+
+        if (internalQuickReject(bounds, paint)) {
+            return;
+        }
+
+        if (aboutToDraw(paint)) {
+            getTopDevice().drawArc(cx, cy, radius, startAngle, sweepAngle, cap, width, paint);
+        }
+    }
+
+    protected void onDrawPie(float cx, float cy, float radius, float startAngle,
+                             float sweepAngle, Paint paint) {
+        Rect2f bounds = new Rect2f();
+        bounds.set(cx - radius, cy - radius, cx + radius, cy + radius);
+
+        if (internalQuickReject(bounds, paint)) {
+            return;
+        }
+
+        if (aboutToDraw(paint)) {
+            getTopDevice().drawPie(cx, cy, radius, startAngle, sweepAngle, paint);
+        }
+    }
+
+    protected void onDrawChord(float cx, float cy, float radius, float startAngle,
+                               float sweepAngle, Paint paint) {
+        Rect2f bounds = new Rect2f();
+        bounds.set(cx - radius, cy - radius, cx + radius, cy + radius);
+
+        if (internalQuickReject(bounds, paint)) {
+            return;
+        }
+
+        if (aboutToDraw(paint)) {
+            getTopDevice().drawChord(cx, cy, radius, startAngle, sweepAngle, paint);
+        }
+    }
+
+    protected void onDrawImageRect(Image image, Rect2fc src, Rect2fc dst,
+                                   SamplingOptions sampling, Paint paint,
+                                   int constraint) {
+        if (internalQuickReject(dst, paint)) {
+            return;
+        }
+
+        if (aboutToDraw(paint)) {
+            getTopDevice().drawImageRect(image, src, dst, sampling, paint, constraint);
         }
     }
 

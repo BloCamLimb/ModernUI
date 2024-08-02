@@ -20,6 +20,7 @@
 package icyllis.arc3d.core.j2d;
 
 import icyllis.arc3d.core.Canvas;
+import icyllis.arc3d.core.Image;
 import icyllis.arc3d.core.Paint;
 import icyllis.arc3d.core.*;
 
@@ -70,7 +71,7 @@ public class RasterDevice extends Device {
     }
 
     @Override
-    public void drawPoints(float[] pts, int offset, int count, icyllis.arc3d.core.Paint paint) {
+    public void drawPoints(int mode, float[] pts, int offset, int count, Paint paint) {
 
     }
 
@@ -87,15 +88,36 @@ public class RasterDevice extends Device {
     }
 
     @Override
+    public void drawRoundRect(RoundRect rr, Paint paint) {
+        mG2D.fill(new RoundRectangle2D.Float(
+
+        ));
+    }
+
+    @Override
     public void drawCircle(float cx, float cy, float radius, icyllis.arc3d.core.Paint paint) {
 
     }
 
     @Override
-    public void drawRoundRect(RoundRect rr, Paint paint) {
-        mG2D.fill(new RoundRectangle2D.Float(
+    public void drawArc(float cx, float cy, float radius, float startAngle, float sweepAngle, int cap, float width, Paint paint) {
 
-        ));
+    }
+
+    @Override
+    public void drawPie(float cx, float cy, float radius, float startAngle, float sweepAngle, Paint paint) {
+
+    }
+
+    @Override
+    public void drawChord(float cx, float cy, float radius, float startAngle, float sweepAngle, Paint paint) {
+
+    }
+
+    @Override
+    public void drawImageRect(Image image, Rect2fc src, Rect2fc dst,
+                              SamplingOptions sampling, Paint paint, int constraint) {
+
     }
 
     @Override

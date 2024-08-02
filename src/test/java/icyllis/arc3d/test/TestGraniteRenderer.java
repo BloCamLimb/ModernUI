@@ -77,6 +77,7 @@ public class TestGraniteRenderer {
     //-XX:+ZGenerational
     public static void main(String[] args) {
         GLFW.glfwInit();
+        LOGGER.info(Long.toString(ProcessHandle.current().pid()));
         TinyFileDialogs.tinyfd_messageBox(
                 "Arc3D Test",
                 "Arc3D starting with pid: " + ProcessHandle.current().pid(),
@@ -283,13 +284,10 @@ public class TestGraniteRenderer {
         Canvas canvas = surface.getCanvas();
         while (!GLFW.glfwWindowShouldClose(window)) {
 
-            long time1 = System.nanoTime();
+            double time1 = GLFW.glfwGetTime();
 
             int nRects = 4000;
-            paint.reset();
-            paint.setColor(0xFF000000);
-            paint.setBlendMode(BlendMode.SRC);
-            canvas.drawPaint(paint);
+            canvas.clear(0xFF000000);
             paint.reset();
             if (TEST_SCENE == 0) {
                 RoundRect rrect = new RoundRect();
@@ -338,11 +336,11 @@ public class TestGraniteRenderer {
                 canvas.drawRect(rect, paint);
                 Runnable lines = () -> {
                     paint.setRGBA(random.nextInt(256), random.nextInt(256), random.nextInt(256), 255);
-                    //drawDevice.drawLine(300, 220 - 30, 20, 220, Paint.CAP_BUTT, 10f, paint);
+                    canvas.drawLine(300, 220 - 30, 20, 220, Paint.CAP_BUTT, 10f, paint);
                     paint.setRGBA(random.nextInt(256), random.nextInt(256), random.nextInt(256), 255);
-                    //drawDevice.drawLine(300, 240 - 20, 20, 240, Paint.CAP_ROUND, 10f, paint);
+                    canvas.drawLine(300, 240 - 20, 20, 240, Paint.CAP_ROUND, 10f, paint);
                     paint.setRGBA(random.nextInt(256), random.nextInt(256), random.nextInt(256), 255);
-                    //drawDevice.drawLine(300, 260 - 10, 20, 260, Paint.CAP_SQUARE, 10f, paint);
+                    canvas.drawLine(300, 260 - 10, 20, 260, Paint.CAP_SQUARE, 10f, paint);
                 };
                 mat.setIdentity();
                 canvas.setMatrix(mat);
@@ -389,13 +387,27 @@ public class TestGraniteRenderer {
                 paint.setStrokeAlign(Paint.ALIGN_CENTER);
                 paint.setRGBA(random.nextInt(256), random.nextInt(256), random.nextInt(256), 255);
 
+                float[] pts = new float[22];
+                pts[0] = 300;
+                pts[1] = 500;
+                for (int i = 2; i < pts.length; i += 2) {
+                    pts[i] = pts[i - 2] + random.nextFloat(30, 60);
+                    pts[i + 1] = random.nextFloat(450, 550);
+                }
+                paint.setStrokeCap(Paint.CAP_ROUND);
+                canvas.drawPoints(Canvas.POINT_MODE_POLYGON, pts, 0, 11, paint);
+
                 canvas.drawCircle(500, 300, 20, paint);
 
+                paint.setStyle(Paint.FILL);
+                canvas.drawArc(1100, 300, 150, 90,
+                        180 + random.nextFloat(-30, 30),
+                        Paint.CAP_SQUARE, 60, paint);
 
                 paint.setStyle(Paint.FILL);
                 paint.setShader(RefCnt.create(gradShader));
                 paint.setDither(true);
-                rrect.setRectXY(100, 450, 1500, 950, 30, 30);
+                rrect.setRectXY(100, 650, 1500, 950, 30, 30);
                 /*rect.set(0, 0, 16, 16);
                 for (int i = 0; i < 16; i++) {
                     for (int j = 0; j < 16; j++) {
@@ -413,19 +425,19 @@ public class TestGraniteRenderer {
                 subRunContainer.draw(canvas, 400, 400, paint, device);
 
                 paint.setStyle(Paint.FILL);
-                device.drawArc(new ArcShape(1100, 300, 150, 90, 180, 10),
-                        ArcShape.kArc_Type, paint);
+                paint.setStrokeCap(Paint.CAP_BUTT);
+                paint.setStrokeWidth(60);
+                canvas.drawArc(1100, 300, 150, 90, 180, paint);
                 paint.setStyle(Paint.STROKE);
                 paint.setStrokeJoin(Paint.JOIN_ROUND);
                 paint.setStrokeAlign(Paint.ALIGN_CENTER);
-                device.drawArc(new ArcShape(1100, 300, 200, 45, 210, 20),
-                        ArcShape.kArc_Type, paint);
-                device.drawArc(new ArcShape(1100, 300, 100, 90, 210, 10),
-                        ArcShape.kArcRound_Type, paint);
-                device.drawArc(new ArcShape(1100, 300, 50, 90, 120, 10),
-                        ArcShape.kPie_Type, paint);
-                device.drawArc(new ArcShape(1100, 300, 50, 270, 120, 10),
-                        ArcShape.kChord_Type, paint);
+                paint.setStrokeWidth(4);
+                canvas.drawArc(1100, 300, 200, 45, 210,
+                        Paint.CAP_BUTT, 60, paint);
+                canvas.drawArc(1100, 300, 100, 90, 210,
+                        Paint.CAP_ROUND, 20, paint);
+                canvas.drawPie(1100, 300, 50, 90, 120, paint);
+                canvas.drawChord(1100, 300, 50, 270, 120, paint);
 
                 paint.setDither(false);
 
@@ -462,22 +474,22 @@ public class TestGraniteRenderer {
                 canvas.drawRect(rect, paint);
             }
 
-            long time2 = System.nanoTime();
+            double time2 = GLFW.glfwGetTime();
 
             surface.flush();
 
-            long time3 = System.nanoTime();
+            double time3 = GLFW.glfwGetTime();
 
             RootTask rootTask = recordingContext.snap();
 
-            long time4 = System.nanoTime();
+            double time4 = GLFW.glfwGetTime();
 
             if (!immediateContext.addTask(rootTask)) {
                 LOGGER.error("Failed to add recording: {}", rootTask);
             }
             RefCnt.move(rootTask);
 
-            long time5 = System.nanoTime();
+            double time5 = GLFW.glfwGetTime();
 
             GL33C.glBindFramebuffer(GL33C.GL_DRAW_FRAMEBUFFER, 0);
             boolean filter = CANVAS_WIDTH == WINDOW_WIDTH && CANVAS_HEIGHT == WINDOW_HEIGHT;
@@ -488,20 +500,20 @@ public class TestGraniteRenderer {
                 LOGGER.error("Failed to submit queue");
             }
 
-            long time6 = System.nanoTime();
+            double time6 = GLFW.glfwGetTime();
 
             GLFW.glfwSwapBuffers(window);
             GLFW.glfwWaitEvents();
 
-            long time7 = System.nanoTime();
-            /*LOGGER.info("Painting: {}, CreateRenderPass: {}, CreateFrameTask: {}, AddCommands: {}, " +
+            double time7 = GLFW.glfwGetTime();
+            LOGGER.info("Painting: {}, CreateRenderPass: {}, CreateFrameTask: {}, AddCommands: {}, " +
                             "Blit/Submit/CheckFence: {}, Swap/Event: {}",
                     formatMicroseconds(time2, time1),
                     formatMicroseconds(time3, time2),
                     formatMicroseconds(time4, time3),
                     formatMicroseconds(time5, time4),
                     formatMicroseconds(time6, time5),
-                    formatMicroseconds(time7, time6));*/
+                    formatMicroseconds(time7, time6));
         }
         paint.close();
         testShader1 = RefCnt.move(testShader1);
@@ -538,7 +550,7 @@ public class TestGraniteRenderer {
         GLFW.glfwTerminate();
     }
 
-    public static String formatMicroseconds(long e, long st) {
-        return String.format("%.1f us", (e - st) / 1000D);
+    public static String formatMicroseconds(double e, double st) {
+        return String.format("%.1f us", (e - st) * 1000000.0D);
     }
 }
