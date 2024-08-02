@@ -20,6 +20,7 @@
 package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.Image;
 import icyllis.arc3d.core.effects.ColorFilter;
 import icyllis.arc3d.core.shaders.Shader;
 import icyllis.arc3d.engine.*;
@@ -194,8 +195,32 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
     }
 
     @Override
-    public void drawPoints(float[] pts, int offset, int count, Paint paint) {
-
+    public void drawPoints(int mode, float[] pts, int offset, int count, Paint paint) {
+        // draw points by filling shape
+        var oldStyle = paint.getStyle();
+        paint.setStyle(Paint.FILL);
+        var cap = paint.getStrokeCap();
+        if (mode == Canvas.POINT_MODE_POINTS) {
+            float radius = paint.getStrokeWidth() * 0.5f;
+            if (cap == Paint.CAP_ROUND) {
+                for (int i = offset, e = offset + count * 2; i < e; i += 2) {
+                    drawCircle(pts[i], pts[i + 1], radius, paint);
+                }
+            } else {
+                Rect2f rect = new Rect2f(-radius, -radius, radius, radius);
+                for (int i = offset, e = offset + count * 2; i < e; i += 2) {
+                    rect.offsetTo(pts[i], pts[i + 1]);
+                    drawRect(rect, paint);
+                }
+            }
+        } else {
+            float width = paint.getStrokeWidth();
+            int inc = mode == Canvas.POINT_MODE_LINES ? 4 : 2;
+            for (int i = offset, e = offset + (count - 1) * 2; i < e; i += inc) {
+                drawLine(pts[i], pts[i + 1], pts[i + 2], pts[i + 3], cap, width, paint);
+            }
+        }
+        paint.setStyle(oldStyle);
     }
 
     @Override
@@ -220,6 +245,15 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
     }
 
     @Override
+    public void drawRoundRect(RoundRect rr, Paint paint) {
+        Draw draw = new Draw();
+        draw.mTransform = getLocalToDevice();
+        draw.mGeometry = new SimpleShape(rr);
+        drawGeometry(draw, paint,
+                mContext.getRendererProvider().getSimpleBox(paint.isAntiAlias()), null);
+    }
+
+    @Override
     public void drawCircle(float cx, float cy, float radius, Paint paint) {
         Draw draw = new Draw();
         draw.mTransform = getLocalToDevice();
@@ -231,22 +265,50 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
     }
 
     @Override
-    public void drawRoundRect(RoundRect rr, Paint paint) {
+    public void drawArc(float cx, float cy, float radius, float startAngle,
+                        float sweepAngle, int cap, float width, Paint paint) {
         Draw draw = new Draw();
         draw.mTransform = getLocalToDevice();
-        draw.mGeometry = new SimpleShape(rr);
+        var shape = new ArcShape(cx, cy, radius, startAngle, sweepAngle, width * 0.5f);
+        shape.mType = switch (cap) {
+            case Paint.CAP_BUTT -> ArcShape.kArc_Type;
+            case Paint.CAP_ROUND -> ArcShape.kArcRound_Type;
+            case Paint.CAP_SQUARE -> ArcShape.kArcSquare_Type;
+            default -> throw new AssertionError();
+        };
+        draw.mGeometry = shape;
         drawGeometry(draw, paint,
-                mContext.getRendererProvider().getSimpleBox(paint.isAntiAlias()), null);
+                mContext.getRendererProvider().getArc(shape.mType), null);
     }
 
-    //TODO
-    public void drawArc(ArcShape arc, int type, Paint paint) {
+    @Override
+    public void drawPie(float cx, float cy, float radius, float startAngle,
+                        float sweepAngle, Paint paint) {
         Draw draw = new Draw();
         draw.mTransform = getLocalToDevice();
-        arc.mType = type;
-        draw.mGeometry = arc;
+        var shape = new ArcShape(cx, cy, radius, startAngle, sweepAngle, 0);
+        shape.mType = ArcShape.kPie_Type;
+        draw.mGeometry = shape;
         drawGeometry(draw, paint,
-                mContext.getRendererProvider().getArc(type), null);
+                mContext.getRendererProvider().getArc(shape.mType), null);
+    }
+
+    @Override
+    public void drawChord(float cx, float cy, float radius, float startAngle,
+                          float sweepAngle, Paint paint) {
+        Draw draw = new Draw();
+        draw.mTransform = getLocalToDevice();
+        var shape = new ArcShape(cx, cy, radius, startAngle, sweepAngle, 0);
+        shape.mType = ArcShape.kChord_Type;
+        draw.mGeometry = shape;
+        drawGeometry(draw, paint,
+                mContext.getRendererProvider().getArc(shape.mType), null);
+    }
+
+    @Override
+    public void drawImageRect(Image image, Rect2fc src, Rect2fc dst,
+                              SamplingOptions sampling, Paint paint, int constraint) {
+
     }
 
     @Override

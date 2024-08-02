@@ -286,12 +286,12 @@ public non-sealed class Rect2f implements Rect2fc {
      * false if <var>pts</var> array contains an infinity or NaN; in this case
      * sets rect to (0, 0, 0, 0).
      *
-     * @param pts   pts array
-     * @param pos   starting offset
-     * @param count number of points
+     * @param pts    pts array
+     * @param offset starting offset
+     * @param count  number of points
      * @return true if all values are finite
      */
-    public final boolean setBounds(float[] pts, int pos, int count) {
+    public final boolean setBounds(float[] pts, int offset, int count) {
         if (count <= 0) {
             setEmpty();
             return true;
@@ -300,8 +300,8 @@ public non-sealed class Rect2f implements Rect2fc {
         float minX, minY;
         float maxX, maxY;
 
-        minX = maxX = pts[pos++];
-        minY = maxY = pts[pos++];
+        minX = maxX = pts[offset++];
+        minY = maxY = pts[offset++];
         count--;
 
         float prodX, prodY;
@@ -310,8 +310,8 @@ public non-sealed class Rect2f implements Rect2fc {
 
         // auto vectorization
         while (count != 0) {
-            float x = pts[pos++];
-            float y = pts[pos++];
+            float x = pts[offset++];
+            float y = pts[offset++];
             prodX *= x;
             prodY *= y;
             minX = Math.min(minX, x);
@@ -334,12 +334,12 @@ public non-sealed class Rect2f implements Rect2fc {
      * Sets to bounds of <var>pts</var> array with <var>count</var> points. If
      * <var>pts</var> array contains an infinity or NaN, all rect values are set to NaN.
      *
-     * @param pts   pts array
-     * @param pos   starting offset
-     * @param count number of points
+     * @param pts    pts array
+     * @param offset starting offset
+     * @param count  number of points
      */
-    public final void setBoundsNoCheck(float[] pts, int pos, int count) {
-        if (!setBounds(pts, pos, count)) {
+    public final void setBoundsNoCheck(float[] pts, int offset, int count) {
+        if (!setBounds(pts, offset, count)) {
             set(Float.NaN, Float.NaN, Float.NaN, Float.NaN);
         }
     }

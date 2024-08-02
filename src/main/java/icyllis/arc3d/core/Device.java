@@ -283,37 +283,8 @@ public abstract class Device extends RefCnt {
 
     public abstract void drawPaint(Paint paint);
 
-    /**
-     * Draw an array of points as a list of points.
-     * <p>
-     * The shape of point drawn depends on paint
-     * SkPaint::Cap. If paint is set to SkPaint::kRound_Cap, each point draws a
-     * circle of diameter SkPaint stroke width. If paint is set to SkPaint::kSquare_Cap
-     * or SkPaint::kButt_Cap, each point draws a square of width and height
-     * SkPaint stroke width.
-     * <p>
-     * Always draws each element one at a time; is not affected by
-     * SkPaint::Join, and unlike drawPath(), does not create a mask from all points
-     * and lines before drawing.
-     *
-     * @param pts    x,y pairs of points
-     * @param offset offset in floats
-     * @param count  number of points
-     */
-    public abstract void drawPoints(float[] pts, int offset,
+    public abstract void drawPoints(int mode, float[] pts, int offset,
                                     int count, Paint paint);
-
-    public void drawLine(float x0, float y0, float x1, float y1,
-                         Paint paint) {
-        // draw a line is done by filling the stroke
-        int style = paint.getStyle();
-        paint.setStyle(Paint.FILL);
-        drawLine(x0, y0, x1, y1,
-                paint.getStrokeCap(),
-                paint.getStrokeWidth(),
-                paint);
-        paint.setStyle(style);
-    }
 
     public abstract void drawLine(float x0, float y0, float x1, float y1,
                                   @Paint.Cap int cap, float width, Paint paint);
@@ -321,9 +292,22 @@ public abstract class Device extends RefCnt {
     public abstract void drawRect(Rect2fc r,
                                   Paint paint);
 
+    public abstract void drawRoundRect(RoundRect rr, Paint paint);
+
     public abstract void drawCircle(float cx, float cy, float radius, Paint paint);
 
-    public abstract void drawRoundRect(RoundRect rr, Paint paint);
+    public abstract void drawArc(float cx, float cy, float radius, float startAngle,
+                                 float sweepAngle, @Paint.Cap int cap, float width, Paint paint);
+
+    public abstract void drawPie(float cx, float cy, float radius, float startAngle,
+                                 float sweepAngle, Paint paint);
+
+    public abstract void drawChord(float cx, float cy, float radius, float startAngle,
+                                   float sweepAngle, Paint paint);
+
+    public abstract void drawImageRect(Image image, Rect2fc src, Rect2fc dst,
+                                       SamplingOptions sampling, Paint paint,
+                                       int constraint);
 
     public final void drawGlyphRunList(Canvas canvas,
                                        GlyphRunList glyphRunList,

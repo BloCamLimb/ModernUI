@@ -30,7 +30,7 @@ public class SimpleShape extends RoundRect implements Geometry {
      * RadiusUlx becomes half the line width.
      */
     public static final int
-            kLine_Type = kLast_Type + 1,        // butt cap
+            kLine_Type = kLast_Type + 1,        // butt cap or square cap, and LTBR is projected
             kLineRound_Type = kLast_Type + 2;   // round cap, and LTBR is projected
 
     public SimpleShape() {
@@ -80,14 +80,9 @@ public class SimpleShape extends RoundRect implements Geometry {
     @Override
     public void getBounds(Rect2f dest) {
         super.getBounds(dest);
-        if (mType > kLast_Type) {
+        if (mType == kLine_Type || mType == kLineRound_Type) {
             dest.sort();
-            float outset;
-            if (mType == kLine_Type) {
-                outset = MathUtil.SQRT2 * getSimpleRadiusX();
-            } else {
-                outset = getSimpleRadiusX();
-            }
+            float outset = getSimpleRadiusX();
             dest.outset(outset, outset);
         }
     }
