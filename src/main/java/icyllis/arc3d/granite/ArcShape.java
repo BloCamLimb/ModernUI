@@ -19,6 +19,7 @@
 
 package icyllis.arc3d.granite;
 
+import icyllis.arc3d.core.MathUtil;
 import icyllis.arc3d.core.Rect2f;
 
 public class ArcShape implements Geometry {
@@ -73,7 +74,8 @@ public class ArcShape implements Geometry {
                 mCenterX + mRadius, mCenterY + mRadius
         );
         if (isOpenArc(mType)) {
-            dest.outset(mHalfWidth, mHalfWidth);
+            float outset = mType == kArcSquare_Type ? MathUtil.SQRT2 * mHalfWidth : mHalfWidth;
+            dest.outset(outset, outset);
         }
     }
 }
