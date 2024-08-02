@@ -154,20 +154,23 @@ public class PipelineBuilder {
         //// Entry Point
         out.append("void main() {\n");
 
+        // shader will define the world pos local variable
         mDesc.geomStep().emitVertexGeomCode(vs,
                 WORLD_POS_VAR_NAME,
                 needsLocalCoords() ? LOCAL_COORDS_VARYING_NAME : null);
 
         // map into clip space
+        // remember to preserve the painter's depth in depth buffer, it must be first multiplied by w,
+        // as it will be divided by w to viewport
         if (mCaps.depthClipNegativeOneToOne()) {
             // [0,1] -> [-1,1]
             vs.format("""
-                    gl_Position = vec4(%1$s.xy * %2$s.xz + %1$s.ww * %2$s.yw, %1$s.z * 2.0 - 1.0, %1$s.w);
+                    gl_Position = vec4(%1$s.xy * %2$s.xz + %1$s.ww * %2$s.yw, (%1$s.z * 2.0 - 1.0) * %1$s.w, %1$s.w);
                     """, WORLD_POS_VAR_NAME, UniformHandler.PROJECTION_NAME);
         } else {
             // zero to one, default behavior
             vs.format("""
-                    gl_Position = vec4(%1$s.xy * %2$s.xz + %1$s.ww * %2$s.yw, %1$s.zw);
+                    gl_Position = vec4(%1$s.xy * %2$s.xz + %1$s.ww * %2$s.yw, %1$s.z * %1$s.w, %1$s.w);
                     """, WORLD_POS_VAR_NAME, UniformHandler.PROJECTION_NAME);
         }
 
