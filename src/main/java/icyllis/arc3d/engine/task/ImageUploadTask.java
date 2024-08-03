@@ -257,7 +257,7 @@ public class ImageUploadTask extends Task {
             return RESULT_SUCCESS;
         }
 
-        if (commandBuffer.copyBufferToImage(mBuffer,
+        if (!commandBuffer.copyBufferToImage(mBuffer,
                 mImageViewProxy.getImage(),
                 mSrcColorType,
                 mDstColorType,

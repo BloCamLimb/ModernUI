@@ -652,6 +652,11 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
     }
 
     @Override
+    public void glCopyBufferSubData(int readTarget, int writeTarget, long readOffset, long writeOffset, long size) {
+        GL31C.glCopyBufferSubData(readTarget, writeTarget, readOffset, writeOffset, size);
+    }
+
+    @Override
     public long glFenceSync(int condition, int flags) {
         return GL32C.glFenceSync(condition, flags);
     }
@@ -825,6 +830,12 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
     public void glNamedBufferStorage(int buffer, long size, long data, int flags) {
         assert mDSASupport;
         GL45C.nglNamedBufferStorage(buffer, size, data, flags);
+    }
+
+    @Override
+    public void glCopyNamedBufferSubData(int readBuffer, int writeBuffer, long readOffset, long writeOffset, long size) {
+        assert mDSASupport;
+        GL45C.glCopyNamedBufferSubData(readBuffer, writeBuffer, readOffset, writeOffset, size);
     }
 
     @Override

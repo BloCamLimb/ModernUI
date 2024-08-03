@@ -28,7 +28,7 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class MeshDrawWriter implements AutoCloseable {
 
-    private final DynamicBufferManager mDynamicBufferManager;
+    private final DrawBufferManager mDrawBufferManager;
     private final DrawCommandList mCommandList;
 
     // Pipeline state matching currently bound pipeline
@@ -50,8 +50,8 @@ public class MeshDrawWriter implements AutoCloseable {
     private long mFailureStorage = NULL;
     private int mFailureCapacity = 0;
 
-    public MeshDrawWriter(DynamicBufferManager dynamicBufferManager, DrawCommandList commandList) {
-        mDynamicBufferManager = dynamicBufferManager;
+    public MeshDrawWriter(DrawBufferManager drawBufferManager, DrawCommandList commandList) {
+        mDrawBufferManager = drawBufferManager;
         mCommandList = commandList;
     }
 
@@ -239,11 +239,11 @@ public class MeshDrawWriter implements AutoCloseable {
         if (mReservedCount > 0) {
             // Have contiguous bytes that can't satisfy request, so return them in the event the
             // DBM has additional contiguous bytes after the prior reserved range.
-            mDynamicBufferManager.putBackVertexBytes(mReservedCount * mCurrentStride);
+            mDrawBufferManager.putBackVertexBytes(mReservedCount * mCurrentStride);
         }
 
         mReservedCount = count;
-        var writer = mDynamicBufferManager.getVertexPointer(count * mCurrentStride,
+        var writer = mDrawBufferManager.getVertexPointer(count * mCurrentStride,
                 mTempAllocInfo);
         if (mTempAllocInfo.mBuffer != mCurrentTarget.mBuffer ||
                 mTempAllocInfo.mOffset !=
@@ -285,7 +285,7 @@ public class MeshDrawWriter implements AutoCloseable {
     public void endAppender() {
         assert mCurrentTarget != null;
         if (mReservedCount > 0) {
-            mDynamicBufferManager.putBackVertexBytes(mReservedCount * mCurrentStride);
+            mDrawBufferManager.putBackVertexBytes(mReservedCount * mCurrentStride);
         }
         mCurrentTarget = null;
         mCurrentWriter = NULL;

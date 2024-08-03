@@ -163,6 +163,23 @@ public abstract class CommandBuffer {
      */
     public abstract void endRenderPass();
 
+    // Can only be used outside render passes
+    public final boolean copyBufferToBuffer(@RawPtr Buffer srcBuffer,
+                                            @RawPtr Buffer dstBuffer,
+                                            long srcOffset,
+                                            long dstOffset,
+                                            long size) {
+        assert srcBuffer != null && dstBuffer != null;
+        return onCopyBufferToBuffer(srcBuffer, dstBuffer, srcOffset, dstOffset, size);
+    }
+
+    protected abstract boolean onCopyBufferToBuffer(@RawPtr Buffer srcBuffer,
+                                                    @RawPtr Buffer dstBuffer,
+                                                    long srcOffset,
+                                                    long dstOffset,
+                                                    long size);
+
+    // Can only be used outside render passes
     public final boolean copyBufferToImage(@RawPtr Buffer srcBuffer,
                                            @RawPtr Image dstImage,
                                            int srcColorType,

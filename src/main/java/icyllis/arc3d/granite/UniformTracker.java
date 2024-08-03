@@ -20,7 +20,6 @@
 package icyllis.arc3d.granite;
 
 import icyllis.arc3d.engine.BufferViewInfo;
-import icyllis.arc3d.engine.DynamicBufferManager;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.lwjgl.system.MemoryUtil;
 
@@ -84,7 +83,7 @@ public class UniformTracker {
         return cache.insert(data);
     }
 
-    public boolean writeUniforms(DynamicBufferManager bufferManager) {
+    public boolean writeUniforms(DrawBufferManager bufferManager) {
         for (var cache : mPerPipelineCaches) {
             int numBlocks = cache.mIndexToData.size();
             if (numBlocks == 0) {

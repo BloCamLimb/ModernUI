@@ -21,6 +21,7 @@ package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SharedPtr;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -43,6 +44,10 @@ public class SharedResourceCache {
     @GuardedBy("itself")
     private final PipelineCache<@SharedPtr ComputePipeline> mComputePipelineCache;
 
+    @GuardedBy("itself")
+    private final ObjectArrayList<@SharedPtr Resource> mStaticResources =
+            new ObjectArrayList<>();
+
     public SharedResourceCache() {
         //TODO configurable
         mGraphicsPipelineCache = new PipelineCache<>(256);
@@ -57,6 +62,10 @@ public class SharedResourceCache {
         synchronized (mComputePipelineCache) {
             mComputePipelineCache.values().forEach(RefCnt::unref);
             mComputePipelineCache.clear();
+        }
+        synchronized (mStaticResources) {
+            mStaticResources.forEach(Resource::unref);
+            mStaticResources.clear();
         }
     }
 
@@ -109,6 +118,12 @@ public class SharedResourceCache {
             return RefCnt.create(pipeline, existing);
         } else {
             return RefCnt.create(pipeline);
+        }
+    }
+
+    public void addStaticResource(@Nonnull @SharedPtr Resource resource) {
+        synchronized (mStaticResources) {
+            mStaticResources.add(resource);
         }
     }
 
