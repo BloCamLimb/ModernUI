@@ -35,8 +35,8 @@ public class NoPixelsDevice extends Device {
 
     private final Rect2i mTmpBounds = new Rect2i();
 
-    public NoPixelsDevice(@Nonnull Rect2i bounds) {
-        this(bounds.mLeft, bounds.mTop, bounds.mRight, bounds.mBottom);
+    public NoPixelsDevice(@Nonnull Rect2ic bounds) {
+        this(bounds.left(), bounds.top(), bounds.right(), bounds.bottom());
     }
 
     public NoPixelsDevice(int left, int top, int right, int bottom) {
@@ -100,12 +100,12 @@ public class NoPixelsDevice extends Device {
     }
 
     @Override
-    protected void onSave() {
+    public void pushClipStack() {
         mClipStack[mClipIndex].mDeferredSaveCount++;
     }
 
     @Override
-    protected void onRestore() {
+    public void popClipStack() {
         ClipState state = mClipStack[mClipIndex];
         if (state.mDeferredSaveCount > 0) {
             state.mDeferredSaveCount--;
@@ -115,12 +115,11 @@ public class NoPixelsDevice extends Device {
     }
 
     @Override
-    public void clipRect(Rect2f rect, int clipOp, boolean doAA) {
+    public void clipRect(Rect2fc rect, int clipOp, boolean doAA) {
         writableClip().opRect(rect, getLocalToDevice(), clipOp, doAA);
     }
 
-    @Override
-    protected void onReplaceClip(Rect2i globalRect) {
+    public void replaceClip(Rect2i globalRect) {
         final Rect2i deviceRect = mTmpBounds;
         getGlobalToDevice().mapRect(globalRect, deviceRect);
         final ClipState clip = writableClip();
@@ -149,6 +148,11 @@ public class NoPixelsDevice extends Device {
     @Override
     public boolean isClipWideOpen() {
         return clip().mIsRect && getClipBounds().equals(mBounds);
+    }
+
+    @Override
+    public void getClipBounds(@Nonnull Rect2i bounds) {
+        bounds.set(getClipBounds());
     }
 
     @Override
@@ -250,7 +254,7 @@ public class NoPixelsDevice extends Device {
             setRect(r.mLeft, r.mTop, r.mRight, r.mBottom);
         }
 
-        public void opRect(final Rect2f localRect, final Matrix4c localToDevice, int clipOp, boolean doAA) {
+        public void opRect(final Rect2fc localRect, final Matrix4c localToDevice, int clipOp, boolean doAA) {
             applyOpParams(clipOp, doAA, localToDevice.isScaleTranslate());
             switch (clipOp) {
                 case ClipOp.CLIP_OP_INTERSECT:

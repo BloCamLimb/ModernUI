@@ -102,16 +102,6 @@ public abstract class Device extends RefCnt {
     }
 
     /**
-     * Returns the bounding box of the current clip, in this device's
-     * coordinate space. No pixels outside these bounds will be touched by
-     * draws unless the clip is further modified (at which point this will
-     * return the updated bounds).
-     */
-    public final void getClipBounds(@Nonnull Rect2i bounds) {
-        bounds.set(getClipBounds());
-    }
-
-    /**
      * Returns the transformation that maps from the local space to the device's coordinate space.
      */
     @Nonnull
@@ -170,38 +160,6 @@ public abstract class Device extends RefCnt {
         dest.set(mDeviceToGlobal);
         dest.postConcat(device.mGlobalToDevice);
     }
-
-    public final void save() {
-        onSave();
-    }
-
-    public final void restore(Matrix4 globalTransform) {
-        onRestore();
-        setGlobalCTM(globalTransform);
-    }
-
-    public final void restoreLocal(Matrix4 localToDevice) {
-        onRestore();
-        setLocalToDevice(localToDevice);
-    }
-
-    public void clipRect(Rect2f rect, int clipOp, boolean doAA) {
-    }
-
-    public final void replaceClip(Rect2i rect) {
-        onReplaceClip(rect);
-    }
-
-    protected void onReplaceClip(Rect2i rect) {
-    }
-
-    public abstract boolean isClipAA();
-
-    public abstract boolean isClipEmpty();
-
-    public abstract boolean isClipRect();
-
-    public abstract boolean isClipWideOpen();
 
     public final void setGlobalCTM(@Nonnull Matrix4c ctm) {
         mLocalToDevice.set(ctm);
@@ -273,13 +231,29 @@ public abstract class Device extends RefCnt {
         setDeviceCoordinateSystem(null, null, globalTransform, x, y);
     }
 
-    protected void onSave() {
-    }
+    public abstract void pushClipStack();
 
-    protected void onRestore() {
-    }
+    public abstract void popClipStack();
+
+    /**
+     * Returns the bounding box of the current clip, in this device's
+     * coordinate space. No pixels outside these bounds will be touched by
+     * draws unless the clip is further modified (at which point this will
+     * return the updated bounds).
+     */
+    public abstract void getClipBounds(@Nonnull Rect2i bounds);
 
     protected abstract Rect2ic getClipBounds();
+
+    public abstract void clipRect(Rect2fc rect, int clipOp, boolean doAA);
+
+    public abstract boolean isClipAA();
+
+    public abstract boolean isClipEmpty();
+
+    public abstract boolean isClipRect();
+
+    public abstract boolean isClipWideOpen();
 
     public abstract void drawPaint(Paint paint);
 

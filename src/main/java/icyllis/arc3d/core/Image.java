@@ -20,7 +20,6 @@
 package icyllis.arc3d.core;
 
 import icyllis.arc3d.engine.Context;
-import icyllis.arc3d.engine.RecordingContext;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
@@ -59,6 +58,14 @@ public abstract class Image extends RefCnt {
      */
     public int getHeight() {
         return mInfo.height();
+    }
+
+    public void getBounds(Rect2i bounds) {
+        bounds.set(0, 0, mInfo.width(), mInfo.height());
+    }
+
+    public void getBounds(Rect2f bounds) {
+        bounds.set(0, 0, mInfo.width(), mInfo.height());
     }
 
     @ColorInfo.ColorType

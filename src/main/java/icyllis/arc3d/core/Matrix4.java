@@ -385,24 +385,24 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      *
      * @param lhs the left-hand side matrix to multiply
      */
-    public void preConcat(@Nonnull Matrix4 lhs) {
+    public void preConcat(@Nonnull Matrix4c lhs) {
         // 64 multiplications
-        final float f11 = lhs.m11 * m11 + lhs.m12 * m21 + lhs.m13 * m31 + lhs.m14 * m41;
-        final float f12 = lhs.m11 * m12 + lhs.m12 * m22 + lhs.m13 * m32 + lhs.m14 * m42;
-        final float f13 = lhs.m11 * m13 + lhs.m12 * m23 + lhs.m13 * m33 + lhs.m14 * m43;
-        final float f14 = lhs.m11 * m14 + lhs.m12 * m24 + lhs.m13 * m34 + lhs.m14 * m44;
-        final float f21 = lhs.m21 * m11 + lhs.m22 * m21 + lhs.m23 * m31 + lhs.m24 * m41;
-        final float f22 = lhs.m21 * m12 + lhs.m22 * m22 + lhs.m23 * m32 + lhs.m24 * m42;
-        final float f23 = lhs.m21 * m13 + lhs.m22 * m23 + lhs.m23 * m33 + lhs.m24 * m43;
-        final float f24 = lhs.m21 * m14 + lhs.m22 * m24 + lhs.m23 * m34 + lhs.m24 * m44;
-        final float f31 = lhs.m31 * m11 + lhs.m32 * m21 + lhs.m33 * m31 + lhs.m34 * m41;
-        final float f32 = lhs.m31 * m12 + lhs.m32 * m22 + lhs.m33 * m32 + lhs.m34 * m42;
-        final float f33 = lhs.m31 * m13 + lhs.m32 * m23 + lhs.m33 * m33 + lhs.m34 * m43;
-        final float f34 = lhs.m31 * m14 + lhs.m32 * m24 + lhs.m33 * m34 + lhs.m34 * m44;
-        final float f41 = lhs.m41 * m11 + lhs.m42 * m21 + lhs.m43 * m31 + lhs.m44 * m41;
-        final float f42 = lhs.m41 * m12 + lhs.m42 * m22 + lhs.m43 * m32 + lhs.m44 * m42;
-        final float f43 = lhs.m41 * m13 + lhs.m42 * m23 + lhs.m43 * m33 + lhs.m44 * m43;
-        final float f44 = lhs.m41 * m14 + lhs.m42 * m24 + lhs.m43 * m34 + lhs.m44 * m44;
+        final float f11 = lhs.m11() * m11 + lhs.m12() * m21 + lhs.m13() * m31 + lhs.m14() * m41;
+        final float f12 = lhs.m11() * m12 + lhs.m12() * m22 + lhs.m13() * m32 + lhs.m14() * m42;
+        final float f13 = lhs.m11() * m13 + lhs.m12() * m23 + lhs.m13() * m33 + lhs.m14() * m43;
+        final float f14 = lhs.m11() * m14 + lhs.m12() * m24 + lhs.m13() * m34 + lhs.m14() * m44;
+        final float f21 = lhs.m21() * m11 + lhs.m22() * m21 + lhs.m23() * m31 + lhs.m24() * m41;
+        final float f22 = lhs.m21() * m12 + lhs.m22() * m22 + lhs.m23() * m32 + lhs.m24() * m42;
+        final float f23 = lhs.m21() * m13 + lhs.m22() * m23 + lhs.m23() * m33 + lhs.m24() * m43;
+        final float f24 = lhs.m21() * m14 + lhs.m22() * m24 + lhs.m23() * m34 + lhs.m24() * m44;
+        final float f31 = lhs.m31() * m11 + lhs.m32() * m21 + lhs.m33() * m31 + lhs.m34() * m41;
+        final float f32 = lhs.m31() * m12 + lhs.m32() * m22 + lhs.m33() * m32 + lhs.m34() * m42;
+        final float f33 = lhs.m31() * m13 + lhs.m32() * m23 + lhs.m33() * m33 + lhs.m34() * m43;
+        final float f34 = lhs.m31() * m14 + lhs.m32() * m24 + lhs.m33() * m34 + lhs.m34() * m44;
+        final float f41 = lhs.m41() * m11 + lhs.m42() * m21 + lhs.m43() * m31 + lhs.m44() * m41;
+        final float f42 = lhs.m41() * m12 + lhs.m42() * m22 + lhs.m43() * m32 + lhs.m44() * m42;
+        final float f43 = lhs.m41() * m13 + lhs.m42() * m23 + lhs.m43() * m33 + lhs.m44() * m43;
+        final float f44 = lhs.m41() * m14 + lhs.m42() * m24 + lhs.m43() * m34 + lhs.m44() * m44;
         m11 = f11;
         m12 = f12;
         m13 = f13;
@@ -495,24 +495,24 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      *
      * @param rhs the right-hand side matrix to multiply
      */
-    public void postConcat(@Nonnull Matrix4 rhs) {
+    public void postConcat(@Nonnull Matrix4c rhs) {
         // 64 multiplications
-        final float f11 = m11 * rhs.m11 + m12 * rhs.m21 + m13 * rhs.m31 + m14 * rhs.m41;
-        final float f12 = m11 * rhs.m12 + m12 * rhs.m22 + m13 * rhs.m32 + m14 * rhs.m42;
-        final float f13 = m11 * rhs.m13 + m12 * rhs.m23 + m13 * rhs.m33 + m14 * rhs.m43;
-        final float f14 = m11 * rhs.m14 + m12 * rhs.m24 + m13 * rhs.m34 + m14 * rhs.m44;
-        final float f21 = m21 * rhs.m11 + m22 * rhs.m21 + m23 * rhs.m31 + m24 * rhs.m41;
-        final float f22 = m21 * rhs.m12 + m22 * rhs.m22 + m23 * rhs.m32 + m24 * rhs.m42;
-        final float f23 = m21 * rhs.m13 + m22 * rhs.m23 + m23 * rhs.m33 + m24 * rhs.m43;
-        final float f24 = m21 * rhs.m14 + m22 * rhs.m24 + m23 * rhs.m34 + m24 * rhs.m44;
-        final float f31 = m31 * rhs.m11 + m32 * rhs.m21 + m33 * rhs.m31 + m34 * rhs.m41;
-        final float f32 = m31 * rhs.m12 + m32 * rhs.m22 + m33 * rhs.m32 + m34 * rhs.m42;
-        final float f33 = m31 * rhs.m13 + m32 * rhs.m23 + m33 * rhs.m33 + m34 * rhs.m43;
-        final float f34 = m31 * rhs.m14 + m32 * rhs.m24 + m33 * rhs.m34 + m34 * rhs.m44;
-        final float f41 = m41 * rhs.m11 + m42 * rhs.m21 + m43 * rhs.m31 + m44 * rhs.m41;
-        final float f42 = m41 * rhs.m12 + m42 * rhs.m22 + m43 * rhs.m32 + m44 * rhs.m42;
-        final float f43 = m41 * rhs.m13 + m42 * rhs.m23 + m43 * rhs.m33 + m44 * rhs.m43;
-        final float f44 = m41 * rhs.m14 + m42 * rhs.m24 + m43 * rhs.m34 + m44 * rhs.m44;
+        final float f11 = m11 * rhs.m11() + m12 * rhs.m21() + m13 * rhs.m31() + m14 * rhs.m41();
+        final float f12 = m11 * rhs.m12() + m12 * rhs.m22() + m13 * rhs.m32() + m14 * rhs.m42();
+        final float f13 = m11 * rhs.m13() + m12 * rhs.m23() + m13 * rhs.m33() + m14 * rhs.m43();
+        final float f14 = m11 * rhs.m14() + m12 * rhs.m24() + m13 * rhs.m34() + m14 * rhs.m44();
+        final float f21 = m21 * rhs.m11() + m22 * rhs.m21() + m23 * rhs.m31() + m24 * rhs.m41();
+        final float f22 = m21 * rhs.m12() + m22 * rhs.m22() + m23 * rhs.m32() + m24 * rhs.m42();
+        final float f23 = m21 * rhs.m13() + m22 * rhs.m23() + m23 * rhs.m33() + m24 * rhs.m43();
+        final float f24 = m21 * rhs.m14() + m22 * rhs.m24() + m23 * rhs.m34() + m24 * rhs.m44();
+        final float f31 = m31 * rhs.m11() + m32 * rhs.m21() + m33 * rhs.m31() + m34 * rhs.m41();
+        final float f32 = m31 * rhs.m12() + m32 * rhs.m22() + m33 * rhs.m32() + m34 * rhs.m42();
+        final float f33 = m31 * rhs.m13() + m32 * rhs.m23() + m33 * rhs.m33() + m34 * rhs.m43();
+        final float f34 = m31 * rhs.m14() + m32 * rhs.m24() + m33 * rhs.m34() + m34 * rhs.m44();
+        final float f41 = m41 * rhs.m11() + m42 * rhs.m21() + m43 * rhs.m31() + m44 * rhs.m41();
+        final float f42 = m41 * rhs.m12() + m42 * rhs.m22() + m43 * rhs.m32() + m44 * rhs.m42();
+        final float f43 = m41 * rhs.m13() + m42 * rhs.m23() + m43 * rhs.m33() + m44 * rhs.m43();
+        final float f44 = m41 * rhs.m14() + m42 * rhs.m24() + m43 * rhs.m34() + m44 * rhs.m44();
         m11 = f11;
         m12 = f12;
         m13 = f13;

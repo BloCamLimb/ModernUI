@@ -129,4 +129,55 @@ public class ImageShader extends Shader {
         };
     }
     //@formatter:on
+
+    public static Rect2f preparePaintForDrawImageRect(@RawPtr Image image,
+                                                      SamplingOptions sampling,
+                                                      Rect2fc src, Rect2fc dst,
+                                                      boolean strictSubset,
+                                                      Paint paint) {
+        // The paint should have already been cleaned for a regular drawImageRect, e.g. no path
+        // effect and is a fill.
+        assert (paint.getStyle() == Paint.FILL && paint.getPathEffect() == null);
+
+        Rect2f imageBounds = new Rect2f();
+        image.getBounds(imageBounds);
+
+        assert (src.isFinite() && dst.isFinite() && dst.isSorted());
+        Matrix localMatrix = new Matrix();
+        localMatrix.setRectToRect(src, dst);
+        Rect2f modifiedSrc = new Rect2f(src);
+        Rect2f modifiedDst = new Rect2f(dst);
+        if (!imageBounds.contains(modifiedSrc)) {
+            if (!modifiedSrc.intersect(imageBounds)) {
+                return modifiedDst; // Nothing to draw for this entry
+            }
+            // Update dst to match smaller src
+            localMatrix.mapRect(modifiedSrc, modifiedDst);
+        }
+
+        boolean imageIsAlphaOnly = ColorInfo.colorTypeIsAlphaOnly(image.getColorType());
+
+        @SharedPtr
+        Shader imageShader;
+        if (strictSubset) {
+            imageShader = ImageShader.makeSubset(RefCnt.create(image), modifiedSrc,
+                    TILE_MODE_CLAMP, TILE_MODE_CLAMP,
+                    sampling, localMatrix);
+        } else {
+            imageShader = ImageShader.make(RefCnt.create(image),
+                    TILE_MODE_CLAMP, TILE_MODE_CLAMP,
+                    sampling, localMatrix);
+        }
+        if (imageShader == null) {
+            modifiedDst.setEmpty();
+            return modifiedDst;
+        }
+        //TODO
+        if (imageIsAlphaOnly && paint.getShader() != null) {
+
+        }
+
+        paint.setShader(imageShader); // move
+        return modifiedDst;
+    }
 }

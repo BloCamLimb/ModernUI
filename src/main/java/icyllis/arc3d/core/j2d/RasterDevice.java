@@ -24,6 +24,7 @@ import icyllis.arc3d.core.Image;
 import icyllis.arc3d.core.Paint;
 import icyllis.arc3d.core.*;
 
+import javax.annotation.Nonnull;
 import java.awt.*;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.RoundRectangle2D;
@@ -61,8 +62,28 @@ public class RasterDevice extends Device {
     }
 
     @Override
+    public void pushClipStack() {
+
+    }
+
+    @Override
+    public void popClipStack() {
+
+    }
+
+    @Override
+    public void getClipBounds(@Nonnull Rect2i bounds) {
+
+    }
+
+    @Override
     protected Rect2ic getClipBounds() {
         return null;
+    }
+
+    @Override
+    public void clipRect(Rect2fc rect, int clipOp, boolean doAA) {
+
     }
 
     @Override
