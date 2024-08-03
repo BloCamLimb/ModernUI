@@ -74,7 +74,7 @@ public class TestClipStack {
                 new Rect2f(0, 0, 60, 60),
                 ClipOp.CLIP_OP_INTERSECT, false);
 
-        drawDevice.save();
+        drawDevice.pushClipStack();
         //viewMatrix.preRotateZ(MathUtil.DEG_TO_RAD * 5);
         drawDevice.clipRect(
                 new Rect2f(20, 20, 70, 60),

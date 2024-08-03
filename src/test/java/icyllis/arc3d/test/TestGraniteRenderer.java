@@ -289,6 +289,7 @@ public class TestGraniteRenderer {
             int nRects = 4000;
             canvas.clear(0xFF000000);
             paint.reset();
+            canvas.save();
             if (TEST_SCENE == 0) {
                 RoundRect rrect = new RoundRect();
                 for (int i = 0; i < nRects; i++) {
@@ -318,20 +319,17 @@ public class TestGraniteRenderer {
                 paint.setStyle(Paint.STROKE);
                 int[] aligns = {Paint.ALIGN_INSIDE, Paint.ALIGN_CENTER, Paint.ALIGN_OUTSIDE};
                 paint.setStrokeWidth(10);
-                Matrix4 mat = Matrix4.identity();
                 for (int i = 0; i < 3; i++) {
                     paint.setStrokeAlign(aligns[i]);
-                    canvas.setMatrix(mat);
                     paint.setRGBA(random.nextInt(256), random.nextInt(256), random.nextInt(256), 255);
                     canvas.drawRoundRect(rrect, paint);
-                    mat.preTranslateX(230);
-                    mat.preRotateZ(MathUtil.PI / 20);
+                    canvas.translate(230, 0);
+                    canvas.rotate(9);
                 }
                 Rect2f rect = new Rect2f();
                 rrect.getRect(rect);
                 //paint.setStrokeAlign(Paint.ALIGN_CENTER);
                 paint.setStrokeJoin(Paint.JOIN_MITER);
-                canvas.setMatrix(mat);
                 paint.setRGBA(random.nextInt(256), random.nextInt(256), random.nextInt(256), 255);
                 canvas.drawRect(rect, paint);
                 Runnable lines = () -> {
@@ -342,36 +340,30 @@ public class TestGraniteRenderer {
                     paint.setRGBA(random.nextInt(256), random.nextInt(256), random.nextInt(256), 255);
                     canvas.drawLine(300, 260 - 10, 20, 260, Paint.CAP_SQUARE, 10f, paint);
                 };
-                mat.setIdentity();
-                canvas.setMatrix(mat);
+                canvas.resetMatrix();
                 paint.setStyle(Paint.FILL);
                 lines.run();
 
-                mat.preTranslateY(100);
-                canvas.setMatrix(mat);
+                canvas.translate(0, 100);
                 paint.setStyle(Paint.STROKE);
                 paint.setStrokeWidth(4);
                 paint.setStrokeJoin(Paint.JOIN_MITER);
                 paint.setStrokeAlign(Paint.ALIGN_CENTER);
                 lines.run();
 
-                mat.preTranslateY(100);
-                canvas.setMatrix(mat);
+                canvas.translate(0, 100);
                 paint.setStrokeJoin(Paint.JOIN_ROUND);
                 lines.run();
 
-                mat.preTranslateY(100);
-                canvas.setMatrix(mat);
+                canvas.translate(0, 100);
                 paint.setStrokeAlign(Paint.ALIGN_INSIDE);
                 lines.run();
 
-                mat.preTranslateY(100);
-                canvas.setMatrix(mat);
+                canvas.translate(0, 100);
                 paint.setStrokeAlign(Paint.ALIGN_OUTSIDE);
                 lines.run();
 
-                mat.setIdentity();
-                canvas.setMatrix(mat);
+                canvas.resetMatrix();
 
                 paint.setShader(RefCnt.create(testShader1));
                 paint.setStyle(Paint.FILL);
@@ -400,11 +392,6 @@ public class TestGraniteRenderer {
                 canvas.drawCircle(500, 300, 20, paint);
 
                 paint.setStyle(Paint.FILL);
-                canvas.drawArc(1100, 300, 150, 90,
-                        180 + random.nextFloat(-30, 30),
-                        Paint.CAP_SQUARE, 60, paint);
-
-                paint.setStyle(Paint.FILL);
                 paint.setShader(RefCnt.create(gradShader));
                 paint.setDither(true);
                 rrect.setRectXY(100, 650, 1500, 950, 30, 30);
@@ -424,6 +411,12 @@ public class TestGraniteRenderer {
                 canvas.drawRoundRect(rrect, paint);
                 subRunContainer.draw(canvas, 400, 400, paint, device);
 
+                canvas.scale(4, 4, 1100, 300);
+
+                paint.setStyle(Paint.FILL);
+                /*canvas.drawArc(1100, 300, 150, 90,
+                        180 + random.nextFloat(-30, 30),
+                        Paint.CAP_SQUARE, 60, paint);*/
                 paint.setStyle(Paint.FILL);
                 paint.setStrokeCap(Paint.CAP_BUTT);
                 paint.setStrokeWidth(60);
@@ -443,6 +436,7 @@ public class TestGraniteRenderer {
 
                 paint.setShader(RefCnt.create(testShader1));
                 paint.setStyle(Paint.FILL);
+                var mat = Matrix4.identity();
                 mat.setTranslate(1000, 100, 0);
                 canvas.setMatrix(mat);
                 rrect.setRectXY(200, 100, 600, 500, 20, 20);
@@ -457,22 +451,19 @@ public class TestGraniteRenderer {
                 paint.setStyle(Paint.FILL);
 
                 paint.setShader(RefCnt.create(testShader1));
-                Matrix4 mat = Matrix4.identity();
                 float scale = (float) (1 + 0.1 * Math.sin(System.currentTimeMillis() / 1000.0 * 2.0));
-                mat.preScale(scale, scale);
-                canvas.setMatrix(mat);
+                canvas.scale(scale, scale);
                 canvas.drawRect(rect, paint);
 
                 paint.setShader(RefCnt.create(testShader2));
-                mat.preTranslateX(wid);
-                canvas.setMatrix(mat);
+                canvas.translate(wid, 0);
                 canvas.drawRect(rect, paint);
 
                 paint.setShader(RefCnt.create(testShader3));
-                mat.preTranslateX(wid);
-                canvas.setMatrix(mat);
+                canvas.translate(wid, 0);
                 canvas.drawRect(rect, paint);
             }
+            canvas.restore();
 
             double time2 = GLFW.glfwGetTime();
 
@@ -506,14 +497,14 @@ public class TestGraniteRenderer {
             GLFW.glfwWaitEvents();
 
             double time7 = GLFW.glfwGetTime();
-            LOGGER.info("Painting: {}, CreateRenderPass: {}, CreateFrameTask: {}, AddCommands: {}, " +
+            /*LOGGER.info("Painting: {}, CreateRenderPass: {}, CreateFrameTask: {}, AddCommands: {}, " +
                             "Blit/Submit/CheckFence: {}, Swap/Event: {}",
                     formatMicroseconds(time2, time1),
                     formatMicroseconds(time3, time2),
                     formatMicroseconds(time4, time3),
                     formatMicroseconds(time5, time4),
                     formatMicroseconds(time6, time5),
-                    formatMicroseconds(time7, time6));
+                    formatMicroseconds(time7, time6));*/
         }
         paint.close();
         testShader1 = RefCnt.move(testShader1);

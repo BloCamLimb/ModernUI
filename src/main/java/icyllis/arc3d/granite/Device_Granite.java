@@ -19,15 +19,17 @@
 
 package icyllis.arc3d.granite;
 
-import icyllis.arc3d.core.*;
 import icyllis.arc3d.core.Image;
+import icyllis.arc3d.core.*;
 import icyllis.arc3d.core.effects.ColorFilter;
+import icyllis.arc3d.core.shaders.ImageShader;
 import icyllis.arc3d.core.shaders.Shader;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.granite.geom.BoundsManager;
 import icyllis.arc3d.granite.geom.FullBoundsManager;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
@@ -135,14 +137,12 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
     }
 
     @Override
-    protected void onSave() {
-        super.onSave();
+    public void pushClipStack() {
         mClipStack.save();
     }
 
     @Override
-    protected void onRestore() {
-        super.onRestore();
+    public void popClipStack() {
         mClipStack.restore();
     }
 
@@ -151,7 +151,7 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
     }
 
     @Override
-    public void clipRect(Rect2f rect, int clipOp, boolean doAA) {
+    public void clipRect(Rect2fc rect, int clipOp, boolean doAA) {
         mClipStack.clipRect(getLocalToDevice(), rect, clipOp);
     }
 
@@ -178,6 +178,12 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
 
     private final Rect2f mTmpClipBounds = new Rect2f();
     private final Rect2i mTmpClipBoundsI = new Rect2i();
+
+    @Override
+    public void getClipBounds(@Nonnull Rect2i bounds) {
+        mClipStack.getConservativeBounds(mTmpClipBounds);
+        mTmpClipBounds.roundOut(bounds);
+    }
 
     @Override
     protected Rect2ic getClipBounds() {
@@ -308,7 +314,16 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
     @Override
     public void drawImageRect(Image image, Rect2fc src, Rect2fc dst,
                               SamplingOptions sampling, Paint paint, int constraint) {
-
+        Paint modifiedPaint = new Paint(paint);
+        Rect2f modifiedDst = ImageShader.preparePaintForDrawImageRect(
+                image, sampling, src, dst,
+                constraint == Canvas.SRC_RECT_CONSTRAINT_STRICT,
+                modifiedPaint
+        );
+        if (!modifiedDst.isEmpty()) {
+            drawRect(modifiedDst, modifiedPaint);
+        }
+        modifiedPaint.close();
     }
 
     @Override

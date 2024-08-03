@@ -20,7 +20,6 @@
 package icyllis.arc3d.core;
 
 import icyllis.arc3d.engine.RecordingContext;
-import icyllis.arc3d.granite.SurfaceDrawContext;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -92,13 +91,10 @@ public class Canvas implements AutoCloseable {
     // cache some objects for performance
     private static final int MAX_MC_POOL_SIZE = 32;
 
-    // a cached identity matrix for resetMatrix() call
-    private static final Matrix4 IDENTITY_MATRIX = Matrix4.identity();
-
     // the bottom-most device in the stack, only changed by init(). Image properties and the final
     // canvas pixels are determined by this device
     @SharedPtr
-    private Device mBaseDevice;
+    private Device mRootDevice;
 
     // keep track of the device clip bounds in the canvas' global space to reject draws before
     // invoking the top-level device.
@@ -115,14 +111,14 @@ public class Canvas implements AutoCloseable {
     // value returned by getSaveCount()
     private int mSaveCount;
 
-    private final MarkerStack mMarkerStack = new MarkerStack();
-
     // a temp rect that used with arguments
     private final Rect2f mTmpRect = new Rect2f();
+    private final Rect2f mTmpRect2 = new Rect2f();
     private final RoundRect mTmpRoundRect = new RoundRect();
-    private final Rect2f mTmpQuickBounds1 = new Rect2f();
+    private final Rect2f mTmpQuickBounds = new Rect2f();
     private final Rect2f mTmpQuickBounds2 = new Rect2f();
-    private final Matrix4 mTmpMatrix = new Matrix4();
+    private final Matrix mTmpMatrix = new Matrix();
+    private final Matrix4 mTmpMatrix44 = new Matrix4();
     private final Paint mTmpPaint = new Paint();
 
     private final GlyphRunBuilder mScratchGlyphRunBuilder = new GlyphRunBuilder();
@@ -132,7 +128,7 @@ public class Canvas implements AutoCloseable {
      * a width and height of zero.
      */
     public Canvas() {
-        this(0, 0);
+        this((Device) null);
     }
 
     /**
@@ -146,11 +142,18 @@ public class Canvas implements AutoCloseable {
         this(new NoPixelsDevice(0, 0, Math.max(width, 0), Math.max(height, 0)));
     }
 
+    protected Canvas(@Nonnull Rect2ic bounds) {
+        this(new NoPixelsDevice(bounds.isEmpty() ? Rect2i.empty() : bounds));
+    }
+
     @ApiStatus.Internal
     public Canvas(@SharedPtr Device device) {
+        if (device == null) {
+            device = new NoPixelsDevice(Rect2i.empty());
+        }
         mSaveCount = 1;
         mMCStack[0] = new MCRec(device);
-        mBaseDevice = device;
+        mRootDevice = device;
         computeQuickRejectBounds();
     }
 
@@ -161,8 +164,8 @@ public class Canvas implements AutoCloseable {
      * @return dimensions and ColorType of Canvas
      */
     @Nonnull
-    public ImageInfo getImageInfo() {
-        return mBaseDevice.imageInfo();
+    public final ImageInfo getImageInfo() {
+        return onGetImageInfo();
     }
 
     /**
@@ -173,7 +176,7 @@ public class Canvas implements AutoCloseable {
      * @return integral width of base layer
      */
     public final int getBaseLayerWidth() {
-        return mBaseDevice.width();
+        return mRootDevice.width();
     }
 
     /**
@@ -184,7 +187,7 @@ public class Canvas implements AutoCloseable {
      * @return integral height of base layer
      */
     public final int getBaseLayerHeight() {
-        return mBaseDevice.height();
+        return mRootDevice.height();
     }
 
     /**
@@ -195,8 +198,9 @@ public class Canvas implements AutoCloseable {
      * @return Surface matching info, or null if no match is available
      */
     @Nullable
-    public Surface makeSurface(ImageInfo info) {
-        return getTopDevice().makeSurface(info);
+    @SharedPtr
+    public final Surface makeSurface(ImageInfo info) {
+        return onNewSurface(info);
     }
 
     /**
@@ -204,15 +208,17 @@ public class Canvas implements AutoCloseable {
      *
      * @return GPU context, if available; null otherwise
      */
+    @RawPtr
     @Nullable
-    public RecordingContext getRecordingContext() {
-        return getTopDevice().getRecordingContext();
+    public final RecordingContext getRecordingContext() {
+        return topDevice().getRecordingContext();
     }
 
     /**
      * Sometimes a canvas is owned by a surface. If it is, getSurface() will return a bare
      * pointer to that surface, else this will return null.
      */
+    @RawPtr
     @Nullable
     public final Surface getSurface() {
         return mSurface;
@@ -221,7 +227,7 @@ public class Canvas implements AutoCloseable {
     /**
      * Saves the current matrix and clip onto a private stack.
      * <p>
-     * Subsequent calls to translate, scale, rotate, skew, concat or clipRect,
+     * Subsequent calls to translate, scale, rotate, shear, concat or clipRect,
      * clipPath will all operate as usual, but when the balancing call to
      * restore() is made, those calls will be forgotten, and the settings that
      * existed before the save() will be reinstated.
@@ -235,8 +241,10 @@ public class Canvas implements AutoCloseable {
     public final int save() {
         final int i = mSaveCount++;
         top().mDeferredSaveCount++;
-        return i;
+        return i; // return our prev value
     }
+
+    //TODO these saveLayer() methods are WIP
 
     /**
      * This behaves the same as {@link #save()}, but in addition it allocates and
@@ -389,12 +397,14 @@ public class Canvas implements AutoCloseable {
      */
     public final void restore() {
         if (top().mDeferredSaveCount > 0) {
+            assert mSaveCount > 1;
             mSaveCount--;
             top().mDeferredSaveCount--;
         } else {
             // check for underflow
             if (mMCIndex > 0) {
                 willRestore();
+                assert mSaveCount > 1;
                 mSaveCount--;
                 internalRestore();
                 didRestore();
@@ -436,11 +446,13 @@ public class Canvas implements AutoCloseable {
         if (saveCount < 1) {
             throw new IllegalStateException("Stack underflow");
         }
-        int n = getSaveCount() - saveCount;
+        int n = mSaveCount - saveCount;
         for (int i = 0; i < n; ++i) {
             restore();
         }
     }
+
+    //////////////////////////////////////////////////////////////////////////////
 
     /**
      * Translates the current matrix by dx along the x-axis and dy along the y-axis.
@@ -457,14 +469,36 @@ public class Canvas implements AutoCloseable {
             checkForDeferredSave();
             Matrix4 transform = top().mMatrix;
             transform.preTranslate(dx, dy);
-            getTopDevice().setGlobalCTM(transform);
-            didTranslate(dx, dy);
+            topDevice().setGlobalCTM(transform);
+            didTranslate(dx, dy, 0);
+        }
+    }
+
+    /**
+     * Translates the current matrix by dx along the x-axis, dy along the y-axis,
+     * and dz along the z-axis. Mathematically, pre-multiply the current matrix with
+     * a translation matrix.
+     * <p>
+     * This has the effect of moving the drawing by (dx, dy, dz) before transforming
+     * the result with the current matrix.
+     *
+     * @param dx the distance to translate on x-axis
+     * @param dy the distance to translate on y-axis
+     * @param dz the distance to translate on z-axis
+     */
+    public final void translate(float dx, float dy, float dz) {
+        if (dx != 0.0f || dy != 0.0f || dz != 0.0f) {
+            checkForDeferredSave();
+            Matrix4 transform = top().mMatrix;
+            transform.preTranslate(dx, dy, dz);
+            topDevice().setGlobalCTM(transform);
+            didTranslate(dx, dy, dz);
         }
     }
 
     /**
      * Scales the current matrix by sx on the x-axis and sy on the y-axis.
-     * Mathematically, pre-multiply the current matrix with a scale matrix.
+     * Mathematically, pre-multiply the current matrix with a scaling matrix.
      * <p>
      * This has the effect of scaling the drawing by (sx, sy) before transforming
      * the result with the current matrix.
@@ -477,15 +511,37 @@ public class Canvas implements AutoCloseable {
             checkForDeferredSave();
             Matrix4 transform = top().mMatrix;
             transform.preScale(sx, sy);
-            getTopDevice().setGlobalCTM(transform);
-            didScale(sx, sy);
+            topDevice().setGlobalCTM(transform);
+            didScale(sx, sy, 1);
+        }
+    }
+
+    /**
+     * Scales the current matrix by sx on the x-axis, sy on the y-axis, and
+     * sz on the z-axis. Mathematically, pre-multiply the current matrix with a
+     * scaling matrix.
+     * <p>
+     * This has the effect of scaling the drawing by (sx, sy, sz) before transforming
+     * the result with the current matrix.
+     *
+     * @param sx the amount to scale on x-axis
+     * @param sy the amount to scale on y-axis
+     * @param sz the amount to scale on z-axis
+     */
+    public final void scale(float sx, float sy, float sz) {
+        if (sx != 1.0f || sy != 1.0f || sz != 1.0f) {
+            checkForDeferredSave();
+            Matrix4 transform = top().mMatrix;
+            transform.preScale(sx, sy, sz);
+            topDevice().setGlobalCTM(transform);
+            didScale(sx, sy, sz);
         }
     }
 
     /**
      * Scales the current matrix by sx on the x-axis and sy on the y-axis at (px, py).
      * Mathematically, pre-multiply the current matrix with a translation matrix;
-     * pre-multiply the current matrix with a scale matrix; then pre-multiply the
+     * pre-multiply the current matrix with a scaling matrix; then pre-multiply the
      * current matrix with a negative translation matrix;
      * <p>
      * This has the effect of scaling the drawing by (sx, sy) before transforming
@@ -498,13 +554,8 @@ public class Canvas implements AutoCloseable {
      */
     public final void scale(float sx, float sy, float px, float py) {
         if (sx != 1.0f || sy != 1.0f) {
-            checkForDeferredSave();
-            Matrix4 transform = top().mMatrix;
-            transform.preTranslate(px, py);
-            transform.preScale(sx, sy);
-            transform.preTranslate(-px, -py);
-            getTopDevice().setGlobalCTM(transform);
-            didScale(sx, sy, px, py);
+            mTmpMatrix.setScale(sx, sy, px, py);
+            concat(mTmpMatrix);
         }
     }
 
@@ -519,11 +570,8 @@ public class Canvas implements AutoCloseable {
      */
     public final void rotate(float degrees) {
         if (degrees != 0.0f) {
-            checkForDeferredSave();
-            Matrix4 transform = top().mMatrix;
-            transform.preRotateZ(degrees * MathUtil.DEG_TO_RAD);
-            getTopDevice().setGlobalCTM(transform);
-            didRotate(degrees);
+            mTmpMatrix.setRotate(degrees * MathUtil.DEG_TO_RAD);
+            concat(mTmpMatrix);
         }
     }
 
@@ -542,14 +590,40 @@ public class Canvas implements AutoCloseable {
      */
     public final void rotate(float degrees, float px, float py) {
         if (degrees != 0.0f) {
-            checkForDeferredSave();
-            Matrix4 transform = top().mMatrix;
-            transform.preTranslate(px, py);
-            transform.preRotateZ(degrees * MathUtil.DEG_TO_RAD);
-            transform.preTranslate(-px, -py);
-            getTopDevice().setGlobalCTM(transform);
-            didRotate(degrees, px, py);
+            mTmpMatrix.setRotate(degrees * MathUtil.DEG_TO_RAD, px, py);
+            concat(mTmpMatrix);
         }
+    }
+
+    /**
+     * Shears the current matrix by sx on the x-axis and sy on the y-axis. A positive value
+     * of sx shears the drawing right as y-axis values increase; a positive value of sy shears
+     * the drawing down as x-axis values increase.
+     * <p>
+     * Mathematically, pre-multiply the current matrix with a shearing matrix.
+     * <p>
+     * This has the effect of shearing the drawing by (sx, sy) before transforming
+     * the result with the current matrix.
+     *
+     * @param sx the amount to shear on x-axis
+     * @param sy the amount to shear on y-axis
+     */
+    public final void shear(float sx, float sy) {
+        mTmpMatrix.setShear(sx, sy);
+        concat(mTmpMatrix);
+    }
+
+    /**
+     * Pre-multiply the current matrix by the specified shearing.
+     *
+     * @param sx the x-component of the shearing, y is unchanged
+     * @param sy the y-component of the shearing, x is unchanged
+     * @param px the x-component of the pivot (unchanged by the shear)
+     * @param py the y-component of the pivot (unchanged by the shear)
+     */
+    public final void shear(float sx, float sy, float px, float py) {
+        mTmpMatrix.setShear(sx, sy, px, py);
+        concat(mTmpMatrix);
     }
 
     /**
@@ -560,37 +634,28 @@ public class Canvas implements AutoCloseable {
      *
      * @param matrix the matrix to premultiply with the current matrix
      */
-    public final void concat(Matrix4 matrix) {
-        if (!matrix.isIdentity()) {
-            checkForDeferredSave();
-            Matrix4 transform = top().mMatrix;
-            transform.preConcat(matrix);
-            getTopDevice().setGlobalCTM(matrix);
-            didConcat(matrix);
+    public final void concat(@Nonnull Matrixc matrix) {
+        if (matrix.isIdentity()) {
+            return;
         }
+        matrix.toMatrix4(mTmpMatrix44);
+        concat(mTmpMatrix44);
     }
 
     /**
-     * Record a marker (provided by caller) for the current transform. This does not change anything
-     * about the transform or clip, but does "name" this matrix value, so it can be referenced by
-     * custom effects (who access it by specifying the same name).
+     * Pre-multiply the current matrix by the specified matrix.
      * <p>
-     * Within a save frame, marking with the same name more than once just replaces the previous
-     * value. However, between save frames, marking with the same name does not lose the marker
-     * in the previous save frame. It is "visible" when the current save() is balanced with
-     * a restore().
+     * This has the effect of transforming the drawn geometry by matrix, before
+     * transforming the result with the current matrix.
+     *
+     * @param matrix the matrix to premultiply with the current matrix
      */
-    public final void setMarker(String name) {
-        if (validateMarker(name)) {
-            mMarkerStack.setMarker(name.hashCode(), top().mMatrix, mMCIndex);
-        }
-    }
-
-    /**
-     * @see #setMarker(String)
-     */
-    public final boolean findMarker(String name, Matrix4 out) {
-        return validateMarker(name) && mMarkerStack.findMarker(name.hashCode(), out);
+    public final void concat(@Nonnull Matrix4c matrix) {
+        checkForDeferredSave();
+        Matrix4 transform = top().mMatrix;
+        transform.preConcat(matrix);
+        topDevice().setGlobalCTM(transform);
+        didConcat(matrix);
     }
 
     /**
@@ -599,9 +664,11 @@ public class Canvas implements AutoCloseable {
      *
      * @param matrix matrix to copy, replacing the current matrix
      */
-    public final void setMatrix(Matrix4 matrix) {
+    public final void setMatrix(@Nonnull Matrix4c matrix) {
         checkForDeferredSave();
-        internalSetMatrix(matrix);
+        Matrix4 transform = top().mMatrix;
+        transform.set(matrix);
+        topDevice().setGlobalCTM(transform);
         didSetMatrix(matrix);
     }
 
@@ -610,8 +677,11 @@ public class Canvas implements AutoCloseable {
      * Any prior matrix state is overwritten.
      */
     public final void resetMatrix() {
-        setMatrix(IDENTITY_MATRIX);
+        mTmpMatrix44.setIdentity();
+        setMatrix(mTmpMatrix44);
     }
+
+    //////////////////////////////////////////////////////////////////////////////
 
     /**
      * Intersect the current clip with the specified rectangle and updates
@@ -621,28 +691,9 @@ public class Canvas implements AutoCloseable {
      *
      * @param rect the rectangle to intersect with the current clip
      */
-    public final void clipRect(Rect2i rect) {
+    public final void clipRect(Rect2ic rect) {
         mTmpRect.set(rect);
-        clipRect(mTmpRect, false);
-    }
-
-    /**
-     * Intersect the current clip with the specified rectangle and updates
-     * the stencil buffer if changed, which is expressed in local coordinates.
-     * Resulting clip is aliased. The clip bounds cannot be expanded unless
-     * restore() is called.
-     *
-     * @param left   the left side of the rectangle to intersect with the
-     *               current clip
-     * @param top    the top of the rectangle to intersect with the current clip
-     * @param right  the right side of the rectangle to intersect with the
-     *               current clip
-     * @param bottom the bottom of the rectangle to intersect with the current
-     *               clip
-     */
-    public final void clipRect(int left, int top, int right, int bottom) {
-        mTmpRect.set(left, top, right, bottom);
-        clipRect(mTmpRect, false);
+        clipRect(mTmpRect, ClipOp.CLIP_OP_INTERSECT, false);
     }
 
     /**
@@ -653,8 +704,8 @@ public class Canvas implements AutoCloseable {
      *
      * @param rect the rectangle to intersect with the current clip
      */
-    public final void clipRect(Rect2f rect) {
-        clipRect(rect, false);
+    public final void clipRect(Rect2fc rect) {
+        clipRect(rect, ClipOp.CLIP_OP_INTERSECT, false);
     }
 
     /**
@@ -673,7 +724,7 @@ public class Canvas implements AutoCloseable {
      */
     public final void clipRect(float left, float top, float right, float bottom) {
         mTmpRect.set(left, top, right, bottom);
-        clipRect(mTmpRect, false);
+        clipRect(mTmpRect, ClipOp.CLIP_OP_INTERSECT, false);
     }
 
     /**
@@ -685,12 +736,8 @@ public class Canvas implements AutoCloseable {
      * @param rect the rectangle to intersect with the current clip
      * @param doAA true if clip is to be anti-aliased
      */
-    public final void clipRect(Rect2f rect, boolean doAA) {
-        if (rect.isFinite()) {
-            checkForDeferredSave();
-            rect.sort();
-            onClipRect(rect, doAA);
-        }
+    public final void clipRect(Rect2fc rect, boolean doAA) {
+        clipRect(rect, ClipOp.CLIP_OP_INTERSECT, doAA);
     }
 
     /**
@@ -710,8 +757,66 @@ public class Canvas implements AutoCloseable {
      */
     public final void clipRect(float left, float top, float right, float bottom, boolean doAA) {
         mTmpRect.set(left, top, right, bottom);
-        clipRect(mTmpRect, doAA);
+        clipRect(mTmpRect, ClipOp.CLIP_OP_INTERSECT, doAA);
     }
+
+    /**
+     * Replaces the current clip with the intersection or difference of the current clip
+     * and the given rect, with an aliased or anti-aliased clip edge. The rectangle is
+     * transformed by the current matrix before it is combined with clip.
+     *
+     * @param rect   rectangle to combine with clip
+     * @param clipOp ClipOp to apply to clip
+     */
+    public final void clipRect(Rect2ic rect, int clipOp) {
+        mTmpRect.set(rect);
+        clipRect(mTmpRect, clipOp, false);
+    }
+
+    /**
+     * Replaces the current clip with the intersection or difference of the current clip
+     * and the given rect, with an aliased or anti-aliased clip edge. The rectangle is
+     * transformed by the current matrix before it is combined with clip.
+     *
+     * @param rect   rectangle to combine with clip
+     * @param clipOp ClipOp to apply to clip
+     */
+    public final void clipRect(Rect2fc rect, int clipOp) {
+        clipRect(rect, clipOp, false);
+    }
+
+    /**
+     * Replaces the current clip with the intersection or difference of the current clip
+     * and the given rect, with an aliased or anti-aliased clip edge. The rectangle is
+     * transformed by the current matrix before it is combined with clip.
+     *
+     * @param clipOp ClipOp to apply to clip
+     */
+    public final void clipRect(float left, float top, float right, float bottom, int clipOp) {
+        mTmpRect.set(left, top, right, bottom);
+        clipRect(mTmpRect, clipOp, false);
+    }
+
+    /**
+     * Replaces the current clip with the intersection or difference of the current clip
+     * and the given rect, with an aliased or anti-aliased clip edge. The rectangle is
+     * transformed by the current matrix before it is combined with clip.
+     *
+     * @param rect   rectangle to combine with clip
+     * @param clipOp ClipOp to apply to clip
+     * @param doAA   true if clip mask is requested to be anti-aliased
+     */
+    public final void clipRect(Rect2fc rect, int clipOp, boolean doAA) {
+        if (!rect.isFinite()) {
+            return;
+        }
+        checkForDeferredSave();
+        mTmpRect2.set(rect);
+        mTmpRect2.sort();
+        onClipRect(mTmpRect2, clipOp, doAA);
+    }
+
+    //TODO clip round rect, clip path
 
     /**
      * Return true if the specified rectangle, after being transformed by the
@@ -772,13 +877,15 @@ public class Canvas implements AutoCloseable {
      * @return true if clip bounds is not empty
      */
     public final boolean getLocalClipBounds(Rect2f bounds) {
-        Device device = getTopDevice();
+        Device device = topDevice();
         if (device.isClipEmpty()) {
             bounds.setEmpty();
             return false;
         } else {
+            Matrix inverse = new Matrix();
+            top().mMatrix.toMatrix(inverse);
             // if we can't invert the matrix, we can't return local clip bounds
-            if (!top().mMatrix.invert(mTmpMatrix)) {
+            if (!inverse.invert()) {
                 bounds.setEmpty();
                 return false;
             }
@@ -787,7 +894,7 @@ public class Canvas implements AutoCloseable {
             bounds.roundOut(bounds);
             // adjust it outwards in case we are antialiasing
             bounds.outset(1.0f, 1.0f);
-            mTmpMatrix.mapRect(bounds);
+            inverse.mapRect(bounds);
             return !bounds.isEmpty();
         }
     }
@@ -803,16 +910,18 @@ public class Canvas implements AutoCloseable {
      * @return true if clip bounds is not empty
      */
     public final boolean getDeviceClipBounds(Rect2i bounds) {
-        Device device = getTopDevice();
+        Device device = topDevice();
         if (device.isClipEmpty()) {
             bounds.setEmpty();
             return false;
         } else {
-            bounds.set(device.getClipBounds());
+            device.getClipBounds(bounds);
             device.getDeviceToGlobal().mapRectOut(bounds, bounds);
             return !bounds.isEmpty();
         }
     }
+
+    //////////////////////////////////////////////////////////////////////////////
 
     /**
      * Fills the current clip with the specified color, using SRC blend mode.
@@ -838,17 +947,17 @@ public class Canvas implements AutoCloseable {
     }
 
     /**
-     * Makes SkCanvas contents undefined. Subsequent calls that read SkCanvas pixels,
-     * such as drawing with SkBlendMode, return undefined results. discard() does
-     * not change clip or SkMatrix.
+     * Makes Canvas contents undefined. Subsequent calls that read Canvas pixels,
+     * such as drawing with BlendMode, return undefined results. discard() does
+     * not change clip or Matrix.
      * <p>
-     * discard() may do nothing, depending on the implementation of SkSurface or SkDevice
-     * that created SkCanvas.
+     * discard() may do nothing, depending on the implementation of Surface or Device
+     * that created Canvas.
      * <p>
      * discard() allows optimized performance on subsequent draws by removing
-     * cached data associated with SkSurface or SkDevice.
-     * It is not necessary to call discard() once done with SkCanvas;
-     * any cached data is deleted when owning SkSurface or SkDevice is deleted.
+     * cached data associated with Surface or Device.
+     * It is not necessary to call discard() once done with Canvas;
+     * any cached data is deleted when owning Surface or Device is deleted.
      */
     public final void discard() {
         onDiscard();
@@ -1406,6 +1515,15 @@ public class Canvas implements AutoCloseable {
         drawImageRect(image, src, dst, sampling, paint, SRC_RECT_CONSTRAINT_FAST);
     }
 
+    /**
+     * Draw the specified image, scaling/translating automatically to fill the destination
+     * rectangle. If the source rectangle is not null, it specifies the subset of the image to
+     * draw. The Style and smooth radius is ignored in the paint, images are always filled.
+     *
+     * @param image the image to be drawn
+     * @param dst   the rectangle that the image will be scaled/translated to fit into
+     * @param paint the paint used to draw the image, null meaning a default paint
+     */
     public final void drawImageRect(@RawPtr Image image, Rect2fc dst, SamplingOptions sampling,
                                     @Nullable Paint paint) {
         if (image == null) {
@@ -1415,6 +1533,16 @@ public class Canvas implements AutoCloseable {
         drawImageRect(image, src, dst, sampling, paint, SRC_RECT_CONSTRAINT_FAST);
     }
 
+    /**
+     * Draw the specified image, scaling/translating automatically to fill the destination
+     * rectangle. If the source rectangle is not null, it specifies the subset of the image to
+     * draw. The Style and smooth radius is ignored in the paint, images are always filled.
+     *
+     * @param image the image to be drawn
+     * @param src   the subset of the image to be drawn, null meaning full image
+     * @param dst   the rectangle that the image will be scaled/translated to fit into
+     * @param paint the paint used to draw the image, null meaning a default paint
+     */
     public final void drawImageRect(@RawPtr Image image, Rect2fc src, Rect2fc dst, SamplingOptions sampling,
                                     @Nullable Paint paint, @SrcRectConstraint int constraint) {
         if (image == null) {
@@ -1432,7 +1560,10 @@ public class Canvas implements AutoCloseable {
         if (constraint == SRC_RECT_CONSTRAINT_STRICT) {
             if (sampling.mMipmapMode != SamplingOptions.MIPMAP_MODE_NONE) {
                 // Use linear filter if either is linear
-                sampling = SamplingOptions.make(sampling.mMinFilter | sampling.mMagFilter);
+                int filter = sampling.mMinFilter | sampling.mMagFilter;
+                sampling = filter == SamplingOptions.FILTER_MODE_LINEAR
+                        ? SamplingOptions.LINEAR
+                        : SamplingOptions.POINT;
             } else if (sampling.isAnisotropy()) {
                 sampling = SamplingOptions.LINEAR;
             }
@@ -1442,79 +1573,29 @@ public class Canvas implements AutoCloseable {
     }
 
     /**
-     * Draw the specified image, scaling/translating automatically to fill the destination
-     * rectangle. If the source rectangle is not null, it specifies the subset of the image to
-     * draw. The Style and smooth radius is ignored in the paint, images are always filled.
+     * Draws count glyphs, at positions relative to origin styled with font and paint.
+     * <p>
+     * This function draw glyphs at the given positions relative to the given origin.
+     * It does not perform typeface fallback for glyphs not found in the Typeface in font.
+     * <p>
+     * The drawing obeys the current transform matrix and clipping.
+     * <p>
+     * All elements of paint: PathEffect, Shader, and ColorFilter; apply to text. By
+     * default, draws filled white glyphs.
      *
-     * @param image the image to be drawn
-     * @param src   the subset of the image to be drawn, null meaning full image
-     * @param dst   the rectangle that the image will be scaled/translated to fit into
-     * @param paint the paint used to draw the image, null meaning a default paint
+     * @param glyphs     the array of glyphIDs to draw
+     * @param positions  where to draw each glyph relative to origin
+     * @param glyphCount number of glyphs to draw
+     * @param originX    the origin X of all the positions
+     * @param originY    the origin Y of all the positions
+     * @param font       typeface, text size and so, used to describe the text
+     * @param paint      blend, color, and so on, used to draw
      */
-    public final void drawImage(Image image, @Nullable Rect2i src, Rect2f dst, @Nullable Paint paint) {
-        if (src == null) {
-            drawImage(image, 0, 0, image.getWidth(), image.getHeight(),
-                    dst.mLeft, dst.mTop, dst.mRight, dst.mBottom, paint);
-        } else {
-            drawImage(image, src.mLeft, src.mTop, src.mRight, src.mBottom,
-                    dst.mLeft, dst.mTop, dst.mRight, dst.mBottom, paint);
-        }
-    }
-
-    /**
-     * Draw the specified image, scaling/translating automatically to fill the destination
-     * rectangle. If the source rectangle is not null, it specifies the subset of the image to
-     * draw. The Style and smooth radius is ignored in the paint, images are always filled.
-     *
-     * @param image the image to be drawn
-     * @param src   the subset of the image to be drawn, null meaning full image
-     * @param dst   the rectangle that the image will be scaled/translated to fit into
-     * @param paint the paint used to draw the image, null meaning a default paint
-     */
-    public final void drawImage(Image image, @Nullable Rect2i src, Rect2i dst, @Nullable Paint paint) {
-        if (src == null) {
-            drawImage(image, 0, 0, image.getWidth(), image.getHeight(),
-                    dst.mLeft, dst.mTop, dst.mRight, dst.mBottom, paint);
-        } else {
-            drawImage(image, src.mLeft, src.mTop, src.mRight, src.mBottom,
-                    dst.mLeft, dst.mTop, dst.mRight, dst.mBottom, paint);
-        }
-    }
-
-    /**
-     * Draw the specified image, scaling/translating automatically to fill the destination
-     * rectangle. If the source rectangle is not null, it specifies the subset of the image to
-     * draw. The Style and smooth radius is ignored in the paint, images are always filled.
-     *
-     * @param image the image to be drawn
-     * @param paint the paint used to draw the image, null meaning a default paint
-     */
-    public void drawImage(Image image, float srcLeft, float srcTop, float srcRight, float srcBottom,
-                          float dstLeft, float dstTop, float dstRight, float dstBottom, @Nullable Paint paint) {
-
-    }
-
-    /**
-     * Draw the specified image with rounded corners, whose top/left corner at (x,y)
-     * using the specified paint, transformed by the current matrix. The Style is
-     * ignored in the paint, images are always filled.
-     *
-     * @param image  the image to be drawn
-     * @param left   the position of the left side of the image being drawn
-     * @param top    the position of the top side of the image being drawn
-     * @param radius the radius used to round the corners
-     * @param paint  the paint used to draw the round image
-     */
-    public void drawRoundImage(Image image, float left, float top,
-                               float radius, Paint paint) {
-
-    }
-
-    public void drawGlyphs(int[] glyphs, int glyphOffset,
-                           float[] positions, int positionOffset,
-                           int glyphCount,
-                           float originX, float originY,
-                           Font font, Paint paint) {
+    public final void drawGlyphs(int[] glyphs, int glyphOffset,
+                                 float[] positions, int positionOffset,
+                                 int glyphCount,
+                                 float originX, float originY,
+                                 Font font, Paint paint) {
         if (glyphCount <= 0) {
             return;
         }
@@ -1532,8 +1613,8 @@ public class Canvas implements AutoCloseable {
      *
      * @return true if clip is empty
      */
-    public final boolean isClipEmpty() {
-        return getTopDevice().isClipEmpty();
+    public boolean isClipEmpty() {
+        return topDevice().isClipEmpty();
     }
 
     /**
@@ -1542,8 +1623,8 @@ public class Canvas implements AutoCloseable {
      *
      * @return true if clip is a Rect and not empty
      */
-    public final boolean isClipRect() {
-        return getTopDevice().isClipRect();
+    public boolean isClipRect() {
+        return topDevice().isClipRect();
     }
 
     /**
@@ -1552,8 +1633,18 @@ public class Canvas implements AutoCloseable {
      *
      * @param storage transformation from local coordinates to device / pixels.
      */
-    public final void getLocalToDevice(Matrix4 storage) {
-        storage.set(top().mMatrix);
+    public final void getLocalToDevice(@Nonnull Matrix4 storage) {
+        top().mMatrix.store(storage);
+    }
+
+    /**
+     * Returns the current transform from local coordinates to the 'device', which for most
+     * purposes means pixels. Discards the 3rd row and column in the matrix, so be warned.
+     *
+     * @param storage transformation from local coordinates to device / pixels.
+     */
+    public final void getLocalToDevice(@Nonnull Matrix storage) {
+        top().mMatrix.toMatrix(storage);
     }
 
     /**
@@ -1562,10 +1653,23 @@ public class Canvas implements AutoCloseable {
      */
     @Override
     public void close() {
-        mBaseDevice = RefCnt.move(mBaseDevice);
+        restoreToCount(1); // restore everything but the last
+        internalRestore(); // restore the last, since we're going away
+        mRootDevice = RefCnt.move(mRootDevice);
         if (mSurface != null) {
             throw new IllegalStateException("Surface-created canvas is owned by Surface, use Surface#close instead");
         }
+    }
+
+    @Nonnull
+    protected ImageInfo onGetImageInfo() {
+        return mRootDevice.imageInfo();
+    }
+
+    @Nullable
+    @SharedPtr
+    protected Surface onNewSurface(ImageInfo info) {
+        return mRootDevice.makeSurface(info);
     }
 
     protected void willSave() {
@@ -1583,33 +1687,16 @@ public class Canvas implements AutoCloseable {
     protected void didRestore() {
     }
 
-    protected void didTranslate(float dx, float dy) {
+    protected void didTranslate(float dx, float dy, float dz) {
     }
 
-    protected void didScale(float sx, float sy) {
+    protected void didScale(float sx, float sy, float sz) {
     }
 
-    protected void didScale(float sx, float sy, float px, float py) {
+    protected void didConcat(Matrix4c matrix) {
     }
 
-    protected void didRotate(float degrees) {
-    }
-
-    protected void didRotate(float degrees, float px, float py) {
-    }
-
-    protected void didConcat(Matrix4 matrix) {
-    }
-
-    protected void didSetMarker(String name) {
-    }
-
-    protected void didSetMatrix(Matrix4 matrix) {
-    }
-
-    protected void onClipRect(Rect2f rect, boolean doAA) {
-        getTopDevice().clipRect(rect, ClipOp.CLIP_OP_INTERSECT, doAA);
-        computeQuickRejectBounds();
+    protected void didSetMatrix(Matrix4c matrix) {
     }
 
     @Nonnull
@@ -1629,8 +1716,9 @@ public class Canvas implements AutoCloseable {
     }
 
     private void pop() {
-        if (mMCIndex-- >= MAX_MC_POOL_SIZE) {
-            mMCStack[mMCIndex + 1] = null;
+        final int i = mMCIndex--;
+        if (i >= MAX_MC_POOL_SIZE) {
+            mMCStack[i] = null;
         }
     }
 
@@ -1642,13 +1730,8 @@ public class Canvas implements AutoCloseable {
     // the top-most device in the stack, will change within saveLayer()'s. All drawing and clipping
     // operations should route to this device.
     @Nonnull
-    private Device getTopDevice() {
+    private Device topDevice() {
         return top().mDevice;
-    }
-
-    @Nullable
-    private SurfaceDrawContext topDeviceSurfaceDrawContext() {
-        return getTopDevice().getSurfaceDrawContext();
     }
 
     private void checkForDeferredSave() {
@@ -1659,6 +1742,7 @@ public class Canvas implements AutoCloseable {
 
     private void doSave() {
         willSave();
+        assert top().mDeferredSaveCount > 0;
         top().mDeferredSaveCount--;
         internalSave();
     }
@@ -1668,11 +1752,11 @@ public class Canvas implements AutoCloseable {
         MCRec rec = top();
         push().set(rec);
 
-        getTopDevice().save();
+        topDevice().pushClipStack();
     }
 
     private void internalRestore() {
-        mMarkerStack.restore(mMCIndex);
+        assert mMCIndex >= 0;
 
         // now do the normal restore()
         pop();
@@ -1682,7 +1766,9 @@ public class Canvas implements AutoCloseable {
             return;
         }
 
-        getTopDevice().restore(top().mMatrix);
+        var top = top();
+        top.mDevice.popClipStack();
+        top.mDevice.setGlobalCTM(top.mMatrix);
 
         // Update the quick-reject bounds in case the restore changed the top device or the
         // removed save record had included modifications to the clip stack.
@@ -1711,12 +1797,6 @@ public class Canvas implements AutoCloseable {
         internalSave();
     }
 
-    private void internalSetMatrix(Matrix4 matrix) {
-        Matrix4 transform = top().mMatrix;
-        transform.set(matrix);
-        getTopDevice().setGlobalCTM(transform);
-    }
-
     private void internalDrawPaint(Paint paint) {
         // drawPaint does not call internalQuickReject() because computing its geometry is not free
         // (see getLocalClipBounds()), and the two conditions below are sufficient.
@@ -1725,7 +1805,7 @@ public class Canvas implements AutoCloseable {
         }
 
         if (aboutToDraw(paint)) {
-            getTopDevice().drawPaint(paint);
+            topDevice().drawPaint(paint);
         }
     }
 
@@ -1734,7 +1814,7 @@ public class Canvas implements AutoCloseable {
      * into the canvas' global space.
      */
     private void computeQuickRejectBounds() {
-        Device device = getTopDevice();
+        Device device = topDevice();
         if (device.isClipEmpty()) {
             mQuickRejectBounds.setEmpty();
         } else {
@@ -1767,13 +1847,13 @@ public class Canvas implements AutoCloseable {
     }
 
     private boolean internalQuickReject(Rect2fc bounds, Paint paint,
-                                        Matrixc matrix) {
+                                        @Nullable Matrixc matrix) {
         if (!bounds.isFinite() || paint.nothingToDraw()) {
             return true;
         }
 
         if (paint.canComputeFastBounds(null)) {
-            var tmp = mTmpQuickBounds1;
+            var tmp = mTmpQuickBounds;
             if (matrix != null) {
                 matrix.mapRect(bounds, tmp);
             } else {
@@ -1801,20 +1881,20 @@ public class Canvas implements AutoCloseable {
         if (count <= 0 || paint.nothingToDraw()) {
             return;
         }
-        Rect2f bounds = new Rect2f();
+        var bounds = mTmpRect2;
         bounds.setBounds(pts, offset, count);
         if (internalQuickReject(bounds, paint)) {
             return;
         }
 
         if (aboutToDraw(paint)) {
-            getTopDevice().drawPoints(mode, pts, offset, count, paint);
+            topDevice().drawPoints(mode, pts, offset, count, paint);
         }
     }
 
     protected void onDrawLine(float x0, float y0, float x1, float y1,
                               @Paint.Cap int cap, float width, Paint paint) {
-        Rect2f bounds = new Rect2f();
+        var bounds = mTmpRect2;
         bounds.set(x0, y0, x1, y1);
         bounds.sort();
         float outset;
@@ -1830,7 +1910,7 @@ public class Canvas implements AutoCloseable {
         }
 
         if (aboutToDraw(paint)) {
-            getTopDevice().drawLine(x0, y0, x1, y1, cap, width, paint);
+            topDevice().drawLine(x0, y0, x1, y1, cap, width, paint);
         }
     }
 
@@ -1840,12 +1920,12 @@ public class Canvas implements AutoCloseable {
         }
 
         if (aboutToDraw(paint)) {
-            getTopDevice().drawRect(r, paint);
+            topDevice().drawRect(r, paint);
         }
     }
 
     protected void onDrawRoundRect(RoundRect roundRect, Paint paint) {
-        var bounds = mTmpRect;
+        var bounds = mTmpRect2;
         roundRect.getBounds(bounds);
         if (roundRect.isRect()) {
             bounds.sort();
@@ -1858,12 +1938,12 @@ public class Canvas implements AutoCloseable {
         }
 
         if (aboutToDraw(paint)) {
-            getTopDevice().drawRoundRect(roundRect, paint);
+            topDevice().drawRoundRect(roundRect, paint);
         }
     }
 
     protected void onDrawCircle(float cx, float cy, float radius, Paint paint) {
-        var bounds = mTmpRect;
+        var bounds = mTmpRect2;
         bounds.set(cx - radius, cy - radius, cx + radius, cy + radius);
 
         if (internalQuickReject(bounds, paint)) {
@@ -1871,13 +1951,13 @@ public class Canvas implements AutoCloseable {
         }
 
         if (aboutToDraw(paint)) {
-            getTopDevice().drawCircle(cx, cy, radius, paint);
+            topDevice().drawCircle(cx, cy, radius, paint);
         }
     }
 
     protected void onDrawArc(float cx, float cy, float radius, float startAngle,
                              float sweepAngle, @Paint.Cap int cap, float width, Paint paint) {
-        Rect2f bounds = new Rect2f();
+        var bounds = mTmpRect2;
         bounds.set(cx - radius, cy - radius, cx + radius, cy + radius);
         float outset = cap == Paint.CAP_SQUARE ? MathUtil.SQRT2 * width * 0.5f : width * 0.5f;
         bounds.outset(outset, outset);
@@ -1887,13 +1967,13 @@ public class Canvas implements AutoCloseable {
         }
 
         if (aboutToDraw(paint)) {
-            getTopDevice().drawArc(cx, cy, radius, startAngle, sweepAngle, cap, width, paint);
+            topDevice().drawArc(cx, cy, radius, startAngle, sweepAngle, cap, width, paint);
         }
     }
 
     protected void onDrawPie(float cx, float cy, float radius, float startAngle,
                              float sweepAngle, Paint paint) {
-        Rect2f bounds = new Rect2f();
+        var bounds = mTmpRect2;
         bounds.set(cx - radius, cy - radius, cx + radius, cy + radius);
 
         if (internalQuickReject(bounds, paint)) {
@@ -1901,13 +1981,13 @@ public class Canvas implements AutoCloseable {
         }
 
         if (aboutToDraw(paint)) {
-            getTopDevice().drawPie(cx, cy, radius, startAngle, sweepAngle, paint);
+            topDevice().drawPie(cx, cy, radius, startAngle, sweepAngle, paint);
         }
     }
 
     protected void onDrawChord(float cx, float cy, float radius, float startAngle,
                                float sweepAngle, Paint paint) {
-        Rect2f bounds = new Rect2f();
+        var bounds = mTmpRect2;
         bounds.set(cx - radius, cy - radius, cx + radius, cy + radius);
 
         if (internalQuickReject(bounds, paint)) {
@@ -1915,7 +1995,7 @@ public class Canvas implements AutoCloseable {
         }
 
         if (aboutToDraw(paint)) {
-            getTopDevice().drawChord(cx, cy, radius, startAngle, sweepAngle, paint);
+            topDevice().drawChord(cx, cy, radius, startAngle, sweepAngle, paint);
         }
     }
 
@@ -1927,20 +2007,26 @@ public class Canvas implements AutoCloseable {
         }
 
         if (aboutToDraw(paint)) {
-            getTopDevice().drawImageRect(image, src, dst, sampling, paint, constraint);
+            topDevice().drawImageRect(image, src, dst, sampling, paint, constraint);
         }
     }
 
     protected void onDrawGlyphRunList(GlyphRunList glyphRunList, Paint paint) {
-        Rect2f bounds = new Rect2f(glyphRunList.mSourceBounds);
+        var bounds = mTmpRect2;
+        bounds.set(glyphRunList.mSourceBounds);
         bounds.offset(glyphRunList.mOriginX, glyphRunList.mOriginY);
         if (internalQuickReject(bounds, paint)) {
             return;
         }
 
         if (aboutToDraw(paint)) {
-            getTopDevice().drawGlyphRunList(this, glyphRunList, paint);
+            topDevice().drawGlyphRunList(this, glyphRunList, paint);
         }
+    }
+
+    protected void onClipRect(Rect2fc rect, int clipOp, boolean doAA) {
+        topDevice().clipRect(rect, clipOp, doAA);
+        computeQuickRejectBounds();
     }
 
     /**
@@ -1961,6 +2047,8 @@ public class Canvas implements AutoCloseable {
         int mDeferredSaveCount;
 
         MCRec() {
+            mMatrix.setIdentity();
+            mDeferredSaveCount = 0;
         }
 
         MCRec(Device device) {
@@ -1974,18 +2062,5 @@ public class Canvas implements AutoCloseable {
             mMatrix.set(prev.mMatrix);
             mDeferredSaveCount = 0;
         }
-    }
-
-    private static boolean validateMarker(String name) {
-        if (name.isEmpty()) {
-            return false;
-        }
-        for (int i = 0; i < name.length(); i++) {
-            char c = name.charAt(i);
-            if (c != '_' && !Character.isLetterOrDigit(c)) {
-                return false;
-            }
-        }
-        return true;
     }
 }
