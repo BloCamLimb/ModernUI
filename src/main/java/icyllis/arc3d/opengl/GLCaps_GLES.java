@@ -542,6 +542,11 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
     }
 
     @Override
+    public void glCopyBufferSubData(int readTarget, int writeTarget, long readOffset, long writeOffset, long size) {
+        GLES30.glCopyBufferSubData(readTarget, writeTarget, readOffset, writeOffset, size);
+    }
+
+    @Override
     public long glFenceSync(int condition, int flags) {
         return GLES30.glFenceSync(condition, flags);
     }
@@ -713,6 +718,11 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
 
     @Override
     public void glNamedBufferStorage(int buffer, long size, long data, int flags) {
+        assert false;
+    }
+
+    @Override
+    public void glCopyNamedBufferSubData(int readBuffer, int writeBuffer, long readOffset, long writeOffset, long size) {
         assert false;
     }
 

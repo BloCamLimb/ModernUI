@@ -17,9 +17,10 @@
  * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine;
+package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
+import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.task.Task;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
@@ -38,7 +39,7 @@ import static org.lwjgl.system.MemoryUtil.NULL;
  * OpenGL 4.4; use mutable buffer and CPU staging buffer for OpenGL 4.3 and below.
  */
 //TODO
-public class DynamicBufferManager {
+public class DrawBufferManager {
 
     /**
      * We expect buffers for meshes to be at least 128KB.
@@ -83,7 +84,7 @@ public class DynamicBufferManager {
     // transfer buffers from the UploadManager, remember so that the next Recording will fail.
     private boolean mMappingFailed = false;
 
-    public DynamicBufferManager(Caps caps, ResourceProvider resourceProvider) {
+    public DrawBufferManager(Caps caps, ResourceProvider resourceProvider) {
         mResourceProvider = resourceProvider;
         mCurrentBuffers[kVertexBufferIndex] = new BlockBuffer(
                 caps,

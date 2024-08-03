@@ -268,6 +268,67 @@ public final class GLCommandBuffer extends CommandBuffer {
     }
 
     @Override
+    protected boolean onCopyBufferToBuffer(@RawPtr Buffer srcBuffer,
+                                           @RawPtr Buffer dstBuffer,
+                                           long srcOffset,
+                                           long dstOffset,
+                                           long size) {
+        assert !srcBuffer.isMapped();
+        assert !dstBuffer.isMapped();
+        GLBuffer glSrc = (GLBuffer) srcBuffer;
+        GLBuffer glDst = (GLBuffer) dstBuffer;
+        long clientBufferPtr = glSrc.getClientUploadBuffer();
+        if (glSrc.getHandle() == 0 &&
+                clientBufferPtr == MemoryUtil.NULL) {
+            // lazy initialization failed
+            return false;
+        }
+        if (glDst.getHandle() == 0 ||
+                glDst.getClientUploadBuffer() != MemoryUtil.NULL) {
+            // lazy initialization failed
+            return false;
+        }
+        assert glSrc.getHandle() == 0 || clientBufferPtr == MemoryUtil.NULL;
+
+        if (clientBufferPtr != MemoryUtil.NULL) {
+            if (mDevice.getCaps().hasDSASupport()) {
+                mDevice.getGL().glNamedBufferSubData(
+                        glDst.getHandle(),
+                        dstOffset,
+                        size,
+                        clientBufferPtr + srcOffset
+                );
+            } else {
+                int target = glDst.getTarget();
+                mDevice.getGL().glBindBuffer(target, glDst.getHandle());
+                mDevice.getGL().glBufferSubData(
+                        target,
+                        dstOffset,
+                        size,
+                        clientBufferPtr + srcOffset
+                );
+            }
+        } else if (mDevice.getCaps().hasDSASupport()) {
+            mDevice.getGL().glCopyNamedBufferSubData(
+                    glSrc.getHandle(),
+                    glDst.getHandle(),
+                    srcOffset,
+                    dstOffset,
+                    size
+            );
+        } else {
+            mDevice.getGL().glBindBuffer(GL_COPY_READ_BUFFER, glSrc.getHandle());
+            mDevice.getGL().glBindBuffer(GL_COPY_WRITE_BUFFER, glDst.getHandle());
+            mDevice.getGL().glCopyBufferSubData(
+                    GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER,
+                    srcOffset, dstOffset,
+                    size
+            );
+        }
+        return true;
+    }
+
+    @Override
     protected boolean onCopyBufferToImage(@RawPtr Buffer srcBuffer,
                                           @RawPtr Image dstImage,
                                           int srcColorType,
@@ -365,7 +426,7 @@ public final class GLCommandBuffer extends CommandBuffer {
             }
         }
 
-        return false;
+        return true;
     }
 
     /**

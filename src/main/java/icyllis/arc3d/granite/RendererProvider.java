@@ -19,8 +19,7 @@
 
 package icyllis.arc3d.granite;
 
-import icyllis.arc3d.engine.Caps;
-import icyllis.arc3d.engine.Engine;
+import icyllis.arc3d.engine.*;
 import icyllis.arc3d.granite.geom.*;
 
 /**
@@ -47,7 +46,7 @@ public class RendererProvider {
     // arc type variant
     private final GeometryRenderer[] mArc = new GeometryRenderer[ArcShape.kTypeCount];
 
-    public RendererProvider(Caps caps) {
+    public RendererProvider(Caps caps, StaticBufferManager staticBufferManager) {
         mSimpleBox[0] = makeSingleStep(
                 new AnalyticSimpleBoxStep(false)
         );

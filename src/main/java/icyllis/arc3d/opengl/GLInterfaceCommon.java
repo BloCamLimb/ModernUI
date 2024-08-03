@@ -37,7 +37,8 @@ public interface GLInterfaceCommon {
     @NativeType("void")
     int glGenTextures();
 
-    void glTexParameteri(@NativeType("GLenum") int target, @NativeType("GLenum") int pname, @NativeType("GLint") int param);
+    void glTexParameteri(@NativeType("GLenum") int target, @NativeType("GLenum") int pname,
+                         @NativeType("GLint") int param);
 
     void glDeleteTextures(@NativeType("GLuint const *") int texture);
 
@@ -178,6 +179,10 @@ public interface GLInterfaceCommon {
     void glDrawElementsInstanced(@NativeType("GLenum") int mode, @NativeType("GLsizei") int count,
                                  @NativeType("GLenum") int type, @NativeType("void const *") long indices,
                                  @NativeType("GLsizei") int instancecount);
+
+    void glCopyBufferSubData(@NativeType("GLenum") int readTarget, @NativeType("GLenum") int writeTarget,
+                             @NativeType("GLintptr") long readOffset, @NativeType("GLintptr") long writeOffset,
+                             @NativeType("GLsizeiptr") long size);
 
     @NativeType("GLsync")
     long glFenceSync(@NativeType("GLenum") int condition, @NativeType("GLbitfield") int flags);

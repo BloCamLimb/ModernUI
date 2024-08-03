@@ -33,7 +33,7 @@ public final class RecordingContext extends Context {
 
     private final ImageProxyCache mImageProxyCache;
     private RenderTaskManager mRenderTaskManager;
-    private DynamicBufferManager mDynamicBufferManager;
+    private DrawBufferManager mDrawBufferManager;
     private UploadBufferManager mUploadBufferManager;
 
     private final TaskList mRootTaskList;
@@ -110,8 +110,8 @@ public final class RecordingContext extends Context {
     }*/
 
     @ApiStatus.Internal
-    public final DynamicBufferManager getDynamicBufferManager() {
-        return mDynamicBufferManager;
+    public final DrawBufferManager getDynamicBufferManager() {
+        return mDrawBufferManager;
     }
 
     @ApiStatus.Internal
@@ -139,7 +139,7 @@ public final class RecordingContext extends Context {
     }
 
     public RootTask snap() {
-        if (mDynamicBufferManager.hasMappingFailed() ||
+        if (mDrawBufferManager.hasMappingFailed() ||
                 mRootTaskList.prepare(this) == Task.RESULT_FAILURE) {
             mRootTaskList.clear();
             return null;
@@ -147,7 +147,7 @@ public final class RecordingContext extends Context {
 
         var extraResourceRefs = new ObjectArrayList<@SharedPtr Resource>();
         var finalTaskList = new TaskList();
-        mDynamicBufferManager.flush(finalTaskList, extraResourceRefs);
+        mDrawBufferManager.flush(finalTaskList, extraResourceRefs);
         mUploadBufferManager.flush(extraResourceRefs);
         finalTaskList.appendTasks(mRootTaskList);
         var recording = new RootTask(finalTaskList, extraResourceRefs);
@@ -164,7 +164,7 @@ public final class RecordingContext extends Context {
             mRenderTaskManager.destroy();
         }
         mRenderTaskManager = new RenderTaskManager(this);
-        mDynamicBufferManager = new DynamicBufferManager(getCaps(), getResourceProvider());
+        mDrawBufferManager = new DrawBufferManager(getCaps(), getResourceProvider());
         mUploadBufferManager = new UploadBufferManager(getResourceProvider());
         return true;
     }

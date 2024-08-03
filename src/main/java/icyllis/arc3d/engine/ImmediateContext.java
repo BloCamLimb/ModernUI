@@ -22,6 +22,7 @@ package icyllis.arc3d.engine;
 import icyllis.arc3d.core.RawPtr;
 import icyllis.arc3d.engine.task.Task;
 import icyllis.arc3d.granite.RendererProvider;
+import icyllis.arc3d.granite.StaticBufferManager;
 import icyllis.arc3d.vulkan.VkBackendContext;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -154,7 +155,18 @@ public final class ImmediateContext extends Context {
             return false;
         }
         mQueueManager.mContext = this;
-        mDevice.mRendererProvider = new RendererProvider(getCaps());
+        var staticBufferManager = new StaticBufferManager(mResourceProvider, getCaps());
+        var rendererProvider = new RendererProvider(getCaps(), staticBufferManager);
+
+        var result = staticBufferManager.flush(mQueueManager, getSharedResourceCache());
+        if (result == StaticBufferManager.RESULT_FAILURE) {
+            return false;
+        }
+        if (result == StaticBufferManager.RESULT_SUCCESS &&
+                !mQueueManager.submit()) {
+            return false;
+        }
+        mDevice.mRendererProvider = rendererProvider;
 
         //assert getThreadSafeCache() != null;
 

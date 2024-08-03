@@ -104,6 +104,10 @@ public interface GLInterface extends GLInterfaceCommon {
     void glNamedBufferStorage(@NativeType("GLuint") int buffer, @NativeType("GLsizeiptr") long size,
                               @NativeType("void const *") long data, @NativeType("GLbitfield") int flags);
 
+    void glCopyNamedBufferSubData(@NativeType("GLuint") int readBuffer, @NativeType("GLuint") int writeBuffer,
+                                  @NativeType("GLintptr") long readOffset, @NativeType("GLintptr") long writeOffset,
+                                  @NativeType("GLsizeiptr") long size);
+
     @NativeType("void")
     int glCreateVertexArrays();
 
