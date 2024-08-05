@@ -23,8 +23,8 @@ import javax.annotation.Nonnull;
 
 /**
  * Blend modes, all the blend equations apply to premultiplied colors.
- * Source color is blend color or paint color, destination color is
- * base color or canvas color.
+ * Source color refers to blend color or paint color, destination color refers
+ * to base color or canvas color (the color of the current render target).
  * <p>
  * Non-clamped blend modes &le; {@link #MODULATE}, plus {@link #SCREEN} are
  * Porter-Duff blend modes. They can be directly implemented by GPU hardware.
@@ -671,7 +671,8 @@ public enum BlendMode implements Blender {
 
     /**
      * Returns the value at the given index.
-     * The return value does not guarantee binary compatibility.
+     * This method can only be used at runtime, the return value does not guarantee
+     * binary compatibility.
      *
      * @param index the {@link BlendMode#ordinal()}
      * @return the blend mode
@@ -735,6 +736,60 @@ public enum BlendMode implements Blender {
      */
     public boolean isAdvanced() {
         return ordinal() >= MULTIPLY.ordinal();
+    }
+
+    /**
+     * Returns the name of blend function.
+     * <p>
+     * Raster pipeline implementation and shader implementation must be consistent with this.
+     */
+    public String getBlendFuncName() {
+        //@formatter:off
+        return switch (this) {
+            case CLEAR          -> "blend_clear";
+            case SRC            -> "blend_src";
+            case DST            -> "blend_dst";
+            case SRC_OVER       -> "blend_src_over";
+            case DST_OVER       -> "blend_dst_over";
+            case SRC_IN         -> "blend_src_in";
+            case DST_IN         -> "blend_dst_in";
+            case SRC_OUT        -> "blend_src_out";
+            case DST_OUT        -> "blend_dst_out";
+            case SRC_ATOP       -> "blend_src_atop";
+            case DST_ATOP       -> "blend_dst_atop";
+            case XOR            -> "blend_xor";
+            case PLUS           -> "blend_plus";
+            case PLUS_CLAMPED   -> "blend_plus_clamped";
+            case MINUS          -> "blend_minus";
+            case MINUS_CLAMPED  -> "blend_minus_clamped";
+            case MODULATE       -> "blend_modulate";
+            case MULTIPLY       -> "blend_multiply";
+            case SCREEN         -> "blend_screen";
+            case OVERLAY        -> "blend_overlay";
+            case DARKEN         -> "blend_darken";
+            case LIGHTEN        -> "blend_lighten";
+            case COLOR_DODGE    -> "blend_color_dodge";
+            case COLOR_BURN     -> "blend_color_burn";
+            case HARD_LIGHT     -> "blend_hard_light";
+            case SOFT_LIGHT     -> "blend_soft_light";
+            case DIFFERENCE     -> "blend_difference";
+            case EXCLUSION      -> "blend_exclusion";
+            case SUBTRACT       -> "blend_subtract";
+            case DIVIDE         -> "blend_divide";
+            case LINEAR_DODGE   -> "blend_linear_dodge";
+            case LINEAR_BURN    -> "blend_linear_burn";
+            case VIVID_LIGHT    -> "blend_vivid_light";
+            case LINEAR_LIGHT   -> "blend_linear_light";
+            case PIN_LIGHT      -> "blend_pin_light";
+            case HARD_MIX       -> "blend_hard_mix";
+            case DARKER_COLOR   -> "blend_darker_color";
+            case LIGHTER_COLOR  -> "blend_lighter_color";
+            case HUE            -> "blend_hue";
+            case SATURATION     -> "blend_saturation";
+            case COLOR          -> "blend_color";
+            case LUMINOSITY     -> "blend_luminosity";
+        };
+        //@formatter:on
     }
 
     /**

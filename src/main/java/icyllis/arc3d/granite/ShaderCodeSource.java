@@ -658,6 +658,458 @@ public class ShaderCodeSource {
                 return vec4(clamp(color.rgb + dithering * range, 0.0, color.a), color.a);
             }
             """;
+    /**
+     * Public blend functions, these are pure functions.
+     * <p>
+     * Implementation is the same as raster pipeline, but is vectorized and eliminates branches.
+     *
+     * @see icyllis.arc3d.core.BlendMode
+     */
+    public static final String BLEND_CLEAR = """
+            vec4 blend_clear(vec4 src, vec4 dst) {
+                return vec4(0);
+            }
+            """;
+    public static final String BLEND_SRC = """
+            vec4 blend_src(vec4 src, vec4 dst) {
+                return src;
+            }
+            """;
+    public static final String BLEND_DST = """
+            vec4 blend_dst(vec4 src, vec4 dst) {
+                return dst;
+            }
+            """;
+    public static final String BLEND_SRC_OVER = """
+            vec4 blend_src_over(vec4 src, vec4 dst) {
+                return src + dst * (1 - src.a);
+            }
+            """;
+    public static final String BLEND_DST_OVER = """
+            vec4 blend_dst_over(vec4 src, vec4 dst) {
+                return src * (1 - dst.a) + dst;
+            }
+            """;
+    public static final String BLEND_SRC_IN = """
+            vec4 blend_src_in(vec4 src, vec4 dst) {
+                return src * dst.a;
+            }
+            """;
+    public static final String BLEND_DST_IN = """
+            vec4 blend_dst_in(vec4 src, vec4 dst) {
+                return dst * src.a;
+            }
+            """;
+    public static final String BLEND_SRC_OUT = """
+            vec4 blend_src_out(vec4 src, vec4 dst) {
+                return src * (1 - dst.a);
+            }
+            """;
+    public static final String BLEND_DST_OUT = """
+            vec4 blend_dst_out(vec4 src, vec4 dst) {
+                return dst * (1 - src.a);
+            }
+            """;
+    public static final String BLEND_SRC_ATOP = """
+            vec4 blend_src_atop(vec4 src, vec4 dst) {
+                return src * dst.a + dst * (1 - src.a);
+            }
+            """;
+    public static final String BLEND_DST_ATOP = """
+            vec4 blend_dst_atop(vec4 src, vec4 dst) {
+                return src * (1 - dst.a) + dst * src.a;
+            }
+            """;
+    public static final String BLEND_XOR = """
+            vec4 blend_xor(vec4 src, vec4 dst) {
+                return src * (1 - dst.a) + dst * (1 - src.a);
+            }
+            """;
+    public static final String BLEND_PLUS = """
+            vec4 blend_plus(vec4 src, vec4 dst) {
+                return src + dst;
+            }
+            """;
+    public static final String BLEND_PLUS_CLAMPED = """
+            vec4 blend_plus_clamped(vec4 src, vec4 dst) {
+                return min(src + dst, 1);
+            }
+            """;
+    public static final String BLEND_MINUS = """
+            vec4 blend_minus(vec4 src, vec4 dst) {
+                return dst - src;
+            }
+            """;
+    public static final String BLEND_MINUS_CLAMPED = """
+            vec4 blend_minus_clamped(vec4 src, vec4 dst) {
+                return max(dst - src, 0);
+            }
+            """;
+    public static final String BLEND_MODULATE = """
+            vec4 blend_modulate(vec4 src, vec4 dst) {
+                return src * dst;
+            }
+            """;
+    public static final String BLEND_MULTIPLY = """
+            vec4 blend_multiply(vec4 src, vec4 dst) {
+                return src * dst + src * (1 - dst.a) + dst * (1 - src.a);
+            }
+            """;
+    public static final String BLEND_SCREEN = """
+            vec4 blend_screen(vec4 src, vec4 dst) {
+                return src + dst - src * dst;
+            }
+            """;
+    public static final String BLEND_OVERLAY = """
+            vec4 blend_overlay(vec4 src, vec4 dst) {
+                vec3 s = src.rgb,       d = dst.rgb;
+                vec3 sa = vec3(src.a),  da = vec3(dst.a);
+                return vec4(s * (1 - da) + d * (1 - sa) +
+                                mix(sa * da - 2 * (sa - s) * (da - d),
+                                    2 * s * d,
+                                    lessThanEqual(2 * d, da)),
+                            sa + da * (1 - sa));
+            }
+            """;
+    public static final String BLEND_DARKEN = """
+            vec4 blend_darken(vec4 src, vec4 dst) {
+                return src + dst - max(src * dst.a, dst * src.a);
+            }
+            """;
+    public static final String BLEND_LIGHTEN = """
+            vec4 blend_lighten(vec4 src, vec4 dst) {
+                return src + dst - min(src * dst.a, dst * src.a);
+            }
+            """;
+    public static final String BLEND_COLOR_DODGE = """
+            vec4 blend_color_dodge(vec4 src, vec4 dst) {
+                vec3 s = src.rgb,       d = dst.rgb;
+                vec3 sa = vec3(src.a),  da = vec3(dst.a);
+                return vec4(mix(mix(sa * min(da, d * sa / (sa - s)) + s * (1 - da) + d * (1 - sa),
+                                    sa * da + s * (1 - da) + d * (1 - sa),
+                                    greaterThanEqual(s, sa)),
+                                s * (1 - da),
+                                lessThanEqual(d, vec3(0))),
+                            sa + da * (1 - sa));
+            }
+            """;
+    public static final String BLEND_COLOR_BURN = """
+            vec4 blend_color_burn(vec4 src, vec4 dst) {
+                vec3 s = src.rgb,       d = dst.rgb;
+                vec3 sa = vec3(src.a),  da = vec3(dst.a);
+                return vec4(mix(mix(sa * max(vec3(0), da - (da - d) * sa / s) + s * (1 - da) + d * (1 - sa),
+                                    d * (1 - sa),
+                                    lessThanEqual(s, vec3(0))),
+                                sa * da + s * (1 - da) + d * (1 - sa),
+                                greaterThanEqual(d, da)),
+                            sa + da * (1 - sa));
+            }
+            """;
+    public static final String BLEND_HARD_LIGHT = """
+            vec4 blend_hard_light(vec4 src, vec4 dst) {
+                vec3 s = src.rgb,       d = dst.rgb;
+                vec3 sa = vec3(src.a),  da = vec3(dst.a);
+                return vec4(s * (1 - da) + d * (1 - sa) +
+                                mix(sa * da - 2 * (sa - s) * (da - d),
+                                    2 * s * d,
+                                    lessThanEqual(2 * s, sa)),
+                            sa + da * (1 - sa));
+            }
+            """;
+    public static final String BLEND_SOFT_LIGHT = """
+            vec4 blend_soft_light(vec4 src, vec4 dst) {
+                vec3 s = src.rgb,       d = dst.rgb;
+                vec3 sa = vec3(src.a),  da = vec3(dst.a);
+                vec3 dd = d * d,        dada = da * da;
+                return vec4(mix(mix(d * (sa - 2 * s + 1) + s * (1 - da) - sqrt(d * da) * (sa - 2 * s),
+                                    (dada * (s + d * (6 * s - 3 * sa + 1)) + 12 * da * dd * (sa - 2 * s) -
+                                          16 * dd * d * (sa - 2 * s) - dada * da * s) / dada,
+                                    lessThanEqual(4 * d, da)),
+                                d * d * (sa - 2 * s) / da + s * (1 - da) + d * (2 * s + 1 - sa),
+                                lessThanEqual(2 * s, sa)),
+                            sa + da * (1 - sa));
+            }
+            """;
+    public static final String BLEND_DIFFERENCE = """
+            vec4 blend_difference(vec4 src, vec4 dst) {
+                return vec4(src.rgb + dst.rgb - 2 * min(src.rgb * dst.a, dst.rgb * src.a),
+                            src.a + dst.a * (1 - src.a));
+            }
+            """;
+    public static final String BLEND_EXCLUSION = """
+            vec4 blend_exclusion(vec4 src, vec4 dst) {
+                return vec4(src.rgb + dst.rgb - 2 * (src.rgb * dst.rgb),
+                            src.a + dst.a * (1 - src.a));
+            }
+            """;
+    public static final String BLEND_SUBTRACT = """
+            vec4 blend_subtract(vec4 src, vec4 dst) {
+                return vec4(src.rgb * (1 - dst.a) + dst.rgb - min(src.rgb * dst.a, dst.rgb * src.a),
+                            src.a + dst.a * (1 - src.a));
+            }
+            """;
+    /**
+     * This can produce undefined results from {@link icyllis.arc3d.core.BlendMode#blend_divide}
+     * if values out of range.
+     */
+    public static final String BLEND_DIVIDE = """
+            vec4 blend_divide(vec4 src, vec4 dst) {
+                vec3 numer = dst.rgb * src.a;
+                vec3 denom = src.rgb * dst.a;
+                vec3 c = src.rgb * (1 - dst.a) + dst.rgb * (1 - src.a);
+                return vec4(mix(clamp(numer / denom, 0, 1) * src.a * dst.a + c,
+                                mix(src.a * dst.a + c,
+                                    c,
+                                    equal(numer, vec3(0))),
+                                equal(denom, vec3(0))),
+                            src.a + dst.a * (1 - src.a));
+            }
+            """;
+    public static final String BLEND_LINEAR_DODGE = """
+            vec4 blend_linear_dodge(vec4 src, vec4 dst) {
+                return vec4(min(src.rgb + dst.rgb, src.a * dst.a + src.rgb * (1 - dst.a) + dst.rgb * (1 - src.a)),
+                            src.a + dst.a * (1 - src.a));
+            }
+            """;
+    public static final String BLEND_LINEAR_BURN = """
+            vec4 blend_linear_burn(vec4 src, vec4 dst) {
+                return vec4(max(src.rgb + dst.rgb - src.a * dst.a, src.rgb * (1 - dst.a) + dst.rgb * (1 - src.a)),
+                            src.a + dst.a * (1 - src.a));
+            }
+            """;
+    public static final String BLEND_VIVID_LIGHT = """
+            vec4 blend_vivid_light(vec4 src, vec4 dst) {
+                vec3 s = src.rgb,       d = dst.rgb;
+                vec3 sa = vec3(src.a),  da = vec3(dst.a);
+                return vec4(mix(mix(sa * min(da, d * sa / (2 * (sa - s))) + s * (1 - da) + d * (1 - sa),
+                                    sa * da + s * (1 - da) + d * (1 - sa),
+                                    greaterThanEqual(s, sa)),
+                                mix(sa * max(vec3(0), da - (da - d) * sa / (2 * s)) + s * (1 - da) + d * (1 - sa),
+                                    d * (1 - sa),
+                                    lessThanEqual(s, vec3(0))),
+                                lessThan(2 * s, sa)),
+                            sa + da * (1 - sa));
+            }
+            """;
+    public static final String BLEND_LINEAR_LIGHT = """
+            vec4 blend_linear_light(vec4 src, vec4 dst) {
+                vec3 s = src.rgb,       d = dst.rgb;
+                vec3 sa = vec3(src.a),  da = vec3(dst.a);
+                return vec4(clamp(2 * s * da + d * sa - sa * da, vec3(0), sa * da) +
+                                  s * (1 - da) + d * (1 - sa),
+                            sa + da * (1 - sa));
+            }
+            """;
+    public static final String BLEND_PIN_LIGHT = """
+            vec4 blend_pin_light(vec4 src, vec4 dst) {
+                vec3 s = src.rgb,       d = dst.rgb;
+                vec3 sa = vec3(src.a),  da = vec3(dst.a);
+                vec3 x = 2 * s * da;
+                vec3 y = x - sa * da;
+                vec3 z = d * sa;
+                return vec4(s * (1 - da) + d * (1 - sa) +
+                            mix(min(x, z),
+                                mix(y,
+                                    vec3(0),
+                                    lessThan(2 * s, sa)),
+                                greaterThan(y, z)),
+                            sa + da * (1 - sa));
+            }
+            """;
+    public static final String BLEND_HARD_MIX = """
+            vec4 blend_hard_mix(vec4 src, vec4 dst) {
+                vec3 s = src.rgb,       d = dst.rgb;
+                vec3 sa = vec3(src.a),  da = vec3(dst.a);
+                vec3 b = s * da + d * sa;
+                vec3 c = sa * da;
+                return vec4(s + d - b + mix(c, vec3(0), lessThan(b, c)),
+                            sa + da * (1 - sa));
+            }
+            """;
+    private static final String PRIV_BLEND_GET_LUM = """
+            float BlendGetLum(vec3 color) {
+                return dot(vec3(0.299, 0.587, 0.114), color);
+            }
+            """;
+    public static final String BLEND_DARKER_COLOR = """
+            vec4 blend_darker_color(vec4 src, vec4 dst) {
+                return mix(src * (1 - dst.a) + dst,
+                           src + dst * (1 - src.a),
+                           BlendGetLum(src.rgb) <= BlendGetLum(dst.rgb));
+            }
+            """;
+    public static final String BLEND_LIGHTER_COLOR = """
+            vec4 blend_lighter_color(vec4 src, vec4 dst) {
+                return mix(src * (1 - dst.a) + dst,
+                           src + dst * (1 - src.a),
+                           BlendGetLum(src.rgb) >= BlendGetLum(dst.rgb));
+            }
+            """;
+    private static final String PRIV_BLEND_SET_LUM = """
+            vec3 BlendSetLum(vec3 cbase,
+                             vec3 clum, float alum,
+                             float alpha) {
+                float ldiff = BlendGetLum(clum) * alum - BlendGetLum(cbase);
+                cbase += ldiff;
+                float lum = BlendGetLum(cbase);
+                float mincol = min(min(cbase.r, cbase.g), cbase.b);
+                float maxcol = max(max(cbase.r, cbase.g), cbase.b);
+                if (mincol < 0 && lum != mincol) {
+                    cbase = lum + ((cbase - lum) * lum) / (lum - mincol);
+                }
+                if (maxcol > alpha && maxcol != lum) {
+                    cbase = lum + ((cbase - lum) * (alpha - lum)) / (maxcol - lum);
+                }
+                return cbase;
+            }
+            """;
+    private static final String PRIV_BLEND_SET_LUM_SAT = """
+            vec3 BlendSetLumSat(vec3 cbase,
+                                vec3 csat, float asat,
+                                vec3 clum, float alum,
+                                float alpha) {
+                float minbase = min(min(cbase.r, cbase.g), cbase.b);
+                float sbase = max(max(cbase.r, cbase.g), cbase.b) - minbase;
+                if (sbase > 0) {
+                    float ssat = (max(max(csat.r, csat.g), csat.b) - min(min(csat.r, csat.g), csat.b)) * asat;
+                    cbase = (cbase - minbase) * ssat / sbase;
+                } else {
+                    cbase = vec3(0);
+                }
+                return BlendSetLum(cbase, clum, alum, alpha);
+            }
+            """;
+    public static final String BLEND_HUE = """
+            vec4 blend_hue(vec4 src, vec4 dst) {
+                float alpha = src.a * dst.a;
+                vec3 c = src.rgb * dst.a;
+                c = BlendSetLumSat(c, dst.rgb, src.a, dst.rgb, src.a, alpha);
+                return vec4(c + src.rgb * (1 - dst.a) + dst.rgb * (1 - src.a),
+                            src.a + dst.a - alpha);
+            }
+            """;
+    public static final String BLEND_SATURATION = """
+            vec4 blend_saturation(vec4 src, vec4 dst) {
+                float alpha = src.a * dst.a;
+                vec3 c = dst.rgb * src.a;
+                c = BlendSetLumSat(c, src.rgb, dst.a, dst.rgb, src.a, alpha);
+                return vec4(c + src.rgb * (1 - dst.a) + dst.rgb * (1 - src.a),
+                            src.a + dst.a - alpha);
+            }
+            """;
+    public static final String BLEND_COLOR = """
+            vec4 blend_color(vec4 src, vec4 dst) {
+                float alpha = src.a * dst.a;
+                vec3 c = src.rgb * dst.a;
+                c = BlendSetLum(c, dst.rgb, src.a, alpha);
+                return vec4(c + src.rgb * (1 - dst.a) + dst.rgb * (1 - src.a),
+                            src.a + dst.a - alpha);
+            }
+            """;
+    public static final String BLEND_LUMINOSITY = """
+            vec4 blend_luminosity(vec4 src, vec4 dst) {
+                float alpha = src.a * dst.a;
+                vec3 c = dst.rgb * src.a;
+                c = BlendSetLum(c, src.rgb, dst.a, alpha);
+                return vec4(c + src.rgb * (1 - dst.a) + dst.rgb * (1 - src.a),
+                            src.a + dst.a - alpha);
+            }
+            """;
+    /**
+     * Apply one of 42 blend modes.
+     */
+    public static final String ARC_BLEND = """
+            vec4 arc_blend(vec4 src, vec4 dst, int blendMode) {
+                const int kClear        = 0;
+                const int kSrc          = 1;
+                const int kDst          = 2;
+                const int kSrcOver      = 3;
+                const int kDstOver      = 4;
+                const int kSrcIn        = 5;
+                const int kDstIn        = 6;
+                const int kSrcOut       = 7;
+                const int kDstOut       = 8;
+                const int kSrcATop      = 9;
+                const int kDstATop      = 10;
+                const int kXor          = 11;
+                const int kPlus         = 12;
+                const int kPlusClamped  = 13;
+                const int kMinus        = 14;
+                const int kMinusClamped = 15;
+                const int kModulate     = 16;
+                const int kMultiply     = 17;
+                const int kScreen       = 18;
+                const int kOverlay      = 19;
+                const int kDarken       = 20;
+                const int kLighten      = 21;
+                const int kColorDodge   = 22;
+                const int kColorBurn    = 23;
+                const int kHardLight    = 24;
+                const int kSoftLight    = 25;
+                const int kDifference   = 26;
+                const int kExclusion    = 27;
+                const int kSubtract     = 28;
+                const int kDivide       = 29;
+                const int kLinearDodge  = 30;
+                const int kLinearBurn   = 31;
+                const int kVividLight   = 32;
+                const int kLinearLight  = 33;
+                const int kPinLight     = 34;
+                const int kHardMix      = 35;
+                const int kDarkerColor  = 36;
+                const int LighterColor  = 37;
+                const int kHue          = 38;
+                const int kSaturation   = 39;
+                const int kColor        = 40;
+                const int kLuminosity   = 41;
+                
+                switch (blendMode) {
+                    case kClear        : return blend_clear          (src,dst);
+                    case kSrc          : return blend_src            (src,dst);
+                    case kDst          : return blend_dst            (src,dst);
+                    case kSrcOver      : return blend_src_over       (src,dst);
+                    case kDstOver      : return blend_dst_over       (src,dst);
+                    case kSrcIn        : return blend_src_in         (src,dst);
+                    case kDstIn        : return blend_dst_in         (src,dst);
+                    case kSrcOut       : return blend_src_out        (src,dst);
+                    case kDstOut       : return blend_dst_out        (src,dst);
+                    case kSrcATop      : return blend_src_atop       (src,dst);
+                    case kDstATop      : return blend_dst_atop       (src,dst);
+                    case kXor          : return blend_xor            (src,dst);
+                    case kPlus         : return blend_plus           (src,dst);
+                    case kPlusClamped  : return blend_plus_clamped   (src,dst);
+                    case kMinus        : return blend_minus          (src,dst);
+                    case kMinusClamped : return blend_minus_clamped  (src,dst);
+                    case kModulate     : return blend_modulate       (src,dst);
+                    case kMultiply     : return blend_multiply       (src,dst);
+                    case kScreen       : return blend_screen         (src,dst);
+                    case kOverlay      : return blend_overlay        (src,dst);
+                    case kDarken       : return blend_darken         (src,dst);
+                    case kLighten      : return blend_lighten        (src,dst);
+                    case kColorDodge   : return blend_color_dodge    (src,dst);
+                    case kColorBurn    : return blend_color_burn     (src,dst);
+                    case kHardLight    : return blend_hard_light     (src,dst);
+                    case kSoftLight    : return blend_soft_light     (src,dst);
+                    case kDifference   : return blend_difference     (src,dst);
+                    case kExclusion    : return blend_exclusion      (src,dst);
+                    case kSubtract     : return blend_subtract       (src,dst);
+                    case kDivide       : return blend_divide         (src,dst);
+                    case kLinearDodge  : return blend_linear_dodge   (src,dst);
+                    case kLinearBurn   : return blend_linear_burn    (src,dst);
+                    case kVividLight   : return blend_vivid_light    (src,dst);
+                    case kLinearLight  : return blend_linear_light   (src,dst);
+                    case kPinLight     : return blend_pin_light      (src,dst);
+                    case kHardMix      : return blend_hard_mix       (src,dst);
+                    case kDarkerColor  : return blend_darker_color   (src,dst);
+                    case LighterColor  : return blend_lighter_color  (src,dst);
+                    case kHue          : return blend_hue            (src,dst);
+                    case kSaturation   : return blend_saturation     (src,dst);
+                    case kColor        : return blend_color          (src,dst);
+                    case kLuminosity   : return blend_luminosity     (src,dst);
+                    default            : return vec4(0);
+                }
+            }
+            """;
 
     private final FragmentStage[] mBuiltinCodeSnippets =
             new FragmentStage[kBuiltinStageIDCount];
@@ -949,6 +1401,41 @@ public class ShaderCodeSource {
                 ShaderCodeSource::generateDefaultExpression,
                 0
         );
+        mBuiltinCodeSnippets[kBlend_BuiltinStageID] = new FragmentStage(
+                "Blend",
+                kNone_ReqFlag,
+                "Blend",
+                NO_FUNCTIONS,
+                NO_UNIFORMS,
+                NO_SAMPLERS,
+                ShaderCodeSource::generateComposeExpression,
+                3
+        );
+        mBuiltinCodeSnippets[kBlendModeBlender_BuiltinStageID] = new FragmentStage(
+                "BlendModeBlender",
+                kPriorStageOutput_ReqFlag | kBlenderDstColor_ReqFlag,
+                "arc_blend",
+                new String[]{
+                        PRIV_BLEND_GET_LUM, PRIV_BLEND_SET_LUM, PRIV_BLEND_SET_LUM_SAT,
+                        BLEND_CLEAR, BLEND_SRC, BLEND_DST, BLEND_SRC_OVER, BLEND_DST_OVER,
+                        BLEND_SRC_IN, BLEND_DST_IN, BLEND_SRC_OUT, BLEND_DST_OUT,
+                        BLEND_SRC_ATOP, BLEND_DST_ATOP, BLEND_XOR, BLEND_PLUS, BLEND_PLUS_CLAMPED,
+                        BLEND_MINUS, BLEND_MINUS_CLAMPED, BLEND_MODULATE, BLEND_MULTIPLY,
+                        BLEND_SCREEN, BLEND_OVERLAY, BLEND_DARKEN, BLEND_LIGHTEN,
+                        BLEND_COLOR_DODGE, BLEND_COLOR_BURN, BLEND_HARD_LIGHT, BLEND_SOFT_LIGHT,
+                        BLEND_DIFFERENCE, BLEND_EXCLUSION, BLEND_SUBTRACT, BLEND_DIVIDE,
+                        BLEND_LINEAR_DODGE, BLEND_LINEAR_BURN, BLEND_VIVID_LIGHT, BLEND_LINEAR_LIGHT,
+                        BLEND_PIN_LIGHT, BLEND_HARD_MIX, BLEND_DARKER_COLOR, BLEND_LIGHTER_COLOR,
+                        BLEND_HUE, BLEND_SATURATION, BLEND_COLOR, BLEND_LUMINOSITY,
+                        ARC_BLEND
+                },
+                new Uniform[]{
+                        new Uniform(SLDataType.kInt, "u_BlendMode")
+                },
+                NO_SAMPLERS,
+                ShaderCodeSource::generateDefaultExpression,
+                0
+        );
         mBuiltinCodeSnippets[kPrimitiveColor_BuiltinStageID] = new FragmentStage(
                 "PrimitiveColor",
                 kPrimitiveColor_ReqFlag,
@@ -973,6 +1460,36 @@ public class ShaderCodeSource {
                 NO_SAMPLERS,
                 ShaderCodeSource::generateComposeExpression,
                 2
+        );
+        mBuiltinCodeSnippets[kInlineSrcOverBlend_BuiltinStageID] = new FragmentStage(
+                "SrcOver",
+                kPriorStageOutput_ReqFlag | kBlenderDstColor_ReqFlag,
+                "blend_src_over",
+                NO_FUNCTIONS,
+                NO_UNIFORMS,
+                NO_SAMPLERS,
+                (node, localCoords, priorStageOutput, blenderDstColor, output, code) -> {
+                    assert node.codeID() == kInlineSrcOverBlend_BuiltinStageID;
+                    code.format("""
+                            %1$s = %2$s + %3$s * (1 - %2$s.a);
+                            """, output, priorStageOutput, blenderDstColor);
+                },
+                0
+        );
+        mBuiltinCodeSnippets[kInlineSrcInBlend_BuiltinStageID] = new FragmentStage(
+                "SrcIn",
+                kPriorStageOutput_ReqFlag | kBlenderDstColor_ReqFlag,
+                "blend_src_in",
+                NO_FUNCTIONS,
+                NO_UNIFORMS,
+                NO_SAMPLERS,
+                (node, localCoords, priorStageOutput, blenderDstColor, output, code) -> {
+                    assert node.codeID() == kInlineSrcInBlend_BuiltinStageID;
+                    code.format("""
+                            %1$s = %2$s * %3$s.a;
+                            """, output, priorStageOutput, blenderDstColor);
+                },
+                0
         );
     }
 
@@ -1078,9 +1595,13 @@ public class ShaderCodeSource {
 
         // Append uniform names.
         for (var uniform : stage.mUniforms) {
-            args.add(
-                    getMangledName(uniform.name(), node.stageIndex())
-            );
+            if (uniform.name().startsWith(UniformHandler.NO_MANGLE_PREFIX)) {
+                args.add(uniform.name());
+            } else {
+                args.add(
+                        getMangledName(uniform.name(), node.stageIndex())
+                );
+            }
         }
 
         // Append samplers.
