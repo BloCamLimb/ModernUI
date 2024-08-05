@@ -36,7 +36,8 @@ import java.util.Formatter;
 public class FragmentStage {
 
     /**
-     * Builtin Code Snippet ID, most are from Skia Graphite
+     * Builtin Code Snippet ID, most are from Skia Graphite.
+     * Do not use these ID outside Granite Renderer.
      */
     public static final int
             kError_BuiltinStageID = 0,
@@ -56,11 +57,16 @@ public class FragmentStage {
             kHWImageShader_BuiltinStageID = 19,
             kDitherShader_BuiltinStageID = 20,
             kColorSpaceXformColorFilter_BuiltinStageID = 21,
-            kPrimitiveColor_BuiltinStageID = 22,
-            kCompose_BuiltinStageID = 23;
+            kBlend_BuiltinStageID = 22,
+            kBlendModeBlender_BuiltinStageID = 23,
+            kPrimitiveColor_BuiltinStageID = 24,
+            kCompose_BuiltinStageID = 25;
+    public static final int
+            kInlineSrcOverBlend_BuiltinStageID = 26,
+            kInlineSrcInBlend_BuiltinStageID = 27;
 
     public static final int
-            kLast_BuiltinStageID = kCompose_BuiltinStageID;
+            kLast_BuiltinStageID = kInlineSrcInBlend_BuiltinStageID;
     public static final int
             kBuiltinStageIDCount = kLast_BuiltinStageID + 1;
 
