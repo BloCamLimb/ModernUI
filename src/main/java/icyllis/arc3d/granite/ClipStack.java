@@ -26,6 +26,7 @@ import org.jetbrains.annotations.UnmodifiableView;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.function.BiConsumer;
 
 /**
  * GPU hierarchical clipping.
@@ -193,9 +194,11 @@ public final class ClipStack {
     //
     // The returned clip element list will be empty if the shape is clipped out or if the draw is
     // unaffected by any of the clip elements.
-    public boolean prepareForDraw(Draw draw,
-                                  boolean outsetBoundsForAA,
-                                  List<Element> elementsForMask) {
+    public <GEO> boolean prepareForDraw(Draw draw,
+                                        GEO geometry,
+                                        BiConsumer<GEO, Rect2f> boundsFn,
+                                        boolean outsetBoundsForAA,
+                                        List<Element> elementsForMask) {
         SaveRecord save = mSaves.element();
         if (save.mState == STATE_EMPTY) {
             // We know the draw is clipped out so don't bother computing the base draw bounds.
@@ -203,7 +206,7 @@ public final class ClipStack {
         }
 
         Rect2f shapeBounds = mTmpShapeBounds;
-        draw.mGeometry.getBounds(shapeBounds);
+        boundsFn.accept(geometry, shapeBounds);
 
         if (!shapeBounds.isFinite()) {
             // Discard all non-finite geometry as if it were clipped out

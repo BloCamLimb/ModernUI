@@ -19,6 +19,7 @@
 
 package icyllis.arc3d.granite;
 
+import icyllis.arc3d.core.ColorSpace;
 import icyllis.arc3d.core.ImageInfo;
 import icyllis.arc3d.engine.RecordingContext;
 
@@ -41,10 +42,19 @@ public class KeyContext {
     }
 
     public void reset(PaintParams paintParams) {
-        //TODO color space transformation
-        mR = paintParams.r();
-        mG = paintParams.g();
-        mB = paintParams.b();
+        var dstCS = mTargetInfo.colorSpace();
+        if (dstCS != null && !dstCS.isSrgb()) {
+            float[] col = ColorSpace.connect(
+                    ColorSpace.get(ColorSpace.Named.SRGB), dstCS
+            ).transform(paintParams.r(), paintParams.g(), paintParams.b());
+            mR = col[0];
+            mG = col[1];
+            mB = col[2];
+        } else {
+            mR = paintParams.r();
+            mG = paintParams.g();
+            mB = paintParams.b();
+        }
         mA = paintParams.a();
     }
 

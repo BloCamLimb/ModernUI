@@ -26,6 +26,7 @@ import icyllis.arc3d.engine.KeyBuilder;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Arrays;
 
 /**
  * Parameters used for shading.
@@ -130,6 +131,21 @@ public final class PaintParams implements AutoCloseable {
     }
 
     /**
+     * Map into destination color space, in color and result color are non-premultiplied.
+     */
+    public static float[] prepareColorForDst(float[] color,
+                                             ImageInfo dstInfo,
+                                             boolean copyOnWrite) {
+        ColorSpace dstCS = dstInfo.colorSpace();
+        if (dstCS != null && !dstCS.isSrgb()) {
+            float[] result = copyOnWrite ? Arrays.copyOfRange(color, 0, 4) : color;
+            return ColorSpace.connect(ColorSpace.get(ColorSpace.Named.SRGB), dstCS)
+                    .transform(result);
+        }
+        return color;
+    }
+
+    /**
      * Returns true if the paint can be simplified to a solid color,
      * and stores the solid color.
      */
@@ -142,16 +158,19 @@ public final class PaintParams implements AutoCloseable {
      * and stores the solid color. The color will be transformed to the
      * target's color space and premultiplied.
      */
-    public boolean getSolidColor(ImageInfo targetInfo, float[] outColor) {
-        //TODO color space transform, extract solid color from shader
+    public boolean getSolidColor(ImageInfo targetInfo, @Nullable float[] outColor) {
         if (mShader == null && mPrimitiveBlender == null) {
             if (outColor != null) {
-                outColor[0] = mR * mA;
-                outColor[1] = mG * mA;
-                outColor[2] = mB * mA;
+                outColor[0] = mR;
+                outColor[1] = mG;
+                outColor[2] = mB;
                 outColor[3] = mA;
+                prepareColorForDst(outColor, targetInfo, false);
+                for (int i = 0; i < 3; i++) {
+                    outColor[i] *= outColor[3];
+                }
                 if (mColorFilter != null) {
-                    mColorFilter.filterColor4f(outColor, outColor);
+                    mColorFilter.filterColor4f(outColor, outColor, targetInfo.colorSpace());
                 }
             }
             return true;
@@ -165,14 +184,17 @@ public final class PaintParams implements AutoCloseable {
     public static boolean getSolidColor(Paint paint, ImageInfo targetInfo, float[] outColor) {
         if (paint.getShader() == null) {
             if (outColor != null) {
-                float a = paint.a();
-                outColor[0] = paint.r() * a;
-                outColor[1] = paint.g() * a;
-                outColor[2] = paint.b() * a;
-                outColor[3] = a;
+                outColor[0] = paint.r();
+                outColor[1] = paint.g();
+                outColor[2] = paint.b();
+                outColor[3] = paint.a();
+                prepareColorForDst(outColor, targetInfo, false);
+                for (int i = 0; i < 3; i++) {
+                    outColor[i] *= outColor[3];
+                }
                 var colorFilter = paint.getColorFilter();
                 if (colorFilter != null) {
-                    colorFilter.filterColor4f(outColor, outColor);
+                    colorFilter.filterColor4f(outColor, outColor, targetInfo.colorSpace());
                 }
             }
             return true;
@@ -251,6 +273,47 @@ public final class PaintParams implements AutoCloseable {
         }
     }
 
+    private void handlePrimitiveColor(KeyContext keyContext,
+                                      KeyBuilder keyBuilder,
+                                      UniformDataGatherer uniformDataGatherer,
+                                      TextureDataGatherer textureDataGatherer) {
+        if (mPrimitiveBlender != null) {
+            keyBuilder.addInt(FragmentStage.kBlend_BuiltinStageID);
+
+            // src
+            appendPaintColorToKey(
+                    keyContext,
+                    keyBuilder,
+                    uniformDataGatherer,
+                    textureDataGatherer
+            );
+
+            // dst
+            FragmentUtils.appendPrimitiveColorBlock(
+                    keyContext,
+                    keyBuilder,
+                    uniformDataGatherer,
+                    textureDataGatherer
+            );
+
+            // blend
+            FragmentUtils.appendToKey(
+                    keyContext,
+                    keyBuilder,
+                    uniformDataGatherer,
+                    textureDataGatherer,
+                    mPrimitiveBlender
+            );
+        } else {
+            appendPaintColorToKey(
+                    keyContext,
+                    keyBuilder,
+                    uniformDataGatherer,
+                    textureDataGatherer
+            );
+        }
+    }
+
     private void handlePaintAlpha(KeyContext keyContext,
                                   KeyBuilder keyBuilder,
                                   UniformDataGatherer uniformDataGatherer,
@@ -268,12 +331,26 @@ public final class PaintParams implements AutoCloseable {
             return;
         }
 
-        appendPaintColorToKey(
+        keyBuilder.addInt(FragmentStage.kBlend_BuiltinStageID);
+
+        // src
+        handlePrimitiveColor(
                 keyContext,
                 keyBuilder,
                 uniformDataGatherer,
                 textureDataGatherer
         );
+
+        // dst
+        FragmentUtils.appendAlphaOnlyPaintColorBlock(
+                keyContext,
+                keyBuilder,
+                uniformDataGatherer,
+                textureDataGatherer
+        );
+
+        // blend
+        keyBuilder.addInt(FragmentStage.kInlineSrcInBlend_BuiltinStageID);
     }
 
     private void handleColorFilter(KeyContext keyContext,

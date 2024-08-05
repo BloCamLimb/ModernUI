@@ -19,8 +19,7 @@
 
 package icyllis.arc3d.core.effects;
 
-import icyllis.arc3d.core.RawPtr;
-import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.core.*;
 
 import java.util.Objects;
 
@@ -62,8 +61,8 @@ public class ComposedColorFilter extends ColorFilter {
     }
 
     @Override
-    public void filterColor4f(float[] col, float[] out) {
-        mBefore.filterColor4f(col, out); // col -> out
-        mAfter.filterColor4f(out, out);  // out -> out
+    public void filterColor4f(float[] col, float[] out, ColorSpace dstCS) {
+        mBefore.filterColor4f(col, out, dstCS); // col -> out
+        mAfter.filterColor4f(out, out, dstCS);  // out -> out
     }
 }

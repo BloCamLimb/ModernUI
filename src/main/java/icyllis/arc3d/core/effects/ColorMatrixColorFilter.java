@@ -19,8 +19,7 @@
 
 package icyllis.arc3d.core.effects;
 
-import icyllis.arc3d.core.MathUtil;
-import icyllis.arc3d.core.Size;
+import icyllis.arc3d.core.*;
 
 import javax.annotation.Nullable;
 
@@ -61,7 +60,7 @@ public class ColorMatrixColorFilter extends ColorFilter {
     }
 
     @Override
-    public void filterColor4f(float[] col, float[] out) {
+    public void filterColor4f(float[] col, float[] out, ColorSpace dstCS) {
         float a = 1.0f / col[3];
         if (!Float.isFinite(a)) { // NaN or Inf
             a = 0;
