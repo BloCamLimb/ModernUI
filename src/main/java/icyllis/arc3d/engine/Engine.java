@@ -376,6 +376,7 @@ public interface Engine {
         byte kLineStrip = 2; // 1 px wide only
         byte kTriangleList = 3; // separate triangle
         byte kTriangleStrip = 4; // connected triangle
+        byte kCount = 5;
     }
 
     /**

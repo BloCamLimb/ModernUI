@@ -20,6 +20,8 @@
 package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.effects.BlendModeColorFilter;
+import icyllis.arc3d.core.effects.ColorFilter;
 import icyllis.arc3d.core.shaders.*;
 import icyllis.arc3d.engine.*;
 
@@ -463,8 +465,33 @@ public class FragmentUtils {
         keyBuilder.addInt(FragmentStage.kColorSpaceXformColorFilter_BuiltinStageID);
     }
 
+    public static void appendBlendModeBlenderBlock(
+            KeyContext keyContext,
+            KeyBuilder keyBuilder,
+            UniformDataGatherer uniformDataGatherer,
+            TextureDataGatherer textureDataGatherer,
+            BlendMode bm
+    ) {
+        uniformDataGatherer.write1i(bm.ordinal());
+
+        keyBuilder.addInt(FragmentStage.kBlendModeBlender_BuiltinStageID);
+    }
+
+    public static void appendPrimitiveColorBlock(
+            KeyContext keyContext,
+            KeyBuilder keyBuilder,
+            UniformDataGatherer uniformDataGatherer,
+            TextureDataGatherer textureDataGatherer
+    ) {
+        appendColorSpaceUniforms(ColorSpace.get(ColorSpace.Named.SRGB), ColorInfo.AT_PREMUL,
+                keyContext.targetInfo().colorSpace(), ColorInfo.AT_PREMUL,
+                uniformDataGatherer);
+
+        keyBuilder.addInt(FragmentStage.kPrimitiveColor_BuiltinStageID);
+    }
+
     /**
-     * Add implementation details, for the specified backend, of this SkShader to the
+     * Add implementation details, for the specified backend, of this Shader to the
      * provided key.
      *
      * @param keyContext backend context for key creation
@@ -503,6 +530,46 @@ public class FragmentUtils {
                     uniformDataGatherer,
                     textureDataGatherer,
                     (Gradient1DShader) shader);
+        } else if (shader instanceof BlendModeShader) {
+            append_to_key(keyContext,
+                    keyBuilder,
+                    uniformDataGatherer,
+                    textureDataGatherer,
+                    (BlendModeShader) shader);
+        }
+    }
+
+    public static void appendToKey(KeyContext keyContext,
+                                   KeyBuilder keyBuilder,
+                                   UniformDataGatherer uniformDataGatherer,
+                                   TextureDataGatherer textureDataGatherer,
+                                   @RawPtr ColorFilter colorFilter) {
+        if (colorFilter == null) {
+            return;
+        }
+        if (colorFilter instanceof BlendModeColorFilter) {
+            append_to_key(keyContext,
+                    keyBuilder,
+                    uniformDataGatherer,
+                    textureDataGatherer,
+                    (BlendModeColorFilter) colorFilter);
+        }
+    }
+
+    public static void appendToKey(KeyContext keyContext,
+                                   KeyBuilder keyBuilder,
+                                   UniformDataGatherer uniformDataGatherer,
+                                   TextureDataGatherer textureDataGatherer,
+                                   @RawPtr Blender blender) {
+        if (blender == null) {
+            return;
+        }
+        if (blender instanceof BlendMode) {
+            append_to_key(keyContext,
+                    keyBuilder,
+                    uniformDataGatherer,
+                    textureDataGatherer,
+                    (BlendMode) blender);
         }
     }
 
@@ -637,5 +704,83 @@ public class FragmentUtils {
                 );
             }
         }
+    }
+
+    private static void append_to_key(KeyContext keyContext,
+                                      KeyBuilder keyBuilder,
+                                      UniformDataGatherer uniformDataGatherer,
+                                      TextureDataGatherer textureDataGatherer,
+                                      @RawPtr BlendModeShader shader) {
+        keyBuilder.addInt(FragmentStage.kBlend_BuiltinStageID);
+
+        appendToKey(
+                keyContext,
+                keyBuilder,
+                uniformDataGatherer,
+                textureDataGatherer,
+                shader.getSrc()
+        );
+
+        appendToKey(
+                keyContext,
+                keyBuilder,
+                uniformDataGatherer,
+                textureDataGatherer,
+                shader.getDst()
+        );
+
+        appendBlendModeBlenderBlock(
+                keyContext,
+                keyBuilder,
+                uniformDataGatherer,
+                textureDataGatherer,
+                shader.getMode()
+        );
+    }
+
+    private static void append_to_key(KeyContext keyContext,
+                                      KeyBuilder keyBuilder,
+                                      UniformDataGatherer uniformDataGatherer,
+                                      TextureDataGatherer textureDataGatherer,
+                                      @RawPtr BlendModeColorFilter colorFilter) {
+        float[] blendColor = colorFilter.getColor().clone();
+        PaintParams.prepareColorForDst(blendColor, keyContext.targetInfo(), false);
+        for (int i = 0; i < 3; i++) {
+            blendColor[i] *= blendColor[3];
+        }
+
+        keyBuilder.addInt(FragmentStage.kBlend_BuiltinStageID);
+
+        appendSolidColorShaderBlock(
+            keyContext,
+                keyBuilder,
+                uniformDataGatherer,
+                textureDataGatherer,
+                blendColor[0], blendColor[1], blendColor[2], blendColor[3]
+        );
+
+        keyBuilder.addInt(FragmentStage.kPassthrough_BuiltinStageID);
+
+        appendBlendModeBlenderBlock(
+                keyContext,
+                keyBuilder,
+                uniformDataGatherer,
+                textureDataGatherer,
+                colorFilter.getMode()
+        );
+    }
+
+    private static void append_to_key(KeyContext keyContext,
+                                      KeyBuilder keyBuilder,
+                                      UniformDataGatherer uniformDataGatherer,
+                                      TextureDataGatherer textureDataGatherer,
+                                      @RawPtr BlendMode blender) {
+        appendBlendModeBlenderBlock(
+                keyContext,
+                keyBuilder,
+                uniformDataGatherer,
+                textureDataGatherer,
+                blender
+        );
     }
 }

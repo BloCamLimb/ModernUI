@@ -57,7 +57,7 @@ public abstract class ColorFilter extends RefCnt {
     @ColorInt
     public int filterColor(@ColorInt int col) {
         float[] dst4 = Color.load_and_premul(col);
-        filterColor4f(dst4, dst4);
+        filterColor4f(dst4, dst4, null);
         float a = MathUtil.clamp(dst4[3], 0, 1);
         int result = (int) (a * 255.0f + 0.5f) << 24;
         if (result == 0) {
@@ -76,10 +76,11 @@ public abstract class ColorFilter extends RefCnt {
      * R,G,B,A components from index 0 to 3. col and out can be the same pointer.
      * col is read-only, out may be written multiple times.
      *
-     * @param col base color
-     * @param out resulting color
+     * @param col   base color
+     * @param out   resulting color
+     * @param dstCS destination color space
      */
-    public abstract void filterColor4f(@Size(4) float[] col, @Size(4) float[] out);
+    public abstract void filterColor4f(@Size(4) float[] col, @Size(4) float[] out, ColorSpace dstCS);
 
     /**
      * Returns a composed color filter that first applies the <var>before</var> filter

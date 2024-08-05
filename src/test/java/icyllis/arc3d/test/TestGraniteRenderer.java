@@ -21,6 +21,8 @@ package icyllis.arc3d.test;
 
 import icyllis.arc3d.core.Image;
 import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.effects.BlendModeColorFilter;
+import icyllis.arc3d.core.effects.ColorFilter;
 import icyllis.arc3d.core.j2d.Typeface_JDK;
 import icyllis.arc3d.core.shaders.*;
 import icyllis.arc3d.engine.*;
@@ -37,6 +39,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.awt.font.FontRenderContext;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 import java.util.*;
 
 public class TestGraniteRenderer {
@@ -280,6 +284,70 @@ public class TestGraniteRenderer {
             LOGGER.info("SubRunContainer size: {}", subRunContainer.getMemorySize());
         }
 
+        Vertices vertices1;
+        Vertices vertices2;
+        {
+            FloatBuffer sLinePoints = FloatBuffer.allocate(16);
+            IntBuffer sLineColors = IntBuffer.allocate(sLinePoints.capacity() / 2);
+
+            FloatBuffer sTrianglePoints = FloatBuffer.allocate(12);
+            IntBuffer sTriangleColors = IntBuffer.allocate(sTrianglePoints.capacity() / 2);
+
+            sLinePoints
+                    .put(100).put(100)
+                    .put(110).put(200)
+                    .put(120).put(100)
+                    .put(130).put(300)
+                    .put(140).put(100)
+                    .put(150).put(400)
+                    .put(160).put(100)
+                    .put(170).put(500)
+                    .flip();
+            sLineColors
+                    .put(0xAAFF0000)
+                    .put(0xFFFF00FF)
+                    .put(0xAA0000FF)
+                    .put(0xFF00FF00)
+                    .put(0xAA00FFFF)
+                    .put(0xFF00FF00)
+                    .put(0xAAFFFF00)
+                    .put(0xFFFFFFFF)
+                    .flip();
+            sTrianglePoints
+                    .put(420).put(20)
+                    .put(420).put(100)
+                    .put(490).put(60)
+                    .put(300).put(130)
+                    .put(250).put(180)
+                    .put(350).put(180)
+                    .flip();
+            sTriangleColors
+                    .put(0xAAFF0000)
+                    .put(0xFFFF00FF)
+                    .put(0xAA0000FF)
+                    .put(0xAA00FFFF)
+                    .put(0xFF00FF00)
+                    .put(0xAAFFFF00)
+                    .flip();
+
+            vertices1 = Vertices.makeCopy(
+                    Vertices.kLines_VertexMode, sLinePoints, null, sLineColors, null
+                    );
+            vertices2 = Vertices.makeCopy(
+                    Vertices.kTriangles_VertexMode, sTrianglePoints, null, sTriangleColors, null
+            );
+        }
+
+        ColorFilter[] blendModeColorFilters = new ColorFilter[BlendMode.COUNT];
+        {
+            float[] src = {33/255f, 150/255f, 243/255f, 204/255f};
+            for (int i = 0; i < BlendMode.COUNT; i++) {
+                blendModeColorFilters[i] = BlendModeColorFilter.make(
+                    src, null, BlendMode.modeAt(i)
+                );
+            }
+        }
+
         Paint paint = new Paint();
         Canvas canvas = surface.getCanvas();
         while (!GLFW.glfwWindowShouldClose(window)) {
@@ -395,23 +463,10 @@ public class TestGraniteRenderer {
                 paint.setShader(RefCnt.create(gradShader));
                 paint.setDither(true);
                 rrect.setRectXY(100, 650, 1500, 950, 30, 30);
-                /*rect.set(0, 0, 16, 16);
-                for (int i = 0; i < 16; i++) {
-                    for (int j = 0; j < 16; j++) {
-                        if (((i ^ j) & 1) != 0) {
-                            paint.setColor(0xFF00FF00);
-                        } else {
-                            paint.setColor(0xFFFFFFFF);
-                        }
-                        rect.offsetTo(400 + i * 24 + random.nextInt(6),
-                                350 + j * 24 + random.nextInt(6));
-                        canvas.drawRect(rect, paint);
-                    }
-                }*/
                 canvas.drawRoundRect(rrect, paint);
                 subRunContainer.draw(canvas, 400, 400, paint, device);
 
-                canvas.scale(4, 4, 1100, 300);
+                //canvas.scale(4, 4, 1100, 300);
 
                 paint.setStyle(Paint.FILL);
                 /*canvas.drawArc(1100, 300, 150, 90,
@@ -441,6 +496,27 @@ public class TestGraniteRenderer {
                 canvas.setMatrix(mat);
                 rrect.setRectXY(200, 100, 600, 500, 20, 20);
                 canvas.drawRoundRect(rrect, paint);
+
+                paint.setShader(null);
+                canvas.translate(-1000, 0);
+                canvas.drawVertices(vertices1, BlendMode.MULTIPLY, paint);
+                canvas.drawVertices(vertices2, BlendMode.MULTIPLY, paint);
+
+                paint.setARGB(255, 233, 30, 99);
+                rect.set(0, 0, 16, 16);
+                for (int i = 0; i < 14; i++) {
+                    for (int j = 0; j < 3; j++) {
+                        /*if (((i ^ j) & 1) != 0) {
+                            paint.setColor(0xFF00FF00);
+                        } else {
+                            paint.setColor(0xFFFFFFFF);
+                        }*/
+                        paint.setColorFilter(RefCnt.create(blendModeColorFilters[j*14+i]));
+                        rect.offsetTo(400 + i * 24 + random.nextInt(6),
+                                450 + j * 24 + random.nextInt(6));
+                        canvas.drawRect(rect, paint);
+                    }
+                }
 
             } else if (TEST_SCENE == 2) {
                 Rect2f rect = new Rect2f();
@@ -512,6 +588,10 @@ public class TestGraniteRenderer {
         testShader3 = RefCnt.move(testShader3);
         gradShader = RefCnt.move(gradShader);
         testImage = RefCnt.move(testImage);
+        for (int i = 0; i < BlendMode.COUNT; i++) {
+            blendModeColorFilters[i] = RefCnt.move(blendModeColorFilters[i]);
+        }
+        blendModeColorFilters = null;
 
         {
             long rowStride = (long) CANVAS_WIDTH * 4;

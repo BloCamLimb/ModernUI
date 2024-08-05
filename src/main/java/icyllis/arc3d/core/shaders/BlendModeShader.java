@@ -17,11 +17,41 @@
  * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.granite;
+package icyllis.arc3d.core.shaders;
 
-import icyllis.arc3d.core.Rect2f;
+import icyllis.arc3d.core.*;
 
-public interface Geometry {
+public final class BlendModeShader extends Shader {
 
-    void getBounds(Rect2f dest);
+    private final BlendMode mMode;
+    @SharedPtr
+    private final Shader mSrc;
+    @SharedPtr
+    private final Shader mDst;
+
+    public BlendModeShader(BlendMode mode, Shader src, Shader dst) {
+        mMode = mode;
+        mSrc = src;
+        mDst = dst;
+    }
+
+    @Override
+    protected void deallocate() {
+        RefCnt.move(mSrc);
+        RefCnt.move(mDst);
+    }
+
+    public BlendMode getMode() {
+        return mMode;
+    }
+
+    @RawPtr
+    public Shader getSrc() {
+        return mSrc;
+    }
+
+    @RawPtr
+    public Shader getDst() {
+        return mDst;
+    }
 }

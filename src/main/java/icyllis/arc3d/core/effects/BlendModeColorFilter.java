@@ -22,92 +22,41 @@ package icyllis.arc3d.core.effects;
 import icyllis.arc3d.core.*;
 
 import javax.annotation.Nullable;
-import java.util.Objects;
+import java.util.Arrays;
 
-public class BlendModeColorFilter extends ColorFilter {
+public final class BlendModeColorFilter extends ColorFilter {
 
-    private static final BlendModeColorFilter CLEAR = new BlendModeColorFilter(BlendMode.SRC);
-
-    // premultiplied blend color in sRGB space
+    // non-premultiplied blend color in sRGB space
     private final float[] mColor;
     private final BlendMode mMode;
 
-    public BlendModeColorFilter(int color, BlendMode mode) {
-        mColor = Color.load_and_premul(color);
-        mMode = mode;
-    }
-
-    public BlendModeColorFilter(@Size(4) float[] color, boolean srcIsPremul, BlendMode mode) {
-        this(mode);
-        if (srcIsPremul) {
-            System.arraycopy(color, 0, mColor, 0, 4);
-        } else {
-            float alpha = mColor[3] = color[3];
-            mColor[0] = color[0] * alpha;
-            mColor[1] = color[1] * alpha;
-            mColor[2] = color[2] * alpha;
-        }
-    }
-
-    private BlendModeColorFilter(BlendMode mode) {
-        mColor = new float[4];
+    BlendModeColorFilter(@Size(4) float[] color, BlendMode mode) {
+        mColor = color;
         mMode = mode;
     }
 
     @Nullable
-    public static BlendModeColorFilter make(int color, BlendMode mode) {
-        Objects.requireNonNull(mode);
-        // Next collapse some modes if possible
-        if (mode == BlendMode.CLEAR) {
-            return CLEAR;
-        }
-        int alpha = color >>> 24;
-        if (mode == BlendMode.SRC_OVER) {
-            if (alpha == 0) {
-                mode = BlendMode.DST;
-            } else if (alpha == 0xFF) {
-                mode = BlendMode.SRC;
-            }
-            // else just stay src_over
-        }
-
-        // Finally weed out combinations that are no-ops, and just return null
-        if (mode == BlendMode.DST) {
-            return null;
-        }
-        if (alpha == 0) {
-            switch (mode) {
-                //case SRC_OVER:
-                case DST_OVER:
-                case DST_OUT:
-                case SRC_ATOP:
-                case XOR:
-                case PLUS:
-                case PLUS_CLAMPED:
-                case MINUS:
-                case MINUS_CLAMPED:
-                    return null;
-            }
-            if (mode.isAdvanced()) {
-                return null;
-            }
-        }
-        if (alpha == 0xFF && mode == BlendMode.DST_IN) {
+    @SharedPtr
+    public static BlendModeColorFilter make(@Size(4) float[] color,
+                                            @Nullable ColorSpace colorSpace,
+                                            BlendMode mode) {
+        if (mode == null) {
             return null;
         }
 
-        return new BlendModeColorFilter(color, mode);
-    }
-
-    @Nullable
-    public static BlendModeColorFilter make(@Size(4) float[] color, boolean srcIsPremul, BlendMode mode) {
-        Objects.requireNonNull(mode);
-        // Next collapse some modes if possible
-        if (mode == BlendMode.CLEAR) {
-            return CLEAR;
+        // First map to sRGB to simplify storage in the actual ColorFilter instance, staying unpremul
+        // until the final dst color space is known when actually filtering.
+        float[] srgb = Arrays.copyOfRange(color, 0, 4);
+        if (colorSpace != null && !colorSpace.isSrgb()) {
+            ColorSpace.connect(colorSpace).transform(srgb);
         }
-        float alpha = color[3];
-        if (mode == BlendMode.SRC_OVER) {
+
+        // Next collapse some modes if possible
+        float alpha = srgb[3];
+        if (mode == BlendMode.CLEAR) {
+            Arrays.fill(srgb, 0);
+            mode = BlendMode.SRC;
+        } else if (mode == BlendMode.SRC_OVER) {
             if (alpha == 0.f) {
                 mode = BlendMode.DST;
             } else if (alpha == 1.f) {
@@ -133,6 +82,7 @@ public class BlendModeColorFilter extends ColorFilter {
                 case MINUS_CLAMPED:
                     return null;
             }
+            // All advanced blend modes are SrcOver-like
             if (mode.isAdvanced()) {
                 return null;
             }
@@ -141,13 +91,13 @@ public class BlendModeColorFilter extends ColorFilter {
             return null;
         }
 
-        return new BlendModeColorFilter(color, srcIsPremul, mode);
+        return new BlendModeColorFilter(srgb, mode);
     }
 
     /**
-     * @return premultiplied source color in sRGB space, unmodifiable.
+     * @return non-premultiplied source color in sRGB space, unmodifiable.
      */
-    public float[] getColor4f() {
+    public float[] getColor() {
         return mColor;
     }
 
@@ -164,7 +114,15 @@ public class BlendModeColorFilter extends ColorFilter {
     }
 
     @Override
-    public void filterColor4f(float[] col, float[] out) {
-        mMode.apply(mColor, col, out);
+    public void filterColor4f(float[] col, float[] out, ColorSpace dstCS) {
+        float[] blendColor = mColor.clone();
+        if (dstCS != null && !dstCS.isSrgb()) {
+            ColorSpace.connect(ColorSpace.get(ColorSpace.Named.SRGB), dstCS)
+                    .transform(blendColor);
+        }
+        for (int i = 0; i < 3; i++) {
+            blendColor[i] *= blendColor[3];
+        }
+        mMode.apply(blendColor, col, out);
     }
 }
