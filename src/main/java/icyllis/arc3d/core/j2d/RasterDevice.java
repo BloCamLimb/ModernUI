@@ -145,4 +145,9 @@ public class RasterDevice extends Device {
     protected void onDrawGlyphRunList(Canvas canvas, GlyphRunList glyphRunList, Paint paint) {
 
     }
+
+    @Override
+    public void drawVertices(Vertices vertices, @SharedPtr Blender blender, Paint paint) {
+        RefCnt.move(blender);
+    }
 }

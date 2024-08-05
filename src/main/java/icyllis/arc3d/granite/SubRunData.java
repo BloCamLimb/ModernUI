@@ -21,7 +21,7 @@ package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
 
-public class SubRunData implements Geometry {
+public class SubRunData {
 
     private final SubRunContainer.AtlasSubRun mSubRun;
     private final Matrix mSubRunToLocal;

@@ -1606,6 +1606,38 @@ public class Canvas implements AutoCloseable {
     }
 
     /**
+     * Draws the vertices, a triangle mesh, using current clip and matrix.
+     * If paint contains a Shader and vertices does not contain texCoords, the shader
+     * is mapped using the vertices' positions.
+     * <p>
+     * Blender is ignored if vertices does not have colors. Otherwise, it combines
+     * - the Shader if Paint contains Shader
+     * - or the solid Paint color if Paint does not contain Shader
+     * as the src of the blend and the interpolated vertex colors as the dst.
+     * <p>
+     * PathEffect, and antialiasing on Paint are ignored.
+     *
+     * @param vertices triangle mesh to draw
+     * @param blender  combines vertices' colors with Shader if present or Paint opaque color
+     *                 if not. Ignored if the vertices do not contain color.
+     * @param paint    specifies the Shader, used as Vertices texture, and ColorFilter.
+     */
+    public final void drawVertices(Vertices vertices,
+                                   @SharedPtr Blender blender,
+                                   Paint paint) {
+        if (vertices == null) {
+            RefCnt.move(blender);
+            return;
+        }
+        var cleanedPaint = mTmpPaint;
+        cleanedPaint.set(paint);
+        cleanedPaint.setStyle(Paint.FILL);
+        cleanedPaint.setPathEffect(null);
+        onDrawVertices(vertices, blender, cleanedPaint);
+        cleanedPaint.reset();
+    }
+
+    /**
      * Returns true if clip is empty; that is, nothing will draw.
      * <p>
      * May do work when called; it should not be called more often than needed.
@@ -2021,6 +2053,20 @@ public class Canvas implements AutoCloseable {
 
         if (aboutToDraw(paint)) {
             topDevice().drawGlyphRunList(this, glyphRunList, paint);
+        }
+    }
+
+    protected void onDrawVertices(Vertices vertices, @SharedPtr Blender blender,
+                                  Paint paint) {
+        if (internalQuickReject(vertices.getBounds(), paint)) {
+            RefCnt.move(blender);
+            return;
+        }
+
+        if (aboutToDraw(paint)) {
+            topDevice().drawVertices(vertices, blender, paint);
+        } else {
+            RefCnt.move(blender);
         }
     }
 

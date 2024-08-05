@@ -297,6 +297,9 @@ public abstract class Device extends RefCnt {
                                                GlyphRunList glyphRunList,
                                                Paint paint);
 
+    public abstract void drawVertices(Vertices vertices, @SharedPtr Blender blender,
+                                      Paint paint);
+
     @Nullable
     protected Surface makeSurface(ImageInfo info) {
         return null;

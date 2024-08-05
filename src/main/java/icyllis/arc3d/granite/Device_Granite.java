@@ -31,6 +31,7 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.function.BiConsumer;
 
 /**
  * The device that is backed by GPU.
@@ -232,49 +233,35 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
     @Override
     public void drawLine(float x0, float y0, float x1, float y1,
                          @Paint.Cap int cap, float width, Paint paint) {
-        Draw draw = new Draw();
-        draw.mTransform = getLocalToDevice();
         var shape = new SimpleShape();
         shape.setLine(x0, y0, x1, y1, cap, width);
-        draw.mGeometry = shape;
-        drawGeometry(draw, paint,
+        drawGeometry(getLocalToDevice(), shape, SimpleShape::getBounds, paint,
                 mContext.getRendererProvider().getSimpleBox(paint.isAntiAlias()), null);
     }
 
     @Override
     public void drawRect(Rect2fc r, Paint paint) {
-        Draw draw = new Draw();
-        draw.mTransform = getLocalToDevice();
-        draw.mGeometry = new SimpleShape(r);
-        drawGeometry(draw, paint,
+        drawGeometry(getLocalToDevice(), new SimpleShape(r), SimpleShape::getBounds, paint,
                 mContext.getRendererProvider().getSimpleBox(paint.isAntiAlias()), null);
     }
 
     @Override
     public void drawRoundRect(RoundRect rr, Paint paint) {
-        Draw draw = new Draw();
-        draw.mTransform = getLocalToDevice();
-        draw.mGeometry = new SimpleShape(rr);
-        drawGeometry(draw, paint,
+        drawGeometry(getLocalToDevice(), new SimpleShape(rr), SimpleShape::getBounds, paint,
                 mContext.getRendererProvider().getSimpleBox(paint.isAntiAlias()), null);
     }
 
     @Override
     public void drawCircle(float cx, float cy, float radius, Paint paint) {
-        Draw draw = new Draw();
-        draw.mTransform = getLocalToDevice();
         var shape = new SimpleShape();
         shape.setEllipseXY(cx, cy, radius, radius);
-        draw.mGeometry = shape;
-        drawGeometry(draw, paint,
+        drawGeometry(getLocalToDevice(), shape, SimpleShape::getBounds, paint,
                 mContext.getRendererProvider().getSimpleBox(paint.isAntiAlias()), null);
     }
 
     @Override
     public void drawArc(float cx, float cy, float radius, float startAngle,
                         float sweepAngle, int cap, float width, Paint paint) {
-        Draw draw = new Draw();
-        draw.mTransform = getLocalToDevice();
         var shape = new ArcShape(cx, cy, radius, startAngle, sweepAngle, width * 0.5f);
         shape.mType = switch (cap) {
             case Paint.CAP_BUTT -> ArcShape.kArc_Type;
@@ -282,37 +269,30 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
             case Paint.CAP_SQUARE -> ArcShape.kArcSquare_Type;
             default -> throw new AssertionError();
         };
-        draw.mGeometry = shape;
-        drawGeometry(draw, paint,
+        drawGeometry(getLocalToDevice(), shape, ArcShape::getBounds, paint,
                 mContext.getRendererProvider().getArc(shape.mType), null);
     }
 
     @Override
     public void drawPie(float cx, float cy, float radius, float startAngle,
                         float sweepAngle, Paint paint) {
-        Draw draw = new Draw();
-        draw.mTransform = getLocalToDevice();
         var shape = new ArcShape(cx, cy, radius, startAngle, sweepAngle, 0);
         shape.mType = ArcShape.kPie_Type;
-        draw.mGeometry = shape;
-        drawGeometry(draw, paint,
+        drawGeometry(getLocalToDevice(), shape, ArcShape::getBounds, paint,
                 mContext.getRendererProvider().getArc(shape.mType), null);
     }
 
     @Override
     public void drawChord(float cx, float cy, float radius, float startAngle,
                           float sweepAngle, Paint paint) {
-        Draw draw = new Draw();
-        draw.mTransform = getLocalToDevice();
         var shape = new ArcShape(cx, cy, radius, startAngle, sweepAngle, 0);
         shape.mType = ArcShape.kChord_Type;
-        draw.mGeometry = shape;
-        drawGeometry(draw, paint,
+        drawGeometry(getLocalToDevice(), shape, ArcShape::getBounds, paint,
                 mContext.getRendererProvider().getArc(shape.mType), null);
     }
 
     @Override
-    public void drawImageRect(Image image, Rect2fc src, Rect2fc dst,
+    public void drawImageRect(@RawPtr Image image, Rect2fc src, Rect2fc dst,
                               SamplingOptions sampling, Paint paint, int constraint) {
         Paint modifiedPaint = new Paint(paint);
         Rect2f modifiedDst = ImageShader.preparePaintForDrawImageRect(
@@ -321,6 +301,7 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
                 modifiedPaint
         );
         if (!modifiedDst.isEmpty()) {
+            //TODO use edge AA quad
             drawRect(modifiedDst, modifiedPaint);
         }
         modifiedPaint.close();
@@ -339,6 +320,14 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
                 StrikeCache.getGlobalStrikeCache()
         );
         container.draw(canvas, glyphRunList.mOriginX, glyphRunList.mOriginY, paint, this);
+    }
+
+    @Override
+    public void drawVertices(Vertices vertices, @SharedPtr Blender blender, Paint paint) {
+        drawGeometry(getLocalToDevice(), vertices, Vertices::getBounds, paint,
+                mContext.getRendererProvider().getVertices(
+                        vertices.getVertexMode(), vertices.hasColors(), vertices.hasTexCoords()),
+                blender); // move
     }
 
     public void drawAtlasSubRun(SubRunContainer.AtlasSubRun subRun,
@@ -376,10 +365,7 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
                 }
                 subRunPaint.setStyle(Paint.FILL);
 
-                Draw draw = new Draw();
-                draw.mTransform = subRunToDevice;
-                draw.mGeometry = subRunData;
-                drawGeometry(draw, paint,
+                drawGeometry(subRunToDevice, subRunData, SubRunData::getBounds, paint,
                         mContext.getRendererProvider().getRasterText(maskFormat),
                         BlendMode.DST_IN);
             } else if (flushed) {
@@ -441,10 +427,15 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
                 paintParams.getPrimitiveBlender());
     }
 
-    public void drawGeometry(Draw draw,
-                             Paint paint,
-                             GeometryRenderer renderer,
-                             @SharedPtr Blender primitiveBlender) {
+    public <GEO> void drawGeometry(Matrix4c localToDevice,
+                                   GEO geometry,
+                                   BiConsumer<GEO, Rect2f> boundsFn,
+                                   Paint paint,
+                                   GeometryRenderer renderer,
+                                   @SharedPtr Blender primitiveBlender) {
+        Draw draw = new Draw();
+        draw.mTransform = localToDevice;
+        draw.mGeometry = geometry;
         draw.mRenderer = renderer;
 
         if (paint.getStyle() == Paint.FILL) {
@@ -464,7 +455,8 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
         // draw without updating the clip stack.
         final boolean outsetBoundsForAA = renderer.outsetBoundsForAA();
         mElementsForMask.clear();
-        boolean clippedOut = mClipStack.prepareForDraw(draw, outsetBoundsForAA, mElementsForMask);
+        boolean clippedOut = mClipStack.prepareForDraw(draw, geometry, boundsFn,
+                outsetBoundsForAA, mElementsForMask);
         if (clippedOut) {
             RefCnt.move(primitiveBlender);
             return;

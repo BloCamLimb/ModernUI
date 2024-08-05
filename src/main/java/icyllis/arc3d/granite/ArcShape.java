@@ -22,7 +22,7 @@ package icyllis.arc3d.granite;
 import icyllis.arc3d.core.MathUtil;
 import icyllis.arc3d.core.Rect2f;
 
-public class ArcShape implements Geometry {
+public class ArcShape {
 
     /**
      * The arc is a closed shape, paint's cap is ignored, this cap determines the shape
@@ -67,7 +67,6 @@ public class ArcShape implements Geometry {
         };
     }
 
-    @Override
     public void getBounds(Rect2f dest) {
         dest.set(
                 mCenterX - mRadius, mCenterY - mRadius,
