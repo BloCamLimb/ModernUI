@@ -208,6 +208,11 @@ public class NoPixelsDevice extends Device {
     protected void onDrawGlyphRunList(Canvas canvas, GlyphRunList glyphRunList, Paint paint) {
     }
 
+    @Override
+    public void drawVertices(Vertices vertices, @SharedPtr Blender blender, Paint paint) {
+        RefCnt.move(blender);
+    }
+
     /**
      * The ConservativeClip computes the maximum rectangular bounds of the actual clipping region
      * for quick rejection. This can skip operations that have no rendering results.

@@ -19,7 +19,9 @@
 
 package icyllis.arc3d.granite;
 
-import icyllis.arc3d.engine.*;
+import icyllis.arc3d.core.Vertices;
+import icyllis.arc3d.engine.Caps;
+import icyllis.arc3d.engine.Engine;
 import icyllis.arc3d.granite.geom.*;
 
 /**
@@ -45,6 +47,8 @@ public class RendererProvider {
     private final GeometryRenderer[] mRasterText = new GeometryRenderer[Engine.MASK_FORMAT_COUNT];
     // arc type variant
     private final GeometryRenderer[] mArc = new GeometryRenderer[ArcShape.kTypeCount];
+    // has color, has tex, vertex mode variant
+    private final GeometryRenderer[] mVertices = new GeometryRenderer[Vertices.kVertexModeCount*4];
 
     public RendererProvider(Caps caps, StaticBufferManager staticBufferManager) {
         mSimpleBox[0] = makeSingleStep(
@@ -64,6 +68,21 @@ public class RendererProvider {
                     new AnalyticArcStep(i)
             );
         }
+        for (int mode = 0; mode < Vertices.kVertexModeCount; mode++) {
+            for (int mask = 0; mask < 4; mask++) {
+                int index = mode * 4 + mask;
+                mVertices[index] = makeSingleStep(
+                        new VerticesStep(switch (mode) {
+                            case Vertices.kPoints_VertexMode -> Engine.PrimitiveType.kPointList;
+                            case Vertices.kLines_VertexMode -> Engine.PrimitiveType.kLineList;
+                            case Vertices.kLineStrip_VertexMode -> Engine.PrimitiveType.kLineStrip;
+                            case Vertices.kTriangles_VertexMode -> Engine.PrimitiveType.kTriangleList;
+                            case Vertices.kTriangleStrip_VertexMode -> Engine.PrimitiveType.kTriangleStrip;
+                            default -> throw new AssertionError();
+                        }, (mask & 2) != 0, (mask & 1) != 0)
+                );
+            }
+        }
     }
 
     public GeometryRenderer getSimpleBox(boolean aa) {
@@ -76,5 +95,9 @@ public class RendererProvider {
 
     public GeometryRenderer getArc(int type) {
         return mArc[type];
+    }
+
+    public GeometryRenderer getVertices(int vertexMode, boolean hasColor, boolean hasTexCoords) {
+        return mVertices[vertexMode*4 + (hasColor?2:0) + (hasTexCoords?1:0)];
     }
 }

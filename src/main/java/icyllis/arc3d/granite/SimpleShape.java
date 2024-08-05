@@ -21,7 +21,7 @@ package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
 
-public class SimpleShape extends RoundRect implements Geometry {
+public class SimpleShape extends RoundRect {
 
     /**
      * Extends RoundRect::Type, adds three types of stroked lines.
