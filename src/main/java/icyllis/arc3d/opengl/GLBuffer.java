@@ -297,27 +297,30 @@ public final class GLBuffer extends Buffer {
 
     @Override
     protected void onSetLabel(@Nullable String label) {
-        if (getDevice().getCaps().hasDebugSupport()) {
-            if (label == null) {
-                getDevice().getGL().glObjectLabel(GL_BUFFER, mBuffer, 0, NULL);
-            } else {
-                label = label.substring(0, Math.min(label.length(),
-                        getDevice().getCaps().maxLabelLength()));
-                getDevice().getGL().glObjectLabel(GL_BUFFER, mBuffer, label);
+        getDevice().executeRenderCall(dev -> {
+            if (dev.getCaps().hasDebugSupport()) {
+                if (label == null) {
+                    dev.getGL().glObjectLabel(GL_BUFFER, mBuffer, 0, NULL);
+                } else {
+                    String subLabel = label.substring(0, Math.min(label.length(),
+                            dev.getCaps().maxLabelLength()));
+                    dev.getGL().glObjectLabel(GL_BUFFER, mBuffer, subLabel);
+                }
             }
-        }
+        });
     }
 
     @Override
     protected void onRelease() {
-        if (mBuffer != 0) {
-            final int buffer = mBuffer;
-            getDevice().executeRenderCall(dev -> dev.getGL().glDeleteBuffers(buffer));
-        }
+        getDevice().executeRenderCall(dev -> {
+            if (mBuffer != 0) {
+                dev.getGL().glDeleteBuffers(mBuffer);
+            }
+            mBuffer = 0;
+        });
         if (mCachedBuffer != NULL) {
             MemoryUtil.nmemFree(mCachedBuffer);
         }
-        mBuffer = 0;
         mCachedBuffer = NULL;
     }
 
@@ -328,13 +331,13 @@ public final class GLBuffer extends Buffer {
 
     @Override
     protected long onMap(int mode, long offset, long size) {
-        if (mBuffer == 0) {
-            return NULL;
-        }
         GLDevice device = getDevice();
-        assert (mBuffer != 0);
 
         if (mode == kRead_MapMode) {
+            if (mBuffer == 0) {
+                return NULL;
+            }
+            assert (mBuffer != 0);
             assert (device.isOnExecutingThread());
             // prefer mapping, such as pixel buffer object
             long mappedBuffer;
@@ -368,7 +371,7 @@ public final class GLBuffer extends Buffer {
                 }
                 mCachedBufferSize = size;
                 if (mCachedBuffer == NULL) {
-                    device.getLogger().error("Failed to map buffer {}", mBuffer);
+                    device.getLogger().error("Failed to map buffer {}", this);
                 }
             }
             return mCachedBuffer;
@@ -377,13 +380,13 @@ public final class GLBuffer extends Buffer {
 
     @Override
     protected void onUnmap(int mode, long offset, long size) {
-        if (mBuffer == 0) {
-            return;
-        }
         GLDevice device = getDevice();
-        assert (mBuffer != 0);
 
         if (mode == kRead_MapMode) {
+            if (mBuffer == 0) {
+                return;
+            }
+            assert (mBuffer != 0);
             assert (device.isOnExecutingThread());
             if (device.getCaps().hasDSASupport()) {
                 device.getGL().glUnmapNamedBuffer(mBuffer);

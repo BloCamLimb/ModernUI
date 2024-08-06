@@ -361,9 +361,10 @@ public abstract class Resource implements RefCounted {
     }
 
     /**
-     * Sets a label for the resource for debugging purposes.
+     * Sets a label for the resource for debugging purposes, the label must
+     * contain only ASCII characters.
      *
-     * @param label the new label to set, or empty to clear
+     * @param label the new label to set, null or empty to clear
      */
     public final void setLabel(@Nullable String label) {
         label = label != null ? label.trim() : "";

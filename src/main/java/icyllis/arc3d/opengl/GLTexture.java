@@ -20,12 +20,13 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.SharedPtr;
-import icyllis.arc3d.engine.*;
+import icyllis.arc3d.engine.Context;
+import icyllis.arc3d.engine.ISurface;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nullable;
 
-import static org.lwjgl.opengl.GL30C.*;
+import static org.lwjgl.opengl.GL30C.GL_TEXTURE;
 
 /**
  * Represents OpenGL textures.
@@ -127,24 +128,29 @@ public final class GLTexture extends GLImage {
 
     @Override
     protected void onSetLabel(@Nullable String label) {
-        if (getDevice().getCaps().hasDebugSupport()) {
-            assert mHandle != 0;
-            if (label == null) {
-                getDevice().getGL().glObjectLabel(GL_TEXTURE, mHandle, 0, MemoryUtil.NULL);
-            } else {
-                label = label.substring(0, Math.min(label.length(),
-                        getDevice().getCaps().maxLabelLength()));
-                getDevice().getGL().glObjectLabel(GL_TEXTURE, mHandle, label);
+        getDevice().executeRenderCall(dev -> {
+            if (dev.getCaps().hasDebugSupport()) {
+                assert mHandle != 0;
+                if (label == null) {
+                    dev.getGL().glObjectLabel(GL_TEXTURE, mHandle, 0, MemoryUtil.NULL);
+                } else {
+                    String subLabel = label.substring(0, Math.min(label.length(),
+                            dev.getCaps().maxLabelLength()));
+                    dev.getGL().glObjectLabel(GL_TEXTURE, mHandle, subLabel);
+                }
             }
-        }
+        });
     }
 
     @Override
     protected void onRelease() {
         if (mOwnership) {
-            if (mHandle != 0) {
-                getDevice().getGL().glDeleteTextures(mHandle);
-            }
+            getDevice().executeRenderCall(dev -> {
+                if (mHandle != 0) {
+                    dev.getGL().glDeleteTextures(mHandle);
+                }
+                mHandle = 0;
+            });
             //TODO?
             /*if (info.memoryObject != 0) {
                 EXTMemoryObject.glDeleteMemoryObjectsEXT(info.memoryObject);
@@ -155,7 +161,6 @@ public final class GLTexture extends GLImage {
                 } // Linux transfers the fd
             }*/
         }
-        mHandle = 0;
         super.onRelease();
     }
 
