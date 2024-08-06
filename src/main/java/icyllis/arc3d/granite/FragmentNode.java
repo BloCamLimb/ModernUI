@@ -41,9 +41,19 @@ public class FragmentNode {
         mChildren = children;
         mCodeID = codeID;
         mStageIndex = stageIndex;
+        boolean isCompose = codeID == FragmentStage.kCompose_BuiltinStageID ||
+                codeID == FragmentStage.kBlend_BuiltinStageID;
         int requirementFlags = stage.mRequirementFlags;
         for (FragmentNode child : children) {
-            requirementFlags |= child.mRequirementFlags;
+            int mask = 0;
+            if (codeID >= FragmentStage.kBuiltinStageIDCount ||
+                    (isCompose && child == children[children.length - 1])) {
+                // Only mask off the variable arguments; any special behaviors always propagate.
+                mask = FragmentStage.kLocalCoords_ReqFlag |
+                        FragmentStage.kPriorStageOutput_ReqFlag |
+                        FragmentStage.kBlenderDstColor_ReqFlag;
+            }
+            requirementFlags |= child.mRequirementFlags & ~mask;
         }
         mRequirementFlags = requirementFlags;
     }

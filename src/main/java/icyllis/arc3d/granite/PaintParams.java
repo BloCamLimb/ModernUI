@@ -331,39 +331,66 @@ public final class PaintParams implements AutoCloseable {
             return;
         }
 
-        keyBuilder.addInt(FragmentStage.kBlend_BuiltinStageID);
+        if (mA != 1.0f) {
+            keyBuilder.addInt(FragmentStage.kBlend_BuiltinStageID);
 
-        // src
-        handlePrimitiveColor(
-                keyContext,
-                keyBuilder,
-                uniformDataGatherer,
-                textureDataGatherer
-        );
+            // src
+            handlePrimitiveColor(
+                    keyContext,
+                    keyBuilder,
+                    uniformDataGatherer,
+                    textureDataGatherer
+            );
 
-        // dst
-        FragmentUtils.appendAlphaOnlyPaintColorBlock(
-                keyContext,
-                keyBuilder,
-                uniformDataGatherer,
-                textureDataGatherer
-        );
+            // dst
+            FragmentUtils.appendAlphaOnlyPaintColorBlock(
+                    keyContext,
+                    keyBuilder,
+                    uniformDataGatherer,
+                    textureDataGatherer
+            );
 
-        // blend
-        keyBuilder.addInt(FragmentStage.kInlineSrcInBlend_BuiltinStageID);
+            // blend
+            keyBuilder.addInt(FragmentStage.kInlineSrcInBlend_BuiltinStageID);
+        } else {
+            handlePrimitiveColor(
+                    keyContext,
+                    keyBuilder,
+                    uniformDataGatherer,
+                    textureDataGatherer
+            );
+        }
     }
 
     private void handleColorFilter(KeyContext keyContext,
                                    KeyBuilder keyBuilder,
                                    UniformDataGatherer uniformDataGatherer,
                                    TextureDataGatherer textureDataGatherer) {
-        //TODO
-        handlePaintAlpha(
-                keyContext,
-                keyBuilder,
-                uniformDataGatherer,
-                textureDataGatherer
-        );
+        if (mColorFilter != null) {
+            keyBuilder.addInt(FragmentStage.kCompose_BuiltinStageID);
+
+            handlePaintAlpha(
+                    keyContext,
+                    keyBuilder,
+                    uniformDataGatherer,
+                    textureDataGatherer
+            );
+
+            FragmentUtils.appendToKey(
+                    keyContext,
+                    keyBuilder,
+                    uniformDataGatherer,
+                    textureDataGatherer,
+                    mColorFilter
+            );
+        } else {
+            handlePaintAlpha(
+                    keyContext,
+                    keyBuilder,
+                    uniformDataGatherer,
+                    textureDataGatherer
+            );
+        }
     }
 
     private void handleDithering(KeyContext keyContext,
