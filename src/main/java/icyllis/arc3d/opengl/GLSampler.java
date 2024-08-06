@@ -33,11 +33,12 @@ import static org.lwjgl.opengl.GL46C.GL_TEXTURE_MAX_ANISOTROPY;
  */
 public final class GLSampler extends Sampler {
 
+    private final SamplerDesc mDesc;
     private int mSampler;
 
-    private GLSampler(Context context, int sampler) {
+    private GLSampler(Context context, SamplerDesc desc) {
         super(context);
-        mSampler = sampler;
+        mDesc = desc;
     }
 
     @Nullable
@@ -45,25 +46,45 @@ public final class GLSampler extends Sampler {
     public static GLSampler create(Context context,
                                    SamplerDesc desc) {
         GLDevice device = (GLDevice) context.getDevice();
+        GLSampler sampler = new GLSampler(context, desc);
+        if (device.isOnExecutingThread()) {
+            if (!sampler.initialize()) {
+                sampler.unref();
+                return null;
+            }
+        } else {
+            device.executeRenderCall(dev -> {
+                if (!sampler.isDestroyed() && !sampler.initialize()) {
+                    sampler.setNonCacheable();
+                }
+            });
+        }
+        return sampler;
+    }
+
+    // OpenGL thread
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+    private boolean initialize() {
+        GLDevice device = (GLDevice) getDevice();
         int sampler = device.getGL().glGenSamplers();
         if (sampler == 0) {
-            return null;
+            return false;
         }
         int magFilter = GLUtil.toGLMagFilter(
-                desc.getMagFilter()
+                mDesc.getMagFilter()
         );
         int minFilter = GLUtil.toGLMinFilter(
-                desc.getMinFilter(),
-                desc.getMipmapMode()
+                mDesc.getMinFilter(),
+                mDesc.getMipmapMode()
         );
         int wrapX = GLUtil.toGLWrapMode(
-                desc.getAddressModeX()
+                mDesc.getAddressModeX()
         );
         int wrapY = GLUtil.toGLWrapMode(
-                desc.getAddressModeY()
+                mDesc.getAddressModeY()
         );
         int wrapZ = GLUtil.toGLWrapMode(
-                desc.getAddressModeZ()
+                mDesc.getAddressModeZ()
         );
         device.getGL().glSamplerParameteri(sampler, GL_TEXTURE_MAG_FILTER, magFilter);
         device.getGL().glSamplerParameteri(sampler, GL_TEXTURE_MIN_FILTER, minFilter);
@@ -71,21 +92,24 @@ public final class GLSampler extends Sampler {
         device.getGL().glSamplerParameteri(sampler, GL_TEXTURE_WRAP_T, wrapY);
         device.getGL().glSamplerParameteri(sampler, GL_TEXTURE_WRAP_R, wrapZ);
         if (device.getCaps().hasAnisotropySupport()) {
-            float maxAnisotropy = Math.min(desc.getMaxAnisotropy(),
+            float maxAnisotropy = Math.min(mDesc.getMaxAnisotropy(),
                     device.getCaps().maxTextureMaxAnisotropy());
             assert (maxAnisotropy >= 1.0f);
             device.getGL().glSamplerParameterf(sampler, GL_TEXTURE_MAX_ANISOTROPY, maxAnisotropy);
         }
         // border color is (0,0,0,0) by default
-        return new GLSampler(context, sampler);
+        mSampler = sampler;
+        return true;
     }
 
     @Override
     protected void onRelease() {
-        if (mSampler != 0) {
-            ((GLDevice) getDevice()).getGL().glDeleteSamplers(mSampler);
-        }
-        discard();
+        ((GLDevice) getDevice()).executeRenderCall(dev -> {
+            if (mSampler != 0) {
+                dev.getGL().glDeleteSamplers(mSampler);
+            }
+            discard();
+        });
     }
 
     public void discard() {

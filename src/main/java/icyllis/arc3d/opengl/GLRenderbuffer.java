@@ -26,7 +26,7 @@ import org.lwjgl.system.MemoryUtil;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import static org.lwjgl.opengl.GL11C.*;
+import static org.lwjgl.opengl.GL11C.GL_NO_ERROR;
 import static org.lwjgl.opengl.GL30C.GL_RENDERBUFFER;
 
 /**
@@ -171,16 +171,29 @@ public final class GLRenderbuffer extends GLImage {
 
     @Override
     protected void onSetLabel(@Nullable String label) {
-        if (getDevice().getCaps().hasDebugSupport()) {
-            assert mRenderbuffer != 0;
-            if (label == null) {
-                getDevice().getGL().glObjectLabel(GL_RENDERBUFFER, mRenderbuffer, 0, MemoryUtil.NULL);
-            } else {
-                label = label.substring(0, Math.min(label.length(),
-                        getDevice().getCaps().maxLabelLength()));
-                getDevice().getGL().glObjectLabel(GL_RENDERBUFFER, mRenderbuffer, label);
+        getDevice().executeRenderCall(dev -> {
+            if (dev.getCaps().hasDebugSupport()) {
+                assert mRenderbuffer != 0;
+                if (label == null) {
+                    dev.getGL().glObjectLabel(GL_RENDERBUFFER, mRenderbuffer, 0, MemoryUtil.NULL);
+                } else {
+                    String subLabel = label.substring(0, Math.min(label.length(),
+                            dev.getCaps().maxLabelLength()));
+                    dev.getGL().glObjectLabel(GL_RENDERBUFFER, mRenderbuffer, subLabel);
+                }
             }
-        }
+        });
+    }
+
+    @Override
+    protected void onRelease() {
+        getDevice().executeRenderCall(dev -> {
+            if (mRenderbuffer != 0) {
+                dev.getGL().glDeleteRenderbuffers(mRenderbuffer);
+            }
+            mRenderbuffer = 0;
+        });
+        super.onRelease();
     }
 
     public int getFormat() {

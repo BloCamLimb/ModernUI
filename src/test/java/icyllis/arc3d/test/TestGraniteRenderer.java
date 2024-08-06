@@ -42,6 +42,7 @@ import java.awt.font.FontRenderContext;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.*;
+import java.util.concurrent.*;
 
 public class TestGraniteRenderer {
 
@@ -60,6 +61,8 @@ public class TestGraniteRenderer {
     public static final int WINDOW_HEIGHT = 990;
 
     public static final int TEST_SCENE = 1;
+
+    public static final ExecutorService RECORDING_THREAD = Executors.newSingleThreadExecutor();
 
     public static float Bayer2(float x, float y) {
         x = (float) Math.floor(x);
@@ -109,47 +112,11 @@ public class TestGraniteRenderer {
         if (immediateContext == null) {
             throw new RuntimeException();
         }
-        RecordingContext recordingContext = immediateContext.makeRecordingContext();
-
-        @SharedPtr
-        Surface_Granite surface;
-        @SharedPtr
-        var device = Device_Granite.make(
-                recordingContext,
-                ImageInfo.make(CANVAS_WIDTH, CANVAS_HEIGHT, ColorInfo.CT_RGBA_8888,
-                        ColorInfo.AT_PREMUL, ColorSpace.get(ColorSpace.Named.SRGB)),
-                ISurface.FLAG_SAMPLED_IMAGE | ISurface.FLAG_RENDERABLE | ISurface.FLAG_BUDGETED,
-                Engine.SurfaceOrigin.kLowerLeft,
-                Engine.LoadOp.kLoad,
-                "TestDevice"
-        );
-        Objects.requireNonNull(device);
-        surface = new Surface_Granite(device); // move
-
-        @SharedPtr
-        Image testImage = null;
-        {
-            int[] x = {0}, y = {0}, channels = {0};
-            var imgData = STBImage.stbi_load(
-                    "F:/119937433_p0.jpg",
-                    x, y, channels, 4
-            );
-            if (imgData != null) {
-                Pixmap testPixmap = new Pixmap(
-                        ImageInfo.make(x[0], y[0], ColorInfo.CT_RGBA_8888, ColorInfo.AT_UNPREMUL, null),
-                        null,
-                        MemoryUtil.memAddress(imgData),
-                        4 * x[0]
-                );
-                testImage = ImageUtils.makeFromPixmap(recordingContext,
-                        testPixmap,
-                        false,
-                        true,
-                        "TestLocalImage");
-                LOGGER.info("Loaded texture image {}", testImage);
-                STBImage.stbi_image_free(imgData);
-            }
-        }
+        TestDrawPass.glSetupDebugCallback();
+        Painter painter = CompletableFuture.supplyAsync(
+                () -> new Painter(immediateContext),
+                RECORDING_THREAD
+        ).join();
         /*for (int y = 0; y < 8; ++y) {
             for (int x = 0; x < 8; ++x) {
                 int m = (int) (Bayer8(x, y) * 64);
@@ -158,7 +125,6 @@ public class TestGraniteRenderer {
             System.out.println();
         }*/
 
-        Random random = new Random();
         /*double maxRadError = 0;
         boolean valid = true;
         for (int i = 0; i < 10000; i++) {
@@ -175,44 +141,183 @@ public class TestGraniteRenderer {
         }
         LOGGER.info("max rad error {}, valid {}",  maxRadError, valid);*/
 
-        /*GL11C.glClear(GL11C.GL_COLOR_BUFFER_BIT);
-        GLFW.glfwSwapBuffers(window);*/
-        TestDrawPass.glSetupDebugCallback();
+        int frame = 0;
+
+        while (!GLFW.glfwWindowShouldClose(window)) {
+
+            if (true) {
+                RootTask rootTask = CompletableFuture.supplyAsync(
+                        painter::paint,
+                        RECORDING_THREAD
+                ).join();
+
+                double time4 = GLFW.glfwGetTime();
+
+                if (!immediateContext.addTask(rootTask)) {
+                    LOGGER.error("Failed to add recording: {}", rootTask);
+                }
+                RefCnt.move(rootTask);
+
+                double time5 = GLFW.glfwGetTime();
+
+                GL33C.glBindFramebuffer(GL33C.GL_DRAW_FRAMEBUFFER, 0);
+                boolean filter = CANVAS_WIDTH == WINDOW_WIDTH && CANVAS_HEIGHT == WINDOW_HEIGHT;
+                GL33C.glBlitFramebuffer(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT,
+                        0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, GL33C.GL_COLOR_BUFFER_BIT,
+                        filter ? GL33C.GL_LINEAR : GL33C.GL_NEAREST);
+                if (!immediateContext.submit()) {
+                    LOGGER.error("Failed to submit queue");
+                }
+
+                double time6 = GLFW.glfwGetTime();
+
+                GLFW.glfwSwapBuffers(window);
+
+                double time7 = GLFW.glfwGetTime();
+                LOGGER.info("AddCommands: {}, Blit/Submit/CheckFence: {}, Swap: {}",
+                        formatMicroseconds(time5, time4),
+                        formatMicroseconds(time6, time5),
+                        formatMicroseconds(time7, time6));
+            }
+            frame++;
+
+            GLFW.glfwWaitEvents();
+        }
+        RECORDING_THREAD.submit(painter::close);
+        RECORDING_THREAD.shutdown();
+        try {
+            boolean terminated = RECORDING_THREAD.awaitTermination(5, TimeUnit.SECONDS);
+            LOGGER.info("Terminated painter {}", terminated);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        {
+            long rowStride = (long) CANVAS_WIDTH * 4;
+            long srcPixels = MemoryUtil.nmemAlloc(rowStride * CANVAS_HEIGHT);
+            long dstPixels = MemoryUtil.nmemAlloc(rowStride * CANVAS_HEIGHT);
+            GL33C.glReadPixels(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE, srcPixels);
+            // premul to unpremul, and flip Y
+            ImageInfo srcInfo = ImageInfo.make(CANVAS_WIDTH, CANVAS_HEIGHT,
+                    ColorInfo.CT_RGBA_8888, ColorInfo.AT_PREMUL, null);
+            ImageInfo dstInfo = srcInfo.makeAlphaType(ColorInfo.AT_UNPREMUL);
+            boolean res = PixelUtils.convertPixels(
+                    srcInfo, null, srcPixels, rowStride,
+                    dstInfo, null, dstPixels, rowStride,
+                    true
+            );
+            assert res;
+            MemoryUtil.nmemFree(srcPixels);
+            STBImageWrite.stbi_write_png_compression_level.put(0, 15);
+            STBImageWrite.stbi_write_png("test_granite.png", CANVAS_WIDTH, CANVAS_HEIGHT, 4,
+                    MemoryUtil.memByteBuffer(dstPixels, CANVAS_WIDTH * CANVAS_HEIGHT * 4), (int) rowStride);
+            MemoryUtil.nmemFree(dstPixels);
+        }
+        immediateContext.unref();
+        GLFW.glfwDestroyWindow(window);
+        GLFW.glfwTerminate();
+    }
+
+    public static String formatMicroseconds(double e, double st) {
+        return String.format("%.1f us", (e - st) * 1000000.0D);
+    }
+
+    public static class Painter {
+
+        final Random mRandom = new Random();
+
+        RecordingContext mContext;
+        @SharedPtr
+        Surface_Granite mSurface;
+        @SharedPtr
+        Image mTestImage = null;
+        @RawPtr
+        Device_Granite mDevice;
 
         @SharedPtr
-        Shader testShader1;
+        Shader mTestShader1;
         @SharedPtr
-        Shader testShader2;
+        Shader mTestShader2;
         @SharedPtr
-        Shader testShader3;
-        if (testImage != null) {
-            var scalingMatrix = new Matrix();
-            //scalingMatrix.setScaleTranslate(13, 13, 0, 0);
-            testShader1 = ImageShader.make(
-                    RefCnt.create(testImage),
-                    Shader.TILE_MODE_CLAMP,
-                    Shader.TILE_MODE_CLAMP,
-                    SamplingOptions.LINEAR,
-                    scalingMatrix);
-            testShader2 = ImageShader.make(
-                    RefCnt.create(testImage),
-                    Shader.TILE_MODE_CLAMP,
-                    Shader.TILE_MODE_CLAMP,
-                    SamplingOptions.MITCHELL,
-                    scalingMatrix);
-            testShader3 = ImageShader.make(
-                    RefCnt.create(testImage),
-                    Shader.TILE_MODE_CLAMP,
-                    Shader.TILE_MODE_CLAMP,
-                    SamplingOptions.CUBIC_BSPLINE,
-                    scalingMatrix);
-        } else {
-            testShader1 = new ColorShader(0xFF8888FF);
-            testShader2 = RefCnt.create(testShader1);
-            testShader3 = RefCnt.create(testShader1);
-        }
+        Shader mTestShader3;
+
         @SharedPtr
-        Shader gradShader;/* = AngularGradient.makeAngular(
+        Shader mGradShader;
+
+        SubRunContainer mSubRunContainer;
+
+        Vertices mVertices1;
+        Vertices mVertices2;
+
+        final ColorFilter[] mBlendModeColorFilters = new ColorFilter[BlendMode.COUNT];
+
+        public Painter(ImmediateContext immediateContext) {
+            mContext = immediateContext.makeRecordingContext();
+            {
+                @SharedPtr
+                var device = Device_Granite.make(
+                        mContext,
+                        ImageInfo.make(CANVAS_WIDTH, CANVAS_HEIGHT, ColorInfo.CT_RGBA_8888,
+                                ColorInfo.AT_PREMUL, ColorSpace.get(ColorSpace.Named.SRGB)),
+                        ISurface.FLAG_SAMPLED_IMAGE | ISurface.FLAG_RENDERABLE | ISurface.FLAG_BUDGETED,
+                        Engine.SurfaceOrigin.kLowerLeft,
+                        Engine.LoadOp.kLoad,
+                        "TestDevice"
+                );
+                Objects.requireNonNull(device);
+                mSurface = new Surface_Granite(device); // move
+                mDevice = device;
+            }
+
+            {
+                int[] x = {0}, y = {0}, channels = {0};
+                var imgData = STBImage.stbi_load(
+                        "F:/119937433_p0.jpg",
+                        x, y, channels, 4
+                );
+                if (imgData != null) {
+                    Pixmap testPixmap = new Pixmap(
+                            ImageInfo.make(x[0], y[0], ColorInfo.CT_RGBA_8888, ColorInfo.AT_UNPREMUL, null),
+                            null,
+                            MemoryUtil.memAddress(imgData),
+                            4 * x[0]
+                    );
+                    mTestImage = ImageUtils.makeFromPixmap(mContext,
+                            testPixmap,
+                            false,
+                            true,
+                            "TestLocalImage");
+                    LOGGER.info("Loaded texture image {}", mTestImage);
+                    STBImage.stbi_image_free(imgData);
+                }
+            }
+
+            if (mTestImage != null) {
+                var scalingMatrix = new Matrix();
+                //scalingMatrix.setScaleTranslate(13, 13, 0, 0);
+                mTestShader1 = ImageShader.make(
+                        RefCnt.create(mTestImage),
+                        Shader.TILE_MODE_CLAMP,
+                        Shader.TILE_MODE_CLAMP,
+                        SamplingOptions.LINEAR,
+                        scalingMatrix);
+                mTestShader2 = ImageShader.make(
+                        RefCnt.create(mTestImage),
+                        Shader.TILE_MODE_CLAMP,
+                        Shader.TILE_MODE_CLAMP,
+                        SamplingOptions.MITCHELL,
+                        scalingMatrix);
+                mTestShader3 = ImageShader.make(
+                        RefCnt.create(mTestImage),
+                        Shader.TILE_MODE_CLAMP,
+                        Shader.TILE_MODE_CLAMP,
+                        SamplingOptions.CUBIC_BSPLINE,
+                        scalingMatrix);
+            } else {
+                mTestShader1 = new ColorShader(0xFF8888FF);
+                mTestShader2 = RefCnt.create(mTestShader1);
+                mTestShader3 = RefCnt.create(mTestShader1);
+            }
+            /* = AngularGradient.makeAngular(
                 584, 534, 0, 360,
                 new float[]{
                         0.2f, 0.85f, 0.95f, 1,
@@ -229,145 +334,141 @@ public class TestGraniteRenderer {
                         GradientShader.Interpolation.kShorter_HueMethod),
                 null
         );*/
-        gradShader = LinearGradient.makeLinear(
-                400, 350, 800, 350,
-                new float[]{
-                        45 / 255f, 212 / 255f, 191 / 255f, 1,
-                        14 / 255f, 165 / 255f, 233 / 255f, 1},
-                ColorSpace.get(ColorSpace.Named.SRGB),
-                null,
-                2,
-                Shader.TILE_MODE_MIRROR,
-                GradientShader.Interpolation.make(false,
-                        GradientShader.Interpolation.kSRGBLinear_ColorSpace,
-                        GradientShader.Interpolation.kShorter_HueMethod),
-                null
-        );
-
-        Typeface_JDK typeface = new Typeface_JDK(
-                new java.awt.Font("STXingKai", java.awt.Font.PLAIN, 1));
-        SubRunContainer subRunContainer;
-        {
-            char[] text = "TeaCon甲辰".toCharArray();
-            var vector = typeface.getFont().deriveFont(80F).layoutGlyphVector(
-                    new FontRenderContext(null, true, false),
-                    text, 0, text.length, java.awt.Font.LAYOUT_LEFT_TO_RIGHT);
-            int nGlyphs = vector.getNumGlyphs();
-            int[] glyphs = vector.getGlyphCodes(0, nGlyphs, null);
-            float[] positions = vector.getGlyphPositions(0, nGlyphs, null);
-
-            LOGGER.info("Glyphs: {}", Arrays.toString(glyphs));
-
-            Font font = new Font();
-            font.setTypeface(typeface);
-            font.setSize(80);
-            font.setEdging(Font.kAntiAlias_Edging);
-
-            Paint paint = new Paint();
-            paint.setStyle(Paint.STROKE);
-            paint.setStrokeJoin(Paint.JOIN_MITER);
-            paint.setStrokeWidth(2);
-
-            GlyphRunBuilder builder = new GlyphRunBuilder();
-            subRunContainer = SubRunContainer.make(
-                    builder.setGlyphRunList(
-                            glyphs, 0,
-                            positions, 0,
-                            nGlyphs, font,
-                            400, 400,
-                            paint
-                    ),
-                    Matrix.identity(),
-                    paint,
-                    StrikeCache.getGlobalStrikeCache()
+            mGradShader = LinearGradient.makeLinear(
+                    400, 350, 800, 350,
+                    new float[]{
+                            45 / 255f, 212 / 255f, 191 / 255f, 1,
+                            14 / 255f, 165 / 255f, 233 / 255f, 1},
+                    ColorSpace.get(ColorSpace.Named.SRGB),
+                    null,
+                    2,
+                    Shader.TILE_MODE_MIRROR,
+                    GradientShader.Interpolation.make(false,
+                            GradientShader.Interpolation.kSRGBLinear_ColorSpace,
+                            GradientShader.Interpolation.kShorter_HueMethod),
+                    null
             );
-            LOGGER.info("SubRunContainer size: {}", subRunContainer.getMemorySize());
-        }
 
-        Vertices vertices1;
-        Vertices vertices2;
-        {
-            FloatBuffer sLinePoints = FloatBuffer.allocate(16);
-            IntBuffer sLineColors = IntBuffer.allocate(sLinePoints.capacity() / 2);
+            Typeface_JDK typeface = new Typeface_JDK(
+                    new java.awt.Font("STXingKai", java.awt.Font.PLAIN, 1));
+            {
+                char[] text = "TeaCon甲辰".toCharArray();
+                var vector = typeface.getFont().deriveFont(80F).layoutGlyphVector(
+                        new FontRenderContext(null, true, false),
+                        text, 0, text.length, java.awt.Font.LAYOUT_LEFT_TO_RIGHT);
+                int nGlyphs = vector.getNumGlyphs();
+                int[] glyphs = vector.getGlyphCodes(0, nGlyphs, null);
+                float[] positions = vector.getGlyphPositions(0, nGlyphs, null);
 
-            FloatBuffer sTrianglePoints = FloatBuffer.allocate(12);
-            IntBuffer sTriangleColors = IntBuffer.allocate(sTrianglePoints.capacity() / 2);
+                LOGGER.info("Glyphs: {}", Arrays.toString(glyphs));
 
-            sLinePoints
-                    .put(100).put(100)
-                    .put(110).put(200)
-                    .put(120).put(100)
-                    .put(130).put(300)
-                    .put(140).put(100)
-                    .put(150).put(400)
-                    .put(160).put(100)
-                    .put(170).put(500)
-                    .flip();
-            sLineColors
-                    .put(0xAAFF0000)
-                    .put(0xFFFF00FF)
-                    .put(0xAA0000FF)
-                    .put(0xFF00FF00)
-                    .put(0xAA00FFFF)
-                    .put(0xFF00FF00)
-                    .put(0xAAFFFF00)
-                    .put(0xFFFFFFFF)
-                    .flip();
-            sTrianglePoints
-                    .put(420).put(20)
-                    .put(420).put(100)
-                    .put(490).put(60)
-                    .put(300).put(130)
-                    .put(250).put(180)
-                    .put(350).put(180)
-                    .flip();
-            sTriangleColors
-                    .put(0xAAFF0000)
-                    .put(0xFFFF00FF)
-                    .put(0xAA0000FF)
-                    .put(0xAA00FFFF)
-                    .put(0xFF00FF00)
-                    .put(0xAAFFFF00)
-                    .flip();
+                Font font = new Font();
+                font.setTypeface(typeface);
+                font.setSize(80);
+                font.setEdging(Font.kAntiAlias_Edging);
 
-            vertices1 = Vertices.makeCopy(
-                    Vertices.kLines_VertexMode, sLinePoints, null, sLineColors, null
-                    );
-            vertices2 = Vertices.makeCopy(
-                    Vertices.kTriangles_VertexMode, sTrianglePoints, null, sTriangleColors, null
-            );
-        }
+                Paint paint = new Paint();
+                paint.setStyle(Paint.STROKE);
+                paint.setStrokeJoin(Paint.JOIN_MITER);
+                paint.setStrokeWidth(2);
 
-        ColorFilter[] blendModeColorFilters = new ColorFilter[BlendMode.COUNT];
-        {
-            float[] src = {33/255f, 150/255f, 243/255f, 204/255f};
-            for (int i = 0; i < BlendMode.COUNT; i++) {
-                blendModeColorFilters[i] = BlendModeColorFilter.make(
-                    src, null, BlendMode.modeAt(i)
+                GlyphRunBuilder builder = new GlyphRunBuilder();
+                mSubRunContainer = SubRunContainer.make(
+                        builder.setGlyphRunList(
+                                glyphs, 0,
+                                positions, 0,
+                                nGlyphs, font,
+                                400, 400,
+                                paint
+                        ),
+                        Matrix.identity(),
+                        paint,
+                        StrikeCache.getGlobalStrikeCache()
                 );
+                LOGGER.info("SubRunContainer size: {}", mSubRunContainer.getMemorySize());
+            }
+
+            {
+                FloatBuffer linePoints = FloatBuffer.allocate(16);
+                IntBuffer lineColors = IntBuffer.allocate(linePoints.capacity() / 2);
+
+                FloatBuffer trianglePoints = FloatBuffer.allocate(12);
+                IntBuffer triangleColors = IntBuffer.allocate(trianglePoints.capacity() / 2);
+
+                linePoints
+                        .put(100).put(100)
+                        .put(110).put(200)
+                        .put(120).put(100)
+                        .put(130).put(300)
+                        .put(140).put(100)
+                        .put(150).put(400)
+                        .put(160).put(100)
+                        .put(170).put(500)
+                        .flip();
+                lineColors
+                        .put(0xAAFF0000)
+                        .put(0xFFFF00FF)
+                        .put(0xAA0000FF)
+                        .put(0xFF00FF00)
+                        .put(0xAA00FFFF)
+                        .put(0xFF00FF00)
+                        .put(0xAAFFFF00)
+                        .put(0xFFFFFFFF)
+                        .flip();
+                trianglePoints
+                        .put(420).put(20)
+                        .put(420).put(100)
+                        .put(490).put(60)
+                        .put(300).put(130)
+                        .put(250).put(180)
+                        .put(350).put(180)
+                        .flip();
+                triangleColors
+                        .put(0xAAFF0000)
+                        .put(0xFFFF00FF)
+                        .put(0xAA0000FF)
+                        .put(0xAA00FFFF)
+                        .put(0xFF00FF00)
+                        .put(0xAAFFFF00)
+                        .flip();
+
+                mVertices1 = Vertices.makeCopy(
+                        Vertices.kLines_VertexMode, linePoints, null, lineColors, null
+                );
+                mVertices2 = Vertices.makeCopy(
+                        Vertices.kTriangles_VertexMode, trianglePoints, null, triangleColors, null
+                );
+            }
+
+            {
+                float[] src = {33 / 255f, 150 / 255f, 243 / 255f, 204 / 255f};
+                for (int i = 0; i < BlendMode.COUNT; i++) {
+                    mBlendModeColorFilters[i] = BlendModeColorFilter.make(
+                            src, null, BlendMode.modeAt(i)
+                    );
+                }
             }
         }
 
-        Paint paint = new Paint();
-        Canvas canvas = surface.getCanvas();
-        while (!GLFW.glfwWindowShouldClose(window)) {
+        public RootTask paint() {
+            Canvas canvas = mSurface.getCanvas();
+            Paint paint = new Paint();
 
             double time1 = GLFW.glfwGetTime();
 
             int nRects = 4000;
             canvas.clear(0xFF000000);
-            paint.reset();
             canvas.save();
             if (TEST_SCENE == 0) {
                 RoundRect rrect = new RoundRect();
                 for (int i = 0; i < nRects; i++) {
-                    int cx = random.nextInt(MAX_RECT_WIDTH / 2, CANVAS_WIDTH - MAX_RECT_WIDTH / 2);
-                    int cy = random.nextInt(MAX_RECT_HEIGHT / 2, CANVAS_HEIGHT - MAX_RECT_HEIGHT / 2);
-                    int w = (int) (random.nextDouble() * random.nextDouble() * random.nextDouble() * random.nextDouble() *
+                    int cx = mRandom.nextInt(MAX_RECT_WIDTH / 2, CANVAS_WIDTH - MAX_RECT_WIDTH / 2);
+                    int cy = mRandom.nextInt(MAX_RECT_HEIGHT / 2, CANVAS_HEIGHT - MAX_RECT_HEIGHT / 2);
+                    int w = (int) (mRandom.nextDouble() * mRandom.nextDouble() * mRandom.nextDouble() * mRandom.nextDouble() *
                             (MAX_RECT_WIDTH - MIN_RECT_WIDTH)) + MIN_RECT_WIDTH;
-                    int h = (int) (random.nextDouble() * random.nextDouble() * random.nextDouble() * random.nextDouble() *
+                    int h = (int) (mRandom.nextDouble() * mRandom.nextDouble() * mRandom.nextDouble() * mRandom.nextDouble() *
                             (MAX_RECT_HEIGHT - MIN_RECT_HEIGHT)) + MIN_RECT_HEIGHT;
-                    int rad = Math.min(random.nextInt(MAX_CORNER_RADIUS), Math.min(w, h) / 2);
+                    int rad = Math.min(mRandom.nextInt(MAX_CORNER_RADIUS), Math.min(w, h) / 2);
                     rrect.setRectXY(
                             cx - (int) Math.ceil(w / 2d),
                             cy - (int) Math.ceil(h / 2d),
@@ -375,10 +476,11 @@ public class TestGraniteRenderer {
                             cy + (int) Math.floor(h / 2d),
                             rad, rad
                     );
-                    int stroke = random.nextInt(50);
+                    int stroke = mRandom.nextInt(50);
                     paint.setStyle(stroke < 25 ? Paint.FILL : Paint.STROKE);
                     paint.setStrokeWidth((stroke - 20) * 2);
-                    paint.setRGBA(random.nextInt(256), random.nextInt(256), random.nextInt(256), random.nextInt(128));
+                    paint.setRGBA(mRandom.nextInt(256), mRandom.nextInt(256), mRandom.nextInt(256),
+                            mRandom.nextInt(128));
                     canvas.drawRoundRect(rrect, paint);
                 }
             } else if (TEST_SCENE == 1) {
@@ -389,7 +491,7 @@ public class TestGraniteRenderer {
                 paint.setStrokeWidth(10);
                 for (int i = 0; i < 3; i++) {
                     paint.setStrokeAlign(aligns[i]);
-                    paint.setRGBA(random.nextInt(256), random.nextInt(256), random.nextInt(256), 255);
+                    paint.setRGBA(mRandom.nextInt(256), mRandom.nextInt(256), mRandom.nextInt(256), 255);
                     canvas.drawRoundRect(rrect, paint);
                     canvas.translate(230, 0);
                     canvas.rotate(9);
@@ -398,14 +500,14 @@ public class TestGraniteRenderer {
                 rrect.getRect(rect);
                 //paint.setStrokeAlign(Paint.ALIGN_CENTER);
                 paint.setStrokeJoin(Paint.JOIN_MITER);
-                paint.setRGBA(random.nextInt(256), random.nextInt(256), random.nextInt(256), 255);
+                paint.setRGBA(mRandom.nextInt(256), mRandom.nextInt(256), mRandom.nextInt(256), 255);
                 canvas.drawRect(rect, paint);
                 Runnable lines = () -> {
-                    paint.setRGBA(random.nextInt(256), random.nextInt(256), random.nextInt(256), 255);
+                    paint.setRGBA(mRandom.nextInt(256), mRandom.nextInt(256), mRandom.nextInt(256), 255);
                     canvas.drawLine(300, 220 - 30, 20, 220, Paint.CAP_BUTT, 10f, paint);
-                    paint.setRGBA(random.nextInt(256), random.nextInt(256), random.nextInt(256), 255);
+                    paint.setRGBA(mRandom.nextInt(256), mRandom.nextInt(256), mRandom.nextInt(256), 255);
                     canvas.drawLine(300, 240 - 20, 20, 240, Paint.CAP_ROUND, 10f, paint);
-                    paint.setRGBA(random.nextInt(256), random.nextInt(256), random.nextInt(256), 255);
+                    paint.setRGBA(mRandom.nextInt(256), mRandom.nextInt(256), mRandom.nextInt(256), 255);
                     canvas.drawLine(300, 260 - 10, 20, 260, Paint.CAP_SQUARE, 10f, paint);
                 };
                 canvas.resetMatrix();
@@ -433,38 +535,40 @@ public class TestGraniteRenderer {
 
                 canvas.resetMatrix();
 
-                paint.setShader(RefCnt.create(testShader1));
+                paint.setRGBA(255, 255, 255, 255);
+                paint.setShader(RefCnt.create(mTestShader1));
                 paint.setStyle(Paint.FILL);
-                paint.setRGBA(random.nextInt(256), random.nextInt(256), random.nextInt(256), 255);
+                //paint.setRGBA(mRandom.nextInt(256), mRandom.nextInt(256), mRandom.nextInt(256), 255);
                 canvas.drawCircle(300, 300, 20, paint);
 
                 paint.setStyle(Paint.STROKE);
                 paint.setStrokeJoin(Paint.JOIN_BEVEL);
                 paint.setStrokeCap(Paint.CAP_SQUARE);
-                paint.setRGBA(random.nextInt(256), random.nextInt(256), random.nextInt(256), 255);
+                //paint.setRGBA(mRandom.nextInt(256), mRandom.nextInt(256), mRandom.nextInt(256), 255);
                 canvas.drawCircle(400, 300, 20, paint);
 
                 paint.setStrokeAlign(Paint.ALIGN_CENTER);
-                paint.setRGBA(random.nextInt(256), random.nextInt(256), random.nextInt(256), 255);
+                paint.setRGBA(mRandom.nextInt(256), mRandom.nextInt(256), mRandom.nextInt(256), 255);
 
                 float[] pts = new float[22];
                 pts[0] = 300;
                 pts[1] = 500;
                 for (int i = 2; i < pts.length; i += 2) {
-                    pts[i] = pts[i - 2] + random.nextFloat(30, 60);
-                    pts[i + 1] = random.nextFloat(450, 550);
+                    pts[i] = pts[i - 2] + mRandom.nextFloat(30, 60);
+                    pts[i + 1] = mRandom.nextFloat(450, 550);
                 }
                 paint.setStrokeCap(Paint.CAP_ROUND);
                 canvas.drawPoints(Canvas.POINT_MODE_POLYGON, pts, 0, 11, paint);
 
+                paint.setRGBA(255, 255, 255, 255);
                 canvas.drawCircle(500, 300, 20, paint);
 
                 paint.setStyle(Paint.FILL);
-                paint.setShader(RefCnt.create(gradShader));
+                paint.setShader(RefCnt.create(mGradShader));
                 paint.setDither(true);
                 rrect.setRectXY(100, 650, 1500, 950, 30, 30);
                 canvas.drawRoundRect(rrect, paint);
-                subRunContainer.draw(canvas, 400, 400, paint, device);
+                mSubRunContainer.draw(canvas, 400, 400, paint, mDevice);
 
                 //canvas.scale(4, 4, 1100, 300);
 
@@ -489,7 +593,7 @@ public class TestGraniteRenderer {
 
                 paint.setDither(false);
 
-                paint.setShader(RefCnt.create(testShader1));
+                paint.setShader(RefCnt.create(mTestShader1));
                 paint.setStyle(Paint.FILL);
                 var mat = Matrix4.identity();
                 mat.setTranslate(1000, 100, 0);
@@ -499,8 +603,8 @@ public class TestGraniteRenderer {
 
                 paint.setShader(null);
                 canvas.translate(-1000, 0);
-                canvas.drawVertices(vertices1, BlendMode.MULTIPLY, paint);
-                canvas.drawVertices(vertices2, BlendMode.MULTIPLY, paint);
+                canvas.drawVertices(mVertices1, BlendMode.MULTIPLY, paint);
+                canvas.drawVertices(mVertices2, BlendMode.MULTIPLY, paint);
 
                 paint.setARGB(255, 233, 30, 99);
                 rect.set(0, 0, 16, 16);
@@ -511,9 +615,9 @@ public class TestGraniteRenderer {
                         } else {
                             paint.setColor(0xFFFFFFFF);
                         }*/
-                        paint.setColorFilter(RefCnt.create(blendModeColorFilters[j*14+i]));
-                        rect.offsetTo(400 + i * 24 + random.nextInt(6),
-                                450 + j * 24 + random.nextInt(6));
+                        paint.setColorFilter(RefCnt.create(mBlendModeColorFilters[j * 14 + i]));
+                        rect.offsetTo(400 + i * 24 + mRandom.nextInt(6),
+                                450 + j * 24 + mRandom.nextInt(6));
                         canvas.drawRect(rect, paint);
                     }
                 }
@@ -526,16 +630,16 @@ public class TestGraniteRenderer {
                 rect.mRight = wid - 2;
                 paint.setStyle(Paint.FILL);
 
-                paint.setShader(RefCnt.create(testShader1));
+                paint.setShader(RefCnt.create(mTestShader1));
                 float scale = (float) (1 + 0.1 * Math.sin(System.currentTimeMillis() / 1000.0 * 2.0));
                 canvas.scale(scale, scale);
                 canvas.drawRect(rect, paint);
 
-                paint.setShader(RefCnt.create(testShader2));
+                paint.setShader(RefCnt.create(mTestShader2));
                 canvas.translate(wid, 0);
                 canvas.drawRect(rect, paint);
 
-                paint.setShader(RefCnt.create(testShader3));
+                paint.setShader(RefCnt.create(mTestShader3));
                 canvas.translate(wid, 0);
                 canvas.drawRect(rect, paint);
             }
@@ -543,85 +647,38 @@ public class TestGraniteRenderer {
 
             double time2 = GLFW.glfwGetTime();
 
-            surface.flush();
+            mSurface.flush();
 
             double time3 = GLFW.glfwGetTime();
 
-            RootTask rootTask = recordingContext.snap();
+            RootTask rootTask = mContext.snap();
 
             double time4 = GLFW.glfwGetTime();
 
-            if (!immediateContext.addTask(rootTask)) {
-                LOGGER.error("Failed to add recording: {}", rootTask);
-            }
-            RefCnt.move(rootTask);
+            paint.close();
 
-            double time5 = GLFW.glfwGetTime();
-
-            GL33C.glBindFramebuffer(GL33C.GL_DRAW_FRAMEBUFFER, 0);
-            boolean filter = CANVAS_WIDTH == WINDOW_WIDTH && CANVAS_HEIGHT == WINDOW_HEIGHT;
-            GL33C.glBlitFramebuffer(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT,
-                    0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, GL33C.GL_COLOR_BUFFER_BIT,
-                    filter ? GL33C.GL_LINEAR : GL33C.GL_NEAREST);
-            if (!immediateContext.submit()) {
-                LOGGER.error("Failed to submit queue");
-            }
-
-            double time6 = GLFW.glfwGetTime();
-
-            GLFW.glfwSwapBuffers(window);
-            GLFW.glfwWaitEvents();
-
-            double time7 = GLFW.glfwGetTime();
-            /*LOGGER.info("Painting: {}, CreateRenderPass: {}, CreateFrameTask: {}, AddCommands: {}, " +
-                            "Blit/Submit/CheckFence: {}, Swap/Event: {}",
+            LOGGER.info("Painting: {}, CreateRenderPass: {}, CreateFrameTask: {}",
                     formatMicroseconds(time2, time1),
                     formatMicroseconds(time3, time2),
-                    formatMicroseconds(time4, time3),
-                    formatMicroseconds(time5, time4),
-                    formatMicroseconds(time6, time5),
-                    formatMicroseconds(time7, time6));*/
-        }
-        paint.close();
-        testShader1 = RefCnt.move(testShader1);
-        testShader2 = RefCnt.move(testShader2);
-        testShader3 = RefCnt.move(testShader3);
-        gradShader = RefCnt.move(gradShader);
-        testImage = RefCnt.move(testImage);
-        for (int i = 0; i < BlendMode.COUNT; i++) {
-            blendModeColorFilters[i] = RefCnt.move(blendModeColorFilters[i]);
-        }
-        blendModeColorFilters = null;
+                    formatMicroseconds(time4, time3));
 
-        {
-            long rowStride = (long) CANVAS_WIDTH * 4;
-            long srcPixels = MemoryUtil.nmemAlloc(rowStride * CANVAS_HEIGHT);
-            long dstPixels = MemoryUtil.nmemAlloc(rowStride * CANVAS_HEIGHT);
-            GL33C.glReadPixels(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE, srcPixels);
-            // premul to unpremul, and flip Y
-            ImageInfo srcInfo = ImageInfo.make(CANVAS_WIDTH, CANVAS_HEIGHT,
-                    ColorInfo.CT_RGBA_8888, ColorInfo.AT_PREMUL, null);
-            ImageInfo dstInfo = srcInfo.makeAlphaType(ColorInfo.AT_UNPREMUL);
-            boolean res = PixelUtils.convertPixels(
-                    srcInfo, null, srcPixels, rowStride,
-                    dstInfo, null, dstPixels, rowStride,
-                    true
-            );
-            assert res;
-            MemoryUtil.nmemFree(srcPixels);
-            STBImageWrite.stbi_write_png_compression_level.put(0, 15);
-            STBImageWrite.stbi_write_png("test_granite.png", CANVAS_WIDTH, CANVAS_HEIGHT, 4,
-                    MemoryUtil.memByteBuffer(dstPixels, CANVAS_WIDTH * CANVAS_HEIGHT * 4), (int) rowStride);
-            MemoryUtil.nmemFree(dstPixels);
+            return rootTask;
         }
-        surface = RefCnt.move(surface);
-        recordingContext.unref();
-        immediateContext.unref();
-        GLFW.glfwDestroyWindow(window);
-        GLFW.glfwTerminate();
-    }
 
-    public static String formatMicroseconds(double e, double st) {
-        return String.format("%.1f us", (e - st) * 1000000.0D);
+        public void close() {
+            mTestShader1 = RefCnt.move(mTestShader1);
+            mTestShader2 = RefCnt.move(mTestShader2);
+            mTestShader3 = RefCnt.move(mTestShader3);
+            mGradShader = RefCnt.move(mGradShader);
+            mTestImage = RefCnt.move(mTestImage);
+            for (int i = 0; i < BlendMode.COUNT; i++) {
+                mBlendModeColorFilters[i] = RefCnt.move(mBlendModeColorFilters[i]);
+            }
+
+            mSurface = RefCnt.move(mSurface);
+            mContext.unref();
+
+            LOGGER.info("Closed painter");
+        }
     }
 }
