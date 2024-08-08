@@ -43,7 +43,7 @@ public class SubRunContainer {
         SubRun mNext;
 
         public abstract void draw(Canvas canvas, float originX, float originY,
-                                  Paint paint, Device_Granite device);
+                                  Paint paint, GraniteDevice device);
 
         public abstract long getMemorySize();
     }
@@ -85,7 +85,7 @@ public class SubRunContainer {
 
         @Override
         public void draw(Canvas canvas, float originX, float originY,
-                         Paint paint, Device_Granite device) {
+                         Paint paint, GraniteDevice device) {
             device.drawAtlasSubRun(this, originX, originY, paint);
         }
 
@@ -654,7 +654,7 @@ public class SubRunContainer {
     }
 
     public void draw(Canvas canvas, float originX, float originY,
-                     Paint paint, Device_Granite device) {
+                     Paint paint, GraniteDevice device) {
         for (var subRun = mHead; subRun != null; subRun = subRun.mNext) {
             subRun.draw(canvas, originX, originY, paint, device);
         }

@@ -118,7 +118,7 @@ public class ImageUtils {
 
     @Nullable
     @SharedPtr
-    public static Image_Engine makeFromPixmap(
+    public static GraniteImage makeFromPixmap(
             RecordingContext context,
             Pixmap pixmap,
             boolean mipmapped,
@@ -130,7 +130,7 @@ public class ImageUtils {
             return null;
         }
 
-        return new Image_Engine(
+        return new GraniteImage(
                 context,
                 result.first(),     // move
                 result.rightInt(),  // new color type

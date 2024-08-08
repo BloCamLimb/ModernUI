@@ -28,7 +28,7 @@ import javax.annotation.Nullable;
 import java.util.Arrays;
 
 /**
- * Used by {@link Device_Granite}
+ * Used by {@link GraniteDevice}
  */
 public final class SurfaceDrawContext implements AutoCloseable {
 
@@ -169,9 +169,9 @@ public final class SurfaceDrawContext implements AutoCloseable {
     }
 
     /**
-     * @param clearColor premultiplied color, null means (0,0,0,0)
+     * @param clearColor premultiplied RGBA color, null means (0,0,0,0)
      */
-    public void clear(float[] clearColor) {
+    public void clear(@Nullable float[] clearColor) {
         discard();
 
         mPendingLoadOp = Engine.LoadOp.kClear;

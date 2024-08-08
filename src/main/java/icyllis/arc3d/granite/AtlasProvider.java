@@ -55,7 +55,11 @@ public class AtlasProvider implements AutoCloseable {
         }
     }
 
-    public void postFlush() {
-        mGlyphAtlasManager.postFlush();
+    public void compact() {
+        mGlyphAtlasManager.compact();
+    }
+
+    public void invalidateAtlases() {
+        mGlyphAtlasManager.evictAtlases();
     }
 }
