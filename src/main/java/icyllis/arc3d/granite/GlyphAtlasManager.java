@@ -199,7 +199,7 @@ public class GlyphAtlasManager extends DrawAtlas.AtlasGenerationCounter
         return true;
     }
 
-    public void evictAllAtlases() {
+    public void evictAtlases() {
         for (var atlas : mAtlases) {
             if (atlas != null) {
                 atlas.evictAllPlots();
@@ -207,7 +207,7 @@ public class GlyphAtlasManager extends DrawAtlas.AtlasGenerationCounter
         }
     }
 
-    public void postFlush() {
+    public void compact() {
         var tokenTracker = mContext.getAtlasTokenTracker();
         for (var atlas : mAtlases) {
             if (atlas != null) {

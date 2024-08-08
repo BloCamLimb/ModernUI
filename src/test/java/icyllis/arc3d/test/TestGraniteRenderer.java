@@ -227,11 +227,11 @@ public class TestGraniteRenderer {
 
         RecordingContext mContext;
         @SharedPtr
-        Surface_Granite mSurface;
+        Surface mSurface;
         @SharedPtr
         Image mTestImage = null;
         @RawPtr
-        Device_Granite mDevice;
+        GraniteDevice mDevice;
 
         @SharedPtr
         Shader mTestShader1;
@@ -254,7 +254,7 @@ public class TestGraniteRenderer {
             mContext = immediateContext.makeRecordingContext();
             {
                 @SharedPtr
-                var device = Device_Granite.make(
+                var device = GraniteDevice.make(
                         mContext,
                         ImageInfo.make(CANVAS_WIDTH, CANVAS_HEIGHT, ColorInfo.CT_RGBA_8888,
                                 ColorInfo.AT_PREMUL, ColorSpace.get(ColorSpace.Named.SRGB)),
@@ -264,7 +264,7 @@ public class TestGraniteRenderer {
                         "TestDevice"
                 );
                 Objects.requireNonNull(device);
-                mSurface = new Surface_Granite(device); // move
+                mSurface = new GraniteSurface(device); // move
                 mDevice = device;
             }
 
@@ -647,20 +647,15 @@ public class TestGraniteRenderer {
 
             double time2 = GLFW.glfwGetTime();
 
-            mSurface.flush();
+            RootTask rootTask = mContext.snap();
 
             double time3 = GLFW.glfwGetTime();
 
-            RootTask rootTask = mContext.snap();
-
-            double time4 = GLFW.glfwGetTime();
-
             paint.close();
 
-            LOGGER.info("Painting: {}, CreateRenderPass: {}, CreateFrameTask: {}",
+            LOGGER.info("Painting: {}, CreateRenderPass/CreateRootTask: {}",
                     formatMicroseconds(time2, time1),
-                    formatMicroseconds(time3, time2),
-                    formatMicroseconds(time4, time3));
+                    formatMicroseconds(time3, time2));
 
             return rootTask;
         }

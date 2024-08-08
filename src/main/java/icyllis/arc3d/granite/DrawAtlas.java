@@ -746,14 +746,14 @@ public class DrawAtlas implements AutoCloseable {
      * Adds a width x height sub-image to the atlas. Upon success, it returns {@link #RESULT_SUCCESS}
      * and returns the plot location and the sub-image's coordinates in the backing texture.
      * {@link #RESULT_TRY_AGAIN} is returned if the sub-image cannot fit in the atlas without overwriting
-     * texels that will be read in the current list of draws. This indicates that the {@link Device_Granite}
+     * texels that will be read in the current list of draws. This indicates that the {@link GraniteDevice}
      * should end its current draw, snap a {@link DrawPass}, and begin another before adding more data.
      * {@link #RESULT_FAILURE} will be returned when some unrecoverable error was encountered while trying
      * to add the sub-image. In this case the draw being created should be discarded.
      * <p>
      * This tracking does not generate {@link ImageUploadTask UploadTasks} per se. Instead, when the
      * {@link RenderPassTask} is ready to be snapped, {@link #recordUploads}
-     * will be called by the {@link Device_Granite} and that will generate the necessary
+     * will be called by the {@link GraniteDevice} and that will generate the necessary
      * {@link ImageUploadTask UploadTasks}.
      * <p>
      * NOTE: When a draw that reads from the atlas is added to the DrawList, the client using this

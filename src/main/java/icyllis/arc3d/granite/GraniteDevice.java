@@ -36,21 +36,25 @@ import java.util.function.BiConsumer;
 /**
  * The device that is backed by GPU.
  */
-public final class Device_Granite extends icyllis.arc3d.core.Device {
+public final class GraniteDevice extends icyllis.arc3d.core.Device {
 
-    private final RecordingContext mContext;
+    // raw pointer
+    private RecordingContext mRC;
+    // unique ref
     private SurfaceDrawContext mSDC;
-    private ClipStack mClipStack;
 
+    private final ClipStack mClipStack;
     private final ObjectArrayList<ClipStack.Element> mElementsForMask = new ObjectArrayList<>();
 
     private int mCurrentDepth;
 
     private final BoundsManager mBoundsManager;
 
-    private Device_Granite(RecordingContext context, SurfaceDrawContext sdc) {
+    private final Paint mSubRunPaint = new Paint();
+
+    private GraniteDevice(RecordingContext rc, SurfaceDrawContext sdc) {
         super(sdc.getImageInfo());
-        mContext = context;
+        mRC = rc;
         mSDC = sdc;
         mClipStack = new ClipStack(this);
         /*mBoundsManager = GridBoundsManager.makeRes(
@@ -63,12 +67,12 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
 
     @Nullable
     @SharedPtr
-    public static Device_Granite make(RecordingContext rContext,
-                                      ImageInfo deviceInfo,
-                                      int surfaceFlags,
-                                      int origin,
-                                      byte initialLoadOp,
-                                      String label) {
+    public static GraniteDevice make(RecordingContext rContext,
+                                     ImageInfo deviceInfo,
+                                     int surfaceFlags,
+                                     int origin,
+                                     byte initialLoadOp,
+                                     String label) {
         if (rContext == null) {
             return null;
         }
@@ -109,11 +113,12 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
         return make(rContext, targetView, deviceInfo, initialLoadOp);
     }
 
+    @Nullable
     @SharedPtr
-    public static Device_Granite make(RecordingContext context,
-                                      @SharedPtr ImageViewProxy targetView,
-                                      ImageInfo deviceInfo,
-                                      byte initialLoadOp) {
+    public static GraniteDevice make(RecordingContext context,
+                                     @SharedPtr ImageViewProxy targetView,
+                                     ImageInfo deviceInfo,
+                                     byte initialLoadOp) {
         if (context == null) {
             return null;
         }
@@ -128,13 +133,42 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
             sdc.discard();
         }
 
-        return new Device_Granite(context, sdc);
+        @SharedPtr
+        GraniteDevice device = new GraniteDevice(context, sdc);
+        context.trackDevice(RefCnt.create(device));
+        return device;
     }
 
     @Override
     protected void deallocate() {
         super.deallocate();
         mSDC.close();
+        mSDC = null;
+        assert mRC == null;
+    }
+
+    public void setImmutable() {
+        if (mRC != null) {
+            // Push any pending work to the RC now. setImmutable() is only called by the
+            // destructor of a client-owned Surface, or explicitly in layer/filtering workflows. In
+            // both cases this is restricted to the RC's thread. This is in contrast to deallocate(),
+            // which might be called from another thread if it was linked to an Image used in multiple
+            // recorders.
+            flushPendingWork();
+            mRC.untrackDevice(this);
+            // Discarding the RC ensures that there are no further operations that can be recorded
+            // and is relied on by Image::notifyInUse() to detect when it can unlink from a Device.
+            discardRC();
+        }
+    }
+
+    public void discardRC() {
+        mRC = null;
+    }
+
+    @Nullable
+    public RecordingContext getRecordingContext() {
+        return mRC;
     }
 
     @Override
@@ -236,19 +270,19 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
         var shape = new SimpleShape();
         shape.setLine(x0, y0, x1, y1, cap, width);
         drawGeometry(getLocalToDevice(), shape, SimpleShape::getBounds, paint,
-                mContext.getRendererProvider().getSimpleBox(paint.isAntiAlias()), null);
+                mRC.getRendererProvider().getSimpleBox(paint.isAntiAlias()), null);
     }
 
     @Override
     public void drawRect(Rect2fc r, Paint paint) {
         drawGeometry(getLocalToDevice(), new SimpleShape(r), SimpleShape::getBounds, paint,
-                mContext.getRendererProvider().getSimpleBox(paint.isAntiAlias()), null);
+                mRC.getRendererProvider().getSimpleBox(paint.isAntiAlias()), null);
     }
 
     @Override
     public void drawRoundRect(RoundRect rr, Paint paint) {
         drawGeometry(getLocalToDevice(), new SimpleShape(rr), SimpleShape::getBounds, paint,
-                mContext.getRendererProvider().getSimpleBox(paint.isAntiAlias()), null);
+                mRC.getRendererProvider().getSimpleBox(paint.isAntiAlias()), null);
     }
 
     @Override
@@ -256,7 +290,7 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
         var shape = new SimpleShape();
         shape.setEllipseXY(cx, cy, radius, radius);
         drawGeometry(getLocalToDevice(), shape, SimpleShape::getBounds, paint,
-                mContext.getRendererProvider().getSimpleBox(paint.isAntiAlias()), null);
+                mRC.getRendererProvider().getSimpleBox(paint.isAntiAlias()), null);
     }
 
     @Override
@@ -270,7 +304,7 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
             default -> throw new AssertionError();
         };
         drawGeometry(getLocalToDevice(), shape, ArcShape::getBounds, paint,
-                mContext.getRendererProvider().getArc(shape.mType), null);
+                mRC.getRendererProvider().getArc(shape.mType), null);
     }
 
     @Override
@@ -279,7 +313,7 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
         var shape = new ArcShape(cx, cy, radius, startAngle, sweepAngle, 0);
         shape.mType = ArcShape.kPie_Type;
         drawGeometry(getLocalToDevice(), shape, ArcShape::getBounds, paint,
-                mContext.getRendererProvider().getArc(shape.mType), null);
+                mRC.getRendererProvider().getArc(shape.mType), null);
     }
 
     @Override
@@ -288,7 +322,7 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
         var shape = new ArcShape(cx, cy, radius, startAngle, sweepAngle, 0);
         shape.mType = ArcShape.kChord_Type;
         drawGeometry(getLocalToDevice(), shape, ArcShape::getBounds, paint,
-                mContext.getRendererProvider().getArc(shape.mType), null);
+                mRC.getRendererProvider().getArc(shape.mType), null);
     }
 
     @Override
@@ -325,7 +359,7 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
     @Override
     public void drawVertices(Vertices vertices, @SharedPtr Blender blender, Paint paint) {
         drawGeometry(getLocalToDevice(), vertices, Vertices::getBounds, paint,
-                mContext.getRendererProvider().getVertices(
+                mRC.getRendererProvider().getVertices(
                         vertices.getVertexMode(), vertices.hasColors(), vertices.hasTexCoords()),
                 blender); // move
     }
@@ -334,18 +368,18 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
                                 float originX, float originY,
                                 Paint paint) {
         int maskFormat = subRun.getMaskFormat();
-        if (!mContext.getAtlasProvider().getGlyphAtlasManager().initAtlas(
+        if (!mRC.getAtlasProvider().getGlyphAtlasManager().initAtlas(
                 maskFormat
         )) {
             return;
         }
 
         int subRunEnd = subRun.getGlyphCount();
-        Paint subRunPaint = new Paint();
+        Paint subRunPaint = mSubRunPaint;
         boolean flushed = false;
         for (int subRunCursor = 0; subRunCursor < subRunEnd; ) {
             int glyphsPrepared = subRun.prepareGlyphs(subRunCursor, subRunEnd,
-                    mContext);
+                    mRC);
             if (glyphsPrepared < 0) {
                 // There was a problem allocating the glyph in the atlas.
                 break;
@@ -366,7 +400,7 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
                 subRunPaint.setStyle(Paint.FILL);
 
                 drawGeometry(subRunToDevice, subRunData, SubRunData::getBounds, paint,
-                        mContext.getRendererProvider().getRasterText(maskFormat),
+                        mRC.getRendererProvider().getRasterText(maskFormat),
                         BlendMode.DST_IN);
             } else if (flushed) {
                 // Treat as an error.
@@ -377,13 +411,13 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
             if (subRunCursor < subRunEnd) {
                 // Flush if not all the glyphs are handled because the atlas is out of space.
                 // We flush every Device because the glyphs that are being flushed/referenced are not
-                // necessarily specific to this Device. This addresses both multiple SkSurfaces within
+                // necessarily specific to this Device. This addresses both multiple Surfaces within
                 // a Recorder, and nested layers.
-                //TODO
+                mRC.flushTrackedDevices();
                 flushed = true;
             }
         }
-        subRunPaint.close();
+        subRunPaint.reset();
     }
 
     private static boolean blender_depends_on_dst(Blender blender,
@@ -525,25 +559,30 @@ public final class Device_Granite extends icyllis.arc3d.core.Device {
     /**
      * Ensures clip elements are drawn that will clip previous draw calls, snaps all pending work
      * from the {@link SurfaceDrawContext} as a {@link RenderPassTask} and records it in the
-     * {@link Device_Granite}'s {@link RecordingContext}.
+     * {@link GraniteDevice}'s {@link RecordingContext}.
      */
     public void flushPendingWork() {
-        mContext.getAtlasProvider().recordUploads(mSDC);
+        assert mRC.isOwnerThread();
+        // Push any pending uploads from the atlas provider that pending draws reference.
+        mRC.getAtlasProvider().recordUploads(mSDC);
 
         // Clip shapes are depth-only draws, but aren't recorded in the DrawContext until a flush in
         // order to determine the Z values for each element.
         mClipStack.recordDeferredClipDraws();
 
         // Flush all pending items to the internal task list and reset Device tracking state
-        mSDC.flush(mContext);
+        mSDC.flush(mRC);
 
         mBoundsManager.clear();
         mCurrentDepth = DrawOrder.MIN_VALUE;
 
-        DrawTask drawTask = mSDC.snapDrawTask(mContext);
+        // Any cleanup in the AtlasProvider
+        mRC.getAtlasProvider().compact();
+
+        DrawTask drawTask = mSDC.snapDrawTask(mRC);
 
         if (drawTask != null) {
-            mContext.addTask(drawTask);
+            mRC.addTask(drawTask);
         }
     }
 }

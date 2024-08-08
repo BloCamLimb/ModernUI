@@ -28,12 +28,12 @@ import javax.annotation.Nullable;
 /**
  * The surface that is backed by GPU.
  */
-public final class Surface_Granite extends icyllis.arc3d.core.Surface {
+public final class GraniteSurface extends icyllis.arc3d.core.Surface {
 
     @SharedPtr
-    private Device_Granite mDevice;
+    private GraniteDevice mDevice;
 
-    public Surface_Granite(@SharedPtr Device_Granite device) {
+    public GraniteSurface(@SharedPtr GraniteDevice device) {
         super(device.width(), device.height());
         mDevice = device;
     }
@@ -41,6 +41,10 @@ public final class Surface_Granite extends icyllis.arc3d.core.Surface {
     @Override
     protected void deallocate() {
         super.deallocate();
+        // Mark the device immutable when the Surface is destroyed to flush any pending work to the
+        // recorder and to flag the device so that any linked image views can detach from the Device
+        // when they are next drawn.
+        mDevice.setImmutable();
         mDevice = RefCnt.move(mDevice);
     }
 
