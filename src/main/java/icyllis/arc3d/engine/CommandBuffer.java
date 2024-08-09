@@ -163,23 +163,35 @@ public abstract class CommandBuffer {
      */
     public abstract void endRenderPass();
 
-    // Can only be used outside render passes
-    public final boolean copyBufferToBuffer(@RawPtr Buffer srcBuffer,
+    /**
+     * Performs a buffer-to-buffer copy.
+     * <p>
+     * Can only be used outside render passes.
+     * <p>
+     * The caller must track resources if success.
+     */
+    public final boolean copyBuffer(@RawPtr Buffer srcBuffer,
+                                    @RawPtr Buffer dstBuffer,
+                                    long srcOffset,
+                                    long dstOffset,
+                                    long size) {
+        assert srcBuffer != null && dstBuffer != null;
+        return onCopyBuffer(srcBuffer, dstBuffer, srcOffset, dstOffset, size);
+    }
+
+    protected abstract boolean onCopyBuffer(@RawPtr Buffer srcBuffer,
                                             @RawPtr Buffer dstBuffer,
                                             long srcOffset,
                                             long dstOffset,
-                                            long size) {
-        assert srcBuffer != null && dstBuffer != null;
-        return onCopyBufferToBuffer(srcBuffer, dstBuffer, srcOffset, dstOffset, size);
-    }
+                                            long size);
 
-    protected abstract boolean onCopyBufferToBuffer(@RawPtr Buffer srcBuffer,
-                                                    @RawPtr Buffer dstBuffer,
-                                                    long srcOffset,
-                                                    long dstOffset,
-                                                    long size);
-
-    // Can only be used outside render passes
+    /**
+     * Performs a buffer-to-image copy.
+     * <p>
+     * Can only be used outside render passes.
+     * <p>
+     * The caller must track resources if success.
+     */
     public final boolean copyBufferToImage(@RawPtr Buffer srcBuffer,
                                            @RawPtr Image dstImage,
                                            int srcColorType,
@@ -198,6 +210,38 @@ public abstract class CommandBuffer {
                                                    int srcColorType,
                                                    int dstColorType,
                                                    BufferImageCopyData[] copyData);
+
+    /**
+     * Perform an image-to-image copy, with the specified regions. Scaling is
+     * not allowed.
+     * <p>
+     * If their dimensions are same and formats are compatible, then this method will
+     * attempt to perform copy. Otherwise, this method will attempt to perform blit,
+     * which may include format conversion.
+     * <p>
+     * Only mipmap level <var>level</var> of 2D images will be copied, without any
+     * multisampled buffer and depth/stencil buffer.
+     * <p>
+     * Can only be used outside render passes.
+     * <p>
+     * The caller must track resources if success.
+     *
+     * @return success or not
+     */
+    public final boolean copyImage(@RawPtr Image srcImage,
+                                   int srcL, int srcT, int srcR, int srcB,
+                                   @RawPtr Image dstImage,
+                                   int dstX, int dstY,
+                                   int mipLevel) {
+        assert srcImage != null && dstImage != null;
+        return onCopyImage(srcImage, srcL, srcT, srcR, srcB, dstImage, dstX, dstY, mipLevel);
+    }
+
+    protected abstract boolean onCopyImage(@RawPtr Image srcImage,
+                                           int srcL, int srcT, int srcR, int srcB,
+                                           @RawPtr Image dstImage,
+                                           int dstX, int dstY,
+                                           int mipLevel);
 
     /**
      * Takes a Usage ref on the Resource that will be released when the command buffer

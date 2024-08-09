@@ -23,18 +23,18 @@ import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.*;
 
-public class CopyBufferToBufferTask extends Task {
+public class CopyBufferTask extends Task {
 
     @SharedPtr
     private Buffer mSrcBuffer;
     @SharedPtr
     private Buffer mDstBuffer;
-    private long mSrcOffset;
-    private long mDstOffset;
-    private long mSize;
+    private final long mSrcOffset;
+    private final long mDstOffset;
+    private final long mSize;
 
-    CopyBufferToBufferTask(@SharedPtr Buffer srcBuffer, @SharedPtr Buffer dstBuffer,
-                           long srcOffset, long dstOffset, long size) {
+    CopyBufferTask(@SharedPtr Buffer srcBuffer, @SharedPtr Buffer dstBuffer,
+                   long srcOffset, long dstOffset, long size) {
         mSrcBuffer = srcBuffer;
         mDstBuffer = dstBuffer;
         mSrcOffset = srcOffset;
@@ -43,13 +43,13 @@ public class CopyBufferToBufferTask extends Task {
     }
 
     @SharedPtr
-    public static CopyBufferToBufferTask make(@SharedPtr Buffer srcBuffer, @SharedPtr Buffer dstBuffer,
-                                              long srcOffset, long dstOffset, long size) {
+    public static CopyBufferTask make(@SharedPtr Buffer srcBuffer, @SharedPtr Buffer dstBuffer,
+                                      long srcOffset, long dstOffset, long size) {
         assert (srcBuffer != null);
         assert (size <= srcBuffer.getSize() - srcOffset);
         assert (dstBuffer != null);
         assert (size <= dstBuffer.getSize() - dstOffset);
-        return new CopyBufferToBufferTask(srcBuffer, dstBuffer, srcOffset, dstOffset, size);
+        return new CopyBufferTask(srcBuffer, dstBuffer, srcOffset, dstOffset, size);
     }
 
     @Override
@@ -65,7 +65,7 @@ public class CopyBufferToBufferTask extends Task {
 
     @Override
     public int execute(ImmediateContext context, CommandBuffer commandBuffer) {
-        if (commandBuffer.copyBufferToBuffer(mSrcBuffer, mDstBuffer,
+        if (commandBuffer.copyBuffer(mSrcBuffer, mDstBuffer,
                 mSrcOffset, mDstOffset, mSize)) {
             commandBuffer.trackResource(RefCnt.create(mSrcBuffer));
             commandBuffer.trackResource(RefCnt.create(mDstBuffer));

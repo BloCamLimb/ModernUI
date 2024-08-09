@@ -21,7 +21,7 @@ package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.engine.task.CopyBufferToBufferTask;
+import icyllis.arc3d.engine.task.CopyBufferTask;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 import static org.lwjgl.system.MemoryUtil.NULL;
@@ -84,7 +84,7 @@ public class StaticBufferManager {
                 data.mTarget.mOffset = offset;
 
                 assert data.mSource.mSize == data.mTarget.mSize;
-                var copyTask = CopyBufferToBufferTask.make(
+                var copyTask = CopyBufferTask.make(
                         RefCnt.create(data.mSource.mBuffer), RefCnt.create(data.mTarget.mBuffer),
                         data.mSource.mOffset, data.mTarget.mOffset,
                         data.mSource.mSize);

@@ -118,14 +118,6 @@ public final class GLTexture extends GLImage {
         return mHandle;
     }
 
-    public int getTarget() {
-        return getGLDesc().mTarget;
-    }
-
-    public int getFormat() {
-        return getGLDesc().mFormat;
-    }
-
     @Override
     protected void onSetLabel(@Nullable String label) {
         getDevice().executeRenderCall(dev -> {

@@ -20,8 +20,8 @@
 package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.engine.Context;
-import icyllis.arc3d.engine.ImageViewProxy;
+import icyllis.arc3d.engine.*;
+import icyllis.arc3d.engine.task.CopyImageTask;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -43,6 +43,61 @@ public final class GraniteImage extends icyllis.arc3d.core.Image {
                 colorType, alphaType, colorSpace));
         mContext = context;
         mImageViewProxy = view;
+    }
+
+    @Nullable
+    @SharedPtr
+    public static GraniteImage copy(@RawPtr RecordingContext rc,
+                                    @RawPtr ImageViewProxy srcView,
+                                    @Nonnull ImageInfo srcInfo,
+                                    @Nonnull Rect2ic subset,
+                                    boolean budgeted,
+                                    boolean mipmapped,
+                                    boolean approxFit,
+                                    @Nullable String label) {
+        assert !(mipmapped && approxFit);
+        if (srcView == null) {
+            return null;
+        }
+
+        assert (new Rect2i(0, 0, srcInfo.width(), srcInfo.height()).contains(subset));
+
+        int width = subset.width();
+        int height = subset.height();
+        if (approxFit) {
+            width = ISurface.getApproxSize(width);
+            height = ISurface.getApproxSize(height);
+        }
+        var dstDesc = rc.getCaps().getImageDescForSampledCopy(
+                srcView.getDesc(), width, height, 1,
+                mipmapped ? ISurface.FLAG_MIPMAPPED : 0
+        );
+
+        @SharedPtr
+        ImageViewProxy dst = ImageViewProxy.make(
+                rc, dstDesc, srcView.getOrigin(), srcView.getSwizzle(),
+                budgeted, label
+        );
+        if (dst == null) {
+            return null;
+        }
+
+        @SharedPtr
+        CopyImageTask copyTask = CopyImageTask.make(
+                RefCnt.create(srcView),
+                subset,
+                RefCnt.create(dst),
+                0, 0, 0
+        );
+        if (copyTask == null) {
+            RefCnt.move(dst);
+            return null;
+        }
+
+        rc.addTask(copyTask); // move
+
+        return new GraniteImage(rc, dst, // move
+                srcInfo.colorType(), srcInfo.alphaType(), srcInfo.colorSpace());
     }
 
     @Override
@@ -84,7 +139,7 @@ public final class GraniteImage extends icyllis.arc3d.core.Image {
 
     @Override
     public String toString() {
-        return "Image_Engine{" +
+        return "GraniteImage{" +
                 "mContext=" + mContext +
                 ", mImageViewProxy=" + mImageViewProxy +
                 '}';

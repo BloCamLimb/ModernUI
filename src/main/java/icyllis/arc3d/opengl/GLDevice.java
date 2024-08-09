@@ -704,6 +704,105 @@ public final class GLDevice extends Device {
         return true;
     }
 
+    /**
+     * Perform an image-to-image copy, with the specified regions. Scaling is
+     * not allowed.
+     * <p>
+     * If their dimensions are same and formats are compatible, then this method will
+     * attempt to perform copy. Otherwise, this method will attempt to perform blit,
+     * which may include format conversion.
+     * <p>
+     * Only mipmap level <var>level</var> of 2D images will be copied, without any
+     * multisampled buffer and depth/stencil buffer.
+     *
+     * @return success or not
+     */
+    public boolean copyImage(@RawPtr GLImage src,
+                             int srcL, int srcT, int srcR, int srcB,
+                             @RawPtr GLImage dst,
+                             int dstX, int dstY,
+                             int level) {
+        int srcWidth = srcR - srcL;
+        int srcHeight = srcB - srcT;
+
+        // no scaling
+        if (mCaps.hasCopyImageSupport() &&
+                mCaps.canCopyImage(
+                        src.getFormat(), 1,
+                        dst.getFormat(), 1
+                )) {
+            //TODO checks
+            glCopyImageSubData(
+                    src.getHandle(),
+                    src.getTarget(),
+                    level,
+                    srcL, srcT, 0,
+                    dst.getHandle(),
+                    dst.getTarget(),
+                    level,
+                    dstX, dstY, 0,
+                    srcWidth, srcHeight, 1
+            );
+            return true;
+        }
+
+        if (src.getTarget() == GL_TEXTURE_2D &&
+                dst.getTarget() == GL_TEXTURE_2D &&
+                mCaps.canCopyTexSubImage(
+                        src.getFormat(),
+                        dst.getFormat()
+                )) {
+
+            int framebuffer = mCopySrcFramebuffer;
+            if (framebuffer == 0) {
+                mCopySrcFramebuffer = framebuffer = getGL().glGenFramebuffers();
+            }
+            if (framebuffer == 0) {
+                return false;
+            }
+
+            int dstTexName = dst.getHandle();
+            int boundTexture = glGetInteger(GL_TEXTURE_BINDING_2D);
+            if (dstTexName != boundTexture) {
+                getGL().glBindTexture(GL_TEXTURE_2D, dstTexName);
+            }
+
+            int boundFramebuffer = glGetInteger(GL_READ_FRAMEBUFFER_BINDING);
+            getGL().glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer);
+            glFramebufferTexture(
+                    GL_READ_FRAMEBUFFER,
+                    GL_COLOR_ATTACHMENT0,
+                    src.getHandle(),
+                    level
+            );
+
+            glCopyTexSubImage2D(
+                    GL_TEXTURE_2D,
+                    level,
+                    dstX, dstY,
+                    srcL, srcT,
+                    srcWidth, srcHeight
+            );
+
+            glFramebufferTexture(
+                    GL_READ_FRAMEBUFFER,
+                    GL_COLOR_ATTACHMENT0,
+                    0,
+                    0);
+            getGL().glBindFramebuffer(GL_READ_FRAMEBUFFER, boundFramebuffer);
+
+            if (dstTexName != boundTexture) {
+                getGL().glBindTexture(GL_TEXTURE_2D, boundTexture);
+            }
+
+            return true;
+        }
+
+        //TODO
+
+        return false;
+    }
+
     @Override
     protected boolean onCopySurface(GpuSurface src,
                                     int srcL, int srcT, int srcR, int srcB,

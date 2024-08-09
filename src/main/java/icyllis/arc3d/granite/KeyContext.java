@@ -19,15 +19,15 @@
 
 package icyllis.arc3d.granite;
 
-import icyllis.arc3d.core.ColorSpace;
-import icyllis.arc3d.core.ImageInfo;
+import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.RecordingContext;
 
 import javax.annotation.Nullable;
 
 public class KeyContext {
 
-    private final RecordingContext mContext;
+    @RawPtr
+    private final RecordingContext mRC;
     private final ImageInfo mTargetInfo;
     // color components using non-premultiplied alpha
     private float mR; // 0..1
@@ -35,9 +35,9 @@ public class KeyContext {
     private float mB; // 0..1
     private float mA; // 0..1
 
-    public KeyContext(RecordingContext context,
+    public KeyContext(@RawPtr RecordingContext rc,
                       ImageInfo targetInfo) {
-        mContext = context;
+        mRC = rc;
         mTargetInfo = targetInfo;
     }
 
@@ -61,9 +61,10 @@ public class KeyContext {
     /**
      * Raw ptr to context, null when pre-compiling shaders.
      */
+    @RawPtr
     @Nullable
-    public RecordingContext getContext() {
-        return mContext;
+    public RecordingContext getRC() {
+        return mRC;
     }
 
     /**
