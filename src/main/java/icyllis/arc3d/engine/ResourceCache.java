@@ -325,8 +325,6 @@ public final class ResourceCache implements AutoCloseable {
                 break;
             }
 
-            //TODO we must delete framebuffers if one of their attachments is deleted
-            // especially important for OpenGL, this can be done via WeakRef
             purgeResource(resource);
         }
     }
@@ -346,7 +344,7 @@ public final class ResourceCache implements AutoCloseable {
      * containing persistent data are skipped. Otherwise, all free resources older than
      * <code>timeMillis</code> will be deleted.
      *
-     * @param timeMillis  the resources older than this time will be deleted
+     * @param timeMillis the resources older than this time will be deleted
      */
     public void purgeFreeResourcesOlderThan(long timeMillis) {
 

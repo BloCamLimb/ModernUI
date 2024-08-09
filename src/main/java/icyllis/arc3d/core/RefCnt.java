@@ -19,6 +19,8 @@
 
 package icyllis.arc3d.core;
 
+import org.jetbrains.annotations.ApiStatus;
+
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.util.Comparator;
@@ -174,5 +176,6 @@ public abstract class RefCnt implements RefCounted {
     /**
      * Override this method to invoke de-allocation of the underlying resource.
      */
+    @ApiStatus.OverrideOnly
     protected abstract void deallocate();
 }

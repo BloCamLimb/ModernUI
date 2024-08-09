@@ -20,14 +20,20 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.RawPtr;
+import icyllis.arc3d.core.UniqueID;
 import org.jetbrains.annotations.ApiStatus;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.annotation.concurrent.Immutable;
+import java.lang.ref.WeakReference;
+import java.util.Objects;
 
 /**
  * Descriptor to create a framebuffer.
  */
 //TODO experimental, to be reviewed
+@Immutable
 public final class FramebufferDesc {
 
     /**
@@ -54,33 +60,207 @@ public final class FramebufferDesc {
     public static final
     int FLAG_VK_WRAP_SECONDARY_CB = ISurface.FLAG_PROTECTED << 6;
 
-    public static class ColorAttachmentDesc {
+    @Immutable
+    public static final class ColorAttachmentDesc {
         @Nullable
-        public @RawPtr Image mAttachment;
+        public final WeakReference<@RawPtr Image> mAttachment;
         @Nullable
-        public @RawPtr Image mResolveAttachment;
-        public int mMipLevel;
-        public int mArraySlice;
+        public final WeakReference<@RawPtr Image> mResolveAttachment;
+        @Nullable
+        public final UniqueID mAttachmentID;
+        @Nullable
+        public final UniqueID mResolveAttachmentID;
+        public final int mMipLevel;
+        public final int mArraySlice;
+
+        public ColorAttachmentDesc() {
+            mAttachment = null;
+            mAttachmentID = null;
+            mResolveAttachment = null;
+            mResolveAttachmentID = null;
+            mMipLevel = 0;
+            mArraySlice = 0;
+        }
+
+        public ColorAttachmentDesc(@Nullable @RawPtr Image attachment,
+                                   @Nullable @RawPtr Image resolveAttachment,
+                                   int mipLevel, int arraySlice) {
+            if (attachment != null) {
+                mAttachment = new WeakReference<>(attachment);
+                mAttachmentID = attachment.getUniqueID();
+            } else {
+                mAttachment = null;
+                mAttachmentID = null;
+            }
+            if (resolveAttachment != null) {
+                mResolveAttachment = new WeakReference<>(resolveAttachment);
+                mResolveAttachmentID = resolveAttachment.getUniqueID();
+            } else {
+                mResolveAttachment = null;
+                mResolveAttachmentID = null;
+            }
+            assert mipLevel >= 0 && arraySlice >= 0;
+            mMipLevel = mipLevel;
+            mArraySlice = arraySlice;
+        }
+
+        @SuppressWarnings("DataFlowIssue")
+        public boolean isStale() {
+            return (mAttachmentID != null && mAttachment.get() == null) ||
+                    (mResolveAttachmentID != null && mResolveAttachment.get() == null);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = Objects.hashCode(mAttachmentID);
+            result = 31 * result + Objects.hashCode(mResolveAttachmentID);
+            result = 31 * result + mMipLevel;
+            result = 31 * result + mArraySlice;
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o instanceof ColorAttachmentDesc that) {
+                return mMipLevel == that.mMipLevel &&
+                        mArraySlice == that.mArraySlice &&
+                        mAttachmentID == that.mAttachmentID &&
+                        mResolveAttachmentID == that.mResolveAttachmentID;
+            }
+            return false;
+        }
     }
 
-    public int mNumColorAttachments;
-    public final ColorAttachmentDesc[] mColorAttachments =
-            new ColorAttachmentDesc[Caps.MAX_COLOR_TARGETS];
+    @Nonnull
+    public final ColorAttachmentDesc[] mColorAttachments;
 
-    public static class DepthStencilAttachmentDesc {
+    public static final ColorAttachmentDesc[] NO_COLOR_ATTACHMENTS = new ColorAttachmentDesc[0];
+
+    @Immutable
+    public static final class DepthStencilAttachmentDesc {
         @Nullable
-        public @RawPtr Image mAttachment;
+        public final WeakReference<@RawPtr Image> mAttachment;
+        @Nullable
+        public final UniqueID mAttachmentID;
+
+        public DepthStencilAttachmentDesc() {
+            mAttachment = null;
+            mAttachmentID = null;
+        }
+
+        public DepthStencilAttachmentDesc(@Nullable @RawPtr Image attachment) {
+            if (attachment != null) {
+                mAttachment = new WeakReference<>(attachment);
+                mAttachmentID = attachment.getUniqueID();
+            } else {
+                mAttachment = null;
+                mAttachmentID = null;
+            }
+        }
+
+        @SuppressWarnings("DataFlowIssue")
+        public boolean isStale() {
+            return (mAttachmentID != null && mAttachment.get() == null);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(mAttachmentID);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o instanceof DepthStencilAttachmentDesc that) {
+                return mAttachmentID == that.mAttachmentID;
+            }
+            return false;
+        }
     }
 
-    public final DepthStencilAttachmentDesc mDepthStencilAttachment =
-            new DepthStencilAttachmentDesc();
+    @Nonnull
+    public final DepthStencilAttachmentDesc mDepthStencilAttachment;
+
+    public static final DepthStencilAttachmentDesc NO_DEPTH_STENCIL_ATTACHMENT = new DepthStencilAttachmentDesc();
 
     /**
      * If there are any attachments, then framebuffer bounds must be the intersection of
      * all attachment bounds.
      */
-    public int mWidth, mHeight;
+    public final int mWidth, mHeight;
     //TODO TBD reserved for future use
-    public int mSampleCount;
+    public final int mSampleCount;
+    //TODO WIP
     public int mFramebufferFlags;
+
+    public FramebufferDesc(int width, int height, int sampleCount,
+                           @Nullable ColorAttachmentDesc colorAttachment,
+                           @Nullable DepthStencilAttachmentDesc depthStencilAttachment) {
+        this(width, height, sampleCount,
+                colorAttachment != null ? new ColorAttachmentDesc[]{colorAttachment} : null,
+                depthStencilAttachment);
+    }
+
+    public FramebufferDesc(int width, int height, int sampleCount,
+                           @Nullable ColorAttachmentDesc[] colorAttachments,
+                           @Nullable DepthStencilAttachmentDesc depthStencilAttachment) {
+        mWidth = width;
+        mHeight = height;
+        mSampleCount = sampleCount;
+        mColorAttachments = colorAttachments != null
+                ? colorAttachments
+                : NO_COLOR_ATTACHMENTS;
+        mDepthStencilAttachment = depthStencilAttachment != null
+                ? depthStencilAttachment
+                : NO_DEPTH_STENCIL_ATTACHMENT;
+        assert mColorAttachments.length <= Caps.MAX_COLOR_TARGETS;
+        for (var colorAttachment : mColorAttachments) {
+            assert colorAttachment != null;
+        }
+    }
+
+    /**
+     * Should the framebuffer keyed by this be deleted now? Used to delete framebuffers
+     * if one of the attachments has already been deleted.
+     *
+     * @return true to delete, false to keep
+     */
+    public boolean isStale() {
+        for (var colorAttachment : mColorAttachments)
+            if (colorAttachment.isStale())
+                return true;
+        return mDepthStencilAttachment.isStale();
+    }
+
+    @Override
+    public int hashCode() {
+        int result = mWidth;
+        result = 31 * result + mHeight;
+        result = 31 * result + mSampleCount;
+        for (var colorAttachment : mColorAttachments) {
+            result = 31 * result + colorAttachment.hashCode();
+        }
+        result = 31 * result + mDepthStencilAttachment.hashCode();
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o instanceof FramebufferDesc that) {
+            if (mWidth == that.mWidth &&
+                    mHeight == that.mHeight &&
+                    mSampleCount == that.mSampleCount &&
+                    mColorAttachments.length == that.mColorAttachments.length &&
+                    mDepthStencilAttachment.equals(that.mDepthStencilAttachment)) {
+                for (int i = 0; i < mColorAttachments.length; i++) {
+                    if (!mColorAttachments[i].equals(that.mColorAttachments[i]))
+                        return false;
+                }
+                return true;
+            }
+        }
+        return false;
+    }
 }
