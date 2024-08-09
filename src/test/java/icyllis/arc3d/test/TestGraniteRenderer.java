@@ -141,11 +141,12 @@ public class TestGraniteRenderer {
         }
         LOGGER.info("max rad error {}, valid {}",  maxRadError, valid);*/
 
-        int frame = 0;
+        long frame = 0;
 
         while (!GLFW.glfwWindowShouldClose(window)) {
 
             if (true) {
+                @SharedPtr
                 RootTask rootTask = CompletableFuture.supplyAsync(
                         painter::paint,
                         RECORDING_THREAD
@@ -174,7 +175,7 @@ public class TestGraniteRenderer {
                 GLFW.glfwSwapBuffers(window);
 
                 double time7 = GLFW.glfwGetTime();
-                LOGGER.info("AddCommands: {}, Blit/Submit/CheckFence: {}, Swap: {}",
+                LOGGER.info("AddCommands: {}, Blit/Submit: {}, Swap: {}",
                         formatMicroseconds(time5, time4),
                         formatMicroseconds(time6, time5),
                         formatMicroseconds(time7, time6));
@@ -225,14 +226,18 @@ public class TestGraniteRenderer {
 
         final Random mRandom = new Random();
 
-        RecordingContext mContext;
+        @SharedPtr
+        RecordingContext mRC;
         @SharedPtr
         Surface mSurface;
-        @SharedPtr
-        Image mTestImage = null;
         @RawPtr
         GraniteDevice mDevice;
 
+        @SharedPtr
+        Surface mPostSurface;
+
+        @SharedPtr
+        Image mTestImage = null;
         @SharedPtr
         Shader mTestShader1;
         @SharedPtr
@@ -251,22 +256,32 @@ public class TestGraniteRenderer {
         final ColorFilter[] mBlendModeColorFilters = new ColorFilter[BlendMode.COUNT];
 
         public Painter(ImmediateContext immediateContext) {
-            mContext = immediateContext.makeRecordingContext();
+            mRC = immediateContext.makeRecordingContext();
             {
                 @SharedPtr
                 var device = GraniteDevice.make(
-                        mContext,
+                        mRC,
                         ImageInfo.make(CANVAS_WIDTH, CANVAS_HEIGHT, ColorInfo.CT_RGBA_8888,
                                 ColorInfo.AT_PREMUL, ColorSpace.get(ColorSpace.Named.SRGB)),
                         ISurface.FLAG_SAMPLED_IMAGE | ISurface.FLAG_RENDERABLE | ISurface.FLAG_BUDGETED,
                         Engine.SurfaceOrigin.kLowerLeft,
                         Engine.LoadOp.kLoad,
-                        "TestDevice"
+                        "TestDevice",
+                        true
                 );
                 Objects.requireNonNull(device);
                 mSurface = new GraniteSurface(device); // move
                 mDevice = device;
             }
+            mPostSurface = GraniteSurface.makeRenderTarget(
+                    mRC,
+                    ImageInfo.make(CANVAS_WIDTH, CANVAS_HEIGHT, ColorInfo.CT_RGBA_8888,
+                            ColorInfo.AT_PREMUL, ColorSpace.get(ColorSpace.Named.SRGB)),
+                    false,
+                    Engine.SurfaceOrigin.kLowerLeft,
+                    "TestDevice2"
+            );
+            Objects.requireNonNull(mPostSurface);
 
             {
                 int[] x = {0}, y = {0}, channels = {0};
@@ -281,7 +296,7 @@ public class TestGraniteRenderer {
                             MemoryUtil.memAddress(imgData),
                             4 * x[0]
                     );
-                    mTestImage = ImageUtils.makeFromPixmap(mContext,
+                    mTestImage = ImageUtils.makeFromPixmap(mRC,
                             testPixmap,
                             false,
                             true,
@@ -450,15 +465,11 @@ public class TestGraniteRenderer {
             }
         }
 
-        public RootTask paint() {
-            Canvas canvas = mSurface.getCanvas();
-            Paint paint = new Paint();
-
-            double time1 = GLFW.glfwGetTime();
-
-            int nRects = 4000;
-            canvas.clear(0xFF000000);
+        private void drawScene(Canvas canvas) {
+            final int nRects = 4000;
+            canvas.clear(0x00000000);
             canvas.save();
+            Paint paint = new Paint();
             if (TEST_SCENE == 0) {
                 RoundRect rrect = new RoundRect();
                 for (int i = 0; i < nRects; i++) {
@@ -643,19 +654,39 @@ public class TestGraniteRenderer {
                 canvas.translate(wid, 0);
                 canvas.drawRect(rect, paint);
             }
+            paint.close();
             canvas.restore();
+        }
+
+        public RootTask paint() {
+            double time1 = GLFW.glfwGetTime();
+
+            @SharedPtr
+            Image snapshot;
+            {
+                Canvas canvas = mSurface.getCanvas();
+                drawScene(canvas);
+                snapshot = mSurface.makeImageSnapshot();
+            }
+            if (snapshot != null) {
+                Canvas canvas = mPostSurface.getCanvas();
+                canvas.clear(0xFF000000);
+                Paint paint = new Paint();
+                paint.setAlphaF(0.5f);
+                paint.setDither(true);
+                canvas.drawImage(snapshot, 0, 0, SamplingOptions.LINEAR, paint);
+                paint.close();
+                snapshot.unref();
+            } else {
+                LOGGER.error("Failed to create image snapshot");
+            }
+
+            RootTask rootTask = mRC.snap();
 
             double time2 = GLFW.glfwGetTime();
 
-            RootTask rootTask = mContext.snap();
-
-            double time3 = GLFW.glfwGetTime();
-
-            paint.close();
-
-            LOGGER.info("Painting: {}, CreateRenderPass/CreateRootTask: {}",
-                    formatMicroseconds(time2, time1),
-                    formatMicroseconds(time3, time2));
+            LOGGER.info("Painting: {}",
+                    formatMicroseconds(time2, time1));
 
             return rootTask;
         }
@@ -670,8 +701,9 @@ public class TestGraniteRenderer {
                 mBlendModeColorFilters[i] = RefCnt.move(mBlendModeColorFilters[i]);
             }
 
+            mPostSurface = RefCnt.move(mPostSurface);
             mSurface = RefCnt.move(mSurface);
-            mContext.unref();
+            mRC = RefCnt.move(mRC);
 
             LOGGER.info("Closed painter");
         }

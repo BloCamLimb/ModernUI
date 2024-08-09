@@ -20,6 +20,7 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.RawPtr;
+import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.task.Task;
 import icyllis.arc3d.granite.RendererProvider;
 import icyllis.arc3d.granite.StaticBufferManager;
@@ -73,6 +74,7 @@ public final class ImmediateContext extends Context {
     }
 
     @Nullable
+    @SharedPtr
     public RecordingContext makeRecordingContext() {
         RecordingContext rContext = new RecordingContext(mDevice);
         if (rContext.init()) {

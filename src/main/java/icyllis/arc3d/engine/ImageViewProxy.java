@@ -509,6 +509,10 @@ public final class ImageViewProxy extends RefCnt {
         return mDesc.isMipmapped();
     }
 
+    public String getLabel() {
+        return mLabel;
+    }
+
     @Override
     public String toString() {
         return "ImageViewProxy{" +

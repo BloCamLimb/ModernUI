@@ -700,6 +700,14 @@ public abstract class Caps {
         return null;
     }
 
+    @Nullable
+    public ImageDesc getImageDescForSampledCopy(ImageDesc src,
+                                                int width, int height,
+                                                int depthOrArraySize,
+                                                int imageFlags) {
+        return null;
+    }
+
     /**
      * These are used when creating a new texture internally.
      */

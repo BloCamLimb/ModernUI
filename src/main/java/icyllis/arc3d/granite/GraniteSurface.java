@@ -20,7 +20,8 @@
 package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.engine.RecordingContext;
+import icyllis.arc3d.core.Image;
+import icyllis.arc3d.engine.*;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -36,6 +37,74 @@ public final class GraniteSurface extends icyllis.arc3d.core.Surface {
     public GraniteSurface(@SharedPtr GraniteDevice device) {
         super(device.width(), device.height());
         mDevice = device;
+    }
+
+    @Nullable
+    @SharedPtr
+    static GraniteSurface make(RecordingContext rc,
+                               ImageInfo info,
+                               boolean budgeted,
+                               boolean mipmapped,
+                               boolean approxFit,
+                               int surfaceOrigin,
+                               byte initialLoadOp,
+                               String label,
+                               boolean trackDevice) {
+        int flags = 0;
+        if (budgeted) {
+            flags |= ISurface.FLAG_BUDGETED;
+        }
+        if (mipmapped) {
+            flags |= ISurface.FLAG_MIPMAPPED;
+        }
+        if (approxFit) {
+            flags |= ISurface.FLAG_APPROX_FIT;
+        }
+        @SharedPtr
+        GraniteDevice device = GraniteDevice.make(
+                rc, info, flags, surfaceOrigin, initialLoadOp, label, trackDevice
+        );
+        if (device == null) {
+            return null;
+        }
+        // A non-budgeted surface should be fully instantiated before we return it
+        // to the client.
+        assert (budgeted || device.getReadView().isInstantiated());
+        return new GraniteSurface(device); // move
+    }
+
+    @Nullable
+    @SharedPtr
+    public static GraniteSurface make(RecordingContext rc,
+                                      ImageInfo info,
+                                      boolean budgeted,
+                                      boolean mipmapped,
+                                      boolean approxFit,
+                                      int surfaceOrigin,
+                                      String label) {
+        return make(rc, info, budgeted, mipmapped, approxFit,
+                surfaceOrigin, Engine.LoadOp.kClear, label, true);
+    }
+
+    /**
+     * While clients hold a ref on a Surface, the backing gpu object does <em>not</em>
+     * count against the budget. Once a Surface is freed, the backing gpu object may or may
+     * not become a scratch (i.e., reusable) resource but, if it does, it will be counted against
+     * the budget.
+     */
+    @Nullable
+    @SharedPtr
+    public static GraniteSurface makeRenderTarget(RecordingContext rc,
+                                                  @Nonnull ImageInfo info,
+                                                  boolean mipmapped,
+                                                  int surfaceOrigin,
+                                                  @Nullable String label) {
+        if (label == null) {
+            label = "SurfaceRenderTarget";
+        }
+        // non-budgeted, exact device
+        return make(rc, info, false, mipmapped, false,
+                surfaceOrigin, label);
     }
 
     @Override
@@ -66,14 +135,23 @@ public final class GraniteSurface extends icyllis.arc3d.core.Surface {
     @Nullable
     @Override
     protected Image onNewImageSnapshot(@Nullable Rect2ic subset) {
-        //TODO
-        return null;
+        return makeImageCopy(subset, mDevice.getReadView().isMipmapped());
     }
 
     @Override
     protected boolean onCopyOnWrite(int changeMode) {
         // onNewImageSnapshot() always copy, no-op here
         return true;
+    }
+
+    @Nullable
+    @SharedPtr
+    public GraniteImage makeImageCopy(@Nullable Rect2ic subset, boolean mipmapped) {
+        assert !hasCachedImage();
+        if (subset == null) {
+            subset = new Rect2i(0,0,getWidth(),getHeight());
+        }
+        return mDevice.makeImageCopy(subset, false, mipmapped, false);
     }
 
     @Override

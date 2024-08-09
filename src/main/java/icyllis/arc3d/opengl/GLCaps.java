@@ -24,6 +24,7 @@ import icyllis.arc3d.core.MathUtil;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
 import icyllis.arc3d.engine.trash.PipelineKey_old;
+import org.lwjgl.system.NativeType;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -972,7 +973,7 @@ public class GLCaps extends Caps {
         var workarounds = mDriverBugWorkarounds;
     }
 
-    FormatInfo getFormatInfo(int format) {
+    FormatInfo getFormatInfo(@NativeType("GLenum") int format) {
         return mFormatTable[GLUtil.glFormatToIndex(format)];
     }
 
@@ -1266,6 +1267,32 @@ public class GLCaps extends Caps {
                 depthStencilFormat, width, height, 1, 1, 1, sampleCount, imageFlags);
     }
 
+    @Nullable
+    @Override
+    public ImageDesc getImageDescForSampledCopy(ImageDesc src,
+                                                int width, int height,
+                                                int depthOrArraySize,
+                                                int imageFlags) {
+        if (!(src instanceof GLImageDesc glSrc)) {
+            return null;
+        }
+        //TODO
+        final int maxSize = maxTextureSize();
+        if (width > maxSize || height > maxSize) {
+            return null;
+        }
+        int mipLevelCount;
+        int maxMipLevels = DataUtils.computeMipLevelCount(width, height, 1);
+        mipLevelCount = (imageFlags & ISurface.FLAG_MIPMAPPED) != 0
+                ? maxMipLevels
+                : 1; // only base level
+        return new GLImageDesc(
+                GL_TEXTURE_2D, glSrc.getGLFormat(),
+                width, height, 1, 1,
+                mipLevelCount, 1, imageFlags | ISurface.FLAG_SAMPLED_IMAGE
+        );
+    }
+
     @Override
     public boolean onFormatCompatible(int colorType, BackendFormat format) {
         FormatInfo formatInfo = getFormatInfo(format.getGLFormat());
@@ -1501,8 +1528,8 @@ public class GLCaps extends Caps {
                 dstColorType, srcColorType);
     }
 
-    public boolean canCopyImage(int srcFormat, int srcSampleCount,
-                                int dstFormat, int dstSampleCount) {
+    public boolean canCopyImage(@NativeType("GLenum") int srcFormat, int srcSampleCount,
+                                @NativeType("GLenum") int dstFormat, int dstSampleCount) {
         if (!mCopyImageSupport) {
             return false;
         }
@@ -1520,7 +1547,8 @@ public class GLCaps extends Caps {
         return false;
     }
 
-    public boolean canCopyTexSubImage(int srcFormat, int dstFormat) {
+    public boolean canCopyTexSubImage(@NativeType("GLenum") int srcFormat,
+                                      @NativeType("GLenum") int dstFormat) {
         // channels should be compatible
         if (getFormatDefaultExternalType(dstFormat) !=
                 getFormatDefaultExternalType(srcFormat)) {

@@ -196,17 +196,13 @@ public final class GLRenderbuffer extends GLImage {
         super.onRelease();
     }
 
-    public int getFormat() {
-        return getGLDesc().mFormat;
-    }
-
     public int getHandle() {
         return mRenderbuffer;
     }
 
     @Override
     public String toString() {
-        return "GLAttachment{" +
+        return "GLRenderbuffer{" +
                 "mRenderbuffer=" + mRenderbuffer +
                 ", mMemorySize=" + getMemorySize() +
                 '}';

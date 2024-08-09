@@ -2360,10 +2360,10 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
      * @param src rect to map from
      * @param dst rect to map to
      */
-    public boolean setRectToRect(Rect2fc src, Rect2fc dst) {
+    public void setRectToRect(Rect2fc src, Rect2fc dst) {
         if (src.isEmpty()) {
             setIdentity();
-            return false;
+            return;
         }
 
         if (dst.isEmpty()) {
@@ -2384,7 +2384,6 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
             float ty = dst.top() - src.top() * sy;
             setScaleTranslate(sx, sy, tx, ty);
         }
-        return true;
     }
 
     /**

@@ -26,12 +26,12 @@ import icyllis.arc3d.engine.*;
  */
 public class AtlasProvider implements AutoCloseable {
 
-    private final RecordingContext mContext;
+    private final RecordingContext mRC;
     private GlyphAtlasManager mGlyphAtlasManager;
 
-    public AtlasProvider(RecordingContext context) {
-        mContext = context;
-        mGlyphAtlasManager = new GlyphAtlasManager(context);
+    public AtlasProvider(RecordingContext rc) {
+        mRC = rc;
+        mGlyphAtlasManager = new GlyphAtlasManager(rc);
     }
 
     @Override
@@ -51,7 +51,7 @@ public class AtlasProvider implements AutoCloseable {
 
     public void recordUploads(SurfaceDrawContext sdc) {
         if (!mGlyphAtlasManager.recordUploads(sdc)) {
-            mContext.getLogger().error("GlyphAtlasManager uploads have failed");
+            mRC.getLogger().error("GlyphAtlasManager uploads have failed");
         }
     }
 

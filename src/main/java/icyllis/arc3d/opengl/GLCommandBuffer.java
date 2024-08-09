@@ -268,11 +268,11 @@ public final class GLCommandBuffer extends CommandBuffer {
     }
 
     @Override
-    protected boolean onCopyBufferToBuffer(@RawPtr Buffer srcBuffer,
-                                           @RawPtr Buffer dstBuffer,
-                                           long srcOffset,
-                                           long dstOffset,
-                                           long size) {
+    protected boolean onCopyBuffer(@RawPtr Buffer srcBuffer,
+                                   @RawPtr Buffer dstBuffer,
+                                   long srcOffset,
+                                   long dstOffset,
+                                   long size) {
         assert !srcBuffer.isMapped();
         assert !dstBuffer.isMapped();
         GLBuffer glSrc = (GLBuffer) srcBuffer;
@@ -427,6 +427,22 @@ public final class GLCommandBuffer extends CommandBuffer {
         }
 
         return true;
+    }
+
+    @Override
+    protected boolean onCopyImage(@RawPtr Image srcImage,
+                                  int srcL, int srcT, int srcR, int srcB,
+                                  @RawPtr Image dstImage,
+                                  int dstX, int dstY,
+                                  int mipLevel) {
+        GLImage glSrc = (GLImage) srcImage;
+        GLImage glDst = (GLImage) dstImage;
+        return mDevice.copyImage(
+                glSrc,
+                srcL, srcT, srcR, srcB,
+                glDst,
+                dstX, dstY, mipLevel
+        );
     }
 
     /**

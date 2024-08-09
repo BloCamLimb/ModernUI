@@ -66,7 +66,8 @@ public class TestClipStack {
                 ISurface.FLAG_SAMPLED_IMAGE | ISurface.FLAG_RENDERABLE | ISurface.FLAG_BUDGETED,
                 Engine.SurfaceOrigin.kLowerLeft,
                 Engine.LoadOp.kLoad,
-                "TestDevice"
+                "TestDevice",
+                true
         );
         assert drawDevice != null;
 

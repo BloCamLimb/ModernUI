@@ -119,12 +119,17 @@ public abstract class VulkanCommandBuffer extends CommandBuffer {
     }
 
     @Override
-    protected boolean onCopyBufferToBuffer(Buffer srcBuffer, Buffer dstBuffer, long srcOffset, long dstOffset, long size) {
+    protected boolean onCopyBuffer(Buffer srcBuffer, Buffer dstBuffer, long srcOffset, long dstOffset, long size) {
         return false;
     }
 
     @Override
     protected boolean onCopyBufferToImage(Buffer srcBuffer, Image dstImage, int srcColorType, int dstColorType, BufferImageCopyData[] copyData) {
+        return false;
+    }
+
+    @Override
+    protected boolean onCopyImage(Image srcImage, int srcL, int srcT, int srcR, int srcB, Image dstImage, int dstX, int dstY, int mipLevel) {
         return false;
     }
 

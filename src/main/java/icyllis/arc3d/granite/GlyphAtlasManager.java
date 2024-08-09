@@ -43,16 +43,16 @@ public class GlyphAtlasManager extends DrawAtlas.AtlasGenerationCounter
         assert plots * plots <= DrawAtlas.Plot.MAX_PLOTS;
     }
 
-    private final RecordingContext mContext;
+    private final RecordingContext mRC;
 
     // managed by this
     private final DrawAtlas[] mAtlases = new DrawAtlas[Engine.MASK_FORMAT_COUNT];
 
     private final int mMaxTextureSize;
 
-    public GlyphAtlasManager(RecordingContext context) {
-        mContext = context;
-        mMaxTextureSize = Math.min(context.getCaps().maxTextureSize(), MAX_ATLAS_SIZE);
+    public GlyphAtlasManager(RecordingContext rc) {
+        mRC = rc;
+        mMaxTextureSize = Math.min(rc.getCaps().maxTextureSize(), MAX_ATLAS_SIZE);
     }
 
     @Override
@@ -151,7 +151,7 @@ public class GlyphAtlasManager extends DrawAtlas.AtlasGenerationCounter
 
         DrawAtlas atlas = getAtlas(maskFormat);
         var res = atlas.addRect(
-                mContext,
+                mRC,
                 width, height,
                 bakedGlyph
         );
@@ -192,7 +192,7 @@ public class GlyphAtlasManager extends DrawAtlas.AtlasGenerationCounter
 
     public boolean recordUploads(SurfaceDrawContext sdc) {
         for (var atlas : mAtlases) {
-            if (atlas != null && !atlas.recordUploads(mContext, sdc)) {
+            if (atlas != null && !atlas.recordUploads(mRC, sdc)) {
                 return false;
             }
         }
@@ -208,7 +208,7 @@ public class GlyphAtlasManager extends DrawAtlas.AtlasGenerationCounter
     }
 
     public void compact() {
-        var tokenTracker = mContext.getAtlasTokenTracker();
+        var tokenTracker = mRC.getAtlasTokenTracker();
         for (var atlas : mAtlases) {
             if (atlas != null) {
                 atlas.compact(tokenTracker.nextFlushToken());

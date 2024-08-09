@@ -47,6 +47,16 @@ public abstract sealed class GLImage extends Image
         return (GLDevice) super.getDevice();
     }
 
+    public int getTarget() {
+        return getGLDesc().mTarget;
+    }
+
+    public int getFormat() {
+        return getGLDesc().mFormat;
+    }
+
+    public abstract int getHandle();
+
     public static final class ResourceKey implements IResourceKey {
 
         private final GLImageDesc mDesc;

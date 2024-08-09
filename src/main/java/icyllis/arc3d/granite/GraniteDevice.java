@@ -67,13 +67,14 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
 
     @Nullable
     @SharedPtr
-    public static GraniteDevice make(RecordingContext rContext,
-                                     ImageInfo deviceInfo,
+    public static GraniteDevice make(@RawPtr RecordingContext rc,
+                                     @Nonnull ImageInfo deviceInfo,
                                      int surfaceFlags,
                                      int origin,
                                      byte initialLoadOp,
-                                     String label) {
-        if (rContext == null) {
+                                     String label,
+                                     boolean trackDevice) {
+        if (rc == null) {
             return null;
         }
 
@@ -90,39 +91,40 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
             backingHeight = ISurface.getApproxSize(backingHeight);
         }
 
-        ImageDesc desc = rContext.getCaps().getDefaultColorImageDesc(
+        ImageDesc desc = rc.getCaps().getDefaultColorImageDesc(
                 Engine.ImageType.k2D,
                 deviceInfo.colorType(),
                 backingWidth,
                 backingHeight,
                 1,
-                surfaceFlags | ISurface.FLAG_RENDERABLE);
+                surfaceFlags | ISurface.FLAG_SAMPLED_IMAGE | ISurface.FLAG_RENDERABLE);
         if (desc == null) {
             return null;
         }
-        short readSwizzle = rContext.getCaps().getReadSwizzle(
+        short readSwizzle = rc.getCaps().getReadSwizzle(
                 desc, deviceInfo.colorType());
         @SharedPtr
-        ImageViewProxy targetView = ImageViewProxy.make(rContext, desc,
+        ImageViewProxy targetView = ImageViewProxy.make(rc, desc,
                 origin, readSwizzle,
                 (surfaceFlags & ISurface.FLAG_BUDGETED) != 0, label);
         if (targetView == null) {
             return null;
         }
 
-        return make(rContext, targetView, deviceInfo, initialLoadOp);
+        return make(rc, targetView, deviceInfo, initialLoadOp, trackDevice);
     }
 
     @Nullable
     @SharedPtr
-    public static GraniteDevice make(RecordingContext context,
+    public static GraniteDevice make(@RawPtr RecordingContext rc,
                                      @SharedPtr ImageViewProxy targetView,
                                      ImageInfo deviceInfo,
-                                     byte initialLoadOp) {
-        if (context == null) {
+                                     byte initialLoadOp,
+                                     boolean trackDevice) {
+        if (rc == null) {
             return null;
         }
-        SurfaceDrawContext sdc = SurfaceDrawContext.make(context,
+        SurfaceDrawContext sdc = SurfaceDrawContext.make(rc,
                 targetView, deviceInfo);
         if (sdc == null) {
             return null;
@@ -134,8 +136,10 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
         }
 
         @SharedPtr
-        GraniteDevice device = new GraniteDevice(context, sdc);
-        context.trackDevice(RefCnt.create(device));
+        GraniteDevice device = new GraniteDevice(rc, sdc);
+        if (trackDevice) {
+            rc.trackDevice(RefCnt.create(device));
+        }
         return device;
     }
 
@@ -166,9 +170,44 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
         mRC = null;
     }
 
-    @Nullable
+    @Nonnull
+    @Override
     public RecordingContext getRecordingContext() {
+        assert mRC != null;
         return mRC;
+    }
+
+    /**
+     * @return raw ptr to the read view
+     */
+    @RawPtr
+    public ImageViewProxy getReadView() {
+        return mSDC.getReadView();
+    }
+
+    @Nullable
+    @SharedPtr
+    public GraniteImage makeImageCopy(@Nonnull Rect2ic subset,
+                                      boolean budgeted,
+                                      boolean mipmapped,
+                                      boolean approxFit) {
+        assert mRC.isOwnerThread();
+        flushPendingWork();
+
+        var srcInfo = imageInfo();
+        @RawPtr
+        var srcView = mSDC.getReadView();
+        String label = srcView.getLabel();
+        if (label == null || label.isEmpty()) {
+            label = "CopyDeviceTexture";
+        } else {
+            label += "_DeviceCopy";
+        }
+
+        return GraniteImage.copy(
+                mRC, srcView, srcInfo, subset,
+                budgeted, mipmapped, approxFit, label
+        );
     }
 
     @Override
@@ -229,6 +268,7 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
 
     @Override
     public void drawPaint(Paint paint) {
+        //TODO fill the clip, not fullscreen clear
         float[] color = new float[4];
         if (PaintParams.getSolidColor(paint, mInfo, color)) {
             mSDC.clear(color);
