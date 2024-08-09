@@ -159,6 +159,10 @@ public final class GLDevice extends Device {
     private final ConcurrentLinkedQueue<Consumer<GLDevice>> mRenderCalls =
             new ConcurrentLinkedQueue<>();
 
+    // executing thread only
+    private final FramebufferCache mFramebufferCache =
+            new FramebufferCache();
+
     private final Thread mExecutingThread;
 
     private GLDevice(ContextOptions options, GLCaps caps, GLInterface glInterface) {
@@ -235,6 +239,10 @@ public final class GLDevice extends Device {
         while ((r = queue.poll()) != null) r.accept(this);
     }
 
+    public FramebufferCache getFramebufferCache() {
+        return mFramebufferCache;
+    }
+
     @Override
     public GLCaps getCaps() {
         return mCaps;
@@ -263,6 +271,8 @@ public final class GLDevice extends Device {
         callAllFinishedCallbacks(cleanup);
 
         flushRenderCalls();
+
+        mFramebufferCache.close();
     }
 
     @Override

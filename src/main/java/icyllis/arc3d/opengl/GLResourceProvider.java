@@ -33,8 +33,6 @@ public final class GLResourceProvider extends ResourceProvider {
 
     private final GLDevice mDevice;
 
-    private final GLFramebuffer.ResourceKey mFramebufferKey = new GLFramebuffer.ResourceKey();
-
     GLResourceProvider(GLDevice device, Context context) {
         super(device, context);
         mDevice = device;
@@ -79,10 +77,10 @@ public final class GLResourceProvider extends ResourceProvider {
     @Nullable
     @SharedPtr
     public GLFramebuffer findOrCreateFramebuffer(FramebufferDesc framebufferDesc) {
+        var framebufferCache = mDevice.getFramebufferCache();
         @SharedPtr
-        GLFramebuffer framebuffer = (GLFramebuffer) mResourceCache.findAndRefResource(
-                mFramebufferKey.compute(framebufferDesc),
-                /*budgeted*/true);
+        GLFramebuffer framebuffer = (GLFramebuffer) framebufferCache.findFramebuffer(
+                framebufferDesc);
         if (framebuffer != null) {
             return framebuffer;
         }
@@ -90,9 +88,7 @@ public final class GLResourceProvider extends ResourceProvider {
         if (framebuffer == null) {
             return null;
         }
-        var key = mFramebufferKey.copy();
-        framebuffer.setKey(key);
-        mResourceCache.insertResource(framebuffer);
+        framebufferCache.insertFramebuffer(framebufferDesc, framebuffer);
         return framebuffer;
     }
 }

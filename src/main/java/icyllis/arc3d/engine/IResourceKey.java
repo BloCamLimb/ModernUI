@@ -35,6 +35,8 @@ public interface IResourceKey {
     /**
      * Can the resource be held by multiple users at the same time?
      * For example, pipelines, samplers, etc.
+     *
+     * @return true if shareable, false if scratch
      */
     default boolean isShareable() {
         return false;

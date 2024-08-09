@@ -837,6 +837,7 @@ public final class GLCommandBuffer extends CommandBuffer {
 
     @Override
     protected void begin() {
+        mDevice.getFramebufferCache().purgeStaleFramebuffers();
         mDevice.flushRenderCalls();
 
         var gl = mDevice.getGL();
@@ -866,6 +867,7 @@ public final class GLCommandBuffer extends CommandBuffer {
 
     @Override
     protected boolean submit(QueueManager queueManager) {
+        mDevice.getFramebufferCache().purgeStaleFramebuffers();
         resetStates();
         mSubmitFence = mDevice.getGL().glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
         // glFlush is required after fence creation

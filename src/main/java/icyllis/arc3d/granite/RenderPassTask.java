@@ -135,7 +135,7 @@ public final class RenderPassTask extends Task {
             depthStencilAttachment = context.getResourceProvider().findOrCreateImage(
                     mRenderPassDesc.mDepthStencilAttachment.mDesc,
                     true,
-                     "SharedDSAttachment"
+                    "SharedDSAttachment"
             );
             if (depthStencilAttachment == null) {
                 return RESULT_FAILURE;
@@ -147,19 +147,15 @@ public final class RenderPassTask extends Task {
         @SharedPtr
         Image resolveAttachment = mResolveTarget != null ? mResolveTarget.refImage() : null;
 
-        var framebufferDesc = new FramebufferDesc();
-
-        framebufferDesc.mNumColorAttachments = 1;
-        var colorDesc = framebufferDesc.mColorAttachments[0] = new FramebufferDesc.ColorAttachmentDesc();
-        colorDesc.mAttachment = colorAttachment;
-        colorDesc.mResolveAttachment = resolveAttachment;
-        colorDesc.mMipLevel = 0;
-        colorDesc.mArraySlice = 0;
-
-        framebufferDesc.mDepthStencilAttachment.mAttachment = depthStencilAttachment;
-
-        framebufferDesc.mWidth = colorAttachment.getWidth();
-        framebufferDesc.mHeight = colorAttachment.getHeight();
+        var framebufferDesc = new FramebufferDesc(
+                colorAttachment.getWidth(), colorAttachment.getHeight(), colorAttachment.getSampleCount(),
+                new FramebufferDesc.ColorAttachmentDesc(
+                        colorAttachment, resolveAttachment, 0, 0
+                ),
+                new FramebufferDesc.DepthStencilAttachmentDesc(
+                        depthStencilAttachment
+                )
+        );
 
         if (commandBuffer.beginRenderPass(
                 mRenderPassDesc,

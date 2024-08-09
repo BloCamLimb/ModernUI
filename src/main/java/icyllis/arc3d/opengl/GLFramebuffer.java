@@ -20,20 +20,16 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.SharedPtr;
-import icyllis.arc3d.core.UniqueID;
 import icyllis.arc3d.engine.*;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Arrays;
-import java.util.Objects;
 
 import static org.lwjgl.opengl.GL11C.GL_NONE;
 import static org.lwjgl.opengl.GL20C.glDrawBuffers;
 import static org.lwjgl.opengl.GL30C.*;
 import static org.lwjgl.opengl.GL32C.*;
 
-public final class GLFramebuffer extends Resource {
+public final class GLFramebuffer extends Framebuffer {
 
     private int mRenderFramebuffer;
     private int mResolveFramebuffer;
@@ -41,7 +37,7 @@ public final class GLFramebuffer extends Resource {
     private GLFramebuffer(Context context,
                           int renderFramebuffer,
                           int resolveFramebuffer) {
-        super(context, true, false, 0);
+        super(context.getDevice());
         mRenderFramebuffer = renderFramebuffer;
         mResolveFramebuffer = resolveFramebuffer;
     }
@@ -87,7 +83,7 @@ public final class GLFramebuffer extends Resource {
         final int numColorAttachments;
         boolean hasColorAttachments = false;
         boolean hasColorResolveAttachments = false;
-        numColorAttachments = desc.mNumColorAttachments;
+        numColorAttachments = desc.mColorAttachments.length;
         for (int i = 0; i < numColorAttachments; i++) {
             var attachmentDesc = desc.mColorAttachments[i];
             hasColorAttachments |= attachmentDesc.mAttachment != null;
@@ -112,12 +108,13 @@ public final class GLFramebuffer extends Resource {
             int[] drawBuffers = new int[numColorAttachments];
             for (int index = 0; index < numColorAttachments; index++) {
                 var attachmentDesc = desc.mColorAttachments[index];
-                GLImage attachment = (GLImage) attachmentDesc.mAttachment;
-                if (attachment == null) {
+                if (attachmentDesc.mAttachment == null) {
                     // unused slot
                     drawBuffers[index] = GL_NONE;
                     continue;
                 }
+                GLImage attachment = (GLImage) attachmentDesc.mAttachment.get();
+                assert attachment != null;
                 attachColorAttachment(index,
                         attachment,
                         attachmentDesc.mMipLevel);
@@ -125,22 +122,23 @@ public final class GLFramebuffer extends Resource {
             }
             glDrawBuffers(drawBuffers);
         }
-        GLRenderbuffer glDepthStencilTarget = (GLRenderbuffer) desc.mDepthStencilAttachment.mAttachment;
-        if (glDepthStencilTarget != null) {
+        if (desc.mDepthStencilAttachment.mAttachment != null) {
+            GLRenderbuffer attachment = (GLRenderbuffer) desc.mDepthStencilAttachment.mAttachment.get();
+            assert attachment != null;
             //TODO attach depth texture besides renderbuffer
             int attachmentPoint;
-            if (GLUtil.glFormatIsPackedDepthStencil(glDepthStencilTarget.getFormat())) {
+            if (GLUtil.glFormatIsPackedDepthStencil(attachment.getFormat())) {
                 attachmentPoint = GL_DEPTH_STENCIL_ATTACHMENT;
-            } else if (GLUtil.glFormatDepthBits(glDepthStencilTarget.getFormat()) > 0) {
+            } else if (GLUtil.glFormatDepthBits(attachment.getFormat()) > 0) {
                 attachmentPoint = GL_DEPTH_ATTACHMENT;
             } else {
-                assert GLUtil.glFormatStencilBits(glDepthStencilTarget.getFormat()) > 0;
+                assert GLUtil.glFormatStencilBits(attachment.getFormat()) > 0;
                 attachmentPoint = GL_STENCIL_ATTACHMENT;
             }
             glFramebufferRenderbuffer(GL_FRAMEBUFFER,
                     attachmentPoint,
                     GL_RENDERBUFFER,
-                    glDepthStencilTarget.getHandle());
+                    attachment.getHandle());
         }
         if (!device.getCaps().skipErrorChecks()) {
             int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -156,12 +154,13 @@ public final class GLFramebuffer extends Resource {
             int[] drawBuffers = new int[numColorAttachments];
             for (int index = 0; index < numColorAttachments; index++) {
                 var attachmentDesc = desc.mColorAttachments[index];
-                GLImage resolveAttachment = (GLImage) attachmentDesc.mResolveAttachment;
-                if (resolveAttachment == null) {
+                if (attachmentDesc.mResolveAttachment == null) {
                     // unused slot
                     drawBuffers[index] = GL_NONE;
                     continue;
                 }
+                GLImage resolveAttachment = (GLImage) attachmentDesc.mResolveAttachment.get();
+                assert resolveAttachment != null;
                 attachColorAttachment(index,
                         resolveAttachment,
                         attachmentDesc.mMipLevel);
@@ -190,7 +189,7 @@ public final class GLFramebuffer extends Resource {
     }
 
     @Override
-    protected void onRelease() {
+    protected void deallocate() {
         GLDevice device = (GLDevice) getDevice();
         assert device.isOnExecutingThread();
         if (mRenderFramebuffer != 0) {
@@ -202,143 +201,5 @@ public final class GLFramebuffer extends Resource {
         }
         mRenderFramebuffer = 0;
         mResolveFramebuffer = 0;
-    }
-
-    public static class ResourceKey implements IResourceKey {
-
-        public int mWidth;
-        public int mHeight;
-        public int mSampleCount;
-
-        public static class ColorAttachmentDesc implements Cloneable {
-            @Nullable
-            public UniqueID mAttachment;
-            @Nullable
-            public UniqueID mResolveAttachment;
-            public int mMipLevel;
-            public int mArraySlice;
-
-            @Override
-            public int hashCode() {
-                int result = Objects.hashCode(mAttachment);
-                result = 31 * result + Objects.hashCode(mResolveAttachment);
-                result = 31 * result + mMipLevel;
-                result = 31 * result + mArraySlice;
-                return result;
-            }
-
-            @Override
-            public boolean equals(Object o) {
-                if (this == o) return true;
-                if (o == null || getClass() != o.getClass()) return false;
-                ColorAttachmentDesc that = (ColorAttachmentDesc) o;
-                if (mMipLevel != that.mMipLevel) return false;
-                if (mArraySlice != that.mArraySlice) return false;
-                if (!Objects.equals(mAttachment, that.mAttachment)) return false;
-                return Objects.equals(mResolveAttachment, that.mResolveAttachment);
-            }
-
-            @Override
-            public ColorAttachmentDesc clone() {
-                try {
-                    return (ColorAttachmentDesc) super.clone();
-                } catch (CloneNotSupportedException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }
-
-        public int mNumColorAttachments;
-        @Nullable
-        public ColorAttachmentDesc[] mColorAttachments;
-
-        @Nullable
-        public UniqueID mDepthStencilAttachment;
-
-        public ResourceKey() {
-        }
-
-        @SuppressWarnings("IncompleteCopyConstructor")
-        public ResourceKey(ResourceKey other) {
-            mWidth = other.mWidth;
-            mHeight = other.mHeight;
-            mSampleCount = other.mSampleCount;
-            mNumColorAttachments = other.mNumColorAttachments;
-            if (mNumColorAttachments > 0) {
-                mColorAttachments = new ColorAttachmentDesc[mNumColorAttachments];
-                for (int i = 0; i < mNumColorAttachments; i++) {
-                    assert other.mColorAttachments != null;
-                    mColorAttachments[i] = other.mColorAttachments[i].clone();
-                }
-            } else {
-                mColorAttachments = null;
-            }
-            mDepthStencilAttachment = other.mDepthStencilAttachment;
-        }
-
-        @Nonnull
-        public ResourceKey compute(@Nonnull FramebufferDesc desc) {
-            mWidth = desc.mWidth;
-            mHeight = desc.mHeight;
-            mSampleCount = desc.mSampleCount;
-            if (mColorAttachments == null) {
-                mColorAttachments = new ColorAttachmentDesc[Caps.MAX_COLOR_TARGETS];
-            }
-            mNumColorAttachments = desc.mNumColorAttachments;
-            for (int i = 0; i < mNumColorAttachments; i++) {
-                var src = desc.mColorAttachments[i];
-                var dst = mColorAttachments[i] = new ColorAttachmentDesc();
-                dst.mAttachment = src.mAttachment != null
-                        ? src.mAttachment.getUniqueID()
-                        : null;
-                dst.mResolveAttachment = src.mResolveAttachment != null
-                        ? src.mResolveAttachment.getUniqueID()
-                        : null;
-                dst.mMipLevel = src.mMipLevel;
-                dst.mArraySlice = src.mArraySlice;
-            }
-            mDepthStencilAttachment = desc.mDepthStencilAttachment.mAttachment != null
-                    ? desc.mDepthStencilAttachment.mAttachment.getUniqueID()
-                    : null;
-            return this;
-        }
-
-        @Override
-        public IResourceKey copy() {
-            return new ResourceKey(this);
-        }
-
-        @Override
-        public int hashCode() {
-            int result = mWidth;
-            result = 31 * result + mHeight;
-            result = 31 * result + mSampleCount;
-            result = 31 * result + mNumColorAttachments;
-            for (int i = 0; i < mNumColorAttachments; i++) {
-                assert mColorAttachments != null;
-                result = 31 * result + mColorAttachments[i].hashCode();
-            }
-            result = 31 * result + Objects.hashCode(mDepthStencilAttachment);
-            return result;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            ResourceKey that = (ResourceKey) o;
-
-            if (mWidth != that.mWidth) return false;
-            if (mHeight != that.mHeight) return false;
-            if (mSampleCount != that.mSampleCount) return false;
-            if (mNumColorAttachments != that.mNumColorAttachments) return false;
-            if (!Objects.equals(mDepthStencilAttachment, that.mDepthStencilAttachment)) return false;
-            if (mNumColorAttachments == 0) return true;
-            assert mColorAttachments != null;
-            assert that.mColorAttachments != null;
-            return Arrays.equals(mColorAttachments, 0, mNumColorAttachments,
-                    that.mColorAttachments, 0, mNumColorAttachments);
-        }
     }
 }
