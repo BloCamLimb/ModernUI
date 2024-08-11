@@ -20,6 +20,7 @@
 package icyllis.arc3d.core;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Objects;
 
 /**
@@ -75,7 +76,7 @@ public final class StrikeDesc {
     }
 
     @Nonnull
-    public StrikeDesc update(@Nonnull Font font, @Nonnull Paint paint,
+    public StrikeDesc update(@Nonnull Font font, @Nullable Paint paint,
                              @Nonnull Matrixc deviceMatrix) {
         if (deviceMatrix.hasPerspective()) {
             throw new IllegalArgumentException();
@@ -98,8 +99,8 @@ public final class StrikeDesc {
             mPostShearX = mPostShearY = 0;
         }
 
-        int style = paint.getStyle();
-        float strokeWidth = paint.getStrokeWidth();
+        int style = paint != null ? paint.getStyle() : Paint.FILL;
+        float strokeWidth = paint != null ? paint.getStrokeWidth() : 0;
 
         int flags = 0;
 
@@ -136,7 +137,7 @@ public final class StrikeDesc {
 
         mFlags = (short) flags;
 
-        mPathEffect = paint.getPathEffect();
+        mPathEffect = paint != null ? paint.getPathEffect() : null;
 
         int h = mTypeface.hashCode();
         h = 31 * h + Float.floatToIntBits(mTextSize);

@@ -21,6 +21,9 @@ package icyllis.arc3d.core;
 
 import org.jetbrains.annotations.ApiStatus;
 
+import javax.annotation.Nonnull;
+import java.util.Objects;
+
 /**
  * Font controls options applied when drawing text.
  */
@@ -45,7 +48,11 @@ public class Font {
     public Font() {
     }
 
-    public void set(Font other) {
+    public Font(@Nonnull Font other) {
+        set(other);
+    }
+
+    public void set(@Nonnull Font other) {
         mTypeface = other.mTypeface;
         mSize = other.mSize;
         mFlags = other.mFlags;
@@ -154,5 +161,27 @@ public class Font {
         } else {
             return mSize * matrix.getMaxScale();
         }
+    }
+
+    @Override
+    public int hashCode() {
+        int result = mTypeface != null ? mTypeface.hashCode() : 0;
+        result = 31 * result + Float.floatToIntBits(mSize);
+        result = 31 * result + (int) mFlags;
+        result = 31 * result + (int) mEdging;
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Font font = (Font) o;
+
+        if (mSize != font.mSize) return false;
+        if (mFlags != font.mFlags) return false;
+        if (mEdging != font.mEdging) return false;
+        return Objects.equals(mTypeface, font.mTypeface);
     }
 }
