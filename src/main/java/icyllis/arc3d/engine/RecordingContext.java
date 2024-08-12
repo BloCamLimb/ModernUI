@@ -44,6 +44,7 @@ public final class RecordingContext extends Context {
 
     private final DrawAtlas.AtlasTokenTracker mAtlasTokenTracker;
     private final GlyphStrikeCache mGlyphStrikeCache;
+    private final TextBlobCache mTextBlobCache;
 
     private final ReferenceArrayList<@SharedPtr GraniteDevice> mTrackedDevices =
             new ReferenceArrayList<>();
@@ -58,6 +59,7 @@ public final class RecordingContext extends Context {
 
         mAtlasTokenTracker = new DrawAtlas.AtlasTokenTracker();
         mGlyphStrikeCache = new GlyphStrikeCache();
+        mTextBlobCache = new TextBlobCache();
     }
 
     /**
@@ -137,6 +139,11 @@ public final class RecordingContext extends Context {
     @ApiStatus.Internal
     public GlyphStrikeCache getGlyphStrikeCache() {
         return mGlyphStrikeCache;
+    }
+
+    @ApiStatus.Internal
+    public TextBlobCache getTextBlobCache() {
+        return mTextBlobCache;
     }
 
     public void trackDevice(@SharedPtr GraniteDevice device) {

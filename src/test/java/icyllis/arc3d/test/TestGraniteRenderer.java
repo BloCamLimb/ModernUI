@@ -41,7 +41,8 @@ import org.slf4j.LoggerFactory;
 import java.awt.font.FontRenderContext;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.*;
+import java.util.Objects;
+import java.util.Random;
 import java.util.concurrent.*;
 
 public class TestGraniteRenderer {
@@ -61,6 +62,7 @@ public class TestGraniteRenderer {
     public static final int WINDOW_HEIGHT = 990;
 
     public static final int TEST_SCENE = 1;
+    public static final boolean POST_PROCESS = false;
 
     public static final ExecutorService RECORDING_THREAD = Executors.newSingleThreadExecutor();
 
@@ -175,14 +177,14 @@ public class TestGraniteRenderer {
                 GLFW.glfwSwapBuffers(window);
 
                 double time7 = GLFW.glfwGetTime();
-                LOGGER.info("AddCommands: {}, Blit/Submit: {}, Swap: {}",
+                /*LOGGER.info("AddCommands: {}, Blit/Submit: {}, Swap: {}",
                         formatMicroseconds(time5, time4),
                         formatMicroseconds(time6, time5),
-                        formatMicroseconds(time7, time6));
+                        formatMicroseconds(time7, time6));*/
             }
             frame++;
 
-            GLFW.glfwWaitEvents();
+            GLFW.glfwPollEvents();
         }
         RECORDING_THREAD.submit(painter::close);
         RECORDING_THREAD.shutdown();
@@ -230,8 +232,6 @@ public class TestGraniteRenderer {
         RecordingContext mRC;
         @SharedPtr
         Surface mSurface;
-        @RawPtr
-        GraniteDevice mDevice;
 
         @SharedPtr
         Surface mPostSurface;
@@ -248,7 +248,8 @@ public class TestGraniteRenderer {
         @SharedPtr
         Shader mGradShader;
 
-        SubRunContainer mSubRunContainer;
+        TextBlob mTextBlob1;
+        TextBlob mTextBlob2;
 
         Vertices mVertices1;
         Vertices mVertices2;
@@ -271,17 +272,18 @@ public class TestGraniteRenderer {
                 );
                 Objects.requireNonNull(device);
                 mSurface = new GraniteSurface(device); // move
-                mDevice = device;
             }
-            mPostSurface = GraniteSurface.makeRenderTarget(
-                    mRC,
-                    ImageInfo.make(CANVAS_WIDTH, CANVAS_HEIGHT, ColorInfo.CT_RGBA_8888,
-                            ColorInfo.AT_PREMUL, ColorSpace.get(ColorSpace.Named.SRGB)),
-                    false,
-                    Engine.SurfaceOrigin.kLowerLeft,
-                    "TestDevice2"
-            );
-            Objects.requireNonNull(mPostSurface);
+            if (POST_PROCESS) {
+                mPostSurface = GraniteSurface.makeRenderTarget(
+                        mRC,
+                        ImageInfo.make(CANVAS_WIDTH, CANVAS_HEIGHT, ColorInfo.CT_RGBA_8888,
+                                ColorInfo.AT_PREMUL, ColorSpace.get(ColorSpace.Named.SRGB)),
+                        false,
+                        Engine.SurfaceOrigin.kLowerLeft,
+                        "TestDevice2"
+                );
+                Objects.requireNonNull(mPostSurface);
+            }
 
             {
                 int[] x = {0}, y = {0}, channels = {0};
@@ -375,32 +377,41 @@ public class TestGraniteRenderer {
                 int[] glyphs = vector.getGlyphCodes(0, nGlyphs, null);
                 float[] positions = vector.getGlyphPositions(0, nGlyphs, null);
 
-                LOGGER.info("Glyphs: {}", Arrays.toString(glyphs));
-
                 Font font = new Font();
                 font.setTypeface(typeface);
                 font.setSize(80);
                 font.setEdging(Font.kAntiAlias_Edging);
 
-                Paint paint = new Paint();
+                /*Paint paint = new Paint();
                 paint.setStyle(Paint.STROKE);
                 paint.setStrokeJoin(Paint.JOIN_MITER);
-                paint.setStrokeWidth(2);
+                paint.setStrokeWidth(2);*/
 
-                GlyphRunBuilder builder = new GlyphRunBuilder();
+                mTextBlob1 = TextBlob.make(
+                        glyphs, 0,
+                        positions, 0,
+                        nGlyphs, font, null
+                );
+                mTextBlob2 = TextBlob.make(
+                        glyphs, 0,
+                        positions, 0,
+                        nGlyphs, font, null
+                );
+
+                /*GlyphRunBuilder builder = new GlyphRunBuilder();
                 mSubRunContainer = SubRunContainer.make(
                         builder.setGlyphRunList(
                                 glyphs, 0,
                                 positions, 0,
                                 nGlyphs, font,
-                                400, 400,
-                                paint
+                                paint,
+                                400, 400
                         ),
                         Matrix.identity(),
                         paint,
                         StrikeCache.getGlobalStrikeCache()
                 );
-                LOGGER.info("SubRunContainer size: {}", mSubRunContainer.getMemorySize());
+                LOGGER.info("SubRunContainer size: {}", mSubRunContainer.getMemorySize());*/
             }
 
             {
@@ -578,14 +589,32 @@ public class TestGraniteRenderer {
                 paint.setShader(RefCnt.create(mGradShader));
                 paint.setDither(true);
                 rrect.setRectXY(100, 650, 1500, 950, 30, 30);
-                canvas.drawRoundRect(rrect, paint);
-                mSubRunContainer.draw(canvas, 400, 400, paint, mDevice);
+                //canvas.drawRoundRect(rrect, paint);
+
+                Matrix4 perspectiveMatrix = new Matrix4();
+                perspectiveMatrix.setIdentity();
+                perspectiveMatrix.m34 = -1.0f / 1920f;
+                perspectiveMatrix.preRotateY(Math.toRadians(30));
+                perspectiveMatrix.preRotateZ(Math.toRadians(45 * Math.sin(System.currentTimeMillis() / 1000.0 * 2)));
+                perspectiveMatrix.preTranslate(-CANVAS_WIDTH / 2f, -CANVAS_HEIGHT / 2f);
+                perspectiveMatrix.postTranslate(CANVAS_WIDTH / 2f, CANVAS_HEIGHT / 2f);
+                canvas.save();
+                canvas.setMatrix(perspectiveMatrix);
+                paint.setStyle(Paint.STROKE);
+                paint.setStrokeJoin(Paint.JOIN_MITER);
+                paint.setStrokeWidth(2);
+                canvas.drawTextBlob(mTextBlob1 != null ? mTextBlob1 : mTextBlob2, 400, 400, paint);
+                canvas.restore();
+
+                if (mRandom.nextDouble() < 0.001) {
+                    mTextBlob1 = null;
+                }
 
                 //canvas.scale(4, 4, 1100, 300);
 
                 paint.setStyle(Paint.FILL);
                 /*canvas.drawArc(1100, 300, 150, 90,
-                        180 + random.nextFloat(-30, 30),
+                        180 + mRandom.nextFloat(-30, 30),
                         Paint.CAP_SQUARE, 60, paint);*/
                 paint.setStyle(Paint.FILL);
                 paint.setStrokeCap(Paint.CAP_BUTT);
@@ -661,32 +690,37 @@ public class TestGraniteRenderer {
         public RootTask paint() {
             double time1 = GLFW.glfwGetTime();
 
-            @SharedPtr
-            Image snapshot;
-            {
+            if (POST_PROCESS) {
+                @SharedPtr
+                Image snapshot;
+                {
+                    Canvas canvas = mSurface.getCanvas();
+                    drawScene(canvas);
+                    snapshot = mSurface.makeImageSnapshot();
+                }
+                if (snapshot != null) {
+                    Canvas canvas = mPostSurface.getCanvas();
+                    canvas.clear(0xFF000000);
+                    Paint paint = new Paint();
+                    paint.setAlphaF(0.5f);
+                    paint.setDither(true);
+                    canvas.drawImage(snapshot, 0, 0, SamplingOptions.LINEAR, paint);
+                    paint.close();
+                    snapshot.unref();
+                } else {
+                    LOGGER.error("Failed to create image snapshot");
+                }
+            } else {
                 Canvas canvas = mSurface.getCanvas();
                 drawScene(canvas);
-                snapshot = mSurface.makeImageSnapshot();
-            }
-            if (snapshot != null) {
-                Canvas canvas = mPostSurface.getCanvas();
-                canvas.clear(0xFF000000);
-                Paint paint = new Paint();
-                paint.setAlphaF(0.5f);
-                paint.setDither(true);
-                canvas.drawImage(snapshot, 0, 0, SamplingOptions.LINEAR, paint);
-                paint.close();
-                snapshot.unref();
-            } else {
-                LOGGER.error("Failed to create image snapshot");
             }
 
             RootTask rootTask = mRC.snap();
 
             double time2 = GLFW.glfwGetTime();
 
-            LOGGER.info("Painting: {}",
-                    formatMicroseconds(time2, time1));
+            /*LOGGER.info("Painting: {}",
+                    formatMicroseconds(time2, time1));*/
 
             return rootTask;
         }
