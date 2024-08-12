@@ -935,14 +935,14 @@ public class ShaderCodeSource {
             vec4 blend_darker_color(vec4 src, vec4 dst) {
                 return mix(src * (1 - dst.a) + dst,
                            src + dst * (1 - src.a),
-                           BlendGetLum(src.rgb) <= BlendGetLum(dst.rgb));
+                           bvec4(BlendGetLum(src.rgb) <= BlendGetLum(dst.rgb)));
             }
             """;
     public static final String BLEND_LIGHTER_COLOR = """
             vec4 blend_lighter_color(vec4 src, vec4 dst) {
                 return mix(src * (1 - dst.a) + dst,
                            src + dst * (1 - src.a),
-                           BlendGetLum(src.rgb) >= BlendGetLum(dst.rgb));
+                           bvec4(BlendGetLum(src.rgb) >= BlendGetLum(dst.rgb)));
             }
             """;
     private static final String PRIV_BLEND_SET_LUM = """
