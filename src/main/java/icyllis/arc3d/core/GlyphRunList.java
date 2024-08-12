@@ -19,49 +19,29 @@
 
 package icyllis.arc3d.core;
 
+import org.jetbrains.annotations.ApiStatus;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+/**
+ * GlyphRunList provides a buffer view to GlyphRuns and additional drawing info.
+ */
+@ApiStatus.Internal
 public class GlyphRunList {
-
-    public static class GlyphRun {
-
-        public int[] mGlyphs;
-        public int mGlyphOffset;
-
-        public float[] mPositions;
-        public int mPositionOffset;
-
-        public int mGlyphCount;
-
-        public Font mFont;
-
-        public GlyphRun() {
-        }
-
-        public void set(int[] glyphs, int glyphOffset,
-                        float[] positions, int positionOffset,
-                        int glyphCount, Font font) {
-            mGlyphs = glyphs;
-            mGlyphOffset = glyphOffset;
-            mPositions = positions;
-            mPositionOffset = positionOffset;
-            mGlyphCount = glyphCount;
-            mFont = font;
-        }
-
-        public int runSize() {
-            return mGlyphCount;
-        }
-
-        public Font font() {
-            return mFont;
-        }
-    }
 
     /**
      * Raw pointer view.
      */
     public GlyphRun[] mGlyphRuns;
     public int mGlyphRunCount;
-    public final Rect2f mSourceBounds = new Rect2f();
+
+    /**
+     * Raw pointer, nullable.
+     */
+    public TextBlob mOriginalTextBlob;
+
+    private final Rect2f mSourceBounds = new Rect2f();
     public float mOriginX;
     public float mOriginY;
 
@@ -69,19 +49,44 @@ public class GlyphRunList {
     }
 
     public void set(GlyphRun[] glyphRuns, int glyphRunCount,
+                    @Nullable TextBlob blob,
                     Rect2fc bounds, float originX, float originY) {
         mGlyphRuns = glyphRuns;
         mGlyphRunCount = glyphRunCount;
+        mOriginalTextBlob = blob;
         mSourceBounds.set(bounds);
         mOriginX = originX;
         mOriginY = originY;
     }
 
+    @Nonnull
+    public Rect2fc getSourceBounds() {
+        return mSourceBounds;
+    }
+
+    public void getSourceBoundsWithOrigin(@Nonnull Rect2f bounds) {
+        mSourceBounds.store(bounds);
+        bounds.offset(mOriginX, mOriginY);
+    }
+
     public int maxGlyphRunSize() {
         int size = 0;
         for (int i = 0; i < mGlyphRunCount; i++) {
-            size = Math.max(mGlyphRuns[i].runSize(), size);
+            size = Math.max(mGlyphRuns[i].mGlyphCount, size);
         }
         return size;
+    }
+
+    /**
+     * Release heavy buffers.
+     */
+    public void clear() {
+        if (mGlyphRuns != null) {
+            for (int i = 0; i < mGlyphRunCount; i++) {
+                mGlyphRuns[i].clear();
+            }
+            mGlyphRuns = null;
+        }
+        mOriginalTextBlob = null;
     }
 }

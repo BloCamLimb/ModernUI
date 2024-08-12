@@ -51,6 +51,7 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
     private final BoundsManager mBoundsManager;
 
     private final Paint mSubRunPaint = new Paint();
+    private final TextBlobCache.FeatureKey mBlobKey = new TextBlobCache.FeatureKey();
 
     private GraniteDevice(RecordingContext rc, SurfaceDrawContext sdc) {
         super(sdc.getImageInfo());
@@ -387,13 +388,31 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
                                       Paint paint) {
         Matrix positionMatrix = new Matrix(getLocalToDevice33());
         positionMatrix.preTranslate(glyphRunList.mOriginX, glyphRunList.mOriginY);
-        SubRunContainer container = SubRunContainer.make(
-                glyphRunList,
-                positionMatrix,
-                paint,
-                StrikeCache.getGlobalStrikeCache()
-        );
-        container.draw(canvas, glyphRunList.mOriginX, glyphRunList.mOriginY, paint, this);
+
+        if (glyphRunList.mOriginalTextBlob != null) {
+            var blobCache = mRC.getTextBlobCache();
+            mBlobKey.update(glyphRunList, paint, positionMatrix);
+            var entry = blobCache.find(glyphRunList.mOriginalTextBlob, mBlobKey);
+            if (entry == null) {
+                entry = BakedTextBlob.make(
+                        glyphRunList,
+                        paint,
+                        positionMatrix,
+                        StrikeCache.getGlobalStrikeCache()
+                );
+                entry = blobCache.insert(glyphRunList.mOriginalTextBlob, mBlobKey,
+                        entry);
+            }
+            entry.draw(canvas, glyphRunList.mOriginX, glyphRunList.mOriginY, paint, this);
+        } else {
+            SubRunContainer container = SubRunContainer.make(
+                    glyphRunList,
+                    positionMatrix,
+                    paint,
+                    StrikeCache.getGlobalStrikeCache()
+            );
+            container.draw(canvas, glyphRunList.mOriginX, glyphRunList.mOriginY, paint, this);
+        }
     }
 
     @Override

@@ -71,7 +71,12 @@ public final class StrikeDesc {
         mHash = other.mHash;
     }
 
-    private static float round_mat_elem(float x) {
+    /**
+     * Return the scalar with only limited fractional precision. Used to consolidate matrices
+     * that vary only slightly when we create our key into the font cache, since the font scaler
+     * typically returns the same looking results for tiny changes in the matrix.
+     */
+    public static float round_mat_elem(float x) {
         return Math.round(x * 1024) / 1024.0f;
     }
 

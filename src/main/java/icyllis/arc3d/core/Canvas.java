@@ -1591,18 +1591,52 @@ public class Canvas implements AutoCloseable {
      * @param font       typeface, text size and so, used to describe the text
      * @param paint      blend, color, and so on, used to draw
      */
-    public final void drawGlyphs(int[] glyphs, int glyphOffset,
-                                 float[] positions, int positionOffset,
+    public final void drawGlyphs(@Nonnull int[] glyphs, int glyphOffset,
+                                 @Nonnull float[] positions, int positionOffset,
                                  int glyphCount,
                                  float originX, float originY,
-                                 Font font, Paint paint) {
+                                 @Nonnull Font font, @Nonnull Paint paint) {
         if (glyphCount <= 0) {
             return;
         }
 
         GlyphRunList glyphRunList = mScratchGlyphRunBuilder.setGlyphRunList(
-                glyphs, glyphOffset, positions, positionOffset, glyphCount, font, originX, originY, paint);
+                glyphs, glyphOffset,
+                positions, positionOffset,
+                glyphCount, font,
+                paint, originX, originY
+        );
         onDrawGlyphRunList(glyphRunList, paint);
+        mScratchGlyphRunBuilder.clear();
+    }
+
+    /**
+     * Draws TextBlob blob at (x, y), using the current matrix, clip and specified paint.
+     * <p>
+     * <var>blob</var> contains glyphs, their positions, and Font.
+     * <p>
+     * Elements of paint: anti-alias, Blender, color including alpha,
+     * ColorFilter, Paint dither, PathEffect, Shader, and
+     * Paint style; apply to blob. If Paint contains stroke:
+     * Paint miter limit, Cap, Join, and Paint stroke width;
+     * apply to Path created from blob.
+     *
+     * @param blob    glyphs, positions, and their paints' text size, typeface, and so on
+     * @param originX horizontal offset applied to blob
+     * @param originY vertical offset applied to blob
+     * @param paint   blend, color, stroking, and so on, used to draw
+     */
+    public final void drawTextBlob(TextBlob blob, float originX, float originY,
+                                   @Nonnull Paint paint) {
+        if (blob == null) {
+            return;
+        }
+        blob.getBounds(mTmpRect2);
+        mTmpRect2.offset(originX, originY);
+        if (!mTmpRect2.isFinite()) {
+            return;
+        }
+        onDrawTextBlob(blob, originX, originY, paint);
     }
 
     /**
@@ -2043,10 +2077,18 @@ public class Canvas implements AutoCloseable {
         }
     }
 
+    protected void onDrawTextBlob(TextBlob blob, float originX, float originY,
+                                  Paint paint) {
+        GlyphRunList glyphRunList = mScratchGlyphRunBuilder.blobToGlyphRunList(
+                blob, originX, originY
+        );
+        onDrawGlyphRunList(glyphRunList, paint);
+        mScratchGlyphRunBuilder.clear();
+    }
+
     protected void onDrawGlyphRunList(GlyphRunList glyphRunList, Paint paint) {
         var bounds = mTmpRect2;
-        bounds.set(glyphRunList.mSourceBounds);
-        bounds.offset(glyphRunList.mOriginX, glyphRunList.mOriginY);
+        glyphRunList.getSourceBoundsWithOrigin(bounds);
         if (internalQuickReject(bounds, paint)) {
             return;
         }

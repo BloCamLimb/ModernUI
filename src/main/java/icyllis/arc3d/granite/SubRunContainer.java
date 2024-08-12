@@ -282,7 +282,7 @@ public class SubRunContainer {
         }
 
         // let source points to glyph run buffer
-        void setSource(GlyphRunList.GlyphRun glyphRun) {
+        void setSource(@Nonnull GlyphRun glyphRun) {
             mSourceGlyphs = glyphRun.mGlyphs;
             mSourceGlyphOffset = glyphRun.mGlyphOffset;
             mSourcePositions = glyphRun.mPositions;
@@ -509,8 +509,8 @@ public class SubRunContainer {
         );
 
         //TODO this may not be correct, need to plus origin
-        float glyphRunListX = glyphRunList.mSourceBounds.centerX();
-        float glyphRunListY = glyphRunList.mSourceBounds.centerY();
+        float glyphRunListX = glyphRunList.getSourceBounds().centerX();
+        float glyphRunListY = glyphRunList.getSourceBounds().centerY();
 
         var strikeDesc = new StrikeDesc();
 
