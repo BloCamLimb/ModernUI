@@ -92,8 +92,7 @@ public class AnalyticSimpleBoxStep extends GeometryStep {
                 aa
                         ? (FLAG_PERFORM_SHADING | FLAG_EMIT_COVERAGE | FLAG_OUTSET_BOUNDS_FOR_AA |
                         FLAG_HANDLE_SOLID_COLOR)
-                        : (FLAG_PERFORM_SHADING | FLAG_EMIT_COVERAGE | FLAG_EMIT_01_COVERAGE |
-                        FLAG_HANDLE_SOLID_COLOR),
+                        : (FLAG_PERFORM_SHADING | FLAG_HANDLE_SOLID_COLOR),
                 PrimitiveType.kTriangleStrip,
                 CommonDepthStencilSettings.kDirectDepthGreaterPass
         );
@@ -226,6 +225,10 @@ public class AnalyticSimpleBoxStep extends GeometryStep {
                     float afwidth = fwidth(dis);
                     float edgeAlpha = 1.0 - clamp(dis/afwidth+0.5, 0.0, 1.0);
                     """);
+            assert outputCoverage != null;
+            fs.format("""
+                %s = vec4(edgeAlpha);
+                """, outputCoverage);
         } else {
             // hard edge
             // discard may reduce performance on certain GPUs, however, in non-AA case,
@@ -234,10 +237,8 @@ public class AnalyticSimpleBoxStep extends GeometryStep {
                     float edgeAlpha = 1.0 - step(0.0, dis);
                     if (edgeAlpha <= 0.0) discard;
                     """);
+            assert outputCoverage == null;
         }
-        fs.format("""
-                %s = vec4(edgeAlpha);
-                """, outputCoverage);
     }
 
     @Override
