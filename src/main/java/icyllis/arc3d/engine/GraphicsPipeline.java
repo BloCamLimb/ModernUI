@@ -24,14 +24,7 @@ package icyllis.arc3d.engine;
  */
 public abstract class GraphicsPipeline extends ManagedResource {
 
-    private final byte mPrimitiveType;
-
-    public GraphicsPipeline(Device device, byte primitiveType) {
+    public GraphicsPipeline(Device device) {
         super(device);
-        mPrimitiveType = primitiveType;
-    }
-
-    public final byte getPrimitiveType() {
-        return mPrimitiveType;
     }
 }

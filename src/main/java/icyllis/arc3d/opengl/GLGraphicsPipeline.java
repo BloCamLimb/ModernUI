@@ -47,8 +47,9 @@ public class GLGraphicsPipeline extends GraphicsPipeline {
     @SharedPtr
     private GLVertexArray mVertexArray;
 
-    private final BlendInfo mBlendInfo;
-    private final DepthStencilSettings mDepthStencilSettings;
+    private byte mPrimitiveType;
+    private BlendInfo mBlendInfo;
+    private DepthStencilSettings mDepthStencilSettings;
 
     private GLUniformDataManager mDataManager;
 
@@ -60,24 +61,25 @@ public class GLGraphicsPipeline extends GraphicsPipeline {
     private CompletableFuture<GLGraphicsPipelineBuilder> mAsyncWork;
 
     GLGraphicsPipeline(GLDevice device,
-                       byte primitiveType,
-                       BlendInfo blendInfo,
-                       DepthStencilSettings depthStencilSettings,
                        CompletableFuture<GLGraphicsPipelineBuilder> asyncWork) {
-        super(device, primitiveType);
-        mBlendInfo = blendInfo;
-        mDepthStencilSettings = depthStencilSettings;
+        super(device);
         mAsyncWork = asyncWork;
     }
 
     void init(@SharedPtr GLProgram program,
-              @SharedPtr GLVertexArray vertexArray/*,
+              @SharedPtr GLVertexArray vertexArray,
+              byte primitiveType,
+              BlendInfo blendInfo,
+              DepthStencilSettings depthStencilSettings/*,
               List<UniformHandler.UniformInfo> uniforms,
               int uniformSize,
               List<UniformHandler.UniformInfo> samplers,
               GeometryStep.ProgramImpl gpImpl*/) {
         mProgram = program;
         mVertexArray = vertexArray;
+        mPrimitiveType = primitiveType;
+        mBlendInfo = blendInfo;
+        mDepthStencilSettings = depthStencilSettings;
         /*mGPImpl = gpImpl;
         mDataManager = new GLUniformDataManager(uniforms, uniformSize);
         mNumTextureSamplers = samplers.size();*/
@@ -162,6 +164,10 @@ public class GLGraphicsPipeline extends GraphicsPipeline {
 
         assert unit == mNumTextureSamplers;
         return true;
+    }
+
+    public byte getPrimitiveType() {
+        return mPrimitiveType;
     }
 
     public BlendInfo getBlendInfo() {

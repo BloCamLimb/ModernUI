@@ -28,28 +28,32 @@ package icyllis.arc3d.engine;
 //TODO
 public abstract class PipelineDesc {
 
+    public static final int NO_DYNAMIC_STATE = 0;
     public static final int DYNAMIC_COLOR_BLEND_STATE = 1;
 
-    public static class GraphicsPipelineInfo {
+    public static final class GraphicsPipelineInfo {
 
         public byte mPrimitiveType;
-        public String mPipelineLabel;
         public VertexInputLayout mInputLayout;
+        //TODO replace full 'source' with IR + main() source
         public StringBuilder mVertSource;
         public String mVertLabel;
         public StringBuilder mFragSource;
         public String mFragLabel;
-    }
-
-    public byte getPrimitiveType() {
-        return 0;
+        public BlendInfo mBlendInfo;
+        public DepthStencilSettings mDepthStencilSettings;
+        public String mPipelineLabel;
     }
 
     /**
      * Generates all info used to create graphics pipeline.
      */
     public GraphicsPipelineInfo createGraphicsPipelineInfo(Device device) {
-        return null;
+        throw new IllegalStateException();
+    }
+
+    public byte getPrimitiveType() {
+        return 0;
     }
 
     public BlendInfo getBlendInfo() {
@@ -66,14 +70,15 @@ public abstract class PipelineDesc {
      * <p>
      * Viewport and scissor are always dynamic states.
      */
+    //TODO not implemented yet, meaningful in Vulkan
     public int getDynamicStates() {
-        return 0;
+        return NO_DYNAMIC_STATE;
     }
 
     /**
      * Makes a deep copy of this desc, it must be immutable before return.
-     * No need to other methods to make its fields visible to all threads.
-     * If this desc is already immutable then implementation may return this.
+     * No need to make its fields visible to all threads.
+     * If this desc is already immutable then subclass may return this.
      * <p>
      * The {@link #hashCode()} and {@link #equals(Object)} of this and return
      * value must be consistent.

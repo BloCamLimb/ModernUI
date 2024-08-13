@@ -77,9 +77,14 @@ public class DrawPass implements AutoCloseable {
         mTextures = textures;
     }
 
-    // backing store's width/height may not equal to device's width/height
-    // currently we use the backing dimensions for scissor and viewport
-    // all the parameters are raw pointers and read-only
+    /**
+     * Backing store's width/height may not equal to device's width/height,
+     * currently we use the backing dimensions for scissor and viewport.
+     * All the parameters are raw pointers and read-only.
+     * <p>
+     * The first uniform variable in geometry block must be a projection vector,
+     * see {@link PipelineBuilder}.
+     */
     @Nullable
     public static DrawPass make(RecordingContext context,
                                 ObjectArrayList<Draw> drawList,

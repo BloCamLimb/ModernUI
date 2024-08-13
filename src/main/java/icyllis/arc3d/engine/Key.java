@@ -49,6 +49,11 @@ public sealed class Key permits KeyBuilder {
         return mData.length;
     }
 
+    public boolean isEmpty() {
+        assert (mData.length == 0) == (this == EMPTY);
+        return mData.length == 0;
+    }
+
     public final int get(int i) {
         assert i < size();
         return mData[i];

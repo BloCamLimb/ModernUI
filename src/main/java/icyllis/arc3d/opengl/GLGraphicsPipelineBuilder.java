@@ -20,9 +20,9 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.SharedPtr;
-import icyllis.arc3d.engine.PipelineDesc;
-import icyllis.arc3d.engine.VertexInputLayout;
+import icyllis.arc3d.engine.*;
 import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.GL43C;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
@@ -40,7 +40,12 @@ public class GLGraphicsPipelineBuilder {
     private ByteBuffer mFinalizedVertSource;
     private ByteBuffer mFinalizedFragSource;
 
+    private byte mPrimitiveType;
     private VertexInputLayout mInputLayout;
+    private String mVertLabel;
+    private String mFragLabel;
+    private BlendInfo mBlendInfo;
+    private DepthStencilSettings mDepthStencilSettings;
     private String mPipelineLabel;
 
     private GLGraphicsPipelineBuilder(GLDevice device,
@@ -55,9 +60,6 @@ public class GLGraphicsPipelineBuilder {
             final GLDevice device,
             final PipelineDesc desc) {
         return new GLGraphicsPipeline(device,
-                desc.getPrimitiveType(),
-                desc.getBlendInfo(),
-                desc.getDepthStencilSettings(),
                 CompletableFuture.supplyAsync(() -> {
                     GLGraphicsPipelineBuilder builder = new GLGraphicsPipelineBuilder(device, desc);
                     builder.build();
@@ -67,10 +69,17 @@ public class GLGraphicsPipelineBuilder {
 
     private void build() {
         var info = mPipelineDesc.createGraphicsPipelineInfo(mDevice);
-        mPipelineLabel = info.mPipelineLabel;
+        mPrimitiveType = info.mPrimitiveType;
         mInputLayout = info.mInputLayout;
+        mVertLabel = info.mVertLabel;
+        mFragLabel = info.mFragLabel;
+        mBlendInfo = info.mBlendInfo;
+        mDepthStencilSettings = info.mDepthStencilSettings;
         mFinalizedVertSource = toUTF8(info.mVertSource);
         mFinalizedFragSource = toUTF8(info.mFragSource);
+        mPipelineLabel = info.mPipelineLabel;
+        /*System.out.printf("-------------------\nVertex GLSL\n%s\nFragment GLSL\n%s\n-------------------\n",
+                info.mVertSource, info.mFragSource);*/
     }
 
     @Nonnull
@@ -136,10 +145,19 @@ public class GLGraphicsPipelineBuilder {
             }
         }
 
+        if (mDevice.getCaps().hasDebugSupport()) {
+            String label = mPipelineLabel;
+            if (label != null && !label.isEmpty()) {
+                label = label.substring(0, Math.min(label.length(),
+                        mDevice.getCaps().maxLabelLength()));
+                gl.glObjectLabel(GL43C.GL_PROGRAM, program, label);
+            }
+        }
+
         // the shaders can be detached after the linking
         gl.glDetachShader(program, vert);
         gl.glDetachShader(program, frag);
-
+        // the shaders can be marked for deletion after the linking
         gl.glDeleteShader(frag);
         gl.glDeleteShader(vert);
 
@@ -175,7 +193,10 @@ public class GLGraphicsPipelineBuilder {
         }
 
         dest.init(new GLProgram(mDevice, program),
-                vertexArray/*,
+                vertexArray,
+                mPrimitiveType,
+                mBlendInfo,
+                mDepthStencilSettings/*,
                 mUniformHandler.mUniforms,
                 mUniformHandler.mCurrentOffset,
                 mUniformHandler.mSamplers,
