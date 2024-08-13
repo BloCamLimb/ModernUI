@@ -20,7 +20,7 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.engine.ops.OpsTask;
+import icyllis.arc3d.engine.trash.ops.OpsTask;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 
 import javax.annotation.Nonnull;

@@ -17,9 +17,11 @@
  * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine;
+package icyllis.arc3d.engine.trash;
 
 import icyllis.arc3d.core.*;
+import icyllis.arc3d.engine.*;
+import icyllis.arc3d.engine.Device;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nullable;

@@ -17,7 +17,7 @@
  * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine.ops;
+package icyllis.arc3d.engine.trash.ops;
 
 import icyllis.arc3d.core.Rect2f;
 import icyllis.arc3d.engine.*;
@@ -46,6 +46,7 @@ import javax.annotation.Nullable;
  * The bounds are used in determining which clip elements must be applied and thus the bounds cannot
  * in turn depend upon the clip.
  */
+@Deprecated
 public abstract class Op extends Rect2f {
 
     /**

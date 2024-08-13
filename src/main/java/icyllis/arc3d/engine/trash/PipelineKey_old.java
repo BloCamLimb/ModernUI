@@ -28,6 +28,7 @@ import javax.annotation.Nonnull;
  * This class is used to generate a generic pipeline cache key.
  * Also used to lookup pipeline state objects in cache.
  */
+@Deprecated
 public final class PipelineKey_old extends KeyBuilder {
 
     private int mShaderKeyLength;

@@ -17,7 +17,7 @@
  * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine;
+package icyllis.arc3d.engine.trash;
 
 import javax.annotation.concurrent.Immutable;
 
@@ -25,6 +25,7 @@ import javax.annotation.concurrent.Immutable;
  * Provides custom shader code to the Arc3D shading pipeline. Processor objects <em>must</em> be
  * immutable: after being constructed, their fields may not change.
  */
+@Deprecated
 @Immutable
 public abstract class Processor {
 

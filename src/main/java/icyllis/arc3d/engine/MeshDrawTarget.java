@@ -26,7 +26,7 @@ import java.nio.ByteBuffer;
  * Abstract interface that supports creating vertices, indices, and meshes, as well as
  * invoking GPU draw operations.
  */
-//TODO
+@Deprecated
 public interface MeshDrawTarget {
 
     /**

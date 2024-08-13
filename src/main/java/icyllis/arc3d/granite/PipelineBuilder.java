@@ -295,12 +295,12 @@ public class PipelineBuilder {
             appendColorOutput(fs,
                     coverageBlendFormula.mPrimaryOutput,
                     PRIMARY_COLOR_OUTPUT_NAME,
-                    outputColor);
+                    outputColor, "outputCoverage");
             if (coverageBlendFormula.hasSecondaryOutput()) {
                 appendColorOutput(fs,
                         coverageBlendFormula.mSecondaryOutput,
                         SECONDARY_COLOR_OUTPUT_NAME,
-                        outputColor);
+                        outputColor, "outputCoverage");
             }
         } else {
             fs.format("%s = %s;\n", PRIMARY_COLOR_OUTPUT_NAME, outputColor);
@@ -317,29 +317,30 @@ public class PipelineBuilder {
 
     private static void appendColorOutput(Formatter fs,
                                           byte outputType,
-                                          String finalColor,
-                                          String inColor) {
+                                          String output,
+                                          String inColor,
+                                          String inCoverage) {
         switch (outputType) {
             case BlendFormula.OUTPUT_TYPE_ZERO:
-                fs.format("%s = vec4(0.0);\n", finalColor);
+                fs.format("%s = vec4(0.0);\n", output);
                 break;
             case BlendFormula.OUTPUT_TYPE_COVERAGE:
-                fs.format("%s = %s;\n", finalColor, "outputCoverage");
+                fs.format("%s = %s;\n", output, inCoverage);
                 break;
             case BlendFormula.OUTPUT_TYPE_MODULATE:
-                fs.format("%s = %s * %s;\n", finalColor, inColor, "outputCoverage");
+                fs.format("%s = %s * %s;\n", output, inColor, inCoverage);
                 break;
             case BlendFormula.OUTPUT_TYPE_SRC_ALPHA_MODULATE:
-                fs.format("%s = %s.a * %s;\n", finalColor, inColor, "outputCoverage");
+                fs.format("%s = %s.a * %s;\n", output, inColor, inCoverage);
                 break;
             case BlendFormula.OUTPUT_TYPE_ONE_MINUS_SRC_ALPHA_MODULATE:
-                fs.format("%s = (1.0 - %s.a) * %s;\n", finalColor, inColor, "outputCoverage");
+                fs.format("%s = (1.0 - %s.a) * %s;\n", output, inColor, inCoverage);
                 break;
             case BlendFormula.OUTPUT_TYPE_ONE_MINUS_SRC_COLOR_MODULATE:
-                fs.format("%s = (vec4(1.0) - %s) * %s;\n", finalColor, inColor, "outputCoverage");
+                fs.format("%s = (1.0 - %s) * %s;\n", output, inColor, inCoverage);
                 break;
             default:
-                throw new AssertionError();
+                throw new AssertionError("Unsupported output type.");
         }
     }
 }

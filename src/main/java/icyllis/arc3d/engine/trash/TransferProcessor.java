@@ -17,14 +17,17 @@
  * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine;
+package icyllis.arc3d.engine.trash;
 
+import icyllis.arc3d.engine.BlendInfo;
+import icyllis.arc3d.engine.KeyBuilder;
 import icyllis.arc3d.granite.shading.UniformHandler;
 import icyllis.arc3d.granite.shading.XPFragmentBuilder;
 
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
 
+@Deprecated
 @Immutable
 public abstract class TransferProcessor extends Processor {
 
@@ -79,6 +82,7 @@ public abstract class TransferProcessor extends Processor {
      * the color and coverage FP outputs, is attached to the generated backend API pipeline/program,
      * and used to extract uniform data from TransferProcessor instances.
      */
+    @Deprecated
     public static abstract class ProgramImpl {
 
         public static final class EmitArgs {

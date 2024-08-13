@@ -17,7 +17,7 @@
  * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine;
+package icyllis.arc3d.engine.trash;
 
 /**
  * This class defines concrete stencil settings that map directly to the underlying hardware. It
