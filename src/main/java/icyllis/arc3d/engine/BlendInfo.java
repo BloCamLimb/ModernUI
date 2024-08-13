@@ -19,6 +19,11 @@
 
 package icyllis.arc3d.engine;
 
+import icyllis.arc3d.core.BlendMode;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 /**
  * BlendInfo is an immutable object holding info for setting-up GPU blend states.
  */
@@ -84,20 +89,6 @@ public final class BlendInfo {
     public static final byte
             EQUATION_UNKNOWN = -1;
 
-    public static final BlendInfo SRC = new BlendInfo(
-            EQUATION_ADD,
-            FACTOR_ONE,
-            FACTOR_ZERO,
-            true
-    );
-
-    public static final BlendInfo SRC_OVER = new BlendInfo(
-            EQUATION_ADD,
-            FACTOR_ONE,
-            FACTOR_ONE_MINUS_SRC_ALPHA,
-            true
-    );
-
     public final byte mEquation;
     public final byte mSrcFactor;
     public final byte mDstFactor;
@@ -113,8 +104,142 @@ public final class BlendInfo {
         mColorWrite = colorWrite;
     }
 
-    public boolean shouldDisableBlend() {
+    public boolean blendShouldDisable() {
         return (mEquation == EQUATION_ADD || mEquation == EQUATION_SUBTRACT) &&
                 mSrcFactor == FACTOR_ONE && mDstFactor == FACTOR_ZERO;
+    }
+
+    public static boolean blendCoeffRefsSrc(byte factor) {
+        return factor == FACTOR_SRC_COLOR || factor == FACTOR_ONE_MINUS_SRC_COLOR ||
+                factor == FACTOR_SRC_ALPHA || factor == FACTOR_ONE_MINUS_SRC_ALPHA;
+    }
+
+    public static boolean blendCoeffRefsDst(byte factor) {
+        return factor == FACTOR_DST_COLOR || factor == FACTOR_ONE_MINUS_DST_COLOR ||
+                factor == FACTOR_DST_ALPHA || factor == FACTOR_ONE_MINUS_DST_ALPHA;
+    }
+
+    public static boolean blendCoeffRefsSrc1(byte factor) {
+        return factor == FACTOR_SRC1_COLOR || factor == FACTOR_ONE_MINUS_SRC1_COLOR ||
+                factor == FACTOR_SRC1_ALPHA || factor == FACTOR_ONE_MINUS_SRC1_ALPHA;
+    }
+
+    public static boolean blendCoeffsUseSrcColor(byte srcFactor, byte dstFactor) {
+        return srcFactor != FACTOR_ZERO || blendCoeffRefsSrc(dstFactor);
+    }
+
+    public static boolean blendCoeffsUseDstColor(byte srcFactor,
+                                                 byte dstFactor,
+                                                 boolean srcColorIsOpaque) {
+        return blendCoeffRefsDst(srcFactor) ||
+                (dstFactor != FACTOR_ZERO && !(dstFactor == FACTOR_ONE_MINUS_SRC_ALPHA && srcColorIsOpaque));
+    }
+
+    public static boolean blendModifiesDst(byte equation, byte srcFactor, byte dstFactor) {
+        return (equation != EQUATION_ADD && equation != EQUATION_REVERSE_SUBTRACT) ||
+                srcFactor != FACTOR_ZERO || dstFactor != FACTOR_ONE;
+    }
+
+    public static final BlendInfo CLEAR = new BlendInfo(
+            EQUATION_ADD,
+            FACTOR_ZERO,
+            FACTOR_ZERO,
+            true
+    );
+    public static final BlendInfo SRC = new BlendInfo(
+            EQUATION_ADD,
+            FACTOR_ONE,
+            FACTOR_ZERO,
+            true
+    );
+    public static final BlendInfo DST = new BlendInfo(
+            EQUATION_ADD,
+            FACTOR_ZERO,
+            FACTOR_ONE,
+            false
+    );
+    public static final BlendInfo SRC_OVER = new BlendInfo(
+            EQUATION_ADD,
+            FACTOR_ONE,
+            FACTOR_ONE_MINUS_SRC_ALPHA,
+            true
+    );
+    public static final BlendInfo DST_OVER = new BlendInfo(
+            EQUATION_ADD,
+            FACTOR_ONE_MINUS_DST_ALPHA,
+            FACTOR_ONE,
+            true
+    );
+    public static final BlendInfo SRC_IN = new BlendInfo(
+            EQUATION_ADD,
+            BlendInfo.FACTOR_DST_ALPHA, BlendInfo.FACTOR_ZERO,
+            true
+    );
+    public static final BlendInfo DST_IN = new BlendInfo(
+            EQUATION_ADD,
+            BlendInfo.FACTOR_ZERO, BlendInfo.FACTOR_SRC_ALPHA,
+            true
+    );
+    public static final BlendInfo SRC_OUT = new BlendInfo(
+            EQUATION_ADD,
+            BlendInfo.FACTOR_ONE_MINUS_DST_ALPHA, BlendInfo.FACTOR_ZERO,
+            true
+    );
+    public static final BlendInfo DST_OUT = new BlendInfo(
+            EQUATION_ADD,
+            BlendInfo.FACTOR_ZERO, BlendInfo.FACTOR_ONE_MINUS_SRC_ALPHA,
+            true
+    );
+    public static final BlendInfo SRC_ATOP = new BlendInfo(
+            EQUATION_ADD,
+            BlendInfo.FACTOR_DST_ALPHA, BlendInfo.FACTOR_ONE_MINUS_SRC_ALPHA,
+            true
+    );
+    public static final BlendInfo DST_ATOP = new BlendInfo(
+            EQUATION_ADD,
+            BlendInfo.FACTOR_ONE_MINUS_DST_ALPHA, BlendInfo.FACTOR_SRC_ALPHA,
+            true
+    );
+    public static final BlendInfo XOR = new BlendInfo(
+            EQUATION_ADD,
+            BlendInfo.FACTOR_ONE_MINUS_DST_ALPHA, BlendInfo.FACTOR_ONE_MINUS_SRC_ALPHA,
+            true
+    );
+    public static final BlendInfo PLUS = new BlendInfo(
+            EQUATION_ADD,
+            BlendInfo.FACTOR_ONE, BlendInfo.FACTOR_ONE,
+            true
+    );
+    public static final BlendInfo MODULATE = new BlendInfo(
+            EQUATION_ADD,
+            BlendInfo.FACTOR_ZERO, BlendInfo.FACTOR_SRC_COLOR,
+            true
+    );
+    public static final BlendInfo SCREEN = new BlendInfo(
+            EQUATION_ADD,
+            BlendInfo.FACTOR_ONE, BlendInfo.FACTOR_ONE_MINUS_SRC_COLOR,
+            true
+    );
+
+    @Nullable
+    public static BlendInfo getSimpleBlendInfo(@Nonnull BlendMode mode) {
+        return switch (mode) {
+            case CLEAR -> CLEAR;
+            case SRC -> SRC;
+            case DST -> DST;
+            case SRC_OVER -> SRC_OVER;
+            case DST_OVER -> DST_OVER;
+            case SRC_IN -> SRC_IN;
+            case DST_IN -> DST_IN;
+            case SRC_OUT -> SRC_OUT;
+            case DST_OUT -> DST_OUT;
+            case SRC_ATOP -> SRC_ATOP;
+            case DST_ATOP -> DST_ATOP;
+            case XOR -> XOR;
+            case PLUS -> PLUS;
+            case MODULATE -> MODULATE;
+            case SCREEN -> SCREEN;
+            default -> null;
+        };
     }
 }

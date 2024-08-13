@@ -19,6 +19,7 @@
 
 package icyllis.arc3d.granite;
 
+import icyllis.arc3d.core.BlendMode;
 import icyllis.arc3d.core.SLDataType;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.granite.shading.UniformHandler;
@@ -29,6 +30,7 @@ import java.util.*;
 /**
  * Build AST for graphics pipeline.
  */
+//TODO currently this build full GLSL source, wait for compiler backend development
 public class PipelineBuilder {
 
     // devicePos + painter's depth is our worldPos
@@ -45,14 +47,17 @@ public class PipelineBuilder {
     public static final String PRIMARY_COLOR_OUTPUT_NAME = "FragColor0";
     public static final String SECONDARY_COLOR_OUTPUT_NAME = "FragColor1";
 
-    private Caps mCaps;
-    private GraphicsPipelineDesc mDesc;
+    private final Caps mCaps;
+    private final GraphicsPipelineDesc mDesc;
 
-    private FragmentNode[] mRootNodes;
+    private final FragmentNode[] mRootNodes;
 
-    private VaryingHandler mVaryings;
-    private UniformHandler mGeometryUniforms;
-    private UniformHandler mFragmentUniforms;
+    private final VaryingHandler mVaryings;
+    private final UniformHandler mGeometryUniforms;
+    private final UniformHandler mFragmentUniforms;
+
+    // depth only pass will disable blend, then default is DST
+    private BlendInfo mBlendInfo = BlendInfo.DST;
 
     private StringBuilder mVertCode;
     private StringBuilder mFragCode;
@@ -88,7 +93,7 @@ public class PipelineBuilder {
         }
     }
 
-    public void build() {
+    public PipelineDesc.GraphicsPipelineInfo build() {
 
         mDesc.geomStep().emitVaryings(mVaryings);
         if (needsLocalCoords()) {
@@ -111,6 +116,17 @@ public class PipelineBuilder {
 
         buildFragmentShader();
         buildVertexShader();
+
+        var info = new PipelineDesc.GraphicsPipelineInfo();
+        info.mPrimitiveType = mDesc.getPrimitiveType();
+        info.mInputLayout = mDesc.geomStep().getInputLayout();
+        info.mVertSource = mVertCode;
+        info.mFragSource = mFragCode;
+        info.mBlendInfo = mBlendInfo;
+        info.mDepthStencilSettings = mDesc.getDepthStencilSettings();
+        info.mPipelineLabel = mDesc.geomStep().name();
+
+        return info;
     }
 
     public void buildVertexShader() {
@@ -180,11 +196,30 @@ public class PipelineBuilder {
 
     public void buildFragmentShader() {
         StringBuilder out = new StringBuilder();
-        if (mDesc.getPaintParamsKey().size() == 0 && !mDesc.usesFastSolidColor()) {
+        if (mDesc.isDepthOnlyPass()) {
             // Depth-only draw so no fragment shader to compile
             mFragCode = out;
             return;
         }
+
+        BlendMode blendMode = mDesc.getFinalBlendMode();
+        assert blendMode != null;
+
+        BlendFormula coverageBlendFormula = null;
+        if (mDesc.geomStep().emitsCoverage()) {
+            //TODO: Determine whether draw is opaque and pass that to getBlendFormula.
+            // we can avoid dual source blending if src is opaque
+            coverageBlendFormula = BlendFormula.getBlendFormula(
+                    /*isOpaque=*/false, /*hasCoverage=*/true, blendMode
+            );
+            if (coverageBlendFormula == null) {
+                coverageBlendFormula = BlendFormula.getBlendFormula(
+                        /*isOpaque=*/false, /*hasCoverage=*/true, BlendMode.SRC_OVER
+                );
+                assert coverageBlendFormula != null;
+            }
+        }
+
         out.append(mCaps.shaderCaps().mGLSLVersion.mVersionDecl);
         Formatter fs = new Formatter(out, Locale.ROOT);
         // If we're doing analytic coverage, we must also be doing shading.
@@ -203,12 +238,26 @@ public class PipelineBuilder {
         mVaryings.getFragDecls(out);
 
         //// Outputs
-        String layoutQualifier = "location = " + MAIN_DRAW_BUFFER_INDEX;
-        var primaryOutput = new ShaderVar(PRIMARY_COLOR_OUTPUT_NAME, SLDataType.kFloat4,
-                ShaderVar.kOut_TypeModifier,
-                ShaderVar.kNonArray, layoutQualifier, "");
-        primaryOutput.appendDecl(out);
-        out.append(";\n");
+        {
+            String layoutQualifier = "location=" + MAIN_DRAW_BUFFER_INDEX;
+            ShaderVar primaryOutput = new ShaderVar(PRIMARY_COLOR_OUTPUT_NAME, SLDataType.kFloat4,
+                    ShaderVar.kOut_TypeModifier,
+                    ShaderVar.kNonArray, layoutQualifier, "");
+            ShaderVar secondaryOutput = null;
+            if (coverageBlendFormula != null && coverageBlendFormula.hasSecondaryOutput()) {
+                secondaryOutput = new ShaderVar(SECONDARY_COLOR_OUTPUT_NAME, SLDataType.kFloat4,
+                        ShaderVar.kOut_TypeModifier,
+                        ShaderVar.kNonArray, layoutQualifier, "");
+                primaryOutput.addLayoutQualifier("index", PRIMARY_COLOR_OUTPUT_INDEX);
+                secondaryOutput.addLayoutQualifier("index", SECONDARY_COLOR_OUTPUT_INDEX);
+            }
+            primaryOutput.appendDecl(out);
+            out.append(";\n");
+            if (secondaryOutput != null) {
+                secondaryOutput.appendDecl(out);
+                out.append(";\n");
+            }
+        }
 
         ShaderCodeSource.emitDefinitions(mRootNodes, new IdentityHashMap<>(), fs);
 
@@ -236,20 +285,61 @@ public class PipelineBuilder {
         if (mDesc.geomStep().emitsCoverage()) {
             out.append("vec4 outputCoverage;\n");
             mDesc.geomStep().emitFragmentCoverageCode(fs, "outputCoverage");
-            fs.format("%s = %s * %s;\n", PRIMARY_COLOR_OUTPUT_NAME, outputColor, "outputCoverage");
+            assert coverageBlendFormula != null;
+            mBlendInfo = new BlendInfo(
+                    coverageBlendFormula.mEquation,
+                    coverageBlendFormula.mSrcFactor,
+                    coverageBlendFormula.mDstFactor,
+                    coverageBlendFormula.modifiesDst() // color write mask
+            );
+            appendColorOutput(fs,
+                    coverageBlendFormula.mPrimaryOutput,
+                    PRIMARY_COLOR_OUTPUT_NAME,
+                    outputColor);
+            if (coverageBlendFormula.hasSecondaryOutput()) {
+                appendColorOutput(fs,
+                        coverageBlendFormula.mSecondaryOutput,
+                        SECONDARY_COLOR_OUTPUT_NAME,
+                        outputColor);
+            }
         } else {
             fs.format("%s = %s;\n", PRIMARY_COLOR_OUTPUT_NAME, outputColor);
+            mBlendInfo = BlendInfo.getSimpleBlendInfo(blendMode);
+            if (mBlendInfo == null) {
+                mBlendInfo = BlendInfo.getSimpleBlendInfo(BlendMode.SRC_OVER);
+                assert mBlendInfo != null;
+            }
         }
 
         out.append("}");
         mFragCode = out;
     }
 
-    public StringBuilder getVertCode() {
-        return mVertCode;
-    }
-
-    public StringBuilder getFragCode() {
-        return mFragCode;
+    private static void appendColorOutput(Formatter fs,
+                                          byte outputType,
+                                          String finalColor,
+                                          String inColor) {
+        switch (outputType) {
+            case BlendFormula.OUTPUT_TYPE_ZERO:
+                fs.format("%s = vec4(0.0);\n", finalColor);
+                break;
+            case BlendFormula.OUTPUT_TYPE_COVERAGE:
+                fs.format("%s = %s;\n", finalColor, "outputCoverage");
+                break;
+            case BlendFormula.OUTPUT_TYPE_MODULATE:
+                fs.format("%s = %s * %s;\n", finalColor, inColor, "outputCoverage");
+                break;
+            case BlendFormula.OUTPUT_TYPE_SRC_ALPHA_MODULATE:
+                fs.format("%s = %s.a * %s;\n", finalColor, inColor, "outputCoverage");
+                break;
+            case BlendFormula.OUTPUT_TYPE_ONE_MINUS_SRC_ALPHA_MODULATE:
+                fs.format("%s = (1.0 - %s.a) * %s;\n", finalColor, inColor, "outputCoverage");
+                break;
+            case BlendFormula.OUTPUT_TYPE_ONE_MINUS_SRC_COLOR_MODULATE:
+                fs.format("%s = (vec4(1.0) - %s) * %s;\n", finalColor, inColor, "outputCoverage");
+                break;
+            default:
+                throw new AssertionError();
+        }
     }
 }

@@ -26,6 +26,9 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import javax.annotation.Nullable;
 import java.util.Objects;
 
+/**
+ * Descriptor of a graphics pipeline in Granite Renderer.
+ */
 public final class GraphicsPipelineDesc extends PipelineDesc {
 
     private GeometryStep mGeometryStep;
@@ -64,6 +67,11 @@ public final class GraphicsPipelineDesc extends PipelineDesc {
 
     public Key getPaintParamsKey() {
         return mPaintParamsKey;
+    }
+
+    @Nullable
+    public BlendMode getFinalBlendMode() {
+        return mFinalBlendMode;
     }
 
     public boolean usesFastSolidColor() {
@@ -116,28 +124,31 @@ public final class GraphicsPipelineDesc extends PipelineDesc {
         return roots.toArray(FragmentNode.NO_CHILDREN);
     }
 
+    public boolean isDepthOnlyPass() {
+        boolean depthOnly = mPaintParamsKey.isEmpty() && !mUseFastSolidColor;
+        assert depthOnly == (mFinalBlendMode == null);
+        return depthOnly;
+    }
+
+    @Override
+    public GraphicsPipelineInfo createGraphicsPipelineInfo(Device device) {
+        PipelineBuilder pipelineBuilder = new PipelineBuilder(device, this);
+        return pipelineBuilder.build();
+    }
+
     @Override
     public byte getPrimitiveType() {
         return mGeometryStep.primitiveType();
     }
 
     @Override
-    public GraphicsPipelineInfo createGraphicsPipelineInfo(Device device) {
-        var info = new GraphicsPipelineInfo();
-        info.mPrimitiveType = getPrimitiveType();
-        info.mPipelineLabel = mGeometryStep.name();
-        info.mInputLayout = mGeometryStep.getInputLayout();
-        PipelineBuilder pipelineBuilder = new PipelineBuilder(device, this);
-        pipelineBuilder.build();
-        info.mVertSource = pipelineBuilder.getVertCode();
-        info.mFragSource = pipelineBuilder.getFragCode();
-        return info;
-    }
-
-    @Override
     public BlendInfo getBlendInfo() {
-        //TODO
-        return BlendInfo.SRC_OVER;
+        if (mFinalBlendMode != null) {
+            var info = BlendInfo.getSimpleBlendInfo(mFinalBlendMode);
+            return info != null ? info : BlendInfo.SRC_OVER;
+        } else {
+            return BlendInfo.DST;
+        }
     }
 
     @Override

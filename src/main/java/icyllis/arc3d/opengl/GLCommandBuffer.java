@@ -508,7 +508,7 @@ public final class GLCommandBuffer extends CommandBuffer {
         }
 
         BlendInfo blendInfo = mGraphicsPipeline.getBlendInfo();
-        boolean blendOff = blendInfo.shouldDisableBlend() || !blendInfo.mColorWrite;
+        boolean blendOff = blendInfo.blendShouldDisable() || !blendInfo.mColorWrite;
         if (blendOff) {
             if (mHWBlendState != kDisabled_TriState) {
                 mDevice.getGL().glDisable(GL_BLEND);

@@ -123,6 +123,7 @@ public final class PaintParams implements AutoCloseable {
         return mPrimitiveBlender;
     }
 
+    @Nonnull
     public BlendMode getFinalBlendMode() {
         BlendMode blendMode = mFinalBlender != null
                 ? mFinalBlender.asBlendMode()
