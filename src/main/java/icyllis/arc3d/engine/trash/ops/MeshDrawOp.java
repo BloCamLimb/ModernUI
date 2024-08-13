@@ -17,7 +17,7 @@
  * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine.ops;
+package icyllis.arc3d.engine.trash.ops;
 
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
@@ -27,6 +27,7 @@ import javax.annotation.Nonnull;
 /**
  * Base class for mesh-drawing {@link DrawOp DrawOps}.
  */
+@Deprecated
 public abstract class MeshDrawOp extends DrawOp implements Mesh {
 
     private GraphicsPipelineDesc_Old mGraphicsPipelineDesc;

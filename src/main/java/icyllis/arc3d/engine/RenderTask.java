@@ -21,7 +21,7 @@ package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SharedPtr;
-import icyllis.arc3d.engine.ops.OpsTask;
+import icyllis.arc3d.engine.trash.ops.OpsTask;
 
 import javax.annotation.Nonnull;
 import java.util.*;
@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * modify its target proxy's contents. (e.g., an {@link OpsTask} that executes a command buffer,
  * a {@link TextureResolveTask} that regenerates mipmaps, etc.)
  */
+@Deprecated
 public abstract class RenderTask extends RefCnt {
 
     private static final AtomicInteger sNextID = new AtomicInteger(1);

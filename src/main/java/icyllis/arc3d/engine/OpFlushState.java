@@ -29,6 +29,7 @@ import java.util.Set;
 /**
  * Tracks the state across all the GrOps (really just the GrDrawOps) in a OpsTask flush.
  */
+@Deprecated
 public class OpFlushState implements MeshDrawTarget {
 
     private final Device mDevice;

@@ -17,7 +17,7 @@
  * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine.ops;
+package icyllis.arc3d.engine.trash.ops;
 
 import icyllis.arc3d.engine.*;
 
@@ -25,6 +25,7 @@ import icyllis.arc3d.engine.*;
  * Base class for {@link Op Ops} that draw. These ops can draw into an {@link OpsRenderPass}'s
  * {@link GpuRenderTarget}.
  */
+@Deprecated
 public abstract class DrawOp extends Op {
 
     public DrawOp() {

@@ -32,6 +32,7 @@ import static icyllis.arc3d.engine.Engine.SurfaceOrigin;
  * and set pipeline state for a draw. It is used along with a source of geometric
  * data to draw.
  */
+@Deprecated
 @Immutable
 public final class GraphicsPipelineDesc_Old {
 

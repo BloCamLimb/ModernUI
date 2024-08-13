@@ -20,7 +20,7 @@
 package icyllis.arc3d.core;
 
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.vulkan.*;
+import icyllis.arc3d.engine.trash.SharedContext;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nullable;

@@ -17,7 +17,7 @@
  * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine.ops;
+package icyllis.arc3d.engine.trash.ops;
 
 import icyllis.arc3d.core.Rect2f;
 import icyllis.arc3d.core.Rect2i;
@@ -33,7 +33,7 @@ import java.util.Objects;
 
 import static icyllis.arc3d.engine.Engine.*;
 
-//TODO
+@Deprecated
 public class OpsTask extends RenderTask {
 
     public static final int

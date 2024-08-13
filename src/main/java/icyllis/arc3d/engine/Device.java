@@ -21,7 +21,7 @@ package icyllis.arc3d.engine;
 
 import icyllis.arc3d.compiler.ShaderCompiler;
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.engine.ops.OpsTask;
+import icyllis.arc3d.engine.trash.ops.OpsTask;
 import icyllis.arc3d.granite.RendererProvider;
 import icyllis.arc3d.granite.ShaderCodeSource;
 import org.jetbrains.annotations.ApiStatus;

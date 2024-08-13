@@ -17,13 +17,14 @@
  * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine.ops;
+package icyllis.arc3d.engine.trash.ops;
 
 import icyllis.arc3d.core.Rect2f;
 import icyllis.arc3d.engine.*;
 
 import javax.annotation.Nonnull;
 
+@Deprecated
 public final class ClearOp extends Op {
 
     private static final int COLOR_BUFFER = 0x1;
