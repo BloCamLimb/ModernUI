@@ -57,7 +57,7 @@ public class PipelineBuilder {
     private final UniformHandler mFragmentUniforms;
 
     // depth only pass will disable blend, then default is DST
-    private BlendInfo mBlendInfo = BlendInfo.DST;
+    private BlendInfo mBlendInfo = BlendInfo.BLEND_DST;
 
     private StringBuilder mVertCode;
     private StringBuilder mFragCode;

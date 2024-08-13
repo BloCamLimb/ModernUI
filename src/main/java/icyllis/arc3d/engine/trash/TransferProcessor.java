@@ -59,7 +59,7 @@ public abstract class TransferProcessor extends Processor {
     @Nonnull
     public BlendInfo getBlendInfo() {
         assert readsDstColor();
-        return BlendInfo.SRC;
+        return BlendInfo.BLEND_SRC;
     }
 
     // must override by subclass if XP will not read dst color

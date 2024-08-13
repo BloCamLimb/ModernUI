@@ -140,105 +140,114 @@ public final class BlendInfo {
                 srcFactor != FACTOR_ZERO || dstFactor != FACTOR_ONE;
     }
 
-    public static final BlendInfo CLEAR = new BlendInfo(
+    public static final BlendInfo BLEND_CLEAR = new BlendInfo(
             EQUATION_ADD,
             FACTOR_ZERO,
             FACTOR_ZERO,
             true
     );
-    public static final BlendInfo SRC = new BlendInfo(
+    public static final BlendInfo BLEND_SRC = new BlendInfo(
             EQUATION_ADD,
             FACTOR_ONE,
             FACTOR_ZERO,
             true
     );
-    public static final BlendInfo DST = new BlendInfo(
+    public static final BlendInfo BLEND_DST = new BlendInfo(
             EQUATION_ADD,
             FACTOR_ZERO,
             FACTOR_ONE,
             false
     );
-    public static final BlendInfo SRC_OVER = new BlendInfo(
+    public static final BlendInfo BLEND_SRC_OVER = new BlendInfo(
             EQUATION_ADD,
             FACTOR_ONE,
             FACTOR_ONE_MINUS_SRC_ALPHA,
             true
     );
-    public static final BlendInfo DST_OVER = new BlendInfo(
+    public static final BlendInfo BLEND_DST_OVER = new BlendInfo(
             EQUATION_ADD,
             FACTOR_ONE_MINUS_DST_ALPHA,
             FACTOR_ONE,
             true
     );
-    public static final BlendInfo SRC_IN = new BlendInfo(
+    public static final BlendInfo BLEND_SRC_IN = new BlendInfo(
             EQUATION_ADD,
             BlendInfo.FACTOR_DST_ALPHA, BlendInfo.FACTOR_ZERO,
             true
     );
-    public static final BlendInfo DST_IN = new BlendInfo(
+    public static final BlendInfo BLEND_DST_IN = new BlendInfo(
             EQUATION_ADD,
             BlendInfo.FACTOR_ZERO, BlendInfo.FACTOR_SRC_ALPHA,
             true
     );
-    public static final BlendInfo SRC_OUT = new BlendInfo(
+    public static final BlendInfo BLEND_SRC_OUT = new BlendInfo(
             EQUATION_ADD,
             BlendInfo.FACTOR_ONE_MINUS_DST_ALPHA, BlendInfo.FACTOR_ZERO,
             true
     );
-    public static final BlendInfo DST_OUT = new BlendInfo(
+    public static final BlendInfo BLEND_DST_OUT = new BlendInfo(
             EQUATION_ADD,
             BlendInfo.FACTOR_ZERO, BlendInfo.FACTOR_ONE_MINUS_SRC_ALPHA,
             true
     );
-    public static final BlendInfo SRC_ATOP = new BlendInfo(
+    public static final BlendInfo BLEND_SRC_ATOP = new BlendInfo(
             EQUATION_ADD,
             BlendInfo.FACTOR_DST_ALPHA, BlendInfo.FACTOR_ONE_MINUS_SRC_ALPHA,
             true
     );
-    public static final BlendInfo DST_ATOP = new BlendInfo(
+    public static final BlendInfo BLEND_DST_ATOP = new BlendInfo(
             EQUATION_ADD,
             BlendInfo.FACTOR_ONE_MINUS_DST_ALPHA, BlendInfo.FACTOR_SRC_ALPHA,
             true
     );
-    public static final BlendInfo XOR = new BlendInfo(
+    public static final BlendInfo BLEND_XOR = new BlendInfo(
             EQUATION_ADD,
             BlendInfo.FACTOR_ONE_MINUS_DST_ALPHA, BlendInfo.FACTOR_ONE_MINUS_SRC_ALPHA,
             true
     );
-    public static final BlendInfo PLUS = new BlendInfo(
+    public static final BlendInfo BLEND_PLUS = new BlendInfo(
             EQUATION_ADD,
             BlendInfo.FACTOR_ONE, BlendInfo.FACTOR_ONE,
             true
     );
-    public static final BlendInfo MODULATE = new BlendInfo(
+    public static final BlendInfo BLEND_MINUS = new BlendInfo(
+            EQUATION_REVERSE_SUBTRACT,
+            BlendInfo.FACTOR_ONE, BlendInfo.FACTOR_ONE,
+            true
+    );
+    public static final BlendInfo BLEND_MODULATE = new BlendInfo(
             EQUATION_ADD,
             BlendInfo.FACTOR_ZERO, BlendInfo.FACTOR_SRC_COLOR,
             true
     );
-    public static final BlendInfo SCREEN = new BlendInfo(
+    public static final BlendInfo BLEND_SCREEN = new BlendInfo(
             EQUATION_ADD,
             BlendInfo.FACTOR_ONE, BlendInfo.FACTOR_ONE_MINUS_SRC_COLOR,
             true
     );
 
+    /**
+     * Returns the standard HW blend info for the given Porter Duff blend mode.
+     */
     @Nullable
     public static BlendInfo getSimpleBlendInfo(@Nonnull BlendMode mode) {
         return switch (mode) {
-            case CLEAR -> CLEAR;
-            case SRC -> SRC;
-            case DST -> DST;
-            case SRC_OVER -> SRC_OVER;
-            case DST_OVER -> DST_OVER;
-            case SRC_IN -> SRC_IN;
-            case DST_IN -> DST_IN;
-            case SRC_OUT -> SRC_OUT;
-            case DST_OUT -> DST_OUT;
-            case SRC_ATOP -> SRC_ATOP;
-            case DST_ATOP -> DST_ATOP;
-            case XOR -> XOR;
-            case PLUS -> PLUS;
-            case MODULATE -> MODULATE;
-            case SCREEN -> SCREEN;
+            case CLEAR -> BLEND_CLEAR;
+            case SRC -> BLEND_SRC;
+            case DST -> BLEND_DST;
+            case SRC_OVER -> BLEND_SRC_OVER;
+            case DST_OVER -> BLEND_DST_OVER;
+            case SRC_IN -> BLEND_SRC_IN;
+            case DST_IN -> BLEND_DST_IN;
+            case SRC_OUT -> BLEND_SRC_OUT;
+            case DST_OUT -> BLEND_DST_OUT;
+            case SRC_ATOP -> BLEND_SRC_ATOP;
+            case DST_ATOP -> BLEND_DST_ATOP;
+            case XOR -> BLEND_XOR;
+            case PLUS, PLUS_CLAMPED -> BLEND_PLUS;
+            case MINUS, MINUS_CLAMPED -> BLEND_MINUS;
+            case MODULATE -> BLEND_MODULATE;
+            case SCREEN -> BLEND_SCREEN;
             default -> null;
         };
     }
