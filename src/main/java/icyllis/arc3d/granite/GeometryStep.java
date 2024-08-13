@@ -102,16 +102,7 @@ public abstract class GeometryStep {
      */
     public static final int FLAG_EMIT_COVERAGE = 1 << 3;
     /**
-     * Set for hard-edge coverage, discard the fragment if coverage is 0.
-     * Otherwise coverage will involve in blending operations.
-     * <p>
-     * Not compatible with {@link #FLAG_OUTSET_BOUNDS_FOR_AA}.
-     */
-    public static final int FLAG_EMIT_01_COVERAGE = 1 << 4;
-    /**
      * Set for analytic antialiasing (AAA) or distance-to-edge antialiasing (DEAA).
-     * <p>
-     * Not compatible with {@link #FLAG_EMIT_01_COVERAGE}.
      */
     public static final int FLAG_OUTSET_BOUNDS_FOR_AA = 1 << 5;
     /**
@@ -139,8 +130,8 @@ public abstract class GeometryStep {
         // same as AtomicInteger.updateAndGet
         for (;;) {
             final int value = sNextID.get();
-            // Not worried about overflow since each Context won't have that many RenderSteps, so even if
-            // it wraps back to 0, that RenderStep will not be in the same Context as the original 0.
+            // Not worried about overflow since each DeviceContext won't have that many GeometrySteps, so even if
+            // it wraps back to 0, that GeometryStep will not be in the same DeviceContext as the original 0.
             final int newValue = value + 1;
             if (sNextID.weakCompareAndSetVolatile(value, newValue)) {
                 return value;
@@ -381,31 +372,27 @@ public abstract class GeometryStep {
         return mInstanceStride;
     }
 
-    public boolean performsShading() {
+    public final boolean performsShading() {
         return (mFlags & FLAG_PERFORM_SHADING) != 0;
     }
 
-    public boolean emitsCoverage() {
+    public final boolean emitsCoverage() {
         return (mFlags & FLAG_EMIT_COVERAGE) != 0;
     }
 
-    public boolean emits01Coverage() {
-        return (mFlags & FLAG_EMIT_01_COVERAGE) != 0;
-    }
-
-    public boolean handlesSolidColor() {
+    public final boolean handlesSolidColor() {
         return (mFlags & FLAG_HANDLE_SOLID_COLOR) != 0;
     }
 
-    public boolean emitsPrimitiveColor() {
+    public final boolean emitsPrimitiveColor() {
         return (mFlags & FLAG_EMIT_PRIMITIVE_COLOR) != 0;
     }
 
-    public DepthStencilSettings depthStencilSettings() {
+    public final DepthStencilSettings depthStencilSettings() {
         return mDepthStencilSettings;
     }
 
-    public int depthStencilFlags() {
+    public final int depthStencilFlags() {
         return (mDepthStencilSettings.mDepthTest || mDepthStencilSettings.mDepthWrite
                 ? DepthStencilFlags.kDepth
                 : DepthStencilFlags.kNone) |
@@ -466,12 +453,18 @@ public abstract class GeometryStep {
     /**
      * Emits the fragment color code into the fragment shader.
      * This is either paint's solid color or per-vertex primitive color.
+     * See {@link #FLAG_HANDLE_SOLID_COLOR} and {@link #FLAG_EMIT_PRIMITIVE_COLOR}.
      */
     public void emitFragmentColorCode(Formatter fs, String outputColor) {
     }
 
     /**
      * Emits the fragment coverage code into the fragment shader.
+     * <p>
+     * If {@link #emitsCoverage()} is false, this method is called for
+     * hard-edge coverage, discard the fragment if coverage is 0.
+     * Otherwise <var>outputCoverage</var> is non-null, and coverage will involve in
+     * blending operations.
      */
     public void emitFragmentCoverageCode(Formatter fs, String outputCoverage) {
     }

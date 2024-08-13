@@ -636,13 +636,11 @@ public class TestGraniteRenderer {
                 paint.setShader(RefCnt.create(mTestShader1));
                 paint.setStyle(Paint.FILL);
                 paint.setAlphaF(0.7f);
-                paint.setBlendMode(BlendMode.SRC_ATOP);
                 var mat = Matrix4.identity();
                 mat.setTranslate(1000, 100, 0);
                 canvas.setMatrix(mat);
                 rrect.setRectXY(200, 100, 600, 500, 20, 20);
                 canvas.drawRoundRect(rrect, paint);
-                paint.setBlendMode(null);
 
                 paint.setShader(null);
                 canvas.translate(-1000, 0);

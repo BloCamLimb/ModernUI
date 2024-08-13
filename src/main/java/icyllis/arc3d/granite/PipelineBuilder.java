@@ -303,6 +303,7 @@ public class PipelineBuilder {
                         outputColor, "outputCoverage");
             }
         } else {
+            mDesc.geomStep().emitFragmentCoverageCode(fs, null);
             fs.format("%s = %s;\n", PRIMARY_COLOR_OUTPUT_NAME, outputColor);
             mBlendInfo = BlendInfo.getSimpleBlendInfo(blendMode);
             if (mBlendInfo == null) {
