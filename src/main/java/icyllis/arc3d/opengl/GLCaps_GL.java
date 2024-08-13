@@ -457,6 +457,11 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
     }
 
     @Override
+    public void glBlendEquation(int mode) {
+        GL14C.glBlendEquation(mode);
+    }
+
+    @Override
     public int glGenBuffers() {
         return GL15C.glGenBuffers();
     }

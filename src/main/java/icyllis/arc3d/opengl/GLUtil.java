@@ -675,6 +675,16 @@ public final class GLUtil {
     //@formatter:on
 
     //@formatter:off
+    public static int toGLBlendEquation(byte equation) {
+        return switch (equation) {
+            case BlendInfo.EQUATION_SUBTRACT            -> GL_FUNC_SUBTRACT;
+            case BlendInfo.EQUATION_REVERSE_SUBTRACT    -> GL_FUNC_REVERSE_SUBTRACT;
+            default -> GL_FUNC_ADD;
+        };
+    }
+    //@formatter:on
+
+    //@formatter:off
     public static int toGLBlendFactor(byte factor) {
         return switch (factor) {
             case BlendInfo.FACTOR_ONE                       -> GL_ONE;
