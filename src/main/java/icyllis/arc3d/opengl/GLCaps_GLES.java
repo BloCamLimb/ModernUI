@@ -347,6 +347,11 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
     }
 
     @Override
+    public void glBlendEquation(int mode) {
+        GLES20.glBlendEquation(mode);
+    }
+
+    @Override
     public int glGenBuffers() {
         return GLES20.glGenBuffers();
     }

@@ -72,6 +72,8 @@ public interface GLInterfaceCommon {
 
     void glActiveTexture(@NativeType("GLenum") int texture);
 
+    void glBlendEquation(@NativeType("GLenum") int mode);
+
     @NativeType("void")
     int glGenBuffers();
 

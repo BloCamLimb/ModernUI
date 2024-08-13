@@ -64,6 +64,10 @@ public final class GLCommandBuffer extends CommandBuffer {
     private /*TriState*/ int mHWColorWrite;
     private /*TriState*/ int mHWBlendState;
     /**
+     * @see BlendInfo#EQUATION_ADD
+     */
+    private byte mHWBlendEquation;
+    /**
      * @see BlendInfo#FACTOR_ZERO
      */
     private byte mHWBlendSrcFactor;
@@ -143,6 +147,7 @@ public final class GLCommandBuffer extends CommandBuffer {
 
         mHWColorWrite = kUnknown_TriState;
         mHWBlendState = kUnknown_TriState;
+        mHWBlendEquation = BlendInfo.EQUATION_UNKNOWN;
         mHWBlendSrcFactor = BlendInfo.FACTOR_UNKNOWN;
         mHWBlendDstFactor = BlendInfo.FACTOR_UNKNOWN;
         mHWDepthTest = kUnknown_TriState;
@@ -519,6 +524,12 @@ public final class GLCommandBuffer extends CommandBuffer {
                 mDevice.getGL().glEnable(GL_BLEND);
                 mHWBlendState = kEnabled_TriState;
             }
+        }
+        if (mHWBlendEquation != blendInfo.mEquation) {
+            mDevice.getGL().glBlendEquation(
+                    GLUtil.toGLBlendEquation(blendInfo.mEquation)
+            );
+            mHWBlendEquation = blendInfo.mEquation;
         }
         if (mHWBlendSrcFactor != blendInfo.mSrcFactor ||
                 mHWBlendDstFactor != blendInfo.mDstFactor) {
