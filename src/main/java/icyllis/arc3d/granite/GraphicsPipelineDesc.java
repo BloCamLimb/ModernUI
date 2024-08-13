@@ -145,9 +145,9 @@ public final class GraphicsPipelineDesc extends PipelineDesc {
     public BlendInfo getBlendInfo() {
         if (mFinalBlendMode != null) {
             var info = BlendInfo.getSimpleBlendInfo(mFinalBlendMode);
-            return info != null ? info : BlendInfo.SRC_OVER;
+            return info != null ? info : BlendInfo.BLEND_SRC_OVER;
         } else {
-            return BlendInfo.DST;
+            return BlendInfo.BLEND_DST;
         }
     }
 

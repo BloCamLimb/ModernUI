@@ -88,15 +88,15 @@ public final class BlendFormula {
      * When there is no coverage, or the blend mode can tweak alpha for coverage, we use the standard
      * Porter Duff formula.
      */
-    private static BlendFormula makeCoeffFormula(byte srcFactor, byte dstFactor) {
+    private static BlendFormula makeCoeffFormula(byte equation, byte srcFactor, byte dstFactor) {
         // When the factors are (Zero, Zero) or (Zero, One) we set the primary output to zero.
-        if ((BlendInfo.FACTOR_ZERO == srcFactor &&
-                (BlendInfo.FACTOR_ZERO == dstFactor || BlendInfo.FACTOR_ONE == dstFactor))) {
+        if (BlendInfo.FACTOR_ZERO == srcFactor &&
+                (BlendInfo.FACTOR_ZERO == dstFactor || BlendInfo.FACTOR_ONE == dstFactor)) {
             return new BlendFormula(OUTPUT_TYPE_ZERO, OUTPUT_TYPE_ZERO,
-                    BlendInfo.EQUATION_ADD, srcFactor, dstFactor);
+                    equation, srcFactor, dstFactor);
         } else {
             return new BlendFormula(OUTPUT_TYPE_MODULATE, OUTPUT_TYPE_ZERO,
-                    BlendInfo.EQUATION_ADD, srcFactor, dstFactor);
+                    equation, srcFactor, dstFactor);
         }
     }
 
@@ -165,35 +165,37 @@ public final class BlendFormula {
             // No coverage, input color unknown
             switch (mode) {
                 case CLEAR:
-                    return makeCoeffFormula(BlendInfo.FACTOR_ZERO, BlendInfo.FACTOR_ZERO);
+                    return makeCoeffFormula(BlendInfo.EQUATION_ADD, BlendInfo.FACTOR_ZERO, BlendInfo.FACTOR_ZERO);
                 case SRC:
-                    return makeCoeffFormula(BlendInfo.FACTOR_ONE, BlendInfo.FACTOR_ZERO);
+                    return makeCoeffFormula(BlendInfo.EQUATION_ADD, BlendInfo.FACTOR_ONE, BlendInfo.FACTOR_ZERO);
                 case DST:
-                    return makeCoeffFormula(BlendInfo.FACTOR_ZERO, BlendInfo.FACTOR_ONE);
+                    return makeCoeffFormula(BlendInfo.EQUATION_ADD, BlendInfo.FACTOR_ZERO, BlendInfo.FACTOR_ONE);
                 case SRC_OVER:
-                    return makeCoeffFormula(BlendInfo.FACTOR_ONE, BlendInfo.FACTOR_ONE_MINUS_SRC_ALPHA);
+                    return makeCoeffFormula(BlendInfo.EQUATION_ADD, BlendInfo.FACTOR_ONE, BlendInfo.FACTOR_ONE_MINUS_SRC_ALPHA);
                 case DST_OVER:
-                    return makeCoeffFormula(BlendInfo.FACTOR_ONE_MINUS_DST_ALPHA, BlendInfo.FACTOR_ONE);
+                    return makeCoeffFormula(BlendInfo.EQUATION_ADD, BlendInfo.FACTOR_ONE_MINUS_DST_ALPHA, BlendInfo.FACTOR_ONE);
                 case SRC_IN:
-                    return makeCoeffFormula(BlendInfo.FACTOR_DST_ALPHA, BlendInfo.FACTOR_ZERO);
+                    return makeCoeffFormula(BlendInfo.EQUATION_ADD, BlendInfo.FACTOR_DST_ALPHA, BlendInfo.FACTOR_ZERO);
                 case DST_IN:
-                    return makeCoeffFormula(BlendInfo.FACTOR_ZERO, BlendInfo.FACTOR_SRC_ALPHA);
+                    return makeCoeffFormula(BlendInfo.EQUATION_ADD, BlendInfo.FACTOR_ZERO, BlendInfo.FACTOR_SRC_ALPHA);
                 case SRC_OUT:
-                    return makeCoeffFormula(BlendInfo.FACTOR_ONE_MINUS_DST_ALPHA, BlendInfo.FACTOR_ZERO);
+                    return makeCoeffFormula(BlendInfo.EQUATION_ADD, BlendInfo.FACTOR_ONE_MINUS_DST_ALPHA, BlendInfo.FACTOR_ZERO);
                 case DST_OUT:
-                    return makeCoeffFormula(BlendInfo.FACTOR_ZERO, BlendInfo.FACTOR_ONE_MINUS_SRC_ALPHA);
+                    return makeCoeffFormula(BlendInfo.EQUATION_ADD, BlendInfo.FACTOR_ZERO, BlendInfo.FACTOR_ONE_MINUS_SRC_ALPHA);
                 case SRC_ATOP:
-                    return makeCoeffFormula(BlendInfo.FACTOR_DST_ALPHA, BlendInfo.FACTOR_ONE_MINUS_SRC_ALPHA);
+                    return makeCoeffFormula(BlendInfo.EQUATION_ADD, BlendInfo.FACTOR_DST_ALPHA, BlendInfo.FACTOR_ONE_MINUS_SRC_ALPHA);
                 case DST_ATOP:
-                    return makeCoeffFormula(BlendInfo.FACTOR_ONE_MINUS_DST_ALPHA, BlendInfo.FACTOR_SRC_ALPHA);
+                    return makeCoeffFormula(BlendInfo.EQUATION_ADD, BlendInfo.FACTOR_ONE_MINUS_DST_ALPHA, BlendInfo.FACTOR_SRC_ALPHA);
                 case XOR:
-                    return makeCoeffFormula(BlendInfo.FACTOR_ONE_MINUS_DST_ALPHA, BlendInfo.FACTOR_ONE_MINUS_SRC_ALPHA);
-                case PLUS:
-                    return makeCoeffFormula(BlendInfo.FACTOR_ONE, BlendInfo.FACTOR_ONE);
+                    return makeCoeffFormula(BlendInfo.EQUATION_ADD, BlendInfo.FACTOR_ONE_MINUS_DST_ALPHA, BlendInfo.FACTOR_ONE_MINUS_SRC_ALPHA);
+                case PLUS, PLUS_CLAMPED:
+                    return makeCoeffFormula(BlendInfo.EQUATION_ADD, BlendInfo.FACTOR_ONE, BlendInfo.FACTOR_ONE);
+                case MINUS, MINUS_CLAMPED:
+                    return makeCoeffFormula(BlendInfo.EQUATION_REVERSE_SUBTRACT, BlendInfo.FACTOR_ONE, BlendInfo.FACTOR_ONE);
                 case MODULATE:
-                    return makeCoeffFormula(BlendInfo.FACTOR_ZERO, BlendInfo.FACTOR_SRC_COLOR);
+                    return makeCoeffFormula(BlendInfo.EQUATION_ADD, BlendInfo.FACTOR_ZERO, BlendInfo.FACTOR_SRC_COLOR);
                 case SCREEN:
-                    return makeCoeffFormula(BlendInfo.FACTOR_ONE, BlendInfo.FACTOR_ONE_MINUS_SRC_COLOR);
+                    return makeCoeffFormula(BlendInfo.EQUATION_ADD, BlendInfo.FACTOR_ONE, BlendInfo.FACTOR_ONE_MINUS_SRC_COLOR);
             }
         } else if (!isOpaque) {
             // Has coverage, input color unknown
@@ -203,11 +205,11 @@ public final class BlendFormula {
                 case SRC:
                     return makeCoverageDstCoeffZeroFormula(BlendInfo.FACTOR_ONE);
                 case DST:
-                    return makeCoeffFormula(BlendInfo.FACTOR_ZERO, BlendInfo.FACTOR_ONE);
+                    return makeCoeffFormula(BlendInfo.EQUATION_ADD, BlendInfo.FACTOR_ZERO, BlendInfo.FACTOR_ONE);
                 case SRC_OVER:
-                    return makeCoeffFormula(BlendInfo.FACTOR_ONE, BlendInfo.FACTOR_ONE_MINUS_SRC_ALPHA);
+                    return makeCoeffFormula(BlendInfo.EQUATION_ADD, BlendInfo.FACTOR_ONE, BlendInfo.FACTOR_ONE_MINUS_SRC_ALPHA);
                 case DST_OVER:
-                    return makeCoeffFormula(BlendInfo.FACTOR_ONE_MINUS_DST_ALPHA, BlendInfo.FACTOR_ONE);
+                    return makeCoeffFormula(BlendInfo.EQUATION_ADD, BlendInfo.FACTOR_ONE_MINUS_DST_ALPHA, BlendInfo.FACTOR_ONE);
                 case SRC_IN:
                     return makeCoverageDstCoeffZeroFormula(BlendInfo.FACTOR_DST_ALPHA);
                 case DST_IN:
@@ -215,20 +217,21 @@ public final class BlendFormula {
                 case SRC_OUT:
                     return makeCoverageDstCoeffZeroFormula(BlendInfo.FACTOR_ONE_MINUS_DST_ALPHA);
                 case DST_OUT:
-                    return makeCoeffFormula(BlendInfo.FACTOR_ZERO, BlendInfo.FACTOR_ONE_MINUS_SRC_ALPHA);
+                    return makeCoeffFormula(BlendInfo.EQUATION_ADD, BlendInfo.FACTOR_ZERO, BlendInfo.FACTOR_ONE_MINUS_SRC_ALPHA);
                 case SRC_ATOP:
-                    return makeCoeffFormula(BlendInfo.FACTOR_DST_ALPHA, BlendInfo.FACTOR_ONE_MINUS_SRC_ALPHA);
+                    return makeCoeffFormula(BlendInfo.EQUATION_ADD, BlendInfo.FACTOR_DST_ALPHA, BlendInfo.FACTOR_ONE_MINUS_SRC_ALPHA);
                 case DST_ATOP:
-                    return makeCoverageFormula(OUTPUT_TYPE_ONE_MINUS_SRC_ALPHA_MODULATE,
-                            BlendInfo.FACTOR_ONE_MINUS_DST_ALPHA);
+                    return makeCoverageFormula(OUTPUT_TYPE_ONE_MINUS_SRC_ALPHA_MODULATE, BlendInfo.FACTOR_ONE_MINUS_DST_ALPHA);
                 case XOR:
-                    return makeCoeffFormula(BlendInfo.FACTOR_ONE_MINUS_DST_ALPHA, BlendInfo.FACTOR_ONE_MINUS_SRC_ALPHA);
-                case PLUS:
-                    return makeCoeffFormula(BlendInfo.FACTOR_ONE, BlendInfo.FACTOR_ONE);
+                    return makeCoeffFormula(BlendInfo.EQUATION_ADD, BlendInfo.FACTOR_ONE_MINUS_DST_ALPHA, BlendInfo.FACTOR_ONE_MINUS_SRC_ALPHA);
+                case PLUS, PLUS_CLAMPED:
+                    return makeCoeffFormula(BlendInfo.EQUATION_ADD, BlendInfo.FACTOR_ONE, BlendInfo.FACTOR_ONE);
+                case MINUS, MINUS_CLAMPED:
+                    return makeCoeffFormula(BlendInfo.EQUATION_REVERSE_SUBTRACT, BlendInfo.FACTOR_ONE, BlendInfo.FACTOR_ONE);
                 case MODULATE:
                     return makeCoverageSrcCoeffZeroFormula(OUTPUT_TYPE_ONE_MINUS_SRC_COLOR_MODULATE);
                 case SCREEN:
-                    return makeCoeffFormula(BlendInfo.FACTOR_ONE, BlendInfo.FACTOR_ONE_MINUS_SRC_COLOR);
+                    return makeCoeffFormula(BlendInfo.EQUATION_ADD, BlendInfo.FACTOR_ONE, BlendInfo.FACTOR_ONE_MINUS_SRC_COLOR);
             }
         } else {
             // Has coverage, input color opaque
@@ -236,21 +239,23 @@ public final class BlendFormula {
                 case CLEAR, DST_OUT:
                     return makeCoverageSrcCoeffZeroFormula(OUTPUT_TYPE_COVERAGE);
                 case SRC, SRC_OVER:
-                    return makeCoeffFormula(BlendInfo.FACTOR_ONE, BlendInfo.FACTOR_ONE_MINUS_SRC_ALPHA);
+                    return makeCoeffFormula(BlendInfo.EQUATION_ADD, BlendInfo.FACTOR_ONE, BlendInfo.FACTOR_ONE_MINUS_SRC_ALPHA);
                 case DST, DST_IN:
-                    return makeCoeffFormula(BlendInfo.FACTOR_ZERO, BlendInfo.FACTOR_ONE);
+                    return makeCoeffFormula(BlendInfo.EQUATION_ADD, BlendInfo.FACTOR_ZERO, BlendInfo.FACTOR_ONE);
                 case DST_OVER, DST_ATOP:
-                    return makeCoeffFormula(BlendInfo.FACTOR_ONE_MINUS_DST_ALPHA, BlendInfo.FACTOR_ONE);
+                    return makeCoeffFormula(BlendInfo.EQUATION_ADD, BlendInfo.FACTOR_ONE_MINUS_DST_ALPHA, BlendInfo.FACTOR_ONE);
                 case SRC_IN, SRC_ATOP:
-                    return makeCoeffFormula(BlendInfo.FACTOR_DST_ALPHA, BlendInfo.FACTOR_ONE_MINUS_SRC_ALPHA);
+                    return makeCoeffFormula(BlendInfo.EQUATION_ADD, BlendInfo.FACTOR_DST_ALPHA, BlendInfo.FACTOR_ONE_MINUS_SRC_ALPHA);
                 case SRC_OUT, XOR:
-                    return makeCoeffFormula(BlendInfo.FACTOR_ONE_MINUS_DST_ALPHA, BlendInfo.FACTOR_ONE_MINUS_SRC_ALPHA);
-                case PLUS:
-                    return makeCoeffFormula(BlendInfo.FACTOR_ONE, BlendInfo.FACTOR_ONE);
+                    return makeCoeffFormula(BlendInfo.EQUATION_ADD, BlendInfo.FACTOR_ONE_MINUS_DST_ALPHA, BlendInfo.FACTOR_ONE_MINUS_SRC_ALPHA);
+                case PLUS, PLUS_CLAMPED:
+                    return makeCoeffFormula(BlendInfo.EQUATION_ADD, BlendInfo.FACTOR_ONE, BlendInfo.FACTOR_ONE);
+                case MINUS, MINUS_CLAMPED:
+                    return makeCoeffFormula(BlendInfo.EQUATION_REVERSE_SUBTRACT, BlendInfo.FACTOR_ONE, BlendInfo.FACTOR_ONE);
                 case MODULATE:
                     return makeCoverageSrcCoeffZeroFormula(OUTPUT_TYPE_ONE_MINUS_SRC_COLOR_MODULATE);
                 case SCREEN:
-                    return makeCoeffFormula(BlendInfo.FACTOR_ONE, BlendInfo.FACTOR_ONE_MINUS_SRC_COLOR);
+                    return makeCoeffFormula(BlendInfo.EQUATION_ADD, BlendInfo.FACTOR_ONE, BlendInfo.FACTOR_ONE_MINUS_SRC_COLOR);
             }
         }
         return null;
