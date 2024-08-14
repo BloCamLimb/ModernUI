@@ -819,7 +819,7 @@ public non-sealed class Rect2f implements Rect2fc {
      */
     public static boolean rectsOverlap(Rect2fc a, Rect2fc b) {
         assert (!a.isFinite() || (a.left() <= a.right() && a.top() <= a.bottom()));
-        assert (!MathUtil.isFinite(b.left(), b.top(), b.right(), b.bottom()) || (b.left() <= b.right() && b.top() <= b.bottom()));
+        assert (!b.isFinite() || (b.left() <= b.right() && b.top() <= b.bottom()));
         return a.right() > b.left() && a.bottom() > b.top() && b.right() > a.left() && b.bottom() > a.top();
     }
 
@@ -829,7 +829,7 @@ public non-sealed class Rect2f implements Rect2fc {
      */
     public static boolean rectsTouchOrOverlap(Rect2fc a, Rect2fc b) {
         assert (!a.isFinite() || (a.left() <= a.right() && a.top() <= a.bottom()));
-        assert (!MathUtil.isFinite(b.left(), b.top(), b.right(), b.bottom()) || (b.left() <= b.right() && b.top() <= b.bottom()));
+        assert (!b.isFinite() || (b.left() <= b.right() && b.top() <= b.bottom()));
         return a.right() >= b.left() && a.bottom() >= b.top() && b.right() >= a.left() && b.bottom() >= a.top();
     }
 
