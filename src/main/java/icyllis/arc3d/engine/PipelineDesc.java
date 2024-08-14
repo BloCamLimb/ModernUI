@@ -25,16 +25,43 @@ package icyllis.arc3d.engine;
  * <p>
  * Subclass must implement {@link #hashCode()} and {@link #equals(Object)}.
  */
-//TODO
+//TODO to be reviewed
 public abstract class PipelineDesc {
 
     public static final int NO_DYNAMIC_STATE = 0;
     public static final int DYNAMIC_COLOR_BLEND_STATE = 1;
 
-    public static final class GraphicsPipelineInfo {
+    //TODO temporary, to be reviewed
+    public static final class UniformBlockInfo {
+        // ShaderFlags
+        public final int mVisibility;
+        public final int mBinding;
+        public final String mBlockName;
 
+        public UniformBlockInfo(int visibility, int binding, String blockName) {
+            mVisibility = visibility;
+            mBinding = binding;
+            mBlockName = blockName;
+        }
+    }
+
+    public static final class SamplerInfo {
+        // ShaderFlags
+        public final int mVisibility;
+        public final int mBinding;
+        public final String mName;
+
+        public SamplerInfo(int visibility, int binding, String name) {
+            mVisibility = visibility;
+            mBinding = binding;
+            mName = name;
+        }
+    }
+
+    public static final class GraphicsPipelineInfo {
         public byte mPrimitiveType;
         public VertexInputLayout mInputLayout;
+        public String mInputLayoutLabel;
         //TODO replace full 'source' with IR + main() source
         public StringBuilder mVertSource;
         public String mVertLabel;
@@ -42,6 +69,8 @@ public abstract class PipelineDesc {
         public String mFragLabel;
         public BlendInfo mBlendInfo;
         public DepthStencilSettings mDepthStencilSettings;
+        public UniformBlockInfo[] mUniformBlockInfos;
+        public SamplerInfo[] mSamplerInfos;
         public String mPipelineLabel;
     }
 

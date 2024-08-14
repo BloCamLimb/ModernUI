@@ -34,6 +34,7 @@ import javax.annotation.Nullable;
  * This class is used by the pipeline internally. Use {@link RenderTargetProxy} for
  * high-level operations.
  */
+@Deprecated
 public abstract class GpuRenderTarget extends GpuSurface {
 
     private final int mWidth;

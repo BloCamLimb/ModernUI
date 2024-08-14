@@ -153,10 +153,10 @@ public class AnalyticSimpleBoxStep extends GeometryStep {
         // cos(atan(x)) = inversesqrt(1+x^2)
         // sin(atan(x)) = cos(atan(x)) * x
         vs.format("""
-                uint flags = %2$s;
+                int flags = int(%2$s);
                 float join = float((flags >> 4) & 1);
                 float dir = float((flags >> 2) & 3);
-                uint type = flags & 3;
+                int type = flags & 3;
                 vec2 localEdge;
                 float strokeRad = max(%1$s.y, 0.0);
                 float strokeOffset = (step(join, 0.0) * dir - 1.0) * strokeRad;
@@ -187,7 +187,7 @@ public class AnalyticSimpleBoxStep extends GeometryStep {
         // A float2 is promoted to a float3 if we add perspective via the matrix
         vs.format("vec3 devicePos = %s * vec3(localPos, 1.0);\n",
                 MODEL_VIEW.name());
-        vs.format("vec4 %s = vec4(devicePos.xy, float(%s >> 16) / 65535.0, devicePos.z);\n",
+        vs.format("vec4 %s = vec4(devicePos.xy, float(%s >> 16u) / 65535.0, devicePos.z);\n",
                 worldPosVar,
                 FLAGS_AND_DEPTH.name());
         if (localPosVar != null) {

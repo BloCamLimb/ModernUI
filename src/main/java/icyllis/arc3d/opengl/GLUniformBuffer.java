@@ -48,6 +48,7 @@ import static icyllis.arc3d.opengl.GLCore.*;
 // just differ in STREAM_DRAW or STATIC_DRAW hint
 // The first two methods should be avoided on OpenGL ES
 // If method 3 is slow, use method 4 (best compatibility, lowest priority)
+@Deprecated
 public class GLUniformBuffer extends ManagedResource {
 
     private final int mBinding;

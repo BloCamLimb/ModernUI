@@ -22,7 +22,6 @@ package icyllis.arc3d.granite.shading;
 import icyllis.arc3d.core.SLDataType;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.granite.ShaderCodeSource;
-import it.unimi.dsi.fastutil.shorts.ShortArrayList;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -122,7 +121,6 @@ public class UniformHandler {
 
     public final ArrayList<UniformInfo> mUniforms = new ArrayList<>();
     public final ArrayList<UniformInfo> mSamplers = new ArrayList<>();
-    public final ShortArrayList mSamplerSwizzles = new ShortArrayList();
 
     private ArrayList<UniformInfo> mReorderedUniforms;
 
@@ -205,6 +203,10 @@ public class UniformHandler {
 
     public int numUniforms() {
         return mUniforms.size();
+    }
+
+    public int numSamplers() {
+        return mSamplers.size();
     }
 
     public UniformInfo uniform(int index) {
@@ -312,12 +314,8 @@ public class UniformHandler {
         return handle;
     }
 
-    protected String samplerVariable(int handle) {
+    public String samplerVariable(int handle) {
         return mSamplers.get(handle).mVariable.getName();
-    }
-
-    protected short samplerSwizzle(int handle) {
-        return mSamplerSwizzles.getShort(handle);
     }
 
     @SamplerHandle
@@ -327,11 +325,6 @@ public class UniformHandler {
     }
 
     protected String inputSamplerVariable(@SamplerHandle int handle) {
-        // vulkan only
-        throw new UnsupportedOperationException();
-    }
-
-    protected short inputSamplerSwizzle(@SamplerHandle int handle) {
         // vulkan only
         throw new UnsupportedOperationException();
     }
@@ -374,9 +367,12 @@ public class UniformHandler {
     }
 
     /**
+     * Append one block declaration.
+     *
      * @param visibility one of ShaderFlags
+     * @return true if block is not empty
      */
-    public void appendUniformDecls(int visibility, int binding, String blockName, StringBuilder out) {
+    public boolean appendUniformDecls(int visibility, int binding, String blockName, StringBuilder out) {
         assert (visibility != 0);
         finish(false);
 
@@ -412,7 +408,13 @@ public class UniformHandler {
             }
             out.append("};\n");
         }
+        return firstVisible;
+    }
 
+    /**
+     * @param visibility one of ShaderFlags
+     */
+    public void appendSamplerDecls(int visibility, StringBuilder out) {
         for (var sampler : mSamplers) {
             assert (sampler.mVariable.getType() == SLDataType.kSampler2D);
             if ((sampler.mVisibility & visibility) == 0) {
@@ -529,7 +531,7 @@ public class UniformHandler {
      * @param offset    the current offset
      * @param type      see {@link SLDataType}
      * @param arraySize see {@link ShaderVar}
-     * @param layout 1 for std430 layout, 0 for std140 layout
+     * @param layout    1 for std430 layout, 0 for std140 layout
      * @return the aligned offset for the new uniform
      */
     public static int getAlignedOffset(int offset,

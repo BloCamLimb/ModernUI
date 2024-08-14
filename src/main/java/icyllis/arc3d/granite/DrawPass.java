@@ -25,19 +25,24 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.function.Function;
 
 /**
  * A draw pass represents a render pass, with limited and sorted draw commands.
  * <p>
  * Created immutable.
+ *
+ * @see PipelineBuilder
  */
 public class DrawPass implements AutoCloseable {
 
-    //TODO move to somewhere else
-    public static final int GEOMETRY_UNIFORM_BINDING = 0;
-    public static final int FRAGMENT_UNIFORM_BINDING = 1;
+    public static final int GEOMETRY_UNIFORM_BLOCK_BINDING = 0; // i.e. RenderBlock/StepBlock
+    public static final int FRAGMENT_UNIFORM_BLOCK_BINDING = 1; // i.e. PaintBlock/EffectBlock/ShadingBlock
+
+    public static final String GEOMETRY_UNIFORM_BLOCK_NAME = "GeometryUniforms";
+    public static final String FRAGMENT_UNIFORM_BLOCK_NAME = "FragmentUniforms";
 
     /**
      * Depth buffer is 16-bit, ensure no overflow.
@@ -274,13 +279,13 @@ public class DrawPass implements AutoCloseable {
                     }
                     if (geometryBindingChange) {
                         geometryUniformTracker.bindUniforms(
-                                GEOMETRY_UNIFORM_BINDING,
+                                GEOMETRY_UNIFORM_BLOCK_BINDING,
                                 commandList
                         );
                     }
                     if (fragmentBindingChange) {
                         fragmentUniformTracker.bindUniforms(
-                                FRAGMENT_UNIFORM_BINDING,
+                                FRAGMENT_UNIFORM_BLOCK_BINDING,
                                 commandList
                         );
                     }

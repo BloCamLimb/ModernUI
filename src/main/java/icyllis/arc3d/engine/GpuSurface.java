@@ -34,6 +34,7 @@ import javax.annotation.Nonnull;
  *
  * @see SurfaceProxy
  */
+@Deprecated
 public abstract class GpuSurface extends Resource {
 
     protected GpuSurface(Context context,
