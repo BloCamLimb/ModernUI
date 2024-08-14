@@ -102,7 +102,7 @@ public final class GraniteSurface extends icyllis.arc3d.core.Surface {
         if (label == null) {
             label = "SurfaceRenderTarget";
         }
-        // non-budgeted, exact device
+        // create non-budgeted, exact-fit device
         return make(rc, info, false, mipmapped, false,
                 surfaceOrigin, label);
     }

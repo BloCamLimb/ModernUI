@@ -26,7 +26,7 @@ import icyllis.arc3d.core.shaders.ImageShader;
 import icyllis.arc3d.core.shaders.Shader;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.granite.geom.BoundsManager;
-import icyllis.arc3d.granite.geom.FullBoundsManager;
+import icyllis.arc3d.granite.geom.HybridBoundsManager;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 import javax.annotation.Nonnull;
@@ -46,9 +46,12 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
     private final ClipStack mClipStack;
     private final ObjectArrayList<ClipStack.Element> mElementsForMask = new ObjectArrayList<>();
 
-    private int mCurrentDepth;
+    // The max depth value sent to the DrawContext, incremented so each draw has a unique value.
+    private int mCurrentDepth = DrawOrder.CLEAR_DEPTH;
 
-    private final BoundsManager mBoundsManager;
+    // Tracks accumulated intersections for ordering dependent use of the color and depth attachment
+    // (i.e. depth-based clipping, and transparent blending)
+    private final BoundsManager mColorDepthBoundsManager;
 
     private final Paint mSubRunPaint = new Paint();
     private final TextBlobCache.FeatureKey mBlobKey = new TextBlobCache.FeatureKey();
@@ -58,12 +61,20 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
         mRC = rc;
         mSDC = sdc;
         mClipStack = new ClipStack(this);
-        /*mBoundsManager = GridBoundsManager.makeRes(
+        // These default tuning numbers for the HybridBoundsManager were chosen from looking at performance
+        // and accuracy curves produced by the BoundsManagerBench for random draw bounding boxes. This
+        // config will use brute force for the first 64 draw calls to the Device and then switch to a grid
+        // that is dynamically sized to produce cells that are 16x16, up to a grid that's 32x32 cells.
+        // This seemed like a sweet spot balancing accuracy for low-draw count surfaces and overhead for
+        // high-draw count and high-resolution surfaces. With the 32x32 grid limit, cell size will increase
+        // above 16px when the surface dimension goes above 512px.
+        // TODO: These could be exposed as context options or surface options, and we may want to have
+        // different strategies in place for a base device vs. a layer's device.
+        mColorDepthBoundsManager = new HybridBoundsManager(
                 width(), height(),
-                16, 32
-        );*/
-        //mBoundsManager = new SimpleBoundsManager();
-        mBoundsManager = new FullBoundsManager();
+                16, 64, 32
+        );
+        //mColorDepthBoundsManager = new SimpleBoundsManager();
     }
 
     @Nullable
@@ -580,14 +591,14 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
         // this point.
         int drawDepth = mCurrentDepth + 1;
         int clipOrder = mClipStack.updateForDraw(
-                draw, mElementsForMask, mBoundsManager, drawDepth);
+                draw, mElementsForMask, mColorDepthBoundsManager, drawDepth);
 
         // A draw's order always depends on the clips that must be drawn before it
         int paintOrder = clipOrder + 1;
         // If a draw is not opaque, it must be drawn after the most recent draw it intersects with in
         // order to blend correctly.
         if (renderer.emitsCoverage() || paint_depends_on_dst(draw.mPaintParams)) {
-            int prevDraw = mBoundsManager.getMostRecentDraw(draw.mDrawBounds);
+            int prevDraw = mColorDepthBoundsManager.getMostRecentDraw(draw.mDrawBounds);
             paintOrder = Math.max(paintOrder, prevDraw + 1);
         }
 
@@ -600,7 +611,7 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
         mSDC.recordDraw(draw);
 
         // Post-draw book keeping (bounds manager, depth tracking, etc.)
-        mBoundsManager.recordDraw(draw.mDrawBounds, paintOrder);
+        mColorDepthBoundsManager.recordDraw(draw.mDrawBounds, paintOrder);
         mCurrentDepth = drawDepth;
     }
 
@@ -632,8 +643,8 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
         // Flush all pending items to the internal task list and reset Device tracking state
         mSDC.flush(mRC);
 
-        mBoundsManager.clear();
-        mCurrentDepth = DrawOrder.MIN_VALUE;
+        mColorDepthBoundsManager.clear();
+        mCurrentDepth = DrawOrder.CLEAR_DEPTH;
 
         // Any cleanup in the AtlasProvider
         mRC.getAtlasProvider().compact();

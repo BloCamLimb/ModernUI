@@ -23,6 +23,7 @@ import icyllis.arc3d.core.MathUtil;
 import icyllis.arc3d.core.Rect2fc;
 import icyllis.arc3d.granite.DrawOrder;
 
+import javax.annotation.Nonnull;
 import java.util.Arrays;
 
 /**
@@ -38,7 +39,7 @@ public final class GridBoundsManager extends BoundsManager {
     private final short[] mNodes;
 
     public GridBoundsManager(int deviceWidth, int deviceHeight,
-                      int gridWidth, int gridHeight) {
+                             int gridWidth, int gridHeight) {
         assert (deviceWidth > 0 && deviceHeight > 0);
         assert (gridWidth >= 1 && gridHeight >= 1);
         mScaleX = (float) gridWidth / deviceWidth;
@@ -48,6 +49,7 @@ public final class GridBoundsManager extends BoundsManager {
         mNodes = new short[gridWidth * gridHeight];
     }
 
+    @Nonnull
     public static GridBoundsManager makeRes(int deviceWidth, int deviceHeight,
                                             int gridCellSize, int maxGridSize) {
         assert (deviceWidth > 0 && deviceHeight > 0);

@@ -187,9 +187,9 @@ public final class ClipStack {
     //  - The Clip also stores the draw's fill-style invariant clipped bounds which is used in atlas
     //    draws and may differ from the draw bounds.
     //
-    // All clip elements that affect the draw will be returned in `outEffectiveElements` alongside
+    // All clip elements that affect the draw will be returned in `elementsForMask` alongside
     // the bounds. This method does not have any side-effects and the per-clip element state has to
-    // be explicitly updated by calling `updateClipStateForDraw()` which prepares the clip stack for
+    // be explicitly updated by calling `updateForDraw()` which prepares the clip stack for
     // later rendering.
     //
     // The returned clip element list will be empty if the shape is clipped out or if the draw is
@@ -373,17 +373,26 @@ public final class ClipStack {
         return false;
     }
 
+    // Update the per-clip element state for later rendering using pre-computed clip state data for
+    // a particular draw. The provided 'z' value is the depth value that the draw will use if it's
+    // not clipped out entirely.
+    //
+    // The returned CompressedPaintersOrder is the largest order that will be used by any of the
+    // clip elements that affect the draw.
+    //
+    // If the provided `clipState` indicates that the draw will be clipped out, then this method has
+    // no effect and returns DrawOrder::NO_INTERSECTION.
     public int updateForDraw(Draw draw,
                              List<Element> elementsForMask,
                              BoundsManager boundsManager,
                              int depth) {
         if (draw.isClippedOut()) {
-            return DrawOrder.MIN_VALUE;
+            return DrawOrder.NO_INTERSECTION;
         }
 
         assert mSaves.element().mState != STATE_EMPTY;
 
-        int maxClipOrder = DrawOrder.MIN_VALUE;
+        int maxClipOrder = DrawOrder.NO_INTERSECTION;
         for (Element element : elementsForMask) {
             ClipElement e = (ClipElement) element;
             int order = e.updateForDraw(boundsManager, draw.mDrawBounds, depth);
@@ -617,8 +626,8 @@ public final class ClipStack {
         // clip stack is applied to additional draws, the clip's Z and usage bounds grow to account
         // for it; its compressed painter's order is selected the first time a draw is affected.
         final Rect2f mUsageBounds = new Rect2f();
-        int mPaintersOrder = DrawOrder.MIN_VALUE;
-        int mMaxDepth = DrawOrder.MIN_VALUE;
+        int mPaintersOrder = DrawOrder.NO_INTERSECTION;
+        int mMaxDepth = DrawOrder.CLEAR_DEPTH;
 
         // Elements are invalidated by SaveRecords as the record is updated with new elements that
         // override old geometry. An invalidated element stores the index of the first element of
@@ -665,8 +674,8 @@ public final class ClipStack {
             mViewMatrix.set(viewMatrix);
             mClipOp = clipOp;
             mUsageBounds.setEmpty();
-            mPaintersOrder = DrawOrder.MIN_VALUE;
-            mMaxDepth = DrawOrder.MIN_VALUE;
+            mPaintersOrder = DrawOrder.NO_INTERSECTION;
+            mMaxDepth = DrawOrder.CLEAR_DEPTH;
             mInvalidatedByIndex = -1;
 
             if (!viewMatrix.invert(mInverseViewMatrix)) {
@@ -716,7 +725,7 @@ public final class ClipStack {
         }
 
         public boolean hasPendingDraw() {
-            return mPaintersOrder != DrawOrder.MIN_VALUE;
+            return mPaintersOrder != DrawOrder.NO_INTERSECTION;
         }
 
         // As new elements are pushed on to the stack, they may make older elements redundant.
@@ -930,8 +939,8 @@ public final class ClipStack {
             // accumulation process will begin again and automatically use the Device's post-flush Z values
             // and BoundsManager state.
             mUsageBounds.setEmpty();
-            mPaintersOrder = DrawOrder.MIN_VALUE;
-            mMaxDepth = DrawOrder.MIN_VALUE;
+            mPaintersOrder = DrawOrder.NO_INTERSECTION;
+            mMaxDepth = DrawOrder.CLEAR_DEPTH;
         }
 
         public int op() {

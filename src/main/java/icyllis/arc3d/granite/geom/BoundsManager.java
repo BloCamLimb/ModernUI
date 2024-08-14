@@ -21,13 +21,22 @@ package icyllis.arc3d.granite.geom;
 
 import icyllis.arc3d.core.Rect2fc;
 
+/**
+ * BoundsManager is an acceleration structure for device-space related pixel bounds queries.
+ * The BoundsManager tracks a single ordinal value per bounds: the CompressedPaintersOrder of a draw
+ * The CompressedPaintersOrder enforces a specific submission order of draws to the GPU but can
+ * re-arrange draws out of their original painter's order if the GREATER depth test and the draw's Z
+ * value resolve out-of-order rendering.
+ * <p>
+ * It supports querying the most recent draw intersecting a bounding rect (represented as a
+ * CompressedPaintersOrder value), and recording a (bounds, CompressedPaintersOrder) pair.
+ */
 public abstract class BoundsManager {
 
-    /**
-     * Returns CompressedPaintersOrder.
-     */
+    // returns CompressedPaintersOrder
     public abstract int getMostRecentDraw(Rect2fc bounds);
 
+    // draw bounds must be finite and not empty
     public abstract void recordDraw(Rect2fc bounds, int order);
 
     public abstract void clear();

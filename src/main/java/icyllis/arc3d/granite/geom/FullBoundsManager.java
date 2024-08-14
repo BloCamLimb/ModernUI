@@ -19,6 +19,7 @@
 
 package icyllis.arc3d.granite.geom;
 
+import icyllis.arc3d.core.Rect2f;
 import icyllis.arc3d.core.Rect2fc;
 import icyllis.arc3d.granite.DrawOrder;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
@@ -30,7 +31,7 @@ import it.unimi.dsi.fastutil.shorts.ShortArrayList;
  */
 public final class FullBoundsManager extends BoundsManager {
 
-    // mRects and mOrders are parallel, repeated L T R B values
+    // rects and orders are parallel, hold repeated L T R B values
     private final FloatArrayList mRects;
     // painter's orders
     private final ShortArrayList mOrders;
@@ -48,12 +49,16 @@ public final class FullBoundsManager extends BoundsManager {
     @Override
     public int getMostRecentDraw(Rect2fc bounds) {
         assert mRects.size() == mOrders.size() * 4;
+        assert (!bounds.isFinite() || (bounds.left() <= bounds.right() && bounds.top() <= bounds.bottom()));
+
+        float al = bounds.left(), at = bounds.top(), ar = bounds.right(), ab = bounds.bottom();
         float[] r = mRects.elements();
         short[] orders = mOrders.elements();
         int limit = mOrders.size();
         int max = DrawOrder.MIN_VALUE;
-        for (int i = 0, j = 0; j < limit; i += 4, j++) {
-            if (bounds.intersects(r[i], r[i|1], r[i|2], r[i|3])) {
+        for (int i = 0, j = 0; j < limit; i += 4, j += 1) {
+            // fast overlap check
+            if (ar > r[i] && ab > r[i|1] && r[i|2] > al && r[i|3] > at) {
                 max = Math.max(max, Short.toUnsignedInt(orders[j]));
             }
         }
@@ -62,6 +67,7 @@ public final class FullBoundsManager extends BoundsManager {
 
     @Override
     public void recordDraw(Rect2fc bounds, int order) {
+        assert (!bounds.isFinite() || (bounds.left() <= bounds.right() && bounds.top() <= bounds.bottom()));
         var r = mRects;
         r.add(bounds.left());
         r.add(bounds.top());
@@ -74,5 +80,21 @@ public final class FullBoundsManager extends BoundsManager {
     public void clear() {
         mRects.clear();
         mOrders.clear();
+    }
+
+    public int count() {
+        return mOrders.size();
+    }
+
+    public void transferTo(BoundsManager other) {
+        var tmp = new Rect2f();
+        float[] r = mRects.elements();
+        short[] orders = mOrders.elements();
+        int limit = mOrders.size();
+        for (int i = 0, j = 0; j < limit; i += 4, j += 1) {
+            tmp.set(r[i], r[i|1], r[i|2], r[i|3]);
+            other.recordDraw(tmp, orders[j]);
+        }
+        clear();
     }
 }
