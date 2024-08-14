@@ -173,6 +173,7 @@ public final class GLVertexArray extends ManagedResource {
 
         if (device.getCaps().hasDebugSupport()) {
             if (label != null && !label.isEmpty()) {
+                label = "Arc3D_VAO_" + label;
                 label = label.substring(0, Math.min(label.length(),
                         device.getCaps().maxLabelLength()));
                 gl.glObjectLabel(GL_VERTEX_ARRAY, vertexArray, label);

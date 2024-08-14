@@ -79,6 +79,7 @@ public final class GraphicsPipelineDesc extends PipelineDesc {
     }
 
     private FragmentNode createNode(ShaderCodeSource codeSource,
+                                    StringBuilder label,
                                     int[] currentStageIndex) {
         assert currentStageIndex[0] < mPaintParamsKey.size();
         int index = currentStageIndex[0]++;
@@ -89,16 +90,29 @@ public final class GraphicsPipelineDesc extends PipelineDesc {
             return null;
         }
 
-        FragmentNode[] children = stage.mNumChildren > 0
-                ? new FragmentNode[stage.mNumChildren]
-                : FragmentNode.NO_CHILDREN;
-        for (int i = 0; i < stage.mNumChildren; i++) {
-            FragmentNode child = createNode(codeSource, currentStageIndex);
-            if (child == null) {
-                return null;
-            }
-            children[i] = child;
+        String name = stage.name();
+        if (name.endsWith("Shader")) {
+            label.append(name, 0, name.length() - 6);
+        } else {
+            label.append(name);
         }
+
+        FragmentNode[] children;
+        if (stage.mNumChildren > 0) {
+            children = new FragmentNode[stage.mNumChildren];
+            label.append(" [ ");
+            for (int i = 0; i < stage.mNumChildren; i++) {
+                FragmentNode child = createNode(codeSource, label, currentStageIndex);
+                if (child == null) {
+                    return null;
+                }
+                children[i] = child;
+            }
+            label.append("]");
+        } else {
+            children = FragmentNode.NO_CHILDREN;
+        }
+        label.append(" ");
 
         return new FragmentNode(
                 stage,
@@ -108,14 +122,16 @@ public final class GraphicsPipelineDesc extends PipelineDesc {
         );
     }
 
-    public FragmentNode[] getRootNodes(ShaderCodeSource codeSource) {
+    public FragmentNode[] getRootNodes(ShaderCodeSource codeSource,
+                                       StringBuilder label) {
         final int keySize = mPaintParamsKey.size();
 
         var roots = new ObjectArrayList<FragmentNode>(7);
         int[] currentIndex = {0};
         while (currentIndex[0] < keySize) {
-            FragmentNode root = createNode(codeSource, currentIndex);
+            FragmentNode root = createNode(codeSource, label, currentIndex);
             if (root == null) {
+                label.setLength(0);
                 return FragmentNode.NO_CHILDREN;
             }
             roots.add(root);

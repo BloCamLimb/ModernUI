@@ -298,7 +298,7 @@ public final class GLBuffer extends Buffer {
     @Override
     protected void onSetLabel(@Nullable String label) {
         getDevice().executeRenderCall(dev -> {
-            if (dev.getCaps().hasDebugSupport()) {
+            if (dev.getCaps().hasDebugSupport() && !mClientUploadBuffer) {
                 if (label == null) {
                     dev.getGL().glObjectLabel(GL_BUFFER, mBuffer, 0, NULL);
                 } else {

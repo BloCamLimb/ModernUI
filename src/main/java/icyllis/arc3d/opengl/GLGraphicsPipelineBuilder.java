@@ -31,6 +31,7 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 
 import static org.lwjgl.opengl.GL20C.*;
+import static org.lwjgl.opengl.GL31C.*;
 
 public class GLGraphicsPipelineBuilder {
 
@@ -42,10 +43,11 @@ public class GLGraphicsPipelineBuilder {
 
     private byte mPrimitiveType;
     private VertexInputLayout mInputLayout;
-    private String mVertLabel;
-    private String mFragLabel;
+    private String mInputLayoutLabel;
     private BlendInfo mBlendInfo;
     private DepthStencilSettings mDepthStencilSettings;
+    private PipelineDesc.UniformBlockInfo[] mUniformBlockInfos;
+    private PipelineDesc.SamplerInfo[] mSamplerInfos;
     private String mPipelineLabel;
 
     private GLGraphicsPipelineBuilder(GLDevice device,
@@ -71,10 +73,11 @@ public class GLGraphicsPipelineBuilder {
         var info = mPipelineDesc.createGraphicsPipelineInfo(mDevice);
         mPrimitiveType = info.mPrimitiveType;
         mInputLayout = info.mInputLayout;
-        mVertLabel = info.mVertLabel;
-        mFragLabel = info.mFragLabel;
+        mInputLayoutLabel = info.mInputLayoutLabel;
         mBlendInfo = info.mBlendInfo;
         mDepthStencilSettings = info.mDepthStencilSettings;
+        mUniformBlockInfos = info.mUniformBlockInfos;
+        mSamplerInfos = info.mSamplerInfos;
         mFinalizedVertSource = toUTF8(info.mVertSource);
         mFinalizedFragSource = toUTF8(info.mFragSource);
         mPipelineLabel = info.mPipelineLabel;
@@ -145,15 +148,6 @@ public class GLGraphicsPipelineBuilder {
             }
         }
 
-        if (mDevice.getCaps().hasDebugSupport()) {
-            String label = mPipelineLabel;
-            if (label != null && !label.isEmpty()) {
-                label = label.substring(0, Math.min(label.length(),
-                        mDevice.getCaps().maxLabelLength()));
-                gl.glObjectLabel(GL43C.GL_PROGRAM, program, label);
-            }
-        }
-
         // the shaders can be detached after the linking
         gl.glDetachShader(program, vert);
         gl.glDetachShader(program, frag);
@@ -186,10 +180,45 @@ public class GLGraphicsPipelineBuilder {
         @SharedPtr
         GLVertexArray vertexArray = GLVertexArray.make(mDevice,
                 mInputLayout,
-                mPipelineLabel);
+                mInputLayoutLabel);
         if (vertexArray == null) {
             gl.glDeleteProgram(program);
             return false;
+        }
+
+        if (mDevice.getCaps().hasDebugSupport()) {
+            String label = mPipelineLabel;
+            if (label != null && !label.isEmpty()) {
+                label = "Arc3D_PIPE_" + label;
+                label = label.substring(0, Math.min(label.length(),
+                        mDevice.getCaps().maxLabelLength()));
+                gl.glObjectLabel(GL43C.GL_PROGRAM, program, label);
+            }
+        }
+
+        // Setup layout bindings if < OpenGL 4.2
+        if (!mDevice.getCaps().shaderCaps().mUseUniformBinding) {
+            if (mUniformBlockInfos != null) {
+                for (var info : mUniformBlockInfos) {
+                    if (info.mVisibility != 0) {
+                        int index = glGetUniformBlockIndex(program, info.mBlockName);
+                        assert index != GL_INVALID_INDEX;
+                        glUniformBlockBinding(program, index, info.mBinding);
+                    }
+                }
+            }
+            // Assign texture units to sampler uniforms one time up front
+            if (mSamplerInfos != null && mSamplerInfos.length > 0) {
+                // We can bind program here, since we will bind this pipeline immediately
+                glUseProgram(program);
+                for (var info : mSamplerInfos) {
+                    if (info.mVisibility != 0) {
+                        int location = glGetUniformLocation(program, info.mName);
+                        assert location != -1;
+                        glUniform1i(location, info.mBinding); // <- binding is just the texture unit (index)
+                    }
+                }
+            }
         }
 
         dest.init(new GLProgram(mDevice, program),

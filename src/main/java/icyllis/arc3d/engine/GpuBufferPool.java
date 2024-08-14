@@ -42,6 +42,7 @@ import static org.lwjgl.system.MemoryUtil.NULL;
  * a number of buffers to pre-allocate can be specified. These will be allocated
  * at the minimum size and kept around until the pool is destroyed.
  */
+@Deprecated
 public abstract class GpuBufferPool {
 
     /**

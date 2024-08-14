@@ -155,7 +155,7 @@ public class AnalyticArcStep extends GeometryStep {
                     const float kOutset = %f;
                     """, mType == ArcShape.kArcSquare_Type ? MathUtil.SQRT2 : 1.0f);
             vs.format("""
-                    uint flags = %2$s;
+                    int flags = int(%2$s);
                     float join = float((flags >> 4) & 1);
                     float dir = float((flags >> 2) & 3);
                     float strokeRad = max(%1$s.y, 0.0);
@@ -168,7 +168,7 @@ public class AnalyticArcStep extends GeometryStep {
                     """, RADII_ARC.name(), FLAGS_AND_DEPTH.name(), "f_ArcEdge", "f_Span", "f_Radii");
         } else {
             vs.format("""
-                    uint flags = %2$s;
+                    int flags = int(%2$s);
                     float join = float((flags >> 4) & 1);
                     float dir = float((flags >> 2) & 3);
                     float strokeRad = max(%1$s.y, 0.0);
@@ -191,7 +191,7 @@ public class AnalyticArcStep extends GeometryStep {
         // A float2 is promoted to a float3 if we add perspective via the matrix
         vs.format("vec3 devicePos = %s * vec3(localPos, 1.0);\n",
                 MODEL_VIEW.name());
-        vs.format("vec4 %s = vec4(devicePos.xy, float(%s >> 16) / 65535.0, devicePos.z);\n",
+        vs.format("vec4 %s = vec4(devicePos.xy, float(%s >> 16u) / 65535.0, devicePos.z);\n",
                 worldPosVar,
                 FLAGS_AND_DEPTH.name());
         if (localPosVar != null) {

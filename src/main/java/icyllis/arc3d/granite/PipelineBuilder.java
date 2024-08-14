@@ -61,6 +61,10 @@ public class PipelineBuilder {
 
     private StringBuilder mVertCode;
     private StringBuilder mFragCode;
+    private final String mFragLabel;
+
+    private int mGeometryBlockVisibility;
+    private int mFragmentBlockVisibility;
 
     private int mSnippetRequirementFlags;
 
@@ -68,7 +72,9 @@ public class PipelineBuilder {
         mCaps = device.getCaps();
         mDesc = desc;
 
-        mRootNodes = desc.getRootNodes(device.getShaderCodeSource());
+        StringBuilder label = new StringBuilder();
+        mRootNodes = desc.getRootNodes(device.getShaderCodeSource(), label);
+        mFragLabel = label.toString();
 
         for (FragmentNode root : mRootNodes) {
             mSnippetRequirementFlags |= root.requirementFlags();
@@ -120,11 +126,38 @@ public class PipelineBuilder {
         var info = new PipelineDesc.GraphicsPipelineInfo();
         info.mPrimitiveType = mDesc.getPrimitiveType();
         info.mInputLayout = mDesc.geomStep().getInputLayout();
+        info.mInputLayoutLabel = mDesc.geomStep().name();
+
         info.mVertSource = mVertCode;
         info.mFragSource = mFragCode;
+        info.mVertLabel = mDesc.geomStep().name();
+        if (needsLocalCoords()) {
+            info.mVertLabel += " (w/ local coords)";
+        }
+        info.mFragLabel = mFragLabel;
+
         info.mBlendInfo = mBlendInfo;
         info.mDepthStencilSettings = mDesc.getDepthStencilSettings();
-        info.mPipelineLabel = mDesc.geomStep().name();
+
+        // pipeline layout
+        info.mUniformBlockInfos = new PipelineDesc.UniformBlockInfo[2];
+        info.mUniformBlockInfos[0] = new PipelineDesc.UniformBlockInfo(mGeometryBlockVisibility,
+                DrawPass.GEOMETRY_UNIFORM_BLOCK_BINDING, DrawPass.GEOMETRY_UNIFORM_BLOCK_NAME);
+        info.mUniformBlockInfos[1] = new PipelineDesc.UniformBlockInfo(mFragmentBlockVisibility,
+                DrawPass.FRAGMENT_UNIFORM_BLOCK_BINDING, DrawPass.FRAGMENT_UNIFORM_BLOCK_NAME);
+        info.mSamplerInfos = new PipelineDesc.SamplerInfo[mFragmentUniforms.numSamplers()];
+        for (int i = 0; i < info.mSamplerInfos.length; i++) {
+            // handle == index == binding index == texture unit
+            info.mSamplerInfos[i] = new PipelineDesc.SamplerInfo(Engine.ShaderFlags.kFragment,
+                    i, mFragmentUniforms.samplerVariable(i));
+        }
+
+        info.mPipelineLabel = info.mVertLabel + " + ";
+        if (info.mFragLabel.isEmpty()) {
+            info.mPipelineLabel += mDesc.usesFastSolidColor() ? "(simple)" : "(empty)";
+        } else {
+            info.mPipelineLabel += info.mFragLabel;
+        }
 
         return info;
     }
@@ -135,8 +168,13 @@ public class PipelineBuilder {
         Formatter vs = new Formatter(out, Locale.ROOT);
 
         //// Uniforms
-        mGeometryUniforms.appendUniformDecls(Engine.ShaderFlags.kVertex,
-                DrawPass.GEOMETRY_UNIFORM_BINDING, "GeometryUniforms", out);
+        if (mGeometryUniforms.appendUniformDecls(Engine.ShaderFlags.kVertex,
+                DrawPass.GEOMETRY_UNIFORM_BLOCK_BINDING, DrawPass.GEOMETRY_UNIFORM_BLOCK_NAME, out)) {
+            mGeometryBlockVisibility |= Engine.ShaderFlags.kVertex;
+        } else {
+            // there's always 2D orthographic projection
+            assert false;
+        }
 
         //// Attributes
         var inputLayout = mDesc.geomStep().getInputLayout();
@@ -226,13 +264,16 @@ public class PipelineBuilder {
         assert !mDesc.geomStep().emitsCoverage() || mDesc.geomStep().performsShading();
 
         //// Uniforms
-        if (mDesc.geomStep().emitsCoverage()) {
-            mGeometryUniforms.appendUniformDecls(Engine.ShaderFlags.kFragment,
-                    DrawPass.GEOMETRY_UNIFORM_BINDING, "GeometryUniforms", out);
+        if (mGeometryUniforms.appendUniformDecls(Engine.ShaderFlags.kFragment,
+                DrawPass.GEOMETRY_UNIFORM_BLOCK_BINDING, DrawPass.GEOMETRY_UNIFORM_BLOCK_NAME, out)) {
+            mGeometryBlockVisibility |= Engine.ShaderFlags.kFragment;
         }
-        mFragmentUniforms.appendUniformDecls(Engine.ShaderFlags.kFragment,
-                DrawPass.FRAGMENT_UNIFORM_BINDING, "FragmentUniforms", out);
-        //TODO fragment uniforms
+        if (mFragmentUniforms.appendUniformDecls(Engine.ShaderFlags.kFragment,
+                DrawPass.FRAGMENT_UNIFORM_BLOCK_BINDING, DrawPass.FRAGMENT_UNIFORM_BLOCK_NAME, out)) {
+            mFragmentBlockVisibility |= Engine.ShaderFlags.kFragment;
+        }
+        //// Samplers
+        mFragmentUniforms.appendSamplerDecls(Engine.ShaderFlags.kFragment, out);
 
         //// Varyings
         mVaryings.getFragDecls(out);

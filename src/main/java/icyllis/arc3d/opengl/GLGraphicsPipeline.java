@@ -53,9 +53,6 @@ public class GLGraphicsPipeline extends GraphicsPipeline {
 
     private GLUniformDataManager mDataManager;
 
-    // the installed effects, unique ptr
-    private GeometryStep.ProgramImpl mGPImpl;
-
     private int mNumTextureSamplers;
 
     private CompletableFuture<GLGraphicsPipelineBuilder> mAsyncWork;
@@ -73,15 +70,13 @@ public class GLGraphicsPipeline extends GraphicsPipeline {
               DepthStencilSettings depthStencilSettings/*,
               List<UniformHandler.UniformInfo> uniforms,
               int uniformSize,
-              List<UniformHandler.UniformInfo> samplers,
-              GeometryStep.ProgramImpl gpImpl*/) {
+              List<UniformHandler.UniformInfo> samplers*/) {
         mProgram = program;
         mVertexArray = vertexArray;
         mPrimitiveType = primitiveType;
         mBlendInfo = blendInfo;
         mDepthStencilSettings = depthStencilSettings;
-        /*mGPImpl = gpImpl;
-        mDataManager = new GLUniformDataManager(uniforms, uniformSize);
+        /*mDataManager = new GLUniformDataManager(uniforms, uniformSize);
         mNumTextureSamplers = samplers.size();*/
     }
 
@@ -136,6 +131,7 @@ public class GLGraphicsPipeline extends GraphicsPipeline {
         return mVertexArray;
     }
 
+    @Deprecated
     public boolean bindUniforms(GLCommandBuffer commandBuffer,
                                 GraphicsPipelineDesc_Old graphicsPipelineDesc,
                                 int width, int height) {
@@ -150,6 +146,7 @@ public class GLGraphicsPipeline extends GraphicsPipeline {
     /**
      * Binds all geometry processor and fragment processor textures.
      */
+    @Deprecated
     public boolean bindTextures(GLCommandBuffer commandBuffer,
                                 GraphicsPipelineDesc_Old graphicsPipelineDesc,
                                 ImageViewProxy[] geomTextures) {
