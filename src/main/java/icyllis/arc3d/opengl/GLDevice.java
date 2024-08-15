@@ -597,13 +597,70 @@ public final class GLDevice extends Device {
                 false);
     }
 
-    @Override
-    protected boolean onWritePixels(Image image,
-                                    int x, int y,
-                                    int width, int height,
-                                    int dstColorType,
-                                    int srcColorType,
-                                    int rowBytes, long pixels) {
+    /**
+     * Updates the pixels in a rectangle of an image. No sRGB/linear conversions are performed.
+     * The write operation can fail because of the surface doesn't support writing (e.g. read only),
+     * the color type is not allowed for the format of the texture or if the rectangle written
+     * is not contained in the texture.
+     *
+     * @param texture      the image to write to
+     * @param dstColorType the color type for this use of the surface
+     * @param srcColorType the color type of the source data
+     * @param rowBytes     the row bytes, must be a multiple of srcColorType's bytes-per-pixel.
+     * @param pixels       the pointer to the texel data for base level image
+     * @return true if succeeded, false if not
+     */
+    public boolean writePixels(@RawPtr Image texture,
+                               int x, int y,
+                               int width, int height,
+                               int dstColorType,
+                               int srcColorType,
+                               int rowBytes, long pixels) {
+        assert (texture != null);
+        if (x < 0 || y < 0 || width <= 0 || height <= 0) {
+            return false;
+        }
+        if (texture.isReadOnly() || texture.getSampleCount() > 1) {
+            return false;
+        }
+        if ((texture.getSurfaceFlags() & ISurface.FLAG_SAMPLED_IMAGE) == 0) {
+            return false;
+        }
+        assert (texture.getWidth() > 0 && texture.getHeight() > 0);
+        if (x + width > texture.getWidth() || y + height > texture.getHeight()) {
+            return false;
+        }
+        int bpp = ColorInfo.bytesPerPixel(srcColorType);
+        int minRowBytes = width * bpp;
+        if (rowBytes < minRowBytes) {
+            return false;
+        }
+        if (rowBytes % bpp != 0) {
+            return false;
+        }
+        if (pixels == 0) {
+            return true;
+        }
+        if (!onWritePixels(texture,
+                x, y, width, height,
+                dstColorType,
+                srcColorType,
+                rowBytes, pixels)) {
+            return false;
+        }
+        if (texture.isMipmapped()) {
+            texture.setMipmapsDirty(true);
+        }
+        mStats.incTextureUploads();
+        return true;
+    }
+
+    private boolean onWritePixels(@RawPtr Image image,
+                                  int x, int y,
+                                  int width, int height,
+                                  int dstColorType,
+                                  int srcColorType,
+                                  int rowBytes, long pixels) {
         //assert (!image.getBackendFormat().isCompressed());
         if (!image.isSampledImage() && !image.isStorageImage()) {
             return false;
@@ -695,8 +752,28 @@ public final class GLDevice extends Device {
         return true;
     }
 
-    @Override
-    protected boolean onGenerateMipmaps(Image image) {
+    /**
+     * Uses the base level of the image to compute the contents of the other mipmap levels.
+     *
+     * @return success or not
+     */
+    public boolean generateMipmaps(@RawPtr Image image) {
+        assert image != null;
+        assert image.isMipmapped();
+        if (!image.isMipmapsDirty()) {
+            return true;
+        }
+        if (image.isReadOnly()) {
+            return false;
+        }
+        if (onGenerateMipmaps(image)) {
+            image.setMipmapsDirty(false);
+            return true;
+        }
+        return false;
+    }
+
+    private boolean onGenerateMipmaps(@RawPtr Image image) {
         var glImage = (GLTexture) image;
         if (mCaps.hasDSASupport()) {
             glGenerateTextureMipmap(glImage.getHandle());
@@ -813,12 +890,56 @@ public final class GLDevice extends Device {
         return false;
     }
 
-    @Override
-    protected boolean onCopySurface(GpuSurface src,
-                                    int srcL, int srcT, int srcR, int srcB,
-                                    GpuSurface dst,
-                                    int dstL, int dstT, int dstR, int dstB,
-                                    int filter) {
+    /**
+     * Special case of {@link #copyImage} that has same dimensions.
+     */
+    public boolean copyImage(Image src, int srcX, int srcY,
+                             Image dst, int dstX, int dstY,
+                             int width, int height) {
+        return copyImage(
+                src,
+                srcX, srcY, srcX + width, srcY + height,
+                dst,
+                dstX, dstY, dstX + width, dstY + height,
+                SamplerDesc.FILTER_NEAREST
+        );
+    }
+
+    /**
+     * Perform a surface-to-surface copy, with the specified regions.
+     * <p>
+     * If their dimensions are same and formats are compatible, then this method will
+     * attempt to perform copy. Otherwise, this method will attempt to perform blit,
+     * which may include resampling and format conversion. <var>filter</var> can be one
+     * of {@link SamplerDesc#FILTER_NEAREST} and {@link SamplerDesc#FILTER_LINEAR}.
+     * <p>
+     * Only mipmap level 0 of 2D images will be copied, without any multisampled buffer
+     * and depth/stencil buffer.
+     *
+     * @return success or not
+     */
+    public boolean copyImage(Image src,
+                             int srcL, int srcT, int srcR, int srcB,
+                             Image dst,
+                             int dstL, int dstT, int dstR, int dstB,
+                             int filter) {
+        if ((dst.getSurfaceFlags() & ISurface.FLAG_READ_ONLY) != 0) {
+            return false;
+        }
+        return onCopyImage(
+                src,
+                srcL, srcT, srcR, srcB,
+                dst,
+                dstL, dstT, dstR, dstB,
+                filter
+        );
+    }
+
+    private boolean onCopyImage(Image src,
+                                int srcL, int srcT, int srcR, int srcB,
+                                Image dst,
+                                int dstL, int dstT, int dstR, int dstB,
+                                int filter) {
         int srcWidth = srcR - srcL;
         int srcHeight = srcB - srcT;
         int dstWidth = dstR - dstL;
@@ -830,8 +951,8 @@ public final class GLDevice extends Device {
         if (srcWidth == dstWidth && srcHeight == dstHeight) {
             // no scaling
             if (mCaps.hasCopyImageSupport() &&
-                    src.asImage() instanceof GLTexture srcImage &&
-                    dst.asImage() instanceof GLTexture dstImage &&
+                    src instanceof GLTexture srcImage &&
+                    dst instanceof GLTexture dstImage &&
                     mCaps.canCopyImage(
                             srcImage.getFormat(), 1,
                             dstImage.getFormat(), 1
@@ -851,8 +972,8 @@ public final class GLDevice extends Device {
                 return true;
             }
 
-            if (src.asImage() instanceof GLTexture srcTex &&
-                    dst.asImage() instanceof GLTexture dstTex &&
+            if (src instanceof GLTexture srcTex &&
+                    dst instanceof GLTexture dstTex &&
                     mCaps.canCopyTexSubImage(
                             srcTex.getFormat(),
                             dstTex.getFormat()

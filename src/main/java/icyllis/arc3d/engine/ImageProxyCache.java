@@ -103,6 +103,7 @@ public final class ImageProxyCache {
      * @see ISurface#FLAG_PROTECTED
      * @see ISurface#FLAG_SKIP_ALLOCATOR
      */
+    @Deprecated
     @Nullable
     @SharedPtr
     public ImageViewProxy createTexture(BackendFormat format,
@@ -144,6 +145,7 @@ public final class ImageProxyCache {
      * @see ISurface#FLAG_APPROX_FIT
      * @see ISurface#FLAG_MIPMAPPED
      */
+    @Deprecated
     @Nullable
     @SharedPtr
     public ImageViewProxy createTextureFromPixels(@Nonnull Pixmap pixmap,
@@ -182,6 +184,7 @@ public final class ImageProxyCache {
         return texture;
     }
 
+    @Deprecated
     private static final class PixelsCallback implements SurfaceProxy.LazyInstantiateCallback {
 
         private Pixels mPixels;
@@ -204,7 +207,7 @@ public final class ImageProxyCache {
                 String label) {
             //TODO implement fast pixel transfer from heap array
             assert mPixels.getBase() == null;
-            @SharedPtr
+            /*@SharedPtr
             Image texture = provider.createTexture(
                     width, height,
                     format,
@@ -214,7 +217,7 @@ public final class ImageProxyCache {
                     mSrcColorType,
                     mPixels.getRowStride(),
                     mPixels.getAddress(),
-                    label);
+                    label);*/
             close();
             //return new SurfaceProxy.LazyCallbackResult(texture);
             return null;
@@ -233,6 +236,7 @@ public final class ImageProxyCache {
      * @see ISurface#FLAG_PROTECTED
      * @see ISurface#FLAG_SKIP_ALLOCATOR
      */
+    @Deprecated
     @Nullable
     @SharedPtr
     public RenderTargetProxy createRenderTexture(BackendFormat format,
@@ -269,6 +273,7 @@ public final class ImageProxyCache {
      * render target. If <code>sampleCount</code> is > 1, the underlying API uses separate MSAA render
      * buffers then a MSAA render buffer is created that resolves to the texture.
      */
+    @Deprecated
     @Nullable
     @SharedPtr
     public RenderTargetProxy wrapRenderableBackendTexture(BackendImage texture,
@@ -291,6 +296,7 @@ public final class ImageProxyCache {
         return null;
     }
 
+    @Deprecated
     @Nullable
     @SharedPtr
     public RenderTargetProxy wrapBackendRenderTarget(BackendRenderTarget backendRenderTarget,
@@ -328,6 +334,7 @@ public final class ImageProxyCache {
      * @see ISurface#FLAG_READ_ONLY
      * @see ISurface#FLAG_SKIP_ALLOCATOR
      */
+    @Deprecated
     @Nullable
     @SharedPtr
     public ImageViewProxy createLazyTexture(BackendFormat format,
